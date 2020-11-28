@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="E Language" version="3" kateversion="5.0" section="Sources" extensions="*.e" mimetype="text/x-e-src">
+    <highlighting>
+        <list name="Type">
+            <item>FALSE</item>
+            <item>MAX_INT</item>
+            <item>MIN_INT</item>
+            <item>NULL</item>
+            <item>TRUE</item>
+            <item>UNDEF</item>
+            <item>bit</item>
+            <item>bits</item>
+            <item>body</item>
+            <item>bool</item>
+            <item>byte</item>
+            <item>byte_array</item>
+            <item>continue</item>
+            <item>copy</item>
+            <item>default</item>
+            <item>external_pointer</item>
+            <item>files</item>
+            <item>file</item>
+            <item>form</item>
+            <item>global</item>
+            <item>index</item>
+            <item>init</item>
+            <item>int</item>
+            <item>it</item>
+            <item>list</item>
+            <item>load</item>
+            <item>long</item>
+            <item>me</item>
+            <item>method</item>
+            <item>module</item>
+            <item>ntv</item>
+            <item>of</item>
+            <item>pat</item>
+            <item>print</item>
+            <item>result</item>
+            <item>source_ref</item>
+            <item>string</item>
+            <item>symtab</item>
+            <item>sys</item>
+            <item>test</item>
+            <item>uint</item>
+            <item>untyped</item>
+            <item>vec</item>
+         </list>
+        <list name="Function">
+            <item>run</item>
+            <item>init</item>
+            <item>pre_generate</item>
+            <item>dut_error</item>
+            <item>pack</item>
+            <item>unpack</item>
+            <item>post_generate</item>
+            <item>pre_generate</item>
+            <item>set_config</item>
+            <item>hex</item>
+            <item>stop_run</item>
+            <item>append</item>
+            <item>size</item>
+            <item>delete</item>
+            <item>is_empty</item>
+            <item>deep_compare</item>
+            <item>deep_compare_physical</item>
+            <item>clear</item>
+            <item>pop0</item>
+            <item>setup</item>
+            <item>crc_32</item>
+        </list>
+        <list name="Statement">
+            <item>chars</item>
+            <item>define</item>
+            <item>extend</item>
+            <item>event</item>
+            <item>ECHO</item>
+            <item>DOECHO</item>
+            <item>import</item>
+            <item>initialize</item>
+            <item>non_terminal</item>
+            <item>struct</item>
+            <item>unit</item>
+            <item>script</item>
+            <item>testgroup</item>
+            <item>type</item>
+         </list>
+        <list name="Action">
+            <item>C</item>
+            <item>add</item>
+            <item>also</item>
+            <item>and</item>
+            <item>as</item>
+            <item>as_a</item>
+            <item>break</item>
+            <item>code</item>
+            <item>compute</item>
+            <item>computed</item>
+            <item>delayed</item>
+            <item>do</item>
+            <item>else</item>
+            <item>each</item>
+            <item>emit</item>
+            <item>empty</item>
+            <item>end</item>
+            <item>exit</item>
+            <item>finish</item>
+            <item>for</item>
+            <item>from</item>
+            <item>if</item>
+            <item>in</item>
+            <item>is</item>
+            <item>like</item>
+            <item>log</item>
+            <item>new</item>
+            <item>no</item>
+            <item>not</item>
+            <item>only</item>
+            <item>or</item>
+            <item>out</item>
+            <item>read</item>
+            <item>repeat</item>
+            <item>return</item>
+            <item>reverse</item>
+            <item>routine</item>
+            <item>step</item>
+            <item>then</item>
+            <item>to</item>
+            <item>traceable</item>
+            <item>untraceable</item>
+            <item>var</item>
+            <item>when</item>
+            <item>while</item>
+            <item>with</item>
+            <item>write</item>
+            <item>xor</item>
+         </list>
+        <list name="Generation">
+            <item>before</item>
+            <item>by</item>
+            <item>choose</item>
+            <item>gen</item>
+            <item>keep</item>
+            <item>keeping</item>
+            <item>matches</item>
+            <item>next</item>
+            <item>select</item>
+            <item>sequence</item>
+            <item>soft</item>
+            <item>using</item>
+        </list>
+        <list name="Cover">
+            <item>address</item>
+            <item>cover</item>
+            <item>error</item>
+            <item>events</item>
+            <item>event</item>
+            <item>length</item>
+            <item>kind</item>
+            <item>ranges</item>
+            <item>range</item>
+            <item>sample</item>
+            <item>text</item>
+            <item>value</item>
+            <item>item</item>
+            <item>transition</item>
+            <item>illegal</item>
+         </list>
+        <list name="Simulator">
+            <item>always</item>
+            <item>all</item>
+            <item>basic</item>
+            <item>call</item>
+            <item>cycles</item>
+            <item>cycle</item>
+            <item>clock</item>
+            <item>change</item>
+            <item>check</item>
+            <item>expect</item>
+            <item>fall</item>
+            <item>first</item>
+            <item>forever</item>
+            <item>idle</item>
+            <item>initial</item>
+            <item>negedge</item>
+            <item>others</item>
+            <item>on</item>
+            <item>posedge</item>
+            <item>rise</item>
+            <item>start</item>
+            <item>that</item>
+            <item>time</item>
+            <item>task</item>
+            <item>until</item>
+            <item>verilog</item>
+            <item>vhdl</item>
+            <item>wait</item>
+            <item>within</item>
+         </list>
+        <contexts>
+
+            <context name="out_comment" attribute="OutSide E code"  lineEndContext="#stay">
+                <Detect2Chars attribute="Normal Text" context="normal" char="&lt;" char1="'" />
+            </context>
+
+            <context name="normal" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="Operators" context="#stay" char="{" beginRegion="Region1"/>
+                <DetectChar attribute="Operators" context="#stay" char="}" endRegion="Region1"/>
+                <HlCHex attribute="Integer" context="#stay" />
+                <HlCOct attribute="Integer" context="#stay" />
+                <Int attribute="Integer" context="#stay" />
+                <Detect2Chars attribute="Normal Text" context="out_comment" char="'" char1="&gt;" />
+                <Detect2Chars attribute="Comment" context="comment" char="-" char1="-" />
+                <Detect2Chars attribute="Comment" context="comment" char="/" char1="/" />
+                <DetectChar attribute="Vector" context="string" char="&quot;" />
+                <AnyChar attribute="Operators" context="#stay" String="'[&amp;&gt;&lt;=:+\-*\|].,;" />
+                <keyword attribute="Data Type" context="#stay"  String="Type"/>
+                <keyword attribute="Function" context="#stay"  String="Function"/>
+                <keyword attribute="Statement" context="#stay"  String="Statement"/>
+                <keyword attribute="Action" context="#stay"  String="Action"/>
+                <keyword attribute="Keyword" context="#stay"  String="Generation"/>
+                <keyword attribute="Keyword" context="#stay"  String="Cover"/>
+                <keyword attribute="Keyword" context="#stay"  String="Simulator"/>
+
+            </context>
+
+
+            <context name="comment" attribute="Comment" lineEndContext="#pop" />
+
+            <context name="string" attribute="Vector" lineEndContext="#stay" >
+                <DetectChar attribute="Vector" context="#pop" char="&quot;" />
+            </context>
+
+        </contexts>
+
+        <itemDatas>
+            <itemData name="OutSide E code" defStyleNum="dsComment"/>
+            <itemData name="Normal Text" defStyleNum="dsNormal" />
+            <itemData name="Keyword" defStyleNum="dsKeyword" />
+            <itemData name="Function" defStyleNum="dsFunction" bold="1"/>
+            <itemData name="Statement" defStyleNum="dsBuiltIn" bold="1" italic="0" />
+            <itemData name="Action" defStyleNum="dsExtension" bold="1" italic="0" />
+            <itemData name="Data Type" defStyleNum="dsDataType" />
+            <itemData name="Comment" defStyleNum="dsComment" />
+            <itemData name="Integer" defStyleNum="dsDecVal" />
+            <itemData name="Vector" defStyleNum="dsString" />
+            <itemData name="Operators" defStyleNum="dsOperator" bold="0" italic="0" />
+        </itemDatas>
+
+    </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>
+
+

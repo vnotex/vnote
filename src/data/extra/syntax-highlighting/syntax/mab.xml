@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="MAB-DB" version="2" kateversion="2.4" extensions="*.mab;*.MAB;*.Mab" section="Markup" mimetype="text/x-mab" casesensitive="0">
+  <highlighting>
+    <contexts>
+      <context attribute="Normal Text" name="Section" lineEndContext="#stay" >
+        <RegExpr String="\*I [a-zA-Z0-9]* " attribute="Mab I Field"  context="#stay" column="0"/>
+        <RegExpr String="\*\*\*\**E.*" attribute="Header Piece" context="#stay" column="0"/>
+        <RegExpr String="\*\*\*\**M.*" attribute="Header Medium" context="#stay" column="0"/>
+        <RegExpr String="\*\*\*\* BIBLIOTHECA.*" attribute="Database Header" context="#stay" column="0"/>
+        <RegExpr String="\*M [a-zA-Z0-9]* " attribute="Mab M Field" context="#stay" column="0"/>
+        <RegExpr String="\*X TYP .*" attribute="Mab Comment Description" context="#stay" column="0"/>
+        <RegExpr String="\*X DESC .*" attribute="Mab Comment Type" context="#stay" column="0"/>
+        <RegExpr String="\*X .*" attribute="Comment" context="#stay" column="0"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" 	defStyleNum="dsNormal" 	color="#FF0022"	selColor="#ffffff" italic="0" bold="1" />
+      <itemData name="Header Piece"  	defStyleNum="dsKeyword" color="#993322" selColor="#ffffff" italic="0" bold="1" />
+      <itemData name="Header Medium"  	defStyleNum="dsKeyword" color="#339922" selColor="#ffffff" italic="0" bold="1" />
+      <itemData name="Database Header" 	defStyleNum="dsKeyword" color="#FF3322" selColor="#ffffff" italic="0" bold="1" />
+      <itemData name="Mab M Field" 		defStyleNum="dsKeyword" color="#003366" selColor="#ffffff" italic="0" bold="1" />
+      <itemData name="Mab I Field" 		defStyleNum="dsKeyword" color="#330066" selColor="#ffffff" italic="0" bold="1" />
+      <itemData name="Mab Comment Description"  	defStyleNum="dsComment" color="#3333FF" selColor="#ffffff" italic="1" bold="1" />
+      <itemData name="Mab Comment Type"  	defStyleNum="dsComment" color="#BB3333" selColor="#ffffff" italic="1" bold="1" />
+      <itemData name="Comment"  	defStyleNum="dsComment" color="#999999" selColor="#ffffff" italic="1" bold="1" />
+    </itemDatas>
+  </highlighting>
+</language>

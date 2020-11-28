@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Texinfo" extensions="*.texi" section="Markup" mimetype="application/x-texinfo" author="Daniel Franke (franke.daniel@gmail.com)" license="LGPL" version="1" kateversion="2.4">
+
+  <highlighting>
+    <!--
+      In TEXINFO, commands start with "@" optionally followed by a 
+      command argument embraced by "{}", as in "@item" or "@emph{foo bar}".
+
+      Some special commands embrace a region, e.g. "@menu" and "@end menu",
+      these regions may be fold (beginRegion="foldingRegion").
+
+      Nodes to NOT end with "@end node", but a "@node" ends at the beginning 
+      of the next "@node".
+      -->
+    <contexts>
+      <context name="Normal Text" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Comment" context="singleLineComment" String="@c(omment)?\b" />
+        <RegExpr attribute="Comment" context="multiLineComment" String="@ignore\b" beginRegion="ignore" />
+        <RegExpr attribute="Command" context="nodeFolding" String="@node\b" beginRegion="node" />
+
+        <RegExpr attribute="Command" context="folding" beginRegion="foldingRegion"
+                 String="@(menu|smallexample|table|multitable)\b"/>
+
+        <RegExpr attribute="Command" context="#stay" String="@[\w]+(\{([\w]+[\s]*)+\})?" />
+      </context>
+
+      <context name="singleLineComment" attribute="Comment" lineEndContext="#pop">
+				<IncludeRules context="##Alerts" />
+			</context>
+
+      <context name="multiLineComment" attribute="Comment" lineEndContext="#stay">
+        <StringDetect attribute="Comment" context="#pop" String="@end ignore" endRegion="ignore" />
+				<IncludeRules context="##Alerts" />
+      </context>
+
+      <context name="nodeFolding" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Command" context="#pop" String="@node\b" endRegion="node" lookAhead="true" />
+        <IncludeRules context="Normal Text" />
+      </context>
+
+      <context name="folding" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Command" context="#pop" endRegion="foldingRegion"
+                 String="@end (menu|smallexample|table|multitable)\b" />
+        <IncludeRules context="Normal Text" />
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="Command" defStyleNum="dsFunction" />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start="@comment " />
+      <comment name="multiLine" start="@ignore" end="@end ignore" region="ignore" />
+    </comments>
+  </general>
+
+</language>

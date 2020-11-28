@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+<!-- Replicated from "markdown.xml": -->
+<!ENTITY rulerregex "\s*(?:(?:\*\s*){3,}|(?:_\s*){3,}|(?:\-\s*){3,})\s*$">
+<!ENTITY indentedcodeblock "(?:\s{4}|\t).*$">
+<!ENTITY listbullet "[\*\+\-]">
+<!ENTITY emptyline "^\s*$">
+<!ENTITY checkbox "\[[ x]\](?=\s)">
+]>
+<!--
+  Kate highlighting module for R Markdown
+  (c) 2014 Dirk Sarpe (dsarpe@posteo.de)
+
+  depends on:
+    Kate highlighting module for Markdown
+    Kate highlighting module for R script
+    Kate highlighting module for LaTeX
+    Kate highlighting module for YAML
+-->
+
+<language name="R Markdown"
+section="Markup"
+extensions="*.rmd;*.Rmd;*.RMD"
+mimetype="text/x-r-markdown"
+version="7"
+kateversion="5.53"
+casesensitive="true"
+author="Dirk Sarpe (dsarpe@posteo.de)"
+license="GPL">
+
+  <highlighting>
+    <contexts>
+
+      <context name="Start Document" attribute="Markdown" lineEndContext="Normal Text" lineEmptyContext="Normal Text" fallthrough="true" fallthroughContext="Normal Text">
+        <RegExpr String="^---$" column="0" attribute="Markdown" context="YAMLhead" beginRegion="YAMLhead block"/>
+      </context>
+
+      <context name="Normal Text" attribute="Markdown" lineEndContext="#stay" lineEmptyContext="find-code-block">
+        <IncludeRules context="Common"/>
+        <IncludeRules context="Overwrite Markdown Normal Text"/>
+        <IncludeRules context="Normal Text##Markdown" includeAttrib="true"/>
+      </context>
+      <context name="find-code-block" attribute="Markdown" lineEndContext="#stay" lineEmptyContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <IncludeRules context="find-code-block##Markdown" includeAttrib="true"/>
+      </context>
+
+      <context name="Common" attribute="Markdown" lineEndContext="#stay">
+        <RegExpr String="```+\{r.*\}" firstNonSpace="true" attribute="Structure"
+                 context="R block" beginRegion="R block"/>
+        <RegExpr String="`r\b" attribute="Structure"
+                 context="R inline"/>
+        <Detect2Chars char="$" char1="$" attribute="MathMode"
+                      context="LaTeX equation block" beginRegion="LaTeX equation block"/>
+        <DetectChar char="$" attribute="MathMode"
+                    context="LaTeX inline equation"/>
+        <Detect2Chars char="\" char1="$" attribute="Backslash Escape" context="#stay"/>
+      </context>
+
+      <context name="R block" attribute="Markdown" lineEndContext="#stay">
+        <RegExpr String="```+(?=\s*$)" firstNonSpace="true" attribute="Structure" context="#pop"
+                 endRegion="R block"/>
+        <IncludeRules context="##R Script" includeAttrib="true"/>
+      </context>
+
+      <context name="R inline" attribute="Markdown" lineEndContext="#stay">
+        <DetectChar char="`" attribute="Structure" context="#pop"/>
+        <IncludeRules context="##R Script" includeAttrib="true"/>
+      </context>
+
+      <context name="LaTeX equation block" attribute="MathMode"
+               lineEndContext="#stay">
+        <Detect2Chars char="$" char1="$" attribute="MathMode"
+                      context="#pop" endRegion="LaTeX equation block"/>
+        <IncludeRules context="MathModeDisplay##LaTeX" includeAttrib="true"/>
+      </context>
+
+      <context name="LaTeX inline equation" attribute="MathMode"
+               lineEndContext="#stay">
+        <DetectChar char="$" attribute="MathMode" context="#pop"/>
+        <IncludeRules context="MathMode##LaTeX" includeAttrib="true"/>
+      </context>
+
+      <context name="YAMLhead" attribute="Document Headers"
+               lineEndContext="#stay">
+        <RegExpr String="^---$" column="0" attribute="Markdown" context="#pop"
+                 endRegion="YAMLhead block"/>
+        <IncludeRules context="##YAML" includeAttrib="true"/>
+      </context>
+
+      <!-- Markdown -->
+      <!-- These contexts are replicated from "markdown.xml" to add the features of R Markdown. -->
+
+      <context name="Overwrite Markdown Normal Text" attribute="Markdown" lineEndContext="#stay">
+        <!-- Blockquotes -->
+        <DetectChar attribute="Blockquote" context="blockquote" char="&gt;" firstNonSpace="true"/>
+        <!-- Lists: avoid highlighting code blocks incorrectly, capturing indentation -->
+        <RegExpr attribute="List" context="list" String="(\s*)&listbullet;(\s+)" column="0"/>
+        <RegExpr attribute="Number List" context="numlist" String="(\s*)\d\.(\s+)" column="0"/>
+        <RegExpr attribute="Number List" context="numlist2" String="(\s*)\d\d+\.(\s+)" column="0"/>
+      </context>
+
+      <context name="list" attribute="Markdown" lineEndContext="#stay" fallthrough="true" fallthroughContext="content-list">
+        <!-- Find indented code blocks, blockquotes and horizontal rules -->
+        <RegExpr attribute="List: Code" String="%1%2\s&indentedcodeblock;" column="0" dynamic="true"/>
+        <RegExpr attribute="Blockquote" context="blockquote-list" String="%1%2\s+&gt;" column="0" dynamic="true"/>
+        <RegExpr attribute="List: Horizontal Rule" String="%1%2\s+&rulerregex;" column="0" dynamic="true"/>
+        <RegExpr String="&emptyline;" column="0"/>
+        <!-- Text with the same indentation captured corresponds to the item list -->
+        <RegExpr context="content-list" String="%1%2\s" column="0" lookAhead="true" dynamic="true"/>
+        <!-- Finish when the text has a lower indentation than the list -->
+        <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
+        <!-- Highlight checkbox at the start of the item (task list) -->
+        <RegExpr attribute="List: Checkbox" context="content-list" String="\s*&checkbox;"/>
+      </context>
+      <!-- 1. numlist (one digit) -->
+      <context name="numlist" attribute="Markdown" lineEndContext="#stay" fallthrough="true" fallthroughContext="content-list">
+        <RegExpr attribute="List: Code" String="%1%2\s{2}&indentedcodeblock;" column="0" dynamic="true"/>
+        <RegExpr attribute="Blockquote" context="blockquote-list" String="%1%2\s{2,}&gt;" column="0" dynamic="true"/>
+        <RegExpr attribute="List: Horizontal Rule" String="%1%2\s{2,}&rulerregex;" column="0" dynamic="true"/>
+        <RegExpr String="&emptyline;" column="0"/>
+        <RegExpr context="content-list" String="%1%2\s{2}" column="0" lookAhead="true" dynamic="true"/>
+        <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
+      </context>
+      <!-- 10. numlist (two or more digits) -->
+      <context name="numlist2" attribute="Markdown" lineEndContext="#stay" fallthrough="true" fallthroughContext="content-list">
+        <RegExpr attribute="List: Code" String="%1%2\s{3}&indentedcodeblock;" column="0" dynamic="true"/>
+        <RegExpr attribute="Blockquote" context="blockquote-list" String="%1%2\s{3,}&gt;" column="0" dynamic="true"/>
+        <RegExpr attribute="List: Horizontal Rule" String="%1%2\s{3,}&rulerregex;" column="0" dynamic="true"/>
+        <RegExpr String="&emptyline;" column="0"/>
+        <RegExpr context="content-list" String="%1%2\s{3}" column="0" lookAhead="true" dynamic="true"/>
+        <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
+      </context>
+
+      <context name="content-list" attribute="Markdown" lineEndContext="#stay" lineEmptyContext="#pop">
+        <IncludeRules context="Common"/>
+        <IncludeRules context="content-list##Markdown" includeAttrib="true"/>
+      </context>
+
+      <context name="blockquote" attribute="Markdown" lineEndContext="#stay" lineEmptyContext="#pop">
+        <IncludeRules context="Common"/>
+        <IncludeRules context="blockquote##Markdown" includeAttrib="true"/>
+      </context>
+      <context name="blockquote-list" attribute="Markdown" lineEndContext="#stay" lineEmptyContext="#pop">
+        <IncludeRules context="Common"/>
+        <IncludeRules context="blockquote-list##Markdown" includeAttrib="true"/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Markdown" defStyleNum="dsNormal"/>
+      <itemData name="Structure" defStyleNum="dsRegionMarker"/>
+      <itemData name="MathMode" defStyleNum="dsRegionMarker" color="#00A000"/>
+      <itemData name="Document Headers" defStyleNum="dsOthers"/>
+
+      <itemData name="Blockquote" defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="List" defStyleNum="dsSpecialString" bold="1" spellChecking="false"/>
+      <itemData name="Number List" defStyleNum="dsSpecialString" spellChecking="false"/>
+      <itemData name="List: Horizontal Rule" defStyleNum="dsNormal" bold="true" spellChecking="false"/>
+      <itemData name="List: Code" defStyleNum="dsInformation"/>
+      <itemData name="List: Checkbox" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Backslash Escape" defStyleNum="dsSpecialChar" spellChecking="false"/>
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+    <keywords additionalDeliminator="`"/>
+    <comments>
+      <comment name="multiLine" start="&lt;!--" end="--&gt;"/>
+    </comments>
+  </general>
+
+</language>

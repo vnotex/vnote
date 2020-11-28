@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="GDB" section="Other"
+          version="2" kateversion="3.4"
+          extensions="*.gdb"
+          mimetype=""
+          author="Milian Wolff (mail@milianw.de)" license="LGPL">
+
+<highlighting>
+  <list name="commands">
+    <item>break</item>
+    <item>run</item>
+    <item>continue</item>
+    <item>backtrace</item>
+    <item>detach</item>
+    <item>quit</item>
+    <item>up</item>
+    <item>down</item>
+    <item>frame</item>
+    <item>where</item>
+    <item>info</item>
+    <item>ptype</item>
+    <item>print</item>
+    <item>call</item>
+    <item>catch</item>
+    <item>condition</item>
+    <item>command</item>
+    <item>set</item>
+    <item>awatch</item>
+    <item>thread</item>
+    <item>list</item>
+    <item>dprintf</item>
+    <item>target</item>
+    <item>end</item>
+    <item>source</item>
+    <item>next</item>
+    <item>nexti</item>
+    <item>step</item>
+    <item>stepi</item>
+    <item>finish</item>
+    <item>start</item>
+    <item>reverse-continue</item>
+    <item>reverse-next</item>
+    <item>reverse-step</item>
+    <item>reverse-nexti</item>
+    <item>reverse-stepi</item>
+    <item>reverse-finish</item>
+    <item>checkpoint</item>
+    <item>restart</item>
+  </list>
+  <contexts>
+    <context name="default" attribute="Normal" lineEndContext="#stay">
+      <Detect2Chars char="#" char1=" " context="comment" />
+      <!-- highlight GDB command listings -->
+      <StringDetect String="(gdb)" context="gdb" firstNonSpace="true" />
+      <StringDetect String="(rr)" context="gdb" firstNonSpace="true" />
+      <!-- continuation of commands -->
+      <DetectChar char=">" context="gdb" firstNonSpace="true" />
+      <!-- output of backtrace-generating commands -->
+      <IncludeRules context="##GDB Backtrace" />
+    </context>
+    <context name="gdb" attribute="CommandLine" lineEndContext="#pop">
+      <keyword attribute="Command" String="commands" context="args" />
+      <WordDetect String="python" context="python" attribute="Command" />
+      <DetectChar char="#" context="comment" />
+    </context>
+    <context name="args" attribute="CommandLine" lineEndContext="#pop">
+      <DetectChar char="#" context="comment" />
+    </context>
+    <context name="comment" attribute="Comment" lineEndContext="#pop">
+    </context>
+    <context name="python" attribute="Normal" lineEndContext="#stay">
+      <WordDetect String="end" context="#pop" attribute="Command" />
+      <IncludeRules context="##Python" />
+    </context>
+  </contexts>
+  <itemDatas>
+    <itemData name="Normal" defStyleNum="dsNormal" spellChecking="false" />
+    <itemData name="CommandLine" defStyleNum="dsFunction" spellChecking="false" />
+    <itemData name="Command" defStyleNum="dsKeyword" spellChecking="false" />
+    <itemData name="Comment" defStyleNum="dsComment" spellChecking="false" />
+  </itemDatas>
+</highlighting>
+
+</language>
+
+<!-- kate: replace-tabs: on; tab-width: 4; indent-width: 4; -->

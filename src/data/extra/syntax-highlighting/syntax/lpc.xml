@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<!--
+=============================================================================
+File:        lpc.xml
+URL:         http://www.metamorpher.de/files/lpc.xml
+Description: Syntax Highlighting for Lars Pensjo C (LPC)
+             It is used in Multi User Dungeons which use LDMud as Gamedriver.
+             For more information, see LDMud project: http://www.bearnip.com
+             For best highlighting results, configure colors yourself.
+Author:      Andreas Klauer (Andreas.Klauer@metamorpher.de)
+Changed:     2004-04-26
+License:     Artistic
+=============================================================================
+-->
+
+
+<language name="LPC" version="2" kateversion="2.4" section="Sources" extensions="*.c;*.h;*.inc;*.o" author="Andreas Klauer (Andreas.Klauer@metamorpher.de)" license="Artistic" >
+
+  <highlighting>
+
+    <!-- Keyword Lists: -->
+    <list name="modifiers">
+      <item>private</item>
+      <item>protected</item>
+      <item>static</item>
+      <item>public</item>
+      <item>nomask</item>
+      <item>varargs</item>
+      <item>nosave</item>
+      <item>virtual</item>
+    </list>
+    <list name="types">
+      <item>void</item>
+      <item>int</item>
+      <item>status</item>
+      <item>string</item>
+      <item>object</item>
+      <item>array</item>
+      <item>mapping</item>
+      <item>closure</item>
+      <item>symbol</item>
+      <item>float</item>
+      <item>mixed</item>
+    </list>
+    <list name="keywords">
+      <item>break</item>
+      <item>continue</item>
+      <item>return</item>
+      <item>if</item>
+      <item>else</item>
+      <item>for</item>
+      <item>foreach</item>
+      <item>do</item>
+      <item>while</item>
+      <item>switch</item>
+      <item>case</item>
+      <item>inherit</item>
+      <item>default</item>
+      <item>variables</item>
+      <item>functions</item>
+      <item>publish</item>
+      <item>nolog</item>
+    </list>
+    <list name="attention">
+      <item>FIXME</item>
+      <item>HACK</item>
+      <item>NOTE</item>
+      <item>NOTICE</item>
+      <item>TODO</item>
+      <item>WARNING</item>
+      <item>###</item>
+    </list>
+
+    <!-- Parsing Rules: -->
+    <contexts>
+      <context name="Normal" attribute="Default" lineEndContext="#stay">
+        <RegExpr attribute="Region Marker" context="#stay" String="//\s*BEGIN.*$" beginRegion="regionMarker" firstNonSpace="true"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="//\s*END.*$" endRegion="regionMarker" firstNonSpace="true"/>
+        <Detect2Chars attribute="Single-Line comments" context="Comment1" char="/" char1="/" />
+        <Detect2Chars attribute="Multi-Line comments" context="Comment2" char="/" char1="*" beginRegion="blockComment" />
+        <keyword String="modifiers" attribute="Modifier" context="#stay" />
+        <keyword String="types" attribute="Datatype" context="#stay" />
+        <keyword String="keywords" attribute="Keywords" context="#stay" />
+        <DetectChar char="#" context="Preprocessor" attribute="Preprocessor" column="0"/>
+        <Float attribute="Floats" context="Float Suffixes"/>
+        <RegExpr String="0b[01]+" attribute="Binary" context="#stay" />
+        <RegExpr String="0x[0-9a-fA-F]+" attribute="Hexadecimal" context="#stay" />
+        <RegExpr String="0o[0-7]+" attribute="Octal" context="#stay" />
+        <Int attribute="Integer" context="#stay" />
+        <RegExpr String="#'[^\t ][^\t ,);}\]/]*" attribute="Closure" context="#stay" />
+        <DetectChar attribute="Strings" context="String1" char="&quot;" />
+        <HlCStringChar attribute="Char" context="#stay" />
+        <DetectChar attribute="Default" context="#stay" char="{" beginRegion="brace" />
+        <DetectChar attribute="Default" context="#stay" char="}" endRegion="brace" />
+      </context>
+      <context name="Float Suffixes" attribute="Floats" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <AnyChar String="fFeE" attribute="Floats" context="#pop"/>
+      </context>
+      <context name="Comment1" attribute="Single-Line comments" lineEndContext="#pop">
+        <LineContinue attribute="Single-Line comments" context="#stay" />
+        <keyword attribute="Alert" context="#stay" String="attention" />
+      </context>
+      <context name="Comment2" attribute="Multi-Line comments" lineEndContext="#stay">
+        <Detect2Chars attribute="Multi-Line comments" context="#pop" char="*" char1="/" endRegion="blockComment" />
+        <keyword attribute="Alert" context="#stay" String="attention" />
+      </context>
+      <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop">
+        <LineContinue attribute="Preprocessor" context="#stay" />
+        <Detect2Chars attribute="Single-Line comments" context="Comment1" char="/" char1="/" />
+        <Detect2Chars attribute="Multi-Line comments" context="Comment2" char="/" char1="*" beginRegion="blockComment" />
+        <keyword String="modifiers" attribute="Modifier" context="#stay" />
+        <keyword String="types" attribute="Datatype" context="#stay" />
+        <keyword String="keywords" attribute="Keywords" context="#stay" />
+        <DetectChar attribute="Preprocessor-Strings" context="String2" char="&quot;" />
+      </context>
+      <context name="String1" attribute="Strings" lineEndContext="#pop">
+        <LineContinue attribute="Default" context="#stay" />
+        <Detect2Chars char="\" char1="\" attribute="Strings" context="#stay" />
+        <Detect2Chars char="\" char1="&quot;" attribute="Strings" context="#stay" />
+        <DetectChar char="&quot;" attribute="Strings" context="#pop" />
+      </context>
+      <context name="String2" attribute="Preprocessor-Strings" lineEndContext="#pop">
+        <LineContinue attribute="Default" context="#stay" />
+        <Detect2Chars char="\" char1="\" attribute="Preprocessor-Strings" context="#stay" />
+        <Detect2Chars char="\" char1="&quot;" attribute="Preprocessor-Strings" context="#stay" />
+        <DetectChar char="&quot;" attribute="Preprocessor-Strings" context="#pop" />
+      </context>
+    </contexts>
+
+    <!-- Color Settings: -->
+    <itemDatas>
+      <itemData name="Default" defStyleNum="dsNormal" />
+      <itemData name="Single-Line comments" defStyleNum="dsComment" />
+      <itemData name="Multi-Line comments" defStyleNum="dsComment" />
+      <itemData name="Alert" defStyleNum="dsAlert" />
+      <itemData name="Modifier" defStyleNum="dsDataType" />
+      <itemData name="Datatype" defStyleNum="dsDataType" />
+      <itemData name="Keywords" defStyleNum="dsKeyword" />
+      <itemData name="Preprocessor" defStyleNum="dsOthers" />
+      <itemData name="Floats" defStyleNum="dsFloat" />
+      <itemData name="Binary" defStyleNum="dsBaseN" />
+      <itemData name="Hexadecimal" defStyleNum="dsBaseN" />
+      <itemData name="Octal" defStyleNum="dsBaseN" />
+      <itemData name="Integer" defStyleNum="dsDecVal" />
+      <itemData name="Closure" defStyleNum="dsOthers" />
+      <itemData name="Strings" defStyleNum="dsString" />
+      <itemData name="Preprocessor-Strings" defStyleNum="dsString" />
+      <itemData name="Char" defStyleNum="dsChar" />
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker" />
+    </itemDatas>
+  </highlighting>
+
+  <!-- This is not for highlighting, but for detecting comments.
+       It allows Kate to hide comments if the user wished to do so. -->
+  <general>
+    <comments>
+      <comment name="singleLine" start="//"  />
+      <comment name="multiLine" start="/*" end="*/"  />
+    </comments>
+    <keywords casesensitive="1"  />
+  </general>
+
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->
+<!-- === End of file. === -->

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Email" version="5" kateversion="5.0" extensions="*.eml;*.email;*.emlx;*.mbox;*.mbx" section="Other" mimetype="message/rfc822" casesensitive="0" author="Volker Krause (vkrause@kde.org)" license="MIT">
+    <highlighting>
+        <list name="header-names">
+            <item>Authentication-Results:</item>
+            <item>Bcc:</item>
+            <item>Cc:</item>
+            <item>Comments:</item>
+            <item>Content-Description:</item>
+            <item>Content-Disposition:</item>
+            <item>Content-Transfer-Encoding:</item>
+            <item>Content-Type:</item>
+            <item>Date:</item>
+            <item>Delivered-To:</item>
+            <item>DKIM-Signature:</item>
+            <item>Errors-To:</item>
+            <item>From:</item>
+            <item>In-Reply-To:</item>
+            <item>Keywords:</item>
+            <item>Lines:</item>
+            <item>Message-Id:</item>
+            <item>List-Archive:</item>
+            <item>List-Id:</item>
+            <item>List-Help:</item>
+            <item>List-Post:</item>
+            <item>List-Unsubscribe:</item>
+            <item>List-Subscribe:</item>
+            <item>MIME-Version:</item>
+            <item>Organization:</item>
+            <item>Precedence:</item>
+            <item>Received:</item>
+            <item>Received-SPF:</item>
+            <item>References:</item>
+            <item>Resent-Bcc:</item>
+            <item>Resent-Cc:</item>
+            <item>Resent-Date:</item>
+            <item>Resent-From:</item>
+            <item>Resent-Message-Id:</item>
+            <item>Return-Path:</item>
+            <item>Resent-Reply-To:</item>
+            <item>Resent-Sender:</item>
+            <item>Resent-To:</item>
+            <item>Reply-To:</item>
+            <item>Sender:</item>
+            <item>Subject:</item>
+            <item>Supersedes:</item>
+            <item>To:</item>
+            <item>User-Agent:</item>
+        </list>
+
+        <contexts>
+            <context name="header" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#pop!body-context">
+                <WordDetect attribute="Common Header" context="header-subject" String="Subject:" column="0"/>
+                <keyword attribute="Common Header" context="header-structured-content" String="header-names" column="0"/>
+                <RegExpr attribute="Other Header" context="header-content" String="[0-9a-zA-Z-]+:\s" column="0"/>
+            </context>
+
+            <context name="header-subject" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#pop#pop!body-context">
+                <RegExpr context="#pop" String="\S" column="0" lookAhead="true"/>
+                <DetectChar attribute="String" context="string-context" char="&quot;"/>
+            </context>
+
+            <context name="header-structured-content" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#pop#pop!body-context">
+                <RegExpr context="#pop" String="\S" column="0" lookAhead="true"/>
+                <DetectChar attribute="String" context="string-context" char="&quot;"/>
+                <DetectChar attribute="Comment" context="comment-context" char="("/>
+                <RegExpr attribute="Address" context="#stay" String="&lt;?[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+&gt;?"/>
+            </context>
+
+            <context name="header-content" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#pop#pop!body-context">
+                <RegExpr context="#pop" String="\S" column="0" lookAhead="true"/>
+            </context>
+
+            <context name="string-context" attribute="String" lineEndContext="#stay">
+                <HlCStringChar/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+
+            <context name="comment-context" attribute="Comment" lineEndContext="#stay">
+                <DetectChar attribute="Comment" context="#pop" char=")"/>
+            </context>
+
+            <context name="body-context" attribute="Normal Text" lineEndContext="#stay">
+                <RegExpr attribute="Content Boundary" context="#pop!header" String="--[0-9a-zA-Z._=-]{10,}(--)?$" column="0"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Common Header" defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="Other Header" defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="String" defStyleNum="dsString" spellChecking="false"/>
+            <itemData name="Address" defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Comment" defStyleNum="dsComment" spellChecking="false"/>
+            <itemData name="Content Boundary" defStyleNum="dsRegionMarker" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <keywords casesensitive="0" weakDeliminator=":-"/>
+    </general>
+</language>

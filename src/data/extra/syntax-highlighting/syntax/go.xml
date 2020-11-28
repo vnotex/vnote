@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<!--
+This file is part of KDE's Kate project
+
+GO.XML supports syntax highlighting for the Go programming language
+under Kate. Go is a compiled, garbage-collected, concurrent programming
+language developed by Google Inc.
+
+Copyright (C) 2010, Miquel Sabaté <mikisabate@gmail.com>
+
+This program, including associated files, is free software.  You may
+distribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation; either Version 2 of
+the license, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+-->
+
+
+<language name="Go" version="4" kateversion="5.0" section="Sources" indenter="cstyle" extensions="*.go" author="Miquel Sabaté (mikisabate@gmail.com)" license="GPLv2+">
+    <highlighting>
+    <list name="keywords">
+<!-- Keywords have been taken from The Go Programming Language Specification -> Keywords section -->
+      <item>break</item>
+      <item>case</item>
+      <item>chan</item>
+      <item>const</item>
+      <item>continue</item>
+      <item>default</item>
+      <item>defer</item>
+      <item>else</item>
+      <item>fallthrough</item>
+      <item>for</item>
+      <item>func</item>
+      <item>go</item>
+      <item>goto</item>
+      <item>if</item>
+      <item>import</item>
+      <item>interface</item>
+      <item>map</item>
+      <item>package</item>
+      <item>range</item>
+      <item>return</item>
+      <item>select</item>
+      <item>struct</item>
+      <item>switch</item>
+      <item>type</item>
+      <item>var</item>
+    </list>
+    <list name="types">
+      <item>bool</item>
+      <item>byte</item>
+      <item>complex64</item>
+      <item>complex128</item>
+      <item>error</item>
+      <item>float32</item>
+      <item>float64</item>
+      <item>int</item>
+      <item>int8</item>
+      <item>int16</item>
+      <item>int32</item>
+      <item>int64</item>
+      <item>rune</item>
+      <item>string</item>
+      <item>uint</item>
+      <item>uintptr</item>
+      <item>uint8</item>
+      <item>uint16</item>
+      <item>uint32</item>
+      <item>uint64</item>
+    </list>
+    <list name="builtin">
+      <item>append</item>
+      <item>cap</item>
+      <item>close</item>
+      <item>complex</item>
+      <item>copy</item>
+      <item>delete</item>
+      <item>imag</item>
+      <item>len</item>
+      <item>make</item>
+      <item>new</item>
+      <item>panic</item>
+      <item>print</item>
+      <item>println</item>
+      <item>real</item>
+      <item>recover</item>
+    </list>
+    <list name="predeclared">
+      <item>false</item>
+      <item>nil</item>
+      <item>true</item>
+      <item>iota</item>
+    </list>
+    <contexts>
+      <context name="normal" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Predeclared Identifier" context="#stay" String="predeclared"  />
+        <keyword attribute="Data Type" context="#stay" String="types"       />
+        <keyword attribute="Builtin Function" context="#stay" String="builtin"  />
+        <DetectIdentifier />
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"   />
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"   />
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*"   />
+        <Int attribute="Decimal" context="#stay" />
+        <Float attribute="Float" context="#stay" />
+        <HlCOct attribute="Octal" context="#stay"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <HlCChar attribute="Char" context="#stay" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <DetectChar attribute="String" context="Multiline String" char="`"/>
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^&#59;"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+        <LineContinue attribute="Comment" context="#stay"/>
+        <DetectSpaces />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue  attribute="String" context="#stay" />
+        <HlCStringChar attribute="String Char" context="#stay" />
+        <DetectChar    attribute="String" context="#pop" char="&quot;" />
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="Multiline String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="`"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"   spellChecking="false"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword"  spellChecking="false"/>
+      <itemData name="Predeclared Identifier" defStyleNum="dsOthers"   spellChecking="false" />
+      <itemData name="Builtin Function"       defStyleNum="dsBuiltIn" spellChecking="false" />
+      <itemData name="Data Type"    defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="String Char"  defStyleNum="dsChar"    />
+      <itemData name="String"       defStyleNum="dsString"  />
+      <itemData name="Comment"      defStyleNum="dsComment" />
+      <itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Octal"        defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Hex"          defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float"        defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Char"         defStyleNum="dsChar"   spellChecking="false"/>
+      <itemData name="Symbol"       defStyleNum="dsNormal" spellChecking="false"/>
+    </itemDatas>
+    </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+    </comments>
+    <keywords casesensitive="1" additionalDeliminator="'&quot;" />
+  </general>
+</language>

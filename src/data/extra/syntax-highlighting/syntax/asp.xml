@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE  language SYSTEM "language.dtd">
+<language name="ASP" version="4" kateversion="5.0" section="Markup" extensions="*.asp;" mimetype="text/x-asp-src;text/x-asp-src" author="Antonio Salazar (savedfastcool@gmail.com)" license="LGPL">
+    <highlighting>
+        <list name="control structures">
+            <item>select</item>
+            <item>case</item>
+            <item>end select</item>
+
+            <item>if</item>
+            <item>then</item>
+            <item>else</item>
+            <item>elseif</item>
+            <item>end if</item>
+
+
+            <item>while</item>
+            <item>do</item>
+            <item>until</item>
+            <item>loop</item>
+            <item>wend</item>
+
+            <item>for</item>
+            <item>each</item>
+            <item>to</item>
+            <item>in</item>
+            <item>next</item>
+
+            <item>exit</item>
+            <item>continue</item>
+        </list>
+        <list name="keywords">
+            <item>dim</item>
+            <item>redim</item>
+            <item>preserve</item>
+
+            <item>const</item>
+            <item>erase</item>
+            <item>nothing</item>
+            <item>set</item>
+
+            <item>new</item>
+            <item>me</item>
+
+
+            <item>function</item>
+            <item>sub</item>
+            <item>call</item>
+
+            <item>class</item>
+            <item>private</item>
+            <item>public</item>
+            <item>with</item>
+
+            <item>randomize</item>
+
+            <item>open</item>
+            <item>close</item>
+            <item>movenext</item>
+            <item>execute</item>
+            <item>eof</item>
+
+            <item>not</item>
+            <item>true</item>
+            <item>false</item>
+            <item>or</item>
+            <item>and</item>
+            <item>xor</item>
+        </list>
+        <list name="functions">
+            <item>response</item>
+            <item>write</item>
+            <item>redirect</item>
+            <item>end</item>
+
+            <item>request</item>
+            <item>form</item>
+            <item>querystring</item>
+            <item>servervariables</item>
+            <item>cookies</item>
+
+            <item>session</item>
+
+            <item>server</item>
+            <item>createobject</item>
+
+            <item>abs</item>
+            <item>array</item>
+            <item>asc</item>
+            <item>atn</item>
+            <item>cbool</item>
+            <item>cbyte</item>
+            <item>ccur</item>
+            <item>cdate</item>
+            <item>cdbl</item>
+            <item>chr</item>
+            <item>cint</item>
+            <item>clng</item>
+            <item>cos</item>
+            <item>csng</item>
+            <item>cstr</item>
+            <item>date</item>
+            <item>dateadd</item>
+
+            <item>DateDiff</item>
+            <item>DatePart</item>
+            <item>DateSerial</item>
+            <item>DateValue</item>
+            <item>Date</item>
+            <item>Day</item>
+            <item>Exp</item>
+            <item>Filter</item>
+            <item>Fix</item>
+            <item>FormatCurrency</item>
+            <item>FormatDateTime</item>
+            <item>FormatNumber</item>
+            <item>FormatPercent</item>
+
+            <item>GetObject</item>
+            <item>Hex</item>
+            <item>Hour</item>
+            <item>InputBox</item>
+            <item>InStr</item>
+            <item>InStrRev</item>
+            <item>Int</item>
+            <item>IsArray</item>
+            <item>IsDate</item>
+            <item>IsEmpty</item>
+            <item>IsNull</item>
+            <item>IsNumeric</item>
+            <item>IsObject</item>
+            <item>Join</item>
+            <item>LBound</item>
+            <item>LCase</item>
+
+            <item>Left</item>
+            <item>Len</item>
+            <item>LoadPicture</item>
+            <item>Log</item>
+            <item>LTrim</item>
+            <item>Mid</item>
+            <item>Minute</item>
+            <item>Month</item>
+            <item>MonthName</item>
+            <item>MsgBox</item>
+            <item>Now</item>
+            <item>Oct</item>
+            <item>Replace</item>
+
+            <item>RGB</item>
+            <item>Right</item>
+            <item>Rnd</item>
+            <item>Round</item>
+            <item>RTrim</item>
+
+            <item>ScriptEngine</item>
+            <item>ScriptEngineBuildVersion</item>
+            <item>ScriptEngineMajorVersion</item>
+            <item>ScriptEngineMinorVersion</item>
+            <item>Second</item>
+            <item>Sgn</item>
+            <item>Sin</item>
+            <item>Space</item>
+            <item>Split</item>
+            <item>Sqr</item>
+            <item>StrComp</item>
+            <item>StrReverse</item>
+            <item>String</item>
+            <item>Tan</item>
+            <item>Time</item>
+            <item>Timer</item>
+            <item>TimeSerial</item>
+            <item>TimeValue</item>
+            <item>Trim</item>
+            <item>TypeName</item>
+            <item>UBound</item>
+            <item>UCase</item>
+            <item>VarType</item>
+            <item>Weekday</item>
+            <item>WeekdayName</item>
+            <item>Year</item>
+
+            <item>Add</item>
+            <item>AddFolders</item>
+            <item>BuildPath</item>
+            <item>Clear</item>
+            <item>Close</item>
+            <item>Copy</item>
+            <item>CopyFile</item>
+            <item>CopyFolder</item>
+            <item>CreateFolder</item>
+            <item>CreateTextFile</item>
+            <item>Delete</item>
+            <item>DeleteFile</item>
+            <item>DeleteFolder</item>
+            <item>DriveExists</item>
+            <item>Exists</item>
+            <item>FileExists</item>
+            <item>FolderExists</item>
+            <item>GetAbsolutePathName</item>
+            <item>GetBaseName</item>
+            <item>GetDrive</item>
+            <item>GetDriveName</item>
+            <item>GetExtensionName</item>
+            <item>GetFile</item>
+            <item>GetFileName</item>
+            <item>GetFolder</item>
+            <item>GetParentFolderName</item>
+
+            <item>GetSpecialFolder</item>
+            <item>GetTempName</item>
+            <item>Items</item>
+            <item>item</item>
+            <item>Keys</item>
+            <item>Move</item>
+            <item>MoveFile</item>
+            <item>MoveFolder</item>
+            <item>OpenAsTextStream</item>
+            <item>OpenTextFile</item>
+            <item>Raise</item>
+            <item>Read</item>
+            <item>ReadAll</item>
+            <item>ReadLine</item>
+            <item>Remove</item>
+            <item>RemoveAll</item>
+            <item>Skip</item>
+            <item>SkipLine</item>
+            <item>Write</item>
+            <item>WriteBlankLines</item>
+            <item>WriteLine</item>
+        </list>
+            <contexts>
+            <context name="nosource" attribute="Normal Text" lineEndContext="#stay">
+                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <RegExpr attribute="HTML Tag" context="aspsource" String="&lt;\s*script\s*language=&quot;VBScript&quot;[^&gt;]*&gt;" insensitive="true" />
+                <RegExpr attribute="HTML Tag" context="scripts" String="&lt;\s*script(\s|&gt;)" insensitive="true" />
+                <RegExpr attribute="HTML Tag" context="htmltag" String="&lt;\s*\/?\s*[a-zA-Z_:][a-zA-Z0-9._:-]*" />
+                <StringDetect attribute="HTML Comment" context="htmlcomment" String="&lt;!--" />
+            </context>
+
+            <context name="aspsource" attribute="ASP Text" lineEndContext="#stay">
+                <StringDetect attribute="Keyword" context="#pop" String="%&gt;" />
+                <RegExpr attribute="HTML Tag" context="#pop" String="&lt;\s*\/\s*script\s*&gt;" insensitive="true" />
+                <DetectChar attribute="Comment" context="asp_onelinecomment" char="'" />
+                <DetectChar attribute="String" context="doublequotestring" char="&quot;" />
+                <DetectChar attribute="String" context="singlequotestring" char="&#39;" />
+                <DetectChar attribute="Keyword" context="#stay" char="&amp;" />
+                <RegExpr attribute="String" context="#stay" String="[0123456789]*\.\.\.[0123456789]*" />
+                <HlCOct attribute="Octal" context="#stay" />
+                <HlCHex attribute="Hex" context="#stay" />
+                <Float attribute="Float" context="#stay" />
+                <Int attribute="Decimal" context="#stay" />
+                <AnyChar attribute="Other" context="#stay" String=";()}{:,[]" />
+
+                <RegExpr attribute="Control Structures" context="#stay" String="\belseif\b" insensitive="true" beginRegion="iffi1" endRegion="iffi1"/>
+                <RegExpr attribute="Control Structures" context="#stay" String="\belse\b" insensitive="true" beginRegion="iffi1" endRegion="iffi1"/>
+                <RegExpr attribute="Control Structures" context="#stay" String="\bif\b" insensitive="true" beginRegion="iffi1"/>
+                <RegExpr attribute="Control Structures" context="#stay" String="\bend if\b" insensitive="true" endRegion="iffi1"/>
+
+                <RegExpr attribute="Keyword" context="#stay" String="\bexit function\b" insensitive="true" />
+                <RegExpr attribute="Keyword" context="#stay" String="\bfunction\b" insensitive="true" beginRegion="funendfun1"/>
+                <RegExpr attribute="Keyword" context="#stay" String="\bend function\b" insensitive="true" endRegion="funendfun1"/>
+
+                <RegExpr attribute="Keyword" context="#stay" String="\bexit sub\b" insensitive="true" />
+                <RegExpr attribute="Keyword" context="#stay" String="\bsub\b" insensitive="true" beginRegion="subendsub1"/>
+                <RegExpr attribute="Keyword" context="#stay" String="\bend sub\b" insensitive="true" endRegion="subendsub1"/>
+
+                <RegExpr attribute="Keyword" context="#stay" String="\bclass\b" insensitive="true" beginRegion="classendclass1"/>
+                <RegExpr attribute="Keyword" context="#stay" String="\bend class\b" insensitive="true" endRegion="classendclass1"/>
+
+                <RegExpr attribute="Control Structures" context="#stay" String="\bexit do\b" insensitive="true" />
+                <RegExpr attribute="Control Structures" context="#stay" String="\bdo(\s+(while))?\b" insensitive="true" beginRegion="doloop1"/>
+                <RegExpr attribute="Control Structures" context="#stay" String="\bloop\b" insensitive="true" endRegion="doloop1"/>
+
+                <RegExpr attribute="Control Structures" context="#stay" String="\bexit while\b" insensitive="true" />
+                <RegExpr attribute="Control Structures" context="#stay" String="\bwhile\b" insensitive="true" beginRegion="whilewend1"/>
+                <RegExpr attribute="Control Structures" context="#stay" String="\bwend\b" insensitive="true" endRegion="whilewend1"/>
+
+                <RegExpr attribute="Control Structures" context="#stay" String="\bexit for\b" insensitive="true" />
+                <RegExpr attribute="Control Structures" context="#stay" String="\bfor\b" insensitive="true" beginRegion="fornext1"/>
+                <RegExpr attribute="Control Structures" context="#stay" String="\bnext\b" insensitive="true" endRegion="fornext1"/>
+
+                <RegExpr attribute="Control Structures" context="#stay" String="\bselect case\b" insensitive="true" beginRegion="selcase1"/>
+                <RegExpr attribute="Control Structures" context="#stay" String="\bend select\b" insensitive="true" endRegion="selcase1"/>
+
+                <keyword attribute="Keyword" context="#stay" String="keywords" />
+                <keyword attribute="Control Structures" context="#stay" String="control structures" />
+                <keyword attribute="Function" context="#stay" String="functions" />
+            </context>
+            <context name="asp_onelinecomment" attribute="Comment" lineEndContext="#pop">
+                <StringDetect attribute="Keyword" context="#pop#pop" String="%&gt;" />
+            </context>
+            <context name="doublequotestring" attribute="String" lineEndContext="#stay">
+                <Detect2Chars attribute="Escape Code" context="#stay" char="&quot;" char1="&quot;" />
+                <RegExpr attribute="Escape Code" context="#stay" String="\\[0-7]{1,3}" />
+                <RegExpr attribute="Escape Code" context="#stay" String="\\x[0-9A-Fa-f]{1,2}" />
+                <DetectChar attribute="String" context="#pop" char="&quot;" />
+            </context>
+            <context name="singlequotestring" attribute="String" lineEndContext="#stay">
+                <Detect2Chars attribute="Escape Code" context="#stay" char="'" char1="'"/>
+                <DetectChar attribute="String" context="#pop" char="'" />
+            </context>
+            <context name="htmltag" attribute="Identifier" lineEndContext="#stay">
+                <Detect2Chars attribute="HTML Tag" context="#pop" char="/" char1="&gt;" />
+                <DetectChar attribute="HTML Tag" context="#pop" char="&gt;"/>
+                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <RegExpr attribute="Identifier" context="identifiers" String="\s*=\s*"/>
+            </context>
+            <context name="htmlcomment" attribute="HTML Comment" lineEndContext="#stay">
+                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" />
+                <RegExpr attribute="Normal Text" context="identifiers" String="\s*=\s*"/>
+            </context>
+            <context name="identifiers" attribute="Identifier" lineEndContext="#stay">
+                <RegExpr attribute="String" context="#pop" String="\s*#?[a-zA-Z0-9]*" />
+                <DetectChar attribute="Types" context="types1" char="'" />
+                <DetectChar attribute="Types" context="types2" char="&quot;" />
+            </context>
+
+            <context name="types1" attribute="Types" lineEndContext="#stay">
+                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <DetectChar attribute="Types" context="#pop#pop" char="'" />
+            </context>
+
+            <context name="types2" attribute="Types" lineEndContext="#stay">
+                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <DetectChar attribute="Types" context="#pop#pop" char="&quot;" />
+            </context>
+
+            <context name="scripts" attribute="Normal Text" lineEndContext="#stay">
+                <Detect2Chars attribute="Comment" context="scripts_onelinecomment" char="/" char1="/" />
+                <Detect2Chars attribute="Comment" context="twolinecomment" char="/" char1="*" />
+                <keyword attribute="Control Structures" context="#stay" String="control structures" />
+                <keyword attribute="Keyword" context="#stay" String="keywords" />
+                <keyword attribute="Function" context="#stay" String="functions" />
+                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%"/>
+                <RegExpr attribute="HTML Tag" context="#pop" String="&lt;\s*\/\s*script\s*&gt;" insensitive="true" />
+
+                <DetectChar attribute="String" context="doublequotestring" char="&quot;" />
+                <DetectChar attribute="String" context="singlequotestring" char="&#39;" />
+                <HlCOct attribute="Octal" context="#stay" />
+                <HlCHex attribute="Hex" context="#stay" />
+                <Float attribute="Float" context="#stay" />
+                <Int attribute="Decimal" context="#stay" />
+                <DetectChar attribute="Normal Text" context="#stay" char="{" beginRegion="Brace1" />
+                <DetectChar attribute="Normal Text" context="#stay" char="}" endRegion="Brace1" />
+                <AnyChar attribute="Other" context="#stay" String=";()}{:,[]" />
+            </context>
+            <context name="scripts_onelinecomment" attribute="Comment" lineEndContext="#pop">
+                <RegExpr attribute="HTML Tag" context="#pop#pop" String="&lt;\s*\/\s*script\s*&gt;" insensitive="true" />
+            </context>
+            <context name="twolinecomment" attribute="Comment" lineEndContext="#stay">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment" />
+            </context>
+
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" />
+            <itemData name="ASP Text" defStyleNum="dsNormal" />
+            <itemData name="Keyword" defStyleNum="dsKeyword" />
+            <itemData name="Function" defStyleNum="dsFunction" />
+            <itemData name="Decimal" defStyleNum="dsDecVal" />
+            <itemData name="Octal" defStyleNum="dsBaseN" />
+            <itemData name="Hex" defStyleNum="dsBaseN" />
+            <itemData name="Float" defStyleNum="dsFloat" />
+            <itemData name="String" defStyleNum="dsString" />
+            <itemData name="Comment" defStyleNum="dsComment" />
+            <itemData name="Control Structures" defStyleNum="dsControlFlow" bold="0" />
+            <itemData name="Escape Code" defStyleNum="dsKeyword" color="#0F0F8F" selColor="#ffffff" bold="1" italic="0" />
+            <itemData name="Other" defStyleNum="dsOthers" />
+
+            <itemData name="HTML Tag" defStyleNum="dsKeyword" color="#0F0000" selColor="#ffffff" bold="1" italic="0" />
+            <itemData name="HTML Comment" defStyleNum="dsComment" />
+            <itemData name="Identifier" defStyleNum="dsOthers" />
+            <itemData name="Types" defStyleNum="dsDataType" />
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="'" />
+            <comment name="multiLine" start="/*" end="*/" />
+        </comments>
+        <keywords casesensitive="0" weakDeliminator=""/>
+    </general>
+</language>

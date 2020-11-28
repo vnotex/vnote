@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="xHarbour" version="3" kateversion="2.4" section="Sources" extensions="*.prg;*.PRG;*.ch" mimetype="text/x-xharbour-src" priority="5" author="Giancarlo Niccolai (giancarlo@niccolai.ws)" license="GPL">
+<highlighting>
+
+   <list name="keywords">
+      <item>local</item>
+      <item>global</item>
+      <item>extern</item>
+      <item>field</item>
+      <item>each</item>
+      <item>as</item>
+      <item>set</item>
+      <item>clear</item>
+      <item>screen</item>
+      <item>databases</item>
+      <item>all</item>
+      <item>close</item>
+      <item>color</item>
+      <item>date</item>
+      <item>else</item>
+      <item>elseif</item>
+      <item>in</item>
+      <item>to</item>
+      <item>do</item>
+      <item>loop</item>
+      <item>catch</item>
+      <item>exit</item>
+      <item>box</item>
+      <item>say</item>
+      <item>case</item>
+      <item>switch</item>
+      <item>self</item>
+      <item>super</item>
+      <item>say</item>
+      <item>get</item>
+      <item>read</item>
+      <item>use</item>
+      <item>select</item>
+      <item>otherwise</item>
+      <item>index</item>
+      <item>alias</item>
+      <item>like</item>
+      <item>has</item>
+      <item>return</item>
+      <item>static</item>
+      <item>on</item>
+      <item>off</item>
+      <item>nil</item>
+      <item>?</item>
+      <item>class</item>
+      <item>external</item>
+   </list>
+
+   <list name="context_beginners">
+      <item>FOR</item>
+      <item>IF</item>
+      <item>SWITCH</item>
+      <item>WHILE</item>
+      <item>TRY</item>
+      <item>BEGIN</item>
+      <item>PROCEDURE</item>
+      <item>FUNCTION</item>
+      <item>METHOD</item>
+   </list>
+
+   <list name="context_terminators">
+      <item>NEXT</item>
+      <item>END</item>
+      <item>ENDIF</item>
+      <item>ENDDO</item>
+      <item>ENDCASE</item>
+   </list>
+
+   <list name="class_keywords">
+      <item>data</item>
+      <item>inline</item>
+      <item>method</item>
+      <item>classdata</item>
+      <item>init</item>
+      <item>from</item>
+      <item>hidden</item>
+   </list>
+
+   <list name="set_commands">
+      <item>INVALID</item>
+      <item>EXACT</item>
+      <item>FIXED</item>
+      <item>DECIMALS</item>
+      <item>DATEFORMAT</item>
+      <item>EPOCH</item>
+      <item>PATH</item>
+      <item>DEFAULT</item>
+      <item>EXCLUSIVE</item>
+      <item>SOFTSEEK</item>
+      <item>UNIQUE</item>
+      <item>DELETED</item>
+      <item>CANCEL</item>
+      <item>DEBUG</item>
+      <item>TYPEAHEAD</item>
+      <item>COLOR</item>
+      <item>CURSOR</item>
+      <item>CONSOLE</item>
+      <item>ALTERNATE</item>
+      <item>ALTFILE</item>
+      <item>DEVICE</item>
+      <item>EXTRA</item>
+      <item>EXTRAFILE</item>
+      <item>PRINTER</item>
+      <item>PRINTFILE</item>
+      <item>MARGIN</item>
+      <item>BELL</item>
+      <item>CONFIRM</item>
+      <item>ESCAPE</item>
+      <item>INSERT</item>
+      <item>EXIT</item>
+      <item>INTENSITY</item>
+      <item>SCOREBOARD</item>
+      <item>DELIMITERS</item>
+      <item>DELIMCHARS</item>
+      <item>WRAP</item>
+      <item>MESSAGE</item>
+      <item>MCENTER</item>
+      <item>SCROLLBREAK</item>
+      <item>EVENTMASK</item>
+      <item>VIDEOMODE</item>
+      <item>MBLOCKSIZE</item>
+      <item>MFILEEXT</item>
+      <item>STRICTREAD</item>
+      <item>OPTIMIZE</item>
+      <item>AUTOPEN</item>
+      <item>AUTORDER</item>
+      <item>AUTOSHARE</item>
+      <item>LANGUAGE</item>
+      <item>IDLEREPEAT</item>
+      <item>TRACE</item>
+      <item>TRACEFILE</item>
+      <item>TRACESTACK</item>
+      <item>FILECASE</item>
+      <item>DIRCASE</item>
+      <item>DIRSEPARATOR</item>
+   </list>
+
+   <list name="functions">
+      <item>aadd</item>
+      <item>adel</item>
+      <item>achoice</item>
+      <item>aclone</item>
+      <item>aeval</item>
+      <item>ains</item>
+      <item>ascan</item>
+      <item>asize</item>
+      <item>adir</item>
+      <item>afill</item>
+      <item>atail</item>
+      <item>asort</item>
+      <item>array</item>
+      <item>TAssociativeArray</item>
+
+      <item>bin21</item>
+      <item>bin2l</item>
+      <item>bin2u</item>
+      <item>bin2w</item>
+      <item>i2bin</item>
+      <item>l2bin</item>
+      <item>u2bin</item>
+      <item>w2bin</item>
+
+      <item>eval</item>
+      <item>fieldblock</item>
+      <item>fieldwblock</item>
+
+      <item>inkey</item>
+      <item>lastkey</item>
+      <item>mcol</item>
+      <item>mrow</item>
+      <item>nextkey</item>
+
+      <item>empty</item>
+      <item>word</item>
+      <item>descend</item>
+      <item>__dbdelim</item>
+      <item>__dbsdf</item>
+
+      <item>os</item>
+      <item>__run</item>
+
+      <item>alert</item>
+      <item>browse</item>
+      <item>dbedit</item>
+      <item>outerr</item>
+      <item>outstd</item>
+      <item>readkey</item>
+      <item>readvar</item>
+      <item>__atprompt</item>
+      <item>__input</item>
+      <item>__menuto</item>
+      <item>__nonoallert</item>
+      <item>__typefile</item>
+      <item>__xrestscreen</item>
+      <item>__xsavescreen</item>
+
+      <item>DBAPPEND</item>
+      <item>DBCLEARFILTER</item>
+      <item>DBCLOSEALL</item>
+      <item>DBCLOSEAREA</item>
+      <item>DBCOMMIT</item>
+      <item>DBCOMMITALL</item>
+      <item>DBCREATE</item>
+      <item>DBDELETE</item>
+      <item>DBEVAL</item>
+      <item>DBF</item>
+      <item>DBFILTER</item>
+      <item>DBGOBOTTOM</item>
+      <item>DBGOTO</item>
+      <item>DBGOTOP</item>
+      <item>DBRECALL</item>
+      <item>DBRLOCK</item>
+      <item>DBRLOCKLIST</item>
+      <item>DBRUNLOCK</item>
+      <item>DBSEEK</item>
+      <item>DBSELECTAREA</item>
+      <item>DBSETDRIVER</item>
+      <item>DBSETFILTER</item>
+      <item>DBSKIP</item>
+      <item>DBSTRUCT</item>
+      <item>DBUNLOCK</item>
+      <item>DBUNLOCKALL</item>
+      <item>DBUSEAREA</item>
+      <item>INDEXEXT</item>
+      <item>INDEXKEY</item>
+      <item>INDEXORD</item>
+      <item>ORDBAGEXT</item>
+      <item>ORDBAGNAME</item>
+      <item>ORDCONDSET</item>
+      <item>ORDCREATE</item>
+      <item>ORDDESTROY</item>
+      <item>ORDFOR</item>
+      <item>ORDKEY</item>
+      <item>ORDLISTADD</item>
+      <item>ORDLISTCLEAR</item>
+      <item>ORDLISTREBUILD</item>
+      <item>ORDNAME</item>
+      <item>ORDNUMBER</item>
+      <item>ORDSETFOCUS</item>
+      <item>RDDLIST</item>
+      <item>RDDNAME</item>
+      <item>RDDSETDEFAULT</item>
+      <item>__DBCONTINUE</item>
+      <item>__DBZAP</item>
+      <item>__FLEDIT</item>
+      <item>__RDDSETDEFAULT</item>
+      <item>__dbCopyStruct</item>
+      <item>__dbCopyXStruct</item>
+      <item>__dbCreate</item>
+      <item>__dbStructFilter</item>
+      <item>dbSkipper</item>
+      <item>CDOW</item>
+      <item>CMONTH</item>
+      <item>CTOD</item>
+      <item>DATE</item>
+      <item>DAY</item>
+      <item>DAYS</item>
+      <item>DOW</item>
+      <item>DTOC</item>
+      <item>DTOS</item>
+      <item>MONTH</item>
+      <item>YEAR</item>
+
+      <item>GETENV</item>
+      <item>SET</item>
+      <item>SETMODE</item>
+      <item>SETTYPEAHEAD</item>
+      <item>VERSION</item>
+      <item>__SETCENTURY</item>
+      <item>__SetFunction</item>
+
+      <item>break</item>
+      <item>errorsys</item>
+      <item>throw</item>
+      <item>errornew</item>
+
+      <item>HB_SETKEYSAVE</item>
+      <item>HB_SetKeyCheck</item>
+      <item>HB_SetKeyGet</item>
+      <item>SETKEY</item>
+      <item>__QUIT</item>
+      <item>__WAIT</item>
+
+      <item>file</item>
+      <item>frename</item>
+      <item>__dir</item>
+
+      <item>col</item>
+      <item>maxcol</item>
+      <item>maxrow</item>
+      <item>row</item>
+      <item>hb_colorindex</item>
+
+      <item>CURDIR</item>
+      <item>DIRCHANGE</item>
+      <item>DIRREMOVE</item>
+      <item>DISKSPACE</item>
+      <item>FCLOSE</item>
+      <item>FCREATE</item>
+      <item>FERASE</item>
+      <item>FERROR</item>
+      <item>FOPEN</item>
+      <item>FREAD</item>
+      <item>FREADSTR</item>
+      <item>FSEEK</item>
+      <item>FWRITE</item>
+      <item>HB_DISKSPACE</item>
+      <item>HB_FEOF</item>
+      <item>ISDISK</item>
+      <item>MAKEDIR</item>
+
+      <item>ABS</item>
+      <item>EXP</item>
+      <item>INT</item>
+      <item>LOG</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>MOD</item>
+      <item>ROUND</item>
+      <item>SQRT</item>
+
+      <item>HB_ISBYREF</item>
+      <item>PROCFILE</item>
+      <item>PROCLINE</item>
+      <item>PROCNAME</item>
+      <item>TYPE</item>
+      <item>VALTYPE</item>
+      <item>valtoprg</item>
+      <item>tone</item>
+
+      <item>HB_LANGNAME</item>
+      <item>HB_LANGSELECT</item>
+      <item>ISAFFIRM</item>
+      <item>ISNEGATIVE</item>
+      <item>NATIONMSG</item>
+
+      <item>pcount</item>
+      <item>HB_pvalue</item>
+
+      <item>ALLTRIM</item>
+      <item>ASC</item>
+      <item>AT</item>
+      <item>CHR</item>
+      <item>HARDCR</item>
+      <item>HB_ANSITOOEM</item>
+      <item>HB_OEMTOANSI</item>
+      <item>HB_VALTOSTR</item>
+      <item>ISALPHA</item>
+      <item>ISDIGIT</item>
+      <item>ISLOWER</item>
+      <item>ISUPPER</item>
+      <item>LEFT</item>
+      <item>LEN</item>
+      <item>LOWER</item>
+      <item>LTRIM</item>
+      <item>MEMOTRAN</item>
+      <item>PADC</item>
+      <item>PADL</item>
+      <item>PADR</item>
+      <item>RAT</item>
+      <item>REPLICATE</item>
+      <item>RIGHT</item>
+      <item>RTRIM</item>
+      <item>SPACE</item>
+      <item>STR</item>
+      <item>STRTRAN</item>
+      <item>STRZERO</item>
+      <item>SUBSTR</item>
+      <item>TRANSFORM</item>
+      <item>TRIM</item>
+      <item>UPPER</item>
+      <item>VAL</item>
+
+      <item>devoutpict</item>
+
+      <item>elaptime</item>
+      <item>seconds</item>
+      <item>secs</item>
+      <item>time</item>
+
+      <item>do</item>
+
+      <item>ThreadStart</item>
+      <item>ThreadStop</item>
+      <item>ThreadSleep</item>
+      <item>ThreadKill</item>
+      <item>ThreadJoin</item>
+      <item>CreateMutex</item>
+      <item>DestroyMutex</item>
+      <item>MutexLock</item>
+      <item>MutexUnlock</item>
+      <item>Subscribe</item>
+      <item>SubscribeNow</item>
+      <item>Notify</item>
+      <item>NotifyAll</item>
+      <item>WaitForThreads</item>
+      <item>KillAllThreads</item>
+
+      <item>InetInit</item>
+      <item>InetCleanup</item>
+      <item>InetCreate</item>
+      <item>InetDestroy</item>
+      <item>InetConnect</item>
+      <item>InetServer</item>
+      <item>InetAccept</item>
+      <item>InetSetTimeout</item>
+      <item>InetGetTimeout</item>
+      <item>InetClearTimeout</item>
+      <item>InetRecv</item>
+      <item>InetRecvAll</item>
+      <item>InetSend</item>
+      <item>InetSendAll</item>
+      <item>InetDGram</item>
+      <item>InetDGramRecv</item>
+      <item>InetDGramSend</item>
+      <item>InetAddress</item>
+      <item>InetPort</item>
+      <item>InetError</item>
+      <item>InetErrorDesc</item>
+      <item>InetGetHosts</item>
+      <item>InetConnectIP</item>
+
+      <item>hb_regex</item>
+      <item>hb_regexmatch</item>
+      <item>hb_regexsplit</item>
+      <item>hb_regexcomp</item>
+      <item>hb_readini</item>
+      <item>hb_writeini</item>
+      <item>hb_random</item>
+      <item>hb_chechsum</item>
+      <item>hb_crypt</item>
+      <item>hb_decrypt</item>
+      <item>hb_hextonum</item>
+      <item>hb_numtohex</item>
+      <item>hb_exec</item>
+      <item>hb_execfromarray</item>
+
+      <item>hb_class</item>
+      <item>hb_keyput</item>
+      <item>hb_osnewline</item>
+
+   </list>
+
+   <list name="pragma">
+      <item>#include</item>
+      <item>#if</item>
+      <item>#ifdef</item>
+      <item>#ifndef</item>
+      <item>#endif</item>
+      <item>#else</item>
+      <item>#define</item>
+   </list>
+
+   <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="TopLevel">
+
+         <Detect2Chars attribute="Comment" context="ml_comment" char="/" char1="*" beginRegion="comment_region"/>
+         <DetectChar attribute="Comment" context="comment" char="*" firstNonSpace="true"/>
+         <Detect2Chars attribute="Comment" context="comment" char="/" char1="/" />
+
+         <DetectChar attribute="String" context="string" char="&quot;" />
+         <DetectChar attribute="String" context="stringc" char="'" />
+
+         <StringDetect attribute="Operator" context="#stay" String=".and." insensitive="true"/>
+         <StringDetect attribute="Operator" context="#stay" String=".or." insensitive="true"/>
+         <StringDetect attribute="Operator" context="#stay" String=".not." insensitive="true"/>
+         <StringDetect attribute="Operator" context="#stay" String=".f." insensitive="true"/>
+         <StringDetect attribute="Operator" context="#stay" String=".t." insensitive="true"/>
+
+         <AnyChar attribute="Operator" context="#stay" String=":=!" />
+         <DetectChar attribute="Keyword" context="#stay" char="@"/>
+
+         <RegExpr String="CLASS[\t ]+" attribute="Keyword" context="ClassContext" insensitive="true" beginRegion="ClassDeclRegion" firstNonSpace="true"/>
+
+         <RegExpr String="DO[\t ]+CASE[\t ]*$" attribute="Keyword" context="#stay" insensitive="true" beginRegion="IndentRegion" firstNonSpace="true"/>
+         <keyword attribute="Keyword" context="#stay" String="context_beginners" beginRegion="IndentRegion" />
+         <keyword attribute="Keyword" context="#stay" String="context_terminators" endRegion="IndentRegion" />
+         <RegExpr String="return ?" attribute="Keyword" context="#stay" insensitive="true" endRegion="IndentRegion" column="0"/>
+
+         <keyword attribute="Keyword" context="#stay" String="keywords" />
+         <keyword attribute="Keyword" context="#stay" String="set_commands" />
+         <keyword attribute="Function" context="#stay" String="functions" />
+         <keyword attribute="Preprocessor" context="#stay" String="pragma" />
+         <Detect2Chars attribute="Operator" context="#stay" char="-" char1=">" />
+         <RegExpr attribute="Number" context="#stay" String="\d+" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="comment"/>
+
+      <context attribute="Comment" lineEndContext="#stay" name="ml_comment">
+         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="comment_region"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="string">
+         <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="stringc">
+         <DetectChar attribute="String" context="#pop" char="'" />
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="ClassContext">
+
+         <Detect2Chars attribute="Comment" context="ml_comment" char="/" char1="*" beginRegion="comment_region"/>
+         <DetectChar attribute="Comment" context="comment" char="*" firstNonSpace="true"/>
+         <Detect2Chars attribute="Comment" context="comment" char="/" char1="/" />
+
+         <keyword attribute="Keyword" context="#stay" String="class_keywords" />
+         <RegExpr String="END(CLASS)? *$" attribute="Keyword" context="#pop" insensitive="true" endRegion="ClassDeclRegion" firstNonSpace="true"/>
+      </context>
+
+   </contexts>
+
+   <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Operator"  defStyleNum="dsBaseN" color="#A01060" selColor="#400040" bold="0" italic="0"/>
+      <itemData name="Number"  defStyleNum="dsDecVal" color="#5050C0" selColor="#000000" bold="0" italic="0"/>
+      <itemData name="Function"  defStyleNum="dsFunction" />
+      <itemData name="String"  defStyleNum="dsString"/>
+      <itemData name="Preprocessor"  defStyleNum="dsOthers"/>
+   </itemDatas>
+</highlighting>
+
+<general>
+   <comments>
+      <comment name="singleLine" start="*" />
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+   </comments>
+   <keywords casesensitive="0" />
+</general>
+</language>

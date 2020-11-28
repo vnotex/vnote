@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="GlossTex" version="2" kateversion="5.0" extensions="*.gdf" section="Markup" mimetype="text/x-gdf" casesensitive="1" author="Thomas Braun(braun@physik.fu-berlin.de)" license="LGPL">
+  <highlighting>
+    <contexts>
+      <context name="Comment" attribute="Comment" lineEndContext="#stay">
+      <StringDetect String="@entry" attribute="Entry" context="Entry"/>
+      </context>
+      <context name="Entry"  attribute="Entry" lineEndContext="#pop">
+        <DetectChar char="{" attribute="Normal Text" context="Label"/>
+        <DetectChar char="}" attribute="Normal Text" context="Text"/>
+      </context>
+      <context name="Label"  attribute="Label" lineEndContext="#pop">
+      <DetectChar char="," attribute="Normal Text" context="Abbrev"/>
+      <DetectChar char="}" attribute="Normal Text" context="Text"/>
+      </context>
+      <context name="Abbrev" attribute="Abbrev" lineEndContext="#pop">
+        <RegExpr String="\{[^\{\}]*\}" attribute="Abbrev" context="#stay"/>
+        <DetectChar char="," attribute="Normal Text" context="Full"/>
+	<DetectChar char="}" attribute="Normal Text" context="Text"/>
+      </context>
+        <context name="Full" attribute="Full" lineEndContext="#pop">
+	<RegExpr String="\{[^\{\}]*\}" attribute="Full" context="#stay"/>
+	<DetectChar char="}" attribute="Normal Text" context="Text"/>
+      </context>
+      <context name="Text" attribute="Normal Text" lineEndContext="Comment">
+      <IncludeRules context="##LaTeX" includeAttrib="true"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Entry" defStyleNum="dsVariable"/>
+      <itemData name="Label" defStyleNum="dsDataType"/>
+      <itemData name="Abbrev" defStyleNum="dsOthers"/>
+      <itemData name="Full" defStyleNum="dsString"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+   <keywords casesensitive="0" weakDeliminator="\" wordWrapDeliminator=",{}[]"/>
+      <comments>
+      <comment name="singleLine" start="%" />
+    </comments>
+    </general>
+  </language>

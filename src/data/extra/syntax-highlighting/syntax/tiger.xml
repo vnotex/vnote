@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Author: Pablo Oliveira <pablo@sifflez.org> //-->
+<language name="Tiger" version="1" kateversion="5.0" section="Other" extensions="*.tig"
+          mimetype="" author="Pablo Oliveira" license="MIT">
+  <highlighting>
+    <list name="controlflow">
+      <item>if</item>
+      <item>then</item>
+      <item>else</item>
+      <item>while</item>
+      <item>do</item>
+      <item>for</item>
+      <item>to</item>
+      <item>break</item>
+    </list>
+    <list name="keywords">
+      <item>let</item>
+      <item>in</item>
+      <item>end</item>
+      <item>array</item>
+      <item>of</item>
+      <item>type</item>
+      <item>function</item>
+      <item>var</item>
+      <item>nil</item>
+    </list>
+    <list name="type">
+      <item>void</item>
+      <item>int</item>
+      <item>string</item>
+    </list>
+    <list name="primitives">
+      <item>print</item>
+      <item>print_int</item>
+      <item>flush</item>
+      <item>getchar</item>
+      <item>ord</item>
+      <item>chr</item>
+      <item>size</item>
+      <item>concat</item>
+      <item>substring</item>
+      <item>not</item>
+      <item>exit</item>
+    </list>
+    <contexts>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectSpaces/>
+
+        <Detect2Chars attribute="Comment" context="Multi/inline Comment" char="/" char1="*" beginRegion="Comment" />
+        <AnyChar attribute="Symbol" String=":&amp;+,-/.*&lt;=&gt;|&#59;" />
+        <Int attribute="Decimal" />
+
+        <keyword attribute="ControlFlow" String="controlflow" />
+        <keyword attribute="Keyword" String="keywords" />
+        <keyword attribute="Function" String="primitives" />
+        <keyword attribute="Type" String="type" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <HlCStringChar attribute="Escape" />
+        <RegExpr attribute="Escape" String="\\u[0-9a-fA-F]{4}" />
+        <LineContinue/>
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Multi/inline Comment">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment" />
+        <IncludeRules context="##Alerts" />
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"  spellChecking="false" />
+      <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="ControlFlow"  defStyleNum="dsControlFlow" spellChecking="false" />
+      <itemData name="Function"     defStyleNum="dsFunction" spellChecking="false" />
+      <itemData name="Type"         defStyleNum="dsDataType" spellChecking="false" />
+      <itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="false" />
+      <itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false" />
+      <itemData name="String"       defStyleNum="dsString" />
+      <itemData name="Escape"       defStyleNum="dsSpecialChar" spellChecking="false" />
+      <itemData name="Comment"      defStyleNum="dsComment" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>
+
+<!-- kate: space-indent on; indent-width 2; -->

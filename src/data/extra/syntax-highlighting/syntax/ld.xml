@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- GNU LD Linker Script syntax highlighter -->
+<language name="GNU Linker Script" section="Scripts" extensions="*.ld" version="3" kateversion="2.4" author="Lyle Putnam (lcputnam@gmail.com)" license="">
+    <highlighting>
+        <list name="keywords">
+            <item>AT</item>
+            <item>ENTRY</item>
+            <item>INPUT</item>
+            <item>GROUP</item>
+            <item>OUTPUT</item>
+            <item>OUTPUT_ARCH</item>
+            <item>OUTPUT_FORMAT</item>
+            <item>SEARCH_DIR</item>
+            <item>STARTUP</item>
+            <item>TARGET</item>
+        </list>
+        <list name="functions">
+            <item>ABSOLUTE</item>
+            <item>ADDR</item>
+            <item>ALIGN</item>
+            <item>DATA_SEGMENT_ALIGN</item>
+            <item>DATA_SEGMENT_END</item>
+            <item>DATA_SEGMENT_RELRO_END</item>
+            <item>DEFINED</item>
+            <item>LOADADDR</item>
+            <item>MAX</item>
+            <item>MIN</item>
+            <item>NEXT</item>
+            <item>SIZEOF</item>
+            <item>SIZEOF_HEADERS</item>
+        </list>
+        <list name="commands">
+            <item>SECTIONS</item>
+            <item>MEMORY</item>
+        </list>
+        <contexts>
+            <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+                <keyword attribute="Keyword" context="#stay" String="keywords" />
+                <keyword attribute="Function" context="#stay" String="functions" />
+                <keyword attribute="Command" context="#stay" String="commands" />
+                <HlCOct attribute="Number" context="#stay" />
+                <HlCHex attribute="Number" context="#stay" />
+                <!-- Base 10 Integers may be suffixed with K, M or G to indicate size -->
+                <Int attribute="Number" context="Int Suffixes"/>
+                <RegExpr attribute="Section Name" context="#stay" String="\.[\-_0-9a-zA-Z]+" />
+                <!-- "COMMON" and "/DISCARD/" are special section targets -->
+                <RegExpr attribute="Section Name" context="#stay" String="(COMMON|\/DISCARD\/)" />
+                <DetectChar attribute="Normal Text" context="#stay" char="{" beginRegion="Block" />
+                <DetectChar attribute="Normal Text" context="#stay" char="}" endRegion="Block" />
+                <Detect2Chars attribute="Comment" context="comment" char="/" char1="*" beginRegion="Comment" />
+                <DetectChar attribute="String" context="string" char="&quot;" />
+            </context>
+            <context name="Int Suffixes" attribute="Number" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                    <StringDetect attribute="Number" context="#pop" String="K" insensitive="true" />
+                    <StringDetect attribute="Number" context="#pop" String="M" insensitive="true" />
+                    <StringDetect attribute="Number" context="#pop" String="G" insensitive="true" />
+            </context>
+            <context name="comment" attribute="Comment" lineEndContext="#stay">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment" />
+            </context>
+            <context name="string" attribute="String" lineEndContext="#stay">
+                <DetectChar attribute="String" context="#pop" char="&quot;" />
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" />
+            <itemData name="Keyword" defStyleNum="dsKeyword" />
+            <itemData name="Function" defStyleNum="dsFunction" />
+            <itemData name="Comment" defStyleNum="dsComment" />
+            <itemData name="Section Name" defStyleNum="dsChar" />
+            <itemData name="Command" defStyleNum="dsKeyword" />
+            <itemData name="Number" defStyleNum="dsBaseN" />
+            <itemData name="String" defStyleNum="dsString" />
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="multiLine" start="/*" end="*/" region="Comment" />
+            <!-- I don't think GNU LD scripts have single-line comments -->
+        </comments>
+        <keywords casesensitive="1" />
+    </general>
+</language>

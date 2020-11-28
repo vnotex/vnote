@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="Logtalk" version="3" kateversion="2.4" section="Sources" extensions="*.lgt;.logtalk" mimetype="text/x-logtalk" author="Paulo Moura (pmoura@logtalk.org)" license="Apache License 2.0">
+
+	<highlighting>
+
+		<contexts>
+
+			<context name = "normal" attribute = "Normal" lineEndContext = "#stay" >
+				<!-- Directives -->
+				<RegExpr String = "^\s*:-" attribute = "Normal" context = "directive" />
+				<!-- Event handlers -->
+				<RegExpr String = "\b(after|before)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Message forwarding handler -->
+				<RegExpr String = "\bforward(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Method execution context -->
+				<RegExpr String = "\b(context|parameter|this|se(lf|nder))(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Reflection -->
+				<RegExpr String = "\b(current_predicate|predicate_property)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- DCGs -->
+				<RegExpr String = "\b(expand_(goal|term)|(goal|term)_expansion|phrase)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Entity -->
+				<RegExpr String = "\b(abolish|c(reate|urrent))_(object|protocol|category)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(object|protocol|category)_property(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Entity relations -->
+				<RegExpr String = "\bco(mplements_object|nforms_to_protocol)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\bextends_(object|protocol|category)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\bimp(lements_protocol|orts_category)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(instantiat|specializ)es_class(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Events -->
+				<RegExpr String = "\b(current_event|(abolish|define)_events)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Flags -->
+				<RegExpr String = "\b(create|current|set)_logtalk_flag(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Compiling, loading, and library paths -->
+				<RegExpr String = "\blogtalk_(compile|l(ibrary_path|oad|oad_context)|make(_target_action)?)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\blogtalk_make\b" attribute = "Built-in" context = "#stay" />
+				<!-- Database -->
+				<RegExpr String = "\b(clause|retract(all)?)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\ba(bolish|ssert(a|z))(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Control -->
+				<RegExpr String = "\b(ca(ll|tch)|throw)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(fa(il|lse)|true|(instantiation|system)_error)\b" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(type|domain|existence|permission|representation|evaluation|resource|syntax)_error(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- All solutions -->
+				<RegExpr String = "\b((bag|set)of|f(ind|or)all)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Multi-threading predicates -->
+				<RegExpr String = "\bthreaded(_(call|once|ignore|exit|peek|wait|notify))?(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Engine predicates -->
+				<RegExpr String = "\bthreaded_engine(_(create|destroy|self|next|next_reified|yield|post|fetch))?(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Term unification -->
+				<RegExpr String = "\b(subsumes_term|unify_with_occurs_check)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Term creation and decomposition -->
+				<RegExpr String = "\b(functor|arg|copy_term|numbervars|term_variables)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Evaluable functors -->
+				<RegExpr String = "\b(div|rem|m(ax|in|od)|abs|sign)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\bfloat(_(integer|fractional)_part)?(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(floor|truncate|round|ceiling)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Other arithmetic functors -->
+				<RegExpr String = "\b(cos|a(cos|sin|tan|tan2)|exp|log|s(in|qrt)|tan|xor)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Term testing -->
+				<RegExpr String = "\b(var|atom(ic)?|integer|float|c(allable|ompound)|n(onvar|umber)|ground|acyclic_term)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Term comparison -->
+				<RegExpr String = "\bcompare(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Stream selection and control -->
+				<RegExpr String = "\b(curren|se)t_(in|out)put(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(open|close)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\bflush_output(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(at_end_of_stream|flush_output)\b" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(stream_property|at_end_of_stream|set_stream_position)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Character and byte input/output -->
+				<RegExpr String = "\b(nl|(get|peek|put)_(byte|c(har|ode)))(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\bnl\b" attribute = "Built-in" context = "#stay" />
+				<!-- Term input/output -->
+				<RegExpr String = "\bread(_term)?(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\bwrite(q|_(canonical|term))?(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(current_)?op(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(current_)?char_conversion(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Atomic term processing -->
+				<RegExpr String = "\batom_(length|c(hars|o(ncat|des)))(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\b(char_code|sub_atom)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\bnumber_c(har|ode)s(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Implementation defined hooks functions -->
+				<RegExpr String = "\b(se|curren)t_prolog_flag(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\bhalt\b" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\bhalt(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Sorting -->
+				<RegExpr String = "\b(key)?sort(?=[(])" attribute = "Built-in" context = "#stay" />
+				<!-- Variables -->
+				<RegExpr String = "\b[A-Z_]\w*" attribute = "Variable" context = "#stay" />
+				<!-- Comments -->
+				<DetectChar char = "%" attribute = "Comment" context = "single line comment" />
+				<Detect2Chars char = "/" char1 = "*" attribute = "Comment" context = "multiline comment" beginRegion = "Comment" />
+				<!-- Strings and quoted atoms -->
+				<DetectChar char = "&quot;" attribute = "String" context = "string" />
+				<DetectChar char = "'" attribute = "String" context = "atom" />
+				<!-- Numbers -->
+				<RegExpr String = "0'\\." attribute = "Number" context = "#stay" />
+				<RegExpr String = "0'." attribute = "Number" context = "#stay" />
+				<RegExpr String = "0b[0-1]+" attribute = "Number" context = "#stay" />
+				<RegExpr String = "0o[0-7]+" attribute = "Number" context = "#stay" />
+				<RegExpr String = "0x[0-9a-fA-F]+" attribute = "Number" context = "#stay" />
+				<RegExpr String = "\d+(\.\d+)?([eE]([-+])?\d+)?" attribute = "Number" context = "#stay" />
+				<!-- Message sending operators -->
+				<Detect2Chars char = ":" char1 = ":" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "^" char1 = "^" attribute = "Operator" context = "#stay" />
+				<!-- External call -->
+				<DetectChar char = "{" attribute = "Operator" context = "#stay" beginRegion="external" />
+				<DetectChar char = "}" attribute = "Operator" context = "#stay" endRegion="external" />
+				<!-- Logic and control -->
+				<RegExpr String = "\b(ignore|once)(?=[(])" attribute = "Built-in" context = "#stay" />
+				<RegExpr String = "\brepeat\b" attribute = "Built-in" context = "#stay" />
+				<!-- Bitwise functors -->
+				<Detect2Chars char = "&gt;" char1 = "&gt;" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "&lt;" char1 = "&lt;" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "/" char1 = "\" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "\" char1 = "/" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "\" char1 = "\" attribute = "Operator" context = "#stay" />
+				<!-- Predicate aliases -->
+				<RegExpr String = "\bas\b" attribute = "Operator" context = "#stay" />
+				<!-- Arithmetic evaluation -->
+				<RegExpr String = "\bis\b" attribute = "Operator" context = "#stay" />
+				<!-- Arithmetic comparison -->
+				<StringDetect String = "=:=" attribute = "Operator" context = "#stay" />
+				<StringDetect String = "=\=" attribute = "Operator" context = "#stay" />
+				<DetectChar char = "&lt;" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "=" char1 = "&lt;" attribute = "Operator" context = "#stay" />
+				<DetectChar char = "&gt;" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "&gt;" char1 = "=" attribute = "Operator" context = "#stay" />
+				<!-- Term creation and decomposition -->
+				<StringDetect String = "=.." attribute = "Operator" context = "#stay" />
+				<!-- Term unification -->
+				<DetectChar char = "=" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "\" char1 = "=" attribute = "Operator" context = "#stay" />
+				<!-- Term comparison -->
+				<Detect2Chars char = "=" char1 = "=" attribute = "Operator" context = "#stay" />
+				<StringDetect String = "\==" attribute = "Operator" context = "#stay" />
+				<StringDetect String = "@=&lt;" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "@" char1 = "&lt;" attribute = "Operator" context = "#stay" />
+				<StringDetect String = "@&gt;=" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "@" char1 = "&gt;" attribute = "Operator" context = "#stay" />
+				<!-- Evaluable functors -->
+				<Detect2Chars char = "/" char1 = "/" attribute = "Operator" context = "#stay" />
+				<AnyChar String = "+-*/" attribute = "Operator" context = "#stay" />
+				<RegExpr String = "\b(e|pi|div|mod|rem)\b" attribute = "Operator" context = "#stay" />
+				<!-- Other arithemtic functors -->
+				<Detect2Chars char = "*" char1 = "*" attribute = "Operator" context = "#stay" />
+				<!-- DCG rules -->
+				<StringDetect String = "--&gt;" attribute = "Operator" context = "#stay" />
+				<!-- Control constructs -->
+				<AnyChar String = "!;" attribute = "Operator" context = "#stay" />
+				<Detect2Chars char = "-" char1 = "&gt;" attribute = "Operator" context = "#stay" />
+				<!-- Logic and control -->
+				<Detect2Chars char = "\" char1 = "+" attribute = "Operator" context = "#stay" />
+				<!-- Mode operators -->
+				<AnyChar String = "?@" attribute = "Operator" context = "#stay" />
+				<!-- Category predicate direct call operator -->
+				<AnyChar String = ":" attribute = "Operator" context = "#stay" />
+				<!-- Clause operator -->
+				<Detect2Chars char = ":" char1 = "-"  firstNonSpace = "false" attribute = "Normal" context = "#stay" />
+				<!-- Existential quantifier -->
+				<AnyChar String = "^" attribute = "Operator" context = "#stay" />
+				<!-- Atoms -->
+				<RegExpr String = "\b[a-z]\w*" attribute = "Normal" context = "#stay" />
+			</context>
+
+			<context name = "directive" attribute = "Directive" lineEndContext = "#stay" >
+				<!-- Conditional compilation directives -->
+				<RegExpr String = "\bif(?=[(])" attribute = "Directive" context = "#pop" beginRegion = "CC" />
+				<RegExpr String = "\bendif[.]" attribute = "Directive" context = "#pop" endRegion = "CC" />
+				<RegExpr String = "\belif(?=[(])" attribute = "Directive" context = "#pop"/>
+				<RegExpr String = "\belse[.]" attribute = "Directive" context = "#pop" />
+				<!-- Entity directives -->
+				<RegExpr String = "\b(category|object|protocol)(?=[(])" attribute = "Directive" context = "entityrelations" beginRegion = "Entity" />
+				<RegExpr String = "\bend_(category|object|protocol)[.]" attribute = "Directive" context = "#pop" endRegion = "Entity" />
+				<RegExpr String = "\bmodule(?=[(])" attribute = "Directive" context = "#pop"/>
+ 				<!-- Predicate scope directives -->
+				<RegExpr String = "\bp(ublic|r(otected|ivate))(?=[(])" attribute = "Directive" context = "#pop" />
+				<!-- Other directives -->
+				<RegExpr String = "\be(n(coding|sure_loaded)|xport)(?=[(])" attribute = "Directive" context = "#pop" />
+				<RegExpr String = "\bin(clude|itialization|fo)(?=[(])" attribute = "Directive" context = "#pop" />
+				<RegExpr String = "\b(built_in|dynamic|synchronized|threaded)[.]" attribute = "Directive" context = "#pop" />
+				<RegExpr String = "\b(alias|d(ynamic|iscontiguous)|m(eta_(non_terminal|predicate)|ode|ultifile)|s(et_(logtalk|prolog)_flag|ynchronized))(?=[(])" attribute = "Directive" context = "#pop" />
+				<RegExpr String = "\bop(?=[(])" attribute = "Directive" context = "#pop" />
+				<RegExpr String = "\b(c(alls|oinductive)|reexport|use(s|_module))(?=[(])" attribute = "Directive" context = "#pop" />
+			</context>
+
+			<context name = "entityrelations" attribute = "Normal" lineEndContext = "#stay" >
+				<RegExpr String = "\b(complements|extends|i(nstantiates|mp(lements|orts))|specializes)(?=[(])" attribute = "Directive" context = "#stay" />
+				<!-- Variables -->
+				<RegExpr String = "\b[A-Z_]\w*" attribute = "Variable" context = "#stay" />
+				<!-- Comments -->
+				<DetectChar char = "%" attribute = "Comment" context = "single line comment" />
+				<Detect2Chars char = "/" char1 = "*" attribute = "Comment" context = "multiline comment" beginRegion = "Comment" />
+				<!-- Strings and quoted atoms -->
+				<DetectChar char = "&quot;" attribute = "String" context = "string" />
+				<DetectChar char = "'" attribute = "String" context = "atom" />
+				<!-- Numbers -->
+				<RegExpr String = "0'\\." attribute = "Number" context = "#stay" />
+				<RegExpr String = "0'." attribute = "Number" context = "#stay" />
+				<RegExpr String = "0b[0-1]+" attribute = "Number" context = "#stay" />
+				<RegExpr String = "0o[0-7]+" attribute = "Number" context = "#stay" />
+				<RegExpr String = "0x[0-9a-fA-F]+" attribute = "Number" context = "#stay" />
+				<RegExpr String = "\d+(\.\d+)?([eE]([-+])?\d+)?" attribute = "Number" context = "#stay" />
+				<!-- Scope operator -->
+				<Detect2Chars char = ":" char1 = ":" attribute = "Operator" context = "#stay" />
+				<!-- End of entity-opening directive -->
+				<Detect2Chars attribute = "Normal" context = "normal" char = ")" char1 = "." />
+			</context>
+
+			<context name = "single line comment" attribute = "Comment" lineEndContext = "#pop" />
+
+			<context name = "multiline comment" attribute = "Comment" lineEndContext = "#stay" >
+				<Detect2Chars char = "*" char1 = "/" attribute = "Comment" context = "#pop" endRegion = "Comment" />
+			</context>
+
+			<context name = "string" attribute = "String" lineEndContext = "#stay" >
+				<DetectChar char = "&quot;" attribute = "String" context = "#pop" />
+			</context>
+
+			<context name = "atom" attribute = "String" lineEndContext = "#stay" >
+				<DetectChar char = "'" attribute = "String" context = "#pop" />
+			</context>
+
+		</contexts>
+
+		<itemDatas>
+			<itemData name = "Normal" defStyleNum = "dsNormal" />
+			<itemData name = "Directive" defStyleNum = "dsKeyword" />
+			<itemData name = "Built-in" defStyleNum = "dsFunction" />
+			<itemData name = "Operator" defStyleNum = "dsDataType" />
+			<itemData name = "Comment" defStyleNum = "dsComment" />
+			<itemData name = "Number" defStyleNum = "dsDecVal" />
+			<itemData name = "String"  defStyleNum = "dsString" />
+			<itemData name = "Variable" defStyleNum = "dsOthers" />
+		</itemDatas>
+
+	</highlighting>
+
+	<general>
+		<comments>
+			<comment name = "singleLine" start = "%" />
+			<comment name = "multiLine" start = "/*" end = "*/" region = "Comment" />
+		</comments>
+		<keywords casesensitive="true" />
+	</general>
+
+</language>

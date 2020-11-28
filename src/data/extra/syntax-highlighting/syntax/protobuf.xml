@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Protobuf" version="7" kateversion="5.0" section="Sources" extensions="*.proto" mimetype="text/x-protobuf" author="Slawomir Mikula (slawek.mikula@gmail.com)" license="LGPL">
+  <highlighting>
+    <list name="keywords">
+      <item>message</item>
+      <item>required</item>
+      <item>optional</item>
+      <item>repeated</item>
+      <item>packed</item>
+      <item>enum</item>
+      <item>default</item>
+      <item>import</item>
+      <item>public</item>
+      <item>extensions</item>
+      <item>package</item>
+      <item>option</item>
+      <item>deprecated</item>
+      <item>extend</item>
+    </list>
+    <list name="operators">
+      <item>=</item>
+      <item>;</item>
+    </list>
+    <list name="datatypes">
+      <item>double</item>
+      <item>float</item>
+      <item>int32</item>
+      <item>int64</item>
+      <item>uint32</item>
+      <item>uint64</item>
+      <item>sint32</item>
+      <item>sint64</item>
+      <item>fixed32</item>
+      <item>fixed64</item>
+      <item>sfixed32</item>
+      <item>sfixed64</item>
+      <item>bool</item>
+      <item>string</item>
+      <item>bytes</item>
+    </list>
+
+<contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectSpaces />
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Operator" context="#stay" String="operators"/>
+        <keyword attribute="Data Type" context="#stay" String="datatypes"/>
+        <RegExpr attribute="Keyword" context="Imports" String="\b(package|import)\b" />
+        <DetectIdentifier />
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^&#59;"/>
+        <Float attribute="Float" context="Float Suffixes"/>
+        <HlCOct attribute="Octal" context="#stay"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Int attribute="Decimal" context="Int Suffixes"/>
+        <HlCChar attribute="Char" context="#stay"/>
+        <RegExpr attribute="Char" context="#stay" String="'\\u[0-9a-fA-F]{4}'"/>
+      </context>
+
+      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <AnyChar String="fF" attribute="Float" context="#pop"/>
+      </context>
+
+      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="Imports">
+        <RegExpr attribute="Imports" context="#pop" String="\s*.*;" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+        <LineContinue attribute="Comment" context="#stay"/>
+        <IncludeRules context="##Alerts" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Alerts" />
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Data Type" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Imports" defStyleNum="dsOthers"/>
+
+      <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Char" defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="String Char" defStyleNum="dsChar"/>
+
+      <itemData name="Operator" defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Symbol" defStyleNum="dsNormal" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

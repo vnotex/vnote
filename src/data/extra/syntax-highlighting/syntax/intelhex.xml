@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Intel HEX" section="Other" extensions="*.hex;*.ihx" version="1" kateversion="5.0" author="Miklos Marton (martonmiklosqdev@gmail.com)" license="MIT">
+  <highlighting>
+    <contexts>
+      <context name="Malformed" attribute="Malformed" lineEndContext="#stay">
+        <DetectChar char=":" context="Startcode"/>
+      </context>
+      <context name="Startcode" attribute="Startcode" lineEndContext="Malformed">
+          <RegExpr String="[0-9A-F]{2}" context="Bytecount"/>
+      </context>
+      <context name="Bytecount" attribute="Bytecount" lineEndContext="Malformed">
+          <RegExpr String="[0-9A-F]{4}" context="Address"/>
+      </context>
+      <context name="Address" attribute="Address" lineEndContext="Malformed">
+        <RegExpr String="(00|01|02|03|04|05)" context="RecordType"/>
+        <RegExpr String="([1-9]|(06|07|08|09))" context="Malformed"/>
+      </context>
+      <context name="RecordType" attribute="RecordType" lineEndContext="Malformed">
+        <RegExpr String="[0-9A-F]{2}$" context="Checksum"/>
+        <RegExpr String="[0-9A-F]{2}" context="Data"/>
+      </context>
+      <context name="Data" attribute="Data" lineEndContext="Malformed">
+        <RegExpr String="[0-9A-F]{2}$" context="Checksum"/>
+      </context>
+      <context name="Checksum" attribute="Checksum" lineEndContext="Malformed">
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Malformed" defStyleNum="dsAlert" spellChecking="false"/>
+      <itemData name="Startcode" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Bytecount" defStyleNum="dsCommentVar" spellChecking="false"/>
+      <itemData name="Address" defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="RecordType" defStyleNum="dsAnnotation" spellChecking="false"/>
+      <itemData name="Data" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Checksum" defStyleNum="dsAlert" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+</language>
+<!-- kate: indent-width 2; -->

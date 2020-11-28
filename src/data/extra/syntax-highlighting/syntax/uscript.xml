@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="UnrealScript" version="2" kateversion="2.2" section="Scripts" extensions="*.uc" mimetype="text/x-uscript">
+	<highlighting>
+		<list name="keywords">
+			<item>break</item>
+			<item>continue</item>
+			<item>if</item>
+			<item>else</item>
+			<item>switch</item>
+			<item>while</item>
+			<item>for</item>
+			<item>do</item>
+			<item>foreach</item>
+			<item>true</item>
+			<item>false</item>
+			<item>null</item>
+			<item>new</item>
+			<item>instanceof</item>
+			<item>state</item>
+			<item>auto</item>
+			<item>exec</item>
+			<item>function</item>
+			<item>defaultproperties</item>
+			<item>native</item>
+			<item>noexport</item>
+			<item>var</item>
+			<item>out</item>
+			<item>local</item>
+			<item>event</item>
+			<item>return</item>
+			<item>static</item>
+			<item>Static</item>
+			<item>synchronized</item>
+			<item>transient</item>
+			<item>volatile</item>
+			<item>final</item>
+			<item>throws</item>
+			<item>extends</item>
+			<item>expands</item>
+			<item>public</item>
+			<item>protected</item>
+			<item>private</item>
+			<item>abstract</item>
+			<item>case</item>
+			<item>default</item>
+			<item>final</item>
+			<item>simulated</item>
+			<item>Dot</item>
+			<item>nativereplication</item>
+			<item>replication</item>
+			<item>unreliable</item>
+			<item>reliable</item>
+			<item>ignores</item>
+			<item>localized</item>
+			<item>latent</item>
+			<item>singular</item>
+			<item>Cross</item>
+			<item>config</item>
+			<item>enum</item>
+			<item>struct</item>
+			<item>operator</item>
+			<item>preoperator</item>
+			<item>postoperator</item>
+			<item>iterator</item>
+			<item>coerce</item>
+			<item>optional</item>
+			<item>const</item>
+			<item>editconst</item>
+			<item>array</item>
+			<item>export</item>
+			<item>editinline</item>
+			<item>editinlinenew</item>
+			<item>editinlineuse</item>
+			<item>cpptext</item>
+			<item>placeable</item>
+			<item>virtual</item>
+			<item>hidecategories</item>
+			<item>super</item>
+			<item>global</item>
+			<item>none</item>
+			<item>self</item>
+		</list>
+
+		<list name="types">
+			<item>boolean</item>
+			<item>char</item>
+			<item>byte</item>
+			<item>short</item>
+			<item>int</item>
+			<item>long</item>
+			<item>float</item>
+			<item>double</item>
+			<item>void</item>
+			<item>Pawn</item>
+			<item>sound</item>
+			<item>ipaddr</item>
+			<item>ELightType</item>
+			<item>actor</item>
+			<item>ammo</item>
+			<item>bool</item>
+			<item>vector</item>
+			<item>rotator</item>
+			<item>name</item>
+			<item>string</item>
+			<item>object</item>
+			<item>plane</item>
+			<item>staticmesh</item>
+			<item>package</item>
+			<item>color</item>
+			<item>coords</item>
+			<item>material</item>
+			<item>class</item>
+		</list>
+		<contexts>
+			<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+				<keyword attribute="Keyword" context="#stay" String="keywords"/>
+				<keyword attribute="Data Type" context="#stay" String="types"/>
+                <Float attribute="Float" context="Float Suffixes"/>
+				<HlCOct attribute="Octal" context="#stay"/>
+				<HlCHex attribute="Hex" context="#stay"/>
+                <Int attribute="Decimal" context="Int Suffixes"/>
+				<HlCChar attribute="Char" context="#stay"/>
+				<RegExpr attribute="Region Marker" context="#stay" String="//BEGIN.*$" beginRegion="Region1"/>
+				<RegExpr attribute="Region Marker" context="#stay" String="//END.*$" endRegion="Region1"/>
+				<DetectChar attribute="String" context="String" char="&quot;"/>
+				<DetectChar attribute="String" context="String" char="&#39;"/>
+				<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+				<DetectChar attribute="Normal Text" context="#stay" char="{" beginRegion="Brace1"/>
+				<DetectChar attribute="Normal Text" context="#stay" char="}" endRegion="Brace1"/>
+				<AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=&gt;?[]^{|}~"/>
+				<StringDetect attribute="Preprocessor" context="Preprocessor" insensitive="true" String="#exec"/>
+			</context>
+            <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                <AnyChar String="fF" attribute="Float" context="#pop"/>
+            </context>
+            <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
+                <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
+                <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
+                <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
+                <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
+                <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
+                <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
+                <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+            </context>
+			<context attribute="String" lineEndContext="#pop" name="String">
+				<LineContinue attribute="String" context="#stay"/>
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<DetectChar attribute="String" context="#pop" char="&quot;"/>
+				<DetectChar attribute="String" context="#pop" char="&#39;"/>
+			</context>
+			<context attribute="Comment" lineEndContext="#pop" name="Commentar 1"/>
+			<context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+			</context>
+			<context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+				<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*"/>
+			</context>
+		</contexts>
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal"/>
+			<itemData name="Keyword" defStyleNum="dsKeyword"/>
+			<itemData name="Data Type" defStyleNum="dsDataType"/>
+			<itemData name="Decimal" defStyleNum="dsDecVal"/>
+			<itemData name="Octal" defStyleNum="dsBaseN"/>
+			<itemData name="Hex" defStyleNum="dsBaseN"/>
+			<itemData name="Float" defStyleNum="dsFloat"/>
+			<itemData name="Char" defStyleNum="dsChar"/>
+			<itemData name="String" defStyleNum="dsString"/>
+			<itemData name="String Char" defStyleNum="dsChar"/>
+			<itemData name="Comment" defStyleNum="dsComment"/>
+			<itemData name="Symbol" defStyleNum="dsNormal"/>
+			<itemData name="Preprocessor"  defStyleNum="dsOthers"/>
+			<itemData name="Region Marker" defStyleNum="dsRegionMarker" />
+		</itemDatas>
+	</highlighting>
+	<general>
+		<comments>
+			<comment name="singleLine" start="//"/>
+			<comment name="multiLine" start="/*" end="*/"/>
+		</comments>
+		<keywords casesensitive="0" additionalDeliminator="&quot;&#39;"/>
+	</general>
+</language>
+

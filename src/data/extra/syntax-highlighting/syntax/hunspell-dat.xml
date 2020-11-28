@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd" >
+<language name="Hunspell Thesaurus File" section="Other" extensions="*.dat" priority="-9" version="1" kateversion="2.4" author="Lukas Sommer" license="LGPL version 2.1, or version 3 or later versions approved by the membership of KDE e.V.; or any other license appoved by the emembership of KDE e.V.">
+
+<highlighting>
+
+<contexts>
+
+	<context name="context_dat" fallthrough="true" fallthroughContext="context_content" attribute="Undefined" lineEndContext="context_content" >
+		<RegExpr attribute="Encoding" context="context_content" String=".*" />
+	</context>
+	
+	<context name="context_content" attribute="Entry" lineEndContext="#stay">
+		<DetectChar char="-" attribute="Keyword" column="0" context="context_list" />
+		<DetectChar char="|" attribute="Keyword" context="context_number" />
+	</context>
+	
+	<context name="context_list" attribute="String" lineEndContext="#pop">
+		<DetectChar char="|" attribute="Keyword" context="#stay" />
+		<RangeDetect char="(" char1=")" attribute="Hint" />
+	</context>
+	
+	<context name="context_number" attribute="Number" lineEndContext="#pop">
+	</context>
+
+</contexts>
+
+
+<itemDatas>
+	<itemData name="Undefined" defStyleNum="dsNormal" />
+	<itemData name="Keyword" defStyleNum="dsKeyword" />
+	<itemData name="Number" defStyleNum="dsDecVal" />
+	<itemData name="String" defStyleNum="dsString" />
+	<itemData name="Hint" defStyleNum="dsOthers" />
+	<itemData name="Encoding" defStyleNum="dsDataType" />
+	<itemData name="Entry" defStyleNum="dsFunction" />
+</itemDatas>
+
+</highlighting>
+
+
+<general>
+	<comments>
+		<comment name="singleLine" start="#" />
+	</comments>
+</general>
+
+</language>

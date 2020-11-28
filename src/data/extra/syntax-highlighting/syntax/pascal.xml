@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Pascal"
+          section="Sources" 
+          version="2"
+          kateversion="3.3"
+          extensions="*.p;*.pas;*.pp"
+          mimetype="text/x-pascal" 
+          priority="8"
+	  indenter="pascal"
+          author="Unnamed people and Liu Sizhuang(oldherl@gmail.com)"
+          >
+  <highlighting>
+    <list name="keywords">
+      <item>and</item>
+      <item>array</item>
+      <item>asm</item>
+      <item>case</item>
+      <item>const</item>
+      <item>div</item>
+      <item>do</item>
+      <item>downto</item>
+      <item>else</item>
+      <item>file</item>
+      <item>for</item>
+      <item>function</item>
+      <item>goto</item>
+      <item>if</item>
+      <item>in</item>
+      <item>label</item>
+      <item>mod</item>
+      <item>nil</item>
+      <item>not</item>
+      <item>of</item>
+      <item>operator</item>
+      <item>or</item>
+      <item>packed</item>
+      <item>procedure</item>
+      <item>program</item>
+      <item>record</item>
+      <item>repeat</item>
+      <item>set</item>
+      <item>then</item>
+      <item>to</item>
+      <item>type</item>
+      <item>unit</item>
+      <item>until</item>
+      <item>uses</item>
+      <item>var</item>
+      <item>while</item>
+      <item>with</item>
+      <item>xor</item>
+
+
+      <item>at</item>
+      <item>automated</item>
+      <item>break</item>
+      <item>continue</item>
+      <item>dispinterface</item>
+      <item>dispose</item>
+      <item>exit</item>
+      <item>false</item>
+      <item>finalization</item>
+      <item>initialization</item>
+      <item>library</item>
+      <item>new</item>
+      <item>published</item>
+      <item>resourcestring</item>
+      <item>self</item>
+      <item>true</item>
+    </list>
+    <list name="ISO/Delphi Extended">
+      <item>abstract</item>
+      <item>as</item>
+      <item>bindable</item>
+      <item>constructor</item>
+      <item>destructor</item>
+      <item>except</item>
+      <item>export</item>
+      <item>finally</item>
+      <item>import</item>
+      <item>implementation</item>
+      <item>inherited</item>
+      <item>inline</item>
+      <item>interface</item>
+      <item>is</item>
+      <item>module</item>
+      <item>on</item>
+      <item>only</item>
+      <item>otherwise</item>
+      <item>override</item>
+      <item>private</item>
+      <item>property</item>
+      <item>protected</item>
+      <item>public</item>
+      <item>read</item>
+      <item>qualified</item>
+      <item>raise</item>
+      <item>restricted</item>
+      <item>shl</item>
+      <item>shr</item>
+      <item>threadvar</item>
+      <item>try</item>
+      <item>virtual</item>
+      <item>write</item>
+    </list>
+    <list name="types">
+      <item>Integer</item>
+      <item>Cardinal</item>
+      <item>ShortInt</item>
+      <item>SmallInt</item>
+      <item>LongInt</item>
+      <item>Int64</item>
+      <item>Byte</item>
+      <item>Word</item>
+      <item>LongWord</item>
+      <item>DWord</item>
+      <item>QWord</item>
+      <item>Char</item>
+      <item>AnsiChar</item>
+      <item>WideChar</item>
+      <item>Boolean</item>
+      <item>ByteBool</item>
+      <item>WordBool</item>
+      <item>LongBool</item>
+      <item>Single</item>
+      <item>Double</item>
+      <item>Extended</item>
+      <item>Comp</item>
+      <item>Currency</item>
+      <item>Real</item>
+      <item>Real48</item>
+      <item>String</item>
+      <item>ShortString</item>
+      <item>AnsiString</item>
+      <item>WideString</item>
+      <item>Pointer</item>
+      <item>Variant</item>
+      <item>File</item>
+      <item>Text</item>
+    </list>
+    <list name="attention">
+      <item>FIXME</item>
+      <item>TODO</item>
+      <item>NOTE</item>
+      <item>###</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <RegExpr attribute="Keyword" context="#stay" String="\b(begin|case|record)(?=(\{[^}]*(\}|$)|\(\*.*(\*\)|$))*([\s]|$|//))" insensitive="true" beginRegion="Region1"/>
+        <RegExpr attribute="ISO/Delphi Extended" context="#stay" String="\b((object|class)(?=(\(.*\))?(\{[^}]*(\}|$)|\(\*.*(\*\)|$))*;?([\s]|$|//))|try(?=(\{[^}]*(\}|$)|\(\*.*(\*\)|$))*([\s]|$|//)))" insensitive="true" beginRegion="Region1"/>
+	<RegExpr attribute="Keyword" context="#stay" String="\bend(?=((\{[^}]*(\}|$)|\(\*.*(\*\)|$))*)([.;\s]|$)|//|$)" insensitive="true" endRegion="Region1"/>
+
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="ISO/Delphi Extended" context="#stay" String="ISO/Delphi Extended"/>
+        <keyword attribute="Type" context="#stay" String="types"/>
+        <Float attribute="Number" context="#stay"/>
+	<Int attribute="Number" context="#stay"/>
+	<DetectChar attribute="Hex" context="Hex" char="$" />
+	<DetectChar attribute="String" context="CharNum" char="#" />
+        <DetectChar attribute="String" context="String" char="&apos;" />
+        <StringDetect attribute="Directive" context="Prep1" String="(*$"/>
+        <Detect2Chars attribute="Directive" context="Prep2" char="{" char1="$"/>
+        <DetectChar attribute="Comment" context="Comment1" char="{"            beginRegion="Region2"/>
+        <Detect2Chars attribute="Comment" context="Comment2" char="(" char1="*" beginRegion="Region3"/>
+        <Detect2Chars attribute="Comment" context="Comment3" char="/" char1="/"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="CharNum">
+	      <DetectChar attribute="Hex" context="HexCharNum" char="$" />
+	      <RegExpr String="[^0-9]" context="#pop"/>
+      </context>
+      <context attribute="Hex" lineEndContext="#pop" name="HexCharNum">
+	      <RegExpr String="[^a-fA-F0-9]" context="#pop#pop"/>
+      </context>
+      <context attribute="Hex" lineEndContext="#pop" name="Hex">
+	      <RegExpr String="[^a-fA-F0-9]" context="#pop"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <DetectChar attribute="String" context="#pop" char="&apos;"/>
+      </context>
+      <context attribute="Directive" lineEndContext="#pop" name="Prep1">
+        <Detect2Chars attribute="Directive" context="#pop" char="*" char1=")"/>
+      </context>
+      <context attribute="Directive" lineEndContext="#pop" name="Prep2">
+        <DetectChar attribute="Directive" context="#pop" char="}"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment1">
+        <keyword attribute="Alert" context="#stay" String="attention" />
+        <DetectChar attribute="Comment" context="#pop" char="}"              endRegion="Region2"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment2">
+        <keyword attribute="Alert" context="#stay" String="attention" />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")"   endRegion="Region3"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Comment3">
+        <keyword attribute="Alert" context="#stay" String="attention" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"  />
+      <itemData name="Hex"         defStyleNum="dsBaseN"   />
+      <itemData name="Keyword"     defStyleNum="dsKeyword" />
+      <itemData name="ISO/Delphi Extended"  defStyleNum="dsKeyword" color="#000080" />
+      <itemData name="Type"  defStyleNum="dsDataType"/>
+      <itemData name="Number"      defStyleNum="dsDecVal" />
+      <itemData name="String"      defStyleNum="dsString" />
+      <itemData name="Directive"   defStyleNum="dsOthers" />
+      <itemData name="Comment"     defStyleNum="dsComment" />
+      <itemData name="Alert"        defStyleNum="dsAlert" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="0" />
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="{" end="}" />
+    </comments>
+  </general>
+</language>

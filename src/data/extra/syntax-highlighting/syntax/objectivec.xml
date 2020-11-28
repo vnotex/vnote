@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Objective-C" version="3" kateversion="5.0" section="Sources" extensions="*.m;*.h" mimetype="text/x-objc-src;text/x-c-hdr">
+  <highlighting>
+    <list name="keywords">
+      <item>break</item>
+      <item>case</item>
+      <item>continue</item>
+      <item>default</item>
+      <item>do</item>
+      <item>else</item>
+      <item>enum</item>
+      <item>extern</item>
+      <item>for</item>
+      <item>goto</item>
+      <item>if</item>
+      <item>return</item>
+      <item>sizeof</item>
+      <item>struct</item>
+      <item>switch</item>
+      <item>typedef</item>
+      <item>union</item>
+      <item>while</item>
+      <item>@class</item>
+      <item>@defs</item>
+      <item>@encode</item>
+      <item>@end</item>
+      <item>@implementation</item>
+      <item>@interface</item>
+      <item>@private</item>
+      <item>@protected</item>
+      <item>@protocol</item>
+      <item>@public</item>
+      <item>@selector</item>
+      <item>self</item>
+      <item>super</item>
+    </list>
+    <list name="types">
+      <item>auto</item>
+      <item>char</item>
+      <item>const</item>
+      <item>double</item>
+      <item>float</item>
+      <item>int</item>
+      <item>long</item>
+      <item>register</item>
+      <item>short</item>
+      <item>signed</item>
+      <item>static</item>
+      <item>unsigned</item>
+      <item>void</item>
+      <item>volatile</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Default">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+        <Float attribute="Float" context="Float Suffixes"/>
+        <HlCOct attribute="Octal" context="#stay"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Int attribute="Decimal" context="Int Suffixes"/>
+        <HlCChar attribute="Char" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <Detect2Chars attribute="Comment" context="SingleLineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*"/>
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^&#59;"/>
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="^#"/>
+        <Detect2Chars attribute="String" context="String" char="@" char1="&quot;" />
+      </context>
+      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <AnyChar String="fF" attribute="Float" context="#pop"/>
+      </context>
+      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="SingleLineComment"/>
+      <context attribute="Comment" lineEndContext="#stay" name="MultiLineComment">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+      </context>
+      <context attribute="Preprocessor" lineEndContext="Default" name="Preprocessor">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="SingleLineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="MultiLineCommentPrep" char="/" char1="*"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="MultiLineCommentPrep">
+        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Data Type"  defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Decimal"  defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Octal"  defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Hex"  defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float"  defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Char"  defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="String"  defStyleNum="dsString"/>
+      <itemData name="String Char"  defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Comment"  defStyleNum="dsComment"/>
+      <itemData name="Symbol"  defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Preprocessor"  defStyleNum="dsPreprocessor" spellChecking="false"/>
+      <itemData name="Prep. Lib"  defStyleNum="dsImport" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

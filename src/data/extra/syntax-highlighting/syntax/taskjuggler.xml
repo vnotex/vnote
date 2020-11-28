@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+    TaskJuggler 2.4.x syntax highlighting.
+    Works for TJ 3.x., too.
+
+    Copyright (C) 2009 Chris Schlaeger <chris@linux.com>
+
+    Minor adaptation for new kate version by
+    Thomas Jarosch <thomas.jarosch@intra2net.com>
+
+    Licensed under the GPLv2.
+-->
+<language name="TaskJuggler" version="5" kateversion="5.0" section="Scripts" extensions="*.tjp;*.tji" license="GPLv2" author="Chris Schlaeger (chris@linux.com)">
+<highlighting>
+    <list name="keywords">
+        <item>account</item>
+        <item>project</item>
+        <item>task</item>
+        <item>resource</item>
+        <item>shift</item>
+        <item>scenario</item>
+    </list>
+    <list name="builtinfuncs">
+        <item>accountid</item>
+        <item>accountreport</item>
+        <item>accumulate</item>
+        <item>allocate</item>
+        <item>allowredefinitions</item>
+        <item>alternative</item>
+        <item>barlabels</item>
+        <item>booking</item>
+        <item>bookings</item>
+        <item>caption</item>
+        <item>celltext</item>
+        <item>cellurl</item>
+        <item>chart</item>
+        <item>columns</item>
+        <item>completed</item>
+        <item>complete</item>
+        <item>copyright</item>
+        <item>cost</item>
+        <item>credit</item>
+        <item>criticalness</item>
+        <item>csvaccountreport</item>
+        <item>csvresourcereport</item>
+        <item>csvtaskreport</item>
+        <item>currencydigits</item>
+        <item>currencyformat</item>
+        <item>currency</item>
+        <item>customer</item>
+        <item>dailymax</item>
+        <item>dailyworkinghours</item>
+        <item>db</item>
+        <item>depends</item>
+        <item>disabled</item>
+        <item>drawemptycontainersastasks</item>
+        <item>duration</item>
+        <item>efficiency</item>
+        <item>effort</item>
+        <item>empty</item>
+        <item>enabled</item>
+        <item>endbuffer</item>
+        <item>endbufferstart</item>
+        <item>endcredit</item>
+        <item>end</item>
+        <item>endsAfter</item>
+        <item>endsBefore</item>
+        <item>export</item>
+        <item>extend</item>
+        <item>finished</item>
+        <item>flags</item>
+        <item>follows</item>
+        <item>freeload</item>
+        <item>gapduration</item>
+        <item>gaplength</item>
+        <item>headline</item>
+        <item>hideaccount</item>
+        <item>hidecelltext</item>
+        <item>hidecellurl</item>
+        <item>hideresource</item>
+        <item>hidetask</item>
+        <item>hierarchindex</item>
+        <item>hierarchlevel</item>
+        <item>hierarchno</item>
+        <item>htmlaccountreport</item>
+        <item>htmlmonthlycalendar</item>
+        <item>htmlresourcereport</item>
+        <item>htmlstatusreport</item>
+        <item>htmltaskreport</item>
+        <item>htmlweeklycalendar</item>
+        <item>icalreport</item>
+        <item>id</item>
+        <item>include</item>
+        <item>index</item>
+        <item>inherit</item>
+        <item>inprogress</item>
+        <item>journalentry</item>
+        <item>label</item>
+        <item>late</item>
+        <item>length</item>
+        <item>limits</item>
+        <item>load</item>
+        <item>loadunit</item>
+        <item>macro</item>
+        <item>mandatory</item>
+        <item>maxeffort</item>
+        <item>maxend</item>
+        <item>maxstart</item>
+        <item>milestone</item>
+        <item>mineffort</item>
+        <item>minend</item>
+        <item>minstart</item>
+        <item>monthlymax</item>
+        <item>name</item>
+        <item>no</item>
+        <item>note</item>
+        <item>notimestamp</item>
+        <item>notstarted</item>
+        <item>now</item>
+        <item>numberformat</item>
+        <item>ontime</item>
+        <item>optimize</item>
+        <item>order</item>
+        <item>overtime</item>
+        <item>pathcriticalness</item>
+        <item>period</item>
+        <item>period</item>
+        <item>persistent</item>
+        <item>precedes</item>
+        <item>priority</item>
+        <item>profit</item>
+        <item>projectid</item>
+        <item>projectids</item>
+        <item>projection</item>
+        <item>project</item>
+        <item>rate</item>
+        <item>rawhead</item>
+        <item>rawstylesheet</item>
+        <item>rawtail</item>
+        <item>reference</item>
+        <item>resourceid</item>
+        <item>resourcereport</item>
+        <item>resources</item>
+        <item>responsibilities</item>
+        <item>responsible</item>
+        <item>revenue</item>
+        <item>rollupaccount</item>
+        <item>rollupresource</item>
+        <item>rolluptask</item>
+        <item>scenario</item>
+        <item>scenarios</item>
+        <item>scheduled</item>
+        <item>schedule</item>
+        <item>scheduling</item>
+        <item>select</item>
+        <item>separator</item>
+        <item>seqno</item>
+        <item>shorttimeformat</item>
+        <item>showprojectids</item>
+        <item>sloppy</item>
+        <item>sortaccounts</item>
+        <item>sortresources</item>
+        <item>sorttasks</item>
+        <item>startbufferend</item>
+        <item>startbuffer</item>
+        <item>startcredit</item>
+        <item>start</item>
+        <item>startsAfter</item>
+        <item>startsBefore</item>
+        <item>status</item>
+        <item>statusnote</item>
+        <item>strict</item>
+        <item>subtitle</item>
+        <item>subtitleurl</item>
+        <item>supplement</item>
+        <item>table</item>
+        <item>taskattributes</item>
+        <item>taskid</item>
+        <item>taskprefix</item>
+        <item>taskreport</item>
+        <item>taskroot</item>
+        <item>text</item>
+        <item>timeformat</item>
+        <item>timezone</item>
+        <item>timingresolution</item>
+        <item>title</item>
+        <item>titleurl</item>
+        <item>total</item>
+        <item>tree</item>
+        <item>treeLevel</item>
+        <item>url</item>
+        <item>utilization</item>
+        <item>vacation</item>
+        <item>version</item>
+        <item>weekdays</item>
+        <item>weeklymax</item>
+        <item>weekstartsmonday</item>
+        <item>weekstartssunday</item>
+        <item>workinghours</item>
+        <item>xml</item>
+        <item>xmlreport</item>
+        <item>yearlyworkingdays</item>
+    </list>
+    <list name="types">
+        <item>accountid</item>
+        <item>alap</item>
+        <item>all</item>
+        <item>asap</item>
+        <item>baseline</item>
+        <item>completeddown</item>
+        <item>completedup</item>
+        <item>containstask</item>
+        <item>criticalnessdown</item>
+        <item>criticalnessup</item>
+        <item>daily</item>
+        <item>day</item>
+        <item>days</item>
+        <item>enddown</item>
+        <item>endup</item>
+        <item>fri</item>
+        <item>fullnamedown</item>
+        <item>fullnameup</item>
+        <item>hasAssignments</item>
+        <item>hours</item>
+        <item>iddown</item>
+        <item>idup</item>
+        <item>indexdown</item>
+        <item>indexup</item>
+        <item>inprogressearly</item>
+        <item>inprogresslate</item>
+        <item>isAccount</item>
+        <item>isactualallocated</item>
+        <item>isAllocated</item>
+        <item>isAllocatedToProject</item>
+        <item>isAnAccount</item>
+        <item>isAResource</item>
+        <item>isatask</item>
+        <item>isATask</item>
+        <item>isChildOf</item>
+        <item>isDutyOf</item>
+        <item>isLeaf</item>
+        <item>isMilestone</item>
+        <item>isOnCriticalPath</item>
+        <item>isParentOf</item>
+        <item>isplanallocated</item>
+        <item>isResource</item>
+        <item>issubtaskof</item>
+        <item>isTask</item>
+        <item>isTaskOfProject</item>
+        <item>isTaskStatus</item>
+        <item>longauto</item>
+        <item>maxeffortdown</item>
+        <item>maxeffortup</item>
+        <item>maxloaded</item>
+        <item>minallocated</item>
+        <item>mineffortdown</item>
+        <item>mineffortup</item>
+        <item>minloaded</item>
+        <item>minslackrate</item>
+        <item>minutes</item>
+        <item>m</item>
+        <item>mon</item>
+        <item>month</item>
+        <item>monthly</item>
+        <item>months</item>
+        <item>namedown</item>
+        <item>nameup</item>
+        <item>off</item>
+        <item>pathcriticalnessdown</item>
+        <item>pathcriticalnessup</item>
+        <item>prioritydown</item>
+        <item>priorityup</item>
+        <item>properties</item>
+        <item>quarter</item>
+        <item>quarterly</item>
+        <item>random</item>
+        <item>ratedown</item>
+        <item>rateup</item>
+        <item>resourceid</item>
+        <item>responsibledown</item>
+        <item>responsibleup</item>
+        <item>sat</item>
+        <item>sequencedown</item>
+        <item>sequenceup</item>
+        <item>shifts</item>
+        <item>shortauto</item>
+        <item>startbufferend</item>
+        <item>startdown</item>
+        <item>startup</item>
+        <item>statusdown</item>
+        <item>statusup</item>
+        <item>sun</item>
+        <item>tasks</item>
+        <item>thu</item>
+        <item>tue</item>
+        <item>undefined</item>
+        <item>wed</item>
+        <item>week</item>
+        <item>weekly</item>
+        <item>weeks</item>
+        <item>year</item>
+        <item>yearly</item>
+        <item>years</item>
+    </list>
+    <contexts>
+        <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <!-- Date(+Time) values -->
+        <RegExpr attribute="Date" String="\d{4}-\d{2}-\d{2}\S*"/>
+        <!-- Time values -->
+        <RegExpr attribute="Time" String="\d{1-2}:\d{2}(:\d{2}|)"/>
+        <!-- Duration specifications --> 
+        <RegExpr attribute="Duration" String="\d(min|h|d|w|m|y)"/>
+
+        <!-- keywords and other builtins -->
+        <keyword attribute="Builtin Function" String="builtinfuncs" context="#stay"/>
+        <keyword attribute="Keyword" String="keywords" context="#stay"/>
+        <keyword attribute="Data Types" String="types" context="#stay"/>
+
+        <!-- region (brace) folding -->
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace2" />
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace2" />
+
+        <DetectChar attribute="Symbol" context="#stay" char="[" beginRegion="Brace1" />
+        <DetectChar attribute="Symbol" context="#stay" char="]" endRegion="Brace1" />
+
+        <!-- number highlighting -->
+        <Float attribute="Float" context="Float Suffixes"/>
+        <Int attribute="Decimal" context="Int Suffixes"/>
+
+        <!-- strings -->
+        <DetectChar attribute="String" context="String1" char="&apos;"/>
+        <DetectChar attribute="String" context="String2" char="&quot;"/>
+
+        <!-- comments -->
+        <DetectChar attribute="Comment" context="Comment1" char="#"/>
+        <Detect2Chars attribute="Comment" context="Comment2" char="/" char1="*"/>
+      </context>
+
+      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <AnyChar String="fF" attribute="Float" context="#pop"/>
+      </context>
+
+      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="String1">
+        <DetectChar attribute="String" context="#pop" char="&apos;"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="String2">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Comment1">
+        <IncludeRules context="##Alerts" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment2">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword"/>
+      <itemData name="Builtin Function"  defStyleNum="dsFunction"/>
+      <itemData name="Data Types" defStyleNum="dsDataType"/>
+      <itemData name="Decimal"  defStyleNum="dsDecVal"/>
+      <itemData name="Float" defStyleNum="dsDecVal"/>
+      <itemData name="Date"  defStyleNum="dsBaseN"/>
+      <itemData name="Time"  defStyleNum="dsBaseN"/>
+      <itemData name="String"  defStyleNum="dsString"/>
+      <itemData name="Comment"  defStyleNum="dsComment"/>
+      <itemData name="Symbol"  defStyleNum="dsNormal"/>
+      <itemData name="Duration" defStyleNum="dsConstant"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>

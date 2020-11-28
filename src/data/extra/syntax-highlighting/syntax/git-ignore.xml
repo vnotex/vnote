@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Git Ignore" version="2" kateversion="2.4" section="Configuration"  extensions=".gitignore*;" mimetype="text/x-git-ignore" license="LGPL">
+    <highlighting>
+        <contexts>
+           
+            <context name="ini" attribute="Normal Text" lineEndContext="#pop">
+                <DetectChar char="#" attribute="Comment" context="Comment" />
+                <RegExpr attribute="Include" String="^!.*" context="Include"/>
+                <RegExpr attribute="Exclude" String=".*"  context="Exclude" />
+            </context>
+            
+            <context name="Comment" attribute="Comment" lineEndContext="#pop">
+                <DetectSpaces />
+            </context>                                                                                          
+        
+            <context name="Include" attribute="Include" lineEndContext="#pop">
+            </context>
+
+            <context name="Exclude" attribute="Exclude" lineEndContext="#pop">
+            </context>
+        
+        </contexts>
+        
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" />
+            <itemData name="Comment" defStyleNum="dsComment" />
+            <itemData name="Exclude" defStyleNum="dsString" />
+            <itemData name="Include" defStyleNum="dsChar" />
+        </itemDatas>
+    
+    </highlighting>
+
+    <general>
+        <comments>
+            <comment name="singleLine" start="#" />
+        </comments>
+        <keywords casesensitive="0" />
+    </general>
+</language>
+

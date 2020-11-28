@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+    <!ENTITY space " ">
+    <!ENTITY end "&#59;">
+]>
+<!--
+  Copyright (c) 2012-2014 by Alex Turbov (i.zaufi@gmail.com)
+  -->
+<language name="Modelines"
+          version="4"
+          kateversion="5.0"
+          section="Other"
+          extensions=""
+          mimetype=""
+          author="Alex Turbov (i.zaufi@gmail.com)"
+          license="MIT"
+          hidden="true"
+          priority="6">
+<!--
+  The main purpose of this file is to be included into other syntax files.
+
+  NOTE Default colors are set to 'Comment', so if u don't want to highight it,
+  just leave colors as is...
+
+  TODO Support for other modelines? emacs/vim??
+-->
+<highlighting>
+  <list name="ModelineStartKeyword">
+    <item>kate:</item>
+  </list>
+
+  <list name="Booleans">
+    <item>auto-brackets</item>
+    <!-- NOTE Deprecated -->
+<!--     <item>auto-insert-doxygen</item> -->
+    <item>automatic-spell-checking</item>                 <!-- NOTE Since KDE 4.?? -->
+    <item>backspace-indents</item>
+    <item>block-selection</item>
+    <item>bookmark-sorting</item>
+    <item>bom</item>
+    <item>byte-order-marker</item>
+    <item>byte-order-mark</item>
+    <item>dynamic-word-wrap</item>
+    <item>folding-markers</item>
+    <item>folding-preview</item>                          <!-- Since KTextEditor 5.24 -->
+    <item>icon-border</item>
+    <item>indent-pasted-text</item>                       <!-- Since KDE 4.11 -->
+    <item>keep-extra-spaces</item>
+    <item>line-numbers</item>
+    <item>newline-at-eof</item>                           <!-- Since KDE 4.9 -->
+    <item>overwrite-mode</item>
+    <item>persistent-selection</item>
+    <!-- NOTE Deprecated since KDE 4.10 -->
+    <!-- <item>remove-trailing-space</item> -->
+    <item>replace-tabs-save</item>
+    <item>replace-tabs</item>
+    <item>replace-trailing-space-save</item>
+    <item>smart-home</item>
+    <item>scrollbar-minimap</item>                         <!-- Since KTextEditor 5.24 -->
+    <item>scrollbar-preview</item>                         <!-- Since KTextEditor 5.24 -->
+    <item>space-indent</item>
+    <item>show-tabs</item>
+    <item>show-trailing-spaces</item>                     <!-- NOTE Since KDE 4.?? -->
+    <item>tab-indents</item>
+    <item>word-wrap</item>
+    <item>wrap-cursor</item>
+  </list>
+
+  <list name="True">
+    <item>on</item>
+    <item>true</item>
+    <item>1</item>
+  </list>
+
+  <list name="False">
+    <item>off</item>
+    <item>false</item>
+    <item>0</item>
+  </list>
+
+  <list name="Integrals">
+    <item>auto-center-lines</item>
+    <item>font-size</item>
+    <item>indent-mode</item>
+    <item>indent-width</item>
+    <item>tab-width</item>
+    <item>undo-steps</item>
+    <item>word-wrap-column</item>
+  </list>
+
+  <list name="Strings">
+    <item>background-color</item>
+    <item>bracket-highlight-color</item>
+    <item>current-line-color</item>
+    <item>default-dictionary</item>
+    <item>encoding</item>                                 <!-- NOTE Since KDE 4.?? -->
+    <item>eol</item>                                      <!-- Valid settings are unix, mac and dos -->
+    <item>end-of-line</item>                              <!-- Valid settings are unix, mac and dos -->
+    <item>font</item>
+    <item>hl</item>
+    <item>icon-bar-color</item>
+    <item>mode</item>                                     <!-- NOTE Since KDE 4.?? -->
+    <item>scheme</item>
+    <item>selection-color</item>
+    <item>syntax</item>
+    <item>word-wrap-marker-color</item>
+  </list>
+
+  <list name="RemoveSpaces">
+    <item>remove-trailing-spaces</item>
+  </list>
+
+  <list name="RemoveSpacesOptions">
+    <item>0</item>
+    <item>-</item>
+    <item>none</item>
+
+    <item>modified</item>
+    <item>mod</item>
+    <item>+</item>
+    <item>1</item>
+
+    <item>all</item>
+    <item>*</item>
+    <item>2</item>
+  </list>
+
+  <contexts>
+    <context name="Normal" attribute="Comment" lineEndContext="#pop">
+      <DetectSpaces />
+      <keyword String="ModelineStartKeyword" context="Modeline" attribute="Keyword" />
+      <RegExpr String="kate-(mimetype|wildcard)\(.*\):" context="Modeline" attribute="Keyword" />
+    </context>
+
+    <context name="Modeline" attribute="Comment" lineEndContext="#pop">
+      <DetectSpaces />
+      <keyword String="Booleans" context="Booleans" attribute="Variable" />
+      <keyword String="Integrals" context="Integrals" attribute="Variable" />
+      <keyword String="Strings" context="Strings" attribute="Variable" />
+      <keyword String="RemoveSpaces" context="RemoveSpaces" attribute="Variable" />
+      <LineContinue context="#pop" />
+    </context>
+
+    <context name="Booleans" attribute="Comment" lineEndContext="#pop">
+      <DetectSpaces />
+      <keyword String="True" attribute="Option ON" context="#stay" />
+      <keyword String="False" attribute="Option OFF" context="#stay" />
+      <DetectChar char="&end;" context="#pop" attribute="Variable" />
+      <LineContinue context="#pop" />
+    </context>
+
+    <context name="Integrals" attribute="Comment" lineEndContext="#pop">
+      <DetectSpaces />
+      <Int attribute="Number" context="#stay" />
+      <DetectChar char="&end;" context="#pop" attribute="Variable" />
+      <LineContinue context="#pop" />
+    </context>
+
+    <context name="Strings" attribute="String" lineEndContext="#pop">
+      <DetectSpaces />
+      <RegExpr String="[^&end;&space;]" context="#stay" />
+      <DetectChar char="&end;" context="#pop" attribute="Variable" />
+      <LineContinue context="#pop" />
+    </context>
+
+    <context name="RemoveSpaces" attribute="Comment" lineEndContext="#pop">
+      <DetectSpaces />
+      <keyword String="RemoveSpacesOptions" attribute="Value" context="#pop!RemoveSpacesEnd" />
+      <DetectChar char="&end;" context="#pop" attribute="Variable" />
+      <LineContinue context="#pop" />
+    </context>
+    <context name="RemoveSpacesEnd" attribute="Comment" lineEndContext="#pop">
+      <DetectChar char="&end;" context="#pop" attribute="Variable" />
+    </context>
+
+  </contexts>
+
+  <itemDatas>
+    <itemData name="Comment" defStyleNum="dsComment" spellChecking="true" />
+    <itemData name="Keyword" defStyleNum="dsAnnotation" spellChecking="false" />
+    <itemData name="Variable" defStyleNum="dsCommentVar" spellChecking="false" />
+    <itemData name="Number" defStyleNum="dsDecVal" spellChecking="false" />
+    <itemData name="String" defStyleNum="dsString" spellChecking="false" />
+    <itemData name="Value" defStyleNum="dsOthers" spellChecking="false" />
+    <itemData name="Option ON" defStyleNum="dsOthers" spellChecking="false" />
+    <itemData name="Option OFF" defStyleNum="dsOthers" spellChecking="false" />
+  </itemDatas>
+
+</highlighting>
+
+<general>
+  <keywords casesensitive="1" weakDeliminator=":-+*" />
+</general>
+
+</language>
+<!-- kate: indent-width 2; -->

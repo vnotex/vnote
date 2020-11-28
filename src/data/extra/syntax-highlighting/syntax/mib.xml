@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Ref SMIv2: RFC 2578, RFC 2579 and RFC 2580 -->
+<language name="MIB" version="1" kateversion="3.4" section="Other" extensions="*.mib" casesensitive="1" author="Jaap Keuter (jaap.keuter@xs4all.nl)" license="MIT">
+    <highlighting>
+        <list name="keywords">
+            <item>ABSENT</item>
+            <item>ACCESS</item>
+            <item>AGENT-CAPABILITIES</item>
+            <item>ANY</item>
+            <item>APPLICATION</item>
+            <item>AUGMENTS</item>
+            <item>BEGIN</item>
+            <item>BIT</item>
+            <item>BITS</item>
+            <item>BOOLEAN</item>
+            <item>BY</item>
+            <item>CHOICE</item>
+            <item>COMPONENT</item>
+            <item>COMPONENTS</item>
+            <item>CONTACT-INFO</item>
+            <item>CREATION-REQUIRES</item>
+            <item>DEFAULT</item>
+            <item>DEFINED</item>
+            <item>DEFINITIONS</item>
+            <item>DEFVAL</item>
+            <item>DESCRIPTION</item>
+            <item>DISPLAY-HINT</item>
+            <item>END</item>
+            <item>ENUMERATED</item>
+            <item>ENTERPRISE</item>
+            <item>EXPLICIT</item>
+            <item>EXPORTS</item>
+            <item>EXTERNAL</item>
+            <item>FALSE</item>
+            <item>FROM</item>
+            <item>GROUP</item>
+            <item>IMPLICIT</item>
+            <item>IMPLIED</item>
+            <item>IMPORTS</item>
+            <item>INCLUDES</item>
+            <item>INDEX</item>
+            <item>LAST-UPDATED</item>
+            <item>MANDATORY-GROUPS</item>
+            <item>MAX</item>
+            <item>MAX-ACCESS</item>
+            <item>MIN</item>
+            <item>MIN-ACCESS</item>
+            <item>MINUS-INFINITY</item>
+            <item>MODULE</item>
+            <item>MODULE-COMPLIANCE</item>
+            <item>MODULE-IDENTITY</item>
+            <item>NOTIFICATION-GROUP</item>
+            <item>NOTIFICATION-TYPE</item>
+            <item>NOTIFICATIONS</item>
+            <item>NULL</item>
+            <item>OBJECT-GROUP</item>
+            <item>OBJECT-IDENTITY</item>
+            <item>OBJECT-TYPE</item>
+            <item>OBJECTS</item>
+            <item>OF</item>
+            <item>OPTIONAL</item>
+            <item>ORGANIZATION</item>
+            <item>PLUS-INFINITY</item>
+            <item>PRESENT</item>
+            <item>PRIVATE</item>
+            <item>PRODUCT-RELEASE</item>
+            <item>REAL</item>
+            <item>REFERENCE</item>
+            <item>REVISION</item>
+            <item>SEQUENCE</item>
+            <item>SET</item>
+            <item>SIZE</item>
+            <item>STATUS</item>
+            <item>SUPPORTS</item>
+            <item>SYNTAX</item>
+            <item>TAGS</item>
+            <item>TEXTUAL-CONVENTION</item>
+            <item>TRAP-TYPE</item>
+            <item>TRUE</item>
+            <item>UNITS</item>
+            <item>UNIVERSAL</item>
+            <item>VARIABLES</item>
+            <item>VARIATION</item>
+            <item>WITH</item>
+            <item>WRITE-SYNTAX</item>
+        </list>
+        <list name="basetypes">
+            <item>INTEGER</item>
+            <item>OCTET</item> <!-- should be, but cannot be concatenated with next-->
+            <item>STRING</item>
+            <item>OBJECT</item> <!-- should be, but cannot be concatenated with next -->
+            <item>IDENTIFIER</item>
+            <item>Integer32</item>
+            <item>IpAddress</item>
+            <item>Counter32</item>
+            <item>Gauge32</item>
+            <item>Unsigned32</item>
+            <item>TimeTicks</item>
+            <item>Opaque</item>
+            <item>Counter64</item>
+        </list>
+        <list name="statuses">
+            <item>obsolete</item>
+            <item>deprecated</item>
+            <item>current</item>
+        </list>
+        <list name="accesstypes">
+            <item>not-accessible</item>
+            <item>accessible-for-notify</item>
+            <item>read-only</item>
+            <item>read-write</item>
+            <item>read-create</item>
+        </list>
+        <contexts>
+            <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+                <WordDetect attribute="Keyword" context="Import" String="IMPORTS"/>
+                <RegExpr context="Syntax" String="(\w+)\s*::=\s*TEXTUAL-CONVENTION" lookAhead="true"/>
+                <!-- for SEQUENCE on next line -->
+                <RegExpr context="Syntax" String="(\w+)\s*::=\W*$" lookAhead="true"/>
+                <RegExpr context="Syntax" String="(\w+)\s*::=\s*SEQUENCE" lookAhead="true"/>
+                <RegExpr context="Syntax" String="SYNTAX\s*(\w+)" lookAhead="true"/>
+                <WordDetect attribute="Keyword" context="Sequence" String="SEQUENCE"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Keyword" context="#stay" String="basetypes"/>
+                <keyword attribute="Status" context="#stay" String="statuses"/>
+                <keyword attribute="Accesstype" context="#stay" String="accesstypes"/>
+                <DetectChar attribute="String" context="String" char="&quot;"/>
+                <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <Detect2Chars attribute="Decimal" context="#stay" char="." char1="."/>
+            </context>
+            <context name="Import" attribute="Syntax" lineEndContext="#stay">
+                <WordDetect attribute="Keyword" context="From" String="FROM"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Keyword" context="#stay" String="basetypes"/>
+                <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>
+                <DetectChar attribute="Normal Text" context="#pop" char=";"/>
+            </context>
+            <context name="From" attribute="Normal Text" lineEndContext="#pop">
+              <DetectChar attribute="Normal Text" context="#pop#pop" char=";"/>
+            </context>
+            <context name="Syntax" attribute="Syntax" lineEndContext="#pop" dynamic="true">
+                <DetectChar attribute="Normal Text" context="#pop" char="{"/>
+                <DetectChar attribute="Normal Text" context="#pop" char="("/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Keyword" context="#stay" String="basetypes"/>
+                <StringDetect attribute="Syntax" context="#pop" String="%1" dynamic="true"/>
+            </context>
+            <context name="Sequence" attribute="Normal Text" lineEndContext="#stay">
+                <keyword attribute="Keyword" context="#stay" String="basetypes"/>
+                <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>
+                <DetectChar attribute="Normal Text" context="#pop" char="}"/>
+            </context>
+            <context name="String" attribute="String" lineEndContext="#stay">
+                <LineContinue attribute="String" context="#stay"/>
+                <HlCStringChar attribute="Char" context="#stay"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context name="Comment" attribute="Comment" lineEndContext="#pop">
+                <Detect2Chars attribute="Comment" context="#pop" char="-" char1="-"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="Syntax"      defStyleNum="dsImport" italic="true"/>
+            <itemData name="Keyword"     defStyleNum="dsKeyword"/>
+            <itemData name="Status"      defStyleNum="dsDataType"/>
+            <itemData name="Accesstype"  defStyleNum="dsDataType"/>
+            <itemData name="String"      defStyleNum="dsString"/>
+            <itemData name="Char"        defStyleNum="dsChar"/>
+            <itemData name="Comment"     defStyleNum="dsComment"/>
+            <itemData name="Decimal"     defStyleNum="dsDecVal"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="--"/>
+        </comments>
+        <keywords casesensitive="1" weakDeliminator="-"/>
+    </general>
+</language>

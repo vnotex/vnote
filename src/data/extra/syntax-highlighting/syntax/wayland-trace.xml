@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="Wayland Trace" section="Other"
+          version="1" kateversion="3.4"
+          extensions=""
+          mimetype=""
+          author="Andreas Cord-Landwehr (cordlandwehr@kde.org)" license="MIT">
+
+<highlighting>
+    <list name="ParameterKeywords">
+        <item>array</item>
+        <item>fd</item>
+        <item>id</item>
+        <item>new</item>
+        <item>nil</item>
+    </list>
+
+    <contexts>
+        <context name="WaylandTrace" attribute="Normal" lineEndContext="#stay">
+            <RegExpr attribute="TimeStamp" context="#stay" String="\[[0-9]*\.[0-9]*\]" />
+            <Detect2Chars attribute="Operator" char="-" char1=">" context="#stay" />
+            <RegExpr attribute="Interface" String="[a-zA-Z0-9_]*@[0-9]*." context="Interface" lookAhead="true" />
+        </context>
+        <context name="Interface" attribute="Interface" lineEndContext="#pop">
+            <RegExpr attribute="Interface" String="(\[unknown\]|[a-zA-Z0-9_])*@[0-9]*" />
+            <DetectChar char="." context="Message" />
+            <DetectSpaces lookAhead="true" context="#pop" />
+        </context>
+        <context name="Message" attribute="Normal" lineEndContext="#stay" dynamic="true">
+            <RegExpr attribute="Function" String="[a-zA-Z_]" />
+            <DetectChar char="(" attribute="Normal" context="Parameters" />
+        </context>
+        <context name="Parameters" attribute="Normal" lineEndContext="#stay" dynamic="true">
+            <Int attribute="NumberParameter" />
+            <DetectChar attribute="StringParameter" context="String" char="&quot;"/>
+            <keyword attribute="Keyword" String="ParameterKeywords" />
+            <RegExpr attribute="Interface" String="(\[unknown\]|[a-zA-Z0-9_])*@[0-9]*" />
+            <DetectChar char=")" attribute="Normal" context="#pop#pop" />
+        </context>
+        <context attribute="StringParameter" lineEndContext="#pop" name="String">
+            <LineContinue attribute="StringParameter" context="#stay"/>
+            <HlCStringChar attribute="StringParameter" context="#stay"/>
+            <DetectChar attribute="StringParameter" context="#pop" char="&quot;"/>
+        </context>
+    </contexts>
+    <itemDatas>
+        <itemData name="Normal" defStyleNum="dsNormal" />
+        <itemData name="Keyword" defStyleNum="dsKeyword" />
+        <itemData name="Interface" defStyleNum="dsVariable" />
+        <itemData name="TimeStamp" defStyleNum="dsComment" />
+        <itemData name="Operator" defStyleNum="dsOperator" />
+        <itemData name="Function" defStyleNum="dsFunction" />
+        <itemData name="NumberParameter" defStyleNum="dsDecVal" />
+        <itemData name="StringParameter" defStyleNum="dsString" />
+    </itemDatas>
+</highlighting>
+
+</language>
+
+<!-- kate: replace-tabs: on; tab-width: 4; indent-width: 4; -->

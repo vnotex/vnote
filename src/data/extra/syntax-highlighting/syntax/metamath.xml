@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd" [
+	<!ENTITY label "[0-9A-Za-z.\-_]+">
+	<!ENTITY symbol "[^ $]+">
+]>
+<language name="Metamath" section="Scientific" extensions="*.mm"
+	version="2" kateversion="5.0" author="Aaron Puchert" license="MIT">
+<highlighting>
+	<contexts>
+		<!-- Block: ${ statement* $} -->
+		<context name="Block" attribute="Normal" lineEndContext="#stay">
+			<DetectSpaces/>
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<Detect2Chars char="$" char1="[" attribute="Keyword" context="Include"/>
+			<Detect2Chars char="$" char1="{" attribute="Keyword" context="Block" beginRegion="block"/>
+			<Detect2Chars char="$" char1="}" attribute="Keyword" context="#pop" endRegion="block"/>
+			<Detect2Chars char="$" char1="v" attribute="Keyword" context="VariableDeclaration"/>
+			<Detect2Chars char="$" char1="c" attribute="Keyword" context="ConstantDeclaration"/>
+			<Detect2Chars char="$" char1="d" attribute="Keyword" context="DisjointRestriction"/>
+			<RegExpr String="&label;" attribute="Label" context="LabelledStatement"/>
+		</context>
+		<!-- Comment: $( text $) -->
+		<context name="Comment" attribute="Comment" lineEndContext="#stay">
+			<RegExpr String=" ~ *&label;" attribute="ReferenceLabel" context="#stay"/>
+			<Detect2Chars char="$" char1=")" attribute="Comment" context="#pop" endRegion="comment"/>
+		</context>
+		<!-- Include: $[ filename $] -->
+		<context name="Include" attribute="Include" lineEndContext="#stay">
+			<Detect2Chars char="$" char1="]" attribute="Keyword" context="#pop"/>
+		</context>
+		<!-- Variable symbol declaration: $v symbol* $. -->
+		<context name="VariableDeclaration" attribute="Variable" lineEndContext="#stay">
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<Detect2Chars char="$" char1="." attribute="Keyword" context="#pop"/>
+		</context>
+		<!-- Constant symbol declaration: $c symbol* $. -->
+		<context name="ConstantDeclaration" attribute="Constant" lineEndContext="#stay">
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<Detect2Chars char="$" char1="." attribute="Keyword" context="#pop"/>
+		</context>
+		<!-- Disjoint variable restriction: $d [variable]* $. -->
+		<context name="DisjointRestriction" attribute="Variable" lineEndContext="#stay">
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<Detect2Chars char="$" char1="." attribute="Keyword" context="#pop"/>
+		</context>
+		<!-- Labeled statements: label $* ... $. -->
+		<context name="LabelledStatement" attribute="Normal" lineEndContext="#stay">
+			<DetectSpaces/>
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<Detect2Chars char="$" char1="f" attribute="Keyword" context="#pop!VariableTypeHypothesis"/>
+			<Detect2Chars char="$" char1="e" attribute="Keyword" context="#pop!LogicalHypothesis"/>
+			<Detect2Chars char="$" char1="a" attribute="Keyword" context="#pop!AxiomaticAssertion"/>
+			<Detect2Chars char="$" char1="p" attribute="Keyword" context="#pop!ProvableAssertion"/>
+		</context>
+		<!-- Variable-type hypothesis: label $f constant variable $. -->
+		<context name="VariableTypeHypothesis" attribute="Normal" lineEndContext="#stay">
+			<DetectSpaces/>
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<RegExpr String="&symbol;" attribute="Constant" context="#pop!SymbolList"/>
+		</context>
+		<!-- Logical hypothesis: label $e constant symbol* $. -->
+		<context name="LogicalHypothesis" attribute="Normal" lineEndContext="#stay">
+			<DetectSpaces/>
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<RegExpr String="&symbol;" attribute="Constant" context="#pop!SymbolList"/>
+		</context>
+		<!-- Axiomatic assertion: label $a constant symbol* $. -->
+		<context name="AxiomaticAssertion" attribute="Normal" lineEndContext="#stay">
+			<DetectSpaces/>
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<RegExpr String="&symbol;" attribute="Constant" context="#pop!SymbolList"/>
+		</context>
+		<!-- Provable assertion: label $p constant symbol* $= label* $. -->
+		<context name="ProvableAssertion" attribute="Normal" lineEndContext="#stay">
+			<DetectSpaces/>
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<RegExpr String="&symbol;" attribute="Constant" context="#pop!ProvableAssertionSymbolList"/>
+		</context>
+		<!-- List of symbols, ending either with $. or $= -->
+		<context name="SymbolList" attribute="Variable" lineEndContext="#stay">
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<Detect2Chars char="$" char1="." attribute="Keyword" context="#pop"/>
+		</context>
+		<context name="ProvableAssertionSymbolList" attribute="Variable" lineEndContext="#stay">
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<Detect2Chars char="$" char1="=" attribute="Keyword" context="#pop!Proof" beginRegion="proof"/>
+		</context>
+		<!-- Proof: label* -->
+		<context name="Proof" attribute="Label" lineEndContext="#stay">
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<DetectChar char="(" attribute="Keyword" context="#pop!CompressedProofStatements"/>
+			<Detect2Chars char="$" char1="." attribute="Keyword" context="#pop" endRegion="proof"/>
+		</context>
+		<!-- Compressed proof syntax: instead of label* we have (label*) [A-Z]* -->
+		<context name="CompressedProofStatements" attribute="Label" lineEndContext="#stay">
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<DetectChar char=")" attribute="Keyword" context="#pop!CompressedProofSteps"/>
+		</context>
+		<context name="CompressedProofSteps" attribute="CompressedProof" lineEndContext="#stay">
+			<Detect2Chars char="$" char1="(" attribute="Comment" context="Comment" beginRegion="comment"/>
+			<Detect2Chars char="$" char1="." attribute="Keyword" context="#pop" endRegion="proof"/>
+		</context>
+	</contexts>
+	<itemDatas>
+		<itemData name="Normal"   defStyleNum="dsNormal" spellChecking="false"/>
+		<itemData name="Comment"  defStyleNum="dsComment"/>
+		<itemData name="Include"  defStyleNum="dsImport" spellChecking="false"/>
+		<itemData name="Keyword"  defStyleNum="dsKeyword" spellChecking="false"/>
+		<itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+		<itemData name="Constant" defStyleNum="dsFunction" spellChecking="false"/>
+		<itemData name="Label"    defStyleNum="dsSpecialString" spellChecking="false"/>
+		<itemData name="ReferenceLabel"  defStyleNum="dsCommentVar" spellChecking="false"/>
+		<itemData name="CompressedProof" defStyleNum="dsString" spellChecking="false"/>
+	</itemDatas>
+</highlighting>
+<general>
+	<keywords casesensitive="1"/>
+	<comments>
+		<comment name="multiLine" start="$(" end="$)" region="comment"/>
+	</comments>
+</general>
+</language>

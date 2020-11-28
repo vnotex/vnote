@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+<!ENTITY punctuators ":!&amp;()&#37;+-/.*&lt;=&gt;?[]{|}~^,;">
+<!ENTITY EXP "(?:[eE][+-]?[0-9](?:_?[0-9]+)*)">
+<!ENTITY HEX "[0-9A-Fa-f]">
+<!ENTITY SPECHAR "(?:\\[abefnrtv\\0]|\\x&HEX;&HEX;|\\u&HEX;&HEX;&HEX;&HEX;|\\U&HEX;&HEX;&HEX;&HEX;&HEX;&HEX;)">
+<!ENTITY IDVAR "[a-z][_a-zA-Z0-9]*'*(?!\w)">
+<!ENTITY IDTYPE "_?[A-Z][_a-zA-Z0-9]*">
+]>
+<language author="Jonathan Poelen (jonathan.poelen@gmail.com)"
+  name="Pony" section="Sources"
+  version="5" kateversion="5.0"
+  indenter="ruby"
+  extensions="*.pony"
+  mimetype="text/x-pony"
+  priority="5"
+  license="MIT"
+>
+  <!-- https://github.com/ponylang/ponyc/blob/master/pony.g -->
+
+  <highlighting>
+    <list name="class_def">
+      <item>type</item>
+      <item>interface</item>
+      <item>trait</item>
+      <item>primitive</item>
+      <item>struct</item>
+      <item>class</item>
+      <item>actor</item>
+    </list>
+    <list name="method">
+      <item>fun</item>
+      <item>be</item>
+    </list>
+    <list name="method_new">
+      <item>new</item>
+    </list>
+    <list name="controlflow">
+      <item>do</item>
+      <item>then</item>
+      <item>return</item>
+      <item>break</item>
+      <item>continue</item>
+      <item>error</item>
+      <item>compile_intrinsic</item>
+      <item>compile_error</item>
+      <item>recover</item> <!-- not a control flow, but ended by 'end' -->
+      <item>until</item>
+    </list>
+    <list name="controlflow_begin">
+      <item>if</item>
+      <item>ifdef</item>
+      <item>iftype</item>
+      <item>match</item>
+      <item>while</item>
+      <item>repeat</item>
+      <item>for</item>
+      <item>with</item>
+      <item>try</item>
+    </list>
+    <list name="controlflow_else">
+      <item>else</item>
+      <item>elseif</item>
+      <item>elseiftype</item>
+    </list>
+    <list name="controlflow_end">
+      <item>end</item>
+    </list>
+    <list name="operators">
+      <item>and</item>
+      <item>or</item>
+      <item>xor</item>
+      <item>not</item>
+    </list>
+    <list name="new_overloaders">
+      <item>create</item>
+    </list>
+    <list name="overloaders">
+      <item>update</item>
+      <item>apply</item>
+      <item>add</item>
+      <item>sub</item>
+      <item>mul</item>
+      <item>div</item>
+      <item>mod</item>
+      <item>eq</item>
+      <item>ne</item>
+      <item>lt</item>
+      <item>le</item>
+      <item>ge</item>
+      <item>gt</item>
+      <item>shl</item>
+      <item>shr</item>
+      <item>op_and</item>
+      <item>op_or</item>
+      <item>op_xor</item>
+    </list>
+    <list name="capability">
+      <item>iso</item>
+      <item>trn</item>
+      <item>ref</item>
+      <item>val</item>
+      <item>box</item>
+      <item>tag</item>
+    </list>
+    <list name="gencapability">
+      <item>#read</item>
+      <item>#send</item>
+      <item>#share</item>
+      <item>#alias</item>
+      <item>#any</item>
+    </list>
+    <list name="keyword">
+      <item>this</item>
+      <item>use</item>
+      <item>object</item>
+      <item>as</item>
+      <item>is</item>
+      <item>isnt</item>
+      <item>in</item>
+      <item>where</item>
+      <item>is</item>
+      <item>consume</item>
+      <item>addressof</item>
+      <item>digestof</item>
+      <!-- literal -->
+      <item>true</item>
+      <item>false</item>
+      <!-- field -->
+      <item>var</item>
+      <item>let</item>
+      <item>embed</item>
+    </list>
+    <list name="types">
+      <item>None</item>
+      <item>String</item>
+      <item>Bool</item>
+      <item>ISize</item>
+      <item>ILong</item>
+      <item>I8</item>
+      <item>I16</item>
+      <item>I32</item>
+      <item>I64</item>
+      <item>I128</item>
+      <item>USize</item>
+      <item>ULong</item>
+      <item>U8</item>
+      <item>U16</item>
+      <item>U32</item>
+      <item>U64</item>
+      <item>U128</item>
+      <item>F32</item>
+      <item>F64</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectSpaces />
+
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+
+        <RegExpr attribute="Hex" context="#stay" String="[\+\-]?0x&HEX;(?:_?&HEX;+)*\b" />
+        <RegExpr attribute="Binary" context="#stay" String="[\+\-]?0b[01](?:_?[01]+)*\b" />
+        <RegExpr attribute="Float" context="#stay" String="[\+\-]?[0-9](?:_?[0-9]+)*(?:\.[0-9](?:_?[0-9]+)*&EXP;?|&EXP;)\b" />
+        <RegExpr attribute="Error" context="#stay" String="[\+\-]?[0-9](?:_?[0-9]+)*\." />
+        <RegExpr attribute="Decimal" context="#stay" String="[\+\-]?[0-9](?:_?[0-9]+)*\b" />
+        <RegExpr attribute="Error" context="#stay" String="[\+\-]?\.?[0-9]\w*" />
+
+        <DetectChar attribute="External Function" context="External Function" char="@" />
+        <LineContinue attribute="Error" char=";" />
+        <AnyChar attribute="Symbol" context="#stay" String="&punctuators;" />
+
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+
+        <keyword attribute="Control Flow" context="#stay" String="controlflow_begin" beginRegion="Block"/>
+        <keyword attribute="Control Flow" context="#stay" String="controlflow_else" endRegion="Block" beginRegion="Block"/>
+        <keyword attribute="Control Flow" context="#stay" String="controlflow_end" endRegion="Block"/>
+        <keyword attribute="Control Flow" context="#stay" String="controlflow"/>
+        <Detect2Chars attribute="Attributes" context="Attributes" char="\" char1="\"/>
+
+        <keyword attribute="Keyword" context="DefClass" String="class_def"/>
+        <keyword attribute="Keyword" context="DefFun" String="method"/>
+        <keyword attribute="Keyword" context="DefNew" String="method_new"/>
+        <keyword attribute="Keyword" context="#stay" String="keyword"/>
+
+        <keyword attribute="Capability" context="#stay" String="capability"/>
+
+        <keyword attribute="Symbol" context="#stay" String="operators"/>
+
+        <RegExpr attribute="Normal Text" context="#stay" String="&IDVAR;" />
+
+        <RegExpr attribute="Char" context="#stay" String="'[^\\']'" /> <!-- only ascii char -->
+        <RegExpr attribute="Special Char" context="#stay" String="'(?:&SPECHAR;|\\')'" />
+        <DetectChar attribute="Error" context="#stay" char="'" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+
+        <RegExpr attribute="Data Type" context="#stay" String="&IDTYPE;" />
+
+        <keyword attribute="Constraint" context="#stay" String="gencapability"/>
+
+        <RegExpr attribute="Error" context="#stay" String="#\w+"/>
+
+        <DetectIdentifier />
+      </context>
+
+
+      <context attribute="String" lineEndContext="SimpleString" name="String" fallthrough="true" fallthroughContext="SimpleString">
+        <Detect2Chars attribute="String" context="LongString" char="&quot;" char1="&quot;"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="SimpleString">
+        <RegExpr attribute="Special Char" context="#stay" String="&SPECHAR;|\\&quot;" />
+        <RegExpr attribute="Error" context="#stay" String="\\." />
+        <DetectChar attribute="String" context="#pop#pop" char="&quot;"/>
+        <DetectIdentifier />
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="LongString">
+        <DetectSpaces />
+        <RegExpr attribute="Special Char" context="#stay" String="&SPECHAR;" />
+        <RegExpr attribute="Error" context="#stay" String="\\." />
+        <StringDetect attribute="String" context="#pop#pop" String="&quot;&quot;&quot;"/>
+        <DetectIdentifier />
+      </context>
+
+
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" endRegion="Comment"/>
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="def_base">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Attributes" context="Attributes" char="\" char1="\"/>
+        <keyword attribute="Capability" context="#stay" String="capability"/>
+        <DetectChar attribute="External Function" context="#pop!External Function" char="@"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="DefNew" fallthrough="true" fallthroughContext="#pop">
+        <IncludeRules context="def_base" />
+        <keyword attribute="Overloaders" context="#pop" String="new_overloaders"/>
+        <DetectIdentifier attribute="Function"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="DefFun" fallthrough="true" fallthroughContext="#pop">
+        <IncludeRules context="def_base" />
+        <keyword attribute="Overloaders" context="#pop" String="overloaders"/>
+        <DetectIdentifier attribute="Function"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="DefClass" fallthrough="true" fallthroughContext="#pop">
+        <IncludeRules context="def_base" />
+        <RegExpr attribute="Data Type" context="#pop" String="&IDTYPE;"/>
+        <DetectIdentifier attribute="Error" context="#pop"/>
+      </context>
+
+
+      <context attribute="External Function" lineEndContext="#pop" name="External Function" fallthrough="true" fallthroughContext="#pop">
+        <DetectIdentifier attribute="External Function"/>
+      </context>
+
+
+      <context attribute="Attributes" lineEndContext="#pop" name="Attributes">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Attributes" context="#pop" char="\" char1="\"/>
+        <DetectChar attribute="Attributes" context="#stay" char=","/>
+        <DetectIdentifier/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Data Type"    defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Function"     defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="External Function"  defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Overloaders"  defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Attributes"   defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="Constraint"   defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="Capability"   defStyleNum="dsAttribute" spellChecking="false" bold="false" italic="true" />
+      <itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Hex"          defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Binary"       defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float"        defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Char"         defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Special Char" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Error"        defStyleNum="dsError" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="#" />
+  </general>
+</language>
+<!-- kate: indent-width 2; tab-width 2; -->

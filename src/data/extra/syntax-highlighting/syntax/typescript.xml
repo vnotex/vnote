@@ -1,0 +1,2092 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!ENTITY identifier "([a-zA-Z_$]|[^[:ascii:]])([\w$]|[^[:ascii:]])*">
+	<!ENTITY numSuffix  "(?=n?([^\w]|$))">
+	<!ENTITY objectOp   "[\?!]?">
+	<!ENTITY endLine    "\s*($|//|(/\*.*\*/\s*)+$)">
+]>
+
+<!--
+    ====================================================================
+
+      This file is part of the KDE's KSyntaxHighlighting framework.
+
+      Copyright 2018-2019 Nibaldo González S. (nibgonz@gmail.com)
+
+      This Source Code Form is subject to the terms of the MIT License.
+      If a copy of the license was not distributed with this file,
+      You can obtain one at: https://opensource.org/licenses/MIT
+
+    ====================================================================
+
+    This file is an extension of the JavaScript highlighter
+    (javascript.xml, Version 10 and higher).
+    Based on the TypeScript grammar files,
+    available at: https://github.com/Microsoft/TypeScript-TmLanguage
+
+    NOTE: TypeScript directives are highlighted by "doxygen.xml",
+    included in the JavaScript highlighter.
+    Ex:
+      /// <reference no-default-lib="true"/>
+
+      Tags: reference, amd-dependency, amd-module
+      Attributes: path, types, no-default-lib, name
+
+    TODO: The keywords of built-in classes & functions can be included
+    in "javascript.xml". The only drawback is that some XML files use
+    JavaScript highlighting, through "IncludeRules", and should not
+    incorporate these keywords (for example: "qml.xml").
+
+    Change log:
+     * v5 [2019-08-30]: Avoid that ?: be used as conditional expressions.
+     * v4 [2019-07-16]: Fixed highlighting of keywords before ":" in conditional expressions.
+     * v3 [2019-02-18]: Add support to bigint and the "is" keyword.
+                        Fixes keyword delimiters. Don't highlight regex
+                        after "]" and ")". Multiple fixes and improvements.
+     * v2 [2018-12-29]: Don't highlight built-in classes as functions,
+                        fix float-points, improve types detection and other fixes.
+     * v1 [2018-11-18]: Initial version
+-->
+
+<language name="TypeScript"
+          version="5"
+          kateversion="5.53"
+          section="Scripts"
+          extensions="*.ts"
+          priority="9"
+          mimetype="text/typescript;application/typescript;text/x-typescript;application/x-typescript"
+          indenter="cstyle"
+          author="Nibaldo González (nibgonz@gmail.com)"
+          license="MIT">
+
+<highlighting>
+
+	<!-- Include all JavaScript keywords! -->
+	<list name="controlflow">
+		<include>controlflow##JavaScript</include>
+		<item>goto</item>
+	</list>
+	<list name="keywords">
+		<include>keywords##JavaScript</include>
+		<item>declare</item> <!-- storage.modifier.ts -->
+	</list>
+	<list name="reserved">
+		<include>reserved##JavaScript</include>
+		<item>type</item>
+		<item>arguments</item>
+
+		<!-- Class -->
+		<item>readonly</item>
+		<item>abstract</item>
+		<item>constructor</item>
+		<item>get</item>
+		<item>set</item>
+		<!-- Also:
+		     public, protected, private, async, super, new, static -->
+	</list>
+	<list name="module">
+		<include>module##JavaScript</include>
+	</list>
+	<list name="primitives">
+		<include>primitives##JavaScript</include>
+		<!-- Types Built-in -->
+		<item>object</item>
+		<!-- Also:
+		     this, true, false, undefined, null -->
+	</list>
+
+	<list name="control_export_types">
+		<!-- storage.type.namespace.ts -->
+		<item>namespace</item>
+		<item>module</item>
+	</list>
+	<list name="types_operator_expression">
+		<item>keyof</item>
+		<item>infer</item>
+		<!-- Also: is, typeof -->
+	</list>
+	<!-- Datatypes -->
+	<list name="types">
+		<item>string</item>
+		<item>number</item>
+		<item>boolean</item>
+		<item>symbol</item>
+		<item>any</item>
+		<item>void</item>
+		<item>never</item>
+		<item>unknown</item>
+		<item>undefined</item>
+		<item>null</item>
+		<item>object</item>
+	</list>
+
+	<!-- Built-in Classes & Functions -->
+
+	<list name="class_builtin">
+		<item>Array</item>
+		<item>ArrayBuffer</item>
+		<item>Atomics</item>
+		<item>Boolean</item>
+		<item>DataView</item>
+		<item>Date</item>
+		<item>Float32Array</item>
+		<item>Float64Array</item>
+		<item>Function</item>
+		<item>Generator</item>
+		<item>GeneratorFunction</item>
+		<item>Int8Array</item>
+		<item>Int16Array</item>
+		<item>Int32Array</item>
+		<item>Intl</item>
+		<item>Map</item>
+		<item>Number</item>
+		<item>Object</item>
+		<item>Proxy</item>
+		<item>Reflect</item>
+		<item>RegExp</item>
+		<item>Set</item>
+		<item>SharedArrayBuffer</item>
+		<item>SIMD</item>
+		<item>String</item>
+		<item>Symbol</item>
+		<item>TypedArray</item>
+		<item>Uint8Array</item>
+		<item>Uint16Array</item>
+		<item>Uint32Array</item>
+		<item>Uint8ClampedArray</item>
+		<item>WeakMap</item>
+		<item>WeakSet</item>
+		<!-- Class: Error -->
+		<item>Error</item>
+		<item>EvalError</item>
+		<item>InternalError</item>
+		<item>RangeError</item>
+		<item>ReferenceError</item>
+		<item>SyntaxError</item>
+		<item>TypeError</item>
+		<item>URIError</item>
+		<!-- Class: Math -->
+		<item>Math</item>
+		<!-- Class: Promise -->
+		<item>Promise</item>
+		<!-- Other -->
+		<item>JSON</item>
+		<item>console</item>
+		<item>process</item>
+	</list>
+	<!-- DOM Classes -->
+	<list name="class_dom">
+		<item>AnalyserNode</item>
+		<item>ArrayBufferView</item>
+		<item>Attr</item>
+		<item>AudioBuffer</item>
+		<item>AudioBufferSourceNode</item>
+		<item>AudioContext</item>
+		<item>AudioDestinationNode</item>
+		<item>AudioListener</item>
+		<item>AudioNode</item>
+		<item>AudioParam</item>
+		<item>BatteryManager</item>
+		<item>BeforeUnloadEvent</item>
+		<item>BiquadFilterNode</item>
+		<item>Blob</item>
+		<item>BufferSource</item>
+		<item>ByteString</item>
+		<item>CSS</item>
+		<item>CSSConditionRule</item>
+		<item>CSSCounterStyleRule</item>
+		<item>CSSGroupingRule</item>
+		<item>CSSMatrix</item>
+		<item>CSSMediaRule</item>
+		<item>CSSPageRule</item>
+		<item>CSSPrimitiveValue</item>
+		<item>CSSRule</item>
+		<item>CSSRuleList</item>
+		<item>CSSStyleDeclaration</item>
+		<item>CSSStyleRule</item>
+		<item>CSSStyleSheet</item>
+		<item>CSSSupportsRule</item>
+		<item>CSSValue</item>
+		<item>CSSValueList</item>
+		<item>CanvasGradient</item>
+		<item>CanvasImageSource</item>
+		<item>CanvasPattern</item>
+		<item>CanvasRenderingContext2D</item>
+		<item>ChannelMergerNode</item>
+		<item>ChannelSplitterNode</item>
+		<item>CharacterData</item>
+		<item>ChromeWorker</item>
+		<item>CloseEvent</item>
+		<item>Comment</item>
+		<item>CompositionEvent</item>
+		<item>Console</item>
+		<item>ConvolverNode</item>
+		<item>Coordinates</item>
+		<item>Credential</item>
+		<item>CredentialsContainer</item>
+		<item>Crypto</item>
+		<item>CryptoKey</item>
+		<item>CustomEvent</item>
+		<item>DOMError</item>
+		<item>DOMException</item>
+		<item>DOMHighResTimeStamp</item>
+		<item>DOMImplementation</item>
+		<item>DOMString</item>
+		<item>DOMStringList</item>
+		<item>DOMStringMap</item>
+		<item>DOMTimeStamp</item>
+		<item>DOMTokenList</item>
+		<item>DataTransfer</item>
+		<item>DataTransferItem</item>
+		<item>DataTransferItemList</item>
+		<item>DedicatedWorkerGlobalScope</item>
+		<item>DelayNode</item>
+		<item>DeviceProximityEvent</item>
+		<item>DirectoryEntry</item>
+		<item>DirectoryEntrySync</item>
+		<item>DirectoryReader</item>
+		<item>DirectoryReaderSync</item>
+		<item>Document</item>
+		<item>DocumentFragment</item>
+		<item>DocumentTouch</item>
+		<item>DocumentType</item>
+		<item>DragEvent</item>
+		<item>DynamicsCompressorNode</item>
+		<item>Element</item>
+		<item>Entry</item>
+		<item>EntrySync</item>
+		<item>ErrorEvent</item>
+		<item>Event</item>
+		<item>EventListener</item>
+		<item>EventSource</item>
+		<item>EventTarget</item>
+		<item>FederatedCredential</item>
+		<item>FetchEvent</item>
+		<item>File</item>
+		<item>FileEntry</item>
+		<item>FileEntrySync</item>
+		<item>FileException</item>
+		<item>FileList</item>
+		<item>FileReader</item>
+		<item>FileReaderSync</item>
+		<item>FileSystem</item>
+		<item>FileSystemSync</item>
+		<item>FontFace</item>
+		<item>FormData</item>
+		<item>GainNode</item>
+		<item>Gamepad</item>
+		<item>GamepadButton</item>
+		<item>GamepadEvent</item>
+		<item>Geolocation</item>
+		<item>GlobalEventHandlers</item>
+		<item>HTMLAnchorElement</item>
+		<item>HTMLAreaElement</item>
+		<item>HTMLAudioElement</item>
+		<item>HTMLBRElement</item>
+		<item>HTMLBaseElement</item>
+		<item>HTMLBodyElement</item>
+		<item>HTMLButtonElement</item>
+		<item>HTMLCanvasElement</item>
+		<item>HTMLCollection</item>
+		<item>HTMLContentElement</item>
+		<item>HTMLDListElement</item>
+		<item>HTMLDataElement</item>
+		<item>HTMLDataListElement</item>
+		<item>HTMLDialogElement</item>
+		<item>HTMLDivElement</item>
+		<item>HTMLDocument</item>
+		<item>HTMLElement</item>
+		<item>HTMLEmbedElement</item>
+		<item>HTMLFieldSetElement</item>
+		<item>HTMLFontElement</item>
+		<item>HTMLFormControlsCollection</item>
+		<item>HTMLFormElement</item>
+		<item>HTMLHRElement</item>
+		<item>HTMLHeadElement</item>
+		<item>HTMLHeadingElement</item>
+		<item>HTMLHtmlElement</item>
+		<item>HTMLIFrameElement</item>
+		<item>HTMLImageElement</item>
+		<item>HTMLInputElement</item>
+		<item>HTMLKeygenElement</item>
+		<item>HTMLLIElement</item>
+		<item>HTMLLabelElement</item>
+		<item>HTMLLegendElement</item>
+		<item>HTMLLinkElement</item>
+		<item>HTMLMapElement</item>
+		<item>HTMLMediaElement</item>
+		<item>HTMLMetaElement</item>
+		<item>HTMLMeterElement</item>
+		<item>HTMLModElement</item>
+		<item>HTMLOListElement</item>
+		<item>HTMLObjectElement</item>
+		<item>HTMLOptGroupElement</item>
+		<item>HTMLOptionElement</item>
+		<item>HTMLOptionsCollection</item>
+		<item>HTMLOutputElement</item>
+		<item>HTMLParagraphElement</item>
+		<item>HTMLParamElement</item>
+		<item>HTMLPreElement</item>
+		<item>HTMLProgressElement</item>
+		<item>HTMLQuoteElement</item>
+		<item>HTMLScriptElement</item>
+		<item>HTMLSelectElement</item>
+		<item>HTMLShadowElement</item>
+		<item>HTMLSourceElement</item>
+		<item>HTMLSpanElement</item>
+		<item>HTMLStyleElement</item>
+		<item>HTMLTableCaptionElement</item>
+		<item>HTMLTableCellElement</item>
+		<item>HTMLTableColElement</item>
+		<item>HTMLTableDataCellElement</item>
+		<item>HTMLTableElement</item>
+		<item>HTMLTableHeaderCellElement</item>
+		<item>HTMLTableRowElement</item>
+		<item>HTMLTableSectionElement</item>
+		<item>HTMLTextAreaElement</item>
+		<item>HTMLTimeElement</item>
+		<item>HTMLTitleElement</item>
+		<item>HTMLTrackElement</item>
+		<item>HTMLUListElement</item>
+		<item>HTMLUnknownElement</item>
+		<item>HTMLVideoElement</item>
+		<item>HashChangeEvent</item>
+		<item>History</item>
+		<item>IDBCursor</item>
+		<item>IDBCursorWithValue</item>
+		<item>IDBDatabase</item>
+		<item>IDBEnvironment</item>
+		<item>IDBFactory</item>
+		<item>IDBIndex</item>
+		<item>IDBKeyRange</item>
+		<item>IDBMutableFile</item>
+		<item>IDBObjectStore</item>
+		<item>IDBOpenDBRequest</item>
+		<item>IDBRequest</item>
+		<item>IDBTransaction</item>
+		<item>IDBVersionChangeEvent</item>
+		<item>IIRFilterNode</item>
+		<item>IdentityManager</item>
+		<item>ImageBitmap</item>
+		<item>ImageBitmapFactories</item>
+		<item>ImageData</item>
+		<item>Index</item>
+		<item>InputDeviceCapabilities</item>
+		<item>InputEvent</item>
+		<item>InstallEvent</item>
+		<item>InstallTrigger</item>
+		<item>KeyboardEvent</item>
+		<item>LinkStyle</item>
+		<item>LocalFileSystem</item>
+		<item>LocalFileSystemSync</item>
+		<item>Location</item>
+		<item>MIDIAccess</item>
+		<item>MIDIConnectionEvent</item>
+		<item>MIDIInput</item>
+		<item>MIDIInputMap</item>
+		<item>MIDIOutputMap</item>
+		<item>MediaElementAudioSourceNode</item>
+		<item>MediaError</item>
+		<item>MediaKeyMessageEvent</item>
+		<item>MediaKeySession</item>
+		<item>MediaKeyStatusMap</item>
+		<item>MediaKeySystemAccess</item>
+		<item>MediaKeySystemConfiguration</item>
+		<item>MediaKeys</item>
+		<item>MediaRecorder</item>
+		<item>MediaStream</item>
+		<item>MediaStreamAudioDestinationNode</item>
+		<item>MediaStreamAudioSourceNode</item>
+		<item>MessageChannel</item>
+		<item>MessageEvent</item>
+		<item>MessagePort</item>
+		<item>MouseEvent</item>
+		<item>MutationObserver</item>
+		<item>MutationRecord</item>
+		<item>NamedNodeMap</item>
+		<item>Navigator</item>
+		<item>NavigatorConcurrentHardware</item>
+		<item>NavigatorGeolocation</item>
+		<item>NavigatorID</item>
+		<item>NavigatorLanguage</item>
+		<item>NavigatorOnLine</item>
+		<item>Node</item>
+		<item>NodeFilter</item>
+		<item>NodeIterator</item>
+		<item>NodeList</item>
+		<item>NonDocumentTypeChildNode</item>
+		<item>Notification</item>
+		<item>OfflineAudioCompletionEvent</item>
+		<item>OfflineAudioContext</item>
+		<item>OscillatorNode</item>
+		<item>PageTransitionEvent</item>
+		<item>PannerNode</item>
+		<item>ParentNode</item>
+		<item>PasswordCredential</item>
+		<item>Path2D</item>
+		<item>PaymentAddress</item>
+		<item>PaymentRequest</item>
+		<item>PaymentResponse</item>
+		<item>Performance</item>
+		<item>PerformanceEntry</item>
+		<item>PerformanceFrameTiming</item>
+		<item>PerformanceMark</item>
+		<item>PerformanceMeasure</item>
+		<item>PerformanceNavigation</item>
+		<item>PerformanceNavigationTiming</item>
+		<item>PerformanceObserver</item>
+		<item>PerformanceObserverEntryList</item>
+		<item>PerformanceResourceTiming</item>
+		<item>PerformanceTiming</item>
+		<item>PeriodicSyncEvent</item>
+		<item>PeriodicWave</item>
+		<item>Plugin</item>
+		<item>Point</item>
+		<item>PointerEvent</item>
+		<item>PopStateEvent</item>
+		<item>PortCollection</item>
+		<item>Position</item>
+		<item>PositionError</item>
+		<item>PositionOptions</item>
+		<item>PresentationConnectionClosedEvent</item>
+		<item>PresentationConnectionList</item>
+		<item>PresentationReceiver</item>
+		<item>ProcessingInstruction</item>
+		<item>ProgressEvent</item>
+		<item>PromiseRejectionEvent</item>
+		<item>PushEvent</item>
+		<item>PushRegistrationManager</item>
+		<item>RTCCertificate</item>
+		<item>RTCConfiguration</item>
+		<item>RTCPeerConnection</item>
+		<item>RTCSessionDescriptionCallback</item>
+		<item>RTCStatsReport</item>
+		<item>RadioNodeList</item>
+		<item>RandomSource</item>
+		<item>Range</item>
+		<item>ReadableByteStream</item>
+		<item>RenderingContext</item>
+		<item>SVGAElement</item>
+		<item>SVGAngle</item>
+		<item>SVGAnimateColorElement</item>
+		<item>SVGAnimateElement</item>
+		<item>SVGAnimateMotionElement</item>
+		<item>SVGAnimateTransformElement</item>
+		<item>SVGAnimatedAngle</item>
+		<item>SVGAnimatedBoolean</item>
+		<item>SVGAnimatedEnumeration</item>
+		<item>SVGAnimatedInteger</item>
+		<item>SVGAnimatedLength</item>
+		<item>SVGAnimatedLengthList</item>
+		<item>SVGAnimatedNumber</item>
+		<item>SVGAnimatedNumberList</item>
+		<item>SVGAnimatedPoints</item>
+		<item>SVGAnimatedPreserveAspectRatio</item>
+		<item>SVGAnimatedRect</item>
+		<item>SVGAnimatedString</item>
+		<item>SVGAnimatedTransformList</item>
+		<item>SVGAnimationElement</item>
+		<item>SVGCircleElement</item>
+		<item>SVGClipPathElement</item>
+		<item>SVGCursorElement</item>
+		<item>SVGDefsElement</item>
+		<item>SVGDescElement</item>
+		<item>SVGElement</item>
+		<item>SVGEllipseElement</item>
+		<item>SVGEvent</item>
+		<item>SVGFilterElement</item>
+		<item>SVGFontElement</item>
+		<item>SVGFontFaceElement</item>
+		<item>SVGFontFaceFormatElement</item>
+		<item>SVGFontFaceNameElement</item>
+		<item>SVGFontFaceSrcElement</item>
+		<item>SVGFontFaceUriElement</item>
+		<item>SVGForeignObjectElement</item>
+		<item>SVGGElement</item>
+		<item>SVGGlyphElement</item>
+		<item>SVGGradientElement</item>
+		<item>SVGHKernElement</item>
+		<item>SVGImageElement</item>
+		<item>SVGLength</item>
+		<item>SVGLengthList</item>
+		<item>SVGLineElement</item>
+		<item>SVGLinearGradientElement</item>
+		<item>SVGMPathElement</item>
+		<item>SVGMaskElement</item>
+		<item>SVGMatrix</item>
+		<item>SVGMissingGlyphElement</item>
+		<item>SVGNumber</item>
+		<item>SVGNumberList</item>
+		<item>SVGPathElement</item>
+		<item>SVGPatternElement</item>
+		<item>SVGPoint</item>
+		<item>SVGPolygonElement</item>
+		<item>SVGPolylineElement</item>
+		<item>SVGPreserveAspectRatio</item>
+		<item>SVGRadialGradientElement</item>
+		<item>SVGRect</item>
+		<item>SVGRectElement</item>
+		<item>SVGSVGElement</item>
+		<item>SVGScriptElement</item>
+		<item>SVGSetElement</item>
+		<item>SVGStopElement</item>
+		<item>SVGStringList</item>
+		<item>SVGStylable</item>
+		<item>SVGStyleElement</item>
+		<item>SVGSwitchElement</item>
+		<item>SVGSymbolElement</item>
+		<item>SVGTRefElement</item>
+		<item>SVGTSpanElement</item>
+		<item>SVGTests</item>
+		<item>SVGTextElement</item>
+		<item>SVGTextPositioningElement</item>
+		<item>SVGTitleElement</item>
+		<item>SVGTransform</item>
+		<item>SVGTransformList</item>
+		<item>SVGTransformable</item>
+		<item>SVGUseElement</item>
+		<item>SVGVKernElement</item>
+		<item>SVGViewElement</item>
+		<item>ServiceWorker</item>
+		<item>ServiceWorkerContainer</item>
+		<item>ServiceWorkerGlobalScope</item>
+		<item>ServiceWorkerRegistration</item>
+		<item>ServiceWorkerState</item>
+		<item>ShadowRoot</item>
+		<item>SharedWorker</item>
+		<item>SharedWorkerGlobalScope</item>
+		<item>SourceBufferList</item>
+		<item>StereoPannerNode</item>
+		<item>Storage</item>
+		<item>StorageEvent</item>
+		<item>StyleSheet</item>
+		<item>StyleSheetList</item>
+		<item>SubtleCrypto</item>
+		<item>SyncEvent</item>
+		<item>Text</item>
+		<item>TextMetrics</item>
+		<item>TimeEvent</item>
+		<item>TimeRanges</item>
+		<item>Touch</item>
+		<item>TouchEvent</item>
+		<item>TouchList</item>
+		<item>Transferable</item>
+		<item>TreeWalker</item>
+		<item>UIEvent</item>
+		<item>USVString</item>
+		<item>VRDisplayCapabilities</item>
+		<item>ValidityState</item>
+		<item>WaveShaperNode</item>
+		<item>WebGL</item>
+		<item>WebGLActiveInfo</item>
+		<item>WebGLBuffer</item>
+		<item>WebGLContextEvent</item>
+		<item>WebGLFramebuffer</item>
+		<item>WebGLProgram</item>
+		<item>WebGLRenderbuffer</item>
+		<item>WebGLRenderingContext</item>
+		<item>WebGLShader</item>
+		<item>WebGLShaderPrecisionFormat</item>
+		<item>WebGLTexture</item>
+		<item>WebGLTimerQueryEXT</item>
+		<item>WebGLTransformFeedback</item>
+		<item>WebGLUniformLocation</item>
+		<item>WebGLVertexArrayObject</item>
+		<item>WebGLVertexArrayObjectOES</item>
+		<item>WebSocket</item>
+		<item>WebSockets</item>
+		<item>WebVTT</item>
+		<item>WheelEvent</item>
+		<item>Window</item>
+		<item>WindowBase64</item>
+		<item>WindowEventHandlers</item>
+		<item>WindowTimers</item>
+		<item>Worker</item>
+		<item>WorkerGlobalScope</item>
+		<item>WorkerLocation</item>
+		<item>WorkerNavigator</item>
+		<item>XMLHttpRequest</item>
+		<item>XMLHttpRequestEventTarget</item>
+		<item>XMLSerializer</item>
+		<item>XPathExpression</item>
+		<item>XPathResult</item>
+		<item>XSLTProcessor</item>
+	</list>
+	<!-- Node.js Classes -->
+	<list name="class_node">
+		<item>Buffer</item>
+		<item>EventEmitter</item>
+		<item>Server</item>
+		<item>Pipe</item>
+		<item>Socket</item>
+		<item>REPLServer</item>
+		<item>ReadStream</item>
+		<item>WriteStream</item>
+		<item>Stream</item>
+		<item>Inflate</item>
+		<item>Deflate</item>
+		<item>InflateRaw</item>
+		<item>DeflateRaw</item>
+		<item>GZip</item>
+		<item>GUnzip</item>
+		<item>Unzip</item>
+		<item>Zip</item>
+	</list>
+	<!-- General Properties of Classes -->
+	<list name="variable_property">
+		<item>constructor</item>
+		<item>length</item>
+		<item>prototype</item>
+		<item>__proto__</item>
+		<item>EPSILON</item>
+		<item>MAX_SAFE_INTEGER</item>
+		<item>MAX_VALUE</item>
+		<item>MIN_SAFE_INTEGER</item>
+		<item>MIN_VALUE</item>
+		<item>NEGATIVE_INFINITY</item>
+		<item>POSITIVE_INFINITY</item>
+	</list>
+	<!-- General Built-in Functions -->
+	<list name="functions">
+		<item>clearInterval</item>
+		<item>clearTimeout</item>
+		<item>decodeURI</item>
+		<item>decodeURIComponent</item>
+		<item>encodeURI</item>
+		<item>encodeURIComponent</item>
+		<item>escape</item>
+		<item>eval</item>
+		<item>isFinite</item>
+		<item>isNaN</item>
+		<item>parseFloat</item>
+		<item>parseInt</item>
+		<item>require</item>
+		<item>setTimeout</item>
+		<item>setInterval</item>
+		<item>super</item>
+		<item>unescape</item>
+		<item>uneval</item>
+	</list>
+	<!-- Methods of Math Class -->
+	<list name="math_functions">
+		<item>abs</item>
+		<item>acos</item>
+		<item>acosh</item>
+		<item>asin</item>
+		<item>asinh</item>
+		<item>atan</item>
+		<item>atan2</item>
+		<item>atanh</item>
+		<item>cbrt</item>
+		<item>ceil</item>
+		<item>clz32</item>
+		<item>cos</item>
+		<item>cosh</item>
+		<item>exp</item>
+		<item>expm1</item>
+		<item>floor</item>
+		<item>fround</item>
+		<item>hypot</item>
+		<item>imul</item>
+		<item>log</item>
+		<item>log10</item>
+		<item>log1p</item>
+		<item>log2</item>
+		<item>max</item>
+		<item>min</item>
+		<item>pow</item>
+		<item>random</item>
+		<item>round</item>
+		<item>sign</item>
+		<item>sin</item>
+		<item>sinh</item>
+		<item>sqrt</item>
+		<item>tan</item>
+		<item>tanh</item>
+		<item>trunc</item>
+	</list>
+	<!-- Constants of Math Class-->
+	<list name="math_property_constants">
+		<item>E</item>
+		<item>LN10</item>
+		<item>LN2</item>
+		<item>LOG10E</item>
+		<item>LOG2E</item>
+		<item>PI</item>
+		<item>SQRT1_2</item>
+		<item>SQRT2</item>
+	</list>
+	<!-- Functions of "console" -->
+	<list name="console_functions">
+		<item>assert</item>
+		<item>clear</item>
+		<item>count</item>
+		<item>debug</item>
+		<item>dir</item>
+		<item>error</item>
+		<item>group</item>
+		<item>groupCollapsed</item>
+		<item>groupEnd</item>
+		<item>info</item>
+		<item>log</item>
+		<item>profile</item>
+		<item>profileEnd</item>
+		<item>table</item>
+		<item>time</item>
+		<item>timeEnd</item>
+		<item>timeStamp</item>
+		<item>trace</item>
+		<item>warn</item>
+	</list>
+	<!-- Methods of JSON Class -->
+	<list name="json_functions">
+		<item>parse</item>
+		<item>stringify</item>
+	</list>
+	<!-- Attributes of Node.js Classes -->
+	<list name="node_object">
+		<item>global</item>
+		<item>GLOBAL</item>
+		<item>root</item>
+		<item>__dirname</item>
+		<item>__filename</item>
+	</list>
+	<!-- Properties of "process" -->
+	<list name="process_property">
+		<item>arch</item>
+		<item>argv</item>
+		<item>config</item>
+		<item>connected</item>
+		<item>env</item>
+		<item>execArgv</item>
+		<item>execPath</item>
+		<item>exitCode</item>
+		<item>mainModule</item>
+		<item>pid</item>
+		<item>platform</item>
+		<item>release</item>
+		<item>stderr</item>
+		<item>stdin</item>
+		<item>stdout</item>
+		<item>title</item>
+		<item>version</item>
+		<item>versions</item>
+	</list>
+	<!-- Functions of "process" -->
+	<list name="process_functions">
+		<item>abort</item>
+		<item>chdir</item>
+		<item>cwd</item>
+		<item>disconnect</item>
+		<item>exit</item>
+		<item>setegid</item>
+		<item>seteuid</item>
+		<item>getegid</item>
+		<item>geteuid</item>
+		<item>setgid</item>
+		<item>setuid</item>
+		<item>getgid</item>
+		<item>getuid</item>
+		<item>send</item>
+		<item>setgroups</item>
+		<item>getgroups</item>
+		<item>initgroups</item>
+		<item>kill</item>
+		<item>memoryUsage</item>
+		<item>nextTick</item>
+		<item>umask</item>
+		<item>uptime</item>
+		<item>hrtime</item>
+	</list>
+	<!-- Methods of Promise Class -->
+	<list name="promise_functions">
+		<item>all</item>
+		<item>catch</item>
+		<item>finally</item>
+		<item>race</item>
+		<item>reject</item>
+		<item>resolve</item>
+		<item>then</item>
+	</list>
+	<!-- DOM Variables -->
+	<list name="dom_variable">
+		<item>document</item>
+		<item>event</item>
+		<item>navigator</item>
+		<item>performance</item>
+		<item>screen</item>
+		<item>window</item>
+	</list>
+	<!-- Constants of DOM Classes -->
+	<list name="dom_constant">
+		<item>ATTRIBUTE_NODE</item>
+		<item>CDATA_SECTION_NODE</item>
+		<item>COMMENT_NODE</item>
+		<item>DOCUMENT_FRAGMENT_NODE</item>
+		<item>DOCUMENT_NODE</item>
+		<item>DOCUMENT_TYPE_NODE</item>
+		<item>DOMSTRING_SIZE_ERR</item>
+		<item>ELEMENT_NODE</item>
+		<item>ENTITY_NODE</item>
+		<item>ENTITY_REFERENCE_NODE</item>
+		<item>HIERARCHY_REQUEST_ERR</item>
+		<item>INDEX_SIZE_ERR</item>
+		<item>INUSE_ATTRIBUTE_ERR</item>
+		<item>INVALID_CHARACTER_ERR</item>
+		<item>NO_DATA_ALLOWED_ERR</item>
+		<item>NO_MODIFICATION_ALLOWED_ERR</item>
+		<item>NOT_FOUND_ERR</item>
+		<item>NOT_SUPPORTED_ERR</item>
+		<item>NOTATION_NODE</item>
+		<item>PROCESSING_INSTRUCTION_NODE</item>
+		<item>TEXT_NODE</item>
+		<item>WRONG_DOCUMENT_ERR</item>
+	</list>
+	<!-- Properties of DOM Classes -->
+	<list name="dom_property">
+		<item>_content</item>
+		<item>x</item>
+		<item>y</item>
+		<item>z</item>
+		<item>abbr</item>
+		<item>above</item>
+		<item>accept</item>
+		<item>acceptCharset</item>
+		<item>accessKey</item>
+		<item>action</item>
+		<item>align</item>
+		<item>aLink</item>
+		<item>vLink</item>
+		<item>aLinkcolor</item>
+		<item>vLinkcolor</item>
+		<item>all</item>
+		<item>alt</item>
+		<item>anchors</item>
+		<item>appCodeName</item>
+		<item>appCore</item>
+		<item>applets</item>
+		<item>appMinorVersion</item>
+		<item>appName</item>
+		<item>appVersion</item>
+		<item>archive</item>
+		<item>areas</item>
+		<item>arguments</item>
+		<item>attributes</item>
+		<item>availHeight</item>
+		<item>availLeft</item>
+		<item>availTop</item>
+		<item>availWidth</item>
+		<item>axis</item>
+		<item>background</item>
+		<item>backgroundColor</item>
+		<item>backgroundImage</item>
+		<item>below</item>
+		<item>bgColor</item>
+		<item>body</item>
+		<item>border</item>
+		<item>borderBottomWidth</item>
+		<item>borderColor</item>
+		<item>borderLeftWidth</item>
+		<item>borderRightWidth</item>
+		<item>borderStyle</item>
+		<item>borderTopWidth</item>
+		<item>borderWidth</item>
+		<item>bottom</item>
+		<item>bufferDepth</item>
+		<item>callee</item>
+		<item>caller</item>
+		<item>caption</item>
+		<item>cellPadding</item>
+		<item>cells</item>
+		<item>cellSpacing</item>
+		<item>ch</item>
+		<item>characterSet</item>
+		<item>charset</item>
+		<item>checked</item>
+		<item>childNodes</item>
+		<item>chOff</item>
+		<item>cite</item>
+		<item>classes</item>
+		<item>className</item>
+		<item>clear</item>
+		<item>clientInformation</item>
+		<item>clip</item>
+		<item>clipBoardData</item>
+		<item>closed</item>
+		<item>code</item>
+		<item>codeBase</item>
+		<item>codeType</item>
+		<item>color</item>
+		<item>colorDepth</item>
+		<item>cols</item>
+		<item>colSpan</item>
+		<item>compact</item>
+		<item>complete</item>
+		<item>components</item>
+		<item>content</item>
+		<item>controllers</item>
+		<item>cookie</item>
+		<item>cookieEnabled</item>
+		<item>cords</item>
+		<item>cpuClass</item>
+		<item>crypto</item>
+		<item>current</item>
+		<item>data</item>
+		<item>dateTime</item>
+		<item>declare</item>
+		<item>defaultCharset</item>
+		<item>defaultChecked</item>
+		<item>defaultSelected</item>
+		<item>defaultStatus</item>
+		<item>defaultValue</item>
+		<item>defaultView</item>
+		<item>defer</item>
+		<item>description</item>
+		<item>dialogArguments</item>
+		<item>dialogHeight</item>
+		<item>dialogLeft</item>
+		<item>dialogTop</item>
+		<item>dialogWidth</item>
+		<item>dir</item>
+		<item>directories</item>
+		<item>disabled</item>
+		<item>display</item>
+		<item>docmain</item>
+		<item>doctype</item>
+		<item>documentElement</item>
+		<item>elements</item>
+		<item>embeds</item>
+		<item>enabledPlugin</item>
+		<item>encoding</item>
+		<item>enctype</item>
+		<item>entities</item>
+		<item>event</item>
+		<item>expando</item>
+		<item>external</item>
+		<item>face</item>
+		<item>fgColor</item>
+		<item>filename</item>
+		<item>firstChild</item>
+		<item>fontFamily</item>
+		<item>fontSize</item>
+		<item>fontWeight</item>
+		<item>form</item>
+		<item>formName</item>
+		<item>forms</item>
+		<item>frame</item>
+		<item>frameBorder</item>
+		<item>frameElement</item>
+		<item>frames</item>
+		<item>hasFocus</item>
+		<item>hash</item>
+		<item>headers</item>
+		<item>height</item>
+		<item>history</item>
+		<item>host</item>
+		<item>hostname</item>
+		<item>href</item>
+		<item>hreflang</item>
+		<item>hspace</item>
+		<item>htmlFor</item>
+		<item>httpEquiv</item>
+		<item>id</item>
+		<item>ids</item>
+		<item>ignoreCase</item>
+		<item>images</item>
+		<item>implementation</item>
+		<item>index</item>
+		<item>innerHeight</item>
+		<item>innerWidth</item>
+		<item>input</item>
+		<item>isMap</item>
+		<item>label</item>
+		<item>lang</item>
+		<item>language</item>
+		<item>lastChild</item>
+		<item>lastIndex</item>
+		<item>lastMatch</item>
+		<item>lastModified</item>
+		<item>lastParen</item>
+		<item>layers</item>
+		<item>layerX</item>
+		<item>layerY</item>
+		<item>left</item>
+		<item>leftContext</item>
+		<item>lineHeight</item>
+		<item>link</item>
+		<item>linkColor</item>
+		<item>links</item>
+		<item>listStyleType</item>
+		<item>localName</item>
+		<item>location</item>
+		<item>locationbar</item>
+		<item>longDesc</item>
+		<item>lowsrc</item>
+		<item>lowSrc</item>
+		<item>marginBottom</item>
+		<item>marginHeight</item>
+		<item>marginLeft</item>
+		<item>marginRight</item>
+		<item>marginTop</item>
+		<item>marginWidth</item>
+		<item>maxLength</item>
+		<item>media</item>
+		<item>menubar</item>
+		<item>method</item>
+		<item>mimeTypes</item>
+		<item>multiline</item>
+		<item>multiple</item>
+		<item>name</item>
+		<item>nameProp</item>
+		<item>namespaces</item>
+		<item>namespaceURI</item>
+		<item>next</item>
+		<item>nextSibling</item>
+		<item>nodeName</item>
+		<item>nodeType</item>
+		<item>nodeValue</item>
+		<item>noHref</item>
+		<item>noResize</item>
+		<item>noShade</item>
+		<item>notationName</item>
+		<item>notations</item>
+		<item>noWrap</item>
+		<item>object</item>
+		<item>offscreenBuffering</item>
+		<item>onLine</item>
+		<item>onreadystatechange</item>
+		<item>opener</item>
+		<item>opsProfile</item>
+		<item>options</item>
+		<item>oscpu</item>
+		<item>outerHeight</item>
+		<item>outerWidth</item>
+		<item>ownerDocument</item>
+		<item>paddingBottom</item>
+		<item>paddingLeft</item>
+		<item>paddingRight</item>
+		<item>paddingTop</item>
+		<item>pageX</item>
+		<item>pageY</item>
+		<item>pageXOffset</item>
+		<item>pageYOffset</item>
+		<item>parent</item>
+		<item>parentLayer</item>
+		<item>parentNode</item>
+		<item>parentWindow</item>
+		<item>pathname</item>
+		<item>personalbar</item>
+		<item>pixelDepth</item>
+		<item>pkcs11</item>
+		<item>platform</item>
+		<item>plugins</item>
+		<item>port</item>
+		<item>prefix</item>
+		<item>previous</item>
+		<item>previousDibling</item>
+		<item>product</item>
+		<item>productSub</item>
+		<item>profile</item>
+		<item>profileend</item>
+		<item>prompt</item>
+		<item>prompter</item>
+		<item>protocol</item>
+		<item>publicId</item>
+		<item>readOnly</item>
+		<item>readyState</item>
+		<item>referrer</item>
+		<item>rel</item>
+		<item>responseText</item>
+		<item>responseXML</item>
+		<item>rev</item>
+		<item>right</item>
+		<item>rightContext</item>
+		<item>rowIndex</item>
+		<item>rows</item>
+		<item>rowSpan</item>
+		<item>rules</item>
+		<item>scheme</item>
+		<item>scope</item>
+		<item>screenX</item>
+		<item>screenY</item>
+		<item>screenLeft</item>
+		<item>screenTop</item>
+		<item>scripts</item>
+		<item>scrollbars</item>
+		<item>scrolling</item>
+		<item>sectionRowIndex</item>
+		<item>security</item>
+		<item>securityPolicy</item>
+		<item>selected</item>
+		<item>selectedIndex</item>
+		<item>selection</item>
+		<item>self</item>
+		<item>shape</item>
+		<item>siblingAbove</item>
+		<item>siblingBelow</item>
+		<item>size</item>
+		<item>source</item>
+		<item>specified</item>
+		<item>standby</item>
+		<item>start</item>
+		<item>status</item>
+		<item>statusbar</item>
+		<item>statusText</item>
+		<item>style</item>
+		<item>styleSheets</item>
+		<item>suffixes</item>
+		<item>summary</item>
+		<item>systemId</item>
+		<item>systemLanguage</item>
+		<item>tagName</item>
+		<item>tags</item>
+		<item>target</item>
+		<item>tBodies</item>
+		<item>text</item>
+		<item>textAlign</item>
+		<item>textDecoration</item>
+		<item>textIndent</item>
+		<item>textTransform</item>
+		<item>tFoot</item>
+		<item>tHead</item>
+		<item>title</item>
+		<item>toolbar</item>
+		<item>top</item>
+		<item>type</item>
+		<item>undefined</item>
+		<item>uniqueID</item>
+		<item>updateInterval</item>
+		<item>URL</item>
+		<item>URLUnencoded</item>
+		<item>useMap</item>
+		<item>userAgent</item>
+		<item>userLanguage</item>
+		<item>userProfile</item>
+		<item>vAlign</item>
+		<item>value</item>
+		<item>valueType</item>
+		<item>vendor</item>
+		<item>vendorSub</item>
+		<item>version</item>
+		<item>visibility</item>
+		<item>vspace</item>
+		<item>whiteSpace</item>
+		<item>width</item>
+		<item>XMLDocument</item>
+		<item>XSLDocument</item>
+		<item>zIndex</item>
+	</list>
+	<!-- Methods of DOM Classes -->
+	<list name="dom_functions">
+		<item>acceptNode</item>
+		<item>add</item>
+		<item>addEventListener</item>
+		<item>addTextTrack</item>
+		<item>adoptNode</item>
+		<item>after</item>
+		<item>animate</item>
+		<item>append</item>
+		<item>appendChild</item>
+		<item>appendData</item>
+		<item>before</item>
+		<item>blur</item>
+		<item>canPlayType</item>
+		<item>captureStream</item>
+		<item>caretPositionFromPoint</item>
+		<item>caretRangeFromPoint</item>
+		<item>checkValidity</item>
+		<item>clear</item>
+		<item>click</item>
+		<item>cloneContents</item>
+		<item>cloneNode</item>
+		<item>cloneRange</item>
+		<item>close</item>
+		<item>closest</item>
+		<item>collapse</item>
+		<item>compareBoundaryPoints</item>
+		<item>compareDocumentPosition</item>
+		<item>comparePoint</item>
+		<item>contains</item>
+		<item>convertPointFromNode</item>
+		<item>convertQuadFromNode</item>
+		<item>convertRectFromNode</item>
+		<item>createAttribute</item>
+		<item>createAttributeNS</item>
+		<item>createCaption</item>
+		<item>createCDATASection</item>
+		<item>createComment</item>
+		<item>createContextualFragment</item>
+		<item>createDocument</item>
+		<item>createDocumentFragment</item>
+		<item>createDocumentType</item>
+		<item>createElement</item>
+		<item>createElementNS</item>
+		<item>createEntityReference</item>
+		<item>createEvent</item>
+		<item>createExpression</item>
+		<item>createHTMLDocument</item>
+		<item>createNodeIterator</item>
+		<item>createNSResolver</item>
+		<item>createProcessingInstruction</item>
+		<item>createRange</item>
+		<item>createShadowRoot</item>
+		<item>createTBody</item>
+		<item>createTextNode</item>
+		<item>createTFoot</item>
+		<item>createTHead</item>
+		<item>createTreeWalker</item>
+		<item>delete</item>
+		<item>deleteCaption</item>
+		<item>deleteCell</item>
+		<item>deleteContents</item>
+		<item>deleteData</item>
+		<item>deleteRow</item>
+		<item>deleteTFoot</item>
+		<item>deleteTHead</item>
+		<item>detach</item>
+		<item>disconnect</item>
+		<item>dispatchEvent</item>
+		<item>elementFromPoint</item>
+		<item>elementsFromPoint</item>
+		<item>enableStyleSheetsForSet</item>
+		<item>entries</item>
+		<item>evaluate</item>
+		<item>execCommand</item>
+		<item>exitFullscreen</item>
+		<item>exitPointerLock</item>
+		<item>expand</item>
+		<item>extractContents</item>
+		<item>fastSeek</item>
+		<item>firstChild</item>
+		<item>focus</item>
+		<item>forEach</item>
+		<item>get</item>
+		<item>getAll</item>
+		<item>getAnimations</item>
+		<item>getAttribute</item>
+		<item>getAttributeNames</item>
+		<item>getAttributeNode</item>
+		<item>getAttributeNodeNS</item>
+		<item>getAttributeNS</item>
+		<item>getBoundingClientRect</item>
+		<item>getBoxQuads</item>
+		<item>getClientRects</item>
+		<item>getContext</item>
+		<item>getDestinationInsertionPoints</item>
+		<item>getElementById</item>
+		<item>getElementsByClassName</item>
+		<item>getElementsByName</item>
+		<item>getElementsByTagName</item>
+		<item>getElementsByTagNameNS</item>
+		<item>getItem</item>
+		<item>getNamedItem</item>
+		<item>getSelection</item>
+		<item>getStartDate</item>
+		<item>getVideoPlaybackQuality</item>
+		<item>has</item>
+		<item>hasAttribute</item>
+		<item>hasAttributeNS</item>
+		<item>hasAttributes</item>
+		<item>hasChildNodes</item>
+		<item>hasFeature</item>
+		<item>hasFocus</item>
+		<item>importNode</item>
+		<item>initEvent</item>
+		<item>insertAdjacentElement</item>
+		<item>insertAdjacentHTML</item>
+		<item>insertAdjacentText</item>
+		<item>insertBefore</item>
+		<item>insertCell</item>
+		<item>insertData</item>
+		<item>insertNode</item>
+		<item>insertRow</item>
+		<item>intersectsNode</item>
+		<item>isDefaultNamespace</item>
+		<item>isEqualNode</item>
+		<item>isPointInRange</item>
+		<item>isSameNode</item>
+		<item>item</item>
+		<item>key</item>
+		<item>keys</item>
+		<item>lastChild</item>
+		<item>load</item>
+		<item>lookupNamespaceURI</item>
+		<item>lookupPrefix</item>
+		<item>matches</item>
+		<item>move</item>
+		<item>moveAttribute</item>
+		<item>moveAttributeNode</item>
+		<item>moveChild</item>
+		<item>moveNamedItem</item>
+		<item>namedItem</item>
+		<item>nextNode</item>
+		<item>nextSibling</item>
+		<item>normalize</item>
+		<item>observe</item>
+		<item>open</item>
+		<item>parentNode</item>
+		<item>pause</item>
+		<item>play</item>
+		<item>postMessage</item>
+		<item>prepend</item>
+		<item>preventDefault</item>
+		<item>previousNode</item>
+		<item>previousSibling</item>
+		<item>probablySupportsContext</item>
+		<item>queryCommandEnabled</item>
+		<item>queryCommandIndeterm</item>
+		<item>queryCommandState</item>
+		<item>queryCommandSupported</item>
+		<item>queryCommandValue</item>
+		<item>querySelector</item>
+		<item>querySelectorAll</item>
+		<item>registerContentHandler</item>
+		<item>registerElement</item>
+		<item>registerProtocolHandler</item>
+		<item>releaseCapture</item>
+		<item>releaseEvents</item>
+		<item>remove</item>
+		<item>removeAttribute</item>
+		<item>removeAttributeNode</item>
+		<item>removeAttributeNS</item>
+		<item>removeChild</item>
+		<item>removeEventListener</item>
+		<item>removeItem</item>
+		<item>replace</item>
+		<item>replaceChild</item>
+		<item>replaceData</item>
+		<item>replaceWith</item>
+		<item>reportValidity</item>
+		<item>requestFullscreen</item>
+		<item>requestPointerLock</item>
+		<item>reset</item>
+		<item>scroll</item>
+		<item>scrollBy</item>
+		<item>scrollIntoView</item>
+		<item>scrollTo</item>
+		<item>seekToNextFrame</item>
+		<item>select</item>
+		<item>selectNode</item>
+		<item>selectNodeContents</item>
+		<item>set</item>
+		<item>setAttribute</item>
+		<item>setAttributeNode</item>
+		<item>setAttributeNodeNS</item>
+		<item>setAttributeNS</item>
+		<item>setCapture</item>
+		<item>setCustomValidity</item>
+		<item>setEnd</item>
+		<item>setEndAfter</item>
+		<item>setEndBefore</item>
+		<item>setItem</item>
+		<item>setNamedItem</item>
+		<item>setRangeText</item>
+		<item>setSelectionRange</item>
+		<item>setSinkId</item>
+		<item>setStart</item>
+		<item>setStartAfter</item>
+		<item>setStartBefore</item>
+		<item>slice</item>
+		<item>splitText</item>
+		<item>stepDown</item>
+		<item>stepUp</item>
+		<item>stopImmediatePropagation</item>
+		<item>stopPropagation</item>
+		<item>submit</item>
+		<item>substringData</item>
+		<item>supports</item>
+		<item>surroundContents</item>
+		<item>takeRecords</item>
+		<item>terminate</item>
+		<item>toBlob</item>
+		<item>toDataURL</item>
+		<item>toggle</item>
+		<item>toString</item>
+		<item>values</item>
+		<item>write</item>
+		<item>writeln</item>
+	</list>
+
+	<!-- Event Handler Functions -->
+	<list name="function_eventhandler">
+		<item>onRowsinserted</item>
+		<item>onRowsdelete</item>
+		<item>onRowenter</item>
+		<item>onRowexit</item>
+		<item>onResize</item>
+		<item>onResizestart</item>
+		<item>onResizeend</item>
+		<item>onReset</item>
+		<item>onReadystatechange</item>
+		<item>onMouseout</item>
+		<item>onMouseover</item>
+		<item>onMousedown</item>
+		<item>onMouseup</item>
+		<item>onMousemove</item>
+		<item>onBeforecut</item>
+		<item>onBeforedeactivate</item>
+		<item>onBeforeunload</item>
+		<item>onBeforeupdate</item>
+		<item>onBeforepaste</item>
+		<item>onBeforeprint</item>
+		<item>onBeforeeditfocus</item>
+		<item>onBeforeactivate</item>
+		<item>onBlur</item>
+		<item>onScrolltop</item>
+		<item>onSubmit</item>
+		<item>onSelect</item>
+		<item>onSelectstart</item>
+		<item>onSelectionchange</item>
+		<item>onHover</item>
+		<item>onHelp</item>
+		<item>onChange</item>
+		<item>onContextmenu</item>
+		<item>onControlselect</item>
+		<item>onCut</item>
+		<item>onCellchange</item>
+		<item>onClock</item>
+		<item>onClose</item>
+		<item>onDeactivate</item>
+		<item>onDatasetchanged</item>
+		<item>onDatasetcomplete</item>
+		<item>onDataavailable</item>
+		<item>onDrop</item>
+		<item>onDrag</item>
+		<item>onDragstart</item>
+		<item>onDragover</item>
+		<item>onDragdrop</item>
+		<item>onDragenter</item>
+		<item>onDragend</item>
+		<item>onDragleave</item>
+		<item>onDblclick</item>
+		<item>onUnload</item>
+		<item>onPaste</item>
+		<item>onPropertychange</item>
+		<item>onError</item>
+		<item>onErrorupdate</item>
+		<item>onKeydown</item>
+		<item>onKeyup</item>
+		<item>onKeypress</item>
+		<item>onFocus</item>
+		<item>onLoad</item>
+		<item>onActivate</item>
+		<item>onAfterupdate</item>
+		<item>onAfterprint</item>
+		<item>onAbort</item>
+	</list>
+	<!-- Others Methods of Classes -->
+	<list name="function_common">
+		<item>shift</item>
+		<item>showModelessDialog</item>
+		<item>showModalDialog</item>
+		<item>showHelp</item>
+		<item>scroll</item>
+		<item>scrollX</item>
+		<item>scrollByPages</item>
+		<item>scrollByLines</item>
+		<item>scrollY</item>
+		<item>scrollTo</item>
+		<item>stop</item>
+		<item>strike</item>
+		<item>sizeToContent</item>
+		<item>sidebar</item>
+		<item>signText</item>
+		<item>sort</item>
+		<item>sup</item>
+		<item>sub</item>
+		<item>substr</item>
+		<item>substring</item>
+		<item>splice</item>
+		<item>split</item>
+		<item>send</item>
+		<item>setMilliseconds</item>
+		<item>setSeconds</item>
+		<item>setMinutes</item>
+		<item>setHours</item>
+		<item>setMonth</item>
+		<item>setYear</item>
+		<item>setFullYear</item>
+		<item>setDate</item>
+		<item>setUTCMilliseconds</item>
+		<item>setUTCSeconds</item>
+		<item>setUTCMinutes</item>
+		<item>setUTCHours</item>
+		<item>setUTCMonth</item>
+		<item>setUTCFullYear</item>
+		<item>setUTCDate</item>
+		<item>setTime</item>
+		<item>setHotkeys</item>
+		<item>setCursor</item>
+		<item>setZOptions</item>
+		<item>setActive</item>
+		<item>setResizable</item>
+		<item>setRequestHeader</item>
+		<item>search</item>
+		<item>slice</item>
+		<item>savePreferences</item>
+		<item>small</item>
+		<item>home</item>
+		<item>handleEvent</item>
+		<item>navigate</item>
+		<item>char</item>
+		<item>charCodeAt</item>
+		<item>charAt</item>
+		<item>concat</item>
+		<item>contextual</item>
+		<item>confirm</item>
+		<item>compile</item>
+		<item>clear</item>
+		<item>captureEvents</item>
+		<item>call</item>
+		<item>createStyleSheet</item>
+		<item>createPopup</item>
+		<item>createEventObject</item>
+		<item>toGMTString</item>
+		<item>toUTCString</item>
+		<item>toString</item>
+		<item>toSource</item>
+		<item>toUpperCase</item>
+		<item>toLowerCase</item>
+		<item>toLocaleString</item>
+		<item>test</item>
+		<item>taint</item>
+		<item>taintEnabled</item>
+		<item>indexOf</item>
+		<item>italics</item>
+		<item>disableExternalCapture</item>
+		<item>dump</item>
+		<item>detachEvent</item>
+		<item>unshift</item>
+		<item>untaint</item>
+		<item>unwatch</item>
+		<item>updateCommands</item>
+		<item>join</item>
+		<item>javaEnabled</item>
+		<item>pop</item>
+		<item>push</item>
+		<item>plugins.refresh</item>
+		<item>paddings</item>
+		<item>parse</item>
+		<item>print</item>
+		<item>prompt</item>
+		<item>preference</item>
+		<item>enableExternalCapture</item>
+		<item>exec</item>
+		<item>execScript</item>
+		<item>valueOf</item>
+		<item>UTC</item>
+		<item>find</item>
+		<item>file</item>
+		<item>fileModifiedDate</item>
+		<item>fileSize</item>
+		<item>fileCreatedDate</item>
+		<item>fileUpdatedDate</item>
+		<item>fixed</item>
+		<item>fontsize</item>
+		<item>fontcolor</item>
+		<item>forward</item>
+		<item>fromCharCode</item>
+		<item>watch</item>
+		<item>link</item>
+		<item>load</item>
+		<item>lastIndexOf</item>
+		<item>anchor</item>
+		<item>attachEvent</item>
+		<item>atob</item>
+		<item>apply</item>
+		<item>alert</item>
+		<item>abort</item>
+		<item>routeEvents</item>
+		<item>resize</item>
+		<item>resizeBy</item>
+		<item>resizeTo</item>
+		<item>recalc</item>
+		<item>returnValue</item>
+		<item>replace</item>
+		<item>reverse</item>
+		<item>reload</item>
+		<item>releaseCapture</item>
+		<item>releaseEvents</item>
+		<item>go</item>
+		<item>getMilliseconds</item>
+		<item>getSeconds</item>
+		<item>getMinutes</item>
+		<item>getHours</item>
+		<item>getMonth</item>
+		<item>getDay</item>
+		<item>getYear</item>
+		<item>getFullYear</item>
+		<item>getTime</item>
+		<item>getDate</item>
+		<item>getTimezoneOffset</item>
+		<item>getUTCMilliseconds</item>
+		<item>getUTCSeconds</item>
+		<item>getUTCMinutes</item>
+		<item>getUTCHours</item>
+		<item>getUTCDay</item>
+		<item>getUTCMonth</item>
+		<item>getUTCFullYear</item>
+		<item>getUTCDate</item>
+		<item>getAttention</item>
+		<item>getSelection</item>
+		<item>getResponseHeader</item>
+		<item>getAllResponseHeaders</item>
+		<item>moveBy</item>
+		<item>moveBelow</item>
+		<item>moveTo</item>
+		<item>moveToAbsolute</item>
+		<item>moveAbove</item>
+		<item>mergeAttributes</item>
+		<item>match</item>
+		<item>margins</item>
+		<item>btoa</item>
+		<item>big</item>
+		<item>bold</item>
+		<item>borderWidths</item>
+		<item>blink</item>
+		<item>back</item>
+	</list>
+
+	<contexts>
+
+		<context name="Shebang" attribute="Normal Text" lineEndContext="Normal" lineEmptyContext="Normal" fallthrough="true" fallthroughContext="Normal">
+			<Detect2Chars context="ShebangLine" attribute="Comment" char="#" char1="!" column="0" />
+		</context>
+		<context name="ShebangLine" attribute="Comment" lineEndContext="#pop!Normal" />
+
+		<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+			<StringDetect context="#stay" attribute="Symbol" String="..." />
+			<IncludeRules context="FindNumbers" />
+			<IncludeRules context="FindStrings" />
+
+			<!-- Abstract -->
+			<RegExpr context="#stay" attribute="Reserved" String="\b(abstract)(?=\s+(class|interface)\b)" />
+			<!-- New -->
+			<RegExpr context="NewTarget" attribute="Keyword" String="\bnew(?=\s*&objectOp;\.\s*target\b)" />
+			<RegExpr context="MemberObject" attribute="Objects" String="\bnew(?=&objectOp;\.)" />
+			<WordDetect context="#stay" attribute="Keyword" String="new" />
+
+			<!-- Keywords: control flow -->
+			<keyword context="#stay" attribute="ControlFlow" String="controlflow" />
+			<RegExpr context="#stay" attribute="ControlFlow" String="\bdefault(?=\s*&objectOp;:)" />
+
+			<!-- NOTE & TODO: The identifiers before ":" are highlighted as "dsNormal".
+			     These identifiers should be highlighted in a different way depending on the
+			     context, for example, in the declaration of classes or interfaces, in sets, the
+			     parameters of a function, or after the keywords: "const", "var", "let" & "enum". -->
+			<RegExpr context="#stay" attribute="Parameter" String="&identifier;(?=\s*&objectOp;:)" />
+
+			<!-- Keywords -->
+			<WordDetect context="TypeDeclaration" attribute="Reserved" String="type" />
+			<keyword context="#stay" attribute="Keyword" String="keywords" /> <!-- NoRegExp? -->
+			<keyword context="#stay" attribute="Reserved" String="reserved" />
+
+			<!-- Built-in Classes -->
+			<IncludeRules context="BuiltInClasses" />
+			<!-- Objects -->
+			<RegExpr context="MemberObject" attribute="Objects" String="&identifier;(?=\s*&objectOp;\.)" />
+			<DetectChar context="MemberObject" char="." />
+
+			<!-- Import -->
+			<WordDetect context="Import" attribute="Module" String="import" />
+			<!-- Export types -->
+			<keyword context="ControlExport" attribute="Module" String="control_export_types" />
+			<!-- Keywords -->
+			<keyword context="#stay" attribute="Module" String="module" />
+			<keyword context="NoRegExp" attribute="Keyword" String="primitives" />
+			<keyword context="#stay" attribute="Keyword" String="types_operator_expression" />
+
+			<!-- Functions -->
+			<IncludeRules context="FindFunctionName" />
+			<keyword context="#stay" attribute="Function Name" String="functions" />
+
+			<!-- Symbols & Operators -->
+			<DetectChar context="Object" attribute="Symbol" char="{" beginRegion="Brace" />
+			<DetectChar context="#stay" attribute="Symbol" char="[" beginRegion="List" />
+			<DetectChar context="NoRegExp" attribute="Symbol" char="]" endRegion="List" />
+			<!-- NOTE: Avoid highlighting identifier?: string, -->
+			<RegExpr context="ConditionalExpression" attribute="Symbol" String="\?(?=.*&identifier;\s*\:)" />
+			<DetectChar context="#stay" attribute="Symbol" char="?" /> <!-- Fix of conditional expression from the JavaScript highlighting -->
+
+			<!-- Highlight types after ":" and between "<" and ">" -->
+			<DetectChar context="Types" attribute="Symbol" char=":" />
+			<RegExpr context="TypesAngleBracket" attribute="Symbol" String="&lt;(?=(&identifier;|[\[\{\(&lt;]).*&gt;)" />
+
+			<IncludeRules context="Normal##JavaScript" />
+		</context>
+
+		<context name="BuiltInClasses" attribute="Normal Text" lineEndContext="#stay">
+			<WordDetect context="FindMemberObjectMath" attribute="Built-in Objects" String="Math" />
+			<WordDetect context="FindMemberObjectPromise" attribute="Built-in Objects" String="Promise" />
+			<WordDetect context="FindMemberObjectJSON" attribute="Built-in Objects" String="JSON" />
+			<WordDetect context="FindMemberObjectConsole" attribute="Built-in Objects" String="console" />
+			<WordDetect context="FindMemberObjectProcess" attribute="Built-in Objects" String="process" />
+			<keyword context="#stay" attribute="Built-in Objects" String="class_builtin" />
+			<keyword context="FindMemberObjectDOM" attribute="Built-in Objects" String="class_dom" />
+			<keyword context="FindMemberObjectNode" attribute="Built-in Objects" String="class_node" />
+			<keyword context="FindMemberObjectDOM" attribute="Built-in Objects" String="dom_variable" />
+		</context>
+
+		<!-- Highlight keywords before ":" in conditional expressions. -->
+		<context name="ConditionalExpression" attribute="Normal Text" lineEndContext="#pop">
+			<DetectChar context="#pop" attribute="Symbol" char=":" />
+			<DetectChar context="#stay" attribute="Symbol" char="?" />
+
+			<!-- Keywords -->
+			<WordDetect context="#stay" attribute="Reserved" String="type" />
+			<keyword context="#stay" attribute="Keyword" String="keywords" /> <!-- NoRegExp? -->
+			<keyword context="#stay" attribute="Reserved" String="reserved" />
+			<!-- Built-in Classes -->
+			<IncludeRules context="BuiltInClasses" />
+			<!-- Import -->
+			<WordDetect context="#stay" attribute="Module" String="import" />
+			<!-- Export types -->
+			<keyword context="#stay" attribute="Module" String="control_export_types" />
+			<!-- Keywords -->
+			<keyword context="#stay" attribute="Module" String="module" />
+			<keyword context="NoRegExp" attribute="Keyword" String="primitives" />
+			<keyword context="#stay" attribute="Keyword" String="types_operator_expression" />
+
+			<!-- NOTE: The identifiers before ":" should be highlighted as "Normal Text".
+			     However, currently, the "Parameter" attribute is equivalent to "Normal Text". -->
+			<!-- <RegExpr context="#stay" attribute="Normal Text" String="&identifier;(?=\s*&objectOp;:)" /> -->
+			<IncludeRules context="Normal" />
+		</context>
+
+		<context name="Object" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar context="#pop" attribute="Symbol" char="}" endRegion="Brace" />
+			<keyword context="NoRegExp" attribute="Keyword" String="keywords" />
+			<!-- Highlight types in the following line.
+			     NOTE: Using the "NoRegExp" context can cause this to apply to multiple lines. -->
+			<RegExpr context="TypesNewLine" attribute="Symbol" String=":(?=&endLine;)" minimal="true" />
+			<IncludeRules context="Normal" />
+		</context>
+
+		<context name="NoRegExp" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+			<IncludeRules context="NoRegExp##JavaScript" />
+		</context>
+		<context name="NoRegExpSameLine" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<IncludeRules context="NoRegExp##JavaScript" />
+		</context>
+
+		<context name="FindNumbers" attribute="Normal Text" lineEndContext="#stay">
+			<RegExpr context="NoRegExp" attribute="Hexadecimal" String="\b0[xX][\da-fA-F][\da-fA-F_]*&numSuffix;" />
+			<RegExpr context="NoRegExp" attribute="Binary" String="\b0[bB][01][01_]*&numSuffix;" />
+			<RegExpr context="NoRegExp" attribute="Float" String="(\b\d[\d_]*\.?|(\b\d[\d_]*)?\.\d[\d_]*)[eE][\+\-]?\d[\d_]*&numSuffix;" />
+			<RegExpr context="NoRegExp" attribute="Float" String="(\.\d[\d_]*|\b\d[\d_]*\.(\d[\d_]*)?)&numSuffix;" />
+			<RegExpr context="NoRegExp" attribute="Octal" String="\b0[oO]?[0-7][0-7_]*&numSuffix;" />
+			<RegExpr context="NoRegExp" attribute="Decimal" String="\b\d[\d_]*&numSuffix;" />
+			<!-- Avoid highlighting numbers of JavaScript -->
+			<RegExpr context="NoRegExp" String="\b([1-9]|0\d)\d*" />
+		</context>
+
+		<context name="FindFunctionName" attribute="Normal Text" lineEndContext="#stay">
+			<!-- function(...) and function<...>(...) -->
+			<RegExpr context="#stay" attribute="Function Name" String="&identifier;(?=\s*(&lt;((\{([^\{\}]|(\{[^\{\}]*\}))*\})|(\(([^\(\)]|(\([^\(\)]*\)))*\))|(\[([^\[\]]|(\[[^\[\]]*\]))*\])|('(\\.|[^'])*')|(&quot;(\\.|[^&quot;])*&quot;)|(`(\\.|[^`])*`)|[^&lt;&gt;]|&lt;.*&gt;)*&gt;)?\()" />
+		</context>
+
+		<context name="FindStrings" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar context="Template" attribute="Template" char="`" />
+			<IncludeRules context="FindStrings##JavaScript" />
+		</context>
+		<context name="Template" attribute="Template" lineEndContext="#stay">
+			<IncludeRules context="Escape##JavaScript" />
+			<Detect2Chars context="Substitution" attribute="Substitution" char="$" char1="{" />
+			<DetectChar context="#pop" attribute="Template" char="`" />
+		</context>
+		<context name="Substitution" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar context="#pop" attribute="Substitution" char="}" />
+			<IncludeRules context="Normal" />
+		</context>
+
+		<!-- Highlight types after the "type" keyword -->
+
+		<context name="TypeDeclaration" attribute="Normal Text" lineEndContext="#stay">
+			<DetectSpaces />
+			<AnyChar context="#pop" String=";,{})]" lookAhead="true" />
+			<IncludeRules context="TypesFindBrackets" />
+			<IncludeRules context="DefaultTypes" />
+			<IncludeRules context="Normal" />
+		</context>
+
+		<!-- Highlight types after ":" -->
+
+		<context name="Types" attribute="Normal Text" lineEndContext="#pop">
+			<IncludeRules context="FixPopLineEndContext" />
+			<IncludeRules context="TypesCommon" />
+		</context>
+		<context name="TypesCommon" attribute="Normal Text" lineEndContext="#pop">
+			<DetectSpaces />
+			<IncludeRules context="TypesEnd" />
+			<!-- New line after "|" or "&".
+			     IMPORTANT: If you modify this rule, do so in "typescript-react.xml"! -->
+			<RegExpr context="#pop!TypesNewLine" attribute="Symbol" String="[\|&amp;](?=&endLine;)" minimal="true" />
+
+			<IncludeRules context="TypesFindBrackets" />
+			<IncludeRules context="DefaultTypes" />
+			<IncludeRules context="Normal" />
+		</context>
+		<!-- NOTE: Context used by "typescript-react.xml" -->
+		<context name="TypesEnd" attribute="Normal Text" lineEndContext="#stay">
+			<AnyChar context="#pop" String=";,})]" lookAhead="true" />
+			<RegExpr context="#pop" String="\=(?!&gt;)" lookAhead="true" />
+			<Detect2Chars context="#pop" char="/" char1="/" lookAhead="true" />
+		</context>
+		<context name="TypesNewLine" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!TypesCommon">
+			<DetectSpaces />
+			<IncludeRules context="FindComments##JavaScript" />
+		</context>
+
+		<!-- NOTE: The "NoRegExp" context invalidates lineEndContext="#pop",
+		     therefore the following rule is necessary -->
+		<context name="FixPopLineEndContext" attribute="Normal Text" lineEndContext="#stay">
+			<RegExpr context="#pop" String="\S" firstNonSpace="true" lookAhead="true" />
+		</context>
+
+		<context name="DefaultTypes" attribute="Normal Text" lineEndContext="#stay">
+			<keyword context="NoRegExpSameLine" attribute="Types" String="types" />
+			<!-- Type Guards -->
+			<WordDetect context="NoRegExpSameLine" attribute="Keyword" String="is" />
+
+			<!-- FIXME: For a strange reason, the keywords before "}" are not highlighted.
+			     This rule fixes it provisionally. -->
+			<RegExpr context="#stay" attribute="Types" String="\b(string|number|boolean|symbol|any|void|never|unknown|undefined|null|object)(?=\})" />
+		</context>
+		<context name="TypesFindBrackets" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar context="TypesSquareBracket" attribute="Symbol" char="[" beginRegion="List" />
+			<DetectChar context="TypesCurlyBracket" attribute="Symbol" char="{" beginRegion="Brace" />
+			<DetectChar context="TypesRoundBracket" char="(" />
+		</context>
+
+		<context name="TypesSquareBracket" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar context="#pop!NoRegExp" attribute="Symbol" char="]" endRegion="List" />
+			<IncludeRules context="TypesFindBrackets" />
+			<IncludeRules context="DefaultTypes" />
+			<IncludeRules context="Normal" />
+		</context>
+		<context name="TypesCurlyBracket" attribute="Normal Text" lineEndContext="#pop!Object">
+			<DetectChar context="#pop" attribute="Symbol" char="}" endRegion="Brace" />
+			<RegExpr context="#pop!Object" String="\S" firstNonSpace="true" lookAhead="true" /> <!-- FixPopLineEndContext -->
+			<IncludeRules context="TypesFindBrackets" />
+			<IncludeRules context="DefaultTypes" />
+			<IncludeRules context="Object" />
+		</context>
+		<context name="TypesRoundBracket" attribute="Normal Text" lineEndContext="#pop">
+			<DetectChar context="#pop!NoRegExp" char=")" />
+			<IncludeRules context="FixPopLineEndContext" />
+			<IncludeRules context="TypesFindBrackets" />
+			<IncludeRules context="DefaultTypes" />
+			<IncludeRules context="Normal" />
+		</context>
+
+		<context name="TypesAngleBracket" attribute="Normal Text" lineEndContext="#pop">
+			<DetectChar context="#pop" attribute="Symbol" char="&gt;" />
+			<IncludeRules context="TypesAngleBracketEnd" />
+			<IncludeRules context="FixPopLineEndContext" />
+			<IncludeRules context="TypesFindBrackets" />
+			<IncludeRules context="DefaultTypes" />
+			<IncludeRules context="Normal" />
+		</context>
+		<!-- NOTE: Context used by "typescript-react.xml" -->
+		<context name="TypesAngleBracketEnd" attribute="Normal Text" lineEndContext="#stay">
+			<AnyChar context="#pop" String="})];" lookAhead="true" />
+		</context>
+
+		<!-- new.target -->
+		<context name="NewTarget" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<DetectSpaces />
+			<AnyChar context="#stay" attribute="Symbol" String=".?!" />
+			<WordDetect context="#pop!NoRegExp" attribute="Keyword" String="target" />
+		</context>
+
+		<!-- After keyword list "control_export_types" -->
+		<context name="ControlExport" attribute="Normal Text" lineEndContext="#pop">
+			<AnyChar context="#pop" attribute="Normal Text" String="{;" lookAhead="true" />
+			<IncludeRules context="FindStrings" />
+			<RegExpr context="#stay" attribute="Types" String="&identifier;" />
+			<IncludeRules context="FindComments##JavaScript" />
+		</context>
+
+		<!-- "import" keyword -->
+		<context name="Import" attribute="Normal Text" lineEndContext="#pop">
+			<DetectChar context="#pop!ImportRequireKey" attribute="Symbol" char="=" />
+			<WordDetect context="#pop!NoRegExp" attribute="Keyword" String="meta" /> <!-- importmeta_property -->
+			<IncludeRules context="Normal" />
+		</context>
+		<context name="ImportRequireKey" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<RegExpr context="#stay" attribute="Keyword" String="\s*\b(require)\s*(?=\()" />
+			<DetectChar context="ImportRequire" attribute="Symbol" char="(" beginRegion="import" />
+		</context>
+		<context name="ImportRequire" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar context="#pop#pop" attribute="Symbol" char=")" endRegion="import" />
+			<IncludeRules context="FindStrings" />
+			<IncludeRules context="FindNumbers" />
+			<IncludeRules context="FindComments##JavaScript" />
+		</context>
+
+		<!-- Member Objects -->
+
+		<context name="MemberObject" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<IncludeRules context="DefaultMemberObject" />
+			<!-- Common functions -->
+			<keyword context="#pop!NoRegExp" attribute="Function Name" String="function_eventhandler" />
+			<keyword context="#pop!NoRegExp" attribute="Function Name" String="function_common" />
+		</context>
+
+		<context name="DefaultMemberObject" attribute="Normal Text" lineEndContext="#pop">
+			<IncludeRules context="FixPointMemberObject" />
+			<DetectChar context="#stay" attribute="Symbol" char="." />
+			<Detect2Chars context="#stay" attribute="Symbol" char="?" char1="." />
+			<Detect2Chars context="#stay" attribute="Symbol" char="!" char1="." />
+
+			<RegExpr context="#stay" attribute="Objects" String="&identifier;(?=\s*&objectOp;\.)" />
+			<IncludeRules context="FindFunctionName" /> <!-- #pop -->
+			<RegExpr context="#pop!NoRegExp" attribute="Object Member" String="&identifier;" />
+			<IncludeRules context="NoRegExp" />
+			<DetectSpaces />
+
+			<!-- Generic functions, variables y properties -->
+			<keyword context="#pop!NoRegExp" attribute="Object Member" String="variable_property" />
+			<keyword context="#pop!NoRegExp" attribute="Function Name" String="functions" />
+		</context>
+		<context name="FixPointMemberObject" attribute="Normal Text" lineEndContext="#pop">
+			<StringDetect context="#pop" attribute="Symbol" String="?..." />
+			<StringDetect context="#pop" attribute="Symbol" String="!..." />
+			<StringDetect context="#pop" attribute="Symbol" String="..." />
+		</context>
+
+		<!-- Built-in Classes -->
+
+		<!-- DOM Classes -->
+		<context name="FindMemberObjectDOM" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!NoRegExp">
+			<DetectSpaces />
+			<IncludeRules context="FixPointMemberObject" />
+			<DetectChar context="#pop!MemberObjectDOM" attribute="Symbol" char="." />
+			<Detect2Chars context="#pop!MemberObjectDOM" attribute="Symbol" char="?" char1="." />
+			<Detect2Chars context="#pop!MemberObjectDOM" attribute="Symbol" char="!" char1="." />
+		</context>
+		<context name="MemberObjectDOM" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<keyword context="#pop!NoRegExp" attribute="Constant" String="dom_constant" />
+			<keyword context="#pop!NoRegExp" attribute="Object Method (Built-in)" String="dom_functions" />
+			<keyword context="#pop!NoRegExp" attribute="Object Property (Built-in)" String="dom_property" />
+			<IncludeRules context="DefaultMemberObject" />
+			<keyword context="#pop!NoRegExp" attribute="Object Member" String="dom_variable" />
+		</context>
+		<!-- Node.js Classes -->
+		<context name="FindMemberObjectNode" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!NoRegExp">
+			<DetectSpaces />
+			<IncludeRules context="FixPointMemberObject" />
+			<DetectChar context="#pop!MemberObjectNode" attribute="Symbol" char="." />
+			<Detect2Chars context="#pop!MemberObjectNode" attribute="Symbol" char="?" char1="." />
+			<Detect2Chars context="#pop!MemberObjectNode" attribute="Symbol" char="!" char1="." />
+		</context>
+		<context name="MemberObjectNode" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<IncludeRules context="DefaultMemberObject" />
+			<keyword context="#pop!NoRegExp" attribute="Object Property (Built-in)" String="node_object" />
+		</context>
+		<!-- Math Class -->
+		<context name="FindMemberObjectMath" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!NoRegExp">
+			<DetectSpaces />
+			<IncludeRules context="FixPointMemberObject" />
+			<DetectChar context="#pop!MemberObjectMath" attribute="Symbol" char="." />
+			<Detect2Chars context="#pop!MemberObjectMath" attribute="Symbol" char="?" char1="." />
+			<Detect2Chars context="#pop!MemberObjectMath" attribute="Symbol" char="!" char1="." />
+		</context>
+		<context name="MemberObjectMath" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<keyword context="#pop!NoRegExp" attribute="Constant" String="math_property_constants" />
+			<keyword context="#pop!NoRegExp" attribute="Object Method (Built-in)" String="math_functions" />
+			<IncludeRules context="DefaultMemberObject" />
+		</context>
+		<!-- Promise Class -->
+		<context name="FindMemberObjectPromise" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!NoRegExp">
+			<DetectSpaces />
+			<IncludeRules context="FixPointMemberObject" />
+			<DetectChar context="#pop!MemberObjectPromise" attribute="Symbol" char="." />
+			<Detect2Chars context="#pop!MemberObjectPromise" attribute="Symbol" char="?" char1="." />
+			<Detect2Chars context="#pop!MemberObjectPromise" attribute="Symbol" char="!" char1="." />
+		</context>
+		<context name="MemberObjectPromise" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<keyword context="#pop!NoRegExp" attribute="Object Method (Built-in)" String="promise_functions" />
+			<IncludeRules context="DefaultMemberObject" />
+		</context>
+		<!-- JSON Class -->
+		<context name="FindMemberObjectJSON" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!NoRegExp">
+			<DetectSpaces />
+			<IncludeRules context="FixPointMemberObject" />
+			<DetectChar context="#pop!MemberObjectJSON" attribute="Symbol" char="." />
+			<Detect2Chars context="#pop!MemberObjectJSON" attribute="Symbol" char="?" char1="." />
+			<Detect2Chars context="#pop!MemberObjectJSON" attribute="Symbol" char="!" char1="." />
+		</context>
+		<context name="MemberObjectJSON" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<keyword context="#pop!NoRegExp" attribute="Object Method (Built-in)" String="json_functions" />
+			<IncludeRules context="DefaultMemberObject" />
+		</context>
+		<!-- Console Object -->
+		<context name="FindMemberObjectConsole" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!NoRegExp">
+			<DetectSpaces />
+			<IncludeRules context="FixPointMemberObject" />
+			<DetectChar context="#pop!MemberObjectConsole" attribute="Symbol" char="." />
+			<Detect2Chars context="#pop!MemberObjectConsole" attribute="Symbol" char="?" char1="." />
+			<Detect2Chars context="#pop!MemberObjectConsole" attribute="Symbol" char="!" char1="." />
+		</context>
+		<context name="MemberObjectConsole" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<keyword context="#pop!NoRegExp" attribute="Object Method (Built-in)" String="console_functions" />
+			<IncludeRules context="DefaultMemberObject" />
+		</context>
+		<!-- Process Object -->
+		<context name="FindMemberObjectProcess" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!NoRegExp">
+			<DetectSpaces />
+			<IncludeRules context="FixPointMemberObject" />
+			<DetectChar context="#pop!MemberObjectProcess" attribute="Symbol" char="." />
+			<Detect2Chars context="#pop!MemberObjectProcess" attribute="Symbol" char="?" char1="." />
+			<Detect2Chars context="#pop!MemberObjectProcess" attribute="Symbol" char="!" char1="." />
+		</context>
+		<context name="MemberObjectProcess" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<keyword context="#pop!NoRegExp" attribute="Object Method (Built-in)" String="process_functions" />
+			<keyword context="#pop!NoRegExp" attribute="Object Property (Built-in)" String="process_property" />
+			<IncludeRules context="DefaultMemberObject" />
+		</context>
+
+	</contexts>
+
+	<itemDatas>
+		<itemData name="Normal Text"      defStyleNum="dsNormal" spellChecking="false" />
+		<itemData name="Keyword"          defStyleNum="dsKeyword" spellChecking="false" />
+		<itemData name="ControlFlow"      defStyleNum="dsControlFlow" spellChecking="false" />
+		<itemData name="Reserved"         defStyleNum="dsKeyword" italic="true" spellChecking="false" />
+		<itemData name="Module"           defStyleNum="dsImport" spellChecking="false" />
+		<itemData name="Objects"          defStyleNum="dsVariable" spellChecking="false" />
+		<itemData name="Object Member"    defStyleNum="dsAttribute" spellChecking="false" />
+		<itemData name="Function Name"    defStyleNum="dsFunction" spellChecking="false" />
+		<itemData name="Built-in Objects" defStyleNum="dsBuiltIn" spellChecking="false" />
+		<itemData name="Object Property (Built-in)" defStyleNum="dsAttribute" italic="1" spellChecking="false" />
+		<itemData name="Object Method (Built-in)" defStyleNum="dsFunction" italic="1" spellChecking="false" />
+		<itemData name="Constant"         defStyleNum="dsConstant" spellChecking="false" />
+		<itemData name="Types"            defStyleNum="dsDataType" spellChecking="false" />
+		<itemData name="Parameter"        defStyleNum="dsNormal" spellChecking="false" />
+
+		<itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false" />
+		<itemData name="Octal"        defStyleNum="dsBaseN" spellChecking="false" />
+		<itemData name="Hexadecimal"  defStyleNum="dsBaseN" spellChecking="false" />
+		<itemData name="Binary"       defStyleNum="dsBaseN" spellChecking="false" />
+		<itemData name="Float"        defStyleNum="dsFloat" spellChecking="false" />
+		<itemData name="Template"     defStyleNum="dsVerbatimString" />
+		<itemData name="Substitution" defStyleNum="dsSpecialChar" spellChecking="false" />
+
+		<itemData name="Comment"      defStyleNum="dsComment" />
+		<itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="false" />
+	</itemDatas>
+
+</highlighting>
+
+<general>
+	<comments>
+		<comment name="singleLine" start="//" />
+		<comment name="multiLine" start="/*" end="*/" />
+	</comments>
+	<keywords casesensitive="1" additionalDeliminator="&quot;&apos;`" weakDeliminator="$" />
+</general>
+
+</language>
+<!-- kate: replace-tabs off; tab-width 3; indent-width 3; remove-trailing-spaces mod; dynamic-word-wrap off; -->

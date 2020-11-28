@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Highlighting for Common Intermediate Language (CIL) files
+     https://en.wikipedia.org/wiki/Common_Intermediate_Language
+-->
+<language name="Common Intermediate Language (CIL)" version="1" kateversion="5.0" section="Assembler" extensions="*.il" author="Volker Krause (vkrause@kde.org)" license="MIT">
+    <highlighting>
+        <list name="keyword-list">
+            <item>cil</item>
+            <item>class</item>
+            <item>catch</item>
+            <item>default</item>
+            <item>extends</item>
+            <item>extern</item>
+            <item>finally</item>
+            <item>instance</item>
+            <item>managed</item>
+            <item>method</item>
+            <item>private</item>
+            <item>public</item>
+            <item>static</item>
+            <item>try</item>
+            <item>virtual</item>
+        </list>
+        <list name="type-list">
+            <item>bool</item>
+            <item>float32</item>
+            <item>float64</item>
+            <item>int8</item>
+            <item>int32</item>
+            <item>int64</item>
+            <item>object</item>
+            <item>string</item>
+            <item>unsigned</item>
+            <item>void</item>
+        </list>
+        <list name="meta-list">
+            <item>assembly</item>
+            <item>custom</item>
+            <item>entrypoint</item>
+            <item>field</item>
+            <item>locals</item>
+            <item>namespace</item>
+            <item>maxstack</item>
+            <item>module</item>
+            <item>property</item>
+        </list>
+        <!-- see https://en.wikipedia.org/wiki/List_of_CIL_instructions -->
+        <list name="op-list">
+            <item>add</item>
+            <item>and</item>
+            <item>arglist</item>
+            <item>beq</item>
+            <item>bge</item>
+            <item>bgt</item>
+            <item>ble</item>
+            <item>blt</item>
+            <item>bne</item>
+            <item>box</item>
+            <item>br</item>
+            <item>break</item>
+            <item>brfalse</item>
+            <item>brinst</item>
+            <item>brnull</item>
+            <item>brtrue</item>
+            <item>brzero</item>
+            <item>call</item>
+            <item>calli</item>
+            <item>callvirt</item>
+            <item>castclass</item>
+            <item>ceq</item>
+            <item>cgt</item>
+            <item>ckfinite</item>
+            <item>clt</item>
+            <item>constrained</item>
+            <item>conv</item>
+            <item>cpblk</item>
+            <item>cpobj</item>
+            <item>div</item>
+            <item>dup</item>
+            <item>endfault</item>
+            <item>endfilter</item>
+            <item>endfinally</item>
+            <item>initblk</item>
+            <item>initobj</item>
+            <item>isinst</item>
+            <item>jmp</item>
+            <item>ldarg</item>
+            <item>ldarga</item>
+            <item>ldc</item>
+            <item>ldelem</item>
+            <item>ldelema</item>
+            <item>ldfld</item>
+            <item>ldflda</item>
+            <item>ldftn</item>
+            <item>ldind</item>
+            <item>ldlen</item>
+            <item>ldloc</item>
+            <item>ldloca</item>
+            <item>ldnull</item>
+            <item>ldobj</item>
+            <item>ldsfld</item>
+            <item>ldsflda</item>
+            <item>ldstr</item>
+            <item>ldtoken</item>
+            <item>ldvirtftn</item>
+            <item>leave</item>
+            <item>localloc</item>
+            <item>mkrefany</item>
+            <item>mul</item>
+            <item>neg</item>
+            <item>newarr</item>
+            <item>newobj</item>
+            <item>nop</item>
+            <item>not</item>
+            <item>or</item>
+            <item>pop</item>
+            <item>readonly</item>
+            <item>refanytype</item>
+            <item>refanyval</item>
+            <item>rem</item>
+            <item>ret</item>
+            <item>rethrow</item>
+            <item>shl</item>
+            <item>shr</item>
+            <item>sizeof</item>
+            <item>starg</item>
+            <item>stelem</item>
+            <item>stfld</item>
+            <item>stind</item>
+            <item>stloc</item>
+            <item>stobj</item>
+            <item>stsfld</item>
+            <item>sub</item>
+            <item>switch</item>
+            <item>tail</item>
+            <item>throw</item>
+            <item>unaligned</item>
+            <item>unbox</item>
+            <item>volatile</item>
+            <item>xor</item>
+        </list>
+
+        <contexts>
+            <context name="normal-context" attribute="Normal Text" lineEndContext="#stay">
+                <Detect2Chars attribute="Comment" char="/" char1="/" context="comment-context"/>
+                <Detect2Chars attribute="Comment" context="multiline-comment-context" char="/" char1="*" beginRegion="CommentRegion"/>
+                <keyword attribute="Keyword" context="#stay" String="keyword-list"/>
+                <keyword attribute="Data Type" context="#stay" String="type-list"/>
+                <keyword attribute="Meta Data" context="#stay" String="meta-list"/>
+                <keyword attribute="Instructions" context="#stay" String="op-list"/>
+                <DetectChar context="#stay" char="{" beginRegion="BlockRegion"/>
+                <DetectChar context="#stay" char="}" endRegion="BlockRegion"/>
+                <DetectChar attribute="String" context="string-context" char="&quot;"/>
+                <RegExpr attribute="Label" context="#stay" String="IL_[\da-f]+:"/>
+            </context>
+
+            <context name="string-context" attribute="String" lineEndContext="#pop">
+                <HlCStringChar attribute="Special Character" context="#stay"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+
+            <context name="comment-context" lineEndContext="#pop" attribute="Comment">
+                <IncludeRules context="##Alerts"/>
+            </context>
+            <context name="multiline-comment-context" lineEndContext="#stay" attribute="Comment">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="CommentRegion"/>
+                <IncludeRules context="##Alerts"/>
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Data Type" defStyleNum="dsDataType" spellChecking="false"/>
+            <itemData name="String" defStyleNum="dsString" spellChecking="false"/>
+            <itemData name="Special Character" defStyleNum="dsChar" spellChecking="false"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="Label" defStyleNum="dsPreprocessor" spellChecking="false"/>
+            <itemData name="Meta Data" defStyleNum="dsAttribute" spellChecking="false"/>
+            <itemData name="Instructions" defStyleNum="dsFunction" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+
+    <general>
+        <comments>
+            <comment name="multiLine" start="/*" end="*/" region="CommentRegion"/>
+            <comment name="singleLine" start="//"/>
+        </comments>
+        <keywords casesensitive="1"/>
+    </general>
+</language>

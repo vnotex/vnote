@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+
+*************************************************************************
+*                                                                       *
+*               Syntax highlighting for the GNU Assembler               *
+*                   Copyright (C) 2002, John Zaitseff                   *
+*                                                                       *
+*************************************************************************
+
+Updated:  Miquel Sabaté <mikisabate@gmail.com>
+Date:     14th September, 2010
+Version:  1.02
+
+Updated:  Roland Pabel <roland@pabel.name>
+Date:     15th August, 2002
+Version:  1.01
+
+Author:   John Zaitseff <J.Zaitseff@zap.org.au>
+Date:     15th April, 2002
+Version:  1.0
+
+This file contains the XML syntax highlighting description for the GNU
+Assembler, for KATE, the KDE Advanced Editor.  Keywords have been taken
+directly from the GNU Assembler source code (read.c).
+
+Known problems: Floating point highlighting does not work correctly.
+
+This program, including associated files, is free software.  You may
+distribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation; either Version 2 of
+the license, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+-->
+
+<language name="GNU Assembler" version="3" kateversion="5.0" section="Assembler" extensions="*.s;*.S" mimetype="text/x-asm" author="John Zaitseff (J.Zaitseff@zap.org.au), Roland Pabel (roland@pabel.name), Miquel Sabaté (mikisabate@gmail.com)" license="GPLv2+">
+  <highlighting>
+    <list name="keywords">
+      <item>.abort</item>
+      <item>.align</item>
+      <item>.app-file</item>
+      <item>.appline</item>
+      <item>.ascii</item>
+      <item>.asciz</item>
+      <item>.att_syntax</item>
+      <item>.balign</item>
+      <item>.balignl</item>
+      <item>.balignw</item>
+      <item>.byte</item>
+      <item>.code16</item>
+      <item>.code32</item>
+      <item>.comm</item>
+      <item>.common.s</item>
+      <item>.common</item>
+      <item>.data</item>
+      <item>.dc.b</item>
+      <item>.dc.d</item>
+      <item>.dc.l</item>
+      <item>.dc.s</item>
+      <item>.dc.w</item>
+      <item>.dc.x</item>
+      <item>.dc</item>
+      <item>.dcb.b</item>
+      <item>.dcb.d</item>
+      <item>.dcb.l</item>
+      <item>.dcb.s</item>
+      <item>.dcb.w</item>
+      <item>.dcb.x</item>
+      <item>.dcb</item>
+      <item>.debug</item>
+      <item>.def</item>
+      <item>.desc</item>
+      <item>.dim</item>
+      <item>.double</item>
+      <item>.ds.b</item>
+      <item>.ds.d</item>
+      <item>.ds.l</item>
+      <item>.ds.p</item>
+      <item>.ds.s</item>
+      <item>.ds.w</item>
+      <item>.ds.x</item>
+      <item>.ds</item>
+      <item>.dsect</item>
+      <item>.eject</item>
+      <item>.else</item>
+      <item>.elsec</item>
+      <item>.elseif</item>
+      <item>.end</item>
+      <item>.endc</item>
+      <item>.endef</item>
+      <item>.endfunc</item>
+      <item>.endif</item>
+      <item>.endm</item>
+      <item>.endr</item>
+      <item>.equ</item>
+      <item>.equiv</item>
+      <item>.err</item>
+      <item>.exitm</item>
+      <item>.extend</item>
+      <item>.extern</item>
+      <item>.fail</item>
+      <item>.file</item>
+      <item>.fill</item>
+      <item>.float</item>
+      <item>.format</item>
+      <item>.func</item>
+      <item>.global</item>
+      <item>.globl</item>
+      <item>.hidden</item>
+      <item>.hword</item>
+      <item>.ident</item>
+      <item>.if</item>
+      <item>.ifc</item>
+      <item>.ifdef</item>
+      <item>.ifeq</item>
+      <item>.ifeqs</item>
+      <item>.ifge</item>
+      <item>.ifgt</item>
+      <item>.ifle</item>
+      <item>.iflt</item>
+      <item>.ifnc</item>
+      <item>.ifndef</item>
+      <item>.ifne</item>
+      <item>.ifnes</item>
+      <item>.ifnotdef</item>
+      <item>.include</item>
+      <item>.int</item>
+      <item>.intel_syntax</item>
+      <item>.internal</item>
+      <item>.irep</item>
+      <item>.irepc</item>
+      <item>.irp</item>
+      <item>.irpc</item>
+      <item>.lcomm</item>
+      <item>.lflags</item>
+      <item>.line</item>
+      <item>.linkonce</item>
+      <item>.list</item>
+      <item>.llen</item>
+      <item>.ln</item>
+      <item>.long</item>
+      <item>.lsym</item>
+      <item>.macro</item>
+      <item>.mexit</item>
+      <item>.name</item>
+      <item>.noformat</item>
+      <item>.nolist</item>
+      <item>.nopage</item>
+      <item>noprefix</item>
+      <item>.octa</item>
+      <item>.offset</item>
+      <item>.org</item>
+      <item>.p2align</item>
+      <item>.p2alignl</item>
+      <item>.p2alignw</item>
+      <item>.page</item>
+      <item>.plen</item>
+      <item>.popsection</item>
+      <item>.previous</item>
+      <item>.print</item>
+      <item>.protected</item>
+      <item>.psize</item>
+      <item>.purgem</item>
+      <item>.pushsection</item>
+      <item>.quad</item>
+      <item>.rodata</item>
+      <item>.rep</item>
+      <item>.rept</item>
+      <item>.rva</item>
+      <item>.sbttl</item>
+      <item>.scl</item>
+      <item>.sect.s</item>
+      <item>.sect</item>
+      <item>.section.s</item>
+      <item>.section</item>
+      <item>.set</item>
+      <item>.short</item>
+      <item>.single</item>
+      <item>.size</item>
+      <item>.skip</item>
+      <item>.sleb128</item>
+      <item>.space</item>
+      <item>.spc</item>
+      <item>.stabd</item>
+      <item>.stabn</item>
+      <item>.stabs</item>
+      <item>.string</item>
+      <item>.struct</item>
+      <item>.subsection</item>
+      <item>.symver</item>
+      <item>.tag</item>
+      <item>.text</item>
+      <item>.title</item>
+      <item>.ttl</item>
+      <item>.type</item>
+      <item>.uleb128</item>
+      <item>.use</item>
+      <item>.val</item>
+      <item>.version</item>
+      <item>.vtable_entry</item>
+      <item>.vtable_inherit</item>
+      <item>.weak</item>
+      <item>.word</item>
+      <item>.xcom</item>
+      <item>.xdef</item>
+      <item>.xref</item>
+      <item>.xstabs</item>
+      <item>.zero</item>
+      <!-- Directives specific to ARM -->
+      <item>.arm</item>
+      <item>.bss</item>
+      <item>.code</item>
+      <item>.even</item>
+      <item>.force_thumb</item>
+      <item>.ldouble</item>
+      <item>.loc</item>
+      <item>.ltorg</item>
+      <item>.packed</item>
+      <item>.pool</item>
+      <item>.req</item>
+      <item>.thumb</item>
+      <item>.thumb_func</item>
+      <item>.thumb_set</item>
+    </list>
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <RegExpr      attribute="Label" context="#stay" String="[_\w\d-]*\s*:" />
+        <keyword      attribute="Keyword" context="#stay" String="keywords"/>
+        <HlCOct       attribute="Octal" context="#stay" />
+        <HlCHex       attribute="Hex" context="#stay" />
+        <RegExpr      attribute="Binary" context="#stay" String="0[bB][01]+" />
+        <Int          attribute="Decimal" context="#stay" />
+        <RegExpr      attribute="Float" context="#stay" String="0[fFeEdD][-+]?[0-9]*\.?[0-9]*[eE]?[-+]?[0-9]+" />
+        <RegExpr      attribute="Normal Text" context="#stay" String="[A-Za-z_.$][A-Za-z0-9_.$]*" />
+        <HlCChar      attribute="Char" context="#stay" />
+        <RegExpr      attribute="Char" context="#stay" String="'(\\x[0-9a-fA-F][0-9a-fA-F]?|\\[0-7]?[0-7]?[0-7]?|\\.|.)" />
+        <DetectChar   attribute="String" context="String" char="&quot;" />
+        <RegExpr      attribute="Preprocessor" context="Preprocessor" String="#\s*if(?:def|ndef)?(?=\s+\S)" insensitive="true" beginRegion="PP" firstNonSpace="true" />
+        <RegExpr      attribute="Preprocessor" context="Preprocessor" String="#\s*endif" insensitive="true" endRegion="PP" firstNonSpace="true" />
+        <RegExpr      attribute="Preprocessor" context="Define" String="#\s*define.*((?=\\))" insensitive="true" firstNonSpace="true" />
+        <RegExpr      attribute="Preprocessor" context="Preprocessor" String="#\s*(?:el(?:se|if)|include(?:_next)?|define|undef|line|error|warning|pragma)" firstNonSpace="true" />
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="*" />
+        <AnyChar      attribute="Comment" context="Commentar 2" String="@;#" />
+        <AnyChar      attribute="Symbol" context="#stay" String="!#%&amp;*()+,-&lt;=&gt;?/:[]^{|}~" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 1">
+        <IncludeRules context="##Alerts" />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 2" >
+        <IncludeRules context="##Alerts" />
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue  attribute="String" context="Some Context" />
+        <HlCStringChar attribute="String Char" context="#stay" />
+        <DetectChar    attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor" />
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Define">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Some Context" />
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"   />
+      <itemData name="Label"        defStyleNum="dsKeyword"  />
+      <itemData name="Keyword"      defStyleNum="dsKeyword"  />
+      <itemData name="Decimal"      defStyleNum="dsDecVal"   />
+      <itemData name="Octal"        defStyleNum="dsBaseN"    />
+      <itemData name="Hex"          defStyleNum="dsBaseN"    />
+      <itemData name="Binary"       defStyleNum="dsBaseN"    />
+      <itemData name="Float"        defStyleNum="dsFloat"    />
+      <itemData name="Char"         defStyleNum="dsChar"     />
+      <itemData name="String"       defStyleNum="dsString"   />
+      <itemData name="String Char"  defStyleNum="dsSpecialChar" />
+      <itemData name="Symbol"       defStyleNum="dsNormal"   />
+      <itemData name="Comment"      defStyleNum="dsComment"  />
+      <itemData name="Preprocessor" defStyleNum="dsPreprocessor" />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <!--<comment name="singleLine" start=";" />
+      <comment name="singleLine" start="@" />
+      <comment name="singleLine" start="#" />-->
+      <comment name="multiLine"  start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="_.$" />
+  </general>
+</language>

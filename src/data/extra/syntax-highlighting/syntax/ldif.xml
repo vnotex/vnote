@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="LDIF" version="3" kateversion="2.4" section="Database" extensions="*.ldif" mimetype="application/directory" author="Andreas Hochsteger (e9625392@student.tuwien.ac.at)" license="">
+	<highlighting>
+		<list name="attributetypes">
+			<item>IPPhone</item>
+			<item>URL</item>
+			<item>aRecord</item>
+			<item>aliasedEntryName</item>
+			<item>aliasedObjectName</item>
+			<item>associatedDomain</item>
+			<item>associatedName</item>
+			<item>audio</item>
+			<item>authorityRevocationList</item>
+			<item>bootFile</item>
+			<item>bootParameter</item>
+			<item>buildingName</item>
+			<item>businessCategory</item>
+			<item>c</item>
+			<item>cACertificate</item>
+			<item>cNAMERecord</item>
+			<item>certificateRevocationList</item>
+			<item>cn</item>
+			<item>comment</item>
+			<item>commonName</item>
+			<item>conferenceInformation</item>
+			<item>corbaContainer</item>
+			<item>corbaRepositoryId</item>
+			<item>countryName</item>
+			<item>crossCertificatePair</item>
+			<item>custom1</item>
+			<item>custom2</item>
+			<item>custom3</item>
+			<item>custom4</item>
+			<item>dITRedirect</item>
+			<item>dSAQuality</item>
+			<item>dc</item>
+			<item>deltaRevocationList</item>
+			<item>description</item>
+			<item>destinationIndicator</item>
+			<item>distinguishedName</item>
+			<item>dmdName</item>
+			<item>dnQualifier</item>
+			<item>documentAuthor</item>
+			<item>documentIdentifier</item>
+			<item>documentLocation</item>
+			<item>documentPublisher</item>
+			<item>documentTitle</item>
+			<item>documentVersion</item>
+			<item>domainComponent</item>
+			<item>enhancedSearchGuide</item>
+			<item>facsimileTelephoneNumber</item>
+			<item>fax</item>
+			<item>gecos</item>
+			<item>generationQualifier</item>
+			<item>gidNumber</item>
+			<item>givenName</item>
+			<item>gn</item>
+			<item>homeDirectory</item>
+			<item>homePostalAddress</item>
+			<item>homeUrl</item>
+			<item>host</item>
+			<item>houseIdentifier</item>
+			<item>info</item>
+			<item>initials</item>
+			<item>internationaliSDNNumber</item>
+			<item>ipHostNumber</item>
+			<item>ipNetmaskNumber</item>
+			<item>ipNetworkNumber</item>
+			<item>ipProtocolNumber</item>
+			<item>ipServicePort</item>
+			<item>ipServiceProtocol</item>
+			<item>janetMailbox</item>
+			<item>javaClassNames</item>
+			<item>javaCodebase</item>
+			<item>javaContainer</item>
+			<item>javaDoc</item>
+			<item>javaFactory</item>
+			<item>javaReferenceAddress</item>
+			<item>javaSerializedData</item>
+			<item>knowledgeInformation</item>
+			<item>l</item>
+			<item>labeledURI</item>
+			<item>lastModifiedBy</item>
+			<item>lastModifiedTime</item>
+			<item>lmpassword</item>
+			<item>localityName</item>
+			<item>loginShell</item>
+			<item>mDRecord</item>
+			<item>mXRecord</item>
+			<item>macAddress</item>
+			<item>mail</item>
+			<item>manager</item>
+			<item>member</item>
+			<item>memberNisNetgroup</item>
+			<item>memberUid</item>
+			<item>mozillaHomeCountryName</item>
+			<item>mozillaHomeFriendlyCountryName</item>
+			<item>mozillaHomeLocalityName</item>
+			<item>mozillaHomePostalAddress2</item>
+			<item>mozillaHomePostalCode</item>
+			<item>mozillaHomeState</item>
+			<item>mozillaPostalAddress2</item>
+			<item>mozillaSecondemail</item>
+			<item>nSRecord</item>
+			<item>name</item>
+			<item>nisMapEntry</item>
+			<item>nisMapName</item>
+			<item>nisNetgroupTriple</item>
+			<item>ntpasswd</item>
+			<item>o</item>
+			<item>objectClass</item>
+			<item>oncRpcNumber</item>
+			<item>organizationName</item>
+			<item>organizationalStatus</item>
+			<item>organizationalUnitName</item>
+			<item>otherFacsimiletelephoneNumber</item>
+			<item>otherMailbox</item>
+			<item>ou</item>
+			<item>owner</item>
+			<item>personalSignature</item>
+			<item>personalTitle</item>
+			<item>photo</item>
+			<item>physicalDeliveryOfficeName</item>
+			<item>postOfficeBox</item>
+			<item>postalAddress</item>
+			<item>postalCode</item>
+			<item>preferredDeliveryMethod</item>
+			<item>presentationAddress</item>
+			<item>protocolInformation</item>
+			<item>rdn</item>
+			<item>registeredAddress</item>
+			<item>reports</item>
+			<item>rfc822Mailbox</item>
+			<item>roleOccupant</item>
+			<item>roomNumber</item>
+			<item>sOARecord</item>
+			<item>searchGuide</item>
+			<item>secretary</item>
+			<item>seeAlso</item>
+			<item>serialNumber</item>
+			<item>shadowExpire</item>
+			<item>shadowFlag</item>
+			<item>shadowInactive</item>
+			<item>shadowLastChange</item>
+			<item>shadowMax</item>
+			<item>shadowMin</item>
+			<item>shadowWarning</item>
+			<item>singleLevelQuality</item>
+			<item>sn</item>
+			<item>st</item>
+			<item>stateOrProvinceName</item>
+			<item>street</item>
+			<item>streetAddress</item>
+			<item>subtreeMaximumQuality</item>
+			<item>subtreeMinimumQuality</item>
+			<item>supportedAlgorithms</item>
+			<item>supportedApplicationContext</item>
+			<item>surname</item>
+			<item>telephoneNumber</item>
+			<item>teletexTerminalIdentifier</item>
+			<item>telexNumber</item>
+			<item>textEncodedORAddress</item>
+			<item>title</item>
+			<item>uid</item>
+			<item>uidNumber</item>
+			<item>uniqueIdentifier</item>
+			<item>uniqueMember</item>
+			<item>userCertificate</item>
+			<item>userClass</item>
+			<item>userPassword</item>
+			<item>userid</item>
+			<item>workUrl</item>
+			<item>x121Address</item>
+			<item>x500UniqueIdentifier</item>
+			<item>xmozillaNickname</item>
+			<item>xmozillaUseHtmlMail</item>
+			<item>xmozillanickname</item>
+			<item>xmozillausehtmlmail</item>
+		</list>
+		<list name="objectclasses">
+			<item>RFC822localPart</item>
+			<item>SUP</item>
+			<item>account</item>
+			<item>alias</item>
+			<item>applicationEntity</item>
+			<item>applicationProcess</item>
+			<item>bootableDevice</item>
+			<item>cRLDistributionPoint</item>
+			<item>certificationAuthority</item>
+			<item>certificationAuthority-V2</item>
+			<item>corbaObject</item>
+			<item>corbaObjectReference</item>
+			<item>country</item>
+			<item>dNSDomain</item>
+			<item>dSA</item>
+			<item>dcObject</item>
+			<item>deltaCRL</item>
+			<item>device</item>
+			<item>dmd</item>
+			<item>document</item>
+			<item>documentSeries</item>
+			<item>domain</item>
+			<item>domainRelatedObject</item>
+			<item>friendlyCountry</item>
+			<item>groupOfNames</item>
+			<item>groupOfUniqueNames</item>
+			<item>ieee802Device</item>
+			<item>inetOrgPerson</item>
+			<item>ipHost</item>
+			<item>ipNetwork</item>
+			<item>ipProtocol</item>
+			<item>ipService</item>
+			<item>javaClassName</item>
+			<item>javaMarshalledObject</item>
+			<item>javaNamingReference</item>
+			<item>javaObject</item>
+			<item>javaSerializedObject</item>
+			<item>labeledURIObject</item>
+			<item>locality</item>
+			<item>mozillaAbPersonObsolete</item>
+			<item>nisMap</item>
+			<item>nisNetgroup</item>
+			<item>nisObject</item>
+			<item>officePerson</item>
+			<item>oncRpc</item>
+			<item>organization</item>
+			<item>organizationalPerson</item>
+			<item>organizationalRole</item>
+			<item>organizationalUnit</item>
+			<item>pager</item>
+			<item>pagerTelephoneNumber</item>
+			<item>person</item>
+			<item>pilotDSA</item>
+			<item>pilotObject</item>
+			<item>pilotOrganization</item>
+			<item>pkiCA</item>
+			<item>pkiUser</item>
+			<item>posixAccount</item>
+			<item>posixGroup</item>
+			<item>qualityLabelledData</item>
+			<item>residentialPerson</item>
+			<item>rid</item>
+			<item>room</item>
+			<item>sambaAccount</item>
+			<item>shadowAccount</item>
+			<item>simpleSecurityObject</item>
+			<item>strongAuthenticationUser</item>
+			<item>telephoneNumber</item>
+			<item>top</item>
+			<item>uid</item>
+			<item>uidNumber</item>
+			<item>uidObject</item>
+			<item>userSecurityInformation</item>
+			<item>userid</item>
+			<item>xmozillaanyphone</item>
+			<item>zillaPerson</item>
+		</list>
+		<contexts>
+			<context name="ctxStart" attribute="Value (Standard)" lineEndContext="#stay">
+				<RegExpr String="#.*$" attribute="Comment" context="#stay"/>
+				<DetectChar char=":" attribute="Description Keyword" context="ctxEncoded"/>
+				<DetectChar char="&lt;" attribute="Description Keyword" context="ctxURL"/>
+				<RegExpr String="[^:&lt;]" attribute="Value (Standard)" context="ctxStandard"/>
+				<RegExpr String="[\w\-]+((;[\w\-]+)+)?:" attribute="Description Keyword" context="#stay" column="0"/>
+			</context>
+			<context name="ctxEncoded" attribute="Value (Encoded)" lineEndContext="#stay">
+				<RegExpr String="#.*$" attribute="Comment" context="#stay"/>
+				<RegExpr String="\s.*$" attribute="Value (Encoded)" context="#stay"/>
+				<RegExpr String="[\w\-]+((;[\w\-]+)+)?:" attribute="Description Keyword" context="#pop" column="0"/>
+			</context>
+			<context name="ctxURL" attribute="Value (URL)" lineEndContext="#stay">
+				<RegExpr String="#.*$" attribute="Comment" context="#stay"/>
+				<RegExpr String="\s+[\w]+://[\w/.]+" attribute="Value (URL)" context="#stay"/>
+				<RegExpr String="\s.*$" attribute="Value (URL)" context="#stay"/>
+				<RegExpr String="[\w\-]+((;[\w\-]+)+)?:" attribute="Description Keyword" context="#pop" column="0"/>
+			</context>
+			<context name="ctxStandard" attribute="Value (Standard)" lineEndContext="#stay">
+				<RegExpr String="#.*$" attribute="Comment" context="#stay"/>
+				<RegExpr String="\{\w+\}.*$" attribute="Value (Encrypted)" context="ctxEncrypted"/>
+				<keyword String="attributetypes" attribute="AttributeType" context="#stay"/>
+				<keyword String="objectclasses" attribute="ObjectClass" context="#stay"/>
+				<RegExpr String="[\w\-]+((;[\w\-]+)+)?:" attribute="Description Keyword" context="#pop" column="0"/>
+				<RegExpr String="[a-zA-Z0-9\-]+=" attribute="Value (Keyword)" context="#stay"/>
+			</context>
+			<context name="ctxEncrypted" attribute="Value (Encrypted)" lineEndContext="#stay">
+				<RegExpr String="#.*$" attribute="Comment" context="#stay"/>
+				<RegExpr String="\s.*$" attribute="Value (Encrypted)" context="#stay"/>
+				<RegExpr String="[\w\-]+((;[\w\-]+)+)?:" attribute="Description Keyword" context="#pop#pop" column="0"/>
+			</context>
+		</contexts>
+		<itemDatas>
+			<itemData name="Comment"		defStyleNum="dsComment"	color="#808080" selColor="#808080" bold="0" italic="0"/>
+			<itemData name="AttributeType"		defStyleNum="dsKeyword"	color="#404040" selColor="#FFFFFF" bold="1" italic="0"/>
+			<itemData name="ObjectClass"		defStyleNum="dsKeyword"	color="#800080" selColor="#FFFFFF" bold="1" italic="0"/>
+			<itemData name="Description Keyword"	defStyleNum="dsKeyword"	color="#000000" selColor="#FFFFFF" bold="1" italic="0"/>
+			<itemData name="Value (Standard)"	defStyleNum="dsString"	color="#008000" selColor="#008000" bold="0" italic="0"/>
+			<itemData name="Value (Encoded)"	defStyleNum="dsString"	color="#FF8000" selColor="#0080FF" bold="0" italic="0"/>
+			<itemData name="Value (Encrypted)"	defStyleNum="dsString"	color="#FF0000" selColor="#00FFFF" bold="0" italic="0"/>
+			<itemData name="Value (Keyword)"	defStyleNum="dsString"	color="#008000" selColor="#800080" bold="1" italic="0"/>
+			<itemData name="Value (URL)"		defStyleNum="dsString"	color="#0000FF" selColor="#FFFF00" bold="0" italic="0"/>
+		</itemDatas>
+	</highlighting>
+</language>

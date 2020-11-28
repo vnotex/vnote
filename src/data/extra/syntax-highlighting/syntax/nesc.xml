@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="nesC" author="Shakthi Kannan" license="GPLv2" version="4" kateversion="2.3" section="Sources" extensions="*.nc" mimetype="text/x-ncsrc" priority="5">
+  <highlighting>
+    <list name="keywords">
+      <item>break</item>
+      <item>case</item>
+      <item>continue</item>
+      <item>default</item>
+      <item>do</item>
+      <item>else</item>
+      <item>enum</item>
+      <item>extern</item>
+      <item>for</item>
+      <item>goto</item>
+      <item>if</item>
+      <item>inline</item>
+      <item>return</item>
+      <item>sizeof</item>
+      <item>struct</item>
+      <item>switch</item>
+      <item>typedef</item>
+      <item>union</item>
+      <item>while</item>  <item>interface</item>
+      <item>module</item>
+      <item>configuration</item>
+      <item>implementation</item>
+      <item>components</item>
+      <item>as</item>
+      <item>uses</item>
+      <item>provides</item>
+      <item>includes</item>
+      <item>command</item>
+      <item>event</item>
+      <item>async</item>
+      <item>task</item>
+      <item>norace</item>
+      <item>default</item>
+      <item>__attribute__</item>
+      <item>atomic</item>
+      <item>call</item>
+      <item>signal</item>
+      <item>post</item>
+      
+    </list>
+    <list name="types">
+      <item>auto</item>
+      <item>char</item>
+      <item>const</item>
+      <item>double</item>
+      <item>float</item>
+      <item>int</item>
+      <item>long</item>
+      <item>register</item>
+      <item>restrict</item>
+      <item>short</item>
+      <item>signed</item>
+      <item>static</item>
+      <item>unsigned</item>
+      <item>void</item>
+      <item>volatile</item>
+      <item>_Imaginary</item>
+      <item>_Complex</item>
+      <item>_Bool</item>
+      <item>bool</item>
+      <item>uint8_t</item>
+      <item>uint16_t</item>
+      <item>uint32_t</item>
+      <item>uint64_t</item>
+      <item>result_t</item>
+      <item>SUCCESS</item>
+      <item>FAIL</item>
+      <item>TRUE</item>
+      <item>FALSE</item>
+      <item>TOSH_INTERRUPT</item>
+      <item>TOSH_SIGNAL</item>
+      <item>TOS_MsgPtr</item>
+      <item>TOS_Msg</item>
+    </list>
+    <list name="attention">
+      <item>FIXME</item>
+      <item>TODO</item>
+      <item>###</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1"/>
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"/>
+        <Float attribute="Float" context="Float Suffixes"/>
+        <HlCOct attribute="Octal" context="#stay"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Int attribute="Decimal" context="Int Suffixes"/>
+        <HlCChar attribute="Char" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+        <StringDetect attribute="Preprocessor" context="Outscoped" String="#if 0" insensitive="false"/>
+        <DetectChar attribute="Preprocessor" context="Preprocessor" char="#"/>
+        <RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*[(])"/>
+        <RegExpr attribute="Symbol" context="Member" String="[.]{1,1}"/>
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^;"/>
+      </context>
+      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <AnyChar String="fF" attribute="Float" context="#pop"/>
+      </context>
+      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Member">
+        <RegExpr attribute="Function" context="#pop" String="\b[_\w][_\w\d]*(?=[\s]*)"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+        <IncludeRules context="##Alerts"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <keyword attribute="Decimal" context="#stay" String="attention"/>
+      </context>
+
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+        <RegExpr attribute="Preprocessor" context="Define" String="define.*((?=\\))"/>
+        <RegExpr attribute="Preprocessor" context="#stay" String="define.*"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
+        <Detect2Chars attribute="Comment" context="Commentar/Preprocessor" char="/" char1="*" beginRegion="Comment2"/>
+      </context>
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Define">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar/Preprocessor">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment2"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Outscoped">
+        <keyword attribute="Decimal" context="#stay" String="attention"/>
+        <RegExpr attribute="Comment" context="Outscoped intern" String="^#if"/>
+        <RegExpr attribute="Preprocessor" context="#pop" String="#endif"/>
+        <RegExpr attribute="Preprocessor" context="#pop" String="#else"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Outscoped intern">
+        <RegExpr attribute="Comment" context="Outscoped intern" String="#if"/>
+        <RegExpr attribute="Comment" context="#pop" String="#endif"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Function" defStyleNum="dsKeyword" color="#000080" selColor="#ffffff" bold="0" italic="0"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal"/>
+      <itemData name="Octal" defStyleNum="dsBaseN"/>
+      <itemData name="Hex" defStyleNum="dsBaseN"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="Char" defStyleNum="dsChar"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="String Char" defStyleNum="dsChar"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Preprocessor" defStyleNum="dsOthers"/>
+      <itemData name="Prep. Lib" defStyleNum="dsOthers"/> <!--,Qt::darkYellow,Qt::yellow,false,false)); -->
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="/*" end="*/"/>
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+</language>

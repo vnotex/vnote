@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Valgrind Suppression" section="Other" extensions="*.supp;" mimetype="" version="2" kateversion="2.4" author="Milian Wolff (mail@milianw.de)" license="LGPL">
+<highlighting>
+<contexts>
+  <context name="File" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar char="#" attribute="Comment" context="Comment" firstNonSpace="true" />
+    <DetectChar char="{" attribute="Normal Text" context="Rule" firstNonSpace="true" />
+ </context>
+
+  <context name="Rule" attribute="Normal Text" lineEndContext="#stay" >
+    <RegExpr attribute="RuleName" String="^[^\}]+$" context="Rule2" />
+    <DetectChar char="}" attribute="Normal Text" context="#pop" firstNonSpace="true" />
+  </context>
+
+  <context name="Rule2" attribute="Normal Text" lineEndContext="#stay" >
+    <RegExpr attribute="ErrorKind" String="\w+:\w+" context="Rule3" />
+    <DetectChar char="}" attribute="Normal Text" context="#pop#pop" firstNonSpace="true" />
+  </context>
+
+  <context name="Rule3" attribute="Normal Text" lineEndContext="#stay" >
+    <RegExpr attribute="FrameKind" String="fun:|obj:|\.\.\." context="#stay" />
+    <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop" firstNonSpace="true" />
+  </context>
+
+  <context name="Comment" attribute="Comment" lineEndContext="#pop">
+    <DetectSpaces />
+    <IncludeRules context="##Alerts" />
+    <DetectIdentifier />
+  </context>
+</contexts>
+
+
+<itemDatas>
+ <itemData name="Normal Text" defStyleNum="dsNormal" />
+ <itemData name="RuleName" defStyleNum="dsKeyword" />
+ <itemData name="Comment" defStyleNum="dsComment" />
+ <itemData name="ErrorKind" defStyleNum="dsOthers" />
+ <itemData name="FrameKind" defStyleNum="dsFunction" />
+</itemDatas>
+</highlighting>
+
+
+<general>
+ <comments>
+  <comment name="singleLine" start="#" />
+ </comments>
+ <keywords casesensitive="0" />
+</general>
+
+</language>

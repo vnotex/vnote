@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--***********************************************************************-->
+<!-- $Id: vera.xml 6 2008-12-07 21:19:40Z seanoboyle $                     -->
+<!--***********************************************************************-->
+<!--  This program is free software: you can redistribute it and/or modify -->
+<!--  it under the terms of the GNU General Public License as published by -->
+<!--  the Free Software Foundation, either version 3 of the License, or    -->
+<!--  (at your option) any later version.                                  -->
+<!--                                                                       -->
+<!--  This program is distributed in the hope that it will be useful,      -->
+<!--  but WITHOUT ANY WARRANTY; without even the implied warranty of       -->
+<!--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        -->
+<!--  GNU General Public License for more details.                         -->
+<!--                                                                       -->
+<!--  You should have received a copy of the GNU General Public License    -->
+<!--  along with this program.  If not, see <http://www.gnu.org/licenses/>.-->
+<!--                                                                       -->
+<!--***********************************************************************-->
+<!-- Title:        Vera Language Keywords File for Kate Editor             -->
+<!-- Description:  This file contains the Vera keywords defined in the     -->
+<!--               OpenVera LRM: Testbench Ver 1.4.4 in the format expected-->
+<!--               by the Kate Editor.                                     -->
+<!--                                                                       -->
+<!-- Original Author: Sean O'Boyle                                         -->
+<!-- Contact:         seanoboyle@intelligentdv.com                         -->
+<!-- Company:         Intelligent Design Verification                      -->
+<!-- Company URL:     http://intelligentdv.com                             -->
+<!--                                                                       -->
+<!-- Download the most recent version here:                                -->
+<!--                  http://intelligentdv.com/downloads                   -->
+<!--                                                                       -->
+<!-- File Bugs Here:  http://bugs.intelligentdv.com                        -->
+<!--        Project:  SyntaxKateVera                                       -->
+<!--                                                                       -->
+<!-- File: vera.xml                                                        -->
+<!-- $LastChangedBy: seanoboyle $                                          -->
+<!-- $LastChangedDate: 2008-12-07 13:19:40 -0800 (Sun, 07 Dec 2008) $      -->
+<!-- $LastChangedRevision: 6 $                                             -->
+<!--                                                                       -->
+<!--***********************************************************************-->
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Vera" version="5" kateversion="5.0" section="Hardware" extensions="*.vr;*.vri;*.vrh" mimetype="text/x-vera-src" author="Sean O'Boyle (seanoboyle@intelligentdv.com)" license="GPLv3+">
+  <highlighting>
+    <list name="keywords">
+       <item>after</item>
+       <item>all</item>
+       <item>any</item>
+       <item>around</item>
+       <item>assoc_index</item>
+       <item>assoc_size</item>
+       <item>async</item>
+       <item>bad_state</item>
+       <item>bad_trans</item>
+       <item>before</item>
+       <item>begin</item>
+       <item>big_endian</item>
+       <item>bind</item>
+       <item>bin_activation</item>
+       <item>bit_normal</item>
+       <item>bit_reverse</item>
+       <item>break</item>
+       <item>breakpoint</item>
+       <item>case</item>
+       <item>casex</item>
+       <item>casez</item>
+       <item>class</item>
+       <item>constraint</item>
+       <item>continue</item>
+       <item>coverage</item>
+       <item>coverage_block</item>
+       <item>coverage_def</item>
+       <item>coverage_depth</item>
+       <item>coverage_goal</item>
+       <item>coverage_group</item>
+       <item>coverage_option</item>
+       <item>coverage_val</item>
+       <item>cross_num_print_missing</item>
+       <item>cross_auto_bin_max</item>
+       <item>cov_comment</item>
+       <item>default</item>
+       <item>depth</item>
+       <item>dist</item>
+       <item>do</item>
+       <item>else</item>
+       <item>end</item>
+       <item>enum</item>
+       <item>exhaustive</item>
+       <item>export</item>
+       <item>extends</item>
+       <item>extern</item>
+       <item>for</item>
+       <item>foreach</item>
+       <item>fork</item>
+       <item>function</item>
+       <item>hdl_task</item>
+       <item>hdl_node</item>
+       <item>hide</item>
+       <item>if</item>
+       <item>illegal_self_transition</item>
+       <item>illegal_state</item>
+       <item>illegal_transition</item>
+       <item>in</item>
+       <item>interface</item>
+       <item>invisible</item>
+       <item>join</item>
+       <item>little_endian</item>
+       <item>local</item>
+       <item>m_bad_state</item>
+       <item>m_bad_trans</item>
+       <item>m_state</item>
+       <item>m_trans</item>
+       <item>negedge</item>
+       <item>new</item>
+       <item>newcov</item>
+       <item>non_rand</item>
+       <item>none</item>
+       <item>not</item>
+       <item>null</item>
+       <item>or</item>
+       <item>ordered</item>
+       <item>packed</item>
+       <item>port</item>
+       <item>posedge</item>
+       <item>proceed</item>
+       <item>prod</item>
+       <item>prodget</item>
+       <item>prodset</item>
+       <item>program</item>
+       <item>protected</item>
+       <item>public</item>
+       <item>rand</item>
+       <item>randc</item>
+       <item>randcase</item>
+       <item>randseq</item>
+       <item>repeat</item>
+       <item>return</item>
+       <item>rules</item>
+       <item>sample</item>
+       <item>sample_event</item>
+       <item>shadow</item>
+       <item>soft</item>
+       <item>state</item>
+       <item>static</item>
+       <item>super</item>
+       <item>task</item>
+       <item>terminate</item>
+       <item>this</item>
+       <item>trans</item>
+       <item>typedef</item>
+       <item>unpacked</item>
+       <item>var</item>
+       <item>vca</item>
+       <item>vector</item>
+       <item>verilog_node</item>
+       <item>verilog_task</item>
+       <item>vhdl_node</item>
+       <item>vhdl_task</item>
+       <item>virtual</item>
+       <item>virtuals</item>
+       <item>visible</item>
+       <item>void</item>
+       <item>while</item>
+       <item>wildcard</item>
+       <item>with</item>
+    </list>
+    <list name="types">
+       <item>integer</item>
+       <item>bit</item>
+       <item>reg</item>
+       <item>string</item>
+       <item>bind_var</item>
+       <item>event</item>
+       <item>inout</item>
+       <item>input</item>
+       <item>output</item>
+       <item>ASYNC</item>
+       <item>CLOCK</item>
+       <item>NDRIVE</item>
+       <item>NHOLD</item>
+       <item>NRX</item>
+       <item>NRZ</item>
+       <item>NR0</item>
+       <item>NR1</item>
+       <item>NSAMPLE</item>
+       <item>PDRIVE</item>
+       <item>PHOLD</item>
+       <item>PRX</item>
+       <item>PRZ</item>
+       <item>PR0</item>
+       <item>PR1</item>
+       <item>PSAMPLE</item>
+    </list>
+    <list name="q_values">
+       <item>gnr</item>
+       <item>grx</item>
+       <item>grz</item>
+       <item>gr0</item>
+       <item>gr1</item>
+       <item>nr</item>
+       <item>rx</item>
+       <item>rz</item>
+       <item>r0</item>
+       <item>r1</item>
+       <item>snr</item>
+       <item>srx</item>
+       <item>srz</item>
+       <item>sr0</item>
+       <item>sr1</item>
+    </list>
+    <list name="methods">
+       <!-- system functions and tasks -->
+       <item>alloc</item>
+       <item>call_func</item>
+       <item>call_task</item>
+       <item>cast_assign</item>
+       <item>close_conn</item>
+       <item>cm_coverage</item>
+       <item>cm_get_coverage</item>
+       <item>cm_get_limit</item>
+       <item>coverage_backup_database_file</item>
+       <item>coverage_save_database</item>
+       <item>delay</item>
+       <item>error</item>
+       <item>error_mode</item>
+       <item>error_wait</item>
+       <item>exit</item>
+       <item>fclose</item>
+       <item>feof</item>
+       <item>ferror</item>
+       <item>fflush</item>
+       <item>flag</item>
+       <item>fopen</item>
+       <item>fprintf</item>
+       <item>freadb</item>
+       <item>freadb</item>
+       <item>freadh</item>
+       <item>freadstr</item>
+       <item>get_bind</item>
+       <item>get_bind_id</item>
+       <item>get_conn_err</item>
+       <item>get_cycle</item>
+       <item>get_env</item>
+       <item>get_memsize</item>
+       <item>get_plus_arg</item>
+       <item>get_systime</item>
+       <item>get_time</item>
+       <item>get_time_unit</item>
+       <item>getstate</item>
+       <item>initstate</item>
+       <item>lock_file</item>
+       <item>mailbox_get</item>
+       <item>mailbox_put</item>
+       <item>mailbox_receive</item>
+       <item>mailbox_send</item>
+       <item>make_client</item>
+       <item>make_server</item>
+       <item>os_command</item>
+       <item>printf</item>
+       <item>psprintf</item>
+       <item>query</item>
+       <item>query_str</item>
+       <item>query_x</item>
+       <item>rand48</item>
+       <item>random</item>
+       <item>region_enter</item>
+       <item>region_exit</item>
+       <item>rewind</item>
+       <item>semaphore_get</item>
+       <item>semaphore_put</item>
+       <item>setstate</item>
+       <item>signal_connect</item>
+       <item>simwave_plot</item>
+       <item>srandom</item>
+       <item>sprintf</item>
+       <item>sscanf</item>
+       <item>stop</item>
+       <item>suspend_thread</item>
+       <item>sync</item>
+       <item>timeout</item>
+       <item>trace</item>
+       <item>trigger</item>
+       <item>unit_delay</item>
+       <item>unlock_file</item>
+       <item>up_connections</item>
+       <item>urand48</item>
+       <item>urandom</item>
+       <item>urandom_range</item>
+       <item>vera_bit_reverse</item>
+       <item>vera_crc</item>
+       <item>vera_pack</item>
+       <item>vera_pack_big_endian</item>
+       <item>vera_plot</item>
+       <item>vera_report_profile</item>
+       <item>vera_unpack</item>
+       <item>vera_unpack_big_endian</item>
+       <item>vsv_call_func</item>
+       <item>vsv_call_task</item>
+       <item>vsv_close_conn</item>
+       <item>vsv_get_conn_err</item>
+       <item>vsv_make_client</item>
+       <item>vsv_make_server</item>
+       <item>vsv_up_connections</item>
+       <item>vsv_wait_for_done</item>
+       <item>vsv_wait_for_input</item>
+       <item>wait_child</item>
+       <item>wait_var</item>
+       <!-- class methods -->
+       <item>Configure</item>
+       <item>DisableTrigger</item>
+       <item>DoAction</item>
+       <item>EnableCount</item>
+       <item>EnableTrigger</item>
+       <item>Event</item>
+       <item>GetAssert</item>
+       <item>GetCount</item>
+       <item>GetFirstAssert</item>
+       <item>GetName</item>
+       <item>GetNextAssert</item>
+       <item>Wait</item>
+       <item>atobin</item>
+       <item>atohex</item>
+       <item>atoi</item>
+       <item>atooct</item>
+       <item>backref</item>
+       <item>bittostr</item>
+       <item>capacity</item>
+       <item>compare</item>
+       <item>constraint_mode</item>
+       <item>delete</item>
+       <item>empty</item>
+       <item>find</item>
+       <item>find_index</item>
+       <item>first</item>
+       <item>first_index</item>
+       <item>get_at_least</item>
+       <item>get_auto_bin</item>
+       <item>get_cov_weight</item>
+       <item>get_coverage_goal</item>
+       <item>get_cross_bin_max</item>
+       <item>get_status</item>
+       <item>get_status_msg</item>
+       <item>getc</item>
+       <item>hash</item>
+       <item>icompare</item>
+       <item>insert</item>
+       <item>inst_get_at_least</item>
+       <item>inst_get_auto_bin_max</item>
+       <item>inst_get_collect</item>
+       <item>inst_get_cov_weight</item>
+       <item>inst_get_coverage_goal</item>
+       <item>inst_getcross_bin_max</item>
+       <item>inst_query</item>
+       <item>inst_set_at_least</item>
+       <item>inst_set_auto_bin_max</item>
+       <item>inst_set_bin_activiation</item>
+       <item>inst_set_collect</item>
+       <item>inst_set_cov_weight</item>
+       <item>inst_set_coverage_goal</item>
+       <item>inst_set_cross_bin_max</item>
+       <item>itoa</item>
+       <item>last</item>
+       <item>last_index</item>
+       <item>len</item>
+       <item>load</item>
+       <item>match</item>
+       <item>max</item>
+       <item>max_index</item>
+       <item>min</item>
+       <item>min_index</item>
+       <item>object_compare</item>
+       <item>object_copy</item>
+       <item>object_print</item>
+       <item>pack</item>
+       <item>pick_index</item>
+       <item>pop_back</item>
+       <item>pop_front</item>
+       <item>post_pack</item>
+       <item>post_randomize</item>
+       <item>post_unpack</item>
+       <item>postmatch</item>
+       <item>pre_pack</item>
+       <item>pre_randomize</item>
+       <item>prematch</item>
+       <item>push_back</item>
+       <item>push_front</item>
+       <item>putc</item>
+       <item>query</item>
+       <item>query_str</item>
+       <item>rand_mode</item>
+       <item>randomize</item>
+       <item>reserve</item>
+       <item>reverse</item>
+       <item>rsort</item>
+       <item>search</item>
+       <item>set_at_least</item>
+       <item>set_auto_bin_max</item>
+       <item>set_bin_activiation</item>
+       <item>set_cov_weight</item>
+       <item>set_coverage_goal</item>
+       <item>set_cross_bin_max</item>
+       <item>set_name</item>
+       <item>size</item>
+       <item>sort</item>
+       <item>substr</item>
+       <item>sum</item>
+       <item>thismatch</item>
+       <item>tolower</item>
+       <item>toupper</item>
+       <item>unique_index</item>
+       <item>unpack</item>
+       <!-- empty methods -->
+       <item>new</item>
+       <item>object_compare</item>
+       <item>post_boundary</item>
+       <item>post_pack</item>
+       <item>post_randomize</item>
+       <item>post_unpack</item>
+       <item>pre-randomize</item>
+       <item>pre_boundary</item>
+       <item>pre_pack</item>
+       <item>pre_unpack</item>
+       <!-- vera-constants -->
+       <item>ALL</item>
+       <item>ANY</item>
+       <item>BAD_STATE</item>
+       <item>BAD_TRANS</item>
+       <item>CALL</item>
+       <item>CHECK</item>
+       <item>CHGEDGE</item>
+       <item>CLEAR</item>
+       <item>COPY_NO_WAIT</item>
+       <item>COPY_WAIT</item>
+       <item>CROSS</item>
+       <item>CROSS_TRANS</item>
+       <item>DEBUG</item>
+       <item>DELETE</item>
+       <item>EC_ARRAYX</item>
+       <item>EC_CODE_END</item>
+       <item>EC_CONFLICT</item>
+       <item>EC_EVNTIMOUT</item>
+       <item>EC_EXPECT</item>
+       <item>EC_FULLEXPECT</item>
+       <item>EC_MBXTMOUT</item>
+       <item>EC_NEXPECT</item>
+       <item>EC_RETURN</item>
+       <item>EC_RGNTMOUT</item>
+       <item>EC_SCONFLICT</item>
+       <item>EC_SEMTMOUT</item>
+       <item>EC_SEXPECT</item>
+       <item>EC_SFULLEXPECT</item>
+       <item>EC_SNEXTPECT</item>
+       <item>EC_USERSET</item>
+       <item>EQ</item>
+       <item>EVENT</item>
+       <item>FAIL</item>
+       <item>FIRST</item>
+       <item>FORK</item>
+       <item>GE</item>
+       <item>GOAL</item>
+       <item>GT</item>
+       <item>HAND_SHAKE</item>
+       <item>HI</item>
+       <item>HIGH</item>
+       <item>HNUM</item>
+       <item>LE</item>
+       <item>LIC_EXIT</item>
+       <item>LIC_PRERR</item>
+       <item>LIC_PRWARN</item>
+       <item>LIC_WAIT</item>
+       <item>LO</item>
+       <item>LOAD</item>
+       <item>LOW</item>
+       <item>LT</item>
+       <item>MAILBOX</item>
+       <item>MAX_COM</item>
+       <item>NAME</item>
+       <item>NE</item>
+       <item>NEGEDGE</item>
+       <item>NEXT</item>
+       <item>NO_OVERLAP</item>
+       <item>NO_OVERLAP_STATE</item>
+       <item>NO_OVERLAP_TRANS</item>
+       <item>NO_VARS</item>
+       <item>NO_WAIT</item>
+       <item>NUM</item>
+       <item>NUM_BIN</item>
+       <item>NUM_DET</item>
+       <item>OFF</item>
+       <item>OK</item>
+       <item>OK_LAST</item>
+       <item>ON</item>
+       <item>ONE_BLAST</item>
+       <item>ONE_SHOT</item>
+       <item>ORDER</item>
+       <item>PAST_IT</item>
+       <item>PERCENT</item>
+       <item>POSEDGE</item>
+       <item>PROGRAM</item>
+       <item>RAWIN</item>
+       <item>REGION</item>
+       <item>REPORT</item>
+       <item>SAMPLE</item>
+       <item>SAVE</item>
+       <item>SEMAPHORE</item>
+       <item>SET</item>
+       <item>SILENT</item>
+       <item>STATE</item>
+       <item>STR</item>
+       <item>STR_ERR_OUT_OF_RANGE</item>
+       <item>STR_ERR_REGEXP_SYNTAX</item>
+       <item>SUM</item>
+       <item>TRANS</item>
+       <item>VERBOSE</item>
+       <item>WAIT</item>
+       <item>stderr</item>
+       <item>stdin</item>
+       <item>stdout</item>
+    </list>
+    
+    
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectSpaces />
+        <RegExpr attribute="Preprocessor" context="Outscoped" String="#\s*if\s+0" beginRegion="PP" firstNonSpace="true" />
+        <DetectChar context="AfterHash" char="#" firstNonSpace="true" lookAhead="true" />
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <keyword attribute="Q Values" context="#stay" String="q_values"/>
+        <keyword attribute="Methods" context="#stay" String="methods"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <RegExpr attribute="Decimal" context="#stay" String="[\d_]*'d[\d_]+"/>
+        <RegExpr attribute="Octal" context="#stay" String="[\d_]*'o[0-7xXzZ_]+"/>
+        <RegExpr attribute="Hex" context="#stay" String="[\d_]*'h[\da-fA-FxXzZ_]+"/>
+        <RegExpr attribute="Binary" context="#stay" String="[\d_]*'b[01_zZxX]+"/>
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]{|}~^&#59;"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+        <LineContinue attribute="Comment" context="#stay"/>
+        <DetectSpaces />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="AfterHash">
+        <!-- define, elif, else, endif, error, if, ifdef, ifndef, include, include_next, line, pragma, undef, warning -->
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="#\s*if(?:def|ndef)?(?=\s+\S)" insensitive="true" beginRegion="PP" firstNonSpace="true" />
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="#\s*endif" insensitive="true" endRegion="PP" firstNonSpace="true" />
+        <RegExpr attribute="Preprocessor" context="Define" String="#\s*define.*((?=\\))" insensitive="true" firstNonSpace="true" />
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="#\s*(?:el(?:se|if)|include(?:_next)?|define|undef|line|error|warning|pragma)" insensitive="true" firstNonSpace="true" />
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="#\s+[0-9]+" insensitive="true" firstNonSpace="true" />
+      </context>
+
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="Commentar/Preprocessor" char="/" char1="*" beginRegion="Comment2" />
+
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+      </context>
+
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Define">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar/Preprocessor">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment2" />
+        <DetectIdentifier />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Outscoped" >
+        <DetectSpaces />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+        <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="PP" firstNonSpace="true" />
+        <RegExpr attribute="Preprocessor" context="#pop" String="#\s*el(?:se|if)" firstNonSpace="true" />
+        <RegExpr attribute="Preprocessor" context="#pop" String="#\s*endif" endRegion="PP" firstNonSpace="true" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Outscoped intern">
+        <DetectSpaces />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+        <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="PP" firstNonSpace="true" />
+        <RegExpr attribute="Comment" context="#pop" String="#\s*endif" endRegion="PP" firstNonSpace="true" />
+      </context>
+    </contexts>
+    
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword"/>
+      <itemData name="Q Values"     defStyleNum="dsKeyword"/>
+      <itemData name="Methods"      defStyleNum="dsKeyword"/>
+      <itemData name="Data Type"    defStyleNum="dsDataType"/>
+      <itemData name="Decimal"      defStyleNum="dsDecVal"/>
+      <itemData name="Octal"        defStyleNum="dsBaseN"/>
+      <itemData name="Hex"          defStyleNum="dsBaseN"/>
+      <itemData name="Float"        defStyleNum="dsFloat"/>
+      <itemData name="Binary"       defStyleNum="dsOthers"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Symbol"       defStyleNum="dsNormal"/>
+      <itemData name="Preprocessor" defStyleNum="dsPreprocessor"/>
+      <itemData name="Prep. Lib"    defStyleNum="dsPreprocessor"/>
+      <itemData name="Error"        defStyleNum="dsError" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+
+</language>

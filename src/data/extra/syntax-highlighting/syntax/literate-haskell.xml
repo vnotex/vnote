@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Literate Haskell" version="5" kateversion="3.4" section="Sources" extensions="*.lhs" mimetype="text/x-literate-haskell" author="Nicolas Wu (zenzike@gmail.com)" license="LGPL">
+  <highlighting>
+  <contexts>
+    <context attribute="Text" lineEndContext="#stay" name="text">
+      <DetectChar attribute="BirdTrack" context="normal" char="&gt;" column="0"/>
+      <DetectChar attribute="BirdTrack" context="normal" char="&lt;" column="0"/>
+      <StringDetect attribute="Text" context="normals" String="&#92;begin&#123;code&#125;"/>
+      <StringDetect attribute="Text" context="normals" String="&#92;begin&#123;spec&#125;"/>
+    </context>
+    <context attribute="Text" lineEndContext="#pop" name="normal">
+      <RegExpr attribute="Comment" context="comments'" String="\{-[^#]" />
+      <IncludeRules context="##Haskell" />
+    </context>
+    <context attribute="Text" lineEndContext="#stay" name="normals">
+      <StringDetect attribute="Text" context="#pop" String="&#92;end&#123;code&#125;"/>
+      <StringDetect attribute="Text" context="#pop" String="&#92;end&#123;spec&#125;"/>
+      <IncludeRules context="##Haskell" />
+    </context>
+    <context attribute="Comment" lineEndContext="uncomments" name="comments'" >
+      <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" />
+    </context>
+    <context attribute="Text" lineEndContext="#stay" name="uncomments">
+      <DetectChar attribute="BirdTrack" context="recomments" char="&gt;" column="0"/>
+      <DetectChar attribute="BirdTrack" context="recomments" char="&lt;" column="0"/>
+    </context>
+    <context attribute="Comment" lineEndContext="#pop" name="recomments">
+      <Detect2Chars attribute="Comment" context="#pop#pop#pop" char="-" char1="}" />
+    </context>
+  </contexts>
+  <itemDatas>
+    <itemData name="Text"             defStyleNum="dsNormal" spellChecking="true" />
+    <itemData name="BirdTrack"        defStyleNum="dsOthers"  spellChecking="false" />
+    <itemData name="Comment"          defStyleNum="dsComment" />
+  </itemDatas>
+  </highlighting>
+</language>

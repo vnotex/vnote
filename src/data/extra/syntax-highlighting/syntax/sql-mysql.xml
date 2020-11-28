@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  MySQL syntax definition based on sql.xml by Yury Lebedev
+  original by Shane Wright (me@shanewright.co.uk)
+  modifications by Milian Wolff (mail@milianw.de)
+  v3 fix comments by Gene Thomas <gene@genethomas.com>
+-->
+<language name="SQL (MySQL)" version="5" kateversion="5.0" section="Database" extensions="*.sql;*.SQL;*.ddl;*.DDL" mimetype="text/x-sql" casesensitive="0" author="Shane Wright (me@shanewright.co.uk)" license="">
+  <highlighting>
+    <list name="controlFlow">
+      <item>BEGIN</item>
+      <item>CASE</item>
+      <item>DO</item>
+      <item>ELSE</item>
+      <item>ELSEIF</item>
+      <item>END</item>
+      <item>FOR</item>
+      <item>IF</item>
+      <item>LOOP</item>
+      <item>RETURN</item>
+      <item>THEN</item>
+      <item>WHEN</item>
+      <item>WHILE</item>
+    </list>
+    <list name="operators">
+      <item>AND</item>
+      <item>BETWEEN</item>
+      <item>IN</item>
+      <item>IS</item>
+      <item>LIKE</item>
+      <item>NOT</item>
+      <item>OR</item>
+    </list>
+    <list name="keywords">
+      <item>ACCESS</item>
+      <item>ADD</item>
+      <item>ALL</item>
+      <item>ALTER</item>
+      <item>ANALYZE</item>
+      <item>AS</item>
+      <item>ASC</item>
+      <item>AUTO_INCREMENT</item>
+      <item>BDB</item>
+      <item>BERKELEYDB</item>
+      <item>BOTH</item>
+      <item>BY</item>
+      <item>CASCADE</item>
+      <item>CHANGE</item>
+      <!-- <item> CHARACTER SET </item>
+        needs special regexp (see below) -->
+      <item>CHARSET</item>
+      <item>COLUMN</item>
+      <item>COLUMNS</item>
+      <item>CONSTRAINT</item>
+      <item>CREATE</item>
+      <item>CROSS</item>
+      <item>CURRENT_DATE</item>
+      <item>CURRENT_TIME</item>
+      <item>CURRENT_TIMESTAMP</item>
+      <item>DATABASE</item>
+      <item>DATABASES</item>
+      <item>DAY_HOUR</item>
+      <item>DAY_MINUTE</item>
+      <item>DAY_SECOND</item>
+      <item>DEC</item>
+      <item>DECLARE</item>
+      <item>DEFAULT</item>
+      <item>DELAYED</item>
+      <item>DELETE</item>
+      <item>DESC</item>
+      <item>DESCRIBE</item>
+      <item>DISTINCT</item>
+      <item>DISTINCTROW</item>
+      <item>DROP</item>
+      <item>ENCLOSED</item>
+      <item>ESCAPED</item>
+      <item>EXISTS</item>
+      <item>EXPLAIN</item>
+      <item>FIELDS</item>
+      <item>FOREIGN</item>
+      <item>FROM</item>
+      <item>FULLTEXT</item>
+      <item>FUNCTION</item>
+      <item>GRANT</item>
+      <item>GROUP</item>
+      <item>HAVING</item>
+      <item>HIGH_PRIORITY</item>
+      <item>IGNORE</item>
+      <item>INDEX</item>
+      <item>INFILE</item>
+      <item>INNER</item>
+      <item>INNODB</item>
+      <item>INSERT</item>
+      <item>INTERVAL</item>
+      <item>INTO</item>
+      <item>JOIN</item>
+      <item>KEY</item>
+      <item>KEYS</item>
+      <item>KILL</item>
+      <item>LEADING</item>
+      <item>LEFT</item>
+      <item>LIMIT</item>
+      <item>LINES</item>
+      <item>LOAD</item>
+      <item>LOCK</item>
+      <item>LOW_PRIORITY</item>
+      <item>MASTER_SERVER_ID</item>
+      <item>MATCH</item>
+      <item>MRG_MYISAM</item>
+      <item>NATIONAL</item>
+      <item>NATURAL</item>
+      <item>NULL</item>
+      <item>NUMERIC</item>
+      <item>ON</item>
+      <item>OPTIMIZE</item>
+      <item>OPTION</item>
+      <item>OPTIONALLY</item>
+      <item>ORDER</item>
+      <item>OUTER</item>
+      <item>OUTFILE</item>
+      <item>PARTIAL</item>
+      <item>PRECISION</item>
+      <item>PRIMARY</item>
+      <item>PRIVILEGES</item>
+      <item>PROCEDURE</item>
+      <item>PURGE</item>
+      <item>READ</item>
+      <item>REFERENCES</item>
+      <item>REGEXP</item>
+      <item>RENAME</item>
+      <item>REPLACE</item>
+      <item>REQUIRE</item>
+      <item>RESTRICT</item>
+      <item>RETURNS</item>
+      <item>REVOKE</item>
+      <item>RIGHT</item>
+      <item>RLIKE</item>
+      <item>SELECT</item>
+      <item>SET</item>
+      <item>SHOW</item>
+      <item>SONAME</item>
+      <item>SQL_BIG_RESULT</item>
+      <item>SQL_CALC_FOUND_ROWS</item>
+      <item>SQL_SMALL_RESULT</item>
+      <item>SSL</item>
+      <item>STARTING</item>
+      <item>STRAIGHT_JOIN</item>
+      <item>STRIPED</item>
+      <item>TABLE</item>
+      <item>TABLES</item>
+      <item>TERMINATED</item>
+      <item>TO</item>
+      <item>TRAILING</item>
+      <item>TRUNCATE</item>
+      <item>TYPE</item>
+      <item>UNION</item>
+      <item>UNIQUE</item>
+      <item>UNLOCK</item>
+      <item>UNSIGNED</item>
+      <item>UPDATE</item>
+      <item>USAGE</item>
+      <item>USE</item>
+      <item>USER_RESOURCES</item>
+      <item>USING</item>
+      <item>VALUES</item>
+      <item>VARYING</item>
+      <item>WITH</item>
+      <item>WHERE</item>
+      <item>WRITE</item>
+      <item>XOR</item>
+      <item>YEAR_MONTH</item>
+      <item>ZEROFILL</item>
+    </list>
+    <list name="functions">
+      <!-- string functions -->
+      <item>ASCII</item>
+      <item>BIN</item>
+      <item>BIT_LENGTH</item>
+      <item>CHAR</item>
+      <item>CHARACTER_LENGTH</item>
+      <item>CHAR_LENGTH</item>
+      <item>COALESCE</item>
+      <item>CONCAT</item>
+      <item>CONCAT_WS</item>
+      <item>CONV</item>
+      <item>ELT</item>
+      <item>EXPORT_SET</item>
+      <item>FIELD</item>
+      <item>FIND_IN_SET</item>
+      <item>HEX</item>
+      <item>INSERT</item>
+      <item>INSTR</item>
+      <item>LCASE</item>
+      <item>LEFT</item>
+      <item>LENGTH</item>
+      <item>LOAD_FILE</item>
+      <item>LOCATE</item>
+      <item>LOWER</item>
+      <item>LPAD</item>
+      <item>LTRIM</item>
+      <item>MAKE_SET</item>
+      <item>MID</item>
+      <item>OCT</item>
+      <item>OCTET_LENGTH</item>
+      <item>ORD</item>
+      <item>POSITION</item>
+      <item>QUOTE</item>
+      <item>REPEAT</item>
+      <item>REPLACE</item>
+      <item>REVERSE</item>
+      <item>RIGHT</item>
+      <item>RPAD</item>
+      <item>RTRIM</item>
+      <item>SOUNDEX</item>
+      <item>SPACE</item>
+      <item>SUBSTRING</item>
+      <item>SUBSTRING_INDEX</item>
+      <item>TRIM</item>
+      <item>UCASE</item>
+      <item>UPPER</item>
+      <!-- math functions -->
+      <item>ABS</item>
+      <item>ACOS</item>
+      <item>ASIN</item>
+      <item>ATAN</item>
+      <item>ATAN2</item>
+      <item>CEILING</item>
+      <item>COS</item>
+      <item>COT</item>
+      <item>DEGREES</item>
+      <item>EXP</item>
+      <item>FLOOR</item>
+      <item>GREATEST</item>
+      <item>LEAST</item>
+      <item>LN</item>
+      <item>LOG</item>
+      <item>LOG10</item>
+      <item>LOG2</item>
+      <item>MOD</item>
+      <item>PI</item>
+      <item>POW</item>
+      <item>POWER</item>
+      <item>RADIANS</item>
+      <item>RAND</item>
+      <item>ROUND</item>
+      <item>SIGN</item>
+      <item>SIN</item>
+      <item>SQRT</item>
+      <item>TAN</item>
+      <!-- date/time functions -->
+      <item>ADDDATE</item>
+      <item>CURDATE</item>
+      <item>CURRENT_DATE</item>
+      <item>CURRENT_TIME</item>
+      <item>CURRENT_TIMESTAMP</item>
+      <item>CURTIME</item>
+      <item>DATE_ADD</item>
+      <item>DATE_FORMAT</item>
+      <item>DATE_SUB</item>
+      <item>DAYNAME</item>
+      <item>DAYOFMONTH</item>
+      <item>DAYOFWEEK</item>
+      <item>DAYOFYEAR</item>
+      <item>EXTRACT</item>
+      <item>FROM_DAYS</item>
+      <item>FROM_UNIXTIME</item>
+      <item>HOUR</item>
+      <item>MINUTE</item>
+      <item>MONTH</item>
+      <item>MONTHNAME</item>
+      <item>NOW</item>
+      <item>PERIOD_ADD</item>
+      <item>PERIOD_DIFF</item>
+      <item>QUARTER</item>
+      <item>SECOND</item>
+      <item>SEC_TO_TIME</item>
+      <item>SUBDATE</item>
+      <item>SYSDATE</item>
+      <item>TIME_FORMAT</item>
+      <item>TIME_TO_SEC</item>
+      <item>TO_DAYS</item>
+      <item>UNIX_TIMESTAMP</item>
+      <item>WEEK</item>
+      <item>WEEKDAY</item>
+      <item>YEAR</item>
+      <item>YEARWEEK</item>
+      <!-- cast functions -->
+      <item>CAST</item>
+      <item>CONVERT</item>
+      <!-- misc -->
+      <item>AES_DECRYPT</item>
+      <item>AES_ENCRYPT</item>
+      <item>BENCHMARK</item>
+      <item>BIT_COUNT</item>
+      <item>CONNECTION_ID</item>
+      <item>DATABASE</item>
+      <item>DECODE</item>
+      <item>DES_DECRYPT</item>
+      <item>DES_ENCRYPT</item>
+      <item>ENCODE</item>
+      <item>ENCRYPT</item>
+      <item>FORMAT</item>
+      <item>FOUND_ROWS</item>
+      <item>GET_LOCK</item>
+      <item>INET_ATON</item>
+      <item>INET_NTOA</item>
+      <item>IS_FREE_LOCK</item>
+      <item>LAST_INSERT_ID</item>
+      <item>MASTER_POS_WAIT</item>
+      <item>MD5</item>
+      <item>PASSWORD</item>
+      <item>RELEASE_LOCK</item>
+      <item>SESSION_USER</item>
+      <item>SHA</item>
+      <item>SHA1</item>
+      <item>SYSTEM_USER</item>
+      <item>USER</item>
+      <item>VERSION</item>
+      <!-- GROUP BY -->
+      <item>AVG</item>
+      <item>BIT_AND</item>
+      <item>BIT_OR</item>
+      <item>COUNT</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>STD</item>
+      <item>STDDEV</item>
+      <item>SUM</item>
+    </list>
+    <list name="types">
+      <!-- strings -->
+      <item>BINARY</item>
+      <item>BLOB</item>
+      <item>CHAR</item>
+      <item>CHARACTER</item>
+      <item>ENUM</item>
+      <item>LONGBLOB</item>
+      <item>LONGTEXT</item>
+      <item>MEDIUMBLOB</item>
+      <item>MEDIUMTEXT</item>
+      <item>TEXT</item>
+      <item>TINYBLOB</item>
+      <item>TINYTEXT</item>
+      <item>VARBINARY</item>
+      <item>VARCHAR</item>
+      <!-- <item>SET</item>
+        needs special regexp (see below) -->
+      <!-- numeric -->
+      <item>BIGINT</item>
+      <item>BIT</item>
+      <item>BOOL</item>
+      <item>BOOLEAN</item>
+      <item>DEC</item>
+      <item>DECIMAL</item>
+      <item>DOUBLE</item>
+      <item>FIXED</item>
+      <item>FLOAT</item>
+      <item>INT</item>
+      <item>INTEGER</item>
+      <item>LONG</item>
+      <item>MEDIUMINT</item>
+      <item>MIDDLEINT</item>
+      <item>NUMERIC</item>
+      <item>TINYINT</item>
+      <item>REAL</item>
+      <item>SERIAL</item>
+      <item>SMALLINT</item>
+      <!-- date and time -->
+      <item>DATE</item>
+      <item>DATETIME</item>
+      <item>TIME</item>
+      <item>TIMESTAMP</item>
+      <item>YEAR</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+
+        <!-- comments, before operators -->
+        <DetectChar attribute="Comment" context="SingleLineComment" char="#"/>
+        <Detect2Chars attribute="Comment" context="SingleLineComment" char="-" char1="-"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" beginRegion="Comment"/>
+        <RegExpr attribute="Comment" context="SingleLineComment" String="rem\b" insensitive="true" column="0"/>
+
+        <LineContinue attribute="Symbol" context="#stay" char="/" column="0"/> <!-- conflict with "operators" keywords -->
+
+        <!-- problematic special cases -->
+        <!-- SET type -->
+        <RegExpr attribute="Data Type" context="#stay" insensitive="true" String="SET(?=\s*\()"/>
+        <!-- keyword character set -->
+        <WordDetect attribute="Keyword" context="#stay" insensitive="true" String="CHARACTER SET"/>
+        <!-- using the lists -->
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <LineContinue attribute="Symbol" context="#stay" char="/" column="0"/>
+        <keyword attribute="Operator Keyword" context="#stay" String="operators"/>
+        <keyword attribute="ControlFlow" context="#stay" String="controlFlow"/>
+        <AnyChar attribute="Operator" context="#stay" String="+-*/=&lt;&gt;"/>
+        <Detect2Chars attribute="Operator" context="#stay" char="!" char1="="/>
+        <Detect2Chars attribute="Operator" context="#stay" char="~" char1="="/>
+        <Detect2Chars attribute="Operator" context="#stay" char="^" char1="="/>
+        <Detect2Chars attribute="Operator" context="#stay" char=":" char1="="/>
+        <Detect2Chars attribute="Operator" context="#stay" char="." char1="."/>
+        <Detect2Chars attribute="Operator" context="#stay" char="|" char1="|"/>
+        <AnyChar attribute="Symbol" context="#stay" String=":&#38;"/>
+        <keyword attribute="Function" context="#stay" String="functions"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+
+        <DetectIdentifier/>
+        <!-- extra data types -->
+        <RegExpr attribute="Data Type" context="#stay" String="%(?:bulk_(?:exceptions|rowcount)|found|isopen|notfound|rowcount|rowtype|type)\b" insensitive="true"/>
+        <!-- numbers -->
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+        <!-- strings -->
+        <DetectChar attribute="String" context="String" char="'"/>
+        <DetectChar attribute="String" context="String2" char="&quot;"/>
+        <DetectChar attribute="Name" context="Name" char="`"/>
+
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="@@?[^@ \t\r\n]" column="0"/>
+        <!-- for something like : SELECT DB.TABLE.ROW ... -->
+        <DetectChar attribute="String Char" context="#stay" char="."/>
+      </context>
+      <!-- 'string' -->
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <LineContinue attribute="String" context="#pop"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="Symbol" context="#stay" char="&#38;"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+      <!-- "string", extra context needed to enable "str'ing" and 'str"ing' -->
+      <context name="String2" attribute="String" lineEndContext="#stay">
+        <LineContinue attribute="String" context="#pop"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="Symbol" context="#stay" char="&#38;"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <!-- `names` -->
+      <context name="Name" attribute="Name" lineEndContext="#stay">
+        <LineContinue attribute="Name" context="#pop"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="Name" context="#pop" char="`"/>
+      </context>
+      <!-- comments -->
+      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="MultiLineComment" attribute="Comment" lineEndContext="#stay">
+        <LineContinue attribute="Comment" context="#pop"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+      </context>
+      <!-- preprocessor -->
+      <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop"/>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"       defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword"           defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="ControlFlow"       defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Operator"          defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Operator Keyword"  defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Function"          defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Data Type"         defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Decimal"           defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Hex"               defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float"             defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Name" color="#080" defStyleNum="dsString" spellChecking="false"/>
+      <itemData name="String"            defStyleNum="dsString"/>
+      <itemData name="String Char"       defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Comment"           defStyleNum="dsComment"/>
+      <itemData name="Symbol"            defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Preprocessor"      defStyleNum="dsOthers" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="--"/>
+      <comment name="multiLine" start="/*" end="*/"/>
+    </comments>
+    <keywords casesensitive="0"/>
+    <folding indentationsensitive="true"/>
+  </general>
+</language>

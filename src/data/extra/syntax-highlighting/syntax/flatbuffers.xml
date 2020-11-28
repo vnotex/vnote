@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="FlatBuffers" section="Sources"
+    version="1" kateversion="5.0"
+    indenter="cstyle"
+    extensions="*.fbs"
+    priority="5"
+    author="Harald Fernengel"
+    license="MIT">
+    <highlighting>
+        <list name="keywords">
+            <item>namespace</item>
+            <item>attribute</item>
+            <item>table</item>
+            <item>struct</item>
+            <item>enum</item>
+            <item>union</item>
+            <item>rpc_service</item>
+            <item>root_type</item>
+            <item>include</item>
+            <item>file_identifier</item>
+            <item>file_extension</item>
+        </list>
+        <list name="types">
+            <item>bool</item>
+            <item>byte</item>
+            <item>ubyte</item>
+            <item>short</item>
+            <item>ushort</item>
+            <item>int</item>
+            <item>uint</item>
+            <item>float</item>
+            <item>long</item>
+            <item>ulong</item>
+            <item>double</item>
+            <item>int8</item>
+            <item>uint8</item>
+            <item>int16</item>
+            <item>uint16</item>
+            <item>int32</item>
+            <item>uint32</item>
+            <item>int64</item>
+            <item>uint64</item>
+            <item>float32</item>
+            <item>float64</item>
+            <item>string</item>
+        </list>
+        <list name="integers">
+            <item>true</item>
+            <item>false</item>
+        </list>
+        <list name="attributes">
+            <item>deprecated</item>
+            <item>required</item>
+            <item>key</item>
+            <item>hash</item>
+            <item>id</item>
+            <item>force_align</item>
+            <item>bit_flags</item>
+            <item>original_order</item>
+            <item>nested_flatbuffer</item>
+            <item>csharp_partial</item>
+            <item>streaming</item>
+            <item>idempotent</item>
+            <item>cpp_type</item>
+            <item>cpp_ptr_type</item>
+            <item>native_inline</item>
+        </list>
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Keyword" context="#stay" String="attributes"/>
+                <keyword attribute="Data Type" context="#stay" String="types"/>
+                <keyword attribute="Integer Constants" context="#stay" String="integers"/>
+                <DetectChar attribute="String" context="String" char="&quot;"/>
+                <Float attribute="Float" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <Detect2Chars attribute="Comment" context="Comment1" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="Comment2" char="/" char1="*" beginRegion="Comment"/>
+            </context>
+            <context attribute="Comment" lineEndContext="#pop" name="Comment1">
+                <LineContinue attribute="Comment" context="#stay"/>
+            </context>
+
+            <context attribute="String" lineEndContext="#pop" name="String">
+                <LineContinue attribute="String" context="#stay"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+
+            <context attribute="Comment" lineEndContext="#stay" name="Comment2">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+            </context>
+
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Data Type"    defStyleNum="dsDataType" spellChecking="false"/>
+            <itemData name="Comment"      defStyleNum="dsComment"/>
+            <itemData name="String"       defStyleNum="dsString"/>
+            <itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Float"        defStyleNum="dsFloat" spellChecking="false"/>
+            <itemData name="Integer Constants" defStyleNum="dsDecVal" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="//" />
+            <comment name="multiLine" start="/*" end="*/" />
+        </comments>
+        <keywords casesensitive="1" />
+    </general>
+</language>

@@ -1,0 +1,967 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Extended and updated by                                    -->
+<!-- Christoph Hormann <chris_hormann@gmx.de>, March 2004       -->
+<!-- features full POV-Ray 3.6 syntax with special highlighting -->
+<!-- of variable and macro declarations                         -->
+<!-- v1.1: added MegaPOV 1.2.1 keywords (Febuary 2006)          -->
+<language name="POV-Ray" version="5" kateversion="2.4" section="3D" extensions="*.inc;*.pov" mimetype="text/x-povray-script;text/x-povray-include" author="Christoph Hormann (chris_hormann@gmx.de)" license="LGPL" priority="2">
+	<highlighting>
+		<list name="keywords">
+			<item>aa_threshold</item>
+			<item>aa_level</item>
+			<item>absorption</item>
+			<item>abs</item>
+			<item>accuracy</item>
+			<item>acosh</item>
+			<item>acos</item>
+			<item>adaptive</item>
+			<item>adc_bailout</item>
+			<item>agate</item>
+			<item>agate_turb</item>
+			<item>all_intersections</item>
+			<item>all</item>
+			<item>alpha</item>
+			<item>always_sample</item>
+			<item>altitude</item>
+			<item>ambient_light</item>
+			<item>ambient</item>
+			<item>angle</item>
+			<item>aperture</item>
+			<item>append</item>
+			<item>arc_angle</item>
+			<item>area_light</item>
+			<item>array</item>
+			<item>ascii</item>
+			<item>asc</item>
+			<item>asinh</item>
+			<item>asin</item>
+			<item>assumed_gamma</item>
+			<item>atan2</item>
+			<item>atanh</item>
+			<item>atan</item>
+			<item>average</item>
+			<item>background</item>
+			<item>bezier_spline</item>
+			<item>bicubic_patch</item>
+			<item>black_hole</item>
+			<item>blob</item>
+			<item>blue</item>
+			<item>blur_samples</item>
+			<item>bounded_by</item>
+			<item>boxed</item>
+			<item>box</item>
+			<item>bozo</item>
+			<item>brick_size</item>
+			<item>brick</item>
+			<item>brightness</item>
+			<item>brilliance</item>
+			<item>bumps</item>
+			<item>bump_map</item>
+			<item>bump_size</item>
+			<item>b_spline</item>
+			<item>camera</item>
+			<item>caustics</item>
+			<item>ceil</item>
+			<item>cells</item>
+			<item>charset</item>
+			<item>checker</item>
+			<item>chr</item>
+			<item>circular</item>
+			<item>clipped_by</item>
+			<item>clock_delta</item>
+			<item>clock_on</item>
+			<item>clock</item>
+			<item>color_map</item>
+			<item>colour_map</item>
+			<item>color</item>
+			<item>colour</item>
+			<item>component</item>
+			<item>composite</item>
+			<item>concat</item>
+			<item>cone</item>
+			<item>confidence</item>
+			<item>conic_sweep</item>
+			<item>contained_by</item>
+			<item>control0</item>
+			<item>control1</item>
+			<item>coords</item>
+			<item>cosh</item>
+			<item>cos</item>
+			<item>count</item>
+			<item>crackle</item>
+			<item>crand</item>
+			<item>cube</item>
+			<item>cubic_spline</item>
+			<item>cubic</item>
+			<item>cubic_wave</item>
+			<item>cylinder</item>
+			<item>cylindrical</item>
+			<item>defined</item>
+			<item>degrees</item>
+			<item>density_file</item>
+			<item>density_map</item>
+			<item>density</item>
+			<item>dents</item>
+			<item>df3</item>
+			<item>difference</item>
+			<item>diffuse</item>
+			<item>dimensions</item>
+			<item>dimension_size</item>
+			<item>direction</item>
+			<item>disc</item>
+			<item>dispersion</item>
+			<item>dispersion_samples</item>
+			<item>distance_maximum</item>
+			<item>distance</item>
+			<item>dist_exp</item>
+			<item>div</item>
+			<item>double_illuminate</item>
+			<item>eccentricity</item>
+			<item>emission</item>
+			<item>error_bound</item>
+			<item>evaluate</item>
+			<item>exp</item>
+			<item>exponent</item>
+			<item>exterior</item>
+			<item>extinction</item>
+			<item>facets</item>
+			<item>face_indices</item>
+			<item>fade_colour</item>
+			<item>fade_color</item>
+			<item>fade_distance</item>
+			<item>fade_power</item>
+			<item>falloff_angle</item>
+			<item>falloff</item>
+			<item>false</item>
+			<item>file_exists</item>
+			<item>shadowless</item>
+			<item>filter</item>
+			<item>final_clock</item>
+			<item>final_frame</item>
+			<item>finish</item>
+			<item>fisheye</item>
+			<item>flatness</item>
+			<item>flip</item>
+			<item>floor</item>
+			<item>focal_point</item>
+			<item>fog_alt</item>
+			<item>fog_offset</item>
+			<item>fog</item>
+			<item>fog_type</item>
+			<item>form</item>
+			<item>frame_number</item>
+			<item>frequency</item>
+			<item>fresnel</item>
+			<item>function</item>
+			<item>gif</item>
+			<item>global_settings</item>
+			<item>gradient</item>
+			<item>granite</item>
+			<item>gray</item>
+			<item>gray_threshold</item>
+			<item>green</item>
+			<item>height_field</item>
+			<item>hexagon</item>
+			<item>hf_gray_16</item>
+			<item>hierarchy</item>
+			<item>hollow</item>
+			<item>hypercomplex</item>
+			<item>image_width</item>
+			<item>image_height</item>
+			<item>initial_clock</item>
+			<item>initial_frame</item>
+			<item>interior_texture</item>
+			<item>iff</item>
+			<item>image_map</item>
+			<item>image_pattern</item>
+			<item>inside</item>
+			<item>inside_vector</item>
+			<item>interior</item>
+			<item>interpolate</item>
+			<item>intersection</item>
+			<item>intervals</item>
+			<item>int</item>
+			<item>inverse</item>
+			<item>ior</item>
+			<item>irid</item>
+			<item>irid_wavelength</item>
+			<item>isosurface</item>
+			<item>jitter</item>
+			<item>julia</item>
+			<item>julia_fractal</item>
+			<item>jpeg</item>
+			<item>lambda</item>
+			<item>lathe</item>
+			<item>leopard</item>
+			<item>light_group</item>
+			<item>light_source</item>
+			<item>linear_spline</item>
+			<item>linear_sweep</item>
+			<item>ln</item>
+			<item>load_file</item>
+			<item>location</item>
+			<item>log</item>
+			<item>looks_like</item>
+			<item>look_at</item>
+			<item>low_error_factor</item>
+			<item>magnet</item>
+			<item>major_radius</item>
+			<item>mandel</item>
+			<item>map_type</item>
+			<item>marble</item>
+			<item>material_map</item>
+			<item>material</item>
+			<item>matrix</item>
+			<item>max_extent</item>
+			<item>max_gradient</item>
+			<item>max_intersections</item>
+			<item>max_iteration</item>
+			<item>max_sample</item>
+			<item>max</item>
+			<item>max_trace_level</item>
+			<item>max_trace</item>
+			<item>media_attenuation</item>
+			<item>media_interaction</item>
+			<item>media</item>
+			<item>merge</item>
+			<item>mesh2</item>
+			<item>mesh</item>
+			<item>metallic</item>
+			<item>method</item>
+			<item>metric</item>
+			<item>minimum_reuse</item>
+			<item>min_extent</item>
+			<item>min</item>
+			<item>mod</item>
+			<item>mortar</item>
+			<item>natural_spline</item>
+			<item>nearest_count</item>
+			<item>normal</item>
+			<item>normal_indices</item>
+			<item>normal_map</item>
+			<item>normal_vectors</item>
+			<item>no_image</item>
+			<item>no_reflection</item>
+			<item>no_shadow</item>
+			<item>no</item>
+			<item>number_of_waves</item>
+			<item>object</item>
+			<item>octaves</item>
+			<item>offset</item>
+			<item>off</item>
+			<item>omega</item>
+			<item>omnimax</item>
+			<item>once</item>
+			<item>onion</item>
+			<item>on</item>
+			<item>open</item>
+			<item>orientation</item>
+			<item>orient</item>
+			<item>orthographic</item>
+			<item>panoramic</item>
+			<item>parallel</item>
+			<item>parametric</item>
+			<item>pattern</item>
+			<item>perspective</item>
+			<item>pgm</item>
+			<item>phase</item>
+			<item>phong_size</item>
+			<item>phong</item>
+			<item>pigment_map</item>
+			<item>pigment</item>
+			<item>pi</item>
+			<item>planar</item>
+			<item>plane</item>
+			<item>png</item>
+			<item>point_at</item>
+			<item>polygon</item>
+			<item>poly</item>
+			<item>poly_wave</item>
+			<item>pot</item>
+			<item>pow</item>
+			<item>ppm</item>
+			<item>precision</item>
+			<item>precompute</item>
+			<item>pretrace_start</item>
+			<item>pretrace_end</item>
+			<item>prism</item>
+			<item>prod</item>
+			<item>projected_through</item>
+			<item>pwr</item>
+			<item>quadratic_spline</item>
+			<item>quadric</item>
+			<item>quartic</item>
+			<item>quaternion</item>
+			<item>quick_color</item>
+			<item>quick_colour</item>
+			<item>quilted</item>
+			<item>radial</item>
+			<item>radians</item>
+			<item>radiosity</item>
+			<item>radius</item>
+			<item>rainbow</item>
+			<item>ramp_wave</item>
+			<item>rand</item>
+			<item>range</item>
+			<item>ratio</item>
+			<item>reciprocal</item>
+			<item>recursion_limit</item>
+			<item>red</item>
+			<item>reflection_exponent</item>
+			<item>reflection</item>
+			<item>refraction</item>
+			<item>repeat</item>
+			<item>rgbft</item>
+			<item>rgbf</item>
+			<item>rgbt</item>
+			<item>rgb</item>
+			<item>right</item>
+			<item>ripples</item>
+			<item>rotate</item>
+			<item>roughness</item>
+			<item>samples</item>
+			<item>save_file</item>
+			<item>scale</item>
+			<item>scallop_wave</item>
+			<item>scattering</item>
+			<item>seed</item>
+			<item>select</item>
+			<item>sine_wave</item>
+			<item>sinh</item>
+			<item>sin</item>
+			<item>size</item>
+			<item>sky_sphere</item>
+			<item>sky</item>
+			<item>slice</item>
+			<item>slope_map</item>
+			<item>slope</item>
+			<item>smooth</item>
+			<item>smooth_triangle</item>
+			<item>solid</item>
+			<item>sor</item>
+			<item>specular</item>
+			<item>sphere_sweep</item>
+			<item>sphere</item>
+			<item>spherical</item>
+			<item>spiral1</item>
+			<item>spiral2</item>
+			<item>spline</item>
+			<item>spotlight</item>
+			<item>spotted</item>
+			<item>sqrt</item>
+			<item>sqr</item>
+			<item>statistics</item>
+			<item>strcmp</item>
+			<item>strength</item>
+			<item>strlen</item>
+			<item>strlwr</item>
+			<item>strupr</item>
+			<item>str</item>
+			<item>sturm</item>
+			<item>substr</item>
+			<item>sum</item>
+			<item>superellipsoid</item>
+			<item>sys</item>
+			<item>tanh</item>
+			<item>tan</item>
+			<item>texture_list</item>
+			<item>texture_map</item>
+			<item>texture</item>
+			<item>text</item>
+			<item>tga</item>
+			<item>thickness</item>
+			<item>threshold</item>
+			<item>tiff</item>
+			<item>tightness</item>
+			<item>tile2</item>
+			<item>tiles</item>
+			<item>normal</item>
+			<item>tolerance</item>
+			<item>toroidal</item>
+			<item>torus</item>
+			<item>trace</item>
+			<item>transform</item>
+			<item>translate</item>
+			<item>transmit</item>
+			<item>triangle</item>
+			<item>triangle_wave</item>
+			<item>true</item>
+			<item>ttf</item>
+			<item>turbulence</item>
+			<item>turb_depth</item>
+			<item>type</item>
+			<item>t</item>
+			<item>ultra_wide_angle</item>
+			<item>union</item>
+			<item>up</item>
+			<item>use_alpha</item>
+			<item>use_color</item>
+			<item>use_colour</item>
+			<item>use_index</item>
+			<item>utf8</item>
+			<item>uv_indices</item>
+			<item>uv_mapping</item>
+			<item>uv_vectors</item>
+			<item>u_steps</item>
+			<item>u</item>
+			<item>val</item>
+			<item>variance</item>
+			<item>vaxis_rotate</item>
+			<item>vcross</item>
+			<item>vdot</item>
+			<item>vertex_vectors</item>
+			<item>vlength</item>
+			<item>vnormalize</item>
+			<item>vrotate</item>
+			<item>vstr</item>
+			<item>vturbulence</item>
+			<item>v_steps</item>
+			<item>v</item>
+			<item>warning</item>
+			<item>warp</item>
+			<item>water_level</item>
+			<item>waves</item>
+			<item>while</item>
+			<item>width</item>
+			<item>wood</item>
+			<item>wrinkles</item>
+			<item>write</item>
+			<item>x</item>
+			<item>yes</item>
+			<item>y</item>
+			<item>z</item>
+			<item>photons</item>
+			<item>steps</item>
+			<item>pass_through</item>
+			<item>collect</item>
+			<item>autostop</item>
+			<item>gather</item>
+			<item>split_union</item>
+			<item>expand_thresholds</item>
+			<item>spacing</item>
+			<item>global</item>
+			<item>target</item>
+			<item>conserve_energy</item>
+			<item>cutaway_textures</item>
+			<item>pigment_pattern</item>
+			<item>no_bump_scale</item>
+			<item>global_lights</item>
+			<item>internal</item>
+			<item>noise_generator</item>
+		</list>
+		<list name="unofficial">
+			<item>akima_spline</item>
+			<item>aoi</item>
+			<item>basic_x_spline</item>
+			<item>camera_view</item>
+			<item>displace</item>
+			<item>exposure</item>
+			<item>exposure_gain</item>
+			<item>extended_x_spline</item>
+			<item>float</item>
+			<item>frame_step</item>
+			<item>date</item>
+			<item>start_chrono</item>
+			<item>current_chrono</item>
+			<item>general_x_spline</item>
+			<item>glow</item>
+			<item>h_align_left</item>
+			<item>h_align_right</item>
+			<item>h_align_center</item>
+			<item>v_align_top</item>
+			<item>v_align_bottom</item>
+			<item>v_align_center</item>
+			<item>inverted_normals</item>
+			<item>is</item>
+			<item>listed</item>
+			<item>mpeg</item>
+			<item>n_roots</item>
+			<item>noise_pigment</item>
+			<item>output_filename</item>
+			<item>post_process</item>
+			<item>projection</item>
+			<item>point</item>
+			<item>blur</item>
+			<item>set</item>
+			<item>sor_spline</item>
+			<item>string</item>
+			<item>structure</item>
+			<item>tcb_spline</item>
+			<item>tension</item>
+			<item>continuity</item>
+			<item>bias</item>
+			<item>user_defined</item>
+			<item>vector</item>
+			<item>unofficial_version</item>
+			<item>gravity</item>
+			<item>environment</item>
+			<item>friction</item>
+			<item>damping</item>
+			<item>simcloth</item>
+			<item>wind</item>
+			<item>neighbors</item>
+			<item>neighbours</item>
+			<item>internal_collision</item>
+			<item>viscosity</item>
+			<item>iterations</item>
+			<item>input</item>
+			<item>mesh_output</item>
+			<item>smooth_mesh</item>
+			<item>uv_mesh</item>
+			<item>output</item>
+			<item>stiffness</item>
+			<item>topology</item>
+			<item>mass</item>
+			<item>connection</item>
+			<item>face</item>
+			<item>velocity</item>
+			<item>position</item>
+			<item>mass_count</item>
+			<item>connection_count</item>
+			<item>face_count</item>
+			<item>index1</item>
+			<item>index2</item>
+			<item>index3</item>
+			<item>time</item>
+			<item>time_step</item>
+			<item>step_count</item>
+			<item>start_time</item>
+			<item>end_time</item>
+			<item>fixed</item>
+			<item>collision</item>
+			<item>interaction</item>
+			<item>group</item>
+			<item>attach</item>
+			<item>field</item>
+			<item>mechsim</item>
+			<item>bounding</item>
+			<item>viscoelastic</item>
+			<item>viscoelastic_count</item>
+			<item>element</item>
+			<item>length</item>
+			<item>force</item>
+			<item>message</item>
+			<item>weight</item>
+			<item>randomize</item>
+			<item>hdr</item>
+			<item>no_radiosity</item>
+			<item>motion_blur</item>
+			<item>tone_mapping</item>
+			<item>show_samples</item>
+			<item>show_low_count</item>
+		</list>
+		<list name="objects">
+			<item>bicubic_patch</item>
+			<item>blob</item>
+			<item>box</item>
+			<item>cone</item>
+			<item>cubic</item>
+			<item>cylinder</item>
+			<item>difference</item>
+			<item>disc</item>
+			<item>height_field</item>
+			<item>intersection</item>
+			<item>isosurface</item>
+			<item>julia_fractal</item>
+			<item>lathe</item>
+			<item>light_source</item>
+			<item>merge</item>
+			<item>mesh</item>
+			<item>mesh2</item>
+			<item>object</item>
+			<item>parametric</item>
+			<item>plane</item>
+			<item>poly</item>
+			<item>polygon</item>
+			<item>prism</item>
+			<item>quadric</item>
+			<item>quartic</item>
+			<item>smooth_triangle</item>
+			<item>sor</item>
+			<item>sphere</item>
+			<item>sphere_sweep</item>
+			<item>superellipsoid</item>
+			<item>text</item>
+			<item>torus</item>
+			<item>triangle</item>
+			<item>union</item>
+		</list>
+		<list name="texturing">
+			<item>aa_threshold</item>
+			<item>aa_level</item>
+			<item>absorption</item>
+			<item>agate</item>
+			<item>agate_turb</item>
+			<item>ambient</item>
+			<item>average</item>
+			<item>black_hole</item>
+			<item>blue</item>
+			<item>boxed</item>
+			<item>brick_size</item>
+			<item>brick</item>
+			<item>brilliance</item>
+			<item>bumps</item>
+			<item>bump_map</item>
+			<item>bump_size</item>
+			<item>caustics</item>
+			<item>cells</item>
+			<item>checker</item>
+			<item>color_map</item>
+			<item>colour_map</item>
+			<item>color</item>
+			<item>colour</item>
+			<item>conserve_energy</item>
+			<item>control0</item>
+			<item>control1</item>
+			<item>crackle</item>
+			<item>crand</item>
+			<item>cubic_wave</item>
+			<item>cylindrical</item>
+			<item>density_file</item>
+			<item>density_map</item>
+			<item>density</item>
+			<item>dents</item>
+			<item>diffuse</item>
+			<item>dist_exp</item>
+			<item>double_illuminate</item>
+			<item>eccentricity</item>
+			<item>emission</item>
+			<item>exponent</item>
+			<item>exterior</item>
+			<item>extinction</item>
+			<item>facets</item>
+			<item>fade_colour</item>
+			<item>fade_color</item>
+			<item>fade_distance</item>
+			<item>fade_power</item>
+			<item>filter</item>
+			<item>finish</item>
+			<item>form</item>
+			<item>frequency</item>
+			<item>fresnel</item>
+			<item>gradient</item>
+			<item>granite</item>
+			<item>gray</item>
+			<item>green</item>
+			<item>hexagon</item>
+			<item>hypercomplex</item>
+			<item>interior_texture</item>
+			<item>image_map</item>
+			<item>image_pattern</item>
+			<item>interior</item>
+			<item>interpolate</item>
+			<item>intervals</item>
+			<item>ior</item>
+			<item>irid</item>
+			<item>irid_wavelength</item>
+			<item>julia</item>
+			<item>lambda</item>
+			<item>leopard</item>
+			<item>magnet</item>
+			<item>mandel</item>
+			<item>map_type</item>
+			<item>marble</item>
+			<item>material_map</item>
+			<item>material</item>
+			<item>media</item>
+			<item>metallic</item>
+			<item>method</item>
+			<item>metric</item>
+			<item>mortar</item>
+			<item>normal</item>
+			<item>normal_map</item>
+			<item>number_of_waves</item>
+			<item>octaves</item>
+			<item>omega</item>
+			<item>once</item>
+			<item>onion</item>
+			<item>orientation</item>
+			<item>phase</item>
+			<item>phong_size</item>
+			<item>phong</item>
+			<item>pigment_map</item>
+			<item>pigment</item>
+			<item>planar</item>
+			<item>quaternion</item>
+			<item>quick_color</item>
+			<item>quick_colour</item>
+			<item>quilted</item>
+			<item>radial</item>
+			<item>ramp_wave</item>
+			<item>red</item>
+			<item>reflection_exponent</item>
+			<item>reflection</item>
+			<item>repeat</item>
+			<item>rgbft</item>
+			<item>rgbf</item>
+			<item>rgbt</item>
+			<item>rgb</item>
+			<item>ripples</item>
+			<item>roughness</item>
+			<item>samples</item>
+			<item>scallop_wave</item>
+			<item>scattering</item>
+			<item>sine_wave</item>
+			<item>slope_map</item>
+			<item>slope</item>
+			<item>solid</item>
+			<item>specular</item>
+			<item>spherical</item>
+			<item>spiral1</item>
+			<item>spiral2</item>
+			<item>spotted</item>
+			<item>texture_list</item>
+			<item>texture_map</item>
+			<item>texture</item>
+			<item>tile2</item>
+			<item>tiles</item>
+			<item>normal</item>
+			<item>toroidal</item>
+			<item>transmit</item>
+			<item>triangle_wave</item>
+			<item>turbulence</item>
+			<item>turb_depth</item>
+			<item>use_alpha</item>
+			<item>use_color</item>
+			<item>use_colour</item>
+			<item>use_index</item>
+			<item>uv_mapping</item>
+			<item>warp</item>
+			<item>waves</item>
+			<item>wood</item>
+			<item>wrinkles</item>
+			<item>cutaway_textures</item>
+			<item>pigment_pattern</item>
+			<item>no_bump_scale</item>
+		</list>
+		<list name="transforms">
+			<item>matrix</item>
+			<item>rotate</item>
+			<item>scale</item>
+			<item>translate</item>
+			<item>transform</item>
+		</list>
+		<list name="filetypes">
+			<item>df3</item>
+			<item>gif</item>
+			<item>iff</item>
+			<item>jpeg</item>
+			<item>pgm</item>
+			<item>png</item>
+			<item>pot</item>
+			<item>ppm</item>
+			<item>tga</item>
+			<item>tiff</item>
+			<item>ttf</item>
+		</list>
+		<list name="identifiers">
+			<item>clock</item>
+			<item>clock_delta</item>
+			<item>clock_on</item>
+			<item>final_clock</item>
+			<item>final_frame</item>
+			<item>frame_number</item>
+			<item>image_height</item>
+			<item>image_width</item>
+			<item>initial_clock</item>
+			<item>initial_frame</item>
+			<item>t</item>
+			<item>u</item>
+			<item>v</item>
+			<item>x</item>
+			<item>y</item>
+			<item>z</item>
+		</list>
+		<list name="constants">
+			<item>false</item>
+			<item>no</item>
+			<item>off</item>
+			<item>on</item>
+			<item>pi</item>
+			<item>true</item>
+			<item>yes</item>
+		</list>
+		<list name="functions">
+			<item>abs</item>
+			<item>acos</item>
+			<item>acosh</item>
+			<item>asc</item>
+			<item>asin</item>
+			<item>asinh</item>
+			<item>atan</item>
+			<item>atan2</item>
+			<item>atanh</item>
+			<item>ceil</item>
+			<item>chr</item>
+			<item>concat</item>
+			<item>cos</item>
+			<item>cosh</item>
+			<item>cube</item>
+			<item>defined</item>
+			<item>degress</item>
+			<item>dimension_size</item>
+			<item>dimensions</item>
+			<item>div</item>
+			<item>exp</item>
+			<item>file_exists</item>
+			<item>floor</item>
+			<item>inside</item>
+			<item>int</item>
+			<item>ln</item>
+			<item>log</item>
+			<item>max</item>
+			<item>min</item>
+			<item>mod</item>
+			<item>pow</item>
+			<item>prod</item>
+			<item>pwr</item>
+			<item>radians</item>
+			<item>rand</item>
+			<item>seed</item>
+			<item>select</item>
+			<item>sin</item>
+			<item>sinh</item>
+			<item>sqrt</item>
+			<item>str</item>
+			<item>strcmp</item>
+			<item>strlen</item>
+			<item>strlwr</item>
+			<item>strupr</item>
+			<item>substr</item>
+			<item>sum</item>
+			<item>tan</item>
+			<item>tanh</item>
+			<item>trace</item>
+			<item>val</item>
+			<item>vaxis_rotate</item>
+			<item>vcross</item>
+			<item>vdot</item>
+			<item>vlength</item>
+			<item>vnormalize</item>
+			<item>vrotate</item>
+			<item>vstr</item>
+			<item>vturbulence</item>
+		</list>
+		<list name="directives">
+			<item>#debug</item>
+			<item>#default</item>
+			<item>#else</item>
+			<item>#end</item>
+			<item>#error</item>
+			<item>#fclose</item>
+			<item>#fopen</item>
+			<item>#if</item>
+			<item>#ifdef</item>
+			<item>#ifndef</item>
+			<item>#include</item>
+			<item>#range</item>
+			<item>#read</item>
+			<item>#render</item>
+			<item>#statistics</item>
+			<item>#switch</item>
+			<item>#undef</item>
+			<item>#version</item>
+			<item>#warning</item>
+			<item>#while</item>
+			<item>#write</item>
+		</list>
+		<contexts>
+			<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+				<StringDetect attribute="Declaration" context="Declaration" String="#declare" />
+				<StringDetect attribute="Declaration" context="Declaration" String="#local" />
+				<StringDetect attribute="Macro" context="Macro" String="#macro" />
+				<keyword attribute="Objects" context="#stay" String="objects" />
+				<keyword attribute="Texturing" context="#stay" String="texturing" />
+				<keyword attribute="Transforms" context="#stay" String="transforms" />
+				<keyword attribute="Filetype" context="#stay" String="filetypes" />
+				<keyword attribute="Keyword" context="#stay" String="identifiers" />
+				<keyword attribute="Constant" context="#stay" String="constants" />
+				<keyword attribute="Functions" context="#stay" String="functions" />
+				<keyword attribute="Directives" context="#stay" String="directives" />
+				<keyword attribute="Keyword" context="#stay" String="keywords" />
+				<keyword attribute="Unofficial" context="#stay" String="unofficial" />
+				<Float attribute="Float" context="#stay"/>
+				<Int attribute="Float" context="#stay"/>
+				<HlCChar attribute="Char" context="#stay"/>
+				<DetectChar attribute="String" context="String" char="&quot;"/>
+				<RegExpr attribute="Region Marker" context="#stay" String="//\s*BEGIN.*$" beginRegion="Region1" firstNonSpace="true"/>
+				<RegExpr attribute="Region Marker" context="#stay" String="//\s*END.*$" endRegion="Region1" firstNonSpace="true"/>
+				<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+				<DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+				<DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+				<AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]{|}~^&#59;"/>
+			</context>
+
+			<context attribute="Declaration" lineEndContext="#pop" name="Declaration">
+				<RegExpr attribute="Declare Keyword" context="Declare_Keyword" String="\w+" />
+				<LineContinue attribute="Declaration" context="#stay"/>
+				<AnyChar attribute="Symbol" context="#pop#pop" String="=[("/>
+			</context>
+
+			<context attribute="Macro" lineEndContext="#pop" name="Macro">
+				<RegExpr attribute="Declare Macro" context="Declare_Macro" String="\w+" />
+				<LineContinue attribute="Macro" context="#stay"/>
+				<DetectChar attribute="Symbol" context="#pop#pop" char="("/>
+			</context>
+
+			<context attribute="Declare Keyword" lineEndContext="#pop" name="Declare_Keyword">
+				<LineContinue attribute="Declare Keyword" context="#stay"/>
+				<AnyChar attribute="Symbol" context="#pop#pop" String="=[("/>
+			</context> 
+
+			<context attribute="Declare Macro" lineEndContext="#pop" name="Declare_Macro">
+				<LineContinue attribute="Declare Macro" context="#stay"/>
+				<DetectChar attribute="Symbol" context="#pop#pop" char="("/>
+			</context>
+
+			<context attribute="String" lineEndContext="#pop" name="String">
+				<LineContinue attribute="String" context="#stay"/>
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<DetectChar attribute="String" context="#pop" char="&quot;"/>
+			</context>
+
+			<context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+				<IncludeRules context="##Alerts" />
+			</context>
+
+			<context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+				<IncludeRules context="##Alerts" />
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+			</context>
+		</contexts>
+
+		<itemDatas>
+			<itemData name="Normal Text"     defStyleNum="dsNormal"   color="#000000" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="Keyword"         defStyleNum="dsKeyword"  color="#000080" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="Unofficial"      defStyleNum="dsKeyword"  color="#0080d0" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="Objects"         defStyleNum="dsKeyword"  color="#800000" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="Texturing"       defStyleNum="dsKeyword"  color="#000080" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="Transforms"      defStyleNum="dsKeyword"  color="#000080" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="Declaration"     defStyleNum="dsKeyword"  color="#000080" selColor="#000080" bold="1" italic="0"/>
+			<itemData name="Macro"           defStyleNum="dsKeyword"  color="#000080" selColor="#000080" bold="1" italic="0"/>
+			<itemData name="Declare Keyword" defStyleNum="dsKeyword"  color="#990099" selColor="#990099" bold="1" italic="0"/>
+			<itemData name="Declare Macro"   defStyleNum="dsKeyword"  color="#CC0000" selColor="#990099" bold="1" italic="0"/>
+			<itemData name="Functions"       defStyleNum="dsKeyword"  color="#000080" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="Directives"      defStyleNum="dsOthers"   color="#3300ff" selColor="#3300ff" bold="1" italic="0"/>
+			<itemData name="Filetype"        defStyleNum="dsDataType" color="#000080" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="Constant"        defStyleNum="dsFloat"    color="#0000ff" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="Float"           defStyleNum="dsFloat"    color="#0000ff" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="Char"            defStyleNum="dsChar"     color="#000080" selColor="#ffffff" bold="0" italic="0"/>
+			<itemData name="String"          defStyleNum="dsString"   color="#ff0000" selColor="#ff0000" bold="0" italic="0"/>
+			<itemData name="String Char"     defStyleNum="dsChar"     color="#ff00ff" selColor="#ff00ff" bold="0" italic="0"/>
+			<itemData name="Comment"         defStyleNum="dsComment"  color="#008000" selColor="#008000" bold="0" italic="0"/>
+			<itemData name="Symbol"          defStyleNum="dsNormal"   color="#660099" selColor="#660099" bold="0" italic="0"/>
+			<itemData name="Region Marker"   defStyleNum="dsRegionMarker"/>
+		</itemDatas>
+	</highlighting>
+
+	<general>
+		<comments>
+			<comment name="singleLine" start="//" />
+			<comment name="multiLine" start="/*" end="*/" />
+		</comments>
+		<keywords casesensitive="1" />
+	</general>
+</language>

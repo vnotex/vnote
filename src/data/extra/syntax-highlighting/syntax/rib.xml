@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<!--Kate syntax file for RenderMan Interface Byte stream-->
+<!--By David Williams-->
+<!--Email david@david-williams.info-->
+
+<language name="RenderMan RIB" version="3" kateversion="2.3" section="3D" mimetype="" extensions="*.rib" author="David Williams &lt;david@david-williams.info&gt;" license="LGPL">
+	<highlighting>
+		<list name="Graphics States">
+			<item>AreaLightSource</item>
+			<item>Attribute</item>
+			<item>AttributeBegin</item>
+			<item>AttributeEnd</item>
+			<item>Begin</item>
+			<item>Bound</item>
+			<item>Clipping</item>
+			<item>Color</item>
+			<item>ColorSamples</item>
+			<item>ConcatTransform</item>
+			<item>CoordinateSystem</item>
+			<item>CropWindow</item>
+			<item>Declare</item>
+			<item>DepthOfField</item>
+			<item>Detail</item>
+			<item>DetailRange</item>
+			<item>Displacement</item>
+			<item>Display</item>
+			<item>End</item>
+			<item>Exterior</item>
+			<item>Format</item>
+			<item>FrameAspectRatio</item>
+			<item>FrameBegin</item>
+			<item>FrameEnd</item>
+			<item>GeometricApproximation</item>
+			<item>Hider</item>
+			<item>Identity</item>
+			<item>Illuminance</item>
+			<item>Illuminate</item>
+			<item>Interior</item>
+			<item>LightSource</item>
+			<item>Matte</item>
+			<item>Opacity</item>
+			<item>Option</item>
+			<item>Orientation</item>
+			<item>Perspective</item>
+			<item>PixelFilter</item>
+			<item>PixelSamples</item>
+			<item>PixelVariance</item>
+			<item>Projection</item>
+			<item>Quantize</item>
+			<item>RelativeDetail</item>
+			<item>Rotate</item>
+			<item>Scale</item>
+			<item>ScreenWindow</item>
+			<item>ShadingInterpolation</item>
+			<item>ShadingRate</item>
+			<item>Shutter</item>
+			<item>Sides</item>
+			<item>Skew</item>
+			<item>Surface</item>
+			<item>TextureCoordinates</item>
+			<item>Transform</item>
+			<item>TransformBegin</item>
+			<item>TransformEnd</item>
+			<item>TransformPoints</item>
+			<item>Translate</item>
+			<item>version</item>
+			<item>WorldBegin</item>
+			<item>WorldEnd</item>
+		</list>
+		<list name="Geometric Primitives">
+			<item>Basis</item>
+			<item>Cylinder</item>
+			<item>Disk</item>
+			<item>GeneralPolygon</item>
+			<item>Geometry</item>
+			<item>Hyperboloid</item>
+			<item>NuPatch</item>
+			<item>ObjectBegin</item>
+			<item>ObjectEnd</item>
+			<item>ObjectInstance</item>
+			<item>Patch</item>
+			<item>Paraboloid</item>
+			<item>PointsPolygons</item>
+			<item>PointsGeneralPolygons</item>
+			<item>Polygon</item>
+			<item>Procedural</item>
+			<item>SolidBegin</item>
+			<item>SolidEnd</item>
+			<item>Sphere</item>
+			<item>Torus</item>
+		</list>
+		<list name="Motions">
+			<item>MotionBegin</item>
+			<item>MotionEnd</item>
+		</list>
+		<list name="External Resources">
+			<item>MakeBump</item>
+			<item>MakeCubeFaceEnvironment</item>
+			<item>MakeLatLongEnvironment</item>
+			<item>MakeTexture</item>
+			<item>ArchiveRecord</item>
+			<item>ErrorHandler</item>
+		</list>
+		<contexts>
+			<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+			
+				<keyword attribute="Graphics State" context="#stay" String="Graphics States"/>
+				<keyword attribute="Geometric Primitive" context="#stay" String="Geometric Primitives"/>
+				<keyword attribute="Motion" context="#stay" String="Motions"/>
+				<keyword attribute="External Resource" context="#stay" String="External Resources"/>
+				
+				<Float attribute="Float" context="#stay"/>
+				<Int attribute="Integer" context="#stay"/>
+				<DetectChar attribute="String" context="String" char="&quot;"/>
+				<DetectChar attribute="Comment" context="Comment" char="#"/>
+			</context>
+			<context name="String" attribute="String" lineEndContext="#pop">
+				<DetectChar attribute="String" context="#pop" char="&quot;"/>
+			</context>
+			<context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+		</contexts>
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal"/>
+			
+			<itemData name="Graphics State" defStyleNum="dsKeyword"/>
+			<itemData name="Geometric Primitive" defStyleNum="dsKeyword"/>
+			<itemData name="Motion" defStyleNum="dsKeyword"/>
+			<itemData name="External Resource" defStyleNum="dsKeyword"/>
+			
+			<itemData name="Float" defStyleNum="dsFloat"/>
+			<itemData name="Integer" defStyleNum="dsDecVal"/>
+			<itemData name="String" defStyleNum="dsString"/>
+			<itemData name="Comment" defStyleNum="dsComment"/>
+		</itemDatas>
+	</highlighting>
+	<general>
+		<comments>
+			<comment name="singleLine" start="#" />
+		</comments>
+	</general>
+</language>

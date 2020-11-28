@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="SiSU" version="5" section="Markup" kateversion="2.4" extensions="*.sst;*.ssm;*.ssi;*._sst;*.-sst;" author="Ralph Amissah (ralph.amissah@gmail.com)" license="LGPL" >
+  <highlighting>
+    <list name="somename">
+      <item>class</item>
+      <item>const</item>
+    </list>
+    <contexts>
+    <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+      <keyword attribute="Keyword" context="#stay" String="somename" />
+      <DetectChar attribute="String" context="string" char="&quot;" />
+      <RegExpr String="^(0~\S+|@\S+)\s.+$" attribute="Header" context="#pop" />
+      <RegExpr String="^:?[A-C1-6]~.+$" attribute="Heading" context="#pop" />
+      <Detect2Chars char="~" char1="{" attribute="Endnote" context="footnote"/>
+      <Detect2Chars char="^" char1="~" attribute="Endnote" context="endnote"/>
+      <Detect2Chars char="!" char1="{" attribute="Bold" context="emphasis"/>
+      <Detect2Chars char="*" char1="{" attribute="Bold" context="bold"/>
+      <Detect2Chars char="/" char1="{" attribute="Italic" context="italic"/>
+      <Detect2Chars char="_" char1="{" attribute="Underscore" context="underscore"/>
+      <Detect2Chars char="^" char1="{" attribute="Superscript" context="superscript"/>
+      <Detect2Chars char="," char1="{" attribute="Subscript" context="subscript"/>
+      <Detect2Chars char="-" char1="{" attribute="Strike" context="strike"/>
+      <Detect2Chars char="+" char1="{" attribute="Insert" context="insert"/>
+      <StringDetect String="&lt;br&gt;" attribute="Break" context="#pop" />
+      <RegExpr String="\{.+?\}(http:\/\/\S+|image)" attribute="Link" context="#stay"/>
+      <RegExpr String="(^|\s)http:\/\/\S+" attribute="Link" context="#stay"/>
+      <RegExpr String="^!_ .+" attribute="Bold" context="boldline"/>
+      <RegExpr String="^(_[12]|_\*|_[12]\*)\s" attribute="Indent" context="#stay"/>
+      <Detect2Chars char="~" char1="^" attribute="Endnote" context="#stay"/>
+      <RegExpr String="^%+\s.+$" attribute="Comment" context="#stay" endRegion="regionMarker" firstNonSpace="true" />
+    </context>
+    <context attribute="String" lineEndContext="#stay" name="string" >
+      <DetectChar attribute="String" context="#pop" char="&quot;" />
+    </context>
+    <context attribute="Endnote" lineEndContext="#stay" name="footnote" >
+      <Detect2Chars char="}" char1="~" attribute="Endnote" context="#pop" />
+      <Detect2Chars char="!" char1="{" attribute="Bold" context="emphasis"/>
+      <Detect2Chars char="*" char1="{" attribute="Bold" context="bold"/>
+      <Detect2Chars char="/" char1="{" attribute="Italic" context="italic"/>
+      <Detect2Chars char="_" char1="{" attribute="Underscore" context="underscore"/>
+      <Detect2Chars char="^" char1="{" attribute="Superscript" context="superscript"/>
+      <Detect2Chars char="," char1="{" attribute="Subscript" context="subscript"/>
+      <Detect2Chars char="-" char1="{" attribute="Strike" context="strike"/>
+      <Detect2Chars char="+" char1="{" attribute="Insert" context="insert"/>
+    </context>
+    <context attribute="Bold" lineEndContext="#stay" name="bold" >
+      <Detect2Chars char="}" char1="*" attribute="Bold" context="#pop" />
+      <Detect2Chars char="/" char1="{" attribute="Italic" context="italic"/>
+      <Detect2Chars char="_" char1="{" attribute="Underscore" context="underscore"/>
+      <Detect2Chars char="^" char1="{" attribute="Superscript" context="superscript"/>
+      <Detect2Chars char="," char1="{" attribute="Subscript" context="subscript"/>
+      <Detect2Chars char="-" char1="{" attribute="Strike" context="strike"/>
+      <Detect2Chars char="+" char1="{" attribute="Insert" context="insert"/>
+    </context>
+    <context attribute="Bold" lineEndContext="#stay" name="emphasis" >
+      <Detect2Chars char="}" char1="!" attribute="Bold" context="#pop" />
+      <Detect2Chars char="/" char1="{" attribute="Italic" context="italic"/>
+      <Detect2Chars char="_" char1="{" attribute="Underscore" context="underscore"/>
+      <Detect2Chars char="^" char1="{" attribute="Superscript" context="superscript"/>
+      <Detect2Chars char="," char1="{" attribute="Subscript" context="subscript"/>
+      <Detect2Chars char="-" char1="{" attribute="Strike" context="strike"/>
+      <Detect2Chars char="+" char1="{" attribute="Insert" context="insert"/>
+    </context>
+    <context attribute="Italic" lineEndContext="#stay" name="italic" >
+      <Detect2Chars char="}" char1="/" attribute="Italic" context="#pop" />
+      <Detect2Chars char="!" char1="{" attribute="Bold" context="emphasis"/>
+      <Detect2Chars char="*" char1="{" attribute="Bold" context="bold"/>
+      <Detect2Chars char="_" char1="{" attribute="Underscore" context="underscore"/>
+      <Detect2Chars char="^" char1="{" attribute="Superscript" context="superscript"/>
+      <Detect2Chars char="," char1="{" attribute="Subscript" context="subscript"/>
+      <Detect2Chars char="-" char1="{" attribute="Strike" context="strike"/>
+      <Detect2Chars char="+" char1="{" attribute="Insert" context="insert"/>
+    </context>
+    <context attribute="Underscore" lineEndContext="#stay" name="underscore" >
+      <Detect2Chars char="}" char1="_" attribute="Underscore" context="#pop" />
+      <Detect2Chars char="!" char1="{" attribute="Bold" context="emphasis"/>
+      <Detect2Chars char="*" char1="{" attribute="Bold" context="bold"/>
+      <Detect2Chars char="/" char1="{" attribute="Italic" context="italic"/>
+      <Detect2Chars char="^" char1="{" attribute="Superscript" context="superscript"/>
+      <Detect2Chars char="," char1="{" attribute="Subscript" context="subscript"/>
+      <Detect2Chars char="-" char1="{" attribute="Strike" context="strike"/>
+      <Detect2Chars char="+" char1="{" attribute="Insert" context="insert"/>
+    </context>
+    <context attribute="Superscript" lineEndContext="#stay" name="superscript" >
+      <Detect2Chars char="}" char1="^" attribute="Superscript" context="#pop" />
+      <Detect2Chars char="!" char1="{" attribute="Bold" context="emphasis"/>
+      <Detect2Chars char="*" char1="{" attribute="Bold" context="bold"/>
+      <Detect2Chars char="/" char1="{" attribute="Italic" context="italic"/>
+      <Detect2Chars char="_" char1="{" attribute="Underscore" context="underscore"/>
+      <Detect2Chars char="," char1="{" attribute="Subscript" context="subscript"/>
+      <Detect2Chars char="-" char1="{" attribute="Strike" context="strike"/>
+      <Detect2Chars char="+" char1="{" attribute="Insert" context="insert"/>
+    </context>
+    <context attribute="Subscript" lineEndContext="#stay" name="subscript" >
+      <Detect2Chars attribute="Subscript" context="#pop" char="}" char1="," />
+      <Detect2Chars char="!" char1="{" attribute="Bold" context="emphasis"/>
+      <Detect2Chars char="*" char1="{" attribute="Bold" context="bold"/>
+      <Detect2Chars char="/" char1="{" attribute="Italic" context="italic"/>
+      <Detect2Chars char="_" char1="{" attribute="Underscore" context="underscore"/>
+      <Detect2Chars char="^" char1="{" attribute="Superscript" context="superscript"/>
+      <Detect2Chars char="-" char1="{" attribute="Strike" context="strike"/>
+      <Detect2Chars char="+" char1="{" attribute="Insert" context="insert"/>
+    </context>
+    <context attribute="Strike" lineEndContext="#stay" name="strike" >
+      <Detect2Chars char="}" char1="-" attribute="Strike" context="#pop" />
+      <Detect2Chars char="!" char1="{" attribute="Bold" context="emphasis"/>
+      <Detect2Chars char="*" char1="{" attribute="Bold" context="bold"/>
+      <Detect2Chars char="/" char1="{" attribute="Italic" context="italic"/>
+      <Detect2Chars char="_" char1="{" attribute="Underscore" context="underscore"/>
+      <Detect2Chars char="^" char1="{" attribute="Superscript" context="superscript"/>
+      <Detect2Chars char="," char1="{" attribute="Subscript" context="subscript"/>
+      <Detect2Chars char="+" char1="{" attribute="Insert" context="insert"/>
+    </context>
+    <context attribute="Insert" lineEndContext="#stay" name="insert" >
+      <Detect2Chars char="}" char1="+" attribute="Insert" context="#pop" />
+      <Detect2Chars char="!" char1="{" attribute="Bold" context="emphasis"/>
+      <Detect2Chars char="*" char1="{" attribute="Bold" context="bold"/>
+      <Detect2Chars char="/" char1="{" attribute="Italic" context="italic"/>
+      <Detect2Chars char="_" char1="{" attribute="Underscore" context="underscore"/>
+      <Detect2Chars char="^" char1="{" attribute="Superscript" context="superscript"/>
+      <Detect2Chars char="," char1="{" attribute="Subscript" context="subscript"/>
+      <Detect2Chars char="-" char1="{" attribute="Strike" context="strike"/>
+    </context>
+    <context attribute="Endnote" lineEndContext="#pop" name="endnote" />
+    <context attribute="Bold" lineEndContext="#pop" name="boldline" />
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Header" defStyleNum="dsNormal" color="#1c869b" selColor="#60FFFF" bold="0" italic="0"/>
+      <itemData name="Heading" defStyleNum="dsNormal" color="#ff0000" selColor="#60FFFF" bold="1" italic="0"/>
+      <itemData name="Bold" defStyleNum="dsNormal" color="#800000" selColor="#60FFFF" bold="1" italic="0"/>
+      <itemData name="Italic" defStyleNum="dsNormal" color="#800000" selColor="#60FFFF" bold="0" italic="1"/>
+      <itemData name="Underscore" defStyleNum="dsNormal" color="#F00000" selColor="#80FFD0" bold="0" italic="0"/>
+      <itemData name="Superscript" defStyleNum="dsNormal" color="#F00000" selColor="#80FFD0" bold="0" italic="0"/>
+      <itemData name="Subscript" defStyleNum="dsNormal" color="#F00000" selColor="#80FFD0" bold="0" italic="0"/>
+      <itemData name="Strike" defStyleNum="dsNormal" color="#F00000" selColor="#80FFD0" bold="0" italic="0"/>
+      <itemData name="Insert" defStyleNum="dsNormal" color="#F00000" selColor="#80FFD0" bold="0" italic="0"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" />
+      <itemData name="Endnote" defStyleNum="dsNormal" color="#086800" selColor="#60FFFF" bold="0" italic="0"/>
+      <itemData name="Link" defStyleNum="dsNormal" color="#0000FF" selColor="#60FFFF" bold="0" italic="0"/>
+      <itemData name="String" defStyleNum="dsString" />
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Break" defStyleNum="dsNormal" color="#FF0000" selColor="#60FFFF" bold="0" italic="0"/>
+      <itemData name="Indent" defStyleNum="dsNormal" color="#F00000" selColor="#80FFD0" bold="0" italic="0"/>
+    </itemDatas>
+  </highlighting>  
+  <general>
+    <keywords weakDeliminator="\" wordWrapDeliminator=",{}[]"/>
+    <comments>
+      <comment name="singleLine" start="%" />
+    </comments>
+  </general>
+</language>

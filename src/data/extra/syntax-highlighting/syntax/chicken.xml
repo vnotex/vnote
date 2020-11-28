@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  This file is part of KDE's kate project.
+
+  copyright   : (C) 2004-2005 by Dominik Haumann
+  email       : dhdev at gmx dot de
+
+
+  copyright   : (C) 2004 by Goffart Olivier
+  email       : ogoffart @ kde.org
+      (brackets coloration)
+
+
+ **********************************************************************
+ * This library is free software; you can redistribute it and/or      *
+ * modify it under the terms of the GNU Library General Public        *
+ * License as published by the Free Software Foundation; either       *
+ * version 2 of the License, or (at your option) any later version.   *
+ *                                                                    *
+ * This library is distributed in the hope that it will be useful,    *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  *
+ * Library General Public License for more details.                   *
+ *                                                                    *
+ * You should have received a copy of the GNU Library General Public  *
+ * License along with this library; if not, write to the              *
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,   *
+ * Boston, MA  02110-1301, USA.                                       *
+ **********************************************************************
+ NOTE:
+   This file defines highlighting rules for both Scheme AND Guile.
+   Scheme usually has no block comments. Guile has block comments: #! !#
+   I support these block comments: "Good design means good compromises" :)
+   Singleline comments are introduced through ';'. In reality EVERY
+   scheme/guile developer use ';;'. It is indented in emacs in a special way.
+   That's why I set <comment singleLine=";;">.
+
+   As a guile guru tole me it would not make sense to highlight all scheme and
+   guile procedures (cause then almost everything would be highlighted) I
+   removed some to have a rather small but "senseful" list of highlighted words.
+-->
+<language version="4" kateversion="3.3"
+          name="Chicken" section="Scripts"
+          extensions="*.chicken;*.scm;*.ss;*.scheme;*.meta" 
+          indenter="lisp"
+          mimetype="text/x-scheme" 
+          author="Dominik Haumann (dhdev@gmx.de) [modified for Chicken by Nick Zarczynski (jacktradespublic@gmail.com)]"
+          license="LGPLv2+">
+  <highlighting>
+    <list name="operators">
+      <item>&lt;=</item>
+      <item>&lt;</item>
+      <item>=</item>
+      <item>=&gt;</item>
+      <item>&gt;=</item>
+      <item>&gt;</item>
+      <item>-</item>
+      <item>/</item>
+      <item>*,*</item>
+      <item>*)</item>
+      <item>+</item>
+    </list>
+    <list name="characters">
+      <item>#\nul</item>
+      <item>#\soh</item>
+      <item>#\stx</item>
+      <item>#\etx</item>
+      <item>#\eot</item>
+      <item>#\enq</item>
+      <item>#\ack</item>
+      <item>#\bel</item>
+      <item>#\bs</item>
+      <item>#\ht</item>
+      <item>#\nl</item>
+      <item>#\vt</item>
+      <item>#\np</item>
+      <item>#\cr</item>
+      <item>#\so</item>
+      <item>#\si</item>
+      <item>#\dle</item>
+      <item>#\dc1</item>
+      <item>#\dc2</item>
+      <item>#\dc3</item>
+      <item>#\dc4</item>
+      <item>#\nak</item>
+      <item>#\syn</item>
+      <item>#\etb</item>
+      <item>#\can</item>
+      <item>#\em</item>
+      <item>#\sub</item>
+      <item>#\esc</item>
+      <item>#\fs</item>
+      <item>#\gs</item>
+      <item>#\rs</item>
+      <item>#\us</item>
+      <item>#\space</item>
+      <item>#\sp</item>
+      <item>#\newline</item>
+      <item>#\nl</item>
+      <item>#\tab</item>
+      <item>#\ht</item>
+      <item>#\backspace</item>
+      <item>#\bs</item>
+      <item>#\return</item>
+      <item>#\cr</item>
+      <item>#\page</item>
+      <item>#\np</item>
+      <item>#\null</item>
+      <item>#\nul</item>
+    </list>
+    <list name="defines">
+      <item>define</item>
+      <item>define*</item>
+      <item>define-accessor</item>
+      <item>define-class</item>
+      <item>defined?</item>
+      <item>define-generic</item>
+      <item>define-macro</item>
+      <item>define-method</item>
+      <item>define-module</item>
+      <item>define-private</item>
+      <item>define-public</item>
+      <item>define*-public</item>
+      <item>define-reader-ctor</item>
+      <item>define-syntax</item>
+      <item>define-syntax-macro</item>
+      <item>defmacro</item>
+      <item>defmacro*</item>
+      <item>defmacro*-public</item>
+    </list>
+    <list name="keywords">
+      <item>abs</item>
+      <item>acos</item>
+      <item>and</item>
+      <item>angle</item>
+      <item>append</item>
+      <item>applymap</item>
+      <item>asin</item>
+      <item>assoc</item>
+      <item>assq</item>
+      <item>assv</item>
+      <item>atan</item>
+      <item>begin</item>
+      <item>boolean?</item>
+      <item>break</item>
+      <item>caaaar</item>
+      <item>caaadr</item>
+      <item>caaar</item>
+      <item>caadar</item>
+      <item>caaddr</item>
+      <item>caadr</item>
+      <item>caar</item>
+      <item>cadaar</item>
+      <item>cadadr</item>
+      <item>cadar</item>
+      <item>caddar</item>
+      <item>cadddr</item>
+      <item>caddr</item>
+      <item>cadr</item>
+      <item>call/cc</item>
+      <item>call-with-current-continuation</item>
+      <item>call-with-input-file</item>
+      <item>call-with-output-file</item>
+      <item>call-with-values</item>
+      <item>car</item>
+      <item>case</item>
+      <item>catch</item>
+      <item>cdaaar</item>
+      <item>cdaadr</item>
+      <item>cdaar</item>
+      <item>cdadar</item>
+      <item>cdaddr</item>
+      <item>cdadr</item>
+      <item>cdar</item>
+      <item>cddaar</item>
+      <item>cddadr</item>
+      <item>cddar</item>
+      <item>cdddar</item>
+      <item>cddddr</item>
+      <item>cdddr</item>
+      <item>cddr</item>
+      <item>cdr</item>
+      <item>ceiling</item>
+      <item>char-alphabetic?</item>
+      <item>char-ci&gt;=?</item>
+      <item>char-ci&gt;?</item>
+      <item>char-ci=?</item>
+      <item>char-ci&lt;=?</item>
+      <item>char-downcase</item>
+      <item>char-&gt;integer</item>
+      <item>char&gt;=?</item>
+      <item>char&gt;?</item>
+      <item>char=?</item>
+      <item>char?</item>
+      <item>char-lower-case?</item>
+      <item>char&lt;?c</item>
+      <item>char&lt;=?</item>
+      <item>char-numeric?</item>
+      <item>char-ready?</item>
+      <item>char-upcase</item>
+      <item>char-upper-case?</item>
+      <item>char-whitespace?</item>
+      <item>close-input-port</item>
+      <item>close-output-port</item>
+      <item>complex?</item>
+      <item>cond</item>
+      <item>cons</item>
+      <item>continue</item>
+      <item>cos</item>
+      <item>current-input-port</item>
+      <item>current-output-port</item>
+      <item>denominator</item>
+      <item>display</item>
+      <item>do</item>
+      <item>dynamic-wind</item>
+      <item>else</item>
+      <item>eof-object?</item>
+      <item>eq?</item>
+      <item>equal?</item>
+      <item>eqv?</item>
+      <item>eval</item>
+      <item>even?</item>
+      <item>exact->inexact</item>
+      <item>exact?</item>
+      <item>exp</item>
+      <item>expt</item>
+      <item>floor</item>
+      <item>force</item>
+      <item>for-each</item>
+      <item>gcd</item>
+      <item>har-ci&lt;?</item>
+      <item>if</item>
+      <item>imag-part</item>
+      <item>inexact-&gt;exact</item>
+      <item>inexact?</item>
+      <item>input-port?</item>
+      <item>integer-&gt;char</item>
+      <item>integer?</item>
+      <item>interaction-environment</item>
+      <item>lambda</item>
+      <item>lcm</item>
+      <item>length</item>
+      <item>let</item>
+      <item>let*</item>
+      <item>letrec</item>
+      <item>letrec-syntax</item>
+      <item>let-syntax</item>
+      <item>list-&gt;string</item>
+      <item>list</item>
+      <item>list?</item>
+      <item>list-ref</item>
+      <item>list-tail</item>
+      <item>load</item>
+      <item>log</item>
+      <item>magnitude</item>
+      <item>make-polar</item>
+      <item>make-rectangular</item>
+      <item>make-string</item>
+      <item>make-vector</item>
+      <item>max</item>
+      <item>member</item>
+      <item>memq</item>
+      <item>memv</item>
+      <item>min</item>
+      <item>modulo</item>
+      <item>negative?</item>
+      <item>newline</item>
+      <item>not</item>
+      <item>null-environment</item>
+      <item>null?</item>
+      <item>number?</item>
+      <item>number->string</item>
+      <item>numerator</item>
+      <item>odd?</item>
+      <item>open-input-file</item>
+      <item>open-output-file</item>
+      <item>or</item>
+      <item>output-port?</item>
+      <item>pair?</item>
+      <item>peek-char</item>
+      <item>port?</item>
+      <item>positive?</item>
+      <item>procedure?</item>
+      <item>quotient</item>
+      <item>rational?</item>
+      <item>rationalize</item>
+      <item>read-char</item>
+      <item>read</item>
+      <item>real?</item>
+      <item>real-part</item>
+      <item>remainder</item>
+      <item>reverse</item>
+      <item>round</item>
+      <item>scheme-report-environment</item>
+      <item>set-car!</item>
+      <item>set-cdr!</item>
+      <item>sin</item>
+      <item>sqrt</item>
+      <item>string-append</item>
+      <item>string-ci&gt;=?</item>
+      <item>string-ci&gt;?</item>
+      <item>string-ci=?</item>
+      <item>string-ci&lt;=?</item>
+      <item>string-ci&lt;?</item>
+      <item>string-copy</item>
+      <item>string-fill!</item>
+      <item>string&gt;=?</item>
+      <item>string&gt;?</item>
+      <item>string-&gt;list</item>
+      <item>string-&gt;number</item>
+      <item>string-&gt;symbol</item>
+      <item>string=?</item>
+      <item>string</item>
+      <item>string?</item>
+      <item>string-length</item>
+      <item>string&lt;=?</item>
+      <item>string&lt;?</item>
+      <item>string-ref</item>
+      <item>string-set!</item>
+      <item>substring</item>
+      <item>symbol-&gt;string</item>
+      <item>symbol?</item>
+      <item>syntax-rules</item>
+      <item>tan</item>
+      <item>transcript-off</item>
+      <item>transcript-on</item>
+      <item>truncate</item>
+      <item>values</item>
+      <item>vector-fill!</item>
+      <item>vector-&gt;listlist->vector</item>
+      <item>vector</item>
+      <item>vector?</item>
+      <item>vector-length</item>
+      <item>vector-ref</item>
+      <item>vector-set!</item>
+      <item>while</item>
+      <item>with-input-from-file</item>
+      <item>with-output-to-file</item>
+      <item>write-char</item>
+      <item>write</item>
+      <item>zero?</item>
+    </list>
+    <contexts>
+      <context name="Level0" attribute="Normal" lineEndContext="#stay">
+            <DetectChar attribute="Brackets1" context="Level1" char="("/>
+            <IncludeRules context="Default" />
+      </context>
+      <context name="Default" attribute="Normal" lineEndContext="#stay">
+        <RegExpr attribute="Region Marker" context="#stay" String=";+\s*BEGIN.*$" beginRegion="region"/>
+        <RegExpr attribute="Region Marker" context="#stay" String=";+\s*END.*$" endRegion="region"/>
+        <RegExpr attribute="Comment" context="#stay" String=";.*$"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Operator" context="#stay" String="operators"/>
+        <keyword attribute="Definition" context="function_decl" String="defines"/>
+        <keyword attribute="Char" context="#stay" String="characters"/>
+        <RegExpr attribute="Char" context="#stay" String="#\\."/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <RegExpr attribute="Char" context="SpecialNumber" String="#[bodxei]"/>
+        <RegExpr attribute="Decimal" context="#stay" String="#[tf]"/>
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+        <DetectChar attribute="Brackets1" context="Level1" char="("/>
+      </context>
+      <context name="SpecialNumber" attribute="Normal" fallthrough="true" lineEndContext="#pop">
+        <RegExpr attribute="Decimal" context="#pop" String="\d*(\.\d+)?"/>
+      </context>
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <keyword attribute="Char" context="#stay" String="characters"/>
+        <RegExpr attribute="Char" context="#stay" String="#\\."/>
+        <Detect2Chars attribute="Char" context="#stay" char="\" char1="&quot;"/>
+        <Detect2Chars attribute="Char" context="#stay" char="\" char1="\"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context name="function_decl" attribute="Function" lineEndContext="#stay">
+        <RegExpr attribute="Function" context="#pop" String="\s*[A-Za-z0-9-+\&lt;\&gt;//\*]*\s*" />
+      </context>
+      <context name="Level1" attribute="Normal" lineEndContext="#stay">
+           <DetectChar attribute="Brackets2" context="Level2" char="("/>
+           <DetectChar attribute="Brackets1" context="#pop" char=")" />
+           <IncludeRules context="Default" />
+      </context>
+      <context name="Level2" attribute="Normal" lineEndContext="#stay">
+           <DetectChar attribute="Brackets3" context="Level3" char="("/>
+           <DetectChar attribute="Brackets2" context="#pop" char=")" />
+           <IncludeRules context="Default" />
+      </context>
+      <context name="Level3" attribute="Normal" lineEndContext="#stay">
+           <DetectChar attribute="Brackets4" context="Level4" char="("/>
+           <DetectChar attribute="Brackets3" context="#pop" char=")" />
+           <IncludeRules context="Default" />
+      </context>
+      <context name="Level4" attribute="Normal" lineEndContext="#stay">
+           <DetectChar attribute="Brackets5" context="Level5" char="("/>
+           <DetectChar attribute="Brackets4" context="#pop" char=")" />
+           <IncludeRules context="Default" />
+      </context>
+      <context name="Level5" attribute="Normal" lineEndContext="#stay">
+           <DetectChar attribute="Brackets6" context="Level6" char="("/>
+           <DetectChar attribute="Brackets5" context="#pop" char=")" />
+           <IncludeRules context="Default" />
+      </context>
+      <context name="Level6" attribute="Normal" lineEndContext="#stay">
+           <DetectChar attribute="Brackets1" context="Level1" char="("/>
+           <DetectChar attribute="Brackets6" context="#pop" char=")" />
+           <IncludeRules context="Default" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal"      defStyleNum="dsNormal"/>
+      <itemData name="Keyword"     defStyleNum="dsKeyword"/>
+      <itemData name="Definition"  defStyleNum="dsKeyword" color="#d22811"/>
+      <itemData name="Operator"    defStyleNum="dsKeyword" color="#d22811"/>
+      <itemData name="Function"    defStyleNum="dsFunction"/>
+      <itemData name="Decimal"     defStyleNum="dsDecVal"/>
+      <itemData name="Float"       defStyleNum="dsFloat"/>
+      <itemData name="Char"        defStyleNum="dsChar"/>
+      <itemData name="String"      defStyleNum="dsString"/>
+      <itemData name="Comment"     defStyleNum="dsComment"/>
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker"/>
+      <itemData name="Brackets1"    defStyleNum="dsNormal" color="#ff0000" selColor="#000000" bold="1" italic="0"/>
+      <itemData name="Brackets2"    defStyleNum="dsNormal" color="#ff8800" selColor="#000000" bold="1" italic="0"/>
+      <itemData name="Brackets3"    defStyleNum="dsNormal" color="#888800" selColor="#000000" bold="1" italic="0"/>
+      <itemData name="Brackets4"    defStyleNum="dsNormal" color="#008800" selColor="#000000" bold="1" italic="0"/>
+      <itemData name="Brackets5"    defStyleNum="dsNormal" color="#000088" selColor="#000000" bold="1" italic="0"/>
+      <itemData name="Brackets6"    defStyleNum="dsNormal" color="#880088" selColor="#000000" bold="1" italic="0"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" weakDeliminator="-+*?!&lt;&gt;=/:#\"/>
+    <comments>
+      <comment name="singleLine" start=";;" />
+    </comments>
+  </general>
+</language>

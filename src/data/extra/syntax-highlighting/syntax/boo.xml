@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!-- Based on Python syntax highlighting v1.99 by Primoz Anzur, Paul Giannaros, Michael Bueker, Per Wigren -->
+<!-- Also based on boo.lang from gtksourceview -->
+<language name="Boo" version="3" kateversion="5.0" section="Sources" extensions="*.boo" mimetype="text/x-boo" casesensitive="1" author="Marc Dassonneville" license="LGPL">
+	<highlighting>
+		<list name="namespace">
+			<item>import</item>
+			<item>from</item>
+			<item>as</item>
+			<item>namespace</item>
+		</list>
+
+		<list name="operators">
+			<item>and</item>
+			<item>assert</item>
+			<item>in</item>
+			<item>is</item>
+			<item>not</item>
+			<item>or</item>
+		</list>
+
+		<list name="primitive">
+			<item>bool</item>
+			<item>byte</item>
+			<item>sbyte</item>
+			<item>double</item>
+			<item>decimal</item>
+			<item>single</item>
+			<item>short</item>
+			<item>ushort</item>
+			<item>int</item>
+			<item>char</item>
+			<item>uint</item>
+			<item>long</item>
+			<item>ulong</item>
+			<item>object</item>
+			<item>duck</item>
+			<item>string</item>
+			<item>regex</item>
+			<item>date</item>
+			<item>timespan</item>
+		</list>
+
+		<list name="definition">
+			<item>abstract</item>
+			<item>virtual</item>
+			<item>override</item>
+			<item>static</item>
+			<item>final</item>
+			<item>transient</item>
+			<item>macro</item>
+
+			<item>protected</item>
+			<item>private</item>
+			<item>public</item>
+			<item>internal</item>
+			<item>partial</item>
+
+			<item>class</item>
+			<item>struct</item>
+			<item>interface</item>
+			<item>enum</item>
+			<item>callable</item>
+			<item>of</item>
+
+			<item>def</item>
+			<item>constructor</item>
+			<item>destructor</item>
+
+			<item>do</item>
+			<item>get</item>
+			<item>set</item>
+			<item>event</item>
+
+			<item>return</item>
+			<item>yield</item>
+		</list>
+
+		<list name="boolean">
+			<item>true</item>
+			<item>false</item>
+		</list>
+
+		<list name="literals">
+			<item>null</item>
+			<item>self</item>
+			<item>super</item>
+		</list>
+
+		<list name="keywords">
+			<item>and</item>
+			<item>break</item>
+			<item>cast</item>
+			<item>continue</item>
+			<item>elif</item>
+			<item>else</item>
+			<item>except</item>
+			<item>ensure</item>
+			<item>for</item>
+			<item>given</item>
+			<item>goto</item>
+			<item>if</item>
+			<item>in</item>
+			<item>is</item>
+			<item>isa</item>
+			<item>not</item>
+			<item>or</item>
+			<item>otherwise</item>
+			<item>pass</item>
+			<item>raise</item>
+			<item>try</item>
+			<item>unless</item>
+			<item>when</item>
+			<item>while</item>
+			<item>ref</item>
+		</list>
+
+		<list name="builtins">
+			<item>assert</item>
+			<item>__eval__</item>
+			<item>__switch__</item>
+			<item>enumerate</item>
+			<item>filter</item>
+			<item>len</item>
+			<item>typeof</item>
+			<item>map</item>
+			<item>max</item>
+			<item>min</item>
+			<item>property</item>
+			<item>using</item>
+			<item>getter</item>
+			<item>required</item>
+			<item>lock</item>
+			<item>range</item>
+			<item>zip</item>
+			<item>checked</item>
+			<item>unchecked</item>
+			<item>rawArrayIndexing</item>
+			<item>normalArrayIndexing</item>
+			<item>print</item>
+			<item>array</item>
+			<item>matrix</item>
+			<item>yieldAll</item>
+		</list>
+
+		<contexts>
+			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+				<keyword attribute="Preprocessor" String="namespace" context="#stay"/>
+				<keyword attribute="Definition Keyword" String="definition" context="#stay"/>
+				<keyword attribute="Operator" String="operators" context="#stay"/>
+				<keyword attribute="Flow Control Keyword" String="keywords" context="#stay"/>
+				<keyword attribute="Builtin Function" String="builtins" context="#stay"/>
+				<keyword attribute="Special Variable" String="literals" context="#stay"/>
+				<keyword attribute="Special Variable" String="boolean" context="#stay"/>
+				<keyword attribute="Data Type" String="primitive" context="#stay" />
+				<RegExpr attribute="Normal Text" String="[a-zA-Z_][a-zA-Z_0-9]+" context="#stay"/>
+
+				<RegExpr attribute="Complex" String=" ((([0-9]*\.[0-9]+|[0-9]+\.)|([0-9]+|([0-9]*\.[0-9]+|[0-9]+\.))[eE](\+|-)?[0-9]+)|[0-9]+)[jJ]" context="#stay"/>
+				<RegExpr attribute="Float" String="([0-9]+\.[0-9]*|\.[0-9]+)([eE][0-9]+)?" context="#stay"/>
+				<RegExpr attribute="Int" String="([1-9][0-9]*([eE][0-9]+)?|0)" context="#stay"/>
+				<RegExpr attribute="Long" String="[1-9][0-9]*([eE][0-9.]+)?[Ll]" context="#stay"/>
+				<RegExpr attribute="Hex" String="0[Xx][0-9a-fA-F]+" context="#stay"/>
+				<RegExpr attribute="Octal" String="0[1-9][0-9]*" context="#stay"/>
+
+				<RegExpr attribute="Raw String" String="[rR]'''" context="Raw Tripple A-string"/>
+				<RegExpr attribute="Raw String" String="[rR]&quot;&quot;&quot;" context="Raw Tripple Q-string"/>
+
+				<RegExpr attribute="Raw String" String="[rR]'" context="Raw A-string"/>
+				<RegExpr attribute="Raw String" String="[rR]&quot;" context="Raw Q-string"/>
+
+				<RegExpr attribute="Comment" String="#.*$" context="#stay"/>
+				<RegExpr attribute="Comment" String="^\s*u?'''" context="Tripple A-comment" beginRegion="Tripple A-region"/>
+				<RegExpr attribute="Comment" String="^\s*u?&quot;&quot;&quot;" context="Tripple Q-comment" beginRegion="Tripple Q-region"/>
+				<Detect2Chars attribute="Comment" char="/" char1="/" context="Comment SlashSlash"/>
+
+				<StringDetect attribute="String" String="'''" context="Tripple A-string" beginRegion="Tripple A-region"/>
+				<StringDetect attribute="String" String="&quot;&quot;&quot;" context="Tripple Q-string" beginRegion="Tripple Q-region"/>
+				<DetectChar attribute="String" char="'" context="Single A-string"/>
+				<DetectChar attribute="String" char="&quot;" context="Single Q-string"/>
+
+				<DetectChar attribute="Operator" char="(" context="parenthesised" beginRegion="parenthesis"/>
+				<DetectChar attribute="Operator" char=")" context="#pop" endRegion="parenthesis"/>
+
+				<StringDetect attribute="Operator" String="[|" context="Quasi-Quotation" beginRegion="qq"/>
+				<StringDetect attribute="Operator" String="|]" context="#pop" endRegion="qq"/>
+
+				<RegExpr attribute="Operator" String="[+*/%\|=;\!&lt;&gt;!^&amp;~-]" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%[a-zA-Z]" context="#stay"/>
+			</context>
+
+			<context name="parenthesised" attribute="Normal Text" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="Normal" />
+			</context>
+
+			<context name="Quasi-Quotation" attribute="Operator" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="Normal" />
+			</context>
+
+			<context name="Tripple A-comment" attribute="Comment" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect attribute="Comment" String="'''" context="#pop" endRegion="Tripple A-region"/>
+			</context>
+
+			<context name="Tripple Q-comment" attribute="Comment" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<HlCChar attribute="Comment" context="#stay"/>
+				<RegExpr attribute="Comment" String="&quot;&quot;&quot;" context="#pop" endRegion="Tripple Q-region"/>
+			</context>
+
+			<context name="Tripple A-string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%\([a-zA-Z0-9_]+\)[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String" String="'''" context="#pop" endRegion="Tripple A-region"/>
+			</context>
+
+			<context name="Raw Tripple A-string" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<HlCStringChar attribute="Raw String" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%\([a-zA-Z0-9_]+\)[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String" String="'''" context="#pop" endRegion="Tripple A-region"/>
+			</context>
+
+			<context name="Tripple Q-string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%\([a-zA-Z0-9_]+\)[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String" String="&quot;&quot;&quot;" context="#pop" endRegion="Tripple Q-region"/>
+			</context>
+
+			<context name="Raw Tripple Q-string" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<HlCStringChar attribute="Raw String" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%\([a-zA-Z0-9_]+\)[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String" String="&quot;&quot;&quot;" context="#pop" endRegion="Tripple Q-region"/>
+			</context>
+
+			<context name="Comment SlashSlash" attribute="Comment" lineEndContext="#pop" >
+				<LineContinue attribute="Comment" context="#stay"/>
+			</context>
+
+			<context name="Single A-string" attribute="String" lineEndContext="#stay">
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%\([a-zA-Z0-9_]+\)[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%[a-zA-Z]" context="#stay"/>
+				<DetectChar attribute="String" char="'" context="#pop"/>
+			</context>
+
+			<context name="Single Q-string" attribute="String" lineEndContext="#stay">
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%\([a-zA-Z0-9_]+\)[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%[a-zA-Z]" context="#stay"/>
+				<DetectChar attribute="String" char="&quot;" context="#pop"/>
+			</context>
+
+			<context name="Raw A-string" attribute="Raw String" lineEndContext="#stay">
+				<HlCStringChar attribute="Raw String" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%\([a-zA-Z0-9_]+\)[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%[a-zA-Z]" context="#stay"/>
+				<DetectChar attribute="Raw String" char="'" context="#pop"/>
+			</context>
+
+			<context name="Raw Q-string" attribute="Raw String" lineEndContext="#stay">
+				<HlCStringChar attribute="Raw String" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%\([a-zA-Z0-9_]+\)[a-zA-Z]" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="%[a-zA-Z]" context="#stay"/>
+				<DetectChar attribute="Raw String" char="&quot;" context="#pop"/>
+			</context>
+		</contexts>
+
+
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal"/>
+			<itemData name="Definition Keyword" defStyleNum="dsKeyword"/>
+			<itemData name="Data Type" defStyleNum="dsDataType"/>
+			<itemData name="Operator" defStyleNum="dsOperator" />
+			<itemData name="String Substitution" defStyleNum="dsNormal"/>
+			<itemData name="Flow Control Keyword" defStyleNum="dsControlFlow"/>
+			<itemData name="Builtin Function" defStyleNum="dsDataType"/>
+			<itemData name="Special Variable" defStyleNum="dsOthers"/>
+			<itemData name="Preprocessor" defStyleNum="dsChar"/>
+			<itemData name="String Char" defStyleNum="dsSpecialChar"/>
+			<itemData name="Long" defStyleNum="dsOthers"/>
+			<itemData name="Float" defStyleNum="dsFloat"/>
+			<itemData name="Int" defStyleNum="dsDecVal"/>
+			<itemData name="Hex" defStyleNum="dsOthers"/>
+			<itemData name="Octal" defStyleNum="dsOthers"/>
+			<itemData name="Complex" defStyleNum="dsOthers"/>
+			<itemData name="Comment" defStyleNum="dsComment"/>
+			<itemData name="String" defStyleNum="dsString"/>
+			<itemData name="Raw String" defStyleNum="dsVerbatimString"/>
+		</itemDatas>
+	</highlighting>
+	<general>
+		<folding indentationsensitive="1" />
+		<emptyLines>
+			<emptyLine regexpr="\s+" casesensitive="false"/>
+			<emptyLine regexpr="\s*#.*$" casesensitive="false"/>
+		</emptyLines>
+		<comments>
+			<comment name="singleLine" start="#" position="afterwhitespace"/>
+		</comments>
+		<keywords casesensitive="1" />
+	</general>
+</language>

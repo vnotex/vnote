@@ -1,0 +1,633 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<!-- Changelog:
+
+v1.1:
+- improved Syntax
+- added support for Apache 2.2 Directives
+- .ht* files may now automaticaly be highlighted
+
+v1.0:
+- first Release
+-->
+
+<language name="Apache Configuration" section="Configuration"
+          version="3" kateversion="5.0"
+          extensions="httpd.conf;httpd2.conf;apache.conf;apache2.conf;.htaccess*;.htpasswd*"
+          mimetype=""
+          author="Jan Janssen (medhefgo@googlemail.com)" license="LGPL">
+
+<highlighting>
+<list name="String Directives">
+<item>AcceptFilter</item>
+<item>AccessFileName</item>
+<item>Action</item>
+<item>AddAlt</item>
+<item>AddAltByEncoding</item>
+<item>AddAltByType</item>
+<item>AddCharset</item>
+<item>AddDefaultCharset</item>
+<item>AddDescription</item>
+<item>AddEncoding</item>
+<item>AddHandler</item>
+<item>AddIcon</item>
+<item>AddIconByEncoding</item>
+<item>AddIconByType</item>
+<item>AddInputFilter</item>
+<item>AddLanguage</item>
+<item>AddModuleInfo</item>
+<item>AddOutputFilter</item>
+<item>AddOutputFilterByType</item>
+<item>AddType</item>
+<item>Alias</item>
+<item>AliasMatch</item>
+<item>Allow</item>
+<item>Anonymous</item>
+<item>AuthBasicProvider</item>
+<item>AuthDBMGroupFile</item>
+<item>AuthDBMUserFile</item>
+<item>AuthDigestDomain</item>
+<item>AuthDigestFile</item>
+<item>AuthDigestGroupFile</item>
+<item>AuthDigestNonceFormat</item>
+<item>AuthDigestProvider</item>
+<item>AuthGroupFile</item>
+<item>AuthLDAPBindDN</item>
+<item>AuthLDAPBindPassword</item>
+<item>AuthLDAPCharsetConfig</item>
+<item>AuthLDAPGroupAttribute</item>
+<item>AuthLDAPUrl</item>
+<item>AuthName</item>
+<item>AuthUserFile</item>
+<item>BrowserMatch</item>
+<item>BrowserMatchNoCase</item>
+<item>BS2000Account</item>
+<item>CacheDisable</item>
+<item>CacheEnable</item>
+<item>CacheFile</item>
+<item>CacheGcClean</item>
+<item>CacheGcUnused</item>
+<item>CacheRoot</item>
+<item>CGIMapExtension</item>
+<item>CharsetDefault</item>
+<item>CharsetOptions</item>
+<item>CharsetSourceEnc</item>
+<item>CookieDomain</item>
+<item>CookieLog</item>
+<item>CookieName</item>
+<item>CoreDumpDirectory</item>
+<item>CustomLog</item>
+<item>Dav</item>
+<item>DavGenericLockDB</item>
+<item>DavLockDB</item>
+<item>DBDParams</item>
+<item>DBDPrepareSQL</item>
+<item>DBDriver</item>
+<item>DefaultIcon</item>
+<item>DefaultLanguage</item>
+<item>DefaultType</item>
+<item>DeflateFilterNote</item>
+<item>Deny</item>
+<item>DirectoryIndex</item>
+<item>DocumentRoot</item>
+<item>ErrorDocument</item>
+<item>ErrorLog</item>
+<item>Example</item>
+<item>ExpiresByType</item>
+<item>ExpiresDefault</item>
+<item>ExtFilterDefine</item>
+<item>ExtFilterOptions</item>
+<item>FilterChain</item>
+<item>FilterDeclare</item>
+<item>FilterProtocol</item>
+<item>FilterProvider</item>
+<item>FilterTrace</item>
+<item>ForceType</item>
+<item>ForensicLog</item>
+<item>Group</item>
+<item>Header</item>
+<item>HeaderName</item>
+<item>ImapBase</item>
+<item>Include</item>
+<item>IndexIgnore</item>
+<item>IndexOptions</item>
+<item>IndexStyleSheet</item>
+<item>ISAPICacheFile</item>
+<item>LanguagePriority</item>
+<item>LDAPSharedCacheFile</item>
+<item>LDAPTrustedCA</item>
+<item>LDAPTrustedCAType</item>
+<item>LDAPTrustedClientCert</item>
+<item>LDAPTrustedGlobalCert</item>
+<item>Listen</item>
+<item>LoadFile</item>
+<item>LoadModule</item>
+<item>LockFile</item>
+<item>LogFormat</item>
+<item>MetaDir</item>
+<item>MetaSuffix</item>
+<item>MimeMagicFile</item>
+<item>MMapFile</item>
+<item>NameVirtualHost</item>
+<item>NoProxy</item>
+<item>NWSSLTrustedCerts</item>
+<item>NWSSLUpgradeable</item>
+<item>PassEnv</item>
+<item>PidFile</item>
+<item>ProxyBlock</item>
+<item>ProxyDomain</item>
+<item>ProxyPass</item>
+<item>ProxyPassReverse</item>
+<item>ProxyPassReverseCookieDomain</item>
+<item>ProxyPassReverseCookiePath</item>
+<item>ProxyRemote</item>
+<item>ProxyRemoteMatch</item>
+<item>ReadmeName</item>
+<item>Redirect</item>
+<item>RedirectMatch</item>
+<item>RedirectPermanent</item>
+<item>RedirectTemp</item>
+<item>RemoveCharset</item>
+<item>RemoveEncoding</item>
+<item>RemoveHandler</item>
+<item>RemoveInputFilter</item>
+<item>RemoveLanguage</item>
+<item>RemoveOutputFilter</item>
+<item>RemoveType</item>
+<item>RequestHeader</item>
+<item>Require</item>
+<item>RewriteBase</item>
+<item>RewriteCond</item>
+<item>RewriteLock</item>
+<item>RewriteLog</item>
+<item>RewriteMap</item>
+<item>RewriteRule</item>
+<item>ScoreBoardFile</item>
+<item>Script</item>
+<item>ScriptAlias</item>
+<item>ScriptAliasMatch</item>
+<item>ScriptLog</item>
+<item>ScriptSock</item>
+<item>SecureListen</item>
+<item>ServerAdmin</item>
+<item>ServerAlias</item>
+<item>ServerName</item>
+<item>ServerPath</item>
+<item>ServerRoot</item>
+<item>SetEnv</item>
+<item>SetEnvIf</item>
+<item>SetEnvIfNoCase</item>
+<item>SetHandler</item>
+<item>SetInputFilter</item>
+<item>SetOutputFilter</item>
+<item>SSIEndTag</item>
+<item>SSIErrorMsg</item>
+<item>SSIStartTag</item>
+<item>SSITimeFormat</item>
+<item>SSIUndefinedEcho</item>
+<item>SSLCACertificateFile</item>
+<item>SSLCACertificatePath</item>
+<item>SSLCADNRequestFile</item>
+<item>SSLCADNRequestPath</item>
+<item>SSLCARevocationFile</item>
+<item>SSLCARevocationPath</item>
+<item>SSLCertificateChainFile</item>
+<item>SSLCertificateFile</item>
+<item>SSLCertificateKeyFile</item>
+<item>SSLCipherSuite</item>
+<item>SSLCryptoDevice</item>
+<item>SSLHonorCiperOrder</item>
+<item>SSLPassPhraseDialog</item>
+<item>SSLProxyCACertificateFile</item>
+<item>SSLProxyCACertificatePath</item>
+<item>SSLProxyCARevocationFile</item>
+<item>SSLProxyCARevocationPath</item>
+<item>SSLProxyCipherSuite</item>
+<item>SSLProxyMachineCertificateFile</item>
+<item>SSLProxyMachineCertificatePath</item>
+<item>SSLProxyProtocol</item>
+<item>SSLRandomSeed</item>
+<item>SSLRequire</item>
+<item>SSLRequireSSL</item>
+<item>SSLUserName</item>
+<item>SuexecUserGroup</item>
+<item>TransferLog</item>
+<item>TypesConfig</item>
+<item>UnsetEnv</item>
+<item>User</item>
+<item>UserDir</item>
+<item>VirtualDocumentRoot</item>
+<item>VirtualDocumentRootIP</item>
+<item>VirtualScriptAlias</item>
+<item>VirtualScriptAliasIP</item>
+<item>Win32DisableAcceptEx</item>
+</list>
+
+<list name="Integer Directives">
+<item>AllowCONNECT</item>
+<item>AssignUserID</item>
+<item>AuthDigestNonceLifetime</item>
+<item>AuthDigestShmemSize</item>
+<item>CacheDefaultExpire</item>
+<item>CacheDirLength</item>
+<item>CacheDirLevels</item>
+<item>CacheForceCompletion</item>
+<item>CacheGcDaily</item>
+<item>CacheGcInterval</item>
+<item>CacheGcMemUsage</item>
+<item>CacheLastModifiedFactor</item>
+<item>CacheMaxExpire</item>
+<item>CacheMaxFileSize</item>
+<item>CacheMinFileSize</item>
+<item>CacheSize</item>
+<item>CacheTimeMargin</item>
+<item>ChildPerUserID</item>
+<item>CookieExpires</item>
+<item>DavMinTimeout</item>
+<item>DBDExptime</item>
+<item>DBDKeep</item>
+<item>DBDMax</item>
+<item>DBDMin</item>
+<item>DBDPersist</item>
+<item>DeflateBufferSize</item>
+<item>DeflateCompressionLevel</item>
+<item>DeflateMemLevel</item>
+<item>DeflateWindowSize</item>
+<item>IdentityCheckTimeout</item>
+<item>ISAPIReadAheadBuffer</item>
+<item>KeepAliveTimeout</item>
+<item>LDAPCacheEntries</item>
+<item>LDAPCacheTTL</item>
+<item>LDAPConnectionTimeout</item>
+<item>LDAPOpCacheEntries</item>
+<item>LDAPOpCacheTTL</item>
+<item>LDAPSharedCacheSize</item>
+<item>LimitInternalRecursion</item>
+<item>LimitRequestBody</item>
+<item>LimitRequestFields</item>
+<item>LimitRequestFieldsize</item>
+<item>LimitRequestLine</item>
+<item>LimitXMLRequestBody</item>
+<item>ListenBacklog</item>
+<item>MaxClients</item>
+<item>MaxKeepAliveRequests</item>
+<item>MaxMemFree</item>
+<item>MaxRequestsPerChild</item>
+<item>MaxRequestsPerThread</item>
+<item>MaxSpareServers</item>
+<item>MaxSpareThreads</item>
+<item>MaxThreads</item>
+<item>MaxThreadsPerChild</item>
+<item>MCacheMaxObjectCount</item>
+<item>MCacheMaxObjectSize</item>
+<item>MCacheMaxStreamingBuffer</item>
+<item>MCacheMinObjectSize</item>
+<item>MCacheSize</item>
+<item>MinSpareServers</item>
+<item>MinSpareThreads</item>
+<item>NumServers</item>
+<item>ProxyIOBufferSize</item>
+<item>ProxyMaxForwards</item>
+<item>ProxyReceiveBufferSize</item>
+<item>ProxyTimeout</item>
+<item>RewriteLogLevel</item>
+<item>RLimitCPU</item>
+<item>RLimitMEM</item>
+<item>RLimitNPROC</item>
+<item>ScriptLogBuffer</item>
+<item>ScriptLogLength</item>
+<item>SendBufferSize</item>
+<item>ServerLimit</item>
+<item>SSLProxyVerifyDepth</item>
+<item>SSLSessionCacheTimeout</item>
+<item>SSLVerifyDepth</item>
+<item>StartServers</item>
+<item>StartThreads</item>
+<item>ThreadLimit</item>
+<item>ThreadsPerChild</item>
+<item>ThreadStackSize</item>
+<item>TimeOut</item>
+</list>
+
+<list name="Alternative Directives">
+<item>AcceptMutex</item>
+<item>AcceptPathInfo</item>
+<item>AllowEncodedSlashes</item>
+<item>AllowOverride</item>
+<item>Anonymous_Authoritative</item>
+<item>Anonymous_LogEmail</item>
+<item>Anonymous_MustGiveEmail</item>
+<item>Anonymous_NoUserID</item>
+<item>Anonymous_VerifyEmail</item>
+<item>AuthAuthoritative</item>
+<item>AuthBasicAuthoritative</item>
+<item>AuthBasicProvider</item>
+<item>AuthDBMAuthoritative</item>
+<item>AuthDBMType</item>
+<item>AuthDefaultAuthoritative</item>
+<item>AuthDigestAlgorithm</item>
+<item>AuthDigestNcCheck</item>
+<item>AuthDigestQop</item>
+<item>AuthLDAPAuthoritative</item>
+<item>AuthLDAPCompareDNOnServer</item>
+<item>AuthLDAPDereferenceAliases</item>
+<item>AuthLDAPEnabled</item>
+<item>AuthLDAPFrontPageHack</item>
+<item>AuthLDAPGroupAttributeIsDN</item>
+<item>AuthLDAPRemoteUserIsDN</item>
+<item>AuthType</item>
+<item>AuthzDBMAuthoritative</item>
+<item>AuthzDBMType</item>
+<item>AuthzDefaultAuthoritative</item>
+<item>AuthzGroupFileAuthoritative</item>
+<item>AuthzLDAPAuthoritative</item>
+<item>AuthzOwnerAuthoritative</item>
+<item>AuthzUserAuthoritative</item>
+<item>BufferedLogs</item>
+<item>CacheExpiryCheck</item>
+<item>CacheIgnoreCacheControl</item>
+<item>CacheIgnoreHeaders</item>
+<item>CacheIgnoreNoLastMod</item>
+<item>CacheNegotiatedDocs</item>
+<item>CacheStoreNoStore</item>
+<item>CacheStorePrivate</item>
+<item>CheckSpelling</item>
+<item>ContentDigest</item>
+<item>CookieStyle</item>
+<item>CookieTracking</item>
+<item>CoreDumpDirectory</item>
+<item>CustomLog</item>
+<item>DavDepthInfinity</item>
+<item>DirectorySlash</item>
+<item>DumpIOInput</item>
+<item>DumpIOOutput</item>
+<item>EnableExceptionHook</item>
+<item>EnableMMAP</item>
+<item>EnableSendfile</item>
+<item>ExpiresActive</item>
+<item>ExtendedStatus</item>
+<item>FileETag</item>
+<item>ForceLanguagePriority</item>
+<item>HostnameLookups</item>
+<item>IdentityCheck</item>
+<item>ImapDefault</item>
+<item>ImapMenu</item>
+<item>IndexOrderDefault</item>
+<item>ISAPIAppendLogToErrors</item>
+<item>ISAPIAppendLogToQuery</item>
+<item>ISAPIFakeAsync</item>
+<item>ISAPILogNotSupported</item>
+<item>KeepAlive</item>
+<item>LDAPTrustedMode</item>
+<item>LDAPVerifyServerCert</item>
+<item>LogLevel</item>
+<item>MCacheRemovalAlgorithm</item>
+<item>MetaFiles</item>
+<item>ModMimeUsePathInfo</item>
+<item>MultiviewsMatch</item>
+<item>Options</item>
+<item>Order</item>
+<item>ProtocolEcho</item>
+<item>ProxyBadHeader</item>
+<item>ProxyErrorOverride</item>
+<item>ProxyPreserveHost</item>
+<item>ProxyRequests</item>
+<item>ProxyVia</item>
+<item>RewriteEngine</item>
+<item>RewriteOptions</item>
+<item>Satisfy</item>
+<item>ScriptInterpreterSource</item>
+<item>ServerSignature</item>
+<item>ServerTokens</item>
+<item>SSLEngine</item>
+<item>SSLHonorCipherOrder</item>
+<item>SSLMutex</item>
+<item>SSLOptions</item>
+<item>SSLProtocol</item>
+<item>SSLProxyEngine</item>
+<item>SSLProxyVerify</item>
+<item>SSLSessionCache</item>
+<item>SSLVerifyClient</item>
+<item>UseCanonicalName</item>
+<item>XBitHack</item>
+</list>
+
+<list name="Alternates">
+<item>On</item>
+<item>Off</item>
+<item>Default</item>
+<item>flock</item>
+<item>fcntl</item>
+<item>posixsem</item>
+<item>pthread</item>
+<item>sysvsem</item>
+<item>All</item>
+<item>None</item>
+<item>AuthConfig</item>
+<item>FileInfo</item>
+<item>Indexes</item>
+<item>Limit</item>
+<item>Options</item>
+
+<item>ExecCGI</item>
+<item>FollowSymLinks</item>
+<item>Includes</item>
+<item>IncludesNOEXEC</item>
+<item>Indexes</item>
+<item>MultiViews</item>
+<item>SymLinksIfOwnerMatch</item>
+<item>StdEnvVars</item>
+<item>CompatEnvVars</item>
+<item>ExportCertData</item>
+<item>FakeBasicAuth</item>
+<item>StrictRequire</item>
+<item>OptRenegotiate</item>
+
+<item>SDBM</item>
+<item>GDBM</item>
+<item>NDBM</item>
+<item>DB</item>
+<item>MD5</item>
+<item>MD5-sess</item>
+<item>auth</item>
+<item>auth-int</item>
+<item>never</item>
+<item>searching</item>
+<item>finding</item>
+<item>always</item>
+<item>Basic</item>
+<item>Digest</item>
+<item>Connection</item>
+<item>Keep-Alive</item>
+<item>Proxy-Authenticate</item>
+<item>Proxy-Authorization</item>
+<item>TE</item>
+<item>Trailers</item>
+<item>Transfer-Encoding</item>
+<item>Upgrade</item>
+<item>Netscape</item>
+<item>Cookie</item>
+<item>Cookie2</item>
+<item>RFC2109</item>
+<item>RFC2965</item>
+<item>INode</item>
+<item>MTime</item>
+<item>Size</item>
+<item>Prefer</item>
+<item>Fallback</item>
+<item>Double</item>
+<item>error</item>
+<item>nocontent</item>
+<item>map</item>
+<item>referer</item>
+<item>formatted</item>
+<item>semiformatted</item>
+<item>unformatted</item>
+<item>Ascending</item>
+<item>Descending</item>
+<item>Name</item>
+<item>Date</item>
+<item>Size</item>
+<item>Description</item>
+<item>SSL</item>
+<item>TLS</item>
+<item>STARTTLS</item>
+<item>emerg</item>
+<item>alert</item>
+<item>crit</item>
+<item>error</item>
+<item>warn</item>
+<item>notice</item>
+<item>info</item>
+<item>debug</item>
+<item>LRU</item>
+<item>GDSF</item>
+<item>Any</item>
+<item>NegotiatedOnly</item>
+<item>Filters</item>
+<item>Handlers</item>
+<item>Deny,Allow</item>
+<item>Allow,Deny</item>
+<item>Mutual-failure</item>
+<item>IsError</item>
+<item>Ignore</item>
+<item>StartBody</item>
+<item>Full</item>
+<item>Block</item>
+<item>inherit</item>
+<item>Registry</item>
+<item>Registry-Strict</item>
+<item>Script</item>
+<item>EMail</item>
+<item>Major</item>
+<item>Minor</item>
+<item>Min</item>
+<item>Minimal</item>
+<item>Prod</item>
+<item>ProductOnly</item>
+<item>OS</item>
+<item>Full</item>
+<item>optional</item>
+<item>posixsem</item>
+<item>sysvsem</item>
+<item>sem</item>
+<item>pthread</item>
+<item>fcntl:</item>
+<item>flock:</item>
+<item>file:</item>
+<item>yes</item>
+<item>no</item>
+<item>SSLv2</item>
+<item>SSLv3</item>
+<item>TLSv1</item>
+<item>require</item>
+<item>optional_no_ca</item>
+<item>nonenotnull</item>
+<item>dbm:</item>
+<item>shm:</item>
+<item>dc:</item>
+<item>DNS</item>
+</list>
+
+
+<contexts>
+ <context name="apache" attribute="Normal Text" lineEndContext="#stay">
+  <keyword context="String Directives" String="String Directives" />
+  <keyword attribute="Directives" context="Integer Directives" String="Integer Directives" />
+  <keyword attribute="Directives" context="Alternative Directives" String="Alternative Directives" />
+
+  <RegExpr attribute="Container" context="Container Open" String="&lt;\w+" beginRegion="Container" />
+  <RegExpr attribute="Container" context="Container Close" String="&lt;/\w+" endRegion="Container" />
+  <DetectChar attribute="Comment" context="Comment" char="#" firstNonSpace="true" />
+ </context>
+
+ <!--	Directives - separated after String, Integer and Alternatives -->
+ <context name="String Directives" attribute="Directives" lineEndContext="#pop">
+  <RegExpr attribute="String" context="#stay" String="[^#]*" />
+  <IncludeRules context="Comment Alert" />
+ </context>
+
+ <context name="Integer Directives" attribute="Other" lineEndContext="#pop">
+  <Float attribute="Float" context="Integer Directives" />
+  <Int attribute="Int" context="Integer Directives" />
+  <IncludeRules context="Comment Alert" />
+ </context>
+
+ <context name="Alternative Directives" attribute="Other" lineEndContext="#pop">
+  <keyword attribute="Alternates" context="#stay" String="Alternates" />
+  <DetectChar attribute="Alternates" context="#stay" char="-" />
+  <DetectChar attribute="Alternates" context="#stay" char="+" />
+  <IncludeRules context="Comment Alert" />
+ </context>
+
+<!--	Other -->
+ <context name="Comment" attribute="Comment" lineEndContext="#pop">
+  <DetectSpaces />
+  <IncludeRules context="##Alerts" />
+  <DetectIdentifier />
+ </context>
+
+<!--	Container -->
+ <context name="Container Open" attribute="Container" lineEndContext="#pop">
+  <DetectChar attribute="Container" context="Alert" char="&gt;" />
+  <RegExpr attribute="Attribute" context="#stay" String="[^#&gt;]*" />
+  <IncludeRules context="Comment Alert" />
+ </context>
+
+ <context name="Container Close" attribute="Container" lineEndContext="#pop">
+  <DetectChar attribute="Container" context="Alert" char="&gt;" />
+ </context>
+
+<!--	Alerts -->
+ <context name="Comment Alert" attribute="Normal Text" lineEndContext="#pop">
+  <DetectChar attribute="Alert" context="Alert" char="#" />
+ </context>
+
+ <context name="Alert" attribute="Alert" lineEndContext="#pop" />
+</contexts>
+
+<itemDatas>
+ <itemData name="Normal Text" defStyleNum="dsNormal" />
+ <itemData name="Comment" defStyleNum="dsComment" />
+ <itemData name="Directives" defStyleNum="dsExtension" bold="true" spellChecking="false"/>
+ <itemData name="String" defStyleNum="dsString" />
+ <itemData name="Float" defStyleNum="dsFloat" />
+ <itemData name="Int" defStyleNum="dsFloat" />
+ <itemData name="Alternates" defStyleNum="dsKeyword" spellChecking="false"/>
+ <itemData name="Alert" defStyleNum="dsError" />
+ <itemData name="Container" defStyleNum="dsFunction" spellChecking="false"/>
+ <itemData name="Attribute" defStyleNum="dsAttribute" spellChecking="false"/>
+ <itemData name="Other" defStyleNum="dsChar" />
+</itemDatas>
+</highlighting>
+
+
+<general>
+ <comments>
+  <comment name="singleLine" start="#" />
+ </comments>
+ <keywords casesensitive="0" weakDeliminator="," />
+</general>
+
+</language>

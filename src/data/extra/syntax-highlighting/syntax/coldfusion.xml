@@ -1,0 +1,731 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="ColdFusion" version="3" kateversion="2.2" section="Markup" extensions="*.cfm;*.cfc;*.cfml;*.dbm" mimetype="text/x-coldfusion">
+
+	<highlighting>
+
+		<list name="Script Keywords">
+
+			<item>if</item>
+			<item>else</item>
+			<item>for</item>
+			<item>in</item>
+			<item>while</item>
+			<item>do</item>
+			<item>continue</item>
+			<item>break</item>
+			<item>with</item>
+			<item>try</item>
+			<item>catch</item>
+			<item>switch</item>
+			<item>case</item>
+			<item>new</item>
+			<item>var</item>
+			<item>function</item>
+			<item>return</item>
+			<item>this</item>
+			<item>delete</item>
+			<item>true</item>
+			<item>false</item>
+			<item>void</item>
+			<item>throw</item>
+			<item>typeof</item>
+			<item>const</item>
+			<item>default</item>
+
+		</list>
+
+		<list name="Script Objects">
+
+			<item>Anchor</item>
+			<item>Applet</item>
+			<item>Area</item>
+			<item>Array</item>
+			<item>Boolean</item>
+			<item>Button</item>
+			<item>Checkbox</item>
+			<item>Date</item>
+			<item>Document</item>
+			<item>Event</item>
+			<item>FileUpload</item>
+			<item>Form</item>
+			<item>Frame</item>
+			<item>Function</item>
+			<item>Hidden</item>
+			<item>History</item>
+			<item>Image</item>
+			<item>Layer</item>
+			<item>Linke</item>
+			<item>Location</item>
+			<item>Math</item>
+			<item>Navigator</item>
+			<item>Number</item>
+			<item>Object</item>
+			<item>Option</item>
+			<item>Password</item>
+			<item>Radio</item>
+			<item>RegExp</item>
+			<item>Reset</item>
+			<item>Screen</item>
+			<item>Select</item>
+			<item>String</item>
+			<item>Submit</item>
+			<item>Text</item>
+			<item>Textarea</item>
+			<item>Window</item>
+
+		</list>
+
+		<list name="Script Methods">
+
+			<item>abs</item>
+			<item>acos</item>
+			<item>alert</item>
+			<item>anchor</item>
+			<item>apply</item>
+			<item>asin</item>
+			<item>atan</item>
+			<item>atan2</item>
+			<item>back</item>
+			<item>blur</item>
+			<item>call</item>
+			<item>captureEvents</item>
+			<item>ceil</item>
+			<item>charAt</item>
+			<item>charCodeAt</item>
+			<item>clearInterval</item>
+			<item>clearTimeout</item>
+			<item>click</item>
+			<item>close</item>
+			<item>compile</item>
+			<item>concat</item>
+			<item>confirm</item>
+			<item>cos</item>
+			<item>disableExternalCapture</item>
+			<item>enableExternalCapture</item>
+			<item>eval</item>
+			<item>exec</item>
+			<item>exp</item>
+			<item>find</item>
+			<item>floor</item>
+			<item>focus</item>
+			<item>forward</item>
+			<item>fromCharCode</item>
+			<item>getDate</item>
+			<item>getDay</item>
+			<item>getFullYear</item>
+			<item>getHours</item>
+			<item>getMilliseconds</item>
+			<item>getMinutes</item>
+			<item>getMonth</item>
+			<item>getSeconds</item>
+			<item>getSelection</item>
+			<item>getTime</item>
+			<item>getTimezoneOffset</item>
+			<item>getUTCDate</item>
+			<item>getUTCDay</item>
+			<item>getUTCFullYear</item>
+			<item>getUTCHours</item>
+			<item>getUTCMilliseconds</item>
+			<item>getUTCMinutes</item>
+			<item>getUTCMonth</item>
+			<item>getUTCSeconds</item>
+			<item>go</item>
+			<item>handleEvent</item>
+			<item>home</item>
+			<item>indexOf</item>
+			<item>javaEnabled</item>
+			<item>join</item>
+			<item>lastIndexOf</item>
+			<item>link</item>
+			<item>load</item>
+			<item>log</item>
+			<item>match</item>
+			<item>max</item>
+			<item>min</item>
+			<item>moveAbove</item>
+			<item>moveBelow</item>
+			<item>moveBy</item>
+			<item>moveTo</item>
+			<item>moveToAbsolute</item>
+			<item>open</item>
+			<item>parse</item>
+			<item>plugins.refresh</item>
+			<item>pop</item>
+			<item>pow</item>
+			<item>preference</item>
+			<item>print</item>
+			<item>prompt</item>
+			<item>push</item>
+			<item>random</item>
+			<item>releaseEvents</item>
+			<item>reload</item>
+			<item>replace</item>
+			<item>reset</item>
+			<item>resizeBy</item>
+			<item>resizeTo</item>
+			<item>reverse</item>
+			<item>round</item>
+			<item>routeEvent</item>
+			<item>scrollBy</item>
+			<item>scrollTo</item>
+			<item>search</item>
+			<item>select</item>
+			<item>setDate</item>
+			<item>setFullYear</item>
+			<item>setHours</item>
+			<item>setInterval</item>
+			<item>setMilliseconds</item>
+			<item>setMinutes</item>
+			<item>setMonth</item>
+			<item>setSeconds</item>
+			<item>setTime</item>
+			<item>setTimeout</item>
+			<item>setUTCDate</item>
+			<item>setUTCFullYear</item>
+			<item>setUTCHours</item>
+			<item>setUTCMilliseconds</item>
+			<item>setUTCMinutes</item>
+			<item>setUTCMonth</item>
+			<item>setUTCSeconds</item>
+			<item>shift</item>
+			<item>sin</item>
+			<item>slice</item>
+			<item>sort</item>
+			<item>splice</item>
+			<item>split</item>
+			<item>sqrt</item>
+			<item>stop</item>
+			<item>submit</item>
+			<item>substr</item>
+			<item>substring</item>
+			<item>taintEnabled</item>
+			<item>tan</item>
+			<item>test</item>
+			<item>toLocaleString</item>
+			<item>toLowerCase</item>
+			<item>toSource</item>
+			<item>toString</item>
+			<item>toUpperCase</item>
+			<item>toUTCString</item>
+			<item>unshift</item>
+			<item>unwatch</item>
+			<item>UTC</item>
+			<item>valueOf</item>
+			<item>watch</item>
+			<item>write</item>
+			<item>writeln</item>
+
+		</list>
+
+		<list name="CFSCRIPT Keywords">
+
+			<item>break</item>
+			<item>case</item>
+			<item>catch</item>
+			<item>continue</item>
+			<item>default</item>
+			<item>do</item>
+			<item>else</item>
+			<item>for</item>
+			<item>function</item>
+			<item>if</item>
+			<item>in</item>
+			<item>return</item>
+			<item>switch</item>
+			<item>try</item>
+			<item>var</item>
+			<item>while</item>
+
+		</list>
+
+		<list name="CFSCRIPT Functions">
+
+			<item>Abs</item>
+			<item>ACos</item>
+			<item>ArrayAppend</item>
+			<item>ArrayAvg</item>
+			<item>ArrayClear</item>
+			<item>ArrayDeleteAt</item>
+			<item>ArrayInsertAt</item>
+			<item>ArrayIsEmpty</item>
+			<item>ArrayLen</item>
+			<item>ArrayMax</item>
+			<item>ArrayMin</item>
+			<item>ArrayNew</item>
+			<item>ArrayPrepend</item>
+			<item>ArrayResize</item>
+			<item>ArraySet</item>
+			<item>ArraySort</item>
+			<item>ArraySum</item>
+			<item>ArraySwap</item>
+			<item>ArrayToList</item>
+			<item>Asc</item>
+			<item>ASin</item>
+			<item>Atn</item>
+			<item>BitAnd</item>
+			<item>BitMaskClear</item>
+			<item>BitMaskRead</item>
+			<item>BitMaskSet</item>
+			<item>BitNot</item>
+			<item>BitOr</item>
+			<item>BitSHLN</item>
+			<item>BitSHRN</item>
+			<item>BitXor</item>
+			<item>Ceiling</item>
+			<item>Chr</item>
+			<item>CJustify</item>
+			<item>Compare</item>
+			<item>CompareNoCase</item>
+			<item>Cos</item>
+			<item>CreateDate</item>
+			<item>CreateDateTime</item>
+			<item>CreateObject</item>
+			<item>CreateODBCDate</item>
+			<item>CreateODBCDateTime</item>
+			<item>CreateODBCTime</item>
+			<item>CreateTime</item>
+			<item>CreateTimeSpan</item>
+			<item>CreateUUID</item>
+			<item>DateAdd</item>
+			<item>DateCompare</item>
+			<item>DateConvert</item>
+			<item>DateDiff</item>
+			<item>DateFormat</item>
+			<item>DatePart</item>
+			<item>Day</item>
+			<item>DayOfWeek</item>
+			<item>DayOfWeekAsString</item>
+			<item>DayOfYear</item>
+			<item>DaysInMonth</item>
+			<item>DaysInYear</item>
+			<item>DE</item>
+			<item>DecimalFormat</item>
+			<item>DecrementValue</item>
+			<item>Decrypt</item>
+			<item>DeleteClientVariable</item>
+			<item>DirectoryExists</item>
+			<item>DollarFormat</item>
+			<item>Duplicate</item>
+			<item>Encrypt</item>
+			<item>Evaluate</item>
+			<item>Exp</item>
+			<item>ExpandPath</item>
+			<item>FileExists</item>
+			<item>Find</item>
+			<item>FindNoCase</item>
+			<item>FindOneOf</item>
+			<item>FirstDayOfMonth</item>
+			<item>Fix</item>
+			<item>FormatBaseN</item>
+			<item>GetAuthUser</item>
+			<item>GetBaseTagData</item>
+			<item>GetBaseTagList</item>
+			<item>GetBaseTemplatePath</item>
+			<item>GetClientVariablesList</item>
+			<item>GetCurrentTemplatePath</item>
+			<item>GetDirectoryFromPath</item>
+			<item>GetException</item>
+			<item>GetFileFromPath</item>
+			<item>GetFunctionList</item>
+			<item>GetHttpRequestData</item>
+			<item>GetHttpTimeString</item>
+			<item>GetK2ServerDocCount</item>
+			<item>GetK2ServerDocCountLimit</item>
+			<item>GetLocale</item>
+			<item>GetMetaData</item>
+			<item>GetMetricData</item>
+			<item>GetPageContext</item>
+			<item>GetProfileSections</item>
+			<item>GetProfileString</item>
+			<item>GetServiceSettings</item>
+			<item>GetTempDirectory</item>
+			<item>GetTempFile</item>
+			<item>GetTemplatePath</item>
+			<item>GetTickCount</item>
+			<item>GetTimeZoneInfo</item>
+			<item>GetToken</item>
+			<item>Hash</item>
+			<item>Hour</item>
+			<item>HTMLCodeFormat</item>
+			<item>HTMLEditFormat</item>
+			<item>IIf</item>
+			<item>IncrementValue</item>
+			<item>InputBaseN</item>
+			<item>Insert</item>
+			<item>Int</item>
+			<item>IsArray</item>
+			<item>IsBinary</item>
+			<item>IsBoolean</item>
+			<item>IsCustomFunction</item>
+			<item>IsDate</item>
+			<item>IsDebugMode</item>
+			<item>IsDefined</item>
+			<item>IsK2ServerABroker</item>
+			<item>IsK2ServerDocCountExceeded</item>
+			<item>IsK2ServerOnline</item>
+			<item>IsLeapYear</item>
+			<item>IsNumeric</item>
+			<item>IsNumericDate</item>
+			<item>IsObject</item>
+			<item>IsQuery</item>
+			<item>IsSimpleValue</item>
+			<item>IsStruct</item>
+			<item>IsUserInRole</item>
+			<item>IsWDDX</item>
+			<item>IsXmlDoc</item>
+			<item>IsXmlElement</item>
+			<item>IsXmlRoot</item>
+			<item>JavaCast</item>
+			<item>JSStringFormat</item>
+			<item>LCase</item>
+			<item>Left</item>
+			<item>Len</item>
+			<item>ListAppend</item>
+			<item>ListChangeDelims</item>
+			<item>ListContains</item>
+			<item>ListContainsNoCase</item>
+			<item>ListDeleteAt</item>
+			<item>ListFind</item>
+			<item>ListFindNoCase</item>
+			<item>ListFirst</item>
+			<item>ListGetAt</item>
+			<item>ListInsertAt</item>
+			<item>ListLast</item>
+			<item>ListLen</item>
+			<item>ListPrepend</item>
+			<item>ListQualify</item>
+			<item>ListRest</item>
+			<item>ListSetAt</item>
+			<item>ListSort</item>
+			<item>ListToArray</item>
+			<item>ListValueCount</item>
+			<item>ListValueCountNoCase</item>
+			<item>LJustify</item>
+			<item>Log</item>
+			<item>Log10</item>
+			<item>LSCurrencyFormat</item>
+			<item>LSDateFormat</item>
+			<item>LSEuroCurrencyFormat</item>
+			<item>LSIsCurrency</item>
+			<item>LSIsDate</item>
+			<item>LSIsNumeric</item>
+			<item>LSNumberFormat</item>
+			<item>LSParseCurrency</item>
+			<item>LSParseDateTime</item>
+			<item>LSParseEuroCurrency</item>
+			<item>LSParseNumber</item>
+			<item>LSTimeFormat</item>
+			<item>LTrim</item>
+			<item>Max</item>
+			<item>Mid</item>
+			<item>Min</item>
+			<item>Minute</item>
+			<item>Month</item>
+			<item>MonthAsString</item>
+			<item>Now</item>
+			<item>NumberFormat</item>
+			<item>ParagraphFormat</item>
+			<item>ParameterExists</item>
+			<item>ParseDateTime</item>
+			<item>Pi</item>
+			<item>PreserveSingleQuotes</item>
+			<item>Quarter</item>
+			<item>QueryAddColumn</item>
+			<item>QueryAddRow</item>
+			<item>QueryNew</item>
+			<item>QuerySetCell</item>
+			<item>QuotedValueList</item>
+			<item>Rand</item>
+			<item>Randomize</item>
+			<item>RandRange</item>
+			<item>REFind</item>
+			<item>REFindNoCase</item>
+			<item>RemoveChars</item>
+			<item>RepeatString</item>
+			<item>Replace</item>
+			<item>ReplaceList</item>
+			<item>ReplaceNoCase</item>
+			<item>REReplace</item>
+			<item>REReplaceNoCase</item>
+			<item>Reverse</item>
+			<item>Right</item>
+			<item>RJustify</item>
+			<item>Round</item>
+			<item>RTrim</item>
+			<item>Second</item>
+			<item>SetEncoding</item>
+			<item>SetLocale</item>
+			<item>SetProfileString</item>
+			<item>SetVariable</item>
+			<item>Sgn</item>
+			<item>Sin</item>
+			<item>SpanExcluding</item>
+			<item>SpanIncluding</item>
+			<item>Sqr</item>
+			<item>StripCR</item>
+			<item>StructAppend</item>
+			<item>StructClear</item>
+			<item>StructCopy</item>
+			<item>StructCount</item>
+			<item>StructDelete</item>
+			<item>StructFind</item>
+			<item>StructFindKey</item>
+			<item>StructFindValue</item>
+			<item>StructGet</item>
+			<item>StructInsert</item>
+			<item>StructIsEmpty</item>
+			<item>StructKeyArray</item>
+			<item>StructKeyExists</item>
+			<item>StructKeyList</item>
+			<item>StructNew</item>
+			<item>StructSort</item>
+			<item>StructUpdate</item>
+			<item>Tan</item>
+			<item>TimeFormat</item>
+			<item>ToBase64</item>
+			<item>ToBinary</item>
+			<item>ToString</item>
+			<item>Trim</item>
+			<item>UCase</item>
+			<item>URLDecode</item>
+			<item>URLEncodedFormat</item>
+			<item>URLSessionFormat</item>
+			<item>Val</item>
+			<item>ValueList</item>
+			<item>Week</item>
+			<item>WriteOutput</item>
+			<item>XmlChildPos</item>
+			<item>XmlElemNew</item>
+			<item>XmlFormat</item>
+			<item>XmlNew</item>
+			<item>XmlParse</item>
+			<item>XmlSearch</item>
+			<item>XmlTransform</item>
+			<item>Year</item>
+			<item>YesNoFormat</item>
+
+		</list>
+
+		<contexts>
+
+			<context attribute="Normal Text" lineEndContext="#stay" name="Normal Text">
+				<StringDetect attribute="CF Comment" context="ctxCF Comment" String="&lt;!---" />
+				<StringDetect attribute="HTML Comment" context="ctxHTML Comment" String="&lt;!--" />
+				<RegExpr attribute="Script Tags" context="ctxCFSCRIPT Tag" String="&lt;[cC][fF][sS][cC][rR][iI][pP][tT]" />
+				<RegExpr attribute="Script Tags" context="ctxSCRIPT Tag" String="&lt;[sS][cC][rR][iI][pP][tT]" />
+				<RegExpr attribute="Style Tags" context="ctxSTYLE Tag" String="&lt;[sS][tT][yY][lL][eE]" />
+				<DetectChar attribute="HTML Entities" context="ctxHTML Entities" char="&amp;" />
+				<RegExpr attribute="Custom Tags" context="ctxCustom Tag" String="&lt;\/?[cC][fF]_" />
+				<RegExpr attribute="CFX Tags" context="ctxCFX Tag" String="&lt;\/?[cC][fF][xX]_" />
+				<RegExpr attribute="CF Tags" context="ctxCF Tag" String="&lt;\/?[cC][fF]" />
+				<RegExpr attribute="Table Tags" context="ctxTable Tag" String="&lt;\/?([tT][aAhHbBfFrRdD])|([cC][aA][pP][tT])" />
+				<RegExpr attribute="Anchor Tags" context="ctxAnchor Tag" String="&lt;\/?[aA] " />
+				<RegExpr attribute="Image Tags" context="ctxImage Tag" String="&lt;\/?[iI][mM][gG] " />
+				<RegExpr attribute="Tags" context="ctxTag" String="&lt;!?\/?[a-zA-Z0-9_]+" />
+			</context>
+
+
+
+			<context name="ctxCFSCRIPT Tag" attribute="Script Tags" lineEndContext="#stay">
+				<DetectChar attribute="Script Tags" context="ctxCFSCRIPT Block" char="&gt;" />
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+			<context name="ctxSCRIPT Tag" attribute="Script Tags" lineEndContext="#stay">
+				<DetectChar attribute="Script Tags" context="ctxSCRIPT Block" char="&gt;" />
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+			<context name="ctxSTYLE Tag" attribute="Style Tags" lineEndContext="#stay">
+				<DetectChar attribute="Style Tags" context="ctxSTYLE Block" char="&gt;" />
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+
+
+			<context name="ctxTag" attribute="Tags" lineEndContext="#stay">
+				<DetectChar attribute="Tags" context="#pop" char="&gt;" />
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+			<context name="ctxTable Tag" attribute="Table Tags" lineEndContext="#stay">
+				<DetectChar attribute="Table Tags" context="#pop" char="&gt;" />
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+			<context name="ctxAnchor Tag" attribute="Anchor Tags" lineEndContext="#stay">
+				<DetectChar attribute="Anchor Tags" context="#pop" char="&gt;" />
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+			<context name="ctxImage Tag" attribute="Image Tags" lineEndContext="#stay">
+				<DetectChar attribute="Image Tags" context="#pop" char="&gt;" />
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+			<context name="ctxCF Tag" attribute="CF Tags" lineEndContext="#stay">
+				<DetectChar attribute="CF Tags" context="#pop" char="&gt;" />
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+			<context name="ctxCustom Tag" attribute="Custom Tags" lineEndContext="#stay">
+				<DetectChar attribute="Custom Tags" context="#pop" char="&gt;" />
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+			<context name="ctxCFX Tag" attribute="CFX Tags" lineEndContext="#stay">
+				<DetectChar attribute="CFX Tags" context="#pop" char="&gt;" />
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+
+
+			<context name="ctxHTML Comment" attribute="HTML Comment" lineEndContext="#stay">
+				<StringDetect attribute="CF Comment" context="ctxCF Comment" String="&lt;!---" />
+				<StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" />
+			</context>
+
+			<context name="ctxCF Comment" attribute="CF Comment" lineEndContext="#stay">
+				<StringDetect attribute="CF Comment" context="#pop" String="---&gt;" />
+			</context>
+
+			<context name="ctxC Style Comment" attribute="Script Comment" lineEndContext="#stay">
+        		<Detect2Chars attribute="Script Comment" context="#pop" char="*" char1="/" />
+			</context>
+
+			<context name="ctxOne Line Comment" attribute="Script Comment" lineEndContext="#pop" />
+
+			<context name="ctxHTML Entities" attribute="HTML Entities" lineEndContext="#pop">
+				<DetectChar attribute="HTML Entities" context="#pop" char=";" />
+			</context>
+
+
+
+			<context name="ctxCFSCRIPT Block" attribute="Normal Text" lineEndContext="#stay">
+				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" />
+				<Detect2Chars attribute="Script Comment" context="ctxOne Line Comment" char="/" char1="/" />
+				<RegExpr attribute="Script Strings" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Script Strings" context="#stay" String="'[^']*'" />
+				<Int attribute="Script Numbers" context="#stay" />
+				<Float attribute="Script Numbers" context="#stay" />
+				<AnyChar attribute="Script Operators" context="#stay" String="[()[\]=+-*/]+" />
+				<AnyChar attribute="Brackets" context="#stay" String="{}" />
+
+				<keyword attribute="Script Keywords" context="#stay" String="CFSCRIPT Keywords" />
+				<keyword attribute="Script Functions" context="#stay" String="CFSCRIPT Functions" />
+				<RegExpr attribute="Script Tags" context="#pop#pop" String="&lt;/[cC][fF][sS][cC][rR][iI][pP][tT]&gt;" />
+			</context>
+
+
+
+			<context name="ctxSCRIPT Block" attribute="Normal Text" lineEndContext="#stay">
+				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" />
+				<Detect2Chars attribute="Script Comment" context="ctxOne Line Comment" char="/" char1="/" />
+				<RegExpr attribute="Script Strings" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Script Strings" context="#stay" String="'[^']*'" />
+				<Int attribute="Script Numbers" context="#stay" />
+				<Float attribute="Script Numbers" context="#stay" />
+				<AnyChar attribute="Script Operators" context="#stay" String="[()[\]=+-*/]+" />
+				<AnyChar attribute="Brackets" context="#stay" String="{}" />
+
+				<keyword attribute="Script Keywords" context="#stay" String="Script Keywords" />
+				<keyword attribute="Script Objects" context="#stay" String="Script Objects" />
+				<keyword attribute="Script Functions" context="#stay" String="Script Methods" />
+				<RegExpr attribute="Script Tags" context="#pop#pop" String="&lt;/[sS][cC][rR][iI][pP][tT]&gt;" />
+			</context>
+
+
+
+			<context name="ctxSTYLE Block" attribute="Style Selectors" lineEndContext="#stay">
+				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" />
+				<DetectChar attribute="Brackets" context="ctxStyle Properties" char="{" />
+				<RegExpr attribute="Style Tags" context="#pop#pop" String="&lt;/[sS][tT][yY][lL][eE]&gt;" />
+			</context>
+
+			<context name="ctxStyle Properties" attribute="Style Properties" lineEndContext="#stay">
+				<DetectChar attribute="Brackets" context="#pop" char="}" />
+				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" />
+				<DetectChar attribute="Normal Text" context="ctxStyle Values" char=":" />
+			</context>
+
+			<context name="ctxStyle Values" attribute="Style Values" lineEndContext="#pop">
+				<DetectChar attribute="Normal Text" context="#pop" char=";" />
+				<DetectChar attribute="Normal Text" context="#stay" char="," />
+				<Int attribute="Numbers" context="#stay" />
+				<Float attribute="Numbers" context="#stay" />
+				<RegExpr attribute="Numbers" context="#stay" String="#([0-9a-fA-F]{3})|([0-9a-fA-F]{6})" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
+				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+			</context>
+
+		</contexts>
+
+		<itemDatas>
+
+			<itemData name="Normal Text" defStyleNum="dsNormal" />
+			<itemData name="Tags" defStyleNum="dsNormal"				color="#000080" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Table Tags" defStyleNum="dsNormal"			color="#008080" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Script Tags" defStyleNum="dsNormal"			color="#800000" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Image Tags" defStyleNum="dsNormal"			color="#800080" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Style Tags" defStyleNum="dsNormal"			color="#800080" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Anchor Tags" defStyleNum="dsNormal"			color="#008000" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Attribute Values" defStyleNum="dsNormal"	color="#0000ff" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="HTML Comment" defStyleNum="dsComment"		color="#008000" selColor="#999999" bold="0" italic="0" />
+			<itemData name="CF Comment" defStyleNum="dsComment"			color="#ff9900" selColor="#999999" bold="0" italic="0" />
+			<itemData name="Script Comment" defStyleNum="dsComment"		color="#ff9900" selColor="#999999" bold="0" italic="0" />
+			<itemData name="CF Tags" defStyleNum="dsNormal"				color="#800000" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Custom Tags" defStyleNum="dsNormal"			color="#cc6666" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="CFX Tags" defStyleNum="dsNormal"			color="#008000" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Numbers" defStyleNum="dsNormal"				color="#0000ff" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="HTML Entities" defStyleNum="dsNormal"		color="#000000" selColor="#ffffff" bold="1" italic="0" />
+			<itemData name="Style Selectors" defStyleNum="dsNormal"		color="#ff00ff" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Style Properties" defStyleNum="dsNormal"	color="#000080" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Style Values" defStyleNum="dsNormal"		color="#ff0000" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Brackets" defStyleNum="dsNormal"			color="#000080" selColor="#ffffff" bold="1" italic="0" />
+			<itemData name="Script Numbers" defStyleNum="dsNormal"		color="#ff00ff" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Script Strings" defStyleNum="dsNormal"		color="#008080" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Script Operators" defStyleNum="dsNormal"	color="#0000ff" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Script Keywords" defStyleNum="dsNormal"		color="#0000cc" selColor="#ffffff" bold="1" italic="0" />
+			<itemData name="Script Functions" defStyleNum="dsFunction"	bold="1" />
+			<itemData name="Script Objects" defStyleNum="dsNormal"		color="#0000cc" selColor="#ffffff" bold="1" italic="0" />
+
+		</itemDatas>
+
+	</highlighting>
+
+	<general>
+
+		<comments>
+
+			<comment name="multiLine" start="&lt;!--" end="--&gt;" />
+			<comment name="multiLine" start="/*" end="*/" />
+			<comment name="singleLine" start="//" />
+
+		</comments>
+
+		<keywords casesensitive="0" weakDeliminator="-" />
+
+	</general>
+
+</language>

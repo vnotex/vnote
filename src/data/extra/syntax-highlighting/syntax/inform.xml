@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- author: Giancarlo Niccolai (giancarlo@niccolai.ws) -->
+<!-- This file is released under GPL license 2.0 or any later version at your choice. -->
+<language name="Inform" version="2" kateversion="2.4" section="Sources" extensions="*.inf;*.h" mimetype="text/x-inform-src" author="Giancarlo Niccolai (giancarlo@niccolai.ws)" license="GPL">
+<highlighting>
+   <list name="keywords">
+      <item>if</item>
+      <item>for</item>
+      <item>else</item>
+      <item>box</item>
+      <item>break</item>
+      <item>continue</item>
+      <item>do</item>
+      <item>until</item>
+      <item>font</item>
+      <item>give</item>
+      <item>inversion</item>
+      <item>jump</item>
+      <item>on</item>
+      <item>to</item>
+      <item>move</item>
+      <item>new_line</item>
+      <item>objectloop</item>
+      <item>print</item>
+      <item>print_ret</item>
+      <item>quit</item>
+      <item>read</item>
+      <item>remove</item>
+      <item>restore</item>
+      <item>return</item>
+      <item>rtrue</item>
+      <item>rfalse</item>
+      <item>save</item>
+      <item>spaces</item>
+      <item>spring</item>
+      <item>style</item>
+      <item>switch</item>
+   </list>
+
+   <list name="functions">
+      <item>metaclass</item>
+      <item>parent</item>
+      <item>child</item>
+      <item>children</item>
+      <item>Achieved</item>
+      <item>AddToScope</item>
+      <item>allowpushdir</item>
+      <item>CDefArt</item>
+      <item>ChangeDefault</item>
+      <item>DefArt</item>
+      <item>DoMenu</item>
+      <item>EnglishNumber</item>
+      <item>HasLightSource</item>
+      <item>InDefArt</item>
+      <item>Locale</item>
+      <item>LoopOverScope</item>
+      <item>NextWord</item>
+      <item>NextWordStopped</item>
+      <item>NounDomain</item>
+      <item>ObjectIsUntouchable</item>
+      <item>OffersLight</item>
+      <item>PlaceInScope</item>
+      <item>PlayerTo</item>
+      <item>PrintShortName</item>
+      <item>ScopeWithin</item>
+      <item>SetTime</item>
+      <item>StartDaemon</item>
+      <item>StartTimer</item>
+      <item>StopDaemon</item>
+      <item>StopTimer</item>
+      <item>TestScope</item>
+      <item>TryNumber</item>
+      <item>UnsignedCompare</item>
+      <item>WordAddress</item>
+      <item>WordLenght</item>
+      <item>WriteListFrom</item>
+      <item>YesOrNo</item>
+      <item>ZRegion</item>
+   </list>
+   <list name="actions">
+      <item>Pronouns</item>
+      <item>Quit</item>
+      <item>Restore</item>
+      <item>Save</item>
+      <item>Verify</item>
+      <item>Restart</item>
+      <item>ScriptOn</item>
+      <item>ScriptOff</item>
+      <item>NotifyOn</item>
+      <item>NotifyOff</item>
+      <item>Places</item>
+      <item>Objects</item>
+      <item>Score</item>
+      <item>FullScore</item>
+      <item>Version</item>
+      <item>LMode1</item>
+      <item>LMode2</item>
+      <item>LMode3</item>
+      <item>Inv</item>
+
+
+      <item>Inv</item>
+      <item>InvTall</item>
+      <item>InvWide</item>
+      <item>Take</item>
+      <item>Drop</item>
+      <item>Empty</item>
+      <item>Enter</item>
+      <item>Exit</item>
+      <item>GetOff</item>
+      <item>Go</item>
+      <item>GoIn</item>
+      <item>Look</item>
+      <item>Examine</item>
+      <item>Search</item>
+      <item>Give</item>
+      <item>Show</item>
+      <item>Unlock</item>
+      <item>Lock</item>
+      <item>SwitchOn</item>
+      <item>SwitchOff</item>
+      <item>Open</item>
+      <item>Close</item>
+      <item>Disrobe</item>
+      <item>Wear</item>
+      <item>Eat</item>
+
+      <item>LetGo</item>
+      <item>Receive</item>
+      <item>Insert</item>
+      <item>PutOn</item>
+      <item>Transfer</item>
+      <item>Empty</item>
+      <item>EmptyT</item>
+      <item>GetOff</item>
+      <item>GoIn</item>
+      <item>Listen</item>
+      <item>Taste</item>
+      <item>Touch</item>
+
+      <item>Pull</item>
+      <item>Push</item>
+      <item>Wave</item>
+      <item>Turn</item>
+      <item>PushDir</item>
+      <item>ThrowAt</item>
+      <item>ThrownAt</item>
+      <item>JumpOn</item>
+      <item>Drink</item>
+      <item>Attack</item>
+      <item>Tie</item>
+      <item>Fill</item>
+      <item>Swing</item>
+      <item>Blow</item>
+      <item>Rub</item>
+      <item>Set</item>
+      <item>SetTo</item>
+      <item>Buy</item>
+      <item>Climb</item>
+      <item>Squeeze</item>
+      <item>Climb</item>
+      <item>Burn</item>
+      <item>Cut</item>
+      <item>Dig</item>
+
+      <item>Consult</item>
+      <item>Tell</item>
+      <item>Answer</item>
+      <item>Ask</item>
+      <item>AskFor</item>
+      <item>Kiss</item>
+
+      <item>Sleep</item>
+      <item>Sing</item>
+      <item>WaveHands</item>
+      <item>Swim</item>
+      <item>Sorry</item>
+      <item>Sing</item>
+      <item>Strong</item>
+      <item>Mild</item>
+      <item>Smell</item>
+      <item>Pray</item>
+      <item>Jump</item>
+      <item>Think</item>
+      <item>VagueGo</item>
+      <item>Yes</item>
+      <item>No</item>
+      <item>Sing</item>
+   </list>
+
+   <list name="special_vals" >
+      <item>String</item>
+      <item>Routine</item>
+      <item>bold</item>
+      <item>roman</item>
+      <item>underline</item>
+      <item>fixed</item>
+      <item>nothing</item>
+      <item>true</item>
+      <item>false</item>
+      <item>on</item>
+      <item>off</item>
+      <item>sender</item>
+      <item>self</item>
+      <item>location</item>
+      <item>score</item>
+      <item>action</item>
+      <item>actor</item>
+      <item>noun</item>
+      <item>second</item>
+      <item>the_time</item>
+      <item>consult_from</item>
+      <item>consult_words</item>
+      <item>wn</item>
+      <item>actors_location</item>
+      <item>buffer</item>
+      <item>player</item>
+   </list>
+
+   <list name="pragmas" >
+      <item>Ifdef</item>
+      <item>Ifndef</item>
+      <item>Iftrue</item>
+      <item>Iffalse</item>
+      <item>Ifnot</item>
+      <item>Endif</item>
+      <item>End</item>
+      <item>Abbreviate</item>
+      <item>Array</item>
+      <item>Attribute</item>
+      <item>Constant</item>
+      <item>Default</item>
+      <item>Extend</item>
+      <item>Global</item>
+      <item>Ifnot</item>
+      <item>Iftrue</item>
+      <item>Iffalse</item>
+      <item>Import</item>
+      <item>Include</item>
+      <item>Link</item>
+      <item>Lowstring</item>
+      <item>Message</item>
+      <item>Property</item>
+      <item>Release</item>
+      <item>Replace</item>
+      <item>Serial</item>
+      <item>Switches</item>
+      <item>Statusline</item>
+      <item>score</item>
+      <item>System_file</item>
+      <item>Verb</item>
+   </list>
+
+   <list name="inline_pragmas" >
+      <item>#ifdef</item>
+      <item>#else</item>
+      <item>#ifndef</item>
+      <item>#endif</item>
+   </list>
+
+   <list name="operators">
+      <item>has</item>
+      <item>hasn't</item>
+      <item>in</item>
+      <item>notin</item>
+      <item>provides</item>
+      <item>ofclass</item>
+      <item>or</item>
+   </list>
+
+   <list name="ClassDeclOps">
+      <item>with</item>
+      <item>private</item>
+      <item>has</item>
+   </list>
+
+   <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="TopLevel">
+         <DetectChar attribute="Comment" context="comment" char="!" />
+         <DetectChar attribute="String" context="string" char="&quot;" />
+         <RegExpr attribute="Function" context="funcdef" beginRegion="reg_function"
+            String="[[]\s*[a-zA-Z_]+\w*" />
+
+         <RegExpr String=" *object | *class " attribute="Pragma"
+            context="ClassDecl"
+            insensitive="true" beginRegion="reg_class" column="0"/>
+
+         <keyword attribute="Pragma" context="#stay" String="pragmas" />
+         <keyword attribute="Pragma" context="#stay" String="inline_pragmas" />
+
+         <RegExpr attribute="Operator" context="#stay" String="--?>" />
+         <RegExpr attribute="Normal Text" context="#stay" String="[a-zA-Z_]+\d*" />
+         <RegExpr attribute="Number" context="#stay" String="\$[0-9a-fA-F]{1,4}" />
+         <RegExpr attribute="Number" context="#stay" String="\d+" />
+      </context>
+
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+         <DetectChar attribute="Comment" context="comment" char="!" />
+         <DetectChar attribute="String" context="string" char="&quot;" />
+         <DetectChar attribute="Word" context="word" char="'" />
+         <keyword attribute="Pragma" context="#stay" String="inline_pragmas" />
+         <RegExpr attribute="Operator" context="#stay" String="--?>" />
+         <keyword attribute="Keyword" context="#stay" String="keywords" />
+         <keyword attribute="Actions" context="#stay" String="actions" />
+         <keyword attribute="PredefFunction" context="#stay" String="functions" />
+         <keyword attribute="Values" context="#stay" String="special_vals" />
+         <keyword attribute="Operator" context="#stay" String="operators" />
+         <RegExpr attribute="Actions" context="#stay" String="##[a-zA-Z_]+\w*" />
+         <RegExpr attribute="OpCode" context="#stay" String="@[a-zA-Z_]+\w*" />
+         <RegExpr attribute="Number" context="#stay" String="\$[0-9a-fA-F]{1,4}" />
+         <RegExpr String="[a-zA-Z_]+\w*" attribute="Normal Text" context="#stay" />
+         <RegExpr attribute="Number" context="#stay" String="\d+" />
+         <DetectChar char="{" attribute="Keyword" context="#stay"
+               beginRegion="reg_compound" />
+         <DetectChar char="}" attribute="Keyword" context="#stay"
+               endRegion="reg_compound" />
+         <AnyChar attribute="Operator" context="#stay" String="%&amp;()+-&lt;=&gt;{|}~"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="PropDefVal rules">
+         <DetectChar attribute="Comment" context="comment" char="!" />
+         <DetectChar attribute="String" context="string" char="&quot;" />
+         <DetectChar attribute="Word" context="word" char="'" />
+         <DetectChar attribute="Function" context="prop_func_def" char="[" beginRegion="reg_prop_def_func" />
+         <DetectChar attribute="Operator" context="#pop" char="," />
+         <RegExpr attribute="Number" context="#stay" String="\$[0-9a-fA-F]{1,4}" />
+         <RegExpr attribute="Number" context="#stay" String="\d+" />
+      </context>
+
+
+      <context name="funcdef" attribute="Normal Text" lineEndContext="#stay" >
+         <IncludeRules context="Normal" />
+         <Detect2Chars attribute="Function" context="#pop" char="]" char1=";"
+            endRegion="reg_function"/>
+      </context>
+
+     <context name="ClassDecl" attribute="Normal Text" lineEndContext="ClassDecl_1">
+        <IncludeRules context="PropDefVal rules" />
+     </context>
+
+     <context name="ClassDecl_1" attribute="Normal Text" lineEndContext="#stay">
+         <RegExpr String="^[\t ]*has " attribute="Keyword" context="has_decl" insensitive="true"/>
+         <keyword String="ClassDeclOps" attribute="Keyword" context="#stay" />
+         <RegExpr String="[a-zA-Z_]+\w*" context = "prop_def"
+            attribute="Function"/>
+         <DetectChar char=";" context="#pop" attribute="Pragma" endRegion="reg_class"/>
+      </context>
+
+
+      <context attribute="Word" lineEndContext="#pop" name="word">
+         <DetectChar attribute="Word" context="#pop" char="'" />
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="string">
+         <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+
+      <context name="prop_func_def" attribute="Normal Text" lineEndContext="#stay">
+         <DetectChar context="#pop" char="]" attribute="Function"
+            endRegion="reg_prop_func"/>
+         <IncludeRules context="Normal" />
+      </context>
+
+      <context name="prop_def" attribute="Normal Text" lineEndContext="#stay" >
+         <DetectChar char="," context="#pop"  attribute="Function"
+            endRegion="reg_prop"/>
+         <DetectChar char=";" context="#pop#pop#pop" attribute="Pragma" endRegion="reg_class"/>
+         <DetectChar char="[" context="prop_func_def"  attribute="Function"
+            beginRegion="reg_prop_func"/>
+         <IncludeRules context="PropDefVal rules" />
+      </context>
+
+      <context name="has_decl" attribute="Normal Text" lineEndContext="#stay" >
+         <DetectChar char=";" context="#pop#pop#pop"  attribute="Pragma" endRegion="reg_class"/>
+         <IncludeRules context="PropDefVal rules" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="comment"/>
+
+   </contexts>
+
+   <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword"/>
+      <itemData name="Actions"  defStyleNum="dsDataType" color="#E06060" selColor="#400000" bold="0" italic="0"/>
+      <itemData name="Operator"  defStyleNum="dsBaseN" color="#A01060" selColor="#400040" bold="0" italic="0"/>
+      <itemData name="Number"  defStyleNum="dsDecVal" color="#5050C0" selColor="#000000" bold="0" italic="0"/>
+      <itemData name="OpCode"  defStyleNum="dsDecVal" color="#3015F0" selColor="#000000" bold="1" italic="0"/>
+      <itemData name="Values"  defStyleNum="dsBaseN" color="#7020F0" selColor="#400000" bold="1" italic="0" />
+      <itemData name="Pragma"  defStyleNum="dsOthers" color="#109010" selColor="#400000" bold="1" italic="0" />
+      <itemData name="PredefFunction"  defStyleNum="dsFunction" />
+      <itemData name="Function"        defStyleNum="dsFunction" />
+      <itemData name="Comment"  defStyleNum="dsComment" color="#707070" selColor="#ffffff" bold="0" italic="1"/>
+      <itemData name="String"  defStyleNum="dsString" color="#007000" selColor="#007000" bold="0" italic="0"/>
+      <itemData name="Word"  defStyleNum="dsString" color="#007000" selColor="#007000" bold="0" italic="1"/>
+   </itemDatas>
+</highlighting>
+<general>
+   <comments>
+      <comment name="singleLine" start="!" />
+   </comments>
+   <keywords casesensitive="1" />
+</general>
+</language>

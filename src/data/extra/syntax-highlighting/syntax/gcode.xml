@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+
+  G-code syntax highlighting for KatePart
+
+  Copy this file to :  ~/.kde/share/apps/katepart/syntax/
+
+  Copyright © 2016 by Fernand Veilleux (fernveilleux@gmail.com)
+
+  This library is free software; you can redistribute it and/or
+	modify it under the terms of the GNU Library General Public
+	License as published by the Free Software Foundation; either
+	version 2 of the License, or (at your option) any later version.
+
+	This library is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+	Library General Public License for more details.
+
+	You should have received a copy of the GNU Library General Public
+	License along with this library; if not, write to the
+	Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+	Boston, MA  02110-1301, USA.
+
+-->
+<language name="G-Code"
+	version="4"
+	kateversion="3.8"
+	section="3D"
+	extensions="*.ngc"
+	mimetype="text/ngc"
+	author="Fernand Veilleux (fernveilleux@gmail.com)"
+	license="LGPLv2+">
+
+  <highlighting>
+    <list name="operators">
+      <item>and</item>
+      <item>or</item>
+      <item>xor</item>
+      <item>eq</item>
+      <item>ne</item>
+      <item>gt</item>
+      <item>ge</item>
+      <item>lt</item>
+      <item>le</item>
+      <item>mod</item>
+    </list>
+
+    <list name="functions">
+      <item>atan</item>
+      <item>abs</item>
+      <item>acos</item>
+      <item>asin</item>
+      <item>cos</item>
+      <item>exp</item>
+      <item>exists</item>
+      <item>fix</item>
+      <item>fup</item>
+      <item>ln</item>
+      <item>round</item>
+      <item>sin</item>
+      <item>sqrt</item>
+      <item>tan</item>
+    </list>
+
+    <list name="o_sub">
+      <item>sub</item>
+      <item>endsub</item>
+      <item>call</item>
+      <item>return</item>
+    </list>
+
+    <list name="keyword">
+      <item>do</item>
+      <item>while</item>
+      <item>endwhile</item>
+      <item>repeat</item>
+      <item>endrepeat</item>
+      <item>break</item>
+      <item>continue</item>
+      <item>if</item>
+      <item>elseif</item>
+      <item>else</item>
+      <item>endif</item>
+    </list>
+
+    <contexts>
+      <context name="Alert" attribute="Alert" lineEndContext="#pop">
+        <RegExpr String="^[\s\t]*[nN][\s\t]*[\d]{1,5}" attribute="Line Number"/>
+        <DetectSpaces attribute="Normal Text"/>
+				<DetectChar char="%" attribute="M-word"/>
+				<DetectChar char="[" attribute="Brackets"/>
+        <DetectChar char="]" attribute="Brackets"/>
+        <DetectChar char="(" lookAhead="1" context="parenthese"/>
+        <DetectChar char="#" lookAhead="1" context="hash1"/>
+        <RegExpr String="[.][\d\s\t]*[.]" lookAhead="1" context="alert"/>
+        <RegExpr String="[.][\d\s\t]*" attribute="Number"/>
+        <RegExpr String="[\d][\d\s\t]*[.][\d\s\t]*[.]" lookAhead="1" context="alert"/>
+        <RegExpr String="[\d][\d\s\t]*[.]?[\d\s\t]*" attribute="Number"/>
+        <RegExpr String="[+\-*/=]" attribute="Operator"/>
+        <RegExpr String=";.*$" attribute="Comment"/>
+        <keyword String="functions" attribute="Function"/>
+        <keyword String="operators" attribute="Operator"/>
+        <keyword String="o_sub" attribute="Sub-program"/>
+        <keyword String="keyword" attribute="Keyword"/>
+        <RegExpr String="[oO][\s\t]*&lt;[\s\t]*&gt;" lookAhead="1" context="alert"/>
+				<RegExpr String="[oO][\s\t]*([\d]+|&lt;[^>]*&gt;)" attribute="O-word"/>
+        <RegExpr String="[abcu-z][\s\t]*[+\-\d#\[.]" insensitive="1" lookAhead="1" context="coords"/>
+        <RegExpr String="[abcu-z].*$" insensitive="1" attribute="Alert"/>
+        <RegExpr String="[deh-lpqr@^][\s\t]*[+\-\d#\[.]" insensitive="1" lookAhead="1" context="opts"/>
+        <RegExpr String="[deh-lpqr@^].*$" insensitive="1" attribute="Alert"/>
+        <RegExpr String="[gG][\s\t]*[\d]+[\s\t]*[.]?[\s\t]*[\d]*" attribute="G-word"/>
+        <RegExpr String="[gG][\s\t]*[\[#]" lookAhead="1" context="gword"/>
+        <RegExpr String="[tsTS][\s\t]*[+\d#\[]" lookAhead="1" context="tools"/>
+        <RegExpr String="[fF][\s\t]*[+\d#\[.]" lookAhead="1" context="feed"/>
+        <RegExpr String="[mM][\s\t]*[1][\s\t]*[\d][\s\t]*[\d]" attribute="M-word (user)"/>
+        <RegExpr String="[mM][\s\t]*([\d][\s\t]*[\d]?|[+#\[])" lookAhead="1" context="mword"/>
+        <RegExpr String=".*$" attribute="Alert"/>
+      </context>
+
+      <context name="feed" attribute="Alert" lineEndContext="#pop">
+        <RegExpr String="[fF]" attribute="Tool" context="#pop"/>
+      </context>
+
+      <context name="tools" attribute="Alert" lineEndContext="#pop">
+        <RegExpr String="[tsTS]" attribute="Tool" context="#pop"/>
+      </context>
+
+      <context name="gword" attribute="Alert" lineEndContext="#pop">
+        <RegExpr String="[gG]" attribute="G-word" context="#pop"/>
+      </context>
+
+      <context name="mword" attribute="Alert" lineEndContext="#pop">
+        <RegExpr String="[mM]" attribute="M-word" context="#pop"/>
+      </context>
+
+      <context name="coords" attribute="Alert" lineEndContext="#pop">
+        <RegExpr String="[abcu-z]" insensitive="1" attribute="Coordinate" context="#pop"/>
+      </context>
+
+      <context name="opts" attribute="Alert" lineEndContext="#pop">
+        <RegExpr String="[deh-lpqr@^]" insensitive="1" attribute="G-options" context="#pop"/>
+      </context>
+
+      <context name="parenthese" attribute="Alert" lineEndContext="#pop">
+        <RegExpr String="\([\s\t]*(PRINT|DEBUG|MSG|AXIS|(PROBE(CLOSE|OPEN))|(LOG(OPEN|CLOSE|APPEND|[\s]|[\,])))[^\)]*\)"
+          insensitive="1" attribute="Message" context="#pop"/>
+        <RegExpr String="\([^\)]*\)" attribute="Comment" context="#pop"/>
+      </context>
+
+      <context name="hash1" attribute="Alert" lineEndContext="#pop">
+        <RegExpr String="#[\s\t]*&lt;[\s\t]*&gt;" context="alert"/>
+				<RegExpr String="#[\s\t]*[\d]{1,4}" attribute="Param (global)" context="#pop"/>
+				<RegExpr String="#[\s\t]*&lt;[\s\t]*_[^>]*&gt;" attribute="Param (global)" context="#pop"/>
+				<RegExpr String="#[\s\t]*&lt;[^>]*&gt;" attribute="Param (local)" context="#pop"/>
+        <RegExpr String="[#][\s\t]*[#][\s\t]*[#]+" lookAhead="1" context="alert"/>
+        <RegExpr String="#[\s\t]*#[\s\t]*[&lt;\[]" lookAhead="1" context="hash2"/>
+        <RegExpr String="#[\s\t]*#" attribute="Param (local)" context="#pop"/>
+        <RegExpr String="#[\s\t]*\[" lookAhead="1" context="hash2"/>
+      </context>
+
+      <context name="hash2" attribute= "Alert" lineEndContext="#pop">
+        <RegExpr String="#" attribute="Param (local)" context="#pop#pop"/>
+      </context>
+
+      <context name="alert" attribute="Alert" lineEndContext="#pop">
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Brackets" defStyleNum="dsNormal"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Coordinate" defStyleNum="dsNormal" color="#A57800" bold="1" italic="0"/>
+      <itemData name="Function" defStyleNum="dsFunction" color="#800080" bold="1" italic="1"/>
+      <itemData name="G-options" defStyleNum="dsNormal" color="#800080"  bold="1" italic="0"/>
+      <itemData name="G-word" defStyleNum="dsNormal" selColor="#FFFFFF"  bold="1" italic="0"/>
+      <itemData name="Keyword" defStyleNum="dsNormal" bold="1" italic="1"/>
+      <itemData name="Line Number" defStyleNum="dsComment"/>
+      <itemData name="Message" defStyleNum="dsNormal" italic="1" />
+      <itemData name="M-word" defStyleNum="dsNormal" color="#A07400" bold="0" italic="0" />
+      <itemData name="M-word (user)" defStyleNum="dsNormal" color="#A07400" bold="1" italic="1"/>
+      <itemData name="Number" defStyleNum="dsDecVal" color="#A64C00" bold="1" italic="0"/>
+      <itemData name="Operator" defStyleNum="dsOperator" color="#000080" bold="1" italic="0"/>
+      <itemData name="O-word" defStyleNum="dsControlFlow" color="#BB7B40" bold="0" italic="0"/>
+      <itemData name="Param (global)" defStyleNum="dsVariable" color="#149E05" bold="0" italic="0"/>
+      <itemData name="Param (local)" defStyleNum="dsVariable" color="#0950AB" bold="0" italic="0"/>
+      <itemData name="Sub-program" defStyleNum="dsKeyword" color="#700070" bold="0" italic="0"/>
+      <itemData name="Tool" defStyleNum="dsNormal" color="#0000D6" bold="1" italic="0"/>
+      <itemData name="Alert" defStyleNum="dsError"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <folding indentationsensitive="1"/>
+    <comments>
+      <comment name="multiLine" start="(" end=")"/>
+    </comments>
+    <keywords casesensitive="0"/>
+  </general>
+</language>

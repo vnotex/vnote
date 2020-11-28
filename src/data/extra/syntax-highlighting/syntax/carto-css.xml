@@ -1,0 +1,405 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<!-- Kate syntax highlighting definition for Mapbox CartoCSS -->
+
+<language name="CartoCSS" version="1" kateversion="5.0" section="Markup" extensions="*.mss" author="Lukas Sommer" license="CC0 Public Domain Dedication, version 1.0, as published by Creative Commons">
+
+	<highlighting>
+
+		<list name="list_boolean">
+			<item>true</item>
+			<item>false</item>
+		</list>
+
+		<list name="list_colornames"> <!-- The 141 official CSS colors -->
+			<item>AliceBlue</item>
+			<item>AntiqueWhite</item>
+			<item>Aqua</item>
+			<item>Aquamarine</item>
+			<item>Azure</item>
+			<item>Beige</item>
+			<item>Bisque</item>
+			<item>Black</item>
+			<item>BlanchedAlmond</item>
+			<item>Blue</item>
+			<item>BlueViolet</item>
+			<item>Brown</item>
+			<item>BurlyWood</item>
+			<item>CadetBlue</item>
+			<item>Chartreuse</item>
+			<item>Chocolate</item>
+			<item>Coral</item>
+			<item>CornflowerBlue</item>
+			<item>Cornsilk</item>
+			<item>Crimson</item>
+			<item>Cyan</item>
+			<item>DarkBlue</item>
+			<item>DarkCyan</item>
+			<item>DarkGoldenRod</item>
+			<item>DarkGray</item>
+			<item>DarkGreen</item>
+			<item>DarkKhaki</item>
+			<item>DarkMagenta</item>
+			<item>DarkOliveGreen</item>
+			<item>DarkOrange</item>
+			<item>DarkOrchid</item>
+			<item>DarkRed</item>
+			<item>DarkSalmon</item>
+			<item>DarkSeaGreen</item>
+			<item>DarkSlateBlue</item>
+			<item>DarkSlateGray</item>
+			<item>DarkTurquoise</item>
+			<item>DarkViolet</item>
+			<item>DeepPink</item>
+			<item>DeepSkyBlue</item>
+			<item>DimGray</item>
+			<item>DodgerBlue</item>
+			<item>FireBrick</item>
+			<item>FloralWhite</item>
+			<item>ForestGreen</item>
+			<item>Fuchsia</item>
+			<item>Gainsboro</item>
+			<item>GhostWhite</item>
+			<item>Gold</item>
+			<item>GoldenRod</item>
+			<item>Gray</item>
+			<item>Green</item>
+			<item>GreenYellow</item>
+			<item>HoneyDew</item>
+			<item>HotPink</item>
+			<item>IndianRed</item>
+			<item>Indigo</item>
+			<item>Ivory</item>
+			<item>Khaki</item>
+			<item>Lavender</item>
+			<item>LavenderBlush</item>
+			<item>LawnGreen</item>
+			<item>LemonChiffon</item>
+			<item>LightBlue</item>
+			<item>LightCoral</item>
+			<item>LightCyan</item>
+			<item>LightGoldenRodYellow</item>
+			<item>LightGray</item>
+			<item>LightGreen</item>
+			<item>LightPink</item>
+			<item>LightSalmon</item>
+			<item>LightSeaGreen</item>
+			<item>LightSkyBlue</item>
+			<item>LightSlateGray</item>
+			<item>LightSteelBlue</item>
+			<item>LightYellow</item>
+			<item>Lime</item>
+			<item>LimeGreen</item>
+			<item>Linen</item>
+			<item>Magenta</item>
+			<item>Maroon</item>
+			<item>MediumAquaMarine</item>
+			<item>MediumBlue</item>
+			<item>MediumOrchid</item>
+			<item>MediumPurple</item>
+			<item>MediumSeaGreen</item>
+			<item>MediumSlateBlue</item>
+			<item>MediumSpringGreen</item>
+			<item>MediumTurquoise</item>
+			<item>MediumVioletRed</item>
+			<item>MidnightBlue</item>
+			<item>MintCream</item>
+			<item>MistyRose</item>
+			<item>Moccasin</item>
+			<item>NavajoWhite</item>
+			<item>Navy</item>
+			<item>OldLace</item>
+			<item>Olive</item>
+			<item>OliveDrab</item>
+			<item>Orange</item>
+			<item>OrangeRed</item>
+			<item>Orchid</item>
+			<item>PaleGoldenRod</item>
+			<item>PaleGreen</item>
+			<item>PaleTurquoise</item>
+			<item>PaleVioletRed</item>
+			<item>PapayaWhip</item>
+			<item>PeachPuff</item>
+			<item>Peru</item>
+			<item>Pink</item>
+			<item>Plum</item>
+			<item>PowderBlue</item>
+			<item>Purple</item>
+			<item>Red</item>
+			<item>RosyBrown</item>
+			<item>RoyalBlue</item>
+			<item>SaddleBrown</item>
+			<item>Salmon</item>
+			<item>SandyBrown</item>
+			<item>SeaGreen</item>
+			<item>SeaShell</item>
+			<item>Sienna</item>
+			<item>Silver</item>
+			<item>SkyBlue</item>
+			<item>SlateBlue</item>
+			<item>SlateGray</item>
+			<item>Snow</item>
+			<item>SpringGreen</item>
+			<item>SteelBlue</item>
+			<item>Tan</item>
+			<item>Teal</item>
+			<item>Thistle</item>
+			<item>Tomato</item>
+			<item>Turquoise</item>
+			<item>Violet</item>
+			<item>Wheat</item>
+			<item>White</item>
+			<item>WhiteSmoke</item>
+			<item>Yellow</item>
+			<item>YellowGreen</item>
+		</list>
+
+			<list name="list_properties"> <!-- Based on https://github.com/mapbox/carto/blob/master/docs/latest.md (date: 19. december 2014) -->
+
+			<!-- Value type: boolean -->
+			<item>line-clip</item> <!-- Element type: line -->
+			<item>line-pattern-clip</item> <!-- Element type: line-pattern -->
+			<item>marker-allow-overlap</item> <!-- Element type: markers -->
+			<item>marker-clip</item> <!-- Element type: markers -->
+			<item>marker-ignore-placement</item> <!-- Element type: markers -->
+			<item>point-allow-overlap</item> <!-- Element type: point -->
+			<item>point-ignore-placement</item> <!-- Element type: point -->
+			<item>polygon-clip</item> <!-- Element type: polygon -->
+			<item>polygon-pattern-clip</item> <!-- Element type: polygon-pattern -->
+			<item>shield-allow-overlap</item> <!-- Element type: shield -->
+			<item>shield-avoid-edges</item> <!-- Element type: shield -->
+			<item>shield-clip</item> <!-- Element type: shield -->
+			<item>shield-unlock-image</item> <!-- Element type: shield -->
+			<item>shield-wrap-before</item> <!-- Element type: shield -->
+			<item>text-allow-overlap</item> <!-- Element type: text -->
+			<item>text-avoid-edges</item> <!-- Element type: text -->
+			<item>text-clip</item> <!-- Element type: text -->
+
+			<!-- Value type: color -->
+			<item>building-fill</item> <!-- Element type: building -->
+			<item>line-color</item> <!-- Element type: line -->
+			<item>background-color</item> <!-- Element type: map -->
+			<item>marker-fill</item> <!-- Element type: markers -->
+			<item>marker-line-color</item> <!-- Element type: markers -->
+			<item>polygon-fill</item> <!-- Element type: polygon -->
+			<item>raster-colorizer-default-color</item> <!-- Element type: raster -->
+			<item>shield-fill</item> <!-- Element type: shield -->
+			<item>shield-halo-fill</item> <!-- Element type: shield -->
+			<item>text-fill</item> <!-- Element type: text -->
+			<item>text-halo-fill</item> <!-- Element type: text -->
+
+			<!-- Value type: expression -->
+			<item>building-height</item> <!-- Element type: building -->
+			<item>marker-height</item> <!-- Element type: markers -->
+			<item>marker-width</item> <!-- Element type: markers -->
+			<item>shield-name</item> <!-- Element type: shield -->
+			<item>text-name</item> <!-- Element type: text -->
+			<item>text-orientation</item> <!-- Element type: text -->
+
+			<!-- Value type: float -->
+			<item>opacity</item> <!-- Element type: All elements -->
+			<item>building-fill-opacity</item> <!-- Element type: building -->
+			<item>line-gamma</item> <!-- Element type: line -->
+			<item>line-miterlimit</item> <!-- Element type: line -->
+			<item>line-offset</item> <!-- Element type: line -->
+			<item>line-opacity</item> <!-- Element type: line -->
+			<item>line-simplify</item> <!-- Element type: line -->
+			<item>line-smooth</item> <!-- Element type: line -->
+			<item>line-width</item> <!-- Element type: line -->
+			<item>line-pattern-offset</item> <!-- Element type: line-pattern -->
+			<item>line-pattern-simplify</item> <!-- Element type: line-pattern -->
+			<item>line-pattern-smooth</item> <!-- Element type: line-pattern -->
+			<item>background-image-opacity</item> <!-- Element type: map -->
+			<item>buffer-size</item> <!-- Element type: map -->
+			<item>marker-fill-opacity</item> <!-- Element type: markers -->
+			<item>marker-line-opacity</item> <!-- Element type: markers -->
+			<item>marker-line-width</item> <!-- Element type: markers -->
+			<item>marker-max-error</item> <!-- Element type: markers -->
+			<item>marker-opacity</item> <!-- Element type: markers -->
+			<item>marker-smooth</item> <!-- Element type: markers -->
+			<item>marker-spacing</item> <!-- Element type: markers -->
+			<item>point-opacity</item> <!-- Element type: point -->
+			<item>polygon-gamma</item> <!-- Element type: polygon -->
+			<item>polygon-opacity</item> <!-- Element type: polygon -->
+			<item>polygon-simplify</item> <!-- Element type: polygon -->
+			<item>polygon-smooth</item> <!-- Element type: polygon -->
+			<item>polygon-pattern-gamma</item> <!-- Element type: polygon-pattern -->
+			<item>polygon-pattern-opacity</item> <!-- Element type: polygon-pattern -->
+			<item>polygon-pattern-simplify</item> <!-- Element type: polygon-pattern -->
+			<item>polygon-pattern-smooth</item> <!-- Element type: polygon-pattern -->
+			<item>raster-colorizer-epsilon</item> <!-- Element type: raster -->
+			<item>raster-filter-factor</item> <!-- Element type: raster -->
+			<item>raster-opacity</item> <!-- Element type: raster -->
+			<item>shield-dx</item> <!-- Element type: shield -->
+			<item>shield-dy</item> <!-- Element type: shield -->
+			<item>shield-halo-radius</item> <!-- Element type: shield -->
+			<item>shield-min-distance</item> <!-- Element type: shield -->
+			<item>shield-min-padding</item> <!-- Element type: shield -->
+			<item>shield-opacity</item> <!-- Element type: shield -->
+			<item>shield-size</item> <!-- Element type: shield -->
+			<item>shield-spacing</item> <!-- Element type: shield -->
+			<item>shield-text-dx</item> <!-- Element type: shield -->
+			<item>shield-text-dy</item> <!-- Element type: shield -->
+			<item>shield-text-opacity</item> <!-- Element type: shield -->
+			<item>text-character-spacing</item> <!-- Element type: text -->
+			<item>text-dx</item> <!-- Element type: text -->
+			<item>text-dy</item> <!-- Element type: text -->
+			<item>text-halo-radius</item> <!-- Element type: text -->
+			<item>text-max-char-angle-delta</item> <!-- Element type: text -->
+			<item>text-min-distance</item> <!-- Element type: text -->
+			<item>text-min-padding</item> <!-- Element type: text -->
+			<item>text-min-path-length</item> <!-- Element type: text -->
+			<item>text-opacity</item> <!-- Element type: text -->
+			<item>text-size</item> <!-- Element type: text -->
+
+			<!-- Value type: functions -->
+			<item>direct-image-filters</item> <!-- Element type: All elements -->
+			<item>image-filters</item> <!-- Element type: All elements -->
+			<item>line-geometry-transform</item> <!-- Element type: line -->
+			<item>line-pattern-geometry-transform</item> <!-- Element type: line-pattern -->
+			<item>marker-geometry-transform</item> <!-- Element type: markers -->
+			<item>marker-transform</item> <!-- Element type: markers -->
+			<item>point-transform</item> <!-- Element type: point -->
+			<item>polygon-geometry-transform</item> <!-- Element type: polygon -->
+			<item>polygon-pattern-geometry-transform</item> <!-- Element type: polygon-pattern -->
+			<item>shield-transform</item> <!-- Element type: shield -->
+
+			<!-- Value type: keyword -->
+			<item>comp-op</item> <!-- Element type: All elements -->
+			<item>line-cap</item> <!-- Element type: line -->
+			<item>line-comp-op</item> <!-- Element type: line -->
+			<item>line-gamma-method</item> <!-- Element type: line -->
+			<item>line-join</item> <!-- Element type: line -->
+			<item>line-rasterizer</item> <!-- Element type: line -->
+			<item>line-simplify-algorithm</item> <!-- Element type: line -->
+			<item>line-pattern-comp-op</item> <!-- Element type: line-pattern -->
+			<item>line-pattern-simplify-algorithm</item> <!-- Element type: line-pattern -->
+			<item>background-image-comp-op</item> <!-- Element type: map -->
+			<item>marker-comp-op</item> <!-- Element type: markers -->
+			<item>marker-multi-policy</item> <!-- Element type: markers -->
+			<item>marker-placement</item> <!-- Element type: markers -->
+			<item>marker-type</item> <!-- Element type: markers -->
+			<item>point-comp-op</item> <!-- Element type: point -->
+			<item>point-placement</item> <!-- Element type: point -->
+			<item>polygon-comp-op</item> <!-- Element type: polygon -->
+			<item>polygon-gamma-method</item> <!-- Element type: polygon -->
+			<item>polygon-simplify-algorithm</item> <!-- Element type: polygon -->
+			<item>polygon-pattern-alignment</item> <!-- Element type: polygon-pattern -->
+			<item>polygon-pattern-comp-op</item> <!-- Element type: polygon-pattern -->
+			<item>polygon-pattern-simplify-algorithm</item> <!-- Element type: polygon-pattern -->
+			<item>raster-colorizer-default-mode</item> <!-- Element type: raster -->
+			<item>raster-comp-op</item> <!-- Element type: raster -->
+			<item>raster-scaling</item> <!-- Element type: raster -->
+			<item>shield-comp-op</item> <!-- Element type: shield -->
+			<item>shield-horizontal-alignment</item> <!-- Element type: shield -->
+			<item>shield-justify-alignment</item> <!-- Element type: shield -->
+			<item>shield-placement</item> <!-- Element type: shield -->
+			<item>shield-placement-type</item> <!-- Element type: shield -->
+			<item>shield-text-transform</item> <!-- Element type: shield -->
+			<item>shield-vertical-alignment</item> <!-- Element type: shield -->
+			<item>text-align</item> <!-- Element type: text -->
+			<item>text-comp-op</item> <!-- Element type: text -->
+			<item>text-halo-rasterizer</item> <!-- Element type: text -->
+			<item>text-horizontal-alignment</item> <!-- Element type: text -->
+			<item>text-placement</item> <!-- Element type: text -->
+			<item>text-placement-type</item> <!-- Element type: text -->
+			<item>text-transform</item> <!-- Element type: text -->
+			<item>text-vertical-alignment</item> <!-- Element type: text -->
+
+			<!-- Value type: numbers -->
+			<item>line-dash-offset</item> <!-- Element type: line -->
+			<item>line-dasharray</item> <!-- Element type: line -->
+
+			<!-- Value type: string -->
+			<item>debug-mode</item> <!-- Element type: debug -->
+			<item>base</item> <!-- Element type: map -->
+			<item>srs</item> <!-- Element type: map -->
+			<item>shield-face-name</item> <!-- Element type: shield -->
+			<item>shield-placements</item> <!-- Element type: shield -->
+			<item>shield-wrap-character</item> <!-- Element type: shield -->
+			<item>text-face-name</item> <!-- Element type: text -->
+			<item>text-placements</item> <!-- Element type: text -->
+			<item>text-wrap-character</item> <!-- Element type: text -->
+
+			<!-- Value type: tags -->
+			<item>raster-colorizer-stops</item> <!-- Element type: raster -->
+
+			<!-- Value type: unsigned -->
+			<item>raster-mesh-size</item> <!-- Element type: raster -->
+			<item>shield-character-spacing</item> <!-- Element type: shield -->
+			<item>shield-line-spacing</item> <!-- Element type: shield -->
+			<item>shield-wrap-width</item> <!-- Element type: shield -->
+			<item>text-label-position-tolerance</item> <!-- Element type: text -->
+			<item>text-line-spacing</item> <!-- Element type: text -->
+			<item>text-ratio</item> <!-- Element type: text -->
+			<item>text-spacing</item> <!-- Element type: text -->
+			<item>text-wrap-width</item> <!-- Element type: text -->
+
+			<!-- Value type: uri -->
+			<item>line-pattern-file</item> <!-- Element type: line-pattern -->
+			<item>background-image</item> <!-- Element type: map -->
+			<item>font-directory</item> <!-- Element type: map -->
+			<item>marker-file</item> <!-- Element type: markers -->
+			<item>point-file</item> <!-- Element type: point -->
+			<item>polygon-pattern-file</item> <!-- Element type: polygon-pattern -->
+			<item>shield-file</item> <!-- Element type: shield -->
+
+		</list>
+
+		<contexts>
+
+			<context attribute="Normal Text" lineEndContext="#stay" name="context_default">
+				<DetectSpaces/>
+				<Detect2Chars attribute="Comment" context="context_comment_multiline" char="/" char1="*" lookAhead="true" beginRegion="region_comment"/>
+				<Detect2Chars attribute="Comment" context="context_comment_singleline" char="/" char1="/" lookAhead="true" />
+				<DetectChar attribute="Operator" char="{" beginRegion="region_braces"/>
+				<DetectChar attribute="Operator" char="}" endRegion="region_braces"/>
+				<AnyChar attribute="Operator" String=";:,!/*-+[]=&gt;&lt;()"/>
+				<keyword attribute="Property" context="#stay" String="list_properties" />
+				<keyword attribute="Boolean" context="#stay" String="list_boolean" />
+				<RegExpr attribute="Number" String="((\d+(\.\d+)?)|(\.\d+))%?" />
+				<RegExpr attribute="Variable" String="@[\w_-]+" />
+				<RegExpr attribute="Color" String="(#[\dabcdefABCDEF]{3}|#[\dabcdefABCDEF]{6})(?=(\W|$))" />
+				<keyword attribute="Color" context="#stay" String="list_colornames" />
+				<RegExpr attribute="Layer ID" String="#[\w_-]+"/>
+				<RegExpr attribute="Class" String="\.[\w_-]+" />
+				<RangeDetect char="&quot;"  char1="&quot;" attribute="String" />
+				<RangeDetect char="'"  char1="'" attribute="String" />
+			</context>
+
+			<context attribute="Comment" lineEndContext="#stay" name="context_comment_multiline">
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="region_comment"/>
+				<IncludeRules context="##Alerts"/>
+			</context>
+
+			<context attribute="Comment" lineEndContext="#pop" name="context_comment_singleline">
+				<IncludeRules context="##Alerts"/>
+			</context>
+
+		</contexts>
+
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal"/>
+			<itemData name="Operator" defStyleNum="dsKeyword" />
+			<itemData name="Variable"  defStyleNum="dsVariable"/>
+			<itemData name="Class"  defStyleNum="dsDataType"/>
+			<itemData name="Layer ID" defStyleNum="dsDataType" />
+			<itemData name="Property" defStyleNum="dsKeyword" />
+			<itemData name="String"  defStyleNum="dsString"/>
+			<itemData name="Number"  defStyleNum="dsFloat"/>
+			<itemData name="Color" defStyleNum="dsOthers" />
+			<itemData name="Boolean" defStyleNum="dsKeyword" />
+			<itemData name="Comment" defStyleNum="dsComment" />
+		</itemDatas>
+
+	</highlighting>
+
+	<general>
+		<comments>
+			<comment name="singleLine" start="//"/>
+			<comment name="multiLine" start="/*" end="*/" region="region_comment"/>
+		</comments>
+		<keywords casesensitive="false" weakDeliminator="-"/>
+	</general>
+</language>

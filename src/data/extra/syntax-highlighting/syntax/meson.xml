@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Meson" section="Other"
+	version="2" kateversion="2.4"
+	extensions="meson.build;meson_options.txt"
+	mimetype="text/x-meson"
+	priority="5"
+	license="LGPL">
+
+	<highlighting>
+		<list name = "flowControl">
+			<item>if</item>
+			<item>else</item>
+			<item>endif</item>
+			<item>foreach</item>
+			<item>endforeach</item>
+		</list>
+		<list name = "builtinfuncs">
+			<item>add_global_arguments</item>
+			<item>build_target</item>
+			<item>configuration_data</item>
+			<item>configure_file</item>
+			<item>custom_target</item>
+			<item>declare_dependency</item>
+			<item>dependency</item>
+			<item>error</item>
+			<item>executable</item>
+			<item>find_program</item>
+			<item>find_library</item>
+			<item>files</item>
+			<item>generator</item>
+			<item>get_option</item>
+			<item>gettext</item>
+			<item>import</item>
+			<item>include_directories</item>
+			<item>install_data</item>
+			<item>install_headers</item>
+			<item>install_man</item>
+			<item>install_subdir</item>
+			<item>is_subproject</item>
+			<item>jar</item>
+			<item>message</item>
+			<item>pkgconfig_gen</item>
+			<item>project</item>
+			<item>run_command</item>
+			<item>run_target</item>
+			<item>set_variable</item>
+			<item>shared_library</item>
+			<item>static_library</item>
+			<item>subdir</item>
+			<item>subproject</item>
+			<item>test</item>
+			<item>vcs_tag</item>
+		</list>
+		<list name = "logicalOperations">
+			<item>and</item>
+			<item>or</item>
+			<item>not</item>
+		</list>
+		<list name="booleans">
+			<item>true</item>
+			<item>false</item>
+		</list>
+
+		<contexts>
+			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+				<keyword attribute="Flow Control Keyword" String="flowControl" context="#stay"/>
+				<keyword attribute="Operator" String="logicalOperations" context="#stay"/>
+				<keyword attribute="Builtin Function" String="builtinfuncs" context="#stay"/>
+				<keyword attribute="Boolean Values" String="booleans" context="#stay"/>
+				<Int attribute="Int" context="#stay"/>
+				<DetectChar attribute="Comment" char="#" context="comment"/>
+				<AnyChar attribute="Operator" String="+-*/=&lt;&gt;" context="#stay"/>
+				<DetectChar attribute="Normal Text" char="[" context="List" beginRegion="List"/>
+				<IncludeRules context="StringVariants" />
+			</context>
+
+			<context name="List" attribute="Normal Text" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces/>
+				<DetectChar attribute="Normal Text" char="]" context="#pop" endRegion="List"/>
+				<IncludeRules context="Normal" />
+			</context>
+
+			<context name="comment" attribute="Comment" lineEndContext="#pop">
+				<IncludeRules context="##Alerts" />
+				<IncludeRules context="##Modelines" />
+			</context>
+
+			<!--strings-->
+			<context name="StringVariants" attribute="Normal Text" lineEndContext="#stay">
+				<DetectSpaces/>
+				<StringDetect attribute="String" String="'''" context="Triple A-string" beginRegion="Triple A-region"/>
+				<DetectChar attribute="String" char="'" context="Single A-string"/>
+			</context>
+			<context name="Single A-string" attribute="String" lineEndContext="#stay">
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<DetectChar attribute="String" char="'" context="#pop"/>
+			</context>
+			<context name="Triple A-string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<StringDetect attribute="String" String="'''" context="#pop" endRegion="Triple A-region"/>
+			</context>
+		</contexts>
+
+		<itemDatas>
+			<itemData name="Normal Text"          defStyleNum="dsNormal"   spellChecking="false"/>
+			<itemData name="Operator"             defStyleNum="dsNormal"   spellChecking="false" bold="1"/>
+			<itemData name="Int"                  defStyleNum="dsDecVal"   spellChecking="false"/>
+			<itemData name="Flow Control Keyword" defStyleNum="dsKeyword"  spellChecking="false"/>
+			<itemData name="Builtin Function"     defStyleNum="dsDataType" spellChecking="false"/>
+			<itemData name="Boolean Values"       defStyleNum="dsKeyword"  spellChecking="false"/>
+			<itemData name="String Char"          defStyleNum="dsChar"     spellChecking="false"/>
+			<itemData name="String"               defStyleNum="dsString"/>
+			<itemData name="Comment"              defStyleNum="dsComment"/>
+		</itemDatas>
+	</highlighting>
+</language>

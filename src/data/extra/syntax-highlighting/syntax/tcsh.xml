@@ -1,0 +1,817 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+        <!ENTITY funcname "[A-Za-z_:][A-Za-z0-9_:#&#37;@-]*">
+        <!ENTITY varname  "[A-Za-z_][A-Za-z0-9_]*">
+        <!ENTITY word     "[|&amp;;()&lt;&gt;\s]+">	<!-- see man csh -->
+        <!ENTITY eos      "(?=($|\s))">			<!-- eol or space following -->
+        <!ENTITY noword   "(?![\w$+-])">		<!-- no word, $, + or - following -->
+        <!ENTITY pathpart "([\w_@.&#37;*?+-]|\\ )">     <!-- valid character in a file name -->
+]>
+<language name="Tcsh" version="6" kateversion="5.0" section="Scripts" extensions="*.csh;*.tcsh;csh.cshrc;csh.login;.tcshrc;.cshrc;.login" mimetype="application/x-csh" casesensitive="1" author="Matthew Woehlke (mw_triad@users.sourceforge.net)" license="LGPL">
+
+<!-- (c) 2006 Matthew Woehlke (mw_triad@users.sourceforge.net)
+    Based on the bash highlighter by Wilbert Berendsen (wilbert@kde.nl)
+    Released under the LGPL -->
+
+  <highlighting>
+    <list name="keywords">
+      <item>function</item>
+      <item>in</item>
+      <item>.</item>
+    </list>
+
+    <list name="builtins">
+      <item>:</item>
+      <item>alias</item>
+      <item>alloc</item>
+      <item>bg</item>
+      <item>bindkey</item>
+      <item>break</item>
+      <item>builtins</item>
+      <item>bye</item>
+      <item>cd</item>
+      <item>chdir</item>
+      <item>complete</item>
+      <item>continue</item>
+      <item>dirs</item>
+      <item>echo</item>
+      <item>echotc</item>
+      <item>eval</item>
+      <item>exec</item>
+      <item>exit</item>
+      <item>fg</item>
+      <item>filetest</item>
+      <item>glob</item>
+      <item>hashstat</item>
+      <item>history</item>
+      <item>hup</item>
+      <item>inlib</item>
+      <item>jobs</item>
+      <item>kill</item>
+      <item>limit</item>
+      <item>log</item>
+      <item>login</item>
+      <item>logout</item>
+      <item>ls-F</item>
+      <item>migrate</item>
+      <item>newgrp</item>
+      <item>nice</item>
+      <item>nohup</item>
+      <item>notify</item>
+      <item>onintr</item>
+      <item>popd</item>
+      <item>printenv</item>
+      <item>pushd</item>
+      <item>rehash</item>
+      <item>repeat</item>
+      <item>sched</item>
+      <item>settc</item>
+      <item>setty</item>
+      <item>shift</item>
+      <item>source</item>
+      <item>stop</item>
+      <item>suspend</item>
+      <item>telltc</item>
+      <item>time</item>
+      <item>umask</item>
+      <item>unalias</item>
+      <item>uncomplete</item>
+      <item>unhash</item>
+      <item>unlimit</item>
+      <item>ver</item>
+      <item>wait</item>
+      <item>watchlog</item>
+      <item>where</item>
+      <item>which</item>
+    </list>
+
+    <list name="builtins_var">
+      <item>unset</item>
+      <item>unsetenv</item>
+    </list>
+
+    <list name="unixcommands">
+      <!-- /bin -->
+      <item>arch</item>
+      <item>awk</item>
+      <item>bash</item>
+      <item>bunzip2</item>
+      <item>bzcat</item>
+      <item>bzcmp</item>
+      <item>bzdiff</item>
+      <item>bzegrep</item>
+      <item>bzfgrep</item>
+      <item>bzgrep</item>
+      <item>bzip2</item>
+      <item>bzip2recover</item>
+      <item>bzless</item>
+      <item>bzmore</item>
+      <item>cat</item>
+      <item>chattr</item>
+      <item>chgrp</item>
+      <item>chmod</item>
+      <item>chown</item>
+      <item>chvt</item>
+      <item>cp</item>
+      <item>date</item>
+      <item>dd</item>
+      <item>deallocvt</item>
+      <item>df</item>
+      <item>dir</item>
+      <item>dircolors</item>
+      <item>dmesg</item>
+      <item>dnsdomainname</item>
+      <item>domainname</item>
+      <item>du</item>
+      <item>dumpkeys</item>
+      <item>echo</item>
+      <item>ed</item>
+      <item>egrep</item>
+      <item>false</item>
+      <item>fgconsole</item>
+      <item>fgrep</item>
+      <item>fuser</item>
+      <item>gawk</item>
+      <item>getkeycodes</item>
+      <item>gocr</item>
+      <item>grep</item>
+      <item>groff</item>
+      <item>groups</item>
+      <item>gunzip</item>
+      <item>gzexe</item>
+      <item>gzip</item>
+      <item>hostname</item>
+      <item>igawk</item>
+      <item>install</item>
+      <item>kbd_mode</item>
+      <item>kbdrate</item>
+      <item>killall</item>
+      <item>last</item>
+      <item>lastb</item>
+      <item>link</item>
+      <item>ln</item>
+      <item>loadkeys</item>
+      <item>loadunimap</item>
+      <item>login</item>
+      <item>ls</item>
+      <item>lsattr</item>
+      <item>lsmod</item>
+      <item>lsmod.old</item>
+      <item>mapscrn</item>
+      <item>mesg</item>
+      <item>mkdir</item>
+      <item>mkfifo</item>
+      <item>mknod</item>
+      <item>mktemp</item>
+      <item>more</item>
+      <item>mount</item>
+      <item>mv</item>
+      <item>nano</item>
+      <item>netstat</item>
+      <item>nisdomainname</item>
+      <item>nroff</item>
+      <item>openvt</item>
+      <item>pgawk</item>
+      <item>pidof</item>
+      <item>ping</item>
+      <item>ps</item>
+      <item>pstree</item>
+      <item>pwd</item>
+      <item>rbash</item>
+      <item>readlink</item>
+      <item>red</item>
+      <item>resizecons</item>
+      <item>rm</item>
+      <item>rmdir</item>
+      <item>run-parts</item>
+      <item>sash</item>
+      <item>sed</item>
+      <item>setfont</item>
+      <item>setkeycodes</item>
+      <item>setleds</item>
+      <item>setmetamode</item>
+      <item>setserial</item>
+      <item>sh</item>
+      <item>showkey</item>
+      <item>shred</item>
+      <item>sleep</item>
+      <item>ssed</item>
+      <item>stat</item>
+      <item>stty</item>
+      <item>su</item>
+      <item>sync</item>
+      <item>tar</item>
+      <item>tempfile</item>
+      <item>touch</item>
+      <item>troff</item>
+      <item>true</item>
+      <item>umount</item>
+      <item>uname</item>
+      <item>unicode_start</item>
+      <item>unicode_stop</item>
+      <item>unlink</item>
+      <item>utmpdump</item>
+      <item>uuidgen</item>
+      <item>vdir</item>
+      <item>wall</item>
+      <item>wc</item>
+      <item>ypdomainname</item>
+      <item>zcat</item>
+      <item>zcmp</item>
+      <item>zdiff</item>
+      <item>zegrep</item>
+      <item>zfgrep</item>
+      <item>zforce</item>
+      <item>zgrep</item>
+      <item>zless</item>
+      <item>zmore</item>
+      <item>znew</item>
+      <item>zsh</item>
+
+      <!-- some from /usr/bin -->
+      <item>aclocal</item>
+      <item>aconnect</item>
+      <item>aplay</item>
+      <item>apm</item>
+      <item>apmsleep</item>
+      <item>apropos</item>
+      <item>ar</item>
+      <item>arecord</item>
+      <item>as</item>
+      <item>as86</item>
+      <item>autoconf</item>
+      <item>autoheader</item>
+      <item>automake</item>
+      <item>awk</item>
+      <item>basename</item>
+      <item>bc</item>
+      <item>bison</item>
+      <item>c++</item>
+      <item>cal</item>
+      <item>cat</item>
+      <item>cc</item>
+      <item>cdda2wav</item>
+      <item>cdparanoia</item>
+      <item>cdrdao</item>
+      <item>cd-read</item>
+      <item>cdrecord</item>
+      <item>chfn</item>
+      <item>chgrp</item>
+      <item>chmod</item>
+      <item>chown</item>
+      <item>chroot</item>
+      <item>chsh</item>
+      <item>clear</item>
+      <item>cmp</item>
+      <item>co</item>
+      <item>col</item>
+      <item>comm</item>
+      <item>cp</item>
+      <item>cpio</item>
+      <item>cpp</item>
+      <item>cut</item>
+      <item>dc</item>
+      <item>dd</item>
+      <item>df</item>
+      <item>diff</item>
+      <item>diff3</item>
+      <item>dir</item>
+      <item>dircolors</item>
+      <item>directomatic</item>
+      <item>dirname</item>
+      <item>du</item>
+      <item>env</item>
+      <item>expr</item>
+      <item>fbset</item>
+      <item>file</item>
+      <item>find</item>
+      <item>flex</item>
+      <item>flex++</item>
+      <item>fmt</item>
+      <item>free</item>
+      <item>ftp</item>
+      <item>funzip</item>
+      <item>fuser</item>
+      <item>g++</item>
+      <item>gawk</item>
+      <item>gc</item>
+      <item>gcc</item>
+      <item>gdb</item>
+      <item>getent</item>
+      <item>getopt</item>
+      <item>gettext</item>
+      <item>gettextize</item>
+      <item>gimp</item>
+      <item>gimp-remote</item>
+      <item>gimptool</item>
+      <item>gmake</item>
+      <item>gs</item>
+      <item>head</item>
+      <item>hexdump</item>
+      <item>id</item>
+      <item>install</item>
+      <item>join</item>
+      <item>kill</item>
+      <item>killall</item>
+      <item>ld</item>
+      <item>ld86</item>
+      <item>ldd</item>
+      <item>less</item>
+      <item>lex</item>
+      <item>ln</item>
+      <item>locate</item>
+      <item>lockfile</item>
+      <item>logname</item>
+      <item>lp</item>
+      <item>lpr</item>
+      <item>ls</item>
+      <item>lynx</item>
+      <item>m4</item>
+      <item>make</item>
+      <item>man</item>
+      <item>mkdir</item>
+      <item>mknod</item>
+      <item>msgfmt</item>
+      <item>mv</item>
+      <item>namei</item>
+      <item>nasm</item>
+      <item>nawk</item>
+      <item>nice</item>
+      <item>nl</item>
+      <item>nm</item>
+      <item>nm86</item>
+      <item>nmap</item>
+      <item>nohup</item>
+      <item>nop</item>
+      <item>od</item>
+      <item>passwd</item>
+      <item>patch</item>
+      <item>pcregrep</item>
+      <item>pcretest</item>
+      <item>perl</item>
+      <item>perror</item>
+      <item>pidof</item>
+      <item>pr</item>
+      <item>printf</item>
+      <item>procmail</item>
+      <item>prune</item>
+      <item>ps2ascii</item>
+      <item>ps2epsi</item>
+      <item>ps2frag</item>
+      <item>ps2pdf</item>
+      <item>ps2ps</item>
+      <item>psbook</item>
+      <item>psmerge</item>
+      <item>psnup</item>
+      <item>psresize</item>
+      <item>psselect</item>
+      <item>pstops</item>
+      <item>rcs</item>
+      <item>rev</item>
+      <item>rm</item>
+      <item>scp</item>
+      <item>sed</item>
+      <item>seq</item>
+      <item>setterm</item>
+      <item>shred</item>
+      <item>size</item>
+      <item>size86</item>
+      <item>skill</item>
+      <item>slogin</item>
+      <item>snice</item>
+      <item>sort</item>
+      <item>sox</item>
+      <item>split</item>
+      <item>ssh</item>
+      <item>ssh-add</item>
+      <item>ssh-agent</item>
+      <item>ssh-keygen</item>
+      <item>ssh-keyscan</item>
+      <item>stat</item>
+      <item>strings</item>
+      <item>strip</item>
+      <item>sudo</item>
+      <item>suidperl</item>
+      <item>sum</item>
+      <item>tac</item>
+      <item>tail</item>
+      <item>tee</item>
+      <item>test</item>
+      <item>tr</item>
+      <item>uniq</item>
+      <item>unlink</item>
+      <item>unzip</item>
+      <item>updatedb</item>
+      <item>updmap</item>
+      <item>uptime</item>
+      <item>users</item>
+      <item>vmstat</item>
+      <item>w</item>
+      <item>wc</item>
+      <item>wget</item>
+      <item>whatis</item>
+      <item>whereis</item>
+      <item>which</item>
+      <item>who</item>
+      <item>whoami</item>
+      <item>write</item>
+      <item>xargs</item>
+      <item>yacc</item>
+      <item>yes</item>
+      <item>zip</item>
+      <item>zsoelim</item>
+
+      <!-- others -->
+      <item>dcop</item>
+      <item>kdialog</item>
+      <item>kfile</item>
+      <item>xhost</item>
+      <item>xmodmap</item>
+      <item>xset</item>
+    </list>
+
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Start">
+        <IncludeRules context="FindAll" />
+      </context>
+
+<!-- ====== The following rulessets are meant to be included ======== -->
+      <!-- FindAll tries to interpret everything -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindAll">
+        <IncludeRules context="FindComments" />
+        <IncludeRules context="FindCommands" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindOthers" />
+      </context>
+
+      <!-- FindMost tries to interpret anything except commands -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindMost">
+        <IncludeRules context="FindComments" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindOthers" />
+      </context>
+
+
+      <!-- FindComments consumes shell comments till EOL -->
+      <context attribute="Normal Text" lineEndContext="#pop" name="FindComments">
+        <DetectChar attribute="Comment" context="Comment" char="#" firstNonSpace="true"/>
+        <RegExpr attribute="Normal Text" context="Comment" String="[\s;](?=#)" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <IncludeRules context="##Alerts" />
+      </context>
+
+      <!-- FindCommentsParen consumes shell comments till EOL or a closing parenthese -->
+<!--      <context attribute="Normal Text" lineEndContext="#pop" name="FindCommentsParen">
+        <DetectChar attribute="Comment" context="CommentParen" char="#" firstNonSpace="true"/>
+        <RegExpr attribute="Normal Text" context="CommentParen" String="[\s;](?=#)" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="CommentParen">
+        <RegExpr attribute="Comment" context="#pop" String="[^)](?=\))" />
+        <IncludeRules context="##Alerts" />
+      </context> -->
+
+      <!-- FindCommentsBackq consumes shell comments till EOL or a backquote -->
+      <context attribute="Normal Text" lineEndContext="#pop" name="FindCommentsBackq">
+        <DetectChar attribute="Comment" context="CommentBackq" char="#" firstNonSpace="true"/>
+        <RegExpr attribute="Normal Text" context="CommentBackq" String="[\s;](?=#)" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="CommentBackq">
+        <RegExpr attribute="Comment" context="#pop" String="[^`](?=`)" />
+        <IncludeRules context="##Alerts" />
+      </context>
+
+
+      <!-- breaksw case default if else end endif endsw foreach goto
+           set setenv switch while -->
+
+      <!-- FindCommands matches many items that can be expected outside strings, substitutions etc. -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindCommands">
+        <!-- start expression in double parentheses -->
+<!--!--><Detect2Chars attribute="Keyword" context="ExprDblParen" char="(" char1="(" beginRegion="expression" />
+        <!-- start expression in single brackets -->
+<!--!--><RegExpr attribute="Builtin" context="ExprBracket" String="\[&eos;" beginRegion="expression" column="0"/>
+<!--!--><RegExpr attribute="Builtin" context="ExprBracket" String="\s\[&eos;" beginRegion="expression" />
+        <!-- start a group command with { -->
+<!--!--><RegExpr attribute="Keyword" context="Group" String="\{&eos;" beginRegion="group" />
+        <!-- start a subshell -->
+<!--!--><DetectChar attribute="Keyword" context="SubShell" char="(" beginRegion="subshell" />
+        <!-- match do and if blocks -->
+<!--!--><RegExpr attribute="Control Flow" context="If" String="\bif&noword;" />
+<!--!--><RegExpr attribute="Control Flow" context="ElseIf" String="\belse\s+if&noword;" />
+<!--!--><RegExpr attribute="Control Flow" context="#stay" String="\belse&noword;" />
+<!--!--><RegExpr attribute="Control Flow" context="#stay" String="\bendif&noword;" endRegion="if" />
+        <!-- handle switch as a special case -->
+<!--!--><RegExpr attribute="Control Flow" context="Switch" String="\bswitch&noword;" beginRegion="switch" />
+<!--!--><RegExpr attribute="Control Flow" context="#stay" String="\b(foreach|while)&noword;" beginRegion="loop" />
+<!--!--><RegExpr attribute="Control Flow" context="#stay" String="\bend&noword;" endRegion="loop" />
+        <!-- handle command line options -->
+        <RegExpr attribute="Option" context="#stay" String="-[A-Za-z0-9][A-Za-z0-9_]*" />
+        <RegExpr attribute="Option" context="#stay" String="--[a-z][A-Za-z0-9_-]*" />
+        <!-- handle variable assignments -->
+<!--R--><RegExpr attribute="Keyword" context="#stay" String="\b@\s" />
+<!--R--><WordDetect attribute="Keyword" context="#stay" String="set" />
+        <WordDetect attribute="Keyword" context="CmdSetEnv" String="setenv" />
+        <!-- handle functions with function keyword before keywords -->
+<!--!--><StringDetect attribute="Function" context="#stay" String=":()" />
+<!--!--><WordDetect attribute="Keyword" context="FunctionDef" String="function" />
+        <!-- handle keywords -->
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Builtin" context="#stay" String="builtins" />
+        <keyword attribute="Command" context="#stay" String="unixcommands" />
+        <!-- handle commands that have variable names as argument -->
+        <keyword attribute="Builtin" context="VarName" String="builtins_var" />
+        <!-- handle redirection -->
+        <RegExpr attribute="Redirection" context="#stay" String="(&lt;&lt;?|&gt;&gt;?&amp;?!?)" />
+        <!-- handle &, &&, | and || -->
+        <RegExpr attribute="Control" context="#stay" String="([|&amp;])\1?" />
+        <!-- mark function definitions without function keyword -->
+        <RegExpr attribute="Function" context="#stay" String="&funcname;\s*\(\)" />
+      </context>
+
+      <!-- FindOthers contains various rules to mark different shell input -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindOthers">
+        <RegExpr attribute="Escape" context="#stay" String="\\[;&quot;\\'$`{}()|&amp;&lt;&gt;* ]" />
+<!--?   <RegExpr attribute="Escape" context="#stay" String="\{(?!(\s|$))\S*\}" />-->
+        <RegExpr attribute="Path" context="#stay" String="&pathpart;*(?=/)" />
+        <RegExpr attribute="Path" context="#stay" String="~\w*" />
+        <RegExpr attribute="Path" context="#stay" String="/&pathpart;*(?=([\s/):;$`'&quot;]|$))" />
+        <!-- TODO: shell globs -->
+      </context>
+
+      <!-- FindStrings looks for single and double quoted strings, also with $-prefix -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindStrings">
+        <DetectChar attribute="String SingleQ" context="StringSQ" char="'" />
+        <DetectChar attribute="String DoubleQ" context="StringDQ" char="&quot;" />
+        <Detect2Chars attribute="String SingleQ" context="StringEsc" char="$" char1="'" />
+        <Detect2Chars attribute="String Transl." context="StringDQ" char="$" char1="&quot;" />
+      </context>
+
+      <!-- FindSubstitutions goes after anything starting with $ and ` and their escapes -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindSubstitutions">
+        <RegExpr attribute="Variable" context="Subscript" String="\$&varname;\[" />
+        <RegExpr attribute="Variable" context="#stay" String="\$&varname;" />
+        <RegExpr attribute="Variable" context="#stay" String="\$[*@#?$!_0-9-]" />
+        <RegExpr attribute="Variable" context="#stay" String="\$\{[*@#?$!_0-9-]\}" />
+        <RegExpr attribute="Variable" context="#stay" String="\$\{#&varname;\}" />
+        <RegExpr attribute="Variable" context="#stay" String="\$\{!&varname;\*?\}" />
+        <RegExpr attribute="Variable" context="VarBrace" String="\$\{&varname;" />
+        <RegExpr attribute="Variable" context="VarBrace" String="\$\{[*@#?$!_0-9-](?=[:#%/])" />
+        <StringDetect attribute="Variable" context="ExprDblParenSubst" String="$((" beginRegion="expression" />
+<!--?   <StringDetect attribute="Redirection" context="SubstFile" String="$(&lt;" />-->
+<!--?   <StringDetect attribute="Variable" context="SubstCommand" String="$(" />-->
+        <DetectChar attribute="Backquote" context="SubstBackq" char="`" />
+        <RegExpr attribute="Escape" context="#stay" String="\\[`$\\]" />
+      </context>
+
+      <!-- FindTests finds operators valid in tests -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindTests">
+        <RegExpr attribute="Expression" context="#stay" String="-[rwxXeozsfdlbcpSugktRLDIFNZ](?=\s)"/>
+        <RegExpr attribute="Expression" context="#stay" String="-[AMCUG]:?(?=\s)"/>
+        <RegExpr attribute="Expression" context="#stay" String="-P[0-7]{,3}:?(?=\s)"/>
+        <RegExpr attribute="Expression" context="#stay" String="[=!][~=]|[*>&lt;!~]"/>
+      </context>
+
+
+<!-- ====== These are the contexts that can be branched to ======= -->
+
+      <!-- ExprDblParen consumes an expression started in command mode till )) -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="ExprDblParen">
+        <Detect2Chars attribute="Keyword" context="#pop" char=")" char1=")" endRegion="expression" />
+        <DetectChar attribute="Normal Text" context="ExprSubParen" char="(" />
+        <IncludeRules context="FindMost" />
+      </context>
+
+      <!-- ExprDblParenSubst like ExprDblParen but matches )) as Variable -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="ExprDblParenSubst">
+        <Detect2Chars attribute="Variable" context="#pop" char=")" char1=")" endRegion="expression" />
+        <DetectChar attribute="Normal Text" context="ExprSubParen" char="(" />
+        <IncludeRules context="FindMost" />
+      </context>
+
+      <!-- ExprSubParen consumes an expression till ) -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="ExprSubParen">
+        <DetectChar attribute="Normal Text" context="#pop" char=")" />
+        <DetectChar attribute="Normal Text" context="ExprSubParen" char="(" />
+        <IncludeRules context="FindMost" />
+      </context>
+
+      <!-- ExprBracket consumes an expression till ] -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="ExprBracket">
+        <RegExpr attribute="Builtin" context="#pop" String="\s\](?=($|[\s;|&amp;]))" endRegion="expression" />
+        <RegExpr attribute="Builtin" context="#pop" String="\](?=($|[\s;|&amp;]))" endRegion="expression" column="0"/>
+        <DetectChar attribute="Normal Text" context="ExprSubParen" char="(" />
+        <IncludeRules context="FindTests" />
+        <IncludeRules context="FindMost" />
+      </context>
+
+      <!-- Group consumes shell input till } -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="Group">
+        <DetectChar attribute="Keyword" context="#pop" char="}" endRegion="group" />
+        <IncludeRules context="FindAll" />
+      </context>
+
+      <!-- SubShell consumes shell input till ) -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="SubShell">
+        <DetectChar attribute="Keyword" context="#pop" char=")" endRegion="subshell" />
+        <IncludeRules context="FindAll" />
+      </context>
+
+      <!-- Assign consumes an expression till EOL or whitespace -->
+      <context attribute="Normal Text" lineEndContext="#pop" name="Assign" fallthrough="true" fallthroughContext="#pop">
+        <DetectChar attribute="Variable" context="AssignArray" char="(" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindOthers" />
+        <RegExpr attribute="Normal Text" context="#stay" String="[\w:,+_./-]+" />
+      </context>
+
+      <!-- AssignArray consumes everything till ), marking assignments -->
+      <context attribute="Normal Text" lineEndContext="#pop" name="AssignArray">
+        <DetectChar attribute="Variable" context="#pop" char=")" />
+        <DetectChar attribute="Variable" context="Subscript" char="[" />
+        <DetectChar attribute="Variable" context="Assign" char="=" />
+        <IncludeRules context="FindMost" />
+      </context>
+
+      <!-- Subscript consumes anything till ], marks as Variable -->
+      <context attribute="Variable" lineEndContext="#stay" name="Subscript">
+        <DetectChar attribute="Variable" context="#pop" char="]" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindOthers" />
+      </context>
+
+      <!-- FunctionDef consumes a name, possibly with (), marks as Function -->
+      <context attribute="Function" lineEndContext="#pop" name="FunctionDef" fallthrough="true" fallthroughContext="#pop">
+        <RegExpr attribute="Function" context="#pop" String="\s+&funcname;(\s*\(\))?" />
+      </context>
+
+      <!-- CmdSetEnv handles the name part of setenv -->
+      <context attribute="Normal Text" lineEndContext="#pop" name="CmdSetEnv" fallthrough="true" fallthroughContext="#pop">
+        <!-- handle command line options -->
+        <RegExpr attribute="Variable" context="#pop" String="\b&varname;" />
+        <RegExpr attribute="Variable" context="Assign" String="\s" />
+        <IncludeRules context="FindMost" />
+      </context>
+
+      <!-- VarName consumes spare variable names and assignments -->
+      <context attribute="Normal Text" lineEndContext="#pop" name="VarName" fallthrough="true" fallthroughContext="#pop">
+        <!-- handle command line options -->
+        <RegExpr attribute="Option" context="#stay" String="-[A-Za-z0-9]+" />
+        <RegExpr attribute="Option" context="#stay" String="--[a-z][A-Za-z0-9_-]*" />
+        <RegExpr attribute="Variable" context="#stay" String="\b&varname;" />
+        <DetectChar attribute="Variable" context="Subscript" char="[" />
+        <DetectChar attribute="Variable" context="Assign" char="=" />
+        <IncludeRules context="FindMost" />
+        <!-- stay here in spaces and other safe characters -->
+        <RegExpr attribute="Normal Text" context="#stay" String="[^]})|;`&amp;&gt;&lt;]" />
+      </context>
+
+      <!-- StringSQ consumes anything till ' -->
+      <context attribute="String SingleQ" lineEndContext="#stay" name="StringSQ">
+        <DetectChar attribute="String SingleQ" context="#pop" char="'" />
+      </context>
+
+      <!-- StringDQ consumes anything till ", substitutes vars and expressions -->
+      <context attribute="String DoubleQ" lineEndContext="#stay" name="StringDQ">
+        <DetectChar attribute="String DoubleQ" context="#pop" char="&quot;" />
+        <RegExpr attribute="String Escape" context="#stay" String="\\[`&quot;\\$\n]" />
+        <IncludeRules context="FindSubstitutions" />
+      </context>
+
+      <!-- StringEsc eats till ', but escaping many characters -->
+      <context attribute="String SingleQ" lineEndContext="#stay" name="StringEsc">
+        <DetectChar attribute="String SingleQ" context="#pop" char="'" />
+        <RegExpr attribute="String Escape" context="#stay" String="\\[abefnrtv\\']" />
+        <RegExpr attribute="String Escape" context="#stay" String="\\([0-7]{1,3}|x[A-Fa-f0-9]{1,2}|c.)" />
+      </context>
+
+      <!-- VarBrace is called as soon as ${xxx is encoutered -->
+      <context attribute="Variable" lineEndContext="#stay" name="VarBrace">
+        <DetectChar attribute="Variable" context="#pop" char="}" />
+        <DetectChar attribute="Variable" context="Subscript" char="[" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindSubstitutions" />
+        <!-- TODO: highlight various special parameter expansions } -->
+      </context>
+
+      <!-- SubstFile is called after a <( or >( is encoutered -->
+<!--      <context attribute="Normal Text" lineEndContext="#stay" name="SubstFile">
+        <DetectChar attribute="Redirection" context="#pop" char=")" />
+        <IncludeRules context="FindCommentsParen" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindOthers" />
+      </context>
+-->
+      <!-- SubstCommand is called after a $( is encountered -->
+<!--      <context attribute="Normal Text" lineEndContext="#stay" name="SubstCommand">
+        <DetectChar attribute="Variable" context="#pop" char=")" />
+        <IncludeRules context="FindCommentsParen" />
+        <IncludeRules context="FindCommands" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindOthers" />
+      </context>
+-->
+
+      <!-- SubstBackq is called when a backquote is encountered -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="SubstBackq">
+        <DetectChar attribute="Backquote" context="#pop" char="`" />
+        <IncludeRules context="FindCommentsBackq" />
+        <IncludeRules context="FindCommands" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindOthers" />
+      </context>
+
+      <!-- Switch is called after the switch keyword is encoutered. This is
+           left over from the bash highlighter where the lonely parentheses
+           would otherwise cause trouble. We keep it because it lets us do a
+           bit of extra syntax validation. -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="Switch">
+        <RegExpr attribute="Keyword" context="SwitchCase" String="\scase\b" />
+        <RegExpr attribute="Keyword" context="SwitchDefault" String="\sdefault\b" />
+        <RegExpr attribute="Keyword" context="#pop" String="\bendsw(?=$|[\s;)])" endRegion="switch" />
+        <IncludeRules context="FindMost" />
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="If" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Keyword" context="ArithmeticCondition" char="(" beginRegion="cond" />
+        <DetectChar attribute="Variable" context="Subscript" char="[" />
+        <StringDetect attribute="Control Flow" context="#pop" String="then" beginRegion="if" />
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="ElseIf" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Keyword" context="ArithmeticCondition" char="(" beginRegion="cond" />
+        <DetectChar attribute="Variable" context="Subscript" char="[" />
+        <StringDetect attribute="Control Flow" context="#pop" String="then" />
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="ArithmeticCondition">
+        <DetectChar attribute="Keyword" context="#pop" char=")" endRegion="cond" />
+        <DetectChar attribute="Keyword" context="ArithmeticCondition" char="(" beginRegion="cond" />
+        <RegExpr attribute="Expression" context="#stay" String="[=!]~|[=!>&lt;]="/>
+        <AnyChar attribute="Expression" context="#stay" String="|^&amp;>&lt;+-*/%!~"/>
+        <IncludeRules context="FindComments" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindOthers" />
+      </context>
+
+      <!-- SwitchCase is called when the construct 'switch ... case' has been found. -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="SwitchCase">
+        <DetectChar attribute="Keyword" context="SwitchExpr" char=":" beginRegion="switchexpr" />
+        <IncludeRules context="FindMost" />
+      </context>
+
+      <!-- SwitchDefault is called when the construct 'switch ... default' has been found. -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="SwitchDefault">
+        <DetectChar attribute="Keyword" context="SwitchExpr" char=":" beginRegion="switchexpr" />
+      </context>
+
+      <!-- SwitchExpr eats shell input till breaksw -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="SwitchExpr">
+        <RegExpr attribute="Keyword" context="#pop#pop" String="\sbreaksw\b" endRegion="switchexpr" />
+        <RegExpr attribute="Keyword" context="#pop#pop" String="\scase\b" endRegion="switchexpr" lookAhead="true" />
+        <IncludeRules context="FindAll" />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"	defStyleNum="dsNormal" />
+      <itemData name="Comment"		defStyleNum="dsComment" />
+      <itemData name="Control Flow" 	defStyleNum="dsControlFlow" spellChecking="false" />
+      <itemData name="Keyword" 		defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="Control" 		defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="Builtin" 		defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="Command" 		defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="Redirection" 	defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="Escape" 		defStyleNum="dsDataType" spellChecking="false" />
+      <itemData name="String SingleQ" 	defStyleNum="dsString" />
+      <itemData name="String DoubleQ" 	defStyleNum="dsString" />
+      <itemData name="Backquote" 	defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="String Transl." 	defStyleNum="dsString" spellChecking="false" />
+      <itemData name="String Escape" 	defStyleNum="dsDataType" spellChecking="false" />
+      <itemData name="Variable" 	defStyleNum="dsOthers" spellChecking="false" />
+      <itemData name="Expression" 	defStyleNum="dsOthers" spellChecking="false" />
+      <itemData name="Function" 	defStyleNum="dsFunction" spellChecking="false" />
+      <itemData name="Path" 		defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="Option" 		defStyleNum="dsNormal" spellChecking="false" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="^%#[]$._{}:-" additionalDeliminator="`"/>
+  </general>
+</language>

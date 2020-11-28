@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="TI Basic" version="2" kateversion="2.2" section="Scientific" extensions="">
+  <highlighting>
+    <list name="keywords">
+      <item>If</item>
+      <item>Then</item>
+      <item>Else</item>
+      <item>For</item>
+      <item>While</item>
+      <item>Repeat</item>
+      <item>End</item>
+      <item>Pause</item>
+      <item>Lbl</item>
+      <item>Goto</item>
+      <item>IS&gt;</item>
+      <item>DS&lt;</item>
+      <item>Menu</item>
+      <item>prgm</item>
+      <item>Return</item>
+      <item>DelVar</item>
+      <item>GraphStyle</item>
+      <item>Input</item>
+      <item>Prompt</item>
+      <item>Disp</item>
+      <item>DispGraph</item>
+      <item>DispTable</item>
+      <item>Output</item>
+      <item>getKey</item>
+      <item>ClrHome</item>
+      <item>ClrTable</item>
+      <item>GetCalc</item>
+      <item>Get</item>
+      <item>Send</item>
+      <item>prgm</item>
+    </list>
+    <list name="special_sym">
+      <item>net</item>
+      <item>eogt</item>
+      <item>eolt</item>
+      <item>sqrt</item>
+      <item>%THETA</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Special operators" context="#stay" String="special_sym" />
+
+        <Detect2Chars attribute="Assignment" context="#stay" char="-" char1="&gt;"/>
+        <Detect2Chars attribute="Assignment" context="#stay" char="s" char1="t"/>
+
+        <RegExpr attribute="Matrix" context="#stay" String="\[\w\]" />
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="String">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Assignment" defStyleNum="dsOthers" />
+      <itemData name="Keyword" defStyleNum="dsKeyword" />
+      <itemData name="String" defStyleNum="dsString" />
+      <itemData name="Special operators" defStyleNum="dsNormal" />
+      <itemData name="Matrix" defStyleNum="dsNormal" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="0" weakDeliminator="%&lt;&gt;"/>
+  </general>
+</language>

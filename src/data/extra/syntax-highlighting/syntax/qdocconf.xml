@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="QDoc Configuration"
+          version="1"
+          kateversion="5.0"
+          section="Configuration"
+          extensions="*.qdocconf"
+          author="Volker Krause (vkrause@kde.org)"
+          license="MIT">
+    <highlighting>
+        <list name="key-names">
+            <item>alias</item>
+            <item>buildversion</item>
+            <item>Cpp</item>
+            <item>customFilters</item>
+            <item>defines</item>
+            <item>depends</item>
+            <item>description</item>
+            <item>dita</item>
+            <item>edition</item>
+            <item>endheader</item>
+            <item>exampledirs</item>
+            <item>examples</item>
+            <item>excludedirs</item>
+            <item>excludefiles</item>
+            <item>falsehoods</item>
+            <item>file</item>
+            <item>filterAttributes</item>
+            <item>headerdirs</item>
+            <item>headers</item>
+            <item>HTML</item>
+            <item>imagedirs</item>
+            <item>images</item>
+            <item>indexes</item>
+            <item>indexRoot</item>
+            <item>indexTitle</item>
+            <item>language</item>
+            <item>macro</item>
+            <item>manifestmeta</item>
+            <item>name</item>
+            <item>namespace</item>
+            <item>navigation</item>
+            <item>outputdir</item>
+            <item>outputformats</item>
+            <item>outputprefixes</item>
+            <item>outputsuffixes</item>
+            <item>project</item>
+            <item>projects</item>
+            <item>qhp</item>
+            <item>selectors</item>
+            <item>sortPages</item>
+            <item>sourcedirs</item>
+            <item>sources</item>
+            <item>sources.fileextensions</item>
+            <item>spurious</item>
+            <item>subprojects</item>
+            <item>tabsize</item>
+            <item>tagfile</item>
+            <item>title</item>
+            <item>type</item>
+            <item>url</item>
+            <item>version</item>
+            <item>versionsym</item>
+            <item>virtualFolder</item>
+        </list>
+        <list name="function-names">
+            <item>include</item>
+        </list>
+        <list name="selector-names">
+            <item>namespace</item>
+            <item>class</item>
+            <item>qmltype</item>
+            <item>qmlclass</item>
+            <item>module</item>
+            <item>qmlmodule</item>
+            <item>doc</item>
+            <item>fake</item>
+            <item>group</item>
+            <item>example</item>
+            <item>headerfile</item>
+            <item>page</item>
+            <item>manual</item>
+        </list>
+
+        <contexts>
+            <context name="key-context" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar char="#" context="comment-context" column="0"/>
+                <keyword attribute="Keyword" String="key-names"/>
+                <keyword attribute="Function" String="function-names"/>
+                <DetectChar char="=" context="value-context"/>
+                <DetectChar char="(" context="argument-context"/>
+            </context>
+
+            <context name="value-context" attribute="Normal Text" lineEndContext="#pop" lineEmptyContext="#pop">
+                <DetectChar attribute="String" context="string-context" char="&quot;"/>
+                <keyword attribute="Selector" String="selector-names"/>
+                <RegExpr attribute="Variable" String="\$\w+"/>
+                <LineContinue char="\" context="#stay"/>
+            </context>
+
+            <context name="argument-context" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="String" context="string-context" char="&quot;"/>
+                <RegExpr attribute="Variable" String="\$\w+"/>
+                <DetectChar char=")" context="#pop"/>
+                <LineContinue char="\" context="#stay"/>
+            </context>
+
+            <context name="string-context" attribute="String" lineEndContext="#stay">
+                <HlCStringChar attribute="Special Character"/>
+                <RegExpr attribute="Variable" String="\$\w+"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+
+            <context name="comment-context" attribute="Comment" lineEndContext="#pop">
+                <IncludeRules context="##Alerts"/>
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Keyword" defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="String" defStyleNum="dsString" spellChecking="false"/>
+            <itemData name="Special Character" defStyleNum="dsSpecialChar" spellChecking="false"/>
+            <itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="Function" defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Selector" defStyleNum="dsExtension" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="#"/>
+        </comments>
+        <keywords casesensitive="1" weakDeliminator="-/"/>
+    </general>
+</language>

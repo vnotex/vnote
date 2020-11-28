@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+        You'll find the "Writing a Kate Highlighting XML File HOWTO" at http://kate.kde.org/doc/hlhowto.php
+        This is a template for the XML format used for syntax highlight descriptions
+        for the Kate text editor (http://kate.kde.org), which is part of the KDE
+        desktop environment (http://www.kde.org).
+
+        Use it as the base for your own syntax files.
+
+        Look at language.dtd for some documentation of the allowed elements and their attributes.
+        There is also a description of how to validate your syntax file.
+
+        You'll find the "Writing a Kate Highlighting XML File HOWTO" at http://kate.kde.org/doc/hlhowto.php
+-->
+<language name="ASN.1" section="Markup" version="3" kateversion="2.3" extensions="*.asn;*.asn1" mimetype="" author="Philippe Rigault" license="GPL">
+  <highlighting>
+    <list name="keywords">
+      <item>DEFINITIONS</item>
+      <item>BEGIN</item>
+      <item>END</item>
+      <item>EXPORTS</item>
+      <item>IMPORTS</item>
+      <item>FROM</item>
+      <item>APPLICATION</item>
+      <item>PRIVATE</item>
+      <item>UNIVERSAL</item>
+      <item>DEFAULT</item>
+      <item>OPTIONAL</item>
+      <item>FALSE</item>
+      <item>TRUE</item>
+    </list>
+    <list name="types">
+      <item>BOOLEAN</item>
+      <item>INTEGER</item>
+      <item>OCTET</item>
+      <item>STRING</item>
+      <item>NULL</item>
+      <item>REAL</item>
+      <item>ENUMERATED</item>
+      <item>SEQUENCE</item>
+      <item>SET</item>
+      <item>CHOICE</item>
+      <item>OF</item>
+      <item>VisibleString</item>
+      <item>StringStore</item>
+    </list>
+    
+    <contexts>
+      <context name="Normal Text" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Data Type" context="#stay" String="types" />
+        <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>      
+      </context>
+      
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+      </context>
+    </contexts>
+    
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"     defStyleNum="dsKeyword"/>
+      <itemData name="Comment"     defStyleNum="dsComment"/>
+      <itemData name="Data Type"   defStyleNum="dsDataType"/>
+    </itemDatas>
+  </highlighting>
+</language>
+<!--
+// kate: space-indent on; indent-width 2; replace-tabs on;
+-->

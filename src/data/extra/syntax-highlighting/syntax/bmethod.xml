@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="B-Method" version="1" kateversion="5.0" section="Scientific" extensions="*.mch;*.imp;*.ref" author="Ivo Anjo (knuckles@gmail.com)" license="LGPL">
+
+<highlighting>
+	<list name="sections">
+		<item>MACHINE</item>
+		<item>SETS</item>
+		<item>CONSTANTS</item>
+		<item>PROPERTIES</item>
+		<item>PROMOTES</item>
+		<item>INCLUDES</item>
+		<item>USES</item>
+		<item>SEES</item>
+		<item>VARIABLES</item>
+		<item>INVARIANT</item>
+		<item>INITIALISATION</item>
+		<item>REFINEMENT</item>
+		<item>REFINES</item>
+		<item>CONSTRAINTS</item>
+		<item>IMPLEMENTATION</item>
+		<item>IMPORTS</item>
+	</list>
+	<list name="sectionsBlockStart">
+		<item>OPERATIONS</item>
+	</list>
+	<list name="sectionsBlockEnd">
+		<item>END</item>
+	</list>
+	<list name="operationSections">
+		<item>THEN</item>
+		<item>WHEN</item>
+		<item>ELSE</item>
+		<item>OR</item>
+		<item>WHERE</item>
+		<item>INVARIANT</item>
+		<item>DO</item>
+		<item>VARIANT</item>
+		<item>IN</item>
+		<item>ELSIF</item>
+	</list>
+	<list name="operationSectionsBlockStart">
+		<item>PRE</item>
+		<item>IF</item>
+		<item>ANY</item>
+		<item>LET</item>
+		<item>CHOICE</item>
+		<item>CASE</item>
+		<item>SELECT</item>
+		<item>VAR</item>
+		<item>WHILE</item>
+		<item>BEGIN</item>
+	</list>
+	<list name="operationSectionsBlockEnd">
+		<item>END</item>
+	</list>
+	<list name="types">
+		<item>NAT</item>
+		<item>NAT1</item>
+	</list>
+	<contexts>
+		<context attribute="Normal Text" lineEndContext="#stay" name="Normal Text">
+			<keyword attribute="SectionKeyword" context="#stay" String="sections" column="0"/>
+			<keyword attribute="SectionKeyword" context="#stay" String="sectionsBlockStart" column="0" beginRegion="sectionsBlock"/>
+			<keyword attribute="SectionKeyword" context="#stay" String="sectionsBlockEnd" column="0" endRegion="sectionsBlock"/>
+			<keyword attribute="Data Type" context="#stay" String="types"/>
+			<Int attribute="Decimal" context="#stay"/>
+			<Detect2Chars attribute="Comment" context="Comment" char="/" char1="*" beginRegion="Comment"/>
+			<keyword attribute="OperationKeyword" context="#stay" String="operationSections"/>
+			<keyword attribute="OperationKeyword" context="#stay" String="operationSectionsBlockStart" beginRegion="CodeBlock"/>
+			<keyword attribute="OperationKeyword" context="#stay" String="operationSectionsBlockEnd" endRegion="CodeBlock"/>
+		</context>
+		
+		<context attribute="Comment" lineEndContext="#stay" name="Comment">
+			<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+			<IncludeRules context="##Alerts"/>
+      		</context>
+	</contexts>
+	<itemDatas>
+		<itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0"/>
+		<itemData name="SectionKeyword" defStyleNum="dsBuiltIn" spellChecking="0"/>
+		<itemData name="OperationKeyword" defStyleNum="dsControlFlow" spellChecking="0"/>
+		<itemData name="Comment" defStyleNum="dsComment"/>
+		<itemData name="Data Type" defStyleNum="dsDataType" spellChecking="0"/>
+		<itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="0"/>
+	</itemDatas>
+</highlighting>
+
+<general>
+	<comments>
+		<comment name="multiLine" start="/*" end="*/"/>
+	</comments>
+	<keywords casesensitive="1"/>
+</general>
+
+</language>

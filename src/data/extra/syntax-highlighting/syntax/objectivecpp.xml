@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Objective-C++" version="5" kateversion="5.0" section="Sources" extensions="*.mm;*.M;*.h" mimetype="text/x-objcpp-src;text/x-c-hdr" author="Gennady Telegin (gepo@lvk.cs.msu.su">
+  <highlighting>
+    <list name="keywords">
+      <item>break</item>
+      <item>case</item>
+      <item>continue</item>
+      <item>default</item>
+      <item>do</item>
+      <item>else</item>
+      <item>enum</item>
+      <item>extern</item>
+      <item>for</item>
+      <item>goto</item>
+      <item>if</item>
+      <item>return</item>
+      <item>sizeof</item>
+      <item>struct</item>
+      <item>switch</item>
+      <item>typedef</item>
+      <item>union</item>
+      <item>while</item>
+      <item>@class</item>
+      <item>@defs</item>
+      <item>@encode</item>
+      <item>@end</item>
+      <item>@implementation</item>
+      <item>@interface</item>
+      <item>@private</item>
+      <item>@protected</item>
+      <item>@protocol</item>
+      <item>@public</item>
+      <item>@selector</item>
+      <item>self</item>
+      <item>super</item>
+      
+      <item>asm</item>
+      <item>catch</item>
+      <item>class</item>
+      <item>const_cast</item>
+      <item>delete</item>
+      <item>dynamic_cast</item>
+      <item>explicit</item>
+      <item>export</item>
+      <item>false</item>
+      <item>friend</item>
+      <item>inline</item>
+      <item>namespace</item>
+      <item>new</item>
+      <item>operator</item>
+      <item>private</item>
+      <item>protected</item>
+      <item>public</item>
+      <item>qobject_cast</item>
+      <item>reinterpret_cast</item>
+      <item>static_cast</item>
+      <item>template</item>
+      <item>this</item>
+      <item>throw</item>
+      <item>true</item>
+      <item>try</item>
+      <item>typeid</item>
+      <item>type_info</item>
+      <item>typename</item>
+      <item>using</item>
+      <item>virtual</item>
+
+      <item>and</item>
+      <item>and_eq</item>
+      <item>bad_cast</item>
+      <item>bad_typeid</item>
+      <item>bitand</item>
+      <item>bitor</item>
+      <item>compl</item>
+      <item>not</item>
+      <item>not_eq</item>
+      <item>or</item>
+      <item>or_eq</item>
+      <item>xor</item>
+      <item>xor_eq</item>
+    </list>
+    <list name="extensions">
+      <item>K_DCOP</item>
+      <item>SLOT</item>
+      <item>SIGNAL</item>
+      <item>Q_CLASSINFO</item>
+      <item>Q_ENUMS</item>
+      <item>Q_EXPORT</item>
+      <item>Q_OBJECT</item>
+      <item>Q_OVERRIDE</item>
+      <item>Q_PROPERTY</item>
+      <item>Q_SETS</item>
+      <item>Q_SIGNALS</item>
+      <item>Q_SLOTS</item>
+      <item>Q_FOREACH</item>
+      <item>Q_DECLARE_FLAGS</item>
+      <item>Q_INIT_RESOURCE</item>
+      <item>Q_CLEANUP_RESOURCE</item>
+      <item>Q_GLOBAL_STATIC</item>
+      <item>Q_GLOBAL_STATIC_WITH_ARGS</item>
+      <item>Q_DECLARE_INTERFACE</item>
+      <item>Q_DECLARE_TYPEINFO</item>
+      <item>Q_DECLARE_SHARED</item>
+      <item>Q_DECLARE_FLAGS</item>
+      <item>Q_DECLARE_OPERATORS_FOR_FLAGS</item>
+      <item>Q_FOREVER</item>
+      <item>Q_DECLARE_PRIVATE</item>
+      <item>Q_DECLARE_PUBLIC</item>
+      <item>Q_D</item>
+      <item>Q_Q</item>
+      <item>Q_DISABLE_COPY</item>
+      <item>Q_INTERFACES</item>
+      <item>Q_FLAGS</item>
+      <item>Q_SCRIPTABLE</item>
+      <item>Q_INVOKABLE</item>
+      <item>Q_GADGET</item>
+      <item>Q_ARG</item>
+      <item>Q_RETURN_ARG</item>
+      <item>Q_ASSERT</item>
+      <item>Q_ASSERT_X</item>
+      <item>TRUE</item>
+      <item>FALSE</item>
+      <item>connect</item>
+      <item>disconnect</item>
+      <item>emit</item>
+      <item>signals</item>
+      <item>slots</item>
+      <item>foreach</item>
+      <item>forever</item>
+    </list>
+    <list name="types">
+      <item>auto</item>
+      <item>char</item>
+      <item>const</item>
+      <item>double</item>
+      <item>float</item>
+      <item>int</item>
+      <item>long</item>
+      <item>register</item>
+      <item>short</item>
+      <item>signed</item>
+      <item>static</item>
+      <item>unsigned</item>
+      <item>void</item>
+      <item>volatile</item>
+      
+      <item>bool</item>
+      <item>mutable</item>
+      <item>uchar</item>
+      <item>uint</item>
+      <item>int8_t</item>
+      <item>int16_t</item>
+      <item>int32_t</item>
+      <item>int64_t</item>
+      <item>uint8_t</item>
+      <item>uint16_t</item>
+      <item>uint32_t</item>
+      <item>uint64_t</item>
+      <item>wchar_t</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Default">
+        <DetectSpaces />
+        <RegExpr attribute="Preprocessor" context="Outscoped" String="#\s*if\s+0" beginRegion="Outscoped" firstNonSpace="true" />
+        <DetectChar attribute="Preprocessor" context="Preprocessor" char="#" firstNonSpace="true" />
+        <StringDetect attribute="Region Marker" context="Region Marker" String="//BEGIN" beginRegion="Region1" firstNonSpace="true" />
+        <StringDetect attribute="Region Marker" context="Region Marker" String="//END" endRegion="Region1" firstNonSpace="true" />
+        
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+        
+        <DetectIdentifier />
+        <Float attribute="Float" context="Float Suffixes"/>
+        <HlCOct attribute="Octal" context="#stay"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Int attribute="Decimal" context="Int Suffixes"/>
+        <HlCChar attribute="Char" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <Detect2Chars attribute="Comment" context="SingleLineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*"/>
+
+        <Detect2Chars attribute="String" context="String" char="@" char1="&quot;" />
+
+        <keyword attribute="Extensions" context="#stay" String="extensions" />
+
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="SingleLineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" beginRegion="Comment"/>
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]{|}~^&#59;"/>
+      </context>
+      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <AnyChar String="fF" attribute="Float" context="#pop"/>
+      </context>
+      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="SingleLineComment">
+        <IncludeRules context="##Alerts" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="MultiLineComment">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+        <IncludeRules context="##Alerts" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="MultiLineCommentPrep">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/"/>
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+      <!-- from c++ -->
+
+      <context attribute="Region Marker" lineEndContext="#pop" name="Region Marker">
+      </context>
+
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+        <RegExpr attribute="Preprocessor" context="Define" String="define.*((?=\\))"/>
+        <RegExpr attribute="Preprocessor" context="#stay" String="define.*"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="SingleLineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="MultiLineCommentPrep" char="/" char1="*"/>
+      </context>
+
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Define">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Outscoped" >
+        <DetectSpaces />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="SingleLineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" beginRegion="Comment"/>
+        <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="Outscoped" firstNonSpace="true" />
+        <RegExpr attribute="Preprocessor" context="#pop" String="#\s*(endif|else|elif)" endRegion="Outscoped" firstNonSpace="true" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Outscoped intern">
+        <DetectSpaces />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="SingleLineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" beginRegion="Comment"/>
+        <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="Outscoped" firstNonSpace="true"/>
+        <RegExpr attribute="Comment" context="#pop" String="#\s*endif" endRegion="Outscoped" firstNonSpace="true"/>
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"   defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword"       defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Extensions"    defStyleNum="dsExtension" spellChecking="false"/>
+      <itemData name="Data Type"     defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Decimal"       defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Octal"         defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Hex"           defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float"         defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Char"          defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="String"        defStyleNum="dsString"/>
+      <itemData name="String Char"   defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Comment"       defStyleNum="dsComment"/>
+      <itemData name="Symbol"        defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Preprocessor"  defStyleNum="dsPreprocessor" spellChecking="false"/>
+      <itemData name="Prep. Lib"     defStyleNum="dsImport" spellChecking="false"/>
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker"/>
+    </itemDatas>
+  </highlighting>
+  
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

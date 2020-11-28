@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<!--
+	** Cg Syntax Rules **
+	
+	NOTES:
+	- some stuff stolen from c.xml
+	
+	TODO:
+	- some exotic keywords are missing, find out which; the spec is a bloody mess
+
+2004-05-25
+	* Initial release
+2004-05-27
+	* Added swizzle highlighting
+	* Added stdlib function highlighting
+2004-12-07 (julien.antille at kdemail.net)
+	* Added COLOR1 through COLOR3 output sementics, for Multiple Render Targets (MRTs).
+	* Added FACE sementic for the new fp40 profile
+-->
+
+<language name="Cg" section="Sources" extensions="*.cg;*.cgfx" mimetype="text/x-cgsrc" version="5" kateversion="5.0" author="Florian Schanda (florian.schanda@schanda.de)" license="LGPL">
+	<highlighting>
+		<list name="binding">
+			<item>POSITION</item>
+			<item>COLOR</item>
+			<item>COLOR0</item>
+			<item>COLOR1</item>
+			<item>COLOR2</item>
+			<item>COLOR3</item>
+			<item>TEXCOORD0</item>
+			<item>TEXCOORD1</item>
+			<item>TEXCOORD2</item>
+			<item>TEXCOORD3</item>
+			<item>TEXCOORD4</item>
+			<item>TEXCOORD5</item>
+			<item>TEXCOORD6</item>
+			<item>TEXCOORD7</item>
+			<item>TEXCOORD8</item>
+			<item>TEXCOORD9</item>
+			<item>TEXCOORD10</item>
+			<item>TEXCOORD11</item>
+			<item>TEXCOORD12</item>
+			<item>TEXCOORD13</item>
+			<item>TEXCOORD14</item>
+			<item>TEXCOORD15</item>
+			<item>TEXUNIT0</item>
+			<item>TEXUNIT1</item>
+			<item>TEXUNIT2</item>
+			<item>TEXUNIT3</item>
+			<item>TEXUNIT4</item>
+			<item>TEXUNIT5</item>
+			<item>TEXUNIT6</item>
+			<item>TEXUNIT7</item>
+			<item>TEXUNIT8</item>
+			<item>TEXUNIT9</item>
+			<item>TEXUNIT10</item>
+			<item>TEXUNIT11</item>
+			<item>TEXUNIT12</item>
+			<item>TEXUNIT13</item>
+			<item>TEXUNIT14</item>
+			<item>TEXUNIT15</item>
+			<item>WPOS</item>
+			<item>DEPTH</item>
+			<item>BLENDWEIGHT</item>
+			<item>NORMAL</item>
+			<item>TESSFACTOR</item>
+			<item>FOGCOORD</item>
+			<item>PSIZE</item>
+			<item>BLENDINDICES</item>
+			<item>TANGENT</item>
+			<item>BINORMAL</item>
+			<item>FOG</item>
+			<item>BCOL0</item>
+			<item>BCOL1</item>
+			<item>FACE</item>
+		</list>
+		<list name="keywords">
+			<item>do</item>
+			<item>while</item>
+			<item>if</item>
+			<item>else</item>
+			<item>for</item>
+			<item>struct</item>
+			<item>return</item>
+			<item>static</item>
+			<item>typedef</item>
+			<item>discard</item>
+			<item>true</item>
+			<item>false</item>
+		</list>
+		<list name="types">
+			<item>bool</item>
+			<item>int</item>
+			<item>fixed</item>
+			<item>half</item>
+			<item>float</item>
+            
+			<item>void</item>
+			<item>sampler</item>
+			<item>sampler1D</item>
+			<item>sampler2D</item>
+			<item>sampler3D</item>
+			<item>samplerCUBE</item>
+			<item>samplerRECT</item>
+			
+			<item>packed</item>
+			<item>const</item>
+			<item>uniform</item>
+			<item>in</item>
+			<item>out</item>
+			<item>inout</item>
+		</list>
+		<list name="attention">
+			<item>FIXME</item>
+			<item>TODO</item>
+			<item>BUG</item>
+		</list>
+		<list name="stdlib">
+			<item>abs</item>
+			<item>acos</item>
+			<item>all</item>
+			<item>any</item>
+			<item>asin</item>
+			<item>atan</item>
+			<item>atan2</item>
+			<item>ceil</item>
+			<item>clamp</item>
+			<item>cos</item>
+			<item>cosh</item>
+			<item>cross</item>
+			<item>degrees</item> <!-- the spec got this wrong... -->
+			<item>determinant</item>
+			<item>dot</item>
+			<item>exp</item>
+			<item>exp2</item>
+			<item>floor</item>
+			<item>fmod</item>
+			<item>frac</item>
+			<item>frexp</item>
+			<item>isfinite</item>
+			<item>isinf</item>
+			<item>isnan</item>
+			<item>ldexp</item>
+			<item>lerp</item>
+			<item>lit</item>
+			<item>log</item>
+			<item>log2</item>
+			<item>log10</item>
+			<item>max</item>
+			<item>min</item>
+			<item>modf</item>
+			<item>mul</item>
+			<item>noise</item>
+			<item>pow</item>
+			<item>radians</item>
+			<item>round</item>
+			<item>rsqrt</item>
+			<item>saturate</item>
+			<item>sign</item>
+			<item>sin</item>
+			<item>sincos</item>
+			<item>sinh</item>
+			<item>smoothstep</item>
+			<item>step</item>
+			<item>sqrt</item>
+			<item>tan</item>
+			<item>tanh</item>
+			<item>transpose</item>
+			<item>distance</item>
+			<item>faceforward</item>
+			<item>length</item>
+			<item>normalize</item>
+			<item>reflect</item>
+			<item>refract</item>
+			<item>tex1D</item>
+			<item>tex1Dproj</item>
+			<item>tex2D</item>
+			<item>tex2Dproj</item>
+			<item>texRECT</item>
+			<item>texRECTproj</item>
+			<item>tex3D</item>
+			<item>tex3Dproj</item>
+			<item>texCUBE</item>
+			<item>texCUBEproj</item>
+			<item>ddx</item>
+			<item>ddy</item>
+			<item>debug</item>
+			<item>pack_2half</item>
+			<item>unpack_2half</item>
+			<item>pack_2ushort</item>
+			<item>unpack_2ushort</item>
+			<item>pack_4byte</item>
+			<item>unpack_4byte</item>
+			<item>pack_4ubyte</item>
+			<item>unpack_4ubyte</item>
+		</list>
+		<list name="stdstruct">
+			<item>fragout</item>
+			<item>fragout_float</item>
+		</list>
+		<contexts>
+			<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+				<keyword String="keywords" attribute="Keyword" context="#stay" />
+				<keyword String="binding" attribute="Binding" context="#stay" />
+				<keyword String="attention" attribute="Alert" context="#stay" />
+				
+				<DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+				<DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+				
+				<RegExpr String="float[1234](x[1234])?" attribute="Data Type" context="#stay" />
+				<RegExpr String="half[1234](x[1234])?" attribute="Data Type" context="#stay" />
+				<RegExpr String="fixed[1234](x[1234])?" attribute="Data Type" context="#stay" />
+				<RegExpr String="bool[1234](x[1234])?" attribute="Data Type" context="#stay" />
+				<RegExpr String="int[1234](x[1234])?" attribute="Data Type" context="#stay" />
+				<keyword String="types" attribute="Data Type" context="#stay" />
+				<keyword String="stdstruct" attribute="Data Type" context="#stay" />
+				
+				<RegExpr String="[0123456789]*[.][0123456789]+f" attribute="Float" context="#stay" />
+				<RegExpr String="[0123456789]*[.][0123456789]+h" attribute="Half" context="#stay" />
+				<RegExpr String="[0123456789]*[.][0123456789]+x" attribute="Fixed" context="#stay" />
+				<RegExpr String="[0123456789]*[.][0123456789]+" attribute="Float" context="#stay" />
+				<Int attribute="Decimal" context="#stay" />
+				
+				<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+				
+				<keyword String="stdlib" attribute="StdFunction" context="#stay" />
+				
+				<RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*[(])" />
+			
+				<RegExpr attribute="Swizzle" context="#stay" String="[.]{1,1}[rgbaxyzw]+(?=[\s/*-+&lt;&gt;])" />
+				
+				<RegExpr attribute="Symbol" context="Member" String="[.]{1,1}" />
+				<AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^&#59;"/>
+			</context>
+			<context name="Member" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+				<RegExpr attribute="Function" context="#pop" String="\b[_\w][_\w\d]*(?=[\s]*)" />
+			</context>
+			<context name="Commentar 1" attribute="Comment" lineEndContext="#pop">
+				<keyword attribute="Alert" context="#stay" String="attention" />
+			</context>
+			<context name="Commentar 2" attribute="Comment" lineEndContext="#stay">
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+				<keyword attribute="Alert" context="#stay" String="attention" />
+			</context>
+	        </contexts>
+		<itemDatas>
+			<itemData name="Normal Text"  defStyleNum="dsNormal"/>
+			<itemData name="Binding"      defStyleNum="dsKeyword"/>
+			<itemData name="Keyword"      defStyleNum="dsKeyword"/>
+			<itemData name="Function"     defStyleNum="dsFunction" bold="0"/>
+			<itemData name="StdFunction"  defStyleNum="dsBuiltIn" bold="1"/>
+			<itemData name="Data Type"    defStyleNum="dsDataType"/>
+			<itemData name="Decimal"      defStyleNum="dsDecVal"/>
+			<itemData name="Float"        defStyleNum="dsFloat"/>
+			<itemData name="Half"         defStyleNum="dsFloat"/>
+			<itemData name="Fixed"        defStyleNum="dsFloat"/>
+			<itemData name="Symbol"       defStyleNum="dsNormal"/>
+			<itemData name="Swizzle"      defStyleNum="dsNormal" bold="1"/>
+			<itemData name="Comment"      defStyleNum="dsComment"/>
+			<itemData name="Alert"        defStyleNum="dsAlert" />
+		</itemDatas>
+	</highlighting>
+	<general>
+		<comments>
+			<comment name="singleLine" start="//" />
+			<comment name="multiLine" start="/*" end="*/" />
+		</comments>
+		<keywords casesensitive="1" />
+	</general>
+</language>

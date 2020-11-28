@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+<!ENTITY HEX "[0-9A-Fa-f]">
+]>
+<!--
+    LUA (www.lua.org) syntax highlighting for Kate
+
+    CHANGES
+
+    [ Version 1.05 (2019-06-03) by Jonathan Poelen ]
+
+    - warn and coroutine.kill (Lua 5.4)
+    - end of a function as Keyword rather than Control
+
+    [ Version 1.04 (2018-04-30) by Jonathan Poelen ]
+
+    - based on Lua 5.3
+    - some math.*, table.* and string.* are marked as deprecated
+    - fix special char, float format and ' collapsable
+
+    [ Version 1.03 (2007-09-12) by Bruno Massa ]
+
+    - [=[ ]=] comment and string style is now working (thanks to Dominik and Sebastian)
+    - it uses DoxygenLua.xml to format the comments in a Doxygen style
+
+    [ Version 1.02 (2007-07-15) by Bruno Massa ]
+
+    - based on Lua 5.1
+    - highlight the Kepler function (cgilua, luasql, lfs, luazip)
+    - true, false and nil are highlighted in black
+    - table.foreach and foreachi are marked as alerts
+
+    [ Version 1.01 (2007-01-01) by Bruno Massa ]
+
+    - highlighting similar to PHP
+    - error detection on one-line strings and common mistakes from other languages like using "!=" "++"
+    - uppercase-only variables are highlighted as constants
+    - { } now is collapsable
+
+    [ Version 1.00 (2006-12-05) by Bruno Massa ]
+
+    - based on Lua 5.0.2 syntax
+    - strings "[[ ]]" and single quoted strings
+    - block comments
+    - function, if/elseif/else, do-end chunks, comment blocks, strings using [[ ]] collapsable
+    - nil, false and true consided pseudo-variables (displayed as numbers)
+    - NOTE, FIXME, TODO alerts added on comments
+    - improved highlighting
+-->
+<language name="Lua" version="7" indenter="lua" kateversion="5.0" section="Scripts" extensions="*.lua" mimetype="text/x-lua">
+  <highlighting>
+    <list name="keywords">
+      <item>and</item>
+      <item>function</item>
+      <item>in</item>
+      <item>local</item>
+      <item>not</item>
+      <item>or</item>
+      <!-- pseudo-variables -->
+      <item>nil</item>
+      <item>false</item>
+      <item>true</item>
+    </list>
+
+    <list name="control">
+      <item>break</item>
+      <item>do</item>
+      <item>else</item>
+      <item>elseif</item>
+      <item>end</item>
+      <item>for</item>
+      <item>goto</item>
+      <item>if</item>
+      <item>repeat</item>
+      <item>return</item>
+      <item>then</item>
+      <item>until</item>
+      <item>while</item>
+    </list>
+
+    <list name="startcontrol">
+      <item>do</item>
+      <item>if</item>
+      <item>repeat</item>
+    </list>
+
+    <list name="elsecontrol">
+      <item>else</item>
+      <item>elseif</item>
+    </list>
+
+    <list name="endcontrol">
+      <item>end</item>
+      <item>until</item>
+    </list>
+
+    <list name="basevar">
+      <item>_PROMPT</item>
+      <item>_PROMPT2</item>
+      <item>LUA_PATH</item>
+      <item>LUA_CPATH</item>
+      <item>LUA_INIT</item>
+      <item>_ENV</item>
+      <item>_VERSION</item>
+      <item>_G</item>
+      <!-- Module -->
+      <item>package.config</item>
+      <item>package.cpath</item>
+      <item>package.loaded</item>
+      <item>package.path</item>
+      <item>package.preload</item>
+      <item>package.searchers</item>
+      <!-- UTF-8 Support -->
+      <item>utf8.charpattern</item>
+      <!-- Mathematical Functions -->
+      <item>math.maxinteger</item>
+      <item>math.mininteger</item>
+      <item>math.pi</item>
+    </list>
+
+    <list name="basefunc">
+      <!-- Basic functions -->
+      <item>assert</item>
+      <item>collectgarbage</item>
+      <item>dofile</item>
+      <item>error</item>
+      <item>getmetatable</item>
+      <item>ipairs</item>
+      <item>load</item>
+      <item>loadfile</item>
+      <item>next</item>
+      <item>pairs</item>
+      <item>pcall</item>
+      <item>print</item>
+      <item>rawequal</item>
+      <item>rawget</item>
+      <item>rawlen</item>
+      <item>rawset</item>
+      <item>select</item>
+      <item>setmetatable</item>
+      <item>tonumber</item>
+      <item>tostring</item>
+      <item>type</item>
+      <item>warn</item>
+      <item>xpcall</item>
+
+      <!-- Coroutine manipulation -->
+      <item>coroutine.create</item>
+      <item>coroutine.isyieldable</item>
+      <item>coroutine.resume</item>
+      <item>coroutine.kill</item>
+      <item>coroutine.running</item>
+      <item>coroutine.status</item>
+      <item>coroutine.wrap</item>
+      <item>coroutine.yield</item>
+
+      <!-- Module -->
+      <item>require</item>
+      <item>package.loadlib</item>
+      <item>package.searchpath</item>
+
+      <!-- String Manipulation -->
+      <item>string.byte</item>
+      <item>string.char</item>
+      <item>string.dump</item>
+      <item>string.find</item>
+      <item>string.format</item>
+      <item>string.gmatch</item>
+      <item>string.gsub</item>
+      <item>string.len</item>
+      <item>string.lower</item>
+      <item>string.match</item>
+      <item>string.pack</item>
+      <item>string.packsize</item>
+      <item>string.rep</item>
+      <item>string.reverse</item>
+      <item>string.sub</item>
+      <item>string.unpack</item>
+      <item>string.upper</item>
+
+      <!-- UTF-8 Support -->
+      <item>utf8.char</item>
+      <item>utf8.codes</item>
+      <item>utf8.codepoint</item>
+      <item>utf8.len</item>
+      <item>utf8.offset</item>
+
+      <!-- Table Manipulation -->
+      <item>table.concat</item>
+      <item>table.insert</item>
+      <item>table.move</item>
+      <item>table.pack</item>
+      <item>table.remove</item>
+      <item>table.sort</item>
+      <item>table.unpack</item>
+
+      <!-- Mathematical Functions -->
+      <item>math.abs</item>
+      <item>math.acos</item>
+      <item>math.asin</item>
+      <item>math.atan</item>
+      <item>math.ceil</item>
+      <item>math.cos</item>
+      <item>math.deg</item>
+      <item>math.exp</item>
+      <item>math.floor</item>
+      <item>math.fmod</item>
+      <item>math.huge</item>
+      <item>math.log</item>
+      <item>math.max</item>
+      <item>math.min</item>
+      <item>math.modf</item>
+      <item>math.rad</item>
+      <item>math.random</item>
+      <item>math.randomseed</item>
+      <item>math.sin</item>
+      <item>math.sqrt</item>
+      <item>math.tan</item>
+      <item>math.tointeger</item>
+      <item>math.type</item>
+      <item>math.utl</item>
+
+      <!-- Input and Output Facilities -->
+      <item>io.close</item>
+      <item>io.flush</item>
+      <item>io.input</item>
+      <item>io.lines</item>
+      <item>io.open</item>
+      <item>io.output</item>
+      <item>io.popen</item>
+      <item>io.read</item>
+      <item>io.stderr</item>
+      <item>io.stdin</item>
+      <item>io.stdout</item>
+      <item>io.tmpfile</item>
+      <item>io.type</item>
+      <item>io.write</item>
+
+      <!-- Operating System Facilities -->
+      <item>os.clock</item>
+      <item>os.date</item>
+      <item>os.difftime</item>
+      <item>os.execute</item>
+      <item>os.exit</item>
+      <item>os.getenv</item>
+      <item>os.remove</item>
+      <item>os.rename</item>
+      <item>os.setlocale</item>
+      <item>os.time</item>
+      <item>os.tmpname</item>
+
+      <!-- The Debug Library -->
+      <item>debug.debug</item>
+      <item>debug.gethook</item>
+      <item>debug.getinfo</item>
+      <item>debug.getlocal</item>
+      <item>debug.getmetatable</item>
+      <item>debug.getregistry</item>
+      <item>debug.getupvalue</item>
+      <item>debug.getuservalue</item>
+      <item>debug.sethook</item>
+      <item>debug.setlocal</item>
+      <item>debug.setmetatable</item>
+      <item>debug.setupvalue</item>
+      <item>debug.setuservalue</item>
+      <item>debug.traceback</item>
+      <item>debug.upvalueid</item>
+      <item>debug.upvaluejoin</item>
+
+      <item>cgilua</item>
+      <item>cgilua.addclosefunction</item>
+      <item>cgilua.addopenfunction</item>
+      <item>cgilua.addopenfunction</item>
+      <item>cgilua.addscripthandler</item>
+      <item>cgilua.addscripthandler</item>
+      <item>cgilua.buildprocesshandler</item>
+      <item>cgilua.contentheader</item>
+      <item>cgilua.cookies.delete</item>
+      <item>cgilua.cookies.get</item>
+      <item>cgilua.cookies.set</item>
+      <item>cgilua.cookies.sethtml</item>
+      <item>cgilua.cookies</item>
+      <item>cgilua.doif</item>
+      <item>cgilua.doscript</item>
+      <item>cgilua.errorlog</item>
+      <item>cgilua.handlelp</item>
+      <item>cgilua.header</item>
+      <item>cgilua.htmlheader</item>
+      <item>cgilua.lp.compile</item>
+      <item>cgilua.lp.include</item>
+      <item>cgilua.lp.setcompatmode</item>
+      <item>cgilua.lp.setoutfunc</item>
+      <item>cgilua.lp.translate</item>
+      <item>cgilua.mkabsoluteurl</item>
+      <item>cgilua.mkurlpath</item>
+      <item>cgilua.pack</item>
+      <item>cgilua.put</item>
+      <item>cgilua.redirect</item>
+      <item>cgilua.script_file</item>
+      <item>cgilua.script_path</item>
+      <item>cgilua.script_pdir</item>
+      <item>cgilua.script_vdir</item>
+      <item>cgilua.script_vpath</item>
+      <item>cgilua.serialize</item>
+      <item>cgilua.servervariable</item>
+      <item>cgilua.session.close</item>
+      <item>cgilua.session.data</item>
+      <item>cgilua.session.delete</item>
+      <item>cgilua.session.load</item>
+      <item>cgilua.session.new</item>
+      <item>cgilua.session.open</item>
+      <item>cgilua.session.save</item>
+      <item>cgilua.session.setsessiondir</item>
+      <item>cgilua.session</item>
+      <item>cgilua.seterrorhandler</item>
+      <item>cgilua.seterroroutput</item>
+      <item>cgilua.setmaxfilesize</item>
+      <item>cgilua.setmaxinput</item>
+      <item>cgilua.setoutfunc</item>
+      <item>cgilua.splitpath</item>
+      <item>cgilua.urlcode.encodetable</item>
+      <item>cgilua.urlcode.escape</item>
+      <item>cgilua.urlcode.insertfield</item>
+      <item>cgilua.urlcode.parsequery</item>
+      <item>cgilua.urlcode.unescape</item>
+      <item>cgilua.urlpath</item>
+
+      <item>lfs</item>
+      <item>lfs.attributes</item>
+      <item>lfs.chdir</item>
+      <item>lfs.currentdir</item>
+      <item>lfs.dir</item>
+      <item>lfs.lock</item>
+      <item>lfs.mkdir</item>
+      <item>lfs.rmdir</item>
+      <item>lfs.touch</item>
+      <item>lfs.unlock</item>
+
+      <item>zip</item>
+      <item>zip.open</item>
+      <item>zip.openfile</item>
+
+      <!-- member function-->
+
+      <!-- String Manipulation -->
+      <item>byte</item>
+      <item>char</item>
+      <item>dump</item>
+      <item>find</item>
+      <item>format</item>
+      <item>gmatch</item>
+      <item>gsub</item>
+      <item>len</item>
+      <item>lower</item>
+      <item>match</item>
+      <item>pack</item>
+      <item>packsize</item>
+      <item>rep</item>
+      <item>reverse</item>
+      <item>sub</item>
+      <item>unpack</item>
+      <item>upper</item>
+
+      <!-- Table Manipulation -->
+      <item>concat</item>
+      <item>insert</item>
+      <item>move</item>
+      <item>pack</item>
+      <item>remove</item>
+      <item>sort</item>
+      <item>unpack</item>
+
+      <!-- luasql -->
+      <item>close</item>
+      <item>commit</item>
+      <item>connect</item>
+      <item>escape</item>
+      <item>execute</item>
+      <item>fetch</item>
+      <item>getcolnames</item>
+      <item>getcoltypes</item>
+      <item>getlastautoid</item>
+      <item>numrows</item>
+      <item>rollback</item>
+      <item>setautocommit</item>
+
+      <!-- luazip -->
+      <item>files</item>
+
+      <!-- File Manipulation -->
+      <item>close</item>
+      <item>flush</item>
+      <item>lines</item>
+      <item>read</item>
+      <item>seek</item>
+      <item>setvbuf</item>
+      <item>write</item>
+    </list>
+
+    <list name="metamethod">
+      <item>__add</item>
+      <item>__sub</item>
+      <item>__mul</item>
+      <item>__div</item>
+      <item>__mod</item>
+      <item>__pow</item>
+      <item>__unm</item>
+      <item>__idiv</item>
+      <item>__band</item>
+      <item>__bor</item>
+      <item>__bxor</item>
+      <item>__bnot</item>
+      <item>__shl</item>
+      <item>__shr</item>
+      <item>__concat</item>
+      <item>__len</item>
+      <item>__eq</item>
+      <item>__lt</item>
+      <item>__le</item>
+      <item>__index</item>
+      <item>__newindex</item>
+      <item>__call</item>
+
+      <item>__tostring</item>
+      <item>__pairs</item>
+      <!-- setmetatable -->
+      <item>__metatable</item>
+      <!-- Garbage collector -->
+      <item>__gc</item>
+      <!-- Weak table -->
+      <item>__mode</item>
+    </list>
+
+    <list name="deprecated">
+      <item>_ALERT</item>
+      <item>_ERRORMESSAGE</item>
+      <item>_LOADED</item>
+      <item>__ipairs</item>
+      <item>foreach</item>
+      <item>foreachi</item>
+      <item>loadstring</item>
+      <item>math.atan2</item>
+      <item>math.cosh</item>
+      <item>math.frexp</item>
+      <item>math.ldexp</item>
+      <item>math.log10</item>
+      <item>math.mod</item>
+      <item>math.pow</item>
+      <item>math.sinh</item>
+      <item>math.tanh</item>
+      <item>string.gfind</item>
+      <item>table.foreach</item>
+      <item>table.foreachi</item>
+      <item>table.getn</item>
+      <item>table.setn</item>
+    </list>
+
+    <contexts>
+      <context name="Shebang"       attribute="Comment" lineEndContext="Normal" lineEmptyContext="Normal" fallthrough="true" fallthroughContext="Normal">
+        <Detect2Chars attribute="Comment" context="Comment" char="#" char1="!" column="0"/>
+      </context>
+
+      <context name="Comment"       attribute="Comment"     lineEndContext="#pop">
+      </context>
+
+      <context name="Normal"        attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces />
+        <keyword      attribute="Deprecated" context="#stay"       String="deprecated" />
+        <IncludeRules context="##DoxygenLua" />
+
+        <RegExpr      attribute="RawStrings" context="String_block"  String="\[(=*)\[" dynamic="true" />
+        <DetectChar   attribute="Strings"  context="String_single" char="'"/>
+        <DetectChar   attribute="Strings"  context="String_double" char="&quot;"/>
+        <keyword      attribute="BFunc"    context="#stay"         String="basefunc"/>
+        <keyword      attribute="Metamethod" context="#stay"       String="metamethod"/>
+        <keyword      attribute="BVar"     context="#stay"         String="basevar"/>
+
+        <WordDetect   attribute="Keyword"  context="Function" beginRegion="chunk" String="function" />
+        <keyword      attribute="Keyword"  context="#stay" String="keywords" />
+        <keyword      attribute="Control"  context="StartControl" beginRegion="chunk" String="startcontrol" />
+        <keyword      attribute="Control"  context="#stay" String="control" />
+
+        <DetectChar   attribute="Symbols"  context="#stay" beginRegion="table" char="{" />
+        <DetectChar   attribute="Symbols"  context="#stay" endRegion="table"   char="}" />
+
+        <RegExpr      attribute="Numbers"  context="#stay" String="(?:0[xX](?:\.&HEX;+|&HEX;+\.?&HEX;*)(?:[pP][-+]?\d*)?|(?:\.\d+|\d+\.?\d*)(?:[eE][-+]?\d*)?)"/>
+
+        <RegExpr      attribute="Normal Text" context="#stay" String="\b[a-zA-Z_][a-zA-Z0-9_]*(?=\s*([({'&quot;]|\[\[|\[=))" />
+        <RegExpr      attribute="Constant" context="#stay" String="\b[A-Z_][A-Z0-9_]*\b" />
+        <RegExpr      attribute="Variable" context="#stay" String="\b[a-zA-Z_][a-zA-Z0-9_]*\b" />
+
+        <Detect2Chars attribute="Error"    context="#stay" char="!" char1="="/>
+        <Detect2Chars attribute="Error"    context="#stay" char="-" char1="="/>
+        <Detect2Chars attribute="Error"    context="#stay" char="+" char1="="/>
+        <Detect2Chars attribute="Error"    context="#stay" char="+" char1="+"/>
+        <Detect2Chars attribute="Error"    context="#stay" char="." char1="="/>
+        <AnyChar      attribute="Symbols"  context="#stay" String=":[]().,=~+-*/%&amp;|^&gt;&lt;#;" />
+      </context>
+
+      <context name="StartControl" attribute="Normal Text"  lineEndContext="#stay">
+        <keyword      attribute="Control"  context="#stay" endRegion="chunk"   beginRegion="chunk" String="elsecontrol" />
+        <keyword      attribute="Control"  context="#pop"  endRegion="chunk"   String="endcontrol" />
+        <IncludeRules context="Normal" />
+      </context>
+
+      <context name="Function" attribute="Normal Text"      lineEndContext="#stay">
+        <WordDetect   attribute="Keyword"  context="#pop"  endRegion="chunk"   String="end" />
+        <IncludeRules context="Normal" />
+      </context>
+
+      <context name="String_single" attribute="Strings"     lineEndContext="Error">
+        <DetectChar   attribute="Strings"  context="Special_char"  char="\" lookAhead="true"/>
+        <DetectChar   attribute="Strings"  context="#pop"  char="'"/>
+      </context>
+
+      <context name="String_double" attribute="Strings"     lineEndContext="Error">
+        <DetectChar   attribute="Strings"  context="Special_char"  char="\" lookAhead="true"/>
+        <DetectChar   attribute="Strings"  context="#pop"  char="&quot;"/>
+      </context>
+
+      <context name="Special_char"  attribute="Error"       lineEndContext="#pop">
+        <LineContinue attribute="Special Char" context="#pop" />
+        <Detect2Chars attribute="Special Char" context="Special_char_\z" char="\" char1="z" lookAhead="true"/>
+        <RegExpr      attribute="Special Char" context="#pop" String="\\(?:[abfnrtv'&quot;\\\[\]]|x&HEX;&HEX;|\d{1,3}|u\{&HEX;{1,6}\})"/>
+        <DetectChar   attribute="Error"        context="#pop" char="\"/>
+      </context>
+
+      <context name="Special_char_\z" attribute="Special Char" lineEndContext="#stay">
+        <LineContinue attribute="Special Char" context="#pop#pop" char="z"/>
+        <DetectChar   attribute="Special Char" context="#pop#pop" char="z"/>
+      </context>
+
+      <context name="String_block"  attribute="RawStrings"  lineEndContext="#stay" dynamic="true">
+        <StringDetect attribute="RawStrings"    context="#pop"  String="]%1]" dynamic="true" />
+      </context>
+
+      <context name="Error"         attribute="Error"       lineEndContext="#stay">
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"     defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Metamethod"      defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="BFunc"           defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="BVar"            defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Comment"         defStyleNum="dsComment"/>
+      <itemData name="Constant"        defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Control"         defStyleNum="dsControlFlow" color="#A1A100" selColor="#ffffff" bold="0" italic="0" spellChecking="false"/>
+      <itemData name="Error"           defStyleNum="dsError" spellChecking="false"/>
+      <itemData name="Deprecated"      defStyleNum="dsError" spellChecking="false"/>
+      <itemData name="Keyword"         defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Numbers"         defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Special Char"    defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Strings"         defStyleNum="dsString"/>
+      <itemData name="RawStrings"      defStyleNum="dsVerbatimString"/>
+      <itemData name="Symbols"         defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Variable"        defStyleNum="dsKeyword" color="#5555FF" selColor="#ffffff" bold="0" italic="0" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="--" />
+      <comment name="multiLine" start="--[[" end="]]" />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="." additionalDeliminator="'&quot;"/>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

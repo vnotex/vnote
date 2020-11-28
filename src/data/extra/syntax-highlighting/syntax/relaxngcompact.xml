@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="RelaxNG-Compact" version="1" kateversion="2.4" section="Markup" extensions="*.rnc" casesensitive="1" author="Rintze Zelle" license="LGPL">
+  <highlighting>
+    <list name="Keywords">
+      <item>default</item>
+      <item>datatypes</item>
+      <item>div</item>
+      <item>empty</item>
+      <item>external</item>
+      <item>grammar</item>
+      <item>include</item>
+      <item>inherit</item>
+      <item>list</item>
+      <item>mixed</item>
+      <item>namespace</item>
+      <item>notAllowed</item>
+      <item>parent</item>
+      <item>start</item>
+      <item>token</item>      
+    </list>
+    <list name="Node Names">
+      <item>attribute</item>
+      <item>element</item>    
+    </list>    
+    <list name="Datatypes">
+      <item>string</item>
+      <item>text</item>    
+      <item>xsd:anyURI</item>
+      <item>xsd:base64Binary</item>
+      <item>xsd:boolean</item>
+      <item>xsd:byte</item>
+      <item>xsd:date</item>
+      <item>xsd:dateTime</item>
+      <item>xsd:decimal</item>
+      <item>xsd:double</item>
+      <item>xsd:duration</item>
+      <item>xsd:ENTITIES</item>
+      <item>xsd:ENTITY</item>
+      <item>xsd:float</item>
+      <item>xsd:gDay</item>
+      <item>xsd:gMonth</item>
+      <item>xsd:gMonthDay</item>
+      <item>xsd:gYear</item>
+      <item>xsd:gYearMonth</item>
+      <item>xsd:hexBinary</item>
+      <item>xsd:ID</item>
+      <item>xsd:IDREF</item>
+      <item>xsd:IDREFS</item>
+      <item>xsd:int</item>
+      <item>xsd:integer</item>
+      <item>xsd:language</item>
+      <item>xsd:long</item>
+      <item>xsd:Name</item>
+      <item>xsd:NCName</item>
+      <item>xsd:negativeInteger</item>
+      <item>xsd:NMTOKEN</item>
+      <item>xsd:NMTOKENS</item>
+      <item>xsd:nonNegativeInteger</item>
+      <item>xsd:nonPositiveInteger</item>
+      <item>xsd:normalizedString</item>
+      <item>xsd:NOTATION</item>
+      <item>xsd:positiveInteger</item>
+      <item>xsd:QName</item>
+      <item>xsd:short</item>
+      <item>xsd:string</item> 
+      <item>xsd:time</item>
+      <item>xsd:token</item>
+      <item>xsd:unsignedByte</item>
+      <item>xsd:unsignedInt</item>
+      <item>xsd:unsignedLong</item>
+      <item>xsd:unsignedShort</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+        <DetectChar attribute="Comments" char="#" firstNonSpace="true" context="Comments"/>
+	<DetectChar attribute="String" char="&quot;" context="String" />
+	<keyword attribute="Keywords" context="#stay" String="Keywords" />
+	<keyword attribute="Keywords" context="Node Names" String="Node Names" />
+	<keyword attribute="Datatypes" context="#stay" String="Datatypes" />
+	<RegExpr attribute="Definitions" context="Definitions" String="[\w\.-]+[\s]+=" lookAhead="true" />
+      </context>
+      <context attribute="Comments" lineEndContext="#pop" name="Comments" >
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="String" >
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context attribute="Node Names" lineEndContext="#pop" name="Node Names" >
+        <DetectChar attribute="Node Names" context="#pop" char="{" lookAhead="true" />
+      </context>
+      <context attribute="Definitions" lineEndContext="#pop" name="Definitions" >
+        <DetectChar attribute="Definitions" context="#pop#pop" char="=" lookAhead="true" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Comments" defStyleNum="dsComment" />
+      <itemData name="String" defStyleNum="dsString" />
+      <itemData name="Keywords" defStyleNum="dsKeyword" />
+      <itemData name="Datatypes" defStyleNum="dsDataType" />
+      <itemData name="Node Names" defStyleNum="dsOthers" />
+      <itemData name="Definitions" defStyleNum="dsFunction" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords weakDeliminator="-:"/>
+  </general>
+</language>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Asm6502" version="3" kateversion="5.0" section="Assembler" extensions="*.asm" mimetype="text/x-asm6502">
+        <highlighting>
+
+                <contexts>
+                        <context name = "Base" attribute = "Normal Text" lineEndContext = "#stay">
+
+
+				<RegExpr String= "#define.*$" attribute = "Preprocessor" context="#stay"/>
+				<RegExpr String= "#include .*$" attribute = "Preprocessor" context="#stay"/>
+				<RegExpr String= ";.*$" attribute = "Comment" context="#stay"/>
+				<RegExpr String= "\.byte" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\.byt" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\.word" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\.asc" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\.dsb" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\.fopt" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\.text" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\.data" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\.bss" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\.zero" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\.align" attribute = "Data Type" context="#stay"/>
+				<RegExpr String= "\$[A-Za-z0-9]*" attribute = "Hex" context="#stay"/>
+				<RegExpr String= ",x$" attribute = "Keyword" context="#stay"  insensitive="true"/>
+				<RegExpr String= ",y$" attribute = "Keyword" context="#stay"  insensitive="true"/>
+				<RegExpr String= "#" attribute = "Keyword" context="#stay"  insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="TAX" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="ADC" insensitive="true"/>
+	 			<StringDetect attribute="Keyword" context="#stay" String="AND" insensitive="true"/>
+ 				<StringDetect attribute="Keyword" context="#stay" String="ASL" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="BCC" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="BCS" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="BEQ" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="BIT" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="BMI" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="BNE" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="BPL" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="BRK" insensitive="true"/>
+ 				<StringDetect attribute="Keyword" context="#stay" String="BVC" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="BVS" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="CLC" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="CLD" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="CLI" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="CLV" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="CMP" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="CPX" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="CPY" insensitive="true"/>
+ 				<StringDetect attribute="Keyword" context="#stay" String="DEC" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="DEX" insensitive="true"/>
+	  			<StringDetect attribute="Keyword" context="#stay" String="DEY" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="EOR" insensitive="true"/>
+ 				<StringDetect attribute="Keyword" context="#stay" String="INC" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="INX" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="INY" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="JMP" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="JSR" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="LDA" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="LDX" insensitive="true"/>
+ 				<StringDetect attribute="Keyword" context="#stay" String="LDY" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="LSR" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="NOP" insensitive="true"/>
+     				<StringDetect attribute="Keyword" context="#stay" String="ORA" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="PHA" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="PHP" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="PLA" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="PLP" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="ROL" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="ROR" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="RTI" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="RTS" insensitive="true"/>
+  				<StringDetect attribute="Keyword" context="#stay" String="SBC" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="SEC" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="SED" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="SEI" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="STA" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="STX" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="STY" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="TAY" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="TSX" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="TXA" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="TXS" insensitive="true"/>
+				<StringDetect attribute="Keyword" context="#stay" String="TYA" insensitive="true"/>
+
+				<RegExpr String= "\*=" attribute = "Decimal" context="#stay"/>
+				<RangeDetect char = "&quot;" char1 = "&quot;" attribute = "String" context = "#stay"/>
+				<AnyChar String = "-+&lt;&gt;=;" attribute = "Operator" context = "#stay"/>
+				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+
+
+			</context>
+			<context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+			</context>
+                </contexts>
+
+		<itemDatas>
+                        <itemData name = "Normal Text" defStyleNum = "dsNormal"/>
+                        <itemData name = "Keyword" defStyleNum = "dsKeyword"/>
+			<itemData name="Decimal" defStyleNum="dsDecVal"/>
+			<itemData name="Data Type"  defStyleNum="dsDataType"/>
+			<itemData name="Hex"  defStyleNum="dsBaseN"/>
+                        <itemData name = "String" defStyleNum = "dsString"/>
+                        <itemData name = "Comment" defStyleNum = "dsComment"/>
+ 			<itemData name="Preprocessor"  defStyleNum="dsPreprocessor"/>
+                        <itemData name = "Operator" defStyleNum = "dsOperator"/>
+                </itemDatas>
+        </highlighting>
+        <general>
+                <comments>
+                        <comment name="singleLine" start=";"/>
+			<comment name="multiLine" start="/*" end="*/"/>
+		</comments>
+                <keywords casesensitive="1"/>
+        </general>
+</language>
+

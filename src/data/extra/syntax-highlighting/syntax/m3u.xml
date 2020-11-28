@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<!-- Changelog:
+
+v1.2: (kde4)
+- mimetype set to audio/x-mpegurl (fdo standard)
+
+v1.1:
+- mimetype korrigiert zu "audio/mpegurl"
+- Syntax verbessert
+
+v1.0:
+-first Release
+-->
+
+<language name="M3U" section="Other" extensions="*.m3u" mimetype="audio/x-mpegurl" version="2" kateversion="2.4" author="Jan Janssen (medhefgo@web.de)" license="LGPL" >
+
+<highlighting>
+<contexts>
+ <context name="M3U" attribute="Normal Text" lineEndContext="#stay">
+  <StringDetect attribute="M3USpec" context="#pop" String="#EXTM3U" column="0" />
+  <StringDetect attribute="EXTINF" context="FindEXTINF" String="#EXTINF" column="0" />
+  <RegExpr attribute="Comment" String="#.*$" firstNonSpace="true" />
+ </context>
+
+ <context name="FindEXTINF" attribute="Normal Text" lineEndContext="#stay">
+  <RegExpr attribute="Lenght" String=":\d+" />
+  <RegExpr attribute="Descr" context="#pop" String=",.*$" />
+ </context>
+</contexts>
+
+<itemDatas>
+ <itemData name="Normal Text" defStyleNum="dsNormal" />
+ <itemData name="M3USpec" defStyleNum="dsKeyword"/>
+ <itemData name="Comment" defStyleNum="dsComment" />
+
+ <itemData name="EXTINF" defStyleNum="dsOthers" />
+ <itemData name="Lenght" defStyleNum="dsDecVal" />
+ <itemData name="Descr" defStyleNum="dsString" />
+</itemDatas>
+</highlighting>
+
+
+<general>
+ <comments>
+  <comment name="singleLine" start="#" />
+ </comments>
+</general>
+
+</language>

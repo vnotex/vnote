@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="FASTQ" version="2" kateversion="5.0" section="Scientific" extensions="*.fastq;*.fq;*.fastq.gz;*.fq.gz" mimetype="text/x-fastq" author="Philipp A" license="GPL">
+	<highlighting>
+		<contexts>
+			<context attribute="SeqStart" lineEndContext="#stay" name="SeqStart">
+				<DetectChar attribute="SeqHeaderStart" context="#pop!SeqHeader" char="@" />
+			</context>
+			<context attribute="SeqHeader" lineEndContext="#pop!Seq" name="SeqHeader" />
+			<context attribute="Seq" lineEndContext="#pop!QualStart" name="Seq">
+				<RegExpr attribute="Error" String="[^ATGCNatgcn]" />
+			</context>
+			<context attribute="QualStart" lineEndContext="#stay" name="QualStart">
+				<DetectChar attribute="QualHeaderStart" context="#pop!QualHeader" char="+" />
+			</context>
+			<context attribute="QualHeader" lineEndContext="#pop!Qual" name="QualHeader" />
+			<context attribute="Qual" lineEndContext="#pop" name="Qual">
+				<RegExpr attribute="Error" String="[^!&quot;#$%&amp;'()*+,-./0123456789:;&lt;=&gt;?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~]" />
+			</context>
+		</contexts>
+		<itemDatas>
+			<itemData name="SeqStart"        defStyleNum="dsError"         spellChecking="false" />
+			<itemData name="SeqHeaderStart"  defStyleNum="dsSpecialChar"   spellChecking="false" />
+			<itemData name="SeqHeader"       defStyleNum="dsVariable"      spellChecking="false" />
+			<itemData name="Seq"             defStyleNum="dsString"        spellChecking="false" />
+			<itemData name="QualStart"       defStyleNum="dsError"         spellChecking="false" />
+			<itemData name="QualHeaderStart" defStyleNum="dsSpecialChar"   spellChecking="false" />
+			<itemData name="QualHeader"      defStyleNum="dsComment"       spellChecking="false" />
+			<itemData name="Qual"            defStyleNum="dsSpecialString" spellChecking="false" />
+			<itemData name="Error"           defStyleNum="dsError"         spellChecking="false" />
+		</itemDatas>
+	</highlighting>
+</language>
+
+<!-- kate: tab-width 2; replace-tabs off; indent-width 2; -->

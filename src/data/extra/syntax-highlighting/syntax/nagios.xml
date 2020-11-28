@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Nagios" section="Configuration" extensions="*.cfg" version="3" kateversion="2.4" author="Gastón Martini" license="GPL" casesensitive="true">
+    <highlighting>
+        <list name="Objects">
+            <item>host</item>
+            <item>hostgroup</item>
+            <item>service</item>
+            <item>servicegroup</item>
+            <item>contact</item>
+            <item>contactgroup</item>
+            <item>timeperiod</item>
+            <item>command</item>
+            <item>servicedependency</item>
+            <item>serviceescalation</item>
+            <item>hostdependency</item>
+            <item>hostescalation</item>
+            <item>hostextinfo</item>
+            <item>serviceextinfo</item>
+        </list>
+        <contexts>
+            <context name="Nagios" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces/>
+                <DetectChar char="#" attribute="Comment" context="Comment" firstNonSpace="true"/> <!-- or column="0"? -->
+                <DetectChar char="$" context="Macro Definition" firstNonSpace="true" lookAhead="true"/>
+                <StringDetect String="define" attribute="Definition" context="Definition" firstNonSpace="true"/>
+                <IncludeRules context="Variable" includeAttrib="true"/>
+            </context>
+            <context name="Comment" attribute="Comment" lineEndContext="#pop">
+                <IncludeRules context="##Alerts" />
+            </context>
+            <context name="Macro Definition" attribute="Macro Definition" lineEndContext="#pop">
+                <RangeDetect char="$" char1="$" firstNonSpace="true" context="#stay"/>
+                <DetectChar char="=" attribute="Symbol" context="Value"/>
+            </context>
+            <context name="Variable" attribute="Variable" lineEndContext="#pop">
+                <RegExpr String="[A-Za-z0-9_]+\s*" firstNonSpace="true" context="#stay"/>
+                <DetectChar char="=" attribute="Symbol" context="Value"/>
+            </context>
+            <context name="Definition" attribute="Definition" lineEndContext="#stay">
+                <DetectSpaces/>
+                <keyword String="Objects" attribute="Object" context="#stay"/>
+                <DetectChar char="{" attribute="Definition Block" context="Object Directives" beginRegion="Object Definition"/>
+                <RegExpr String="[^{]+" attribute="Invalid Text" context="#stay"/>
+            </context>
+            <context name="Object Directives" attribute="Object Directive" lineEndContext="#stay">
+                <DetectSpaces/>
+                <DetectChar char=";" attribute="Comment" context="Comment" firstNonSpace="true"/>
+                <RegExpr String="[A-Za-z0-9_]+\s*" firstNonSpace="true" attribute="Object Directive" context="Value"/>
+                <DetectChar char="}" attribute="Definition Block" context="Nagios" endRegion="Object Definition"/>
+            </context>
+            <context name="Value" attribute="Value" lineEndContext="#pop">
+                <RangeDetect char="$" char1="$" attribute="Macro" context="#stay"/>
+                <Float attribute="Float" />
+                <Int attribute="Int" />
+                <DetectChar char=";" attribute="Comment" context="Comment" />
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="Variable" defStyleNum="dsNormal"/>
+            <itemData name="Object" defStyleNum="dsDataType"/>
+            <itemData name="Object Directive" defStyleNum="dsNormal"/>
+            <itemData name="Macro" defStyleNum="dsFunction"/>
+            <itemData name="Macro Definition" defStyleNum="dsFunction"/>
+            <itemData name="Value" defStyleNum="dsString"/>
+            <itemData name="Int" defStyleNum="dsDecVal"/>
+            <itemData name="Float" defStyleNum="dsFloat"/>
+            <itemData name="Symbol" defStyleNum="dsOthers"/>
+            <itemData name="Definition" defStyleNum="dsKeyword"/>
+            <itemData name="Definition Block" defStyleNum="dsRegionMarker"/>
+            <itemData name="Invalid Text" defStyleNum="dsError"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <folding indentationsensitive="false"/>
+        <comments>
+            <comment name="singleLine" start="#"/>
+        </comments>
+        <keywords casesensitive="true"/>
+    </general>
+</language>

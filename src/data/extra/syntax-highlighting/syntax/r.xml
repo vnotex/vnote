@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Kate 2.5 (KDE 3.5) highlighting module for R
+	based on an earlier version by E.L. Willighagen. Code folding code by Ben Goodrich
+	version 2.0: (c) 2006 Thomas Friedrichsmeier, Arne Henningsen, and the RKWard Team
+	license: GPL v2
+	Kate   : http://kate.kde.org/
+	R      : http://www.r-project.org/
+	RKWard : http://rkward.kde.org/
+	-->
+<language version="8" kateversion="5.0" name="R Script" section="Scientific" extensions="*.R;*.r;*.S;*.s;*.q" mimetype="" license="GPLv2">
+<highlighting>
+
+	<list name="controls">
+		<item>for</item>
+		<item>in</item>
+		<item>next</item>
+		<item>break</item>
+		<item>while</item>
+		<item>repeat</item>
+		<item>if</item>
+		<item>else</item>
+		<item>switch</item>
+		<item>function</item>
+	</list>
+	<list name="words">
+		<item>TRUE</item>
+		<item>FALSE</item>
+		<item>NULL</item>
+		<item>NA</item>
+		<item>NA_integer_</item>
+		<item>NA_real_</item>
+		<item>NA_complex_</item>
+		<item>NA_character_</item>
+		<item>Inf</item>
+		<item>NaN</item>
+	</list>
+
+	<contexts>
+		<!-- This context is really only good for detecting unexpected closing braces '}'. Since opening braces go to ctx0 (and nesting in there), this context is only active on the base level -->
+		<context attribute="Normal Text" lineEndContext="#stay" name="level0">
+			<IncludeRules context="CommonRules"/>
+
+			<DetectChar attribute="Error" context="#stay" char="}" />
+			<DetectChar attribute="Error" context="#stay" char=")"/>
+		</context>
+
+		<context attribute="Normal Text" lineEndContext="#stay" name="ctx0">
+			<IncludeRules context="CommonRules"/>
+
+			<DetectChar attribute="Symbol" context="#pop" char="}" endRegion="Brace1" />
+			<DetectChar attribute="Error" context="#stay" char=")"/>
+		</context>
+
+		<context attribute="Normal Text" lineEndContext="#stay" name="parenthesis">
+			<LineContinue attribute="Operator" context="#stay"/>
+			<DetectChar attribute="Symbol" context="#pop" char=")"/>
+
+			<RegExpr attribute="Identifier" context="#stay" String="[a-zA-Z_\.][0-9a-zA-Z_\.]*[\s]*[:]?=(?=([^=]|$))"/>
+
+			<IncludeRules context="CommonRules"/>
+			<DetectChar attribute="Error" context="#stay" char="}" />
+		</context>
+
+		<context attribute="String" lineEndContext="#stay" name="string">
+			<DetectChar attribute="String" context="#pop" char="&quot;"/>
+			<HlCStringChar attribute="String Char" context="#stay"/>
+		</context>
+
+		<context attribute="String" lineEndContext="#stay" name="string2">
+			<DetectChar attribute="String" context="#pop" char="'"/>
+			<HlCStringChar attribute="String Char" context="#stay"/>
+		</context>
+
+		<context attribute="Identifier" lineEndContext="#stay" name="backquotedsymbol">
+			<DetectChar attribute="String" context="#pop" char="`"/>
+			<HlCStringChar attribute="String Char" context="#stay"/>
+		</context>
+
+		<context attribute="Normal Text" lineEndContext="#stay" name="operator_rhs" fallthrough="true" fallthroughContext="#pop">
+			<!-- While there is nothing of interest, stay in the context -->
+			<Detect2Chars attribute="Headline" context="Headline" char="#" char1="#"/>
+			<DetectChar attribute="Comment" context="Comment" char="#"/>
+			<DetectChar attribute="String" context="#stay" char=" "/>
+			<!-- Operators other than +, -, and ! directly after another operator are an error. -->
+			<RegExpr attribute="Error" context="#stay" String="(\*|/|&lt;|&gt;|\!=|=|\||&amp;|:|\^|@|\$|~)"/>
+		</context>
+
+		<context attribute="Headline" lineEndContext="#pop" name="Headline">
+			<IncludeRules context="##Alerts" />
+		</context>
+		<context attribute="Comment" lineEndContext="#pop" name="Comment">
+			<IncludeRules context="##Alerts" />
+		</context>
+
+		<!-- This context is not really used, but contains the common rules -->
+		<context name="CommonRules" lineEndContext="#stay" attribute="Normal Text" >
+			<DetectChar attribute="String" context="string" char="&quot;"/>
+			<DetectChar attribute="String" context="string2" char="'"/>
+			<DetectChar attribute="String" context="backquotedsymbol" char="`"/>
+			<keyword attribute="Control Structure" context="#stay" String="controls"/>
+			<keyword attribute="Reserved Words" context="#stay" String="words"/>
+			<Float attribute="Float" context="#stay"/>
+			<Int attribute="Int" context="#stay"/>
+			<RegExpr attribute="Keyword" context="#stay" String="[a-zA-Z_]+[a-zA-Z_\.0-9]*(?=[\s]*[(])"/>
+			<RegExpr attribute="Keyword" context="#stay" String="\.[a-zA-Z_\.]+[a-zA-Z_\.0-9]*(?=[\s]*[(])"/>
+			<DetectChar attribute="Symbol" context="parenthesis" char="("/>
+			<Detect2Chars attribute="Headline" context="Headline" char="#" char1="#"/>
+			<DetectChar attribute="Comment" context="Comment" char="#"/>
+
+			<!-- For (assignment) operators, enter a new context operator_rhs to check what follows (generally, that should not be another op) -->
+			<RegExpr attribute="Assign" context="operator_rhs" String="[&lt;]{1,2}\-"/>
+			<RegExpr attribute="Assign" context="operator_rhs" String="\-[&gt;]{1,2}"/>
+			<RegExpr attribute="Assign" context="operator_rhs" String="=(?!=)"/>
+			<RegExpr attribute="Operator" context="operator_rhs" String="(\+|\-|\*{1,2}|/|&lt;=?|&gt;=?|={1,2}|\!=?|\|{1,2}|&amp;{1,2}|:{1,3}|\^|@|\$|~)"/>
+			<RegExpr attribute="Operator" context="operator_rhs" String="%[^%]*%"/>
+
+			<DetectChar attribute="Symbol" context="ctx0" char="{" beginRegion="Brace1" />
+
+			<!-- This is needed only to assist variable based indentation -->
+			<DetectChar attribute="Symbol" context="#stay" char="[" />
+			<DetectChar attribute="Symbol" context="#stay" char="]" />
+		</context>
+	</contexts>
+
+	<itemDatas>
+		<!-- KDE default colors: http://accessibility.kde.org/oxygen.php?color=white -->
+		<itemData name="Normal Text" defStyleNum="dsNormal"/>
+		<itemData name="Symbol" defStyleNum="dsNormal"/>
+		<itemData name="Keyword" defStyleNum="dsKeyword"/>
+		<itemData name="Identifier" defStyleNum="dsDataType"/>
+		<itemData name="String" defStyleNum="dsString"/>
+		<itemData name="Headline" defStyleNum="dsComment" color="#b00000" selColor="#b00000" bold="1" italic="0"/> <!-- KDE default color: text 5 -->
+		<itemData name="Comment" defStyleNum="dsComment"/>
+		<itemData name="Assign" defStyleNum="dsNormal" color="#336366" selColor="#ccc099" bold="1" italic="0"/> <!-- KDE default color: text 7 -->
+		<itemData name="Control Structure" defStyleNum="dsControlFlow"/>
+		<itemData name="Reserved Words" defStyleNum="dsOthers"/>
+		<itemData name="Error" defStyleNum="dsError"/>
+		<itemData name="Operator" defStyleNum="dsOperator"/>
+		<itemData name="String Char"  defStyleNum="dsChar"/>
+		<itemData name="Float" defStyleNum="dsFloat"/>
+		<itemData name="Int" defStyleNum="dsDecVal"/>
+	</itemDatas>
+</highlighting>
+
+<general>
+	<comments>
+		<comment name="singleLine" start="#" end=""/>
+	</comments>
+	<keywords casesensitive="true" weakDeliminator="." additionalDeliminator="$"/>
+</general>
+</language>

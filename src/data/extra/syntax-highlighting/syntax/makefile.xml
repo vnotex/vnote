@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Makefile syntaxfile v0.9 by Per Wigren <wigren@home.se> -->
+<!-- Modified by Joseph Wenninger <jowenn@kde.org> -->
+<!-- Modified by Rui Santana <santana.rui@gmail.com> -->
+<!-- v2.0 by Andreas Nordal <andreas.nordal@gmail.com> -->
+<!-- small priority to allow for example Makefile.cpp to be detected as cpp file -->
+<!-- v2.1 by Alex Turbov <i.zaufi@gmail.com>
+     improve comments handling -->
+<!-- v4 by Alex Richardson <arichardson.kde@gmail.com>
+     added bmake support -->
+<language name="Makefile" section="Other"
+          version="7" kateversion="3.4"
+          extensions="GNUmakefile;Makefile;makefile;GNUmakefile.*;Makefile.*;makefile.*;*.mk"
+          mimetype="text/x-makefile" priority="11"
+          author="Per Wigren (wigren@home.se)" license="">
+  <highlighting>
+    <list name = "keywords" >
+      <item>include</item>
+      <item>-include</item>
+      <item>define</item>
+      <item>endef</item>
+    </list>
+    <!-- https://www.gnu.org/software/make/manual/html_node/Conditional-Syntax.html -->
+    <list name="gmake_if_keywords">
+      <item>if</item>
+      <item>ifeq</item>
+      <item>ifneq</item>
+      <item>ifdef</item>
+      <item>ifndef</item>
+    </list>
+    <list name="gmake_else_keywords"><item>else</item></list>
+    <list name="gmake_endif_keywords"><item>endif</item></list>
+    <!-- bmake statements: https://www.freebsd.org/cgi/man.cgi?make(1)#INCLUDE_STATEMENTS,_CONDITIONALS_AND_FOR_LOOPS -->
+    <list name="bmake_if_keywords">
+      <item>.if</item>
+      <item>.ifdef</item>
+      <item>.ifndef</item>
+      <item>.ifmake</item>
+      <item>.ifnmake</item>
+    </list>
+    <list name="bmake_else_keywords">
+      <item>.elif</item>
+      <item>.elifdef</item>
+      <item>.elifndef</item>
+      <item>.elifmake</item>
+      <item>.elifnmake</item>
+      <item>.else</item> <!-- TODO: anything following .else should be highlighted as an error -->
+    </list>
+    <list name="bmake_endif_keywords"><item>.endif</item></list>
+
+    <list name="bmake_expressions">
+      <item>defined</item>
+      <item>empty</item>
+      <item>exists</item>
+      <item>target</item>
+      <item>commands</item>
+    </list>
+
+    <list name="bmake_include_stmt">
+      <item>.include</item>
+      <item>.-include</item>
+      <item>.sinclude</item>
+      <!-- For compat bmake also handles include but this is already highlighted. <item>include</item> -->
+    </list>
+    <list name="bmake_message_stmt">
+      <item>.info</item>
+      <item>.warning</item>
+      <item>.error</item>
+    </list>
+    <!-- Use single element list here so that .for/.endfor also shows up in code completion -->
+    <list name="bmake_for_stmt"><item>.for</item></list>
+    <list name="bmake_endfor_stmt"><item>.endfor</item></list>
+
+    <!-- https://www.freebsd.org/cgi/man.cgi?make(1)#SPECIAL_TARGETS -->
+    <list name="bmake_special_targets">
+      <item>.BEGIN</item>
+      <item>.DEFAULT</item>
+      <item>.END</item>
+      <item>.ERROR</item>
+      <item>.IGNORE</item>
+      <item>.INTERRUPT</item>
+      <item>.MAIN</item>
+      <item>.MAKEFLAGS</item>
+      <item>.NOPATH</item>
+      <item>.NOTPARALLEL</item>
+      <item>.NO_PARALLEL</item>
+      <item>.OBJDIR</item>
+      <item>.ORDER</item>
+      <item>.PATH</item>
+      <item>.PHONY</item>
+      <item>.PRECIOUS</item>
+      <item>.SHELL</item>
+      <item>.SILENT</item>
+      <item>.STALE</item>
+      <item>.SUFFIXES</item>
+    </list>
+    <!-- https://www.freebsd.org/cgi/man.cgi?make(1)#SPECIAL_SOURCES_(ATTRIBUTES) -->
+    <list name="bmake_special_sources">
+      <item>.EXEC</item>
+      <item>.IGNORE</item>
+      <item>.MADE</item>
+      <item>.MAKE</item>
+      <item>.META</item>
+      <item>.NOMETA</item>
+      <item>.NOMETA_CMP</item>
+      <item>.NOPATH</item>
+      <item>.NOTMAIN</item>
+      <item>.OPTIONAL</item>
+      <item>.PHONY</item>
+      <item>.PRECIOUS</item>
+      <item>.RECURSIVE</item>
+      <item>.SILENT</item>
+      <item>.USE</item>
+      <item>.USEBEFORE</item>
+      <item>.WAIT</item>
+    </list>
+
+    <list name="bmake_other_stmts">
+      <item>.unexport-env</item>
+      <item>.unexport</item>
+      <item>.undef</item>
+      <item>.export-env</item>
+      <item>.export</item>
+    </list>
+
+    <list name = "functions">
+      <item>call</item>
+      <item>subst</item>
+      <item>patsubst</item>
+      <item>strip</item>
+      <item>findstring</item>
+      <item>filter</item>
+      <item>filter-out</item>
+      <item>sort</item>
+      <item>word</item>
+      <item>wordlist</item>
+      <item>words</item>
+      <item>firstword</item>
+      <item>lastword</item>
+      <item>dir</item>
+      <item>notdir</item>
+      <item>suffix</item>
+      <item>basename</item>
+      <item>addsuffix</item>
+      <item>addprefix</item>
+      <item>join</item>
+      <item>wildcard</item>
+      <item>realpath</item>
+      <item>abspath</item>
+      <item>if</item>
+      <item>or</item>
+      <item>and</item>
+      <item>foreach</item>
+      <item>value</item>
+      <item>eval</item>
+      <item>origin</item>
+      <item>flavor</item>
+      <item>shell</item>
+      <item>error</item>
+      <item>warning</item>
+      <item>info</item>
+    </list>
+    <contexts>
+      <context name="normal" attribute="Normal" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <keyword attribute="ControlFlow" String="bmake_if_keywords" context="bmake_conditional" beginRegion="bmake_if" firstNonSpace="true"/>
+        <!--TODO: trailing non-space after .else should be highlighted as an error -->
+        <keyword attribute="ControlFlow" String="bmake_else_keywords" context="bmake_conditional" endRegion="bmake_if" beginRegion="bmake_if" firstNonSpace="true"/>
+        <keyword attribute="ControlFlow" String="bmake_endif_keywords" context="#stay" endRegion="bmake_if"/>
+
+        <keyword attribute="ControlFlow" String="gmake_if_keywords" context="#stay" beginRegion="gmake_if" firstNonSpace="true"/>
+        <!--TODO: trailing non-space after .else should be highlighted as an error -->
+        <keyword attribute="ControlFlow" String="gmake_else_keywords" context="gmake_else" endRegion="gmake_if" beginRegion="gmake_if" firstNonSpace="true"/>
+        <keyword attribute="ControlFlow" String="gmake_endif_keywords" context="#stay" endRegion="gmake_if"/>
+
+        <keyword attribute="Keyword"  context="#stay" String="keywords"/>
+        <keyword attribute="Keyword"  context="bmake_other_stmts" String="bmake_other_stmts" firstNonSpace="true"/>
+        <RegExpr attribute="Variable" context="assign" String="[^\s+:?+]*\s*(?=:=|=|\+=|\?=)"/>
+        <keyword attribute="SpecialTarget" context="bmake_special_target" String="bmake_special_targets" firstNonSpace="true"/>
+        <RegExpr attribute="SpecialTarget" context="prereq" String="\.PATH\.[^:]*:" firstNonSpace="true"/>
+        <keyword attribute="Keyword" context="bmake_include" String="bmake_include_stmt" firstNonSpace="true"/>
+        <keyword attribute="Keyword" context="bmake_message" String="bmake_message_stmt" firstNonSpace="true"/>
+        <keyword attribute="Keyword" context="bmake_for_loop" String="bmake_for_stmt" firstNonSpace="true" beginRegion="for"/>
+        <keyword attribute="Keyword" context="#stay" String="bmake_endfor_stmt" firstNonSpace="true" endRegion="for"/>
+
+        <RegExpr attribute="Section"  context="prereq" String="^\.[^.][^:]*:"/>
+        <RegExpr attribute="Target"   context="prereq" String="^[^:]*:"/>
+        <DetectIdentifier/>
+        <DetectChar attribute="String" context="string&quot;" char="&quot;"/>
+        <DetectChar attribute="String" context="string'" char="'"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <Detect2Chars attribute="Special" context="#stay" char="\" char1="#"/>
+        <Detect2Chars attribute="Special" context="#stay" char="\" char1="\"/>
+        <AnyChar attribute="Operator" context="silent" String="@-" firstNonSpace="1"/>
+      </context>
+
+      <context name="strings_and_vars" attribute="Normal" lineEndContext="#pop">
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <DetectChar attribute="String" context="string&quot;" char="&quot;"/>
+        <DetectChar attribute="String" context="string'" char="'"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+      </context>
+
+      <context name="gmake_else" attribute="Error" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal"/>
+        <keyword attribute="ControlFlow" String="gmake_if_keywords" context="#stay"/>
+        <IncludeRules context="strings_and_vars"/>
+      </context>
+
+      <context name="bmake_include" attribute="Normal" lineEndContext="#pop">
+        <DetectSpaces />
+        <RangeDetect char="&lt;"  char1="&gt;" context="#stay" attribute="Include" />
+        <RangeDetect char="&quot;"  char1="&quot;" context="#stay" attribute="Include" />
+      </context>
+
+
+      <context name="bmake_conditional" attribute="Normal" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="strings_and_vars"/>
+        <keyword attribute="Builtin"  context="bmake_expression" String="bmake_expressions"/>
+        <Detect2Chars attribute="RealOperator" context="#stay" char="&amp;" char1="&amp;"/>
+        <Detect2Chars attribute="RealOperator" context="#stay" char="|" char1="|"/>
+        <Detect2Chars attribute="RealOperator" context="#stay" char="!" char1="="/>
+        <Detect2Chars attribute="RealOperator" context="#stay" char="=" char1="="/>
+        <DetectChar attribute="RealOperator" context="#stay" char="!"/>
+        <HlCHex attribute="Number" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+        <DetectIdentifier attribute="Variable" context="#stay"/>
+        <LineContinue attribute="Operator" context="#stay"/>
+      </context>
+
+      <context name="bmake_for_loop" attribute="Variable" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="strings_and_vars"/>
+        <WordDetect attribute="RealOperator" context="#stay" String="in" />
+      </context>
+
+      <context name="bmake_other_stmts" attribute="Variable" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="strings_and_vars"/>
+      </context>
+
+      <context name="bmake_expression" attribute="Variable" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="strings_and_vars"/>
+        <DetectChar attribute="Normal" context="#stay" char="("/>
+        <DetectChar attribute="Normal" context="#pop" char=")"/>
+        <DetectIdentifier attribute="Variable"/>
+      </context>
+
+      <context name="bmake_special_target" attribute="Error" lineEndContext="rule">
+        <!-- anything but spaces before the : should be an error -->
+        <DetectSpaces attribute="Normal" />
+        <DetectChar attribute="SpecialTarget" context="#pop!prereq" char=":"/>
+      </context>
+
+      <context name="bmake_message" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+      </context>
+
+      <context name="prereq" attribute="Prereq" lineEndContext="rule">
+        <DetectSpaces/>
+        <keyword attribute="SpecialPrereq" context="#stay" String="bmake_special_sources"/>
+        <DetectIdentifier/>
+        <LineContinue attribute="Operator" context="#stay"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <Detect2Chars attribute="Special" context="#stay" char="\" char1="#"/>
+        <Detect2Chars attribute="Special" context="#stay" char="\" char1="\"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+      </context>
+
+      <context name="rule" attribute="Normal" lineEndContext="#stay">
+        <LineContinue attribute="Operator" context="#stay"/>
+        <!-- pop if there is a leading non-tab,
+        and in particular, mark leading spaces as errors -->
+        <RegExpr attribute="Error" context="#pop#pop#pop" String="^ +" firstNonSpace="1"/>
+        <RegExpr context="#pop#pop#pop" String="^[^\t]" lookAhead="1" firstNonSpace="1"/>
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="String" context="string&quot;" char="&quot;"/>
+        <DetectChar attribute="String" context="string'" char="'"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <Detect2Chars attribute="Special" context="#stay" char="\" char1="#"/>
+        <Detect2Chars attribute="Special" context="#stay" char="\" char1="\"/>
+        <AnyChar attribute="Operator" context="silent" String="@-" firstNonSpace="1"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+      </context>
+
+      <context name="silent" attribute="Silent" lineEndContext="#pop">
+        <LineContinue attribute="Operator" context="#stay"/>
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="String" context="string&quot;" char="&quot;"/>
+        <DetectChar attribute="String" context="string'" char="'"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <Detect2Chars attribute="Special" context="#stay" char="\" char1="#"/>
+        <Detect2Chars attribute="Special" context="#stay" char="\" char1="\"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+      </context>
+
+      <context name="string&quot;" attribute="String" lineEndContext="#pop">
+        <LineContinue attribute="Operator" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+      </context>
+
+      <context name="string'" attribute="String" lineEndContext="#pop">
+        <LineContinue attribute="String" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+      </context>
+
+      <context name="assign" attribute="Operator" lineEndContext="#pop">
+        <DetectChar attribute="Operator" context="value" char="="/>
+      </context>
+
+      <context name="value" attribute="String" lineEndContext="#pop#pop">
+        <LineContinue attribute="Operator"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <RegExpr attribute="Special" context="#pop#pop" String="@[-_\d\w]*@"/>
+        <DetectChar attribute="Operator" char=";" context="#pop#pop"/>
+      </context>
+
+      <context name="dollar" attribute="Operator" lineEndContext="#pop">
+        <DetectChar attribute="Operator" context="call(" char="("/>
+        <DetectChar attribute="Operator" context="call{" char="{"/>
+        <RegExpr attribute="Operator" context="#pop" String="."/>
+      </context>
+
+      <context name="call(" attribute="Variable" lineEndContext="#stay" fallthroughContext="callVar(" fallthrough="1">
+        <keyword attribute="Keyword" context="callFunc(" String="functions"/>
+      </context>
+
+      <context name="call{" attribute="Variable" lineEndContext="#stay" fallthroughContext="callVar{" fallthrough="1">
+        <keyword attribute="Keyword" context="callFunc{" String="functions"/>
+      </context>
+
+      <context name="callVar(" attribute="Variable" lineEndContext="#stay">
+        <DetectChar attribute="Operator" char=")" context="#pop#pop#pop"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <DetectSpaces attribute="Error" context="#stay"/>
+        <AnyChar attribute="Error" context="#stay" String="=#:"/>
+      </context>
+
+      <context name="callVar{" attribute="Variable" lineEndContext="#stay">
+        <DetectChar attribute="Operator" char="}" context="#pop#pop#pop"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <DetectSpaces attribute="Error" context="#stay"/>
+        <!-- Handle bmake Variable modifiers: ${variable[:modifier[:...]]} -->
+        <Detect2Chars context="#stay" char="\" char1=":"/>
+        <!-- other modifiers -->
+        <DetectChar attribute="RealOperator" context="bmake_var_modifier" char=":"/>
+        <AnyChar attribute="Error" context="#stay" String="=#"/>
+      </context>
+
+      <context name="bmake_var_modifier_arg" attribute="VarModifier" lineEndContext="#pop">
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <Detect2Chars context="#stay" char="\" char1="}"/>
+        <DetectChar attribute="Operator" char="}" context="#pop#pop#pop#pop"/>
+        <Detect2Chars context="#stay" char="\" char1=":"/>
+        <DetectChar attribute="RealOperator" context="#pop!bmake_var_modifier" char=":"/>
+      </context>
+
+      <!-- TODO: once all modifiers are properly handled change fallthroughContext to "expect}" -->
+      <context name="bmake_var_modifier" attribute="VarModifier" lineEndContext="#pop" fallthroughContext="#pop!bmake_var_modifier_arg" fallthrough="true">
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+
+                    <!--
+          TODO :?true_string:false_string
+          TODO :old_string=new_string This is the AT&T System V UNIX style variable substitution.
+          TODO :@temp@string@ This is the loop expansion mechanism from the OSF Development Environment (ODE) make.
+          TODO :!cmd! The output of running cmd is the value.
+          TODO :[range]
+        -->
+        <!--  Modifiers without arguments:-->
+        <!--
+          :E Replaces each word in the variable with its suffix.
+          :H Replaces each word in the variable with everything but the last component.
+          :O   Order every word in variable alphabetically.
+          :Q   Quotes every shell meta-character in the variable
+          :R   Replaces each word in the variable with everything but its suffix.
+          :T   Replaces each word in the variable with its last component.
+          :u   Remove adjacent duplicate words (like uniq(1)).
+          :L The name of the variable is the value.
+          :P The path of the node which has the same name as the variable is the value.
+        -->
+        <AnyChar    attribute="Builtin" context="#pop!expect}" String="EHOQRTuLP"/>
+        <!-- :sh  If the variable is non-empty it is run as a command and the output becomes the new value. -->
+        <Detect2Chars attribute="Builtin" context="#pop!expect}" char="s" char1="h"/>
+        <!-- :Ox  Randomize words in variable. -->
+        <Detect2Chars attribute="Builtin" context="#pop!expect}" char="O" char1="x"/>
+        <!-- :tA  Attempt to convert variable to an absolute path using realpath(3),-->
+        <Detect2Chars attribute="Builtin" context="#pop!expect}" char="t" char1="A"/>
+        <!-- :tl  Converts variable to lower-case letters.-->
+        <Detect2Chars attribute="Builtin" context="#pop!expect}" char="t" char1="L"/>
+        <!--  :gmtime The value is a format string for strftime(3), using the current gmtime(3). -->
+        <StringDetect attribute="Builtin" String="gmtime" context="#pop!expect}" />
+        <!-- :hash Compute a 32bit hash of the value and encode it as hex digits. -->
+        <StringDetect attribute="Builtin" String="hash" context="#pop!expect}" />
+        <!-- :localtime The value is a format string for strftime(3), using the current localtime(3). -->
+        <StringDetect attribute="Builtin" String="localtime" context="#pop!expect}" />
+        <!--Now the modifiers with arguments:-->
+        <!--
+          :Mpattern Select only those words that match pattern.
+          :Npattern This is identical to `:M', but selects all words which do not match pattern.
+          :Dnewval If the variable is defined newval is the value.
+          :Unewval If the variable is undefined newval is the value.
+        -->
+        <AnyChar    attribute="Builtin" context="#pop!bmake_var_modifier_arg" String="MNDU"/>
+        <!-- TODO: add new context to highligh old_string and new_string differently
+          :S/old_string/new_string/[1gW]
+          :C/pattern/replacement/[1gW]
+        -->
+        <AnyChar attribute="Builtin" context="#pop!bmake_var_modifier_arg" String="SC"/>
+        <!-- ::=str The variable is assigned the value str after substitution. -->
+        <Detect2Chars attribute="Builtin" context="#pop!bmake_var_modifier_arg" char=":" char1="="/>
+        <!-- ::?=str As for ::= but only if the variable does not already have a value. -->
+        <StringDetect attribute="Builtin" String=":?=" context="#pop!bmake_var_modifier_arg" />
+        <!-- ::+=str Append str to the variable. -->
+        <StringDetect attribute="Builtin" String=":+=" context="#pop!bmake_var_modifier_arg" />
+        <!-- ::!=cmd Assign the output of cmd to the variable. -->
+        <StringDetect attribute="Builtin" String=":!=" context="#pop!bmake_var_modifier_arg" />
+        <!-- :tu  Converts variable to upper-case letters. -->
+        <Detect2Chars attribute="Builtin" context="#pop!bmake_var_modifier_arg" char="t" char1="u"/>
+        <!-- :tW  Causes the value to be treated as a single word.  See also `:[*]'. -->
+        <Detect2Chars attribute="Builtin" context="#pop!bmake_var_modifier_arg" char="t" char1="W"/>
+        <!-- :tw  Causes the value to be treated as a sequence of words delimited by white space.  See also `:[@]'.-->
+        <Detect2Chars attribute="Builtin" context="#pop!bmake_var_modifier_arg" char="t" char1="w"/>
+        <!-- :tsc Words in the variable are normally separated by a space on
+          expansion.  This modifier sets the separator to the character c.  If
+          c is omitted, then no separator is used.  The common escapes
+          (including octal numeric codes), work as expected. -->
+        <Detect2Chars attribute="Builtin" context="#pop!bmake_var_modifier_arg" char="t" char1="s"/>
+
+        <IncludeRules context="bmake_var_modifier_arg"/>
+      </context>
+
+      <context name="expect}" attribute="Error" lineEndContext="#pop#pop#pop#pop">
+        <Detect2Chars context="#stay" char="\" char1="}"/>
+        <DetectChar attribute="Operator" char="}" context="#pop#pop#pop#pop"/>
+      </context>
+
+      <context name="callFunc(" attribute="FuncParam" lineEndContext="#stay">
+        <DetectChar attribute="Operator" char=")" context="#pop#pop#pop"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <DetectChar attribute="Keyword" context="#stay" char=","/>
+        <DetectChar attribute="String" context="string'" char="'"/>
+      </context>
+
+      <context name="callFunc{" attribute="FuncParam" lineEndContext="#stay">
+        <DetectChar attribute="Operator" char="}" context="#pop#pop#pop"/>
+        <DetectChar attribute="Operator" context="dollar" char="$"/>
+        <DetectChar attribute="Keyword" context="#stay" char=","/>
+        <DetectChar attribute="String" context="string'" char="'"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <LineContinue attribute="Comment" context="#stay" />
+        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Modelines" />
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal"    defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Keyword"   defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Comment"   defStyleNum="dsComment"/>
+      <itemData name="String"    defStyleNum="dsString" spellChecking="0"/>
+      <itemData name="Variable"  defStyleNum="dsDataType" spellChecking="0"/>
+      <itemData name="Target"    defStyleNum="dsDecVal" spellChecking="0"/>
+      <itemData name="Section"   defStyleNum="dsOthers" spellChecking="0"/>
+      <itemData name="Prereq"    defStyleNum="dsDataType" spellChecking="0"/>
+      <itemData name="FuncParam" defStyleNum="dsString" spellChecking="0"/>
+      <itemData name="Operator"  defStyleNum="dsChar" spellChecking="0"/>
+      <itemData name="Silent"    defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Special"   defStyleNum="dsFloat" spellChecking="0"/>
+      <itemData name="Error"     defStyleNum="dsError" spellChecking="0"/>
+      <itemData name="Builtin"   defStyleNum="dsBuiltIn" spellChecking="0"/>
+      <itemData name="Number"    defStyleNum="dsDecVal" spellChecking="0"/>
+      <itemData name="Include"   defStyleNum="dsImport" spellChecking="0"/>
+      <itemData name="ControlFlow" defStyleNum="dsControlFlow" spellChecking="0"/>
+      <itemData name="VarModifier" defStyleNum="dsSpecialString" spellChecking="0"/>
+      <itemData name="RealOperator" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="SpecialTarget" defStyleNum="dsOthers" spellChecking="0" bold="1"/>
+      <itemData name="SpecialPrereq" defStyleNum="dsDataType" spellChecking="0" bold="1"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name = "singleLine" start = "#"/>
+    </comments>
+    <!-- '-' is not a deliminator in function filter-out -->
+    <keywords casesensitive="1" weakDeliminator = ".-"/>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

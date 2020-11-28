@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Varnish Configuration Language" version="3" kateversion="5.0" section="Configuration" extensions="*.vcl;" mimetype="" author="Xavier Guerrin (xavier@tuxfamily.org)" license="WTFPL">
+  <highlighting>
+    <list name="vclStandardSubs">
+      <item>vcl_recv</item>
+      <item>vcl_pipe</item>
+      <item>vcl_pass</item>
+      <item>vcl_hash</item>
+      <item>vcl_hit</item>
+      <item>vcl_miss</item>
+      <item>vcl_fetch</item>
+      <item>vcl_deliver</item>
+      <item>vcl_init</item>
+      <item>vcl_fini</item>
+      <item>vcl_error</item>
+    </list>
+    <list name="vclConditionalKeywords">
+      <item>if</item>
+      <item>else</item>
+      <item>elsif</item>
+      <item>elseif</item>
+    </list>
+    <list name="vclKeywords">
+      <item>set</item>
+      <item>call</item>
+      <item>error</item>
+      <item>esi</item>
+      <item>include</item>
+      <item>remove</item>
+      <item>unset</item>
+      <item>panic</item>
+      <item>rollback</item>
+      <item>purge</item>
+      <item>synthetic</item>
+    </list>
+    <list name="vclStandardFunctions">
+      <item>hash_data</item>
+      <item>regsub</item>
+      <item>regsuball</item>
+      <item>ban</item>
+      <item>ban_url</item>
+    </list>
+    <list name="vclModes">
+      <item>deliver</item>
+      <item>error</item>
+      <item>fetch</item>
+      <item>hash</item>
+      <item>hit_for_pass</item>
+      <item>lookup</item>
+      <item>ok</item>
+      <item>pass</item>
+      <item>pipe</item>
+      <item>restart</item>
+    </list>
+    <list name="vclDirectorTypes">
+      <item>random</item>
+      <item>client</item>
+      <item>hash</item>
+      <item>round-robin</item>
+      <item>dns</item>
+      <item>fallback</item>
+    </list>
+    <!--
+      2013-06-16
+      This list was generated from https://www.varnish-cache.org/vmods, taking
+      only vmods having the "Used in production" status, excluding the
+      non-free ones.
+    -->
+    <list name="knownVMods">
+      <item>std</item>
+      <item>example</item>
+      <item>abtest</item>
+      <item>threescale</item>
+      <item>authentication</item>
+      <item>boltsort</item>
+      <item>crashhandler</item>
+      <item>curl</item>
+      <item>digest</item>
+      <item>dns</item>
+      <item>header</item>
+      <item>memcached</item>
+      <item>null</item>
+      <item>querystring</item>
+      <item>shield</item>
+      <item>softpurge</item>
+      <item>statsd</item>
+      <item>throttle</item>
+      <item>timeutils</item>
+      <item>urlcode</item>
+      <item>var</item>
+      <item>timers</item>
+    </list>
+    <contexts>
+      <context name="normal_text" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="comments" />
+        <RegExpr attribute="Keyword" context="sub_declaration"      String="^\s*sub\s+" />
+        <RegExpr attribute="Keyword" context="probe_declaration"    String="^\s*probe\s+" />
+        <RegExpr attribute="Keyword" context="backend_declaration"  String="^\s*backend\s+" />
+        <RegExpr attribute="Keyword" context="director_declaration" String="^\s*director\s+" />
+        <RegExpr attribute="Keyword" context="acl_declaration"      String="^\s*acl\s+" />
+        <RegExpr attribute="Keyword" context="import_declaration"   String="^\s*import\s+" />
+        <RegExpr attribute="Keyword" context="include_declaration"  String="^\s*include\s+" />
+        <IncludeRules context="embedded-c" />
+      </context>
+      <context name="embedded-c" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars char="C" char1="{" context="embedded-c_enclosure" attribute="Region Marker" beginRegion="embedded_c_block" />
+      </context>
+      <context name="embedded-c_enclosure" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars char="}" char1="C" context="#pop" attribute="Region Marker" endRegion="embedded_c_block" />
+        <IncludeRules context="##C" />
+      </context>
+      <context name="shell-like-comment" attribute="Comment" lineEndContext="#pop">
+      </context>
+      <context name="c-like-comment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars char="*" char1="/" context="#pop" attribute="Comment" />
+      </context>
+      <context name="cplusplus-like-comment" attribute="Comment" lineEndContext="#pop">
+      </context>
+      <context name="comments" attribute="Comment" lineEndContext="#pop">
+        <DetectChar   char="#"           context="shell-like-comment"       attribute="Comment" />
+        <Detect2Chars char="/" char1="*" context="c-like-comment"           attribute="Comment" />
+        <Detect2Chars char="/" char1="/" context="cplusplus-like-comment"   attribute="Comment" />
+      </context>
+      <context name="vcl_variables" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Variable"       context="#stay" String="now" />
+        <RegExpr attribute="Storage"        context="#stay" String="storage\.[a-zA-Z0-9]+(?:\.(?:free_space|used_space|happy))?" />
+        <RegExpr attribute="TCP Property"   context="#stay" String="client\.(ip|identity)" />
+        <RegExpr attribute="TCP Property"   context="#stay" String="server\.(ip|hostname|identity|port)" />
+        <RegExpr attribute="HTTP Property"  context="#stay" String="req\.(request|url|proto|backend|restarts|esi_level|ttl|grace|keep|xid|esi|can_gzip|backend\.healthy|hash_ignore_busy|hash_always_miss)" />
+        <RegExpr attribute="HTTP Property"  context="#stay" String="bereq\.(request|url|proto|connect_timeout|first_byte_timeout|between_bytes_timeout)" />
+        <RegExpr attribute="HTTP Property"  context="#stay" String="obj\.(proto|status|response|hits|ttl|grace|keep|lastuse)" />
+        <RegExpr attribute="HTTP Property"  context="#stay" String="beresp\.(proto|saintmode|status|response|do_esi|do_stream|do_gzip|do_gunzip|ttl|grace|keep|backend\.(name|ip|port)|storage|cacheable)" />
+        <RegExpr attribute="HTTP Property"  context="#stay" String="resp\.(proto|status|response)" />
+        <RegExpr attribute="HTTP X- Header" context="#stay" String="(req|bereq|resp|beresp|obj)\.http\.X-[-_A-Za-z0-9]*" />
+        <RegExpr attribute="HTTP Header"    context="#stay" String="(req|bereq|resp|beresp|obj)\.http\.[A-Za-z][-_A-Za-z0-9]*" />
+      </context>
+      <context name="vcl_operators" attribute="Operator" lineEndContext="#stay">
+        <DetectChar   attribute="Logical Operator" context="#stay" char="!" />
+        <Detect2Chars attribute="Logical Operator" context="#stay" char="&amp;" char1="&amp;" />
+        <Detect2Chars attribute="Logical Operator" context="#stay" char="|" char1="|" />
+
+        <Detect2Chars attribute="Comparison Operator" context="#stay" char="=" char1="=" />
+        <Detect2Chars attribute="Comparison Operator" context="#stay" char="!" char1="=" />
+        <Detect2Chars attribute="Comparison Operator" context="#stay" char="&lt;" char1="=" />
+        <Detect2Chars attribute="Comparison Operator" context="#stay" char="&gt;" char1="=" />
+        <DetectChar   attribute="Comparison Operator" context="#stay" char="&lt;" />
+        <DetectChar   attribute="Comparison Operator" context="#stay" char="&gt;" />
+        <DetectChar   attribute="Comparison Operator" context="#stay" char="~" />
+        <Detect2Chars attribute="Comparison Operator" context="#stay" char="!" char1="~" />
+
+        <DetectChar   attribute="Arithmetic Operator" context="#stay" char="+" />
+        <DetectChar   attribute="Arithmetic Operator" context="#stay" char="-" />
+        <DetectChar   attribute="Arithmetic Operator" context="#stay" char="*" />
+        <DetectChar   attribute="Arithmetic Operator" context="#stay" char="/" />
+
+        <Detect2Chars attribute="Arithmetic Operator" context="#stay" char="+" char1="=" />
+        <Detect2Chars attribute="Arithmetic Operator" context="#stay" char="-" char1="=" />
+        <Detect2Chars attribute="Arithmetic Operator" context="#stay" char="*" char1="=" />
+        <Detect2Chars attribute="Arithmetic Operator" context="#stay" char="/" char1="=" />
+
+        <Detect2Chars attribute="Arithmetic Operator" context="#stay" char="+" char1="+" />
+        <Detect2Chars attribute="Arithmetic Operator" context="#stay" char="-" char1="-" />
+
+        <Detect2Chars attribute="Arithmetic Operator" context="#stay" char="&gt;" char1="&gt;" />
+        <Detect2Chars attribute="Arithmetic Operator" context="#stay" char="&lt;" char1="&lt;" />
+
+        <DetectChar   attribute="Operator" context="#stay" char="=" />
+      </context>
+      <context name="minimal_code" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="comments" />
+        <RegExpr attribute="Duration" context="#stay" String="([0-9]+|[0-9]+\.[0-9]+|[0-9]+\.|\.[0-9]+)\s*(w|d|h|m|s|ms)" />
+        <RegExpr attribute="Data Size" context="#stay" String="([0-9]+|[0-9]+\.[0-9]+|[0-9]+\.|\.[0-9]+)\s*[KMGT]?B" />
+        <Float attribute="Float" context="#stay" />
+        <Int attribute="Decimal" context="#stay" />
+        <StringDetect attribute="Keyword" context="#stay" String="true" />
+        <StringDetect attribute="Keyword" context="#stay" String="false" />
+        <DetectChar char="&quot;" context="string" attribute="String" />
+        <Detect2Chars attribute="String" char="{" char1="&quot;" context="string_enclosure" beginRegion="string_enclosure_block" />
+      </context>
+      <context name="definition_code" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="minimal_code" />
+        <DetectChar attribute="Operator" context="#stay" char="=" />
+      </context>
+      <context name="basic_code" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="minimal_code" />
+        <IncludeRules context="vcl_variables" />
+        <IncludeRules context="vcl_operators" />
+      </context>
+      <context name="regular_code" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="basic_code" />
+        <keyword attribute="Keyword" context="#stay" String="vclKeywords" />
+        <keyword attribute="Standard VCL Sub" context="#stay" String="vclStandardSubs" />
+        <keyword attribute="Standard VCL Function" context="#stay" String="vclStandardFunctions" />
+        <keyword attribute="Condition Keyword" context="condition_part" String="vclConditionalKeywords" />
+        <StringDetect attribute="Keyword" context="return_statement" String="return" />
+        <IncludeRules context="embedded-c" />
+      </context>
+      <context name="return_statement" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Action Keyword" context="#stay" String="vclModes" />
+        <DetectChar attribute="Normal Text" char=";" context="#pop" />
+      </context>
+      <context name="string_enclosure" attribute="String" lineEndContext="#stay">
+        <Detect2Chars attribute="String" char="&quot;" char1="}" context="#pop" endRegion="string_enclosure_block" />
+      </context>
+      <context name="sub_declaration" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces />
+        <keyword attribute="Standard VCL Sub" context="#stay" String="vclStandardSubs" />
+        <DetectChar attribute="Region Marker" context="sub_definition" char="{" beginRegion="sub_block" />
+      </context>
+      <context name="sub_definition" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="regular_code" />
+        <DetectChar attribute="Region Marker" context="#pop#pop" char="}" endRegion="sub_block" />
+      </context>
+      <context name="condition_part" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Condition Keyword" context="#stay" String="vclConditionalKeywords" />
+        <DetectChar attribute="Region Marker" context="conditional_expression" char="(" beginRegion="conditional_expression_block" />
+        <DetectChar attribute="Region Marker" context="conditional_block" char="{" beginRegion="conditional_blockregion" />
+      </context>
+      <context name="conditional_expression" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="basic_code" />
+        <DetectChar attribute="Region Marker" context="conditional_expression" char="(" beginRegion="conditional_expression_block" />
+        <DetectChar attribute="Region Marker" context="#pop" char=")" endRegion="conditional_expression_block" />
+      </context>
+      <context name="conditional_block" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="regular_code" />
+        <DetectChar attribute="Region Marker" context="#pop#pop" char="}" endRegion="conditional_blockregion" />
+      </context>
+      <context name="string" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context name="probe_declaration" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces />
+        <DetectChar   attribute="Operator" context="#stay" char="=" />
+        <DetectChar attribute="Region Marker" context="probe_definition" char="{" beginRegion="probe_block" />
+        <DetectChar attribute="Normal Text" context="#pop" char=";" />
+      </context>
+      <context name="probe_definition" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Probe Property" context="#stay" String="\.(url|request|window|threshold|initial|expected_response|interval|timeout)" />
+        <IncludeRules context="definition_code" />
+        <DetectChar attribute="Region Marker" context="#pop#pop" char="}" endRegion="probe_block" />
+      </context>
+      <context name="backend_declaration" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces />
+        <DetectChar attribute="Operator" context="#stay" char="=" />
+        <DetectChar attribute="Region Marker" context="backend_definition" char="{" beginRegion="backend_block" />
+        <DetectChar attribute="Normal Text" context="#pop" char=";" />
+      </context>
+      <context name="backend_definition" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Backend Property" context="#stay" String="\.(host|port|host_header|connect_timeout|first_byte_timeout|between_bytes_timeout|max_connections|saintmode_threshold)" />
+        <IncludeRules context="definition_code" />
+        <StringDetect attribute="Backend Property" context="probe_declaration" String=".probe" />
+        <DetectChar attribute="Region Marker" context="#pop#pop" char="}" endRegion="backend_block" />
+      </context>
+      <context name="director_declaration" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces />
+        <keyword      attribute="Director Type" String="vclDirectorTypes" />
+        <StringDetect attribute="Director Type" String="round-robin" />
+        <DetectChar attribute="Region Marker" context="director_definition" char="{" beginRegion="director_block" />
+      </context>
+      <context name="director_definition" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="definition_code" />
+        <RegExpr attribute="Director Property" context="#stay" String="\.(retries|ttl|suffix)" />
+        <StringDetect attribute="Director Property" context="backend_declaration" String=".list" />
+        <DetectChar attribute="Region Marker" context="director_backend" char="{" beginRegion="director_backend_block" />
+        <DetectChar attribute="Region Marker" context="#pop#pop" char="}" endRegion="backend_block" />
+      </context>
+      <context name="director_backend" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="definition_code" />
+        <RegExpr attribute="Director Property" context="#stay" String="\.(weight|suffix)" />
+        <StringDetect attribute="Director Property" context="backend_declaration" String=".backend" />
+        <DetectChar attribute="Region Marker" context="#pop" char="}" endRegion="director_backend_block" />
+      </context>
+      <context name="acl_declaration" attribute="Normal Text" lineEndContext="#stay"> 
+        <DetectChar attribute="Region Marker" context="acl_definition" char="{" beginRegion="acl_block" />
+      </context>
+      <context name="acl_definition" attribute="Normal Text" lineEndContext="#stay"> 
+        <IncludeRules context="minimal_code" />
+        <DetectChar attribute="Logical Operator" context="#stay" char="!" />
+        <DetectChar attribute="Logical Operator" context="#stay" char="/" />
+        <DetectChar attribute="Region Marker" context="#pop#pop" char="}" endRegion="acl_block" />
+      </context>
+      <context name="import_declaration" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Well-known VMod" context="import_identified" String="knownVMods" />
+        <DetectIdentifier attribute="VMod Identifier" context="import_identified" />
+      </context>
+      <context name="import_identified" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" context="#pop#pop" char=";" />
+        <StringDetect attribute="Keyword" context="import_from" String="from" />
+      </context>
+      <context name="import_from" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="&quot;" context="import_from_path" attribute="String" />
+      </context>
+      <context name="import_from_path" attribute="String" lineEndContext="#stay">
+        <DetectChar char="&quot;" context="import_from_path_complete" attribute="String" />
+      </context>
+      <context name="import_from_path_complete" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" context="#pop#pop#pop#pop#pop" char=";" />
+      </context>
+      <context name="include_declaration" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="&quot;" context="include_path" attribute="String" />
+      </context>
+      <context name="include_path" attribute="String" lineEndContext="#stay">
+        <DetectChar char="&quot;" context="include_path_complete" attribute="String" />
+      </context>
+      <context name="include_path_complete" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" context="#pop#pop#pop" char=";" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"               defStyleNum="dsNormal" />
+      <itemData name="Comment"                   defStyleNum="dsComment" />
+      <itemData name="Keyword"                   defStyleNum="dsKeyword" />
+      <itemData name="Condition Keyword"         defStyleNum="dsKeyword" />
+      <itemData name="Action Keyword"            defStyleNum="dsKeyword" />
+      <itemData name="Variable"                  defStyleNum="dsVariable" />
+      <itemData name="Director Type"             defStyleNum="dsDataType" />
+      <itemData name="Standard VCL Function"     defStyleNum="dsFunction" />
+      <itemData name="Standard VCL Sub"          defStyleNum="dsFunction" bold="1" />
+      <itemData name="Operator"                  defStyleNum="dsKeyword" color="#008000" bold="0" />
+      <itemData name="Comparison Operator"       defStyleNum="dsKeyword" color="#008000" bold="0" />
+      <itemData name="Arithmetic Operator"       defStyleNum="dsKeyword" color="#008000" bold="0" />
+      <itemData name="Logical Operator"          defStyleNum="dsKeyword" color="#008000" bold="0" />
+      <itemData name="String"                    defStyleNum="dsString" bold="0" italic="0" />
+      <itemData name="Region Marker"             defStyleNum="dsNormal" />
+      <itemData name="Probe Property"            defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="1" italic="0" />
+      <itemData name="Backend Property"          defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="1" italic="0" />
+      <itemData name="Director Property"         defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="1" italic="0" />
+      <itemData name="Storage"                   defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="0" italic="0" />
+      <itemData name="TCP Property"              defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="0" italic="1" />
+      <itemData name="HTTP Property"             defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="0" italic="0" />
+      <itemData name="HTTP Header"               defStyleNum="dsDataType" color="#0D62FF" selColor="#0D62FF" bold="0" italic="0" />
+      <itemData name="HTTP X- Header"            defStyleNum="dsDataType" color="#0D62FF" selColor="#0D62FF" bold="0" italic="1" />
+      <itemData name="Decimal"                   defStyleNum="dsDecVal" />
+      <itemData name="Duration"                  defStyleNum="dsDecVal" />
+      <itemData name="Data Size"                 defStyleNum="dsDecVal" />
+      <itemData name="Float"                     defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="VMod Identifier"           defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" />
+      <itemData name="Well-known VMod"           defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="1" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

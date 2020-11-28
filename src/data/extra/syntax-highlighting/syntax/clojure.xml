@@ -1,0 +1,883 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  This file is part of KDE's kate project.
+
+  copyright   : (C) 2004 by Dominik Haumann, (C) 2011 by Caspar Hasenclever
+
+ **********************************************************************
+ * This library is free software; you can redistribute it and/or      *
+ * modify it under the terms of the GNU Library General Public        *
+ * License as published by the Free Software Foundation; either       *
+ * version 2 of the License, or (at your option) any later version.   *
+ *                                                                    *
+ * This library is distributed in the hope that it will be useful,    *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  *
+ * Library General Public License for more details.                   *
+ *                                                                    *
+ * You should have received a copy of the GNU Library General Public  *
+ * License along with this library; if not, write to the              *
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,   *
+ * Boston, MA  02110-1301, USA.                                       *
+ **********************************************************************
+ -->
+<language version="10" kateversion="5.0" name="Clojure" section="Sources" extensions="*.clj;*.cljs;*.cljc" mimetype="" author="Dominik Haumann [lisp] modified for clojure by Caspar Hasenclever" license="LGPLv2+">
+  <highlighting>
+    <list name="definitions">
+      <item>def</item>
+      <item>def-</item>
+      <item>defalias</item>
+      <item>defhinted</item>
+      <item>definline</item>
+      <item>defmethod</item>
+      <item>defmulti</item>
+      <item>defnk</item>
+      <item>defn-memo</item>
+      <item>defonce</item>
+      <item>defonce-</item>
+      <item>defprotocol</item>
+      <item>defrecord</item>
+      <item>defstruct</item>
+      <item>defstruct-</item>
+      <item>deftest</item>
+      <item>deftest-</item>
+      <item>deftype</item>
+      <item>defunbound</item>
+      <item>defunbound-</item>
+      <item>defvar</item>
+      <item>defvar-</item>
+    </list>
+    <list name="documentable_definitions">
+      <item>defn</item>
+      <item>defn-</item>
+      <item>defmacro</item>
+      <item>defmacro-</item>
+    </list>
+    <list name="keywords">
+      <item>&lt;</item>
+      <item>&lt;=</item>
+      <item>=</item>
+      <item>==</item>
+      <item>&gt;</item>
+      <item>&gt;=</item>
+      <item>-</item>
+      <item>-'</item>
+      <item>-&gt;</item>
+      <item>-&gt;&gt;</item>
+      <item>/</item>
+      <item>.</item>
+      <item>..</item>
+      <item>*</item>
+      <item>*'</item>
+      <item>+</item>
+      <item>+'</item>
+      <item>accessor</item>
+      <item>aclone</item>
+      <item>add-classpath</item>
+      <item>add-watch</item>
+      <item>agent</item>
+      <item>agent-errors</item>
+      <item>aget</item>
+      <item>alength</item>
+      <item>alias</item>
+      <item>all-ns</item>
+      <item>alter</item>
+      <item>alter-meta!</item>
+      <item>alter-var-root</item>
+      <item>amap</item>
+      <item>ancestors</item>
+      <item>and</item>
+      <item>append-child</item>
+      <item>apply</item>
+      <item>apply-template</item>
+      <item>are</item>
+      <item>areduce</item>
+      <item>array-map</item>
+      <item>as-&gt;</item>
+      <item>aset</item>
+      <item>aset-boolean</item>
+      <item>aset-byte</item>
+      <item>aset-char</item>
+      <item>aset-double</item>
+      <item>aset-float</item>
+      <item>aset-int</item>
+      <item>aset-long</item>
+      <item>aset-short</item>
+      <item>assert</item>
+      <item>assert-any</item>
+      <item>assert-expr</item>
+      <item>assert-predicate</item>
+      <item>assoc</item>
+      <item>assoc!</item>
+      <item>associative?</item>
+      <item>assoc-in</item>
+      <item>atom</item>
+      <item>atom?</item>
+      <item>attrs</item>
+      <item>await</item>
+      <item>await1</item>
+      <item>await-for</item>
+      <item>bases</item>
+      <item>bean</item>
+      <item>bigdec</item>
+      <item>bigint</item>
+      <item>binding</item>
+      <item>bit-and</item>
+      <item>bit-and-not</item>
+      <item>bit-clear</item>
+      <item>bit-flip</item>
+      <item>bit-not</item>
+      <item>bit-or</item>
+      <item>bit-set</item>
+      <item>bit-shift-left</item>
+      <item>bit-shift-right</item>
+      <item>bit-test</item>
+      <item>bit-xor</item>
+      <item>boolean</item>
+      <item>boolean-array</item>
+      <item>booleans</item>
+      <item>bound-fn</item>
+      <item>bound-fn*</item>
+      <item>branch?</item>
+      <item>butlast</item>
+      <item>byte</item>
+      <item>byte-array</item>
+      <item>bytes</item>
+      <item>case</item>
+      <item>cast</item>
+      <item>catch</item>
+      <item>char</item>
+      <item>char?</item>
+      <item>char-array</item>
+      <item>char-escape-string</item>
+      <item>char-name-string</item>
+      <item>chars</item>
+      <item>children</item>
+      <item>chunk</item>
+      <item>chunk-append</item>
+      <item>chunk-buffer</item>
+      <item>chunk-cons</item>
+      <item>chunked-seq?</item>
+      <item>chunk-first</item>
+      <item>chunk-next</item>
+      <item>chunk-rest</item>
+      <item>class</item>
+      <item>class?</item>
+      <item>clear-agent-errors</item>
+      <item>clojure-version</item>
+      <item>coll?</item>
+      <item>collection-tag</item>
+      <item>comment</item>
+      <item>commute</item>
+      <item>comp</item>
+      <item>comparator</item>
+      <item>compare</item>
+      <item>compare-and-set!</item>
+      <item>compile</item>
+      <item>complement</item>
+      <item>compose-fixtures</item>
+      <item>concat</item>
+      <item>cond</item>
+      <item>condp</item>
+      <item>conj</item>
+      <item>conj!</item>
+      <item>cons</item>
+      <item>constantly</item>
+      <item>construct-proxy</item>
+      <item>contains?</item>
+      <item>content</item>
+      <item>content-handler</item>
+      <item>count</item>
+      <item>counted?</item>
+      <item>create-ns</item>
+      <item>create-struct</item>
+      <item>cycle</item>
+      <item>dec</item>
+      <item>dec'</item>
+      <item>decimal?</item>
+      <item>declare</item>
+      <item>delay</item>
+      <item>delay?</item>
+      <item>deliver</item>
+      <item>deref</item>
+      <item>derive</item>
+      <item>descendants</item>
+      <item>destructure</item>
+      <item>difference</item>
+      <item>disj</item>
+      <item>disj!</item>
+      <item>dissoc</item>
+      <item>dissoc!</item>
+      <item>distinct</item>
+      <item>distinct?</item>
+      <item>do</item>
+      <item>doall</item>
+      <item>doc</item>
+      <item>dorun</item>
+      <item>doseq</item>
+      <item>dosync</item>
+      <item>do-template</item>
+      <item>dotimes</item>
+      <item>doto</item>
+      <item>double</item>
+      <item>double-array</item>
+      <item>doubles</item>
+      <item>down</item>
+      <item>drop</item>
+      <item>drop-last</item>
+      <item>drop-while</item>
+      <item>e</item>
+      <item>edit</item>
+      <item>element</item>
+      <item>emit</item>
+      <item>emit-element</item>
+      <item>empty</item>
+      <item>empty?</item>
+      <item>end?</item>
+      <item>ensure</item>
+      <item>enumeration-seq</item>
+      <item>eval</item>
+      <item>even?</item>
+      <item>every?</item>
+      <item>extend</item>
+      <item>extenders</item>
+      <item>extend-protocol</item>
+      <item>extends?</item>
+      <item>extend-type</item>
+      <item>false?</item>
+      <item>ffirst</item>
+      <item>file-position</item>
+      <item>file-seq</item>
+      <item>filter</item>
+      <item>filterv</item>
+      <item>finally</item>
+      <item>find</item>
+      <item>find-doc</item>
+      <item>find-ns</item>
+      <item>find-var</item>
+      <item>first</item>
+      <item>float</item>
+      <item>float?</item>
+      <item>float-array</item>
+      <item>floats</item>
+      <item>flush</item>
+      <item>fn</item>
+      <item>fn?</item>
+      <item>fnext</item>
+      <item>fnil</item>
+      <item>for</item>
+      <item>force</item>
+      <item>format</item>
+      <item>frequencies</item>
+      <item>function?</item>
+      <item>future</item>
+      <item>future?</item>
+      <item>future-call</item>
+      <item>future-cancel</item>
+      <item>future-cancelled?</item>
+      <item>future-done?</item>
+      <item>gen-and-load-class</item>
+      <item>gen-and-save-class</item>
+      <item>gen-class</item>
+      <item>gen-interface</item>
+      <item>gensym</item>
+      <item>get</item>
+      <item>get-child</item>
+      <item>get-child-count</item>
+      <item>get-in</item>
+      <item>get-method</item>
+      <item>get-possibly-unbound-var</item>
+      <item>get-proxy-class</item>
+      <item>get-thread-bindings</item>
+      <item>get-validator</item>
+      <item>group-by</item>
+      <item>handle</item>
+      <item>handler-case</item>
+      <item>hash</item>
+      <item>hash-map</item>
+      <item>hash-set</item>
+      <item>identical?</item>
+      <item>identity</item>
+      <item>if</item>
+      <item>if-let</item>
+      <item>ifn?</item>
+      <item>if-not</item>
+      <item>import</item>
+      <item>inc</item>
+      <item>inc'</item>
+      <item>inc-report-counter</item>
+      <item>index</item>
+      <item>init-proxy</item>
+      <item>in-ns</item>
+      <item>insert-child</item>
+      <item>insert-left</item>
+      <item>insert-right</item>
+      <item>inspect</item>
+      <item>inspect-table</item>
+      <item>inspect-tree</item>
+      <item>instance?</item>
+      <item>int</item>
+      <item>int-array</item>
+      <item>integer?</item>
+      <item>interleave</item>
+      <item>intern</item>
+      <item>interpose</item>
+      <item>intersection</item>
+      <item>into</item>
+      <item>into-array</item>
+      <item>ints</item>
+      <item>io!</item>
+      <item>is</item>
+      <item>isa?</item>
+      <item>is-leaf</item>
+      <item>iterate</item>
+      <item>iterator-seq</item>
+      <item>join</item>
+      <item>join-fixtures</item>
+      <item>juxt</item>
+      <item>key</item>
+      <item>keys</item>
+      <item>keyword</item>
+      <item>keyword?</item>
+      <item>keywordize-keys</item>
+      <item>last</item>
+      <item>lazy-cat</item>
+      <item>lazy-seq</item>
+      <item>left</item>
+      <item>leftmost</item>
+      <item>lefts</item>
+      <item>let</item>
+      <item>letfn</item>
+      <item>line-seq</item>
+      <item>list</item>
+      <item>list*</item>
+      <item>list?</item>
+      <item>list-model</item>
+      <item>list-provider</item>
+      <item>load</item>
+      <item>loaded-libs</item>
+      <item>load-file</item>
+      <item>load-reader</item>
+      <item>load-script</item>
+      <item>load-string</item>
+      <item>locking</item>
+      <item>long</item>
+      <item>long-array</item>
+      <item>longs</item>
+      <item>loop</item>
+      <item>macroexpand</item>
+      <item>macroexpand-1</item>
+      <item>macroexpand-all</item>
+      <item>main</item>
+      <item>make-array</item>
+      <item>make-hierarchy</item>
+      <item>make-node</item>
+      <item>map</item>
+      <item>map?</item>
+      <item>mapcat</item>
+      <item>mapv</item>
+      <item>map-invert</item>
+      <item>max</item>
+      <item>max-key</item>
+      <item>memfn</item>
+      <item>memoize</item>
+      <item>merge</item>
+      <item>merge-with</item>
+      <item>meta</item>
+      <item>methods</item>
+      <item>method-sig</item>
+      <item>min</item>
+      <item>min-key</item>
+      <item>mod</item>
+      <item>name</item>
+      <item>namespace</item>
+      <item>neg?</item>
+      <item>newline</item>
+      <item>next</item>
+      <item>nfirst</item>
+      <item>nil?</item>
+      <item>nnext</item>
+      <item>node</item>
+      <item>not</item>
+      <item>not=</item>
+      <item>not-any?</item>
+      <item>not-empty</item>
+      <item>not-every?</item>
+      <item>ns</item>
+      <item>ns-aliases</item>
+      <item>ns-imports</item>
+      <item>ns-interns</item>
+      <item>ns-map</item>
+      <item>ns-name</item>
+      <item>ns-publics</item>
+      <item>ns-refers</item>
+      <item>ns-resolve</item>
+      <item>ns-unalias</item>
+      <item>ns-unmap</item>
+      <item>nth</item>
+      <item>nthnext</item>
+      <item>num</item>
+      <item>number?</item>
+      <item>odd?</item>
+      <item>or</item>
+      <item>parents</item>
+      <item>partial</item>
+      <item>partition</item>
+      <item>path</item>
+      <item>pcalls</item>
+      <item>peek</item>
+      <item>persistent!</item>
+      <item>pmap</item>
+      <item>pop</item>
+      <item>pop!</item>
+      <item>pop-thread-bindings</item>
+      <item>pos?</item>
+      <item>postwalk</item>
+      <item>postwalk-demo</item>
+      <item>postwalk-replace</item>
+      <item>pr</item>
+      <item>prefer-method</item>
+      <item>prefers</item>
+      <item>prev</item>
+      <item>prewalk</item>
+      <item>prewalk-demo</item>
+      <item>prewalk-replace</item>
+      <item>primitives-classnames</item>
+      <item>print</item>
+      <item>print-cause-trace</item>
+      <item>print-ctor</item>
+      <item>print-doc</item>
+      <item>print-dup</item>
+      <item>printf</item>
+      <item>println</item>
+      <item>println-str</item>
+      <item>print-method</item>
+      <item>print-namespace-doc</item>
+      <item>print-simple</item>
+      <item>print-special-doc</item>
+      <item>print-stack-trace</item>
+      <item>print-str</item>
+      <item>print-throwable</item>
+      <item>print-trace-element</item>
+      <item>prn</item>
+      <item>prn-str</item>
+      <item>project</item>
+      <item>promise</item>
+      <item>proxy</item>
+      <item>proxy-call-with-super</item>
+      <item>proxy-mappings</item>
+      <item>proxy-name</item>
+      <item>proxy-super</item>
+      <item>pr-str</item>
+      <item>push-thread-bindings</item>
+      <item>pvalues</item>
+      <item>quot</item>
+      <item>rand</item>
+      <item>rand-int</item>
+      <item>rand-nth</item>
+      <item>range</item>
+      <item>ratio?</item>
+      <item>rational?</item>
+      <item>rationalize</item>
+      <item>read</item>
+      <item>read-line</item>
+      <item>read-string</item>
+      <item>recur</item>
+      <item>reduce</item>
+      <item>ref</item>
+      <item>refer</item>
+      <item>refer-clojure</item>
+      <item>ref-history-count</item>
+      <item>re-find</item>
+      <item>ref-max-history</item>
+      <item>ref-min-history</item>
+      <item>ref-set</item>
+      <item>re-groups</item>
+      <item>reify</item>
+      <item>release-pending-sends</item>
+      <item>rem</item>
+      <item>re-matcher</item>
+      <item>re-matches</item>
+      <item>remove</item>
+      <item>remove-method</item>
+      <item>remove-ns</item>
+      <item>remove-watch</item>
+      <item>rename</item>
+      <item>rename-keys</item>
+      <item>re-pattern</item>
+      <item>repeat</item>
+      <item>repeatedly</item>
+      <item>repl</item>
+      <item>replace</item>
+      <item>repl-caught</item>
+      <item>repl-exception</item>
+      <item>replicate</item>
+      <item>repl-prompt</item>
+      <item>repl-read</item>
+      <item>report</item>
+      <item>require</item>
+      <item>re-seq</item>
+      <item>reset!</item>
+      <item>reset-meta!</item>
+      <item>resolve</item>
+      <item>rest</item>
+      <item>resultset-seq</item>
+      <item>reverse</item>
+      <item>reversible?</item>
+      <item>right</item>
+      <item>rightmost</item>
+      <item>rights</item>
+      <item>root</item>
+      <item>rseq</item>
+      <item>rsubseq</item>
+      <item>run-all-tests</item>
+      <item>run-tests</item>
+      <item>satisfies?</item>
+      <item>second</item>
+      <item>select</item>
+      <item>select-keys</item>
+      <item>send</item>
+      <item>send-off</item>
+      <item>seq</item>
+      <item>seq?</item>
+      <item>seque</item>
+      <item>sequence</item>
+      <item>sequential?</item>
+      <item>seq-zip</item>
+      <item>set</item>
+      <item>set?</item>
+      <item>set-test</item>
+      <item>set-validator!</item>
+      <item>short</item>
+      <item>short-array</item>
+      <item>shorts</item>
+      <item>shutdown-agents</item>
+      <item>skip-if-eol</item>
+      <item>skip-whitespace</item>
+      <item>slurp</item>
+      <item>some</item>
+      <item>sort</item>
+      <item>sort-by</item>
+      <item>sorted?</item>
+      <item>sorted-map</item>
+      <item>sorted-map-by</item>
+      <item>sorted-set</item>
+      <item>sorted-set-by</item>
+      <item>special-form-anchor</item>
+      <item>special-symbol?</item>
+      <item>split-at</item>
+      <item>split-with</item>
+      <item>str</item>
+      <item>stream?</item>
+      <item>string?</item>
+      <item>stringify-keys</item>
+      <item>struct</item>
+      <item>struct-map</item>
+      <item>subs</item>
+      <item>subseq</item>
+      <item>subvec</item>
+      <item>successful?</item>
+      <item>supers</item>
+      <item>swap!</item>
+      <item>symbol</item>
+      <item>symbol?</item>
+      <item>sync</item>
+      <item>syntax-symbol-anchor</item>
+      <item>take</item>
+      <item>take-last</item>
+      <item>take-nth</item>
+      <item>take-while</item>
+      <item>test</item>
+      <item>test-all-vars</item>
+      <item>testing</item>
+      <item>testing-contexts-str</item>
+      <item>testing-vars-str</item>
+      <item>test-ns</item>
+      <item>test-var</item>
+      <item>the-ns</item>
+      <item>throw</item>
+      <item>time</item>
+      <item>to-array</item>
+      <item>to-array-2d</item>
+      <item>trampoline</item>
+      <item>transient</item>
+      <item>tree-seq</item>
+      <item>true?</item>
+      <item>try</item>
+      <item>try-expr</item>
+      <item>type</item>
+      <item>unchecked-add</item>
+      <item>unchecked-dec</item>
+      <item>unchecked-divide</item>
+      <item>unchecked-inc</item>
+      <item>unchecked-multiply</item>
+      <item>unchecked-negate</item>
+      <item>unchecked-remainder</item>
+      <item>unchecked-subtract</item>
+      <item>underive</item>
+      <item>unimport</item>
+      <item>union</item>
+      <item>unquote</item>
+      <item>unquote-splicing</item>
+      <item>up</item>
+      <item>update</item>
+      <item>update-in</item>
+      <item>update-proxy</item>
+      <item>use</item>
+      <item>use-fixtures</item>
+      <item>val</item>
+      <item>vals</item>
+      <item>var?</item>
+      <item>var-get</item>
+      <item>var-set</item>
+      <item>vary-meta</item>
+      <item>vec</item>
+      <item>vector</item>
+      <item>vector?</item>
+      <item>vector-of</item>
+      <item>walk</item>
+      <item>when</item>
+      <item>when-first</item>
+      <item>when-let</item>
+      <item>when-not</item>
+      <item>while</item>
+      <item>with-bindings</item>
+      <item>with-bindings*</item>
+      <item>with-in-str</item>
+      <item>with-loading-context</item>
+      <item>with-local-vars</item>
+      <item>with-meta</item>
+      <item>with-open</item>
+      <item>with-out-str</item>
+      <item>with-precision</item>
+      <item>with-test</item>
+      <item>with-test-out</item>
+      <item>xml-seq</item>
+      <item>zero?</item>
+      <item>zipmap</item>
+    </list>
+    <list name="variables">
+      <item>*1</item>
+      <item>*2</item>
+      <item>*3</item>
+      <item>*agent*</item>
+      <item>*allow-unresolved-vars*</item>
+      <item>*assert*</item>
+      <item>*clojure-version*</item>
+      <item>*command-line-args*</item>
+      <item>*compile-files*</item>
+      <item>*compile-path*</item>
+      <item>*current*</item>
+      <item>*e</item>
+      <item>*err*</item>
+      <item>*file*</item>
+      <item>*flush-on-newline*</item>
+      <item>*in*</item>
+      <item>*initial-report-counters*</item>
+      <item>*load-tests*</item>
+      <item>*macro-meta*</item>
+      <item>*math-context*</item>
+      <item>*ns*</item>
+      <item>*out*</item>
+      <item>*print-dup*</item>
+      <item>*print-length*</item>
+      <item>*print-level*</item>
+      <item>*print-meta*</item>
+      <item>*print-readably*</item>
+      <item>*read-eval*</item>
+      <item>*report-counters*</item>
+      <item>*sb*</item>
+      <item>*source-path*</item>
+      <item>*stack*</item>
+      <item>*stack-trace-depth*</item>
+      <item>*state*</item>
+      <item>*testing-contexts*</item>
+      <item>*testing-vars*</item>
+      <item>*test-out*</item>
+      <item>*use-context-classloader*</item>
+      <item>*warn-on-reflection*</item>
+      <item>*warn-on-reflection*</item>
+      <item>false</item>
+      <item>nil</item>
+      <item>true</item>
+    </list>
+    <contexts>
+      <context name="Level0" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Brackets1" context="Level1" char="("/>
+        <Detect2Chars attribute="Brackets1" context="Level1" char="'" char1="("/>
+        <Detect2Chars attribute="Brackets1" context="Level1" char="`" char1="("/>
+        <Detect2Chars attribute="Brackets1" context="Level1" char="#" char1="("/>
+        <Detect2Chars attribute="Brackets1" context="Level1" char="@" char1="("/>
+        <IncludeRules context="Default" />
+      </context>
+      <context name="Default" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="Comment" char=";"/>
+        <Detect2Chars attribute="Comment" context="#stay" char="#" char1="_"/>
+        <RegExpr attribute="Readermacro" context="#stay" String="#\?@?"/>
+        <RegExpr attribute="Modifier" context="#stay" String="[@~'`][^\s\(\)\{\}\[\]]+"/>
+        <RegExpr attribute="Modifier" context="#stay" String="[^\s&quot;\(\)\{\}\[\]]+#"/>
+        <RegExpr attribute="Modifier2" context="#stay" String="::?[a-zA-Z0-9\-\./]+"/>
+        <Detect2Chars attribute="BracketsSet" context="BracketsSet" char="#" char1="{"/>
+        <Detect2Chars attribute="BracketsMeta" context="BracketsMeta" char="^" char1="{"/>
+        <DetectChar attribute="BracketsMap" context="BracketsMap" char="{"/>
+        <DetectChar attribute="BracketsSquare" context="#stay" char="["/>
+        <DetectChar attribute="BracketsSquare" context="#stay" char="]"/>
+        <RegExpr attribute="Variable" context="#stay" String="#'[^\s\(\)\{\}\[\]]+"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <RegExpr attribute="Variable" context="#stay" String="%[0-9]*"/>
+        <keyword attribute="Variable" context="#stay" String="variables"/>
+        <keyword attribute="Definition" context="function_decl_documentable" String="documentable_definitions"/>
+        <keyword attribute="Definition" context="function_decl" String="definitions"/>
+        <RegExpr attribute="Char" context="#stay" String="\\u[0-9A-Fa-f]+|\\o[0-7]+|\\backspace|\\formfeed|\\newline|\\space|\\tab|\\[^\s\(\)\{\}\[\]]"/>
+        <Detect2Chars attribute="Regexpr" context="Regexpr" char="#" char1="&quot;"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <RegExpr attribute="Float" context="#stay" String="[0-9]+/[0-9]+"/>
+        <RegExpr attribute="BaseN" context="#stay" String="0[xX][0-9A-Fa-f]+"/>
+        <RegExpr attribute="BaseN" context="#stay" String="([12]?[0-9]|3[0-6])[rR][0-9a-zA-Z]+"/>
+        <RegExpr attribute="Error" context="#stay" String="(3[7-9]|[0-9]*[4-9][0-9]+)[rR][0-9a-zA-Z]+"/>
+        <Float attribute="Float" context="Float Suffixes"/>
+        <Int attribute="Decimal" context="Int Suffixes"/>
+        <DetectChar attribute="Brackets1" context="Level1" char="("/>
+      </context>
+      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+            <StringDetect attribute="Float" context="#pop" String="M" insensitive="false"/>
+      </context>
+      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+            <StringDetect attribute="Decimal" context="#pop" String="N" insensitive="false"/>
+      </context>
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <RegExpr String="(FIXME|TODO):?" attribute="Alert" context="#stay"/>
+      </context>
+      <context name="function_decl_documentable" attribute="Function" lineEndContext="#stay">
+        <RegExpr attribute="Function" context="#pop!DocumentationPossible" String="\s*[A-Za-z0-9-+\&lt;\&gt;//\*!\?']*\s*"/>
+      </context>
+      <context name="function_decl" attribute="Function" lineEndContext="#stay">
+        <RegExpr attribute="Function" context="#pop" String="\s*[A-Za-z0-9-+\&lt;\&gt;//\*!\?']*\s*"/>
+      </context>
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <RegExpr attribute="Char" context="#stay" String="#\\."/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context name="Regexpr" attribute="Regexpr" lineEndContext="#stay">
+        <RegExpr attribute="Char" context="#stay" String="#\\."/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="Regexpr" context="#pop" char="&quot;"/>
+      </context>
+      <context name="DocumentationPossible" attribute="Normal" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <DetectChar attribute="Comment" context="Comment" char=";"/>
+        <DetectChar attribute="Documentation" context="#pop!Documentation" char="&quot;"/>
+      </context>
+      <context name="Documentation" attribute="Documentation" lineEndContext="#stay">
+        <RegExpr attribute="Char" context="#stay" String="#\\."/>
+        <HlCStringChar attribute="Char" context="#stay"/>
+        <DetectChar attribute="Documentation" context="#pop" char="&quot;"/>
+      </context>
+      <context name="BracketsSet" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="BracketsSet" context="#pop" char="}" />
+        <IncludeRules context="Default" />
+      </context>
+      <context name="BracketsMeta" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="BracketsMeta" context="#pop" char="}" />
+        <DetectChar attribute="Documentation" context="Documentation" char="&quot;"/>
+        <IncludeRules context="Default" />
+      </context>
+      <context name="BracketsMap" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="BracketsMap" context="#pop" char="}" />
+        <IncludeRules context="Default" />
+      </context>
+      <context name="Level1" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Brackets2" context="Level2" char="("/>
+        <Detect2Chars attribute="Brackets2" context="Level2" char="'" char1="("/>
+        <Detect2Chars attribute="Brackets2" context="Level2" char="`" char1="("/>
+        <Detect2Chars attribute="Brackets2" context="Level2" char="#" char1="("/>
+        <Detect2Chars attribute="Brackets2" context="Level2" char="@" char1="("/>
+        <DetectChar attribute="Brackets1" context="#pop" char=")" />
+        <IncludeRules context="Default" />
+      </context>
+      <context name="Level2" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Brackets3" context="Level3" char="("/>
+        <Detect2Chars attribute="Brackets3" context="Level3" char="'" char1="("/>
+        <Detect2Chars attribute="Brackets3" context="Level3" char="`" char1="("/>
+        <Detect2Chars attribute="Brackets3" context="Level3" char="#" char1="("/>
+        <Detect2Chars attribute="Brackets3" context="Level3" char="@" char1="("/>
+        <DetectChar attribute="Brackets2" context="#pop" char=")" />
+        <IncludeRules context="Default" />
+      </context>
+      <context name="Level3" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Brackets4" context="Level4" char="("/>
+        <Detect2Chars attribute="Brackets4" context="Level4" char="'" char1="("/>
+        <Detect2Chars attribute="Brackets4" context="Level4" char="`" char1="("/>
+        <Detect2Chars attribute="Brackets4" context="Level4" char="#" char1="("/>
+        <Detect2Chars attribute="Brackets4" context="Level4" char="@" char1="("/>
+        <DetectChar attribute="Brackets3" context="#pop" char=")" />
+        <IncludeRules context="Default" />
+      </context>
+      <context name="Level4" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Brackets5" context="Level5" char="("/>
+        <Detect2Chars attribute="Brackets5" context="Level5" char="'" char1="("/>
+        <Detect2Chars attribute="Brackets5" context="Level5" char="`" char1="("/>
+        <Detect2Chars attribute="Brackets5" context="Level5" char="#" char1="("/>
+        <Detect2Chars attribute="Brackets5" context="Level5" char="@" char1="("/>
+        <DetectChar attribute="Brackets4" context="#pop" char=")" />
+        <IncludeRules context="Default" />
+      </context>
+      <context name="Level5" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Brackets6" context="Level6" char="("/>
+        <Detect2Chars attribute="Brackets6" context="Level6" char="'" char1="("/>
+        <Detect2Chars attribute="Brackets6" context="Level6" char="`" char1="("/>
+        <Detect2Chars attribute="Brackets6" context="Level6" char="#" char1="("/>
+        <Detect2Chars attribute="Brackets6" context="Level6" char="@" char1="("/>
+        <DetectChar attribute="Brackets5" context="#pop" char=")" />
+        <IncludeRules context="Default" />
+      </context>
+      <context name="Level6" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Brackets1" context="Level1" char="("/>
+        <Detect2Chars attribute="Brackets1" context="Level1" char="'" char1="("/>
+        <Detect2Chars attribute="Brackets1" context="Level1" char="`" char1="("/>
+        <Detect2Chars attribute="Brackets1" context="Level1" char="#" char1="("/>
+        <Detect2Chars attribute="Brackets1" context="Level1" char="@" char1="("/>
+        <DetectChar attribute="Brackets6" context="#pop" char=")" />
+        <IncludeRules context="Default" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Modifier" defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="Modifier2" defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Definition" defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="BaseN" defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Function" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Char" defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="String Char" defStyleNum="dsSpecialChar"/>
+      <itemData name="Regexpr" defStyleNum="dsSpecialString"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Documentation" defStyleNum="dsDocumentation"/>
+      <itemData name="Alert" defStyleNum="dsAlert" spellChecking="false"/>
+      <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+      <itemData name="Readermacro" defStyleNum="dsPreprocessor"/>
+      <itemData name="BracketsSet" defStyleNum="dsNormal" color="#0000ff" selColor="#00ff00"/>
+      <itemData name="BracketsMeta" defStyleNum="dsNormal" color="#0000ff" selColor="#00ff00" bold="1" italic="0"/>
+      <itemData name="BracketsMap" defStyleNum="dsNormal" color="#206620" selColor="#219921"/>
+      <itemData name="BracketsSquare" defStyleNum="dsNormal" color="#3333ff" selColor="#3333aa"/>
+      <itemData name="Brackets1" defStyleNum="dsNormal" color="#ff0000" selColor="#ffaa00" bold="0" italic="0"/>
+      <itemData name="Brackets2" defStyleNum="dsNormal" color="#ff8800" selColor="#ffff00" bold="0" italic="0"/>
+      <itemData name="Brackets3" defStyleNum="dsNormal" color="#888800" selColor="#888888" bold="0" italic="0"/>
+      <itemData name="Brackets4" defStyleNum="dsNormal" color="#008800" selColor="#000000" bold="0" italic="0"/>
+      <itemData name="Brackets5" defStyleNum="dsNormal" color="#000088" selColor="#000000" bold="0" italic="0"/>
+      <itemData name="Brackets6" defStyleNum="dsNormal" color="#880088" selColor="#000000" bold="0" italic="0"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" weakDeliminator="-+*?!&lt;&gt;=/:#\"/>
+    <comments>
+      <comment name="singleLine" start=";;"/>
+    </comments>
+  </general>
+</language>

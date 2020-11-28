@@ -1,0 +1,706 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Varnish 4 Test Case language" version="4" kateversion="3.4" section="Configuration" extensions="*.vtc;" mimetype="" author="Xavier Guerrin (xavier@tuxfamily.org)" license="WTFPL" priority="4">
+  <highlighting>
+    <list name="VSLGrouping">
+      <!-- Extracted from lib/libvarnishapi/vsl_arg.c -->
+      <item>raw</item>
+      <item>vxid</item>
+      <item>request</item>
+      <item>session</item>
+    </list>
+    <list name="VSLTags">
+      <!--
+        Extracted using:
+          perl -nlE 'push(@tags, $1) if m#^([^ ]+) - #; END { map { printf("      <item>%s</item>\n", $_); } @tags; }' lib/libvarnishapi/vsl-tags.rst
+      -->
+      <item>Backend</item>
+      <item>BackendClose</item>
+      <item>BackendOpen</item>
+      <item>BackendReuse</item>
+      <item>Backend_health</item>
+      <item>Begin</item>
+      <item>BereqAcct</item>
+      <item>BereqHeader</item>
+      <item>BereqMethod</item>
+      <item>BereqProtocol</item>
+      <item>BereqURL</item>
+      <item>BerespHeader</item>
+      <item>BerespProtocol</item>
+      <item>BerespReason</item>
+      <item>BerespStatus</item>
+      <item>BogoHeader</item>
+      <item>CLI</item>
+      <item>Debug</item>
+      <item>ESI_BodyBytes</item>
+      <item>ESI_xmlerror</item>
+      <item>End</item>
+      <item>Error</item>
+      <item>ExpBan</item>
+      <item>ExpKill</item>
+      <item>FetchError</item>
+      <item>Fetch_Body</item>
+      <item>Gzip</item>
+      <item>Hash</item>
+      <item>Hit</item>
+      <item>HitPass</item>
+      <item>HttpGarbage</item>
+      <item>Length</item>
+      <item>Link</item>
+      <item>LostHeader</item>
+      <item>ObjHeader</item>
+      <item>ObjProtocol</item>
+      <item>ObjReason</item>
+      <item>ObjStatus</item>
+      <item>PipeAcct</item>
+      <item>ReqAcct</item>
+      <item>ReqHeader</item>
+      <item>ReqMethod</item>
+      <item>ReqProtocol</item>
+      <item>ReqStart</item>
+      <item>ReqURL</item>
+      <item>RespHeader</item>
+      <item>RespProtocol</item>
+      <item>RespReason</item>
+      <item>RespStatus</item>
+      <item>SessClose</item>
+      <item>SessOpen</item>
+      <item>Storage</item>
+      <item>TTL</item>
+      <item>Timestamp</item>
+      <item>VCL_Error</item>
+      <item>VCL_Log</item>
+      <item>VCL_acl</item>
+      <item>VCL_call</item>
+      <item>VCL_return</item>
+      <item>VCL_trace</item>
+      <item>VSL</item>
+      <item>WorkThread</item>
+    </list>
+    <contexts>
+      <!-- default context: define main keywords -->
+      <context name="vtcnormal_text" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="global_directives_restricted" />
+        <IncludeRules context="global_directives" />
+      </context>
+
+      <!-- directives that can be encountered at global scope but not within a loop -->
+      <context name="global_directives_restricted" attribute="Normal Text" lineEndContext="#stay">
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="varnishtest_declaration" String="varnishtest" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="feature_instruction"     String="feature" />
+        <RegExpr attribute="Keyword" context="#stay"     String="^\s*random\s*$" />
+      </context>
+
+      <!-- directives that can be encountered at global scope, either directly or within a loop  -->
+      <context name="global_directives" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="comments" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="client_declaration"      String="client" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="server_declaration"      String="server" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="varnish_declaration"     String="varnish" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="logexpect_declaration"   String="logexpect" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="sema_instruction"        String="sema" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="shell_instruction"       String="shell" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="delay_instruction"       String="delay" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="global_loop_instruction" String="loop" />
+      </context>
+
+      <!-- Strings delimited with double quotes -->
+      <context name="strings" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="&quot;" context="string" attribute="String" />
+      </context>
+      <context name="string" attribute="String" lineEndContext="#pop">
+        <Detect2Chars attribute="String" context="#stay" char="\" char1="&quot;" />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+
+      <!-- The following contexts (quoted-, brace- and unquoted- strings) make their parent pop as soon as they parsed a string. -->
+      <context name="quoted-strings" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="&quot;" context="quoted-string" attribute="String" />
+      </context>
+      <context name="quoted-string" attribute="String" lineEndContext="#pop#pop">
+        <Detect2Chars attribute="String" context="#stay" char="\" char1="&quot;" />
+        <DetectChar attribute="String" context="#pop#pop" char="&quot;" />
+      </context>
+
+      <context name="brace-strings" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="String" context="brace-string" char="{" beginRegion="string_block" />
+      </context>
+      <context name="brace-string" attribute="String" lineEndContext="#stay">
+        <!--
+          strings delimited with braces do not require to escape closing braces;
+          therefore, we have to use an extra context to keep track of opening and closing braces
+        -->
+        <DetectChar attribute="String" context="brace-string-internal" char="{" />
+        <DetectChar attribute="String" context="#pop#pop" char="}" endRegion="string_block" />
+      </context>
+      <context name="brace-string-internal" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="String" context="#pop" char="}" />
+      </context>
+
+      <context name="unquoted-strings" attribute="String" lineEndContext="#pop">
+        <RegExpr attribute="String" context="unquoted-string" String="[^ ]" />
+      </context>
+      <context name="unquoted-string" attribute="String" lineEndContext="#pop#pop">
+        <RegExpr attribute="Normal Text" context="#pop#pop" String="\s" />
+      </context>
+
+      <!-- This context exits as soon as it parsed a string, be it defined between braces, quotes or spaces -->
+      <context name="string-arg" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="HTTP announce"        context="#pop" String="HTTP/[0-9.]+" />
+        <RegExpr attribute="HTTP method"          context="#pop" String="\s+(GET|HEAD|POST|PUT|DELETE|TRACE|OPTIONS|CONNECT|PATCH)" />
+        <RegExpr attribute="HTTP WebDAV method"   context="#pop" String="\s+(PROPFIND|PROPPATCH|MKCOL|COPY|MOVE|LOCK|UNLOCK|CONNECT|PATCH)" />
+        <RegExpr attribute="HTTP custom method"   context="#pop" String="\s+(PURGE|PURGESTR)" />
+        <IncludeRules context="brace-strings" />
+        <IncludeRules context="quoted-strings" />
+        <IncludeRules context="unquoted-strings" />
+      </context>
+
+      <!-- This context exits as soon as it parsed an integer. -->
+      <context name="int-arg" attribute="Normal Text" lineEndContext="#pop">
+        <Int attribute="Decimal" context="#pop" />
+      </context>
+
+      <!-- This context exits as soon as it parsed a status integer. -->
+      <context name="status-arg" attribute="String" lineEndContext="#pop">
+        <!-- HTTP status can be provided within quotes too. -->
+        <RegExpr attribute="Decimal" context="#pop" String="(&quot;[12345][0-9]{2}&quot;|[12345][0-9]{2})(?![0-9])" />
+      </context>
+
+      <!-- Comments -->
+      <context name="shell-like-comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Modelines" />
+      </context>
+      <context name="comments" attribute="Comment" lineEndContext="#pop">
+        <DetectChar   char="#" context="shell-like-comment" attribute="Comment" />
+      </context>
+
+      <!-- Define base elements that used within various contexts -->
+      <context name="base_elements" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="HTTP announce"        context="#stay" String="HTTP/[0-9.]+" />
+        <RegExpr attribute="HTTP method"          context="#stay" String="\s+(GET|HEAD|POST|PUT|DELETE|TRACE|OPTIONS|CONNECT|PATCH)" />
+        <RegExpr attribute="HTTP WebDAV method"   context="#stay" String="\s+(PROPFIND|PROPPATCH|MKCOL|COPY|MOVE|LOCK|UNLOCK|CONNECT|PATCH)" />
+        <RegExpr attribute="HTTP custom method"   context="#stay" String="\s+(PURGE|PURGESTR)" />
+        <Float attribute="Float" context="#stay" />
+        <Int attribute="Decimal" context="#stay" />
+        <IncludeRules context="strings" />
+        <IncludeRules context="comments" />
+      </context>
+
+      <!--
+        Define syntax of the -expect command for server and client objects.
+        Written from cmd_http_expect() in bin/varnishtest/vtc_http.c.
+      -->
+      <context name="http_expectation" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="comments" />
+        <RegExpr    attribute="Float"                context="http_expectation_operator" String="[0-9\.]+(\s+|$)" />
+        <RegExpr    attribute="Decimal"              context="http_expectation_operator" String="[0-9]+(\s+|$)" />
+        <StringDetect attribute="Keyword"            context="http_expectation_operator" String="&lt;undef&gt;" />
+        <!-- Written from cmd_var_resolve() in bin/varnishtest/vtc_http.c. -->
+        <RegExpr    attribute="HTTP Property"        context="http_expectation_operator" String="req\.(method|url|proto|bodylen)" />
+        <RegExpr    attribute="HTTP Property"        context="http_expectation_operator" String="resp\.(proto|status|msg|chunklen|bodylen|body)" />
+        <RegExpr    attribute="HTTP X- Header"       context="http_expectation_operator" String="(req|resp)\.http\.X\-[\-_A-Za-z0-9]*" />
+        <RegExpr    attribute="HTTP Header"          context="http_expectation_operator" String="(req|resp)\.http\.[A-Za-z][\-_A-Za-z0-9]*" />
+        <RegExpr    attribute="HTTP announce"        context="http_expectation_operator" String="HTTP/[0-9\.]+" />
+        <RegExpr    attribute="HTTP method"          context="http_expectation_operator" String="\s+(GET|HEAD|POST|PUT|DELETE|TRACE|OPTIONS|CONNECT|PATCH)" />
+        <RegExpr    attribute="HTTP WebDAV method"   context="http_expectation_operator" String="\s+(PROPFIND|PROPPATCH|MKCOL|COPY|MOVE|LOCK|UNLOCK|CONNECT|PATCH)" />
+        <RegExpr    attribute="HTTP custom method"   context="http_expectation_operator" String="\s+(PURGE|PURGESTR)" />
+        <DetectChar attribute="String"               context="http_expectation_arg1_brace-string" char="{" beginRegion="string_block" />
+        <DetectChar attribute="String"               context="http_expectation_arg1_quoted-string" char="&quot;" />
+        <RegExpr    attribute="Normal Text"          context="http_expectation_arg1_unquoted-string" String="[^ ]" lookAhead="true" />
+      </context>
+      <context name="http_expectation_operator" attribute="Normal Text" lineEndContext="#pop#pop">
+        <IncludeRules context="comments" />
+        <Detect2Chars attribute="Comparison Operator" context="common_expectation_second_arg" char="=" char1="=" />
+        <Detect2Chars attribute="Comparison Operator" context="common_expectation_second_arg" char="!" char1="=" />
+        <Detect2Chars attribute="Comparison Operator" context="common_expectation_second_arg" char="&gt;" char1="=" />
+        <Detect2Chars attribute="Comparison Operator" context="common_expectation_second_arg" char="&lt;" char1="=" />
+        <DetectChar   attribute="Comparison Operator" context="common_expectation_second_arg" char="&gt;" />
+        <DetectChar   attribute="Comparison Operator" context="common_expectation_second_arg" char="&lt;" />
+        <DetectChar   attribute="Comparison Operator" context="common_expectation_second_arg" char="~" />
+        <Detect2Chars attribute="Comparison Operator" context="common_expectation_second_arg" char="!" char1="~" />
+      </context>
+      <context name="common_expectation_second_arg" attribute="Normal Text" lineEndContext="#pop#pop#pop">
+        <IncludeRules context="comments" />
+        <RegExpr    attribute="Float"                context="common_expectation_end" String="[0-9\.]+(\s+|$)" />
+        <RegExpr    attribute="Decimal"              context="common_expectation_end" String="[0-9]+(\s+|$)" />
+        <StringDetect attribute="Keyword"            context="common_expectation_end" String="&lt;undef&gt;" />
+        <!-- Written from cmd_var_resolve() in bin/varnishtest/vtc_http.c. -->
+        <RegExpr    attribute="HTTP Property"        context="common_expectation_end" String="req\.(method|url|proto|bodylen)" />
+        <RegExpr    attribute="HTTP Property"        context="common_expectation_end" String="resp\.(proto|status|msg|chunklen|bodylen|body)" />
+        <RegExpr    attribute="HTTP X- Header"       context="common_expectation_end" String="(req|resp)\.http\.X\-[\-_A-Za-z0-9]*" />
+        <RegExpr    attribute="HTTP Header"          context="common_expectation_end" String="(req|resp)\.http\.[A-Za-z][\-_A-Za-z0-9]*" />
+        <RegExpr    attribute="HTTP announce"        context="common_expectation_end" String="HTTP/[0-9\.]+" />
+        <RegExpr    attribute="HTTP method"          context="common_expectation_end" String="\s+(GET|HEAD|POST|PUT|DELETE|TRACE|OPTIONS|CONNECT|PATCH)" />
+        <RegExpr    attribute="HTTP WebDAV method"   context="common_expectation_end" String="\s+(PROPFIND|PROPPATCH|MKCOL|COPY|MOVE|LOCK|UNLOCK|CONNECT|PATCH)" />
+        <RegExpr    attribute="HTTP custom method"   context="common_expectation_end" String="\s+(PURGE|PURGESTR)" />
+        <DetectChar attribute="String"               context="common_expectation_arg2_brace-string" char="{" beginRegion="string_block" />
+        <DetectChar attribute="String"               context="common_expectation_arg2_quoted-string" char="&quot;" />
+        <RegExpr    attribute="Normal Text"          context="common_expectation_arg2_unquoted-string" String="[^ ]" lookAhead="true" />
+      </context>
+      <context name="common_expectation_end" attribute="Normal Text" lineEndContext="#pop#pop#pop#pop">
+        <IncludeRules context="comments" />
+      </context>
+
+      <!-- Contexts to parse first argument of server/client expectations as a string -->
+      <context name="http_expectation_arg1_brace-string" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="String" context="brace-string-internal" char="{" />
+        <DetectChar attribute="String" context="http_expectation_operator" char="}" endRegion="string_block" />
+      </context>
+      <context name="http_expectation_arg1_quoted-string" attribute="String" lineEndContext="#pop#pop">
+        <Detect2Chars attribute="String" context="#stay" char="\" char1="&quot;" />
+        <DetectChar   attribute="String" context="http_expectation_operator" char="&quot;" />
+      </context>
+      <context name="http_expectation_arg1_unquoted-string" attribute="String" lineEndContext="#pop#pop">
+        <RegExpr attribute="Normal Text" context="http_expectation_operator" String="\s" />
+      </context>
+
+      <!-- Contexts to parse second argument of all expectations as a string -->
+      <context name="common_expectation_arg2_brace-string" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="String" context="brace-string-internal" char="{" />
+        <DetectChar attribute="String" context="common_expectation_end" char="}" endRegion="string_block" />
+      </context>
+      <context name="common_expectation_arg2_quoted-string" attribute="String" lineEndContext="#pop#pop">
+        <Detect2Chars attribute="String" context="#stay" char="\" char1="&quot;" />
+        <DetectChar   attribute="String" context="common_expectation_end" char="&quot;" />
+      </context>
+      <context name="common_expectation_arg2_unquoted-string" attribute="String" lineEndContext="#pop#pop">
+        <RegExpr attribute="Normal Text" context="common_expectation_end" String="\s" />
+      </context>
+
+      <!--
+        Define syntax of the -expect command for varnish objects.
+        Written from varnish_expect() in bin/varnishtest/vtc_varnish.c
+      -->
+      <context name="varnish_expectation" attribute="Normal Text" lineEndContext="#pop">
+        <!-- Varnish's expect takes a Varnish counter as first argument. -->
+        <IncludeRules context="comments" />
+        <!-- Mostly extracted using man 7 varnish-counters | grep - - - | grep _ | sort -->
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="backend_(?:busy|conn|fail|recycle|req|retry|reuse|toolate|unhealthy)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="bans_(?:added|completed|deleted|dups|lurker_(?:contention|obj_killed|tested|tests_tested)|obj|obj_killed|persisted_(bytes|fragmentation)|req|tested|tests_tested)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="busy_(?:sleep|wakeup)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="cache_(?:hit(pass)?|miss)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="client_(?:req|req_4(?:00|11|13|17))" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="esi_(?:errors|warnings)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="exp_(?:mailed|received)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="fetch_(?:1xx|204|304|bad|chunked|close|eof|failed|head|length|oldhttp|zero)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="hcb_(?:insert|lock|nolock)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="n_(?:backend|expired|gunzip|gzip|lru_moved|lru_nuked|obj_purged|object|objectcore|objecthead|purges|vampireobject|vcl|vcl_avail|vcl_discard|waitinglist)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="s_(?:fetch|pass|pipe|pipe_(?:hdrbytes|in|out)|req|(req|resp)_(?:body|hdr)bytes|sess|synth)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="sess_(?:closed|conn|drop|dropped|fail|herd|pipe_overflow|pipeline|queued|readahead)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="shm_(?:cont|cycles|flushes|records|writes)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="sms_(?:balloc|bfree|nbytes|nobj|nreq)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="thread_(?:queue_len|created|destroyed|failed|limited)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="vsm_(?:cooling|free|overflow(ed)?|user)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="(?:bans|losthdr|pools|threads|uptime|vmods)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="LCK\.(?:sm[spaf]|hsl|hcb|hcl|vcl|stat|sessmem|wstat|herder|wq|objhdr|exp|lru|cli|ban|vbp|vbe|backend)\.(?:creat|destroy|locks)" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="SMA\.[a-zA-Z0-9_\-]+\.(?:c_(?:req|fail|bytes|freed)|g_(?:alloc|bytes|space))" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="SMF\.[a-zA-Z0-9_\-]+\.(?:c_(?:req|fail|bytes|freed)|g_(?:alloc|bytes|space|smf|smf_frag|smf_large))" />
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="VBE\..+\.(?:happy|vcls|be(?:req|resp)_(?:body|hdr)bytes|pipe_(?:in|hdrbytes|out))" />
+        <!-- Found out in c00050.vtc -->
+        <RegExpr attribute="VarnishStat metric"    context="varnish_expectation_operator" String="MEMPOOL\.vbc\.(?:pool|surplus|timeout)" />
+      </context>
+      <context name="varnish_expectation_operator" attribute="Normal Text" lineEndContext="#pop#pop">
+        <IncludeRules context="comments" />
+        <Detect2Chars attribute="Comparison Operator" context="varnish_expectation_second_arg" char="=" char1="=" />
+        <Detect2Chars attribute="Comparison Operator" context="varnish_expectation_second_arg" char="!" char1="=" />
+        <Detect2Chars attribute="Comparison Operator" context="varnish_expectation_second_arg" char="&gt;" char1="=" />
+        <Detect2Chars attribute="Comparison Operator" context="varnish_expectation_second_arg" char="&lt;" char1="=" />
+        <DetectChar   attribute="Comparison Operator" context="varnish_expectation_second_arg" char="&gt;" />
+        <DetectChar   attribute="Comparison Operator" context="varnish_expectation_second_arg" char="&lt;" />
+        <!-- Varnish's expect does not handle the ~ and !~ operators -->
+      </context>
+      <context name="varnish_expectation_second_arg" attribute="Normal Text" lineEndContext="#pop">
+        <!-- Varnish's expect takes an unsigned integer as second argument. -->
+        <Int attribute="Decimal" context="common_expectation_end" />
+      </context>
+
+      <!-- Define macros -->
+      <context name="macro_accepted" attribute="String" lineEndContext="#pop">
+        <Detect2Chars char="$" char1="{" attribute="String" context="macro_identifier" />
+      </context>
+      <context name="macro_identifier" attribute="String" lineEndContext="#pop#pop">
+        <DetectChar char="}" attribute="String" context="#pop" />
+      </context>
+
+      <!-- Define syntax for main keywords' options -->
+      <context name="common_options" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="macro_accepted" />
+        <IncludeRules context="base_elements" />
+      </context>
+
+      <context name="client_options" attribute="Normal Text" lineEndContext="#stay">
+        <!-- Extracted from bin/varnishtest/vtc_client.c  -->
+        <RegExpr attribute="Keyword" context="#stay" String="\-(?:run|start|wait)" />
+        <StringDetect attribute="Keyword" context="int-arg" String="-repeat" />
+        <StringDetect attribute="Keyword" context="string-arg" String="-connect" />
+        <StringDetect attribute="Keyword" context="http_expectation" String="-expect" />
+        <IncludeRules context="common_options" />
+      </context>
+
+      <context name="server_options" attribute="Normal Text" lineEndContext="#stay" >
+        <!-- Extracted from bin/varnishtest/vtc_server.c  -->
+        <RegExpr attribute="Keyword" context="#stay" String="\-(?:break|start|wait)" />
+        <StringDetect attribute="Keyword" context="int-arg" String="-repeat" />
+        <StringDetect attribute="Keyword" context="string-arg" String="-listen " />
+        <StringDetect attribute="Keyword" context="http_expectation" String="-expect" />
+        <IncludeRules context="common_options" />
+      </context>
+
+      <context name="varnish_options" attribute="Normal Text" lineEndContext="#stay" >
+        <!-- Extracted from bin/varnishtest/vtc_varnish.c  -->
+        <RegExpr attribute="Keyword" context="#stay" String="\-(?:start|stop|wait|wait-running|wait-stopped)" />
+        <RegExpr attribute="Keyword" context="string-arg" String="\-(?:arg|cli|cliok|storage) " />
+        <StringDetect attribute="Keyword" context="clierr_options" String="-clierr " />
+        <StringDetect attribute="Keyword" context="varnish_expectation" String="-expect" />
+        <IncludeRules context="common_options" />
+      </context>
+
+      <context name="logexpect_options" attribute="Normal Text" lineEndContext="#stay" >
+        <!-- Extracted from bin/varnishtest/vtc_logexp.c -->
+        <RegExpr attribute="Keyword" context="#stay" String="\-(?:start|run|wait)" />
+      </context>
+
+      <context name="clierr_options" attribute="Normal Text" lineEndContext="#pop">
+        <!-- unlike clikok, clierr requires an integer argument first -->
+        <Int attribute="Decimal" context="clierr_command" />
+        <!-- It seems that integer can be provided within quotes though. -->
+        <RegExpr attribute="Decimal" context="clierr_command" String="&quot;[0-9]+&quot; " />
+        <IncludeRules context="comments" />
+      </context>
+      <context name="clierr_command" attribute="String" lineEndContext="#pop">
+        <IncludeRules context="comments" />
+      </context>
+
+      <context name="tx_options" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="comments" />
+        <StringDetect attribute="Tx Keyword" String="-nolen" />
+        <RegExpr attribute="Tx Keyword" context="string-arg" String="\-(?:body|gzipbody|hdr|proto) " />
+        <RegExpr attribute="Tx Keyword" context="int-arg" String="\-(?:bodylen|gzip(?:len|residual|level))" />
+        <LineContinue attribute="Normal Text" context="#stay" />
+      </context>
+
+      <!-- Define syntax for the client-specific txreq keyword -->
+      <context name="txreq_options" attribute="String" lineEndContext="#pop">
+        <IncludeRules context="tx_options" />
+        <RegExpr attribute="TxReq Keyword" context="string-arg" String="\-(?:req|url)" />
+      </context>
+
+      <!-- Define syntax for the server-specific txresp keyword -->
+      <context name="txresp_options" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="tx_options" />
+        <StringDetect attribute="TxResp Keyword" context="string-arg" String="-msg" />
+        <StringDetect attribute="TxResp Keyword" context="status-arg" String="-status" />
+      </context>
+
+      <!-- Define syntax for the client-specific rxresp keyword -->
+      <context name="rxresp_options" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="comments" />
+        <StringDetect attribute="RxResp Keyword" String="-no_obj" />
+        <LineContinue attribute="Normal Text" context="#stay" />
+      </context>
+
+      <!-- varnishtest keyword -->
+      <context name="varnishtest_declaration" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="strings" />
+        <IncludeRules context="comments" />
+      </context>
+
+      <!-- client/server HTTP commands -->
+      <context name="clientserver_common_definition" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="comments" />
+        <!-- Extracted using:
+            perl -nlE '$p = 1 if m#http_cmds\[\]#; say if ($p); exit if ($p && m#^\}#);' vtc_http.c
+            egrep '(^cmd_http_|^\s*ONLY_(CLIENT|SERVER))' bin/varnishtest/vtc_http.c
+        -->
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="timeout_instruction"     String="timeout" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="gunzip" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="expect_close" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="http_expectation"        String="expect" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="send_instruction"        String="sendhex" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="send_instruction"        String="send" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="chunkedlen_instruction"  String="chunkedlen" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="send_instruction"        String="chunked" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="delay_instruction"       String="delay" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="sema_instruction"        String="sema" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="close" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="accept" />
+        <!-- loop is not there as its parsing changes depending on server or client. -->
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="fatal" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="non-fatal" />
+      </context>
+
+      <!-- client keyword -->
+      <context name="client_declaration" attribute="Normal Text" lineEndContext="#pop">
+        <DetectIdentifier attribute="Client Identifier" context="client_identified" />
+      </context>
+      <context name="client_identified" attribute="String" lineEndContext="#pop">
+        <IncludeRules context="client_options" />
+        <DetectChar attribute="Region Marker" context="client_definition" char="{" beginRegion="client_block" />
+        <LineContinue attribute="Normal Text" context="#stay" />
+      </context>
+      <context name="client_definition" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="clientserver_common_definition" />
+        <!-- client-specific HTTP commands -->
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="txreq_options"           String="txreq" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="rxresphdrs" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="rxresp_options"          String="rxresp" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="rxchunk" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="client_loop_instruction" String="loop" />
+        <DetectChar attribute="Region Marker" context="client_postdefinition" char="}" endRegion="client_block" />
+      </context>
+      <context name="client_postdefinition" attribute="Normal Text" lineEndContext="#pop#pop#pop#pop">
+        <IncludeRules context="client_options" />
+        <LineContinue attribute="Normal Text" context="#stay" />
+      </context>
+
+      <!-- server keyword -->
+      <context name="server_declaration" attribute="Normal Text" lineEndContext="#pop">
+        <DetectIdentifier attribute="Server Identifier" context="server_identified" />
+      </context>
+      <context name="server_identified" attribute="String" lineEndContext="#pop">
+        <IncludeRules context="server_options" />
+        <DetectChar attribute="Region Marker" context="server_definition" char="{" beginRegion="server_block" />
+        <LineContinue attribute="Normal Text" context="#stay" />
+      </context>
+      <context name="server_definition" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="clientserver_common_definition" />
+        <!-- server-specific HTTP commands -->
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="rxreqhdrs" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="rxreq" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="#stay"                   String="rxbody" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="txresp_options"          String="txresp" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="server_loop_instruction" String="loop" />
+        <DetectChar attribute="Region Marker" context="server_postdefinition" char="}" endRegion="server_block" />
+      </context>
+      <context name="server_postdefinition" attribute="Normal Text" lineEndContext="#pop#pop#pop#pop">
+        <IncludeRules context="server_options" />
+        <LineContinue attribute="Normal Text" context="#stay" />
+      </context>
+
+      <!-- varnish keyword -->
+      <context name="varnish_declaration" attribute="Normal Text" lineEndContext="#pop">
+        <DetectIdentifier attribute="Varnish Identifier" context="varnish_identified" />
+      </context>
+      <context name="varnish_identified" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="varnish_options" />
+        <RegExpr attribute="Keyword" context="varnish_vclannounced" String="\s*\-vcl(?:\+backend)?" />
+        <RegExpr attribute="Keyword" context="varnish_errvclannounced" String="\s*\-errvcl" />
+        <LineContinue attribute="Normal Text" context="#stay" />
+      </context>
+      <context name="varnish_vclannounced" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Region Marker" context="varnish_vcldefinition" char="{" beginRegion="varnish_block" />
+      </context>
+      <context name="varnish_vcldefinition" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="##Varnish 4 Configuration Language" />
+        <DetectChar attribute="Region Marker" context="varnish_postvcldefinition" char="}" endRegion="varnish_block" />
+      </context>
+      <context name="varnish_postvcldefinition" attribute="Normal Text" lineEndContext="#pop#pop#pop#pop#pop">
+        <IncludeRules context="varnish_options" />
+        <LineContinue attribute="Normal Text" context="#stay" />
+      </context>
+      <context name="varnish_errvclannounced" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="&quot;" context="errvcl_expected_error_quoted" attribute="String" />
+        <DetectChar char="{" context="errvcl_expected_error_brace" attribute="String" beginRegion="string_block" />
+      </context>
+      <context name="errvcl_expected_error_quoted" attribute="String" lineEndContext="#pop">
+        <Detect2Chars attribute="String" context="#stay" char="\" char1="&quot;" />
+        <DetectChar attribute="String" context="varnish_errvcldefined" char="&quot;" />
+      </context>
+      <context name="errvcl_expected_error_brace" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="String" context="brace-string-internal" char="{" />
+        <DetectChar attribute="String" context="varnish_errvcldefined" char="}" endRegion="string_block" />
+      </context>
+      <context name="varnish_errvcldefined" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Region Marker" context="varnish_errvclcode" char="{" beginRegion="errvclcode_block" />
+      </context>
+      <context name="varnish_errvclcode" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" context="varnish_errvclcode-internal" char="{" />
+        <DetectChar attribute="Region Marker" context="varnish_postvcldefinition" char="}" endRegion="errvclcode_block" />
+      </context>
+      <context name="varnish_errvclcode-internal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" context="varnish_errvclcode-internal" char="{" />
+        <DetectChar attribute="Normal Text" context="#pop" char="}" />
+      </context>
+
+      <context name="logexpect_declaration" attribute="Normal Text" lineEndContext="#pop">
+        <DetectIdentifier attribute="LogExpect Identifier" context="logexpect_identified" />
+      </context>
+      <context name="logexpect_identified" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Normal Text" context="#stay" />
+        <IncludeRules context="logexpect_options" />
+        <!-- Extracted from bin/varnishtest/vtc_logexp.c -->
+        <Detect2Chars attribute="Keyword" char="-" char1="v" context="logexpect_varnishinstance_arg" />
+        <Detect2Chars attribute="Keyword" char="-" char1="g" context="logexpect_grouping_arg" />
+        <Detect2Chars attribute="Keyword" char="-" char1="d" context="logexpect_headtailmode_arg" />
+        <Detect2Chars attribute="Keyword" char="-" char1="q" context="logexpect_query_arg" />
+        <DetectChar attribute="Region Marker" context="logexpect_definition" char="{" beginRegion="logexpect_block" />
+      </context>
+      <context name="logexpect_varnishinstance_arg" attribute="Normal Text" lineEndContext="#pop">
+        <DetectIdentifier attribute="Varnish Identifier" context="#pop" />
+      </context>
+      <context name="logexpect_grouping_arg" attribute="Normal Text" lineEndContext="#pop">
+        <keyword attribute="VSL Grouping" context="#pop" String="VSLGrouping" />
+      </context>
+      <context name="logexpect_headtailmode_arg" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Decimal" context="#pop" char="0" />
+        <DetectChar attribute="Decimal" context="#pop" char="1" />
+      </context>
+      <context name="logexpect_query_arg" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="string-arg" />
+      </context>
+      <context name="logexpect_definition" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Region Marker" context="logexpect_postdefinition" char="}" endRegion="logexpect_block" />
+        <StringDetect firstNonSpace="true" attribute="Action Keyword" context="logexpect_skip" String="expect" />
+      </context>
+      <context name="logexpect_postdefinition" attribute="Normal Text" lineEndContext="#pop#pop#pop#pop">
+        <IncludeRules context="logexpect_options" />
+      </context>
+      <context name="logexpect_skip" attribute="Normal Text" lineEndContext="#pop">
+        <Int attribute="Decimal" context="logexpect_vxid" />
+        <DetectChar attribute="Logical Operator" context="logexpect_vxid" char="*" />
+      </context>
+      <context name="logexpect_vxid" attribute="Normal Text" lineEndContext="#pop">
+        <Int attribute="Decimal" context="logexpect_tag" />
+        <DetectChar attribute="Logical Operator" context="logexpect_tag" char="*" />
+        <DetectChar attribute="Logical Operator" context="logexpect_tag" char="=" />
+      </context>
+      <context name="logexpect_tag" attribute="Normal Text" lineEndContext="#pop">
+        <keyword attribute="VSL Tag" context="logexpect_regex" String="VSLTags" />
+        <DetectChar attribute="Logical Operator" context="logexpect_regex" char="*" />
+        <DetectChar attribute="Logical Operator" context="logexpect_regex" char="=" />
+      </context>
+      <context name="logexpect_regex" attribute="String" lineEndContext="#pop">
+        <IncludeRules context="brace-strings" />
+        <IncludeRules context="quoted-strings" />
+      </context>
+
+      <!-- sema keyword -->
+      <context name="sema_instruction" attribute="Normal Text" lineEndContext="#pop">
+        <DetectIdentifier attribute="Sema Identifier" context="sema_identified" />
+      </context>
+      <context name="sema_identified" attribute="Normal Text" lineEndContext="#pop#pop">
+        <StringDetect attribute="Keyword" String="sync" />
+        <Int attribute="Decimal" context="#stay" />
+        <IncludeRules context="comments" />
+      </context>
+
+      <!-- delay keyword -->
+      <context name="delay_instruction" attribute="Normal Text" lineEndContext="#pop">
+        <Int attribute="Decimal" context="#stay" />
+        <Float attribute="Float" context="#stay" />
+        <IncludeRules context="comments" />
+      </context>
+
+      <!-- feature keyword -->
+      <context name="feature_instruction" attribute="String" lineEndContext="#pop">
+        <IncludeRules context="strings" />
+        <IncludeRules context="comments" />
+      </context>
+
+      <!-- chunkedlen keyword -->
+      <context name="chunkedlen_instruction" attribute="Normal Text" lineEndContext="#pop">
+        <Int attribute="Decimal" context="#stay" />
+        <IncludeRules context="comments" />
+      </context>
+
+      <!-- send / sendhex / chunk keywords -->
+      <context name="send_instruction" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="string-arg" />
+        <IncludeRules context="comments" />
+      </context>
+
+      <!-- timeout keyword -->
+      <context name="timeout_instruction" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="int-arg" />
+        <IncludeRules context="comments" />
+      </context>
+
+      <!-- loop keyword at global scope -->
+      <context name="global_loop_instruction" attribute="Normal Text" lineEndContext="#stay">
+        <Int attribute="Decimal" context="global_loop_defined" />
+      </context>
+      <context name="global_loop_defined" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Region Marker" context="global_loop_code" char="{" beginRegion="loop_block" />
+      </context>
+      <context name="global_loop_code" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Region Marker" context="#pop#pop#pop" char="}" endRegion="loop_block" />
+        <IncludeRules context="global_directives" />
+      </context>
+
+      <!-- loop keyword for client definitions -->
+      <context name="client_loop_instruction" attribute="Normal Text" lineEndContext="#stay">
+        <Int attribute="Decimal" context="client_loop_defined" />
+      </context>
+      <context name="client_loop_defined" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Region Marker" context="client_loop_code" char="{" beginRegion="loop_block" />
+      </context>
+      <context name="client_loop_code" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Region Marker" context="#pop#pop#pop" char="}" endRegion="loop_block" />
+        <IncludeRules context="client_definition" />
+      </context>
+
+      <!-- loop keyword for server definitions -->
+      <context name="server_loop_instruction" attribute="Normal Text" lineEndContext="#stay">
+        <Int attribute="Decimal" context="server_loop_defined" />
+      </context>
+      <context name="server_loop_defined" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Region Marker" context="server_loop_code" char="{" beginRegion="loop_block" />
+      </context>
+      <context name="server_loop_code" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Region Marker" context="#pop#pop#pop" char="}" endRegion="loop_block" />
+        <IncludeRules context="server_definition" />
+      </context>
+
+      <!-- shell keyword, one-line version -->
+      <context name="shell_instruction" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Region Marker" context="shell_code" char="{" beginRegion="shell_block" />
+        <IncludeRules context="quoted-strings" />
+        <IncludeRules context="comments" />
+      </context>
+      <context name="shell_code" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Region Marker" context="#pop#pop" char="}" endRegion="shell_block" />
+        <!-- There does not seem to be a syntax highlighting dedicated to "standard shell" so let's use Bash instead -->
+        <IncludeRules context="##Bash" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"               defStyleNum="dsNormal" />
+      <itemData name="Comment"                   defStyleNum="dsComment" />
+      <itemData name="Keyword"                   defStyleNum="dsKeyword" />
+      <itemData name="Tx Keyword"                defStyleNum="dsKeyword" color="#008000" bold="0" />
+      <itemData name="TxReq Keyword"             defStyleNum="dsKeyword" color="#008000" bold="0" />
+      <itemData name="TxResp Keyword"            defStyleNum="dsKeyword" color="#008000" bold="0" />
+      <itemData name="RxResp Keyword"            defStyleNum="dsKeyword" color="#008000" bold="0" />
+      <itemData name="Action Keyword"            defStyleNum="dsKeyword" />
+      <itemData name="Comparison Operator"       defStyleNum="dsKeyword" color="#008000" bold="0" />
+      <itemData name="Logical Operator"          defStyleNum="dsKeyword" color="#008000" bold="0" />
+      <itemData name="String"                    defStyleNum="dsString" bold="0" italic="0" />
+      <itemData name="Region Marker"             defStyleNum="dsNormal" />
+      <itemData name="HTTP Property"             defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="0" italic="0" />
+      <itemData name="HTTP Header"               defStyleNum="dsDataType" color="#0D62FF" selColor="#0D62FF" bold="0" italic="0" />
+      <itemData name="HTTP X- Header"            defStyleNum="dsDataType" color="#0D62FF" selColor="#0D62FF" bold="0" italic="1" />
+      <itemData name="HTTP announce"             defStyleNum="dsDataType" color="#562579" selColor="#562579" bold="1" />
+      <itemData name="HTTP method"               defStyleNum="dsDataType" color="#562579" selColor="#562579" bold="1" />
+      <itemData name="HTTP WebDAV method"        defStyleNum="dsDataType" color="#562579" selColor="#562579" bold="1" />
+      <itemData name="HTTP custom method"        defStyleNum="dsDataType" color="#562579" selColor="#562579" bold="1" />
+      <itemData name="VarnishStat metric"        defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="0" italic="0" />
+      <itemData name="VSL Tag"                   defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="0" italic="0" />
+      <itemData name="VSL Grouping"              defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" bold="0" italic="0" />
+      <itemData name="Decimal"                   defStyleNum="dsDecVal" />
+      <itemData name="Float"                     defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Client Identifier"         defStyleNum="dsDataType" color="#0D62FF" selColor="#0D62FF" bold="0" underline="1" />
+      <itemData name="Server Identifier"         defStyleNum="dsDataType" color="#0D62FF" selColor="#0D62FF" bold="0" underline="1" />
+      <itemData name="Varnish Identifier"        defStyleNum="dsDataType" color="#0D62FF" selColor="#0D62FF" bold="0" underline="1" />
+      <itemData name="LogExpect Identifier"      defStyleNum="dsDataType" color="#0D62FF" selColor="#0D62FF" bold="0" underline="1" />
+      <itemData name="Sema Identifier"           defStyleNum="dsDataType" color="#0D62FF" selColor="#0D62FF" bold="0" underline="1" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

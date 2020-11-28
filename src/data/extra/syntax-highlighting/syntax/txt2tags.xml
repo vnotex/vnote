@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Created by Juliano Dorneles dos Santos <juliano_dorneles@yahoo.com.br> -->
+<!-- Fixed for 3.2 Helio Chissini de Castro <helio@kde.org> -->
+<!-- Extended and adapted (v1.20) by Eric Forgeot < http://esclinux.tk > -->
+<language name="txt2tags" extensions="*.t2t" section="Markup" mimetype="text/txt2tags" version="4" kateversion="3.0" casesensitive="1">
+<highlighting>
+
+<contexts>
+	<context name="Context" attribute="Normal" lineEndContext="#stay">
+		<RegExpr attribute="Date" context="Context" String="%%date(\(.*\))?"/>
+		<RegExpr attribute="Comment" context="Context" String="%.*"/>
+		<RegExpr attribute="BoldItalic" context="Context" String="\*\*//(.*)//\*\*" minimal="true"/>
+		<RegExpr attribute="BoldItalic" context="Context" String="//\*\*(.*)\*\*//" minimal="true" />
+		<RegExpr attribute="Bold" context="Context" String="\*\*.*\*\*" minimal="true"/>
+		<RegExpr attribute="Italic" context="Context" String="//.*//" minimal="true"/>
+		<RegExpr attribute="Underline" context="Context" String="__.*__" minimal="true"/>
+		<RegExpr attribute="Strikeout" context="Context" String="--.*--" minimal="true"/>
+		<RegExpr attribute="Monospaced" context="Context" String="``.*``" minimal="true"/>
+		<RegExpr attribute="Verbatim Line" context="Context" String="``` .*"/>
+		<RegExpr attribute="Title" context="Context" String=" *=[^=].*[^=]=(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
+		<RegExpr attribute="Title" context="Context" String=" *==[^=].*[^=]==(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
+		<RegExpr attribute="Title" context="Context" String=" *===[^=].*[^=]===(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
+		<RegExpr attribute="Title" context="Context" String=" *====[^=].*[^=]====(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
+		<RegExpr attribute="Title" context="Context" String=" *=====[^=].*[^=]=====(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
+		<RegExpr attribute="Title" context="Context" String=" *\+[^=].*[^=]\+(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
+		<RegExpr attribute="Title" context="Context" String=" *\+\+[^=].*[^=]\+\+(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
+		<RegExpr attribute="Title" context="Context" String=" *\+\+\+[^=].*[^=]\+\+\+(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
+		<RegExpr attribute="Title" context="Context" String=" *\+\+\+\+[^=].*[^=]\+\+\+\+(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
+		<RegExpr attribute="Title" context="Context" String=" *\+\+\+\+\+[^=].*[^=]\+\+\+\+\+(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
+		<RangeDetect attribute="Link" char="[" char1="]"/>
+		<RegExpr attribute="Tabel" context="Context" String=" *\|\| .*" column="0"/>
+		<RegExpr attribute="Tabel" context="Context" String=" *\| .*" column="0"/>
+		<RegExpr attribute="DefList" context="Context" String=" *\: .*" column="0"/>
+		<RegExpr attribute="List" context="Context" String=" *\- .*" column="0"/>
+		<RegExpr attribute="NumList" context="Context" String=" *\+ .*" column="0"/>
+		<RegExpr attribute="Quote" context="Context" String="\t.*"/>
+		<RegExpr attribute="Bar" context="Context" String="\s*([_=-]{20,})\s*$"/>
+		<RegExpr attribute="EOF" context="Context" String="$$" column="0" beginRegion="Header" endRegion="Header"/>
+	</context>
+</contexts>
+
+<itemDatas>
+	<itemData name="Normal" defStyleNum="dsNormal" />
+	<itemData name="Date" defStyleNum="dsNormal" color="#FF0000" italic="1" />
+	<itemData name="Comment" defStyleNum="dsNormal" color="#666666" italic="1" />
+	<itemData name="BoldItalic" defStyleNum="dsNormal" bold="1" italic="1" />
+	<itemData name="Bold" defStyleNum="dsNormal" color="#445675" bold="1" />
+	<itemData name="Italic" defStyleNum="dsNormal" color="#653A39" italic="1" />
+	<itemData name="Underline" defStyleNum="dsNormal" color="#386742" underline="1" />
+	<itemData name="Strikeout" defStyleNum="dsNormal" color="#644A9B" strikeOut="1" />
+	<itemData name="Monospaced" defStyleNum="dsNormal" color="#006600" />
+	<itemData name="Verbatim Line" defStyleNum="dsNormal" color="#006600" />
+	<itemData name="Title" defStyleNum="dsNormal" color="#990000" />
+	<itemData name="Link" defStyleNum="dsNormal" color="#0930DE" />
+	<itemData name="Tabel" defStyleNum="dsNormal" color="#FF0000" />
+	<itemData name="DefList" defStyleNum="dsNormal" color="#E300EE" />
+	<itemData name="List" defStyleNum="dsNormal" color="#E300EE" />
+	<itemData name="NumList" defStyleNum="dsNormal" color="#E300EE" />
+	<itemData name="Quote" defStyleNum="dsNormal" color="brown" />
+	<itemData name="Bar" defStyleNum="dsNormal" color="#C0C0C0" />
+	<itemData name="EOF" defStyleNum="dsOthers" />
+</itemDatas>
+
+</highlighting>
+
+</language>

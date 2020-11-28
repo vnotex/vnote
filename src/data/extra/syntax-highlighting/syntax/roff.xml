@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+  <!ENTITY roffidc "[^]\s]">
+  <!ENTITY roffid  "(&roffidc;|\(&roffidc;{2}|\[&roffidc;+\])">
+  <!ENTITY roffnum "([0-9]+)">
+  <!ENTITY argsep1 "([^\\]|\\[&#37; |\^{}'`\-!?@)/,&amp;:~0E_acdeprtu])">
+  <!ENTITY argsep2 "([^\\0-9]|\\[&#37;:{}'`\-_!@/cep])">
+]>
+<language name="Roff" section="Markup" version="3" kateversion="2.4" extensions="" author="Matthew Woehlke (mw_triad@users.sourceforge.net)" license="GPL">
+
+  <highlighting>
+
+    <list name="layout">
+      <item>br</item>
+      <item>sp</item>
+    </list>
+
+    <list name="formatting">
+    </list>
+
+    <list name="gnuext">
+    </list>
+
+    <contexts>
+
+      <!-- root context -->
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="DetectComments"/>
+        <DetectChar attribute="Other Macros" context="DetectDirective" char="." column="0"/>
+        <IncludeRules context="DetectOthers"/>
+      </context>
+
+      <context name="DetectComments" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Comment" context="Comment" String="\.\s*\\&quot;" column="0"/>
+        <Detect2Chars attribute="Comment" context="Comment" char="\" char1="&quot;"/>
+        <Detect2Chars attribute="Comment" context="Comment" char="\" char1="#"/>
+      </context>
+
+      <!-- catch glyphc, registers, strings, etc -->
+      <context name="DetectOthers" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="DetectComments"/>
+        <DetectChar attribute="Escape" context="DetectEscape" char="\" lookAhead="true"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+      </context>
+
+      <!-- detect escapes -->
+      <context name="DetectEscape" attribute="Error" lineEndContext="#pop">
+        <RegExpr attribute="Register" context="#pop" String="\\(\*|n[+-]?)&roffid;"/>
+        <RegExpr attribute="Font" context="#pop" String="\\[fF]&roffid;"/>
+        <RegExpr attribute="Font" context="#pop" String="\\f([0-9]|\([0-9][0-9]|\[[0-9]+\])"/>
+        <RegExpr attribute="Font" context="#pop" String="\\s(\[([1-3][0-9]|[04-9])\]|[04-9]|[+-][0-9]|([+-]?\(|\([+-])[0-9][0-9])"/>
+        <Detect2Chars attribute="Escape" context="#pop" char="\" char1="\"/>
+        <RegExpr attribute="Escape" context="#pop" String="\\(\$[0-9*@]|[.:&#37; |^{}_!?@)/,&amp;:~0acdeEprtu])"/>
+        <RegExpr attribute="Escape" context="Argument" String="\\[ABDXZbow]&argsep1;"/>
+        <RegExpr attribute="Escape" context="#pop" String="\\[gkmMVYz]&roffid;"/>
+        <RegExpr attribute="Escape" context="#pop" String="\\O([0-4]|\[5[lrci][^]]\])"/>
+        <RegExpr attribute="Escape" context="Measurement" String="\\[hHSvx]&argsep1;"/>
+        <RegExpr attribute="Escape" context="Measurement" String="\\[lL]&argsep1;\|?"/> <!-- TODO - optional trailing &glyph; -->
+        <RegExpr attribute="Escape" context="Argument" String="\\R&argsep1;"/> <!-- TODO - &roffid; (register), measurement -->
+        <RegExpr attribute="Glyph" context="GlyphArgument" String="\\C&argsep1;"/>
+        <RegExpr attribute="Glyph" context="#pop" String="\\N&argsep2;[0-9]+\1"/>
+        <RegExpr attribute="Glyph" context="#pop" String="\\&roffid;"/>
+        <RegExpr attribute="Escape" context="#pop" String="\\$"/>
+        <DetectChar attribute="Error" context="#pop" char="\"/>
+      </context>
+
+      <!-- directive start -->
+      <context name="DetectDirective" attribute="Other Macros" lineEndContext="#pop">
+        <keyword attribute="Layout Macros" context="Directive" String="layout"/>
+        <keyword attribute="Format Macros" context="Directive" String="formatting"/>
+        <keyword attribute="GNU Macros" context="Directive" String="gnuext"/>
+        <RegExpr attribute="Other Macros" context="dsDirective" String="\s*ds\b" column="1"/>
+        <RegExpr attribute="Other Macros" context="deDirective" String="\s*de\b" column="1" beginRegion="de"/>
+        <RegExpr attribute="Other Macros" context="daDirective" String="\s*da(?=\s+[A-Za-z]+)" column="1" beginRegion="di"/>
+        <RegExpr attribute="Other Macros" context="diDirective" String="\s*di(?=\s+[A-Za-z]+)" column="1" beginRegion="di"/>
+        <RegExpr attribute="Other Macros" context="Directive" String="\s*[A-Za-z]+\b" column="1"/>
+      </context>
+
+      <!-- comment -->
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+      <!-- error -->
+      <context name="Error" attribute="Error" lineEndContext="#stay"/>
+
+      <!-- generic directive -->
+      <context name="Directive" attribute="Identifier" lineEndContext="#pop">
+        <Float attribute="Number" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+        <Detect2Chars attribute="Comment" context="Comment" char="\" char1="&quot;"/>
+        <IncludeRules context="DetectOthers"/>
+      </context>
+
+      <!-- quoted string -->
+      <context name="String" attribute="String" lineEndContext="#pop">
+        <Detect2Chars attribute="Escape" context="#stay" char="\" char1="&quot;"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <IncludeRules context="DetectOthers"/>
+      </context>
+
+      <!-- \!, \? escapes -->
+      <context name="LiteralSL" attribute="Normal Text" lineEndContext="#pop"/>
+      <context name="LiteralIL" attribute="Normal Text" lineEndContext="Error">
+        <Detect2Chars attribute="Escape" context="#stay" char="\" char1="\"/>
+        <Detect2Chars attribute="Escape" context="#pop" char="\" char1="?"/>
+      </context>
+
+      <!-- escape argument -->
+      <context name="Argument" attribute="String" lineEndContext="Error" dynamic="true">
+        <RegExpr attribute="Escape" context="#pop#pop" String="%1" dynamic="true"/>
+        <IncludeRules context="DetectOthers"/>
+      </context>
+
+      <!-- glyph escape argument -->
+      <context name="GlyphArgument" attribute="Glyph" lineEndContext="Error" dynamic="true">
+        <RegExpr attribute="Glyph" context="#pop#pop" String="%1" dynamic="true"/>
+      </context>
+
+      <!-- measurement (or expression) escape argument -->
+      <context name="Measurement" attribute="Error" lineEndContext="Error" dynamic="true">
+        <RegExpr attribute="Escape" context="#pop#pop" String="%1" dynamic="true"/>
+        <!-- TODO -->
+      </context>
+
+      <!-- .de directive -->
+      <context name="deDirective" attribute="Identifier" lineEndContext="deBody"/>
+      <context name="deBody" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars attribute="Other Macros" context="#pop#pop" char="." char1="." column="0" endRegion="de"/>
+        <IncludeRules context="Normal"/>
+      </context>
+
+      <!-- .di directives -->
+      <context name="diDirective" attribute="Identifier" lineEndContext="diBody"/>
+      <context name="diBody" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Other Macros" context="#pop#pop" String="\.\s*di\b" column="0" endRegion="di"/>
+        <Detect2Chars attribute="Escape" context="LiteralSL" char="\" char1="!"/>
+        <Detect2Chars attribute="Escape" context="LiteralIL" char="\" char1="?"/>
+        <IncludeRules context="Normal"/>
+      </context>
+
+      <!-- .da directives -->
+      <context name="daDirective" attribute="Identifier" lineEndContext="daBody"/>
+      <context name="daBody" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Other Macros" context="#pop#pop" String="\.\s*da\b" column="0" endRegion="di"/>
+        <Detect2Chars attribute="Escape" context="LiteralSL" char="\" char1="!"/>
+        <Detect2Chars attribute="Escape" context="LiteralIL" char="\" char1="?"/>
+        <IncludeRules context="Normal"/>
+      </context>
+
+      <!-- .ds directive -->
+      <context name="dsDirective" attribute="Identifier" lineEndContext="#pop">
+        <Int attribute="Number" context="#stay"/>
+        <Float attribute="Number" context="#stay"/>
+        <Detect2Chars attribute="Comment" context="Comment" char="\" char1="&quot;"/>
+        <DetectChar attribute="String" context="dsString" char="&quot;"/>
+        <IncludeRules context="DetectOthers"/>
+      </context>
+
+      <!-- .ds quoted value -->
+      <context name="dsString" attribute="String" lineEndContext="#pop">
+        <IncludeRules context="DetectOthers"/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"    defStyleNum="dsNormal"/>
+      <itemData name="Comment"        defStyleNum="dsComment"/>
+      <itemData name="Layout Macros"  defStyleNum="dsKeyword"/>
+      <itemData name="Format Macros"  defStyleNum="dsKeyword"/>
+      <itemData name="GNU Macros"     defStyleNum="dsDataType"/>
+      <itemData name="Other Macros"   defStyleNum="dsFunction"/>
+      <itemData name="Identifier"     defStyleNum="dsString"/>
+      <itemData name="Number"         defStyleNum="dsDecVal"/>
+      <itemData name="Register"       defStyleNum="dsOthers"/>
+      <itemData name="Font"           defStyleNum="dsOthers"/>
+      <itemData name="Glyph"          defStyleNum="dsOthers"/>
+      <itemData name="Escape"         defStyleNum="dsChar"/>
+      <itemData name="String"         defStyleNum="dsString"/>
+      <itemData name="Error"          defStyleNum="dsError"/>
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+
+    <comments>
+      <comment name="singleLine" start=".\&quot;" />
+    </comments>
+
+    <keywords casesensitive="1"/>
+
+  </general>
+
+</language>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="WINE Config" version="4" kateversion="2.4" section="Configuration" extensions="*.reg" mimetype="">
+  <highlighting>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <RegExpr String="WINE REGISTRY Version.*$" attribute="RegistryBeginEnd" context="#stay" />
+        <RegExpr String="#\s*&lt;\s*wineconf\s*&gt;" attribute="RegistryBeginEnd" context="#stay" column="0"/>
+        <RegExpr String="#\s*&lt;\s*\/\s*wineconf\s*&gt;" attribute="RegistryBeginEnd" context="#stay" column="0"/>
+        <RegExpr String="\[.*\]" attribute="Section" context="#stay" column="0"/>
+        <RegExpr String=";.*$" attribute="Comment" context="#stay"/>
+
+        <RegExpr String="\s*&quot;\s*[a-zA-Z0-9_.:*]*\s*&quot;" attribute="Key" context="#stay" />
+
+        <DetectChar char="=" attribute="Normal Text" context="Value"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="Value">
+        <RegExpr String="\s*&quot;.*&quot;" attribute="Value" context="#stay" />
+        <RegExpr String=";.*$" attribute="Comment" context="#stay"/>
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Section"  defStyleNum="dsKeyword"/>
+      <itemData name="Key"  defStyleNum="dsDataType"/>
+      <itemData name="Value"  defStyleNum="dsNormal" color="#0000FF" selColor="#ffffff" italic="0" bold="1"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="RegistryBeginEnd"  defStyleNum="dsNormal" color="#00AAAA" selColor="#ffffff" italic="0" bold="1"/>
+    </itemDatas>
+  </highlighting>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

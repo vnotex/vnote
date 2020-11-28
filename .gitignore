@@ -1,0 +1,6 @@
+vnotex.pro.user
+vnotex.pro.user.*
+.ccls
+compile_commands.json
+compile_flags.txt
+*.plist

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Kate syntax highlighting for the Objective Caml 'Ocamlllex' -->
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+<!-- Regular expresion constants: -->
+<!ENTITY LOWER  "a-z\300-\326\330-\337">         <!-- Lowercase Latin-1 letters. -->
+<!ENTITY UPPER  "A-Z\340-\366\370-\377">         <!-- Uppercase Latin-1 letters. -->
+<!ENTITY LETTER "&LOWER;&UPPER;">                <!-- All Latin-1 letters. -->
+<!ENTITY LIDENT "[&LOWER;_][&LETTER;0-9_']*">    <!-- Lowercase OCaml identifiers. -->
+<!ENTITY UIDENT "`?[&UPPER;][&LETTER;0-9_']*">   <!-- Uppercase OCaml identifiers. -->
+<!ENTITY IDENT  "`?[&LETTER;][&LETTER;0-9_']*">  <!-- All OCaml identifiers. -->
+]>
+<language name="Objective Caml Ocamlyacc"
+          section="Sources"
+          extensions="*.mly"
+          mimetype=""
+          version="3"
+          kateversion="2.4"
+          priority="10"
+          author="Glyn Webster (glynwebster@orcon.net.nz) and Vincent Hugot (vincent.hugot@gmail.com)"
+          license="LGPL" >
+
+  <highlighting>
+    <list name="typed symbol list keywords">
+      <item>%token</item>
+      <item>%type</item>
+    </list>
+
+    <list name="symbol list keywords">
+      <item>%left</item>
+      <item>%right</item>
+      <item>%nonassoc</item>
+      <item>%start</item>
+    </list>
+
+    <list name="rule keywords">
+      <item>%prec</item>
+      <item>error</item>
+    </list>
+
+    <contexts>
+      <!-- Note: Because the Yacc grammar is so simple I've written this so that any symbol
+           that has not been specifically dealt with by a highlighting rule is an error. -->
+
+      <!-- Declaration section: Header sections and Yacc symbol declararations. -->
+      <!-- A %% marks the end of the Declaration section and the start of the rules section. -->
+      <context name="Declarations" lineEndContext="#stay" attribute="Error">
+        <Detect2Chars char="%" char1="{"                  context="Header"            attribute="Normal" beginRegion="header" />
+        <keyword      String="typed symbol list keywords" context="Typed Symbol List" attribute="Keyword" />
+        <keyword      String="symbol list keywords"       context="Symbol List"       attribute="Keyword" />
+        <Detect2Chars char="%" char1="%"                  context="Rules"             attribute="Normal" />
+        <IncludeRules context="General" />
+      </context>
+
+      <!-- Header section: Ocaml code in the declarations between %{ %} brackets -->
+      <context name="Header" lineEndContext="#stay" attribute="Normal">
+        <Detect2Chars char="%" char1="}" context="#pop" attribute="Normal" endRegion="header" />
+        <IncludeRules context="##Objective Caml" includeAttrib="true" />
+      </context>
+
+      <!-- A typed symbol list: an optional Ocaml type declaration between < > brackets, followed by a symbol list. -->
+        <context name="Typed Symbol List" lineEndContext="#pop" attribute="Error">
+        <DetectChar char="&lt;" context="Type" attribute="Normal" />
+        <RegExpr String="&UIDENT;" context="Symbol List" attribute="Uppercase Name (Token)" />
+        <RegExpr String="&LIDENT;" context="Symbol List" attribute="Lowercase Name (Rule)" />
+        <IncludeRules context="General" />
+      </context>
+      <context name="Type" lineEndContext="#stay" attribute="Normal">
+        <DetectChar char="&gt;" context="#pop" attribute="Normal" />
+        <IncludeRules context="##Objective Caml" includeAttrib="true" />
+      </context>
+
+      <!-- A symbol list: one line of sybmol names and option comments. -->
+      <context name="Symbol List" lineEndContext="#pop" attribute="Error">
+        <RegExpr String="&UIDENT;" context="#stay" attribute="Uppercase Name (Token)" />
+        <RegExpr String="&LIDENT;" context="#stay" attribute="Lowercase Name (Rule)" />
+        <IncludeRules context="General" />
+      </context>
+
+      <!-- Rules section:. -->
+      <!-- A %% marks the end of the rules section and the start of the trailer section: -->
+      <context name="Rules" lineEndContext="#stay" attribute="Error">
+        <Detect2Chars char="%" char1="%" context="Trailer" attribute="Normal" />
+        <RegExpr String="&IDENT;" context="Rule, Expecting Colon" attribute="Rule Definition Name" beginRegion="rule" />
+        <IncludeRules context="General" />
+      </context>
+      <context name="Rule, Expecting Colon" lineEndContext="#stay" attribute="Error">
+        <DetectChar char=":" context="Rule" attribute="Normal" />
+        <!-- Incomplete rule before the start of the trailer: -->
+        <Detect2Chars char="%" char1="%" context="Trailer" attribute="Error" />
+        <IncludeRules context="General" />
+      </context>
+      <context name="Rule" lineEndContext="#stay" attribute="Error">
+        <DetectChar char=";"               context="#pop#pop" attribute="Normal" endRegion="rule" />
+        <DetectChar char="|"               context="#stay"    attribute="Normal" />
+        <keyword    String="rule keywords" context="#stay"    attribute="Keyword" />
+        <RegExpr    String="&UIDENT;"      context="#stay"    attribute="Uppercase Name (Token)" />
+        <RegExpr    String="&LIDENT;"      context="#stay"    attribute="Lowercase Name (Rule)" />
+        <DetectChar char="{"               context="Action"   attribute="Normal" beginRegion="action" />
+        <IncludeRules context="General" />
+      </context>
+
+      <!-- A rule action: Ocaml code between { } brackets containing $1,$2,$3.. symbols. -->
+      <!-- (The "Nested Action" contexts override the rules for [ ] and { } brackets in the Objective
+           Caml highlighting file. They make make the $1,$2,$3.. symbols show up inside those brackets.) -->
+      <context name="Action" lineEndContext="#stay" attribute="Normal">
+        <DetectChar char="}" context="#pop" attribute="Normal" endRegion="action" />
+        <RegExpr String="[$][0-9]+" context="#stay" attribute="Semantic Attribute" />
+        <DetectChar char="{" context="Nested Action 1" />
+        <DetectChar char="[" context="Nested Action 2" />
+        <IncludeRules context="##Objective Caml" includeAttrib="true" />
+      </context>
+      <context name="Nested Action 1" lineEndContext="#stay" attribute="Normal">
+        <DetectChar char="}" context="#pop" />
+        <IncludeRules context="Action" includeAttrib="true" />
+      </context>
+      <context name="Nested Action 2" lineEndContext="#stay" attribute="Normal">
+        <DetectChar char="]" context="#pop" />
+        <IncludeRules context="Action" includeAttrib="true" />
+      </context>
+
+      <!-- Trailer section: Ocaml code until the end of the file. -->
+      <context name="Trailer" lineEndContext="#stay" attribute="Normal">
+        <IncludeRules context="##Objective Caml" includeAttrib="true" />
+      </context>
+
+      <!-- General rules for all contexts: -->
+      <!-- 1) Whitespace is expected. -->
+      <!-- 2) Ocamlyacc's comments are in /* */ brackets and are nestable. -->
+      <context name="General" lineEndContext="#stay" attribute="Normal">
+        <DetectSpaces context="#stay" attribute="Normal" />
+        <Detect2Chars char="/" char1="*" context="Comment" attribute="Comment" beginRegion="comment" />
+      </context>
+      <context name="Comment" lineEndContext="#stay" attribute="Comment">
+        <Detect2Chars char="*" char1="/" context="#pop"    attribute="Comment" endRegion="comment" />
+        <Detect2Chars char="/" char1="*" context="Comment" attribute="Comment" beginRegion="comment" />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Keyword"                defStyleNum="dsOthers" bold="true" />
+      <itemData name="Normal"                 defStyleNum="dsOthers" />
+      <itemData name="Uppercase Name (Token)" defStyleNum="dsOthers" />
+      <itemData name="Lowercase Name (Rule)"  defStyleNum="dsOthers" italic="true" />
+      <itemData name="Rule Definition Name"   defStyleNum="dsOthers" italic="true" bold="true" />
+      <itemData name="Semantic Attribute"     defStyleNum="dsOthers" />
+      <itemData name="Comment"                defStyleNum="dsComment" />
+      <itemData name="Error"                  defStyleNum="dsError"  />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="true" weakDeliminator="%" />
+    <comments>
+      <comment name="multiLine" start="(*" end="*)" />
+    </comments>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

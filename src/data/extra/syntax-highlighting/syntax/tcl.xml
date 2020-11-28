@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<!-- Authors: Alexander Dederer & JM. Philippe -->
+<!-- Copyright: BSD copyright & Irsid - Arcelor Innovation R&D -->
+<!-- Ported to Kate 2.0/ KWrite 4.0 by Joseph Wenninger (Updated by Simon Robins)-->
+<!--
+    Updated by Pawel Salawa (boogie at scripts dot one dot pl)
+
+    Revision history:
+        1.11:
+            - added new commands of Tcl/tk 8.5, released in 2007
+        1.10:
+            - Fixed problem with single ':' character after variable name (it's no longer variable,
+              because only double-colon is namespace delimiter and can be part of variable name).
+            - Fixed problem with matching quote character next to regular character, for example:
+              puts {"string"}
+              In that case left bracked was marked as string, but it's no longer like that.
+            - Fixed problem with variable names like: ${text\}test}
+              It whole is valid variable name, because of escape character.
+            - Fixed problem with marking ';' character as a comment when '#' character was after the ';'.
+            - Fixed problem with marking options. '-' character after word-delimiter character caused
+              marking that word-delimiter character as option too, even it wasn't white-space.
+            - Few other minor optimalizations.
+	1.09:
+	    - Added fast comments support (Ctrl+d or whatever your shortcut is)
+	    - Fixed single-character variables detection
+	    - Fixed detection of varaibles with names containing serval namespace delimiters (::)
+-->
+
+<language name="Tcl/Tk" version="4" kateversion="2.4" section="Scripts" extensions="*.tcl;*.tk" mimetype="text/x-tcl" license="BSD">
+  <highlighting>
+    <list name="keywords">
+      <item>after</item>
+      <item>append</item>
+      <item>AppleScript</item>
+      <item>argv</item>
+      <item>argc</item>
+      <item>array</item>
+      <item>auto_execk</item>
+      <item>auto_execok</item>
+      <item>auto_import</item>
+      <item>auto_load</item>
+      <item>auto_mkindex</item>
+      <item>auto_mkindex_old</item>
+      <item>auto_path</item>
+      <item>auto_qualify</item>
+      <item>auto_reset</item>
+      <item>beep</item>
+      <item>bell</item>
+      <item>binary</item>
+      <item>bind</item>
+      <item>bindtags</item>
+      <item>bgerror</item>
+      <item>break</item>
+      <item>button</item>
+      <item>canvas</item>
+      <item>case</item>
+      <item>catch</item>
+      <item>cd</item>
+      <item>chan</item>
+      <item>checkbutton</item>
+      <item>clipboard</item>
+      <item>clock</item>
+      <item>close</item>
+      <item>combobox</item>
+      <item>concat</item>
+      <item>console</item>
+      <item>continue</item>
+      <item>dde</item>
+      <item>destroy</item>
+      <item>dict</item>
+      <item>else</item>
+      <item>elseif</item>
+      <item>encoding</item>
+      <item>entry</item>
+      <item>env</item>
+      <item>eof</item>
+      <item>error</item>
+      <item>errorCode</item>
+      <item>errorInfo</item>
+      <item>eval</item>
+      <item>event</item>
+      <item>exec</item>
+      <item>exit</item>
+      <item>expr</item>
+      <item>fblocked</item>
+      <item>fconfigure</item>
+      <item>fcopy</item>
+      <item>file</item>
+      <item>fileevent</item>
+      <item>flush</item>
+      <item>focus</item>
+      <item>font</item>
+      <item>for</item>
+      <item>foreach</item>
+      <item>format</item>
+      <item>frame</item>
+      <item>gets</item>
+      <item>glob</item>
+      <item>global</item>
+      <item>grab</item>
+      <item>grid</item>
+      <item>history</item>
+      <item>if</item>
+      <item>image</item>
+      <item>incr</item>
+      <item>info</item>
+      <item>interp</item>
+      <item>join</item>
+      <item>label</item>
+      <item>labelframe</item>
+      <item>lappend</item>
+      <item>lassign</item>
+      <item>lindex</item>
+      <item>linsert</item>
+      <item>list</item>
+      <item>listbox</item>
+      <item>llength</item>
+      <item>load</item>
+      <item>lower</item>
+      <item>lrange</item>
+      <item>lremove</item>
+      <item>lrepeat</item>
+      <item>lreplace</item>
+      <item>lreverse</item>
+      <item>lsearch</item>
+      <item>lset</item>
+      <item>lsort</item>
+      <item>menu</item>
+      <item>menubutton</item>
+      <item>message</item>
+      <item>namespace</item>
+      <item>notebook</item>
+      <item>open</item>
+      <item>option</item>
+      <item>OptProc</item>
+      <item>pack</item>
+      <item>package</item>
+      <item>panedwindow</item>
+      <item>parray</item>
+      <item>pid</item>
+      <item>place</item>
+      <item>pkg_mkIndex</item>
+      <item>proc</item>
+      <item>progressbar</item>
+      <item>puts</item>
+      <item>pwd</item>
+      <item>radiobutton</item>
+      <item>raise</item>
+      <item>read</item>
+      <item>regexp</item>
+      <item>registry</item>
+      <item>regsub</item>
+      <item>rename</item>
+      <item>resource</item>
+      <item>return</item>
+      <item>scale</item>
+      <item>scan</item>
+      <item>scrollbar</item>
+      <item>seek</item>
+      <item>selection</item>
+      <item>send</item>
+      <item>separator</item>
+      <item>set</item>
+      <item>sizegrip</item>
+      <item>socket</item>
+      <item>source</item>
+      <item>spinbox</item>
+      <item>split</item>
+      <item>string</item>
+      <item>style</item>
+      <item>subst</item>
+      <item>switch</item>
+      <item>tclLog</item>
+      <item>tcl_endOfWord</item>
+      <item>tcl_findLibrary</item>
+      <item>tcl_library</item>
+      <item>tcl_patchLevel</item>
+      <item>tcl_platform</item>
+      <item>tcl_precision</item>
+      <item>tcl_rcFileName</item>
+      <item>tcl_rcRsrcName</item>
+      <item>tcl_startOfNextWord</item>
+      <item>tcl_startOfPreviousWord</item>
+      <item>tcl_traceCompile</item>
+      <item>tcl_traceExec</item>
+      <item>tcl_version</item>
+      <item>tcl_wordBreakAfter</item>
+      <item>tcl_wordBreakBefore</item>
+      <item>tell</item>
+      <item>text</item>
+      <item>time</item>
+      <item>tk</item>
+      <item>tkTabToWindow</item>
+      <item>tkwait</item>
+      <item>tk_chooseColor</item>
+      <item>tk_chooseDirectory</item>
+      <item>tk_focusFollowMouse</item>
+      <item>tk_focusNext</item>
+      <item>tk_focusPrev</item>
+      <item>tk_getOpenFile</item>
+      <item>tk_getSaveFile</item>
+      <item>tk_library</item>
+      <item>tk_menuSetFocus</item>
+      <item>tk_messageBox</item>
+      <item>tk_optionMenu</item>
+      <item>tk_patchLevel</item>
+      <item>tk_popup</item>
+      <item>tk_strictMotif</item>
+      <item>tk_textCopy</item>
+      <item>tk_textCut</item>
+      <item>tk_textPaste</item>
+      <item>tk_version</item>
+      <item>toplevel</item>
+      <item>trace</item>
+      <item>traverseTo</item>
+      <item>treeview</item>
+      <item>unknown</item>
+      <item>unload</item>
+      <item>unset</item>
+      <item>update</item>
+      <item>uplevel</item>
+      <item>upvar</item>
+      <item>variable</item>
+      <item>vwait</item>
+      <item>while</item>
+      <item>winfo</item>
+      <item>wm</item>
+    </list>
+
+    <list name="keywords-opt">
+      <item>add</item>
+      <item>args</item>
+      <item>atime</item>
+      <item>attributes</item>
+      <item>body</item>
+      <item>bytelength</item>
+      <item>cancel</item>
+      <item>channels</item>
+      <item>clicks</item>
+      <item>cmdcount</item>
+      <item>commands</item>
+      <item>compare</item>
+      <item>complete</item>
+      <item>convertfrom</item>
+      <item>convertto</item>
+      <item>copy</item>
+      <item>default</item>
+      <item>delete</item>
+      <item>dirname</item>
+      <item>equal</item>
+      <item>executable</item>
+      <item>exists</item>
+      <item>extension</item>
+      <item>first</item>
+      <item>forget</item>
+      <item>format</item>
+      <item>functions</item>
+      <item>globals</item>
+      <item>hostname</item>
+      <item>idle</item>
+      <item>ifneeded</item>
+      <item>index</item>
+      <item>info</item>
+      <item>is</item>
+      <item>isdirectory</item>
+      <item>isfile</item>
+      <item>join</item>
+      <item>last</item>
+      <item>length</item>
+      <item>level</item>
+      <item>library</item>
+      <item>link</item>
+      <item>loaded</item>
+      <item>locals</item>
+      <item>lstat</item>
+      <item>map</item>
+      <item>match</item>
+      <item>mkdir</item>
+      <item>mtime</item>
+      <item>nameofexecutable</item>
+      <item>names</item>
+      <item>nativename</item>
+      <item>normalize</item>
+      <item>number</item>
+      <item>owned</item>
+      <item>patchlevel</item>
+      <item>pathtype</item>
+      <item>present</item>
+      <item>procs</item>
+      <item>provide</item>
+      <item>range</item>
+      <item>readable</item>
+      <item>readlink</item>
+      <item>remove</item>
+      <item>rename</item>
+      <item>repeat</item>
+      <item>replace</item>
+      <item>require</item>
+      <item>rootname</item>
+      <item>scan</item>
+      <item>script</item>
+      <item>seconds</item>
+      <item>separator</item>
+      <item>sharedlibextension</item>
+      <item>size</item>
+      <item>split</item>
+      <item>stat</item>
+      <item>system</item>
+      <item>tail</item>
+      <item>tclversion</item>
+      <item>tolower</item>
+      <item>totitle</item>
+      <item>toupper</item>
+      <item>trim</item>
+      <item>trimleft</item>
+      <item>trimright</item>
+      <item>type</item>
+      <item>unknown</item>
+      <item>variable</item>
+      <item>vars</item>
+      <item>vcompare</item>
+      <item>vdelete</item>
+      <item>versions</item>
+      <item>vinfo</item>
+      <item>volumes</item>
+      <item>vsatisfies</item>
+      <item>wordend</item>
+      <item>wordstart</item>
+      <item>writable</item>
+
+      <item>activate</item>
+      <item>actual</item>
+      <item>addtag</item>
+      <item>append</item>
+      <item>appname</item>
+      <item>aspect</item>
+      <item>atom</item>
+      <item>atomname</item>
+      <item>bbox</item>
+      <item>bind</item>
+      <item>broadcast</item>
+      <item>canvasx</item>
+      <item>canvasy</item>
+      <item>caret</item>
+      <item>cells</item>
+      <item>cget</item>
+      <item>children</item>
+      <item>class</item>
+      <item>clear</item>
+      <item>client</item>
+      <item>clone</item>
+      <item>colormapfull</item>
+      <item>colormapwindows</item>
+      <item>command</item>
+      <item>configure</item>
+      <item>containing</item>
+      <item>coords</item>
+      <item>create</item>
+      <item>current</item>
+      <item>curselection</item>
+      <item>dchars</item>
+      <item>debug</item>
+      <item>deiconify</item>
+      <item>delta</item>
+      <item>depth</item>
+      <item>deselect</item>
+      <item>dlineinfo</item>
+      <item>dtag</item>
+      <item>dump</item>
+      <item>edit</item>
+      <item>entrycget</item>
+      <item>entryconfigure</item>
+      <item>families</item>
+      <item>find</item>
+      <item>flash</item>
+      <item>focus</item>
+      <item>focusmodel</item>
+      <item>fpixels</item>
+      <item>fraction</item>
+      <item>frame</item>
+      <item>generate</item>
+      <item>geometry</item>
+      <item>get</item>
+      <item>gettags</item>
+      <item>grid</item>
+      <item>group</item>
+      <item>handle</item>
+      <item>height</item>
+      <item>hide</item>
+      <item>iconbitmap</item>
+      <item>iconify</item>
+      <item>iconmask</item>
+      <item>iconname</item>
+      <item>iconposition</item>
+      <item>iconwindow</item>
+      <item>icursor</item>
+      <item>id</item>
+      <item>identify</item>
+      <item>image</item>
+      <item>insert</item>
+      <item>interps</item>
+      <item>inuse</item>
+      <item>invoke</item>
+      <item>ismapped</item>
+      <item>itemcget</item>
+      <item>itemconfigure</item>
+      <item>keys</item>
+      <item>lower</item>
+      <item>manager</item>
+      <item>mark</item>
+      <item>maxsize</item>
+      <item>measure</item>
+      <item>metrics</item>
+      <item>minsize</item>
+      <item>move</item>
+      <item>name</item>
+      <item>nearest</item>
+      <item>overrideredirect</item>
+      <item>own</item>
+      <item>panecget</item>
+      <item>paneconfigure</item>
+      <item>panes</item>
+      <item>parent</item>
+      <item>pathname</item>
+      <item>pixels</item>
+      <item>pointerx</item>
+      <item>pointerxy</item>
+      <item>pointery</item>
+      <item>positionfrom</item>
+      <item>post</item>
+      <item>postcascade</item>
+      <item>postscript</item>
+      <item>protocol</item>
+      <item>proxy</item>
+      <item>raise</item>
+      <item>release</item>
+      <item>reqheight</item>
+      <item>reqwidth</item>
+      <item>resizable</item>
+      <item>rgb</item>
+      <item>rootx</item>
+      <item>rooty</item>
+      <item>scale</item>
+      <item>scaling</item>
+      <item>screen</item>
+      <item>screencells</item>
+      <item>screendepth</item>
+      <item>screenheight</item>
+      <item>screenmmheight</item>
+      <item>screenmmwidth</item>
+      <item>screenvisual</item>
+      <item>screenwidth</item>
+      <item>search</item>
+      <item>see</item>
+      <item>select</item>
+      <item>selection</item>
+      <item>server</item>
+      <item>set</item>
+      <item>show</item>
+      <item>sizefrom</item>
+      <item>stackorder</item>
+      <item>state</item>
+      <item>status</item>
+      <item>tag</item>
+      <item>title</item>
+      <item>toplevel</item>
+      <item>transient</item>
+      <item>types</item>
+      <item>unpost</item>
+      <item>useinputmethods</item>
+      <item>validate</item>
+      <item>values</item>
+      <item>viewable</item>
+      <item>visual</item>
+      <item>visualid</item>
+      <item>visualsavailable</item>
+      <item>vrootheight</item>
+      <item>vrootwidth</item>
+      <item>vrootx</item>
+      <item>vrooty</item>
+      <item>width</item>
+      <item>window</item>
+      <item>windowingsystem</item>
+      <item>withdraw</item>
+      <item>x</item>
+      <item>xview</item>
+      <item>y</item>
+    </list>
+
+    <contexts>
+      <context name = "Base" attribute = "Normal Text" lineEndContext="#stay">
+      
+        <!-- Virtual blocks -->
+        <RegExpr attribute="Region Marker" context="#stay" String="#\s*BEGIN.*$" beginRegion="region" firstNonSpace="true"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="#\s*END.*$" endRegion="region" firstNonSpace="true"/>
+        
+        <!-- Standard -->
+        <keyword String = "keywords" attribute = "Keyword" context="#stay"/>
+        <keyword String = "keywords-opt" attribute = "Parameter" context="#stay"/>
+        <Float attribute = "Float" context="#stay"/>
+        <Int attribute ="Decimal" context="#stay"/>
+        <RegExpr String="\\." attribute = "Char" context = "#stay"/>
+        
+        <!-- Options -->
+        <RegExpr String = "\s-\w+" attribute = "Parameter" context="#stay"/>
+        
+        <!-- Variables -->
+        <RegExpr String = "\$\{([^\}]|\\\})+\}" attribute = "Variable" context="#stay"/>
+        <RegExpr String = "\$(::|\w)+" attribute = "Variable" context="#stay"/>
+        
+        <!-- Strings -->
+        <Detect2Chars char = "&quot;" char1 = "&quot;" attribute = "String" context="#stay"/>
+        <DetectChar char = "&quot;" attribute = "String" context="String"/>
+        
+        <!-- Comments -->
+        <DetectChar char = ";" attribute = "Normal Text" context="New command line" />
+        <DetectChar char = "#" attribute = "Comment" context="Comment" firstNonSpace="true"/>
+        
+        <!-- Braces, brackets, etc -->
+        <DetectChar char = "{" attribute = "Keyword" context="#stay" beginRegion="block"/>
+        <DetectChar char = "}" attribute = "Keyword" context="#stay" endRegion="block"/>
+        <DetectChar char = "[" attribute = "Keyword" context="#stay"/>
+        <DetectChar char = "]" attribute = "Keyword" context="#stay"/>
+        
+      </context>
+
+      <context name = "String" attribute = "String" lineEndContext="#stay">
+        <RegExpr String="\\." attribute = "Char" context = "#stay"/>
+        <DetectChar char="&quot;" attribute = "String" context = "#pop"/>
+        <DetectChar char  = "$" attribute = "Variable" context="#stay"/>
+      </context>
+
+      <context name = "Comment" attribute = "Comment" lineEndContext="#pop"/>
+
+      <context name = "New command line" attribute = "Normal Text" lineEndContext="#stay">
+        <RegExpr String = "\s*#" attribute="Comment" context="Comment" />
+        <RegExpr String = "." attribute="Normal Text" context="#pop" lookAhead="true" />
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name = "Normal Text" defStyleNum = "dsNormal"/>
+      <itemData name = "Keyword" defStyleNum = "dsKeyword"/>
+      <itemData name = "Decimal" defStyleNum = "dsDecVal"/>
+      <itemData name = "Float" defStyleNum = "dsFloat"/>
+      <itemData name = "String" defStyleNum = "dsString"/>
+      <itemData name = "Comment" defStyleNum = "dsComment"/>
+      <itemData name = "Parameter" defStyleNum = "dsOthers"/>
+      <itemData name = "Variable" defStyleNum = "dsDataType"/>
+      <itemData name = "Char" defStyleNum="dsChar"/>
+      <itemData name = "Region Marker" defStyleNum="dsRegionMarker"/>
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+    <comments>
+	<comment name="singleLine" start="#" />
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+
+</language>

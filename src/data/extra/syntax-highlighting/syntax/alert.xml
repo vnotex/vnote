@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language version="5" kateversion="3.1" name="Alerts" section="Other" extensions="" mimetype="" author="Dominik Haumann (dhaumann@kde.org)" license="MIT" hidden="true">
+  <highlighting>
+    <list name="alerts_hi">
+      <item>ALERT</item>
+      <item>ATTENTION</item>
+      <item>DANGER</item>
+      <item>HACK</item>
+      <item>SECURITY</item>
+    </list>
+    <list name="alerts_mid">
+      <item>BUG</item>
+      <item>FIXME</item>
+      <item>DEPRECATED</item>
+      <item>TASK</item>
+      <item>TODO</item>
+      <item>TBD</item>
+      <item>WARNING</item>
+      <item>CAUTION</item>
+      <item>NOLINT</item>
+    </list>
+    <list name="alerts_lo">
+      <item>###</item>
+      <item>NOTE</item>
+      <item>NOTICE</item>
+      <item>TEST</item>
+      <item>TESTING</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Normal Text" >
+        <StringDetect attribute="Region Marker" context="#stay" String="{{{" beginRegion="AlertRegion1" />
+        <StringDetect attribute="Region Marker" context="#stay" String="}}}" endRegion="AlertRegion1" />
+        <WordDetect attribute="Region Marker" context="#stay" String="BEGIN" beginRegion="AlertRegion2" />
+        <WordDetect attribute="Region Marker" context="#stay" String="END" endRegion="AlertRegion2" />
+        <keyword attribute="Alert Level 1" context="#stay" String="alerts_hi" />
+        <keyword attribute="Alert Level 2" context="#stay" String="alerts_mid" />
+        <keyword attribute="Alert Level 3" context="#stay" String="alerts_lo" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"   defStyleNum="dsNormal"/>
+      <itemData name="Alert Level 1" defStyleNum="dsAlert" color="#e85848" selColor="#e85848" backgroundColor="#451e1a" />
+      <itemData name="Alert Level 2" defStyleNum="dsAlert" color="#ca9219" selColor="#ca9219" backgroundColor="#451e1a" />
+      <itemData name="Alert Level 3" defStyleNum="dsAlert" color="#81ca2d" selColor="#81ca2d" />
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1"/>
+  </general>
+</language>
+<!-- kate: indent-width 2; -->

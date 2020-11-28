@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="CUE Sheet" version="1" kateversion="5.0" section="Other" extensions="*.cue" mimetype="application/x-cue">
+  <highlighting>
+    <list name="keywords">
+      <item>CATALOG</item>
+      <item>CDTEXTFILE</item>
+      <item>FILE</item>
+      <item>FLAGS</item>
+      <item>INDEX</item>
+      <item>ISRC</item>
+      <item>PERFORMER</item>
+      <item>PREGAP</item>
+      <item>POSTGAP</item>
+      <item>REM</item>
+      <item>SONGWRITER</item>
+      <item>TITLE</item>
+      <item>TRACK</item>
+    </list>
+    <list name="format">
+      <item>AIFF</item>
+      <item>WAVE</item>
+      <item>MP3</item>
+      <item>BINARY</item>
+      <item>MOTOTOLA</item>
+    </list>
+    <list name="mode">
+      <item>AUDIO</item>
+      <item>CDG</item>
+      <item>CDI</item>
+      <item>MODE1</item>
+      <item>MODE2</item>
+      <item>RAW</item>
+    </list>
+    <list name="flags">
+      <item>4CH</item>
+      <item>DCP</item>
+      <item>PRE</item>
+      <item>SCMS</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Format" context="#stay" String="format" />
+        <keyword attribute="Mode" context="#stay" String="mode" />
+        <keyword attribute="Flags" context="#stay" String="flags" />
+        <Int attribute="Decimal" context="#stay" />
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <DetectChar attribute="Comment" context="Comment" char=";"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Comment" />
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword"/>
+      <itemData name="Format"       defStyleNum="dsImport"/>
+      <itemData name="Mode"         defStyleNum="dsVariable"/>
+      <itemData name="Flags"        defStyleNum="dsOthers"/>
+      <itemData name="Decimal"      defStyleNum="dsDecVal"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start=";" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>

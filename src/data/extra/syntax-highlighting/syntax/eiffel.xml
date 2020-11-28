@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+Eiffel syntax highlighting for Kate and Kwrite editors
+
+Change log:
+2003-12-16 	Revised existing version by adding several missing keywords. Added predefined
+				entities as a separate word list. Moved from numeric to named contexts.
+				Changed version to 1.02.
+
+Author of version 1.02: Sebastian Vuorinen
+-->
+<language name="Eiffel" version="2" kateversion="5.0" section="Sources" extensions="*.e" mimetype="text/x-eiffel-src" author="Sebastian Vuorinen" license="">
+	<highlighting>
+		<list name="keywords">
+			<item>agent</item>
+			<item>alias</item>
+			<item>all</item>
+			<item>and</item>
+			<item>as</item>
+			<item>assign</item>
+			<item>class</item>
+			<item>convert</item>
+			<item>create</item>
+			<item>creation</item>
+			<item>debug</item>
+			<item>deferred</item>
+			<item>do</item>
+			<item>else</item>
+			<item>elseif</item>
+			<item>end</item>
+			<item>expanded</item>
+			<item>export</item>
+			<item>external</item>
+			<item>feature</item>
+			<item>from</item>
+			<item>frozen</item>
+			<item>if</item>
+			<item>implies</item>
+			<item>indexing</item>
+			<item>infix</item>
+			<item>inherit</item>
+			<item>inspect</item>
+			<item>is</item>
+			<item>like</item>
+			<item>local</item>
+			<item>loop</item>
+			<item>not</item>
+			<item>obsolete</item>
+			<item>old</item>
+			<item>once</item>
+			<item>or</item>
+			<item>prefix</item>
+			<item>pure</item>
+			<item>redefine</item>
+			<item>reference</item>
+			<item>rename</item>
+			<item>rescue</item>
+			<item>retry</item>
+			<item>separate</item>
+			<item>then</item>
+			<item>undefine</item>
+		</list>
+
+		<list name="predefined-entities">
+			<item>Current</item>
+			<item>False</item>
+			<item>Precursor</item>
+			<item>Result</item>
+			<item>True</item>
+			<item>TUPLE</item>
+		</list>
+
+		<list name="assertions">
+			<item>check</item>
+			<item>ensure</item>
+			<item>require</item>
+			<item>variant</item>
+			<item>invariant</item>
+		</list>
+
+		<contexts>
+			<context name = "Normal" attribute = "Normal Text" lineEndContext="#stay">
+				<keyword attribute = "Keyword" String = "keywords" context="#stay" />
+				<keyword attribute = "Predefined entities" String = "predefined-entities" context="#stay" />
+				<keyword attribute = "Assertions" String = "assertions" context="#stay" />
+
+				<Int attribute = "Decimal" context="#stay" />
+				<Float attribute = "Float" context="#stay" />
+				<HlCChar attribute = "Char" context="#stay" />
+				<DetectChar attribute = "String" char = "&quot;" context="Quoted String" />
+
+				<Detect2Chars attribute = "Comment" char = "-" char1 = "-" context="Documentation" />
+			</context>
+
+			<context name = "Quoted String" attribute = "String" lineEndContext="#pop">
+				<DetectChar attribute = "String" char = "&quot;" context="#pop" />
+			</context>
+
+			<context name = "Documentation" attribute="Comment" lineEndContext="#pop" />
+		</contexts>
+
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal" />
+
+			<itemData name="Keyword"     defStyleNum="dsKeyword" />
+			<itemData name="Predefined entities" defStyleNum="dsConstant" />
+			<itemData name="Assertions"  defStyleNum="dsOthers" />
+
+			<itemData name="Decimal"     defStyleNum="dsDecVal" />
+			<itemData name="Float"       defStyleNum="dsFloat" />
+			<itemData name="Char"        defStyleNum="dsChar" />
+			<itemData name="String"      defStyleNum="dsString" />
+
+			<itemData name="Comment"     defStyleNum="dsComment" />
+		</itemDatas>
+	</highlighting>
+
+	<general>
+		<comments>
+			<comment name="singleLine" start="--" />
+		</comments>
+		<keywords casesensitive="1" />
+	</general>
+</language>

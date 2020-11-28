@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="FTL" version="3" kateversion="5.0" section="Markup" extensions="*.ftl" license="LGPLv2+" author="Radomir Svancer (svancer@gmail.com), Robert Kratky (kratky@rob.cz>), Matthias Mailänder (matthias.mailaender@vogella.com)">
+  <highlighting>
+    <contexts>
+        <context name="comment start" attribute="NormalText" lineEndContext="#stay">
+            <StringDetect attribute="Comment" context="comment end" String="&lt;!--"/>
+            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--"/>
+            <RegExpr attribute="FTLKeyword" context="syntax start" String="&lt;\s*\/?\s*[#@][a-zA-Z0-9_]*" />
+            <StringDetect attribute="FTLMark" context="variable end" String="${" />
+            <RegExpr attribute="Keyword" context="logic end" String="&lt;\s*\/?\s*[a-zA-Z0-9_]*" />
+        </context>
+
+        <context name="logic end" attribute="Identifier" lineEndContext="#stay">
+            <DetectChar attribute="Keyword" context="#pop" char="&gt;"/>
+            <RegExpr attribute="NormalText" context="logic" String="\s*=\s*"/>
+            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--"/>
+            <RegExpr attribute="FTLKeyword" context="syntax start" String="&lt;\s*\/?\s*[#@][a-zA-Z0-9_]*" />
+            <StringDetect attribute="FTLMark" context="variable end" String="${" />
+        </context>
+
+        <context name="logic" attribute="Types" lineEndContext="#stay">
+            <RegExpr attribute="Types" context="#pop" String="\s*#?[a-zA-Z0-9]*" />
+            <DetectChar attribute="Types" context="logic start" char="&quot;" />
+        </context>
+
+        <context name="logic start" attribute="Types" lineEndContext="#stay">
+            <DetectChar attribute="Types" context="#pop#pop" char="&quot;" />
+            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--"/>
+            <RegExpr attribute="FTLKeyword" context="syntax start" String="&lt;\s*\/?\s*[#@][a-zA-Z0-9_]*" />
+            <StringDetect attribute="FTLMark" context="variable end" String="${" />
+        </context>
+
+        <context name="comment end" attribute="Comment" lineEndContext="#stay">
+            <StringDetect attribute="Comment" context="#pop" String="--&gt;"/>
+            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--"/>
+            <RegExpr attribute="FTLKeyword" context="syntax start" String="&lt;\s*\/?\s*[#@][a-zA-Z0-9_]*" />
+            <StringDetect attribute="FTLMark" context="variable end" String="${" />
+        </context>
+
+        <context name="comment ending" attribute="FTLComment" lineEndContext="#stay">
+            <StringDetect attribute="FTLComment" context="#pop" String="--&gt;"/>
+        </context>
+
+        <context name="syntax start" attribute="FTLKeyword" lineEndContext="#stay">
+            <DetectChar attribute="FTLKeyword" context="#pop" char="&gt;"/>
+            <DetectChar attribute="FTLQuot" context="comment string" char="&quot;" />
+            <RegExpr attribute="FTLIdentifier" context="syntax end" String="\s*"/>
+        </context>
+
+        <context name="comment string" attribute="FTLQuot" lineEndContext="#stay">
+            <DetectChar attribute="FTLQuot" context="#pop#pop" char="&quot;" />
+        </context>
+
+        <context name="syntax end" attribute="FTLIdentifier" lineEndContext="#stay">
+            <DetectChar attribute="FTLKeyword" context="#pop#pop" char="&gt;"/>
+            <DetectChar attribute="FTLQuot" context="comment string" char="&quot;" />
+        </context>
+
+        <context name="variable end" attribute="FTLIdentifier" lineEndContext="#stay">
+            <DetectChar attribute="FTLMark" context="#pop" char="}"/>
+            <DetectChar attribute="FTLQuot" context="comment string" char="&quot;" />
+        </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="NormalText" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Identifier" defStyleNum="dsOthers"/>
+      <itemData name="Types" defStyleNum="dsDataType"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="FTLComment" defStyleNum="dsDocumentation" bold="0" italic="1"/>
+      <itemData name="FTLKeyword" defStyleNum="dsKeyword" color="#0000cc" selColor="#00ff00" bold="1" italic="0"/>
+      <itemData name="FTLQuot" defStyleNum="dsOthers" color="#ff0044" selColor="#00ff00" bold="0" italic="0"/>
+      <itemData name="FTLIdentifier" defStyleNum="dsOthers" color="#0022bb" selColor="#00ff00" bold="0" italic="0"/>
+      <itemData name="FTLMark" defStyleNum="dsOthers" color="#0000cc" selColor="#00ff00" bold="1" italic="1"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="&lt;#--" end="--&gt;" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>

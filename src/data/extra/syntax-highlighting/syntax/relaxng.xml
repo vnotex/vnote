@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!ENTITY qname    "[A-Za-z_:][\w.:_-]*">
+	<!ENTITY entref  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&qname;);">
+]>
+
+<!--
+  Kate syntax highlighting for RELAX NG
+  2007 by Thomas Schraitle (tom_schr AT web DOT de)
+  Derived from the XSLT syntax file from Peter Lammich
+  Published under the LGPL
+
+  TODO:
+   - More modularization (how?)
+   - Namespace rules
+-->
+
+<language version="3"
+          kateversion="2.4"
+          name="RELAX NG"
+          section="Markup"
+          extensions="*.rng;*.RNG"
+          license="LGPL"
+          author="Thomas Schraitle (tom_schr AT web DOT de)">
+  <highlighting>
+    <list name="relaxngnames">
+      <item>anyName</item>
+      <item>attribute</item>
+      <item>choice</item>
+      <item>data</item>
+      <item>define</item>
+      <item>div</item>
+      <item>element</item>
+      <item>empty</item>
+      <item>except</item>
+      <item>externalRef</item>
+      <item>grammar</item>
+      <item>group</item>
+      <item>include</item>
+      <item>interleave</item>
+      <item>list</item>
+      <item>mixed</item>
+      <item>name</item>
+      <item>notAllowed</item>
+      <item>nsName</item>
+      <item>oneOrMore</item>
+      <item>optional</item>
+      <item>param</item>
+      <item>parentRef</item>
+      <item>ref</item>
+      <item>start</item>
+      <item>text</item>
+      <item>value</item>
+      <item>zeroOrMore</item>
+    </list>
+
+    <contexts>
+      <context name="normalText" attribute="Normal Text" lineEndContext="#stay">
+         <StringDetect attribute="Comment" context="comment" String="&lt;!--" beginRegion="comment"/>
+         <DetectChar attribute="Tag" context="tagname" char="&lt;" />
+         <RegExpr attribute="Entity Reference" context="#stay" String="&entref;" />
+      </context>
+
+      <context name="detectEntRef" attribute="Normal Text" lineEndContext="#stay">
+         <RegExpr attribute="Entity Reference" context="#stay" String="&entref;" />
+      </context>
+
+      <context name="tagname" attribute="Tag" lineEndContext="#stay">
+         <keyword attribute="RELAX NG Tag" context="attributes" String="relaxngnames" />
+         <RegExpr attribute="Attribute" context="attributes" String="\s*" />
+         <DetectChar attribute="Tag" context="#pop" char="&gt;" />
+      </context>
+
+      <context name="attributes" attribute="Attribute" lineEndContext="#stay">
+         <Detect2Chars attribute="Tag" context="#pop#pop" char="/" char1="&gt;" />
+         <DetectChar attribute="Tag" context="#pop#pop" char="&gt;" />
+         <RegExpr attribute="Normal Text" context="attrValue" String="\s*=\s*" />
+      </context>
+
+      <context name="attrValue" attribute="Invalid" lineEndContext="#stay">
+         <Detect2Chars attribute="Invalid" context="#pop#pop#pop" char="/" char1="&gt;" />
+         <DetectChar attribute="Invalid" context="#pop#pop#pop" char="&gt;" />
+         <DetectChar attribute="Attribute Value" context="string" char="&quot;" />
+      </context>
+
+      <context name="string" attribute="Attribute Value" lineEndContext="#stay">
+         <DetectChar attribute="Attribute Value" context="#pop#pop" char="&quot;" />
+         <IncludeRules context="detectEntRef" />
+      </context>
+
+      <context name="comment" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <StringDetect attribute="Comment" context="#pop"  String="--&gt;" endRegion="comment"/>
+        <RegExpr attribute="Error" context="#stay" String="-(-(?!-&gt;))+"/>
+        <IncludeRules context="##Alerts"/>
+        <DetectIdentifier/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Tag" defStyleNum="dsKeyword"/>
+      <itemData name="Entity Reference" defStyleNum="dsOthers"/>
+      <itemData name="Invalid" defStyleNum="dsError"/>
+      <itemData name="Attribute" defStyleNum="dsOthers"/>
+      <itemData name="Attribute Value" defStyleNum="dsString" color="#800000" selColor="#ffffff" bold="0" italic="0"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="RELAX NG Tag" defStyleNum="dsKeyword" color="#000080" selColor="#ffffff" bold="1" italic="0" />
+      <itemData name="Error" defStyleNum="dsError" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+    </comments>
+    <keywords casesensitive="0" weakDeliminator="-:" additionalDeliminator="&quot;{}"/>
+  </general>
+</language>

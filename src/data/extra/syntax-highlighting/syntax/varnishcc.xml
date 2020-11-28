@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Varnish 3 module spec file" version="2" kateversion="3.4" section="Sources" extensions="*.vcc;" mimetype="" author="Xavier Guerrin (xavier@tuxfamily.org)" license="WTFPL" priority="3">
+  <highlighting>
+    <!-- Extracted from the "ctypes" hash in lib/libvmod_std/vmod.py -->
+    <list name="VCC C Types">
+      <item>BACKEND</item>
+      <item>BOOL</item>
+      <item>DURATION</item>
+      <item>HEADER</item>
+      <item>INT</item>
+      <item>IP</item>
+      <item>PRIV_CALL</item>
+      <item>PRIV_VCL</item>
+      <item>REAL</item>
+      <item>STRING</item>
+      <item>STRING_LIST</item>
+      <item>TIME</item>
+      <item>VOID</item>
+    </list>
+    <contexts>
+      <!-- Default context: define main keywords. -->
+      <context name="vccnormal_text" attribute="Normal Text" lineEndContext="#stay">
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="module_declaration"   String="Module" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="init_declaration"     String="Init" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="function_declaration" String="Function" />
+        <IncludeRules context="comments" />
+      </context>
+
+      <!-- Contexts for comments. -->
+      <context name="comments" attribute="Comment" lineEndContext="#pop">
+        <DetectChar char="#" context="shell-like-comment" attribute="Comment" />
+      </context>
+      <context name="shell-like-comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Modelines" />
+      </context>
+
+      <!-- Contexts for the "Module" keyword. -->
+      <context name="module_declaration" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="VMod Identifier" context="#stay" String="[a-z][a-z0-9_]*$" />
+      </context>
+
+      <!-- Contexts for the "Init" keyword. -->
+      <context name="init_declaration" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Function Identifier" context="#stay" String="[a-z][a-z0-9_]*$" />
+      </context>
+
+      <!-- Contexts for the "Function" keyword. -->
+      <context name="function_declaration" attribute="Normal Text" lineEndContext="#pop">
+        <keyword attribute="Data Type" String="VCC C Types" context="return_type_declared" />
+      </context>
+      <context name="return_type_declared" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Function Identifier" context="function_name_declared" String="[a-z][a-z0-9_]*" />
+      </context>
+      <context name="function_name_declared" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar char="(" context="function_arg_type_expected" attribute="Normal Text" />
+      </context>
+      <context name="function_arg_type_expected" attribute="Normal Text" lineEndContext="#pop">
+        <keyword attribute="Data Type" String="VCC C Types" context="function_comma_expected" />
+        <StringDetect String="ENUM" context="enum" attribute="Data Type" />
+        <DetectChar char=")" context="function_end" attribute="Normal Text" />
+      </context>
+      <context name="function_comma_expected" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar char="," context="function_arg_type_expected" attribute="Normal Text" />
+        <DetectChar char=")" context="function_end" attribute="Normal Text" />
+      </context>
+      <context name="function_end" attribute="Normal Text" lineEndContext="#pop">
+      </context>
+
+      <!-- Contexts for enums. -->
+      <context name="enum" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar char="{" context="enum_c_name_expected" attribute="Normal Text" />
+      </context>
+      <context name="enum_c_name_expected" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Symbol" context="enum_comma_expected" String="[a-z][a-z0-9_]*" />
+        <DetectChar char="}" context="function_comma_expected" attribute="Normal Text" />
+      </context>
+      <context name="enum_comma_expected" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar char="," context="enum_c_name_expected" attribute="Normal Text" />
+        <DetectChar char="}" context="function_comma_expected" attribute="Normal Text" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"               defStyleNum="dsNormal" />
+      <itemData name="Data Type"                 defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="VMod Identifier"           defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" />
+      <itemData name="Function Identifier"       defStyleNum="dsFunction" />
+      <itemData name="Comment"                   defStyleNum="dsComment" />
+      <itemData name="Symbol"                    defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword"                   defStyleNum="dsKeyword" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

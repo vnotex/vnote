@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Author: Milian Wolff <mail@milianw.de> -->
+<language name="QML" version="7" kateversion="5.0" section="Scripts" extensions="*.qml;*.qmltypes"
+          mimetype="text/x-qml;application/x-qml" indenter="cstyle"
+          author="Milian Wolff (mail@milianw.de)" license="MIT">
+  <highlighting>
+    <list name="elements">
+      <!-- see: http://doc.trolltech.com/4.7-snapshot/qmlelements.html -->
+      <item>State</item>
+      <item>PropertyChanges</item>
+      <item>StateGroup</item>
+      <item>ParentChange</item>
+      <item>StateChangeScript</item>
+      <item>AnchorChanges</item>
+      <item>PropertyAnimation</item>
+      <item>NumberAnimation</item>
+      <item>ColorAnimation</item>
+      <item>SequentialAnimation</item>
+      <item>ParallelAnimation</item>
+      <item>PauseAnimation</item>
+      <item>PropertyAction</item>
+      <item>ParentAction</item>
+      <item>ScriptAction</item>
+      <item>Transition</item>
+      <item>SpringFollow</item>
+      <item>EaseFollow</item>
+      <item>Behavior</item>
+      <item>Binding</item>
+      <item>ListModel</item>
+      <item>ListElement</item>
+      <item>VisualItemModel</item>
+      <item>XmlListModel</item>
+      <item>XmlRole</item>
+      <item>DateTimeFormatter</item>
+      <item>NumberFormatter</item>
+      <item>Script</item>
+      <item>Connections</item>
+      <item>Component</item>
+      <item>Timer</item>
+      <item>QtObject</item>
+      <item>Item</item>
+      <item>Rectangle</item>
+      <item>Image</item>
+      <item>BorderImage</item>
+      <item>Text</item>
+      <item>TextInput</item>
+      <item>TextEdit</item>
+      <item>MouseArea</item>
+      <item>FocusScope</item>
+      <item>Flickable</item>
+      <item>Flipable</item>
+      <item>WebView</item>
+      <item>Loader</item>
+      <item>Repeater</item>
+      <item>SystemPalette</item>
+      <item>GraphicsObjectContainer</item>
+      <item>LayoutItem</item>
+      <item>ListView</item>
+      <item>GridView</item>
+      <item>PathView</item>
+      <item>Path</item>
+      <item>PathLine</item>
+      <item>PathQuad</item>
+      <item>PathCubic</item>
+      <item>PathAttribute</item>
+      <item>PathPercent</item>
+      <item>Column</item>
+      <item>Row</item>
+      <item>Grid</item>
+      <item>Scale</item>
+      <item>Rotation</item>
+      <item>Blur</item>
+      <item>Colorize</item>
+      <item>DropShadow</item>
+      <item>Opacity</item>
+      <item>Particles</item>
+      <item>ParticleMotionLinear</item>
+      <item>ParticleMotionGravity</item>
+      <item>ParticleMotionWander</item>
+      <!-- here some other items I find in the examples, we really need a proper list of them... -->
+      <item>Gradient</item>
+      <item>GradientStop</item>
+      <item>MouseRegion</item>
+    </list>
+    <!-- keywords not part of JavaScript -->
+    <list name="extra-keywords">
+      <item>readonly</item>
+    </list>
+    <list name="types">
+      <!-- see: http://doc.trolltech.com/4.7-snapshot/qml-extending-types.html -->
+      <item>string</item>
+      <item>int</item>
+      <item>bool</item>
+      <item>date</item>
+      <item>color</item>
+      <item>url</item>
+      <item>real</item>
+      <item>double</item>
+      <item>var</item>
+      <item>variant</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectSpaces/>
+        <WordDetect attribute="Import" context="Import" String="import"/>
+        <keyword attribute="Elements" context="#stay" String="elements" />
+        <keyword attribute="Keywords" String="extra-keywords"/>
+        <WordDetect attribute="Signal" context="Signal" String="signal" />
+        <WordDetect attribute="Keywords" context="Property" String="default property" />
+        <WordDetect attribute="Keywords" context="Property" String="property" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <DetectChar attribute="Normal Text" context="Object" char="{" beginRegion="Brace" />
+        <IncludeRules context="Normal##JavaScript" />
+      </context>
+      <context attribute="ImportValue" lineEndContext="#pop" name="Import">
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Property">
+        <WordDetect attribute="Property Type" context="#stay" String="alias" />
+        <keyword attribute="Property Type" context="#stay" String="types" />
+        <DetectSpaces />
+        <DetectIdentifier />
+        <DetectSpaces />
+        <DetectChar char=":" context="#pop" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Signal">
+        <DetectSpaces />
+        <DetectIdentifier />
+        <DetectChar char="(" context="SignalParameter" />
+      </context>
+      <context attribute="Normal Text" name="SignalParameter" lineEndContext="#pop">
+        <DetectSpaces />
+        <keyword attribute="Property Type" context="#stay" String="types" />
+        <DetectSpaces />
+        <DetectIdentifier />
+        <DetectSpaces />
+        <DetectChar char=")" context="#pop"/>
+      </context>
+      <!-- QML supports multi-line strings, which are not supported by Javascript -->
+      <context attribute="String" lineEndContext="#stay" name="String">
+        <HlCStringChar attribute="Escape" />
+        <RegExpr attribute="Escape" String="\\u[0-9a-fA-F]{4}" />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Object">
+        <!--DetectIdentifier-->
+        <RegExpr attribute="Property Type" String="[a-zA-Z_$][\w$]*\s*(?=:)" />
+        <DetectChar attribute="Normal Text" char="}" endRegion="Brace" context="#pop" />
+        <IncludeRules context="Normal" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"  spellChecking="false" />
+      <itemData name="Import"  defStyleNum="dsKeyword"  spellChecking="false" />
+      <itemData name="ImportValue"  defStyleNum="dsString"  spellChecking="false" />
+      <itemData name="Keywords"  defStyleNum="dsKeyword"  spellChecking="false" />
+      <itemData name="Elements" defStyleNum="dsKeyword" color="#008000" selColor="#00ffff" bold="0" italic="0" spellChecking="false"/>
+      <itemData name="Signal" defStyleNum="dsKeyword" color="#0095ff" selColor="#ffffff" spellChecking="false"/>
+      <itemData name="Property Type" defStyleNum="dsDataType" spellChecking="false" />
+      <itemData name="String"       defStyleNum="dsString" />
+      <itemData name="Escape"       defStyleNum="dsSpecialChar" spellChecking="false" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>
+
+<!-- kate: tab-width 2; replace-tabs on; indent-width 2; -->

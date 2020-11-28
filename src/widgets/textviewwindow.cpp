@@ -1,0 +1,183 @@
+#include "textviewwindow.h"
+
+#include <QTextDocument>
+#include <QDebug>
+#include <QScrollBar>
+#include <QToolBar>
+
+#include <vtextedit/vtextedit.h>
+#include <core/editorconfig.h>
+
+#include "textviewwindowhelper.h"
+#include "toolbarhelper.h"
+#include "editors/texteditor.h"
+#include <core/vnotex.h>
+#include <core/thememgr.h>
+
+using namespace vnotex;
+
+TextViewWindow::TextViewWindow(QWidget *p_parent)
+    : ViewWindow(p_parent)
+{
+    m_mode = Mode::Edit;
+    setupUI();
+}
+
+void TextViewWindow::setupUI()
+{
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+    const auto &textEditorConfig = editorConfig.getTextEditorConfig();
+
+    m_editorConfigRevision = editorConfig.revision();
+    m_textEditorConfigRevision = textEditorConfig.revision();
+
+    // Central widget.
+    {
+        auto config = createTextEditorConfig(textEditorConfig);
+        m_editor = new TextEditor(config, this);
+        setCentralWidget(m_editor);
+
+        if (textEditorConfig.getZoomDelta() != 0) {
+            m_editor->zoom(textEditorConfig.getZoomDelta());
+        }
+    }
+
+    TextViewWindowHelper::connectEditor(this);
+
+    // Status widget.
+    setStatusWidget(m_editor->statusWidget());
+
+    setupToolBar();
+}
+
+void TextViewWindow::setupToolBar()
+{
+    auto toolBar = new QToolBar(this);
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+    const int iconSize = editorConfig.getToolBarIconSize();
+    toolBar->setIconSize(QSize(iconSize, iconSize));
+
+    addToolBar(toolBar);
+
+    addAction(toolBar, ViewWindowToolBarHelper::Save);
+
+    toolBar->addSeparator();
+
+    addAction(toolBar, ViewWindowToolBarHelper::Attachment);
+
+    toolBar->addSeparator();
+
+    ToolBarHelper::addSpacer(toolBar);
+    addAction(toolBar, ViewWindowToolBarHelper::FindAndReplace);
+}
+
+void TextViewWindow::handleBufferChangedInternal()
+{
+    TextViewWindowHelper::handleBufferChanged(this);
+}
+
+void TextViewWindow::syncEditorFromBuffer()
+{
+    const bool old = m_propogateEditorToBuffer;
+    m_propogateEditorToBuffer = false;
+
+    auto buffer = getBuffer();
+    if (buffer) {
+        m_editor->setSyntax(QFileInfo(buffer->getPath()).suffix());
+        m_editor->setReadOnly(buffer->isReadOnly());
+        m_editor->setText(buffer->getContent());
+        m_editor->setModified(buffer->isModified());
+    } else {
+        m_editor->setSyntax("");
+        m_editor->setReadOnly(true);
+        m_editor->setText("");
+        m_editor->setModified(false);
+    }
+
+    m_bufferRevision = buffer ? buffer->getRevision() : 0;
+    m_propogateEditorToBuffer = old;
+}
+
+void TextViewWindow::syncEditorFromBufferContent()
+{
+    const bool old = m_propogateEditorToBuffer;
+    m_propogateEditorToBuffer = false;
+
+    auto buffer = getBuffer();
+    Q_ASSERT(buffer);
+    m_editor->setText(buffer->getContent());
+    m_editor->setModified(buffer->isModified());
+
+    m_bufferRevision = buffer->getRevision();
+    m_propogateEditorToBuffer = old;
+}
+
+QString TextViewWindow::getLatestContent() const
+{
+    return m_editor->getText();
+}
+
+void TextViewWindow::setModified(bool p_modified)
+{
+    m_editor->setModified(p_modified);
+}
+
+void TextViewWindow::handleEditorConfigChange()
+{
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+    const auto &textEditorConfig = editorConfig.getTextEditorConfig();
+
+    if (m_textEditorConfigRevision != textEditorConfig.revision()) {
+        m_textEditorConfigRevision = textEditorConfig.revision();
+        auto config = createTextEditorConfig(textEditorConfig);
+        m_editor->setConfig(config);
+
+        if (textEditorConfig.getZoomDelta() != 0) {
+            m_editor->zoom(textEditorConfig.getZoomDelta());
+        }
+    }
+}
+
+void TextViewWindow::setBufferRevisionAfterInvalidation(int p_bufferRevision)
+{
+    m_bufferRevision = p_bufferRevision;
+}
+
+void TextViewWindow::setMode(Mode p_mode)
+{
+    Q_UNUSED(p_mode);
+    Q_ASSERT(false);
+}
+
+QSharedPointer<vte::TextEditorConfig> TextViewWindow::createTextEditorConfig(const TextEditorConfig &p_config)
+{
+    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+    auto config = TextViewWindowHelper::createTextEditorConfig(p_config,
+                                                               themeMgr.getFile(Theme::File::TextEditorStyle),
+                                                               themeMgr.getEditorHighlightTheme());
+    return config;
+}
+
+void TextViewWindow::scrollUp()
+{
+    QScrollBar *vbar = m_editor->getTextEdit()->verticalScrollBar();
+    if (vbar && (vbar->minimum() != vbar->maximum())) {
+        vbar->triggerAction(QAbstractSlider::SliderSingleStepAdd);
+    }
+}
+
+void TextViewWindow::scrollDown()
+{
+    QScrollBar *vbar = m_editor->getTextEdit()->verticalScrollBar();
+    if (vbar && (vbar->minimum() != vbar->maximum())) {
+        vbar->triggerAction(QAbstractSlider::SliderSingleStepSub);
+    }
+}
+
+void TextViewWindow::zoom(bool p_zoomIn)
+{
+    m_editor->zoom(m_editor->zoomDelta() + (p_zoomIn ? 1 : -1));
+    auto &textEditorConfig = ConfigMgr::getInst().getEditorConfig().getTextEditorConfig();
+    textEditorConfig.setZoomDelta(m_editor->zoomDelta());
+    showZoomDelta(m_editor->zoomDelta());
+}

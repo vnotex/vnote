@@ -1,0 +1,1005 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--***********************************************************************-->
+<!-- $Id: systemverilog.xml 10 2009-06-25 03:41:39Z seanoboyle $            -->
+<!--***********************************************************************-->
+<!--  This program is free software: you can redistribute it and/or modify -->
+<!--  it under the terms of the GNU General Public License as published by -->
+<!--  the Free Software Foundation, either version 3 of the License, or    -->
+<!--  (at your option) any later version.                                  -->
+<!--                                                                       -->
+<!--  This program is distributed in the hope that it will be useful,      -->
+<!--  but WITHOUT ANY WARRANTY; without even the implied warranty of       -->
+<!--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        -->
+<!--  GNU General Public License for more details.                         -->
+<!--                                                                       -->
+<!--  You should have received a copy of the GNU General Public License    -->
+<!--  along with this program.  If not, see <http://www.gnu.org/licenses/>.-->
+<!--                                                                       -->
+<!--***********************************************************************-->
+<!-- Title:        SystemVerilog Language Keywords File for Kate Editor    -->
+<!-- Description:  This file contains the SV keywords defined in the       -->
+<!--               IEEE1800-2009 Draft Standard in the format expected by  -->
+<!--               the Kate Editor.                                        -->
+<!--                                                                       -->
+<!-- Original Author: Sean O'Boyle                                         -->
+<!-- Contact:         seanoboyle@intelligentdv.com                         -->
+<!-- Company:         Intelligent Design Verification                      -->
+<!-- Company URL:     http://intelligentdv.com                             -->
+<!--                                                                       -->
+<!-- Download the most recent version here:                                -->
+<!--                  http://intelligentdv.com/downloads                   -->
+<!--                                                                       -->
+<!-- File Bugs Here:  http://bugs.intelligentdv.com                        -->
+<!--        Project:  SyntaxFiles                                          -->
+<!--                                                                       -->
+<!-- File: systemverilog.xml                                               -->
+<!-- $LastChangedBy: seanoboyle $                                          -->
+<!-- $LastChangedDate: 2009-06-24 20:41:39 -0700 (Wed, 24 Jun 2009) $      -->
+<!-- $LastChangedRevision: 10 $                                             -->
+<!--                                                                       -->
+<!--***********************************************************************-->
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="SystemVerilog" version="7" kateversion="2.4" section="Hardware" extensions="*.sv;*.svh" mimetype="text/x-systemverilog-src" author="Sean O'Boyle (seanoboyle@intelligentdv.com)" license="GPLv3+">
+  <highlighting>
+    <list name="key_deprecated">
+       <item>defparam</item>
+       <item>deassign</item>
+    </list>
+
+    <list name="key_dpi">
+       <item>DPI</item>
+       <item>DPI-C</item>
+       <item>import</item>
+       <item>export</item>
+       <item>context</item>
+    </list>
+
+    <list name="key_assert">
+       <item>assert</item>
+       <item>assume</item>
+       <item>cover</item>
+       <item>expect</item>
+       <item>disable</item>
+       <item>iff</item>
+       <item>binsof</item>
+       <item>intersect</item>
+       <item>first_match</item>
+       <item>throughout</item>
+       <item>within</item>
+    </list>
+
+    <list name="key_coverage">
+       <item>coverpoint</item>
+       <item>cross</item>
+       <item>wildcard</item>
+       <item>bins</item>
+       <item>ignore_bins</item>
+       <item>illegal_bins</item>
+    </list>
+
+    <list name="key_generator">
+       <item>genvar</item>
+    </list>
+
+    <list name="key_conditional">
+       <item>if</item>
+       <item>else</item>
+       <item>unique</item>
+       <item>priority</item>
+       <item>matches</item>
+    </list>
+
+    <list name="key_case">
+       <item>default</item>
+    </list>
+
+    <list name="key_loop">
+       <item>forever</item>
+       <item>repeat</item>
+       <item>while</item>
+       <item>for</item>
+       <item>do</item>
+       <item>foreach</item>
+       <item>break</item>
+       <item>continue</item>
+       <item>return</item>
+    </list>
+
+    <list name="key_specify">
+       <item>pulsestyle_onevent</item>
+       <item>pulsestyle_ondetect</item>
+       <item>noshowcancelled</item>
+       <item>showcancelled</item>
+       <item>ifnone</item>
+    </list>
+
+    <list name="key_procblock">
+       <item>initial</item>
+       <item>final</item>
+       <item>always</item>
+       <item>always_comb</item>
+       <item>always_ff</item>
+       <item>always_latch</item>
+    </list>
+
+    <list name="key_contassign">
+       <item>alias</item>
+       <item>assign</item>
+       <item>force</item>
+       <item>release</item>
+    </list>
+
+    <list name="key_event">
+       <item>posedge</item>
+       <item>negedge</item>
+       <item>edge</item>
+       <item>wait</item>
+       <item>wait_order</item>
+    </list>
+
+    <list name="key_time">
+       <item>timeunit</item>
+       <item>timeprecision</item>
+       <item>s</item>
+       <item>ms</item>
+       <item>ns</item>
+       <item>us</item>
+       <item>ns</item>
+       <item>ps</item>
+       <item>fs</item>
+       <item>step</item>
+    </list>
+
+    <list name="key_class">
+       <item>new</item>
+       <item>extends</item>
+       <item>this</item>
+       <item>super</item>
+       <item>protected</item>
+       <item>local</item>
+       <item>rand</item>
+       <item>randc</item>
+       <item>bind</item>
+    </list>
+
+    <list name="key_constraint">
+       <item>constraint</item>
+       <item>solve</item>
+       <item>before</item>
+       <item>dist</item>
+       <item>inside</item>
+       <item>with</item>
+    </list>
+
+    <list name="key_methods">
+       <item>virtual</item>
+       <item>pure</item>
+       <item>extern</item>
+       <item>forkjoin</item>
+    </list>
+
+    <list name="key_config">
+       <item>design</item>
+       <item>instance</item>
+       <item>cell</item>
+       <item>liblist</item>
+       <item>use</item>
+    </list>
+
+    <list name="key_library">
+       <item>library</item>
+       <item>incdir</item>
+       <item>include</item>
+    </list>
+
+    <list name="key_interface">
+       <item>modport</item>
+    </list>
+
+    <list name="key_checker">
+        <item>sync_accept_on</item>
+        <item>reject_on</item>
+        <item>accept_on</item>
+        <item>sync_reject_on</item>
+        <item>restrict</item>
+        <item>let</item>
+        <item>until</item>
+        <item>until_with</item>
+        <item>unique0</item>
+        <item>eventually</item>
+        <item>s_until</item>
+        <item>s_always</item>
+        <item>s_eventually</item>
+        <item>s_nexttime</item>
+        <item>s_until_with</item>
+        <item>global</item>
+        <item>untyped</item>
+        <item>implies</item>
+        <item>weak</item>
+        <item>strong</item>
+        <item>nexttime</item>
+    </list>
+
+    <list name="key_types">
+       <!-- parameters -->
+       <item>parameter</item>
+       <item>localparam</item>
+       <item>specparam</item>
+       <!-- port direction -->
+       <item>input</item>
+       <item>output</item>
+       <item>inout</item>
+       <item>ref</item>
+       <!-- integer atom type -->
+       <item>byte</item>
+       <item>shortint</item>
+       <item>int</item>
+       <item>integer</item>
+       <item>longint</item>
+       <item>time</item>
+       <!-- integer vector type -->
+       <item>bit</item>
+       <item>logic</item>
+       <item>reg</item>
+       <!-- net type -->
+       <item>supply0</item>
+       <item>supply1</item>
+       <item>tri</item>
+       <item>triand</item>
+       <item>trior</item>
+       <item>trireg</item>
+       <item>tri0</item>
+       <item>tri1</item>
+       <item>wire</item>
+       <item>uwire</item>
+       <item>wand</item>
+       <item>wor</item>
+       <!-- signing -->
+       <item>signed</item>
+       <item>unsigned</item>
+       <!-- noninteger type -->
+       <item>shortreal</item>
+       <item>real</item>
+       <item>realtime</item>
+       <!-- type reference -->
+       <item>type</item>
+       <item>void</item>
+       <!-- struct union -->
+       <item>struct</item>
+       <item>union</item>
+       <item>tagged</item>
+       <!-- modifier -->
+       <item>const</item>
+       <item>var</item>
+       <item>automatic</item>
+       <item>static</item>
+       <item>packed</item>
+       <item>vectored</item>
+       <item>scalared</item>
+       <!-- other types -->
+       <item>typedef</item>
+       <item>enum</item>
+       <item>string</item>
+       <item>chandle</item>
+       <item>event</item>
+       <!-- misc -->
+       <item>null</item>
+    </list>
+
+    <list name="key_preprocessor">
+        <item>`__FILE__</item>
+        <item>`__LINE__</item>
+        <item>`begin_keywords</item>
+        <item>`celldefine</item>
+        <item>`default_nettype</item>
+        <item>`define</item>
+        <item>`else</item>
+        <item>`elsif</item>
+        <item>`end_keywords</item>
+        <item>`endcelldefine</item>
+        <item>`endif</item>
+        <item>`ifdef</item>
+        <item>`ifndef</item>
+        <item>`include</item>
+        <item>`line</item>
+        <item>`nounconnected_drive</item>
+        <item>`pragma</item>
+        <item>`resetall</item>
+        <item>`timescale</item>
+        <item>`unconnected_drive</item>
+        <item>`undef</item>
+        <item>`undefineall</item>
+    </list>
+
+    <list name="key_system">
+        <item>$finish</item>
+        <item>$stop</item>
+        <item>$exit</item>
+        <item>$realtime</item>
+        <item>$stime</item>
+        <item>$time</item>
+        <item>$printtimescale</item>
+        <item>$timeformat</item>
+        <item>$bitstoreal</item>
+        <item>$realtobits</item>
+        <item>$bitstoshortreal</item>
+        <item>$shortrealtobits</item>
+        <item>$itor</item>
+        <item>$rtoi</item>
+        <item>$signed</item>
+        <item>$unsigned</item>
+        <item>$cast</item>
+        <item>$bits</item>
+        <item>$isunbounded</item>
+        <item>$typename</item>
+        <item>$unpacked_dimensions</item>
+        <item>$dimensions</item>
+        <item>$left</item>
+        <item>$right</item>
+        <item>$low</item>
+        <item>$high</item>
+        <item>$increment</item>
+        <item>$size</item>
+        <item>$clog2</item>
+        <item>$asin</item>
+        <item>$ln</item>
+        <item>$acos</item>
+        <item>$log10</item>
+        <item>$atan</item>
+        <item>$exp</item>
+        <item>$atan2</item>
+        <item>$sqrt</item>
+        <item>$hypot</item>
+        <item>$pow</item>
+        <item>$sinh</item>
+        <item>$floor</item>
+        <item>$cosh</item>
+        <item>$ceil</item>
+        <item>$tanh</item>
+        <item>$sin</item>
+        <item>$asinh</item>
+        <item>$cos</item>
+        <item>$acosh</item>
+        <item>$tan</item>
+        <item>$atanh</item>
+        <item>$fatal</item>
+        <item>$error</item>
+        <item>$warning</item>
+        <item>$info</item>
+        <item>$fatal</item>
+        <item>$error</item>
+        <item>$warning</item>
+        <item>$info</item>
+        <item>$asserton</item>
+        <item>$assertoff</item>
+        <item>$assertkill</item>
+        <item>$assertpasson</item>
+        <item>$assertpassoff</item>
+        <item>$assertfailon</item>
+        <item>$assertfailoff</item>
+        <item>$assertnonvacuouson</item>
+        <item>$assertvacuousoff</item>
+        <item>$onehot</item>
+        <item>$onehot0</item>
+        <item>$isunknown</item>
+        <item>$sampled</item>
+        <item>$rose</item>
+        <item>$fell</item>
+        <item>$stable</item>
+        <item>$changed</item>
+        <item>$past</item>
+        <item>$countones</item>
+        <item>$past_gclk</item>
+        <item>$rose_gclk</item>
+        <item>$fell_gclk</item>
+        <item>$stable_gclk</item>
+        <item>$changed_gclk</item>
+        <item>$future_gclk</item>
+        <item>$rising_gclk</item>
+        <item>$falling_gclk</item>
+        <item>$steady_gclk</item>
+        <item>$changing_gclk</item>
+        <item>$coverage_control</item>
+        <item>$coverage_get_max</item>
+        <item>$coverage_get</item>
+        <item>$coverage_merge</item>
+        <item>$coverage_save</item>
+        <item>$get_coverage</item>
+        <item>$set_coverage_db_name</item>
+        <item>$load_coverage_db</item>
+        <item>$random</item>
+        <item>$dist_chi_square</item>
+        <item>$dist_erlang</item>
+        <item>$dist_exponential</item>
+        <item>$dist_normal</item>
+        <item>$dist_poisson</item>
+        <item>$dist_t</item>
+        <item>$dist_uniform</item>
+        <item>$q_initialize</item>
+        <item>$q_add</item>
+        <item>$q_remove</item>
+        <item>$q_full</item>
+        <item>$q_exam</item>
+        <item>$async$and$array</item>
+        <item>$async$and$plane</item>
+        <item>$async$nand$array</item>
+        <item>$async$nand$plane</item>
+        <item>$async$or$array</item>
+        <item>$async$or$plane</item>
+        <item>$async$nor$array</item>
+        <item>$async$nor$plane</item>
+        <item>$sync$and$array</item>
+        <item>$sync$and$plane</item>
+        <item>$sync$nand$array</item>
+        <item>$sync$nand$plane</item>
+        <item>$sync$or$array</item>
+        <item>$sync$or$plane</item>
+        <item>$sync$nor$array</item>
+        <item>$sync$nor$plane</item>
+        <item>$system</item>
+        <item>$display</item>
+        <item>$write</item>
+        <item>$displayb</item>
+        <item>$writeb</item>
+        <item>$displayh</item>
+        <item>$writeh</item>
+        <item>$displayo</item>
+        <item>$writeo</item>
+        <item>$strobe</item>
+        <item>$monitor</item>
+        <item>$strobeb</item>
+        <item>$monitorb</item>
+        <item>$strobeh</item>
+        <item>$monitorh</item>
+        <item>$strobeo</item>
+        <item>$monitoro</item>
+        <item>$monitoroff</item>
+        <item>$monitoron</item>
+        <item>$fclose</item>
+        <item>$fopen</item>
+        <item>$fdisplay</item>
+        <item>$fwrite</item>
+        <item>$fdisplayb</item>
+        <item>$fwriteb</item>
+        <item>$fdisplayh</item>
+        <item>$fwriteh</item>
+        <item>$fdisplayo</item>
+        <item>$fwriteo</item>
+        <item>$fstrobe</item>
+        <item>$fmonitor</item>
+        <item>$fstrobeb</item>
+        <item>$fmonitorb</item>
+        <item>$fstrobeh</item>
+        <item>$fmonitorh</item>
+        <item>$fstrobeo</item>
+        <item>$fmonitoro</item>
+        <item>$swrite</item>
+        <item>$sformat</item>
+        <item>$swriteb</item>
+        <item>$sformatf</item>
+        <item>$swriteh</item>
+        <item>$fgetc</item>
+        <item>$swriteo</item>
+        <item>$ungetc</item>
+        <item>$fscanf</item>
+        <item>$fgets</item>
+        <item>$fread</item>
+        <item>$sscanf</item>
+        <item>$fseek</item>
+        <item>$rewind</item>
+        <item>$fflush</item>
+        <item>$ftell</item>
+        <item>$feof</item>
+        <item>$ferror</item>
+        <item>$readmemb</item>
+        <item>$readmemh</item>
+        <item>$writememb</item>
+        <item>$writememh</item>
+        <item>$test$plusargs</item>
+        <item>$value$plusargs</item>
+        <item>$dumpfile</item>
+        <item>$dumpvars</item>
+        <item>$dumpoff</item>
+        <item>$dumpon</item>
+        <item>$dumpall</item>
+        <item>$dumplimit</item>
+        <item>$dumpflush</item>
+        <item>$dumpports</item>
+        <item>$dumpportsoff</item>
+        <item>$dumpportson</item>
+        <item>$dumpportsall</item>
+        <item>$dumpportslimit</item>
+        <item>$dumpportsflush</item>
+    </list>
+
+    <list name="key_gates">
+       <item>pullup</item>
+       <item>pulldown</item>
+       <item>cmos</item>
+       <item>rcmos</item>
+       <item>nmos</item>
+       <item>pmos</item>
+       <item>rnmos</item>
+       <item>rpmos</item>
+       <item>and</item>
+       <item>nand</item>
+       <item>or</item>
+       <item>nor</item>
+       <item>xor</item>
+       <item>xnor</item>
+       <item>not</item>
+       <item>buf</item>
+       <item>tran</item>
+       <item>rtran</item>
+       <item>tranif0</item>
+       <item>tranif1</item>
+       <item>rtranif0</item>
+       <item>rtranif1</item>
+       <item>bufif0</item>
+       <item>bufif1</item>
+       <item>notif0</item>
+       <item>notif1</item>
+    </list>
+
+    <list name="key_strength">
+       <!-- drive strength -->
+       <item>strong0</item>
+       <item>strong1</item>
+       <item>pull0</item>
+       <item>pull1</item>
+       <item>weak0</item>
+       <item>weak1</item>
+       <item>highz0</item>
+       <item>highz1</item>
+       <!-- charge strength -->
+       <item>small</item>
+       <item>medium</item>
+       <item>large</item>
+    </list>
+    <list name="key_stdlib">
+       <item>randomize</item>
+       <item>mailbox</item>
+       <item>semaphore</item>
+       <item>put</item>
+       <item>get</item>
+       <item>try_put</item>
+       <item>try_get</item>
+       <item>peek</item>
+       <item>try_peek</item>
+       <item>process</item>
+       <item>state</item>
+       <item>self</item>
+       <item>status</item>
+       <item>kill</item>
+       <item>await</item>
+       <item>suspend</item>
+       <item>resume</item>
+       <!-- Array -->
+       <item>size</item>
+       <item>delete</item>
+       <item>insert</item>
+       <item>num</item>
+       <item>first</item>
+       <item>last</item>
+       <item>next</item>
+       <item>prev</item>
+       <item>pop_front</item>
+       <item>pop_back</item>
+       <item>push_front</item>
+       <item>push_back</item>
+       <item>find</item>
+       <item>find_index</item>
+       <item>find_first</item>
+       <item>find_last</item>
+       <item>find_last_index</item>
+       <item>min</item>
+       <item>max</item>
+       <item>unique_index</item>
+       <item>reverse</item>
+       <item>sort</item>
+       <item>rsort</item>
+       <item>shuffle</item>
+       <item>sum</item>
+       <item>product</item>
+       <!-- List_pkg -->
+       <item>List</item>
+       <item>List_Iterator</item>
+       <item>neq</item>
+       <item>eq</item>
+       <item>data</item>
+       <item>empty</item>
+       <item>front</item>
+       <item>back</item>
+       <item>start</item>
+       <item>finish</item>
+       <item>insert_range</item>
+       <item>erase</item>
+       <item>erase_range</item>
+       <item>set</item>
+       <item>swap</item>
+       <item>clear</item>
+       <item>purge</item>
+    </list>
+
+    <list name="begin">
+       <item>begin</item>
+    </list>
+    <list name="end">
+       <item>end</item>
+    </list>
+    <list name="package">
+       <item>package</item>
+    </list>
+    <list name="endpackage">
+       <item>endpackage</item>
+    </list>
+    <list name="macromodule">
+       <item>macromodule</item>
+    </list>
+    <list name="module">
+       <item>module</item>
+    </list>
+    <list name="endmodule">
+       <item>endmodule</item>
+    </list>
+    <list name="generate">
+       <item>generate</item>
+    </list>
+    <list name="endgenerate">
+       <item>endgenerate</item>
+    </list>
+    <list name="program">
+       <item>program</item>
+    </list>
+    <list name="endprogram">
+       <item>endprogram</item>
+    </list>
+    <list name="class">
+       <item>class</item>
+    </list>
+    <list name="endclass">
+       <item>endclass</item>
+    </list>
+    <list name="function">
+       <item>function</item>
+    </list>
+    <list name="endfunction">
+       <item>endfunction</item>
+    </list>
+    <list name="case">
+       <item>case</item>
+    </list>
+    <list name="casex">
+       <item>casex</item>
+    </list>
+    <list name="casez">
+       <item>casez</item>
+    </list>
+    <list name="randcase">
+       <item>randcase</item>
+    </list>
+    <list name="endcase">
+       <item>endcase</item>
+    </list>
+    <list name="interface">
+       <item>interface</item>
+    </list>
+    <list name="endinterface">
+       <item>endinterface</item>
+    </list>
+    <list name="clocking">
+       <item>clocking</item>
+    </list>
+    <list name="endclocking">
+       <item>endclocking</item>
+    </list>
+    <list name="task">
+       <item>task</item>
+    </list>
+    <list name="endtask">
+       <item>endtask</item>
+    </list>
+    <list name="primitive">
+       <item>primitive</item>
+    </list>
+    <list name="endprimitive">
+       <item>endprimitive</item>
+    </list>
+    <list name="fork">
+       <item>fork</item>
+    </list>
+    <list name="join">
+       <item>join</item>
+    </list>
+    <list name="join_any">
+       <item>join_any</item>
+    </list>
+    <list name="join_none">
+       <item>join_none</item>
+    </list>
+    <list name="covergroup">
+       <item>covergroup</item>
+    </list>
+    <list name="endgroup">
+       <item>endgroup</item>
+    </list>
+    <list name="checker">
+       <item>checker</item>
+    </list>
+    <list name="endchecker">
+       <item>endchecker</item>
+    </list>
+    <list name="property">
+       <item>property</item>
+    </list>
+    <list name="endproperty">
+       <item>endproperty</item>
+    </list>
+    <list name="randsequence">
+       <item>randsequence</item>
+    </list>
+    <list name="sequence">
+       <item>sequence</item>
+    </list>
+    <list name="endsequence">
+       <item>endsequence</item>
+    </list>
+    <list name="specify">
+       <item>specify</item>
+    </list>
+    <list name="endspecify">
+       <item>endspecify</item>
+    </list>
+    <list name="config">
+       <item>config</item>
+    </list>
+    <list name="endconfig">
+       <item>endconfig</item>
+    </list>
+    <list name="table">
+       <item>table</item>
+    </list>
+    <list name="endtable">
+       <item>endtable</item>
+    </list>
+    <list name="extern">
+       <item>extern</item>
+    </list>
+    <list name="pure">
+       <item>pure</item>
+    </list>
+    <list name="typedef">
+       <item>typedef</item>
+    </list>
+    <list name="import">
+       <item>import</item>
+    </list>
+
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1"/>
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"/>
+        <RegExpr attribute="Block Keyword" context="Block Name" String="begin\ *:" beginRegion="beginEnd"/>
+        <keyword attribute="Method Keyword" context="Extern Context" String="extern"/>
+        <keyword attribute="Method Keyword" context="Extern Context" String="pure"/>
+        <keyword attribute="Method Keyword" context="Extern Context" String="import"/>
+        <keyword attribute="Type Keyword" context="Typedef Context" String="typedef"/>
+        <keyword attribute="Block Keyword" context="#stay" String="begin" beginRegion="beginEnd"/>
+        <keyword attribute="Block Keyword" context="#stay" String="end" endRegion="beginEnd"/>
+        <keyword attribute="Block Keyword" context="#stay" String="package" beginRegion="packageEndpackage"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endpackage" endRegion="packageEndpackage"/>
+        <keyword attribute="Block Keyword" context="#stay" String="macromodule" beginRegion="moduleEndmodule"/>
+        <keyword attribute="Block Keyword" context="#stay" String="module" beginRegion="moduleEndmodule"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endmodule" endRegion="moduleEndmodule"/>
+        <keyword attribute="Block Keyword" context="#stay" String="generate" beginRegion="generateEndgenerate"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endgenerate" endRegion="generateEndgenerate"/>
+        <keyword attribute="Block Keyword" context="#stay" String="program" beginRegion="programEndprogram"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endprogram" endRegion="programEndprogram"/>
+        <keyword attribute="Block Keyword" context="#stay" String="class" beginRegion="classEndclass"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endclass" endRegion="classEndclass"/>
+        <keyword attribute="Block Keyword" context="#stay" String="function" beginRegion="functionEndfunction"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endfunction" endRegion="functionEndfunction"/>
+        <keyword attribute="Block Keyword" context="#stay" String="case" beginRegion="caseEndcase"/>
+        <keyword attribute="Block Keyword" context="#stay" String="casex" beginRegion="caseEndcase"/>
+        <keyword attribute="Block Keyword" context="#stay" String="casez" beginRegion="caseEndcase"/>
+        <keyword attribute="Block Keyword" context="#stay" String="randcase" beginRegion="caseEndcase"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endcase" endRegion="caseEndcase"/>
+        <keyword attribute="Block Keyword" context="#stay" String="interface" beginRegion="interfaceEndinterface"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endinterface" endRegion="interfaceEndinterface"/>
+        <keyword attribute="Block Keyword" context="#stay" String="clocking" beginRegion="clockingEndclocking"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endclocking" endRegion="clockingEndclocking"/>
+        <keyword attribute="Block Keyword" context="#stay" String="task" beginRegion="taskEndtask"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endtask" endRegion="taskEndtask"/>
+        <keyword attribute="Block Keyword" context="#stay" String="primitive" beginRegion="primitiveEndprimitive"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endprimitive" endRegion="primitiveEndprimitive"/>
+        <keyword attribute="Block Keyword" context="#stay" String="fork" beginRegion="forkJoin"/>
+        <keyword attribute="Block Keyword" context="#stay" String="join" endRegion="forkJoin"/>
+        <keyword attribute="Block Keyword" context="#stay" String="join_any" endRegion="forkJoin"/>
+        <keyword attribute="Block Keyword" context="#stay" String="join_none" endRegion="forkJoin"/>
+        <keyword attribute="Block Keyword" context="#stay" String="covergroup" beginRegion="covergroupEndgroup"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endgroup" endRegion="covergroupEndgroup"/>
+        <keyword attribute="Block Keyword" context="#stay" String="checker" beginRegion="checkerEndchecker"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endchecker" endRegion="checkerEndchecker"/>
+        <keyword attribute="Block Keyword" context="#stay" String="property" beginRegion="propertyEndproperty"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endproperty" endRegion="propertyEndproperty"/>
+        <keyword attribute="Block Keyword" context="#stay" String="randsequence" beginRegion="sequenceEndsequence"/>
+        <keyword attribute="Block Keyword" context="#stay" String="sequence" beginRegion="sequenceEndsequence"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endsequence" endRegion="sequenceEndsequence"/>
+        <keyword attribute="Block Keyword" context="#stay" String="specify" beginRegion="specifyEndspecify"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endspecify" endRegion="specifyEndspecify"/>
+        <keyword attribute="Block Keyword" context="#stay" String="config" beginRegion="configEndconfig"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endconfig" endRegion="configEndconfig"/>
+        <keyword attribute="Block Keyword" context="#stay" String="table" beginRegion="tableEndtable"/>
+        <keyword attribute="Block Keyword" context="#stay" String="endtable" endRegion="tableEndtable"/>
+        <keyword attribute="Deprecated Keyword" context="#stay" String="key_deprecated"/>
+        <keyword attribute="DPI Keyword" context="#stay" String="key_dpi"/>
+        <keyword attribute="Assert Keyword" context="#stay" String="key_assert"/>
+        <keyword attribute="Coverage Keyword" context="#stay" String="key_coverage"/>
+        <keyword attribute="Generator Keyword" context="#stay" String="key_generator"/>
+        <keyword attribute="Confitional Keyword" context="#stay" String="key_conditional"/>
+        <keyword attribute="Case Keyword" context="#stay" String="key_case"/>
+        <keyword attribute="Loop Keyword" context="#stay" String="key_loop"/>
+        <keyword attribute="Specify Keyword" context="#stay" String="key_specify"/>
+        <keyword attribute="Process Block Keyword" context="#stay" String="key_procblock"/>
+        <keyword attribute="Continuous Assign Keyword" context="#stay" String="key_contassign"/>
+        <keyword attribute="Event Keyword" context="#stay" String="key_event"/>
+        <keyword attribute="Time Keyword" context="#stay" String="key_time"/>
+        <keyword attribute="Class Keyword" context="#stay" String="key_class"/>
+        <keyword attribute="Constraint Keyword" context="#stay" String="key_constraint"/>
+        <keyword attribute="Method Keyword" context="#stay" String="key_methods"/>
+        <keyword attribute="Config Keyword" context="#stay" String="key_config"/>
+        <keyword attribute="Library Keyword" context="#stay" String="key_library"/>
+        <keyword attribute="Interface Keyword" context="#stay" String="key_interface"/>
+        <keyword attribute="Checker Keyword" context="#stay" String="key_checker"/>
+        <keyword attribute="Type Keyword" context="#stay" String="key_types"/>
+        <keyword attribute="Preprocessor Keyword" context="#stay" String="key_preprocessor"/>
+        <keyword attribute="System Task Keyword" context="#stay" String="key_system"/>
+        <keyword attribute="Data Type Keyword" context="#stay" String="key_types"/>
+        <keyword attribute="Drive/Charge Strength Keyword" context="#stay" String="key_strength"/>
+        <keyword attribute="Gate Instantiation Keyword" context="#stay" String="key_gates"/>
+        <keyword attribute="Standard Library" context="#stay" String="key_stdlib"/>
+
+        <RegExpr attribute="Decimal" context="#stay" String="[\d_]*'d[\d_]+"/>
+        <RegExpr attribute="Octal" context="#stay" String="[\d_]*'o[0-7xXzZ_]+"/>
+        <RegExpr attribute="Hex" context="#stay" String="[\d_]*'h[\da-fA-FxXzZ_]+"/>
+        <RegExpr attribute="Binary" context="#stay" String="[\d_]*'b[01_zZxX]+"/>
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Integer" context="#stay"/>
+
+        <RegExpr attribute="Port Connection" context="#stay" String="[^\w$]\.[a-zA-Z]+[\w$]*"/>
+
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+        <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=+/:;&gt;?[]^{|}~@"/>
+
+        <DetectChar attribute="Preprocessor" context="Preprocessor" char="`" column="0"/>
+        <RegExpr attribute="Preprocessor" context="#stay" String="\`[a-zA-Z_]+\w*" />
+        <RegExpr attribute="PLI Task" context="#stay" String="\$[a-zA-Z_]+\w*"/>
+        <RegExpr attribute="Delay" context="#stay" String="#[\d_]+"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Extern Context">
+         <keyword attribute="Method Keyword" context="#stay" String="key_methods"/>
+         <keyword attribute="DPI Keyword" context="#stay" String="key_dpi"/>
+         <keyword attribute="Class Keyword" context="#stay" String="key_class"/>
+	      <keyword attribute="Constraint Keyword" context="#stay" String="key_constraint"/>
+         <keyword attribute="Block Keyword" context="#pop" String="function"/>
+         <keyword attribute="Block Keyword" context="#pop" String="task"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Typedef Context">
+         <keyword attribute="Block Keyword" context="#pop" String="class"/>
+         <keyword attribute="Type Keyword" context="#pop" String="key_types"/>
+         <keyword attribute="Interface Keyword" context="#pop" String="key_interface"/>
+         <keyword attribute="Checker Keyword" context="#pop" String="key_checker"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+        <LineContinue attribute="Comment" context="#stay"/>
+        <DetectSpaces />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+     
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="Commentar/Preprocessor" char="/" char1="*" beginRegion="Comment2" />
+
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar/Preprocessor">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment2" />
+        <DetectIdentifier />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Outscoped intern">
+        <DetectSpaces />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+        <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="PP" firstNonSpace="true" />
+        <RegExpr attribute="Comment" context="#pop" String="#\s*endif" endRegion="PP" firstNonSpace="true" />
+      </context>
+      
+      <context attribute="Block Name" lineEndContext="#pop" name="Block Name">
+          <RegExpr attribute="Data Type Keyword" context="#pop" String="[^ ]+"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Block Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="DPI Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Assert Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Coverage Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Generator Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Confitional Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Case Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Loop Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Specify Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Process Block Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Continuous Assign Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Event Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Time Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Class Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Constraint Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Method Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Config Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Library Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Interface Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Checker Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Type Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Preprocessor Keyword" defStyleNum="dsOthers"/>
+      <itemData name="Preprocessor" defStyleNum="dsOthers"/>
+      <itemData name="System Task Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Data Type Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Drive/Charge Strength Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Gate Instantiation Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Decimal" defStyleNum="dsBaseN"/>
+      <itemData name="Octal" defStyleNum="dsBaseN"/>
+      <itemData name="Hex" defStyleNum="dsBaseN"/>
+      <itemData name="Binary" defStyleNum="dsBaseN"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="String Char" defStyleNum="dsChar"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Deprecated Keyword" defStyleNum="dsError"/>
+      <itemData name="Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Prep. Lib" defStyleNum="dsFloat"/>
+      <itemData name="PLI Task" defStyleNum="dsDataType"/>
+      <itemData name="Integer" defStyleNum="dsDecVal"/>
+      <itemData name="Delay" defStyleNum="dsBaseN"/>
+      <itemData name="Block Name" defStyleNum="dsDataType"/>
+      <itemData name="Port Connection" defStyleNum="dsDataType"/>
+      <itemData name="Standard Library" defStyleNum="dsOthers"/>
+      </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+</language>

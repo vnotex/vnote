@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Stan"
+          section="Scientific"
+          version="1"
+          kateversion="5.0"
+          indenter="cstyle"
+          extensions="*.stan;*.stanfuncs"
+          license="MIT">
+  <highlighting>
+    <list name="controlflow">
+      <item>break</item>
+      <item>continue</item>
+      <item>else</item>
+      <item>for</item>
+      <item>if</item>
+      <item>in</item>
+      <item>return</item>
+      <item>while</item>
+    </list>
+    <list name="keywords">
+      <item>reject</item>
+      <item>print</item>
+      <item>integrate_ode</item>
+      <item>integrate_ode_bdf</item>
+      <item>integrate_ode_rk45</item>
+      <item>algebra_solver</item>
+    </list>
+    <list name="types">
+      <item>int</item>
+      <item>real</item>
+      <item>vector</item>
+      <item>ordered</item>
+      <item>positive_ordered</item>
+      <item>simplex</item>
+      <item>unit_vector</item>
+      <item>row_vector</item>
+      <item>matrix</item>
+      <item>cholesky_factor_corr</item>
+      <item>cholesky_factor_cov</item>
+      <item>corr_matrix</item>
+      <item>cov_matrix</item>
+      <item>void</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectSpaces />
+        <DetectChar attribute="Comment" context="Hash comment" char="#"/>
+        <Detect2Chars attribute="Comment" context="C-style comment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Block comment" char="/" char1="*" beginRegion="Comment"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\btarget\s*\+=" />
+        <DetectChar attribute="Operator" context="After less-than" char="&lt;" />
+        <DetectChar attribute="Punctuation" context="After comma" char="," />
+        <DetectChar attribute="Operator" context="After Right Paren" char=")" />
+        <RegExpr attribute="Keyword" context="#stay" String="\b(functions|(transformed\s+)?(data|parameters)|model|generated\s+quantities)\b" />
+        <keyword attribute="Control Flow" context="#stay" String="controlflow" />
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Data Type" context="#stay" String="types" />
+        <RegExpr attribute="Identifier" context="#stay" String="[A-Za-z][A-Za-z0-9_]*" />
+        <Float attribute="Real" />
+        <Int attribute="Int" />
+        <DetectChar attribute="Punctuation" context="#stay" char="{" beginRegion="Brace1" />
+        <DetectChar attribute="Punctuation" context="#stay" char="}" endRegion="Brace1" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <RegExpr attribute="Assignment" context="#stay" String="([+-]?=|\.?[*/]=)" />
+        <RegExpr attribute="Operator" context="#stay" String="(:|\?|\|\||&amp;&amp;|==|!=|&lt;=?|&gt;=?|\+|-|\.?\*|\.?/|%|\\|'|^)" />
+        <RegExpr attribute="Punctuation" context="#stay" String="[[\]()]" />
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="String">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Hash comment">
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="C-style comment">
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Block comment">
+        <RegExpr attribute="Doc Tag" String="@(return|param)\b" context="#stay" />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+      </context>
+      <context attribute="Normal Text" name="After comma" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop" >
+        <DetectSpaces />
+        <RegExpr context="Upper Bound" String="upper\s*=" lookAhead="true" />
+      </context>
+      <context attribute="Normal Text" name="After less-than" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop" >
+        <DetectSpaces />
+        <RegExpr context="Upper Bound" String="upper\s*=" lookAhead="true" />
+        <RegExpr context="Lower Bound" String="lower\s*=" lookAhead="true" />
+      </context>
+      <context attribute="Normal Text" name="After Right Paren" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop" >
+        <DetectSpaces />
+        <RegExpr context="Truncation" String="T\s*\[" lookAhead="true" />
+      </context>
+      <context attribute="Normal Text" name="Upper Bound" lineEndContext="#stay" >
+        <RegExpr attribute="Keyword" String="upper" context="#stay" />
+        <DetectChar attribute="Punctuation" char="=" context="#pop" />
+      </context>
+      <context attribute="Normal Text" name="Lower Bound" lineEndContext="#stay" >
+        <RegExpr attribute="Keyword" String="lower" context="#stay" />
+        <DetectChar attribute="Punctuation" char="=" context="#pop" />
+      </context>
+      <context attribute="Normal Text" name="Truncation" lineEndContext="#stay" >
+        <DetectChar attribute="Keyword" char="T" context="#stay" />
+        <DetectChar attribute="Punctuation" char="[" context="#pop" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Data Type"    defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Int"          defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Real"         defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Assignment"   defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Operator"     defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Punctuation"  defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Identifier"   defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="Doc Tag"      defStyleNum="dsAnnotation" spellChecking="false" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

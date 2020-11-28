@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Wavefront OBJ" version="2" kateversion="5.0" section="3D" extensions="*.obj" mimetype="" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
+    <highlighting>
+        <list name="keywords">
+            <item>v</item>
+            <item>vt</item>
+            <item>vn</item>
+            <item>vp</item>
+            <item>cstype</item>
+            <item>deg</item>
+            <item>bmat</item>
+            <item>step</item>
+            <item>p</item>
+            <item>l</item>
+            <item>f</item>
+            <item>curv</item>
+            <item>curv2</item>
+            <item>surf</item>
+            <item>parm</item>
+            <item>trim</item>
+            <item>hole</item>
+            <item>scrv</item>
+            <item>sp</item>
+            <item>end</item>
+            <item>con</item>
+            <item>g</item>
+            <item>s</item>
+            <item>mg</item>
+            <item>o</item>
+            <item>bevel</item>
+            <item>c_interp</item>
+            <item>d_interp</item>
+            <item>lod</item>
+            <item>usemtl</item>
+            <item>mtllib</item>
+            <item>usemap</item>
+            <item>maplib</item>
+            <item>shadow_obj</item>
+            <item>trace_obj</item>
+            <item>ctech</item>
+            <item>stech</item>
+        </list>
+        <contexts>
+            <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces/>
+                <Float attribute="Float" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords" column="0"/>
+                <DetectChar attribute="Comment" context="Comment" char="#"/>
+            </context>
+            <context name="Comment" attribute="Comment" lineEndContext="#pop">
+                <IncludeRules context="##Alerts"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="Keyword"     defStyleNum="dsKeyword"/>
+            <itemData name="Decimal"     defStyleNum="dsDecVal"/>
+            <itemData name="Float"       defStyleNum="dsFloat"/>
+            <itemData name="Comment"     defStyleNum="dsComment"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="#"/>
+        </comments>
+    </general>
+</language>

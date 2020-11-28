@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="SML" version="4" kateversion="2.3" section="Sources" extensions="*.sml;*.ml" mimetype="" author="Christoph Cullmann (cullmann@kde.org)" license="MIT">
+  <highlighting>
+    <list name="keywords">
+      <item>abstype</item>
+      <item>and</item>
+      <item>andalso</item>
+      <item>as</item>
+      <item>case</item>
+      <item>do</item>
+      <item>datatype</item>
+      <item>else</item>
+      <item>end</item>
+      <item>eqtype</item>
+      <item>exception</item>
+      <item>false</item>
+      <item>fn</item>
+      <item>fun</item>
+      <item>functor</item>
+      <item>handle</item>
+      <item>if</item>
+      <item>in</item>
+      <item>include</item>
+      <item>infix</item>
+      <item>infixr</item>
+      <item>let</item>
+      <item>local</item>
+      <item>nonfix</item>
+      <item>of</item>
+      <item>op</item>
+      <item>open</item>
+      <item>orelse</item>
+      <item>raise</item>
+      <item>rec</item>
+      <item>sharing</item>
+      <item>sig</item>
+      <item>signature</item>
+      <item>struct</item>
+      <item>structure</item>
+      <item>then</item>
+      <item>true</item>
+      <item>type</item>
+      <item>val</item>
+      <item>where</item>
+      <item>with</item>
+      <item>withtype</item>
+      <item>while</item>
+    </list>
+    <list name="types">
+      <item>unit</item>
+      <item>int</item>
+      <item>real</item>
+      <item>char</item>
+      <item>string</item>
+      <item>substring</item>
+      <item>word</item>
+      <item>ref</item>
+      <item>array</item>
+      <item>vector</item>
+      <item>bool</item>
+      <item>list</item>
+      <item>option</item>
+      <item>order</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <Detect2Chars attribute="Comment" context="Multiline/Inline Comment" char="(" char1="*" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Data Type" context="#stay" String="types" />
+        <Float attribute="Float" context="Float Suffixes"/>
+        <HlCHex attribute="Decimal" context="#stay"/>
+        <Int attribute="Decimal" context="#stay" />
+      </context>
+      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <AnyChar String="fF" attribute="Float" context="#pop"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Multiline/Inline Comment">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")" />
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="String">
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword"/>
+      <itemData name="Data Type"  defStyleNum="dsDataType"/>
+      <itemData name="Decimal"  defStyleNum="dsDecVal"/>
+      <itemData name="Float"  defStyleNum="dsFloat"/>
+      <itemData name="String"  defStyleNum="dsString"/>
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="String Char"  defStyleNum="dsChar" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" />
+    <comments>
+      <comment name="multiLine" start="(*" end="*)" />
+    </comments>
+  </general>
+</language>

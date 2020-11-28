@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+Changes:
+
+Version 1.5 (2015-04-29) by Igor Zhuravlov
+- language/@kateversion upgraded from "2.4" to "3.4"
+
+Version 1.4 (2015-04-20) by Igor Zhuravlov
+- merge versions 1.2 and 1.3
+- removed not used def and defc entities
+- approached color scheme to JQt
+- separated out color scheme to j14.katehlcolor file
+- dropped ExpArg: n. m. u. v. x. y.
+- reformatted a bit
+
+Version 1.3 (2014-05-26) by greg heil
+- based on version 1.1
+- add Foldable feature
+- change color scheme
+- add def and defc entities
+- split long lines
+
+Version 1.2 (2013-09-29) by Igor Zhuravlov
+- fix Adverb regexp's pattern
+- fix Verb regexp's pattern
+
+Version 1.1 (2013-03-18) by Igor Zhuravlov
+- fix enum entity's exponent definition
+- rework String regexp's pattern
+- use entities in Number regexp's pattern
+- use entities in Control regexp's pattern
+
+Version 1.0 (2012-03-21) by Igor Zhuravlov
+- initial release
+
+-->
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+  <!ENTITY unum "\d+">                                 <!-- Unsigned integer number -->
+  <!ENTITY anum "[a-z\d]+">                            <!-- Non-10-based unsigned integer number, e.g. 1a -->
+  <!ENTITY bnum "\b&unum;b_?&anum;(\.&anum;)\b">       <!-- Based integer number, e.g. 36b_1a.z2 -->
+  <!ENTITY inum "_?&unum;">                            <!-- Integer number -->
+  <!ENTITY xnum "\b&inum;x\b">                         <!-- Extended precision integer number, e.g. _123x -->
+  <!ENTITY rnum "\b&inum;r&inum;\b">                   <!-- Rational number, e.g. _1r23 -->
+  <!ENTITY fnum "&inum;(\.&unum;)?">                   <!-- Floating point number, e.g. 1.23 -->
+  <!ENTITY enum "(&fnum;(e&inum;)?|_?_|_\.)">          <!-- Exponential (scientific) notation, e.g. 1.2e_3 -->
+  <!ENTITY cnum "&enum;((j|a[dr])&enum;)?">            <!-- Complex number, e.g. 1.2e3j4.5e_6 -->
+  <!ENTITY pnum "\b&cnum;([px]&cnum;)?(?![a-z\d_.])">  <!-- Number based on pi or e, e.g. 1j2p3j4 -->
+  <!ENTITY name "[a-zA-Z][a-zA-Z\d_]*">                <!-- Name -->
+  <!ENTITY lname "\b&name;_(&name;)?_\b">              <!-- Locative, a__ means a_base_ -->
+  <!ENTITY ilname "\b&name;__&name;\b">                <!-- Indirect locative -->
+]>
+<!--
+  j.xml syntax highlighting for J programming language under Kate
+
+  J is a modern, high-level, general-purpose, high-performance, portable programming language
+  http://www.jsoftware.com
+
+  Kate is a KDE Advanced Text Editor
+  http://kate.kde.org/
+-->
+<language name="J"
+          section="Scripts"
+          version="2"
+          kateversion="3.4"
+          extensions="*.ijs;*.ijt;*.IJS;*.IJT"
+          mimetype="text/x-j;text/x-jsrc"
+          author="Igor Zhuravlov (zhuravlov.ip@ya.ru), greg heil (gheil.j@gmail.com)"
+          indenter="normal"
+          license="GPL">
+  <highlighting>
+    <contexts>
+      <context attribute="Sentence" lineEndContext="#pop" name="sentence">
+        <DetectSpaces/>
+        <RegExpr      attribute="Foldable"       context="#stay"        String=":\s*0|\bdefine\b" beginRegion="Fold"/>
+        <RegExpr      attribute="Foldable"       context="#stay"        String="^\)$" endRegion="Fold"/>
+        <StringDetect attribute="Comment"        context="#stay"        String="NB.(" beginRegion="Fold"/>
+        <StringDetect attribute="Comment"        context="#stay"        String="NB.)" endRegion="Fold"/>
+        <StringDetect attribute="Comment"        context="comment line" String="NB."/>
+        <RegExpr      attribute="String"         context="#stay"        String="&apos;([^&apos;]|&apos;&apos;)*&apos;"/>
+        <RegExpr      attribute="Adverb"         context="#stay"        String="([/\\]\.|\b[bfMt]\.|\bt:|[~/\\}])(?![.:])"/>
+        <RegExpr      attribute="Verb"           context="#stay"        String="(_?\d:|p\.\.|[ACeEIjLor]\.|[_/\\iqsux]:|\{::|[=!\]]|[-&lt;&gt;+*%$|,#\{][.:]?|[;\[]:?|[~}&quot;ip][.:]|[?^]\.?)(?![.:])"/>
+        <RegExpr      attribute="Number"         context="#stay"        String="&bnum;|&xnum;|&rnum;|&pnum;"/>
+        <AnyChar      attribute="Parens"         context="#stay"        String="()"/>
+        <RegExpr      attribute="Conjunction"    context="#stay"        String="(&quot;|[@&amp;][.:]?|[.:][.:]?|[!D][.:]|&amp;\.:|[;dHT]\.|`:?|[LS^]:)(?![.:])"/>
+        <RegExpr      attribute="Control"        context="#stay"        String="\b(assert|break|f?case|catch[dt]?|continue|do|else(if)?|end|for(_&name;)?|(goto|label)_&name;|if|return|select|throw|try|whil(e|st))\.(?![.:])"/>
+        <Detect2Chars attribute="Copulae Global" context="#stay"        char="=" char1=":"/>
+        <Detect2Chars attribute="Copulae Local"  context="#stay"        char="=" char1="."/>
+        <RegExpr      attribute="ExpArg"         context="#stay"        String="\b[nmuvxy](?![\w:.])"/>
+        <RegExpr      attribute="Noun"           context="#stay"        String="\ba[.:](?![.:])"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="comment line"/>
+    </contexts>
+    <itemDatas>
+      <itemData name="Sentence"       defStyleNum="dsNormal"/>
+      <itemData name="Adverb"         defStyleNum="dsKeyword"      spellChecking="false"/>
+      <itemData name="Comment"        defStyleNum="dsComment"      spellChecking="true"/>
+      <itemData name="Conjunction"    defStyleNum="dsKeyword"      spellChecking="false"/>
+      <itemData name="Control"        defStyleNum="dsKeyword"      spellChecking="false"/>
+      <itemData name="Copulae Global" defStyleNum="dsKeyword"      spellChecking="false"/>
+      <itemData name="Copulae Local"  defStyleNum="dsKeyword"      spellChecking="false"/>
+      <itemData name="ExpArg"         defStyleNum="dsKeyword"      spellChecking="false" italic="true"/>
+      <itemData name="Foldable"       defStyleNum="dsRegionMarker" spellChecking="false"/>
+      <itemData name="Noun"           defStyleNum="dsKeyword"      spellChecking="false" bold="true"/>
+      <itemData name="Number"         defStyleNum="dsDecVal"       spellChecking="false"/>
+      <itemData name="Parens"         defStyleNum="dsRegionMarker" spellChecking="false"/>
+      <itemData name="String"         defStyleNum="dsString"       spellChecking="false"/>
+      <itemData name="Verb"           defStyleNum="dsKeyword"      spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="NB.(" end="NB.)" region="Fold"/>
+      <comment name="singleLine" start="NB."/>
+    </comments>
+    <folding indentationsensitive="true"/>
+  </general>
+</language>

@@ -1,0 +1,642 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Kate syntax highlight filter for Markdown/MultiMarkdown documents.
+
+    Copyright 2008 Darrin Yeager. http://www.dyeager.org/
+    Dual-Licensed under both GPL and BSD licenses.
+
+    Extended 2009 Claes Holmerson. http://github.com/claes/kate-markdown/
+    Extended 2019 Nibaldo González S. <nibgonz@gmail.com> (changes under MIT license).
+-->
+<!--
+    The [^\s]{1} is in the regex to avoid interfering with bullet list which
+    starts "* item". Thus emphasis/strong MUST be formed like *words here*
+    with the asterisks next to the beginning of the first word.
+
+    Match space or newline, followed by "*", followed by one non-space,
+    followed by anything non-asterisk, followed by "*", followed by
+    space, end-of-sentence punctuation, or the end of the line.
+
+    TODO: We can be more specific and highlight text combinations in bold,
+          italic and strikethrough.
+          Example: **bold text and _italic and bold text_**
+                   __bold and ~~strikeout and bold~~__
+-->
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+<!-- NOTE: To correctly detect bold, italic or strike out text, use minimal="true" in RegExpr rules -->
+<!ENTITY contentregex_ast "(?:(?:[^\*\s\\]|\\.)(?:[^\\]|\\.)*)?(?:[^\*\s\\]|\\\S)">
+<!ENTITY contentregex_und "(?:(?:[^_\s\\]|\\.)(?:[^\\]|\\.)*)?(?:[^_\s\\]|\\\S)">
+<!-- strong + emphasis text -->
+<!ENTITY strongemphasisregex_ast "\*{3,5}&contentregex_ast;\*{3}">
+<!ENTITY strongemphasisregex_und "\b_{3,5}&contentregex_und;_{3}">
+<!ENTITY strongemphasisregex_ast_und "\*{2,5}(?:(?:_|_{3}|_{5})&contentregex_und;_+|(?:_{2}|_{4})&contentregex_und;_)\*{2}">
+<!ENTITY strongemphasisregex_ast_und2 "\*_{2,5}&contentregex_und;_{2,5}\*(?!\*)">
+<!ENTITY strongemphasisregex_und_ast "\b_{2,5}(?:(?:\*|\*{3}|\*{5})&contentregex_ast;\*+|(?:\*{2}|\*{4})&contentregex_ast;\*)_{2}">
+<!ENTITY strongemphasisregex_und_ast2 "\b_(?:\*{2,5}&contentregex_ast;\*{2,5}_{0,4}|_{0,4}\*{2,5}&contentregex_ast;\*{2,5})_\b">
+<!-- strong text -->
+<!ENTITY strongregex_ast "\*{2}(?:&contentregex_ast;\*{2}|\*{1,3}&contentregex_ast;\*{2}(?!\*))">
+<!ENTITY strongregex_und "\b_{2}(?:&contentregex_und;_{2}|_{1,3}&contentregex_und;_{2}(?!_))">
+<!-- emphasis text -->
+<!ENTITY emphasisregex_ast "\*(?:&contentregex_ast;\*|\*{1,4}&contentregex_ast;\*(?!\*))">
+<!ENTITY emphasisregex_und "\b_(?:&contentregex_und;_+|_{1,4}&contentregex_und;_)\b">
+<!-- links -->
+<!ENTITY startlink "(?:https?|ftp)\://">
+<!ENTITY link "&startlink;[^&quot;&gt;\s]+">
+<!-- link in normal text -->
+<!ENTITY implicitlink "\b&startlink;[^&quot;&gt;\s`\)]*[^\s!&quot;&apos;`\(\)\*,\.:;&lt;&gt;\?~\]\}\\](?=[[:punct:]]*(?:[\s\)]|$))">
+<!-- references: [name], [name][id], [name][id] "title", [name](https://example.com) -->
+<!ENTITY refchar "(?:\\.|[^\]\\])">
+<!ENTITY refname "(?:\\.|[^\s\[\]\\])&refchar;*">
+<!ENTITY reflinkid "\s*(?:&refname;)?">
+<!ENTITY reflinkidregex "(?:\s?\[&reflinkid;\]|\((?:\\.|[^\(\)\\])*\))">
+<!ENTITY reflinkregex "\[(?:(?=\s*&refname;\])|\s+(?=\]))">
+<!-- target ref.: [id]: https://example.com "Title" -->
+<!ENTITY reflinktargetregex '\[\s*(?:&refname;|\s)\]\:\s+(?=\S)'>
+<!-- footnote: [^name] -->
+<!ENTITY footnoteregex "\[\^&refchar;+\]">
+<!-- image: ![title](https://example.com), ![title][id] -->
+<!ENTITY startinlineimage "\!\[(?:\\.|[^\[\]\\])*\]\(">
+<!ENTITY endinlineimage "(?:\\.|[^\(\)\\])*\)">
+<!ENTITY inlineimageregex "&startinlineimage;(?=&endinlineimage;)">
+<!ENTITY refimageregex "\!\[(?:\\.|[^\[\]\\])*\]\[&reflinkid;\]">
+<!-- autolink & email: <https://example.com>, <example@kde.org>, <mailto:example@kde.org> -->
+<!ENTITY autolinkregex '&lt;&link;&gt;'>
+<!ENTITY email "[\-\.\w]+\@[\-a-z0-9]+(?:\.[\-a-z0-9]+)*\.[a-z]+">
+<!ENTITY mailtolinkregex "&lt;(?:mailto:)?(?=&email;&gt;)">
+<!-- horizontal rule: avoid conflicts with strong-emphasis text, lists and code blocks -->
+<!ENTITY rulerregex "\s*(?:(?:\*\s*){3,}|(?:_\s*){3,}|(?:\-\s*){3,})\s*$">
+<!-- two spaces at end of line generates linebreak -->
+<!ENTITY linebreakregex "  $">
+<!-- strikethrough text, pandoc style -->
+<!ENTITY strikeoutregex "[~]{2}[^~](?:.*[^~])?[~]{2}">
+<!-- start of fenced code block -->
+<!ENTITY fcode "(`{3,}|~{3,})">
+<!-- end of line & empty line -->
+<!ENTITY end "\s*$">
+<!ENTITY emptyline "^\s*$">
+<!-- indented code block -->
+<!ENTITY indentedcodeblock "(?:\s{4}|\t).*$">
+<!-- bullet of list -->
+<!ENTITY listbullet "[\*\+\-]">
+<!-- metadata key & name of html tag -->
+<!ENTITY metadatakey "[a-zA-Z0-9][\w\-\s]*\:">
+<!ENTITY htmlname "[A-Za-z_\:][\w\.\:\-]*">
+<!-- comment -->
+<!ENTITY startcomment "&lt;!--">
+<!ENTITY endcomment "--&gt;">
+<!ENTITY checkbox "\[[ x]\](?=\s)">
+]>
+
+<language name="Markdown" version="9" kateversion="5.53" section="Markup" extensions="*.md;*.mmd;*.markdown" priority="15" author="Darrin Yeager, Claes Holmerson" license="GPL,BSD">
+  <highlighting>
+    <contexts>
+      <!-- Start of the Markdown document: find metadata or code block -->
+      <context name="Start Document" attribute="Normal Text" lineEndContext="Normal Text" lineEmptyContext="Normal Text" fallthrough="true" fallthroughContext="Normal Text">
+        <!-- Some titles: (Title|Author|Date|Copyright|Revision|CSS|LaTeX\ XSLT|Categories|Tags|BaseName|Excerpt) -->
+        <!-- Metadata: Markdown format -->
+        <RegExpr attribute="Metadata" context="metadata" String="\-{3}&end;" column="0" beginRegion="metadata"/>
+        <!-- Metadata: MultiMarkdown format -->
+        <RegExpr attribute="Metadata Title" context="metadata-mm-value" String="^&metadatakey;(?=\s|$)" column="0"/>
+        <!-- Code Block -->
+        <RegExpr attribute="Code" context="find-code-block-start" String="^&indentedcodeblock;" column="0"/>
+      </context>
+      <context name="metadata" attribute="Metadata" lineEndContext="#stay">
+        <StringDetect attribute="Metadata" context="#pop!Normal Text" String="---" column="0" endRegion="metadata"/>
+        <StringDetect attribute="Metadata" context="#pop!Normal Text" String="..." column="0" endRegion="metadata"/>
+        <RegExpr attribute="Metadata Title" String="^&metadatakey;(?=\s|$)" column="0"/>
+      </context>
+      <context name="metadata-mm-value" attribute="Metadata" lineEndContext="#pop!metadata-mm"/>
+      <context name="metadata-mm" attribute="Metadata" lineEndContext="#stay" lineEmptyContext="#pop!Normal Text" fallthrough="true" fallthroughContext="#pop!Normal Text">
+        <!-- Find Metadata key or value -->
+        <RegExpr attribute="Metadata Title" context="#pop!metadata-mm-value" String="^&metadatakey;(?=\s|$)" column="0"/>
+        <RegExpr attribute="Metadata" context="#pop!metadata-mm-value" String="^(?:\s{4}|\t)" column="0"/>
+      </context>
+      <context name="find-code-block-start" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#stay" fallthrough="true" fallthroughContext="#pop!Normal Text">
+        <IncludeRules context="find-code-block"/>
+      </context>
+
+      <!-- Normal Text Document -->
+      <context name="Normal Text" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="find-code-block">
+        <!-- Header -->
+        <DetectChar context="find-header" char="#" column="0" lookAhead="true"/>
+        <RegExpr attribute="Header H1" String="(?:\=\s*){2,}$" firstNonSpace="true"/>
+        <!-- Highlight code block after line only with spaces or comment -->
+        <RegExpr attribute="Normal Text" context="find-code-block" String="&emptyline;" column="0"/>
+        <StringDetect attribute="Comment" context="find-code-block" String="&startcomment;" column="0" lookAhead="true"/>
+        <!-- Horizontal rules, Blockquotes and Lists.
+             NOTE: The indentation of the lists is captured. -->
+        <RegExpr attribute="Horizontal Rule" context="find-code-block" String="^&rulerregex;" column="0"/>
+        <DetectChar attribute="Blockquote" context="blockquote" char="&gt;" firstNonSpace="true"/>
+        <RegExpr attribute="List" context="list" String="(\s*)&listbullet;(\s+)" column="0"/>
+        <RegExpr attribute="Number List" context="numlist" String="(\s*)\d\.(\s+)" column="0"/>
+        <RegExpr attribute="Number List" context="numlist2" String="(\s*)\d\d+\.(\s+)" column="0"/>
+        <!-- Find Strong, Emphasis and Strikethrough Text -->
+        <DetectChar context="find-strong-normal" char="*" lookAhead="true"/>
+        <DetectChar context="find-emphasis-normal" char="_" lookAhead="true"/>
+        <RegExpr attribute="Strikethrough Text" minimal="true" String="&strikeoutregex;"/>
+        <!-- Common -->
+        <IncludeRules context="inc"/>
+        <RegExpr attribute="Normal Text: Link" String="&implicitlink;"/>
+      </context>
+      <!-- Find indented code blocks. These are only allowed after an empty line or on the first line -->
+      <context name="find-code-block" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <RegExpr attribute="Code" String="^&indentedcodeblock;" column="0"/>
+        <RegExpr attribute="Normal Text" String="&end;" />
+        <RegExpr attribute="Comment" context="comment" String="\s*&startcomment;" column="0" beginRegion="comment"/>
+        <RegExpr attribute="Comment" context="comment" String="\s*&startcomment;(?=.*&endcomment;)" beginRegion="comment"/>
+      </context>
+
+      <context name="find-header" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Header H1" context="#pop" String="^#\s.*[#]?$"/>
+        <RegExpr attribute="Header H2" context="#pop" String="^##\s.*[#]?$"/>
+        <RegExpr attribute="Header H3" context="#pop" String="^###\s.*[#]?$"/>
+        <RegExpr attribute="Header H4" context="#pop" String="^####\s.*[#]?$"/>
+        <RegExpr attribute="Header H5" context="#pop" String="^#####\s.*[#]?$"/>
+        <RegExpr attribute="Header H6" context="#pop" String="^######\s.*[#]?$"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="#"/>
+      </context>
+      <context name="find-strong-normal" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_ast_und;"/>
+        <RegExpr attribute="Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_ast_und2;"/>
+        <RegExpr attribute="Strong Text" context="#pop" minimal="true" String="&strongregex_ast;"/>
+        <RegExpr attribute="Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_ast;"/>
+        <RegExpr attribute="Emphasis Text" context="#pop" minimal="true" String="&emphasisregex_ast;"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="*"/>
+      </context>
+      <context name="find-emphasis-normal" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_und_ast;"/>
+        <RegExpr attribute="Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_und_ast2;"/>
+        <RegExpr attribute="Strong Text" context="#pop" minimal="true" String="&strongregex_und;"/>
+        <RegExpr attribute="Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_und;"/>
+        <RegExpr attribute="Emphasis Text" context="#pop" minimal="true" String="&emphasisregex_und;"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="_"/>
+      </context>
+
+      <!-- Blockquote -->
+      <context name="blockquote" attribute="Blockquote: Normal Text" lineEndContext="#stay" lineEmptyContext="#pop">
+        <IncludeRules context="default-blockquote-1"/>
+        <!-- Find code block -->
+        <RegExpr attribute="Normal Text" context="#pop!find-code-block" String="&emptyline;" column="0"/>
+        <StringDetect attribute="Comment" context="#pop!find-code-block" String="&startcomment;" column="0" lookAhead="true"/>
+        <IncludeRules context="default-blockquote-2"/>
+      </context>
+      <!-- Blockquote within a list -->
+      <context name="blockquote-list" attribute="Blockquote: Normal Text" lineEndContext="#stay" lineEmptyContext="#pop">
+        <IncludeRules context="default-blockquote-1"/>
+        <!-- Don't find code block -->
+        <RegExpr attribute="Normal Text" context="#pop" String="&emptyline;" column="0"/>
+        <StringDetect attribute="Comment" context="#pop!comment" String="&startcomment;" firstNonSpace="true"/>
+        <IncludeRules context="default-blockquote-2"/>
+      </context>
+
+      <context name="default-blockquote-1" attribute="Blockquote: Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Blockquote" char="&gt;" firstNonSpace="true"/>
+        <!-- End with header, horizontal rule or list/numlist -->
+        <RegExpr context="#pop" String="(?:\s*(?:&listbullet;|[\d]+\.)\s|#{1,6}\s|&rulerregex;)" column="0" lookAhead="true"/>
+      </context>
+      <context name="default-blockquote-2" attribute="Blockquote: Normal Text" lineEndContext="#stay">
+        <!-- Strong, emphasis, strong-emphasis and strikethrough text -->
+        <AnyChar context="find-strong-emphasis-blockquote" String="*_" lookAhead="true"/>
+        <RegExpr attribute="Blockquote: Strikethrough Text" minimal="true" String="&strikeoutregex;"/>
+        <!-- Common -->
+        <IncludeRules context="inc"/>
+        <RegExpr attribute="Blockquote: Link" String="&implicitlink;"/>
+      </context>
+      <context name="find-strong-emphasis-blockquote" attribute="Blockquote: Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Blockquote: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_ast_und;"/>
+        <RegExpr attribute="Blockquote: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_und_ast;"/>
+        <RegExpr attribute="Blockquote: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_ast_und2;"/>
+        <RegExpr attribute="Blockquote: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_und_ast2;"/>
+        <RegExpr attribute="Blockquote: Strong Text" context="#pop" minimal="true" String="&strongregex_ast;"/>
+        <RegExpr attribute="Blockquote: Strong Text" context="#pop" minimal="true" String="&strongregex_und;"/>
+        <RegExpr attribute="Blockquote: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_ast;"/>
+        <RegExpr attribute="Blockquote: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_und;"/>
+        <RegExpr attribute="Blockquote: Emphasis Text" context="#pop" minimal="true" String="&emphasisregex_ast;" />
+        <RegExpr attribute="Blockquote: Emphasis Text" context="#pop" minimal="true" String="&emphasisregex_und;"/>
+        <AnyChar attribute="Blockquote: Normal Text" context="#pop" String="*_"/>
+      </context>
+
+      <!-- List and Numbered List -->
+      <!-- NOTE: The indentation of the lists is captured. New paragraphs, code blocks, blockquotes or
+           horizontal rules must have an indentation equal to or greater than the list, to be part of it. -->
+      <!-- * list -->
+      <context name="list" attribute="List: Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="content-list">
+        <!-- Find indented code blocks, blockquotes and horizontal rules -->
+        <RegExpr attribute="Code" String="%1%2\s&indentedcodeblock;" column="0" dynamic="true"/>
+        <RegExpr attribute="Blockquote" context="blockquote-list" String="%1%2\s+&gt;" column="0" dynamic="true"/>
+        <RegExpr attribute="Horizontal Rule" String="%1%2\s+&rulerregex;" column="0" dynamic="true"/>
+        <RegExpr String="&emptyline;" column="0"/>
+        <!-- Text with the same indentation captured corresponds to the item list -->
+        <RegExpr context="content-list" String="%1%2\s" column="0" lookAhead="true" dynamic="true"/>
+        <!-- Finish when the text has a lower indentation than the list -->
+        <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
+        <!-- Highlight checkbox at the start of the item (task list) -->
+        <RegExpr attribute="List: Checkbox" context="content-list" String="\s*&checkbox;"/>
+      </context>
+      <!-- 1. numlist (one digit) -->
+      <context name="numlist" attribute="List: Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="content-list">
+        <!-- Find indented code blocks, blockquotes and horizontal rules -->
+        <RegExpr attribute="Code" String="%1%2\s{2}&indentedcodeblock;" column="0" dynamic="true"/>
+        <RegExpr attribute="Blockquote" context="blockquote-list" String="%1%2\s{2,}&gt;" column="0" dynamic="true"/>
+        <RegExpr attribute="Horizontal Rule" String="%1%2\s{2,}&rulerregex;" column="0" dynamic="true"/>
+        <RegExpr String="&emptyline;" column="0"/>
+        <!-- Text with the same indentation captured -->
+        <RegExpr context="content-list" String="%1%2\s{2}" column="0" lookAhead="true" dynamic="true"/>
+        <!-- Finish when the text has a lower indentation than the list -->
+        <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
+      </context>
+      <!-- 10. numlist (two or more digits) -->
+      <context name="numlist2" attribute="List: Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="content-list">
+        <!-- Find indented code blocks, blockquotes and horizontal rules -->
+        <RegExpr attribute="Code" String="%1%2\s{3}&indentedcodeblock;" column="0" dynamic="true"/>
+        <RegExpr attribute="Blockquote" context="blockquote-list" String="%1%2\s{3,}&gt;" column="0" dynamic="true"/>
+        <RegExpr attribute="Horizontal Rule" String="%1%2\s{3,}&rulerregex;" column="0" dynamic="true"/>
+        <RegExpr String="&emptyline;" column="0"/>
+        <!-- Text with the same indentation captured -->
+        <RegExpr context="content-list" String="%1%2\s{3}" column="0" lookAhead="true" dynamic="true"/>
+        <!-- Finish when the text has a lower indentation than the list -->
+        <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
+      </context>
+
+      <!-- NOTE: Empty lines, blockquotes and horizontal rules send to contexts "list", "numlist" or "numlist2" (#pop),
+           to check the indentation of the text and determine if the content of the list ends. -->
+      <context name="content-list" attribute="List: Normal Text" lineEndContext="#stay" lineEmptyContext="#pop">
+        <RegExpr context="#pop" String="&emptyline;" column="0"/>
+        <!-- Blockquote and horzontal rule (check indentation) -->
+        <RegExpr context="#pop" String="^\s*(?:&gt;|&rulerregex;)" column="0" lookAhead="true"/>
+        <!-- End with header or new list/numlist -->
+        <RegExpr context="#pop#pop" String="(?:\s*(?:&listbullet;|[\d]+\.)\s|#{1,6}\s)" column="0" lookAhead="true"/>
+        <!-- Strong, emphasis, strong-emphasis and strikethrough text -->
+        <AnyChar context="find-strong-emphasis-list" String="*_" lookAhead="true"/>
+        <RegExpr attribute="List: Strikethrough Text" minimal="true" String="&strikeoutregex;"/>
+        <!-- Common -->
+        <IncludeRules context="inc"/>
+        <RegExpr attribute="List: Link" String="&implicitlink;"/>
+      </context>
+      <context name="find-strong-emphasis-list" attribute="List: Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="List: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_ast_und;"/>
+        <RegExpr attribute="List: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_und_ast;"/>
+        <RegExpr attribute="List: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_ast_und2;"/>
+        <RegExpr attribute="List: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_und_ast2;"/>
+        <RegExpr attribute="List: Strong Text" context="#pop" minimal="true" String="&strongregex_ast;"/>
+        <RegExpr attribute="List: Strong Text" context="#pop" minimal="true" String="&strongregex_und;"/>
+        <RegExpr attribute="List: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_ast;"/>
+        <RegExpr attribute="List: Strong-Emphasis Text" context="#pop" minimal="true" String="&strongemphasisregex_und;"/>
+        <RegExpr attribute="List: Emphasis Text" context="#pop" minimal="true" String="&emphasisregex_ast;" />
+        <RegExpr attribute="List: Emphasis Text" context="#pop" minimal="true" String="&emphasisregex_und;"/>
+        <AnyChar attribute="List: Normal Text" context="#pop" String="*_"/>
+      </context>
+
+      <!-- Comments -->
+      <context name="comment" attribute="Comment" lineEndContext="#stay">
+        <StringDetect attribute="Comment" context="#pop" String="&endcomment;" endRegion="comment"/>
+        <IncludeRules context="##Alerts"/>
+        <IncludeRules context="##Modelines"/>
+      </context>
+
+      <!-- Fenced Code Blocks -->
+      <context name="find-lang-fenced-code" attribute="Normal Text" lineEndContext="#pop">
+        <!-- Apply syntax highlighting to fenced code blocks for some languages -->
+        <RegExpr attribute="Fenced Code" context="#pop!code" String="&fcode;&end;"/>
+        <RegExpr attribute="Fenced Code" context="#pop!bash-code" String="&fcode;\s*(?:bash(?:rc|_profile|_login|_logout)?|shell|sh|zsh|profile|PKGBUILD|APKBUILD|ebuild|eclass|nix)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!cpp-code" String="&fcode;\s*(?:[ch]pp|[ch]\+\+|[ch]xx|h?cc|hh|cuh?|ino|pde|moc)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!csharp-code" String="&fcode;\s*(?:cs|csharp|c\#)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!cmake-code" String="&fcode;\s*(?:cmake|CMakeLists(?:\.txt)?)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!css-code" String="&fcode;\s*css&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!c-code" String="&fcode;\s*[ch]&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!doxygen-code" String="&fcode;\s*doxygen&end;" insensitive="true"/> <!-- Block comment of Doxygen -->
+        <RegExpr attribute="Fenced Code" context="#pop!email-code" String="&fcode;\s*(?:email|emlx?|mbo?x)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!go-code" String="&fcode;\s*go(?:lang)?&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!hamlet-code" String="&fcode;\s*[wxs]?hamlet&end;" insensitive="true"/> <!-- Included in the Haskell definition -->
+        <RegExpr attribute="Fenced Code" context="#pop!haskell-code" String="&fcode;\s*(?:haskell|c?hs|hs\-boot)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!html-code" String="&fcode;\s*(?:[sx]?html?|inc|tmpl|tpl)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!java-code" String="&fcode;\s*(?:java|bsh)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!javascript-code" String="&fcode;\s*(?:javascript|m?js|es6|kwinscript|julius)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!jsx-code" String="&fcode;\s*(?:jsx|tsx|(?:java|type)script\-react)&end;" insensitive="true"/> <!-- Included in the HTML definition. Also apply for TSX. -->
+        <RegExpr attribute="Fenced Code" context="#pop!json-code" String="&fcode;\s*(?:json5?|gltf)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!matlab-code" String="&fcode;\s*matlab&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!markdown-code" String="&fcode;\s*(?:markdown|m?md)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!mustache-code" String="&fcode;\s*(?:handlebars|hbs|mustache|mst|ractive|hogan|hulk)&end;" insensitive="true"/> <!-- Included in the HTML definition -->
+        <RegExpr attribute="Fenced Code" context="#pop!perl-code" String="&fcode;\s*(?:perl|p[lm]|pod|psgi|vcl|perl6|p[lm]?6|nqp)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!php-code" String="&fcode;\s*(?:php[3457t]?|wml|phtml?|aw|ctp)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!python-code" String="&fcode;\s*(?:python[23]?|py[23w]?|[rc]py|sconstruct|gypi?)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!qml-code" String="&fcode;\s*qml(?:types)?&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!r-code" String="&fcode;\s*(?:r|rprofile|rscript)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!rest-code" String="&fcode;\s*(?:rst|rest|restructuredtext)&end;" insensitive="true"/> <!-- Included in the CMake definition -->
+        <RegExpr attribute="Fenced Code" context="#pop!ruby-code" String="&fcode;\s*(?:ruby|rbx?|rjs|rake|f?cgi|gemspec|irbrc|ru|prawn|Appraisals|(?:Rake|Cap|Chef|Gem|Guard|Hobo|Vagrant||Rant|Berks|Thor|Puppet)file|rxml|(?:xml|js)\.erb)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!rust-code" String="&fcode;\s*(?:rust|rs)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!mysql-code" String="&fcode;\s*(?:mysql|sql|ddl)&end;" insensitive="true"/> <!-- Included in the PHP definition -->
+        <RegExpr attribute="Fenced Code" context="#pop!typescript-code" String="&fcode;\s*(?:typescript|ts)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!xml-code" String="&fcode;\s*(?:xml|xsd|xspf|tld|jsp|c?pt|dtml|rss|opml|svg|daml|rdf|ui|kcfg|qrc|wsdl|scxml|xbel|dae|sch|brd|docbook)&end;" insensitive="true"/>
+        <RegExpr attribute="Fenced Code" context="#pop!code" String="&fcode;.*$"/>
+      </context>
+      <context name="code" attribute="Code" lineEndContext="#stay"> <!-- Unknown language -->
+        <RegExpr attribute="Fenced Code" context="#pop" String="%1[~`]*(?=&end;)" firstNonSpace="true" dynamic="true" endRegion="code-block"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="bash-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Bash" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="cmake-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##CMake" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="c-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##C" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="cpp-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##C++" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="csharp-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##C#" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="css-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##CSS" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="doxygen-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="BlockComment##Doxygen" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="email-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Email" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="go-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Go" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="hamlet-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Hamlet" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="haskell-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Haskell" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="html-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##HTML" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="java-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Java" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="javascript-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="Normal##JavaScript" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="jsx-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="Normal##JavaScript React" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="json-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##JSON" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="find-code-block" name="markdown-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="Normal Text"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="matlab-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Matlab" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="mustache-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Mustache/Handlebars (HTML)" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="perl-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Perl" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="php-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="phpsource##PHP/PHP" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="python-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Python" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="qml-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##QML" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="r-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##R Script" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="rest-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##reStructuredText" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="ruby-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Ruby" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="rust-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##Rust" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="mysql-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##SQL (MySQL)" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="typescript-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="Normal##TypeScript" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="xml-code">
+        <IncludeRules context="code"/>
+        <IncludeRules context="##XML" includeAttrib="true"/>
+      </context>
+
+      <!-- Common -->
+      <context name="inc" attribute="Normal Text" lineEndContext="#stay">
+        <!-- Code -->
+        <RegExpr attribute="Code" String="`[^`]+`(?!`)"/>
+        <RegExpr attribute="Code" minimal="true" String="`{2}[^`](?:.*[^`])?`{2}(?!`)"/>
+        <RegExpr attribute="Code" minimal="true" String="`{3}[^`](?:.*[^`])?`{3}(?!`)"/>
+        <RegExpr attribute="Code" minimal="true" String="`{4}[^`](?:.*[^`])?`{4}(?!`)"/>
+        <RegExpr attribute="Code" minimal="true" String="`{5,}[^`](?:.*[^`])?`{5,}"/>
+        <!-- Find Fenced Code Block -->
+        <RegExpr attribute="Fenced Code" context="find-lang-fenced-code" String="`{3,}(?=[^`]*$)" firstNonSpace="true" lookAhead="true" beginRegion="code-block"/>
+        <RegExpr attribute="Fenced Code" context="find-lang-fenced-code" String="~{3,}(?=[^~]*$)" firstNonSpace="true" lookAhead="true" beginRegion="code-block"/>
+        <!-- Comment -->
+        <StringDetect attribute="Comment" context="comment" String="&startcomment;" beginRegion="comment"/>
+        <!-- Links and References -->
+        <RegExpr attribute="Reference-Link Target" context="reflinktarget" String="&reflinktargetregex;" firstNonSpace="true"/>
+        <RegExpr attribute="Footnote" String="&footnoteregex;"/>
+        <RegExpr attribute="Reference-Link" context="find-reflink" String="&reflinkregex;"/>
+        <RegExpr attribute="Inline Image" context="inlineimage" String="&inlineimageregex;"/>
+        <RegExpr attribute="Reference Image" String="&refimageregex;"/>
+        <RegExpr attribute="Auto-Link" context="autolink" String="&autolinkregex;" lookAhead="true"/>
+        <RegExpr attribute="Mailto-Link" context="mailtolink" String="&mailtolinkregex;"/>
+        <!-- Line Break -->
+        <RegExpr attribute="Line Break" minimal="true" String="&linebreakregex;"/>
+        <!-- Backslash Escapes -->
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="\"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="`"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="*"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="_"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="{"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="}"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="["/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="]"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="("/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1=")"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="#"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="+"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="-"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="."/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="!"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="&lt;"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="&gt;"/>
+        <Detect2Chars attribute="Backslash Escape" char="\" char1="&amp;"/>
+        <!-- Inline HTML -->
+        <RegExpr attribute="EntityRef" String="&amp;(?:#[0-9]+|#[xX][0-9A-Fa-f]+|&htmlname;);"/>
+        <RegExpr context="find-html-block" String="&lt;/?&htmlname;(?:[\s&gt;]|/&gt;|$)" lookAhead="true"/>
+      </context>
+      <context name="find-html-block" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <!-- In the HTML definition, just highlight the tags
+             (this prevents incorrect highlighting after writing a tag) -->
+        <DetectSpaces context="#pop" lookAhead="true"/>
+        <RegExpr context="#pop" String="[^&lt;]" lookAhead="true"/>
+        <RegExpr context="#pop" String="&lt;(?!/?&htmlname;)" lookAhead="true"/>
+        <IncludeRules context="##HTML"/>
+      </context>
+
+      <!-- Links and email: <https://example.com>, <example@kde.org> -->
+      <context name="autolink" attribute="Auto-Link" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectChar attribute="Auto-Link" char="&lt;"/>
+        <DetectChar attribute="Auto-Link" context="#pop" char="&gt;"/>
+        <RegExpr attribute="Link" String="&startlink;[^&quot;&gt;\s]+"/>
+      </context>
+      <context name="mailtolink" attribute="Email" lineEndContext="#pop">
+        <DetectChar attribute="Mailto-Link" context="#pop" char="&gt;"/>
+      </context>
+
+      <!-- References: [example][id], [example](http://example.com) -->
+      <context name="find-reflink" attribute="Reference-Link Name" lineEndContext="#pop">
+        <Detect2Chars attribute="Reference-Link Name" char="\" char1="]"/>
+        <RegExpr attribute="Reference-Link" context="#pop!find-reflink-id" String="\](?=&reflinkidregex;)"/> <!-- Find id -->
+        <DetectChar attribute="Reference-Link" context="#pop" char="]"/>
+        <!-- Image as link or reference -->
+        <RegExpr attribute="Inline Image" context="inlineimage" String="&startinlineimage;(?=&endinlineimage;&refchar;*\])"/>
+        <RegExpr attribute="Reference Image" String="&refimageregex;(?=&refchar;*\])"/>
+        <RegExpr attribute="Reference-Link Name" context="#stay" String="(?:\[(?:\\.|[^\[\]\\])*\](?:\\.|[^\[\]\\])*)+(?=\])" minimal="true"/>
+      </context>
+      <context name="find-reflink-id" attribute="Reference-Link" lineEndContext="#pop">
+        <DetectSpaces />
+        <!-- Ref.: [an example][id] "Optional title" -->
+        <DetectChar attribute="Reference-Link" context="#pop!reflink-id" char="["/>
+        <!-- Inline Ref.: [an example](http://example.com/ "Title") -->
+        <DetectChar attribute="Reference-Link" context="#pop!reflink-inline-id" char="("/>
+      </context>
+      <context name="reflink-inline-id" attribute="Reference-Link" lineEndContext="#pop">
+        <Detect2Chars attribute="Reference-Link" char="\" char1=")"/>
+        <DetectChar attribute="Reference-Link" context="#pop" char=")"/>
+        <RegExpr attribute="Reference-Link: Link" String="\b&startlink;(?:\\.|[^&quot;&gt;\s\)\\])+"/>
+        <RegExpr attribute="Reference-Link: Email" String="\b&email;\b"/>
+      </context>
+      <context name="reflink-id" attribute="Reference-Link ID" lineEndContext="#pop">
+        <Detect2Chars attribute="Reference-Link ID" char="\" char1="]"/>
+        <DetectChar attribute="Reference-Link" context="#pop!reflink-title" char="]"/>
+        <RegExpr attribute="Reference-Link: Link" String="\b&startlink;(?:\\.|[^&quot;&gt;\s\]\\])+"/>
+      </context>
+      <!-- [an example][id] "title" -->
+      <context name="reflink-title" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <RegExpr attribute="Reference-Link" context="#pop" String="\s+&quot;(?:\\.|[^&quot;\\])*&quot;"/>
+      </context>
+
+      <!-- Target Ref.: [foo]: http://example.com/  "Optional Title Here" -->
+      <context name="reflinktarget" attribute="Reference-Link Target" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <RegExpr attribute="Reference-Link Target: Link" context="#pop!reflinktarget-title" String="\s*&link;(?=\s|$)"/>
+        <RegExpr attribute="Reference-Link Target" context="#pop!reflinktarget-link" String="\s*&lt;(?=&link;&gt;(?:\s|$))"/>
+        <RegExpr attribute="Reference-Link Target" context="#pop!reflinktarget-title" String="\s*#[\w\.\:\-]+\b"/>
+      </context>
+      <context name="reflinktarget-link" attribute="Reference-Link Target" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectChar attribute="Reference-Link Target" context="#pop!reflinktarget-title" char="&gt;"/>
+        <RegExpr attribute="Reference-Link Target: Link" String="&link;"/>
+      </context>
+      <context name="reflinktarget-title" attribute="Reference-Link Target" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces attribute="Reference-Link Target"/>
+        <RegExpr attribute="Reference-Link Target" context="#pop" String="&quot;(?:\\.|[^&quot;\\])*&quot;"/>
+        <RegExpr attribute="Reference-Link Target" context="#pop" String="&apos;(?:\\.|[^&apos;\\])*&apos;"/>
+        <RegExpr attribute="Reference-Link Target" context="#pop" String="\((?:\\.|[^\)\\])*\)"/>
+      </context>
+
+      <!-- Image -->
+      <context name="inlineimage" attribute="Inline Image" lineEndContext="#pop">
+        <DetectChar attribute="Inline Image" context="#pop" char=")"/>
+        <Detect2Chars attribute="Inline Image" char="\" char1=")"/>
+        <RegExpr attribute="Inline Image: Link" String="\b&startlink;(?:\\.|[^&quot;&gt;\s\)\\])+"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Emphasis Text" defStyleNum="dsNormal" italic="true"/>
+      <itemData name="Strong Text" defStyleNum="dsNormal" bold="true"/>
+      <itemData name="Strong-Emphasis Text" defStyleNum="dsNormal" italic="true" bold="true"/>
+      <itemData name="Strikethrough Text" defStyleNum="dsNormal" strikeOut="true"/>
+      <itemData name="Normal Text: Link" defStyleNum="dsNormal" underline="true" spellChecking="false"/>
+      <itemData name="Horizontal Rule" defStyleNum="dsNormal" bold="true" spellChecking="false"/>
+      <itemData name="Line Break" defStyleNum="dsNormal" underline="true" color="#999999" spellChecking="false"/>
+      <itemData name="Header H1" defStyleNum="dsFunction" bold="true"/>
+      <itemData name="Header H2" defStyleNum="dsFunction" bold="true"/>
+      <itemData name="Header H3" defStyleNum="dsFunction" bold="true"/>
+      <itemData name="Header H4" defStyleNum="dsFunction" bold="true"/>
+      <itemData name="Header H5" defStyleNum="dsFunction" bold="true"/>
+      <itemData name="Header H6" defStyleNum="dsFunction" bold="true"/>
+      <itemData name="Blockquote" defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="Blockquote: Normal Text" defStyleNum="dsAttribute"/>
+      <itemData name="Blockquote: Emphasis Text" defStyleNum="dsAttribute" italic="true"/>
+      <itemData name="Blockquote: Strong Text" defStyleNum="dsAttribute" bold="true"/>
+      <itemData name="Blockquote: Strong-Emphasis Text" defStyleNum="dsAttribute" italic="true" bold="true"/>
+      <itemData name="Blockquote: Strikethrough Text" defStyleNum="dsAttribute" strikeOut="true"/>
+      <itemData name="Blockquote: Link" defStyleNum="dsAttribute" underline="true" spellChecking="false"/>
+      <itemData name="List" defStyleNum="dsSpecialString" bold="1" spellChecking="false"/>
+      <itemData name="Number List" defStyleNum="dsSpecialString" spellChecking="false"/>
+      <itemData name="List: Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="List: Emphasis Text" defStyleNum="dsNormal" italic="true"/>
+      <itemData name="List: Strong Text" defStyleNum="dsNormal" bold="true"/>
+      <itemData name="List: Strong-Emphasis Text" defStyleNum="dsNormal" italic="true" bold="true"/>
+      <itemData name="List: Strikethrough Text" defStyleNum="dsNormal" strikeOut="true"/>
+      <itemData name="List: Link" defStyleNum="dsNormal" underline="true" spellChecking="false"/>
+      <itemData name="List: Checkbox" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Code" defStyleNum="dsInformation"/>
+      <itemData name="Fenced Code" defStyleNum="dsInformation" spellChecking="false"/>
+      <itemData name="Auto-Link" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Link" defStyleNum="dsOthers" underline="true" spellChecking="false"/>
+      <itemData name="Mailto-Link" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Email" defStyleNum="dsOthers" italic="true" underline="true" spellChecking="false"/>
+      <itemData name="Footnote" defStyleNum="dsOthers" italic="true"/>
+      <itemData name="Reference-Link" defStyleNum="dsComment" italic="false"/>
+      <itemData name="Reference-Link Name" defStyleNum="dsOthers" underline="true" italic="false"/>
+      <itemData name="Reference-Link ID" defStyleNum="dsComment" italic="false"/>
+      <itemData name="Reference-Link: Link" defStyleNum="dsComment" underline="true" italic="false" spellChecking="false"/>
+      <itemData name="Reference-Link: Email" defStyleNum="dsComment" italic="true" underline="true" spellChecking="false"/>
+      <itemData name="Reference-Link Target" defStyleNum="dsOthers" italic="false" bold="false"/>
+      <itemData name="Reference-Link Target: Link" defStyleNum="dsOthers" underline="true" spellChecking="false"/>
+      <itemData name="Inline Image" defStyleNum="dsAlert" italic="false" bold="false"/>
+      <itemData name="Reference Image" defStyleNum="dsAlert" italic="false" bold="false"/>
+      <itemData name="Inline Image: Link" defStyleNum="dsAlert" italic="false" bold="false" underline="true"/>
+      <itemData name="Metadata Title" defStyleNum="dsAnnotation"/>
+      <itemData name="Metadata" defStyleNum="dsComment" italic="0"/>
+      <itemData name="Backslash Escape" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="EntityRef" defStyleNum="dsDecVal" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords additionalDeliminator="`"/>
+    <comments>
+      <comment name="multiLine" start="&startcomment;" end="&endcomment;" region="comment"/>
+    </comments>
+  </general>
+</language>
+<!-- kate: replace-tabs on; indent-width 2; tab-width 2; -->

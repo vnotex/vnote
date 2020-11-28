@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+        This is an attempt to write a quick and dirty syntax file for Cubescript.
+        This will only document a subset of available keywords and internal commands, partly due to the various forks and the little overlap they have.
+        Some effort has been taken to highlight and mark errors where possible.
+
+        List values which are current ignored by the keyword identifier are commented.
+-->
+<language name="CubeScript" section="Scripts" version="2" kateversion="5.0" extensions="*.cfg" mimetype="" casesensitive="true" author="Kevin Meyer" license="zlib/libpng" indenter="normal">
+  <highlighting>
+    <!--
+        There are far more commands than these, these are just guaranteed to be in all forks.
+    -->
+    <list name="commands">
+      <item>?</item>
+      <item>alias</item>
+      <item>at</item>
+      <item>case</item>
+      <item>casef</item>
+      <item>cases</item>
+      <item>clearconsole</item>
+      <item>clearsleep</item>
+      <item>complete</item>
+      <item>concat</item>
+      <item>concatword</item>
+      <item>cond</item>
+      <item>conskip</item>
+      <item>do</item>
+      <item>echo</item>
+      <item>error</item>
+      <item>escape</item>
+      <item>exec</item>
+      <item>format</item>
+      <item>getalias</item>
+      <item>getfvarmin</item>
+      <item>getfvarmax</item>
+      <item>getvarmin</item>
+      <item>getvarmax</item>
+      <item>history</item>
+      <item>if</item>
+      <item>indexof</item>
+      <item>inputcommand</item>
+      <item>keymap</item>
+      <item>listcomplete</item>
+      <item>listdel</item>
+      <item>listfind</item>
+      <item>listlen</item>
+      <item>listsplice</item>
+      <item>local</item>
+      <item>loop</item>
+      <item>loopconcat</item>
+      <item>loopconcatword</item>
+      <item>loopfiles</item>
+      <item>looplist</item>
+      <item>loopwhile</item>
+      <item>miniconskip</item>
+      <item>nodebug</item>
+      <item>onrelease</item>
+      <item>prettylist</item>
+      <item>push</item>
+      <item>resetvar</item>
+      <item>result</item>
+      <item>rnd</item>
+      <item>saycommand</item>
+      <item>searchbinds</item>
+      <item>searcheditbinds</item>
+      <item>searchspecbinds</item>
+      <item>sleep</item>
+      <item>strcmp</item>
+      <item>strlen</item>
+      <item>strreplace</item>
+      <item>strstr</item>
+      <item>sublist</item>
+      <item>substr</item>
+      <item>tabify</item>
+      <item>toggleconsole</item>
+      <item>unescape</item>
+      <item>while</item>
+      <item>writecfg</item>
+    </list>
+    <list name="bindcommands">
+      <item>bind</item>
+      <item>editbind</item>
+      <item>specbind</item>
+      <item>getbind</item>
+      <item>geteditbind</item>
+      <item>getspecbind</item>
+    </list>
+    <list name="operators">
+      <!--
+        listed in the same order as in src/engine/command.cpp
+        Includes all available operators, both basic and advanced
+      -->
+      <item>+</item>
+      <item>*</item>
+      <item>-</item>
+      <item>+f</item>
+      <item>*f</item>
+      <item>-f</item>
+      <item>=</item>
+      <item>!=</item>
+      <item>&gt;</item>
+      <item>&lt;</item>
+      <item>&gt;=</item>
+      <item>&lt;=</item>
+      <item>=f</item>
+      <item>!=f</item>
+      <item>&gt;f</item>
+      <item>&lt;f</item>
+      <item>&gt;=f</item>
+      <item>&lt;=f</item>
+      <item>^</item>
+      <item>!</item>
+      <item>&amp;</item>
+      <item>|</item>
+      <item>~</item>
+      <item>^~</item>
+      <item>&amp;~</item>
+      <item>|~</item>
+      <item>&lt;&lt;</item>
+      <item>&gt;&gt;</item>
+      <item>&amp;&amp;</item>
+      <item>||</item>
+      <item>abs</item>
+      <item>absf</item>
+      <item>div</item>
+      <item>mod</item>
+      <item>divf</item>
+      <item>modf</item>
+      <item>sin</item>
+      <item>cos</item>
+      <item>tan</item>
+      <item>asin</item>
+      <item>acos</item>
+      <item>atan</item>
+      <item>sqrt</item>
+      <item>pow</item>
+      <item>loge</item>
+      <item>log2</item>
+      <item>log10</item>
+      <item>exp</item>
+      <item>min</item>
+      <item>max</item>
+      <item>minf</item>
+      <item>maxf</item>
+      <item>=s</item>
+      <item>!=s</item>
+      <item>&lt;s</item>
+      <item>&gt;s</item>
+      <item>&lt;=s</item>
+      <item>&gt;=s</item>
+    </list>
+    <list name="keys">
+      <!-- SDL 2.0 Standard Mose Buttons -->
+      <item>MOUSELEFT</item>
+      <item>MOUSEMIDDLE</item>
+      <item>MOUSERIGHT</item>
+      <item>MOUSEWHEELUP</item>
+      <item>MOUSEWHEELDOWN</item>
+      <item>MOUSEX1</item>
+      <item>MOUSEX2</item>
+
+      <!-- SDL 1.2, Standard Mouse Buttons -->
+      <item>MOUSE1</item>
+      <item>MOUSE2</item>
+      <item>MOUSE3</item>
+      <item>MOUSE4</item>
+      <item>MOUSE5</item>
+
+
+      <item>BACKSPACE</item>
+      <item>TAB</item>
+      <item>CLEAR</item>
+      <item>RETURN</item>
+      <item>PAUSE</item>
+      <item>ESCAPE</item>
+      <item>SPACE</item>
+      <item>EXCLAIM</item>
+      <item>QUOTEDBL</item>
+      <item>HASH</item>
+      <item>DOLLAR</item>
+      <item>AMPERSAND</item>
+      <item>QUOTE</item>
+      <item>LEFTPAREN</item>
+      <item>RIGHTPAREN</item>
+      <item>ASTERISK</item>
+      <item>PLUS</item>
+      <item>COMMA</item>
+      <item>MINUS</item>
+      <item>PERIOD</item>
+      <item>SLASH</item>
+      <item>0</item>
+      <item>1</item>
+      <item>2</item>
+      <item>3</item>
+      <item>4</item>
+      <item>5</item>
+      <item>6</item>
+      <item>7</item>
+      <item>8</item>
+      <item>9</item>
+      <item>COLON</item>
+      <item>SEMICOLON</item>
+      <item>LESS</item>
+      <item>EQUALS</item>
+      <item>GREATER</item>
+      <item>QUESTION</item>
+      <item>AT</item>
+      <item>LEFTBRACKET</item>
+      <item>BACKSLASH</item>
+      <item>RIGHTBRACKET</item>
+      <item>CARET</item>
+      <item>UNDERSCORE</item>
+      <item>BACKQUOTE</item>
+      <item>A</item>
+      <item>B</item>
+      <item>C</item>
+      <item>D</item>
+      <item>E</item>
+      <item>F</item>
+      <item>G</item>
+      <item>H</item>
+      <item>I</item>
+      <item>J</item>
+      <item>K</item>
+      <item>L</item>
+      <item>M</item>
+      <item>N</item>
+      <item>O</item>
+      <item>P</item>
+      <item>Q</item>
+      <item>R</item>
+      <item>S</item>
+      <item>T</item>
+      <item>U</item>
+      <item>V</item>
+      <item>W</item>
+      <item>X</item>
+      <item>Y</item>
+      <item>Z</item>
+      <item>DELETE</item>
+      <item>KP0</item>
+      <item>KP1</item>
+      <item>KP2</item>
+      <item>KP3</item>
+      <item>KP4</item>
+      <item>KP5</item>
+      <item>KP6</item>
+      <item>KP7</item>
+      <item>KP8</item>
+      <item>KP9</item>
+      <item>KP_PERIOD</item>
+      <item>KP_DIVIDE</item>
+      <item>KP_MULTIPLY</item>
+      <item>KP_MINUS</item>
+      <item>KP_PLUS</item>
+      <item>KP_ENTER</item>
+      <item>KP_EQUALS</item>
+      <item>UP</item>
+      <item>DOWN</item>
+      <item>RIGHT</item>
+      <item>LEFT</item>
+      <item>INSERT</item>
+      <item>HOME</item>
+      <item>END</item>
+      <item>PAGEUP</item>
+      <item>PAGEDOWN</item>
+      <item>F1</item>
+      <item>F2</item>
+      <item>F3</item>
+      <item>F4</item>
+      <item>F5</item>
+      <item>F6</item>
+      <item>F7</item>
+      <item>F8</item>
+      <item>F9</item>
+      <item>F10</item>
+      <item>F11</item>
+      <item>F12</item>
+      <item>F13</item>
+      <item>F14</item>
+      <item>F15</item>
+      <item>NUMLOCK</item>
+      <item>CAPSLOCK</item>
+      <item>SCROLLOCK</item>
+      <item>RSHIFT</item>
+      <item>LSHIFT</item>
+      <item>RCTRL</item>
+      <item>LCTRL</item>
+      <item>RALT</item>
+      <item>LALT</item>
+      <item>RMETA</item>
+      <item>LMETA</item>
+      <item>LSUPER</item>
+      <item>RSUPER</item>
+      <item>MODE</item>
+      <item>COMPOSE</item>
+      <item>HELP</item>
+      <item>PRINT</item>
+      <item>SYSREQ</item>
+      <item>BREAK</item>
+      <item>MENU</item>
+    </list>
+    <!-- Reserved aliases. -->
+    <list name="aliases">
+      <item>commandbuf</item>
+      <item>editing</item>
+      <item>mainmenu</item>
+      <item>numargs</item>
+    </list>
+    <!--
+        TODO list for Cubescript contexts
+        1) Add GLSL support for shader commands, It's vanilla GLSL, the cubescript witchcraft aside.
+        2) Improve alias highlighting eg foo@[bar]baz; do not highlight baz, but make sure to still highlight all of $foo[bar]baz, will probably need a special context.
+
+    -->
+
+    <contexts>
+      <context name="Normal" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Error" context="#stay" char="]"/>
+        <DetectChar attribute="Error" context="#stay" char=")"/>
+        <IncludeRules context="__Basic" />
+      </context>
+
+      <context name="Block" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Brackets" context="#pop" char="]" endRegion="Block" />
+        <DetectChar attribute="Error" context="#stay" char=")"/>
+        <IncludeRules context="__Basic" />
+      </context>
+
+      <context name="Brackets" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Error" context="#stay" char="]"/>
+        <DetectChar attribute="Brackets" context="#pop" char=")"/>
+        <IncludeRules context="__Basic" />
+      </context>
+
+      <context name="__Basic" attribute="Normal" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
+        <DetectChar attribute="Brackets" context="Block" char="[" beginRegion="Block" />
+        <DetectChar attribute="Brackets" context="Brackets" char="(" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <AnyChar lookAhead="true" context="Lookup" String="$@" />
+        <keyword attribute="Keyword" context="#stay" String="commands"/>
+        <keyword attribute="Operator" context="#stay" String="operators"/>
+        <keyword attribute="Keyword" context="Bind" String="bindcommands" />
+        <HlCHex attribute="IntOther" context="#stay"/>
+        <HlCOct attribute="IntOther" context="#stay"/>
+        <Float attribute="Float" context="#stay" />
+        <Int attribute="Int10" context="#stay"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Alerts" />
+      </context>
+
+      <context name="__Lookup" attribute="Lookup" lineEndContext="#pop">
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <DetectChar attribute="LookupBrackets" context="LookupEncBlock" char="[" />
+        <DetectChar attribute="LookupBrackets" context="LookupEncBrackets" char="(" />
+        <RegExpr attribute="Error" context="#stay" String="[^\$\s]+\$[^\[\]\(\)\s]*" />
+        <RegExpr attribute="Error" context="#stay" String="\S+(?![\s\[\(])[^\$@](?=[\[\(])" />
+        <RegExpr attribute="Key" context="#stay" String="[@\$]*arg[0-9]+" />
+      </context>
+
+      <context name="Lookup" attribute="Lookup" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal" context="#pop" />
+        <AnyChar lookAhead="true" context="#pop" String=")];" />
+        <Detect2Chars lookAhead="true" context="#pop" char="/" char1="/"/>
+        <keyword attribute="Key" context="#stay" String="aliases" />
+        <IncludeRules context="__Lookup" />
+      </context>
+
+      <context name="LookupEncBrackets" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="LookupBrackets" context="#pop" char=")" />
+        <DetectChar attribute="Error" context="#stay" char="]" />
+        <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
+        <IncludeRules context="__Basic" />
+      </context>
+
+      <context name="LookupEncBlock" attribute="Lookup" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
+        <DetectChar attribute="Error" context="#stay" char=")" />
+        <DetectChar attribute="LookupBrackets" context="#pop" char="]" />
+        <keyword attribute="Key" context="#stay" String="aliases" />
+        <IncludeRules context="__Lookup" />
+      </context>
+
+      <context name="String" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+        <!-- Escape newlines. -->
+        <LineContinue attribute="Escaped" context="#stay" char="^" />
+        <DetectChar attribute="Escaped" context="Escaped" char="^" />
+      </context>
+
+      <context name="Escaped" attribute="Escaped" lineEndContext="#stay" >
+        <!-- Cubescript treats any character following a "^" in a string is escaped. -->
+        <Detect2Chars char="f" char1="0" attribute="String0" context="#pop"/>
+        <Detect2Chars char="f" char1="1" attribute="String1" context="#pop"/>
+        <Detect2Chars char="f" char1="2" attribute="String2" context="#pop"/>
+        <Detect2Chars char="f" char1="3" attribute="String3" context="#pop"/>
+        <Detect2Chars char="f" char1="4" attribute="String4" context="#pop"/>
+        <Detect2Chars char="f" char1="5" attribute="String5" context="#pop"/>
+        <Detect2Chars char="f" char1="6" attribute="String6" context="#pop"/>
+        <Detect2Chars char="f" char1="7" attribute="String7" context="#pop"/>
+        <RegExpr String="f?." attribute="Escaped" context="#pop"/>
+      </context>
+
+      <context name="Bind" attribute="Error" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal" />
+        <AnyChar lookAhead="true" context="#pop" String="[]();&quot;$@" />
+        <keyword insensitive="true" attribute="Key" context="#pop" String="keys" />
+        <Detect2Chars lookAhead="true" context="#pop" char="/" char1="/"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal"      defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Lookup"      defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Error"       defStyleNum="dsError" spellChecking="false"/>
+      <itemData name="Int10"       defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="IntOther"    defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float"       defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="String"      defStyleNum="dsString"/>
+      <itemData name="Escaped"     defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Comment"     defStyleNum="dsComment"/>
+      <itemData name="Keyword"     defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Operator"    defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Key"         defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="LookupBrackets"    defStyleNum="dsRegionMarker" spellChecking="false"/>
+      <itemData name="Brackets"    defStyleNum="dsNormal" bold="1" spellChecking="false"/>
+      <!-- These are for the ^f# format tokens, the background colour is explicitly set to try and guarantee visibility at all times -->
+      <itemData name="String0"     defStyleNum="dsString" bold="1" color="#40FF80" backgroundColor="#3F3F3F" spellChecking="false"/>
+      <itemData name="String1"     defStyleNum="dsString" bold="1" color="#60A0FF" backgroundColor="#DFDFDF" spellChecking="false"/>
+      <itemData name="String2"     defStyleNum="dsString" bold="1" color="#FFC040" backgroundColor="#3F3F3F" spellChecking="false"/>
+      <itemData name="String3"     defStyleNum="dsString" bold="1" color="#FF4040" backgroundColor="#DFDFDF" spellChecking="false"/>
+      <itemData name="String4"     defStyleNum="dsString" bold="1" color="#808080" backgroundColor="#DFDFDF" spellChecking="false"/>
+      <itemData name="String5"     defStyleNum="dsString" bold="1" color="#A040A0" backgroundColor="#DFDFDF" spellChecking="false"/>
+      <itemData name="String6"     defStyleNum="dsString" bold="1" color="#FF8000" backgroundColor="#DFDFDF" spellChecking="false"/>
+      <itemData name="String7"     defStyleNum="dsString" bold="1" color="#FFFFFF" backgroundColor="#3F3F3F" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="true" wordWrapDeliminator="[(;" additionalDeliminator="$@" weakDeliminator="!=&lt;&gt;|&amp;^~+*"/>
+    <comments>
+      <comment name="singleLine" start="//" />
+    </comments>
+  </general>
+</language>
+<!--
+// kate: space-indent on; indent-width 2; replace-tabs on;
+-->

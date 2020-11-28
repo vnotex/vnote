@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="4GL" version="4" kateversion="5.0" section="Database" extensions="*.4gl;*.4GL;*.err" mimetype="text/x-4glsrc;text/x-4glerr" author="Andrej Falout (andrej@falout.org)" license="LGPL">
+  <highlighting>
+    <list name="keywords">
+      <item>at</item>
+      <item>by</item>
+      <item>go</item>
+      <item>if</item>
+      <item>in</item>
+      <item>is</item>
+      <item>no</item>
+      <item>of</item>
+      <item>on</item>
+      <item>or</item>
+      <item>to</item>
+      <item>up</item>
+
+      <item>add</item>
+      <item>ALL</item>
+      <item>and</item>
+      <item>ANY</item>
+      <item>avg</item>
+      <item>day</item>
+      <item>end</item>
+      <item>ESC</item>
+      <item>for</item>
+      <item>key</item>
+      <item>let</item>
+      <item>log</item>
+      <item>max</item>
+      <item>mdy</item>
+      <item>min</item>
+      <item>not</item>
+      <item>put</item>
+      <item>red</item>
+      <item>row</item>
+      <item>run</item>
+      <item>set</item>
+      <item>sum</item>
+      <item>top</item>
+
+      <item>blue</item>
+      <item>BOLD</item>
+      <item>call</item>
+      <item>case</item>
+      <item>cyan</item>
+      <item>desc</item>
+      <item>DROP</item>
+      <item>else</item>
+      <item>exit</item>
+      <item>file</item>
+      <item>form</item>
+      <item>FREE</item>
+      <item>from</item>
+      <item>goto</item>
+      <item>help</item>
+      <item>HIDE</item>
+      <item>HOLD</item>
+      <item>HOUR</item>
+      <item>into</item>
+      <item>last</item>
+      <item>left</item>
+      <item>like</item>
+      <item>line</item>
+      <item>load</item>
+      <item>LOCK</item>
+      <item>main</item>
+      <item>menu</item>
+      <item>MODE</item>
+      <item>name</item>
+      <item>NEED</item>
+      <item>next</item>
+      <item>null</item>
+      <item>open</item>
+      <item>page</item>
+      <item>PIPE</item>
+      <item>quit</item>
+      <item>READ</item>
+      <item>rows</item>
+      <item>show</item>
+      <item>skip</item>
+      <item>sort</item>
+      <item>STEP</item>
+      <item>STOP</item>
+      <item>TEMP</item>
+      <item>text</item>
+      <item>then</item>
+      <item>thru</item>
+      <item>true</item>
+      <item>user</item>
+      <item>WAIT</item>
+      <item>when</item>
+      <item>with</item>
+      <item>WORK</item>
+      <item>WRAP</item>
+      <item>year</item>
+
+      <item>after</item>
+      <item>alter</item>
+      <item>ascii</item>
+      <item>BEGIN</item>
+      <item>blink</item>
+      <item>clear</item>
+      <item>close</item>
+      <item>count</item>
+      <item>DEFER</item>
+      <item>DIRTY</item>
+      <item>error</item>
+      <item>every</item>
+      <item>false</item>
+      <item>fetch</item>
+      <item>field</item>
+      <item>first</item>
+      <item>flush</item>
+      <item>green</item>
+      <item>GROUP</item>
+      <item>index</item>
+      <item>input</item>
+      <item>label</item>
+      <item>lines</item>
+      <item>month</item>
+      <item>order</item>
+      <item>outer</item>
+      <item>pause</item>
+      <item>print</item>
+      <item>right</item>
+      <item>share</item>
+      <item>sleep</item>
+      <item>space</item>
+      <item>start</item>
+      <item>TABLE</item>
+      <item>today</item>
+      <item>union</item>
+      <item>UNITS</item>
+      <item>using</item>
+      <item>where</item>
+      <item>WHILE</item>
+      <item>white</item>
+
+      <item>ACCEPT</item>
+      <item>before</item>
+      <item>border</item>
+      <item>bottom</item>
+      <item>column</item>
+      <item>commit</item>
+      <item>create</item>
+      <item>cursor</item>
+      <item>define</item>
+      <item>delete</item>
+      <item>enable</item>
+      <item>ESCAPE</item>
+      <item>exists</item>
+      <item>finish</item>
+      <item>format</item>
+      <item>HAVING</item>
+      <item>header</item>
+      <item>insert</item>
+      <item>length</item>
+      <item>locate</item>
+      <item>margin</item>
+      <item>MINUTE</item>
+      <item>MODIFY</item>
+      <item>normal</item>
+      <item>option</item>
+      <item>output</item>
+      <item>PAGENO</item>
+      <item>prompt</item>
+      <item>record</item>
+      <item>report</item>
+      <item>return</item>
+      <item>revoke</item>
+      <item>SCREEN</item>
+      <item>scroll</item>
+      <item>SECOND</item>
+      <item>select</item>
+      <item>spaces</item>
+      <item>status</item>
+      <item>UNIQUE</item>
+      <item>UNLOAD</item>
+      <item>update</item>
+      <item>values</item>
+      <item>window</item>
+      <item>yellow</item>
+
+      <item>between</item>
+      <item>clipped</item>
+      <item>cluster</item>
+      <item>columns</item>
+      <item>command</item>
+      <item>comment</item>
+      <item>connect</item>
+      <item>CURRENT</item>
+      <item>declare</item>
+      <item>display</item>
+      <item>execute</item>
+      <item>foreach</item>
+      <item>globals</item>
+      <item>infield</item>
+      <item>MAGENTA</item>
+      <item>matches</item>
+      <item>message</item>
+      <item>options</item>
+      <item>prepare</item>
+      <item>printer</item>
+      <item>program</item>
+      <item>reverse</item>
+      <item>trailer</item>
+      <item>upshift</item>
+      <item>waiting</item>
+      <item>without</item>
+
+      <item>ABSOLUTE</item>
+      <item>continue</item>
+      <item>database</item>
+      <item>defaults</item>
+      <item>DISTINCT</item>
+      <item>EXTERNAL</item>
+      <item>function</item>
+      <item>INT_FLAG</item>
+      <item>NOTFOUND</item>
+      <item>previous</item>
+      <item>ROLLBACK</item>
+      <item>whenever</item>
+      <item>wordwrap</item>
+
+      <item>attribute</item>
+      <item>committed</item>
+      <item>construct</item>
+      <item>delimiter</item>
+      <item>downshift</item>
+      <item>exclusive</item>
+      <item>INTERRUPT</item>
+      <item>ISOLATION</item>
+      <item>otherwise</item>
+      <item>quit_flag</item>
+      <item>returning</item>
+
+      <item>attributes</item>
+      <item>CONSTRAINT</item>
+      <item>initialize</item>
+      <item>statistics</item>
+
+      <item>fgl_lastkey</item>
+      <item>formhandler</item>
+
+      <item>fgl_lastkey()</item>
+
+
+    </list>
+    <list name="types">
+      <item>char</item>
+      <item>date</item>
+      <item>array</item>
+      <item>float</item>
+      <item>money</item>
+      <item>serial</item>
+      <item>DECIMAL</item>
+      <item>integer</item>
+      <item>NUMERIC</item>
+      <item>VARCHAR</item>
+      <item>DATETIME</item>
+      <item>FRACTION</item>
+      <item>INTERVAL</item>
+      <item>smallint</item>
+    </list>
+   <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text 1">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <Float attribute="Float" context="Float Suffixes"/>
+        <HlCOct attribute="Octal" context="#stay"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Int attribute="Decimal" context="Int Suffixes"/>
+        <HlCChar attribute="Char" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <DetectChar attribute="Comment" context="Comment 1" char="#"/>
+        <DetectChar attribute="Comment" context="Comment 2" char="{"/>
+        <Detect2Chars attribute="Comment" context="Comment 1" char="-" char1="-"/>
+<!--        <Detect2Chars attribute="Comment" context="Comment 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Comment 2" char="/" char1="*"/>//-->
+        <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=&gt;?[]^|~"/>
+         <StringDetect attribute="Preprocessor" context="Comment 4" String="#if 0" insensitive="false"/>
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="#"/>
+      </context>
+      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <AnyChar String="fF" attribute="Float" context="#pop"/>
+      </context>
+      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Comment 1">
+        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment 2">
+        <DetectChar attribute="Comment" context="#pop" char="}"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+      </context>
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
+        <DetectChar attribute="Comment" context="Comment 1" char="#"/>
+        <DetectChar attribute="Comment" context="Comment 2" char="{"/>
+        <Detect2Chars attribute="Comment" context="Comment 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Comment 3" char="/" char1="*"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment 3">
+        <DetectChar attribute="Comment" context="#pop" char="}"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment 4">
+          <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+          <RegExpr attribute="Comment" context="Comment 5" String="#if" />
+          <RegExpr attribute="Preprocessor" context="#pop" String="#endif" />
+          <RegExpr attribute="Preprocessor" context="#pop" String="#else" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment 5">
+          <RegExpr attribute="Comment" context="Comment 5" String="#if" />
+          <RegExpr attribute="Comment" context="#pop" String="#endif" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword"/>
+      <itemData name="Data Type"  defStyleNum="dsDataType"/>
+      <itemData name="Decimal"  defStyleNum="dsDecVal"/>
+      <itemData name="Octal"  defStyleNum="dsBaseN"/>
+      <itemData name="Hex"  defStyleNum="dsBaseN"/>
+      <itemData name="Float"  defStyleNum="dsFloat"/>
+      <itemData name="Char"  defStyleNum="dsChar"/>
+      <itemData name="String"  defStyleNum="dsString"/>
+      <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
+      <itemData name="Comment"  defStyleNum="dsComment"/>
+      <itemData name="Symbol"  defStyleNum="dsNormal"/>
+      <itemData name="Preprocessor"  defStyleNum="dsPreprocessor"/>
+      <itemData name="Prep. Lib"  defStyleNum="dsImport"/>
+      <itemData name="Alert"        defStyleNum="dsAlert"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="{" end="}" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>
+
+
+

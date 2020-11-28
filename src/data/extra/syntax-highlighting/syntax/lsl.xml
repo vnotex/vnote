@@ -1,0 +1,1050 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Linden Scripting Language used in SecondLife and OpenMetaverse -->
+
+<!-- following entities are taken from the original lexer (indra.l) -->
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+  <!ENTITY N "[0-9]">
+  <!ENTITY L "[a-zA-Z_]">
+  <!ENTITY H "[a-fA-F0-9]">
+  <!ENTITY E "[Ee][+-]?&N;+">
+  <!ENTITY FS "(f|F)">
+]>
+<!-- versioning is based on the slviewer source code version from which strings were extracted, then a point version for this file -->
+<language name="LSL" section="Scripts" version="3" kateversion="2.5" extensions="*.lsl" mimetype="text/x-lsl" author="Rafał Rzepecki" license="LGPLv3">
+  <highlighting>
+    <!-- types, keyword, events, constants and symbols are from indra.l -->
+    <list name="types">
+      <item>integer</item>
+      <item>float</item>
+      <item>string</item>
+      <item>key</item>
+      <item>vector</item>
+      <item>quaternion</item>
+      <item>rotation</item>
+      <item>list</item>
+    </list>
+    <list name="keywords">
+      <item>default</item>
+      <item>state</item>
+      <item>event</item>
+      <item>jump</item>
+      <item>return</item>
+      <item>if</item>
+      <item>else</item>
+      <item>for</item>
+      <item>do</item>
+      <item>while</item>
+    </list>
+    <list name="events">
+      <item>state_entry</item>
+      <item>state_exit</item>
+      <item>touch_start</item>
+      <item>touch</item>
+      <item>touch_end</item>
+      <item>collision_start</item>
+      <item>collision</item>
+      <item>collision_end</item>
+      <item>land_collision_start</item>
+      <item>land_collision</item>
+      <item>land_collision_end</item>
+      <item>timer</item>
+      <item>listen</item>
+      <item>sensor</item>
+      <item>no_sensor</item>
+      <item>control</item>
+      <item>print</item>
+      <item>at_target</item>
+      <item>not_at_target</item>
+      <item>at_rot_target</item>
+      <item>not_at_rot_target</item>
+      <item>money</item>
+      <item>email</item>
+      <item>run_time_permissions</item>
+      <item>changed</item>
+      <item>attach</item>
+      <item>dataserver</item>
+      <item>moving_start</item>
+      <item>moving_end</item>
+      <item>link_message</item>
+      <item>on_rez</item>
+      <item>object_rez</item>
+      <item>remote_data</item>
+      <item>http_response</item>
+    </list>
+    <list name="constants">
+      <item>TRUE</item>
+      <item>FALSE</item>
+      <item>STATUS_PHYSICS</item>
+      <item>STATUS_ROTATE_X</item>
+      <item>STATUS_ROTATE_Y</item>
+      <item>STATUS_ROTATE_Z</item>
+      <item>STATUS_PHANTOM</item>
+      <item>STATUS_SANDBOX</item>
+      <item>STATUS_BLOCK_GRAB</item>
+      <item>STATUS_DIE_AT_EDGE</item>
+      <item>STATUS_RETURN_AT_EDGE</item>
+      <item>STATUS_CAST_SHADOWS</item>
+
+      <item>AGENT_FLYING</item>
+      <item>AGENT_ATTACHMENTS</item>
+      <item>AGENT_SCRIPTED</item>
+      <item>AGENT_MOUSELOOK</item>
+      <item>AGENT_SITTING</item>
+      <item>AGENT_ON_OBJECT</item>
+      <item>AGENT_AWAY</item>
+      <item>AGENT_WALKING</item>
+      <item>AGENT_IN_AIR</item>
+      <item>AGENT_TYPING</item>
+      <item>AGENT_CROUCHING</item>
+      <item>AGENT_BUSY</item>
+      <item>AGENT_ALWAYS_RUN</item>
+
+      <item>CAMERA_PITCH</item>
+      <item>CAMERA_FOCUS_OFFSET</item>
+      <item>CAMERA_POSITION_LAG</item>
+      <item>CAMERA_FOCUS_LAG</item>
+      <item>CAMERA_DISTANCE</item>
+      <item>CAMERA_BEHINDNESS_ANGLE</item>
+      <item>CAMERA_BEHINDNESS_LAG</item>
+      <item>CAMERA_POSITION_THRESHOLD</item>
+      <item>CAMERA_FOCUS_THRESHOLD</item>
+      <item>CAMERA_ACTIVE</item>
+      <item>CAMERA_POSITION</item>
+      <item>CAMERA_FOCUS</item>
+      <item>CAMERA_POSITION_LOCKED</item>
+      <item>CAMERA_FOCUS_LOCKED</item>
+
+      <item>ANIM_ON</item>
+      <item>LOOP</item>
+      <item>REVERSE</item>
+      <item>PING_PONG</item>
+      <item>SMOOTH</item>
+      <item>ROTATE</item>
+      <item>SCALE</item>
+
+      <item>ALL_SIDES</item>
+      <item>LINK_ROOT</item>
+      <item>LINK_SET</item>
+      <item>LINK_ALL_OTHERS</item>
+      <item>LINK_ALL_CHILDREN</item>
+      <item>LINK_THIS</item>
+
+      <item>AGENT</item>
+      <item>ACTIVE</item>
+      <item>PASSIVE</item>
+      <item>SCRIPTED</item>
+
+      <item>CONTROL_FWD</item>
+      <item>CONTROL_BACK</item>
+      <item>CONTROL_LEFT</item>
+      <item>CONTROL_RIGHT</item>
+      <item>CONTROL_ROT_LEFT</item>
+      <item>CONTROL_ROT_RIGHT</item>
+      <item>CONTROL_UP</item>
+      <item>CONTROL_DOWN</item>
+      <item>CONTROL_LBUTTON</item>
+      <item>CONTROL_ML_LBUTTON</item>
+
+      <item>PERMISSION_DEBIT</item>
+      <item>PERMISSION_TAKE_CONTROLS</item>
+      <item>PERMISSION_REMAP_CONTROLS</item>
+      <item>PERMISSION_TRIGGER_ANIMATION</item>
+      <item>PERMISSION_ATTACH</item>
+      <item>PERMISSION_RELEASE_OWNERSHIP</item>
+      <item>PERMISSION_CHANGE_LINKS</item>
+      <item>PERMISSION_CHANGE_JOINTS</item>
+      <item>PERMISSION_CHANGE_PERMISSIONS</item>
+      <item>PERMISSION_TRACK_CAMERA</item>
+      <item>PERMISSION_CONTROL_CAMERA</item>
+
+      <item>INVENTORY_TEXTURE</item>
+      <item>INVENTORY_SOUND</item>
+      <item>INVENTORY_OBJECT</item>
+      <item>INVENTORY_SCRIPT</item>
+      <item>INVENTORY_LANDMARK</item>
+      <item>INVENTORY_CLOTHING</item>
+      <item>INVENTORY_NOTECARD</item>
+      <item>INVENTORY_BODYPART</item>
+      <item>INVENTORY_ANIMATION</item>
+      <item>INVENTORY_GESTURE</item>
+      <item>INVENTORY_ALL</item>
+      <item>INVENTORY_NONE</item>
+
+      <item>CHANGED_INVENTORY</item>
+      <item>CHANGED_COLOR</item>
+      <item>CHANGED_SHAPE</item>
+      <item>CHANGED_SCALE</item>
+      <item>CHANGED_TEXTURE</item>
+      <item>CHANGED_LINK</item>
+      <item>CHANGED_ALLOWED_DROP</item>
+      <item>CHANGED_OWNER</item>
+      <item>CHANGED_REGION</item>
+      <item>CHANGED_TELEPORT</item>
+
+      <item>OBJECT_UNKNOWN_DETAIL</item>
+      <item>OBJECT_NAME</item>
+      <item>OBJECT_DESC</item>
+      <item>OBJECT_POS</item>
+      <item>OBJECT_ROT</item>
+      <item>OBJECT_VELOCITY</item>
+      <item>OBJECT_OWNER</item>
+      <item>OBJECT_GROUP</item>
+      <item>OBJECT_CREATOR</item>
+
+      <item>TYPE_INTEGER</item>
+      <item>TYPE_FLOAT</item>
+      <item>TYPE_STRING</item>
+      <item>TYPE_KEY</item>
+      <item>TYPE_VECTOR</item>
+      <item>TYPE_ROTATION</item>
+      <item>TYPE_INVALID</item>
+
+      <item>NULL_KEY</item>
+      <item>EOF</item>
+
+      <item>PI</item>
+      <item>TWO_PI</item>
+      <item>PI_BY_TWO</item>
+      <item>DEG_TO_RAD</item>
+      <item>RAD_TO_DEG</item>
+      <item>SQRT2</item>
+
+      <item>DEBUG_CHANNEL</item>
+      <item>PUBLIC_CHANNEL</item>
+
+      <item>ZERO_VECTOR</item>
+      <item>ZERO_ROTATION</item>
+
+      <item>ATTACH_CHEST</item>
+      <item>ATTACH_HEAD</item>
+      <item>ATTACH_LSHOULDER</item>
+      <item>ATTACH_RSHOULDER</item>
+      <item>ATTACH_LHAND</item>
+      <item>ATTACH_RHAND</item>
+      <item>ATTACH_LFOOT</item>
+      <item>ATTACH_RFOOT</item>
+      <item>ATTACH_BACK</item>
+      <item>ATTACH_PELVIS</item>
+      <item>ATTACH_MOUTH</item>
+      <item>ATTACH_CHIN</item>
+      <item>ATTACH_LEAR</item>
+      <item>ATTACH_REAR</item>
+      <item>ATTACH_LEYE</item>
+      <item>ATTACH_REYE</item>
+      <item>ATTACH_NOSE</item>
+      <item>ATTACH_RUARM</item>
+      <item>ATTACH_RLARM</item>
+      <item>ATTACH_LUARM</item>
+      <item>ATTACH_LLARM</item>
+      <item>ATTACH_RHIP</item>
+      <item>ATTACH_RULEG</item>
+      <item>ATTACH_RLLEG</item>
+      <item>ATTACH_LHIP</item>
+      <item>ATTACH_LULEG</item>
+      <item>ATTACH_LLLEG</item>
+      <item>ATTACH_BELLY</item>
+      <item>ATTACH_LPEC</item>
+      <item>ATTACH_RPEC</item>
+      <item>ATTACH_HUD_CENTER_2</item>
+      <item>ATTACH_HUD_TOP_RIGHT</item>
+      <item>ATTACH_HUD_TOP_CENTER</item>
+      <item>ATTACH_HUD_TOP_LEFT</item>
+      <item>ATTACH_HUD_CENTER_1</item>
+      <item>ATTACH_HUD_BOTTOM_LEFT</item>
+      <item>ATTACH_HUD_BOTTOM</item>
+      <item>ATTACH_HUD_BOTTOM_RIGHT</item>
+
+      <item>LAND_LEVEL</item>
+      <item>LAND_RAISE</item>
+      <item>LAND_LOWER</item>
+      <item>LAND_SMOOTH</item>
+      <item>LAND_NOISE</item>
+      <item>LAND_REVERT</item>
+
+      <item>LAND_SMALL_BRUSH</item>
+      <item>LAND_MEDIUM_BRUSH</item>
+      <item>LAND_LARGE_BRUSH</item>
+
+      <item>DATA_ONLINE</item>
+      <item>DATA_NAME</item>
+      <item>DATA_BORN</item>
+      <item>DATA_RATING</item>
+      <item>DATA_SIM_POS</item>
+      <item>DATA_SIM_STATUS</item>
+      <item>DATA_SIM_RATING</item>
+      <item>DATA_PAYINFO</item>
+
+      <item>PAYMENT_INFO_ON_FILE</item>
+      <item>PAYMENT_INFO_USED</item>
+
+      <item>REMOTE_DATA_CHANNEL</item>
+      <item>REMOTE_DATA_REQUEST</item>
+      <item>REMOTE_DATA_REPLY</item>
+
+
+      <item>PSYS_PART_FLAGS</item>
+      <item>PSYS_PART_START_COLOR</item>
+      <item>PSYS_PART_START_ALPHA</item>
+      <item>PSYS_PART_START_SCALE</item>
+      <item>PSYS_PART_END_COLOR</item>
+      <item>PSYS_PART_END_ALPHA</item>
+      <item>PSYS_PART_END_SCALE</item>
+      <item>PSYS_PART_MAX_AGE</item>
+
+
+      <item>PSYS_PART_WIND_MASK</item>
+      <item>PSYS_PART_INTERP_COLOR_MASK</item>
+      <item>PSYS_PART_INTERP_SCALE_MASK</item>
+      <item>PSYS_PART_BOUNCE_MASK</item>
+      <item>PSYS_PART_FOLLOW_SRC_MASK</item>
+      <item>PSYS_PART_FOLLOW_VELOCITY_MASK</item>
+      <item>PSYS_PART_TARGET_POS_MASK</item>
+      <item>PSYS_PART_EMISSIVE_MASK</item>
+      <item>PSYS_PART_TARGET_LINEAR_MASK</item>
+
+
+      <item>PSYS_SRC_MAX_AGE</item>
+      <item>PSYS_SRC_PATTERN</item>
+      <item>PSYS_SRC_INNERANGLE</item>
+      <item>PSYS_SRC_OUTERANGLE</item>
+      <item>PSYS_SRC_ANGLE_BEGIN</item>
+      <item>PSYS_SRC_ANGLE_END</item>
+      <item>PSYS_SRC_BURST_RATE</item>
+      <item>PSYS_SRC_BURST_PART_COUNT</item>
+      <item>PSYS_SRC_BURST_RADIUS</item>
+      <item>PSYS_SRC_BURST_SPEED_MIN</item>
+      <item>PSYS_SRC_BURST_SPEED_MAX</item>
+      <item>PSYS_SRC_ACCEL</item>
+      <item>PSYS_SRC_TEXTURE</item>
+      <item>PSYS_SRC_TARGET_KEY</item>
+      <item>PSYS_SRC_OMEGA</item>
+
+      <item>PSYS_SRC_OBJ_REL_MASK</item>
+
+      <item>PSYS_SRC_PATTERN_DROP</item>
+      <item>PSYS_SRC_PATTERN_EXPLODE</item>
+      <item>PSYS_SRC_PATTERN_ANGLE</item>
+      <item>PSYS_SRC_PATTERN_ANGLE_CONE</item>
+      <item>PSYS_SRC_PATTERN_ANGLE_CONE_EMPTY</item>
+
+
+      <item>VEHICLE_TYPE_NONE</item>
+      <item>VEHICLE_TYPE_SLED</item>
+      <item>VEHICLE_TYPE_CAR</item>
+      <item>VEHICLE_TYPE_BOAT</item>
+      <item>VEHICLE_TYPE_AIRPLANE</item>
+      <item>VEHICLE_TYPE_BALLOON</item>
+
+      <item>VEHICLE_REFERENCE_FRAME</item>
+      <item>VEHICLE_LINEAR_FRICTION_TIMESCALE</item>
+      <item>VEHICLE_ANGULAR_FRICTION_TIMESCALE</item>
+      <item>VEHICLE_LINEAR_MOTOR_DIRECTION</item>
+      <item>VEHICLE_ANGULAR_MOTOR_DIRECTION</item>
+      <item>VEHICLE_LINEAR_MOTOR_OFFSET</item>
+
+
+
+      <item>VEHICLE_HOVER_HEIGHT</item>
+      <item>VEHICLE_HOVER_EFFICIENCY</item>
+      <item>VEHICLE_HOVER_TIMESCALE</item>
+      <item>VEHICLE_BUOYANCY</item>
+
+      <item>VEHICLE_LINEAR_DEFLECTION_EFFICIENCY</item>
+      <item>VEHICLE_LINEAR_DEFLECTION_TIMESCALE</item>
+      <item>VEHICLE_LINEAR_MOTOR_TIMESCALE</item>
+      <item>VEHICLE_LINEAR_MOTOR_DECAY_TIMESCALE</item>
+
+      <item>VEHICLE_ANGULAR_DEFLECTION_EFFICIENCY</item>
+      <item>VEHICLE_ANGULAR_DEFLECTION_TIMESCALE</item>
+      <item>VEHICLE_ANGULAR_MOTOR_TIMESCALE</item>
+      <item>VEHICLE_ANGULAR_MOTOR_DECAY_TIMESCALE</item>
+
+      <item>VEHICLE_VERTICAL_ATTRACTION_EFFICIENCY</item>
+      <item>VEHICLE_VERTICAL_ATTRACTION_TIMESCALE</item>
+
+      <item>VEHICLE_BANKING_EFFICIENCY</item>
+      <item>VEHICLE_BANKING_MIX</item>
+      <item>VEHICLE_BANKING_TIMESCALE</item>
+
+      <item>VEHICLE_FLAG_NO_FLY_UP</item>
+      <item>VEHICLE_FLAG_NO_DEFLECTION_UP</item>
+      <item>VEHICLE_FLAG_LIMIT_ROLL_ONLY</item>
+      <item>VEHICLE_FLAG_HOVER_WATER_ONLY</item>
+      <item>VEHICLE_FLAG_HOVER_TERRAIN_ONLY</item>
+      <item>VEHICLE_FLAG_HOVER_GLOBAL_HEIGHT</item>
+      <item>VEHICLE_FLAG_HOVER_UP_ONLY</item>
+      <item>VEHICLE_FLAG_LIMIT_MOTOR_UP</item>
+      <item>VEHICLE_FLAG_MOUSELOOK_STEER</item>
+      <item>VEHICLE_FLAG_MOUSELOOK_BANK</item>
+      <item>VEHICLE_FLAG_CAMERA_DECOUPLED</item>
+
+
+
+      <item>PRIM_TYPE</item>
+      <item>PRIM_MATERIAL</item>
+      <item>PRIM_PHYSICS</item>
+      <item>PRIM_FLEXIBLE</item>
+      <item>PRIM_POINT_LIGHT</item>
+      <item>PRIM_TEMP_ON_REZ</item>
+      <item>PRIM_PHANTOM</item>
+      <item>PRIM_CAST_SHADOWS</item>
+      <item>PRIM_POSITION</item>
+      <item>PRIM_SIZE</item>
+      <item>PRIM_ROTATION</item>
+      <item>PRIM_TEXTURE</item>
+      <item>PRIM_COLOR</item>
+      <item>PRIM_BUMP_SHINY</item>
+      <item>PRIM_FULLBRIGHT</item>
+      <item>PRIM_TEXGEN</item>
+      <item>PRIM_GLOW</item>
+
+      <item>PRIM_TYPE_BOX</item>
+      <item>PRIM_TYPE_CYLINDER</item>
+      <item>PRIM_TYPE_PRISM</item>
+      <item>PRIM_TYPE_SPHERE</item>
+      <item>PRIM_TYPE_TORUS</item>
+      <item>PRIM_TYPE_TUBE</item>
+      <item>PRIM_TYPE_RING</item>
+      <item>PRIM_TYPE_SCULPT</item>
+
+      <item>PRIM_HOLE_DEFAULT</item>
+      <item>PRIM_HOLE_CIRCLE</item>
+      <item>PRIM_HOLE_SQUARE</item>
+      <item>PRIM_HOLE_TRIANGLE</item>
+
+      <item>PRIM_MATERIAL_STONE</item>
+      <item>PRIM_MATERIAL_METAL</item>
+      <item>PRIM_MATERIAL_GLASS</item>
+      <item>PRIM_MATERIAL_WOOD</item>
+      <item>PRIM_MATERIAL_FLESH</item>
+      <item>PRIM_MATERIAL_PLASTIC</item>
+      <item>PRIM_MATERIAL_RUBBER</item>
+      <item>PRIM_MATERIAL_LIGHT</item>
+
+      <item>PRIM_SHINY_NONE</item>
+      <item>PRIM_SHINY_LOW</item>
+      <item>PRIM_SHINY_MEDIUM</item>
+      <item>PRIM_SHINY_HIGH</item>
+
+      <item>PRIM_BUMP_NONE</item>
+      <item>PRIM_BUMP_BRIGHT</item>
+      <item>PRIM_BUMP_DARK</item>
+      <item>PRIM_BUMP_WOOD</item>
+      <item>PRIM_BUMP_BARK</item>
+      <item>PRIM_BUMP_BRICKS</item>
+      <item>PRIM_BUMP_CHECKER</item>
+      <item>PRIM_BUMP_CONCRETE</item>
+      <item>PRIM_BUMP_TILE</item>
+      <item>PRIM_BUMP_STONE</item>
+      <item>PRIM_BUMP_DISKS</item>
+      <item>PRIM_BUMP_GRAVEL</item>
+      <item>PRIM_BUMP_BLOBS</item>
+      <item>PRIM_BUMP_SIDING</item>
+      <item>PRIM_BUMP_LARGETILE</item>
+      <item>PRIM_BUMP_STUCCO</item>
+      <item>PRIM_BUMP_SUCTION</item>
+      <item>PRIM_BUMP_WEAVE</item>
+
+      <item>PRIM_TEXGEN_DEFAULT</item>
+      <item>PRIM_TEXGEN_PLANAR</item>
+
+      <item>PRIM_SCULPT_TYPE_SPHERE</item>
+      <item>PRIM_SCULPT_TYPE_TORUS</item>
+      <item>PRIM_SCULPT_TYPE_PLANE</item>
+      <item>PRIM_SCULPT_TYPE_CYLINDER</item>
+      <item>PRIM_SCULPT_TYPE_MASK</item>
+      <item>PRIM_SCULPT_FLAG_MIRROR</item>
+      <item>PRIM_SCULPT_FLAG_INVERT</item>
+
+      <item>MASK_BASE</item>
+      <item>MASK_OWNER</item>
+      <item>MASK_GROUP</item>
+      <item>MASK_EVERYONE</item>
+      <item>MASK_NEXT</item>
+
+      <item>PERM_TRANSFER</item>
+      <item>PERM_MODIFY</item>
+      <item>PERM_COPY</item>
+      <item>PERM_MOVE</item>
+      <item>PERM_ALL</item>
+
+      <item>PARCEL_MEDIA_COMMAND_STOP</item>
+      <item>PARCEL_MEDIA_COMMAND_PAUSE</item>
+      <item>PARCEL_MEDIA_COMMAND_PLAY</item>
+      <item>PARCEL_MEDIA_COMMAND_LOOP</item>
+      <item>PARCEL_MEDIA_COMMAND_TEXTURE</item>
+      <item>PARCEL_MEDIA_COMMAND_URL</item>
+      <item>PARCEL_MEDIA_COMMAND_TIME</item>
+      <item>PARCEL_MEDIA_COMMAND_AGENT</item>
+      <item>PARCEL_MEDIA_COMMAND_UNLOAD</item>
+      <item>PARCEL_MEDIA_COMMAND_AUTO_ALIGN</item>
+      <item>PARCEL_MEDIA_COMMAND_TYPE</item>
+      <item>PARCEL_MEDIA_COMMAND_SIZE</item>
+      <item>PARCEL_MEDIA_COMMAND_DESC</item>
+      <item>PARCEL_MEDIA_COMMAND_LOOP_SET</item>
+
+      <item>LIST_STAT_MAX</item>
+      <item>LIST_STAT_MIN</item>
+      <item>LIST_STAT_MEAN</item>
+      <item>LIST_STAT_MEDIAN</item>
+      <item>LIST_STAT_STD_DEV</item>
+      <item>LIST_STAT_SUM</item>
+      <item>LIST_STAT_SUM_SQUARES</item>
+      <item>LIST_STAT_NUM_COUNT</item>
+      <item>LIST_STAT_GEOMETRIC_MEAN</item>
+      <item>LIST_STAT_RANGE</item>
+
+      <item>PAY_HIDE</item>
+      <item>PAY_DEFAULT</item>
+
+      <item>PARCEL_FLAG_ALLOW_FLY</item>
+      <item>PARCEL_FLAG_ALLOW_GROUP_SCRIPTS</item>
+      <item>PARCEL_FLAG_ALLOW_SCRIPTS</item>
+      <item>PARCEL_FLAG_ALLOW_LANDMARK</item>
+      <item>PARCEL_FLAG_ALLOW_TERRAFORM</item>
+      <item>PARCEL_FLAG_ALLOW_DAMAGE</item>
+      <item>PARCEL_FLAG_ALLOW_CREATE_OBJECTS</item>
+      <item>PARCEL_FLAG_ALLOW_CREATE_GROUP_OBJECTS</item>
+      <item>PARCEL_FLAG_USE_ACCESS_GROUP</item>
+      <item>PARCEL_FLAG_USE_ACCESS_LIST</item>
+      <item>PARCEL_FLAG_USE_BAN_LIST</item>
+      <item>PARCEL_FLAG_USE_LAND_PASS_LIST</item>
+      <item>PARCEL_FLAG_LOCAL_SOUND_ONLY</item>
+      <item>PARCEL_FLAG_RESTRICT_PUSHOBJECT</item>
+      <item>PARCEL_FLAG_ALLOW_GROUP_OBJECT_ENTRY</item>
+      <item>PARCEL_FLAG_ALLOW_ALL_OBJECT_ENTRY</item>
+
+      <item>REGION_FLAG_ALLOW_DAMAGE</item>
+      <item>REGION_FLAG_FIXED_SUN</item>
+      <item>REGION_FLAG_BLOCK_TERRAFORM</item>
+      <item>REGION_FLAG_SANDBOX</item>
+      <item>REGION_FLAG_DISABLE_COLLISIONS</item>
+      <item>REGION_FLAG_DISABLE_PHYSICS</item>
+      <item>REGION_FLAG_BLOCK_FLY</item>
+      <item>REGION_FLAG_ALLOW_DIRECT_TELEPORT</item>
+      <item>REGION_FLAG_RESTRICT_PUSHOBJECT</item>
+
+      <item>HTTP_METHOD</item>
+      <item>HTTP_MIMETYPE</item>
+      <item>HTTP_BODY_MAXLENGTH</item>
+      <item>HTTP_BODY_TRUNCATED</item>
+      <item>HTTP_VERIFY_CERT</item>
+
+      <item>PARCEL_COUNT_TOTAL</item>
+      <item>PARCEL_COUNT_OWNER</item>
+      <item>PARCEL_COUNT_GROUP</item>
+      <item>PARCEL_COUNT_OTHER</item>
+      <item>PARCEL_COUNT_SELECTED</item>
+      <item>PARCEL_COUNT_TEMP</item>
+
+      <item>PARCEL_DETAILS_NAME</item>
+      <item>PARCEL_DETAILS_DESC</item>
+      <item>PARCEL_DETAILS_OWNER</item>
+      <item>PARCEL_DETAILS_GROUP</item>
+      <item>PARCEL_DETAILS_AREA</item>
+
+      <item>STRING_TRIM_HEAD</item>
+      <item>STRING_TRIM_TAIL</item>
+      <item>STRING_TRIM</item>
+
+      <item>CLICK_ACTION_NONE</item>
+      <item>CLICK_ACTION_TOUCH</item>
+      <item>CLICK_ACTION_SIT</item>
+      <item>CLICK_ACTION_BUY</item>
+      <item>CLICK_ACTION_PAY</item>
+      <item>CLICK_ACTION_OPEN</item>
+      <item>CLICK_ACTION_PLAY</item>
+      <item>CLICK_ACTION_OPEN_MEDIA</item>
+
+      <item>TEXTURE_BLANK</item>
+      <item>TEXTURE_DEFAULT</item>
+      <item>TEXTURE_MEDIA</item>
+      <item>TEXTURE_PLYWOOD</item>
+      <item>TEXTURE_TRANSPARENT</item>
+
+      <item>TOUCH_INVALID_FACE</item>
+      <item>TOUCH_INVALID_VECTOR</item>
+      <item>TOUCH_INVALID_TEXCOORD</item>
+    </list>
+    <list name="symbols">
+      <item>++</item>
+      <item>--</item>
+      <item>+=</item>
+      <item>-=</item>
+      <item>*=</item>
+      <item>/=</item>
+      <item>%=</item>
+      <item>;</item>
+      <item>,</item>
+      <item>=</item>
+      <item>(</item>
+      <item>)</item>
+      <item>-</item>
+      <item>+</item>
+      <item>*</item>
+      <item>/</item>
+      <item>%</item>
+      <item>@</item>
+      <item>:</item>
+      <item>&gt;</item>
+      <item>&lt;</item>
+      <item>==</item>
+      <item>!=</item>
+      <item>&gt;=</item>
+      <item>&lt;=</item>
+      <item>&amp;</item>
+      <item>|</item>
+      <item>^</item>
+      <item>~</item>
+      <item>!</item>
+      <item>&amp;&amp;</item>
+      <item>||</item>
+      <item>&lt;&lt;</item>
+      <item>&gt;&gt;</item>
+    </list>
+
+    <!-- stdlib is taken from lscript_library.cpp -->
+    <list name="stdlib">
+      <item>llSin</item>
+      <item>llCos</item>
+      <item>llTan</item>
+      <item>llAtan2</item>
+      <item>llSqrt</item>
+      <item>llPow</item>
+      <item>llAbs</item>
+      <item>llFabs</item>
+      <item>llFrand</item>
+      <item>llFloor</item>
+      <item>llCeil</item>
+      <item>llRound</item>
+      <item>llVecMag</item>
+      <item>llVecNorm</item>
+      <item>llVecDist</item>
+      <item>llRot2Euler</item>
+      <item>llEuler2Rot</item>
+      <item>llAxes2Rot</item>
+      <item>llRot2Fwd</item>
+      <item>llRot2Left</item>
+      <item>llRot2Up</item>
+      <item>llRotBetween</item>
+      <item>llWhisper</item>
+      <item>llSay</item>
+      <item>llShout</item>
+      <item>llListen</item>
+      <item>llListenControl</item>
+      <item>llListenRemove</item>
+      <item>llSensor</item>
+      <item>llSensorRepeat</item>
+      <item>llSensorRemove</item>
+      <item>llDetectedName</item>
+      <item>llDetectedKey</item>
+      <item>llDetectedOwner</item>
+      <item>llDetectedType</item>
+      <item>llDetectedPos</item>
+      <item>llDetectedVel</item>
+      <item>llDetectedGrab</item>
+      <item>llDetectedRot</item>
+      <item>llDetectedGroup</item>
+      <item>llDetectedLinkNumber</item>
+      <item>llDie</item>
+      <item>llGround</item>
+      <item>llCloud</item>
+      <item>llWind</item>
+      <item>llSetStatus</item>
+      <item>llGetStatus</item>
+      <item>llSetScale</item>
+      <item>llGetScale</item>
+      <item>llSetColor</item>
+      <item>llGetAlpha</item>
+      <item>llSetAlpha</item>
+      <item>llGetColor</item>
+      <item>llSetTexture</item>
+      <item>llScaleTexture</item>
+      <item>llOffsetTexture</item>
+      <item>llRotateTexture</item>
+      <item>llGetTexture</item>
+      <item>llSetPos</item>
+      <item>llGetPos</item>
+      <item>llGetLocalPos</item>
+      <item>llSetRot</item>
+      <item>llGetRot</item>
+      <item>llGetLocalRot</item>
+      <item>llSetForce</item>
+      <item>llGetForce</item>
+      <item>llTarget</item>
+      <item>llTargetRemove</item>
+      <item>llRotTarget</item>
+      <item>llRotTargetRemove</item>
+      <item>llMoveToTarget</item>
+      <item>llStopMoveToTarget</item>
+      <item>llApplyImpulse</item>
+      <item>llApplyRotationalImpulse</item>
+      <item>llSetTorque</item>
+      <item>llGetTorque</item>
+      <item>llSetForceAndTorque</item>
+      <item>llGetVel</item>
+      <item>llGetAccel</item>
+      <item>llGetOmega</item>
+      <item>llGetTimeOfDay</item>
+      <item>llGetWallclock</item>
+      <item>llGetTime</item>
+      <item>llResetTime</item>
+      <item>llGetAndResetTime</item>
+      <item>llSound</item>
+      <item>llPlaySound</item>
+      <item>llLoopSound</item>
+      <item>llLoopSoundMaster</item>
+      <item>llLoopSoundSlave</item>
+      <item>llPlaySoundSlave</item>
+      <item>llTriggerSound</item>
+      <item>llStopSound</item>
+      <item>llPreloadSound</item>
+      <item>llGetSubString</item>
+      <item>llDeleteSubString</item>
+      <item>llInsertString</item>
+      <item>llToUpper</item>
+      <item>llToLower</item>
+      <item>llGiveMoney</item>
+      <item>llMakeExplosion</item>
+      <item>llMakeFountain</item>
+      <item>llMakeSmoke</item>
+      <item>llMakeFire</item>
+      <item>llRezObject</item>
+      <item>llLookAt</item>
+      <item>llStopLookAt</item>
+      <item>llSetTimerEvent</item>
+      <item>llSleep</item>
+      <item>llGetMass</item>
+      <item>llCollisionFilter</item>
+      <item>llTakeControls</item>
+      <item>llReleaseControls</item>
+      <item>llAttachToAvatar</item>
+      <item>llDetachFromAvatar</item>
+      <item>llTakeCamera</item>
+      <item>llReleaseCamera</item>
+      <item>llGetOwner</item>
+      <item>llInstantMessage</item>
+      <item>llEmail</item>
+      <item>llGetNextEmail</item>
+      <item>llGetKey</item>
+      <item>llSetBuoyancy</item>
+      <item>llSetHoverHeight</item>
+      <item>llStopHover</item>
+      <item>llMinEventDelay</item>
+      <item>llSoundPreload</item>
+      <item>llRotLookAt</item>
+      <item>llStringLength</item>
+      <item>llStartAnimation</item>
+      <item>llStopAnimation</item>
+      <item>llPointAt</item>
+      <item>llStopPointAt</item>
+      <item>llTargetOmega</item>
+      <item>llGetStartParameter</item>
+      <item>llGodLikeRezObject</item>
+      <item>llRequestPermissions</item>
+      <item>llGetPermissionsKey</item>
+      <item>llGetPermissions</item>
+      <item>llGetLinkNumber</item>
+      <item>llSetLinkColor</item>
+      <item>llCreateLink</item>
+      <item>llBreakLink</item>
+      <item>llBreakAllLinks</item>
+      <item>llGetLinkKey</item>
+      <item>llGetLinkName</item>
+      <item>llGetInventoryNumber</item>
+      <item>llGetInventoryName</item>
+      <item>llSetScriptState</item>
+      <item>llGetEnergy</item>
+      <item>llGiveInventory</item>
+      <item>llRemoveInventory</item>
+      <item>llSetText</item>
+      <item>llWater</item>
+      <item>llPassTouches</item>
+      <item>llRequestAgentData</item>
+      <item>llRequestInventoryData</item>
+      <item>llSetDamage</item>
+      <item>llTeleportAgentHome</item>
+      <item>llModifyLand</item>
+      <item>llCollisionSound</item>
+      <item>llCollisionSprite</item>
+      <item>llGetAnimation</item>
+      <item>llResetScript</item>
+      <item>llMessageLinked</item>
+      <item>llPushObject</item>
+      <item>llPassCollisions</item>
+      <item>llGetScriptName</item>
+      <item>llGetNumberOfSides</item>
+      <item>llAxisAngle2Rot</item>
+      <item>llRot2Axis</item>
+      <item>llRot2Angle</item>
+      <item>llAcos</item>
+      <item>llAsin</item>
+      <item>llAngleBetween</item>
+      <item>llGetInventoryKey</item>
+      <item>llAllowInventoryDrop</item>
+      <item>llGetSunDirection</item>
+      <item>llGetTextureOffset</item>
+      <item>llGetTextureScale</item>
+      <item>llGetTextureRot</item>
+      <item>llSubStringIndex</item>
+      <item>llGetOwnerKey</item>
+      <item>llGetCenterOfMass</item>
+      <item>llListSort</item>
+      <item>llGetListLength</item>
+      <item>llList2Integer</item>
+      <item>llList2Float</item>
+      <item>llList2String</item>
+      <item>llList2Key</item>
+      <item>llList2Vector</item>
+      <item>llList2Rot</item>
+      <item>llList2List</item>
+      <item>llDeleteSubList</item>
+      <item>llGetListEntryType</item>
+      <item>llList2CSV</item>
+      <item>llCSV2List</item>
+      <item>llListRandomize</item>
+      <item>llList2ListStrided</item>
+      <item>llGetRegionCorner</item>
+      <item>llListInsertList</item>
+      <item>llListFindList</item>
+      <item>llGetObjectName</item>
+      <item>llSetObjectName</item>
+      <item>llGetDate</item>
+      <item>llEdgeOfWorld</item>
+      <item>llGetAgentInfo</item>
+      <item>llAdjustSoundVolume</item>
+      <item>llSetSoundQueueing</item>
+      <item>llSetSoundRadius</item>
+      <item>llKey2Name</item>
+      <item>llSetTextureAnim</item>
+      <item>llTriggerSoundLimited</item>
+      <item>llEjectFromLand</item>
+      <item>llParseString2List</item>
+      <item>llOverMyLand</item>
+      <item>llGetLandOwnerAt</item>
+      <item>llGetNotecardLine</item>
+      <item>llGetAgentSize</item>
+      <item>llSameGroup</item>
+      <item>llUnSit</item>
+      <item>llGroundSlope</item>
+      <item>llGroundNormal</item>
+      <item>llGroundContour</item>
+      <item>llGetAttached</item>
+      <item>llGetFreeMemory</item>
+      <item>llGetRegionName</item>
+      <item>llGetRegionTimeDilation</item>
+      <item>llGetRegionFPS</item>
+
+      <item>llParticleSystem</item>
+      <item>llGroundRepel</item>
+      <item>llGiveInventoryList</item>
+
+      <item>llSetVehicleType</item>
+      <item>llSetVehicleFloatParam</item>
+      <item>llSetVehicleVectorParam</item>
+      <item>llSetVehicleRotationParam</item>
+      <item>llSetVehicleFlags</item>
+      <item>llRemoveVehicleFlags</item>
+      <item>llSitTarget</item>
+      <item>llAvatarOnSitTarget</item>
+      <item>llAddToLandPassList</item>
+      <item>llSetTouchText</item>
+      <item>llSetSitText</item>
+      <item>llSetCameraEyeOffset</item>
+      <item>llSetCameraAtOffset</item>
+
+      <item>llDumpList2String</item>
+      <item>llScriptDanger</item>
+      <item>llDialog</item>
+      <item>llVolumeDetect</item>
+      <item>llResetOtherScript</item>
+      <item>llGetScriptState</item>
+      <item>llRemoteLoadScript</item>
+
+      <item>llSetRemoteScriptAccessPin</item>
+      <item>llRemoteLoadScriptPin</item>
+
+      <item>llOpenRemoteDataChannel</item>
+      <item>llSendRemoteData</item>
+      <item>llRemoteDataReply</item>
+      <item>llCloseRemoteDataChannel</item>
+
+      <item>llMD5String</item>
+      <item>llSetPrimitiveParams</item>
+      <item>llStringToBase64</item>
+      <item>llBase64ToString</item>
+      <item>llXorBase64Strings</item>
+      <item>llRemoteDataSetRegion</item>
+      <item>llLog10</item>
+      <item>llLog</item>
+      <item>llGetAnimationList</item>
+      <item>llSetParcelMusicURL</item>
+
+      <item>llGetRootPosition</item>
+      <item>llGetRootRotation</item>
+
+      <item>llGetObjectDesc</item>
+      <item>llSetObjectDesc</item>
+      <item>llGetCreator</item>
+      <item>llGetTimestamp</item>
+      <item>llSetLinkAlpha</item>
+      <item>llGetNumberOfPrims</item>
+      <item>llGetNumberOfNotecardLines</item>
+
+      <item>llGetBoundingBox</item>
+      <item>llGetGeometricCenter</item>
+      <item>llGetPrimitiveParams</item>
+      <item>llIntegerToBase64</item>
+      <item>llBase64ToInteger</item>
+      <item>llGetGMTclock</item>
+      <item>llGetSimulatorHostname</item>
+
+      <item>llSetLocalRot</item>
+
+      <item>llParseStringKeepNulls</item>
+      <item>llRezAtRoot</item>
+
+      <item>llGetObjectPermMask</item>
+      <item>llSetObjectPermMask</item>
+
+      <item>llGetInventoryPermMask</item>
+      <item>llSetInventoryPermMask</item>
+      <item>llGetInventoryCreator</item>
+      <item>llOwnerSay</item>
+      <item>llRequestSimulatorData</item>
+      <item>llForceMouselook</item>
+      <item>llGetObjectMass</item>
+      <item>llListReplaceList</item>
+      <item>llLoadURL</item>
+
+      <item>llParcelMediaCommandList</item>
+      <item>llParcelMediaQuery</item>
+
+      <item>llModPow</item>
+
+      <item>llGetInventoryType</item>
+      <item>llSetPayPrice</item>
+      <item>llGetCameraPos</item>
+      <item>llGetCameraRot</item>
+
+      <item>llSetPrimURL</item>
+      <item>llRefreshPrimURL</item>
+      <item>llEscapeURL</item>
+      <item>llUnescapeURL</item>
+
+      <item>llMapDestination</item>
+      <item>llAddToLandBanList</item>
+      <item>llRemoveFromLandPassList</item>
+      <item>llRemoveFromLandBanList</item>
+
+      <item>llSetCameraParams</item>
+      <item>llClearCameraParams</item>
+
+      <item>llListStatistics</item>
+      <item>llGetUnixTime</item>
+      <item>llGetParcelFlags</item>
+      <item>llGetRegionFlags</item>
+      <item>llXorBase64StringsCorrect</item>
+
+      <item>llHTTPRequest</item>
+
+      <item>llResetLandBanList</item>
+      <item>llResetLandPassList</item>
+
+      <item>llGetObjectPrimCount</item>
+      <item>llGetParcelPrimOwners</item>
+      <item>llGetParcelPrimCount</item>
+      <item>llGetParcelMaxPrims</item>
+      <item>llGetParcelDetails</item>
+
+      <item>llSetLinkPrimitiveParams</item>
+      <item>llSetLinkTexture</item>
+
+
+      <item>llStringTrim</item>
+      <item>llRegionSay</item>
+      <item>llGetObjectDetails</item>
+      <item>llSetClickAction</item>
+
+      <item>llGetRegionAgentCount</item>
+      <item>llTextBox</item>
+      <item>llGetAgentLanguage</item>
+      <item>llDetectedTouchUV</item>
+      <item>llDetectedTouchFace</item>
+      <item>llDetectedTouchPos</item>
+      <item>llDetectedTouchNormal</item>
+      <item>llDetectedTouchBinormal</item>
+      <item>llDetectedTouchST</item>
+
+      <item>llSHA1String</item>
+    </list>
+
+    <!-- for added convenience -->
+    <list name="attention">
+      <item>FIXME</item>
+      <item>TODO</item>
+      <item>BUG</item>
+      <item>HACK</item>
+      <item>XXX</item>
+    </list>
+    <contexts>
+      <context name="Default" attribute="Normal Text" lineEndContext="#stay">
+        <!-- all regexps here are based on indra.l -->
+        <Detect2Chars  char="/" char1="/" context="Comment"/>
+        <keyword attribute="Data Type" String="types"/>
+        <keyword attribute="Keyword" String="keywords"/>
+        <keyword attribute="Event" String="events"/>
+        <RegExpr attribute="Hex" String="0[xX]&H;+"/>
+        <RegExpr attribute="Decimal" String="&N;+"/>
+        <keyword attribute="Constant" String="constants"/>
+        <keyword attribute="Library Function" String="stdlib"/>
+        <RegExpr attribute="Function" String="&L;(&L;|&N;)*(?=\s*\()"/>
+        <RegExpr attribute="Identifier" String="&L;(&L;|&N;)*"/>
+        <RegExpr attribute="Float" String="&N;+&E;"/>
+        <RegExpr attribute="Float" String="&N;*\.&N;+(&E;)?&FS;?"/>
+        <RegExpr attribute="Float" String="&N;+\.&N;*(&E;)?&FS;?"/>
+        <RegExpr attribute="String" String="&L;?\&quot;(\\.|[^\\&quot;])*\&quot;"/>
+        <keyword attribute="Symbol" String="symbols"/>
+        <DetectChar char="." attribute="Symbol"/>
+        <DetectChar char="{" attribute="Brace" beginRegion="brace"/>
+        <DetectChar char="}" attribute="Brace" endRegion="brace"/>
+
+        <!-- the following allows folding multiline function calls and lists, very handy -->
+        <DetectChar char="(" attribute="Symbol" beginRegion="paren"/>
+        <DetectChar char=")" attribute="Symbol" endRegion="paren"/>
+        <DetectChar char="[" attribute="Symbol" beginRegion="list"/>
+        <DetectChar char="]" attribute="Symbol" endRegion="list"/>
+      </context>
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <keyword attribute="Alert" String="attention"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Event" defStyleNum="dsOthers"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Hex" defStyleNum="dsBaseN"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal"/>
+      <itemData name="Constant" defStyleNum="dsOthers"/>
+      <itemData name="Identifier" defStyleNum="dsNormal"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Brace" defStyleNum="dsNormal"/>
+      <itemData name="Library Function" defStyleNum="dsFunction" bold="1"/>
+      <itemData name="Function" defStyleNum="dsFunction"/>
+      <itemData name="Alert" defStyleNum="dsAlert"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+        <comment name="singleLine" position="afterwhitespace" start="//"/>
+    </comments>
+  </general>
+</language>
+<!--
+// kate: space-indent on; indent-width 2; replace-tabs on;
+-->

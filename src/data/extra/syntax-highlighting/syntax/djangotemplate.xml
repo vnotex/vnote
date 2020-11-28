@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!ENTITY name    "[A-Za-z_:][\w.:_-]*">
+	<!ENTITY entref  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
+]>
+<language name="Django HTML Template" version="4" kateversion="5.0" section="Markup" extensions="*.htm;*.html" mimetype="text/html"  author="Matthew Marshall (matthew@matthewmarshall.org)" license="LGPL" priority="9">
+
+<!--
+    Based off of the katepart html syntax highlighting by Wilbert Berendsen.
+
+    Email me with any bugs/suggestions/requests!
+-->
+
+<highlighting>
+
+<list name="blocktags">
+    <item>for</item>
+    <item>block</item>
+    <item>if</item>
+    <item>ifequal</item>
+    <item>ifnotequal</item>
+    <item>ifchanged</item>
+    <item>blocktrans</item>
+    <item>spaceless</item>
+    <item>autoescape</item>
+</list>
+
+<list name="endblocktags">
+    <item>endfor</item>
+    <item>endblock</item>
+    <item>endif</item>
+    <item>endifequal</item>
+    <item>endifnotequal</item>
+    <item>endifchanged</item>
+    <item>endblocktrans</item>
+    <item>endspaceless</item>
+    <item>endautoescape</item>
+</list>
+
+<contexts>
+  <context name="Start" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="Mismatched Block Tag" context="#stay" String="\{%\s*end[a-z]+\s*%\}" />
+    <IncludeRules context="FindTemplate" />
+    <IncludeRules context="FindHTML" />
+  </context>
+
+  <context name="In Block" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr context="#pop" String="\{%\s*end[a-z]+\s*%\}" lookAhead="true" />
+    <IncludeRules context="FindTemplate" />
+    <IncludeRules context="FindHTML" />
+  </context>
+
+  <context name="FindTemplate" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="Template Comment" context="Template Comment" String="\{%\s*comment\s*%\}" beginRegion="templatecomment" />
+    <Detect2Chars attribute="Template Var" context="Template Var" char="{" char1="{" />
+    <Detect2Chars attribute="Template Tag" context="Template Tag" char="{" char1="%" />
+  </context>
+
+  <context name="Template Comment" attribute="Template Comment" lineEndContext="#stay">
+    <RegExpr attribute="Template Comment" context="#pop" String="\{%\s*endcomment\s*%\}" endRegion="templatecomment" />
+  </context>
+
+  <context name="Template Var" attribute="Template Var" lineEndContext="#stay">
+    <Detect2Chars attribute="Template Var" context="#pop" char="}" char1="}" />
+    <DetectChar attribute="Template Filter" context="Template Filter" char='|' />
+    <Detect2Chars attribute="Error" context="#stay" char="{" char1="{" />
+    <Detect2Chars attribute="Error" context="#stay" char="{" char1="%" />
+    <Detect2Chars attribute="Error" context="#stay" char="%" char1="}" />
+  </context>
+
+  <context name="Template Filter" attribute="Template Filter" lineEndContext="#stay">
+    <Detect2Chars attribute="Template Var" context="#pop#pop" char="}" char1="}" />
+    <DetectChar attribute="Template String" char="'" context="Single A-string"/>
+    <DetectChar attribute="Template String" char="&quot;" context="Single Q-string"/>
+    <Detect2Chars attribute="Error" context="#stay" char="{" char1="{" />
+    <Detect2Chars attribute="Error" context="#stay" char="{" char1="%" />
+    <Detect2Chars attribute="Error" context="#stay" char="%" char1="}" />
+  </context>
+
+  <context name="Template Tag" attribute="Template Tag" lineEndContext="#stay">
+      <keyword String="blocktags" context="Found Block Tag" lookAhead="true" attribute="Template Tag" />
+      <DetectIdentifier attribute="Template Tag" context="In Template Tag" />
+  </context>
+
+  <context name="Found Block Tag" attribute="Template Tag" lineEndContext="#stay">
+    <!-- This context is entered when a matching block tag was found through lookAhead.  We need to capture it in an re, so that it can be matched with the end[blockname] tag later -->
+    <RegExpr attribute="Template Tag" String="(&name;)" context="In Block Tag"/>
+  </context>
+
+  <context name="In Block Tag" attribute="Template Tag Argument" dynamic="true" lineEndContext="#stay" >
+    <RegExpr context="#pop#pop#pop" String="\{%\s*end%1\s*%\}" dynamic="true" attribute="Template Tag"/>
+    <RegExpr context="Non Matching Tag" String="\{%\s*end[a-z]+\s*%\}" lookAhead="true" />
+    <Detect2Chars attribute="Template Tag" context="In Block" char="%" char1="}" />
+    <IncludeRules context="In Template Tag" />
+  </context>
+
+  <context name="Non Matching Tag" attribute="Template Tag" lineEndContext="#stay">
+    <keyword String="endblocktags" attribute="Mismatched Block Tag" context="#pop" />
+    <!-- If the mismatched tag is one we don't know about, ignore it. -->
+    <DetectIdentifier attribute="Template Tag" context="#pop" />
+  </context>
+
+  <context name="In Template Tag" attribute="Template Tag Argument" lineEndContext="#stay">
+    <Detect2Chars attribute="Template Tag" context="#pop#pop" char="%" char1="}" />
+    <DetectChar attribute="Template String" char="'" context="Single A-string"/>
+    <DetectChar attribute="Template String" char="&quot;" context="Single Q-string"/>
+    <Detect2Chars attribute="Error" context="#stay" char="{" char1="{" />
+    <Detect2Chars attribute="Error" context="#stay" char="{" char1="%" />
+    <Detect2Chars attribute="Error" context="#stay" char="}" char1="}" />
+  </context>
+
+  <context name="Single A-string" attribute="Template String" lineEndContext="#stay">
+    <HlCStringChar attribute="Template String" context="#stay"/>
+<!--       <RegExpr attribute="Operator" String="%[a-zA-Z]" context="#stay"/> -->
+    <DetectChar attribute="Template String" char="'" context="#pop"/>
+  </context>
+
+  <context name="Single Q-string" attribute="Template String" lineEndContext="#stay">
+    <HlCStringChar attribute="Template String" context="#stay"/>
+<!--       <RegExpr attribute="Operator" String="%[a-zA-Z]" context="#stay"/> -->
+    <DetectChar attribute="Template String" char="&quot;" context="#pop"/>
+  </context>
+
+
+
+  <context name="FindHTML" attribute="Normal Text" lineEndContext="#stay">
+    <DetectSpaces/>
+    <DetectIdentifier/>
+    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+    <StringDetect attribute="CDATA" context="CDATA" String="&lt;![CDATA[" beginRegion="cdata" />
+    <RegExpr attribute="Doctype" context="Doctype" String="&lt;!DOCTYPE\s+" beginRegion="doctype" />
+    <RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:-]*" beginRegion="pi" />
+    <RegExpr attribute="Element" context="CSS" String="&lt;style\b" insensitive="true" beginRegion="style" />
+    <RegExpr attribute="Element" context="JS" String="&lt;script\b" insensitive="true" beginRegion="script" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;pre\b" insensitive="true" beginRegion="pre" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;div\b" insensitive="true" beginRegion="div" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;table\b" insensitive="true" beginRegion="table" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;&name;" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/pre\b" insensitive="true" endRegion="pre" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/div\b" insensitive="true" endRegion="div" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/table\b" insensitive="true" endRegion="table" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/&name;" />
+    <!-- as long as kde gives DTDs the text/html mimetype--><IncludeRules context="FindDTDRules" />
+    <IncludeRules context="FindEntityRefs" />
+  </context>
+
+  <context name="FindEntityRefs" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+    <AnyChar attribute="Error" context="#stay" String="&amp;&lt;" />
+  </context>
+
+  <context name="FindPEntityRefs" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+    <RegExpr attribute="PEntityRef" context="#stay" String="%&name;;" />
+    <AnyChar attribute="Error" context="#stay" String="&amp;%" />
+  </context>
+
+  <context name="FindAttributes" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="Attribute" context="#stay" String="&name;" column="0"/>
+    <RegExpr attribute="Attribute" context="#stay" String="\s+&name;" />
+    <DetectChar attribute="Attribute" context="Value" char="=" />
+  </context>
+
+  <context name="FindDTDRules" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="Doctype" context="Doctype Markupdecl" String="&lt;!(ELEMENT|ENTITY|ATTLIST|NOTATION)\b" />
+  </context>
+
+
+  <context name="Comment" attribute="Comment" lineEndContext="#stay">
+    <DetectSpaces/>
+    <IncludeRules context="##Alerts" />
+    <IncludeRules context="FindTemplate" />
+    <DetectIdentifier/>
+    <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
+    <RegExpr attribute="Error" context="#stay" String="-(-(?!-&gt;))+" />
+  </context>
+
+  <context name="CDATA" attribute="Normal Text" lineEndContext="#stay">
+    <DetectSpaces/>
+    <DetectIdentifier/>
+    <StringDetect attribute="CDATA" context="#pop" String="]]&gt;" endRegion="cdata" />
+    <StringDetect attribute="EntityRef" context="#stay" String="]]&amp;gt;" />
+  </context>
+
+  <context name="PI" attribute="Normal Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Processing Instruction" context="#pop" char="?" char1="&gt;" endRegion="pi" />
+  </context>
+
+  <context name="Doctype" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="&gt;" endRegion="doctype" />
+    <DetectChar attribute="Doctype" context="Doctype Internal Subset" char="[" beginRegion="int_subset" />
+  </context>
+
+  <context name="Doctype Internal Subset" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="]" endRegion="int_subset" />
+    <IncludeRules context="FindDTDRules" />
+    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+    <RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:-]*" beginRegion="pi" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="Doctype Markupdecl" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="&gt;" />
+    <DetectChar attribute="Value" context="Doctype Markupdecl DQ" char="&quot;" />
+    <DetectChar attribute="Value" context="Doctype Markupdecl SQ" char="&apos;" />
+  </context>
+
+  <context name="Doctype Markupdecl DQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop" char="&quot;" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="Doctype Markupdecl SQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop" char="&apos;" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="El Open" attribute="Normal Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" />
+    <DetectChar attribute="Element" context="#pop" char="&gt;" />
+    <IncludeRules context="FindAttributes" />
+    <IncludeRules context="FindTemplate" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="El Close" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="#pop" char="&gt;" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="El Close 2" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="#pop#pop#pop" char="&gt;" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="El Close 3" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="#pop#pop#pop#pop" char="&gt;" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="CSS" attribute="Normal Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="style" />
+    <DetectChar attribute="Element" context="CSS content" char="&gt;" />
+    <IncludeRules context="FindAttributes" />
+    <IncludeRules context="FindTemplate" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="CSS content" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="Element" context="El Close 2" String="&lt;/style\b" insensitive="true" endRegion="style" />
+    <IncludeRules context="FindTemplate" />
+    <IncludeRules context="##CSS" includeAttrib="true"/>
+  </context>
+
+  <context name="JS" attribute="Normal Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="script" />
+    <DetectChar attribute="Element" context="JS content" char="&gt;" />
+    <IncludeRules context="FindTemplate" />
+    <IncludeRules context="FindAttributes" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="JS content" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="Element" context="El Close 2" String="&lt;/script\b" insensitive="true" endRegion="script" />
+    <RegExpr attribute="Comment" context="JS comment close" String="//(?=.*&lt;/script\b)" insensitive="true" />
+    <IncludeRules context="FindTemplate" />
+    <IncludeRules context="Normal##JavaScript" includeAttrib="true"/>
+  </context>
+
+  <context name="JS comment close" attribute="Comment" lineEndContext="#pop">
+    <RegExpr attribute="Element" context="El Close 3" String="&lt;/script\b" insensitive="true" endRegion="script" />
+    <IncludeRules context="FindTemplate" />
+    <IncludeRules context="##Alerts" />
+  </context>
+
+  <context name="Value" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="Value NQ">
+    <DetectChar attribute="Value" context="Value DQ" char="&quot;" />
+    <DetectChar attribute="Value" context="Value SQ" char="&apos;" />
+    <DetectSpaces />
+  </context>
+
+  <context name="Value NQ" attribute="Normal Text" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
+    <IncludeRules context="FindEntityRefs" />
+    <IncludeRules context="FindTemplate" />
+    <RegExpr attribute="Value" context="#stay" String="/(?!&gt;)" />
+    <RegExpr attribute="Value" context="#stay" String="[^/&gt;&lt;&quot;&apos;\s]" />
+  </context>
+
+  <context name="Value DQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop#pop" char="&quot;" />
+    <IncludeRules context="FindTemplate" />
+    <IncludeRules context="FindEntityRefs" />
+  </context>
+
+  <context name="Value SQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop#pop" char="&apos;" />
+    <IncludeRules context="FindTemplate" />
+    <IncludeRules context="FindEntityRefs" />
+  </context>
+
+</contexts>
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" />
+  <itemData name="Comment" defStyleNum="dsComment" />
+  <itemData name="CDATA" defStyleNum="dsBaseN" bold="1" />
+  <itemData name="Processing Instruction" defStyleNum="dsKeyword" />
+  <itemData name="Doctype" defStyleNum="dsDataType" bold="1" />
+  <itemData name="Element" defStyleNum="dsKeyword" />
+  <itemData name="Attribute" defStyleNum="dsOthers" />
+  <itemData name="Value" defStyleNum="dsString" />
+  <itemData name="EntityRef" defStyleNum="dsDecVal" />
+  <itemData name="PEntityRef" defStyleNum="dsDecVal" />
+  <itemData name="Error" defStyleNum="dsError" />
+  <itemData name="Template Var" defStyleNum="dsFunction" />
+  <itemData name="Template Tag" defStyleNum="dsFunction" />
+  <itemData name="Template Tag Argument" defStyleNum="dsFunction" />
+  <itemData name="Template String" defStyleNum="dsString" />
+  <itemData name="Template Comment" defStyleNum="dsComment" />
+  <itemData name="Template Filter" defStyleNum="dsOthers" />
+  <itemData name="Mismatched Block Tag" defStyleNum="dsError" />
+</itemDatas>
+
+</highlighting>
+<general>
+  <comments>
+      <comment name="multiLine" start="{% comment %}" end="{% endcomment %}" region="templatecomment" />
+  </comments>
+</general>
+</language>

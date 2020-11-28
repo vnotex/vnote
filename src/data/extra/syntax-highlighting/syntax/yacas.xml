@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="yacas" version="3" kateversion="2.2" section="Scientific" extensions="*.ys" mimetype="text/x-yacassrc">
+  <highlighting>
+    <list name="keywords">
+      <item>And</item>
+      <item>ApplyPure</item>
+      <item>ArrayCreate</item>
+      <item>ArrayGet</item>
+      <item>ArraySet</item>
+      <item>ArraySize</item>
+      <item>Atom</item>
+      <item>Berlekamp</item>
+      <item>BitAnd</item>
+      <item>BitOr</item>
+      <item>BitXor</item>
+      <item>Bodied</item>
+      <item>CTokenizer</item>
+      <item>Check</item>
+      <item>Clear</item>
+      <item>CommonLispTokenizer</item>
+      <item>Concat</item>
+      <item>ConcatStrings</item>
+      <item>CurrentFile</item>
+      <item>CurrentLine</item>
+      <item>CustomEval</item>
+      <item>CustomEval'Expression</item>
+      <item>CustomEval'Locals</item>
+      <item>CustomEval'Result</item>
+      <item>CustomEval'Stop</item>
+      <item>DefLoad</item>
+      <item>DefLoadFunction</item>
+      <item>DefMacroRuleBase</item>
+      <item>DefMacroRuleBaseListed</item>
+      <item>DefaultDirectory</item>
+      <item>DefaultTokenizer</item>
+      <item>Delete</item>
+      <item>DestructiveDelete</item>
+      <item>DestructiveInsert</item>
+      <item>DestructiveReplace</item>
+      <item>DestructiveReverse</item>
+      <item>DllEnumerate</item>
+      <item>DllLoad</item>
+      <item>DllUnload</item>
+      <item>Equals</item>
+      <item>Eval</item>
+      <item>FastArcCos</item>
+      <item>FastArcSin</item>
+      <item>FastArcTan</item>
+      <item>FastAssoc</item>
+      <item>FastCos</item>
+      <item>FastExp</item>
+      <item>FastIsPrime</item>
+      <item>FastLog</item>
+      <item>FastPower</item>
+      <item>FastSin</item>
+      <item>FastTan</item>
+      <item>FindFile</item>
+      <item>FindFunction</item>
+      <item>FlatCopy</item>
+      <item>FromBase</item>
+      <item>FromFile</item>
+      <item>FromString</item>
+      <item>FullForm</item>
+      <item>GarbageCollect</item>
+      <item>GenericTypeName</item>
+      <item>GetExtraInfo</item>
+      <item>GetPrecision</item>
+      <item>GreaterThan</item>
+      <item>Head</item>
+      <item>Hold</item>
+      <item>HoldArg</item>
+      <item>If</item>
+      <item>Infix</item>
+      <item>Insert</item>
+      <item>IsAtom</item>
+      <item>IsBodied</item>
+      <item>IsBound</item>
+      <item>IsFunction</item>
+      <item>IsGeneric</item>
+      <item>IsInfix</item>
+      <item>IsInteger</item>
+      <item>IsList</item>
+      <item>IsNumber</item>
+      <item>IsPostfix</item>
+      <item>IsPrefix</item>
+      <item>IsString</item>
+      <item>LazyGlobal</item>
+      <item>LeftPrecedence</item>
+      <item>Length</item>
+      <item>LessThan</item>
+      <item>LispRead</item>
+      <item>LispReadListed</item>
+      <item>List</item>
+      <item>Listify</item>
+      <item>Load</item>
+      <item>Local</item>
+      <item>LocalSymbols</item>
+      <item>MacroClear</item>
+      <item>MacroLocal</item>
+      <item>MacroRule</item>
+      <item>MacroRuleBase</item>
+      <item>MacroRuleBaseListed</item>
+      <item>MacroRulePattern</item>
+      <item>MacroSet</item>
+      <item>MathAbs</item>
+      <item>MathAdd</item>
+      <item>MathAnd</item>
+      <item>MathArcCos</item>
+      <item>MathArcSin</item>
+      <item>MathArcTan</item>
+      <item>MathCeil</item>
+      <item>MathCos</item>
+      <item>MathDiv</item>
+      <item>MathDivide</item>
+      <item>MathExp</item>
+      <item>MathFac</item>
+      <item>MathFloor</item>
+      <item>MathGcd</item>
+      <item>MathGetExactBits</item>
+      <item>MathLibrary</item>
+      <item>MathLog</item>
+      <item>MathMod</item>
+      <item>MathMultiply</item>
+      <item>MathNot</item>
+      <item>MathNth</item>
+      <item>MathOr</item>
+      <item>MathPi</item>
+      <item>MathPower</item>
+      <item>MathSetExactBits</item>
+      <item>MathSin</item>
+      <item>MathSqrt</item>
+      <item>MathSubtract</item>
+      <item>MathTan</item>
+      <item>MaxEvalDepth</item>
+      <item>Not</item>
+      <item>OpLeftPrecedence</item>
+      <item>OpPrecedence</item>
+      <item>OpRightPrecedence</item>
+      <item>Or</item>
+      <item>PatchLoad</item>
+      <item>PatchString</item>
+      <item>PatternCreate</item>
+      <item>PatternMatches</item>
+      <item>Postfix</item>
+      <item>Precision</item>
+      <item>Prefix</item>
+      <item>PrettyPrinter</item>
+      <item>Prog</item>
+      <item>Read</item>
+      <item>ReadToken</item>
+      <item>Replace</item>
+      <item>Retract</item>
+      <item>RightAssociative</item>
+      <item>RightPrecedence</item>
+      <item>Rule</item>
+      <item>RuleBase</item>
+      <item>RuleBaseArgList</item>
+      <item>RuleBaseDefined</item>
+      <item>RuleBaseListed</item>
+      <item>RulePattern</item>
+      <item>Secure</item>
+      <item>Set</item>
+      <item>SetExtraInfo</item>
+      <item>SetStringMid</item>
+      <item>ShiftLeft</item>
+      <item>ShiftRight</item>
+      <item>String</item>
+      <item>StringMid</item>
+      <item>Subst</item>
+      <item>SystemCall</item>
+      <item>Tail</item>
+      <item>ToBase</item>
+      <item>ToFile</item>
+      <item>ToString</item>
+      <item>TraceRule</item>
+      <item>TraceStack</item>
+      <item>Type</item>
+      <item>UnFence</item>
+      <item>UnList</item>
+      <item>Use</item>
+      <item>Version</item>
+      <item>While</item>
+      <item>Write</item>
+      <item>WriteString</item>
+      <item>XmlExplodeTag</item>
+      <item>XmlTokenizer</item>
+      <item>`</item>
+      <item>=</item>
+    </list>
+    <contexts>
+      <context name="default" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="String" context="string" char="&quot;"/>
+        <Detect2Chars attribute="Comment" context="linecomment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="multilinecomment" char="/" char1="*"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <AnyChar attribute="Parens" context="#stay" String="{[(" beginRegion="brace"/>
+        <AnyChar attribute="Parens" context="#stay" String="}])" endRegion="brace"/>
+        <AnyChar attribute="Symbol" context="#stay" String="+-*/=`~:!@#$^&amp;*_|&lt;&gt;"/>
+
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+      </context>
+      <context name="string" attribute="String" lineEndContext="#pop">
+        <LineContinue attribute="String" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context name="linecomment" attribute="Comment" lineEndContext="#pop">
+        <RegExpr attribute="Highlight" context="#stay" String="(FIXME|TODO)" />
+      </context>
+      <context name="multilinecomment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+        <RegExpr attribute="Highlight" context="#stay" String="(FIXME|TODO)" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword"/>
+      <itemData name="Decimal"  defStyleNum="dsDecVal"/>
+      <itemData name="Float"  defStyleNum="dsFloat"/>
+      <itemData name="String"  defStyleNum="dsString"/>
+      <itemData name="Comment"  defStyleNum="dsComment"/>
+      <itemData name="Symbol"  defStyleNum="dsOthers"/>
+      <itemData name="Parens"  defStyleNum="dsNormal"/>
+      <itemData name="Highlight"  defStyleNum="dsAlert"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="=`"/>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

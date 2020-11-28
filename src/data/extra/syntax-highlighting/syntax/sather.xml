@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Sather" version="2" kateversion="2.2" section="Sources" extensions="*.sa" mimetype="text/x-sather-src" casesensitive="1">
+        <highlighting>
+                <list name="keywords">
+                        <item>and</item>
+                        <item>assert</item>
+                        <item>attr</item>
+                        <item>break!</item>
+                        <item>case</item>
+                        <item>class</item>
+                        <item>const</item>
+                        <item>else</item>
+                        <item>elsif</item>
+                        <item>end</item>
+                        <item>exception</item>
+                        <item>external</item>
+                        <item>false</item>
+                        <item>if</item>
+                        <item>include</item>
+                        <item>initial</item>
+                        <item>is</item>
+                        <item>ITER</item>
+                        <item>loop</item>
+                        <item>new</item>
+                        <item>or</item>
+                        <item>post</item>
+                        <item>pre</item>
+                        <item>private</item>
+                        <item>protect</item>
+                        <item>quit</item>
+                        <item>raise</item>
+                        <item>readonly</item>
+                        <item>result</item>
+                        <item>return</item>
+                        <item>ROUT</item>
+                        <item>SAME</item>
+                        <item>self</item>
+                        <item>shared</item>
+                        <item>then</item>
+                        <item>true</item>
+                        <item>typecase</item>
+                        <item>type</item>
+                        <item>until!</item>
+                        <item>value</item>
+                        <item>void</item>
+                        <item>when</item>
+                        <item>while!</item>
+                        <item>yield</item>
+                        <item>abstract</item>
+                        <item>any</item>
+                        <item>bind</item>
+                        <item>fork</item>
+                        <item>guard</item>
+                        <item>immutable</item>
+                        <item>inout</item>
+                        <item>in</item>
+                        <item>lock</item>
+                        <item>once</item>
+                        <item>out</item>
+                        <item>parloop</item>
+                        <item>partial</item>
+                        <item>par</item>
+                        <item>spread</item>
+                        <item>stub</item>
+                </list>
+                <list name="types">
+                        <item>$OB</item>
+                        <item>ARRAY</item>
+                        <item>AREF</item>
+                        <item>AVAL</item>
+                        <item>BOOL</item>
+                        <item>CHAR</item>
+                        <item>EXT_OB</item>
+                        <item>FLTDX</item>
+                        <item>FLTD</item>
+                        <item>FLTX</item>
+                        <item>FLTI</item>
+                        <item>FLT</item>
+                        <item>INTI</item>
+                        <item>INT</item>
+                        <item>$REHASH</item>
+                        <item>STR</item>
+                        <item>SYS</item>
+                </list>
+                <list name="features">
+                        <item>create</item>
+                        <item>invariant</item>
+                        <item>main</item>
+                        <item>aget</item>
+                        <item>aset</item>
+                        <item>div</item>
+                        <item>is_eq</item>
+                        <item>is_geq</item>
+                        <item>is_gt</item>
+                        <item>is_leq</item>
+                        <item>is_lt</item>
+                        <item>is_neq</item>
+                        <item>minus</item>
+                        <item>mod</item>
+                        <item>negate</item>
+                        <item>not</item>
+                        <item>plus</item>
+                        <item>pow</item>
+                        <item>times</item>
+                </list>
+                <contexts>
+                        <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                                <keyword attribute="Data Type" context="#stay" String="types"/>
+                                <keyword attribute="Features" context="#stay" String="features"/>
+                                <Float attribute="Float" context="#stay"/>
+                                <Int attribute="Decimal" context="#stay"/>
+                                <RegExpr attribute="Char" context="#stay" String="'.'"/>
+                                <DetectChar attribute="String" context="String" char="&quot;"/>
+                                <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>
+                        </context>
+                        <context attribute="String" lineEndContext="#stay" name="String">
+                                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+                        </context>
+                        <context attribute="Comment" lineEndContext="#pop" name="Comment"/>
+                </contexts>
+                <itemDatas>
+                        <itemData name="Normal Text" defStyleNum="dsNormal" />
+                        <itemData name="Keyword"     defStyleNum="dsKeyword" />
+                        <itemData name="Data Type"   defStyleNum="dsDataType"/>
+                        <itemData name="Features"    defStyleNum="dsOthers" />
+                        <itemData name="Decimal"     defStyleNum="dsDecVal" />
+                        <itemData name="Float"       defStyleNum="dsFloat" />
+                        <itemData name="Char"        defStyleNum="dsChar" />
+                        <itemData name="String"      defStyleNum="dsString" />
+                        <itemData name="Comment"     defStyleNum="dsComment" />
+                </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="--" />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="$!"/>
+  </general>
+</language>

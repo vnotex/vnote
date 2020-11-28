@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="ActionScript 2.0" version="3" kateversion="5.0" section="Sources" extensions="*.as" mimetype="text/x-actionscript" license="LGPL" author="Aaron Miller (armantic101@gmail.com)">
+  <highlighting>
+    
+    <list name="properties">
+      <item>_accProps</item>
+      <item>_focusrect</item>
+      <item>_global</item>
+      <item>_highquality</item>
+      <item>_level</item>
+      <item>_parent</item>
+      <item>_quality</item>
+      <item>_root</item>
+      <item>_soundbuftime</item>
+      <item>maxscroll</item>
+      <item>scroll</item>
+      <item>this</item>
+    </list>
+    
+    <list name="global_functions">
+      <item>asfunction</item>
+      <item>call</item>
+      <item>chr</item>
+      <item>clearInterval</item>
+      <item>duplicateMovieClip</item>
+      <item>escape</item>
+      <item>eval</item>
+      <item>fscommand</item>
+      <item>getProperty</item>
+      <item>getTimer</item>
+      <item>getURL</item>
+      <item>getVersion</item>
+      <item>gotoAndPlay</item>
+      <item>gotoAndStop</item>
+      <item>ifFrameLoaded</item>
+      <item>int</item>
+      <item>isFinite</item>
+      <item>isNaN</item>
+      <item>length</item>
+      <item>loadMovie</item>
+      <item>loadMovieNum</item>
+      <item>loadVariables</item>
+      <item>loadVariablesNum</item>
+      <item>mbchr</item>
+      <item>mblength</item>
+      <item>mbord</item>
+      <item>mbsubstring</item>
+      <item>nextFrame</item>
+      <item>nextScene</item>
+      <item>on</item>
+      <item>onClipEvent</item>
+      <item>ord</item>
+      <item>parseFloat</item>
+      <item>parseInt</item>
+      <item>play</item>
+      <item>prevFrame</item>
+      <item>prevScene</item>
+      <item>print</item>
+      <item>printAsBitmap</item>
+      <item>printAsBitmapNum</item>
+      <item>printNum</item>
+      <item>random</item>
+      <item>removeMovieClip</item>
+      <item>setInterval</item>
+      <item>setProperty</item>
+      <item>showRedrawRegions</item>
+      <item>startDrag</item>
+      <item>stop</item>
+      <item>stopAllSounds</item>
+      <item>stopDrag</item>
+      <item>substring</item>
+      <item>targetPath</item>
+      <item>tellTarget</item>
+      <item>toggleHighQuality</item>
+      <item>trace</item>
+      <item>typeof</item>
+      <item>unescape</item>
+      <item>unloadMovie</item>
+      <item>unloadMovieNum</item>
+    <item>updateAfterEvent</item>
+    </list>
+      
+    <list name="classes">
+      <item>Accessibility</item>
+      <item>Accordion</item>
+      <item>Alert</item>
+      <item>Binding</item>
+      <item>Button</item>
+      <item>Camera</item>
+      <item>CellRenderer</item>
+      <item>CheckBox</item>
+      <item>Collection</item>
+      <item>Color</item>
+      <item>ComboBox</item>
+      <item>ComponentMixins</item>
+      <item>ContextMenu</item>
+      <item>ContextMenuItem</item>
+      <item>CustomActions</item>
+      <item>CustomFormatter</item>
+      <item>CustomValidator</item>
+      <item>DataGrid</item>
+      <item>DataHolder</item>
+      <item>DataProvider</item>
+      <item>DataSet</item>
+      <item>DataType</item>
+      <item>Date</item>
+      <item>DateChooser</item>
+      <item>DateField</item>
+      <item>Delta</item>
+      <item>DeltaItem</item>
+      <item>DeltaPacket</item>
+      <item>DepthManager</item>
+      <item>EndPoint</item>
+      <item>Error</item>
+      <item>FaultEvent</item>
+      <item>FocusManager</item>
+      <item>Form</item>
+      <item>Function</item>
+      <item>Iterator</item>
+      <item>Key</item>
+      <item>Label</item>
+      <item>List</item>
+      <item>LoadVars</item>
+      <item>Loader</item>
+      <item>LocalConnection</item>
+      <item>Log</item>
+      <item>Math</item>
+      <item>Media</item>
+      <item>Menu</item>
+      <item>MenuBar</item>
+      <item>Microphone</item>
+      <item>Mouse</item>
+      <item>MovieClip</item>
+      <item>MovieClipLoader</item>
+      <item>NetConnection</item>
+      <item>NetStream</item>
+      <item>Number</item>
+      <item>NumericStepper</item>
+      <item>PendingCall</item>
+      <item>PopUpManager</item>
+      <item>PrintJob</item>
+      <item>ProgressBar</item>
+      <item>RDBMSResolver</item>
+      <item>RadioButton</item>
+      <item>RelayResponder</item>
+      <item>SOAPCall</item>
+      <item>Screen</item>
+      <item>ScrollPane</item>
+      <item>Selection</item>
+      <item>SharedObject</item>
+      <item>Slide</item>
+      <item>Sound</item>
+      <item>Stage</item>
+      <item>StyleManager</item>
+      <item>System</item>
+      <item>TextArea</item>
+      <item>TextField</item>
+      <item>TextFormat</item>
+      <item>TextInput</item>
+      <item>TextSnapshot</item>
+      <item>TransferObject</item>
+      <item>Tree</item>
+      <item>TreeDataProvider</item>
+      <item>TypedValue</item>
+      <item>UIComponent</item>
+      <item>UIEventDispatcher</item>
+      <item>UIObject</item>
+      <item>Video</item>
+      <item>WebService</item>
+      <item>WebServiceConnector</item>
+      <item>Window</item>
+      <item>XML</item>
+      <item>XMLConnector</item>
+      <item>XUpdateResolver</item>
+    </list>
+    
+    <list name="keywords">
+      <item>add</item>
+      <item>and</item>
+      <item>break</item>
+      <item>case</item>
+      <item>catch</item>
+      <item>class</item>
+      <item>continue</item>
+      <item>default</item>
+      <item>delete</item>
+      <item>do</item>
+      <item>dynamic</item>
+      <item>else</item>
+      <item>eq</item>
+      <item>extends</item>
+      <item>finally</item>
+      <item>for</item>
+      <item>function</item>
+      <item>ge</item>
+      <item>get</item>
+      <item>gt</item>
+      <item>if</item>
+      <item>implements</item>
+      <item>import</item>
+      <item>in</item>
+      <item>instanceof</item>
+      <item>interface</item>
+      <item>intrinsic</item>
+      <item>le</item>
+      <item>lt</item>
+      <item>ne</item>
+      <item>new</item>
+      <item>not</item>
+      <item>or</item>
+      <item>private</item>
+      <item>public</item>
+      <item>return</item>
+      <item>set</item>
+      <item>static</item>
+      <item>switch</item>
+      <item>throw</item>
+      <item>try</item>
+      <item>var</item>
+      <item>void</item>
+      <item>while</item>
+      <item>with</item>
+    </list>
+    
+    <list name="const">
+      <item>false</item>
+      <item>Infinity</item>
+      <item>-Infinity</item>
+      <item>NaN</item>
+      <item>newline</item>
+      <item>null</item>
+      <item>true</item>
+      <item>undefined</item>
+    </list>
+    
+    <list name="types">
+      <item>Array</item>
+      <item>Boolean</item>
+      <item>Number</item>
+      <item>Object</item>
+      <item>String</item>
+      <item>Void</item>
+    </list>
+    
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <!-- Comment next line if you don't use Javadoc tool -->
+        <IncludeRules context="##Javadoc"/>
+        <keyword attribute="Properties" context="#stay" String="properties"/>
+        <keyword attribute="Global Functions" context="#stay" String="global_functions"/>
+        <keyword attribute="Classes" context="#stay" String="classes"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Constants" context="#stay" String="const"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <Float attribute="Float" context="Float Suffixes"/>
+        <HlCOct attribute="Octal" context="#stay"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Int attribute="Decimal" context="Int Suffixes"/>
+        <HlCChar attribute="Char" context="#stay"/>
+        <RegExpr attribute="Decimal" context="#stay" String="//\s*BEGIN.*$" beginRegion="Region1"/>
+        <RegExpr attribute="Decimal" context="#stay" String="//\s*END.*$" endRegion="Region1"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/> 
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/> 
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>  
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1"/>
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\.{3,3}\s+" />  
+        <RegExpr attribute="Keyword" context="StaticImports" String="\b(import\s+static)\b" />
+        <RegExpr attribute="Keyword" context="Imports" String="\b(package|import)\b" /> 
+        <RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*(/\*\s*\d+\s*\*/\s*)?[(])" />
+        <RegExpr attribute="Symbol" context="Member" String="[.]{1,1}" /> 
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^&#59;"/>
+      </context>
+      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <AnyChar String="fF" attribute="Float" context="#pop"/>
+      </context>
+      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Member" fallthrough="true" fallthroughContext="#pop">  
+        <RegExpr attribute="Function" context="#pop" String="\b[_a-zA-Z]\w*(?=[\s]*)" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="StaticImports">
+        <RegExpr attribute="StaticImports" context="#pop" String="\s*.*$" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Imports">
+        <RegExpr attribute="Imports" context="#pop" String="\s*.*$" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1"/>
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword"/>
+      <itemData name="Function"     defStyleNum="dsFunction"/>
+      <itemData name="StaticImports" defStyleNum="dsImport"/>
+      <itemData name="Imports"      defStyleNum="dsImport"/>
+      <itemData name="Data Type"    defStyleNum="dsDataType"/>
+      <itemData name="Decimal"      defStyleNum="dsDecVal"/>
+      <itemData name="Octal"        defStyleNum="dsBaseN"/>
+      <itemData name="Hex"          defStyleNum="dsBaseN"/>
+      <itemData name="Float"        defStyleNum="dsFloat"/>
+      <itemData name="Char"         defStyleNum="dsChar"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="String Char"  defStyleNum="dsSpecialString"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Symbol"       defStyleNum="dsNormal"/>
+      <itemData name="Properties"   defStyleNum="dsAttribute" bold="1"/>
+      <itemData name="Global Functions"   defStyleNum="dsFunction" bold="1"/>
+      <itemData name="Classes"   defStyleNum="dsBuiltIn" bold="1"/>
+      <itemData name="Constants" defStyleNum="dsConstant" bold="1"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="/*" end="*/"/>
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+</language>

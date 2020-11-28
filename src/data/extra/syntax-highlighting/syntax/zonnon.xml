@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Zonnon" version="2" kateversion="2.2" section="Sources" extensions="*.znn" mimetype="text/x-zonnon">
+  <highlighting>
+    <list name="keywords">
+      <item>accept</item>
+      <item>activity</item>
+      <item>array</item>
+      <item>as</item>
+      <item>await</item>
+      <item>begin</item>
+      <item>by</item>
+      <item>case</item>
+      <item>const</item>
+      <item>definition</item>
+      <item>div</item>
+      <item>do</item>
+      <item>else</item>
+      <item>elsif</item>
+      <item>end</item>
+      <item>exception</item>
+      <item>exit</item>
+      <item>for</item>
+      <item>if</item>
+      <item>implementation</item>
+      <item>implements</item>
+      <item>import</item>
+      <item>in</item>
+      <item>is</item>
+      <item>loop</item>
+      <item>mod</item>
+      <item>module</item>
+      <item>new</item>
+      <item>nil</item>
+      <item>object</item>
+      <item>of</item>
+      <item>on</item>
+      <item>operator</item>
+      <item>or</item>
+      <item>procedure</item>
+      <item>protocol</item>
+      <item>record</item>
+      <item>refines</item>
+      <item>repeat</item>
+      <item>return</item>
+      <item>self</item>
+      <item>termination</item>
+      <item>then</item>
+      <item>to</item>
+      <item>type</item>
+      <item>until</item>
+      <item>var</item>
+      <item>while</item>
+    </list>
+    <list name="modifiers">
+      <item>barrier</item>
+      <item>immutable</item>
+      <item>locked</item>
+      <item>private</item>
+      <item>protected</item>
+      <item>public</item>
+      <item>ref</item>
+      <item>sealed</item>
+      <item>shared</item>
+      <item>value</item>
+    </list>
+    <list name="predefines">
+      <item>abs</item>
+      <item>assert</item>
+      <item>cap</item>
+      <item>copy</item>
+      <item>copyvalue</item>
+      <item>dec</item>
+      <item>excl</item>
+      <item>false</item>
+      <item>halt</item>
+      <item>inc</item>
+      <item>len</item>
+      <item>low</item>
+      <item>max</item>
+      <item>min</item>
+      <item>odd</item>
+      <item>pred</item>
+      <item>read</item>
+      <item>readln</item>
+      <item>reason</item>
+      <item>size</item>
+      <item>succ</item>
+      <item>true</item>
+      <item>write</item>
+      <item>writeln</item>
+    </list>
+    <list name="types">
+      <item>boolean</item>
+      <item>cardinal</item>
+      <item>char</item>
+      <item>fixed</item>
+      <item>integer</item>
+      <item>real</item>
+      <item>set</item>
+      <item>string</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+	<keyword attribute="Type" context="#stay" String="types"/>
+	<keyword attribute="Modifier" context="#stay" String="modifiers"/>
+	<keyword attribute="Predefine" context="#stay" String="predefines"/>
+        <Float attribute="Number" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+	<HlCHex attribute="Number" context="#stay"/>
+        <DetectChar attribute="String" context="String1" char="&quot;" />
+        <DetectChar attribute="String" context="String2" char="'" />
+        <Detect2Chars attribute="Comment" context="Comment1" char="(" char1="*"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String1">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String2">
+        <DetectChar attribute="String" context="#pop" char="'" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment1">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")"/>
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Keyword"     defStyleNum="dsKeyword" />
+      <itemData name="Type"        defStyleNum="dsDataType"/>
+      <itemData name="Number"      defStyleNum="dsDecVal" />
+      <itemData name="String"      defStyleNum="dsString" />
+      <itemData name="Modifier"    defStyleNum="dsOthers" />
+      <itemData name="Predefine"   defStyleNum="dsKeyword"   italic="true" />
+      <itemData name="Comment"     defStyleNum="dsComment" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" />
+    <comments>
+      <comment name="multiLine" start="(*" end="*)" />
+    </comments>
+  </general>
+</language>

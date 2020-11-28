@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="AWK" version="3" kateversion="5.0" section="Scripts"
+  extensions="*.awk" mimetype="text/x-awk" indenter="cstyle"
+  license="LGPL">
+<!-- patched by igli#kate@irc:chat.freenode.net -->
+  <highlighting>
+    <list name="controlflow">
+      <item>if</item>
+      <item>else</item>
+      <item>while</item>
+      <item>do</item>
+      <item>for</item>
+      <item>break</item>
+      <item>continue</item>
+      <item>return</item>
+      <item>switch</item>
+      <item>case</item>
+      <item>default</item>
+      <item>exit</item>
+    </list>
+    <list name="keywords">
+      <item>in</item>
+      <item>delete</item>
+      <item>print</item>
+      <item>printf</item>
+      <item>getline</item>
+      <item>function</item>
+      <item>next</item>
+      <item>nextfile</item>
+      <item>@include</item>
+      <item>@load</item>
+    </list>
+    <list name="builtins">
+      <item>ARGC</item>
+      <item>ARGIND</item>
+      <item>ARGV</item>
+      <item>BINMODE</item>
+      <item>CONVFMT</item>
+      <item>ENVIRON</item>
+      <item>ERRNO</item>
+      <item>FIELDWIDTHS</item>
+      <item>FILENAME</item>
+      <item>FNR</item>
+      <item>FPAT</item>
+      <item>FS</item>
+      <item>FUNCTAB</item>
+      <item>IGNORECASE</item>
+      <item>LINT</item>
+      <item>NF</item>
+      <item>NR</item>
+      <item>OFMT</item>
+      <item>OFS</item>
+      <item>ORS</item>
+      <item>PREC</item>
+      <item>PROCINFO</item>
+      <item>ROUNDMODE</item>
+      <item>RS</item>
+      <item>RT</item>
+      <item>RSTART</item>
+      <item>RLENGTH</item>
+      <item>SUBSEP</item>
+      <item>SYMTAB</item>
+      <item>TEXTDOMAIN</item>
+    </list>
+    <list name="functions">
+      <!-- I/O -->
+      <item>close</item>
+      <item>fflush</item>
+      <item>system</item>
+      <!-- Arithmetic -->
+      <item>atan2</item>
+      <item>cos</item>
+      <item>exp</item>
+      <item>int</item>
+      <item>log</item>
+      <item>rand</item>
+      <item>sin</item>
+      <item>sqrt</item>
+      <item>srand</item>
+      <!-- String -->
+      <item>asort</item>
+      <item>asorti</item>
+      <item>gensub</item>
+      <item>gsub</item>
+      <item>index</item>
+      <item>length</item>
+      <item>match</item>
+      <item>patsplit</item>
+      <item>split</item>
+      <item>sprintf</item>
+      <item>strtonum</item>
+      <item>sub</item>
+      <item>substr</item>
+      <item>tolower</item>
+      <item>toupper</item>
+      <!-- Time -->
+      <item>mktime</item>
+      <item>strftime</item>
+      <item>systime</item>
+      <!-- Bit Manipulationse -->
+      <item>and</item>
+      <item>compl</item>
+      <item>lshift</item>
+      <item>or</item>
+      <item>rshift</item>
+      <item>xor</item>
+      <!-- Type -->
+      <item>isarray</item>
+      <item>typeof</item>
+      <!-- Internationalization -->
+      <item>bindtextdomain</item>
+      <item>dcgettext</item>
+      <item>dcngettext</item>
+    </list>
+    <list name="special">
+      <item>BEGIN</item>
+      <item>BEGINFILE</item>
+      <item>END</item>
+      <item>ENDFILE</item>
+    </list>
+    <list name="charclass">
+      <item>alpha</item>
+      <item>alnum</item>
+      <item>blank</item>
+      <item>cntrl</item>
+      <item>digit</item>
+      <item>graph</item>
+      <item>lower</item>
+      <item>print</item>
+      <item>punct</item>
+      <item>space</item>
+      <item>upper</item>
+      <item>xdigit</item>
+    </list>
+
+<contexts>
+<!-- START CONTEXTS -->
+<context name="Pattern" attribute="Normal" lineEndContext="#stay">
+	<DetectSpaces />
+	<DetectChar char="{" attribute="Symbol" context="Block" beginRegion="block" />
+	<DetectChar char="}" attribute="Error" context="#stay"/>
+	<DetectChar char="/" attribute="Regex Op" firstNonSpace="true" context="Regex"/>
+	<IncludeRules context="base" />
+	<keyword String="special" attribute="Special" context="#stay"/>
+</context>
+
+<context name="Block" attribute="Normal" lineEndContext="#stay">
+	<DetectSpaces />
+	<DetectChar char="}" attribute="Symbol" context="#pop" endRegion="block" />
+	<DetectChar char="{" attribute="Symbol" context="Block" beginRegion="block" />
+	<IncludeRules context="base" />
+	<keyword String="special" attribute="Error" context="#stay"/>
+</context>
+
+<context name="base" attribute="Normal" lineEndContext="#stay">
+	<DetectChar char=")" attribute="Symbol" context="#stay"/>
+	<DetectChar char="(" attribute="Symbol" context="Match"/>
+	<AnyChar String="=~" attribute="Operator" context="Match"/>
+	<DetectChar char="," attribute="Separator Symbol" context="ArgSep"/>
+	<DetectChar char="&quot;" attribute="String" context="String"/>
+	<DetectChar char="#" attribute="Comment" context="Comment"/>
+	<AnyChar String="@!%&amp;*+-/:&lt;&gt;?^|" attribute="Operator" context="#stay"/>
+	<keyword String="controlflow" attribute="ControlFlow" context="#stay"/>
+	<keyword String="keywords" attribute="Keyword" context="#stay"/>
+	<keyword String="builtins" attribute="Builtin" context="#stay"/>
+	<keyword String="functions" attribute="Function" context="#stay"/>
+	<Float attribute="Float"   context="#stay"/>
+	<Int   attribute="Decimal" context="#stay"/>
+	<RegExpr String="\$[A-Za-z0-9_]+" attribute="Field" context="#stay"/>
+	<DetectChar char=";" attribute="Separator Symbol" context="#stay"/>
+</context>
+
+<context name="ArgSep" attribute="Normal" lineEndContext="#stay"
+   fallthrough="true" fallthroughContext="#pop">
+	<IncludeRules context="Match" />
+</context>
+
+<context name="String" attribute="String" lineEndContext="#stay">
+	<DetectChar char="&quot;" attribute="String" context="#pop"/>
+	<DetectChar char="\" context="Escape" attribute="Escape"/>
+</context>
+
+<context name="Comment" attribute="Comment" lineEndContext="#pop">
+	<IncludeRules context="##Alerts"/>
+</context>
+
+<context name="Escape" attribute="Error" lineEndContext="#pop">
+	<RegExpr String="[\\abfnrtv]|x[0-9a-fA-F]{1,2}|[0-7]{1,3}" attribute="Escape" context="#pop"/>
+	<RegExpr String="." attribute="Error" context="#pop"/>
+</context>
+
+<context name="Match" attribute="Normal" lineEndContext="#pop"
+   fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces />
+	<DetectChar char="/" attribute="Regex Op" context="#pop!Regex"/>
+</context>
+
+<context name="Regex" attribute="Regex" lineEndContext="#pop">
+	<IncludeRules context="regex"/>
+	<DetectChar char="/" context="#pop" attribute="Regex Op"/>
+</context>
+
+<context name="regex" attribute="Normal" lineEndContext="#stay">
+	<Detect2Chars char="[" char1="^" context="RegexChar" attribute="Regex Op"/>
+	<DetectChar char="[" context="RegexChar" attribute="Regex Op"/>
+	<AnyChar String="^$.+?*()|" context="#stay" attribute="Regex Op"/>
+	<DetectChar char="\" context="Regex Escape" attribute="Regex Op"/>
+</context>
+
+<context name="Regex Escape" attribute="Normal" lineEndContext="#pop">
+	<RegExpr String="[&lt;&gt;sSwW`'[\]{}^$.+?*()|/\\abfnrtv]|x[0-9a-fA-F]{1,2}|[0-7]{1,3}" attribute="Escape" context="#pop"/>
+	<RegExpr String="." attribute="Regex" context="#pop"/>
+</context>
+
+<context name="RegexChar" attribute="Regex" lineEndContext="#pop"
+   fallthrough="true" fallthroughContext="InChar">
+	<AnyChar String="-]" context="InChar" attribute="Regex"/>
+</context>
+
+<context name="InChar" attribute="Regex" lineEndContext="#pop#pop">
+	<Detect2Chars char="-" char1="]" context="InCharEnd" attribute="Regex" lookAhead="true"/>
+	<DetectChar char="-" context="#stay" attribute="Regex Op"/>
+	<DetectChar char="\" context="Regex Escape" attribute="Regex Op"/>
+	<DetectChar char="[" context="CharClassSelect" attribute="Regex" lookAhead="true"/>
+	<DetectChar char="]" context="#pop#pop" attribute="Regex Op"/>
+</context>
+
+<context name="InCharEnd" attribute="Regex Op" lineEndContext="#stay">
+	<DetectChar char="-" context="#stay" attribute="Regex"/>
+	<DetectChar char="]" context="#pop#pop#pop" attribute="Regex Op"/>
+</context>
+
+<context name="CharClassSelect" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
+	<Detect2Chars char="[" char1=":" context="#pop!CharClass" attribute="CharClass"/>
+	<Detect2Chars char="[" char1="." context="#pop!CollatingSymbols" attribute="CharClass"/>
+	<Detect2Chars char="[" char1="=" context="#pop!EquivalenceClass" attribute="CharClass"/>
+	<DetectChar char="[" context="#pop" attribute="Regex"/>
+</context>
+
+<context name="CharClass" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
+	<keyword String="charclass" attribute="CharClass" context="#stay"/>
+	<Detect2Chars char=":" char1="]" attribute="CharClass" context="#pop"/>
+	<DetectChar char="]" attribute="Error" context="#pop"/>
+</context>
+
+<context name="CollatingSymbols" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
+	<Detect2Chars char="." char1="]" attribute="CharClass" context="#pop"/>
+	<DetectChar char="]" attribute="Error" context="#pop"/>
+</context>
+
+<context name="EquivalenceClass" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
+	<Detect2Chars char="=" char1="]" attribute="CharClass" context="#pop"/>
+	<DetectChar char="]" attribute="Error" context="#pop"/>
+</context>
+
+<!-- END OF CONTEXTS -->
+</contexts>
+    <itemDatas>
+      <itemData name="Normal"   defStyleNum="dsNormal"/>
+      <itemData name="ControlFlow" defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Builtin"  defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Function" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Decimal"  defStyleNum="dsDecVal"/>
+      <itemData name="Float"    defStyleNum="dsFloat"/>
+      <itemData name="String"   defStyleNum="dsString"/>
+      <itemData name="Comment"  defStyleNum="dsComment"/>
+      <itemData name="Escape"   defStyleNum="dsSpecialChar"/>
+      <itemData name="Field"    defStyleNum="dsDataType"/>
+      <itemData name="Error"    defStyleNum="dsError"/>
+      <itemData name="Special"  defStyleNum="dsControlFlow" bold="0"/>
+      <itemData name="Operator" defStyleNum="dsOperator"/>
+      <itemData name="Symbol"   defStyleNum="dsNormal"/>
+      <itemData name="Separator Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Regex"    defStyleNum="dsSpecialString" spellChecking="false"/>
+      <itemData name="Regex Op" defStyleNum="dsOthers"/>
+      <itemData name="CharClass" defStyleNum="dsExtension" spellChecking="false"/>
+      <itemData name="Custom"   defStyleNum="dsOthers" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="@"/>
+  </general>
+</language>

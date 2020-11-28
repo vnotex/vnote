@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Kate syntax highlighting for F# based on the OCAML syntax by Glyn Webster (glyn@wave.co.nz). -->
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+<!-- Regular expresion constants: -->
+<!ENTITY LETTER "A-Za-z\300-\326\330-\366\370-\377">                <!-- Latin-1 letters. -->
+<!ENTITY IDENT  "[&LETTER;_][&LETTER;0-9_']*">                      <!-- OCaml identifiers. -->
+<!ENTITY MIDENT "[A-Z][&LETTER;0-9_']*">                            <!-- OCaml uppercase identifiers. -->
+<!ENTITY ESC    "(\\[ntbr'&quot;\\]|\\[0-9]{3}|\\x[0-9A-Fa-f]{2})"> <!-- OCaml character code escapes. -->
+<!ENTITY DEC    "[0-9][0-9_]*">                                     <!-- Decimal digits with underscores. -->
+]>
+<language name="FSharp" version="5" kateversion="5.0" section="Sources" extensions="*.fs;*.fsi;*.fsx" mimetype="" priority="10" author="Bas Bossink (bas.bossink@gmail.com)" license="LGPL">
+
+  <highlighting>
+    <list name="keywords">
+      <item>abstract</item>
+      <item>and</item>
+      <item>as</item>
+      <item>assert</item>
+      <item>base</item>
+<!--       <item>begin</item> -->
+      <item>class</item>
+      <item>delegate</item>
+<!--       <item>do</item> -->
+<!--       <item>done</item> -->
+      <item>dowcast</item>
+      <item>downto</item>
+      <item>elif</item>
+      <item>else</item>
+<!--       <item>end</item> -->
+      <item>exception</item>
+      <item>extern</item>
+      <item>false</item>
+      <item>for</item>
+      <item>fun</item>
+      <item>function</item>
+      <item>functor</item>
+      <item>global</item>
+      <item>if</item>
+      <item>in</item>
+<!--       <item>include</item> -->
+      <item>inherit</item>
+      <item>inline</item>
+      <item>interfaece</item>
+      <item>internal</item>
+      <item>lazy</item>
+      <item>let</item>
+      <item>match</item>
+      <item>member</item>
+<!--       <item>module</item> -->
+      <item>mutable</item>
+      <item>namespace</item>
+      <item>new</item>
+      <item>not</item>
+      <item>null</item>
+<!--       <item>object</item> -->
+      <item>of</item>
+<!--       <item>open</item> -->
+      <item>or</item>
+      <item>override</item>
+      <item>private</item>
+      <item>public</item>
+      <item>rec</item>
+      <item>ref</item>
+      <item>return</item>
+<!--       <item>sig</item> -->
+      <item>static</item>
+<!--       <item>struct</item> -->
+      <item>then</item>
+      <item>to</item>
+      <item>true</item>
+      <item>try</item>
+      <item>type</item>
+      <item>upcast</item>
+      <item>use</item>
+      <item>val</item>
+      <item>void</item>
+      <item>when</item>
+      <item>while</item>
+      <item>with</item>
+      <item>yield</item>
+    </list>
+    <list name="core types">
+      <item>bool</item>
+      <item>byte</item>
+      <item>sbyte</item>
+      <item>int16</item>
+      <item>uint16</item>
+      <item>int</item>
+      <item>uint32</item>
+      <item>int64</item>
+      <item>uint64</item>
+      <item>nativeint</item>
+      <item>unativeint</item>
+      <item>char</item>
+      <item>string</item>
+      <item>decimal</item>
+      <item>unit</item>
+      <item>void</item>
+      <item>float32</item>
+      <item>single</item>
+      <item>float</item>
+      <item>double</item>
+      <item>bigint</item>
+      <item>option</item>
+      <item>seq</item>
+    </list>
+    <list name="end">
+      <item>end</item>
+    </list>
+    <list name="sig">
+      <item>sig</item>
+    </list>
+    <list name="struct">
+      <item>struct</item>
+    </list>
+    <list name="object">
+      <item>object</item>
+    </list>
+    <list name="begin">
+      <item>begin</item>
+    </list>
+    <list name="do">
+      <item>do</item>
+    </list>
+    <list name="done">
+      <item>done</item>
+    </list>
+    <list name="module_environment">
+      <item>module</item>
+      <item>open</item>
+    </list>
+    <contexts>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+
+        <Detect2Chars attribute="Comment" context="Multiline Comment" char="(" char1="*" beginRegion="comment" />
+        <Detect2Chars context="Singleline Comment" char="/" char1="/" />
+
+        <DetectChar attribute="Symbol" context="#stay" char="(" beginRegion="paren"/>
+        <DetectChar attribute="Symbol" context="#stay" char=")" endRegion="paren"/>
+
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="record"/>
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="record"/>
+        <Detect2Chars attribute="Symbol" context="#stay" char="[" char1="&lt;" beginRegion="attribute"/>
+        <Detect2Chars attribute="Symbol" context="#stay" char="&gt;" char1="]" endRegion="attribute"/>
+
+        <Detect2Chars attribute="Symbol" context="#stay" char="[" char1="|" beginRegion="array"/>
+        <Detect2Chars attribute="Symbol" context="#stay" char="|" char1="]" endRegion="array"/>
+        <DetectChar attribute="Symbol" context="#stay" char="[" beginRegion="list"/>
+        <DetectChar attribute="Symbol" context="#stay" char="]" endRegion="list"/>
+
+        <keyword attribute="Keyword" context="#stay" String="do" beginRegion="loop"/>
+        <keyword attribute="Keyword" context="#stay" String="done" endRegion="loop"/>
+        <keyword attribute="Directive" context="ModuleEnv" String="module_environment"/>
+        <keyword attribute="Region Marker" context="Block" String="begin" beginRegion="block"/>
+        <keyword attribute="Region Marker" context="Object" String="object" beginRegion="object"/>
+        <keyword attribute="Region Marker" context="Sig" String="sig" beginRegion="sig"/>
+        <keyword attribute="Region Marker" context="Struct" String="struct" beginRegion="struct"/>
+
+        <RegExpr attribute="Constructor" context="#stay" String="`\s*&IDENT;"/>
+        <RegExpr attribute="Module" lookAhead="true" context="ModuleEnv2" String="&MIDENT;\s*\."/>
+        <RegExpr attribute="Constructor" context="#stay" String="&MIDENT;"/>
+
+        <!-- Interpreter directives. -->
+        <!-- (These are lines where the first symbol is a '#' followed by an identifier. -->
+        <!-- Such lines could also be part of a method call split over two lines but     -->
+        <!-- it's unlikey anyone would code like that.)                                  -->
+        <RegExpr attribute="Directive" context="#stay" String="#&IDENT;.*$" firstNonSpace="true"/>
+
+        <!-- String, character and Camlp4 "quotation" constants.              -->
+        <!-- Note: If you must modify the pattern for characters be precise:  -->
+        <!-- single quotes have several meanings in Ocaml.                    -->
+        <DetectChar attribute="String" context="String Constant" char="&quot;" />
+        <RegExpr attribute="Character" context="#stay" String="'(&ESC;|[^'])'" />
+        <Detect2Chars attribute="Camlp4 Quotation" context="Camlp4 Quotation Constant" char="&lt;" char1="&lt;" />
+        <RegExpr attribute="Camlp4 Quotation" context="Camlp4 Quotation Constant" String="&lt;:&IDENT;&lt;" />
+
+        <!-- Identifiers and keywords. -->
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Core Data Type" context="#stay" String="core types" />
+        <RegExpr attribute="Identifier" context="#stay" String="&IDENT;" />
+
+        <!-- Numeric constants. -->
+        <!-- Note that they may contain underscores. -->
+        <RegExpr attribute="Hexadecimal" context="#stay" String="-?0[xX][0-9A-Fa-f_]+" />
+        <RegExpr attribute="Octal" context="#stay" String="-?0[oO][0-7_]+" />
+        <RegExpr attribute="Binary" context="#stay" String="-?0[bB][01_]+" />
+        <RegExpr attribute="Float" context="#stay" String="-?&DEC;((\.(&DEC;)?([eE][-+]?&DEC;)?)|([eE][-+]?&DEC;))" />
+        <RegExpr attribute="Decimal" context="#stay" String="-?&DEC;" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Singleline Comment"/>
+      <context attribute="Comment" lineEndContext="#stay" name="Multiline Comment">
+        <!-- Support for nested comments -->
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")" endRegion="comment" />
+        <Detect2Chars attribute="Comment" context="Multiline Comment" char="(" char1="*" beginRegion="comment" />
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="String Constant">
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+        <RegExpr attribute="Escaped characters" context="#stay" String="&ESC;" />
+        <!-- An underscore at the end of a line in a string indicates  -->
+        <!-- that the string will continue on the next line.           -->
+        <RegExpr attribute="Escaped characters" context="#stay" String="\\$" />
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="Block">
+        <keyword attribute="Region Marker" context="#pop" String="end" endRegion="block"/>
+        <IncludeRules context="Normal"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="Sig">
+        <keyword attribute="Region Marker" context="#pop" String="end" endRegion="sig"/>
+        <IncludeRules context="Normal"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="Struct">
+        <keyword attribute="Region Marker" context="#pop" String="end" endRegion="struct"/>
+        <IncludeRules context="Normal"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="Object">
+        <keyword attribute="Region Marker" context="#pop" String="end" endRegion="object"/>
+        <IncludeRules context="Normal"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="ModuleEnv" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <RegExpr attribute="Module" lookAhead="true" context="ModuleEnv2" String="&MIDENT;\s*\."/>
+        <RegExpr attribute="Module" context="#pop" String="&MIDENT;"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="ModuleEnv2">
+        <RegExpr attribute="Module" context="#stay" String="&MIDENT;"/>
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <StringDetect attribute="Keyword" context="#pop" String="."/>
+      </context>
+
+      <!-- Camlp4 Quotations. These are source code literals used by the Campl4 preprocessor.           -->
+      <!-- The only escapes allowed in a Camlp4 quotation are for the quotation start and stop symbols. -->
+      <context attribute="Camlp4 Quotation" lineEndContext="#stay" name="Camlp4 Quotation Constant">
+        <Detect2Chars attribute="Camlp4 Quotation" context="#pop" char="&gt;" char1="&gt;" />
+        <Detect2Chars attribute="Camlp4 Quotation" context="Camlp4 Quotation Constant" char="&lt;" char1="&lt;" />
+        <RegExpr attribute="Camlp4 Quotation" context="Camlp4 Quotation Constant" String="&lt;:&IDENT;&lt;" />
+        <RegExpr attribute="Escaped characters" context="#stay" String="\\(\\|&gt;&gt;|&lt;&lt;)" />
+        <RegExpr attribute="Escaped characters" context="#stay" String="\\&lt;:&IDENT;&lt;" />
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Identifier" defStyleNum="dsNormal"/>
+      <itemData name="Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword"/>
+      <itemData name="Core Data Type"  defStyleNum="dsDataType"/>
+      <itemData name="Decimal"  defStyleNum="dsDecVal"/>
+      <itemData name="Hexadecimal"  defStyleNum="dsBaseN"/>
+      <itemData name="Octal"  defStyleNum="dsBaseN"/>
+      <itemData name="Binary"  defStyleNum="dsBaseN"/>
+      <itemData name="Float"  defStyleNum="dsFloat"/>
+      <itemData name="Character"  defStyleNum="dsChar"/>
+      <itemData name="String"  defStyleNum="dsString"/>
+      <itemData name="Escaped characters"  defStyleNum="dsSpecialChar"/>
+      <itemData name="Comment"  defStyleNum="dsComment"/>
+      <itemData name="Camlp4 Quotation"  defStyleNum="dsString"/>
+      <itemData name="Directive"  defStyleNum="dsOthers"/>
+      <itemData name="Constructor" defStyleNum="dsNormal"/>
+      <itemData name="Module" defStyleNum="dsNormal"/>
+      <itemData name="Region Marker" defStyleNum="dsKeyword"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="1" />
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="singleLine" start="///" />
+      <comment name="multiLine" start="(*" end="*)" />
+    </comments>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

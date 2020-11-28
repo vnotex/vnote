@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Git Rebase" version="2" kateversion="2.4" section="Other" extensions="git-rebase-todo" license="LGPL" mimetype="text/vnd.git.rebase" author="Orgad Shaneh (orgads@gmail.com)">
+  <highlighting>
+    <list name="pick">
+      <item>p</item>
+      <item>pick</item>
+    </list>
+    <list name="reword">
+      <item>r</item>
+      <item>reword</item>
+    </list>
+    <list name="edit">
+      <item>e</item>
+      <item>edit</item>
+    </list>
+    <list name="squash">
+      <item>s</item>
+      <item>squash</item>
+    </list>
+    <list name="fixup">
+      <item>f</item>
+      <item>fixup</item>
+    </list>
+    <list name="exec">
+      <item>x</item>
+      <item>exec</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Normal">
+    <DetectChar char="#" attribute="Comment" context="Comment" column="0"/>
+    <keyword attribute="Pick" context="Commit" String="pick" />
+    <keyword attribute="Reword" context="Commit" String="reword" />
+    <keyword attribute="Edit" context="Commit" String="edit" />
+    <keyword attribute="Squash" context="Commit" String="squash" />
+    <keyword attribute="Fixup" context="Commit" String="fixup" />
+    <keyword attribute="Exec" context="Commit" String="exec" />
+      </context>
+      <context attribute="Commit" lineEndContext="#pop" name="Commit">
+        <RegExpr attribute="Commit" context="Summary" String="[0-9a-f]{7,40}" />
+      </context>
+      <context attribute="Summary" lineEndContext="#pop" name="Summary" />
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <RegExpr attribute="Commit" context="#stay" String="[0-9a-f]{7,40}" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Pick"  defStyleNum="dsKeyword"/>
+      <itemData name="Reword"  defStyleNum="dsDecVal"/>
+      <itemData name="Edit"  defStyleNum="dsDataType"/>
+      <itemData name="Squash"  defStyleNum="dsChar"/>
+      <itemData name="Fixup"  defStyleNum="dsBaseN"/>
+      <itemData name="Exec"  defStyleNum="dsOthers"/>
+      <itemData name="Commit" defStyleNum="dsFunction"/>
+      <itemData name="Summary" defStyleNum="dsString"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+  </general>
+</language>

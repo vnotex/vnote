@@ -1,0 +1,80 @@
+{
+    "metadata" : {
+        "revision" : 0,
+        "//comment" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
+        "//comment" : "Otherwise, this value specify the theme name to use.",
+        "editor-highlight-theme" : "Default",
+        "//comment" : "If there is a file named 'markdown-editor-highlight.theme' under theme folder, this value will be ignored.",
+        "//comment" : "Otherwise, this value specify the theme name to use.",
+        "//comment" : "If empty, editor-highlight-theme will be used.",
+        "markdown-editor-highlight-theme" : "Markdown Default"
+    },
+    "base" : {
+        "fg1" : "#31373c",
+        "fg2" : "#babdc1",
+        "error_fg" : "#b71c1c",
+        "warning_fg" : "#880e4f",
+        "info_fg" : "#283593",
+        "border" : "@base#fg2",
+        "dangerous_fg": "#f5f5f5",
+        "dangerous_bg": "#c9302c",
+        "icon" : {
+            "fg" : "#434b52",
+            "disabled_fg" : "@base#fg2",
+            "warning_fg" : "@base#warning_fg",
+            "dangerous_fg": "@base#dangerous_fg"
+        }
+    },
+    "widgets" : {
+        "toolbox" : {
+            "title" : {
+                "border" : "@widgets#toolbox#title#button#active_bg",
+                "button": {
+                    "fg" : "@base#fg1",
+                    "active_fg" : "#fbffff",
+                    "active_bg" : "#535c65"
+                }
+            }
+        },
+        "titlebar" : {
+            "button" : {
+                "fg" : "@base#icon#fg"
+            },
+            "menu_icon" : {
+                "fg" : "@base#icon#fg",
+                "disabled_fg" : "@base#icon#disabled_fg"
+            }
+        },
+        "toolbar" : {
+            "icon" : {
+                "fg" : "@base#icon#fg",
+                "disabled_fg" : "@base#icon#disabled_fg",
+                "dangerous_fg" : "@base#icon#dangerous_fg"
+            }
+        },
+        "notebookexplorer" : {
+            "node_icon" : {
+                "fg" : "@base#icon#fg"
+            }
+        },
+        "viewsplit" : {
+            "action_button" : {
+                "fg" : "#808080",
+                "active_fg" : "@base#icon#fg"
+            }
+        },
+        "qmainwindow" : {
+            "separator" : {
+                "bg" : "@base#border"
+            }
+        },
+        "dragdropareaindicator" : {
+            "fg" : "@base#fg1",
+            "border" : "@widgets#dragdropareaindicator#fg"
+        },
+        "navigationlabel" : {
+            "fg" : "@widgets#toolbox#title#button#active_fg",
+            "bg" : "@widgets#toolbox#title#button#active_bg"
+        }
+    }
+}

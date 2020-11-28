@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="VRML" version="4" kateversion="2.3" section="3D" extensions="*.wrl" mimetype="model/vrml" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
+	<highlighting>
+		<list name="keywords">
+			<item>DEF</item>
+			<item>EXTERNPROTO</item>
+			<item>FALSE</item>
+			<item>IS</item>
+			<item>NULL</item>
+			<item>PROTO</item>
+			<item>ROUTE</item>
+			<item>TO</item>
+			<item>TRUE</item>
+			<item>USE</item>
+			<item>eventIn</item>
+			<item>eventOut</item>
+			<item>exposedField</item>
+			<item>field</item>
+		</list>
+		<list name="types">
+			<item>MFColor</item>
+			<item>MFFloat</item>
+			<item>MFInt32</item>
+			<item>MFNode</item>
+			<item>MFRotation</item>
+			<item>MFString</item>
+			<item>MFTime</item>
+			<item>MFVec2f</item>
+			<item>MFVec3f</item>
+			<item>SFBool</item>
+			<item>SFColor</item>
+			<item>SFFloat</item>
+			<item>SFImage</item>
+			<item>SFInt32</item>
+			<item>SFNode</item>
+			<item>SFRotation</item>
+			<item>SFString</item>
+			<item>SFTime</item>
+			<item>SFVec2f</item>
+			<item>SFVec3f</item>
+		</list>
+		<list name="nodes">
+			<item>Anchor</item>
+			<item>AudioClip</item>
+			<item>Appearance</item>
+			<item>Background</item>
+			<item>Billboard</item>
+			<item>Box</item>
+			<item>Collision</item>
+			<item>Color</item>
+			<item>ColorInterpolator</item>
+			<item>Cone</item>
+			<item>Coordinate</item>
+			<item>CoordinateInterpolator</item>
+			<item>Cylinder</item>
+			<item>CylinderSensor</item>
+			<item>DirectionalLight</item>
+			<item>ElevationGrid</item>
+			<item>Extrusion</item>
+			<item>Fog</item>
+			<item>FontStyle</item>
+			<item>Group</item>
+			<item>ImageTexture</item>
+			<item>IndexedFaceSet</item>
+			<item>IndexedLineSet</item>
+			<item>Inline</item>
+			<item>LOD</item>
+			<item>Material</item>
+			<item>MovieTexture</item>
+			<item>NavigationInfo</item>
+			<item>Normal</item>
+			<item>NormalInterpolator</item>
+			<item>OrientationInterpolator</item>
+			<item>PixelTexture</item>
+			<item>Plane</item>
+			<item>PlaneSensor</item>
+			<item>PointLight</item>
+			<item>PointSet</item>
+			<item>PositionInterpolator</item>
+			<item>ProximitySensor</item>
+			<item>ScalarInterpolator</item>
+			<item>Script</item>
+			<item>Shape</item>
+			<item>Sensor</item>
+			<item>Sound</item>
+			<item>Sphere</item>
+			<item>SphereSensor</item>
+			<item>SpotLight</item>
+			<item>Switch</item>
+			<item>Text</item>
+			<item>TextureCoordinate</item>
+			<item>TextureTransform</item>
+			<item>TimeSensor</item>
+			<item>TouchSensor</item>
+			<item>Transform</item>
+			<item>Viewpoint</item>
+			<item>VisibilitySensor</item>
+			<item>WorldInfo</item>
+		</list>
+		<contexts>
+			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+				<keyword attribute="Keyword" context="#stay" String="keywords"/>
+				<keyword attribute="Node" context="#stay" String="nodes"/>
+				<keyword attribute="Data Type" context="#stay" String="types"/>
+				<Float attribute="Float" context="#stay"/>
+				<HlCHex attribute="Hex" context="#stay"/>
+				<Int attribute="Decimal" context="#stay"/>
+				<DetectChar attribute="Normal Text" context="#stay" char="{" beginRegion="Brace"/>
+				<DetectChar attribute="Normal Text" context="#stay" char="}" endRegion="Brace"/>
+				<DetectChar attribute="String" context="String" char="&quot;"/>
+				<DetectChar attribute="Comment" context="Comment" char="#"/>
+			</context>
+			<context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+			<context attribute="String" lineEndContext="#stay" name="String">
+				<LineContinue attribute="String" context="#stay"/>
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<DetectChar attribute="String" context="#pop" char="&quot;"/>
+			</context>
+		</contexts>
+		<itemDatas>
+			<itemData name="Normal Text"  defStyleNum="dsNormal"/>
+			<itemData name="Keyword"      defStyleNum="dsKeyword"/>
+			<itemData name="Data Type"    defStyleNum="dsDataType"/>
+			<itemData name="Decimal"      defStyleNum="dsDecVal"/>
+			<itemData name="Hex"          defStyleNum="dsBaseN"/>
+			<itemData name="Float"        defStyleNum="dsFloat"/>
+			<itemData name="String"       defStyleNum="dsString"/>
+			<itemData name="String Char"  defStyleNum="dsChar"/>
+			<itemData name="Comment"      defStyleNum="dsComment"/>
+			<itemData name="Node"         defStyleNum="dsNormal" color="#000080" selColor="#FFFFFF" bold="1" italic="0"/>
+		</itemDatas>
+	</highlighting>
+	<general>
+		<comments>
+			<comment name="singleLine" start="#"/>
+		</comments>
+	</general>
+</language>

@@ -1,0 +1,595 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  *************************************************************************
+
+  ANS Forth 94 syntax highlighting for Kate.
+
+  Copyright (C) 2011, Mark Corbin (mark@dibsco.co.uk)
+
+  *************************************************************************
+
+  This library is free software; you can redistribute it and/or modify it
+  under the terms of the GNU Lesser General Public License as published by
+  the Free Software Foundation; either version 2.1 of the License, or
+  (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
+  General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public License
+  along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor,
+  Boston, MA  02110-1301  USA
+
+  *************************************************************************
+
+  Version 1.0 (23-11-11)
+    - Added additional file extensions.
+
+  Version 0.1 (08-11-11)
+    - Initial release for comment.
+
+  *************************************************************************
+-->
+<language name="ANS-Forth94" version="4" kateversion="5.0" section="Sources" extensions="*.4th;*.4TH;*.f;*.F;*.frt;*.FRT;*.fs;*.FS;*.fth;*.FTH;*.seq;*.SEQ" mimetype="" author="Mark Corbin (mark@dibsco.co.uk)" license="LGPLv2.1+" priority="5">
+  <highlighting>
+    <list name="core-keywords">
+      <item>!</item>
+      <item>#</item>
+      <item>#&gt;</item> <!-- #> -->
+      <item>#S</item>
+      <item>&apos;</item> <!-- ' -->
+      <item>(</item>
+      <item>*</item>
+      <item>*/</item>
+      <item>*/MOD</item>
+      <item>+</item>
+      <item>+!</item>
+      <item>+LOOP</item>
+      <item>,</item>
+      <item>-</item>
+      <item>.</item>
+      <item>.&quot;</item> <!-- ." -->
+      <item>/</item>
+      <item>/MOD</item>
+      <item>0&lt;</item> <!-- 0< -->
+      <item>0=</item>
+      <item>1+</item>
+      <item>1-</item>
+      <item>2!</item>
+      <item>2*</item>
+      <item>2/</item>
+      <item>2@</item>
+      <item>2DROP</item>
+      <item>2DUP</item>
+      <item>2OVER</item>
+      <item>2SWAP</item>
+      <item>:</item>
+      <item>;</item>
+      <item>&lt;</item> <!-- < -->
+      <item>&lt;#</item> <!-- <# -->
+      <item>=</item>
+      <item>&gt;</item> <!-- > -->
+      <item>&gt;BODY</item> <!-- >BODY -->
+      <item>&gt;IN</item> <!-- >IN -->
+      <item>&gt;NUMBER</item> <!-- >NUMBER -->
+      <item>&gt;R</item> <!-- >R -->
+      <item>?DUP</item>
+      <item>@</item>
+      <item>ABORT</item>
+      <item>ABORT&quot;</item> <!-- ABORT" -->
+      <item>ABS</item>
+      <item>ACCEPT</item>
+      <item>ALIGN</item>
+      <item>ALIGNED</item>
+      <item>ALLOT</item>
+      <item>AND</item>
+      <item>BASE</item>
+      <item>BEGIN</item>
+      <item>BL</item>
+      <item>C!</item>
+      <item>C,</item>
+      <item>C@</item>
+      <item>CELL+</item>
+      <item>CELLS</item>
+      <item>CHAR</item>
+      <item>CHAR+</item>
+      <item>CHARS</item>
+      <item>CONSTANT</item>
+      <item>COUNT</item>
+      <item>CR</item>
+      <item>CREATE</item>
+      <item>DECIMAL</item>
+      <item>DEPTH</item>
+      <item>DO</item>
+      <item>DOES&gt;</item> <!-- DOES> -->
+      <item>DROP</item>
+      <item>DUP</item>
+      <item>ELSE</item>
+      <item>EMIT</item>
+      <item>ENVIRONMENT?</item>
+      <item>EVALUATE</item>
+      <item>EXECUTE</item>
+      <item>EXIT</item>
+      <item>FILL</item>
+      <item>FIND</item>
+      <item>FM/MOD</item>
+      <item>HERE</item>
+      <item>HOLD</item>
+      <item>I</item>
+      <item>IF</item>
+      <item>IMMEDIATE</item>
+      <item>INVERT</item>
+      <item>J</item>
+      <item>KEY</item>
+      <item>LEAVE</item>
+      <item>LITERAL</item>
+      <item>LOOP</item>
+      <item>LSHIFT</item>
+      <item>M*</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>MOD</item>
+      <item>MOVE</item>
+      <item>NEGATE</item>
+      <item>OR</item>
+      <item>OVER</item>
+      <item>POSTPONE</item>
+      <item>QUIT</item>
+      <item>R&gt;</item> <!-- R> -->
+      <item>R@</item>
+      <item>RECURSE</item>
+      <item>REPEAT</item>
+      <item>ROT</item>
+      <item>RSHIFT</item>
+      <item>S&quot;</item> <!-- S" -->
+      <item>S&gt;D</item> <!-- S>D -->
+      <item>SIGN</item>
+      <item>SM/REM</item>
+      <item>SOURCE</item>
+      <item>SPACE</item>
+      <item>SPACES</item>
+      <item>STATE</item>
+      <item>SWAP</item>
+      <item>THEN</item>
+      <item>TYPE</item>
+      <item>U.</item>
+      <item>U&lt;</item> <!-- U< -->
+      <item>UM*</item>
+      <item>UM/MOD</item>
+      <item>UNLOOP</item>
+      <item>UNTIL</item>
+      <item>VARIABLE</item>
+      <item>WHILE</item>
+      <item>WORD</item>
+      <item>XOR</item>
+      <item>[</item>
+      <item>[&apos;]</item> <!-- ['] -->
+      <item>[CHAR]</item>
+      <item>]</item>
+    </list>
+    <list name="core-ext-keywords">
+      <item>.(</item>
+      <item>.R</item>
+      <item>0&lt;&gt;</item> <!-- 0<> -->
+      <item>0&gt;</item> <!-- 0> -->
+      <item>2&gt;R</item> <!-- 2>R -->
+      <item>2R&gt;</item> <!-- 2R> -->
+      <item>2R@</item>
+      <item>:NONAME</item>
+      <item>&lt;&gt;</item> <!-- <> -->
+      <item>?DO</item>
+      <item>AGAIN</item>
+      <item>C&quot;</item> <!-- C" -->
+      <item>CASE</item>
+      <item>COMPILE,</item>
+      <item>ENDCASE</item>
+      <item>ENDOF</item>
+      <item>ERASE</item>
+      <item>FALSE</item>
+      <item>HEX</item>
+      <item>MARKER</item>
+      <item>NIP</item>
+      <item>OF</item>
+      <item>PAD</item>
+      <item>PARSE</item>
+      <item>PICK</item>
+      <item>REFILL</item>
+      <item>RESTORE-INPUT</item>
+      <item>ROLL</item>
+      <item>SAVE-INPUT</item>
+      <item>SOURCE-ID</item>
+      <item>TO</item>
+      <item>TRUE</item>
+      <item>TUCK</item>
+      <item>U.R</item>
+      <item>U&gt;</item> <!-- U> -->
+      <item>UNUSED</item>
+      <item>VALUE</item>
+      <item>WITHIN</item>
+      <item>[COMPILE]</item>
+      <item>\</item>
+    </list>
+    <list name="obsolete-core-ext-keywords">
+      <item>#TIB</item>
+      <item>CONVERT</item>
+      <item>EXPECT</item>
+      <item>QUERY</item>
+      <item>SPAN</item>
+      <item>TIB</item>
+    </list>
+    <list name="block-keywords">
+      <item>BLK</item>
+      <item>BLOCK</item>
+      <item>BUFFER</item>
+      <item>EVALUATE</item>
+      <item>FLUSH</item>
+      <item>LOAD</item>
+      <item>SAVE-BUFFERS</item>
+      <item>UPDATE</item>
+    </list>
+    <list name="block-ext-keywords">
+      <item>EMPTY-BUFFERS</item>
+      <item>LIST</item>
+      <item>REFILL</item>
+      <item>SCR</item>
+      <item>THRU</item>
+      <item>\</item>
+    </list>
+    <list name="double-keywords">
+      <item>2CONSTANT</item>
+      <item>2LITERAL</item>
+      <item>2VARIABLE</item>
+      <item>D+</item>
+      <item>D-</item>
+      <item>D.</item>
+      <item>D.R</item>
+      <item>D0&lt;</item> <!-- D0< -->
+      <item>D0=</item>
+      <item>D2*</item>
+      <item>D2/</item>
+      <item>D&lt;</item> <!-- D< -->
+      <item>D=</item>
+      <item>D&gt;S</item> <!-- D>S -->
+      <item>DABS</item>
+      <item>DMAX</item>
+      <item>DMIN</item>
+      <item>DNEGATE</item>
+      <item>M*/</item>
+      <item>M+</item>
+    </list>
+    <list name="double-ext-keywords">
+      <item>2ROT</item>
+      <item>DU&lt;</item> <!-- DU< -->
+    </list>
+    <list name="exception-keywords">
+      <item>CATCH</item>
+      <item>THROW</item>
+    </list>
+    <list name="exception-ext-keywords">
+      <item>ABORT</item>
+      <item>ABORT&quot;</item> <!-- ABORT" -->
+    </list>
+    <list name="facility-keywords">
+      <item>AT-XY</item>
+      <item>KEY?</item>
+      <item>PAGE</item>
+    </list>
+    <list name="facility-ext-keywords">
+      <item>EKEY</item>
+      <item>EKEY&gt;CHAR</item> <!-- EKEY>CHAR -->
+      <item>EKEY?</item>
+      <item>EMIT?</item>
+      <item>MS</item>
+      <item>TIME&amp;DATE</item> <!-- TIME&DATE -->
+    </list>
+    <list name="file-keywords">
+      <item>(</item>
+      <item>BIN</item>
+      <item>CLOSE-FILE</item>
+      <item>CREATE-FILE</item>
+      <item>DELETE-FILE</item>
+      <item>FILE-POSITION</item>
+      <item>FILE-SIZE</item>
+      <item>INCLUDE-FILE</item>
+      <item>INCLUDED</item>
+      <item>OPEN-FILE</item>
+      <item>R/O</item>
+      <item>R/W</item>
+      <item>READ-FILE</item>
+      <item>READ-LINE</item>
+      <item>REPOSITION-FILE</item>
+      <item>RESIZE-FILE</item>
+      <item>S&quot;</item> <!-- S" -->
+      <item>SOURCE-ID</item>
+      <item>W/O</item>
+      <item>WRITE-FILE</item>
+      <item>WRITE-LINE</item>
+    </list>
+    <list name="file-ext-keywords">
+      <item>FILE-STATUS</item>
+      <item>FLUSH-FILE</item>
+      <item>REFILL</item>
+      <item>RENAME-FILE</item>
+    </list>
+    <list name="floating-keywords">
+      <item>&gt;FLOAT</item> <!-- >FLOAT -->
+      <item>D&gt;F</item> <!-- D>F -->
+      <item>F!</item>
+      <item>F*</item>
+      <item>F+</item>
+      <item>F-</item>
+      <item>F/</item>
+      <item>F0&lt;</item> <!-- F0< -->
+      <item>F0=</item>
+      <item>F&lt;</item> <!-- F< -->
+      <item>F&gt;D</item> <!-- F>D -->
+      <item>F@</item>
+      <item>FALIGN</item>
+      <item>FALIGNED</item>
+      <item>FCONSTANT</item>
+      <item>FDEPTH</item>
+      <item>FDROP</item>
+      <item>FDUP</item>
+      <item>FLITERAL</item>
+      <item>FLOAT+</item>
+      <item>FLOATS</item>
+      <item>FLOOR</item>
+      <item>FMAX</item>
+      <item>FMIN</item>
+      <item>FNEGATE</item>
+      <item>FOVER</item>
+      <item>FROT</item>
+      <item>FROUND</item>
+      <item>FSWAP</item>
+      <item>FVARIABLE</item>
+      <item>REPRESENT</item>
+    </list>
+    <list name="floating-ext-keywords">
+      <item>DF!</item>
+      <item>DF@</item>
+      <item>DFALIGN</item>
+      <item>DFALIGNED</item>
+      <item>DFLOAT+</item>
+      <item>DFLOATS</item>
+      <item>F**</item>
+      <item>F.</item>
+      <item>FABS</item>
+      <item>FACOS</item>
+      <item>FACOSH</item>
+      <item>FALOG</item>
+      <item>FASIN</item>
+      <item>FASINH</item>
+      <item>FATAN</item>
+      <item>FATAN2</item>
+      <item>FATANH</item>
+      <item>FCOS</item>
+      <item>FCOSH</item>
+      <item>FE.</item>
+      <item>FEXP</item>
+      <item>FEXPM1</item>
+      <item>FLN</item>
+      <item>FLNP1</item>
+      <item>FLOG</item>
+      <item>FS.</item>
+      <item>FSIN</item>
+      <item>FSINCOS</item>
+      <item>FSINH</item>
+      <item>FSQRT</item>
+      <item>FTAN</item>
+      <item>FTANH</item>
+      <item>F~</item>
+      <item>PRECISION</item>
+      <item>SET-PRECISION</item>
+      <item>SF!</item>
+      <item>SF@</item>
+      <item>SFALIGN</item>
+      <item>SFALIGNED</item>
+      <item>SFLOAT+</item>
+      <item>SFLOATS</item>
+    </list>
+    <list name="local-keywords">
+      <item>(LOCAL)</item>
+      <item>TO</item>
+    </list>
+    <list name="local-ext-keywords">
+      <item>LOCALS|</item>
+    </list>
+    <list name="memory-keywords">
+      <item>ALLOCATE</item>
+      <item>FREE</item>
+      <item>RESIZE</item>
+    </list>
+    <list name="tools-keywords">
+      <item>.S</item>
+      <item>?</item>
+      <item>DUMP</item>
+      <item>SEE</item>
+      <item>WORDS</item>
+    </list>
+    <list name="tools-ext-keywords">
+      <item>;CODE</item>
+      <item>AHEAD</item>
+      <item>ASSEMBLER</item>
+      <item>BYE</item>
+      <item>CODE</item>
+      <item>CS-PICK</item>
+      <item>CS-ROLL</item>
+      <item>EDITOR</item>
+      <item>STATE</item>
+      <item>[ELSE]</item>
+      <item>[IF]</item>
+      <item>[THEN]</item>
+    </list>
+    <list name="obsolete-tools-ext-keywords">
+      <item>FORGET</item>
+    </list>
+    <list name="search-keywords">
+      <item>DEFINITIONS</item>
+      <item>FIND</item>
+      <item>FORTH-WORDLIST</item>
+      <item>GET-CURRENT</item>
+      <item>GET-ORDER</item>
+      <item>SEARCH-WORDLIST</item>
+      <item>SET-CURRENT</item>
+      <item>SET-ORDER</item>
+      <item>WORDLIST</item>
+    </list>
+    <list name="search-ext-keywords">
+      <item>ALSO</item>
+      <item>FORTH</item>
+      <item>ONLY</item>
+      <item>ORDER</item>
+      <item>PREVIOUS</item>
+    </list>
+    <list name="string-keywords">
+      <item>-TRAILING</item>
+      <item>/STRING</item>
+      <item>BLANK</item>
+      <item>CMOVE</item>
+      <item>CMOVE&gt;</item> <!-- CMOVE> -->
+      <item>COMPARE</item>
+      <item>SEARCH</item>
+      <item>SLITERAL</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+	<DetectSpaces/>
+        <RegExpr attribute="Core Keyword" context="Comment" String="(^|\s+)[\(]($|\s+)" beginRegion="comment"/>
+        <RegExpr attribute="Core Keyword" context="Char" insensitive="true" String="(^|\s+)(CHAR|[[]CHAR[]])($|\s+)"/>
+        <RegExpr attribute="Core Keyword" context="#stay" insensitive="true" String="(^|\s+)(BEGIN|DO|IF)($|\s+)" beginRegion="block"/>
+        <RegExpr attribute="Core Keyword" context="#stay" insensitive="true" String="(^|\s+)([;]|LOOP|[+]LOOP|THEN|REPEAT|UNTIL)($|\s+)" endRegion="block"/>
+        <RegExpr attribute="Core Keyword" context="Word" insensitive="true" String="(^|\s+)([:])($|\s+)" beginRegion="block"/>
+        <RegExpr attribute="Core Keyword" context="Word" insensitive="true" String="(^|\s+)([']|CREATE|POSTPONE)($|\s+)"/>
+        <RegExpr attribute="Core Keyword" context="#stay" insensitive="true" String="(^|\s+)ELSE($|\s+)" endRegion="block" beginRegion="block"/>
+        <RegExpr attribute="Core Keyword" context="String" insensitive="true" String="(^|\s+)([.]&quot;|ABORT&quot;|S&quot;)($|\s+)"/>
+        <RegExpr attribute="Core Keyword" context="Parse String" insensitive="true" String="(^|\s+)(WORD)($|\s+)"/>
+        <RegExpr attribute="Core Keyword" context="Constant" insensitive="true" String="(^|\s+)(CONSTANT)($|\s+)"/>
+        <RegExpr attribute="Core Keyword" context="Variable" insensitive="true" String="(^|\s+)(VARIABLE)($|\s+)"/>
+        <RegExpr attribute="Core Ext Keyword" context="Single Comment" String="(^|\s+)[\\]($|\s+)"/>
+        <RegExpr attribute="Core Ext Keyword" context="#stay" insensitive="true" String="(^|\s+)([?]DO|CASE|OF)($|\s+)" beginRegion="block"/>
+        <RegExpr attribute="Core Ext Keyword" context="#stay" insensitive="true" String="(^|\s+)(AGAIN|ENDCASE|ENDOF)($|\s+)" endRegion="block"/>
+        <RegExpr attribute="Core Ext Keyword" context="Word" insensitive="true" String="(^|\s+)(MARKER|[[]COMPILE[]])($|\s+)"/>
+        <RegExpr attribute="Core Ext Keyword" context="String" insensitive="true" String="(^|\s+)(C&quot;)($|\s+)"/>
+        <RegExpr attribute="Core Ext Keyword" context="Parse String" insensitive="true" String="(^|\s+)(PARSE)($|\s+)"/>
+        <RegExpr attribute="Core Ext Keyword" context="Display String" String="(^|\s+)([\.][\(])($|\s+)"/>
+        <RegExpr attribute="Core Ext Keyword" context="Variable" insensitive="true" String="(^|\s+)(TO)($|\s+)"/>
+        <RegExpr attribute="Core Ext Keyword" context="Variable" insensitive="true" String="(^|\s+)(VALUE)($|\s+)"/>
+        <RegExpr attribute="Double Keyword" context="Constant" insensitive="true" String="(^|\s+)(2CONSTANT)($|\s+)"/>
+        <RegExpr attribute="Double Keyword" context="Variable" insensitive="true" String="(^|\s+)(2VARIABLE)($|\s+)"/>
+        <RegExpr attribute="Floating Keyword" context="Constant" insensitive="true" String="(^|\s+)(FCONSTANT)($|\s+)"/>
+        <RegExpr attribute="Floating Keyword" context="Variable" insensitive="true" String="(^|\s+)(FVARIABLE)($|\s+)"/>
+        <RegExpr attribute="Local Ext Keyword" context="Local" insensitive="true" String="(^|\s+)(LOCALS\|)($|\s+)"/>
+        <RegExpr attribute="Tools Keyword" context="Word" insensitive="true" String="(^|\s+)(SEE)($|\s+)"/>
+        <RegExpr attribute="Tools Ext Keyword" context="Word" insensitive="true" String="(^|\s+)(CODE)($|\s+)"/>
+        <RegExpr attribute="Obs Tools Ext Keyword" context="Word" insensitive="true" String="(^|\s+)(FORGET)($|\s+)"/>
+
+        <keyword attribute="Core Keyword" context="#stay" String="core-keywords"/>
+        <keyword attribute="Core Ext Keyword" context="#stay" String="core-ext-keywords"/>
+        <keyword attribute="Obs Core Ext Keyword" context="#stay" String="obsolete-core-ext-keywords"/>
+        <keyword attribute="Block Keyword" context="#stay" String="block-keywords"/>
+        <keyword attribute="Block Ext Keyword" context="#stay" String="block-ext-keywords"/>
+        <keyword attribute="Double Keyword" context="#stay" String="double-keywords"/>
+        <keyword attribute="Double Ext Keyword" context="#stay" String="double-ext-keywords"/>
+        <keyword attribute="Exception Keyword" context="#stay" String="exception-keywords"/>
+        <keyword attribute="Exception Ext Keyword" context="#stay" String="exception-ext-keywords"/>
+        <keyword attribute="Facility Keyword" context="#stay" String="facility-keywords"/>
+        <keyword attribute="Facility Ext Keyword" context="#stay" String="facility-ext-keywords"/>
+        <keyword attribute="File Keyword" context="#stay" String="file-keywords"/>
+        <keyword attribute="File Ext Keyword" context="#stay" String="file-ext-keywords"/>
+        <keyword attribute="Floating Keyword" context="#stay" String="floating-keywords"/>
+        <keyword attribute="Floating Ext Keyword" context="#stay" String="floating-ext-keywords"/>
+        <keyword attribute="Local Keyword" context="#stay" String="local-keywords"/>
+        <keyword attribute="Local Ext Keyword" context="#stay" String="local-ext-keywords"/>
+        <keyword attribute="Memory Keyword" context="#stay" String="memory-keywords"/>
+        <keyword attribute="Tools Keyword" context="#stay" String="tools-keywords"/>
+        <keyword attribute="Tools Ext Keyword" context="#stay" String="tools-ext-keywords"/>
+        <keyword attribute="Obs Tools Ext Keyword" context="#stay" String="obsolete-tools-ext-keywords"/>
+        <keyword attribute="Search Keyword" context="#stay" String="search-keywords"/>
+        <keyword attribute="Search Ext Keyword" context="#stay" String="search-ext-keywords"/>
+        <keyword attribute="String Keyword" context="#stay" String="string-keywords"/>
+
+        <RegExpr attribute="Single Number" context="#stay" String="(^|\s+)([-]?[0-9]+)($|\s+)"/>
+        <RegExpr attribute="Double Number" context="#stay" String="(^|\s+)([-]?[0-9]+[.][0-9]*)($|\s+)"/>
+        <RegExpr attribute="Float" context="#stay" String="(^|\s+)([+]|[-])?([0-9]+[.]?[0-9]*)(E|e)([+]|[-])?([0-9]*)($|\s+)"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment">
+        <DetectChar attribute="Core Keyword" context="#pop" char=")" endRegion="comment"/>
+        <IncludeRules context="##Alerts" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Single Comment">
+        <IncludeRules context="##Alerts" />
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Display String">
+        <DetectChar attribute="Core Keyword" context="#pop" char=")"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="String">
+        <DetectChar attribute="Core Keyword" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="Parse String">
+        <DetectChar attribute="Core Keyword" context="#pop" char=" "/>
+      </context>
+      <context attribute="Word" lineEndContext="#pop" name="Word">
+        <DetectChar attribute="Word" context="#pop" char=" "/>
+      </context>
+      <context attribute="Char" lineEndContext="#pop" name="Char">
+        <DetectChar attribute="Char" context="#pop" char=" "/>
+      </context>
+      <context attribute="Constant" lineEndContext="#pop" name="Constant">
+        <DetectChar attribute="Constant" context="#pop" char=" "/>
+      </context>
+      <context attribute="Variable" lineEndContext="#pop" name="Variable">
+        <DetectChar attribute="Variable" context="#pop" char=" "/>
+      </context>
+      <context attribute="Local Variable" lineEndContext="#pop" name="Local">
+        <DetectChar attribute="Local Ext Keyword" context="#pop" char="|"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Core Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Core Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Obs Core Ext Keyword" defStyleNum="dsKeyword" color="#ff0000" spellChecking="false"/>
+      <itemData name="Block Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Block Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Double Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Double Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Exception Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Exception Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Facility Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Facility Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="File Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="File Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Floating Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Floating Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Local Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Local Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Memory Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Tools Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Tools Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Obs Tools Ext Keyword" defStyleNum="dsKeyword" color="#ff0000" spellChecking="false"/>
+      <itemData name="Search Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Search Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="String Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Single Number" defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Double Number" defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Word" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Char" defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Constant" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Variable" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Local Variable" defStyleNum="dsDataType" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="0" weakDeliminator="!£$%^&amp;#&apos;~|\(){}*+,-./=@:;&lt;&gt;&quot;?[]"/>
+    <comments>
+      <comment name="multiLine" start="( " end=")" region="comment"/>
+    </comments>
+  </general>
+</language>

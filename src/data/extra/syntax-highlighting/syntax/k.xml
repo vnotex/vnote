@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="k" version="3" kateversion="3.4" section="Scripts" extensions="*.k" license="LGPLv2+" author="James Schmitz (james.schmitz@gmail.com)">
+<highlighting>
+    <list name="flowcontrol" >
+      <item>while</item>
+      <item>if</item>
+      <item>do</item>
+    </list>
+    <list name="kkeywords" >
+      <item>abs</item>
+      <item>acos</item>
+      <item>asin</item>
+      <item>atan</item>
+      <item>avg</item>
+      <item>bin</item>
+      <item>by</item>
+      <item>cos</item>
+      <item>delete</item>
+      <item>div</item>
+      <item>exec</item>
+      <item>exit</item>
+      <item>exp</item>
+      <item>from</item>
+      <item>getenv</item>
+      <item>i</item>
+      <item>in</item>
+      <item>insert</item>
+      <item>last</item>
+      <item>like</item>
+      <item>log</item>
+      <item>max</item>
+      <item>min</item>
+      <item>prd</item>
+      <item>select</item>
+      <item>setenv</item>
+      <item>sin</item>
+      <item>sqrt</item>
+      <item>ss</item>
+      <item>sum</item>
+      <item>tan</item>
+      <item>update</item>
+      <item>wavg</item>
+      <item>within</item>
+      <item>wsum</item>
+      <item>xexp</item>
+    </list>
+    <list name="DotQ">
+      <item>.Q.addmonths</item>
+      <item>.Q.addr</item>
+      <item>.Q.host</item>
+      <item>.Q.chk</item>
+      <item>.Q.cn</item>
+      <item>.Q.dd</item>
+      <item>.Q.dpft</item>
+      <item>.Q.dsftg</item>
+      <item>.Q.def</item>
+      <item>.Q.en</item>
+      <item>.Q.fc</item>
+      <item>.Q.fk</item>
+      <item>.Q.fmt</item>
+      <item>.Q.foo</item>
+      <item>.Q.fs</item>
+      <item>.Q.ft</item>
+      <item>.Q.fu</item>
+      <item>.Q.gc</item>
+      <item>.Q.hdpf</item>
+      <item>.Q.ind</item>
+      <item>.Q.j10</item>
+      <item>.Q.x10</item>
+      <item>.Q.j12</item>
+      <item>.Q.x12</item>
+      <item>.Q.k</item>
+      <item>.Q.l</item>
+      <item>.Q.opt</item>
+      <item>.Q.par</item>
+      <item>.Q.qp</item>
+      <item>.Q.qt</item>
+      <item>.Q.s</item>
+      <item>.Q.s1</item>
+      <item>.Q.ty</item>
+      <item>.Q.v</item>
+      <item>.Q.V</item>
+      <item>.Q.view</item>
+      <item>.Q.w</item>
+      <item>.Q.M</item>
+      <item>.Q.pf</item>
+      <item>.Q.pt</item>
+      <item>.Q.PD</item>
+      <item>.Q.PV</item>
+      <item>.Q.pd</item>
+      <item>.Q.pv</item>
+      <item>.Q.pn</item>
+      <item>.Q.bv</item>
+      <item>.Q.vp</item>
+      <item>.Q.P</item>
+      <item>.Q.D</item>
+      <item>.Q.u</item>
+    </list>
+    <list name="Doth" >
+      <item>.h.br</item>
+      <item>.h.c0</item>
+      <item>.h.c1</item>
+      <item>.h.cd</item>
+      <item>.h.code</item>
+      <item>.h.data</item>
+      <item>.h.eb</item>
+      <item>.h.ec</item>
+      <item>.h.ed</item>
+      <item>.h.edsn</item>
+      <item>.h.es</item>
+      <item>.h.ex</item>
+      <item>.h.fram</item>
+      <item>.h.ha</item>
+      <item>.h.hb</item>
+      <item>.h.hc</item>
+      <item>.h.he</item>
+      <item>.h.hn</item>
+      <item>.h.hp</item>
+      <item>.h.hr</item>
+      <item>.h.ht</item>
+      <item>.h.hta</item>
+      <item>.h.htac</item>
+      <item>.h.htc</item>
+      <item>.h.html</item>
+      <item>.h.http</item>
+      <item>.h.hu</item>
+      <item>.h.hug</item>
+      <item>.h.hy</item>
+      <item>.h.iso8601</item>
+      <item>.h.jx</item>
+      <item>.h.logo</item>
+      <item>.h.nbr</item>
+      <item>.h.pre</item>
+      <item>.h.text</item>
+      <item>.h.tx</item>
+      <item>.h.ty</item>
+      <item>.h.uh</item>
+      <item>.h.xd</item>
+      <item>.h.xmp</item>
+      <item>.h.xs</item>
+      <item>.h.xt</item>
+    </list>
+    <list name="Doto" >
+      <item>.o.B0</item>
+      <item>.o.C0</item>
+      <item>.o.Cols</item>
+      <item>.o.Columns</item>
+      <item>.o.FG</item>
+      <item>.o.Fkey</item>
+      <item>.o.Gkey</item>
+      <item>.o.Key</item>
+      <item>.o.PS</item>
+      <item>.o.Special</item>
+      <item>.o.Stats</item>
+      <item>.o.T</item>
+      <item>.o.T0</item>
+      <item>.o.TI</item>
+      <item>.o.Tables</item>
+      <item>.o.Ts</item>
+      <item>.o.TypeInfo</item>
+      <item>.o.ex</item>
+      <item>.o.o</item>
+      <item>.o.t</item>
+    </list>
+    <list name="Dotz" >
+      <item>.z.a</item>
+      <item>.z.ac</item>
+      <item>.z.b</item>
+      <item>.z.bm</item>
+      <item>.z.c</item>
+      <item>.z.exit</item>
+      <item>.z.f</item>
+      <item>.z.h</item>
+      <item>.z.i</item>
+      <item>.z.k</item>
+      <item>.z.K</item>
+      <item>.z.l</item>
+      <item>.z.n</item>
+      <item>.z.N</item>
+      <item>.z.o</item>
+      <item>.z.p</item>
+      <item>.z.P</item>
+      <item>.z.pc</item>
+      <item>.z.pg</item>
+      <item>.z.ph</item>
+      <item>.z.pi</item>
+      <item>.z.po</item>
+      <item>.z.pp</item>
+      <item>.z.ps</item>
+      <item>.z.pw</item>
+      <item>.z.q</item>
+      <item>.z.s</item>
+      <item>.z.ts</item>
+      <item>.z.u</item>
+      <item>.z.vs</item>
+      <item>.z.w</item>
+      <item>.z.W</item>
+      <item>.z.ws</item>
+      <item>.z.x</item>
+      <item>.z.z</item>
+      <item>.z.Z</item>
+      <item>.z.t</item>
+      <item>.z.T</item>
+      <item>.z.d</item>
+      <item>.z.D</item>
+      <item>.z.zd</item>
+    </list>
+    <list name="Dotq" >
+      <item>.q.aj</item>
+      <item>.q.aj0</item>
+      <item>.q.all</item>
+      <item>.q.and</item>
+      <item>.q.any</item>
+      <item>.q.asc</item>
+      <item>.q.asof</item>
+      <item>.q.attr</item>
+      <item>.q.avgs</item>
+      <item>.q.ceiling</item>
+      <item>.q.cols</item>
+      <item>.q.cor</item>
+      <item>.q.count</item>
+      <item>.q.cov</item>
+      <item>.q.cross</item>
+      <item>.q.csv</item>
+      <item>.q.cut</item>
+      <item>.q.deltas</item>
+      <item>.q.desc</item>
+      <item>.q.dev</item>
+      <item>.q.differ</item>
+      <item>.q.distinct</item>
+      <item>.q.each</item>
+      <item>.q.ej</item>
+      <item>.q.enlist</item>
+      <item>.q.eval</item>
+      <item>.q.except</item>
+      <item>.q.fby</item>
+      <item>.q.fills</item>
+      <item>.q.first</item>
+      <item>.q.fkeys</item>
+      <item>.q.flip</item>
+      <item>.q.floor</item>
+      <item>.q.get</item>
+      <item>.q.group</item>
+      <item>.q.gtime</item>
+      <item>.q.hclose</item>
+      <item>.q.hcount</item>
+      <item>.q.hdel</item>
+      <item>.q.hopen</item>
+      <item>.q.hsym</item>
+      <item>.q.iasc</item>
+      <item>.q.idesc</item>
+      <item>.q.ij</item>
+      <item>.q.inter</item>
+      <item>.q.inv</item>
+      <item>.q.key</item>
+      <item>.q.keys</item>
+      <item>.q.lj</item>
+      <item>.q.load</item>
+      <item>.q.lower</item>
+      <item>.q.lsq</item>
+      <item>.q.ltime</item>
+      <item>.q.ltrim</item>
+      <item>.q.mavg</item>
+      <item>.q.maxs</item>
+      <item>.q.mcount</item>
+      <item>.q.md5</item>
+      <item>.q.mdev</item>
+      <item>.q.med</item>
+      <item>.q.meta</item>
+      <item>.q.mins</item>
+      <item>.q.mmax</item>
+      <item>.q.mmin</item>
+      <item>.q.mmu</item>
+      <item>.q.mod</item>
+      <item>.q.msum</item>
+      <item>.q.neg</item>
+      <item>.q.next</item>
+      <item>.q.not</item>
+      <item>.q.null</item>
+      <item>.q.or</item>
+      <item>.q.over</item>
+      <item>.q.parse</item>
+      <item>.q.peach</item>
+      <item>.q.pj</item>
+      <item>.q.plist</item>
+      <item>.q.prds</item>
+      <item>.q.prev</item>
+      <item>.q.prior</item>
+      <item>.q.rand</item>
+      <item>.q.rank</item>
+      <item>.q.ratios</item>
+      <item>.q.raze</item>
+      <item>.q.read0</item>
+      <item>.q.read1</item>
+      <item>.q.reciprocal</item>
+      <item>.q.reverse</item>
+      <item>.q.rload</item>
+      <item>.q.rotate</item>
+      <item>.q.rsave</item>
+      <item>.q.rtrim</item>
+      <item>.q.save</item>
+      <item>.q.scan</item>
+      <item>.q.set</item>
+      <item>.q.show</item>
+      <item>.q.signum</item>
+      <item>.q.ssr</item>
+      <item>.q.string</item>
+      <item>.q.sublist</item>
+      <item>.q.sums</item>
+      <item>.q.sv</item>
+      <item>.q.system</item>
+      <item>.q.tables</item>
+      <item>.q.til</item>
+      <item>.q.trim</item>
+      <item>.q.txf</item>
+      <item>.q.type</item>
+      <item>.q.uj</item>
+      <item>.q.ungroup</item>
+      <item>.q.union</item>
+      <item>.q.upper</item>
+      <item>.q.upsert</item>
+      <item>.q.value</item>
+      <item>.q.var</item>
+      <item>.q.view</item>
+      <item>.q.views</item>
+      <item>.q.vs</item>
+      <item>.q.where</item>
+      <item>.q.wj</item>
+      <item>.q.wj1</item>
+      <item>.q.xasc</item>
+      <item>.q.xbar</item>
+      <item>.q.xcol</item>
+      <item>.q.xcols</item>
+      <item>.q.xdesc</item>
+      <item>.q.xgroup</item>
+      <item>.q.xkey</item>
+      <item>.q.xlog</item>
+      <item>.q.xprev</item>
+      <item>.q.xrank</item>
+    </list>
+    <list name="todos" >
+      <item>TODO</item>
+      <item>FIXME</item>
+      <item>FIX</item>
+      <item>HACK</item>
+      <item>XXX</item>
+      <item>NOTE</item>
+      <item>GOTCHA</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+        <RegExpr attribute="kSystemCommand" String="^\\[^\s].*$" context="#stay" />
+        <DetectChar attribute="String" context="string" char="&quot;" />
+        <RegExpr attribute="kSeparators" String="[{|(|[|\]|)|}]" context="#stay" />
+        <RegExpr attribute="kHSym" String="`:[\w/:.]*" context="#stay" />
+        <RegExpr attribute="kSymbol" String="(`[a-zA-Z\d.][\w:.]*|`|\d[a-zA-Z\d:.]*s)" context="#stay" />
+        <keyword attribute="FlowControl" context="#stay" String="flowcontrol" />
+        <RegExpr attribute="FlowControl" String="\$(?=\[)" context="#stay" />
+        <keyword attribute="kKeyword" context="#stay" String="kkeywords" />
+        <keyword attribute="DotQfunctions" context="#stay" String="DotQ" />
+        <keyword attribute="Dotzfunctions" context="#stay" String="Dotz" />
+        <keyword attribute="Dothfunctions" context="#stay" String="Doth" />
+        <keyword attribute="Dotofunctions" context="#stay" String="Doto" />
+        <keyword attribute="Dotqfunctions" context="#stay" String="Dotq" />
+        <RegExpr attribute="kIdentifier" String="(?:[a-zA-Z][\w.]*|\.[a-zA-Z][\w.]*)" context="#stay" />
+        <RegExpr attribute="kBool" String="[0|1]+b" context="#stay" />
+        <RegExpr attribute="kByte" String="0x[0-9a-fA-F]*" context="#stay" />
+        <RegExpr attribute="kGuid" String="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" context="#stay" />
+        <RegExpr attribute="kDateTime" String="(?:\d{4}\.\d\dm|\d{4}\.\d\d\.\d\d(?:|[D|T](?:\d*|\d\d:\d\d|\d\d:\d\d:\d\d|\d\d:\d\d:\d\d\.\d*)))" context="#stay" />
+        <RegExpr attribute="kDateTime" String="\d+D(?:\d*|\d\d:\d\d|\d\d:\d\d:\d\d|\d\d:\d\d:\d\d\.\d*)" context="#stay" />
+        <RegExpr attribute="kDateTime" String="(?:\d+t|\d\d:\d*|\d\d:\d\d:\d\d(?:|\.\d+))" context="#stay" />
+        <RegExpr attribute="kNumber" String="[-]?(?:0(?:n|Ne|ne|Nf|nf)|(?:[\d]+\.[\d]*|\.?[\d]+)e[-]?\d+|(?:[\d]+\.[\d]*[ef]?|\.[\d]+[ef]?|[\d]+[ef]))" context="#stay" />
+        <RegExpr attribute="kNumber" String="[-]?(?:0N[hj]?|[\d]+[i|j|h]?)" context="#stay" />
+        <Detect2Chars attribute="Comment" context="comment" char=" " char1="/" />
+        <Detect2Chars attribute="Comment" context="comment" char=")" char1="/" />
+        <Detect2Chars attribute="Comment" context="comment" char="}" char1="/" />
+        <Detect2Chars attribute="Comment" context="comment" char="]" char1="/" />
+        <RegExpr String="^\\[\s]*$" attribute="CommentToEOF" context="commentToEOF" />
+        <RegExpr String="^/[\s]*$" attribute="MultiLineComment" context="multicomment" beginRegion="Comment" />
+        <DetectChar attribute="Comment" context="comment" char="/" firstNonSpace="true" /> 
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="string" >
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context name="comment" attribute="Comment" lineEndContext="#pop" >
+        <keyword attribute="Todos" context="#stay" String="todos" />
+      </context>
+      <context name="multicomment" attribute="MultiLineComment" lineEndContext="#stay" >
+        <keyword attribute="Todos" context="#stay" String="todos" />
+        <RegExpr String="^\\[\s]*$" attribute="MultiLineComment" context="#pop" endRegion="Comment" />
+      </context>
+      <context name="commentToEOF" attribute="CommentToEOF" lineEndContext="#stay" >
+        <keyword attribute="Todos" context="#stay" String="todos" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" spellChecking="false" defStyleNum="dsNormal" />
+      <itemData name="kSystemCommand" spellChecking="false" defStyleNum="dsOthers" />
+      <itemData name="kSeparators" defStyleNum="dsNormal" />
+      <itemData name="Todos" defStyleNum="dsComment" />
+      <itemData name="kSymbol" spellChecking="false" defStyleNum="dsOthers" />
+      <itemData name="kHSym" spellChecking="false" defStyleNum="dsOthers" />
+      <itemData name="FlowControl" defStyleNum="dsKeyword" />
+      <itemData name="kKeyword" defStyleNum="dsKeyword" />
+      <itemData name="Dothfunctions" defStyleNum="dsKeyword" />
+      <itemData name="DotQfunctions" defStyleNum="dsKeyword" />
+      <itemData name="Dotzfunctions" defStyleNum="dsKeyword" />
+      <itemData name="Dotofunctions" defStyleNum="dsKeyword" />
+      <itemData name="Dotqfunctions" defStyleNum="dsKeyword" />
+      <itemData name="kIdentifier" spellChecking="false" defStyleNum="dsNormal" />
+      <itemData name="kNumber" spellChecking="false" defStyleNum="dsDecVal" />
+      <itemData name="kBool" spellChecking="false" defStyleNum="dsBaseN" />
+      <itemData name="kGuid" spellChecking="false" defStyleNum="dsBaseN" />
+      <itemData name="kByte" spellChecking="false" defStyleNum="dsBaseN" />
+      <itemData name="String" spellChecking="false" defStyleNum="dsString" />
+      <itemData name="kDateTime" spellChecking="false" defStyleNum="dsOthers" />
+      <itemData name="Comment" spellChecking="true" defStyleNum="dsComment" />
+      <itemData name="MultiLineComment" spellChecking="true" defStyleNum="dsComment" />
+      <itemData name="CommentToEOF" defStyleNum="dsComment" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="/" />
+      <comment name="multiLine" start="/" end="\" region="Comment" />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="." additionalDeliminator="`#'@$&quot;" />
+  </general>
+</language>

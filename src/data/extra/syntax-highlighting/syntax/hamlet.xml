@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+  <!-- names must start with a letter, ideogram or underscore. \w matches any
+  word character *or* a number, hence the lookahead -->
+  <!ENTITY name    "(?![0-9])[\w_:][\w.:_-]*">
+]>
+<language name="Hamlet" version="3" kateversion="2.4" section="Markup" extensions="*.hamlet" author="Bastian Holst (bastianholst@gmx.de)" license="LGPL" indenter="haskell">
+<highlighting>
+<contexts>
+  <context attribute="Normal Text" lineEndContext="#pop" name="Normal Text" >
+    <RegExpr attribute="Element" context="element" String="&lt;&name;\b" />
+    <!-- A widget -->
+    <StringDetect attribute="Code" context="Code" String="^{"/>
+    <!-- Something implementing ToHtml -->
+    <StringDetect attribute="Code" context="Code" String="#{"/>
+    <!-- An URL -->
+    <StringDetect attribute="Code" context="Code" String="@{"/>
+    <!-- A Message -->
+    <StringDetect attribute="Code" context="Code" String="_{"/>
+    <DetectChar attribute="Logic" context="Logic" firstNonSpace="true" char="$"/>
+  </context>
+
+  <context attribute="Element" lineEndContext="#stay" name="element" >
+    <Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" />
+    <DetectChar attribute="Element" context="#pop" char="&gt;" />
+    <RegExpr attribute="Attribute" context="Attribute" String="&name;" column="0"/>
+    <RegExpr attribute="Attribute" context="Attribute" String="\s+&name;" />
+    <RegExpr attribute="Class" context="#stay" String="\.&name;"/>
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="Logic" lineEndContext="#pop" attribute="Normal Text">
+    <WordDetect attribute="Logic" context="Codeline" String="if"/>
+    <WordDetect attribute="Logic" context="Codeline" String="elseif"/>
+    <WordDetect attribute="Logic" context="Assignment" String="forall"/>
+    <WordDetect attribute="Logic" context="Assignment" String="maybe"/>
+    <WordDetect attribute="Logic" context="#stay" String="else"/>
+    <WordDetect attribute="Logic" context="#stay" String="nothing"/>
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="Code" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Code" context="#pop" char="}"/>
+    <IncludeRules context="##Haskell" />
+  </context>
+
+  <context name="Codeline" attribute="Normal Text" lineEndContext="#pop">
+    <IncludeRules context="##Haskell" />
+  </context>
+
+  <context name="Assignment" attribute="Normal Text" lineEndContext="#pop">
+    <StringDetect attribute="Assignment" context="Codeline" String="&lt;-"/>
+    <IncludeRules context="##Haskell" />
+  </context>
+
+  <context name="Attribute" attribute="Attribute" lineEndContext="#stay">
+    <DetectChar attribute="Attribute" context="Value" char="=" />
+    <DetectChar attribute="Element" context="#pop#pop" char="&gt;"/>
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context attribute="Value" lineEndContext="#stay" name="Value">
+    <DetectChar attribute="Value" context="Value DQ" char="&quot;" />
+    <DetectChar attribute="Value" context="Value SQ" char="&apos;" />
+    <StringDetect attribute="Code" context="Value Code" String="@{"/>
+    <StringDetect attribute="Code" context="Value Code" String="#{"/>
+    <RegExpr attribute="Value" context="#pop#pop" String="[^&quot;&apos;&gt;\s]+"/>
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="Value DQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop#pop#pop" char="&quot;" />
+  </context>
+
+  <context name="Value SQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop#pop#pop" char="&apos;" />
+  </context>
+  
+  <context name="Value Code" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Code" context="#pop#pop#pop" char="}"/>
+    <IncludeRules context="##Haskell" />
+  </context>
+
+</contexts>
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" />
+  <itemData name="Element" defStyleNum="dsKeyword" />
+  <itemData name="Attribute" defStyleNum="dsOthers" spellChecking="false" />
+  <itemData name="Class" defStyleNum="dsString" spellChecking="false" />
+  <itemData name="Value" defStyleNum="dsString" spellChecking="false" />
+  <itemData name="Logic" defStyleNum="dsKeyword" spellChecking="false" />
+  <itemData name="Code"  defStyleNum="dsKeyword" spellChecking="false" />
+  <itemData name="Error" defStyleNum="dsError" spellChecking="false" />
+  <itemData name="Assignment" defStyleNum="dsOthers"  spellChecking="false" />
+</itemDatas>
+</highlighting> 
+<general>
+  <comments>
+    <comment name="singleLine" start="#"/>
+  </comments>
+  <keywords casesensitive="1"/>
+</general> 
+</language>

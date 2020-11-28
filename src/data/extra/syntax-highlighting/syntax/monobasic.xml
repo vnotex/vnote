@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<!--
+    Mono Basic syntax
+
+    Created: Davide Bettio <davide.bettio@kdemail.net>
+    Date: 09/09/2005
+    Version: 1.01
+    License: GNU General Public License
+-->
+
+<language name="MonoBasic" section="Sources" version="3" kateversion="2.3" extensions="*.vb" mimetype="" author="Davide Bettio (davide.bettio@kdemail.net)" license="GPL">
+  <highlighting>
+     <list name="keywords">
+        <item>Option</item>
+	<item>Explicit</item>
+	<item>Strict</item>
+	<item>Imports</item>
+	<item>Inherits</item>
+	<item>As</item>
+	<item>New</item>
+	<item>Dim</item>
+	<item>Redim</item>
+	<item>Private</item>
+	<item>Friend</item>
+	<item>Public</item>
+	<item>Const</item>
+	<item>ReadOnly</item>
+	<item>WriteOnly</item>
+	<item>Default</item>
+	<item>Shared</item>
+	<item>Shadows</item>
+	<item>Protected</item>
+	<item>Overloads</item>
+	<item>Overrides</item>
+	<item>NotOverridable</item>
+	<item>NotInheritable</item>
+	<item>MustInherit</item>
+	<item>MustOverride</item>
+	<item>MyBase</item>
+	<item>MyClass</item>
+	<item>Me</item>
+	<item>Delegate</item>
+	<item>Catch</item>
+	<item>Finaly</item>
+	<item>When</item>
+	<item>Throw</item>
+	<item>To</item>
+	<item>Step</item>
+	<item>Then</item>
+	<item>Else</item>
+	<item>True</item>
+	<item>False</item>
+	<item>Nothing</item>
+	<item>Call</item>
+	<item>ByVal</item>
+	<item>ByRef</item>
+	<item>Optional</item>
+	<item>ParamArray</item>
+	<item>Return</item>
+	<item>Declare</item>
+	<item>WithEvents</item>
+	<item>Event</item>
+	<item>RaiseEvent</item>
+	<item>AddHandler</item>
+	<item>And</item>
+	<item>Or</item>
+	<item>Not</item>
+	<item>Xor</item>
+	<item>AndAlso</item>
+	<item>OrElse</item>
+	<item>Goto</item>
+	<item>On</item>
+	<item>Error</item>
+	<item>Resume</item>
+      </list>
+
+      <list name="types">
+	<item>Boolean</item>
+	<item>Char</item>
+	<item>String</item>
+	<item>Integer</item>
+	<item>Long</item>
+	<item>Double</item>
+	<item>Object</item>
+	<item>Exception</item>
+	<item>Date</item>
+	<item>DateTime</item>
+	<item>Int16</item>
+	<item>Int32</item>
+	<item>Int64</item>
+	<item>ParamArray</item>
+	<item>TimeSpan</item>
+	<item>Byte</item>
+	<item>Decimal</item>
+	<item>IntPtr</item>
+	<item>Single</item>
+	<item>Guid</item>
+      </list>
+
+      <contexts>
+	<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+	   <keyword attribute="Keyword" context="#stay" String="keywords"/>
+	   <keyword attribute="Type" context="#stay" String="types"/>
+	   <DetectChar attribute="String" context="String" char="&quot;"/>
+	   <DetectChar attribute="Comment" context="Comment" char="'" />
+
+	   <!-- Namespace -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Namespace)([\s]|$)"  insensitive="true" beginRegion="Namespace1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Namespace.*$" insensitive="true" endRegion="Namespace1"/>
+
+	   <!-- Module -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Module)([\s]|$)"  insensitive="true" beginRegion="Module1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Module.*$" insensitive="true" endRegion="Module1"/>
+
+	   <!-- Class -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Class)([\s]|$)"  insensitive="true" beginRegion="Class1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Class.*$" insensitive="true" endRegion="Class1"/>
+
+	   <!-- Interface -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Interface)([\s]|$)"  insensitive="true" beginRegion="Interface1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Interface.*$" insensitive="true" endRegion="Interface1"/>
+
+	   <!-- Structure -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Structure)([\s]|$)"  insensitive="true" beginRegion="Structure1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Structure.*$" insensitive="true" endRegion="Structure1"/>
+	
+	   <!-- Enum -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Enum)([\s]|$)"  insensitive="true" beginRegion="Enum1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Enum.*$" insensitive="true" endRegion="Enum1"/>
+	
+	   <!-- Property -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Property)([\s]|$)"  insensitive="true" beginRegion="Property1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Property.*$" insensitive="true" endRegion="Property1"/>
+
+	   <!-- Get -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Get)([\s]|$)"  insensitive="true" beginRegion="Get1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Get.*$" insensitive="true" endRegion="Get1"/>
+
+	   <!-- Set -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Set)([\s]|$)"  insensitive="true" beginRegion="Set1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Set.*$" insensitive="true" endRegion="Set1"/>
+
+	   <!-- Sub -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Sub)([.\s]|$)"  insensitive="true" beginRegion="Sub1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Sub.*$" insensitive="true" endRegion="Sub1"/>
+           <RegExpr attribute="Keyword" context="#stay" String="Exit.Sub.*$" insensitive="true"/>
+
+	   <!-- Function -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Function)([\s]|$)"  insensitive="true" beginRegion="Function1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Function.*$" insensitive="true" endRegion="Function1"/>
+           <RegExpr attribute="Keyword" context="#stay" String="Exit.Function.*$" insensitive="true"/>
+
+	   <!-- Try -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Try)([\s]|$)"  insensitive="true" beginRegion="Try1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Try.*$" insensitive="true" endRegion="Try1"/>
+
+	   <!-- If -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(If)([\s]|$)"  insensitive="true" beginRegion="If1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.If.*$" insensitive="true" endRegion="If1"/>
+
+	   <!-- Select case -->
+	   <RegExpr attribute="Keyword" context="#stay" String="Select.Case.*$"  insensitive="true" beginRegion="SelectCase1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.Select.*$" insensitive="true" endRegion="SelectCase1"/>
+	
+	   <!-- For -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(For)([\s]|$)"  insensitive="true" beginRegion="For1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Next)([\s]|$)" insensitive="true" endRegion="For1"/>
+	
+	   <!-- Do Loop -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Do)([\s]|$)"  insensitive="true" beginRegion="DoLoop1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(Loop)([\s]|$)" insensitive="true" endRegion="DoLoop1"/>
+
+	   <!-- While -->
+	   <RegExpr attribute="Keyword" context="#stay" String="\b(While)([\s]|$)"  insensitive="true" beginRegion="While1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="End.While.*$" insensitive="true" endRegion="While1"/>
+	   <RegExpr attribute="Keyword" context="#stay" String="Exit.While.*$" insensitive="true"/>
+	   
+	   <!-- #Region -->
+	   <RegExpr attribute="Preprocessor" context="#stay" String="#Region.*$"  insensitive="true" beginRegion="Region1"/>
+	   <RegExpr attribute="Preprocessor" context="#stay" String="#End.Region.*$" insensitive="true" endRegion="Region1"/>
+
+	   <!-- #If -->
+	   <RegExpr attribute="Preprocessor" context="#stay" String="#If.*$"  insensitive="true" beginRegion="PreprocessorIf1"/>
+	   <RegExpr attribute="Preprocessor" context="#stay" String="#End.If.*$" insensitive="true" endRegion="PreprocessorIf1"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="String">
+         <LineContinue attribute="String" context="#pop"/>
+	 <HlCStringChar attribute="String Char" context="#stay"/>
+         <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+    </contexts>
+
+    <itemDatas>
+       <itemData name="Normal Text" defStyleNum="dsNormal"/>
+       <itemData name="Keyword" defStyleNum="dsKeyword" color="#000080" bold="0"/>
+       <itemData name="Type" defStyleNum="dsDataType" color="#000080" bold="0"/>
+       <itemData name="String" defStyleNum="dsString" color="#800000"/>
+       <itemData name="String Char" defStyleNum="dsSpecialChar"/>
+       <itemData name="Preprocessor" defStyleNum="dsOthers" color="#008000"/>
+       <itemData name="Comment" defStyleNum="dsComment" color="#008000"/>
+    </itemDatas>
+
+   </highlighting>
+	
+   <general>
+      <keywords casesensitive="0"/>
+      <comments>
+         <comment name="singleLine" start="'"/>
+      </comments>
+   </general>
+</language>

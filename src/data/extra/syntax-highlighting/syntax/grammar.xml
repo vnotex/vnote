@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  Syntax definition for kdev-pg/kdev-pg-qt grammars.
+-->
+<language name="KDev-PG[-Qt] Grammar" version="2" kateversion="3.4" section="Sources" extensions="*.g" casesensitive="1" author="Milian Wolff (mail@milianw.de), Jonathan Schmidt-Dominé (devel@the-user.org)" license="">
+  <highlighting>
+    <list name="macros">
+      <item>ast_extra_members</item>
+      <item>export_macro</item>
+      <item>export_macro_header</item>
+      <item>namespace</item>
+      <item>parserclass</item>
+      <item>token</item>
+      <item>token_stream</item>
+      <item>parser_declaration_header</item>
+      <item>parser_bits_header</item>
+      <item>ast_header</item>
+      <item>ast_base</item>
+      <item>parser_base</item>
+      <item>bin</item>
+      <item>pre</item>
+      <item>post</item>
+      <item>tern</item>
+      <item>paren</item>
+      <item>left</item>
+      <item>right</item>
+      <item>&lt;</item>
+      <item>&gt;</item>
+    </list>
+    <list name="keywords">
+      <item>try/rollback</item>
+      <item>try/recover</item>
+      <item>catch</item>
+    </list>
+    <list name="access">
+      <item>public</item>
+      <item>protected</item>
+      <item>private</item>
+    </list>
+    <list name="locations">
+      <item>declaration</item>
+      <item>destructor</item>
+      <item>constructor</item>
+    </list>
+    
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <!-- keywords -->
+        <DetectChar attribute="Keyword" context="Macros" char="%" firstNonSpace="true" />
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Access" context="#stay" String="access" />
+        <keyword attribute="Location" context="#stay" String="locations" />
+        <!-- numbers -->
+        <Float attribute="Float" context="#stay" />
+        <Int attribute="Decimal" context="#stay" />
+        <!-- strings -->
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <!-- comments -->
+        <Detect2Chars attribute="Comment" context="SingleLineComment" char="-" char1="-" />
+        <!-- code segments -->
+        <Detect2Chars attribute="Code Segment" context="CodeSegment" char="[" char1=":" beginRegion="code" />
+        <!-- tokens are all-uppercase -->
+        <RegExpr attribute="Token" insensitive="false" context="#stay" String="\b[A-Z_]+\b" />
+        <!-- simple use of an ASTNode without assigning it -->
+        <RegExpr attribute="AstNode" insensitive="true" context="#stay" String="\b[a-z]+\b(?!=)" />
+        <!-- member=ASTNode -->
+        <DetectChar attribute="Symbol" context="MemberAst" char="=" />
+        <!-- -> ASTNode -->
+        <Detect2Chars attribute="Symbol" context="AstDecl" char="-" char1=">" />
+        <!-- symbols -->
+        <AnyChar attribute="Symbol" context="#stay" String=";[()]->|=*#@:?" />
+      </context>
+      <!-- keywords -->
+      <context name="Macros" attribute="Keyword" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <keyword attribute="Keyword" context="#stay" String="macros" />
+        <Detect2Chars lookAhead="true" context="#pop" attribute="Normal Text" char="[" char1=":" />
+        <Detect2Chars context="#pop" attribute="Keyword" char=";" char1=";" />
+      </context>
+      <!-- "string" -->
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <HlCStringChar attribute="String Char" context="#stay" />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <!-- comments -->
+      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop"/>
+      <!-- code segments -->
+      <context name="CodeSegment" attribute="Code Segment" lineEndContext="#stay">
+        <Detect2Chars attribute="Code Segment" context="#pop" char=":" char1="]" endRegion="code" />
+        <IncludeRules context="##C++" />
+      </context>
+      <!-- memberVar=AstNode -->
+      <context name="MemberAst" attribute="AstNode" lineEndContext="#pop">
+        <DetectSpaces />
+        <!-- tokens are all-uppercase -->
+        <RegExpr attribute="Token" insensitive="false" context="#pop" String="\b[A-Z_]+\b" />
+        <DetectIdentifier attribute="AstNode" context="#pop" />
+      </context>
+      <!-- -> AstNode -->
+      <context name="AstDecl" attribute="Error" lineEndContext="#stay">
+        <DetectSpaces attribute="Normal Text" />
+        <DetectIdentifier attribute="AstNode" />
+        <DetectChar char="[" attribute="Symbol" context="AstMemberDecl" />
+        <Detect2Chars char=";" char1=";" attribute="Symbol" context="#pop" />
+      </context>
+      <!-- member or temporary variables -->
+      <context name="AstMemberDecl" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces />
+        <RegExpr attribute="Keyword" String="\b(member|temporary)\s+variable\b" />
+        <DetectIdentifier attribute="AstMember" />
+        <DetectChar attribute="Symbol" char=":" context="AstMemberType" />
+        <DetectChar attribute="Symbol" char="]" context="#pop" />
+      </context>
+      <context name="AstMemberType" attribute="Normal Text" lineEndContext="#stay">
+        <DetectIdentifier attribute="AstMemberType" />
+        <DetectChar attribute="Symbol" char=";" context="#pop" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="Access" defStyleNum="dsDataType" spellChecking="false" />
+      <itemData name="Location" defStyleNum="dsOthers" spellChecking="false" />
+      <itemData name="Decimal"  defStyleNum="dsDecVal" spellChecking="false" />
+      <itemData name="Float"  defStyleNum="dsFloat" spellChecking="false" />
+      <itemData name="String" defStyleNum="dsString" />
+      <itemData name="String Char" defStyleNum="dsChar" spellChecking="false" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="Symbol" defStyleNum="dsOthers" />
+      <itemData name="Code Segment" defStyleNum="dsFunction" />
+      <itemData name="Token" defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="AstNode" defStyleNum="dsFunction" spellChecking="false" />
+      <itemData name="Error" defStyleNum="dsError" spellChecking="false" />
+      <itemData name="AstMember" defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="AstMemberType" defStyleNum="dsDataType" spellChecking="false" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="--" />
+    </comments>
+    <keywords casesensitive="true" weakDeliminator="/" />
+  </general>
+</language>
+

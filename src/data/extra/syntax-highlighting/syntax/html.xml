@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!ENTITY name          "[A-Za-z_:][\w.:_-]*">
+	<!ENTITY attributeName "[A-Za-z_:*#\(\[][\)\]\w.:_-]*">
+	<!ENTITY entref        "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
+]>
+<language name="HTML" version="8" kateversion="5.53" section="Markup" extensions="*.htm;*.html;*.shtml;*.shtm" mimetype="text/html"  author="Wilbert Berendsen (wilbert@kde.nl)" license="LGPL" priority="10">
+
+<highlighting>
+<contexts>
+  <context name="Start" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="FindHTML" />
+  </context>
+
+  <context name="FindHTML" attribute="Normal Text" lineEndContext="#stay">
+    <DetectSpaces/>
+    <DetectIdentifier/>
+    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+    <StringDetect attribute="CDATA" context="CDATA" String="&lt;![CDATA[" beginRegion="cdata" />
+    <RegExpr attribute="Doctype" context="Doctype" String="&lt;!DOCTYPE\s+" insensitive="true" beginRegion="doctype"  />
+    <RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:-]*" beginRegion="pi" />
+    <RegExpr attribute="Element" context="CSS" String="&lt;style\b" insensitive="true" beginRegion="style" />
+    <RegExpr attribute="Element" context="JS" String="&lt;script\b" insensitive="true" beginRegion="script" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;pre\b" insensitive="true" beginRegion="pre" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;div\b" insensitive="true" beginRegion="div" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;table\b" insensitive="true" beginRegion="table" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;ul\b" insensitive="true" beginRegion="ul" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;ol\b" insensitive="true" beginRegion="ol" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;dl\b" insensitive="true" beginRegion="dl" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;article\b" insensitive="true" beginRegion="article" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;aside\b" insensitive="true" beginRegion="aside" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;details\b" insensitive="true" beginRegion="details" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;figure\b" insensitive="true" beginRegion="figure" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;footer\b" insensitive="true" beginRegion="footer" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;header\b" insensitive="true" beginRegion="header" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;main\b" insensitive="true" beginRegion="main" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;nav\b" insensitive="true" beginRegion="nav" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;section\b" insensitive="true" beginRegion="section" />
+    <RegExpr attribute="Element" context="El Open" String="&lt;&name;" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/pre\b" insensitive="true" endRegion="pre" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/div\b" insensitive="true" endRegion="div" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/table\b" insensitive="true" endRegion="table" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/ul\b" insensitive="true" endRegion="ul" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/ol\b" insensitive="true" endRegion="ol" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/dl\b" insensitive="true" endRegion="dl" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/article\b" insensitive="true" endRegion="article" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/aside\b" insensitive="true" endRegion="aside" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/details\b" insensitive="true" endRegion="details" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/figure\b" insensitive="true" endRegion="figure" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/footer\b" insensitive="true" endRegion="footer" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/header\b" insensitive="true" endRegion="header" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/main\b" insensitive="true" endRegion="main" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/nav\b" insensitive="true" endRegion="nav" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/section\b" insensitive="true" endRegion="section" />
+    <RegExpr attribute="Element" context="El Close" String="&lt;/&name;" />
+    <!-- as long as kde gives DTDs the text/html mimetype--><IncludeRules context="FindDTDRules" />
+    <IncludeRules context="FindEntityRefs" />
+  </context>
+
+  <context name="FindEntityRefs" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+    <AnyChar attribute="Error" context="#stay" String="&amp;&lt;" />
+  </context>
+
+  <context name="FindPEntityRefs" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+    <RegExpr attribute="PEntityRef" context="#stay" String="%&name;;" />
+    <AnyChar attribute="Error" context="#stay" String="&amp;%" />
+  </context>
+
+  <context name="FindAttributes" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="Attribute" context="#stay" String="&attributeName;" column="0"/>
+    <RegExpr attribute="Attribute" context="#stay" String="\s+&attributeName;" />
+    <DetectChar attribute="Attribute" context="Value" char="=" />
+  </context>
+
+  <context name="FindDTDRules" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="Doctype" context="Doctype Markupdecl" String="&lt;!(ELEMENT|ENTITY|ATTLIST|NOTATION)\b" />
+  </context>
+
+
+  <context name="Comment" attribute="Comment" lineEndContext="#stay">
+    <DetectSpaces/>
+    <IncludeRules context="##Alerts" />
+    <DetectIdentifier/>
+    <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
+    <RegExpr attribute="Error" context="#stay" String="-(-(?!-&gt;))+" />
+  </context>
+
+  <context name="CDATA" attribute="Other Text" lineEndContext="#stay">
+    <DetectSpaces/>
+    <DetectIdentifier/>
+    <StringDetect attribute="CDATA" context="#pop" String="]]&gt;" endRegion="cdata" />
+    <StringDetect attribute="EntityRef" context="#stay" String="]]&amp;gt;" />
+  </context>
+
+  <context name="PI" attribute="Other Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Processing Instruction" context="#pop" char="?" char1="&gt;" endRegion="pi" />
+  </context>
+
+  <context name="Doctype" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="&gt;" endRegion="doctype" />
+    <DetectChar attribute="Doctype" context="Doctype Internal Subset" char="[" beginRegion="int_subset" />
+  </context>
+
+  <context name="Doctype Internal Subset" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="]" endRegion="int_subset" />
+    <IncludeRules context="FindDTDRules" />
+    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+    <RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:-]*" beginRegion="pi" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="Doctype Markupdecl" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="&gt;" />
+    <DetectChar attribute="Value" context="Doctype Markupdecl DQ" char="&quot;" />
+    <DetectChar attribute="Value" context="Doctype Markupdecl SQ" char="&apos;" />
+  </context>
+
+  <context name="Doctype Markupdecl DQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop" char="&quot;" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="Doctype Markupdecl SQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop" char="&apos;" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="El Open" attribute="Other Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" />
+    <DetectChar attribute="Element" context="#pop" char="&gt;" />
+    <IncludeRules context="FindAttributes" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="El Close" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="#pop" char="&gt;" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="El Close 2" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="#pop#pop#pop" char="&gt;" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="El Close 3" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="#pop#pop#pop#pop" char="&gt;" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="CSS" attribute="Other Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="style" />
+    <DetectChar attribute="Element" context="CSS content" char="&gt;" />
+    <IncludeRules context="FindAttributes" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="CSS content" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="Element" context="El Close 2" String="&lt;/style\b" insensitive="true" endRegion="style" />
+    <IncludeRules context="##CSS" includeAttrib="true"/>
+  </context>
+
+  <context name="JS" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="Attribute" context="Script-Type" String="(\s+|^)type(?=\=|\s|$)" insensitive="true"/>
+    <DetectChar attribute="Element" context="JS content" char="&gt;" />
+    <IncludeRules context="DefaultJS" />
+  </context>
+  <context name="DefaultJS" attribute="Other Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="script" />
+    <IncludeRules context="FindAttributes" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="JS content" attribute="Other Text" lineEndContext="#stay">
+    <IncludeRules context="Default JS content"/>
+    <IncludeRules context="Normal##JavaScript" includeAttrib="true"/>
+  </context>
+  <context name="Default JS content" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="Element" context="El Close 2" String="&lt;/script\b" insensitive="true" endRegion="script" />
+    <RegExpr attribute="Comment" context="JS comment close" String="//(?=.*&lt;/script\b)" insensitive="true" />
+  </context>
+
+  <context name="JS comment close" attribute="Comment" lineEndContext="#pop">
+    <RegExpr attribute="Element" context="El Close 3" String="&lt;/script\b" insensitive="true" endRegion="script" />
+    <IncludeRules context="##Alerts" />
+  </context>
+
+  <context name="Value" attribute="Other Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="Value NQ">
+    <DetectChar attribute="Value" context="Value DQ" char="&quot;" />
+    <DetectChar attribute="Value" context="Value SQ" char="&apos;" />
+    <DetectSpaces />
+  </context>
+
+  <context name="Value NQ" attribute="Other Text" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
+    <IncludeRules context="FindEntityRefs" />
+    <RegExpr attribute="Value" context="#stay" String="/(?!&gt;)" />
+    <RegExpr attribute="Value" context="#stay" String="[^/&gt;&lt;&quot;&apos;\s]" />
+  </context>
+
+  <context name="Value DQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop#pop" char="&quot;" />
+    <IncludeRules context="FindEntityRefs" />
+  </context>
+
+  <context name="Value SQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop#pop" char="&apos;" />
+    <IncludeRules context="FindEntityRefs" />
+  </context>
+
+  <!-- Read content from the "type" attribute to change the language to
+       highlight in the <script> tag. The default language is JavaScript. -->
+
+  <context name="Script-Type" attribute="Other Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+    <DetectSpaces />
+    <DetectChar attribute="Attribute" context="#pop!Script-Type Value" char="=" />
+  </context>
+  <context name="Script-Type Value" attribute="Other Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!Value">
+    <DetectSpaces />
+    <!-- TypeScript -->
+    <StringDetect attribute="Value" context="#pop#pop!TypeScript" String="&quot;text/typescript&quot;"/>
+    <StringDetect attribute="Value" context="#pop#pop!TypeScript" String="&apos;text/typescript&apos;"/>
+    <!-- JSX (JavaScript React) -->
+    <StringDetect attribute="Value" context="#pop#pop!JSX" String="&quot;text/jsx&quot;"/>
+    <StringDetect attribute="Value" context="#pop#pop!JSX" String="&apos;text/jsx&apos;"/>
+    <StringDetect attribute="Value" context="#pop#pop!JSX" String="&quot;text/babel&quot;"/>
+    <StringDetect attribute="Value" context="#pop#pop!JSX" String="&apos;text/babel&apos;"/>
+    <!-- MustacheJS / HandlebarsJS / RactiveJS -->
+    <StringDetect attribute="Value" context="#pop#pop!MustacheJS" String="&quot;x-tmpl-mustache&quot;"/>
+    <StringDetect attribute="Value" context="#pop#pop!MustacheJS" String="&apos;x-tmpl-mustache&apos;"/>
+    <StringDetect attribute="Value" context="#pop#pop!MustacheJS" String="&quot;text/mustache&quot;"/>
+    <StringDetect attribute="Value" context="#pop#pop!MustacheJS" String="&apos;text/mustache&apos;"/>    
+    <StringDetect attribute="Value" context="#pop#pop!MustacheJS" String="&quot;text/x-mustache-template&quot;"/>
+    <StringDetect attribute="Value" context="#pop#pop!MustacheJS" String="&apos;text/x-mustache-template&apos;"/>
+    <StringDetect attribute="Value" context="#pop#pop!MustacheJS" String="&quot;text/x-handlebars-template&quot;"/>
+    <StringDetect attribute="Value" context="#pop#pop!MustacheJS" String="&apos;text/x-handlebars-template&apos;"/>
+    <StringDetect attribute="Value" context="#pop#pop!MustacheJS" String="&quot;text/ractive&quot;"/>
+    <StringDetect attribute="Value" context="#pop#pop!MustacheJS" String="&apos;text/ractive&apos;"/>
+    <!-- HTML templates -->
+    <StringDetect attribute="Value" context="#pop#pop!Script HTML template" String="&quot;text/html&quot;"/>
+    <StringDetect attribute="Value" context="#pop#pop!Script HTML template" String="&apos;text/html&apos;"/>
+  </context>
+
+  <context name="JSX" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="JSX content" char="&gt;" />
+    <IncludeRules context="DefaultJS" />
+  </context>
+  <context name="JSX content" attribute="Other Text" lineEndContext="#stay">
+    <IncludeRules context="Default JS content"/>
+    <IncludeRules context="Normal##JavaScript React" includeAttrib="true"/>
+  </context>
+
+  <context name="TypeScript" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="TypeScript content" char="&gt;" />
+    <IncludeRules context="DefaultJS" />
+  </context>
+  <context name="TypeScript content" attribute="Other Text" lineEndContext="#stay">
+    <IncludeRules context="Default JS content"/>
+    <IncludeRules context="Normal##TypeScript" includeAttrib="true"/>
+  </context>
+
+  <context name="MustacheJS" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="MustacheJS content" char="&gt;" />
+    <IncludeRules context="DefaultJS" />
+  </context>
+  <context name="MustacheJS content" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="Element" context="El Close 2" String="&lt;/script\b" insensitive="true" endRegion="script" />
+    <StringDetect attribute="Error" context="#stay" String="&lt;script&gt;" insensitive="true" />
+    <RegExpr attribute="Error" context="#stay" String="&lt;script\b" insensitive="true" />
+    <IncludeRules context="Base##Mustache/Handlebars (HTML)" includeAttrib="true"/>
+  </context>
+
+  <context name="Script HTML template" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="Script HTML template content" char="&gt;" />
+    <IncludeRules context="DefaultJS" />
+  </context>
+  <context name="Script HTML template content" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="Element" context="El Close 2" String="&lt;/script\b" insensitive="true" endRegion="script" />
+    <StringDetect attribute="Error" context="#stay" String="&lt;script&gt;" insensitive="true" />
+    <RegExpr attribute="Error" context="#stay" String="&lt;script\b" insensitive="true" />
+    <IncludeRules context="FindHTML" />
+  </context>
+
+</contexts>
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" />
+  <itemData name="Other Text" defStyleNum="dsNormal" spellChecking="false" />
+  <itemData name="Comment" defStyleNum="dsComment" />
+  <itemData name="CDATA" defStyleNum="dsBaseN" bold="1" spellChecking="false" />
+  <itemData name="Processing Instruction" defStyleNum="dsKeyword" spellChecking="false" />
+  <itemData name="Doctype" defStyleNum="dsDataType" bold="1" spellChecking="false" />
+  <itemData name="Element" defStyleNum="dsKeyword" spellChecking="false" />
+  <itemData name="Attribute" defStyleNum="dsOthers" spellChecking="false" />
+  <itemData name="Value" defStyleNum="dsString" spellChecking="false" />
+  <itemData name="EntityRef" defStyleNum="dsDecVal" spellChecking="false" />
+  <itemData name="PEntityRef" defStyleNum="dsDecVal" spellChecking="false" />
+  <itemData name="Error" defStyleNum="dsError" spellChecking="false" />
+</itemDatas>
+
+</highlighting>
+<general>
+  <comments>
+    <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+  </comments>
+</general>
+</language>

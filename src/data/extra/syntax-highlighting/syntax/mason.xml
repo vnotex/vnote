@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language version="4" kateversion="2.4" name="Mason" section="Scripts" extensions="*.html;" mimetype="">
+<highlighting>
+	<list name="keywords">
+		<item>sub</item>
+		<item>bless</item>
+		<item>caller</item>
+		<item>cmp</item>
+		<item>print</item>
+		<item>echo</item>
+		<item>die</item>
+		<item>import</item>
+		<item>lt</item>
+		<item>le</item>
+		<item>local</item>
+		<item>defined</item>
+		<item>last</item>
+		<item>!</item>
+		<item>||</item>
+		<item>eq</item>
+		<item>ne</item>
+		<item>use</item>
+		<item>elsif</item>
+		<item>my</item>
+		<item>foreach</item>
+		<item>wantarray</item>
+		<item>push</item>
+		<item>pop</item>
+		<item>dbmclose</item>
+		<item>dbmopen</item>
+		<item>dump</item>
+		<item>each</item>
+		<item>ge</item>
+		<item>gt</item>
+		<item>split</item>
+		<item>open</item>
+		<item>close</item>
+		<item>eval</item>
+		<item>chomp</item>
+		<item>chop</item>
+		<item>unless</item>
+		<item>undef</item>
+		<item>next</item>
+		<item>unlink</item>
+		<item>new</item>
+		<item>and</item>
+		<item>not</item>
+		<item>no</item>
+		<item>ref</item>
+		<item>redo</item>
+		<item>require</item>
+		<item>tied</item>
+		<item>tie</item>
+		<item>untie</item>
+		<item>or</item>
+		<item>xor</item>
+		<item>continue</item>
+		<item>do</item>
+		<item>else</item>
+		<item>for</item>
+		<item>goto</item>
+		<item>if</item>
+		<item>return</item>
+		<item>switch</item>
+		<item>while</item>
+	</list>
+
+	<contexts>
+		<context  attribute="HTML" lineEndContext="#stay" name="HTML">
+			<RegExpr attribute="Mason Tag" context="EmbeddedPerl" String="&lt;\%method[^&gt;]*&gt;" />
+			<RegExpr attribute="Mason Tag" context="EmbeddedPerl" String="&lt;\%def[^&gt;]*&gt;" />
+			<StringDetect attribute="Mason Tag" context="EmbeddedPerl" String="&lt;%method&gt;" insensitive="false" />
+			<StringDetect attribute="Comment" context="Documentation" String="&lt;%doc&gt;" insensitive="false" />
+
+			<StringDetect attribute="Mason Tag" context="EmbeddedPerl" String="&lt;%perl&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="EmbeddedPerl" String="&lt;%init&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="EmbeddedPerl" String="&lt;%once&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="EmbeddedPerl" String="&lt;%args&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="EmbeddedPerl" String="&lt;%filter&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="EmbeddedPerl" String="&lt;%cleanup&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="EmbeddedPerl" String="&lt;%flags&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="EmbeddedPerl" String="&lt;%attr&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="EmbeddedPerl" String="&lt;%shared&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="UnparsedText" String="&lt;%text&gt;" insensitive="false" />
+			<Detect2Chars attribute="Mason Tag" context="EmbeddedPerl" char="&lt;" char1="%" />
+			<Detect2Chars attribute="Mason Method" context="MethodCall" char="&lt;" char1="&amp;" />
+			<StringDetect attribute="Mason Tag" context="#stay" String="&lt;/&amp;&gt;" />
+			<RegExpr attribute="Mason Tag" context="PerlOneLiner" String="^%" />
+		</context>
+
+		<context attribute="normal" lineEndContext="#stay" name="EmbeddedPerl">
+			<Detect2Chars attribute="Mason Tag" context="#pop" char="%" char1="&gt;" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%perl&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%method&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%def&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%init&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%once&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%args&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%filter&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%cleanup&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%flags&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%attr&gt;" insensitive="false" />
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%shared&gt;" insensitive="false" />
+			<keyword attribute="Keyword" context="#stay" String="keywords"/>
+			<HlCOct attribute="Octal" context="#stay"/>
+			<HlCHex attribute="Hex" context="#stay"/>
+			<Int attribute="Decimal" context="#stay" />
+			<HlCChar attribute="Char" context="#stay"/>
+			<RegExpr attribute="Keyword" context="#stay" String="^#!.*" />
+			<DetectChar attribute="String" context="String" char="&quot;"/>
+			<DetectChar attribute="String" context="String2" char="'"/>
+			<DetectChar attribute="String Char" context="String" char="`"/>
+			<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+			<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*"/>
+			<Detect2Chars attribute="Pattern" context="Pattern2" char="s" char1="/" />
+			<DetectChar attribute="Pattern" context="Pattern" char="/" />
+			<DetectIdentifier attribute="normal" context="#stay" />
+			<RegExpr attribute="Decimal" context="#stay" String="[0-9]+" />
+			<AnyChar attribute="Data Type" context="Variable" String="$@%" />
+			<RegExpr attribute="Pattern" context="#stay" String="\s+\:" />
+			<AnyChar attribute="Symbol" context="#stay" String="!&amp;()+,-&lt;=&gt;?[]^{|}~"/> 
+			<DetectChar attribute="Comment" context="Commentar 1" char="#" />
+		</context>
+
+		<context attribute="String" lineEndContext="#stay" name="String">
+			<LineContinue attribute="String" context="#stay"/>
+			<HlCStringChar attribute="String Char" context="#stay"/>
+			<DetectChar attribute="String" context="#pop" char="&quot;"/>
+			<RegExpr attribute="Decimal" context="#stay" String="[0-9]+" />
+			<AnyChar attribute="Data Type" context="Variable" String="$@%" />
+		</context>
+		
+		<context attribute="String" lineEndContext="#stay" name="UnparsedText">
+			<StringDetect attribute="Mason Tag" context="#pop" String="&lt;/%text&gt;" insensitive="false" />
+		</context>
+		
+		<context attribute="Data Type" lineEndContext="#pop" name="Variable">
+			<Detect2Chars attribute="normal" context="#stay" char="-" char1="&gt;" />
+			<DetectChar attribute="String" context="String" char="&quot;" />
+			<DetectChar attribute="String" context="String2" char="'" />
+			<AnyChar attribute="normal" context="#pop" String=" &amp;	()+,-&lt;=&gt;?^|~" />
+		</context>
+
+		<context attribute="Comment" lineEndContext="#pop" name="Commentar 1"/>
+
+		<context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+			<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+		</context>
+
+		<context attribute="Pattern" lineEndContext="#stay" name="Pattern">
+			<RegExpr attribute="String Char" context="#stay" String="\\[\/\[\]dDwWsSnrtfb0\$@]?" />
+			<RegExpr attribute="String Char" context="#stay" String="\^[\/\[\]]?" />
+			<DetectChar attribute="Pattern" context="#pop" char="/" />
+		</context>
+
+		<context attribute="Pattern" lineEndContext="#stay" name="Pattern2">
+			<RegExpr attribute="String Char" context="#stay" String="\\[\/\[\]dDwWsSnrtfb0\$@]?" />
+			<RegExpr attribute="String Char" context="#stay" String="\^[\/\[\]]?" />
+			<RegExpr attribute="Pattern" context="Pattern3" String="\/" />
+		</context>
+
+		<context attribute="Pattern" lineEndContext="#stay" name="Pattern3">
+			<RegExpr attribute="String Char" context="#stay" String="\\[\/\[\]dDwWsSnrtfb0\$@]?" />
+			<RegExpr attribute="String Char" context="#stay" String="\^[\/\[\]]?" />
+			<RegExpr attribute="Pattern" context="#pop#pop" String="\/g?" />
+		</context>
+
+		<context attribute="String Char" lineEndContext="#stay" name="Something">
+			<DetectChar attribute="String Char" context="#pop" char="`"/>
+		</context>
+
+		<context attribute="String" lineEndContext="#stay" name="String2">
+			<LineContinue attribute="String" context="#stay"/>
+			<Detect2Chars attribute="String Char" context="#stay" char="\" char1="'"/>
+			<DetectChar attribute="String" context="#pop" char="'"/>
+		</context>
+
+		<context attribute="normal" lineEndContext="#pop" name="PerlOneLiner">
+			<keyword attribute="Keyword" context="#stay" String="keywords"/>
+			<HlCOct attribute="Octal" context="#stay"/>
+			<HlCHex attribute="Hex" context="#stay"/>
+			<Int attribute="Decimal" context="#stay" />
+			<HlCChar attribute="Char" context="#stay"/>
+			<RegExpr attribute="Keyword" context="#stay" String="^#!.*" />
+			<RegExpr attribute="String" context="#stay" String="&quot;[^&quot;]*&quot;"/>
+			<RegExpr attribute="String" context="#stay" String="'[^']*'"/>
+			<DetectChar attribute="String Char" context="Something" char="`"/>
+			<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+			<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*"/>
+			<Detect2Chars attribute="Pattern" context="Pattern2" char="s" char1="/" />
+			<RegExpr attribute="Decimal" context="#stay" String="[0-9]+" />
+			<AnyChar attribute="Data Type" context="Variable" String="$@%" />
+			<AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=&gt;?[]^{|}~"/>
+			<RegExpr attribute="Pattern" context="#stay" String="\s+\:" />
+			<RegExpr attribute="Comment" context="#stay" String="\#.*" />
+		</context>
+
+		<context attribute="Comment" lineEndContext="#stay" name="Documentation">
+			<StringDetect attribute="Comment" context="#pop" String="&lt;/%doc&gt;" insensitive="false" />
+		</context>
+
+		<context attribute="Mason Method" lineEndContext="#stay" name="MethodCall">
+			<Detect2Chars attribute="Mason Method" context="#pop" char="&amp;" char1="&gt;" />
+		</context>
+	</contexts>
+
+	<itemDatas>
+		<itemData name="normal" defStyleNum="dsNormal"/>
+		<itemData name="Keyword"  defStyleNum="dsKeyword"/>
+		<itemData name="Data Type"  defStyleNum="dsDataType"/>
+		<itemData name="Decimal"  defStyleNum="dsDecVal"/>
+		<itemData name="Octal"  defStyleNum="dsBaseN"/>
+		<itemData name="Hex"  defStyleNum="dsBaseN"/>
+		<itemData name="Char"  defStyleNum="dsChar"/>
+		<itemData name="String"  defStyleNum="dsString"/>
+		<itemData name="String Char"  defStyleNum="dsChar"/>
+		<itemData name="Comment"  defStyleNum="dsComment"/>
+		<itemData name="Symbol"  defStyleNum="dsNormal"/>
+		<itemData name="Pattern"  defStyleNum="dsOthers"/>
+		<itemData name="Mason Tag"  defStyleNum="dsKeyword"/>
+		<itemData name="Mason Method"  defStyleNum="dsKeyword"/>
+		<itemData name="HTML"  defStyleNum="dsString"/>
+	</itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+	  <comment name="singleLine" start="#" />
+	  <comment name="multiLine" start="&lt;%doc&gt;" end="&lt;%doc&gt;"/>
+     </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

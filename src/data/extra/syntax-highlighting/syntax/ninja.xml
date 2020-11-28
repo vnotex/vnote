@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"[
+  <!ENTITY ident "[-_a-zA-Z0-9]+">
+  <!ENTITY deplist "[^$|:]+">
+]>
+<language
+  name="Ninja" section="Other"
+  version="1" kateversion="5.0"
+  extensions="*.ninja"
+  author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT"
+>
+  <highlighting>
+    <list name="keywordRule"><item>rule</item></list>
+    <list name="keywordBuild"><item>build</item></list>
+    <list name="keywordPool"><item>pool</item></list>
+    <list name="keywords">
+      <item>default</item>
+      <item>include</item>
+      <item>subninja</item>
+    </list>
+
+    <list name="poolValues">
+      <item>console</item>
+    </list>
+
+    <list name="rules">
+      <item>phony</item>
+    </list>
+
+    <list name="topVariables">
+      <item>builddir</item>
+      <item>ninja_required_version</item>
+    </list>
+
+    <list name="poolVariables">
+      <item>depth</item>
+    </list>
+
+    <list name="ruleVariables">
+      <item>command</item>
+      <item>console</item>
+      <item>depfile</item>
+      <item>deps</item>
+      <item>msvc_deps_prefix</item>
+      <item>description</item>
+      <item>generator</item>
+      <item>in</item>
+      <item>in_newline</item>
+      <item>out</item>
+      <item>pool</item>
+      <item>restat</item>
+      <item>rspfile</item>
+      <item>rspfile_content</item>
+    </list>
+
+    <contexts>
+      <context attribute="Normal" name="Normal" lineEndContext="#stay" fallthrough="1" fallthroughContext="ErrorOrComment">
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <keyword attribute="Keyword" context="BuildStatement" String="keywordBuild"/>
+        <keyword attribute="Keyword" context="RuleStatement" String="keywordRule"/>
+        <keyword attribute="Keyword" context="PoolStatement" String="keywordPool"/>
+        <keyword attribute="Keyword" context="SimpleStatement" String="keywords"/>
+        <keyword attribute="Special Key" context="VariableAssignment" String="topVariables"/>
+        <RegExpr attribute="Key" context="VariableAssignment" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" name="ErrorOrComment" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
+        <DetectSpaces/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+      </context>
+
+      <context attribute="Error" name="Error" lineEndContext="#pop"/>
+
+      <!-- rule -->
+
+      <context attribute="Normal" name="RuleStatement" lineEndContext="#pop" fallthrough="1" fallthroughContext="Error">
+        <DetectSpaces/>
+        <RegExpr attribute="Normal" context="#pop!RuleKeys" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" name="RuleKeys" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces context="RuleKey"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+      </context>
+
+      <context attribute="Normal" name="RuleKey" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
+        <DetectChar attribute="Comment" context="#pop!Comment" char="#"/>
+        <keyword attribute="Special Key" context="#pop!PoolVariableAssignment" String="keywordPool"/>
+        <keyword attribute="Special Key" context="#pop!RuleVariableAssignment" String="ruleVariables"/>
+      </context>
+
+      <context attribute="Normal" name="RuleVariableAssignment" lineEndContext="#pop" fallthrough="1" fallthroughContext="Error">
+        <DetectSpaces/>
+        <DetectChar attribute="Operator" context="#pop!RuleValue" char="="/>
+      </context>
+
+      <context attribute="Normal" name="RuleValue" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal" context="RuleDollar" char="$" lookAhead="true"/>
+        <AnyChar attribute="Symbol" context="#stay" String="&lt;>&amp;|=(){}[]&quot;';!%?*"/>
+        <RegExpr attribute="Normal" context="#stay" String="[^&lt;>&amp;|=(){}[\]&quot;';!%?*$]"/>
+      </context>
+
+      <context attribute="Error" name="RuleDollar" lineEndContext="#pop">
+        <LineContinue attribute="Line Continuation" context="#pop!LineContinuation" char="$"/>
+        <Detect2Chars attribute="Special Char" context="#pop" char="$" char1=" "/>
+        <Detect2Chars attribute="Special Char" context="#pop" char="$" char1="$"/>
+        <Detect2Chars attribute="Special Char" context="#pop" char="$" char1=":"/>
+        <Detect2Chars attribute="Variable Delimiter" context="#pop!RuleOpenVariableName" char="$" char1="{"/>
+        <DetectChar attribute="Variable Delimiter" context="#pop!RuleVariableName" char="$"/>
+      </context>
+
+      <context attribute="Variable" name="RuleOpenVariableName" lineEndContext="#pop" fallthrough="1" fallthroughContext="Error">
+        <DetectChar attribute="Variable Delimiter" context="#pop" char="}"/>
+        <keyword attribute="Special Variable" context="#stay" String="ruleVariables"/>
+        <RegExpr attribute="Variable" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Variable" name="RuleVariableName" lineEndContext="#pop" fallthrough="1" fallthroughContext="Error">
+        <keyword attribute="Special Variable" context="#pop" String="ruleVariables"/>
+        <RegExpr attribute="Variable" context="#pop" String="&ident;"/>
+      </context>
+
+      <!-- build -->
+
+      <context attribute="Normal" name="BuildStatement" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal" context="Dollar" char="$" lookAhead="true"/>
+        <DetectChar attribute="Operator" context="#pop!BuildRuleName" char=":"/>
+        <DetectChar attribute="Operator" context="#pop!ImplicitOutput" char="|"/>
+        <RegExpr attribute="Normal" context="#stay" String="&deplist;"/>
+      </context>
+
+      <context attribute="Implicit Output" name="ImplicitOutput" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal" context="Dollar" char="$" lookAhead="true"/>
+        <DetectChar attribute="Operator" context="#pop!BuildRuleName" char=":"/>
+        <RegExpr attribute="Implicit Output" context="#stay" String="&deplist;"/>
+      </context>
+
+      <context attribute="Normal" name="BuildRuleName" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
+        <DetectSpaces/>
+        <keyword attribute="Special Rule Name" context="#pop!BuildDependancies" String="rules"/>
+        <RegExpr attribute="Rule Name" context="#pop!BuildDependancies" String="&ident;"/>
+      </context>
+
+      <context attribute="Dependancy" name="BuildDependancies" lineEndContext="#pop!BuildKeys">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal" context="Dollar" char="$" lookAhead="true"/>
+        <DetectChar attribute="Operator" context="#pop!ImplicitBuildDependancies" char="|"/>
+        <RegExpr attribute="Dependancy" context="#stay" String="&deplist;"/>
+        <DetectChar attribute="Error" context="#stay" char=":"/>
+      </context>
+
+      <context attribute="Implicit Dependancy" name="ImplicitBuildDependancies" lineEndContext="#pop!BuildKeys">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal" context="Dollar" char="$" lookAhead="true"/>
+        <RegExpr attribute="Implicit Dependancy" context="#stay" String="&deplist;"/>
+        <DetectChar attribute="Operator" context="#stay" char="|"/>
+        <DetectChar attribute="Error" context="#stay" char=":"/>
+      </context>
+
+      <context attribute="Normal" name="BuildKeys" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces context="BuildKey"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+      </context>
+
+      <context attribute="Normal" name="BuildKey" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
+        <DetectChar attribute="Comment" context="#pop!Comment" char="#"/>
+        <keyword attribute="Special Key" context="#pop!PoolVariableAssignment" String="keywordPool"/>
+        <keyword attribute="Special Key" context="#pop!VariableAssignment" String="ruleVariables"/>
+        <RegExpr attribute="Key" context="#pop!VariableAssignment" String="&ident;"/>
+      </context>
+
+      <!-- pool -->
+
+      <context attribute="Normal" name="PoolStatement" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
+        <DetectSpaces/>
+        <RegExpr attribute="Normal" context="#pop!PoolKeys" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" name="PoolKeys" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces context="PoolKey"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+      </context>
+
+      <context attribute="Normal" name="PoolKey" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
+        <DetectChar attribute="Comment" context="#pop!Comment" char="#"/>
+        <keyword attribute="Special Key" context="#pop!PoolVariableAssignment" String="poolVariables"/>
+      </context>
+
+      <context attribute="Normal" name="PoolVariableAssignment" lineEndContext="#pop" fallthrough="1" fallthroughContext="Error">
+        <DetectSpaces/>
+        <DetectChar attribute="Operator" context="#pop!PoolValue" char="="/>
+      </context>
+
+      <context attribute="Normal" name="PoolValue" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal" context="Dollar" char="$" lookAhead="true"/>
+        <keyword attribute="Special Value" context="BuildStatement" String="poolValues"/>
+        <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
+      </context>
+
+      <!-- default, include, subninja -->
+
+      <context attribute="Normal" name="SimpleStatement" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
+        <DetectChar attribute="Normal" context="Dollar" char="$" lookAhead="true"/>
+        <RegExpr attribute="Normal" context="#stay" String="&deplist;"/>
+      </context>
+
+      <!-- Value -->
+
+      <context attribute="Normal" name="VariableAssignment" lineEndContext="#pop" fallthrough="1" fallthroughContext="Error">
+        <DetectSpaces/>
+        <DetectChar attribute="Operator" context="#pop!Value" char="="/>
+      </context>
+
+      <context attribute="Normal" name="Value" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal" context="Dollar" char="$" lookAhead="true"/>
+        <AnyChar attribute="Symbol" context="#stay" String="&lt;>&amp;|=(){}[]&quot;';!%?*"/>
+        <RegExpr attribute="Normal" context="#stay" String="[^&lt;>&amp;|=(){}[\]&quot;';!%?*$]"/>
+      </context>
+
+      <!-- $ -->
+
+      <context attribute="Error" name="Dollar" lineEndContext="#pop">
+        <LineContinue attribute="Line Continuation" context="#pop!LineContinuation" char="$"/>
+        <Detect2Chars attribute="Special Char" context="#pop" char="$" char1=" "/>
+        <Detect2Chars attribute="Special Char" context="#pop" char="$" char1="$"/>
+        <Detect2Chars attribute="Special Char" context="#pop" char="$" char1=":"/>
+        <Detect2Chars attribute="Variable Delimiter" context="#pop!OpenVariableName" char="$" char1="{"/>
+        <DetectChar attribute="Variable Delimiter" context="#pop!VariableName" char="$"/>
+      </context>
+
+      <context attribute="Variable" name="OpenVariableName" lineEndContext="#pop" fallthrough="1" fallthroughContext="Error">
+        <DetectChar attribute="Variable Delimiter" context="#pop" char="}"/>
+        <RegExpr attribute="Variable" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Variable" name="VariableName" lineEndContext="#pop" fallthrough="1" fallthroughContext="Error">
+        <RegExpr attribute="Variable" context="#pop" String="&ident;"/>
+      </context>
+
+      <context attribute="Line Continuation" name="LineContinuation" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces/>
+      </context>
+
+      <!-- comment -->
+
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <DetectSpaces/>
+        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Modelines" />
+        <DetectIdentifier attribute="Comment" />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Rule Name" defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Special Rule Name" defStyleNum="dsBuiltIn" spellChecking="0"/>
+      <itemData name="Dependancy" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Implicit Dependancy" defStyleNum="dsNormal" italic="1" spellChecking="0"/>
+      <itemData name="Implicit Output" defStyleNum="dsNormal" italic="1" spellChecking="0"/>
+      <itemData name="Special Key" defStyleNum="dsBuiltIn" spellChecking="0"/>
+      <itemData name="Key" defStyleNum="dsVariable" spellChecking="0"/>
+      <itemData name="Variable Delimiter" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Special Variable" defStyleNum="dsBuiltIn" spellChecking="0"/>
+      <itemData name="Variable" defStyleNum="dsVariable" spellChecking="0"/>
+      <itemData name="Special Value" defStyleNum="dsBuiltIn" spellChecking="0"/>
+      <itemData name="Operator" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Line Continuation" defStyleNum="dsSpecialChar" spellChecking="0"/>
+      <itemData name="Special Char" defStyleNum="dsSpecialChar" spellChecking="0"/>
+      <itemData name="Symbol" defStyleNum="dsNormal" bold="1" spellChecking="0"/>
+      <itemData name="Error" defStyleNum="dsError" spellChecking="0"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

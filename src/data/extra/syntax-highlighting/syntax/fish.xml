@@ -1,0 +1,1001 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+        <!ENTITY white             "	 ">                            <!-- first is tab -->
+        <!ENTITY eocommand         "&white;&lt;&gt;^">                 <!-- end of command separator -->
+        <!ENTITY allchars          "[&white;!&quot;#$&#37;&amp;'()*+,-./0-9:;&lt;=&gt;?@A-Z[\]\\^_`a-z{}|~]"> <!--&percent; doesn't work -> &#37; -->
+        <!ENTITY separator         "&white;|&amp;;&lt;&gt;()'&quot;">  <!-- token separator as char list -->
+        <!ENTITY commandsep        "|&amp;;">                          <!-- command separator as char list -->
+        <!ENTITY special           "{}*/.?\\$&amp;">                   <!-- not allowed in function names -->
+        <!ENTITY portable_filename "A-Za-z0-9\._-">
+        <!ENTITY funcname_first    "a-zA-Z+:=!.@_`">
+        <!ENTITY funcname_last     "a-zA-Z0-9+,-:=!.@#&#37;^_`~">
+        <!ENTITY funcname          "[&funcname_first;]([&funcname_last;]|\\ )*">
+        <!ENTITY varname           "[A-Za-z0-9_]+">
+        <!ENTITY alnumdash         "[A-Za-z0-9-]">                     <!-- option chars, dashes for GNU long opts -->
+        <!ENTITY testoptsfile      "[bcdefgGkLOprsStuwx]">             <!-- test operators for file testing -->
+        <!ENTITY testoptsother     "[nzao]">                           <!-- other test operators -->
+        <!ENTITY braceelement      "[!#&#37;+\-\./0-9:=@A-Z^_`a-z~]">
+        <!ENTITY escapechars       "[abefnrtv $\\*?~&#37;#(){}[\]&lt;&gt;\^&amp;;&quot;&apos;]">   <!-- escape chars -->
+        <!ENTITY white_or_eol      "([&white;]|$)">
+        <!ENTITY homedir           "~[&portable_filename;]*">
+        <!ENTITY pathdetect        "((\.\.|\.|&homedir;)&white_or_eol;|([^$\\{}&separator;/\*\?]|\\&escapechars;)*(/|\*|\*\*|\?))">
+        <!ENTITY pathpart          "(([^&separator;/]|\\&escapechars;)*)?(/|(?=&quot;)|(?='))">
+]>
+
+
+<language name="Fish" version="1" kateversion="5.0" section="Scripts" extensions="*.fish;fishd.*" mimetype="application/x-fish" casesensitive="1" author="Arnd Diestelhorst (adiestelhorst@m-xchg.de)" license="LGPL">
+
+
+  <highlighting>
+
+    <list name= "commands">
+      <item>abbr</item>
+      <item>alias</item>
+      <item>argparse</item>
+      <item>bg</item>
+      <item>bind</item>
+      <item>block</item>
+      <item>cd</item>
+      <item>cdh</item>
+      <item>commandline</item>
+      <item>complete</item>
+      <item>contains</item>
+      <item>count</item>
+      <item>dirs</item>
+      <item>disown</item>
+      <item>echo</item>
+      <item>emit</item>
+      <item>end</item>
+      <item>exit</item>
+      <item>fg</item>
+      <item>fish</item>
+      <item>fish_config</item>
+      <item>fish_indent</item>
+      <item>fish_key_reader</item>
+      <item>fish_mode_prompt</item>
+      <item>fish_opt</item>
+      <item>fish_prompt</item>
+      <item>fish_right_prompt</item>
+      <item>fish_update_completions</item>
+      <item>fish_vi_mode</item>
+      <item>funced</item>
+      <item>funcsave</item>
+      <item>functions</item>
+      <item>help</item>
+      <item>history</item>
+      <item>isatty</item>
+      <item>jobs</item>
+      <item>math</item>
+      <item>nextd</item>
+      <item>open</item>
+      <item>prevd</item>
+      <item>printf</item>
+      <item>psub</item>
+      <item>pushd</item>
+      <item>random</item>
+      <item>realpath</item>
+      <item>return</item>
+      <item>set_color</item>
+      <item>source</item>
+      <item>status</item>
+      <item>suspend</item>
+      <item>trap</item>
+      <item>type</item>
+      <item>ulimit</item>
+      <item>umask</item>
+      <item>vared</item>
+    </list>
+
+    <list name="commandsnoargs">
+      <item>break</item>
+      <item>breakpoint</item>
+      <item>continue</item>
+      <item>dirh</item>
+      <item>false</item> 
+      <item>popd</item>
+      <item>prompt_pwd</item>
+      <item>pwd</item>
+      <item>true</item>
+    </list>
+
+    <list name="commandsstay">
+      <item>and</item>
+      <item>not</item>
+      <item>or</item>
+    </list>
+
+    <list name="stringsubcommands">
+      <item>escape</item>
+      <item>join</item>
+      <item>length</item>
+      <item>lower</item>
+      <item>match</item>
+      <item>repeat</item>
+      <item>replace</item>
+      <item>split</item>
+      <item>sub</item>
+      <item>trim</item>
+      <item>unescape</item>
+      <item>upper</item>
+    </list>
+
+    <list name="unixcommands">
+      <item>aclocal</item>
+      <item>aconnect</item>
+      <item>aplay</item>
+      <item>apm</item>
+      <item>apmsleep</item>
+      <item>apropos</item>
+      <item>arch</item>
+      <item>arecord</item>
+      <item>ar</item>
+      <item>as86</item>
+      <item>as</item>
+      <item>autoconf</item>
+      <item>autoheader</item>
+      <item>automake</item>
+      <item>awk</item>
+      <item>basename</item>
+      <item>bash</item>
+      <item>bc</item>
+      <item>bison</item>
+      <item>bunzip2</item>
+      <item>bzcat</item>
+      <item>bzcmp</item>
+      <item>bzdiff</item>
+      <item>bzegrep</item>
+      <item>bzfgrep</item>
+      <item>bzgrep</item>
+      <item>bzip2</item>
+      <item>bzip2recover</item>
+      <item>bzless</item>
+      <item>bzmore</item>
+      <item>cal</item>
+      <item>cat</item>
+      <item>cc</item>
+      <item>cdda2wav</item>
+      <item>cdparanoia</item>
+      <item>cdrdao</item>
+      <item>cd-read</item>
+      <item>cdrecord</item>
+      <item>chattr</item>
+      <item>chfn</item>
+      <item>chgrp</item>
+      <item>chmod</item>
+      <item>chown</item>
+      <item>chroot</item>
+      <item>chsh</item>
+      <item>chvt</item>
+      <item>c++</item>
+      <item>clang</item>
+      <item>clear</item>
+      <item>cmake</item>
+      <item>cmp</item>
+      <item>co</item>
+      <item>col</item>
+      <item>comm</item>
+      <item>cpio</item>
+      <item>cp</item>
+      <item>cpp</item>
+      <item>cut</item>
+      <item>date</item>
+      <item>dc</item>
+      <item>dcop</item>
+      <item>dd</item>
+      <item>deallocvt</item>
+      <item>df</item>
+      <item>diff3</item>
+      <item>diff</item>
+      <item>dircolors</item>
+      <item>directomatic</item>
+      <item>dir</item>
+      <item>dirname</item>
+      <item>dmesg</item>
+      <item>dnsdomainname</item>
+      <item>domainname</item>
+      <item>du</item>
+      <item>dumpkeys</item>
+      <item>echo</item>
+      <item>ed</item>
+      <item>egrep</item>
+      <item>env</item>
+      <item>expr</item>
+      <item>false</item>
+      <item>fbset</item>
+      <item>fgconsole</item>
+      <item>fgrep</item>
+      <item>file</item>
+      <item>find</item>
+      <item>flex</item>
+      <item>flex++</item>
+      <item>fmt</item>
+      <item>free</item>
+      <item>ftp</item>
+      <item>funzip</item>
+      <item>fuser</item>
+      <item>gawk</item>
+      <item>gcc</item>
+      <item>gc</item>
+      <item>gdb</item>
+      <item>getent</item>
+      <item>getkeycodes</item>
+      <item>getopt</item>
+      <item>gettext</item>
+      <item>gettextize</item>
+      <item>gimp</item>
+      <item>gimp-remote</item>
+      <item>gimptool</item>
+      <item>g++</item>
+      <item>git</item>
+      <item>gmake</item>
+      <item>gocr</item>
+      <item>grep</item>
+      <item>groff</item>
+      <item>groups</item>
+      <item>gs</item>
+      <item>gunzip</item>
+      <item>gzexe</item>
+      <item>gzip</item>
+      <item>head</item>
+      <item>hexdump</item>
+      <item>hostname</item>
+      <item>id</item>
+      <item>igawk</item>
+      <item>install</item>
+      <item>join</item>
+      <item>kbd_mode</item>
+      <item>kbdrate</item>
+      <item>kdialog</item>
+      <item>kfile</item>
+      <item>killall</item>
+      <item>kill</item>
+      <item>lastb</item>
+      <item>last</item>
+      <item>ld86</item>
+      <item>ldd</item>
+      <item>ld</item>
+      <item>less</item>
+      <item>lex</item>
+      <item>link</item>
+      <item>ln</item>
+      <item>ln</item>
+      <item>loadkeys</item>
+      <item>loadunimap</item>
+      <item>locate</item>
+      <item>lockfile</item>
+      <item>login</item>
+      <item>logname</item>
+      <item>lp</item>
+      <item>lpr</item>
+      <item>lsattr</item>
+      <item>ls</item>
+      <item>lsmod</item>
+      <item>lsmod.old</item>
+      <item>lynx</item>
+      <item>lzcat</item>
+      <item>lzcmp</item>
+      <item>lzdiff</item>
+      <item>lzegrep</item>
+      <item>lzfgrep</item>
+      <item>lzgrep</item>
+      <item>lzless</item>
+      <item>lzmainfo</item>
+      <item>lzma</item>
+      <item>lzmore</item>
+      <item>m4</item>
+      <item>make</item>
+      <item>man</item>
+      <item>mapscrn</item>
+      <item>mesg</item>
+      <item>mkdir</item>
+      <item>mkfifo</item>
+      <item>mknod</item>
+      <item>mktemp</item>
+      <item>more</item>
+      <item>mount</item>
+      <item>msgfmt</item>
+      <item>mv</item>
+      <item>namei</item>
+      <item>nano</item>
+      <item>nasm</item>
+      <item>nawk</item>
+      <item>netstat</item>
+      <item>nice</item>
+      <item>nisdomainname</item>
+      <item>nl</item>
+      <item>nm86</item>
+      <item>nmap</item>
+      <item>nm</item>
+      <item>nohup</item>
+      <item>nop</item>
+      <item>nroff</item>
+      <item>od</item>
+      <item>openvt</item>
+      <item>passwd</item>
+      <item>patch</item>
+      <item>pcregrep</item>
+      <item>pcretest</item>
+      <item>perl</item>
+      <item>perror</item>
+      <item>pgawk</item>
+      <item>pidof</item>
+      <item>ping</item>
+      <item>printf</item>
+      <item>pr</item>
+      <item>procmail</item>
+      <item>prune</item>
+      <item>ps2ascii</item>
+      <item>ps2epsi</item>
+      <item>ps2frag</item>
+      <item>ps2pdf</item>
+      <item>ps2ps</item>
+      <item>psbook</item>
+      <item>ps</item>
+      <item>psmerge</item>
+      <item>psnup</item>
+      <item>psresize</item>
+      <item>psselect</item>
+      <item>pstops</item>
+      <item>pstree</item>
+      <item>pwd</item>
+      <item>qmake</item>
+      <item>rbash</item>
+      <item>rcs</item>
+      <item>readlink</item>
+      <item>red</item>
+      <item>resizecons</item>
+      <item>rev</item>
+      <item>rmdir</item>
+      <item>rm</item>
+      <item>rsync</item>
+      <item>run-parts</item>
+      <item>sash</item>
+      <item>scp</item>
+      <item>sed</item>
+      <item>seq</item>
+      <item>setfont</item>
+      <item>setkeycodes</item>
+      <item>setleds</item>
+      <item>setmetamode</item>
+      <item>setserial</item>
+      <item>setterm</item>
+      <item>sh</item>
+      <item>showkey</item>
+      <item>shred</item>
+      <item>size86</item>
+      <item>size</item>
+      <item>skill</item>
+      <item>sleep</item>
+      <item>slogin</item>
+      <item>snice</item>
+      <item>sort</item>
+      <item>sox</item>
+      <item>split</item>
+      <item>ssed</item>
+      <item>ssh-add</item>
+      <item>ssh-agent</item>
+      <item>ssh</item>
+      <item>ssh-keygen</item>
+      <item>ssh-keyscan</item>
+      <item>stat</item>
+      <item>strings</item>
+      <item>strip</item>
+      <item>stty</item>
+      <item>sudo</item>
+      <item>suidperl</item>
+      <item>su</item>
+      <item>sum</item>
+      <item>svn</item>
+      <item>sync</item>
+      <item>tac</item>
+      <item>tail</item>
+      <item>tar</item>
+      <item>tee</item>
+      <item>tempfile</item>
+      <item>test</item>
+      <item>touch</item>
+      <item>tr</item>
+      <item>troff</item>
+      <item>true</item>
+      <item>truncate</item>
+      <item>umount</item>
+      <item>uname</item>
+      <item>unicode_start</item>
+      <item>unicode_stop</item>
+      <item>uniq</item>
+      <item>unlink</item>
+      <item>unlzma</item>
+      <item>unxz</item>
+      <item>unzip</item>
+      <item>updatedb</item>
+      <item>updmap</item>
+      <item>uptime</item>
+      <item>users</item>
+      <item>utmpdump</item>
+      <item>uuidgen</item>
+      <item>valgrind</item>
+      <item>vdir</item>
+      <item>vmstat</item>
+      <item>wall</item>
+      <item>wc</item>
+      <item>wget</item>
+      <item>whatis</item>
+      <item>whereis</item>
+      <item>which</item>
+      <item>whoami</item>
+      <item>who</item>
+      <item>w</item>
+      <item>write</item>
+      <item>xargs</item>
+      <item>xdg-open</item>
+      <item>xhost</item>
+      <item>xmodmap</item>
+      <item>xset</item>
+      <item>xzcat</item>
+      <item>xz</item>
+      <item>yacc</item>
+      <item>yes</item>
+      <item>ypdomainname</item>
+      <item>zcat</item>
+      <item>zcmp</item>
+      <item>zdiff</item>
+      <item>zegrep</item>
+      <item>zfgrep</item>
+      <item>zforce</item>
+      <item>zgrep</item>
+      <item>zip</item>
+      <item>zless</item>
+      <item>zmore</item>
+      <item>znew</item>
+      <item>zsh</item>
+      <item>zsoelim</item>
+    </list>
+
+
+
+    <contexts>
+      <context name="Start" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="Root">
+        <DetectChar attribute="Error" context="DropRestOfLine" char=")"/>
+      </context>
+
+      <context name="DropRestOfLine" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <RegExpr attribute="Normal Text" String="[^#]*" />
+      </context>
+
+      <!-- Root starts at a new line (not continuation) -->
+      <context name="Root" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <DetectChar context="#pop" char=")" lookAhead="true" />
+        <IncludeRules context="FindCommands" />
+      </context>
+
+      <!--
+      fish interprets closing parenthesis inside comments as end of command substitution, if the comment starts
+      inside of a command substitution!
+
+      fish does not interpret them this way, when
+        they are escaped by a \ or
+        they are matched by an earlier opening parenthesis inside the same comment.
+      This behaviour is replicated here.
+
+      Command substitutions may span several lines, so the closing parenthesis may be on a different line,
+      than the opening one. In the interactive shell you need a continuation line for this, not so in scripts.
+      Blocks of code with multiline command substitutions may be commented out. This should not lead to visual artifacts.
+
+      There is one case, where the following solution fails: a lonely closing ")", which is marked as an error.
+      -->
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <Detect2Chars attribute="Comment" char="\" char1="(" />
+        <Detect2Chars attribute="Comment" char="\" char1=")" />
+        <DetectChar context="CommentParenSub" char="(" />
+        <DetectChar context="#pop" char=")" lookAhead="true" />
+        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Modelines" />
+      </context>
+
+      <context name="CommentParenSub" attribute="Comment" lineEndContext="BlockComment">
+        <DetectChar attribute="Comment" context="#pop" char=")" />
+        <IncludeRules context="Comment" />
+      </context>
+
+      <context name="BlockComment" attribute="Comment" fallthrough="true" fallthroughContext="#pop#pop#pop" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char="#" firstNonSpace="true"/>
+      </context>
+
+      <!-- FindCommands matches Fish and Unix commands -->
+      <!--   order is important, factor out common rules did'nt work because of order of rules-->
+      <context name="FindCommands" attribute="Command" lineEndContext="#stay">
+        <DetectSpaces attribute="Normal Text" />
+        <AnyChar attribute="Error" context="#pop!DropRestOfLine" String="(&lt;&gt;"/>
+        <AnyChar attribute="Separator" String="&commandsep;" />
+        <keyword attribute="Builtin" context="Arguments" String="commands" /> <!--simple commands first-->
+        <keyword attribute="Builtin" context="ArgumentsNone" String="commandsnoargs" />
+        <keyword attribute="Control Flow" String="commandsstay" />
+        <Detect2Chars attribute="Builtin" context="Arguments" char="." char1=" " />
+        <RegExpr attribute="CommandPath" context="CommandPart" String="&pathdetect;" />
+        <IncludeRules context="FindSpecialCommands" /> <!--before unixcommands, because f test, but after path detection-->
+        <keyword attribute="UnixCommand" context="Arguments" String="unixcommands"/>
+        <RegExpr attribute="Command" context="CommandPart" String="&funcname;" />
+        <DetectChar context="CommandPart" char="&quot;" lookAhead="true"/>
+      </context>
+
+      <context name="CommandPart" attribute="Command" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <AnyChar context="#pop" String=")#" lookAhead="true"/>
+        <AnyChar attribute="Separator" context="#pop" String="&commandsep;" />
+        <AnyChar context="#pop!Arguments" String="&eocommand;" lookAhead="true"/>
+        <RegExpr attribute="CommandPath" String="&pathpart;" />
+        <keyword attribute="UnixCommand" String="unixcommands"/>
+        <RegExpr attribute="Command" String="&funcname;" />
+        <IncludeRules context="FindStrings" />
+        <RegExpr attribute="Error" String="." />
+      </context>
+
+      <context name="FindSpecialCommands" attribute="Builtin" lineEndContext="#stay">
+        <WordDetect attribute="Builtin" String="command" context="command_builtin" />
+        <WordDetect attribute="Builtin" String="builtin" context="command_builtin" />
+        <WordDetect attribute="Builtin" String="eval" context="eval_exec" />
+        <WordDetect attribute="Builtin" String="exec" context="eval_exec" />
+        <WordDetect attribute="Builtin" String="set" context="set" />
+        <WordDetect attribute="Builtin" String="string" context="string" />
+        <WordDetect attribute="Builtin" String="read" context="read_vared" />
+        <WordDetect attribute="Builtin" String="vared" context="read_vared" />
+        <WordDetect attribute="Builtin" String="test" context="ArgumentsTest" />
+        <RegExpr    attribute="Builtin" String="\[\s" context="ArgumentsTestBrack" />
+        <WordDetect attribute="Control Flow" String="begin" context="begin" beginRegion="begin" />
+        <WordDetect attribute="Control Flow" String="for" context="for" beginRegion="for" />
+        <WordDetect attribute="Control Flow" String="function" context="function" beginRegion="function" />
+        <WordDetect attribute="Control Flow" String="if" context="if" beginRegion="if" />
+        <WordDetect attribute="Control Flow" String="switch" context="switch" beginRegion="switch" />
+        <WordDetect attribute="Control Flow" String="while" context="while" beginRegion="while" />
+      </context>
+
+      <context name="command_builtin" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <RegExpr attribute="Option" String="-&alnumdash;*" />
+        <AnyChar attribute="Separator" context="#pop" String="&commandsep;" />
+        <IncludeRules context="Root" />
+      </context>
+
+      <context name="eval_exec" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar context="#pop" char=")" lookAhead="true"/>
+        <AnyChar attribute="Separator" context="#pop" String="&commandsep;" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindVarExpansion" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindBraceExpansion" />
+        <IncludeRules context="FindPaths" />
+        <IncludeRules context="FindEscapes" />
+        <IncludeRules context="Root" />
+      </context>
+
+      <context name="set" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <AnyChar attribute="Separator" context="#pop" String="&commandsep;" />
+        <RegExpr attribute="Option" String="-&alnumdash;*" />
+        <RegExpr attribute="Variable" String="&varname;" context="Arguments" />
+        <IncludeRules context="FindVarExpansion" />
+      </context>
+
+      <context name="string" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <DetectSpaces attribute="Normal Text" />
+        <keyword attribute="Builtin" context="#pop!Arguments" String="stringsubcommands" />
+        <RegExpr attribute="Error" String="." />
+      </context>
+
+      <context name="read_vared" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <RegExpr attribute="Option" String="-&alnumdash;*" />
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <AnyChar attribute="Separator" context="#pop" String="&commandsep;" />
+        <DetectChar context="#pop" char=")" lookAhead="true"/>
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindVarExpansion" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindBraceExpansion" />
+        <IncludeRules context="FindEscapes" />
+        <RegExpr attribute="Variable" String="&varname;" />
+      </context>
+
+      <context name="ArgumentsTestBrack" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+		<Detect2Chars attribute="Builtin" char=" " char1="]" context="#pop!ArgumentsNonePre" />
+        <AnyChar attribute="Error" context="#pop!DropRestOfLine" String="#&commandsep;&amp;"/>
+        <IncludeRules context="ArgumentsTest" />
+      </context>
+
+      <context name="ArgumentsTest" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <DetectChar context="#pop" char="#" lookAhead="true" />
+        <IncludeRules context="ArgumentsTest_common" />
+      </context>
+
+      <context name="ArgumentsTest_common" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Operator" context="DirectPath" String="-&testoptsfile; " />
+        <RegExpr attribute="Operator" String="-&testoptsother; " />
+        <RegExpr attribute="Operator" String="(!|=|!=| -eq | -ne | -gt | -ge | -lt | -le )"/>
+        <AnyChar context="#pop" String="&commandsep;" lookAhead="true"/>
+        <IncludeRules context="FindArgumentsCommon" />
+      </context>
+
+      <context name="begin" attribute="Normal Text" lineEndContext="beginbody">
+        <DetectSpaces attribute="Normal Text" />
+        <DetectChar attribute="Separator" context="beginbody" char=";" />
+        <IncludeRules context="Root" />
+      </context>
+
+      <context name="beginbody" attribute="Normal Text" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <StringDetect attribute="Control Flow" String="end" context="#pop#pop" endRegion="begin" />
+        <IncludeRules context="Root" />
+      </context>
+
+      <context name="for" attribute="Normal Text" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <DetectSpaces attribute="Normal Text" />
+        <Detect2Chars attribute="Control Flow" char="i" char1="n" context="forargs" />
+        <RegExpr attribute="Variable" String="&varname;" />
+        <IncludeRules context="FindVarExpansion" />
+        <RegExpr attribute="Error" String="."/>
+      </context>
+
+      <context name="forargs" attribute="Normal Text" lineEndContext="forbody">
+        <DetectChar attribute="Separator" context="forbody" char=";" />
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="FindArgumentsCommon" />
+      </context>
+
+      <context name="forbody" attribute="Normal Text" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <StringDetect attribute="Control Flow" String="end" context="#pop#pop#pop" endRegion="for" />
+        <IncludeRules context="Root" />
+      </context>
+
+      <context name="function" attribute="Normal Text" lineEndContext="funcbody">
+        <LineContinue attribute="Escape" />
+        <DetectSpaces attribute="Normal Text" />
+        <DetectChar attribute="Comment" context="func_comment" char="#"/>
+        <DetectChar context="funcopts" char="-" lookAhead="true" />
+        <DetectChar attribute="Separator" context="funcbody" char=";" />
+        <RegExpr attribute="Command" String="&funcname;" />
+        <IncludeRules context="FindVarExpansion" />
+        <RegExpr attribute="Error" String="."/>
+      </context>
+
+      <context name="func_comment" attribute="Comment" lineEndContext="#pop!funcbody">
+      </context>
+
+      <context name="funcopts" attribute="Normal Text" lineEndContext="#pop!funcbody">
+        <DetectChar attribute="Comment" context="#pop!func_comment" char="#"/>
+        <RegExpr attribute="Option" String="(-d[&white;]*|--description=)(?=('|&quot;))" context="funcdesc" beginRegion="doc"/>
+        <RegExpr attribute="Option" String="-&alnumdash;*" />
+        <DetectChar attribute="Separator" context="#pop!funcbody" char=";" />
+        <IncludeRules context="FindArgumentsCommon" />
+      </context>
+
+      <context name="funcdesc" attribute="Function Doc" lineEndContext="#stay">
+        <DetectChar context="DocstringSQ" char="'" />
+        <DetectChar context="DocstringDQ" char="&quot;" />
+      </context>
+
+      <!-- StringSQ consumes anything till ' -->
+      <context name="DocstringSQ" attribute="Function Doc" lineEndContext="#stay">
+        <!--no line continuation here-->
+        <Detect2Chars attribute="Escape" char="\" char1="'" />
+        <Detect2Chars attribute="Escape" char="\" char1="\" />
+        <DetectChar attribute="Function Doc" context="#pop#pop" char="'" endRegion="doc"/>
+      </context>
+
+      <!-- StringDQ consumes anything till ", substitutes vars and expressions -->
+      <context name="DocstringDQ" attribute="Function Doc" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <Detect2Chars attribute="Escape" char="\" char1="&quot;" />
+        <Detect2Chars attribute="Escape" char="\" char1="$" />
+        <Detect2Chars attribute="Escape" char="\" char1="\" />
+        <IncludeRules context="FindVarExpansion" />
+        <DetectChar attribute="Function Doc" context="#pop#pop" char="&quot;" endRegion="doc"/>
+      </context>
+
+      <context name="funcbody" attribute="Normal Text" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <StringDetect attribute="Control Flow" String="end" context="#pop#pop" endRegion="function" />
+        <IncludeRules context="Root" />
+      </context>
+
+      <context name="if" attribute="Normal Text" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <RegExpr attribute="Control Flow" String="\s*(else\s*if|else)" />
+        <StringDetect attribute="Control Flow" String="end" context="#pop" endRegion="if"/>
+        <IncludeRules context="Root" />
+      </context>
+
+      <context name="else" attribute="Normal Text" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <RegExpr String="\s*(else|end|else\s*if)" context="#pop" lookAhead="true"/>
+        <RegExpr attribute="Control Flow" String="\s*(else\s*if|else)" context="else" />
+        <StringDetect attribute="Control Flow" String="end" context="#pop#pop" endRegion="if"/>
+        <IncludeRules context="Root" />
+      </context>
+
+      <context name="switch" attribute="Normal Text" lineEndContext="switchbody">
+        <DetectChar attribute="Separator" context="switchbody" char=";" />
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="FindArgumentsCommon" />
+      </context>
+
+      <context name="switchbody" attribute="Normal Text" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <RegExpr attribute="Control Flow" String="\s*case" context="case" beginRegion="case" />
+        <StringDetect attribute="Control Flow" String="end" context="#pop#pop" endRegion="switch"/>
+        <IncludeRules context="Root" />
+      </context>
+
+      <context name="case" attribute="Normal Text" lineEndContext="casebody">
+        <DetectChar attribute="Separator" context="casebody" char=";" />
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="FindArgumentsCommon" />
+      </context>
+
+      <context name="casebody" attribute="Normal Text" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <!-- next: don't consume anything, otherwise the end of folding hides the next case -->
+        <RegExpr String="^\s*(case|end)" context="#pop#pop" endRegion="case" lookAhead="true"/>
+        <IncludeRules context="Root" />
+      </context>
+
+      <context name="while" attribute="Normal Text" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <StringDetect attribute="Control Flow" String="end" context="#pop" endRegion="while"/>
+        <IncludeRules context="Root" />
+      </context>
+
+      <!--Argument Rules match the items after a command
+            this one is a collection with the common part for inclusion-->
+      <context name="Arguments" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <AnyChar context="#pop" String="&commandsep;" lookAhead="true"/>
+        <DetectChar context="#pop" char=")" lookAhead="true"/>
+        <IncludeRules context="FindArgumentsCommon" />
+      </context>
+
+      <context name="FindArgumentsCommon" attribute="Normal Text" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <DetectSpaces attribute="Normal Text" />
+        <RegExpr attribute="Option" String="-&alnumdash;*" />
+        <RegExpr attribute="Redirection" context="Redirect" String="[0-9]*(&gt;{1,2}|&lt;|\^{1,2})" />
+        <DetectChar attribute="Operator" char="="/>
+        <DetectChar attribute="Index" context="Subscript" char="["/>
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindVarExpansion" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindBraceExpansion" />
+        <IncludeRules context="FindProcessExpansion" />
+        <IncludeRules context="FindPaths" />
+        <IncludeRules context="FindEscapes" />
+        <RegExpr attribute="Normal Text" String="[^&separator;&special;]*" />  <!--unknown token-->
+      </context>
+
+      <context name="ArgumentsNonePre" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <DetectSpaces attribute="Normal Text" context="#pop!ArgumentsNone" />
+        <AnyChar context="#pop" String="&commandsep;" lookAhead="true"/> <!--consumed on the "Find"-Level-->
+        <RegExpr attribute="Error" String="[^&commandsep;]"/>
+      </context>
+
+      <context name="ArgumentsNone" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <DetectSpaces attribute="Normal Text" />
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <RegExpr attribute="Redirection" context="Redirect" String="[0-9]*(&gt;{1,2}|&lt;|\^{1,2})" />
+        <AnyChar context="#pop" String="&commandsep;" lookAhead="true"/> <!--consumed on the "Find"-Level-->
+        <DetectChar context="#pop" char=")" lookAhead="true"/>
+        <RegExpr attribute="Error" String="[^&commandsep;#]*"/>
+      </context>
+
+      <context name="TokEnd" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <DetectSpaces attribute="Normal Text" context="#pop"/>
+        <AnyChar context="#pop" String="&commandsep;" lookAhead="true"/> <!--consumed on the "Find"-Level-->
+        <RegExpr attribute="Error" String="." context="#pop"/>
+      </context>
+
+      <context name="Redirect" attribute="Redirection" fallthrough="true" fallthroughContext="#pop!DirectPath" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <DetectChar attribute="Redirection" context="#pop!DirectPath" char="?"/>
+        <DetectChar attribute="Redirection" context="#pop#pop" char="|"/>
+        <RegExpr    attribute="Redirection" context="#pop!TokEnd" String="(&amp;[0-9]+|&amp;-)" />
+      </context>
+
+      <context name="Subscript" attribute="Index" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <Detect2Chars char="]" char1="[" />
+        <DetectChar attribute="Index" context="#pop" char="]" />
+        <Detect2Chars char="." char1="." />
+        <RegExpr attribute="Index" String=" *-?\d+" />
+        <IncludeRules context="FindVarExpansion" />
+        <IncludeRules context="FindSubstitutions" />
+        <DetectSpaces attribute="Normal Text" />
+        <RegExpr attribute="Error" String="[^\]]" />
+      </context>
+
+      <!-- FindStrings looks for single and double quoted strings -->
+      <context name="FindStrings" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar context="StringSQ" char="'" />
+        <DetectChar context="StringDQ" char="&quot;" />
+      </context>
+
+      <!-- StringSQ consumes anything till ' -->
+      <context name="StringSQ" attribute="String SingleQ" lineEndContext="#stay">
+        <!--no line continuation here-->
+        <Detect2Chars attribute="Escape" char="\" char1="'" />
+        <Detect2Chars attribute="Escape" char="\" char1="\" />
+        <DetectChar attribute="String SingleQ" context="#pop" char="'" />
+      </context>
+
+      <!-- StringDQ consumes anything till ", substitutes vars and expressions -->
+      <context name="StringDQ" attribute="String DoubleQ" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <Detect2Chars attribute="Escape" char="\" char1="&quot;" />
+        <Detect2Chars attribute="Escape" char="\" char1="$" />
+        <Detect2Chars attribute="Escape" char="\" char1="\" />
+        <IncludeRules context="FindVarExpansion" />
+        <DetectChar attribute="String DoubleQ" context="#pop" char="&quot;" />
+      </context>
+
+      <!-- FindVarExpansion goes after anything starting with $ and and their escapes -->
+      <context name="FindVarExpansion" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Variable" context="CheckSubscript" String="\$+&varname;" />
+      </context>
+
+      <!-- Subscript consumes anything till ], marks as Variable -->
+      <context name="CheckSubscript" attribute="Index" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <LineContinue attribute="Escape" />
+        <DetectChar attribute="Index" context="Subscript" char="["/>
+      </context>
+
+      <!-- Command Substitution -->
+      <context name="FindSubstitutions" attribute="Normal Text" lineEndContext="#stay">
+        <StringDetect attribute="Keychar" context="CommandSubstitution" String="(" />
+      </context>
+
+      <context name="CommandSubstitution" attribute="Normal Text" fallthrough="true" fallthroughContext="Root" lineEndContext="#stay">
+        <LineContinue attribute="Escape" />
+        <DetectChar attribute="Keychar" context="#pop" char=")" />
+      </context>
+
+      <!--	Brace Expansion consumes anything till } -->
+      <context name="FindBraceExpansion" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Keychar" context="BraceList" char="{" />
+        <DetectChar attribute="Error" char="}" />
+      </context>
+
+      <context name="BraceList" attribute="Normal Text" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <DetectChar attribute="Keychar" context="#pop" char="}" />
+        <DetectChar attribute="Separator" char="," />
+        <RegExpr attribute="Normal Text" String="&braceelement;*"/>
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindVarExpansion" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindBraceExpansion" />
+        <IncludeRules context="FindPaths" />
+        <IncludeRules context="FindEscapes" />
+        <RegExpr attribute="Error" String="."/>
+      </context>
+
+      <!--	Process Expansion -->
+      <context name="FindProcessExpansion" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Keychar" context="ProcessArg" char="%" />
+      </context>
+
+      <context name="ProcessArg" attribute="Process" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <AnyChar context="#pop" String="&white;" />
+        <AnyChar context="#pop" String="&separator;" lookAhead="true" />
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindVarExpansion" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindBraceExpansion" />
+        <IncludeRules context="FindEscapes" />
+      </context>
+
+      <!-- FindPaths for parts which might be a path. Uses the matching of a / as heuristic -->
+      <!-- Might be fooled with quotes -->
+      <context name="FindPaths" attribute="Path" lineEndContext="#stay">
+        <RegExpr context="DirectPath" String="&pathdetect;" lookAhead="true" />
+      </context>
+
+      <!-- DirectPath is used at places where the next part is definitely a path -->
+      <context name="DirectPath" attribute="Path" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!PathHead" >
+        <LineContinue attribute="Escape" />
+        <DetectSpaces attribute="Normal Text" />
+        <AnyChar attribute="Error" context="#pop" String="#&commandsep;&lt;&gt;^" />
+      </context>
+
+      <context name="PathHead" attribute="Path" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!Path" >
+        <LineContinue attribute="Escape" />
+        <RegExpr attribute="HomeDir" context="#pop" String="&homedir;&white_or_eol;" />
+        <RegExpr attribute="HomeDir" context="#pop!Path" String="&homedir;" />
+      </context>
+
+      <context name="Path" attribute="Path" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <DetectSpaces context="#pop" lookAhead="true" />
+        <AnyChar context="#pop" String="#&commandsep;&lt;&gt;^)" lookAhead="true" />
+        <AnyChar attribute="Glob" String="*?" />
+        <DetectChar attribute="Path" char="/" />
+        <DetectChar attribute="Keychar" context="PathBrace" char="{" />
+        <DetectChar attribute="Error" context="#pop" char="}" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindVarExpansion" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindEscapes" />
+        <RegExpr attribute="Path" String="[^$\*\?\\{}&separator;/]*" /> <!--consume everything until next special-->
+      </context>
+
+      <context name="PathBrace" attribute="Path" lineEndContext="#pop">
+        <LineContinue attribute="Escape" />
+        <DetectChar attribute="Keychar" context="#pop" char="}" />
+        <DetectChar attribute="Separator" char="," />
+        <AnyChar attribute="Error" String=" #&commandsep;&lt;&gt;^)" />
+        <AnyChar attribute="Glob" String="*?" />
+        <DetectChar attribute="Path" char="/" />
+        <DetectChar attribute="Keychar" context="PathBrace" char="{" />
+        <IncludeRules context="FindStrings" />
+        <IncludeRules context="FindVarExpansion" />
+        <IncludeRules context="FindSubstitutions" />
+        <IncludeRules context="FindEscapes" />
+        <RegExpr attribute="Path" String="[^$\*\?\\,{}&separator;/]*" />
+      </context>
+
+      <!-- FindEscapes contains various rules to mark different shell input -->
+      <context name="FindEscapes" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Escape" String="\\&escapechars;" />
+        <RegExpr attribute="Escape" String="\\([0-7]{1,3}|[xX][A-Fa-f0-9]{1,2}|u[A-Fa-f0-9]{1,4}|U[A-Fa-f0-9]{1,8}|c.)" />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"    defStyleNum="dsNormal" />
+      <itemData name="Path"           defStyleNum="dsNormal" />
+      <itemData name="Option"         defStyleNum="dsNormal" />
+      <itemData name="Escape"         defStyleNum="dsKeyword" />
+      <itemData name="Separator"      defStyleNum="dsKeyword" />
+      <itemData name="Glob"           defStyleNum="dsKeyword" />
+      <itemData name="HomeDir"        defStyleNum="dsKeyword" />
+      <itemData name="Keychar"        defStyleNum="dsSpecialChar" />
+      <itemData name="Command"        defStyleNum="dsFunction" />
+      <itemData name="UnixCommand"    defStyleNum="dsFunction" />
+      <itemData name="CommandPath"    defStyleNum="dsExtension" />
+      <itemData name="Variable"       defStyleNum="dsVariable" />
+      <itemData name="Control Flow"   defStyleNum="dsControlFlow" />
+      <itemData name="Operator"       defStyleNum="dsOperator" />
+      <itemData name="Redirection"    defStyleNum="dsOperator" />
+      <itemData name="Builtin"        defStyleNum="dsBuiltIn" />
+      <itemData name="Index"          defStyleNum="dsAttribute" />
+
+      <itemData name="String SingleQ" defStyleNum="dsString" />
+      <itemData name="String DoubleQ" defStyleNum="dsString" />
+      <itemData name="Process"        defStyleNum="dsImport" />
+
+
+      <itemData name="Comment"        defStyleNum="dsComment" />
+      <itemData name="Function Doc"   defStyleNum="dsDocumentation" />
+
+      <itemData name="Error"          defStyleNum="dsError" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <!-- no / as weakDeliminator, otherwwise in /usr/bin/ls ls is not recognized as UnixCommand -->
+      <keywords casesensitive="1" weakDeliminator="\+,-:=!.@#&#37;^_`~"  wordWrapDeliminator="&separator;"/>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+  </general>
+</language>

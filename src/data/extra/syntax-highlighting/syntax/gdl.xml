@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="GDL" version="2" kateversion="2.2" section="Scientific" extensions="*.gdl;*.vcg;*.GDL;*.VCG" mimetype="" author="Christoph Cullmann (cullmann@absint.com)" license="MIT">
+ <highlighting>
+  <list name="colors">
+   <item>white</item>
+   <item>blue</item>
+   <item>red</item>
+   <item>green</item>
+   <item>yellow</item>
+   <item>magenta</item>
+   <item>cyan</item>
+   <item>darkgrey</item>
+   <item>darkgray</item>
+   <item>darkblue</item>
+   <item>darkred</item>
+   <item>darkgreen</item>
+   <item>darkyellow</item>
+   <item>darkmagenta</item>
+   <item>darkcyan</item>
+   <item>gold</item>
+   <item>lightgrey</item>
+   <item>lightgray</item>
+   <item>lightblue</item>
+   <item>lightred</item>
+   <item>lightgreen</item>
+   <item>lightyellow</item>
+   <item>lightmagenta</item>
+   <item>lightcyan</item>
+   <item>lilac</item>
+   <item>turquoise</item>
+   <item>aquamarine</item>
+   <item>khaki</item>
+   <item>purple</item>
+   <item>yellowgreen</item>
+   <item>pink</item>
+   <item>orange</item>
+   <item>orchid</item>
+   <item>black</item>
+  </list>
+  <list name="shapes">
+   <item>box</item>
+   <item>triangle</item>
+   <item>circle</item>
+   <item>ellipse</item>
+   <item>hexagon</item>
+   <item>rhomb</item>
+   <item>rhomboid</item>
+   <item>trapeze</item>
+   <item>uptrapeze</item>
+   <item>trapezoid</item>
+   <item>uptrapezoid</item>
+   <item>lparallelogram</item>
+   <item>rparallelogram</item>
+  </list>
+  <list name="states">
+   <item>unfolded</item>
+   <item>folded</item>
+   <item>boxed</item>
+   <item>clustered</item>
+   <item>wrapped</item>
+   <item>exclusive</item>
+   <item>white</item>
+  </list>
+  <list name="algorithms">
+   <item>normal</item>
+   <item>tree</item>
+   <item>forcedir</item>
+   <item>dfs</item>
+   <item>minbackward</item>
+   <item>maxdepth</item>
+   <item>maxdepthslow</item>
+   <item>mindepth</item>
+   <item>mindepthslow</item>
+   <item>minindegree</item>
+   <item>minoutdegree</item>
+   <item>maxindegree</item>
+   <item>maxoutdegree</item>
+   <item>maxdegree</item>
+   <item>mindegree</item>
+  </list>
+  <list name="forcedir">
+   <item>attraction</item>
+   <item>repulsion</item>
+   <item>randomfactor</item>
+   <item>randomimpulse</item>
+   <item>randomrounds</item>
+   <item>tempscheme</item>
+   <item>temptreshold</item>
+   <item>tempmin</item>
+   <item>tempmax</item>
+  </list>
+  <list name="magnetic">
+   <item>no</item>
+   <item>polar</item>
+   <item>circular</item>
+   <item>polcircular</item>
+   <item>orthogonal</item>
+  </list>
+  <list name="orientation">
+   <item>toptobottom</item>
+   <item>bottomtotop</item>
+   <item>lefttoright</item>
+   <item>righttoleft</item>
+   <item>top_to_bottom</item>
+   <item>bottom_to_top</item>
+   <item>left_to_right</item>
+   <item>right_to_left</item>
+  </list>
+  <list name="lines">
+   <item>solid</item>
+   <item>continuous</item>
+   <item>dashed</item>
+   <item>dotted</item>
+   <item>double</item>
+   <item>triple</item>
+   <item>invisible</item>
+  </list>
+  <list name="fisheye">
+   <item>pfish</item>
+   <item>cfish</item>
+   <item>fpfish</item>
+   <item>fcfish</item>
+   <item>dpfish</item>
+   <item>dcfish</item>
+  </list>
+  <contexts>
+   <context name="default" attribute="Normal" lineEndContext="#stay">
+    <Detect2Chars attribute="Comment" context="ccomment" char="/" char1="/"/>
+    <Detect2Chars attribute="Comment" context="cppcomment" char="/" char1="*"/>
+    <StringDetect attribute="Keyword" context="#stay" String="focus"/>
+    <RegExpr attribute="Keyword" context="#stay" String="(graph|edge|node|region|backedge|(left|right|)(bent|)nearedge):"/>
+    <RegExpr attribute="Value" context="#stay" String="loc *:"/>
+    <StringDetect attribute="Value" context="centry" String="colorentry"/>
+    <RegExpr attribute="Value" context="arrowmode" String="arrow_?mode *:"/>
+    <RegExpr attribute="Value" context="colorid" String="(foldnode.|node.|)(text|border|)color *:"/>
+    <RegExpr attribute="Value" context="colorid" String="(foldedge.|edge.|)(arrow|backarrow|)color *:"/>
+    <RegExpr attribute="Value" context="arrow" String="(foldedge.|edge.|)(arrow|backarrow)style *:"/>
+    <RegExpr attribute="Value" context="lineid" String="(foldedge.|edge.|)linestyle *:"/>
+    <RegExpr attribute="Value" context="lineid" String="(foldnode.|node.|)borderstyle *:"/>
+    <RegExpr attribute="Value" context="fishid" String="view *:"/>
+    <RegExpr attribute="Value" context="shapeid" String="(foldnode.|node.|)shape"/>
+    <RegExpr attribute="Value" context="lquote" String="(source|target)(name|)"/>
+    <RegExpr attribute="Value" context="lquote" String="title *:"/>
+    <RegExpr attribute="Value" context="lquote" String="(foldnode.|node.|foldedge.|edge.|)label *:"/>
+    <RegExpr attribute="Value" context="fontlq" String="(foldnode.|node.|foldedge.|edge.|)fontname *:"/>
+    <RegExpr attribute="Value" context="lquote" String="infoname(1|2|3) *:"/>
+    <RegExpr attribute="Value" context="lquote" String="(foldnode.|node.|)info(1|2|3) *:"/>
+    <RegExpr attribute="Value" context="intval" String="spreadlevel *:"/>
+    <RegExpr attribute="Value" context="nodelevel" String="(foldnode.|node.|)(level|vertical_?order) *:"/>
+    <RegExpr attribute="Value" context="intval" String="(foldnode.|node.|foldedge.|edge.|)horizontal_?order *:"/>
+    <RegExpr attribute="Value" context="stateid" String="stat(e|us) *:"/>
+    <RegExpr attribute="Value" context="algid" String="layout_?algorithm *:"/>
+    <RegExpr attribute="Value" context="boolean" String="crossing_?optimization *:"/>
+    <RegExpr attribute="Value" context="boolean" String="crossing_?phase2 *:"/>
+    <RegExpr attribute="Value" context="boolean" String="(dirty_edge_|display_edge_|displayedge|late_edge_|subgraph_?)labels *:"/>
+    <RegExpr attribute="Value" context="boolean" String="s?manhatt(a|e)n_?edges *:"/>
+    <RegExpr attribute="Value" context="boolean" String="(nodes|near_?edges|edges|splines) *:"/>
+    <RegExpr attribute="Value" context="classname" String="classname"/>
+    <RegExpr attribute="Value" context="orient" String="orientation *:"/>
+    <RegExpr attribute="Value" context="nodealign" String="node_alignment *:"/>
+    <RegExpr attribute="Value" context="textmode" String="(foldnode.|node.|)textmode *:"/>
+    <RegExpr attribute="Value" context="boolean" String="equal_y_dist *:"/>
+    <RegExpr attribute="Value" context="boolean" String="equal_?ydist *:"/>
+    <RegExpr attribute="Value" context="weight" String="crossing_?weight *:"/>
+    <RegExpr attribute="Value" context="boolean" String="(fast_?|)icons *:"/>
+    <RegExpr attribute="Value" context="boolean" String="fine_?tuning *:"/>
+    <RegExpr attribute="Value" context="boolean" String="(f?straight_?|priority_)phase *:"/>
+    <RegExpr attribute="Value" context="boolean" String="ignore_?singles *:"/>
+    <RegExpr attribute="Value" context="boolean" String="(in|out|)port_?sharing *:"/>
+    <RegExpr attribute="Value" context="boolean" String="linear_?segments *:"/>
+    <RegExpr attribute="Value" context="intval" String="(foldnode.|node.|)(height|width|borderwidth|stretch|shrink) *:"/>
+    <RegExpr attribute="Value" context="intval" String="(foldedge.|edge.|)(arrowsize|backarrowsize|thickness|class|priority) *:"/>
+    <RegExpr attribute="Value" context="intval" String="anchor *:"/>
+    <RegExpr attribute="Value" context="intval" String="iconcolors *:"/>
+    <RegExpr attribute="Value" context="intval" String="hidden *:"/>
+    <RegExpr attribute="Value" context="boolean" String="energetic *:"/>
+    <RegExpr attribute="Value" context="intval" String="layout_(up|down|near|spline)factor *:"/>
+    <RegExpr attribute="Value" context="intval" String="border +(x|y) *:"/>
+    <RegExpr attribute="Value" context="intval" String="splinefactor *:"/>
+    <RegExpr attribute="Value" context="floatval" String="(gravity|tempfactor|treefactor) *:"/>
+    <RegExpr attribute="Value" context="intval" String="(xspace|xbase|xmax|xraster|x) *:"/>
+    <RegExpr attribute="Value" context="intval" String="(yspace|ybase|ymax|yraster|y) *:"/>
+    <RegExpr attribute="Value" context="intval" String="(xlraster|xlspace) *:"/>
+    <RegExpr attribute="Value" context="intval" String="magnetic_force(1|2) *:"/>
+    <RegExpr attribute="Value" context="magnor" String="magnetic_field(1|2) *:"/>
+    <RegExpr attribute="Value" context="intval" String="(a|b|c|fd|p|r|s)(max) *:"/>
+    <RegExpr attribute="Value" context="intval" String="(c|p|r)(min) *:"/>
+    <keyword attribute="Value" context="intval" String="forcedir"/>
+    <RegExpr attribute="Value" context="scaling" String="scaling *:"/>
+    <RegExpr attribute="Value" context="lquote" String="useraction(name|cmd)(1|2|3|4) *:"/>
+   </context>
+   <context name="string" attribute="String" lineEndContext="#stay">
+    <DetectChar attribute="String" context="default" char="&quot;"/>
+    <Detect2Chars attribute="Char" context="#stay" char="\" char1="&quot;"/>
+    <RegExpr attribute="Char" context="#stay" String="\\(n|a|t|b)"/>
+    <RegExpr attribute="Char" context="#stay" String="\\fi(0|1|2)[0-9][0-9]"/>
+    <RegExpr attribute="Char" context="#stay" String="\\f(u|I|b|B|n|[0-9][0-9])"/>
+   </context>
+   <context name="scaling" attribute="Normal" lineEndContext="#stay">
+    <StringDetect attribute="Datatype" context="default" String="maxspect"/>
+    <Float attribute="Float" context="default"/>
+   </context>
+   <context name="ccomment" attribute="Comment" lineEndContext="default">
+   </context>
+   <context name="cppcomment" attribute="Comment" lineEndContext="#stay">
+    <Detect2Chars attribute="Comment" context="default" char="*" char1="/"/>
+   </context>
+   <context name="colorid" attribute="Normal" lineEndContext="#stay">
+    <keyword attribute="Datatype" context="default" String="colors"/>
+    <RegExpr attribute="Datatype" context="default" String="[0-9][0-9]?"/>
+   </context>
+   <context name="shapeid" attribute="Normal" lineEndContext="#stay">
+    <keyword attribute="Datatype" context="default" String="shapes"/>
+   </context>
+   <context name="lquote" attribute="Normal" lineEndContext="#stay">
+    <DetectChar attribute="String" context="string" char="&quot;"/>
+   </context>
+   <context name="stateid" attribute="Normal" lineEndContext="#stay">
+    <keyword attribute="Datatype" context="default" String="states"/>
+   </context>
+   <context name="algid" attribute="Normal" lineEndContext="#stay">
+    <keyword attribute="Datatype" context="default" String="algorithms"/>
+   </context>
+   <context name="fishid" attribute="Normal" lineEndContext="#stay">
+    <keyword attribute="Datatype" context="default" String="fisheye"/>
+   </context>
+   <context name="boolean" attribute="Normal" lineEndContext="#stay">
+    <RegExpr attribute="Datatype" context="default" String="(yes|no)"/>
+   </context>
+   <context name="lineid" attribute="Normal" lineEndContext="#stay">
+    <keyword attribute="Datatype" context="default" String="lines"/>
+   </context>
+   <context name="intval" attribute="Normal" lineEndContext="#stay">
+    <Int attribute="Integer" context="longint"/>
+   </context>
+   <context name="longint" attribute="Normal" lineEndContext="default">
+    <Int attribute="Integer" context="longint"/>
+    <RegExpr attribute="Normal" context="default" String="\ "/>
+   </context>
+   <context name="centry" attribute="Normal" lineEndContext="default">
+    <RegExpr attribute="Value" context="cecolon" String="[0-9][0-9]?"/>
+   </context>
+   <context name="rgb" attribute="Normal" lineEndContext="#stay">
+    <RegExpr attribute="Integer" context="default" String="[0-9][0-9]?[0-9]? +[0-9][0-9]?[0-9]? +[0-9][0-9]?[0-9]?"/>
+   </context>
+   <context name="floatval" attribute="Normal" lineEndContext="#stay">
+    <Float attribute="Float" context="default"/>
+   </context>
+   <context name="fontlq" attribute="Normal" lineEndContext="#stay">
+    <DetectChar attribute="Datatype" context="fontbase" char="&quot;"/>
+   </context>
+   <context name="fontbase" attribute="Normal" lineEndContext="#stay">
+    <RegExpr attribute="Datatype" context="fontsize" String="((tim|ncen)(R|B|I|BI)|(cour|helv)(R|B|O|BO)|symb)"/>
+   </context>
+   <context name="fontsize" attribute="Normal" lineEndContext="#stay">
+    <RegExpr attribute="Datatype" context="#stay" String="(08|10|12|14|18|24)(.vcf|)"/>
+    <DetectChar attribute="Datatype" context="default" char="&quot;"/>
+   </context>
+   <context name="arrow" attribute="Normal" lineEndContext="#stay">
+    <RegExpr attribute="Datatype" context="default" String="(solid|line|none)"/>
+   </context>
+   <context name="arrowmode" attribute="Normal" lineEndContext="#stay">
+    <RegExpr attribute="Datatype" context="default" String="(free|fixed)"/>
+   </context>
+   <context name="magnor" attribute="Normal" lineEndContext="#stay">
+    <keyword attribute="Datatype" context="default" String="magnetic"/>
+    <keyword attribute="Datatype" context="default" String="orientation"/>
+   </context>
+   <context name="orient" attribute="Normal" lineEndContext="#stay">
+    <keyword attribute="Datatype" context="default" String="orientation"/>
+   </context>
+   <context name="nodealign" attribute="Normal" lineEndContext="#stay">
+    <RegExpr attribute="Datatype" context="default" String="(top|center|bottom)"/>
+   </context>
+   <context name="nodelevel" attribute="Normal" lineEndContext="#stay">
+    <StringDetect attribute="Datatype" context="default" String="maxlevel"/>
+    <Int attribute="Integer" context="longint"/>
+   </context>
+   <context name="classname" attribute="Normal" lineEndContext="#stay">
+    <RegExpr attribute="Value" context="#stay" String="[0-9]+"/>
+    <DetectChar attribute="Value" context="lquote" char=":"/>
+   </context>
+   <context name="cecolon" attribute="Normal" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="rgb" char=":"/>
+   </context>
+   <context name="weight" attribute="Normal" lineEndContext="#stay">
+    <RegExpr attribute="Datatype" context="default" String="(medianbary|barymedian|bary|median)"/>
+   </context>
+   <context name="textmode" attribute="Normal" lineEndContext="#stay">
+    <RegExpr attribute="Datatype" context="default" String="(center|left_justify|right_justify)"/>
+   </context>
+  </contexts>
+  <itemDatas>
+   <itemData name="Normal" defStyleNum="dsNormal"/>
+   <itemData name="String" defStyleNum="dsString"/>
+   <itemData name="Char" defStyleNum="dsChar"/>
+   <itemData name="Keyword" defStyleNum="dsKeyword"/>
+   <itemData name="Integer" defStyleNum="dsDecVal"/>
+   <itemData name="Datatype" defStyleNum="dsDataType"/>
+   <itemData name="Comment" defStyleNum="dsComment"/>
+   <itemData name="Value" defStyleNum="dsOthers"/>
+   <itemData name="Float" defStyleNum="dsFloat"/>
+  </itemDatas>
+ </highlighting>
+ <general>
+  <comments>
+   <comment name="singleLine" start="//" />
+   <comment name="multiLine" start="/*" end="*/"/>
+  </comments>
+  <keywords casesensitive="1"/>
+ </general>
+</language>

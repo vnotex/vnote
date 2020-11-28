@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+
+*************************************************************************
+*                                                                       *
+*               Syntax highlighting for the AVR Assembler               *
+*                   Copyright (C) 2004, Roland Nagy                     *
+*                                                                       *
+*************************************************************************
+
+Author:   Rolanf Nagy <R.Nagy@pknc.com>
+Date:     18th May, 2004
+Version:  1.0
+
+This file contains the XML syntax highlighting description for the AVR
+Assembler, for KATE, the KDE Advanced Editor.  Keywords have been taken
+directly from the AVR Assembler source code.
+
+This program, including associated files, is free software.  You may
+distribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation; either Version 2 of
+the license, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+-->
+
+<language name="AVR Assembler" version="3" kateversion="5.0" section="Assembler" extensions="*.asm;*.ASM;*.asm-avr" mimetype="text/x-asm;text/x-asm-avr" author="Roland Nagy" license="GPLv2+">
+  <highlighting>
+    <list name="keywords">
+      <item>adc</item>
+      <item>add</item>
+      <item>adiw</item>
+      <item>and</item>
+      <item>andi</item>
+      <item>asr</item>
+      <item>bclr</item>
+      <item>bld</item>
+      <item>brbc</item>
+      <item>brbs</item>
+      <item>brcc</item>
+      <item>brcs</item>
+      <item>break</item>
+      <item>breq</item>
+      <item>brge</item>
+      <item>brhc</item>
+      <item>brhs</item>
+      <item>brid</item>
+      <item>brie</item>
+      <item>brlo</item>
+      <item>brlt</item>
+      <item>brmi</item>
+      <item>brne</item>
+      <item>brpl</item>
+      <item>brsh</item>
+      <item>brtc</item>
+      <item>brts</item>
+      <item>brvc</item>
+      <item>brvs</item>
+      <item>bset</item>
+      <item>bst</item>
+      <item>call</item>
+      <item>cbi</item>
+      <item>cbr</item>
+      <item>clc</item>
+      <item>clh</item>
+      <item>cli</item>
+      <item>cln</item>
+      <item>clr</item>
+      <item>cls</item>
+      <item>clt</item>
+      <item>clv</item>
+      <item>clz</item>
+      <item>com</item>
+      <item>cp</item>
+      <item>cpc</item>
+      <item>cpi</item>
+      <item>cpse</item>
+      <item>dec</item>
+      <item>eicall</item>
+      <item>eijmp</item>
+      <item>elpm</item>
+      <item>eor</item>
+      <item>fmul</item>
+      <item>fmuls</item>
+      <item>fmulsu</item>
+      <item>icall</item>
+      <item>ijmp</item>
+      <item>in</item>
+      <item>inc</item>
+      <item>jmp</item>
+      <item>ld</item>
+      <item>ldd</item>
+      <item>ldi</item>
+      <item>lds</item>
+      <item>lpm</item>
+      <item>lsl</item>
+      <item>lsr</item>
+      <item>mov</item>
+      <item>movw</item>
+      <item>mul</item>
+      <item>muls</item>
+      <item>mulsu</item>
+      <item>neg</item>
+      <item>nop</item>
+      <item>or</item>
+      <item>ori</item>
+      <item>out</item>
+      <item>pop</item>
+      <item>push</item>
+      <item>rcall</item>
+      <item>ret</item>
+      <item>reti</item>
+      <item>rjmp</item>
+      <item>rol</item>
+      <item>ror</item>
+      <item>sbc</item>
+      <item>sbr</item>
+      <item>sbrc</item>
+      <item>sbrs</item>
+      <item>sec</item>
+      <item>seh</item>
+      <item>sbi</item>
+      <item>sbci</item>
+      <item>sbic</item>
+      <item>sbis</item>
+      <item>sbiw</item>
+      <item>sei</item>
+      <item>sen</item>
+      <item>ser</item>
+      <item>ses</item>
+      <item>set</item>
+      <item>sev</item>
+      <item>sez</item>
+      <item>sleep</item>
+      <item>spm</item>
+      <item>st</item>
+      <item>std</item>
+      <item>sts</item>
+      <item>sub</item>
+      <item>subi</item>
+      <item>swap</item>
+      <item>tst</item>
+      <item>wdr</item>
+  </list>
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <RegExpr      attribute="Label" context="#stay" String="[A-Za-z0-9_.$]+:" firstNonSpace="true"/>
+        <keyword      attribute="Keyword" context="#stay" String="keywords"/>
+        <HlCOct       attribute="Octal" context="#stay" />
+        <HlCHex       attribute="Hex" context="#stay" />
+        <RegExpr      attribute="Binary" context="#stay" String="0[bB][01]+" />
+        <Int          attribute="Decimal" context="#stay" />
+        <RegExpr      attribute="Float" context="#stay" String="0[fFeEdD][-+]?[0-9]*\.?[0-9]*[eE]?[-+]?[0-9]+" />
+        <RegExpr      attribute="Normal Text" context="#stay" String="[A-Za-z_.$][A-Za-z0-9_.$]*" />
+        <RegExpr      attribute="Char" context="#stay" String="'(\\x[0-9a-fA-F][0-9a-fA-F]?|\\[0-7]?[0-7]?[0-7]?|\\.|.)" />
+        <DetectChar   attribute="String" context="String" char="&quot;" />
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="*" />
+        <DetectChar   attribute="Comment" context="Commentar 2" char="@" />
+        <DetectChar   attribute="Comment" context="Commentar 2" char=";" />
+        <AnyChar      attribute="Symbol" context="#stay" String="!#%&amp;*()+,-&lt;=&gt;?/:[]^{|}~" />
+        <RegExpr      attribute="Preprocessor" context="Preprocessor" String="^#" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 1">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 2" />
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor" />
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue  attribute="String" context="Some Context" />
+        <HlCStringChar attribute="String Char" context="#stay" />
+        <DetectChar    attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Some Context" />
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"   />
+      <itemData name="Label"        defStyleNum="dsFunction" />
+      <itemData name="Keyword"      defStyleNum="dsKeyword"  />
+      <itemData name="Decimal"      defStyleNum="dsDecVal"   />
+      <itemData name="Octal"        defStyleNum="dsBaseN"    />
+      <itemData name="Hex"          defStyleNum="dsBaseN"    />
+      <itemData name="Binary"       defStyleNum="dsBaseN"    />
+      <itemData name="Float"        defStyleNum="dsFloat"    />
+      <itemData name="Char"         defStyleNum="dsChar"     />
+      <itemData name="String"       defStyleNum="dsString"   />
+      <itemData name="String Char"  defStyleNum="dsSpecialChar" />
+      <itemData name="Symbol"       defStyleNum="dsNormal"   />
+      <itemData name="Comment"      defStyleNum="dsComment"  />
+      <itemData name="Preprocessor" defStyleNum="dsPreprocessor" />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start=";" />
+      <comment name="singleLine" start="@" />
+      <comment name="multiLine"  start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="_.$" />
+  </general>
+</language>

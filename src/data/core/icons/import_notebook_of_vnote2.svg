@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 135.46666 135.46666"
+   height="512"
+   width="512">
+  <defs
+     id="defs2" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     transform="translate(0,-161.53335)"
+     id="g4579"
+     style="display:inline">
+    <path
+       id="path4682"
+       d="m 42.289995,195.6223 -20.278396,3.3e-4 25.334055,70.74483 c 0.448204,1.32121 2.064047,4.66939 4.092726,4.73001 l 21.555975,0.0275 c -8.602263,-24.03459 -17.204501,-48.0692 -25.806767,-72.10379 -0.624661,-1.37844 -2.606139,-3.39892 -4.897593,-3.39892 z"
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2399714;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       id="path856"
+       d="M 113.45506,217.57986 C 97.982428,237.70991 80.859596,259.34026 72.994356,271.125 l -6.893565,-23.90176 33.174646,-43.1022 z"
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2399714;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       id="path4577"
+       d="m 113.44472,191.54848 c 0.0504,-1.94436 -1.34529,-4.1252 -3.90208,-4.13813 l -22.932325,-0.002 c 5.340575,7.09033 15.661615,18.31157 26.844745,30.17171 z"
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.21666166;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+  </g>
+</svg>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Velocity" version="2" kateversion="2.3" section="Scripts" extensions="*.vm;" mimetype="text/x-velocity-src;text/x-vm-src" author="John Christopher (John@animalsinneed.net)" license="">
+	<highlighting>
+		<list name="keywords">
+			<item>#set</item>
+			<item>#foreach</item>
+			<item>#end</item>
+			<item>#if</item>
+			<item>#else</item>
+			<item>#elseif</item>
+			<item>#parse</item>
+			<item>#macro</item>
+			<item>#stop</item>
+			<item>#include</item>
+		</list>
+		<contexts>
+			<context attribute="Normal Text" lineEndContext="#stay" name="Keyword">
+				<keyword attribute="Keyword" context="#stay" String="keywords" />
+				<RegExpr attribute="Variable" context="#stay" String="\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*" />
+				<RegExpr attribute="Variable" context="#stay" String="\$\{[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*\}" />
+				<RegExpr attribute="Variable" context="#stay" String="\$!\{[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*\}." />
+				<RegExpr attribute="Variable" context="#stay" String="\{\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[([0-9]*|&quot;[a-zA-Z_]*&quot;)|'[a-zA-Z_]*'|\])*(->[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*(\[[a-zA-Z0-9_]*\])*(\[([0-9]*|&quot;[a-zA-Z_]*&quot;)|'[a-zA-Z_]*'|\])*)*\}" />
+				<RegExpr attribute="Properties" context="#stay" String="[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\-]*(\[[a-zA-Z0-9_]*\])*\.[a-zA-Z0-9_\x7f-\xff\-]*" />
+				<AnyChar attribute="Other" context="#stay" String="(),[]" />
+				<Detect2Chars attribute="Comment" context="singleline comment" char="#" char1="#" />
+				<Detect2Chars attribute="Comment" context="multilinecomment" char="#" char1="&#42;" />
+			</context>
+			<context attribute="Comment" name="singleline comment" lineEndContext="#pop">
+			</context>
+			<context attribute="Comment" lineEndContext="#stay" name="multilinecomment" >
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="#" />
+			</context>
+		</contexts>
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal" />
+			<itemData name="Keyword" defStyleNum="dsKeyword" />
+			<itemData name="Variable" defStyleNum="dsKeyword" color="#5555FF" selColor="#ffffff" bold="0" italic="0" />
+			<itemData name="Other" defStyleNum="dsOthers" />
+			<itemData name="Properties" defStyleNum="dsNormal" color="#8AC6FF" selColor="#ffffff" bold="0" italic="1"/>
+			<itemData name="Comment" defStyleNum="dsComment" />
+		</itemDatas>
+	</highlighting>
+	<general>
+		<comments>
+			<comment name="singleLine" start="##" />
+			<comment name="multiLine" start="#*" end="*#" />
+		</comments>
+		<keywords casesensitive="1" weakDeliminator="+"/>
+	</general>
+</language>

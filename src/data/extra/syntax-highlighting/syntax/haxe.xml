@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  ========================================================================
+
+  Haxe Language highlighting.
+
+  ========================================================================
+  
+  Author: Chad Joan
+  
+  ========================================================================
+-->
+
+<language name="Haxe" section="Sources" extensions="*.hx;*.Hx;*.hX;*.HX;" mimetype="text/x-hxsrc" version="2" kateversion="2.4" casesensitive="true" author="Chad Joan" license="MIT">
+  <highlighting>
+    <list name="keywords">
+    
+      <item>break</item>
+      
+      <item>case</item>
+      <item>cast</item>
+      <item>catch</item>
+      <item>class</item>
+      <item>continue</item>
+      
+      <item>default</item>
+
+      <item>else</item>
+      <item>enum</item>
+      <item>extends</item>
+      
+      <item>false</item>
+      <item>for</item>
+      <item>function</item>
+      
+      <item>if</item>
+      <item>implements</item>
+      <item>in</item>
+      <item>inline</item>
+      <item>interface</item>
+      
+      <item>new</item>
+      <item>null</item>
+      
+      <item>override</item>
+      
+      <item>private</item>
+      <item>public</item>
+      
+      <item>return</item>
+      
+      <item>static</item>
+      <item>super</item>
+      <item>switch</item>
+      
+      <item>this</item>
+      <item>throw</item>
+      <item>trace</item>
+      <item>true</item>
+      <item>try</item>
+      <item>typedef</item>
+      
+      <item>untyped</item>
+      
+      <item>var</item>
+      
+      <item>while</item>
+
+    </list>
+
+    <list name="modules">
+      <item>package</item>
+      <item>import</item>
+    </list>
+
+    <list name="types">
+      <item>Array</item>
+      <item>Void</item>
+      <item>Bool</item>
+      <item>Int</item>
+      <item>UInt</item>
+      <item>Float</item>
+      <item>Dynamic</item>
+      <item>String</item>
+      <item>List</item>
+      <item>Error</item>
+      <item>Unknown</item>
+      <item>Type</item>
+    </list>
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="normal">
+        <RegExpr attribute="Preprocessor" context="#pop" String="#if(\s+\w+)?" />
+        <RegExpr attribute="Preprocessor" context="#pop" String="#(else|elseif|end|error)" />
+
+        <keyword attribute="Keyword"        context="#stay"      String="keywords"/>
+        <keyword attribute="Module"         context="ModuleName" String="modules"/>
+        <keyword attribute="Type"           context="#stay"      String="types"/>
+      
+        <DetectIdentifier attribute="Normal Text"/>
+
+        <HlCStringChar attribute="EscapeSequence" context="#pop"/>
+
+        <DetectChar attribute="RawString" context="RawString"   char="'"/>
+        <DetectChar attribute="String"    context="String"      char="&quot;"/>
+
+        <Detect2Chars attribute="Comment" context="CommentLine"   char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="CommentBlock" char="/" char1="*" beginRegion="CommentBlock"/>
+
+        <DetectChar attribute="Normal Text" context="#stay" char="{" beginRegion="BraceA" />
+        <DetectChar attribute="Normal Text" context="#stay" char="}" endRegion="BraceA" />
+
+        <!-- Match ... and .. before numbers are matched. -->
+        <StringDetect attribute="Normal Text" context="#pop" String="..."/>
+        <Detect2Chars attribute="Normal Text"   char="." char1="."/>
+
+        <!-- Float -->
+        <!-- Floats must be matched before Binary|Octal|Hex|Integer -->
+        <!-- All floats except integers -->
+        <RegExpr attribute="Float" context="#pop" String="[\d][\d]*(\.(?!\.)[\d]*([eE][-+]?[\d]+)?)"/>
+        <RegExpr attribute="Float" context="#pop" String="\.[\d][\d]*([eE][-+]?[\d]+)?"/>
+
+        <!-- Hex|Integer -->
+        <RegExpr attribute="Hex"     context="#pop" String="0[xX][\da-fA-F]+"/>
+        <RegExpr attribute="Integer" context="#pop" String="\d+"/>
+      </context>
+
+      <context attribute="Module Name" lineEndContext="#stay" name="ModuleName">
+        <Detect2Chars attribute="Comment"     context="CommentLine"   char="/" char1="/"/>
+        <Detect2Chars attribute="Comment"     context="CommentBlock" char="/" char1="*" beginRegion="CommentBlock"/>
+        <RegExpr context="#pop" String="[^\s\w.:,]"/>
+      </context>
+
+      <!-- Strings -->
+      <!-- '...' -->
+      <context attribute="RawString" lineEndContext="#stay" name="RawString">
+        <DetectChar attribute="RawString" context="#pop" char="'"/>
+      </context>
+      <!-- "..." -->
+      <context attribute="String" lineEndContext="#stay" name="String">
+        <Detect2Chars attribute="String" context="#stay" char="\" char1="&quot;"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <HlCStringChar attribute="EscapeSequence"/>
+        <RegExpr attribute="EscapeSequence" context="#stay" String="\\(u[\da-fA-F]{4}|U[\da-fA-F]{8}|&amp;[a-zA-Z]\w+;)" />
+      </context>
+
+      <!-- Comments -->
+      <context attribute="Comment" lineEndContext="#pop" name="CommentLine"/>
+      <context attribute="Comment" lineEndContext="#stay" name="CommentBlock">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="CommentBlock"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"    defStyleNum="dsNormal"/>
+      <itemData name="Keyword"        defStyleNum="dsKeyword"/>
+      <itemData name="Type"           defStyleNum="dsDataType"/>
+      <itemData name="Integer"        defStyleNum="dsDecVal"/>
+      <itemData name="Hex"            defStyleNum="dsBaseN"/>
+      <itemData name="Float"          defStyleNum="dsFloat"/>
+
+      <itemData name="Module"         defStyleNum="dsKeyword"  color="#0000ff" selColor="#ffffff"/>
+      <itemData name="Module Name"    defStyleNum="dsNormal"  color="#0000ff" selColor="#ffffff"/>
+
+      <itemData name="EscapeSequence" defStyleNum="dsString" color="#00aa88" selColor="#ff0000"/>
+      <itemData name="String"         defStyleNum="dsString"/>
+      <itemData name="RawString"      defStyleNum="dsString"/>
+
+      <itemData name="Comment"        defStyleNum="dsComment"/>
+      
+      <itemData name="Preprocessor"   defStyleNum="dsOthers"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="true"/>
+  </general>
+</language>

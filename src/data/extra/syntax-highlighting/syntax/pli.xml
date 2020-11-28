@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="PL/I"
+	  section="Sources"
+	  version="3"
+	  kateversion="5.0"
+	  extensions="*.pli"
+	  mimetype="text/x-pli"
+	  priority="8"
+	  indenter="pli"
+	  author="Nikolay Kultashev, nkultashev@yandex.ru"
+	  >
+  <highlighting>
+    <list name="Attributes">
+      <item>ALIGNED</item>
+      <item>AUTOMATIC</item>
+      <item>BACKWARDS</item>
+      <item>BIN</item>
+      <item>BINARY</item>
+      <item>BIT</item>
+      <item>BUFFERED</item>
+      <item>BUILTIN</item>
+      <item>COMPLEX</item>
+      <item>CONDITION</item>
+      <item>CONNECTED</item>
+      <item>CONTROLLED</item>
+      <item>DEC</item>
+      <item>DECIMAL</item>
+      <item>DIRECT</item>
+      <item>EVENT</item>
+      <item>EXCLUSIVE</item>
+      <item>EXTERNAL</item>
+      <item>FILE</item>
+      <item>FIXED</item>
+      <item>FLOAT</item>
+      <item>INPUT</item>
+      <item>INTERNAL</item>
+      <item>IRREDUCIBLE</item>
+      <item>KEYED</item>
+      <item>LIKE</item>
+      <item>OUTPUT</item>
+      <item>POINTER</item>
+      <item>PRINT</item>
+      <item>REAL</item>
+      <item>RECORD</item>
+      <item>REDUCIBLE</item>
+      <item>SEQUENTIAL</item>
+      <item>STATIC</item>
+      <item>STREAM</item>
+      <item>TASK</item>
+      <item>TRANSIENT</item>
+      <item>UNALIGNED</item>
+      <item>UNBUFFERED</item>
+      <item>UPDATE</item>
+      <item>VARIABLE</item>
+      <item>VAR</item>
+      <item>VARYING</item>
+    </list>
+    <list name="Keywords">
+      <item>A</item>
+      <item>ABS</item>
+      <item>ACOS</item>
+      <item>ACTIVATE</item>
+      <item>ADD</item>
+      <item>ADDR</item>
+      <item>ALIGNED</item>
+      <item>ALL</item>
+      <item>ALLOCATE</item>
+      <item>ALLOCATION</item>
+      <item>ANY</item>
+      <item>AREA</item>
+      <item>ASIN</item>
+      <item>ASMTDLI</item>
+      <item>ASSEMBLER</item>
+      <item>ATAN</item>
+      <item>ATAND</item>
+      <item>ATANH</item>
+      <item>ATTENTION</item>
+      <item>AUTOMATIC</item>
+      <item>B</item>
+      <item>BACKWARDS</item>
+      <item>BASED</item>
+      <item>BEGIN</item>
+      <item>BINARY</item>
+      <item>BINARYVALUE</item>
+      <item>BIT</item>
+      <item>BOOL</item>
+      <item>BUFFERED</item>
+      <item>BUILTIN</item>
+      <item>BY</item>
+      <item>C</item>
+      <item>CALL</item>
+      <item>CEIL</item>
+      <item>CHAR</item>
+      <item>CHARACTER</item>
+      <item>CHARGRAPHIC</item>
+      <item>CHECK</item>
+      <item>CLOSE</item>
+      <item>COBOL</item>
+      <item>COL</item>
+      <item>COLUMN</item>
+      <item>COMPILE</item>
+      <item>COMPILETIME</item>
+      <item>COMPLETION</item>
+      <item>COMPLEX</item>
+      <item>CONDITION</item>
+      <item>CONJG</item>
+      <item>CONNECTED</item>
+      <item>CONTROLLED</item>
+      <item>CONVERSION</item>
+      <item>COPY</item>
+      <item>COS</item>
+      <item>COSD</item>
+      <item>COSH</item>
+      <item>COUNT</item>
+      <item>COUNTER</item>
+      <item>CURRENTSTORAGE</item>
+      <item>DATA</item>
+      <item>DATAFIELD</item>
+      <item>DATE</item>
+      <item>DATETIME</item>
+      <item>DCL</item>
+      <item>DEACTIVATE</item>
+      <item>DECIMAL</item>
+      <item>DECLARE</item>
+      <item>DEF</item>
+      <item>DEFAULT</item>
+      <item>DEFINED</item>
+      <item>DELAY</item>
+      <item>DELETE</item>
+      <item>DESCRIPTORS</item>
+      <item>DIM</item>
+      <item>DIRECT</item>
+      <item>DISPLAY</item>
+      <item>DIVIDE</item>
+      <item>DO</item>
+      <item>E</item>
+      <item>EDIT</item>
+      <item>ELSE</item>
+      <item>EMPTY</item>
+      <item>END</item>
+      <item>ENDFILE</item>
+      <item>ENDPAGE</item>
+      <item>ENTRY</item>
+      <item>ENTRYADDR</item>
+      <item>ENVIRONMENT</item>
+      <item>ERF</item>
+      <item>ERFC</item>
+      <item>ERROR</item>
+      <item>EVENT</item>
+      <item>EXCLUSIVE</item>
+      <item>EXIT</item>
+      <item>EXP</item>
+      <item>EXTERNAL</item>
+      <item>F</item>
+      <item>FETCH</item>
+      <item>FILE</item>
+      <item>FINISH</item>
+      <item>FIXED</item>
+      <item>FIXEDOVERFLOW</item>
+      <item>FLOAT</item>
+      <item>FLOOR</item>
+      <item>FORMAT</item>
+      <item>FORTRAN</item>
+      <item>FREE</item>
+      <item>FROM</item>
+      <item>G</item>
+      <item>GENERIC</item>
+      <item>GET</item>
+      <item>GET-STRING</item>
+      <item>GO</item>
+      <item>GOTO</item>
+      <item>GO_TO</item>
+      <item>GRAPHIC</item>
+      <item>HBOUND</item>
+      <item>HIGH</item>
+      <item>IF</item>
+      <item>IGNORE</item>
+      <item>IMAG</item>
+      <item>IN</item>
+      <item>%INCLUDE</item>
+      <item>INCLUDE</item>
+      <item>INDEX</item>
+      <item>INIT</item>
+      <item>INITIAL</item>
+      <item>INPUT</item>
+      <item>INTER</item>
+      <item>INTERNAL</item>
+      <item>INTO</item>
+      <item>IRREDUCIBLE</item>
+      <item>ITEM</item>
+      <item>KEY</item>
+      <item>KEYED</item>
+      <item>KEYFROM</item>
+      <item>KEYTO</item>
+      <item>LABEL</item>
+      <item>LBOUND</item>
+      <item>LEAVE</item>
+      <item>LENGTH</item>
+      <item>LIKE</item>
+      <item>LINE</item>
+      <item>LINENO</item>
+      <item>LINESIZE</item>
+      <item>LIST</item>
+      <item>LOCATE</item>
+      <item>LOG</item>
+      <item>LOG10</item>
+      <item>LOG2</item>
+      <item>LOW</item>
+      <item>MAIN</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>MPSTR</item>
+      <item>MULTIPLY</item>
+      <item>NAME</item>
+      <item>NOCHARGRAPHIC</item>
+      <item>NOEXECOPS</item>
+      <item>NOLOCK</item>
+      <item>NOMAP</item>
+      <item>NOMAPIN</item>
+      <item>NOMAPOUT</item>
+      <item>NOPRINT</item>
+      <item>NORESCAN</item>
+      <item>NOTE</item>
+      <item>NULL</item>
+      <item>OFFSET</item>
+      <item>ON</item>
+      <item>ONCHAR</item>
+      <item>ONCODE</item>
+      <item>ONCOUNT</item>
+      <item>ONFILE</item>
+      <item>ONKEY</item>
+      <item>ONLOC</item>
+      <item>ONSOURCE</item>
+      <item>OPEN</item>
+      <item>OPTIONS</item>
+      <item>ORDER</item>
+      <item>OTHERWISE</item>
+      <item>OUTPUT</item>
+      <item>OVERFLOW</item>
+      <item>P</item>
+      <item>PAGE</item>
+      <item>PAGESIZE</item>
+      <item>PARMSET</item>
+      <item>PENDING</item>
+      <item>PICTURE</item>
+      <item>PLICANC</item>
+      <item>PLICKPT</item>
+      <item>PLIDUMP</item>
+      <item>PLIREST</item>
+      <item>PLISRTA</item>
+      <item>PLISRTB</item>
+      <item>PLISRTC</item>
+      <item>PLISRTD</item>
+      <item>PLITDLI</item>
+      <item>PLITEST</item>
+      <item>POINTER</item>
+      <item>POINTERADD</item>
+      <item>POINTERVALUE</item>
+      <item>POLY</item>
+      <item>POS</item>
+      <item>POSITION</item>
+      <item>PRECISION</item>
+      <item>PRINT</item>
+      <item>PRIORITY</item>
+      <item>PROC</item>
+      <item>PROCEDURE</item>
+      <item>PROCESS</item>
+      <item>PROD</item>
+      <item>PUT</item>
+      <item>PUT-STRING</item>
+      <item>R</item>
+      <item>RANGE</item>
+      <item>READ</item>
+      <item>REAL</item>
+      <item>RECORD</item>
+      <item>RECURSIVE</item>
+      <item>REDUCIBLE</item>
+      <item>REENTRANT</item>
+      <item>REFER</item>
+      <item>RELEASE</item>
+      <item>REORDER</item>
+      <item>REPEAT</item>
+      <item>REPLY</item>
+      <item>REREAD</item>
+      <item>RESCAN</item>
+      <item>RETCODE</item>
+      <item>RETURN</item>
+      <item>RETURNS</item>
+      <item>REVERT</item>
+      <item>REWRITE_FILE</item>
+      <item>SAMEKEY</item>
+      <item>SELECT</item>
+      <item>SEQUENTIAL</item>
+      <item>SET</item>
+      <item>SIGN</item>
+      <item>SIGNAL</item>
+      <item>SIN</item>
+      <item>SIND</item>
+      <item>SINH</item>
+      <item>SIZE</item>
+      <item>SKIP</item>
+      <item>SNAP</item>
+      <item>SQRT</item>
+      <item>STATEMENT</item>
+      <item>STATIC</item>
+      <item>STATUS</item>
+      <item>STOP</item>
+      <item>STORAGE</item>
+      <item>STREAM</item>
+      <item>STRING</item>
+      <item>STRINGRANGE</item>
+      <item>STRINGSIZE</item>
+      <item>SUBSCRIPTRANGE</item>
+      <item>SUBSTR</item>
+      <item>SUM</item>
+      <item>SYSNULL</item>
+      <item>SYSTEM</item>
+      <item>TAN</item>
+      <item>TAND</item>
+      <item>TANH</item>
+      <item>TASK</item>
+      <item>THEN</item>
+      <item>TIME</item>
+      <item>TITLE</item>
+      <item>TO</item>
+      <item>TRANSIENT</item>
+      <item>TRANSLATE</item>
+      <item>TRANSMIT</item>
+      <item>TRUNC</item>
+      <item>UNALIGNED</item>
+      <item>UNBUFFERED</item>
+      <item>UNDEFINEDFILE</item>
+      <item>UNDERFLOW</item>
+      <item>UNLOCK</item>
+      <item>UNSPEC</item>
+      <item>UNTIL</item>
+      <item>UPDATE</item>
+      <item>VALUE</item>
+      <item>VARIABLE</item>
+      <item>VARYING</item>
+      <item>VERIFY</item>
+      <item>WAIT</item>
+      <item>WHEN</item>
+      <item>WHILE</item>
+      <item>WRITE</item>
+      <item>ZERODIVIDE</item>
+    </list>
+    <list name="BuiltIn">
+      <item>MOD</item>
+      <item>ROUND</item>
+      <item>PLIRETC</item>
+      <item>PLIRETV</item>
+      <item>ADDR</item>
+      <item>CEIL</item>
+      <item>DATETIME</item>
+      <item>INDEX</item>
+      <item>LENGTH</item>
+      <item>MAX</item>
+      <item>MOD</item>
+      <item>NULL</item>
+      <item>PLIRETC</item>
+      <item>PLIRETV</item>
+      <item>PLISRTD</item>
+      <item>ROUND</item>
+      <item>STG</item>
+      <item>SUBSTR</item>
+      <item>ONCODE</item>
+      <item>ONCONDCOND</item>
+      <item>ONCOUNT</item>
+      <item>ONFILE</item>
+      <item>ONLOC</item>
+      <item>ONSUBCODE</item>
+    </list>
+    <list name="DataTypes">
+      <item>BIN</item>
+      <item>BINARY</item>
+      <item>BIT</item>
+      <item>BUILTIN</item>
+      <item>CHAR</item>
+      <item>CHARACTER</item>
+      <item>DEC</item>
+      <item>DECIMAL</item>
+      <item>ENTRY</item>
+      <item>FIXED</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+	<RegExpr      attribute="Comment"   context="CommentW"  String="^\s*/\*.*\*/\s*([0-9]{1,8})?$" beginRegion="CommentW"/>
+	<RegExpr      attribute="Comment"   context="Comment"   String="/\*"              beginRegion="Comment"/>
+	<RegExpr      attribute="Comment"   context="#stay"     String="[0-9]{1,8}$"/> <!-- Sequence number -->
+	<RegExpr      attribute="Comment"   context="#stay"     String="^1"/>          <!-- Printer control char -->
+	<RegExpr      attribute="PreProc"   context="#stay"     String="^\s*%"/>       <!-- Preprocessor directive -->
+	<RegExpr      attribute="Label"     context="#stay"     String="[#a-zA-Z][#_0-9a-zA-Z]*:"/>
+	<DetectChar   attribute="String"    context="String1"   char="'"/>
+	<DetectChar   attribute="String"    context="String2"   char='"'/>
+	<DetectChar   attribute="EndOfStat" context="#stay"     char=";"/>
+	<WordDetect   attribute="Return"    context="#stay"     String="RETURN" insensitive="true"/>
+	<RegExpr      attribute="DoEnd"     context="#stay"     String="\b(BEGIN|DO|SELECT|PROC|PROCEDURE)\b" insensitive="true" beginRegion="DoEnd"/>
+	<RegExpr      attribute="Return"    context="#stay"     String="\bEND\b\s*\S+\s*;" insensitive="true" endRegion="DoEnd"/>
+	<RegExpr      attribute="DoEnd"     context="#stay"     String="\bEND\b\s*;" insensitive="true" endRegion="DoEnd"/>
+	<RegExpr      attribute="Bin"       context="#stay"     String="'[01]+'B"/>
+	<RegExpr      attribute="Bin"       context="#stay"     String='"[01]+"B'/>
+	<Float        attribute="Float"     context="#stay"/>
+	<Int          attribute="DecVal"    context="#stay"/>
+	<keyword      attribute="DataType"  context="#stay"     String="DataTypes"/>
+	<keyword      attribute="BuiltIn"   context="#stay"     String="BuiltIn"/>
+	<keyword      attribute="Attribute" context="#stay"     String="Attributes"/>
+	<keyword      attribute="Keyword"   context="#stay"     String="Keywords"/>
+	<RegExpr      attribute="Identifier" context="#stay"    String="[#a-zA-Z][#_0-9a-zA-Z]*"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="CommentW">
+	<RegExpr attribute="Comment" context="#stay" String="^\s*/\*.*\*/\s*([0-9]{8})?$"/>
+	<RegExpr attribute="Comment" context="#stay" String="^\s*$"/>
+	<RegExpr                     context="#pop"   String="." endRegion="CommentW" lookAhead="true"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment">
+	<RegExpr attribute="Comment" context="#pop"  String="\*/" endRegion="Comment"/>
+	<RegExpr attribute="Comment" context="#stay" String="."/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="String1">
+	<DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="String2">
+	<DetectChar attribute="String" context="#pop" char='"'/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Attribute"    defStyleNum="dsKeyword"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword"/>
+      <itemData name="DataType"     defStyleNum="dsDataType"/>
+      <itemData name="DecVal"       defStyleNum="dsDecVal"/>
+      <itemData name="Float"        defStyleNum="dsFloat"/>
+      <itemData name="Bin"          defStyleNum="dsBaseN"/>
+      <itemData name="DoEnd"        defStyleNum="dsKeyword"/>
+      <itemData name="Label"        defStyleNum="dsNormal"   color="#008200" underline="true" bold="true"/>
+      <itemData name="EndOfStat"    defStyleNum="dsKeyword" color="#000080"/>
+      <itemData name="Return"       defStyleNum="dsKeyword" color="#008200"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="Identifier"   defStyleNum="dsNormal"   color="#2E64FE"/>
+      <itemData name="PreProc"      defStyleNum="dsNormal"   color="#008200"/>
+      <itemData name="BuiltIn"      defStyleNum="dsFunction"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="0" />
+    <comments>
+      <!--comment name="singleLine" start="//" /-->
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+  </general>
+</language>

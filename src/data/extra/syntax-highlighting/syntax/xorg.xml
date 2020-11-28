@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="x.org Configuration" section="Configuration" extensions="xorg.conf" mimetype="" version="2" kateversion="2.4" author="Jan Janssen (medhefgo@web.de)" license="LGPL">
+
+<highlighting>
+<contexts>
+ <context name="xorg" attribute="Normal Text" lineEndContext="#stay">
+  <StringDetect String="Section" attribute="Section" context="Section" beginRegion="Section" insensitive="true" />
+  <DetectChar char="#" context="Comment" />
+ </context>
+
+ <context name="Section" attribute="Normal Text" lineEndContext="#stay">
+  <RangeDetect char="&quot;" char1="&quot;" attribute="Section Name" context="Section Content" />
+  <RangeDetect char="'" char1="'" attribute="Section Name" context="Section Content" />
+  <DetectIdentifier attribute="Alert" />
+  <DetectChar char="#" context="Comment" />
+ </context>
+
+ <context name="Section Content" attribute="Normal Text" lineEndContext="#stay">
+  <StringDetect String="EndSection" attribute="Section" context="#pop#pop" endRegion="Section" insensitive="true" />
+  <StringDetect String="EndSubSection" attribute="Section" context="#pop#pop" endRegion="SubSection" insensitive="true" />
+  <StringDetect String="SubSection" attribute="Section" context="Section" beginRegion="SubSection" insensitive="true" />
+  <RegExpr String="\b\w+\b" context="Keyword" />
+  <DetectChar char="#" context="Comment" />
+ </context>
+
+ <context name="Keyword" attribute="Keyword" lineEndContext="#pop">
+  <RangeDetect attribute="Value" char="&quot;" char1="&quot;" />
+  <RangeDetect attribute="Value" char="'" char1="'" />
+  <Float attribute="Float" />
+  <Int attribute="Int" />
+  <RegExpr attribute="Value2" String="[\w\d]+" />
+  <DetectChar char="#" context="Comment" />
+ </context>
+
+ <context name="Comment" attribute="Comment" lineEndContext="#pop">
+  <DetectSpaces />
+  <IncludeRules context="##Alerts" />
+  <DetectIdentifier />
+ </context>
+</contexts>
+
+
+<itemDatas>
+ <itemData name="Normal Text" defStyleNum="dsNormal" />
+ <itemData name="Section" defStyleNum="dsFunction" />
+ <itemData name="Section Name" defStyleNum="dsString" />
+ <itemData name="Value" defStyleNum="dsDataType" />
+ <itemData name="Keyword" defStyleNum="dsKeyword" />
+ <itemData name="Alert" defStyleNum="dsError" />
+ <itemData name="Int" defStyleNum="dsDecVal" />
+ <itemData name="Value2" defStyleNum="dsOthers" />
+ <itemData name="Float" defStyleNum="dsFloat" />
+ <itemData name="Comment" defStyleNum="dsComment" />
+</itemDatas>
+</highlighting>
+
+
+<general>
+ <comments>
+  <comment name="singleLine" start="#" />
+ </comments>
+</general>
+
+</language>

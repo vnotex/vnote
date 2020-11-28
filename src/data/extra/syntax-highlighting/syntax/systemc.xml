@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+    Copyright (C) Joseph Wenninger, 2008
+    Highlighting for SystemC (www.systemc.org)
+    Highlighting licensed as LGPL 2+
+================================================================================
+    July 17th 2008                            Initial version
+-->
+<language name="SystemC" version="3" kateversion="2.4" section="Hardware" extensions="*.c++;*.cxx;*.cpp;*.cc;*.C;*.h;*.hh;*.H;*.h++;*.hxx;*.hpp;*.hcc;*.moc" mimetype="text/x-c++src;text/x-c++hdr;text/x-chdr" priority="1" author="Joseph Wenninger (jowenn@kde.org)" license="LGPLv2+">
+
+<highlighting>
+<list name="systemc_keywords">
+    <item>sensitive</item>
+</list>
+<list name="systemc_functions">
+    <item>dont_initialize</item>
+    <item>gen_unique_name</item>
+    <item>name</item>
+    <item>next_trigger</item>
+    <item>sc_assert_fail</item>
+    <item>sc_copyright</item>
+    <item>sc_cycle</item>
+    <item>sc_initialize</item>
+    <item>sc_simulation_time</item>
+    <item>sc_start</item>
+    <item>sc_stop</item>
+    <item>sc_get_default_time_unit</item>
+    <item>sc_get_default_time_resolution</item>
+    <item>sc_time_stamp</item>
+    <item>sc_version</item>
+    <item>timed_out</item>
+    <item>wait</item>
+    <item>sc_trace</item>
+    <item>sc_create_vcd_trace_file</item>
+    <item>sc_close_vcd_trace_file</item>
+    
+</list>
+<list name="systemc_macros">
+    <item>SC_MODULE</item>
+    <item>SC_CTOR</item>
+    <item>SC_METHOD</item>
+    <item>SC_THREAD</item>
+</list>
+<list name="systemc_datatypes">
+    <item>sc_time_unit</item>
+    <item>sc_clock</item>
+    <item>sc_int</item>
+    <item>sc_uint</item>
+    <item>sc_bigint</item>
+    <item>sc_biguint</item>
+    <item>sc_logic</item>
+    <item>sc_lv</item>
+    <item>sc_bit</item>
+    <item>sc_bv</item>
+    <item>sc_fixed</item>
+    <item>sc_ufixed</item>
+    <item>sc_fixed_fast</item>
+    <item>sc_ufixed_fast</item>
+    <item>sc_fix</item>
+    <item>sc_ufix</item>
+    <item>sc_buffer</item>
+    <item>sc_fifo</item>
+    <item>sc_mutex</item>
+    <item>sc_semaphore</item>
+    <item>sc_signal</item>
+    <item>sc_signal_resolved</item>
+    <item>sc_signal_rv</item>
+    <item>sc_fifo_in_if</item>
+    <item>sc_fifo_out_if</item>
+    <item>sc_mutex_if</item>
+    <item>sc_semaphore_if</item>
+    <item>sc_signal_in_if</item>
+    <item>sc_signal_inout_if</item>
+    <item>sc_master</item>
+    <item>sc_inmaster</item>
+    <item>sc_outmaster</item>
+    <item>sc_inout_master</item>
+    <item>sc_indexed</item>
+    <item>sc_slave</item>
+    <item>sc_inslave</item>
+    <item>sc_outslave</item>
+    <item>sc_inoutslave</item>
+    <item>sc_in</item>
+    <item>sc_out</item>
+    <item>sc_inout</item>
+    <item>sc_noHandshake</item>
+    <item>sc_fullHandshake</item>
+    <item>sc_memfullHandshake</item>
+    <item>sc_enable_Handshake</item>
+    <item>sc_memenHandshake</item>
+    <item>sc_link_mp</item>
+    <item>sc_trace_file</item>
+</list>
+<contexts>
+  <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/> <!-- see below -->
+    <keyword attribute="Extensions-Keywords" context="#stay" String="systemc_keywords" />
+    <keyword attribute="Extensions-Functions" context="#stay" String="systemc_functions" />
+    <keyword attribute="Extensions-Macros" context="#stay" String="systemc_macros" />
+    <keyword attribute="Data Type" context="#stay" String="systemc_datatypes" />
+    <IncludeRules context="##C++" />
+  </context>
+  
+  <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+      <DetectSpaces />
+      <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+      <IncludeRules context="##Alerts" />
+      <DetectIdentifier />
+  </context>
+
+</contexts>
+
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" />
+  <itemData name="Extensions-Macros"   defStyleNum="dsKeyword" color="#0095ff" selColor="#ffffff" bold="1" italic="0"/>
+  <itemData name="Extensions-Functions"   defStyleNum="dsKeyword" color="#000000" selColor="#ffffff" bold="1" italic="1"/>
+  <itemData name="Extensions-Keywords"   defStyleNum="dsKeyword" />
+  <itemData name="Data Type"    defStyleNum="dsDataType"/>
+  <itemData name="Comment"      defStyleNum="dsComment"/>
+<!--   <itemData name="Comment" defStyleNum="dsComment" /> -->
+</itemDatas>
+
+</highlighting>
+<general>
+    <comments>
+        <comment name="singleLine" start="//" />
+        <!-- implement support for something like this:<comment name="multiLine" start="/*" end="*/" region="Comment##C++"/>-->
+        <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

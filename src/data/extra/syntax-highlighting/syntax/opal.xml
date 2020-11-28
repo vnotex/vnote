@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="OPAL" version="2" kateversion="2.3" section="Sources" extensions="*.impl;*.sign" mimetype="" author="Sebastian Pipping (webmaster@hartwork.org)">
+
+	<highlighting>
+
+		<list name="opal_keywords">
+			<item>ALL</item>
+			<item>AND</item>
+			<item>ANDIF</item>
+			<item>ANY</item>
+			<item>AS</item>
+			<item>ASSERT</item>
+			<item>AXM</item>
+			<item>COMPLETELY</item>
+			<item>DATA</item>
+			<item>DEF</item>
+			<item>DERIVE</item>
+			<item>DFD</item>
+			<item>DISCRIMINATORS</item>
+			<item>ELSE</item>
+			<item>EX</item>
+			<item>EXTERNAL</item>
+			<item>FI</item>
+			<item>FIX</item>
+			<item>FUN</item>
+			<item>IF</item>
+			<item>IMPLEMENTATION</item>
+			<item>IMPLIES</item>
+			<item>IMPORT</item>
+			<item>IN</item>
+			<item>INHERIT</item>
+			<item>INJECTIONS</item>
+			<item>INTERFACE</item>
+			<item>INTERNAL</item>
+			<item>LAW</item>
+			<item>LAZY</item>
+			<item>LEFTASSOC</item>
+			<item>LET</item>
+			<item>MODULE</item>
+			<item>NOT</item>
+			<item>ONLY</item>
+			<item>OR</item>
+			<item>ORIF</item>
+			<item>OTHERWISE</item>
+			<item>POST</item>
+			<item>PRE</item>
+			<item>PRED</item>
+			<item>PRIORITY</item>
+			<item>PROPERTIES</item>
+			<item>REALIZES</item>
+			<item>REQUIRE</item>
+			<item>RIGHTASSOC</item>
+			<item>SELECTORS</item>
+			<item>SIGNATURE</item>
+			<item>SORT</item>
+			<item>SPC</item>
+			<item>SPEC</item>
+			<item>SPECIFICATION</item>
+			<item>STRUCTURE</item>
+			<item>THE</item>
+			<item>THEN</item>
+			<item>THEORY</item>
+			<item>THM</item>
+			<item>TYPE</item>
+			<item>UNIQ</item>
+			<item>WHERE</item>
+		</list>
+		<list name="opal_sorts">
+			<item>aEntry</item>
+			<item>agent</item>
+			<item>align</item>
+			<item>anchor</item>
+			<item>ans</item>
+			<item>arg</item>
+			<item>arg1</item>
+			<item>arg2</item>
+			<item>array</item>
+			<item>arrowWhere</item>
+			<item>bag</item>
+			<item>bitmap</item>
+			<item>bool</item>
+			<item>bstree</item>
+			<item>byte</item>
+			<item>callback</item>
+			<item>canvasEditor</item>
+			<item>capStyle</item>
+			<item>channel</item>
+			<item>char</item>
+			<item>childstat</item>
+			<item>codom</item>
+			<item>codomFrom</item>
+			<item>codomTo</item>
+			<item>color</item>
+			<item>colorModel</item>
+			<item>com</item>
+			<item>composeOp</item>
+			<item>config</item>
+			<item>configCom</item>
+			<item>cursor</item>
+			<item>dArray</item>
+			<item>data</item>
+			<item>data1</item>
+			<item>data11</item>
+			<item>data2</item>
+			<item>data21</item>
+			<item>data3</item>
+			<item>data31</item>
+			<item>data4</item>
+			<item>data41</item>
+			<item>dataFrom</item>
+			<item>dataTo</item>
+			<item>defaultPrio</item>
+			<item>denotation</item>
+			<item>device</item>
+			<item>dist</item>
+			<item>distOut</item>
+			<item>dom</item>
+			<item>domFrom</item>
+			<item>domTo</item>
+			<item>drawing</item>
+			<item>dyn</item>
+			<item>emitter</item>
+			<item>env</item>
+			<item>event</item>
+			<item>eventInfo</item>
+			<item>file</item>
+			<item>filemode</item>
+			<item>filestat</item>
+			<item>filetype</item>
+			<item>first</item>
+			<item>first1</item>
+			<item>first2</item>
+			<item>first3</item>
+			<item>fission</item>
+			<item>fmt</item>
+			<item>font</item>
+			<item>from</item>
+			<item>from1</item>
+			<item>from2</item>
+			<item>funct</item>
+			<item>group</item>
+			<item>groupid</item>
+			<item>heap</item>
+			<item>iconfig</item>
+			<item>image</item>
+			<item>in</item>
+			<item>inData</item>
+			<item>index</item>
+			<item>inode</item>
+			<item>input</item>
+			<item>int</item>
+			<item>inter</item>
+			<item>interdom</item>
+			<item>interpreter</item>
+			<item>iseq</item>
+			<item>items</item>
+			<item>joinStyle</item>
+			<item>justifyHow</item>
+			<item>long</item>
+			<item>manager</item>
+			<item>managerRequest</item>
+			<item>map</item>
+			<item>mapEntry</item>
+			<item>mark</item>
+			<item>mid</item>
+			<item>modifier</item>
+			<item>nat</item>
+			<item>natMap</item>
+			<item>OBJECT</item>
+			<item>option</item>
+			<item>orient</item>
+			<item>out</item>
+			<item>outData</item>
+			<item>output</item>
+			<item>packOp</item>
+			<item>pair</item>
+			<item>parser</item>
+			<item>permission</item>
+			<item>point</item>
+			<item>positionRequest</item>
+			<item>process</item>
+			<item>procstat</item>
+			<item>quad</item>
+			<item>range</item>
+			<item>real</item>
+			<item>regulator</item>
+			<item>rel</item>
+			<item>relief</item>
+			<item>res</item>
+			<item>res1</item>
+			<item>res2</item>
+			<item>result</item>
+			<item>role</item>
+			<item>sap</item>
+			<item>script</item>
+			<item>scroller</item>
+			<item>scrollView</item>
+			<item>scrollWindow</item>
+			<item>searchOpt</item>
+			<item>second</item>
+			<item>seekMode</item>
+			<item>selector</item>
+			<item>semaphor</item>
+			<item>seq</item>
+			<item>seqEntry</item>
+			<item>set</item>
+			<item>setEntry</item>
+			<item>short</item>
+			<item>sigaction</item>
+			<item>sighandler</item>
+			<item>sigmask</item>
+			<item>signal</item>
+			<item>size</item>
+			<item>sizeRequest</item>
+			<item>some</item>
+			<item>sreal</item>
+			<item>state</item>
+			<item>stateId</item>
+			<item>stateRequest</item>
+			<item>string</item>
+			<item>subrel</item>
+			<item>tag</item>
+			<item>textEditor</item>
+			<item>time</item>
+			<item>to</item>
+			<item>tree</item>
+			<item>triple</item>
+			<item>union</item>
+			<item>user</item>
+			<item>userid</item>
+			<item>version</item>
+			<item>view</item>
+			<item>void</item>
+			<item>wconfig</item>
+			<item>wconfigCom</item>
+			<item>wday</item>
+			<item>widget</item>
+			<item>window</item>
+			<item>wrapStyle</item>
+		</list>
+		<list name="opal_other">
+			<item>true</item>
+			<item>false</item>
+
+			<item>0</item>
+			<item>1</item>
+			<item>2</item>
+			<item>3</item>
+			<item>4</item>
+			<item>5</item>
+			<item>6</item>
+			<item>7</item>
+			<item>8</item>
+			<item>9</item>
+			<item>10</item>
+			<item>11</item>
+			<item>12</item>
+			<item>13</item>
+			<item>14</item>
+			<item>15</item>
+			<item>16</item>
+			<item>17</item>
+			<item>18</item>
+			<item>19</item>
+			<item>20</item>
+			<item>21</item>
+			<item>22</item>
+			<item>23</item>
+			<item>24</item>
+			<item>25</item>
+			<item>26</item>
+			<item>27</item>
+			<item>28</item>
+			<item>29</item>
+			<item>30</item>
+			<item>31</item>
+			<item>32</item>
+			<item>64</item>
+			<item>128</item>
+			<item>256</item>
+			<item>512</item>
+			<item>1024</item>
+			<item>10000</item>
+			<item>100000</item>
+			<item>1000000</item>
+		</list>
+
+		<contexts>
+			<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+				<keyword attribute="Keyword" context="#stay" String="opal_keywords"/>
+				<keyword attribute="Sort" context="#stay" String="opal_sorts"/>
+				<keyword attribute="Decimal" context="#stay" String="opal_other"/>
+				<DetectChar attribute="String" context="String" char="&quot;"/>
+				<RegExpr attribute="Comment" context="SingLineCom" String="(?:^--$|^--[^-]|[^-]--[^-]|[^-]--$)"/>
+				<Detect2Chars attribute="Comment" context="MultLineCom" char="/" char1="*"/>
+			</context>
+			
+			<context attribute="String" lineEndContext="#stay" name="String">
+				<Detect2Chars attribute="String" context="#stay" char="\" char1="&quot;"/>
+				<DetectChar attribute="String" context="#pop" char="&quot;"/>
+			</context>
+			
+			<context attribute="Comment" lineEndContext="#pop" name="SingLineCom"/>
+			
+			<context attribute="Comment" lineEndContext="#stay" name="MultLineCom">
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+				<Detect2Chars attribute="Comment" context="MultLineCom" char="/" char1="*"/>
+			</context>
+		</contexts>
+
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal"/>
+			<itemData name="Keyword"     defStyleNum="dsKeyword" color="#0000ff"/>
+			<itemData name="Sort"        defStyleNum="dsDataType" color="#0000ff"/>
+			<itemData name="Decimal"     defStyleNum="dsString"/>
+			<itemData name="String"      defStyleNum="dsString"/>
+			<itemData name="Comment"     defStyleNum="dsOthers"/>
+		</itemDatas>
+
+	</highlighting>
+
+	<general>
+		<comments>
+			<comment name="singleLine" start="--"/>
+			<comment name="multiLine" start="/*" end="*/"/>
+		</comments>
+		<keywords casesensitive="1"/>
+	</general>
+
+</language>

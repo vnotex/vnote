@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Pig syntax highlighting v3.0, Copyright © 2012 Johannes Schwenk, johannes.schwenk@adition.com -->
+<language name="Pig" version="8" kateversion="3.4" section="Scripts" extensions="*.pig" mimetype="application/x-pig;text/x-pig" casesensitive="0" author="Johannes Schwenk, johannes.schwenk@adition.com" license="GPL">
+	<highlighting>
+		<list name="keywords">
+			<item>load</item>
+			<item>store</item>
+			<item>filter</item>
+			<item>foreach</item>
+			<item>order</item>
+			<item>arrange</item>
+			<item>distinct</item>
+			<item>cogroup</item>
+			<item>join</item>
+			<item>cross</item>
+			<item>union</item>
+			<item>onschema</item>
+			<item>split</item>
+			<item>into</item>
+			<item>if</item>
+			<item>all</item>
+			<item>any</item>
+			<item>as</item>
+			<item>by</item>
+			<item>using</item>
+			<item>inner</item>
+			<item>outer</item>
+			<item>parallel</item>
+			<item>group</item>
+			<item>continuously</item>
+			<item>window</item>
+			<item>tuples</item>
+			<item>generate</item>
+			<item>eval</item>
+			<item>define</item>
+			<item>returns</item>
+			<item>input</item>
+			<item>output</item>
+			<item>ship</item>
+			<item>cache</item>
+			<item>stream</item>
+			<item>through</item>
+			<item>seconds</item>
+			<item>minutes</item>
+			<item>hours</item>
+			<item>asc</item>
+			<item>desc</item>
+			<item>null</item>
+			<item>left</item>
+			<item>right</item>
+			<item>full</item>
+		</list>
+		<list name="grunts">
+			<item>cat</item>
+			<item>cd</item>
+			<item>cp</item>
+			<item>copyFromLocal</item>
+			<item>copyToLocal</item>
+			<item>define</item>
+			<item>dump</item>
+			<item>illustrate</item>
+			<item>describe</item>
+			<item>explain</item>
+			<item>exec</item>
+			<item>help</item>
+			<item>kill</item>
+			<item>ls</item>
+			<item>mv</item>
+			<item>mkdir</item>
+			<item>pwd</item>
+			<item>quit</item>
+			<item>register</item>
+			<item>import</item>
+			<item>rm</item>
+			<item>set</item>
+		</list>
+		<list name="types">
+			<item>chararray</item>
+			<item>bytearray</item>
+			<item>int</item>
+			<item>long</item>
+			<item>float</item>
+			<item>double</item>
+			<item>tuple</item>
+			<item>bag</item>
+			<item>map</item>
+		</list>
+		<list name="operators">
+			<item>and</item>
+			<item>is</item>
+			<item>not</item>
+			<item>or</item>
+			<item>eq</item>
+			<item>neq</item>
+			<item>gt</item>
+			<item>lt</item>
+			<item>gte</item>
+			<item>lte</item>
+			<item>matches</item>
+		</list>
+		<list name="functions">
+			<item>flatten</item>
+			<item>sum</item>
+			<item>count</item>
+			<item>min</item>
+			<item>max</item>
+			<item>avg</item>
+			<item>arity</item>
+			<item>tokenize</item>
+			<item>diff</item>
+			<item>size</item>
+			<item>concat</item>
+			<item>BinStorage</item>
+			<item>PigStorage</item>
+			<item>TextLoader</item>
+			<item>PigDump</item>
+			<item>IsEmpty</item>			
+		</list>
+		<contexts>
+			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+				<keyword attribute="Keyword" String="keywords" context="#stay"/>
+				<keyword attribute="Operator" String="operators" context="#stay"/>
+				<keyword attribute="Type" String="types" context="#stay"/>
+				<keyword attribute="Grunt" String="grunts" context="#stay"/>
+				<keyword attribute="Function" String="functions" context="#stay"/>
+				<RegExpr attribute="Statement" String="[%](declare|default)" context="#stay"/>
+				<Float attribute="Float" context="#stay" />
+				<HlCHex attribute="Hex" context="#stay"/>
+				<HlCOct attribute="Octal" context="#stay"/>
+                <Int attribute="Int" context="Int Suffixes"/>
+				<Detect2Chars attribute="Comment" char="/" char1="*" context="Multiline comment" beginRegion="Comment"/>
+				<DetectChar attribute="String" char="'" context="Single A-string"/>
+<!--				<DetectChar attribute="String" char="&quot;" context="Single Q-string"/>-->
+				<Detect2Chars attribute="Comment" char="-" char1='-' context="Dash comment"/>
+				<IncludeRules context="Parameter variable" />
+			</context>
+
+            <context name="Int Suffixes" attribute="Int" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+					<StringDetect attribute="Int" String="L" insensitive="true" context="#pop"/>
+            </context>
+
+			<context name="Parameter variable" attribute="Normal Text" lineEndContext="#pop">
+				<DetectSpaces />
+				<RegExpr attribute="Parameter" String="[$][a-zA-Z0-9_]+" context="#stay" />
+			</context>
+	
+			<context name="Single A-string" attribute="String" lineEndContext="#pop">
+				<IncludeRules context="Parameter variable" />
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<DetectChar attribute="String" char="'" context="#pop"/>
+			</context>
+
+<!--			<context name="Single Q-string" attribute="String" lineEndContext="#stay">
+				<IncludeRules context="Parameter variable" />
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<DetectChar attribute="String" char="&quot;" context="#pop"/>
+			</context>-->
+
+			<context name="Dash comment" attribute="Comment" lineEndContext="#pop">
+				<LineContinue attribute="Comment" context="#stay"/>
+				<DetectSpaces />
+				<IncludeRules context="##Alerts" />
+				<DetectIdentifier />
+			</context>
+			
+			<context name="Multiline comment" attribute="Comment" lineEndContext="#stay">
+				<DetectSpaces />
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+				<IncludeRules context="##Alerts" />
+				<DetectIdentifier />
+			</context>
+
+			
+		</contexts>
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+			<itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+			<itemData name="Statement" defStyleNum="dsOthers" bold="1" spellChecking="false"/>
+			<itemData name="Operator" defStyleNum="dsNormal" bold="1" spellChecking="false"/>
+			<itemData name="Type" defStyleNum="dsDataType" spellChecking="false"/>
+			<itemData name="Grunt" defStyleNum="dsOthers" color="#BA8200" selColor="#FFFFFF" bold="1" italic="0" spellChecking="false"/>
+			<itemData name="Function" defStyleNum="dsDataType" bold="1" spellChecking="false"/>
+			<itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+			<itemData name="Int" defStyleNum="dsDecVal" spellChecking="false"/>
+			<itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
+			<itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false"/>
+			<itemData name="Comment" defStyleNum="dsComment"/>
+			<itemData name="String" defStyleNum="dsString"/>
+			<itemData name="String Char" defStyleNum="dsSpecialChar"/>
+			<itemData name="Parameter" defStyleNum="dsOthers" color="#25A000" selColor="#FFFFFF" spellChecking="false"/>
+		</itemDatas>
+	</highlighting>
+	<general>
+		<folding indentationsensitive="1" />
+		<emptyLines>
+			<emptyLine regexpr="(?:\s+|\s*#.*)"/>
+		</emptyLines>
+		<comments>
+			<comment name="singleLine" start="--" position="afterwhitespace"/>
+			<comment name="multiLine" start="/*" end="*/" region="Comment" />
+		</comments>
+		<keywords casesensitive="0" />
+	</general>
+</language>

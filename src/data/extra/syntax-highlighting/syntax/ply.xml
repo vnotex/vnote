@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="PLY" version="2" kateversion="5.0" section="3D" extensions="*.ply" mimetype="" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
+    <highlighting>
+        <list name="keywords">
+            <item>format</item>
+            <item>element</item>
+            <item>property</item>
+            <item>end_header</item>
+        </list>
+        <list name="types">
+            <item>char</item>
+            <item>uchar</item>
+            <item>short</item>
+            <item>ushort</item>
+            <item>int</item>
+            <item>uint</item>
+            <item>float</item>
+            <item>double</item>
+            <item>list</item>
+        </list>
+        <contexts>
+            <context name="entryPoint" attribute="Error" lineEndContext="#stay">
+                <StringDetect String="ply" context="Header"/>
+            </context>
+            <context name="Header" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces/>
+                <Float attribute="Float" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <StringDetect String="comment" context="Comment" lookAhead="true"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords" column="0"/>
+                <keyword attribute="DataType" context="#stay" String="types"/>
+            </context>
+            <context name="Comment" attribute="Comment" lineEndContext="#pop">
+                <IncludeRules context="##Alerts"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="Keyword"     defStyleNum="dsKeyword"/>
+            <itemData name="Decimal"     defStyleNum="dsDecVal"/>
+            <itemData name="Float"       defStyleNum="dsFloat"/>
+            <itemData name="Comment"     defStyleNum="dsComment"/>
+            <itemData name="Error"       defStyleNum="dsError"/>
+            <itemData name="DataType"    defStyleNum="dsDataType"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="comment"/>
+        </comments>
+    </general>
+</language>
+

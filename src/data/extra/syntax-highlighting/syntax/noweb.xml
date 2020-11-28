@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="noweb" version="2" kateversion="2.4" section="Sources" extensions="*.w;*.nw" author="Scott Collins (scc@scottcollins.net)">
+<!-- 
+#########################################################################
+# First version added to repository was 0.4, added as 1.0 .
+#
+# Article about this highlighter:
+#   http://scottcollins.net/articles/Kate.html
+# 
+# Indirect source file:
+#   http://scottcollins.net/articles/Kate.w
+# 
+# Command used for extraction:
+#   $ notangle Kate.w -R"noweb.xml" > syntax/data/noweb.xml
+#########################################################################
+-->
+  <highlighting>
+    <contexts>
+      <context name="RawDocumentation" attribute="Prose" lineEndContext="#stay">
+        <RegExpr String="^&lt;&lt;.*&gt;&gt;=$" attribute="SectionName" context="CodeSection" beginRegion="CodeSection" />
+        <Detect2Chars char="@" char1="[" context="#stay" />
+        <Detect2Chars char="[" char1="[" attribute="Punctuation" context="CodeQuote" />
+        <IncludeRules context="##HTML" includeAttrib="true" />
+      </context>
+      <context name="CodeQuote" attribute="Code" lineEndContext="#stay">
+        <Detect2Chars char="@" char1="]" context="#stay" />
+        <RegExpr String="\]\](?!\])" minimal="true" attribute="Punctuation" context="#pop" />
+        <IncludeRules context="SectionNames" />
+        <IncludeRules context="##C++" includeAttrib="true" />
+      </context>
+      <context name="CodeSection" attribute="Code" lineEndContext="#stay">
+        <RegExpr String="^@$" attribute="Punctuation" context="RawDocumentation" endRegion="CodeSection" />
+        <RegExpr String="^@(?=[\s%])" attribute="Punctuation" context="RawDocumentation" endRegion="CodeSection" />
+        <RegExpr String="^&lt;&lt;.*&gt;&gt;=$" context="RawDocumentation" lookAhead="true" endRegion="CodeSection" />
+        <IncludeRules context="SectionNames" />
+        <IncludeRules context="##C++" includeAttrib="true" />
+      </context>
+      <context name="SectionNames" attribute="Prose" lineEndContext="#stay">
+        <RegExpr String="@&lt;&lt;" context="#stay" />
+        <RegExpr String="&lt;&lt;.*[^@]&gt;&gt;(?!=)" minimal="true" attribute="SectionName" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Prose"        defStyleNum="dsNormal" />
+      <itemData name="Code"         defStyleNum="dsNormal" />
+      <itemData name="Punctuation"  defStyleNum="dsRegionMarker" bold="true" />
+      <itemData name="SectionName"  defStyleNum="dsRegionMarker" italic="true" />
+    </itemDatas>
+  </highlighting>
+</language>
+

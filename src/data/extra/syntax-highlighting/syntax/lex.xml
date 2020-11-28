@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  ========================================================================
+
+  LEX.XML supports syntax highlighting for Lex/Flex source under Kate.
+
+  Copyright (C) 2004 - Jan Villat <jan.villat@net2000.ch>
+  This code is released under the LGPL as part of kdelibs/kate.
+
+  ========================================================================
+
+  Updates for LEX.XML can be obtained from http://kate.kde.org/hl/
+
+  UPDATE HISTORY:-
+  2004.05.25 - LEX.XML 1.00        - First released.
+
+  TODO:-
+  - Add a mime type (cannot find it !?)
+  
+  ========================================================================
+-->
+<language name="Lex/Flex" version="2" kateversion="2.4" section="Sources" extensions="*.l;*.lex;*.flex" author="Jan Villat (jan.villat@net2000.ch)" license="LGPL">
+
+<highlighting>
+<contexts>
+  <context name="Pre Start" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="Normal Text" context="Definitions" String="." lookAhead="true" beginRegion="definitions" />
+  </context>
+  <context name="Definitions" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="Detect C" />
+    <Detect2Chars attribute="Content-Type Delimiter" context="Rules" char="%" char1="%" beginRegion="rules" endRegion="definitions" />
+    <DetectChar attribute="Directive" context="Percent Command" char="%" />
+    <Detect2Chars attribute="Comment" context="Comment" char="/" char1="*" column="0"/>
+    <RegExpr attribute="Definition" context="Definition RegExpr" String="[A-Za-z_]\w*\s+" column="0"/>
+  </context>
+  <context name="Rules" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="Rule RegExpr">
+    <IncludeRules context="Detect C" />
+    <Detect2Chars attribute="Content-Type Delimiter" context="User Code" char="%" char1="%" beginRegion="code" endRegion="rules" />
+  </context>
+  <context name="User Code" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="##C++" />
+  </context>
+  
+  <context name="Percent Command" attribute="Directive" lineEndContext="#pop">
+  </context>
+  <context name="Comment" attribute="Comment" lineEndContext="#stay">
+    <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+  </context>
+
+  <context name="Definition RegExpr" attribute="RegExpr" lineEndContext="#pop">
+    <IncludeRules context="RegExpr Base" />
+    <RegExpr attribute="RegExpr" context="#stay" String="\S" />  
+    <RegExpr attribute="Alert" context="#stay" String=".*" />  
+  </context>
+  <context name="Rule RegExpr" attribute="RegExpr" lineEndContext="#pop">
+    <RegExpr attribute="Content-Type Delimiter" context="Start Conditions Scope" String="\{$" beginRegion="SCscope" />  
+    <IncludeRules context="RegExpr Base" />
+    <RegExpr attribute="RegExpr" context="#stay" String="\S" />  
+    <RegExpr attribute="Normal Text" context="Action" String="\s+" />  
+  </context>
+  <context name="RegExpr (" attribute="RegExpr" lineEndContext="#stay">
+    <IncludeRules context="RegExpr Base" />
+    <DetectChar attribute="RegExpr" context="#pop" char=")" />  
+    <RegExpr attribute="RegExpr" context="#stay" String="." />
+  </context>
+  <context name="RegExpr [" attribute="RegExpr" lineEndContext="#stay">
+    <RegExpr attribute="Backslash Code" context="#stay" String="\\." />
+    <DetectChar attribute="RegExpr" context="#pop" char="]" />  
+    <RegExpr attribute="RegExpr" context="#stay" String="." />
+  </context>
+  <context name="RegExpr {" attribute="RegExpr" lineEndContext="#stay">
+    <RegExpr attribute="Backslash Code" context="#stay" String="\\." />
+    <DetectChar attribute="RegExpr" context="#pop" char="}" />  
+    <RegExpr attribute="RegExpr" context="#stay" String="." />
+  </context>
+  <context name="RegExpr Q" attribute="RegExpr" lineEndContext="#stay">
+    <RegExpr attribute="Backslash Code" context="#stay" String="\\." />
+    <DetectChar attribute="RegExpr" context="#pop" char="&quot;" />  
+    <RegExpr attribute="RegExpr" context="#stay" String="." />
+  </context>
+  <context name="RegExpr Base" attribute="RegExpr" lineEndContext="#stay">
+    <RegExpr attribute="Backslash Code" context="#stay" String="\\." />
+    <DetectChar attribute="RegExpr" context="RegExpr (" char="(" />  
+    <DetectChar attribute="RegExpr" context="RegExpr [" char="[" />  
+    <DetectChar attribute="RegExpr" context="RegExpr {" char="{" />  
+    <DetectChar attribute="RegExpr" context="RegExpr Q" char="&quot;" />  
+  </context>
+  
+  <context name="Start Conditions Scope" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="Rule RegExpr">
+    <RegExpr attribute="Content-Type Delimiter" context="#pop" String="\s*\}" endRegion="SCscope" />
+    <RegExpr attribute="Normal Text" context="Rule RegExpr" String="\s*" />
+  </context>
+  
+  <context name="Action" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="Action C">
+    <RegExpr attribute="Directive" context="#stay" String="\|\s*$" />
+    <Detect2Chars attribute="Content-Type Delimiter" context="Lex Rule C Bloc" char="%" char1="{" beginRegion="lexCbloc" />
+  </context>
+  
+  <context name="Detect C" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="Normal Text" context="Indented C" String="^\s" />
+    <Detect2Chars attribute="Content-Type Delimiter" context="Lex C Bloc" char="%" char1="{" beginRegion="lexCbloc" column="0"/>
+  </context>
+  <context name="Indented C" attribute="Normal Text" lineEndContext="#pop">
+    <IncludeRules context="##C++" />
+  </context>
+  <context name="Lex C Bloc" attribute="Normal Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Content-Type Delimiter" context="#pop" char="%" char1="}" endRegion="lexCbloc" column="0"/>
+    <IncludeRules context="##C++" />
+  </context>
+  <context name="Lex Rule C Bloc" attribute="Normal Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Content-Type Delimiter" context="#pop" char="%" char1="}" endRegion="lexCbloc" />
+    <IncludeRules context="##C++" />
+  </context>
+  <context name="Normal C Bloc" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Normal Text" context="Normal C Bloc" char="{" beginRegion="bloc" />  
+    <DetectChar attribute="Normal Text" context="#pop" char="}" endRegion="bloc" />  
+    <IncludeRules context="##C++" />
+  </context>
+  <context name="Action C" attribute="Normal Text" lineEndContext="#pop">
+    <DetectChar attribute="Normal Text" context="Normal C Bloc" char="{" beginRegion="bloc" />  
+    <DetectChar attribute="Alert" context="#stay" char="}" />  
+    <IncludeRules context="##C++" />
+  </context>
+</contexts>
+
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" />
+  <itemData name="Definition" defStyleNum="dsDataType" />
+  <itemData name="Comment" defStyleNum="dsComment" />
+  <itemData name="Content-Type Delimiter" defStyleNum="dsBaseN" bold="1" />
+  <itemData name="Directive" defStyleNum="dsKeyword"/>
+  <itemData name="RegExpr" defStyleNum="dsString" />
+  <itemData name="Backslash Code" defStyleNum="dsString" bold="1" />
+  <itemData name="Alert" defStyleNum="dsAlert" />
+</itemDatas>
+
+</highlighting>
+<general>
+  <comments>
+    <comment name="multiLine" start="/*" end="*/" />
+  </comments>
+</general>
+</language>

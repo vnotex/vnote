@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ====================================================================
+  MATLAB syntax highlighting file for the KDE editors Kate and Kwrite
+  ====================================================================
+      works (at least) for MATLAB versions 5.3, 6.0, 6.1, 6.5, 6.5sp1
+      works with Kate 2.2 and with Kwrite 4.2 (KDE 3.2)
+
+  This file works only for syntactically correct MATLAB code. For incorrect
+  code, the behaviour is undefined. One exception is made: Incomplete strings
+  with missing closing delimiter are highlighted separately, just as in the
+  native editor of MATLAB does.
+
+  Highlighting errors never propagate across line breaks.
+
+  Most of this XML file is straight and simple. Only the character ' (&apos;)
+  needs nontrivial treatment, since it is both a postfix operator indicating
+  complex conjugate transpose (adjoint) and a string delimiter. It is an
+  adjoint operator in the following positions:
+  1) immediately after an identifier (variable, function, but not keyword)
+  2) immediately after a number literal
+  3) immediately after the closing parenthesis ), ] and }
+  4) immediately after a simple transpose operator .'
+  5) immediately after another adjoint operator '
+  In all other cases it is a string delimiter.
+
+  This is implemented using look-ahead regexps. If one of the entities in the
+  above cases 1-4 (identifier, number literal, ...) matches and look-ahead
+  shows that it is followed by a ', the entity is highlighted and control is
+  passed to the special context _adjoint, whose sole purpose is to correctly
+  highlight a series of ' (thus covering case 5 as well). _adjoint immediately
+  returns to the default context _normal.
+
+  MATLAB number literals are different from those in C and similar languages:
+  a) All numbers literals are doubles. There is no distinction between float and int.
+  b) There is no notation of hex or oct base integers.
+  c) The symbols i or j may be attached to a number to indicate a multiplication
+     with the imaginary unit.
+
+  MATLAB identifiers have to start with a letter followed by any number of letters,
+  digits and underscores.
+
+  There is a small number of reserved keywords, which cannot be the target of an
+  assignment. All other identifiers (including all of the many 100s of MATLAB commands)
+  can be redefined. Consequently, only the reserved keywords are highlighted.
+
+  At the end of the XML file, there is MATLAB testing code for developers.
+
+  Change log:
+  19-Nov-03  Created from scratch.
+  08-Mar-04  Small corrections. Added default colors of MATLAB editor.
+  25-Jan-09  Addedd basic support for OOP (Matlab 2008) (by Leonardo Finetti)
+
+  Author: Stefan Stoll, Swiss Federal Institute of Technology, Zurich
+  Co-author: Leonardo Finetti, www.finex.org
+-->
+
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="Matlab" version="3" kateversion="5.0" section="Scientific" extensions="*.m;*.M" mimetype="text/mfile" casesensitive="1">
+  <highlighting>
+
+    <!-- Reserved keywords in MATLAB -->
+    <list name="KeywordsList">
+      <item>break</item>
+      <item>case</item>
+      <item>catch</item>
+      <item>classdef</item>
+      <item>continue</item>
+      <item>else</item>
+      <item>elseif</item>
+      <item>end</item>
+      <item>for</item>
+      <item>function</item>
+      <item>global</item>
+      <item>if</item>
+      <item>otherwise</item>
+      <item>parfor</item>
+      <item>persistent</item>
+      <item>return</item>
+      <item>spmd</item>
+      <item>switch</item>
+      <item>try</item>
+      <item>while</item>
+      <item>methods</item>
+      <item>properties</item>
+      <item>events</item>
+    </list>
+
+    <contexts>
+
+      <context name="_normal" attribute="Normal Text" lineEndContext="#stay">
+
+        <!-- Look-ahead for adjoint ' after variable, number literal, closing braces and .' -->
+        <RegExpr context="_adjoint" attribute="Variable" String="[a-zA-Z]\w*(?=')" />
+        <RegExpr context="_adjoint" attribute="Number" String="(\d+(\.\d+)?|\.\d+)([eE][+-]?\d+)?[ij]?(?=')" />
+        <RegExpr context="_adjoint" attribute="Delimiter" String="[\)\]}](?=')" />
+        <RegExpr context="_adjoint" attribute="Operator" String="\.'(?=')" />
+
+        <!-- If ' is not the adjoint operator, it starts a string or an unterminated string -->
+        <RegExpr context="#stay" attribute="CharVector" String="'[^']*(''[^']*)*'(?=[^']|$)" />
+        <RegExpr context="#stay" attribute="Incomplete CharVector" String="'[^']*(''[^']*)*" />
+        <RegExpr context="#stay" attribute="String" String="&quot;[^&quot;]*(&quot;&quot;[^&quot;]*)*&quot;(?=[^&quot;]|$)" />
+        <RegExpr context="#stay" attribute="Incomplete String" String="&quot;[^&quot;]*(&quot;&quot;[^&quot;]*)*" />
+
+        <!-- Handling of keywords, comments, system commands, identifiers, numbers and braces -->
+        <keyword context="#stay" attribute="Keyword" String="KeywordsList" />
+        <RegExpr context="#stay" attribute="Comment" String="%.*$" />
+        <RegExpr context="#stay" attribute="System" String="!.*$" />
+        <RegExpr context="#stay" attribute="Variable" String="[a-zA-Z]\w*" />
+        <RegExpr context="#stay" attribute="Number" String="(\d+(\.\d+)?|\.\d+)([eE][+-]?\d+)?[ij]?" />
+        <AnyChar context="#stay" attribute="Delimiter" String="()[]{}"/>
+
+        <!-- Three and two-character operators -->
+        <StringDetect context="#stay" attribute="Operator" String="..."/>
+        <StringDetect context="#stay" attribute="Operator" String="=="/>
+        <StringDetect context="#stay" attribute="Operator" String="~="/>
+        <StringDetect context="#stay" attribute="Operator" String="&lt;="/>
+        <StringDetect context="#stay" attribute="Operator" String="&gt;="/>
+        <StringDetect context="#stay" attribute="Operator" String="&amp;&amp;"/>
+        <StringDetect context="#stay" attribute="Operator" String="||"/>
+        <StringDetect context="#stay" attribute="Operator" String=".*"/>
+        <StringDetect context="#stay" attribute="Operator" String=".^"/>
+        <StringDetect context="#stay" attribute="Operator" String="./"/>
+        <StringDetect context="#stay" attribute="Operator" String=".'"/>
+
+        <!-- Single-character operators -->
+        <AnyChar context="#stay" attribute="Operator" String="*+-/\&amp;|&lt;&gt;~^=,;:@"/>
+
+      </context>
+
+      <!-- Context entered after encountering an ' adjoint operator -->
+      <context name="_adjoint" attribute="Operator" lineEndContext="#pop">
+        <RegExpr context="#pop" attribute="Operator" String="'+" />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Variable" defStyleNum="dsVariable" />
+      <itemData name="Operator" defStyleNum="dsOperator"/>
+      <itemData name="Number" defStyleNum="dsFloat" />
+      <itemData name="Delimiter" defStyleNum="dsNormal" />
+      <itemData name="CharVector" defStyleNum="dsSpecialString" />
+      <itemData name="String" defStyleNum="dsString" />
+      <itemData name="System" defStyleNum="dsBaseN" />
+      <itemData name="Incomplete CharVector" defStyleNum="dsError" />
+      <itemData name="Incomplete String" defStyleNum="dsError" />
+      <itemData name="Keyword"  defStyleNum="dsKeyword" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start="% " />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator=""/>
+  </general>
+
+</language>

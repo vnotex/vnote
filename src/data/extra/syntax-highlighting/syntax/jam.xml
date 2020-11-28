@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+    <!ENTITY ident "([^\t $&quot;\\]+|\$(?!\()|\\.)+">
+]>
+<!--
+Copyright (C) 2006 Mildred <silkensedai@online.fr>.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to
+deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+-->
+<language name="Jam" version="5" kateversion="5.0" section="Other" extensions="Jam*;*.jam" mimetype="text/x-jam;text/x-Jamfile;text/x-Jamrules;text/x-Jambase" author="Mildred (silkensedai@online.fr)" license="MIT">
+  <!--
+  Changelog
+    0.2
+      * now tokens like [ ] { } ( ) : ; are not detected if there is no whitespace before and after
+      * Jam* files are handled (example Jamrules or Jambase)
+      * different colors
+      * Subvariables are handled (example : $(varname[$(v)])
+      * Include bash highlighting inside actions blocks
+      * rules names are found in rules definitions
+      * highlight the variable reference in rule definitions after 'bind'
+    0.3
+      * because weakDelimiter isn't supported, it is not possible to just have some locals delimiters for the tokens and globals delimiters as default. So it's not possible to have our usual double click to select.
+      * 'actions action_name bind var' instead of 'actions bind var action_name'
+      * bun in syntax 'rule Rulename : param param ...' ':' is not recognized. fixed
+      * fixed some bugs found when looking at Jambase (peacemeal -> piecemeal, ...)
+      * variables recognized in strings
+      * named parameters for rules ... the syntax has changed : 'rule rulename param : param : param {'
+      * changed section from Scripts to Other
+  Feature request to Kate dev.
+    * returnContext attribute
+    * ability to enter a new context after a #pop
+    * when you include rules from foreign contexts (here Bash), having the ability to prepend some rules to all foreign contexts for example to terminate the included context before it naturally ends.
+
+    0.4
+      * fix `x=`: is a rule named `x=`, not a variable
+      * fix `exe onxxxxx`: is a rule call, not a variable
+      * fix `ifxxx`, `rulexxx`, etc: not keywords
+      * fix `variable default = xxx ;`
+      * fix keywords and operators in a condition: they must be separated by spaces
+      * fix `on target`
+      * fix `switch`
+      * fix `class` and `module`
+      * fix `for local x`
+      * new styles: Feature and FeatureOperator for `<xxx>`, `-<xxx>`, `<xxx>abc:<yyy>abc`, `<xxx>abc/<yyy>abc`, `<xxx>abc&&def`
+      * don't use black color in Rule
+
+    v5
+      * fix `local x ;`, `x` is a variable not a rule
+      * highlight subrule: `exe x : [ glob *.cpp ]`
+  -->
+  <highlighting>
+    <list name="keywords">
+      <item>break</item>
+      <item>continue</item>
+      <item>else</item>
+    </list>
+    <list name="keywordIf">
+      <item>if</item>
+      <item>while</item>
+    </list>
+    <list name="keywordAcceptRule">
+      <item>include</item>
+      <item>return</item>
+    </list>
+    <list name="keywordClass"><item>class</item></list>
+    <list name="keywordModule"><item>module</item></list>
+    <list name="keywordSwitch"><item>switch</item></list>
+    <list name="keywordActions"><item>actions</item></list>
+    <list name="keywordRule"><item>rule</item></list>
+    <list name="keywordFor"><item>for</item></list>
+    <list name="keywordOn"><item>on</item></list>
+    <list name="keywordReturn"><item>return</item></list>
+    <list name="keywordIn"><item>in</item></list>
+    <list name="keywordCase"><item>case</item></list>
+    <list name="keywordLocal"><item>local</item></list>
+
+    <list name="actionAttribute">
+      <item>existing</item>
+      <item>ignore</item>
+      <item>piecemeal</item>
+      <item>quietly</item>
+      <item>together</item>
+      <item>updated</item>
+    </list>
+    <list name="actionAttributeBind">
+      <item>bind</item>
+    </list>
+
+    <list name="onTarget"><item>target</item></list>
+
+    <list name="features">
+      <item>&lt;address-model&gt;</item>
+      <item>&lt;address-sanitizer&gt;</item>
+      <item>&lt;allow-system-cflags&gt;</item>
+      <item>&lt;allow-system-libs&gt;</item>
+      <item>&lt;architecture&gt;</item>
+      <item>&lt;archiver&gt;</item>
+      <item>&lt;asciidoctor-attribute&gt;</item>
+      <item>&lt;asciidoctor-backend&gt;</item>
+      <item>&lt;asciidoctor-doctype&gt;</item>
+      <item>&lt;assembler&gt;</item>
+      <item>&lt;boostbook&gt;</item>
+      <item>&lt;build&gt;</item>
+      <item>&lt;build-name&gt;</item>
+      <item>&lt;c++-template-depth&gt;</item>
+      <item>&lt;catalog&gt;</item>
+      <item>&lt;cflags&gt;</item>
+      <item>&lt;compileflags&gt;</item>
+      <item>&lt;compiler&gt;</item>
+      <item>&lt;compiler-filter&gt;</item>
+      <item>&lt;cxxflags&gt;</item>
+      <item>&lt;debug-symbols&gt;</item>
+      <item>&lt;def-file&gt;</item>
+      <item>&lt;define&gt;</item>
+      <item>&lt;dll-path&gt;</item>
+      <item>&lt;doxygen:param&gt;</item>
+      <item>&lt;doxygen:xml-imagedir&gt;</item>
+      <item>&lt;embed-manifest&gt;</item>
+      <item>&lt;embed-manifest-file&gt;</item>
+      <item>&lt;file&gt;</item>
+      <item>&lt;format&gt;</item>
+      <item>&lt;hardcode-dll-paths&gt;</item>
+      <item>&lt;idl-compiler&gt;</item>
+      <item>&lt;implicit-dependency&gt;</item>
+      <item>&lt;import&gt;</item>
+      <item>&lt;include&gt;</item>
+      <item>&lt;includes&gt;</item>
+      <item>&lt;inlining&gt;</item>
+      <item>&lt;install-dependencies&gt;</item>
+      <item>&lt;install-source-root&gt;</item>
+      <item>&lt;install-type&gt;</item>
+      <item>&lt;instruction-set&gt;</item>
+      <item>&lt;libdir&gt;</item>
+      <item>&lt;library&gt;</item>
+      <item>&lt;link&gt;</item>
+      <item>&lt;linker&gt;</item>
+      <item>&lt;linkflags&gt;</item>
+      <item>&lt;local-visibility&gt;</item>
+      <item>&lt;location&gt;</item>
+      <item>&lt;location-prefix&gt;</item>
+      <item>&lt;mc-compiler&gt;</item>
+      <item>&lt;name&gt;</item>
+      <item>&lt;optimization&gt;</item>
+      <item>&lt;parallelism&gt;</item>
+      <item>&lt;path&gt;</item>
+      <item>&lt;pkg-config&gt;</item>
+      <item>&lt;pkg-config-define&gt;</item>
+      <item>&lt;prefix&gt;</item>
+      <item>&lt;profiling&gt;</item>
+      <item>&lt;ranlib&gt;</item>
+      <item>&lt;rc&gt;</item>
+      <item>&lt;rc-type&gt;</item>
+      <item>&lt;reftitle&gt;</item>
+      <item>&lt;relevant&gt;</item>
+      <item>&lt;resource-compiler&gt;</item>
+      <item>&lt;root&gt;</item>
+      <item>&lt;runtime-debugging&gt;</item>
+      <item>&lt;runtime-link&gt;</item>
+      <item>&lt;sass-line-numbers&gt;</item>
+      <item>&lt;sass-style&gt;</item>
+      <item>&lt;search&gt;</item>
+      <item>&lt;setup&gt;</item>
+      <item>&lt;setup-amd64&gt;</item>
+      <item>&lt;setup-i386&gt;</item>
+      <item>&lt;setup-ia64&gt;</item>
+      <item>&lt;source&gt;</item>
+      <item>&lt;sysroot&gt;</item>
+      <item>&lt;target-os&gt;</item>
+      <item>&lt;testing.arg&gt;</item>
+      <item>&lt;testing.launcher&gt;</item>
+      <item>&lt;thread-sanitizer&gt;</item>
+      <item>&lt;threading&gt;</item>
+      <item>&lt;toolset&gt;</item>
+      <item>&lt;undefined-sanitizer&gt;</item>
+      <item>&lt;use&gt;</item>
+      <item>&lt;variable&gt;</item>
+      <item>&lt;variant&gt;</item>
+      <item>&lt;verbatim-options&gt;</item>
+      <item>&lt;version&gt;</item>
+      <item>&lt;visibility&gt;</item>
+      <item>&lt;warnings&gt;</item>
+      <item>&lt;warnings-as-errors&gt;</item>
+      <item>&lt;xsl:param&gt;</item>
+      <item>&lt;xsl:path&gt;</item>
+      <item>&lt;xslt&gt;</item>
+      <item>&lt;xslt-dir&gt;</item>
+    </list>
+
+    <contexts>
+
+      <context attribute="Normal" lineEndContext="#stay" name="Normal">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Error" context="#stay" String="}" endRegion="block"/>
+        <IncludeRules context="Statement"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="Block">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="#pop" String="}" endRegion="block"/>
+        <IncludeRules context="Statement"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="Statement">
+        <IncludeRules context="Preprocess"/>
+        <keyword attribute="Keyword" context="ActionDefinition" String="keywordActions"/>
+        <keyword attribute="Keyword" context="RuleDefinition" String="keywordRule"/>
+        <keyword attribute="Keyword" context="ForStatement" String="keywordFor"/>
+        <keyword attribute="Keyword" context="IfStatement" String="keywordIf"/>
+        <keyword attribute="Keyword" context="Rule" String="keywordAcceptRule"/>
+        <keyword attribute="Keyword" context="OnPreStment" String="keywordOn"/>
+        <keyword attribute="Keyword" context="SwitchStatement" String="keywordSwitch"/>
+        <keyword attribute="Keyword" context="ClassStatement" String="keywordClass"/>
+        <keyword attribute="Keyword" context="ModuleStatement" String="keywordModule"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Keyword" context="Local" String="keywordLocal"/>
+        <WordDetect attribute="Operator" context="Block" String="{" beginRegion="block"/>
+        <RegExpr attribute="VarAssign" context="Assignment" String="[^\t ]+[\t ]+(?=([+?]?=|on|default)([\t ]|$))" />
+        <RegExpr attribute="Rule" context="Rule" String="([^\t ][^\t ]+|[^{}\t ])"/>
+      </context>
+
+      <!-- General instructions -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="Rule">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="#stay" String=":"/>
+        <WordDetect attribute="Operator" context="#pop" String=";"/>
+        <IncludeRules context="ValueIdentifier"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="ValueIdentifier">
+        <DetectChar attribute="Feature" context="Feature" char="&lt;"/>
+        <RegExpr attribute="FeatureOperator" context="#stay" String="-(?=&lt;)"/>
+        <RegExpr attribute="Normal" context="#stay" String="([^\t $&amp;&quot;\\]+|\$(?!\()|&amp;(?!&amp;)|\\.)+"/>
+        <!-- auto-completion only -->
+        <keyword attribute="Feature" context="#stay" String="features"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#pop" name="Feature" fallthrough="true" fallthroughContext="#pop">
+        <AnyChar attribute="Error" context="#pop" String="&#9; " />
+        <DetectChar attribute="Feature" context="#pop!Property" char=">"/>
+        <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <RegExpr attribute="Feature" context="#stay" String="([^\t $>&quot;#\\]+|\$(?!\()|\\.)+"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#pop" name="Property" fallthrough="true" fallthroughContext="#pop">
+        <AnyChar attribute="Normal" context="#pop" String="&#9; " />
+        <Detect2Chars attribute="FeatureOperator" context="#pop" char="&amp;" char1="&amp;"/>
+        <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <RegExpr attribute="FeatureOperator" context="#pop!PropertyFeature" String="[:/,](?=[&lt;\t ]|$)"/>
+        <RegExpr attribute="Normal" context="#stay" String="([^\t $:&amp;&quot;:/,#\\]+|\$(?!\()|&amp;(?!&amp;)|[:/,](?!&lt;)|\\.)+"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#pop" name="PropertyFeature" fallthrough="true" fallthroughContext="#pop">
+        <DetectChar attribute="Feature" context="#pop!Feature" char="&lt;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="OnPreStment" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword attribute="Keyword" context="OnTargetPreStment" String="onTarget"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="OnTargetPreStment" fallthrough="true" fallthroughContext="#pop">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="#stay" String=":"/>
+        <WordDetect attribute="Operator" context="#pop#pop" String=";"/>
+        <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="ClassStatement">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="#pop!ClassStatement2" String="{" beginRegion="block"/>
+        <WordDetect attribute="Operator" context="#stay" String=":"/>
+        <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="ModuleStatement">
+        <DetectSpaces/>
+        <RegExpr attribute="Normal" context="#pop" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="ClassStatement2">
+        <DetectSpaces attribute="Normal"/>
+        <Detect2Chars attribute="CommentTitle" context="CommentTitle" char="#" char1="#"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <WordDetect attribute="Operator" context="#pop" String="}" endRegion="block"/>
+        <keyword attribute="Keyword" context="MethodDefinition" String="keywordRule"/>
+        <RegExpr attribute="Error" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="MethodDefinition">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Error" context="#stay" String=":"/>
+        <WordDetect attribute="Operator" context="MethodDefinition2" String="{" beginRegion="block"/>
+        <RegExpr attribute="Rule" context="VarnameList" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="MethodDefinition2">
+        <DetectSpaces/>
+        <WordDetect attribute="Operator" context="#pop#pop" String="}" endRegion="block"/>
+        <IncludeRules context="Statement"/>
+      </context>
+
+      <!-- Assignment -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="Assignment">
+        <DetectChar attribute="Operator" context="Assignment2" char="="/>
+        <Detect2Chars attribute="Operator" context="Assignment2" char="+" char1="="/>
+        <Detect2Chars attribute="Operator" context="Assignment2" char="?" char1="="/>
+        <Detect2Chars attribute="Operator" context="AssignmentOn" char="o" char1="n"/>
+        <StringDetect attribute="Keyword" context="AssignmentDefault" String="default"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="Assignment2">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="#pop#pop" String=";"/>
+        <IncludeRules context="ValueIdentifier"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="AssignmentOn">
+        <IncludeRules context="Preprocess"/>
+        <DetectChar attribute="Operator" context="#pop!Assignment2" char="="/>
+        <Detect2Chars attribute="Operator" context="#pop!Assignment2" char="+" char1="="/>
+        <Detect2Chars attribute="Operator" context="#pop!Assignment2" char="?" char1="="/>
+        <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#stay" name="AssignmentDefault">
+        <DetectSpaces attribute="Normal"/>
+        <DetectChar attribute="Operator" context="#pop!Assignment2" char="="/>
+      </context>
+
+      <!-- Sub statements -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="SubStatement" fallthrough="true" fallthroughContext="SubRule">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Keyword" context="OnSubStatement" char="o" char1="n"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="OnSubStatement" fallthrough="true" fallthroughContext="OnSubStatement2">
+        <DetectSpaces/>
+        <keyword attribute="Keyword" context="#pop!SubRule" String="onTarget"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="OnSubStatement2">
+        <IncludeRules context="Preprocess"/>
+        <keyword attribute="Keyword" context="#stay" String="keywordReturn"/>
+        <WordDetect attribute="Operator" context="#stay" String=":"/>
+        <WordDetect attribute="Operator" context="#pop#pop#pop" String="]"/>
+        <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="SubRule" fallthrough="true" fallthroughContext="#pop!SubRuleParam">
+        <DetectSpaces/>
+        <RegExpr attribute="Rule" context="#pop!SubRuleParam" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="SubRuleParam">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="#stay" String=":"/>
+        <WordDetect attribute="Operator" context="#pop#pop" String="]"/>
+        <RegExpr attribute="Feature" context="Property" String="&lt;[^\t >]+>"/>
+        <!-- auto-completion only -->
+        <keyword attribute="Feature" context="#stay" String="features"/>
+      </context>
+
+      <!-- Actions, Rules definitions -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="ActionDefinition">
+        <IncludeRules context="Preprocess"/>
+        <keyword attribute="Error" context="#stay" String="actionAttributeBind"/>
+        <keyword attribute="actionAttribute" context="#stay" String="actionAttribute"/>
+        <WordDetect attribute="Operator" context="ActionBody" String="{" beginRegion="block"/>
+        <RegExpr attribute="Action" context="ActionDefinitionFull" String="&ident;"/>
+        <DetectSpaces attribute="Normal"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#stay" name="ActionDefinitionFull">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="#pop" String="{" lookAhead="true"/>
+        <keyword attribute="actionAttribute" context="ActionDefinitionBind" String="actionAttributeBind"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="ActionDefinitionBind">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="#pop" String="{" lookAhead="true"/>
+        <RegExpr attribute="Varname" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="ActionText" lineEndContext="#stay" name="ActionBody">
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
+        <WordDetect attribute="Operator" context="#pop#pop" String="}" endRegion="block"/>
+        <IncludeRules context="##Bash"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="RuleDefinition">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Error" context="#stay" String=":"/>
+        <WordDetect attribute="Operator" context="#pop" String="{" lookAhead="true"/>
+        <RegExpr attribute="Rule" context="VarnameList" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="VarnameList">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="VarnameList" String=":"/>
+        <WordDetect attribute="Operator" context="#pop" String="{" lookAhead="true"/>
+        <AnyChar attribute="VariableAttribute" context="#stay" String="?+*"/>
+        <RegExpr attribute="Varname" context="#stay" String="&ident;"/>
+      </context>
+
+      <!-- for, while, if, switch -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="ForStatement" fallthrough="true" fallthroughContext="#pop!ForStatement2">
+        <DetectSpaces/>
+        <keyword attribute="Keyword" context="#pop!ForStatement2" String="keywordLocal"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="ForStatement2">
+        <IncludeRules context="Preprocess"/>
+        <keyword attribute="Operator" context="ForList" String="keywordIn"/>
+        <RegExpr attribute="Varname" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="ForList">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="#pop#pop" String="{" lookAhead="true"/>
+        <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="IfStatement">
+        <IncludeRules context="Preprocess"/>
+        <RegExpr attribute="Operator" context="#stay" String="([=&lt;>!]?=|[&lt;>!()]|&amp;&amp;|\|\||in)(?=[ \t]|$)"/>
+        <WordDetect attribute="Operator" context="#pop" String="{" lookAhead="true"/>
+        <RegExpr attribute="Feature" context="Property" String="&lt;[^\t >]+>"/>
+        <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
+        <!-- auto-completion only -->
+        <keyword attribute="Feature" context="#stay" String="features"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="SwitchStatement">
+        <IncludeRules context="Preprocess"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <WordDetect attribute="Operator" context="#pop!SwitchStatement2" String="{" beginRegion="block"/>
+        <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="SwitchStatement2">
+        <DetectSpaces attribute="Normal"/>
+        <Detect2Chars attribute="CommentTitle" context="CommentTitle" char="#" char1="#"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <WordDetect attribute="Operator" context="#pop" String="}" endRegion="block"/>
+        <keyword attribute="Operator" context="CaseCond" String="keywordCase"/>
+        <RegExpr attribute="Error" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="CaseCond">
+        <DetectSpaces attribute="Normal"/>
+        <Detect2Chars attribute="CommentTitle" context="CommentTitle" char="#" char1="#"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <WordDetect attribute="Operator" context="#pop!CaseStatement" String=":"/>
+        <WordDetect attribute="Error" context="#pop" String=";"/>
+        <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="CaseStatement">
+        <IncludeRules context="Preprocess"/>
+        <WordDetect attribute="Operator" context="#stay" String=":"/>
+        <WordDetect attribute="Operator" context="#pop" String=";"/>
+        <IncludeRules context="ValueIdentifier"/>
+      </context>
+
+      <!-- local -->
+
+      <context attribute="Variable" lineEndContext="#stay" name="Local">
+        <DetectSpaces attribute="Normal"/>
+        <keyword attribute="Keyword" context="#pop!RuleDefinition" String="keywordRule"/>
+        <RegExpr attribute="VarAssign" context="#pop!LocalInit" String="&ident;"/>
+        <WordDetect attribute="Operator" context="#pop" String=";"/>
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="LocalInit" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal"/>
+        <DetectChar attribute="Operator" context="Assignment2" char="="/>
+        <WordDetect attribute="Operator" context="#pop" String=";"/>
+      </context>
+
+      <!-- Variables, Strings, Comments -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="Preprocess">
+        <DetectSpaces attribute="Normal"/>
+        <Detect2Chars attribute="CommentTitle" context="CommentTitle" char="#" char1="#"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <WordDetect attribute="Operator" context="SubStatement" String="["/>
+      </context>
+
+      <context attribute="Variable" lineEndContext="Error" name="Variable">
+        <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
+        <DetectChar attribute="VariableDelimiter" context="#pop" char=")"/>
+        <DetectChar attribute="VariableAttribute" context="VariableRange" char="["/>
+        <DetectChar attribute="VariableAttribute" context="VariableAttribute" char=":"/>
+      </context>
+
+      <context attribute="VariableAttribute" lineEndContext="Error" name="VariableRange">
+        <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
+        <DetectChar attribute="VariableAttribute" context="#pop" char="]"/>
+      </context>
+
+      <context attribute="VariableAttribute" lineEndContext="Error" name="VariableAttribute">
+        <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
+        <DetectChar attribute="Variable" context="#pop" char=")" lookAhead="true"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <DetectSpaces/>
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier/>
+      </context>
+
+      <context attribute="CommentTitle" lineEndContext="#pop" name="CommentTitle">
+        <IncludeRules context="Comment"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="String">
+        <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
+        <Detect2Chars attribute="EscapeSeq" context="#stay" char="\" char1="&quot;"/>
+        <DetectChar attribute="EscapeSeq" context="#stay" char="\"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <!-- Error -->
+
+      <context attribute="Error" lineEndContext="#stay" name="Error"/>
+
+    </contexts>
+    <itemDatas>
+      <!-- action definition (shell script) -->
+      <itemData name="actionAttribute" defStyleNum="dsAttribute"/>
+      <itemData name="ActionText" defStyleNum="dsNormal"/>
+      <!-- rule / action call -->
+      <itemData name="Rule" defStyleNum="dsFunction"/>
+      <itemData name="Action" defStyleNum="dsNormal"/>
+      <!-- variables with attributes -->
+      <itemData name="Variable" defStyleNum="dsVariable"/>
+      <itemData name="VariableDelimiter" defStyleNum="dsOperator"/>
+      <itemData name="VariableAttribute" defStyleNum="dsAttribute"/>
+      <itemData name="VarAssign" defStyleNum="dsVariable"/>
+      <itemData name="Varname" defStyleNum="dsVariable"/>
+      <!-- common -->
+      <itemData name="Normal" defStyleNum="dsNormal"/>
+      <itemData name="Feature" defStyleNum="dsBuiltIn"/>
+      <itemData name="FeatureOperator" defStyleNum="dsOperator" bold="1"/>
+      <itemData name="Operator" defStyleNum="dsOperator" bold="1"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="CommentTitle" defStyleNum="dsComment" bold="1"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="EscapeSeq" defStyleNum="dsSpecialChar"/>
+      <itemData name="Error" defStyleNum="dsError"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+    <keywords weakDeliminator=":;{}()[].!+,-&lt;=&gt;%&amp;/?^|~\*," additionalDeliminator=" 	"/>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

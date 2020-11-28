@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+  <!ENTITY file  "(====|\*\*\*|\-\-\-|diff|Only in .*:).*$">
+  <!ENTITY chunk "(\@\@|\d).*$">
+  <!ENTITY csep  "(\+\+\+|\-\-\-).*$">
+  <!ENTITY index  "Index:.*">
+]>
+<!--
+    2006-08-02: 1.10 Matthew Woehlke <mw_triad@sourceforge.net>
+      Added folding. Context diff changes are now identified as old/new (using
+      seperate attributes). Recognize 'Only in' from 'diff -r' output.
+      There is currently a bug (KATE limitation?) where regions may sometimes
+      pick up one line too many.
+    2008-02-13: 1.11 Eduardo Robles Elvira <edulix AT gmail DOT com>
+     Fixed folding.
+-->
+<language name="Diff" version="4" kateversion="5.0" section="Other" extensions="*.diff;*patch" mimetype="text/x-patch">
+
+  <highlighting>
+
+    <contexts>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <RegExpr attribute="Header" context="Chunk" String="&chunk;" beginRegion="chunk" column="0"/>
+        <RegExpr attribute="Header" context="RChunk" String="\*+$" beginRegion="chunk" column="0"/>
+        <RegExpr attribute="File" context="#stay" String="Only in .*:.*$" column="0"/>
+        <RegExpr attribute="File" context="RFile" String="diff.*$" beginRegion="chunk" column="0"/>
+        <RegExpr attribute="File" context="#stay" String="====.*$" column="0"/>
+        <RegExpr attribute="File" context="File" String="(\*\*\*|\-\-\-).*$" beginRegion="chunk" column="0"/>
+        <IncludeRules context="FindDiff"/>
+        <DetectChar attribute="Changed line (old)" context="ChangedOld" char="!" column="0"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindDiff">
+        <RegExpr attribute="File" context="#stay" String="\-\-\-.*$" column="0"/>
+        <RegExpr attribute="Header" context="#stay" String="&csep;" column="0"/>
+        <AnyChar attribute="Added line" context="Added" String="+&gt;" column="0"/>
+        <AnyChar attribute="Removed line" context="Removed" String="-&lt;" column="0"/>
+      </context>
+
+      <!-- block contexts -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="File">
+        <IncludeRules context="FindDiff"/>
+        <RegExpr attribute="Header" context="ChunkInFile" String="&chunk;" beginRegion="chunk" column="0"/>
+        <RegExpr attribute="Header" context="RChunkInFile" String="\*+$" beginRegion="chunk" column="0"/>
+        <RegExpr attribute="File" context="#pop" String="&file;" endRegion="chunk" column="0"/>
+        <DetectChar attribute="Changed line (old)" context="ChangedOld" char="!" column="0"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="Chunk">
+        <IncludeRules context="FindDiff"/>
+        <RegExpr attribute="Header" context="#pop" String="&chunk;" endRegion="chunk" lookAhead="true" column="0"/>
+        <DetectChar attribute="Changed line (old)" context="ChangedOld" char="!" column="0"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="ChunkInFile">
+        <IncludeRules context="FindDiff"/>
+        <RegExpr attribute="Header" context="#pop" String="&chunk;" endRegion="chunk" lookAhead="true" column="0"/>
+        <RegExpr attribute="Normal Text" context="#pop" String="&index;" endRegion="chunk" column="0"/>
+        <RegExpr attribute="File" context="#pop" String="&file;" endRegion="chunk" lookAhead="true" column="0"/>
+        <DetectChar attribute="Changed line (old)" context="ChangedOld" char="!" column="0"/>
+      </context>
+
+      <!-- block contexts (diff -r) -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="RFile">
+        <RegExpr attribute="File" context="#pop" String="(diff|Only in .*:).*$" endRegion="chunk" lookAhead="true" column="0"/>
+        <RegExpr attribute="Header" context="#stay" String="&file;" column="0"/>
+        <RegExpr attribute="Header" context="RChunkInFile" String="\*+$" beginRegion="chunk" column="0"/>
+        <IncludeRules context="File"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="RChunk">
+        <RegExpr attribute="Header" context="#stay" String="\*\*\* .* \*\*\*\*$" column="0"/>
+        <RegExpr attribute="Header" context="RChunkNew" String="\-\-\- .* \-\-\-\-$" column="0"/>
+        <IncludeRules context="Chunk"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="RChunkInFile">
+        <RegExpr attribute="Header" context="#stay" String="\*\*\* .* \*\*\*\*$" column="0"/>
+        <RegExpr attribute="Header" context="RChunkInFileNew" String="\-\-\- .* \-\-\-\-$" column="0"/>
+        <IncludeRules context="ChunkInFile"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="RChunkNew">
+        <RegExpr attribute="Header" context="#pop#pop" String="&chunk;" lookAhead="true" column="0"/>
+        <DetectChar attribute="Changed line (new)" context="ChangedNew" char="!" column="0"/>
+        <IncludeRules context="FindDiff"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="RChunkInFileNew">
+        <RegExpr attribute="Header" context="#pop#pop" String="&chunk;" lookAhead="true" column="0"/>
+        <RegExpr attribute="File" context="#pop#pop" String="&file;" endRegion="chunk" lookAhead="true" column="0"/>
+        <DetectChar attribute="Changed line (new)" context="ChangedNew" char="!" column="0"/>
+        <IncludeRules context="FindDiff"/>
+      </context>
+
+      <!-- line contexts -->
+      <context attribute="Removed line" lineEndContext="#pop" name="Removed"/>
+      <context attribute="Added line" lineEndContext="#pop" name="Added"/>
+      <context attribute="Changed line (old)" lineEndContext="#pop" name="ChangedOld"/>
+      <context attribute="Changed line (new)" lineEndContext="#pop" name="ChangedNew"/>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="File"  defStyleNum="dsKeyword"/>
+      <itemData name="Header"  defStyleNum="dsDataType"/>
+      <itemData name="Removed line"  defStyleNum="dsString" />
+      <itemData name="Added line"  defStyleNum="dsVariable"/>
+      <itemData name="Changed line (old)"  defStyleNum="dsString"/>
+      <itemData name="Changed line (new)"  defStyleNum="dsVariable"/>
+    </itemDatas>
+
+  </highlighting>
+
+</language>

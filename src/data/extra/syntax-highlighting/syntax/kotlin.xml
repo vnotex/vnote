@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- kotlin language syntax http://kotlinlang.org -->
+<language name="Kotlin" version="5" kateversion="5.0" section="Sources" extensions="*.kt;*.kts" license="LGPLv2+" author="Sergey Mashkov (sergey.mashkov@jetbrains.com)" style="cstyle" indenter="cstyle">
+    <highlighting>
+        <list name="keywords">
+            <item>package</item>
+            <item>import</item>
+
+            <item>sealed</item>
+            <item>data</item>
+            <item>class</item>
+            <item>enum</item>
+            <item>interface</item>
+            <item>companion</item>
+            <item>object</item>
+
+            <item>private</item>
+            <item>public</item>
+            <item>protected</item>
+            <item>internal</item>
+            <item>open</item>
+            <item>final</item>
+
+            <item>get</item>
+            <item>set</item>
+            <item>fun</item>
+            <item>var</item>
+            <item>val</item>
+            <item>constructor</item>
+
+            <item>inline</item>
+            <item>reified</item>
+            <item>crossinline</item>
+            <item>tailrec</item>
+
+            <item>in</item>
+            <item>out</item>
+            <item>is</item>
+            <item>as</item>
+            <item>by</item>
+            <item>where</item>
+
+            <item>vararg</item>
+            <item>get</item>
+            <item>set</item>
+
+            <item>return</item>
+            <item>throw</item>
+
+            <item>typealias</item>
+            <item>typeof</item>
+            <item>override</item>
+            <item>infix</item>
+            <item>operator</item>
+        </list>
+        <list name="controlFlowKeyword">
+            <item>if</item>
+            <item>else</item>
+            <item>when</item>
+
+            <item>for</item>
+            <item>while</item>
+            <item>do</item>
+
+            <item>try</item>
+            <item>catch</item>
+            <item>finally</item>
+
+            <item>continue</item>
+            <item>break</item>
+            <item>yield</item>
+        </list>
+        <list name="predeclared">
+            <item>this</item>
+            <item>super</item>
+            <item>null</item>
+            <item>true</item>
+            <item>false</item>
+        </list>
+        <list name="types">
+            <item>Unit</item>
+            <item>Nothing</item>
+
+            <item>String</item>
+            <item>Char</item>
+
+            <item>Int</item>
+            <item>Long</item>
+            <item>Byte</item>
+            <item>Short</item>
+            <item>Float</item>
+            <item>Double</item>
+
+            <item>Boolean</item>
+        </list>
+
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <RegExpr attribute="Keyword" context="Imports" String="\b(package|import)\b"/>
+                <RegExpr attribute="Keyword" context="FunctionDeclaration" String="\bfun\b"/>
+                <RegExpr attribute="Keyword" context="TypeDeclaration" String="\b(object|class|interface)\b"/>
+                <RegExpr attribute="Keyword" context="VariableDeclaration" String="\b(val|var)\b"/>
+
+                <keyword attribute="Keyword" context="#stay" String="predeclared"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="ControlFlowKeyword" context="#stay" String="controlFlowKeyword"/>
+                <keyword attribute="Keyword" context="#stay" String="types"/>
+
+                <StringDetect attribute="String" String="&quot;&quot;&quot;" context="MultiLineDoubleString" beginRegion="MultiLineString"/>
+                <DetectChar attribute="String" context="String" char="&quot;"/>
+                <DetectChar attribute="Char" context="Char" char="'"/>
+
+                <Detect2Chars attribute="Comment" context="CommentSingleLine" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="CommentMultiline" char="/" char1="*" beginRegion="Comment"/>
+
+                <Float attribute="Float" context="Float Suffixes"/>
+                <Int attribute="Decimal" context="Int Suffixes"/>
+
+                <RegExpr attribute="Annotation" context="#stay" String="@[_\w][_\w\d]*"/>
+                <RegExpr attribute="TODO" context="#stay" String="TODO\s*\([^)]*\)" />
+                <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+                <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+                <Detect2Chars attribute="Comment" context="CommentSingleLine" char="#" char1="!" />
+            </context>
+
+            <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                <AnyChar String="fF" attribute="Float" context="#pop"/>
+            </context>
+
+            <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#pop" name="Imports">
+                <DetectChar attribute="Symbol" context="#pop" char=";" />
+                <StringDetect attribute="Keyword" context="TypeName" String="as" />
+
+                <RegExpr attribute="Imports" context="#stay" String="\b[_\w][_\w\d]*(\.[_\w][_\w\d]*)*(\.\*)?"/>
+            </context>
+
+            <context name="VariableDeclaration" lineEndContext="#stay" attribute="Normal Text">
+                <DetectIdentifier attribute="Variable" context="#pop" />
+            </context>
+
+            <context name="TypeDeclaration" lineEndContext="#stay" attribute="Normal Text">
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+
+                <DetectChar attribute="Symbol" context="TypeParameters" char="&lt;" />
+                <DetectChar attribute="Symbol" context="Parameters" char="(" />
+                <DetectChar attribute="Symbol" context="SuperTypes" char=":" />
+                <DetectChar attribute="Symbol" context="#pop" char="{" lookAhead="true" />
+            </context>
+
+            <context name="SuperTypes" lineEndContext="#stay" attribute="Normal Text">
+                <keyword attribute="Keyword" context="#pop#pop" String="keywords" lookAhead="true" />
+
+                <DetectChar attribute="Symbol" context="#stay" char="," />
+                <DetectChar attribute="Symbol" context="#pop" char="{" lookAhead="true" />
+                <DetectChar attribute="Symbol" context="Parameters" char="(" />
+                <DetectChar attribute="Symbol" context="TypeParameters" char="&lt;" />
+
+                <RegExpr attribute="Data Type" context="#stay" String="[_\w][_\w\d]*" />
+            </context>
+
+            <context name="FunctionDeclaration" lineEndContext="#stay" attribute="Normal Text">
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <DetectChar attribute="Symbol" context="#stay" char="." />
+                <DetectChar attribute="Symbol" context="Parameters" char="(" />
+                <DetectChar attribute="Symbol" context="TypeParameters" char="&lt;" />
+                <DetectChar attribute="Symbol" context="TypeName" char=":" />
+
+                <AnyChar attribute="Symbol" context="#pop" String="{=" lookAhead="true" />
+
+                <RegExpr attribute="Function" context="#stay" String="[_\w][_\w\d]*" />
+            </context>
+
+            <context name="TypeParameters" lineEndContext="#stay" attribute="Normal Text">
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+
+                <DetectChar attribute="Symbol" context="TypeName" char=":" />
+                <DetectChar attribute="Symbol" context="#stay" char="*" />
+
+                <DetectChar attribute="Symbol" context="#pop" char="&gt;" />
+                <DetectChar attribute="Symbol" context="TypeParameters" char="&lt;" />
+
+                <RegExpr attribute="Data Type" context="#stay" String="[_\w][_\w\d]*[?]?" />
+            </context>
+
+            <context name="Parameters" lineEndContext="#stay" attribute="Normal Text">
+                <keyword attribute="Keyword" context="#stay" String="keywords" />
+                <DetectChar attribute="Symbol" context="#pop" char=")" />
+                <DetectChar attribute="Symbol" context="TypeName" char=":" />
+                <DetectChar attribute="Symbol" context="Expression" char="=" />
+                <RegExpr attribute="Variable" context="#stay" String="[_\w][_\w\d]*" />
+            </context>
+
+            <context name="TypeName" lineEndContext="#stay" attribute="Normal Text">
+                <DetectChar attribute="Symbol" context="#pop" char="*" />
+                <DetectChar attribute="Symbol" context="FunctionType" char="(" />
+                <StringDetect attribute="Symbol" context="#stay" String="-&gt;" />
+                <RegExpr attribute="Data Type" context="#pop" String="[_\w][_\w\d]*[?]?" />
+            </context>
+
+            <context name="FunctionType" lineEndContext="#stay" attribute="Normal Text">
+                <DetectChar attribute="Symbol" context="#pop" char=")" />
+                <RegExpr attribute="Data Type" context="#stay" String="[_\w][_\w\d]*[?]?" />
+                <StringDetect attribute="Symbol" context="#stay" String="-&gt;" />
+                <StringDetect attribute="Symbol" context="#stay" String="," />
+            </context>
+
+            <context name="Expression" lineEndContext="#stay" attribute="Normal Text">
+                <DetectChar attribute="Symbol" context="ExpressionInner" char="(" />
+                <DetectChar attribute="Symbol" context="#pop" char=")" lookAhead="true" />
+
+                <DetectChar attribute="Symbol" context="ExpressionInner" char="{" />
+                <DetectChar attribute="Symbol" context="#pop" char="}" lookAhead="true" />
+
+                <RegExpr attribute="Symbol" context="TypeParameters" String="&lt;\w+" lookAhead="true" />
+
+                <DetectChar attribute="Char" context="Char" char="'"/>
+                <StringDetect attribute="String" String="&quot;&quot;&quot;" context="MultiLineDoubleString" beginRegion="MultiLineString"/>
+                <DetectChar attribute="String" context="String" char="&quot;"/>
+
+                <Detect2Chars attribute="Comment" context="CommentSingleLine" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="CommentMultiline" char="/" char1="*" beginRegion="Comment"/>
+
+                <DetectChar attribute="Symbol" context="#pop" char=","/>
+            </context>
+
+            <context name="ExpressionInner" lineEndContext="#stay" attribute="Normal Text">
+                <DetectChar attribute="Symbol" context="ExpressionInner" char="(" />
+                <DetectChar attribute="Symbol" context="#pop" char=")" />
+
+                <DetectChar attribute="Symbol" context="ExpressionInner" char="{" />
+                <DetectChar attribute="Symbol" context="#pop" char="}" />
+
+                <RegExpr attribute="Symbol" context="TypeParameters" String="&lt;\w+" lookAhead="true" />
+
+                <DetectChar attribute="Char" context="Char" char="'"/>
+                <StringDetect attribute="String" String="&quot;&quot;&quot;" context="MultiLineDoubleString" beginRegion="MultiLineString"/>
+                <DetectChar attribute="String" context="String" char="&quot;"/>
+
+                <Detect2Chars attribute="Comment" context="CommentSingleLine" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="CommentMultiline" char="/" char1="*" beginRegion="Comment"/>
+            </context>
+
+            <context attribute="Char" lineEndContext="#pop" name="Char">
+                <RegExpr attribute="String Char" context="#stay" String="\\u[0-9a-fA-F]{4}"/>
+                <DetectChar attribute="Char" context="#pop" char="'"/>
+            </context>
+            <context attribute="String" lineEndContext="#pop" name="String">
+                <LineContinue attribute="String" context="#stay"/>
+                <HlCStringChar attribute="String Char" context="#stay"/>
+                <RegExpr attribute="String Char" context="#stay" String="\\u[0-9a-fA-F]{4}"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context attribute="String" lineEndContext="#stay" name="MultiLineDoubleString">
+                <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;" endRegion="MultiLineString"/>
+            </context>
+
+            <context attribute="Comment" lineEndContext="#pop" name="CommentSingleLine">
+                <StringDetect attribute="TODO" context="#stay" String="TODO" />
+            </context>
+            <context attribute="Comment" lineEndContext="#stay" name="CommentMultiline">
+                <StringDetect attribute="TODO" context="#stay" String="TODO" />
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+            </context>
+
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+            <itemData name="Keyword"      defStyleNum="dsKeyword"/>
+            <itemData name="ControlFlowKeyword" defStyleNum="dsControlFlow" />
+            <itemData name="Function"     defStyleNum="dsFunction"/>
+            <itemData name="Variable"     defStyleNum="dsVariable"/>
+            <itemData name="Imports"      defStyleNum="dsImport"/>
+            <itemData name="Annotation"   defStyleNum="dsAttribute"/>
+            <itemData name="Data Type"    defStyleNum="dsDataType" bold="true" />
+            <itemData name="Decimal"      defStyleNum="dsDecVal"/>
+            <itemData name="Float"        defStyleNum="dsFloat"/>
+            <itemData name="Char"         defStyleNum="dsChar"/>
+            <itemData name="String"       defStyleNum="dsString"/>
+            <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
+            <itemData name="Comment"      defStyleNum="dsComment"/>
+            <itemData name="Symbol"       defStyleNum="dsNormal"/>
+            <itemData name="TODO"         defStyleNum="dsAlert" />
+    </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="//"/>
+            <comment name="multiLine" start="/*" end="*/"/>
+        </comments>
+        <keywords casesensitive="1"/>
+    </general>
+</language>

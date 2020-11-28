@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Highlighting for Sieve scripts (RFC 5228) and
+     Sieve extensions published at https://www.iana.org/assignments/sieve-extensions/sieve-extensions.xhtml
+-->
+<language
+    name="Sieve"
+    version="6"
+    kateversion="5.0"
+    section="Scripts"
+    extensions="*.siv;*.sieve"
+    mimetype="application/sieve"
+    author="Volker Krause (vkrause@kde.org)"
+    license="MIT">
+    <highlighting>
+        <list name="keyword-list">
+            <item>require</item>
+            <item>if</item>
+            <item>elsif</item>
+            <item>else</item>
+            <item>foreverypart</item>
+            <item>global</item>
+        </list>
+        <list name="action-list">
+            <item>addflag</item>
+            <item>addheader</item>
+            <item>break</item>
+            <item>convert</item>
+            <item>debug_log</item>
+            <item>deleteheader</item>
+            <item>discard</item>
+            <item>enclose</item>
+            <item>ereject</item>
+            <item>error</item>
+            <item>extracttext</item>
+            <item>fileinto</item>
+            <item>include</item>
+            <item>keep</item>
+            <item>notify</item>
+            <item>redirect</item>
+            <item>reject</item>
+            <item>removeflag</item>
+            <item>replace</item>
+            <item>return</item>
+            <item>setflag</item>
+            <item>set</item>
+            <item>stop</item>
+            <item>vacation</item>
+        </list>
+        <list name="test-list">
+            <item>address</item>
+            <item>allof</item>
+            <item>anyof</item>
+            <item>body</item>
+            <item>currentdate</item>
+            <item>date</item>
+            <item>duplicate</item>
+            <item>envelope</item>
+            <item>environment</item>
+            <item>exists</item>
+            <item>false</item>
+            <item>hasflag</item>
+            <item>header</item>
+            <item>ihave</item>
+            <item>mailboxexists</item>
+            <item>metadata</item>
+            <item>metadataexists</item>
+            <item>not</item>
+            <item>notify_method_capability</item>
+            <item>servermetadata</item>
+            <item>servermetadataexists</item>
+            <item>spamtest</item>
+            <item>size</item>
+            <item>string</item>
+            <item>true</item>
+            <item>valid_notify_method</item>
+            <item>virustest</item>
+        </list>
+        <list name="match-type-list">
+            <item>:contains</item>
+            <item>:count</item>
+            <item>:is</item>
+            <item>:matches</item>
+            <item>:regex</item>
+            <item>:value</item>
+        </list>
+
+        <contexts>
+            <context name="normal-context" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="Comment" char="#" context="comment-context"/>
+                <Detect2Chars attribute="Comment" context="multiline-comment-context" char="/" char1="*" beginRegion="CommentRegion"/>
+                <keyword attribute="Keyword" context="#stay" String="keyword-list"/>
+                <keyword attribute="Action" context="#stay" String="action-list"/>
+                <keyword attribute="Test" context="#stay" String="test-list"/>
+                <keyword attribute="Match Type" context="#stay" String="match-type-list"/>
+                <DetectChar context="#stay" char="{" beginRegion="BlockRegion"/>
+                <DetectChar context="#stay" char="}" endRegion="BlockRegion"/>
+                <DetectChar attribute="String" context="string-context" char="&quot;"/>
+                <RegExpr attribute="Decimal" context="#stay" String="\d+[KMG]?"/>
+                <RegExpr attribute="String" context="multiline-string-context" String="text:$" beginRegion="StringRegion"/>
+                <RegExpr attribute="Argument" context="#stay" String=":\w+"/>
+            </context>
+
+            <context name="string-context" attribute="String" lineEndContext="#pop">
+                <LineContinue attribute="String" context="#stay"/>
+                <HlCStringChar attribute="Special Character" context="#stay"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+                <IncludeRules context="common-string-rules"/>
+            </context>
+            <context name="multiline-string-context" attribute="String" lineEndContext="#stay">
+                <RegExpr attribute="String" context="#pop" String="\.$" column="0" endRegion="StringRegion"/>
+                <HlCStringChar attribute="Special Character" context="#stay"/>
+                <IncludeRules context="common-string-rules"/>
+            </context>
+            <context name="common-string-rules" attribute="String" lineEndContext="#stay">
+                <RegExpr attribute="Variable" context="#stay" String="\$\{\w+\}"/>
+                <RegExpr attribute="Special Character" context="#stay" String="\$\{hex:[ 0-9a-f]+}" insensitive="true"/>
+                <RegExpr attribute="Special Character" context="#stay" String="\$\{unicode:[ 0-9a-f]+}" insensitive="true"/>
+            </context>
+
+            <context name="comment-context" lineEndContext="#pop" attribute="Comment">
+                <IncludeRules context="##Alerts"/>
+            </context>
+            <context name="multiline-comment-context" lineEndContext="#stay" attribute="Comment">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="CommentRegion"/>
+                <IncludeRules context="##Alerts"/>
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="String" defStyleNum="dsString" spellChecking="false"/>
+            <itemData name="Special Character" defStyleNum="dsChar" spellChecking="false"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="Action" defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Test" defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="Match Type" defStyleNum="dsExtension" spellChecking="false"/>
+            <itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Argument" defStyleNum="dsOthers" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+
+    <general>
+        <comments>
+            <comment name="multiLine" start="/*" end="*/" region="CommentRegion"/>
+            <comment name="singleLine" start="#"/>
+        </comments>
+        <keywords casesensitive="1" weakDeliminator=":"/>
+    </general>
+</language>

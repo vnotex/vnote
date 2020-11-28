@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Elm" version="1" kateversion="5.0" section="Sources" extensions="*.elm" author="Bonghyun Kim (bonghyun.d.kim@gmail.com)" license="MIT" style="elm">
+  <highlighting>
+    <list name="declarations">
+      <item>type</item>
+      <item>alias</item>
+      <item>port</item>
+    </list>
+    <list name="controlFlows">
+      <item>case</item>
+      <item>of</item>
+      <item>if</item>
+      <item>else</item>
+      <item>then</item>
+    </list>
+    <list name="letExpressions">
+      <item>let</item>
+      <item>in</item>
+    </list>
+    <list name="imports">
+      <item>module</item>
+      <item>exposing</item>
+      <item>import</item>
+      <item>as</item>
+    </list>
+    <list name="infixes">
+      <item>infix</item>
+      <item>left</item>
+      <item>right</item>
+      <item>non</item>
+    </list>
+    <list name="effects">
+      <item>effect</item>
+      <item>where</item>
+      <item>command</item>
+      <item>subscription</item>
+    </list>
+    <contexts>
+      <context attribute="Normal" lineEndContext="#stay" name="code">
+        <Detect2Chars attribute="Comment" context="comments" char="{" char1="-" />
+        <Detect2Chars attribute="Comment" context="comment" char="-" char1="-" />
+        <WordDetect attribute="Comment" context="documentation" String="{-|" />
+
+        <keyword attribute="Keyword"          context="#stay" String="declarations" />
+        <keyword attribute="Keyword"          context="#stay" String="letExpressions" />
+        <keyword attribute="Keyword"          context="#stay" String="effects" />
+        <keyword attribute="Keyword"          context="#stay" String="imports" />
+        <keyword attribute="Keyword"          context="#stay" String="infixes" />
+        <keyword attribute="ControlFlowKeyword"          context="#stay" String="controlFlows" />
+
+        <WordDetect attribute="Import" context="module" String="module" />
+        <WordDetect attribute="Port" context="port" String="port" />
+        <WordDetect attribute="Import" context="import" String="import" />
+
+        <RegExpr attribute="Name"         context="#stay" String="(\b[a-z]\w*|\b_\b)" />
+        <RegExpr attribute="Operator"         context="#stay" String="(-&gt;|::|\/\/|\.\.|&amp;&amp;|\|\||\+\+|\|&gt;|&lt;\||&gt;&gt;|&lt;&lt;|==|\/=|&lt;=|&gt;=)" />
+        <RegExpr attribute="Operator"         context="#stay" String="[+-\/*%=&gt;&lt;^\|!]" />
+        <RegExpr attribute="Operator"         context="#stay" String="[@\#$&amp;~?]" />
+
+        <RegExpr attribute="Type"             context="#stay" String="\b[A-Z][\w]*" />
+
+        <Int        attribute="Decimal" context="#stay" />
+        <RegExpr    attribute="Hex"     context="#stay" String="0x[\da-f]+" insensitive="true" />
+        <RegExpr    attribute="Float"   context="#stay" String="\d+\.\d+(e[+-]?\d+)?" insensitive="true" />
+
+        <RegExpr    attribute="Char"    context="#stay" String="'(.|\\'|\\n|\\r|\\t|\\&quot;|\\\\|\\u\{(10|0?[0-9])[0-9a-fA-F]{4}\})'" />
+        <DetectChar attribute="String"  context="string" char="&quot;" />
+        <RegExpr attribute="String"     context="multilineString" String="&quot;&quot;&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="comment">
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="comments">
+        <Detect2Chars attribute="Comment" context="comments" char="{" char1="-" />
+        <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" />
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="string">
+        <RegExpr attribute="String" context="#stay" String="\\." />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="multilineString">
+        <RegExpr attribute="String" context="#stay" String="\s*" />
+        <RegExpr attribute="String" context="#stay" String="\.*" />
+        <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;" />
+      </context>
+      <context attribute="Normal" lineEndContext="#stay" name="module">
+        <DetectChar attribute="Normal" context="moduleParentheses" char="(" />
+        <keyword attribute="Keyword"          context="#stay" String="imports" />
+        <RegExpr attribute="Name"         context="#stay" String="\b[a-z][\w]*" />
+        <RegExpr attribute="Type"             context="#stay" String="\b[A-Z][\w]*" />
+        <DetectChar attribute="Normal" context="#pop" char=")" />
+      </context>
+      <context attribute="Normal" lineEndContext="#stay" name="moduleParentheses">
+        <DetectChar attribute="Normal" context="moduleParentheses" char="(" />
+        <RegExpr attribute="Name"         context="#stay" String="\b[a-z][\w]*" />
+        <RegExpr attribute="Type"             context="#stay" String="\b[A-Z][\w]*" />
+        <DetectChar attribute="Normal" context="#pop" char=")" />
+      </context>
+      <context attribute="Normal" lineEndContext="#stay" name="port">
+        <WordDetect attribute="Import" context="module" String="imports" />
+      </context>
+      <context attribute="Normal" lineEndContext="#stay" name="import">
+        <DetectChar attribute="Normal" context="moduleParentheses" char="(" />
+        <keyword attribute="Keyword"          context="#stay" String="imports" />
+        <RegExpr attribute="Name"         context="#stay" String="\b[a-z][\w]*" />
+        <RegExpr attribute="Type"             context="#stay" String="\b[A-Z][\w]*" />
+        <DetectChar attribute="Normal" context="#pop" char=")" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="documentation">
+        <WordDetect attribute="Comment" context="#stay" String="@docs" />
+        <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" />
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal"           defStyleNum="dsNormal"   spellChecking="false" />
+      <itemData name="Comment"          defStyleNum="dsComment" />
+
+      <itemData name="Keyword"          defStyleNum="dsKeyword"  spellChecking="false" />
+      <itemData name="ControlFlowKeyword" defStyleNum="dsControlFlow"  spellChecking="false" />
+
+      <itemData name="Name"         defStyleNum="dsFunction"   spellChecking="false" />
+      <itemData name="Port"         defStyleNum="dsNormal"   spellChecking="false" />
+      <itemData name="Import"         defStyleNum="dsImport"   spellChecking="false" />
+      <itemData name="Operator"         defStyleNum="dsOperator" spellChecking="false" />
+      <itemData name="Type"             defStyleNum="dsDataType" spellChecking="false" />
+
+      <itemData name="Decimal"          defStyleNum="dsDecVal"   spellChecking="false" />
+      <itemData name="Hex"          defStyleNum="dsBaseN"   spellChecking="false" />
+      <itemData name="Float"            defStyleNum="dsFloat"    spellChecking="false" />
+      <itemData name="Char"             defStyleNum="dsChar"     spellChecking="false" />
+      <itemData name="String"           defStyleNum="dsString" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <folding indentationsensitive="1"/>
+    <comments>
+      <comment name="singleLine" start="--" />
+      <comment name="multiLine" start="{-" end="-}" />
+    </comments>
+    <keywords casesensitive="1" />
+</general>
+</language>

@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+  SYSTEM 'language.dtd'>
+<!--
+  Elixir syntax highlighting definition for Kate.
+
+  Copyright (C) 2014  by Rubén Caro (ruben.caro.estevez@gmail.com)
+  Copyright (C) 2016  by Boris Egorov (egorov@linux.com)
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Library General Public
+  License as published by the Free Software Foundation; either
+  version 2 of the License, or (at your option) any later version.
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Library General Public License for more details.
+  You should have received a copy of the GNU Library General Public
+  License along with this library; if not, write to the
+  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+  Boston, MA  02110-1301, USA.
+-->
+<!-- Hold the "language" opening tag on a single line, as mentioned in "language.dtd". -->
+<language author="Rubén Caro (ruben.caro.estevez@gmail.com), Boris Egorov (egorov@linux.com)"
+          extensions="*.ex;*.exs;*.eex;*.xml.eex;*.js.eex"
+          indenter="elixir"
+          kateversion="5.53"
+          license="LGPLv2+"
+          mimetype="text/x-elixir"
+          name="Elixir"
+          section="Sources"
+          style="elixir"
+          version="5">
+  <highlighting>
+    <list name="control-flow">
+      <item>catch</item>
+      <item>cond</item>
+      <item>else</item>
+      <item>if</item>
+      <item>raise</item>
+      <item>rescue</item>
+      <item>throw</item>
+      <item>try</item>
+      <item>unless</item>
+    </list>
+    <list name="keywords">
+      <item>do</item>
+      <item>end</item>
+      <item>case</item>
+      <item>bc</item>
+      <item>lc</item>
+      <item>for</item>
+      <item>receive</item>
+      <item>exit</item>
+      <item>after</item>
+      <item>quote</item>
+      <item>unquote</item>
+      <item>super</item>
+      <item>and</item>
+      <item>not</item>
+      <item>or</item>
+      <item>when</item>
+      <item>xor</item>
+      <item>in</item>
+      <item>inlist</item>
+      <item>inbits</item>
+    </list>
+    <list name="pseudo-variables">
+      <item>nil</item>
+      <item>true</item>
+      <item>false</item>
+    </list>
+    <list name="definitions">
+      <item>fn</item>
+      <item>defmodule</item>
+      <item>def</item>
+      <item>defp</item>
+      <item>defprotocol</item>
+      <item>defimpl</item>
+      <item>defrecord</item>
+      <item>defstruct</item>
+      <item>defmacro</item>
+      <item>defmacrop</item>
+      <item>defdelegate</item>
+      <item>defcallback</item>
+      <item>defmacrocallback</item>
+      <item>defexception</item>
+      <item>defoverridable</item>
+    </list>
+    <list name="mixin-macros">
+      <item>import</item>
+      <item>require</item>
+      <item>alias</item>
+      <item>use</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <!-- "shebang" line -->
+        <RegExpr String="#!\/.*" attribute="Keyword" column="0" context="#stay"/>
+
+        <!-- Defined words -->
+        <keyword String="keywords" attribute="Keyword" context="#stay"/>
+        <keyword String="control-flow" attribute="Control Flow" context="#stay"/>
+        <keyword String="definitions" attribute="Definition" context="#stay"/>
+        <keyword String="pseudo-variables" attribute="Pseudo variable" context="#stay"/>
+        <keyword String="mixin-macros" attribute="Mixin macros" context="#stay"/>
+
+        <!-- special-character globals -->
+        <RegExpr String="\b[_A-Z]+[A-Z_0-9]+\b" attribute="Global Constant" context="#stay"/>
+
+        <!-- Generally a module or class name like "File", "MyModule_1", .. -->
+        <RegExpr String="\b[A-Z]+_*([0-9]|[a-z])[_a-zA-Z0-9]*\b" attribute="Constant" context="#stay"/>
+
+        <!-- Numeric values. Note that we have to allow underscores between two digits (thus the creepy regular expressions). -->
+        <RegExpr String="\b\-?0[xX]([0-9a-fA-F]|_[0-9a-fA-F])+" attribute="Hex" context="#stay"/>
+        <RegExpr String="\b\-?0[bB]([01]|_[01])+" attribute="Bin" context="#stay"/>
+        <RegExpr String="\b\-?0[1-7]([0-7]|_[0-7])*" attribute="Octal" context="#stay"/>
+        <RegExpr String="\b\-?[0-9]([0-9]|_[0-9])*\.[0-9]([0-9]|_[0-9])*([eE]\-?[1-9]([0-9]|_[0-9])*(\.[0-9]*)?)?" attribute="Float" context="#stay"/>
+        <RegExpr String="\b\-?[1-9]([0-9]|_[0-9])*\b" attribute="Dec" context="#stay"/>
+        <Int attribute="Dec" context="#stay"/>
+        <HlCChar attribute="Char" context="#stay"/>
+        <DetectChar attribute="Operator" char="." context="#stay"/>
+        <Detect2Chars attribute="Operator" char="&amp;" char1="&amp;" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="|" char1="|" context="#stay"/>
+        <RegExpr String="\s[\?\:\%]\s" attribute="Operator" context="#stay"/>
+        <RegExpr String="[|&amp;&lt;&gt;\^\+*~\-=/]+" attribute="Operator" context="#stay"/>
+        <!-- regexp hack -->
+        <RegExpr String="\s!" attribute="Operator" context="#stay"/>
+        <RegExpr String="/=\s" attribute="Operator" context="#stay" insensitive="0"/>
+        <StringDetect String="%=" attribute="Operator" context="#stay" insensitive="0"/>
+        <RegExpr String=":(@{1,2}|\$)?[a-zA-Z_][a-zA-Z0-9_]*[=?!]?" attribute="Symbol" context="#stay"/>
+        <RegExpr String="\b(@{1,2}|\$)?[a-zA-Z_][a-zA-Z0-9_]*[=?!]?:" attribute="Symbol" context="#stay"/>
+        <RegExpr String=":\[\]=?" attribute="Symbol" context="#stay"/>
+        <RegExpr String="@(module)?doc\s+&quot;&quot;&quot;" attribute="Attribute" context="Documentation"/>
+        <StringDetect String="&quot;&quot;&quot;" attribute="String" context="Triple Quoted String"/>
+        <DetectChar attribute="String" char="&quot;" context="Quoted String"/>
+        <DetectChar attribute="Raw String" char="'" context="Apostrophed String"/>
+        <StringDetect String="?#" attribute="Normal Text" context="#stay"/>
+        <DetectChar attribute="Comment" char="#" context="General Comment"/>
+        <DetectChar attribute="Delimiter" char="[" context="#stay"/>
+        <DetectChar attribute="Delimiter" char="]" context="#stay"/>
+        <RegExpr String="@[a-zA-Z_0-9]+" attribute="Attribute" context="#stay"/>
+        <!-- handle the different regular expression formats -->
+        <DetectChar attribute="Normal Text" char=")" context="#stay"/>
+        <DetectIdentifier attribute="Normal Text" context="#stay"/>
+      </context>
+      <context attribute="DocComment" lineEndContext="#stay" name="Documentation">
+        <StringDetect String="&quot;&quot;&quot;" attribute="Attribute" context="#pop"/>
+        <RegExpr attribute="MarkdownHead" String="^\s*#+\s.*[#]?$"/>
+        <RegExpr attribute="MarkdownBullet" String="^\s*[\*\+\-]\s"/>
+        <RegExpr attribute="MarkdownNumlist" String="^\s*[\d]+\.\s"/>
+        <RegExpr attribute="MarkdownCode" context="Markdown Code" String="^\s*\`\`\`\s*$"/>
+        <DetectSpaces />
+        <IncludeRules context="Normal Text##Markdown"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Triple Quoted String">
+        <StringDetect String="&quot;&quot;&quot;" attribute="String" context="#pop"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Quoted String">
+        <StringDetect String="\\" attribute="String" context="#stay"/>
+        <RegExpr String="\\\&quot;" attribute="String" context="#stay"/>
+        <RegExpr String="#@{1,2}" attribute="Substitution" context="Short Subst"/>
+        <Detect2Chars attribute="Substitution" char="#" char1="{" context="Subst"/>
+        <DetectChar attribute="String" char="&quot;" context="#pop"/>
+      </context>
+      <context attribute="Raw String" lineEndContext="#stay" name="Apostrophed String">
+        <StringDetect String="\\" attribute="String" context="#stay"/>
+        <RegExpr String="\\\'" attribute="String" context="#stay"/>
+        <DetectChar attribute="Raw String" char="'" context="#pop"/>
+      </context>
+      <!-- Substitutions can be nested -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="Subst">
+        <DetectChar attribute="Substitution" char="}" context="#pop"/>
+        <!-- Highlight substitution as code. -->
+        <IncludeRules context="Normal"/>
+      </context>
+      <context attribute="Substitution" lineEndContext="#pop" name="Short Subst">
+        <!-- Check for e.g.: "#@var#@@xy" -->
+        <RegExpr String="#@{1,2}" attribute="Substitution" context="#stay"/>
+        <RegExpr String="\w(?!\w)" attribute="Substitution" context="#pop"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="General Comment">
+      </context>
+      <context attribute="MarkdownCode" lineEndContext="#stay" name="Markdown Code">
+        <RegExpr String="^\s*\`\`\`\s*$" attribute="MarkdownCode" context="#pop"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Global Constant" defStyleNum="dsConstant"/>
+      <itemData name="Constant" defStyleNum="dsConstant"/>
+      <itemData defStyleNum="dsNormal" name="Normal Text"/>
+      <itemData defStyleNum="dsKeyword" name="Keyword"/>
+      <itemData defStyleNum="dsControlFlow" name="Control Flow"/>
+      <itemData defStyleNum="dsKeyword" name="Definition"/>
+      <itemData defStyleNum="dsImport" name="Mixin macros"/>
+      <itemData defStyleNum="dsConstant" name="Pseudo variable"/>
+      <itemData defStyleNum="dsDecVal" name="Dec"/>
+      <itemData defStyleNum="dsFloat" name="Float"/>
+      <itemData defStyleNum="dsChar" name="Char"/>
+      <itemData defStyleNum="dsBaseN" name="Octal"/>
+      <itemData defStyleNum="dsBaseN" name="Hex"/>
+      <itemData defStyleNum="dsBaseN" name="Bin"/>
+      <itemData defStyleNum="dsVariable" name="Symbol"/>
+      <itemData defStyleNum="dsString" name="String"/>
+      <itemData defStyleNum="dsVerbatimString" name="Raw String"/>
+      <itemData defStyleNum="dsOthers" name="Substitution"/>
+      <itemData defStyleNum="dsOthers" name="Attribute"/>
+      <itemData defStyleNum="dsComment" name="Comment"/>
+      <itemData defStyleNum="dsComment" name="DocComment"/>
+      <!-- use these to mark errors and alerts things -->
+      <itemData color="#FF9FEC" defStyleNum="dsNormal" name="Delimiter"/>
+      <itemData defStyleNum="dsOperator" name="Operator"/>
+      <itemData name="MarkdownHead" defStyleNum="dsFunction" bold="true"/>
+      <itemData name="MarkdownBullet" defStyleNum="dsFunction"/>
+      <itemData name="MarkdownNumlist" defStyleNum="dsFunction"/>
+      <itemData name="MarkdownCode" defStyleNum="dsFunction"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="!?"/>
+  </general>
+</language>

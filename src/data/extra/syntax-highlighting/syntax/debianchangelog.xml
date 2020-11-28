@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Debian Changelog" version="8" kateversion="2.4" section="Other" extensions="" mimetype="">
+    <highlighting>
+        <list name="keywords">
+            <item>urgency</item>
+        </list>
+
+        <list name="distributions">
+            <item>oldstable</item>
+            <item>oldstable-security</item>
+            <item>oldstable-proposed-updates</item>
+            <item>stable</item>
+            <item>stable-security</item>
+            <item>stable-proposed-updates</item>
+            <item>testing</item>
+            <item>testing-security</item>
+            <item>testing-proposed-updates</item>
+            <item>frozen</item>
+            <item>unstable</item>
+            <item>sid</item>
+            <item>experimental</item>
+            <item>UNRELEASED</item>
+            <!-- Debian releases -->
+            <item>sarge</item>
+            <item>sarge-backports</item>
+            <item>sarge-volatile</item>
+            <item>etch</item>
+            <item>etch-backports</item>
+            <item>etch-volatile</item>
+            <item>lenny</item>
+            <item>lenny-backports</item>
+            <item>lenny-backports-sloppy</item>
+            <item>lenny-volatile</item>
+            <item>squeeze</item>
+            <item>squeeze-backports</item>
+            <item>squeeze-backports-sloppy</item>
+            <item>squeeze-volatile</item>
+            <item>wheezy</item>
+            <item>wheezy-backports</item>
+            <item>wheezy-backports-sloppy</item>
+            <item>jessie</item>
+            <item>jessie-backports</item>
+            <item>jessie-backports-sloppy</item>
+            <item>stretch</item>
+            <item>stretch-backports</item>
+            <item>stretch-backports-sloppy</item>
+            <item>buster</item>
+            <item>buster-backports</item>
+            <item>buster-backports-sloppy</item>
+            <item>bullseye</item>
+            <item>bullseye-backports</item>
+            <item>bullseye-backports-sloppy</item>
+            <item>bookworm</item>
+            <item>bookworm-backports</item>
+            <item>bookworm-backports-sloppy</item>
+            <!-- Ubuntu releases -->
+            <item>dapper</item>
+            <item>dapper-security</item>
+            <item>dapper-proposed</item>
+            <item>dapper-updates</item>
+            <item>dapper-backports</item>
+            <item>dapper-commercial</item>
+            <item>edgy</item>
+            <item>edgy-security</item>
+            <item>edgy-proposed</item>
+            <item>edgy-updates</item>
+            <item>edgy-backports</item>
+            <item>edgy-commercial</item>
+            <item>feisty</item>
+            <item>feisty-security</item>
+            <item>feisty-proposed</item>
+            <item>feisty-updates</item>
+            <item>feisty-backports</item>
+            <item>feisty-commercial</item>
+            <item>gutsy</item>
+            <item>gutsy-security</item>
+            <item>gutsy-proposed</item>
+            <item>gutsy-updates</item>
+            <item>gutsy-backports</item>
+            <item>gutsy-partner</item>
+            <item>hardy</item>
+            <item>hardy-security</item>
+            <item>hardy-proposed</item>
+            <item>hardy-updates</item>
+            <item>hardy-backports</item>
+            <item>hardy-partner</item>
+            <item>intrepid</item>
+            <item>intrepid-security</item>
+            <item>intrepid-proposed</item>
+            <item>intrepid-updates</item>
+            <item>intrepid-backports</item>
+            <item>intrepid-partner</item>
+            <item>jaunty</item>
+            <item>jaunty-security</item>
+            <item>jaunty-proposed</item>
+            <item>jaunty-updates</item>
+            <item>jaunty-backports</item>
+            <item>jaunty-partner</item>
+            <item>karmic</item>
+            <item>karmic-security</item>
+            <item>karmic-proposed</item>
+            <item>karmic-updates</item>
+            <item>karmic-backports</item>
+            <item>lucid</item>
+            <item>lucid-security</item>
+            <item>lucid-proposed</item>
+            <item>lucid-updates</item>
+            <item>lucid-backports</item>
+            <item>maverick</item>
+            <item>maverick-security</item>
+            <item>maverick-proposed</item>
+            <item>maverick-updates</item>
+            <item>maverick-backports</item>
+            <item>natty</item>
+            <item>natty-security</item>
+            <item>natty-proposed</item>
+            <item>natty-updates</item>
+            <item>natty-backports</item>
+            <item>oneiric</item>
+            <item>oneiric-security</item>
+            <item>oneiric-proposed</item>
+            <item>oneiric-updates</item>
+            <item>oneiric-backports</item>
+            <item>precise</item>
+            <item>precise-security</item>
+            <item>precise-proposed</item>
+            <item>precise-updates</item>
+            <item>precise-backports</item>
+            <item>quantal</item>
+            <item>quantal-security</item>
+            <item>quantal-proposed</item>
+            <item>quantal-updates</item>
+            <item>quantal-backports</item>
+            <item>raring</item>
+            <item>raring-security</item>
+            <item>raring-proposed</item>
+            <item>raring-updates</item>
+            <item>raring-backports</item>
+            <item>saucy</item>
+            <item>saucy-security</item>
+            <item>saucy-proposed</item>
+            <item>saucy-updates</item>
+            <item>saucy-backports</item>
+            <item>trusty</item>
+            <item>trusty-security</item>
+            <item>trusty-proposed</item>
+            <item>trusty-updates</item>
+            <item>trusty-backports</item>
+            <item>utopic</item>
+            <item>utopic-security</item>
+            <item>utopic-proposed</item>
+            <item>utopic-updates</item>
+            <item>utopic-backports</item>
+            <item>vivid</item>
+            <item>vivid-security</item>
+            <item>vivid-proposed</item>
+            <item>vivid-updates</item>
+            <item>vivid-backports</item>
+            <item>wily</item>
+            <item>wily-security</item>
+            <item>wily-proposed</item>
+            <item>wily-updates</item>
+            <item>wily-backports</item>
+            <item>xenial</item>
+            <item>xenial-security</item>
+            <item>xenial-proposed</item>
+            <item>xenial-updates</item>
+            <item>xenial-backports</item>
+            <item>yakkety</item>
+            <item>yakkety-security</item>
+            <item>yakkety-proposed</item>
+            <item>yakkety-updates</item>
+            <item>yakkety-backports</item>
+            <item>zesty</item>
+            <item>zesty-security</item>
+            <item>zesty-proposed</item>
+            <item>zesty-updates</item>
+            <item>zesty-backports</item>
+            <item>artful</item>
+            <item>artful-security</item>
+            <item>artful-proposed</item>
+            <item>artful-updates</item>
+            <item>artful-backports</item>
+            <item>bionic</item>
+            <item>bionic-security</item>
+            <item>bionic-proposed</item>
+            <item>bionic-updates</item>
+            <item>bionic-backports</item>
+            <item>cosmic</item>
+            <item>cosmic-security</item>
+            <item>cosmic-proposed</item>
+            <item>cosmic-updates</item>
+            <item>cosmic-backports</item>
+            <item>disco</item>
+            <item>disco-security</item>
+            <item>disco-proposed</item>
+            <item>disco-updates</item>
+            <item>disco-backports</item>
+            <item>eoan</item>
+            <item>eoan-security</item>
+            <item>eoan-proposed</item>
+            <item>eoan-updates</item>
+            <item>eoan-backports</item>
+        </list>
+
+        <list name="urgencies">
+            <item>low</item>
+            <item>medium</item>
+            <item>high</item>
+            <item>emergency</item>
+            <item>bug</item>
+            <item>critical</item>
+        </list>
+
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="INIT">
+                <RegExpr attribute="Keyword" context="Head" String="[^ ]*" column="0"/>
+                <RegExpr attribute="Email" context="#stay" String="&lt;.*@.*&gt;"/>
+                <RegExpr attribute="Keyword" context="#stay" String=" \-\-" column="0"/>
+                <RegExpr attribute="Keyword" context="#stay" String="  \*" column="0"/>
+                <RegExpr attribute="Bug" context="#stay" String="closes:[\s]*((bug\s*)?#\s*\d+)(\s*, *(bug\s*)?#\s*\d+)*" insensitive="true"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#pop" name="Head">
+                <DetectChar attribute="Keyword" context="Version" char="("/>
+                <RegExpr attribute="Keyword" context="#stay" String="[,;=]"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Data" context="#stay" String="distributions"/>
+                <keyword attribute="Data" context="#stay" String="urgencies"/>
+            </context>
+
+            <context attribute="Version" lineEndContext="#pop" name="Version">
+                <DetectChar attribute="Keyword" context="#pop" char=")"/>
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="Keyword"  defStyleNum="dsKeyword"/>
+            <itemData name="Version"  defStyleNum="dsDataType"/>
+            <itemData name="Data" defStyleNum="dsDataType"/>
+            <itemData name="Bug"  defStyleNum="dsDataType"/>
+            <itemData name="Email" defStyleNum="dsOthers"/>
+        </itemDatas>
+    </highlighting>
+
+    <general>
+        <keywords casesensitive="1" weakDeliminator="-"/>
+    </general>
+</language>

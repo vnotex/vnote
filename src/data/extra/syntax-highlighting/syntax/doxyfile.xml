@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+    This file is part of the KDE KSyntaxHighlighting framework.
+
+    Copyright 2016-2017 Ernst Maurer <ernst.maurer@gmail.com>
+
+    Permission to use, copy, modify, and distribute this software
+    and its documentation for any purpose and without fee is hereby
+    granted, provided that the above copyright notice appear in all
+    copies and that both that the copyright notice and this
+    permission notice and warranty disclaimer appear in supporting
+    documentation, and that the name of the author not be used in
+    advertising or publicity pertaining to distribution of the
+    software without specific, written prior permission.
+
+    The author disclaim all warranties with regard to this
+    software, including all implied warranties of merchantability
+    and fitness.  In no event shall the author be liable for any
+    special, indirect or consequential damages or any damages
+    whatsoever resulting from loss of use, data or profits, whether
+    in an action of contract, negligence or other tortious action,
+    arising out of or in connection with the use or performance of
+    this software.
+ -->
+<language name="Doxyfile"
+          section="Configuration"
+          extensions="Doxyfile;Doxyfile.*"
+          mimetype=""
+          version="2"
+          kateversion="5.0"
+          author="Ernst Maurer (ernst.maurer@gmail.com)"
+          license="MIT">
+
+    <highlighting>
+        <list name="keywords">
+            <item>ABBREVIATE_BRIEF</item>
+            <item>ALIASES</item>
+            <item>ALLEXTERNALS</item>
+            <item>ALLOW_UNICODE_NAMES</item>
+            <item>ALPHABETICAL_INDEX</item>
+            <item>ALWAYS_DETAILED_SEC</item>
+            <item>AUTOLINK_SUPPORT</item>
+            <item>BINARY_TOC</item>
+            <item>BRIEF_MEMBER_DESC</item>
+            <item>BUILTIN_STL_SUPPORT</item>
+            <item>CALLER_GRAPH</item>
+            <item>CALL_GRAPH</item>
+            <item>CASE_SENSE_NAMES</item>
+            <item>CHM_FILE</item>
+            <item>CHM_INDEX_ENCODING</item>
+            <item>CITE_BIB_FILES</item>
+            <item>CLANG_ASSISTED_PARSING</item>
+            <item>CLANG_OPTIONS</item>
+            <item>CLASS_DIAGRAMS</item>
+            <item>CLASS_GRAPH</item>
+            <item>COLLABORATION_GRAPH</item>
+            <item>COLS_IN_ALPHA_INDEX</item>
+            <item>COMPACT_LATEX</item>
+            <item>COMPACT_RTF</item>
+            <item>CPP_CLI_SUPPORT</item>
+            <item>CREATE_SUBDIRS</item>
+            <item>DIAFILE_DIRS</item>
+            <item>DIA_PATH</item>
+            <item>DIRECTORY_GRAPH</item>
+            <item>DISABLE_INDEX</item>
+            <item>DISTRIBUTE_GROUP_DOC</item>
+            <item>DOCBOOK_OUTPUT</item>
+            <item>DOCBOOK_PROGRAMLISTING</item>
+            <item>DOCSET_BUNDLE_ID</item>
+            <item>DOCSET_FEEDNAME</item>
+            <item>DOCSET_PUBLISHER_ID</item>
+            <item>DOCSET_PUBLISHER_NAME</item>
+            <item>DOTFILE_DIRS</item>
+            <item>DOT_CLEANUP</item>
+            <item>DOT_FONTNAME</item>
+            <item>DOT_FONTPATH</item>
+            <item>DOT_FONTSIZE</item>
+            <item>DOT_GRAPH_MAX_NODES</item>
+            <item>DOT_IMAGE_FORMAT</item>
+            <item>DOT_MULTI_TARGETS</item>
+            <item>DOT_NUM_THREADS</item>
+            <item>DOT_PATH</item>
+            <item>DOT_TRANSPARENT</item>
+            <item>DOXYFILE_ENCODING</item>
+            <item>ECLIPSE_DOC_ID</item>
+            <item>ENABLED_SECTIONS</item>
+            <item>ENABLE_PREPROCESSING</item>
+            <item>ENUM_VALUES_PER_LINE</item>
+            <item>EXAMPLE_PATH</item>
+            <item>EXAMPLE_PATTERNS</item>
+            <item>EXAMPLE_RECURSIVE</item>
+            <item>EXCLUDE</item>
+            <item>EXCLUDE_PATTERNS</item>
+            <item>EXCLUDE_SYMBOLS</item>
+            <item>EXCLUDE_SYMLINKS</item>
+            <item>EXPAND_AS_DEFINED</item>
+            <item>EXPAND_ONLY_PREDEF</item>
+            <item>EXTENSION_MAPPING</item>
+            <item>EXTERNAL_GROUPS</item>
+            <item>EXTERNAL_PAGES</item>
+            <item>EXTERNAL_SEARCH</item>
+            <item>EXTERNAL_SEARCH_ID</item>
+            <item>EXTRACT_ALL</item>
+            <item>EXTRACT_ANON_NSPACES</item>
+            <item>EXTRACT_LOCAL_CLASSES</item>
+            <item>EXTRACT_LOCAL_METHODS</item>
+            <item>EXTRACT_PACKAGE</item>
+            <item>EXTRACT_PRIVATE</item>
+            <item>EXTRACT_STATIC</item>
+            <item>EXTRA_PACKAGES</item>
+            <item>EXTRA_SEARCH_MAPPINGS</item>
+            <item>EXT_LINKS_IN_WINDOW</item>
+            <item>FILE_PATTERNS</item>
+            <item>FILE_VERSION_FILTER</item>
+            <item>FILTER_PATTERNS</item>
+            <item>FILTER_SOURCE_FILES</item>
+            <item>FILTER_SOURCE_PATTERNS</item>
+            <item>FORCE_LOCAL_INCLUDES</item>
+            <item>FORMULA_FONTSIZE</item>
+            <item>FORMULA_TRANSPARENT</item>
+            <item>FULL_PATH_NAMES</item>
+            <item>GENERATE_AUTOGEN_DEF</item>
+            <item>GENERATE_BUGLIST</item>
+            <item>GENERATE_CHI</item>
+            <item>GENERATE_DEPRECATEDLIST</item>
+            <item>GENERATE_DOCBOOK</item>
+            <item>GENERATE_DOCSET</item>
+            <item>GENERATE_ECLIPSEHELP</item>
+            <item>GENERATE_HTML</item>
+            <item>GENERATE_HTMLHELP</item>
+            <item>GENERATE_LATEX</item>
+            <item>GENERATE_LEGEND</item>
+            <item>GENERATE_MAN</item>
+            <item>GENERATE_PERLMOD</item>
+            <item>GENERATE_QHP</item>
+            <item>GENERATE_RTF</item>
+            <item>GENERATE_TAGFILE</item>
+            <item>GENERATE_TESTLIST</item>
+            <item>GENERATE_TODOLIST</item>
+            <item>GENERATE_TREEVIEW</item>
+            <item>GENERATE_XML</item>
+            <item>GRAPHICAL_HIERARCHY</item>
+            <item>GROUP_GRAPHS</item>
+            <item>GROUP_NESTED_COMPOUNDS</item>
+            <item>HAVE_DOT</item>
+            <item>HHC_LOCATION</item>
+            <item>HIDE_COMPOUND_REFERENCE</item>
+            <item>HIDE_FRIEND_COMPOUNDS</item>
+            <item>HIDE_IN_BODY_DOCS</item>
+            <item>HIDE_SCOPE_NAMES</item>
+            <item>HIDE_UNDOC_CLASSES</item>
+            <item>HIDE_UNDOC_MEMBERS</item>
+            <item>HIDE_UNDOC_RELATIONS</item>
+            <item>HTML_COLORSTYLE_GAMMA</item>
+            <item>HTML_COLORSTYLE_HUE</item>
+            <item>HTML_COLORSTYLE_SAT</item>
+            <item>HTML_DYNAMIC_SECTIONS</item>
+            <item>HTML_EXTRA_FILES</item>
+            <item>HTML_EXTRA_STYLESHEET</item>
+            <item>HTML_FILE_EXTENSION</item>
+            <item>HTML_FOOTER</item>
+            <item>HTML_HEADER</item>
+            <item>HTML_INDEX_NUM_ENTRIES</item>
+            <item>HTML_OUTPUT</item>
+            <item>HTML_STYLESHEET</item>
+            <item>HTML_TIMESTAMP</item>
+            <item>IDL_PROPERTY_SUPPORT</item>
+            <item>IGNORE_PREFIX</item>
+            <item>IMAGE_PATH</item>
+            <item>INCLUDED_BY_GRAPH</item>
+            <item>INCLUDE_FILE_PATTERNS</item>
+            <item>INCLUDE_GRAPH</item>
+            <item>INCLUDE_PATH</item>
+            <item>INHERIT_DOCS</item>
+            <item>INLINE_GROUPED_CLASSES</item>
+            <item>INLINE_INFO</item>
+            <item>INLINE_INHERITED_MEMB</item>
+            <item>INLINE_SIMPLE_STRUCTS</item>
+            <item>INLINE_SOURCES</item>
+            <item>INPUT</item>
+            <item>INPUT_ENCODING</item>
+            <item>INPUT_FILTER</item>
+            <item>INTERACTIVE_SVG</item>
+            <item>INTERNAL_DOCS</item>
+            <item>JAVADOC_AUTOBRIEF</item>
+            <item>LATEX_BATCHMODE</item>
+            <item>LATEX_BIB_STYLE</item>
+            <item>LATEX_CMD_NAME</item>
+            <item>LATEX_EXTRA_FILES</item>
+            <item>LATEX_EXTRA_STYLESHEET</item>
+            <item>LATEX_FOOTER</item>
+            <item>LATEX_HEADER</item>
+            <item>LATEX_HIDE_INDICES</item>
+            <item>LATEX_OUTPUT</item>
+            <item>LATEX_SOURCE_CODE</item>
+            <item>LATEX_TIMESTAMP</item>
+            <item>LAYOUT_FILE</item>
+            <item>LOOKUP_CACHE_SIZE</item>
+            <item>MACRO_EXPANSION</item>
+            <item>MAKEINDEX_CMD_NAME</item>
+            <item>MAN_EXTENSION</item>
+            <item>MAN_LINKS</item>
+            <item>MAN_OUTPUT</item>
+            <item>MAN_SUBDIR</item>
+            <item>MARKDOWN_SUPPORT</item>
+            <item>MATHJAX_CODEFILE</item>
+            <item>MATHJAX_EXTENSIONS</item>
+            <item>MATHJAX_FORMAT</item>
+            <item>MATHJAX_RELPATH</item>
+            <item>MAX_DOT_GRAPH_DEPTH</item>
+            <item>MAX_INITIALIZER_LINES</item>
+            <item>MSCFILE_DIRS</item>
+            <item>MSCGEN_PATH</item>
+            <item>MULTILINE_CPP_IS_BRIEF</item>
+            <item>OPTIMIZE_FOR_FORTRAN</item>
+            <item>OPTIMIZE_OUTPUT_FOR_C</item>
+            <item>OPTIMIZE_OUTPUT_JAVA</item>
+            <item>OPTIMIZE_OUTPUT_VHDL</item>
+            <item>OUTPUT_DIRECTORY</item>
+            <item>OUTPUT_LANGUAGE</item>
+            <item>PAPER_TYPE</item>
+            <item>PDF_HYPERLINKS</item>
+            <item>PERLMOD_LATEX</item>
+            <item>PERLMOD_MAKEVAR_PREFIX</item>
+            <item>PERLMOD_PRETTY</item>
+            <item>PERL_PATH</item>
+            <item>PLANTUML_INCLUDE_PATH</item>
+            <item>PLANTUML_JAR_PATH</item>
+            <item>PREDEFINED</item>
+            <item>PROJECT_BRIEF</item>
+            <item>PROJECT_LOGO</item>
+            <item>PROJECT_NAME</item>
+            <item>PROJECT_NUMBER</item>
+            <item>QCH_FILE</item>
+            <item>QHG_LOCATION</item>
+            <item>QHP_CUST_FILTER_ATTRS</item>
+            <item>QHP_CUST_FILTER_NAME</item>
+            <item>QHP_NAMESPACE</item>
+            <item>QHP_SECT_FILTER_ATTRS</item>
+            <item>QHP_VIRTUAL_FOLDER</item>
+            <item>QT_AUTOBRIEF</item>
+            <item>QUIET</item>
+            <item>RECURSIVE</item>
+            <item>REFERENCED_BY_RELATION</item>
+            <item>REFERENCES_LINK_SOURCE</item>
+            <item>REFERENCES_RELATION</item>
+            <item>REPEAT_BRIEF</item>
+            <item>RTF_EXTENSIONS_FILE</item>
+            <item>RTF_HYPERLINKS</item>
+            <item>RTF_OUTPUT</item>
+            <item>RTF_SOURCE_CODE</item>
+            <item>RTF_STYLESHEET_FILE</item>
+            <item>SEARCHDATA_FILE</item>
+            <item>SEARCHENGINE</item>
+            <item>SEARCHENGINE_URL</item>
+            <item>SEARCH_INCLUDES</item>
+            <item>SEPARATE_MEMBER_PAGES</item>
+            <item>SERVER_BASED_SEARCH</item>
+            <item>SHORT_NAMES</item>
+            <item>SHOW_FILES</item>
+            <item>SHOW_GROUPED_MEMB_INC</item>
+            <item>SHOW_INCLUDE_FILES</item>
+            <item>SHOW_NAMESPACES</item>
+            <item>SHOW_USED_FILES</item>
+            <item>SIP_SUPPORT</item>
+            <item>SKIP_FUNCTION_MACROS</item>
+            <item>SORT_BRIEF_DOCS</item>
+            <item>SORT_BY_SCOPE_NAME</item>
+            <item>SORT_GROUP_NAMES</item>
+            <item>SORT_MEMBERS_CTORS_1ST</item>
+            <item>SORT_MEMBER_DOCS</item>
+            <item>SOURCE_BROWSER</item>
+            <item>SOURCE_TOOLTIPS</item>
+            <item>STRICT_PROTO_MATCHING</item>
+            <item>STRIP_CODE_COMMENTS</item>
+            <item>STRIP_FROM_INC_PATH</item>
+            <item>STRIP_FROM_PATH</item>
+            <item>SUBGROUPING</item>
+            <item>TAB_SIZE</item>
+            <item>TAGFILES</item>
+            <item>TCL_SUBST</item>
+            <item>TEMPLATE_RELATIONS</item>
+            <item>TOC_EXPAND</item>
+            <item>TREEVIEW_WIDTH</item>
+            <item>TYPEDEF_HIDES_STRUCT</item>
+            <item>UML_LIMIT_NUM_FIELDS</item>
+            <item>UML_LOOK</item>
+            <item>USE_HTAGS</item>
+            <item>USE_MATHJAX</item>
+            <item>USE_MDFILE_AS_MAINPAGE</item>
+            <item>USE_PDFLATEX</item>
+            <item>VERBATIM_HEADERS</item>
+            <item>WARNINGS</item>
+            <item>WARN_AS_ERROR</item>
+            <item>WARN_FORMAT</item>
+            <item>WARN_IF_DOC_ERROR</item>
+            <item>WARN_IF_UNDOCUMENTED</item>
+            <item>WARN_LOGFILE</item>
+            <item>WARN_NO_PARAMDOC</item>
+            <item>XML_OUTPUT</item>
+            <item>XML_PROGRAMLISTING</item>
+        </list>
+
+        <contexts>
+            <context name="doxy" attribute="Error" lineEndContext="#stay">
+                <keyword attribute="Keyword" String="keywords" context="Assignment"/>
+                <DetectChar char="#" context="Comment" firstNonSpace="true" />
+            </context>
+
+            <context name="Assignment" attribute="Normal Text" lineEndContext="#pop">
+                <DetectChar attribute="Assignment" context="Value" char="=" />
+            </context>
+            <context name="Value" attribute="UntypedValue" lineEndContext="#pop" >
+                <WordDetect attribute="ValueYes" insensitive="true" String="YES" />
+                <WordDetect attribute="ValueNo" insensitive="true" String="NO" />
+                <RegExpr attribute="Parameter" String="@.*@" />
+                <DetectChar char="#" context="Comment" />
+                <LineContinue />
+            </context>
+            <context name="Comment" attribute="Comment" lineEndContext="#pop">
+                <keyword attribute="KeywordInComment" String="keywords" context="#stay"/>
+                <DetectSpaces />
+                <DetectIdentifier />
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0" />
+            <itemData name="Error" defStyleNum="dsError" spellChecking="0" />
+            <itemData name="Comment" defStyleNum="dsComment" />
+            <itemData name="Assignment" defStyleNum="dsOperator" spellChecking="0" />
+            <itemData name="ValueYes" defStyleNum="dsOthers" spellChecking="0" />
+            <itemData name="ValueNo" defStyleNum="dsString" spellChecking="0" />
+            <itemData name="UntypedValue" defStyleNum="dsString" spellChecking="0" />
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="0" />
+            <itemData name="KeywordInComment" defStyleNum="dsCommentVar" spellChecking="0" />
+            <itemData name="Parameter" defStyleNum="dsOthers" spellChecking="0" />
+        </itemDatas>
+    </highlighting>
+
+    <general>
+        <comments>
+            <comment name="singleLine" start="#" />
+            <comment name="singleLine" start=";" />
+        </comments>
+        <keywords casesensitive="0" />
+    </general>
+
+</language>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="INI Files" section="Configuration" extensions="*.ini;*.pls;*.kcfgc" mimetype="" version="5" kateversion="2.4" author="Jan Janssen (medhefgo@web.de)" license="LGPL">
+
+<highlighting>
+<list name="keywords">
+<item>On</item>
+<item>Off</item>
+<item>Default</item>
+<item>Defaults</item>
+<item>Localhost</item>
+<item>Null</item>
+<item>True</item>
+<item>False</item>
+<item>Yes</item>
+<item>No</item>
+<item>Normal</item>
+
+<!-- PHP Keywords -->
+<item>E_ALL</item>
+<item>E_ERROR</item>
+<item>E_WARNING</item>
+<item>E_PARSE</item>
+<item>E_NOTICE</item>
+<item>E_STRICT</item>
+<item>E_CORE_ERROR</item>
+<item>E_CORE_WARNING</item>
+<item>E_COMPILE_ERROR</item>
+<item>E_COMPILE_WARNING</item>
+<item>E_USER_ERROR</item>
+<item>E_USER_WARNING</item>
+<item>E_USER_NOTICE</item>
+</list>
+
+<contexts>
+ <context name="ini" attribute="Normal Text" lineEndContext="#stay">
+  <RangeDetect attribute="Section" context="#stay" char="["  char1="]" beginRegion="Section" endRegion="Section" />
+  <DetectChar attribute="Assignment" context="Value" char="=" />
+  <DetectChar char=";" attribute="Comment" context="Comment" firstNonSpace="true" />
+  <DetectChar char="#" attribute="Comment" context="Comment" firstNonSpace="true" />
+ </context>
+
+ <context name="Value" attribute="Value" lineEndContext="#pop" >
+  <Float attribute="Float" />
+  <Int attribute="Int" />
+  <keyword attribute="Keyword" String="keywords" />
+ </context>
+
+ <context name="Comment" attribute="Comment" lineEndContext="#pop">
+  <DetectSpaces />
+  <IncludeRules context="##Alerts" />
+  <DetectIdentifier />
+ </context>
+</contexts>
+
+
+<itemDatas>
+ <itemData name="Normal Text" defStyleNum="dsDataType" />
+ <itemData name="Section" defStyleNum="dsKeyword" />
+ <itemData name="Comment" defStyleNum="dsComment" />
+ <itemData name="Assignment" defStyleNum="dsOthers" />
+ <itemData name="Value" defStyleNum="dsString" />
+ <itemData name="Float" defStyleNum="dsFloat" />
+ <itemData name="Int" defStyleNum="dsDecVal" />
+ <itemData name="Keyword" defStyleNum="dsKeyword" />
+</itemDatas>
+</highlighting>
+
+
+<general>
+ <comments>
+  <comment name="singleLine" start="#" />
+  <comment name="singleLine" start=";" />
+ </comments>
+ <keywords casesensitive="0" />
+</general>
+
+</language>

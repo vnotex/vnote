@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+          [
+          <!ENTITY var1    "\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*">
+          <!ENTITY varwithbraces "\$\{[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*\}">
+]>
+<!--
+    Copyright (C) 2007 Красимир Беров <k.berov@gmail.com>
+    Put this file in your $KDEDIR/share/apps/katepart/syntax,
+    then restart Кate/KDevelop/Quanta... whatever using katepart.
+    That's it. You have Template Toolkit Syntax highliting.
+    Enjoy!!!
+    
+    -->
+    <!--
+    Changelog :)
+    0.02 Added highliting for interpolated variables
+        -->
+<language version="5" kateversion="5.0"
+          author="Красимир Беров (k.berov@gmail.com)" license="Artistic"
+          name="TT2" section="Markup" extensions="*.tt*;" casesensitive="true">
+<highlighting>
+    <list name="control structures">
+        <!-- Template directives -->
+        <item>SET</item>
+        <item>GET</item>
+        <item>CALL</item>
+        <item>DEFAULT</item>
+        <item>IF</item>
+        <item>ELSIF</item>
+        <item>ELSE</item>
+        <item>UNLESS</item>
+        <item>LAST</item>
+        <item>NEXT</item>
+        <item>FOR</item>
+        <item>FOREACH</item>
+        <item>WHILE</item>
+        <item>SWITCH</item>
+        <item>CASE</item>
+        <item>PROCESS</item>
+        <item>INCLUDE</item>
+        <item>INSERT</item>
+        <item>WRAPPER</item>
+        <item>BLOCK</item>
+        <item>MACRO</item>
+        <item>END</item>
+        <item>USE</item>
+        <item>IN</item>
+        <item>FILTER</item>
+        <item>TRY</item>
+        <item>THROW</item>
+        <item>CATCH</item>
+        <item>FINAL</item>
+        <item>META</item>
+        <item>TAGS</item>
+        <item>DEBUG</item>
+        <item>PERL</item>
+    </list>
+    <list name="keywords">
+        <!-- Compile Time Constant Folding -->
+        <item>constants</item>
+        <!-- Special Variables -->
+        <item>template</item>
+        <item>component</item>
+        <item>loop</item>
+        <item>error</item>
+        <item>content</item>
+    </list>
+    <list name="functions">
+        <!-- VMethods -->
+        <!-- Scalar Virtual Methods -->
+        <item>defined</item>
+        <item>length</item>
+        <item>repeat</item>
+        <item>replace</item>
+        <item>match</item>
+        <item>search</item>
+        <item>split</item>
+        <item>chunk</item>
+        <item>list</item>
+        <item>hash</item>
+        <item>size</item>
+        <!-- Hash Virtual Methods -->
+        <item>keys</item>
+        <item>values</item>
+        <item>each</item>
+        <item>sort</item>
+        <item>nsort</item>
+        <item>import</item>
+        <item>defined</item>
+        <item>exists</item>
+        <item>item</item>
+        <!-- List Virtual Methods -->
+        <item>first</item>
+        <item>last</item>
+        <item>max</item>
+        <item>reverse</item>
+        <item>join</item>
+        <item>grep</item>
+        
+        <item>unshift</item>
+        <item>push</item>
+        <item>shift</item>
+        <item>pop</item>
+        <item>unique</item>
+        <item>merge</item>
+        <item>slice</item>
+        <item>splice</item>
+        <item>count</item>
+        <!-- Standard filters -->
+        <item>format</item>
+        <item>upper</item>
+        <item>lower</item>
+        <item>ucfirst</item>
+        <item>lcfirst</item>
+        <item>trim</item>
+        <item>collapse</item>
+        <item>html</item>
+        <item>html_entity</item>
+        <item>html_para</item>
+        <item>html_break</item>
+        <item>html_para_break</item>
+        <item>html_line_break</item>
+        <item>uri</item>
+        <item>url</item>
+        <item>indent</item>
+        <item>truncate</item>
+        <item>repeat</item>
+        <item>remove</item>
+        <item>replace</item>
+        <item>redirect</item>
+        <item>eval</item>
+        <item>evaltt</item>
+        <item>perl</item>
+        <item>evalperl</item>
+        <item>stdout</item>
+        <item>stderr</item>
+        <item>null</item>
+        <item>latex</item>
+    </list>
+    <list name="operators">
+        <item>=</item>
+        <item>!=</item>
+        <item>~=</item>
+        <item>+=</item>
+        <item>-=</item>
+        <item>*=</item>
+        <item>/=</item>
+        <item>**=</item>
+        <item>|=</item>
+        <item>||=</item>
+        <item>&amp;=</item>
+        <item>&amp;&amp;=</item>
+        <item>?=</item>
+        <item>+</item>
+        <item>-</item>
+        <item>*</item>
+        <!-- <item>/</item>//-->
+        <item>%</item>
+        <item>||</item>
+        <item>&amp;&amp;</item>
+        <item>|</item>
+        <item>&amp;</item>
+        <item>&lt;</item>
+        <item>&lt;&lt;</item>
+        <item>&gt;</item>
+        <item>&gt;&gt;</item>
+        <item>^</item>
+        <item>-&gt;</item>
+        <item>=&gt;</item>
+        <item>.</item>
+        <item>,</item>
+        <item>;</item>
+        <item>::</item>
+        <item>\</item>
+        <item>and</item>
+        <item>or</item>
+        <item>not</item>
+        <item>eq</item>
+        <item>ne</item>
+    </list>
+
+    <contexts>
+        <context name="nosource" attribute="Normal Text" lineEndContext="#stay">
+            <Detect2Chars attribute="Keyword" context="tt2source" char="[" char1="%" />
+            <RegExpr attribute="HTML Tag" context="scripts" String="&lt;\s*script(\s|&gt;)" insensitive="true" />
+            <RegExpr attribute="HTML Tag" context="htmltag" String="&lt;\s*\/?\s*[a-zA-Z_:][a-zA-Z0-9._:-]*" />
+            <StringDetect attribute="HTML Comment" context="htmlcomment" String="&lt;!--" />
+            <!-- Interpolated variables -->
+            <RegExpr attribute="Variable" context="#stay" String="&var1;" />
+            <RegExpr attribute="Variable" context="#stay" String="&varwithbraces;" />
+        </context>
+        
+        <context name="tt2source" attribute="TT2 Text" lineEndContext="#stay">
+            <Detect2Chars attribute="Keyword" context="#pop" char="%" char1="]" />
+            <DetectChar attribute="Comment" context="tt2_onelinecomment" char="#" />
+            <DetectChar attribute="String" context="doublequotestring" char="&quot;" />
+            <DetectChar attribute="String" context="singlequotestring" char="&#39;" />
+            <DetectChar attribute="Keyword" context="#stay" char="&amp;" />
+            <keyword attribute="Operator" context="#stay" String="operators" />
+            <keyword attribute="Function" context="#stay" String="functions" />
+            <RegExpr attribute="String" context="#stay" String="[0123456789]*\.\.\.[0123456789]*" />
+            <HlCOct attribute="Octal" context="#stay" />
+            <HlCHex attribute="Hex" context="#stay" />
+            <Float attribute="Float" context="#stay" />
+            <Int attribute="Decimal" context="#stay" />
+            <AnyChar attribute="Other" context="#stay" String=";()}{:,[]" />
+
+            <WordDetect attribute="Control Structures" context="#stay" String="ELSIF" insensitive="false" beginRegion="iffi1" endRegion="iffi1"/>
+            <WordDetect attribute="Control Structures" context="#stay" String="ELSE" insensitive="false" beginRegion="iffi1" endRegion="iffi1"/>
+            <WordDetect attribute="Control Structures" context="#stay" String="IF" insensitive="false" beginRegion="iffi1"/>
+            <WordDetect attribute="Control Structures" context="#stay" String="END" insensitive="false" endRegion="iffi1"/>
+
+            <WordDetect attribute="Control Structures" context="#stay" String="FOREACH" insensitive="false" beginRegion="foreachblock"/>
+            <WordDetect attribute="Control Structures" context="#stay" String="END" insensitive="false" endRegion="foreachblock"/>
+
+            <keyword attribute="Keyword" context="#stay" String="keywords" />
+            <keyword attribute="Control Structures" context="#stay" String="control structures" />
+        </context>
+        <context name="tt2_onelinecomment" attribute="Comment" lineEndContext="#pop">
+            <Detect2Chars attribute="Keyword" context="#pop#pop" char="%" char1="]" />
+        </context>
+        <context name="doublequotestring" attribute="String" lineEndContext="#stay">
+            <Detect2Chars attribute="Escape Code" context="#stay" char="&quot;" char1="&quot;" />
+            <RegExpr attribute="Escape Code" context="#stay" String="\\([0-7]{1,3}|x[0-9A-Fa-f]{1,2})" />
+            <DetectChar attribute="String" context="#pop" char="&quot;" />
+            <!-- Interpolated variables -->
+            <RegExpr attribute="Variable" context="#stay" String="&var1;" />
+            <RegExpr attribute="Variable" context="#stay" String="&varwithbraces;" />
+        </context>
+        <context name="singlequotestring" attribute="String" lineEndContext="#stay">
+            <Detect2Chars attribute="Escape Code" context="#stay" char="'" char1="'"/>
+            <DetectChar attribute="String" context="#pop" char="'" />
+        </context>
+        <context name="htmltag" attribute="Identifier" lineEndContext="#stay">
+            <Detect2Chars attribute="HTML Tag" context="#pop" char="/" char1="&gt;" />
+            <DetectChar attribute="HTML Tag" context="#pop" char="&gt;"/>
+            <Detect2Chars attribute="Keyword" context="tt2source" char="[" char1="%" />
+            <RegExpr attribute="Identifier" context="identifiers" String="\s*=\s*"/>
+
+        </context>
+        <context name="htmlcomment" attribute="HTML Comment" lineEndContext="#stay">
+            <Detect2Chars attribute="Keyword" context="tt2source" char="[" char1="%" />
+            <StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" />
+            <RegExpr attribute="Normal Text" context="identifiers" String="\s*=\s*"/>
+        </context>
+        <context name="identifiers" attribute="Identifier" lineEndContext="#stay">
+            <RegExpr attribute="String" context="#pop" String="\s*#?[a-zA-Z0-9]*" />
+            <DetectChar attribute="Types" context="types1" char="'" />
+            <DetectChar attribute="Types" context="types2" char="&quot;" />
+        </context>
+        
+        <context name="types1" attribute="Types" lineEndContext="#stay">
+            <Detect2Chars attribute="Keyword" context="tt2source" char="[" char1="%" />
+            <DetectChar attribute="Types" context="#pop#pop" char="'" />
+        </context>
+        
+        <context name="types2" attribute="Types" lineEndContext="#stay">
+            <Detect2Chars attribute="Keyword" context="tt2source" char="[" char1="%" />
+            <DetectChar attribute="Types" context="#pop#pop" char="&quot;" />
+        </context>
+        
+        <context name="scripts" attribute="Normal Text" lineEndContext="#stay">
+            <Detect2Chars attribute="Comment" context="scripts_onelinecomment" char="/" char1="/" />
+            <Detect2Chars attribute="Comment" context="twolinecomment" char="/" char1="*" />
+            <keyword attribute="Control Structures" context="#stay" String="control structures" />
+            <keyword attribute="Keyword" context="#stay" String="keywords" />
+            <keyword attribute="Function" context="#stay" String="functions" />
+            <StringDetect attribute="Keyword" context="tt2source" String="[%"/>
+            <RegExpr attribute="HTML Tag" context="#pop" String="&lt;\s*\/\s*script\s*&gt;" insensitive="true" />
+            
+            <DetectChar attribute="String" context="doublequotestring" char="&quot;" />
+            <DetectChar attribute="String" context="singlequotestring" char="&#39;" />
+            <HlCOct attribute="Octal" context="#stay" />
+            <HlCHex attribute="Hex" context="#stay" />
+            <Float attribute="Float" context="#stay" />
+            <Int attribute="Decimal" context="#stay" />
+            <DetectChar attribute="Normal Text" context="#stay" char="{" beginRegion="Brace1" />
+            <DetectChar attribute="Normal Text" context="#stay" char="}" endRegion="Brace1" />
+            <AnyChar attribute="Other" context="#stay" String=";()}{:,[]" />
+        </context>
+        <context name="scripts_onelinecomment" attribute="Comment" lineEndContext="#pop">
+            <RegExpr attribute="HTML Tag" context="#pop#pop" String="&lt;\s*\/\s*script\s*&gt;" insensitive="true" />
+        </context>
+        <context name="twolinecomment" attribute="Comment" lineEndContext="#stay">
+            <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment" />
+        </context>
+        
+    </contexts>
+            
+    <itemDatas>
+        <itemData name="Normal Text" defStyleNum="dsNormal" />
+        <itemData name="TT2 Text" defStyleNum="dsNormal" />
+        <itemData name="Keyword" defStyleNum="dsKeyword" />
+        <itemData name="Function" defStyleNum="dsFunction" />
+        <itemData name="Decimal" defStyleNum="dsDecVal" />
+        <itemData name="Octal" defStyleNum="dsBaseN" />
+        <itemData name="Hex" defStyleNum="dsBaseN" />
+        <itemData name="Float" defStyleNum="dsFloat" />
+        <itemData name="String" defStyleNum="dsString" />
+        <itemData name="Comment" defStyleNum="dsComment" />
+        <itemData name="Variable" defStyleNum="dsVariable" />
+        <itemData name="Control Structures" defStyleNum="dsControlFlow" />
+        <itemData name="Escape Code" defStyleNum="dsSpecialChar" />
+        <itemData name="Other" defStyleNum="dsOthers" />
+        <itemData name="Operator" defStyleNum="dsOperator" />
+        <itemData name="HTML Tag" defStyleNum="dsExtension" />
+        <itemData name="HTML Comment" defStyleNum="dsComment" />
+        <itemData name="Identifier" defStyleNum="dsOthers" />
+        <itemData name="Types" defStyleNum="dsDataType" />
+    </itemDatas>
+</highlighting>
+<general>
+    <comments>
+        <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+        <comment name="singleLine" start="#" />
+        <comment name="multiLine" start="[%#" end="%]"/>
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

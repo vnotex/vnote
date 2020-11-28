@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="GDB Backtrace" section="Other"
+          version="2" kateversion="3.4"
+          extensions="*.kcrash;*.crash;*.bt"
+          mimetype=""
+          author="Milian Wolff (mail@milianw.de)" license="LGPL">
+
+<highlighting>
+
+  <contexts>
+    <context name="apache" attribute="Normal" lineEndContext="#stay">
+      <DetectChar char="#" context="stackframe" firstNonSpace="true" />
+      <IncludeRules context="oneliners" />
+    </context>
+    <context name="oneliners" attribute="Normal" lineEndContext="#pop">
+      <StringDetect attribute="Crash" context="#stay" String="[KCrash Handler]" />
+      <StringDetect String="Thread" firstNonSpace="true" context="thread" />
+      <StringDetect String="[Current thread" firstNonSpace="true" context="thread" />
+    </context>
+    <context name="stackframe" attribute="Normal" lineEndContext="#stay">
+      <RegExpr attribute="Normal" context="identifier"  String="((?:[^ ]|&lt;.+&gt;)+::)?([^ :]+)\s*\(" lookAhead="true" />
+      <StringDetect attribute="Normal" String="at" context="file" />
+      <StringDetect attribute="Normal" String="from" context="file" />
+      <IncludeRules context="oneliners" />
+    </context>
+    <context name="identifier" attribute="Normal" lineEndContext="#stay" dynamic="true">
+      <StringDetect attribute="QualifiedIdentifier" String="%1" dynamic="true" />
+      <StringDetect attribute="Function" String="%2" dynamic="true" />
+      <RegExpr attribute="Crash" String="\b0x0\b" />
+      <DetectChar char=")" context="#pop" />
+    </context>
+    <context name="file" attribute="File" lineEndContext="#pop#pop">
+      <DetectChar char=":" context="#pop#pop" attribute="Normal" />
+    </context>
+    <context name="thread" attribute="Thread" lineEndContext="#pop">
+    </context>
+  </contexts>
+
+  <itemDatas>
+    <itemData name="Normal" defStyleNum="dsNormal" spellChecking="false" />
+    <itemData name="Crash" defStyleNum="dsError" spellChecking="false" underline="false" bold="true" />
+    <itemData name="QualifiedIdentifier" defStyleNum="dsOthers" spellChecking="false" />
+    <itemData name="Function" defStyleNum="dsFunction" spellChecking="false" bold="true" />
+    <itemData name="File" defStyleNum="dsDataType" spellChecking="false" />
+    <itemData name="Thread" defStyleNum="dsBaseN" spellChecking="false" />
+  </itemDatas>
+</highlighting>
+
+</language>
+
+<!-- kate: replace-tabs: on; tab-width: 4; indent-width: 4; -->

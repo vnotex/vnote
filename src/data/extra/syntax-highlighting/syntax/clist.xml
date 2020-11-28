@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="CLIST" version="1" kateversion="5.0" section="Scripts" extensions="*.clist;*.CLIST" mimetype="" license="MIT">
+    <!--
+      Command LIST, or CLIST, is the scripting language for TSO (Time Sharing Option) on IBM mainframes running z/OS.
+      Developers can use CLISTs to automate repetitive tasks or to automate complex TSO commands.
+    -->
+  <highlighting>
+    <list name="control">
+        <item>ATTN</item>
+        <item>CONTROL</item>
+        <item>DATA-ENDDATA</item>
+        <item>DATA-PROMPT</item>
+        <item>ERROR</item>
+        <item>EXIT</item>
+        <item>GLOBAL</item>
+        <item>GOTO</item>
+        <item>NGLOBAL</item>
+        <item>PROC</item>
+        <item>RETURN</item>
+        <item>SYSCALL</item>
+        <item>SYSREF</item>
+        <item>TERMIN</item>
+        <item>WRITE</item>
+        <item>WRITENR</item>
+    </list>
+    <list name="assignment">
+        <item>READ</item>
+        <item>READDVAL</item>
+        <item>SET</item>
+        <item>LISTDSI</item>
+    </list>
+    <list name="flowcontrol">
+        <item>DO</item>
+        <item>IF</item>
+        <item>TO</item>
+        <item>THEN</item>
+        <item>END</item>
+        <item>ELSE</item>
+        <item>SELECT</item>
+    </list>
+    <list name="IO">
+        <item>CLOSFILE</item>
+        <item>GETFILE</item>
+        <item>OPENFILE</item>
+        <item>PUTFILE</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Control"      context="#stay" String="control" />
+        <keyword attribute="Assignment"   context="#stay" String="assignment" />
+        <keyword attribute="Control Flow" context="#stay" String="flowcontrol" />
+        <keyword attribute="inputOutput"  context="#stay" String="IO" />
+        <RegExpr attribute="Variable"     context="#stay" insensitive="true" String="&amp;+[A-Z0-9]*"/>
+        <RegExpr attribute="Number"       context="#stay" insensitive="true" String="\b(\d+)\b"/>
+        <RegExpr attribute="String"       context="#stay" insensitive="true" String="(?&lt;=WRITE).*"/>
+        <DetectChar attribute="String"    context="String" char="&apos;"/>
+        <DetectChar attribute="String"    context="String" char="&quot;"/>
+        <Detect2Chars attribute="Comment" context="comments" char="/" char1="*" beginRegion="Comment"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="comments">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <DetectChar attribute="String" context="#pop" char="&apos;"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Control"      defStyleNum="dsControlFlow"/>
+      <itemData name="Assignment"   defStyleNum="dsBuiltIn"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow"/>
+      <itemData name="inputOutput"  defStyleNum="dsKeyword"/>
+      <itemData name="Variable"     defStyleNum="dsVariable"/>
+      <itemData name="Number"       defStyleNum="dsDataType"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="/*"/>
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!ENTITY name    "[A-Za-z_:][\w.:_-]*">
+	<!ENTITY entref  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
+]>
+<language name="Mako" version="5" kateversion="5.0" section="Markup" extensions="*.mako;*.mak" author="Massimiliano Torromeo (massimiliano.torromeo@gmail.com)" license="LGPL">
+
+<highlighting>
+<list name="flow">
+	<item>endfor</item>
+	<item>endif</item>
+</list>
+<contexts>
+	<context name="Start" attribute="Normal Text" lineEndContext="#stay">
+		<IncludeRules context="FindMako" />
+		<IncludeRules context="FindHTML" />
+	</context>
+
+	<context name="FindMako" attribute="Normal Text" lineEndContext="#stay">
+		<RegExpr attribute="MakoKeyword" context="NoMakoHTML" String="&lt;%text(?:\s+[^&gt;]*)?&gt;" beginRegion="nomako" />
+		<Detect2Chars attribute="MakoKeyword" context="Mako" char="&lt;" char1="%" />
+		<RegExpr attribute="MakoKeyword" context="Mako" String="&lt;/?%" />
+		<RegExpr attribute="MakoKeyword" context="MakoOneLiner" String="^\s*% " />
+		<Detect2Chars attribute="MakoKeyword" context="MakoPrint" char="$" char1="{" />
+	</context>
+
+	<context name="Mako" attribute="Mako" lineEndContext="#stay">
+		<RegExpr attribute="MakoKeyword" context="#pop" String="[%/]?&gt;" />
+		<IncludeRules context="##Python" includeAttrib="true"/>
+	</context>
+
+	<context name="MakoOneLiner" attribute="MakoKeyword" lineEndContext="#pop">
+		<keyword attribute="Flow Control Keyword" String="flow" context="#stay"/>
+		<IncludeRules context="##Python" includeAttrib="true"/>
+	</context>
+
+	<context name="MakoPrint" attribute="Mako" lineEndContext="#stay">
+		<DetectChar attribute="MakoKeyword" context="#pop" char="}" />
+		<IncludeRules context="##Python" includeAttrib="true"/>
+	</context>
+
+	<context name="NoMakoHTML" attribute="Normal Text" lineEndContext="#stay">
+		<StringDetect attribute="MakoKeyword" context="#pop" String="&lt;/%text&gt;" endRegion="nomako" />
+		<IncludeRules context="##HTML" includeAttrib="true"/>
+	</context>
+
+	<context name="NoMakoJS" attribute="Normal Text" lineEndContext="#stay">
+		<StringDetect attribute="MakoKeyword" context="#pop" String="&lt;/%text&gt;" endRegion="nomako" />
+		<IncludeRules context="Normal##JavaScript" includeAttrib="true"/>
+	</context>
+
+	<context name="FindHTML" attribute="Normal Text" lineEndContext="#stay">
+		<DetectSpaces/>
+		<DetectIdentifier/>
+		<StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+		<StringDetect attribute="CDATA" context="CDATA" String="&lt;![CDATA[" beginRegion="cdata" />
+		<RegExpr attribute="Doctype" context="Doctype" String="&lt;!DOCTYPE\s+" beginRegion="doctype" />
+		<RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:-]*" beginRegion="pi" />
+		<RegExpr attribute="Element" context="CSS" String="&lt;style\b" insensitive="true" beginRegion="style" />
+		<RegExpr attribute="Element" context="JS" String="&lt;script\b" insensitive="true" beginRegion="script" />
+		<RegExpr attribute="Element" context="El Open" String="&lt;pre\b" insensitive="true" beginRegion="pre" />
+		<RegExpr attribute="Element" context="El Open" String="&lt;div\b" insensitive="true" beginRegion="div" />
+		<RegExpr attribute="Element" context="El Open" String="&lt;table\b" insensitive="true" beginRegion="table" />
+		<RegExpr attribute="Element" context="El Open" String="&lt;ul\b" insensitive="true" beginRegion="ul" />
+		<RegExpr attribute="Element" context="El Open" String="&lt;ol\b" insensitive="true" beginRegion="ol" />
+		<RegExpr attribute="Element" context="El Open" String="&lt;dl\b" insensitive="true" beginRegion="dl" />
+		<RegExpr attribute="Element" context="El Open" String="&lt;&name;" />
+		<RegExpr attribute="Element" context="El Close" String="&lt;/pre\b" insensitive="true" endRegion="pre" />
+		<RegExpr attribute="Element" context="El Close" String="&lt;/div\b" insensitive="true" endRegion="div" />
+		<RegExpr attribute="Element" context="El Close" String="&lt;/table\b" insensitive="true" endRegion="table" />
+		<RegExpr attribute="Element" context="El Close" String="&lt;/ul\b" insensitive="true" endRegion="ul" />
+		<RegExpr attribute="Element" context="El Close" String="&lt;/ol\b" insensitive="true" endRegion="ol" />
+		<RegExpr attribute="Element" context="El Close" String="&lt;/dl\b" insensitive="true" endRegion="dl" />
+		<RegExpr attribute="Element" context="El Close" String="&lt;/&name;" />
+		<!-- as long as kde gives DTDs the text/html mimetype--><IncludeRules context="FindDTDRules" />
+		<IncludeRules context="FindEntityRefs" />
+	</context>
+
+	<context name="FindEntityRefs" attribute="Normal Text" lineEndContext="#stay">
+		<RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+		<AnyChar attribute="Error" context="#stay" String="&amp;&lt;" />
+	</context>
+
+	<context name="FindPEntityRefs" attribute="Normal Text" lineEndContext="#stay">
+		<RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+		<RegExpr attribute="PEntityRef" context="#stay" String="%&name;;" />
+		<AnyChar attribute="Error" context="#stay" String="&amp;%" />
+	</context>
+
+	<context name="FindAttributes" attribute="Normal Text" lineEndContext="#stay">
+		<!--<RegExpr attribute="Attribute" context="#stay" String="&name;" column="0"/>
+		<RegExpr attribute="Attribute" context="#stay" String="\s+&name;" />-->
+		<RegExpr attribute="Attribute" context="#stay" String="&name;" />
+		<DetectChar attribute="Attribute" context="Value" char="=" />
+	</context>
+
+	<context name="FindDTDRules" attribute="Normal Text" lineEndContext="#stay">
+		<RegExpr attribute="Doctype" context="Doctype Markupdecl" String="&lt;!(ELEMENT|ENTITY|ATTLIST|NOTATION)\b" />
+	</context>
+
+	<context name="Comment" attribute="Comment" lineEndContext="#stay">
+		<DetectSpaces/>
+		<IncludeRules context="##Alerts" />
+		<DetectIdentifier/>
+		<StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
+		<RegExpr attribute="Error" context="#stay" String="-(-(?!-&gt;))+" />
+	</context>
+
+	<context name="CDATA" attribute="Normal Text" lineEndContext="#stay">
+		<DetectSpaces/>
+		<DetectIdentifier/>
+		<StringDetect attribute="CDATA" context="#pop" String="]]&gt;" endRegion="cdata" />
+		<StringDetect attribute="EntityRef" context="#stay" String="]]&amp;gt;" />
+	</context>
+
+	<context name="PI" attribute="Normal Text" lineEndContext="#stay">
+		<Detect2Chars attribute="Processing Instruction" context="#pop" char="?" char1="&gt;" endRegion="pi" />
+	</context>
+
+	<context name="Doctype" attribute="Normal Text" lineEndContext="#stay">
+		<DetectChar attribute="Doctype" context="#pop" char="&gt;" endRegion="doctype" />
+		<DetectChar attribute="Doctype" context="Doctype Internal Subset" char="[" beginRegion="int_subset" />
+	</context>
+
+	<context name="Doctype Internal Subset" attribute="Normal Text" lineEndContext="#stay">
+		<DetectChar attribute="Doctype" context="#pop" char="]" endRegion="int_subset" />
+		<IncludeRules context="FindDTDRules" />
+		<StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+		<RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:-]*" beginRegion="pi" />
+		<IncludeRules context="FindPEntityRefs" />
+	</context>
+
+	<context name="Doctype Markupdecl" attribute="Normal Text" lineEndContext="#stay">
+		<DetectChar attribute="Doctype" context="#pop" char="&gt;" />
+		<DetectChar attribute="Value" context="Doctype Markupdecl DQ" char="&quot;" />
+		<DetectChar attribute="Value" context="Doctype Markupdecl SQ" char="&apos;" />
+	</context>
+
+	<context name="Doctype Markupdecl DQ" attribute="Value" lineEndContext="#stay">
+		<DetectChar attribute="Value" context="#pop" char="&quot;" />
+		<IncludeRules context="FindPEntityRefs" />
+	</context>
+
+	<context name="Doctype Markupdecl SQ" attribute="Value" lineEndContext="#stay">
+		<DetectChar attribute="Value" context="#pop" char="&apos;" />
+		<IncludeRules context="FindPEntityRefs" />
+	</context>
+
+	<context name="El Open" attribute="Normal Text" lineEndContext="#stay">
+		<Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" />
+		<DetectChar attribute="Element" context="#pop" char="&gt;" />
+		<IncludeRules context="FindAttributes" />
+		<IncludeRules context="FindMako" />
+	</context>
+
+	<context name="El Close" attribute="Normal Text" lineEndContext="#stay">
+		<DetectChar attribute="Element" context="#pop" char="&gt;" />
+		<RegExpr attribute="Error" context="#stay" String="\S" />
+	</context>
+
+	<context name="El Close 2" attribute="Normal Text" lineEndContext="#stay">
+		<DetectChar attribute="Element" context="#pop#pop#pop" char="&gt;" />
+		<RegExpr attribute="Error" context="#stay" String="\S" />
+	</context>
+
+	<context name="El Close 3" attribute="Normal Text" lineEndContext="#stay">
+		<DetectChar attribute="Element" context="#pop#pop#pop#pop" char="&gt;" />
+		<RegExpr attribute="Error" context="#stay" String="\S" />
+	</context>
+
+	<context name="CSS" attribute="Normal Text" lineEndContext="#stay">
+		<Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="style" />
+		<DetectChar attribute="Element" context="CSS content" char="&gt;" />
+		<RegExpr attribute="Error" context="#stay" String="\S" />
+	</context>
+
+	<context name="CSS content" attribute="Normal Text" lineEndContext="#stay">
+		<RegExpr attribute="Element" context="El Close 2" String="&lt;/style\b" insensitive="true" endRegion="style" />
+		<IncludeRules context="##CSS" includeAttrib="true"/>
+	</context>
+
+	<context name="JS" attribute="Normal Text" lineEndContext="#stay">
+		<Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="script" />
+		<DetectChar attribute="Element" context="JS content" char="&gt;" />
+		<IncludeRules context="FindAttributes" />
+		<RegExpr attribute="Error" context="#stay" String="\S" />
+	</context>
+
+	<context name="JS content" attribute="Normal Text" lineEndContext="#stay">
+		<RegExpr attribute="Element" context="El Close 2" String="&lt;/script\b" insensitive="true" endRegion="script" />
+		<RegExpr attribute="Comment" context="JS comment close" String="//(?=.*&lt;/script\b)" insensitive="true" />
+		<RegExpr attribute="MakoKeyword" context="NoMakoJS" String="&lt;%text(?:\s+[^&gt;]*)?&gt;" beginRegion="nomako" />
+		<IncludeRules context="FindMako" />
+		<IncludeRules context="Normal##JavaScript" includeAttrib="true"/>
+	</context>
+
+	<context name="JS comment close" attribute="Comment" lineEndContext="#pop">
+		<RegExpr attribute="Element" context="El Close 3" String="&lt;/script\b" insensitive="true" endRegion="script" />
+		<IncludeRules context="##Alerts" />
+	</context>
+
+	<context name="Value" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="Value NQ">
+		<DetectChar attribute="Value" context="Value DQ" char="&quot;" />
+		<DetectChar attribute="Value" context="Value SQ" char="&apos;" />
+		<DetectSpaces />
+	</context>
+
+	<context name="Value NQ" attribute="Normal Text" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
+		<IncludeRules context="FindEntityRefs" />
+		<RegExpr attribute="Value" context="#stay" String="/(?!&gt;)" />
+		<RegExpr attribute="Value" context="#stay" String="[^/&gt;&lt;&quot;&apos;\s]" />
+	</context>
+
+	<context name="Value DQ" attribute="Value" lineEndContext="#stay">
+		<DetectChar attribute="Value" context="#pop#pop" char="&quot;" />
+		<IncludeRules context="FindEntityRefs" />
+		<IncludeRules context="FindMako" />
+	</context>
+
+	<context name="Value SQ" attribute="Value" lineEndContext="#stay">
+		<DetectChar attribute="Value" context="#pop#pop" char="&apos;" />
+		<IncludeRules context="FindEntityRefs" />
+		<IncludeRules context="FindMako" />
+	</context>
+
+</contexts>
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" />
+  <itemData name="Comment" defStyleNum="dsComment" />
+  <itemData name="CDATA" defStyleNum="dsBaseN" bold="1" />
+  <itemData name="Processing Instruction" defStyleNum="dsKeyword" />
+  <itemData name="Doctype" defStyleNum="dsDataType" bold="1" />
+  <itemData name="Element" defStyleNum="dsKeyword" />
+  <itemData name="Flow Control Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+  <itemData name="Attribute" defStyleNum="dsOthers" />
+  <itemData name="Value" defStyleNum="dsString" />
+  <itemData name="EntityRef" defStyleNum="dsDecVal" />
+  <itemData name="PEntityRef" defStyleNum="dsDecVal" />
+  <itemData name="Error" defStyleNum="dsError" />
+  <itemData name="Mako" defStyleNum="dsDataType" />
+  <itemData name="MakoKeyword" defStyleNum="dsDataType" bold="1" />
+</itemDatas>
+
+</highlighting>
+<general>
+  <comments>
+    <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+    <comment name="multiLine" start="&lt;%doc&gt;" end="&lt;/%doc&gt;" />
+    <comment name="singleLine" start="##" position="afterwhitespace"/>
+  </comments>
+</general>
+</language>

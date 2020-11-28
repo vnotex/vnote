@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Nemerle syntax highlighting v0.2 by caminoix, approved of and corrected by Kamil Skalski (Nazgul) -->
+<language name="Nemerle" version="1" kateversion="2.3" section="Sources" extensions="*.n" mimetype="text/x-nemerle" casesensitive="1" author="caminoix + Kamil Skalski (Nazgul)" license="">
+	<highlighting>
+		<list name="Attributes">
+			<item>abstract</item>
+			<item>def</item>
+			<item>delegate</item>
+			<item>event</item>
+			<item>extern</item>
+			<item>internal</item>
+			<item>mutable</item>
+			<item>override</item>
+			<item>public</item>
+			<item>private</item>
+			<item>protected</item>
+			<item>sealed</item>
+			<item>static</item>
+			<item>volatile</item>
+			<item>virtual</item>
+			<item>new</item>
+		</list>
+
+		<list name="CompilationUnits">
+			<item>macro</item>
+			<item>namespace</item>
+			<item>using</item>
+			<item>\[Record\]</item>
+		</list>
+
+		<list name="DataTypes">
+			<item>array</item>
+			<item>bool</item>
+			<item>byte</item>
+			<item>char</item>
+			<item>decimal</item>
+			<item>double</item>
+			<item>enum</item>
+			<item>float</item>
+			<item>int</item>
+			<item>list</item>
+			<item>long</item>
+			<item>object</item>
+			<item>sbyte</item>
+			<item>short</item>
+			<item>string</item>
+			<item>uint</item>
+			<item>ulong</item>
+			<item>ushort</item>
+			<item>variant</item>
+			<item>void</item>
+		</list>
+
+		<list name="Keywords">
+			<item>_</item>
+			<item>as</item>
+			<item>assert</item>
+			<item>base</item>
+			<item>catch</item>
+			<item>checked</item>
+			<item>do</item>
+			<item>else</item>
+			<item>false</item>
+			<item>finally</item>
+			<item>for</item>
+			<item>foreach</item>
+			<item>fun</item>
+			<item>get</item>
+			<item>if</item>
+			<item>ignore</item>
+			<item>implements</item>
+			<item>in</item>
+			<item>is</item>
+			<item>lock</item>
+			<item>match</item>
+			<item>null</item>
+			<item>out</item>
+			<item>params</item>
+			<item>ref</item>
+			<item>repeat</item>
+			<item>set</item>
+			<item>syntax</item>
+			<item>this</item>
+			<item>throw</item>
+			<item>true</item>
+			<item>try</item>
+			<item>typeof</item>
+			<item>unchecked</item>
+			<item>unless</item>
+			<item>when</item>
+			<item>where</item>
+			<item>while</item>
+			<item>with</item>
+		</list>
+
+		<list name="Preprocessing">
+			<item>#define</item>
+			<item>#elif</item>
+			<item>#else</item>
+			<item>#endif</item>
+			<item>#endregion</item>
+			<item>#error</item>
+			<item>#if</item>
+			<item>#line</item>
+			<item>#region</item>
+			<item>#undef</item>
+			<item>#warning</item>
+			<item>#pragma</item>
+		</list>
+
+		<list name="TypeDeclarations">
+			<item>class</item>
+			<item>interface</item>
+			<item>module</item>
+			<item>struct</item>
+			<item>type</item>
+		</list>
+
+		<contexts>
+			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+				<StringDetect attribute="Comment" context="SingleLineComment" String="//" />
+				<StringDetect attribute="Comment" context="MultiLineComment" String="/*" />
+				<DetectChar attribute="String" context="NormalString" char="&quot;" />
+				<Detect2Chars attribute="String" context="StringInterpolation" char="$" char1="&quot;" />
+
+				<Int attribute="Number" context="#stay" />
+				<Float attribute="Number" context="#stay" />
+
+				<keyword attribute="Attribute" context="#stay" String="Attributes" />
+				<keyword attribute="CompilationUnit" context="#stay" String="CompilationUnits" />
+				<keyword attribute="DataType" context="#stay" String="DataTypes" />
+				<keyword attribute="Keyword" context="#stay" String="Keywords" />
+				<keyword attribute="Preprocessing" context="#stay" String="Preprocessing" />
+				<keyword attribute="TypeDeclaration" context="#stay" String="TypeDeclarations" />
+
+				<DetectChar attribute="Keyword" context="#stay" char="{" beginRegion="Region1" />
+				<DetectChar attribute="Keyword" context="#stay" char="}" endRegion="Region1" />
+				<DetectChar attribute="Keyword" context="#stay" char="(" beginRegion="Region2" />
+				<DetectChar attribute="Keyword" context="#stay" char=")" endRegion="Region2" />
+				<Detect2Chars attribute="CompilationUnit" context="#stay" char="&#60;" char1="[" beginRegion="Region3" />
+				<Detect2Chars attribute="CompilationUnit" context="#stay" char="]" char1="&#62;" endRegion="Region3" />
+			</context>
+
+			<context name="SingleLineComment" attribute="Comment" lineEndContext="#pop">
+				<StringDetect attribute="Comment" String="//" context="#pop" />
+			</context>
+			<context name="MultiLineComment" attribute="Comment" lineEndContext="#stay">
+				<StringDetect attribute="Comment" String="*/" context="#pop" />
+			</context>
+
+			<context name="NormalString" attribute="String" lineEndContext="#stay">
+				<DetectChar attribute="String" char="&quot;" context="#pop" />
+				<RegExpr attribute="EscapeSequence" context="#stay" String="\{[0-9]+\}" />
+
+				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="&quot;" />
+				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="\" />
+				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="t" />
+				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="n" />
+				<StringDetect attribute="EscapeSequence" context="#stay" String="\u0008" />
+				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000D" />
+				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000d" />
+				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000A" />
+				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000a" />
+			</context>
+
+			<context name="StringInterpolation" attribute="String" lineEndContext="#stay">
+				<DetectChar attribute="String" char="&quot;" context="#pop" />
+				<RegExpr attribute="EscapeSequence" context="#stay" String="\{[0-9]+\}" />
+				<RegExpr attribute="EscapeSequence" context="#stay" String="\$(\S)+\s" />
+
+				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="&quot;" />
+				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="\" />
+				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="t" />
+				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="n" />
+				<StringDetect attribute="EscapeSequence" context="#stay" String="\u0008" />
+				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000D" />
+				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000d" />
+				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000A" />
+				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000a" />
+			</context>
+		</contexts>
+
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal" />
+
+			<itemData name="Comment" defStyleNum="dsComment" />
+			<itemData name="String" defStyleNum="dsString" />
+
+			<itemData name="Number" defStyleNum="dsOthers" color="#00009f" selColor="#0000e9"/>
+
+			<itemData name="Attribute" defStyleNum="dsOthers" color="#28712f" selColor="#34923d" />
+			<itemData name="CompilationUnit" defStyleNum="dsChar" />
+			<itemData name="DataType" defStyleNum="dsDataType" />
+			<itemData name="EscapeSequence" defStyleNum="dsBaseN" />
+			<itemData name="Keyword" defStyleNum="dsKeyword" />
+			<itemData name="Preprocessing" defStyleNum="dsChar" />
+			<itemData name="TypeDeclaration" defStyleNum="dsOthers" color="#eeb312" selColor="ffc013" bold="1" />
+		</itemDatas>
+	</highlighting>
+
+	<general>
+		<comments>
+			<comment name="singleLine" start="//" />
+			<comment name="multiLine" start="/*" end="*/" />
+		</comments>
+	</general>
+</language>

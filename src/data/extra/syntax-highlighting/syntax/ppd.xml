@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE language SYSTEM "language.dtd" []>
+
+<!--
+The following documentation is available for PPD:
+- File Format Specification: http://partners.adobe.com/public/developer/en/ps/5003.PPD_Spec_v4.3.pdf
+- Update to the Specification: http://partners.adobe.com/public/developer/en/ps/5645.PPD_Update.pdf
+- CUPS PPD Extensions: http://www.cups.org/documentation.php/doc-1.4/spec-ppd.html
+-->
+
+<language name="PostScript Printer Description" version="2" kateversion="2.4" section="Markup" extensions="*.ppd" author="Lukas Sommer" mimetype="application/vnd.cups-ppd" license="Public Domain">
+
+    <highlighting>
+
+        <contexts>
+            <context attribute="Option" lineEndContext="#stay" name="contextNormal">
+                <Detect2Chars context="contextComment" char="*" char1="%" column="0"/>
+                <DetectChar attribute="Colon" context="contextValue" char=":" />
+                <StringDetect attribute="Keyword" String="*OpenUI" beginRegion="ui"/>
+                <StringDetect attribute="Keyword" String="*CloseUI" endRegion="ui"/>
+                <StringDetect attribute="Keyword" String="*OpenGroup" beginRegion="group"/>
+                <StringDetect attribute="Keyword" String="*CloseGroup" endRegion="group"/>
+                <RegExpr attribute="Keyword" String="\*[&#33;-&#46;&#48;-&#57;&#59;-&#126;]*"/> <!-- According to http://partners.adobe.com/public/developer/en/ps/5003.PPD_Spec_v4.3.pdf page 16 (page 20 in the PDF file), all characters from 33 to 126 are allowed, except ':' and '/'. -->
+            </context>
+            <context attribute="Comment" lineEndContext="#pop" name="contextComment">
+                <IncludeRules context="##Alerts"/>
+            </context>
+            <context attribute="Value" lineEndContext="#pop" name="contextValue">
+                <DetectSpaces/>
+                <DetectChar attribute="Value" context="contextValueMultiLine" char="&quot;" />
+                <RegExpr attribute="Value" context="contextValueSingleLine" String="."/>
+            </context>
+            <context attribute="Value" lineEndContext="#stay" name="contextValueMultiLine">
+                <DetectSpaces/>
+                <DetectChar attribute="Value" context="#pop" char="&quot;" />
+            </context>
+            <context attribute="Value" lineEndContext="#pop" name="contextValueSingleLine">
+            </context>
+        </contexts>
+
+        <itemDatas>
+          <itemData name="Comment" defStyleNum="dsComment"/>
+          <itemData name="Keyword" defStyleNum="dsKeyword"/>
+          <itemData name="Colon"   defStyleNum="dsKeyword"/>
+          <itemData name="Value"  defStyleNum="dsString"/>
+          <itemData name="Option"  defStyleNum="dsOthers"/>
+        </itemDatas>
+
+    </highlighting>
+
+    <general>
+        <comments>
+            <comment name="singleLine" start="*%"/>
+        </comments>
+    </general>
+
+</language>

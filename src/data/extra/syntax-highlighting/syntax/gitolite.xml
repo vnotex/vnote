@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language version="2" kateversion="3.4" name="Gitolite" section="Configuration" extensions="gitolite.conf" author="Andor Dávid (david-andor@kozpontiagy.hu)" license="GPL">
+  <highlighting>
+    <list name="keywords">
+      <item>repo</item>
+    </list>
+
+    <contexts>
+      <context name="Normal Text" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar                     context="SingleLineComment" char="#" />
+        <keyword attribute="Keyword"    context="#stay"   String="keywords" />
+        <RegExpr attribute="Group"      context="#stay"   String="\@[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*" />
+        <RegExpr attribute="Symbol"     context="Value"   String="=" />
+      </context>
+
+      <context name="SingleLineComment" attribute="Comment (Single)" lineEndContext="#pop" />
+
+      <context name="Value" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Group"       context="#stay" String="\@[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*" />
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"      defStyleNum="dsNormal"/>
+      <itemData name="Comment (Single)" defStyleNum="dsComment" />
+      <itemData name="Keyword"          defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="Group"            defStyleNum="dsKeyword" spellChecking="false" />
+ <!-- <itemData name="Refs"             defStyleNum="dsKeyword" spellChecking="false" /> -->
+      <itemData name="Symbol"           defStyleNum="dsString" />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="1" />
+
+    <comments>
+      <comment name="singleLine" start="#" />
+    </comments>
+
+  </general>
+
+  <!-- kate: space-indent on indent-width 2 replace-tabs on indent-mode xml -->
+</language>

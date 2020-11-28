@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+========================================================================
+YACC.XML supports syntax highlighting for Yacc/Bison source under Kate.
+
+Copyright (C) 2004, Jan Villat <jan.villat@net2000.ch>
+This code is released under the LGPL as part of kdelibs/kate.
+========================================================================
+
+
+== UPDATE HISTORY ==
+2018-02-20 // Nibaldo González <nibgonz@gmail.com>
+
+  Fix '$' symbol, highlighted as 'dsError' by C++ (isocpp.xml). 
+  Update syntax for Bison (3.0.4):
+   - Add declarations, directives in rules and the '@' variable.
+   - Allow a tag in '%union', declarations in multiple lines and 
+     grammar declarations in the grammar rules section.
+   - The ';' char is not necessary to finish a rule. Allow '; |' 
+     within rules.
+  Add mimetypes and extensions '*.ypp' & '*.y++'.
+
+2007-10-01 // Sebastian Pipping <webmaster@hartwork.org>
+
+  Added: Extension "*.yy" for Bison
+
+2004-05-26 // Jan Villat <jan.villat@net2000.ch>
+
+  YACC.XML 1.00 - First released.
+
+
+========================================================================
+-->
+<language name="Yacc/Bison" version="5" kateversion="5.0" section="Sources" extensions="*.y;*.yy;*.ypp;*.y++" mimetype="text/x-yacc;text/x-bison" priority="5" author="Jan Villat (jan.villat@net2000.ch)" license="LGPL">
+
+<highlighting>
+<contexts>
+  <context name="Pre Start" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="Comment" />
+    <DetectSpaces />
+    <Detect2Chars attribute="Content-Type Delimiter" context="C Declarations" char="%" char1="{" beginRegion="cdeclarations" column="0" />
+    <RegExpr attribute="Normal Text" context="Declarations" String="." beginRegion="declarations" lookAhead="true" />
+  </context>
+
+  <context name="C Declarations" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="Comment" />
+    <Detect2Chars attribute="Content-Type Delimiter" context="#pop" char="%" char1="}" endRegion="cdeclarations" column="0" />
+    <IncludeRules context="##C++" />
+  </context>
+
+  <context name="Declarations" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="Comment" />
+    <Detect2Chars attribute="Content-Type Delimiter" context="Rules" char="%" char1="%" beginRegion="rules" endRegion="declarations" />
+    <!-- Prologue Declarations -->
+    <Detect2Chars attribute="Content-Type Delimiter" context="C Declarations" char="%" char1="{" beginRegion="cdeclarations" column="0" />
+    <IncludeRules context="Grammar Declarations" />
+    <WordDetect attribute="Directive" context="Code-Symbols Start" String="%initial-action" />
+    <WordDetect attribute="Directive" context="Code-Symbols Start" String="%param" />
+    <WordDetect attribute="Directive" context="Code-Symbols Start" String="%lex-param" />
+    <WordDetect attribute="Directive" context="Code-Symbols Start" String="%parse-param" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%&lt;flag&gt;" />
+    <!-- Any word followed by '%' (End with ';' or '%') -->
+    <DetectChar attribute="Directive" context="Percent Command" char="%" />
+  </context>  
+  <context name="Grammar Declarations" attribute="Normal Text" lineEndContext="#stay">
+    <WordDetect attribute="Directive" context="Union Start" String="%union" />
+    <WordDetect attribute="Directive" context="Union Start" String="%code" />
+    <WordDetect attribute="Directive" context="Code-Symbols Start" String="%destructor" />
+    <WordDetect attribute="Directive" context="Code-Symbols Start" String="%printer" />
+  </context>
+
+  <context name="Union Start" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="Comment" />
+    <DetectSpaces />
+    <DetectChar attribute="Normal Text" context="Union In" char="{" beginRegion="union" />
+    <RegExpr attribute="Normal Text" context="#pop!Union Tag" String="[^\s\{](?=(\s|$|//))" />
+  </context>
+  <context name="Union Tag" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="Comment" />
+    <DetectSpaces />
+    <DetectChar attribute="Normal Text" context="Union In" char="{" beginRegion="union" />
+    <RegExpr attribute="Alert" context="#pop" String="." />
+  </context>
+  <context name="Union In" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Normal Text" context="Union InIn" char="{" />
+    <DetectChar attribute="Normal Text" context="#pop#pop" char="}" endRegion="union" />
+    <IncludeRules context="##C++" />
+  </context>
+  <context name="Union InIn" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Normal Text" context="Union InIn" char="{" />
+    <DetectChar attribute="Normal Text" context="#pop" char="}" />
+    <IncludeRules context="##C++" />
+  </context>
+
+  <!-- '%'<decl> ('{' <Code-Symbols In> '}')+ <Percent Command In> [';'] -->
+  <context name="Code-Symbols Start" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="Comment" />
+    <DetectSpaces />
+    <DetectChar attribute="Normal Text" context="Code-Symbols In" char="{" beginRegion="code-symbols" />
+    <RegExpr attribute="Alert" context="#pop" String="." />
+  </context>
+  <context name="Code-Symbols In" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Normal Text" context="#pop#pop!Code-Symbols End" char="}" endRegion="code-symbols" />
+    <DetectChar attribute="Normal Text" context="Code-Symbols InIn" char="{" />
+    <IncludeRules context="Symbol-Variable" />
+    <IncludeRules context="##C++" />
+  </context>
+  <context name="Code-Symbols InIn" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Normal Text" context="Code-Symbols InIn" char="{" />
+    <DetectChar attribute="Normal Text" context="#pop" char="}" />
+    <IncludeRules context="Symbol-Variable" />
+    <IncludeRules context="##C++" />
+  </context>
+  <context name="Code-Symbols End" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!Percent Command In">
+    <IncludeRules context="Comment" />
+    <DetectSpaces />
+    <DetectChar attribute="Normal Text" context="#pop" char=";" lookAhead="true" />
+    <DetectChar attribute="Normal Text" context="Code-Symbols In" char="{" beginRegion="code-symbols" />
+  </context>
+
+  <context name="Rules" attribute="Rule" lineEndContext="#stay">
+    <IncludeRules context="Comment" />
+    <Detect2Chars attribute="Content-Type Delimiter" context="User Code" char="%" char1="%" beginRegion="code" endRegion="rules" />
+    <DetectChar attribute="Normal Text" context="Rule In" char=":" beginRegion="rule" />
+    <DetectChar attribute="Rule" context="Grammar Declaration Start" char="%" lookAhead="true" />
+  </context>
+
+  <context name="Rule In" attribute="Definition" lineEndContext="#stay">
+    <IncludeRules context="Comment" />
+    <DetectChar attribute="Normal Text" context="Rule End" char=";" endRegion="rule" />
+    <DetectChar attribute="Normal Text" context="Normal C Bloc" char="{" beginRegion="bloc" />
+    <DetectChar attribute="Normal Text" context="#stay" char="|" />
+    <IncludeRules context="StringOrChar" />
+    <RegExpr attribute="Directive" context="#stay" String="%\?(?=\{)" />
+    <WordDetect attribute="Directive" context="#stay" String="%empty" />
+    <WordDetect attribute="Directive" context="#stay" String="%prec" />
+    <WordDetect attribute="Directive" context="#stay" String="%dprec" />
+    <WordDetect attribute="Directive" context="#stay" String="%merge" />
+
+    <!-- Finish rule without the ';' character (see the 'rhses.1' rule in the 'src/parse-gram.y' file, from the Bison source) -->
+    <RegExpr attribute="Open Rule" context="#pop" String="[\w\-\.](?=[\w\-\.]*:)" column="0" endRegion="rule" />
+    <Detect2Chars attribute="Content-Type Delimiter" context="#pop" char="%" char1="%" lookAhead="true" firstNonSpace="true" endRegion="rule" />
+    <RegExpr attribute="Directive" context="#pop" String="%(union|code|destructor|printer|start|(no\-)?default\-prec|nterm|token|type|left|right|nonassoc|precedence)\b" lookAhead="true" column="0" endRegion="rule" />
+  </context>
+  <!-- The Bison parser allows to have ';' followed by '|', without the rule ending. 
+       The problem here is that the ';' char has endRegion="rule" (although it is not very relevant). -->
+  <context name="Rule End" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop">
+    <DetectSpaces />
+    <DetectChar attribute="Normal Text" context="#stay" char=";" />
+    <DetectChar attribute="Normal Text" context="#pop" char="|" />
+    <IncludeRules context="Comment" />
+  </context>
+
+  <context name="Grammar Declaration Start" attribute="Normal Text" lineEndContext="#stay">
+    <!-- In the rules section, only highlighting exact declarations -->
+    <IncludeRules context="Grammar Declarations" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%start" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%default-prec" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%no-default-prec" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%nterm" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%token" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%type" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%left" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%right" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%nonassoc" />
+    <WordDetect attribute="Directive" context="Percent Command In" String="%precedence" /> 
+
+    <DetectChar attribute="Rule" context="#pop" char="%" /> <!-- End when there is an invalid declaration -->
+    <DetectChar attribute="Normal Text" context="#pop" char=";" />
+    <IncludeRules context="Comment" />
+    <DetectSpaces />
+    <RegExpr attribute="Alert" context="#pop" String=".+" />
+  </context>
+
+  <context name="User Code" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="##C++" />
+  </context>
+
+  <context name="Percent Command" attribute="Directive" lineEndContext="#pop!Percent Command In">
+    <IncludeRules context="Comment" />
+    <RegExpr attribute="Normal Text" context="#pop!Percent Command In" String="[^\w\-]" lookAhead="true" />
+  </context>
+  <context name="Percent Command In" attribute="Normal Text" lineEndContext="#stay">
+    <!-- This can be applied to multiple lines -->
+    <DetectChar attribute="Normal Text" context="#pop" char=";" lookAhead="true" />
+    <DetectChar attribute="Normal Text" context="#pop" char="%" lookAhead="true" firstNonSpace="true" />
+    <Detect2Chars attribute="Normal Text" context="#pop" char="%" char1="%" lookAhead="true" />
+    <IncludeRules context="StringOrChar" />
+    <DetectChar attribute="Data Type" context="PC type" char="&lt;" />
+    <IncludeRules context="Comment" />
+  </context>
+  <context name="PC type" attribute="Data Type" lineEndContext="#pop#pop">
+    <DetectChar attribute="Data Type" context="#pop" char="&gt;" />
+  </context>
+
+  <context name="Comment" attribute="Comment" lineEndContext="#stay">
+    <Detect2Chars attribute="Comment" context="CommentStar" char="/" char1="*" />
+    <Detect2Chars attribute="Comment" context="CommentSlash" char="/" char1="/" />
+  </context>
+  <context name="CommentStar" attribute="Comment" lineEndContext="#stay">
+    <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+    <IncludeRules context="##Alerts" />
+    <IncludeRules context="##Modelines" />
+  </context>
+  <context name="CommentSlash" attribute="Comment" lineEndContext="#pop">
+    <IncludeRules context="##Alerts" />
+    <IncludeRules context="##Modelines" />
+  </context>
+
+  <context name="StringOrChar" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="String Char" context="Char" char="'" />
+    <DetectChar attribute="String" context="String" char="&quot;" />
+  </context>
+  <context name="String" attribute="String" lineEndContext="#pop">
+    <RegExpr attribute="Backslash Code" context="#stay" String="\\." />
+    <DetectChar attribute="String" context="#pop" char="&quot;" />
+  </context>
+  <context name="Char" attribute="String Char" lineEndContext="#pop">
+    <RegExpr attribute="Backslash Code" context="#stay" String="\\." />
+    <DetectChar attribute="String Char" context="#pop" char="'" />
+  </context>
+
+  <context name="Normal C Bloc" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Normal Text" context="Normal C Bloc" char="{" beginRegion="bloc" />
+    <DetectChar attribute="Normal Text" context="#pop" char="}" endRegion="bloc" />
+    <IncludeRules context="Symbol-Variable" />
+    <IncludeRules context="##C++" />
+  </context>
+  <context name="Symbol-Variable" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Directive" context="Dol" char="$" />
+    <RegExpr attribute="Directive" context="#stay" String="@(\$?)(\d+|[A-Za-z_]\w*)?" />
+  </context>
+  <context name="Dol" attribute="Normal Text" fallthrough="true" fallthroughContext="DolEnd" lineEndContext="#stay">
+    <RegExpr attribute="Data Type" context="DolEnd" String="&lt;[^&gt;]+&gt;" />
+  </context>
+  <context name="DolEnd" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop">
+    <RegExpr attribute="Directive" context="#pop#pop" String="@?\d+" />
+    <DetectChar attribute="Directive" context="#pop#pop" char="$" />
+    <DetectIdentifier attribute="Directive" context="#pop#pop" />
+  </context>
+</contexts>
+
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" />
+  <itemData name="Definition" defStyleNum="dsNormal" />
+  <itemData name="Comment" defStyleNum="dsComment" />
+  <itemData name="Content-Type Delimiter" defStyleNum="dsBaseN" bold="1" />
+  <itemData name="Directive" defStyleNum="dsKeyword"/>
+  <itemData name="Rule" defStyleNum="dsString" />
+  <itemData name="Open Rule" defStyleNum="dsString" bold="1" />
+  <itemData name="Backslash Code" defStyleNum="dsString" bold="1" />
+  <itemData name="Alert" defStyleNum="dsAlert" />
+  <itemData name="String" defStyleNum="dsString"/>
+  <itemData name="String Char" defStyleNum="dsChar"/>
+  <itemData name="Data Type" defStyleNum="dsDataType"/>
+</itemDatas>
+
+</highlighting>
+<general>
+  <comments>
+    <comment name="multiLine" start="/*" end="*/" />
+    <comment name="singleLine" start="//" />
+  </comments>
+</general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

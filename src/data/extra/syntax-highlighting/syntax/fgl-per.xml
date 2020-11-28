@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="4GL-PER" version="4" kateversion="5.0" section="Database" extensions="*.per;*.PER;*.per.err" mimetype="text/x-4glper;text/x-4glpererr" author="Andrej Falout (andrej@falout.org)" license="LGPL">
+  <highlighting>
+    <list name="keywords">
+      <item>by</item>
+      <item>to</item>
+
+      <item>end</item>
+      <item>not</item>
+      <item>red</item>
+
+      <item>blue</item>
+      <item>cyan</item>
+      <item>keys</item>
+      <item>like</item>
+      <item>null</item>
+      <item>size</item>
+      <item>type</item>
+
+      <item>black</item>
+      <item>color</item>
+      <item>green</item>
+      <item>input</item>
+      <item>today</item>
+      <item>white</item>
+
+      <item>format</item>
+      <item>record</item>
+      <item>screen</item>
+      <item>tables</item>
+      <item>yellow</item>
+
+      <item>default</item>
+      <item>display</item>
+      <item>include</item>
+      <item>magenta</item>
+      <item>noentry</item>
+      <item>picture</item>
+      <item>reverse</item>
+      <item>through</item>
+      <item>UPSHIFT</item>
+      <item>without</item>
+
+      <item>autonext</item>
+      <item>comments</item>
+      <item>COMPRESS</item>
+      <item>database</item>
+      <item>formonly</item>
+      <item>noupdate</item>
+      <item>required</item>
+      <item>WORDWRAP</item>
+
+      <item>character</item>
+      <item>downshift</item>
+      <item>invisible</item>
+      <item>underline</item>
+
+      <item>attributes</item>
+      <item>delimiters</item>
+
+      <item>instructions</item>
+    </list>
+    <list name="types">
+      <item>char</item>
+      <item>date</item>
+      <item>array</item>
+      <item>float</item>
+      <item>money</item>
+      <item>serial</item>
+      <item>DECIMAL</item>
+      <item>integer</item>
+      <item>NUMERIC</item>
+      <item>VARCHAR</item>
+      <item>DATETIME</item>
+      <item>FRACTION</item>
+      <item>INTERVAL</item>
+      <item>smallint</item>
+    </list>
+   <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text 1">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <Float attribute="Float" context="Float Suffixes"/>
+        <HlCOct attribute="Octal" context="#stay"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Int attribute="Decimal" context="Int Suffixes"/>
+        <HlCChar attribute="Char" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <DetectChar attribute="Comment" context="Comment 1" char="#"/>
+        <DetectChar attribute="Comment" context="Comment 2" char="{"/>
+        <Detect2Chars attribute="Comment" context="Comment 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Comment 2" char="/" char1="*"/>
+        <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=&gt;?[]^|~"/>
+         <StringDetect attribute="Preprocessor" context="Comment 4" String="#if 0" insensitive="false"/>
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="#"/>
+      </context>
+      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <AnyChar String="fF" attribute="Float" context="#pop"/>
+      </context>
+      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
+          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Comment 1">
+        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment 2">
+        <DetectChar attribute="Comment" context="#pop" char="}"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+      </context>
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
+        <DetectChar attribute="Comment" context="Comment 1" char="#"/>
+        <DetectChar attribute="Comment" context="Comment 2" char="{"/>
+        <Detect2Chars attribute="Comment" context="Comment 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Comment 3" char="/" char1="*"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment 3">
+        <DetectChar attribute="Comment" context="#pop" char="}"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment 4">
+          <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+          <RegExpr attribute="Comment" context="Comment 5" String="#if" />
+          <RegExpr attribute="Preprocessor" context="#pop" String="#endif" />
+          <RegExpr attribute="Preprocessor" context="#pop" String="#else" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment 5">
+          <RegExpr attribute="Comment" context="Comment 5" String="#if" />
+          <RegExpr attribute="Comment" context="#pop" String="#endif" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword"/>
+      <itemData name="Data Type"  defStyleNum="dsDataType"/>
+      <itemData name="Decimal"  defStyleNum="dsDecVal"/>
+      <itemData name="Octal"  defStyleNum="dsBaseN"/>
+      <itemData name="Hex"  defStyleNum="dsBaseN"/>
+      <itemData name="Float"  defStyleNum="dsFloat"/>
+      <itemData name="Char"  defStyleNum="dsChar"/>
+      <itemData name="String"  defStyleNum="dsString"/>
+      <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
+      <itemData name="Comment"  defStyleNum="dsComment"/>
+      <itemData name="Symbol"  defStyleNum="dsNormal"/>
+      <itemData name="Preprocessor"  defStyleNum="dsPreprocessor"/>
+      <itemData name="Prep. Lib"  defStyleNum="dsImport"/>
+      <itemData name="Alert"        defStyleNum="dsAlert" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="{" end="}" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>

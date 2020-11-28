@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  This file is part of KDE's kate project.
+
+  Copyright 2012 Antoni Boucher (bouanto@hotmail.com)
+
+ **********************************************************************
+ * This library is free software; you can redistribute it and/or      *
+ * modify it under the terms of the GNU Lesser General Public         *
+ * License as published by the Free Software Foundation; either       *
+ * version 2 of the License, or (at your option) any later version.   *
+ *                                                                    *
+ * This library is distributed in the hope that it will be useful,    *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  *
+ * Lesser General Public License for more details.                    *
+ *                                                                    *
+ * You should have received a copy of the GNU Lesser General Public   *
+ * License along with this library; if not, write to the              *
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,   *
+ * Boston, MA  02110-1301, USA.                                       *
+ **********************************************************************
+ -->
+<language name="Vala" section="Sources" version="5" kateversion="3.4" indenter="cstyle" extensions="*.vala" mimetype="text/x-vala" priority="15" author="Antoni Boucher (bouanto@hotmail.com)" license="LGPLv2+">
+    <highlighting>
+        <list name="keywords">
+            <item>abstract</item>
+            <item>as</item>
+            <item>async</item>
+            <item>base</item>
+            <item>break</item>
+            <item>case</item>
+            <item>catch</item>
+            <item>class</item>
+            <item>const</item>
+            <item>construct</item>
+            <item>continue</item>
+            <item>default</item>
+            <item>delegate</item>
+            <item>delete</item>
+            <item>do</item>
+            <item>dynamic</item>
+            <item>else</item>
+            <item>enum</item>
+            <item>ensures</item>
+            <item>errordomain</item>
+            <item>extern</item>
+            <item>false</item>
+            <item>finally</item>
+            <item>for</item>
+            <item>foreach</item>
+            <item>get</item>
+            <item>global</item>
+            <item>if</item>
+            <item>in</item>
+            <item>inline</item>
+            <item>interface</item>
+            <item>internal</item>
+            <item>is</item>
+            <item>lock</item>
+            <item>namespace</item>
+            <item>new</item>
+            <item>null</item>
+            <item>out</item>
+            <item>override</item>
+            <item>owned</item>
+            <item>private</item>
+            <item>protected</item>
+            <item>public</item>
+            <item>ref</item>
+            <item>requires</item>
+            <item>result</item>
+            <item>return</item>
+            <item>set</item>
+            <item>signal</item>
+            <item>sizeof</item>
+            <item>static</item>
+            <item>struct</item>
+            <item>switch</item>
+            <item>this</item>
+            <item>throw</item>
+            <item>throws</item>
+            <item>true</item>
+            <item>try</item>
+            <item>typeof</item>
+            <item>unowned</item>
+            <item>using</item>
+            <item>value</item>
+            <item>virtual</item>
+            <item>weak</item>
+            <item>while</item>
+            <item>yield</item>
+        </list>
+    <list name="extensions">
+        <item>connect</item>
+        <item>connect_after</item>
+        <item>disconnect</item>
+        <item>emit</item>
+    </list>
+    <list name="types">
+        <item>bool</item>
+        <item>char</item>
+        <item>double</item>
+        <item>float</item>
+        <item>int</item>
+        <item>int8</item>
+        <item>int16</item>
+        <item>int32</item>
+        <item>int64</item>
+        <item>long</item>
+        <item>short</item>
+        <item>size_t</item>
+        <item>ssize_t</item>
+        <item>string</item>
+        <item>uchar</item>
+        <item>uint</item>
+        <item>uint8</item>
+        <item>uint16</item>
+        <item>uint32</item>
+        <item>uint64</item>
+        <item>ulong</item>
+        <item>unichar</item>
+        <item>ushort</item>
+        <item>var</item>
+        <item>void</item>
+    </list>
+    <contexts>
+        <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+            <DetectSpaces />
+            <RegExpr attribute="Preprocessor" context="Outscoped" String="#\s*if\s+0\s*$" beginRegion="PP" firstNonSpace="true" />
+            <DetectChar context="AfterHash" char="#" firstNonSpace="true" lookAhead="true" />
+            <StringDetect attribute="Region Marker" context="Region Marker" String="//BEGIN" beginRegion="Region1" firstNonSpace="true" />
+            <StringDetect attribute="Region Marker" context="Region Marker" String="//END" endRegion="Region1" firstNonSpace="true" />
+            <keyword attribute="Keyword" context="#stay" String="keywords" />
+            <keyword attribute="Extensions" context="#stay" String="extensions" />
+            <keyword attribute="Data Type" context="#stay" String="types" />
+            <HlCChar attribute="Char" context="#stay"/>
+
+            <Detect2Chars attribute="String" context="String Template" char="@" char1="&quot;"/>
+            <StringDetect attribute="String" context="MultiLine String" String="&quot;&quot;&quot;"/>
+            <DetectChar attribute="String" context="String" char="&quot;"/>
+            <DetectIdentifier />
+            <Float attribute="Float" context="Float Suffixes"/>
+            <HlCOct attribute="Octal" context="#stay"/>
+            <HlCHex attribute="Hex" context="#stay"/>
+            <Int attribute="Decimal" context="Int Suffixes"/>
+            <IncludeRules context="##Doxygen" />
+            <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
+            <Detect2Chars attribute="Comment" context="MultiLine Comment" char="/" char1="*" beginRegion="Comment"/>
+            <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+            <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+            <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]{|}~^&#59;"/>
+        </context>
+
+        <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+            <AnyChar String="fF" attribute="Float" context="#pop"/>
+        </context>
+
+        <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+            <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
+            <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
+            <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
+            <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
+            <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
+            <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
+            <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
+            <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+        </context>
+
+        <context name="String Template Variable" attribute="String" lineEndContext="#stay">
+            <Detect2Chars attribute="Escaped Code" context="#stay" char="$" char1="$" />
+            <RegExpr attribute="Variable" context="#stay" String="\$[a-zA-Z_][a-zA-Z0-9_]*" />
+            <RegExpr attribute="Variable" context="#stay" String="\$\(.*\)" minimal="true" />
+        </context>
+
+        <context attribute="String" lineEndContext="#stay" name="MultiLine String">
+            <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;"/>
+        </context>
+
+        <context attribute="String" lineEndContext="#pop" name="String">
+            <LineContinue attribute="String" context="#stay"/>
+            <HlCStringChar attribute="String Char" context="#stay"/>
+            <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        </context>
+
+        <context attribute="String" lineEndContext="#pop" name="String Template">
+            <IncludeRules context="String Template Variable" />
+            <LineContinue attribute="String" context="#stay"/>
+            <HlCStringChar attribute="String Char" context="#stay"/>
+            <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        </context>
+
+        <context attribute="Region Marker" lineEndContext="#pop" name="Region Marker">
+        </context>
+
+        <context attribute="Comment" lineEndContext="#pop" name="Comment">
+            <LineContinue attribute="Comment" context="#stay"/>
+            <DetectSpaces />
+            <IncludeRules context="##Alerts" />
+            <DetectIdentifier />
+        </context>
+
+        <context attribute="Comment" lineEndContext="#stay" name="MultiLine Comment">
+            <DetectSpaces />
+            <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+            <IncludeRules context="##Alerts" />
+            <DetectIdentifier />
+        </context>
+
+        <context attribute="Error" lineEndContext="#pop" name="AfterHash">
+            <!-- elif, else, endif, if -->
+            <RegExpr attribute="Preprocessor" context="Preprocessor" String="#\s*if(?=\s+\S)" insensitive="true" beginRegion="PP" firstNonSpace="true" />
+            <RegExpr attribute="Preprocessor" context="Preprocessor" String="#\s*endif" insensitive="true" endRegion="PP" firstNonSpace="true" />
+            <RegExpr attribute="Preprocessor" context="Preprocessor" String="#\s*(?:el(?:se|if))" insensitive="true" firstNonSpace="true" />
+            <RegExpr attribute="Preprocessor" context="Preprocessor" String="#\s+[0-9]+" insensitive="true" firstNonSpace="true" />
+        </context>
+
+        <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+            <LineContinue attribute="Preprocessor" context="#stay"/>
+            <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
+            <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
+            <IncludeRules context="##Doxygen" />
+            <Detect2Chars attribute="Comment" context="Comment/Preprocessor" char="/" char1="*" beginRegion="MultiLine Comment" />
+
+            <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
+        </context>
+
+        <context attribute="Comment" lineEndContext="#stay" name="Comment/Preprocessor">
+            <DetectSpaces />
+            <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment2" />
+            <DetectIdentifier />
+        </context>
+
+        <context attribute="Comment" lineEndContext="#stay" name="Outscoped" >
+            <DetectSpaces />
+            <IncludeRules context="##Alerts" />
+            <DetectIdentifier />
+            <IncludeRules context="##Doxygen" />
+            <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
+            <Detect2Chars attribute="Comment" context="MultiLine Comment" char="/" char1="*" beginRegion="Comment"/>
+            <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="PP" firstNonSpace="true" />
+            <RegExpr attribute="Preprocessor" context="#pop" String="#\s*el(?:se|if)" firstNonSpace="true" />
+            <RegExpr attribute="Preprocessor" context="#pop" String="#\s*endif" endRegion="PP" firstNonSpace="true" />
+        </context>
+
+        <context attribute="Comment" lineEndContext="#stay" name="Outscoped intern">
+            <DetectSpaces />
+            <IncludeRules context="##Alerts" />
+            <DetectIdentifier />
+            <DetectChar attribute="String" context="String" char="&quot;"/>
+            <IncludeRules context="##Doxygen" />
+            <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
+            <Detect2Chars attribute="Comment" context="MultiLine Comment" char="/" char1="*" beginRegion="Comment"/>
+            <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="PP" firstNonSpace="true" />
+            <RegExpr attribute="Comment" context="#pop" String="#\s*endif" endRegion="PP" firstNonSpace="true" />
+        </context>
+    </contexts>
+    <itemDatas>
+        <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+        <itemData name="Char" defStyleNum="dsChar" spellChecking="false"/>
+        <itemData name="Comment" defStyleNum="dsComment"/>
+        <itemData name="Data Type" defStyleNum="dsDataType" spellChecking="false"/>
+        <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+        <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+        <itemData name="Escaped Code" defStyleNum="dsKeyword" color="#0F0F8F" selColor="#ffffff" bold="true" italic="false" spellChecking="false" />
+        <itemData name="Extensions" defStyleNum="dsKeyword" color="#0095ff" selColor="#ffffff" bold="true" italic="false" spellChecking="false"/>
+        <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+        <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
+        <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+        <itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false"/>
+        <itemData name="Prep. Lib" defStyleNum="dsOthers" spellChecking="false"/>
+        <itemData name="Preprocessor" defStyleNum="dsOthers" spellChecking="false"/>
+        <itemData name="Region Marker" defStyleNum="dsRegionMarker" spellChecking="false"/>
+        <itemData name="String" defStyleNum="dsString"/>
+        <itemData name="String Char" defStyleNum="dsChar"/>
+        <itemData name="Symbol" defStyleNum="dsNormal" spellChecking="false"/>
+        <itemData name="Variable" defStyleNum="dsKeyword" color="#5555FF" selColor="#ffffff" bold="false" italic="false" spellChecking="false" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+        <comment name="singleLine" start="//" />
+        <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+    </comments>
+    <keywords casesensitive="true" />
+  </general>
+</language>

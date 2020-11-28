@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="Motorola DSP56k" section="Assembler" version="2" kateversion="5.0"  extensions="*.asm;*.inc;*.ASM;*.INC" author="Miro Kropacek (miro.kropacek@gmail.com)" license="LGPL">
+
+  <highlighting>
+    <list name="Data Registers">
+      <item>x</item>
+      <item>x0</item>
+      <item>x1</item>
+      <item>y</item>
+      <item>y0</item>
+      <item>y1</item>
+      <item>a2</item>
+      <item>a1</item>
+      <item>a0</item>
+      <item>a</item>
+      <item>a10</item>
+      <item>ab</item>
+      <item>b2</item>
+      <item>b1</item>
+      <item>b0</item>
+      <item>b</item>
+      <item>b10</item>
+      <item>ba</item>
+    </list>
+
+    <list name="Address Registers">
+      <item>r0</item>
+      <item>r1</item>
+      <item>r2</item>
+      <item>r3</item>
+      <item>r4</item>
+      <item>r5</item>
+      <item>r6</item>
+      <item>r7</item>
+    </list>
+
+    <list name="Offset Registers">
+	    <item>n0</item>
+	    <item>n1</item>
+	    <item>n2</item>
+	    <item>n3</item>
+	    <item>n4</item>
+	    <item>n5</item>
+	    <item>n6</item>
+	    <item>n7</item>
+    </list>
+
+    <list name="Modifier Registers">
+	    <item>m0</item>
+	    <item>m1</item>
+	    <item>m2</item>
+	    <item>m3</item>
+	    <item>m4</item>
+	    <item>m5</item>
+	    <item>m6</item>
+	    <item>m7</item>
+    </list>
+
+    <list name="Control Registers">
+	    <item>la</item>
+	    <item>lc</item>
+	    <item>pc</item>
+	    <item>ssh</item>
+	    <item>ssl</item>
+	    <item>omr</item>
+	    <item>sr</item>
+	    <item>sp</item>
+	    <item>mr</item>
+	    <item>ccr</item>
+    </list>
+
+    <list name="Instructions">
+	    <item>abs</item>
+	    <item>adc</item>
+	    <item>add</item>
+	    <item>addl</item>
+	    <item>addr</item>
+	    <item>and</item>
+	    <item>andi</item>
+	    <item>asl</item>
+	    <item>asr</item>
+	    <item>bchg</item>
+	    <item>bclr</item>
+	    <item>bset</item>
+	    <item>btst</item>
+	    <item>clr</item>
+	    <item>cmp</item>
+	    <item>cmpm</item>
+	    <item>div</item>
+	    <item>do</item>
+	    <item>enddo</item>
+	    <item>eor</item>
+	    <item>illegal</item>
+	    <item>jcc</item>
+	    <item>jhs</item>
+	    <item>jcs</item>
+	    <item>jls</item>
+	    <item>jec</item>
+	    <item>jeq</item>
+	    <item>jes</item>
+	    <item>jge</item>
+	    <item>jgt</item>
+	    <item>jlc</item>
+	    <item>jle</item>
+	    <item>jls</item>
+	    <item>jlt</item>
+	    <item>jmi</item>
+	    <item>jne</item>
+	    <item>jnr</item>
+	    <item>jpl</item>
+	    <item>jnn</item>
+	    <item>jclr</item>
+	    <item>jmp</item>
+	    <item>jscc</item>
+	    <item>jshs</item>
+	    <item>jscs</item>
+	    <item>jsls</item>
+	    <item>jsec</item>
+	    <item>jseq</item>
+	    <item>jses</item>
+	    <item>jsge</item>
+	    <item>jsgt</item>
+	    <item>jslc</item>
+	    <item>jsle</item>
+	    <item>jsls</item>
+	    <item>jslt</item>
+	    <item>jsmi</item>
+	    <item>jsne</item>
+	    <item>jsnr</item>
+	    <item>jspl</item>
+	    <item>jsnn</item>
+	    <item>jsclr</item>
+	    <item>jset</item>
+	    <item>jsr</item>
+	    <item>jsset</item>
+	    <item>lsl</item>
+	    <item>lsr</item>
+	    <item>lua</item>
+	    <item>mac</item>
+	    <item>macr</item>
+	    <item>move</item>
+	    <item>movec</item>
+	    <item>movem</item>
+	    <item>movep</item>
+	    <item>mpy</item>
+	    <item>mpyr</item>
+	    <item>neg</item>
+	    <item>nop</item>
+	    <item>norm</item>
+	    <item>not</item>
+	    <item>or</item>
+	    <item>ori</item>
+	    <item>rep</item>
+	    <item>reset</item>
+	    <item>rnd</item>
+	    <item>rol</item>
+	    <item>ror</item>
+	    <item>rti</item>
+	    <item>rts</item>
+	    <item>sbc</item>
+	    <item>stop</item>
+	    <item>sub</item>
+	    <item>subl</item>
+	    <item>subr</item>
+	    <item>swi</item>
+	    <item>tcc</item>
+	    <item>ths</item>
+	    <item>tcs</item>
+	    <item>tls</item>
+	    <item>tec</item>
+	    <item>teq</item>
+	    <item>tes</item>
+	    <item>tge</item>
+	    <item>tgt</item>
+	    <item>tlc</item>
+	    <item>tle</item>
+	    <item>tls</item>
+	    <item>tlt</item>
+	    <item>tmi</item>
+	    <item>tne</item>
+	    <item>tnr</item>
+	    <item>tpl</item>
+	    <item>snn</item>
+	    <item>tfr</item>
+	    <item>tst</item>
+	    <item>wait</item>
+    </list>
+
+    <list name="Directives">
+	    <item>endif</item>
+	    <item>endc</item>
+	    <item>else</item>
+	    <item>ifne</item>
+	    <item>if</item>
+	    <item>ifeq</item>
+	    <item>ifle</item>
+	    <item>iflt</item>
+	    <item>ifge</item>
+	    <item>ifgt</item>
+	    <item>include</item>
+	    <item>incbin</item>
+	    <item>printval</item>
+	    <item>pass1val</item>
+	    <item>pass2val</item>
+	    <item>fail</item>
+	    <item>endm</item>
+	    <item>end</item>
+	    <item>org</item>
+	    <item>ds</item>
+	    <item>dsm</item>
+	    <item>list</item>
+	    <item>nolist</item>
+	    <item>macro</item>
+	    <item>dc</item>
+	    <item>equ</item>
+    </list>
+
+    <contexts>
+      <!-- name = name of context, attribute = name of item data -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+	<RegExpr attribute="Memory" context="#stay" String="[xylpXYLP]:"/>
+	<keyword attribute="Data Registers" context="#stay" String="Data Registers"/>
+	<keyword attribute="Address Registers" context="#stay" String="Address Registers"/>
+	<keyword attribute="Offset Registers" context="#stay" String="Offset Registers"/>
+	<keyword attribute="Modifier Registers" context="#stay" String="Modifier Registers"/>
+	<keyword attribute="Control Registers" context="#stay" String="Control Registers"/>
+	<keyword attribute="Instructions" context="#stay" String="Instructions"/>
+	<keyword attribute="Directives" context="#stay" String="Directives"/>
+
+	<RegExpr attribute="Label" context="#stay" String="^[A-Za-z][A-Za-z_.0-9]*:?"/>
+	<RegExpr attribute="Local label" context="#stay" String="^_[A-Za-z_][A-Za-z_.0-9]*:?"/>
+
+	<DetectChar attribute="Comment" context="Comment" char=";"/>
+	<DetectChar attribute="Comment" context="Comment" char="*" firstNonSpace="true"/>
+	<DetectChar attribute="Constant" context="Constant" char="#"/>
+	<DetectChar attribute="BaseN" context="Number16" char="$"/>
+	<DetectChar attribute="BaseN" context="Number2" char="%"/>
+	<DetectChar attribute="BaseN" context="Number8" char="@"/>
+	<Float attribute="Float" context="#stay"/>
+	<Int attribute="Number" context="#stay"/>
+	<RangeDetect attribute="Char" context="#stay" char="'"  char1="'"/>
+	<AnyChar attribute="String" context="String" String="&quot;'"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+
+      <context name="String" attribute="String" lineEndContext="#pop">
+	      <AnyChar attribute="String" context="#pop" String="&quot;'"/>
+      </context>
+
+      <context name="Constant" attribute="Constant" lineEndContext="#pop">
+	      <RegExpr attribute="Constant" context="Operators" String="[0-9]+"/>
+	      <RegExpr attribute="Constant" context="Operators" String="\$[A-Fa-f0-9]+"/>
+	      <RegExpr attribute="Constant" context="Operators" String="@[0-7]+"/>
+	      <RegExpr attribute="Constant" context="Operators" String="%[01]+"/>
+	      <RegExpr attribute="Label" context="Operators" String="[A-Za-z_][A-Za-z_.0-9]*"/>
+	      <RegExpr attribute="Local label" context="Operators" String="\.[A-Za-z_][A-Za-z_.0-9]*"/>
+	      <RangeDetect attribute="Char" context="#pop" char="'"  char1="'"/>
+	      <DetectChar attribute="Normal Text" char="," context="#pop"/>
+	      <DetectSpaces attribute="Normal Text" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="(" context="#stay"/>
+      </context>
+
+      <context name="Operators" attribute="Normal Text" lineEndContext="#pop">
+	      <DetectChar attribute="Normal Text" char="|" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="&amp;" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="^" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="*" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="(" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char=")" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="+" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="-" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="/" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="~" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="!" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="%" context="#pop"/>
+	      <Detect2Chars attribute="Normal Text" char="&lt;" char1="&lt;" context="#pop"/>
+	      <Detect2Chars attribute="Normal Text" char="&gt;" char1="&gt;" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="," context="#pop#pop"/>
+	      <DetectSpaces attribute="Normal Text" context="#pop#pop"/>
+      </context>
+
+      <context name="Number16" attribute="BaseN" lineEndContext="#pop">
+	      <RegExpr attribute="BaseN" context="#pop" String="[A-Fa-f0-9]+"/>
+      </context>
+
+      <context name="Number2" attribute="BaseN" lineEndContext="#pop">
+	      <RegExpr attribute="BaseN" context="#pop" String="[01]+"/>
+      </context>
+
+      <context name="Number8" attribute="BaseN" lineEndContext="#pop">
+	      <RegExpr attribute="BaseN" context="#pop" String="[0-7]+"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <!-- keywords -->
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Data Registers" defStyleNum="dsDataType"/>
+      <itemData name="Address Registers" defStyleNum="dsDataType"/>
+      <itemData name="Offset Registers" defStyleNum="dsDataType"/>
+      <itemData name="Modifier Registers" defStyleNum="dsDataType"/>
+      <itemData name="Control Registers" defStyleNum="dsDataType"/>
+      <itemData name="Instructions" bold="true" defStyleNum="dsKeyword"/>
+      <itemData name="Directives" bold="true" defStyleNum="dsControlFlow"/>
+      <itemData name="Memory" bold="true" defStyleNum="dsOthers"/>
+      <!-- defined in contexts -->
+      <itemData name="Comment" italic="false" defStyleNum="dsComment"/>
+      <itemData name="Label" defStyleNum="dsFunction"/>
+      <itemData name="Local label" defStyleNum="dsFunction"/>
+      <itemData name="Constant" defStyleNum="dsConstant"/>
+      <itemData name="BaseN" defStyleNum="dsBaseN"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="Char" defStyleNum="dsChar"/>
+      <itemData name="String" defStyleNum="dsString"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+	  <keywords casesensitive="0"/>
+    <comments>
+      <comment name="singleLine" start=";"/>
+    </comments>
+  </general>
+
+</language>

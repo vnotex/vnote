@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="Spice" section="Hardware" version="4" kateversion="5.0" extensions="*.sp;*.hsp" mimetype="text/spice" author="Steven Robson (s.a.robson@sms.ed.ac.uk) and Anders Lund" license="LGPL">
+    <highlighting>
+
+        <contexts>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <RegExpr attribute="Keyword" context="#stay" String="\B\.\w+" />
+                <Int attribute="Number" context="#stay"/>
+                <Float attribute="Number" context="#stay"/>
+                <AnyChar attribute="Comment" String="$*" context="Commentar 1" />
+                <DetectChar attribute="String" context="String" char="&quot;"/>
+                <DetectChar attribute="String" context="TickString" char="'"/>
+            </context>
+
+            <context attribute="Comment" lineEndContext="#pop" name="Commentar 1"/>
+
+            <context attribute="String" lineEndContext="#pop" name="String">
+                <LineContinue attribute="String" context="#stay"/>
+                <HlCStringChar attribute="String Char" context="#stay"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+
+            <context attribute="String" lineEndContext="#pop" name="TickString">
+                <LineContinue attribute="String" context="#stay"/>
+                <HlCStringChar attribute="String Char" context="#stay"/>
+                <DetectChar attribute="String" context="#pop" char="'"/>
+            </context>
+
+        </contexts>
+
+        <itemDatas>
+                <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+                <itemData name="Keyword"      defStyleNum="dsKeyword"/>
+                <itemData name="String"       defStyleNum="dsString"/>
+                <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
+                <itemData name="Comment"      defStyleNum="dsComment"/>
+                <itemData name="Number"       defStyleNum="dsDecVal"/>
+        </itemDatas>
+
+    </highlighting>
+
+    <general>
+        <comments>
+            <comment name="singleLine" start="*" />
+        </comments>
+        <keywords casesensitive="1" weakDeliminator="."/>
+    </general>
+</language>

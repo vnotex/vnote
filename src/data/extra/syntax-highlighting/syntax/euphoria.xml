@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+
+  This file is part of KDE's kate project.
+
+  copyright   : (C) 2004 by Irv Mullins
+  email       : irvm at ellijay dot com
+
+  last change : 2004-04-24
+
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Library General Public
+  License as published by the Free Software Foundation; either
+  version 2 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Library General Public License for more details.
+
+  You should have received a copy of the GNU Library General Public
+  License along with this library; if not, write to the
+  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+  Boston, MA  02110-1301, USA.
+
+-->
+
+<!-- Store this in /usr/share/apps/katepart/syntax -->
+
+<language name="Euphoria" version="6" kateversion="5.0" section="Scripts" extensions="*.e;*.ex;*.exw;*.exu" mimetype="text/x-euphoria" author="Irv Mullins (irvm@ellijay.com)" license="LGPLv2+">
+  <highlighting>
+    <list name="keywords">
+      <item>abort</item>
+      <item>allocate</item>
+      <item>allocate_string</item>
+      <item>allow_break</item>
+      <item>and</item>
+      <item>and_bits</item>
+      <item>append</item>
+      <item>arccos</item>
+      <item>arcsin</item>
+      <item>arctan</item>
+      <item>atom_to_float32</item>
+      <item>atom_to_float64</item>
+      <item>as</item>
+      <item>begin</item>
+      <item>bits_to_int</item>
+      <item>bytes_to_int</item>
+      <item>c_func</item>
+      <item>c_proc</item>
+      <item>call</item>
+      <item>call_back</item>
+      <item>call_func</item>
+      <item>call_proc</item>
+      <item>check_break</item>
+      <item>chdir</item>
+      <item>clear_screen</item>
+      <item>close</item>
+      <item>command_line</item>
+      <item>compare</item>
+      <item>cos</item>
+      <item>crash_file</item>
+      <item>crash_message</item>
+      <item>current_dir</item>
+      <item>custom_sort</item>
+      <item>date</item>
+      <item>define_c_func</item>
+      <item>define_c_proc</item>
+      <item>define_c_var</item>
+      <item>dir</item>
+      <item>display_text_image</item>
+      <item>do</item>
+      <item>else</item>
+      <item>elsif</item>
+      <item>end</item>
+      <item>equal</item>
+      <item>exit</item>
+      <item>find</item>
+      <item>float32_to_atom</item>
+      <item>float64_to_atom</item>
+      <item>floor</item>
+      <item>flush</item>
+      <item>for</item>
+      <item>free</item>
+      <item>free_console</item>
+      <item>function</item>
+      <item>get_bytes</item>
+      <item>get_key</item>
+      <item>get_mouse</item>
+      <item>get_position</item>
+      <item>get_screen_char</item>
+      <item>getc</item>
+      <item>getenv</item>
+      <item>gets</item>
+      <item>if</item>
+      <item>include</item>
+      <item>int_to_bits</item>
+      <item>int_to_bytes</item>
+      <item>length</item>
+      <item>lock_file</item>
+      <item>log</item>
+      <item>lower</item>
+      <item>machine_func</item>
+      <item>machine_proc</item>
+      <item>match</item>
+      <item>mem_copy</item>
+      <item>mem_set</item>
+      <item>mouse_events</item>
+      <item>mouse_pointer</item>
+      <item>not</item>
+      <item>not_bits</item>
+      <item>of</item>
+      <item>open</item>
+      <item>open_dll</item>
+      <item>or</item>
+      <item>or_bits</item>
+      <item>peek</item>
+      <item>peek4</item>
+      <item>peek4s</item>
+      <item>peek4u</item>
+      <item>platform</item>
+      <item>poke</item>
+      <item>poke4</item>
+      <item>position</item>
+      <item>power</item>
+      <item>prepend</item>
+      <item>print</item>
+      <item>printf</item>
+      <item>procedure</item>
+      <item>profile</item>
+      <item>prompt_number</item>
+      <item>prompt_string</item>
+      <item>put_screen_char</item>
+      <item>puts</item>
+      <item>rand</item>
+      <item>read_bitmap</item>
+      <item>register_block</item>
+      <item>remainder</item>
+      <item>repeat</item>
+      <item>return</item>
+      <item>reverse</item>
+      <item>routine_id</item>
+      <item>save_bitmap</item>
+      <item>save_text_image</item>
+      <item>scroll</item>
+      <item>seek</item>
+      <item>set_rand</item>
+      <item>sin</item>
+      <item>sleep</item>
+      <item>sort</item>
+      <item>sprint</item>
+      <item>sprintf</item>
+      <item>sqrt</item>
+      <item>system</item>
+      <item>system_exec</item>
+      <item>tan</item>
+      <item>text_color</item>
+      <item>then</item>
+      <item>time</item>
+      <item>to</item>
+      <item>trace</item>
+      <item>type</item>
+      <item>unlock_file</item>
+      <item>unregister_block</item>
+      <item>upper</item>
+      <item>value</item>
+      <item>video_config</item>
+      <item>wait_key</item>
+      <item>walk_dir</item>
+      <item>where</item>
+      <item>while</item>
+      <item>wildcard_file</item>
+      <item>wildcard_match</item>
+      <item>with</item>
+      <item>without</item>
+      <item>wrap</item>
+      <item>xor</item>
+      <item>xor_bits</item>
+      <item>?</item>
+    </list>
+
+    <list name="types">
+      <item>atom</item>
+      <item>constant</item>
+      <item>global</item>
+      <item>integer</item>
+      <item>object</item>
+      <item>sequence</item>
+      <item>type</item>
+    </list>
+
+    <list name="constants">
+      <item>PI</item>
+      <item>GET_SUCCESS</item>
+    </list>
+
+    <list name="GtkKeywords">
+      <item>addto</item>
+      <item>adjustment</item>
+      <item>alignment</item>
+      <item>appendto</item>
+      <item>append_page</item>
+      <item>arrow</item>
+      <item>aspect_frame</item>
+      <item>button</item>
+      <item>calendar</item>
+      <item>cell_renderer_text</item>
+      <item>cell_renderer_toggle</item>
+      <item>check</item>
+      <item>checkbutton</item>
+      <item>check_menu_item</item>
+      <item>choice</item>
+      <item>combo</item>
+      <item>connect</item>
+      <item>drawingarea</item>
+      <item>draw_arc</item>
+      <item>draw_image</item>
+      <item>draw_line</item>
+      <item>draw_polygon</item>
+      <item>draw_point</item>
+      <item>draw_rectangle</item>
+      <item>end_submenu</item>
+      <item>entry</item>
+      <item>euget</item>
+      <item>event_box</item>
+      <item>flatten</item>
+      <item>font</item>
+      <item>frame</item>
+      <item>get</item>
+      <item>getImage</item>
+      <item>getSize</item>
+      <item>g_list</item>
+      <item>g_list_to_sequence</item>
+      <item>deallocate_strings</item>
+      <item>draw_line</item>
+      <item>hbox</item>
+      <item>hbuttonbox</item>
+      <item>hpaned</item>
+      <item>hscrollbar</item>
+      <item>hseparator</item>
+      <item>hscale</item>
+      <item>idle_add</item>
+      <item>image</item>
+      <item>image_menu_item</item>
+      <item>init</item>
+      <item>label</item>
+      <item>limit</item>
+      <item>list_store</item>
+      <item>list_view</item>
+      <item>list_view_column</item>
+      <item>main</item>
+      <item>mark_day</item>
+      <item>menu</item>
+      <item>menubar</item>
+      <item>menu_item</item>
+      <item>mouse_button</item>
+      <item>new_gc</item>
+      <item>new_group</item>
+      <item>new_menu_group</item>
+      <item>notebook</item>
+      <item>option</item>
+      <item>option_menu</item>
+      <item>pack</item>
+      <item>path</item>
+      <item>pop</item>
+      <item>progress_bar</item>
+      <item>push</item>
+      <item>quit</item>
+      <item>radio</item>
+      <item>radiobutton</item>
+      <item>radio_menu_item</item>
+      <item>rc_parse</item>
+      <item>run</item>
+      <item>separator_menu_item</item>
+      <item>set</item>
+      <item>set_submenu</item>
+      <item>str</item>
+      <item>scrolled_window</item>
+      <item>seq_to_str</item>
+      <item>setfg</item>
+      <item>setProperty</item>
+      <item>show</item>
+      <item>spinbutton</item>
+      <item>statusbar</item>
+      <item>table</item>
+      <item>textbox</item>
+      <item>timer</item>
+      <item>togglebutton</item>
+      <item>toolbar</item>
+      <item>tooltip</item>
+      <item>tree_store</item>
+      <item>tree_view</item>
+      <item>tree_view_column</item>
+      <item>vbox</item>
+      <item>vbuttonbox</item>
+      <item>vpaned</item>
+      <item>vscale</item>
+      <item>vscrollbar</item>
+      <item>vseparator</item>
+      <item>when</item>
+      <item>window</item>
+      <item>NULL</item>
+      <item>TRUE</item>
+      <item>FALSE</item>
+      <item>color_selection</item>
+      <item>file_selection</item>
+      <item>font_selection_dialog</item>
+      <item>Error</item>
+      <item>Info</item>
+      <item>Question</item>
+      <item>Warn</item>
+      <item>YesNo</item>
+    </list>
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+for\b" endRegion="regFor"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bfor\b" beginRegion="regFor"/>
+
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+if\b" endRegion="regIf"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bif\b" beginRegion="regIf"/>
+
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+function\b" endRegion="regFunction"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bfunction\b" beginRegion="regFunction"/>
+
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+procedure\b" endRegion="regProcedure"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bprocedure\b" beginRegion="regProcedure"/>
+
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+while\b" endRegion="regWhile"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bwhile\b" beginRegion="regWhile"/>
+
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+type\b" endRegion="regType"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\btype\b" beginRegion="regType"/>
+
+        <keyword attribute="Constants" context="#stay" String="constants"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="GtkKeyword" context="#stay" String="GtkKeywords"/>
+        <keyword attribute="Type" context="#stay" String="types"/>
+        <Float attribute="Number" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <RegExpr attribute="Region Marker" context="#stay" String="--\s*BEGIN.*" beginRegion="regMarker" firstNonSpace="true"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="--\s*END.*" endRegion="regMarker" firstNonSpace="true"/>
+        <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Modelines" />
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"     defStyleNum="dsNormal" />
+      <itemData name="Keyword"         defStyleNum="dsKeyword" />
+      <itemData name="Constants"       defStyleNum="dsConstant" />
+      <itemData name="GtkKeyword"      defStyleNum="dsKeyword" />
+      <itemData name="Type"            defStyleNum="dsDataType"/>
+      <itemData name="Number"          defStyleNum="dsDecVal" />
+      <itemData name="String"          defStyleNum="dsString" />
+      <itemData name="Comment"         defStyleNum="dsComment" />
+      <itemData name="Region Marker"   defStyleNum="dsRegionMarker" />
+    </itemDatas>
+
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" />
+    <comments>
+       <comment name="singleLine" start="--" />
+    </comments>
+  </general>
+</language>

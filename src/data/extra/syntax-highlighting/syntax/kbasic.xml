@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="KBasic" version="3" kateversion="2.2" section="Sources" extensions="*.kbasic" mimetype="text/x-kbasic-src">
+    <highlighting>
+        <list name="keywords">
+        <item>For</item>
+        <item>Next</item>
+        <item>Do</item>
+        <item>Loop</item>
+        <item>While</item>
+        <item>Wend</item>
+        <item>Until</item>
+        <item>If</item>
+        <item>Else</item>
+        <item>End</item>
+        <item>Function</item>
+        <item>Goto</item>
+        <item>Sub</item>
+        <item>Implements</item>
+        <item>In</item>
+        <item>Sub</item>
+        <item>Private</item>
+        <item>Public</item>
+        <item>Global</item>
+        <item>As</item>
+        <item>Dim</item>
+        <item>Set</item>
+        <item>Let</item>
+        <item>Get</item>
+        <item>To</item>
+        <item>Property</item>
+        <item>True</item>
+        <item>False</item>
+        <item>Or</item>
+        <item>Not</item>
+        <item>Xor</item>
+        <item>And</item>
+        <item>Then</item>
+        <item>Exit</item>
+        <item>Put</item>
+        <item>Open</item>
+        <item>Close</item>
+        <item>Seek</item>
+        <item>Print</item>
+        <item>Input</item>
+        <item>Output</item>
+        <item>Repeat</item>
+        <item>Load</item>
+        <item>Unload</item>
+        <item>Declare</item>
+        <item>Option</item>
+        <item>Explicit</item>
+        </list>
+        <list name="types">
+        <item>Integer</item>
+        <item>Long</item>
+        <item>Byte</item>
+        <item>Boolean</item>
+        <item>Variant</item>
+        <item>Single</item>
+        <item>Double</item>
+        <item>Currency</item>
+        <item>String</item>
+        <item>Object</item>
+        <item>Control</item>
+        </list>
+        <contexts>
+        <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Identifier" context="#stay" String="types"/>
+        <Float attribute="String" context="#stay"/>
+        <Int attribute="Types" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <DetectChar attribute="Comment" context="Comment" char="'"/>
+        </context>
+        <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+        <context name="String" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="String" context="#pop" char="'"/>
+        </context>
+        </contexts>
+        <itemDatas>
+        <itemData name="Normal Text" defStyleNum="dsNormal"/>
+        <itemData name="Keyword" defStyleNum="dsKeyword"/>
+        <itemData name="Identifier" defStyleNum="dsOthers"/>
+        <itemData name="Types" defStyleNum="dsDataType"/>
+        <itemData name="String" defStyleNum="dsString"/>
+        <itemData name="Comment" defStyleNum="dsComment"/>
+        </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

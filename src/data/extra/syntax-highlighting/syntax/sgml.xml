@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="SGML" version="2" kateversion="2.2" section="Markup" extensions="*.sgml" mimetype="text/sgml">
+  <highlighting>
+    <contexts>
+       <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+         <StringDetect attribute="Comment" context="Comment" String="&lt;!--"/>
+         <RegExpr attribute="Tag" context="Attribute" String="&lt;\s*\/?\s*[a-zA-Z_:][a-zA-Z0-9._:-]*" />
+       </context>
+
+       <context attribute="Attribute Name" lineEndContext="#stay" name="Attribute" >
+          <Detect2Chars attribute="Tag" context="#pop" char="/" char1="&gt;" />
+          <DetectChar attribute="Tag" context="#pop" char="&gt;" />
+          <RegExpr attribute="Normal Text" context="Value" String="\s*=\s*" />
+       </context>
+
+       <context attribute="Attribute Value" lineEndContext="#stay" name="Value" >
+         <Detect2Chars attribute="Tag" context="#pop#pop" char="/" char1="&gt;" />
+          <DetectChar attribute="Tag" context="#pop#pop" char="&gt;" />
+         <DetectChar attribute="Attribute Value" context="Value 2" char="&quot;" />
+       </context>
+
+       <context attribute="Attribute Value" lineEndContext="#stay" name="Value 2" >
+         <DetectChar attribute="Attribute Value" context="#pop#pop" char="&quot;" />
+       </context>
+
+       <context attribute="Comment" lineEndContext="#stay" name="Comment" >
+         <StringDetect attribute="Comment" context="#pop" String="--&gt;"/>
+       </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Tag" defStyleNum="dsKeyword"/>
+      <itemData name="Attribute Name" defStyleNum="dsOthers"/>
+      <itemData name="Attribute Value" defStyleNum="dsDataType"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="&lt;!--" end="//--&gt;" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>

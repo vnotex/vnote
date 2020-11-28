@@ -1,0 +1,1107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+    <!ENTITY bullet "&#xd7;">
+    <!ENTITY envname "[a-zA-Z]+\*?">
+]>
+<language name="LaTeX" version="9" section="Markup" kateversion="5.0" priority="10" extensions="*.tex;*.ltx;*.dtx;*.sty;*.cls;*.bbx;*.cbx;*.lbx;*.tikz;*.pgf" mimetype="text/x-tex" casesensitive="1" author="Jeroen Wijnhout (Jeroen.Wijnhout@kdemail.net)+Holger Danielsson (holger.danielsson@versanet.de)+Michel Ludwig (michel.ludwig@kdemail.net)+Thomas Braun (thomas.braun@virtuell-zuhause.de)" license="LGPL" >
+  <highlighting>
+    <list name="beginEnv">
+      <item>\begin</item>
+    </list>
+
+    <list name="endEnv">
+      <item>\end</item>
+    </list>
+
+    <list name="Label">
+      <item>\Autocite</item>
+      <item>\autocite</item>
+      <item>\autoref</item>
+      <item>\Cite</item>
+      <item>\cite</item>
+      <item>\Citeauthor</item>
+      <item>\citeauthor</item>
+      <item>\citep</item>
+      <item>\citet</item>
+      <item>\citetitle</item>
+      <item>\citeurl</item>
+      <item>\citeyear</item>
+      <item>\cref</item>
+      <item>\Cref</item>
+      <item>\cref*</item>
+      <item>\Cref*</item>
+      <item>\eqref</item>
+      <item>\Footcite</item>
+      <item>\footcite</item>
+      <item>\footfullcite</item>
+      <item>\fullcite</item>
+      <item>\label</item>
+      <item>\nocite</item>
+      <item>\pagecite</item>
+      <item>\pageref</item>
+      <item>\Parencite</item>
+      <item>\parencite</item>
+      <item>\ref</item>
+      <item>\subref</item>
+      <item>\subref*</item>
+      <item>\supercite</item>
+      <item>\Textcite</item>
+      <item>\textcite</item>
+      <item>\vpageref</item>
+      <item>\vref</item>
+    </list>
+
+    <list name="macroFancyLabel">
+      <item>\documentclass</item>
+      <item>\includegraphics</item>
+      <item>\include</item>
+      <item>\usepackage</item>
+      <item>\bibliography</item>
+      <item>\bibliographystyle</item>
+    </list>
+
+    <list name="FancyLabel">
+      <item>\cites</item>
+      <item>\Cites</item>
+      <item>\parencites</item>
+      <item>\Parencites</item>
+      <item>\autocites</item>
+      <item>\Autocites</item>
+      <item>\supercites</item>
+      <item>\footcites</item>
+      <item>\Footcites</item>
+    </list>
+
+    <list name="Sectioning">
+      <item>\part*</item>
+      <item>\part</item>
+      <item>\chapter*</item>
+      <item>\chapter</item>
+      <item>\section*</item>
+      <item>\section</item>
+      <item>\subsection*</item>
+      <item>\subsection</item>
+      <item>\subsubsection*</item>
+      <item>\subsubsection</item>
+      <item>\paragraph*</item>
+      <item>\paragraph</item>
+      <item>\subparagraph*</item>
+      <item>\subparagraph</item>
+    </list>
+
+    <list name="SpecialCommand">
+      <item>\column</item>
+      <item>\definecolor</item>
+      <item>\geometry</item>
+      <item>\hspace*</item>
+      <item>\hspace</item>
+      <item>\input</item>
+      <item>\newboolean</item>
+      <item>\rule</item>
+      <item>\setboolean</item>
+      <item>\setcounter</item>
+      <item>\setlength</item>
+      <item>\special</item>
+      <item>\textcolor</item>
+      <item>\vspace*</item>
+      <item>\vspace</item>
+    </list>
+
+    <list name="Footnoting">
+      <item>\footnote*</item>
+      <item>\footnote</item>
+    </list>
+
+    <list name="NewCommand">
+      <item>\renewcommand*</item>
+      <item>\renewcommand</item>
+      <item>\providecommand*</item>
+      <item>\providecommand</item>
+      <item>\newcommand*</item>
+      <item>\newcommand</item>
+    </list>
+
+    <list name="DefCommand">
+      <item>\edef</item>
+      <item>\gdef</item>
+      <item>\xdef</item>
+    </list>
+
+    <list name="MathModeEnsure">
+      <item>\ensuremath</item>
+    </list>
+
+    <list name="iffalse">
+      <item>\iffalse</item>
+    </list>
+
+    <list name="iffalseend">
+      <item>\fi</item>
+      <item>\else</item>
+    </list>
+
+    <list name="Verb">
+      <item>verb*</item>
+      <item>verb</item>
+      <item>Verb</item>
+    </list>
+
+    <list name="Lstinline">
+      <item>lstinline</item>
+    </list>
+
+    <list name="MintParam">
+      <item>mint</item>
+    </list>
+
+    <list name="ListingsEnv">
+      <item>lstlisting*</item>
+      <item>lstlisting</item>
+    </list>
+
+    <list name="MintedEnv">
+      <item>minted*</item>
+      <item>minted</item>
+    </list>
+
+    <list name="VerbatimEnv">
+      <item>Verbatim*</item>
+      <item>Verbatim</item>
+      <item>BVerbatim*</item>
+      <item>BVerbatim</item>
+      <item>LVerbatim*</item>
+      <item>LVerbatim</item>
+      <item>verbatim*</item>
+      <item>verbatim</item>
+      <item>boxedverbatim*</item>
+      <item>boxedverbatim</item>
+    </list>
+
+    <list name="CommentEnv">
+      <item>comment*</item>
+      <item>comment</item>
+    </list>
+
+    <list name="MathEnvParam">
+      <item>alignat*</item>
+      <item>alignat</item>
+      <item>xalignat*</item>
+      <item>xalignat</item>
+      <item>xxalignat*</item>
+      <item>xxalignat</item>
+    </list>
+
+    <list name="MathEnv">
+      <item>Bmatrix*</item>
+      <item>Bmatrix</item>
+      <item>IEEEeqnarray*</item>
+      <item>IEEEeqnarray</item>
+      <item>IEEEeqnarraybox*</item>
+      <item>IEEEeqnarraybox</item>
+      <item>Vmatrix*</item>
+      <item>Vmatrix</item>
+      <item>align*</item>
+      <item>align</item>
+      <item>bmatrix*</item>
+      <item>bmatrix</item>
+      <item>cases*</item>
+      <item>cases</item>
+      <item>displaymath*</item>
+      <item>displaymath</item>
+      <item>eqnarray*</item>
+      <item>eqnarray</item>
+      <item>equation*</item>
+      <item>equation</item>
+      <item>flalign*</item>
+      <item>flalign</item>
+      <item>gather*</item>
+      <item>gather</item>
+      <item>math*</item>
+      <item>math</item>
+      <item>multline*</item>
+      <item>multline</item>
+      <item>pmatrix*</item>
+      <item>pmatrix</item>
+      <item>smallmatrix*</item>
+      <item>smallmatrix</item>
+      <item>subeqnarray*</item>
+      <item>subeqnarray</item>
+      <item>vmatrix*</item>
+      <item>vmatrix</item>
+    </list>
+
+    <list name="TabEnv">
+      <item>tabularx*</item>
+      <item>tabularx</item>
+      <item>tabular*</item>
+      <item>tabular</item>
+      <item>supertabular*</item>
+      <item>supertabular</item>
+      <item>mpsupertabular*</item>
+      <item>mpsupertabular</item>
+      <item>xtabular*</item>
+      <item>xtabular</item>
+      <item>mpxtabular*</item>
+      <item>mpxtabular</item>
+      <item>longtable*</item>
+      <item>longtable</item>
+    </list>
+
+    <list name="MathModeText">
+      <item>\text</item>
+      <item>\textit</item>
+      <item>\textbf</item>
+      <item>\textmd</item>
+      <item>\textsl</item>
+      <item>\textsc</item>
+      <item>\textrm</item>
+      <item>\textsf</item>
+      <item>\texttt</item>
+      <item>\textup</item>
+      <item>\textlf</item>
+      <item>\textnormal</item>
+      <item>\shortintertext</item>
+      <item>\intertext</item>
+      <item>\mbox</item>
+      <item>\emph</item>
+    </list>
+
+    <list name="ResetHL">
+      <item>\KileResetHL</item>
+      <item>\KateResetHL</item>
+    </list>
+
+    <contexts>
+      <!-- Normal text -->
+      <context name="Normal Text" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar char="\" attribute="Normal Text" context="LatexMacro" lookAhead="true"/>
+        <DetectChar char="$" attribute="Math" context="MathModeTex"/>
+        <RegExpr String="&lt;&lt;.*&gt;&gt;=" attribute="Normal Text" context="NoWeb" column="0"/>
+        <RegExpr String="%\s*(BEGIN|END)" attribute="Region Marker" context="RegionComment" firstNonSpace="true"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+      </context>
+
+      <context name="LatexMacro" attribute="Normal Text" lineEndContext="#pop">
+        <keyword String="beginEnv" attribute="Structure" context="#pop!FindBeginEnvironment" beginRegion="block"/>
+        <keyword String="endEnv" attribute="Structure" context="#pop!FindEndEnvironment" endRegion="block"/>
+        <keyword String="Label" attribute="Structure" context="#pop!Label"/>
+        <keyword String="macroFancyLabel" attribute="Builtin Macro" context="#pop!FancyLabel"/>
+        <keyword String="FancyLabel" attribute="Structure" context="#pop!FancyLabel"/>
+        <keyword String="Sectioning" attribute="Structure" context="#pop!Sectioning"/>
+        <keyword String="SpecialCommand" attribute="Macro" context="#pop!SpecialCommand"/>
+        <keyword String="Footnoting" attribute="Macro" context="#pop!Footnoting"/>
+        <keyword String="NewCommand" attribute="Macro" context="#pop!NewCommand"/>
+        <keyword String="DefCommand" attribute="Macro" context="#pop!DefCommand"/>
+        <Detect2Chars char="\" char1="(" attribute="Math" context="#pop!MathModeLatex"/>
+        <Detect2Chars char="\" char1="[" attribute="Math" context="#pop!MathModeLatexEquation" beginRegion="mathMode"/>
+        <keyword String="MathModeEnsure" attribute="Math" context="#pop!MathModeEnsure"/>
+        <keyword String="iffalse" attribute="Comment" context="#pop!Multiline Comment"/>
+        <DetectChar char="\" attribute="Macro" context="#pop!ContrSeq"/>
+      </context>
+
+      <!-- NoWeb -->
+      <context name="NoWeb" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr String="@\s*$" attribute="Normal Text" context="#pop" column="0"/>
+      </context>
+
+      <!-- LaTeX sectioning commands -->
+      <context name="Sectioning" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <RangeDetect char="[" char1="]" attribute="Normal Text" context="#stay"/>
+        <DetectChar char="{" attribute="Normal Text" context="SectioningInside"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+      </context>
+      <context name="SectioningInside" attribute="Sectioning Text" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Normal Text" context="SectioningInside"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+        <Detect2Chars char="\" char1="(" attribute="Sectioning Math" context="SectioningMathMode" />
+        <DetectChar char="\" attribute="Sectioning Macro" context="SectioningContrSeq"/>
+        <DetectChar char="$" attribute="Sectioning Math" context="SectioningMathMode" />
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+      </context>
+      <context name="SectioningContrSeq" attribute="Macro" lineEndContext="#pop">
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="[a-zA-Z]+(\+?|\*{0,3})|." attribute="Sectioning Macro" context="#pop" />
+      </context>
+      <context name="SectioningMathMode" attribute="Sectioning Math" lineEndContext="#stay">
+        <Detect2Chars char="$" char1="$" attribute="Error" context="#stay" />
+        <DetectChar char="$" attribute="Sectioning Math" context="#pop" />
+        <Detect2Chars char="\" char1=")" attribute="Sectioning Math" context="#pop" />
+        <Detect2Chars char="\" char1="]" attribute="Error" context="#stay" />
+        <DetectChar char="\" attribute="Sectioning Macro Mathmode" context="SectioningMathContrSeq"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+      </context>
+      <context name="SectioningMathContrSeq" attribute="Sectioning Macro Mathmode" lineEndContext="#pop">
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="&envname;|." attribute="Sectioning Macro Mathmode" context="#pop" />
+      </context>
+
+      <!-- LaTeX Footnote commands -->
+      <context name="Footnoting" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <RangeDetect char="[" char1="]" attribute="Normal Text" context="#stay"/>
+        <DetectChar char="{" attribute="Normal Text" context="FootnotingInside"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+      </context>
+      <context name="FootnotingInside" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Normal Text" context="FootnotingInside"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+        <IncludeRules context="Normal Text"/>
+      </context>
+
+      <!-- LaTeX commands \newcommand and \renewcommand -->
+      <context name="NewCommand" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="LabelParameter"/>
+        <RegExpr String="(\[\d\](\[[^\]]*\])?)?\{" attribute="Normal Text" context="LabelParameter"/>
+        <DetectChar char="}" attribute="Error" context="#pop"/>
+      </context>
+
+      <!-- LaTeX command \def -->
+      <context name="DefCommand" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <RegExpr String="\\[a-zA-Z]+[^\{]*\{" attribute="Normal Text" context="#pop!CommandParameter"/>
+        <DetectChar char="}" attribute="Error" context="#pop"/>
+      </context>
+
+      <!-- parse command argument -->
+      <context name="CommandParameter" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Normal Text" context="CommandParameter"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+        <RegExpr String="\\." attribute="Normal Text" context="#stay"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+      </context>
+
+      <!-- LaTeX command in text mode -->
+      <context name="ContrSeq" attribute="Macro" lineEndContext="#pop">
+        <keyword String="Verb" attribute="Macro" context="Verb"/>
+        <keyword String="Lstinline" attribute="Macro" context="Lstinline"/>
+        <keyword String="MintParam" attribute="Macro" context="MintParam"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="[a-zA-Z@]+(\+?|\*{0,3})|." attribute="Macro" context="#pop" />
+      </context>
+
+      <!-- \mint command with parameter-->
+      <context name="MintParam" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars char="}" char1="[" attribute="Normal Text" context="#stay"/>
+        <DetectChar char="}" attribute="Normal Text" context="Verb"/>
+        <DetectChar char="]" attribute="Normal Text" context="Verb"/>
+      </context>
+
+      <!-- verb command -->
+      <context name="Verb" attribute="Verbatim" lineEndContext="#pop#pop" >
+        <RegExpr String="(.)" attribute="Normal Text" dynamic="true" context="VerbEnd" />
+      </context>
+      <context name="VerbEnd" attribute="Verbatim" lineEndContext="#pop#pop#pop" dynamic="true" >
+        <StringDetect String="%1" attribute="Normal Text" context="#pop#pop#pop" dynamic="true" />
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="[^%1\xd7]*" attribute="Verbatim" context="#stay" dynamic="true" />
+      </context>
+
+      <!-- lstinline command, different from verb as it takes options -->
+      <context name="Lstinline" attribute="Verbatim" lineEndContext="#pop#pop" >
+        <DetectSpaces/>
+        <DetectChar char="[" attribute="Normal Text" context="FancyLabelOption"/>
+        <DetectChar char="{" attribute="Normal Text" context="LstinlineParameter"/>
+        <RegExpr String="(.)" attribute="Normal Text" dynamic="true" context="LstinlineEnd" />
+      </context>
+      <context name="LstinlineEnd" attribute="Verbatim" lineEndContext="#pop#pop#pop" dynamic="true" >
+        <!-- TODO DetectChar segfault -->
+        <StringDetect String="%1" attribute="Normal Text" context="#pop#pop#pop" dynamic="true" />
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="[^%1\xd7]*" attribute="Verbatim" context="#stay" dynamic="true" />
+      </context>
+      <context name="LstinlineParameter" attribute="Verbatim" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop"/>
+      </context>
+
+      <!-- label -->
+      <context name="Label" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="LabelParameter"/>
+        <DetectChar char="[" attribute="Normal Text" context="LabelOption"/>
+      </context>
+
+      <context name="LabelOption" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="(" attribute="Math" context="MathModeTex" />
+        <DetectChar char="\" attribute="Macro" context="ContrSeq"/>
+        <DetectChar char="$" attribute="Math" context="MathModeTex" />
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <DetectChar char="]" attribute="Normal Text" context="#pop"/>
+      </context>
+
+      <context name="LabelParameter" attribute="Reference" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop"/>
+      </context>
+
+      <!-- labels from biblatex commands -->
+      <context name="FancyLabel" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="FancyLabelParameter"/>
+        <DetectChar char="[" attribute="Normal Text" context="FancyLabelOption"/>
+        <DetectChar char="(" attribute="Normal Text" context="FancyLabelRoundBrackets"/>
+      </context>
+
+      <context name="FancyLabelParameter" attribute="Environment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="(" attribute="Math" context="MathModeTex" />
+        <DetectChar char="\" attribute="Macro" context="ContrSeq"/>
+        <DetectChar char="$" attribute="Math" context="MathModeTex" />
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+      </context>
+
+      <context name="FancyLabelOption" attribute="Option Text" lineEndContext="#stay">
+        <IncludeRules context="LabelOption"/>
+      </context>
+
+      <context name="FancyLabelRoundBrackets" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <Detect2Chars char="\" char1="(" attribute="Math" context="MathModeLatex" />
+        <DetectChar char="\" attribute="Macro" context="ContrSeq"/>
+        <DetectChar char="$" attribute="Math" context="MathModeTex" />
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <DetectChar char=")" attribute="Normal Text" context="#pop"/>
+      </context>
+
+      <!-- Special commands -->
+      <context name="SpecialCommand" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="SpecialCommandParameterOption"/>
+      </context>
+
+      <context name="SpecialCommandParameterOption" attribute="Option Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <Detect2Chars char="\" char1="(" attribute="Math" context="MathModeTex" />
+        <DetectChar char="\" attribute="Macro" context="ContrSeq"/>
+        <DetectChar char="$" attribute="Math" context="MathModeTex" />
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+      </context>
+
+      <!-- end of an environment -->
+      <context name="FindEndEnvironment" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Normal Text" context="EndEnvironment"/>
+        <RegExpr String="\S" attribute="Normal Text" context="#pop"/>
+      </context>
+
+      <context name="EndEnvironment" attribute="Environment" lineEndContext="#stay">
+        <RegExpr String="&envname;" attribute="Environment" context="LatexEnvEnd"/>
+        <RegExpr String="." attribute="Error" context="#pop#pop"/>
+      </context>
+
+      <context name="LatexEnvEnd" attribute="Environment" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" endRegion="block" context="#pop#pop#pop"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      </context>
+
+      <!-- start of an environment -->
+      <context name="FindBeginEnvironment" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="BeginEnvironment"/>
+        <RegExpr String="." attribute="Normal Text" context="#pop"/>
+      </context>
+
+      <!-- filter the environment name and check the type -->
+      <context name="BeginEnvironment" attribute="Environment" lineEndContext="#stay">
+        <keyword String="ListingsEnv" attribute="Environment" context="ListingsEnv"/>
+        <keyword String="MintedEnv" attribute="Environment" context="MintedEnv"/>
+        <keyword String="VerbatimEnv" attribute="Environment" context="VerbatimEnv" lookAhead="true"/>
+        <keyword String="CommentEnv" attribute="Environment" context="CommentEnv"/>
+        <keyword String="MathEnvParam" attribute="Environment" context="MathEnvWithParam"/>
+        <keyword String="MathEnv" attribute="Environment" context="MathEnv"/>
+        <keyword String="TabEnv" attribute="Environment" context="TabEnv"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="&envname;" attribute="Environment" context="LatexEnv"/>
+        <RegExpr String="." attribute="Error" context="#pop"/>
+      </context>
+
+      <!-- environment type 1: normal -->
+      <context name="LatexEnv" attribute="Error" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop"/>
+      </context>
+
+      <context name="VerbatimEnv" attribute="Environment" lineEndContext="#stay">
+        <WordDetect String="verbatim*" attribute="Environment" context="VerbatimEnv1"/>
+        <WordDetect String="verbatim" attribute="Environment" context="VerbatimEnv1"/>
+        <WordDetect String="boxedverbatim*" attribute="Environment" context="VerbatimEnv2"/>
+        <WordDetect String="boxedverbatim" attribute="Environment" context="VerbatimEnv2"/>
+
+        <WordDetect String="Verbatim*" attribute="Environment" context="VerbatimEnv3"/>
+        <WordDetect String="Verbatim" attribute="Environment" context="VerbatimEnv3"/>
+        <WordDetect String="BVerbatim*" attribute="Environment" context="VerbatimEnv4"/>
+        <WordDetect String="BVerbatim" attribute="Environment" context="VerbatimEnv4"/>
+        <WordDetect String="LVerbatim*" attribute="Environment" context="VerbatimEnv5"/>
+        <WordDetect String="LVerbatim" attribute="Environment" context="VerbatimEnv5"/>
+      </context>
+
+      <!-- environment type 2: verbatim without parameter -->
+      <context name="VerbatimEnv1" attribute="Error" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop#pop">
+        <DetectChar char="}" attribute="Normal Text" context="Verbatim1"/>
+      </context>
+      <context name="Verbatim1" attribute="Verbatim" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="\\end(?=\s*\{verbatim\*?\})" attribute="Structure" context="VerbFindEnd"/>
+      </context>
+
+      <context name="VerbatimEnv2" attribute="Error" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop#pop">
+        <DetectChar char="}" attribute="Normal Text" context="Verbatim2"/>
+      </context>
+      <context name="Verbatim2" attribute="Verbatim" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="\\end(?=\s*\{boxedverbatim\*?\})" attribute="Structure" context="VerbFindEnd"/>
+      </context>
+
+      <!-- environment type 3: verbatim with optional parameter -->
+      <context name="VerbatimEnv3" attribute="Error" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop#pop">
+        <DetectChar char="}" attribute="Normal Text" context="VerbatimEnv3Param"/>
+      </context>
+      <context name="VerbatimEnv3Param" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!Verbatim3">
+        <DetectSpaces/>
+        <RangeDetect char="[" char1="]" attribute="Normal Text" context="#pop!Verbatim3"/>
+      </context>
+      <context name="Verbatim3" attribute="Verbatim" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="\\end(?=\s*\{Verbatim\*?\})" attribute="Structure" context="VerbFindEnd"/>
+      </context>
+
+      <context name="VerbatimEnv4" attribute="Error" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop#pop">
+        <DetectChar char="}" attribute="Normal Text" context="VerbatimEnv4Param"/>
+      </context>
+      <context name="VerbatimEnv4Param" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!Verbatim4">
+        <DetectSpaces/>
+        <RangeDetect char="[" char1="]" attribute="Normal Text" context="#pop!Verbatim4"/>
+      </context>
+      <context name="Verbatim4" attribute="Verbatim" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="\\end(?=\s*\{BVerbatim\*?\})" attribute="Structure" context="VerbFindEnd"/>
+      </context>
+
+      <context name="VerbatimEnv5" attribute="Error" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop#pop">
+        <DetectChar char="}" attribute="Normal Text" context="VerbatimEnv5Param"/>
+      </context>
+      <context name="VerbatimEnv5Param" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!Verbatim5">
+        <DetectSpaces/>
+        <RangeDetect char="[" char1="]" attribute="Normal Text" context="#pop!Verbatim5"/>
+      </context>
+      <context name="Verbatim5" attribute="Verbatim" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="\\end(?=\s*\{LVerbatim\*?\})" attribute="Structure" context="VerbFindEnd"/>
+      </context>
+
+      <!-- environment type 4: listings environment with optional parameter and HL switching-->
+      <context name="ListingsEnv" attribute="Environment" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="#pop!ListingsEnvParam"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      </context>
+      <context name="ListingsEnvParam" attribute="Normal Text" lineEndContext="#pop!UnknownHighlighting" fallthrough="true" fallthroughContext="#pop!UnknownHighlighting">
+        <DetectSpaces/>
+        <DetectChar char="[" attribute="Normal Text" context="#pop!ListingsEnvParamInside"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+      </context>
+      <context name="ListingsEnvParamInside" attribute="Normal Text" lineEndContext="#stay">
+        <DetectIdentifier/>
+        <RegExpr String="\s*language\s*=\s*(?=[^],])" attribute="Normal Text" context="HighlightingSelector"/>
+        <DetectChar char="]" attribute="Normal Text" context="ListingsEnvParamEnd"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+      </context>
+      <context name="ListingsEnvParamEnd" attribute="Normal Text" lineEndContext="#pop#pop!UnknownHighlighting" fallthrough="true" fallthroughContext="#pop#pop!UnknownHighlighting">
+        <DetectSpaces/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+      </context>
+
+      <!-- environment type 5: minted environment with optional and HL switching -->
+      <context name="MintedEnv" attribute="Environment" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="#pop!MintedEnvParam"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      </context>
+      <context name="MintedEnvParam" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="[" attribute="Normal Text" context="#pop!MintedEnvParamInside"/>
+        <DetectChar char="{" attribute="Normal Text" context="HighlightingSelector"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+      </context>
+      <context name="MintedEnvParamInside" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar char="]" attribute="Normal Text" context="#pop!MintedEnvLang"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <RegExpr String="\\&envname;" attribute="Macro" context="#stay"/>
+      </context>
+      <context name="MintedEnvLang" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="HighlightingSelector"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+      </context>
+
+      <!-- parse verbatim text for lstinline and minted -->
+      <context name="UnknownHighlighting" attribute="Verbatim" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="\\end(?=\s*\{(lstlisting|minted)\*?\})" attribute="Structure" context="UnknownHighlightingEnd"/>
+      </context>
+      <context name="UnknownHighlightingEnd" attribute="Environment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="#stay"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop#pop#pop#pop" endRegion="block"/>
+        <DetectIdentifier/>
+      </context>
+
+
+      <!-- Selector for different highlightning schemes, in case the language is not implemented we pop and thus fallback to verbatim -->
+      <context name="HighlightingSelector" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect String="C++" insensitive="true" context="HighlightingBeginC++"/>
+        <WordDetect String="Python" insensitive="true" context="HighlightingBeginPython"/>
+        <DetectChar char="}" context="#pop!UnknownHighlighting"/>
+        <DetectChar char="]" context="#pop!UnknownHighlighting"/>
+        <RegExpr String="[^]}]*" context="#stay"/>
+      </context>
+
+      <context name="HighlightingCommon" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr String="\\end\s*\{(lstlisting|minted)\*?\}" attribute="Structure" lookAhead="true" context="#pop#pop#pop#pop#pop#pop"/>
+      </context>
+
+      <context name="HighlightingBeginC++" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" context="HighlightingC++"/>
+        <DetectChar char="]" context="HighlightingC++"/>
+        <!-- Eat the trailing characters including } or ] after the language specification -->
+        <RegExpr String="[^]}]*" context="#stay"/>
+      </context>
+
+      <context name="HighlightingC++" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="HighlightingCommon"/>
+        <IncludeRules context="##C++" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingBeginPython" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" context="HighlightingPython"/>
+        <DetectChar char="]" context="HighlightingPython"/>
+        <RegExpr String="[^]}]*" context="#stay"/>
+      </context>
+
+      <context name="HighlightingPython" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="HighlightingCommon"/>
+        <IncludeRules context="##Python"/>
+      </context>
+
+      <!-- end of verbatim environment -->
+      <context name="VerbFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="#stay"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop#pop#pop" endRegion="block"/>
+        <keyword String="VerbatimEnv" attribute="Environment"/>
+      </context>
+
+      <!-- begin comment environment -->
+      <context name="CommentEnv" attribute="Environment" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="BlockComment"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+       </context>
+
+      <!-- parse comment text -->
+      <context name="BlockComment" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <RegExpr String="\\end(?=\s*\{comment\*?\})" attribute="Structure" context="CommFindEnd"/>
+      </context>
+
+      <!-- end of comment environment -->
+      <context name="CommFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="#stay"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop#pop" endRegion="block"/>
+        <keyword String="CommentEnv" attribute="Environment"/>
+      </context>
+
+      <!-- environment type 4: math environment with its own mathmode -->
+      <context name="MathEnv" attribute="Environment" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="MathModeEnv"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      </context>
+
+      <!-- environment type 5: math environment with its own mathmode and parameter -->
+      <context name="MathEnvWithParam" attribute="Environment" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="MathEnvWithParamInside"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      </context>
+      <context name="MathEnvWithParamInside" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RangeDetect char="[" char1="]" attribute="Normal Text" context="#stay"/>
+        <DetectChar char="{" attribute="Normal Text" context="MathEnvParamInside"/>
+      </context>
+      <context name="MathEnvParamInside" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop!MathModeEnv"/>
+      </context>
+
+      <!-- parse math environment -->
+      <context name="MathModeEnv" attribute="Math" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <keyword String="beginEnv" attribute="Structure" context="FindBeginEnvironmentInMathMode" beginRegion="block"/>
+        <keyword String="endEnv" attribute="Structure" context="MathFindEnd" endRegion="block"/>
+        <keyword String="MathModeText" attribute="Macro Mathmode" context="MathModeText"/>
+        <RegExpr String="\\[()\[\]]|\$" attribute="Error" context="#stay"/>
+        <DetectChar char="\" attribute="Macro Mathmode" context="MathContrSeq"/>
+        <RegExpr String="%\s*(BEGIN|END)" attribute="Region Marker" context="RegionComment" firstNonSpace="true"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+      </context>
+
+      <!-- start of an environment in math mode -->
+      <context name="FindBeginEnvironmentInMathMode" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="BeginEnvironmentInMathMode"/>
+        <RegExpr String="." attribute="Normal Text" context="#pop"/>
+      </context>
+
+      <!-- filter the environment name and check the type in math mode -->
+      <context name="BeginEnvironmentInMathMode" attribute="Environment" lineEndContext="#stay">
+        <keyword String="ListingsEnv" attribute="Environment" context="ListingsEnv"/>
+        <keyword String="MintedEnv" attribute="Environment" context="MintedEnv"/>
+        <keyword String="VerbatimEnv" attribute="Environment" context="VerbatimEnv" lookAhead="true"/>
+        <keyword String="CommentEnv" attribute="Environment" context="CommentEnv"/>
+        <keyword String="TabEnv" attribute="Environment" context="TabEnv"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <!-- keywords in MathEnvParam and MathEnv. Do not use keyword to avoid autocomplete -->
+        <RegExpr String="(equation|IEEEeqnarray(box)?|([BVvbp]|small)matrix|(fl)?align|x{0,2}alignat|cases|displaymath|gather|math|multline|(sub)?eqnarray)(?=[^a-zA-Z]|$)\*?" attribute="Error" context="#pop"/>
+        <RegExpr String="&envname;" attribute="Environment" context="LatexEnv"/>
+        <RegExpr String="." attribute="Error" context="#pop"/>
+      </context>
+
+      <!-- end of math environment -->
+      <context name="MathFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="#stay"/>
+        <keyword String="MathEnvParam" attribute="Environment" context="MathFindEndInside"/>
+        <keyword String="MathEnv" attribute="Environment" context="MathFindEndInside"/>
+        <RegExpr String="&envname;" attribute="Environment" context="NoMathFindEndInside"/>
+        <RegExpr String="." attribute="Error" context="#pop"/>
+      </context>
+      <context name="MathFindEndInside" attribute="Normal Text" lineEndContext="#pop#pop">
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop#pop#pop" endRegion="block"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      </context>
+      <context name="NoMathFindEndInside" attribute="Normal Text" lineEndContext="#pop#pop">
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop" endRegion="block"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      </context>
+
+      <!-- environment type 9: tabular -->
+      <context name="TabEnv" attribute="Environment" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop">
+        <DetectChar char="}" attribute="Normal Text" context="Tab"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      </context>
+
+      <!-- parse tabular text -->
+      <context name="Tab" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="&amp;" attribute="Ampersand" context="#stay"/>
+        <Detect2Chars char="@" char1="{" attribute="Column Separator" context="Column Separator"/>
+        <keyword String="endEnv" attribute="Structure" context="TabFindEnd"/>
+        <IncludeRules context="Normal Text" />
+      </context>
+
+      <context name="Column Separator" attribute="Column Separator" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Column Separator" context="Column Separator"/>
+        <DetectChar char="}" attribute="Column Separator" context="#pop"/>
+      </context>
+
+      <!-- end of tabular environment -->
+      <context name="TabFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="#stay"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop#pop" endRegion="block"/>
+        <keyword String="TabEnv" attribute="Environment" context="#stay"/>
+      </context>
+
+      <!-- math mode: starting with $ -->
+      <context name="MathModeTex" attribute="Math" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!MathMode">
+        <DetectChar char="$" attribute="Math" context="#pop!MathModeDisplay" beginRegion="mathMode"/>
+      </context>
+      <context name="MathMode" attribute="Math" lineEndContext="#stay">
+        <DetectChar char="$" attribute="Math" context="#pop"/>
+        <IncludeRules context="MathModeCommon"/>
+      </context>
+
+      <!-- math mode: starting with $$ -->
+      <context name="MathModeDisplay" attribute="Math" lineEndContext="#stay">
+        <Detect2Chars char="$" char1="$" attribute="Math" context="#pop" endRegion="mathMode"/>
+        <DetectChar char="$" attribute="Error" context="#stay"/>
+        <IncludeRules context="MathModeCommon"/>
+      </context>
+
+      <!-- math mode: starting with \( -->
+      <context name="MathModeLatex" attribute="Math" lineEndContext="#stay">
+        <Detect2Chars char="\" char1=")" attribute="Math" context="#pop"/>
+        <IncludeRules context="MathModeCommon"/>
+      </context>
+
+      <!-- math mode: starting with \[ -->
+      <context name="MathModeLatexEquation" attribute="Math" lineEndContext="#stay">
+        <Detect2Chars char="\" char1="]" attribute="Math" context="#pop" endRegion="mathMode"/>
+        <IncludeRules context="MathModeCommon"/>
+      </context>
+
+      <!-- math mode: \ensuremath{...} -->
+      <context name="MathModeEnsure" attribute="Math" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Math" context="#pop!MathModeEnsureInside"/>
+        <RegExpr String="." attribute="Error" context="#pop"/>
+      </context>
+      <context name="MathModeEnsureInside" attribute="Math" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Math" context="MathModeEnsureInside" />
+        <DetectChar char="}" attribute="Math" context="#pop" />
+        <IncludeRules context="MathModeCommon"/>
+      </context>
+
+      <!-- math mode common -->
+      <context name="MathModeCommon" attribute="Math" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <keyword String="beginEnv" attribute="Structure" context="MathEnvironment" beginRegion="block"/>
+        <keyword String="endEnv" attribute="Structure" context="MathEnvironmentEnd" endRegion="block"/>
+        <keyword String="MathModeText" attribute="Macro Mathmode" context="MathModeText" />
+        <DetectChar char="\" attribute="Macro Mathmode" context="MathContrSeq"/>
+        <RegExpr String="%\s*(BEGIN|END)" attribute="Region Marker" context="RegionComment" firstNonSpace="true"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+      </context>
+      <context name="MathEnvironment" attribute="Math" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="MathEnvironmentInside"/>
+        <RegExpr String="." attribute="Error" context="#pop"/>
+      </context>
+      <context name="MathEnvironmentInside" attribute="Environment" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop"/>
+        <RegExpr String="&envname;" attribute="Environment" context="#stay"/>
+        <RegExpr String="[^}a-zA-Z]+|." attribute="Error" context="#stay"/>
+      </context>
+      <context name="MathEnvironmentEnd" attribute="Math" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="MathEnvironmentEndInside"/>
+        <RegExpr String="." attribute="Error" context="#pop"/>
+      </context>
+      <context name="MathEnvironmentEndInside" attribute="Environment" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop"/>
+        <WordDetect String="ensuremath" attribute="Environment" context="#pop!LatexEnvEnd"/>
+        <RegExpr String="&envname;" attribute="Environment" context="#stay"/>
+        <RegExpr String="[^}a-zA-Z]+|." attribute="Error" context="#pop#pop"/>
+      </context>
+
+      <!-- command in mathmode -->
+      <context name="MathContrSeq" attribute="Macro Mathmode" lineEndContext="#pop">
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="&envname;|." attribute="Macro Mathmode" context="#pop" />
+      </context>
+
+      <!-- text in mathmode -->
+      <context name="MathModeText" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="MathContrSeq">
+        <DetectSpaces/>
+        <DetectChar char="{" attribute="Normal Text" context="MathModeTextParameterStart"/>
+      </context>
+      <context name="MathModeTextInside" attribute="Normal Text" lineEndContext="#stay" >
+        <DetectChar char="{" attribute="Normal Text" context="MathModeTextParameterStart"/>
+      </context>
+
+      <context name="MathModeTextParameterStart" attribute="Normal Text" lineEndContext="#stay" >
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RangeDetect char="$" char1="$" attribute="Math" context="#stay"/>
+        <DetectChar char="{" attribute="Normal Text" context="MathModeTextInside" lookAhead="true"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="\" attribute="Macro Mathmode" context="MathContrSeq"/>
+      </context>
+
+      <!-- iffalse aka multiline comment -->
+      <context name="Multiline Comment" attribute="Comment" lineEndContext="#stay">
+        <keyword String="iffalseend" attribute="Comment" context="#pop"/>
+      </context>
+
+     <!-- comment -->
+      <context name="RegionComment" attribute="Region Marker" lineEndContext="#pop"/>
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier/>
+        <keyword String="ResetHL" attribute="Comment" context="Normal Text"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Option Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Macro" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment" spellChecking="false"/>
+      <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+      <itemData name="Math" defStyleNum="dsSpecialString" spellChecking="false"/>
+      <!-- begin/end -->
+      <itemData name="Structure" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Builtin Macro" defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Macro Mathmode" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Environment" defStyleNum="dsExtension" spellChecking="false"/>
+      <itemData name="Reference" defStyleNum="dsExtension" spellChecking="false"/>
+      <itemData name="Verbatim" defStyleNum="dsVerbatimString" spellChecking="false"/>
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker" spellChecking="false"/>
+      <itemData name="Bullet" defStyleNum="dsInformation" spellChecking="false"/>
+      <itemData name="Ampersand" defStyleNum="dsOperator" bold="1" spellChecking="false"/>
+      <itemData name="Column Separator" defStyleNum="dsChar" spellChecking="false"/>
+      <!-- in section headers -->
+      <itemData name="Sectioning Text" defStyleNum="dsNormal" bold="1"/>
+      <itemData name="Sectioning Macro" defStyleNum="dsFunction" bold="1" spellChecking="false"/>
+      <itemData name="Sectioning Math" defStyleNum="dsSpecialString" bold="1"/>
+      <itemData name="Sectioning Macro Mathmode" defStyleNum="dsSpecialChar" bold="1" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords weakDeliminator="\*" additionalDeliminator="$" wordWrapDeliminator=",{}[]"/>
+    <comments>
+      <comment name="singleLine" start="%" />
+    </comments>
+  </general>
+
+  <spellchecking>
+    <encodings>
+      <encoding char="&#192;" string="\`{A}" />
+      <encoding char="&#192;" string="\`A" />
+      <encoding char="&#193;" string="\'{A}" />
+      <encoding char="&#193;" string="\'A" />
+      <encoding char="&#194;" string="\^{A}" />
+      <encoding char="&#194;" string="\^A" />
+      <encoding char="&#195;" string="\~{A}" />
+      <encoding char="&#195;" string="\~A" />
+      <encoding char="&#196;" string="\&#34;{A}" />
+      <encoding char="&#196;" string="\&#34;A" />
+      <encoding char="&#197;" string="\AA{}" />
+      <encoding char="&#198;" string="\AE{}" />
+      <encoding char="&#199;" string="\c{C}" />
+      <encoding char="&#200;" string="\`{E}" />
+      <encoding char="&#200;" string="\`E" />
+      <encoding char="&#201;" string="\'{E}" />
+      <encoding char="&#201;" string="\'E" />
+      <encoding char="&#202;" string="\^{E}" />
+      <encoding char="&#202;" string="\^E" />
+      <encoding char="&#203;" string="\&#34;{E}" />
+      <encoding char="&#203;" string="\&#34;E" />
+      <encoding char="&#204;" string="\`{I}" />
+      <encoding char="&#204;" string="\`I" />
+      <encoding char="&#205;" string="\'{I}" />
+      <encoding char="&#205;" string="\'I" />
+      <encoding char="&#206;" string="\^{I}" />
+      <encoding char="&#206;" string="\^I" />
+      <encoding char="&#207;" string="\&#34;{I}" />
+      <encoding char="&#207;" string="\&#34;I" />
+      <encoding char="&#208;" string="\DH{}" />
+      <encoding char="&#209;" string="\~{N}" />
+      <encoding char="&#209;" string="\~N" />
+      <encoding char="&#210;" string="\`{O}" />
+      <encoding char="&#210;" string="\`O" />
+      <encoding char="&#211;" string="\'{O}" />
+      <encoding char="&#211;" string="\'O" />
+      <encoding char="&#212;" string="\^{O}" />
+      <encoding char="&#212;" string="\^O" />
+      <encoding char="&#213;" string="\~{O}" />
+      <encoding char="&#213;" string="\~O" />
+      <encoding char="&#214;" string="\&#34;{O}" />
+      <encoding char="&#214;" string="\&#34;O" />
+      <encoding char="&#216;" string="\O{}" />
+      <encoding char="&#217;" string="\`{U}" />
+      <encoding char="&#217;" string="\`U" />
+      <encoding char="&#218;" string="\'{U}" />
+      <encoding char="&#218;" string="\'U" />
+      <encoding char="&#219;" string="\^{U}" />
+      <encoding char="&#219;" string="\^U" />
+      <encoding char="&#220;" string="\&#34;{U}" />
+      <encoding char="&#220;" string="\&#34;U" />
+      <encoding char="&#221;" string="\'{Y}" />
+      <encoding char="&#221;" string="\'Y" />
+      <encoding char="&#222;" string="\TH{}" />
+      <encoding char="&#223;" string="\ss{}" />
+      <encoding char="&#224;" string="\`{a}" />
+      <encoding char="&#224;" string="\`a" />
+      <encoding char="&#225;" string="\'{a}" />
+      <encoding char="&#225;" string="\'a" />
+      <encoding char="&#226;" string="\^{a}" />
+      <encoding char="&#226;" string="\^a" />
+      <encoding char="&#227;" string="\~{a}" />
+      <encoding char="&#227;" string="\~a" />
+      <encoding char="&#228;" string="\&#34;{a}" />
+      <encoding char="&#228;" string="\&#34;a" />
+      <encoding char="&#229;" string="\aa{}" />
+      <encoding char="&#230;" string="\ae{}" />
+      <encoding char="&#231;" string="\c{c}" />
+      <encoding char="&#232;" string="\`{e}" />
+      <encoding char="&#232;" string="\`e" />
+      <encoding char="&#233;" string="\'{e}" />
+      <encoding char="&#233;" string="\'e" />
+      <encoding char="&#234;" string="\^{e}" />
+      <encoding char="&#234;" string="\^e" />
+      <encoding char="&#235;" string="\&#34;{e}" />
+      <encoding char="&#235;" string="\&#34;e" />
+      <encoding char="&#236;" string="\`{i}" />
+      <encoding char="&#236;" string="\`i" />
+      <encoding char="&#237;" string="\'{i}" />
+      <encoding char="&#237;" string="\'i" />
+      <encoding char="&#238;" string="\^{i}" />
+      <encoding char="&#238;" string="\^i" />
+      <encoding char="&#239;" string="\&#34;{i}" />
+      <encoding char="&#239;" string="\&#34;i" />
+      <encoding char="&#240;" string="\dh{}" />
+      <encoding char="&#241;" string="\~{n}" />
+      <encoding char="&#241;" string="\~n" />
+      <encoding char="&#242;" string="\`{o}" />
+      <encoding char="&#242;" string="\`o" />
+      <encoding char="&#243;" string="\'{o}" />
+      <encoding char="&#243;" string="\'o" />
+      <encoding char="&#244;" string="\^{o}" />
+      <encoding char="&#244;" string="\^o" />
+      <encoding char="&#245;" string="\~{o}" />
+      <encoding char="&#245;" string="\~o" />
+      <encoding char="&#246;" string="\&#34;{o}" />
+      <encoding char="&#246;" string="\&#34;o" />
+      <encoding char="&#248;" string="\o{}" />
+      <encoding char="&#249;" string="\`{u}" />
+      <encoding char="&#249;" string="\`u" />
+      <encoding char="&#250;" string="\'{u}" />
+      <encoding char="&#250;" string="\'u" />
+      <encoding char="&#251;" string="\^{u}" />
+      <encoding char="&#251;" string="\^u" />
+      <encoding char="&#252;" string="\&#34;{u}" />
+      <encoding char="&#252;" string="\&#34;u" />
+      <encoding char="&#253;" string="\'{y}" />
+      <encoding char="&#253;" string="\'y" />
+      <encoding char="&#254;" string="\th{}" />
+      <encoding char="&#255;" string="\&#34;{y}" />
+      <encoding char="&#255;" string="\&#34;y" />
+      <encoding string="''" ignored="true" />
+      <encoding string="\-" ignored="true" />
+    </encodings>
+  </spellchecking>
+</language>

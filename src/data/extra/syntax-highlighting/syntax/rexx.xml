@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="REXX" version="3" kateversion="2.2" section="Scripts" extensions="*.rex;*.rx;*.rexx" mimetype="">
+  <highlighting>
+      <list name="keywords">
+          <item>ADDRESS</item>
+          <item>ARG</item>
+          <item>CALL</item>
+          <item>DROP</item>
+          <item>EXIT</item>
+          <item>INTERPRET</item>
+          <item>NOP</item>
+          <item>NUMERIC</item>
+          <item>OPTIONS</item>
+          <item>PARSE</item>
+          <item>PROCEDURE</item>
+          <item>PULL</item>
+          <item>PUSH</item>
+          <item>QUEUE</item>
+          <item>RETURN</item>
+          <item>SAY</item>
+          <item>SYNTAX</item>
+          <item>TRACE</item>
+          <item>UPPER</item>
+          <item>RC</item>
+          <item>RESULT</item>
+          <item>SIGL</item>
+       </list>
+       <list name="subkeywords">
+          <item>VALUE</item>
+          <item>WITH</item>
+          <item>RESULT</item>
+          <item>DIGITS</item>
+          <item>SCIENTIFIC</item>
+          <item>ENGINEERING</item>
+          <item>FORM</item>
+          <item>FUZZ</item>
+          <item>ALL</item>
+          <item>COMMANDS</item>
+          <item>ERROR</item>
+          <item>FAILURE</item>
+          <item>Intermediates</item>
+          <item>LABELS</item>
+          <item>NORMAL</item>
+          <item>OFF</item>
+          <item>RESULTS</item>
+      </list>
+      <list name="loops">
+          <item>do</item>
+          <item>to</item>
+          <item>by</item>
+          <item>for</item>
+          <item>while</item>
+          <item>until</item>
+          <item>leave</item>
+          <item>iterate</item>
+          <item>forever</item>
+      </list>
+      <list name="control">
+          <item>select</item>
+          <item>when</item>
+          <item>then</item>
+          <item>otherwise</item>
+          <item>do</item>
+          <item>if</item>
+          <item>else</item>
+          <item>end</item>
+      </list>
+      <list name="builtin">
+          <item>ABBREV</item>
+          <item>ABS</item>
+          <item>ADDRESS</item>
+          <item>ARG</item>
+          <item>B2X</item>
+          <item>BITAND</item>
+          <item>BITOR</item>
+          <item>BITXOR</item>
+          <item>C2D</item>
+          <item>C2X</item>
+          <item>CHARS</item>
+          <item>CHARIN</item>
+          <item>CHARSIN</item>
+          <item>CENTER</item>
+          <item>CENTRE</item>
+          <item>COMPARE</item>
+          <item>CONDITION</item>
+          <item>COPIES</item>
+          <item>D2C</item>
+          <item>D2X</item>
+          <item>DATATYPE</item>
+          <item>DATE</item>
+          <item>DBCS</item>
+          <item>DELSTR</item>
+          <item>DELWORD</item>
+          <item>DIGITS</item>
+          <item>ERRORTEXT</item>
+          <item>EXTERNALS</item>
+          <item>FIND</item>
+          <item>FORM</item>
+          <item>FORMAT</item>
+          <item>FUZZ</item>
+          <item>GETMSG</item>
+          <item>INDEX</item>
+          <item>INSERT</item>
+          <item>JUSTIFY</item>
+          <item>LASTPOS</item>
+          <item>LEFT</item>
+          <item>LENGTH</item>
+          <item>LINEIN</item>
+          <item>LINEOUT</item>
+          <item>LINESIZE</item>
+          <item>LISTDSI</item>
+          <item>MAX</item>
+          <item>MIN</item>
+          <item>MSG</item>
+          <item>MVSVAR</item>
+          <item>OUTTRAP</item>
+          <item>OVERLAY</item>
+          <item>POS</item>
+          <item>PROMPT</item>
+          <item>QUEUED</item>
+          <item>RANDOM</item>
+          <item>REVERSE</item>
+          <item>RIGHT</item>
+          <item>SETLANG</item>
+          <item>SIGN</item>
+          <item>SOURCELINE</item>
+          <item>SPACE</item>
+          <item>STORAGE</item>
+          <item>STRIP</item>
+          <item>STREAM</item>
+          <item>SUBSTR</item>
+          <item>SUBWORD</item>
+          <item>SYMBOL</item>
+          <item>SYSCPUS</item>
+          <item>SYSDSN</item>
+          <item>SYSVAR</item>
+          <item>TIME</item>
+          <item>TRACE</item>
+          <item>TRANSLATE</item>
+          <item>TRUNC</item>
+          <item>USERID</item>
+          <item>VALUE</item>
+          <item>VERIFY</item>
+          <item>WORD</item>
+          <item>WORDINDEX</item>
+          <item>WORDLENGTH</item>
+          <item>WORDPOS</item>
+          <item>WORDS</item>
+          <item>X2B</item>
+          <item>X2C</item>
+          <item>X2D</item>
+          <item>XRANGE</item>
+      </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Instructions" context="#stay" String="keywords" />
+        <keyword attribute="Instructions" context="#stay" String="subkeywords" />
+        <keyword attribute="Control"      context="#stay" String="loops" />
+        <keyword attribute="Control"      context="#stay" String="control" />        
+        <keyword attribute="Built In" context="#stay" String="builtin" />
+        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\bsignal([\s]*(on|off)[\s]*(error|failure|halt|notready|novalue|syntax|lostdigits))*"/>
+        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\bcall([\s]*(on|off)[\s]*(error|failure|halt|notready))*"/>
+        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\b(trace|address)\s*[_\w\d]"/>
+        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\bprocedure([\s]*expose)?"/>
+        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\bdo([\s]*forever)?"/>
+        <DetectChar attribute="String" context="String" char="&apos;"/>
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="*" beginRegion="Comment"/>
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]{|}~^&#59;"/>
+        <RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*[(:])" />
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&apos;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 1">
+        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Instructions" defStyleNum="dsKeyword"/>
+      <itemData name="Built In"     defStyleNum="dsFunction" />
+      <itemData name="Control"      defStyleNum="dsControlFlow" />
+      <itemData name="Function"     defStyleNum="dsFunction" />
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Symbol"       defStyleNum="dsVariable"/>
+      <itemData name="Alert"        defStyleNum="dsAlert" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>

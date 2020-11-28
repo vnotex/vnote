@@ -1,0 +1,685 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!ENTITY symbol         "\w\[\]\.@\=/\*\-&#036;&#037;\+&#033;\|&amp;\^&#058;&#126;&#096;#\{\}&#039;&lt;&gt;\?,\\"> <!-- [].@=/*-_$%+!|&^:~`#{}'<>?,\ -->
+	<!ENTITY identifier     "[a-zA-Z][\w\-]*">
+	<!ENTITY statementchar  "[a-z_\-]">
+
+	<!ENTITY fullIdentifier "[a-zA-Z][\w\-]*(\.?[\w\-])*">
+	<!ENTITY mlsLevel       "&fullIdentifier;(:&fullIdentifier;(\s*,\s*&fullIdentifier;)*)?">
+]>
+
+<!--
+  SELinux CIL (Common Interface Language) Policy Syntax Highlighting Definition for Kate
+  ==========================================================================================
+   This file is part of the KDE's KSyntaxHighlighting framework.
+
+   Copyright (c) 2018-2019 Nibaldo González S. (nibgonz@gmail.com)
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy of this
+   software and associated documentation files (the "Software"), to deal in the Software
+   without restriction, including without limitation the rights to use, copy, modify, merge,
+   publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+   persons to whom the Software is furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+   PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+   COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+   AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  ==========================================================================================
+
+  Based on the Scheme syntax highlighting file (scheme.xml),
+  created by Dominik Haumann (dhaumann@kde.org) & licensed under MIT.
+
+  Last update: secilc 2.8
+  More details about CIL:
+    https://github.com/SELinuxProject/selinux/tree/master/secilc/docs
+
+  Change log:
+   * Version 3 [02-Apr-2019]: Remove one indentation.
+   * Version 2 [28-Aug-2018]:
+      - Implement "selinux.xml": some rules and keywords are moved there. Improve RegExp
+        highlighting, add Android permissions and BPF permissions, improve IPv6
+        detection and others improvements.
+      - Fix permissions list in "ioctl" kind and "call" statements.
+      - Add "sctp" protocol keyword and policy capabilities keywords.
+   * Version 1 [26-Jan-2018, by Nibaldo González]:
+      - Initial version.
+-->
+
+<language name="SELinux CIL Policy"
+          version="3"
+          kateversion="5.0"
+          section="Sources"
+          extensions="*.cil"
+          priority="9"
+          mimetype=""
+          author="Nibaldo González (nibgonz@gmail.com)"
+          license="MIT">
+
+<highlighting>
+
+	<list name="expr_keys">
+		<item>and</item>
+		<item>or</item>
+		<item>xor</item>
+		<item>not</item>
+		<item>all</item>
+		<item>eq</item>
+		<item>ne</item>
+		<item>neq</item>
+		<item>dom</item>
+		<item>domby</item>
+		<item>incomp</item>
+		<item>range</item>
+	</list>
+
+	<!-- Access Vector Rules -->
+	<list name="access">
+		<item>allow</item>
+		<item>auditallow</item>
+		<item>dontaudit</item>
+		<item>neverallow</item>
+		<item>auditdeny</item>
+		<item>allowx</item>
+		<item>auditallowx</item>
+		<item>dontauditx</item>
+		<item>neverallowx</item>
+	</list>
+
+	<list name="booleans">
+		<item>true</item>
+		<item>false</item>
+	</list>
+
+	<list name="file_types">
+		<item>file</item>
+		<item>dir</item>
+		<item>char</item>
+		<item>block</item>
+		<item>socket</item>
+		<item>pipe</item>
+		<item>symlink</item>
+		<item>any</item>
+	</list>
+	<list name="fs_types">
+		<item>task</item>
+		<item>trans</item>
+		<item>xattr</item>
+	</list>
+	<list name="protocols">
+		<item>tcp</item>
+		<item>udp</item>
+		<item>dccp</item>
+		<item>sctp</item>
+	</list>
+
+	<list name="special_keys">
+		<item>self</item>
+	</list>
+	<list name="classorder_keys">
+		<item>unordered</item>
+	</list>
+	<list name="handleunknown_keys">
+		<item>allow</item>
+		<item>deny</item>
+		<item>reject</item>
+	</list>
+
+	<list name="type_statements">
+		<item>block</item>
+		<item>optional</item>
+		<item>common</item>
+		<item>class</item>
+		<item>classmap</item>
+		<item>classmapping</item>
+		<item>sid</item>
+		<item>user</item>
+		<item>role</item>
+		<item>roleattribute</item>
+		<item>type</item>
+		<item>classpermission</item>
+		<item>typeattribute</item>
+		<item>typealias</item>
+		<item>tunable</item>
+		<item>sensitivity</item>
+		<item>sensitivityalias</item>
+		<item>category</item>
+		<item>categoryalias</item>
+		<item>categoryset</item>
+		<item>level</item>
+		<item>levelrange</item>
+		<item>context</item>
+		<item>ipaddr</item>
+		<item>macro</item>
+		<item>boolean</item>
+		<!-- policycap, classpermissionset -->
+	</list>
+	<list name="policy_config_statements">
+		<item>policycap</item>
+		<item>mls</item>
+		<item>handleunknown</item>
+	</list>
+	<list name="statements">
+		<!-- Container Statements.
+		     Also: block, optional, macro -->
+		<item>blockabstract</item>
+		<item>blockinherit</item>
+		<item>in</item>
+		<item>call</item>
+
+		<!-- Default Object Statements -->
+		<item>defaultuser</item>
+		<item>defaultrole</item>
+		<item>defaulttype</item>
+		<item>defaultrange</item>
+
+		<!-- User Statements.
+		     Also: user -->
+		<item>userrole</item>
+		<item>userattribute</item>
+		<item>userattributeset</item>
+		<item>userlevel</item>
+		<item>userrange</item>
+		<item>userbounds</item>
+		<item>userprefix</item>
+		<item>selinuxuser</item>
+		<item>selinuxuserdefault</item>
+
+		<!-- Role Statements.
+		     Also: role, roleattribute -->
+		<item>roletype</item>
+		<item>roleattributeset</item>
+		<item>roleallow</item>
+		<item>roletransition</item>
+		<item>rolebounds</item>
+
+		<!-- Type Statements.
+		     Also: type, typeattribute, typealias -->
+		<item>typealiasactual</item>
+		<item>typeattributeset</item>
+		<item>typebounds</item>
+		<item>typechange</item>
+		<item>typemember</item>
+		<item>typetransition</item>
+		<item>typepermissive</item>
+		<item>attributetype</item>
+
+		<item>expandtypeattribute</item>
+		<item>nametypetransition</item>
+
+		<!-- Class and Permission Statements.
+		     Also: common, class, classmap, classmapping, classpermission -->
+		<item>classcommon</item>
+		<item>classorder</item>
+		<item>permission</item>
+		<item>permissionset</item>
+		<item>classpermissionset</item>
+		<item>permissionx</item>
+
+		<!-- Conditional Statements.
+		     Also: tunable, boolean -->
+		<item>booleanif</item>
+		<item>tunableif</item>
+
+		<!-- Constraint Statements -->
+		<item>constrain</item>
+		<item>validatetrans</item>
+		<item>mlsconstrain</item>
+		<item>mlsvalidatetrans</item>
+
+		<!-- Multi-Level Security Labeling Statements.
+		     Also: sensitivity, sensitivityalias, category, categoryalias, categoryset, level, levelrange -->
+		<item>sensitivityaliasactual</item>
+		<item>sensitivityorder</item>
+		<item>categoryaliasactual</item>
+		<item>categoryorder</item>
+		<item>sensitivitycategory</item>
+		<item>rangetransition</item>
+		<item>categoryrange</item>
+
+		<!-- Context Statement: context -->
+		<!-- SID Statements.
+		     Also: sid -->
+		<item>sidorder</item>
+		<item>sidcontext</item>
+
+		<!-- File Labeling Statements -->
+		<item>filecon</item>
+		<item>fsuse</item>
+		<item>genfscon</item>
+		<item>fscon</item>
+		<item>fsusexattr</item>
+		<item>fsusetask</item>
+		<item>fsusetrans</item>
+
+		<!-- Network Labeling Statements.
+		     Also: ipaddr -->
+		<item>netifcon</item>
+		<item>nodecon</item>
+		<item>portcon</item>
+		<!-- ipv4_addr, ipv6_addr -->
+
+		<!-- Xen Statements -->
+		<item>iomemcon</item>
+		<item>ioportcon</item>
+		<item>pcidevicecon</item>
+		<item>pirqcon</item>
+		<item>devicetreecon</item>
+
+		<!-- Infiniband Statements -->
+		<item>ibpkeycon</item>
+		<item>ibendportcon</item>
+
+		<!-- Others -->
+		<item>dominance</item>
+		<item>allowxperm</item>
+		<item>auditallowxperm</item>
+		<item>dontauditxperm</item>
+		<item>neverallowxperm</item>
+	</list>
+
+	<list name="type_name">
+		<item>string</item>
+		<item>name</item>
+		<item>ioctl</item> <!-- permissionx -->
+	</list>
+
+	<list name="other_keywords">
+		<item>source</item>
+		<item>target</item>
+		<item>low</item>
+		<item>high</item>
+		<item>low-high</item>
+
+		<item>perm</item>
+		<item>object_r</item>
+		<item>t1</item>
+		<item>t2</item>
+		<item>t3</item>
+		<item>r1</item>
+		<item>r2</item>
+		<item>r3</item>
+		<item>u1</item>
+		<item>u2</item>
+		<item>u3</item>
+		<item>l1</item>
+		<item>l2</item>
+		<item>h1</item>
+		<item>h2</item>
+	</list>
+
+	<contexts>
+
+		<context name="_normal" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar context="_rule_bracket_level1" attribute="Brackets1" char="("/>
+			<DetectChar context="#stay" attribute="Error"  char=")"/>
+			<IncludeRules context="_common"/>
+			<IncludeRules context="_identifiers"/>
+		</context>
+		<context name="_common" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar context="_comment" attribute="Comment" char=";"/>
+			<DetectChar context="_quoted" attribute="Text Quoted" char="&quot;"/>
+			<DetectChar context="_path_content" attribute="Path" char="/"/>
+
+			<!-- IP Address -->
+			<IncludeRules context="_ip_addr##SELinux Policy"/>
+			<!-- Special Characters -->
+			<DetectChar context="#stay" attribute="Special Char" char="*"/>
+
+			<!-- File Contexts: user_u:role_r:type_t:s0:c0 -->
+			<RegExpr context="_file_contexts" attribute="File Contexts" String="\b&fullIdentifier;(:&fullIdentifier;){2}(:&mlsLevel;(\s*\-\s*&mlsLevel;)?)?([^&symbol;:]|\s|$)" lookAhead="true"/>
+			<!-- Global Namespace (this avoids highlighting keywords) -->
+			<RegExpr context="#stay" String="(\b&identifier;)?(\.&identifier;)+(?=\s|[^&symbol;]|$)"/>
+
+			<!-- Numbers -->
+			<HlCHex context="#stay" attribute="Hexadecimal"/>
+			<Float context="#stay" attribute="Number"/>
+			<Int context="#stay" attribute="Number"/>
+		</context>
+		<context name="_identifiers" attribute="Normal Text" lineEndContext="#stay">
+			<!-- Avoid highlighting numbers in identifiers.
+			     IMPORTANT: Do not put this rule before the keywords! -->
+			<RegExpr context="#stay" String="&identifier;"/>
+		</context>
+
+		<context name="_comment" attribute="Comment" lineEndContext="#pop">
+			<DetectSpaces />
+			<LineContinue context="#pop" attribute="Comment"/>
+			<IncludeRules context="##Alerts"/>
+			<IncludeRules context="##Modelines"/>
+			<IncludeRules context="_default_comment##SELinux Policy"/>
+		</context>
+
+		<context name="_quoted" attribute="Text Quoted" lineEndContext="#pop">
+			<DetectChar context="#pop" attribute="Text Quoted" char="&quot;"/>
+			<IncludeRules context="_regex_quoted##SELinux Policy"/> <!-- This does not support line breaks and line cont. escape -->
+			<RegExpr context="#stay" attribute="Text Quoted Open" String="[^\s&quot;\[\(\\](?=\s*$)"/>
+		</context>
+
+		<context name="_path_content" attribute="Path" lineEndContext="#pop">
+			<DetectSpaces context="#pop" attribute="Normal Text" lookAhead="true"/>
+			<RegExpr context="#pop" attribute="Normal Text" String="[^&symbol;]" lookAhead="true"/>
+
+			<IncludeRules context="_default_regex##SELinux Policy"/>
+			<DetectChar context="_square_brackets_cil_path" attribute="RegExp Brackets (Paths)" char="["/>
+		</context>
+		<context name="_square_brackets_cil_path" attribute="RegExp Brackets (Paths)"
+		         lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!_square_brackets_cil_path_content">
+		<RegExpr context="#pop!_square_brackets_cil_path_content" attribute="Special Char of Brackets (Paths)" String="\^(?=[&symbol;])"/>
+		</context>
+		<context name="_square_brackets_cil_path_content" attribute="RegExp Brackets (Paths)" lineEndContext="#pop">
+			<DetectChar context="#pop" attribute="RegExp Brackets (Paths)" char="]"/>
+			<RegExpr context="#pop" String="[^&symbol;]" lookAhead="true"/>
+			<RegExpr context="#stay" attribute="Open RegExp Brackets (Paths)" String="[^\s\[\]\\](?![&symbol;])"/>
+			<DetectChar context="#stay" attribute="Error" char="["/>
+			<IncludeRules context="_special_chars##SELinux Policy"/>
+		</context>
+
+		<!-- RULES -->
+
+		<!-- Highlighting specific keywords in some rules -->
+		<context name="_filecon_statement" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_end"/>
+			<keyword context="#pop" attribute="Types" String="file_types"/>
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_portcon_statement" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_end"/>
+			<keyword context="#pop" attribute="Types" String="protocols"/>
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_fsuse_statement" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_end"/>
+			<keyword context="#pop" attribute="Types" String="fs_types"/>
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_handleunknown_statement" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_end"/>
+			<keyword context="#pop" attribute="Access Keys" String="handleunknown_keys"/>
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_policycap_statement" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_end"/>
+			<IncludeRules context="_policy_capabilities##SELinux Policy"/>
+			<IncludeRules context="_common"/>
+			<IncludeRules context="_identifiers"/>
+		</context>
+		<context name="_av_permissions_statement" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_end"/>
+			<IncludeRules context="_av_permissions##SELinux Policy"/>
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_default_end" attribute="Normal Text" lineEndContext="#stay">
+			<AnyChar context="#pop" attribute="Normal Text" String=")(" lookAhead="true"/>
+		</context>
+
+		<context name="_find_ioctl_kind" attribute="Normal Text"
+		         lineEndContext="#pop!_av_permissions_statement" fallthrough="true" fallthroughContext="#pop!_av_permissions_statement">
+			<!-- ioctl is a kind in permissionx/accessx statement:
+			     (permissionx permissionx_id (ioctl class_id (permission ... | expr ...))) -->
+			<RegExpr context="#pop" attribute="Type Name Statements" String="ioctl(?=\s+[&symbol;]+\s*\()"/>
+			<!-- ioctl can be a kind of permissionx or AV permission -->
+			<RegExpr context="#pop!_av_permissions_statement" attribute="Type Name Statements" String="ioctl(?=(\s+[&symbol;]+)?\s*($|;))"/>
+			<RegExpr context="#pop!_av_permissions_statement" attribute="Type Name Statements" String="ioctl(?=\s+[&symbol;]+\s+\d)"/>
+		</context>
+
+		<context name="_default_statement" attribute="Normal Text" lineEndContext="#stay">
+			<WordDetect context="_handleunknown_statement" attribute="Policy Config. Statements" String="handleunknown"/>
+			<WordDetect context="_policycap_statement" attribute="Policy Config. Statements" String="policycap"/>
+			<WordDetect context="_filecon_statement" attribute="Statements" String="filecon"/>
+			<WordDetect context="_fsuse_statement" attribute="Statements" String="fsuse"/>
+			<WordDetect context="_portcon_statement" attribute="Statements" String="portcon"/>
+			<!-- Fix permissions list if the keywords "ioctl" or "call" are not statements,
+			     but a permissions (see "av_permissions" keyword list of "selinux.xml"). -->
+			<RegExpr context="_av_permissions_statement" String="\b(call|ioctl)\s*\)" lookAhead="true"/>
+			<WordDetect context="_find_ioctl_kind" String="ioctl" lookAhead="true"/>
+			<WordDetect context="_av_permissions_statement" attribute="Statements" String="call"/>
+
+			<keyword context="#stay" attribute="Policy Config. Statements" String="policy_config_statements"/>
+			<keyword context="#stay" attribute="Type Statements" String="type_statements"/>
+			<keyword context="#stay" attribute="Statements" String="statements"/>
+			<keyword context="#stay" attribute="Expression Keys" String="expr_keys"/>
+			<keyword context="#stay" attribute="Access Keys" String="access"/>
+
+			<keyword context="#stay" attribute="Booleans" String="booleans"/>
+			<keyword context="#stay" attribute="Type Name Statements" String="classorder_keys"/>
+			<keyword context="#stay" attribute="Type Name Statements" String="type_name"/>
+		</context>
+		<context name="_default_rule" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_common"/>
+			<keyword context="#stay" attribute="Booleans" String="booleans"/>
+			<keyword context="#stay" attribute="Special Keys" String="special_keys"/>
+
+			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;root&gt;"/>
+			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;node&gt;"/>
+			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;src_info&gt;"/>
+			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;src_cil&gt;"/>
+			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;src_hll&gt;"/>
+			<keyword context="#stay" attribute="Other Keywords" String="other_keywords"/>
+			<IncludeRules context="_filesystem##SELinux Policy"/>
+
+			<IncludeRules context="_identifiers"/>
+		</context>
+		<context name="_default_rule_without_statement" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_av_permissions##SELinux Policy"/>
+		</context>
+		<context name="_default_rule_bracket" attribute="Normal Text" lineEndContext="#stay">
+			<DetectSpaces context="#stay" attribute="Normal Text"/>
+			<DetectChar context="_comment" attribute="Comment" char=";"/>
+		</context>
+
+		<!-- Levels of rule brackets.
+		     Only the first word of a rule can be highlighted as a statement keyword. -->
+		<context name="_rule_bracket_level1" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_without_statement_level1" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_bracket"/> <!-- Detect spaces & comments -->
+			<!-- Detect first word -->
+			<RegExpr context="#pop!_statement_level1" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
+		</context>
+		<context name="_statement_level1" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level1" lineEndContext="#pop!_rule_level1">
+			<!-- When writing a statement and then a delimiter (like a space), go to the context "_rule_level1" -->
+			<IncludeRules context="_default_statement"/>
+			<RegExpr context="#pop!_rule_without_statement_level1" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+		</context>
+		<context name="_rule_level1" attribute="Normal Text" lineEndContext="#stay"> <!-- Rule content -->
+			<DetectChar attribute="Brackets2" context="_rule_bracket_level2" char="("/>
+			<DetectChar attribute="Brackets1" context="#pop" char=")" />
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_rule_without_statement_level1" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_without_statement"/>
+			<IncludeRules context="_rule_level1"/>
+		</context>
+
+		<context name="_rule_bracket_level2" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_without_statement_level2" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_bracket"/>
+			<RegExpr context="#pop!_statement_level2" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
+		</context>
+		<context name="_statement_level2" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level2" lineEndContext="#pop!_rule_level2">
+			<IncludeRules context="_default_statement"/>
+			<RegExpr context="#pop!_rule_without_statement_level2" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+		</context>
+		<context name="_rule_level2" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar attribute="Brackets3" context="_rule_bracket_level3" char="("/>
+			<DetectChar attribute="Brackets2" context="#pop" char=")" />
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_rule_without_statement_level2" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_without_statement"/>
+			<IncludeRules context="_rule_level2"/>
+		</context>
+
+		<context name="_rule_bracket_level3" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_without_statement_level3" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_bracket"/>
+			<RegExpr context="#pop!_statement_level3" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
+		</context>
+		<context name="_statement_level3" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level3" lineEndContext="#pop!_rule_level3">
+			<IncludeRules context="_default_statement"/>
+			<RegExpr context="#pop!_rule_without_statement_level3" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+		</context>
+		<context name="_rule_level3" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar attribute="Brackets4" context="_rule_bracket_level4" char="("/>
+			<DetectChar attribute="Brackets3" context="#pop" char=")" />
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_rule_without_statement_level3" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_without_statement"/>
+			<IncludeRules context="_rule_level3"/>
+		</context>
+
+		<context name="_rule_bracket_level4" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_without_statement_level4" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_bracket"/>
+			<RegExpr context="#pop!_statement_level4" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
+		</context>
+		<context name="_statement_level4" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level4" lineEndContext="#pop!_rule_level4">
+			<IncludeRules context="_default_statement"/>
+			<RegExpr context="#pop!_rule_without_statement_level4" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+		</context>
+		<context name="_rule_level4" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar attribute="Brackets5" context="_rule_bracket_level5" char="("/>
+			<DetectChar attribute="Brackets4" context="#pop" char=")" />
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_rule_without_statement_level4" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_without_statement"/>
+			<IncludeRules context="_rule_level4"/>
+		</context>
+
+		<context name="_rule_bracket_level5" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_without_statement_level5" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_bracket"/>
+			<RegExpr context="#pop!_statement_level5" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
+		</context>
+		<context name="_statement_level5" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level5" lineEndContext="#pop!_rule_level5">
+			<IncludeRules context="_default_statement"/>
+			<RegExpr context="#pop!_rule_without_statement_level5" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+		</context>
+		<context name="_rule_level5" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar attribute="Brackets6" context="_rule_bracket_level6" char="("/>
+			<DetectChar attribute="Brackets5" context="#pop" char=")" />
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_rule_without_statement_level5" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_without_statement"/>
+			<IncludeRules context="_rule_level5"/>
+		</context>
+
+		<context name="_rule_bracket_level6" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_without_statement_level6" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_bracket"/>
+			<RegExpr context="#pop!_statement_level6" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
+		</context>
+		<context name="_statement_level6" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level6" lineEndContext="#pop!_rule_level6">
+			<IncludeRules context="_default_statement"/>
+			<RegExpr context="#pop!_rule_without_statement_level6" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+		</context>
+		<context name="_rule_level6" attribute="Normal Text" lineEndContext="#stay">
+			<DetectChar attribute="Brackets1" context="_rule_bracket_level1" char="("/>
+			<DetectChar attribute="Brackets6" context="#pop" char=")" />
+			<IncludeRules context="_default_rule"/>
+		</context>
+		<context name="_rule_without_statement_level6" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="_default_rule_without_statement"/>
+			<IncludeRules context="_rule_level6"/>
+		</context>
+
+		<!-- File Contexts -->
+		<!-- user:role:type -->
+		<context name="_file_contexts" attribute="File Contexts" lineEndContext="#pop">
+			<DetectChar context="#pop!_fc_role" attribute="Normal Text" char=":"/>
+			<DetectSpaces context="#pop" attribute="Normal Text" lookAhead="true"/>
+		</context>
+		<context name="_fc_role" attribute="File Contexts" lineEndContext="#pop">
+			<DetectChar context="#pop!_fc_type" attribute="Normal Text" char=":"/>
+			<DetectSpaces context="#pop" attribute="Normal Text" lookAhead="true"/>
+		</context>
+		<context name="_fc_type" attribute="File Contexts (Type Enforcement)" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<RegExpr context="#pop!_fc_mls" attribute="File Contexts (Type Enforcement)" String="&fullIdentifier;(?=:&mlsLevel;)"/> <!-- Find Level/Range -->
+			<RegExpr context="#pop" attribute="File Contexts (Type Enforcement)" String="&fullIdentifier;"/>
+		</context>
+		<!-- (MLS/MCS) user:role:type:level -->
+		<context name="_fc_mls" attribute="File Contexts" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<DetectChar context="#pop!_fc_level_range_sen" attribute="Normal Text" char=":"/>
+		</context>
+		<context name="_fc_level_range_sen" attribute="File Contexts" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<RegExpr context="#pop!_fc_level_range_cat" attribute="Normal Text" String=":(?=&identifier;)"/> <!-- Find Category -->
+			<RegExpr context="#pop!_fc_level_sen" attribute="Normal Text" String="\s*\-\s*(?=&mlsLevel;)"/> <!-- Find Range -->
+			<RegExpr context="#stay" attribute="Normal Text" String="\.(?=&identifier;)"/>
+			<IncludeRules context="_default_fc_level"/>
+		</context>
+		<context name="_fc_level_range_cat" attribute="File Contexts" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<RegExpr context="#pop!_fc_level_sen" attribute="Normal Text" String="\s*\-\s*(?=&mlsLevel;)"/> <!-- Find Range -->
+			<RegExpr context="#stay" attribute="Normal Text" String="(\.|\s*,\s*)(?=&identifier;)"/>
+			<IncludeRules context="_default_fc_level"/>
+		</context>
+		<!-- (MLS/MCS) user:role:type:level-level -->
+		<context name="_fc_level_sen" attribute="File Contexts" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<RegExpr context="#pop!_fc_level_cat" attribute="Normal Text" String=":(?=&identifier;)"/> <!-- Find Category -->
+			<RegExpr context="#stay" attribute="Normal Text" String="\.(?=&identifier;)"/>
+			<IncludeRules context="_default_fc_level"/>
+		</context>
+		<context name="_fc_level_cat" attribute="File Contexts" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<RegExpr context="#stay" attribute="Normal Text" String="(\.|\s*,\s*)(?=&identifier;)"/>
+			<IncludeRules context="_default_fc_level"/>
+		</context>
+		<context name="_default_fc_level" attribute="File Contexts" lineEndContext="#pop">
+			<RegExpr context="#stay" attribute="File Contexts" String="\w+"/>
+			<DetectChar context="#stay" attribute="File Contexts" char="-"/>
+		</context>
+
+	</contexts>
+
+	<itemDatas>
+		<itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+		<itemData name="Comment"     defStyleNum="dsComment"/>
+		<itemData name="Text Quoted" defStyleNum="dsString" spellChecking="false"/>
+		<itemData name="Path"        defStyleNum="dsNormal" spellChecking="false"/>
+
+		<itemData name="Statements"                defStyleNum="dsKeyword"      bold="1" spellChecking="false"/>
+		<itemData name="Type Statements"           defStyleNum="dsFunction"     bold="1" spellChecking="false"/>
+		<itemData name="Policy Config. Statements" defStyleNum="dsPreprocessor" bold="1" spellChecking="false"/>
+		<itemData name="Access Keys"               defStyleNum="dsWarning"      bold="1" spellChecking="false"/>
+		<itemData name="Expression Keys"           defStyleNum="dsVariable"     bold="1" spellChecking="false"/>
+		<itemData name="Type Name Statements"      defStyleNum="dsDataType"     bold="1" spellChecking="false"/>
+		<itemData name="Booleans"                  defStyleNum="dsExtension"    bold="1" spellChecking="false"/>
+
+		<itemData name="Types"                defStyleNum="dsDataType"      bold="0" spellChecking="false"/>
+		<itemData name="Special Keys"         defStyleNum="dsOthers"        spellChecking="false"/>
+		<itemData name="File Contexts"        defStyleNum="dsSpecialString" spellChecking="false"/>
+		<itemData name="File Contexts (Type Enforcement)" defStyleNum="dsInformation" spellChecking="false"/>
+		<itemData name="Other Keywords"       defStyleNum="dsNormal"        italic="1" spellChecking="false"/>
+
+		<itemData name="Number"      defStyleNum="dsDecVal" spellChecking="false"/>
+		<itemData name="Hexadecimal" defStyleNum="dsBaseN"  spellChecking="false"/>
+
+		<!-- Obtained from "scheme.xml" -->
+		<itemData name="Brackets1" defStyleNum="dsNormal" color="#ff0000" bold="1" />
+		<itemData name="Brackets2" defStyleNum="dsNormal" color="#ff8800" bold="1" />
+		<itemData name="Brackets3" defStyleNum="dsNormal" color="#888800" bold="1" />
+		<itemData name="Brackets4" defStyleNum="dsNormal" color="#008800" bold="1" />
+		<itemData name="Brackets5" defStyleNum="dsNormal" color="#000088" bold="1" />
+		<itemData name="Brackets6" defStyleNum="dsNormal" color="#880088" bold="1" />
+
+		<itemData name="Special Char"                     defStyleNum="dsSpecialChar"   spellChecking="false"/>
+		<itemData name="Special Char of Brackets (Paths)" defStyleNum="dsAnnotation"    spellChecking="false"/>
+		<itemData name="RegExp Brackets (Paths)"          defStyleNum="dsSpecialString" spellChecking="false"/>
+		<itemData name="Open RegExp Brackets (Paths)"     defStyleNum="dsSpecialString" underline="1" spellChecking="false"/>
+		<itemData name="Text Quoted Open"                 defStyleNum="dsString"        underline="1" spellChecking="false"/>
+
+		<itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+	</itemDatas>
+
+</highlighting>
+
+<general>
+	<keywords casesensitive="true" additionalDeliminator="&quot;&apos;&#096;" weakDeliminator="-"/>
+	<comments>
+		<comment name="singleLine" start=";"/>
+	</comments>
+</general>
+
+</language>
+<!-- kate: replace-tabs off; tab-width 3; indent-width 3; remove-trailing-spaces mod; dynamic-word-wrap off; -->

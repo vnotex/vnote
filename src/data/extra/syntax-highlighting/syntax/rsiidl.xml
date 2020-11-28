@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="UTF-8"?>   <!-- KATE Syntax Highlighting for RSI IDL   -->
+<!DOCTYPE language SYSTEM "language.dtd"><!-- Created by Markus Fraenz,fraenz@linmpi.mpg.de Aug 2002 -->
+<language name="RSI IDL" version="3" kateversion="2.3" section="Sources" extensions="*.pro" mimetype="text/x-rsiidl-src" author="Markus Fraenz (fraenz@linmpi.mpg.de)" license="">
+    <highlighting>
+        <list name="reserved words">
+        <item>For</item>
+        <item>Do</item>
+        <item>Endfor</item>
+        <item>Repeat</item>
+        <item>Endrep</item>
+        <item>While</item>
+        <item>Endwhile</item>
+        <item>Until</item>
+        <item>Case</item>
+        <item>Endcase</item>
+        <item>If</item>
+        <item>Endif</item>
+        <item>Else</item>
+        <item>Endelse</item>
+        <item>Then</item>
+        <item>Begin</item>
+        <item>End</item>
+        <item>Function</item>
+        <item>Goto</item>
+        <item>Pro</item>
+        <item>Eq</item>
+        <item>Ge</item>
+        <item>Gt</item>
+        <item>Le</item>
+        <item>Lt</item>
+        <item>Ne</item>
+        <item>Mod</item>
+        <item>Or</item>
+        <item>Xor</item>
+        <item>Not</item>
+        <item>And</item>
+        <item>Then</item>
+        <item>Return</item>
+        <item>Common</item>
+        <item>Of</item>
+        <item>On_ioerror</item>
+        <item>Switch</item>
+        <item>Endswitch</item>
+        </list>
+        <list name="system variables">
+        <item>dpi</item>
+        <item>dtor</item>
+        <item>map</item>
+        <item>pi</item>
+        <item>radeg</item>
+        <item>values</item>
+        <item>err</item>
+        <item>error_state</item>
+        <item>error</item>
+        <item>err_string</item>
+        <item>except</item>
+        <item>mouse</item>
+        <item>msg_prefix</item>
+        <item>syserror</item>
+        <item>syserr_string</item>
+        <item>warn</item>
+        <item>dir</item>
+        <item>dlm_path</item>
+        <item>edit_input</item>
+        <item>help_path</item>
+        <item>journal</item>
+        <item>more</item>
+        <item>path</item>
+        <item>prompt</item>
+        <item>quiet</item>
+        <item>version</item>
+        <item>c</item>
+        <item>d</item>
+        <item>order</item>
+        <item>p</item>
+        <item>x</item>
+        <item>y</item>
+        <item>z</item>
+        <item>stime</item>
+        </list>
+        <list name="types"><!-- IDL5 Data types and variable creation -->
+        <item>Fix</item>
+        <item>Long</item>
+        <item>Long64</item>
+        <item>uint</item>
+        <item>Byte</item>
+        <item>Float</item>
+        <item>Double</item>
+        <item>complex</item>
+        <item>dcomplex</item>
+        <item>complexarr</item>
+        <item>dcomplexarr</item>
+        <item>String</item>
+        <item>Intarr</item>
+        <item>lonarr</item>
+        <item>lon64arr</item>
+        <item>uintarr</item>
+        <item>ulong</item>
+        <item>ulonarr</item>
+        <item>ulon64arr</item>
+        <item>Bytarr</item>
+        <item>Bytscl</item>
+        <item>Fltarr</item>
+        <item>Dblarr</item>
+        <item>Strarr</item>
+        <item>Objarr</item>
+        <item>Indgen</item>
+        <item>Findgen</item>
+        <item>Dindgen</item>
+        <item>Dcindgen</item>
+        <item>cindgen</item>
+        <item>lindgen</item>
+        <item>bindgen</item>
+        <item>sindgen</item>
+        <item>uindgen</item>
+        <item>ul64indgen</item>
+        <item>l64indgen</item>
+        <item>ulindgen</item>
+        <item>Replicate</item>
+        <item>Ptrarr</item>
+        </list>
+        <list name="commands"><!-- IDL5.3 build in routines, excluding lib functions and io functions -->
+        <item>ABS</item>
+        <item>ACOS</item>
+        <item>ADAPT_HIST_EQUAL</item>
+        <item>ALOG</item>
+        <item>ALOG10</item>
+        <item>ARG_PRESENT</item>
+        <item>ASIN</item>
+        <item>ASSOC</item>
+        <item>ATAN</item>
+        <item>AXIS</item>
+        <item>BESELI</item>
+        <item>BESELJ</item>
+        <item>BESELY</item>
+        <item>BLAS_AXPY</item>
+        <item>BREAKPOINT</item>
+        <item>BROYDEN</item>
+        <item>BYTEORDER</item>
+        <item>CALL_EXTERNAL</item>
+        <item>CALL_FUNCTION</item>
+        <item>CALL_METHOD</item>
+        <item>CALL_PROCEDURE</item>
+        <item>CATCH</item>
+        <item>CEIL</item>
+        <item>CHECK_MATH</item>
+        <item>CHOLDC</item>
+        <item>CHOLSOL</item>
+        <item>COLOR_CONVERT</item>
+        <item>COLOR_QUAN</item>
+        <item>COMPILE_OPT</item>
+        <item>COMPUTE_MESH_NORMALS</item>
+        <item>CONJ</item>
+        <item>CONSTRAINED_MIN</item>
+        <item>CONTOUR</item>
+        <item>CONVERT_COORD</item>
+        <item>CONVOL</item>
+        <item>CORRELATE</item>
+        <item>COS</item>
+        <item>COSH</item>
+        <item>CREATE_STRUCT</item>
+        <item>CURSOR</item>
+        <item>DEFINE_KEY</item>
+        <item>DEFSYSV</item>
+        <item>DELVAR</item>
+        <item>DEVICE</item>
+        <item>DFPMIN</item>
+        <item>DIALOG_MESSAGE</item>
+        <item>DIALOG_PICKFILE</item>
+        <item>DIALOG_PRINTERSETUP</item>
+        <item>DIALOG_PRINTJOB</item>
+        <item>DILATE</item>
+        <item>DLM_LOAD</item>
+        <item>DRAW_ROI</item>
+        <item>ELMHES</item>
+        <item>EMPTY</item>
+        <item>ENABLE_SYSRTN</item>
+        <item>ERASE</item>
+        <item>ERODE</item>
+        <item>ERRORF</item>
+        <item>EXECUTE</item>
+        <item>EXIT</item>
+        <item>EXP</item>
+        <item>EXPAND_PATH</item>
+        <item>EXPINT</item>
+        <item>FINDFILE</item>
+        <item>FINITE</item>
+        <item>FLOOR</item>
+        <item>FORMAT_AXIS_VALUES</item>
+        <item>FORWARD_FUNCTION</item>
+        <item>FSTAT</item>
+        <item>FULSTR</item>
+        <item>FZ_ROOTS</item>
+        <item>GAUSSINT</item>
+        <item>GET_KBRD</item>
+        <item>GETENV</item>
+        <item>GRID_TPS</item>
+        <item>GRID3</item>
+        <item>HEAP_GC</item>
+        <item>HELP</item>
+        <item>HISTOGRAM</item>
+        <item>HQR</item>
+        <item>IMAGE_STATISTICS</item>
+        <item>IMAGINARY</item>
+        <item>INTERPOLATE</item>
+        <item>INVERT</item>
+        <item>ISHFT</item>
+        <item>ISOCONTOUR</item>
+        <item>ISOSURFACE</item>
+        <item>JOURNAL</item>
+        <item>KEYWORD_SET</item>
+        <item>LABEL_REGION</item>
+        <item>LINBCG</item>
+        <item>LINKIMAGE</item>
+        <item>LMGR</item>
+        <item>LNGAMMA</item>
+        <item>LNP_TEST</item>
+        <item>LOADCT</item>
+        <item>LOCALE_GET</item>
+        <item>LSODE</item>
+        <item>LUDC</item>
+        <item>LUMPROVE</item>
+        <item>LUSOL</item>
+        <item>MACHAR</item>
+        <item>MAKE_ARRAY</item>
+        <item>MAP_PROJ_INFO</item>
+        <item>MAX</item>
+        <item>MEDIAN</item>
+        <item>MESH_CLIP</item>
+        <item>MESH_DECIMATE</item>
+        <item>MESH_ISSOLID</item>
+        <item>MESH_MERGE</item>
+        <item>MESH_NUMTRIANGLES</item>
+        <item>MESH_SMOOTH</item>
+        <item>MESH_SURFACEAREA</item>
+        <item>MESH_VALIDATE</item>
+        <item>MESH_VOLUME</item>
+        <item>MESSAGE</item>
+        <item>MIN</item>
+        <item>N_ELEMENTS</item>
+        <item>N_PARAMS</item>
+        <item>N_TAGS</item>
+        <item>NEWTON</item>
+        <item>OBJ_CLASS</item>
+        <item>OBJ_DESTROY</item>
+        <item>OBJ_ISA</item>
+        <item>OBJ_NEW</item>
+        <item>OBJ_VALID</item>
+        <item>ON_ERROR</item>
+        <item>OPLOT</item>
+        <item>PARTICLE_TRACE</item>
+        <item>PLOT</item>
+        <item>PLOTS</item>
+        <item>POLY_2D</item>
+        <item>POLYFILL</item>
+        <item>POLYFILLV</item>
+        <item>POLYSHADE</item>
+        <item>POWELL</item>
+        <item>PROFILER</item>
+        <item>PTR_FREE</item>
+        <item>PTR_NEW</item>
+        <item>PTR_VALID</item>
+        <item>QROMB</item>
+        <item>QROMO</item>
+        <item>QSIMP</item>
+        <item>RANDOMN</item>
+        <item>RANDOMU</item>
+        <item>REBIN</item>
+        <item>REFORM</item>
+        <item>RETALL</item>
+        <item>RETURN</item>
+        <item>RIEMANN</item>
+        <item>RK4</item>
+        <item>ROBERTS</item>
+        <item>ROTATE</item>
+        <item>ROUND</item>
+        <item>SET_PLOT</item>
+        <item>SET_SHADING</item>
+        <item>SETENV</item>
+        <item>SHADE_SURF</item>
+        <item>SHADE_VOLUME</item>
+        <item>SHIFT</item>
+        <item>SIN</item>
+        <item>SINH</item>
+        <item>SIZE</item>
+        <item>SMOOTH</item>
+        <item>SOBEL</item>
+        <item>SORT</item>
+        <item>SPL_INIT</item>
+        <item>SPL_INTERP</item>
+        <item>SPRSAB</item>
+        <item>SPRSAX</item>
+        <item>SPRSIN</item>
+        <item>SQRT</item>
+        <item>STOP</item>
+        <item>STRCMP</item>
+        <item>STRCOMPRESS</item>
+        <item>STREGEX</item>
+        <item>STRJOIN</item>
+        <item>STRLEN</item>
+        <item>STRLOWCASE</item>
+        <item>STRMATCH</item>
+        <item>STRMESSAGE</item>
+        <item>STRMID</item>
+        <item>STRPOS</item>
+        <item>STRPUT</item>
+        <item>STRTRIM</item>
+        <item>STRUCT_ASSIGN</item>
+        <item>STRUCT_HIDE</item>
+        <item>STRUPCASE</item>
+        <item>SURFACE</item>
+        <item>SVDC</item>
+        <item>SVSOL</item>
+        <item>SYSTIME</item>
+        <item>TAG_NAMES</item>
+        <item>TAN</item>
+        <item>TANH</item>
+        <item>TEMPORARY</item>
+        <item>TETRA_CLIP</item>
+        <item>TETRA_SURFACE</item>
+        <item>TETRA_VOLUME</item>
+        <item>THIN</item>
+        <item>THREED</item>
+        <item>TOTAL</item>
+        <item>TRANSPOSE</item>
+        <item>TRIANGULATE</item>
+        <item>TRIGRID</item>
+        <item>TRIQL</item>
+        <item>TRIRED</item>
+        <item>TRISOL</item>
+        <item>TV</item>
+        <item>TVCRS</item>
+        <item>TVLCT</item>
+        <item>TVRD</item>
+        <item>TVSCLU</item>
+        <item>USERSYM</item>
+        <item>VALUE_LOCATE</item>
+        <item>VOIGT</item>
+        <item>VOXEL_PROJ</item>
+        <item>WAIT</item>
+        <item>WATERSHED</item>
+        <item>WDELETE</item>
+        <item>WHERE</item>
+        <item>WIDGET_BASE</item>
+        <item>WIDGET_BUTTON</item>
+        <item>WIDGET_CONTROL</item>
+        <item>WIDGET_DRAW</item>
+        <item>WIDGET_DROPLIST</item>
+        <item>WIDGET_EVENT</item>
+        <item>WIDGET_INFO</item>
+        <item>WIDGET_LABEL</item>
+        <item>WIDGET_LIST</item>
+        <item>WIDGET_SLIDER</item>
+        <item>WIDGET_TABLE</item>
+        <item>WIDGET_TEXT</item>
+        <item>WINDOW</item>
+        <item>WSET</item>
+        <item>WSHOW</item>
+        <item>WTN</item>
+        <item>XYOUTS</item>
+        </list>
+        <list name="io commands"><!-- IDL5.3 build in I/O routines -->
+        <item>Open</item>
+        <item>FLUSH</item>
+        <item>IOCTL</item>
+        <item>RESTORE</item>
+        <item>SAVE</item>
+        <item>POINT_LUN</item>
+        <item>Openr</item>
+        <item>Openw</item>
+        <item>Openu</item>
+        <item>Close</item>
+        <item>Free_lun</item>
+        <item>get_lun</item>
+        <item>assoc</item>
+        <item>catch</item>
+        <item>cd</item>
+        <item>spawn</item>
+        <item>eof</item>
+        <item>print</item>
+        <item>printf</item>
+        <item>prints</item>
+        <item>read</item>
+        <item>readf</item>
+        <item>reads</item>
+        <item>writu</item>
+        </list>
+        <contexts>
+        <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Keyword" context="#stay" String="reserved words"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <keyword attribute="Command" context="#stay" String="commands"/>
+        <keyword attribute="IOCommand" context="#stay" String="io commands"/>
+        <Float attribute="Octal" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+        <RangeDetect attribute="String" context="#stay" char="'" char1="'"/>
+        <RangeDetect attribute="String" context="#stay" char="&quot;" char1="&quot;"/>
+        <DetectChar attribute="Hex" context="#stay" char="(" />
+        <DetectChar attribute="Hex" context="#stay" char=")" />
+        <DetectChar attribute="Char" context="#stay" char="[" />
+        <DetectChar attribute="Char" context="#stay" char="]" />
+        <DetectChar attribute="Float" context="#stay" char="{" />
+        <DetectChar attribute="Float" context="#stay" char="}" />
+        <DetectChar attribute="Char" context="#stay" char="$" />
+        <DetectChar attribute="Char" context="#stay" char="@" />
+        <DetectChar attribute="Char" context="#stay" char=":" />
+        <DetectChar attribute="Char" context="Comment" char="&#59;"/>
+        <DetectChar attribute="Char" context="systemvarcontext" char="!" />
+        </context>
+        <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        </context>
+        <context attribute="Char" lineEndContext="#pop" name="systemvarcontext">
+        <DetectChar attribute="Hex" context="#pop" char="(" />
+        <DetectChar attribute="Char" context="#pop" char="." />
+        <DetectChar attribute="Hex" context="#pop" char=" " />
+        <keyword attribute="Float" context="#pop" String="system variables"/>
+        </context>
+        </contexts>
+        <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"   defStyleNum="dsKeyword" color="#1414e4" selColor="#ffd60b" bold="1"/>
+      <itemData name="Data Type"  defStyleNum="dsDataType"/>
+      <itemData name="Decimal"  defStyleNum="dsDecVal" color="#000000" selColor="#ffffff"/>
+      <itemData name="Octal"  defStyleNum="dsDecVal"/>
+      <itemData name="Hex"  defStyleNum="dsDecVal"/>
+      <itemData name="Float"  defStyleNum="dsDecVal" color="#000000" selColor="#ffffff"/>
+      <itemData name="Char"  defStyleNum="dsChar"/>
+      <itemData name="String"  defStyleNum="dsString" color="#ff0000" selColor="#ff0000"/>
+      <itemData name="Comment"  defStyleNum="dsComment" color="#2b7805" selColor="#945ca4"/>
+      <itemData name="Command"  defStyleNum="dsBaseN" color="#050505" selColor="#ffffff" bold="1"/>
+      <itemData name="IOCommand"  defStyleNum="dsDataType" color="#050505" selColor="#ffffff" bold="1"/>
+        </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="&#59;" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>

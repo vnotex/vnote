@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Kate syntax highlight filter for Textile formatted documents
+
+    Copyright 2012 alexander Kabakov. http://kabakov.wordpress.com/
+    Licensed under GPL license.
+-->
+
+<!DOCTYPE language SYSTEM "language.dtd"
+            [           
+            <!ENTITY strongregex "(\s|^)\*[^*]\w.*\w[^*]\*(\s|\.|,|;|:|\-|\?|$)">
+            <!ENTITY strikeoutregex "(\s|^)-[^-]\w.*\w[^-]-(\s|\.|,|;|:|\-|\?|$)">
+            <!ENTITY blockattrsregex "(\(\w+(#\w+)?\))?">
+            <!ENTITY formatregex "(&gt;|&lt;|=|&lt;&gt;)?">
+            <!ENTITY name "(?![0-9])[\w_:][\w.:_-]*">
+]>
+            
+<language section="Markup" name="Textile" 
+        version="4" kateversion="3.0"
+        extensions="*.textile" priority="15"
+        author="Alexander Kabakov (kabakov.as@gmail.com)"
+        license="LGPL" >
+    <highlighting>
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+                <StringDetect attribute="comment" context="comment" String="&lt;!--" beginRegion="comment" />
+                <RegExpr attribute="macro" String="\{\{&name;\}\}" />
+                
+                <Detect2Chars context="sectiontitle_block"  char="h" char1="1" column="0" />
+                <Detect2Chars context="sectionheader_block" char="h" char1="2" column="0" />                
+                <Detect2Chars context="sectionheader_block" char="h" char1="3" column="0" />
+                <Detect2Chars context="sectionheader_block" char="h" char1="4" column="0" />
+                <Detect2Chars context="sectionheader_block" char="h" char1="5" column="0" />
+                
+                <RegExpr attribute="textblock" String="^(p|pre|bq|bc)&blockattrsregex;&formatregex;\." />
+                <DetectChar context="image" char="!"/>
+                
+                <IncludeRules context="inc" />
+
+                <RegExpr attribute="itemlist" String="^[\*\#]+\s" />
+                <RegExpr attribute="htmllink" String='".*":http(s)?:[\w_/\\\d\.%\?&amp;=-]*' />
+            </context>
+            
+            <context name="image" lineEndContext="#pop" attribute="image">
+                <RegExpr String="&blockattrsregex;" attribute="blockattrs" />
+                <RegExpr String="\w+\.(png|jpg|jpeg|gif|bmp)" attribute="imagefilename" />
+                <DetectChar char="!" context="#pop" attribute="image"/>
+            </context>
+            
+            <context name="sectiontitle_block" lineEndContext="#pop" attribute="sectiontitle">
+                <RegExpr String="&blockattrsregex;" attribute="sectionblockattrs" />
+            </context>
+            
+            <context name="sectionheader_block" lineEndContext="#pop" attribute="sectionheader">
+                <RegExpr String="&blockattrsregex;" attribute="sectionblockattrs" />
+            </context>
+            
+            <context name="comment" attribute="comment" lineEndContext="#stay">
+                <DetectSpaces/>
+                <DetectIdentifier/>
+                <StringDetect attribute="comment" context="#pop" String="--&gt;" endRegion="comment" />
+            </context>
+            
+            <context attribute="Normal Text" name="inc" lineEndContext="#stay" >
+                <RegExpr attribute="strong" String="&strongregex;" />
+                <RegExpr attribute="strikeout" minimal="true" String="&strikeoutregex;"/>
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" />
+            
+            <itemData name="sectiontitle" defStyleNum="dsKeyword" bold="true" />
+            <itemData name="sectionheader" defStyleNum="dsFunction" bold="true" />
+            <itemData name="sectionblockattrs" defStyleNum="dsComment" bold="true"/>
+            <itemData name="blockattrs" defStyleNum="dsComment" />
+            <itemData name="textblock"  defStyleNum="dsComment" />
+            
+            <itemData name="strong" defStyleNum="dsNormal" bold="true" />
+            <itemData name="strikeout" defStyleNum="dsNormal" strikeOut="true" />
+            
+            <itemData name="itemlist" defStyleNum="dsDataType" />
+            
+            <itemData name="macro"  defStyleNum="dsComment" bold="true"/>
+            <itemData name="comment"  defStyleNum="dsComment" />
+            
+            <itemData name="image"  defStyleNum="dsFloat" />
+            <itemData name="imagefilename"  defStyleNum="dsKeyword" />
+            <itemData name="htmllink" defStyleNum="dsDataType" />
+        </itemDatas>
+
+    </highlighting>
+
+    <general>
+        <comments>
+            <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+        </comments>
+    </general>
+
+</language>

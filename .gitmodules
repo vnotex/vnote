@@ -1,0 +1,3 @@
+[submodule "libs/vtextedit"]
+	path = libs/vtextedit
+	url = https://github.com/vnotex/vtextedit.git

@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="R documentation" version="2" section="Markup" kateversion="5.0"
+          extensions="*.Rd" author="Aaron Puchert" license="MIT" >
+<highlighting>
+    <list name="PreprocessorOptions">
+        <item>unix</item>
+        <item>windows</item>
+    </list>
+    <list name="Formats">
+        <item>example</item>
+        <item>html</item>
+        <item>latex</item>
+        <item>text</item>
+        <item>TRUE</item>
+        <item>FALSE</item>
+    </list>
+
+    <list name="TopLevel-ExpectName">
+        <item>\docType</item>
+        <item>\encoding</item>
+        <item>\keyword</item>
+        <item>\name</item>
+    </list>
+    <list name="TopLevel-ExpectLatex">
+        <item>\author</item>
+        <item>\concept</item>
+        <item>\description</item>
+        <item>\details</item>
+        <item>\format</item>
+        <item>\note</item>
+        <item>\references</item>
+        <item>\seealso</item>
+        <item>\source</item>
+        <item>\title</item>
+    </list>
+    <list name="TopLevel-ExpectNameLatex">
+        <item>\section</item>
+    </list>
+    <list name="TopLevel-ExpectMacroLatex">
+        <item>\newcommand</item>
+        <item>\renewcommand</item>
+    </list>
+    <list name="TopLevel-ExpectR">
+        <item>\examples</item>
+        <item>\usage</item>
+    </list>
+    <list name="TopLevel-ExpectVerbatim">
+        <item>\alias</item>
+        <item>\Rdversion</item>
+        <item>\synopsis</item>
+        <item>\RdOpts</item>
+    </list>
+    <list name="TopLevel-ExpectItem2List">
+        <item>\arguments</item>
+        <item>\value</item>
+    </list>
+
+    <!-- For now we highlight these as macros.
+    <list name="Latex-Markup">
+        <item>\cr</item>
+        <item>\dots</item>
+        <item>\ldots</item>
+        <item>\R</item>
+        <item>\tab</item>
+    </list>
+    -->
+    <list name="Latex-ExpectLatex">
+        <item>\acronym</item>
+        <item>\bold</item>
+        <item>\cite</item>
+        <item>\command</item>
+        <item>\dfn</item>
+        <item>\dQuote</item>
+        <item>\emph</item>
+        <item>\file</item>
+        <item>\linkS4class</item>
+        <item>\pkg</item>
+        <item>\sQuote</item>
+        <item>\strong</item>
+        <item>\var</item>
+    </list>
+    <list name="Latex-ExpectNameLatex">
+        <item>\enc</item>
+        <item>\method</item>
+        <item>\S3method</item>
+        <item>\S4method</item>
+    </list>
+    <list name="Latex-ExpectNameLatex-Section">
+        <item>\subsection</item>
+    </list>
+    <list name="Latex-ExpectMacroLatex">
+        <item>\newcommand</item>
+        <item>\renewcommand</item>
+    </list>
+    <list name="Latex-ExpectItemList">
+        <item>\enumerate</item>
+        <item>\itemize</item>
+    </list>
+    <list name="ItemList-Item">
+        <item>\item</item>
+    </list>
+    <list name="Latex-ExpectItem2List">
+        <item>\describe</item>
+    </list>
+    <list name="Latex-ExpectIf">
+        <item>\if</item>
+        <item>\ifelse</item>
+    </list>
+    <list name="Latex-ExpectRLike">
+        <item>\code</item>
+    </list>
+    <list name="Latex-ExpectVerbatim">
+        <item>\email</item>
+        <item>\env</item>
+        <item>\kbd</item>
+        <item>\option</item>
+        <item>\out</item>
+        <item>\preformatted</item>
+        <item>\samp</item>
+        <item>\url</item>
+        <item>\verb</item>
+        <item>\deqn</item>
+        <item>\eqn</item>
+    </list>
+    <list name="Latex-ExpectVerbatimLatex">
+        <item>\tabular</item>
+        <item>\href</item>
+        <item>\figure</item>
+    </list>
+    <list name="Latex-ExpectOptionName">
+        <item>\link</item>
+    </list>
+    <list name="Latex-ExpectOptionR">
+        <item>\Sexpr</item>
+    </list>
+
+    <list name="R-ExpectRLike">
+        <item>\dontrun</item>
+        <item>\special</item>
+        <item>\v</item>
+        <item>\var</item>
+    </list>
+    <list name="R-ExpectNameLatex">
+        <item>\method</item>
+        <item>\S3method</item>
+        <item>\S4method</item>
+    </list>
+    <list name="R-ExpectOptionName">
+        <item>\l</item>
+        <item>\link</item>
+    </list>
+    <list name="R-ExpectR">
+        <item>\dontshow</item>
+        <item>\donttest</item>
+        <item>\testonly</item>
+    </list>
+
+    <contexts>
+        <context name="TopLevel" attribute="NormalText" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+
+            <keyword String="TopLevel-ExpectName" attribute="Section" context="ExpectName"/>
+            <keyword String="TopLevel-ExpectLatex" attribute="Section" context="ExpectLatex"/>
+            <keyword String="TopLevel-ExpectNameLatex" attribute="Section" context="ExpectNameLatex"/>
+            <keyword String="TopLevel-ExpectMacroLatex" attribute="Markup" context="ExpectMacroLatex"/>
+            <keyword String="TopLevel-ExpectR" attribute="Section" context="ExpectR"/>
+            <keyword String="TopLevel-ExpectVerbatim" attribute="Section" context="ExpectVerbatim"/>
+            <keyword String="TopLevel-ExpectItem2List" attribute="Section" context="ExpectItem2List"/>
+        </context>
+
+        <!-- Common rules: only included in other contexts -->
+        <context name="Common" attribute="NormalText" lineEndContext="#stay">
+            <DetectSpaces/>
+            <DetectChar char="%" attribute="Comment" context="Comment"/>
+
+            <Detect2Chars char="\" char1="\" attribute="Escape"/>
+            <Detect2Chars char="\" char1="%" attribute="Escape"/>
+            <Detect2Chars char="\" char1="{" attribute="Escape"/>
+            <Detect2Chars char="\" char1="}" attribute="Escape"/>
+
+            <StringDetect String="#ifdef" firstNonSpace="true" attribute="Preprocessor"
+                            context="PreprocessorCondition" beginRegion="Preprocessor"/>
+            <StringDetect String="#ifndef" firstNonSpace="true" attribute="Preprocessor"
+                            context="PreprocessorCondition" beginRegion="Preprocessor"/>
+            <StringDetect String="#endif" firstNonSpace="true" attribute="Preprocessor"
+                            context="Comment" endRegion="Preprocessor"/>
+        </context>
+
+        <!-- Contexts where we expect certain arguments -->
+        <context name="ExpectName" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!Name" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectLatex" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!Latex" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectItemList" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!ItemList" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectItem2List" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!Item2List" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectNameLatex" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!NameLatex" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectMacroLatex" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!MacroLatex" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectLatexLatex" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!LatexLatex" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectR" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!R" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectRLike" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!RLike" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectVerbatim" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!Verbatim" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectVerbatimLatex" attribute="NormalText" lineEndContext="#stay">
+            <DetectChar char="{" attribute="Brace" context="#pop!VerbatimLatex" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectOptionName" attribute="Verbatim" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="#pop!Name" beginRegion="Brace"/>
+            <DetectChar char="[" attribute="Brace" context="#pop!OptionName" beginRegion="Bracket"/>
+            <RegExpr String="[^{[]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectOptionR" attribute="Verbatim" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="#pop!R" beginRegion="Brace"/>
+            <DetectChar char="[" attribute="Brace" context="#pop!OptionR" beginRegion="Bracket"/>
+            <RegExpr String="[^{[]*" attribute="Error" context="#pop"/>
+        </context>
+        <context name="ExpectIf" attribute="NormalText" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="#pop!If" beginRegion="Brace"/>
+            <RegExpr String="[^{]*" attribute="Error" context="#pop"/>
+        </context>
+
+        <!-- The actual arguments -->
+        <context name="Latex" attribute="NormalText" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="Latex" beginRegion="Brace"/>
+            <DetectChar char="}" attribute="Brace" context="#pop" endRegion="Brace"/>
+
+            <keyword String="Latex-ExpectLatex" attribute="Markup" context="ExpectLatex"/>
+            <keyword String="Latex-ExpectNameLatex" attribute="Markup" context="ExpectNameLatex"/>
+            <keyword String="Latex-ExpectNameLatex-Section" attribute="Section" context="ExpectNameLatex"/>
+            <keyword String="Latex-ExpectMacroLatex" attribute="Markup" context="ExpectMacroLatex"/>
+            <keyword String="Latex-ExpectItemList" attribute="Markup" context="ExpectItemList"/>
+            <keyword String="Latex-ExpectItem2List" attribute="Markup" context="ExpectItem2List"/>
+            <keyword String="Latex-ExpectIf" attribute="Markup" context="ExpectIf"/>
+            <keyword String="Latex-ExpectRLike" attribute="Markup" context="ExpectRLike"/>
+            <keyword String="Latex-ExpectVerbatim" attribute="Markup" context="ExpectVerbatim"/>
+            <keyword String="Latex-ExpectVerbatimLatex" attribute="Markup" context="ExpectVerbatimLatex"/>
+            <keyword String="Latex-ExpectOptionName" attribute="Markup" context="ExpectOptionName"/>
+            <keyword String="Latex-ExpectOptionR" attribute="Markup" context="ExpectOptionR"/>
+
+            <RegExpr String="\\[A-Za-z][A-Za-z0-9]*" attribute="UserDefinedMacro"/>
+            <RegExpr String="#[1-9]" attribute="UserDefinedMacroArgument"/>
+        </context>
+        <context name="ItemList" attribute="NormalText" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="Item2List" beginRegion="Brace"/>
+            <DetectChar char="}" attribute="Brace" context="#pop" endRegion="Brace"/>
+            <keyword String="ItemList-Item" attribute="Markup"/>
+            <IncludeRules context="Latex"/>
+        </context>
+        <context name="Item2List" attribute="NormalText" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <keyword String="ItemList-Item" attribute="Markup" context="ExpectLatexLatex"/>
+            <IncludeRules context="Latex"/>
+        </context>
+        <context name="Name" attribute="ItemName" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <RegExpr String="\\[A-Za-z][A-Za-z0-9]*" attribute="UserDefinedMacro"/>
+            <RegExpr String="#[1-9]" attribute="UserDefinedMacroArgument"/>
+            <DetectChar char="{" attribute="Brace" context="Name" beginRegion="Brace"/>
+            <DetectChar char="}" attribute="Brace" context="#pop" endRegion="Brace"/>
+        </context>
+        <context name="NameLatex" attribute="ItemName" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <RegExpr String="\\[A-Za-z][A-Za-z0-9]*" attribute="UserDefinedMacro"/>
+            <RegExpr String="#[1-9]" attribute="UserDefinedMacroArgument"/>
+            <DetectChar char="{" attribute="Brace" context="Latex" beginRegion="Brace"/>
+            <DetectChar char="}" attribute="Brace" context="#pop!ExpectLatex" endRegion="Brace"/>
+        </context>
+        <context name="MacroLatex" attribute="UserDefinedMacro" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="}" attribute="Brace" context="#pop!ExpectLatex" endRegion="Brace"/>
+        </context>
+        <context name="LatexLatex" attribute="ItemName" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="}" attribute="Brace" context="#pop!ExpectLatex" endRegion="Brace"/>
+            <IncludeRules context="Latex"/>
+        </context>
+        <context name="R" attribute="RSource" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="R" beginRegion="Brace"/>
+            <DetectChar char="}" attribute="Brace" context="#pop" endRegion="Brace"/>
+            <keyword String="R-ExpectR" attribute="Markup" context="ExpectR"/>
+            <keyword String="R-ExpectRLike" attribute="Markup" context="ExpectRLike"/>
+            <keyword String="R-ExpectNameLatex" attribute="Markup" context="ExpectNameLatex"/>
+            <keyword String="R-ExpectOptionName" attribute="Markup" context="ExpectOptionName"/>
+            <IncludeRules context="level0##R Script"/>
+        </context>
+        <context name="RLike" attribute="Verbatim" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="RLike" beginRegion="Brace"/>
+            <DetectChar char="}" attribute="Brace" context="#pop" endRegion="Brace"/>
+            <keyword String="R-ExpectRLike" attribute="Markup" context="ExpectRLike"/>
+            <keyword String="R-ExpectNameLatex" attribute="Markup" context="ExpectNameLatex"/>
+            <keyword String="R-ExpectOptionName" attribute="Markup" context="ExpectOptionName"/>
+        </context>
+        <context name="Verbatim" attribute="Verbatim" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="Verbatim" beginRegion="Brace"/>
+            <DetectChar char="}" attribute="Brace" context="#pop" endRegion="Brace"/>
+        </context>
+        <context name="VerbatimLatex" attribute="Verbatim" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="Verbatim" beginRegion="Brace"/>
+            <DetectChar char="}" attribute="Brace" context="#pop!ExpectLatex" endRegion="Brace"/>
+        </context>
+        <context name="OptionName" attribute="Verbatim" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="Verbatim" beginRegion="Brace"/>
+            <DetectChar char="]" attribute="Brace" context="#pop!ExpectName" endRegion="Bracket"/>
+            <DetectChar char="}" attribute="Error" context="#pop!ExpectName" endRegion="Bracket"/>
+        </context>
+        <context name="OptionR" attribute="Verbatim" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <DetectChar char="{" attribute="Brace" context="Verbatim" beginRegion="Brace"/>
+            <DetectChar char="]" attribute="Brace" context="#pop!ExpectR" endRegion="Bracket"/>
+            <DetectChar char="}" attribute="Error" context="#pop!ExpectR" endRegion="Bracket"/>
+        </context>
+        <context name="If" attribute="Verbatim" lineEndContext="#stay">
+            <IncludeRules context="Common"/>
+            <keyword String="Formats" attribute="Builtin"/>
+            <DetectChar char="}" attribute="Brace" context="#pop" endRegion="Brace"/>
+        </context>
+
+        <context name="Comment" attribute="Comment" lineEndContext="#pop">
+            <IncludeRules context="##Alerts"/>
+        </context>
+
+        <context name="PreprocessorCondition" attribute="Preprocessor" lineEndContext="#pop">
+            <keyword String="PreprocessorOptions" attribute="Builtin"/>
+        </context>
+    </contexts>
+
+    <itemDatas>
+        <itemData name="NormalText" defStyleNum="dsNormal"/>
+        <itemData name="RSource" defStyleNum="dsNormal" spellChecking="false"/>
+        <itemData name="Brace" defStyleNum="dsOperator" spellChecking="false"/>
+        <itemData name="Section" defStyleNum="dsControlFlow" spellChecking="false"/>
+        <itemData name="Markup" defStyleNum="dsKeyword" spellChecking="false"/>
+        <itemData name="UserDefinedMacro" defStyleNum="dsFunction" spellChecking="false"/>
+        <itemData name="UserDefinedMacroArgument" defStyleNum="dsVariable" spellChecking="false"/>
+        <itemData name="ItemName" defStyleNum="dsSpecialString" spellChecking="false"/>
+        <itemData name="Escape" defStyleNum="dsSpecialChar" spellChecking="false"/>
+        <itemData name="Preprocessor" defStyleNum="dsPreprocessor" spellChecking="false"/>
+        <itemData name="Builtin" defStyleNum="dsBuiltIn" spellChecking="false"/>
+        <itemData name="Verbatim" defStyleNum="dsVerbatimString" spellChecking="false"/>
+        <itemData name="Comment" defStyleNum="dsComment"/>
+        <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+    </itemDatas>
+</highlighting>
+<general>
+    <keywords weakDeliminator="\" wordWrapDeliminator=",{}[]"/>
+    <comments>
+        <comment name="singleLine" start="%"/>
+    </comments>
+</general>
+</language>

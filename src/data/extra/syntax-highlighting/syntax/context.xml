@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="ConTeXt" version="4" section="Markup" kateversion="3.4" priority="8" extensions="*.ctx" mimetype="text/x-tex" casesensitive="1" author="Philipp A. (flying-sheep@web.de)" license="GPL" >
+	<highlighting>
+		<list name="titles">
+			<item>\part</item>
+			<item>\chapter</item>
+			<item>\section</item>
+			<item>\subsection</item>
+			<item>\subsubsection</item>
+			<item>\title</item>
+			<item>\subject</item>
+			<item>\subsubject</item>
+			<item>\subsubsubject</item>
+		</list>
+		<contexts>
+			<!-- Normal text -->
+			<context name="Normal Text" attribute="Normal Text" lineEndContext="#stay">
+				<DetectChar   char="$"               attribute="Block" context="MathMode"/>
+				<Detect2Chars char="$" char1="$"     attribute="Block" context="MathModeDisplay"/>
+				<RegExpr String="\\math(ematics)?"   attribute="Block" context="MathModeMacroFind"/>
+				<StringDetect String="\startformula" attribute="Block" context="MathModeFormula"/>
+				<StringDetect String="\starttyping"  attribute="Block" context="Verbatim"/>
+				<keyword String="titles"             attribute="Section" context="#stay"/>
+				<IncludeRules context="Common"/>
+			</context>
+
+			<!-- Macro -->
+			<context name="Macro" attribute="Macro" lineEndContext="#stay">
+				<RegExpr String="[a-zA-Z_]+[a-zA-Z@_]*" attribute="Macro" context="#pop"/>
+				<RegExpr String="[^a-zA-Z_]"            attribute="Macro" context="#pop"/>
+			</context>
+
+			<!-- Comment -->
+			<context name="Comment" attribute="Comment" lineEndContext="#pop">
+				<RegExpr String="(FIXME|TODO):?" attribute="Alert" context="#stay"/>
+			</context>
+
+			<!-- Math Modes -->
+			<context name="MathMode" attribute="Math" lineEndContext="#pop">
+				<DetectChar   char="$"               attribute="Block" context="#pop"/>
+				<Detect2Chars char="$" char1="$"     attribute="Error" context="#stay"/>
+				<StringDetect String="\stopformula"  attribute="Error" context="#stay"/>
+				<IncludeRules context="MathModeCommon"/>
+			</context>
+			<context name="MathModeMacroFind" attribute="Math" lineEndContext="#stay">
+				<DetectChar   char="{"               attribute="Brace" context="#popMathModeMacro"/>
+			</context>
+			<context name="MathModeMacro" attribute="Math" lineEndContext="#stay">
+				<DetectChar   char="{"               attribute="Brace" context="MathModeMacro"/>
+				<DetectChar   char="}"               attribute="Brace" context="#pop"/>
+				<DetectChar   char="$"               attribute="Error" context="#stay"/>
+				<Detect2Chars char="$" char1="$"     attribute="Error" context="#stay"/>
+				<StringDetect String="\stopformula"  attribute="Error" context="#stay"/>
+				<IncludeRules context="MathModeCommon"/>
+			</context>
+			<context name="MathModeDisplay" attribute="Math" lineEndContext="#stay">
+				<DetectChar   char="$"               attribute="Error" context="#stay"/>
+				<Detect2Chars char="$" char1="$"     attribute="Block" context="#pop"/>
+				<StringDetect String="\stopformula"  attribute="Error" context="#stay"/>
+				<IncludeRules context="MathModeCommon"/>
+			</context>
+			<context name="MathModeFormula" attribute="Math" lineEndContext="#stay">
+				<DetectChar   char="$"               attribute="Error" context="#stay"/>
+				<Detect2Chars char="$" char1="$"     attribute="Error" context="#stay"/>
+				<StringDetect String="\stopformula"  attribute="Block" context="#pop"/>
+				<IncludeRules context="MathModeCommon"/>
+			</context>
+			<context name="MathModeCommon" attribute="Error" lineEndContext="#stay">
+				<DetectChar   char="^"               attribute="Brace" context="#stay"/>
+				<DetectChar   char="_"               attribute="Brace" context="#stay"/>
+				<StringDetect String="\startformula" attribute="Error" context="#stay"/>
+				<StringDetect String="\text"         attribute="Block" context="MathModeTextFind"/>
+				<IncludeRules context="Common"/>
+			</context>
+			<!--Math text-->
+			<context name="MathModeTextFind" attribute="Normal Text" lineEndContext="#stay" >
+				<DetectChar char="{" attribute="Brace" context="#popMathModeText"/>
+			</context>
+			<context name="MathModeText" attribute="Normal Text" lineEndContext="#stay" >
+				<DetectChar char="{" attribute="Brace" context="MathModeText"/>
+				<DetectChar char="}" attribute="Brace" context="#pop"/>
+				<IncludeRules context="Normal Text"/>
+			</context>
+
+			<!--Verbatim TODO: \startC support-->
+			<context name="Verbatim" attribute="Verbatim" lineEndContext="#stay">
+				<StringDetect String="\stoptyping"  attribute="Block" context="#pop"/>
+			</context>
+
+			<!--Common-->
+			<context name="Common" attribute="Error" lineEndContext="#stay">
+				<DetectChar char="%" attribute="Comment" context="Comment"/>
+				<RegExpr String="\\start([a-zA-Z_]+)" attribute="Block" context="#stay" beginRegion="block"/>
+				<RegExpr String="\\stop([a-zA-Z_]+)"  attribute="Block" context="#stay" endRegion="block"/>
+				<DetectChar char="\" attribute="Macro"   context="Macro"/>
+				<DetectChar char="{" attribute="Brace"   context="#stay" beginRegion="block"/>
+				<DetectChar char="}" attribute="Brace"   context="#stay" endRegion="block"/>
+			</context>
+		</contexts>
+
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal"                            /><!--(Hi, I’m text)-->
+			<itemData name="Comment"     defStyleNum="dsComment"                           /><!--(%Comment)-->
+			<itemData name="Section"     defStyleNum="dsKeyword"                           /><!--\section{(Fancy!)}-->
+			<itemData name="Alert"       defStyleNum="dsAlert"        spellChecking="false"/><!--%(TODO):do sth.!-->
+			<itemData name="Brace"       defStyleNum="dsChar"         spellChecking="false"/><!--({})-->
+			<itemData name="Math"        defStyleNum="dsOthers"       spellChecking="false"/><!--($5$)-->
+			<itemData name="Macro"       defStyleNum="dsFunction"     spellChecking="false"/><!--(\foo)-->
+			<itemData name="Block"       defStyleNum="dsRegionMarker" spellChecking="false"/><!--\start(bar), \stop(bar)-->
+			<itemData name="Error"       defStyleNum="dsError"        spellChecking="false"/><!--$($$)-->
+			<itemData name="Verbatim"    defStyleNum="dsString"       spellChecking="false"/><!--\starttyping(eggs)\stoptyping, \definetyping[C] \startC(umm…)\stopC-->
+		</itemDatas>
+	</highlighting>
+
+	<general>
+		<keywords weakDeliminator="\" wordWrapDeliminator=",{}[]"/>
+		<comments>
+			<comment name="singleLine" start="%" />
+		</comments>
+	</general>
+
+	<spellchecking>
+		<encodings>
+			<encoding string="''" ignored="true" />
+		</encodings>
+	</spellchecking>
+</language>
+
+<!-- kate: space-indent off; indent-width 4; -->

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Andrea Primiani - primiani at dag dot it
+ 	version1.10 - 12 december 2005 -->
+<language name="ABC" version="5" kateversion="2.4" section="Other" extensions="*.abc;*.ABC" mimetype="text/vnd.abc" casesensitive="1" author="Andrea Primiani (primiani@dag.it)" license="LGPL">
+    <highlighting>
+        <contexts>
+           <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+<!-- detects tuplet symbols e.g. (3 or (3:2:2-->
+	    <RegExpr attribute="Tuplet" context="#stay" String="\([23456789]:?[23456789]?:?[23456789]?" />
+<!-- detects quoted strings -->
+	    <RangeDetect attribute="String" context="#stay" char="&quot;" char1="&quot;"/>
+<!-- detects decorations delimited by ! ! symbols -->
+	    <RangeDetect attribute="Decoration" context="#stay" char="!" char1="!" />
+<!-- detects single header command delimited by [ and sends to Header context -->
+	    <RegExpr attribute="Header" context="Header" String="\[[ABCGHILMNOQRSTUVZ]:" />
+<!-- detects single header line inside a song without [] - ends at EOL-->
+	    <RegExpr attribute="Header" context="Header2" String="[ABCGHILMNOPQRSTUVZ]:" />
+<!-- detect beginning of header zone with X: and sends to Header context -->	    
+	    <Detect2Chars attribute="Header" context="Header" char="X" char1=":" beginRegion="header" column="0"/>
+<!-- detects bar beginning (or chord) symbols and sends to Bar context -->
+	    <AnyChar attribute="Bar" context="Bar" String="|:[" />
+<!-- detects ] if used to close chords -->	    
+	    <DetectChar attribute="Bar" context="#stay" char="]" />
+<!-- detects () for slurs -->
+	    <AnyChar attribute="Slur" context="#stay" String="()" />
+<!-- detects {} for gracings -->
+	    <AnyChar attribute="Slur" context="#stay" String="{}" />
+<!-- detects W: and w: lyric lines -->	    
+	    <Detect2Chars attribute="Lyrics" context="Lyrics" char="W" char1=":" />
+	    <Detect2Chars attribute="Lyrics" context="Lyrics" char="w" char1=":" />
+<!-- detects %% preprocessor lines and % comment lines-->	    
+	    <Detect2Chars attribute="Preprocessor" context="Preprocessor" char="%" char1="%"/>
+	    <DetectChar attribute="Comment" context="Comment" char="%" />
+<!-- detects ^ _ = symbols before a note -->
+	    <RegExpr attribute="Sharp" context="#stay" String="[_|\^]?[_|=|\^][A-Ga-g]" />
+	   </context>
+<!-- returns to Normal context at the end of line -->	   
+	   <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop" />
+	   <context name="Lyrics" attribute="Lyrics" lineEndContext="#pop" />
+	   <context name="Comment" attribute="Comment" lineEndContext="#pop" />
+<!-- returns to Normal context after the end of bar symbols or at EOL -->
+	   <context name="Bar" attribute="Bar" lineEndContext="#pop" >
+	   	<DetectChar attribute="Normal Text" context="#pop" char="&quot;" />
+<!-- the bar symbol ends when a note letter follows -->
+		<RegExpr attribute="Normal Text" context="#pop" String="[A-Ga-gZz]" />
+<!-- the bar symbol ends after a white space -->
+		<DetectChar attribute="Normal Text" context="#pop" char=" " />
+<!-- detects decorations delimited by ! ! symbols -->
+	    <RangeDetect attribute="Decoration" context="#stay" char="!" char1="!" />
+<!-- detects () for slurs -->
+	    <AnyChar attribute="Slur" context="#stay" String="()" />
+<!-- chomps all other bar symbols -->
+		<RegExpr attribute="Bar" context="#pop" String=":*\|*[1-9]|/*\|" />
+	   </context>
+<!-- returns to Normal context at the end of header -->
+	   <context name="Header" attribute="Header" lineEndContext="#stay">
+<!-- the header ends after K: line -->
+		<RegExpr attribute="Header" context="#pop" String="K:.+" endRegion="header" column="0"/>
+<!-- the single header command ends at the ] char -->
+		<DetectChar attribute="Header" context="#pop" char="]" />
+	   </context>
+<!-- the single header line ends at EOL -->
+	   <context name="Header2" attribute="Header" lineEndContext="#pop" />
+       </contexts>
+        <itemDatas>
+          <itemData name="Normal Text" defStyleNum="dsNormal"/>
+	  <itemData name="Comment" defStyleNum="dsComment"/>
+	  <itemData name="Decoration" defStyleNum="dsFloat" color="#00bbaa" />
+	  <itemData name="String" defStyleNum="dsString" bold="true"/>
+	  <itemData name="Preprocessor" defStyleNum="dsString" italic="true"/>
+	  <itemData name="Header" defStyleNum="dsFloat"/>
+	  <itemData name="Slur" defStyleNum="dsDataType" bold="true"/>
+	  <itemData name="Tuplet" defStyleNum="dsDataType" color="#bb00bb"/>
+	  <itemData name="Lyrics" defStyleNum="dsDataType" color="#00bb00"/>
+	  <itemData name="Bar" defStyleNum="dsChar" color="#0000ff"/>
+	  <itemData name="Sharp" defStyleNum="dsNormal" color="#22bb66" bold="true"/>
+	</itemDatas>
+ </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="%" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

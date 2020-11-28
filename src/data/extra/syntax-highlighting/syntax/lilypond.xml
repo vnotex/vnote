@@ -1,0 +1,1199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd" [
+  <!ENTITY b "(?![A-Za-z])">
+  <!ENTITY rest "\b[srR]&b;">
+  <!ENTITY pitch "\b([a-h]((iss){1,2}|(ess){1,2}|(is){1,2}|(es){1,2}|(sharp){1,2}|(flat){1,2}|ss?|ff?)?|(do|re|mi|fa|sol|la|si)(dd?|bb?|ss?|kk?)?|q)('+|,+|&b;)">
+  <!ENTITY duration "(\\(longa|breve)\b|(1|2|4|8|16|32|64|128|256|512|1024|2048)(?!\d))(\s*\.+)?(\s*\*\s*\d+(/\d+)?)*">
+  <!ENTITY dynamics "p{1,5}|mp|mf|f{1,5}|s?fp|sff?|spp?|[sr]?fz|cresc|decresc|dim">
+  <!ENTITY scripts "\d+|accent|marcato|staccat(issim)?o|espressivo|tenuto|portato|(up|down)(bow|mordent|prall)|flageolet|thumb|[lr](heel|toe)|open|stopped|turn|reverseturn|trill|mordent|prall(prall|mordent|down|up)?|lineprall|signumcongruentiae|(short|long|verylong)?fermata|segno|(var)?coda|snappizzicato|halfopen">
+  <!ENTITY keywords "accepts|alias|consists|defaultchild|denies|description|grobdescriptions|include|invalid|language|name|objectid|once|remove|sequential|simultaneous|type|version|score|book|bookpart">
+  <!ENTITY deprecatedkeywords "consistsend">
+
+  <!-- predefined commands, grouped, TODO: unravel other commands -->
+  <!ENTITY commands-heads "(aiken|funk|sacredHarp|southernHarmony|walker)Heads(Minor)?">
+  <!ENTITY commands-other1 "acciaccatura|addQuote|afterGrace|allowPageTurn|alternative|apply(Context|Music|Output)|appoggiatura|arpeggio(Arrow(Down|Up)|Bracket|Normal|Parenthesis)?|(a|de)scendens|auctum|augmentum|autoBeamO(ff|n)|autochange|balloon(Grob)?Text|bar|barNumberCheck|bendAfter|breathe|break|cadenzaO(ff|n)|cavum|clef(\s+(treble|violin|G|alto|C|tenor|(sub)?bass|F|french|(mezzo)?soprano|(var)?baritone|percussion|tab))?|(end)?(de)?cr|cresc(TextCresc|Hairpin)">
+  <!ENTITY commands-other2 "(cue|transposedCue)During|default|deminutum|dim(Text(Decresc|Decr|Dim)|Hairpin)|display(Lily)?Music|divisio(Maior|Maxima|Minima)|(dynamic|dots|phrasingSlur|slur|stem|tie|tuplet)(Down|Neutral|Up)|(balloon|text)LengthO(ff|n)|featherDurations|figure(mode|s)|finalis|flexa|(french|german|italian|semiGerman)Chords|glissando|grace|harmonic|(unH|h)ideNotes|(hide|show)StaffSwitch|inclinatum|(keep|remove)WithTag|key(\s+&pitch;)?|killCues">
+  <!ENTITY commands-other3 "label|laissezVibrer|linea|makeClusters|mark|maxima|melisma(End)?|mergeDifferently(Head|Dott)edO(ff|n)|newSpacingSection|no(Beam|Break|PageBreak|PageTurn)|normalsize|numericTimeSignature|octaveCheck|oneVoice|oriscus|ottava|page(-ref|Break|Turn)|parallelMusic|parenthesize|partcombine|partial(\s*&duration;)?|pes|pitchedTrill">
+  <!ENTITY commands-other4 "pointAndClickO(ff|n)|quilisma|quoteDuring|relative(\s+&pitch;)?|RemoveEmptyStaffContext|repeat(\s+(unfold|volta|tremolo|percent)(\s+\d+)?)?|repeatTie|resetRelativeOctave|rest|scaleDurations|scoreTweak|easyHeadsO(ff|n)|shift(Durations|Off|On{1,3})|(slur|tie)(Both|Dashed|Dotted|Solid)|small|spacingTweaks">
+  <!ENTITY commands-other5 "(start|stop)(Group|(Text|Trill)Span|Staff)|stemBoth|stropha|super|(sustain|sostenuto)O(ff|n)|table-of-contents|tag|times?(\s*\d+/\d+)?|tiny|tocItem">
+  <!ENTITY commands-other6 "transpose(\s+&pitch;\s*&pitch;)?|transposition(\s+&pitch;)">
+  <!ENTITY commands-other7 "tweak|unfoldRepeats|virg(ul)?a|voice(One|Two|Three|Four)|withMusicProperty|cm|mm|in|pt|major|minor|ionian|locrian|aeolian|mixolydian|lydian|phrygian|dorian">
+
+  <!ENTITY deprecatedcommands "arpeggio(Up|Down|Neutral)|newpage|script(Up|Down|Both)|(empty|fat)Text|setEasyHeads|(default|voice|modernVoice|piano|forget)Accidentals|(modern(Voice)?|piano)Cautionaries|noResetKey|compressMusic|octave|(sustain|sostenuto)(Down|Up)|set(Hairpin|Text)(Cresc|Decresc|Dim)|setTextDecr">
+  <!ENTITY markupnotextargs "arrow-head|beam|char|(semi|sesqui|double)?(flat|sharp)|draw-(circle|line)|epsfile|eyeglasses|filled-box|fret-diagram(-terse|-verbose)?|fromproperty|harp-pedal|(justify|wordwrap)-(field|string)|left-brace|lookup|markalphabet|markletter|musicglyph|natural|note-by-number|note|null|path|right-brace|simple|(back)?slashed-digit|stencil|strut|tied-lyric|triangle|verbatim-file">
+  <!ENTITY markupwithtextargs "markup|bold|(rounded-)?box|bracket|caps|(center|general|left|right)-align|circle|((center|dir|left|right)-)?column|combine|concat|dynamic|fill-line|finger|fontCaps|(abs-)?fontsize|fraction|halign|hbracket|hcenter-in|hcenter|hspace|huge|italic|justify|larger?|line|lower|magnify|medium|normal-size-(sub|super)|normal-text|normalsize|number|on-the-fly|override|pad-(around|markup|to-box|x)|page-ref|postscript|put-adjacent|raise|roman|rotate|sans|small(er)?|smallCaps|sub|super|teeny|text|tiny|translate(-scaled)?|transparent|typewriter|underline|upright|vcenter|whiteout|with-(color|dimensions|url)|wordwrap|(markup|column-|justified-|override-|wordwrap-)lines|wordwrap-(string-)?internal">
+  <!ENTITY deprecatedmarkup "bigger|h?center">
+  <!ENTITY headervars "dedication|(sub){,2}title|poet|composer|meter|opus|arranger|instrument|piece|breakbefore|copyright|tagline|mutopia(title|composer|poet|opus|instrument)|date|enteredby|source|style|maintainer(Email|Web)?|moreInfo|lastupdated|texidoc|footer">
+
+  <!-- The '-new' entities are for for LilyPond 2.13.4 and higher, and '-old' for LilyPond up to 2.12 -->
+  <!ENTITY paper-margin "(top|bottom|left|right)-margin|(foot|head)-separation|indent|short-indent|paper-(height|width)|horizontal-shift|line-width">
+  <!ENTITY paper-margin-new "(inner|outer)-margin|two-sided|binding-offset">
+  <!ENTITY paper-spacing-old "(after|before|between)-title-space|between-system-(space|padding)|page-top-space|page-breaking-between-system-padding">
+  <!ENTITY paper-spacing-new "(after|before|between)-title-spacing|between-(scores-)?system-spacing|bottom-system-spacing|top-title-spacing|top-system-spacing|page-breaking-between-system-spacing">
+  <!ENTITY paper-systems "system-count">
+  <!ENTITY paper-systems-new "(min-|max-)?systems-per-page">
+  <!ENTITY paper-other "annotate-spacing|auto-first-page-number|blank-(last-)?page-force|first-page-number|page-count|page-limit-inter-system-space|page-limit-inter-system-space-factor|page-spacing-weight|print-all-headers|print-first-page-number|print-page-number|ragged-(bottom|right)|ragged-last(-bottom)?|system-separator-markup|force-assignment|input-encoding|output-scale">
+  <!ENTITY paper-markup "((even|odd)(Footer|Header)|(book|score|toc)Title|tocItem)Markup">
+  <!ENTITY papervars "&paper-margin;|&paper-margin-new;|&paper-spacing-old;|&paper-spacing-new;|&paper-systems;|&paper-systems-new;|&paper-other;|&paper-markup;">
+
+  <!ENTITY layoutvars "system-count|(short-)?indent">
+  <!ENTITY toplevelvars "dash(Hat|Plus|Dash|Bar|Larger|Dot|Underscore)|fermataMarkup|pipeSymbol|slashSeparator">
+  <!ENTITY performer "Beam|Control_track|Drum_note|Dynamic|Key|Lyric|Note|Piano_pedal|Slur|Staff|Swallow|Tempo|Tie|Time_signature">
+  <!ENTITY translator "Note_swallow|Rest_swallow|Skip_event_swallow|Timing">
+  <!ENTITY engraver0 "Accidental|Ambitus|Arpeggio|Auto_beam|Axis_group|Balloon|Bar|Bar_number|Beam|Bend|Break_align|Breathing_sign|Chord_name|Chord_tremolo|Clef|Cluster_spanner|Collision|Completion_heads|Custos|Default_bar_line|Dot_column|Dots|Drum_notes|Dynami_align|Dynamic|Episema|Extender|Figured_bass|Figured_bass_position|Fingering|Font_size|Forbid_line_break|Fretboard|Glissando|Grace_beam|Grace|Grace_spacing|Grid_line_span|Grid_point|Grob_pq|Hara_kiri|Horizontal_bracket">
+  <!ENTITY engraver1 "Hyphen|Instrument_name|Instrument_switch|Key|Laissez_vibrer|Ledger_line|Ligature_bracket|Lyric|Mark|Measure_grouping|Melody|Mensural_ligature|Metronome_mark|Multi_measure_rest|New_dynamic|New_fingering|Note_head_line|Note_heads|Note_name|Note_spacing|Ottava_spanner|Output_property|Page_turn|Paper_column|Parenthesis|Part_combine|Percent_repeat|Phrasing_slur|Piano_pedal_align|Piano_pedal|Pitch_squash|Pitched_trill|Repeat_acknowledge|Repeat_tie|Rest_collision|Rest|Rhythmic_column|Scheme|Script_column|Script|Script_row">
+  <!ENTITY engraver2 "Separating_line_group|Slash_repeat|Slur|Spacing|Span_arpeggio|Span_bar|Spanner_break_forbid|Staff_collecting|Staff_symbol|Stanza_number_align|Stanza_number|Stem|String_number|Swallow|System_start_delimiter|Tab_harmonic|Tab_note_heads|Tab_staff_symbol|Text|Text_spanner|Tie|Time_signature|Trill_spanner|Tuplet|Tweak|Vaticana_ligature|Vertical_align|Vertically_spaced_contexts|Volta">
+  <!ENTITY engravers00 "(&engraver0;)_engraver">
+  <!ENTITY engravers01 "(&engraver1;)_engraver">
+  <!ENTITY engravers02 "(&engraver2;)_engraver">
+  <!ENTITY engravers1 "(&performer;)_performer">
+  <!ENTITY engravers2 "(&translator;)_translator">
+
+  <!ENTITY schemename "[a-zA-Z#][^\s(){}[\];$&quot;]*">
+  <!ENTITY schemefunc0 "\b(define|defined\?|define\*(-public)?|define-(\*|builtin-markup-(list-)?command|class|(extra-)?display-method|fonts?|grob-property|ly-syntax(-loc|-simple)?|macro(-public)?|markup-(list-)command|method|module|music-function|post-event-display-method|public(-macro|-toplevel)?|safe-public|span-event-display-method)|defmacro(\*(-public)?)?|lambda\*?|and|or|if|cond|case|let\*?|letrec|begin|do|delay|set!|else|(quasi)?quote|unquote(-splicing)?|(define|let|letrec)-syntax|syntax-rules)(?=($|\s|\)))">
+  <!ENTITY schemefunc1 "\b(not|boolean\?|eq\?|eqv\?|equal\?|pair\?|cons|set-c[ad]r!|c[ad]{1,4}r|null\?|list\?|list|length|append|reverse|list-ref|mem[qv]|member|ass[qv]|assoc|symbol\?|symbol-&gt;string|string-&gt;symbol|number\?|complex\?|real\?|rational\?|integer\?|exact\?|inexact\?|zero\?|positive\?|negative\?|odd\?|even\?|max|min|abs|quotient|remainder|modulo|gcd|lcm|numerator|denominator|floor|ceiling|truncate|round|rationalize|exp|log|sin|cos|tan|asin|acos|atan|sqrt|expt|make-rectangular|make-polar|real-part|imag-part|magnitude|angle|exact-&gt;inexact|inexact-&gt;exact|number-&gt;string|string-&gt;number)(?=($|\s|\)))">
+  <!ENTITY schemefunc2 "\b(char((-ci)?(=\?|&lt;\?|&gt;\?|&lt;=\?|&gt;=\?)|-alphabetic\?|\?|-numeric\?|-whitespace\?|-upper-case\?|-lower-case\?|-&gt;integer|-upcase|-downcase|-ready\?)|integer-&gt;char|make-string|string(\?|-copy|-fill!|-length|-ref|-set!|(-ci)?(=\?|&lt;\?|&gt;\?|&lt;=\?|&gt;=\?)|-append)|substring|make-vector|vector(\?|-length|-ref|-set!|-fill!)?|procedure\?|apply|map|for-each|force|call-with-(current-continuation|(in|out)put-file)|(in|out)put-port\?|current-(in|out)put-port|open-(in|out)put-file|close-(in|out)put-port|eof-object\?|read|(read|peek)-char|write(-char)?|display|newline|call/cc|list-tail|string-&gt;list|list-&gt;string|vector-&gt;list|list-&gt;vector|with-input-from-file|with-output-to-file|load|transcript-(on|off)|eval|dynamic-wind|port\?|values|call-with-values|(scheme-report-|null-|interaction-)environment)(?=($|\s|\)))">
+]>
+<language name="LilyPond" section="Other"
+          style="lilypond" indenter="lilypond"
+          version="6" kateversion="3.3"
+          extensions="*.ly;*.LY;*.ily;*.ILY;*.lyi;*.LYI"
+          mimetype="text/x-lilypond"
+          author="Wilbert Berendsen (info@wilbertberendsen.nl)" license="LGPL">
+
+  <!--
+
+    Fall 2010
+    Minor updates by Wilbert Berendsen
+
+    Changes:
+    - add some new commands (\path, \eyeglasses, etc), contexts and grobs for LilyPond 2.14
+    - cleaned up papervars mess by using nested entities categorizing different variables
+
+    November, 2009
+    Minor updates by Wilbert Berendsen
+
+    Changes:
+    - add makeClusters
+    - fix chords in drummode
+
+    October, 2008
+    Minor updates by Wilbert Berendsen
+
+    Changes:
+    - More new LilyPond commands (2.12) and some more deprecated words
+    - Match deprecated properties after header vars
+    - Special case \tempo command
+
+    January, 2008
+    Fully rewritten by Wilbert Berendsen (info@wilbertberendsen.nl)
+
+    Changes:
+    - correctly parse pitches, chords, durations, etc. marking often made mistakes as invalid
+    - speed up by shortening contexts, e.g. branch out on a \, instead of RegExpr'ing all \commands
+    - recognize some contexts like \layout, \with, \header to colorcode variables, engravers, etc. only there
+    - recognize lilypond words like ChoirStaff etc. only in sections and after \set, \override etc.
+    - highlight some standard Scheme function names
+    - add \figuremode recognition
+    - all Scheme stuff has a nice, very light background, to show where Lilypond is in Scheme mode.
+    - mark some deprecated (pre 2.12) LilyPond commands and properties
+
+    October, 2007
+    New version by Wilbert Berendsen (info@wilbertberendsen.nl)
+
+    Changes:
+    - better recognition of being inside lyrics, drums, notes, chords and markup sections
+    - detect block comments %{  %}
+    - links to ##Alerts in comments (e.g. TODO, FIXME)
+    - detect lilypond inside scheme #{ #}
+    - detect \score inside \markup, etc.
+    - helps with some often made errors like forgetting spaces around lyric extenders and hyphens
+    - more scheme improvements: strings, numbers, $substitutions, lilypond objects
+    - highlights many variables, commands, lilypond objects, properties, engravers, etc.
+    - by using entities for many regexps the main syntax checking parts remain legible, and the file more maintainable.
+
+    I borrowed some colors and the drum names from Andrea Primiani's first version (August, 2004).
+
+  -->
+
+  <highlighting>
+    <list name="contexts">
+      <item>ChoirStaff</item>
+      <item>ChordNames</item>
+      <item>CueVoice</item>
+      <item>Devnull</item>
+      <item>DrumStaff</item>
+      <item>DrumVoice</item>
+      <item>Dynamics</item>
+      <item>FiguredBass</item>
+      <item>FretBoards</item>
+      <item>Global</item>
+      <item>GrandStaff</item>
+      <item>GregorianTranscriptionStaff</item>
+      <item>GregorianTranscriptionVoice</item>
+      <item>Lyrics</item>
+      <item>MensuralStaff</item>
+      <item>MensuralVoice</item>
+      <item>NoteNames</item>
+      <item>PianoStaff</item>
+      <item>RhythmicStaff</item>
+      <item>Score</item>
+      <item>Staff</item>
+      <item>StaffGroup</item>
+      <item>TabStaff</item>
+      <item>TabVoice</item>
+      <item>Timing</item>
+      <item>VaticanaStaff</item>
+      <item>VaticanaVoice</item>
+      <item>Voice</item>
+    </list>
+    <list name="deprecatedcontexts">
+      <item>InnerChoirStaff</item>
+      <item>InnerStaffGroup</item>
+    </list>
+    <list name="layoutobjects">
+      <item>Accidental</item>
+      <item>AccidentalCautionary</item>
+      <item>AccidentalPlacement</item>
+      <item>AccidentalSuggestion</item>
+      <item>Ambitus</item>
+      <item>AmbitusAccidental</item>
+      <item>AmbitusLine</item>
+      <item>AmbitusNoteHead</item>
+      <item>Arpeggio</item>
+      <item>BalloonTextItem</item>
+      <item>BarLine</item>
+      <item>BarNumber</item>
+      <item>BassFigure</item>
+      <item>BassFigureAlignment</item>
+      <item>BassFigureAlignmentPositioning</item>
+      <item>BassFigureBracket</item>
+      <item>BassFigureContinuation</item>
+      <item>BassFigureLine</item>
+      <item>Beam</item>
+      <item>BendAfter</item>
+      <item>BreakAlignGroup</item>
+      <item>BreakAlignment</item>
+      <item>BreathingSign</item>
+      <item>ChordName</item>
+      <item>Clef</item>
+      <item>ClusterSpanner</item>
+      <item>ClusterSpannerBeacon</item>
+      <item>CombineTextScript</item>
+      <item>Custos</item>
+      <item>DotColumn</item>
+      <item>Dots</item>
+      <item>DoublePercentRepeat</item>
+      <item>DoublePercentRepeatCounter</item>
+      <item>DynamicLineSpanner</item>
+      <item>DynamicText</item>
+      <item>DynamicTextSpanner</item>
+      <item>Episema</item>
+      <item>Fingering</item>
+      <item>FretBoard</item>
+      <item>Glissando</item>
+      <item>GraceSpacing</item>
+      <item>GridLine</item>
+      <item>GridPoint</item>
+      <item>Hairpin</item>
+      <item>HarmonicParenthesesItem</item>
+      <item>HorizontalBracket</item>
+      <item>InstrumentName</item>
+      <item>InstrumentSwitch</item>
+      <item>KeyCancellation</item>
+      <item>KeySignature</item>
+      <item>LaissezVibrerTie</item>
+      <item>LaissezVibrerTieColumn</item>
+      <item>LedgerLineSpanner</item>
+      <item>LeftEdge</item>
+      <item>LigatureBracket</item>
+      <item>LyricExtender</item>
+      <item>LyricHyphen</item>
+      <item>LyricSpace</item>
+      <item>LyricText</item>
+      <item>MeasureGrouping</item>
+      <item>MelodyItem</item>
+      <item>MensuralLigature</item>
+      <item>MetronomeMark</item>
+      <item>MultiMeasureRest</item>
+      <item>MultiMeasureRestNumber</item>
+      <item>MultiMeasureRestText</item>
+      <item>NonMusicalPaperColumn</item>
+      <item>NoteCollision</item>
+      <item>NoteColumn</item>
+      <item>NoteHead</item>
+      <item>NoteName</item>
+      <item>NoteSpacing</item>
+      <item>OctavateEight</item>
+      <item>OttavaBracket</item>
+      <item>PaperColumn</item>
+      <item>ParenthesesItem</item>
+      <item>PercentRepeat</item>
+      <item>PercentRepeatCounter</item>
+      <item>PhrasingSlur</item>
+      <item>PianoPedalBracket</item>
+      <item>RehearsalMark</item>
+      <item>RepeatSlash</item>
+      <item>RepeatTie</item>
+      <item>RepeatTieColumn</item>
+      <item>Rest</item>
+      <item>RestCollision</item>
+      <item>Script</item>
+      <item>ScriptColumn</item>
+      <item>ScriptRow</item>
+      <item>SeparationItem</item>
+      <item>Slur</item>
+      <item>SostenutoPedal</item>
+      <item>SostenutoPedalLineSpanner</item>
+      <item>SpacingSpanner</item>
+      <item>SpanBar</item>
+      <item>StaffGrouper</item>
+      <item>StaffSpacing</item>
+      <item>StaffSymbol</item>
+      <item>StanzaNumber</item>
+      <item>Stem</item>
+      <item>StemTremolo</item>
+      <item>StringNumber</item>
+      <item>StrokeFinger</item>
+      <item>SustainPedal</item>
+      <item>SustainPedalLineSpanner</item>
+      <item>System</item>
+      <item>SystemStartBar</item>
+      <item>SystemStartBrace</item>
+      <item>SystemStartBracket</item>
+      <item>SystemStartSquare</item>
+      <item>TabNoteHead</item>
+      <item>TextScript</item>
+      <item>TextSpanner</item>
+      <item>Tie</item>
+      <item>TieColumn</item>
+      <item>TimeSignature</item>
+      <item>TrillPitchAccidental</item>
+      <item>TrillPitchGroup</item>
+      <item>TrillPitchHead</item>
+      <item>TrillSpanner</item>
+      <item>TupletBracket</item>
+      <item>TupletNumber</item>
+      <item>UnaCordaPedal</item>
+      <item>UnaCordaPedalLineSpanner</item>
+      <item>VaticanaLigature</item>
+      <item>VerticalAlignment</item>
+      <item>VerticalAxisGroup</item>
+      <item>VoiceFollower</item>
+      <item>VoltaBracket</item>
+      <item>VoltaBracketSpanner</item>
+    </list>
+    <list name="properties">
+      <item>aDueText</item>
+      <item>alignAboveContext</item>
+      <item>alignBassFigureAccidentals</item>
+      <item>alignBelowContext</item>
+      <item>allowBeamBreak</item>
+      <item>associatedVoice</item>
+      <item>autoAccidentals</item>
+      <item>autoBeamCheck</item>
+      <item>autoBeamSettings</item>
+      <item>autoBeaming</item>
+      <item>autoCautionaries</item>
+      <item>automaticBars</item>
+      <item>barAlways</item>
+      <item>barCheckSynchronize</item>
+      <item>barNumberVisibility</item>
+      <item>baseMoment</item>
+      <item>bassFigureFormatFunction</item>
+      <item>bassStaffProperties</item>
+      <item>beamExceptions</item>
+      <item>beatGrouping</item>
+      <item>beatLength</item>
+      <item>beatStructure</item>
+      <item>chordChanges</item>
+      <item>chordNameExceptions</item>
+      <item>chordNameExceptionsFull</item>
+      <item>chordNameExceptionsPartial</item>
+      <item>chordNameFunction</item>
+      <item>chordNameSeparator</item>
+      <item>chordNoteNamer</item>
+      <item>chordPrefixSpacer</item>
+      <item>chordRootNamer</item>
+      <item>clefGlyph</item>
+      <item>clefOctavation</item>
+      <item>clefPosition</item>
+      <item>connectArpeggios</item>
+      <item>countPercentRepeats</item>
+      <item>createKeyOnClefChange</item>
+      <item>createSpacing</item>
+      <item>crescendoSpanner</item>
+      <item>crescendoText</item>
+      <item>currentBarNumber</item>
+      <item>decrescendoSpanner</item>
+      <item>decrescendoText</item>
+      <item>defaultBarType</item>
+      <item>doubleSlurs</item>
+      <item>doubleRepeatType</item>
+      <item>drumPitchTable</item>
+      <item>drumStyleTable</item>
+      <item>dynamicAbsoluteVolumeFunction</item>
+      <item>explicitClefVisibility</item>
+      <item>explicitKeySignatureVisibility</item>
+      <item>extendersOverRests</item>
+      <item>extraNatural</item>
+      <item>figuredBassAlterationDirection</item>
+      <item>figuredBassCenterContinuations</item>
+      <item>figuredBassFormatter</item>
+      <item>figuredBassPlusDirection</item>
+      <item>fingeringOrientations</item>
+      <item>firstClef</item>
+      <item>followVoice</item>
+      <item>fontSize</item>
+      <item>forbidBreak</item>
+      <item>forceClef</item>
+      <item>gridInterval</item>
+      <item>hairpinToBarline</item>
+      <item>harmonicAccidentals</item>
+      <item>highStringOne</item>
+      <item>ignoreBarChecks</item>
+      <item>ignoreFiguredBassRest</item>
+      <item>ignoreMelismata</item>
+      <item>implicitBassFigures</item>
+      <item>implicitTimeSignatureVisibility</item>
+      <item>instrumentCueName</item>
+      <item>instrumentEqualizer</item>
+      <item>instrumentName</item>
+      <item>instrumentTransposition</item>
+      <item>internalBarNumber</item>
+      <item>keepAliveInterfaces</item>
+      <item>keyAlterationOrder</item>
+      <item>keySignature</item>
+      <item>lyricMelismaAlignment</item>
+      <item>majorSevenSymbol</item>
+      <item>markFormatter</item>
+      <item>maximumFretStretch</item>
+      <item>measureLength</item>
+      <item>measurePosition</item>
+      <item>melismaBusyProperties</item>
+      <item>metronomeMarkFormatter</item>
+      <item>middleCClefPosition</item>
+      <item>middleCOffset</item>
+      <item>middleCPosition</item>
+      <item>midiInstrument</item>
+      <item>midiMaximumVolume</item>
+      <item>midiMinimumVolume</item>
+      <item>minimumFret</item>
+      <item>minimumPageTurnLength</item>
+      <item>minimumRepeatLengthForPageTurn</item>
+      <item>noteToFretFunction</item>
+      <item>ottavation</item>
+      <item>output</item>
+      <item>pedalSostenutoStrings</item>
+      <item>pedalSostenutoStyle</item>
+      <item>pedalSustainStrings</item>
+      <item>pedalSustainStyle</item>
+      <item>pedalUnaCordaStrings</item>
+      <item>pedalUnaCordaStyle</item>
+      <item>printKeyCancellation</item>
+      <item>printOctaveNames</item>
+      <item>printPartCombineTexts</item>
+      <item>proportionalNotationDuration</item>
+      <item>recordEventSequence</item>
+      <item>rehearsalMark</item>
+      <item>repeatCommands</item>
+      <item>restNumberThreshold</item>
+      <item>scriptDefinitions</item>
+      <item>shapeNoteStyles</item>
+      <item>shortInstrumentName</item>
+      <item>shortVocalName</item>
+      <item>skipBars</item>
+      <item>skipTypesetting</item>
+      <item>soloIIText</item>
+      <item>soloText</item>
+      <item>squashedPosition</item>
+      <item>staffLineLayoutFunction</item>
+      <item>stanza</item>
+      <item>stemLeftBeamCount</item>
+      <item>stemRightBeamCount</item>
+      <item>stringNumberOrientations</item>
+      <item>stringOneTopmost</item>
+      <item>stringTunings</item>
+      <item>strokeFingerOrientations</item>
+      <item>subdivideBeams</item>
+      <item>suggestAccidentals</item>
+      <item>systemStartDelimiter</item>
+      <item>systemStartDelimiterHierarchy</item>
+      <item>tablatureFormat</item>
+      <item>tempoUnitCount</item>
+      <item>tempoUnitDuration</item>
+      <item>tempoWholesPerMinute</item>
+      <item>tieWaitForNote</item>
+      <item>timeSignatureFraction</item>
+      <item>timing</item>
+      <item>tonic</item>
+      <item>topLevelAlignment</item>
+      <item>trebleStaffProperties</item>
+      <item>tremoloFlags</item>
+      <item>tupletFullLength</item>
+      <item>tupletFullLengthNote</item>
+      <item>tupletSpannerDuration</item>
+      <item>useBassFigureExtenders</item>
+      <item>verticallySpacedContexts</item>
+      <item>vocalName</item>
+      <item>voltaOnThisStaff</item> <!-- gone in 2.12 and 2.13 -->
+      <item>voltaSpannerDuration</item>
+      <item>whichBar</item>
+    </list>
+    <list name="deprecatedproperties">
+      <item>barNumberAlignSymbol</item>
+      <item>centralCPosition</item>
+      <item>extraVerticalExtent</item>
+      <item>fingerHorizontalDirection</item>
+      <item>instr</item>
+      <item>instrument</item>
+      <item>keyAccidentalOrder</item>
+      <item>minimumVerticalExtent</item>
+      <item>rehearsalMarkAlignSymbol</item>
+      <item>soloADue</item>
+      <item>tupletNumberFormatFunction</item>
+      <item>vocNam</item>
+    </list>
+    <list name="musicexpressions">
+      <item>AbsoluteDynamicEvent</item>
+      <item>AnnotateOutputEvent</item>
+      <item>ApplyContext</item>
+      <item>ApplyOutputEvent</item>
+      <item>ArpeggioEvent</item>
+      <item>ArticulationEvent</item>
+      <item>AutoChangeMusic</item>
+      <item>BarCheck</item>
+      <item>BassFigureEvent</item>
+      <item>BeamEvent</item>
+      <item>BeamForbidEvent</item>
+      <item>BendAfterEvent</item>
+      <item>BreathingEvent</item>
+      <item>ClusterNoteEvent</item>
+      <item>ContextChange</item>
+      <item>ContextSpeccedMusic</item>
+      <item>CrescendoEvent</item>
+      <item>DecrescendoEvent</item>
+      <item>Event</item>
+      <item>EventChord</item>
+      <item>ExtenderEvent</item>
+      <item>FingeringEvent</item>
+      <item>GlissandoEvent</item>
+      <item>GraceMusic</item>
+      <item>HarmonicEvent</item>
+      <item>HyphenEvent</item>
+      <item>KeyChangeEvent</item>
+      <item>LabelEvent</item>
+      <item>LaissezVibrerEvent</item>
+      <item>LigatureEvent</item>
+      <item>LineBreakEvent</item>
+      <item>LyricCombineMusic</item>
+      <item>LyricEvent</item>
+      <item>MarkEvent</item>
+      <item>MultiMeasureRestEvent</item>
+      <item>MultiMeasureRestMusic</item>
+      <item>MultiMeasureTextEvent</item>
+      <item>Music</item>
+      <item>NoteEvent</item>
+      <item>NoteGroupingEvent</item>
+      <item>OverrideProperty</item>
+      <item>PageBreakEvent</item>
+      <item>PageTurnEvent</item>
+      <item>PartCombineMusic</item>
+      <item>PercentEvent</item>
+      <item>PercentRepeatedMusic</item>
+      <item>PesOrFlexaEvent</item>
+      <item>PhrasingSlurEvent</item>
+      <item>PropertySet</item>
+      <item>PropertyUnset</item>
+      <item>QuoteMusic</item>
+      <item>RelativeOctaveCheck</item>
+      <item>RelativeOctaveMusic</item>
+      <item>RepeatTieEvent</item>
+      <item>RepeatedMusic</item>
+      <item>RestEvent</item>
+      <item>RevertProperty</item>
+      <item>ScriptEvent</item>
+      <item>SequentialMusic</item>
+      <item>SimultaneousMusic</item>
+      <item>SkipEvent</item>
+      <item>SkipMusic</item>
+      <item>SlurEvent</item>
+      <item>SoloOneEvent</item>
+      <item>SoloTwoEvent</item>
+      <item>SostenutoEvent</item>
+      <item>SpacingSectionEvent</item>
+      <item>SpanEvent</item>
+      <item>StaffSpanEvent</item>
+      <item>StringNumberEvent</item>
+      <item>StrokeFingerEvent</item>
+      <item>SustainEvent</item>
+      <item>TextScriptEvent</item>
+      <item>TextSpanEvent</item>
+      <item>TieEvent</item>
+      <item>TimeScaledMusic</item>
+      <item>TransposedMusic</item>
+      <item>TremoloEvent</item>
+      <item>TremoloRepeatedMusic</item>
+      <item>TremoloSpanEvent</item>
+      <item>TrillSpanEvent</item>
+      <item>TupletSpanEvent</item>
+      <item>UnaCordaEvent</item>
+      <item>UnfoldedRepeatedMusic</item>
+      <item>UnisonoEvent</item>
+      <item>UnrelativableMusic</item>
+      <item>VoiceSeparator</item>
+      <item>VoltaRepeatedMusic</item>
+    </list>
+    <list name="drumpitchnames">
+      <item>acousticbassdrum</item>
+      <item>acousticsnare</item>
+      <item>agh</item>
+      <item>agl</item>
+      <item>bassdrum</item>
+      <item>bd</item>
+      <item>bda</item>
+      <item>boh</item>
+      <item>bohm</item>
+      <item>boho</item>
+      <item>bol</item>
+      <item>bolm</item>
+      <item>bolo</item>
+      <item>cab</item>
+      <item>cabasa</item>
+      <item>cb</item>
+      <item>cgh</item>
+      <item>cghm</item>
+      <item>cgho</item>
+      <item>cgl</item>
+      <item>cglm</item>
+      <item>cglo</item>
+      <item>chinesecymbal</item>
+      <item>cl</item>
+      <item>claves</item>
+      <item>closedhihat</item>
+      <item>cowbell</item>
+      <item>crashcymbal</item>
+      <item>crashcymbala</item>
+      <item>crashcymbalb</item>
+      <item>cuim</item>
+      <item>cuio</item>
+      <item>cymc</item>
+      <item>cymca</item>
+      <item>cymcb</item>
+      <item>cymch</item>
+      <item>cymr</item>
+      <item>cymra</item>
+      <item>cymrb</item>
+      <item>cyms</item>
+      <item>da</item>
+      <item>db</item>
+      <item>dc</item>
+      <item>dd</item>
+      <item>de</item>
+      <item>electricsnare</item>
+      <item>fivedown</item>
+      <item>fiveup</item>
+      <item>fourdown</item>
+      <item>fourup</item>
+      <item>gui</item>
+      <item>guil</item>
+      <item>guiro</item>
+      <item>guis</item>
+      <item>halfopenhihat</item>
+      <item>handclap</item>
+      <item>hc</item>
+      <item>hh</item>
+      <item>hhc</item>
+      <item>hhho</item>
+      <item>hho</item>
+      <item>hhp</item>
+      <item>hiagogo</item>
+      <item>hibongo</item>
+      <item>hiconga</item>
+      <item>highfloortom</item>
+      <item>hightom</item>
+      <item>hihat</item>
+      <item>himidtom</item>
+      <item>hisidestick</item>
+      <item>hitimbale</item>
+      <item>hiwoodblock</item>
+      <item>loagogo</item>
+      <item>lobongo</item>
+      <item>loconga</item>
+      <item>longguiro</item>
+      <item>longwhistle</item>
+      <item>losidestick</item>
+      <item>lotimbale</item>
+      <item>lowfloortom</item>
+      <item>lowmidtom</item>
+      <item>lowoodblock</item>
+      <item>lowtom</item>
+      <item>mar</item>
+      <item>maracas</item>
+      <item>mutecuica</item>
+      <item>mutehibongo</item>
+      <item>mutehiconga</item>
+      <item>mutelobongo</item>
+      <item>muteloconga</item>
+      <item>mutetriangle</item>
+      <item>onedown</item>
+      <item>oneup</item>
+      <item>opencuica</item>
+      <item>openhibongo</item>
+      <item>openhiconga</item>
+      <item>openhihat</item>
+      <item>openlobongo</item>
+      <item>openloconga</item>
+      <item>opentriangle</item>
+      <item>pedalhihat</item>
+      <item>rb</item>
+      <item>ridebell</item>
+      <item>ridecymbal</item>
+      <item>ridecymbala</item>
+      <item>ridecymbalb</item>
+      <item>shortguiro</item>
+      <item>shortwhistle</item>
+      <item>sidestick</item>
+      <item>sn</item>
+      <item>sna</item>
+      <item>snare</item>
+      <item>sne</item>
+      <item>splashcymbal</item>
+      <item>ss</item>
+      <item>ssh</item>
+      <item>ssl</item>
+      <item>tamb</item>
+      <item>tambourine</item>
+      <item>tamtam</item>
+      <item>threedown</item>
+      <item>threeup</item>
+      <item>timh</item>
+      <item>timl</item>
+      <item>tomfh</item>
+      <item>tomfl</item>
+      <item>tomh</item>
+      <item>toml</item>
+      <item>tommh</item>
+      <item>tomml</item>
+      <item>tri</item>
+      <item>triangle</item>
+      <item>trim</item>
+      <item>trio</item>
+      <item>tt</item>
+      <item>twodown</item>
+      <item>twoup</item>
+      <item>ua</item>
+      <item>ub</item>
+      <item>uc</item>
+      <item>ud</item>
+      <item>ue</item>
+      <item>vibraslap</item>
+      <item>vibs</item>
+      <item>wbh</item>
+      <item>wbl</item>
+      <item>whl</item>
+      <item>whs</item>
+    </list>
+    <contexts>
+      <!-- Entry point -->
+      <context name="lilypond" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="music"/>
+        <RegExpr String="\b[a-z]+\s*=" insensitive="true" lookAhead="true" context="assignment"/>
+      </context>
+
+      <!-- Music expressions -->
+      <context name="music" attribute="Normal Text" lineEndContext="#stay">
+        <AnyChar String="()~" attribute="Slur"/>
+        <AnyChar String="[]" attribute="Beam"/>
+        <AnyChar String="-_^" context="connect"/>
+        <DetectChar char="\" context="musiccommand" lookAhead="true"/>
+        <IncludeRules context="default"/>
+        <DetectChar char="&lt;" attribute="Chord" context="chord"/>
+        <DetectChar char="&gt;" attribute="Invalid"/><!-- chord terminator outsite chord -->
+        <RegExpr String="[a-z]+\d+\.*[,']+" attribute="Invalid"/><!-- pitch-dur-octave i.s.o. pitch-oct-dur -->
+        <RegExpr String="(&rest;|&pitch;)" context="pitch"/>
+        <RegExpr String=":\d*" attribute="Tremolo"/>
+      </context>
+
+      <!-- Default Lilypond code to be recognized e.g. also inside lyrics -->
+      <context name="default" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars char="&lt;" char1="&lt;" attribute="Keyword" beginRegion="simultaneous"/>
+        <Detect2Chars char="&gt;" char1="&gt;" attribute="Keyword" endRegion="simultaneous"/>
+        <DetectChar char="{" attribute="Keyword" beginRegion="sequential"/>
+        <DetectChar char="}" attribute="Keyword" endRegion="sequential"/>
+        <DetectChar char="|" attribute="Check"/>
+        <DetectChar char="\" context="command" lookAhead="true"/>
+        <IncludeRules context="basic"/>
+      </context>
+
+      <!-- Basic Lilypond syntax that also works inside markup -->
+      <context name="basic" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars char="%" char1="{" context="commentblock" beginRegion="comment"/>
+        <DetectChar char="%" context="commentline"/>
+        <DetectChar char="&quot;" context="string"/>
+        <DetectChar char="#" context="scheme"/>
+        <DetectChar char="$" context="schemesub"/>
+      </context>
+
+      <context name="musiccommand" attribute="Normal Text" lineEndContext="#pop"
+               fallthrough="true" fallthroughContext="#pop">
+        <RegExpr String="\\(&dynamics;)&b;" attribute="Dynamic"/>
+        <RegExpr String="\\[&lt;!&gt;]" attribute="Dynamic"/>
+        <RegExpr String="\\(&scripts;)&b;" attribute="Articulation"/>
+        <RegExpr String="\\[()]" attribute="Slur"/>
+        <RegExpr String="\\[][]" attribute="Beam"/>
+        <IncludeRules context="command"/>
+      </context>
+
+      <context name="command" attribute="Normal Text" lineEndContext="#pop"
+               fallthrough="true" fallthroughContext="#pop">
+        <Detect2Chars char="\" char1="\" attribute="Keyword"/>
+        <RegExpr String="\\note(mode|s)&b;" context="notemode"/>
+        <RegExpr String="\\drum(mode|s)&b;" context="drummode"/>
+        <RegExpr String="\\chord(mode|s)&b;" context="chordmode"/>
+        <RegExpr String="\\figure(mode|s)&b;" context="figuremode"/>
+        <RegExpr String="\\(lyric(mode|s)|addlyrics)&b;" context="lyricmode"/>
+        <RegExpr String="\\lyricsto&b;" context="lyricsto"/>
+        <RegExpr String="\\markup(lines)?&b;" attribute="Markup" context="markup"/>
+        <RegExpr String="\\(header|paper|layout|midi|with)\b" context="section"/>
+        <RegExpr String="\\(new|context|change)\b" attribute="Keyword" context="context"/>
+        <RegExpr String="\\(un)?set\b" attribute="Keyword" context="set"/>
+        <RegExpr String="\\(override(Property)?|revert)&b;" attribute="Keyword" context="override"/>
+        <RegExpr String="\\skip&b;" attribute="Command" context="duration"/>
+        <RegExpr String="\\tempo&b;" attribute="Command" context="tempo"/>
+        <RegExpr String="\\(&keywords;)&b;" attribute="Keyword"/>
+        <RegExpr String="\\(&commands-heads;)&b;" attribute="Command"/>
+        <RegExpr String="\\(&commands-other1;)&b;" attribute="Command"/>
+        <RegExpr String="\\(&commands-other2;)&b;" attribute="Command"/>
+        <RegExpr String="\\(&commands-other3;)&b;" attribute="Command"/>
+        <RegExpr String="\\(&commands-other4;)&b;" attribute="Command"/>
+        <RegExpr String="\\(&commands-other5;)&b;" attribute="Command"/>
+        <RegExpr String="\\(&commands-other6;)&b;" attribute="Command"/>
+        <RegExpr String="\\(&commands-other7;)&b;" attribute="Command"/>
+        <RegExpr String="\\(&toplevelvars;)&b;" attribute="Variable"/>
+        <RegExpr String="\\(&deprecatedkeywords;)&b;" attribute="Deprecated Keyword"/>
+        <RegExpr String="\\(&deprecatedcommands;)&b;" attribute="Deprecated Command"/>
+        <RegExpr String="\\(translator|newcontext)\b" attribute="Deprecated Keyword" context="context"/>
+        <RegExpr String="\\property&b;" attribute="Deprecated Keyword" context="override"/>
+        <RegExpr String="\\[A-Za-z]+" attribute="User Command"/>
+        <DetectChar char="\" attribute="Invalid"/>
+      </context>
+
+      <context name="assignment" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr String="\b(&toplevelvars;)\b" attribute="Variable" context="#pop"/>
+        <RegExpr String="[a-z]+" insensitive="true" attribute="User Command" context="#pop"/>
+      </context>
+
+      <context name="pitch" attribute="Pitch" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <RegExpr String="=\s*('+|,+)?" attribute="Check"/>
+        <AnyChar String="!?"/>
+        <IncludeRules context="duration"/>
+      </context>
+
+      <context name="duration" attribute="Normal Text" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <RegExpr String="&duration;" attribute="Duration" context="#pop"/>
+        <RegExpr String="\d+" attribute="Invalid" context="#pop"/><!-- uncaught (wrong) durations -->
+      </context>
+
+      <context name="chord" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="&gt;" context="chordend"/>
+        <RegExpr String="&pitch;" context="chordpitch"/>
+        <AnyChar String="&lt;{}srR" attribute="Invalid"/><!-- no rests in chord allowed -->
+        <IncludeRules context="music"/>
+      </context>
+
+      <context name="chordpitch" attribute="Pitch" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <RegExpr String="=\s*('+|,+)?" attribute="Check"/>
+        <RegExpr String="&duration;" attribute="Invalid" context="#pop"/><!-- no duration in chord allowed -->
+        <RegExpr String="\d+" attribute="Invalid" context="#pop"/><!-- catch other (wrong) durations as well -->
+      </context>
+
+      <context name="chordend" attribute="Chord" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <RegExpr String="&duration;" attribute="Duration" context="#pop#pop"/>
+      </context>
+
+      <context name="commentline" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+      <context name="commentblock" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars char="%" char1="}" attribute="Comment" context="#pop" endRegion="comment"/>
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+      <context name="string" attribute="Quoted Text" lineEndContext="#stay">
+        <DetectChar char="&quot;" attribute="Quoted Text" context="#pop"/>
+        <Detect2Chars char="\" char1="\"/>
+        <Detect2Chars char="\" char1="&quot;"/>
+      </context>
+
+      <context name="connect" attribute="Articulation" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <AnyChar String=".-+|&gt;^_12345" attribute="Articulation" context="#pop"/>
+      </context>
+
+      <!-- Scheme -->
+      <context name="scheme" attribute="Scheme" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="scheme2">
+        <DetectSpaces/>
+      </context>
+
+      <context name="scheme2" attribute="Scheme" lineEndContext="#pop#pop">
+        <DetectChar char="(" attribute="Scheme Keyword" context="scheme3" beginRegion="scheme"/>
+        <IncludeRules context="schemerules"/>
+        <DetectSpaces lookAhead="true" context="#pop#pop"/>
+      </context>
+
+      <context name="scheme3" attribute="Scheme" lineEndContext="#stay">
+        <DetectChar char=")" attribute="Scheme Keyword" context="#pop#pop#pop" endRegion="scheme"/>
+        <IncludeRules context="schemerules"/>
+      </context>
+
+      <context name="schemerules" attribute="Scheme" lineEndContext="#stay">
+        <DetectChar char="(" context="schemerules" beginRegion="scheme"/>
+        <DetectChar char=")" context="#pop" endRegion="scheme"/>
+        <DetectChar char="&quot;" context="schemestring"/>
+        <DetectChar char=";" context="schemecommentline"/>
+        <DetectChar char="$" context="schemesub"/>
+        <DetectChar char="'" context="schemequote"/>
+        <Detect2Chars char="#" char1="!" context="schemecommentblock" beginRegion="schemecomment"/>
+        <Detect2Chars char="#" char1="{" attribute="Scheme Keyword" context="schemelily" beginRegion="schemelily"/>
+        <keyword String="musicexpressions" attribute="Scheme Keyword"/>
+        <keyword String="contexts" attribute="Scheme Keyword"/>
+        <keyword String="layoutobjects" attribute="Scheme Keyword"/>
+        <RegExpr String="[-+]?(\d+(\.\d+)?|\.\d+)" attribute="Scheme Value"/>
+        <RegExpr String="#(t|f|b[-+]?[01.]+|o[-+]?[0-7.]+|d[-+]?[0-9.]+|x[-+]?[0-9a-f.]+)"
+                 insensitive="true" attribute="Scheme Value"/>
+        <RegExpr String="[+-](inf|nan)\.0" attribute="Scheme Value"/>
+        <RegExpr String="&schemefunc0;" attribute="Scheme Keyword"/>
+        <RegExpr String="&schemefunc1;" attribute="Scheme Keyword"/>
+        <RegExpr String="&schemefunc2;" attribute="Scheme Keyword"/>
+        <RegExpr String="&schemename;"/>
+      </context>
+
+      <context name="schemequote" attribute="Scheme" lineEndContext="#pop"
+               fallthrough="true" fallthroughContext="#pop">
+        <RegExpr String="&schemefunc0;"/>
+        <RegExpr String="&schemefunc1;"/>
+        <RegExpr String="&schemefunc2;"/>
+      </context>
+
+      <context name="schemelily" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars char="#" char1="}" attribute="Scheme Keyword" context="#pop" endRegion="schemelily"/>
+        <IncludeRules context="lilypond"/>
+      </context>
+
+      <context name="schemecommentline" attribute="Scheme Comment" lineEndContext="#pop">
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+      <context name="schemecommentblock" attribute="Scheme Comment" lineEndContext="#stay">
+        <Detect2Chars char="!" char1="#" attribute="Scheme Comment" context="#pop" endRegion="schemecomment"/>
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+      <context name="schemesub" attribute="Scheme Subst" lineEndContext="#pop"
+                fallthrough="true" fallthroughContext="#pop">
+        <RegExpr String="&schemename;" attribute="Scheme Subst" context="#pop"/>
+      </context>
+
+      <context name="schemestring" attribute="Scheme String" lineEndContext="#stay">
+        <DetectChar char="&quot;" attribute="Scheme String" context="#pop"/>
+        <RegExpr String="\\[0fnrtav\\&quot;]"/>
+      </context>
+
+      <!-- NoteMode -->
+      <context name="notemode" attribute="Other Mode" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectChar char="{" attribute="Keyword" context="notemode2" beginRegion="sequential"/>
+        <DetectSpaces/>
+      </context>
+
+      <context name="notemode2" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Keyword" context="#pop#pop" endRegion="sequential"/>
+        <IncludeRules context="noterules"/>
+      </context>
+
+      <context name="noterules" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Keyword" context="noterules" beginRegion="sequential"/>
+        <DetectChar char="}" attribute="Keyword" context="#pop" endRegion="sequential"/>
+        <IncludeRules context="music"/>
+      </context>
+
+      <!-- Drummode -->
+      <context name="drummode" attribute="Other Mode" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectChar char="{" attribute="Keyword" context="drummode2" beginRegion="sequential"/>
+        <DetectSpaces/>
+      </context>
+
+      <context name="drummode2" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Keyword" context="#pop#pop" endRegion="sequential"/>
+        <IncludeRules context="drumrules"/>
+      </context>
+
+      <context name="drumrules" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Keyword" context="drumrules" beginRegion="sequential"/>
+        <DetectChar char="}" attribute="Keyword" context="#pop" endRegion="sequential"/>
+        <RegExpr String="&lt;(?!&lt;)" attribute="Chord" context="drumchord"/>
+        <keyword attribute="Other Text" String="drumpitchnames" context="duration"/>
+        <IncludeRules context="music"/>
+      </context>
+
+      <context name="drumchord" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Other Text" String="drumpitchnames"/>
+        <IncludeRules context="chord"/>
+      </context>
+
+      <!-- Chordmode -->
+      <context name="chordmode" attribute="Other Mode" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectChar char="{" attribute="Keyword" context="chordmode2" beginRegion="sequential"/>
+        <DetectSpaces/>
+      </context>
+
+      <context name="chordmode2" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Keyword" context="#pop#pop" endRegion="sequential"/>
+        <IncludeRules context="chordrules"/>
+      </context>
+
+      <context name="chordrules" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Keyword" context="chordrules" beginRegion="sequential"/>
+        <DetectChar char="}" attribute="Keyword" context="#pop" endRegion="sequential"/>
+        <RegExpr attribute="Other Text" String=":?([\.^]?\d+[-+]?|(m|dim|aug|maj|sus)&b;)*(/\+?&pitch;)?"/>
+        <IncludeRules context="music"/>
+      </context>
+
+      <!-- Figuremode -->
+      <context name="figuremode" attribute="Other Mode" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectChar char="{" attribute="Keyword" context="figuremode2" beginRegion="sequential"/>
+        <DetectSpaces/>
+      </context>
+
+      <context name="figuremode2" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Keyword" context="#pop#pop" endRegion="sequential"/>
+        <IncludeRules context="figurerules"/>
+      </context>
+
+      <context name="figurerules" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Keyword" context="figurerules" beginRegion="sequential"/>
+        <DetectChar char="}" attribute="Keyword" context="#pop" endRegion="sequential"/>
+        <DetectChar char="&lt;" attribute="Chord" context="figure"/>
+        <RegExpr String="&rest;" attribute="Pitch" context="duration"/>
+        <IncludeRules context="default"/>
+      </context>
+
+      <context name="figure" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="&gt;" attribute="Chord" context="chordend"/>
+        <IncludeRules context="basic"/>
+        <RegExpr String="\\markup(lines)?&b;" attribute="Markup" context="markup"/>
+        <RegExpr String="\\skip&b;" attribute="Command" context="duration"/>
+      </context>
+
+      <!-- Lyrics -->
+      <context name="lyricmode" attribute="Lyricmode" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectChar char="{" attribute="Keyword" context="lyricmode2" beginRegion="sequential"/>
+        <DetectSpaces/>
+      </context>
+
+      <context name="lyricmode2" attribute="Lyric Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Keyword" context="#pop#pop" endRegion="sequential"/>
+        <IncludeRules context="lyricrules"/>
+      </context>
+
+      <!-- LyricsTo has extra parameter -->
+      <context name="lyricsto" attribute="Lyricmode" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <RegExpr String="&quot;(\\[&quot;\\]|[^&quot;\\])+&quot;" attribute="Quoted Text" context="lyricsto2"/>
+        <RegExpr String="[A-Za-z]+" attribute="Normal Text" context="lyricsto2"/>
+        <DetectSpaces/>
+      </context>
+
+      <context name="lyricsto2" attribute="Normal Text" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop#pop">
+        <DetectChar char="{" attribute="Keyword" context="lyricsto3" beginRegion="sequential"/>
+        <DetectSpaces/>
+      </context>
+
+      <context name="lyricsto3" attribute="Lyric Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Keyword" context="#pop#pop#pop" endRegion="sequential"/>
+        <IncludeRules context="lyricrules"/>
+      </context>
+
+      <context name="lyricrules" attribute="Lyric Text" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Keyword" context="lyricrules" beginRegion="sequential"/>
+        <DetectChar char="}" attribute="Keyword" context="#pop" endRegion="sequential"/>
+        <RegExpr String="(\w+-{2,}|\w+_{2,}|-{2,}\w+|_{2,}\w+)" attribute="Invalid"/><!-- two hyphens or underscores run together with a word -->
+        <RegExpr String="&duration;" attribute="Duration"/>
+        <RegExpr String="(--|__|_)" attribute="Lyricmode"/>
+        <IncludeRules context="default"/>
+        <RegExpr String="\S+\}" attribute="Invalid" context="#pop" endRegion="sequential"/>
+      </context>
+
+      <!-- Markup -->
+      <context name="markup" attribute="Normal Text" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectChar char="{" attribute="Keyword" context="markup2" beginRegion="markup"/>
+        <DetectSpaces/>
+        <RegExpr String="\\score\b" attribute="Markup" context="notemode"/>
+        <RegExpr String="\\(&markupwithtextargs;)&b;" attribute="Markup"/>
+        <RegExpr String="\\(&markupnotextargs;)&b;" attribute="Markup" context="#pop"/>
+        <DetectChar char="#" context="scheme"/>
+        <RegExpr String="[^&quot;\s\\#%{}$]+" attribute="Normal Text" context="#pop"/>
+      </context>
+
+      <context name="markup2" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Keyword" context="#pop#pop" endRegion="markup"/>
+        <IncludeRules context="markuprules"/>
+      </context>
+
+      <context name="markuprules" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Keyword" context="#pop" endRegion="markup"/>
+        <DetectChar char="{" attribute="Keyword" context="markuprules" beginRegion="markup"/>
+        <RegExpr String="\\score\b" attribute="Markup" context="notemode"/>
+        <RegExpr String="\\(&markupnotextargs;|&markupwithtextargs;)&b;" attribute="Markup"/>
+        <RegExpr String="\\(&deprecatedmarkup;)&b;" attribute="Deprecated Markup"/>
+        <RegExpr String="\\[A-Za-z]+(-[A-Za-z]+)*" attribute="User Command"/>
+        <IncludeRules context="basic"/>
+      </context>
+
+      <!-- \paper, \layout, \midi, \header, \with -->
+      <context name="section" attribute="Keyword" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectChar char="{" attribute="Keyword" context="section2" beginRegion="section"/>
+        <DetectSpaces/>
+      </context>
+
+      <context name="section2" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Keyword" context="#pop#pop" endRegion="section"/>
+        <IncludeRules context="sectionrules"/>
+      </context>
+
+      <context name="sectionrules" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Keyword" context="#pop" endRegion="section"/>
+        <DetectChar char="{" attribute="Keyword" context="sectionrules" beginRegion="section"/>
+        <keyword String="contexts" attribute="Context"/>
+        <keyword String="deprecatedcontexts" attribute="Deprecated Context"/>
+        <RegExpr String="(&quot;?)\b(&engravers00;)\b\1" attribute="Engraver"/>
+        <RegExpr String="(&quot;?)\b(&engravers01;)\b\1" attribute="Engraver"/>
+        <RegExpr String="(&quot;?)\b(&engravers02;)\b\1" attribute="Engraver"/>
+        <RegExpr String="(&quot;?)\b(&engravers1;)\b\1" attribute="Engraver"/>
+        <RegExpr String="(&quot;?)\b(&engravers2;)\b\1" attribute="Engraver"/>
+        <keyword String="layoutobjects" attribute="Layout Object"/>
+        <keyword String="properties" attribute="Property"/>
+        <RegExpr String="\b(&headervars;|&papervars;|&layoutvars;)\b" attribute="Variable"/>
+        <keyword String="deprecatedproperties" attribute="Deprecated Property"/>
+        <IncludeRules context="default"/>
+      </context>
+
+      <!-- \new, \context, \change -->
+      <context name="context" attribute="Normal Text" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword String="contexts" attribute="Context" context="context2"/>
+        <keyword String="deprecatedcontexts" attribute="Deprecated Context" context="context2"/>
+        <RegExpr String="[A-Za-z]+" attribute="User Command" context="context2"/>
+        <DetectChar char="{" attribute="Keyword" context="section2" beginRegion="section"/>
+      </context>
+
+      <context name="context2" attribute="Normal Text" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop#pop">
+        <DetectSpaces/>
+        <RegExpr String="=(\s*[A-Za-z]+)?" attribute="Normal Text" context="#pop#pop"/>
+      </context>
+
+      <!-- \set, \unset -->
+      <context name="set" attribute="Normal Text" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword String="contexts" attribute="Context"/>
+        <keyword String="deprecatedcontexts" attribute="Deprecated Context"/>
+        <DetectChar char="."/>
+        <keyword String="properties" attribute="Property" context="#pop"/>
+        <keyword String="deprecatedproperties" attribute="Deprecated Property" context="#pop"/>
+        <RegExpr String="[A-Za-z]+" attribute="User Command" context="#pop"/>
+      </context>
+
+      <!-- \override, \overrideProperty, \revert -->
+      <context name="override" attribute="Normal Text" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword String="contexts" attribute="Context"/>
+        <keyword String="deprecatedcontexts" attribute="Deprecated Context"/>
+        <DetectChar char="."/>
+        <keyword String="layoutobjects" attribute="Layout Object" context="#pop"/>
+        <RegExpr String="[A-Za-z]+(?=\s*\.)" attribute="User Command"/>
+        <RegExpr String="[A-Za-z]+" attribute="User Command" context="#pop"/>
+      </context>
+
+      <!-- special cases for individual commands -->
+      <!-- \tempo -->
+      <context name="tempo" attribute="Normal Text" lineEndContext="#stay"
+               fallthrough="true" fallthroughContext="#pop">
+        <RegExpr String="\\markup(lines)?&b;" attribute="Markup" context="markup"/>
+        <RegExpr String="\d+\.*\s*=\s*\d+" attribute="Command" context="#pop"/>
+        <DetectSpaces/>
+        <IncludeRules context="basic"/>
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Pitch" defStyleNum="dsNormal"/>
+      <itemData name="Duration" defStyleNum="dsDataType"/>
+      <itemData name="Slur" defStyleNum="dsChar" bold="true"/>
+      <itemData name="Dynamic" defStyleNum="dsString" color="#ee5000" bold="true"/>
+      <itemData name="Articulation" defStyleNum="dsString" color="#ee5000" bold="true"/>
+      <itemData name="Chord" defStyleNum="dsDataType" bold="true"/>
+      <itemData name="Beam" defStyleNum="dsDataType" bold="true"/>
+      <itemData name="Check" defStyleNum="dsDecVal"/>
+      <itemData name="Tremolo" defStyleNum="dsOthers"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Command" defStyleNum="dsFunction" bold="true"/>
+      <itemData name="User Command" defStyleNum="dsFunction"/>
+      <itemData name="Context" defStyleNum="dsDataType" bold="true"/>
+      <itemData name="Layout Object" defStyleNum="dsDataType"/>
+      <itemData name="Property" defStyleNum="dsDataType"/>
+      <itemData name="Variable" defStyleNum="dsDataType"/>
+      <itemData name="Engraver" defStyleNum="dsDataType"/>
+      <itemData name="Markup" defStyleNum="dsBaseN" color="#009817"/>
+      <itemData name="Lyricmode" defStyleNum="dsKeyword" color="#007010"/>
+      <itemData name="Lyric Text" defStyleNum="dsNormal" color="#007010"/>
+      <itemData name="Other Mode" defStyleNum="dsKeyword" color="#0094e4"/>
+      <itemData name="Other Text" defStyleNum="dsNormal" color="#0094e4"/>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Quoted Text" defStyleNum="dsString"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Scheme" defStyleNum="dsFloat" backgroundColor="#fff6ff"/>
+      <itemData name="Scheme Keyword" defStyleNum="dsFloat" bold="true" backgroundColor="#fff6ff"/>
+      <itemData name="Scheme Subst" defStyleNum="dsDecVal" bold="true" backgroundColor="#fff6ff"/>
+      <itemData name="Scheme Value" defStyleNum="dsDecVal" backgroundColor="#fff6ff"/>
+      <itemData name="Scheme String" defStyleNum="dsString" backgroundColor="#fff6ff"/>
+      <itemData name="Scheme Comment" defStyleNum="dsComment" backgroundColor="#fff6ff"/>
+      <itemData name="Deprecated Keyword" defStyleNum="dsKeyword" backgroundColor="#fcc"/>
+      <itemData name="Deprecated Command" defStyleNum="dsFunction" backgroundColor="#fcc"/>
+      <itemData name="Deprecated Property" defStyleNum="dsDataType" backgroundColor="#fcc"/>
+      <itemData name="Deprecated Context" defStyleNum="dsDataType" bold="true" backgroundColor="#fcc"/>
+      <itemData name="Deprecated Markup" defStyleNum="dsBaseN" color="#009817" backgroundColor="#fcc"/>
+      <itemData name="Invalid" defStyleNum="dsError"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="%"/>
+      <comment name="multiLine" start="%{" end="%}" region="comment"/>
+    </comments>
+    <keywords casesensitive="true" additionalDeliminator="'_0123456789"/>
+  </general>
+</language>
+<!--
+  kate: space-indent on; indent-width 2; replace-tabs on;
+-->

@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd" >
+<!--
+License: LGPL version 2.1, or version 3 or later versions approved by the membership of KDE e.V.; or any other license appoved by the memembership of KDE e.V.
+-->
+<language name="Hunspell Affix File" section="Other" extensions="*.aff" priority="-9" version="2" kateversion="2.4" author="Lukas Sommer" license="LGPLv2.1+KDE e.V.">
+
+<highlighting>
+
+<!-- This list is commented out. We use a simple fallback rule instead …
+<list name="list_keywordsWithNumbersOrFlags">
+
+	<!- - keywords without options: - - >
+	<item>ONLYMAXDIFF</item>
+	<item>NOSPLITSUGS</item>
+	<item>SUGSWITHDOTS</item>
+	<item>FORBIDWARN</item>
+	<item>CHECKCOMPOUNDDUP</item>
+	<item>CHECKCOMPOUNDREP</item>
+	<item>CHECKCOMPOUNDCASE</item>
+	<item>CHECKCOMPOUNDTRIPLE</item>
+	<item>SIMPLIFIEDTRIPLE</item>
+	<item>FULLSTRIP</item>
+	<item>CHECKSHARPS</item>
+	<item>COMPLEXPREFIXES</item>
+	
+	<!- - keywords with flags: - - >
+	<item>COMPOUNDFLAG</item>
+	<item>COMPOUNDBEGIN</item>
+	<item>COMPOUNDLAST</item>
+	<item>COMPOUNDMIDDLE</item>
+	<item>ONLYINCOMPOUND</item>
+	<item>COMPOUNDPERMITFLAG</item>
+	<item>COMPOUNDFORBIDFLAG</item>
+	<item>COMPOUNDROOT</item>
+	<item>COMPOUNDROOT</item>
+	<item>FORCEUCASE</item>
+	<item>SYLLABLENUM</item>
+	<item>CIRCUMFIX</item>
+	<item>FORBIDDENWORD</item>
+	<item>KEEPCASE</item>
+	<item>LEMMA_PRESENT</item>
+	<item>NEEDAFFIX</item>
+	<!- - PSEUDOROOT is deprecated. (Former name of the NEEDAFFIX option.) - - >
+	<item>SUBSTANDARD</item>
+	<item>NOSUGGEST</item>
+	<item>WARN</item>
+	
+	<!- - keywords with number: - - >
+	<item>MAXCPDSUGS</item>
+	<item>MAXNGRAMSUGS</item>
+	<item>MAXDIFF</item>
+	<item>COMPOUNDMIN</item>
+	<item>COMPOUNDWORDMAX</item>
+	
+	<!- - keywords with number or flags: - - >
+	<item>AF</item>
+	
+</list>
+-->
+
+<list name="list_keywordsWithEnum">
+	<item>SET</item>
+	<item>FLAG</item>
+	<item>LANG</item>
+</list>
+
+<list name="list_keywordsWithCharacters">
+	<item>TRY</item>
+	<item>WORDCHARS</item>
+	<item>IGNORE</item>
+</list>
+
+<list name="list_keywordsWithNumbersOrStrings">
+	<item>BREAK</item>
+	<item>COMPOUNDSYLLABLE</item>
+</list>
+
+<list name="list_keywordsForAffixes">
+	<item>SFX</item>
+	<item>PFX</item>
+</list>
+
+<list name="list_keywordsWithPattern">
+    <!-- TODO Maybe we could implement a special highlighting for each of these pattern types? -->
+	<item>COMPOUNDRULE</item>
+	<item>PHONE</item>
+	<item>ICONV</item>
+	<item>OCONV</item>
+	<item>KEY</item>
+	<item>MAP</item>
+</list>
+
+<contexts>
+
+	<context name="aff" attribute="Undefined" lineEndContext="#stay">
+		<DetectSpaces />
+		<keyword attribute="Keyword" context="context_flag_stripping_affix_condition_morphologicalFields" String="list_keywordsForAffixes" column="0" />
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+		<StringDetect String="REP" insensitive="true" attribute="Keyword" context="context_replace" column="0" /> 
+		<StringDetect String="CHECKCOMPOUNDPATTERN" insensitive="true" attribute="Keyword" context="context_stringsWithFlags" column="0" />
+		<keyword attribute="Keyword" context="context_numbersOrString" String="list_keywordsWithNumbersOrStrings" column="0" />
+		<keyword attribute="Keyword" context="context_characters" String="list_keywordsWithCharacters" column="0" />
+		<keyword attribute="Keyword" context="context_pattern" String="list_keywordsWithPattern" column="0" />
+		<keyword attribute="Keyword" context="context_enum" String="list_keywordsWithEnum" column="0" />
+		<!-- Fallback rule: -->
+		<DetectIdentifier  attribute="Keyword" context="context_numbersOrFlags" column="0" />
+	</context>
+	
+	<context name="context_stringsWithFlags" attribute="String" lineEndContext="#pop">
+		<DetectSpaces />
+		<DetectChar char="/" attribute="Keyword" context="context_stringsWithFlags_flagHelper" />
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+	</context>
+	
+	<context name="context_stringsWithFlags_flagHelper" attribute="Flags" lineEndContext="#pop">
+		<DetectSpaces context="context_stringsWithFlags" />
+	</context>
+	
+	<context name="context_characters" attribute="Characters" lineEndContext="#pop">
+		<DetectSpaces />
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+	</context>
+	
+	<context name="context_enum" attribute="Choice" lineEndContext="#pop">
+		<DetectSpaces />
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+	</context>
+	
+	<context name="context_replace" attribute="Keyword" lineEndContext="#pop">
+		<DetectSpaces />
+		<Int attribute="Number" context="#stay" />
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+		<RegExpr context="context_numbersOrString" attribute="Pattern" String="\S*" />
+	</context>
+	
+	<context name="context_pattern" attribute="Pattern" lineEndContext="#pop">
+		<DetectSpaces />
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+	</context>
+	
+	<context name="context_numbersOrFlags" attribute="Flags" lineEndContext="#pop">
+		<DetectSpaces />
+		<Int attribute="Number" context="#stay" />
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+	</context>
+	
+	<context name="context_numbersOrString" attribute="String" lineEndContext="#pop">
+		<DetectSpaces />
+		<Int attribute="Number" context="#stay" />
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+	</context>
+	
+	<context name="context_flag_stripping_affix_condition_morphologicalFields" attribute="Keyword" lineEndContext="#pop">
+		<DetectSpaces/>
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+		<RegExpr context="context_stripping_affix_condition_morphologicalFields" attribute="Flags" String="\S*" />
+	</context>
+	
+	<context name="context_stripping_affix_condition_morphologicalFields" attribute="Flags" lineEndContext="#pop">
+		<DetectSpaces/>
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+		<DetectChar char="0" attribute="Skipped parameter" context="context_affix_condition_morphologicalFields" />
+		<RegExpr context="context_numbersOrString" attribute="Choice" String="(Y|N)\s*(?![^\d])" />
+		<RegExpr context="context_affix_condition_morphologicalFields" attribute="Stripping" String="\S*" />
+	</context>
+	
+	<context name="context_affix_condition_morphologicalFields" attribute="Stripping" lineEndContext="#pop">
+		<DetectSpaces/>
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+		<RegExpr context="context_slash_flags_condition_morphologicalFields" attribute="Skipped parameter" String="0(?=/)" />
+		<DetectChar char="0" attribute="Skipped parameter" context="context_condition_morphologicalFields" />
+		<RegExpr context="context_slash_flags_condition_morphologicalFields" attribute="Affix" String="[^\s/]*(?=/)" />
+		<DetectChar char="/" context="context_slash_flags_condition_morphologicalFields" lookAhead="true"  />
+		<RegExpr context="context_condition_morphologicalFields" attribute="Affix" String="\S*" />
+	</context>
+	
+	<context name="context_slash_flags_condition_morphologicalFields" attribute="Stripping" lineEndContext="#pop">
+		<DetectChar char="/" attribute="Keyword"  />
+		<RegExpr attribute="Flags" String="\S*" />
+		<DetectSpaces context="context_condition_morphologicalFields" />
+	</context>
+	
+	<context name="context_condition_morphologicalFields" attribute="Stripping" lineEndContext="#pop">
+		<DetectSpaces/>
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+		<RegExpr attribute="Skipped parameter" String="\.(?!\S)" context="context_morphologicalFields" />
+		<RegExpr context="context_notSkippedCondition_morphologicalFields" lookAhead="true" String="\S" />
+	</context>
+	
+	<context name="context_notSkippedCondition_morphologicalFields" attribute="Stripping" lineEndContext="#pop">
+		<RegExpr attribute="Pattern" String="\S*" />
+		<DetectSpaces context="context_morphologicalFields" />
+	</context>
+	
+	<context name="context_morphologicalFields" attribute="Keyword" lineEndContext="#pop">
+		<DetectSpaces/>
+		<DetectChar char="#" attribute="Comment" context="context_comment" />
+		<DetectChar char=":" attribute="Keyword" context="context_morphologicalFieldsContent" />
+	</context>
+	
+	<context name="context_morphologicalFieldsContent" attribute="String" lineEndContext="#pop">
+		<DetectSpaces context="context_morphologicalFields" />
+	</context>
+	
+	<context name="context_comment" attribute="Comment" lineEndContext="#pop">
+		<DetectSpaces />
+		<IncludeRules context="##Alerts" />
+		<DetectIdentifier />
+	</context>
+
+</contexts>
+
+
+<itemDatas>
+	<itemData name="Undefined" defStyleNum="dsNormal" />
+	<itemData name="Keyword" defStyleNum="dsKeyword" />
+	<itemData name="Comment" defStyleNum="dsComment" />
+	<itemData name="Number" defStyleNum="dsDecVal" />
+	<itemData name="Stripping" defStyleNum="dsString" />
+	<itemData name="Affix" defStyleNum="dsString" />
+	<itemData name="String" defStyleNum="dsString" />
+	<itemData name="Flags" defStyleNum="dsChar" />
+	<itemData name="Skipped parameter" defStyleNum="dsKeyword" />
+	<itemData name="Pattern" defStyleNum="dsOthers" />
+	<itemData name="Characters" defStyleNum="dsChar" />
+	<itemData name="Choice" defStyleNum="dsDataType" />
+</itemDatas>
+
+</highlighting>
+
+
+<general>
+	<comments>
+		<comment name="singleLine" start="#" />
+	</comments>
+</general>
+
+</language>

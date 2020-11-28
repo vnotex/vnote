@@ -1,0 +1,108 @@
+<!--
+
+    ====================================================================
+    PGN - Portable Game Notation syntax highlighting file for the
+    KDE editors Kate and Kwrite
+    ====================================================================
+    // PGN - Portable Game Notation highlighter
+    // To write your chess (and others) games
+    // written by Ruben Carlo Benante. - dr.beco@gmail.com
+    // 14/oct/2005, v.2.0
+
+    - Know bugs:
+    * None.
+-->
+<language name="PGN" version="4" kateversion="2.3" section="Other" extensions="*.pgn;*.PGN" priority="5" mimetype="" casesensitive="1" author="Ruben Carlo Benante (dr.beco@gmail.com)" license="GPL">
+<highlighting>
+  <list name="keywords_list">
+    <item>Event</item>
+    <item>Site</item>
+    <item>Date</item>
+    <item>Round</item>
+    <item>White</item>
+    <item>Black</item>
+    <item>Result</item>
+    <item>ECO</item>
+    <item>Annotator</item>
+    <item>PlyCount</item>
+    <item>EventDate</item>
+    <item>EventCountry</item>
+    <item>SourceDate</item>
+    <item>WhiteTitle</item>
+    <item>BlackTitle</item>
+    <item>FM</item>
+    <item>IM</item>
+    <item>GM</item>
+    <item>WhiteElo</item>
+    <item>BlackElo</item>
+    <item>WhiteNA</item>
+    <item>BlackNA</item>
+    <item>WhiteType</item>
+    <item>BlackType</item>
+    <item>program</item>
+    <item>human</item>
+    <item>TimeControl</item>
+    <item>FEN</item>
+    <item>Termination</item>
+    <item>abandoned</item>
+    <item>adjudication</item>
+    <item>death</item>
+    <item>emergency</item>
+    <item>normal</item>
+    <item>rules</item>
+    <item>infraction</item>
+    <item>time</item>
+    <item>forfeit</item>
+    <item>unterminated</item>
+    <item>Mode</item>
+    <item>OTB</item>
+    <item>PM</item>
+    <item>EM</item>
+    <item>ICS</item>
+    <item>TC</item>
+    </list>
+  <contexts>
+    <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+      <keyword attribute="Keyword" context="#stay" String="keywords_list"/>
+      <AnyChar attribute="Piece" context="#stay" String="KQBNRPODCTA"/>
+      <DetectChar attribute="Commentp" context="Comment_p" char="("/>
+      <DetectChar attribute="Commentc" context="Comment_c" char="{"/>
+      <DetectChar attribute="String" context="String" char="&quot;"/>
+      <RegExpr attribute="Symbol" context="#stay" String="(\$\d*|1\-0|0\-1|1/2\-1/2|\*|#|\+|\?|!|=|x|\+\-|\-\+)"/>
+      <RegExpr attribute="Number" context="#stay" String="\d*(\.|\.\.\.)( |$)"/>
+    </context>
+    <context attribute="Commentp" lineEndContext="#stay" name="Comment_p">
+      <DetectChar attribute="String" context="String" char="&quot;"/>
+      <DetectChar attribute="Commentp" context="Comment_p" char="("/>
+      <DetectChar attribute="Commentc" context="Comment_c" char="{"/>
+      <DetectChar attribute="Commentp" context="#pop" char=")" endRegion="Comment_p"/>
+    </context>
+      <context attribute="Commentc" lineEndContext="#stay" name="Comment_c">
+      <DetectChar attribute="String" context="String" char="&quot;"/>
+      <DetectChar attribute="Commentp" context="Comment_p" char="("/>
+      <DetectChar attribute="Commentc" context="Comment_c" char="{"/>
+      <DetectChar attribute="Commentc" context="#pop" char="}" endRegion="Comment_c"/>
+    </context>
+    <context attribute="String" lineEndContext="#stay" name="String">
+      <DetectChar attribute="String" context="#pop" char="&quot;"/>
+    </context>
+  </contexts>
+  <itemDatas>
+    <itemData name="Normal Text" defStyleNum="dsNormal"/>
+    <itemData name="Keyword" defStyleNum="dsKeyword" bold="true"/>
+    <itemData name="Piece" defStyleNum="dsNormal" color="#0095FF" bold="1" italic="0"/>
+    <itemData name="Commentp" defStyleNum="dsComment"/>
+    <itemData name="Commentc" defStyleNum="dsComment" bold="true"/>
+    <itemData name="String" defStyleNum="dsString" bold="false"/>
+    <itemData name="Number" defStyleNum="dsDecVal" color="#bb00bb"/>
+    <itemData name="Symbol" defStyleNum="dsOthers" color="#00bb00"/>
+  </itemDatas>
+</highlighting>
+<general>
+  <comments>
+    <comment name="multiLine" start="(" end=")"/>
+    <comment name="multiLine" start="{" end="}"/>
+  </comments>
+  <keywords casesensitive="0" weakDeliminator=""/>
+</general>
+</language>

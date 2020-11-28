@@ -1,0 +1,624 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!ENTITY name    "[A-Za-z_:][\w.:_-]*">
+	<!ENTITY entref  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
+]>
+<language name="XUL" version="5" kateversion="5.0" section="Markup" extensions="*.xul;*.xbl" mimetype="text/xul" casesensitive="1" indenter="xml" author="Wilbert Berendsen (wilbert@kde.nl), Anders Lund (anders@alweb.dk), Joseph Wenninger (jowenn@kde.org), Whitehawk Stormchaser (zerokode@gmx.net), Marc Dassonneville (marc.dassonneville@gmail.com)" license="LGPL">
+
+<highlighting>
+   <list name="keywords">
+      <item>if</item>
+      <item>else</item>
+      <item>for</item>
+      <item>in</item>
+      <item>while</item>
+      <item>do</item>
+      <item>continue</item>
+      <item>break</item>
+      <item>with</item>
+      <item>try</item>
+      <item>catch</item>
+      <item>finally</item>
+      <item>switch</item>
+      <item>case</item>
+      <item>new</item>
+      <item>var</item>
+      <item>function</item>
+      <item>return</item>
+      <item>delete</item>
+      <item>true</item>
+      <item>false</item>
+      <item>void</item>
+      <item>throw</item>
+      <item>typeof</item>
+      <item>const</item>
+      <item>default</item>
+   </list>
+   <list name="functions">
+      <item>escape</item>
+      <item>isFinite</item>
+      <item>isNaN</item>
+      <item>Number</item>
+      <item>parseFloat</item>
+      <item>parseInt</item>
+      <item>reload</item>
+      <item>taint</item>
+      <item>unescape</item>
+      <item>untaint</item>
+      <item>write</item>
+   </list>
+   <list name="objects">
+      <item>Anchor</item>
+      <item>Applet</item>
+      <item>Area</item>
+      <item>Array</item>
+      <item>Boolean</item>
+      <item>Button</item>
+      <item>Checkbox</item>
+      <item>Date</item>
+      <item>document</item>
+      <item>window</item>
+      <item>Image</item>
+      <item>FileUpload</item>
+      <item>Form</item>
+      <item>Frame</item>
+      <item>Function</item>
+      <item>Hidden</item>
+      <item>Link</item>
+      <item>MimeType</item>
+      <item>Math</item>
+      <item>Max</item>
+      <item>Min</item>
+      <item>Layer</item>
+      <item>navigator</item>
+      <item>Object</item>
+      <item>Password</item>
+      <item>Plugin</item>
+      <item>Radio</item>
+      <item>RegExp</item>
+      <item>Reset</item>
+      <item>Screen</item>
+      <item>Select</item>
+      <item>String</item>
+      <item>Text</item>
+      <item>Textarea</item>
+      <item>this</item>
+      <item>Window</item>
+   </list>
+   <list name="math">
+      <item>abs</item>
+      <item>acos</item>
+      <item>asin</item>
+      <item>atan</item>
+      <item>atan2</item>
+      <item>ceil</item>
+      <item>cos</item>
+      <item>ctg</item>
+      <item>E</item>
+      <item>exp</item>
+      <item>floor</item>
+      <item>LN2</item>
+      <item>LN10</item>
+      <item>log</item>
+      <item>LOG2E</item>
+      <item>LOG10E</item>
+      <item>PI</item>
+      <item>pow</item>
+      <item>round</item>
+      <item>sin</item>
+      <item>sqrt</item>
+      <item>SQRT1_2</item>
+      <item>SQRT2</item>
+      <item>tan</item>
+   </list>
+   <list name="events">
+      <item>onAbort</item>
+      <item>onBlur</item>
+      <item>onChange</item>
+      <item>onClick</item>
+      <item>onError</item>
+      <item>onFocus</item>
+      <item>onLoad</item>
+      <item>onMouseOut</item>
+      <item>onMouseOver</item>
+      <item>onReset</item>
+      <item>onSelect</item>
+      <item>onSubmit</item>
+      <item>onUnload</item>
+   </list>
+   <list name="methods">
+      <item>above</item>
+      <item>action</item>
+      <item>alinkColor</item>
+      <item>alert</item>
+      <item>anchor</item>
+      <item>anchors</item>
+      <item>appCodeName</item>
+      <item>applets</item>
+      <item>apply</item>
+      <item>appName</item>
+      <item>appVersion</item>
+      <item>argument</item>
+      <item>arguments</item>
+      <item>arity</item>
+      <item>availHeight</item>
+      <item>availWidth</item>
+      <item>back</item>
+      <item>background</item>
+      <item>below</item>
+      <item>bgColor</item>
+      <item>border</item>
+      <item>big</item>
+      <item>blink</item>
+      <item>blur</item>
+      <item>bold</item>
+      <item>border</item>
+      <item>call</item>
+      <item>caller</item>
+      <item>charAt</item>
+      <item>charCodeAt</item>
+      <item>checked</item>
+      <item>clearInterval</item>
+      <item>clearTimeout</item>
+      <item>click</item>
+      <item>clip</item>
+      <item>close</item>
+      <item>closed</item>
+      <item>colorDepth</item>
+      <item>complete</item>
+      <item>compile</item>
+      <item>constructor</item>
+      <item>confirm</item>
+      <item>cookie</item>
+      <item>current</item>
+      <item>cursor</item>
+      <item>data</item>
+      <item>defaultChecked</item>
+      <item>defaultSelected</item>
+      <item>defaultStatus</item>
+      <item>defaultValue</item>
+      <item>description</item>
+      <item>disableExternalCapture</item>
+      <item>domain</item>
+      <item>elements</item>
+      <item>embeds</item>
+      <item>enabledPlugin</item>
+      <item>enableExternalCapture</item>
+      <item>encoding</item>
+      <item>eval</item>
+      <item>exec</item>
+      <item>fgColor</item>
+      <item>filename</item>
+      <item>find</item>
+      <item>fixed</item>
+      <item>focus</item>
+      <item>fontcolor</item>
+      <item>fontsize</item>
+      <item>form</item>
+      <item>forms</item>
+      <item>formName</item>
+      <item>forward</item>
+      <item>frames</item>
+      <item>fromCharCode</item>
+      <item>getDate</item>
+      <item>getDay</item>
+      <item>getHours</item>
+      <item>getMiliseconds</item>
+      <item>getMinutes</item>
+      <item>getMonth</item>
+      <item>getSeconds</item>
+      <item>getSelection</item>
+      <item>getTime</item>
+      <item>getTimezoneOffset</item>
+      <item>getUTCDate</item>
+      <item>getUTCDay</item>
+      <item>getUTCFullYear</item>
+      <item>getUTCHours</item>
+      <item>getUTCMilliseconds</item>
+      <item>getUTCMinutes</item>
+      <item>getUTCMonth</item>
+      <item>getUTCSeconds</item>
+      <item>getYear</item>
+      <item>global</item>
+      <item>go</item>
+      <item>hash</item>
+      <item>height</item>
+      <item>history</item>
+      <item>home</item>
+      <item>host</item>
+      <item>hostname</item>
+      <item>href</item>
+      <item>hspace</item>
+      <item>ignoreCase</item>
+      <item>images</item>
+      <item>index</item>
+      <item>indexOf</item>
+      <item>innerHeight</item>
+      <item>innerWidth</item>
+      <item>input</item>
+      <item>italics</item>
+      <item>javaEnabled</item>
+      <item>join</item>
+      <item>language</item>
+      <item>lastIndex</item>
+      <item>lastIndexOf</item>
+      <item>lastModified</item>
+      <item>lastParen</item>
+      <item>layers</item>
+      <item>layerX</item>
+      <item>layerY</item>
+      <item>left</item>
+      <item>leftContext</item>
+      <item>length</item>
+      <item>link</item>
+      <item>linkColor</item>
+      <item>links</item>
+      <item>location</item>
+      <item>locationbar</item>
+      <item>load</item>
+      <item>lowsrc</item>
+      <item>match</item>
+      <item>MAX_VALUE</item>
+      <item>menubar</item>
+      <item>method</item>
+      <item>mimeTypes</item>
+      <item>MIN_VALUE</item>
+      <item>modifiers</item>
+      <item>moveAbove</item>
+      <item>moveBelow</item>
+      <item>moveBy</item>
+      <item>moveTo</item>
+      <item>moveToAbsolute</item>
+      <item>multiline</item>
+      <item>name</item>
+      <item>NaN</item>
+      <item>NEGATIVE_INFINITY</item>
+      <item>negative_infinity</item>
+      <item>next</item>
+      <item>open</item>
+      <item>opener</item>
+      <item>options</item>
+      <item>outerHeight</item>
+      <item>outerWidth</item>
+      <item>pageX</item>
+      <item>pageY</item>
+      <item>pageXoffset</item>
+      <item>pageYoffset</item>
+      <item>parent</item>
+      <item>parse</item>
+      <item>pathname</item>
+      <item>personalbar</item>
+      <item>pixelDepth</item>
+      <item>platform</item>
+      <item>plugins</item>
+      <item>pop</item>
+      <item>port</item>
+      <item>POSITIVE_INFINITY</item>
+      <item>positive_infinity</item>
+      <item>preference</item>
+      <item>previous</item>
+      <item>print</item>
+      <item>prompt</item>
+      <item>protocol</item>
+      <item>prototype</item>
+      <item>push</item>
+      <item>referrer</item>
+      <item>refresh</item>
+      <item>releaseEvents</item>
+      <item>reload</item>
+      <item>replace</item>
+      <item>reset</item>
+      <item>resizeBy</item>
+      <item>resizeTo</item>
+      <item>reverse</item>
+      <item>rightContext</item>
+      <item>screenX</item>
+      <item>screenY</item>
+      <item>scroll</item>
+      <item>scrollbar</item>
+      <item>scrollBy</item>
+      <item>scrollTo</item>
+      <item>search</item>
+      <item>select</item>
+      <item>selected</item>
+      <item>selectedIndex</item>
+      <item>self</item>
+      <item>setDate</item>
+      <item>setHours</item>
+      <item>setMinutes</item>
+      <item>setMonth</item>
+      <item>setSeconds</item>
+      <item>setTime</item>
+      <item>setTimeout</item>
+      <item>setUTCDate</item>
+      <item>setUTCDay</item>
+      <item>setUTCFullYear</item>
+      <item>setUTCHours</item>
+      <item>setUTCMilliseconds</item>
+      <item>setUTCMinutes</item>
+      <item>setUTCMonth</item>
+      <item>setUTCSeconds</item>
+      <item>setYear</item>
+      <item>shift</item>
+      <item>siblingAbove</item>
+      <item>siblingBelow</item>
+      <item>small</item>
+      <item>sort</item>
+      <item>source</item>
+      <item>splice</item>
+      <item>split</item>
+      <item>src</item>
+      <item>status</item>
+      <item>statusbar</item>
+      <item>strike</item>
+      <item>sub</item>
+      <item>submit</item>
+      <item>substr</item>
+      <item>substring</item>
+      <item>suffixes</item>
+      <item>sup</item>
+      <item>taintEnabled</item>
+      <item>target</item>
+      <item>test</item>
+      <item>text</item>
+      <item>title</item>
+      <item>toGMTString</item>
+      <item>toLocaleString</item>
+      <item>toLowerCase</item>
+      <item>toolbar</item>
+      <item>toSource</item>
+      <item>toString</item>
+      <item>top</item>
+      <item>toUpperCase</item>
+      <item>toUTCString</item>
+      <item>type</item>
+      <item>URL</item>
+      <item>unshift</item>
+      <item>unwatch</item>
+      <item>userAgent</item>
+      <item>UTC</item>
+      <item>value</item>
+      <item>valueOf</item>
+      <item>visibility</item>
+      <item>vlinkColor</item>
+      <item>vspace</item>
+      <item>width</item>
+      <item>watch</item>
+      <item>which</item>
+      <item>width</item>
+      <item>write</item>
+      <item>writeln</item>
+      <item>x</item>
+      <item>y</item>
+      <item>zIndex</item>
+    </list>
+<contexts>
+  <context name="Start" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="FindXML" />
+  </context>
+
+  <context name="FindXML" attribute="Normal Text" lineEndContext="#stay">
+    <DetectSpaces />
+    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+    <StringDetect attribute="CDATA" context="CDATA" String="&lt;![CDATA[" beginRegion="cdata" />
+    <RegExpr attribute="Doctype" context="Doctype" String="&lt;!DOCTYPE\s+" beginRegion="doctype" />
+    <RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:_-]*" beginRegion="pi" />
+    <RegExpr attribute="Element" context="Element" String="&lt;&name;" beginRegion="element" />
+    <IncludeRules context="FindEntityRefs" />
+    <DetectIdentifier />
+  </context>
+
+  <context name="FindEntityRefs" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+    <AnyChar attribute="Error" context="#stay" String="&amp;&lt;" />
+  </context>
+
+  <context name="FindPEntityRefs" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+    <RegExpr attribute="PEntityRef" context="#stay" String="%&name;;" />
+    <AnyChar attribute="Error" context="#stay" String="&amp;%" />
+  </context>
+
+
+  <context name="Comment" attribute="Comment" lineEndContext="#stay">
+    <DetectSpaces />
+    <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
+    <RegExpr attribute="Error" context="#stay" String="-(-(?!-&gt;))+" />
+    <IncludeRules context="##Alerts" />
+    <DetectIdentifier />
+  </context>
+
+  <context name="PI" attribute="Normal Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Processing Instruction" context="#pop" char="?" char1="&gt;" endRegion="pi" />
+  </context>
+
+  <context name="Doctype" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="&gt;" endRegion="doctype" />
+    <DetectChar attribute="Doctype" context="Doctype Internal Subset" char="[" beginRegion="int_subset" />
+  </context>
+
+  <context name="Doctype Internal Subset" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="]" endRegion="int_subset" />
+    <RegExpr attribute="Doctype" context="Doctype Markupdecl" String="&lt;!(ELEMENT|ENTITY|ATTLIST|NOTATION)\b" />
+    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+    <RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:_-]*" beginRegion="pi" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="Doctype Markupdecl" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="&gt;" />
+    <DetectChar attribute="Value" context="Doctype Markupdecl DQ" char="&quot;" />
+    <DetectChar attribute="Value" context="Doctype Markupdecl SQ" char="&apos;" />
+  </context>
+
+  <context name="Doctype Markupdecl DQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop" char="&quot;" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="Doctype Markupdecl SQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop" char="&apos;" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="Element" attribute="Normal Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="element" />
+    <DetectChar attribute="Element" context="El Content" char="&gt;" />
+    <RegExpr attribute="Attribute" context="Attribute" String="^&name;" />
+    <RegExpr attribute="Attribute" context="Attribute" String="\s+&name;" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="El Content" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="Element" context="El End" String="&lt;/&name;" />
+    <IncludeRules context="FindXML" />
+  </context>
+
+  <context name="El End" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="#pop#pop#pop" char="&gt;" endRegion="element" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="Attribute" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Attribute" context="Value" char="=" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="Value" attribute="Normal Text" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="Value DQ" char="&quot;" />
+    <DetectChar attribute="Value" context="Value SQ" char="&apos;" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="Value DQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop#pop#pop" char="&quot;" />
+    <IncludeRules context="FindEntityRefs" />
+  </context>
+
+  <context name="Value SQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop#pop#pop" char="&apos;" />
+    <IncludeRules context="FindEntityRefs" />
+  </context>
+
+  <context name="CDATA" attribute="Normal Text" lineEndContext="#stay">
+     <StringDetect attribute="CDATA" context="#pop" String="]]&gt;" endRegion="cdata" />
+     <StringDetect attribute="EntityRef" context="#stay" String="]]&amp;gt;" />
+     <DetectSpaces/>
+     <StringDetect attribute="Region Marker" context="region_marker" String="//BEGIN" beginRegion="Region1"/>
+     <StringDetect attribute="Region Marker" context="region_marker" String="//END" endRegion="Region1"/>
+     <keyword attribute="Keyword" context="#stay" String="keywords" />
+     <keyword attribute="Function" context="#stay" String="functions" />
+     <keyword attribute="Objects" context="#stay" String="objects" />
+     <keyword attribute="Math" context="#stay" String="math" />
+     <keyword attribute="Events" context="#stay" String="events" />
+     <keyword attribute="Data Type" context="#stay" String="methods" />
+     <DetectIdentifier/>
+     <Float attribute="Float" context="#stay" />
+     <Int attribute="Decimal" context="#stay" />
+     <DetectChar attribute="String" context="String" char="&quot;"/>
+     <DetectChar attribute="String" context="String 1" char="'"/>
+     <Detect2Chars attribute="Comment" context="JSComment" char="/" char1="/"/>
+     <Detect2Chars attribute="Comment" context="Multi/inline Comment" char="/" char1="*" beginRegion="Comment"/>
+     <RegExpr attribute="Normal Text" context="(Internal regex catch)" String="[=?:]" />
+     <RegExpr attribute="Normal Text" context="(Internal regex catch)" String="\(" />
+     <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+     <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+     <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;+,-/.*&lt;=&gt;?[]|~^&#59;"/>
+  </context>
+  
+  <context attribute="String" lineEndContext="#pop" name="String">
+     <DetectIdentifier/>
+     <HlCStringChar attribute="String Char" context="#stay"/>
+     <DetectChar attribute="String" context="#pop" char="&quot;"/>
+  </context>
+  <context attribute="String Char" lineEndContext="#pop" name="String 1">
+     <DetectIdentifier/>
+     <DetectChar attribute="String" context="String" char="&quot;"/>
+     <DetectChar attribute="String Char" context="#pop" char="'"/>
+  </context>
+
+  <context attribute="Comment" lineEndContext="#pop" name="JSComment">
+     <DetectSpaces />
+     <IncludeRules context="##Alerts" />
+     <DetectIdentifier />
+  </context>
+  <context attribute="Comment" lineEndContext="#stay" name="Multi/inline Comment">
+     <IncludeRules context="##Alerts" />
+     <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+  </context>
+  
+  <context attribute="Regular Expression" lineEndContext="#stay" name="Regular Expression">
+     <RegExpr attribute="Regular Expression" context="#pop#pop#pop" String="/[ig]{0,2}" />
+     <RegExpr attribute="Pattern Internal Operator" context="#stay" String="\{[\d, ]+\}" />
+     <RegExpr attribute="Pattern Internal Operator" context="#stay" String="\\[bB]" />
+     <RegExpr attribute="Pattern Character Class" context="#stay" String="\\[nrtvfDdSsWw]" />
+     <DetectChar attribute="Pattern Character Class" context="(charclass caret first check)" char="[" />
+     <RegExpr attribute="Pattern Internal Operator" context="#stay" String="\\." />
+     <RegExpr attribute="Pattern Internal Operator" context="#stay" String="\$(?=/)" />
+     <AnyChar attribute="Pattern Internal Operator" context="#stay" String="?+*()|" />
+  </context>
+  <context attribute="Normal Text" lineEndContext="#stay" name="(Internal regex catch)" fallthrough="true" fallthroughContext="#pop">
+     <RegExpr attribute="Normal Text" context="#stay" String="\s*" />
+     <RegExpr attribute="Regular Expression" context="#pop" String="//(?=;)" />
+     <Detect2Chars attribute="Comment" context="JSComment" char="/" char1="/" />
+     <Detect2Chars attribute="Comment" context="Multi/inline Comment" char="/" char1="*" />
+     <DetectChar attribute="Regular Expression" context="(regex caret first check)" char="/" />
+  </context>
+  <context attribute="Pattern Character Class" lineEndContext="#stay" name="Regular Expression Character Class">
+     <RegExpr attribute="Pattern Character Class" context="#stay" String="\\[\[\]]" />
+     <DetectChar attribute="Pattern Character Class" context="#pop#pop" char="]" />
+  </context>
+  <context attribute="Pattern Internal Operator" lineEndContext="#pop" name="(regex caret first check)" fallthrough="true" fallthroughContext="Regular Expression">
+     <DetectChar attribute="Pattern Internal Operator" context="Regular Expression" char="^" />
+  </context>
+  <context attribute="Pattern Internal Operator" lineEndContext="#pop" name="(charclass caret first check)" fallthrough="true" fallthroughContext="Regular Expression Character Class">
+     <DetectChar attribute="Pattern Internal Operator" context="Regular Expression Character Class" char="^" />
+  </context>
+  
+  <context name="region_marker" attribute="Region Marker" lineEndContext="#pop" >
+     <DetectIdentifier />
+     <DetectSpaces />
+  </context>
+
+</contexts>
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" />
+  <itemData name="Comment" defStyleNum="dsComment" />
+  <itemData name="CDATA" defStyleNum="dsBaseN" bold="1" />
+  <itemData name="Processing Instruction" defStyleNum="dsKeyword" />
+  <itemData name="Doctype" defStyleNum="dsDataType" bold="1" />
+  <itemData name="Element" defStyleNum="dsKeyword" />
+  <itemData name="Attribute" defStyleNum="dsOthers" />
+  <itemData name="Value" defStyleNum="dsString" />
+  <itemData name="EntityRef" defStyleNum="dsDecVal" />
+  <itemData name="PEntityRef" defStyleNum="dsDecVal" />
+  <itemData name="Error" defStyleNum="dsError" />
+
+  <itemData name="Keyword"      defStyleNum="dsKeyword"/>
+  <itemData name="Function" defStyleNum="dsFunction"/>
+  <itemData name="Objects" defStyleNum="dsKeyword" color="#008000" selColor="#00ffff" bold="0" italic="0"/>
+  <itemData name="Math" defStyleNum="dsKeyword" color="#DBA716" selColor="#00ffff" bold="0" italic="0"/>
+  <itemData name="Events" defStyleNum="dsKeyword" color="#F766D5" selColor="#00ffff" bold="0" italic="0"/>
+  <itemData name="Data Type"    defStyleNum="dsDataType"/>
+  <itemData name="Decimal"      defStyleNum="dsDecVal"/>
+  <itemData name="Float"        defStyleNum="dsFloat"/>
+  <itemData name="String"       defStyleNum="dsString"/>
+  <itemData name="String Char"  defStyleNum="dsChar"/>
+  <itemData name="Symbol"       defStyleNum="dsNormal"/>
+  <itemData name="Regular Expression" defStyleNum="dsOthers"   />
+  <itemData name="Pattern Internal Operator" defStyleNum="dsFloat" />
+  <itemData name="Pattern Character Class" defStyleNum="dsBaseN" />
+  <itemData name="Region Marker" defStyleNum="dsRegionMarker" />
+</itemDatas>
+
+</highlighting>
+<general>
+  <comments>
+    <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+    <comment name="singleLine" start="//" />
+    <comment name="multiLine" start="/*" end="*/" />
+  </comments>
+  <keywords casesensitive="1" />
+</general>
+</language>

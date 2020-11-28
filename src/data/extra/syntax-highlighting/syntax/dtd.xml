@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"[
+  <!ENTITY nmtoken "[\-\w\d\.:_]+">
+  <!ENTITY entref  "(#[0-9]+|#[xX][0-9A-Fa-f]+|&nmtoken;);">
+]>
+<language name="DTD" version="2" kateversion="3.4" section="Markup" extensions="*.dtd" mimetype="application/xml-dtd" author="Andriy Lesyuk (s-andy@in.if.ua)" license="LGPL">
+  <highlighting>
+
+    <list name="Category">
+      <item>EMPTY</item>
+      <item>ANY</item>
+      <item>CDATA</item>
+      <item>ID</item>
+      <item>IDREF</item>
+      <item>IDREFS</item>
+      <item>NMTOKEN</item>
+      <item>NMTOKENS</item>
+      <item>ENTITY</item>
+      <item>ENTITIES</item>
+      <item>NOTATION</item>
+      <item>PUBLIC</item>
+      <item>SYSTEM</item>
+      <item>NDATA</item>
+    </list>
+
+    <list name="Keywords">
+      <item>#PCDATA</item>
+      <item>#REQUIRED</item>
+      <item>#IMPLIED</item>
+      <item>#FIXED</item>
+    </list>
+
+    <contexts>
+      <context name="Normal" attribute="Normal" lineEndContext="#stay">
+        <DetectSpaces />
+        <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+        <StringDetect attribute="Processing Instruction" context="PI" String="&lt;?xml" beginRegion="pi" />
+        <StringDetect attribute="Declaration" context="Declaration" String="&lt;!ELEMENT" beginRegion="declaration" />
+        <StringDetect attribute="Declaration" context="Declaration" String="&lt;!ATTLIST" beginRegion="declaration" />
+        <StringDetect attribute="Declaration" context="Declaration" String="&lt;!NOTATION" beginRegion="declaration" />
+        <StringDetect attribute="Declaration" context="Declaration" String="&lt;!ENTITY" beginRegion="declaration" />
+        <DetectIdentifier />
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces />
+        <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+      <context name="PI" attribute="Other" lineEndContext="#stay">
+        <Detect2Chars attribute="Processing Instruction" context="#pop" char="?" char1="&gt;" endRegion="pi" />
+      </context>
+
+      <context name="Declaration" attribute="Other" lineEndContext="#stay">
+        <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+        <Detect2Chars attribute="Comment" context="InlineComment" char="-" char1="-" />
+        <DetectChar attribute="Declaration" context="#pop" char="&gt;" endRegion="declaration" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <RegExpr attribute="Declaration" context="#stay" String="(-|O)\s(-|O)" />
+        <AnyChar attribute="Delimiter" context="#stay" String="(|)," />
+        <RegExpr attribute="Entity" context="#stay" String="(%|&amp;)&entref;" />
+        <AnyChar attribute="Symbol" context="#stay" String="?*+-&amp;" />
+        <RegExpr attribute="Local" context="#stay" String="%\s" />
+        <keyword attribute="Keyword" context="#stay" String="Category" />
+        <keyword attribute="Keyword" context="#stay" String="Keywords" />
+        <RegExpr attribute="Name" context="#stay" String="\b&nmtoken;\b" />
+      </context>
+
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <DetectSpaces />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+        <RegExpr attribute="Entity" context="#stay" String="%&nmtoken;;" />
+      </context>
+
+      <context name="InlineComment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="-" char1="-" />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal" />
+      <itemData name="Other" defStyleNum="dsNormal" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="Processing Instruction" defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="Declaration" defStyleNum="dsDataType" bold="1" spellChecking="false" />
+      <itemData name="Name" defStyleNum="dsFunction" spellChecking="false" />
+      <itemData name="Delimiter" defStyleNum="dsDecVal" spellChecking="false" />
+      <itemData name="Symbol" defStyleNum="dsFloat" bold="1" spellChecking="false" />
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="String" defStyleNum="dsString" spellChecking="false" />
+      <itemData name="Entity" defStyleNum="dsDecVal" spellChecking="false" />
+      <itemData name="Local" defStyleNum="dsDecVal" bold="1" spellChecking="false" />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+    </comments>
+  </general>
+
+</language>
+<!-- kate: indent-width 2; indent-mode normal; tab-indents on; -->
+

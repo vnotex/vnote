@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Fortran (Free Format)" version="2" kateversion="5.53" section="Sources" extensions="*.f90;*.F90;*.f95;*.F95;*.f03;*.F03;*.f08;*.F08;" mimetype="text/x-fortran-src" casesensitive="0" author="Franchin Matteo (fnch@libero.it), Janus Weil" license="MIT" priority="10">
+<!-- Original author: Franchin Matteo (fnch@libero.it).
+     Adaptation to free & fixed format: Janus Weil.
+-->
+<!-- NOTE: Keep in sync with the "Fortran (Fixed Format)" highlighter! (fortran-fixed.xml) -->
+  <highlighting>
+
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+<!-- *                              L I S T S                            *  -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+    <list name="keywords">
+      <include>keywords##Fortran (Fixed Format)</include>
+      <item>associate</item>
+      <item>import</item>
+      <item>impure</item>
+    </list>
+    <list name="io_functions">
+      <include>io_functions##Fortran (Fixed Format)</include>
+    </list>
+    <!-- Keywords inside read(...), write(...), backspace(...),
+          rewind(...), endfile(...), close(...) -->
+    <list name="io_keywords">
+      <include>io_keywords##Fortran (Fixed Format)</include>
+    </list>
+    <!-- Keywords inside open(...) -->
+    <list name="open_keywords">
+      <include>open_keywords##Fortran (Fixed Format)</include>
+    </list>
+    <!-- Keywords inside inquire(...) -->
+    <list name="inquire_keywords">
+      <include>inquire_keywords##Fortran (Fixed Format)</include>
+    </list>
+    <list name="types">
+      <include>types##Fortran (Fixed Format)</include>
+      <item>abstract</item>
+      <item>asynchronous</item>
+      <item>bind</item>
+      <item>contiguous</item>
+      <item>deferred</item>
+      <item>enum</item>
+      <item>enumerator</item>
+      <item>final</item>
+      <item>generic</item>
+      <item>nopass</item>
+      <item>non_overridable</item>
+      <item>protected</item>
+      <item>value</item>
+      <item>volatile</item>
+    </list>
+
+<!-- There are 4 types of intrinsic procedures in Fortran 90:
+   1) Elemental procedures (elemental_procs);
+   2) Inquiry functions (inquiry_fn);
+   3) Transformational functions (transform_fn);
+   4) Non elemental subroutines (non_elem_subr);
+  Often mathematical functions have one generic form and many specific names!
+  If you use the generic form, the compiler will select the right function
+  to use depending on the type of the arguments.
+  But you can use also the specific names!
+  -->
+
+<!-- E L E M E N T A L    P R O C E D U R E S -->
+    <list name="elemental_procs">
+      <include>elemental_procs##Fortran (Fixed Format)</include>
+    <!-- Elemental mathematical functions -->
+      <item>acosh</item>
+      <item>asinh</item>
+      <item>atanh</item>
+      <item>bessel_j0</item>
+      <item>bessel_j1</item>
+      <item>bessel_jn</item>
+      <item>bessel_y0</item>
+      <item>bessel_y1</item>
+      <item>bessel_yn</item>
+      <item>erf</item>
+      <item>erfc</item>
+      <item>erfc_scaled</item>
+      <item>gamma</item>
+      <item>log_gamma</item>
+      <item>hypot</item>
+    </list>
+
+<!-- I N Q U I R Y    F U N C T I O N S -->
+    <list name="inquiry_fn">
+      <include>inquiry_fn##Fortran (Fixed Format)</include>
+    <!-- Inquiry functions for any type -->
+      <item>extends_type_of</item>
+      <item>same_type_as</item>
+      <item>storage_size</item>
+    <!-- Coarray inquiry functions -->
+      <item>lcobound</item>
+      <item>ucobound</item>
+      <item>image_index</item>
+    </list>
+
+<!-- T R A N S F O R M A T I O N A L    F U N C T I O N S -->
+    <list name="transform_fn">
+      <include>transform_fn##Fortran (Fixed Format)</include>
+    <!-- Transformational functions for kind values -->
+      <item>selected_char_kind</item>
+    <!-- Transformational functions that reduce arrays -->
+      <item>parity</item>
+      <item>iall</item>
+      <item>iany</item>
+      <item>iparity</item>
+    <!-- Coarray transformational functions -->
+      <item>num_images</item>
+      <item>this_image</item>
+    </list>
+
+<!-- N O N    E L E M E N T A L    S U B R O U T I N E S -->
+    <list name="non_elem_subr">
+      <include>non_elem_subr##Fortran (Fixed Format)</include>
+    <!-- Real time clock -->
+      <item>cpu_time</item>
+    <!-- System commands -->
+      <item>execute_command_line</item>
+      <item>get_environment_variable</item>
+    </list>
+
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+<!-- *                           C O N T E X T S                         *  -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="default" >
+        <IncludeRules context="find_strings" />
+        <IncludeRules context="find_io_stmnts" />
+        <IncludeRules context="find_op_and_log##Fortran (Fixed Format)" />
+        <IncludeRules context="find_numbers##Fortran (Fixed Format)" />
+        <IncludeRules context="find_preprocessor##Fortran (Fixed Format)" />
+        <IncludeRules context="find_comments" />
+        <IncludeRules context="find_symbols##Fortran (Fixed Format)" />
+        <IncludeRules context="find_begin_stmnts" />
+        <IncludeRules context="find_mid_stmnts" />
+        <IncludeRules context="find_end_stmnts" />
+        <IncludeRules context="find_decls" />
+        <IncludeRules context="find_intrinsics" />
+      </context>
+<!--************************END OF THE MAIN CONTEXT*************************-->
+
+
+<!-- IMPORTANT: If you modify something, do it also in "fortran-fixed.xml"! -->
+
+<!-- This context highlights comments -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_comments">
+        <DetectChar attribute="Comment" context="comment" char="!"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="comment">
+        <IncludeRules context="##Alerts"/>
+        <IncludeRules context="##Modelines"/>
+      </context>
+
+<!-- This context highlights items inside the parentesis of a function -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="inside_func_paren">
+      <!-- inside_func_paren##Fortran (Fixed Format) -->
+        <DetectChar attribute="Normal Text" context="inside_func_paren" char="("/>
+        <DetectChar attribute="Normal Text" context="#pop" char=")"/>
+        <IncludeRules context="find_strings" />
+        <IncludeRules context="find_intrinsics" />
+        <IncludeRules context="find_numbers##Fortran (Fixed Format)" />
+      </context>
+
+<!-- The following two contexts match input/output statements -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_io_stmnts">
+        <RegExpr attribute="IO Function" context="find_io_paren" String="\b(flush|wait)\s*[(]" insensitive="true"/>
+      <!-- find_io_stmnts##Fortran (Fixed Format) -->
+        <RegExpr attribute="IO Function" context="find_io_paren" String="\b(read|write|backspace|rewind|end\s*file|close|open|inquire)\s*[(]" insensitive="true"/>
+        <RegExpr attribute="IO Function" context="format_stmnt" String="\bformat\s*[(]" insensitive="true"/>
+        <RegExpr attribute="IO Function" context="#stay" String="\bend\s*file\b" insensitive="true"/>
+        <keyword attribute="IO Function" context="#stay" String="io_functions"/>
+      </context>
+<!-- This context matches parenthesis for the read, write, ... statements -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_io_paren">
+      <!-- find_io_paren##Fortran (Fixed Format) -->
+        <DetectChar attribute="IO Function" context="#stay" char="*"/>
+        <DetectChar attribute="Normal Text" context="inside_func_paren" char="("/>
+        <DetectChar attribute="IO Function" context="#pop" char=")"/>
+        <keyword attribute="IO Function"  context="#stay" String="io_keywords"/>
+        <keyword attribute="IO Function"  context="#stay" String="inquire_keywords"/>
+        <keyword attribute="IO Function"  context="#stay" String="open_keywords"/>
+        <IncludeRules context="find_strings" />
+        <IncludeRules context="find_intrinsics" />
+        <IncludeRules context="find_numbers##Fortran (Fixed Format)" />
+        <IncludeRules context="find_symbols##Fortran (Fixed Format)" />
+      </context>
+<!-- This context highlights the text inside the parenthesis of fortran statement -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="format_stmnt">
+        <DetectChar attribute="IO Function" context="format_stmnt" char="("/>
+        <DetectChar attribute="IO Function" context="#pop" char=")"/>
+        <IncludeRules context="find_strings" />
+        <IncludeRules context="format_stmnt##Fortran (Fixed Format)" />
+      </context>
+
+<!-- FIXME: beginRegion/endRegion don't work well with IncludeRules. When this is corrected, use IncludeRules instead of replicating rules. -->
+<!-- The following context matches the begin of program units -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_begin_stmnts">
+        <WordDetect attribute="Keyword" context="#stay" String="submodule" insensitive="true" beginRegion="Routine"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(do\s*(,|\s)\s*concurrent|select\s+type|block|critical)\b" insensitive="true" beginRegion="Block"/>
+      <!-- Here IncludeRules: find_begin_stmnts##Fortran (Fixed Format) -->
+        <RegExpr attribute="Keyword" context="#stay" String="\bmodule\s+procedure\b" insensitive="true"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(subroutine|function|block\s*data|program|module)\b" insensitive="true" beginRegion="Routine"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(then|do|select\s+case)\b" insensitive="true" beginRegion="Block"/>
+      </context>
+<!-- The following context matches the end of program units -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_end_stmnts">
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(procedure|submodule)\b" insensitive="true" endRegion="Routine"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(block|critical)\b" insensitive="true" endRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(associate)\b" insensitive="true"/>
+        <RegExpr attribute="Data Type" context="#stay" String="\bend\s*(type|enum)\b" insensitive="true"/>
+      <!-- Here IncludeRules: find_end_stmnts##Fortran (Fixed Format) -->
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(subroutine|function|block\s*data|program|module)\b" insensitive="true" endRegion="Routine"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(do|if)\b" insensitive="true" endRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(select|where|forall|interface)\b" insensitive="true"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\belse\s*if\b" insensitive="true" endRegion="Block"/>
+        <WordDetect attribute="Keyword" context="#stay" String="end" insensitive="true" endRegion="Routine"/>
+      </context>
+<!-- The following context matches the mid of program units -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_mid_stmnts">
+        <RegExpr attribute="Keyword" context="#stay" String="\b(type\s+is|class\s+(is|default))\b" insensitive="true" endRegion="Block" beginRegion="Block"/>
+      <!-- Here IncludeRules: find_mid_stmnts##Fortran (Fixed Format) -->
+        <WordDetect attribute="Keyword" context="#stay" String="else" insensitive="true" endRegion="Block" beginRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bcase(\s+default)?\b" insensitive="true" endRegion="Block" beginRegion="Block"/>
+        <WordDetect attribute="Keyword" context="#stay" String="contains" insensitive="true" endRegion="Routine" beginRegion="Routine"/>
+      </context>
+
+<!-- The following two contexts match declarations -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_decls">
+        <RegExpr attribute="Data Type" context="find_paren" String="\b(class|extends|procedure|pass|codimension)\s*[(]" insensitive="true"/>
+        <WordDetect attribute="Data Type" context="#stay" String="codimension" insensitive="true"/>
+        <WordDetect attribute="Data Type" context="#stay" String="procedure" insensitive="true"/>
+        <WordDetect attribute="Data Type" context="#stay" String="pass" insensitive="true"/>
+      <!-- find_decls##Fortran (Fixed Format) -->
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <!--<RegExpr attribute="Data Type" context="find_paren" String="real\s*[(]" firstNonSpace="true" insensitive="true"/>-->
+        <RegExpr attribute="Data Type" context="find_paren" String="\b(type|integer|real|complex|character|logical|intent|dimension)\s*[(]" insensitive="true"/>
+        <IncludeRules context="find_decls##Fortran (Fixed Format)"/>
+      </context>
+<!-- This context matches parenthesis in data type declarations, such as in 'real(...)'-->
+      <context attribute="Data Type" lineEndContext="#pop" name="find_paren">
+      <!-- find_paren##Fortran (Fixed Format) -->
+        <DetectChar attribute="Data Type" context="find_paren" char="("/>
+        <DetectChar attribute="Data Type" context="find_paren" char="["/>
+        <DetectChar attribute="Data Type" context="#pop" char=")"/>
+        <DetectChar attribute="Data Type" context="#pop" char="]"/>
+      </context>
+
+<!-- The following context matches intrinsic procedures -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_intrinsics">
+      <!-- find_intrinsics##Fortran (Fixed Format) -->
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+      <!-- INTRINSIC PROCEDURES -->
+        <keyword attribute="Elemental Procedure"       context="#stay" String="elemental_procs"/>
+        <keyword attribute="Inquiry Function"          context="#stay" String="inquiry_fn"/>
+        <keyword attribute="Transformational Function" context="#stay" String="transform_fn"/>
+        <keyword attribute="Non elemental subroutine"  context="#stay" String="non_elem_subr"/>
+      </context>
+
+<!-- The following four contexts implement the complex string multi-line declarations -->
+<!-- NOTE: Contexts replicated from "Fortran (Fixed Format)" -->
+      <!-- Matches STRINGS (there are 2 types of strings: '...' and "...") -->
+      <context attribute="String" lineEndContext="#stay" name="find_strings">
+        <DetectChar attribute="String" context="string_1" char="&apos;"/>
+        <DetectChar attribute="String" context="string_2" char="&quot;"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="string_1" fallthrough="true" fallthroughContext="#pop">
+        <RegExpr attribute="String" context="#pop" String="[^&apos;]*&apos;"/>
+        <RegExpr attribute="Keyword" context="end_of_string" String="&amp;\s*$"/>
+        <RegExpr attribute="String" context="end_of_string" String=".*(?=&amp;\s*$)"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="string_2" fallthrough="true" fallthroughContext="#pop">
+        <RegExpr attribute="String" context="#pop" String="[^&quot;]*&quot;"/>
+        <RegExpr attribute="Keyword" context="end_of_string" String="&amp;\s*$"/>
+        <RegExpr attribute="String" context="end_of_string" String=".*(?=&amp;\s*$)"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="end_of_string" fallthrough="true" fallthroughContext="#pop#pop">
+        <DetectSpaces />
+        <RegExpr attribute="Keyword" context="#stay" String="&amp;\s*$"/>
+        <DetectChar attribute="Keyword" context="#pop" char="&amp;" firstNonSpace="true"/>
+        <DetectChar attribute="Comment" context="comment" char="!" firstNonSpace="true"/>
+      </context>
+    </contexts>
+
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+<!-- *             S T Y L E   I T E M   D E F I N I T I O N S           *  -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="IO Function" defStyleNum="dsFunction" bold="0" italic="0"/>
+      <itemData name="Elemental Procedure" defStyleNum="dsBuiltIn" bold="1" italic="0"/>
+      <itemData name="Inquiry Function" defStyleNum="dsFunction" bold="1" italic="1"/>
+      <itemData name="Transformational Function" defStyleNum="dsFunction" bold="1" italic="0"/>
+      <itemData name="Non elemental subroutine" defStyleNum="dsFunction" bold="1" italic="0"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="!"/>
+    </comments>
+    <keywords casesensitive="0"/>
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

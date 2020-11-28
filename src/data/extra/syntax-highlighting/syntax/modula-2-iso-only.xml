@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Modula-2 (ISO only)" mimetype="text/x-modula2" version="1"
+  kateversion="2.2" section="Sources" priority="3" extensions="*.mod;*.def"
+  casesensitive="1"  author="B. Kowarsch (trijezdci@github)"  license="MIT">
+<!--
+  *****************************************************************************
+  ISO Modula-2 syntax highlighting profile for Kate
+
+  Copyright (C) 2018 Modula-2 Software Foundation
+
+  Licensed under the MIT license <https://opensource.org/licenses/MIT>
+
+  This profile covers ISO Modula-2 (ISO 10514-1) by ISO/IEC/TC1/SC22/WG13.
+
+  Since standard specifications from ISO are not available publicly free
+  of charge and the fees to obtain copies is quite high, references to a
+  summary by Excelsior LLC are given in this profile.
+
+  A list of ISO Modula-2 keywords can be found at:
+
+  https://www.excelsior-usa.com/doc/xds/isom202.html#5
+
+  In ISO Modula-2 terminology there are two kinds of built-in identifiers:
+  (1) predefined identifiers, also called pervasive identifiers or simply
+  pervasives, and (2) identifiers that are provided by a built-in module,
+  called SYSTEM.  There is no terminology for the latter group.
+
+  A list of pervasives can be found at:
+
+  https://www.excelsior-usa.com/doc/xds/isom203.html#194
+
+  Identifiers provided by built-in module SYSTEM are given at:
+
+  https://www.excelsior-usa.com/doc/xds/isom204.html#306
+
+  Procedures ALLOCATE and DEALLOCATE to which macros NEW and DISPOSE resolve
+  are given under the subsections for procedures NEW and DISPOSE. Although
+  the implementations of ALLOCATE and DEALLOCATE are library supplied, their
+  identifiers are hardcoded into the language.  For the purpose of syntax
+  highlighting, they should therefore  be treated as built-in identifiers.
+  Identifiers exported by built-in module SYSTEM are given in PIM4, page 121.
+
+  In ISO Modula-2 terminology, there are two kinds of procedures: those that
+  return a result in their own name, and those that do not.  When necessary to
+  differentiate between them, the former are called function procedures and
+  the latter proper procedures.  For this reason, both function and procedure
+  identifiers are listed together under "procedures" in this profile.
+
+  Some ISO Modula-2 compilers implemented additional built-in types, most
+  notably LONGCARD, LONGINT, SHORTCARD and SHORTINT.  However, these types are
+  not part of the ISO Modula-2 language definition and consequently they are
+  not recognised as built-in identifiers in this profile.
+  *****************************************************************************
+-->
+  <highlighting>
+    <list name="workaround">
+      <!-- BUG: Kate ignores first entry in context 'Normal' -->
+      <!-- WORKAROUND: Use the name of this dummy list as first entry -->
+      <item>???</item> <!-- use '???' in source to test/verify this bug -->
+    </list>
+
+    <!-- KeyWords -->
+    <list name="keywords">
+      <item>AND</item>
+      <item>ARRAY</item>
+      <item>BEGIN</item>
+      <item>BY</item>
+      <item>CASE</item>
+      <item>CONST</item>
+      <item>DEFINITION</item>
+      <item>DIV</item>
+      <item>DO</item>
+      <item>ELSE</item>
+      <item>ELSIF</item>
+      <item>END</item>
+      <item>EXIT</item>
+      <item>EXCEPT</item>
+      <item>EXPORT</item>
+      <item>FINALLY</item>
+      <item>FOR</item>
+      <item>FORWARD</item>
+      <item>FROM</item>
+      <item>IF</item>
+      <item>IMPLEMENTATION</item>
+      <item>IMPORT</item>
+      <item>IN</item>
+      <item>LOOP</item>
+      <item>MOD</item>
+      <item>MODULE</item>
+      <item>NOT</item>
+      <item>OF</item>
+      <item>OR</item>
+      <item>PACKEDSET</item>
+      <item>POINTER</item>
+      <item>PROCEDURE</item>
+      <item>QUALIFIED</item>
+      <item>RECORD</item>
+      <item>REM</item>
+      <item>REPEAT</item>
+      <item>RETRY</item>
+      <item>RETURN</item>
+      <item>SET</item>
+      <item>THEN</item>
+      <item>TO</item>
+      <item>TYPE</item>
+      <item>UNTIL</item>
+      <item>VAR</item>
+      <item>WHILE</item>
+      <item>WITH</item>
+    </list>
+
+    <!-- Built-in Constant Identifiers -->
+    <list name="constants">
+      <item>FALSE</item>
+      <item>INTERRUPTIBLE</item>
+      <item>NIL</item>
+      <item>TRUE</item>
+      <item>UNINTERRUPTIBLE</item>
+    </list>
+
+    <!-- Built-in Type Identifiers -->
+    <list name="types">
+      <!-- Pervasives -->
+      <item>BOOLEAN</item>
+      <item>BITSET</item>
+      <item>CARDINAL</item>
+      <item>COMPLEX</item>
+      <item>CHAR</item>
+      <item>INTEGER</item>
+      <item>LONGCOMPLEX</item>
+      <item>LONGREAL</item>
+      <item>PROC</item>
+      <item>PROTECTION</item>
+      <item>REAL</item>
+    </list>
+
+    <!-- Built-in Procedure Identifiers -->
+    <list name="procedures">
+      <!-- Pervasives -->
+      <item>ABS</item>
+      <item>CAP</item>
+      <item>CHR</item>
+      <item>CMPLX</item>
+      <item>DEC</item>
+      <item>EXCL</item>
+      <item>FLOAT</item>
+      <item>HALT</item>
+      <item>HIGH</item>
+      <item>IM</item>
+      <item>INC</item>
+      <item>INCL</item>
+      <item>INT</item>
+      <item>LENGTH</item>
+      <item>LFLOAT</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>ODD</item>
+      <item>ORD</item>
+      <item>RE</item>
+      <item>SIZE</item>
+      <item>TRUNC</item>
+      <item>VAL</item>
+    </list>
+
+    <!-- Built-in Macros -->
+    <list name="macros">
+      <!-- NEW resolves to ALLOCATE -->
+      <item>NEW</item>
+      <item>ALLOCATE</item>
+
+      <!-- DISPOSE resolves to DEALLOCATE -->
+      <item>DISPOSE</item>
+      <item>DEALLOCATE</item>
+    </list>
+
+    <!-- Module SYSTEM -->
+    <list name="unsafe">
+      <!-- Module Identifier -->
+      <item>SYSTEM</item>
+
+      <!-- Constants -->
+      <item>BITSPERLOC</item>
+      <item>BITSPERWORD</item>
+
+      <!-- Types -->
+      <item>ADDRESS</item>
+      <item>LOC</item>
+      <item>WORD</item>
+
+      <!-- Procedures -->
+      <item>ADDADR</item>
+      <item>ADR</item>
+      <item>CAST</item>
+      <item>DIFADR</item>
+      <item>MAKEADR</item>
+      <item>ROTATE</item>
+      <item>SHIFT</item>
+      <item>SUBADR</item>
+      <item>TSIZE</item>
+    </list>
+
+    <contexts>
+      <context attribute="Plain Source" lineEndContext="#stay" name="plain">
+        <!-- BUG: first entry is ignored, leave Dummy at first position -->
+        <keyword attribute="Dummy" context="#stay" String="workaround"/>
+
+        <!-- Keyords -->
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+
+        <!-- Built-in Constant Identifiers -->
+        <keyword attribute="Const" context="#stay" String="constants"/>
+
+        <!-- Built-in Type Identifiers -->
+        <keyword attribute="Type" context="#stay" String="types"/>
+
+        <!-- Built-in Procedure Identifiers -->
+        <keyword attribute="Builtin" context="#stay" String="procedures"/>
+
+        <!-- Built-in Macro Identifiers and Translations -->
+        <keyword attribute="Builtin" context="#stay" String="macros"/>
+
+        <!-- Facilities from Built-in Module SYSTEM -->
+        <keyword attribute="Unsafe" context="#stay" String="unsafe"/>
+
+        <!-- Base-16 Integer Literals -->
+        <RegExpr attribute="Number" context="#stay" String="0[0-9A-F]*H"/>
+
+        <!-- Base-8 Integers and Character Code Literals -->
+        <RegExpr attribute="Number" context="#stay" String="[0-7]+[BC]"/>
+
+        <!-- Real Number Literals -->
+        <Float attribute="Number" context="#stay"/>
+
+        <!-- Decimal Integer Literals -->
+        <Int attribute="Number" context="#stay"/>
+
+        <!-- Start of Double-Quoted String Literal -->
+        <DetectChar attribute="String" context="DoubleQuotedString" char="&quot;" />
+
+        <!-- Start of Single-Quoted String Literal -->
+        <DetectChar attribute="String" context="SingleQuotedString" char="'" />
+
+        <!-- Start of Modula-2 Dialect Tags -->
+        <StringDetect attribute="DialectTag" context="InDialectTag" String="(*!"/>
+
+        <!-- Start of Pragma -->
+        <Detect2Chars attribute="Pragma" context="InPragma" char="&lt;" char1="*"/>
+
+        <!-- Start of Comment -->
+        <Detect2Chars attribute="Comment"
+          context="InComment" char="(" char1="*" beginRegion="FoldableComment"/>
+      </context>
+
+      <!-- End of Double-Quoted String Literal -->
+      <context attribute="String" lineEndContext="#pop" name="DoubleQuotedString">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <!-- End of Single-Quoted String Literal -->
+      <context attribute="String" lineEndContext="#pop" name="SingleQuotedString">
+        <DetectChar attribute="String" context="#pop" char="'" />
+      </context>
+
+      <!-- End of Dialet Tag -->
+      <context attribute="DialectTag" lineEndContext="#pop" name="InDialectTag">
+        <Detect2Chars attribute="DialectTag" context="#pop" char="*" char1=")"/>
+      </context>
+
+      <!-- End of Pragma -->
+      <context attribute="Pragma" lineEndContext="#stay" name="InPragma">
+        <Detect2Chars attribute="Pragma" context="#pop" char="*" char1="&gt;"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="InComment">
+        <!-- Start of nested Comment -->
+        <Detect2Chars attribute="Comment"
+        context="InComment" char="(" char1="*" beginRegion="FoldableComment"/>
+
+        <!-- End of Comment -->
+        <Detect2Chars attribute="Comment"
+        context="#pop" char="*" char1=")" endRegion="FoldableComment"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <!-- Style for Plain Source Text -->
+      <itemData name="Plain Source"
+        defStyleNum="dsNormal" bold="0" italic="0" />
+
+      <!-- Style for Reserved Words -->
+      <itemData name="Keyword"
+        defStyleNum="dsKeyword" bold="1" italic="0" />
+
+      <!-- Style for Built-in Constant Identifiers -->
+      <itemData name="Const"
+        defStyleNum="dsBuiltIn" bold="1" italic="0" />
+
+      <!-- Style for Built-in Type Identifiers -->
+      <itemData name="Type"
+        defStyleNum="dsDataType" bold="1" italic="0" />
+
+      <!-- Style for Built-in Procedure Identifiers -->
+      <itemData name="Builtin"
+        defStyleNum="dsBuiltIn" bold="1" italic="0" />
+
+      <!--  Style for Facilities from Module SYSTEM  -->
+      <itemData name="Unsafe"
+        defStyleNum="dsWarning" bold="1" italic="0"/>
+
+      <!-- Style for Number Literals -->
+      <itemData name="Number"
+        defStyleNum="dsDecVal" bold="0" italic="0" />
+
+      <!-- Style for Quoted Literals -->
+      <itemData name="String"
+        defStyleNum="dsString" bold="0" italic="0" />
+
+      <!-- Style for Dialect Tags -->
+      <itemData name="DialectTag"
+        defStyleNum="dsComment" bold="1" italic="0" />
+
+      <!-- Style for Pragmas -->
+      <itemData name="Pragma"
+        defStyleNum="dsPreprocessor" bold="1" italic="0" />
+
+      <!-- Style for Comments -->
+      <itemData name="Comment"
+        defStyleNum="dsComment" bold="0" italic="1" />
+
+      <!-- Dummy style for testing -->
+      <itemData name="Dummy" defStyleNum="dsError" />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="1" />
+    <comments>
+      <comment name="multiLine" start="(*" end="*)" />
+    </comments>
+  </general>
+</language>

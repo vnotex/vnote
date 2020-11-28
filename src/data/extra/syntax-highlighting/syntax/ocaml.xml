@@ -1,0 +1,624 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Kate syntax highlighting for Objective Caml version 4.02 in the standard and revised syntaxes, with Ocamldoc comments. -->
+
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+<!-- Regular expresion constants: -->
+<!ENTITY LOWER  "a-z\300-\326\330-\337">         <!-- Lowercase Latin-1 letters. -->
+<!ENTITY UPPER  "A-Z\340-\366\370-\377">         <!-- Uppercase Latin-1 letters. -->
+<!ENTITY LETTER "&LOWER;&UPPER;">                <!-- All Latin-1 letters. -->
+<!ENTITY LIDENT "[&LOWER;_][&LETTER;0-9_']*">    <!-- Lowercase OCaml identifiers. -->
+<!ENTITY UIDENT "`?[&UPPER;][&LETTER;0-9_']*">   <!-- Uppercase OCaml identifiers. -->
+<!ENTITY IDENT  "`?[&LETTER;][&LETTER;0-9_']*">  <!-- All OCaml identifiers. -->
+<!ENTITY ESC    "(\\[ntbr'&quot;\\]|\\[0-9]{3}|\\x[0-9A-Fa-f]{2})"> <!-- OCaml character code escapes. -->
+<!ENTITY DEC    "[0-9][0-9_]*">                                     <!-- Decimal digits with underscores. -->
+]>
+<language name="Objective Caml"
+          extensions="*.ml;*.mli"
+          mimetype="text/x-ocaml"
+          section="Sources"
+          version="6"
+          priority="10"
+          kateversion="2.4"
+          author="Glyn Webster (glynwebster@orcon.net.nz) and Vincent Hugot (vincent.hugot@gmail.com)"
+          license="LGPL" >
+
+  <highlighting>
+    <list name="qtest keywords">
+      <item>in</item>
+      <item>as</item>
+      <item>forall</item>
+    </list>
+    <list name="Keywords">
+      <item>and</item>
+      <item>as</item>
+      <item>assert</item>
+      <item>asr</item>
+      <item>begin</item>
+      <item>class</item>
+      <item>closed</item>
+      <item>constraint</item>
+      <item>do</item>
+      <item>done</item>
+      <item>downto</item>
+      <item>else</item>
+      <item>end</item>
+      <item>exception</item>
+      <item>external</item>
+      <item>false</item>
+      <item>for</item>
+      <item>fun</item>
+      <item>function</item>
+      <item>functor</item>
+      <item>if</item>
+      <item>in</item>
+      <item>include</item>
+      <item>inherit</item>
+      <item>land</item>
+      <item>lazy</item>
+      <item>let</item>
+      <item>lor</item>
+      <item>lsl</item>
+      <item>lsr</item>
+      <item>lxor</item>
+      <item>match</item>
+      <item>method</item>
+      <item>mod</item>
+      <item>module</item>
+      <item>mutable</item>
+      <item>new</item>
+      <item>nonrec</item>
+      <item>object</item>
+      <item>of</item>
+      <item>open</item>
+      <item>or</item>
+      <item>parser</item>
+      <item>private</item>
+      <item>rec</item>
+      <item>sig</item>
+      <item>struct</item>
+      <item>then</item>
+      <item>to</item>
+      <item>true</item>
+      <item>try</item>
+      <item>type</item>
+      <item>val</item>
+      <item>virtual</item>
+      <item>when</item>
+      <item>while</item>
+      <item>with</item>
+    </list>
+
+    <!-- Revised Syntax keywords are highlighted as identifiers by default. -->
+    <!-- Change their highlighting colour to match the standard keywords    -->
+    <!-- if you intend to use the Camlp4 Revised Syntax.                    -->
+    <list name="Revised Syntax Keywords">
+      <item>declare</item>
+      <item>value</item>
+      <item>where</item>
+    </list>
+
+    <list name="Pervasive Functions">
+      <item>abs</item>
+      <item>abs_float</item>
+      <item>acos</item>
+      <item>asin</item>
+      <item>at_exit</item>
+      <item>atan</item>
+      <item>atan2</item>
+      <item>bool_of_string</item>
+      <item>ceil</item>
+      <item>char_of_int</item>
+      <item>classify_float</item>
+      <item>close_in</item>
+      <item>close_in_noerr</item>
+      <item>close_out</item>
+      <item>close_out_noerr</item>
+      <item>compare</item>
+      <item>copysign</item>
+      <item>cos</item>
+      <item>cosh</item>
+      <item>decr</item>
+      <item>do_at_exit</item>
+      <item>epsilon_float</item>
+      <item>exp</item>
+      <item>expm1</item>
+      <item>float</item>
+      <item>float_of_int</item>
+      <item>float_of_string</item>
+      <item>floor</item>
+      <item>flush</item>
+      <item>flush_all</item>
+      <item>format_of_string</item>
+      <item>frexp</item>
+      <item>fst</item>
+      <item>hypot</item>
+      <item>ignore</item>
+      <item>in_channel_length</item>
+      <item>incr</item>
+      <item>infinity</item>
+      <item>input</item>
+      <item>input_binary_int</item>
+      <item>input_byte</item>
+      <item>input_char</item>
+      <item>input_line</item>
+      <item>input_value</item>
+      <item>int_of_char</item>
+      <item>int_of_float</item>
+      <item>int_of_string</item>
+      <item>ldexp</item>
+      <item>lnot</item>
+      <item>log</item>
+      <item>log10</item>
+      <item>log1p</item>
+      <item>max</item>
+      <item>max_float</item>
+      <item>max_int</item>
+      <item>min</item>
+      <item>min_float</item>
+      <item>min_int</item>
+      <item>mod_float</item>
+      <item>modf</item>
+      <item>nan</item>
+      <item>neg_infinity</item>
+      <item>not</item>
+      <item>open_in</item>
+      <item>open_in_bin</item>
+      <item>open_in_gen</item>
+      <item>open_out</item>
+      <item>open_out_bin</item>
+      <item>open_out_gen</item>
+      <item>out_channel_length</item>
+      <item>output</item>
+      <item>output_binary_int</item>
+      <item>output_byte</item>
+      <item>output_bytes</item>
+      <item>output_char</item>
+      <item>output_string</item>
+      <item>output_substring</item>
+      <item>output_value</item>
+      <item>pos_in</item>
+      <item>pos_out</item>
+      <item>pred</item>
+      <item>prerr_bytes</item>
+      <item>prerr_char</item>
+      <item>prerr_endline</item>
+      <item>prerr_float</item>
+      <item>prerr_int</item>
+      <item>prerr_newline</item>
+      <item>prerr_string</item>
+      <item>print_bytes</item>
+      <item>print_char</item>
+      <item>print_endline</item>
+      <item>print_float</item>
+      <item>print_int</item>
+      <item>print_newline</item>
+      <item>print_string</item>
+      <item>read_float</item>
+      <item>read_int</item>
+      <item>read_line</item>
+      <item>really_input</item>
+      <item>really_input_string</item>
+      <item>ref</item>
+      <item>seek_in</item>
+      <item>seek_out</item>
+      <item>set_binary_mode_in</item>
+      <item>set_binary_mode_out</item>
+      <item>sin</item>
+      <item>sinh</item>
+      <item>snd</item>
+      <item>sqrt</item>
+      <item>stderr</item>
+      <item>stdin</item>
+      <item>stdout</item>
+      <item>string_of_bool</item>
+      <item>string_of_float</item>
+      <item>string_of_format</item>
+      <item>string_of_int</item>
+      <item>succ</item>
+      <item>tan</item>
+      <item>tanh</item>
+      <item>truncate</item>
+      <item>unsafe_really_input</item>
+      <item>valid_float_lexem</item>
+    </list>
+
+    <!-- These pervasive functions control program flow,    -->
+    <!-- so some people like to highlight them as keywords: -->
+    <list name="Flow Control Functions">
+      <item>exit</item>
+      <item>failwith</item>
+      <item>invalid_arg</item>
+      <item>raise</item>
+      <item>raise_notrace</item>
+    </list>
+
+    <list name="Pervasive Types">
+      <item>array</item>
+      <item>bool</item>
+      <item>bytes</item>
+      <item>char</item>
+      <item>exn</item>
+      <item>float</item>
+      <item>format4</item>
+      <item>format6</item>
+      <item>fpclass</item>
+      <item>in_channel</item>
+      <item>int</item>
+      <item>int32</item>
+      <item>int64</item>
+      <item>lazy_t</item>
+      <item>list</item>
+      <item>nativeint</item>
+      <item>open_flag</item>
+      <item>option</item>
+      <item>out_channel</item>
+      <item>real</item>
+      <item>ref</item>
+      <item>string</item>
+      <item>unit</item>
+    </list>
+
+    <list name="Pervasive Variant Tags">
+      <item>FP_infinite</item>
+      <item>FP_nan</item>
+      <item>FP_normal</item>
+      <item>FP_subnormal</item>
+      <item>FP_zero</item>
+      <item>None</item>
+      <item>Open_append</item>
+      <item>Open_binary</item>
+      <item>Open_creat</item>
+      <item>Open_excl</item>
+      <item>Open_nonblock</item>
+      <item>Open_rdonly</item>
+      <item>Open_text</item>
+      <item>Open_trunc</item>
+      <item>Open_wronly</item>
+      <item>Some</item>
+    </list>
+
+    <list name="Pervasive Exceptions">
+      <item>Assert_failure</item>
+      <item>Division_by_zero</item>
+      <item>End_of_file</item>
+      <item>Exit</item>
+      <item>Failure</item>
+      <item>Invalid_argument</item>
+      <item>Match_failure</item>
+      <item>Not_found</item>
+      <item>Out_of_memory</item>
+      <item>Stack_overflow</item>
+      <item>Sys_blocked_io</item>
+      <item>Sys_error</item>
+      <item>Undefined_recursive_module</item>
+    </list>
+
+    <list name="Standard Library Modules">
+      <item>Arg</item>
+      <item>Array</item>
+      <item>ArrayLabels</item>
+      <item>Buffer</item>
+      <item>Bytes</item>
+      <item>Callback</item>
+      <item>Char</item>
+      <item>Complex</item>
+      <item>Digest</item>
+      <item>Ephemeron</item>
+      <item>Filename</item>
+      <item>Format</item>
+      <item>Gc</item>
+      <item>Genlex</item>
+      <item>Hashtbl</item>
+      <item>Int32</item>
+      <item>Int64</item>
+      <item>Lazy</item>
+      <item>Lexing</item>
+      <item>List</item>
+      <item>ListLabels</item>
+      <item>Map</item>
+      <item>Marshal</item>
+      <item>MoreLabels</item>
+      <item>Nativeint</item>
+      <item>Oo</item>
+      <item>Parsing</item>
+      <item>Printexc</item>
+      <item>Printf</item>
+      <item>Queue</item>
+      <item>Random</item>
+      <item>Scanf</item>
+      <item>Set</item>
+      <item>Sort</item>
+      <item>Spacetime</item>
+      <item>Stack</item>
+      <item>StdLabels</item>
+      <item>Stream</item>
+      <item>String</item>
+      <item>StringLabels</item>
+      <item>Sys</item>
+      <item>Uchar</item>
+      <item>Weak</item>
+    </list>
+
+    <contexts>
+
+      <context name="Code" lineEndContext="#stay" attribute="Operator">
+
+        <!-- ] and ]} close code samples in Ocamldoc, so -->
+        <!-- nested [ ] and { } brackets have to be allowed for: -->
+        <DetectChar char="[" context="Nested Code 1" attribute="Operator" />
+        <DetectChar char="{" context="Nested Code 2" attribute="Operator" />
+
+        <!-- Comments. -->
+        <!-- A (** begins a special comment with Ocamldoc documentation markup. -->
+        <StringDetect String="(**)"      context="#stay"    attribute="Comment" />
+        <StringDetect String="(**"       context="Ocamldoc" attribute="Comment" beginRegion="comment" />
+        <RegExpr String="\(\*\$(T|Q|R|=)"       context="qtest header" attribute="qtest body style" beginRegion="comment" />
+        <Detect2Chars char="(" char1="*" context="Comment"  attribute="Comment" beginRegion="comment" />
+
+        <!-- Interpreter directives. -->
+        <!-- (These are lines where the first symbol is a '#' followed by an identifier. -->
+        <!-- Such lines could also be part of a method call split over two lines but     -->
+        <!-- it's unlikey anyone would code like that.)                                  -->
+        <RegExpr String="#&IDENT;.*$" context="#stay" firstNonSpace="true" attribute="Directive"/>
+
+        <!-- String, character and Camlp4 "quotation" constants.              -->
+        <!-- Note: If you must modify the pattern for characters be precise:  -->
+        <!-- single quotes have several meanings in Ocaml.                    -->
+        <DetectChar char="&quot;" context="String" attribute="String" />
+        <RegExpr String="'(&ESC;|[^'])'" context="#stay" attribute="Character" />
+        <Detect2Chars char="&lt;" char1="&lt;" context="Camlp4 Quotation" attribute="Camlp4 Quotation" />
+        <RegExpr String="&lt;:&IDENT;&lt;" context="Camlp4 Quotation" attribute="Camlp4 Quotation" />
+
+        <!-- Identifiers and keywords. -->
+        <keyword String="Keywords"                 context="#stay" attribute="Keyword" />
+        <keyword String="Revised Syntax Keywords"  context="#stay" attribute="Revised Syntax Keyword" />
+        <keyword String="Flow Control Functions"      context="#stay" attribute="Flow Control Functions" />
+        <keyword String="Pervasive Functions"      context="#stay" attribute="Pervasive Functions" />
+        <keyword String="Pervasive Types"          context="#stay" attribute="Pervasive Types" />
+        <keyword String="Pervasive Exceptions"     context="#stay" attribute="Pervasive Exceptions" />
+        <keyword String="Pervasive Variant Tags"   context="#stay" attribute="Pervasive Variant Tags" />
+        <keyword String="Standard Library Modules" context="#stay" attribute="Standard Library Modules" />
+        <RegExpr String="&LIDENT;"                 context="#stay" attribute="Lowercase Identifier" />
+        <RegExpr String="&UIDENT;"                 context="#stay" attribute="Uppercase Identifier" />
+
+        <!-- Numeric constants. -->
+        <!-- Note that they may contain underscores. -->
+        <RegExpr String="-?0[xX][0-9A-Fa-f_]+" context="#stay" attribute="Hexadecimal" />
+        <RegExpr String="-?0[oO][0-7_]+" context="#stay" attribute="Octal" />
+        <RegExpr String="-?0[bB][01_]+" context="#stay" attribute="Binary" />
+        <RegExpr String="-?&DEC;(\.&DEC;([eE][-+]?&DEC;)?|[eE][-+]?&DEC;)" context="#stay" attribute="Float" />
+        <RegExpr String="-?&DEC;" context="#stay" attribute="Decimal" />
+
+        <IncludeRules context="Unmatched Closing Brackets" />
+      </context>
+
+      <context name="Nested Code 1" lineEndContext="#stay" attribute="Operator">
+        <DetectChar char="]" context="#pop" attribute="Operator" />
+        <IncludeRules context="Code" includeAttrib="true" />
+      </context>
+
+      <context name="Nested Code 2" lineEndContext="#stay" attribute="Operator">
+        <DetectChar char="}" context="#pop" attribute="Operator" />
+        <IncludeRules context="Code" includeAttrib="true" />
+      </context>
+
+      <context name="String" lineEndContext="#stay" attribute="String">
+        <DetectChar char="&quot;" context="#pop" attribute="String" />
+        <RegExpr String="&ESC;" context="#stay" attribute="Escaped Characters" />
+        <!-- A backslash at the end of a line in a string indicates  -->
+        <!-- that the string will continue on the next line:         -->
+        <RegExpr String="\\$" context="#stay" attribute="Escaped Characters" />
+      </context>
+
+      <context name="qtest header" lineEndContext="qtest" attribute="Operator">
+        <keyword String="qtest keywords"  attribute="Keyword" />
+        <DetectChar char="&amp;" context="qtest param" attribute="qtest param style" />
+        <RegExpr String="&LIDENT;" context="#stay" attribute="qtest header style"/>
+      </context>
+
+      <context name="qtest param" lineEndContext="qtest" attribute="qtest param style">
+      </context>
+
+      <context name="qtest" lineEndContext="#stay" attribute="qtest body style">
+        <Detect2Chars char="*" char1=')' context="#pop" attribute="qtest body style" endRegion="comment" />
+        <IncludeRules context="Code" includeAttrib="true" />
+      </context>
+
+      <context name="Comment" lineEndContext="#stay" attribute="Comment">
+        <Detect2Chars char="*" char1=")" context="#pop" attribute="Comment" endRegion="comment"  />
+        <!-- Support for nested comments: -->
+        <Detect2Chars char="(" char1="*" context="Comment" attribute="Comment" beginRegion="comment" />
+        <!-- Strings in Ocaml comments must be well-formed: -->
+        <DetectChar char="&quot;" context="String in Comment" attribute="String in Comment" />
+      </context>
+
+      <context name="String in Comment" lineEndContext="#stay" attribute="String in Comment">
+        <DetectChar char="&quot;" context="#pop" attribute="String in Comment" />
+        <IncludeRules context="String" />
+      </context>
+
+      <!-- Camlp4 Quotations. These are source code literals used by the Campl4 preprocessor.           -->
+      <!-- The only escapes allowed in a Camlp4 quotation are for the quotation start and stop symbols. -->
+      <context name="Camlp4 Quotation" lineEndContext="#stay" attribute="Camlp4 Quotation">
+        <Detect2Chars char="&gt;" char1="&gt;"     context="#pop"             attribute="Camlp4 Quotation" />
+        <Detect2Chars char="&lt;" char1="&lt;"     context="Camlp4 Quotation" attribute="Camlp4 Quotation" />
+        <RegExpr String="&lt;:&IDENT;&lt;"         context="Camlp4 Quotation" attribute="Camlp4 Quotation" />
+        <RegExpr String="\\(\\|&gt;&gt;|&lt;&lt;)" context="#stay"            attribute="Escaped Characters" />
+        <RegExpr String="\\&lt;:&IDENT;&lt;"       context="#stay"            attribute="Escaped Characters" />
+      </context>
+
+    <!-- Ocamldoc - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+      <context name="Ocamldoc" lineEndContext="#stay" attribute="Ocamldoc Text">
+        <Detect2Chars char="*" char1=")" context="#pop" attribute="Comment" endRegion="comment" />
+
+        <!-- A backslash escapes markup characters: -->
+        <RegExpr String="\\." context="#stay" attribute="Escaped Characters" />
+
+        <!-- Support for nested comments and strings: -->
+        <StringDetect String="(**)"      context="#stay"    attribute="Comment" />
+        <StringDetect String="(**"       context="Ocamldoc" attribute="Comment" beginRegion="comment" />
+        <Detect2Chars char="(" char1="*" context="Comment"  attribute="Comment" beginRegion="comment" />
+
+        <!-- Strings in Ocaml comments must be well-formed: -->
+        <DetectChar char="&quot;" context="String in Comment" attribute="String in Comment" />
+
+        <!-- Nested Markup: -->
+        <DetectChar   char="["                   context="Ocamldoc Code"         attribute="Ocamldoc Markup" />
+        <Detect2Chars char="{" char1="["         context="Ocamldoc Preformatted" attribute="Ocamldoc Markup" />
+        <Detect2Chars char="{" char1="%"         context="Ocamldoc LaTeX"        attribute="Ocamldoc Markup" />
+        <Detect2Chars char="{" char1="^"         context="Nested Ocamldoc"       attribute="Ocamldoc Markup" />
+        <RegExpr String="[{]v(\s|$)"             context="Ocamldoc Verbatim"     attribute="Ocamldoc Markup" />
+        <RegExpr String="[{]b(\s|$)"             context="Ocamldoc Bold"         attribute="Ocamldoc Markup" />
+        <RegExpr String="[{]i(\s|$)"             context="Ocamldoc Italic"       attribute="Ocamldoc Markup" />
+        <RegExpr String="[{]e(\s|$)"             context="Ocamldoc Emphasised"   attribute="Ocamldoc Markup" />
+        <RegExpr String="[{][0-9]+(:&IDENT;)?\s" context="Ocamldoc Heading"      attribute="Ocamldoc Markup" />
+        <RegExpr String="[{][{]:&IDENT;[}]"      context="Ocamldoc Link"         attribute="Ocamldoc Markup" />
+        <RegExpr String="[{]!([a-z]+:)?"         context="Ocamldoc References"   attribute="Ocamldoc Markup" />
+        <RegExpr String="[{]&IDENT;(\s|$)"       context="Nested Ocamldoc"       attribute="Ocamldoc Markup" />
+
+        <RegExpr String="@see\s*(&lt;[^&gt;]*&gt;|&quot;[^&quot;]*&quot;|'[^']*')" context="#stay" attribute="Ocamldoc Markup" />
+        <RegExpr String="@(param|raise)\s*" context="Ocamldoc Identifier" attribute="Ocamldoc Markup" />
+        <RegExpr String="@(author|before|deprecated|return|since|version)" context="#stay" attribute="Ocamldoc Markup" />
+        <RegExpr String="@&IDENT;" context="#stay" attribute="Ocamldoc Custom Tag" />
+
+
+
+        <!-- A dash at the start of a line is a bullet point. -->
+        <RegExpr String="^[ &#009;]*-\s" context="#stay"  attribute="Ocamldoc Markup" />
+
+        <IncludeRules context="Unmatched Closing Brackets" />
+      </context>
+
+      <context name="Ocamldoc Code" lineEndContext="#stay" attribute="Operator">
+        <DetectChar char="]" context="#pop" attribute="Ocamldoc Markup" />
+        <IncludeRules context="Code" includeAttrib="true" />
+      </context>
+
+      <context name="Ocamldoc Preformatted" lineEndContext="#stay" attribute="Operator">
+        <Detect2Chars char="]" char1="}" context="#pop" attribute="Ocamldoc Markup" />
+        <IncludeRules context="Code" includeAttrib="true" />
+      </context>
+
+      <context name="Ocamldoc Verbatim" lineEndContext="#stay" attribute="Ocamldoc Text">
+        <Detect2Chars char="v" char1="}" context="#pop" attribute="Ocamldoc Markup" />
+      </context>
+
+      <context name="Ocamldoc LaTeX" lineEndContext="#stay" attribute="Ocamldoc LaTeX">
+        <Detect2Chars char="%" char1="}" context="#pop" attribute="Ocamldoc Markup" />
+        <IncludeRules context="##LaTeX" />
+      </context>
+
+      <!-- A single qualified Ocaml identifier, perhaps preceeded by whitespace. } -->
+      <context name="Ocamldoc Identifier" lineEndContext="#stay" attribute="Mismatched Brackets">
+        <RegExpr      String="&IDENT;(\.&IDENT;)*" context="#pop" attribute="Ocamldoc Link"  />
+        <Detect2Chars char="*" char1=")"           context="#pop" attribute="Mismatched Brackets" />
+        <DetectSpaces />
+      </context>
+
+      <context name="Nested Ocamldoc" lineEndContext="#stay" attribute="Operator">
+        <DetectChar   char="}"           context="#pop" attribute="Ocamldoc Markup" />
+        <Detect2Chars char="*" char1=")" context="#pop" attribute="Mismatched Brackets" />
+        <IncludeRules context="Ocamldoc" includeAttrib="true" />
+      </context>
+
+      <context name="Ocamldoc Bold" lineEndContext="#stay" attribute="Ocamldoc Bold">
+        <IncludeRules context="Nested Ocamldoc" />
+      </context>
+
+      <context name="Ocamldoc Italic" lineEndContext="#stay" attribute="Ocamldoc Italic">
+        <IncludeRules context="Nested Ocamldoc" />
+      </context>
+
+      <context name="Ocamldoc Emphasised" lineEndContext="#stay" attribute="Ocamldoc Emphasised">
+        <IncludeRules context="Nested Ocamldoc" />
+      </context>
+
+      <context name="Ocamldoc Heading" lineEndContext="#stay" attribute="Ocamldoc Heading">
+        <IncludeRules context="Nested Ocamldoc" />
+      </context>
+
+      <context name="Ocamldoc Link" lineEndContext="#stay" attribute="Ocamldoc Link">
+        <IncludeRules context="Nested Ocamldoc" />
+      </context>
+
+      <!-- A list of qualified Ocaml identifiers, seperated by whitespace and ending with a } -->
+      <context name="Ocamldoc References" lineEndContext="#stay" attribute="Mismatched Brackets">
+        <DetectChar   char="}"                     context="#pop"  attribute="Ocamldoc Markup"  />
+        <Detect2Chars char="*" char1=")"           context="#pop"  attribute="Mismatched Brackets" />
+        <RegExpr      String="&IDENT;(\.&IDENT;)*" context="#stay" attribute="Ocamldoc Link"  />
+        <DetectSpaces                              context="#stay" attribute="Ocamldoc Markup" />
+      </context>
+
+      <!-- Unmatched closing brackets- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+      <context name="Unmatched Closing Brackets"  lineEndContext="#stay" attribute="Operator">
+        <Detect2Chars char="*" char1=")" context="#pop"  attribute="Mismatched Brackets" />
+        <Detect2Chars char="v" char1="}" context="#stay" attribute="Mismatched Brackets" />
+        <Detect2Chars char="]" char1="}" context="#stay" attribute="Mismatched Brackets" />
+        <Detect2Chars char="%" char1="}" context="#stay" attribute="Mismatched Brackets" />
+        <DetectChar   char="]"           context="#stay" attribute="Mismatched Brackets" />
+        <DetectChar   char="}"           context="#stay" attribute="Mismatched Brackets" />
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Operator"                defStyleNum="dsNormal"   />
+      <itemData name="Keyword"                 defStyleNum="dsKeyword"  />
+      <itemData name="Revised Syntax Keyword"  defStyleNum="dsNormal"   />
+      <itemData name="Lowercase Identifier"    defStyleNum="dsNormal"   />
+      <itemData name="Uppercase Identifier"    defStyleNum="dsNormal"   italic="true" />
+
+      <!-- Lowercase pervasive identifiers: -->
+      <itemData name="Flow Control Functions"   defStyleNum="dsDataType" />
+      <itemData name="Pervasive Functions"      defStyleNum="dsDataType" />
+      <itemData name="Pervasive Types"          defStyleNum="dsDataType" />
+
+      <!-- Uppercase pervasive identifiers: -->
+      <itemData name="Pervasive Exceptions"     defStyleNum="dsDataType" italic="true" />
+      <itemData name="Pervasive Variant Tags"   defStyleNum="dsDataType" italic="true" />
+      <itemData name="Standard Library Modules" defStyleNum="dsDataType" italic="true" />
+
+      <itemData name="Decimal"                 defStyleNum="dsDecVal"   />
+      <itemData name="Hexadecimal"             defStyleNum="dsBaseN"    />
+      <itemData name="Octal"                   defStyleNum="dsBaseN"    />
+      <itemData name="Binary"                  defStyleNum="dsBaseN"    />
+      <itemData name="Float"                   defStyleNum="dsFloat"    />
+
+      <itemData name="Character"               defStyleNum="dsChar"     />
+      <itemData name="String"                  defStyleNum="dsString"   />
+      <itemData name="Camlp4 Quotation"        defStyleNum="dsString"   />
+      <itemData name="Escaped Characters"      defStyleNum="dsChar"     />
+
+      <itemData name="Directive"               defStyleNum="dsOthers"   />
+
+      <itemData name="Comment"                 defStyleNum="dsComment"  />
+      <itemData name="String in Comment"       defStyleNum="dsComment"  bold="true" />
+      <itemData name="Mismatched Brackets"     defStyleNum="dsError"    />
+
+      <itemData name="Ocamldoc Markup"         defStyleNum="dsOthers"   />
+      <itemData name="Ocamldoc Text"           defStyleNum="dsComment"  italic="false" />
+      <itemData name="Ocamldoc Bold"           defStyleNum="dsComment"  italic="false" bold="true" />
+      <itemData name="Ocamldoc Italic"         defStyleNum="dsComment"  italic="true"  bold="false" />
+      <itemData name="Ocamldoc Emphasised"     defStyleNum="dsComment"  italic="true"  bold="true" />
+      <itemData name="Ocamldoc Heading"        defStyleNum="dsComment"  italic="false" bold="true" underline="true" />
+      <itemData name="Ocamldoc Link"           defStyleNum="dsComment"  italic="false" underline="true" color="#0000ff" />
+      <itemData name="Ocamldoc LaTeX"          defStyleNum="dsComment"  italic="false" />
+      <itemData name="Ocamldoc Custom Tag"     defStyleNum="dsOthers"   italic="true"  />
+
+      <itemData name="qtest header style"     defStyleNum="dsNormal"  backgroundColor="#FFEBE0" />
+      <itemData name="qtest param style"      defStyleNum="dsNormal"  italic="true" color="#7788FF" />
+      <!-- backgroundColor="#EEEEFF" -->
+      <itemData name="qtest body style"       defStyleNum="dsNormal"  bold="true" backgroundColor="#D6FFEB" />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="true" />
+    <comments>
+      <comment name="multiLine" start="(*" end="*)" region ="comment" />
+    </comments>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"[
+  <!ENTITY charsdelim "_;.&#34;(){}@">
+  <!ENTITY wordsep "(?=([&charsdelim;]|\s|$))">
+]>
+<language name="Agda" version="5" kateversion="5.0" section="Sources" extensions="*.agda" mimetype="text/x-agda" author="Matthias C. M. Troffaes" license="LGPL">
+  <highlighting>
+    <list name="reserved keywords">
+      <item>abstract</item>
+      <item>codata</item>
+      <item>coinductive</item>
+      <item>constructor</item>
+      <item>data</item>
+      <item>field</item>
+      <item>forall</item>
+      <item>hiding</item>
+      <item>import</item>
+      <item>in</item>
+      <item>inductive</item>
+      <item>infix</item>
+      <item>infixl</item>
+      <item>infixr</item>
+      <item>let</item>
+      <item>open</item>
+      <item>pattern</item>
+      <item>postulate</item>
+      <item>primitive</item>
+      <item>private</item>
+      <item>public</item>
+      <item>module</item>
+      <item>mutual</item>
+      <item>quote</item>
+      <item>quoteGoal</item>
+      <item>quoteTerm</item>
+      <item>record</item>
+      <item>renaming</item>
+      <item>rewrite</item>
+      <item>syntax</item>
+      <item>to</item>
+      <item>unquote</item>
+      <item>using</item>
+      <item>where</item>
+      <item>with</item>
+    </list>
+    <contexts>
+      <context attribute="Normal" lineEndContext="#stay" name="code">
+        <RegExpr attribute="Pragma"  context="#stay" String="\{-#.*#-\}" />
+        <keyword attribute="Keyword" context="#stay" String="reserved keywords" />
+        <RegExpr attribute="Type"    context="#stay" String="(Prop|Set[₀-₉]+|Set[0-9]*)&wordsep;" />
+        <RegExpr attribute="Special" context="#stay" String="(-&gt;|→|∀|λ|:|=|\|)&wordsep;" />
+        <RegExpr attribute="Float"   context="#stay" String="\d+\.\d+&wordsep;" />
+        <RegExpr attribute="Decimal" context="#stay" String="[0-9]+&wordsep;" />
+        <DetectChar attribute="Char"   context="char"   char="'" />
+        <DetectChar attribute="String" context="string" char="&quot;" />
+        <Detect2Chars attribute="Comment" context="comment"  char="-"  char1="-" />
+        <Detect2Chars attribute="Comment" context="comments" char="{" char1="-" />
+        <Detect2Chars attribute="Hole"    context="hole"     char="{" char1="!" />
+        <!-- delimiters which cannot be part of an identifier, or
+             backslash which starts a lambda expression -->
+        <AnyChar      attribute="Special" context="#stay" String="&charsdelim;\\" />
+        <!-- any other identifier (can contain backslash and single
+             quote anywhere except at start, but these two special
+             cases are already taken care off above) -->
+        <RegExpr attribute="Normal" context="#stay" String="[^&charsdelim;\s]+" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="comment" />
+      <context attribute="Comment" lineEndContext="#stay" name="comments">
+        <Detect2Chars attribute="Comment" context="comments" char="{" char1="-" /> <!-- for nested comments -->
+        <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" />
+      </context>
+      <context attribute="Hole" lineEndContext="#stay" name="hole">
+        <Detect2Chars attribute="Hole" context="#pop" char="!" char1="}" />
+      </context>
+      <context attribute="Char" lineEndContext="#pop" name="char">
+        <Detect2Chars attribute="Char" context="#stay" char="\" char1="'" />
+        <DetectChar   attribute="Char" context="#pop"  char="'" />
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="string">
+        <Detect2Chars attribute="String" context="#stay" char="\" char1="&quot;" />
+        <DetectChar   attribute="String" context="#pop"  char="&quot;" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal"   defStyleNum="dsNormal"   spellChecking="false" />
+      <itemData name="Comment"  defStyleNum="dsComment" />
+      <itemData name="Pragma"   defStyleNum="dsPreprocessor" spellChecking="false" />
+      <itemData name="Hole"     defStyleNum="dsOthers"   spellChecking="false" />
+      <itemData name="Keyword"  defStyleNum="dsKeyword"  spellChecking="false" />
+      <itemData name="Type"     defStyleNum="dsDataType" spellChecking="false" />
+      <itemData name="Special"  defStyleNum="dsOthers"   spellChecking="false" />
+      <itemData name="Decimal"  defStyleNum="dsDecVal"   spellChecking="false" />
+      <itemData name="Float"    defStyleNum="dsFloat"    spellChecking="false" />
+      <itemData name="Char"     defStyleNum="dsChar"     spellChecking="false" />
+      <itemData name="String"   defStyleNum="dsString" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <folding indentationsensitive="1"/>
+    <comments>
+      <comment name="singleLine" start="--" />
+      <comment name="multiLine" start="{-" end="-}" />
+    </comments>
+    <keywords casesensitive="1"
+              weakDeliminator=":!+,-&lt;=&gt;%&amp;*/?[]^|~\\"
+              additionalDeliminator="&charsdelim;" />
+  </general>
+</language>

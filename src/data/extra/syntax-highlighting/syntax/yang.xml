@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="YANG" version="1" kateversion="3.4" section="Markup" extensions="*.yang" author="Nicolás Alvarez (based on yang.vim by Matt Parker)" license="LGPLv2.1+">
+  <highlighting>
+    <list name="Types">
+      <item>decimal64</item>
+      <item>int8</item>
+      <item>int16</item>
+      <item>int32</item>
+      <item>int64</item>
+      <item>uint8</item>
+      <item>uint16</item>
+      <item>uint32</item>
+      <item>uint64</item>
+      <item>string</item>
+      <item>boolean</item>
+      <item>enumeration</item>
+      <item>bits</item>
+      <item>binary</item>
+      <item>leafref</item>
+      <item>identityref</item>
+      <item>empty</item>
+      <item>instance-identifier</item>
+    </list>
+    <list name="Statements">
+      <item>anyxml</item>
+      <item>argument</item>
+      <item>augment</item>
+      <item>base</item>
+      <item>belongs-to</item>
+      <item>bit</item>
+      <item>case</item>
+      <item>choice</item>
+      <item>config</item>
+      <item>contact</item>
+      <item>container</item>
+      <item>default</item>
+      <item>description</item>
+      <item>enum</item>
+      <item>error-app-tag</item>
+      <item>error-message</item>
+      <item>extension</item>
+      <item>deviation</item>
+      <item>deviate</item>
+      <item>feature</item>
+      <item>fraction-digits</item>
+      <item>grouping</item>
+      <item>identity</item>
+      <item>import</item>
+      <item>include</item>
+      <item>input</item>
+      <item>key</item>
+      <item>leaf</item>
+      <item>leaf-list</item>
+      <item>length</item>
+      <item>list</item>
+      <item>mandatory</item>
+      <item>max-elements</item>
+      <item>min-elements</item>
+      <item>module</item>
+      <item>must</item>
+      <item>namespace</item>
+      <item>notification</item>
+      <item>ordered-by</item>
+      <item>organization</item>
+      <item>output</item>
+      <item>path</item>
+      <item>pattern</item>
+      <item>position</item>
+      <item>prefix</item>
+      <item>presence</item>
+      <item>range</item>
+      <item>reference</item>
+      <item>refine</item>
+      <item>require-instance</item>
+      <item>revision</item>
+      <item>revision-date</item>
+      <item>rpc</item>
+      <item>status</item>
+      <item>submodule</item>
+      <item>type</item>
+      <item>typedef</item>
+      <item>unique</item>
+      <item>units</item>
+      <item>uses</item>
+      <item>value</item>
+      <item>when</item>
+      <item>yang-version</item>
+      <item>yin-element</item>
+    </list>
+    <list name="Others">
+      <item>add</item>
+      <item>current</item>
+      <item>delete</item>
+      <item>deprecated</item>
+      <item>max</item>
+      <item>min</item>
+      <item>not-supported</item>
+      <item>obsolete</item>
+      <item>replace</item>
+      <item>system</item>
+      <item>unbounded</item>
+      <item>user</item>
+    </list>
+    <list name="Booleans">
+      <item>true</item>
+      <item>false</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Block">
+        <keyword attribute="Type" context="#stay" String="Types" />
+        <keyword attribute="Statement" context="#stay" String="Statements" />
+        <keyword attribute="Other Keywords" context="#stay" String="Others" />
+        <keyword attribute="Boolean" context="#stay" String="Booleans" />
+        <WordDetect attribute="Conditional" context="#stay" String="if-feature" />
+        <Detect2Chars attribute="Comment" context="Block comment" char="/" char1="*" />
+        <Detect2Chars attribute="Comment" context="Line comment" char="/" char1="/" />
+        <DetectChar attribute="String" context="dq string" char="&quot;" />
+        <DetectChar attribute="String" context="sq string" char="'" />
+        <DetectChar context="#pop" char="{" beginRegion="Block" />
+        <DetectChar context="#pop" char="}" endRegion="Block" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Block comment">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+      </context>
+      <context attribute="Comment" name="Line comment" lineEndContext="#pop">
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="dq string" >
+        <RegExpr attribute="Escape" String="\\[nt&quot;\\]" context="#stay" />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="sq string" >
+        <DetectChar attribute="String" context="#pop" char="'" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Type" defStyleNum="dsDataType" />
+      <itemData name="Statement" defStyleNum="dsKeyword" />
+      <itemData name="Other Keywords" defStyleNum="dsFunction" />
+      <itemData name="Boolean" defStyleNum="dsVariable" />
+      <itemData name="Conditional" defStyleNum="dsKeyword" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="String" defStyleNum="dsString" />
+      <itemData name="Escape" defStyleNum="dsSpecialChar"/>
+    </itemDatas>
+  </highlighting>
+    <general>
+      <keywords weakDeliminator="-" casesensitive="1" />
+      <comments>
+        <comment name="singleLine" start="//" />
+        <comment name="multiLine" start="/*" end="*/" />
+      </comments>
+    </general>
+</language>

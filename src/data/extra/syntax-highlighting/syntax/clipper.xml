@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Clipper" version="5" kateversion="5.0" section="Sources" extensions="*.prg;*.PRG;*.ch" mimetype="text/x-clipper-src" priority="2" author="Andrey Cherepanov (sibskull@mail.ru)" license="GPL">
+  <highlighting>
+
+    <list name="keywords">
+    <!-- compiler directives and structures -->
+      <item>.and.</item>
+      <item>announce</item>
+      <item>begin</item>
+      <item>case</item>
+      <item>command</item>
+      <item>define</item>
+      <item>do</item>
+      <item>elseif</item>
+      <item>else</item>
+      <item>endcase</item>
+      <item>enddo</item>
+      <item>endif</item>
+      <item>error</item>
+      <item>exit</item>
+      <item>field</item>
+      <item>.f.</item>
+      <item>for</item>
+      <item>function</item>
+      <item>ifdef</item>
+      <item>if</item>
+      <item>include</item>
+      <item>init</item>
+      <item>inndef</item>
+      <item>local</item>
+      <item>memvar</item>
+      <item>next</item>
+      <item>nil</item>
+      <item>.not.</item>
+      <item>.or.</item>
+      <item>other</item>
+      <item>parameters</item>
+      <item>private</item>
+      <item>procedure</item>
+      <item>public</item>
+      <item>request</item>
+      <item>return</item>
+      <item>sequence</item>
+      <item>static</item>
+      <item>stdout</item>
+      <item>.t.</item>
+      <item>traslate</item>
+      <item>undef</item>
+      <item>while</item>
+      <item>xcommand</item>
+      <item>xtranslate</item>
+    </list>
+
+    <list name="commands">
+    <!-- Commands -->
+      <item>accept</item>
+      <item>all</item>
+      <item>alternate</item>
+      <item>append</item>
+      <item>ascending</item>
+      <item>average</item>
+      <item>bell</item>
+      <item>blank</item>
+      <item>box</item>
+      <item>century</item>
+      <item>clear</item>
+      <item>close</item>
+      <item>coclor</item>
+      <item>color</item>
+      <item>commit</item>
+      <item>confirm</item>
+      <item>console</item>
+      <item>continue</item>
+      <item>copy</item>
+      <item>count</item>
+      <item>create</item>
+      <item>cursor</item>
+      <item>date</item>
+      <item>decimals</item>
+      <item>default</item>
+      <item>deleted</item>
+      <item>delete</item>
+      <item>delimiters</item>
+      <item>descending</item>
+      <item>device</item>
+      <item>display</item>
+      <item>do</item>
+      <item>eject</item>
+      <item>epoch</item>
+      <item>erase</item>
+      <item>escape</item>
+      <item>eval</item>
+      <item>every</item>
+      <item>exact</item>
+      <item>extended</item>
+      <item>file</item>
+      <item>filter</item>
+      <item>fixed</item>
+      <item>form</item>
+      <item>from</item>
+      <item>get</item>
+      <item>gets</item>
+      <item>go</item>
+      <item>goto</item>
+      <item>index</item>
+      <item>input</item>
+      <item>intensity</item>
+      <item>?</item>
+      <item>??</item>
+      <item>@</item>
+      <item>join</item>
+      <item>keyboard</item>
+      <item>key</item>
+      <item>label</item>
+      <item>list</item>
+      <item>locate</item>
+      <item>margin</item>
+      <item>memory</item>
+      <item>menu</item>
+      <item>message</item>
+      <item>new</item>
+      <item>on</item>
+      <item>order</item>
+      <item>pack</item>
+      <item>path</item>
+      <item>pict</item>
+      <item>printer</item>
+      <item>prompt</item>
+      <item>quit</item>
+      <item>range</item>
+      <item>read</item>
+      <item>recall</item>
+      <item>record</item>
+      <item>reindex</item>
+      <item>relation</item>
+      <item>release</item>
+      <item>rename</item>
+      <item>replace</item>
+      <item>report</item>
+      <item>rest</item>
+      <item>restore</item>
+      <item>run</item>
+      <item>save</item>
+      <item>say</item>
+      <item>scoreboard</item>
+      <item>seek</item>
+      <item>select</item>
+      <item>set</item>
+      <item>skip</item>
+      <item>softseek</item>
+      <item>sort</item>
+      <item>structure</item>
+      <item>sum</item>
+      <item>tag</item>
+      <item>to</item>
+      <item>total</item>
+      <item>typeahead</item>
+      <item>type</item>
+      <item>unique</item>
+      <item>unlock</item>
+      <item>update</item>
+      <item>use</item>
+      <item>valid</item>
+      <item>wait</item>
+      <item>when</item>
+      <item>with</item>
+      <item>wrap</item>
+      <item>zap</item>
+    </list>
+
+    <list name="functions">
+    <!-- Functions -->
+      <item>aadd</item>
+      <item>abs</item>
+      <item>achoice</item>
+      <item>aclone</item>
+      <item>acopy</item>
+      <item>adel</item>
+      <item>aeval</item>
+      <item>afill</item>
+      <item>ains</item>
+      <item>alert</item>
+      <item>alias</item>
+      <item>alltrim</item>
+      <item>altd</item>
+      <item>array</item>
+      <item>ascan</item>
+      <item>asize</item>
+      <item>asort</item>
+      <item>atail</item>
+      <item>at</item>
+      <item>bin2i</item>
+      <item>bin2l</item>
+      <item>bin2w</item>
+      <item>bof</item>
+      <item>break</item>
+      <item>browse</item>
+      <item>cdowchr</item>
+      <item>chr</item>
+      <item>cmonth</item>
+      <item>col</item>
+      <item>colorselect</item>
+      <item>ctod</item>
+      <item>curdir</item>
+      <item>date</item>
+      <item>day</item>
+      <item>dbappend</item>
+      <item>dbclearall</item>
+      <item>dbclearfilter</item>
+      <item>dbclearindex</item>
+      <item>dbclearrelation</item>
+      <item>dbcloseall</item>
+      <item>dbclosearea</item>
+      <item>dbcommitall</item>
+      <item>dbcommit</item>
+      <item>dbcreateindex</item>
+      <item>dbcreate</item>
+      <item>dbdelete</item>
+      <item>dbedit</item>
+      <item>dbeval</item>
+      <item>dbfilter</item>
+      <item>dbf</item>
+      <item>dbgobottom</item>
+      <item>dbgoto</item>
+      <item>dbgotop</item>
+      <item>dbrecall</item>
+      <item>dbreindex</item>
+      <item>dbrelation</item>
+      <item>dbrlock</item>
+      <item>dbrlocklist</item>
+      <item>dbrselect</item>
+      <item>dbrunlock</item>
+      <item>dbseek</item>
+      <item>dbselectarea</item>
+      <item>dbsetfilter</item>
+      <item>dbsetindex</item>
+      <item>dbsetorder</item>
+      <item>dbsetrelation</item>
+      <item>dbskip</item>
+      <item>dbstruct</item>
+      <item>dbunlockall</item>
+      <item>dbunlock</item>
+      <item>dbusearea</item>
+      <item>deleted</item>
+      <item>descend</item>
+      <item>devout</item>
+      <item>devpos</item>
+      <item>directory</item>
+      <item>dispbegin</item>
+      <item>dispbox</item>
+      <item>dispcount</item>
+      <item>dispend</item>
+      <item>dispout</item>
+      <item>dispspace</item>
+      <item>doserror</item>
+      <item>dow</item>
+      <item>dtoc</item>
+      <item>dtos</item>
+      <item>empty</item>
+      <item>eof</item>
+      <item>errorblock</item>
+      <item>errorinhandler</item>
+      <item>errorlevel</item>
+      <item>eval</item>
+      <item>exp</item>
+      <item>fclose</item>
+      <item>fcount</item>
+      <item>fcreate</item>
+      <item>ferase</item>
+      <item>ferror</item>
+      <item>fieldblock</item>
+      <item>fieldget</item>
+      <item>field</item>
+      <item>fieldname</item>
+      <item>fieldpos</item>
+      <item>fieldput</item>
+      <item>fieldwblock</item>
+      <item>file</item>
+      <item>flock</item>
+      <item>fopen</item>
+      <item>found</item>
+      <item>fread</item>
+      <item>freadstr</item>
+      <item>frename</item>
+      <item>fseek</item>
+      <item>fwrite</item>
+      <item>getactive</item>
+      <item>getenv</item>
+      <item>hardcr</item>
+      <item>header</item>
+      <item>i2bin</item>
+      <item>iif</item>
+      <item>indexext</item>
+      <item>indexkey</item>
+      <item>indexord</item>
+      <item>inkey</item>
+      <item>int</item>
+      <item>isalpha</item>
+      <item>iscolor</item>
+      <item>isdigit</item>
+      <item>islower</item>
+      <item>isprinter</item>
+      <item>isupper</item>
+      <item>l2bin</item>
+      <item>lastkey</item>
+      <item>lastrec</item>
+      <item>left</item>
+      <item>len</item>
+      <item>lock</item>
+      <item>log</item>
+      <item>lower</item>
+      <item>ltrim</item>
+      <item>lupdate</item>
+      <item>maxcol</item>
+      <item>max</item>
+      <item>maxrow</item>
+      <item>memoedit</item>
+      <item>memoline</item>
+      <item>memoread</item>
+      <item>memory</item>
+      <item>memotran</item>
+      <item>memowrit</item>
+      <item>memvarblock</item>
+      <item>min</item>
+      <item>mlcount</item>
+      <item>mlctopos</item>
+      <item>mlpos</item>
+      <item>mod</item>
+      <item>month</item>
+      <item>mpostolc</item>
+      <item>neterr</item>
+      <item>netname</item>
+      <item>nextkey</item>
+      <item>nosnow</item>
+      <item>ordbagext</item>
+      <item>ordbagname</item>
+      <item>ordcreate</item>
+      <item>orddestroy</item>
+      <item>ordfor</item>
+      <item>ordkey</item>
+      <item>ordlistadd</item>
+      <item>ordlistclear</item>
+      <item>ordlistrebuild</item>
+      <item>ordname</item>
+      <item>ordnumber</item>
+      <item>ordsetfocus</item>
+      <item>os</item>
+      <item>outerr</item>
+      <item>outstd</item>
+      <item>padc</item>
+      <item>padl</item>
+      <item>padr</item>
+      <item>pcol</item>
+      <item>pcount</item>
+      <item>proclineprocname</item>
+      <item>prow</item>
+      <item>qout</item>
+      <item>qqout</item>
+      <item>rat</item>
+      <item>rddlist</item>
+      <item>rddname</item>
+      <item>rddsetdefault</item>
+      <item>readexit</item>
+      <item>readinsert</item>
+      <item>readmodal</item>
+      <item>readvar</item>
+      <item>reccount</item>
+      <item>recno</item>
+      <item>recsize</item>
+      <item>replicate</item>
+      <item>restscreen</item>
+      <item>right</item>
+      <item>rlock</item>
+      <item>round</item>
+      <item>row</item>
+      <item>rtrim</item>
+      <item>savesreen</item>
+      <item>scroll</item>
+      <item>seconds</item>
+      <item>select</item>
+      <item>setblink</item>
+      <item>setcancel</item>
+      <item>setcolor</item>
+      <item>setcursor</item>
+      <item>setkey</item>
+      <item>setmode</item>
+      <item>setpos</item>
+      <item>setprc</item>
+      <item>soundex</item>
+      <item>space</item>
+      <item>sqrt</item>
+      <item>str</item>
+      <item>strtran</item>
+      <item>stuff</item>
+      <item>substr</item>
+      <item>time</item>
+      <item>tone</item>
+      <item>transform</item>
+      <item>trim</item>
+      <item>updated</item>
+      <item>upper</item>
+      <item>used</item>
+      <item>val</item>
+      <item>valtype</item>
+      <item>version</item>
+    </list>
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <WordDetect attribute="Keyword" context="#stay" String="function" insensitive="true" beginRegion="regFunction" />
+        <WordDetect attribute="Keyword" context="#stay" column="0" String="return" insensitive="true" endRegion="regFunction" />
+	<RegExpr attribute="Keyword" context="#stay" String="\bbegin\s+sequence\b" insensitive="true" beginRegion="regSequence" />
+	<RegExpr attribute="Keyword" context="#stay" String="\bend\s+sequence\b" insensitive="true" endRegion="regSequence" />
+        <RegExpr attribute="Keyword" context="#stay" String="\bdo\s+case\b" insensitive="true" beginRegion="regDoCase" />
+    <WordDetect attribute="Keyword" context="#stay" String="endcase" insensitive="true" endRegion="regDoCase" />
+	<RegExpr attribute="Keyword" context="#stay" String="\bdo\s+while\b" insensitive="true" beginRegion="regDoWhile" />
+	<WordDetect attribute="Keyword" context="#stay" String="enddo" insensitive="true" endRegion="regDoWhile" />
+        <WordDetect attribute="Keyword" context="#stay" String="for" insensitive="true" beginRegion="regFor" />
+        <WordDetect attribute="Keyword" context="#stay" String="next" insensitive="true" endRegion="regFor" />
+        <WordDetect attribute="Keyword" context="#stay" String="if" insensitive="true" beginRegion="regIf" />
+        <WordDetect attribute="Keyword" context="#stay" String="elseif" insensitive="true" endRegion="regIf" beginRegion="regIf" />
+	<WordDetect attribute="Keyword" context="#stay" String="else" insensitive="true" endRegion="regIf" beginRegion="regIf" />
+        <WordDetect attribute="Keyword" context="#stay" String="endif" insensitive="true" endRegion="regIf" />
+	<WordDetect attribute="Keyword" context="#stay" String="switch" insensitive="true" beginRegion="regSwitch" />
+	<WordDetect attribute="Keyword" context="#stay" String="endswitch" insensitive="true" endRegion="regSwitch" />
+
+	<keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Command" context="#stay" String="commands"/>
+        <keyword attribute="Function" context="#stay" String="functions"/>
+        <HlCHex  attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="//\s*BEGIN.*$" beginRegion="regMarker"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="//\s*END.*$" endRegion="regMarker"/>
+        <Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/"/>
+	<RegExpr attribute="Comment" context="LineComment" String="^\s*\*.*$"/>
+        <Detect2Chars attribute="Comment" context="BlockComment" char="/" char1="*" beginRegion="Comment2" />
+        <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;:=&gt;[]^~"/>
+        <DetectChar attribute="Preprocessor" context="Preprocessor" char="#"/>
+        <Detect2Chars attribute="Eval Block" context="EvalBlock" char="{" char1="|"/>
+        <DetectChar attribute="String" context="String2" char="'"/>
+
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="LineComment">
+        <RegExpr attribute="Command" context="#stay" String="(FIXME|TODO|NOT(IC)?E)" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="BlockComment">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment2" />
+        <RegExpr attribute="Command" context="#stay" String="(FIXME|TODO|NOT(IC)?E)" />
+      </context>
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+        <LineContinue attribute="Preprocessor" context="#stay"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="//\s*BEGIN.*$" beginRegion="regMarker"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="//\s*END.*$" endRegion="regMarker"/>
+        <Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="BlockComment" char="/" char1="*" beginRegion="Comment2" />
+      </context>
+      <context attribute="Eval Block" lineEndContext="#stay" name="EvalBlock">
+        <LineContinue attribute="Eval Block" context="#stay"/>
+        <DetectChar attribute="Eval Block" context="#pop" char="}" />
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String2">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" 	defStyleNum="dsNormal"/>
+      <itemData name="Keyword"  	defStyleNum="dsKeyword"/>
+      <itemData name="Command"  	defStyleNum="dsDataType"/>
+      <itemData name="Function"  	defStyleNum="dsFunction"/>
+      <itemData name="String"  		defStyleNum="dsString"/>
+      <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
+      <itemData name="Comment"  	defStyleNum="dsComment"/>
+      <itemData name="Symbol"  		defStyleNum="dsNormal"/>
+      <itemData name="Preprocessor"	defStyleNum="dsPreprocessor"/>
+      <itemData name="Prep. Lib"  	defStyleNum="dsImport"/>
+      <itemData name="Eval Block"  	defStyleNum="dsOthers"/>
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="*" />
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="0" weakDeliminator="?." />
+  </general>
+</language>

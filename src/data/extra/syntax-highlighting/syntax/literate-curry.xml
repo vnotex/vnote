@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Literate Curry" version="2" kateversion="3.4"
+          section="Sources" extensions="*.lcurry" mimetype="text/x-curry"
+          author="Björn Peemöller (bjp@informatik.uni-kiel.de)" license="LGPL"
+          indenter="haskell">
+  <highlighting>
+  <contexts>
+
+    <context attribute="Text" lineEndContext="#stay" name="Text">
+      <!-- Bird Tracks -->
+      <DetectChar attribute="BirdTrack" context="Code" char="&gt;" column="0"/>
+      <DetectChar attribute="BirdTrack" context="Code" char="&lt;" column="0"/>
+      <!-- \begin{code} and \begin{spec} -->
+      <StringDetect attribute="Text" context="normals" String="&#92;begin&#123;code&#125;"/>
+      <StringDetect attribute="Text" context="normals" String="&#92;begin&#123;spec&#125;"/>
+    </context>
+
+    <context attribute="Text" lineEndContext="#pop" name="Code">
+      <RegExpr attribute="Comment" context="multiline" String="\{-[^#]" />
+      <IncludeRules context="##Curry" />
+    </context>
+
+    <context attribute="Text" lineEndContext="#stay" name="normals">
+      <StringDetect attribute="Text" context="#pop" String="&#92;end&#123;code&#125;"/>
+      <StringDetect attribute="Text" context="#pop" String="&#92;end&#123;spec&#125;"/>
+      <IncludeRules context="##Curry" />
+    </context>
+
+    <!-- Handle comments in presence of bird tracks -->
+    <context attribute="Comment" lineEndContext="lineend" name="multiline" >
+      <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" />
+    </context>
+
+    <context attribute="Text" lineEndContext="#stay" name="lineend">
+      <DetectChar attribute="BirdTrack" context="restart" char="&gt;" column="0"/>
+      <DetectChar attribute="BirdTrack" context="restart" char="&lt;" column="0"/>
+    </context>
+
+    <context attribute="Comment" lineEndContext="#pop" name="restart">
+      <Detect2Chars attribute="Comment" context="#pop#pop#pop" char="-" char1="}" />
+    </context>
+  </contexts>
+  <itemDatas>
+    <itemData name="Text"      defStyleNum="dsNormal"  spellChecking="true"  />
+    <itemData name="BirdTrack" defStyleNum="dsOthers"  spellChecking="false" />
+    <itemData name="Comment"   defStyleNum="dsComment" />
+  </itemDatas>
+  </highlighting>
+</language>

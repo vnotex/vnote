@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- See https://adblockplus.org/en/filters -->
+<language
+    name="Adblock Plus"
+    version="1"
+    kateversion="5.0"
+    section="Configuration"
+    author="Volker Krause (vkrause@kde.org)"
+    extensions=""
+    license="MIT">
+    <highlighting>
+        <list name="special-comment-list">
+            <item>Homepage</item>
+            <item>Title</item>
+            <item>Expires</item>
+            <item>Checksum</item>
+            <item>Redirect</item>
+            <item>Version</item>
+        </list>
+        <list name="filter-option-list">
+            <item>script</item>
+            <item>image</item>
+            <item>stylesheet</item>
+            <item>object</item>
+            <item>xmlhttprequest</item>
+            <item>object-subrequest</item>
+            <item>subdocument</item>
+            <item>ping</item>
+            <item>websocket</item>
+            <item>webrtc</item>
+            <item>document</item>
+            <item>elemhide</item>
+            <item>generichide</item>
+            <item>genericblock</item>
+            <item>popup</item>
+            <item>other</item>
+            <item>third-party</item>
+            <item>domain</item>
+            <item>sitekey</item>
+            <item>match-case</item>
+            <item>collapse</item>
+            <item>donottrack</item>
+        </list>
+
+        <contexts>
+            <context name="rule-context" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar char="!" column="0" context="comment-context" attribute="Comment"/>
+                <DetectChar char="[" column="0" context="header-context" attribute="Header"/>
+                <Detect2Chars char="@" char1="@" column="0" context="exception-context" attribute="Exception Rule"/>
+                <DetectChar char="$" context="option-context" attribute="Filter Option"/>
+                <Detect2Chars char="#" char1="#" context="element-hiding-context" attribute="Element Hiding Rule"/>
+                <StringDetect String="#@#" context="element-hiding-context" attribute="Element Hiding Rule"/>
+            </context>
+
+            <context name="comment-context" attribute="Comment" lineEndContext="#pop">
+                <keyword String="special-comment-list" attribute="Special Comment"/>
+            </context>
+
+            <context name="header-context" attribute="Header" lineEndContext="#pop"/>
+
+            <context name="exception-context" attribute="Exception Rule" lineEndContext="#pop">
+                <DetectChar char="$" context="#pop!option-context" attribute="Filter Option"/>
+            </context>
+
+            <context name="option-context" attribute="Normal Text" lineEndContext="#pop">
+                <keyword String="filter-option-list" attribute="Filter Option"/>
+            </context>
+
+            <context name="element-hiding-context" attribute="Element Hiding Rule" lineEndContext="#pop"/>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="Special Comment" defStyleNum="dsCommentVar" spellChecking="false"/>
+            <itemData name="Header" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Exception Rule" defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Filter Option" defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Element Hiding Rule" defStyleNum="dsString" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+
+    <general>
+        <keywords casesensitive="1" weakDeliminator="-" additionalDeliminator="$"/>
+    </general>
+</language>

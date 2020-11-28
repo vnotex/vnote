@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Kate syntax highlighting for the Objective Caml 'Ocamlllex' -->
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+<!-- Regular expresion constants: -->
+<!ENTITY LETTER "A-Za-z\300-\326\330-\366\370-\377">                <!-- Latin-1 letters. -->
+<!ENTITY IDENT  "`?[&LETTER;_][&LETTER;0-9_']*">                    <!-- OCaml identifiers. -->
+<!ENTITY ESC    "(\\[ntbr'&quot;\\]|\\[0-9]{3}|\\x[0-9A-Fa-f]{2})"> <!-- OCaml character code escapes. -->
+]>
+<language name="Objective Caml Ocamllex"
+          section="Sources"
+          extensions="*.mll"
+          mimetype=""
+          version="3"
+          kateversion="2.4"
+          priority="10"
+          author="Glyn Webster (glynwebster@orcon.net.nz) and Vincent Hugot (vincent.hugot@gmail.com)"
+          license="LGPL" >
+
+  <highlighting>
+
+    <list name="keywords">
+      <item>and</item>
+      <item>as</item>
+      <item>eof</item>
+      <item>let</item>
+      <item>parse</item>
+      <item>rule</item>
+      <item>shortest</item>
+    </list>
+
+    <contexts>
+      <context name="Rules" lineEndContext="#stay" attribute="Normal">
+        <Detect2Chars char="(" char1="*"      context="Comment" attribute="Comment" beginRegion="comment" />
+        <DetectChar   char="{"                context="Ocaml"   attribute="Normal"  beginRegion="code" />
+        <DetectChar   char="&quot;"           context="String"  attribute="String" />
+        <RegExpr      String="'(&ESC;|[^'])'" context="#stay"   attribute="Character" />
+        <keyword      String="keywords"       context="#stay"   attribute="Keyword" />
+        <RegExpr      String="&IDENT;"        context="#stay"   attribute="Identifier" />
+        <DetectChar   char="}"                context="#stay"   attribute="Mismatched Brackets" />
+        <Detect2Chars char="*" char1=")"      context="#stay"   attribute="Mismatched Brackets" />
+      </context>
+
+      <context name="Comment" lineEndContext="#stay" attribute="Comment">
+        <Detect2Chars char="*" char1=")" context="#pop"    attribute="Comment" endRegion="comment" />
+        <Detect2Chars char="(" char1="*" context="Comment" attribute="Comment" beginRegion="comment" />
+        <DetectChar   char="&quot;"      context="String"  attribute="String" />
+      </context>
+
+      <context name="Ocaml" lineEndContext="#stay" attribute="Normal">
+        <DetectChar char="}" context="#pop" attribute="Normal" endRegion="code" />
+        <IncludeRules context="##Objective Caml" includeAttrib="true" />
+      </context>
+
+      <context name="String" lineEndContext="#stay" attribute="String">
+        <DetectChar char="&quot;"  context="#pop"  attribute="String" />
+        <RegExpr    String="&ESC;" context="#stay" attribute="Escaped Characters" />
+        <RegExpr    String="\\$"   context="#stay" attribute="Escaped Characters" />
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal"                  defStyleNum="dsOthers"    />
+      <itemData name="Identifier"              defStyleNum="dsNormal"   />
+      <itemData name="Keyword"                 defStyleNum="dsOthers" bold="true" />
+      <itemData name="Character"               defStyleNum="dsChar"     />
+      <itemData name="String"                  defStyleNum="dsString"   />
+      <itemData name="Escaped Characters"      defStyleNum="dsChar"     />
+      <itemData name="Comment"                 defStyleNum="dsComment"  />
+      <itemData name="Mismatched Brackets"     defStyleNum="dsError"    />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="true" />
+    <comments>
+      <comment name="multiLine" start="(*" end="*)" />
+    </comments>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

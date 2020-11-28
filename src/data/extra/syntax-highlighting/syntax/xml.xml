@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!-- names must start with a letter, ideogram or underscore. \w matches any
+		 word character *or* a number, hence the lookahead -->
+	<!ENTITY name    "(?![0-9])[\w_:][\w.:_-]*">
+	<!ENTITY entref  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
+]>
+<language name="XML" version="9" kateversion="3.4" section="Markup" extensions="*.docbook;*.xml;*.rc;*.daml;*.rdf;*.rss;*.xspf;*.xsd;*.svg;*.ui;*.kcfg;*.qrc;*.wsdl;*.scxml;*.xbel;*.dae;*.sch;*.brd" mimetype="text/xml;text/book;text/daml;text/rdf;application/rss+xml;application/xspf+xml;image/svg+xml;application/x-designer;application/x-xbel;application/xml;application/scxml+xml" casesensitive="1" indenter="xml" author="Wilbert Berendsen (wilbert@kde.nl)" license="LGPL">
+
+<highlighting>
+<contexts>
+  <context name="Start" attribute="Normal Text" lineEndContext="#stay">
+    <IncludeRules context="FindXML" />
+  </context>
+
+  <context name="FindXML" attribute="Normal Text" lineEndContext="#stay">
+    <DetectSpaces />
+    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+    <StringDetect attribute="CDATA" context="CDATA" String="&lt;![CDATA[" beginRegion="cdata" />
+    <RegExpr attribute="Doctype" context="Doctype" String="&lt;!DOCTYPE\s+" beginRegion="doctype" />
+    <RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:_-]*" beginRegion="pi" />
+    <RegExpr attribute="Element" context="Element" String="&lt;&name;" beginRegion="element" />
+    <IncludeRules context="FindEntityRefs" />
+    <DetectIdentifier />
+  </context>
+
+  <context name="FindEntityRefs" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+    <AnyChar attribute="Error" context="#stay" String="&amp;&lt;" />
+  </context>
+
+  <context name="FindPEntityRefs" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+    <RegExpr attribute="PEntityRef" context="#stay" String="%&name;;" />
+    <AnyChar attribute="Error" context="#stay" String="&amp;%" />
+  </context>
+
+
+  <context name="Comment" attribute="Comment" lineEndContext="#stay">
+    <DetectSpaces />
+    <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
+    <RegExpr attribute="Error" context="#stay" String="-(-(?!-&gt;))+" />
+    <IncludeRules context="##Alerts" />
+    <DetectIdentifier />
+  </context>
+
+  <context name="CDATA" attribute="Other Text" lineEndContext="#stay">
+    <DetectSpaces />
+    <DetectIdentifier />
+    <StringDetect attribute="CDATA" context="#pop" String="]]&gt;" endRegion="cdata" />
+    <StringDetect attribute="EntityRef" context="#stay" String="]]&amp;gt;" />
+  </context>
+
+  <context name="PI" attribute="Other Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Processing Instruction" context="#pop" char="?" char1="&gt;" endRegion="pi" />
+  </context>
+
+  <context name="Doctype" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="&gt;" endRegion="doctype" />
+    <DetectChar attribute="Doctype" context="Doctype Internal Subset" char="[" beginRegion="int_subset" />
+  </context>
+
+  <context name="Doctype Internal Subset" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="]" endRegion="int_subset" />
+    <RegExpr attribute="Doctype" context="Doctype Markupdecl" String="&lt;!(ELEMENT|ENTITY|ATTLIST|NOTATION)\b" />
+    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
+    <RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:_-]*" beginRegion="pi" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="Doctype Markupdecl" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Doctype" context="#pop" char="&gt;" />
+    <DetectChar attribute="Value" context="Doctype Markupdecl DQ" char="&quot;" />
+    <DetectChar attribute="Value" context="Doctype Markupdecl SQ" char="&apos;" />
+  </context>
+
+  <context name="Doctype Markupdecl DQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop" char="&quot;" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="Doctype Markupdecl SQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop" char="&apos;" />
+    <IncludeRules context="FindPEntityRefs" />
+  </context>
+
+  <context name="Element" attribute="Other Text" lineEndContext="#stay">
+    <Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="element" />
+    <DetectChar attribute="Element" context="El Content" char="&gt;" />
+    <RegExpr attribute="Attribute" context="Attribute" String="^&name;" />
+    <RegExpr attribute="Attribute" context="Attribute" String="\s+&name;" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="El Content" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="Element" context="El End" String="&lt;/&name;" />
+    <IncludeRules context="FindXML" />
+  </context>
+
+  <context name="El End" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Element" context="#pop#pop#pop" char="&gt;" endRegion="element" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="Attribute" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Attribute" context="Value" char="=" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="Value" attribute="Other Text" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="Value DQ" char="&quot;" />
+    <DetectChar attribute="Value" context="Value SQ" char="&apos;" />
+    <RegExpr attribute="Error" context="#stay" String="\S" />
+  </context>
+
+  <context name="Value DQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop#pop#pop" char="&quot;" />
+    <IncludeRules context="FindEntityRefs" />
+  </context>
+
+  <context name="Value SQ" attribute="Value" lineEndContext="#stay">
+    <DetectChar attribute="Value" context="#pop#pop#pop" char="&apos;" />
+    <IncludeRules context="FindEntityRefs" />
+  </context>
+
+</contexts>
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" />
+  <itemData name="Other Text" defStyleNum="dsNormal" />
+  <itemData name="Comment" defStyleNum="dsComment" spellChecking="false" />
+  <itemData name="CDATA" defStyleNum="dsBaseN" bold="1" spellChecking="false" />
+  <itemData name="Processing Instruction" defStyleNum="dsKeyword" spellChecking="false" />
+  <itemData name="Doctype" defStyleNum="dsDataType" bold="1" spellChecking="false" />
+  <itemData name="Element" defStyleNum="dsKeyword" spellChecking="false" />
+  <itemData name="Attribute" defStyleNum="dsOthers" spellChecking="false" />
+  <itemData name="Value" defStyleNum="dsString" spellChecking="false" />
+  <itemData name="EntityRef" defStyleNum="dsDecVal" spellChecking="false" />
+  <itemData name="PEntityRef" defStyleNum="dsDecVal" spellChecking="false" />
+  <itemData name="Error" defStyleNum="dsError" spellChecking="false" />
+</itemDatas>
+
+</highlighting>
+<general>
+  <comments>
+    <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+  </comments>
+</general>
+</language>

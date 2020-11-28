@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Cisco" version="5" kateversion="5.0" section="Configuration" extensions="*.cis" mimetype="text/cisco" author="Raphaël GRAPINET" license="LGPL">
+	<highlighting>
+		<list name = "commands">
+			<item>aaa</item>
+			<item>access-list</item>
+			<item>address</item>
+			<item>alias</item>
+			<item>arp</item>
+			<item>async-bootp</item>
+			<item>banner</item>
+			<item>boot</item>
+			<item>bridge</item>
+			<item>buffers</item>
+			<item>busy-message</item>
+			<item>call-history-mib</item>
+			<item>cdp</item>
+			<item>chat-script</item>
+			<item>class-map</item>
+			<item>clock</item>
+			<item>cns</item>
+			<item>config-register</item>
+			<item>controller</item>
+			<item>crypto</item>
+			<item>default</item>
+			<item>default-value</item>
+			<item>dialer</item>
+			<item>dialer-list</item>
+			<item>dnsix-dmdp</item>
+			<item>dnsix-nat</item>
+			<item>downward-compatible-config</item>
+			<item>enable</item>
+			<item>end</item>
+			<item>exception</item>
+			<item>exit</item>
+			<item>file</item>
+			<item>frame-relay</item>
+			<item>help</item>
+			<item>hostname</item>
+			<item>interface</item>
+			<item>ip</item>
+			<item>isdn</item>
+			<item>isdn-mib</item>
+			<item>kerberos</item>
+			<item>key</item>
+			<item>line</item>
+			<item>logging</item>
+			<item>login-string</item>
+			<item>map-class</item>
+			<item>map-list</item>
+			<item>memory-size</item>
+			<item>menu</item>
+			<item>modemcap</item>
+			<item>multilink</item>
+			<item>netbios</item>
+			<item>no</item>
+			<item>ntp</item>
+			<item>partition</item>
+			<item>policy-map</item>
+			<item>priority-list</item>
+			<item>privilege</item>
+			<item>process-max-time</item>
+			<item>prompt</item>
+			<item>queue-list</item>
+			<item>resume-string</item>
+			<item>rlogin</item>
+			<item>rmon</item>
+			<item>route-map</item>
+			<item>router</item>
+			<item>rtr</item>
+			<item>scheduler</item>
+			<item>service</item>
+			<item>snmp-server</item>
+			<item>sntp</item>
+			<item>stackmaker</item>
+			<item>state-machine</item>
+			<item>subscriber-policy</item>
+			<item>tacacs-server</item>
+			<item>template</item>
+			<item>terminal-queue</item>
+			<item>tftp-server</item>
+			<item>time-range</item>
+			<item>username</item>
+			<item>virtual-profile</item>
+			<item>virtual-template</item>
+			<item>vpdn</item>
+			<item>vpdn-group</item>
+			<item>x25</item>
+			<item>x29</item>
+		</list>
+		<list name = "parameters">
+			<item>accounting</item>
+			<item>accounting-list</item>
+			<item>accounting-threshold</item>
+			<item>accounting-transits</item>
+			<item>address-pool</item>
+			<item>as-path</item>
+			<item>audit</item>
+			<item>auth-proxy</item>
+			<item>authentication</item>
+			<item>authorization</item>
+			<item>bgp-community</item>
+			<item>bootp</item>
+			<item>cef</item>
+			<item>classless</item>
+			<item>community-list</item>
+			<item>default-gateway</item>
+			<item>default-network</item>
+			<item>dhcp</item>
+			<item>dhcp-server</item>
+			<item>domain-list</item>
+			<item>domain-lookup</item>
+			<item>domain-name</item>
+			<item>dvmrp</item>
+			<item>exec-callback</item>
+			<item>extcommunity-list</item>
+			<item>finger</item>
+			<item>flow-aggregation</item>
+			<item>flow-cache</item>
+			<item>flow-export</item>
+			<item>forward-protocol</item>
+			<item>ftp</item>
+			<item>gratuitous-arps</item>
+			<item>host</item>
+			<item>host-routing</item>
+			<item>hp-host</item>
+			<item>http</item>
+			<item>icmp</item>
+			<item>inspect</item>
+			<item>local</item>
+			<item>mrm</item>
+			<item>mroute</item>
+			<item>msdp</item>
+			<item>multicast</item>
+			<item>multicast-routing</item>
+			<item>name-server</item>
+			<item>nat</item>
+			<item>new-model</item>
+			<item>ospf</item>
+			<item>password</item>
+			<item>password-encryption</item>
+			<item>pgm</item>
+			<item>pim</item>
+			<item>port-map</item>
+			<item>prefix-list</item>
+			<item>radius</item>
+			<item>rcmd</item>
+			<item>reflexive-list</item>
+			<item>route</item>
+			<item>routing</item>
+			<item>rsvp</item>
+			<item>rtcp</item>
+			<item>sap</item>
+			<item>sdr</item>
+			<item>security</item>
+			<item>source-route</item>
+			<item>subnet-zero</item>
+			<item>tacacs</item>
+			<item>tcp</item>
+			<item>tcp-small-servers</item>
+			<item>telnet</item>
+			<item>tftp</item>
+			<item>timestamps</item>
+			<item>udp-small-servers</item>
+			<item>vrf</item>
+			<item>wccp</item>
+		</list>
+		<list name = "options">
+			<item>accounting</item>
+			<item>accounting-list</item>
+			<item>accounting-threshold</item>
+			<item>accounting-transits</item>
+			<item>address-pool</item>
+			<item>as-path</item>
+			<item>audit</item>
+			<item>auth-proxy</item>
+			<item>authentication</item>
+			<item>authorization</item>
+			<item>bgp-community</item>
+			<item>bootp</item>
+			<item>cef</item>
+			<item>classless</item>
+			<item>community-list</item>
+			<item>default-gateway</item>
+			<item>default-network</item>
+			<item>dhcp</item>
+			<item>dhcp-server</item>
+			<item>domain-list</item>
+			<item>domain-lookup</item>
+			<item>domain-name</item>
+			<item>dvmrp</item>
+			<item>exec-callback</item>
+			<item>extcommunity-list</item>
+			<item>finger</item>
+			<item>flow-aggregation</item>
+			<item>flow-cache</item>
+			<item>flow-export</item>
+			<item>forward-protocol</item>
+			<item>ftp</item>
+			<item>gratuitous-arps</item>
+			<item>host</item>
+			<item>host-routing</item>
+			<item>hp-host</item>
+			<item>http</item>
+			<item>icmp</item>
+			<item>inspect</item>
+			<item>local</item>
+			<item>mrm</item>
+			<item>mroute</item>
+			<item>msdp</item>
+			<item>multicast</item>
+			<item>multicast-routing</item>
+			<item>name-server</item>
+			<item>nat</item>
+			<item>new-model</item>
+			<item>ospf</item>
+			<item>password</item>
+			<item>password-encryption</item>
+			<item>pgm</item>
+			<item>pim</item>
+			<item>port-map</item>
+			<item>prefix-list</item>
+			<item>radius</item>
+			<item>rcmd</item>
+			<item>reflexive-list</item>
+			<item>route</item>
+			<item>routing</item>
+			<item>rsvp</item>
+			<item>rtcp</item>
+			<item>sap</item>
+			<item>sdr</item>
+			<item>security</item>
+			<item>source-route</item>
+			<item>subnet-zero</item>
+			<item>tacacs</item>
+			<item>tcp</item>
+			<item>tcp-small-servers</item>
+			<item>telnet</item>
+			<item>tftp</item>
+			<item>timestamps</item>
+			<item>udp-small-servers</item>
+			<item>vrf</item>
+			<item>wccp</item>
+		</list>
+		<contexts>
+                        <context name = "Base" attribute = "Normal Text" lineEndContext = "#stay">
+                                <WordDetect attribute="Keyword" context="#stay" String="done" insensitive="true" endRegion="dodone1"/>
+                                <WordDetect attribute="Keyword" context="#stay" String="do" insensitive="true" beginRegion="dodone1"/>
+                                <WordDetect attribute="Keyword" context="#stay" String="elif" insensitive="true" beginRegion="iffi1" endRegion="iffi1"/>
+                                <WordDetect attribute="Keyword" context="#stay" String="if" insensitive="true" beginRegion="iffi1"/>
+                                <WordDetect attribute="Keyword" context="#stay" String="fi" insensitive="true" endRegion="iffi1"/>
+                                <WordDetect attribute="Keyword" context="#stay" String="case" insensitive="true" beginRegion="case1"/>
+                                <WordDetect attribute="Keyword" context="#stay" String="esac" insensitive="true" endRegion="case1"/>
+                                <RegExpr attribute="Keyword" context="#stay" String="[^()]+\)" insensitive="true" beginRegion="subcase1" column="0"/>
+                                <Detect2Chars attribute="Keyword" context="#stay" char=";" char1=";" endRegion="subcase1"/>
+                                <DetectChar attribute="Keyword" context="#stay" char="{" beginRegion="func1"/>
+                                <DetectChar attribute="Keyword" context="#stay" char="}" endRegion="func1"/>
+
+                                <keyword String = "commands" attribute = "Command" context = "#stay"/>
+                                <keyword String = "parameters" attribute = "Parameter" context = "#stay"/>
+                                <keyword String = "options" attribute = "Keyword" context = "#stay"/>
+                                <Int attribute = "Decimal" context = "#stay"/>
+                                <RegExpr String = "\$[A-Za-z0-9_?{}!]+" attribute = "Parameter" context = "#stay"/>
+                                <RangeDetect char = "&quot;" char1 = "&quot;" attribute = "String" context = "#stay"/>
+                                <AnyChar String = "|&lt;&gt;=;" attribute = "Operator" context = "#stay"/>
+                                <DetectChar char="'" attribute = "String" context = "Single Quote"/>
+                                <DetectChar char="`" attribute = "Substitution" context = "Substitution"/>
+                                <Detect2Chars attribute = "Normal Text" context = "#stay" char = "\" char1 = "#"/>
+                                <RegExpr String= "#.*$" attribute = "Comment" context="#stay"/>
+
+                        </context>
+			<context name = "Single Quote" attribute = "String" lineEndContext="#stay">
+				<Detect2Chars char = "\" char1 = "\" attribute = "String" context = "#stay"/>
+				<Detect2Chars char = "\" char1 = "'" attribute = "String" context = "#stay"/>
+				<DetectChar char = "'" attribute = "String" context = "#pop"/>
+                        </context>
+                        <context name = "Substitution" attribute = "Substitution" lineEndContext="#stay">
+				<Detect2Chars char = "\" char1 = "\" attribute = "String" context = "#stay"/>
+				<Detect2Chars char = "\" char1 = "`" attribute = "String" context = "#stay"/>
+                                <DetectChar char = "`" attribute = "Substitution" context = "#pop"/>
+                        </context>
+                </contexts>
+                <itemDatas>
+                        <itemData name = "Normal Text" defStyleNum = "dsNormal"/>
+                        <itemData name = "Keyword" defStyleNum = "dsKeyword"/>
+                        <itemData name = "Decimal" defStyleNum = "dsDecVal"/>
+                        <itemData name = "String" defStyleNum = "dsString"/>
+                        <itemData name = "Comment" defStyleNum = "dsComment"/>
+                        <itemData name = "Substitution" defStyleNum = "dsOthers"/>
+                        <itemData name = "Parameter" defStyleNum = "dsVariable"/>
+                        <itemData name = "Operator" defStyleNum = "dsOperator"/>
+                        <itemData name = "Command" defStyleNum = "dsNormal"/>
+                </itemDatas>
+	</highlighting>
+	<general>
+		<comments>
+			<comment name="singleLine" start="!"/>
+		</comments>
+		<keywords casesensitive="0"/>
+		</general>
+</language>

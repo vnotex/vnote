@@ -1,0 +1,1191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Modula-2" mimetype="text/x-modula2" version="5"
+  kateversion="2.2" section="Sources" priority="5" extensions="*.mod;*.def"
+  casesensitive="1"  author="B. Kowarsch (trijezdci@github)"  license="MIT">
+<!--
+  *****************************************************************************
+  Multi-Dialect Modula-2 syntax highlighting profile for Kate
+
+  Copyright (C) 2018 Modula-2 Software Foundation
+
+  Licensed under the MIT license <https://opensource.org/licenses/MIT>
+
+  This file should be placed in /usr/share.org.kde.syntax-highlighting/syntax/.
+
+  1. Dialect Support
+
+  This profile covers the following Modula-2 dialects:
+
+  (1) PIM Modula-2 (Wirth, 1985)
+  (2) ISO Modula-2 (ISO 10514-1)
+  (3) Modula-2 R10 (Kowarsch & Sutcliffe, 2010)
+
+  The default context  recognises reserved words and built-in identifiers that
+  are common to all dialects and tags them accordingly for highlighting.
+
+  1.2 Dialect Disambiguation
+
+  In order to disambiguate dialects, the profile also recognises entities that
+  are indicative of a specific dialect, tags them accordingly for highlighting
+  and switches the context to the dialect of which the entity is indicative.
+
+  However, this approach does NOT prevent  mis-identification  as it is always
+  possible  that a  user or library defined identifier  matches an entity that
+  is a reserved word or built-in identifier in another dialect.
+
+  It is therefore  advisable  to place  dialect tags  into the top of Modula-2
+  source files.
+
+  1.3 Dialect Tags
+
+  A dialect tag is a specially formatted comment that specifies the dialect in
+  use.  The profile recognises the following dialect tags:
+
+  (*!m2pim*) specifies the PIM dialect
+  (*!m2iso*) specifies the ISO dialect
+  (*!m2r10*) specifies the R10 dialect
+
+  Dialect tags  may  also include a  compiler extension suffix  following  the
+  dialect identifier  and preceded by '+'  to indicate  the  use  of  compiler
+  specific language extensions.  Such suffixes are recognised but ignored.
+
+  Using a dialect tag  guarantees  that the profile identifies the source file
+  correctly.  Attention: No whitespace is permitted within a dialect tag.
+
+  These dialect tags are also  recognised  by  Emacs, Vim/vi  and the Pygments
+  source code rendering framework.  Support in other editors and frameworks is
+  being added over time.
+
+  2. Classification
+
+  2.1 Reserved Words
+
+  In Modula-2 terminology, keywords are called reserved words.  Reserved words
+  are tagged "Keyword" regardless of their kind or purpose.
+
+  2.2 Built-in Identifiers
+
+  Modula-2 distinguishes two kinds of built-in identifiers: so called standard
+  identifiers, also called  pervasive identifiers  or simply  pervasives;  and
+  identifiers  provided by a  built-in module  for  unsafe facilities,  called
+  SYSTEM in PIM and ISO Modula-2, and UNSAFE in Modula-2 R10.
+
+  Pervasive Identifiers are tagged according to their kind as follows:
+
+  (1) Constants are tagged "Const"
+  (2) Types are tagged "Type"
+  (3) Functions, procedures and macros are tagged "Builtin"
+  (4) Identifiers provided by SYSTEM/UNSAFE are tagged "Unsafe"
+
+  The tagging of the  latter group  regardless of kind or purpose  follows the
+  Modula-2 philosophy of  making the  use of  unsafe facilities  explicit  and
+  easily identifiable within the source code in order to sensitise programmers
+  and thereby discourage and minimise their use.
+
+  2.3 Numeric Literals
+
+  There  are  three kinds of  numeric  literals: whole number  literals,  real
+  number literals  and  character code literals.  Numeric literals  are tagged
+  "Number" regardless of their kind.
+
+  2.4 Quoted Literals
+
+  There are  two ways to quote  a character or string: using single quotes, or
+  using double quotes.  Quoted literals  are  tagged  "String"  regardless  of
+  their type or kind.
+
+  2.5 Comments and Pragmas
+
+  Dialect tags, although comments, are tagged "DialectTag",  any other comments
+  are tagged "Comment",  and pragmas are tagged "Pragma".
+
+  2.6 Any Other Entities
+
+  Any other entities are tagged "Plain Source".
+
+  3. Rendering Styles
+
+  By default, the above tags/attributes are assigned styles as follows:
+
+  Keyword => dsKeyword, bold
+  Const => dsBuiltin, bold
+  Type => dsDataType, bold
+  Builtin => dsBuiltin, bold
+  Unsafe => dsWarning, bold
+  Number => dsDecVal
+  String => dsString
+  DialectTag => dsComment, bold
+  Comment => dsComment, italic
+  Pragma => dsPreprocessor, bold
+  Plain Source => dsNormal
+
+  These styles can be customised in Kate via Settings->Configure Kate...
+  *****************************************************************************
+-->
+  <highlighting>
+    <list name="workaround">
+      <!-- BUG: Kate ignores first entry in first context -->
+      <!-- WORKAROUND: Use the name of this dummy list as first entry -->
+      <item>???</item> <!-- use '???' in source to test/verify this bug -->
+    </list>
+
+<!--
+  ============================================================================
+  Common Entities - Lowest Common Denominator
+  ============================================================================
+-->
+    <!-- Common Reserved Words -->
+    <list name="common-keywords">
+      <item>AND</item>
+      <item>ARRAY</item>
+      <item>BEGIN</item>
+      <item>BY</item>
+      <item>CASE</item>
+      <item>CONST</item>
+      <item>DEFINITION</item>
+      <item>DIV</item>
+      <item>DO</item>
+      <item>ELSE</item>
+      <item>ELSIF</item>
+      <item>END</item>
+      <item>EXIT</item>
+      <item>FOR</item>
+      <item>FROM</item>
+      <item>IF</item>
+      <item>IMPLEMENTATION</item>
+      <item>IMPORT</item>
+      <item>IN</item>
+      <item>LOOP</item>
+      <item>MOD</item>
+      <item>MODULE</item>
+      <item>NOT</item>
+      <item>OF</item>
+      <item>OR</item>
+      <item>POINTER</item>
+      <item>PROCEDURE</item>
+      <item>RECORD</item>
+      <item>REPEAT</item>
+      <item>RETURN</item>
+      <item>SET</item>
+      <item>THEN</item>
+      <item>TO</item>
+      <item>TYPE</item>
+      <item>UNTIL</item>
+      <item>VAR</item>
+      <item>WHILE</item>
+    </list>
+
+    <!-- Common Pervasive Constants -->
+    <list name="common-constants">
+      <item>FALSE</item>
+      <item>NIL</item>
+      <item>TRUE</item>
+    </list>
+
+    <!-- Common Pervasive Types -->
+    <list name="common-types">
+      <item>BOOLEAN</item>
+      <item>CARDINAL</item>
+      <item>CHAR</item>
+      <item>INTEGER</item>
+      <item>LONGREAL</item>
+      <item>REAL</item>
+    </list>
+
+    <!-- Common Pervasive Procedures -->
+    <list name="common-procedures">
+      <item>ABS</item>
+      <item>CHR</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>ODD</item>
+      <item>ORD</item>
+    </list>
+
+    <!-- Common Unsafe Facilities -->
+    <list name="common-unsafe">
+      <!-- Types -->
+      <item>ADDRESS</item>
+      <item>WORD</item>
+      <!-- Procedures -->
+      <item>ADR</item>
+    </list>
+
+<!--
+  ============================================================================
+  Dialect Indicative Entities
+  ============================================================================
+-->
+<!--
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  PIM Indicators - Entities indicative of PIM Modula-2
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+    <!-- There are no reswords, pervasives or builtins indicative of PIM -->
+
+    <!-- PIM-only Libraries -->
+    <list name="pim-only-libraries">
+      <item>InOut</item>
+      <item>MathLib0</item>
+    </list>
+
+<!--
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ISO Indicators - Entities indicative of ISO Modula-2
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+    <!-- ISO-only Reserved Words -->
+    <list name="iso-only-keywords">
+      <!--NB: FORWARD is not indicative of ISO,
+          PIM single-pass compilers also use it.-->
+      <item>EXCEPT</item>
+      <item>FINALLY</item>
+      <item>PACKEDSET</item>
+      <item>REM</item>
+      <item>RETRY</item>
+    </list>
+
+    <!-- ISO-only Pervasive Constants -->
+    <list name="iso-only-constants">
+      <item>INTERRUPTIBLE</item>
+      <item>UNINTERRUPTIBLE</item>
+    </list>
+
+    <!-- ISO-only Pervasive Types -->
+    <list name="iso-only-types">
+      <!--NB: COMPLEX and LONGCOMPLEX are not indicative of ISO,
+          they are also part of the R10 standard library.-->
+      <item>PROTECTION</item>
+    </list>
+
+    <!-- ISO-only Pervasive Procedures -->
+    <list name="iso-only-procedures">
+      <item>CMPLX</item>
+      <item>IM</item>
+      <item>LFLOAT</item>
+      <item>RE</item>
+    </list>
+
+    <!-- ISO-only Unsafe Facilities -->
+    <list name="iso-only-unsafe">
+      <!-- Constants -->
+      <item>BITSPERLOC</item>
+      <item>BITSPERWORD</item>
+      <!-- Types -->
+      <item>LOC</item>
+      <!-- Procedures -->
+      <item>ADDADR</item>
+      <item>DIFADR</item>
+      <item>MAKEADR</item>
+      <item>ROTATE</item>
+      <item>SHIFT</item>
+      <item>SUBADR</item>
+    </list>
+
+    <!-- ISO-only Libraries -->
+    <list name="iso-only-libraries">
+      <item>IOConsts</item>
+      <item>IOLink</item>
+      <item>IOResult</item>
+      <item>LongIO</item>
+      <item>WholeIO</item>
+      <item>RawIO</item>
+      <item>SIOResult</item>
+      <item>SLongIO</item>
+      <item>SWholeIO</item>
+      <item>SRealIO</item>
+      <item>SRawIO</item>
+      <item>ConvTypes</item>
+      <item>RealStr</item>
+      <item>WholeStr</item>
+      <item>WholeConv</item>
+    </list>
+
+<!--
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  R10 Indicators - Entities indicative of Modula-2 R10
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+    <!-- R10-only Reserved Words -->
+    <list name="r10-only-keywords">
+      <item>ALIAS</item>
+      <item>ARGLIST</item>
+      <item>BLUEPRINT</item>
+      <item>COPY</item>
+      <item>GENLIB</item>
+      <item>OPAQUE</item>
+      <item>READ</item>
+      <item>REFERENTIAL</item>
+      <item>RELEASE</item>
+      <item>RETAIN</item>
+      <item>WRITE</item>
+      <item>YIELD</item>
+    </list>
+
+    <!-- R10-only Pervasive Types -->
+    <list name="r10-only-types">
+      <!--NB: LONGCARD is not indicative of R10,
+          some PIM and ISO compilers also use it.-->
+      <item>OCTET</item>
+      <item>UNICHAR</item>
+    </list>
+
+    <!-- R10-only Pervasive Procedures -->
+    <list name="r10-only-procedures">
+      <item>APPEND</item>
+      <item>CAPACITY</item>
+      <item>COUNT</item>
+      <item>INSERT</item>
+      <item>LOG2</item>
+      <item>POW2</item>
+      <item>PRED</item>
+      <item>PTR</item>
+      <item>REMOVE</item>
+      <item>SGN</item>
+      <item>SUCC</item>
+    </list>
+
+    <!-- R10-only Pervasive Macros -->
+    <list name="r10-only-macros">
+      <item>TLIMIT</item>
+      <item>TMAX</item>
+      <item>TMIN</item>
+    </list>
+
+    <!-- R10-only Unsafe Facilities -->
+    <list name="r10-only-unsafe">
+      <!-- Module -->
+      <item>UNSAFE</item>
+      <!-- Types -->
+      <item>LONGWORD</item>
+      <item>OCTETSEQ</item>
+      <!-- Procedures -->
+      <item>BIT</item>
+      <item>BWAND</item>
+      <item>BWNOT</item>
+      <item>BWOR</item>
+      <item>SETBIT</item>
+      <item>SHL</item>
+      <item>SHR</item>
+    </list>
+
+    <!-- R10-only Libraries -->
+    <list name="r10-only-libraries">
+      <item>PervasiveIO</item>
+      <item>UnsafeIO</item>
+    </list>
+
+<!--
+  ============================================================================
+  Entities for PIM Context
+  ============================================================================
+-->
+    <!-- All PIM Reserved Words -->
+    <list name="pim-keywords">
+      <item>AND</item>
+      <item>ARRAY</item>
+      <item>BEGIN</item>
+      <item>BY</item>
+      <item>CASE</item>
+      <item>CONST</item>
+      <item>DEFINITION</item>
+      <item>DIV</item>
+      <item>DO</item>
+      <item>ELSE</item>
+      <item>ELSIF</item>
+      <item>END</item>
+      <item>EXIT</item>
+      <item>EXPORT</item>
+      <item>FOR</item>
+      <item>FROM</item>
+      <item>IF</item>
+      <item>IMPLEMENTATION</item>
+      <item>IMPORT</item>
+      <item>IN</item>
+      <item>LOOP</item>
+      <item>MOD</item>
+      <item>MODULE</item>
+      <item>NOT</item>
+      <item>OF</item>
+      <item>OR</item>
+      <item>POINTER</item>
+      <item>PROCEDURE</item>
+      <item>QUALIFIED</item>
+      <item>RECORD</item>
+      <item>REPEAT</item>
+      <item>RETURN</item>
+      <item>SET</item>
+      <item>THEN</item>
+      <item>TO</item>
+      <item>TYPE</item>
+      <item>UNTIL</item>
+      <item>VAR</item>
+      <item>WHILE</item>
+      <item>WITH</item>
+    </list>
+
+    <!-- All PIM Pervasive Constants -->
+    <list name="pim-constants">
+      <item>FALSE</item>
+      <item>NIL</item>
+      <item>TRUE</item>
+    </list>
+
+    <!-- All PIM Pervasive Types -->
+    <list name="pim-types">
+      <item>BOOLEAN</item>
+      <item>BITSET</item>
+      <item>CARDINAL</item>
+      <item>CHAR</item>
+      <item>INTEGER</item>
+      <item>LONGINT</item>
+      <item>LONGREAL</item>
+      <item>PROC</item>
+      <item>REAL</item>
+    </list>
+
+    <!-- All PIM Pervasive Procedures -->
+    <list name="pim-procedures">
+      <item>ABS</item>
+      <item>CAP</item>
+      <item>CHR</item>
+      <item>DEC</item>
+      <item>EXCL</item>
+      <item>FLOAT</item>
+      <item>HALT</item>
+      <item>HIGH</item>
+      <item>INC</item>
+      <item>INCL</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>ODD</item>
+      <item>ORD</item>
+      <item>SIZE</item>
+      <item>TRUNC</item>
+      <item>VAL</item>
+    </list>
+
+    <!-- All PIM Pervasive Macros and their translations -->
+    <list name="pim-macros">
+      <item>NEW</item>
+      <!--resolves to-->
+      <item>ALLOCATE</item>
+      <item>DISPOSE</item>
+      <!--resolves to-->
+      <item>DEALLOCATE</item>
+    </list>
+
+    <!-- All PIM Unsafe Facilities -->
+    <list name="pim-unsafe">
+      <!-- Module -->
+      <item>SYSTEM</item>
+      <!-- Types -->
+      <item>ADDRESS</item>
+      <item>PROCESS</item>
+      <item>WORD</item>
+      <!-- Procedures -->
+      <item>ADR</item>
+      <item>NEWPROCESS</item>
+      <item>TRANSFER</item>
+      <item>TSIZE</item>
+    </list>
+
+<!--
+  ============================================================================
+  Entities for ISO Context
+  ============================================================================
+-->
+    <!-- All ISO Reserved Words -->
+    <list name="iso-keywords">
+      <item>AND</item>
+      <item>ARRAY</item>
+      <item>BEGIN</item>
+      <item>BY</item>
+      <item>CASE</item>
+      <item>CONST</item>
+      <item>DEFINITION</item>
+      <item>DIV</item>
+      <item>DO</item>
+      <item>ELSE</item>
+      <item>ELSIF</item>
+      <item>END</item>
+      <item>EXIT</item>
+      <item>EXCEPT</item>
+      <item>EXPORT</item>
+      <item>FINALLY</item>
+      <item>FOR</item>
+      <item>FORWARD</item>
+      <item>FROM</item>
+      <item>IF</item>
+      <item>IMPLEMENTATION</item>
+      <item>IMPORT</item>
+      <item>IN</item>
+      <item>LOOP</item>
+      <item>MOD</item>
+      <item>MODULE</item>
+      <item>NOT</item>
+      <item>OF</item>
+      <item>OR</item>
+      <item>PACKEDSET</item>
+      <item>POINTER</item>
+      <item>PROCEDURE</item>
+      <item>QUALIFIED</item>
+      <item>RECORD</item>
+      <item>REM</item>
+      <item>REPEAT</item>
+      <item>RETRY</item>
+      <item>RETURN</item>
+      <item>SET</item>
+      <item>THEN</item>
+      <item>TO</item>
+      <item>TYPE</item>
+      <item>UNTIL</item>
+      <item>VAR</item>
+      <item>WHILE</item>
+      <item>WITH</item>
+    </list>
+
+    <!-- All ISO Pervasive Constants -->
+    <list name="iso-constants">
+      <item>FALSE</item>
+      <item>INTERRUPTIBLE</item>
+      <item>NIL</item>
+      <item>TRUE</item>
+      <item>UNINTERRUPTIBLE</item>
+    </list>
+
+    <!-- All ISO Pervasive Types -->
+    <list name="iso-types">
+      <item>BOOLEAN</item>
+      <item>BITSET</item>
+      <item>CARDINAL</item>
+      <item>COMPLEX</item>
+      <item>CHAR</item>
+      <item>INTEGER</item>
+      <item>LONGCOMPLEX</item>
+      <item>LONGREAL</item>
+      <item>PROC</item>
+      <item>PROTECTION</item>
+      <item>REAL</item>
+    </list>
+
+    <!-- All ISO Pervasive Procedures -->
+    <list name="iso-procedures">
+      <item>ABS</item>
+      <item>CAP</item>
+      <item>CHR</item>
+      <item>CMPLX</item>
+      <item>DEC</item>
+      <item>EXCL</item>
+      <item>FLOAT</item>
+      <item>HALT</item>
+      <item>HIGH</item>
+      <item>IM</item>
+      <item>INC</item>
+      <item>INCL</item>
+      <item>INT</item>
+      <item>LENGTH</item>
+      <item>LFLOAT</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>ODD</item>
+      <item>ORD</item>
+      <item>RE</item>
+      <item>SIZE</item>
+      <item>TRUNC</item>
+      <item>VAL</item>
+    </list>
+
+    <!-- All ISO Pervasive Macros and teir translations -->
+    <list name="iso-macros">
+      <item>NEW</item>
+      <!--resolves to-->
+      <item>ALLOCATE</item>
+      <item>DISPOSE</item>
+      <!--resolves to-->
+      <item>DEALLOCATE</item>
+    </list>
+
+    <!-- All ISO Unsafe Facilities -->
+    <list name="iso-unsafe">
+      <!-- Module -->
+      <item>SYSTEM</item>
+      <!-- Constants -->
+      <item>BITSPERLOC</item>
+      <item>BITSPERWORD</item>
+      <!-- Types -->
+      <item>ADDRESS</item>
+      <item>LOC</item>
+      <item>WORD</item>
+      <!-- Procedures -->
+      <item>ADDADR</item>
+      <item>ADR</item>
+      <item>CAST</item>
+      <item>DIFADR</item>
+      <item>MAKEADR</item>
+      <item>ROTATE</item>
+      <item>SHIFT</item>
+      <item>SUBADR</item>
+      <item>TSIZE</item>
+    </list>
+
+<!--
+  ============================================================================
+  Entities for R10 Context
+  ============================================================================
+-->
+    <!-- All R10 Reserved Words -->
+    <list name="r10-keywords">
+      <item>ALIAS</item>
+      <item>AND</item>
+      <item>ARGLIST</item>
+      <item>ARRAY</item>
+      <item>BEGIN</item>
+      <item>BLUEPRINT</item>
+      <item>BY</item>
+      <item>CASE</item>
+      <item>CONST</item>
+      <item>COPY</item>
+      <item>DEFINITION</item>
+      <item>DIV</item>
+      <item>DO</item>
+      <item>ELSE</item>
+      <item>ELSIF</item>
+      <item>END</item>
+      <item>EXIT</item>
+      <item>FOR</item>
+      <item>FROM</item>
+      <item>GENLIB</item>
+      <item>IF</item>
+      <item>IMPLEMENTATION</item>
+      <item>IMPORT</item>
+      <item>IN</item>
+      <item>LOOP</item>
+      <item>MOD</item>
+      <item>MODULE</item>
+      <item>NEW</item>
+      <item>NOT</item>
+      <item>OF</item>
+      <item>OPAQUE</item>
+      <item>OR</item>
+      <item>POINTER</item>
+      <item>PROCEDURE</item>
+      <item>READ</item>
+      <item>RECORD</item>
+      <item>REFERENTIAL</item>
+      <item>RELEASE</item>
+      <item>REPEAT</item>
+      <item>RETAIN</item>
+      <item>RETURN</item>
+      <item>SET</item>
+      <item>THEN</item>
+      <item>TO</item>
+      <item>TYPE</item>
+      <item>UNTIL</item>
+      <item>VAR</item>
+      <item>WHILE</item>
+      <item>WRITE</item>
+      <item>YIELD</item>
+    </list>
+
+    <!-- All R10 Pervasive Constants -->
+    <list name="r10-constants">
+      <item>FALSE</item>
+      <item>NIL</item>
+      <item>TRUE</item>
+    </list>
+
+    <!-- All R10 Pervasive Types -->
+    <list name="r10-types">
+      <item>BOOLEAN</item>
+      <item>CARDINAL</item>
+      <item>CHAR</item>
+      <item>INTEGER</item>
+      <item>LONGCARD</item>
+      <item>LONGINT</item>
+      <item>LONGREAL</item>
+      <item>OCTET</item>
+      <item>REAL</item>
+      <item>UNICHAR</item>
+    </list>
+
+    <!-- All R10 Pervasive Procedures -->
+    <list name="r10-procedures">
+      <item>ABS</item>
+      <item>APPEND</item>
+      <item>CAPACITY</item>
+      <item>CHR</item>
+      <item>COUNT</item>
+      <item>ENTIER</item>
+      <item>INSERT</item>
+      <item>LENGTH</item>
+      <item>LOG2</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>ODD</item>
+      <item>ORD</item>
+      <item>POW2</item>
+      <item>PRED</item>
+      <item>PTR</item>
+      <item>REMOVE</item>
+      <item>SGN</item>
+      <item>SUCC</item>
+    </list>
+
+    <!-- All R10 Pervasive Macros -->
+    <list name="r10-macros">
+      <item>TLIMIT</item>
+      <item>TMAX</item>
+      <item>TMIN</item>
+      <item>TSIZE</item>
+    </list>
+
+    <!-- All R10 Unsafe Facilities -->
+    <list name="r10-unsafe">
+      <!-- Reserved Words -->
+      <item>CAST</item>
+      <!-- Module -->
+      <item>UNSAFE</item>
+      <!-- Constants -->
+      <item>BitsPerAddress</item>
+      <item>BitsPerByte</item>
+      <item>BytesPerWord</item>
+      <item>BytesPerLongWord</item>
+      <!-- Types -->
+      <item>ADDRESS</item>
+      <item>BYTE</item>
+      <item>LONGWORD</item>
+      <item>OCTETSEQ</item>
+      <item>WORD</item>
+      <!-- Procedures -->
+      <item>ADD</item>
+      <item>ADR</item>
+      <item>BIT</item>
+      <item>BWAND</item>
+      <item>BWNOT</item>
+      <item>BWOR</item>
+      <item>HALT</item>
+      <item>SETBIT</item>
+      <item>SHL</item>
+      <item>SHR</item>
+      <item>SUB</item>
+      <!-- Macros -->
+      <item>NOP</item>
+    </list>
+
+    <contexts>
+<!--
+  ============================================================================
+  Common Context
+  ============================================================================
+  This context is selected by default, prior to any dialect disambiguation.
+  ============================================================================
+-->
+      <context name="Common" attribute="Plain Source" lineEndContext="#stay">
+        <!-- BUG: first entry is ignored, leave Dummy at first position -->
+        <keyword attribute="Dummy" context="#stay" String="workaround"/>
+<!--
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Dialect tags
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Occurence selects specified dialect. Compiler extension suffix is ignored.
+
+  EBNF:
+
+  dialectTag :=
+    '(*!' dialectIdent ( '+' compilerExtension )? '*)'
+    ;
+
+  dialectIdent :=
+    'm2pim' | 'm2iso' | 'm2r10'
+    ;
+
+  compilerExtension :=
+    LowerCaseLetter ( LowerCaseLetter | Digit )*
+    ;
+
+  LowerCaseLetter := 'a' .. 'z';
+
+  Digit := '0' .. '9' ;
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+        <!-- PIM Dialect Tag (*!m2pim*) -->
+        <RegExpr attribute="DialectTag" context="PIM"
+          String="\(\*\!m2pim(\+[a-z][a-z0-9]*)?\*\)"/>
+
+        <!-- ISO Dialect Tag (*!m2iso*) -->
+        <RegExpr attribute="DialectTag" context="ISO"
+          String="\(\*\!m2iso(\+[a-z][a-z0-9]*)?\*\)"/>
+
+        <!-- R10 Dialect Tag (*!m2r10*) -->
+        <RegExpr attribute="DialectTag" context="R10"
+          String="\(\*\!m2r10(\+[a-z][a-z0-9]*)?\*\)"/>
+<!--
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Entities common to all dialects, occurrence does not select any dialect
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+        <!-- Common Reserved Words -->
+        <keyword attribute="Keyword"
+          context="#stay" String="common-keywords"/>
+
+        <!-- Common Pervasive Constants -->
+        <keyword attribute="Const"
+          context="#stay" String="common-constants"/>
+
+        <!-- Common Pervasive Types -->
+        <keyword attribute="Const"
+          context="#stay" String="common-types"/>
+
+        <!-- Common Pervasive Procedures -->
+        <keyword attribute="Builtin"
+          context="#stay" String="common-procedures"/>
+
+        <!-- Common Unsafe Facilities -->
+        <keyword attribute="Unsafe"
+          context="#stay" String="common-unsafe"/>
+<!--
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Entities indicative of a dialect, occurrence selects indicated dialect
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+        <!-- Dialect Indicative Reserved Words -->
+        <keyword attribute="Keyword"
+          context="ISO" String="iso-only-keywords"/>
+        <keyword attribute="Keyword"
+          context="R10" String="r10-only-keywords"/>
+
+        <!-- Dialect Indicative Constants -->
+        <keyword attribute="Const"
+          context="ISO" String="iso-only-constants"/>
+
+         <!-- Dialect Indicative Types -->
+        <keyword attribute="Type"
+          context="ISO" String="iso-only-types"/>
+        <keyword attribute="Type"
+          context="R10" String="r10-only-types"/>
+
+        <!-- Dialect Indicative Procedures -->
+        <keyword attribute="Builtin"
+          context="ISO" String="iso-only-procedures"/>
+        <keyword attribute="Builtin"
+          context="R10" String="r10-only-procedures"/>
+
+        <!-- Dialect Indicative Macros -->
+        <keyword attribute="Builtin"
+          context="R10" String="r10-only-macros"/>
+
+        <!-- Dialect Indicative Unsafe Facilities -->
+        <keyword attribute="Unsafe" context="ISO" String="iso-only-unsafe"/>
+        <keyword attribute="Unsafe" context="R10" String="r10-only-unsafe"/>
+
+        <!-- Dialect Indicative Libraries -->
+        <keyword attribute="Plain Source"
+          context="PIM" String="pim-only-libraries"/>
+        <keyword attribute="Plain Source"
+          context="ISO" String="iso-only-libraries"/>
+        <keyword attribute="Plain Source"
+          context="R10" String="r10-only-libraries"/>
+<!--
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Literals common to all dialects, occurrence does not select any dialect
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+        <!-- Real Number Literals -->
+        <Float attribute="Number" context="#stay"/>
+
+        <!-- Decimal Whole Number Literals -->
+        <Int attribute="Number" context="#stay"/>
+
+        <!-- Double-Quoted Character and String Literals -->
+        <DetectChar attribute="String" context="DoubleQuoted" char="&quot;"/>
+
+        <!-- Single-Quoted Character and String Literals -->
+        <DetectChar attribute="String" context="SingleQuoted" char="'"/>
+
+        <!-- Opening Block Comment Delimiter -->
+        <Detect2Chars attribute="Comment" context="BlockComment"
+          char="(" char1="*" beginRegion="FoldableComment"/>
+      </context><!--Common-->
+
+<!--
+  ============================================================================
+  PIM Context
+  ============================================================================
+  This context is selected when either the PIM dialect tag (*!m2pim*) or an
+  entity indicative of the PIM dialect is found within the source file.
+  ============================================================================
+-->
+      <context name="PIM" attribute="Plain Source" lineEndContext="#stay">
+        <!-- Reserved Words -->
+        <keyword attribute="Keyword" context="#stay" String="pim-keywords"/>
+
+        <!-- Pervasive Constant Identifiers -->
+        <keyword attribute="Const" context="#stay" String="pim-constants"/>
+
+        <!-- Pervasive Type Identifiers -->
+        <keyword attribute="Type" context="#stay" String="pim-types"/>
+
+        <!-- Pervasive Procedure Identifiers -->
+        <keyword attribute="Builtin" context="#stay" String="pim-procedures"/>
+
+        <!-- Pervasive Macro Identifiers and Translations -->
+        <keyword attribute="Builtin" context="#stay" String="pim-macros"/>
+
+        <!-- Built-in Unsafe Facilities -->
+        <keyword attribute="Unsafe" context="#stay" String="pim-unsafe"/>
+
+        <!-- Base-16 Whole Number Literals -->
+        <RegExpr attribute="Number" context="#stay" String="0[0-9A-F]*H"/>
+
+        <!-- Base-8 Whole Number and Character Code Literals -->
+        <RegExpr attribute="Number" context="#stay" String="[0-7]+[BC]"/>
+
+        <!-- Real Number Literals -->
+        <Float attribute="Number" context="#stay"/>
+
+        <!-- Decimal Whole Number Literals -->
+        <Int attribute="Number" context="#stay"/>
+
+        <!-- Double-Quoted Character and String Literals -->
+        <DetectChar attribute="String" context="DoubleQuoted" char="&quot;"/>
+
+        <!-- Single-Quoted Character and String Literals -->
+        <DetectChar attribute="String" context="SingleQuoted" char="'"/>
+
+        <!-- Opening Pragma Delimiter -->
+        <StringDetect attribute="Pragma" context="PIM-Pragma" String="(*$"/>
+
+        <!-- Opening Block Comment Delimiter -->
+        <Detect2Chars attribute="Comment" context="BlockComment"
+          char="(" char1="*" beginRegion="FoldableComment"/>
+      </context><!--PIM-->
+
+<!--
+  ============================================================================
+  ISO Context
+  ============================================================================
+  This context is selected when either the ISO dialect tag (*!m2iso*) or an
+  entity indicative of the ISO dialect is found within the source file.
+  ============================================================================
+-->
+      <context name="ISO" attribute="Plain Source" lineEndContext="#stay">
+        <!-- Reserved Words -->
+        <keyword attribute="Keyword" context="#stay" String="iso-keywords"/>
+
+        <!-- Pervasive Constant Identifiers -->
+        <keyword attribute="Const" context="#stay" String="iso-constants"/>
+
+        <!-- Pervasive Type Identifiers -->
+        <keyword attribute="Type" context="#stay" String="iso-types"/>
+
+        <!-- Pervasive Procedure Identifiers -->
+        <keyword attribute="Builtin" context="#stay" String="iso-procedures"/>
+
+        <!-- Pervasive Macro Identifiers and Translations -->
+        <keyword attribute="Builtin" context="#stay" String="iso-macros"/>
+
+        <!-- Built-in Unsafe Facilities -->
+        <keyword attribute="Unsafe" context="#stay" String="iso-unsafe"/>
+
+        <!-- Base-16 Whole Number Literals -->
+        <RegExpr attribute="Number" context="#stay" String="0[0-9A-F]*H"/>
+
+        <!-- Base-8 Whole Number and Character Code Literals -->
+        <RegExpr attribute="Number" context="#stay" String="[0-7]+[BC]"/>
+
+        <!-- Real Number Literals -->
+        <Float attribute="Number" context="#stay"/>
+
+        <!-- Decimal Whole Number Literals -->
+        <Int attribute="Number" context="#stay"/>
+
+        <!-- Double-Quoted Character and String Literals -->
+        <DetectChar attribute="String" context="DoubleQuoted" char="&quot;"/>
+
+        <!-- Single-Quoted Character and String Literals -->
+        <DetectChar attribute="String" context="SingleQuoted" char="'"/>
+
+        <!-- Opening Pragma Delimiter -->
+        <Detect2Chars attribute="Pragma"
+          context="ISO-Pragma" char="&lt;" char1="*"/>
+
+        <!-- Opening Block Comment Delimiter -->
+        <Detect2Chars attribute="Comment" context="BlockComment"
+          char="(" char1="*" beginRegion="FoldableComment"/>
+      </context><!--ISO-->
+
+<!--
+  ============================================================================
+  R10 Context
+  ============================================================================
+  This context is selected when either the R10 dialect tag (*!m2r10*) or an
+  entity indicative of the R10 dialect is found within the source file.
+  ============================================================================
+-->
+      <context name="R10" attribute="Plain Source" lineEndContext="#stay">
+        <!-- Reserved Words -->
+        <keyword attribute="Keyword" context="#stay" String="r10-keywords"/>
+
+        <!-- Built-in Constant Identifiers -->
+        <keyword attribute="Const" context="#stay" String="r10-constants"/>
+
+        <!-- Built-in Type Identifiers -->
+        <keyword attribute="Type" context="#stay" String="r10-types"/>
+
+        <!-- Built-in Procedure Identifiers -->
+        <keyword attribute="Builtin" context="#stay" String="r10-procedures"/>
+
+        <!-- Built-in Macro Identifiers and Translations -->
+        <keyword attribute="Builtin" context="#stay" String="r10-macros"/>
+
+        <!-- Facilities from Built-in Module UNSAFE -->
+        <keyword attribute="Unsafe" context="#stay" String="r10-unsafe"/>
+
+        <!-- Base-2 Whole Number Literals -->
+        <RegExpr attribute="Number" context="#stay"
+          String="0b([01]+('[01]+)?)+"/>
+
+        <!-- Base-16 Whole Number and Character Code Literals -->
+        <RegExpr attribute="Number" context="#stay"
+          String="0[ux]([0-9A-F]+('[0-9A-F]+)?)+"/>
+
+        <!-- Real Number Literals -->
+        <Float attribute="Number" context="#stay"/>
+
+        <!-- Decimal Whole Number Literals -->
+        <RegExpr attribute="Number" context="#stay"
+          String="([1-9][0-9]*('[0-9]+)*)|0"/>
+
+        <!-- Double-Quoted Character and String Literals -->
+        <DetectChar attribute="String" context="DoubleQuoted" char="&quot;"/>
+
+        <!-- Single-Quoted Character and String Literals -->
+        <DetectChar attribute="String" context="SingleQuoted" char="'"/>
+
+        <!-- Opening Pragma Delimiter -->
+        <Detect2Chars attribute="Pragma"
+          context="ISO-Pragma" char="&lt;" char1="*"/>
+
+        <!-- Line Comment -->
+        <DetectChar attribute ="Comment" context="LineComment" char="!"/>
+
+        <!-- Opening Block Comment Delimiter -->
+        <Detect2Chars attribute="Comment" context="BlockComment"
+          char="(" char1="*" beginRegion="FoldableComment"/>
+      </context><!--R10-->
+
+<!--
+  ============================================================================
+  Sub-Contexts
+  ============================================================================
+  These contexts are used to process entities that are recognised by their
+  opening delimiters, such as quoted literals, pragmas and comments.
+  ============================================================================
+-->
+      <!-- Double-Quoted Literal -->
+      <context name="DoubleQuoted" attribute="String" lineEndContext="#pop">
+        <!-- Closing Delimiter -->
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <!-- Single-Quoted Literal -->
+      <context name="SingleQuoted" attribute="String" lineEndContext="#pop">
+        <!-- CLosing Delimiter -->
+        <DetectChar attribute="String" context="#pop" char="'" />
+      </context>
+
+      <!-- PIM Pragma Body -->
+      <context name="PIM-Pragma" attribute="Pragma" lineEndContext="#stay">
+        <!-- Closing Delimiter -->
+        <Detect2Chars attribute="Pragma" context="#pop" char="*" char1=")"/>
+      </context>
+
+      <!-- ISO Pragma Body -->
+      <context name="ISO-Pragma" attribute="Pragma" lineEndContext="#stay">
+        <!-- Closing Delimiter -->
+        <Detect2Chars attribute="Pragma"
+          context="#pop" char="*" char1="&gt;"/>
+      </context>
+
+      <!-- Line Comment Body -->
+      <context name="LineComment" attribute="Comment" lineEndContext="#pop">
+      </context>
+
+      <!-- Block Comment Body -->
+      <context name="BlockComment" attribute="Comment" lineEndContext="#stay">
+        <!-- Opening Delimiter of Nested Comment -->
+        <Detect2Chars attribute="Comment" context="BlockComment"
+          char="(" char1="*" beginRegion="FoldableComment"/>
+        <!-- Closing Delimiter -->
+        <Detect2Chars attribute="Comment" context="#pop"
+          char="*" char1=")" endRegion="FoldableComment"/>
+      </context>
+    </contexts>
+
+<!--
+  ============================================================================
+  Rendering Styles
+  ============================================================================
+-->
+    <itemDatas>
+      <!-- Style for Plain Source Text -->
+      <itemData name="Plain Source"
+        defStyleNum="dsNormal" bold="0" italic="0"/>
+
+      <!-- Style for Reserved Words -->
+      <itemData name="Keyword"
+        defStyleNum="dsKeyword" bold="1" italic="0"/>
+
+      <!-- Style for Pervasive Constant Identifiers -->
+      <itemData name="Const"
+        defStyleNum="dsBuiltIn" bold="1" italic="0"/>
+
+      <!-- Style for Pervasive Type Identifiers -->
+      <itemData name="Type"
+        defStyleNum="dsDataType" bold="1" italic="0"/>
+
+      <!-- Style for Pervasive Procedure Identifiers -->
+      <itemData name="Builtin"
+        defStyleNum="dsBuiltIn" bold="1" italic="0"/>
+
+      <!--  Style for Unsafe Facilities -->
+      <itemData name="Unsafe"
+        defStyleNum="dsWarning" bold="1" italic="0"/>
+
+      <!-- Style for Number Literals -->
+      <itemData name="Number"
+        defStyleNum="dsDecVal" bold="0" italic="0"/>
+
+      <!-- Style for Quoted Literals -->
+      <itemData name="String"
+        defStyleNum="dsString" bold="0" italic="0"/>
+
+      <!-- Style for Dialect Tags -->
+      <itemData name="DialectTag"
+        defStyleNum="dsComment" bold="1" italic="0"/>
+
+      <!-- Style for Pragmas -->
+      <itemData name="Pragma"
+        defStyleNum="dsPreprocessor" bold="1" italic="0"/>
+
+      <!-- Style for Comments -->
+      <itemData name="Comment"
+        defStyleNum="dsComment" bold="0" italic="1"/>
+
+      <!-- Dummy style for testing -->
+      <itemData name="Dummy" defStyleNum="dsError"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="1" />
+    <comments>
+      <comment name="singleLine" start="!"/>
+      <comment name="multiLine" start="(*" end="*)"/>
+    </comments>
+  </general>
+</language>
+
+<!--EOF-->

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+	  [
+	  <!ENTITY stringVariable   	"[a-zA-Z0-9\-]+">
+	  <!ENTITY fieldFormat    	"[a-zA-Z0-9\-_\.]+">
+	  <!ENTITY latexCmd	  	"\\([a-zA-Z@]+|[^ ])">
+	  <!ENTITY refKeyFormat  	"[a-zA-Z0-9_@\\-\\:]+"> <!--taken from kile 2.0.3-->
+	  ]>
+<language name="BibTeX" version="2" kateversion="5.0" extensions="*.bib" section="Markup" mimetype="text/x-bib" casesensitive="1" author="Jeroen Wijnhout (Jeroen.Wijnhout@kdemail.net)+Thomas Braun (thomas.braun@virtuell-zuhause.de)" license="LGPL">
+  <highlighting>
+    <list name="kw_entry">
+      <item>@article</item> 
+      <item>@book</item> 
+      <item>@booklet</item> 
+      <item>@conference</item> 
+      <item>@collection</item>
+      <item>@electronic</item>
+      <item>@inbook</item> 
+      <item>@incollection</item> 
+      <item>@inproceedings</item> 
+      <item>@manual</item> 
+      <item>@mastersthesis</item> 
+      <item>@misc</item>
+      <item>@online</item>
+      <item>@patent</item>
+      <item>@periodical</item>
+      <item>@proceedings</item>
+      <item>@report</item>
+      <item>@phdthesis</item>
+      <item>@set</item>
+      <item>@thesis</item> 
+      <item>@techreport</item> 
+      <item>@unpublished</item>
+      <item>@www</item>
+      <item>@person</item> <!--all three from the directory package-->
+      <item>@company</item>
+      <item>@place</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Comment" lineEndContext="#stay">
+        <keyword String="kw_entry" attribute="Entry" context="Entry"/>
+	<StringDetect String="@string" attribute="Command" insensitive="true" context="StringCommand"/>
+	<StringDetect String="@preamble" attribute="Command" insensitive="true" context="PreambleCommand"/>
+	<StringDetect String="@comment" attribute="Comment" insensitive="true" context="#stay"/> <!--nothing special needed here-->
+    </context>
+
+	<context name="PreambleCommand" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop" lineEndContext="#stay" >
+		<DetectChar char="{" context="CurlyBracket" />
+	</context>
+	
+	<context name="StringCommand" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop" lineEndContext="#stay" >
+		<DetectChar char="{" context="CurlyBracket" />
+		<RegExpr String="&stringVariable;" attribute="String" context="CurlyBracket"/>
+      </context>
+
+      <context name="Entry" attribute="Normal Text" lineEndContext="#stay">
+	      <DetectChar char="{"  context="#stay" beginRegion="block" />
+	      <RegExpr String="&refKeyFormat;" attribute="Ref Key" context="#stay"/>
+	      <DetectChar char="," context="Field"/>
+	      <DetectChar char="}" attribute="Normal Text" context="#pop" endRegion="block" />
+      </context>
+
+      <context name="Field" attribute="Normal Text" lineEndContext="#stay">
+	      <RegExpr String="&fieldFormat;" attribute="Field" firstNonSpace="true"/>
+	      <DetectSpaces/>
+	      <DetectChar char="=" context="#stay"/>
+	      <DetectSpaces/>
+	      <DetectChar char="{" context="CurlyBracket"/>
+	      <DetectChar char="}" context="#pop" lookAhead="true"/>
+	      <DetectChar char="&quot;"  attribute="Normal Text" context="QuotedText"/>
+	      <DetectChar char="," context="#stay"/>
+	      <DetectChar char="#" context="#stay"/> <!-- the bibtex string concatenate character -->
+	      <RegExpr String="[0-9]+" context="#stay"/>
+	      <RegExpr String="&stringVariable;" attribute="String" /> <!-- assume this is a variable created with @String -->
+	      <DetectSpaces/>
+	      <RegExpr String="." attribute="Error" context="#stay"/> <!--this rule catches all errors-->
+      </context>
+
+      <context name="CurlyBracket" attribute="Normal Text" lineEndContext="#stay">
+	      <DetectChar char="{" context="CurlyBracket"/>
+	      <RegExpr String="&latexCmd;" attribute="LatexCommand" context="#stay"/>
+	      <RegExpr String="}$" context="#pop#pop"/>
+	      <DetectChar char="}" context="#pop"/>
+      </context>
+
+      <context name="QuotedText" attribute="String" lineEndContext="#stay">
+	      <DetectChar char="&quot;" attribute="Normal Text" context="#pop"/>
+	      <RegExpr String="&latexCmd;" attribute="LatexCommand" context="#stay"/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Entry" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Command" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Field" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Ref Key" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="LatexCommand" defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment" spellChecking="false"/>
+      <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+      <itemData name="String" defStyleNum="dsString" spellChecking="true"/>
+</itemDatas>
+  </highlighting>
+  <general>
+   <keywords casesensitive="0" weakDeliminator="\" wordWrapDeliminator=",{}[]"/>
+  </general>
+</language>

@@ -1,0 +1,651 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="Motorola 68k (VASM/Devpac)" section="Assembler" version="2" kateversion="5.0"  extensions="*.s;*.i;*.S;*.I" author="Miro Kropacek (miro.kropacek@gmail.com)" license="LGPL">
+
+  <highlighting>
+    <list name="Data Registers">
+      <item>d0</item>
+      <item>d1</item>
+      <item>d2</item>
+      <item>d3</item>
+      <item>d4</item>
+      <item>d5</item>
+      <item>d6</item>
+      <item>d7</item>
+    </list>
+
+    <list name="Address Registers">
+      <item>a0</item>
+      <item>a1</item>
+      <item>a2</item>
+      <item>a3</item>
+      <item>a4</item>
+      <item>a5</item>
+      <item>a6</item>
+      <item>a7</item>
+      <item>sp</item>
+    </list>
+
+    <list name="Control Registers">
+      <item>ccr</item>
+      <item>sr</item>
+      <item>pc</item>
+      <item>zpc</item>
+      <item>ssp</item>
+      <item>usp</item>
+      <item>msp</item>
+      <item>isp</item>
+      <item>dfc</item>
+      <item>cacr</item>
+      <item>caar</item>
+      <item>vbr</item>
+      <item>crp</item>
+      <item>srp</item>
+      <item>urp</item>
+      <item>tc</item>
+      <item>tt0</item>
+      <item>tt1</item>
+      <item>mmusr</item>
+      <item>itt0</item>
+      <item>itt1</item>
+      <item>dtt0</item>
+      <item>dtt1</item>
+      <item>buscr</item>
+      <item>pcr</item>
+      <item>ic</item>
+      <!-- <item>dc</item> -->
+      <item>bc</item>
+    </list>
+
+    <list name="FPU Registers">
+      <item>fp0</item>
+      <item>fp1</item>
+      <item>fp2</item>
+      <item>fp3</item>
+      <item>fp4</item>
+      <item>fp5</item>
+      <item>fp6</item>
+      <item>fp7</item>
+      <item>fpcr></item>
+      <item>fpsr</item>
+      <item>fpiar</item>
+    </list>
+
+    <list name="Instructions (CPU)">
+      <item>abcd</item>
+      <item>adda</item>
+      <item>addi</item>
+      <item>add</item>
+      <item>addq</item>
+      <item>addx</item>
+      <item>andi</item>
+      <item>and</item>
+      <item>asl</item>
+      <item>asr</item>
+      <item>bcc</item>
+      <item>bchg</item>
+      <item>bclr</item>
+      <item>bcs</item>
+      <item>beq</item>
+      <item>bfchg</item>
+      <item>bfclr</item>
+      <item>bfexts</item>
+      <item>bfextu</item>
+      <item>bfffo</item>
+      <item>bfins</item>
+      <item>bfset</item>
+      <item>bftst</item>
+      <item>bge</item>
+      <item>bgt</item>
+      <item>bhi</item>
+      <item>bhs</item>
+      <item>bkpt</item>
+      <item>ble</item>
+      <item>blo</item>
+      <item>bls</item>
+      <item>blt</item>
+      <item>bmi</item>
+      <item>bne</item>
+      <item>bpl</item>
+      <item>bra</item>
+      <item>bset</item>
+      <item>bsr</item>
+      <item>btst</item>
+      <item>bvc</item>
+      <item>bvs</item>
+      <item>callm</item>
+      <item>cas2</item>
+      <item>cas</item>
+      <item>chk2</item>
+      <item>chk</item>
+      <item>cinva</item>
+      <item>cinvl</item>
+      <item>cinvp</item>
+      <item>clr</item>
+      <item>cmp2</item>
+      <item>cmpa</item>
+      <item>cmpi</item>
+      <item>cmp</item>
+      <item>cmpm</item>
+      <item>cpusha</item>
+      <item>cpushl</item>
+      <item>cpushp</item>
+      <item>dbcc</item>
+      <item>dbcs</item>
+      <item>dbeq</item>
+      <item>dbf</item>
+      <item>dbge</item>
+      <item>dbgt</item>
+      <item>dbhi</item>
+      <item>dbhs</item>
+      <item>dble</item>
+      <item>dblo</item>
+      <item>dbls</item>
+      <item>dblt</item>
+      <item>dbmi</item>
+      <item>dbne</item>
+      <item>dbpl</item>
+      <item>dbra</item>
+      <item>dbt</item>
+      <item>dbvc</item>
+      <item>dbvs</item>
+      <item>divs</item>
+      <item>divsl</item>
+      <item>divu</item>
+      <item>divul</item>
+      <item>eori</item>
+      <item>eor</item>
+      <item>exg</item>
+      <item>extb</item>
+      <item>ext</item>
+      <item>illegal</item>
+      <item>jmp</item>
+      <item>jsr</item>
+      <item>lea</item>
+      <item>link</item>
+      <item>lpstop</item>
+      <item>lsl</item>
+      <item>lsr</item>
+      <item>move16</item>
+      <item>movea</item>
+      <item>movec</item>
+      <item>move</item>
+      <item>movem</item>
+      <item>movep</item>
+      <item>moveq</item>
+      <item>moves</item>
+      <item>muls</item>
+      <item>mulu</item>
+      <item>nbcd</item>
+      <item>neg</item>
+      <item>negx</item>
+      <item>nop</item>
+      <item>not</item>
+      <item>ori</item>
+      <item>or</item>
+      <item>pack</item>
+      <item>pea</item>
+      <item>pflusha</item>
+      <item>pflushan</item>
+      <item>pflush</item>
+      <item>pflushn</item>
+      <item>ploadr</item>
+      <item>ploadw</item>
+      <item>plpa</item>
+      <item>pmovefd</item>
+      <item>pmove</item>
+      <item>ptestr</item>
+      <item>ptestw</item>
+      <item>reset</item>
+      <item>rol</item>
+      <item>ror</item>
+      <item>roxl</item>
+      <item>roxr</item>
+      <item>rtd</item>
+      <item>rte</item>
+      <item>rtm</item>
+      <item>rtr</item>
+      <item>rts</item>
+      <item>sbcd</item>
+      <item>scc</item>
+      <item>scs</item>
+      <item>seq</item>
+      <item>sf</item>
+      <item>sge</item>
+      <item>sgt</item>
+      <item>shi</item>
+      <item>shs</item>
+      <item>sle</item>
+      <item>slo</item>
+      <item>sls</item>
+      <item>slt</item>
+      <item>smi</item>
+      <item>sne</item>
+      <item>spl</item>
+      <item>st</item>
+      <item>stop</item>
+      <item>suba</item>
+      <item>subi</item>
+      <item>sub</item>
+      <item>subq</item>
+      <item>subx</item>
+      <item>svc</item>
+      <item>svs</item>
+      <item>swap</item>
+      <item>tas</item>
+      <item>trapcc</item>
+      <item>trapcs</item>
+      <item>trapeq</item>
+      <item>trapf</item>
+      <item>trapge</item>
+      <item>trapgt</item>
+      <item>traphi</item>
+      <item>traphs</item>
+      <item>trap</item>
+      <item>traple</item>
+      <item>traplo</item>
+      <item>trapls</item>
+      <item>traplt</item>
+      <item>trapmi</item>
+      <item>trapne</item>
+      <item>trappl</item>
+      <item>trapt</item>
+      <item>trapvc</item>
+      <item>trapvc</item>
+      <item>trapv</item>
+      <item>tst</item>
+      <item>unlk</item>
+      <item>unpk</item>
+    </list>
+
+    <list name="Instructions (FPU)">
+      <item>fabs</item>
+      <item>facos</item>
+      <item>fadd</item>
+      <item>fasin</item>
+      <item>fatanh</item>
+      <item>fatan</item>
+      <item>fbeq</item>
+      <item>fbf</item>
+      <item>fbge</item>
+      <item>fbgle</item>
+      <item>fbgl</item>
+      <item>fbgt</item>
+      <item>fble</item>
+      <item>fblt</item>
+      <item>fbne</item>
+      <item>fbnge</item>
+      <item>fbngle</item>
+      <item>fbngl</item>
+      <item>fbngt</item>
+      <item>fbnle</item>
+      <item>fbnlt</item>
+      <item>fboge</item>
+      <item>fbogl</item>
+      <item>fbogt</item>
+      <item>fbole</item>
+      <item>fbolt</item>
+      <item>fbor</item>
+      <item>fbseq</item>
+      <item>fbsf</item>
+      <item>fbsne</item>
+      <item>fbst</item>
+      <item>fbt</item>
+      <item>fbueq</item>
+      <item>fbuge</item>
+      <item>fbugt</item>
+      <item>fbule</item>
+      <item>fbult</item>
+      <item>fbun</item>
+      <item>fcmp</item>
+      <item>fcosh</item>
+      <item>fcos</item>
+      <item>fdabs</item>
+      <item>fdadd</item>
+      <item>fdbeq</item>
+      <item>fdbf</item>
+      <item>fdbge</item>
+      <item>fdbgle</item>
+      <item>fdbgl</item>
+      <item>fdbgt</item>
+      <item>fdble</item>
+      <item>fdblt</item>
+      <item>fdbne</item>
+      <item>fdbnge</item>
+      <item>fdbngle</item>
+      <item>fdbngl</item>
+      <item>fdbngt</item>
+      <item>fdbnle</item>
+      <item>fdbnlt</item>
+      <item>fdboge</item>
+      <item>fdbogl</item>
+      <item>fdbogt</item>
+      <item>fdbole</item>
+      <item>fdbolt</item>
+      <item>fdbor</item>
+      <item>fdbseq</item>
+      <item>fdbsf</item>
+      <item>fdbsne</item>
+      <item>fdbst</item>
+      <item>fdbt</item>
+      <item>fdbueq</item>
+      <item>fdbuge</item>
+      <item>fdbugt</item>
+      <item>fdbule</item>
+      <item>fdbult</item>
+      <item>fdbun</item>
+      <item>fddiv</item>
+      <item>fdiv</item>
+      <item>fdmove</item>
+      <item>fdmul</item>
+      <item>fdneg</item>
+      <item>fdsqrt</item>
+      <item>fdsub</item>
+      <item>fetox</item>
+      <item>fetoxm1</item>
+      <item>fgetexp</item>
+      <item>fgetman</item>
+      <item>fint</item>
+      <item>fintrz</item>
+      <item>flog10</item>
+      <item>flog2</item>
+      <item>flogn</item>
+      <item>flognp1</item>
+      <item>fmod</item>
+      <item>fmovecr</item>
+      <item>fmove</item>
+      <item>fmovem</item>
+      <item>fmul</item>
+      <item>fneg</item>
+      <item>fnop</item>
+      <item>frem</item>
+      <item>frestore</item>
+      <item>fsabs</item>
+      <item>fsadd</item>
+      <item>fsave</item>
+      <item>fscale</item>
+      <item>fsdiv</item>
+      <item>fseq</item>
+      <item>fsf</item>
+      <item>fsge</item>
+      <item>fsgldiv</item>
+      <item>fsgle</item>
+      <item>fsgl</item>
+      <item>fsglmul</item>
+      <item>fsgt</item>
+      <item>fsincos</item>
+      <item>fsinh</item>
+      <item>fsin</item>
+      <item>fsle</item>
+      <item>fslt</item>
+      <item>fsmove</item>
+      <item>fsmul</item>
+      <item>fsneg</item>
+      <item>fsne</item>
+      <item>fsnge</item>
+      <item>fsngle</item>
+      <item>fsngl</item>
+      <item>fsngt</item>
+      <item>fsnle</item>
+      <item>fsnlt</item>
+      <item>fsoge</item>
+      <item>fsogl</item>
+      <item>fsogt</item>
+      <item>fsole</item>
+      <item>fsolt</item>
+      <item>fsor</item>
+      <item>fsqrt</item>
+      <item>fsseq</item>
+      <item>fssf</item>
+      <item>fssne</item>
+      <item>fssqrt</item>
+      <item>fsst</item>
+      <item>fssub</item>
+      <item>fst</item>
+      <item>fsub</item>
+      <item>fsueq</item>
+      <item>fsuge</item>
+      <item>fsugt</item>
+      <item>fsule</item>
+      <item>fsult</item>
+      <item>fsun</item>
+      <item>ftanh</item>
+      <item>ftan</item>
+      <item>ftentox</item>
+      <item>ftrapeq</item>
+      <item>ftrapf</item>
+      <item>ftrapge</item>
+      <item>ftrapgle</item>
+      <item>ftrapgl</item>
+      <item>ftrapgt</item>
+      <item>ftraple</item>
+      <item>ftraplt</item>
+      <item>ftrapne</item>
+      <item>ftrapnge</item>
+      <item>ftrapngle</item>
+      <item>ftrapngl</item>
+      <item>ftrapngt</item>
+      <item>ftrapnle</item>
+      <item>ftrapnlt</item>
+      <item>ftrapoge</item>
+      <item>ftrapogl</item>
+      <item>ftrapogt</item>
+      <item>ftrapole</item>
+      <item>ftrapolt</item>
+      <item>ftrapor</item>
+      <item>ftrapseq</item>
+      <item>ftrapsf</item>
+      <item>ftrapsne</item>
+      <item>ftrapst</item>
+      <item>ftrapt</item>
+      <item>ftrapueq</item>
+      <item>ftrapuge</item>
+      <item>ftrapugt</item>
+      <item>ftrapule</item>
+      <item>ftrapult</item>
+      <item>ftrapun</item>
+      <item>ftst</item>
+      <item>ftwotox</item>
+    </list>
+
+    <list name="Directives">
+      <item>align</item>
+      <item>blk</item>
+      <item>bss</item>
+      <item>clrfo</item>
+      <item>clrso</item>
+      <item>cnop</item>
+      <item>code</item>
+      <item>cseg</item>
+      <item>data</item>
+      <item>dc</item>
+      <item>dcb</item>
+      <item>ds</item>
+      <item>dseg</item>
+      <item>else</item>
+      <item>end</item>
+      <item>endc</item>
+      <item>endif</item>
+      <item>endm</item>
+      <item>endr</item>
+      <item>equ</item>
+      <item>even</item>
+      <item>fo</item>
+      <item>idnt</item>
+      <item>if</item>
+      <item>ifeq</item>
+      <item>ifne</item>
+      <item>ifgt</item>
+      <item>ifge</item>
+      <item>iflt</item>
+      <item>ifle</item>
+      <item>ifd</item>
+      <item>ifnd</item>
+      <item>ifc</item>
+      <item>ifnc</item>
+      <item>incbin</item>
+      <item>incdir</item>
+      <item>include</item>
+      <item>macro</item>
+      <item>org</item>
+      <item>public</item>
+      <item>rept</item>
+      <item>rs</item>
+      <item>rsreset</item>
+      <item>rsset</item>
+      <item>section</item>
+      <item>set</item>
+      <item>setfo</item>
+      <item>setso</item>
+      <item>so</item>
+      <item>text</item>
+      <item>ttl</item>
+      <item>xdef</item>
+      <item>xref</item>
+      <item>sdreg</item>
+      <item>cpu32</item>
+      <item>far</item>
+      <item>fpu</item>
+      <item>machine</item>
+      <item>mc68000</item>
+      <item>mc68010</item>
+      <item>mc68020</item>
+      <item>mc68030</item>
+      <item>mc68040</item>
+      <item>mc68060</item>
+      <item>mcf5200</item>
+      <item>mcf5206</item>
+      <item>mcf5307</item>
+      <item>mcf5407</item>
+      <item>near</item>
+      <item>opt</item>
+      <item>equr</item>
+      <item>equrl</item>
+      <item>fequr</item>
+      <item>fequrl</item>
+      <item>freg</item>
+      <item>reg</item>
+    </list>
+
+    <contexts>
+      <!-- name = name of context, attribute = name of item data -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+	<keyword attribute="Data Registers" context="#stay" String="Data Registers"/>
+	<keyword attribute="Address Registers" context="#stay" String="Address Registers"/>
+	<keyword attribute="Control Registers" context="#stay" String="Control Registers"/>
+	<keyword attribute="FPU Registers" context="#stay" String="FPU Registers"/>
+	<keyword attribute="Instructions (CPU)" context="#stay" String="Instructions (CPU)"/>
+	<keyword attribute="Instructions (FPU)" context="#stay" String="Instructions (FPU)"/>
+	<keyword attribute="Directives" context="#stay" String="Directives"/>
+
+	<!-- precedes ".[bwlsdqpx]" match -->
+	<RegExpr attribute="Label" context="#stay" String="^[A-Za-z_][A-Za-z_.0-9]*:?"/>
+	<RegExpr attribute="Local label" context="#stay" String="^\.[A-Za-z_][A-Za-z_.0-9]*:?"/>
+
+	<RegExpr attribute="Operand sizes (CPU)" context="#stay" insensitive="true" String="\.b[\s,]"/>
+	<RegExpr attribute="Operand sizes (CPU)" context="#stay" insensitive="true" String="\.w[\s,]"/>
+	<RegExpr attribute="Operand sizes (CPU)" context="#stay" insensitive="true" String="\.l[\s,]"/>
+	<RegExpr attribute="Operand sizes (FPU)" context="#stay" insensitive="true" String="\.s[\s,]"/>
+	<RegExpr attribute="Operand sizes (FPU)" context="#stay" insensitive="true" String="\.d[\s,]"/>
+	<RegExpr attribute="Operand sizes (FPU)" context="#stay" insensitive="true" String="\.p[\s,]"/>
+	<RegExpr attribute="Operand sizes (FPU)" context="#stay" insensitive="true" String="\.q[\s,]"/>
+	<RegExpr attribute="Operand sizes (FPU)" context="#stay" insensitive="true" String="\.x[\s,]"/>
+
+	<DetectChar attribute="Comment" context="Comment" char=";"/>
+	<DetectChar attribute="Comment" context="Comment" char="*" firstNonSpace="true"/>
+	<DetectChar attribute="Constant" context="Constant" char="#"/>
+	<DetectChar attribute="BaseN" context="Number16" char="$"/>
+	<DetectChar attribute="BaseN" context="Number2" char="%"/>
+	<DetectChar attribute="BaseN" context="Number8" char="@"/>
+	<Float attribute="Float" context="#stay"/>
+	<Int attribute="Number" context="#stay"/>
+	<RangeDetect attribute="Char" context="#stay" char="'"  char1="'"/>
+	<AnyChar attribute="String" context="String" String="&quot;'"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+
+      <context name="String" attribute="String" lineEndContext="#pop">
+	      <AnyChar attribute="String" context="#pop" String="&quot;'"/>
+      </context>
+
+      <context name="Constant" attribute="Constant" lineEndContext="#pop">
+	      <RegExpr attribute="Constant" context="Operators" String="[0-9]+"/>
+	      <RegExpr attribute="Constant" context="Operators" String="\$[A-Fa-f0-9]+"/>
+	      <RegExpr attribute="Constant" context="Operators" String="@[0-7]+"/>
+	      <RegExpr attribute="Constant" context="Operators" String="%[01]+"/>
+	      <RegExpr attribute="Label" context="Operators" String="[A-Za-z_][A-Za-z_.0-9]*"/>
+	      <RegExpr attribute="Local label" context="Operators" String="\.[A-Za-z_][A-Za-z_.0-9]*"/>
+	      <RangeDetect attribute="Char" context="#pop" char="'"  char1="'"/>
+	      <DetectChar attribute="Normal Text" char="," context="#pop"/>
+	      <DetectSpaces attribute="Normal Text" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="(" context="#stay"/>
+      </context>
+
+      <context name="Operators" attribute="Normal Text" lineEndContext="#pop">
+	      <DetectChar attribute="Normal Text" char="|" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="&amp;" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="^" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="*" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="(" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char=")" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="+" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="-" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="/" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="~" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="!" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="%" context="#pop"/>
+	      <Detect2Chars attribute="Normal Text" char="&lt;" char1="&lt;" context="#pop"/>
+	      <Detect2Chars attribute="Normal Text" char="&gt;" char1="&gt;" context="#pop"/>
+	      <DetectChar attribute="Normal Text" char="," context="#pop#pop"/>
+	      <DetectSpaces attribute="Normal Text" context="#pop#pop"/>
+      </context>
+
+      <context name="Number16" attribute="BaseN" lineEndContext="#pop">
+	      <RegExpr attribute="BaseN" context="#pop" String="[A-Fa-f0-9]+"/>
+      </context>
+
+      <context name="Number2" attribute="BaseN" lineEndContext="#pop">
+	      <RegExpr attribute="BaseN" context="#pop" String="[01]+"/>
+      </context>
+
+      <context name="Number8" attribute="BaseN" lineEndContext="#pop">
+	      <RegExpr attribute="BaseN" context="#pop" String="[0-7]+"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <!-- keywords -->
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Data Registers" defStyleNum="dsDataType"/>
+      <itemData name="Address Registers" defStyleNum="dsDataType"/>
+      <itemData name="Control Registers" defStyleNum="dsDataType"/>
+      <itemData name="FPU Registers" defStyleNum="dsDataType"/>
+      <itemData name="Instructions (CPU)" bold="true" defStyleNum="dsKeyword"/>
+      <itemData name="Instructions (FPU)" bold="true" defStyleNum="dsKeyword"/>
+      <itemData name="Directives" bold="true" defStyleNum="dsBuiltIn"/>
+      <!-- defined in contexts -->
+      <itemData name="Operand sizes (CPU)" bold="true" defStyleNum="dsKeyword"/>
+      <itemData name="Operand sizes (FPU)" bold="true" defStyleNum="dsKeyword"/>
+      <itemData name="Comment" italic="false" defStyleNum="dsComment"/>
+      <itemData name="Label" defStyleNum="dsFunction"/>
+      <itemData name="Local label" defStyleNum="dsFunction"/>
+      <itemData name="Constant" defStyleNum="dsConstant"/>
+      <itemData name="BaseN" defStyleNum="dsBaseN"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="Char" defStyleNum="dsChar"/>
+      <itemData name="String" defStyleNum="dsString"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="0"/>
+    <comments>
+      <comment name="singleLine" start=";"/>
+      <comment name="singleLine" start="*"/>
+    </comments>
+  </general>
+
+</language>

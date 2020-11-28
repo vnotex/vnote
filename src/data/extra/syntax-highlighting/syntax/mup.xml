@@ -1,0 +1,865 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Music Publisher" version="3" kateversion="2.4" section="Other" extensions="*.mup;*.not" mimetype="text/x-mup;audio/x-mup;application/x-mup;audio/x-notes" casesensitive="1" author="Wilbert Berendsen (wilbert@kde.nl)" license="LGPL">
+
+  <highlighting>
+
+    <list name="mupcontexts">
+      <item>score</item>
+      <item>music</item>
+      <item>header</item>
+      <item>header2</item>
+      <item>footer</item>
+      <item>footer2</item>
+      <item>top</item>
+      <item>top2</item>
+      <item>bottom</item>
+      <item>bottom2</item>
+      <item>staff</item>
+      <item>voice</item>
+      <item>grids</item>
+      <item>music</item>
+      <item>headshapes</item>
+      <item>block</item>
+    </list>
+
+
+    <list name="mupparameters">
+      <item>aboveorder</item>
+      <item>addtranspose</item>
+      <item>barstyle</item>
+      <item>beamslope</item>
+      <item>beamstyle</item>
+      <item>beloworder</item>
+      <item>betweenorder</item>
+      <item>bottommargin</item>
+      <item>brace</item>
+      <item>bracket</item>
+      <item>cancelkey</item>
+      <item>chorddist</item>
+      <item>clef</item>
+      <item>crescdist</item>
+      <item>defoct</item>
+      <item>dist</item>
+      <item>division</item>
+      <item>dyndist</item>
+      <item>endingstyle</item>
+      <item>firstpage</item>
+      <item>font</item>
+      <item>fontfamily</item>
+      <item>gridfret</item>
+      <item>gridsatend</item>
+      <item>gridscale</item>
+      <item>gridswhereused</item>
+      <item>key</item>
+      <item>label</item>
+      <item>label2</item>
+      <item>leftmargin</item>
+      <item>lyricsalign</item>
+      <item>lyricsfont</item>
+      <item>lyricsfontfamily</item>
+      <item>lyricssize</item>
+      <item>measnum</item>
+      <item>measnumfont</item>
+      <item>measnumfontfamily</item>
+      <item>measnumsize</item>
+      <item>noteheads</item>
+      <item>numbermrpt</item>
+      <item>ontheline</item>
+      <item>packexp</item>
+      <item>packfact</item>
+      <item>pad</item>
+      <item>pageheight</item>
+      <item>pagewidth</item>
+      <item>panelsperpage</item>
+      <item>pedstyle</item>
+      <item>printmultnum</item>
+      <item>rehstyle</item>
+      <item>release</item>
+      <item>restcombine</item>
+      <item>restsymmult</item>
+      <item>rightmargin</item>
+      <item>scale</item>
+      <item>scorepad</item>
+      <item>scoresep</item>
+      <item>size</item>
+      <item>stafflines</item>
+      <item>staffpad</item>
+      <item>staffs</item>
+      <item>staffscale</item>
+      <item>staffsep</item>
+      <item>stemlen</item>
+      <item>swingunit</item>
+      <item>sylposition</item>
+      <item>tabwhitebox</item>
+      <item>time</item>
+      <item>timeunit</item>
+      <item>topmargin</item>
+      <item>transpose</item>
+      <item>units</item>
+      <item>visible</item>
+      <item>vscheme</item>
+      <item>warn</item>
+    </list>
+
+
+    <list name="mupvalues">
+      <item>y</item>
+      <item>n</item>
+      <item>2f</item>
+      <item>2o</item>
+      <item>3f</item>
+      <item>3o</item>
+      <item>mussym</item>
+      <item>octave</item>
+      <item>dyn</item>
+      <item>othertext</item>
+      <item>chord</item>
+      <item>lyrics</item>
+      <item>ending</item>
+      <item>reh</item>
+      <item>up</item>
+      <item>down</item>
+      <item>major</item>
+      <item>minor</item>
+      <item>perfect</item>
+      <item>augmented</item>
+      <item>diminished</item>
+      <item>maj</item>
+      <item>min</item>
+      <item>per</item>
+      <item>aug</item>
+      <item>dim</item>
+      <item>pedal</item>
+      <item>8treble</item>
+      <item>treble8</item>
+      <item>treble</item>
+      <item>frenchviolin</item>
+      <item>soprano</item>
+      <item>mezzosoprano</item>
+      <item>alto</item>
+      <item>tenor</item>
+      <item>baritone</item>
+      <item>bass</item>
+      <item>cut</item>
+      <item>common</item>
+      <item>line</item>
+      <item>alt</item>
+      <item>pedstar</item>
+      <item>top</item>
+      <item>barred</item>
+      <item>grouped</item>
+      <item>times</item>
+      <item>boxed</item>
+      <item>circled</item>
+      <item>plain</item>
+      <item>1n</item>
+      <item>5n</item>
+      <item>1drum</item>
+      <item>5drum</item>
+      <item>drum</item>
+      <item>tab</item>
+      <item>inches</item>
+      <item>cm</item>
+      <item>whereused</item>
+    </list>
+
+
+    <list name="mupmacrodirectives_start">
+      <item>define</item>
+      <item>ifdef</item>
+      <item>ifndef</item>
+    </list>
+
+
+    <list name="mupmacrodirectives_end">
+      <item>@</item>
+      <item>endif</item>
+    </list>
+
+
+    <list name="mupmacrodirectives">
+      <item>else</item>
+      <item>include</item>
+      <item>undef</item>
+    </list>
+
+
+    <list name="mupspecialchars">
+      <item>exclamdown</item>
+      <item>questiondown</item>
+      <item>sterling</item>
+      <item>yen</item>
+      <item>cent</item>
+      <item>quotedblbase</item>
+      <item>quotedblleft</item>
+      <item>``</item>
+      <item>quotedblright</item>
+      <item>''</item>
+      <item>guillemotleft</item>
+      <item>&lt;&lt;</item>
+      <item>guillemotright</item>
+      <item>&gt;&gt;</item>
+      <item>guildsinglleft</item>
+      <item>guilsinglright</item>
+      <item>dagger</item>
+      <item>daggerdbl</item>
+      <item>grave</item>
+      <item>acute</item>
+      <item>macron</item>
+      <item>breve</item>
+      <item>dotaccent</item>
+      <item>dieresis</item>
+      <item>ring</item>
+      <item>cedilla</item>
+      <item>hungarumlaut</item>
+      <item>ogonek</item>
+      <item>caron</item>
+      <item>emdash</item>
+      <item>AE</item>
+      <item>ae</item>
+      <item>ordfeminine</item>
+      <item>ordmasculine</item>
+      <item>Lslash</item>
+      <item>L/</item>
+      <item>lslash</item>
+      <item>l/</item>
+      <item>Oslash</item>
+      <item>O/</item>
+      <item>oslash</item>
+      <item>o/</item>
+      <item>OE</item>
+      <item>oe</item>
+      <item>dotlessi</item>
+      <item>germandbls</item>
+      <item>ss</item>
+      <item>Aacute</item>
+      <item>A'</item>
+      <item>aacute</item>
+      <item>a'</item>
+      <item>Acircumflex</item>
+      <item>A^</item>
+      <item>acircumflex</item>
+      <item>a^</item>
+      <item>Adieresis</item>
+      <item>A:</item>
+      <item>adieresis</item>
+      <item>a:</item>
+      <item>Agrave</item>
+      <item>A`</item>
+      <item>agrave</item>
+      <item>a`</item>
+      <item>Aring</item>
+      <item>Ao</item>
+      <item>aring</item>
+      <item>ao</item>
+      <item>Atilde</item>
+      <item>A~</item>
+      <item>atilde</item>
+      <item>a~</item>
+      <item>Ccedilla</item>
+      <item>C,</item>
+      <item>ccedilla</item>
+      <item>c,</item>
+      <item>Eacute</item>
+      <item>E'</item>
+      <item>eacute</item>
+      <item>e'</item>
+      <item>Ecircumflex</item>
+      <item>E^</item>
+      <item>ecircumflex</item>
+      <item>e^</item>
+      <item>Edieresis</item>
+      <item>E:</item>
+      <item>edieresis</item>
+      <item>e:</item>
+      <item>Egrave</item>
+      <item>E`</item>
+      <item>egrave</item>
+      <item>e`</item>
+      <item>Iacute</item>
+      <item>I'</item>
+      <item>iacute</item>
+      <item>i'</item>
+      <item>Icircumflex</item>
+      <item>I^</item>
+      <item>icircumflex</item>
+      <item>i^</item>
+      <item>Idieresis</item>
+      <item>i:</item>
+      <item>idieresis</item>
+      <item>i:</item>
+      <item>Igrave</item>
+      <item>I`</item>
+      <item>igrave</item>
+      <item>i`</item>
+      <item>Ntilde</item>
+      <item>N~</item>
+      <item>ntilde</item>
+      <item>n~</item>
+      <item>Oacute</item>
+      <item>O'</item>
+      <item>oacute</item>
+      <item>o'</item>
+      <item>Ocircumflex</item>
+      <item>O^</item>
+      <item>ocircumflex</item>
+      <item>o^</item>
+      <item>Odieresis</item>
+      <item>O:</item>
+      <item>odieresis</item>
+      <item>o:</item>
+      <item>Ograve</item>
+      <item>O`</item>
+      <item>ograve</item>
+      <item>o`</item>
+      <item>Otilde</item>
+      <item>O~</item>
+      <item>otilde</item>
+      <item>o~</item>
+      <item>Scaron</item>
+      <item>Sv</item>
+      <item>scaron</item>
+      <item>sv</item>
+      <item>Uacute</item>
+      <item>U'</item>
+      <item>uacute</item>
+      <item>u'</item>
+      <item>Ucircumflex</item>
+      <item>U^</item>
+      <item>ucircumflex</item>
+      <item>u^</item>
+      <item>Udieresis</item>
+      <item>U:</item>
+      <item>udieresis</item>
+      <item>u:</item>
+      <item>Ugrave</item>
+      <item>U`</item>
+      <item>ugrave</item>
+      <item>u`</item>
+      <item>Ydieresis</item>
+      <item>Y:</item>
+      <item>ydieresis</item>
+      <item>y:</item>
+      <item>Zcaron</item>
+      <item>Zv</item>
+      <item>zcaron</item>
+      <item>zv</item>
+      <item>bullet</item>
+      <item>space</item>
+   </list>
+
+
+   <list name="mupmusicchars">
+      <item>gclef</item>
+      <item>fclef</item>
+      <item>cclef</item>
+      <item>com</item>
+      <item>cut</item>
+      <item>flat</item>
+      <item>dblflat</item>
+      <item>sharp</item>
+      <item>dblsharp</item>
+      <item>nat</item>
+      <item>4n</item>
+      <item>2n</item>
+      <item>1n</item>
+      <item>dblwhole</item>
+      <item>xnote</item>
+      <item>diamond</item>
+      <item>filldiamond</item>
+      <item>dwhdiamond</item>
+      <item>dn2n</item>
+      <item>dn4n</item>
+      <item>dn8n</item>
+      <item>dn16n</item>
+      <item>dn32n</item>
+      <item>dn64n</item>
+      <item>dn128n</item>
+      <item>dn256n</item>
+      <item>up2n</item>
+      <item>up4n</item>
+      <item>up8n</item>
+      <item>up16n</item>
+      <item>up32n</item>
+      <item>up64n</item>
+      <item>up128n</item>
+      <item>up256n</item>
+      <item>upflag</item>
+      <item>dnflag</item>
+      <item>qwhrest</item>
+      <item>dwhrest</item>
+      <item>1rest</item>
+      <item>2rest</item>
+      <item>4rest</item>
+      <item>8rest</item>
+      <item>16rest</item>
+      <item>32rest</item>
+      <item>64rest</item>
+      <item>128rest</item>
+      <item>256rest</item>
+      <item>begped</item>
+      <item>endped</item>
+      <item>pedal</item>
+      <item>tr</item>
+      <item>mor</item>
+      <item>invmor</item>
+      <item>turn</item>
+      <item>invturn</item>
+      <item>ferm</item>
+      <item>uferm</item>
+      <item>acc_gt</item>
+      <item>acc_hat</item>
+      <item>acc_uhat</item>
+      <item>leg</item>
+      <item>dot</item>
+      <item>wedge</item>
+      <item>uwedge</item>
+      <item>sign</item>
+      <item>coda</item>
+      <item>upbow</item>
+      <item>dnbow</item>
+      <item>rr</item>
+      <item>measrpt</item>
+      <item>copyright</item>
+      <item>dim</item>
+      <item>halfdim</item>
+      <item>triangle</item>
+
+      <item>smgclef</item>
+      <item>smfclef</item>
+      <item>smcclef</item>
+      <item>smcom</item>
+      <item>smcut</item>
+      <item>smflat</item>
+      <item>smdblflat</item>
+      <item>smsharp</item>
+      <item>smdblsharp</item>
+      <item>smnat</item>
+      <item>sm4n</item>
+      <item>sm2n</item>
+      <item>sm1n</item>
+      <item>smdblwhole</item>
+      <item>smxnote</item>
+      <item>smdiamond</item>
+      <item>smfilldiamond</item>
+      <item>smdwhdiamond</item>
+      <item>smdn2n</item>
+      <item>smdn4n</item>
+      <item>smdn8n</item>
+      <item>smdn16n</item>
+      <item>smdn32n</item>
+      <item>smdn64n</item>
+      <item>smdn128n</item>
+      <item>smdn256n</item>
+      <item>smup2n</item>
+      <item>smup4n</item>
+      <item>smup8n</item>
+      <item>smup16n</item>
+      <item>smup32n</item>
+      <item>smup64n</item>
+      <item>smup128n</item>
+      <item>smup256n</item>
+      <item>smupflag</item>
+      <item>smdnflag</item>
+      <item>smqwhrest</item>
+      <item>smdwhrest</item>
+      <item>sm1rest</item>
+      <item>sm2rest</item>
+      <item>sm4rest</item>
+      <item>sm8rest</item>
+      <item>sm16rest</item>
+      <item>sm32rest</item>
+      <item>sm64rest</item>
+      <item>sm128rest</item>
+      <item>sm256rest</item>
+      <item>smbegped</item>
+      <item>smendped</item>
+      <item>smpedal</item>
+      <item>smtr</item>
+      <item>smmor</item>
+      <item>sminvmor</item>
+      <item>smturn</item>
+      <item>sminvturn</item>
+      <item>smferm</item>
+      <item>smuferm</item>
+      <item>smacc_gt</item>
+      <item>smacc_hat</item>
+      <item>smacc_uhat</item>
+      <item>smleg</item>
+      <item>smdot</item>
+      <item>smwedge</item>
+      <item>smuwedge</item>
+      <item>smsign</item>
+      <item>smcoda</item>
+      <item>smupbow</item>
+      <item>smdnbow</item>
+      <item>smrr</item>
+      <item>smmeasrpt</item>
+      <item>smcopyright</item>
+      <item>smdim</item>
+      <item>smhalfdim</item>
+      <item>smtriangle</item>
+    </list>
+
+
+    <list name="mupprintcommands">
+      <item>print</item>
+      <item>left</item>
+      <item>right</item>
+      <item>center</item>
+      <item>title</item>
+      <item>paragraph</item>
+      <item>postscript</item>
+    </list>
+
+
+    <list name="mupfontnames">
+      <item>avantgarde</item>
+      <item>bookman</item>
+      <item>courier</item>
+      <item>helvetica</item>
+      <item>newcentury</item>
+      <item>palatino</item>
+      <item>times</item>
+    </list>
+
+
+    <list name="mupfontstyles">
+      <item>rom</item>
+      <item>bold</item>
+      <item>ital</item>
+      <item>boldital</item>
+    </list>
+
+
+    <list name="mupprintspecifiers">
+      <item>chord</item>
+      <item>analysis</item>
+      <item>figbass</item>
+      <item>dyn</item>
+    </list>
+
+
+    <list name="mupgraphics">
+      <item>dotted</item>
+      <item>dashed</item>
+      <item>wavy</item>
+      <item>wide</item>
+      <item>medium</item>
+
+      <item>line</item>
+      <item>curve</item>
+      <item>to</item>
+      <item>bulge</item>
+
+      <item>octave</item>
+      <item>mussym</item>
+      <item>phrase</item>
+      <item>pedal</item>
+      <item>roll</item>
+      <item>to</item>
+
+      <item>down</item>
+      <item>up</item>
+      <item>with</item>
+
+      <item>midi</item>
+    </list>
+
+
+    <list name="muplocations">
+      <item>above</item>
+      <item>below</item>
+      <item>between</item>
+      <item>all</item>
+    </list>
+
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Context" context="#stay" String="mupcontexts" />
+	<RegExpr attribute="Lyrics" context="#stay" String="\blyrics\b" />
+	<RegExpr attribute="Barline" context="Barline" String="\b((dashed|dotted)\s+)?(bar|endbar|dblbar|invisbar|repeatstart|repeatboth|repeatend|restart)\b" />
+	<RegExpr attribute="Newscore" context="#stay" String="\bnew(score|page)\b" />
+	<RegExpr attribute="Newscore" context="#stay" String="\bmultirest\s+[0-9]+\b" />
+	<RegExpr attribute="Unset Command" context="Unset" String="\bunset\b" />
+        <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
+	<DetectChar attribute="String" context="String" char="&quot;"/>
+	<RegExpr attribute="Special Char" context="#stay" String="\\$" />
+	<keyword attribute="Print Command" context="Print Command" String="mupprintcommands" />
+	<keyword attribute="Print Command" context="Print Command" String="mupfontnames" />
+	<keyword attribute="Print Command" context="Print Command" String="mupfontstyles" />
+	<RegExpr attribute="Print Command" context="Print Command" String="\b((ragged|justified)\s+)?paragraph\b" />
+	<keyword attribute="Print Command" context="#stay" String="mupprintspecifiers" />
+	<keyword attribute="Print Command" context="#stay" String="mupgraphics" />
+	<keyword attribute="Print Command" context="#stay" String="muplocations" />
+	<RegExpr attribute="Print Command" context="#stay" String="\bdist(?=\s+[^=])" />
+	<keyword attribute="Parameter" context="Parameter" String="mupparameters" />
+	<RegExpr attribute="Special Char" context="Bracket" String="\[(?=(grace|xnote|cue|diam|with|slash|up|down|len|pad|ho|dist|hs|c\b|=))" />
+	<DetectChar attribute="Special Char" context="Tuplet" char="}" />
+	<AnyChar attribute="Special Char" context="#stay" String="[]{" />
+	<RegExpr attribute="Special Char" context="#stay" String="(&lt;&lt;|&gt;&gt;)" />
+	<RegExpr attribute="Note" context="Note"
+	String="(\(\s*)?((1/4|1/2|1|2|4|8|16|32|64|128|256)\.*\s*)?((\(\s*)?([a-grs]|us)(?!bm)([0-9'?\sxn]|[+-]+|[&amp;#]{1,2}|\(\s*[&amp;#]{1,2}\s*\)|\(\s*[xn]\s*\)|\(\s*[0-9]\s*\))*\)?\s*)*\s*(?=[;~=&quot;&lt;A-Z@^]|\b(bm|es?bm|dashed|dotted|tie|slur|alt|hs|ifn?def|else|elseif|endif|with|above)\b)" />
+	<RegExpr attribute="Normal Text" context="Note" String=";\s*(?=[~=&lt;]|\b(bm|es?bm|dashed|dotted|tie|slur|alt|hs|ifn?def|else|elseif|endif)\b)" />
+	<RegExpr attribute="Note" context="#stay" String="(1/4|1/2|1|2|4|8|16|32|64|128|256)?mu?[rs]+\s*(?=;)" />
+	<RegExpr attribute="Note" context="#stay" String="m\s*rpt\s*(?=;)" />
+	<RegExpr attribute="Location" context="#stay" String="=([a-z]|_[a-z][a-z_0-9]*)\b" />
+	<RegExpr attribute="Location" context="Location" String="([a-z]|_[a-z][a-z_0-9]*)\.[xynews]\b" />
+	<RegExpr attribute="Location Probably" context="#stay" String="([a-z]|_[a-z][a-z_0-9]*)\.(?=[A-Z])" />
+	<RegExpr attribute="Normal Text" context="Location Probably" String="[(,]\s*(?=([h-qt-z]|_[a-z][a-z_0-9]*)\s*[,)])" />
+	<RegExpr attribute="Normal Text" context="Note Probably" String="[(,]\s*(?=[a-grs]\s*[,)])" />
+	<IncludeRules context="Macro" />
+	<RegExpr attribute="Normal Text" context="#stay" String="[0-9.]*\s*til\s*(([0-9]+m(\s*\+\s*[0-9.]+)?)|[0-9.]+)\s*;" />
+	<RegExpr attribute="Error" context="#stay" String="[0-9]*[a-z_]+" />
+      </context>
+
+
+      <context attribute="Parameter" lineEndContext="#pop" name="Parameter"
+		fallthrough="true" fallthroughContext="#pop">
+	<DetectChar attribute="Normal Text" context="Value" char="=" />
+	<RegExpr attribute="Parameter" context="#stay" String="\s+" />
+      </context>
+
+
+      <context attribute="Value" lineEndContext="#pop" name="Value"
+		fallthrough="true" fallthroughContext="#pop">
+	<DetectChar attribute="Normal Text" context="#pop" char=";" />
+	<RegExpr attribute="Normal Text" context="#stay" String="[\s,&amp;()-]+" />
+	<keyword attribute="Value" context="#stay" String="mupvalues" />
+	<keyword attribute="Value" context="#pop" String="mupfontnames" />
+	<keyword attribute="Value" context="#pop" String="mupfontstyles" />
+	<RegExpr attribute="Value" context="#stay" String="\b[1-9][0-9]*/(1|2|4|8|16|32|64|128)n?\b" />
+	<RegExpr attribute="Value" context="#stay" String="\b[a-g][#&amp;]?'?([0-9]\b)?" />
+	<RegExpr attribute="Value" context="#stay" String="[0-7][#&amp;]" />
+	<RegExpr attribute="Value" context="#stay" String="r\b" />
+	<Float attribute="Value" context="#stay" />
+	<Int attribute="Value" context="#stay" />
+	<DetectChar attribute="String" context="String" char="&quot;"/>
+	<IncludeRules context="Macro" />
+        <RegExpr attribute="Error" context="#stay" String="[a-z][a-z0-9]*" />
+      </context>
+
+
+      <context attribute="Parameter" lineEndContext="#pop" name="Unset"
+		fallthrough="true" fallthroughContext="#pop">
+	<keyword attribute="Parameter" context="#stay" String="mupparameters" />
+	<RegExpr attribute="Normal Text" context="#stay" String="[\s,]+" />
+	<RegExpr attribute="Error" context="#pop" String="\w+" />
+      </context>
+
+
+      <context attribute="Print Command" lineEndContext="#pop" name="Print Command"
+		fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces />
+	<keyword attribute="Print Command" context="#stay" String="mupfontstyles" />
+	<RegExpr attribute="Print Command" context="#stay" String="\bnl\b" />
+	<RegExpr attribute="Print Command" context="#pop" String="\([0-9]+\)" />
+      </context>
+
+
+      <context attribute="Barline" lineEndContext="#pop" name="Barline"
+		fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces />
+	<RegExpr attribute="Barline" context="#stay" String="\b(ending|endending|hidechanges)\b" />
+	<RegExpr attribute="Barline" context="Bar Rehearsal" String="\breh(earsal)?\b" />
+	<RegExpr attribute="Barline" context="#stay" String="\bmnum\s*=\s*[0-9]+" />
+	<RegExpr attribute="Barline" context="#stay" String="\bnum\s*=\s*[0-9]+" />
+	<RegExpr attribute="Barline" context="#stay" String="\blet\s*=\s*(&quot;[A-Z]{1,2}&quot;)?" />
+	<RegExpr attribute="Barline" context="#stay" String="\bpad\s+[0-9]+" />
+	<RegExpr attribute="Location" context="#stay" String="=([a-z]|_[a-z][a-z_0-9]*)\b" />
+	<IncludeRules context="Macro" />
+      </context>
+
+
+      <context attribute="Barline" lineEndContext="#pop" name="Bar Rehearsal"
+		fallthrough="true" fallthroughContext="#pop">
+	<RegExpr attribute="Print Command" context="#stay" String="\s+" />
+	<keyword attribute="Print Command" context="Print Command" String="mupfontnames" />
+	<keyword attribute="Print Command" context="Print Command" String="mupfontstyles" />
+	<RegExpr attribute="Barline" context="#pop" String="\b(let|mnum|num)\b" />
+	<IncludeRules context="Macro" />
+      </context>
+
+
+      <context attribute="Note" lineEndContext="#pop" name="Note"
+		fallthrough="true" fallthroughContext="#pop">
+	<RegExpr attribute="Note Attribute" context="#stay" String="(\bdashed\s+|\bdotted\s+)?(&lt;(/n|\\n|n/|n\\|[a-g]([+-]*|[0-7]))?&gt;|tie|slur|[~])" />
+	<RegExpr attribute="Note Attribute" context="#stay" String="^(/|[a-g]([+-]*|[0-7]))" />
+	<RegExpr attribute="Note Attribute" context="#stay" String="\bbm\b(\s+with\s+staff\s+(below|above)\b)?" />
+	<RegExpr attribute="Note Attribute" context="#stay" String="\bes?bm\b" />
+	<RegExpr attribute="Note Attribute" context="#stay" String="\balt\s+[1-9]\b" />
+	<RegExpr attribute="Note Attribute" context="#stay" String="\bhs\s+" />
+	<DetectChar attribute="String" context="String" char="&quot;"/>
+	<IncludeRules context="Macro" />
+      </context>
+
+
+      <context attribute="Note Attribute" lineEndContext="#pop" name="Bracket"
+		fallthrough="true" fallthroughContext="#pop">
+	<DetectChar attribute="Special Char" context="#pop" char="]" />
+	<RegExpr attribute="Normal Text" context="#stay" String="[\s;,]+" />
+	<RegExpr attribute="Note Attribute" context="#stay" String="\b(grace|xnote|cue|diam|up|down)\b" />
+	<RegExpr attribute="Note Attribute" context="#stay" String="\b(slash|len|pad|ho|dist)\s*[0-9.+-]*" />
+	<RegExpr attribute="Note Attribute" context="Bracket With" String="\bwith\s*(?=[A-Z&quot;^&gt;.-])" />
+	<RegExpr attribute="Note Attribute" context="Bracket Hs" String="\bhs\s*(?=[A-Z&quot;])" />
+	<RegExpr attribute="Location" context="#stay" String="=([a-z]|_[a-z][a-z_0-9]*)\b" />
+	<RegExpr attribute="Normal Text" context="#stay" String="\bc\b" />
+	<IncludeRules context="Macro" />
+      </context>
+
+
+      <context attribute="Note Attribute" lineEndContext="#pop" name="Bracket With"
+		fallthrough="true" fallthroughContext="#pop">
+	<DetectChar attribute="String" context="String" char="&quot;" />
+	<RegExpr attribute="Note Attribute" context="#stay" String="[&gt;.^-]+" />
+	<RegExpr attribute="Normal Text" context="#stay" String="[\s,]+" />
+	<IncludeRules context="Macro" />
+      </context>
+
+
+      <context attribute="Note Attribute" lineEndContext="#pop" name="Bracket Hs"
+      		fallthrough="true" fallthroughContext="#pop">
+	<DetectChar attribute="String" context="String" char="&quot;" />
+	<IncludeRules context="Macro" />
+      </context>
+
+
+      <context attribute="Note" lineEndContext="#pop" name="Note Probably"
+		fallthrough="true" fallthroughContext="#pop">
+	<RegExpr attribute="Note" context="#pop" String="[a-grs]*" />
+      </context>
+
+
+      <context attribute="Tuplet" lineEndContext="#pop" name="Tuplet"
+		fallthrough="true" fallthroughContext="#pop">
+	<RegExpr attribute="Tuplet" context="#pop" String="\s*(above|below)?\s*[0-9]{1,2}(y|n|num)?(\s*,\s*[0-9]{1,2}\.?([+][0-9]{1,2}\.?)*)?" />
+      </context>
+
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="Location"
+		fallthrough="true" fallthroughContext="#pop">
+	<RegExpr attribute="Normal Text" context="#stay" String="[\s+-]+" />
+	<Float attribute="Normal Text" context="#stay" />
+	<RegExpr attribute="Location" context="#stay" String="\btime\b" />
+	<IncludeRules context="Macro" />
+      </context>
+
+
+      <context attribute="Location Probably" lineEndContext="#pop" name="Location Probably"
+		fallthrough="true" fallthroughContext="#pop">
+	<RegExpr attribute="Location Probably" context="#pop" String="[h-qt-z]|_[a-z][a-z_0-9]*" />
+      </context>
+
+
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+	<IncludeRules context="##Alerts" />
+      </context>
+
+
+      <context attribute="String" lineEndContext="#stay" name="String">
+	<DetectChar attribute="String" context="#pop" char="&quot;" />
+        <RegExpr attribute="String Special" context="#stay" String="[\\][][{}%#&quot;nb|^:,\\/ ]" />
+        <StringDetect attribute="String Special" context="Special Char" String="\(" />
+	<StringDetect attribute="String Special" context="Font Name" String="\f(" />
+	<StringDetect attribute="String Special" context="Font Size" String="\s(" />
+	<RegExpr attribute="String Special" context="#stay" String="\\v\(-?[0-9]{1,3}\)" />
+	<RegExpr attribute="String Lyrics" context="#stay" String="[~&lt;&gt;|^]" />
+	<RegExpr attribute="String Lyrics" context="#stay" String="[-+]?[0-9]+\|" />
+      </context>
+
+
+      <context attribute="String Special" lineEndContext="#stay" name="Special Char"
+		fallthrough="true" fallthroughContext="#pop">
+        <DetectChar attribute="String Special" context="#pop" char=")" />
+	<keyword attribute="String Special" context="#stay" String="mupspecialchars" />
+	<keyword attribute="String Special" context="#stay" String="mupmusicchars" />
+	<RegExpr attribute="String Special" context="#stay" String="[AaEeOo]['`:^~](?=\))" />
+	<RegExpr attribute="String Special" context="#stay" String="[IiUu]['`:^](?=\))" />
+	<RegExpr attribute="String Special" context="#stay" String="[Nn]~(?=\))" />
+	<RegExpr attribute="String Special" context="#stay" String="[Yy]:(?=\))" />
+	<RegExpr attribute="String Special" context="#stay" String="[LlOo]/(?=\))" />
+	<RegExpr attribute="String Special" context="#stay" String="[Cc],(?=\))" />
+	<RegExpr attribute="String Special" context="#stay" String="(&gt;&gt;|&lt;&lt;|``|'')(?=\))" />
+	<RegExpr attribute="String Error" context="#stay" String="[^)&quot;]+" />
+      </context>
+
+
+      <context attribute="String Special" lineEndContext="#stay" name="Font Name"
+		fallthrough="true" fallthroughContext="#pop">
+        <DetectChar attribute="String Special" context="#pop" char=")" />
+	<RegExpr attribute="String Special" context="#stay" String="[ABCHNPT][RBIX](?=\))" />
+	<keyword attribute="String Special" context="Font Style" String="mupfontnames" />
+	<RegExpr attribute="String Special" context="#stay" String="(PV|previous)(?=\))" />
+	<RegExpr attribute="String Error" context="#stay" String="[^ )&quot;]+" />
+      </context>
+
+
+      <context attribute="String Special" lineEndContext="#stay" name="Font Style"
+		fallthrough="true" fallthroughContext="#pop">
+        <RegExpr attribute="String Special" context="#stay" String="\s+" />
+	<keyword attribute="String Special" context="#stay" String="mupfontstyles" />
+	<RegExpr attribute="String Error" context="#stay" String="[^ )&quot;]+" />
+      </context>
+
+
+      <context attribute="String Special" lineEndContext="#stay" name="Font Size"
+		fallthrough="true" fallthroughContext="#pop">
+        <DetectChar attribute="String Special" context="#pop" char=")" />
+	<RegExpr attribute="String Special" context="#stay" String="[-+]?[0-9]+(?=\))" />
+	<RegExpr attribute="String Special" context="#stay" String="(PV|previous)(?=\))" />
+	<RegExpr attribute="String Error" context="#stay" String="[^ )&quot;]+" />
+      </context>
+
+
+      <context attribute="Macro" lineEndContext="#pop" name="Macro">
+	<keyword attribute="Macro" context="#stay" String="mupmacrodirectives_start" beginRegion="macro" />
+	<keyword attribute="Macro" context="#stay" String="mupmacrodirectives_end" endRegion="macro" />
+	<keyword attribute="Macro" context="#stay" String="mupmacrodirectives" />
+	<RegExpr attribute="Macro" context="Macro Location" String="[A-Z][A-Z0-9_]*(?=\.[xynews]\b)" />
+	<RegExpr attribute="Macro" context="#stay" String="[A-Z][A-Z0-9_]*" />
+	<DetectChar attribute="Macro" context="#stay" char="@" endRegion="macro" />
+      </context>
+
+
+      <context attribute="Location" lineEndContext="#pop" name="Macro Location"
+		fallthrough="true" fallthroughContext="#pop">
+	<RegExpr attribute="Location Probably" context="#pop" String=".." />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"       defStyleNum="dsNormal" />
+      <itemData name="Context"           defStyleNum="dsKeyword" />
+      <itemData name="Special Char"      defStyleNum="dsKeyword" />
+      <itemData name="Parameter"         defStyleNum="dsChar" />
+      <itemData name="Value"	         defStyleNum="dsFloat" />
+      <itemData name="Unset Command"     defStyleNum="dsFloat"   bold="1" />
+      <itemData name="Comment"           defStyleNum="dsComment" />
+      <itemData name="Macro"             defStyleNum="dsOthers"  color="#11F" selColor="#1FF" />
+      <itemData name="Print Command"     defStyleNum="dsBaseN" />
+      <itemData name="Barline"           defStyleNum="dsDecVal"  color="#c62" />
+      <itemData name="Newscore"          defStyleNum="dsDecVal"  color="#c62" bold="1" />
+      <itemData name="Note"	         defStyleNum="dsNormal" />
+      <itemData name="Note Attribute"    defStyleNum="dsNormal"  italic="1" color="#07b" />
+      <itemData name="Tuplet"            defStyleNum="dsNormal"  color="#035" />
+      <itemData name="Location"          defStyleNum="dsKeyword" color="#0C4" bold="1" />
+      <itemData name="Location Probably" defStyleNum="dsKeyword" color="#0C4" bold="0" />
+      <itemData name="String"            defStyleNum="dsString" />
+      <itemData name="String Special"    defStyleNum="dsString" bold="1" />
+      <itemData name="String Error"      defStyleNum="dsError" />
+      <itemData name="String Lyrics"     defStyleNum="dsString"  color="#800" />
+      <itemData name="Lyrics"            defStyleNum="dsBaseN"   bold="1" />
+      <itemData name="Error"             defStyleNum="dsError"   color="black" />
+    </itemDatas>
+
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//"/>
+    </comments>
+    <keywords casesensitive="1" additionalDeliminator="~'`@#+-" />
+  </general>
+</language>

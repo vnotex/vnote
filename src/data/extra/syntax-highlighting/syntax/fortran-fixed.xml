@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Fortran (Fixed Format)" version="6" kateversion="5.0" section="Sources" extensions="*.f;*.F;*.for;*.FOR;*.fpp;*.FPP;" mimetype="text/x-fortran-src" casesensitive="0" author="Franchin Matteo (fnch@libero.it)" license="MIT" priority="9">
+<!-- by Franchin Matteo, fnch@libero.it -->
+<!-- NOTE: Keep in sync with the "Fortran (Free Format)" highlighter! (fortran-free.xml) -->
+  <highlighting>
+
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+<!-- *                              L I S T S                            *  -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+    <list name="keywords">
+      <item>allocate</item>
+      <item>break</item>
+      <item>call</item>
+      <item>common</item>
+      <item>continue</item>
+      <item>cycle</item>
+      <item>deallocate</item>
+      <item>forall</item>
+      <item>where</item>
+      <item>elsewhere</item>
+      <item>equivalence</item>
+      <item>exit</item>
+      <item>external</item>
+      <item>for</item>
+      <item>go</item>
+      <item>goto</item>
+      <item>if</item>
+      <item>implicit</item>
+      <item>include</item>
+      <item>interface</item>
+      <item>intrinsic</item>
+      <item>namelist</item>
+      <item>none</item>
+      <item>nullify</item>
+      <item>operator</item>
+      <item>assignment</item>
+      <item>pause</item>
+      <item>procedure</item>
+      <item>pure</item>
+      <item>elemental</item>
+      <item>record</item>
+      <item>recursive</item>
+      <item>result</item>
+      <item>return</item>
+      <item>stop</item>
+      <item>to</item>
+      <item>use</item>
+      <item>only</item>
+      <item>entry</item>
+      <item>while</item>
+      <!-- Others keywords:
+           case, default, select, selectcase,
+           contains, do, elseif, else, then -->
+    </list>
+    <list name="io_functions">
+      <item>access</item>
+      <item>backspace</item>
+      <item>close</item>
+      <item>inquire</item>
+      <item>open</item>
+      <item>print</item>
+      <item>read</item>
+      <item>rewind</item>
+      <item>write</item>
+      <item>format</item>
+    </list>
+    <!-- Keywords inside read(...), write(...), backspace(...),
+          rewind(...), endfile(...), close(...) -->
+    <list name="io_keywords">
+      <item>unit</item>
+      <item>end</item>
+      <item>err</item>
+      <item>fmt</item>
+      <item>iostat</item>
+      <item>status</item>
+      <item>advance</item>
+      <item>size</item>
+      <item>eor</item>
+    </list>
+    <!-- Keywords inside open(...) -->
+    <list name="open_keywords">
+      <item>unit</item>
+      <item>iostat</item>
+      <item>err</item>
+      <item>file</item>
+      <item>status</item>
+      <item>access</item>
+      <item>form</item>
+      <item>recl</item>
+      <item>blank</item>
+      <item>position</item>
+      <item>action</item>
+      <item>delim</item>
+      <item>pad</item>
+    </list>
+    <!-- Keywords inside inquire(...) -->
+    <list name="inquire_keywords">
+      <item>unit</item>
+      <item>iostat</item>
+      <item>err</item>
+      <item>file</item>
+      <item>exist</item>
+      <item>opened</item>
+      <item>number</item>
+      <item>named</item>
+      <item>name</item>
+      <item>access</item>
+      <item>sequential</item>
+      <item>direct</item>
+      <item>form</item>
+      <item>formatted</item>
+      <item>unformatted</item>
+      <item>recl</item>
+      <item>nextrec</item>
+      <item>blank</item>
+      <item>position</item>
+      <item>action</item>
+      <item>read</item>
+      <item>write</item>
+      <item>readwrite</item>
+      <item>delim</item>
+      <item>pad</item>
+    </list>
+    <list name="types">
+      <item>parameter</item>
+      <item>save</item>
+      <item>pointer</item>
+      <item>public</item>
+      <item>private</item>
+      <item>target</item>
+      <item>allocatable</item>
+      <item>optional</item>
+      <item>sequence</item>
+      <!-- Others types: double, precision -->
+    </list>
+
+<!-- There are 4 types of intrinsic procedures in Fortran 90:
+   1) Elemental procedures (elemental_procs);
+   2) Inquiry functions (inquiry_fn);
+   3) Transformational functions (transform_fn);
+   4) Non elemental subroutines (non_elem_subr);
+  Often mathematical functions have one generic form and many specific names!
+  If you use the generic form, the compiler will select the right function
+  to use depending on the type of the arguments.
+  But you can use also the specific names!
+  -->
+
+<!-- E L E M E N T A L    P R O C E D U R E S -->
+    <list name="elemental_procs">
+    <!-- Elemental functions that may convert -->
+      <item>abs</item>   <!-- Generic form: abs -->
+      <item>cabs</item>  <!-- Specific names for abs -->
+      <item>dabs</item>
+      <item>iabs</item>
+      <item>aimag</item>
+      <item>aint</item>  <!-- Generic form: aint -->
+      <item>dint</item>  <!-- Specific name for aint -->
+      <item>anint</item> <!-- Generic form: anint -->
+      <item>dnint</item> <!-- Specific name for anint -->
+      <item>ceiling</item>
+      <item>cmplx</item>
+      <item>dcmplx</item> <!-- (non standard) -->
+      <item>dimag</item>  <!-- (non standard) -->
+      <item>floor</item>
+      <item>nint</item>  <!-- Generic form: nint -->
+      <item>idnint</item><!-- Specific name for nint -->
+      <item>int</item>   <!-- Generic form: int -->
+      <item>idint</item> <!-- Specific names for int -->
+      <item>ifix</item>
+      <item>real</item>  <!-- Generic form: real -->
+      <item>float</item> <!-- Specific names for real -->
+      <item>sngl</item>
+      <item>dble</item>
+      <item>dreal</item> <!-- (non standard) -->
+      <item>aprime</item> <!-- 5 functions from fortran.xml -->
+      <item>dconjg</item> <!-- I don't know if they really belong to -->
+      <item>dfloat</item> <!-- the fortran 90/95 standard! -->
+      <item>ddmim</item>
+      <item>rand</item>
+    <!-- Elemental functions that do not convert -->
+      <item>modulo</item>
+      <item>conjg</item>
+      <item>dprod</item>  <!-- dprod(x, y) is the specific name for x*y -->
+      <item>dim</item>    <!-- Generic form: dim -->
+      <item>ddim</item>   <!-- Specific names for dim -->
+      <item>idim</item>
+      <item>max</item>    <!-- Generic form: max -->
+      <item>amax0</item>  <!-- Specific names for max -->
+      <item>amax1</item>
+      <item>max0</item>
+      <item>max1</item>
+      <item>dmax1</item>
+      <item>min</item>    <!-- Generic form: min -->
+      <item>amin0</item>  <!-- Specific names for min -->
+      <item>amin1</item>
+      <item>min0</item>
+      <item>min1</item>
+      <item>dmin1</item>
+      <item>mod</item>    <!-- Generic form: mod -->
+      <item>amod</item>   <!-- Specific names for mod -->
+      <item>dmod</item>
+      <item>sign</item>   <!-- Generic form: sign -->
+      <item>dsign</item>  <!-- Specific names for sign -->
+      <item>isign</item>
+    <!-- Elemental mathematical functions -->
+      <item>acos</item>    <!-- Generic form: acos -->
+      <item>dacos</item>   <!-- Specific names for acos -->
+      <item>asin</item>    <!-- Generic form: asin -->
+      <item>dasin</item>   <!-- Specific names for asin -->
+      <item>atan</item>    <!-- Generic form: atan -->
+      <item>datan</item>   <!-- Specific names for atan -->
+      <item>atan2</item>   <!-- Generic form: atan2 -->
+      <item>datan2</item>  <!-- Specific names for atan2 -->
+      <item>cos</item>     <!-- Generic form: cos -->
+      <item>ccos</item>    <!-- Specific names for cos -->
+      <item>dcos</item>
+      <item>cosh</item>    <!-- Generic form: cosh -->
+      <item>dcosh</item>   <!-- Specific names for cosh -->
+      <item>exp</item>     <!-- Generic form: exp -->
+      <item>cexp</item>    <!-- Specific names for exp -->
+      <item>dexp</item>
+      <item>log</item>     <!-- Generic form: log -->
+      <item>alog</item>    <!-- Specific names for log -->
+      <item>dlog</item>
+      <item>clog</item>
+      <item>log10</item>   <!-- Generic form: log10 -->
+      <item>alog10</item>  <!-- Specific names for log10 -->
+      <item>dlog10</item>
+      <item>sin</item>     <!-- Generic form: sin -->
+      <item>csin</item>    <!-- Specific names for sin -->
+      <item>dsin</item>
+      <item>sinh</item>    <!-- Generic form: sinh -->
+      <item>dsinh</item>   <!-- Specific name for sinh -->
+      <item>sqrt</item>    <!-- Generic form: sqrt -->
+      <item>csqrt</item>   <!-- Specific names for sqrt -->
+      <item>dsqrt</item>
+      <item>tan</item>     <!-- Generic form: tan -->
+      <item>dtan</item>    <!-- Generic form: dtan -->
+      <item>tanh</item>    <!-- Generic form: tanh -->
+      <item>dtanh</item>   <!-- Specific names for tanh -->
+    <!-- Elemental character and logical functions -->
+    <!-- Character-integer conversions -->
+      <item>achar</item>
+      <item>char</item>
+      <item>iachar</item>
+      <item>ichar</item>
+    <!-- Lexical comparison functions -->
+      <item>lge</item>
+      <item>lgt</item>
+      <item>lle</item>
+      <item>llt</item>
+    <!-- String-handling elemental functions -->
+      <item>adjustl</item>
+      <item>adjustr</item>
+      <item>index</item>
+      <item>len_trim</item>
+      <item>scan</item>
+      <item>verify</item>
+    <!-- Logical conversion -->
+      <item>logical</item>
+    <!-- Elemental functions to manipulate reals -->
+      <item>exponent</item>
+      <item>fraction</item>
+      <item>nearest</item>
+      <item>rrspacing</item>
+      <item>scale</item>
+      <item>set_exponent</item>
+      <item>spacing</item>
+    <!-- Bit manipulation elemental functions -->
+      <item>btest</item>
+      <item>iand</item>
+      <item>ibclr</item>
+      <item>ibits</item>
+      <item>ibset</item>
+      <item>ieor</item>
+      <item>ior</item>
+      <item>ishft</item>
+      <item>ishftc</item>
+      <item>not</item>
+    <!-- Bit manipulation elemental subroutine -->
+      <item>mvbits</item>
+    <!-- Merge elemental function -->
+      <item>merge</item>
+    </list>
+
+<!-- I N Q U I R Y    F U N C T I O N S -->
+    <list name="inquiry_fn">
+    <!-- Inquiry functions for any type -->
+      <item>associated</item>
+      <item>present</item>
+      <item>kind</item>
+    <!-- String-handling inquiry function -->
+      <item>len</item>
+    <!-- Numeric inquiry functions -->
+      <item>digits</item>
+      <item>epsilon</item>
+      <item>huge</item>
+      <item>maxexponent</item>
+      <item>minexponent</item>
+      <item>precision</item>
+      <item>radix</item>
+      <item>range</item>
+      <item>tiny</item>
+    <!-- Bit inquiry function -->
+      <item>bit_size</item>
+    <!-- Array inquiry functions -->
+      <item>allocated</item>
+      <item>lbound</item>
+      <item>ubound</item>
+      <item>shape</item>
+      <item>size</item>
+    </list>
+
+<!-- T R A N S F O R M A T I O N A L    F U N C T I O N S -->
+    <list name="transform_fn">
+    <!-- String-handling transformational functions -->
+      <item>repeat</item>
+      <item>trim</item>
+    <!-- Transformational functions for kind values -->
+      <item>selected_int_kind</item>
+      <item>selected_real_kind</item>
+    <!-- Transfer function -->
+      <item>transfer</item>
+    <!-- Vector and matrix multiplication functions -->
+      <item>dot_product</item>
+      <item>matmul</item>
+    <!-- Transformational functions that reduce arrays -->
+      <item>all</item>
+      <item>any</item>
+      <item>count</item>
+      <item>maxval</item>
+      <item>minval</item>
+      <item>product</item>
+      <item>sum</item>
+    <!-- Packing and unpacking arrays -->
+      <item>pack</item>
+      <item>unpack</item>
+    <!-- Transformational function for reshaping an array -->
+      <item>reshape</item>
+    <!-- Transformational function for replication -->
+      <item>spread</item>
+    <!-- Array shifting functions -->
+      <item>cshift</item>
+      <item>eoshift</item>
+    <!-- Matrix transpose -->
+      <item>transpose</item>
+    <!-- Transformational functions for geometric location -->
+      <item>maxloc</item>
+      <item>minloc</item>
+    </list>
+
+<!-- N O N    E L E M E N T A L    S U B R O U T I N E S -->
+    <list name="non_elem_subr">
+    <!-- Real time clock -->
+      <item>date_and_time</item>
+      <item>system_clock</item>
+    <!-- Random numbers -->
+      <item>random_number</item>
+      <item>random_seed</item>
+    </list>
+
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+<!-- *                           C O N T E X T S                         *  -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="default" >
+        <IncludeRules context="find_preprocessor" />
+        <IncludeRules context="find_comments" />
+        <IncludeRules context="find_strings" />
+        <IncludeRules context="find_decls" />
+        <IncludeRules context="find_intrinsics" />
+        <IncludeRules context="find_io_stmnts" />
+        <IncludeRules context="find_op_and_log" />
+        <IncludeRules context="find_numbers" />
+        <IncludeRules context="find_continue" />
+        <IncludeRules context="find_symbols" />
+        <IncludeRules context="find_begin_stmnts" />
+        <IncludeRules context="find_end_stmnts" />
+        <IncludeRules context="find_mid_stmnts" />
+      </context>
+<!--************************END OF THE MAIN CONTEXT*************************-->
+
+
+<!-- IMPORTANT: If you modify something, do it also in "fortran-free.xml"! -->
+
+<!-- This context highlights preprocessor lines -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_preprocessor">
+        <DetectChar attribute="Preprocessor" context="preprocessor" char="#" column="0"/>
+        <StringDetect attribute="Preprocessor" context="preprocessor" String="cDEC$" column="0"/>
+        <StringDetect attribute="Preprocessor" context="preprocessor" String="CDEC$" column="0"/>
+      </context>
+      <context attribute="Preprocessor" lineEndContext="#pop" name="preprocessor" />
+
+<!-- This context highlights operators and the logical values .true. .false. -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_op_and_log">
+        <StringDetect attribute="Logical" context="#stay" String=".true." insensitive="true"/>
+        <StringDetect attribute="Logical" context="#stay" String=".false." insensitive="true"/>
+        <RegExpr attribute="Operator" context="#stay" String="\.[A-Za-z]+\."/>
+        <Detect2Chars attribute="Operator" context="#stay" char="=" char1="="/>
+        <Detect2Chars attribute="Operator" context="#stay" char="/" char1="="/>
+        <Detect2Chars attribute="Operator" context="#stay" char="&lt;" char1="="/>
+        <Detect2Chars attribute="Operator" context="#stay" char="&gt;" char1="="/>
+        <AnyChar attribute="Operator" context="#stay" String="&lt;&gt;"/>
+      </context>
+
+<!-- This context highlights comments -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_comments">
+        <AnyChar attribute="Comment" context="comment" String="cC*" column="0"/>
+        <DetectChar attribute="Comment" context="comment" char="!"/>
+        <RegExpr attribute="Comment" context="comment" String="." column="72" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="comment">
+        <IncludeRules context="##Alerts"/>
+        <IncludeRules context="##Modelines"/>
+      </context>
+
+<!-- This context highlights symbols -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_symbols">
+        <Detect2Chars attribute="Keyword" context="#stay" char="*" char1="*"/>
+        <Detect2Chars attribute="Keyword" context="#stay" char="(" char1="/"/>
+        <Detect2Chars attribute="Keyword" context="#stay" char="/" char1=")"/>
+        <AnyChar attribute="Keyword" context="#stay" String="&amp;+-*/=?[]^{|}~"/>
+        <AnyChar attribute="Symbol" context="#stay" String="(),"/>
+      </context>
+
+<!-- This context highlights the continuation character -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_continue">
+        <RegExpr attribute="Continuation character" context="#stay" String="^     [^0-9\s]"/>
+      </context>
+
+<!-- This context highlights items inside the parentesis of a function -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="inside_func_paren">
+        <DetectChar attribute="Normal Text" context="inside_func_paren" char="("/>
+        <DetectChar attribute="Normal Text" context="#pop" char=")"/>
+        <IncludeRules context="find_strings" />
+        <IncludeRules context="find_intrinsics" />
+        <IncludeRules context="find_numbers" />
+      </context>
+
+<!-- The following two contexts match input/output statements -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_io_stmnts">
+        <RegExpr attribute="IO Function" context="find_io_paren" String="\b(read|write|backspace|rewind|end\s*file|close|open|inquire)\s*[(]" insensitive="true"/>
+        <RegExpr attribute="IO Function" context="format_stmnt" String="\bformat\s*[(]" insensitive="true"/>
+        <RegExpr attribute="IO Function" context="#stay" String="\bend\s*file\b" insensitive="true"/>
+        <keyword attribute="IO Function" context="#stay" String="io_functions"/>
+      </context>
+<!-- This context matches parenthesis for the read, write, ... statements -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_io_paren">
+        <DetectChar attribute="IO Function" context="#stay" char="*"/>
+        <DetectChar attribute="Normal Text" context="inside_func_paren" char="("/>
+        <DetectChar attribute="IO Function" context="#pop" char=")"/>
+        <keyword attribute="IO Function"  context="#stay" String="io_keywords"/>
+        <keyword attribute="IO Function"  context="#stay" String="inquire_keywords"/>
+        <keyword attribute="IO Function"  context="#stay" String="open_keywords"/>
+        <IncludeRules context="find_strings" />
+        <IncludeRules context="find_intrinsics" />
+        <IncludeRules context="find_numbers" />
+        <IncludeRules context="find_symbols" />
+      </context>
+<!-- This context highlights the text inside the parenthesis of fortran statement -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="format_stmnt">
+        <DetectChar attribute="IO Function" context="format_stmnt" char="("/>
+        <DetectChar attribute="IO Function" context="#pop" char=")"/>
+        <RegExpr attribute="IO Function" context="#stay" String="[0-9]*/" insensitive="true"/>
+        <DetectChar attribute="IO Function" context="#stay" char=":"/>
+        <IncludeRules context="find_strings" />
+        <IncludeRules context="find_symbols" />
+      </context>
+
+<!-- The following context matches the begin of program units -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_begin_stmnts">
+        <RegExpr attribute="Keyword" context="#stay" String="\bmodule\s+procedure\b" insensitive="true"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(subroutine|function|block\s*data|program|module)\b" insensitive="true" beginRegion="Routine"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(then|do|select\s+case)\b" insensitive="true" beginRegion="Block"/>
+      </context>
+<!-- The following context matches the end of program units -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_end_stmnts">
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(subroutine|function|block\s*data|program|module)\b" insensitive="true" endRegion="Routine"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(do|if)\b" insensitive="true" endRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(select|where|forall|interface)\b" insensitive="true"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\belse\s*if\b" insensitive="true" endRegion="Block"/>
+        <WordDetect attribute="Keyword" context="#stay" String="end" insensitive="true" endRegion="Routine"/>
+      </context>
+<!-- The following context matches the mid of program units -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_mid_stmnts">
+        <WordDetect attribute="Keyword" context="#stay" String="else" insensitive="true" endRegion="Block" beginRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bcase(\s+default)?\b" insensitive="true" endRegion="Block" beginRegion="Block"/>
+        <WordDetect attribute="Keyword" context="#stay" String="contains" insensitive="true" endRegion="Routine" beginRegion="Routine"/>
+      </context>
+
+<!-- The following two contexts match declarations -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_decls">
+        <RegExpr attribute="Data Type" context="#stay" String="\b(integer|real|complex)[\*]\d{1,2}" insensitive="true"/>
+        <RegExpr attribute="Data Type" context="#stay" String="\bend\s*type\b" insensitive="true"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <WordDetect attribute="Data Type" context="#stay" String="data" firstNonSpace="true" insensitive="true"/>
+        <!--<RegExpr attribute="Data Type" context="find_paren" String="real\s*[(]" firstNonSpace="true" insensitive="true"/>
+        <RegExpr attribute="Data Type" context="#stay" String="real(?![\w\*])" firstNonSpace="true" insensitive="true"/>-->
+        <RegExpr attribute="Data Type" context="#stay" String="\bcharacter[*][0-9]+\b" insensitive="true"/>
+        <RegExpr attribute="Data Type" context="find_paren" String="\b(type|integer|real|complex|character|logical|intent|dimension)\s*[(]" insensitive="true"/>
+        <RegExpr attribute="Data Type" context="#stay" String="\b(type|integer|real|complex|character|logical|double\s*precision|intent|dimension)\b" insensitive="true"/>
+        <Detect2Chars attribute="Data Type" context="#stay" char=":" char1=":"/>
+      </context>
+<!-- This context matches parenthesis in data type declarations, such as in 'real(...)'-->
+      <context attribute="Data Type" lineEndContext="#pop" name="find_paren">
+        <DetectChar attribute="Data Type" context="find_paren" char="("/>
+        <DetectChar attribute="Data Type" context="#pop" char=")"/>
+      </context>
+
+<!-- The following context matches intrinsic procedures -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_intrinsics">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+      <!-- INTRINSIC PROCEDURES -->
+        <keyword attribute="Elemental Procedure"       context="#stay" String="elemental_procs"/>
+        <keyword attribute="Inquiry Function"          context="#stay" String="inquiry_fn"/>
+        <keyword attribute="Transformational Function" context="#stay" String="transform_fn"/>
+        <keyword attribute="Non elemental subroutine"  context="#stay" String="non_elem_subr"/>
+      </context>
+
+<!-- The following context matches integer and real numbers -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="find_numbers">
+        <!-- Floating-point numbers with optional kind -->
+        <RegExpr attribute="Float" context="#stay" String="[0-9]*\.[0-9]+([de][+-]?[0-9]+)?([_]([0-9]+|[a-z][\w_]*))?" insensitive="true"/>
+        <RegExpr attribute="Float" context="#stay" String="\b[0-9]+\.[0-9]*([de][+-]?[0-9]+)?([_]([0-9]+|[a-z][\w_]*))?(?![a-z])" insensitive="true"/>
+        <RegExpr attribute="Float" context="#stay" String="\b[0-9]+[de][+-]?[0-9]+([_]([0-9]+|[a-z][\w_]*))?" insensitive="true"/>
+        <!-- Integers with optional kind specifier -->
+        <RegExpr attribute="Decimal" context="#stay" String="\b[0-9]+([_]([0-9]+|[a-zA-Z][\w_]*))?"/>
+        <!-- Integers in binary, octal and hexadecimal notations -->
+        <RegExpr attribute="Decimal" context="#stay" String="\b[bozx]([&apos;][0-9a-f]+[&apos;]|[&quot;][0-9a-f]+[&quot;])" insensitive="true"/>
+      </context>
+
+<!-- The following four contexts implement the complex string multi-line declarations -->
+      <!-- Matches STRINGS (there are 2 types of strings: '...' and "...") -->
+      <context attribute="String" lineEndContext="#stay" name="find_strings">
+        <DetectChar attribute="String" context="string_1" char="&apos;"/>
+        <DetectChar attribute="String" context="string_2" char="&quot;"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="string_1" fallthrough="true" fallthroughContext="#pop">
+        <RegExpr attribute="String" context="#pop" String="[^&apos;]*&apos;"/>
+        <RegExpr attribute="Keyword" context="end_of_string" String="&amp;\s*$"/>
+        <RegExpr attribute="String" context="end_of_string" String=".*(?=&amp;\s*$)"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="string_2" fallthrough="true" fallthroughContext="#pop">
+        <RegExpr attribute="String" context="#pop" String="[^&quot;]*&quot;"/>
+        <RegExpr attribute="Keyword" context="end_of_string" String="&amp;\s*$"/>
+        <RegExpr attribute="String" context="end_of_string" String=".*(?=&amp;\s*$)"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="end_of_string" fallthrough="true" fallthroughContext="#pop#pop">
+        <DetectSpaces />
+        <RegExpr attribute="Keyword" context="#stay" String="&amp;\s*$"/>
+        <DetectChar attribute="Keyword" context="#pop" char="&amp;" firstNonSpace="true"/>
+        <AnyChar attribute="Comment" context="comment" String="cC*" column="0"/>
+        <DetectChar attribute="Comment" context="comment" char="!" firstNonSpace="true"/>
+      </context>
+    </contexts>
+
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+<!-- *             S T Y L E   I T E M   D E F I N I T I O N S           *  -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  -->
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Preprocessor" defStyleNum="dsOthers"/>
+      <itemData name="Operator" defStyleNum="dsOperator" bold="1" italic="0"/>
+      <itemData name="Logical" defStyleNum="dsConstant" bold="1" italic="0"/>
+      <itemData name="IO Function" defStyleNum="dsFunction" bold="0" italic="0"/>
+      <itemData name="Elemental Procedure" defStyleNum="dsBuiltIn" bold="1" italic="0"/>
+      <itemData name="Continuation character" defStyleNum="dsBuiltIn" bold="1" italic="0"/>
+      <itemData name="Inquiry Function" defStyleNum="dsFunction" bold="1" italic="1"/>
+      <itemData name="Transformational Function" defStyleNum="dsFunction" bold="1" italic="0"/>
+      <itemData name="Non elemental subroutine" defStyleNum="dsFunction" bold="1" italic="0"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="c"/>
+    </comments>
+    <keywords casesensitive="0"/>
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

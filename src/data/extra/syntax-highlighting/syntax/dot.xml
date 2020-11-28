@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Adapted from the VIM highlighter, by Markus Mottl (markus@oefai.at) -->
+<language name="dot" version="3" kateversion="5.0" section="Scientific" extensions="*.dot" mimetype="text/x-dot" author="Postula Loïs (lois.postula@live.be)" priority="0">
+
+  <highlighting>
+
+    <list name="keywords">
+      <item>digraph</item>
+      <item>node</item>
+      <item>edge</item>
+      <item>subgraph</item>
+    </list>
+
+    <list name="attributes">
+      <!-- Graph attributes -->
+      <item>center</item>
+      <item>layers</item>
+      <item>margin</item>
+      <item>mclimit</item>
+      <item>name</item>
+      <item>nodesep</item>
+      <item>nslimit</item>
+      <item>ordering</item>
+      <item>page</item>
+      <item>pagedir</item>
+      <item>rank</item>
+      <item>rankdir</item>
+      <item>ranksep</item>
+      <item>ratio</item>
+      <item>rotate</item>
+      <item>size</item>
+      <!-- Node attributes -->
+      <item>distortion</item>
+      <item>fillcolor</item>
+      <item>fontcolor</item>
+      <item>fontname</item>
+      <item>fontsize</item>
+      <item>height</item>
+      <item>layer</item>
+      <item>orientation</item>
+      <item>peripheries</item>
+      <item>regular</item>
+      <item>shape</item>
+      <item>shapefile</item>
+      <item>sides</item>
+      <item>skew</item>
+      <item>width</item>
+      <!-- Edge attributes -->
+      <item>arrowhead</item>
+      <item>arrowsize</item>
+      <item>arrowtail</item>
+      <item>constraint</item>
+      <item>decorateP</item>
+      <item>dir</item>
+      <item>headclip</item>
+      <item>headlabel</item>
+      <item>labelangle</item>
+      <item>labeldistance</item>
+      <item>labelfontcolor</item>
+      <item>labelfontname</item>
+      <item>labelfontsize</item>
+      <item>minlen</item>
+      <item>port_label_distance</item>
+      <item>samehead</item>
+      <item>sametail</item>
+      <item>tailclip</item>
+      <item>taillabel</item>
+      <item>weight</item>
+      <!-- Shared attributes (graphs, nodes, edges) -->
+      <item>color</item>
+      <!-- Shared attributes (graphs and edges) -->
+      <item>bgcolor</item>
+      <item>label</item>
+      <item>URL</item>
+      <!-- Shared attributes (nodes and edges) -->
+      <item>fontcolor</item>
+      <item>fontname</item>
+      <item>fontsize</item>
+      <item>layer</item>
+      <item>style</item>
+    </list>
+
+    <contexts>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <IncludeRules context="DetectAll"/>
+      </context>
+
+      <!-- detector contexts -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="DetectAll">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Attribute" context="#stay" String="attributes"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <AnyChar attribute="Symbol" context="#stay" String=";="/>
+        <Detect2Chars attribute="Symbol" context="#stay" char="-" char1="&gt;"/>
+        <Float attribute="Number" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+        <RegExpr attribute="Identifier" context="#stay" String="\b\w+\b"/>
+        <IncludeRules context="DetectComments"/>
+        <DetectChar attribute="Symbol" context="RegionCurly" char="{" beginRegion="curly"/>
+        <DetectChar attribute="Symbol" context="RegionSquare" char="[" beginRegion="square"/>
+        <DetectChar attribute="Symbol" context="RegionParen" char="(" beginRegion="paren"/>
+        <AnyChar attribute="Error" context="#stay" String=")]}"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="DetectComments">
+        <Detect2Chars attribute="Comment" context="CommentSL" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="CommentML" char="/" char1="*" beginRegion="Comment"/>
+      </context>
+
+      <!-- region contexts -->
+      <context attribute="Comment" lineEndContext="#stay" name="RegionCurly">
+        <DetectChar attribute="Symbol" context="#pop" char="}" endRegion="curly"/>
+        <IncludeRules context="DetectAll"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="RegionSquare">
+        <DetectChar attribute="Symbol" context="#pop" char="]" endRegion="square"/>
+        <IncludeRules context="DetectAll"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="RegionParen">
+        <DetectChar attribute="Symbol" context="#pop" char=")" endRegion="paren"/>
+        <IncludeRules context="DetectAll"/>
+      </context>
+
+      <!-- other contexts -->
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <Detect2Chars attribute="String Char" context="#stay" char="\" char1="\"/>
+        <Detect2Chars attribute="String Char" context="#stay" char="\" char1="&quot;"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="CommentSL">
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="CommentML">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword"/>
+      <itemData name="Attribute"    defStyleNum="dsAttribute"/>
+      <itemData name="Symbol"       defStyleNum="dsOthers"/>
+      <itemData name="Number"       defStyleNum="dsDecVal"/>
+      <itemData name="Identifier"   defStyleNum="dsVariable"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Error"        defStyleNum="dsError"/>
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+
+    <comments>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="/*" end="*/"/>
+    </comments>
+
+    <keywords casesensitive="1"/>
+
+  </general>
+
+</language>

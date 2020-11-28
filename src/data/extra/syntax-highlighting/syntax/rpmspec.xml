@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd" [
+  <!ENTITY a_valid_char_in_macro_names "A-Za-z0-9_">
+  <!ENTITY command_section_name "(prep|build|pre|preun|install|post|postun|clean|files|trigger|triggerin|triggerun|triggerpostun|verifyscript|check|pretrans|posttrans)">
+  <!ENTITY arch "(aarch64|alpha|alphaev5|alphaev56|alphaev6|alphaev67|alphapca56|amd64|armv3l|armv4b|armv4l|armv4tl|armv5b|armv5l|armv5teb|armv5tejl|armv5tel|armv6l|armv7l|atariclone|atarist|atariste|ataritt|athlon|axp|em64t|falcon|fat|geode|hades|hppa|hppa1\.0|hppa1\.1|hppa1\.2|hppa2\.0|hppa64|i370|i386|i486|i586|i686|ia32e|ia64|IP|m68k|m68kmint|milan|mips|mipsel|noarch|osfmach3_i386|osfmach3_i486|osfmach3_i586|osfmach3_i686|osfmach3_ppc|parisc|pentium3|pentium4|powerpc|powerpc64|powerppc|ppc|ppc32dy4|ppc64|ppc64le|ppc64iseries|ppc64pseries|ppc8260|ppc8560|ppciseries|ppcpseries|rs6000|s390|s390x|sgi|sh|sh3|sh4|sh4a|sparc|sparc64|sparc64v|sparcv8|sparcv9|sparcv9v|sun4|sun4c|sun4d|sun4m|sun4u|x86_64|xtensa)">
+  <!ENTITY os "(AIX|AmigaOS|BSD_OS|bsdi|bsdi4\.0|cygwin32|CYGWIN32_95|CYGWIN32_NT|Darwin|darwin|Darwin|FreeBSD|FreeMiNT|HP-UX|hpux10|hpux10\.00|hpux10\.01|hpux10\.10|hpux10\.20|hpux10\.30|hpux11\.00|hpux9\.04|hpux9\.05|hpux9\.07|IRIX|Irix|IRIX|IRIX64|Irix64|IRIX64|Linux|Linux\/390|Linux\/ESA|machten|MacOSX|macosx|MacOSX|MiNT|mint|MiNT|mint|MiNT|mint|MP_RAS|ncr-sysv4\.2|ncr-sysv4\.3|NEXTSTEP|NextStep|OS\/390|OSF1|osf1|osf3\.2|osf4\.0|SCO_SV|SCO_SV3\.2v5\.0\.2|solaris|solaris2\.3|solaris2\.4|solaris2\.5|solaris2\.6|solaris2\.7|SunOS|SunOS4|SunOS5|TOS|UNIX_SV|VM\/ESA)">
+  <!ENTITY arch_conditionals_names "(ifarch|ifnarch)">
+  <!ENTITY os_conditionals_names "(ifos|ifnos)">
+  <!ENTITY lookahead_whitespace_eol "(?=($| |\t))">
+]>
+<language name="RPM Spec" version="5" kateversion="2.4" section="Other" extensions="*.spec" mimetype="text/x-rpm-spec" license="Public Domain">
+
+<!-- The entities "arch" and "os" are based on /usr/lib/rpm/rpmrc (in the version coming with openSUSE 11.4). -->
+
+  <highlighting>
+
+    <list name="weekdays">
+      <item>Mon</item>
+      <item>Tue</item>
+      <item>Wed</item>
+      <item>Thu</item>
+      <item>Fri</item>
+      <item>Sat</item>
+      <item>Sun</item>
+    </list>
+
+    <list name="month names">
+      <item>Jan</item>
+      <item>Feb</item>
+      <item>Mar</item>
+      <item>Apr</item>
+      <item>May</item>
+      <item>Jun</item>
+      <item>Jul</item>
+      <item>Aug</item>
+      <item>Sep</item>
+      <item>Oct</item>
+      <item>Nov</item>
+      <item>Dec</item>
+    </list>
+
+    <list name="days">
+      <item>1</item>
+      <item>2</item>
+      <item>3</item>
+      <item>4</item>
+      <item>5</item>
+      <item>6</item>
+      <item>7</item>
+      <item>8</item>
+      <item>9</item>
+      <item>01</item>
+      <item>02</item>
+      <item>03</item>
+      <item>04</item>
+      <item>05</item>
+      <item>06</item>
+      <item>07</item>
+      <item>08</item>
+      <item>09</item>
+      <item>10</item>
+      <item>11</item>
+      <item>12</item>
+      <item>13</item>
+      <item>14</item>
+      <item>15</item>
+      <item>16</item>
+      <item>17</item>
+      <item>18</item>
+      <item>19</item>
+      <item>20</item>
+      <item>21</item>
+      <item>22</item>
+      <item>23</item>
+      <item>24</item>
+      <item>25</item>
+      <item>26</item>
+      <item>27</item>
+      <item>28</item>
+      <item>29</item>
+      <item>30</item>
+      <item>31</item>
+    </list>
+
+    <contexts>
+      <!-- "package section" is the context for the package defination. As it is the first context
+      in this file, it is also the context with which the interpreter starts. -->
+      <context attribute="Error" lineEndContext="#stay" name="package section">
+        <!-- Handle tags: -->
+        <RegExpr attribute="Tag" context="tag_line_value" String="((Icon)[ \t]*:[ \t]*)" column="0" />
+        <RegExpr attribute="Tag" context="tag_line_os" String="((ExclusiveOs|ExcludeOs)[ \t]*:[ \t]*)" column="0" />
+        <RegExpr attribute="Tag" context="tag_line_arch" String="((BuildArch|BuildArchitectures|ExclusiveArch|ExcludeArch)[ \t]*:[ \t]*)" column="0" />
+        <RegExpr attribute="Tag" context="tag_line_package" String="((Conflicts|Obsoletes|Provides|Requires|Requires\(.*\)|Enhances|Suggests|BuildConflicts|BuildRequires|Recommends|PreReq)[ \t]*:[ \t]*)" column="0" />
+        <RegExpr attribute="Tag" context="tag_line_integer" String="((Epoch|Serial|Nosource|Nopatch)[ \t]*:[ \t]*)" column="0" />
+        <RegExpr attribute="Tag" context="tag_line_switch" String="((AutoReq|AutoProv|AutoReqProv)[ \t]*:[ \t]*)" column="0" />
+        <RegExpr attribute="Tag" context="tag_line_string" String="((Copyright|License|Summary|Summary\(.*\)|Distribution|Vendor|Packager|Group|Source\d*|Patch\d*|BuildRoot|Prefix)[ \t]*:[ \t]*)" column="0" />
+        <RegExpr attribute="Tag" context="tag_line_string_only_one_word" String="((Name|Version|Release|Url|URL)[ \t]*:[ \t]*)" column="0" />
+        <!-- Handle % -->
+        <AnyChar context="macro entry in package section" String="%$" lookAhead="true" />
+        <!-- Handle comments. "# norootforbuild" is displayed like a tag. -->
+        <RegExpr context="Comment" String="[ \t]*#" column="0" lookAhead="true" />
+                <!-- Spaces are okay -->
+        <DetectSpaces attribute="Fallback for separator spaces" />
+        <!-- Fallback value for every non-space -->
+        <!--RegExpr attribute="Error" context="#stay" String="[^\s]" /-->
+      </context>
+
+      <!-- "macro entry in package section" is used for lines in the package section that start
+      with a macro. It recognizes macros. Everything else is treated as normal text. This context
+      is used to prevent to highlight syntax errors after macros. With the next line break, this
+      context will switch back ("#pop"). -->
+      <context attribute="Shell commands" lineEndContext="#pop" name="macro entry in package section">
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- "package section start line" simply is used for the parameters after the
+      "%package" macro. With the next line break, it will switch to the
+      "package section" context which will handle everything else. -->
+      <context attribute="Shell commands" lineEndContext="package section" name="package section start line">
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- "command section" is a generic context for all secions (like %prep, %build, %install...)
+      where you can enter shell commands. -->
+      <context attribute="Shell commands" lineEndContext="#stay" name="command section">
+        <!-- Handle \ -->
+        <RegExpr attribute="Escaped character" String="\\." />
+        <DetectChar attribute="Line break" char="\" />
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <!-- Handle comments. "# norootforbuild" is displayed like a tag. -->
+        <RegExpr context="Comment" String="[ \t]*#" column="0" lookAhead="true" />
+      </context>
+
+      <!-- "changelog section" is the context for the changelog. By default, everything that is
+      not recognized especially, is interpretated as changelog text. -->
+      <context attribute="String" lineEndContext="#stay" name="changelog section">
+        <!-- Handle calender date -->
+        <DetectChar attribute="Tag" context="changelog_weekday" char="*" column="0" />
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <!-- Handle comments. "# norootforbuild" is displayed like a tag. -->
+        <RegExpr context="Comment" String="[ \t]*#" column="0" lookAhead="true" />
+      </context>
+
+      <!-- "description section start line" simply is used for the parameters after the
+      "%description" macro. With the next line break, it will switch to the
+      "description section" context which will handle the content of the description. -->
+      <context attribute="Shell commands" lineEndContext="description section" name="description section start line">
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- "description section" is a follow-up context of "description section start line". See
+      there for further details. -->
+      <context attribute="String" lineEndContext="#stay" name="description section">
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <!-- Handle comments. "# norootforbuild" is displayed like a tag. -->
+        <RegExpr context="Comment" String="[ \t]*#" column="0" lookAhead="true" />
+      </context>
+
+      <!-- This is a convenience context that is handling comments automatically. Furthermore it
+      handles "# norootforbuild" because it looks like a comment. If a context supports comments,
+      simple use "<RegExpr context="Comment" String="[ \t]*#" column="0" lookAhead="true" />".
+      (This context relies on the asumption that # is the first non-whitespace. We have to
+      guarantee this when calling this context! -->
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <!-- While indeeted comments are not allowed by the standard (see section "Comments" at
+        http://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-specfile-syntax.html#id1961462),
+        rpmbuild accepts them nevertheless. We highlight them as comments, but we mark the
+        indeet. -->
+        <RegExpr attribute="Hint" context="#stay" String="[ \t]+(?=#)" column="0" />
+	<!-- Handle "# norootforbuild" and some of its miss-spellings. -->
+        <StringDetect attribute="Tag" context="every_non_whitespace_is_warning" String="# norootforbuild" column="0" />
+        <RegExpr attribute="Warning" context="#stay" String="#[ \t]*norootforbuild" />
+        <!-- Warning on single percent ("%"), but not on double percent ("%%"): -->
+        <Detect2Chars attribute="Comment" char="%" char1="%"/>
+        <DetectChar attribute="Warning" char="%"/>
+        <IncludeRules context="##Alerts"/> <!-- Alert -->
+      </context>
+
+      <!-- "every_non_whitespace_is_error" is a simple helper context. It switchs back to the
+      previous context at the end of the line. -->
+      <context attribute="Fallback for separator spaces" lineEndContext="#pop" name="every_non_whitespace_is_error">
+        <RegExpr attribute="Error" context="#stay" String="[^\s]" />
+      </context>
+
+      <!-- "every_non_whitespace_is_warning" is a simple helper context. It switchs back to the
+      previous context at the end of the line. -->
+      <context attribute="Fallback for separator spaces" lineEndContext="#pop" name="every_non_whitespace_is_warning">
+        <RegExpr attribute="Warning" context="#stay" String="[^\s]" />
+      </context>
+
+      <!-- "tag_line_value" is a context for enumeration values. It makes no further syntax
+      check. -->
+      <context attribute="Enumeration" lineEndContext="#pop" name="tag_line_value">
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- "tag_line_string" is a context for string values. It makes no further syntax
+      check. -->
+      <context attribute="String" lineEndContext="#pop" name="tag_line_string">
+        <!-- Handle \ -->
+        <RegExpr attribute="Escaped character" String="\\[^%]" />
+        <RegExpr attribute="Escaped character" String="\\(?=(\%))" />
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- "tag_line_string_only_one_word" is a context for string values. The first word is
+      highlighted as string, but after the first space (normal space, tab...), all other
+      words are highlighted as error. WARNING: This context requieres that there is no space at
+      the begin! -->
+      <context attribute="String" lineEndContext="#pop" name="tag_line_string_only_one_word">
+        <!-- Handle \ -->
+        <RegExpr attribute="Escaped character" String="\\[^%]" />
+        <RegExpr attribute="Escaped character" String="\\(?=(\%))" />
+        <!-- Handle % -->
+        <AnyChar context="tag_line_string" String="%$" lookAhead="true" />
+        <!-- Handle spaces -->
+        <DetectSpaces context="every_non_whitespace_is_error" />
+      </context>
+
+      <!-- "tag_line_integer" is a context for integer values. Non-integer context is marked as
+      error. -->
+      <context attribute="Error" lineEndContext="#pop" name="tag_line_integer">
+        <Int attribute="Integer" context="every_non_whitespace_is_error" />
+        <!-- Handle % -->
+        <AnyChar context="tag_line_integer_without_syntax_check" String="%$" lookAhead="true" />
+        <RegExpr context="every_non_whitespace_is_error" String="." lookAhead="true" />
+      </context>
+
+      <!-- "tag_line_os" is a context for values that define the operation system. Unknown values
+      are marked as error. -->
+      <context attribute="Warning" lineEndContext="#pop" name="tag_line_os">
+        <!-- Spaces are okay -->
+        <DetectSpaces attribute="Fallback for separator spaces" />
+        <!-- Recognize valid values -->
+        <RegExpr attribute="Enumeration" String="&os;&lookahead_whitespace_eol;" />
+        <!-- Handle % -->
+        <AnyChar context="tag_line_value" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- "tag_line_integer_without_syntax_check" is a context that is used internally by
+      "tag_line_integer" after macros. -->
+      <context attribute="Integer" lineEndContext="#pop" name="tag_line_integer_without_syntax_check">
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- "tag_line_arch" is a context for values that define the computer type. Unknown values
+      are marked as error. -->
+      <context attribute="Warning" lineEndContext="#pop" name="tag_line_arch">
+        <!-- Spaces are okay -->
+        <DetectSpaces attribute="Fallback for separator spaces" />
+        <!-- Recognize valid values -->
+        <RegExpr attribute="Enumeration" String="&arch;&lookahead_whitespace_eol;" />
+        <!-- Handle % -->
+        <AnyChar context="tag_line_value" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- "tag_line_package" is a context for dependency handling. The keywords <= >= == < > are
+      recognized and highlighted as keywords. Thee rest is simply highlighted as enumeration. See
+      http://docs.fedoraproject.org/drafts/rpm-guide-en/ch-specfile-syntax.html#id3045258 and
+      http://docs.fedoraproject.org/drafts/rpm-guide-en/ch-advanced-packaging.html#id2979270 for
+      details -->
+      <context attribute="Enumeration" lineEndContext="#pop" name="tag_line_package">
+        <AnyChar attribute="Keyword" context="#stay" String="()" /> <!-- See http://rpm5.org/docs/api/dependencies.html about the parentheses -->
+        <Detect2Chars attribute="Keyword" context="#stay" char="&lt;" char1="="/>
+        <Detect2Chars attribute="Keyword" context="#stay" char="&gt;" char1="="/>
+        <Detect2Chars attribute="Keyword" context="#stay" char="=" char1="="/>
+        <AnyChar attribute="Keyword" context="#stay" String="=&lt;&gt;," />
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- "tag_line_switch" is a context that accepts "0", "1", "yes" and "no" as value.
+      Everything else is an error. See http://www.rpm.org/max-rpm-snapshot/s1-rpm-depend-auto-depend.html
+      and http://www.rpm.org/max-rpm/s1-rpm-inside-tags.html#S3-RPM-INSIDE-AUTOREQPROV-TAG -->
+      <context attribute="Error" lineEndContext="#pop" name="tag_line_switch">
+        <AnyChar attribute="Enumeration" context="every_non_whitespace_is_error" String="01" />
+        <Detect2Chars attribute="Enumeration" context="every_non_whitespace_is_error" char="n" char1="o"/>
+        <StringDetect attribute="Enumeration" context="every_non_whitespace_is_error" String="yes" />
+        <!-- Handle % -->
+        <AnyChar context="tag_line_value" String="%$" lookAhead="true" />
+        <RegExpr context="every_non_whitespace_is_error" String="." lookAhead="true" />
+      </context>
+
+      <!-- A context that doesn't test for format errors in the changelog date anymore. Necessary
+      if macros are used. -->
+      <context attribute="Tag" lineEndContext="#pop" name="changelog_generic">
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+     <!-- A context that handles the weekday in the changelog date. -->
+      <context attribute="Tag" lineEndContext="#pop" name="changelog_weekday">
+        <DetectSpaces/>
+        <keyword context="changelog_month" attribute="Tag" String="weekdays" />
+        <!-- % handling without format errors in the date of the changelog -->
+        <AnyChar context="changelog_generic" String="%$" lookAhead="true" />
+        <RegExpr context="changelog_month" attribute="Error" String="\S*" />
+      </context>
+
+     <!-- A context that handles the month in the changelog date. -->
+      <context attribute="Tag" lineEndContext="#pop" name="changelog_month">
+        <DetectSpaces/>
+        <keyword context="changelog_day" attribute="Tag" String="month names" />
+        <!-- % handling without format errors in the date of the changelog -->
+        <AnyChar context="changelog_generic" String="%$" lookAhead="true" />
+        <RegExpr context="changelog_day" attribute="Error" String="\S*" />
+      </context>
+
+     <!-- A context that handles the day in the changelog date. -->
+      <context attribute="Tag" lineEndContext="#pop" name="changelog_day">
+        <DetectSpaces/>
+        <keyword context="changelog_year" attribute="Tag" String="days" />
+        <!-- % handling without format errors in the date of the changelog -->
+        <AnyChar context="changelog_generic" String="%$" lookAhead="true" />
+        <RegExpr context="changelog_year" attribute="Error" String="\S*" />
+      </context>
+
+     <!-- A context that handles the year in the changelog date. -->
+      <context attribute="Tag" lineEndContext="#pop" name="changelog_year">
+        <DetectSpaces/>
+        <RegExpr context="changelog_header" attribute="Tag" String="(\d{4})&lookahead_whitespace_eol;" />
+        <!-- % handling without format errors in the date of the changelog -->
+        <AnyChar context="changelog_generic" String="%$" lookAhead="true" />
+        <RegExpr context="changelog_header" attribute="Error" String="\S*" />
+      </context>
+
+     <!-- A context that handles the text after the date in a changelog (name, e-mail...). -->
+      <context attribute="Tag" lineEndContext="#pop" name="changelog_header">
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- Handles everything that comes after %ifos etc... -->
+      <context attribute="Warning" lineEndContext="#pop" name="parameters after ifos">
+        <!-- Spaces are okay -->
+        <DetectSpaces attribute="Fallback for separator spaces" />
+        <!-- Recognize valid values -->
+        <RegExpr attribute="Enumeration" String="&os;&lookahead_whitespace_eol;" />
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- Handles everything that comes after %ifarch etc... -->
+      <context attribute="Warning" lineEndContext="#pop" name="parameters after ifarch">
+        <!-- Spaces are okay -->
+        <DetectSpaces attribute="Fallback for separator spaces" />
+        <!-- Recognize valid values -->
+        <RegExpr attribute="Enumeration" String="&arch;&lookahead_whitespace_eol;" />
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- Handles expressions after conditionals. -->
+      <context attribute="Error" lineEndContext="#pop" name="expression after _if_ statement">
+        <!-- spaces should not be "Error" (which is the default for unrecognized entities) -->
+        <DetectSpaces attribute="Fallback for separator spaces" context="#stay" />
+        <!-- %if recognizes && || > < >= <= == != ! and () -->
+        <AnyChar attribute="Keyword" context="#stay" String="()" />
+        <Detect2Chars attribute="Keyword" context="#stay" char="&amp;" char1="&amp;"/>
+        <Detect2Chars attribute="Keyword" context="#stay" char="&lt;" char1="="/>
+        <Detect2Chars attribute="Keyword" context="#stay" char="&gt;" char1="="/>
+        <Detect2Chars attribute="Keyword" context="#stay" char="=" char1="="/>
+        <Detect2Chars attribute="Keyword" context="#stay" char="!" char1="="/>
+        <AnyChar attribute="Keyword" context="#stay" String="!&lt;&gt;" />
+        <Detect2Chars attribute="Keyword" context="#stay" char="|" char1="|"/>
+        <!-- %if interpretates values either as integer or as string -->
+        <Int attribute="Integer" context="#stay" />
+        <DetectIdentifier attribute="String" context="#stay" />
+        <DetectChar attribute="String" context="quoted strings in if statements" char="&quot;" />
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+      <!-- This context handles quoted strings in %if statements. WARNING: Make sure that you
+      switch to this context _after_ parsing the starting ", because at the first occurrence
+      of " this context switches back. -->
+      <context attribute="String" lineEndContext="#pop" name="quoted strings in if statements">
+        <!-- Handle \ -->
+        <RegExpr attribute="Escaped character" String="\\[^&quot;]" />
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <!-- Switch back at the end of the quoted string -->
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+
+      <!-- Context for %define -->
+      <context attribute="Fallback for separator spaces" lineEndContext="#pop" name="macro defination">
+        <DetectSpaces />
+        <RegExpr attribute="Enumeration" context="macro defination content" String="[&a_valid_char_in_macro_names;]*&lookahead_whitespace_eol;" />
+        <RegExpr attribute="Error" context="macro defination content" String="[^ \t]*" />
+      </context>
+
+      <!-- Context for the content of a macro defination. -->
+      <context attribute="String" lineEndContext="#pop" name="macro defination content">
+        <DetectSpaces />
+        <LineContinue attribute="Line break" context="#stay"/>
+        <DetectChar attribute="Warning" char="\" />
+      </context>
+
+      <!-- Context for %undefine -->
+      <context attribute="Fallback for separator spaces" lineEndContext="#pop" name="undefine macro">
+        <DetectSpaces />
+        <RegExpr attribute="Enumeration" context="every_non_whitespace_is_error" String="[&a_valid_char_in_macro_names;]*&lookahead_whitespace_eol;" />
+        <RegExpr attribute="Error" context="every_non_whitespace_is_error" String="." />
+      </context>
+
+      <!-- This context handles automatically all type of macros, keywords and so on that start with % or $.
+      It expects a string starting with % or $ (otherwise, this context will fail!). -->
+      <context attribute="Fallback for separator spaces" lineEndContext="#pop" name="handle_percent">
+        <Detect2Chars attribute="Escaped character" context="#pop" char="%" char1="%"/>
+        <!-- Keywords: -->
+        <RegExpr attribute="Keyword" context="expression after _if_ statement" String="%(if!?)&lookahead_whitespace_eol;" firstNonSpace="true" beginRegion="if_block" />
+        <RegExpr attribute="Keyword" context="parameters after ifarch" String="%&arch_conditionals_names;&lookahead_whitespace_eol;" firstNonSpace="true" beginRegion="if_block" />
+        <RegExpr attribute="Keyword" context="parameters after ifos" String="%&os_conditionals_names;&lookahead_whitespace_eol;" firstNonSpace="true" beginRegion="if_block" />
+        <RegExpr attribute="Keyword" context="every_non_whitespace_is_error" String="%else&lookahead_whitespace_eol;" firstNonSpace="true" endRegion="if_block" beginRegion="if_block" />
+        <RegExpr attribute="Keyword" context="every_non_whitespace_is_error" String="%endif&lookahead_whitespace_eol;" firstNonSpace="true" endRegion="if_block" />
+        <RegExpr attribute="Keyword" context="macro defination" String="%(define|global)&lookahead_whitespace_eol;" firstNonSpace="true" />
+        <RegExpr attribute="Keyword" context="undefine macro" String="%undefine&lookahead_whitespace_eol;" firstNonSpace="true" />
+        <!-- If a command section starts (=section macro at begin of the line), we switch
+             to the corresponding context. There will never be a return to THIS context...: -->
+        <RegExpr attribute="Section" context="package section start line" String="%package&lookahead_whitespace_eol;" column="0" />
+        <RegExpr attribute="Section" context="description section start line" String="%description&lookahead_whitespace_eol;" column="0" />
+        <RegExpr attribute="Section" context="command section" String="%&command_section_name;&lookahead_whitespace_eol;" column="0" />
+        <RegExpr attribute="Section" context="changelog section" String="%changelog&lookahead_whitespace_eol;" column="0" />
+        <!-- Handle normal macros -->
+        <RegExpr attribute="Error" context="#pop" String="%([\{\(][ \t]{0,}){0,1}(if|&arch_conditionals_names;|&os_conditionals_names;|else|endif|define|global|undefine|package|description|&command_section_name;|changelog)(?=($|[^&a_valid_char_in_macro_names;]))" />
+        <RegExpr attribute="Macro call" context="macro content in parenthesis" String="%[&a_valid_char_in_macro_names;]*\(" />
+        <RegExpr attribute="Macro call" context="macro content in braces" String="(%|\$)\{" />
+        <RegExpr attribute="Macro call" context="#pop" String="(%|\$)([&a_valid_char_in_macro_names;]{1,}|\*|\#)(?=($|[^&a_valid_char_in_macro_names;]))" /> <!-- ')' and '}' are only allowed as macro terminator in the lookahead because when you do something like %__make %{?jobs:-j %jobs}, then the "%jobs" is a valid macro. However, the disadvantage is that a line like "%abc} isn't marked as error. But it is to complicate to distinguish this properly. -->
+        <RegExpr attribute="Error" context="#pop" String="(%|\$)([&a_valid_char_in_macro_names;]{1,}|\*|\#)" />
+        <AnyChar attribute="Error" context="#pop" String="%$" /> <!-- a single % or $ is also an error -->
+      </context>
+
+      <!-- Used internally by "handle_percent" -->
+      <context attribute="Macro call" lineEndContext="#pop#pop" name="macro content in parenthesis">
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar attribute="Macro call" context="#pop#pop" char=")" />
+        <AnyChar attribute="Error" context="#stay" String="({}" />
+      </context>
+
+      <!-- Used internally by "handle_percent" -->
+      <context attribute="Macro call" lineEndContext="#pop#pop" name="macro content in braces">
+        <DetectChar attribute="Macro call" context="#pop#pop" char="}" />
+        <AnyChar attribute="Error" context="#stay" String="({)" />
+        <!--(This seems to be confusing instead of helping)AnyChar attribute="Keyword" context="#stay" String="!?:" /-->
+        <!-- Handle % -->
+        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <!-- "Shell commands" is used for the sections like %prep, %build or %install, where you write
+      shell commands. -->
+      <itemData name="Shell commands" defStyleNum="dsNormal"/>
+      <!-- "Fallback for separator spaces" is used as a fallback context for spaces between
+      different contexts. For example: "%if 1 <= %number" has the contexts Keyword,
+      Integer, Keyword and Macro call. But the spaces between? They are using THIS
+      context. -->
+      <itemData name="Fallback for separator spaces" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Tag" defStyleNum="dsDataType"/>
+      <!-- "Enumeration" is used for data types where you can't use arbitrary strings but have
+      to use predefined values (like in "Provides:" or "%undefine"). -->
+      <itemData name="Enumeration" defStyleNum="dsOthers"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Integer" defStyleNum="dsDecVal"/>
+      <!-- "Error" is used for problems that will always produce an error in the interpretation
+      process. -->
+      <itemData name="Error" defStyleNum="dsError"/>
+      <!-- "Warning" is used for problems that will maybe produce an error in the interpretation
+      process or will lead to unexpected results. -->
+      <itemData name="Warning" defStyleNum="dsError"/>
+      <!-- "Hint" is used for problems that will never produce an error in the interpretation
+      process and will always work like expected (the interpreter has error tolerance),
+      but that are claimed as bad or invalid .spec following the documentation. -->
+      <itemData name="Hint" defStyleNum="dsError"/>
+      <itemData name="Macro call" defStyleNum="dsFunction"/>
+      <itemData name="Section" defStyleNum="dsRegionMarker"/>
+      <itemData name="Escaped character" defStyleNum="dsChar"/>
+      <itemData name="Line break" defStyleNum="dsKeyword"/>
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+    <!-- defining all word deliminators except space and tab as weak -->
+    <keywords casesensitive="1" weakDeliminator=".():!+,-&lt;=&gt;%&amp;*/;?[]^{|}~\," />
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+  </general>
+
+</language>

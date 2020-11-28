@@ -1,0 +1,711 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+  <!ENTITY BareWord  "[a-z][a-zA-Z0-9-_]*">
+  <!ENTITY CapWord   "[A-Z][a-zA-Z0-9-_]*">
+  <!ENTITY namespace "[a-z][a-z0-9_]*">
+]>
+
+<!--
+  Puppet syntax highlighting file:
+
+  Copyright (C) 2014  by Michal Humpula (michal.humpula@seznam.cz)
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Library General Public
+  License as published by the Free Software Foundation; either
+  version 2 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Library General Public License for more details.
+
+  You should have received a copy of the GNU Library General Public
+  License along with this library; if not, write to the
+  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+  Boston, MA  02110-1301, USA.
+-->
+
+<language name="Puppet" section="Scripts" version="6" kateversion="3.8" extensions="*.pp" priority="10" mimetype="application/x-puppet" style="puppet" indenter="cstyle" author="Michal Humpula (michal.humpula@seznam.cz)" license="LGPLv2+">
+  <highlighting>
+    <list name="keywords">
+      <item>import</item>
+      <item>false</item>
+      <item>true</item>
+      <item>undef</item>
+    </list>
+
+    <list name="operators">
+      <item>in</item>
+      <item>and</item>
+      <item>or</item>
+    </list>
+
+    <list name="collector operators">
+      <item>and</item>
+      <item>or</item>
+    </list>
+
+    <contexts>
+      <context name="Start" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="common" />
+      </context>
+
+      <context name="common" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindComment"/>
+        <IncludeRules context="FindString"/>
+        <IncludeRules context="FindOperator"/>
+        <Int attribute="Number" context="#stay" />
+        <IncludeRules context="FindUnless"/>
+        <IncludeRules context="FindIf"/>
+        <IncludeRules context="FindCase"/>
+        <keyword attribute="Keyword" String="keywords" context="#stay"/>
+        <IncludeRules context="FindVariable"/>
+
+        <IncludeRules context="FindClass"/>
+        <IncludeRules context="FindNode"/>
+
+        <IncludeRules context="FindCollector"/>
+        <IncludeRules context="FindExportedCollector"/>
+
+        <IncludeRules context="FindResource"/>
+        <IncludeRules context="FindResourceReference"/>
+        <IncludeRules context="FindResourceDefaults"/>
+        <IncludeRules context="FindDefine"/>
+
+        <IncludeRules context="FindArray"/>
+        <IncludeRules context="FindHash"/>
+
+        <IncludeRules context="FindFunction"/>
+        <IncludeRules context="FindStatement"/>
+
+        <IncludeRules context="FindBareWord"/>
+      </context>
+
+      <!-- BEGIN Finders -->
+      <context name="FindString" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="String" char="'" context="string single"/>
+        <DetectChar attribute="String" char="&quot;" context="string double"/>
+      </context>
+
+      <context name="FindComment" attribute="Comment" lineEndContext="#stay">
+        <StringDetect attribute="Region Marker" String="#BEGIN" beginRegion="region marker" firstNonSpace="true" context="region marker"/>
+        <StringDetect attribute="Region Marker" String="#END" endRegion="region marker" firstNonSpace="true" context="region marker"/>
+        <DetectChar attribute="Comment" char="#" context="comment"/>
+        <Detect2Chars attribute="Comment" char="/" char1="*" beginRegion="comment" context="multiline comment"/>
+      </context>
+
+      <context name="FindVariable" attribute="Variable" lineEndContext="#pop">
+        <RegExpr String="\$(::)?(&namespace;::)*&BareWord;" lookAhead="true" context="variable"/>
+      </context>
+
+      <context name="FindStatement" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Function" String="&BareWord;" context="statement" firstNonSpace="true"/>
+      </context>
+
+      <context name="FindFunction" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr String="&BareWord;\s*\(" lookAhead="true" context="function"/>
+      </context>
+
+      <context name="FindResource" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr String="@?@?(::)?(&BareWord;::)*&BareWord;\s*\{" lookAhead="true" context="resource"/>
+      </context>
+
+      <context name="FindResourceReference" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr String="(::)?(&CapWord;::)*&CapWord;\s*\[" lookAhead="true" context="res_ref"/>
+      </context>
+
+      <context name="FindResourceDefaults" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr String="(::)?(&CapWord;::)*&CapWord;\s*\{" lookAhead="true" context="res_defaults"/>
+      </context>
+
+      <context name="FindOperator" attribute="Operator" lineEndContext="#pop" >
+        <keyword attribute="Operator" String="operators" context="#stay"/>
+        <DetectChar attribute="Operator" char="!" context="#stay"/>
+        <DetectChar attribute="Operator" char="*" context="#stay"/>
+        <DetectChar attribute="Operator" char="/" context="#stay"/>
+        <DetectChar attribute="Operator" char="-" context="#stay"/>
+        <DetectChar attribute="Operator" char="+" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="+" char1="=" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="&lt;" char1="&lt;" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="&gt;" char1="&gt;" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="=" char1="=" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="!" char1="=" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="&gt;" char1="=" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="&lt;" char1="=" context="#stay"/>
+        <DetectChar attribute="Operator" char="&gt;" context="#stay"/>
+        <DetectChar attribute="Operator" char="&lt;" context="#stay"/>
+        <DetectChar attribute="Operator" char="?" context="selector"/>
+
+        <Detect2Chars attribute="Operator" char="=" char1="~" context="regexp operators"/>
+        <Detect2Chars attribute="Operator" char="!" char1="~" context="regexp operators"/>
+
+        <Detect2Chars attribute="Operator" char="-" char1="&gt;" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="~" char1="&gt;" context="#stay"/>
+      </context>
+
+      <context name="FindResourcePath" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr String="(&BareWord;)?(::&BareWord;)*::&BareWord;" lookAhead="true" context="resource path"/>
+      </context>
+
+      <context name="FindBareWord" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="String" String="&BareWord;" context="#stay"/>
+      </context>
+
+      <context name="FindArray" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="[" context="array"/>
+      </context>
+
+      <context name="FindHash" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="{" lookAhead="true" context="hash"/>
+      </context>
+
+      <context name="FindClass" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Keyword" String="class" context="class def"/>
+      </context>
+
+      <context name="FindNode" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Keyword" String="node" context="node def"/>
+      </context>
+
+      <context name="FindDefine" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Keyword" String="define" context="resource definition"/>
+      </context>
+
+      <context name="FindCollector" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr String="(::)?(&CapWord;::)*&CapWord;\s*&lt;\|" lookAhead="true" context="collector"/>
+      </context>
+
+      <context name="FindExportedCollector" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr String="(::)?(&CapWord;::)*&CapWord;\s*&lt;&lt;\|" lookAhead="true" context="exported collector"/>
+      </context>
+
+      <context name="FindUnless" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Keyword" String="unless" context="unless"/>
+      </context>
+
+      <context name="FindIf" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Keyword" String="if" context="if"/>
+      </context>
+
+      <context name="FindCase" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Keyword" String="case" context="case"/>
+      </context>
+
+      <context name="FindRegExp" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="RegExp" String="/[^/]*[^\\/]/" context="#stay"/>
+      </context>
+      <!-- END Finders -->
+
+      <!-- BEGIN Strings -->
+      <context name="string single" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="String" char="'" context="#pop"/>
+      </context>
+
+      <context name="string double" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="Escape" char="\" context="escapes"/>
+        <Detect2Chars char="$" char1="{" lookAhead="true" context="string code block"/>
+        <RegExpr attribute="Variable" String="\$&BareWord;" context="#stay"/>
+        <DetectChar attribute="String" char="&quot;" context="#pop"/>
+      </context>
+
+      <context name="string code block" attribute="Variable" fallthrough="true" fallthroughContext="#pop" lineEndContext="#stay">
+        <Detect2Chars attribute="Variable" char="$" char1="{" context="#stay"/>
+        <RegExpr attribute="Variable" String="&namespace;" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char=":" char1=":" context="#stay"/>
+        <RegExpr attribute="Variable" String="&BareWord;" context="#stay"/>
+        <DetectChar attribute="Variable" char="}" context="#pop"/>
+      </context>
+
+      <context name="escapes" attribute="Escape" fallthrough="true" fallthroughContext="#pop" lineEndContext="#pop">
+        <AnyChar attribute="Escape" String="$&quot;'\nrts" context="#pop"/>
+      </context>
+      <!-- END Strings -->
+
+      <!-- BEGIN RegExp -->
+      <context name="regexp operators" attribute="RegExp" lineEndContext="#pop">
+        <DetectSpaces/>
+        <RegExpr attribute="RegExp" String="/[^/]*[^\\/]/" context="#pop"/>
+      </context>
+      <!-- END RegExp -->
+
+      <!-- BEGIN Comments -->
+      <context name="comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+      <context name="multiline comment" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Comment" char="*" char1="/" endRegion="comment" context="#pop"/>
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+      <context name="region marker" attribute="Region Marker" lineEndContext="#pop">
+      </context>
+      <!-- END Comments -->
+
+      <!-- BEGIN Function -->
+      <context name="statement" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <LineContinue attribute="Normal Text" char="," context="#stay"/>
+        <IncludeRules context="parameter values"/>
+        <DetectChar attribute="String" char="," context="#stay"/>
+      </context>
+
+      <context name="function" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RegExpr attribute="Function" String="&BareWord;" context="#stay"/>
+        <DetectChar attribute="Normal Text" char="(" context="function_in"/>
+        <DetectChar attribute="Normal Text" char=")" context="#pop"/>
+      </context>
+
+      <context name="function_in" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="," context="#stay"/>
+        <IncludeRules context="parameter values"/>
+        <DetectChar char=")" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END Function -->
+
+      <!-- BEGIN conditions -->
+      <context name="unless" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="condition"/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="code" context="code block"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="code" context="#pop"/>
+      </context>
+
+      <context name="if" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="condition"/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="code" context="code block"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="code"  context="if continues?"/>
+      </context>
+
+      <context name="if continues?" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop#pop" lineEndContext="#stay">
+        <DetectSpaces/>
+        <WordDetect attribute="Keyword" String="else" context="else"/>
+        <WordDetect attribute="Keyword" String="elsif" context="elsif"/>
+      </context>
+
+      <context name="elsif" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="condition"/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="code" context="code block"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="dode" context="#pop"/>
+      </context>
+
+      <context name="else" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="code" context="code block"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="code" context="#pop#pop#pop"/>
+      </context>
+
+      <context name="case" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindVariable"/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="case" context="case block"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="case" context="#pop"/>
+      </context>
+
+      <context name="case block" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal Text" char="," context="#stay"/>
+        <DetectChar attribute="Operator" char=":" context="case value"/>
+        <Int attribute="Number" context="#stay" />
+        <WordDetect attribute="Keyword" String="default" context="#stay"/>
+        <IncludeRules context="FindString"/>
+        <IncludeRules context="FindComment"/>
+        <IncludeRules context="FindRegExp"/>
+        <IncludeRules context="FindFunction"/>
+        <IncludeRules context="FindBareWord"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+
+      <context name="case value" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="code" context="code block"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="code" context="#pop"/>
+      </context>
+
+      <context name="selector" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="selector" context="selector block"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="selector" context="#pop"/>
+      </context>
+
+      <context name="selector block" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Operator" char="=" char1="&gt;" context="selector value"/>
+        <Int attribute="Number" context="#stay" />
+        <WordDetect attribute="Keyword" String="default" context="#stay"/>
+        <IncludeRules context="FindString"/>
+        <IncludeRules context="FindComment"/>
+        <IncludeRules context="FindRegExp"/>
+        <IncludeRules context="FindFunction"/>
+        <IncludeRules context="FindBareWord"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+
+      <context name="selector value" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="parameter values"/>
+        <DetectChar attribute="Normal Text" char="," context="#pop"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+
+      <context name="code block" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="common"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END conditions -->
+
+      <context name="variable" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop" lineEndContext="#pop">
+        <DetectChar attribute="Variable" char="$" context="#stay"/>
+        <RegExpr attribute="Variable" String="&namespace;" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char=":" char1=":" context="#stay"/>
+        <RegExpr attribute="Variable" String="&BareWord;" context="#pop"/>
+      </context>
+
+      <context name="array" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="list content"/>
+        <DetectChar attribute="Normal Text" char="]" context="#pop"/>
+      </context>
+
+      <!-- BEGIN Hash -->
+      <context name="hash" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" char="{" beginRegion="hash" context="hash list"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="hash" context="#pop"/>
+      </context>
+
+      <context name="hash list" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars attribute="AttributeOp" char="=" char1="&gt;" context="#stay"/>
+        <DetectChar attribute="Normal Text" char="," context="#stay"/>
+        <IncludeRules context="hash keys"/>
+        <IncludeRules context="parameter values"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END Hash -->
+
+      <!-- BEGIN Node -->
+      <context name="node def" attribute="Normal Text" lineEndContext="#stay">
+        <!-- TODO: need a regular expresion here, order is random and seems that Class is not allowed in node(?) -->
+        <DetectSpaces/>
+        <IncludeRules context="FindString"/>
+        <IncludeRules context="FindRegExp"/>
+        <StringDetect attribute="Keyword" String="inherits" context="#stay"/>
+        <StringDetect attribute="Keyword" String="default" context="#stay"/>
+        <RegExpr attribute="Node" String="&namespace;" context="#stay"/>
+        <DetectChar char="{" lookAhead="true" context="node in open"/>
+      </context>
+
+      <context name="node in open" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" char="{" beginRegion="node" context="node in"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="node" context="#pop#pop"/>
+      </context>
+
+      <context name="node in" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="common"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END Node -->
+
+      <!-- BEGIN Class -->
+      <context name="class def" attribute="Normal Text" lineEndContext="#stay">
+        <!-- TODO: be more strict here -->
+        <DetectSpaces/>
+        <StringDetect attribute="Keyword" String="inherits" context="#stay"/>
+        <RegExpr attribute="Class" String="&namespace;" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char=":" char1=":" context="#stay"/>
+        <DetectChar char="(" context="class params"/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="class" context="class in"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="class" context="#pop"/>
+      </context>
+
+      <context name="class params" attribute="Normal Text" lineEndContext="#stay">
+        <!-- TODO: be more strict here -->
+        <DetectSpaces/>
+        <DetectChar char="=" context="#stay"/>
+        <DetectChar char="," context="#stay"/>
+        <IncludeRules context="FindVariable"/>
+        <IncludeRules context="parameter values"/>
+        <DetectChar char=")" context="#pop"/>
+      </context>
+
+      <context name="class in" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="common"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END Class -->
+
+      <!-- BEGIN Resource -->
+      <context name="resource" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar attribute="Resource" char="@" context="#stay"/>
+        <RegExpr attribute="Resource" String="&BareWord;" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char=":" char1=":" context="#stay"/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="resource" context="resource_in"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="resource" context="#pop"/>
+      </context>
+
+      <context name="resource_in" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindString"/>
+        <IncludeRules context="FindVariable"/>
+        <IncludeRules context="FindComment"/>
+        <IncludeRules context="FindArray"/>
+        <IncludeRules context="FindBareWord"/>
+        <DetectChar attribute="Operator" char=":" context="resource_attrs"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+
+      <context name="resource_attrs" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RegExpr attribute="Attribute Name" String="&BareWord;" context="resource_attr"/>
+        <IncludeRules context="FindComment"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+
+      <context name="resource_attr" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindComment"/>
+        <Detect2Chars attribute="AttributeOp" char="=" char1="&gt;" context="resource_attr_val"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+
+      <context name="resource_attr_val" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="parameter values"/>
+        <DetectChar attribute="Normal Text" char="," context="#pop#pop"/>
+        <DetectChar attribute="Normal Text" char=";" context="#pop#pop#pop"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END Resource -->
+
+      <!-- BEGIN Resource Reference -->
+      <context name="res_ref" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RegExpr attribute="ResourceReference" String="&CapWord;" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char=":" char1=":" context="#stay"/>
+        <DetectChar attribute="Normal Text" char="[" context="res_ref_titles"/>
+      </context>
+
+      <context name="res_ref_titles" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="list content"/>
+        <DetectChar attribute="Normal Text" char="]" context="res_ref_params_opt"/>
+      </context>
+
+      <context name="res_ref_params_opt" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop#pop#pop" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="res ref" context="res_ref_params"/>
+      </context>
+
+      <context name="res_ref_params" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RegExpr attribute="Attribute Name" String="&BareWord;" context="res_ref_param"/>
+        <IncludeRules context="FindComment"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="res ref" context="#pop#pop#pop#pop"/>
+      </context>
+
+      <context name="res_ref_param" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindComment"/>
+        <Detect2Chars attribute="AttributeOp" char="=" char1="&gt;" context="res_ref_param_val"/>
+        <Detect2Chars attribute="AttributeOp" char="+" char1="&gt;" context="res_ref_param_val"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+
+      <context name="res_ref_param_val" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="parameter values"/>
+        <DetectChar attribute="Normal Text" char="," context="#pop#pop"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END Resource Reference -->
+
+      <!-- BEGIN Resource Defaults -->
+      <context name="res_defaults" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RegExpr attribute="ResourceReference" String="&CapWord;" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char=":" char1=":" context="#stay"/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="res defs" context="res_defaults_params"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="res defs" context="#pop"/>
+      </context>
+
+      <context name="res_defaults_params" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindComment"/>
+        <RegExpr attribute="Attribute Name" String="&BareWord;" context="res_defaults_param"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+
+      <context name="res_defaults_param" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindComment"/>
+        <Detect2Chars attribute="AttributeOp" char="=" char1="&gt;" context="res_defaults_param_val"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+
+      <context name="res_defaults_param_val" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="parameter values"/>
+        <DetectChar attribute="Normal Text" char="," context="#pop#pop"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END Resource Defaults -->
+
+      <!-- BEGIN Collector -->
+      <context name="collector" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RegExpr attribute="Collector" String="&CapWord;" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char=":" char1=":" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char="&lt;" char1="|" context="collector in"/>
+        <Detect2Chars attribute="Normal Text" char="|" char1="&gt;" context="#pop"/>
+      </context>
+
+      <context name="collector in" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="collector content"/>
+        <Detect2Chars char="|" char1="&gt;" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END Collector -->
+
+      <!-- BEGIN Exported Collector -->
+      <context name="exported collector" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RegExpr attribute="Collector" String="&CapWord;" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char=":" char1=":" context="#stay"/>
+        <StringDetect attribute="Normal Text" String="&lt;&lt;|" context="exported collector in"/>
+        <StringDetect attribute="Normal Text" String="|&gt;&gt;" context="#pop"/>
+      </context>
+
+      <context name="exported collector in" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="collector content"/>
+        <StringDetect String="|&gt;&gt;" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END Exported Collector -->
+
+      <context name="resource path" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop" lineEndContext="#pop">
+        <DetectSpaces/>
+        <RegExpr attribute="Resource" String="&BareWord;" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char=":" char1=":" context="#stay"/>
+      </context>
+
+      <!-- BEGIN define -->
+      <context name="resource definition" attribute="Normal Text" lineEndContext="#stay">
+        <!-- TODO: be more strict here -->
+        <DetectSpaces/>
+        <StringDetect attribute="Keyword" String="inherits" context="#stay"/>
+        <RegExpr attribute="Class" String="&namespace;" context="#stay"/>
+        <Detect2Chars attribute="Normal Text" char=":" char1=":" context="#stay"/>
+        <DetectChar char="(" context="define params"/>
+        <DetectChar attribute="Normal Text" char="{" beginRegion="define" context="define in"/>
+        <DetectChar attribute="Normal Text" char="}" endRegion="define" context="#pop"/>
+      </context>
+
+      <context name="define params" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar char="=" context="#stay"/>
+        <DetectChar char="," context="#stay"/>
+        <IncludeRules context="FindVariable"/>
+        <IncludeRules context="parameter values"/>
+        <DetectChar char=")" context="#pop"/>
+      </context>
+
+      <context name="define in" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="common"/>
+        <DetectChar char="}" lookAhead="true" context="#pop"/>
+      </context>
+      <!-- END define -->
+
+      <!-- BEGIN Contents -->
+      <context name="list content" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindString"/>
+        <IncludeRules context="FindVariable"/>
+        <IncludeRules context="FindOperator"/>
+        <Int attribute="Number" context="#stay"/>
+        <IncludeRules context="FindResourceReference"/>
+        <IncludeRules context="FindFunction"/>
+        <IncludeRules context="FindBareWord"/>
+        <DetectChar char="," context="#stay"/>
+      </context>
+
+      <context name="parameter values" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindString"/>
+        <IncludeRules context="FindComment"/>
+        <IncludeRules context="FindOperator"/>
+        <keyword attribute="Keyword" String="keywords" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+        <IncludeRules context="FindVariable"/>
+        <IncludeRules context="FindResourceReference"/>
+        <IncludeRules context="FindArray"/>
+        <IncludeRules context="FindFunction"/>
+        <IncludeRules context="FindResourcePath"/>
+        <IncludeRules context="FindBareWord"/>
+      </context>
+
+      <context name="hash keys" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindString"/>
+        <IncludeRules context="FindComment"/>
+        <Int attribute="Number" context="#stay"/>
+        <IncludeRules context="FindBareWord"/>
+      </context>
+
+      <context name="collector content" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <keyword attribute="Operator" String="collector operators" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="=" char1="=" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="!" char1="=" context="#stay"/>
+        <IncludeRules context="FindString"/>
+        <Int attribute="Number" context="#stay"/>
+        <IncludeRules context="FindComment"/>
+        <IncludeRules context="FindBareWord"/>
+      </context>
+
+      <context name="condition" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="FindComment"/>
+        <IncludeRules context="FindString"/>
+        <IncludeRules context="FindOperator"/>
+        <Int attribute="Number" context="#stay" />
+        <keyword attribute="Keyword" String="keywords" context="#stay"/>
+        <IncludeRules context="FindVariable"/>
+        <IncludeRules context="FindResourceReference"/>
+        <IncludeRules context="FindArray"/>
+        <IncludeRules context="FindFunction"/>
+        <IncludeRules context="FindBareWord"/>
+      </context>
+
+      <!-- END Contents -->
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Escape" defStyleNum="dsFloat"/>
+      <itemData name="RegExp" defStyleNum="dsOthers" />
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Variable" defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Number" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Function" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Operator" defStyleNum="dsOthers" spellChecking="false"/>
+
+      <itemData name="Attribute Name" defStyleNum="dsKeyword" italic="true" bold="false" spellChecking="false"/>
+      <itemData name="AttributeOp" defStyleNum="dsOthers" spellChecking="false"/>
+
+      <itemData name="Node" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Class" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Resource" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="ResourceReference" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Collector" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

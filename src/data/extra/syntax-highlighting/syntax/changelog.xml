@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="ChangeLog" version="3" kateversion="2.4" section="Other" extensions="ChangeLog" mimetype="" author="Dominik Haumann (dhaumann@kde.org)" license="MIT">
+  <highlighting>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectChar attribute="Entry" context="entry" char="*" firstNonSpace="true" />
+        <RegExpr attribute="Date" context="line" String="\d\d\d\d\s*-\s*\d\d\s*-\s*\d\d\s*" column="0"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="line">
+        <RegExpr attribute="Name" context="#stay" String="(\w\s*)+"/>
+        <RegExpr attribute="E-Mail" context="#pop" String="&lt;.*&gt;\s*$"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="entry">
+        <RegExpr attribute="Entry" context="#pop" String=".*:" minimal="true"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Name" defStyleNum="dsKeyword"/>
+      <itemData name="E-Mail" defStyleNum="dsOthers"/>
+      <itemData name="Date" defStyleNum="dsDataType"/>
+      <itemData name="Entry" defStyleNum="dsDecVal"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" />
+  </general>
+</language>

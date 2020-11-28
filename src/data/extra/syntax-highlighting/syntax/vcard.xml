@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE language SYSTEM "language.dtd" []>
+
+<language name="vCard, vCalendar, iCalendar" version="2" kateversion="2.4" section="Markup" extensions="*.iCal;*.iCalendar;.ics;*.ifb;*.iFBf;*.vcal;*.vcalendar;*.vcard;*.vcf;" author="Lukas Sommer" mimetype="text/calendar;text/vcard" license="Public Domain">
+
+    <highlighting>
+
+        <contexts>
+            <context attribute="Property" lineEndContext="#stay" name="contextProperty">
+                <StringDetect attribute="vCard" String="BEGIN:" beginRegion="region" context="contextAttribute" column="0"/>
+                <StringDetect attribute="vCard" String="END:" endRegion="region" context="contextAttribute" column="0"/>
+                <DetectChar char=" " context="contextAttribute" column="0"/>
+                <DetectChar attribute="Delimiter" context="contextAttribute" char=":" />
+                <DetectChar attribute="Delimiter" context="contextParameterKey" char=";" />
+            </context>
+            <context attribute="Parameter key" lineEndContext="#pop" name="contextParameterKey">
+                <DetectChar attribute="Assignment" context="contextParameterValue" char="=" />
+                <DetectChar attribute="Delimiter" context="contextAttribute" char=":" />
+            </context>
+            <context attribute="Parameter value" lineEndContext="#pop" name="contextParameterValue">
+                <DetectChar attribute="Delimiter" context="contextParameterKey" char=";" />
+                <DetectChar attribute="Delimiter" context="contextAttribute" char=":" />
+            </context>
+            <context attribute="Attribute" lineEndContext="#pop" name="contextAttribute">
+                <DetectChar attribute="Delimiter" char=";" />
+            </context>
+        </contexts>
+
+        <itemDatas>
+          <itemData name="Assignment" defStyleNum="dsKeyword"/>
+          <itemData name="Attribute" defStyleNum="dsString"/>
+          <itemData name="Delimiter" defStyleNum="dsKeyword"/>
+          <itemData name="Parameter key" defStyleNum="dsFunction"/>
+          <itemData name="Parameter value" defStyleNum="dsOthers"/>
+	  <itemData name="Property" defStyleNum="dsKeyword"/> <!-- dsDataType -->
+          <itemData name="vCard" defStyleNum="dsRegionMarker"/>
+        </itemDatas>
+
+    </highlighting>
+
+    <general>
+    </general>
+
+</language>

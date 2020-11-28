@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="OpenSCAD"
+          version="2"
+          indenter="cstyle"
+          kateversion="5.53"
+          section="3D"
+          extensions="*.scad"
+          mimetype="text/x-openscad-src"
+          priority="1"
+          casesensitive="1"
+          author="Julian Stirling (julian@julianstirling.co.uk)"
+          license="MIT">
+    <highlighting>
+
+        <list name="preprocessor">
+            <item>include</item>
+            <item>import</item>
+            <item>use</item>
+        </list>
+        <list name="keywords">
+            <item>echo</item>
+            <item>for</item>
+            <item>intersection_for</item>
+            <item>if</item>
+            <item>else</item>
+            <item>module</item>
+            <item>function</item>
+        </list>
+
+        <list name="2D">
+            <item>circle</item>
+            <item>square</item>
+            <item>polygon</item>
+            <item>text</item>
+        </list>
+
+        <list name="3D">
+            <item>sphere</item>
+            <item>cube</item>
+            <item>cylinder</item>
+            <item>polyhedron</item>
+        </list>
+
+        <list name="transformations">
+            <item>translate</item>
+            <item>rotate</item>
+            <item>scale</item>
+            <item>resize</item>
+            <item>mirror</item>
+            <item>multmatrix</item>
+            <item>color</item>
+            <item>color</item>
+            <item>offset</item>
+            <item>hull</item>
+            <item>minkowski</item>
+        </list>
+
+        <list name="boolean">
+            <item>union</item>
+            <item>difference</item>
+            <item>intersection</item>
+        </list>
+
+        <list name="mathematical">
+            <item>abs</item>
+            <item>sign</item>
+            <item>sin</item>
+            <item>cos</item>
+            <item>tan</item>
+            <item>acos</item>
+            <item>asin</item>
+            <item>atan</item>
+            <item>atan2</item>
+            <item>floor</item>
+            <item>round</item>
+            <item>ceil</item>
+            <item>ln</item>
+            <item>len</item>
+            <item>let</item>
+            <item>log</item>
+            <item>pow</item>
+            <item>sqrt</item>
+            <item>exp</item>
+            <item>rands</item>
+            <item>min</item>
+            <item>max</item>
+        </list>
+
+        <list name="functions">
+            <item>concat</item>
+            <item>lookup</item>
+            <item>str</item>
+            <item>chr</item>
+            <item>search</item>
+            <item>version</item>
+            <item>version_num</item>
+            <item>norm</item>
+            <item>cross</item>
+            <item>parent_module</item>
+        </list>
+
+        <list name="list_comp">
+            <item>Generate</item>
+            <item>Conditions</item>
+            <item>Assignments</item>
+        </list>
+
+        <list name="other">
+            <item>linear_extrude</item>
+            <item>rotate_extrude</item>
+            <item>surface</item>
+            <item>projection</item>
+            <item>render</item>
+            <item>children</item>
+        </list>
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <DetectSpaces />
+        <RegExpr attribute="Error" context="AfterDollar" String="\$[a-zA-Z]*" insensitive="true" firstNonSpace="false"  lookAhead="true"/>
+                <keyword attribute="Preprocessor" context="#stay" String="preprocessor"/>
+                <keyword attribute="Keywords" context="#stay" String="keywords"/>
+                <keyword attribute="Two Dim" context="#stay" String="2D"/>
+                <keyword attribute="Three Dim" context="#stay" String="3D"/>
+                <keyword attribute="Transformation" context="#stay" String="transformations"/>
+                <keyword attribute="Boolean" context="#stay" String="boolean"/>
+                <keyword attribute="Mathematical" context="#stay" String="mathematical"/>
+                <keyword attribute="Functions" context="#stay" String="functions"/>
+                <keyword attribute="List Comprehensions" context="#stay" String="list_comp"/>
+                <keyword attribute="Other" context="#stay" String="other"/>
+                <Detect2Chars attribute="Comment" context="OneLineCom" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="MultLineCom" char="/" char1="*" beginRegion="Comment"/>
+            </context>
+            <context attribute="Error" lineEndContext="#pop" name="AfterDollar">
+                <RegExpr attribute="SpecialVar" context="SpecialVar" String="\$(fa|fs|fn|t|vpr|vpt|vpd|children)" insensitive="true" firstNonSpace="false"/>
+        <RegExpr attribute="Normal Text" context="#pop" String="[^a-zA-Z0-9\$]" insensitive="true" firstNonSpace="false"/>
+            </context>
+            <context attribute="SpecialVar" lineEndContext="#pop" name="SpecialVar">
+            <RegExpr attribute="Error" context="#pop#pop" String="[^\s=\*\+\-/\);]+" insensitive="true" firstNonSpace="false"/>
+            <RegExpr attribute="Normal Text" context="#pop#pop" String="\s*[=\*\+\-/\);]" insensitive="true" firstNonSpace="false"/>
+            </context>
+            <context attribute="Comment" lineEndContext="#pop" name="OneLineCom">
+            </context>
+            <context attribute="Comment" lineEndContext="#stay" name="MultLineCom">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text"              defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Comment"                  defStyleNum="dsComment"/>
+            <itemData name="Error"                    defStyleNum="dsError" spellChecking="false"/>
+            <itemData name="Preprocessor"             defStyleNum="dsPreprocessor" spellChecking="false"/>
+            <itemData name="Keywords"                 defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Two Dim"                  defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Three Dim"                defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Transformation"           defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Boolean"                  defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Mathematical"             defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="Functions"                defStyleNum="dsExtension" spellChecking="false"/>
+            <itemData name="List Comprehensions"      defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Other"                    defStyleNum="dsExtension" spellChecking="false"/>
+        <itemData name="SpecialVar"               defStyleNum="dsAttribute" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="//" />
+            <comment name="multiLine" start="/*" end="*/" />
+        </comments>
+        <keywords casesensitive="1" additionalDeliminator="'&quot;" />
+    </general>
+</language>

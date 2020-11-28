@@ -1,0 +1,7 @@
+<div style="color: grey; margin-left: 30px;">
+<h1>Get Started</h1>
+<ul>
+    <li>Create a notebook and create notes within notebook</li>
+    <li>Drag and drop files here</li>
+</ul>
+</div>

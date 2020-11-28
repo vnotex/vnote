@@ -1,0 +1,924 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!ENTITY label		"[a-zA-Z_][a-zA-Z_0-9]*">				<!-- so sehen Labels aus -->
+	<!ENTITY varname	"([a-z_]\w*|[0-9]*[&amp;])">			<!-- valid character in a variable name -->
+	<!ENTITY pathpart	"[^&#34;&#42;&#61;/:&lt;&gt;?\\[\]\|]">	<!-- valid character in a file name -->
+	<!ENTITY tasten		"((Strg|Alt|Shift)-)?([a-z0-9]|F[1-9]|F1[0-2]|Esc|Bksp|Tab|Enter|Up|Down|Left|Right|PgUp|PgDn|Home|End|Ins|Del)">
+]>
+<language name="4DOS BatchToMemory" kateversion="5.0" version="5" section="Scripts" extensions="*.btm" casesensitive="0" indenter="cstyle" author="Stefan Huebner (st0ff@npl.de)" license="LGPL">
+<!--DONE:
+	- comments are there
+	- substitutions are there
+	- basic variable function handling, distinguishing the function result between numerical and string
+	- variables are there (somehow)
+	- numbers will be found
+	- escape characters are found and highlit
+	- jumps, gosubs and labels
+	- command grouping
+	- conditions
+	- redirection
+	- many different command handlings
+		- iff
+		- echo
+		- text/endtext
+		- set/unset
+		- input/inkey
+		- do
+		- for
+		- switch
+	- internal commands of 4DOS
+	TODO:
+	- if someone finds that PATH-detection makes sense: create it...
+	- whatever doesn't seem to be correctly lit after all the preceeding stuff ...
+	- follow the TODO-Marks
+-->
+	<highlighting>
+                <list name="HighlightInsideComment">
+                        <item>todo</item>
+                        <item>attention</item>
+                        <item>attn</item>
+                        <item>fixme</item>
+                        <item>achtung</item>
+                        <item>info</item>
+                </list>
+                <list name="IntFunctions">
+                        <item>DOSMEM</item>   <!-- b|k|m-->
+                        <item>EMS</item>        <!-- b|k|m-->
+                        <item>EXTENDED</item>   <!-- b|k|m-->
+                        <item>XMS</item>        <!-- b|k|m-->
+                        <item>CDROM</item>      <!--string-->
+                        <item>CLUSTSIZE</item>  <!--string-->
+                        <item>CODEPAGE</item>   <!--string-->
+                        <item>COM</item>        <!--   int-->
+                        <item>DEVICE</item>   <!--string-->
+                        <item>DISKFREE</item>   <!--string, b|k|m-->
+                        <item>DISKTOTAL</item>  <!--string, b|k|m-->
+                        <item>DISKUSED</item>   <!--string, b|k|m-->
+                        <item>DRIVETYPE</item>  <!--string-->
+                        <item>HDDSIZE</item>  <!--string, b|k|m-->
+                        <item>LPT</item>        <!--   int-->
+                        <item>READY</item>      <!--string-->
+                        <item>REMOTE</item>   <!--string-->
+                        <item>REMOVABLE</item>  <!--string-->
+                        <item>ATTRIB</item>   <!--string,-n|r|h|s|a|d,p]--><!--ATTENTION : nur mit 2 Parametern wird ein Int returned-->
+                        <item>COMPARE</item>  <!--string-->
+                        <item>FILEAGE</item>  <!--string,a|c|w]-->
+                        <item>FILECLOSE</item>  <!--   int-->
+                        <item>FILEOPEN</item>   <!--string, r|w|a,b|t]-->
+                        <item>FILEREAD</item>   <!--   int,   int]-->
+                        <item>FILEREADB</item>  <!--   int,   int-->
+                        <item>FILES</item>      <!--string,-n|r|h|s|a|d]-->
+                        <item>FILESEEK</item>   <!--   int,   int,   int-->
+                        <item>FILESEEKL</item>  <!--   int,   int-->
+                        <item>FILESIZE</item>   <!--string,char,char]]-->
+                        <item>FILEWRITE</item>  <!--   int,string-->
+                        <item>FILEWRITEB</item> <!--   int,   int,string-->
+                        <item>FINDCLOSE</item>  <!--string-->
+                        <item>LINES</item>      <!--string-->
+                        <item>ASCII</item>      <!--  char-->
+                        <item>COUNT</item>      <!--  char,string-->
+                        <item>FIELDS</item>   <!--"string",]string-->
+                        <item>INDEX</item>      <!--string,string,int]-->
+                        <item>ISALNUM</item>  <!--string-->
+                        <item>ISALPHA</item>  <!--string-->
+                        <item>ISASCII</item>  <!--string-->
+                        <item>ISCNTRL</item>  <!--string-->
+                        <item>ISDIGIT</item>  <!--string-->
+                        <item>ISLOWER</item>  <!--string-->
+                        <item>ISPRINT</item>  <!--string-->
+                        <item>ISPUNCT</item>  <!--string-->
+                        <item>ISSPACE</item>  <!--string-->
+                        <item>ISUPPER</item>  <!--string-->
+                        <item>ISXDIGIT</item>   <!--string-->
+                        <item>LEN</item>        <!--string-->
+                        <item>SIMILAR</item>  <!--string,string-->
+                        <item>WILD</item>     <!--string,string-->
+                        <item>WORDS</item>      <!--"string",]string-->
+                        <item>ABS</item>        <!-- float-->
+                        <item>AVERAGE</item>  <!-- float,float,float...]]]-->
+                        <item>CEILING</item>  <!-- float-->
+                        <item>CONVERT</item>  <!--   int,   int,   int-->
+                        <item>DEC</item>        <!--expression-->
+                        <item>DECIMAL</item>  <!-- float-->
+                        <item>DIGITS</item>   <!--string-->
+                        <item>EVAL</item>     <!--expression-->
+                        <item>FLOOR</item>      <!-- float-->
+                        <item>INC</item>        <!--expression-->
+                        <item>INT</item>        <!-- float-->
+                        <item>MAX</item>        <!-- float,float,float...]]]-->
+                        <item>MIN</item>        <!-- float,float,float...]]]-->
+                        <item>NUMERIC</item>  <!--string-->
+                        <item>RANDOM</item>   <!-- float,float-->
+                        <item>DATE</item>     <!--  date-->
+                        <item>DAY</item>        <!--  date-->
+                        <item>DOWI</item>     <!--  date-->
+                        <item>DOY</item>        <!--  date-->
+                        <item>ISODOWI</item>  <!--  date-->
+                        <item>ISOWEEK</item>  <!--  date-->
+                        <item>ISOWYEAR</item>   <!--  date-->
+                        <item>MAKEAGE</item>  <!--  date,time]-->
+                        <item>MONTH</item>      <!--  date-->
+                        <item>TIME</item>     <!--  time-->
+                        <item>YEAR</item>     <!--  date-->
+                        <item>EXEC</item>     <!--expression-->
+                        <item>INIWRITE</item>   <!--string,string,string,string-->
+                </list>
+                <list name="StringFunctions">
+                        <item>DDCSTR</item>   <!--   int-->
+                        <item>MASTER</item>   <!--string-->
+                        <item>READSCR</item>  <!--   int,   int,   int-->
+                        <item>SMBSTR</item>   <!--   int,   int-->
+                        <item>CWD</item>        <!--string-->
+                        <item>CWDS</item>     <!--string-->
+                        <item>FSTYPE</item>   <!--string-->
+                        <item>LABEL</item>      <!--string-->
+                        <item>SERIAL</item>   <!--string-->
+                        <item>ATTRIB</item>   <!--string--><!--ATTENTION : nur mit 1 Parameter wird ein String returned-->
+                        <item>FILEDATE</item>   <!--string,acw],n]]-->
+                        <item>FILETIME</item>   <!--string,acw],s]]-->
+                        <item>FINDFIRST</item>  <!--string,-n|r|h|s|a|d]-->
+                        <item>FINDNEXT</item>   <!--string,-n|r|h|s|a|d]-->
+                        <item>LINE</item>     <!--string,   int-->
+                        <item>MD5</item>        <!--string-->
+                        <item>SEARCH</item>   <!--string,string]-->
+                        <item>SHA1</item>     <!--string-->
+                        <item>TRUENAME</item>   <!--string-->
+                        <item>UNIQUE</item>   <!--string-->
+                        <item>ALTNAME</item>  <!--string-->
+                        <item>EXPAND</item>   <!--string,-n|r|h|s|a|d]-->
+                        <item>EXT</item>        <!--string-->
+                        <item>FILENAME</item>   <!--string-->
+                        <item>FULL</item>     <!--string-->
+                        <item>LFN</item>        <!--string-->
+                        <item>NAME</item>     <!--string-->
+                        <item>PATH</item>     <!--string-->
+                        <item>QUOTE</item>      <!--string-->
+                        <item>SFN</item>        <!--string-->
+                        <item>UNQUOTE</item>  <!--string-->
+                        <item>UNQUOTES</item>   <!--string-->
+                        <item>ASCII</item>      <!--string-->
+                        <item>CAPS</item>     <!--"string",string-->
+                        <item>CHAR</item>     <!--space-delimited list of int-->
+                        <item>FIELD</item>      <!--"string",] int,string-->
+                        <item>FORMAT</item>   <!--string,string-->
+                        <item>INSERT</item>   <!--   int,string,string-->
+                        <item>INSTR</item>      <!--   int,   int,string-->
+                        <item>LCS</item>        <!--string,string-->
+                        <item>LEFT</item>     <!--   int,string-->
+                        <item>LOWER</item>      <!--string-->
+                        <item>LTRIM</item>      <!--string,string-->
+                        <item>REPEAT</item>   <!--  char,   int-->
+                        <item>REPLACE</item>  <!--string,string,string-->
+                        <item>RIGHT</item>      <!--   int,string-->
+                        <item>RTRIM</item>      <!--string,string-->
+                        <item>REVERSE</item>  <!--string-->
+                        <item>STRIP</item>      <!--string,string-->
+                        <item>SUBST</item>      <!--   int,string,string-->
+                        <item>SUBSTR</item>   <!--   int,   int,string-->
+                        <item>TRIM</item>     <!--string-->
+                        <item>UPPER</item>      <!--string-->
+                        <item>WORD</item>     <!--"string",]n,string-->
+                        <item>COMMA</item>      <!-- float-->
+                        <item>AGEDATE</item>  <!--   int,format]-->
+                        <item>DATECONV</item>   <!--string,format]-->
+                        <item>DOW</item>        <!--  date-->
+                        <item>DOWF</item>     <!--  date-->
+                        <item>MAKEDATE</item>   <!--   int-->
+                        <item>MAKETIME</item>   <!--   int-->
+                        <item>MONTHF</item>   <!--  date-->
+                        <item>ALIAS</item>      <!--string-->
+                        <item>CLIP</item>     <!--string-->
+                        <item>CLIPW</item>      <!--string-->
+                        <item>EXECSTR</item>  <!--string-->
+                        <item>FUNCTION</item>   <!--string-->
+                        <item>HISTORY</item>  <!--   int,   int]-->
+                        <item>IF</item>               <!--condition,string,string-->
+                        <item>INIREAD</item>  <!--string,string,string-->
+                        <item>SELECT</item>   <!--string,   int,   int,   int,   int,string-->
+                        <item>TIMER</item>      <!--   int-->
+                </list>
+                <list name="IfCommand">         <item>if</item>               </list>
+                <list name="IffCommand">        <item>iff</item>              </list>
+                <list name="TextCommand">       <item>text</item>             </list>
+                <list name="InputCommand">      <item>input</item>    </list>
+                <list name="InkeyCommand">  <item>inkey</item>        </list>
+                <list name="DoCommand">  <item>do</item>              </list>
+                <list name="EnddoCommand">  <item>enddo</item>        </list>
+                <list name="SkipdoCommand">
+                        <item>iterate</item>
+                        <item>leave</item>
+                </list>
+                <list name="SwitchCommand">     <item>switch</item>   </list>
+                <list name="TestErrorlevel"><item>errorlevel</item></list>
+                <list name="TestStatusVarname">
+                        <item>defined</item>
+                        <item>isalias</item>
+                        <item>isfunction</item>
+                        <item>isinternal</item>
+                        <item>islabel</item>
+                </list>
+                <list name="SetCommand">
+                        <item>set</item>
+                        <item>function</item>
+                        <item>alias</item>
+                </list>
+                <list name="UnsetCommand">
+                        <item>ENDLOCAL</item>
+                        <item>UNALIAS</item>
+                        <item>UNFUNCTION</item>
+                        <item>UNSET</item>
+                </list>
+                <list name="BadCommands">
+                        <item>for</item>
+                        <item>else</item>
+                        <item>elseiff</item>
+                        <item>endiff</item>
+                        <item>enddo</item>
+                        <item>endtext</item>
+                        <item>case</item>
+                        <item>endswitch</item>
+                        <item>default</item>
+                        <!-- the following is only valid within a do-loop.  But obviously I didn't think about it twice:
+                                if inside a do-loop we enter an iff/endiff construct, we switch contexts and the "leave" will
+                                not be found by the "insideDo" context.  There would need to be a way to create a dynamic list
+                                of keywords that can be shorted or expanded by a specific context, so that the above wouldn't
+                                happen. -->
+                        <!--item> iterate </item>
+                        <item> leave </item-->
+                </list>
+                <list name="NeedOnOffCommands">
+                        <item>BREAK</item>
+                        <item>IDLE</item>
+                        <item>LFNFOR</item>
+                        <item>LOADBTM</item>
+                        <item>SWAPPING</item>
+                        <item>TRANSIENT</item>
+                        <item>VERIFY</item>
+                </list>
+                <list name="TakeAFileNameCommands">
+                        <item>CALL</item>
+                        <item>CD</item>
+                        <item>CHDIR</item>
+                        <item>CDD</item>
+                        <item>DIR</item>
+                        <item>ERASE</item>
+                        <item>DEL</item>
+                        <item>DESCRIBE</item>
+                        <item>HEAD</item>
+                        <item>MD</item>
+                        <item>MKDIR</item>
+                        <item>RD</item>
+                        <item>RMDIR</item>
+                        <item>PUSHD</item>
+                        <item>REN</item>
+                        <item>RENAME</item>
+                        <item>TOUCH</item>
+                </list>
+                <list name="simpleNoChecksCommands">
+                        <item>BEEP</item>
+                        <item>CANCEL</item>
+                        <item>DATE</item>
+                        <item>FREE</item>
+                        <item>KEYBD</item>
+                        <item>ELSE</item>
+                        <item>PAUSE</item>
+                        <item>POPD</item>
+                        <item>QUIT</item>
+                        <item>SETDOS</item>
+                        <item>SHIFT</item>
+                        <item>TAIL</item>
+                        <item>TEE</item>
+                        <item>TIME</item>
+                        <item>TIMER</item>
+                        <item>TYPE</item>
+                </list>
+                <list name="NeedAnIntegerCommands">
+                        <item>CHCP</item>
+                        <item>DELAY</item>
+                        <item>COUNTRY</item>
+                        <item>SETERROR</item>
+                </list>
+                <list name="TakeColorsCommands">
+                        <item>CLS</item>
+                        <item>COLOR</item>
+                </list>
+                <list name="FilesystemOperationCommands">
+                        <item>ATTRIB</item>
+                        <item>COPY</item>
+                        <item>FFIND</item>
+                        <item>MOVE</item>
+                </list>
+                <list name="DrawCommands">
+                        <item>DRAWBOX</item>
+                        <item>DRAWHLINE</item>
+                        <item>DRAWVLINE</item>
+                        <item>SCREEN</item>
+                        <item>SCRPUT</item>
+                        <item>VSCRPUT</item>
+                </list>
+                <list name="NeedsACommandCommands">
+                        <item>EXCEPT</item>
+                        <item>GLOBAL</item>
+                </list>
+                <list name="NoParametersAtAllCommands">
+                        <item>SETLOCAL</item>
+                </list>
+                <list name="OnOff">
+                        <item>on</item>
+                        <item>off</item>
+                </list>
+		<contexts>
+			<context name="base" attribute="Normal" lineEndContext="#stay">
+				<IncludeRules context="findComments"/>
+				<IncludeRules context="findCommands"/>
+				<IncludeRules context="findCommandSeparator"/>
+				<IncludeRules context="findStrings"/>	<!-- includes "findSubstitution"-->
+			</context>
+<!--
+	the following contexts are meant to be included in other contexts.
+-->
+	<!-- find any comments (we were even keen enough to highlight things like TODO/FIXME and so on)-->
+			<context name="findComments" attribute="Normal" lineEndContext="#stay">
+				<Detect2Chars attribute="Comment" context="foundComment" char=":" char1=":" column="0"/>
+				<WordDetect attribute="Comment" context="foundComment" String="rem" insensitive="true"/>
+			</context>
+
+	<!-- whereever there should be a command start, the following should match in some way or another -->
+			<context name="findCommands" attribute="Normal" lineEndContext="#stay">
+				<!-- Highlight command groups and start/end corresponding folding region -->
+				<DetectChar attribute="Label" context="CommandGroup" char="(" beginRegion="true"/>
+				<!-- find Labels and jmp/jsr/rts commands -->
+				<IncludeRules context="findSpaghetti"/>
+				<!-- find commands that need special handling-->
+				<!-- TODO: replace single-item keyword lists with WordDetect as soon as WordDetect works properly again-->
+				<keyword attribute="Keyword" context="conditionLeft" String="IfCommand"/>
+				<keyword attribute="Keyword" context="cmdIff" String="IffCommand"/>
+				<!-- find all "echo"-variations -->
+				<RegExpr attribute="Keyword" String="[@]?echo\s+(on|off)(?=\s*($|\%\+|\)|\]))" insensitive="true"/>
+				<RegExpr attribute="Keyword" context="cmdEcho" String="\becho[s]?(err)?[\.]?" insensitive="true"/>
+				<!-- special treatment for Text and EndText -->
+				<keyword attribute="Keyword" context="cmdText" String="TextCommand" insensitive="true" beginRegion="true"/>
+				<!-- Set und Unset-Befehle -->
+				<keyword attribute="Keyword" context="cmdSet" String="SetCommand"/>
+				<keyword attribute="Keyword" context="cmdUnset" String="UnsetCommand"/>
+	<!-- inkey/input -->
+				<keyword attribute="Keyword" context="cmdInput" String="InputCommand"/>
+				<keyword attribute="Keyword" context="cmdInkey" String="InkeyCommand"/>
+				<!-- do loops -->
+				<keyword attribute="Keyword" context="cmdDo" String="DoCommand" beginRegion="true"/>
+				<!-- switch constructs -->
+				<keyword attribute="Keyword" context="cmdSwitch" String="SwitchCommand" beginRegion="true"/>
+					<!-- all the other internal 4DOS commands (with as little processing, as time permits) -->
+					<keyword attribute="Keyword" context="cmdNeedOnOff" String="NeedOnOffCommands"/>
+					<keyword attribute="Keyword" context="cmdTakeAFileName" String="TakeAFileNameCommands"/>
+					<keyword attribute="Keyword" context="cmdsimpleNoChecks" String="simpleNoChecksCommands"/>
+					<keyword attribute="Keyword" context="cmdNeedAnInteger" String="NeedAnIntegerCommands"/>
+					<keyword attribute="Keyword" context="cmdTakeColors" String="TakeColorsCommands"/>
+					<keyword attribute="Keyword" context="cmdFilesystemOperation" String="FilesystemOperationCommands"/>
+					<keyword attribute="Keyword" context="cmdDraw" String="DrawCommands"/>
+					<keyword attribute="Keyword" context="cmdNeedsACommand" String="NeedsACommandCommands"/>
+					<keyword attribute="Keyword" context="popNeedEndOfCommand" String="NoParametersAtAllCommands"/>
+				<!-- BAD COMMANDS:
+					 for :: if someone codes for 4DOS, he shall not use for-loops.  The way to go is using do-loops,
+							for-loops were just included into 4DOS to have M$-DOS command.com compatibility
+					 any other bad commands: are not available outside of their respective scopes, or it's the same
+					 as with "for"
+				-->
+					<keyword attribute="Error" context="Error" String="BadCommands"/>
+			</context>
+
+	<!-- find jumps, labels and subroutine calls -->
+			<context name="findSpaghetti" attribute="Normal" lineEndContext="#stay">
+				<RegExpr attribute="Label" context="foundLabel" String="^:&label;" beginRegion="true" insensitive="true"/>
+				<RegExpr attribute="Label" context="foundSpagetti" String="(goto|gosub)\s+&label;" insensitive="true"/>
+				<WordDetect attribute="Label" String="return" insensitive="true" endRegion="true"/>
+			</context>
+
+	<!-- find any variable substitution-->
+			<context name="findSubstitution" attribute="Normal" lineEndContext="#stay">
+				<DetectChar context="substitutionFound" char="%" lookAhead="true"/>
+			</context>
+
+	<!-- findVariables just finds variable substitutions WITHOUT variable functions!!!-->
+			<context name="findVariables" attribute="Normal" lineEndContext="#stay">
+				<Detect2Chars attribute="VariableBold" context="substitutionIndirect" char="%" char1="["/>
+				<RegExpr attribute="Variable" String="%(([a-z_][a-z_0-9]*%?)|[0-9]+&amp;?|&amp;|\?+|_\?|#)" insensitive="true"/>
+			</context>
+
+	<!-- findNumbers finds Numbers and variableSubstitutions that may well be numbers-->
+			<context name="findNumbers" attribute="Normal" lineEndContext="#stay">
+				<RegExpr attribute="Number" String="\s*[+-]?\d*[,.]?\d+"/>
+				<Detect2Chars attribute="Function" context="substitutionFindIntFunction" char="%" char1="@"/>
+				<IncludeRules context="findVariables"/>
+			</context>
+
+	<!-- findStrings should skip over Strings, highlighting any substitution inside-->
+			<context name="findStrings" attribute="Normal" lineEndContext="#stay">
+				<DetectChar attribute="Escape" context="foundStringBackQuote" char="`"/>
+				<DetectChar attribute="String" context="foundStringQuote" char="&quot;"/>
+				<IncludeRules context="findEscapes"/>
+				<IncludeRules context="findSubstitution"/>
+				<!-- a Number may well be interpreted as a string in 4dos, also -->
+				<RegExpr attribute="Number" String="\s*[+-]?\d*[,.]?\d+"/>
+				<!-- the following highlights ANSI-Escape-Sequences -->
+				<RegExpr attribute="Escape" String="\x1b\[.*[fhlmpsuABCDHJKR]" minimal="true"/>
+			   <!--
+					we shall find strings - so why don't we find at least literal words?
+
+					There is one simple answer: if we are inside a context that shall highlight strings,
+					then "findStrings" is included, to find things that evaluate to some kind of string.
+					Normal plaintext strings shall be lit by the context itself.
+				-->
+			</context>
+
+	<!-- highlight escaped characters -->
+			<context name="findEscapes" attribute="Normal" lineEndContext="#stay">
+				<RegExpr attribute="Escape" context="foundANSIEscape" String="&#37;&#61;e\[(?=.*[fhlmpsuABCDHJKR])" minimal="true"/>
+				<RegExpr attribute="Escape" String="\x18.|&#37;&#61;."/>
+			</context>
+
+	<!-- highlight the command seperator without changing contexts -->
+			<context name="findCommandSeparator" attribute="Normal" lineEndContext="#stay">
+				<Detect2Chars attribute="Keyword" char="%" char1="+"/>
+			</context>
+
+	<!-- highlight the command seperator and pop a context -->
+			<context name="popNeedEndOfCommand" attribute="Error" lineEndContext="#pop">
+				<Detect2Chars attribute="Keyword" context="#pop" char="%" char1="+"/>
+				<DetectSpaces attribute="Normal"/>
+			</context>
+
+	<!-- Entry Point for finding conditions -->
+			<context name="findCondition" attribute="Normal" lineEndContext="#stay">
+				<RegExpr attribute="Error" context="conditionLeft" String="(not\s+)*(((dir)?exist|isdir|defined|is(alias|function|label|internal)|errorlevel)|(.+((\s*(==|!=)\s*)|(\s+(eq|ne|gt|ge|lt|le|eqc)\s+)).+))" lookAhead="true" insensitive="true"/>
+			</context>
+
+	<!-- find redirections -->
+			<context name="findRedirection" attribute="Error" lineEndContext="#stay">
+				<DetectChar attribute="Keyword" context="RedirectionInput1st" char="&lt;"/>
+				<RegExpr attribute="Keyword" context="RedirectionOutput1st" String="[&gt;]{1,2}[&amp;]?[&gt;]?"/>
+			</context>
+
+	<!-- find any Option -->
+			<context name="findOption" attribute="Option" lineEndContext="#stay">
+				<DetectChar attribute="Option" context="Option" char="/"/>
+			</context>
+
+
+<!--
+Here we start with functional contexts.  These actually do something more than just find something and should not be sourced directly
+-->
+			<context name="CommandGroup" attribute="Normal" lineEndContext="#stay">
+				<DetectChar attribute="Label" context="#pop" char=")" endRegion="true"/>
+				<IncludeRules context="base"/>
+			</context>
+
+	<!-- Highlight ANSI Escap-Sequences - the "%=e[" are already eaten up -->
+			<context name="foundANSIEscape" attribute="String" lineEndContext="#pop">
+				<IncludeRules context="findStrings"/>
+				<AnyChar attribute="Escape" context="#pop" String="fhlmpsuABCDHJKR"/>
+			</context>
+
+	<!-- if any substitution was found, we get here ... -->
+			<context name="substitutionFound" attribute="Error" lineEndContext="#pop">
+				<Detect2Chars attribute="Function" context="#pop!substitutionFindFunction" char="%" char1="@"/>
+				<Detect2Chars attribute="VariableBold" context="#pop!substitutionIndirect" char="%" char1="["/>
+				<RegExpr attribute="Variable" context="#pop" String="%((([a-z_][a-z_0-9]*)%?)|[0-9]+&amp;?|&amp;|\?+|_\?|#)" insensitive="true"/>
+				<!-- in @EVAL there is the modulo-operator %% - we'll have to filter it out!
+					 TODO: give eval a special handler and remove the following rule. -->
+				<Detect2Chars attribute="Operator" context="#pop" char="%" char1="%"/>
+			</context>
+
+			<context name="substitutionFindFunction" attribute="Error" lineEndContext="#pop">
+				<!-- TODO: add special function handlers for
+						execstr
+						if
+				-->
+				<keyword attribute="Function" context="#pop!substitutionFunctionFound" String="StringFunctions"/>
+				<IncludeRules context="substitutionFindIntFunction"/>
+			</context>
+
+			<context name="substitutionFindIntFunction" attribute="Error" lineEndContext="#pop">
+				<!-- TODO: add special function handlers for
+						eval
+				-->
+				<keyword attribute="Function" context="#pop!substitutionFunctionFound" String="IntFunctions"/>
+				<RegExpr attribute="Function" context="#pop!substitutionFunctionFound" String="&label;(?=\[)" insensitive="true"/>
+			</context>
+
+	<!-- Variable Functions - the Masterpower of 4DOS -> we'll make this more complex later on!-->
+			<context name="substitutionFunctionFound" attribute="Error" lineEndContext="Error">
+				<DetectChar attribute="Function" context="#pop!findFunctionParameters" beginRegion="true" char="["/>
+			</context>
+
+			<context name="findFunctionParameters" attribute="String" lineEndContext="Error">
+				<DetectChar attribute="Function" char=","/>
+				<DetectChar attribute="Function" context="#pop" endRegion="true" char="]"/>
+				<IncludeRules context="findStrings"/>
+			</context>
+
+	<!-- indirect Substitutions - they need to find their ending braces-->
+			<context name="substitutionIndirect" attribute="Variable" lineEndContext="Error">
+				<DetectChar attribute="VariableBold" context="#pop" endRegion="true" char="]"/>
+				<IncludeRules context="findStrings"/>
+			</context>
+
+	<!-- Strings within quotes -->
+			<context name="foundStringBackQuote" attribute="String" lineEndContext="#pop">
+				<DetectChar attribute="Escape" context="#pop" char="`"/>
+			</context>
+
+			<context name="foundStringQuote" attribute="String" lineEndContext="#pop">
+				<DetectChar attribute="String" context="#pop" char="&quot;"/>
+				<IncludeRules context="findStrings"/>
+			</context>
+
+	<!-- stuff inside comments ... (a comment always runs until EOL) -->
+			<context name="foundComment" attribute="Comment" lineEndContext="#pop">
+				<keyword attribute="Alert" String="HighlightInsideComment"/>
+			</context>
+
+	<!-- Label definitions including parameter definitions for Gosub-->
+			<context name="foundLabel" attribute="Error" lineEndContext="#pop">
+				<!-- Wir suchen nach Parameterdefinitionen für GOSUBs, alles andere sind Fehler! -->
+				<DetectChar attribute="Label" context="#pop!foundLabelParameters" char="["/>
+				<DetectSpaces attribute="Normal"/>
+			</context>
+
+			<context name="foundLabelParameters" attribute="Error" lineEndContext="#pop">
+				<DetectIdentifier attribute="Variable" context="#stay"/>
+				<DetectChar attribute="Label" context="#pop" char="]"/>
+				<DetectSpaces attribute="Normal"/>
+			</context>
+
+	<!-- highlight gosubs and gotos with additional parameters (only valid with gosub, actually)-->
+			<context name="foundSpagetti" attribute="Normal" lineEndContext="#pop">
+				<IncludeRules context="popNeedEndOfCommand"/>
+				<IncludeRules context="findStrings"/>
+			</context>
+
+   <!-- Rules that highlight conditions (include the entry point "findCondition" to start this as a context that pops behind the condition(s))-->
+			<context name="conditionLeft" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!conditionLeftStandard">
+				<RegExpr attribute="Normal" context="conditionNot" String="\bnot\b" lookAhead="true" insensitive="true"/>
+				<keyword attribute="Label" context="#pop!conditionVarname" String="TestStatusVarname"/>
+				<!-- the end of a filename comes with any non-quoted space - so we need to eat up the first space after exist etc.-->
+				<RegExpr attribute="Label" context="#pop!conditionFileTest" String="((dir)?exist|isdir)\s+" insensitive="true"/>
+				<keyword attribute="Label" context="#pop!conditionErrorlevel" String="TestErrorlevel"/>
+				<DetectSpaces/>
+			</context>
+
+			<context name="conditionNot" attribute="Error" lineEndContext="#pop#pop">
+				<!-- the context itself highlights everything as Error - just this rule finds the last not -->
+				<RegExpr attribute="Alert" context="#pop" String="\bnot\b(?!\s*not\b)" insensitive="true"/>
+			</context>
+
+			<context name="conditionVarname" attribute="Normal" lineEndContext="#pop">
+				<!-- basic variable name check just finds an identifier -->
+				<DetectIdentifier attribute="Variable" context="#pop!conditionEnd"/>
+				<!-- TODO: further checking, as a varname can also be calculated -->
+			</context>
+
+			<context name="conditionFileTest" attribute="String" lineEndContext="#pop">
+				<IncludeRules context="findStrings"/>
+				<DetectSpaces context="#pop!conditionEnd"/>
+			</context>
+
+			<context name="conditionErrorlevel" attribute="Normal" lineEndContext="#pop">
+				<DetectSpaces/>
+				<RegExpr attribute="Operator" String="==|!=|eq|ne|gt|ge|lt|le" insensitive="true"/>
+				<RegExpr attribute="Number" context="#pop!conditionEnd" String="\s*[+-]?\d*[,.]?\d+"/>
+				<!-- TODO: actually errorlevel-test can also take calculated numbers or int variables to test agains - but would we want to duplicate a lot of the functionality above again?-->
+			</context>
+
+			<context name="conditionEnd" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+				<RegExpr attribute="Operator" context="#pop!conditionLeft" String="\.(and|(x)?or)\." insensitive="true"/>
+				<!--DetectSpaces/-->
+			</context>
+
+			<context name="conditionLeftStandard" attribute="Normal" lineEndContext="#pop">
+				<!--DetectSpaces/-->
+				<RegExpr attribute="Operator" context="#pop!conditionLeftEval" String="\s*(==|!=|eq|ne|gt|ge|lt|le)\s*" lookAhead="true" insensitive="true"/>
+				<IncludeRules context="findStrings"/>
+			</context>
+
+			<context name="conditionLeftEval" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!conditionRight">
+				<DetectSpaces/>
+				<RegExpr attribute="Operator" String="==|!=|eq|ne|gt|ge|lt|le|eqc" insensitive="true"/>
+			</context>
+
+			<context name="conditionRight" attribute="Normal" lineEndContext="#pop">
+				<IncludeRules context="findStrings"/>
+				<DetectSpaces context="#pop!conditionEnd"/>
+			</context>
+
+   <!-- Handle Iff correctly: condition, then, wait for possible else/handle elseiff find endiff-->
+			<context name="cmdIff" attribute="Normal" lineEndContext="#pop">
+				<IncludeRules context="findCondition"/>
+				<DetectSpaces/>
+				<!-- TODO: replace with WordDetect as soon as WordDetect works right-->
+				<RegExpr attribute="Keyword" context="#pop!cmdIffThen" beginRegion="true" String="\bthen\b\s*($|%\+)" insensitive="true"/>
+				<!-- should the above regex not match, there is an error... -->
+				<StringDetect attribute="Keyword" context="Error" String="then" insensitive="true"/>
+			</context>
+
+			<context name="cmdIffThen" attribute="Normal" lineEndContext="#stay">
+				<!-- TODO: replace with WordDetect as soon as WordDetect works right-->
+				<RegExpr attribute="Keyword" context="popNeedEndOfCommand" String="\belse\b" insensitive="true"/>
+				<RegExpr attribute="Keyword" context="cmdElseiff" String="\belseiff\b" insensitive="true"/>
+				<RegExpr attribute="Keyword" context="#pop!popNeedEndOfCommand" endRegion="true" String="\bendiff\b" insensitive="true"/>
+				<IncludeRules context="base"/>
+			</context>
+
+			<context name="cmdElseiff" attribute="Normal" lineEndContext="#pop">
+				<IncludeRules context="findCondition"/>
+				<DetectSpaces/>
+				<!-- TODO: replace with WordDetect as soon as WordDetect works right-->
+				<RegExpr attribute="Keyword" context="#pop" String="\bthen\b\s*($|%\+)" insensitive="true"/>
+				<!-- should the above regex not match, there is an error... -->
+				<StringDetect attribute="Keyword" context="Error" String="then" insensitive="true"/>
+			</context>
+
+	<!-- echo -->
+			<context name="cmdEcho" attribute="String" lineEndContext="#pop">
+				<IncludeRules context="findStrings"/>
+				<IncludeRules context="findRedirection"/>
+				<RegExpr attribute="Normal" context="#pop" String="\s*($|\%\+|\)|\])" lookAhead="true"/>
+			</context>
+
+	<!-- Redirection: kann ja auch mehrfach auftreten -->
+			<context name="Redirection" attribute="String" lineEndContext="#pop">
+				<DetectSpaces attribute="Normal" context="#stay"/>
+				<IncludeRules context="findStrings"/>
+				<IncludeRules context="popNeedEndOfCommand"/>
+			</context>
+
+			<context name="RedirectionOutput1st" attribute="String" lineEndContext="#pop">
+				<IncludeRules context="Redirection"/>
+				<DetectChar attribute="Redirection" context="#pop!Redirection" char="&lt;"/>
+			</context>
+
+			<context name="RedirectionInput1st" attribute="String" lineEndContext="#pop">
+				<IncludeRules context="Redirection"/>
+				<RegExpr attribute="Redirection" context="#pop!Redirection" String="[&gt;]{1,2}[&amp;]?[&gt;]?"/>
+			</context>
+
+	<!-- special treatment of text and endtext -->
+			<context name="cmdText" attribute="Error" lineEndContext="#pop!cmdEndText">
+				<DetectSpaces attribute="Normal" context="#stay"/>
+				<RegExpr attribute="Keyword" context="Redirection" String="[&gt;]{1,2}"/>
+			</context>
+
+			<context name="cmdEndText" attribute="String" lineEndContext="#stay">
+				<RegExpr attribute="Keyword" context="#pop" String="^\s*endtext\s*$" insensitive="true"/>
+	<!--	As we are pretty 31337, we also highlight ANSI-Escapes in Textblocks.
+			We're just not 1337 enough to also provide a syntactic checking for
+			those sequences...-->
+				<RegExpr attribute="Escape" String="\x1b\[.*[fhlmpsuABCDHJKR]" minimal="true"/>
+			</context>
+
+	<!-- Set/Unset commands -->
+			<context name="cmdUnset" attribute="Normal" lineEndContext="#pop">
+				<IncludeRules context="findOption"/>
+				<DetectIdentifier attribute="Variable" context="#stay"/>
+				<IncludeRules context="popNeedEndOfCommand"/>
+			</context>
+
+			<context name="cmdSet" attribute="Normal" lineEndContext="#pop">
+				<DetectChar attribute="Keyword" context="#pop" char="="/>
+				<IncludeRules context="cmdUnset"/>
+			</context>
+
+	<!-- Highlight an Option, #pop on next space ...-->
+			<context name="Option" attribute="Option" lineEndContext="#pop">
+				<IncludeRules context="findStrings"/>
+				<DetectSpaces attribute="Normal" context="#pop"/>
+			</context>
+
+	<!-- input und inkey - testing allowed Options ... -->
+			<context name="cmdInput" attribute="String" lineEndContext="#pop"
+					 fallthroughContext="#pop!inputMessage" fallthrough="true">
+				<IncludeRules context="input"/>
+				<RegExpr attribute="Option" String="/([en]|l[0-9]+)\s" insensitive="true"/>
+			</context>
+
+			<context name="cmdInkey" attribute="String" lineEndContext="#pop"
+					 fallthroughContext="#pop!inputMessage" fallthrough="true">
+				<RegExpr attribute="Option" context="inputKeysDP" String="/k:" insensitive="true"/>
+				<RegExpr attribute="Option" context="inputKeysAZ" String="/k\&quot;" insensitive="true"/>
+				<StringDetect attribute="Error" String="/k" insensitive="true"/>
+				<StringDetect attribute="Option" String="/m" insensitive="true"/>
+				<IncludeRules context="input"/>
+			</context>
+
+			<context name="input" attribute="Error" lineEndContext="#stay">
+				<RegExpr attribute="Option" String="/([cdpx]|[w][0-9]+)\s" insensitive="true"/>
+				<DetectSpaces attribute="Normal" context="#stay"/>
+			</context>
+
+			<context name="inputKeysDP" attribute="Error" lineEndContext="#pop#pop">
+				<DetectChar attribute="String" context="inputKeyDesc" char="["/>
+				<DetectSpaces attribute="Normal" context="#pop"/>
+				<RegExpr attribute="Function" String="\S"/>
+			</context>
+
+			<context name="inputKeysAZ" attribute="Error" lineEndContext="#pop#pop">
+				<DetectChar attribute="String" context="inputKeyDesc" char="["/>
+				<DetectChar attribute="Option" context="#pop" char="&quot;"/>
+				<RegExpr attribute="Function" String="\S"/>
+			</context>
+
+			<context name="inputKeyDesc" attribute="Error" lineEndContext="#pop#pop#pop">
+				<RegExpr attribute="Label" context="#pop!inputKeyDesc2" String="&tasten;"/>
+			</context>
+
+			<context name="inputKeyDesc2" attribute="Error" lineEndContext="#pop#pop#pop">
+				<DetectChar attribute="String" context="#pop" char="]"/>
+			</context>
+
+			<context name="inputMessage" attribute="String" lineEndContext="#pop">
+				<RegExpr attribute="Variable" context="#pop!popNeedEndOfCommand" String="%%[a-z_][a-z0-9_]*" insensitive="true"/>
+				<IncludeRules context="findStrings"/>
+			</context>
+
+	<!-- special treatment of DO -->
+			<context name="cmdDo" attribute="Error" lineEndContext="Error">
+				<!-- do n | forever-->
+				<RegExpr attribute="Label" context="#pop!insideDo" String="\s*forever(?=\s*$)" insensitive="true"/>
+				<RegExpr attribute="Variable" context="#pop!fixedDo" String="\s*(%|[0-9]+)" lookAhead="true"/>
+				<!-- WHILE | UNTIL -->
+				<RegExpr attribute="Label" context="#pop!conditionalDo" String="\s*(while|until)" insensitive="true"/>
+				<!-- varname = start TO end [BY n] | varname in blubberkram -->
+				<RegExpr attribute="Variable" context="#pop!countedDo" String="\s*&varname;" insensitive="true"/>
+			</context>
+
+			<context name="fixedDo" attribute="Error" lineEndContext="#pop!insideDo">
+				<DetectSpaces attribute="Normal"/>
+				<IncludeRules context="findNumbers"/>
+			</context>
+
+			<context name="countedDo" attribute="Error" lineEndContext="Error">
+				<RegExpr attribute="Keyword" context="#pop!countedDoIn" String="\bin\b" insensitive="true"/>
+				<DetectChar attribute="Keyword" context="#pop!countedDoStart" char="="/>
+				<DetectSpaces attribute="Normal"/>
+			</context>
+
+			<context name="countedDoIn" attribute="String" lineEndContext="#pop!insideDo">
+				<DetectSpaces/>
+				<IncludeRules context="findOption"/>
+				<IncludeRules context="findStrings"/>
+			</context>
+
+			<context name="countedDoStart" attribute="Error" lineEndContext="Error">
+				<RegExpr attribute="Keyword" context="#pop!countedDoTo" String="\bto\b" insensitive="true"/>
+				<IncludeRules context="findNumbers"/>
+				<DetectSpaces attribute="Normal"/>
+			</context>
+
+			<context name="countedDoTo" attribute="Error" lineEndContext="#pop!insideDo">
+				<IncludeRules context="findNumbers"/>
+				<DetectSpaces attribute="Normal"/>
+				<RegExpr attribute="Keyword" context="#pop!countedDoBy" String="\bby\b" insensitive="true"/>
+			</context>
+
+			<context name="countedDoBy" attribute="Error" lineEndContext="#pop!insideDo">
+				<IncludeRules context="findNumbers"/>
+				<DetectSpaces attribute="Normal"/>
+			</context>
+
+			<context name="conditionalDo" attribute="Error" lineEndContext="#pop!insideDo">
+				<IncludeRules context="findCondition"/>
+				<DetectSpaces attribute="Normal"/>
+			</context>
+
+			<context name="insideDo" attribute="Normal" lineEndContext="#stay">
+				<keyword attribute="Keyword" String="SkipdoCommand"/>
+				<keyword attribute="Keyword" endRegion="true" context="#pop!popNeedEndOfCommand" String="EnddoCommand"/>
+				<IncludeRules context="base"/>
+			</context>
+
+   <!-- special treatment of switch statements -->
+			<context name="cmdSwitch" attribute="Normal" lineEndContext="#pop!insideSwitch">
+				<IncludeRules context="findStrings"/>
+			</context>
+
+			<context name="insideSwitch" attribute="Normal" lineEndContext="#stay">
+				<RegExpr attribute="Keyword" context="#pop!switchDefault" String="\s*default\s*$" insensitive="true"/>
+				<IncludeRules context="switchDefault"/>
+			</context>
+			<!-- "Default" may be used only once, that's why we change contexts when it was found -->
+			<context name="switchDefault" attribute="Normal" lineEndContext="#stay">
+				<RegExpr attribute="Keyword" context="switchCase" String="\bcase\b" insensitive="true"/>
+				<RegExpr attribute="Keyword" context="#pop!popNeedEndOfCommand" String="\bendswitch\b" insensitive="true" endRegion="true"/>
+				<IncludeRules context="base"/>
+			</context>
+
+			<context name="switchCase" attribute="String" lineEndContext="#pop">
+				<DetectSpaces/>
+				<StringDetect attribute="Operator" insensitive="true" String=".or."/>
+				<IncludeRules context="findStrings"/>
+			</context>
+
+   <!-- internal commands of the 4DOS interpreter (TODO: make it even better, like integrated syntax checking) -->
+			<context name="cmdNeedOnOff" attribute="Error" lineEndContext="#pop">
+				<keyword attribute="String" context="#pop!popNeedEndOfCommand" String="OnOff"/>
+				<DetectSpaces attribute="Normal"/>
+			</context>
+
+			<context name="cmdNeedAnInteger" attribute="Error" lineEndContext="#pop">
+				<DetectSpaces attribute="Normal"/>
+				<IncludeRules context="findOption"/>
+				<IncludeRules context="findNumbers"/>
+				<IncludeRules context="popNeedEndOfCommand"/>
+			</context>
+
+			<context name="cmdNeedsACommand" attribute="String" lineEndContext="#pop">
+				<IncludeRules context="findOption"/>
+				<IncludeRules context="base"/>
+			</context>
+
+			<context name="cmdsimpleNoChecks" attribute="String" lineEndContext="#pop">
+				<IncludeRules context="findOption"/>
+				<IncludeRules context="findStrings"/>
+				<IncludeRules context="popNeedEndOfCommand"/>
+			</context>
+
+			<context name="cmdTakeAFileName" attribute="String" lineEndContext="#pop">
+				<IncludeRules context="findOption"/>
+				<IncludeRules context="findStrings"/>
+				<IncludeRules context="popNeedEndOfCommand"/>
+			</context>
+
+			<context name="cmdTakeColors" attribute="String" lineEndContext="#pop">
+				<RegExpr attribute="Operator" context="#pop!ColorHaveBrightFG" String="\bbri(ght)?\b" insensitive="true"/>
+				<RegExpr attribute="Operator" context="#pop!ColorHaveBlinkFG" String="\bbli(nk)?\b" insensitive="true"/>
+				<IncludeRules context="ColorHaveBlinkFG"/>
+			</context>
+
+			<context name="ColorHaveBrightFG" attribute="String" lineEndContext="Error">
+				<RegExpr attribute="Operator" context="#pop!ColorHaveBlinkFG" String="\bbli(nk)?\b" insensitive="true"/>
+				<IncludeRules context="ColorHaveBlinkFG"/>
+			</context>
+
+			<context name="ColorHaveBlinkFG" attribute="String" lineEndContext="Error">
+				<RegExpr attribute="Option" context="#pop!ColorHaveFG" insensitive="true" String="\b(Bla(ck)?|Blue?|Gre(en)?|Red|Mag(enta)?|Cyan?|Yel(low)?|Whi(te)?)\b"/>
+				<DetectSpaces/>
+			</context>
+
+			<context name="ColorHaveFG" attribute="String" lineEndContext="Error">
+				<RegExpr attribute="Keyword" context="#pop!ColorBG" insensitive="true" String="\s+on\s+"/>
+			</context>
+
+			<context name="ColorBG" attribute="String" lineEndContext="Error">
+				<RegExpr attribute="Operator" insensitive="true" String="\bbri(ght)?\b"/>
+				<RegExpr attribute="Option" context="#pop!ColorHaveBG" insensitive="true" String="\b(Bla(ck)?|Blue?|Gre(en)?|Red|Mag(enta)?|Cyan?|Yel(low)?|Whi(te)?)\b"/>
+			</context>
+
+			<context name="ColorHaveBG" attribute="String" lineEndContext="#pop">
+				<RegExpr attribute="Operator" context="#pop!ColorNeedBordercol" insensitive="true" String="\bBOR(der)?\b"/>
+				<IncludeRules context="popNeedEndOfCommand"/>
+			</context>
+
+			<context name="ColorNeedBordercol" attribute="String" lineEndContext="Error">
+				<RegExpr attribute="Option" context="#pop!popNeedEndOfCommand" insensitive="true" String="\s*(Bla(ck)?|Blue?|Gre(en)?|Red|Mag(enta)?|Cyan?|Yel(low)?|Whi(te)?)\b"/>
+			</context>
+
+			<context name="cmdDraw" attribute="String" lineEndContext="#pop">
+				<!-- ToDo: check if we'll have to split this into multiple contexts, add the highlighting for drawing commands -->
+			</context>
+
+			<context name="cmdFilesystemOperation" attribute="String" lineEndContext="#pop">
+				<IncludeRules context="findOption"/>
+				<IncludeRules context="findStrings"/>
+				<IncludeRules context="popNeedEndOfCommand"/>
+			</context>
+
+			<context name="Error" attribute="Error" lineEndContext="#stay">
+			</context>
+		</contexts>
+		<itemDatas>
+			<itemData name="Normal"	defStyleNum="dsNormal"/>
+			<itemData name="Comment"	  defStyleNum="dsComment"/>
+			<itemData name="Keyword"	  defStyleNum="dsKeyword"/>
+			<itemData name="Number"	defStyleNum="dsDecVal"/>
+			<itemData name="Option"	defStyleNum="dsDecVal"/>
+			<itemData name="Label"	  defStyleNum="dsOthers"/>
+			<itemData name="Function"	defStyleNum="dsFunction"/>
+			<itemData name="Redirection"  defStyleNum="dsKeyword"/>
+			<itemData name="String"	defStyleNum="dsString"/>
+			<itemData name="Escape"	defStyleNum="dsSpecialChar"/>
+			<itemData name="Variable"	defStyleNum="dsVariable"/>
+			<itemData name="VariableBold" defStyleNum="dsVariable" bold="true"/>
+			<itemData name="Alert"	  defStyleNum="dsAlert"/>
+			<itemData name="Error"	  defStyleNum="dsError"/>
+			<itemData name="Operator"	defStyleNum="dsOperator"/>
+		</itemDatas>
+	</highlighting>
+	<general>
+		<comments>
+			<comment name="singleLine" start="rem "/>
+			<comment name="singleLine" start="::"/>
+		</comments>
+		<keywords casesensitive="0" additionalDeliminator="@"/>
+	</general>
+</language>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- FIXME: Find a way to prevent ranges (e.g. [1..] or [0..99]) from matching as floats. -pp -->
+<language name="Pike" version="2" kateversion="2.4" section="Scripts" extensions="*.pike" mimetype="application/x-pike;text/x-pike" casesensitive="1" author="Paul Pogonyshev" license="">
+  <highlighting>
+    <list name="keywords">
+      <item>break</item>
+      <item>case</item>
+      <item>class</item>
+      <item>continue</item>
+      <item>default</item>
+      <item>do</item>
+      <item>else</item>
+      <item>for</item>
+      <item>foreach</item>
+      <item>if</item>
+      <item>return</item>
+      <item>switch</item>
+      <item>while</item>
+    </list>
+    <list name="types">
+      <item>array</item>
+      <item>float</item>
+      <item>function</item>
+      <item>int</item>
+      <item>mapping</item>
+      <item>mixed</item>
+      <item>multiset></item>
+      <item>object</item>
+      <item>program</item>
+      <item>static</item>
+      <item>string</item>
+      <item>void</item>
+    </list>
+    <list name="builtins">
+      <item>catch</item>
+      <item>gauge</item>
+      <item>sscanf</item>
+      <item>typeof</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+	<keyword attribute="Keyword" context="#stay" String="keywords"/>
+	<keyword attribute="Data Type" context="#stay" String="types"/>
+	<keyword attribute="Builtin Function" context="#stay" String="builtins"/>
+	<RegExpr attribute="Builtin Function" context="#stay" String="`([\+\-\*/%~&amp;\|^]|[!=&lt;&gt;]=|&lt;&lt;?|&gt;&gt;?|(\[\]|->)=?)"/>
+	<Float attribute="Float" context="#stay"/>
+	<RegExpr attribute="Binary" context="#stay" String="0[bB][01]+"/>
+	<HlCOct attribute="Octal" context="#stay"/>
+	<HlCHex attribute="Hex" context="#stay"/>
+	<Int attribute="Decimal" context="#stay"/>
+	<HlCChar attribute="Char" context="#stay"/>
+	<DetectChar attribute="Normal Text" context="#stay" char="{" beginRegion="Brace"/>
+	<DetectChar attribute="Normal Text" context="#stay" char="}" endRegion="Brace"/>
+	<DetectChar attribute="String" context="String" char="&quot;"/>
+	<Detect2Chars attribute="Comment" context="Line Comment" char="/" char1="/"/>
+	<Detect2Chars attribute="Comment" context="Line Comment" char="#" char1="!"/>
+	<Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*" beginRegion="Comment"/>
+	<RegExpr attribute="Preprocessor" context="Outscoped" String="#\s*if\s+0" beginRegion="Outscoped" firstNonSpace="true"/>
+	<DetectChar attribute="Preprocessor" context="Preprocessor" char="#" firstNonSpace="true"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+	<RegExpr attribute="String Char" context="#stay" String="\\d[0-9]+"/>
+	<HlCStringChar attribute="String Char" context="#stay"/>
+	<DetectChar attribute="String" context="#pop" char="&quot;"/>
+	<LineContinue attribute="String" context="#stay"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Line Comment">
+	<RegExpr attribute="Note" context="#stay" String="(FIXME|TODO|NOT(IC)?E):?"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Block Comment">
+	<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+	<RegExpr attribute="Note" context="#stay" String="(FIXME|TODO|NOT(IC)?E):?"/>
+      </context>
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+	<RangeDetect attribute="Preprocessor Lib" context="#stay" char="&quot;" char1="&quot;"/>
+	<RangeDetect attribute="Preprocessor Lib" context="#stay" char="&lt;" char1="&gt;"/>
+	<Detect2Chars attribute="Comment" context="Line Comment" char="/" char1="/"/>
+	<Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*"/>
+	<LineContinue attribute="Preprocessor" context="#stay"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Outscoped">
+	<RegExpr attribute="Note" context="#stay" String="(FIXME|TODO|NOT(IC)?E):?"/>
+	<Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*" beginRegion="Comment"/>
+	<RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="Outscoped" firstNonSpace="true"/>
+	<RegExpr attribute="Preprocessor" context="#pop" String="#\s*(endif|elif|else)" endRegion="Outscoped" firstNonSpace="true"/>
+      </context>         
+      <context attribute="Comment" lineEndContext="#stay" name="Outscoped intern">
+	<Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*" beginRegion="Comment"/>
+	<RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="Outscoped" firstNonSpace="true"/>
+	<RegExpr attribute="Comment" context="#pop" String="#\s*endif" endRegion="Outscoped" firstNonSpace="true"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"	defStyleNum="dsNormal"/>
+      <itemData name="Keyword"		defStyleNum="dsKeyword"/>
+      <itemData name="Builtin Function" defStyleNum="dsFunction"/>
+      <itemData name="Data Type"	defStyleNum="dsDataType"/>
+      <itemData name="Decimal"		defStyleNum="dsDecVal"/>
+      <itemData name="Hex"		defStyleNum="dsBaseN"/>
+      <itemData name="Octal"		defStyleNum="dsBaseN"/>
+      <itemData name="Binary"		defStyleNum="dsBaseN"/>
+      <itemData name="Float"		defStyleNum="dsFloat"/>
+      <itemData name="Char"		defStyleNum="dsChar"/>
+      <itemData name="String"		defStyleNum="dsString"/>
+      <itemData name="String Char"	defStyleNum="dsChar"/>
+      <itemData name="Comment"		defStyleNum="dsComment"/>
+      <itemData name="Note"		defStyleNum="dsAlert"/>
+      <itemData name="Preprocessor"	defStyleNum="dsOthers"/>
+      <itemData name="Preprocessor Lib" defStyleNum="dsString"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#!"/>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="/*" end="*/"/>
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+</language>

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- Author: Werner Braun <wb@o3-software.de> -->
+<!-- 29.05.2003 wb mailed to the kate-team (cullmann) -->
+<!-- 23.05.2003 wb added *.bro File-Type for GPCP Browser output-->
+<!-- 09.05.2003 wb nested comments allowed (maximum two level nesting) -->
+<!-- 07.04.2003 wb IN Problem solved -->
+<!-- 06.05.2003 wb NEW without ( -->
+<!-- 22.04.2003 wb Minor bugfixes -->
+<!-- 19.04.2003 wb Some more Enhancements -->
+<!-- 18.04.2003 wb Enhancenment for Maior / Minor Comments and Full / ReadOnly Exports, Folds for Procedures, Records, Comments -->
+<!-- 17.04.2003 wb Enhancements for Relation and Operators -->
+<language name="Component-Pascal" version="2" kateversion="2.3" section="Sources" extensions="*.cp;*.bro" mimetype="text/x-component-pascal" author="Werner Braun (wb@o3-software.de)" license="">
+	<highlighting>
+		<list name="keywords">
+			<item>BEGIN</item>
+			<item>BY</item>
+			<item>CASE</item>
+			<item>CLOSE</item>
+			<item>CONST</item>
+			<item>DO</item>
+			<item>ELSE</item>
+			<item>ELSIF</item>
+			<item>END</item>
+			<item>FOR</item>
+			<item>IF</item>
+			<item>IMPORT</item>
+			<item>LOOP</item>
+			<item>MODULE</item>
+			<item>NEW</item>
+			<item>OF</item>
+			<item>OUT</item>
+			<item>PROCEDURE</item>
+			<item>REPEAT</item>
+			<item>THEN</item>
+			<item>TO</item>
+			<item>TYPE</item>
+			<item>UNTIL</item>
+			<item>VAR</item>
+			<item>WHILE</item>
+			<item>WITH</item>
+		</list>
+		<list name="exits">
+			<item>ASSERT</item>
+			<item>EXIT</item>
+			<item>HALT</item>
+			<item>RETURN</item>
+		</list>
+		<list name="types">
+			<item>ANYPTR</item>
+			<item>ANYREC</item>
+			<item>ARRAY</item>
+			<item>BOOLEAN</item>
+			<item>SHORTCHAR</item>
+			<item>CHAR</item>
+			<item>BYTE</item>
+			<item>SHORTINT</item>
+			<item>INTEGER</item>
+			<item>LONGINT</item>
+			<item>POINTER</item>
+			<item>RECORD</item>
+			<item>SHORTREAL</item>
+			<item>REAL</item>
+			<item>SET</item>
+		</list>
+		<list name="attributes">
+			<item>ABSTRACT</item>
+			<item>EMPTY</item>
+			<item>EXTENSIBLE</item>
+			<item>LIMITED</item>
+		</list>
+		<list name="builtins">
+			<item>ABS</item>
+			<item>ASH</item>
+			<item>BITS</item>
+			<item>CAP</item>
+			<item>CHR</item>
+			<item>DEC</item>
+			<item>ENTIER</item>
+			<item>EXCL</item>
+			<item>INC</item>
+			<item>INCL</item>
+			<item>LEN</item>
+			<item>LONG</item>
+			<item>MAX</item>
+			<item>MIN</item>
+			<item>ODD</item>
+			<item>ORD</item>
+			<item>SHORT</item>
+			<item>SIZE</item>
+		</list>
+		<list name="specials">
+			<item>FALSE</item>
+			<item>INF</item>
+			<item>NIL</item>
+			<item>TRUE</item>
+		</list>
+		<contexts>
+			<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+				<StringDetect attribute="CommentMaior" context="Comment1" String="(**" beginRegion="Comment"/>
+				<Detect2Chars attribute="CommentMinor" context="Comment2" char="(" char1="*" beginRegion="Comment"/>
+				<DetectChar attribute="String" context="String1" char="&quot;" />
+				<DetectChar attribute="String" context="String2" char="'" />
+				<RegExpr attribute="Keyword" context="#stay" String="PROCEDURE\s" beginRegion="Proc"/>
+				<RegExpr attribute="Normal Text" context="#stay" String="ABSTRACT;|EMPTY;|END\s*[A-Za-z][A-Za-z0-9_]*\;" endRegion="Proc"/>
+				<RegExpr attribute="Type" context="#stay" String="RECORD" beginRegion="Rec"/>
+				<RegExpr attribute="Keyword" context="#stay" String="END" endRegion="Rec"/>
+				<StringDetect attribute="MemAlloc" context="#stay" String="NEW"/>
+				<keyword attribute="Keyword" context="#stay" String="keywords"/>
+				<keyword attribute="Exit" context="#stay" String="exits"/>
+				<keyword attribute="Type" context="#stay" String="types"/>
+				<keyword attribute="Attribute" context="#stay" String="attributes"/>
+				<keyword attribute="Builtin" context="#stay" String="builtins"/>
+				<keyword attribute="SpecialValues" context="#stay" String="specials"/>
+				<RegExpr attribute="Integer" context="#stay" String="\s[\+|\-]{0,1}[0-9]([0-9]*|[0-9A-F]*(H|L))"/>
+				<Float attribute="Float" context="#stay"/>
+				<RegExpr attribute="Char" context="#stay" String="\s[0-9][0-9A-F]*X"/>
+				<RegExpr attribute="ExportFull" context="#stay" String="[A-Za-z][A-Za-z0-9_]*\*"/>
+				<RegExpr attribute="ExportReadOnly" context="#stay" String="[A-Za-z][A-Za-z0-9_]*\-"/>
+				<RegExpr attribute="Relation" context="#stay" String="\s(=|#|&lt;|&lt;=|&gt;|&gt;=|IN\s|IS)"/>
+				<RegExpr attribute="Operator" context="#stay" String="\s(\+|\-|OR|\*|/|DIV|MOD|\&amp;)"/>
+			</context>
+			<context attribute="CommentMaior" lineEndContext="#stay" name="Comment1">
+				<Detect2Chars attribute="CommentMaior" context="#pop" char="*" char1=")" endRegion="Comment"/>
+				<Detect2Chars attribute="CommentMinor" context="CommentN" char="(" char1="*"/>
+			</context>
+			<context attribute="CommentMinor" lineEndContext="#stay" name="Comment2">
+				<Detect2Chars attribute="CommentMinor" context="#pop" char="*" char1=")" endRegion="Comment"/>
+				<Detect2Chars attribute="CommentMinor" context="CommentN" char="(" char1="*"/>
+			</context>
+			<context attribute="CommentMinor" lineEndContext="#stay" name="CommentN">
+				<Detect2Chars attribute="CommentMinor" context="#pop" char="*" char1=")"/>
+				<Detect2Chars attribute="CommentMinor" context="CommentN2" char="(" char1="*"/>
+			</context>
+			<context attribute="CommentMinor" lineEndContext="#stay" name="CommentN2">
+				<Detect2Chars attribute="CommentMinor" context="#pop" char="*" char1=")"/>
+			</context>
+			<context attribute="String" lineEndContext="#stay" name="String1">
+				<DetectChar attribute="String" context="#pop" char="&quot;"/>
+			</context>
+			<context attribute="String" lineEndContext="#stay" name="String2">
+				<DetectChar attribute="String" context="#pop" char="'"/>
+			</context>
+		</contexts>
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal" />
+			<itemData name="CommentMaior" defStyleNum="dsComment" />
+			<itemData name="CommentMinor" defStyleNum="dsComment" />
+			<itemData name="String" defStyleNum="dsString" />
+			<itemData name="Keyword" defStyleNum="dsKeyword" />
+			<itemData name="MemAlloc" defStyleNum="dsKeyword" />
+			<itemData name="Exit" defStyleNum="dsKeyword"/>
+			<itemData name="Type" defStyleNum="dsDataType"/>
+			<itemData name="Attribute" defStyleNum="dsOthers"/>
+			<itemData name="Builtin" defStyleNum="dsNormal"/>
+			<itemData name="Integer" defStyleNum="dsBaseN"/>
+			<itemData name="Float" defStyleNum="dsFloat" />
+			<itemData name="Char" defStyleNum="dsChar" />
+			<itemData name="SpecialValues" defStyleNum="dsDecVal"/>
+			<itemData name="ExportFull" defStyleNum="dsOthers"/>
+			<itemData name="ExportReadOnly" defStyleNum="dsOthers"/>
+			<itemData name="Relation" defStyleNum="dsNormal"/>
+			<itemData name="Operator" defStyleNum="dsNormal"/>
+		</itemDatas>
+	</highlighting>
+	<general>
+		<keywords casesensitive="1" />
+		<comments>
+			<comment name="multiLine" start="(*" end="*)" />
+		</comments>
+	</general>
+</language>

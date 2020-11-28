@@ -1,0 +1,231 @@
+{
+    "//comment" : "This is the default configuration file of VNoteX. User should modify the one in user configuration folder instead of this.",
+    "metadata" : {
+        "//comment": "When releasing new version, please go through the following configs to check if override is needed.",
+        "//Comment": "markdown_editor#override_viewer_resource",
+        "version" : "0.1.5"
+    },
+    "core" : {
+        "theme" : "native",
+        "locale" : "",
+        "shortcuts" : {
+            "FullScreen" : "F11",
+            "ExpandContentArea" : "Ctrl+G, E",
+            "Settings" : "Ctrl+Alt+P",
+            "NewNote" : "Ctrl+Alt+N",
+            "CloseTab" : "Ctrl+G, X",
+            "NavigationDock" : "Ctrl+G, 1",
+            "OutlineDock" : "Ctrl+G, 2",
+            "NavigationMode" : "Ctrl+G, W",
+            "LocateNode" : "Ctrl+G, D"
+        },
+        "toolbar_icon_size" : 16
+    },
+    "editor" : {
+        "core": {
+            "toolbar_icon_size" : 14,
+            "//comment" : "none/autosave/backupfile",
+            "auto_save_policy" : "autosave",
+            "backup_file_extension" : "vswp",
+            "//comment" : "Where to put the backup file, related to the content file",
+            "backup_file_directory" : ".",
+            "shortcuts" : {
+                "Save" : "Ctrl+S",
+                "EditRead" : "Ctrl+T",
+                "Discard" : "Ctrl+G, Q",
+                "TypeHeading1" : "Ctrl+1",
+                "TypeHeading2" : "Ctrl+2",
+                "TypeHeading3" : "Ctrl+3",
+                "TypeHeading4" : "Ctrl+4",
+                "TypeHeading5" : "Ctrl+5",
+                "TypeHeading6" : "Ctrl+6",
+                "TypeHeadingNone" : "Ctrl+7",
+                "TypeBold" : "Ctrl+B",
+                "TypeItalic" : "Ctrl+I",
+                "TypeUnorderedList" : "Ctrl+8",
+                "TypeOrderedList" : "Ctrl+9",
+                "TypeCode" : "Ctrl+;",
+                "TypeCodeBlock" : "Ctrl+'",
+                "TypeMath" : "Ctrl+,",
+                "TypeMathBlock" : "Ctrl+.",
+                "TypeTable" : "Ctrl+/",
+                "Outline" : "Ctrl+G, O",
+                "RichPaste" : "Ctrl+Shift+V",
+                "FindAndReplace" : "Ctrl+F"
+            }
+        },
+        "text_editor" : {
+            "theme" : "",
+            "//comment" : "none/absolute/relative",
+            "line_number" : "absolute",
+            "text_folding" : true,
+            "//comment" : "normal/vi",
+            "input_mode" : "normal",
+            "//comment" : "never/always/bottom",
+            "center_cursor" : "never",
+            "//comment" : "none/word/anywhere/word_anywhere",
+            "wrap_mode": "word_anywhere",
+            "expand_tab": true,
+            "tab_stop_width": 4,
+            "//comment" : "Positive to zoom in and negative to zoom out",
+            "zoom_delta": 0
+        },
+        "markdown_editor" : {
+            "override_viewer_resource" : true,
+            "viewer_resource" : {
+                "template" : "web/markdownviewertemplate.html",
+                "resources" : [
+                    {
+                        "name" : "global_styles",
+                        "enabled" : true,
+                        "styles" : [
+                            "web/css/globalstyles.css"
+                        ]
+                    },
+                    {
+                        "name" : "built_in",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/qwebchannel.js",
+                            "web/js/eventemitter.js",
+                            "web/js/utils.js",
+                            "web/js/nodelinemapper.js",
+                            "web/js/lrucache.js",
+                            "web/js/graphcache.js",
+                            "web/js/graphpreviewer.js",
+                            "web/js/vnotex.js",
+                            "web/js/vxworker.js",
+                            "web/js/graphrenderer.js",
+                            "web/js/svg-to-image.js",
+                            "web/js/computed-style-to-inline-style.js",
+                            "web/js/imageviewer.js",
+                            "web/js/easyaccess.js",
+                            "web/js/crosscopy.js"
+                        ],
+                        "styles" : [
+                            "web/css/imageviewer.css"
+                        ]
+                    },
+                    {
+                        "name" : "markdown_viewer",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/markdownviewer.js"
+                        ]
+                    },
+                    {
+                        "name" : "markdown_it",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/markdown-it/markdown-it.min.js",
+                            "web/js/markdown-it/markdown-it-container.min.js",
+                            "web/js/markdown-it/markdown-it-emoji.min.js",
+                            "web/js/markdown-it/markdown-it-footnote.min.js",
+                            "web/js/markdown-it/markdown-it-front-matter.js",
+                            "web/js/markdown-it/markdown-it-headinganchor.js",
+                            "web/js/markdown-it/markdown-it-imsize.min.js",
+                            "web/js/markdown-it/markdown-it-sub.min.js",
+                            "web/js/markdown-it/markdown-it-sup.min.js",
+                            "web/js/markdown-it/markdown-it-task-lists.js",
+                            "web/js/markdown-it/markdown-it-texmath.js",
+                            "web/js/markdown-it/markdown-it-inject-linenumbers.js",
+                            "web/js/markdownit.js"
+                        ],
+                        "styles" : [
+                            "web/css/markdownit.css"
+                        ]
+                    },
+                    {
+                        "name" : "prism",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/prism/clipboard.min.js",
+                            "web/js/prism.js"
+                        ]
+                    },
+                    {
+                        "name" : "mermaid",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/mermaid.js"
+                        ]
+                    },
+                    {
+                        "name" : "flowchart.js",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/flowchart.js/raphael.min.js",
+                            "web/js/flowchart.js/flowchart.min.js",
+                            "web/js/flowchartjs.js"
+                        ]
+                    },
+                    {
+                        "name" : "wavedrom",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/wavedrom.js"
+                        ]
+                    },
+                    {
+                        "name" : "mathjax",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/mathjax.js"
+                        ]
+                    },
+                    {
+                        "name" : "plantuml",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/plantuml.js"
+                        ]
+                    },
+                    {
+                        "name" : "graphviz",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/graphviz.js"
+                        ]
+                    },
+                    {
+                        "name" : "turndown",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/turndown/turndown.js",
+                            "web/js/turndown/turndown-plugin-gfm.js",
+                            "web/js/turndown.js"
+                        ]
+                    }
+                ]
+            },
+            "//comment" : "Whether use javascript or external program to render PlantUML",
+            "web_plantuml" : true,
+            "//comment" : "Whether use javascript or external program to render Graphviz",
+            "web_graphviz" : true,
+            "//comment" : "Whether prepend a dot at front in relative link like images",
+            "prepend_dot_in_relative_link" : false,
+            "//comment" : "Whether ask for user confirmation before clearing obsolete images",
+            "confirm_before_clear_obsolete_images" : true,
+            "//comment" : "Whether insert the file name as title on new file",
+            "insert_file_name_as_title" : true,
+            "//comment" : "Whether enable auto section numbering",
+            "section_number" : true,
+            "//comment" : "Whether enable image width constraint",
+            "constrain_image_width" : true,
+            "//comment" : "Whether enable in-place preview width constraint",
+            "constrain_inplace_preview_width" : false,
+            "//comment" : "Zoom factor in read mode",
+            "zoom_factor_in_read_mode" : 1,
+            "//comment" : "Whether fetch images to local in Parse To Markdown And Paste",
+            "fetch_images_in_parse_and_paste" : true,
+            "//comment" : "Whether protect from Cross-Site Scripting attack",
+            "protect_from_xss" : false
+        }
+    },
+    "widget" : {
+        "//comment" : "Level of the heading in outline that should expand to automatically (1-6)",
+        "outline_auto_expanded_level" : 6,
+        "//comment" : "Default find options in FindAndReplace",
+        "find_and_replace_options" : 8
+    }
+}

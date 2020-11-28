@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  ====================================================================
+  Bitbake syntax highlighting file for the Kate and QtCreator
+  ====================================================================
+
+  Author: Ivan Koveshnikov
+-->
+
+<language name="Bitbake" section="Sources"
+          version="5" kateversion="2.4"
+          extensions="*.bb;*.bbappend;*.bbclass;*.inc"
+          license="GPL" author="Ivan Koveshnikov">
+
+  <highlighting>
+
+    <list name="keywords">
+      <item>after</item>
+      <item>before</item>
+      <item>python</item>
+      <item>branch</item>
+      <item>bareclone</item>
+      <item>protocol</item>
+      <item>name</item>
+      <item>if</item>
+      <item>fi</item>
+      <item>then</item>
+      <item>rm</item>
+      <item>ln</item>
+      <item>cp</item>
+      <item>for</item>
+      <item>done</item>
+      <item>cat</item>
+    </list>
+
+    <list name="oe_functions">
+      <item>do_build</item>
+      <item>do_compile</item>
+      <item>do_compile_append</item>
+      <item>do_compile_prepend</item>
+      <item>do_compile_ptest_base</item>
+      <item>do_configure</item>
+      <item>do_configure_append</item>
+      <item>do_configure_prepend</item>
+      <item>do_configure_ptest_base</item>
+      <item>do_deploy</item>
+      <item>do_fetch</item>
+      <item>do_install</item>
+      <item>do_install_append</item>
+      <item>do_install_prepend</item>
+      <item>do_install_ptest_base</item>
+      <item>do_package</item>
+      <item>do_package_qa</item>
+      <item>do_package_write_deb</item>
+      <item>do_package_write_ipk</item>
+      <item>do_package_write_rpm</item>
+      <item>do_package_write_tar</item>
+      <item>do_packagedata</item>
+      <item>do_patch</item>
+      <item>do_populate_lic</item>
+      <item>do_populate_sdk</item>
+      <item>do_populate_sysroot</item>
+      <item>do_rm_work</item>
+      <item>do_rm_work_all</item>
+      <item>do_unpack</item>
+      <item>do_checkuri</item>
+      <item>do_checkuriall</item>
+      <item>do_clean</item>
+      <item>do_cleanall</item>
+      <item>do_cleansstate</item>
+      <item>do_devshell</item>
+      <item>do_fetchall</item>
+      <item>do_listtasks</item>
+      <item>do_package_index</item>
+      <item>do_bootimg</item>
+      <item>do_bundle_initramfs</item>
+      <item>do_rootfs</item>
+      <item>do_testimage</item>
+      <item>do_testimage_auto</item>
+      <item>do_vmdkimg</item>
+      <item>do_compile_kernelmodules</item>
+      <item>do_diffconfig</item>
+      <item>do_kernel_checkout</item>
+      <item>do_kernel_configcheck</item>
+      <item>do_kernel_configme</item>
+      <item>do_kernel_link_vmlinux</item>
+      <item>do_menuconfig</item>
+      <item>do_savedefconfig</item>
+      <item>do_sizecheck</item>
+      <item>do_strip</item>
+      <item>do_uboot_mkimage</item>
+      <item>do_validate_branches</item>
+      <item>do_generate_qt_config_file</item>
+      <item>do_spdx</item>
+      <item>oe_runmake</item>
+      <item>export</item>
+      <item>install</item>
+      <item>kernel_configme</item>
+      <item>validate_branches</item>
+
+    </list>
+
+    <list name="dependencies">
+      <item>inherit</item>
+      <item>include</item>
+      <item>require</item>
+      <item>addtask</item>
+      <item>deltask</item>
+      <item>addhandler</item>
+      <item>EXPORT_FUNCTIONS</item>
+    </list>
+
+    <contexts>
+
+      <context name="Normal Text" attribute="Normal Text" lineEndContext="#pop" >
+        <DetectSpaces/>
+        <DetectChar                         context="bbComment" char="#" />
+        <keyword attribute="Keyword"        context="#stay"     String="keywords" />
+        <keyword attribute="OEFunction"     context="#stay"     String="oe_functions" />
+        <keyword attribute="Dependency"     context="#stay"     String="dependencies" />
+        <DetectChar attribute="String"      context="bbString"  char="&quot;" />
+        <RegExpr attribute="Variable" context="#stay" String="\$\{[A-Za-z0-9_-]+\}" />
+        <RegExpr attribute="Keyword" context="#stay" String="([A-Z]+)[0-9_]*" />
+      </context>
+
+      <context name="bbString" attribute="String" lineEndContext="bbError" >
+        <keyword    attribute="Keyword"     context="#stay" String="keywords" />
+        <DetectChar attribute="String"      context="#pop"  char="&quot;" />
+        <LineContinue  attribute="Escape"   context="#stay"  />
+        <AnyChar    attribute="Normal Text" context="#stay" String="=|;," />
+        <RegExpr    attribute="BBFunction"  context="#stay" String="\$\{@[a-zA-Z0-9._\-\(\), &quot;/]+\}" />
+        <RegExpr    attribute="Variable"    context="#stay" String="\$\{[A-Za-z0-9_-]+\}" />
+      </context>
+
+      <context name="bbComment" attribute="Comment" lineEndContext="#pop" />
+
+      <context name="bbError" attribute="Error" lineEndContext="#stay" >
+        <DetectChar attribute="Error"      context="#pop"  char="&quot;" />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+    <!--
+        dsNormal, used for normal text.
+        dsKeyword, used for keywords.
+        dsDataType, used for data types.
+        dsDecVal, used for decimal values.
+        dsBaseN, used for values with a base other than 10.
+        dsFloat, used for float values.
+        dsChar, used for a character.
+        dsString, used for strings.
+        dsComment, used for comments.
+        dsOthers, used for ‘other’ things.
+        dsAlert, used for warning messages.
+        dsFunction, used for function calls.
+        dsRegionMarker, used for region markers.
+        dsError, used for error highlighting and wrong syntax.
+    -->
+      <itemData name="Normal Text"    defStyleNum="dsNormal"      spellChecking="false" />
+      <itemData name="String"         defStyleNum="dsString"      spellChecking="true" />
+      <itemData name="Keyword"        defStyleNum="dsKeyword"     spellChecking="false" />
+      <itemData name="Variable"       defStyleNum="dsOthers"      spellChecking="false" color="darkred" />
+      <itemData name="Comment"        defStyleNum="dsComment"     spellChecking="true" />
+      <itemData name="Dependency"     defStyleNum="dsDataType"    spellChecking="false"/>
+      <itemData name="BBFunction"     defStyleNum="dsOthers"      spellChecking="false" color="darkblue" />
+      <itemData name="OEFunction"     defStyleNum="dsBaseN"       spellChecking="false" />
+      <itemData name="Escape"         defStyleNum="dsOthers"      spellChecking="false" color="grey" />
+      <itemData name="Error"          defStyleNum="dsError"       spellChecking="false" />
+
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+  </general>
+
+</language>
+

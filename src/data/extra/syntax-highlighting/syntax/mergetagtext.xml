@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  Copyright 2008 Diggory Hardy
+  
+  Author: Diggory Hardy <diggory.hardy@gmail.com>
+  
+  This contains highlighting for mergetag text files, a sub-part of the mde project.
+  dsource.org/projects/mde
+  
+ **********************************************************************
+ * This library is free software; you can redistribute it and/or      *
+ * modify it under the terms of the GNU Lesser General Public         *
+ * License as published by the Free Software Foundation; either       *
+ * version 2 of the License, or (at your option) any later version.   *
+ *                                                                    *
+ * This library is distributed in the hope that it will be useful,    *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  *
+ * Lesser General Public License for more details.                    *
+ *                                                                    *
+ * You should have received a copy of the GNU Lesser General Public   *
+ * License along with this library; if not, write to the              *
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,   *
+ * Boston, MA  02110-1301, USA.                                       *
+ **********************************************************************
+ -->
+<language name="mergetag text" version="2" kateversion="2.4" section="Configuration" author="Diggory Hardy (diggory.hardy@gmail.com)" license="LGPLv2+" extensions="*.mtt;">
+  <highlighting>
+    <contexts>
+      <context name="Normal" attribute="Error" lineEndContext="#stay">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment Brackets" context="SecComment" char="!" char1="{" beginRegion="SecComment" />
+        <Detect2Chars attribute="Comment Brackets" context="TagCommentType" char="!" char1="&lt;" />
+        <DetectChar attribute="Brackets" context="SectionIdentifier" char="{" beginRegion="SecID" />
+        <DetectChar attribute="Tag Character" context="TagType" char="&lt;" />
+      </context>
+      
+      <context name="SectionIdentifier" attribute="ID" lineEndContext="#stay">
+        <DetectChar attribute="Brackets" context="#pop" char="}" endRegion="SecID" />
+      </context>
+      
+      <context name="SecComment" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment Brackets" context="#pop" char="}" endRegion="SecComment" />
+        <DetectChar attribute="Comment Brackets" context="SecComment" char="{" beginRegion="SecID" />
+      </context>
+      
+      <context name="TagType" attribute="Type" lineEndContext="#stay">
+        <DetectChar attribute="Tag Character" context="TagID" char="|" />
+        <IncludeRules context="TagErrors" />
+      </context>
+      <context name="TagID" attribute="ID" lineEndContext="#stay">
+        <DetectChar attribute="Tag Character" context="TagData" char="=" />
+        <IncludeRules context="TagErrors" />
+      </context>
+      <context name="TagData" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Tag Character" context="#pop#pop#pop" char="&gt;" />
+        
+        <DetectChar attribute="Char"     context="CharLiteral" char="'"/>
+        <DetectChar attribute="String"   context="String"      char="&quot;"/>
+        <!-- Number literals -->
+        <Float attribute="Float" context="#stay" />
+        <RegExpr attribute="Binary" context="#pop" String="0[bB][01]+"/>
+        <RegExpr attribute="Octal" context="#pop" String="0[oO][0-7]+"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Int attribute="Integer" context="#stay" />
+        
+        <IncludeRules context="TagErrors" />
+      </context>
+      <context name="TagErrors" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Error" context="#stay" char="&lt;" />
+        <DetectChar attribute="Error" context="#stay" char="|" />
+        <DetectChar attribute="Error" context="#stay" char="=" />
+        <DetectChar attribute="Error" context="#stay" char="&gt;" />
+      </context>
+      
+      <context name="TagCommentType" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment Brackets" context="TagCommentID" char="|" />
+        <IncludeRules context="TagErrors" />
+      </context>
+      <context name="TagCommentID" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment Brackets" context="TagCommentData" char="=" />
+        <IncludeRules context="TagErrors" />
+      </context>
+      <context name="TagCommentData" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment Brackets" context="#pop#pop#pop" char="&gt;" />
+        <DetectChar attribute="Comment" context="CommentChar" char="'"/>
+        <DetectChar attribute="Comment" context="CommentString" char="&quot;"/>
+        <IncludeRules context="TagErrors" />
+      </context>
+      <context name="CommentString" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char="&quot;" />
+        <RegExpr String="\\." attribute="Comment" context="#stay"/>
+      </context>
+      <context name="CommentChar" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char="'" />
+        <RegExpr String="\\." attribute="Comment" context="#stay"/>
+      </context>
+      
+      <!-- 'char' -->
+      <context name="CharLiteral" attribute="Char" lineEndContext="CharLiteralClosing" fallthrough="true" fallthroughContext="#pop">
+        <!-- Empty '' -->
+        <DetectChar   attribute="Char" context="#pop"  char="'"/>
+        <HlCStringChar attribute="EscapeSequence" context="CharLiteralClosing"/>
+        <RegExpr attribute="Char" context="CharLiteralClosing" String="."/>
+      </context>
+      <!-- Anything other than a closing ' is now be an error -->
+      <context name="CharLiteralClosing" attribute="Error" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
+        <DetectChar attribute="Char" context="#pop#pop"  char="'"/>
+      </context>
+      <!-- "string" -->
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <HlCStringChar attribute="EscapeSequence"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+    </contexts>
+    
+    <itemDatas>
+      <itemData name="Brackets"         defStyleNum="dsKeyword"/>
+      <itemData name="Tag Character"    defStyleNum="dsKeyword" color="#008040"/>
+      <itemData name="Type"             defStyleNum="dsDataType"/>
+      <itemData name="Error"            defStyleNum="dsError"/>
+      <itemData name="Comment Brackets" defStyleNum="dsComment" italic="0" color="#404040" />
+      <itemData name="Comment"          defStyleNum="dsComment"/>
+      <itemData name="Normal Text"      defStyleNum="dsNormal"/>
+      <itemData name="ID"               defStyleNum="dsOthers"/>
+      
+      <itemData name="Integer"        defStyleNum="dsDecVal"/>
+      <itemData name="Binary"         defStyleNum="dsBaseN"/>
+      <itemData name="Octal"          defStyleNum="dsBaseN"/>
+      <itemData name="Hex"            defStyleNum="dsBaseN"/>
+      <itemData name="Float"          defStyleNum="dsFloat"/>
+      
+      <itemData name="EscapeSequence" defStyleNum="dsString"   color="#00aa88" selColor="#ff0000"/>
+      <itemData name="String"         defStyleNum="dsString"/>
+      <itemData name="Char"           defStyleNum="dsChar"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine"  start="!{" end="}" region="SecComment"/>
+    </comments>
+    <keywords casesensitive="true" />
+  </general>
+</language>

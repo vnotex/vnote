@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!-- TADS 3 syntax highlight definition for Kate. -->
+<!-- Author: Nikos Chantziaras <realnc@gmail.com> -->
+<language name="TADS 3" section="Sources"
+          version="4" kateversion="3.3"
+          indenter="cstyle"
+          extensions="*.t;*.h"
+          mimetype=""
+          priority="0"
+          author="Nikos Chantziaras (realnc@gmail.com)">
+
+<highlighting>
+	<list name="keywords">
+		<item>abort</item>
+		<item>and</item>
+		<item>argcount</item>
+		<item>break</item>
+		<item>case</item>
+		<item>catch</item>
+		<item>class</item>
+		<item>construct</item>
+		<item>continue</item>
+		<item>default</item>
+		<item>definingobj</item>
+		<item>delegated</item>
+		<item>dictionary</item>
+		<item>do</item>
+		<item>else</item>
+		<item>enum</item>
+		<item>exit</item>
+		<item>export</item>
+		<item>extern</item>
+		<item>finalize</item>
+		<item>finally</item>
+		<item>for</item>
+		<item>foreach</item>
+		<item>function</item>
+		<item>goto</item>
+		<item>grammar</item>
+		<item>if</item>
+		<item>in</item>
+		<item>inherited</item>
+		<item>intrinsic</item>
+		<item>is</item>
+		<item>local</item>
+		<item>modify</item>
+		<item>new</item>
+		<item>nil</item>
+		<item>not</item>
+		<item>object</item>
+		<item>or</item>
+		<item>property</item>
+		<item>propertyset</item>
+		<item>replace</item>
+		<item>replaced</item>
+		<item>return</item>
+		<item>self</item>
+		<item>static</item>
+		<item>switch</item>
+		<item>targetobj</item>
+		<item>targetprop</item>
+		<item>template</item>
+		<item>throw</item>
+		<item>token</item>
+		<item>transient</item>
+		<item>true</item>
+		<item>try</item>
+		<item>while</item>
+	</list>
+
+	<contexts>
+		<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+			<keyword attribute="Keyword" context="#stay" String="keywords"/>
+			<HlCOct attribute="Octal" context="#stay"/>
+			<HlCHex attribute="Hex" context="#stay"/>
+			<Int attribute="Decimal" context="#stay"/>
+			<DetectChar attribute="String" context="String" char="&quot;"/>
+			<DetectChar attribute="ValString" context="ValString" char="'"/>
+			<Detect2Chars attribute="Comment" context="ShortComment" char="/" char1="/"/>
+			<Detect2Chars attribute="Comment" context="LongComment" char="/" char1="*" beginRegion="Comment"/>
+			<DetectChar attribute="Normal Text" context="#stay" char="{" beginRegion="Brace1"/>
+			<DetectChar attribute="Normal Text" context="#stay" char="}" endRegion="Brace1"/>
+			<AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=&gt;?[]^{|}~"/>
+			<DetectChar attribute="Preprocessor" context="Preprocessor" char="#"/>
+		</context>
+
+		<context attribute="String" lineEndContext="#stay" name="String">
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="&quot;"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="\"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="n"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="r"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="t"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="b"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="^"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="v"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1=" "/>
+			<Detect2Chars attribute="Embedded Expression" context="embedded" char="&lt;" char1="&lt;"/>
+			<DetectChar attribute="HTML Tag" context="htmltag" char="&lt;"/>
+			<DetectChar attribute="String" context="#pop" char="&quot;"/>
+		</context>
+
+		<context attribute="ValString" lineEndContext="#stay" name="ValString">
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="'"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="\"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="n"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="r"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="t"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="b"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="^"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="v"/>
+			<Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1=" "/>
+			<DetectChar attribute="HTML Tag" context="htmltag" char="&lt;"/>
+			<DetectChar attribute="String" context="#pop" char="'"/>
+		</context>
+
+		<context attribute="Comment" lineEndContext="#pop" name="ShortComment">
+			<RegExpr attribute="Preprocessor" context="#stay" String="(FIXME|TODO)"/>
+		</context>
+
+		<context attribute="Comment" lineEndContext="#stay" name="LongComment">
+			<RegExpr attribute="Preprocessor" context="#stay" String="(FIXME|TODO)"/>
+			<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+		</context>
+
+		<context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+			<LineContinue attribute="Preprocessor" context="#stay"/>
+			<RangeDetect attribute="String" context="#stay" char="&quot;" char1="&quot;"/>
+			<RangeDetect attribute="String" context="#stay" char="&lt;" char1="&gt;"/>
+			<Detect2Chars attribute="Comment" context="ShortComment" char="/" char1="/"/>
+			<Detect2Chars attribute="Comment" context="LongComment/Preprocessor" char="/" char1="*"/>
+		</context>
+
+		<context attribute="Comment" lineEndContext="#stay" name="LongComment/Preprocessor">
+			<RegExpr attribute="Preprocessor" context="#stay" String="(FIXME|TODO)"/>
+			<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+		</context>
+
+		<context name="embedded" attribute="Embedded Expression" lineEndContext="#stay">
+			<Detect2Chars attribute="Embedded Expression" context="#pop" char="&gt;" char1="&gt;"/>
+		</context>
+
+		<context name="htmltag" attribute="HTML Tag" lineEndContext="#stay">
+			<Detect2Chars attribute="HTML Tag" context="#pop" char="/" char1="&gt;"/>
+			<DetectChar attribute="HTML Tag" context="#pop" char="&gt;"/>
+		</context>
+	</contexts>
+
+	<itemDatas>
+		<itemData name="Normal Text" defStyleNum="dsNormal"/>
+		<itemData name="Keyword" defStyleNum="dsKeyword"/>
+		<itemData name="Decimal" defStyleNum="dsDecVal"/>
+		<itemData name="Octal" defStyleNum="dsBaseN"/>
+		<itemData name="Hex" defStyleNum="dsBaseN"/>
+		<itemData name="String" defStyleNum="dsString"/>
+		<itemData name="ValString" defStyleNum="dsString"/>
+		<itemData name="Comment" defStyleNum="dsComment"/>
+		<itemData name="Symbol" defStyleNum="dsNormal"/>
+		<itemData name="Preprocessor" defStyleNum="dsOthers"/>
+		<itemData name="Backslash Code" defStyleNum="dsKeyword" color="#0F0F8F" selColor="#ffffff" bold="1" italic="0"/>
+		<itemData name="HTML Tag" defStyleNum="dsKeyword" color="#0F0F8F" selColor="#ffffff" bold="0" italic="1"/>
+		<itemData name="Embedded Expression" defStyleNum="dsNormal" color="#000000" selColor="#ffffff" bold="0" italic="1"/>
+	</itemDatas>
+
+</highlighting>
+
+<general>
+	<comments>
+		<comment name="singleLine" start="//"/>
+		<comment name="multiLine" start="/*" end="*/"/>
+	</comments>
+
+	<keywords casesensitive="1"/>
+</general>
+
+</language>

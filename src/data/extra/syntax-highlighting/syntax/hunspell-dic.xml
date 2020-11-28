@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd" >
+<language name="Hunspell Dictionary File" section="Other" extensions="*.dic" priority="-9" version="1" kateversion="2.4" author="Lukas Sommer" license="LGPL version 2.1, or version 3 or later versions approved by the membership of KDE e.V.; or any other license appoved by the emembership of KDE e.V.">
+
+<highlighting>
+
+<list name="list_hyphenKeywords">
+	<item>LEFTHYPHENMIN</item>
+	<item>RIGHTHYPHENMIN</item>
+	<item>COMPOUNDLEFTHYPHENMIN</item>
+	<item>COMPOUNDRIGHTHYPHENMIN</item>
+	<item>NEXTWORD</item>
+	<item>NOHYPHEN</item>
+	<item>NEXTLEVEL</item>
+</list>
+
+<contexts>
+
+	<context name="context_dic" attribute="Undefined" lineEndContext="context_spell" >
+		<!-- detect in the first line wether this is a hyphen dictionary (continue with context_hyphen) or a spell check dictionary (continue with context_spell) -->
+		<Int attribute="Number" context="context_spell" column="0" />
+		<RegExpr attribute="Encoding" context="context_hyphen" String=".*" />
+	</context>
+	
+	<context name="context_hyphen" attribute="String" lineEndContext="#stay">
+		<AnyChar String="0123456789" attribute="Number" context="#stay" />
+		<DetectChar char="." attribute="Keyword" context="#stay" />
+		<DetectChar char="/" attribute="Keyword" context="context_hyphen_parameters" />
+		<AnyChar String="#%" column="0" attribute="Comment" context="context_comment" />
+		<keyword attribute="Keyword" context="#stay" String="list_hyphenKeywords" column="0" />
+	</context>
+	
+	<context name="context_hyphen_parameters" attribute="String" lineEndContext="#pop">
+		<AnyChar String=",=" attribute="Keyword" context="#stay" />
+		<AnyChar String="0123456789" attribute="Number" context="#stay" />
+	</context>
+	
+	<context name="context_spell" attribute="String" lineEndContext="#stay">
+		<DetectChar char="#" column="0" attribute="Comment" context="context_comment" />
+		<DetectChar char="/" attribute="Keyword" context="context_spell_flags" />
+		<DetectSpaces context="context_spell_options" />
+	</context>
+	
+	<context name="context_spell_flags" attribute="Flags" lineEndContext="#pop">
+		<DetectSpaces context="context_spell_options" />
+	</context>
+	
+	<context name="context_spell_options" attribute="Keyword" lineEndContext="#pop">
+		<DetectChar char=":" attribute="Keyword" context="context_spell_parameter" />
+		<DetectChar char="#" column="0" attribute="Comment" context="context_comment" />
+	</context>
+	
+	<context name="context_spell_parameter" attribute="String" lineEndContext="#pop">
+		<DetectSpaces context="#pop" />
+	</context>
+	
+	<context name="context_comment" attribute="Comment" lineEndContext="#pop">
+		<DetectSpaces />
+		<IncludeRules context="##Alerts" />
+		<DetectIdentifier />
+	</context>
+
+</contexts>
+
+
+<itemDatas>
+	<itemData name="Undefined" defStyleNum="dsNormal" />
+	<itemData name="Keyword" defStyleNum="dsKeyword" />
+	<itemData name="Comment" defStyleNum="dsComment" />
+	<itemData name="Number" defStyleNum="dsDecVal" />
+	<itemData name="String" defStyleNum="dsString" />
+	<itemData name="Flags" defStyleNum="dsChar" />
+	<itemData name="Encoding" defStyleNum="dsDataType" />
+</itemDatas>
+
+</highlighting>
+
+
+<general>
+	<comments>
+		<comment name="singleLine" start="#" />
+	</comments>
+</general>
+
+</language>

@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  Thread for discussions: http://www.wesnoth.org/forum/viewtopic.php?f=21&t=13781
+  Alternatively try the "normal" way: #kate@freenode, kwrite-devel@kde.org
+  Changelog (0.35 and later):
+  ***************************
+* 0.42.1
+  - 2019-01-01 <nibgonz@gmail.com>
+    * Fix infinite loop between the "section" & "error" contexts.
+    * Only highlight tags with valid name format.
+    * Don't highlight array indices as tags.
+    * Use new default styles & fix embedded Lua code.
+* 0.42
+  - 2011-11-15 <shadowm2006@gmail.com>:
+    * Added preprocessor directives: #error, #warning
+    * Added highlighting for the wmlxgettext annotation metadirective (po:)
+* 0.41
+  - 2011-04-15 <shadowm2006@gmail.com>:
+    * Added preprocessor directives: #if(n)have, #if(n)ver
+    * Revalidated against language.dtd
+
+* 0.40
+  - 2010-06-13 <devel@the-user.org>:
+    * Added lua-highlighting between << and >>.
+    * Added pango-highlighting between " and "
+    * Folding for macro-strings between paretheses
+    * Changed colors.
+    * This file is licensed under GPLv2+
+
+* 0.37
+  - 2008-03-29 <shadowm2006@gmail.com>:
+    * WML preprocessor directive (define, if) blocks can be collapsed/expanded
+    * attribute_name = "string" WML constructs (note the space surrounding '=') are recognized too
+      (designed considering the mainline about.cfg structure case
+    * Changed various context names and styles
+
+- 2008-03-21 <shadowm2006@gmail.com>:
+    * WML nodes and multiline preprocessing macro/include blocks can be collapsed/expanded
+    * WML nodes that are opened and closed in a single line are properly highlighted now
+  * 0.36
+  - 2008-03-05 <shadowm2006@gmail.com>:
+    * Added wmlscope to list of utility control commands
+
+  * 0.35
+  - 2008-02-23 <shadowm2006@gmail.com>:
+    * Made it possible to comment/uncomment line(s) using the default
+      CTRL-D / CTRL-SHIFT-D shortcuts
+  - 2008-01-27 <shadowm2006@gmail.com>:
+    * Added the *.pbl file name pattern
+    * Made the standard alerts (i.e. TODO, HACK, FIXME,...) be highlighted too
+    * Made the key comments for Wesnoth's mainline maintenance scripts be highlighted (at the moment
+      they are only used for wmllint and wmlindent)
+  - 2008-01-?? <shadowm2006@gmail.com>:
+    * Made #textdomain another preprocessor directive, as is handled by the game at /src/serialization/preprocessor.cpp
+      line 634 and around
+  - 2007-11-?? <shadowm2006@gmail.com>:
+    * Minor improvements?
+  - 2007-11-?? <shadowm2006@gmail.com>:
+    * Made the new #ifndef directive be recognized (implemented on Wesnoth 1.3.11 and later)
+-->
+
+<language name="Wesnoth Markup Language" section="Markup" extensions="*.cfg;*.pbl;*.CFG;*.PBL" version="5"
+          kateversion="5.0" casesensitive="true" author="Zachary Palmer (zep01@bahj.com), modif. by Ignacio Riquelme Morelle (shadowm2006@gmail.com) and Jonathan Schmidt-Dominé (devel@the-user.org)" license="GPL">
+    <highlighting>
+        <list name="alerts_wml_utils">
+            <item>wmllint</item>
+            <item>wmlindent</item>
+            <item>wmlscope</item>
+            <item>po</item>
+        </list>
+        <list name="preprocessor_directive_statements">
+                <item>#textdomain</item>
+                <item>#else</item>
+                <item>#undef</item>
+                <item>#error</item>
+                <item>#warning</item>
+        </list>
+        <list name="preprocessor_block_begin_statements">
+                <item>#define</item>
+                <item>#ifdef</item>
+                <item>#ifndef</item>
+                <item>#ifhave</item>
+                <item>#ifnhave</item>
+                <item>#ifver</item>
+                <item>#ifnver</item>
+        </list>
+        <list name="preprocessor_block_end_statements">
+                <item>#enddef</item>
+                <item>#endif</item>
+        </list>
+        <contexts>            
+            <!-- Main contexts -->
+            <context attribute="Normal WML Text" name="text" lineEndContext="#stay">
+                <RegExpr String="(_ *)?&quot;" attribute="String" context="string" />
+                
+                <RegExpr String=" *&lt;&lt;" attribute="String" context="luastring" beginRegion="wml_lua" />
+                
+                <keyword String="preprocessor_directive_statements" attribute="Preprocessor" context="preprocessor" />
+                <keyword String="preprocessor_block_begin_statements" attribute="Preprocessor" context="preprocessor" beginRegion="wmlpp_block" />
+                <keyword String="preprocessor_block_end_statements" attribute="Preprocessor" context="preprocessor" endRegion="wmlpp_block" />
+                
+                <DetectChar char="#" attribute="Comment" context="comment" />
+                
+                <DetectChar char="{" attribute="Macro/Include" context="macro" beginRegion="macro_block" />
+
+                <!-- Tags: https://wiki.wesnoth.org/SyntaxWML#Tag_and_Attribute_Structures -->
+                <RegExpr String="\[/\s*\w*\s*\]" attribute="WML Node" context="#stay" endRegion="wml_node" />
+                <RegExpr String="\[\+?\w*\]" attribute="WML Node" context="#stay" beginRegion="wml_node" />
+
+                <RegExpr String="(\w|,| )+=" attribute="WML Attribute" context="value"
+                                    lookAhead="true" />
+                
+                <IncludeRules context="variableSubstitutionRule" />
+                
+                <!-- This avoids highlighting array indices as tags -->
+                <RegExpr String="(\w+|\])\[(?!/)" attribute="Normal WML Text" context="#stay" />
+            </context>
+            
+            <context attribute="String" lineEndContext="#stay" name="string">
+                <DetectChar char="&quot;" attribute="String" context="#pop" />
+                <DetectChar char="{" attribute="Macro/Include" context="macro" />
+                <IncludeRules context="variableSubstitutionRule" />
+                <IncludeRules context="##Pango" includeAttrib="false"/>
+            </context>
+
+            <context attribute="Normal WML Text" name="luastring" lineEndContext="#stay">
+                <Detect2Chars char="&gt;" char1="&gt;" attribute="String" context="#pop" endRegion="wml_lua" />
+                <IncludeRules context="Normal##Lua" includeAttrib="true"/>
+            </context>
+            
+            <context attribute="Normal WML Text" name="luamacrostring" lineEndContext="#stay">
+                <Detect2Chars char="&gt;" char1="&gt;" attribute="Macro String" context="#pop" endRegion="wml_lua" />
+                <IncludeRules context="Normal##Lua" includeAttrib="true"/>
+            </context>
+            
+            <context attribute="Comment" lineEndContext="#pop" name="comment">
+                <keyword attribute="Maintenance script statement" context="#stay" String="alerts_wml_utils" />
+                <IncludeRules context="##Alerts" />
+            </context>
+            
+            <context attribute="Macro/Include" lineEndContext="#stay" name="macro">
+                <DetectChar char="{" attribute="Macro/Include" context="macro" beginRegion="macro_block"/>
+                <RegExpr String="(_ *)?&quot;" attribute="Macro String" context="macroString" />
+                <RegExpr String=" *&lt;&lt;" attribute="Macro String" context="luamacrostring" beginRegion="wml_lua" />
+                <DetectChar char="(" attribute="Macro String" context="macroString2" beginRegion="macro_paren_string" />
+                <DetectChar char="}" attribute="Macro/Include" context="#pop" endRegion="macro_block" />
+                <IncludeRules context="variableSubstitutionRule" />
+            </context>
+            
+            <context attribute="Macro String" lineEndContext="#stay" name="macroString">
+                <DetectChar char="&quot;" attribute="Macro String" context="#pop" />
+                <DetectChar char="{" attribute="Macro/Include" context="macro" beginRegion="macro_block" />
+                <IncludeRules context="variableSubstitutionRule" />
+                <IncludeRules context="##Pango" includeAttrib="false"/>
+            </context>
+            
+            <context attribute="Macro String" lineEndContext="#stay" name="macroString2">
+                <DetectChar char=")" attribute="Macro String" context="#pop" endRegion="macro_paren_string" />
+                <DetectChar char="{" attribute="Macro/Include" context="macro" beginRegion="macro_block" />
+                <IncludeRules context="text" />
+            </context>
+            
+            <context attribute="WML Attribute" lineEndContext="#pop" name="value">
+                <DetectChar char="=" attribute="Normal WML Text" context="#pop" />
+            </context>
+            
+            <context attribute="Preprocessor" lineEndContext="#pop" name="preprocessor">
+            </context>
+            
+            <context attribute="Error" lineEndContext="#stay" name="error">
+            </context>
+            
+            <context attribute="Variable Substitution" lineEndContext="#pop"
+                     name="variableSubstitution">
+                <DetectChar char="|" attribute="Variable Substitution" context="#pop" />
+                <DetectChar char="$" attribute="Variable Substitution" context="variableSubstitution" />
+                <DetectChar char="[" attribute="Variable Subscript" context="variableSubscript" />
+                <RegExpr String="[^A-Za-z0-9_\.]" attribute="Variable Substitution" context="#pop"
+                         lookAhead="true" />
+            </context>
+            
+            <context attribute="Variable Subscript" lineEndContext="error" name="variableSubscript">
+                <DetectChar char="]" attribute="Variable Subscript" context="#pop" />
+            </context>
+            
+            <!-- Include contexts -->
+            <context attribute="Variable Substitution" lineEndContext="#pop" name="variableSubstitutionRule">
+                <DetectChar char="$" attribute="Variable Substitution" context="variableSubstitution" />
+            </context>
+            
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal WML Text" defStyleNum="dsNormal" />
+            <itemData name="Maintenance script statement" defStyleNum="dsAlert"/>
+            <itemData name="String" defStyleNum="dsString" />
+            <itemData name="Comment" defStyleNum="dsComment" />
+            <itemData name="Macro/Include" defStyleNum="dsFunction" />
+            <itemData name="WML Node" defStyleNum="dsKeyword" />
+            <itemData name="WML Attribute" defStyleNum="dsAttribute" />
+            <itemData name="Preprocessor" defStyleNum="dsPreprocessor" />
+            <itemData name="Error" defStyleNum="dsError" />
+            <itemData name="Macro String" defStyleNum="dsChar" />
+            <itemData name="Variable Substitution" defStyleNum="dsDecVal" />
+            <itemData name="Variable Subscript" defStyleNum="dsBaseN" />
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="#"/>
+        </comments>
+        <keywords casesensitive="1"/>
+    </general>
+</language>

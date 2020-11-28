@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="AHDL" version="3" kateversion="5.0" section="Hardware" extensions="*.ahdl;*.tdf" mimetype="text/x-ahdl" author="Dominik Haumann (dhaumann@kde.org)" license="MIT">
+  <highlighting>
+    <list name="keywords">
+      <item>assert</item>
+      <item>bidir</item>
+      <item>bits</item>
+      <item>buried</item>
+      <item>case</item>
+      <item>clique</item>
+      <item>connected_pins</item>
+      <item>constant</item>
+      <item>defaults</item>
+      <item>define</item>
+      <item>design</item>
+      <item>device</item>
+      <item>else</item>
+      <item>elsif</item>
+      <item>for</item>
+      <item>function</item>
+      <item>generate</item>
+      <item>gnd</item>
+      <item>help_id</item>
+      <item>in</item>
+      <item>include</item>
+      <item>input</item>
+      <item>is</item>
+      <item>machine</item>
+      <item>node</item>
+      <item>of</item>
+      <item>options</item>
+      <item>others</item>
+      <item>output</item>
+      <item>parameters</item>
+      <item>returns</item>
+      <item>states</item>
+      <item>subdesign</item>
+      <item>then</item>
+      <item>title</item>
+      <item>to</item>
+      <item>tri_state_node</item>
+      <item>variable</item>
+      <item>vcc</item>
+      <item>when</item>
+      <item>with</item>
+    </list>
+    <list name="types">
+      <item>carry</item>
+      <item>cascade</item>
+      <item>dffe</item>
+      <item>dff</item>
+      <item>exp</item>
+      <item>global</item>
+      <item>jkffe</item>
+      <item>jkff</item>
+      <item>latch</item>
+      <item>lcell</item>
+      <item>mcell</item>
+      <item>memory</item>
+      <item>opendrn</item>
+      <item>soft</item>
+      <item>srffe</item>
+      <item>srff</item>
+      <item>tffe</item>
+      <item>tff</item>
+      <item>tri</item>
+      <item>wire</item>
+      <item>x</item>
+    </list>
+    <list name="operator">
+      <item>not</item>
+      <item>and</item>
+      <item>nand</item>
+      <item>or</item>
+      <item>nor</item>
+      <item>xor</item>
+      <item>xnor</item>
+      <item>mod</item>
+      <item>div</item>
+      <item>log2</item>
+      <item>used</item>
+      <item>ceil</item>
+      <item>floor</item>
+    </list>
+    <contexts>
+      <context name="normal" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Keyword" context="#stay" String="\bdefaults\b" insensitive="true" beginRegion="def"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+defaults\b" insensitive="true" endRegion="def"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bif\b" insensitive="true" beginRegion="if"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+if\b" insensitive="true" endRegion="if"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\btable\b" insensitive="true" beginRegion="table"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+table\b" insensitive="true" endRegion="table"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bcase\b" insensitive="true" beginRegion="case"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+case\b" insensitive="true" endRegion="case"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bbegin\b" insensitive="true" beginRegion="block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\b" insensitive="true" endRegion="block"/>
+        <DetectChar attribute="Normal Text" context="#stay" char="(" beginRegion="bracket"/>
+        <DetectChar attribute="Normal Text" context="#stay" char=")" endRegion="bracket"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <keyword attribute="Operator" context="#stay" String="operator"/>
+        <RegExpr attribute="Decimal" context="#stay" String="\b(\d+)\b" />
+        <RegExpr attribute="Bit" context="#stay" String="\bb&quot;(0|1|x)+&quot;" insensitive="true"/>
+        <RegExpr attribute="Octal" context="#stay" String="\b(o|q)&quot;[0-7*]&quot;" insensitive="true"/>
+        <RegExpr attribute="Hex" context="#stay" String="\b(h|x)&quot;[0-9a-f]*&quot;" insensitive="true"/>
+        <DetectChar attribute="String" context="string" char="&quot;" />
+        <RegExpr attribute="Region Marker" context="#stay" String="--\s*BEGIN.*$" beginRegion="region" firstNonSpace="true"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="--\s*END.*$" endRegion="region" firstNonSpace="true"/>
+        <RegExpr attribute="Comment" context="#stay" String="--.*$" />
+        <DetectChar attribute="Comment" context="comment" char="%" />
+        <HlCChar attribute="Char" context="#stay"/>
+      </context>
+      <context name="string" attribute="String" lineEndContext="#stay" >
+        <Detect2Chars attribute="Char" context="#stay" char="\" char1="&quot;" />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context name="comment" attribute="Comment" lineEndContext="#stay" >
+        <DetectChar attribute="Comment" context="#pop" char="%" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="Keyword" defStyleNum="dsKeyword"  spellChecking="false" />
+      <itemData name="Data Type" defStyleNum="dsDataType"  spellChecking="false" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="String" defStyleNum="dsString" />
+      <itemData name="Operator" defStyleNum="dsOperator" spellChecking="false" />
+      <itemData name="Char" defStyleNum="dsChar"/>
+      <itemData name="Bit" defStyleNum="dsDecVal" spellChecking="false" />
+      <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false" />
+      <itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false" />
+      <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false" />
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="--" />
+      <comment name="multiLine" start="%" end="%" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

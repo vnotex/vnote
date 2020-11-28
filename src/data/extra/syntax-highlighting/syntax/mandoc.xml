@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Troff Mandoc" section="Markup" version="2" kateversion="2.4" extensions="*.1;*.2;*.3;*.4;*.5;*.6;*.7;*.8;*.1m;*.3x;*.tmac" mimetype="" author="Matthew Woehlke (mw_triad@users.sourceforge.net)" license="GPL">
+
+  <highlighting>
+
+    <list name="headings">
+      <item>SH</item>
+      <item>SS</item>
+      <item>TH</item>
+    </list>
+
+    <list name="paragraph">
+      <item>HP</item>
+      <item>IP</item>
+      <item>LP</item>
+      <item>P</item>
+      <item>PD</item>
+      <item>PP</item>
+      <item>RE</item>
+      <item>RS</item>
+      <item>TP</item>
+    </list>
+
+    <list name="formatting">
+      <item>B</item>
+      <item>BI</item>
+      <item>BR</item>
+      <item>I</item>
+      <item>IB</item>
+      <item>IR</item>
+      <item>RB</item>
+      <item>RI</item>
+      <item>SM</item>
+      <item>SB</item>
+    </list>
+
+    <list name="others">
+      <item>DT</item>
+    </list>
+
+    <contexts>
+
+      <!-- root context -->
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="DetectComments##Roff"/>
+        <DetectChar attribute="Macros" context="DetectDirective" char="." column="0"/>
+        <IncludeRules context="DetectOthers##Roff"/>
+      </context>
+
+      <!-- directive start -->
+      <context name="DetectDirective" attribute="Macros" lineEndContext="#pop">
+        <keyword attribute="Headings" context="Directive" String="headings"/>
+        <keyword attribute="Paragraphs" context="Directive" String="paragraph"/>
+        <keyword attribute="Formatting" context="Directive" String="formatting"/>
+        <keyword attribute="Other Macros" context="Directive" String="others"/>
+        <IncludeRules context="DetectDirective##Roff"/>
+      </context>
+
+      <context name="Directive" attribute="Identifier" lineEndContext="#pop">
+        <IncludeRules context="Directive##Roff"/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"    defStyleNum="dsNormal"/>
+      <itemData name="Macros"         defStyleNum="dsFunction"/>
+      <itemData name="Headings"       defStyleNum="dsKeyword"/>
+      <itemData name="Paragraphs"     defStyleNum="dsDataType"/>
+      <itemData name="Formatting"     defStyleNum="dsKeyword"/>
+      <itemData name="Other Macros"   defStyleNum="dsFunction"/>
+      <itemData name="Identifier"     defStyleNum="dsString"/>
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+
+    <comments>
+      <comment name="singleLine" start=".\&quot;" />
+    </comments>
+
+    <keywords casesensitive="1"/>
+
+  </general>
+
+</language>

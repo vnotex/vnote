@@ -1,0 +1,610 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+    <!ENTITY space " ">
+    <!ENTITY separators ",&#59;">
+    <!ENTITY ns_punctuators "!&#37;&space;&amp;()+-/.*&lt;=&gt;?[]{|}~^&separators;">
+    <!ENTITY punctuators ":&ns_punctuators;">
+]>
+<!--
+  Copyright (c) 2012-2014 by Alex Turbov (i.zaufi@gmail.com)
+
+  Homepage: http://kde-files.org/content/show.php?content=90660
+  -->
+<language
+    name="GCCExtensions"
+    version="4"
+    kateversion="5.0"
+    section="Sources"
+    extensions="*.c++;*.cxx;*.cpp;*.cc;*.C;*.h;*.hh;*.H;*.h++;*.hxx;*.hpp;*.hcc;"
+    mimetype="text/x-c++src;text/x-c++hdr;text/x-chdr;text/x-csrc"
+    author="Alex Turbov (i.zaufi@gmail.com)"
+    license="LGPL"
+    hidden="true"
+    priority="5"
+  >
+<!--
+  The main purpose of this file is to hold GNU gcc extensions syntax in a single place,
+  so later it can be included to other (C++ based) syntaxes.
+
+  NOTE Default colors are set to 'Normal Text', so if u don't want to highight it,
+  just leave colors as is...
+
+  Based on GCC documentation
+-->
+<highlighting>
+  <list name="GNUTypes">
+    <!-- NOTE From gcc's info: 6.10 Additional Floating Types -->
+    <item>__float80</item>
+    <item>__float128</item>
+    <!-- NOTE From gcc's 4.7.1 info: 6.13 Decimal Floating Types -->
+    <item>_Decimal32</item>
+    <item>_Decimal64</item>
+    <item>_Decimal128</item>
+    <!-- NOTE From gcc's info: 6.8 128-bits integers -->
+    <item>__int128</item>
+    <!-- NOTE From gcc's 4.7.1 info: 6.12 Half-Precision Floating Point -->
+    <item>__fp16</item>
+    <!-- NOTE From gcc's 4.7.1 info: 6.15 Fixed-Point Types -->
+    <item>_Fract</item>
+    <item>_Sat</item>
+    <item>_Accum</item>
+  </list>
+  <list name="GNUKeywords">
+    <!-- NOTE that __attribute__ handled separately -->
+    <item>__asm__</item>
+    <item>__const__</item>
+    <item>__extension__</item>
+    <item>__inline__</item>
+    <item>__label__</item>
+    <item>__complex__</item>
+    <item>__real__</item>
+    <item>__restrict__</item>
+    <item>__restrict</item>
+    <item>__imag__</item>
+    <!-- NOTE From gcc's info: 6.6 Referring to a Type with `typeof' -->
+    <item>__typeof__</item>
+    <item>typeof</item>
+    <!-- NOTE From gcc's 4.7.1 info: 6.38 -->
+    <item>__alignof__</item>
+    <!-- NOTE From gcc's info: 6.59 Thread-Local storage -->
+    <item>__thread</item>
+  </list>
+  <!-- NOTE Everything started from `__builtin_' handled separately -->
+  <list name="GNUFunctions">
+    <!-- NOTE From gcc's info: 7.9 Type Traits -->
+    <item>__has_nothrow_assign</item>
+    <item>__has_nothrow_copy</item>
+    <item>__has_nothrow_constructor</item>
+    <item>__has_trivial_assign</item>
+    <item>__has_trivial_copy</item>
+    <item>__has_trivial_constructor</item>
+    <item>__has_trivial_destructor</item>
+    <item>__has_virtual_destructor</item>
+    <item>__is_abstract</item>
+    <item>__is_base_of</item>
+    <item>__is_class</item>
+    <item>__is_empty</item>
+    <item>__is_enum</item>
+    <item>__is_pod</item>
+    <item>__is_polymorphic</item>
+    <item>__is_union</item>
+    <!-- NOTE From gcc's info: 6.49 -->
+    <item>__sync_fetch_and_add</item>
+    <item>__sync_fetch_and_sub</item>
+    <item>__sync_fetch_and_or</item>
+    <item>__sync_fetch_and_and</item>
+    <item>__sync_fetch_and_xor</item>
+    <item>__sync_fetch_and_nand</item>
+    <item>__sync_add_and_fetch</item>
+    <item>__sync_sub_and_fetch</item>
+    <item>__sync_or_and_fetch</item>
+    <item>__sync_and_and_fetch</item>
+    <item>__sync_xor_and_fetch</item>
+    <item>__sync_nand_and_fetch</item>
+    <item>__sync_bool_compare_and_swap</item>
+    <item>__sync_val_compare_and_swap</item>
+    <item>__sync_synchronize</item>
+    <item>__sync_lock_test_and_set</item>
+    <item>__sync_lock_release</item>
+    <!-- NOTE From gcc 4.7.x info: 6.52 -->
+    <item>__atomic_load_n</item>
+    <item>__atomic_load</item>
+    <item>__atomic_store_n</item>
+    <item>__atomic_store</item>
+    <item>__atomic_exchange_n</item>
+    <item>__atomic_exchange</item>
+    <item>__atomic_compare_exchange_n</item>
+    <item>__atomic_compare_exchange</item>
+    <item>__atomic_add_fetch</item>
+    <item>__atomic_sub_fetch</item>
+    <item>__atomic_and_fetch</item>
+    <item>__atomic_or_fetch</item>
+    <item>__atomic_xor_fetch</item>
+    <item>__atomic_nand_fetch</item>
+    <item>__atomic_fetch_add</item>
+    <item>__atomic_fetch_sub</item>
+    <item>__atomic_fetch_and</item>
+    <item>__atomic_fetch_or</item>
+    <item>__atomic_fetch_xor</item>
+    <item>__atomic_fetch_nand</item>
+    <item>__atomic_test_and_set</item>
+    <item>__atomic_clear</item>
+    <item>__atomic_signal_fence</item>
+    <item>__atomic_thread_fence</item>
+    <item>__atomic_always_lock_free</item>
+    <item>__atomic_is_lock_free</item>
+  </list>
+  <!-- From http://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
+        plus a lot of platform specific predefines found by my script
+        git@github.com:zaufi/kate-stuff.git/support/genpredefmacrolist.sh
+    -->
+  <list name="GNUMacros">
+    <item>_FORTIFY_SOURCE</item>
+    <item>_GNU_SOURCE</item>
+    <item>_ILP32</item>
+    <item>_LP64</item>
+    <item>_REENTRANT</item>
+    <item>_STDC_PREDEF_H</item>
+    <item>__3dNOW_A__</item>
+    <item>__3dNOW__</item>
+    <item>__ABM__</item>
+    <item>__ADX__</item>
+    <item>__AES__</item>
+    <item>__ATOMIC_ACQUIRE</item>
+    <item>__ATOMIC_ACQ_REL</item>
+    <item>__ATOMIC_CONSUME</item>
+    <item>__ATOMIC_HLE_ACQUIRE</item>
+    <item>__ATOMIC_HLE_RELEASE</item>
+    <item>__ATOMIC_RELAXED</item>
+    <item>__ATOMIC_RELEASE</item>
+    <item>__ATOMIC_SEQ_CST</item>
+    <item>__AVX2__</item>
+    <item>__AVX__</item>
+    <item>__BASE_FILE__</item>
+    <item>__BIGGEST_ALIGNMENT__</item>
+    <item>__BMI2__</item>
+    <item>__BMI__</item>
+    <item>__BYTE_ORDER__</item>
+    <item>__CHAR16_TYPE__</item>
+    <item>__CHAR32_TYPE__</item>
+    <item>__CHAR_BIT__</item>
+    <item>__CHAR_UNSIGNED__</item>
+    <item>__COUNTER__</item>
+    <item>__DBL_DECIMAL_DIG__</item>
+    <item>__DBL_DENORM_MIN__</item>
+    <item>__DBL_DIG__</item>
+    <item>__DBL_EPSILON__</item>
+    <item>__DBL_HAS_DENORM__</item>
+    <item>__DBL_HAS_INFINITY__</item>
+    <item>__DBL_HAS_QUIET_NAN__</item>
+    <item>__DBL_MANT_DIG__</item>
+    <item>__DBL_MAX_10_EXP__</item>
+    <item>__DBL_MAX_EXP__</item>
+    <item>__DBL_MAX__</item>
+    <item>__DBL_MIN_10_EXP__</item>
+    <item>__DBL_MIN_EXP__</item>
+    <item>__DBL_MIN__</item>
+    <item>__DEC128_EPSILON__</item>
+    <item>__DEC128_MANT_DIG__</item>
+    <item>__DEC128_MAX_EXP__</item>
+    <item>__DEC128_MAX__</item>
+    <item>__DEC128_MIN_EXP__</item>
+    <item>__DEC128_MIN__</item>
+    <item>__DEC128_SUBNORMAL_MIN__</item>
+    <item>__DEC32_EPSILON__</item>
+    <item>__DEC32_MANT_DIG__</item>
+    <item>__DEC32_MAX_EXP__</item>
+    <item>__DEC32_MAX__</item>
+    <item>__DEC32_MIN_EXP__</item>
+    <item>__DEC32_MIN__</item>
+    <item>__DEC32_SUBNORMAL_MIN__</item>
+    <item>__DEC64_EPSILON__</item>
+    <item>__DEC64_MANT_DIG__</item>
+    <item>__DEC64_MAX_EXP__</item>
+    <item>__DEC64_MAX__</item>
+    <item>__DEC64_MIN_EXP__</item>
+    <item>__DEC64_MIN__</item>
+    <item>__DEC64_SUBNORMAL_MIN__</item>
+    <item>__DECIMAL_BID_FORMAT__</item>
+    <item>__DECIMAL_DIG__</item>
+    <item>__DEC_EVAL_METHOD__</item>
+    <item>__DEPRECATED</item>
+    <item>__ELF__</item>
+    <item>__EXCEPTIONS</item>
+    <item>__F16C__</item>
+    <item>__FAST_MATH__</item>
+    <item>__FINITE_MATH_ONLY__</item>
+    <item>__FLOAT_WORD_ORDER__</item>
+    <item>__FLT_DECIMAL_DIG__</item>
+    <item>__FLT_DENORM_MIN__</item>
+    <item>__FLT_DIG__</item>
+    <item>__FLT_EPSILON__</item>
+    <item>__FLT_EVAL_METHOD__</item>
+    <item>__FLT_HAS_DENORM__</item>
+    <item>__FLT_HAS_INFINITY__</item>
+    <item>__FLT_HAS_QUIET_NAN__</item>
+    <item>__FLT_MANT_DIG__</item>
+    <item>__FLT_MAX_10_EXP__</item>
+    <item>__FLT_MAX_EXP__</item>
+    <item>__FLT_MAX__</item>
+    <item>__FLT_MIN_10_EXP__</item>
+    <item>__FLT_MIN_EXP__</item>
+    <item>__FLT_MIN__</item>
+    <item>__FLT_RADIX__</item>
+    <item>__FMA4__</item>
+    <item>__FMA__</item>
+    <item>__FP_FAST_FMA</item>
+    <item>__FP_FAST_FMAF</item>
+    <item>__FSGSBASE__</item>
+    <item>__FUNCTION__</item>
+    <item>__FXSR__</item>
+    <item>__GCC_ATOMIC_BOOL_LOCK_FREE</item>
+    <item>__GCC_ATOMIC_CHAR16_T_LOCK_FREE</item>
+    <item>__GCC_ATOMIC_CHAR32_T_LOCK_FREE</item>
+    <item>__GCC_ATOMIC_CHAR_LOCK_FREE</item>
+    <item>__GCC_ATOMIC_INT_LOCK_FREE</item>
+    <item>__GCC_ATOMIC_LLONG_LOCK_FREE</item>
+    <item>__GCC_ATOMIC_LONG_LOCK_FREE</item>
+    <item>__GCC_ATOMIC_POINTER_LOCK_FREE</item>
+    <item>__GCC_ATOMIC_SHORT_LOCK_FREE</item>
+    <item>__GCC_ATOMIC_TEST_AND_SET_TRUEVAL</item>
+    <item>__GCC_ATOMIC_WCHAR_T_LOCK_FREE</item>
+    <item>__GCC_HAVE_DWARF2_CFI_ASM</item>
+    <item>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_1</item>
+    <item>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16</item>
+    <item>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_2</item>
+    <item>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4</item>
+    <item>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8</item>
+    <item>__GFORTRAN__</item>
+    <item>__GNUC_GNU_INLINE__</item>
+    <item>__GNUC_MINOR__</item>
+    <item>__GNUC_PATCHLEVEL__</item>
+    <item>__GNUC_STDC_INLINE__</item>
+    <item>__GNUC__</item>
+    <item>__GNUG__</item>
+    <item>__GXX_ABI_VERSION</item>
+    <item>__GXX_EXPERIMENTAL_CXX0X__</item>
+    <item>__GXX_RTTI</item>
+    <item>__GXX_WEAK__</item>
+    <item>__ILP32__</item>
+    <item>__INCLUDE_LEVEL__</item>
+    <item>__INT16_C</item>
+    <item>__INT16_MAX__</item>
+    <item>__INT16_TYPE__</item>
+    <item>__INT32_C</item>
+    <item>__INT32_MAX__</item>
+    <item>__INT32_TYPE__</item>
+    <item>__INT64_C</item>
+    <item>__INT64_MAX__</item>
+    <item>__INT64_TYPE__</item>
+    <item>__INT8_C</item>
+    <item>__INT8_MAX__</item>
+    <item>__INT8_TYPE__</item>
+    <item>__INTMAX_C</item>
+    <item>__INTMAX_MAX__</item>
+    <item>__INTMAX_TYPE__</item>
+    <item>__INTPTR_MAX__</item>
+    <item>__INTPTR_TYPE__</item>
+    <item>__INT_FAST16_MAX__</item>
+    <item>__INT_FAST16_TYPE__</item>
+    <item>__INT_FAST32_MAX__</item>
+    <item>__INT_FAST32_TYPE__</item>
+    <item>__INT_FAST64_MAX__</item>
+    <item>__INT_FAST64_TYPE__</item>
+    <item>__INT_FAST8_MAX__</item>
+    <item>__INT_FAST8_TYPE__</item>
+    <item>__INT_LEAST16_MAX__</item>
+    <item>__INT_LEAST16_TYPE__</item>
+    <item>__INT_LEAST32_MAX__</item>
+    <item>__INT_LEAST32_TYPE__</item>
+    <item>__INT_LEAST64_MAX__</item>
+    <item>__INT_LEAST64_TYPE__</item>
+    <item>__INT_LEAST8_MAX__</item>
+    <item>__INT_LEAST8_TYPE__</item>
+    <item>__INT_MAX__</item>
+    <item>__LDBL_DENORM_MIN__</item>
+    <item>__LDBL_DIG__</item>
+    <item>__LDBL_EPSILON__</item>
+    <item>__LDBL_HAS_DENORM__</item>
+    <item>__LDBL_HAS_INFINITY__</item>
+    <item>__LDBL_HAS_QUIET_NAN__</item>
+    <item>__LDBL_MANT_DIG__</item>
+    <item>__LDBL_MAX_10_EXP__</item>
+    <item>__LDBL_MAX_EXP__</item>
+    <item>__LDBL_MAX__</item>
+    <item>__LDBL_MIN_10_EXP__</item>
+    <item>__LDBL_MIN_EXP__</item>
+    <item>__LDBL_MIN__</item>
+    <item>__LONG_LONG_MAX__</item>
+    <item>__LONG_MAX__</item>
+    <item>__LP64__</item>
+    <item>__LWP__</item>
+    <item>__LZCNT__</item>
+    <item>__MMX__</item>
+    <item>__NEXT_RUNTIME__</item>
+    <item>__NO_INLINE__</item>
+    <item>__OPTIMIZE_SIZE__</item>
+    <item>__OPTIMIZE__</item>
+    <item>__ORDER_BIG_ENDIAN__</item>
+    <item>__ORDER_LITTLE_ENDIAN__</item>
+    <item>__ORDER_PDP_ENDIAN__</item>
+    <item>__PCLMUL__</item>
+    <item>__PIC__</item>
+    <item>__PIE__</item>
+    <item>__POPCNT__</item>
+    <item>__PRAGMA_REDEFINE_EXTNAME</item>
+    <item>__PRETTY_FUNCTION__</item>
+    <item>__PRFCHW__</item>
+    <item>__PTRDIFF_MAX__</item>
+    <item>__PTRDIFF_TYPE__</item>
+    <item>__RDRND__</item>
+    <item>__RDSEED__</item>
+    <item>__REGISTER_PREFIX__</item>
+    <item>__RTM__</item>
+    <item>__SANITIZE_ADDRESS__</item>
+    <item>__SCHAR_MAX__</item>
+    <item>__SHRT_MAX__</item>
+    <item>__SIG_ATOMIC_MAX__</item>
+    <item>__SIG_ATOMIC_MIN__</item>
+    <item>__SIG_ATOMIC_TYPE__</item>
+    <item>__SIZEOF_DOUBLE__</item>
+    <item>__SIZEOF_FLOAT__</item>
+    <item>__SIZEOF_INT128__</item>
+    <item>__SIZEOF_INT__</item>
+    <item>__SIZEOF_LONG_DOUBLE__</item>
+    <item>__SIZEOF_LONG_LONG__</item>
+    <item>__SIZEOF_LONG__</item>
+    <item>__SIZEOF_POINTER__</item>
+    <item>__SIZEOF_PTRDIFF_T__</item>
+    <item>__SIZEOF_SHORT__</item>
+    <item>__SIZEOF_SIZE_T__</item>
+    <item>__SIZEOF_WCHAR_T__</item>
+    <item>__SIZEOF_WINT_T__</item>
+    <item>__SIZE_MAX__</item>
+    <item>__SIZE_TYPE__</item>
+    <item>__SSE2_MATH__</item>
+    <item>__SSE2__</item>
+    <item>__SSE3__</item>
+    <item>__SSE4A__</item>
+    <item>__SSE4_1__</item>
+    <item>__SSE4_2__</item>
+    <item>__SSE_MATH__</item>
+    <item>__SSE__</item>
+    <item>__SSP_ALL__</item>
+    <item>__SSP__</item>
+    <item>__SSSE3__</item>
+    <item>__STDC_HOSTED__</item>
+    <item>__STDC_IEC_559_COMPLEX__</item>
+    <item>__STDC_IEC_559__</item>
+    <item>__STDC_ISO_10646__</item>
+    <item>__STDC_NO_THREADS__</item>
+    <item>__STDC_UTF_16__</item>
+    <item>__STDC_UTF_32__</item>
+    <item>__STDC_VERSION__</item>
+    <item>__STDC__</item>
+    <item>__STRICT_ANSI__</item>
+    <item>__TBM__</item>
+    <item>__TIMESTAMP__</item>
+    <item>__UINT16_C</item>
+    <item>__UINT16_MAX__</item>
+    <item>__UINT16_TYPE__</item>
+    <item>__UINT32_C</item>
+    <item>__UINT32_MAX__</item>
+    <item>__UINT32_TYPE__</item>
+    <item>__UINT64_C</item>
+    <item>__UINT64_MAX__</item>
+    <item>__UINT64_TYPE__</item>
+    <item>__UINT8_C</item>
+    <item>__UINT8_MAX__</item>
+    <item>__UINT8_TYPE__</item>
+    <item>__UINTMAX_C</item>
+    <item>__UINTMAX_MAX__</item>
+    <item>__UINTMAX_TYPE__</item>
+    <item>__UINTPTR_MAX__</item>
+    <item>__UINTPTR_TYPE__</item>
+    <item>__UINT_FAST16_MAX__</item>
+    <item>__UINT_FAST16_TYPE__</item>
+    <item>__UINT_FAST32_MAX__</item>
+    <item>__UINT_FAST32_TYPE__</item>
+    <item>__UINT_FAST64_MAX__</item>
+    <item>__UINT_FAST64_TYPE__</item>
+    <item>__UINT_FAST8_MAX__</item>
+    <item>__UINT_FAST8_TYPE__</item>
+    <item>__UINT_LEAST16_MAX__</item>
+    <item>__UINT_LEAST16_TYPE__</item>
+    <item>__UINT_LEAST32_MAX__</item>
+    <item>__UINT_LEAST32_TYPE__</item>
+    <item>__UINT_LEAST64_MAX__</item>
+    <item>__UINT_LEAST64_TYPE__</item>
+    <item>__UINT_LEAST8_MAX__</item>
+    <item>__UINT_LEAST8_TYPE__</item>
+    <item>__USER_LABEL_PREFIX__</item>
+    <item>__USING_SJLJ_EXCEPTIONS__</item>
+    <item>__VERSION__</item>
+    <item>__WCHAR_MAX__</item>
+    <item>__WCHAR_MIN__</item>
+    <item>__WCHAR_TYPE__</item>
+    <item>__WCHAR_UNSIGNED__</item>
+    <item>__WINT_MAX__</item>
+    <item>__WINT_MIN__</item>
+    <item>__WINT_TYPE__</item>
+    <item>__XOP__</item>
+    <item>__XSAVEOPT__</item>
+    <item>__XSAVE__</item>
+    <item>__amd64</item>
+    <item>__amd64__</item>
+    <item>__amdfam10</item>
+    <item>__amdfam10__</item>
+    <item>__athlon</item>
+    <item>__athlon__</item>
+    <item>__athlon_sse__</item>
+    <item>__atom</item>
+    <item>__atom__</item>
+    <item>__bdver1</item>
+    <item>__bdver1__</item>
+    <item>__bdver2</item>
+    <item>__bdver2__</item>
+    <item>__bdver3</item>
+    <item>__bdver3__</item>
+    <item>__btver1</item>
+    <item>__btver1__</item>
+    <item>__btver2</item>
+    <item>__btver2__</item>
+    <item>__code_model_32__</item>
+    <item>__code_model_small__</item>
+    <item>__core2</item>
+    <item>__core2__</item>
+    <item>__core_avx2</item>
+    <item>__core_avx2__</item>
+    <item>__corei7</item>
+    <item>__corei7__</item>
+    <item>__cplusplus</item>
+    <item>__geode</item>
+    <item>__geode__</item>
+    <item>__gnu_linux__</item>
+    <item>__i386</item>
+    <item>__i386__</item>
+    <item>__i486</item>
+    <item>__i486__</item>
+    <item>__i586</item>
+    <item>__i586__</item>
+    <item>__i686</item>
+    <item>__i686__</item>
+    <item>__k6</item>
+    <item>__k6_2__</item>
+    <item>__k6_3__</item>
+    <item>__k6__</item>
+    <item>__k8</item>
+    <item>__k8__</item>
+    <item>__linux</item>
+    <item>__linux__</item>
+    <item>__nocona</item>
+    <item>__nocona__</item>
+    <item>__pentium</item>
+    <item>__pentium4</item>
+    <item>__pentium4__</item>
+    <item>__pentium__</item>
+    <item>__pentium_mmx__</item>
+    <item>__pentiumpro</item>
+    <item>__pentiumpro__</item>
+    <item>__pic__</item>
+    <item>__pie__</item>
+    <item>__tune_amdfam10__</item>
+    <item>__tune_athlon__</item>
+    <item>__tune_athlon_sse__</item>
+    <item>__tune_atom__</item>
+    <item>__tune_bdver1__</item>
+    <item>__tune_bdver2__</item>
+    <item>__tune_bdver3__</item>
+    <item>__tune_btver1__</item>
+    <item>__tune_btver2__</item>
+    <item>__tune_core2__</item>
+    <item>__tune_core_avx2__</item>
+    <item>__tune_corei7__</item>
+    <item>__tune_geode__</item>
+    <item>__tune_i386__</item>
+    <item>__tune_i486__</item>
+    <item>__tune_i586__</item>
+    <item>__tune_i686__</item>
+    <item>__tune_k6_2__</item>
+    <item>__tune_k6_3__</item>
+    <item>__tune_k6__</item>
+    <item>__tune_k8__</item>
+    <item>__tune_nocona__</item>
+    <item>__tune_pentium2__</item>
+    <item>__tune_pentium3__</item>
+    <item>__tune_pentium4__</item>
+    <item>__tune_pentium__</item>
+    <item>__tune_pentium_mmx__</item>
+    <item>__tune_pentiumpro__</item>
+    <item>__unix</item>
+    <item>__unix__</item>
+    <item>__x86_64</item>
+    <item>__x86_64__</item>
+    <item>i386</item>
+    <item>linux</item>
+    <item>unix</item>
+  </list>
+  <contexts>
+    <context name="DetectGccExtensions" attribute="Normal Text" lineEndContext="#stay">
+      <keyword attribute="GNU Macros" context="#stay" String="GNUMacros" />
+      <keyword attribute="GNU Functions" context="#stay" String="GNUFunctions" />
+      <keyword attribute="GNU Types" context="#stay" String="GNUTypes" />
+      <WordDetect attribute="GNU Extensions" context="AttrArgs" String="__attribute__" />
+      <WordDetect attribute="GNU Extensions" context="AttrArgs" String="__declspec" />
+      <keyword attribute="GNU Extensions" context="#stay" String="GNUKeywords" />
+      <RegExpr attribute="GNU Functions" context="#stay" String="__builtin_[a-zA-Z0-9_]+" />
+    </context>
+
+    <context name="DetectGccExtensionsInPP" attribute="Normal Text" lineEndContext="#stay">
+      <keyword attribute="GNU Macros" context="#stay" String="GNUMacros" />
+      <keyword attribute="GNU Functions" context="#stay" String="GNUFunctions" />
+      <keyword attribute="GNU Types" context="#stay" String="GNUTypes" />
+      <WordDetect attribute="GNU Extensions" context="AttrArgsInPP" String="__attribute__" />
+      <WordDetect attribute="GNU Extensions" context="AttrArgsInPP" String="__declspec" />
+      <keyword attribute="GNU Extensions" context="#stay" String="GNUKeywords" />
+      <RegExpr attribute="GNU Functions" context="#stay" String="__builtin_[a-zA-Z0-9_]+" />
+    </context>
+
+    <context name="GNUMacros" attribute="Normal Text" lineEndContext="#stay">
+      <keyword attribute="GNU Macros" context="#stay" String="GNUMacros" />
+    </context>
+
+    <context name="AttrArgs" attribute="GNU Extensions" lineEndContext="#pop">
+      <Detect2Chars attribute="GNU Extensions" context="#stay" char="(" char1="(" />
+      <Detect2Chars attribute="GNU Extensions" context="#pop" char=")" char1=")" />
+      <DetectChar attribute="GNU Extensions" context="Close" char="(" />
+    </context>
+
+    <context name="AttrArgsInPP" attribute="GNU Extensions" lineEndContext="#pop">
+      <DetectChar attribute="Error" context="#pop" char="\" lookAhead="true" />
+      <IncludeRules context="AttrArgs" />
+    </context>
+
+    <context name="Close" attribute="GNU Extensions" lineEndContext="#stay">
+      <DetectChar attribute="GNU Extensions" context="#pop" char=")" />
+      <DetectChar attribute="String" context="AttrStringArg" char="&quot;" />
+    </context>
+
+    <context name="AttrStringArg" attribute="String" lineEndContext="#stay">
+      <DetectChar attribute="String" context="#pop" char="&quot;" />
+    </context>
+
+
+    <context name="DetectGccAttributes" attribute="Normal Text" lineEndContext="#stay">
+      <StringDetect attribute="GNU Extensions" context="CppAttr" String="gnu::" />
+      <StringDetect attribute="GNU Extensions" context="CppAttr" String="clang::" />
+    </context>
+
+    <context name="DetectNamespaceGccAttributes" attribute="Normal Text" lineEndContext="#stay">
+      <WordDetect attribute="GNU Extensions" context="#pop" String="gnu" />
+      <WordDetect attribute="GNU Extensions" context="#pop" String="clang" />
+    </context>
+
+    <context name="CppAttr" attribute="Error" lineEndContext="#stay">
+      <DetectSpaces/>
+      <DetectIdentifier attribute="GNU Extensions" context="#pop" />
+    </context>
+
+  </contexts>
+
+  <itemDatas>
+    <itemData name="Normal Text"    defStyleNum="dsNormal"    spellChecking="false" />
+    <itemData name="GNU Extensions" defStyleNum="dsExtension" spellChecking="false" italic="1" />
+    <itemData name="GNU Functions"  defStyleNum="dsFunction"  spellChecking="false" />
+    <itemData name="GNU Macros"     defStyleNum="dsOthers"    spellChecking="false" />
+    <itemData name="GNU Types"      defStyleNum="dsDataType"  spellChecking="false" />
+    <itemData name="String"         defStyleNum="dsString"    spellChecking="false" />
+    <itemData name="Error"          defStyleNum="dsError"     spellChecking="false" />
+  </itemDatas>
+</highlighting>
+
+<general>
+  <comments>
+    <comment name="singleLine" start="//"/>
+  </comments>
+  <keywords casesensitive="1"/>
+</general>
+</language>
+<!-- kate: indent-width 2; tab-width 2; -->

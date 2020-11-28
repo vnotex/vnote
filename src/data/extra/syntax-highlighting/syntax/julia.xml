@@ -1,0 +1,708 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ====================================================================
+  Julia syntax highlighting file for the KDE editors Kate and Kwrite
+  ====================================================================
+
+  This was adapted from the Matlab syntax highlighting file
+
+  Most of this XML file is straightforward. Only the character ' (&apos;)
+  needs nontrivial treatment, since it is both a postfix operator indicating
+  complex conjugate transpose (adjoint) and a character delimiter. It is an
+  adjoint operator in the following positions:
+  1) immediately after an identifier (variable, function, but not keyword)
+  2) immediately after a number literal
+  3) immediately after the closing parenthesis ), ] and }
+  4) immediately after a simple transpose operator .'
+  5) immediately after another adjoint operator '
+  Otherwise it is a character delimiter.
+
+  This is implemented using look-ahead regexps. If one of the entities in the
+  above cases 1-4 (identifier, number literal, ...) matches and look-ahead
+  shows that it is followed by a ', the entity is highlighted and control is
+  passed to the special context _adjoint, whose sole purpose is to correctly
+  highlight a series of ' (thus covering case 5 as well). _adjoint immediately
+  returns to the default context _normal.
+
+  Author: Timothy E. Holy, Washington University in St. Louis
+-->
+
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+  <!ENTITY int "[0-9]([0-9_]*[0-9])?">
+  <!ENTITY hex "[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?">
+]>
+
+<language name="Julia" section="Sources" version="7" kateversion="5.0" extensions="*.jl" casesensitive="1" priority="5" license="MIT">
+
+  <highlighting>
+    <list name="block_begin">
+      <item>begin</item>
+      <item>do</item>
+      <item>for</item>
+      <item>function</item>
+      <item>if</item>
+      <item>let</item>
+      <item>quote</item>
+      <item>try</item>
+      <item>type</item>
+      <item>while</item>
+    </list>
+    <list name="block_eb">
+      <item>catch</item>
+      <item>finally</item>
+      <item>else</item>
+      <item>elseif</item>
+    </list>
+    <list name="block_end">
+      <item>end</item>
+    </list>
+    <list name="keywords">
+      <item>abstract</item>
+      <item>bitstype</item>
+      <item>break</item>
+      <item>ccall</item>
+      <item>const</item>
+      <item>continue</item>
+      <item>export</item>
+      <item>global</item>
+      <item>import</item>
+      <item>in</item>
+      <item>local</item>
+      <item>macro</item>
+      <item>module</item>
+      <item>return</item>
+      <item>typealias</item>
+      <item>importall</item>
+      <item>baremodule</item>
+      <item>using</item>
+      <item>where</item>
+      <item>new</item>
+      <item>in</item>
+      <item>struct</item>
+      <item>ans</item>
+      <!-- C Interface -->
+      <item>ccall</item>
+    </list>
+    <list name="types">
+      <item>AbstractArray</item>
+      <item>AbstractMatrix</item>
+      <item>AbstractVector</item>
+      <item>Any</item>
+      <item>Array</item>
+      <item>ASCIIString</item>
+      <item>Associative</item>
+      <item>Bool</item>
+      <item>ByteString</item>
+      <item>Char</item>
+      <item>Complex</item>
+      <item>Complex64</item>
+      <item>Complex128</item>
+      <item>ComplexPair</item>
+      <item>DArray</item>
+      <item>Dict</item>
+      <item>Exception</item>
+      <item>Expr</item>
+      <item>Float</item>
+      <item>Float32</item>
+      <item>Float64</item>
+      <item>Function</item>
+      <item>ObjectIdDict</item>
+      <item>Int</item>
+      <item>Int8</item>
+      <item>Int16</item>
+      <item>Int32</item>
+      <item>Int64</item>
+      <item>Integer</item>
+      <item>IntSet</item>
+      <item>IO</item>
+      <item>IOStream</item>
+      <item>Matrix</item>
+      <item>Nothing</item>
+      <item>None</item>
+      <item>NTuple</item>
+      <item>Number</item>
+      <item>Ptr</item>
+      <item>Range</item>
+      <item>Range1</item>
+      <item>Ranges</item>
+      <item>Rational</item>
+      <item>Real</item>
+      <item>Regex</item>
+      <item>RegexMatch</item>
+      <item>Set</item>
+      <item>Signed</item>
+      <item>StridedArray</item>
+      <item>StridedMatrix</item>
+      <item>StridedVecOrMat</item>
+      <item>StridedVector</item>
+      <item>String</item>
+      <item>SubArray</item>
+      <item>SubString</item>
+      <item>Symbol</item>
+      <item>Task</item>
+      <item>Tuple</item>
+      <item>Type</item>
+      <item>UInt</item>
+      <item>UInt8</item>
+      <item>UInt16</item>
+      <item>UInt32</item>
+      <item>UInt64</item>
+      <item>Union</item>
+      <item>Unsigned</item>
+      <item>UTF8String</item>
+      <item>VecOrMat</item>
+      <item>Vector</item>
+      <item>Void</item>
+      <item>WeakRef</item>
+      <!-- Essentials -->
+      <item>Missing</item>
+      <item>Cmd</item>
+      <item>EnvDict</item>
+      <item>VersionNumber</item>
+      <item>ArgumentError</item>
+      <item>AssertionError</item>
+      <item>BoundsError</item>
+      <item>CompositeException</item>
+      <item>DimensionMismatch</item>
+      <item>DivideError</item>
+      <item>DomainError</item>
+      <item>EOFError</item>
+      <item>ErrorException</item>
+      <item>InexactError</item>
+      <item>InterruptException</item>
+      <item>KeyError</item>
+      <item>LoadError</item>
+      <item>MethodError</item>
+      <item>MissingException</item>
+      <item>OutOfMemoryError</item>
+      <item>ReadOnlyMemoryError</item>
+      <item>OverflowError</item>
+      <item>StackOverflowError</item>
+      <item>SystemError</item>
+      <item>TypeError</item>
+      <item>UndefKeywordError</item>
+      <item>UndefRefError</item>
+      <item>UndefVarError</item>
+      <item>StringIndexError</item>
+      <item>InitError</item>
+      <item>ExponentialBackOff</item>
+      <item>Timer</item>
+      <item>AsyncCondition</item>
+      <item>ParseError</item>
+      <!-- Collections and Data Structures -->
+      <item>IteratorEltype</item>
+      <item>AbstractRange</item>
+      <item>OrdinalRange</item>
+      <item>AbstractUnitRange</item>
+      <item>StepRange</item>
+      <item>UnitRange</item>
+      <item>LinRange</item>
+      <item>IdDict</item>
+      <item>WeakKeyDict</item>
+      <item>ImmutableDict</item>
+      <item>BitSet</item>
+      <item>Pair</item>
+      <!-- Math -->
+      <item>OneTo</item>
+      <item>StepRangeLen</item>
+      <item>RoundingMode</item>
+      <!-- Numbers -->
+      <item>AbstractFloat</item>
+      <item>AbstractIrrational</item>
+      <item>Float16</item>
+      <item>Float32</item>
+      <item>Float64</item>
+      <item>BigFloat</item>
+      <item>Int128</item>
+      <item>UInt128</item>
+      <item>BigInt</item>
+      <item>ComplexF16</item>
+      <item>ComplexF32</item>
+      <item>ComplexF64</item>
+      <item>Irrational</item>
+      <item>UnionAll</item>
+      <item>NamedTuple</item>
+      <item>Val</item>
+      <item>Vararg</item>
+      <item>Some</item>
+      <!-- String -->
+      <item>AbstractChar</item>
+      <item>SubstitutionString</item>
+      <item>AbstractString</item>
+      <!-- Array -->
+      <item>UndefInitializer</item>
+      <item>DenseArray</item>
+      <item>DenseVector</item>
+      <item>DenseMatrix</item>
+      <item>BitArray</item>
+      <item>IndexStyle</item>
+      <item>IndexLinear</item>
+      <item>IndexCartesian</item>
+      <item>BroadcastStyle</item>
+      <item>AbstractArrayStyle</item>
+      <item>ArrayStyle</item>
+      <item>DefaultArrayStyle</item>
+      <item>Colon</item>
+      <item>CartesianIndex</item>
+      <item>CartesianIndices</item>
+      <item>Dims</item>
+      <item>LinearIndices</item>
+      <item>PermutedDimsArray</item>
+      <!-- Tasks -->
+      <item>Condition</item>
+      <item>Channel</item>
+      <!-- Threads -->
+      <item>Atomic</item>
+      <item>AbstractLock</item>
+      <item>ReentrantLock</item>
+      <item>Mutex</item>
+      <item>SpinLock</item>
+      <item>RecursiveSpinLock</item>
+      <item>Semaphore</item>
+      <!-- Filesystem (Libc) -->
+      <item>RawFD</item>
+      <!-- I/O and Network -->
+      <item>IOBuffer</item>
+      <item>IOContext</item>
+      <item>TextDisplay</item>
+      <item>AbstractDisplay</item>
+      <!-- Sort -->
+      <item>PartialQuickSort</item>
+      <!-- Iteration utilities -->
+      <item>Stateful</item>
+      <!-- Iterators -->
+      <item>Pairs</item>
+      <!-- C Interface -->
+      <item>CFunction</item>
+      <item>Ptr</item>
+      <item>Ref</item>
+      <item>Cchar</item>
+      <item>Cuchar</item>
+      <item>Cshort</item>
+      <item>Cstring</item>
+      <item>Cushort</item>
+      <item>Cint</item>
+      <item>Cuint</item>
+      <item>Clong</item>
+      <item>Culong</item>
+      <item>Clonglong</item>
+      <item>Culonglong</item>
+      <item>Cintmax_t</item>
+      <item>Cuintmax_t</item>
+      <item>Csize_t</item>
+      <item>Cssize_t</item>
+      <item>Cptrdiff_t</item>
+      <item>Cwchar_t</item>
+      <item>Cwstring</item>
+      <item>Cfloat</item>
+      <item>Cdouble</item>
+      <!-- C Standard Library -->
+      <item>TmStruct</item>
+      <!-- StackTraces -->
+      <item>StackFrame</item>
+      <item>StackTrace</item>
+      <!-- Base64 -->
+      <item>Base64EncodePipe</item>
+      <item>Base64DecodePipe</item>
+      <!-- Dates -->
+      <item>Period</item>
+      <item>CompoundPeriod</item>
+      <item>Instant</item>
+      <item>UTInstant</item>
+      <item>TimeType</item>
+      <item>DateTime</item>
+      <item>Date</item>
+      <item>Time</item>
+      <item>DateFormat</item>
+      <!-- Base.CoreLogging -->
+      <item>LogLevel</item>
+      <item>AbstractLogger</item>
+      <item>NullLogger</item>
+      <item>ConsoleLogger</item>
+      <item>SimpleLogger</item>
+      <!-- Mmap -->
+      <item>Anonymous</item>
+      <!-- Random -->
+      <item>RandomDevice</item>
+      <item>MersenneTwister</item>
+      <!-- SharedArrays -->
+      <item>SharedArray</item>
+      <!-- Sockets -->
+      <item>IPv4</item>
+      <item>IPv6</item>
+      <item>TCPSocket</item>
+      <item>UDPSocket</item>
+      <!-- SparseArrays -->
+      <item>SparseVector</item>
+      <item>SparseMatrixCSC</item>
+      <!-- Others -->
+      <item>AbstractChannel</item>
+      <item>AbstractSet</item>
+      <item>AbstractDict</item>
+      <item>BitMatrix</item>
+      <item>BitVector</item>
+      <item>Enum</item>
+      <item>CapturedException</item>
+      <item>InvalidStateException</item>
+      <item>ProcessFailedException</item>
+    </list>
+
+    <list name="constants">
+      <!-- Constants -->
+      <item>nothing</item>
+      <item>PROGRAM_FILE</item>
+      <item>ARGS</item>
+      <item>C_NULL</item>
+      <item>VERSION</item>
+      <item>LOAD_PATH</item>
+      <item>DEPOT_PATH</item>
+      <!-- Sys -->
+      <item>BINDIR</item>
+      <item>CPU_THREADS</item>
+      <item>WORD_SIZE</item>
+      <item>KERNEL</item>
+      <item>ARCH</item>
+      <item>MACHINE</item>
+      <!-- Essentials -->
+      <item>missing</item>
+      <item>devnull</item>
+      <item>ENV</item>
+      <!-- I/O and Network -->
+      <item>stdout</item>
+      <item>stderr</item>
+      <item>stdin</item>
+      <item>open</item>
+      <item>read</item>
+      <item>write</item>
+      <item>create</item>
+      <item>truncate</item>
+      <item>append</item>
+      <item>ENDIAN_BOM</item>
+      <!-- Numbers -->
+      <item>im</item>
+      <item>pi</item>
+      <item>e</item>
+      <item>catalan</item>
+      <item>eulergamma</item>
+      <item>golden</item>
+      <item>Inf</item>
+      <item>Inf64</item>
+      <item>Inf32</item>
+      <item>Inf16</item>
+      <item>NaN</item>
+      <item>NaN64</item>
+      <item>NaN32</item>
+      <item>NaN16</item>
+      <!-- Math -->
+      <item>RoundNearest</item>
+      <item>RoundNearestTiesAway</item>
+      <item>RoundNearestTiesUp</item>
+      <item>RoundToZero</item>
+      <item>RoundFromZero</item>
+      <item>RoundUp</item>
+      <item>RoundDown</item>
+      <!-- Array -->
+      <item>AbstractVecOrMat</item>
+      <item>undef</item>
+      <item>VecOrMat</item>
+      <item>DenseVecOrMat</item>
+      <item>StridedArray</item>
+      <item>StridedVector</item>
+      <item>StridedMatrix</item>
+      <item>StridedVecOrMat</item>
+      <!-- Sort -->
+      <item>InsertionSort</item>
+      <item>MergeSort</item>
+      <item>QuickSort</item>
+      <item>InsertionSort</item>
+      <!-- Libc -->
+      <item>MS_ASYNC</item>
+      <item>MS_INVALIDATE</item>
+      <item>MS_SYNC</item>
+    </list>
+    <list name="booleans">
+      <item>true</item>
+      <item>false</item>
+    </list>
+    <list name="modules">
+      <item>Base</item>
+      <item>Core</item>
+      <item>Main</item>
+      <item>Meta</item>
+      <item>StackTraces</item>
+      <item>Sys</item>
+      <item>Libc</item>
+      <item>Docs</item>
+      <item>Threads</item>
+      <item>Iterators</item>
+      <item>Broadcast</item>
+      <item>MathConstants</item>
+      <item>Math</item>
+      <item>Unicode</item>
+      <item>Sort</item>
+      <item>Base64</item>
+      <item>Dates</item>
+      <item>Mmap</item>
+      <item>Random</item>
+      <item>SharedArrays</item>
+      <item>Sockets</item>
+      <item>SparseArrays</item>
+      <item>CoreLogging</item>
+    </list>
+    <contexts>
+
+      <context name="_normal" attribute="Normal Text" lineEndContext="#stay">
+
+        <DetectSpaces />
+
+        <!-- Blocks -->
+        <keyword context="#stay" attribute="Keyword" String="block_begin"
+                 beginRegion="block" />
+        <keyword context="#stay" attribute="Keyword" String="block_eb"
+                 endRegion="block" beginRegion="block" />
+        <keyword context="#stay" attribute="Keyword" String="block_end"
+                 endRegion="block" />
+        <StringDetect String="#BEGIN" context="region_marker" attribute="FoldingComment" beginRegion="user_region" />
+        <StringDetect String="#END" context="region_marker" attribute="FoldingComment" endRegion="user_region" />
+
+        <!-- Keywords, types, and comments -->
+        <RegExpr context="#stay" attribute="Keyword" String="\b(abstract|primitive)\s+type\b" />
+        <RegExpr context="#stay" attribute="Keyword" String="\bmutable\s+struct\b" />
+        <keyword context="#stay" attribute="Keyword" String="keywords" />
+        <keyword context="#stay" attribute="Data Type" String="types" />
+        <keyword context="#stay" attribute="Boolean" String="booleans" />
+        <keyword context="#stay" attribute="Constant" String="constants" />
+        <keyword context="#stay" attribute="Module" String="modules" />
+        <Detect2Chars char="#" char1="=" context="block-comment" attribute="Comment" beginRegion="block-comment"/>
+        <DetectChar char="#" context="1-comment" attribute="Comment"/>
+
+        <!-- Lists and arrays -->
+        <!-- <DetectChar char="(" context="nested" beginRegion="nested" attribute="Delimiter" />
+        <DetectChar char="[" context="squared" beginRegion="squared" attribute="Delimiter" />
+        <DetectChar char="{" context="curly" beginRegion="curly" attribute="Delimiter" /> -->
+
+        <!-- Strings -->
+        <StringDetect attribute="String" context="Block-String" String="&quot;&quot;&quot;" beginRegion="block-string"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <!-- Regular expressions -->
+        <StringDetect attribute="String" context="Regex-Block-String" String="r&quot;&quot;&quot;" beginRegion="block-string"/>
+        <Detect2Chars attribute="String" context="Regex-String" char="r" char1="&quot;"/>
+        <!-- Byte Arrays -->
+        <StringDetect attribute="String" context="Block-String" String="b&quot;&quot;&quot;" beginRegion="block-string"/>
+        <Detect2Chars attribute="String" context="String" char="b" char1="&quot;"/>
+        <!-- Version Number -->
+        <Detect2Chars attribute="String" context="String" char="v" char1="&quot;"/>
+        <!-- Raw Strings -->
+        <StringDetect attribute="String" context="Raw-Block-String" String="raw&quot;&quot;&quot;" beginRegion="block-string"/>
+        <StringDetect attribute="String" context="Raw-String" String="raw&quot;"/>
+        <!-- Documentation -->
+        <StringDetect attribute="String" context="Block-String" String="doc&quot;&quot;&quot;" beginRegion="block-string"/>
+        <StringDetect attribute="String" context="String" String="doc&quot;"/>
+
+        <!-- For Running External Programs -->
+        <StringDetect attribute="Command String" context="Block-Backtick-String" String="```" beginRegion="block-string"/>
+        <DetectChar attribute="Command String" context="Backtick-String" char="`"/>
+
+        <!-- Multi-character operators -->
+        <StringDetect context="#stay" attribute="Operator" String="..."/>
+        <Detect2Chars context="#stay" attribute="Operator" char=":" char1=":"/>
+        <StringDetect context="#stay" attribute="Operator" String="&gt;&gt;&gt;="/>
+        <StringDetect context="#stay" attribute="Operator" String="&gt;&gt;="/>
+        <StringDetect context="#stay" attribute="Operator" String="&lt;&lt;="/>
+        <StringDetect context="#stay" attribute="Operator" String="&gt;&gt;&gt;"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="&gt;" char1="&gt;"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="&lt;" char1="&lt;"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="=" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="!" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="&lt;" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="&gt;" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="&amp;" char1="&amp;"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="|" char1="|"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="." char1="*"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="." char1="^"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="." char1="/"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="." char1="'"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="+" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="-" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="*" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="/" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="&amp;" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="|" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="$" char1="="/>
+
+        <!-- Look-ahead for adjoint ' after variable, number literal, closing braces and .' -->
+        <RegExpr context="_adjoint" attribute="Variable" String="[a-zA-Z]\w*(?=')" />
+        <RegExpr context="_adjoint" attribute="Float" String="(&int;(\.&int;)?|\.&int;)([eEfF][+-]?\d+)?(im)?(?=')" />
+        <RegExpr context="_adjoint" attribute="Delimiter" String="[\)\]}](?=')" />
+        <RegExpr context="_adjoint" attribute="Operator" String="\.'(?=')" />
+
+        <!-- If ' is not the adjoint operator, it starts a character or an unterminated char -->
+        <RegExpr context="#stay" attribute="Char" String="'[^']*(''[^']*)*'(?=[^']|$)" />
+        <RegExpr context="#stay" attribute="Incomplete Char" String="'[^']*(''[^']*)*" />
+
+        <RegExpr context="#stay" attribute="Macro" String="@[a-zA-Z_]\w*" />
+        <RegExpr context="#stay" attribute="Function" String="\b[A-Za-z_]\w*(?=\!?\()" />
+
+        <!-- Identifiers, numbers and braces -->
+        <!-- We can't use HlCHex, Int, and Float because we need to allow the "im" at the end of complex numbers -->
+        <DetectIdentifier context="#stay" attribute="Variable" />
+        <RegExpr context="#stay" attribute="Float" String="0x(&hex;\.?|(&hex;)?\.&hex;)[pP][+-]?\d+(im)?"/>
+        <RegExpr context="#stay" attribute="Hex" String="0x&hex;(im)?" />
+        <RegExpr context="#stay" attribute="Octal" String="0o[0-7]([0-7_]*[0-7])?(im)?" />
+        <RegExpr context="#stay" attribute="Binary" String="0b[01]([01_]*[01])?(im)?" />
+        <RegExpr context="#stay" attribute="Float" String="(&int;(\.&int;)?|\.&int;)([eEfF][+-]?\d+)?(im)?" />
+        <AnyChar context="#stay" attribute="Delimiter" String="()[]{}"/>
+
+        <!-- Single-character operators -->
+        <AnyChar context="#stay" attribute="Operator" String="*+-/\&amp;|&lt;&gt;~$!^=,;:@"/>
+
+      </context>
+
+      <!-- Context for user block (#BEGIN...#END) -->
+      <context name="region_marker" lineEndContext="#pop" attribute="FoldingComment" >
+        <IncludeRules context="1-comment" />
+      </context>
+
+      <!-- Contexts entered after beginning a list or array -->
+<!--      <context name="nested" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char=")" context="#pop" endRegion="nested" attribute="Delimiter" />
+      </context>
+      <context name="squared" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="]" context="#pop" endRegion="squared" attribute="Delimiter" />
+      </context>
+      <context name="curly" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" context="#pop" endRegion="curly" attribute="Delimiter" />
+      </context>-->
+
+      <!-- Context entered after encountering an ' adjoint operator -->
+      <context name="_adjoint" attribute="Operator" lineEndContext="#pop">
+        <RegExpr context="#pop" attribute="Operator" String="'+" />
+      </context>
+
+      <!-- Context entered after encountering an " (string) -->
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <DetectSpaces />
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Block-String">
+        <DetectSpaces />
+        <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;" endRegion="block-string"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+      </context>
+      <!-- Raw String -->
+      <context attribute="String" lineEndContext="#pop" name="Raw-String">
+        <DetectSpaces />
+        <LineContinue attribute="String" context="#stay"/>
+        <RegExpr attribute="String Char" context="#stay" String="(\\\\)*\\&quot;"/>
+        <RegExpr attribute="String Char" context="#stay" String="(\\\\)+(?=&quot;)"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Raw-Block-String">
+        <DetectSpaces />
+        <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;" endRegion="block-string"/>
+      </context>
+      <!-- Command String -->
+      <context attribute="Command String" lineEndContext="#pop" name="Backtick-String">
+        <DetectSpaces />
+        <LineContinue attribute="Command String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="Command String" context="#pop" char="`"/>
+      </context>
+      <context attribute="Command String" lineEndContext="#stay" name="Block-Backtick-String">
+        <DetectSpaces />
+        <StringDetect attribute="Command String" context="#pop" String="```" endRegion="block-string"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+      </context>
+
+      <!-- Regular expressions -->
+      <context attribute="String" lineEndContext="#pop" name="Regex-String">
+        <RegExpr attribute="String" context="#pop" String="&quot;[imsx]{1,4}"/>
+        <Detect2Chars attribute="Char" context="Regex-Square-Bracket" char="[" char1="^"/>
+        <DetectChar attribute="Char" context="Regex-Square-Bracket" char="["/>
+        <IncludeRules context="Default-Regex"/>
+        <IncludeRules context="String"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Regex-Block-String">
+        <RegExpr attribute="String" context="#pop" String="&quot;{3}[imsx]{1,4}" endRegion="block-string"/>
+        <Detect2Chars attribute="Char" context="Block-Regex-Square-Bracket" char="[" char1="^"/>
+        <DetectChar attribute="Char" context="Block-Regex-Square-Bracket" char="["/>
+        <IncludeRules context="Default-Regex"/>
+        <IncludeRules context="Block-String"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="Regex-Square-Bracket">
+        <LineContinue attribute="String" context="#stay"/>
+        <RegExpr attribute="String Char" context="#stay" String="\\." />
+        <DetectChar attribute="Char" context="#pop" char="]"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;" lookAhead="true"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Block-Regex-Square-Bracket">
+        <RegExpr attribute="String Char" context="#stay" String="\\." />
+        <DetectChar attribute="Char" context="#pop" char="]"/>
+        <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;" lookAhead="true"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Default-Regex">
+        <RegExpr attribute="String Char" context="#stay" String="\\." />
+        <Detect2Chars attribute="Char" context="#stay" char="(" char1="?"/>
+        <AnyChar attribute="Char" context="#stay" String="()|"/>
+        <AnyChar attribute="String Char" context="#stay" String="?+*." />
+      </context>
+
+      <!-- 1-line comment: #pop@EOL  -->
+      <context name="1-comment" lineEndContext="#pop" attribute="Comment">
+        <DetectSpaces />
+        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Modelines" />
+      </context>
+
+      <context name="block-comment" lineEndContext="#stay" attribute="Comment">
+        <DetectSpaces />
+        <Detect2Chars char="=" char1="#" context="#pop" attribute="Comment" endRegion="block-comment"/>
+        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Modelines" />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Variable" defStyleNum="dsNormal" />
+      <itemData name="Operator" defStyleNum="dsOperator"/>
+      <itemData name="Float" defStyleNum="dsFloat" />
+      <itemData name="Hex" defStyleNum="dsBaseN" />
+      <itemData name="Octal" defStyleNum="dsBaseN" />
+      <itemData name="Binary" defStyleNum="dsBaseN" />
+      <itemData name="Delimiter" defStyleNum="dsNormal" />
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="String Char" defStyleNum="dsSpecialChar"/>
+      <itemData name="Char" defStyleNum="dsChar"/>
+      <itemData name="Incomplete Char" defStyleNum="dsChar"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="Constant" defStyleNum="dsConstant"/>
+      <itemData name="Boolean" defStyleNum="dsExtension"/>
+      <itemData name="Macro" defStyleNum="dsPreprocessor"/>
+      <itemData name="Module" defStyleNum="dsBuiltIn"/>
+      <itemData name="Function" defStyleNum="dsNormal"/>
+      <itemData name="Command String" defStyleNum="dsSpecialString"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="FoldingComment" defStyleNum="dsRegionMarker" />
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start="#" />
+      <comment name="multiLine" start="#=" end="=#" />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator=""/>
+  </general>
+
+</language>
+
+<!-- It's recommended to put the following line in the Variables field under Settings->Configure Kate->Open/Save->Modes&Filetypes -->
+<!-- kate: space-indent on; indent-width 2; mixed-indent off; indent-mode cstyle; -->

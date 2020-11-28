@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language version="5" kateversion="5.0" name="JSP" section="Markup" extensions="*.jsp;*.JSP" mimetype="text/html" casesensitive="false" author="Rob Martin (rob@gamepimp.com)" license="LGPL">
+  <highlighting>
+
+    <list name="jsp-reserved-words">
+      <item>and</item>
+      <item>eq</item>
+      <item>gt</item>
+      <item>true</item>
+      <item>instanceof</item>
+      <item>or</item>
+      <item>ne</item>
+      <item>le</item>
+      <item>false</item>
+      <item>empty</item>
+      <item>not</item>
+      <item>lt</item>
+      <item>ge</item>
+      <item>null</item>
+      <item>div</item>
+      <item>mod</item>
+    </list>
+
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr String="&lt;%@\s*[a-zA-Z0-9_\.]*" attribute="Jsp Directive" context="Jsp Standard Directive"/>
+        <RegExpr String="&lt;\s*jsp:(declaration|expression|scriptlet)\s*&gt;" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <RegExpr String="&lt;\s*\/?s*jsp:[a-zA-Z0-9_\.]*" attribute="Jsp Directive" context="Jsp Xml Directive"/>
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <StringDetect String="&lt;!--" attribute="Html Comment" context="Html Comment"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+        <RegExpr String="&lt;\s*\/?\s*\$?[a-zA-Z0-9_]*:\$?[a-zA-Z0-9_]*" attribute="Keyword" context="Jsp Custom Tag"/>
+        <StringDetect String="&lt;![CDATA[" attribute="Normal Text" context="#stay"/>
+        <StringDetect String="]]&gt;" attribute="Normal Text" context="#stay"/>
+        <RegExpr String="&lt;script\b" attribute="Normal Text" context="JS" beginRegion="script" />
+        <RegExpr String="&lt;style\b" attribute="Normal Text" context="CSS" beginRegion="style" />
+        <RegExpr String="&lt;\s*\/?\s*[a-zA-Z0-9_]*" attribute="Normal Text" context="Html Attribute"/>
+      </context>
+
+      <context name="CSS" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" context="CSS content" char="&gt;" />
+        <Detect2Chars attribute="Normal Text" context="#pop" char="/" char1="&gt;" endRegion="style" />
+        <IncludeRules context="Html Attribute" />
+      </context>
+
+      <context name="CSS content" attribute="Normal Text" lineEndContext="#stay">
+        <StringDetect attribute="Normal Text" context="#pop#pop" String="&lt;/style>" endRegion="style" />
+        <IncludeRules context="##CSS" includeAttrib="true"/>
+      </context>
+
+      <context name="JS" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" context="JS content" char="&gt;" />
+        <Detect2Chars attribute="Normal Text" context="#pop" char="/" char1="&gt;" endRegion="script" />
+        <IncludeRules context="Html Attribute" />
+      </context>
+
+      <context name="JS content" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Normal Text" context="#pop#pop!Html Attribute" String="&lt;/script\b" endRegion="script" />
+        <RegExpr attribute="Jsp Comment" context="JS comment close" String="//(?=.*&lt;/script)" />
+        <IncludeRules context="Normal##JavaScript" includeAttrib="true"/>
+      </context>
+      <context name="JS comment close" attribute="Jsp Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <StringDetect attribute="Normal Text" context="#pop#pop#pop" String="&lt;/script" endRegion="script" />
+      </context>
+
+      <context name="Jsp Standard Directive" attribute="Jsp Param Name" lineEndContext="#stay">
+        <Detect2Chars char="%" char1="&gt;" attribute="Jsp Directive" context="#pop"/>
+        <RegExpr String="\s*=\s*" attribute="Normal Text" context="Jsp Standard Directive Value"/>
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+        <RegExpr String="&lt;\s*\/?\s*\$?\w*:\$?\w*" attribute="Keyword" context="Jsp Custom Tag"/>
+      </context>
+
+      <context name="Jsp Xml Directive" attribute="Jsp Param Name" lineEndContext="#stay">
+        <RegExpr String="\s*\/?\s*&gt;" attribute="Jsp Directive" context="#pop"/>
+        <RegExpr String="\s*=\s*" attribute="Normal Text" context="Jsp Xml Directive Value"/>
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+      </context>
+
+      <context name="Jsp Comment" attribute="Jsp Comment" lineEndContext="#stay">
+        <StringDetect String="--%&gt;" attribute="Jsp Comment" context="#pop"/>
+      </context>
+
+      <context name="Jsp Custom Tag" attribute="Identifier" lineEndContext="#stay">
+        <RegExpr String="\/?&gt;" attribute="Keyword" context="#pop"/>
+        <RegExpr String="\s*=\s*" attribute="Normal Text" context="Jsp Custom Tag Value"/>
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+      </context>
+
+      <context name="Jsp Standard Directive Value" attribute="Jsp Param Value" lineEndContext="#stay">
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+        <DetectChar char="&quot;" attribute="Jsp Param Value" context="Jsp Double Quoted Param Value"/>
+        <DetectChar char="'" attribute="Jsp Param Value" context="Jsp Single Quoted Param Value"/>
+        <Detect2Chars char="%" char1="&gt;" attribute="Jsp Directive" context="#pop#pop"/>
+      </context>
+
+      <context name="Jsp Xml Directive Value" attribute="Jsp Param Value" lineEndContext="#stay">
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+        <DetectChar char="&quot;" attribute="Jsp Param Value" context="Jsp Double Quoted Param Value"/>
+        <DetectChar char="'" attribute="Jsp Param Value" context="Jsp Single Quoted Param Value"/>
+        <RegExpr String="\s*\/?\s*&gt;" attribute="Jsp Directive" context="#pop#pop"/>
+      </context>
+
+      <context name="Jsp Custom Tag Value" attribute="Normal Text" lineEndContext="#stay">
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+        <DetectChar char="&quot;" attribute="Types" context="Jsp Double Quoted Custom Tag Value"/>
+        <DetectChar char="'" attribute="Types" context="Jsp Single Quoted Custom Tag Value"/>
+        <RegExpr String="\/?&gt;" attribute="Normal Text" context="#pop#pop"/>
+      </context>
+
+      <context name="Jsp Double Quoted Param Value" attribute="Jsp Param Value" lineEndContext="#stay">
+        <DetectChar char="&quot;" attribute="Jsp Param Value" context="#pop#pop"/>
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+      </context>
+
+      <context name="Jsp Single Quoted Param Value" attribute="Jsp Param Value" lineEndContext="#stay">
+        <DetectChar char="'" attribute="Jsp Param Value" context="#pop#pop"/>
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+      </context>
+
+      <context name="Jsp Double Quoted Custom Tag Value" attribute="Types" lineEndContext="#stay">
+        <DetectChar char="&quot;" attribute="Types" context="#pop#pop"/>
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+      </context>
+
+      <context name="Jsp Single Quoted Custom Tag Value" attribute="Types" lineEndContext="#stay">
+        <DetectChar char="'" attribute="Types" context="#pop#pop"/>
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+      </context>
+
+      <context name="Jsp Scriptlet" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars char="%" char1="&gt;" attribute="Jsp Scriptlet" context="#pop"/>
+        <RegExpr String="&lt;\s*jsp:(declaration|expression|scriptlet)\s*&gt;" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <keyword String="jsp-reserved-words" attribute="Keyword" context="#stay"/>
+        <IncludeRules context="##Java" includeAttrib="true"/>
+      </context>
+
+      <context name="Jsp Expression" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Jsp Expression" context="#pop"/>
+        <keyword String="jsp-reserved-words" attribute="Keyword" context="#stay"/>
+        <IncludeRules context="##Java" includeAttrib="true"/>
+      </context>
+
+      <context name="Html Attribute" attribute="Identifier" lineEndContext="#stay">
+        <RegExpr String="\/?&gt;" attribute="Normal Text" context="#pop"/>
+        <RegExpr String="\s*=\s*" attribute="Normal Text" context="Html Value"/>
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+      </context>
+
+      <context name="Html Value" attribute="Types" lineEndContext="#stay">
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+        <RegExpr String="&lt;\s*\/?\s*\$?\w*:\$?\w*" attribute="Keyword" context="Jsp Custom Tag"/>
+        <RegExpr String="(&quot;|&amp;quot;|&amp;#34;)" attribute="Types" context="Html Double Quoted Value"/>
+        <RegExpr String="('|&amp;#39;)" attribute="Types" context="Html Single Quoted Value"/>
+        <RegExpr String="\s*#?-?_?\.?[a-zA-Z0-9]*" attribute="Types" context="Html Unquoted Value"/>
+        <RegExpr String="\/?&gt;" attribute="Normal Text" context="#pop#pop"/>
+      </context>
+
+      <context name="Html Double Quoted Value" attribute="Types" lineEndContext="#stay">
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+        <RegExpr String="&lt;\s*\/?\s*\$?\w*:\$?\w*" attribute="Keyword" context="Jsp Custom Tag"/>
+        <RegExpr String="(&quot;|&amp;quot;|&amp;#34;)" attribute="Types" context="#pop#pop"/>
+      </context>
+
+      <context name="Html Single Quoted Value" attribute="Types" lineEndContext="#stay">
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+        <RegExpr String="&lt;\s*\/?\s*\$?\w*:\$?\w*" attribute="Keyword" context="Jsp Custom Tag"/>
+        <RegExpr String="('|&amp;#39;)" attribute="Types" context="#pop#pop"/>
+      </context>
+
+      <context name="Html Unquoted Value" attribute="Types" lineEndContext="#stay">
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+        <RegExpr String="&lt;\s*\/?\s*\$?\w*:\$?\w*" attribute="Keyword" context="Jsp Custom Tag"/>
+        <RegExpr String="\/?&gt;" attribute="Normal Text" context="#pop#pop#pop"/>
+        <RegExpr String="\s+" attribute="Types" context="#pop#pop"/>
+      </context>
+
+      <context name="Html Comment" attribute="Html Comment" lineEndContext="#stay">
+        <StringDetect String="&lt;%--" attribute="Jsp Comment" context="Jsp Comment"/>
+        <RegExpr String="&lt;%(!|=)?" attribute="Jsp Scriptlet" context="Jsp Scriptlet"/>
+        <Detect2Chars char="$" char1="{" attribute="Jsp Expression" context="Jsp Expression"/>
+        <RegExpr String="\/*--&gt;" attribute="Html Comment" context="#pop"/>
+      </context>
+
+    </contexts>
+
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Identifier" defStyleNum="dsOthers"/>
+      <itemData name="Types" defStyleNum="dsDataType"/>
+
+      <itemData name="Html Comment" defStyleNum="dsComment"/>
+
+      <itemData name="Jsp Directive" defStyleNum="dsBuiltIn" bold="true" italic="true"/>
+      <itemData name="Jsp Scriptlet" defStyleNum="dsPreprocessor" bold="true" italic="false"/>
+      <itemData name="Jsp Expression" defStyleNum="dsPreprocessor" bold="true" italic="false"/>
+      <itemData name="Jsp Comment" defStyleNum="dsComment"/>
+
+      <itemData name="Jsp Param Name" defStyleNum="dsOthers"/>
+      <itemData name="Jsp Param Value" defStyleNum="dsString"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="multiLine" start="&lt;%-- " end=" --%&gt;" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

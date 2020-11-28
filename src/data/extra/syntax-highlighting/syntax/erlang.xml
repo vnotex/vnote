@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+          <!ENTITY atomstr    "\b[a-z][_a-z@-Z0-9]*(?:(?=[^_a-z@-Z0-9])|$)" >
+          <!ENTITY varstr    "\b[_A-Z][_a-z@-Z0-9]*(?:(?=[^_a-z@-Z0-9])|$)" >
+          <!-- pragmas defined here, because "keyword" can't handle the leading '-' -->
+          <!ENTITY pragmas 
+             "^(?:-module|-export|-define|-undef|-ifdef|-ifndef|-else|-endif|-include|-include_lib)" >
+          <!--  same with separators: (from s3.9 p 24 of erlang spec) -->
+          <!ENTITY separators "(?:\(|\)|\{|\}|\[|\]|\.|\:|\||\|\||;|\,|\?|-&gt;|\#)" >
+          <!--  and operators - although words are dealt with separately -->
+          <!ENTITY opsymbols 
+                   "(?:\+|-|\*|\/|==|\/=|=:=|=\/=|&lt;|=&lt;|&gt;|&gt;=|\+\+|--|=|!|&lt;-)" >
+]
+>
+<!--
+    Copyright (C) 2007 Bill Ross <bill@emailme.net.au>
+
+    
+    This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Library General Public
+   License version 2 as published by the Free Software Foundation.
+
+   This library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Library General Public License for more details.
+
+   You should have received a copy of the GNU Library General Public License
+   along with this library; see the file COPYING.LIB.  If not, write to
+   the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02110-1301, USA.
+  
+   Changes 
+   v1-0-2 (2008-01-10) - fixed to '_" in atom and variable names (thanks to Vito De Tullio)
+                                   - fixed highlighting problem when '@' at end of atom/variable
+-->
+
+<language name="Erlang" version="3" kateversion="5.0" section="Scripts" extensions="*.erl" mimetype="" author="Bill Ross (bill@emailme.net.au)" license="LGPLv2">
+  <highlighting>
+    <list name="keywords">
+      <!-- ====== s3.8 p 24 of erlang spec ===== -->
+      <item>after</item>
+      <item>begin</item>
+      <item>case</item>
+      <item>catch</item>
+      <item>cond</item>
+      <item>end</item>
+      <item>fun</item>
+      <item>if</item>
+      <item>let</item>
+      <item>of</item>
+      <item>query</item>
+      <item>receive</item>
+      <item>all_true</item>
+      <item>some_true</item>
+    </list>
+    <list name="operators">
+      <!-- operators: s3.9 p 24 of erlang spec -->
+      <!-- see also opsymbols for the symbols -->
+      <item>div</item>
+      <item>rem</item>
+      <item>or</item>
+      <item>xor</item>
+      <item>bor</item>
+      <item>bxor</item>
+      <item>bsl</item>
+      <item>bsr</item>
+      <item>and</item>
+      <item>band</item>
+      <item>not</item>
+      <item>bnot</item>
+    </list>
+    <list name="functions">
+      <!-- all standard (erlang) functions are here, -->
+      <!-- except those defined as erlang:function (those will show as functions anyway -->
+      <item>abs</item>
+      <item>accept</item>
+      <item>alarm</item>
+      <item>apply</item>
+      <item>atom_to_list</item>
+      <item>binary_to_list</item>
+      <item>binary_to_term</item>
+      <item>check_process_code</item>
+      <item>concat_binary</item>
+      <item>date</item>
+      <item>delete_module</item>
+      <item>disconnect_node</item>
+      <item>element</item>
+      <item>erase</item>
+      <item>exit</item>
+      <item>float</item>
+      <item>float_to_list</item>
+      <item>garbage_collect</item>
+      <item>get</item>
+      <item>get_keys</item>
+      <item>group_leader</item>
+      <item>halt</item>
+      <item>hd</item>
+      <item>integer_to_list</item>
+      <item>is_alive</item>
+      <item>is_atom</item>
+      <item>is_binary</item>
+      <item>is_boolean</item>
+      <item>is_float</item>
+      <item>is_function</item>
+      <item>is_integer</item>
+      <item>is_list</item>
+      <item>is_number</item>
+      <item>is_pid</item>
+      <item>is_port</item>
+      <item>is_process_alive</item>
+      <item>is_record</item>
+      <item>is_reference</item>
+      <item>is_tuple</item>
+      <item>length</item>
+      <item>link</item>
+      <item>list_to_atom</item>
+      <item>list_to_binary</item>
+      <item>list_to_float</item>
+      <item>list_to_integer</item>
+      <item>list_to_pid</item>
+      <item>list_to_tuple</item>
+      <item>load_module</item>
+      <item>loaded</item>
+      <item>localtime</item>
+      <item>make_ref</item>
+      <item>module_loaded</item>
+      <item>node</item>
+      <item>nodes</item>
+      <item>now</item>
+      <item>open_port</item>
+      <item>pid_to_list</item>
+      <item>port_close</item>
+      <item>port_command</item>
+      <item>port_connect</item>
+      <item>port_control</item>
+      <item>ports</item>
+      <item>pre_loaded</item>
+      <item>process_flag</item>
+      <item>process_info</item>
+      <item>processes</item>
+      <item>purge_module</item>
+      <item>put</item>
+      <item>register</item>
+      <item>registered</item>
+      <item>round</item>
+      <item>self</item>
+      <item>setelement</item>
+      <item>size</item>
+      <item>spawn</item>
+      <item>spawn_link</item>
+      <item>spawn_opt</item>
+      <item>split_binary</item>
+      <item>statistics</item>
+      <item>term_to_binary</item>
+      <item>throw</item>
+      <item>time</item>
+      <item>tl</item>
+      <item>trunc</item>
+      <item>tuple_to_list</item>
+      <item>unlink</item>
+      <item>unregister</item>
+      <item>whereis</item>
+   </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+        <RegExpr attribute="Pragma" context="#stay" column="0" String="&pragmas;" />
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Operator" context="#stay" String="operators" />
+        <RegExpr attribute="Operator" context="#stay" String="&opsymbols;" />
+        <keyword attribute="Function" context="#stay" String="functions" />
+        <RegExpr attribute="Separator" context="#stay" String="&separators;" />
+        <DetectSpaces />
+        <DetectChar attribute="Comment" context="comment" char="%" />
+
+        <!-- Functions (in addition to named functions dealt with above) -->
+        <!-- simple version - got to be in form module:function -->
+        <RegExpr attribute="Function" context="#stay" String="&atomstr;:&atomstr;" />
+        <RegExpr attribute="Function" context="isfunction" String="&atomstr;\(" lookAhead="true" />
+
+        <!-- Variables - begin with upper case, or between single quotes -->
+        <RegExpr attribute="Variable" context="#stay" String="&varstr;" />
+
+        <!-- atoms - begin with lower case (letters, numbers, @), 
+             or anything between single quotes -->
+        <DetectChar attribute="Atom" context="atomquote" char="'" /> 
+        <RegExpr attribute="Atom" context="#stay" String="&atomstr;" />
+        
+        <DetectChar attribute="String" context="stringquote" char="&quot;" />
+        
+        <!-- numbers - these work -->
+        <!-- integers have three forms 7, 3#22, $A -->
+        <!-- float must have a number after the decimal point, or it doesn't count -->
+        <RegExpr attribute="Float" context="#stay" String="[0-9]+\.[0-9]+(?:[eE][+-]?[0-9]+)?" />
+        <RegExpr attribute="Number" context="#stay" String="\d+#[a-zA-Z0-9]+" />
+        <RegExpr attribute="Integer" context="#stay" String="\$\S" />
+        <RegExpr attribute="Integer" context="#stay" String="[0-9]+" />
+
+      </context>
+
+      <!-- isfunction -->
+      <!-- confirm that this is a function and capture name for formatting -->
+      <!-- lookahead for '(' already performed by the time we are here -->
+      <context name="isfunction" attribute="Function" lineEndContext="#pop"  >
+        <RegExpr attribute="Function" context="#pop" String="&atomstr;" />
+      </context>
+
+      <!-- finish off the atom in quoted string (allow for escaped single quotes -->
+      <context name="atomquote" attribute="Atom" lineEndContext="#pop">
+        <RegExpr attribute="Atom" context="#pop" String="(?:(?:\\')?[^']*)*'" />
+      </context>
+
+      <!-- finish off the atom in quoted string (allow for escaped single quotes -->
+      <context name="stringquote" attribute="String" lineEndContext="#pop">
+        <RegExpr attribute="String" context="#pop" String="(?:(?:\\&quot;)?[^&quot;]*)*&quot;" />
+      </context>
+      
+      <!-- finish off the comment (allows for alerts) -->
+      <context name="comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier />
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"               defStyleNum="dsNormal" />
+      <itemData name="Keyword"                   defStyleNum="dsKeyword" />
+      <itemData name="Pragma"                    defStyleNum="dsKeyword" />
+      <itemData name="Function"                  defStyleNum="dsFunction" />
+      <itemData name="Separator"                 defStyleNum="dsFunction" />
+      <itemData name="Operator"                  defStyleNum="dsOperator"  />
+      <itemData name="Variable"                  defStyleNum="dsVariable" />
+      <itemData name="Integer"                   defStyleNum="dsDecVal" />
+      <itemData name="Number"                    defStyleNum="dsBaseN" />
+      <itemData name="Float"                     defStyleNum="dsFloat" />
+      <itemData name="Atom"                      defStyleNum="dsChar" />
+      <itemData name="String"                    defStyleNum="dsString" />
+      <itemData name="Comment"                   defStyleNum="dsComment" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="%" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

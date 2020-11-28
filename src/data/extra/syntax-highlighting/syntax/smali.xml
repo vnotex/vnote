@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+    <!ENTITY hex "[\da-fA-F]">
+    <!ENTITY label "(?&lt;=^|\s|{)\:\w+">
+    <!ENTITY typeIdentifiers "ZBSCIJFD">
+    <!ENTITY fieldTypeLookBehind "\w\:">
+    <!ENTITY fieldLookBehind "[\s,;\(\)]">
+    <!ENTITY builtin "(javax?|dalvik|android)/[\w\$/]+">
+]>
+<language name="Smali" version="1" kateversion="5.0" section="Sources" extensions="*.smali" mimetype="text/x-smali" license="MIT">
+    <highlighting>
+        <list name="mnemonics">
+            <item>nop</item>
+            <item>move</item>
+            <item>move/from16</item>
+            <item>move/16</item>
+            <item>move-wide</item>
+            <item>move-wide/from16</item>
+            <item>move-wide/16</item>
+            <item>move-object</item>
+            <item>move-object/from16</item>
+            <item>move-object/16</item>
+            <item>move-result</item>
+            <item>move-result-wide</item>
+            <item>move-result-object</item>
+            <item>move-exception</item>
+            <item>return-void</item>
+            <item>return</item>
+            <item>return-wide</item>
+            <item>return-object</item>
+            <item>const/4</item>
+            <item>const/16</item>
+            <item>const</item>
+            <item>const/high16</item>
+            <item>const-wide/16</item>
+            <item>const-wide/32</item>
+            <item>const-wide</item>
+            <item>const-wide/high16</item>
+            <item>const-string</item>
+            <item>const-string/jumbo</item>
+            <item>const-class</item>
+            <item>monitor-enter</item>
+            <item>monitor-exit</item>
+            <item>check-cast</item>
+            <item>instance-of</item>
+            <item>array-length</item>
+            <item>new-instance</item>
+            <item>new-array</item>
+            <item>filled-new-array</item>
+            <item>filled-new-array/range</item>
+            <item>fill-array-data</item>
+            <item>throw</item>
+            <item>goto</item>
+            <item>goto/16</item>
+            <item>goto/32</item>
+            <item>packed-switch</item>
+            <item>sparse-switch</item>
+            <item>cmpl-float</item>
+            <item>cmpg-float</item>
+            <item>cmpl-double</item>
+            <item>cmpg-double</item>
+            <item>cmp-long</item>
+            <item>if-eq</item>
+            <item>if-ne</item>
+            <item>if-lt</item>
+            <item>if-ge</item>
+            <item>if-gt</item>
+            <item>if-le</item>
+            <item>if-eqz</item>
+            <item>if-nez</item>
+            <item>if-ltz</item>
+            <item>if-gez</item>
+            <item>if-gtz</item>
+            <item>if-lez</item>
+            <item>aget</item>
+            <item>aget-wide</item>
+            <item>aget-object</item>
+            <item>aget-boolean</item>
+            <item>aget-byte</item>
+            <item>aget-char</item>
+            <item>aget-short</item>
+            <item>aput</item>
+            <item>aput-wide</item>
+            <item>aput-object</item>
+            <item>aput-boolean</item>
+            <item>aput-byte</item>
+            <item>aput-char</item>
+            <item>aput-short</item>
+            <item>iget</item>
+            <item>iget-wide</item>
+            <item>iget-object</item>
+            <item>iget-boolean</item>
+            <item>iget-byte</item>
+            <item>iget-char</item>
+            <item>iget-short</item>
+            <item>iput</item>
+            <item>iput-wide</item>
+            <item>iput-object</item>
+            <item>iput-boolean</item>
+            <item>iput-byte</item>
+            <item>iput-char</item>
+            <item>iput-short</item>
+            <item>sget</item>
+            <item>sget-wide</item>
+            <item>sget-object</item>
+            <item>sget-boolean</item>
+            <item>sget-byte</item>
+            <item>sget-char</item>
+            <item>sget-short</item>
+            <item>sput</item>
+            <item>sput-wide</item>
+            <item>sput-object</item>
+            <item>sput-boolean</item>
+            <item>sput-byte</item>
+            <item>sput-char</item>
+            <item>sput-short</item>
+            <item>invoke-virtual</item>
+            <item>invoke-super</item>
+            <item>invoke-direct</item>
+            <item>invoke-static</item>
+            <item>invoke-interface</item>
+            <item>invoke-virtual/range</item>
+            <item>invoke-super/range</item>
+            <item>invoke-direct/range</item>
+            <item>invoke-static/range</item>
+            <item>invoke-interface/range</item>
+            <item>neg-int</item>
+            <item>not-int</item>
+            <item>neg-long</item>
+            <item>not-long</item>
+            <item>neg-float</item>
+            <item>neg-double</item>
+            <item>int-to-long</item>
+            <item>int-to-float</item>
+            <item>int-to-double</item>
+            <item>long-to-int</item>
+            <item>long-to-float</item>
+            <item>long-to-double</item>
+            <item>float-to-int</item>
+            <item>float-to-long</item>
+            <item>float-to-double</item>
+            <item>double-to-int</item>
+            <item>double-to-long</item>
+            <item>double-to-float</item>
+            <item>int-to-byte</item>
+            <item>int-to-char</item>
+            <item>int-to-short</item>
+            <item>add-int</item>
+            <item>sub-int</item>
+            <item>mul-int</item>
+            <item>div-int</item>
+            <item>rem-int</item>
+            <item>and-int</item>
+            <item>or-int</item>
+            <item>xor-int</item>
+            <item>shl-int</item>
+            <item>shr-int</item>
+            <item>ushr-int</item>
+            <item>add-long</item>
+            <item>sub-long</item>
+            <item>mul-long</item>
+            <item>div-long</item>
+            <item>rem-long</item>
+            <item>and-long</item>
+            <item>or-long</item>
+            <item>xor-long</item>
+            <item>shl-long</item>
+            <item>shr-long</item>
+            <item>ushr-long</item>
+            <item>add-float</item>
+            <item>sub-float</item>
+            <item>mul-float</item>
+            <item>div-float</item>
+            <item>rem-float</item>
+            <item>add-double</item>
+            <item>sub-double</item>
+            <item>mul-double</item>
+            <item>div-double</item>
+            <item>rem-double</item>
+            <item>add-int/2addr</item>
+            <item>sub-int/2addr</item>
+            <item>mul-int/2addr</item>
+            <item>div-int/2addr</item>
+            <item>rem-int/2addr</item>
+            <item>and-int/2addr</item>
+            <item>or-int/2addr</item>
+            <item>xor-int/2addr</item>
+            <item>shl-int/2addr</item>
+            <item>shr-int/2addr</item>
+            <item>ushr-int/2addr</item>
+            <item>add-long/2addr</item>
+            <item>sub-long/2addr</item>
+            <item>mul-long/2addr</item>
+            <item>div-long/2addr</item>
+            <item>rem-long/2addr</item>
+            <item>and-long/2addr</item>
+            <item>or-long/2addr</item>
+            <item>xor-long/2addr</item>
+            <item>shl-long/2addr</item>
+            <item>shr-long/2addr</item>
+            <item>ushr-long/2addr</item>
+            <item>add-float/2addr</item>
+            <item>sub-float/2addr</item>
+            <item>mul-float/2addr</item>
+            <item>div-float/2addr</item>
+            <item>rem-float/2addr</item>
+            <item>add-double/2addr</item>
+            <item>sub-double/2addr</item>
+            <item>mul-double/2addr</item>
+            <item>div-double/2addr</item>
+            <item>rem-double/2addr</item>
+            <item>add-int/lit16</item>
+            <item>rsub-int</item>
+            <item>mul-int/lit16</item>
+            <item>div-int/lit16</item>
+            <item>rem-int/lit16</item>
+            <item>and-int/lit16</item>
+            <item>or-int/lit16</item>
+            <item>xor-int/lit16</item>
+            <item>add-int/lit8</item>
+            <item>rsub-int/lit8</item>
+            <item>mul-int/lit8</item>
+            <item>div-int/lit8</item>
+            <item>rem-int/lit8</item>
+            <item>and-int/lit8</item>
+            <item>or-int/lit8</item>
+            <item>xor-int/lit8</item>
+            <item>shl-int/lit8</item>
+            <item>shr-int/lit8</item>
+            <item>ushr-int/lit8</item>
+            <item>iget-volatile</item>
+            <item>iput-volatile</item>
+            <item>sget-volatile</item>
+            <item>sput-volatile</item>
+            <item>iget-object-volatile</item>
+            <item>iget-wide-volatile</item>
+            <item>iput-wide-volatile</item>
+            <item>sget-wide-volatile</item>
+            <item>sput-wide-volatile</item>
+            <item>sget-object-volatile</item>
+            <item>throw-verification-error</item>
+            <item>execute-inline</item>
+            <item>execute-inline/range</item>
+            <item>invoke-object-init/range</item>
+            <item>return-void-barrier</item>
+            <item>iget-quick</item>
+            <item>invoke-polymorphic</item>
+            <item>invoke-polymorphic/range</item>
+            <item>invoke-custom</item>
+            <item>invoke-custom/range</item>
+            <item>const-method-handle</item>
+            <item>const-method-type</item>
+        </list>
+        <list name="keywords">
+            <!-- Access flags -->
+            <item>public</item>
+            <item>private</item>
+            <item>protected</item>
+            <item>static</item>
+            <item>final</item>
+            <item>synchronized</item>
+            <item>volatile</item>
+            <item>bridge</item>
+            <item>transient</item>
+            <item>varargs</item>
+            <item>native</item>
+            <item>interface</item>
+            <item>abstract</item>
+            <item>strictfp</item>
+            <item>synthetic</item>
+            <item>annotation</item>
+            <item>enum</item>
+            <item>constructor</item>
+            <item>declared-synchronized</item>
+
+            <!-- Visibility values -->
+            <item>build</item>
+            <item>runtime</item>
+            <item>system</item>
+        </list>
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <WordDetect attribute="Attribute" String=".class" context="#stay" />
+                <WordDetect attribute="Attribute" String=".super" context="#stay" />
+                <WordDetect attribute="Attribute" String=".implements" context="#stay" />
+                <WordDetect attribute="Attribute" String=".source" context="#stay" />
+                <WordDetect attribute="Attribute" String=".field" context="#stay" />
+                <RegExpr attribute="Attribute" String="\.end\s+field" firstNonSpace="true" context="#stay" />
+                <WordDetect attribute="Attribute" String=".annotation" context="Annotation" beginRegion="Annotation" />
+                <WordDetect attribute="Attribute" String=".subannotation" context="#stay" />
+                <RegExpr attribute="Attribute" String="\.end\s+subannotation" firstNonSpace="true" context="#stay" />
+                <WordDetect attribute="Attribute" String=".enum" context="#stay" />
+                <WordDetect attribute="Attribute" String=".method" context="MethodDeclaration" beginRegion="Method" />
+                <keyword attribute="Keyword" context="#stay" String="keywords" />
+                <IncludeRules context="Global" />
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Literal">
+                <WordDetect attribute="Bool" String="true" context="#stay" />
+                <WordDetect attribute="Bool" String="false" context="#stay" />
+                <WordDetect attribute="Float" String="-infinity" insensitive="true" context="#stay" />
+                <WordDetect attribute="Float" String="infinity" insensitive="true" context="#stay" />
+                <WordDetect attribute="Float" String="-infinityD" insensitive="true" context="#stay" />
+                <WordDetect attribute="Float" String="infinityD" insensitive="true" context="#stay" />
+                <WordDetect attribute="Float" String="-infinityF" insensitive="true" context="#stay" />
+                <WordDetect attribute="Float" String="infinityF" insensitive="true" context="#stay" />
+                <WordDetect attribute="Float" String="NaN" insensitive="true" context="#stay" />
+                <WordDetect attribute="Float" String="NaND" insensitive="true" context="#stay" />
+                <WordDetect attribute="Float" String="NaNF" insensitive="true" context="#stay" />
+                <RegExpr attribute="Float" context="#stay" String="\-?\d*(\d+\.|\.\d+|\d+)\d*[eE][\-\+]?\d+[dDfF]?\b" />
+                <RegExpr attribute="Float" context="#stay" String="\-?\d*(\d+\.|\.\d+)\d*[dDfF]?" />
+                <RegExpr attribute="Float" context="#stay" String="\-?\d+[dDfF]\b" />
+                <RegExpr attribute="Float" context="#stay" String="\-?0x&hex;*(\.|&hex;+)&hex;*[pP]\-?\d+[dDfF]?\b" />
+                <RegExpr attribute="Hex" context="#stay" String="\-?0x&hex;+[LtTsS]?\b" />
+                <RegExpr attribute="Decimal" context="#stay" String="\-?\d+[tTLsS]?\b" />
+                <HlCChar attribute="Char" context="#stay" />
+                <RegExpr attribute="Char" context="#stay" String="'\\u&hex;{4}'" />
+                <DetectChar attribute="String" context="String" char="&quot;" />
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Global">
+                <DetectChar attribute="Comment" context="Comment" char="#" />
+                <RegExpr attribute="Method" context="#stay" String="\b[\w\$]+\s*(?=\s*>?\s*\()" />
+                <RegExpr attribute="Field" context="#stay" String="\b[\w\$]+\s*(?=\:)" />
+                <IncludeRules context="Literal" />
+                <RegExpr attribute="Built-in" context="#stay" String="(?&lt;=&fieldTypeLookBehind;L)&builtin;" />
+                <RegExpr attribute="Built-in" context="#stay" String="(?&lt;=&fieldLookBehind;L)&builtin;" />
+                <RegExpr attribute="Built-in" context="#stay" String="(?&lt;=\[L)&builtin;" />
+                <RegExpr attribute="Built-in" context="#stay" String="(?&lt;=[&typeIdentifiers;]L)&builtin;" />
+                <RegExpr attribute="Data Type" context="#stay" String="(?&lt;=&fieldTypeLookBehind;L)[\w/\$]+" />
+                <RegExpr attribute="Data Type" context="#stay" String="(?&lt;=&fieldLookBehind;L)[\w/\$]+" />
+                <RegExpr attribute="Data Type" context="#stay" String="(?&lt;=\[L)[\w/\$]+" />
+                <RegExpr attribute="Data Type" context="#stay" String="(?&lt;=[&typeIdentifiers;]L)[\w/\$]+" />
+                <RegExpr attribute="Type Identifier" context="#stay" String="(?&lt;=&fieldTypeLookBehind;)\[*([&typeIdentifiers;]|L)" />
+                <RegExpr attribute="Type Identifier" context="#stay" String="(?&lt;=&fieldLookBehind;)(\[*[&typeIdentifiers;])*\[*([&typeIdentifiers;]|L)" />
+                <RegExpr attribute="Type Identifier" context="#stay" String="(?&lt;=[;&typeIdentifiers;\(]\))V" />
+                <Detect2Chars attribute="Operator" context="#stay" char="." char1="." />
+                <DetectChar attribute="Symbol" context="#stay" char="{" />
+                <DetectChar attribute="Symbol" context="#stay" char="}" />
+                <DetectChar attribute="Symbol" context="#stay" char="&lt;" />
+                <DetectChar attribute="Symbol" context="#stay" char="&gt;" />
+                <DetectChar attribute="Symbol" context="#stay" char=":" />
+                <DetectChar attribute="Symbol" context="#stay" char=";" />
+                <DetectChar attribute="Symbol" context="#stay" char="=" />
+                <DetectChar attribute="Symbol" context="#stay" char="(" />
+                <DetectChar attribute="Symbol" context="#stay" char=")" />
+            </context>
+            <context attribute="Normal Text" lineEndContext="Method" name="MethodDeclaration">
+                <keyword attribute="Keyword" context="#stay" String="keywords" />
+                <IncludeRules context="Global" />
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Method">
+                <WordDetect attribute="Attribute" String=".registers" context="#stay" />
+                <WordDetect attribute="Attribute" String=".locals" context="#stay" />
+                <WordDetect attribute="Attribute" String=".annotation" context="Annotation" beginRegion="Annotation" />
+                <WordDetect attribute="Attribute" String=".array-data" context="ArrayData" beginRegion="ArrayData" />
+                <WordDetect attribute="Attribute" String=".packed-switch" context="PackedSwitch" beginRegion="PackedSwitch" />
+                <WordDetect attribute="Attribute" String=".sparse-switch" context="SparseSwitch" beginRegion="SparseSwitch" />
+                <WordDetect attribute="Attribute" String=".catch" context="#stay" />
+                <WordDetect attribute="Attribute" String=".catchall" context="#stay" />
+                <WordDetect attribute="Attribute" String=".line" context="#stay" />
+                <WordDetect attribute="Attribute" String=".param" context="Param" />
+                <RegExpr attribute="Attribute" String="\.end\s+param" firstNonSpace="true" context="#stay" />
+                <WordDetect attribute="Attribute" String=".local" context="#stay" />
+                <RegExpr attribute="Attribute" String="\.end\s+local" firstNonSpace="true" context="#stay" />
+                <RegExpr attribute="Attribute" String="\.restart\s+local" firstNonSpace="true" context="#stay" />
+                <WordDetect attribute="Attribute" String=".prologue" context="#stay" />
+                <WordDetect attribute="Attribute" String=".epilogue" context="#stay" />
+                <keyword attribute="Mnemonic" context="#stay" String="mnemonics" />
+                <RegExpr attribute="Attribute" String="\.end\s+method" firstNonSpace="true" context="#pop#pop" endRegion="Method" />
+                <RegExpr attribute="Register" context="#stay" String="\b(v|p)[0-9]+\b" />
+                <RegExpr attribute="Label" context="#stay" String="&label;" />
+                <Detect2Chars attribute="Operator" context="#stay" char="-" char1=">" />
+                <IncludeRules context="Global" />
+            </context>
+            <context attribute="Annotation" lineEndContext="AnnotationBody" name="Annotation">
+                <IncludeRules context="Global" />
+                <keyword attribute="Keyword" context="#stay" String="keywords" />
+            </context>
+            <context attribute="Attribute" lineEndContext="#stay" name="AnnotationBody">
+                <IncludeRules context="Global" />
+                <RegExpr attribute="Attribute" String="\.end\s+annotation" firstNonSpace="true" context="#pop#pop" endRegion="Annotation" />
+            </context>
+            <context attribute="Attribute" lineEndContext="PackedSwitchBody" name="PackedSwitch">
+                <IncludeRules context="Literal" />
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="PackedSwitchBody">
+                <DetectChar attribute="Comment" context="Comment" char="#" />
+                <RegExpr attribute="Label" context="#stay" String="&label;" />
+                <RegExpr attribute="Attribute" String="\.end\s+packed\-switch" firstNonSpace="true" context="#pop#pop" endRegion="PackedSwitch" />
+            </context>
+            <context attribute="Attribute" lineEndContext="SparseSwitchBody" name="SparseSwitch">
+                <IncludeRules context="Literal" />
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="SparseSwitchBody">
+                <DetectChar attribute="Comment" context="Comment" char="#" />
+                <IncludeRules context="Literal" />
+                <RegExpr attribute="Label" context="#stay" String="&label;" />
+                <Detect2Chars attribute="Operator" context="#stay" char="-" char1=">" />
+                <RegExpr attribute="Attribute" String="\.end\s+sparse\-switch" firstNonSpace="true" context="#pop#pop" endRegion="SparseSwitch" />
+            </context>
+            <context attribute="Normal Text" lineEndContext="ArrayDataBody" name="ArrayData">
+                <IncludeRules context="Literal" />
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="ArrayDataBody">
+                <DetectChar attribute="Comment" context="Comment" char="#" />
+                <IncludeRules context="Literal" />
+                <RegExpr attribute="Attribute" String="\.end\s+array\-data" firstNonSpace="true" context="#pop#pop" endRegion="ArrayData" />
+            </context>
+            <context attribute="Normal Text" lineEndContext="#pop" name="Param">
+                <RegExpr attribute="Register" context="#stay" String="\bp[0-9]+\b" />
+                <RegExpr attribute="Variable" context="#stay" String="(?&lt;=,)\s*[\w]+" />
+                <IncludeRules context="Literal" />
+            </context>
+            <context attribute="String" lineEndContext="#pop" name="String">
+                <LineContinue attribute="String" context="#stay"/>
+                <HlCStringChar attribute="String Char" context="#stay"/>
+                <RegExpr attribute="String Char" context="#stay" String="\\u[0-9a-fA-F]{4}"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context attribute="Comment" lineEndContext="#pop" name="Comment">
+                <IncludeRules context="##Alerts"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text"     defStyleNum="dsNormal" spellChecking="false" />
+            <itemData name="Attribute"       defStyleNum="dsAttribute" spellChecking="false" />
+            <itemData name="Annotation"      defStyleNum="dsAttribute" spellChecking="false" />
+            <itemData name="Mnemonic"        defStyleNum="dsKeyword" spellChecking="false" />
+            <itemData name="Keyword"         defStyleNum="dsKeyword" spellChecking="false" />
+            <itemData name="Method"          defStyleNum="dsFunction" spellChecking="false" />
+            <itemData name="Register"        defStyleNum="dsVariable" spellChecking="false" />
+            <itemData name="Field"           defStyleNum="dsVariable" spellChecking="false" />
+            <itemData name="Variable"        defStyleNum="dsVariable" />
+            <itemData name="Operator"        defStyleNum="dsOperator" spellChecking="false" />
+            <itemData name="Type Identifier" defStyleNum="dsDataType" italic="true" spellChecking="false" />
+            <itemData name="Data Type"       defStyleNum="dsDataType" italic="false" spellChecking="false" />
+            <itemData name="Label"           defStyleNum="dsOthers" spellChecking="false" />
+            <itemData name="Decimal"         defStyleNum="dsDecVal" spellChecking="false" />
+            <itemData name="Bool"            defStyleNum="dsBaseN" spellChecking="false" />
+            <itemData name="Hex"             defStyleNum="dsBaseN" spellChecking="false" />
+            <itemData name="Float"           defStyleNum="dsFloat" spellChecking="false" />
+            <itemData name="Char"            defStyleNum="dsChar" spellChecking="false" />
+            <itemData name="String"          defStyleNum="dsString" />
+            <itemData name="String Char"     defStyleNum="dsSpecialChar" spellChecking="false" />
+            <itemData name="Comment"         defStyleNum="dsComment" />
+            <itemData name="Symbol"          defStyleNum="dsNormal" spellChecking="false" />
+            <itemData name="Built-in"        defStyleNum="dsBuiltIn" spellChecking="false" />
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="#"/>
+        </comments>
+        <keywords casesensitive="1" weakDeliminator="-/[$" />
+    </general>
+</language>

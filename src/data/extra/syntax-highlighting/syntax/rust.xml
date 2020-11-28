@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (c) 2015 The Rust Project Developers
+
+    Permission is hereby granted, free of charge, to any
+    person obtaining a copy of this software and associated
+    documentation files (the "Software"), to deal in the
+    Software without restriction, including without
+    limitation the rights to use, copy, modify, merge,
+    publish, distribute, sublicense, and/or sell copies of
+    the Software, and to permit persons to whom the Software
+    is furnished to do so, subject to the following
+    conditions:
+
+    The above copyright notice and this permission notice
+    shall be included in all copies or substantial portions
+    of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+    ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+    TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+    PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+    SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+    IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.
+-->
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!ENTITY rustIdent "([a-zA-Z_]|[^[:ascii:]])(\w|[^[:ascii:]])*">
+	<!ENTITY rustIntSuf "([iu](8|16|32|64|128|size)?)?">
+	<!ENTITY commonEscape "([trn0&apos;&quot;\\]|x[0-9a-fA-F]{2})">
+	<!ENTITY unicodeEscape "u\{([0-9a-fA-F]_*){1,6}\}">
+]>
+<language name="Rust" version="7" kateversion="5.0" section="Sources" extensions="*.rs" mimetype="text/rust" priority="15" license="MIT" author="The Rust Project Developers">
+<highlighting>
+	<list name="fn">
+		<item>fn</item>
+	</list>
+	<list name="type">
+		<item>type</item>
+	</list>
+	<list name="keywords">
+		<item>abstract</item>
+		<item>alignof</item>
+		<item>as</item>
+		<item>async</item>
+		<item>await</item>
+		<item>become</item>
+		<item>box</item>
+		<item>break</item>
+		<item>const</item>
+		<item>continue</item>
+		<item>crate</item>
+		<item>default</item>
+		<item>do</item>
+		<item>dyn</item>
+		<item>else</item>
+		<item>enum</item>
+		<item>extern</item>
+		<item>final</item>
+		<item>for</item>
+		<item>if</item>
+		<item>impl</item>
+		<item>in</item>
+		<item>let</item>
+		<item>loop</item>
+		<item>macro</item>
+		<item>match</item>
+		<item>mod</item>
+		<item>move</item>
+		<item>mut</item>
+		<item>offsetof</item>
+		<item>override</item>
+		<item>priv</item>
+		<item>proc</item>
+		<item>pub</item>
+		<item>pure</item>
+		<item>ref</item>
+		<item>return</item>
+		<item>sizeof</item>
+		<item>static</item>
+		<item>struct</item>
+		<item>super</item>
+		<item>trait</item>
+		<item>try</item>
+		<item>typeof</item>
+		<item>union</item>
+		<item>unsafe</item>
+		<item>unsized</item>
+		<item>use</item>
+		<item>virtual</item>
+		<item>where</item>
+		<item>while</item>
+		<item>yield</item>
+		<!-- Also (these keywords are in other lists):
+		     type, Self, self. -->
+	</list>
+	<list name="traits">
+		<!-- Core Traits -->
+		<item>Add</item>
+		<item>AddAssign</item>
+		<item>Alloc</item>
+		<item>Any</item>
+		<item>AsMut</item>
+		<item>AsRef</item>
+		<item>Binary</item>
+		<item>BitAnd</item>
+		<item>BitAndAssign</item>
+		<item>BitOr</item>
+		<item>BitOrAssign</item>
+		<item>BitXor</item>
+		<item>BitXorAssign</item>
+		<item>Borrow</item>
+		<item>BorrowMut</item>
+		<item>BuildHasher</item>
+		<item>Clone</item>
+		<item>CoerceUnsized</item>
+		<item>Copy</item>
+		<item>Debug</item>
+		<item>Default</item>
+		<item>Deref</item>
+		<item>DerefMut</item>
+		<item>DispatchFromDyn</item>
+		<item>Display</item>
+		<item>Div</item>
+		<item>DivAssign</item>
+		<item>DoubleEndedIterator</item>
+		<item>Drop</item>
+		<item>Eq</item>
+		<item>ExactSizeIterator</item>
+		<item>Extend</item>
+		<item>FixedSizeArray</item>
+		<item>Fn</item>
+		<item>FnBox</item>
+		<item>FnMut</item>
+		<item>FnOnce</item>
+		<item>From</item>
+		<item>FromIterator</item>
+		<item>FromStr</item>
+		<item>FusedIterator</item>
+		<item>Future</item>
+		<item>Generator</item>
+		<item>GlobalAlloc</item>
+		<item>Hash</item>
+		<item>Hasher</item>
+		<item>Index</item>
+		<item>IndexMut</item>
+		<item>Into</item>
+		<item>IntoIterator</item>
+		<item>Iterator</item>
+		<item>LowerExp</item>
+		<item>LowerHex</item>
+		<item>Mul</item>
+		<item>MulAssign</item>
+		<item>Neg</item>
+		<item>Not</item>
+		<item>Octal</item>
+		<item>Ord</item>
+		<item>PartialEq</item>
+		<item>PartialOrd</item>
+		<item>Pointer</item>
+		<item>Product</item>
+		<item>RangeBounds</item>
+		<item>Rem</item>
+		<item>RemAssign</item>
+		<item>Send</item>
+		<item>Shl</item>
+		<item>ShlAssign</item>
+		<item>Shr</item>
+		<item>ShrAssign</item>
+		<item>Sized</item>
+		<item>SliceIndex</item>
+		<item>Step</item>
+		<item>Sub</item>
+		<item>SubAssign</item>
+		<item>Sum</item>
+		<item>Sync</item>
+		<item>TrustedLen</item>
+		<item>Try</item>
+		<item>TryFrom</item>
+		<item>TryInto</item>
+		<item>Unpin</item>
+		<item>Unsize</item>
+		<item>UpperExp</item>
+		<item>UpperHex</item>
+		<item>Write</item>
+		<!-- Standard Library Traits -->
+		<item>AsSlice</item>
+		<item>BufRead</item>
+		<item>CharExt</item>
+		<item>Decodable</item>
+		<item>Encodable</item>
+		<item>Error</item>
+		<item>FromPrimitive</item>
+		<item>IteratorExt</item>
+		<item>MultiSpan</item>
+		<item>MutPtrExt</item>
+		<item>Pattern</item>
+		<item>PtrExt</item>
+		<item>Rand</item>
+		<item>Read</item>
+		<item>RefUnwindSafe</item>
+		<item>Seek</item>
+		<item>SliceConcatExt</item>
+		<item>SliceExt</item>
+		<item>Str</item>
+		<item>StrExt</item>
+		<item>TDynBenchFn</item>
+		<item>Termination</item>
+		<item>ToOwned</item>
+		<item>ToSocketAddrs</item>
+		<item>ToString</item>
+		<item>UnwindSafe</item>
+	</list>
+	<list name="types">
+		<item>bool</item>
+		<item>isize</item>
+		<item>usize</item>
+		<item>i8</item>
+		<item>i16</item>
+		<item>i32</item>
+		<item>i64</item>
+		<item>i128</item>
+		<item>u8</item>
+		<item>u16</item>
+		<item>u32</item>
+		<item>u64</item>
+		<item>u128</item>
+		<item>f32</item>
+		<item>f64</item>
+		<item>char</item>
+		<item>str</item>
+		<item>Option</item>
+		<item>Result</item>
+		<item>Self</item>
+		<item>Box</item>
+		<item>Vec</item>
+		<item>String</item>
+		<item>Path</item>
+		<item>PathBuf</item>
+	</list>
+	<list name="ctypes">
+		<item>c_float</item>
+		<item>c_double</item>
+		<item>c_void</item>
+		<item>FILE</item>
+		<item>fpos_t</item>
+		<item>DIR</item>
+		<item>dirent</item>
+		<item>c_char</item>
+		<item>c_schar</item>
+		<item>c_uchar</item>
+		<item>c_short</item>
+		<item>c_ushort</item>
+		<item>c_int</item>
+		<item>c_uint</item>
+		<item>c_long</item>
+		<item>c_ulong</item>
+		<item>size_t</item>
+		<item>ptrdiff_t</item>
+		<item>clock_t</item>
+		<item>time_t</item>
+		<item>c_longlong</item>
+		<item>c_ulonglong</item>
+		<item>intptr_t</item>
+		<item>uintptr_t</item>
+		<item>off_t</item>
+		<item>dev_t</item>
+		<item>ino_t</item>
+		<item>pid_t</item>
+		<item>mode_t</item>
+		<item>ssize_t</item>
+	</list>
+	<list name="self">
+		<item>self</item>
+	</list>
+	<list name="constants">
+		<item>true</item>
+		<item>false</item>
+		<item>Some</item>
+		<item>None</item>
+		<item>Ok</item>
+		<item>Err</item>
+		<item>Success</item>
+		<item>Failure</item>
+		<item>Cons</item>
+		<item>Nil</item>
+		<!-- Core Constants -->
+		<!-- char/f32 -->
+		<item>MAX</item>
+		<!-- char -->
+		<item>REPLACEMENT_CHARACTER</item>
+		<item>UNICODE_VERSION</item>
+		<!-- f32 -->
+		<item>DIGITS</item>
+		<item>EPSILON</item>
+		<item>INFINITY</item>
+		<item>MANTISSA_DIGITS</item>
+		<item>MAX_10_EXP</item>
+		<item>MAX_EXP</item>
+		<item>MIN</item>
+		<item>MIN_10_EXP</item>
+		<item>MIN_EXP</item>
+		<item>MIN_POSITIVE</item>
+		<item>NAN</item>
+		<item>NEG_INFINITY</item>
+		<item>RADIX</item>
+		<!-- path -->
+		<item>MAIN_SEPARATOR</item>
+		<!-- sync -->
+		<item>ONCE_INIT</item>
+		<!-- time -->
+		<item>UNIX_EPOCH</item>
+	</list>
+	<list name="cconstants">
+		<item>EXIT_FAILURE</item>
+		<item>EXIT_SUCCESS</item>
+		<item>RAND_MAX</item>
+		<item>EOF</item>
+		<item>SEEK_SET</item>
+		<item>SEEK_CUR</item>
+		<item>SEEK_END</item>
+		<item>_IOFBF</item>
+		<item>_IONBF</item>
+		<item>_IOLBF</item>
+		<item>BUFSIZ</item>
+		<item>FOPEN_MAX</item>
+		<item>FILENAME_MAX</item>
+		<item>L_tmpnam</item>
+		<item>TMP_MAX</item>
+		<item>O_RDONLY</item>
+		<item>O_WRONLY</item>
+		<item>O_RDWR</item>
+		<item>O_APPEND</item>
+		<item>O_CREAT</item>
+		<item>O_EXCL</item>
+		<item>O_TRUNC</item>
+		<item>S_IFIFO</item>
+		<item>S_IFCHR</item>
+		<item>S_IFBLK</item>
+		<item>S_IFDIR</item>
+		<item>S_IFREG</item>
+		<item>S_IFMT</item>
+		<item>S_IEXEC</item>
+		<item>S_IWRITE</item>
+		<item>S_IREAD</item>
+		<item>S_IRWXU</item>
+		<item>S_IXUSR</item>
+		<item>S_IWUSR</item>
+		<item>S_IRUSR</item>
+		<item>F_OK</item>
+		<item>R_OK</item>
+		<item>W_OK</item>
+		<item>X_OK</item>
+		<item>STDIN_FILENO</item>
+		<item>STDOUT_FILENO</item>
+		<item>STDERR_FILENO</item>
+	</list>
+	<contexts>
+		<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+			<DetectSpaces/>
+			<keyword String="fn" attribute="Keyword" context="Function"/>
+			<keyword String="type" attribute="Keyword" context="Type"/>
+			<keyword String="self" attribute="Self" context="#stay"/>
+			<keyword String="keywords" attribute="Keyword" context="#stay"/>
+			<keyword String="types" attribute="Type" context="#stay"/>
+			<keyword String="ctypes" attribute="CType" context="#stay"/>
+			<keyword String="constants" attribute="Constant" context="#stay"/>
+			<keyword String="cconstants" attribute="CConstant" context="#stay"/>
+			<keyword String="traits" attribute="Trait" context="#stay"/>
+			<IncludeRules context="FindComments"/>
+			<!-- Hexadecimal, Octal & Binary -->
+			<RegExpr String="\b0(x[0-9a-fA-F_]+|o[0-7_]+|b[01_]+)&rustIntSuf;\b" attribute="Number" context="#stay"/>
+			<!-- Float & Decimal -->
+			<RegExpr String="\b[0-9][0-9_]*((\.[0-9][0-9_]*)?([eE][\+\-]?[0-9_]+)?(f32|f64)?|&rustIntSuf;)\b" attribute="Number" context="#stay"/>
+			<!-- Invalid number -->
+			<RegExpr String="\b0(b[01_]*[^01_]|o[0-7_]*[^0-7_]|x[0-9a-fA-F_]*[^0-9a-fA-F_])\w*&rustIntSuf;\b" attribute="Error" context="#stay"/>
+			<Detect2Chars char="#" char1="[" attribute="Attribute" context="Attribute" beginRegion="Attribute"/>
+			<StringDetect String="#![" attribute="Attribute" context="Attribute" beginRegion="Attribute"/>
+			<RegExpr String="&rustIdent;::" attribute="Scope"/>
+			<RegExpr String="::(?=[^\s\:])" attribute="Scope"/> <!-- Points after keyword or group { } -->
+			<RegExpr String="&rustIdent;!" attribute="Macro"/>
+			<RegExpr String="&apos;&rustIdent;(?!&apos;)" attribute="Lifetime"/>
+			<DetectChar char="{" attribute="Symbol" context="#stay" beginRegion="Brace" />
+			<DetectChar char="}" attribute="Symbol" context="#stay" endRegion="Brace" />
+			<!-- Raw Strings -->
+			<RegExpr String="b?r(#*)&quot;" attribute="String" context="RawString" dynamic="true"/>
+			<!-- Byte Strings -->
+			<Detect2Chars char="b" char1="&quot;" attribute="String" context="ByteString"/>
+			<!-- Strings -->
+			<DetectChar char="&quot;" attribute="String" context="String"/>
+			<!-- Byte -->
+			<RegExpr String="b&apos;(?=([^&apos;\\]|\\&commonEscape;)&apos;)" attribute="Character" context="Character"/>
+			<!-- Character -->
+			<DetectChar char="&apos;" attribute="Character" context="Character"/>
+			<DetectChar char="[" attribute="Normal Text" context="#stay" beginRegion="Bracket" />
+			<DetectChar char="]" attribute="Normal Text" context="#stay" endRegion="Bracket" />
+			<!-- Raw identifier prefix -->
+			<RegExpr String="r#(?=&rustIdent;)" attribute="Raw Identifier" context="#stay"/>
+			<AnyChar String=";,.@~:$?=&gt;&lt;&amp;-+|*!/^%" attribute="Symbol" context="#stay"/>
+			<DetectIdentifier/>
+		</context>
+		<context attribute="Attribute" lineEndContext="#stay" name="Attribute">
+			<DetectChar char="]" attribute="Attribute" context="#pop" endRegion="Attribute"/>
+			<IncludeRules context="Normal"/>
+		</context>
+		<context attribute="Definition" lineEndContext="#stay" name="Function">
+			<DetectSpaces/>
+			<DetectChar char="(" attribute="Normal Text" context="#pop" lookAhead="true"/>
+			<DetectChar char="&lt;" attribute="Normal Text" context="#pop" lookAhead="true"/>
+			<IncludeRules context="FindComments"/>
+		</context>
+		<context attribute="Definition" lineEndContext="#stay" name="Type">
+			<DetectSpaces/>
+			<DetectChar char="=" attribute="Normal Text" context="#pop" lookAhead="true"/>
+			<DetectChar char="&lt;" attribute="Normal Text" context="#pop" lookAhead="true"/>
+			<DetectChar char=";" attribute="Normal Text" context="#pop" lookAhead="true"/>
+			<IncludeRules context="FindComments"/>
+		</context>
+		<!-- Rustc allows strings to extend over multiple lines, and the
+		     only thing a backshash at end-of-line does is remove the whitespace. -->
+		<context attribute="String" lineEndContext="#stay" name="String">
+			<DetectChar char="\" attribute="CharEscape" context="CharEscapeWithUnicode"/>
+			<DetectChar attribute="String" context="#pop" char="&quot;"/>
+		</context>
+		<context attribute="String" lineEndContext="#stay" name="ByteString">
+			<DetectChar char="\" attribute="CharEscape" context="CharEscape"/>
+			<DetectChar attribute="String" context="#pop" char="&quot;"/>
+		</context>
+		<context attribute="String" lineEndContext="#stay" name="RawString" dynamic="true">
+			<RegExpr String="&quot;%1" attribute="String" context="#pop" dynamic="true"/>
+		</context>
+		<context attribute="Character" lineEndContext="#pop" name="Character" fallthrough="true" fallthroughContext="#pop">
+			<RegExpr String="[^&apos;\\](?=&apos;)" attribute="Character" context="#stay"/>
+			<RegExpr String="\\(&unicodeEscape;|&commonEscape;)(?=&apos;)" attribute="CharEscape" context="#stay"/>
+			<DetectChar attribute="Character" context="#pop" char="&apos;"/>
+			<RegExpr String="(\\.|[^&apos;\\])[^&apos;]*(?=&apos;([\d\s!&quot;#&#036;&#037;&amp;&#039;\(\)\*\+,\-\./:;&lt;\=&gt;\?@\[\\\]\^&#096;\{\|\}~[:cntrl:]]|$))" attribute="Error" context="#stay"/>
+		</context>
+		<context attribute="CharEscape" lineEndContext="#pop" name="CharEscape">
+			<RegExpr String="&commonEscape;" attribute="CharEscape" context="#pop"/>
+			<RegExpr String="." attribute="Error" context="#pop"/>
+		</context>
+		<context attribute="CharEscape" lineEndContext="#pop" name="CharEscapeWithUnicode">
+			<RegExpr String="&unicodeEscape;" attribute="CharEscape" context="#pop"/>
+			<IncludeRules context="CharEscape"/>
+		</context>
+		<context attribute="Normal Text" lineEndContext="#stay" name="FindComments">
+			<Detect2Chars char="/" char1="/" attribute="Comment" context="Commentar 1"/>
+			<Detect2Chars char="/" char1="*" attribute="Comment" context="Commentar 2" beginRegion="Comment"/>
+		</context>
+		<context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+			<IncludeRules context="##Alerts" />
+			<IncludeRules context="##Modelines" />
+		</context>
+		<context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+			<DetectSpaces/>
+			<Detect2Chars char="/" char1="*" attribute="Comment" context="Commentar 2" beginRegion="Comment"/>
+			<Detect2Chars char="*" char1="/" attribute="Comment" context="#pop" endRegion="Comment"/>
+			<IncludeRules context="##Alerts" />
+			<IncludeRules context="##Modelines" />
+		</context>
+	</contexts>
+	<itemDatas>
+		<itemData name="Normal Text"  defStyleNum="dsNormal"/>
+		<itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="0"/>
+		<itemData name="Self"         defStyleNum="dsKeyword" spellChecking="0"/>
+		<itemData name="Type"         defStyleNum="dsDataType" spellChecking="0"/>
+		<itemData name="Trait"        defStyleNum="dsBuiltIn" spellChecking="0"/>
+		<itemData name="CType"        defStyleNum="dsDataType" spellChecking="0"/>
+		<itemData name="Constant"     defStyleNum="dsConstant" spellChecking="0"/>
+		<itemData name="CConstant"    defStyleNum="dsConstant" spellChecking="0"/>
+		<itemData name="Definition"   defStyleNum="dsNormal"/>
+		<itemData name="Comment"      defStyleNum="dsComment"/>
+		<itemData name="Scope"        defStyleNum="dsPreprocessor"/>
+		<itemData name="Number"       defStyleNum="dsDecVal"/>
+		<itemData name="String"       defStyleNum="dsString"/>
+		<itemData name="CharEscape"   defStyleNum="dsSpecialChar"/>
+		<itemData name="Character"    defStyleNum="dsChar"/>
+		<itemData name="Macro"        defStyleNum="dsPreprocessor"/>
+		<itemData name="Symbol"       defStyleNum="dsOperator"/>
+		<itemData name="Attribute"    defStyleNum="dsAttribute"/>
+		<itemData name="Lifetime"     defStyleNum="dsOthers" spellChecking="0"/>
+		<itemData name="Raw Identifier" defStyleNum="dsAnnotation" spellChecking="0"/>
+		<itemData name="Error"        defStyleNum="dsError"/>
+	</itemDatas>
+</highlighting>
+<general>
+	<comments>
+		<comment name="singleLine" start="//" />
+		<comment name="multiLine" start="/*" end="*/" region="Comment"/>
+	</comments>
+	<keywords casesensitive="1" />
+</general>
+</language>
+<!-- kate: replace-tabs off; -->

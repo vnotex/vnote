@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+  <!-- qualification of entities -->
+  <!ENTITY qualify     "([A-Z][a-zA-Z0-9_']*\.)*">
+  <!-- identifier -->
+  <!ENTITY ident       "[a-z][a-zA-Z0-9_']*">
+  <!-- Type -->
+  <!ENTITY type        "[A-Z][a-zA-Z0-9_']*">
+  <!-- infix operator characters -->
+  <!ENTITY infixchar   "~!@#\$&#37;\^&amp;\*\+\-=&lt;&gt;\?\./\|&backslash;:">
+  <!-- identifier in prefix notation, e.g.: id, ($) -->
+  <!ENTITY prefixIdent "(&ident;|\([&infixchar;]+\))">
+
+  <!-- Characters allowed in character escape sequence, e.g., \n -->
+  <!ENTITY escSeqChar  "abfnrtv\&quot;'" >
+  <!-- Ascii escape sequence, e.g., \NUL -->
+  <!ENTITY escSeqAscii "NUL|SOH|STX|ETX|EOT|ENQ|ACK|BEL|BS|HT|LF|VT|FF|CR|SO|SI|DLE|DC1|DC2|DC3|DC4|NAK|SYN|ETB|CAN|EM|SUB|ESC|FS|GS|RS|US|SP|DEL" >
+  <!-- Control escape sequence, e.g., \^X -->
+  <!ENTITY escSeqCntrl "\^[A-Z@\[&backslash;\]\^_]" >
+
+  <!-- octal number -->
+  <!ENTITY octal       "[0-7]+" >
+  <!-- decimal number -->
+  <!ENTITY decimal     "[0-9]+" >
+  <!-- hexadecimal number -->
+  <!ENTITY hexadecimal "[0-9a-fA-F]+" >
+  <!-- a backslash, escaped for use in regular expressions -->
+  <!ENTITY backslash   "\\" >
+  <!-- dashes introducing a currydoc comment -->
+  <!ENTITY currydoc    "---" >
+]>
+<language name="Curry" version="1" kateversion="5.0"
+          section="Sources" extensions="*.curry" mimetype="text/x-curry"
+          author="Björn Peemöller (bjp@informatik.uni-kiel.de)" license="LGPL"
+          indenter="haskell">
+  <highlighting>
+  <list name="keywords">
+    <item>case</item>
+    <item>data</item>
+    <item>do</item>
+    <item>else</item>
+    <item>external</item>
+    <item>fcase</item>
+    <item>free</item>
+    <item>if</item>
+<!-- Although import is a keyword, it is handled in a special context
+     to highlight "qualified", "as" and "hiding" in keyword style,
+     albeit these lexemes are no keywords.
+    <item>import</item>
+  -->
+    <item>in</item>
+    <item>infix</item>
+    <item>infixl</item>
+    <item>infixr</item>
+    <item>let</item>
+    <item>module</item>
+    <item>of</item>
+    <item>then</item>
+    <item>type</item>
+    <item>where</item>
+  </list>
+  <list name="Prelude Func">
+    <item>and</item>
+    <item>all</item>
+    <item>any</item>
+    <item>appendFile</item>
+    <item>best</item>
+    <item>break</item>
+    <item>browse</item>
+    <item>browseList</item>
+    <item>chr</item>
+    <item>concat</item>
+    <item>concatMap</item>
+    <item>const</item>
+    <item>curry</item>
+    <item>div</item>
+    <item>done</item>
+    <item>doSolve</item>
+    <item>drop</item>
+    <item>dropWhile</item>
+    <item>either</item>
+    <item>elem</item>
+    <item>ensureNotFree</item>
+    <item>ensureSpine</item>
+    <item>enumFrom</item>
+    <item>enumFromThen</item>
+    <item>enumFromTo</item>
+    <item>enumFromThenTo</item>
+    <item>error</item>
+    <item>failed</item>
+    <item>filter</item>
+    <item>findall</item>
+    <item>flip</item>
+    <item>foldl</item>
+    <item>foldl1</item>
+    <item>foldr</item>
+    <item>foldr1</item>
+    <item>fst</item>
+    <item>getChar</item>
+    <item>getLine</item>
+    <item>id</item>
+    <item>if_then_else</item>
+    <item>iterate</item>
+    <item>head</item>
+    <item>length</item>
+    <item>lines</item>
+    <item>lookup</item>
+    <item>map</item>
+    <item>mapIO</item>
+    <item>mapIO_</item>
+    <item>max</item>
+    <item>maybe</item>
+    <item>min</item>
+    <item>mod</item>
+    <item>negate</item>
+    <item>not</item>
+    <item>notElem</item>
+    <item>null</item>
+    <item>once</item>
+    <item>or</item>
+    <item>ord</item>
+    <item>otherwise</item>
+    <item>print</item>
+    <item>putChar</item>
+    <item>putStr</item>
+    <item>putStrLn</item>
+    <item>readFile</item>
+    <item>repeat</item>
+    <item>replicate</item>
+    <item>return</item>
+    <item>reverse</item>
+    <item>seq</item>
+    <item>sequenceIO</item>
+    <item>sequenceIO_</item>
+    <item>show</item>
+    <item>snd</item>
+    <item>solveAll</item>
+    <item>span</item>
+    <item>splitAt</item>
+    <item>success</item>
+    <item>tail</item>
+    <item>take</item>
+    <item>takeWhile</item>
+    <item>try</item>
+    <item>uncurry</item>
+    <item>unknown</item>
+    <item>unlines</item>
+    <item>unpack</item>
+    <item>until</item>
+    <item>unwords</item>
+    <item>unzip</item>
+    <item>unzip3</item>
+    <item>writeFile</item>
+    <item>words</item>
+    <item>zip</item>
+    <item>zip3</item>
+    <item>zipWith</item>
+    <item>zipWith3</item>
+  </list>
+  <list name="Prelude Type">
+    <item>Bool</item>
+    <item>Char</item>
+    <item>Either</item>
+    <item>Float</item>
+    <item>Int</item>
+    <item>IO</item>
+    <item>Maybe</item>
+    <item>Ordering</item>
+    <item>String</item>
+    <item>Success</item>
+  </list>
+  <list name="Prelude Cons">
+    <item>False</item>
+    <item>True</item>
+    <item>Left</item>
+    <item>Right</item>
+    <item>Just</item>
+    <item>Nothing</item>
+    <item>EQ</item>
+    <item>LT</item>
+    <item>GT</item>
+  </list>
+  <contexts>
+    <context name="Normal" attribute="Normal" lineEndContext="#stay">
+      <!-- pragmas, currydoc, comments -->
+      <StringDetect attribute="Pragma"   context="Pragma"            String="{-#"        beginRegion="Pragma"  />
+      <Detect2Chars attribute="Comment"  context="Multiline Comment" char="{" char1="-"  beginRegion="Multiline Comment" />
+      <StringDetect attribute="Currydoc" context="Currydoc"          String="&currydoc;" />
+      <Detect2Chars attribute="Comment"  context="Comment"           char="-" char1="-"  />
+
+      <!-- keywords, Prelude entities -->
+      <keyword      attribute="Keyword"             context="#stay"   String="keywords" />
+      <keyword      attribute="Prelude Function"    context="#stay"   String="Prelude Func" />
+      <keyword      attribute="Prelude Type"        context="#stay"   String="Prelude Type" />
+      <keyword      attribute="Prelude Constructor" context="#stay"   String="Prelude Cons" />
+      <RegExpr      attribute="Keyword"             context="Import"  String="import\s+(qualified)?" />
+
+      <!-- Literals -->
+      <Float        attribute="Float"   context="#stay"   />
+      <RegExpr      attribute="Octal"   context="#stay"   String="0(o|O)&octal;" />
+      <HlCHex       attribute="Hex"     context="#stay"   />
+      <Int          attribute="Decimal" context="#stay"   />
+      <DetectChar   attribute="Char"    context="Char"    char="'" />
+      <DetectChar   attribute="String"  context="String"  char="&quot;" />
+
+      <!-- Others -->
+      <RegExpr      attribute="Special Symbol"    context="#stay"   String="(::|:=|:&gt;|\-&gt;|&lt;\-|\.\.)" />
+      <RegExpr      attribute="Signature"         context="#stay"   String="\s*&prefixIdent;\s*(,\s*&prefixIdent;)*\s*(?=::[^&infixchar;])" />
+      <RegExpr      attribute="Function"          context="#stay"   String="&qualify;&ident;" />
+      <RegExpr      attribute="Operator"          context="#stay"   String="&qualify;[&infixchar;]+" />
+      <RegExpr      attribute="Type, Constructor" context="#stay"   String="&qualify;&type;" />
+      <DetectChar   attribute="Infix Application" context="Infix"   char="`" />
+
+      <!-- Folding of braces -->
+      <DetectChar char="(" context="#stay" beginRegion="nested" attribute="Braces" />
+      <DetectChar char=")" context="#stay" endRegion="nested"   attribute="Braces" />
+      <DetectChar char="[" context="#stay" beginRegion="list"   attribute="Braces" />
+      <DetectChar char="]" context="#stay" endRegion="list"     attribute="Braces" />
+      <DetectChar char="{" context="#stay" beginRegion="curly"  attribute="Braces" />
+      <DetectChar char="}" context="#stay" endRegion="curly"    attribute="Braces" />
+    </context>
+
+    <!-- Pragma -->
+    <context name="Pragma" attribute="Pragma" lineEndContext="#stay" >
+      <StringDetect attribute="Pragma" context="#pop" String="#-}" endRegion="Pragma" />
+    </context>
+
+    <!-- Multiline comment -->
+    <context name="Multiline Comment" attribute="Comment" lineEndContext="#stay" >
+      <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" endRegion="Multiline Comment" />
+    </context>
+
+    <!-- Currydoc -->
+    <context name="Currydoc" attribute="Currydoc" lineEndContext="#pop" />
+
+    <!-- Single line comment -->
+    <context name="Comment" attribute="Comment" lineEndContext="#pop" />
+
+    <!-- Import section -->
+    <context name="Import" attribute="Normal" lineEndContext="#pop" >
+      <!-- pragmas, currydoc, comments -->
+      <StringDetect attribute="Pragma"   context="Pragma"            String="{-#"        beginRegion="Pragma"  />
+      <Detect2Chars attribute="Comment"  context="Multiline Comment" char="{" char1="-"  beginRegion="Multiline Comment" />
+      <StringDetect attribute="Currydoc" context="Currydoc"          String="&currydoc;" />
+      <Detect2Chars attribute="Comment"  context="Comment"           char="-" char1="-"  />
+
+      <RegExpr      attribute="Type, Constructor" context="#stay" String="&qualify;&type;" />
+      <Detect2Chars attribute="Keyword"           context="#stay" char="a" char1="s" />
+      <StringDetect attribute="Keyword"           context="#stay" String="hiding" />
+      <!-- Pop context at open paren to highlight imported entities -->
+      <DetectChar   attribute="Braces"            context="#pop"   char="(" beginRegion="nested" />
+      <RegExpr      attribute="Syntax Error"      context="#stay"  String="\S+" />
+    </context>
+
+    <!-- A single characters, with escape sequences -->
+    <context name="Char" attribute="Char" lineEndContext="CharSyntaxError" >
+      <DetectChar attribute="Syntax Error" context="#pop"       char="'" />
+      <DetectChar attribute="Char"         context="CharEscape" char="\" />
+      <RegExpr    attribute="Char"         context="CharEnd"    String="[^'&backslash;]" />
+    </context>
+
+    <!-- Character escape sequence -->
+    <context name="CharEscape" attribute="Char" lineEndContext="#popCharSyntaxError" >
+      <AnyChar attribute="Char"         context="#popCharEnd" String="&escSeqChar;"   />
+      <RegExpr attribute="Char"         context="#popCharEnd" String="o&octal;"       />
+      <RegExpr attribute="Char"         context="#popCharEnd" String="&decimal;"      />
+      <RegExpr attribute="Char"         context="#popCharEnd" String="x&hexadecimal;" />
+      <RegExpr attribute="Char"         context="#popCharEnd" String="&escSeqCntrl;"  />
+      <RegExpr attribute="Char"         context="#popCharEnd" String="&escSeqAscii;"  />
+      <RegExpr attribute="Syntax Error" context="#popCharEnd" String="."              />
+    </context>
+
+    <!-- Ending quote of character literal -->
+    <context name="CharEnd" attribute="Char" lineEndContext="#popCharSyntaxError" >
+      <DetectChar attribute="Char"         context="#pop#pop" char="'" />
+      <RegExpr    attribute="Syntax Error" context="#stay"    String="." />
+    </context>
+
+    <!-- Character syntax error: Newline inside literal -->
+    <context name="CharSyntaxError" attribute="Syntax Error" lineEndContext="#stay" >
+      <DetectChar attribute="Syntax Error" context="#pop#pop" char="'" />
+    </context>
+
+    <!-- A string, with escape sequences -->
+    <context name="String" attribute="String" lineEndContext="StringSyntaxError" >
+      <DetectChar   attribute="String"        context="#pop"         char="&quot;" />
+      <DetectChar   attribute="String Escape" context="StringEscape" char="\" />
+      <RegExpr      attribute="String"        context="#stay"        String="[^&quot;&backslash;]*" />
+    </context>
+
+    <!-- String escape sequence -->
+    <context name="StringEscape" attribute="String" lineEndContext="StringGap" >
+      <AnyChar      attribute="String Escape"  context="#pop"      String="&escSeqChar;&amp;" />
+      <RegExpr      attribute="String Escape"  context="#pop"      String="o&octal;"          />
+      <RegExpr      attribute="String Escape"  context="#pop"      String="&decimal;"         />
+      <RegExpr      attribute="String Escape"  context="#pop"      String="x&hexadecimal;"    />
+      <RegExpr      attribute="String Escape"  context="#pop"      String="&escSeqCntrl;"     />
+      <RegExpr      attribute="String Escape"  context="#pop"      String="&escSeqAscii;"     />
+      <DetectSpaces attribute="String Escape"  context="StringGap"                            />
+      <RegExpr      attribute="Syntax Error"   context="#pop"      String="."                 />
+    </context>
+
+    <context name="StringGap" attribute="String" lineEndContext="#stay" >
+      <DetectSpaces attribute="String Escape" context="#stay" />
+      <DetectChar   attribute="String Escape" context="#pop#pop#popString" char="\"      />
+      <DetectChar   attribute="Syntax Error"  context="#pop#pop#pop"       char="&quot;" />
+      <RegExpr      attribute="Syntax Error"  context="#stay"              String="."    />
+    </context>
+
+    <!-- String syntax error: Newline inside literal -->
+    <context name="StringSyntaxError" attribute="Syntax Error" lineEndContext="#stay" >
+      <DetectChar attribute="Syntax Error" context="#pop#pop" char="&quot;" />
+    </context>
+
+    <!-- Infix application -->
+    <context name="Infix" attribute="Infix Application" lineEndContext="#stay" >
+      <DetectChar attribute="Infix Application" context="#pop" char="`"/>
+    </context>
+  </contexts>
+
+  <itemDatas>
+    <itemData name="Normal"              defStyleNum="dsNormal"   spellChecking="false" />
+
+    <!-- Comments -->
+    <itemData name="Pragma"              defStyleNum="dsOthers"   spellChecking="false" />
+    <itemData name="Comment"             defStyleNum="dsComment"  />
+    <itemData name="Currydoc"            defStyleNum="dsDocumentation" />
+
+    <!-- Keywords, predefined entities -->
+    <itemData name="Keyword"             defStyleNum="dsKeyword"  spellChecking="false" />
+    <itemData name="Prelude Type"        defStyleNum="dsDataType" spellChecking="false" />
+    <itemData name="Prelude Function"    defStyleNum="dsFunction" spellChecking="false" />
+    <itemData name="Prelude Constructor" defStyleNum="dsKeyword"  spellChecking="false" />
+
+    <!-- Literals -->
+    <itemData name="Float"               defStyleNum="dsFloat"    spellChecking="false" />
+    <itemData name="Octal"               defStyleNum="dsBaseN"    spellChecking="false" />
+    <itemData name="Hex"                 defStyleNum="dsBaseN"    spellChecking="false" />
+    <itemData name="Decimal"             defStyleNum="dsDecVal"   spellChecking="false" />
+    <itemData name="Char"                defStyleNum="dsChar"     spellChecking="false" />
+    <itemData name="String Escape"       defStyleNum="dsChar"     spellChecking="false" />
+    <itemData name="String"              defStyleNum="dsString"   />
+
+    <!-- Others -->
+    <itemData name="Braces"              defStyleNum="dsNormal"   spellChecking="false" />
+    <itemData name="Signature"           defStyleNum="dsOthers"   spellChecking="false" />
+    <itemData name="Function"            defStyleNum="dsNormal"   spellChecking="false" />
+    <itemData name="Operator"            defStyleNum="dsFunction" spellChecking="false" />
+    <itemData name="Type, Constructor"   defStyleNum="dsDataType" spellChecking="false" />
+    <itemData name="Special Symbol"      defStyleNum="dsOthers"   spellChecking="false" />
+    <itemData name="Infix Application"   defStyleNum="dsOthers"   spellChecking="false" />
+    <itemData name="Syntax Error"        defStyleNum="dsError"    spellChecking="false" />
+  </itemDatas>
+  </highlighting>
+  <general>
+    <folding indentationsensitive="1"/>
+    <comments>
+      <comment name="singleLine" start="--" />
+      <comment name="multiLine" start="{-" end="-}" region="Multiline Comment" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

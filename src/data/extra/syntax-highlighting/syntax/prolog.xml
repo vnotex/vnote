@@ -1,0 +1,1031 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!-- [Purpose & Copyright]
+
+    Highlight ISO-Prolog texts or template/include for Prolog dialects
+    based on the ISO standard.
+
+    Includes detection of DCG since it is 'hooked' in the ISO standard.
+    Uses text style "Warning/ISO-bogus" where portability is likely to
+    fail.
+
+    This file is part of KDE's kate project.
+
+  copyright   : (C) 2012 by Torsten Eichstädt
+
+ **********************************************************************
+ * This library is free software; you can redistribute it and/or      *
+ * modify it under the terms of the GNU Library General Public        *
+ * License as published by the Free Software Foundation; either       *
+ * version 2 of the License, or (at your option) any later version.   *
+ *                                                                    *
+ * This library is distributed in the hope that it will be useful,    *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  *
+ * Library General Public License for more details.                   *
+ *                                                                    *
+ * You should have received a copy of the GNU Library General Public  *
+ * License along with this library; if not, write to the              *
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,   *
+ * Boston, MA  02110-1301, USA.                                       *
+ **********************************************************************
+-->
+<!DOCTYPE language SYSTEM "language.dtd"
+[<!-- [Regular Expressions, Character Classes & Important Tokens]
+E.g. the dot "." has so many different meanings (i.e. in an RegExpr 'any char',
+'fullstop' of a clause, etc. pp.) that I decided it's usefull to write these out
+to make the rules more expressive. -->
+
+<!-- RegExpr for graphic tokens.  Comment start "/*" is catched earlier. -->
+    <!ENTITY gr_char_iso    	"[#$&amp;*+\-./:&lt;=>?@^~\\]">
+
+<!-- RegExpr: The highlighting engine always strips newline, so this ok: -->
+    <!ENTITY any_nw         "[^ \t]">
+    <!ENTITY any            ".">
+
+<!-- RegExpr: we want to highlight some graphic tokens: Logic & Control
+    fullstop shall not be falsely detected if it is actually a list functor
+    comma is catched extra to highlight it as "Normal Text" in an arg_seq
+    (and the cut "!" is NOT an op) -->
+    <!ENTITY fullstop_iso          "\.(?!(\(|&gr_char_iso;))">
+    <!ENTITY logic_control_ops_iso "(;|->|\\\+|:-|=|\\=)(?!&gr_char_iso;)">
+
+    <!-- RegExpr: DCG (not my idea it is not reversed and named 'reduction') -->
+    <!ENTITY dcg_production_iso    "-->(?!&gr_char_iso;)">
+
+    <!-- RegExpr: partitioning of arithmetic operators:
+    - the 1st "arith_compare" always demand arithmetic evaluation
+      => highlight as "Arithmetics".
+    - the 2nd only at the right side of "is" or when an arith_compare applies.
+      They are used in other contexts as well, e.g. traditionally A-B is used
+      for 'a pair of something', the "^" in bagof/3 and setof/3.
+      => highlight as "Arithmetics" only in an arith_expr.
+    - the 3rd are true ISO Bogus: it is not specified whether it is arithmetic
+      or logical shift, and for bitwise AND, OR and NEG the integer format is
+      unspecified => not portable, depend on Prolog implementation. -->
+    <!ENTITY arith_compare_iso  "(=:=|=\\=|=&lt;|&lt;|>=|>)(?!&gr_char_iso;)">
+    <!ENTITY arith_ops_mixed_iso      "(\+|-|\*|\^)(?!&gr_char_iso;)">
+    <!ENTITY arith_ops_int_iso      "//(?!&gr_char_iso;)">
+    <!ENTITY arith_ops_float_iso      "(/|\*\*)(?!&gr_char_iso;)">
+    <!ENTITY arith_bogus_iso  "(/\\|\\/|\\|&lt;&lt;|>>)(?!&gr_char_iso;)">
+
+    <!-- RegExpr: other predefined operators -->
+    <!ENTITY predefined_ops_iso "(\?-|==|\\==|@=&lt;|@&lt;|@>=|@>|=\.\.|@|:)(?!&gr_char_iso;)">
+
+    <!-- We treat a number as float if it includes a decimal dot or exponent -->
+    <!ENTITY float3_iso "[0-9]+E[+\-]?[0-9]+">
+    <!ENTITY float2_iso "[0-9]+\.[0-9]+">
+    <!ENTITY float1_iso "[0-9]+\.[0-9]+E[+\-]?[0-9]+">
+
+<!-- RegExpr for esc'd char code in quoted 'strings' e.g. "\007\" -->
+    <!ENTITY esc_oct_iso	"\\[0-7]+\\">
+    <!ENTITY esc_hex_iso	"\\x[a-fA-F0-9]+\\">
+
+<!-- Char classes for AnyChar, NOT RegExpr: no esc seqs, ranges, etc. pp. here!
+     Used to avoid expensive RegExpr whenever possible. -->
+    <!--  Not needed: any_alnum_under_iso:  use "DetectIdentifier" instead -->
+    <!ENTITY any_lower_iso         "abcdefghijklmnopqrstuvwxyz">
+    <!ENTITY any_upper_under_iso   "ABCDEFGHIJKLMNOPQRSTUVWXYZ_">
+    <!ENTITY any_bin_iso           "01">
+    <!ENTITY any_oct_iso           "01234567">
+    <!ENTITY any_dec_iso           "0123456789">
+    <!ENTITY any_hex_iso           "0123456789abcdefABCDEF">
+    <!ENTITY any_graphic_iso       "#$&amp;*+-./:&lt;=>?@^~\">
+
+    <!-- Common esc seq in quoted & char code (after "0'").
+    Tab is handled extra.  Esc'd newline is catched earlier. -->
+    <!ENTITY any_esc_iso		"abfnrtv\'`&quot;]">
+
+    <!ENTITY dot        ".">
+
+    <!-- Some solo chars for DetectChar -->
+    <!ENTITY comma	",">
+    <!ENTITY cut        "!">
+    <!ENTITY bar        "|">
+    <!ENTITY tab	"	">
+    <!ENTITY bs         "\">
+]>
+<language name="Prolog" section="Sources"
+	  version="10" kateversion="3.4"
+	  mimetype="text/x-prolog"
+	  extensions="*.prolog;*.dcg;*.pro"
+	  author="Torsten Eichstädt (torsten.eichstaedt@web.de)"
+	  license="LGPLv2+">
+
+<!-- [Terminology & Abbreviations In The Comments]
+    - Literal text is in double quotes "like this", single quotes sometimes used
+      for a 'terminus technicus'.
+    - "w/", "w/o", "s/t" mean 'with', 'without', and "sometimes" resp.
+    - Use "brace" instead of 'bracket'/'parenthesis' for any of "()[]{}"
+    - Specify "round", "list/squared", "curly", "opening" and "closing" brace.
+    - "quote/quoted/string" mean any of single-, double-, or back-quote(d)
+    - "seq" sequence, "nl" newline, "bs" backslash, "q" quote(d), "cc" char code
+    - "KISS" Keep it simple, stupid! (be pragmatic)
+    - "style" = "attribute" (the applied text style)
+    - Keep comments as short as possible and as descriptive as neccessary LOL
+-->
+<!-- [Documentation, Bugs, Limitations & Solutions, TODOs]
+################################################################################
+All bugs except three by the author. !FOLD THIS AWAY if long comments annoy you.
+
+BUG - Nobody's perfect - If I knew about the bug you found, it would have been
+      fixed already.
+ one- Indentation-based folding is not reliable (Kate; fixed in KDE 4.9?).
+ two- Folding is sometimes broken (Kate?).  See SOLUTIONS below.
+ three- An optional leading sign is not highlighted as part of the number.
+  4 - A float w/o fractional part and exponent is highlighted as an integer.
+  5 - Detection of whitespace may not be 100% correct, only space/tab/newline.
+  6 - Handling inside arithmetic expressions might not be 100%.  See "AL GUSTO".
+ inf- see TODOs below.
+
+LIMITS of this parser
+    - Highlighting of syntax errors is as intuitive as possible, i.e. for an
+      invalid newline highlight the last token before and leading white of the
+      next line - but that's not always possible.  Use your built-in problem
+      solver (between your ears) when you do not know what the exact error is.
+    - The parser knows nothing about currently defined dynamic ops, but has to
+      respect possible definitions of dynamic ops.  That's why:
+    - Any sequence of 'graphic chars' (_incl. those containing a dot_) is taken
+      as _one_ graphic token, and not - as you might expect - your user-defined
+      operator followed by fullstop (or sequence of ops).
+    - A single dot in the outmost term of a clause is taken as a fullstop, even
+      if it is actually a user-defined operator.
+      - Else, a single dot is highlighted as "Warning" because it might be a
+        user-def'd op (usually an error, but can not decide w/o current_op/3).
+    - Detection of the fullstop relies upon the usual semantics of braces.
+    - Axioms of folding capabilities are: the literal fullstop as stop symbol
+      and the usual semantics of braces w/ pairs of opening and closing brace.
+   ?- period.
+uncaught exception: error(existence_error(procedure,current_op/3),highlight/2)
+
+SOLUTIONS
+    - Help the parser by puting whitespace (space/tab/nl) here and there, espc.
+      after the fullstop, or use quotes; e.g. '/*' does not begin a comment,
+      neither does '%', and ***'.' can be two operators.
+      Functored syntax should always do, e.g. */*(X,Y) is valid (and does not
+      begin a comment).
+    - Folding: s/t moving the mouse slightly below the marker shows what you
+      want, s/t an empty line helps (or removing an empty line), when it's
+      removed regions stay ok, or break auto-folding w/ non-white @begin of
+      line.  Try a newer kate version.
+
+AL GUSTO (simple changes):
+    - Change classification of built-in predicates: adjust the <list> below.
+    - Reminder for other changes: solo chars - DetectChar, graphic - RegExpr.
+    - bar "|" (solo) is highlighted as "other built-in operator" in lists, else
+      "Normal Text".  You may safely remove/comment out  the rules in contexts
+      "term/list/curly" below if you add in in context "operator" or "atomic".
+      If it shall be part of user-defined ops, it has to be added to "gr_char",
+      and a few rules need adjustment.  Search for "&bar;".  You may then safely
+      add it to "predefined_ops" above (don't forget to escape it).
+    - cut "!" (solo) can be adjusted like the bar.
+    - comma "," (solo) is "Normal Text" in lists, else "Logic & Control".  You
+      may safely remove/comment out the rules in "term/nested/list/curly" below
+      and handle it in the context "operator".
+    - Disable arith_expr: replace "context="arith_expr"" w/ "context="#stay""
+      in the rules in contexts "atomic" and "operator" (two or three occurrences).
+    - Disable indentation-based folding: in the section "general"@EOF:"folding".
+    - General guidelines: Be nice to slow/old hardware: avoid RegExpr (start w/
+      a RegExpr, test, then find a replacement), else match a RegExpr as late as
+      possible - it's expensive, a context switch is relatively cheap.
+      Eat as much text as possible in one run, e.g. in comments and quoted we
+      use "DetectIdentifier", else the engine would try all rules of the context
+      (w/ failure) and eat only one char on each run.
+    If your modification is kind of general, upload it and drop me a note.
+
+  The simplified syntax below should highlight 99.999% of ISO-Prolog texts
+correctly, as well as many non-ISO Prolog texts.
+  Else modify this file.  Save with new name in your HOME directory to
+.kde/share/apps/katepart/syntax/prolog-xy.xml You may read the NOTE at the end
+of this file.  WARNING: Be careful, though: the highlighting works according to
+it's program code, not neccessarily it's documentation...
+
+DONE- Parse (m)any (!) conforming Prolog texts w/ correct highlighting (LIMITS)
+    - Parse any erratic text w/o crash or endless loops and highlight errors
+    - Folding for multiline comments, clauses, nested terms, and quoted (LIMITS)
+    - Folding inside comments and of 1-line comments and clauses: indentation-
+      based like in Python, e.g.
+      my_pred(a).   % w/ marker@left (western style; depends on your settings)
+	my_pred(b). % you can fold
+	my_pred(c). % these lines
+      Inside clauses (i.e. context "term" and below) only explicit folding for
+      braces and quotes applies, except comments.  I did not find a better
+      solution, since the engine does not provide lookahead to the next line.
+    - Additionally, folding with %BEGIN ... %END (iff 1st nonwhite of the line).
+    - Classify built-ins (YMMV) for different highlighting, mainly:
+	- w/ side effects from 'outside world' (arithmetics, stream I/O,...)
+	- w/o side effects, only depend on user's program ('internal world')
+	- program logic & control constructs
+	- altering the clause knowledge base or Prolog state
+	- integer/float/mixed arithmetics, so one can see the type of the result
+	    - Iff it's an arithmetic expression; else arith ops and built-ins
+	      are highlighted normal.
+    - Incl. Sep2012 DRAFT Technical Corrigendum 2: Prolog - Part 1: General Core
+    - Incl. honourable Richard O'Keefe's remarks as warnings as "ISO Bogus".
+    - Detect 'shebang' shell scripts, see BUGs
+    - Includes alert.xml to highlight alert keywords in comments.
+    - Dot "." may be an _unquoted_ user-defined operator in nested terms (but is
+      highlighted as "Warning" 'cause it's more likely a typo than an user-def'd
+      op) and is only taken as fullstop and highlighted as "Logic & Control" in
+      the outmost term of a clause.
+    - Über-correct handling of quoted, escape seqs and "0'" (char code integer):
+	- detection of valid/invalid newline in quoted 'strings'.
+	- highlight whitespace after esc'd newline in quoted so it differs from
+	  whitespace contained in the quoted 'string'.
+	- Highlight esc'd tab and tab in quoted as "Warning" because some text
+	editors may convert them to space and it is easy to use "\t" instead.
+    - Preliminary: most names end w/ ISO; prepared to be included in syntax
+      files adapted for Prolog dialects.
+    - The Shebang is highlighted only in the first line (with lineEmptyContext).
+
+FIXME	When katepart can supply line numbers, fix the "shebang" rule.
+
+TODO sorted by priority
+  1 - [always] Cruise over all FIXMEs.
+  2 - Check if comma, cut & bar are really solo chars (where's the red book?).
+  3  - Check final Technical Corrigendum 2: Prolog - Part 1: General Core
+  4 - Buy ISO Prolog standard - Part 2: Modules.  Likely only keywords.  Need it
+      anyway.
+  5 - Make this strict-ISO and a "Prolog (portable)" that includes this file.
+  6 - Likewise, adopt for GNU & SWI Prolog and others.
+  8 - keywords 'phrase', streams depricated, etc.pp. ==> Prolog (portable).
+  9 - Likewise: shebang ==> Prolog (portable).
+ 10 - Check if shebang can span multiple (escaped) lines.
+ 11 - Check: all KB altering preds can have side effects (via resource_error)?
+ 12 - For next two TODOs: ask katepart dev to provide lookahead to the next line
+    13 - Folding for consecutive one-line comments [easy? HARD! Impossible.]
+    14 - Likewise, folding for consecutive clauses [HARD! Impossible.]
+    I can live w/ indentation-based folding as a workaround.  Not 100%, but ok.
+ 15 - +arg_seq (and list): "," as normal text: Detect name( [no layout; easy]
+ 16 - +Classify meta predicates.
+ 18 - The dollar "$" is commonly used as the 1st char of (unquoted?) atoms to
+      indicate 'internal mode', e.g. to declare a predicate as compile-in.
+      Does this mean the dollar is used as if it were a prefix op or is it part
+      of the atom?  Would be easy to implement.
+ 19 - Bug #4: could be partly fixed, some built-ins take only float not integer.
+ 20 - Bug them to better document weakDeliminators (and rename to delimiter ;)
+ 21 - Adjust doxygen syntax for Prolog (e.g. adapt doxygen-lua), and include it.
+ 22 - Check if vertical tab is white/layout; are there more non-printables?
+################################################################################
+-->
+<!-- [Facts & Implications Of The ISO Standard, as a reminder]
+  - 'layout' is whitespace (space/tab/newline) and/or comments.
+  - Braces (any of "(){}[]"), exclamation "!" (aka 'cut'), 'bar' "|", degree "°",
+    paragraph "§" and percent "%" are NOT 'graphic' chars, but 'solo' chars.
+  - The 'bar' "|" may be a predefined operator, and then a user-def'd op, too.
+  - There can only be (at most) one bar "|" in a list (written inside "[]"), and
+    no commata after it (after the bar).
+  - Graphic tokens are atoms (and solo chars are one-char atoms?).
+  - "{}" and "[]" are 'special atoms' (likewise "()"?).
+  - "{}" and "[]" shall not be operators (but round or single braces may be?).
+  - The fullstop "." is not a predefined postfix operator, and
+  - the list functor "." is not a predefined prefix operator.
+  - An unquoted graphic token shall not begin with "/*".
+  - Multiline comments shall not be nested.
+  - Floats are NOT written with lowercase "e" (i.e. not neccessarily an error if
+    e.g. "e" is a pre- or user-defined expr or op and the whole term is valid),
+  - and the fractional part and exponent of floats are optional (any and both).
+  - A leading minus immediately preceding a number is optional for all numbers
+    and then part of the number and not a prefix operator (currently beeing
+    clarified by the standard commitee if "immediately" includes layout, only
+    comments, or none of these at all ;) but
+  - the minus "-" is a predefined prefix- and infix operator...
+  - Terms are rewritten when read in, extendable by user-def'd rules (and these
+    may be dynamic), i.e. clauses are not restricted to the standard forms
+    (to the extent that the fullstop ending a clause may be omited at all) and
+  - the dot "." may be (solo or part of) an user-defined operator.
+  - A Prolog processor may use any character set, e.g. (multi-byte) Unicode.
+  - Virtually every token may be an (user- or predefined) operator, except a few
+    specifically excluded tokens (i.e. NOT just graphic and 'standard' atoms).
+  - All operators except the comma are dynamic (although the standard denotes
+    atoms as 'constants' ;), and
+  - (the comma may appear in a user-defined operator (beeing part of it)?).
+  (Now try to write syntax highlighting for Prolog w/o Prolog HAHAHA ;)
+-->
+    <highlighting>
+	<!-- aka "guru meditation trigger" -->
+	<list name="error term ISO">
+	    <item>error</item>
+	</list>
+	<list name="guru meditation terms ISO">
+	    <item>instantiation_error</item>
+	    <item>uninstantiation_error</item>
+	    <item>type_error</item>
+	    <item>domain_error</item>
+	    <item>existence_error</item>
+	    <item>permission_error</item>
+	    <item>representation_error</item>
+	    <item>evaluation_error</item>
+	    <item>resource_error</item>
+	    <item>syntax_error</item>
+	    <item>system_error</item>
+	</list>
+
+	<!-- These are in fact bogus, DO NOT USE them and bug the ISO standard
+	commitee to abandon char_conversion/2 and to apply common sense to the
+	semantics of include/1 and ensure_loaded/1, i.e. to handle recursion.
+	Bomb them w/ e-mails! It's not the purpose of a standard to fixate
+	errors till eternity. -->
+	<list name="bogus ISO">
+	    <item>char_conversion</item>
+	    <item>current_char_conversion</item>
+	    <item>include</item>
+	    <item>ensure_loaded</item>
+	    <!-- Use atan2 instead -->
+	    <item>atan</item>
+	    <!-- Unspecified integer representation/format -->
+	    <item>xor</item>
+	</list>
+        <!-- including directive "initialization" -->
+        <list name="logic+control ISO">
+	    <item>initialization</item>
+<!-- 	    <item>!</item> -->
+	    <item>fail</item>
+	    <item>repeat</item>
+	    <item>call</item>
+            <item>catch</item>
+	    <item>throw</item>
+	    <item>true</item>
+	    <item>false</item>
+	    <item>once</item>
+	</list>
+
+	<!-- including directive "dynamic" -->
+        <list name="dyn clause mgmt ISO">
+	    <item>dynamic</item>
+	    <item>asserta</item>
+            <item>assertz</item>
+            <item>retractall</item>
+	    <item>retract</item>
+	    <item>abolish</item>
+	    <item>clause</item>
+<!-- 	    <item>numbervars</item> -->
+<!-- 	    <item>current_predicate</item> -->
+	</list>
+	<list name="terms ISO">
+	    <!-- keep tokens with same prefix sorted by length? -->
+	    <item>atom_concat</item>
+	    <item>atom_length</item>
+	    <item>atom_chars</item>
+	    <item>atom_codes</item>
+	    <item>arg</item>
+	    <item>subsumes_term</item>
+	    <item>acyclic_term</item>
+	    <item>char_code</item>
+	    <item>compare</item>
+	    <item>copy_term</item>
+	    <item>functor</item>
+	    <item>number_chars</item>
+	    <item>number_codes</item>
+<!--FIXME check if GNU or ISO 	    <item>sub_atom</item> -->
+	    <item>term_variables</item>
+	    <item>unify_with_occurs_check</item>
+	</list>
+	<list name="DCG non-ISO">
+	    <item>phrase</item>
+	</list>
+	<list name="streams ISO">
+	    <item>open</item>
+<!--GNU	    <item>current_stream</item>-->
+	    <item>set_stream_position</item>
+	    <item>get_char</item>
+	    <item>get_code</item>
+	    <item>peek_char</item>
+	    <item>peek_code</item>
+	    <item>get_byte</item>
+	    <item>peek_byte</item>
+
+	    <item>put_char</item>
+	    <item>put_code</item>
+	    <item>put_byte</item>
+	    <item>nl</item>
+
+	    <item>read_term</item>
+	    <item>read</item>
+	    <item>write_canonical</item>
+	    <item>writeq</item>
+	    <item>write</item>
+	</list>
+	<list name="arith eval ISO">
+	    <item>is</item>
+	</list>
+	<list name="arith ops int ISO">
+	    <item>rem</item>
+	    <item>mod</item>
+	    <item>div</item>
+	</list>
+        <list name="arith expr mixed ISO">
+<!--GNU	arith IF expr    <item>inc</item> -->
+<!--GNU	arith IF expr    <item>dec</item> -->
+	    <item>abs</item>
+	    <item>sign</item>
+	    <item>min</item>
+	    <item>max</item>
+        </list>
+        <list name="arith expr int ISO">
+<!--GNU	arith IF expr    <item>inc</item> -->
+<!--GNU	arith IF expr    <item>dec</item> -->
+	    <item>ceiling</item>
+	    <item>floor</item>
+	    <item>round</item>
+            <item>truncate</item>
+<!-- ISO Bogus	    <item>xor</item> -->
+        </list>
+        <list name="arith expr float ISO">
+	    <item>pi</item>
+<!--GNU	(see pi)    <item>e</item> -->
+<!--GNU	(see pi)    <item>epsilon</item> -->
+	    <item>sqrt</item>
+	    <item>tan</item>
+	    <item>cos</item>
+	    <item>sin</item>
+	    <item>atan2</item>
+	    <item>acos</item>
+	    <item>asin</item>
+	    <item>exp</item>
+            <item>log</item>
+	    <item>float</item>
+	    <item>float_fractional_part</item>
+            <item>float_integer_part</item>
+        </list>
+
+	<!-- including directives "op/multifile/discontigous" -->
+	<list name="prolog state ISO">
+	    <item>multifile</item>
+	    <item>discontigous</item>
+	    <item>op</item>
+	    <item>set_prolog_flag</item>
+	</list>
+	<list name="types ISO">
+	    <item>var</item>
+	    <item>nonvar</item>
+	    <item>atom</item>
+	    <item>integer</item>
+	    <item>float</item>
+	    <item>number</item>
+	    <item>atomic</item>
+	    <item>compound</item>
+	    <item>callable</item>
+	    <item>ground</item>
+	</list>
+	<list name="built-ins ISO">
+	    <item>current_op</item>
+	    <item>current_prolog_flag</item>
+	    <item>current_input</item>
+	    <item>current_output</item>
+
+	    <!-- These act on streams, but the permission_error is only thrown
+	    if the programmer tries to set_input(S) when S is alread an output
+	    stream and vice versa; so: not affected by 'outside world' -->
+	    <item>set_input</item>
+	    <item>set_output</item>
+
+	    <!-- may throw a system_error in GNU -->
+	    <item>close</item>
+
+	    <item>flush_output</item>
+
+	    <!-- may throw permission_error in GNU if S is an output stream -->
+	    <item>at_end_of_stream</item>
+
+	    <item>stream_property</item>
+	</list>
+
+	<!-- !FOLD the <context> rules & comments for an overview, then it's no magic. -->
+	<contexts>
+	<!-- Catch typos: style="Syntax Error" for all rules except comments and
+	quoted.  This helps to catch bugs in the rules itself, too.  Nice
+	debuging aid.  Note that (naturally) some of the syntax rules given in
+	EBNF are simplified and do not describe 100% valid Prolog.
+
+	    prolog text	:= shebang clause_seq | clause_seq
+	    clause_seq	:= clause clause_seq | empty
+	    clause      := layout term_seq fullstop | term_seq fullstop
+	-->
+	    <!-- shebang: ("#!") Detect shebang and fallthrough to clause_seq -->
+	    <context name="shebang" lineEndContext="clause" lineEmptyContext="clause" attribute="Syntax Error" >
+		<!-- no way: fallthrough="1" fallthroughContext="clause_seq" > -->
+		<Detect2Chars column="0" char="#" char1="!" context="1-comment" attribute="% italic predicates: w/ side effects" />
+		<!-- else fallthrough (workaround broken fallthrough) -->
+		<RegExpr String="&any;" lookAhead="true" context="clause" attribute="Syntax Error" />
+	    </context>
+
+	    <!-- syntax error (Test & Debug Aid, too): it's enough to highlight next token -->
+	    <context name="syntax_error" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
+		<DetectSpaces context="#pop" attribute="Syntax Error" />
+		<DetectIdentifier context="#pop" attribute="Syntax Error" />
+		<RegExpr String="&any;" context="#pop" attribute="Syntax Error" />
+	    </context>
+
+	    <!-- clause: Start a region for code folding and switch to term -->
+<!-- 	    <context name="clause" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" > -->
+	    <context name="clause" lineEndContext="#stay" attribute="Syntax Error" >
+		<IncludeRules context="layout" />
+		<!-- KISS: do not force term to detect an empty clause as syntax error -->
+		<RegExpr String="&fullstop_iso;" context="#stay" attribute="Warning (!use background)" />
+<!-- 		<RegExpr lookAhead="true" String="&any;" context="term" attribute="Syntax Error" /> -->
+		<RegExpr lookAhead="true" String="&any;" context="term" beginRegion="clause" attribute="Syntax Error" />
+	    </context>
+
+	    <!--term/nested/list/curly: the master/dispatcher -->
+	    <!-- (abbreviated): term := var | atomic | compound | "(" term ")"
+
+	    (term_seq := term "," term_seq | term    Not needed: comma is an op)
+	    term      := layout solo layout | layout solo | solo layout | solo
+	    solo      := var | atomic | compound | "(" term ")"
+	    compound  := op term | term op | term op term | functored | list
+	    functored := atom "(" arg_seq ")" | op "(" arg_seq ")"
+	    list      := "[" l_arg_seq "]" | double_quoted | "." "(" arg_seq ")"
+	    (if semantics of double_quoted not changed by set_prolog_flag/2)
+	    sorry I forgot curly: the DCG term but can not contain the fullstop.
+
+	    Comments in 'term' apply to the others as well.
+	    Note that eating layout once is enough, since we come back here.
+	    Only end the clause in the outmost term, which can only be term. -->
+	    <context name="term" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
+		<IncludeRules context="layout" />
+		<DetectChar char="(" context="nested" beginRegion="nested" attribute="( ) [ ]" />
+		<DetectChar char="[" context="list" beginRegion="list" attribute="( ) [ ]" />
+		<DetectChar char="{" context="curly" beginRegion="curly" attribute="{ DCG }" />
+		<DetectChar char="&comma;" context="#stay" attribute="Logic &amp; Control" />
+		<DetectChar char="&cut;" context="#stay" attribute="Logic &amp; Control" />
+		<DetectChar char="&bar;" context="#stay" attribute="Normal Text" />
+		<!-- lookAhead to give different style to the dot and the brace -->
+		<Detect2Chars lookAhead="true" char="&dot;" char1="(" context="list_functor" attribute="Syntax Error" />
+<!-- 		<RegExpr String="&fullstop_iso;" context="#pop" attribute="Logic &amp; Control" /> -->
+		<RegExpr String="&fullstop_iso;" context="#pop" endRegion="clause" attribute="Logic &amp; Control" />
+		<IncludeRules context="atomic" />
+		<!-- Default: anything not eaten here is a syntax error -->
+	    </context>
+	    <context name="nested" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
+		<IncludeRules context="layout" />
+		<DetectChar char=")" context="#pop" endRegion="nested" attribute="( ) [ ]" />
+		<DetectChar char="(" context="nested" beginRegion="nested" attribute="( ) [ ]" />
+		<DetectChar char="[" context="list" beginRegion="list" attribute="( ) [ ]" />
+		<DetectChar char="{" context="curly" beginRegion="curly" attribute="{ DCG }" />
+		<DetectChar char="&cut;" context="#stay" attribute="Logic &amp; Control" />
+		<DetectChar char="&comma;" context="#stay" attribute="Logic &amp; Control" />
+		<DetectChar char="&bar;" context="#stay" attribute="Normal Text" />
+		<Detect2Chars lookAhead="true" char="&dot;" char1="(" context="list_functor" attribute="Normal Text" />
+		<RegExpr String="&fullstop_iso;" context="#stay" attribute="Warning (!use background)" />
+		<IncludeRules context="atomic" />
+	    </context>
+	    <context name="list" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
+		<IncludeRules context="layout" />
+		<DetectChar char="(" context="nested" beginRegion="nested" attribute="( ) [ ]" />
+		<DetectChar char="]" context="#pop" endRegion="list" attribute="( ) [ ]" />
+		<DetectChar char="[" context="list" beginRegion="list" attribute="( ) [ ]" />
+		<DetectChar char="{" context="curly" beginRegion="curly" attribute="( ) [ ]" />
+		<DetectChar char="&comma;" context="#stay" attribute="Normal Text" />
+		<DetectChar char="&cut;" context="#stay" attribute="Normal Text" />
+		<DetectChar char="&bar;" context="#stay" attribute="other built-in operator" />
+		<Detect2Chars lookAhead="true" char="&dot;" char1="(" context="list_functor" attribute="Normal Text" />
+		<IncludeRules context="atomic" />
+	    </context>
+	    <context name="curly" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
+		<IncludeRules context="layout" />
+		<DetectChar char="(" context="nested" beginRegion="nested" attribute="( ) [ ]" />
+		<DetectChar char="[" context="list" beginRegion="list" attribute="( ) [ ]" />
+		<DetectChar char="}" context="#pop" endRegion="curly" attribute="{ DCG }" />
+		<DetectChar char="{" context="curly" beginRegion="curly" attribute="{ DCG }" />
+		<DetectChar char="&comma;" context="#stay" attribute="Logic &amp; Control" />
+		<DetectChar char="&cut;" context="#stay" attribute="Logic &amp; Control" />
+		<DetectChar char="&bar;" context="#stay" attribute="Normal Text" />
+		<Detect2Chars lookAhead="true" char="&dot;" char1="(" context="list_functor" attribute="Normal Text" />
+		<IncludeRules context="atomic" />
+	    </context>
+
+	    <!--  arith_expr := expr op expr | op expr | expr op | "(" expr ")"
+			expr := number_expr | var | arith_expr
+
+	    This is only a goody to highlight arith ops and detect syntax errors.
+	    If it causes problems, disable it: exchange context="arith_expr" in
+	    "atomic" and "operator" below with context="#stay" (two or three occurrences) -->
+	    <context name="arith_expr" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
+		<DetectChar char="(" context="nested_expr" beginRegion="nested" attribute="( ) [ ]" />
+		<DetectChar lookAhead="true" char=")" context="#pop" attribute="( ) [ ]" />
+		<DetectChar lookAhead="true" char="}" context="#pop" attribute="{ DCG }" />
+		<DetectChar lookAhead="true" char="]" context="#pop" attribute="( ) [ ]" />
+		<!-- FIXME check if cut may be an op, else (and in any case 99.9% likely) it's a usual cut here -->
+		<DetectChar lookAhead="true" char="&cut;" context="#pop" attribute="Logic &amp; Control" />
+		<DetectChar lookAhead="true" char="&comma;" context="#pop" attribute="Logic &amp; Control" />
+		<!-- bar & dot could be a user-def'd op, pre-def'd ops could be
+		redef'd; but let's assume the default and just end the expr -->
+		<DetectChar lookAhead="true" char="&bar;" context="#pop" attribute="other built-in operator" />
+		<RegExpr lookAhead="true" String="&fullstop_iso;" context="#pop" attribute="Logic &amp; Control" />
+		<RegExpr lookAhead="true" String="&logic_control_ops_iso;" context="#pop" attribute="Logic &amp; Control" />
+		<IncludeRules context="arith_expr_common" />
+	    </context>
+	    <context name="nested_expr" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
+		<DetectChar char="(" context="nested_expr" beginRegion="nested" attribute="( ) [ ]" />
+		<DetectChar char=")" context="#pop" endRegion="nested" attribute="( ) [ ]" />
+		<!-- FIXME check if cut may be an op, else it's a syntax error here -->
+		<DetectChar char="&cut;" context="#stay" attribute="Normal Text" />
+		<DetectChar char="&comma;" context="#stay" attribute="Syntax Error" />
+		<!-- bar & dot could be a user-def'd op, pre-def'd ops could be redef'd; else these were errors -->
+		<DetectChar char="&bar;" context="#stay" attribute="Normal Text" />
+		<RegExpr String="&logic_control_ops_iso;" context="#stay" attribute="other built-in operator" />
+		<IncludeRules context="arith_expr_common" />
+	    </context>
+
+	    <!-- list functor: assign style to the dot and let term/list/curly take the brace
+	    (We have no style "built-in term", so take "Normal text" or "built-in predicate")
+	    ASSERT 1st is the dot, else "Syntax Error" INTENTIONALLY -->
+	    <context name="list_functor" lineEndContext="syntax_error" attribute="Syntax Error" >
+		<DetectChar char="&dot;" context="#pop" attribute="other built-in predicate" />
+	    </context>
+
+	    <!-- single/double/back-quoted: handle esc seq and closing quote
+	    Comments in single-quoted apply to the others as well.
+	    Entry point is single/double/back-quoted (only to handle syntax error:
+	    nl after opening quote), sq/dq/bq is inside the string.
+	    lineEndContext should be "syntax_error", but then we couldn't handle
+	    a valid esc'd line continuation.  So we do that 'in vitro' (took me
+	    2 days w/ a plethora of useless rules to solve that puzzle LOL).
+	    On error must not #stay, else the error isn't shown iff white or empty -->
+	    <context name="sq" lineEndContext="#stay" attribute="'quo Ted'" noIndentationBasedFolding="true">
+<!-- 	    <context name="single-quoted" lineEndContext="#stay" attribute="'quo Ted'" > -->
+		<IncludeRules context="quoted_1st"/>
+		<!-- un-esc'd nl is a syntax error; match max seq (+), else the
+		error is only shown in the next line -->
+		<RegExpr String="(''|&esc_oct_iso;|&esc_hex_iso;|\\&any;|[^'\\]+)$"
+			context="syntax_error_sq" attribute="Syntax Error" />
+		<!-- Usual handling: -->
+		<Detect2Chars char="'" char1="'" context="#stay" attribute="escaped (!use background)" />
+		<DetectChar char="'" context="#pop#pop" endRegion="quoted" attribute="'quo Ted'" />
+		<IncludeRules context="quoted_last"/>
+		<!-- Default: literal content of the quoted string, context's style applies -->
+	    </context>
+	    <context name="dq" lineEndContext="#stay" attribute="&quot;double-quoted&quot;" noIndentationBasedFolding="true" >
+<!-- 	    <context name="double-quoted" lineEndContext="#stay" attribute="&quot;double-quoted&quot;" > -->
+		<IncludeRules context="quoted_1st"/>
+		<RegExpr String="(&quot;&quot;|&esc_oct_iso;|&esc_hex_iso;|\\&any;|[^&quot;\\]+)$"
+			context="syntax_error_dq" attribute="Syntax Error" />
+		<Detect2Chars char="&quot;" char1="&quot;" context="#stay" attribute="escaped (!use background)" />
+		<DetectChar char="&quot;" context="#pop#pop" endRegion="quoted" attribute="&quot;double-quoted&quot;" />
+		<IncludeRules context="quoted_last"/>
+	    </context>
+	    <context name="bq" lineEndContext="#stay" attribute="`back-quoted`" noIndentationBasedFolding="true" >
+<!-- 	    <context name="back-quoted" lineEndContext="#stay" attribute="`back-quoted`" > -->
+		<IncludeRules context="quoted_1st"/>
+		<RegExpr String="(``|&esc_oct_iso;|&esc_hex_iso;|\\&any;|[^`\\]+)$"
+			context="syntax_error_bq" attribute="Syntax Error" />
+		<Detect2Chars char="`" char1="`" attribute="escaped (!use background)" />
+		<DetectChar char="`" context="#pop#pop" endRegion="quoted" attribute="`back-quoted`" />
+		<IncludeRules context="quoted_last"/>
+	    </context>
+	    <context name="single-quoted" lineEndContext="#stay" attribute="'quo Ted'" >
+		<LineContinue char="'" context="sq" beginRegion="quoted" attribute="Syntax Error" />
+		<DetectChar char="'" context="sq" beginRegion="quoted" attribute="'quo Ted'" />
+	    </context>
+	    <context name="double-quoted" lineEndContext="#stay" attribute="&quot;double-quoted&quot;" >
+		<LineContinue char="&quot;" context="dq" beginRegion="quoted" attribute="Syntax Error" />
+		<DetectChar char="&quot;" context="dq" beginRegion="quoted" attribute="&quot;double-quoted&quot;" />
+	    </context>
+	    <context name="back-quoted" lineEndContext="#stay" attribute="`back-quoted`" >
+		<LineContinue char="`" context="bq" beginRegion="quoted" attribute="Syntax Error" />
+		<DetectChar char="`" context="bq" beginRegion="quoted" attribute="`back-quoted`" />
+	    </context>
+
+	    <!-- syntax_error_q: highlight next token and proceed normal afterwards -->
+	    <context name="syntax_error_sq" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
+		<Detect2Chars char="\" char1="'" context="#pop" attribute="Syntax Error" />
+		<Detect2Chars char="'" char1="'" context="#pop" attribute="Syntax Error" />
+		<DetectChar char="'" context="#pop#pop#pop" endRegion="quoted" attribute="Syntax Error" />
+		<IncludeRules context="syntax_error"/>
+	    </context>
+	    <context name="syntax_error_dq" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
+		<Detect2Chars char="\" char1="&quot;" context="#pop" attribute="Syntax Error" />
+		<Detect2Chars char="&quot;" char1="&quot;" context="#pop" attribute="Syntax Error" />
+		<DetectChar char="&quot;" context="#pop#pop#pop" endRegion="quoted" attribute="Syntax Error" />
+		<IncludeRules context="syntax_error"/>
+	    </context>
+	    <context name="syntax_error_bq" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
+		<Detect2Chars char="\" char1="`" context="#pop" attribute="Syntax Error" />
+		<Detect2Chars char="`" char1="`" context="#pop" attribute="Syntax Error" />
+		<DetectChar char="`" context="#pop#pop#pop" endRegion="quoted" attribute="Syntax Error" />
+		<IncludeRules context="syntax_error"/>
+	    </context>
+
+	    <!-- char_code (after "0'"): esc seq, singleq twice, or any other -->
+	    <context name="char_code" lineEndContext="#pop" attribute="Syntax Error" >
+		<Detect2Chars char="'" char1="'" context="#pop" attribute="escaped (!use background)" />
+		<DetectChar char="'" context="#pop" attribute="Syntax Error" />
+		<DetectChar char="&bs;" context="esc_seq_cc" attribute="escaped (!use background)" />
+		<DetectChar char="&tab;" context="#pop" attribute="Warning (!use background)" />
+		<!-- Default _AND IF_ esc_seq #pops back here; we need this to #pop out -->
+		<RegExpr String="&any;" context="#pop" attribute="0'a (!use background)" />
+	    </context>
+	    <!-- "0'" or "0'\" at EOL is a syntax error, catched below.  If
+	    possible, highlight white @next line to make clear error is the nl -->
+	    <context name="syntax_error_cc" lineEndContext="#stay" attribute="Syntax Error"
+		    fallthrough="true" fallthroughContext="#pop" >
+		<DetectSpaces context="#pop" attribute="Syntax Error" />
+	    </context>
+
+	    <!-- esc_seq: it's not worth it to handle common for quoted and cc
+	    esc_seq_q: handle only cc in bs (e.g. "\007\"), else -> esc_seq_q2
+	    ASSERT esc'd newline is handled by the calling context
+	    ASSERT we get the leading bs here to highlight the whole thing -->
+	    <context name="esc_seq_q" lineEndContext="syntax_error" attribute="Syntax Error" >
+		<RegExpr String="&esc_oct_iso;" context="#pop" attribute="0'a (!use background)" />
+		<RegExpr String="&esc_hex_iso;" context="#pop" attribute="0'a (!use background)" />
+		<DetectChar char="&bs;" context="esc_seq_q2" attribute="escaped (!use background)" />
+	    </context>
+	    <!-- esc_seq_cc: #pop#pop out of cc on std esc seq, else pass char back
+	    ASSERT we do NOT need the leading bs here anymore -->
+	    <context name="esc_seq_cc" fallthrough="true" fallthroughContext="#pop"
+		    lineEndContext="#pop#pop" attribute="Syntax Error" >
+		<DetectChar char="&tab;" context="#pop#pop" attribute="Warning (!use background)" />
+		<AnyChar String="&any_esc_iso;" context="#pop#pop" attribute="escaped (!use background)" />
+	    </context>
+	    <!-- esc_seq_q2: Handle standard esc seq in quoted else pass char back
+	    ASSERT we do NOT need the leading bs here anymore -->
+	    <context name="esc_seq_q2" fallthrough="true" fallthroughContext="#pop#pop"
+		    lineEndContext="syntax_error" attribute="Syntax Error" >
+		<DetectChar char="&tab;" context="#pop#pop" attribute="Warning (!use background)" />
+		<AnyChar String="&any_esc_iso;" context="#pop#pop" attribute="escaped (!use background)" />
+	    </context>
+
+	    <!-- id,var,graphic: ASSERT calling context ashured 1st char is ok
+				 ASSERT we get the 1st char for id & var -->
+	    <context name="id" attribute="Syntax Error" lineEndContext="#stay" >
+		<DetectIdentifier context="#pop" attribute="Normal Text" />
+	    </context>
+	    <context name="var" attribute="Syntax Error" lineEndContext="#stay" >
+		<DetectIdentifier context="#pop" attribute="_VARIABLE" />
+	    </context>
+	    <context name="graphic" lineEndContext="#pop" attribute="Syntax Error" fallthrough="true" fallthroughContext="#pop" >
+		<AnyChar String="&any_graphic_iso;" context="#stay" attribute="Normal Text" />
+	    </context>
+
+	    <!-- numbers (after "0[box]") -->
+	    <context name="bin" lineEndContext="#pop" attribute="Syntax Error" fallthrough="true" fallthroughContext="#pop" >
+		<AnyChar String="&any_bin_iso;" context="#stay" attribute="0b1001 0o007 0xF1" />
+	    </context>
+	    <context name="oct" lineEndContext="#pop" attribute="Syntax Error" fallthrough="true" fallthroughContext="#pop" >
+		<AnyChar String="&any_oct_iso;" context="#stay" attribute="0b1001 0o007 0xF1" />
+	    </context>
+	    <context name="hex" lineEndContext="#pop" attribute="Syntax Error" fallthrough="true" fallthroughContext="#pop" >
+		<AnyChar String="&any_hex_iso;" context="#stay" attribute="0b1001 0o007 0xF1" />
+	    </context>
+
+	    <!-- comment-iso: multi-line comment, handle closing "*/" -->
+	    <context name="comment-iso" lineEndContext="#stay" attribute="% italic predicates: w/ side effects" >
+	    <!-- Nested comments are not allowed in strict ISO-Prolog - - >
+		<Detect2Chars char="/" char1="*" context="comment" beginRegion="comment"
+			    attribute="% italic predicates: w/ side effects" />-->
+		<Detect2Chars char="*" char1="/" context="#pop" endRegion="comment"
+			    attribute="% italic predicates: w/ side effects" />
+		<DetectSpaces />
+		<IncludeRules context="##Alerts" />
+		<DetectIdentifier />
+	    </context>
+
+	    <!-- 1-line comment: #pop@EOL  -->
+	    <!-- Folding for consecutive 1-line comments: let indentation-based auto-folding work -->
+	    <context name="1-comment" lineEndContext="#pop" attribute="% italic predicates: w/ side effects" >
+		<DetectSpaces />
+		<IncludeRules context="##Alerts" />
+		<DetectIdentifier />
+	    </context>
+	    <context name="region_marker" lineEndContext="#pop" attribute="%BEGIN folding region" noIndentationBasedFolding="true" >
+		<IncludeRules context="1-comment" />
+	    </context>
+	    <context name="layout_fold" lineEndContext="#stay" attribute="Syntax Error"
+		    fallthrough="true" fallthroughContext="#pop" >
+		<DetectSpaces attribute="Normal Text" />
+		<StringDetect String="%BEGIN" context="region_marker" attribute="%BEGIN folding region"
+			    firstNonSpace="true" beginRegion="user_region" />
+		<StringDetect String="%END" context="region_marker" attribute="%BEGIN folding region"
+			    firstNonSpace="true" endRegion="user_region" />
+		<DetectChar firstNonSpace="true" char="%" context="1-comment" attribute="% italic predicates: w/ side effects" />
+	    </context>
+
+<!--####### BEGIN sub rules to be included - <context> never taken -->
+
+	    <!-- Common for all quoted: Handle line continuation, esc seq, and most other input efficiently -->
+	    <context name="quoted_1st" lineEndContext="#stay" attribute="Syntax Error" >
+		<LineContinue attribute="escaped (!use background)" />
+		<DetectSpaces column="0" attribute="escaped (!use background)" />
+	    </context>
+	    <context name="quoted_last" lineEndContext="#stay" attribute="Syntax Error" >
+		<DetectChar lookAhead="true" char="&bs;" context="esc_seq_q" attribute="Syntax Error" />
+		<DetectChar char="&tab;" attribute="Warning (!use background)" />
+		<DetectIdentifier />
+		<DetectSpaces />
+	    </context>
+
+	    <!-- layout_seq := layout layout_seq
+		     layout := " " | tab | nl | comment -->
+	    <context name="layout" lineEndContext="#stay" attribute="Syntax Error" >
+		<DetectSpaces attribute="Normal Text" />
+		<Detect2Chars char="/" char1="*" context="comment-iso" attribute="% italic predicates: w/ side effects"
+			    beginRegion="comment" />
+		<StringDetect String="%BEGIN" context="region_marker" attribute="%BEGIN folding region"
+			    firstNonSpace="true" beginRegion="user_region" />
+		<StringDetect String="%END" context="region_marker" attribute="%BEGIN folding region"
+			    firstNonSpace="true" endRegion="user_region" />
+		<DetectChar firstNonSpace="true" char="%" context="layout_fold" attribute="% italic predicates: w/ side effects"
+			    lookAhead="true" />
+		<DetectChar firstNonSpace="false" char="%" context="1-comment" attribute="% italic predicates: w/ side effects" />
+	    </context>
+
+	    <!--atomic: the work horse -->
+	    <!-- (simplified) atomic := atom | number | op | var -->
+	    <context name="atomic" lineEndContext="#stay" attribute="Syntax Error" >
+		<!-- NOTE the order of rules is important... (as always)
+		Predefined 1st, unknown (user defined) last -->
+		<keyword String="logic+control ISO" context="#stay" attribute="Logic &amp; Control" />
+		<keyword String="types ISO" context="#stay" attribute="Type Checking" />
+		<keyword String="dyn clause mgmt ISO" context="#stay" attribute="Dynamic Clause Management" />
+		<keyword String="streams ISO" context="#stay" attribute="Stream I/O" />
+		<keyword String="terms ISO" context="#stay" attribute="other built-in predicate" />
+		<keyword String="prolog state ISO" context="#stay" attribute="Prolog State" />
+		<keyword String="DCG non-ISO" context="#stay" attribute="{ DCG }" />
+		<keyword String="arith eval ISO" context="arith_expr" attribute="Arithmetics" />
+		<!-- These are user predicates outside arit_expr -->
+<!-- 		<keyword String="arith expr mixed ISO" context="#stay" attribute="other built-in predicate" /> -->
+<!-- 		<keyword String="arith expr int ISO" context="#stay" attribute="other built-in predicate" /> -->
+<!-- 		<keyword String="arith expr float ISO" context="#stay" attribute="other built-in predicate" /> -->
+		<keyword String="built-ins ISO" context="#stay" attribute="other built-in predicate" />
+		<keyword String="error term ISO" context="#stay" attribute="Guru Meditation" />
+		<keyword String="guru meditation terms ISO" context="#stay" attribute="Guru Meditation Terms" />
+		<keyword String="bogus ISO" context="#stay" attribute="ISO Bogus" />
+
+		<!-- Match char code before quoted and ops... -->
+ 		<IncludeRules context="number" />
+
+		<!-- these depend on current_prolog_flag/2 so can all return a term i.e. a list (of char codes) -->
+		<DetectChar lookAhead="true" char="'" context="single-quoted" attribute="'quo Ted'" />
+		<DetectChar lookAhead="true" char="`" context="back-quoted" attribute="`back-quoted`" />
+		<DetectChar lookAhead="true" char="&quot;" context="double-quoted" attribute="&quot;double-quoted&quot;" />
+
+		<!-- ...and ops before atoms, else "div", "is" etc. are usual atoms -->
+ 		<IncludeRules context="operator" />
+		<AnyChar lookAhead="true" String="&any_lower_iso;" context="id" attribute="Normal Text" />
+		<AnyChar lookAhead="true" String="&any_upper_under_iso;" context="var" attribute="_VARIABLE" />
+		<AnyChar String="&any_graphic_iso;" context="graphic" attribute="Normal Text" />
+	    </context> <!-- atomic -->
+
+	    <!-- [(mostly) "atomic" for] arith_expr := arith_op | number_expr | var
+				      number_expr := number | built-in | user-def
+
+	    This is only a goody to highlight arith ops and detect syntax errors.
+	    If it causes problems, disable it: exchange context="arith_expr" in
+	    contexts "atomic" and "operator" with context="#stay" -->
+	    <context name="arith_expr_common" lineEndContext="#stay" attribute="Syntax Error" >
+		<IncludeRules context="layout" />
+		<IncludeRules context="number" />
+		<keyword String="arith eval ISO" context="#pop" attribute="Syntax Error" />
+		<keyword String="bogus ISO" context="#stay" attribute="ISO Bogus" />
+		<keyword String="arith expr mixed ISO" context="#stay" attribute="Arithmetics" />
+		<keyword String="arith expr int ISO" context="#stay" attribute="Integer Arithmetics" />
+		<keyword String="arith expr float ISO" context="#stay" attribute="Float Arithmetics" />
+		<keyword String="arith ops int ISO" context="#stay" attribute="Integer Arithmetics" />
+		<RegExpr String="&arith_compare_iso;" context="#pop" attribute="Syntax Error" />
+		<RegExpr String="&arith_ops_mixed_iso;" context="#stay" attribute="Arithmetics" />
+		<RegExpr String="&arith_ops_int_iso;" context="#stay" attribute="Integer Arithmetics" />
+		<RegExpr String="&arith_ops_float_iso;" context="#stay" attribute="Float Arithmetics" />
+		<RegExpr String="&arith_bogus_iso;" context="#stay" attribute="ISO Bogus" />
+		<!-- do not miss user-def'd arithmetic expr and number expr-->
+ 		<IncludeRules context="operator" />
+		<AnyChar lookAhead="true" String="&any_lower_iso;" context="id" attribute="Normal Text" />
+		<AnyChar lookAhead="true" String="&any_upper_under_iso;" context="var" attribute="_VARIABLE" />
+		<AnyChar String="&any_graphic_iso;" context="graphic" attribute="Normal Text" />
+	    </context>
+
+	    <!-- number := float | integer
+		integer := decimal | baseN | "0'" char_code
+		baseN   := "0b" [01]+ | "0o" [0-7]+ | "0x" [0-9a-fA-F]+ -->
+	    <context name="number" lineEndContext="#pop" attribute="Syntax Error" >
+		<!-- Match integers after other numbers -->
+		<!-- FIXME a minus may precede all numbers and is part of the number! -->
+		<RegExpr String="0'\\?$" context="syntax_error_cc" attribute="Syntax Error" />
+		<Detect2Chars char="0" char1="'" context="char_code" attribute="0'a (!use background)" />
+
+<!-- NOT: [box] could be a postfix op <RegExpr String="0[box]$" context="#stay" attribute="Syntax Error" /> -->
+		<Detect2Chars char="0" char1="b" context="bin" attribute="0b1001 0o007 0xF1" />
+		<Detect2Chars char="0" char1="o" context="oct" attribute="0b1001 0o007 0xF1" />
+		<Detect2Chars char="0" char1="x" context="hex" attribute="0b1001 0o007 0xF1" />
+
+		<RegExpr String="&float1_iso;" context="#stay" attribute="2.718281E-9" />
+		<RegExpr String="&float2_iso;" context="#stay" attribute="2.718281E-9" />
+		<RegExpr String="&float3_iso;" context="#stay" attribute="2.718281E-9" />
+		<Int context="#stay" attribute="1  2  3  42" />
+	    </context>
+
+	    <!-- operator := predefined_op | dynamic_op (which we can not detect)
+	    comma, single dot & bar are catched earlier above in term/list/curly -->
+	    <context name="operator" lineEndContext="#pop" attribute="Syntax Error" >
+		<keyword String="arith eval ISO" context="arith_expr" attribute="Arithmetics" />
+		<keyword String="arith ops int ISO" context="#stay" attribute="other built-in operator" />
+		<RegExpr String="&logic_control_ops_iso;" context="#stay" attribute="Logic &amp; Control" />
+		<RegExpr String="&predefined_ops_iso;" context="#stay" attribute="other built-in operator" />
+		<RegExpr String="&dcg_production_iso;" context="#stay" attribute="{ DCG }" />
+		<RegExpr String="&arith_compare_iso;" context="arith_expr" attribute="Arithmetics" />
+		<RegExpr String="&arith_ops_mixed_iso;" context="#stay" attribute="other built-in operator" />
+		<RegExpr String="&arith_ops_int_iso;" context="#stay" attribute="other built-in operator" />
+		<RegExpr String="&arith_ops_float_iso;" context="#stay" attribute="other built-in operator" />
+		<RegExpr String="&arith_bogus_iso;" context="#stay" attribute="ISO Bogus" />
+	    </context>
+
+<!--####### END sub rules to be included - <context> never taken -->
+	</contexts>
+
+	<!-- The idea is to give all predicates that may be affected by the
+	"outside world" a common style (italic).  I.e. these can throw a
+	permission, evaluation, representation or resource_error, even though
+	the program itself is 100% correct.  E.g. you get_char/2 a char code 1
+	from a text stream (representation_error): not your mistake, but you
+	have to deal with that, too. -->
+	<itemDatas>
+	    <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false" />
+	    <itemData name="_VARIABLE" defStyleNum="dsDataType" bold="false" spellChecking="false" />
+	    <itemData name="'quo Ted'" defStyleNum="dsString" />
+	    <itemData name="`back-quoted`" defStyleNum="dsString" italic="true" />
+	    <!-- The standard wants double-quoted to be a list of char codes, but
+	    e.g. GNU Prolog allows that to be set with set_prolog_flag/2 -->
+	    <itemData name="&quot;double-quoted&quot;" defStyleNum="dsOthers" />
+	    <itemData name="escaped (!use background)" defStyleNum="dsChar" spellChecking="false"
+			 backgroundColor="#0C0C0C" selBackgroundColor="#FFFFFF" />
+
+	    <!-- Numbers -->
+	    <itemData name="2.718281E-9" defStyleNum="dsFloat" spellChecking="false" />
+	    <itemData name="1  2  3  42" defStyleNum="dsDecVal" spellChecking="false" />
+	    <itemData name="0b1001 0o007 0xF1" defStyleNum="dsBaseN" spellChecking="false" />
+	    <itemData name="0'a (!use background)" defStyleNum="dsBaseN" spellChecking="false"
+			 backgroundColor="#0C0C0C" selBackgroundColor="#FFFFFF" />
+
+	    <itemData name="( ) [ ]" defStyleNum="dsNormal" spellChecking="false" />
+	    <itemData name="{ DCG }" defStyleNum="dsKeyword" spellChecking="false" />
+	    <itemData name="Prolog State" defStyleNum="dsFunction" bold="true" spellChecking="false" />
+	    <itemData name="Type Checking" defStyleNum="dsDataType" spellChecking="false" />
+	    <itemData name="Logic &amp; Control" defStyleNum="dsKeyword" spellChecking="false" />
+	    <itemData name="other built-in operator" defStyleNum="dsFunction" spellChecking="false" />
+	    <itemData name="other built-in predicate" defStyleNum="dsFunction" spellChecking="false" />
+
+	    <!-- Comments (2nd not used, just a hint) -->
+	    <itemData name="% italic predicates: w/ side effects" defStyleNum="dsComment" />
+
+	    <!-- Predicates affected by 'outside world' -->
+	    <itemData name="Dynamic Clause Management" defStyleNum="dsKeyword" italic="true" spellChecking="false" />
+	    <itemData name="Stream I/O" defStyleNum="dsFunction" italic="true" spellChecking="false" />
+
+	    <!-- arithmetics: get the color of ints/floats; includes ops & expressions like pi -->
+	    <itemData name="Arithmetics" defStyleNum="dsDataType" bold="true" italic="true" spellChecking="false" />
+	    <itemData name="Integer Arithmetics" defStyleNum="dsDecVal" bold="true" italic="true" spellChecking="false" />
+	    <itemData name="Float Arithmetics" defStyleNum="dsFloat" bold="true" italic="true" spellChecking="false" />
+	    <itemData name="ISO Bogus" defStyleNum="dsAlert" bold="true" italic="true" spellChecking="false" />
+
+	    <!-- no way w/ buggy kate 3.8.5: get the color of default style dsError for error and terms -->
+	    <itemData name="Guru Meditation" defStyleNum="dsNormal" spellChecking="false"
+		    bold="true" italic="false" underline="false" color="#FF0000" selColor="#00FFFF" />
+	    <itemData name="Guru Meditation Terms" defStyleNum="dsNormal" spellChecking="false"
+		    bold="false" italic="true" underline="false" color="#FF0000" selColor="#00FFFF" />
+	    <itemData name="Syntax Error" defStyleNum="dsError" spellChecking="false" />
+	    <itemData name="Warning (!use background)" defStyleNum="dsAlert" spellChecking="false"
+			backgroundColor="#FC000C" selBackgroundColor="#03FFF3" />
+	    <itemData name="%BEGIN folding region" defStyleNum="dsRegionMarker" spellChecking="false" />
+	</itemDatas>
+    </highlighting>
+    <general>
+	<keywords casesensitive="true" additionalDeliminator="$#'&quot;`" />
+	<!-- let indentationsensitive folding provide it's magic -->
+	<folding indentationsensitive="true" />
+<!-- 	<EmptyLines> -->
+<!--        <EmptyLine regexpr="^[ /t]*(?!%).*$" /> -->
+<!-- 	</EmptyLines> -->
+	<comments>
+	    <comment name="singleLine" start="%" position="afterwhitespace" />
+	    <comment name="multiLine" start="/*" end="*/" region="comment" />
+	</comments>
+    </general>
+</language>
+<!--##### NOTE [HOWTO check your syntax file, extracted from language.dtd] #####
+
+	Copyright (c) 2001 Joseph Wenninger <jowenn@kde.org>
+        modified (c) 2002 Anders Lund <anders@alweb.dk>
+        modified (c) 2003 Simon Huerlimann <simon.huerlimann@access.unizh.ch>
+        modified (c) 2005 Dominik Haumann <dhdev@gmx.de>
+        modified (c) 2008 Wilbert Berendsen <info@wilbertberendsen.nl>
+
+    You can validate your syntax files using checkXML from the development
+    package of kdelibs [author: i.e. kdelibs-dev]:
+
+	checkXML yourSyntax.xml [author: | grep -v 'no template matches']
+
+    If you see any 'validity error' lines, you should fix them. If you get
+    a lot of 'No template matches' lines, everything's just fine. You've
+    produced a valid syntax file!
+
+    It's also possible to use the (much faster) xmllint which comes with the
+    GNOME (oops:-) XML Library libxml2:
+
+	xmllint - -dtdvalid language.dtd yourSyntax.xml
+	(don't use a space between the two - [author: dashes/minus]
+	That's just because XML comments don't allow that:-(
+
+    To use your syntax file, copy it to .kde/share/apps/katepart/syntax/ in
+    your home directory. You have to open a new instance of kwrite/kate to use
+    the new syntax file.
+-->

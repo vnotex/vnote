@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="OORS" version="3" kateversion="2.4" section="Sources" extensions="*.oors" author="Gernot Gebhard (gebhard@absint.com)" license="MIT">
+  <highlighting>
+    <list name="oors">
+      <item>allow</item>
+      <item>apply</item>
+      <item>backtrack</item>
+      <item>copy</item>
+      <item>condition</item>
+      <item>deny</item>
+      <item>extends</item>
+      <item>graph</item>
+      <item>if</item>
+      <item>else</item>
+      <item>linear</item>
+      <item>profile</item>
+      <item>rule</item>
+      <item>ruleset</item>
+      <item>search</item>
+      <item>unsafe</item>
+    </list>
+    <contexts>
+      <context name="Main" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Directive" context="#stay" String="oors" />
+        <IncludeRules context="Comment" />
+        <DetectSpaces />
+        <DetectChar attribute="Normal Text" context="Ordered" char="[" beginRegion="Ordered" />
+        <DetectChar attribute="Normal Text" context="Unordered" char="{" beginRegion="Unordered" />
+        <Detect2Chars attribute="Content-Type Delimiter" context="Header" char="%" char1="{" beginRegion="Header" />
+        <Detect2Chars attribute="Content-Type Delimiter" context="Header" char="%" char1="%" beginRegion="Header" />
+      </context>
+      <context name="Header" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="Comment" />
+        <Detect2Chars attribute="Content-Type Delimiter" context="#pop" char="%" char1="}" endRegion="Header" />
+        <Detect2Chars attribute="Content-Type Delimiter" context="#pop" char="%" char1="%" endRegion="Header" />
+        <IncludeRules context="##C++" />
+      </context>
+      <context name="Ordered" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Directive" context="#stay" String="oors" />
+        <IncludeRules context="Comment" />
+        <IncludeRules context="Accessor" />
+        <DetectChar attribute="Normal Text" context="Ordered" char="[" beginRegion="Ordered" />
+        <DetectChar attribute="Normal Text" context="Unordered" char="{" beginRegion="Unordered" />
+        <DetectChar attribute="Normal Text" context="#pop" char="]" endRegion="Ordered" />
+        <IncludeRules context="##C++" />
+      </context>
+      <context name="Unordered" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Directive" context="#stay" String="oors" />
+        <IncludeRules context="Comment" />
+        <IncludeRules context="Accessor" />
+        <DetectChar attribute="Normal Text" context="Ordered" char="[" beginRegion="Ordered" />
+        <DetectChar attribute="Normal Text" context="Unordered" char="{" beginRegion="Unordered" />
+        <DetectChar attribute="Normal Text" context="#pop" char="}" endRegion="Unordered" />
+        <IncludeRules context="##C++" />
+      </context>
+      <context name="Accessor" attribute="Directive" lineEndContext="#stay">
+        <Detect2Chars attribute="Directive" context="#stay" char="$" char1="$" />
+        <RegExpr attribute="Directive" context="#stay" String="\$-?[_a-zA-Z1-9][_a-zA-Z0-9]*" />
+      </context>
+      <context name="Comment" attribute="Comment" lineEndContext="#stay">
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="CommentStar" char="/" char1="*" />
+        <Detect2Chars attribute="Comment" context="CommentSlash" char="/" char1="/" />
+      </context>
+      <context name="CommentStar" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+      </context>
+      <context name="CommentSlash" attribute="Comment" lineEndContext="#stay">
+        <RegExpr attribute="Comment" context="#pop" String="[^\\]$" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="Content-Type Delimiter" defStyleNum="dsBaseN" bold="1" />
+      <itemData name="Directive" defStyleNum="dsKeyword"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>

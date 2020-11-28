@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="MIPS Assembler" version="3" kateversion="2.4" section="Assembler" extensions="*.s;" mimetype="text/x-mips" author="Dominik Haumann (dhaumann@kde.org)" license="MIT" priority="-1">
+  <highlighting>
+    <list name="type">
+      <item>.align</item>
+      <item>.ascii</item>
+      <item>.asciiz</item>
+      <item>.byte</item>
+      <item>.double</item>
+      <item>.extern</item>
+      <item>.float</item>
+      <item>.globl</item>
+      <item>.half</item>
+      <item>.sdata</item>
+      <item>.set</item>
+      <item>.space</item>
+      <item>.word</item>
+    </list>
+    <list name="section">
+      <item>.data</item>
+      <item>.kdata</item>
+      <item>.ktext</item>
+      <item>.text</item>
+    </list>
+    <list name="hardware">
+      <item>abs.d</item>
+      <item>abs.s</item>
+      <item>add</item>
+      <item>add.d</item>
+      <item>add.s</item>
+      <item>addi</item>
+      <item>addiu</item>
+      <item>addu</item>
+      <item>and</item>
+      <item>andi</item>
+      <item>bc0f</item>
+      <item>bc0t</item>
+      <item>bc1f</item>
+      <item>bc1t</item>
+      <item>bc2f</item>
+      <item>bc2t</item>
+      <item>bc3f</item>
+      <item>bc3t</item>
+      <item>beq</item>
+      <item>bgez</item>
+      <item>bgezal</item>
+      <item>bgtz</item>
+      <item>blez</item>
+      <item>bltz</item>
+      <item>bltzal</item>
+      <item>bne</item>
+      <item>break</item>
+      <item>c.eq.d</item>
+      <item>c.eq.s</item>
+      <item>c.seq.s</item>
+      <item>c.seq.d</item>
+      <item>c.ueq.s</item>
+      <item>c.ueq.d</item>
+      <item>c.olt.d</item>
+      <item>c.olt.s</item>
+      <item>c.ole.d</item>
+      <item>c.ole.s</item>
+      <item>c.ult.d</item>
+      <item>c.ult.s</item>
+      <item>c.ule.d</item>
+      <item>c.ule.s</item>
+      <item>c.le.d</item>
+      <item>c.le.s</item>
+      <item>c.lt.d</item>
+      <item>c.lt.s</item>
+      <item>c.un.s</item>
+      <item>c.un.d</item>
+      <item>cvt.d.s</item>
+      <item>cvt.d.w</item>
+      <item>cvt.s.d</item>
+      <item>cvt.s.w</item>
+      <item>cvt.w.d</item>
+      <item>cvt.w.s</item>
+      <item>div.d</item>
+      <item>div.s</item>
+      <item>j</item>
+      <item>jal</item>
+      <item>jalr</item>
+      <item>jr</item>
+      <item>lb</item>
+      <item>lbu</item>
+      <item>lh</item>
+      <item>lhu</item>
+      <item>lui</item>
+      <item>lw</item>
+      <item>lwc0</item>
+      <item>lwc1</item>
+      <item>lwc2</item>
+      <item>lwc3</item>
+      <item>lwl</item>
+      <item>lwr</item>
+      <item>mfc0</item>
+      <item>mfc1</item>
+      <item>mfc2</item>
+      <item>mfc3</item>
+      <item>mfhi</item>
+      <item>mflo</item>
+      <item>mtc0</item>
+      <item>mtc1</item>
+      <item>mtc2</item>
+      <item>mtc3</item>
+      <item>mthi</item>
+      <item>mtlo</item>
+      <item>mul.d</item>
+      <item>mul.s</item>
+      <item>mult</item>
+      <item>multu</item>
+      <item>nor</item>
+      <item>or</item>
+      <item>ori</item>
+      <item>rfe</item>
+      <item>sb</item>
+      <item>sh</item>
+      <item>sw</item>
+      <item>swcl</item>
+      <item>swl</item>
+      <item>swr</item>
+      <item>sll</item>
+      <item>sllv</item>
+      <item>slt</item>
+      <item>slti</item>
+      <item>sltiu</item>
+      <item>sra</item>
+      <item>srav</item>
+      <item>srl</item>
+      <item>srlv</item>
+      <item>sub</item>
+      <item>sub.d</item>
+      <item>sub.s</item>
+      <item>subu</item>
+      <item>sw</item>
+      <item>swc0</item>
+      <item>swc1</item>
+      <item>swc2</item>
+      <item>swc3</item>
+      <item>swl</item>
+      <item>swr</item>
+      <item>syscall</item>
+      <item>xor</item>
+      <item>xori</item>
+    </list>
+    <list name="pseudo">
+      <item>abs</item>
+      <item>b</item>
+      <item>beqz</item>
+      <item>bge</item>
+      <item>bgeu</item>
+      <item>bgt</item>
+      <item>bgtu</item>
+      <item>ble</item>
+      <item>bleu</item>
+      <item>blt</item>
+      <item>bltu</item>
+      <item>bnez</item>
+      <item>div</item>
+      <item>divu</item>
+      <item>l.d</item>
+      <item>l.s</item>
+      <item>la</item>
+      <item>ld</item>
+      <item>li</item>
+      <item>li.d</item>
+      <item>li.s</item>
+      <item>mfc0.d</item>
+      <item>mfc1.d</item>
+      <item>mfc2.d</item>
+      <item>mfc3.d</item>
+      <item>mov.d</item>
+      <item>mov.s</item>
+      <item>move</item>
+      <item>mul</item>
+      <item>mulo</item>
+      <item>mulou</item>
+      <item>neg</item>
+      <item>neg.d</item>
+      <item>neg.s</item>
+      <item>negu</item>
+      <item>nop</item>
+      <item>not</item>
+      <item>rem</item>
+      <item>remu</item>
+      <item>rol</item>
+      <item>ror</item>
+      <item>s.d</item>
+      <item>s.s</item>
+      <item>sd</item>
+      <item>seq</item>
+      <item>sge</item>
+      <item>sgeu</item>
+      <item>sgt</item>
+      <item>sgtu</item>
+      <item>sle</item>
+      <item>sleu</item>
+      <item>sne</item>
+      <item>ulh</item>
+      <item>ulhu</item>
+      <item>ulw</item>
+      <item>ush</item>
+      <item>usw</item>
+    </list>
+    <list name="register1">
+      <item>$0</item>
+      <item>$1</item>
+      <item>$2</item>
+      <item>$3</item>
+      <item>$4</item>
+      <item>$5</item>
+      <item>$6</item>
+      <item>$7</item>
+      <item>$8</item>
+      <item>$9</item>
+      <item>$10</item>
+      <item>$11</item>
+      <item>$12</item>
+      <item>$13</item>
+      <item>$14</item>
+      <item>$15</item>
+      <item>$16</item>
+      <item>$17</item>
+      <item>$18</item>
+      <item>$19</item>
+      <item>$20</item>
+      <item>$21</item>
+      <item>$22</item>
+      <item>$23</item>
+      <item>$24</item>
+      <item>$25</item>
+      <item>$26</item>
+      <item>$27</item>
+      <item>$28</item>
+      <item>$29</item>
+      <item>$30</item>
+      <item>$31</item>
+      <item>$zero</item>
+      <item>$t0</item>
+      <item>$t1</item>
+      <item>$t2</item>
+      <item>$t3</item>
+      <item>$t4</item>
+      <item>$t5</item>
+      <item>$t6</item>
+      <item>$t7</item>
+      <item>$t8</item>
+      <item>$t9</item>
+    </list>
+    <list name="register2">
+      <item>$v0</item>
+      <item>$v1</item>
+      <item>$a0</item>
+      <item>$a1</item>
+      <item>$a2</item>
+      <item>$a3</item>
+      <item>$k0</item>
+      <item>$k1</item>
+      <item>$at</item>
+      <item>$gp</item>
+      <item>$sp</item>
+      <item>$fp</item>
+      <item>$s0</item>
+      <item>$s1</item>
+      <item>$s2</item>
+      <item>$s3</item>
+      <item>$s4</item>
+      <item>$s5</item>
+      <item>$s6</item>
+      <item>$s7</item>
+      <item>$ra</item>
+    </list>
+    <list name="fp">
+      <item>$f0</item>
+      <item>$f1</item>
+      <item>$f2</item>
+      <item>$f3</item>
+      <item>$f4</item>
+      <item>$f5</item>
+      <item>$f6</item>
+      <item>$f7</item>
+      <item>$f8</item>
+      <item>$f9</item>
+      <item>$f10</item>
+      <item>$f11</item>
+      <item>$f12</item>
+      <item>$f13</item>
+      <item>$f14</item>
+      <item>$f15</item>
+      <item>$f16</item>
+      <item>$f17</item>
+      <item>$f18</item>
+      <item>$f19</item>
+      <item>$f20</item>
+      <item>$f21</item>
+      <item>$f22</item>
+      <item>$f23</item>
+      <item>$f24</item>
+      <item>$f25</item>
+      <item>$f26</item>
+      <item>$f27</item>
+      <item>$f28</item>
+      <item>$f29</item>
+      <item>$f30</item>
+      <item>$f31</item>
+    </list>
+    <contexts>
+      <context name="normal" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Hardware Instruction" context="#stay" String="hardware"/>
+        <keyword attribute="Pseudo Instruction" context="#stay" String="pseudo"/>
+        <keyword attribute="Other Register" context="#stay" String="register1"/>
+        <keyword attribute="Main Register" context="#stay" String="register2"/>
+        <keyword attribute="Floating Point Register" context="#stay" String="fp"/>
+        <keyword attribute="Type" context="#stay" String="section"/>
+        <keyword attribute="Section" context="#stay" String="type"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="#\s*BEGIN.*$" beginRegion="region" firstNonSpace="true"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="#\s*END.*$" endRegion="region" firstNonSpace="true"/>
+        <RegExpr attribute="Comment" context="#stay" String="#.*$" />
+        <RegExpr attribute="Label" context="#stay" String="[\w_\.]+:" firstNonSpace="true"/>
+        <DetectChar attribute="String" context="string" char="&quot;" />
+        <Float attribute="Float" context="#stay"/>
+        <HlCOct attribute="Octal" context="#stay"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+      </context>
+      <context name="string" attribute="String" lineEndContext="#stay" >
+        <RegExpr attribute="Char" context="#stay" String="\\." />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Hardware Instruction" defStyleNum="dsKeyword" />
+      <itemData name="Pseudo Instruction" defStyleNum="dsFunction"/>
+      <itemData name="Other Register" defStyleNum="dsDataType" color="#0000ff"/>
+      <itemData name="Main Register" defStyleNum="dsDataType"/>
+      <itemData name="Floating Point Register" defStyleNum="dsFloat"/>
+      <itemData name="Section" defStyleNum="dsDataType"/>
+      <itemData name="Type" defStyleNum="dsKeyword"/>
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="Char" defStyleNum="dsChar" />
+      <itemData name="String" defStyleNum="dsString" />
+      <itemData name="Label" defStyleNum="dsOthers" />
+      <itemData name="Decimal" defStyleNum="dsDecVal"/>
+      <itemData name="Octal" defStyleNum="dsBaseN"/>
+      <itemData name="Hex" defStyleNum="dsBaseN"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#" />
+    </comments>
+    <keywords casesensitive="0" weakDeliminator="."/>
+  </general>
+</language>

@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+        <!ENTITY label    "[^\s]+">
+        <!ENTITY eos      "(?=($|\s))">                         <!-- eol or space following -->
+        <!ENTITY noword   "(?![\w$+-])">                        <!-- no word, $, + or - following -->
+        <!ENTITY varname  "[A-Za-z_][A-Za-z0-9_]*">             <!-- valid character in a variable name -->
+        <!ENTITY eop      "(?=([\s\\;&quot;&#37;]|$))">         <!-- end of path -->
+        <!ENTITY pathpart "[^\s\\&#37;;/:\*\?&quot;&gt;&lt;\|]"> <!-- valid character in a file name -->
+]>
+<language name="MS-DOS Batch" version="3" kateversion="5.0" section="Scripts" extensions="*.bat" mimetype="application/x-dos" casesensitive="0" author="Matthew Woehlke (mw_triad@users.sourceforge.net)" license="LGPL">
+
+<!-- (c) 2006, 2009, 2010 Matthew Woehlke (mw_triad@users.sourceforge.net)
+    Released under the LGPL -->
+
+  <highlighting>
+    <list name="builtins">
+      <item>assoc</item>
+      <item>break</item>
+      <item>call</item>
+      <item>cd</item>
+      <item>chdir</item>
+      <item>cls</item>
+      <item>color</item>
+      <item>copy</item>
+      <item>date</item>
+      <item>del</item>
+      <item>dir</item>
+      <item>endlocal</item>
+      <item>erase</item>
+      <item>exit</item>
+      <item>ftype</item>
+      <item>md</item>
+      <item>mkdir</item>
+      <item>move</item>
+      <item>path</item>
+      <item>pause</item>
+      <item>popd</item>
+      <item>prompt</item>
+      <item>pushd</item>
+      <item>rd</item>
+      <item>ren</item>
+      <item>rename</item>
+      <item>rmdir</item>
+      <item>setlocal</item>
+      <item>shift</item>
+      <item>start</item>
+      <item>time</item>
+      <item>title</item>
+      <item>type</item>
+      <item>ver</item>
+      <item>verify</item>
+      <item>vol</item>
+    </list>
+
+    <!-- these need special handling -->
+    <list name="echo"><item>echo</item></list>
+    <list name="else"><item>else</item></list>
+    <list name="for"><item>for</item></list>
+    <list name="in"><item>in</item></list>
+    <list name="do"><item>do</item></list>
+    <list name="goto"><item>goto</item></list>
+    <list name="if"><item>if</item></list>
+    <list name="not"><item>not</item></list>
+    <list name="set"><item>set</item></list>
+
+    <list name="commands">
+      <!-- the basics -->
+      <item>at</item>
+      <item>attrib</item>
+      <item>break</item>
+      <item>cacls</item>
+      <item>chcp</item>
+      <item>chkdsk</item>
+      <item>chkntfs</item>
+      <item>cmd</item>
+      <item>comp</item>
+      <item>compact</item>
+      <item>convert</item>
+      <item>diskcomp</item>
+      <item>diskcopy</item>
+      <item>doskey</item>
+      <item>fc</item>
+      <item>find</item>
+      <item>findstr</item>
+      <item>format</item>
+      <item>graftabl</item>
+      <item>help</item>
+      <item>label</item>
+      <item>mode</item>
+      <item>more</item>
+      <item>print</item>
+      <item>recover</item>
+      <item>replace</item>
+      <item>sort</item>
+      <item>subst</item>
+      <item>tree</item>
+      <item>xcopy</item>
+    </list>
+
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Start">
+        <!-- general syntactical stuff -->
+        <RegExpr attribute="Comment" context="Comment" String="^\s*[Rr][Ee][Mm](\s|$)"/>
+        <keyword attribute="Builtin" context="Command" String="builtins"/>
+        <keyword attribute="Command" context="Command" String="commands"/>
+        <DetectChar attribute="Label" context="Label" char=":" firstNonSpace="true"/>
+        <!-- special built-ins -->
+        <RegExpr attribute="Builtin" context="#stay" String="\b[Ee][Cc][Hh][Oo]\s+[Oo]([Ff][Ff]|[Nn])\s*$"/>
+        <keyword attribute="Builtin" context="CmdEcho" String="echo"/>
+        <keyword attribute="Keyword" context="#stay" String="if"/>
+        <keyword attribute="Keyword" context="#stay" String="not"/>
+        <keyword attribute="Keyword" context="#stay" String="else"/>
+        <keyword attribute="Keyword" context="CmdFor" String="for"/>
+        <keyword attribute="Keyword" context="Label" String="goto"/>
+        <keyword attribute="Builtin" context="CmdSet" String="set"/>
+        <DetectChar attribute="Keyword" context="#stay" char="@"/>
+        <!-- other syntaxes -->
+        <IncludeRules context="FindMost"/>
+      </context>
+
+      <!-- the following contexts are meant to be included -->
+      <context attribute="Normal Text" lineEndContext="#pop" name="FindMost">
+        <IncludeRules context="FindStrings"/>
+        <IncludeRules context="FindSubstitutions"/>
+        <!-- handle command line options -->
+        <RegExpr attribute="Option" context="#stay" String="[/-][A-Za-z0-9][A-Za-z0-9_]*:?"/>
+        <!-- handle redirection -->
+        <RegExpr attribute="Redirection" context="#stay" String="[0-9]*(&gt;&gt;?|&lt;)(&amp;[0-9]+)"/>
+        <RegExpr attribute="Redirection" context="Path" String="[0-9]*(&gt;&gt;?|&lt;)\s*"/>
+        <DetectChar attribute="Redirection" context="Start" char="|"/>
+        <!-- handle paths -->
+        <RegExpr attribute="Path" context="#stay" String="[.]+&eop;"/>
+        <RegExpr attribute="Path" context="#stay" String="[A-Za-z][A-Za-z.]*:"/>
+        <RegExpr attribute="Path" context="#stay" String="&pathpart;+(?=\\)"/>
+        <RegExpr attribute="Path" context="#stay" String="[.]*\\+&pathpart;*&eop;"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindStrings">
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindSubstitutions">
+        <Detect2Chars attribute="Escape" context="#stay" char="&#37;" char1="&#37;"/>
+        <RegExpr attribute="Variable" context="#stay" String="([&#37;!])[^&#37;\s!]+\1"/>
+        <RegExpr attribute="Variable" context="#stay" String="[&#37;!][a-z0-9]" insensitive="true"/>
+      </context>
+
+      <!-- basic sub-contexts -->
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <Detect2Chars attribute="Escape" context="#stay" char="\" char1="&quot;"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <IncludeRules context="FindSubstitutions"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="Command">
+        <IncludeRules context="FindMost"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="Label">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <RegExpr attribute="Label" context="Comment" String="&label;&eos;"/>
+      </context>
+
+      <context attribute="Path" lineEndContext="#pop" name="Path">
+        <IncludeRules context="FindStrings"/>
+        <IncludeRules context="FindSubstitutions"/>
+        <AnyChar attribute="Normal Text" context="#pop" String=" &#9;\&#37;/:*?&quot;&gt;&lt;|" lookAhead="true"/>
+      </context>
+
+      <!-- special sub-contexts -->
+      <context attribute="Error" lineEndContext="#pop" name="CmdSet">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <RegExpr attribute="Variable" context="#pop" String="&varname;="/>
+      </context>
+
+      <context attribute="Echoed Text" lineEndContext="#pop" name="CmdEcho">
+        <IncludeRules context="FindSubstitutions"/>
+        <RegExpr attribute="Escape" context="#stay" String="\^."/>
+        <RegExpr attribute="Redirection" context="#stay" String="[0-9]*(&gt;&gt;?|&lt;)(&amp;[0-9]+)"/>
+        <RegExpr attribute="Redirection" context="Path" String="[0-9]*(&gt;&gt;?|&lt;)\s*"/>
+        <DetectChar attribute="Redirection" context="Start" char="|"/>
+      </context>
+
+      <!-- 'for' sub-contexts -->
+      <context attribute="Error" lineEndContext="#pop" name="CmdFor">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <RegExpr attribute="Variable" context="CmdForIn" String="%%[a-z]" insensitive="true"/>
+        <Detect2Chars attribute="Option" context="#stay" char="/" char1="D"/>
+        <Detect2Chars attribute="Option" context="CmdForR" char="/" char1="R"/>
+        <Detect2Chars attribute="Option" context="CmdForL" char="/" char1="L"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForIn">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <keyword attribute="Keyword" context="CmdForList" String="in"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForList">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <DetectChar attribute="Keyword" context="CmdForListBody" char="("/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="CmdForListBody">
+        <IncludeRules context="FindStrings"/>
+        <IncludeRules context="FindSubstitutions"/>
+        <DetectChar attribute="Keyword" context="CmdForDo" char=")"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForDo">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <keyword attribute="Keyword" context="CmdForCommands" String="do"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="CmdForCommands">
+        <RegExpr attribute="Variable" context="#stay" String="%%(~([fdpnxsatz]|\$&varname;:)*)?[a-z]" insensitive="true"/>
+        <IncludeRules context="Start"/>
+        <DetectChar attribute="Keyword" context="CmdForNestedCommands" char="("/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="CmdForNestedCommands">
+        <DetectChar attribute="Keyword" context="#pop" char=")"/>
+        <IncludeRules context="CmdForCommands"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForR">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <RegExpr attribute="Path" context="#stay" String="([a-z][a-z.]*:)?[.]*\\*&pathpart;*&eop;" insensitive="true"/>
+        <RegExpr attribute="Variable" context="CmdForIn" String="%%[a-z]" insensitive="true"/>
+      </context>
+
+      <!-- 'for /L' sub-contexts -->
+      <context attribute="Error" lineEndContext="#pop" name="CmdForL">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <RegExpr attribute="Variable" context="CmdForLIn" String="%%[a-z]" insensitive="true"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForLIn">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <keyword attribute="Keyword" context="CmdForLRange" String="in"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForLRange">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <DetectChar attribute="Keyword" context="CmdForLStart" char="("/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForLStart">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <RegExpr attribute="Number" context="CmdForLStartComma" String="-?[0-9]+"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForLStartComma">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <DetectChar attribute="Keyword" context="CmdForLStep" char=","/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForLStep">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <RegExpr attribute="Number" context="CmdForLStepComma" String="-?[0-9]+"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForLStepComma">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <DetectChar attribute="Keyword" context="CmdForLEnd" char=","/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForLEnd">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <RegExpr attribute="Number" context="CmdForLEndParen" String="-?[0-9]+"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="CmdForLEndParen">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <DetectChar attribute="Keyword" context="CmdForDo" char=")"/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword"/>
+      <itemData name="Number"       defStyleNum="dsDecVal"/>
+      <itemData name="Label"        defStyleNum="dsOthers"/>
+      <itemData name="Builtin"      defStyleNum="dsBuiltIn"/>
+      <itemData name="Command"      defStyleNum="dsKeyword"/>
+      <itemData name="Redirection"  defStyleNum="dsKeyword"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="Escape"       defStyleNum="dsSpecialChar"/>
+      <itemData name="Echoed Text"  defStyleNum="dsNormal"/>
+      <itemData name="Variable"     defStyleNum="dsVariable"/>
+      <itemData name="Path"         defStyleNum="dsNormal"/>
+      <itemData name="Option"       defStyleNum="dsNormal"/>
+      <itemData name="Error"        defStyleNum="dsError"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="rem "/>
+    </comments>
+    <keywords casesensitive="0" weakDeliminator="@" additionalDeliminator="@"/>
+  </general>
+</language>

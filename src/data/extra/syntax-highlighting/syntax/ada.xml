@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Ada"
+          version="3"
+          kateversion="5.0"
+          section="Sources"
+          extensions="*.adb;*.ads;*.ada;*.a"
+          indenter="ada"
+          mimetype="text/x-adasrc">
+  <highlighting>
+    <list name="keywords">
+      <item>abort</item>
+      <item>abs</item>
+      <item>abstract</item>
+      <item>accept</item>
+      <item>access</item>
+      <item>aliased</item>
+      <item>all</item>
+      <item>and</item>
+      <item>array</item>
+      <item>at</item>
+      <item>begin</item>
+      <item>body</item>
+      <item>constant</item>
+      <item>declare</item>
+      <item>delay</item>
+      <item>delta</item>
+      <item>digits</item>
+      <item>do</item>
+      <item>else</item>
+      <item>elsif</item>
+      <item>end</item>
+      <item>entry</item>
+      <item>exception</item>
+      <item>exit</item>
+      <item>for</item>
+      <item>function</item>
+      <item>generic</item>
+      <item>goto</item>
+      <item>in</item>
+      <item>interface</item>
+      <item>is</item>
+      <item>limited</item>
+      <item>mod</item>
+      <item>new</item>
+      <item>not</item>
+      <item>null</item>
+      <item>of</item>
+      <item>or</item>
+      <item>others</item>
+      <item>out</item>
+      <item>overriding</item>
+      <item>package</item>
+      <item>pragma</item>
+      <item>private</item>
+      <item>procedure</item>
+      <item>protected</item>
+      <item>raise</item>
+      <item>range</item>
+      <item>rem</item>
+      <item>record</item>
+      <item>renames</item>
+      <item>requeue</item>
+      <item>return</item>
+      <item>reverse</item>
+      <item>separate</item>
+      <item>subtype</item>
+      <item>tagged</item>
+      <item>task</item>
+      <item>terminate</item>
+      <item>then</item>
+      <item>type</item>
+      <item>until</item>
+      <item>use</item>
+      <item>when</item>
+      <item>while</item>
+      <item>with</item>
+      <item>xor</item>
+    </list>
+    <list name="pragmas">
+      <item>all_calls_remote</item>
+      <item>assert</item>
+      <item>assertion_policy</item>
+      <item>asynchronous</item>
+      <item>atomic</item>
+      <item>atomic_components</item>
+      <item>attach_handler</item>
+      <item>controlled</item>
+      <item>convention</item>
+      <item>detect_blocking</item>
+      <item>discard_names</item>
+      <item>elaborate</item>
+      <item>elaborate_all</item>
+      <item>elaborate_body</item>
+      <item>export</item>
+      <item>import</item>
+      <item>inline</item>
+      <item>inspection_point</item>
+      <item>interrupt_handler</item>
+      <item>interrupt_priority</item>
+      <item>linker_options</item>
+      <item>list</item>
+      <item>locking_policy</item>
+      <item>no_return</item>
+      <item>normalize_scalars</item>
+      <item>optimize</item>
+      <item>pack</item>
+      <item>page</item>
+      <item>partition_elaboration_policy</item>
+      <item>preelaborable_initialization</item>
+      <item>preelaborate</item>
+      <item>priority</item>
+      <item>priority_specific_dispatching</item>
+      <item>profile</item>
+      <item>pure</item>
+      <item>queuing_policy</item>
+      <item>relative_deadline</item>
+      <item>remote_call_interface</item>
+      <item>remote_types</item>
+      <item>restrictions</item>
+      <item>reviewable</item>
+      <item>shared_passive</item>
+      <item>storage_size</item>
+      <item>suppress</item>
+      <item>task_dispatching_policy</item>
+      <item>unchecked_union</item>
+      <item>unsuppress</item>
+      <item>volatile</item>
+      <item>volatile_components</item>
+    </list>
+    <list name="types">
+      <item>boolean</item>
+      <item>character</item>
+      <item>float</item>
+      <item>integer</item>
+      <item>long_float</item>
+      <item>long_integer</item>
+      <item>long_long_float</item>
+      <item>long_long_integer</item>
+      <item>short_float</item>
+      <item>short_integer</item>
+      <item>string</item>
+      <item>wide_string</item>
+      <item>wide_character</item>
+      <item>wide_wide_character</item>
+      <item>wide_wide_string</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Default">
+        <RegExpr attribute="Keyword" context="#stay" String="\brecord\b"       insensitive="true" beginRegion="RecordRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+record\b" insensitive="true"   endRegion="RecordRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bcase\b"         insensitive="true" beginRegion="CaseRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+case\b"   insensitive="true"   endRegion="CaseRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bif\b"           insensitive="true" beginRegion="IfRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+if\b"     insensitive="true"   endRegion="IfRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bloop\b"         insensitive="true" beginRegion="LoopRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+loop\b"   insensitive="true"   endRegion="LoopRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bselect\b"       insensitive="true" beginRegion="SelectRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+select\b" insensitive="true"   endRegion="SelectRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bbegin\b"        insensitive="true" beginRegion="BeginRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\b"          insensitive="true"   endRegion="BeginRegion"/>
+        <StringDetect attribute="Region Marker" context="Region Marker" String="--  BEGIN" beginRegion="RegionMarker" firstNonSpace="true" />
+        <StringDetect attribute="Region Marker" context="Region Marker" String="--  END" endRegion="RegionMarker" firstNonSpace="true" />
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Pragmas" context="#stay" String="pragmas" />
+        <keyword attribute="Data Type" context="#stay" String="types" />
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+        <RegExpr attribute="Char" context="#stay" String="'.'"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;|"/>
+      </context>
+      <context attribute="Region Marker" lineEndContext="#pop" name="Region Marker"/>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Comment"/>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Keyword"     defStyleNum="dsKeyword" />
+      <itemData name="Pragmas"     defStyleNum="dsExtension" bold="1" />
+      <itemData name="Data Type"   defStyleNum="dsDataType"/>
+      <itemData name="Decimal"     defStyleNum="dsDecVal" />
+      <itemData name="Float"       defStyleNum="dsFloat" />
+      <itemData name="Char"        defStyleNum="dsChar" />
+      <itemData name="String"      defStyleNum="dsString" />
+      <itemData name="Comment"     defStyleNum="dsComment" />
+      <itemData name="Symbol"      defStyleNum="dsNormal"/>
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="--" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

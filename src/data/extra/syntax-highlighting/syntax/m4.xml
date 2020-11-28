@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+
+  GNU M4 syntax highlightning.
+  Corresponds to GNU M4 version 1.4.16.
+
+  For KatePart (Kate, KWrite etc) copy this file to
+    ~/.kde/share/apps/katepart/syntax/
+
+  For Qt Creator copy this file to
+    ~/.config/Nokia/qtcreator/generic-highlighter/
+
+
+  Copyright (c) 2011, Cybernetica AS ( http://www.cyber.ee/ )
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+      * Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+      * Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
+      * Neither the name of Cybernetica AS nor the names of its contributors
+        may be used to endorse or promote products derived from this software
+        without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL  Cybernetica AS  BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+-->
+<language name="GNU M4" version="2" section="Sources" kateversion="3.0" extensions="*.m4;" author="Jaak Ristioja" license="New BSD License">
+  <highlighting>
+    <list name="optbuiltins">
+      <item>__gnu__</item>
+      <item>__os2__</item>
+      <item>os2</item>
+      <item>__unix__</item>
+      <item>unix</item>
+      <item>__windows__</item>
+      <item>windows</item>
+    </list>
+    <list name="m4_optbuiltins">
+      <item>m4___gnu__</item>
+      <item>m4___os2__</item>
+      <item>m4_os2</item>
+      <item>m4___unix__</item>
+      <item>m4_unix</item>
+      <item>m4___windows__</item>
+      <item>m4_windows</item>
+    </list>
+    <list name="builtins">
+      <item>__file__</item>
+      <item>__line__</item>
+      <item>__program__</item>
+      <item>builtin</item>
+      <item>changecom</item>
+      <item>changequote</item>
+      <item>changeword</item>
+      <item>debugfile</item>
+      <item>debugmode</item>
+      <item>decr</item>
+      <item>define</item>
+      <item>defn</item>
+      <item>divert</item>
+      <item>divnum</item>
+      <item>dnl</item>
+      <item>dumpdef</item>
+      <item>errprint</item>
+      <item>esyscmd</item>
+      <item>eval</item>
+      <item>format</item>
+      <item>ifdef</item>
+      <item>ifelse</item>
+      <item>include</item>
+      <item>incr</item>
+      <item>index</item>
+      <item>indir</item>
+      <item>len</item>
+      <item>m4exit</item>
+      <item>m4wrap</item>
+      <item>maketemp</item>
+      <item>mkstemp</item>
+      <item>patsubst</item>
+      <item>popdef</item>
+      <item>pushdef</item>
+      <item>regexp</item>
+      <item>shift</item>
+      <item>sinclude</item>
+      <item>substr</item>
+      <item>syscmd</item>
+      <item>sysval</item>
+      <item>traceon</item>
+      <item>traceoff</item>
+      <item>translit</item>
+      <item>undefine</item>
+      <item>undivert</item>
+    </list>
+    <list name="m4_builtins">
+      <item>m4___file__</item>
+      <item>m4___line__</item>
+      <item>m4___program__</item>
+      <item>m4_builtin</item>
+      <item>m4_changecom</item>
+      <item>m4_changequote</item>
+      <item>m4_changeword</item>
+      <item>m4_debugfile</item>
+      <item>m4_debugmode</item>
+      <item>m4_decr</item>
+      <item>m4_define</item>
+      <item>m4_defn</item>
+      <item>m4_divert</item>
+      <item>m4_divnum</item>
+      <item>m4_dnl</item>
+      <item>m4_dumpdef</item>
+      <item>m4_errprint</item>
+      <item>m4_esyscmd</item>
+      <item>m4_eval</item>
+      <item>m4_format</item>
+      <item>m4_ifdef</item>
+      <item>m4_ifelse</item>
+      <item>m4_include</item>
+      <item>m4_incr</item>
+      <item>m4_index</item>
+      <item>m4_indir</item>
+      <item>m4_len</item>
+      <item>m4_m4exit</item>
+      <item>m4_m4wrap</item>
+      <item>m4_maketemp</item>
+      <item>m4_mkstemp</item>
+      <item>m4_patsubst</item>
+      <item>m4_popdef</item>
+      <item>m4_pushdef</item>
+      <item>m4_regexp</item>
+      <item>m4_shift</item>
+      <item>m4_sinclude</item>
+      <item>m4_substr</item>
+      <item>m4_syscmd</item>
+      <item>m4_sysval</item>
+      <item>m4_traceon</item>
+      <item>m4_traceoff</item>
+      <item>m4_translit</item>
+      <item>m4_undefine</item>
+      <item>m4_undivert</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text">
+        <keyword attribute="Builtins" String="builtins" context="#stay"/>
+        <keyword attribute="Builtins (prefixed with m4_)" String="m4_builtins" context="#stay"/>
+        <keyword attribute="Optional builtins" String="optbuiltins" context="#stay"/>
+        <keyword attribute="Optional builtins (prefixed with m4_)" String="m4_optbuiltins" context="#stay"/>
+        <RegExpr attribute="Normal Text" String="[a-zA-Z_]\w+" context="#stay"/>
+        <RegExpr attribute="Special arguments to macros" String="\$([1-9]\d*|0|\#|\*|\@|\{([1-9]\d*|0)\})" context="#stay"/>
+        <RegExpr attribute="Int" String="([1-9]\d*|0|0x[0-9abcdefABCDEF]+)" context="#stay"/>
+        <RegExpr attribute="Comment" String="#.*$" context="#stay"/>
+        <DetectChar attribute="Commas" char="," context="#stay"/>
+        <DetectChar attribute="Operators" char="(" context="inparenthesis" beginRegion="parenthesis"/>
+        <DetectChar attribute="Operators" char=")" context="#pop" endRegion="parenthesis"/>
+        <RegExpr attribute="Operators" String="[+*/%\|=\!&lt;&gt;!^&amp;~-]" context="#stay"/>
+      </context>
+      <context name="inparenthesis" attribute="Normal Text" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <IncludeRules context="Normal Text" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Builtins" defStyleNum="dsKeyword"/>
+      <itemData name="Builtins (prefixed with m4_)" defStyleNum="dsKeyword"/>
+      <itemData name="Optional builtins" defStyleNum="dsKeyword"/>
+      <itemData name="Optional builtins (prefixed with m4_)" defStyleNum="dsKeyword"/>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Special arguments to macros" defStyleNum="dsChar"/>
+      <itemData name="Int" defStyleNum="dsDecVal"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Commas" defStyleNum="dsChar"/>
+      <itemData name="Operators" defStyleNum="dsChar"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <folding indentationsensitive="1" />
+    <comments>
+      <comment name="singleLine" start="#" position="afterwhitespace"/>
+    </comments>
+  </general>
+</language>

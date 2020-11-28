@@ -1,0 +1,801 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language
+	name="BrightScript"
+	section="Scripts"
+	extensions="*.brs"
+	version="5"
+	kateversion="5.0"
+	author="Daniel Levin (dendy.ua@gmail.com)"
+	license="MIT">
+
+<highlighting>
+
+
+
+
+<list name="library"><item>library</item></list>
+
+<list name="function"><item>function</item></list>
+<list name="endfunction"><item>endfunction</item></list>
+<list name="sub"><item>sub</item></list>
+<list name="endsub"><item>endsub</item></list>
+<list name="as"><item>as</item></list>
+
+<list name="exit"><item>exit</item></list>
+
+<list name="if"><item>if</item></list>
+<list name="endif"><item>endif</item></list>
+<list name="then"><item>then</item></list>
+<list name="else"><item>else</item></list>
+<list name="elseif"><item>elseif</item></list>
+
+<list name="while"><item>while</item></list>
+<list name="endwhile"><item>endwhile</item></list>
+<list name="exitwhile"><item>exitwhile</item></list>
+
+<list name="for"><item>for</item></list>
+<list name="endfor"><item>endfor</item></list>
+<list name="each"><item>each</item></list>
+<list name="in"><item>in</item></list>
+<list name="to"><item>to</item></list>
+<list name="step"><item>step</item></list>
+<list name="next"><item>next</item></list>
+
+<list name="print"><item>print</item></list>
+<list name="return"><item>return</item></list>
+
+<list name="dim"><item>dim</item></list>
+<list name="stop"><item>stop</item></list>
+<list name="goto"><item>goto</item></list>
+
+<list name="m"><item>m</item></list>
+<list name="top">
+	<item>top</item>
+	<item>global</item>
+</list>
+
+<list name="end_of_scope">
+	<item>then</item>
+	<item>end</item>
+	<item>exit</item>
+</list>
+
+<list name="unary">
+	<item>not</item>
+</list>
+
+<list name="builtin_functions">
+	<item>tab</item>
+	<item>pos</item>
+	<item>CreateObject</item>
+	<item>Type</item>
+	<item>GetGlobalAA</item>
+	<item>Box</item>
+	<item>Run</item>
+	<item>Eval</item>
+	<item>GetLastRunCompileError</item>
+	<item>GetLastRunRuntimeError</item>
+	<item>ObjFun</item>
+</list>
+
+<list name="utility_functions">
+	<item>Sleep</item>
+	<item>Wait</item>
+	<item>GetInterface</item>
+	<item>FindMemberFunction</item>
+	<item>UpTime</item>
+	<item>RebootSystem</item>
+	<item>ListDir</item>
+	<item>ReadAsciiFile</item>
+	<item>WriteAsciiFile</item>
+	<item>CopyFile</item>
+	<item>MoveFile</item>
+	<item>MatchFiles</item>
+	<item>DeleteFile</item>
+	<item>DeleteDirectory</item>
+	<item>CreateDirectory</item>
+	<item>FormatDrive</item>
+	<item>StrToI</item>
+	<item>RunGarbageCollector</item>
+	<item>ParseJson</item>
+	<item>FormatJson</item>
+	<item>Tr</item>
+</list>
+
+<list name="string_functions">
+	<item>UCase</item>
+	<item>LCase</item>
+	<item>Asc</item>
+	<item>Chr</item>
+	<item>Instr</item>
+	<item>Left</item>
+	<item>Len</item>
+	<item>Mid</item>
+	<item>Str</item>
+	<item>StrI</item>
+	<item>String</item>
+	<item>StringI</item>
+	<item>Val</item>
+	<item>Substitute</item>
+</list>
+
+<list name="math_functions">
+	<item>Abs</item>
+	<item>Atn</item>
+	<item>Cdbl</item>
+	<item>Cint</item>
+	<item>Cos</item>
+	<item>Csng</item>
+	<item>Exp</item>
+	<item>Fix</item>
+	<item>Int</item>
+	<item>Log</item>
+	<item>Rnd</item>
+	<item>Sgn</item>
+	<item>Sin</item>
+	<item>Sqr</item>
+	<item>Tan</item>
+</list>
+
+<list name="comments">
+	<item>rem</item>
+</list>
+
+<list name="types">
+	<item>invalid</item>
+	<item>void</item>
+	<item>dynamic</item>
+	<item>boolean</item>
+	<item>integer</item>
+	<item>longinteger</item>
+	<item>float</item>
+	<item>double</item>
+	<item>string</item>
+	<item>object</item>
+	<item>function</item>
+	<item>interface</item>
+</list>
+
+<list name="constants">
+	<item>true</item>
+	<item>false</item>
+	<item>invalid</item>
+	<item>LINE_NUM</item>
+</list>
+
+
+
+
+<contexts>
+
+<!-- Contexts starting with @ are for inclusion only. -->
+
+<context name="global" attribute="g" lineEndContext="#stay">
+	<DetectSpaces/>
+	<keyword String="library" attribute="import" context="library"/>
+	<IncludeRules context="@comment"/>
+	<IncludeRules context="@macro"/>
+	<IncludeRules context="@function"/>
+	<IncludeRules context="@sub"/>
+</context>
+
+
+<!-- Import statement, which might appear at the global context:
+         library "mylibname.brs"
+-->
+<context name="library" attribute="import" lineEndContext="#pop">
+	<DetectSpaces/>
+	<DetectChar char="&quot;" attribute="string" context="#pop!string"/>
+</context>
+
+
+<!-- Comments have higher priority over anything else. -->
+<context name="@comment" attribute="g" lineEndContext="#stay">
+	<DetectSpaces/>
+	<DetectChar char="'" attribute="comment" context="comment"/>
+	<keyword String="comments" attribute="comment" context="comment"/>
+</context>
+
+<context name="comment" attribute="comment" lineEndContext="#pop">
+</context>
+
+
+<!-- Macro statement starts with # and might appear anywhere in the code:
+         #if foo
+             ...
+         #else
+             ...
+         #endif
+-->
+<context name="@macro" attribute="g" lineEndContext="#stay">
+	<DetectChar char="#" attribute="macro" context="macro_line"/>
+</context>
+
+<context name="macro_line" attribute="macro" lineEndContext="#pop">
+	<IncludeRules context="@comment"/>
+</context>
+
+
+<!-- Colon starts a new line. -->
+<context name="line_break" attribute="g" lineEndContext="#stay">
+	<IncludeRules context="@line_break"/>
+</context>
+
+<context name="@line_break" attribute="g" lineEndContext="#stay">
+	<DetectChar char=":" attribute="line_break" context="#pop"/>
+</context>
+
+
+<!-- Common rules for function and sub. -->
+<context name="@code_end" attribute="g" lineEndContext="#stay">
+	<RegExpr String="end\s+(if|for|while)" insensitive="true" attribute="control"/>
+</context>
+
+<context name="arg_as_type" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces/>
+	<DetectIdentifier attribute="var" context="#pop!arg_params"/>
+</context>
+
+<context name="arg_params" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces/>
+	<keyword String="as" context="as_type" lookAhead="true"/>
+	<DetectChar char="=" attribute="assign" context="rvalue"/>
+</context>
+
+<context name="as_type" attribute="g" lineEndContext="#stay">
+	<keyword String="as" attribute="keyword" context="as_type_value"/>
+</context>
+
+<context name="as_type_value" attribute="g" lineEndContext="#stay">
+	<keyword String="types" attribute="type" context="#pop#pop"/>
+	<DetectIdentifier attribute="invalid" context="#pop#pop"/>
+</context>
+
+
+<!-- Regular function definition. -->
+<context name="@function" attribute="g" lineEndContext="#stay">
+	<keyword String="function" attribute="keyword" context="function" beginRegion="function"/>
+</context>
+
+<context name="function" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="function_name">
+</context>
+
+<context name="function_name" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!function_code">
+	<DetectSpaces/>
+	<DetectIdentifier attribute="func" context="#pop!func_open_brace"/>
+	<DetectChar char="(" context="#pop!func_open_brace" lookAhead="true"/>
+</context>
+
+<context name="func_open_brace" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!function_code">
+	<DetectSpaces/>
+	<DetectChar char="(" attribute="scope" context="func_args"/>
+</context>
+
+<context name="func_args" attribute="g" lineEndContext="#stay" fallthroughContext="#pop#pop!function_code">
+	<DetectSpaces/>
+	<DetectIdentifier context="arg_as_type" lookAhead="true"/>
+	<DetectChar char=")" attribute="scope" context="#pop#pop!function_ret"/>
+	<DetectChar char="," attribute="coma" context="arg_as_type"/>
+</context>
+
+<context name="function_ret" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!function_code">
+	<DetectChar char=" " context="#stay"/>
+	<keyword String="as" context="as_type" lookAhead="true"/>
+</context>
+
+<context name="function_code" attribute="g" lineEndContext="#stay">
+	<DetectSpaces/>
+	<RegExpr String="end\s+function" insensitive="true" context="#pop!function_solid_end" lookAhead="true"/>
+	<keyword String="endfunction" context="#pop!function_solid_end" lookAhead="true"/>
+	<IncludeRules context="@code"/>
+</context>
+
+<context name="function_solid_end" attribute="g" lineEndContext="#stay">
+	<StringDetect String="end" insensitive="true" attribute="keyword" context="#pop!function_end"/>
+</context>
+
+<context name="function_end" attribute="keyword" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
+	<DetectSpaces/>
+	<StringDetect String="function" insensitive="true" attribute="keyword" context="#pop#pop" endRegion="function"/>
+</context>
+
+
+<!-- sub is a function with void return type. -->
+<context name="@sub" attribute="g" lineEndContext="#stay">
+	<keyword String="sub" attribute="keyword" context="sub" beginRegion="sub"/>
+</context>
+
+<context name="sub" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="sub_name">
+</context>
+
+<context name="sub_name" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!sub_code">
+	<DetectSpaces/>
+	<DetectIdentifier attribute="func" context="#pop!sub_open_brace"/>
+	<DetectChar char="(" context="#pop!sub_open_brace" lookAhead="true"/>
+</context>
+
+<context name="sub_open_brace" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!sub_code">
+	<DetectSpaces/>
+	<DetectChar char="(" attribute="scope" context="sub_args"/>
+</context>
+
+<context name="sub_args" attribute="g" lineEndContext="#stay" fallthroughContext="#pop#pop!sub_code">
+	<DetectSpaces/>
+	<DetectIdentifier context="arg_as_type" lookAhead="true"/>
+	<DetectChar char=")" attribute="scope" context="#pop#pop!sub_ret"/>
+	<DetectChar char="," attribute="coma" context="arg_as_type"/>
+</context>
+
+<context name="sub_ret" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!sub_code">
+	<DetectChar char=" " context="#stay"/>
+	<keyword String="as" context="as_type" lookAhead="true"/>
+</context>
+
+<context name="sub_code" attribute="g" lineEndContext="#stay">
+	<DetectSpaces/>
+	<RegExpr String="end\s+sub" insensitive="true" context="#pop!sub_solid_end" lookAhead="true"/>
+	<keyword String="endsub" context="#pop!sub_solid_end" lookAhead="true"/>
+	<IncludeRules context="@code"/>
+</context>
+
+<context name="sub_solid_end" attribute="g" lineEndContext="#stay">
+	<StringDetect String="end" insensitive="true" attribute="keyword" context="#pop!sub_end"/>
+</context>
+
+<context name="sub_end" attribute="keyword" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
+	<DetectSpaces/>
+	<StringDetect String="sub" insensitive="true" attribute="keyword" context="#pop#pop" endRegion="sub"/>
+</context>
+
+
+<!-- @code represents execution body, including function and sub contents.
+-->
+<context name="@code" attribute="g" lineEndContext="#stay">
+	<DetectSpaces/>
+	<IncludeRules context="@macro"/>
+	<IncludeRules context="@comment"/>
+	<IncludeRules context="@code_end"/>
+
+	<keyword String="print" attribute="print" context="print"/>
+	<keyword String="goto" attribute="keyword" context="goto"/>
+	<keyword String="return" attribute="control" context="rvalue"/>
+	<keyword String="stop" attribute="keyword"/>
+
+	<keyword String="dim" attribute="keyword" context="dim"/>
+
+	<keyword String="if" attribute="control" context="rvalue"/>
+	<keyword String="then" attribute="control"/>
+	<keyword String="else" attribute="control"/>
+	<keyword String="elseif" attribute="control"/>
+	<keyword String="endif" attribute="control"/>
+
+	<keyword String="while" attribute="control" context="rvalue"/>
+	<keyword String="endwhile" attribute="control"/>
+	<keyword String="exitwhile" attribute="control"/>
+
+	<keyword String="for" attribute="control" context="for"/>
+	<keyword String="endfor" attribute="control"/>
+	<keyword String="next" attribute="control"/>
+
+	<keyword String="exit" attribute="control" context="exit"/>
+
+	<DetectChar char=":" context="line_break" lookAhead="true"/>
+
+	<DetectIdentifier context="lvalue" lookAhead="true"/>
+</context>
+
+<context name="print" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="rvalue">
+	<DetectChar char="," attribute="coma"/>
+	<DetectChar char=";" attribute="coma"/>
+	<IncludeRules context="@line_break"/>
+</context>
+
+<context name="goto" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<DetectIdentifier attribute="label" context="#pop"/>
+</context>
+
+<context name="dim" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<DetectIdentifier attribute="var" context="#pop!dim_array"/>
+	<IncludeRules context="@comment"/>
+</context>
+
+<context name="dim_array" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<DetectChar char="[" attribute="operator" context="#pop!array"/>
+	<IncludeRules context="@comment"/>
+</context>
+
+<context name="for" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!for_var">
+	<DetectSpaces/>
+	<keyword String="each" attribute="control" context="#pop!for_each"/>
+	<IncludeRules context="@comment"/>
+</context>
+
+<context name="for_each" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<DetectIdentifier attribute="var" context="#pop!for_in"/>
+	<IncludeRules context="@comment"/>
+</context>
+
+<context name="for_in" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<keyword String="in" attribute="control" context="#pop!rvalue"/>
+	<IncludeRules context="@comment"/>
+</context>
+
+<context name="for_var" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="lvalue">
+	<DetectSpaces/>
+	<keyword String="to" attribute="control" context="#pop!for_to"/>
+	<IncludeRules context="@comment"/>
+</context>
+
+<context name="for_to" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="rvalue">
+	<DetectSpaces/>
+	<keyword String="step" attribute="control" context="#pop!rvalue"/>
+</context>
+
+<context name="exit" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<keyword String="for" attribute="control" context="#pop"/>
+	<keyword String="while" attribute="control" context="#pop"/>
+	<IncludeRules context="@comment"/>
+</context>
+
+
+
+<!-- Builtin functions are reserved keywords. They cannot be used as a local variable names.
+     Thus doing something like below is an error and will be highlighted with 'invalid':
+         eval = 1
+         foo = eval
+     It is still valid to use any word, including reserved ones, as an variable parameter:
+         foo.eval = 1
+         foo = bar.eval
+         foo.eval()
+-->
+<context name="@lvalue_builtin_functions" attribute="g" lineEndContext="#stay">
+    <keyword String="builtin_functions" context="#pop!lvalue_builtin_function" lookAhead="true"/>
+</context>
+
+<context name="lvalue_builtin_function" attribute="g" lineEndContext="#pop">
+	<RegExpr String="[a-zA-Z_][a-zA-Z0-1_]*\s*\(" context="#pop!lvalue_builtin_call" lookAhead="true"/>
+	<DetectIdentifier attribute="invalid" context="#pop"/>
+</context>
+
+<context name="lvalue_builtin_call" attribute="g" lineEndContext="#pop">
+	<DetectIdentifier attribute="builtin_func" context="#pop!lvalue_call_open_brace"/>
+</context>
+
+
+<context name="@rvalue_builtin_functions" attribute="g" lineEndContext="#stay">
+    <keyword String="builtin_functions" context="#pop!rvalue_builtin_function" lookAhead="true"/>
+</context>
+
+<context name="rvalue_builtin_function" attribute="g" lineEndContext="#pop">
+	<RegExpr String="[a-zA-Z_][a-zA-Z0-1_]*\s*\(" context="#pop!rvalue_builtin_call" lookAhead="true"/>
+	<DetectIdentifier attribute="invalid" context="#pop"/>
+</context>
+
+<context name="rvalue_builtin_call" attribute="g" lineEndContext="#pop">
+	<DetectIdentifier attribute="builtin_func" context="#pop!rvalue_call_open_brace"/>
+</context>
+
+
+<!-- Library functions have nothing special comparing to other functions. They just have different
+     highlighting colors. It is valid to shadow function with a variable with the same name,
+     although it is not recommended and might be considered as a warning by various linters.
+-->
+<context name="@lvalue_library_functions" attribute="g" lineEndContext="#stay">
+	<keyword String="utility_functions" context="#pop!lvalue_library_function" lookAhead="true"/>
+	<keyword String="string_functions" context="#pop!lvalue_library_function" lookAhead="true"/>
+	<keyword String="math_functions" context="#pop!lvalue_library_function" lookAhead="true"/>
+</context>
+
+<context name="lvalue_library_function" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!lvalue_var">
+	<RegExpr String="[a-zA-Z_][a-zA-Z0-1_]*\s*\(" context="#pop!lvalue_library_call" lookAhead="true"/>
+</context>
+
+<context name="lvalue_library_call" attribute="g" lineEndContext="#pop">
+	<DetectIdentifier attribute="library_func" context="#pop!lvalue_call_open_brace"/>
+</context>
+
+
+<context name="@rvalue_library_functions" attribute="g" lineEndContext="#stay">
+	<keyword String="utility_functions" context="#pop!rvalue_library_function" lookAhead="true"/>
+	<keyword String="string_functions" context="#pop!rvalue_library_function" lookAhead="true"/>
+	<keyword String="math_functions" context="#pop!rvalue_library_function" lookAhead="true"/>
+</context>
+
+<context name="rvalue_library_function" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!rvalue_var">
+	<RegExpr String="[a-zA-Z_][a-zA-Z0-1_]*\s*\(" context="#pop!rvalue_library_call" lookAhead="true"/>
+</context>
+
+<context name="rvalue_library_call" attribute="g" lineEndContext="#pop">
+	<DetectIdentifier attribute="library_func" context="#pop!rvalue_call_open_brace"/>
+</context>
+
+
+<!-- lvalue contexts represent expressions of the left side of the assignment operators or
+	 standalone function calls.
+-->
+<context name="lvalue" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!lvalue_exp">
+	<DetectSpaces/>
+	<keyword String="m" attribute="m" context="#pop!lvalue_m_dot"/>
+	<IncludeRules context="@lvalue_builtin_functions"/>
+	<IncludeRules context="@lvalue_library_functions"/>
+	<IncludeRules context="@comment"/>
+</context>
+
+<context name="lvalue_exp" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<RegExpr String="[a-zA-Z_][a-zA-Z0-1_]*\s*\(" context="#pop!lvalue_call" lookAhead="true"/>
+	<RegExpr String="[a-zA-Z_][a-zA-Z0-1_]*:" attribute="label" context="#pop"/>
+	<DetectIdentifier context="#pop!lvalue_var" lookAhead="true"/>
+</context>
+
+<context name="lvalue_m_dot" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<DetectChar char="." attribute="operator" context="#pop!lvalue_top"/>
+	<IncludeRules context="@comment"/>
+	<IncludeRules context="@lvalue_ops"/>
+</context>
+
+<context name="lvalue_top" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<keyword String="top" attribute="top" context="#pop!lvalue_operator"/>
+	<DetectIdentifier context="#pop!lvalue_exp" lookAhead="true"/>
+	<IncludeRules context="@comment"/>
+</context>
+
+<context name="lvalue_var" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+	<DetectIdentifier attribute="var" context="#pop!lvalue_var_postfix"/>
+</context>
+
+<context name="lvalue_var_postfix" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!lvalue_operator">
+	<AnyChar String="$%&amp;!#" attribute="var" context="#pop!lvalue_operator"/>
+</context>
+
+<context name="lvalue_operator" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces/>
+	<DetectChar char="." attribute="operator" context="#pop!lvalue_exp"/>
+	<IncludeRules context="@lvalue_ops"/>
+</context>
+
+<context name="@lvalue_ops" attribute="g" lineEndContext="#stay">
+	<IncludeRules context="@lvalue_call_open_brace"/>
+	<DetectChar char="[" attribute="operator" context="lvalue_array"/>
+	<RegExpr String="(=|\+=|\-=|\*=|/=|\\=|&lt;&lt;=|&gt;&gt;=)" attribute="assign" context="#pop!rvalue"/>
+</context>
+
+<context name="lvalue_array" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="rvalue">
+	<DetectSpaces/>
+	<DetectChar char="," attribute="coma"/>
+	<DetectChar char="]" attribute="operator" context="#pop!lvalue_operator"/>
+</context>
+
+<context name="lvalue_call" attribute="g" lineEndContext="#stay">
+	<DetectIdentifier attribute="func" context="#pop!lvalue_call_open_brace"/>
+</context>
+
+<context name="lvalue_call_open_brace" attribute="g" lineEndContext="#stay">
+	<IncludeRules context="@lvalue_call_open_brace"/>
+</context>
+
+<context name="@lvalue_call_open_brace" attribute="g" lineEndContext="#stay">
+	<DetectChar char="(" attribute="scope" context="lvalue_call_args"/>
+</context>
+
+<context name="lvalue_call_args" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="rvalue">
+	<DetectSpaces/>
+	<DetectChar char=")" attribute="scope" context="#pop#pop!lvalue_operator"/>
+	<DetectChar char="," attribute="coma"/>
+</context>
+
+
+<!-- rvalue contexts represent expressions on the right side of assignment operators and arguments
+	 to other functions, 'print' calls, object keys, array values, etc.
+-->
+<context name="rvalue" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces/>
+	<DetectChar char="-" attribute="unary"/>
+	<DetectChar char="+" attribute="unary"/>
+	<IncludeRules context="@comment"/>
+	<IncludeRules context="@function"/>
+	<IncludeRules context="@sub"/>
+	<keyword String="unary" attribute="unary"/>
+	<keyword String="end_of_scope" context="#pop#pop" lookAhead="true"/>
+	<DetectChar char="&quot;" attribute="string" context="#pop!string"/>
+	<DetectChar char="[" attribute="operator" context="#pop!array"/>
+	<DetectChar char="(" attribute="scope" context="#pop!rvalue_scope"/>
+	<DetectChar char="{" attribute="operator" context="#pop!object"/>
+	<keyword String="constants" attribute="constant" context="#pop!rvalue_operator"/>
+	<RegExpr String="[-+]?[0-9]*\.[0-9]" context="#pop!float" lookAhead="true"/>
+	<RegExpr String="[-+]?[0-9]" context="#pop!int" lookAhead="true"/>
+	<StringDetect String="&amp;h" insensitive="true" attribute="dec" context="#pop!hex"/>
+	<keyword String="m" attribute="m" context="#pop!rvalue_m_dot"/>
+	<IncludeRules context="@rvalue_builtin_functions"/>
+	<IncludeRules context="@rvalue_library_functions"/>
+	<IncludeRules context="@rvalue_dot"/>
+</context>
+
+<context name="rvalue_var" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+	<DetectIdentifier attribute="var" context="#pop!rvalue_var_postfix"/>
+</context>
+
+<context name="rvalue_var_postfix" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!rvalue_operator">
+	<AnyChar String="$%&amp;!#" attribute="var" context="#pop!rvalue_operator"/>
+</context>
+
+<context name="rvalue_operator" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!rvalue_end">
+	<DetectSpaces/>
+	<DetectChar char="." attribute="operator" context="#pop!rvalue_dot"/>
+	<DetectChar char="@" attribute="operator" context="#pop!rvalue_dot"/>
+	<IncludeRules context="@rvalue_ops"/>
+</context>
+
+<context name="@rvalue_ops" attribute="g" lineEndContext="#stay">
+	<IncludeRules context="@rvalue_call_open_brace"/>
+	<DetectChar char="[" attribute="operator" context="#pop!array"/>
+</context>
+
+<context name="rvalue_end" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces/>
+	<RegExpr String="(=|&lt;&gt;|&lt;&lt;|&gt;&gt;|&lt;=|&gt;=|&lt;|&gt;|\^|\-|\+|\*|\/|\\)" context="#pop!rvalue_binary" lookAhead="true"/>
+	<RegExpr String="(and|or|mod)[\W]" insensitive="true" context="#pop!rvalue_binary" lookAhead="true"/>
+</context>
+
+<context name="rvalue_binary" attribute="invalid" lineEndContext="#stay">
+	<DetectSpaces/>
+	<RegExpr String="(=|&lt;&gt;|&lt;&lt;|&gt;&gt;|&lt;=|&gt;=|&lt;|&gt;|\^|\-|\+|\*|\/|\\|and|or|mod)" insensitive="true" attribute="binary" context="#pop!rvalue"/>
+</context>
+
+<context name="rvalue_m_dot" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!rvalue_end">
+	<DetectSpaces/>
+	<DetectChar char="." attribute="operator" context="#pop!rvalue_top"/>
+	<IncludeRules context="@comment"/>
+	<IncludeRules context="@rvalue_ops"/>
+</context>
+
+<context name="rvalue_top" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<keyword String="top" attribute="top" context="#pop!rvalue_operator"/>
+	<DetectIdentifier context="#pop!rvalue_dot" lookAhead="true"/>
+	<IncludeRules context="@comment"/>
+</context>
+
+<context name="rvalue_scope" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="rvalue">
+	<DetectSpaces/>
+	<DetectChar char=")" attribute="scope" context="#pop!rvalue_operator"/>
+</context>
+
+<context name="rvalue_dot" attribute="g" lineEndContext="#stay">
+	<IncludeRules context="@rvalue_dot"/>
+</context>
+
+<context name="@rvalue_dot" attribute="g" lineEndContext="#stay">
+	<RegExpr String="[a-zA-Z_][a-zA-Z0-1_]*\s*\(" context="#pop!rvalue_call" lookAhead="true"/>
+	<DetectIdentifier context="#pop!rvalue_var" lookAhead="true"/>
+</context>
+
+
+<!-- Other rvalue expressions. -->
+<context name="string" attribute="string" lineEndContext="#pop#pop">
+	<DetectChar char="&quot;" attribute="string" context="#pop!rvalue_operator"/>
+</context>
+
+<context name="array" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="rvalue">
+	<DetectSpaces/>
+	<DetectChar char="," attribute="coma"/>
+	<DetectChar char="]" attribute="operator" context="#pop!rvalue_operator"/>
+</context>
+
+<context name="object" attribute="g" lineEndContext="#stay">
+	<DetectSpaces/>
+	<IncludeRules context="@comment"/>
+	<DetectChar char="," attribute="coma"/>
+	<DetectChar char="}" attribute="operator" context="#pop!rvalue_operator"/>
+	<DetectChar char="&quot;" attribute="var" context="object_param_string"/>
+	<DetectIdentifier attribute="var" context="object_param_colon"/>
+</context>
+
+<context name="object_param_string" attribute="var" lineEndContext="#pop">
+	<DetectChar char="&quot;" attribute="var" context="#pop!object_param_colon"/>
+</context>
+
+<context name="object_param_colon" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<IncludeRules context="@comment"/>
+	<DetectChar char=":" attribute="operator" context="#pop!rvalue"/>
+</context>
+
+<context name="float" attribute="float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+	<!-- documentation says this is a valid string, but implementation gives compile error -->
+	<!--<RegExpr String="[-+]?[0-9]*\.[0-9]+([eE][-+]?[0-9]+)?\$" attribute="string" context="postfix_delimiter"/>-->
+	<!--<RegExpr String="[-+]?[0-9]*\.[0-9]+([eE][-+]?[0-9]+)?[%&amp;]" attribute="dec" context="postfix_delimiter"/>-->
+	<RegExpr String="[-+]?[0-9]*\.[0-9]+([eE][-+]?[0-9]+)?[!#]?" attribute="float" context="postfix_delimiter"/>
+</context>
+
+<context name="int" attribute="dec" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+	<!-- documentation says this is a valid string, but implementation gives compile error -->
+	<!--<RegExpr String="[-+]?[0-9]*\$" attribute="string" context="postfix_delimiter"/>-->
+	<RegExpr String="[-+]?[0-9]*[!#]" attribute="float" context="postfix_delimiter"/>
+	<RegExpr String="[-+]?[0-9]*[%&amp;]?" attribute="dec" context="postfix_delimiter"/>
+</context>
+
+<context name="hex" attribute="invalid" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+	<RegExpr String="[0-9a-fA-F]+" insensitive="true" attribute="dec" context="#pop"/>
+</context>
+
+<context name="postfix_delimiter" attribute="g" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
+	<RegExpr String="[\s\W]" context="#pop#pop!rvalue_operator" lookAhead="true"/>
+</context>
+
+<context name="rvalue_call" attribute="g" lineEndContext="#stay">
+	<DetectIdentifier attribute="func" context="#pop!rvalue_call_open_brace"/>
+</context>
+
+<context name="rvalue_call_open_brace" attribute="g" lineEndContext="#stay">
+	<IncludeRules context="@rvalue_call_open_brace"/>
+</context>
+
+<context name="@rvalue_call_open_brace" attribute="g" lineEndContext="#stay">
+	<DetectChar char="(" attribute="scope" context="rvalue_call_args"/>
+</context>
+
+<context name="rvalue_call_args" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="rvalue">
+	<DetectSpaces/>
+	<DetectChar char=")" attribute="scope" context="#pop#pop!rvalue_operator"/>
+	<DetectChar char="," attribute="coma"/>
+</context>
+
+</contexts>
+
+
+
+
+<itemDatas>
+	<itemData name="g"            defStyleNum="dsNormal"/>
+	<itemData name="import"       defStyleNum="dsImport"/>
+	<itemData name="func"         defStyleNum="dsFunction"/>
+	<itemData name="keyword"      defStyleNum="dsKeyword"/>
+	<itemData name="control"      defStyleNum="dsControlFlow"/>
+	<itemData name="assign"       defStyleNum="dsOperator"/>
+	<itemData name="binary"       defStyleNum="dsOperator"/>
+	<itemData name="unary"        defStyleNum="dsOperator"/>
+	<itemData name="operator"     defStyleNum="dsOperator"/>
+	<itemData name="scope"        defStyleNum="dsOperator"/>
+	<itemData name="coma"         defStyleNum="dsOperator"/>
+	<itemData name="type"         defStyleNum="dsDataType"/>
+	<itemData name="var"          defStyleNum="dsVariable"/>
+	<itemData name="comment"      defStyleNum="dsComment"/>
+	<itemData name="print"        defStyleNum="dsBuiltIn"/>
+	<itemData name="builtin_func" defStyleNum="dsBuiltIn"/>
+	<itemData name="library_func" defStyleNum="dsBuiltIn"/>
+	<itemData name="dec"          defStyleNum="dsDecVal"/>
+	<itemData name="float"        defStyleNum="dsFloat"/>
+	<itemData name="string"       defStyleNum="dsString"/>
+	<itemData name="constant"     defStyleNum="dsConstant"/>
+	<itemData name="macro"        defStyleNum="dsPreprocessor"/>
+	<itemData name="label"        defStyleNum="dsSpecialChar"/>
+	<itemData name="line_break"   defStyleNum="dsSpecialChar"/>
+	<itemData name="m"            defStyleNum="dsExtension"/>
+	<itemData name="top"          defStyleNum="dsExtension"/>
+	<itemData name="invalid"      defStyleNum="dsError"/>
+</itemDatas>
+
+</highlighting>
+
+
+
+
+<general>
+	<comments>
+		<comment name="singleLine" start="'"/>
+	</comments>
+
+	<keywords casesensitive="0" additionalDeliminator="'"/>
+</general>
+
+</language>

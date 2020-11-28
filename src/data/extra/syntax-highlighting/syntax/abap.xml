@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="ABAP" version="2" kateversion="2.3" section="Sources" extensions="*.abap;*.ABAP" mimetype="text/x-abap-src" priority="5" author="Marcos Antonio Alvarez Costales (busgosin@hotmail.com)" license="GPL">
+  <highlighting>
+
+    <list name="keywords">
+    <!-- compiler directives and structures -->
+      <item>ADD</item>
+      <item>ADJACENT</item>
+      <item>ALL</item>
+      <item>AND</item>
+      <item>APPEND</item>
+      <item>APPENDING</item>
+      <item>AS</item>
+      <item>ASCENDING</item>
+      <item>AT</item>
+      <item>BEGIN</item>
+      <item>BETWEEN</item>
+      <item>BINARY</item>
+      <item>BLOCK</item>
+      <item>BY</item>
+      <item>CASE</item>
+      <item>CENTERED</item>
+      <item>CHAIN</item>
+      <item>CHANGING</item>
+      <item>CHECK</item>
+      <item>CHECKBOX</item>
+      <item>CLEAR</item>
+      <item>COL_BACKGROUND</item>
+      <item>COL_HEADING</item>
+      <item>COL_NORMAL</item>
+      <item>COL_TOTAL</item>
+      <item>COLOR</item>
+      <item>COMMENT</item>
+      <item>COMMIT</item>
+      <item>COMPARING</item>
+      <item>COMPUTE</item>
+      <item>CONCATENATE</item>
+      <item>CONDENSE</item>
+      <item>CONSTANTS</item>
+      <item>CONTINUE</item>
+      <item>CONTROLS</item>
+      <item>COUNTRY</item>
+      <item>DATA</item>
+      <item>DECIMALS</item>
+      <item>DEFAULT</item>
+      <item>DELETE</item>
+      <item>DELETING</item>
+      <item>DESCENDING</item>
+      <item>DESCRIBE</item>
+      <item>DO</item>
+      <item>DUPLICATES</item>
+      <item>EDIT</item>
+      <item>ELSE</item>
+      <item>ELSEIF</item>
+      <item>END</item>
+      <item>ENDCASE</item>
+      <item>ENDCHAIN</item>
+      <item>ENDDO</item>
+      <item>ENDIF</item>
+      <item>ENDLOOP</item>
+      <item>ENDMODULE</item>
+      <item>ENDSELECT</item>
+      <item>ENDWHILE</item>
+      <item>ENTRIES</item>
+      <item>EQ</item>
+      <item>EXCEPTIONS</item>
+      <item>EXCLUDING</item>
+      <item>EXIT</item>
+      <item>EXIT-COMMAND</item>
+      <item>EXPORT</item>
+      <item>EXPORTING</item>
+      <item>FIELD</item>
+      <item>FIRST</item>
+      <item>FOR</item>
+      <item>FORMAT</item>
+      <item>FRAME</item>
+      <item>FREE</item>
+      <item>FROM</item>
+      <item>GE</item>
+      <item>GROUP</item>
+      <item>GT</item>
+      <item>HEADER</item>
+      <item>HEADING</item>
+      <item>HIDE</item>
+      <item>HOTSPOT</item>
+      <item>ID</item>
+      <item>IF</item>
+      <item>IMPORT</item>
+      <item>IMPORTING</item>
+      <item>IN</item>
+      <item>INDEX</item>
+      <item>INITIAL</item>
+      <item>INNER</item>
+      <item>INPUT</item>
+      <item>INSERT</item>
+      <item>INTENSIFIED</item>
+      <item>INTERVALS</item>
+      <item>INTO</item>
+      <item>IS</item>
+      <item>JOIN</item>
+      <item>KEY</item>
+      <item>LE</item>
+      <item>LEAVE</item>
+      <item>LEFT</item>
+      <item>LEFT-JUSTIFIED</item>
+      <item>LIKE</item>
+      <item>LINE</item>
+      <item>LINE-COUNT</item>
+      <item>LINES</item>
+      <item>LINES</item>
+      <item>LINE-SIZE</item>
+      <item>LIST-PROCESSING</item>
+      <item>LOOP</item>
+      <item>LT</item>
+      <item>MASK</item>
+      <item>MEMORY</item>
+      <item>MESSAGE</item>
+      <item>MESSAGE-ID</item>
+      <item>MOD</item>
+      <item>MODIFY</item>
+      <item>MODULE</item>
+      <item>MOVE</item>
+      <item>MOVE-CORRESPONDING</item>
+      <item>NE</item>
+      <item>NEW-LINE</item>
+      <item>NEW-PAGE</item>
+      <item>NO</item>
+      <item>NO-EXTENSION</item>
+      <item>NO-GAP</item>
+      <item>NO-SCROLLING</item>
+      <item>NOT</item>
+      <item>NO-ZERO</item>
+      <item>NUMBER</item>
+      <item>OBLIGATORY</item>
+      <item>OCCURS</item>
+      <item>OF</item>
+      <item>OFF</item>
+      <item>ON</item>
+      <item>OR</item>
+      <item>OTHERS</item>
+      <item>OUTPUT</item>
+      <item>PAGE</item>
+      <item>PARAMETER</item>
+      <item>PARAMETERS</item>
+      <item>PERFORM</item>
+      <item>PF-STATUS</item>
+      <item>POS_HIGH</item>
+      <item>POS_LOW</item>
+      <item>POSITION</item>
+      <item>PROGRAM</item>
+      <item>RADIOBUTTON</item>
+      <item>RANGES</item>
+      <item>READ</item>
+      <item>REFRESH</item>
+      <item>REPORT</item>
+      <item>RESERVE</item>
+      <item>RESET</item>
+      <item>RIGHT</item>
+      <item>RIGHT-JUSTIFIED</item>
+      <item>ROLLBACK</item>
+      <item>ROWS</item>
+      <item>SCREEN</item>
+      <item>SCREEN-GROUP1</item>
+      <item>SCREEN-GROUP2</item>
+      <item>SCREEN-GROUP3</item>
+      <item>SCREEN-GROUP4</item>
+      <item>SCREEN-GROUP5</item>
+      <item>SCREEN-INPUT</item>
+      <item>SCREEN-INTENSIFIED</item>
+      <item>SEARCH</item>
+      <item>SELECT</item>
+      <item>SELECTION</item>
+      <item>SELECTION-SCREEN</item>
+      <item>SELECT-OPTIONS</item>
+      <item>SEPARATED</item>
+      <item>SET</item>
+      <item>SHIFT</item>
+      <item>SINGLE</item>
+      <item>SKIP</item>
+      <item>SORT</item>
+      <item>SPACE</item>
+      <item>SPLIT</item>
+      <item>STANDARD</item>
+      <item>STARTING</item>
+      <item>STOP</item>
+      <item>STRLEN</item>
+      <item>STRUCTURE</item>
+      <item>SUBTRACT</item>
+      <item>SY-CUCOL</item>
+      <item>SY-DATUM</item>
+      <item>SY-DYNNR</item>
+      <item>SY-LINSZ</item>
+      <item>SY-LOOPC</item>
+      <item>SY-LSIND</item>
+      <item>SY-MSGID</item>
+      <item>SY-MSGTY</item>
+      <item>SY-MSGV1</item>
+      <item>SY-MSGV2</item>
+      <item>SY-MSGV3</item>
+      <item>SY-MSGV4</item>
+      <item>SY-PAGNO</item>
+      <item>SY-REPID</item>
+      <item>SY-STEPL</item>
+      <item>SY-SUBRC</item>
+      <item>SY-TABIX</item>
+      <item>SY-TCODE</item>
+      <item>SY-TMAXL</item>
+      <item>SY-UCOMM</item>
+      <item>SY-ULINE</item>
+      <item>SY-UNAME</item>
+      <item>SY-UZEIT</item>
+      <item>SY-VLINE</item>
+      <item>TABLE</item>
+      <item>TABLES</item>
+      <item>TABLEVIEW</item>
+      <item>TIMES</item>
+      <item>TITLE</item>
+      <item>TITLEBAR</item>
+      <item>TO</item>
+      <item>TRAILING</item>
+      <item>TRANSPORTING</item>
+      <item>TYPE</item>
+      <item>TYPE-POOLS</item>
+      <item>TYPES</item>
+      <item>ULINE</item>
+      <item>UP</item>
+      <item>UPDATE</item>
+      <item>USING</item>
+      <item>VALUE</item>
+      <item>WHEN</item>
+      <item>WHERE</item>
+      <item>WHILE</item>
+      <item>WITH</item>
+      <item>WORK</item>
+      <item>WRITE</item>
+      <item>AFTER</item>
+      <item>BEFORE</item>
+      <item>CALL</item>
+      <item>DURING</item>
+      <item>ENDFORM</item>
+      <item>END-OF-SELECTION</item>
+      <item>FORM</item>
+      <item>FUNCTION</item>
+      <item>INCLUDE</item>
+      <item>LINE-SELECTION</item>
+      <item>PROCESS</item>
+      <item>START-OF-SELECTION</item>
+      <item>TOP-OF-PAGE</item>
+      <item>TRANSACTION</item>
+      <item>USER-COMMAND</item>
+    </list>
+
+    <contexts>
+	    <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+		    <keyword attribute="Keyword" context="#stay" String="keywords"/>
+		    <DetectChar attribute="Comment" context="Comment" char="&quot;"/>
+		    <DetectChar attribute="Comment" context="Comment" char="*"/>
+		    <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;:=&gt;[]^~"/>
+	    </context>
+	    <context attribute="Comment" lineEndContext="#pop" name="Comment">
+		       <DetectChar attribute="Comment" context="#pop" char="&quot;"/>
+		       <DetectChar attribute="Comment" context="#pop" char="*"/>
+	    </context>
+    </contexts>
+    
+    <itemDatas>
+	    <itemData name="Normal Text" 	defStyleNum="dsNormal"/>
+	    <itemData name="Keyword"  		defStyleNum="dsKeyword"/>
+	    <itemData name="Comment"  		defStyleNum="dsComment"/>
+	    <itemData name="Symbol"  		defStyleNum="dsNormal"/>
+    </itemDatas>
+
+  </highlighting>
+  
+  <general>
+    <comments>
+      <comment name="singleLine" start="&quot;" />
+      <comment name="singleLine" start="*" />
+      <comment name="multiLine" start="*" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+  
+</language>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+        <!ENTITY inlinestart "(^|[-\s&apos;&quot;\(\[{&lt;/:‘“’«¡¿‐‑‒–— ])">
+        <!ENTITY inlineend "(?=[-\s’”»‐‑‒–— &apos;&quot;\)\]}&gt;/:\.,;!\?\\]|$)">
+        <!ENTITY SimpleReferenceNameChars "\w_\.:\+\-">
+]>
+<!--
+  This file is part of KDE's kate project.
+
+  Copyright 2010 Matt Williams (matt@milliams.com)
+  Copyright 2014 Matthew Woehlke (mw_triad@users.sourceforge.net)
+  -->
+<language name="reStructuredText" extensions="*.rst" section="Markup" mimetype="text/x-rst" version="5" kateversion="2.4" casesensitive="1">
+
+  <highlighting>
+
+    <contexts>
+      <context name="Normal" attribute="Normal" lineEndContext="#stay">
+        <RegExpr attribute="Bold" context="#stay" String="&inlinestart;\*\*[^\s].*\*\*&inlineend;" minimal="true"/>
+        <RegExpr attribute="Italic" context="#stay" String="&inlinestart;\*[^\s].*\*&inlineend;" minimal="true"/>
+        <IncludeRules context="InlineMarkup"/>
+        <RegExpr attribute="Footnote" context="#stay" String="^\s*\.\. \[(\d+|#|\*|#[&SimpleReferenceNameChars;]+)\]\s" minimal="true" column="0"/>
+        <RegExpr attribute="Citation" context="#stay" String="^\s*\.\. \[[&SimpleReferenceNameChars;]+\]\s" minimal="true" column="0"/>
+        <RegExpr attribute="HyperlinkTarget" context="#stay" String="^\s*(\.\. (__:|_[&SimpleReferenceNameChars; ]+:(\s|$))|__ )" minimal="true" column="0"/>
+        <StringDetect attribute="Code" String=".. code-block::" context="CodeBlock" firstNonSpace="true"/>
+        <StringDetect attribute="Code" String=".. code::" context="CodeBlock" firstNonSpace="true"/>
+        <RegExpr attribute="Directive" context="#stay" String="^\s*\.\. ([\w\-_\.]+)(:[\w\-_\.]+)*::(\s|$)" minimal="true" column="0"/>
+        <RegExpr attribute="Code" String="::$" context="CodeBlock" />
+        <RegExpr attribute="SubstitutionDefinition" context="#stay" String="^\s*\.\. \|[&SimpleReferenceNameChars; ]+\|\s+[&SimpleReferenceNameChars;]+::\s" minimal="true" column="0"/>
+        <RegExpr attribute="Field" String=":(?=([^:]*\\:)*[^:]*:(\s|$))" context="Field" firstNonSpace="true"/>
+        <RegExpr attribute="Comment" context="Comment" String="^(\s*)\.\.(\s|$)(?!([\w\-_\.]+)(:[\w\-_\.]+)*::(\s|$))" column="0"/>
+      </context>
+
+      <context name="InlineMarkup" attribute="Normal" lineEndContext="#stay">
+        <RegExpr attribute="InlineLiteral" context="#stay" String="&inlinestart;``[^\s].*``&inlineend;" minimal="true"/>
+        <RegExpr attribute="SubstitutionReference" context="#stay" String="&inlinestart;\|[^\s].*\|&inlineend;" minimal="true"/>
+        <RegExpr attribute="InlineInternalTarget" context="#stay" String="&inlinestart;_`[^\s].*`&inlineend;" minimal="true"/>
+        <RegExpr attribute="FootnoteReference" context="#stay" String="&inlinestart;\[[&SimpleReferenceNameChars;]+\]_&inlineend;" minimal="true"/>
+        <RegExpr attribute="HyperlinkReference" context="#stay" String="&inlinestart;(`[^\s].*`|\w+)_&inlineend;" minimal="true"/>
+        <RegExpr attribute="InterpretedText" context="TrailingRole" String="&inlinestart;`[^\s].*`(?=:([\w\-_\.\+]+)(:[\w\-_\.\+]+)*:)" minimal="true"/>
+        <RegExpr attribute="Role" String=":([\w\-_\.\+]+)(:[\w\-_\.\+]+)*:(?=`)" context="Role"/>
+        <RegExpr attribute="DefaultRole" context="#stay" String="&inlinestart;`[^\s].*`&inlineend;" minimal="true"/>
+      </context>
+
+      <context name="Field" attribute="Field" lineEndContext="#stay">
+        <DetectChar attribute="Field" context="#pop" char=":"/>
+        <Detect2Chars attribute="Field" context="#stay" char="\" char1=":"/>
+        <RegExpr attribute="FieldBold" context="#stay" String="&inlinestart;\*\*[^\s].*\*\*&inlineend;" minimal="true"/>
+        <RegExpr attribute="FieldItalic" context="#stay" String="&inlinestart;\*[^\s].*\*&inlineend;" minimal="true"/>
+        <IncludeRules context="InlineMarkup"/>
+      </context>
+      <context name="InterpretedText" attribute="InterpretedText" lineEndContext="#pop">
+        <DetectChar attribute="InterpretedText" char="`" context="#pop" />
+      </context>
+      <context name="Role" attribute="Role" lineEndContext="#pop">
+        <DetectChar attribute="InterpretedText" char="`" context="#pop!InterpretedText" />
+      </context>
+      <context name="TrailingRole" attribute="Role" lineEndContext="#pop">
+        <RegExpr attribute="Role" String=":[\w\-_\.\+]+:" context="#pop"/>
+      </context>
+      <context name="Comment" attribute="Comment" lineEndContext="#stay" dynamic="true">
+        <RegExpr attribute="Code" String="^%1   " context="#stay" column="0" dynamic="true"/>
+        <RegExpr attribute="Normal" String="^(.|$)" lookAhead="true" column="0" context="#pop"/>
+        <IncludeRules context="##Alerts"/>
+      </context>
+
+      <context name="CodeBlock" attribute="Code" lineEndContext="#stay">
+        <RegExpr attribute="Code" String="^(\s+)(?=\S)" context="Code" column="0"/>
+      </context>
+
+      <context name="Code" attribute="Code" lineEndContext="#stay" dynamic="true">
+        <RegExpr attribute="Code" String="^%1" context="#stay" column="0" dynamic="true"/>
+        <RegExpr attribute="Normal" String="^(.|$)" lookAhead="true" context="#pop#pop" column="0"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal" />
+      <itemData name="Bold" defStyleNum="dsNormal" bold="1" />
+      <itemData name="Italic" defStyleNum="dsNormal" italic="1" />
+      <itemData name="InlineLiteral" defStyleNum="dsDataType" />
+      <itemData name="SubstitutionReference" defStyleNum="dsFunction" />
+      <itemData name="InlineInternalTarget" defStyleNum="dsFunction" />
+      <itemData name="FootnoteReference" defStyleNum="dsOthers" />
+      <itemData name="InterpretedText" defStyleNum="dsDecVal" />
+      <itemData name="HyperlinkReference" defStyleNum="dsOthers" />
+      <itemData name="Field" defStyleNum="dsFunction" />
+      <itemData name="FieldBold" defStyleNum="dsFunction" bold="1" />
+      <itemData name="FieldItalic" defStyleNum="dsFunction" italic="1" />
+      <itemData name="Footnote" defStyleNum="dsDataType" />
+      <itemData name="Citation" defStyleNum="dsDataType" />
+      <itemData name="HyperlinkTarget" defStyleNum="dsDataType" />
+      <itemData name="Directive" defStyleNum="dsDataType" />
+      <itemData name="SubstitutionDefinition" defStyleNum="dsDataType" />
+      <itemData name="Role" defStyleNum="dsKeyword" />
+      <itemData name="DefaultRole" defStyleNum="dsDecVal" />
+      <itemData name="Code" defStyleNum="dsDataType" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+    <folding indentationsensitive="true" />
+    <comments>
+      <comment name="singleLine" start=".."/>
+    </comments>
+  </general>
+
+</language>

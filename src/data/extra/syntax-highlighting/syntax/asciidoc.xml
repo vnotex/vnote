@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd" [
+    <!-- alphabetic -->
+    <!ENTITY alp "a-zA-Z">
+    <!-- alphanumeric -->
+    <!ENTITY aln "&alp;0-9">
+    <!ENTITY id "\w[\w-]+">
+    <!-- percent symbol, needs to be encoded inside an entity definition -->
+    <!ENTITY perc "&#x0025;">
+
+    <!ENTITY admonition_names "CAUTION|IMPORTANT|NOTE|TIP|WARNING">
+
+    <!-- regular expression parts to identify anchors -->
+    <!ENTITY anchor_mid "&id;(?:,.+?)?">
+    <!ENTITY anchor_phrase "#\S(?:.*?\S)?#">
+
+    <!-- block delimiters -->
+    <!ENTITY block_dels_comment "/{4,}">
+    <!ENTITY block_dels_normal "={4,}|_{4,}|\*{4,}|-{2}|&quot;{2}">
+    <!ENTITY block_dels_pass "\+{4,}">
+    <!ENTITY block_dels_verbatim "`{3}|-{4,}|\.{4,}">
+    <!-- postfix/trailing part of block name -->
+    <!ENTITY block_name_post "(?:[#&perc;].+)?\s*(,.*)?\]\s*$">
+    <!-- block end delimiter, dynamic matching: "^%1\s*$" -->
+    <!ENTITY block_end_del "^&perc;1\s*$">
+
+    <!-- unicode character reference, decimal and hexadecimal -->
+    <!ENTITY char_ref "&amp;#(?:\d{2,4}|x[\da-fA-F]{2,4});">
+
+    <!-- email - inline -->
+    <!ENTITY email "\w[\w.&perc;+-]*@[&aln;][&aln;.-]*\.[&alp;]{2,4}\b">
+
+    <!-- link macro and mailto: -->
+    <!ENTITY link_mailto "(?:link|mailto):[^:\s\[][^\s\[]*\[(?:\]|.*?[^\\]\])">
+
+    <!-- parts to build regular expressions to identify quoted (formatted) text
+         E.g. emphasized, marked, strong. -->
+    <!-- prefix/leading part -->
+    <!ENTITY quoted_pre "(?&lt;=^|[^\w;:}])">
+    <!ENTITY quoted_pre_pass "(?&lt;=^|\W)">
+    <!-- central part -->
+    <!ENTITY quoted "\S(?:.*?\S)??">
+    <!-- postfix/trailing part -->
+    <!ENTITY quoted_post "(?=\W|$)">
+
+    <!-- section (title) -->
+    <!ENTITY sectionL0 "^(?:=|#)\s+(?=\S)">
+    <!ENTITY sectionL1 "^(?:={2}|#{2})\s+(?=\S)">
+    <!ENTITY sectionL2 "^(?:={3}|#{3})\s+(?=\S)">
+    <!ENTITY sectionL3 "^(?:={4}|#{4})\s+(?=\S)">
+    <!ENTITY sectionL4 "^(?:={5}|#{5})\s+(?=\S)">
+    <!ENTITY sectionL5 "^(?:={6}|#{6})\s+(?=\S)">
+]>
+<language author="Andreas Gratzer" extensions="*.ad;*.adoc;*.asciidoc" kateversion="5.0" mimetype="text/asciidoc" name="AsciiDoc" license="MIT" section="Markup" version="3">
+    <highlighting>
+        <list name="macro">
+            <item>anchor</item>
+            <item>btn</item>
+            <item>footnote</item>
+            <item>footnoteref</item>
+            <item>icon</item>
+            <item>image</item>
+            <item>indexterm</item>
+            <item>indexterm2</item>
+            <item>kbd</item>
+            <item>menu</item>
+            <item>pass</item>
+            <item>toc</item>
+            <item>xref</item>
+        </list>
+
+        <contexts>
+            <context name="start" attribute="Normal" lineEndContext="#stay">
+                <!-- main title, first level 0 section title -->
+                <RegExpr String="&sectionL0;" attribute="Main Title" context="main title" beginRegion="section"/>
+                <IncludeRules context="R section"/>
+            </context>
+
+            <!-- attribute value definition, may span multiple lines -->
+            <context name="attribute value" attribute="Normal" lineEndContext="#stay" lineEmptyContext="#pop">
+                <!-- line with continuation -->
+                <RegExpr String=".*?(?=\s+(\+\s+)?\\\s*$)" attribute="Attribute Value" context="continuation"/>
+                <!-- line without continuation, terminates value definition -->
+                <RegExpr String=".*" attribute="Attribute Value" context="#pop"/>
+            </context>
+            <!-- inline attribute value definition -->
+            <context name="attribute value inline" attribute="Attribute Value" lineEndContext="#stay">
+                <!-- the leading `:` is part of the definition syntax and should not be highlighted as value -->
+                <DetectChar char=":" attribute="Attribute" context="attribute value inline L2"/>
+                <DetectChar char="}" attribute="Attribute" context="#pop"/>
+            </context>
+            <context name="attribute value inline L2" attribute="Attribute Value" lineEndContext="#stay">
+                <DetectChar char="}" attribute="Attribute" context="#pop#pop"/>
+            </context>
+
+            <!-- backlash, may function as an escape -->
+            <context name="backlash" attribute="Normal" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+                <!-- anchor, consuming leading char will make anchor matches fail -->
+                <DetectChar char="[" attribute="Normal" context="#pop"/>
+                <!-- cross reference -->
+                <DetectChar char="&lt;" attribute="Normal" context="#pop"/>
+                <!-- email - inline, needs to be ordered after mailto: -->
+                <RegExpr String="&email;" attribute="Normal" context="#pop"/>
+                <!-- attribute usage
+                     formatted/quoted text
+                     replacement of apostrophe
+                     table separator (default)
+                -->
+                <AnyChar String="_#`+*~^'|{" attribute="Normal" context="#pop"/>
+                <!-- indexterm, consuming leading char will make matches fail -->
+                <DetectChar char="(" attribute="Normal" context="#pop"/>
+                <!-- link and mailto macros, note that ftp, irc, http(s) don't match with leading `\` anyway -->
+                <RegExpr String="&link_mailto;" attribute="Normal" context="#pop"/>
+                <!-- macro -->
+                <keyword String="macro" attribute="Normal" context="#pop"/>
+                <!-- replacement (besides apostrophe -->
+                <StringDetect String="(C)" attribute="Normal" context="#pop"/>
+                <StringDetect String="(R)" attribute="Normal" context="#pop"/>
+                <StringDetect String="(TM)" attribute="Normal" context="#pop"/>
+                <Detect2Chars char="-" char1="-" attribute="Normal" context="#pop"/>
+                <StringDetect String="..." attribute="Normal" context="#pop"/>
+                <Detect2Chars char="&lt;" char1="-" attribute="Normal" context="#pop"/>
+                <Detect2Chars char="-" char1="&gt;" attribute="Normal" context="#pop"/>
+                <Detect2Chars char="&lt;" char1="=" attribute="Normal" context="#pop"/>
+                <Detect2Chars char="=" char1="&gt;" attribute="Normal" context="#pop"/>
+                <RegExpr String="&char_ref;" attribute="Normal" context="#pop"/>
+            </context>
+
+            <context name="block title" attribute="Block Title" lineEndContext="#pop">
+                <IncludeRules context="R title"/>
+            </context>
+
+            <context name="comment" attribute="Comment" lineEndContext="#stay" lineEmptyContext="#pop">
+                <RegExpr String="^(&block_dels_comment;)\s*$" attribute="Comment" context="#pop!comment delimited" beginRegion="comment"/>
+                <IncludeRules context="R anchor"/>
+                <IncludeRules context="R block title"/>
+                <IncludeRules context="##Alerts" />
+            </context>
+            <context name="comment delimited" attribute="Comment" lineEndContext="#stay">
+                <RegExpr String="&block_end_del;" dynamic="true" attribute="Comment" context="#pop" endRegion="comment"/>
+                <IncludeRules context="##Alerts" />
+            </context>
+            <context name="comment single-line" attribute="Comment" lineEndContext="#pop">
+                <IncludeRules context="##Alerts" />
+            </context>
+
+            <!-- continuation, both for normal text and attribute value definition
+                 The allowed pattern must already by validated.
+                 Here only the possible characters are highlighted. -->
+            <context name="continuation" attribute="Normal" lineEndContext="#pop">
+                <AnyChar String="+\" attribute="Control"/>
+            </context>
+
+            <context name="main title" attribute="Main Title" lineEndContext="#pop!section L0">
+                <IncludeRules context="R title"/>
+            </context>
+
+            <context name="normal" attribute="Normal" lineEndContext="#stay" lineEmptyContext="#pop">
+                <RegExpr String="^(-{2}|&block_dels_normal;)\s*$" attribute="Delimiter" context="#pop!normal delimited" beginRegion="block"/>
+                <IncludeRules context="R block title"/>
+                <!-- shared rules includes anchor rules, so we do not need to include that separately -->
+                <IncludeRules context="R shared"/>
+            </context>
+            <context name="normal delimited" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="&block_end_del;" dynamic="true" attribute="Delimiter" context="#pop" endRegion="block"/>
+                <IncludeRules context="R admonition"/>
+                <IncludeRules context="R block"/>
+                <!-- shared rules includes anchor rules, so we do not need to include that separately -->
+                <IncludeRules context="R shared"/>
+            </context>
+
+            <context name="passthrough" attribute="Passthrough" lineEndContext="#stay" lineEmptyContext="#pop">
+                <RegExpr String="^(&block_dels_pass;)\s*$" attribute="Delimiter" context="#pop!passthrough delimited" beginRegion="block"/>
+                <IncludeRules context="R anchor"/>
+                <IncludeRules context="R block title"/>
+                <IncludeRules context="R include"/>
+            </context>
+            <context name="passthrough delimited" attribute="Passthrough" lineEndContext="#stay">
+                <RegExpr String="&block_end_del;" dynamic="true" attribute="Delimiter" context="#pop" endRegion="block"/>
+                <IncludeRules context="R include"/>
+            </context>
+
+            <context name="section L0" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="&sectionL5;" attribute="Section Title" context="section title L5" beginRegion="section"/>
+                <RegExpr String="&sectionL4;" attribute="Section Title" context="section title L4" beginRegion="section"/>
+                <RegExpr String="&sectionL3;" attribute="Section Title" context="section title L3" beginRegion="section"/>
+                <RegExpr String="&sectionL2;" attribute="Section Title" context="section title L2" beginRegion="section"/>
+                <RegExpr String="&sectionL1;" attribute="Section Title" context="section title L1" beginRegion="section"/>
+                <RegExpr String="&sectionL0;" lookAhead="true" attribute="Section Title" context="section title L0" endRegion="section" beginRegion="section"/>
+                <IncludeRules context="R section"/>
+            </context>
+
+            <context name="section L1" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="&sectionL5;" attribute="Section Title" context="section title L5" beginRegion="section"/>
+                <RegExpr String="&sectionL4;" attribute="Section Title" context="section title L4" beginRegion="section"/>
+                <RegExpr String="&sectionL3;" attribute="Section Title" context="section title L3" beginRegion="section"/>
+                <RegExpr String="&sectionL2;" attribute="Section Title" context="section title L2" beginRegion="section"/>
+                <RegExpr String="^(?:={1,2}|#{1,2})\s+\S" lookAhead="true" attribute="Section Title" context="#pop" endRegion="section"/>
+                <IncludeRules context="R section"/>
+            </context>
+
+            <context name="section L2" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="&sectionL5;" attribute="Section Title" context="section title L5" beginRegion="section"/>
+                <RegExpr String="&sectionL4;" attribute="Section Title" context="section title L4" beginRegion="section"/>
+                <RegExpr String="&sectionL3;" attribute="Section Title" context="section title L3" beginRegion="section"/>
+                <RegExpr String="^(?:={1,3}|#{1,3})\s+\S" lookAhead="true" attribute="Section Title" context="#pop" endRegion="section"/>
+                <IncludeRules context="R section"/>
+            </context>
+
+            <context name="section L3" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="&sectionL5;" attribute="Section Title" context="section title L5" beginRegion="section"/>
+                <RegExpr String="&sectionL4;" attribute="Section Title" context="section title L4" beginRegion="section"/>
+                <RegExpr String="^(?:={1,4}|#{1,4})\s+\S" lookAhead="true" attribute="Section Title" context="#pop" endRegion="section"/>
+                <IncludeRules context="R section"/>
+            </context>
+
+            <context name="section L4" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="&sectionL5;" attribute="Section Title" context="section title L5" beginRegion="section"/>
+                <RegExpr String="^(?:={1,5}|#{1,5})\s+\S" lookAhead="true" attribute="Section Title" context="#pop" endRegion="section"/>
+                <IncludeRules context="R section"/>
+            </context>
+
+            <context name="section L5" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="^(?:={1,6}|#{1,6})\s+\S" lookAhead="true" attribute="Section Title" context="#pop" endRegion="section"/>
+                <IncludeRules context="R section"/>
+            </context>
+
+            <context name="section title L0" attribute="Section Title" lineEndContext="#pop!section L0">
+                <IncludeRules context="R title"/>
+            </context>
+
+            <context name="section title L1" attribute="Section Title" lineEndContext="#pop!section L1">
+                <IncludeRules context="R title"/>
+            </context>
+
+            <context name="section title L2" attribute="Section Title" lineEndContext="#pop!section L2">
+                <IncludeRules context="R title"/>
+            </context>
+
+            <context name="section title L3" attribute="Section Title" lineEndContext="#pop!section L3">
+                <IncludeRules context="R title"/>
+            </context>
+
+            <context name="section title L4" attribute="Section Title" lineEndContext="#pop!section L4">
+                <IncludeRules context="R title"/>
+            </context>
+
+            <context name="section title L5" attribute="Section Title" lineEndContext="#pop!section L5">
+                <IncludeRules context="R title"/>
+            </context>
+
+            <context name="table" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="&block_end_del;" dynamic="true" attribute="Delimiter" context="#pop" endRegion="block"/>
+                <!-- `|` with prefix for alignment, style etc. -->
+                <RegExpr String="(?&lt;=^|\s)(?:(\d*\.)?\d+\+|\d+\*)?(?:[&lt;&gt;^]?\.?[&lt;&gt;^])?[adehlmsv]?\|" attribute="Delimiter"/>
+                <!-- simple `|` without alignment, style etc. -->
+                <DetectChar char="|" attribute="Delimiter"/>
+                <IncludeRules context="R shared"/>
+            </context>
+
+            <context name="verbatim" attribute="Verbatim" lineEndContext="#stay">
+                <RegExpr String="^(-{2}|&block_dels_verbatim;)\s*$" attribute="Delimiter" context="#pop!verbatim delimited" beginRegion="block"/>
+                <IncludeRules context="R anchor"/>
+                <IncludeRules context="R block title"/>
+                <IncludeRules context="R comment"/>
+                <IncludeRules context="R include"/>
+                <RegExpr String="^." attribute="Verbatim" context="#pop!verbatim paragraph"/>
+            </context>
+            <context name="verbatim delimited" attribute="Verbatim" lineEndContext="#stay">
+                <RegExpr String="&block_end_del;" dynamic="true" attribute="Delimiter" context="#pop" endRegion="block"/>
+                <IncludeRules context="R include"/>
+            </context>
+            <context name="verbatim paragraph" attribute="Verbatim" lineEndContext="#stay" lineEmptyContext="#pop">
+                <IncludeRules context="R include"/>
+            </context>
+
+            <!-- contexts to be used for IncludeRules only -->
+
+            <context name="R admonition" attribute="Normal" lineEndContext="#stay">
+                <!-- admonition - simple form, block form is part of block rules -->
+                <RegExpr String="^(?:&admonition_names;):(?=\s+\S)" attribute="Preprocessor" context="normal"/>
+            </context>
+
+            <context name="R anchor" attribute="Normal" lineEndContext="#stay">
+                <!-- bibliographic anchor -->
+                <RegExpr String="\[{3}&anchor_mid;\]{3}" attribute="Anchor"/>
+                <!-- normal form -->
+                <RegExpr String="\[{2}&anchor_mid;\]{2}" attribute="Anchor"/>
+                <!-- shorthand form at line start -->
+                <RegExpr String="^\[#&anchor_mid;\](&anchor_phrase;|\s*$)" attribute="Anchor"/>
+                <!-- shorthand form inline -->
+                <RegExpr String="(?&lt;=\S\s)\s*\[\s*#&anchor_mid;\s*\]&anchor_phrase;" attribute="Anchor"/>
+            </context>
+
+            <context name="R attribute" attribute="Normal" lineEndContext="#stay">
+                <!-- attribute definition without value / unset attribute -->
+                <RegExpr String="^:!?&id;!?:$" attribute="Attribute"/>
+                <!-- attribute definition with value -->
+                <RegExpr String="^:!?&id;!?:\s(?=\S)" attribute="Attribute" context="attribute value"/>
+                <!-- attribute inline definition -->
+                <RegExpr String="\{set:&id;(?=(:.*)?\})" minimal="true" attribute="Attribute" context="attribute value inline"/>
+                <IncludeRules context="R attribute usage"/>
+            </context>
+
+            <context name="R attribute usage" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="\{&id;\}" attribute="Attribute"/>
+            </context>
+
+            <context name="R block" attribute="Normal" lineEndContext="#stay">
+                <IncludeRules context="R block title"/>
+
+                <!-- name matching -->
+                <RegExpr String="^\[(?:&admonition_names;)&block_name_post;" attribute="Preprocessor" context="normal"/>
+                <RegExpr String="^\[(?:example|quote|sidebar|verse)&block_name_post;" attribute="Preprocessor" context="normal"/>
+                <RegExpr String="^\[(?:pass|stem)&block_name_post;" attribute="Preprocessor" context="passthrough"/>
+                <RegExpr String="^\[(?:listing|literal|source)&block_name_post;" attribute="Preprocessor" context="verbatim"/>
+
+                <!-- delimiter matching -->
+                <RegExpr String="^(&block_dels_normal;)\s*$" attribute="Delimiter" context="normal delimited" beginRegion="block"/>
+                <RegExpr String="^(&block_dels_pass;)\s*$" attribute="Delimiter" context="passthrough delimited" beginRegion="block"/>
+                <RegExpr String="^(\|={3,})\s*$" attribute="Delimiter" context="table" beginRegion="block"/>
+                <RegExpr String="^(&block_dels_verbatim;)\s*$" attribute="Delimiter" context="verbatim delimited" beginRegion="block"/>
+            </context>
+
+            <context name="R block title" attribute="Normal" lineEndContext="#stay">
+                <!-- not more than 3 leading dots followed by a non-dot, otherwise it would conflict with the delimited literal block -->
+                <RegExpr String="^\.{1,3}(?=[^\.\s])" attribute="Block Title" context="block title"/>
+            </context>
+
+            <context name="R comment" attribute="Normal" lineEndContext="#stay">
+                <!-- comment - multi-line, named block -->
+                <RegExpr String="^\[comment&block_name_post;" attribute="Preprocessor" context="comment"/>
+                <!-- comment - multi-line, delimited block -->
+                <RegExpr String="^(&block_dels_comment;)\s*$" attribute="Comment" context="comment delimited" beginRegion="comment"/>
+                <!-- comment - single line -->
+                <RegExpr String="^/{2}([^/]|$)" attribute="Comment" context="comment single-line"/>
+            </context>
+
+            <context name="R formatted" attribute="Normal" lineEndContext="#stay">
+                <!-- custom style, e.g. [underline]#underlined text# -->
+                <RegExpr String="(?&lt;=^|\W)\[[^\]]+?\]((#|_|`|\*){1,2})&quoted;\g1&quoted_post;" attribute="Preprocessor"/>
+
+                <!-- combined highlighting must be ordered before simple highlighting -->
+
+                <!-- emphasized monospaced strong unconstrained - must be ordered before constrained -->
+                <RegExpr String="`{2}\*_.*_\*`{2}" minimal="true" attribute="Emphasized Monospaced Strong"/>
+                <!-- emphasized monospaced strong - constrained must be ordered after unconstrained -->
+                <RegExpr String="&quoted_pre;`\*_&quoted;_\*`&quoted_post;" attribute="Emphasized Monospaced Strong"/>
+
+                <!-- emphasized strong unconstrained - must be ordered before constrained -->
+                <RegExpr String="\*{2}_.*_\*{2}" minimal="true" attribute="Emphasized Strong"/>
+                <!-- emphasized strong constrained - must be ordered after unconstrained -->
+                <RegExpr String="&quoted_pre;\*_&quoted;_\*&quoted_post;" attribute="Emphasized Strong"/>
+
+                <!-- monospaced strong unconstrained - must be ordered before constrained -->
+                <RegExpr String="`{2}\*.*\*`{2}" minimal="true" attribute="Monospaced Strong"/>
+                <!-- monospaced strong constrained - must be ordered after unconstrained -->
+                <RegExpr String="&quoted_pre;`\*&quoted;\*`&quoted_post;" attribute="Monospaced Strong"/>
+
+                <!-- emphasized monospaced unconstrained - must be ordered before constrained -->
+                <RegExpr String="`{2}_.*_`{2}" minimal="true" attribute="Emphasized Monospaced"/>
+                <!-- emphasized monospaced constrained - must be ordered after unconstrained -->
+                <RegExpr String="&quoted_pre;`_&quoted;_`&quoted_post;" attribute="Emphasized Monospaced"/>
+
+                <!-- strong unconstrained - must be ordered before constrained -->
+                <RegExpr String="\*{2}[^*].*\*{2}" minimal="true" attribute="Strong"/>
+                <!-- strong constrained - must be ordered after unconstrained -->
+                <RegExpr String="&quoted_pre;\*&quoted;\*&quoted_post;" attribute="Strong"/>
+
+                <!-- emphasized unconstrained - must be ordered before constrained -->
+                <RegExpr String="_{2}[^_].*_{2}" minimal="true" attribute="Emphasized"/>
+                <!-- emphasized constrained - must be ordered after unconstrained
+                     Can't use &quoted_pre; as that excludes \w which excludes `_` too. -->
+                <RegExpr String="(?&lt;=^|[^&alp;;:}])_&quoted;_&quoted_post;" attribute="Emphasized"/>
+
+                <IncludeRules context="R marked"/>
+                <IncludeRules context="R monospaced"/>
+
+                <!-- subscript -->
+                <RegExpr String="~\S+~" minimal="true" attribute="Subscript"/>
+                <!-- superscript -->
+                <RegExpr String="\^\S+\^" minimal="true" attribute="Superscript"/>
+            </context>
+
+            <context name="R include" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="^include::.*\[.*?\](?=\s*$)" attribute="Preprocessor"/>
+            </context>
+
+            <context name="R macro" attribute="Normal" lineEndContext="#stay">
+                <RegExpr String="(?:anchor|xref):&id;\[.*?\]" attribute="Preprocessor"/>
+                <RegExpr String="(?:btn|footnote(ref)?|kbd):\[.*?\]" attribute="Preprocessor"/>
+                <RegExpr String="pass:\w*\[.*?\]" attribute="Preprocessor"/>
+                <RegExpr String="(?:icon|image|menu):[^:].*?\[.*?\]" attribute="Preprocessor"/>
+                <RegExpr String="toc::\[\]" attribute="Preprocessor"/>
+            </context>
+
+            <context name="R marked" attribute="Normal" lineEndContext="#stay">
+                <!-- marked unconstrained - must be ordered before constrained -->
+                <RegExpr String="#{2}.+#{2}" minimal="true" attribute="Marked"/>
+                <!-- marked constrained - must be ordered after unconstrained -->
+                <RegExpr String="&quoted_pre;#&quoted;#&quoted_post;" attribute="Marked"/>
+            </context>
+
+            <context name="R monospaced" attribute="Normal" lineEndContext="#stay">
+                <!-- monospaced unconstrained - must be ordered before constrained -->
+                <RegExpr String="`{2}[^`].*`{2}" minimal="true" attribute="Monospaced"/>
+                <!-- monospaced constrained - must be ordered after unconstrained -->
+                <RegExpr String="&quoted_pre;`&quoted;`&quoted_post;" attribute="Monospaced"/>
+            </context>
+
+            <!-- replacements -->
+            <context name="R replacement" attribute="Normal" lineEndContext="#stay">
+                <!-- copyright -->
+                <StringDetect String="(C)" attribute="Replacement"/>
+                <!-- registered -->
+                <StringDetect String="(R)" attribute="Replacement"/>
+                <!-- trademark -->
+                <StringDetect String="(TM)" attribute="Replacement"/>
+                <!-- apostrophe, only when between alphabetic characters -->
+                <RegExpr String="(?&lt;=[&alp;])'(?=[&alp;])" attribute="Replacement"/>
+                <!-- ellipses -->
+                <StringDetect String="..." attribute="Replacement"/>
+                <!-- mdash -->
+                <Detect2Chars char="-" char1="-" attribute="Replacement"/>
+                <!-- left single arrow -->
+                <Detect2Chars char="&lt;" char1="-" attribute="Replacement"/>
+                <!-- right single arrow -->
+                <Detect2Chars char="-" char1="&gt;" attribute="Replacement"/>
+                <!-- left double arrow -->
+                <Detect2Chars char="&lt;" char1="=" attribute="Replacement"/>
+                <!-- right double arrow -->
+                <Detect2Chars char="=" char1="&gt;" attribute="Replacement"/>
+                <!-- unicode character reference -->
+                <RegExpr String="&char_ref;" attribute="Replacement"/>
+            </context>
+
+            <context name="R section" attribute="Normal" lineEndContext="#stay">
+                <!-- callout as being used below a source code block -->
+                <RegExpr String="^&lt;(?:\.|\d+)&gt;(?=\s+\S)" attribute="Callout"/>
+                <IncludeRules context="R admonition"/>
+                <IncludeRules context="R block"/>
+                <IncludeRules context="R shared"/>
+                <!-- literal paragraph started by a line with leading spaces
+                     This must be ordered after lists, as list items may be indented -->
+                <RegExpr String="^\s+\S" attribute="Verbatim" context="verbatim paragraph"/>
+            </context>
+
+            <context name="R shared" attribute="Normal" lineEndContext="#stay">
+                <!-- the escaped forms must be ordered before the not escaped forms -->
+                <DetectChar char="\" attribute="Normal" context="backlash"/>
+
+                <!-- passthrough - inline, must be ordered before other rules
+                     The macro form pass: is part of "R macro" context -->
+                <RegExpr String="&quoted_pre_pass;(\+{1,3})&quoted;\g1&quoted_post;" attribute="Passthrough"/>
+
+                <IncludeRules context="R anchor"/>
+                <IncludeRules context="R attribute"/>
+                <IncludeRules context="R comment"/>
+                <IncludeRules context="R include"/>
+                <IncludeRules context="R macro"/>
+
+                <!-- counter and counter2 -->
+                <RegExpr String="\{counter2?:\s*&id;\s*(?::\s*(\d+|[&alp;])\s*)?\}" minimal="true" attribute="Attribute"/>
+
+                <!-- horizontal rules and page break -->
+                <!-- to enable highlighting of the horizontal rules using "- - -" or "* * *",
+                     keep this before the checklist and unnumbered list definition -->
+                <RegExpr String="^(?:'{3}|-{3}|\*{3}|- - -|\* \* \*|&lt;{3})\s*$" attribute="Control"/>
+
+                <!-- cross reference -->
+                <RegExpr String="&lt;&lt;[^&lt;\s].*?&gt;&gt;" attribute="Link"/>
+
+                <!-- index term -->
+                <RegExpr String="\({3}.+?\){3}" attribute="Preprocessor"/>
+                <RegExpr String="\({2}.+?\){2}" attribute="Preprocessor"/>
+                <RegExpr String="indexterm2?:\[.+?\]" attribute="Preprocessor"/>
+
+                <!-- marker for description list -->
+                <RegExpr String="^\s*\S.+::(?=\s|$)" attribute="List Marker"/>
+                <!-- marker for numbered list -->
+                <RegExpr String="^\s*(?:\.+|\d+\.)(?=\s+\S)" attribute="List Marker"/>
+                <!-- marker for checklist and bulleted/unnumbered list
+                     To enable highlighting of the horizontal rules using "- - -" or "* * *",
+                     keep this after the horizontal rules definition -->
+                <RegExpr String="^\s*(?:-|\*+)(?:\s+\[[*x ]\])?(?=\s+\S)" attribute="List Marker"/>
+
+                <!-- media - block format -->
+                <RegExpr String="^(?:audio|image|video)::.*\[.*?\](?=\s*$)" attribute="Preprocessor"/>
+
+                <!-- links -->
+                <RegExpr String="(?&lt;=^|[\s\[\]();&lt;&gt;])(?:ftp|https?|irc)://[^\s\[]*(?:\[\]|\[.*[^\\]\]|(?=([\[\]]|[\.,;:]?(\s|$))))" minimal="true" attribute="Link"/>
+                <RegExpr String="&link_mailto;" attribute="Link"/>
+                <!-- email - inline,  needs to be ordered after mailto:
+                     For some reason, Asciidoctor recognizes emails with leading : or / but does not render them as link -->
+                <RegExpr String="[:/]&email;" attribute="Normal"/>
+                <RegExpr String="&email;" attribute="Link"/>
+
+                <!-- preprocessor -->
+                <RegExpr String="^ifn?def::&id;(?:[,\+]&id;)*\[.*\]" minimal="true" attribute="Preprocessor"/>
+                <RegExpr String="^ifeval::\[.*\]" minimal="true" attribute="Preprocessor"/>
+                <RegExpr String="^endif::(?:&id;)?\[\]" attribute="Preprocessor"/>
+
+                <!-- general meta data attribute list - must be ordered after other rules matching for lines of the form of [some content] -->
+                <RegExpr String="^\[[^\s\[].*\](?=\s*$)" attribute="Preprocessor"/>
+
+                <!-- continuation `+`, both at end of line and on a line on its own -->
+                <RegExpr String="(?:^|\s)\s*\+\s*$" lookAhead="true" attribute="Normal" context="continuation"/>
+
+                <!-- formatted/quoted must be ordered after unnumbered list -->
+                <IncludeRules context="R formatted"/>
+                <!-- replacements are done only if nothing else matched -->
+                <IncludeRules context="R replacement"/>
+            </context>
+
+            <!-- common rules for main title, section title, block title -->
+            <context name="R title" attribute="Normal" lineEndContext="#stay">
+                <!-- the escaped forms must be ordered before the not escaped forms -->
+                <DetectChar char="\" attribute="Section Title" context="backlash"/>
+                <IncludeRules context="R anchor"/>
+                <IncludeRules context="R attribute usage"/>
+                <IncludeRules context="R marked"/>
+                <IncludeRules context="R monospaced"/>
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Anchor" defStyleNum="dsFunction"/>
+            <itemData name="Attribute" defStyleNum="dsVariable"/>
+            <itemData name="Attribute Value" defStyleNum="dsVariable" italic="true"/>
+            <itemData name="Block Title" defStyleNum="dsString" italic="true"/>
+            <itemData name="Callout" defStyleNum="dsNormal" bold="true" underline="true"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="Control" defStyleNum="dsControlFlow" bold="true" underline="true"/>
+            <itemData name="Delimiter" defStyleNum="dsPreprocessor" bold="true"/>
+            <itemData name="Emphasized" defStyleNum="dsNormal" italic="true"/>
+            <itemData name="Emphasized Monospaced" defStyleNum="dsDocumentation" italic="true"/>
+            <itemData name="Emphasized Monospaced Strong" defStyleNum="dsDocumentation" bold="true" italic="true"/>
+            <itemData name="Emphasized Strong" defStyleNum="dsNormal" bold="true" italic="true"/>
+            <itemData name="Link" defStyleNum="dsVariable" underline="true"/>
+            <itemData name="List Marker" defStyleNum="dsNormal" bold="true"/>
+            <itemData name="Main Title" defStyleNum="dsNormal" bold="true"/>
+            <itemData name="Marked" defStyleNum="dsFloat"/>
+            <itemData name="Monospaced" defStyleNum="dsDocumentation"/>
+            <itemData name="Monospaced Strong" defStyleNum="dsDocumentation" bold="true"/>
+            <itemData name="Normal" defStyleNum="dsNormal"/>
+            <itemData name="Passthrough" defStyleNum="dsSpecialString"/>
+            <itemData name="Preprocessor" defStyleNum="dsPreprocessor"/>
+            <itemData name="Replacement" defStyleNum="dsNormal" bold="true" underline="true"/>
+            <itemData name="Section Title" defStyleNum="dsString" bold="true"/>
+            <itemData name="Strong" defStyleNum="dsNormal" bold="true"/>
+            <itemData name="Subscript" defStyleNum="dsNormal" underline="true"/>
+            <itemData name="Superscript" defStyleNum="dsNormal" bold="true" underline="true"/>
+            <itemData name="Verbatim" defStyleNum="dsDocumentation"/>
+        </itemDatas>
+    </highlighting>
+
+    <general>
+        <comments>
+            <comment name="singleLine" start="//"/>
+            <comment name="multiLine" start="////" end="////"/>
+        </comments>
+        <keywords casesensitive="1"/>
+    </general>
+</language>

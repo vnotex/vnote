@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="STL" version="2" kateversion="5.0" section="3D" extensions="*.stl" mimetype="application/sla" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
+    <highlighting>
+        <list name="keywords">
+            <item>solid</item>
+            <item>facet</item>
+            <item>normal</item>
+            <item>outer</item>
+            <item>loop</item>
+            <item>vertex</item>
+            <item>endloop</item>
+            <item>endfacet</item>
+            <item>endsolid</item>
+        </list>
+        <contexts>
+            <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces/>
+                <Float attribute="Float" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="Keyword"     defStyleNum="dsKeyword"/>
+            <itemData name="Decimal"     defStyleNum="dsDecVal"/>
+            <itemData name="Float"       defStyleNum="dsFloat"/>
+        </itemDatas>
+    </highlighting>
+</language>

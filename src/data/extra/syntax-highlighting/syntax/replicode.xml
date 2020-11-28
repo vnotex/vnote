@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+This file is part of KDE's kate project.
+
+copyright   : (C) 2014 by Martin Sandsmark
+email       : martin.sandsmark@kde.org
+
+This file is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+-->
+<language version="4" kateversion="2.4" name="Replicode" section="Scientific" extensions="*.replicode" author="Martin Sandsmark" license="GPLv2+">
+    <highlighting>
+        <list name="operators">
+            <item>_now</item>
+            <item>equ</item>
+            <item>neq</item>
+            <item>gtr</item>
+            <item>lsr</item>
+            <item>gte</item>
+            <item>lse</item>
+            <item>add</item>
+            <item>sub</item>
+            <item>mul</item>
+            <item>div</item>
+            <item>dis</item>
+            <item>ln</item>
+            <item>exp</item>
+            <item>log</item>
+            <item>e10</item>
+            <item>syn</item>
+            <item>red</item>
+            <item>rnd</item>
+            <item>fvw</item>
+        </list>
+        <list name="builtin_classes">
+            <item>view</item>
+            <item>grp_view</item>
+            <item>pgm_view</item>
+            <item>_obj</item>
+            <item>ptn</item>
+            <item>|ptn</item>
+            <item>pgm</item>
+            <item>|pgm</item>
+            <item>_grp</item>
+            <item>grp</item>
+            <item>_fact</item>
+            <item>fact</item>
+            <item>|fact</item>
+            <item>pred</item>
+            <item>goal</item>
+            <item>cst</item>
+            <item>mdl</item>
+            <item>icst</item>
+            <item>icmd</item>
+            <item>cmd</item>
+            <item>ent</item>
+            <item>ont</item>
+            <item>dev</item>
+            <item>nod</item>
+            <item>ipgm</item>
+            <item>icpp_pgm</item>
+            <item>perf</item>
+        </list>
+        <list name="marker_classes">
+            <item>mk.rdx</item>
+            <item>mk.grp_pair</item>
+            <item>mk.low_sln</item>
+            <item>mk.high_sln</item>
+            <item>mk.low_act</item>
+            <item>mk.high_act</item>
+            <item>mk.low_res</item>
+            <item>mk.sln_chg</item>
+            <item>mk.act_chg</item>
+            <item>mk.new</item>
+        </list>
+        <list name="entities">
+            <item>self</item>
+        </list>
+        <list name="groups">
+            <item>stdin</item>
+            <item>stdout</item>
+        </list>
+        <list name="functions">
+            <item>_inj</item>
+            <item>_eje</item>
+            <item>_mod</item>
+            <item>_set</item>
+            <item>_new_class</item>
+            <item>_del_class</item>
+            <item>_ldc</item>
+            <item>_swp</item>
+            <item>_stop</item>
+        </list>
+        <list name="constants">
+            <item>|nb</item>
+            <item>|bl</item>
+            <item>true</item>
+            <item>false</item>
+            <item>|[]</item>
+            <item>|nid</item>
+            <item>|did</item>
+            <item>|fid</item>
+            <item>|st</item>
+            <item>|us</item>
+            <item>forever</item>
+        </list>
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#pop" name="Normal Text" >
+                <RegExpr String="[a-zA-Z0-9_\.]+:\(" attribute="Class Definition" context="open_parens" beginRegion="true" />
+                <StringDetect attribute="Preprocessor" context="preprocessor_load" String="!load " />
+                <RegExpr String="\![a-zA-Z0-9_\.]+" attribute="Preprocessor" context="preprocessor" />
+                <RegExpr attribute="ListBracket" context="list" String="[^\|]\[" />
+                <IncludeRules context="global_data_type" />
+            </context>
+            <context attribute="Identifier" lineEndContext="error" name="open_parens">
+                <keyword attribute="Function" String="functions" context="class_definition"/>
+                <keyword attribute="Operator" String="operators" context="class_definition"/>
+                <keyword attribute="Builtin Class" String="builtin_classes" context="class_definition"/>
+                <keyword attribute="Builtin Class" String="marker_classes" context="class_definition"/>
+                <RegExpr String="[a-zA-Z0-9_\.&gt;&lt;]+" attribute="Class Name" context="class_definition" />
+            </context>
+            <context attribute="Class Definition" lineEndContext="#stay" name="global_data_type">
+                <DetectChar attribute="Comment" context="comment" char=";" />
+                <StringDetect attribute="EmptyList" context="#stay" String="|[]" />
+                <DetectChar attribute="ListBracket" context="list" char="[" />
+            </context>
+            <context attribute="Class Definition" lineEndContext="#stay" name="data_type">
+                <keyword attribute="Operator" String="operators" context="#stay" />
+                <keyword attribute="Constant" String="constants" context="#stay"/>
+                <keyword attribute="Group" String="groups" context="#stay"/>
+                <keyword attribute="Entity" String="entities" context="#stay"/>
+                <IncludeRules context="global_data_type" />
+                <HlCHex attribute="Hex" context="#stay" />
+                <RegExpr attribute="Number" context="#stay" String="[0-9]+us"/>
+                <Int attribute="Number" context="#stay" />
+                <DetectChar attribute="String" context="string" char="&quot;" />
+                <RegExpr String="[A-Z_]+" attribute="Constant" context="#stay" />
+                <RegExpr String="[a-z0-9_\.&lt;&gt;\.=+\-*\\/]+" attribute="Member" context="#stay" />
+                <DetectChar attribute="Class Definition" context="open_parens" char="(" beginRegion="true" />
+            </context>
+            <context attribute="Comment" lineEndContext="#pop" name="comment">
+                <IncludeRules context="##Alerts" />
+                <IncludeRules context="##Modelines" />
+            </context>
+            <context attribute="Class Definition" lineEndContext="#stay" name="class_definition">
+                <DetectChar attribute="Class Definition" context="#pop#pop" char=")" endRegion="true" />
+                <IncludeRules context="data_type" />
+            </context>
+            <context attribute="Member" lineEndContext="error" name="list">
+                <DetectChar attribute="ListBracket" context="#pop" char="]" />
+                <IncludeRules context="data_type" />
+            </context>
+            <context attribute="String" lineEndContext="error" name="string">
+                <DetectChar attribute="String" context="#pop" char="&quot;" />
+            </context>
+            <context attribute="Error" lineEndContext="#stay" name="error" />
+            <context attribute="Preprocessor" lineEndContext="#pop" name="preprocessor">
+                <IncludeRules context="data_type" />
+            </context>
+            <context attribute="Path" lineEndContext="#pop" name="preprocessor_load" />
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="String" defStyleNum="dsString"/>
+            <itemData name="Path" defStyleNum="dsString" bold="1" />
+            <itemData name="Class Definition" defStyleNum="dsOthers" />
+            <itemData name="Preprocessor" defStyleNum="dsNormal" bold="1" />
+            <itemData name="Class Name" defStyleNum="dsFunction" />
+            <itemData name="Builtin Class" defStyleNum="dsFunction" bold="1" />
+            <itemData name="Member" defStyleNum="dsKeyword" bold="0" />
+            <itemData name="Constant" defStyleNum="dsKeyword" bold="1" />
+            <itemData name="Group" defStyleNum="dsKeyword" italic="1" bold="0" />
+            <itemData name="Entity" defStyleNum="dsKeyword" italic="1" bold="1" />
+            <itemData name="Operator" defStyleNum="dsFunction" italic="1" bold="0" />
+            <itemData name="Function" defStyleNum="dsFunction" italic="0" bold="1" />
+            <itemData name="ListBracket" defStyleNum="dsOthers" color="#0095ff" selColor="#0095ff" bold="0" italic="0" />
+            <itemData name="EmptyList" defStyleNum="dsOthers" color="#0095ff" selColor="#0095ff" bold="1" italic="0" />
+            <itemData name="Identifier" defStyleNum="dsFunction" />
+            <itemData name="Number" defStyleNum="dsDecVal" />
+            <itemData name="Error" defStyleNum="dsError" />
+            <itemData name="Comment" defStyleNum="dsComment" />
+            <itemData name="Hex" defStyleNum="dsBaseN" />
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start=";" />
+        </comments>
+        <folding indentationsensitive="1" />
+        <keywords casesensitive="1" weakDeliminator="|." />
+    </general>
+</language>
+<!-- kate: space-indent on; indent-width 4; replace-tabs on; indent-mode xml; -->

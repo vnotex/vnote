@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="JCL" version="2" kateversion="5.0" section="Scripts" extensions="*.JCL;*.jcl" mimetype="" license="MIT">
+    <!-- 
+         JCL, or Job Control Language, is the name for scripting languages used on IBM mainframe operating systems (z/OS, z/VM)
+         to instruct the system on how to run a batch job or start a subsystem.
+    -->
+  <highlighting>
+    <list name="jobCard">
+        <item>JOB</item>
+        <item>CLASS</item>
+        <item>PRTY</item>
+        <item>NOTIFY</item>
+        <item>MSGCLASS</item>
+        <item>MSGLEVEL</item>
+        <item>TYPRUN</item>
+        <item>TIME</item>
+        <item>REGION</item>
+    </list>
+    <list name="controlFlow">
+        <item>IF</item>
+        <item>THEN</item>
+        <item>ELSE</item>
+        <item>ENDIF</item>
+    </list>
+    <list name="operator">
+        <item>AND</item>
+        <item>OR</item>
+        <item>GT</item>
+        <item>LT</item>
+        <item>RC</item>
+        <item>EQ</item>
+    </list>
+    <list name="instructions">
+        <item>COND</item>
+        <item>MEMBER</item>
+        <item>ORDER</item>
+        <item>PARM</item>
+        <item>PGM</item>
+        <item>EXEC</item>
+        <item>PROC</item>
+        <item>RETAIN</item>
+        <item>SYSDA</item>
+        <item>DD</item>
+    </list>
+    <list name="builtin">               
+        <item>ACCODE</item>
+        <item>AMP</item>
+        <item>AVGREC</item>
+        <item>SET</item>
+        <item>BLKSZLIM</item>
+        <item>BLKSIZE</item>
+        <item>BURST</item>
+        <item>CCSID</item>
+        <item>CHARS</item>
+        <item>CHKPT</item>
+        <item>CNTL</item>
+        <item>COPIES</item>
+        <item>DATA</item>
+        <item>DATACLAS</item>
+        <item>DCB</item>
+        <item>DDNAME</item>
+        <item>DEST</item>
+        <item>DISP</item>
+        <item>DLM</item>
+        <item>DSID</item>
+        <item>DSNAME</item>
+        <item>DSN</item>
+        <item>DSNTYPE</item>
+        <item>DSORG</item>
+        <item>DUMMY</item>
+        <item>DYNAM</item>
+        <item>EATTR</item>
+        <item>EXPDT</item>
+        <item>FCB</item>
+        <item>FILEDATA</item>
+        <item>FLASH</item>
+        <item>FREE</item>
+        <item>FREEVOL</item>
+        <item>GDGORDER</item>
+        <item>HOLD</item>
+        <item>KEYENCD1</item>
+        <item>KEYENCD2</item>
+        <item>KEYLABL1</item>
+        <item>KEYLABL2</item>
+        <item>KEYLEN</item>
+        <item>KEYOFF</item>
+        <item>LABEL</item>
+        <item>LGSTREAM</item>
+        <item>LIKE</item>
+        <item>LRECL</item>
+        <item>MAXGENS</item>
+        <item>MGMTCLAS</item>
+        <item>MODIFY</item>
+        <item>OUTLIM</item>
+        <item>OUTPUT</item>
+        <item>PATH</item>
+        <item>PATHDISP</item>
+        <item>PATHMODE</item>
+        <item>PATHOPTS</item>
+        <item>PROTECT</item>
+        <item>RECFM</item>
+        <item>RECORG</item>
+        <item>REFDD</item>
+        <item>RETPD</item>
+        <item>RLS</item>
+        <item>RLSE</item>
+        <item>SECMODEL</item>
+        <item>SEGMENT</item>
+        <item>SPACE</item>
+        <item>SPIN</item>
+        <item>STORCLAS</item>
+        <item>SUBSYS</item>
+        <item>SYMBOLS</item>
+        <item>SYMLIST</item>
+        <item>SYSOUT</item>
+        <item>TERM</item>
+        <item>UCS</item>
+        <item>UNIT</item>
+        <item>VOLUME</item>
+        <item>JCLLIB</item>
+        <item>STEPLIB</item>
+        <item>SYSEXEC</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Instructions" context="#stay" String="instructions" />
+        <keyword attribute="Operators"    context="#stay" String="operator" />
+        <keyword attribute="Job Card"     context="#stay" String="jobCard" />
+        <keyword attribute="Control Flow" context="#stay" String="controlFlow" />
+        <keyword attribute="Built In"     context="#stay" String="builtin" />
+        <RegExpr attribute="InLine"       context="#stay" insensitive="true" String="(?!\/\/).*"  firstNonSpace="true"/>
+        <RegExpr attribute="Step"         context="#stay" insensitive="true" String=".+?(?=EXEC)" />
+        <RegExpr attribute="JCLopts"      context="#stay" insensitive="true" String="((?!\/\/\*).*)(\/\/).*?(?=\s)" firstNonSpace="true"/>
+        <RegExpr attribute="Variable"     context="#stay" insensitive="true" String="&amp;+[A-Z0-9]*"/>
+        <RegExpr attribute="Dataset"      context="#stay" insensitive="true" String="(?&lt;=DSN\=|DSNAME\=)([A-Z0-9.]*)"/>
+        <RegExpr attribute="Comment"      context="#pop"  insensitive="true" String="\/\/\*.*" firstNonSpace="true"/>
+        <AnyChar attribute="Symbol"       context="#stay" String="|&amp;&lt;=&gt;"/>
+        <DetectChar attribute="String"    context="String" char="&apos;"/>
+        <DetectChar attribute="String"    context="String" char="&quot;"/> 
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <DetectChar attribute="String" context="#pop" char="&apos;"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Instructions" defStyleNum="dsKeyword"/>
+      <itemData name="Operators"    defStyleNum="dsControlFlow" />
+      <itemData name="Job Card"     defStyleNum="dsVariable"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow"/>
+      <itemData name="Built In"     defStyleNum="dsKeyword"/>
+      <itemData name="JCLopts"      defStyleNum="dsAttribute"/>
+      <itemData name="Step"         defStyleNum="dsInformation" />
+      <itemData name="InLine"       defStyleNum="dsFunction" />
+      <itemData name="Variable"     defStyleNum="dsControlFlow"/>
+      <itemData name="Dataset"      defStyleNum="dsDataType"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Symbol"       defStyleNum="dsOperator"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//*"/>
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>

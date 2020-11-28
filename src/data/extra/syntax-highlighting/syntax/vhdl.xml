@@ -1,0 +1,654 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd" [
+  <!ENTITY funcname "[A-Za-z_:][A-Za-z0-9_:#&#37;@-]*">
+  <!ENTITY varname  "\b(?!(?:process|constant|signal|variable))([A-Za-z_][A-Za-z0-9_]*)\b">
+  <!ENTITY bos      "(\b)">                        <!-- bol or space following -->
+  <!ENTITY eos      "\b">                <!-- eol or space following -->
+  <!ENTITY noword   "(?![\w$+-])">                <!-- no word, $, + or - following -->
+  <!ENTITY label     "((&varname;)\s*:\s*)?">
+
+]>
+<language name="VHDL" version="6" kateversion="3.0" section="Hardware" extensions="*.vhdl;*.vhd" mimetype="text/x-vhdl" author="Rocky Scaletta (rocky@purdue.edu), Stefan Endrullis (stefan@endrullis.de), Florent Ouchet (outchy@users.sourceforge.net), Chris Higgs (chiggs.99@gmail.com), Jan Michel (jan@mueschelsoft.de), Luigi Calligaris (luigi.calligaris@stfc.ac.uk)">
+  <highlighting>
+    <list name="keywordsToplevel">
+      <item>file</item>
+      <item>library</item>
+      <item>use</item>
+    </list>
+
+    <list name="keywords">
+      <item>access</item>
+      <item>after</item>
+      <item>alias</item>
+      <item>all</item>
+      <item>array</item>
+      <item>assert</item>
+      <item>assume</item>
+      <item>assume_guarantee</item>
+      <item>attribute</item>
+      <item>begin</item>
+      <item>block</item>
+      <item>body</item>
+      <item>bus</item>
+      <item>component</item>
+      <item>constant</item>
+      <item>context</item>
+      <item>cover</item>
+      <item>default</item>
+      <item>disconnect</item>
+      <item>downto</item>
+      <item>end</item>
+      <item>exit</item>
+      <item>fairness</item>
+      <item>falling_edge</item>
+      <item>file</item>
+      <item>for</item>
+      <item>force</item>
+      <item>function</item>
+      <item>generate</item>
+      <item>generic</item>
+      <item>group</item>
+      <item>guarded</item>
+      <item>impure</item>
+      <item>inertial</item>
+      <item>is</item>
+      <item>label</item>
+      <item>linkage</item>
+      <item>literal</item>
+      <item>map</item>
+      <item>new</item>
+      <item>next</item>
+      <item>null</item>
+      <item>of</item>
+      <item>on</item>
+      <item>open</item>
+      <item>others</item>
+      <item>parameter</item>
+      <item>port</item>
+      <item>postponed</item>
+      <item>procedure</item>
+      <item>process</item>
+      <item>property</item>
+      <item>protected</item>
+      <item>pure</item>
+      <item>range</item>
+      <item>record</item>
+      <item>register</item>
+      <item>reject</item>
+      <item>release</item>
+      <item>report</item>
+      <item>return</item>
+      <item>rising_edge</item>
+      <item>select</item>
+      <item>sequence</item>
+      <item>severity</item>
+      <item>signal</item>
+      <item>shared</item>
+      <item>strong</item>
+      <item>subtype</item>
+      <item>to</item>
+      <item>transport</item>
+      <item>type</item>
+      <item>unaffected</item>
+      <item>units</item>
+      <item>until</item>
+      <item>variable</item>
+      <item>vmode</item>
+      <item>vprop</item>
+      <item>vunit</item>
+      <item>wait</item>
+      <item>when</item>
+      <item>with</item>
+      <item>note</item>
+      <item>warning</item>
+      <item>error</item>
+      <item>failure</item>
+      <item>in</item>
+      <item>inout</item>
+      <item>out</item>
+      <item>buffer</item>
+      <item>and</item>
+      <item>abs</item>
+      <item>or</item>
+      <item>xor</item>
+      <item>xnor</item>
+      <item>not</item>
+      <item>mod</item>
+      <item>nand</item>
+      <item>nor</item>
+      <item>rem</item>
+      <item>rol</item>
+      <item>ror</item>
+      <item>sla</item>
+      <item>sra</item>
+      <item>sll</item>
+      <item>srl</item>
+    </list>
+
+    <list name="if">
+      <item>if</item>
+      <item>else</item>
+      <item>elsif</item>
+      <item>then</item>
+    </list>
+
+    <list name="signals">
+      <item>signal</item>
+      <item>variable</item>
+      <item>constant</item>
+      <item>type</item>
+      <item>attribute</item>
+    </list>
+
+    <list name="range">
+      <item>to</item>
+      <item>downto</item>
+      <item>others</item>
+    </list>
+
+    <list name="case">
+      <item>case</item>
+      <item>when</item>
+    </list>
+
+    <list name="timeunits">
+      <item>fs</item>
+      <item>ps</item>
+      <item>ns</item>
+      <item>us</item>
+      <item>ms</item>
+      <item>sec</item>
+      <item>min</item>
+      <item>hr</item>
+    </list>
+
+
+    <list name="types">
+      <item>bit</item>
+      <item>bit_vector</item>
+      <item>character</item>
+      <item>boolean</item>
+      <item>boolean_vector</item>
+      <item>integer</item>
+      <item>integer_vector</item>
+      <item>real</item>
+      <item>real_vector</item>
+      <item>time</item>
+      <item>time_vector</item>
+      <item>delay_length</item>
+      <item>string</item>
+      <item>severity_level</item>
+      <item>positive</item>
+      <item>natural</item>
+      <item>file_open_kind</item>
+      <item>file_open_status</item>
+      <item>signed</item>
+      <item>unsigned</item>
+      <item>unresolved_unsigned</item>
+      <item>unresolved_signed</item>
+      <item>line</item>
+      <item>text</item>
+      <item>side</item>
+      <item>width</item>
+      <item>std_logic</item>
+      <item>std_logic_vector</item>
+      <item>std_ulogic</item>
+      <item>std_ulogic_vector</item>
+      <item>x01</item>
+      <item>x01z</item>
+      <item>ux01</item>
+      <item>ux01z</item>
+      <item>qsim_state</item>
+      <item>qsim_state_vector</item>
+      <item>qsim_12state</item>
+      <item>qsim_12state_vector</item>
+      <item>qsim_strength</item>
+      <item>mux_bit</item>
+      <item>mux_vector</item>
+      <item>reg_bit</item>
+      <item>reg_vector</item>
+      <item>wor_bit</item>
+      <item>wor_vector</item>
+    </list>
+
+
+    <contexts>
+
+<!-- start / global environment -->
+      <context name="start" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+
+        <RegExpr attribute="Control" context="architecture_main" insensitive="true" dynamic="true" lookAhead="true"
+                 String="&bos;architecture\s+(&varname;)&eos;"/>
+        <StringDetect attribute="Control" context="entity"
+                 String="entity"/>
+        <RegExpr attribute="Control" context="package" insensitive="true" lookAhead="true" dynamic="true" beginRegion="PackageRegion1"
+                 String="&bos;package\s+(&varname;)\s+is&eos;"/>
+        <RegExpr attribute="Control" context="packagebody" lookAhead="true" insensitive="true" dynamic="true" beginRegion="PackageBodyRegion1"
+                 String="&bos;package\s+body\s+(&varname;)\s+is&eos;"/>
+       <!-- <StringDetect  attribute="Control"  context="arch_decl"      String="package"     />temporary-->
+        <RegExpr attribute="Control" context="configuration" insensitive="true" dynamic="true" lookAhead="true"
+                 String="&bos;configuration\s+(&varname;)&eos;"/>
+        <keyword attribute="Keyword" context="#stay" String="keywordsToplevel"/>
+      </context>
+
+
+      <context name="package" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control"   context="#stay" insensitive="true" String="&bos;package&eos;" />
+        <RegExpr attribute="Keyword"   context="packagemain" insensitive="true" String="&bos;is&eos;" />
+        <RegExpr attribute="Name"      context="#stay"     insensitive="true" String="&bos;%2&eos;" dynamic="true"/>
+        <RegExpr attribute="Redirection" context="#pop"  dynamic="true" endRegion="PackageRegion1" insensitive="true"
+                 String="&bos;end(\s+package)?(\s+%2)?\s*;" />
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="packagemain" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Keyword"   context="#pop" lookAhead="true" insensitive="true" String="&bos;end&eos;" />
+        <RegExpr attribute="Keyword"   context="packagefunction" insensitive="true" String="&bos;function&eos;" />
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="packagefunction" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Name" context="#pop" insensitive="true" String="&bos;&varname;&eos;" />
+      </context>
+
+      <!-- package body environment -->
+
+      <context name="packagebody" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control"   context="#stay" insensitive="true" String="&bos;package&eos;" />
+        <RegExpr attribute="Keyword"   context="packagebodymain" insensitive="true" String="&bos;is&eos;" />
+        <RegExpr attribute="Name"      context="#stay"     insensitive="true" String="&bos;%2&eos;" dynamic="true"/>
+        <RegExpr attribute="Redirection" context="#pop" dynamic="true" endRegion="PackageBodyRegion1" insensitive="true"
+                 String="&bos;end(\s+package)?(\s+%2)?\s*;" />
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="packagebodymain" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Keyword"   context="#pop" lookAhead="true" insensitive="true" String="&bos;end\s+package&eos;" />
+        <RegExpr attribute="Keyword"   context="packagebodyfunc1" beginRegion="PackBodyFunc" insensitive="true" dynamic="true" lookAhead="true" String="&bos;function\s+(&varname;)&eos;" />
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="packagebodyfunc1" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Redirection" context="packagebodyfunc2" beginRegion="RegionFunction" insensitive="true" String="&bos;begin&eos;" />
+        <RegExpr attribute="Keyword"   context="#pop" insensitive="true" endRegion="PackBodyFunc" dynamic="true" String="&bos;end(\s+function)?(\s+%2)?&eos;" />
+        <RegExpr attribute="Name" context="#stay" insensitive="true" String="&bos;%2&eos;"  dynamic="true"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="packagebodyfunc2" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Redirection" context="#pop" insensitive="true" dynamic="true" lookAhead="true" endRegion="RegionFunction"
+                 String="&bos;end(\s+function)?&eos;"/>
+        <!--<RegExpr attribute="Error" context="#pop" insensitive="true" dynamic="true" lookAhead="true" endRegion="RegionFunction"
+                 String="&bos;end\s+function(\s+&varname;)?&eos;"/>-->
+        <RegExpr attribute="Process" context="#stay" insensitive="true"
+                 String="&bos;begin&eos;"/>
+        <IncludeRules context="proc_rules"/>
+      </context>
+
+
+<!--====ARCHITECTURE ===============-->
+      <context name="architecture_main" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="arch_start" insensitive="true" lookAhead="true" dynamic="true" beginRegion="ArchitectureRegion1"
+                 String="&bos;architecture\s+(&varname;)\s+of\s+(&varname;)\s+is"/>
+        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" dynamic="true" endRegion="ArchitectureRegion1"
+                 String="&bos;end(\s+architecture)?(\s+%2)?\s*;"/>
+        <RegExpr attribute="Error" context="#pop#pop" insensitive="true" dynamic="true" endRegion="ArchitectureRegion1"
+                 String="&bos;end(\s+architecture)?(\s+&varname;)\s*;"/>
+        <IncludeRules context="detect_arch_parts"/>
+      </context>
+
+<!-- architecture environment "before begin" -->
+      <context name="arch_start" attribute="Control" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Keyword"   context="arch_decl" insensitive="true" String="&bos;is&eos;" />
+        <RegExpr attribute="Name"      context="#stay"     insensitive="true" String="&bos;%2&eos;" dynamic="true"/>
+        <RegExpr attribute="Reference" context="#stay"     insensitive="true" String="&bos;%4&eos;" dynamic="true"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="arch_decl" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preDetection"/>
+        <keyword attribute="Signal" context="signal"          insensitive="true" String="signals"/>
+        <StringDetect attribute="Control" context="archfunc1" insensitive="true" String="function" beginRegion="ArchFunctionRegion1"/>
+        <StringDetect attribute="Control" context="entity"    insensitive="true" String="component"/>
+        <StringDetect attribute="Control" context="#pop#pop"  insensitive="true" String="begin"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="archfunc1" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Redirection" context="archfunc2" beginRegion="RegionFunction" insensitive="true" String="&bos;begin&eos;" />
+        <RegExpr attribute="Keyword"   context="#pop" insensitive="true" endRegion="ArchFunctionRegion1" dynamic="true" String="&bos;end(\s+function)?(\s+%2)?&eos;" />
+        <RegExpr attribute="Name" context="#stay" insensitive="true" String="&bos;%2&eos;"  dynamic="true"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="archfunc2" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Redirection" context="#pop" insensitive="true" dynamic="true" lookAhead="true" endRegion="RegionFunction"
+                 String="&bos;end(\s+function)?&eos;"/>
+        <!--<RegExpr attribute="Error" context="#pop" insensitive="true" dynamic="true" lookAhead="true" endRegion="RegionFunction"
+                 String="&bos;end\s+function(\s+&varname;)?&eos;"/>-->
+        <RegExpr attribute="Process" context="#stay" insensitive="true"
+                 String="&bos;begin&eos;"/>
+        <IncludeRules context="proc_rules"/>
+      </context>
+
+
+<!-- parts of architecture body -->
+      <context name="detect_arch_parts" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <RegExpr attribute="Normal Text" context="generate1" lookAhead="true" insensitive="true" dynamic="true"
+                 String="&bos;(&varname;\s*:\s*)(if|for).*\s+generate&eos;"/>
+        <RegExpr attribute="Normal Text" context="process1" lookAhead="true" insensitive="true" dynamic="true"
+                 String="&bos;(&varname;\s*:\s*)?process&eos;"/>
+        <RegExpr attribute="Normal Text" context="instance" lookAhead="true" insensitive="true" dynamic="true" beginRegion="InstanceRegion1"
+                 String="&bos;(&varname;)\s*:\s*((entity\s+)?(&varname;)(\.&varname;)?)"/>
+
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+<!--====generate ===============-->
+      <context name="generate1" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="generate2" insensitive="true" beginRegion="GenerateRegion"
+                 String="&bos;(generate|loop)&eos;"/>
+        <RegExpr attribute="Name"      context="#stay" dynamic="true" insensitive="true"
+                 String="&bos;%3&eos;"/>
+        <RegExpr attribute="Control" context="#stay"                insensitive="true"
+                 String="&bos;(for|if|while)&eos;"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="generate2" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="#stay" insensitive="true"
+                 String="&bos;begin&eos;"/>
+        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" endRegion="GenerateRegion"
+                 String="&bos;end\s+(generate|loop)(\s+&varname;)?"/>
+        <IncludeRules context="detect_arch_parts"/>
+      </context>
+
+
+<!--====process ===============-->
+<!-- process environment -->
+
+      <context name="process1" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Process" context="#pop" insensitive="true" dynamic="true" endRegion="RegionProcess"
+                 String="&bos;end\s+process(\s+%3)?"/>
+        <RegExpr attribute="Error" context="#pop" insensitive="true" dynamic="true" endRegion="RegionProcess"
+                 String="&bos;end\s+process(\s+&varname;)?"/>
+        <RegExpr attribute="Process" context="#stay" insensitive="true" beginRegion="RegionProcess"
+                 String="&bos;process&eos;"/>
+        <RegExpr attribute="Process" context="#stay" insensitive="true"
+                 String="&bos;begin&eos;"/>
+        <IncludeRules context="proc_rules"/>
+      </context>
+
+      <context name="proc_rules" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+         <RegExpr attribute="Name" context="#stay" insensitive="true"
+                  String="&bos;&varname;(?=\s*:(?!=))"/>
+         <RegExpr attribute="Control" context="if_start" insensitive="true"
+                  String="&bos;if&eos;"/>
+         <RegExpr attribute="Control" context="case1" lookAhead="true" insensitive="true"
+                  String="&bos;case&eos;"/>
+         <RegExpr attribute="Control" context="forwhile1" dynamic="true" lookAhead="true" insensitive="true"
+                  String="&bos;((&varname;)\s*:\s*)?((for|while)\s+.+\s+)loop&eos;"/>
+         <IncludeRules context="generalDetection"/>
+      </context>
+
+
+
+
+<!--====instance =============== -->
+      <!-- When an instance has been detected-->
+      <context name="instance" attribute="Error" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Reference"   context="#stay" String="&bos;%4&eos;" dynamic="true"/>
+        <RegExpr attribute="Name"        context="#stay" String="&bos;%3&eos;" dynamic="true"/>
+        <RegExpr attribute="Keyword"     context="instanceMap" beginRegion="InstanceMapRegion"
+                 String="&bos;(port|generic)\s+map\s*\(" />
+        <DetectChar attribute="Normal Text" context="#pop" char=";" endRegion="InstanceRegion1"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <!-- Inside a port or generic map-->
+      <context name="instanceMap" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <AnyChar attribute="Error" context="#stay" String="&lt;;:"/>
+        <DetectChar attribute="Error" context="#stay" char=":" />
+        <IncludeRules context="preDetection"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=")" endRegion="InstanceMapRegion"/>
+        <DetectChar attribute="Normal Text" context="instanceInnerPar" char="("/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <!-- Inside parantheses inside a map-->
+      <context name="instanceInnerPar" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=")" endRegion="instanceInnerPar"/>
+        <DetectChar attribute="Normal Text" context="instanceInnerPar" char="("/>
+        <DetectChar attribute="Error" context="#stay" char=";"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+<!--====loop ===============-->
+      <context name="forwhile1" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="forwhile2" insensitive="true" beginRegion="ForWhileRegion"
+                 String="&bos;loop&eos;"/>
+        <RegExpr attribute="Name"      context="#stay" dynamic="true" insensitive="true"
+                 String="&bos;%3&eos;"/>
+        <RegExpr attribute="Control" context="#stay"                insensitive="true"
+                 String="&bos;(for|while)&eos;"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="forwhile2" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="#stay" insensitive="true"
+                 String="&bos;begin&eos;"/>
+        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" endRegion="ForWhileRegion"
+                 String="&bos;end\s+loop(\s+&varname;)?"/>
+        <IncludeRules context="proc_rules"/>
+      </context>
+
+<!--====if ===============-->
+      <context name="if_start" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="if" insensitive="true" beginRegion="IfRegion1"
+                 String="&bos;then&eos;"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="if" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" endRegion="IfRegion1"
+                 String="&bos;end\s+if(\s+&varname;)?\s*;"/>
+        <IncludeRules context="proc_rules"/>
+        <keyword attribute="Control" context="#stay" insensitive="true" String="if"/>
+      </context>
+
+
+<!--====case ===============-->
+
+      <context name="case1" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Keyword" context="case2" insensitive="true"
+                 String="&bos;is&eos;"/>
+        <keyword attribute="Control" context="#stay" insensitive="true" beginRegion="CaseRegion1" String="case"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="case2" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" endRegion="CaseRegion1"
+                 String="&bos;end\s+case(&varname;)?\s*;"/>
+        <RegExpr attribute="Control" context="caseWhen" lookAhead="true" dynamic="true" insensitive="true"
+                 String="&bos;when(\s+&varname;)?&eos;"/>
+        <IncludeRules context="proc_rules"/>
+      </context>
+
+      <context name="caseWhen" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <Detect2Chars char="=" char1="&gt;" attribute="Operator" context="caseWhen2" beginRegion="CaseWhenRegion1"/>
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" insensitive="true"
+                 String="&bos;when&eos;"/>
+        <RegExpr attribute="Name" insensitive="true" dynamic="true"
+                 String="&bos;%2&eos;"/>
+        <IncludeRules context="proc_rules"/>
+      </context>
+
+      <context name="caseWhen2" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="#pop#pop" lookAhead="true" insensitive="true" endRegion="CaseWhenRegion1" firstNonSpace="true"
+                 String="(when|end\s+case)&eos;"/>
+        <IncludeRules context="proc_rules"/>
+      </context>
+      <!-- 'when' and 'end case' are checked at the beginning of the line for better code folding -->
+
+
+
+
+<!--====ENTITY ===============-->
+<!-- entity environment -->
+
+      <context name="entity" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Name" context="entity_main" beginRegion="EntityRegion1" insensitive="true"
+                 String="(&varname;)"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+
+      <context name="entity_main" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="#pop#pop" dynamic="true" insensitive="true" endRegion="EntityRegion1"
+                 String="&bos;end(\s+(entity|component))?(\s+%1)?\s*;"/>
+        <RegExpr attribute="Error" context="#pop#pop" dynamic="true" insensitive="true" endRegion="EntityRegion1"
+                 String="&bos;end(\s+(entity|component))?(\s+&varname;)?\s*;"/>
+        <StringDetect attribute="Control" context="#stay" insensitive="true" String="generic"/>
+        <StringDetect attribute="Control" context="#stay" insensitive="true" String="port"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+<!--====Configuration ===============-->
+<!-- configuration environment -->
+      <context name="configuration" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Control" context="conf_start" insensitive="true" lookAhead="true" dynamic="true" beginRegion="ConfigurationRegion1"
+                 String="&bos;configuration\s+(&varname;)\s+of\s+(&varname;)\s+is"/>
+        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" dynamic="true" endRegion="ConfigurationRegion1"
+                 String="&bos;end(\s+configuration)?(\s+%2)?\s*;"/>
+        <RegExpr attribute="Error" context="#pop#pop" insensitive="true" dynamic="true" endRegion="ConfigurationRegion1"
+                 String="&bos;end(\s+configuration)?(\s+&varname;)\s*;"/>
+      </context>
+
+      <context name="conf_start" attribute="Control" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="preDetection"/>
+        <RegExpr attribute="Keyword"   context="conf_decl" insensitive="true" String="&bos;is&eos;" />
+        <RegExpr attribute="Name"      context="#stay"     insensitive="true" String="&bos;%2&eos;" dynamic="true"/>
+        <RegExpr attribute="Reference" context="#stay"     insensitive="true" String="&bos;%4&eos;" dynamic="true"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="conf_decl" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preDetection"/>
+        <StringDetect attribute="Control" context="conf_for" insensitive="true" String="for"/>
+        <StringDetect attribute="Control" context="#pop#pop" insensitive="true" lookAhead="true"  String="end"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+      <context name="conf_for" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preDetection"/>
+        <StringDetect attribute="Control" context="conf_for" insensitive="true" String="for"/>
+        <RegExpr attribute="Control" context="#pop" insensitive="true"  String="end(\s+&varname;)?"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+
+
+<!--====Basic Stuff ===============-->
+<!-- basic rules -->
+      <context name="preDetection" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="comment" char="-" char1="-"/>
+        <DetectChar attribute="Vector" context="string" char="&quot;"/>
+        <AnyChar attribute="Operator" context="#stay" String="[&amp;&gt;&lt;=:+\-*\/|].,"/>
+        <DetectChar attribute="Attribute" context="attribute" char="'"/>
+      </context>
+
+
+
+<!-- general detection -->
+      <context name="generalDetection" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <keyword attribute="Data Type" context="#stay" String="timeunits"/>
+        <keyword attribute="Signal" context="signal" String="signals" beginRegion="sig"/>
+        <keyword attribute="Range" context="#stay" String="range"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <Int attribute="Integer" context="#stay"/>
+        <HlCChar attribute="Bit" context="#stay"/>
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+      </context>
+
+<!-- other environments -->
+      <context name="comment" attribute="Comment" lineEndContext="#pop"/>
+
+      <context name="string" attribute="Vector" lineEndContext="#stay">
+        <DetectChar attribute="Vector" context="#pop" char="&quot;"/>
+      </context>
+
+      <context name="attribute" attribute="Attribute" lineEndContext="#pop">
+        <DetectChar attribute="Attribute" context="quot in att" char="&quot;"/>
+        <DetectChar attribute="Attribute" context="par in att" char="("/>
+        <DetectChar attribute="Normal Text" context="#pop" char=" "/>
+        <DetectChar attribute="Attribute" context="#pop" char="'"/>
+        <AnyChar attribute="Attribute" context="#pop" String=")=&lt;&gt;" lookAhead="true" />
+       </context>
+
+      <context name="quot in att" attribute="Attribute" lineEndContext="#stay">
+        <DetectChar attribute="Attribute" context="#pop" char="&quot;"/>
+      </context>
+      <context name="par in att" attribute="Attribute" lineEndContext="#stay">
+        <DetectChar attribute="Attribute" context="#pop" char=")"/>
+      </context>
+
+      <context name="signal" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preDetection"/>
+        <DetectChar attribute="Normal Text" lookAhead="true" context="#pop" char=";" endRegion="sig"/>
+        <IncludeRules context="generalDetection"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Integer" defStyleNum="dsDecVal"/>
+      <itemData name="Bit" defStyleNum="dsChar"/>
+      <itemData name="Reference" defStyleNum="dsFunction"/>
+      <itemData name="Error" defStyleNum="dsError" color="#ff0000" bold="1"/>
+      <itemData name="Vector" defStyleNum="dsString"/>
+      <itemData name="Operator" defStyleNum="dsOthers"/>
+      <itemData name="Attribute" defStyleNum="dsBaseN"/>
+      <itemData name="Signal" defStyleNum="dsOthers"/>
+      <itemData name="Range" defStyleNum="dsOthers"/>
+      <itemData name="Redirection" defStyleNum="dsKeyword" color="#223388"/>
+      <itemData name="Process" defStyleNum="dsKeyword" color="#0099AA"/>
+      <itemData name="Control" defStyleNum="dsKeyword" color="#223388"/>
+      <itemData name="Name" defStyleNum="dsKeyword" color="#bb6600" bold="1"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="--"/>
+    </comments>
+    <keywords casesensitive="0"/>
+  </general>
+</language>

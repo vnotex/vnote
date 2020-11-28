@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+  <!-- http://www.w3.org/TR/CSS21/syndata.html#tokenization -->
+  <!ENTITY nmstart "[_a-zA-Z]|(\\[0-9a-fA-F]{1,6})|(\\[^\n\r\f0-9a-fA-F])">
+  <!ENTITY nmchar  "[_a-zA-Z0-9-]|(\\[0-9a-fA-F]{1,6})|(\\[^\n\r\f0-9a-fA-F])">
+]>
+<language name="LESSCSS" version="5" kateversion="5.53" section="Markup" extensions="*.less" mimetype="text/css"
+          author="from CCS:Wilbert Berendsen (wilbert@kde.nl)" license="LGPL">
+    <!--
+    Version 3 (2017-05-10):
+    - rebased on SCSS syntax version 4 (by Guo Yunhe guoyunhebrave@gmail.com)
+    - added some CSS colours and properties
+    -->
+
+    <highlighting>
+        <list name="properties">
+            <include>properties##CSS</include>
+            <include>within-@font-face##CSS</include>
+        </list>
+
+        <list name="values">
+            <include>values##CSS</include>
+        </list>
+
+        <list name="value keywords">
+            <include>value keywords##CSS</include>
+        </list>
+
+        <list name="colors">
+            <include>colors##CSS</include>
+        </list>
+
+        <list name="functions">
+            <include>functions##CSS</include>
+
+            <!-- Less functions, @see http://lesscss.org/functions/ -->
+
+            <!-- Misc Functions -->
+            <item>color</item>
+            <item>convert</item>
+            <item>data-uri</item>
+            <item>default</item>
+            <item>get-unit</item>
+            <item>image-height</item>
+            <item>image-size</item>
+            <item>image-width</item>
+            <item>svg-gradient</item>
+            <item>unit</item>
+
+            <!-- String Functions -->
+            <item>%</item>
+            <item>e</item>
+            <item>escape</item>
+            <item>replace</item>
+
+            <!-- List Functions -->
+            <item>extract</item>
+            <item>length</item>
+
+            <!-- Math Functions -->
+            <item>abs</item>
+            <item>acos</item>
+            <item>asin</item>
+            <item>atan</item>
+            <item>ceil</item>
+            <item>cos</item>
+            <item>floor</item>
+            <item>max</item>
+            <item>min</item>
+            <item>mod</item>
+            <item>percentage</item>
+            <item>pi</item>
+            <item>pow</item>
+            <item>round</item>
+            <item>sin</item>
+            <item>sqrt</item>
+            <item>tan</item>
+
+            <!-- Type Functions -->
+            <item>iscolor</item>
+            <item>isem</item>
+            <item>iskeyword</item>
+            <item>isnumber</item>
+            <item>ispercentage</item>
+            <item>ispixel</item>
+            <item>isruleset</item>
+            <item>isstring</item>
+            <item>isunit</item>
+            <item>isurl</item>
+
+            <!-- Color Definition Functions -->
+            <item>argb</item>
+            <item>hsl</item>
+            <item>hsla</item>
+            <item>hsv</item>
+            <item>hsva</item>
+            <item>rgb</item>
+            <item>rgba</item>
+
+            <!-- Color Channel Functions -->
+            <item>alpha</item>
+            <item>blue</item>
+            <item>green</item>
+            <item>hsvhue</item>
+            <item>hsvsaturation</item>
+            <item>hsvvalue</item>
+            <item>hue</item>
+            <item>lightness</item>
+            <item>luma</item>
+            <item>luminance</item>
+            <item>red</item>
+            <item>saturation</item>
+
+            <!-- Color Operation Functions -->
+            <item>contrast</item>
+            <item>darken</item>
+            <item>desaturate</item>
+            <item>fade</item>
+            <item>fadein</item>
+            <item>fadeout</item>
+            <item>greyscale</item>
+            <item>lighten</item>
+            <item>mix</item>
+            <item>saturate</item>
+            <item>shade</item>
+            <item>spin</item>
+            <item>tint</item>
+
+            <!-- Color Blending Functions -->
+            <item>average</item>
+            <item>difference</item>
+            <item>exclusion</item>
+            <item>hardlight</item>
+            <item>multiply</item>
+            <item>negation</item>
+            <item>overlay</item>
+            <item>screen</item>
+            <item>softlight</item>
+        </list>
+
+        <list name="mediatypes">
+            <item>all</item>
+            <item>aural</item>
+            <item>braille</item>
+            <item>embossed</item>
+            <item>handheld</item>
+            <item>print</item>
+            <item>projection</item>
+            <item>screen</item>
+            <item>speech</item>
+            <item>tty</item>
+            <item>tv</item>
+        </list>
+
+        <list name="mediatypes_op">
+            <include>media operators##CSS</include>
+            <item>or</item>
+        </list>
+
+        <list name="media_features">
+            <item>width</item>
+            <item>min-width</item>
+            <item>max-width</item>
+            <item>height</item>
+            <item>min-height</item>
+            <item>max-height</item>
+            <item>device-width</item>
+            <item>min-device-width</item>
+            <item>max-device-width</item>
+            <item>device-height</item>
+            <item>min-device-height</item>
+            <item>max-device-height</item>
+            <item>orientation</item>
+            <item>aspect-ratio</item>
+            <item>min-aspect-ratio</item>
+            <item>max-aspect-ratio</item>
+            <item>device-aspect-ratio</item>
+            <item>min-device-aspect-ratio</item>
+            <item>max-device-aspect-ratio</item>
+            <item>color</item>
+            <item>min-color</item>
+            <item>max-color</item>
+            <item>color-index</item>
+            <item>min-color-index</item>
+            <item>max-color-index</item>
+            <item>monochrome</item>
+            <item>min-monochrome</item>
+            <item>max-monochrome</item>
+            <item>resolution</item>
+            <item>min-resolution</item>
+            <item>max-resolution</item>
+            <item>scan</item>
+            <item>grid</item>
+        </list>
+
+        <list name="pseudoclasses">
+            <include>pseudoclasses##CSS</include>
+            <!-- Less -->
+            <item>extend</item>
+        </list>
+
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Base">
+                <IncludeRules context="FindComments"/>
+
+                <DetectChar attribute="Normal Text" beginRegion="ruleset" char="{" context="RuleSet"/>
+                <RegExpr attribute="Variable" context="VariableDefine" String="\@[a-zA-Z0-9\-_]+\s*:"/>
+                <RegExpr attribute="At Rule" context="AtRule" String="@[a-zA-Z0-1\-]+\b"/>
+
+                <IncludeRules context="FindSelectors"/>
+            </context>
+
+            <!-- find selectors // .class #id :hover :nth-child(2n+1) [type="search"] -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="FindSelectors">
+                <IncludeRules context="FindInterpolation"/>
+
+                <DetectChar attribute="Annotation" context="Annotation" char="!"/>
+                <DetectChar attribute="Selector Attribute" char="[" context="SelectorAttr"/>
+                <RegExpr attribute="Selector Id" context="#stay" String="#(-)?(&nmstart;)(&nmchar;)*"/>
+                <RegExpr attribute="Selector Class" context="#stay"
+                         String="\.([a-zA-Z0-9\-_]|[\x80-\xFF]|\\[0-9A-Fa-f]{1,6})*"/>
+                <RegExpr attribute="Selector Pseudo" context="#stay" String=":lang\([\w_\-]+\)"/>
+                <DetectChar attribute="Selector Pseudo" char=":" context="SelectorPseudo"/>
+                <RegExpr attribute="Control Flow" context="Condition" String="when\s*(not)?(?=\s*\()"/>
+                <DetectChar attribute="Normal Text" char="(" context="Function" lookAhead="true"/>
+
+                <IncludeRules context="FindVariables"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="Condition">
+                <IncludeRules context="FindFunctions"/>
+                <IncludeRules context="FindVariables"/>
+                <IncludeRules context="FindValues"/>
+
+                <DetectChar attribute="Normal Text" char=")" context="#pop"/>
+            </context>
+
+            <!-- find variables // @page-width -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="FindVariables">
+                <RegExpr attribute="Variable" context="#stay" String="[\@]{1,2}[a-zA-Z0-9\-_]+"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="FindInterpolation">
+                <!-- @{variable} -->
+                <RegExpr attribute="Variable" context="Interpolation" String="\@\{\s*[a-zA-Z0-9\-_]+"/>
+            </context>
+
+            <!-- find functions // rgba(255,255,255,0.75) -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="FindFunctions">
+                <RegExpr attribute="Function" context="Function" String="[a-z\-]+\(" lookAhead="true"/>
+            </context>
+
+            <!-- find values //  10px 12pt 2.5em 1rem 75% #ffcc99 red solid -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="FindValues">
+                <DetectChar attribute="Annotation" context="Annotation" char="!"/>
+
+                <IncludeRules context="FindInterpolation"/>
+                <IncludeRules context="FindVariables"/>
+
+                <keyword attribute="Value Keyword" context="#stay" String="value keywords"/>
+                <keyword attribute="Value" context="#stay" String="values"/>
+                <keyword attribute="Color" context="#stay" String="colors"/>
+                <RegExpr attribute="Color" context="#stay" String="#([0-9A-Fa-f]{3,4}){1,2}\b"/>
+                <RegExpr attribute="Number" context="FindUnits" String="[-+]?([0-9]+(\.[0-9]+)?|\.[0-9]+)([eE][+-]?[0-9]+)?(?![-+])"/>
+                <RegExpr attribute="Value" context="#stay" String="[-+]?[0-9.]+[%]?"/>
+                <RegExpr attribute="Normal Text" context="#stay" String="[\w\-]+"/>
+            </context>
+
+            <context name="Annotation" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                <WordDetect attribute="Annotation" context="#pop" String="important"/>
+                <WordDetect attribute="Annotation" context="#pop" String="default"/>
+            </context>
+
+            <context name="FindUnits" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                <RegExpr attribute="Unit" context="#stay" String="(%|(em|ex|ch|rem|vw|vh|vm|px|in|cm|mm|pt|pc|deg|rad|grad|turn|ms|s|Hz|kHz)\b)"/>
+            </context>
+
+            <!-- find strings // "some words" 'some words' -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="FindStrings">
+                <DetectChar attribute="String" context="StringDQ" char="&quot;"/>
+                <DetectChar attribute="String" context="StringSQ" char="'"/>
+            </context>
+
+            <!-- find comments // /* comment */  // comment -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="FindComments">
+                <RegExpr attribute="Region Marker" context="#stay" String="/\*BEGIN.*\*/" beginRegion="UserDefined"/>
+                <RegExpr attribute="Region Marker" context="#stay" String="//\s*BEGIN.*" beginRegion="UserDefined"/>
+                <RegExpr attribute="Region Marker" context="#stay" String="/\*END.*\*/" endRegion="UserDefined"/>
+                <RegExpr attribute="Region Marker" context="#stay" String="//\s*END.*" endRegion="UserDefined"/>
+                <Detect2Chars attribute="Comment" context="Comment" char="/" char1="*" beginRegion="comment"/>
+                <Detect2Chars attribute="Comment" context="LessComment" char="/" char1="/" />
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#pop" name="AtRule">
+                <IncludeRules context="FindComments"/>
+                <IncludeRules context="FindStrings"/>
+
+                <keyword attribute="Value" context="#stay" String="mediatypes"/>
+                <keyword attribute="Control Flow" context="#stay" String="mediatypes_op"/>
+                <keyword attribute="Property" context="#stay" String="media_features"/>
+                <AnyChar attribute="Normal Text" context="#pop" lookAhead="true" String=";{"/>
+
+                <IncludeRules context="FindInterpolation"/>
+                <IncludeRules context="FindVariables"/>
+                <IncludeRules context="FindValues"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="VariableDefine">
+                <IncludeRules context="FindInterpolation"/>
+                <IncludeRules context="FindVariables"/>
+
+                <DetectChar attribute="Normal Text" beginRegion="ruleset" char="{" context="#pop!RuleSet"/>
+
+                <IncludeRules context="FindComments"/>
+                <IncludeRules context="FindStrings"/>
+                <IncludeRules context="FindFunctions"/>
+                <IncludeRules context="FindValues"/>
+
+                <DetectChar attribute="Normal Text" char=";" context="#pop"/>
+            </context>
+
+            <!-- Interpolation -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="Interpolation">
+                <IncludeRules context="FindInterpolation"/>
+                <IncludeRules context="FindVariables"/>
+
+                <DetectChar attribute="Variable" char="}" context="#pop"/>
+            </context>
+
+            <context attribute="Selector Attribute" lineEndContext="#stay" name="SelectorAttr">
+                <DetectChar attribute="Selector Attribute" char="]" context="#pop"/>
+
+                <IncludeRules context="FindStrings"/>
+            </context>
+
+            <context attribute="Selector Pseudo" fallthrough="true" fallthroughContext="#pop" lineEndContext="#pop"
+                     name="SelectorPseudo">
+                <RegExpr attribute="Selector Pseudo" context="SelectorPseudoParameters" String="extend(?=\s*\()"/>
+                <keyword attribute="Selector Pseudo" context="#pop" String="pseudoclasses"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="SelectorPseudoParameters">
+                <DetectChar attribute="Normal Text" char="(" context="#stay"/>
+
+                <IncludeRules context="FindSelectors"/>
+
+                <DetectChar attribute="Normal Text" char=")" context="#pop#pop"/>
+            </context>
+
+            <context attribute="Comment" lineEndContext="#pop" name="LessComment"></context>
+
+            <context attribute="Comment" lineEndContext="#stay" name="Comment">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="comment"/>
+
+                <IncludeRules context="##Alerts"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="RuleSet">
+                <DetectChar attribute="Normal Text" char="{" context="RuleSet" beginRegion="ruleset"/>
+                <DetectChar attribute="Normal Text" char="}" context="#pop" endRegion="ruleset"/>
+                <!-- find CSS property, like border-radius with optional + or +- decorators -->
+                <RegExpr attribute="Property" context="Rule" String="-?[A-Za-z_\-]+(?=\s*(\+|\+_)?\s*:)"
+                         lookAhead="true"/>
+                <!-- as above, but include support for interpolation -->
+                <RegExpr attribute="Property" context="Rule"
+                         String="-?[A-Za-z_\-]*@{\s*[a-zA-Z0-9\-_]+}[A-Za-z_\-]*(?=\s*(\+|\+_)?\s*:)" lookAhead="true"
+                         />
+
+                <IncludeRules context="Base"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="Rule">
+                <IncludeRules context="FindInterpolation"/>
+
+                <RegExpr attribute="Normal Text" context="RuleParameters" String="(\+|\+_)?\s*:"/>
+                <keyword attribute="Property" context="#stay" String="properties"/>
+                <RegExpr attribute="Unknown Property" context="#stay" String="\S"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="RuleParameters">
+                <IncludeRules context="FindComments"/>
+                <IncludeRules context="FindStrings"/>
+                <IncludeRules context="FindFunctions"/>
+                <IncludeRules context="FindValues"/>
+
+                <DetectChar attribute="Normal Text" context="#pop#pop" char=";"/>
+                <DetectChar attribute="Normal Text" context="#pop#pop#pop" char="}" endRegion="ruleset"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="Function">
+                <DetectChar attribute="Normal Text" char="(" context="FunctionParameters"/>
+                <keyword attribute="Function" context="#stay" String="functions"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="FunctionParameters">
+                <IncludeRules context="FindComments"/>
+                <IncludeRules context="FindStrings"/>
+                <IncludeRules context="FindInterpolation"/>
+                <IncludeRules context="FindVariables"/>
+                <IncludeRules context="FindFunctions"/>
+                <IncludeRules context="FindValues"/>
+
+                <DetectChar attribute="Normal Text" context="#pop#pop" char=")"/>
+            </context>
+
+            <!-- string contexts -->
+            <context attribute="String" lineEndContext="#stay" name="StringDQ">
+                <DetectChar attribute="String" char="&quot;" context="#pop"/>
+
+                <IncludeRules context="InsideString"/>
+            </context>
+
+            <context attribute="String" lineEndContext="#stay" name="StringSQ">
+                <DetectChar attribute="String" char="'" context="#pop"/>
+
+                <IncludeRules context="InsideString"/>
+            </context>
+
+            <context attribute="String" lineEndContext="#stay" name="InsideString">
+                <RegExpr attribute="String" context="#stay" String="\\[&quot;']"/>
+
+                <IncludeRules context="FindInterpolation"/>
+
+                <DetectIdentifier/>
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData defStyleNum="dsNormal" name="Normal Text" spellChecking="false"/>
+            <itemData defStyleNum="dsVariable" name="Variable" spellChecking="false"/>
+            <itemData defStyleNum="dsControlFlow" name="Control Flow" spellChecking="false"/>
+            <itemData defStyleNum="dsImport" name="At Rule" spellChecking="false"/>
+            <itemData defStyleNum="dsKeyword" name="Property" spellChecking="false"/>
+            <itemData defStyleNum="dsNormal" italic="1" name="Unknown Property" spellChecking="false"/>
+            <itemData defStyleNum="dsString" name="String"/>
+            <itemData defStyleNum="dsDecVal" name="Value" spellChecking="false"/>
+            <itemData defStyleNum="dsDecVal" name="Number" spellChecking="false"/>
+            <itemData defStyleNum="dsBuiltIn" name="Value Keyword" spellChecking="false"/>
+            <itemData defStyleNum="dsConstant" name="Color" spellChecking="false"/>
+            <itemData defStyleNum="dsDataType" name="Unit" spellChecking="false"/>
+            <itemData defStyleNum="dsBuiltIn" name="Function" spellChecking="false"/>
+            <itemData defStyleNum="dsAttribute" name="Annotation" spellChecking="false"/>
+            <itemData bold="1" defStyleNum="dsPreprocessor" name="Selector Id" spellChecking="false"/>
+            <itemData defStyleNum="dsFunction" name="Selector Class" spellChecking="false"/>
+            <itemData defStyleNum="dsExtension" name="Selector Attribute" spellChecking="false"/>
+            <itemData defStyleNum="dsInformation" name="Selector Pseudo" spellChecking="false"/>
+            <itemData defStyleNum="dsComment" name="Comment"/>
+            <itemData defStyleNum="dsRegionMarker" name="Region Marker" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+
+    <general>
+        <keywords casesensitive="0" weakDeliminator="-%"/>
+        <comments>
+            <comment name="multiLine" start="/*" end="*/" />
+        </comments>
+    </general>
+</language>

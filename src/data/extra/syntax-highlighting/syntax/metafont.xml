@@ -1,0 +1,986 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+The lists of keywords of this file are borrowed from the VIM syntax 
+files mp.vim and mf.vim
+We have moved some keywords for consistency
+-->
+
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Metapost/Metafont" section="Markup" version="5" kateversion="5.0"
+extensions="*.mp;*.mps;*.mpost;*.mf" mimetype="text/x-metapost" 
+author="Yedvilun (yedvilun@gmail.com)" license="LGPL">
+  <highlighting>
+    <!--Here are some listing from mf.vim-->
+    <!--Metafont 'primitives' as defined in chapter 25 of 'The METAFONTbook'-->
+    <!--Page 210: 'boolean expressions'-->
+    <list name="mfBoolExp">
+      <item>true</item>
+
+      <item>false</item>
+      <item>known</item>
+      <item>unknown</item>
+      <item>odd</item>
+      <item>charexists</item>
+      <item>not</item>
+
+      <item>and</item>
+      <item>or</item>
+    </list>
+
+    <!--Page 210: 'numeric expression'-->
+    <list name="mfNumExp">
+      <item>normaldeviate</item>
+      <item>length</item>
+
+      <item>ASCII</item>
+      <item>oct</item>
+      <item>hex</item>
+      <item>angle</item>
+      <item>turningnumber</item>
+      <item>totalweight</item>
+
+      <item>directiontime</item>
+      <item>xpart</item>
+      <item>ypart</item>
+      <item>xxpart</item>
+      <item>xypart</item>
+      <item>yxpart</item>
+
+      <item>yypart</item>
+      <item>sqrt</item>
+      <item>sind</item>
+      <item>cosd</item>
+      <item>mlog</item>
+      <item>mexp</item>
+
+      <item>floor</item>
+      <item>uniformdeviate</item>
+      <item>abs</item>
+      <item>div</item>
+      <item>dotprod</item>
+      <item>max</item>
+
+      <item>min</item>
+      <item>mod</item>
+      <item>ceiling</item>
+    </list>
+
+    <!--Page 211: 'internal quantities'-->
+    <list name="mfInternal">
+      <item>tracingtitles</item>
+
+      <item>tracingequations</item>
+      <item>tracingcapsules</item>
+      <item>tracingchoices</item>
+      <item>tracingspecs</item>
+      <item>tracingpens</item>
+      <item>tracingcommands</item>
+
+      <item>tracingrestores</item>
+      <item>tracingmacros</item>
+      <item>tracingedges</item>
+      <item>tracingoutput</item>
+      <item>tracingonline</item>
+      <item>tracingstats</item>
+
+      <item>pausing</item>
+      <item>showstopping</item>
+      <item>fontmaking</item>
+      <item>proofing</item>
+      <item>turningcheck</item>
+      <item>warningcheck</item>
+
+      <item>smoothing</item>
+      <item>autorounding</item>
+      <item>granularity</item>
+      <item>fillin</item>
+      <item>year</item>
+      <item>month</item>
+
+      <item>day</item>
+      <item>time</item>
+      <item>charcode</item>
+      <item>charext</item>
+      <item>charwd</item>
+      <item>charht</item>
+
+      <item>chardp</item>
+      <item>charic</item>
+      <item>chardx</item>
+      <item>chardy</item>
+      <item>designsize</item>
+      <item>hppp</item>
+
+      <item>vppp</item>
+      <item>xoffset</item>
+      <item>yoffset</item>
+      <item>boundarychar</item>
+    </list>
+
+    <!--Page 212: 'pair expressions'-->
+
+    <list name="mfPairExp">
+      <item>point</item>
+      <item>of</item>
+      <item>precontrol</item>
+      <item>postcontrol</item>
+      <item>penoffset</item>
+
+      <item>rotated</item>
+      <item>scaled</item>
+      <item>shifted</item>
+      <item>slanted</item>
+      <item>transformed</item>
+      <item>xscaled</item>
+
+      <item>yscaled</item>
+      <item>zscaled</item>
+    </list>
+
+    <!--Page 213: 'path expressions'-->
+    <list name="mfPathExp">
+      <item>makepath</item>
+      <item>reverse</item>
+
+      <item>subpath</item>
+      <item>curl</item>
+      <item>tension</item>
+      <item>atleast</item>
+      <item>controls</item>
+      <item>cycle</item>
+
+    </list>
+
+    <!--Page 214: 'pen expressions'-->
+    <list name="mfPenExp">
+      <item>nullpen</item>
+      <item>pencircle</item>
+      <item>makepen</item>
+    </list>
+
+    <!--Page 214: 'picture expressions'-->
+    <list name="mfPicExp">
+      <item>nullpicture</item>
+    </list>
+
+    <!--Page 214: 'string expressions'-->
+    <list name="mfStringExp">
+      <item>jobname</item>
+
+      <item>readstring</item>
+      <item>str</item>
+      <item>char</item>
+      <item>decimal</item>
+      <item>substring</item>
+    </list>
+
+    <!--Page 217: 'commands and statements'-->
+    <list name="mfCommand">
+      <item>end</item>
+      <item>dump</item>
+      <item>save</item>
+      <item>interim</item>
+
+      <item>newinternal</item>
+      <item>randomseed</item>
+      <item>let</item>
+      <item>delimiters</item>
+      <item>outer</item>
+      <item>everyjob</item>
+
+      <item>show</item>
+      <item>showvariable</item>
+      <item>showtoken</item>
+      <item>showdependencies</item>
+      <item>showstats</item>
+      <item>message</item>
+
+      <item>errmessage</item>
+      <item>errhelp</item>
+      <item>batchmode</item>
+      <item>nonstopmode</item>
+      <item>scrollmode</item>
+      <item>errorstopmode</item>
+
+      <item>addto</item>
+      <item>also</item>
+      <item>contour</item>
+      <item>doublepath</item>
+      <item>withpen</item>
+      <item>withweight</item>
+
+      <item>cull</item>
+      <item>keeping</item>
+      <item>dropping</item>
+      <item>display</item>
+      <item>inwindow</item>
+      <item>openwindow</item>
+
+      <item>at</item>
+      <item>from</item>
+      <item>to</item>
+      <item>shipout</item>
+      <item>special</item>
+      <item>numspecial</item>
+
+    </list>
+
+    <!--Page 56: 'types'-->
+    <list name="mfType">
+      <item>boolean</item>
+      <item>numeric</item>
+      <item>pair</item>
+      <item>path</item>
+
+      <item>pen</item>
+      <item>picture</item>
+      <item>string</item>
+      <item>transform</item>
+    </list>
+
+    <!--Page 155: 'grouping'-->
+
+<!--     commented out, since these keywords are in RegExpr rules-->
+<!--     <list name="mfStatement"> -->
+<!--       <item>begingroup</item> -->
+<!--       <item>endgroup</item> -->
+<!--     </list> -->
+
+    <!--Page 165: 'definitions'-->
+    <list name="mfDefinition">
+<!--       <item>enddef</item> -->
+<!--       <item>def</item> -->
+      <item>expr</item>
+      <item>suffix</item>
+
+      <item>text</item>
+      <item>primary</item>
+      <item>secondary</item>
+      <item>tertiary</item>
+<!--       <item>vardef</item> -->
+      <item>primarydef</item>
+      <item>secondarydef</item>
+
+      <item>tertiarydef</item>
+    </list>
+
+    <!--Page 169: 'conditions and loops'-->
+    <list name="mfCondition">
+<!--       <item>if</item> -->
+<!--       <item>fi</item> -->
+      <item>else</item>
+      <item>elseif</item>
+
+<!--       <item>endfor</item> -->
+<!--       <item>for</item> -->
+<!--       <item>forsuffixes</item> -->
+<!--       <item>forever</item> -->
+      <item>step</item>
+      <item>until</item>
+      <item>upto</item>
+      <item>exitif</item>
+    </list>
+
+    <!--Other primitives listed in the index-->
+    <list name="mfPrimitive">
+      <item>charlist</item>
+      <item>endinput</item>
+      <item>expandafter</item>
+      <item>extensible</item>
+
+      <item>fontdimen</item>
+      <item>headerbyte</item>
+      <item>inner</item>
+      <item>input</item>
+      <item>intersectiontimes</item>
+      <item>kern</item>
+
+      <item>ligtable</item>
+      <item>quote</item>
+      <item>scantokens</item>
+      <item>skipto</item>
+    </list>
+
+    <!--Keywords defined by plain.mf-->
+
+    <list name="mfMacro">
+<!--       <item>abs</item> -->
+      <item>addto_currentpicture</item>
+      <item>aspect_ratio</item>
+      <item>base_name</item>
+      <item>base_version</item>
+<!--       <item>beginchar</item> -->
+      <item>blacker</item>
+
+      <item>blankpicture</item>
+      <item>bot</item>
+      <item>bye</item>
+      <item>byte</item>
+      <item>capsule_def</item>
+<!--       <item>ceiling</item> -->
+      <item>change_width</item>
+
+      <item>clear_pen_memory</item>
+      <item>clearit</item>
+      <item>clearpen</item>
+      <item>clearxy</item>
+      <item>counterclockwise</item>
+      <item>culldraw</item>
+
+      <item>cullit</item>
+      <item>currentpen</item>
+      <item>currentpen_path</item>
+      <item>currentpicture</item>
+      <item>currenttransform</item>
+      <item>currentwindow</item>
+
+      <item>cutdraw</item>
+      <item>cutoff</item>
+      <item>d</item>
+      <item>decr</item>
+      <item>define_blacker_pixels</item>
+      <item>define_corrected_pixels</item>
+
+      <item>define_good_x_pixels</item>
+      <item>define_good_y_pixels</item>
+      <item>define_horizontal_corrected_pixels</item>
+      <item>define_pixels</item>
+      <item>define_whole_blacker_pixels</item>
+      <item>define_whole_pixels</item>
+
+      <item>define_whole_vertical_blacker_pixels</item>
+      <item>define_whole_vertical_pixels</item>
+      <item>dir</item>
+      <item>direction</item>
+      <item>directionpoint</item>
+      <item>displaying</item>
+
+      <item>ditto</item>
+<!--       <item>div</item> -->
+<!--       <item>dotprod</item> -->
+      <item>down</item>
+      <item>downto</item>
+      <item>draw</item>
+      <item>drawdot</item>
+
+<!--       <item>endchar</item> -->
+      <item>eps</item>
+      <item>epsilon</item>
+<!--       <item>extra_beginchar</item> -->
+<!--       <item>extra_endchar</item> -->
+      <item>extra_setup</item>
+      <item>erase</item>
+      <item>exitunless</item>
+
+      <item>fill</item>
+      <item>filldraw</item>
+      <item>fix_units</item>
+      <item>flex</item>
+      <item>font_coding_scheme</item>
+      <item>font_extra_space</item>
+
+      <item>font_identifier</item>
+      <item>font_normal_shrink</item>
+      <item>font_normal_space</item>
+      <item>font_normal_stretch</item>
+      <item>font_quad</item>
+      <item>font_setup</item>
+
+      <item>font_size</item>
+      <item>font_slant</item>
+      <item>font_x_height</item>
+      <item>fullcircle</item>
+      <item>generate</item>
+      <item>gfcorners</item>
+
+      <item>gobble</item>
+      <item>gobbled</item>
+      <item>grayfont</item>
+      <item>h</item>
+      <item>halfcircle</item>
+      <item>hide</item>
+
+      <item>hround</item>
+      <item>identity</item>
+      <item>image_rules</item>
+      <item>incr</item>
+      <item>infinity</item>
+      <item>interact</item>
+
+      <item>interpath</item>
+      <item>intersectionpoint</item>
+      <item>inverse</item>
+      <item>italcorr</item>
+      <item>join_radius</item>
+      <item>killtext</item>
+
+      <item>labelfont</item>
+      <item>labels</item>
+      <item>left</item>
+      <item>lft</item>
+      <item>localfont</item>
+      <item>loggingall</item>
+
+      <item>lowres</item>
+      <item>lowres_fix</item>
+      <item>mag</item>
+      <item>magstep</item>
+      <item>makebox</item>
+      <item>makegrid</item>
+
+      <item>makelabel</item>
+      <item>maketicks</item>
+<!--       <item>max</item> -->
+<!--       <item>min</item> -->
+<!--       <item>mod</item> -->
+      <item>mode</item>
+      <item>mode_def</item>
+      <item>mode_name</item>
+
+      <item>mode_setup</item>
+      <item>nodisplays</item>
+      <item>notransforms</item>
+      <item>number_of_modes</item>
+      <item>numtok</item>
+      <item>o_correction</item>
+
+      <item>openit</item>
+      <item>origin</item>
+      <item>pen_bot</item>
+      <item>pen_lft</item>
+      <item>pen_rt</item>
+      <item>pen_top</item>
+
+      <item>penlabels</item>
+      <item>penpos</item>
+      <item>penrazor</item>
+      <item>penspeck</item>
+      <item>pensquare</item>
+      <item>penstroke</item>
+
+      <item>pickup</item>
+      <item>pixels_per_inch</item>
+      <item>proof</item>
+      <item>proofoffset</item>
+      <item>proofrule</item>
+      <item>proofrulethickness</item>
+
+      <item>quartercircle</item>
+      <item>range</item>
+      <item>reflectedabout</item>
+      <item>relax</item>
+      <item>right</item>
+      <item>rotatedabout</item>
+
+      <item>rotatedaround</item>
+      <item>round</item>
+      <item>rt</item>
+      <item>rulepen</item>
+      <item>savepen</item>
+      <item>screenchars</item>
+
+      <item>screen_rows</item>
+      <item>screen_cols</item>
+      <item>screenrule</item>
+      <item>screenstrokes</item>
+      <item>shipit</item>
+      <item>showit</item>
+
+      <item>slantfont</item>
+      <item>smode</item>
+      <item>smoke</item>
+      <item>softjoin</item>
+      <item>solve</item>
+      <item>stop</item>
+
+      <item>superellipse</item>
+      <item>takepower</item>
+      <item>tensepath</item>
+      <item>titlefont</item>
+      <item>tolerance</item>
+      <item>top</item>
+
+      <item>tracingall</item>
+      <item>tracingnone</item>
+      <item>undraw</item>
+      <item>undrawdot</item>
+      <item>unfill</item>
+      <item>unfilldraw</item>
+
+      <item>unitpixel</item>
+      <item>unitsquare</item>
+      <item>unitvector</item>
+      <item>up</item>
+      <item>upto</item>
+      <item>vround</item>
+
+      <item>w</item>
+      <item>whatever</item>
+<!--       <item>beginlogochar</item> -->
+    </list>
+
+    <!--Here are some listing from mp.vim-->
+    <!--MetaPost primitives not found in Metafont-->
+    <list name="mpInternal">
+      <item>bluepart</item>
+
+      <item>clip</item>
+      <item>color</item>
+      <item>dashed</item>
+      <item>fontsize</item>
+      <item>greenpart</item>
+      <item>infont</item>
+
+      <item>linecap</item>
+      <item>linejoin</item>
+      <item>llcorner</item>
+      <item>lrcorner</item>
+      <item>miterlimit</item>
+      <item>mpxbreak</item>
+
+      <item>prologues</item>
+      <item>redpart</item>
+      <item>setbounds</item>
+      <item>tracinglostchars</item>
+      <item>truecorners</item>
+      <item>ulcorner</item>
+
+      <item>urcorner</item>
+      <item>withcolor</item>
+    </list>
+
+    <!--Keywords defined by plain.mp-->
+    <list name="mpMacro">
+      <item>ahangle</item>
+      <item>ahlength</item>
+      <item>background</item>
+      <item>bbox</item>
+
+      <item>bboxmargin</item>
+<!--       <item>beginfig</item> -->
+      <item>beveled</item>
+      <item>black</item>
+      <item>blue</item>
+      <item>buildcycle</item>
+      <item>butt</item>
+
+      <item>center</item>
+      <item>cutafter</item>
+      <item>cutbefore</item>
+      <item>cuttings</item>
+      <item>dashpattern</item>
+      <item>defaultfont</item>
+
+      <item>defaultpen</item>
+      <item>defaultscale</item>
+      <item>dotlabel</item>
+      <item>dotlabels</item>
+      <item>drawarrow</item>
+      <item>drawdblarrow</item>
+
+      <item>drawoptions</item>
+<!--       <item>endfig</item> -->
+      <item>evenly</item>
+<!--       <item>extra_beginfig</item> -->
+<!--       <item>extra_endfig</item> -->
+      <item>green</item>
+      <item>label</item>
+      <item>labeloffset</item>
+
+      <item>mitered</item>
+      <item>red</item>
+      <item>rounded</item>
+      <item>squared</item>
+      <item>thelabel</item>
+      <item>white</item>
+
+      <item>base_name</item>
+      <item>base_version</item>
+      <item>upto</item>
+      <item>downto</item>
+      <item>exitunless</item>
+      <item>relax</item>
+
+      <item>gobble</item>
+      <item>gobbled</item>
+      <item>interact</item>
+      <item>loggingall</item>
+      <item>tracingall</item>
+      <item>tracingnone</item>
+
+      <item>eps</item>
+      <item>epsilon</item>
+      <item>infinity</item>
+      <item>right</item>
+      <item>left</item>
+      <item>up</item>
+
+      <item>down</item>
+      <item>origin</item>
+      <item>quartercircle</item>
+      <item>halfcircle</item>
+      <item>fullcircle</item>
+      <item>unitsquare</item>
+
+      <item>identity</item>
+      <item>blankpicture</item>
+      <item>withdots</item>
+      <item>ditto</item>
+      <item>EOF</item>
+      <item>pensquare</item>
+
+      <item>penrazor</item>
+      <item>penspeck</item>
+      <item>whatever</item>
+<!--       <item>abs</item> -->
+      <item>round</item>
+<!--       <item>ceiling</item> -->
+      <item>byte</item>
+
+      <item>dir</item>
+      <item>unitvector</item>
+      <item>inverse</item>
+      <item>counterclockwise</item>
+      <item>tensepath</item>
+<!--       <item>mod</item> -->
+<!--       <item>div</item> -->
+
+<!--       <item>dotprod</item> -->
+      <item>takepower</item>
+      <item>direction</item>
+      <item>directionpoint</item>
+      <item>intersectionpoint</item>
+      <item>softjoin</item>
+      <item>incr</item>
+
+      <item>decr</item>
+      <item>reflectedabout</item>
+      <item>rotatedaround</item>
+      <item>rotatedabout</item>
+<!--       <item>min</item> -->
+<!--       <item>max</item> -->
+      <item>flex</item>
+
+      <item>superellipse</item>
+      <item>interpath</item>
+      <item>magstep</item>
+      <item>currentpen</item>
+      <item>currentpen_path</item>
+      <item>currentpicture</item>
+
+      <item>fill</item>
+      <item>draw</item>
+      <item>filldraw</item>
+      <item>drawdot</item>
+      <item>unfill</item>
+      <item>undraw</item>
+
+      <item>unfilldraw</item>
+      <item>undrawdot</item>
+      <item>erase</item>
+      <item>cutdraw</item>
+      <item>image</item>
+      <item>pickup</item>
+
+      <item>numeric_pickup</item>
+      <item>pen_lft</item>
+      <item>pen_rt</item>
+      <item>pen_top</item>
+      <item>pen_bot</item>
+      <item>savepen</item>
+
+      <item>clearpen</item>
+      <item>clear_pen_memory</item>
+      <item>lft</item>
+      <item>rt</item>
+      <item>top</item>
+      <item>bot</item>
+
+      <item>ulft</item>
+      <item>urt</item>
+      <item>llft</item>
+      <item>lrt</item>
+      <item>penpos</item>
+      <item>penstroke</item>
+
+      <item>arrowhead</item>
+      <item>makelabel</item>
+      <item>labels</item>
+      <item>penlabel</item>
+      <item>range</item>
+      <item>numtok</item>
+
+      <item>thru</item>
+      <item>clearxy</item>
+      <item>clearit</item>
+      <item>clearpen</item>
+      <item>pickup</item>
+      <item>shipit</item>
+
+      <item>bye</item>
+      <item>hide</item>
+      <item>stop</item>
+      <item>solve</item>
+<!--       <item>beginchar</item> -->
+      <item>blacker</item>
+      <item>capsule_def</item>
+
+      <item>change_width</item>
+      <item>define_blacker_pixels</item>
+      <item>define_corrected_pixels</item>
+      <item>define_good_x_pixels</item>
+      <item>define_good_y_pixels</item>
+      <item>define_horizontal_corrected_pixels</item>
+
+      <item>define_pixels</item>
+      <item>define_whole_blacker_pixels</item>
+      <item>define_whole_vertical_blacker_pixels</item>
+      <item>define_whole_vertical_pixels</item>
+<!--       <item>endchar</item> -->
+<!--       <item>extra_beginchar</item> -->
+<!--       <item>extra_endchar</item> -->
+      <item>extra_setup</item>
+
+      <item>font_coding_scheme</item>
+      <item>font_extra_space</item>
+      <item>font_identifier</item>
+      <item>font_normal_shrink</item>
+      <item>font_normal_space</item>
+      <item>font_normal_stretch</item>
+
+      <item>font_quad</item>
+      <item>font_size</item>
+      <item>font_slant</item>
+      <item>font_x_height</item>
+      <item>italcorr</item>
+      <item>labelfont</item>
+
+      <item>makebox</item>
+      <item>makegrid</item>
+      <item>maketicks</item>
+      <item>mode_def</item>
+      <item>mode_setup</item>
+      <item>o_correction</item>
+
+      <item>proofrule</item>
+      <item>proofrulethickness</item>
+      <item>rulepen</item>
+      <item>smode</item>
+      <item>cullit</item>
+      <item>currenttransform</item>
+
+      <item>gfcorners</item>
+      <item>grayfont</item>
+      <item>hround</item>
+      <item>imagerules</item>
+      <item>lowres_fix</item>
+      <item>nodisplays</item>
+
+      <item>notransforms</item>
+      <item>openit</item>
+      <item>proofoffset</item>
+      <item>screenchars</item>
+      <item>screenrule</item>
+      <item>screenstrokes</item>
+
+      <item>showit</item>
+      <item>slantfont</item>
+      <item>titlefont</item>
+      <item>unitpixel</item>
+      <item>vround</item>
+      <item>circmargin</item>
+
+      <item>defaultdx</item>
+      <item>defaultdy</item>
+      <item>boxit</item>
+      <item>boxjoin</item>
+      <item>bpath</item>
+      <item>circleit</item>
+
+      <item>drawboxed</item>
+      <item>drawboxes</item>
+      <item>drawunboxed</item>
+      <item>fixpos</item>
+      <item>fixsize</item>
+      <item>pic</item>
+
+    </list>
+
+    <!--We put all the delimiters here. They will be treated apart, for code folding.
+        Commented out, since these keywords are already matched by RegExpr rules.-->
+<!--    <list name="EnvDelimiters">
+      <item>beginchar</item>
+      <item>endchar</item>
+      <item>extra_beginchar</item>
+      <item>extra_endchar</item>
+
+      <item>beginlogochar</item>
+      <item>beginfig</item>
+      <item>endfig</item>
+      <item>extra_beginfig</item>
+      <item>extra_endfig</item>
+    </list>-->
+
+    <contexts>
+      <context name="Normal Text"    attribute="Normal Text" lineEndContext="#stay">
+        <keyword String="mfBoolExp"  attribute="BoolExp" context="#stay"/>
+        <keyword String="mfNumExp"   attribute="NumExp" context="#stay"/>
+        <keyword String="mfInternal" attribute="Statement" context="#stay"/>
+        <keyword String="mfPairExp"  attribute="Statement" context="#stay"/>
+        <keyword String="mfPathExp"  attribute="Statement" context="#stay"/>
+        <keyword String="mfPenExp"   attribute="Statement" context="#stay"/>
+
+        <keyword String="mfPicExp"   attribute="Statement" context="#stay"/>
+        <keyword String="mfStringExp" attribute="Statement" context="#stay"/>
+        <keyword String="mfCommand"  attribute="Statement" context="#stay"/>
+        <keyword String="mfType"     attribute="Type" context="#stay"/>
+<!--         <keyword String="mfStatement" attribute="Statement" context="#stay"/> -->
+        <keyword String="mfDefinition" attribute="Statement" context="#stay"/>
+        <keyword String="mfCondition" attribute="Conditional" context="#stay"/>
+        <keyword String="mfPrimitive" attribute="Statement" context="#stay"/>
+        <keyword String="mfMacro"    attribute="Macro" context="#stay"/>
+
+        <keyword String="mpInternal" attribute="Statement" context="#stay"/>
+        <keyword String="mpMacro"    attribute="Macro" context="#stay"/>
+
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char='"' attribute="String" context="string" beginRegion="String"/>
+        <RegExpr String="(\+|\-|\*|\/|\=|\:\=)" attribute="Operator" context="#stay"/>
+        <Detect2Chars char="." char1="." attribute="Operator" context="#stay"/>
+
+        <HlCOct attribute="Octal"/>
+        <HlCHex attribute="Hex"/>
+
+        <Float attribute="Float"/>
+        <Int attribute="Decimal"/>
+
+        <!--Metafont lengths-->
+        <RegExpr String="\b(bp|cc|cm|dd|in|mm|pc|pt)\b" attribute="Float" context="#stay"/>
+        <RegExpr String="\b-?\d+(bp|cc|cm|dd|in|mm|pc|pt)#?\b" attribute="Float" context="#stay"/>
+        <RegExpr String="\b-?\.\d+(bp|cc|cm|dd|in|mm|pc|pt)#?\b" attribute="Float" context="#stay"/>
+        <RegExpr String="\b-?\d+\.\d+(bp|cc|cm|dd|in|mm|pc|pt)#?\b" attribute="Float" context="#stay"/>
+
+        <!--Metafont coordinates, points, pathes-->
+
+        <RegExpr String="\b[xy]\d(\w|\')*" attribute="Variable" context="#stay"/>
+        <RegExpr String="\bz\d(\w|\')*" attribute="Variable" context="#stay"/>
+        <RegExpr String="\bp\d(\w|\')*" attribute="Variable" context="#stay"/>
+
+        <!--Special characters-->
+        <DetectChar char="$" attribute="Special" context="#stay"/>
+
+        <!--MetaPost has TeX inserts for typeset labels verbatimtex, btex, and etex will be treated as keywords-->
+        <RegExpr String="\b(verbatimtex|btex)\b" insensitive="1" attribute="Identifier" context="TeXMode" beginRegion="TeXblock"/>
+
+        <!--Here are some delimiters with code folding-->
+        <RegExpr String="\bbegin(group|fig|char)\b" insensitive="1" attribute="Identifier" context="#stay" beginRegion="block"/>
+        <RegExpr String="\bend(group|fig|char)\b" insensitive="1" attribute="Identifier" context="#stay" endRegion="block"/>
+
+        <RegExpr String="\bextra_begin(group|fig|char)\b" insensitive="1" attribute="Identifier" context="#stay" beginRegion="block"/>
+        <RegExpr String="\bextra_end(group|fig|char)\b" insensitive="1" attribute="Identifier" context="#stay" endRegion="block"/>
+
+        <RegExpr String="\b(def|vardef)\b" insensitive="1" attribute="Identifier" context="#stay" beginRegion="defblock"/>
+        <RegExpr String="\benddef\b" insensitive="1" attribute="Identifier" context="#stay" endRegion="defblock"/>
+
+        <RegExpr String="\bif\b" insensitive="1" attribute="Conditional" context="#stay" beginRegion="ifblock"/>
+        <RegExpr String="\bfi\b" insensitive="1" attribute="Conditional" context="#stay" endRegion="ifblock"/>
+        <RegExpr String="\b(for|forsuffixes|forever)\b" insensitive="1" attribute="Conditional" context="#stay" beginRegion="forblock"/>
+        <RegExpr String="\bendfor\b" insensitive="1" attribute="Conditional" context="#stay" endRegion="forblock"/>
+
+      </context>
+
+      <context name="string" attribute="String" lineEndContext="#stay">
+        <DetectIdentifier/>
+        <Detect2Chars char="\" char1='"' attribute="String" context="#stay"/>
+
+        <Detect2Chars char="\" char1="\" attribute="String" context="#stay"/>
+        <DetectChar char='"' attribute="String" context="#pop" endRegion="String"/>
+      </context>
+
+      <!--TeX mode : we just define generic TeX commands-->
+      <!--syntax from highlighting file latex.xml-->
+      <context name="TeXMode" attribute="TeX" lineEndContext="#stay">
+        <DetectChar char="\" attribute="Keyword" context="ContrSeq"/>
+        <DetectChar char="$" attribute="Math" context="MathMode" beginRegion="mathMode" />
+
+        <StringDetect String="\(" attribute="Math" context="MathMode" beginRegion="mathMode" />
+        <RegExpr String="\betex\b" insensitive="1" attribute="Identifier" context="#pop" endRegion="TeXblock"/>
+      </context>
+      <context name="ContrSeq" attribute="Keyword" lineEndContext="#pop">
+        <StringDetect String="verb*" attribute="Keyword" context="Verb"/>
+        <RegExpr String="verb(?=[^a-zA-Z])" attribute="Keyword" context="Verb"/>
+        <DetectChar char="&#xd7;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="[a-zA-Z]+(\+?|\*{0,3})" attribute="Keyword" context="#pop"/>
+        <RegExpr String="[^a-zA-Z]" attribute="Keyword" context="#pop" />
+      </context>
+      <context name="Verb" attribute="Verbatim" lineEndContext="#pop#pop" >
+        <RegExpr String="(.)" attribute="Normal Text" dynamic="true" context="VerbEnd" />
+      </context>
+      <context name="VerbEnd" attribute="Verbatim" lineEndContext="#pop#pop#pop" dynamic="true" >
+        <StringDetect String="%1" attribute="Normal Text" context="#pop#pop#pop" dynamic="true" />
+        <DetectChar char="&#xd7;" attribute="Bullet" context="#stay"/>
+
+        <RegExpr String="[^%1\xd7]*" attribute="Verbatim" context="#stay" dynamic="true" />
+      </context>
+
+      <!-- math mode: starting with $ or \( -->
+      <context name="MathMode" attribute="Math" lineEndContext="#stay">
+        <StringDetect String="$$" attribute="Error" context="#stay" />
+        <DetectChar char="\" attribute="Keyword Mathmode" context="MathContrSeq"/>
+        <DetectChar char="$" attribute="Math" context="#pop" endRegion="mathMode" />
+        <Detect2Chars char="\" char1=")" attribute="Math" context="#pop" endRegion="mathMode" />
+
+        <Detect2Chars char="\" char1="]" attribute="Error" context="#stay" />
+      </context>
+      <context name="MathContrSeq" attribute="Keyword Mathmode" lineEndContext="#pop">
+        <DetectChar char="&#xd7;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="[a-zA-Z]+\*?" attribute="Keyword Mathmode" context="#pop"/>
+        <RegExpr String="[^a-zA-Z]" attribute="Keyword Mathmode" context="#pop" /> 
+      </context>
+
+      <!-- comment -->
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Alerts" />
+        <DetectChar char="&#xd7;" attribute="Bullet" context="#stay"/>
+      </context>
+
+</contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsNormal" color="#800000" selColor="#60FFFF" bold="0" italic="0"/>
+      <itemData name="Keyword Mathmode" defStyleNum="dsNormal" color="#606000" selColor="#FFD0FF" bold="0" italic="0"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+
+      <itemData name="Error" defStyleNum="dsAlert"/>
+      <itemData name="Math" defStyleNum="dsNormal" color="#00A000" selColor="#FF40FF"  bold="0" italic="0"/>
+      <itemData name="TeX" defStyleNum="dsNormal"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Verbatim" defStyleNum="dsVerbatimString"/>
+      <itemData name="Macro"  defStyleNum="dsKeyword" color="#770000" selColor="#99FFFF" bold="0" italic="0"/>
+      <itemData name="Operator" defStyleNum="dsOperator"/>
+      <itemData name="Special" defStyleNum="dsKeyword" color="#008000" bold="0"/>
+      <itemData name="Conditional" defStyleNum="dsKeyword"/>
+
+      <itemData name="Statement" defStyleNum="dsNormal" color="#0000FF" selColor="#FFFF00" bold="0" italic="0"/>
+      <itemData name="BoolExp" defStyleNum="dsKeyword" italic="1" bold="0" color="#AA00AA" selColor="#FFFF00"/>
+      <itemData name="NumExp" defStyleNum="dsFunction"/>
+      <itemData name="Variable" defStyleNum="dsVariable"/>
+      <itemData name="Identifier" defStyleNum="dsKeyword"/>
+      <itemData name="Type" defStyleNum="dsDataType"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal"/>
+      <itemData name="Octal" defStyleNum="dsBaseN"/>
+      <itemData name="Hex" defStyleNum="dsBaseN"/>
+      <itemData name="Bullet" defStyleNum="dsExtension"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+ </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start="%"/>
+    </comments>
+    <keywords casesensitive="0" />
+
+  </general>
+</language>
+

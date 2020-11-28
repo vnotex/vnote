@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+	====================================================================
+	Modelica syntax highlighting file for the KDE editors Kate and Kwrite
+	====================================================================
+	Based on Modelica 3.0, available at the following link:
+	http://www.modelica.org/documents/ModelicaSpec30.pdf
+
+	License: LGPL v2 or later
+
+	ChangeLog: Aug 21, 2008: first version committed.
+
+	Author: Federico Zenith, Max Planck Institute for Complex Technical
+	Systems, Magdeburg (Germany).
+-->
+
+
+<language name="Modelica" version="6" kateversion="5.0" casesensitive="1" section="Sources" extensions="*.mo" author="Federico Zenith" license="LGPLv2+">
+
+	<highlighting>
+		<!-- Classes in Modelica can be called different names; "class" is the
+		     most general one, others will limit its capabilities in some ways;
+		     for instance, "record" can only contain data members, "connector"
+		     does not allow equations, and so on. -->
+		<list name="classTypes">
+			<item>block</item>
+			<item>class</item>
+			<item>connector</item>
+			<item>function</item>
+			<item>model</item>
+			<item>package</item>
+			<item>record</item>
+		</list>
+
+		<list name="classType_type">
+			<!-- NOTE this should actually be with the rest in classTypes, but
+			     "type" shall not start an environment. -->
+			<item>type</item>
+		</list>
+
+		<!-- The primitive data types already defined in Modelica. -->
+		<list name="primitiveTypes">
+			<item>Boolean</item>
+			<item>enumeration</item>
+			<item>ExternalObject</item>
+			<item>Integer</item>
+			<item>Real</item>
+			<item>StateSelect</item>
+			<item>String</item>
+		</list>
+		
+		<!-- The attributes of data types defined in Modelica and those derived
+		     from them. Not all primitive data types have all attributes. -->
+		<list name="defaultAttributes">
+			<item>display</item>
+			<item>fixed</item>
+			<item>max</item>
+			<item>min</item>
+			<item>nominal</item>
+			<item>quantity</item>
+			<item>start</item>
+			<item>stateSelect</item>
+			<item>unit</item>
+			<item>value</item>
+		</list>
+
+		<!-- The keywords defined in the Modelica specification (for the 3.0
+		     specification it is in section 2.3.3), minus the class types. -->
+		<list name="keywords">
+			<item>algorithm</item>
+			<item>and</item>
+			<item>annotation</item>
+			<item>assert</item>
+			<item>break</item>
+			<item>connect</item>
+			<item>constant</item>
+			<item>constrainedby</item>
+			<item>discrete</item>
+			<item>else</item>
+			<item>elseif</item>
+			<item>elsewhen</item>
+			<item>encapsulated</item>
+			<item>end</item>
+			<item>equation</item>
+			<item>expandable</item>
+			<item>extends</item>
+			<item>external</item>
+			<item>false</item>
+			<item>final</item>
+			<item>flow</item>
+			<item>for</item>
+			<item>if</item>
+			<item>import</item>
+			<item>in</item>
+			<item>inner</item>
+			<item>input</item>
+			<item>loop</item>
+			<item>not</item>
+			<item>or</item>
+			<item>outer</item>
+			<item>output</item>
+			<item>parameter</item>
+			<item>partial</item>
+			<item>protected</item>
+			<item>public</item>
+			<item>redeclare</item>
+			<item>replaceable</item>
+			<item>return</item>
+			<item>then</item>
+			<item>true</item>
+			<item>when</item>
+			<item>while</item>
+			<item>within</item>
+		</list>
+		
+		<!-- The functions that are by default available in Modelica 3.0. -->
+		<list name="functions">
+			<!-- NOTE this is more like a built-in variable, but as it changes
+			     its value during the simulation it is more like a function
+			     without the (), and has therefore been placed here.-->
+			<item>time</item>
+
+			<item>abs</item>
+			<item>ceil</item>
+			<item>div</item>
+			<item>floor</item>
+			<item>integer</item>
+			<item>mod</item>
+			<item>rem</item>
+			<item>sign</item>
+			<item>sqrt</item>
+
+			<item>sin</item>
+			<item>cos</item>
+			<item>tan</item>
+			<item>asin</item>
+			<item>acos</item>
+			<item>atan</item>
+			<item>atan2</item>
+			<item>sinh</item>
+			<item>cosh</item>
+			<item>tanh</item>
+			<item>exp</item>
+			<item>log</item>
+			<item>log10</item>
+
+			<item>analysisType</item>
+			<item>cardinality</item> <!-- NOTE deprecated in 3.0. -->
+			<item>change</item>
+			<item>delay</item>
+			<item>der</item>
+			<item>direction</item>
+			<item>edge</item>
+			<item>initial</item>
+			<item>isPresent</item>
+			<item>noEvent</item>
+			<item>pre</item>
+			<item>reinit</item>
+			<item>sample</item>
+			<item>semiLinear</item>
+			<item>smooth</item>
+			<item>terminal</item>
+			<item>terminate</item>
+
+			<item>ndims</item>
+			<item>size</item>
+			<item>scalar</item>
+			<item>vector</item>
+			<item>matrix</item>
+			<item>array</item>
+			<item>zeros</item>
+			<item>ones</item>
+			<item>fill</item>
+			<item>identity</item>
+			<item>diagonal</item>
+			<item>linspace</item>
+			<item>min</item>
+			<item>max</item>
+			<item>sum</item>
+			<item>product</item>
+			<item>transpose</item>
+			<item>outerProduct</item>
+			<item>symmetric</item>
+			<item>cross</item>
+			<item>skew</item>
+			<item>cat</item>
+		</list>
+
+		<contexts>
+			<context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+				<RegExpr attribute="Keyword" String="\bend\s+(for|while|loop)\b" endRegion="loopBlock"/>
+				<RegExpr attribute="Keyword" String="\bloop\b" beginRegion="loopBlock"/>
+				<RegExpr attribute="Keyword" String="\bend\s+(if|when)\b" endRegion="thenBlock"/>
+				<RegExpr attribute="Keyword" String="\bend\s+(if|when)\b" endRegion="thenBlock"/>
+				<RegExpr attribute="Keyword" String="\b(if|when)\b" beginRegion="thenBlock"/>
+
+				<keyword attribute="Class Type" String="classType_type"/>
+				<keyword attribute="Class Type" String="classTypes" beginRegion="class"/>
+				<RegExpr attribute="Keyword" String="\bend " endRegion="class"/>
+
+				<keyword attribute="Data Type" String="primitiveTypes"/>
+				<keyword attribute="Default Attribute" String="defaultAttributes"/>
+				<keyword attribute="Keyword" String="keywords"/>
+				<keyword attribute="Function" String="functions"/>
+				<Float attribute="Floating-Point Number"/>
+				<Int attribute="Integer Number"/>
+				<AnyChar attribute="Delimiter" String="()[]{}"/>
+				<RegExpr attribute="Variable" String="[_a-zA-Z]\w*"/>
+				<DetectChar attribute="String" context="String" char="&quot;"/>
+				<Detect2Chars attribute="Comment" context="Single-line comment" char="/" char1="/"/>
+				<Detect2Chars attribute="Comment" context="Multi-line comment" char="/" char1="*" beginRegion="Comment"/>
+			</context>
+
+			<context attribute="String" lineEndContext="#stay" name="String">
+				<LineContinue attribute="String" context="#stay"/>
+				<HlCStringChar attribute="String Char" context="#stay"/>
+				<DetectChar attribute="String" context="#pop" char="&quot;"/>
+			</context>
+
+			<context attribute="Comment" lineEndContext="#pop" name="Single-line comment">
+				<DetectSpaces/>
+				<IncludeRules context="##Alerts"/>
+				<DetectIdentifier/>
+			</context>
+
+			<context attribute="Comment" lineEndContext="#stay" name="Multi-line comment">
+				<DetectSpaces/>
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+				<IncludeRules context="##Alerts"/>
+				<DetectIdentifier/>
+			</context>
+		</contexts>
+
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal"/>
+			<itemData name="Variable" defStyleNum="dsVariable"/>
+			<itemData name="Class Type" defStyleNum="dsKeyword"/>
+			<itemData name="Delimiter" defStyleNum="dsOperator"/>
+			<itemData name="String" defStyleNum="dsString"/>
+			<itemData name="String Char"  defStyleNum="dsSpecialChar"/>
+			<itemData name="Default Attribute" defStyleNum="dsOthers"/>
+			<itemData name="Keyword" defStyleNum="dsKeyword"/>
+			<itemData name="Data Type" defStyleNum="dsDataType"/>
+			<itemData name="Function" defStyleNum="dsFunction"/>
+			<itemData name="Floating-Point Number" defStyleNum="dsFloat"/>
+			<itemData name="Integer Number" defStyleNum="dsDecVal"/>
+			<itemData name="Comment" defStyleNum="dsComment"/>
+		</itemDatas>
+	</highlighting>
+
+	<general>
+		<comments>
+			<comment name="singleLine" start="//"/>
+			<comment name="multiLine" start="/**" end="*/"/>
+			<comment name="multiLine" start="/*" end="*/"/>
+		</comments>
+		<keywords casesensitive="1"/>
+	</general>
+</language>

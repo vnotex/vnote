@@ -1,0 +1,1738 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+  <!-- https://www.w3.org/TR/CSS22/syndata.html#tokenization -->
+  <!ENTITY nmstart "[_a-zA-Z]|(\\[0-9a-fA-F]{1,6})|(\\[^\n\r\f0-9a-fA-F])">
+  <!ENTITY nmchar  "[_a-zA-Z0-9-]|(\\[0-9a-fA-F]{1,6})|(\\[^\n\r\f0-9a-fA-F])">
+]>
+
+<!--
+
+Kate CSS syntax highlighting definition
+
+Changelog:
+
+- Version 8, by Jonathan Poelen
+- fix some Operator and Selector Tag highlighting
+
+- Version 7, by Jonathan Poelen
+- fix tag followed by a pseudo-class in a nested rule (@media, ...)
+- fix constraint in a rule
+- fix Kate auto-completion for properties and rules
+- New highlighting categories: Keyword, Operator, Separator Symbol, SpecialChar, Variable, Value Keyword, Color, Number, Unit, Selector Tag
+
+- Version 4, by Guo Yunhe guoyunhebrave@gmail.com
+- Remake for complex CSS syntax, avoid errors
+
+- Version 2.13, by Guo Yunhe
+- Add all W3C Work Draft properties
+
+- Version 2.06, by Mte90:
+- CSS3 tag
+
+- Version 2.03, by Milian Wolff:
+- Make it spelling aware
+
+- Version 2.08, Joseph Wenninger:
+- CSS3 media queries
+
+-->
+
+<language name="CSS" version="9" kateversion="5.0" section="Markup" extensions="*.css" indenter="cstyle" mimetype="text/css" author="Wilbert Berendsen (wilbert@kde.nl)" license="LGPL" priority="10">
+    <!-- https://www.w3.org/Style/CSS/current-work -->
+
+    <highlighting>
+        <list name="properties">
+            <!-- W3C > Work Draft, from https://www.w3.org/Style/CSS/all-properties -->
+            <item>align-content</item>
+            <item>align-items</item>
+            <item>alignment-baseline</item>
+            <item>align-self</item>
+            <item>all</item>
+            <item>animation</item>
+            <item>animation-delay</item>
+            <item>animation-direction</item>
+            <item>animation-duration</item>
+            <item>animation-fill-mode</item>
+            <item>animation-iteration-count</item>
+            <item>animation-name</item>
+            <item>animation-play-state</item>
+            <item>animation-timing-function</item>
+            <item>appearance</item>
+            <item>azimuth</item>
+            <item>backface-visibility</item>
+            <item>background</item>
+            <item>background-attachment</item>
+            <item>background-blend-mode</item>
+            <item>background-clip</item>
+            <item>background-color</item>
+            <item>background-image</item>
+            <item>background-image-transform</item>
+            <item>background-origin</item>
+            <item>background-position</item>
+            <item>background-repeat</item>
+            <item>background-size</item>
+            <item>baseline-shift</item>
+            <item>block-size</item>
+            <item>block-step</item>
+            <item>block-step-align</item>
+            <item>block-step-insert</item>
+            <item>block-step-round</item>
+            <item>block-step-size</item>
+            <item>bookmark-label</item>
+            <item>bookmark-level</item>
+            <item>bookmark-state</item>
+            <item>border</item>
+            <item>border-block</item>
+            <item>border-block-color</item>
+            <item>border-block-end</item>
+            <item>border-block-end-color</item>
+            <item>border-block-end-style</item>
+            <item>border-block-end-width</item>
+            <item>border-block-start</item>
+            <item>border-block-start-color</item>
+            <item>border-block-start-style</item>
+            <item>border-block-start-width</item>
+            <item>border-block-style</item>
+            <item>border-block-width</item>
+            <item>border-bottom</item>
+            <item>border-bottom-color</item>
+            <item>border-bottom-left-radius</item>
+            <item>border-bottom-right-radius</item>
+            <item>border-bottom-style</item>
+            <item>border-bottom-width</item>
+            <item>border-boundary</item>
+            <item>border-collapse</item>
+            <item>border-color</item>
+            <item>border-image</item>
+            <item>border-image-outset</item>
+            <item>border-image-repeat</item>
+            <item>border-image-slice</item>
+            <item>border-image-source</item>
+            <item>border-image-transform</item>
+            <item>border-image-width</item>
+            <item>border-inline</item>
+            <item>border-inline-color</item>
+            <item>border-inline-end</item>
+            <item>border-inline-end-color</item>
+            <item>border-inline-end-style</item>
+            <item>border-inline-end-width</item>
+            <item>border-inline-start</item>
+            <item>border-inline-start-color</item>
+            <item>border-inline-start-style</item>
+            <item>border-inline-start-width</item>
+            <item>border-inline-style</item>
+            <item>border-inline-width</item>
+            <item>border-left</item>
+            <item>border-left-color</item>
+            <item>border-left-style</item>
+            <item>border-left-width</item>
+            <item>border-radius</item>
+            <item>border-right</item>
+            <item>border-right-color</item>
+            <item>border-right-style</item>
+            <item>border-right-width</item>
+            <item>border-spacing</item>
+            <item>border-style</item>
+            <item>border-top</item>
+            <item>border-top-color</item>
+            <item>border-top-left-radius</item>
+            <item>border-top-right-radius</item>
+            <item>border-top-style</item>
+            <item>border-top-width</item>
+            <item>border-width</item>
+            <item>bottom</item>
+            <item>box-decoration-break</item>
+            <item>box-shadow</item>
+            <item>box-sizing</item>
+            <item>box-snap</item>
+            <item>break-after</item>
+            <item>break-before</item>
+            <item>break-inside</item>
+            <item>caption-side</item>
+            <item>caret</item>
+            <item>caret-color</item>
+            <item>caret-shape</item>
+            <item>clear</item>
+            <item>clip</item>
+            <item>clip-path</item>
+            <item>clip-rule</item>
+            <item>color</item>
+            <item>color-adjust</item>
+            <item>color-interpolation-filters</item>
+            <item>columns</item>
+            <item>column-count</item>
+            <item>column-fill</item>
+            <item>column-gap</item>
+            <item>column-rule</item>
+            <item>column-rule-color</item>
+            <item>column-rule-style</item>
+            <item>column-rule-width</item>
+            <item>column-span</item>
+            <item>column-width</item>
+            <item>contain</item>
+            <item>content</item>
+            <item>continue</item>
+            <item>counter-increment</item>
+            <item>counter-reset</item>
+            <item>counter-set</item>
+            <item>cue</item>
+            <item>cue-after</item>
+            <item>cue-before</item>
+            <item>cursor</item>
+            <item>direction</item>
+            <item>display</item>
+            <item>dominant-baseline</item>
+            <item>elevation</item>
+            <item>empty-cells</item>
+            <item>fill</item>
+            <item>fill-break</item>
+            <item>fill-color</item>
+            <item>fill-image</item>
+            <item>fill-opacity</item>
+            <item>fill-origin</item>
+            <item>fill-position</item>
+            <item>fill-repeat</item>
+            <item>fill-rule</item>
+            <item>fill-size</item>
+            <item>filter</item>
+            <item>flex</item>
+            <item>flex-basis</item>
+            <item>flex-direction</item>
+            <item>flex-flow</item>
+            <item>flex-grow</item>
+            <item>flex-shrink</item>
+            <item>flex-wrap</item>
+            <item>float</item>
+            <item>float-defer</item>
+            <item>float-offset</item>
+            <item>float-reference</item>
+            <item>flood-color</item>
+            <item>flood-opacity</item>
+            <item>flow-from</item>
+            <item>flow-into</item>
+            <item>font</item>
+            <item>font-family</item>
+            <item>font-feature-settings</item>
+            <item>font-kerning</item>
+            <item>font-language-override</item>
+            <item>font-max-size</item>
+            <item>font-min-size</item>
+            <item>font-optical-sizing</item>
+            <item>font-palette</item>
+            <item>font-size</item>
+            <item>font-size-adjust</item>
+            <item>font-stretch</item>
+            <item>font-style</item>
+            <item>font-synthesis</item>
+            <item>font-variant</item>
+            <item>font-variant-alternates</item>
+            <item>font-variant-caps</item>
+            <item>font-variant-east-asian</item>
+            <item>font-variant-emoji</item>
+            <item>font-variant-ligatures</item>
+            <item>font-variant-numeric</item>
+            <item>font-variant-position</item>
+            <item>font-variation-settings</item>
+            <item>font-weight</item>
+            <item>footnote-display</item>
+            <item>footnote-policy</item>
+            <item>gap</item>
+            <item>glyph-orientation-vertical</item>
+            <item>grid</item>
+            <item>grid-area</item>
+            <item>grid-auto-columns</item>
+            <item>grid-auto-flow</item>
+            <item>grid-auto-rows</item>
+            <item>grid-column</item>
+            <item>grid-column-end</item>
+            <item>grid-column-gap</item>
+            <item>grid-column-start</item>
+            <item>grid-gap</item>
+            <item>grid-row</item>
+            <item>grid-row-end</item>
+            <item>grid-row-gap</item>
+            <item>grid-row-start</item>
+            <item>grid-template</item>
+            <item>grid-template-areas</item>
+            <item>grid-template-columns</item>
+            <item>grid-template-rows</item>
+            <item>hanging-punctuation</item>
+            <item>height</item>
+            <item>hyphenate-character</item>
+            <item>hyphenate-limit-chars</item>
+            <item>hyphenate-limit-last</item>
+            <item>hyphenate-limit-lines</item>
+            <item>hyphenate-limit-zone</item>
+            <item>hyphens</item>
+            <item>image-orientation</item>
+            <item>image-rendering</item>
+            <item>image-resolution</item>
+            <item>initial-letter</item>
+            <item>initial-letter-align</item>
+            <item>initial-letter-wrap</item>
+            <item>inline-size</item>
+            <item>inset</item>
+            <item>inset-block</item>
+            <item>inset-block-end</item>
+            <item>inset-block-start</item>
+            <item>inset-inline</item>
+            <item>inset-inline-end</item>
+            <item>inset-inline-start</item>
+            <item>isolation</item>
+            <item>justify-content</item>
+            <item>justify-items</item>
+            <item>justify-self</item>
+            <item>left</item>
+            <item>letter-spacing</item>
+            <item>lighting-color</item>
+            <item>line-break</item>
+            <item>line-grid</item>
+            <item>line-height</item>
+            <item>line-height-step</item>
+            <item>line-snap</item>
+            <item>list-style</item>
+            <item>list-style-image</item>
+            <item>list-style-position</item>
+            <item>list-style-type</item>
+            <item>margin</item>
+            <item>margin-block</item>
+            <item>margin-block-end</item>
+            <item>margin-block-start</item>
+            <item>margin-bottom</item>
+            <item>margin-inline</item>
+            <item>margin-inline-end</item>
+            <item>margin-inline-start</item>
+            <item>margin-left</item>
+            <item>margin-right</item>
+            <item>margin-top</item>
+            <item>marker</item>
+            <item>marker-end</item>
+            <item>marker-knockout-left</item>
+            <item>marker-knockout-right</item>
+            <item>marker-mid</item>
+            <item>marker-pattern</item>
+            <item>marker-segment</item>
+            <item>marker-side</item>
+            <item>marker-start</item>
+            <item>marquee-direction</item>
+            <item>marquee-loop</item>
+            <item>marquee-speed</item>
+            <item>marquee-style</item>
+            <item>mask</item>
+            <item>mask-border</item>
+            <item>mask-border-mode</item>
+            <item>mask-border-outset</item>
+            <item>mask-border-repeat</item>
+            <item>mask-border-slice</item>
+            <item>mask-border-source</item>
+            <item>mask-border-width</item>
+            <item>mask-clip</item>
+            <item>mask-composite</item>
+            <item>mask-image</item>
+            <item>mask-mode</item>
+            <item>mask-origin</item>
+            <item>mask-position</item>
+            <item>mask-repeat</item>
+            <item>mask-size</item>
+            <item>mask-type</item>
+            <item>max-block-size</item>
+            <item>max-height</item>
+            <item>max-inline-size</item>
+            <item>max-lines</item>
+            <item>max-width</item>
+            <item>min-block-size</item>
+            <item>min-height</item>
+            <item>min-inline-size</item>
+            <item>min-width</item>
+            <item>mix-blend-mode</item>
+            <item>nav-up</item>
+            <item>nav-down</item>
+            <item>nav-left</item>
+            <item>nav-right</item>
+            <item>object-fit</item>
+            <item>object-position</item>
+            <item>offset</item>
+            <item>offset-after</item>
+            <item>offset-anchor</item>
+            <item>offset-before</item>
+            <item>offset-distance</item>
+            <item>offset-end</item>
+            <item>offset-path</item>
+            <item>offset-position</item>
+            <item>offset-rotate</item>
+            <item>offset-start</item>
+            <item>opacity</item>
+            <item>order</item>
+            <item>orphans</item>
+            <item>outline</item>
+            <item>outline-color</item>
+            <item>outline-offset</item>
+            <item>outline-style</item>
+            <item>outline-width</item>
+            <item>overflow</item>
+            <item>overflow-style</item>
+            <item>overflow-wrap</item>
+            <item>overflow-x</item>
+            <item>overflow-y</item>
+            <item>padding</item>
+            <item>padding-block</item>
+            <item>padding-block-end</item>
+            <item>padding-block-start</item>
+            <item>padding-bottom</item>
+            <item>padding-inline</item>
+            <item>padding-inline-end</item>
+            <item>padding-inline-start</item>
+            <item>padding-left</item>
+            <item>padding-right</item>
+            <item>padding-top</item>
+            <item>page</item>
+            <item>page-break-after</item>
+            <item>page-break-before</item>
+            <item>page-break-inside</item>
+            <item>pause</item>
+            <item>pause-after</item>
+            <item>pause-before</item>
+            <item>perspective</item>
+            <item>perspective-origin</item>
+            <item>pitch</item>
+            <item>pitch-range</item>
+            <item>place-content</item>
+            <item>place-items</item>
+            <item>place-self</item>
+            <item>play-during</item>
+            <item>pointer-events</item>
+            <item>position</item>
+            <item>quotes</item>
+            <item>region-fragment</item>
+            <item>resize</item>
+            <item>richness</item>
+            <item>right</item>
+            <item>rotation</item>
+            <item>rotation-point</item>
+            <item>row-gap</item>
+            <item>ruby-align</item>
+            <item>ruby-merge</item>
+            <item>ruby-position</item>
+            <item>running</item>
+            <item>scrollbar-gutter</item>
+            <item>shape-image-threshold</item>
+            <item>shape-inside</item>
+            <item>shape-margin</item>
+            <item>shape-outside</item>
+            <item>size</item>
+            <item>speak</item>
+            <item>speak-header</item>
+            <item>speak-numeral</item>
+            <item>speak-punctuation</item>
+            <item>speech-rate</item>
+            <item>stress</item>
+            <item>string-set</item>
+            <item>table-layout</item>
+            <item>tab-size</item>
+            <item>text-align-all</item>
+            <item>text-align</item>
+            <item>text-align-last</item>
+            <item>text-combine-upright</item>
+            <item>text-decoration-color</item>
+            <item>text-decoration</item>
+            <item>text-decoration-line</item>
+            <item>text-decoration-skip</item>
+            <item>text-decoration-skip-ink</item>
+            <item>text-decoration-style</item>
+            <item>text-decoration-width</item>
+            <item>text-emphasis</item>
+            <item>text-emphasis-color</item>
+            <item>text-emphasis-position</item>
+            <item>text-emphasis-skip</item>
+            <item>text-emphasis-style</item>
+            <item>text-indent</item>
+            <item>text-justify</item>
+            <item>text-orientation</item>
+            <item>text-overflow</item>
+            <item>text-shadow</item>
+            <item>text-space-collapse</item>
+            <item>text-space-trim</item>
+            <item>text-spacing</item>
+            <item>text-transform</item>
+            <item>text-underline-offset</item>
+            <item>text-underline-position</item>
+            <item>text-wrap</item>
+            <item>top</item>
+            <item>transform</item>
+            <item>transform-box</item>
+            <item>transform-origin</item>
+            <item>transform-style</item>
+            <item>transition</item>
+            <item>transition-delay</item>
+            <item>transition-duration</item>
+            <item>transition-property</item>
+            <item>transition-timing-function</item>
+            <item>unicode-bidi</item>
+            <item>user-select</item>
+            <item>vertical-align</item>
+            <item>visibility</item>
+            <item>voice-family</item>
+            <item>volume</item>
+            <item>white-space</item>
+            <item>widows</item>
+            <item>width</item>
+            <item>will-change</item>
+            <item>word-break</item>
+            <item>word-spacing</item>
+            <item>word-wrap</item>
+            <item>wrap-after</item>
+            <item>wrap-before</item>
+            <item>wrap-flow</item>
+            <item>wrap-inside</item>
+            <item>wrap-through</item>
+            <item>writing-mode</item>
+            <item>z-index</item>
+
+            <!-- Gecko rendering engine CSS property extensions -->
+            <item>-moz-animation</item>
+            <item>-moz-animation-delay</item>
+            <item>-moz-animation-direction</item>
+            <item>-moz-animation-duration</item>
+            <item>-moz-animation-fill-mode</item>
+            <item>-moz-animation-iteration-count</item>
+            <item>-moz-animation-name</item>
+            <item>-moz-animation-play-state</item>
+            <item>-moz-animation-timing-function</item>
+            <item>-moz-appearance</item>
+            <item>-moz-background-clip</item>
+            <item>-moz-background-origin</item>
+            <item>-moz-background-size</item>
+            <item>-moz-border-image</item>
+            <item>-moz-border-radius</item>
+            <item>-moz-border-radius-bottomleft</item>
+            <item>-moz-border-radius-bottomright</item>
+            <item>-moz-border-radius-topleft</item>
+            <item>-moz-border-radius-topright</item>
+            <item>-moz-box-align</item>
+            <item>-moz-box-direction</item>
+            <item>-moz-box-flex</item>
+            <item>-moz-box-flex-group</item>
+            <item>-moz-box-ordinal-group</item>
+            <item>-moz-box-orient</item>
+            <item>-moz-box-pack</item>
+            <item>-moz-box-shadow</item>
+            <item>-moz-box-sizing</item>
+            <item>-moz-box</item>
+            <item>-moz-column-count</item>
+            <item>-moz-column-fill</item>
+            <item>-moz-column-gap</item>
+            <item>-moz-column-rule</item>
+            <item>-moz-column-rule-color</item>
+            <item>-moz-column-rule-style</item>
+            <item>-moz-column-rule-width</item>
+            <item>-moz-columns</item>
+            <item>-moz-column-width</item>
+            <item>-moz-hyphens</item>
+            <item>-moz-opacity</item>
+            <item>-moz-outline-style</item>
+            <item>-moz-perspective</item>
+            <item>-moz-resize</item>
+            <item>-moz-text-align-last</item>
+            <item>-moz-text-decoration-color</item>
+            <item>-moz-text-decoration-line</item>
+            <item>-moz-text-decoration-style</item>
+            <item>-moz-transform</item>
+            <item>-moz-transform-origin</item>
+            <item>-moz-transform-style</item>
+            <item>-moz-transition</item>
+            <item>-moz-transition-delay</item>
+            <item>-moz-transition-duration</item>
+            <item>-moz-transition-property</item>
+            <item>-moz-transition-timing-function</item>
+            <item>-moz-user-select</item>
+
+            <!-- Opera rendering engine CSS property extensions -->
+            <item>-o-background-size</item>
+            <item>-o-linear-gradient</item>
+            <item>-o-text-overflow</item>
+            <item>-o-transition</item>
+            <item>-o-transform-origin</item>
+
+            <!-- konq specific -->
+            <item>konq_bgpos_x</item>
+            <item>konq_bgpos_y</item>
+            <item>-khtml-background-size</item>
+            <item>-khtml-border-top-left-radius</item>
+            <item>-khtml-border-top-right-radius</item>
+            <item>-khtml-border-bottom-left-radius</item>
+            <item>-khtml-border-bottom-right-radius</item>
+            <item>-khtml-border-radius</item>
+            <item>-khtml-box-shadow</item>
+            <item>-khtml-opacity</item>
+
+            <!-- Webkit rendering engine CSS property extensions -->
+            <item>-webkit-appearance</item>
+            <item>-webkit-animation</item>
+            <item>-webkit-animation-name</item>
+            <item>-webkit-animation-duration</item>
+            <item>-webkit-animation-iteration</item>
+            <item>-webkit-animation-direction</item>
+            <item>-webkit-animation-delay</item>
+            <item>-webkit-animation-play-state</item>
+            <item>-webkit-animation-fill-mode</item>
+            <item>-webkit-background-size</item>
+            <item>-webkit-backface-visibility</item>
+            <item>-webkit-border-image</item>
+            <item>-webkit-border-bottom-colors</item>
+            <item>-webkit-border-left-colors</item>
+            <item>-webkit-border-radius</item>
+            <item>-webkit-border-right-colors</item>
+            <item>-webkit-border-top-colors</item>
+            <item>-webkit-border-top-left-radius</item>
+            <item>-webkit-border-top-right-radius</item>
+            <item>-webkit-border-bottom-left-radius</item>
+            <item>-webkit-border-bottom-right-radius</item>
+            <item>-webkit-border-radius-bottomleft</item>
+            <item>-webkit-border-radius-bottomright</item>
+            <item>-webkit-box-align</item>
+            <item>-webkit-box-direction</item>
+            <item>-webkit-box-flex</item>
+            <item>-webkit-box-ordinal-group</item>
+            <item>-webkit-box-orient</item>
+            <item>-webkit-box-pack</item>
+            <item>-webkit-box-reflect</item>
+            <item>-webkit-box-shadow</item>
+            <item>-webkit-box-sizing</item>
+            <item>-webkit-column-count</item>
+            <item>-webkit-column-gap</item>
+            <item>-webkit-hyphens</item>
+            <item>-webkit-linear-gradient</item>
+            <item>-webkit-gradient</item>
+            <item>-webkit-overflow-scrolling</item>
+            <item>-webkit-perspective</item>
+            <item>-webkit-text-decoration</item>
+            <item>-webkit-text-decoration-skip</item>
+            <item>-webkit-text-fill-color</item>
+            <item>-webkit-text-stroke-color</item>
+            <item>-webkit-text-stroke-width</item>
+            <item>-webkit-text-size-adjust</item>
+            <item>-webkit-tap-highlight-color</item>
+            <item>-webkit-transform</item>
+            <item>-webkit-transform-origin</item>
+            <item>-webkit-transform-style</item>
+            <item>-webkit-transition</item>
+            <item>-webkit-transition-property</item>
+            <item>-webkit-transition-delay</item>
+            <item>-webkit-transition-duration</item>
+            <item>-webkit-user-select</item>
+
+            <!-- Trident (a.k.a., MSHTML) CSS property extensions -->
+            <item>zoom</item>
+            <item>-ms-animation-name</item>
+            <item>-ms-animation-duration</item>
+            <item>-ms-animation-iteration</item>
+            <item>-ms-animation-direction</item>
+            <item>-ms-animation-delay</item>
+            <item>-ms-animation-play-state</item>
+            <item>-ms-animation-fill-mode</item>
+            <item>-ms-box-sizing</item>
+            <item>-ms-filter</item>
+            <item>-ms-flex</item>
+            <item>-ms-flex-align</item>
+            <item>-ms-flex-direction</item>
+            <item>-ms-flex-flow</item>
+            <item>-ms-flex-item-align</item>
+            <item>-ms-flex-line-pack</item>
+            <item>-ms-flex-negative</item>
+            <item>-ms-flex-order</item>
+            <item>-ms-flex-pack</item>
+            <item>-ms-flex-positive</item>
+            <item>-ms-flex-position</item>
+            <item>-ms-flex-preferred-size</item>
+            <item>-ms-flex-wrap</item>
+            <item>-ms-interpolation-mode</item>
+            <item>-ms-linear-gradient</item>
+            <item>-ms-overflow-style</item>
+            <item>-ms-text-size-adjust</item>
+            <item>-ms-transform</item>
+            <item>-ms-transition</item>
+            <item>-ms-user-select</item>
+        </list>
+
+        <list name="value keywords">
+            <item>inherit</item>
+            <item>unset</item>
+            <item>auto</item>
+            <!-- <item>revert</item> -->
+        </list>
+
+        <list name="values">
+            <item>none</item>
+            <item>hidden</item>
+            <item>dotted</item>
+            <item>dashed</item>
+            <item>solid</item>
+            <item>double</item>
+            <item>groove</item>
+            <item>ridge</item>
+            <item>inset</item>
+            <item>outset</item>
+            <item>xx-small</item>
+            <item>x-small</item>
+            <item>small</item>
+            <item>medium</item>
+            <item>large</item>
+            <item>x-large</item>
+            <item>xx-large</item>
+            <item>smaller</item>
+            <item>larger</item>
+            <item>italic</item>
+            <item>oblique</item>
+            <item>small-caps</item>
+            <item>normal</item>
+            <item>bold</item>
+            <item>bolder</item>
+            <item>lighter</item>
+            <item>light</item>
+            <item>transparent</item>
+            <item>repeat</item>
+            <item>repeat-x</item>
+            <item>repeat-y</item>
+            <item>no-repeat</item>
+            <item>baseline</item>
+            <item>sub</item>
+            <item>super</item>
+            <item>top</item>
+            <item>text-top</item>
+            <item>middle</item>
+            <item>bottom</item>
+            <item>text-bottom</item>
+            <item>left</item>
+            <item>right</item>
+            <item>center</item>
+            <item>justify</item>
+            <item>konq-center</item>
+            <item>disc</item>
+            <item>circle</item>
+            <item>square</item>
+            <item>box</item>
+            <item>decimal</item>
+            <item>decimal-leading-zero</item>
+            <item>lower-roman</item>
+            <item>upper-roman</item>
+            <item>lower-greek</item>
+            <item>lower-alpha</item>
+            <item>lower-latin</item>
+            <item>upper-alpha</item>
+            <item>upper-latin</item>
+            <item>hebrew</item>
+            <item>armenian</item>
+            <item>georgian</item>
+            <item>cjk-ideographic</item>
+            <item>hiragana</item>
+            <item>katakana</item>
+            <item>hiragana-iroha</item>
+            <item>katakana-iroha</item>
+            <item>inline</item>
+            <item>inline-block</item>
+            <item>block</item>
+            <item>list-item</item>
+            <item>run-in</item>
+            <item>compact</item>
+            <item>marker</item>
+            <item>table</item>
+            <item>inline-table</item>
+            <item>table-row-group</item>
+            <item>table-header-group</item>
+            <item>table-footer-group</item>
+            <item>table-row</item>
+            <item>table-column-group</item>
+            <item>table-column</item>
+            <item>table-cell</item>
+            <item>table-caption</item>
+            <item>crosshair</item>
+            <item>default</item>
+            <item>pointer</item>
+            <item>move</item>
+            <item>e-resize</item>
+            <item>ne-resize</item>
+            <item>nw-resize</item>
+            <item>n-resize</item>
+            <item>se-resize</item>
+            <item>sw-resize</item>
+            <item>s-resize</item>
+            <item>w-resize</item>
+            <item>text</item>
+            <item>wait</item>
+            <item>help</item>
+            <item>above</item>
+            <item>absolute</item>
+            <item>always</item>
+            <item>avoid</item>
+            <item>below</item>
+            <item>bidi-override</item>
+            <item>blink</item>
+            <item>both</item>
+            <item>capitalize</item>
+            <item>caption</item>
+            <item>clip</item>
+            <item>close-quote</item>
+            <item>collapse</item>
+            <item>condensed</item>
+            <item>crop</item>
+            <item>cross</item>
+            <item>ellipsis</item>
+            <item>ellipsis-word</item>
+            <item>embed</item>
+            <item>expanded</item>
+            <item>extra-condensed</item>
+            <item>extra-expanded</item>
+            <item>fixed</item>
+            <item>hand</item>
+            <item>hide</item>
+            <item>higher</item>
+            <item>icon</item>
+            <item>inside</item>
+            <item>invert</item>
+            <item>landscape</item>
+            <item>level</item>
+            <item>line-through</item>
+            <item>loud</item>
+            <item>lower</item>
+            <item>lowercase</item>
+            <item>ltr</item>
+            <item>menu</item>
+            <item>message-box</item>
+            <item>mix</item>
+            <item>narrower</item>
+            <item>no-close-quote</item>
+            <item>no-open-quote</item>
+            <item>nowrap</item>
+            <item>open-quote</item>
+            <item>outside</item>
+            <item>overline</item>
+            <item>portrait</item>
+            <item>pre</item>
+            <item>pre-line</item>
+            <item>pre-wrap</item>
+            <item>relative</item>
+            <item>rtl</item>
+            <item>scroll</item>
+            <item>semi-condensed</item>
+            <item>semi-expanded</item>
+            <item>separate</item>
+            <item>show</item>
+            <item>small-caption</item>
+            <item>static</item>
+            <item>static-position</item>
+            <item>status-bar</item>
+            <item>thick</item>
+            <item>thin</item>
+            <item>ultra-condensed</item>
+            <item>ultra-expanded</item>
+            <item>underline</item>
+            <item>uppercase</item>
+            <item>visible</item>
+            <item>wider</item>
+            <item>break</item>
+            <item>serif</item>
+            <item>sans-serif</item>
+            <item>cursive</item>
+            <item>fantasy</item>
+            <item>monospace</item>
+            <item>border-box</item>
+            <item>content-box</item>
+            <item>-epub-hyphens</item>
+            <item>contain</item>
+            <item>cover</item>
+
+            <!-- transition and animation -->
+            <item>all</item>
+            <item>ease</item>
+            <item>ease-in</item>
+            <item>ease-out</item>
+            <item>ease-in-out</item>
+            <item>step-start</item>
+            <item>step-end</item>
+            <item>linear</item>
+
+            <!-- animation -->
+            <item>infinite</item>
+            <item>reverse</item>
+            <item>alternate</item>
+            <item>alternate-reverse</item>
+            <item>forwards</item>
+            <item>backwards</item>
+            <item>running</item>
+            <item>paused</item>
+        </list>
+
+        <list name="colors">
+            <item>black</item>
+            <item>silver</item>
+            <item>gray</item>
+            <item>white</item>
+            <item>maroon</item>
+            <item>red</item>
+            <item>purple</item>
+            <item>fuchsia</item>
+            <item>green</item>
+            <item>lime</item>
+            <item>olive</item>
+            <item>yellow</item>
+            <item>navy</item>
+            <item>blue</item>
+            <item>teal</item>
+            <item>aqua</item>
+            <item>orange</item>
+            <item>aliceblue</item>
+            <item>antiquewhite</item>
+            <item>aquamarine</item>
+            <item>azure</item>
+            <item>beige</item>
+            <item>bisque</item>
+            <item>blanchedalmond</item>
+            <item>blueviolet</item>
+            <item>brown</item>
+            <item>burlywood</item>
+            <item>cadetblue</item>
+            <item>chartreuse</item>
+            <item>chocolate</item>
+            <item>coral</item>
+            <item>cornflowerblue</item>
+            <item>cornsilk</item>
+            <item>crimson</item>
+            <item>cyan</item>
+            <item>aqua</item>
+            <item>darkblue</item>
+            <item>darkcyan</item>
+            <item>darkgoldenrod</item>
+            <item>darkgray</item>
+            <item>darkgreen</item>
+            <item>darkgrey</item>
+            <item>darkkhaki</item>
+            <item>darkmagenta</item>
+            <item>darkolivegreen</item>
+            <item>darkorange</item>
+            <item>darkorchid</item>
+            <item>darkred</item>
+            <item>darksalmon</item>
+            <item>darkseagreen</item>
+            <item>darkslateblue</item>
+            <item>darkslategray</item>
+            <item>darkslategrey</item>
+            <item>darkturquoise</item>
+            <item>darkviolet</item>
+            <item>deeppink</item>
+            <item>deepskyblue</item>
+            <item>dimgray</item>
+            <item>dimgrey</item>
+            <item>dodgerblue</item>
+            <item>firebrick</item>
+            <item>floralwhite</item>
+            <item>forestgreen</item>
+            <item>gainsboro</item>
+            <item>ghostwhite</item>
+            <item>gold</item>
+            <item>goldenrod</item>
+            <item>greenyellow</item>
+            <item>grey</item>
+            <item>honeydew</item>
+            <item>hotpink</item>
+            <item>indianred</item>
+            <item>indigo</item>
+            <item>ivory</item>
+            <item>khaki</item>
+            <item>lavender</item>
+            <item>lavenderblush</item>
+            <item>lawngreen</item>
+            <item>lemonchiffon</item>
+            <item>lightblue</item>
+            <item>lightcoral</item>
+            <item>lightcyan</item>
+            <item>lightgoldenrodyellow</item>
+            <item>lightgray</item>
+            <item>lightgreen</item>
+            <item>lightgrey</item>
+            <item>lightpink</item>
+            <item>lightsalmon</item>
+            <item>lightseagreen</item>
+            <item>lightskyblue</item>
+            <item>lightslategray</item>
+            <item>lightslategrey</item>
+            <item>lightsteelblue</item>
+            <item>lightyellow</item>
+            <item>limegreen</item>
+            <item>linen</item>
+            <item>magenta</item>
+            <item>fuchsia</item>
+            <item>mediumaquamarine</item>
+            <item>mediumblue</item>
+            <item>mediumorchid</item>
+            <item>mediumpurple</item>
+            <item>mediumseagreen</item>
+            <item>mediumslateblue</item>
+            <item>mediumspringgreen</item>
+            <item>mediumturquoise</item>
+            <item>mediumvioletred</item>
+            <item>midnightblue</item>
+            <item>mintcream</item>
+            <item>mistyrose</item>
+            <item>moccasin</item>
+            <item>navajowhite</item>
+            <item>oldlace</item>
+            <item>olivedrab</item>
+            <item>orangered</item>
+            <item>orchid</item>
+            <item>palegoldenrod</item>
+            <item>palegreen</item>
+            <item>paleturquoise</item>
+            <item>palevioletred</item>
+            <item>papayawhip</item>
+            <item>peachpuff</item>
+            <item>peru</item>
+            <item>pink</item>
+            <item>plum</item>
+            <item>powderblue</item>
+            <item>rosybrown</item>
+            <item>royalblue</item>
+            <item>saddlebrown</item>
+            <item>salmon</item>
+            <item>sandybrown</item>
+            <item>seagreen</item>
+            <item>seashell</item>
+            <item>sienna</item>
+            <item>skyblue</item>
+            <item>slateblue</item>
+            <item>slategray</item>
+            <item>slategrey</item>
+            <item>snow</item>
+            <item>springgreen</item>
+            <item>steelblue</item>
+            <item>tan</item>
+            <item>thistle</item>
+            <item>tomato</item>
+            <item>turquoise</item>
+            <item>violet</item>
+            <item>wheat</item>
+            <item>whitesmoke</item>
+            <item>yellowgreen</item>
+            <item>rebeccapurple</item>
+
+            <item>ActiveBorder</item>
+            <item>ActiveCaption</item>
+            <item>AppWorkspace</item>
+            <item>Background</item>
+            <item>ButtonFace</item>
+            <item>ButtonHighlight</item>
+            <item>ButtonShadow</item>
+            <item>ButtonText</item>
+            <item>CaptionText</item>
+            <item>GrayText</item>
+            <item>Highlight</item>
+            <item>HighlightText</item>
+            <item>InactiveBorder</item>
+            <item>InactiveCaption</item>
+            <item>InactiveCaptionText</item>
+            <item>InfoBackground</item>
+            <item>InfoText</item>
+            <item>Menu</item>
+            <item>MenuText</item>
+            <item>Scrollbar</item>
+            <item>ThreeDDarkShadow</item>
+            <item>ThreeDFace</item>
+            <item>ThreeDHighlight</item>
+            <item>ThreeDLightShadow</item>
+            <item>ThreeDShadow</item>
+            <item>Window</item>
+            <item>WindowFrame</item>
+            <item>WindowText</item>
+        </list>
+
+        <list name="functions">
+            <item>attr</item>
+            <item>calc</item>
+            <item>hsl</item>
+            <item>hsla</item>
+            <item>linear-gradient</item>
+            <item>radial-gradient</item>
+            <item>repeating-linear-gradient</item>
+            <item>repeating-radial-gradient</item>
+            <item>rgb</item>
+            <item>rgba</item>
+            <item>var</item>
+            <item>url</item>
+
+            <!-- clip -->
+            <item>rect</item>
+
+            <!-- shape-outside and clip-path -->
+            <item>inset</item>
+            <item>circle</item>
+            <item>ellipse</item>
+            <item>polygon</item>
+
+            <!-- filter and backdrop-filter -->
+            <item>blur</item>
+            <item>brightness</item>
+            <item>contrast</item>
+            <item>drop-shadow</item>
+            <item>grayscale</item>
+            <item>hue-rotate</item>
+            <item>invert</item>
+            <item>opacity</item>
+            <item>saturate</item>
+            <item>sepia</item>
+
+            <!-- grid-template-columns and grid-template-rows -->
+            <item>max-content</item>
+            <item>min-content</item>
+            <item>minmax</item>
+            <item>fix-content</item>
+            <item>repeat</item>
+
+            <!-- transition and animation -->
+            <item>cubic-bezier</item>
+            <item>frames</item>
+            <item>steps</item>
+
+            <!-- transform -->
+            <item>matrix</item>
+            <item>matrix3d</item>
+            <item>perspective</item>
+            <item>rotate</item>
+            <item>rotate3d</item>
+            <item>rotateX</item>
+            <item>rotateY</item>
+            <item>rotateZ</item>
+            <item>scale</item>
+            <item>scale3d</item>
+            <item>scaleX</item>
+            <item>scaleY</item>
+            <item>scaleZ</item>
+            <item>skew</item>
+            <item>skewX</item>
+            <item>skewY</item>
+            <item>translate</item>
+            <item>translate3d</item>
+            <item>translateX</item>
+            <item>translateY</item>
+            <item>translateZ</item>
+
+            <!-- inner @font-face -->
+            <item>local</item>
+            <item>format</item>
+        </list>
+
+        <list name="medias">
+            <!-- types -->
+            <item>all</item>
+            <item>print</item>
+            <item>screen</item>
+            <item>speech</item>
+
+            <!-- features -->
+            <item>any-pointer</item>
+            <item>any-hover</item>
+            <item>aspect-ratio</item>
+            <item>color</item>
+            <item>color-gamut</item>
+            <item>color-index</item>
+            <item>display-mode</item>
+            <item>grid</item>
+            <item>height</item>
+            <item>hover</item>
+            <item>max-aspect-ratio</item>
+            <item>max-color</item>
+            <item>max-color-index</item>
+            <item>max-device-aspect-ratio</item>
+            <item>max-device-height</item>
+            <item>max-device-width</item>
+            <item>max-height</item>
+            <item>max-monochrome</item>
+            <item>max-resolution</item>
+            <item>max-width</item>
+            <item>min-aspect-ratio</item>
+            <item>min-color</item>
+            <item>min-color-index</item>
+            <item>min-device-aspect-ratio</item>
+            <item>min-device-height</item>
+            <item>min-device-width</item>
+            <item>min-height</item>
+            <item>min-monochrome</item>
+            <item>min-resolution</item>
+            <item>min-width</item>
+            <item>monochrome</item>
+            <item>orientation</item>
+            <item>pointer</item>
+            <item>resolution</item>
+            <item>scan</item>
+            <item>update</item>
+            <item>width</item>
+        </list>
+
+        <!-- prefixed by :: -->
+        <list name="pseudoelements">
+            <item>after</item>
+            <item>before</item>
+            <item>cue</item>
+            <item>first-letter</item>
+            <item>first-line</item>
+            <item>selection</item>
+
+            <!-- experimental -->
+            <item>backdrop</item>
+            <item>placeholder</item>
+            <!-- <item>marker</item> -->
+            <item>slotted</item>
+            <!-- <item>spelling-error</item> -->
+            <!-- <item>grammar-error</item> -->
+
+            <!-- UI pseudo-classes -->
+            <item>value</item>
+            <item>choices</item>
+            <item>repeat-item</item>
+            <item>repeat-index</item>
+
+            <item>-moz-progress-bar</item>
+            <item>-moz-range-progress</item>
+            <item>-moz-range-thumb</item>
+            <item>-moz-range-track</item>
+            <item>-moz-selection</item>
+            <item>-ms-fill</item>
+            <item>-ms-fill-lower</item>
+            <item>-ms-fill-upper</item>
+            <item>-ms-thumb</item>
+            <item>-ms-track</item>
+            <item>-webkit-progress-bar</item>
+            <item>-webkit-progress-value</item>
+            <item>-webkit-slider-runnable-track</item>
+            <item>-webkit-slider-thumb</item>
+        </list>
+
+        <!-- prefixed by : -->
+        <list name="pseudoclasses">
+            <item>active</item>
+            <item>any-link</item>
+            <item>checked</item>
+            <item>default</item>
+            <item>defined</item>
+            <!-- <item>dir</item> -->
+            <item>disabled</item>
+            <item>empty</item>
+            <item>enabled</item>
+            <item>first-child</item>
+            <item>first-of-type</item>
+            <item>fullscreen</item>
+            <item>focus</item>
+            <item>focus-within</item>
+            <item>host</item>
+            <item>hover</item>
+            <item>in-range</item>
+            <item>indeterminate</item>
+            <item>invalid</item>
+            <item>lang</item>
+            <item>last-child</item>
+            <item>last-of-type</item>
+            <item>link</item>
+            <item>not</item>
+            <item>nth-child</item>
+            <item>nth-last-child</item>
+            <item>nth-last-of-type</item>
+            <item>nth-of-type</item>
+            <item>only-child</item>
+            <item>only-of-type</item>
+            <item>optional</item>
+            <item>out-of-range</item>
+            <item>placeholder-shown</item>
+            <item>read-only</item>
+            <item>read-write</item>
+            <item>required</item>
+            <item>root</item>
+            <item>scope</item>
+            <item>target</item>
+            <item>valid</item>
+            <item>visited</item>
+
+            <!-- pseudo-elements -->
+            <item>after</item>
+            <item>before</item>
+            <item>cue</item>
+            <item>first-letter</item>
+            <item>first-line</item>
+            <item>selection</item>
+        </list>
+
+        <list name="pseudoclass-selector">
+            <item>not</item>
+            <item>matches</item>
+        </list>
+
+        <list name="pseudoclasses-@page">
+            <item>blank</item>
+            <item>first</item>
+            <item>left</item>
+            <item>recto</item>
+            <item>right</item>
+            <item>verso</item>
+        </list>
+
+        <list name="at-rules">
+            <item>@character</item>
+            <item>@charset</item>
+            <item>@import</item>
+            <item>@namespace</item>
+        </list>
+
+        <list name="nested at-rules">
+            <item>@document</item>
+            <item>@media</item>
+            <item>@supports</item>
+        </list>
+
+        <list name="@viewport">
+            <item>@viewport</item>
+        </list>
+
+        <list name="within-@viewport">
+            <item>min-width</item>
+            <item>max-width</item>
+            <item>width</item>
+            <item>min-height</item>
+            <item>max-height</item>
+            <item>height</item>
+            <item>zoom</item>
+            <item>min-zoom</item>
+            <item>max-zoom</item>
+            <item>user-zoom</item>
+            <item>orientation</item>
+            <item>viewport-fit</item>
+        </list>
+
+        <list name="@page">
+            <item>@page</item>
+        </list>
+
+        <list name="within-@page">
+            <item>size</item>
+            <item>marks</item>
+            <item>bleed</item>
+        </list>
+
+        <list name="@font-face">
+            <item>@font-face</item>
+        </list>
+
+        <list name="within-@font-face">
+            <item>font-display</item>
+            <item>font-family</item>
+            <item>font-stretch</item>
+            <item>font-style</item>
+            <item>font-weight</item>
+            <item>font-variant</item>
+            <item>font-feature-settings</item>
+            <item>font-variation-settings</item>
+            <item>src</item>
+            <item>unicode-range</item>
+        </list>
+
+        <list name="@keyframes">
+            <item>@keyframes</item>
+        </list>
+
+        <list name="within-@keyframes">
+            <item>from</item>
+            <item>to</item>
+        </list>
+
+        <list name="media operators">
+            <item>and</item>
+            <item>only</item>
+            <item>not</item>
+        </list>
+
+        <contexts>
+            <context name="Base" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <IncludeRules context="FindComments" />
+                <DetectChar attribute="Normal Text" context="RuleSet" char="{" beginRegion="ruleset" />
+                <DetectChar attribute="At Rule" context="SelectAtRule" char="@" lookAhead="true" />
+                <!-- find selectors // .class #id :hover :nth-child(2n+1) [type="search"] -->
+                <DetectChar attribute="Selector Pseudo" context="SelectorPseudo" char=":" />
+                <DetectChar attribute="Selector Attribute" context="SelectorAttr" char="[" />
+                <DetectChar attribute="Separator Symbol" context="#stay" char="," />
+                <AnyChar attribute="Operator" context="#stay" String="*>+~|" />
+                <RegExpr attribute="Selector Id" context="#stay" String="#[-]?(&nmstart;)(&nmchar;)*" />
+                <RegExpr attribute="Selector Class" context="#stay" String="\.([a-zA-Z0-9\-_]|[\x80-\xFF]|\\[0-9A-Fa-f]{1,6})*" />
+                <RegExpr attribute="Selector Tag" context="#stay" String="[-]?(&nmstart;)(&nmchar;)*" />
+            </context>
+
+            <context name="FindSelector" attribute="Normal Text" lineEndContext="#stay">
+                <IncludeRules context="FindComments" />
+                <!-- find selectors // .class #id :hover :nth-child(2n+1) [type="search"] -->
+                <DetectChar attribute="Selector Attribute" context="SelectorAttr" char="[" />
+                <DetectChar attribute="Separator Symbol" context="#stay" char="," />
+                <AnyChar attribute="Operator" context="#stay" String="*>+~|" />
+                <RegExpr attribute="Selector Id" context="#stay" String="#[-]?(&nmstart;)(&nmchar;)*" />
+                <RegExpr attribute="Selector Class" context="#stay" String="\.([a-zA-Z0-9\-_]|[\x80-\xFF]|\\[0-9A-Fa-f]{1,6})*" />
+                <RegExpr attribute="Selector Tag" context="#stay" String="[-]?(&nmstart;)(&nmchar;)*" />
+            </context>
+
+            <!-- find functions // rgba(255,255,255,0.75) -->
+            <context name="FindFunctions" attribute="Normal Text" lineEndContext="#stay">
+                <RegExpr attribute="Function" context="Function" String="[a-z\-]{2,}\(" lookAhead="true" />
+            </context>
+
+            <!-- find values //  10px 12pt 2.5em 1rem 75% #ffcc99 red solid -->
+            <context name="FindValues" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="Annotation" context="Annotation" char="!" />
+                <keyword attribute="Value Keyword" context="#stay" String="value keywords" />
+                <keyword attribute="Value" context="#stay" String="values" />
+                <keyword attribute="Color" context="#stay" String="colors" />
+                <RegExpr attribute="Color" context="#stay" String="#([0-9A-Fa-f]{3,4}){1,2}\b" />
+                <RegExpr attribute="Number" context="FindUnits" String="[-+]?([0-9]+(\.[0-9]+)?|\.[0-9]+)([eE][+-]?[0-9]+)?(?![-+])" />
+                <RegExpr attribute="Normal Text" context="#stay" String="[-]?(&nmstart;)(&nmchar;)*" />
+            </context>
+
+            <context name="Annotation" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                <WordDetect attribute="Annotation" context="#pop" String="important" />
+            </context>
+
+            <context name="FindUnits" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                <!-- https://drafts.csswg.org/css-values-4/#lengths -->
+                <RegExpr attribute="Unit" context="#stay" String="(%|(em|ex|cap|ch|ic|rem|lh|rlh|vw|vh|vi|vb|vmin|vmax|cm|mm|Q|in|pc|pt|px|deg|rad|grad|turn|s|ms|Hz|kHz|dpi|dpcm|dppx|x)\b)(?![-+])" />
+            </context>
+
+            <!-- find strings // "some words" 'some words' -->
+            <context name="FindStrings" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="String" context="StringDQ" char="&quot;" />
+                <DetectChar attribute="String" context="StringSQ" char="'" />
+            </context>
+
+            <!-- find comments // /* comment */ -->
+            <context name="FindComments" attribute="Normal Text" lineEndContext="#stay">
+                <Detect2Chars attribute="Comment" context="IsComments" char="/" char1="*" lookAhead="true"/>
+                <Detect2Chars attribute="Error" context="Error" char="/" char1="/" />
+            </context>
+
+            <context name="Error" attribute="Error" lineEndContext="#pop">
+                <RegExpr attribute="Error" context="#pop" String=".*" />
+            </context>
+
+            <context name="IsComments" attribute="Normal Text" lineEndContext="#stay">
+                <RegExpr attribute="Region Marker" context="#pop" String="/\*\s*BEGIN\b.*\*/" beginRegion="UserDefined" />
+                <RegExpr attribute="Region Marker" context="#pop" String="/\*\s*END\b.*\*/" endRegion="UserDefined" />
+                <Detect2Chars attribute="Comment" context="Comment" char="/" char1="*" beginRegion="comment" />
+            </context>
+
+            <context name="SelectAtRule" attribute="At Rule" lineEndContext="#pop">
+                <keyword attribute="At Rule" context="#pop!NestedAtRule" String="nested at-rules" />
+                <keyword attribute="At Rule" context="#pop!AtRule" String="at-rules" />
+                <keyword attribute="At Rule" context="#pop!@keyframes" String="@keyframes" />
+                <keyword attribute="At Rule" context="#pop!@viewport" String="@viewport" />
+                <keyword attribute="At Rule" context="#pop!@font-face" String="@font-face" />
+                <keyword attribute="At Rule" context="#pop!@page" String="@page" />
+                <RegExpr attribute="At Rule" context="#pop!UnknownAtRule" String="@[a-zA-Z0-9\-_]+\b" />
+            </context>
+
+            <context name="@keyframes" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <IncludeRules context="FindComments" />
+                <DetectChar attribute="Normal Text" context="Within-@keyframes" char="{" beginRegion="ruleset" />
+            </context>
+
+            <context name="Within-@keyframes" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <IncludeRules context="FindComments" />
+                <DetectChar attribute="Normal Text" context="#pop#pop" char="}" endRegion="ruleset" />
+                <DetectChar attribute="Normal Text" context="RuleSet" char="{" beginRegion="ruleset" />
+                <keyword attribute="Value" context="#stay" String="within-@keyframes" />
+                <RegExpr attribute="Value" context="#stay" String="[-+]?[0-9.]+%" />
+            </context>
+
+            <context name="@viewport" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <IncludeRules context="FindComments" />
+                <DetectChar attribute="Selector Pseudo" context="SelectorPseudo" char=":" />
+                <DetectChar attribute="Normal Text" context="#pop!Within-@viewport" char="{" beginRegion="ruleset" />
+            </context>
+
+            <context name="Within-@viewport" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <keyword attribute="Property" context="IsProperty" String="within-@viewport" />
+                <IncludeRules context="RuleSet" />
+            </context>
+
+            <context name="@font-face" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <IncludeRules context="FindComments" />
+                <DetectChar attribute="Normal Text" context="#pop!Within-@font-face" char="{" beginRegion="ruleset" />
+            </context>
+
+            <context name="Within-@font-face" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <IncludeRules context="FindComments" />
+                <keyword attribute="Property" context="IsProperty" String="within-@font-face" />
+                <RegExpr attribute="Unknown Property" context="IsProperty" String="[A-Za-z_-]+\b" />
+                <DetectChar attribute="Normal Text" context="#pop" char="}" endRegion="ruleset" />
+            </context>
+
+            <context name="@page" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <IncludeRules context="FindComments" />
+                <DetectChar attribute="Selector Pseudo" context="SelectorPseudo-@page" char=":" />
+                <DetectChar attribute="Normal Text" context="#pop!Within-@page" char="{" beginRegion="ruleset" />
+            </context>
+
+            <context name="SelectorPseudo-@page" attribute="Selector Pseudo" lineEndContext="#pop">
+                <keyword attribute="Selector Pseudo" context="#pop" String="pseudoclasses-@page" />
+                <RegExpr attribute="Selector Pseudo" context="#pop" String="[-a-zA-Z][-a-zA-Z0-9]*" />
+            </context>
+
+            <context name="Within-@page" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <keyword attribute="Property" context="IsProperty" String="within-@page" />
+                <IncludeRules context="RuleSet" />
+            </context>
+
+            <context name="IsProperty" attribute="Error" lineEndContext="#stay">
+                <DetectSpaces attribute="Normal Text" />
+                <DetectChar attribute="Normal Text" context="RuleParameters" char=":" />
+            </context>
+
+            <context name="NestedAtRule" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <DetectChar attribute="Normal Text" context="NestedBase" char="{" beginRegion="ruleset" />
+                <IncludeRules context="AtRuleValue" />
+            </context>
+
+            <context name="NestedBase" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <DetectChar attribute="Normal Text" context="#pop#pop" char="}" endRegion="ruleset" />
+                <IncludeRules context="Base" />
+            </context>
+
+            <context name="AtRule" attribute="Normal Text" lineEndContext="#pop">
+                <DetectSpaces />
+                <DetectChar attribute="Separator Symbol" context="#pop" char=";" />
+                <IncludeRules context="AtRuleValue" />
+            </context>
+
+            <context name="UnknownAtRule" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <DetectChar attribute="Separator Symbol" context="#pop" char=";" />
+                <DetectChar attribute="Normal Text" context="#pop!RuleSet" char="{" beginRegion="ruleset" />
+                <DetectChar attribute="Normal Text" context="#pop" char="}" endRegion="ruleset" />
+                <IncludeRules context="AtRuleValue" />
+            </context>
+
+            <context name="AtRuleValue" attribute="Normal Text" lineEndContext="#stay">
+                <IncludeRules context="FindComments" />
+                <IncludeRules context="FindStrings" />
+                <IncludeRules context="FindFunctions" />
+                <keyword attribute="Keyword" context="#stay" String="media operators" />
+                <RegExpr attribute="Property" context="#stay" String="[A-Za-z_-]+(?=\s*:)" />
+                <keyword attribute="Value" context="#stay" String="medias" />
+                <IncludeRules context="FindValues" />
+            </context>
+
+            <context name="SelectorAttr" attribute="Selector Attribute" lineEndContext="#stay">
+                <DetectChar attribute="Selector Attribute" context="#pop" char="]" />
+                <IncludeRules context="FindStrings" />
+                <DetectChar   attribute="Operator" context="SelectorAttrValue" char="=" />
+                <Detect2Chars attribute="Operator" context="SelectorAttrValue" char="~" char1="=" />
+                <Detect2Chars attribute="Operator" context="SelectorAttrValue" char="^" char1="=" />
+                <Detect2Chars attribute="Operator" context="SelectorAttrValue" char="$" char1="=" />
+                <Detect2Chars attribute="Operator" context="SelectorAttrValue" char="*" char1="=" />
+                <Detect2Chars attribute="Operator" context="SelectorAttrValue" char="|" char1="=" />
+                <DetectIdentifier />
+            </context>
+
+            <context name="SelectorAttrValue" attribute="String" lineEndContext="#stay">
+                <DetectChar attribute="Selector Attribute" context="#pop#pop" char="]" />
+                <DetectIdentifier />
+            </context>
+
+            <context name="SelectorPseudo" attribute="Selector Pseudo" lineEndContext="#pop">
+                <DetectChar attribute="Selector Pseudo" context="SelectorPseudoElements" char=":" />
+                <keyword attribute="Selector Pseudo" context="SelectorPseudoValueSelector" String="pseudoclass-selector" />
+                <keyword attribute="Selector Pseudo" context="SelectorPseudoValue" String="pseudoclasses" />
+                <RegExpr attribute="Selector Pseudo" context="SelectorPseudoValue" String="[-a-zA-Z][-a-zA-Z0-9]*" />
+            </context>
+
+            <context name="SelectorPseudoElements" attribute="Selector Pseudo" lineEndContext="#pop#pop">
+                <keyword attribute="Selector Pseudo" context="#pop!SelectorPseudoValue" String="pseudoelements" />
+                <RegExpr attribute="Selector Pseudo" context="#pop!SelectorPseudoValue" String="[-a-zA-Z][-a-zA-Z0-9]*" />
+            </context>
+
+            <context name="SelectorPseudoValueSelector" attribute="Selector Pseudo" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
+                <DetectChar attribute="Selector Pseudo" context="SelectorPseudoValueCloseSelector" char="(" />
+            </context>
+
+            <context name="SelectorPseudoValueCloseSelector" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <DetectChar attribute="Selector Pseudo" context="#pop#pop#pop" char=")" />
+                <DetectChar attribute="Error" context="#pop#pop#pop!RuleSet" char="{" beginRegion="ruleset" />
+                <IncludeRules context="FindSelector" />
+            </context>
+
+            <context name="SelectorPseudoValue" attribute="Selector Pseudo" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
+                <DetectChar attribute="Selector Pseudo" context="SelectorPseudoValueClose" char="(" />
+            </context>
+
+            <context name="SelectorPseudoValueClose" attribute="Selector Pseudo" lineEndContext="#pop#pop#pop">
+                <DetectChar attribute="Selector Pseudo" context="#pop#pop#pop" char=")" />
+                <DetectIdentifier />
+            </context>
+
+            <context name="Comment" attribute="Comment" lineEndContext="#stay">
+                <DetectSpaces />
+                <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/" endRegion="comment" />
+                <IncludeRules context="##Alerts" />
+                <DetectIdentifier />
+            </context>
+
+            <context name="RuleSet" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <DetectChar attribute="Normal Text" context="#pop" char="}" endRegion="ruleset" />
+                <RegExpr attribute="Property" context="Rule" String="[A-Za-z_-]+(?=\s*:)" lookAhead="true" />
+                <IncludeRules context="Base" />
+                <RegExpr attribute="Normal Text" context="#stay" String="[A-Za-z_-]+" />
+                <!-- auto-completion only, includes by previous rule -->
+                <keyword attribute="Normal Text" context="#stay" String="properties" />
+            </context>
+
+            <context name="Rule" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="Normal Text" context="RuleParameters" char=":" />
+                <Detect2Chars attribute="Variable" context="IsVariable" char="-" char1="-" />
+                <keyword attribute="Property" context="#stay" String="properties" />
+                <RegExpr attribute="Unknown Property" context="#stay" String="[^:]+" />
+            </context>
+
+            <context name="IsVariable" attribute="Normal Text" lineEndContext="#pop">
+                <DetectChar attribute="Normal Text" context="#pop!RuleParameters" char=":" />
+                <RegExpr attribute="Variable" context="#stay" String="[^:]+" />
+            </context>
+
+            <context name="RuleParameters" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <IncludeRules context="FindComments" />
+                <IncludeRules context="FindStrings" />
+                <IncludeRules context="FindFunctions" />
+                <IncludeRules context="FindValues" />
+                <!-- Jump out conditions -->
+                <DetectChar attribute="Separator Symbol" context="#pop#pop" char=";" />
+                <DetectChar attribute="Separator Symbol" context="#stay" char="," />
+                <DetectChar attribute="Normal Text" context="#pop#pop#pop" char="}" endRegion="ruleset" />
+                <!-- auto-completion only -->
+                <keyword attribute="Normal Text" context="#stay" String="functions" />
+            </context>
+
+            <context name="Function" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="Function" context="FunctionParameters" char="(" />
+                <StringDetect attribute="Function" context="FunctionVar" String="var(" />
+                <StringDetect attribute="Function" context="FunctionUrl" String="url(" />
+                <StringDetect attribute="Function" context="FunctionCalc" String="calc(" />
+                <keyword attribute="Function" context="#stay" String="functions" />
+                <RegExpr attribute="Normal Text" context="#stay" String="[-a-zA-Z][-a-zA-Z0-9]*" />
+            </context>
+
+            <context name="FunctionVar" attribute="Variable" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!FunctionParameters">
+                <DetectSpaces />
+                <RegExpr attribute="Variable" context="#pop!FunctionParameters" String="--[^ \t\),]+" />
+            </context>
+
+            <context name="FunctionCalc" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <DetectChar attribute="Function" context="#pop#pop" char=")" />
+                <IncludeRules context="Calc" />
+            </context>
+
+            <context name="NestedCalc" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <DetectChar attribute="Normal Text" context="#pop" char=")" />
+                <IncludeRules context="Calc" />
+            </context>
+
+            <context name="Calc" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="Separator Symbol" context="#stay" char="," />
+                <DetectChar attribute="Normal Text" context="NestedCalc" char="(" />
+                <IncludeRules context="FindComments" />
+                <IncludeRules context="FindStrings" />
+                <IncludeRules context="FindFunctions" />
+                <IncludeRules context="FindValues" />
+                <RegExpr attribute="Operator" context="#stay" String="[-](?=$|[ \t(,;])|[+](?=$|[^0-9)])|[/*]" />
+                <!-- auto-completion only -->
+                <keyword attribute="Normal Text" context="#stay" String="functions" />
+            </context>
+
+            <context name="FunctionUrl" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="UrlValue">
+                <DetectSpaces />
+                <IncludeRules context="FindStrings" />
+                <DetectChar attribute="Function" context="#pop#pop" char=")" />
+            </context>
+
+            <context name="UrlValue" attribute="String" lineEndContext="#stay">
+                <DetectChar attribute="Function" context="#pop#pop#pop" char=")" />
+            </context>
+
+            <context name="FunctionParameters" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces />
+                <DetectChar attribute="Function" context="#pop#pop" char=")" />
+                <IncludeRules context="FindComments" />
+                <IncludeRules context="FindStrings" />
+                <IncludeRules context="FindValues" />
+                <DetectChar attribute="Separator Symbol" context="#stay" char="," />
+            </context>
+
+            <!-- string contexts -->
+            <context name="StringDQ" attribute="String" lineEndContext="#stay">
+                <DetectChar attribute="String" context="#pop" char="&quot;" />
+                <IncludeRules context="InsideString" />
+            </context>
+
+            <context name="StringSQ" attribute="String" lineEndContext="#stay">
+                <DetectChar attribute="String" context="#pop" char="'" />
+                <IncludeRules context="InsideString" />
+            </context>
+
+            <context name="InsideString" attribute="String" lineEndContext="#stay">
+                <RegExpr attribute="SpecialChar" context="#stay" String="\\([0-9A-Fa-f]{1,6}|.?)" />
+                <RegExpr attribute="String" context="#stay" String="\\?[^&quot;'\\]+" />
+            </context>
+
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="At Rule" defStyleNum="dsImport" spellChecking="false"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Property" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Unknown Property" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="String" defStyleNum="dsString"/>
+            <itemData name="SpecialChar" defStyleNum="dsSpecialChar" spellChecking="false"/>
+            <itemData name="Operator" defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Separator Symbol" defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Value" defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Number" defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Value Keyword" defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="Color" defStyleNum="dsConstant" spellChecking="false"/>
+            <itemData name="Unit" defStyleNum="dsDataType" spellChecking="false"/>
+            <itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Function" defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Annotation" defStyleNum="dsAttribute" spellChecking="false"/>
+            <itemData name="Selector Id" defStyleNum="dsPreprocessor" bold="1" spellChecking="false"/>
+            <itemData name="Selector Class" defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Selector Attribute" defStyleNum="dsExtension" spellChecking="false"/>
+            <itemData name="Selector Pseudo" defStyleNum="dsInformation" italic="1" spellChecking="false"/>
+            <itemData name="Selector Tag" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Comment" defStyleNum="dsComment" />
+            <itemData name="Region Marker" defStyleNum="dsRegionMarker" spellChecking="false"/>
+            <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+
+    <general>
+        <keywords casesensitive="0" weakDeliminator="-%@" />
+        <comments>
+            <comment name="multiLine" start="/*" end="*/" />
+        </comments>
+    </general>
+
+</language>

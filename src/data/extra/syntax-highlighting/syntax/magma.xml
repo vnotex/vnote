@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Magma" section="Scientific"
+          version="2" kateversion="2.4"
+          mimetype="text/x-magma"
+          indenter="cstyle"
+          extensions="*.m;*.mag">
+	<highlighting>
+		<list name="keywords">
+			<item>and</item>
+			<item>assert</item>
+			<item>assigned</item>
+			<item>attributes</item>
+			<item>break</item>
+			<item>by</item>
+			<item>case</item>
+			<item>cat</item>
+			<item>cmpeq</item>
+			<item>cmpne</item>
+			<item>continue</item>
+			<item>declare</item>
+			<item>delete</item>
+			<item>diff</item>
+			<item>div</item>
+			<item>do</item>
+			<item>else</item>
+			<item>elif</item>
+			<item>end</item>
+			<item>eq</item>
+			<item>error</item>
+			<item>exists</item>
+			<item>false</item>
+			<item>for</item>
+			<item>forall</item>
+			<item>forward</item>
+			<item>freeze</item>
+			<item>function</item>
+			<item>ge</item>
+			<item>gt</item>
+			<item>if</item>
+			<item>import</item>
+			<item>in</item>
+			<item>intrinsic</item>
+			<item>join</item>
+			<item>le</item>
+			<item>lt</item>
+			<item>max</item>
+			<item>meet</item>
+			<item>min</item>
+			<item>mod</item>
+			<item>ne</item>
+			<item>not</item>
+			<item>or</item>
+			<item>procedure</item>
+			<item>quit</item>
+			<item>repeat</item>
+			<item>require</item>
+			<item>requirege</item>
+			<item>requirerange</item>
+			<item>return</item>
+			<item>sdiff</item>
+			<item>select</item>
+			<item>then</item>
+			<item>time</item>
+			<item>to</item>
+			<item>true</item>
+			<item>until</item>
+			<item>verbose</item>
+			<item>vprint</item>
+			<item>vtime</item>
+			<item>when</item>
+			<item>while</item>
+			<item>xor</item>
+		</list>
+		<list name="types">
+			<item>Booleans</item>
+			<item>EllipticCurve</item>
+			<item>ExtensionField</item>
+			<item>FiniteField</item>
+			<item>GF</item>
+			<item>HyperellipticCurve</item>
+			<item>Integers</item>
+			<item>Jacobian</item>
+			<item>PolynomialRing</item>
+			<item>Rationals</item>
+			<item>RealField</item>
+		</list>
+		<list name="directives">
+			<item>AddAttribute</item>
+			<item>AssignNames</item>
+			<item>Attach</item>
+			<item>AttachSpec</item>
+			<item>CoveringStructure</item>
+			<item>Cputime</item>
+			<item>Detach</item>
+			<item>DetachSpec</item>
+			<item>ElementType</item>
+			<item>ExistsCoveringStructure</item>
+			<item>ExtendedType</item>
+			<item>GetAttributes</item>
+			<item>GetSeed</item>
+			<item>ISA</item>
+			<item>IsCoercible</item>
+			<item>IsIntrinsic</item>
+			<item>ListAttributes</item>
+			<item>MakeType</item>
+			<item>Random</item>
+			<item>Realtime</item>
+			<item>SetSeed</item>
+			<item>Type</item>
+		</list>
+		<contexts>
+			<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <RegExpr attribute="Keyword" context="#stay" String="\b(function|procedure|if|elif|else|for|repeat|while|case)(?=(\{[^}]*(\}|$)|\(\*.*(\*\)|$))*([\s]|$|//))" insensitive="false" beginRegion="Region1"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(end|elif|else)(?=((\{[^}]*(\}|$)|\(\*.*(\*\)|$))*)([.;\s]|$)|//|$)" insensitive="false" endRegion="Region1"/>
+				<keyword attribute="Keyword" context="#stay" String="keywords"/>
+				<keyword attribute="Directive" context="#stay" String="directives"/>
+				<keyword attribute="Type" context="#stay" String="types"/>
+				<Float attribute="Number" context="#stay"/>
+				<Int attribute="Number" context="#stay"/>
+				<DetectChar attribute="String" context="String1" char="&quot;" />
+				<DetectChar attribute="String" context="String2" char="'" />
+				<Detect2Chars attribute="Comment" context="Comment1" char="/" char1="/"/>
+				<Detect2Chars attribute="Comment" context="Comment2" char="/" char1="*"/>
+			</context>
+			<context attribute="String" lineEndContext="#pop" name="String1">
+				<DetectChar attribute="String" context="#pop" char="&quot;"/>
+			</context>
+			<context attribute="String" lineEndContext="#pop" name="String2">
+				<DetectChar attribute="String" context="#pop" char="'" />
+			</context>
+			<context attribute="Comment" lineEndContext="#pop" name="Comment1" />
+			<context attribute="Comment" lineEndContext="#stay" name="Comment2">
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+			</context>
+		</contexts>
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal" />
+			<itemData name="Keyword"     defStyleNum="dsKeyword" />
+			<itemData name="Type"        defStyleNum="dsDataType"/>
+			<itemData name="Number"      defStyleNum="dsDecVal" />
+			<itemData name="String"      defStyleNum="dsString" />
+			<itemData name="Directive"   defStyleNum="dsOthers" />
+			<itemData name="Comment"     defStyleNum="dsComment" />
+		</itemDatas>
+	</highlighting>
+	<general>
+		<keywords casesensitive="1" />
+		<comments>
+			<comment name="singleLine" start="//" />
+			<comment name="multiLine" start="/*" end="*/" />
+		</comments>
+	</general>
+</language>

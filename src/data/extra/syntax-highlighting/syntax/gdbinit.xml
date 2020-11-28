@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+<language name="GDB Init" section="Other"
+          version="2" kateversion="3.4"
+          extensions="*.gdbinit"
+          mimetype=""
+          author="Milian Wolff (mail@milianw.de)" license="LGPL">
+
+<highlighting>
+  <contexts>
+    <context name="default" attribute="Normal" lineEndContext="#stay">
+      <!-- highlight gdbinit files without leading (gdb) -->
+      <IncludeRules context="gdb##GDB" />
+    </context>
+  </contexts>
+  <itemDatas>
+    <itemData name="Normal" defStyleNum="dsNormal" spellChecking="false" />
+  </itemDatas>
+</highlighting>
+
+</language>
+
+<!-- kate: replace-tabs: on; tab-width: 4; indent-width: 4; -->

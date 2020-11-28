@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Haml" version="7" kateversion="5.0" section="Markup"
+          extensions="*.haml"
+          author="Cies Breijs (cies_at_kde_nl)" license="LGPL"
+          mimetype="text/x-haml">
+<!--      mimetype="text/x-haml"     this might be a problem as is doesn't exist -->
+
+<!-- learned and copied a lot from rhtml.xml -->
+<!-- ripped out some functionality from rhtml, like GDL, maybe put this back in some day... -->
+<!-- rhtml is rails specific, i ripped the rails helper keywords out as i'm a _merb_ guy... -->
+
+<!-- 1.1: fixed many many many buggers, clearly shows how arbitrary the title '1.0' was -->
+
+<!-- TODO: multi-line-based-on-indenting (comments, filters) don't work, mark more errors with error_hl_test.haml(?) (currently only unpaired spaces on indentation), give ruby code a little background, pipe character as a multiline splitter can use a little color (can it be escaped? "\|"), use hamls unittests for inspiration for better *_test.haml files -->
+
+  <highlighting>
+
+    <list name="keywords">
+      <item>BEGIN</item>
+      <item>END</item>
+      <item>and</item>
+      <item>begin</item>
+      <item>break</item>
+      <item>case</item>
+      <item>defined?</item>
+      <item>do</item>
+      <item>else</item>
+      <item>elsif</item>
+      <item>end</item>
+      <item>ensure</item>
+      <item>for</item>
+      <item>if</item>
+      <item>in</item>
+      <item>include</item>
+      <item>next</item>
+      <item>not</item>
+      <item>or</item>
+      <item>redo</item>
+      <item>rescue</item>
+      <item>retry</item>
+      <item>return</item>
+      <item>then</item>
+      <item>unless</item>
+      <item>until</item>
+      <item>when</item>
+      <item>while</item>
+      <item>yield</item>
+    </list>
+
+    <list name="access-control">
+      <item>private_class_method</item>
+      <item>private</item>
+      <item>protected</item>
+      <item>public_class_method</item>
+      <item>public</item>
+    </list>
+
+    <list name="attribute-definitions">
+      <item>attr_reader</item>
+      <item>attr_writer</item>
+      <item>attr_accessor</item>
+    </list>
+
+    <list name="definitions">
+      <item>alias</item>
+      <item>module</item>
+      <item>class</item>
+      <item>def</item>
+      <item>undef</item>
+    </list>
+
+    <list name="pseudo-variables">
+      <item>self</item>
+      <item>super</item>
+      <item>nil</item>
+      <item>false</item>
+      <item>true</item>
+      <item>caller</item>
+      <item>__FILE__</item>
+      <item>__LINE__</item>
+    </list>
+
+    <list name="default-globals">
+      <item>$stdout</item>
+      <item>$defout</item>
+      <item>$stderr</item>
+      <item>$deferr</item>
+      <item>$stdin</item>
+    </list>
+
+    <!-- Kernel module methods.
+      NOTE: Methods ending in ? or !
+        are included below as regexes.
+    -->
+    <list name="kernel-methods">
+      <!-- backquote ` -->
+      <item>abort</item>
+      <item>at_exit</item>
+      <item>autoload</item>
+      <item>autoload?</item>
+      <item>binding</item>
+      <item>block_given?</item>
+      <item>callcc</item>
+      <item>caller</item>
+      <item>catch</item>
+      <item>chomp</item>
+      <item>chomp!</item>
+      <item>chop</item>
+      <item>chop!</item>
+      <item>eval</item>
+      <item>exec</item>
+      <item>exit</item>
+      <item>exit!</item>
+      <item>fail</item>
+      <item>fork</item>
+      <item>format</item>
+      <item>getc</item>
+      <item>gets</item>
+      <item>global_variables</item>
+      <item>gsub</item>
+      <item>gsub!</item>
+      <item>iterator?</item>
+      <item>lambda</item>
+      <item>load</item>
+      <item>local_variables</item>
+      <item>loop</item>
+      <item>method_missing</item>
+      <item>open</item>
+      <item>p</item>
+      <item>print</item>
+      <item>printf</item>
+      <item>proc</item>
+      <item>putc</item>
+      <item>puts</item>
+      <item>raise</item>
+      <item>rand</item>
+      <item>readline</item>
+      <item>readlines</item>
+      <item>require</item>
+      <item>scan</item>
+      <item>select</item>
+      <item>set_trace_func</item>
+      <item>sleep</item>
+      <item>split</item>
+      <item>sprintf</item>
+      <item>srand</item>
+      <item>sub</item>
+      <item>sub!</item>
+      <item>syscall</item>
+      <item>system</item>
+      <item>test</item>
+      <item>throw</item>
+      <item>trace_var</item>
+      <item>trap</item>
+      <item>untrace_var</item>
+      <item>warn</item>
+    </list>
+
+    <list name="attention">
+      <item>TODO</item>
+      <item>FIXME</item>
+      <item>NOTE</item>
+    </list>
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="normal" >
+        <RegExpr attribute="Error" firstNonSpace="false" context="#stay" String="^[ ]{1}([ ]{2})*[^ ]+" />
+        <RegExpr attribute="Doctype" context="#stay" String="^!!!.*$"/>
+
+<!--         2 failed attempts to implement multiline comments -->
+
+<!--        <RegExpr attribute="Comment" String="/.*$" context="#stay" beginRegion="comment0" column="0"/>
+        <RegExpr attribute="Comment" String="[^ /]" context="#stay" endRegion="comment0" column="0"/>
+
+        <RegExpr attribute="Comment" String="^[ ]{2}/.*$" context="#stay" beginRegion="comment2" column="0"/>
+        <RegExpr attribute="Comment" String="^[^ ]{4}" context="#stay" endRegion="comment2" column="0"/>-->
+
+<!--        <RegExpr attribute="Comment" context="comment0" String="^/.*" />
+        <RegExpr attribute="Comment" context="comment2" String="^[ ]{2}/.*" />
+        <RegExpr attribute="Comment" context="comment4" String="^[ ]{4}/.*" />-->
+
+        <DetectSpaces/>
+        <DetectChar attribute="Escaped Text" context="escaped" char="\" />
+        <DetectChar attribute="Comment" context="comment" char="/" />
+
+        <Detect2Chars attribute="Keyword" context="unquoted" char="=" char1="=" />
+        <DetectChar attribute="Keyword" context="rubysourceline" char="=" />
+        <DetectChar attribute="Keyword" context="rubysourceline" char="-" />
+        <DetectChar attribute="Keyword" context="rubysourceline" char="~" />
+        <Detect2Chars attribute="Keyword" context="rubysourceline" char="!" char1="=" />
+        <Detect2Chars attribute="Keyword" context="rubysourceline" char="&amp;" char1="=" />
+
+        <DetectChar attribute="Operator" context="array" char="[" beginRegion="Array" />
+        <DetectChar attribute="Operator" context="hash" char="{" beginRegion="Hash" />
+
+        <RegExpr attribute="Filter" firstNonSpace="true" context="#stay" String=":[a-zA-Z0-9_\-]*" />
+        <RegExpr attribute="Tag" firstNonSpace="true" context="#stay" String="%[a-zA-Z_][a-zA-Z0-9_\-]*" />
+        <RegExpr attribute="Div Id" firstNonSpace="true" context="#stay" String="#[a-zA-Z_][a-zA-Z0-9_\-]*" />
+        <RegExpr attribute="Div Class" firstNonSpace="true" context="#stay" String="\.[a-zA-Z_][a-zA-Z0-9_\-]*" />
+        <RegExpr attribute="Element Id" context="#stay" String="#[a-zA-Z_][a-zA-Z0-9_\-]*" />
+        <RegExpr attribute="Element Class" context="#stay" String="\.[a-zA-Z_][a-zA-Z0-9_\-]*" />
+        <RegExpr attribute="Entity" context="#stay" String="&amp;[a-zA-Z]+;" />
+      </context>
+
+      <context attribute="Operator" lineEndContext="#stay" name="array">
+        <DetectSpaces/>
+        <DetectChar attribute="Operator" context="#pop" char="]" endRegion="Array" />
+        <IncludeRules context="rubysourceline" />
+      </context>
+
+      <context attribute="Hash" lineEndContext="#stay" name="hash">
+        <DetectSpaces/>
+        <DetectChar attribute="Operator" context="#pop" char="}" endRegion="Hash" />
+        <IncludeRules context="rubysourceline" />
+      </context>
+
+      <context attribute="Unquoted String" lineEndContext="#pop" name="unquoted">
+        <IncludeRules context="Quoted String" />
+      </context>
+
+<!--      <context attribute="Comment" lineEndContext="#pop" name="comment0">
+        <DetectSpaces/>
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier/>
+<!- - was commented out         <RegExpr attribute="Comment" context="#pop" String="^[^/ ]" endRegion="comment" />  attempt for multiline comments  - ->
+      </context>
+-->
+<!--      <context attribute="Comment" lineEndContext="#pop" name="comment2">
+        <DetectSpaces/>
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier/>
+        <RegExpr attribute="Comment" context="#pop" String="^[ ]{2}[^ /]" endRegion="comment" />
+      </context>-->
+
+
+      <context attribute="Comment" lineEndContext="#pop" name="comment">
+        <DetectSpaces/>
+        <IncludeRules context="##Alerts" />
+        <DetectIdentifier/>
+        <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
+      </context>
+
+      <context attribute="Escaped Text" lineEndContext="#pop" name="escaped">
+      </context>
+
+      <context name="rubysourceline" attribute="Ruby embedded in haml" lineEndContext="#pop">
+        <IncludeRules context="rubysource" />
+      </context>
+
+      <context name="rubysource" attribute="Ruby embedded in haml"  lineEndContext="#stay">
+        <!-- ruby ignores newline after \ -->
+        <LineContinue attribute="Ruby Normal Text" context="Line Continue"/>
+
+        <!-- "def" - "end" blocks -->
+        <!-- check for statement modifiers with regexes -->
+        <RegExpr attribute="Keyword" String="(\=|\(|\[|\{)\s*(if|unless|while|until)\b" context="#stay" beginRegion="def block"/>
+        <RegExpr attribute="Keyword" String="(while|until)\b(?!.*\bdo\b)" context="#stay" beginRegion="def block" firstNonSpace="true"/>
+        <RegExpr attribute="Keyword" String="\;\s*(while|until)\b(?!.*\bdo\b)" context="#stay" beginRegion="def block"/>
+        <RegExpr attribute="Keyword" String="(if|unless)\b" context="#stay" beginRegion="def block" firstNonSpace="true"/>
+        <RegExpr attribute="Keyword" String="\;\s*(if|unless)\b" context="#stay" beginRegion="def block"/>
+        <WordDetect attribute="Keyword" String="class" context="#stay" beginRegion="def block"/>
+        <WordDetect attribute="Keyword" String="module" context="#stay" beginRegion="def block"/>
+        <WordDetect attribute="Keyword" String="begin" context="#stay" beginRegion="def block"/>
+        <RegExpr attribute="Keyword" String="\bfor\b(?!.*\bdo\b)" context="#stay" beginRegion="def block"/>
+        <WordDetect attribute="Keyword" String="case" context="#stay" beginRegion="def block"/>
+        <WordDetect attribute="Keyword" String="do" context="#stay" beginRegion="def block"/>
+        <WordDetect attribute="Keyword" String="def" context="#stay" beginRegion="def block"/>
+        <WordDetect attribute="Keyword" String="end" context="#stay" endRegion="def block"/>
+        <!-- elsif/else close the current block and start a new one -->
+        <RegExpr attribute="Keyword" String="(\b|^\s*)(else|elsif|rescue|ensure)(\s+|$)" context="#stay" endRegion="def block" beginRegion="def block"/>
+
+        <StringDetect attribute="Operator" String="..." context="#stay"/>
+        <Detect2Chars attribute="Operator" char="." char1="." context="#stay"/>
+
+        <!-- marks a message (being sent, not defined) -->
+        <RegExpr attribute="Message" String="\.[_a-z][_a-zA-Z0-9]*(\?|\!|\b)" context="#stay"/>
+
+        <!-- Check for "ASCII code operator". e.g.: ?a -->
+        <RegExpr attribute="Dec" String="\s\?(\\M\-)?(\\C\-)?\\?\S" context="#stay"/>
+
+        <keyword attribute="Keyword" String="keywords" context="#stay"/>
+        <keyword attribute="Attribute Definition" String="attribute-definitions"  context="#stay"/>
+        <keyword attribute="Access Control" String="access-control" context="#stay"/>
+        <keyword attribute="Definition" String="definitions"  context="#stay" />
+        <keyword attribute="Pseudo variable" String="pseudo-variables"  context="#stay"/>
+        <keyword attribute="Default globals" String="default-globals" context="#stay"/>
+        <keyword attribute="Kernel methods" String="kernel-methods" context="#stay"/>
+
+        <!-- (global) vars starting with $
+          Match them before $_.
+          -->
+        <RegExpr attribute="Global Variable" String="\$[a-zA-Z_0-9]+" context="#stay"/>
+        <RegExpr attribute="Global Variable" String="\$\-[a-zA-Z_]\b" context="#stay"/>
+        <!-- special-character globals -->
+        <RegExpr attribute="Default globals" String="\$[\d_*`\!:?'/\\\-\&amp;]" context="#stay"/>
+        <RegExpr attribute="Global Constant" String="\b[_A-Z]+[A-Z_0-9]+\b" context="#stay"/>
+        <!-- Generally a module or class name like "File", "MyModule_1", .. -->
+        <RegExpr attribute="Constant" String="\b[A-Z]+_*([0-9]|[a-z])[_a-zA-Z0-9]*\b" context="#stay"/>
+
+        <RegExpr attribute="Hex" String="\b\-?0[xX][_0-9a-fA-F]+" context="#stay"/>
+        <RegExpr attribute="Bin" String="\b\-?0[bB][_01]+" context="#stay"/>
+        <RegExpr attribute="Octal" String="\b\-?0[1-7][_0-7]*" context="#stay"/>
+        <RegExpr attribute="Float" String="\b\-?[0-9][0-9_]*\.[0-9][0-9_]*([eE]\-?[1-9][0-9]*(\.[0-9]*)?)?" context="#stay"/>
+        <RegExpr attribute="Dec" String="\b\-?[1-9][0-9_]*\b" context="#stay"/>
+        <Int attribute="Dec" context="#stay"/>
+        <HlCChar attribute="Char" context="#stay"/>
+
+        <!-- Check for =begin before assignment operator. -->
+        <StringDetect attribute="Blockcomment" String="=begin" context="Embedded documentation" beginRegion="comment block" column="0"/>
+
+        <DetectChar attribute="Operator" char="." context="#stay"/>
+        <Detect2Chars attribute="Operator" char="&amp;" char1="&amp;" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="|" char1="|" context="#stay"/>
+        <RegExpr attribute="Operator" String="\s[\?\:\%/]\s" context="#stay"/>
+        <RegExpr attribute="Operator" String="[|&amp;&lt;&gt;\^\+*~\-=]+" context="#stay"/>
+        <!-- regexp hack -->
+        <RegExpr attribute="Operator" String="\s!" context="#stay"/>
+        <RegExpr attribute="Operator" String="/=\s" context="#stay" insensitive="0"/>
+        <StringDetect attribute="Operator" String="%=" context="#stay" insensitive="0"/>
+        <Detect2Chars attribute="Operator" char=":" char1=":" context="Member Access"/>
+
+        <RegExpr attribute="Symbol" String=":[a-zA-Z_][a-zA-Z0-9_]*" context="#stay"/>
+
+        <DetectChar attribute="String" char="&quot;" context="Quoted String"/>
+        <DetectChar attribute="Raw String" char="'" context="Apostrophed String"/>
+        <DetectChar attribute="Command" char="`" context="Command String"/>
+
+        <StringDetect attribute="Normal Text" String="?#" context="#stay"/>
+
+        <RegExpr attribute="Comment" String="#\s*BEGIN.*$"  context="#stay" beginRegion="marker" column="0"/>
+        <RegExpr attribute="Comment" String="#\s*END.*$"  context="#stay" endRegion="marker" column="0"/>
+        <RegExpr attribute="Comment" String="#"  context="General Comment"/>
+
+        <RegExpr attribute="Delimiter" String="[\[\]]+"  context="#stay"/>
+        <DetectChar attribute="Delimiter" char="{" context="#stay" beginRegion="def block"/>
+        <DetectChar attribute="Delimiter" char="}" context="#stay" endRegion="def block"/>
+
+        <RegExpr attribute="Instance Variable" String="@[a-zA-Z_0-9]+" context="#stay"/>
+        <RegExpr attribute="Class Variable" String="@@[a-zA-Z_0-9]+" context="#stay"/>
+
+        <!-- handle the different regular expression formats -->
+        <DetectChar attribute="Regular Expression" char="/" context="RegEx 1"/>
+      </context>
+
+      <context name="Line Continue" attribute="Ruby Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Keyword" String="(while|until)\b(?!.*\bdo\b)" context="#stay" firstNonSpace="true"/>
+        <RegExpr attribute="Keyword" String="(if|unless)\b" context="#stay" firstNonSpace="true"/>
+        <IncludeRules context="rubysource"/>
+      </context>
+
+      <context name="Quoted String" attribute="String" lineEndContext="#stay">
+        <StringDetect attribute="String" String="\\" context="#stay"/>
+        <RegExpr attribute="String" String="\\\&quot;" context="#stay"/>
+        <RegExpr attribute="Substitution" String="#@{1,2}" context="Short Subst"/>
+        <Detect2Chars attribute="Substitution" char="#" char1="{" context="Subst"/>
+        <!--HlCChar attribute="Char" context="#pop"/-->
+        <DetectChar char="&quot;" attribute="String" context="#pop"/>
+      </context>
+
+      <context name="Apostrophed String" attribute="Raw String" lineEndContext="#stay">
+        <!-- <HlCChar attribute="Char" context="#pop"/> -->
+        <StringDetect attribute="String" String="\\" context="#stay"/>
+        <RegExpr attribute="String" String="\\\'" context="#stay"/>
+        <DetectChar char="'" attribute="Raw String" context="#pop"/>
+      </context>
+
+      <context name="Command String" attribute="Command" lineEndContext="#stay">
+        <StringDetect attribute="String" String="\\" context="#stay"/>
+        <RegExpr attribute="String" String="\\\`" context="#stay"/>
+        <RegExpr attribute="Substitution" String="#@{1,2}" context="Short Subst"/>
+        <Detect2Chars attribute="Substitution" char="#" char1="{" context="Subst"/>
+        <HlCChar attribute="Char" context="#pop"/>
+        <DetectChar char="`" attribute="Command" context="#pop"/>
+      </context>
+
+      <context name="Embedded documentation" attribute="Ruby Comment" lineEndContext="#stay">
+        <StringDetect attribute="Ruby Comment" String="=end" context="#pop" endRegion="comment block" column="0"/>
+      </context>
+
+      <context name="RegEx 1" attribute="Regular Expression" lineEndContext="#stay">
+        <RegExpr attribute="Regular Expression" String="\\\/" context="#stay"/>
+        <RegExpr attribute="Regular Expression" String="[^\\]$" context="#pop"/>
+        <RegExpr attribute="Substitution" String="#@{1,2}" context="Short Subst"/>
+        <Detect2Chars attribute="Substitution" char="#" char1="{" context="Subst"/>
+        <RegExpr attribute="Regular Expression" String="/[uiomxn]*" context="#pop"/>
+      </context>
+
+      <!-- Substitutions can be nested -->
+      <context name="Subst" attribute="Ruby Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Substitution" char="}" context="#pop"/>
+        <!-- Highlight substitution as code. -->
+        <IncludeRules context="rubysource"/>
+      </context>
+
+      <context name="Short Subst" attribute="Substitution" lineEndContext="#pop">
+        <!-- Check for e.g.: "#@var#@@xy" -->
+        <RegExpr attribute="Substitution" String="#@{1,2}" context="#stay"/>
+        <RegExpr attribute="Substitution" String="\w(?!\w)" context="#pop"/>
+      </context>
+
+      <!-- This handles access of nested module classes and class methods -->
+      <context name="Member Access" attribute="Member" lineEndContext="#pop">
+        <!-- marks a message (being sent, not defined) -->
+        <RegExpr attribute="Message" String="\.?[_a-z]\w*(\?|\!)?(?=[^\w\d\.\:])" context="#pop"/>
+        <RegExpr attribute="Message" String="\.?[_a-z]\w*(\?|\!)?" context="#stay"/>
+        <RegExpr attribute="Constant" String="[A-Z]+_*(\d|[a-z])\w*(?=[^\w\d\.\:])" context="#pop"/>
+        <RegExpr attribute="Constant" String="[A-Z]+_*([0-9]|[a-z])\w*" context="#stay"/>
+        <RegExpr attribute="Constant Value" String="[_A-Z][_A-Z0-9]*(?=[^\w\d\.\:])" context="#pop"/>
+        <RegExpr attribute="Constant Value" String="[_A-Z][_A-Z0-9]*" context="#stay"/>
+        <Detect2Chars attribute="Operator" char=":" char1=":" context="#stay"/>
+        <DetectChar attribute="Member" char="." context="#stay"/>
+
+        <AnyChar attribute="Operator" String="=+-*/%|&amp;[]{}~" context="#pop"/>
+        <DetectChar attribute="Ruby Comment" char="#" context="#pop"/>
+        <AnyChar attribute="Ruby Normal Text" String="()\" context="#pop"/>
+        <RegExpr attribute="Member" String="\W" context="#pop"/>
+      </context>
+
+      <context name="General Comment" attribute="Ruby Comment" lineEndContext="#pop">
+        <keyword attribute="Dec" String="attention" context="#stay"/>
+      </context>
+    </contexts>
+
+
+
+
+    <itemDatas>
+    <!-- Ruby itemData -->
+      <itemData name="Ruby Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Ruby embedded in haml" defStyleNum="dsNormal"/>
+
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Attribute Definition" defStyleNum="dsOthers"/>
+      <itemData name="Access Control" defStyleNum="dsKeyword" color="#0000FF"/>
+      <itemData name="Definition" defStyleNum="dsKeyword"/>
+      <itemData name="Pseudo variable" defStyleNum="dsDecVal"/>
+
+      <itemData name="Dec" defStyleNum="dsDecVal"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="Char" defStyleNum="dsChar"/>
+      <itemData name="Octal" defStyleNum="dsBaseN"/>
+      <itemData name="Hex" defStyleNum="dsBaseN"/>
+      <itemData name="Bin" defStyleNum="dsBaseN"/>
+
+      <itemData name="Symbol" defStyleNum="dsDataType" />
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Escaped Text" defStyleNum="dsChar"/>
+      <itemData name="Unquoted String" defStyleNum="dsString"/>
+      <itemData name="Raw String" defStyleNum="dsString" color="#DD4A4A" selColor="#DD4A4A"/>
+      <itemData name="Command" defStyleNum="dsString" color="#AA3000"/>
+      <itemData name="Message" defStyleNum="dsNormal" color="#4000A7"/> <!-- #4A00C0 -->
+      <itemData name="Regular Expression" defStyleNum="dsOthers" color="#4A5704"/>
+      <itemData name="Substitution" defStyleNum="dsOthers"/>
+
+      <itemData name="Default globals" defStyleNum="dsDataType" color="#C00000" bold="1"/>
+      <itemData name="Global Variable" defStyleNum="dsDataType" color="#C00000"/>
+      <itemData name="Global Constant" defStyleNum="dsDataType" color="#bb1188" bold="1"/>
+      <itemData name="Constant" defStyleNum="dsDataType"/>
+      <itemData name="Constant Value" defStyleNum="dsDataType" color="#bb1188"/>
+      <itemData name="Kernel methods" defStyleNum="dsNormal" color="#000080" selColor="#ffffff"/> <!-- #CC0E86 -->
+      <itemData name="Member" defStyleNum="dsNormal"/>
+      <itemData name="Instance Variable" defStyleNum="dsOthers"/>
+      <itemData name="Class Variable" defStyleNum="dsOthers"/>
+
+      <itemData name="Ruby Comment" defStyleNum="dsComment"/>
+      <itemData name="Blockcomment" defStyleNum="dsComment"/>
+
+      <!-- use these to mark errors and alerts things -->
+      <itemData name="Error" defStyleNum="dsError" />
+
+      <itemData name="Delimiter" defStyleNum="dsChar"/>
+      <itemData name="Operator" defStyleNum="dsChar"/>
+
+     <!-- HAML itemData -->
+
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Hash" defStyleNum="dsNormal" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="Doctype" defStyleNum="dsDataType" bold="1" />
+      <itemData name="Filter" defStyleNum="dsOthers" />
+      <itemData name="Element Id" defStyleNum="dsFloat" bold="1" />
+      <itemData name="Element Class" defStyleNum="dsFloat" />
+      <itemData name="Div Id" defStyleNum="dsDecVal" bold="1" />
+      <itemData name="Div Class" defStyleNum="dsDecVal" />
+      <itemData name="Tag" defStyleNum="dsKeyword" />
+      <itemData name="Entity" defStyleNum="dsDecVal" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <folding indentationsensitive="1" />
+    <emptyLines>
+      <emptyLine regexpr="\s+" casesensitive="false"/>
+    </emptyLines>
+    <comments>
+      <comment name="singleLine" start="/"/>
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+</language>

@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Modula-2 (R10 only)" mimetype="text/x-modula2" version="1"
+  kateversion="2.2" section="Sources" priority="2" extensions="*.mod;*.def"
+  casesensitive="1"  author="B. Kowarsch (trijezdci@github)"  license="MIT">
+<!--
+  *****************************************************************************
+  Modula-2 R10 syntax highlighting profile for Kate
+
+  Copyright (C) 2018 Modula-2 Software Foundation
+
+  Licensed under the MIT license <https://opensource.org/licenses/MIT>
+
+  A reference for the Modula-2 R10 BSK subset is available online at:
+
+  https://github.com/m2sf/m2bsk/wiki/Language-Description
+
+  In Modula-2 terminology, keywords are called reserved words.
+
+  https://github.com/m2sf/m2bsk/wiki/Language-Description#reserved-words.
+
+  Additional reserved words are available in the fulls spec for which the
+  specification is outdated and being revised. The EBNF is available at:
+
+  https://github.com/m2sf/M2-R10-Syntax-Diagrams/blob/master/m2r10-grammar.gll
+
+  There are two kinds of built-in identifiers:
+
+  (1) Predefined identifiers, also known as pervasives are listed at:
+
+  https://github.com/m2sf/m2bsk/wiki/Language-Description#predefined-identifiers
+
+  (2) Identifiers provided by built-in Module UNSAFE are listed at:
+
+  https://github.com/m2sf/m2bsk/wiki/Language-Description#low-level-facilities
+
+  In Modula-2 terminology, there are two kinds of procedures: those that return
+  a result in their own name, and those that do not.  When it is necessary to
+  differentiate, the former are called function procedures and the latter
+  proper procedures.  For this reason, both function and procedure identifiers
+  are listed together under a single group "procedures" in this profile.
+  *****************************************************************************
+-->
+  <highlighting>
+    <list name="workaround">
+      <!-- BUG: Kate ignores first entry in context 'Normal' -->
+      <!-- WORKAROUND: Use the name of this dummy list as first entry -->
+      <item>???</item> <!-- use '???' in source to test/verify this bug -->
+    </list>
+
+    <!-- Reserved Words -->
+    <list name="keywords">
+      <item>ALIAS</item>
+      <item>AND</item>
+      <item>ARGLIST</item>
+      <item>ARRAY</item>
+      <item>BEGIN</item>
+      <item>BLUEPRINT</item>
+      <item>BY</item>
+      <item>CASE</item>
+      <item>CONST</item>
+      <item>COPY</item>
+      <item>DEFINITION</item>
+      <item>DIV</item>
+      <item>DO</item>
+      <item>ELSE</item>
+      <item>ELSIF</item>
+      <item>END</item>
+      <item>EXIT</item>
+      <item>FOR</item>
+      <item>FROM</item>
+      <item>GENLIB</item>
+      <item>IF</item>
+      <item>IMPLEMENTATION</item>
+      <item>IMPORT</item>
+      <item>IN</item>
+      <item>LOOP</item>
+      <item>MOD</item>
+      <item>MODULE</item>
+      <item>NEW</item>
+      <item>NOT</item>
+      <item>OF</item>
+      <item>OPAQUE</item>
+      <item>OR</item>
+      <item>POINTER</item>
+      <item>PROCEDURE</item>
+      <item>READ</item>
+      <item>RECORD</item>
+      <item>REFERENTIAL</item>
+      <item>RELEASE</item>
+      <item>REPEAT</item>
+      <item>RETAIN</item>
+      <item>RETURN</item>
+      <item>SET</item>
+      <item>THEN</item>
+      <item>TO</item>
+      <item>TYPE</item>
+      <item>UNTIL</item>
+      <item>VAR</item>
+      <item>WHILE</item>
+      <item>WRITE</item>
+      <item>YIELD</item>
+    </list>
+
+    <!-- Built-in Constant Identifiers -->
+    <list name="constants">
+      <item>FALSE</item>
+      <item>NIL</item>
+      <item>TRUE</item>
+    </list>
+
+    <!-- Built-in Type Identifiers -->
+    <list name="types">
+      <!-- Pervasives -->
+      <item>BOOLEAN</item>
+      <item>CARDINAL</item>
+      <item>CHAR</item>
+      <item>INTEGER</item>
+      <item>LONGCARD</item>
+      <item>LONGINT</item>
+      <item>LONGREAL</item>
+      <item>OCTET</item>
+      <item>REAL</item>
+      <item>UNICHAR</item>
+    </list>
+
+    <!-- Built-in Procedure Identifiers -->
+    <list name="procedures">
+      <!-- Pervasives -->
+      <item>ABS</item>
+      <item>APPEND</item>
+      <item>CAPACITY</item>
+      <item>CHR</item>
+      <item>COUNT</item>
+      <item>ENTIER</item>
+      <item>INSERT</item>
+      <item>LENGTH</item>
+      <item>LOG2</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>ODD</item>
+      <item>ORD</item>
+      <item>POW2</item>
+      <item>PRED</item>
+      <item>PTR</item>
+      <item>REMOVE</item>
+      <item>SGN</item>
+      <item>SUCC</item>
+    </list>
+
+    <!-- Built-in Macros -->
+    <list name="macros">
+      <item>TLIMIT</item>
+      <item>TMAX</item>
+      <item>TMIN</item>
+      <item>TSIZE</item>
+    </list>
+
+    <!-- Module UNSAFE -->
+    <list name="unsafe">
+      <!-- Reserved Words -->
+      <item>CAST</item>
+
+      <!-- Module Identifier -->
+      <item>UNSAFE</item>
+
+      <!-- Constants -->
+      <item>BitsPerAddress</item>
+      <item>BitsPerByte</item>
+      <item>BytesPerWord</item>
+      <item>BytesPerLongWord</item>
+
+      <!-- Types -->
+      <item>ADDRESS</item>
+      <item>BYTE</item>
+      <item>LONGWORD</item>
+      <item>OCTETSEQ</item>
+      <item>WORD</item>
+
+      <!-- Procedures -->
+      <item>ADD</item>
+      <item>ADR</item>
+      <item>BIT</item>
+      <item>BWAND</item>
+      <item>BWNOT</item>
+      <item>BWOR</item>
+      <item>HALT</item>
+      <item>SETBIT</item>
+      <item>SHL</item>
+      <item>SHR</item>
+      <item>SUB</item>
+
+      <!-- Macros -->
+      <item>NOP</item>
+    </list>
+
+    <contexts>
+      <context attribute="Plain Source" lineEndContext="#stay" name="plain">
+        <!-- BUG: first entry is ignored, leave Dummy at first position -->
+        <keyword attribute="Dummy" context="#stay" String="workaround"/>
+
+        <!-- Reserved Words -->
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+
+        <!-- Built-in Constant Identifiers -->
+        <keyword attribute="Const" context="#stay" String="constants"/>
+
+        <!-- Built-in Type Identifiers -->
+        <keyword attribute="Type" context="#stay" String="types"/>
+
+        <!-- Built-in Procedure Identifiers -->
+        <keyword attribute="Builtin" context="#stay" String="procedures"/>
+
+        <!-- Built-in Macro Identifiers and Translations -->
+        <keyword attribute="Builtin" context="#stay" String="macros"/>
+
+        <!-- Facilities from Built-in Module UNSAFE -->
+        <keyword attribute="Unsafe" context="#stay" String="unsafe"/>
+
+        <!-- Base-2 Integer Literals -->
+        <RegExpr attribute="Number" context="#stay"
+          String="0b([01]+('[01]+)?)+"/>
+
+        <!-- Base-16 Integer and Character Code Literals -->
+        <RegExpr attribute="Number" context="#stay"
+          String="0[ux]([0-9A-F]+('[0-9A-F]+)?)+"/>
+
+        <!-- Real Number Literals -->
+        <Float attribute="Number" context="#stay"/>
+
+        <!-- Decimal Integer Literals -->
+        <RegExpr attribute="Number" context="#stay"
+          String="([1-9][0-9]*('[0-9]+)*)|0"/>
+
+        <!-- Start of Double-Quoted String Literal -->
+        <DetectChar attribute="String" context="DoubleQuotedString" char="&quot;"/>
+
+        <!-- Start of Single-Quoted String Literal -->
+        <DetectChar attribute="String" context="SingleQuotedString" char="'"/>
+
+        <!-- Start of Modula-2 Dialect Tag -->
+        <StringDetect attribute="DialectTag" context="InDialectTag" String="(*!"/>
+
+        <!-- Start of Pragma -->
+        <Detect2Chars attribute="Pragma" context="InPragma" char="&lt;" char1="*"/>
+
+        <!-- Start of Line Comment -->
+        <DetectChar attribute ="Comment" context="LineComment" char="!"/>
+
+        <!-- Start of Block Comment -->
+        <Detect2Chars attribute="Comment" context="BlockComment"
+          char="(" char1="*" beginRegion="FoldableComment"/>
+      </context>
+
+      <!-- End of Double-Quoted String Literal -->
+      <context attribute="String" lineEndContext="#pop" name="DoubleQuotedString">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <!-- End of Single-Quoted String Literal -->
+      <context attribute="String" lineEndContext="#pop" name="SingleQuotedString">
+        <DetectChar attribute="String" context="#pop" char="'" />
+      </context>
+
+      <!-- End of Dialect Tag -->
+      <context attribute="DialectTag" lineEndContext="#pop" name="InDialectTag">
+        <Detect2Chars attribute="DialectTag" context="#pop" char="*" char1=")"/>
+      </context>
+
+      <!-- End of Pragma -->
+      <context attribute="Pragma" lineEndContext="#stay" name="InPragma">
+        <Detect2Chars attribute="Pragma" context="#pop" char="*" char1="&gt;"/>
+      </context>
+
+      <!-- End of Line Comment -->
+      <context attribute="Comment" lineEndContext="#pop" name="LineComment">
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="BlockComment">
+        <!-- Start of nessted Block Comment -->
+        <Detect2Chars attribute="Comment"
+        context="BlockComment" char="(" char1="*" beginRegion="FoldableComment"/>
+
+        <!-- End of Block Comment -->
+        <Detect2Chars attribute="Comment"
+        context="#pop" char="*" char1=")" endRegion="FoldableComment"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <!-- Style for Plain Source Text -->
+      <itemData name="Plain Source"
+        defStyleNum="dsNormal" bold="0" italic="0" />
+
+      <!-- Style for Reserved Words -->
+      <itemData name="Keyword"
+        defStyleNum="dsKeyword" bold="1" italic="0" />
+
+      <!-- Style for Built-in Constant Identifiers -->
+      <itemData name="Const"
+        defStyleNum="dsBuiltIn" bold="1" italic="0" />
+
+      <!-- Style for Built-in Type Identifiers -->
+      <itemData name="Type"
+        defStyleNum="dsDataType" bold="1" italic="0" />
+
+      <!-- Style for Built-in Procedure Identifiers -->
+      <itemData name="Builtin"
+        defStyleNum="dsBuiltIn" bold="1" italic="0" />
+
+      <!-- Style for Facilities from Module UNSAFE -->
+      <itemData name="Unsafe"
+        defStyleNum="dsWarning" bold="1" italic="0" />
+
+      <!-- Style for Number Literals -->
+      <itemData name="Number"
+        defStyleNum="dsDecVal" bold="0" italic="0" />
+
+      <!-- Style for Quoted Literals -->
+      <itemData name="String"
+        defStyleNum="dsString" bold="0" italic="0" />
+
+      <!-- Style for Dialect Tags -->
+      <itemData name="DialectTag"
+        defStyleNum="dsComment" bold="1" italic="0" />
+
+      <!-- Style for Pragmas -->
+      <itemData name="Pragma"
+        defStyleNum="dsPreprocessor" bold="1" italic="0" />
+
+      <!-- Style for Comments -->
+      <itemData name="Comment"
+        defStyleNum="dsComment" bold="0" italic="1" />
+
+      <!-- Dummy style for testing -->
+      <itemData name="Dummy" defStyleNum="dsError" />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="1" />
+    <comments>
+      <comment name="singleLine" start="!" />
+      <comment name="multiLine" start="(*" end="*)" />
+    </comments>
+  </general>
+</language>
