@@ -1,0 +1,92 @@
+name: CI-Win
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      vnote-version: 3.0.0
+
+    strategy:
+      matrix:
+        config:
+          - {
+            name: "Build On Win64",
+            arch: win64_msvc2017_64,
+            platform: amd64
+          }
+          - {
+            name: "Build On Win32",
+            arch: win32_msvc2017,
+            platform: x86
+          }
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE.
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Init Submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: 5.12.10
+          target: desktop
+          arch: ${{matrix.config.arch}}
+          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+
+      - name: Create Build Dir
+        shell: bash
+        run: mkdir build
+        working-directory: ${{runner.workspace}}
+
+      - name: Configure and Build Project
+        shell: cmd
+        run: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" ${{matrix.config.platform}}
+          qmake -r -spec win32-msvc CONFIG-=debug CONFIG+=release %GITHUB_WORKSPACE%\vnote.pro
+          nmake
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Package Project
+        shell: cmd
+        run: |
+          mkdir "%DISTRIB_PATH%"
+          windeployqt.exe --dir "%DISTRIB_PATH%" .\src\release\vnote.exe
+          call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" ${{matrix.config.platform}}
+          copy .\src\release\vnote.exe "%DISTRIB_PATH%\vnote.exe"
+          copy .\src\release\extra.rcc "%DISTRIB_PATH%\extra.rcc"
+          copy .\libs\vtextedit\src\libs\syntax-highlighting\release\KSyntaxHighlighting.dll "%DISTRIB_PATH%\KSyntaxHighlighting.dll"
+          copy .\libs\vtextedit\src\editor\release\VTextEdit.dll "%DISTRIB_PATH%\VTextEdit.dll"
+          copy "%GITHUB_WORKSPACE%\README.md" "%DISTRIB_PATH%\README.md"
+          copy "%GITHUB_WORKSPACE%\COPYING.LESSER" "%DISTRIB_PATH%\COPYING.LESSER"
+          echo %GITHUB_SHA% > "%DISTRIB_PATH%\commit"
+          del /F /Q "%DISTRIB_PATH%\translations\qt_*.qm"
+        working-directory: ${{runner.workspace}}/build
+        env:
+          DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
+
+      - name: Archive Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vnote-${{matrix.config.platform}}_${{env.vnote-version}}
+          path: ${{env.DISTRIB_PATH}}
+        env:
+          DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
