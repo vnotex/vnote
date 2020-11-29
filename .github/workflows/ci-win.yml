@@ -9,13 +9,14 @@ on:
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
 
+env:
+    VNOTE_VER: 3.0.0
+
 jobs:
   build:
     name: ${{ matrix.config.name }}
     runs-on: windows-latest
     timeout-minutes: 120
-    env:
-      vnote-version: 3.0.0
 
     strategy:
       matrix:
@@ -86,7 +87,7 @@ jobs:
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: vnote-${{matrix.config.platform}}_${{env.vnote-version}}
+          name: vnote-${{matrix.config.platform}}_v${{env.VNOTE_VER}}
           path: ${{env.DISTRIB_PATH}}
         env:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
