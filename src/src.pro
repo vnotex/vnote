@@ -9,7 +9,7 @@ CONFIG -= qtquickcompiler
 # Enable message log in release build
 DEFINES += QT_MESSAGELOGCONTEXT
 
-TARGET = vnotex
+TARGET = vnote
 TEMPLATE = app
 
 win32:CONFIG(release, debug|release) {

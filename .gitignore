@@ -1,5 +1,5 @@
-vnotex.pro.user
-vnotex.pro.user.*
+*.pro.user
+*.pro.user.*
 .ccls
 compile_commands.json
 compile_flags.txt

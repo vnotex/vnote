@@ -29,7 +29,7 @@ using namespace vnotex;
 
 const QString ConfigMgr::c_orgName = "VNote";
 
-const QString ConfigMgr::c_appName = "VNoteX";
+const QString ConfigMgr::c_appName = "VNote";
 
 const QString ConfigMgr::c_configFileName = "vnotex.json";
 
