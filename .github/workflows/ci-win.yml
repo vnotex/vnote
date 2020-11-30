@@ -24,7 +24,7 @@ jobs:
           - {
             name: "Build On Win64",
             arch: win64_msvc2017_64,
-            platform: amd64
+            platform: x64
           }
           - {
             name: "Build On Win32",
@@ -52,6 +52,7 @@ jobs:
           target: desktop
           arch: ${{matrix.config.arch}}
           modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+          tools: tools_openssl_${{matrix.config.platform}},1.1.1-4,qt.tools.openssl.win_${{matrix.config.platform}}
 
       - name: Create Build Dir
         shell: bash
@@ -70,12 +71,16 @@ jobs:
         shell: cmd
         run: |
           mkdir "%DISTRIB_PATH%"
-          windeployqt.exe --dir "%DISTRIB_PATH%" .\src\release\vnote.exe
           call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" ${{matrix.config.platform}}
+          windeployqt.exe --dir "%DISTRIB_PATH%" .\src\release\vnote.exe
           copy .\src\release\vnote.exe "%DISTRIB_PATH%\vnote.exe"
           copy .\src\release\extra.rcc "%DISTRIB_PATH%\extra.rcc"
           copy .\libs\vtextedit\src\libs\syntax-highlighting\release\KSyntaxHighlighting.dll "%DISTRIB_PATH%\KSyntaxHighlighting.dll"
           copy .\libs\vtextedit\src\editor\release\VTextEdit.dll "%DISTRIB_PATH%\VTextEdit.dll"
+          set qt_dir=%Qt5_Dir:/=\%
+          for %%I in ("%qt_dir%\..\..") do set "qt_topdir=%%~fI"
+          set openssl_dir=%qt_topdir%\Tools\OpenSSL\Win_${{matrix.config.platform}}\bin
+          copy %openssl_dir%\lib*.dll "%DISTRIB_PATH%\"
           copy "%GITHUB_WORKSPACE%\README.md" "%DISTRIB_PATH%\README.md"
           copy "%GITHUB_WORKSPACE%\COPYING.LESSER" "%DISTRIB_PATH%\COPYING.LESSER"
           echo %GITHUB_SHA% > "%DISTRIB_PATH%\commit"
