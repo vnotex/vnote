@@ -1,0 +1,77 @@
+name: CI-Win
+
+on:
+  push:
+    branches: [ master, dev ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+env:
+    VNOTE_VER: 3.0.0
+
+jobs:
+  build-linux:
+    name: Build On Ubuntu
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE.
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Init Submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install linuxdeploy
+        uses: miurahr/install-linuxdeploy-action@v1.2.0
+        with:
+            plugins: qt appimage
+
+      - name: Install dependencies
+        run: |
+            sudo DEBIAN_FRONTEND=noninteractive apt-get update
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: 5.12.10
+          target: desktop
+          arch: ${{matrix.config.arch}}
+          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+
+      - name: Create Build Dir
+        shell: bash
+        run: mkdir build
+        working-directory: ${{runner.workspace}}
+
+      - name: Compile qt5ct
+        shell: bash
+        run: |
+            wget -c https://excellmedia.dl.sourceforge.net/project/qt5ct/qt5ct-0.37.tar.bz2
+            tar xf qt5ct-0.*.tar.bz2
+            cd qt5ct-0.*/
+            QT_SELECT=5 qmake
+            make -j$(nproc) && sudo make install
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Configure Project
+        shell: bash
+        run: |
+            qmake -v
+            qmake CONFIG+=release -spec linux-g++-64 ${GITHUB_WORKSPACE}/vnote.pro
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Build Project
+        shell: bash
+        run: make -j$(nproc)
+        working-directory: ${{runner.workspace}}/build
