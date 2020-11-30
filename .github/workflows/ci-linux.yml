@@ -1,4 +1,4 @@
-name: CI-Win
+name: CI-Linux
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
 
       - name: Install linuxdeploy
-        uses: miurahr/install-linuxdeploy-action@v1.2.0
+        uses: miurahr/install-linuxdeploy-action@v1
         with:
             plugins: qt appimage
 
@@ -48,6 +48,7 @@ jobs:
           target: desktop
           arch: ${{matrix.config.arch}}
           modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+          tools: tools_openssl_x64,1.1.1-4,qt.tools.openssl.gcc_64
 
       - name: Create Build Dir
         shell: bash
