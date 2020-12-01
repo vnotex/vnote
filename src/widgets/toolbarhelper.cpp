@@ -336,6 +336,11 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                             QMessageBox::about(p_win, MainWindow::tr("About"), info + text);
                         });
 
+        auto aboutQtAct = menu->addAction(MainWindow::tr("About Qt"));
+        aboutQtAct->setMenuRole(QAction::AboutQtRole);
+        MainWindow::connect(aboutQtAct, &QAction::triggered,
+                            qApp, &QApplication::aboutQt);
+
         tb->addWidget(btn);
     }
 
