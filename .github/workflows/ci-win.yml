@@ -99,7 +99,7 @@ jobs:
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: vnote-${{matrix.config.platform}}_v${{env.VNOTE_VER}}
+          name: vnote-win-${{matrix.config.platform}}_v${{env.VNOTE_VER}}
           path: ${{env.DISTRIB_PATH}}
         env:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
