@@ -59,6 +59,12 @@ jobs:
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
+      - name: Clone OpenSSL
+        shell: bash
+        run: |
+          git clone https://github.com/tamlok/openssl-utils.git openssl-utils.git --depth=1
+        working-directory: ${{runner.workspace}}/build
+
       - name: Configure and Build Project
         shell: cmd
         run: |
@@ -77,9 +83,10 @@ jobs:
           copy .\src\release\extra.rcc "%DISTRIB_PATH%\extra.rcc"
           copy .\libs\vtextedit\src\libs\syntax-highlighting\release\KSyntaxHighlighting.dll "%DISTRIB_PATH%\KSyntaxHighlighting.dll"
           copy .\libs\vtextedit\src\editor\release\VTextEdit.dll "%DISTRIB_PATH%\VTextEdit.dll"
-          set qt_dir=%Qt5_Dir:/=\%
-          for %%I in ("%qt_dir%\..\..") do set "qt_topdir=%%~fI"
-          set openssl_dir=%qt_topdir%\Tools\OpenSSL\Win_${{matrix.config.platform}}\bin
+          rem set qt_dir=%Qt5_Dir:/=\%
+          rem for %%I in ("%qt_dir%\..\..") do set "qt_topdir=%%~fI"
+          rem set openssl_dir=%qt_topdir%\Tools\OpenSSL\Win_${{matrix.config.platform}}\bin
+          set openssl_dir=openssl-utils.git\1.1.1g\Win_${{matrix.config.platform}}
           copy %openssl_dir%\lib*.dll "%DISTRIB_PATH%\"
           copy "%GITHUB_WORKSPACE%\README.md" "%DISTRIB_PATH%\README.md"
           copy "%GITHUB_WORKSPACE%\COPYING.LESSER" "%DISTRIB_PATH%\COPYING.LESSER"
