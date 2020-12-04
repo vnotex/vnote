@@ -58,9 +58,9 @@ jobs:
       - name: Compile qt5ct
         shell: bash
         run: |
-            wget -c https://excellmedia.dl.sourceforge.net/project/qt5ct/qt5ct-0.37.tar.bz2
-            tar xf qt5ct-0.*.tar.bz2
-            cd qt5ct-0.*/
+            wget -c https://excellmedia.dl.sourceforge.net/project/qt5ct/qt5ct-1.1.tar.bz2
+            tar xf qt5ct-1.*.tar.bz2
+            cd qt5ct-1.*/
             QT_SELECT=5 qmake
             make -j$(nproc) && sudo make install
         working-directory: ${{runner.workspace}}/build
@@ -90,10 +90,14 @@ jobs:
         run: |
           # Move the lib out to avoid duplication
           mv AppDir/usr/lib ./
-          tree /etc/ld.so.conf.d
           echo "$PWD/lib/" | sudo tee -a /etc/ld.so.conf.d/vnote.conf
-          cat /etc/ld.so.conf.d/vnote.conf
           sudo ldconfig
           linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage
           tree AppDir
+          mv VNote*.appimage vnote-linux-x64_v${env.VNOTE_VER}.appimage
         working-directory: ${{runner.workspace}}/build
+
+      - name: Archive Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          path: ${{runner.workspace}}/build/vnote*.appimage
