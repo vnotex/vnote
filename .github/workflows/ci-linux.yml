@@ -94,14 +94,14 @@ jobs:
           sudo ldconfig
           # copy translations
           mkdir -p AppDir/usr/translations
-          tree $Qt5_Dir/translations
-          tree $Qt5_Dir/../../Tools
-          # cp "$Qt5_Dir/translations/qt*zh_CN.qm" AppDir/usr/translations
-          tree /home/qt/openssl*
-          ldconfig -p | grep ssl
+          cp $Qt5_Dir/translations/qt_zh_CN.qm AppDir/usr/translations
           ldconfig -p | grep qt5ct
+          tree $Qt5_Dir/../../Tools
+          echo 123
           linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage
+          echo 456
           tree AppDir
+          echo 789
           mv VNote*.appimage vnote-linux-x64_v${{runner.workspace}}.appimage
         working-directory: ${{runner.workspace}}/build
 
