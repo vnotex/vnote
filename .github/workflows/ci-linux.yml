@@ -92,9 +92,17 @@ jobs:
           mv AppDir/usr/lib ./
           echo "$PWD/lib/" | sudo tee -a /etc/ld.so.conf.d/vnote.conf
           sudo ldconfig
+          # copy translations
+          mkdir -p AppDir/usr/translations
+          tree $Qt5_Dir/translations
+          tree $Qt5_Dir/../../Tools
+          # cp "$Qt5_Dir/translations/qt*zh_CN.qm" AppDir/usr/translations
+          tree /home/qt/openssl*
+          ldconfig -p | grep ssl
+          ldconfig -p | grep qt5ct
           linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage
           tree AppDir
-          mv VNote*.appimage vnote-linux-x64_v${env.VNOTE_VER}.appimage
+          mv VNote*.appimage vnote-linux-x64_v${{runner.workspace}}.appimage
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
