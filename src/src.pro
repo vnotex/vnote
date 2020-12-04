@@ -95,9 +95,9 @@ unix:!macx {
 
     target.path = $${BINDIR}
 
-    extrarcc.path = $${BINDIR}
-    extrarcc.files = $${SRC_DESTDIR}/vnote_extra.rcc
+    extraresource.path = $${BINDIR}
+    extraresource.files = $${SRC_DESTDIR}/vnote_extra.rcc
 
-    INSTALLS += target extrarcc desktop icon16 icon32 icon48 icon64 icon128 icon256 iconsvg
+    INSTALLS += target extraresource desktop icon16 icon32 icon48 icon64 icon128 icon256 iconsvg
     message("VNote will be installed in prefix $${PREFIX}")
 }

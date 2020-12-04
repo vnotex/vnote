@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: |
             sudo DEBIAN_FRONTEND=noninteractive apt-get update
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev tree
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
@@ -75,4 +75,25 @@ jobs:
       - name: Build Project
         shell: bash
         run: make -j$(nproc)
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Install Project
+        shell: bash
+        run: |
+          mkdir AppDir
+          make install INSTALL_ROOT=${{runner.workspace}}/build/AppDir
+          tree AppDir
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Package Project
+        shell: bash
+        run: |
+          # Move the lib out to avoid duplication
+          mv AppDir/usr/lib ./
+          tree /etc/ld.so.conf.d
+          echo "$PWD/lib/" | sudo tee -a /etc/ld.so.conf.d/vnote.conf
+          cat /etc/ld.so.conf.d/vnote.conf
+          sudo ldconfig
+          linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage
+          tree AppDir
         working-directory: ${{runner.workspace}}/build
