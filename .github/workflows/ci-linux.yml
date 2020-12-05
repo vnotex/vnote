@@ -2,7 +2,7 @@ name: CI-Linux
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -118,6 +118,7 @@ jobs:
           path: ${{runner.workspace}}/build/vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
 
       - name: Update Continuous Build Release
+        if: github.ref == 'refs/heads/master'
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
