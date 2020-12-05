@@ -107,6 +107,7 @@ jobs:
           Qt5_Tools=$Qt5_Dir/../../Tools
           linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage -l $Qt5_Tools/OpenSSL/binary/lib/libcrypto.so.1.1 -l $Qt5_Tools/OpenSSL/binary/lib/libssl.so.1.1
           mv VNote*.AppImage vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
+          cp vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage vnote-linux-x64.AppImage
           tree AppDir
         working-directory: ${{runner.workspace}}/build
 
@@ -114,16 +115,12 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: vnote-linux-x64_v${{env.VNOTE_VER}}
-          path: ${{runner.workspace}}/build/vnote*.AppImage
-
-      - name: Test
-        shell: bash
-        run: ls ${{runner.workspace}}/build
+          path: ${{runner.workspace}}/build/vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
 
       - name: Update Continuous Build Release
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/vnote-linux-x64_v3.0.0.AppImage
+          files: ${{runner.workspace}}/build/vnote-linux-x64.AppImage
           release: Continuous Build
           tag: continuous-build
