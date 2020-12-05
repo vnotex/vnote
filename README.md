@@ -14,6 +14,8 @@ The obsolete code base of VNote 2.0 is available at the [vnote2.0](https://githu
 
 For more information, please visit [**VNote's Homepage**](https://vnotex.github.io/vnote).
 
+![CI-Win](https://github.com/vnotex/vnote/workflows/CI-Win/badge.svg) ![CI-Linux](https://github.com/vnotex/vnote/workflows/CI-Linux/badge.svg)
+
 ![VNote](pics/vnote.png)
 
 ## Description
@@ -22,6 +24,11 @@ For more information, please visit [**VNote's Homepage**](https://vnotex.github.
 VNote is **NOT** just a simple editor for Markdown. By providing notes management, VNote makes taking notes in Markdown simpler.
 
 Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
+
+## Downloads
+Continuous builds on `master` branch could be found at the [Continuous Build](https://github.com/vnotex/vnote/releases/tag/continuous-build) release.
+
+Latest stable builds could be found at the [latest release](https://github.com/vnotex/vnote/releases/latest).
 
 ## Supports
 - [GitHub Issues](https://github.com/vnotex/vnote/issues);
