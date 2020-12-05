@@ -91,20 +91,15 @@ jobs:
       - name: Package Project
         shell: bash
         run: |
-          # Move the lib out to avoid duplication
           set -x
+          # Move the lib out to avoid duplication
           mv AppDir/usr/lib ./
-          echo $PWD/lib/ > ./vnote.conf
-          sudo mv ./vnote.conf /etc/ld.so.conf.d/vnote.conf
-          sudo ldconfig
+          LD_LIBRARY_PATH=$PWD/lib:$LD_LIBRARY_PATH
           # copy translations
           mkdir -p AppDir/usr/translations
           cp $Qt5_Dir/translations/qt_zh_CN.qm AppDir/usr/translations
-          # copy qt5ct
-          mkdir -p AppDir/usr/plugins/platformthemes
-          mkdir -p AppDir/usr/plugins/styles
-          cp $Qt5_Dir/plugins/platformthemes/* AppDir/usr/plugins/platformthemes/
-          cp $Qt5_Dir/plugins/styles/* AppDir/usr/plugins/styles/
+          # package qt5ct
+          EXTRA_QT_PLUGINS="platformthemes/libqt5ct.so;styles/libqt5ct-style.so"
           # package libssl.so and libcrypto.so
           Qt5_Tools=$Qt5_Dir/../../Tools
           linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage -l $Qt5_Tools/OpenSSL/binary/lib/libcrypto.so.1.1 -l $Qt5_Tools/OpenSSL/binary/lib/libssl.so.1.1
