@@ -107,11 +107,10 @@ jobs:
 
       - name: Update Tag
         if: github.ref == 'refs/heads/master'
-        uses: EndBug/latest-tag@latest
-        with:
-          tag-name: continuous-build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          git tag --force continuous-build ${GITHUB_SHA}
+          git push --force --tags
 
       - name: Update Continuous Build Release
         if: github.ref == 'refs/heads/master'
