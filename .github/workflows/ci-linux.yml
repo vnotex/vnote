@@ -117,6 +117,14 @@ jobs:
           name: vnote-linux-x64_v${{env.VNOTE_VER}}
           path: ${{runner.workspace}}/build/vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
 
+      - name: Update Tag
+        if: github.ref == 'refs/heads/master'
+        uses: EndBug/latest-tag@latest
+        with:
+          tag-name: continuous-build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Update Continuous Build Release
         if: github.ref == 'refs/heads/master'
         uses: johnwbyrd/update-release@v1.0.0
