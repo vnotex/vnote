@@ -91,15 +91,18 @@ jobs:
       - name: Package Project
         shell: bash
         run: |
-          set -x
           # Move the lib out to avoid duplication
           mv AppDir/usr/lib ./
           LD_LIBRARY_PATH=$PWD/lib:$LD_LIBRARY_PATH
           # copy translations
           mkdir -p AppDir/usr/translations
           cp $Qt5_Dir/translations/qt_zh_CN.qm AppDir/usr/translations
-          # package qt5ct
-          EXTRA_QT_PLUGINS="platformthemes/libqt5ct.so;styles/libqt5ct-style.so"
+          # package qt5ct (EXTRA_QT_PLUGINS seems not work)
+          # EXTRA_QT_PLUGINS="platformthemes/libqt5ct.so;styles/libqt5ct-style.so"
+          mkdir -p AppDir/usr/plugins/platformthemes
+          mkdir -p AppDir/usr/plugins/styles
+          cp $Qt5_Dir/plugins/platformthemes/* AppDir/usr/plugins/platformthemes/
+          cp $Qt5_Dir/plugins/styles/* AppDir/usr/plugins/styles/
           # package libssl.so and libcrypto.so
           Qt5_Tools=$Qt5_Dir/../../Tools
           linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage -l $Qt5_Tools/OpenSSL/binary/lib/libcrypto.so.1.1 -l $Qt5_Tools/OpenSSL/binary/lib/libssl.so.1.1
@@ -110,4 +113,5 @@ jobs:
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
+          name: vnote-linux-x64_v${{env.VNOTE_VER}}
           path: ${{runner.workspace}}/build/vnote*.AppImage
