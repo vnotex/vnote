@@ -1,0 +1,127 @@
+name: CI-Linux
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+env:
+    VNOTE_VER: 3.0.0
+
+jobs:
+  build-linux:
+    name: Build On Ubuntu
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE.
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Init Submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install linuxdeploy
+        uses: miurahr/install-linuxdeploy-action@v1
+        with:
+            plugins: qt appimage
+
+      - name: Install dependencies
+        run: |
+            sudo DEBIAN_FRONTEND=noninteractive apt-get update
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev tree
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: 5.12.10
+          target: desktop
+          arch: ${{matrix.config.arch}}
+          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+          tools: tools_openssl_x64,1.1.1-4,qt.tools.openssl.gcc_64
+
+      - name: Create Build Dir
+        shell: bash
+        run: mkdir build
+        working-directory: ${{runner.workspace}}
+
+      - name: Compile qt5ct
+        shell: bash
+        run: |
+            wget -c https://excellmedia.dl.sourceforge.net/project/qt5ct/qt5ct-1.1.tar.bz2
+            tar xf qt5ct-1.*.tar.bz2
+            cd qt5ct-1.*/
+            QT_SELECT=5 qmake
+            make -j$(nproc) && sudo make install
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Configure Project
+        shell: bash
+        run: |
+            qmake -v
+            cp /usr/lib/x86_64-linux-gnu/qt5/plugins/platforminputcontexts/libfcitxplatforminputcontextplugin.so ./
+            sudo chmod +rwx ./libfcitxplatforminputcontextplugin.so
+            cp ./libfcitxplatforminputcontextplugin.so $Qt5_Dir/plugins/platforminputcontexts
+            qmake CONFIG+=release -spec linux-g++-64 ${GITHUB_WORKSPACE}/vnote.pro
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Build Project
+        shell: bash
+        run: make -j$(nproc)
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Install Project
+        shell: bash
+        run: |
+          mkdir AppDir
+          make install INSTALL_ROOT=${{runner.workspace}}/build/AppDir
+          tree AppDir
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Package Project
+        shell: bash
+        run: |
+          # Move the lib out to avoid duplication
+          mv AppDir/usr/lib ./
+          LD_LIBRARY_PATH=$PWD/lib:$LD_LIBRARY_PATH
+          # copy translations
+          mkdir -p AppDir/usr/translations
+          cp $Qt5_Dir/translations/qt_zh_CN.qm AppDir/usr/translations
+          # package qt5ct (EXTRA_QT_PLUGINS seems not work)
+          # EXTRA_QT_PLUGINS="platformthemes/libqt5ct.so;styles/libqt5ct-style.so"
+          mkdir -p AppDir/usr/plugins/platformthemes
+          mkdir -p AppDir/usr/plugins/styles
+          cp $Qt5_Dir/plugins/platformthemes/* AppDir/usr/plugins/platformthemes/
+          cp $Qt5_Dir/plugins/styles/* AppDir/usr/plugins/styles/
+          # package libssl.so and libcrypto.so
+          Qt5_Tools=$Qt5_Dir/../../Tools
+          linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage -l $Qt5_Tools/OpenSSL/binary/lib/libcrypto.so.1.1 -l $Qt5_Tools/OpenSSL/binary/lib/libssl.so.1.1
+          mv VNote*.AppImage vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
+          cp vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage vnote-linux-x64.AppImage
+          tree AppDir
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Archive Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vnote-linux-x64_v${{env.VNOTE_VER}}
+          path: ${{runner.workspace}}/build/vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
+
+      - name: Update Continuous Build Release
+        if: github.ref == 'refs/heads/master'
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ${{runner.workspace}}/build/vnote-linux-x64.AppImage
+          release: Continuous Build
+          tag: continuous-build

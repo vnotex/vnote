@@ -6,3 +6,5 @@ QT += core gui widgets network svg webenginewidgets webchannel
 QT += testlib
 
 CONFIG += c++14 testcase
+
+CONFIG += no_testcase_installs

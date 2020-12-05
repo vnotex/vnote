@@ -158,7 +158,8 @@ void ConfigMgr::checkAppConfig()
 
     // Load extra data.
     splash->showMessage("Loading extra resource data");
-    const QString extraRcc(QStringLiteral("extra.rcc"));
+    const QString extraRcc(PathUtils::concatenateFilePath(QCoreApplication::applicationDirPath(),
+                                                          QStringLiteral("vnote_extra.rcc")));
     bool ret = QResource::registerResource(extraRcc);
     if (!ret) {
         Exception::throwOne(Exception::Type::FailToReadFile,

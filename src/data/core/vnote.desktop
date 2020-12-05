@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=VNote
+Name[zh]=VNote笔记
+GenericName=Note-taking Application
+GenericName[zh]=笔记软件
+Comment=A pleasant note-taking platform
+Comment[zh]=一个舒适的笔记平台
+Icon=vnote
+Terminal=false
+Exec=vnote %F
+MimeType=text/markdown;
+Categories=Qt;Utility;TextEditor;Office;
