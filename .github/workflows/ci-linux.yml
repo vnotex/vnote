@@ -100,9 +100,14 @@ jobs:
           # copy translations
           mkdir -p AppDir/usr/translations
           cp $Qt5_Dir/translations/qt_zh_CN.qm AppDir/usr/translations
-          tree $Qt5_Dir/../../Tools
-          # package libssl.so and libcrypto.so and libqt5ct.so
-          linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage
+          # copy qt5ct
+          mkdir -p AppDir/usr/plugins/platformthemes
+          mkdir -p AppDir/usr/plugins/styles
+          cp $Qt5_Dir/plugins/platformthemes/* AppDir/usr/plugins/platformthemes/
+          cp $Qt5_Dir/plugins/styles/* AppDir/usr/plugins/styles/
+          # package libssl.so and libcrypto.so
+          Qt5_Tools=$Qt5_Dir/../../Tools
+          linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage -l $Qt5_Tools/OpenSSL/binary/lib/libcrypto.so.1.1 -l $Qt5_Tools/OpenSSL/binary/lib/libssl.so.1.1
           mv VNote*.AppImage vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
           tree AppDir
         working-directory: ${{runner.workspace}}/build
@@ -110,4 +115,4 @@ jobs:
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          path: ${{runner.workspace}}/build/vnote*.appimage
+          path: ${{runner.workspace}}/build/vnote*.AppImage
