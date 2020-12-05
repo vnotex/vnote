@@ -115,3 +115,15 @@ jobs:
         with:
           name: vnote-linux-x64_v${{env.VNOTE_VER}}
           path: ${{runner.workspace}}/build/vnote*.AppImage
+
+      - name: Test
+        shell: bash
+        run: ls ${{runner.workspace}}/build
+
+      - name: Update Continuous Build Release
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ${{runner.workspace}}/build/vnote-linux-x64_v3.0.0.AppImage
+          release: Continuous Build
+          tag: continuous-build
