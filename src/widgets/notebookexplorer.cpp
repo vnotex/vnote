@@ -200,8 +200,9 @@ void NotebookExplorer::newFolder()
         return;
     }
 
-    if (m_currentNotebook->isRecycleBinNode(node)
-        || m_currentNotebook->isNodeInRecycleBin(node)) {
+    if (m_currentNotebook->isRecycleBinNode(node)) {
+        node = m_currentNotebook->getRootNode().data();
+    } else if (m_currentNotebook->isNodeInRecycleBin(node)) {
         MessageBoxHelper::notify(MessageBoxHelper::Information,
                                  tr("Could not create folder within Recycle Bin."),
                                  VNoteX::getInst().getMainWindow());
@@ -221,8 +222,9 @@ void NotebookExplorer::newNote()
         return;
     }
 
-    if (m_currentNotebook->isRecycleBinNode(node)
-        || m_currentNotebook->isNodeInRecycleBin(node)) {
+    if (m_currentNotebook->isRecycleBinNode(node)) {
+        node = m_currentNotebook->getRootNode().data();
+    } else if (m_currentNotebook->isNodeInRecycleBin(node)) {
         MessageBoxHelper::notify(MessageBoxHelper::Information,
                                  tr("Could not create note within Recycle Bin."),
                                  VNoteX::getInst().getMainWindow());
@@ -285,8 +287,9 @@ void NotebookExplorer::importFile()
         return;
     }
 
-    if (m_currentNotebook->isRecycleBinNode(node)
-        || m_currentNotebook->isNodeInRecycleBin(node)) {
+    if (m_currentNotebook->isRecycleBinNode(node)) {
+        node = m_currentNotebook->getRootNode().data();
+    } else if (m_currentNotebook->isNodeInRecycleBin(node)) {
         MessageBoxHelper::notify(MessageBoxHelper::Information,
                                  tr("Could not create file within Recycle Bin."),
                                  VNoteX::getInst().getMainWindow());
@@ -325,8 +328,9 @@ void NotebookExplorer::importFolder()
         return;
     }
 
-    if (m_currentNotebook->isRecycleBinNode(node)
-        || m_currentNotebook->isNodeInRecycleBin(node)) {
+    if (m_currentNotebook->isRecycleBinNode(node)) {
+        node = m_currentNotebook->getRootNode().data();
+    } else if (m_currentNotebook->isNodeInRecycleBin(node)) {
         MessageBoxHelper::notify(MessageBoxHelper::Information,
                                  tr("Could not create folder within Recycle Bin."),
                                  VNoteX::getInst().getMainWindow());
