@@ -1,0 +1,63 @@
+name: CI-MacOS
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+env:
+    VNOTE_VER: 3.0.0
+
+jobs:
+  build-linux:
+    name: Build On MacOS
+    runs-on: macos-latest
+    timeout-minutes: 120
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE.
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Init Submodules
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install macdeployqtfix
+        uses: actions/checkout@v2
+        with:
+          repository: aurelien-rainone/macdeployqtfix
+          path: macdeployqtfix
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: 5.12.10
+          target: desktop
+          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+
+      - name: Create Build Dir
+        run: mkdir build
+        working-directory: ${{runner.workspace}}
+
+      - name: Configure Project
+        run: |
+          qmake -v
+          qmake CONFIG+=release ${GITHUB_WORKSPACE}/vnote.pro
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Build Project
+        run: make -j2
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Package Project
+        run: |
+          tree ./
+        working-directory: ${{runner.workspace}}/build
