@@ -10,7 +10,7 @@ A pleasant note-taking platform.
 **ATTENTION**:
 
 * The notebook format of VNote 3.0 is not compatible with that of earlier versions of VNote. Feel free to decide the right time to jump to VNote 3.0.
-* Features supported by VNote 3.0 now is NOT on par with VNote 2.0. The migration takes time.
+* Features supported by VNote 3.0 now is NOT on par with VNote 2.0. The [migration](https://github.com/vnotex/vnote/projects/1) takes time.
 
 The obsolete code base of VNote 2.0 is available at the [vnote2.0](https://github.com/vnotex/vnote/tree/vnote2.0) branch.
 
@@ -21,7 +21,7 @@ For more information, please visit [**VNote's Homepage**](https://vnotex.github.
 ## Description
 **VNote** is a Qt-based, free and open source note-taking application, focusing on Markdown now. VNote is designed to provide a pleasant note-taking platform with excellent editing experience.
 
-VNote is **NOT** just a simple editor for Markdown. By providing notes management, VNote makes taking notes in Markdown simpler.
+VNote is **NOT** just a simple editor for Markdown. By providing notes management, VNote makes taking notes in Markdown simpler. In the future, VNote will support more formats besides Markdown.
 
 Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 
@@ -43,7 +43,7 @@ You could help VNote's development in many ways.
 - Keep monitoring VNote and sending feedback for improvement.
 - Spread and promote VNote to your friends. Popularity is a strong power to drive developers.
 - Participate in the development of VNote and send [Pull Request](https://github.com/vnotex/vnote/pulls) to make VNote perfect.
-- Last, really appreciate your donate to VNote if you think VNote really helps.
+- Last, really appreciate your donate to VNote if VNote does help.
 
 **PayPal**: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
 
