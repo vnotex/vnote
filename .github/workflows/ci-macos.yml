@@ -30,6 +30,10 @@ jobs:
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
 
+      - name: Install Dependencies
+        run: |
+          brew install tree
+
       - name: Install macdeployqtfix
         uses: actions/checkout@v2
         with:
@@ -60,4 +64,8 @@ jobs:
       - name: Package Project
         run: |
           tree ./
+          cd src
+          sed -i -e 's/com.yourcompany.vnote/com.vnotex.vnote/g' vnote.app/Contents/Info.plist
+          macdeployqt vnote.app
+          python ../macdeployqtfix/macdeployqtfix.py vnote.app/Contents/MacOS/vnote $Qt5_Dir
         working-directory: ${{runner.workspace}}/build
