@@ -35,10 +35,9 @@ jobs:
           brew install tree
 
       - name: Install macdeployqtfix
-        uses: actions/checkout@v2
-        with:
-          repository: aurelien-rainone/macdeployqtfix
-          path: macdeployqtfix
+        run: |
+          git clone https://github.com/tamlok/macdeployqtfix.git macdeployqtfix --depth=1
+        working-directory: ${{runner.workspace}}
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
@@ -61,11 +60,49 @@ jobs:
         run: make -j2
         working-directory: ${{runner.workspace}}/build
 
-      - name: Package Project
+      - name: Mac Deploy
         run: |
-          tree ./
-          cd src
+          pushd src
           sed -i -e 's/com.yourcompany.vnote/com.vnotex.vnote/g' vnote.app/Contents/Info.plist
           macdeployqt vnote.app
-          python ../macdeployqtfix/macdeployqtfix.py vnote.app/Contents/MacOS/vnote $Qt5_Dir
+          python ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py vnote.app/Contents/MacOS/vnote $Qt5_Dir
+          # Fix Helpers/QtWebEngineProcess.app
+          pushd vnote.app/Contents/Frameworks/QtWebEngineCore.framework/Versions/5/Helpers
+          macdeployqt QtWebEngineProcess.app
+          python ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess $Qt5_Dir
+          popd
+          popd
+          tree ./
         working-directory: ${{runner.workspace}}/build
+
+      - name: Package Project
+        run: |
+          mkdir -p distrib/vnote
+          pushd distrib/vnote
+          mv ../../src/vnote.app ./
+          ln -s /Applications ./Applications
+          popd
+          hdiutil create -srcfolder ./distrib/vnote -format UDBZ ./vnote-mac-x64_v${{env.VNOTE_VER}}.dmg
+          cp vnote-mac-x64_v${{env.VNOTE_VER}}.dmg vnote-mac-x64.dmg
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Archive Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vnote-mac-x64_v${{env.VNOTE_VER}}
+          path: ${{runner.workspace}}/build/vnote-mac-x64_v${{env.VNOTE_VER}}.dmg
+
+      - name: Update Tag
+        if: github.ref == 'refs/heads/master'
+        run: |
+          git tag --force continuous-build ${GITHUB_SHA}
+          git push --force --tags
+
+      - name: Update Continuous Build Release
+        if: github.ref == 'refs/heads/master'
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ${{runner.workspace}}/build/vnote-mac-x64.dmg
+          release: Continuous Build
+          tag: continuous-build
