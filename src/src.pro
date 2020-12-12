@@ -69,7 +69,7 @@ macx {
     app_bundle_dir = $${TARGET}.app/Contents/MacOS
     app_target = $${app_bundle_dir}/$${TARGET}
     QMAKE_POST_LINK += \
-        install_name_tool -add_rpath $${vte_lib_dir}/ $${app_target} && \
+        install_name_tool -add_rpath $${vte_lib_dir} $${app_target} && \
         install_name_tool -change $${vte_lib_full_name} @rpath/$${vte_lib_full_name} $${app_target} &&
 
     # Process VSyntaxHighlighting framework
@@ -77,7 +77,7 @@ macx {
     sh_lib_dir = $${OUT_PWD}/../libs/vtextedit/src/libs/syntax-highlighting
     sh_lib_full_name = $${sh_lib_name}.framework/Versions/1/$${sh_lib_name}
     QMAKE_POST_LINK += \
-        install_name_tool -add_rpath $${sh_lib_dir}/ $${app_target} && \
+        install_name_tool -add_rpath $${sh_lib_dir} $${app_target} && \
         install_name_tool -change $${sh_lib_full_name} @rpath/$${sh_lib_full_name} $${app_target}
 
     # Move vnote_extra.rcc to the bundle.

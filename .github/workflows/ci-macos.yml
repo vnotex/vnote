@@ -57,7 +57,34 @@ jobs:
         working-directory: ${{runner.workspace}}/build
 
       - name: Build Project
-        run: make -j2
+        run: make -j4
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Deploy VSyntaxHighlighting Framework
+        run: |
+          my_lib_name=VSyntaxHighlighting
+          my_lib_framework=${my_lib_name}.framework
+          my_lib_dir=./libs/vtextedit/src/libs/syntax-highlighting
+          frameworks_dir=./src/vnote.app/Contents/Frameworks
+          mkdir -p ${frameworks_dir}
+          cp -R ${my_lib_dir}/${my_lib_framework} ${frameworks_dir}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Deploy VTextEdit Framework
+        run: |
+          my_lib_name=VTextEdit
+          my_lib_framework=${my_lib_name}.framework
+          my_lib_dir=./libs/vtextedit/src/editor
+          frameworks_dir=./src/vnote.app/Contents/Frameworks
+          mkdir -p ${frameworks_dir}
+          cp -R ${my_lib_dir}/${my_lib_framework} ${frameworks_dir}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Cleanup rpath
+        run: |
+          app_target=./src/vnote.app/Contents/MacOS/vnote
+          install_name_tool -delete_rpath ${PWD}/src/../libs/vtextedit/src/editor ${app_target}
+          install_name_tool -delete_rpath ${PWD}/src/../libs/vtextedit/src/libs/syntax-highlighting ${app_target}
         working-directory: ${{runner.workspace}}/build
 
       - name: Mac Deploy
