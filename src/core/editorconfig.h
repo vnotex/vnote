@@ -46,6 +46,8 @@ namespace vnotex
             Outline,
             RichPaste,
             FindAndReplace,
+            FindNext,
+            FindPrevious,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

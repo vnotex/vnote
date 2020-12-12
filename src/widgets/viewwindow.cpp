@@ -816,6 +816,29 @@ void ViewWindow::updateEditReadDiscardActionState(EditReadDiscardAction *p_act)
 
 void ViewWindow::setupShortcuts()
 {
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+
+    // FindNext.
+    {
+        auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::FindNext), this, Qt::WidgetWithChildrenShortcut);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        findNextOnLastFind(true);
+                    });
+        }
+    }
+
+    // FindPrevious.
+    {
+        auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::FindPrevious), this, Qt::WidgetWithChildrenShortcut);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        findNextOnLastFind(false);
+                    });
+        }
+    }
 }
 
 void ViewWindow::wheelEvent(QWheelEvent *p_event)
@@ -849,6 +872,21 @@ void ViewWindow::showFindAndReplaceWidget()
     if (!m_findAndReplace) {
         m_findAndReplace = new FindAndReplaceWidget(this);
         m_mainLayout->addWidget(m_findAndReplace);
+
+        // Connect it to slots.
+        connect(m_findAndReplace, &FindAndReplaceWidget::findTextChanged,
+                this, &ViewWindow::handleFindTextChanged);
+        connect(m_findAndReplace, &FindAndReplaceWidget::findNextRequested,
+                this, &ViewWindow::findNext);
+        connect(m_findAndReplace, &FindAndReplaceWidget::replaceRequested,
+                this, &ViewWindow::replace);
+        connect(m_findAndReplace, &FindAndReplaceWidget::replaceAllRequested,
+                this, &ViewWindow::replaceAll);
+        connect(m_findAndReplace, &FindAndReplaceWidget::closed,
+                this, [this]() {
+                    setFocus();
+                    handleFindAndReplaceWidgetClosed();
+                });
     }
 
     m_findAndReplace->open(QString());
@@ -880,4 +918,82 @@ void ViewWindow::keyPressEvent(QKeyEvent *p_event)
 bool ViewWindow::findAndReplaceWidgetVisible() const
 {
     return m_findAndReplace && m_findAndReplace->isVisible();
+}
+
+void ViewWindow::handleFindTextChanged(const QString &p_text, FindOptions p_options)
+{
+}
+
+void ViewWindow::handleFindNext(const QString &p_text, FindOptions p_options)
+{
+}
+
+void ViewWindow::handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
+{
+}
+
+void ViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
+{
+}
+
+void ViewWindow::handleFindAndReplaceWidgetClosed()
+{
+}
+
+void ViewWindow::findNextOnLastFind(bool p_forward)
+{
+    // Check if need to update the find info.
+    if (m_findAndReplace && m_findAndReplace->isVisible()) {
+        m_findInfo.m_text = m_findAndReplace->getFindText();
+        m_findInfo.m_options = m_findAndReplace->getOptions();
+    }
+
+    if (m_findInfo.m_text.isEmpty()) {
+        return;
+    }
+
+    if (p_forward) {
+        handleFindNext(m_findInfo.m_text, m_findInfo.m_options & ~FindOption::FindBackward);
+    } else {
+        handleFindNext(m_findInfo.m_text, m_findInfo.m_options | FindOption::FindBackward);
+    }
+}
+
+void ViewWindow::findNext(const QString &p_text, FindOptions p_options)
+{
+    m_findInfo.m_text = p_text;
+    m_findInfo.m_options = p_options;
+    handleFindNext(p_text, p_options);
+}
+
+void ViewWindow::replace(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
+{
+    m_findInfo.m_text = p_text;
+    m_findInfo.m_options = p_options;
+    handleReplace(p_text, p_options, p_replaceText);
+}
+
+void ViewWindow::replaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
+{
+    m_findInfo.m_text = p_text;
+    m_findInfo.m_options = p_options;
+    handleReplaceAll(p_text, p_options, p_replaceText);
+}
+
+void ViewWindow::showFindResult(const QString &p_text, int p_totalMatches, int p_currentMatchIndex)
+{
+    if (p_totalMatches == 0) {
+        VNoteX::getInst().showStatusMessageShort(tr("Pattern not found: %1").arg(p_text));
+    } else {
+        VNoteX::getInst().showStatusMessageShort(tr("Match found: %1/%2").arg(p_currentMatchIndex + 1).arg(p_totalMatches));
+    }
+}
+
+void ViewWindow::showReplaceResult(const QString &p_text, int p_totalReplaces)
+{
+    if (p_totalReplaces == 0) {
+        VNoteX::getInst().showStatusMessageShort(tr("Pattern not found: %1").arg(p_text));
+    } else {
+        VNoteX::getInst().showStatusMessageShort(tr("Replaced %n match(es)", "", p_totalReplaces));
+    }
 }

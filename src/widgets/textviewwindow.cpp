@@ -181,3 +181,28 @@ void TextViewWindow::zoom(bool p_zoomIn)
     textEditorConfig.setZoomDelta(m_editor->zoomDelta());
     showZoomDelta(m_editor->zoomDelta());
 }
+
+void TextViewWindow::handleFindTextChanged(const QString &p_text, FindOptions p_options)
+{
+    TextViewWindowHelper::handleFindTextChanged(this, p_text, p_options);
+}
+
+void TextViewWindow::handleFindNext(const QString &p_text, FindOptions p_options)
+{
+    TextViewWindowHelper::handleFindNext(this, p_text, p_options);
+}
+
+void TextViewWindow::handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
+{
+    TextViewWindowHelper::handleReplace(this, p_text, p_options, p_replaceText);
+}
+
+void TextViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
+{
+    TextViewWindowHelper::handleReplaceAll(this, p_text, p_options, p_replaceText);
+}
+
+void TextViewWindow::handleFindAndReplaceWidgetClosed()
+{
+    TextViewWindowHelper::handleFindAndReplaceWidgetClosed(this);
+}

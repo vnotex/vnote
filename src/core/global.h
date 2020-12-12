@@ -64,10 +64,11 @@ namespace vnotex
     enum FindOption
     {
         None = 0,
-        CaseSensitive = 0x1U,
-        WholeWordOnly = 0x2U,
-        RegularExpression = 0x4U,
-        IncrementalSearch = 0x8U
+        FindBackward = 0x1U,
+        CaseSensitive = 0x2U,
+        WholeWordOnly = 0x4U,
+        RegularExpression = 0x8U,
+        IncrementalSearch = 0x10U
     };
     Q_DECLARE_FLAGS(FindOptions, FindOption);
 

@@ -20,7 +20,6 @@
 #include <core/vnotex.h>
 #include <core/thememgr.h>
 #include "editors/markdowneditor.h"
-#include "textviewwindow.h"
 #include "textviewwindowhelper.h"
 #include "editors/markdownviewer.h"
 #include "editors/editormarkdownvieweradapter.h"
@@ -278,6 +277,7 @@ void MarkdownViewWindow::setupToolBar()
     toolBar->addSeparator();
 
     ToolBarHelper::addSpacer(toolBar);
+    addAction(toolBar, ViewWindowToolBarHelper::FindAndReplace);
     addAction(toolBar, ViewWindowToolBarHelper::Outline);
 }
 
@@ -791,4 +791,47 @@ void MarkdownViewWindow::zoom(bool p_zoomIn)
     auto &textEditorConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig().getTextEditorConfig();
     textEditorConfig.setZoomDelta(m_editor->zoomDelta());
     showZoomDelta(m_editor->zoomDelta());
+}
+
+void MarkdownViewWindow::handleFindTextChanged(const QString &p_text, FindOptions p_options)
+{
+    if (m_mode == Mode::Read) {
+
+    } else {
+        TextViewWindowHelper::handleFindTextChanged(this, p_text, p_options);
+    }
+}
+
+void MarkdownViewWindow::handleFindNext(const QString &p_text, FindOptions p_options)
+{
+    if (m_mode == Mode::Read) {
+
+    } else {
+        TextViewWindowHelper::handleFindNext(this, p_text, p_options);
+    }
+}
+
+void MarkdownViewWindow::handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
+{
+    if (m_mode == Mode::Read) {
+
+    } else {
+        TextViewWindowHelper::handleReplace(this, p_text, p_options, p_replaceText);
+    }
+}
+
+void MarkdownViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
+{
+    if (m_mode == Mode::Read) {
+
+    } else {
+        TextViewWindowHelper::handleReplaceAll(this, p_text, p_options, p_replaceText);
+    }
+}
+
+void MarkdownViewWindow::handleFindAndReplaceWidgetClosed()
+{
+    if (m_editor) {
+        TextViewWindowHelper::handleFindAndReplaceWidgetClosed(this);
+    }
 }

@@ -28,6 +28,7 @@ QJsonObject WidgetConfig::toJson() const
 {
     QJsonObject obj;
     obj[QStringLiteral("outline_auto_expanded_level")] = m_outlineAutoExpandedLevel;
+    obj[QStringLiteral("find_and_replace_options")] = static_cast<int>(m_findAndReplaceOptions);
     return obj;
 }
 

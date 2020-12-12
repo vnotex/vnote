@@ -756,9 +756,8 @@ void ViewArea::setupGlobalShortcuts()
 
     // CloseTab.
     {
-        QKeySequence kseq(coreConfig.getShortcut(CoreConfig::CloseTab));
-        if (!kseq.isEmpty()) {
-            auto shortcut = new QShortcut(kseq, this);
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseTab), this);
+        if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
                         auto win = getCurrentViewWindow();
@@ -771,9 +770,8 @@ void ViewArea::setupGlobalShortcuts()
 
     // LocateNode.
     {
-        QKeySequence kseq(coreConfig.getShortcut(CoreConfig::LocateNode));
-        if (!kseq.isEmpty()) {
-            auto shortcut = new QShortcut(kseq, this);
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::LocateNode), this);
+        if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
                         auto win = getCurrentViewWindow();

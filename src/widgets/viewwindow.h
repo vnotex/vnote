@@ -77,6 +77,12 @@ namespace vnotex
     public slots:
         virtual void handleEditorConfigChange() = 0;
 
+        void findNext(const QString &p_text, FindOptions p_options);
+
+        void replace(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
+
+        void replaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
+
     signals:
         // Emit when the attached buffer is changed.
         void bufferChanged();
@@ -129,6 +135,16 @@ namespace vnotex
 
         // Handle all kinds of type action.
         virtual void handleTypeAction(TypeAction p_action);
+
+        virtual void handleFindTextChanged(const QString &p_text, FindOptions p_options);
+
+        virtual void handleFindNext(const QString &p_text, FindOptions p_options);
+
+        virtual void handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
+
+        virtual void handleReplaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
+
+        virtual void handleFindAndReplaceWidgetClosed();
 
     protected:
         void setCentralWidget(QWidget *p_widget);
@@ -183,6 +199,11 @@ namespace vnotex
 
         bool findAndReplaceWidgetVisible() const;
 
+        // @p_currentMatchIndex: 0-based.
+        static void showFindResult(const QString &p_text, int p_totalMatches, int p_currentMatchIndex);
+
+        static void showReplaceResult(const QString &p_text, int p_totalReplaces);
+
         static ViewWindow::Mode modeFromOpenParameters(const FileOpenParameters &p_paras);
 
         QSharedPointer<QWidget> m_statusWidget;
@@ -197,6 +218,12 @@ namespace vnotex
         Mode m_mode = Mode::Invalid;
 
     private:
+        struct FindInfo
+        {
+            QString m_text;
+            FindOptions m_options;
+        };
+
         void setupUI();
 
         void initIcons();
@@ -236,6 +263,8 @@ namespace vnotex
         };
         int checkFileMissingOrChangedOutside();
 
+        void findNextOnLastFind(bool p_forward = true);
+
         static ViewWindow::TypeAction toolBarActionToTypeAction(ViewWindowToolBarHelper::Action p_action);
 
         Buffer *m_buffer = nullptr;
@@ -271,6 +300,9 @@ namespace vnotex
 
         // Managed by QObject.
         FindAndReplaceWidget *m_findAndReplace = nullptr;
+
+        // Last find info.
+        FindInfo m_findInfo;
 
         static QIcon s_savedIcon;
         static QIcon s_modifiedIcon;

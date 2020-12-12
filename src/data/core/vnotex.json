@@ -51,7 +51,9 @@
                 "TypeTable" : "Ctrl+/",
                 "Outline" : "Ctrl+G, O",
                 "RichPaste" : "Ctrl+Shift+V",
-                "FindAndReplace" : "Ctrl+F"
+                "FindAndReplace" : "Ctrl+F",
+                "FindNext" : "F3",
+                "FindPrevious" : "Shift+F3"
             }
         },
         "text_editor" : {
@@ -226,6 +228,6 @@
         "//comment" : "Level of the heading in outline that should expand to automatically (1-6)",
         "outline_auto_expanded_level" : 6,
         "//comment" : "Default find options in FindAndReplace",
-        "find_and_replace_options" : 8
+        "find_and_replace_options" : 16
     }
 }
