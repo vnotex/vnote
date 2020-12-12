@@ -25,7 +25,6 @@ jobs:
           fetch-depth: 1
 
       - name: Init Submodules
-        shell: bash
         run: |
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
@@ -34,54 +33,48 @@ jobs:
       - name: Install linuxdeploy
         uses: miurahr/install-linuxdeploy-action@v1
         with:
-            plugins: qt appimage
+          plugins: qt appimage
 
       - name: Install dependencies
         run: |
-            sudo DEBIAN_FRONTEND=noninteractive apt-get update
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev tree
+          sudo DEBIAN_FRONTEND=noninteractive apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev tree
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
           version: 5.12.10
           target: desktop
-          arch: ${{matrix.config.arch}}
           modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
           tools: tools_openssl_x64,1.1.1-4,qt.tools.openssl.gcc_64
 
       - name: Create Build Dir
-        shell: bash
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
       - name: Compile qt5ct
-        shell: bash
         run: |
-            wget -c https://excellmedia.dl.sourceforge.net/project/qt5ct/qt5ct-1.1.tar.bz2
-            tar xf qt5ct-1.*.tar.bz2
-            cd qt5ct-1.*/
-            QT_SELECT=5 qmake
-            make -j$(nproc) && sudo make install
+          wget -c https://excellmedia.dl.sourceforge.net/project/qt5ct/qt5ct-1.1.tar.bz2
+          tar xf qt5ct-1.*.tar.bz2
+          cd qt5ct-1.*/
+          QT_SELECT=5 qmake
+          make -j$(nproc) && sudo make install
         working-directory: ${{runner.workspace}}/build
 
       - name: Configure Project
-        shell: bash
         run: |
-            qmake -v
-            cp /usr/lib/x86_64-linux-gnu/qt5/plugins/platforminputcontexts/libfcitxplatforminputcontextplugin.so ./
-            sudo chmod +rwx ./libfcitxplatforminputcontextplugin.so
-            cp ./libfcitxplatforminputcontextplugin.so $Qt5_Dir/plugins/platforminputcontexts
-            qmake CONFIG+=release -spec linux-g++-64 ${GITHUB_WORKSPACE}/vnote.pro
+          qmake -v
+          cp /usr/lib/x86_64-linux-gnu/qt5/plugins/platforminputcontexts/libfcitxplatforminputcontextplugin.so ./
+          sudo chmod +rwx ./libfcitxplatforminputcontextplugin.so
+          cp ./libfcitxplatforminputcontextplugin.so $Qt5_Dir/plugins/platforminputcontexts
+          qmake CONFIG+=release -spec linux-g++-64 ${GITHUB_WORKSPACE}/vnote.pro
         working-directory: ${{runner.workspace}}/build
 
       - name: Build Project
-        shell: bash
         run: make -j$(nproc)
         working-directory: ${{runner.workspace}}/build
 
       - name: Install Project
-        shell: bash
         run: |
           mkdir AppDir
           make install INSTALL_ROOT=${{runner.workspace}}/build/AppDir
@@ -89,7 +82,6 @@ jobs:
         working-directory: ${{runner.workspace}}/build
 
       - name: Package Project
-        shell: bash
         run: |
           # Move the lib out to avoid duplication
           mv AppDir/usr/lib ./
@@ -119,7 +111,6 @@ jobs:
 
       - name: Update Tag
         if: github.ref == 'refs/heads/master'
-        shell: bash
         run: |
           git tag --force continuous-build ${GITHUB_SHA}
           git push --force --tags

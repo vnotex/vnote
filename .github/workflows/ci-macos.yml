@@ -1,0 +1,135 @@
+name: CI-MacOS
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+env:
+    VNOTE_VER: 3.0.0
+
+jobs:
+  build-linux:
+    name: Build On MacOS
+    runs-on: macos-latest
+    timeout-minutes: 120
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE.
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Init Submodules
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install Dependencies
+        run: |
+          brew install tree
+
+      - name: Install macdeployqtfix
+        run: |
+          git clone https://github.com/tamlok/macdeployqtfix.git macdeployqtfix --depth=1
+        working-directory: ${{runner.workspace}}
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: 5.12.10
+          target: desktop
+          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+
+      - name: Create Build Dir
+        run: mkdir build
+        working-directory: ${{runner.workspace}}
+
+      - name: Configure Project
+        run: |
+          qmake -v
+          qmake CONFIG+=release ${GITHUB_WORKSPACE}/vnote.pro
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Build Project
+        run: make -j4
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Deploy VSyntaxHighlighting Framework
+        run: |
+          my_lib_name=VSyntaxHighlighting
+          my_lib_framework=${my_lib_name}.framework
+          my_lib_dir=./libs/vtextedit/src/libs/syntax-highlighting
+          frameworks_dir=./src/vnote.app/Contents/Frameworks
+          mkdir -p ${frameworks_dir}
+          cp -R ${my_lib_dir}/${my_lib_framework} ${frameworks_dir}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Deploy VTextEdit Framework
+        run: |
+          my_lib_name=VTextEdit
+          my_lib_framework=${my_lib_name}.framework
+          my_lib_dir=./libs/vtextedit/src/editor
+          frameworks_dir=./src/vnote.app/Contents/Frameworks
+          mkdir -p ${frameworks_dir}
+          cp -R ${my_lib_dir}/${my_lib_framework} ${frameworks_dir}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Cleanup rpath
+        run: |
+          app_target=./src/vnote.app/Contents/MacOS/vnote
+          install_name_tool -delete_rpath ${PWD}/src/../libs/vtextedit/src/editor ${app_target}
+          install_name_tool -delete_rpath ${PWD}/src/../libs/vtextedit/src/libs/syntax-highlighting ${app_target}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Mac Deploy
+        run: |
+          pushd src
+          sed -i -e 's/com.yourcompany.vnote/com.vnotex.vnote/g' vnote.app/Contents/Info.plist
+          macdeployqt vnote.app
+          python ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py vnote.app/Contents/MacOS/vnote $Qt5_Dir
+          # Fix Helpers/QtWebEngineProcess.app
+          pushd vnote.app/Contents/Frameworks/QtWebEngineCore.framework/Versions/5/Helpers
+          macdeployqt QtWebEngineProcess.app
+          python ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess $Qt5_Dir
+          popd
+          popd
+          tree ./
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Package Project
+        run: |
+          mkdir -p distrib/vnote
+          pushd distrib/vnote
+          mv ../../src/vnote.app ./
+          ln -s /Applications ./Applications
+          popd
+          hdiutil create -srcfolder ./distrib/vnote -format UDBZ ./vnote-mac-x64_v${{env.VNOTE_VER}}.dmg
+          cp vnote-mac-x64_v${{env.VNOTE_VER}}.dmg vnote-mac-x64.dmg
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Archive Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vnote-mac-x64_v${{env.VNOTE_VER}}
+          path: ${{runner.workspace}}/build/vnote-mac-x64_v${{env.VNOTE_VER}}.dmg
+
+      - name: Update Tag
+        if: github.ref == 'refs/heads/master'
+        run: |
+          git tag --force continuous-build ${GITHUB_SHA}
+          git push --force --tags
+
+      - name: Update Continuous Build Release
+        if: github.ref == 'refs/heads/master'
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ${{runner.workspace}}/build/vnote-mac-x64.dmg
+          release: Continuous Build
+          tag: continuous-build
