@@ -318,13 +318,7 @@ void MarkdownViewer::hideUnusedActions(QMenu *p_menu)
 void MarkdownViewer::handleWebKeyPress(int p_key, bool p_ctrl, bool p_shift, bool p_meta)
 {
     Q_UNUSED(p_shift);
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-    bool macCtrl = p_meta;
-#else
     Q_UNUSED(p_meta);
-    bool macCtrl = false;
-#endif
-
     switch (p_key) {
     // Esc
     case 27:
@@ -332,7 +326,7 @@ void MarkdownViewer::handleWebKeyPress(int p_key, bool p_ctrl, bool p_shift, boo
 
     // Dash
     case 189:
-        if (p_ctrl || macCtrl) {
+        if (p_ctrl) {
             // Zoom out.
             zoomOut();
         }
@@ -340,7 +334,7 @@ void MarkdownViewer::handleWebKeyPress(int p_key, bool p_ctrl, bool p_shift, boo
 
     // Equal
     case 187:
-        if (p_ctrl || macCtrl) {
+        if (p_ctrl) {
             // Zoom in.
             zoomIn();
         }
@@ -348,7 +342,7 @@ void MarkdownViewer::handleWebKeyPress(int p_key, bool p_ctrl, bool p_shift, boo
 
     // 0
     case 48:
-        if (p_ctrl || macCtrl) {
+        if (p_ctrl) {
             // Recover zoom.
             restoreZoom();
         }

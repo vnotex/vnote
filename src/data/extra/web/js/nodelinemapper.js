@@ -14,7 +14,7 @@ class NodeLineMapper {
 
         this.headingNodes = [];
 
-        this.smoothAnchorScroll = true;
+        this.smoothAnchorScroll = false;
 
         window.addEventListener(
             'scroll',
