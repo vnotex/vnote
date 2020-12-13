@@ -40,6 +40,8 @@ namespace vnotex
 
         void closed();
 
+        void opened();
+
     protected:
         void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 

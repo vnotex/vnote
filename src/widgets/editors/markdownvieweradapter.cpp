@@ -55,6 +55,16 @@ MarkdownViewerAdapter::Heading MarkdownViewerAdapter::Heading::fromJson(const QJ
                    p_obj.value(QStringLiteral("anchor")).toString());
 }
 
+QJsonObject MarkdownViewerAdapter::FindOption::toJson() const
+{
+    QJsonObject obj;
+    obj["findBackward"] = m_findBackward;
+    obj["caseSensitive"] = m_caseSensitive;
+    obj["wholeWordOnly"] = m_wholeWordOnly;
+    obj["regularExpression"] = m_regularExpression;
+    return obj;
+}
+
 MarkdownViewerAdapter::MarkdownViewerAdapter(QObject *p_parent)
     : QObject(p_parent)
 {
@@ -267,4 +277,28 @@ const QStringList &MarkdownViewerAdapter::getCrossCopyTargets() const
 void MarkdownViewerAdapter::setCrossCopyResult(quint64 p_id, quint64 p_timeStamp, const QString &p_html)
 {
     emit crossCopyReady(p_id, p_timeStamp, p_html);
+}
+
+void MarkdownViewerAdapter::findText(const QString &p_text, FindOptions p_options)
+{
+    FindOption opts;
+    if (p_options & vnotex::FindOption::FindBackward) {
+        opts.m_findBackward = true;
+    }
+    if (p_options & vnotex::FindOption::CaseSensitive) {
+        opts.m_caseSensitive = true;
+    }
+    if (p_options & vnotex::FindOption::WholeWordOnly) {
+        opts.m_wholeWordOnly = true;
+    }
+    if (p_options & vnotex::FindOption::RegularExpression) {
+        opts.m_regularExpression = true;
+    }
+
+    emit findTextRequested(p_text, opts.toJson());
+}
+
+void MarkdownViewerAdapter::setFindText(const QString &p_text, int p_totalMatches, int p_currentMatchIndex)
+{
+    emit findTextReady(p_text, p_totalMatches, p_currentMatchIndex);
 }

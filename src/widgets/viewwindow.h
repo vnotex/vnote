@@ -146,6 +146,8 @@ namespace vnotex
 
         virtual void handleFindAndReplaceWidgetClosed();
 
+        virtual void handleFindAndReplaceWidgetOpened();
+
     protected:
         void setCentralWidget(QWidget *p_widget);
 
@@ -216,6 +218,9 @@ namespace vnotex
         int m_editorConfigRevision = 0;
 
         Mode m_mode = Mode::Invalid;
+
+        // Managed by QObject.
+        FindAndReplaceWidget *m_findAndReplace = nullptr;
 
     private:
         struct FindInfo
@@ -297,9 +302,6 @@ namespace vnotex
 
         // Whether check file missing or changed outside.
         bool m_fileChangeCheckEnabled = true;
-
-        // Managed by QObject.
-        FindAndReplaceWidget *m_findAndReplace = nullptr;
 
         // Last find info.
         FindInfo m_findInfo;

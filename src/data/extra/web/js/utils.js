@@ -99,4 +99,14 @@ class Utils {
             height: rect.height
         };
     }
+
+    static isVisible(p_node) {
+        let rect = p_node.getBoundingClientRect();
+        let vrect = this.viewPortRect();
+        if (rect.top < 0 || rect.left < 0
+            || rect.bottom > vrect.height || rect.right > vrect.width) {
+            return false;
+        }
+        return true;
+    }
 }

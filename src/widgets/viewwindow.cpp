@@ -887,6 +887,8 @@ void ViewWindow::showFindAndReplaceWidget()
                     setFocus();
                     handleFindAndReplaceWidgetClosed();
                 });
+        connect(m_findAndReplace, &FindAndReplaceWidget::opened,
+                this, &ViewWindow::handleFindAndReplaceWidgetOpened);
     }
 
     m_findAndReplace->open(QString());
@@ -937,6 +939,10 @@ void ViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_options, 
 }
 
 void ViewWindow::handleFindAndReplaceWidgetClosed()
+{
+}
+
+void ViewWindow::handleFindAndReplaceWidgetOpened()
 {
 }
 

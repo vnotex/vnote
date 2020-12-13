@@ -197,6 +197,14 @@
                             "web/js/turndown/turndown-plugin-gfm.js",
                             "web/js/turndown.js"
                         ]
+                    },
+                    {
+                        "name" : "mark.js",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/mark.js/mark.min.js",
+                            "web/js/markjs.js"
+                        ]
                     }
                 ]
             },

@@ -78,6 +78,19 @@ namespace vnotex
             QString m_anchor;
         };
 
+        struct FindOption
+        {
+            QJsonObject toJson() const;
+
+            bool m_findBackward = false;
+
+            bool m_caseSensitive = false;
+
+            bool m_wholeWordOnly = false;
+
+            bool m_regularExpression = false;
+        };
+
         explicit MarkdownViewerAdapter(QObject *p_parent = nullptr);
 
         virtual ~MarkdownViewerAdapter();
@@ -101,6 +114,8 @@ namespace vnotex
         void scroll(bool p_up);
 
         const QStringList &getCrossCopyTargets() const;
+
+        void findText(const QString &p_text, FindOptions p_options);
 
         // Functions to be called from web side.
     public slots:
@@ -142,6 +157,8 @@ namespace vnotex
 
         void setCrossCopyResult(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
 
+        void setFindText(const QString &p_text, int p_totalMatches, int p_currentMatchIndex);
+
         // Signals to be connected at web side.
     signals:
         // Current Markdown text is updated.
@@ -173,6 +190,8 @@ namespace vnotex
                                 const QString &p_baseUrl,
                                 const QString &p_html);
 
+        void findTextRequested(const QString &p_text, const QJsonObject &p_options);
+
     // Signals to be connected at cpp side.
     signals:
         void graphPreviewDataReady(const PreviewData &p_data);
@@ -192,6 +211,8 @@ namespace vnotex
         void htmlToMarkdownReady(quint64 p_id, quint64 p_timeStamp, const QString &p_text);
 
         void crossCopyReady(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
+
+        void findTextReady(const QString &p_text, int p_totalMatches, int p_currentMatchIndex);
 
     private:
         void scrollToLine(int p_lineNumber);

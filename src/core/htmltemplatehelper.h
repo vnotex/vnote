@@ -20,11 +20,6 @@ namespace vnotex
 
         bool m_protectFromXss = false;
 
-        QString boolToString(bool p_val) const
-        {
-            return p_val ? QStringLiteral("true") : QStringLiteral("false");
-        }
-
         QString toJavascriptObject() const;
     };
 

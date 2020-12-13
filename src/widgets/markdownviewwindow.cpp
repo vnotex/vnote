@@ -27,6 +27,7 @@
 #include "dialogs/deleteconfirmdialog.h"
 #include "outlineprovider.h"
 #include "toolbarhelper.h"
+#include "findandreplacewidget.h"
 
 using namespace vnotex;
 
@@ -81,6 +82,10 @@ void MarkdownViewWindow::setupUI()
 void MarkdownViewWindow::setMode(Mode p_mode)
 {
     setModeInternal(p_mode);
+
+    if (m_findAndReplace && m_findAndReplace->isVisible()) {
+        m_findAndReplace->setReplaceEnabled(m_mode != Mode::Read);
+    }
 }
 
 void MarkdownViewWindow::setModeInternal(Mode p_mode)
@@ -418,6 +423,8 @@ void MarkdownViewWindow::setupViewer()
                     m_outlineProvider->setCurrentHeadingIndex(this->adapter()->getCurrentHeadingIndex());
                 }
             });
+    connect(adapter, &MarkdownViewerAdapter::findTextReady,
+            this, &ViewWindow::showFindResult);
 }
 
 void MarkdownViewWindow::syncTextEditorFromBuffer(bool p_syncPositionFromReadMode)
@@ -796,7 +803,7 @@ void MarkdownViewWindow::zoom(bool p_zoomIn)
 void MarkdownViewWindow::handleFindTextChanged(const QString &p_text, FindOptions p_options)
 {
     if (m_mode == Mode::Read) {
-
+        adapter()->findText(p_text, p_options);
     } else {
         TextViewWindowHelper::handleFindTextChanged(this, p_text, p_options);
     }
@@ -805,7 +812,9 @@ void MarkdownViewWindow::handleFindTextChanged(const QString &p_text, FindOption
 void MarkdownViewWindow::handleFindNext(const QString &p_text, FindOptions p_options)
 {
     if (m_mode == Mode::Read) {
-
+        if (p_options & FindOption::IncrementalSearch) {
+            adapter()->findText(p_text, p_options);
+        }
     } else {
         TextViewWindowHelper::handleFindNext(this, p_text, p_options);
     }
@@ -814,7 +823,7 @@ void MarkdownViewWindow::handleFindNext(const QString &p_text, FindOptions p_opt
 void MarkdownViewWindow::handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
 {
     if (m_mode == Mode::Read) {
-
+        VNoteX::getInst().showStatusMessageShort(tr("Replace is not supported in read mode"));
     } else {
         TextViewWindowHelper::handleReplace(this, p_text, p_options, p_replaceText);
     }
@@ -823,7 +832,7 @@ void MarkdownViewWindow::handleReplace(const QString &p_text, FindOptions p_opti
 void MarkdownViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
 {
     if (m_mode == Mode::Read) {
-
+        VNoteX::getInst().showStatusMessageShort(tr("Replace is not supported in read mode"));
     } else {
         TextViewWindowHelper::handleReplaceAll(this, p_text, p_options, p_replaceText);
     }
@@ -833,5 +842,13 @@ void MarkdownViewWindow::handleFindAndReplaceWidgetClosed()
 {
     if (m_editor) {
         TextViewWindowHelper::handleFindAndReplaceWidgetClosed(this);
+    } else {
+        adapter()->findText("", FindOption::None);
     }
+}
+
+void MarkdownViewWindow::handleFindAndReplaceWidgetOpened()
+{
+    Q_ASSERT(m_findAndReplace);
+    m_findAndReplace->setReplaceEnabled(m_mode != Mode::Read);
 }

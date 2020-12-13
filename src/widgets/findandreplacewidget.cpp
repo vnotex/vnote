@@ -27,7 +27,7 @@ FindAndReplaceWidget::FindAndReplaceWidget(QWidget *p_parent)
 {
     m_findTextTimer = new QTimer(this);
     m_findTextTimer->setSingleShot(true);
-    m_findTextTimer->setInterval(100);
+    m_findTextTimer->setInterval(500);
     connect(m_findTextTimer, &QTimer::timeout,
             this, [this]() {
                 emit findTextChanged(getFindText(), getOptions());
@@ -302,6 +302,8 @@ void FindAndReplaceWidget::open(const QString &p_text)
 
     m_findLineEdit->setFocus();
     m_findLineEdit->selectAll();
+
+    emit opened();
 }
 
 QString FindAndReplaceWidget::getFindText() const
