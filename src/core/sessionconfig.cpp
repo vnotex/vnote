@@ -72,7 +72,16 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
         m_openGL = stringToOpenGL(option);
     }
 
-    m_systemTitleBarEnabled = readBool(coreObj, QStringLiteral("system_title_bar"));
+    if (coreObj.contains(QStringLiteral("system_title_bar"))) {
+        m_systemTitleBarEnabled = readBool(coreObj, QStringLiteral("system_title_bar"));
+    } else {
+        // Enable system title bar on macOS by default.
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+        m_systemTitleBarEnabled = true;
+#else
+        m_systemTitleBarEnabled = false;
+#endif
+    }
 }
 
 QJsonObject SessionConfig::saveCore() const
