@@ -112,3 +112,8 @@ bool Utils::fuzzyEqual(qreal p_a, qreal p_b)
 {
     return std::abs(p_a - p_b) < std::pow(10, -6);
 }
+
+QString Utils::boolToString(bool p_val)
+{
+    return p_val ? QStringLiteral("true") : QStringLiteral("false");
+}

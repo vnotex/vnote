@@ -62,7 +62,7 @@ QString PathUtils::concatenateFilePath(const QString &p_dirPath, const QString &
 
 QString PathUtils::dirName(const QString &p_path)
 {
-    Q_ASSERT(QFileInfo(p_path).isDir());
+    Q_ASSERT(!QFileInfo::exists(p_path) || QFileInfo(p_path).isDir());
     return QDir(p_path).dirName();
 }
 

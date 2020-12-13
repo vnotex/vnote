@@ -25,8 +25,22 @@ namespace vnotex
 
         void close();
 
+        QString getFindText() const;
+
+        FindOptions getOptions() const;
+
     signals:
         void findTextChanged(const QString &p_text, FindOptions p_options);
+
+        void findNextRequested(const QString &p_text, FindOptions p_options);
+
+        void replaceRequested(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
+
+        void replaceAllRequested(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
+
+        void closed();
+
+        void opened();
 
     protected:
         void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
@@ -66,6 +80,8 @@ namespace vnotex
         FindOptions m_options = FindOption::None;
 
         QTimer *m_findTextTimer = nullptr;
+
+        bool m_optionCheckBoxMuted = false;
     };
 }
 

@@ -52,6 +52,8 @@ namespace vnotex
                                    qreal p_scaleFactor);
 
         static bool fuzzyEqual(qreal p_a, qreal p_b);
+
+        static QString boolToString(bool p_val);
     };
 } // ns vnotex
 

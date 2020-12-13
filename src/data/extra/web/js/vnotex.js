@@ -50,6 +50,8 @@ class VNoteX extends EventEmitter {
 
             this.crossCopyer = new CrossCopy(this);
 
+            this.searcher = new MarkJs(this, this.contentContainer);
+
             this.initialized = true;
 
             // Signal out.
@@ -248,6 +250,14 @@ class VNoteX extends EventEmitter {
 
     setCrossCopyResult(p_id, p_timeStamp, p_html) {
         window.vxMarkdownAdapter.setCrossCopyResult(p_id, p_timeStamp, p_html);
+    }
+
+    findText(p_text, p_options) {
+        this.searcher.findText(p_text, p_options);
+    }
+
+    showFindResult(p_text, p_totalMatches, p_currentMatchIndex) {
+        window.vxMarkdownAdapter.setFindText(p_text, p_totalMatches, p_currentMatchIndex);
     }
 
     static detectOS() {

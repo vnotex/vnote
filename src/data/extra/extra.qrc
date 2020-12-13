@@ -63,6 +63,8 @@
         <file>web/js/turndown/turndown.js</file>
         <file>web/js/turndown/turndown-plugin-gfm.js</file>
         <file>web/js/turndown.js</file>
+        <file>web/js/mark.js/mark.min.js</file>
+        <file>web/js/markjs.js</file>
         <file>syntax-highlighting/themes/markdown-default.theme</file>
         <file>syntax-highlighting/themes/default.theme</file>
         <file>syntax-highlighting/themes/breeze-dark.theme</file>

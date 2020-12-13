@@ -39,6 +39,21 @@
         },
         "FoldingHighlight" : {
             "text-color" : "#ffa9c4f5"
+        },
+        "IncrementalSearch" : {
+            "//comment" : "Incremental search highlight",
+            "text-color" : "#222222",
+            "background-color" : "#ce93d8"
+        },
+        "Search" : {
+            "//comment" : "Search highlight",
+            "text-color" : "#222222",
+            "background-color" : "#4db6ac"
+        },
+        "SearchUnderCursor" : {
+            "//comment" : "Search highlight under cursor",
+            "text-color" : "#222222",
+            "background-color" : "#66bb6a"
         }
     },
     "//comment" : "Override the Text style in editor-styles",

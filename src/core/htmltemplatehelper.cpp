@@ -4,6 +4,7 @@
 
 #include <core/markdowneditorconfig.h>
 #include <core/configmgr.h>
+#include <utils/utils.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 #include <core/thememgr.h>
@@ -16,11 +17,11 @@ HtmlTemplateHelper::Template HtmlTemplateHelper::s_markdownViewerTemplate;
 QString WebGlobalOptions::toJavascriptObject() const
 {
     return QStringLiteral("window.vxOptions = {\n")
-           + QString("webPlantUml: %1,\n").arg(boolToString(m_webPlantUml))
-           + QString("webGraphviz: %1,\n").arg(boolToString(m_webGraphviz))
-           + QString("constrainImageWidthEnabled: %1,\n").arg(boolToString(m_constrainImageWidthEnabled))
-           + QString("protectFromXss: %1,\n").arg(boolToString(m_protectFromXss))
-           + QString("sectionNumberEnabled: %1\n").arg(boolToString(m_sectionNumberEnabled))
+           + QString("webPlantUml: %1,\n").arg(Utils::boolToString(m_webPlantUml))
+           + QString("webGraphviz: %1,\n").arg(Utils::boolToString(m_webGraphviz))
+           + QString("constrainImageWidthEnabled: %1,\n").arg(Utils::boolToString(m_constrainImageWidthEnabled))
+           + QString("protectFromXss: %1,\n").arg(Utils::boolToString(m_protectFromXss))
+           + QString("sectionNumberEnabled: %1\n").arg(Utils::boolToString(m_sectionNumberEnabled))
            + QStringLiteral("}");
 }
 

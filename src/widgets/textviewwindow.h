@@ -33,6 +33,16 @@ namespace vnotex
 
         void handleBufferChangedInternal() Q_DECL_OVERRIDE;
 
+        void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
+
+        void handleFindNext(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
+
+        void handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText) Q_DECL_OVERRIDE;
+
+        void handleReplaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText) Q_DECL_OVERRIDE;
+
+        void handleFindAndReplaceWidgetClosed() Q_DECL_OVERRIDE;
+
     protected:
         void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 

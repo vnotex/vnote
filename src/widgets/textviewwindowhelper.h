@@ -127,6 +127,60 @@ namespace vnotex
 
             return editorConfig;
         }
+
+        static vte::FindFlags toEditorFindFlags(FindOptions p_options)
+        {
+            vte::FindFlags flags;
+            if (p_options & FindOption::FindBackward) {
+                flags |= vte::FindFlag::FindBackward;
+            }
+            if (p_options & FindOption::CaseSensitive) {
+                flags |= vte::FindFlag::CaseSensitive;
+            }
+            if (p_options & FindOption::WholeWordOnly) {
+                flags |= vte::FindFlag::WholeWordOnly;
+            }
+            if (p_options & FindOption::RegularExpression) {
+                flags |= vte::FindFlag::RegularExpression;
+            }
+            return flags;
+        }
+
+        template <typename _ViewWindow>
+        static void handleFindTextChanged(_ViewWindow *p_win, const QString &p_text, FindOptions p_options)
+        {
+            if (p_options & FindOption::IncrementalSearch) {
+                p_win->m_editor->peekText(p_text, toEditorFindFlags(p_options));
+            }
+        }
+
+        template <typename _ViewWindow>
+        static void handleFindNext(_ViewWindow *p_win, const QString &p_text, FindOptions p_options)
+        {
+            const auto result = p_win->m_editor->findText(p_text, toEditorFindFlags(p_options));
+            p_win->showFindResult(p_text, result.m_totalMatches, result.m_currentMatchIndex);
+        }
+
+        template <typename _ViewWindow>
+        static void handleReplace(_ViewWindow *p_win, const QString &p_text, FindOptions p_options, const QString &p_replaceText)
+        {
+            const auto result = p_win->m_editor->replaceText(p_text, toEditorFindFlags(p_options), p_replaceText);
+            p_win->showReplaceResult(p_text, result.m_totalMatches);
+        }
+
+        template <typename _ViewWindow>
+        static void handleReplaceAll(_ViewWindow *p_win, const QString &p_text, FindOptions p_options, const QString &p_replaceText)
+        {
+            const auto result = p_win->m_editor->replaceAll(p_text, toEditorFindFlags(p_options), p_replaceText);
+            p_win->showReplaceResult(p_text, result.m_totalMatches);
+        }
+
+        template <typename _ViewWindow>
+        static void handleFindAndReplaceWidgetClosed(_ViewWindow *p_win)
+        {
+            p_win->m_editor->clearIncrementalSearchHighlight();
+            p_win->m_editor->clearSearchHighlight();
+        }
     };
 }
 

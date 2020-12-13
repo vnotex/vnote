@@ -30,7 +30,7 @@ FindAndReplaceWidget::FindAndReplaceWidget(QWidget *p_parent)
     m_findTextTimer->setInterval(500);
     connect(m_findTextTimer, &QTimer::timeout,
             this, [this]() {
-                emit findTextChanged(m_findLineEdit->text(), m_options);
+                emit findTextChanged(getFindText(), getOptions());
             });
 
     setupUI();
@@ -155,6 +155,7 @@ void FindAndReplaceWidget::setupUI()
 void FindAndReplaceWidget::close()
 {
     hide();
+    emit closed();
 }
 
 void FindAndReplaceWidget::setReplaceEnabled(bool p_enabled)
@@ -198,47 +199,82 @@ void FindAndReplaceWidget::keyPressEvent(QKeyEvent *p_event)
 
 void FindAndReplaceWidget::findNext()
 {
-
+    m_findTextTimer->stop();
+    auto text = m_findLineEdit->text();
+    if (text.isEmpty()) {
+        return;
+    }
+    emit findNextRequested(text, m_options);
 }
 
 void FindAndReplaceWidget::findPrevious()
 {
-
+    m_findTextTimer->stop();
+    auto text = m_findLineEdit->text();
+    if (text.isEmpty()) {
+        return;
+    }
+    emit findNextRequested(text, m_options | FindOption::FindBackward);
 }
 
 void FindAndReplaceWidget::updateFindOptions()
 {
-    m_options = FindOption::None;
+    if (m_optionCheckBoxMuted) {
+        return;
+    }
+
+    FindOptions options = FindOption::None;
 
     if (m_caseSensitiveCheckBox->isChecked()) {
-        m_options |= FindOption::CaseSensitive;
+        options |= FindOption::CaseSensitive;
     }
     if (m_wholeWordOnlyCheckBox->isChecked()) {
-        m_options |= FindOption::WholeWordOnly;
+        options |= FindOption::WholeWordOnly;
     }
     if (m_regularExpressionCheckBox->isChecked()) {
-        m_options |= FindOption::RegularExpression;
+        options |= FindOption::RegularExpression;
     }
     if (m_incrementalSearchCheckBox->isChecked()) {
-        m_options |= FindOption::IncrementalSearch;
+        options |= FindOption::IncrementalSearch;
     }
 
+    if (options == m_options) {
+        return;
+    }
+    m_options = options;
     ConfigMgr::getInst().getWidgetConfig().setFindAndReplaceOptions(m_options);
+    m_findTextTimer->start();
 }
 
 void FindAndReplaceWidget::replace()
 {
-
+    m_findTextTimer->stop();
+    auto text = m_findLineEdit->text();
+    if (text.isEmpty()) {
+        return;
+    }
+    emit replaceRequested(text, m_options, m_replaceLineEdit->text());
 }
 
 void FindAndReplaceWidget::replaceAndFind()
 {
-
+    m_findTextTimer->stop();
+    auto text = m_findLineEdit->text();
+    if (text.isEmpty()) {
+        return;
+    }
+    emit replaceRequested(text, m_options, m_replaceLineEdit->text());
+    emit findNextRequested(text, m_options);
 }
 
 void FindAndReplaceWidget::replaceAll()
 {
-
+    m_findTextTimer->stop();
+    auto text = m_findLineEdit->text();
+    if (text.isEmpty()) {
+        return;
+    }
+    emit replaceAllRequested(text, m_options, m_replaceLineEdit->text());
 }
 
 void FindAndReplaceWidget::setFindOptions(FindOptions p_options)
@@ -247,11 +283,13 @@ void FindAndReplaceWidget::setFindOptions(FindOptions p_options)
         return;
     }
 
-    m_options = p_options;
+    m_optionCheckBoxMuted = true;
+    m_options = p_options & ~FindOption::FindBackward;
     m_caseSensitiveCheckBox->setChecked(m_options & FindOption::CaseSensitive);
     m_wholeWordOnlyCheckBox->setChecked(m_options & FindOption::WholeWordOnly);
     m_regularExpressionCheckBox->setChecked(m_options & FindOption::RegularExpression);
     m_incrementalSearchCheckBox->setChecked(m_options & FindOption::IncrementalSearch);
+    m_optionCheckBoxMuted = false;
 }
 
 void FindAndReplaceWidget::open(const QString &p_text)
@@ -264,4 +302,16 @@ void FindAndReplaceWidget::open(const QString &p_text)
 
     m_findLineEdit->setFocus();
     m_findLineEdit->selectAll();
+
+    emit opened();
+}
+
+QString FindAndReplaceWidget::getFindText() const
+{
+    return m_findLineEdit->text();
+}
+
+FindOptions FindAndReplaceWidget::getOptions() const
+{
+    return m_options;
 }

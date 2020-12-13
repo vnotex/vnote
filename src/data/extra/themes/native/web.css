@@ -290,3 +290,13 @@ span.modal-close:hover,
 span.modal-close:focus {
     color: #222222;
 }
+
+#vx-content span.vx-search-match {
+    color: #222222;
+    background-color: #4db6ac;
+}
+
+#vx-content span.vx-current-search-match {
+    color: #222222;
+    background-color: #66bb6a;
+}
