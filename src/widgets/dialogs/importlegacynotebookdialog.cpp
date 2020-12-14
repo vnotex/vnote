@@ -38,7 +38,7 @@ void ImportLegacyNotebookDialog::acceptedButtonClicked()
                                                  QString(),
                                                  tr("Welcome to VNoteX and the new VNote!"),
                                                  this);
-    if (ret && importLegacyNotebook()) {
+    if (ret == QMessageBox::Ok && importLegacyNotebook()) {
         accept();
         return;
     }

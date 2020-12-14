@@ -165,7 +165,6 @@ void OutlineViewer::showEvent(QShowEvent *p_event)
 
 void OutlineViewer::updateOutline(const QSharedPointer<Outline> &p_outline)
 {
-    m_muted = true;
     if (!p_outline) {
         if (m_outline.isEmpty()) {
             return;
@@ -178,6 +177,7 @@ void OutlineViewer::updateOutline(const QSharedPointer<Outline> &p_outline)
         m_outline = *p_outline;
     }
 
+    m_muted = true;
     updateTreeToOutline(m_tree, m_outline);
 
     expandTree(m_autoExpandedLevel);
