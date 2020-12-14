@@ -13,6 +13,7 @@
 #include <QTabBar>
 #include <QVariant>
 #include <QCoreApplication>
+#include <QApplication>
 #include <QShortcut>
 
 #include "toolbox.h"
