@@ -279,8 +279,6 @@ void MarkdownViewWindow::setupToolBar()
     addAction(toolBar, ViewWindowToolBarHelper::TypeImage);
     addAction(toolBar, ViewWindowToolBarHelper::TypeTable);
 
-    toolBar->addSeparator();
-
     ToolBarHelper::addSpacer(toolBar);
     addAction(toolBar, ViewWindowToolBarHelper::FindAndReplace);
     addAction(toolBar, ViewWindowToolBarHelper::Outline);

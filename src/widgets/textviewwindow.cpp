@@ -65,8 +65,6 @@ void TextViewWindow::setupToolBar()
 
     addAction(toolBar, ViewWindowToolBarHelper::Attachment);
 
-    toolBar->addSeparator();
-
     ToolBarHelper::addSpacer(toolBar);
     addAction(toolBar, ViewWindowToolBarHelper::FindAndReplace);
 }

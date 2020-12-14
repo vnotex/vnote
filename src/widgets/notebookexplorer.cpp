@@ -77,59 +77,6 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
                                  p_parent);
     titleBar->setWhatsThis(tr("This title bar contains buttons and menu to manage notebooks and notes."));
 
-    titleBar->addMenuSeparator();
-    auto newNoteAct = titleBar->addMenuAction(QStringLiteral("new_note.svg"),
-                                              tr("New N&ote"),
-                                              titleBar,
-                                              []() {
-                                                  emit VNoteX::getInst().newNoteRequested();
-                                              });
-    WidgetUtils::addActionShortcutText(newNoteAct,
-                                       ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::NewNote));
-
-    titleBar->addMenuSeparator();
-    auto newFolderAct = titleBar->addMenuAction(QStringLiteral("new_folder.svg"),
-                                                tr("New &Folder"),
-                                                titleBar,
-                                                []() {
-                                                    emit VNoteX::getInst().newFolderRequested();
-                                                });
-
-    connect(this, &NotebookExplorer::updateTitleBarMenuActions,
-            this, [=]() {
-                newFolderAct->setEnabled(m_currentNotebook);
-                newNoteAct->setEnabled(m_currentNotebook);
-            });
-
-    titleBar->addMenuSeparator();
-    titleBar->addMenuAction(QStringLiteral("new_notebook.svg"),
-                            tr("New &Notebook"),
-                            titleBar,
-                            []() {
-                                emit VNoteX::getInst().newNotebookRequested();
-                            });
-
-    titleBar->addMenuAction(QStringLiteral("new_notebook_from_folder.svg"),
-                            tr("N&ew Notebook From Folder"),
-                            titleBar,
-                            []() {
-                                emit VNoteX::getInst().newNotebookFromFolderRequested();
-                            });
-
-    titleBar->addMenuAction(QStringLiteral("import_notebook.svg"),
-                            tr("&Import Notebook"),
-                            titleBar,
-                            []() {
-                                emit VNoteX::getInst().importNotebookRequested();
-                            });
-
-    titleBar->addMenuAction(QStringLiteral("import_notebook_of_vnote2.svg"),
-                            tr("Import Legacy Notebook Of &VNote 2.0"),
-                            titleBar,
-                            []() {
-                                emit VNoteX::getInst().importLegacyNotebookRequested();
-                            });
-
     titleBar->addMenuAction(QStringLiteral("manage_notebooks.svg"),
                             tr("&Manage Notebooks"),
                             titleBar,
@@ -137,19 +84,6 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
                                 ManageNotebooksDialog dialog(m_currentNotebook.data(),
                                                              VNoteX::getInst().getMainWindow());
                                 dialog.exec();
-                            });
-
-    titleBar->addMenuSeparator();
-    titleBar->addMenuAction(tr("Import File"),
-                            titleBar,
-                            [this]() {
-                                emit VNoteX::getInst().importFileRequested();
-                            });
-
-    titleBar->addMenuAction(tr("Import Folder"),
-                            titleBar,
-                            [this]() {
-                                emit VNoteX::getInst().importFolderRequested();
                             });
 
     return titleBar;

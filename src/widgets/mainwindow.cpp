@@ -49,6 +49,10 @@ MainWindow::MainWindow(QWidget *p_parent)
 
     loadStateAndGeometry();
 
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    QApplication::setQuitOnLastWindowClosed(false);
+#endif
+
     connect(qApp, &QCoreApplication::aboutToQuit,
             this, &MainWindow::closeOnQuit);
 }

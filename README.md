@@ -1,7 +1,7 @@
 # vnote
-A pleasant note-taking platform.
+![CI-Windows](https://github.com/vnotex/vnote/workflows/CI-Windows/badge.svg) ![CI-Linux](https://github.com/vnotex/vnote/workflows/CI-Linux/badge.svg) ![CI-MacOS](https://github.com/vnotex/vnote/workflows/CI-MacOS/badge.svg)
 
-![CI-Windows](https://github.com/vnotex/vnote/workflows/CI-Windows/badge.svg) ![CI-Linux](https://github.com/vnotex/vnote/workflows/CI-Linux/badge.svg)
+A pleasant note-taking platform.
 
 > At early 2019, I decided to refactor VNote as VNoteX. Now a fresh VNote is ready!  
 > VNoteX is closed source and is intended to keep several premium features compared to VNote. Most of VNoteX's code base will be open source as VNote 3.0, so VNote will share most of the code base with VNoteX and continue to be open source from 3.0.  
@@ -28,22 +28,24 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 ## Downloads
 Continuous builds on `master` branch could be found at the [Continuous Build](https://github.com/vnotex/vnote/releases/tag/continuous-build) release.
 
-Latest stable builds could be found at the [latest release](https://github.com/vnotex/vnote/releases/latest).
+Latest stable builds could be found at the [latest release](https://github.com/vnotex/vnote/releases/latest). Alternative download services are available:
+
+* [Tianyi Netdisk](https://cloud.189.cn/t/Av67NvmEJVBv)
 
 ## Supports
-- [GitHub Issues](https://github.com/vnotex/vnote/issues);
-- Email: `tamlokveer at gmail.com`;
-- [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU);
-- [Telegram](https://t.me/vnotex);
-- WeChat Public Account: vnotex;
+* [GitHub Issues](https://github.com/vnotex/vnote/issues);
+* Email: `tamlokveer at gmail.com`;
+* [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU);
+* [Telegram](https://t.me/vnotex);
+* WeChat Public Account: vnotex;
 
 ## Donate
 You could help VNote's development in many ways.
 
-- Keep monitoring VNote and sending feedback for improvement.
-- Spread and promote VNote to your friends. Popularity is a strong power to drive developers.
-- Participate in the development of VNote and send [Pull Request](https://github.com/vnotex/vnote/pulls) to make VNote perfect.
-- Last, really appreciate your donate to VNote if VNote does help.
+* Keep monitoring VNote and sending feedback for improvement.
+* Spread and promote VNote to your friends. Popularity is a strong power to drive developers.
+* Participate in the development of VNote and send [Pull Request](https://github.com/vnotex/vnote/pulls) to make VNote perfect.
+* Last, really appreciate your donate to VNote if VNote does help.
 
 **PayPal**: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
 

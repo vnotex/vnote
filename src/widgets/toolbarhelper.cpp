@@ -20,6 +20,7 @@
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
 #include <core/fileopenparameters.h>
+#include "propertydefs.h"
 #include "dialogs/settings/settingsdialog.h"
 
 using namespace vnotex;
@@ -39,7 +40,53 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
         tb = createToolBar(p_win, MainWindow::tr("File"), "FileToolBar");
     }
 
-    // New.
+    // Notebook.
+    {
+        auto act = tb->addAction(generateIcon("notebook_menu.svg"), MainWindow::tr("Notebook"));
+
+        auto toolBtn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
+        Q_ASSERT(toolBtn);
+        toolBtn->setPopupMode(QToolButton::InstantPopup);
+        toolBtn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+
+        auto newMenu = WidgetsFactory::createMenu(tb);
+        toolBtn->setMenu(newMenu);
+
+        newMenu->addAction(generateIcon("new_notebook.svg"),
+                           MainWindow::tr("New Notebook"),
+                           newMenu,
+                           []() {
+                               emit VNoteX::getInst().newNotebookRequested();
+                           });
+
+        // New notebook from folder.
+        newMenu->addAction(generateIcon("new_notebook_from_folder.svg"),
+                           MainWindow::tr("New Notebook From Folder"),
+                           newMenu,
+                           []() {
+                               emit VNoteX::getInst().newNotebookFromFolderRequested();
+                           });
+
+        newMenu->addSeparator();
+
+        // Import notebook.
+        newMenu->addAction(generateIcon("import_notebook.svg"),
+                           MainWindow::tr("Import Notebook"),
+                           newMenu,
+                           []() {
+                               emit VNoteX::getInst().importNotebookRequested();
+                           });
+
+        // Import notebook of VNote 2.0.
+        newMenu->addAction(generateIcon("import_notebook_of_vnote2.svg"),
+                           MainWindow::tr("Import Legacy Notebook Of VNote 2.0"),
+                           newMenu,
+                           []() {
+                               emit VNoteX::getInst().importLegacyNotebookRequested();
+                           });
+    }
+
+    // New Note.
     {
         const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
 
@@ -63,64 +110,12 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
         // To hide the shortcut text shown in button.
         newBtn->setText(MainWindow::tr("New Note"));
 
-        newMenu->addSeparator();
-
         // New folder.
         newMenu->addAction(generateIcon("new_folder.svg"),
                            MainWindow::tr("New Folder"),
                            newMenu,
                            []() {
                                emit VNoteX::getInst().newFolderRequested();
-                           });
-
-        newMenu->addSeparator();
-
-        // New notebook.
-        newMenu->addAction(generateIcon("new_notebook.svg"),
-                           MainWindow::tr("New Notebook"),
-                           newMenu,
-                           []() {
-                               emit VNoteX::getInst().newNotebookRequested();
-                           });
-
-        // New notebook from folder.
-        newMenu->addAction(generateIcon("new_notebook_from_folder.svg"),
-                           MainWindow::tr("New Notebook From Folder"),
-                           newMenu,
-                           []() {
-                               emit VNoteX::getInst().newNotebookFromFolderRequested();
-                           });
-
-        // Import notebook.
-        newMenu->addAction(generateIcon("import_notebook.svg"),
-                           MainWindow::tr("Import Notebook"),
-                           newMenu,
-                           []() {
-                               emit VNoteX::getInst().importNotebookRequested();
-                           });
-
-        // Import notebook of VNote 2.0.
-        newMenu->addAction(generateIcon("import_notebook_of_vnote2.svg"),
-                           MainWindow::tr("Import Legacy Notebook Of VNote 2.0"),
-                           newMenu,
-                           []() {
-                               emit VNoteX::getInst().importLegacyNotebookRequested();
-                           });
-
-        newMenu->addSeparator();
-
-        // Import file.
-        newMenu->addAction(MainWindow::tr("Import File"),
-                           newMenu,
-                           []() {
-                               emit VNoteX::getInst().importFileRequested();
-                           });
-
-        // Import folder.
-        newMenu->addAction(MainWindow::tr("Import Folder"),
-                           newMenu,
-                           []() {
-                               emit VNoteX::getInst().importFolderRequested();
                            });
 
         newMenu->addSeparator();
@@ -145,6 +140,33 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
 
 
         tb->addWidget(newBtn);
+    }
+
+    // Import and export.
+    {
+        auto act = tb->addAction(generateIcon("import_export_menu.svg"), MainWindow::tr("Import And Export"));
+
+        auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
+        Q_ASSERT(btn);
+        btn->setPopupMode(QToolButton::InstantPopup);
+        btn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+
+        auto newMenu = WidgetsFactory::createMenu(tb);
+        btn->setMenu(newMenu);
+
+        // Import file.
+        newMenu->addAction(MainWindow::tr("Import File"),
+                           newMenu,
+                           []() {
+                               emit VNoteX::getInst().importFileRequested();
+                           });
+
+        // Import folder.
+        newMenu->addAction(MainWindow::tr("Import Folder"),
+                           newMenu,
+                           []() {
+                               emit VNoteX::getInst().importFolderRequested();
+                           });
     }
 
     return tb;
@@ -176,9 +198,11 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
 
         auto btn = WidgetsFactory::createToolButton(tb);
 
-        auto expandAct = new QAction(generateIcon("expand.svg"),
-                                     MainWindow::tr("Expand Content Area"),
-                                     btn);
+        auto menu = WidgetsFactory::createMenu(tb);
+        btn->setMenu(menu);
+
+        auto expandAct = menu->addAction(generateIcon("expand.svg"),
+                                         MainWindow::tr("Expand Content Area"));
         WidgetUtils::addActionShortcut(expandAct,
                                        coreConfig.getShortcut(CoreConfig::Shortcut::ExpandContentArea));
         expandAct->setCheckable(true);
@@ -189,9 +213,6 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                                 expandAct->setChecked(p_win->isContentAreaExpanded());
                             });
         btn->setDefaultAction(expandAct);
-
-        auto menu = WidgetsFactory::createMenu(tb);
-        btn->setMenu(menu);
 
         auto fullScreenAct = new FullScreenToggleAction(p_win,
                                                         generateIcon("fullscreen.svg"),
@@ -221,7 +242,11 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
     {
         const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
 
-        auto btn = WidgetsFactory::createToolButton(tb);
+        auto act = tb->addAction(generateIcon("settings_menu.svg"), MainWindow::tr("Settings"));
+        auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
+        Q_ASSERT(btn);
+        btn->setPopupMode(QToolButton::InstantPopup);
+        btn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
 
         auto menu = WidgetsFactory::createMenu(tb);
         btn->setMenu(menu);
@@ -235,7 +260,6 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                                            });
         WidgetUtils::addActionShortcut(settingsAct,
                                        coreConfig.getShortcut(CoreConfig::Shortcut::Settings));
-        btn->setDefaultAction(settingsAct);
 
         menu->addSeparator();
 
@@ -279,13 +303,15 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                         [p_win]() {
                             p_win->resetStateAndGeometry();
                         });
-
-        tb->addWidget(btn);
     }
 
-    // WhatsThis.
+    // Help.
     {
-        auto btn = WidgetsFactory::createToolButton(tb);
+        auto act = tb->addAction(generateIcon("help_menu.svg"), MainWindow::tr("Help"));
+        auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
+        Q_ASSERT(btn);
+        btn->setPopupMode(QToolButton::InstantPopup);
+        btn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
 
         auto menu = WidgetsFactory::createMenu(tb);
         btn->setMenu(menu);
@@ -297,7 +323,6 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                                                 QWhatsThis::enterWhatsThisMode();
                                             });
         whatsThisAct->setToolTip(MainWindow::tr("Enter WhatsThis mode and click somewhere to show help information"));
-        btn->setDefaultAction(whatsThisAct);
 
         menu->addSeparator();
 
@@ -327,6 +352,14 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
 
         menu->addSeparator();
 
+        menu->addAction(MainWindow::tr("Feedback And Discussions"),
+                        menu,
+                        []() {
+                            WidgetUtils::openUrlByDesktop(QUrl("https://github.com/vnotex/vnote/discussions"));
+                        });
+
+        menu->addSeparator();
+
         menu->addAction(MainWindow::tr("About"),
                         menu,
                         [p_win]() {
@@ -340,8 +373,6 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
         aboutQtAct->setMenuRole(QAction::AboutQtRole);
         MainWindow::connect(aboutQtAct, &QAction::triggered,
                             qApp, &QApplication::aboutQt);
-
-        tb->addWidget(btn);
     }
 
     return tb;
