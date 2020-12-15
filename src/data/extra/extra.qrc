@@ -30,7 +30,8 @@
         <file>web/js/markdown-it/markdown-it-emoji.min.js</file>
         <file>web/js/markdown-it/markdown-it-footnote.min.js</file>
         <file>web/js/markdown-it/markdown-it-front-matter.js</file>
-        <file>web/js/markdown-it/markdown-it-headinganchor.js</file>
+        <file>web/js/markdown-it/markdownItAnchor.umd.js</file>
+        <file>web/js/markdown-it/markdownItTocDoneRight.umd.js</file>
         <file>web/js/markdown-it/markdown-it-imsize.min.js</file>
         <file>web/js/markdown-it/markdown-it-sub.min.js</file>
         <file>web/js/markdown-it/markdown-it-sup.min.js</file>

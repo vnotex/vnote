@@ -38,6 +38,10 @@ class NodeLineMapper {
         }
     }
 
+    getHeadingContent(p_node) {
+        return p_node.textContent;
+    }
+
     updateHeadingNodes() {
         this.headingNodes = this.container.querySelectorAll("h1, h2, h3, h4, h5, h6");
         let headings = [];
@@ -45,12 +49,13 @@ class NodeLineMapper {
         let regExp = /^\d(?:\.\d)*\.? /;
         for (let i = 0; i < this.headingNodes.length; ++i) {
             let node = this.headingNodes[i];
+            let headingContent = this.getHeadingContent(node);
             headings.push({
-                name: node.textContent,
+                name: headingContent,
                 level: parseInt(node.tagName.substr(1)),
                 anchor: node.id
             });
-            if (needSectionNumber && regExp.test(node.textContent)) {
+            if (needSectionNumber && regExp.test(headingContent)) {
                 needSectionNumber = false;
             }
         }

@@ -49,3 +49,35 @@
     max-width: 100%;
     height: auto;
 }
+
+/* Table of Contents */
+.vx-table-of-contents ol {
+    list-style: none;
+}
+
+#vx-content.vx-section-number .vx-table-of-contents > ol > li ol {
+    counter-reset: toc;
+}
+
+#vx-content.vx-section-number .vx-table-of-contents > ol > li ol li {
+    counter-increment: toc;
+}
+
+#vx-content.vx-section-number .vx-table-of-contents > ol > li ol li:before {
+    content: counters(toc, '.') '. ';
+    font-family: cursive;
+}
+
+.vx-header-anchor {
+    visibility: hidden;
+    vertical-align: middle;
+}
+
+.vx-header-anchor::after {
+    content: attr(vx-data-anchor-icon);
+}
+
+#vx-content h1:hover .vx-header-anchor, #vx-content h2:hover .vx-header-anchor, #vx-content h3:hover .vx-header-anchor, #vx-content h4:hover .vx-header-anchor, #vx-content h5:hover .vx-header-anchor, #vx-content h6:hover .vx-header-anchor {
+    visibility: visible;
+    vertical-align: middle;
+}

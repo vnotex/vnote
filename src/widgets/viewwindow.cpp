@@ -409,7 +409,11 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
         act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
         connect(act, &QAction::triggered,
                 this, [this]() {
-                    showFindAndReplaceWidget();
+                    if (m_findAndReplace && m_findAndReplace->isVisible()) {
+                        hideFindAndReplaceWidget();
+                    } else {
+                        showFindAndReplaceWidget();
+                    }
                 });
         break;
     }
