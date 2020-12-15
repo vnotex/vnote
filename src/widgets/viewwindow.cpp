@@ -1007,3 +1007,5 @@ void ViewWindow::showReplaceResult(const QString &p_text, int p_totalReplaces)
         VNoteX::getInst().showStatusMessageShort(tr("Replaced %n match(es)", "", p_totalReplaces));
     }
 }
+
+
