@@ -82,8 +82,8 @@ void TitleBar::setupActionButtons(TitleBar::Actions p_actionFlags)
     if (p_actionFlags & Action::Settings) {
         auto btn = newActionButton("settings.svg", tr("Settings"), this);
         connect(btn, &QToolButton::triggered,
-                this, [this]() {
-
+                this, []() {
+                    // TODO.
                 });
         m_actionButtons.push_back(btn);
     }

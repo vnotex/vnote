@@ -16,12 +16,12 @@ Node::Node(Type p_type,
            const QDateTime &p_createdTimeUtc,
            Notebook *p_notebook,
            Node *p_parent)
-    : m_type(p_type),
+    : m_notebook(p_notebook),
+      m_type(p_type),
       m_id(p_id),
       m_name(p_name),
       m_createdTimeUtc(p_createdTimeUtc),
       m_loaded(true),
-      m_notebook(p_notebook),
       m_parent(p_parent)
 {
     if (m_notebook) {
@@ -34,9 +34,9 @@ Node::Node(Type p_type,
            const QString &p_name,
            Notebook *p_notebook,
            Node *p_parent)
-    : m_type(p_type),
+    : m_notebook(p_notebook),
+      m_type(p_type),
       m_name(p_name),
-      m_notebook(p_notebook),
       m_parent(p_parent)
 {
     if (m_notebook) {

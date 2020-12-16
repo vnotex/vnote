@@ -83,9 +83,10 @@ void ClipboardData::fromJson(const QJsonObject &p_jobj)
         return;
     }
 
-    for (const auto &item : p_jobj[c_data].toArray()) {
+    const auto itemArr = p_jobj[c_data].toArray();
+    for (size_t i = 0; i < itemArr.size(); ++i) {
         auto dataItem = createClipboardDataItem(m_action);
-        dataItem->fromJson(item.toObject());
+        dataItem->fromJson(itemArr[i].toObject());
         m_data.push_back(dataItem);
     }
 }

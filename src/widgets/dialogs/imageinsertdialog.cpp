@@ -203,7 +203,7 @@ void ImageInsertDialog::browseFile()
     QString filePath = QFileDialog::getOpenFileName(this,
                                                     tr("Select Image To Insert"),
                                                     bpath,
-                                                    tr("Images (*.png *.xpm *.jpg *.bmp *.gif *.svg);;All (*.*)"));
+                                                    tr("Images (*.png *.xpm *.jpg *.bmp *.gif *.svg *.webp);;All (*.*)"));
     if (filePath.isEmpty()) {
         return;
     }
