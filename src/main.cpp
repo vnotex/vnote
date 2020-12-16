@@ -21,6 +21,7 @@
 #include <core/exception.h>
 #include <widgets/messageboxhelper.h>
 
+#include <QProcess>
 
 using namespace vnotex;
 
@@ -127,6 +128,13 @@ int main(int argc, char *argv[])
     window.kickOffOnStart();
 
     int ret = app.exec();
+    if (ret == RESTART_EXIT_CODE) {
+        // Ask to restart VNote.
+        guard.exit();
+        QProcess::startDetached(qApp->applicationFilePath(), QStringList());
+        return 0;
+    }
+
     return ret;
 }
 

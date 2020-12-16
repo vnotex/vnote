@@ -43,7 +43,7 @@ void CoreConfig::init(const QJsonObject &p_app,
     }
 
     if(!isUnDefinedKey(appObj, userObj, "minimize_to_system_tray"))
-        m_minimize_to_system_tray = READINT(QStringLiteral("minimize_to_system_tray"));
+        m_minimize_to_system_tray = int(READBOOL(QStringLiteral("minimize_to_system_tray")));
 }
 
 QJsonObject CoreConfig::toJson() const

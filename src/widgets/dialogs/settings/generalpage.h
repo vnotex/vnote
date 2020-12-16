@@ -4,6 +4,7 @@
 #include "settingspage.h"
 
 class QComboBox;
+class QCheckBox;
 
 namespace vnotex
 {
@@ -26,6 +27,9 @@ namespace vnotex
         QComboBox *m_localeComboBox = nullptr;
 
         QComboBox *m_openGLComboBox = nullptr;
+
+        QCheckBox *m_systemTray = nullptr;
+
     };
 }
 

@@ -13,6 +13,8 @@
 #include "statusbarhelper.h"
 #include <core/singleinstanceguard.h>
 
+#define RESTART_EXIT_CODE   1000
+
 class QDockWidget;
 
 namespace vnotex
@@ -47,6 +49,8 @@ namespace vnotex
         void focusViewArea();
 
         void setStayOnTop(bool p_enabled);
+
+        void restart();
 
     signals:
         void mainWindowStarted();

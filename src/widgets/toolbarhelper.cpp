@@ -303,6 +303,14 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                         [p_win]() {
                             p_win->resetStateAndGeometry();
                         });
+
+        menu->addSeparator();
+
+        menu->addAction(MainWindow::tr("Restart"),
+                        menu,
+                        [p_win]() {
+                            p_win->restart();
+                        });
     }
 
     // Help.

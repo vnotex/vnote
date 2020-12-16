@@ -2,6 +2,7 @@
 
 #include <QComboBox>
 #include <QFormLayout>
+#include <QCheckBox>
 
 #include <widgets/widgetsfactory.h>
 #include <core/coreconfig.h>
@@ -55,6 +56,17 @@ void GeneralPage::setupUI()
                 this, &GeneralPage::pageIsChanged);
     }
 #endif
+
+#if not defined(Q_OS_MAC)
+    {
+        m_systemTray = WidgetsFactory::createCheckBox("System tray");
+        mainLayout->addRow(m_systemTray);
+
+        connect(m_systemTray, &QCheckBox::stateChanged,
+                this, &GeneralPage::pageIsChanged);
+    }
+#endif
+
 }
 
 void GeneralPage::loadInternal()
@@ -73,6 +85,12 @@ void GeneralPage::loadInternal()
         Q_ASSERT(idx != -1);
         m_openGLComboBox->setCurrentIndex(idx);
     }
+
+    if(m_systemTray){
+        auto toTray = coreConfig.getMinimizeToStystemTray();
+        if(toTray)
+            m_systemTray->setChecked(true);
+    }
 }
 
 void GeneralPage::saveInternal()
@@ -88,6 +106,10 @@ void GeneralPage::saveInternal()
         auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
         int opt = m_openGLComboBox->currentData().toInt();
         sessionConfig.setOpenGL(static_cast<SessionConfig::OpenGL>(opt));
+    }
+
+    if(m_systemTray) {
+        coreConfig.setMinimizeToSystemTray(m_systemTray->isChecked());
     }
 }
 

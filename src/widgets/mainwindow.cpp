@@ -326,7 +326,7 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
         }
     }
 
-    if(isExit || !m_trayIcon->isVisible()){
+    if(isExit || toTray == 0 || !m_trayIcon->isVisible()){
         // really to quit, process workspace
         // TODO: process workspace
 
@@ -591,4 +591,8 @@ void MainWindow::checkSharedMemory(){
             qDebug() << "shared memory asked to show up";
             show();
         }
+}
+
+void MainWindow::restart(){
+    QCoreApplication::exit(RESTART_EXIT_CODE);
 }
