@@ -32,19 +32,23 @@
 #include "outlineviewer.h"
 #include <utils/widgetutils.h>
 #include "navigationmodemgr.h"
+#include <widgets/messageboxhelper.h>
 
 #include <vtoolbar.h>
 
 using namespace vnotex;
 
-MainWindow::MainWindow(QWidget *p_parent)
-    : QMainWindow(p_parent)
+MainWindow::MainWindow(QWidget *p_parent, SingleInstanceGuard *p_guard)
+    : QMainWindow(p_parent),
+      m_guard(p_guard)
 {
     VNoteX::getInst().setMainWindow(this);
 
     NavigationModeMgr::init(this);
 
     setupUI();
+
+    initSystemTrayIcon();
 
     setupShortcuts();
 
@@ -54,8 +58,13 @@ MainWindow::MainWindow(QWidget *p_parent)
     QApplication::setQuitOnLastWindowClosed(false);
 #endif
 
+    // The signal is particularly useful if your application has
+    // to do some last-second cleanup.
+    // Note that no user interaction is possible in this state.
     connect(qApp, &QCoreApplication::aboutToQuit,
             this, &MainWindow::closeOnQuit);
+
+    initSharedMemoryWatcher();
 }
 
 MainWindow::~MainWindow()
@@ -282,21 +291,63 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
 {
     // TODO: support minimized to system tray.
 
+    auto toTray = ConfigMgr::getInst().getCoreConfig().getMinimizeToStystemTray();
+    bool isExit = m_requestQuit;
+    m_requestQuit = 0;
+
     if (isVisible()) {
         saveStateAndGeometry();
     }
 
-    // Signal out the close event.
-    auto event = QSharedPointer<Event>::create();
-    event->m_response = true;
-    emit mainWindowClosed(event);
-    if (!event->m_response.toBool()) {
-        // Stop the close.
-        p_event->ignore();
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    // Do not support minimized to tray on macOS.
+    if (!isExit) {
+        event->accept();
         return;
     }
+#endif
 
-    QMainWindow::closeEvent(p_event);
+    if(!isExit && toTray == -1){
+        int ret =  MessageBoxHelper::questionYesNo(MessageBoxHelper::Question,
+                                                   tr("Close VNote"),
+                                                   tr("Do you want to minimize VNote to system tray "
+                                                      "instead of quitting it when closing VNote?"),
+                                                   tr("You could change the option in Settings later."),
+                                                   this);
+        if (ret == QMessageBox::Yes) {
+            ConfigMgr::getInst().getCoreConfig().setMinimizeToSystemTray(true);
+            hide();
+        } else if (ret == QMessageBox::No) {
+            ConfigMgr::getInst().getCoreConfig().setMinimizeToSystemTray(false);
+            isExit = true;
+        } else {
+            p_event->ignore();
+            return;
+        }
+    }
+
+    if(isExit || !m_trayIcon->isVisible()){
+        // really to quit, process workspace
+        // TODO: process workspace
+
+        // Signal out the close event.
+        auto event = QSharedPointer<Event>::create();
+        event->m_response = true;
+        emit mainWindowClosed(event);
+        if (!event->m_response.toBool()) {
+            // Stop the close.
+            p_event->ignore();
+            return;
+        }
+
+        m_guard->exit();
+
+        QMainWindow::closeEvent(p_event);
+        qApp->quit();
+    }else {
+        hide();
+        p_event->ignore();
+    }
 }
 
 void MainWindow::saveStateAndGeometry()
@@ -484,4 +535,60 @@ void MainWindow::setStayOnTop(bool p_enabled)
     if (shown) {
         show();
     }
+}
+
+void MainWindow::initSystemTrayIcon(){
+    QMenu *menu = new QMenu(this);
+    QAction *showMainWindowAct = menu->addAction(tr("Show VNote"));
+    connect(showMainWindowAct, &QAction::triggered,
+            this, &MainWindow::show);
+
+    QAction *exitAct = menu->addAction(tr("Quit"));
+    connect(exitAct, &QAction::triggered,
+            this, [this](){
+                this->m_requestQuit = 1;
+                this->close();
+                });
+
+    QIcon sysIcon(":/vnotex/data/core/logo/vnote.png");
+
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    sysIcon.setIsMask(true);
+#endif
+
+    m_trayIcon = new QSystemTrayIcon(sysIcon, this);
+    m_trayIcon->setToolTip(tr("VNote"));
+    m_trayIcon->setContextMenu(menu);
+
+    connect(m_trayIcon, &QSystemTrayIcon::activated,
+            this, [this](QSystemTrayIcon::ActivationReason p_reason){
+#if !defined(Q_OS_MACOS) && !defined(Q_OS_MAC)
+                if (p_reason == QSystemTrayIcon::Trigger) {
+                    this->show();
+                }
+#endif
+            });
+
+    m_trayIcon->show();
+}
+
+const int MainWindow::c_sharedMemTimerInterval = 1000;
+void MainWindow::initSharedMemoryWatcher(){
+    if(!m_guard)return;
+    m_sharedMemTimer = new QTimer(this);
+    m_sharedMemTimer->setSingleShot(false);
+    m_sharedMemTimer->setInterval(c_sharedMemTimerInterval);
+    connect(m_sharedMemTimer, &QTimer::timeout,
+            this, &MainWindow::checkSharedMemory);
+
+    m_sharedMemTimer->start();
+}
+
+void MainWindow::checkSharedMemory(){
+    // TODO: Open files
+
+    if (m_guard->fetchAskedToShow()) {
+            qDebug() << "shared memory asked to show up";
+            show();
+        }
 }

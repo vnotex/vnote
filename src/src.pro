@@ -5,6 +5,7 @@ equals(QT_MAJOR_VERSION, 5):lessThan(QT_MINOR_VERSION, 12): error("requires Qt 5
 QT += core gui widgets webenginewidgets webchannel network svg printsupport
 
 CONFIG -= qtquickcompiler
+unix:!macx:CONFIG+=use_gold_linker
 
 # Enable message log in release build
 DEFINES += QT_MESSAGELOGCONTEXT

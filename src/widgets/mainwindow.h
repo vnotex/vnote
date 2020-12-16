@@ -4,8 +4,14 @@
 #include <QMainWindow>
 #include <QSharedPointer>
 
+#include <QMenu>
+#include <QIcon>
+#include <QSystemTrayIcon>
+#include <QTimer>
+
 #include "toolbarhelper.h"
 #include "statusbarhelper.h"
+#include <core/singleinstanceguard.h>
 
 class QDockWidget;
 
@@ -21,7 +27,7 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        explicit MainWindow(QWidget *p_parent = nullptr);
+        explicit MainWindow(QWidget *p_parent = nullptr, SingleInstanceGuard *p_guard = nullptr);
 
         ~MainWindow();
 
@@ -58,6 +64,7 @@ namespace vnotex
 
     private slots:
         void closeOnQuit();
+        void checkSharedMemory();
 
     private:
         // Index in m_docks.
@@ -100,6 +107,21 @@ namespace vnotex
 
         void setupShortcuts();
 
+        // Init a timer to watch the change of the shared memory between instances of
+        // VNote.
+        void initSharedMemoryWatcher();
+        // Interval of the shared memory timer in ms.
+        static const int c_sharedMemTimerInterval;
+
+        // Init system tray and correspondign context menu.
+        void initSystemTrayIcon();
+
+        // Tray icon.
+        QSystemTrayIcon *m_trayIcon;
+        SingleInstanceGuard *m_guard;
+        QTimer *m_sharedMemTimer;
+        bool m_requestQuit = false;
+
         ToolBarHelper m_toolBarHelper;
 
         StatusBarHelper m_statusBarHelper;
@@ -117,6 +139,8 @@ namespace vnotex
         QVector<QDockWidget *> m_docks;
 
         bool m_layoutReset = false;
+
+        
     };
 } // ns vnotex
 

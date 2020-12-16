@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 
     loadTranslators(app);
 
-    MainWindow window;
+    MainWindow window(nullptr, &guard);
 
     window.show();
     VNoteX::getInst().getThemeMgr().setBaseBackground(window.palette().color(QPalette::Base));

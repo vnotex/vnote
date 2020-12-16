@@ -7,6 +7,7 @@ using namespace vnotex;
 
 #define READSTR(key) readString(appObj, userObj, (key))
 #define READINT(key) readInt(appObj, userObj, (key))
+#define READBOOL(key) readBool(appObj, userObj, (key))
 
 QStringList CoreConfig::s_availableLocales;
 
@@ -40,6 +41,9 @@ void CoreConfig::init(const QJsonObject &p_app,
     if (m_toolBarIconSize <= 0) {
         m_toolBarIconSize = 16;
     }
+
+    if(!isUnDefinedKey(appObj, userObj, "minimize_to_system_tray"))
+        m_minimize_to_system_tray = READINT(QStringLiteral("minimize_to_system_tray"));
 }
 
 QJsonObject CoreConfig::toJson() const
@@ -49,6 +53,8 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("locale")] = m_locale;
     obj[QStringLiteral("shortcuts")] = saveShortcuts();
     obj[QStringLiteral("toolbar_icon_size")] = m_toolBarIconSize;
+    if(m_minimize_to_system_tray!=-1)
+        obj[QStringLiteral("minimize_to_system_tray")] = bool(m_minimize_to_system_tray);
     return obj;
 }
 
@@ -121,4 +127,12 @@ void CoreConfig::setToolBarIconSize(int p_size)
 {
     Q_ASSERT(p_size > 0);
     updateConfig(m_toolBarIconSize, p_size, this);
+}
+
+int CoreConfig::getMinimizeToStystemTray() const{
+    return m_minimize_to_system_tray;
+}
+
+void CoreConfig::setMinimizeToSystemTray(bool state){
+    updateConfig(m_minimize_to_system_tray, int(state), this);
 }
