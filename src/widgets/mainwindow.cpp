@@ -302,7 +302,7 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     // Do not support minimized to tray on macOS.
     if (!isExit) {
-        event->accept();
+        p_event->accept();
         return;
     }
 #endif
