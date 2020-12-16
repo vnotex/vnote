@@ -236,7 +236,7 @@ void PreviewHelper::handleGraphPreviewData(const MarkdownViewerAdapter::PreviewD
     if (p_data.m_timeStamp != m_codeBlockTimeStamp) {
         return;
     }
-    if (p_data.m_id >= m_codeBlocksData.size() || p_data.m_data.isEmpty()) {
+    if (p_data.m_id >= static_cast<quint64>(m_codeBlocksData.size()) || p_data.m_data.isEmpty()) {
         updateEditorInplacePreviewCodeBlock();
         return;
     }
@@ -384,7 +384,7 @@ void PreviewHelper::handleMathPreviewData(const MarkdownViewerAdapter::PreviewDa
     if (p_data.m_timeStamp != m_mathBlockTimeStamp) {
         return;
     }
-    if (p_data.m_id >= m_mathBlocksData.size() || p_data.m_data.isEmpty()) {
+    if (p_data.m_id >= static_cast<quint64>(m_mathBlocksData.size()) || p_data.m_data.isEmpty()) {
         updateEditorInplacePreviewMathBlock();
         return;
     }

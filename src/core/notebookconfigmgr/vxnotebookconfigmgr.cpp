@@ -71,8 +71,8 @@ void VXNotebookConfigMgr::NodeFileConfig::fromJson(const QJsonObject &p_jobj)
 
     {
         auto arr = p_jobj[NodeConfig::c_tags].toArray();
-        for (const auto &tag : arr) {
-            m_tags << tag.toString();
+        for (size_t i = 0; i < arr.size(); ++i) {
+            m_tags << arr[i].toString();
         }
     }
 }

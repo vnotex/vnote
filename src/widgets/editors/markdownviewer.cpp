@@ -60,7 +60,7 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter,
             });
 
     connect(m_adapter, &MarkdownViewerAdapter::crossCopyReady,
-            this, [this](quint64 p_id, quint64 p_timeStamp, const QString &p_html) {
+            this, [](quint64 p_id, quint64 p_timeStamp, const QString &p_html) {
                 Q_UNUSED(p_id);
                 Q_UNUSED(p_timeStamp);
                 std::unique_ptr<QMimeData> mimeData(new QMimeData());
