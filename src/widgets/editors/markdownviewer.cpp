@@ -7,7 +7,6 @@
 #include <QMimeData>
 #include <QScopedPointer>
 
-#include "../webpage.h"
 #include "markdownvieweradapter.h"
 #include "previewhelper.h"
 #include <utils/clipboardutils.h>
@@ -28,25 +27,15 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter,
                                const QColor &p_background,
                                qreal p_zoomFactor,
                                QWidget *p_parent)
-    : WebViewer(p_parent),
+    : WebViewer(p_background, p_zoomFactor, p_parent),
       m_adapter(p_adapter)
 {
     m_adapter->setParent(this);
 
-    auto page = new WebPage(this);
-    setPage(page);
-
-    // Avoid white flash before loading content.
-    // Setting Qt::transparent will force GrayScale antialias rendering.
-    page->setBackgroundColor(p_background);
-
-    if (!Utils::fuzzyEqual(p_zoomFactor, 1.0)) {
-        setZoomFactor(p_zoomFactor);
-    }
-
     auto channel = new QWebChannel(this);
     channel->registerObject(QStringLiteral("vxAdapter"), m_adapter);
-    page->setWebChannel(channel);
+
+    page()->setWebChannel(channel);
 
     connect(QApplication::clipboard(), &QClipboard::changed,
             this, &MarkdownViewer::handleClipboardChanged);

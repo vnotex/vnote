@@ -9,9 +9,14 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        explicit WebViewer(QWidget *p_parent = nullptr);
+        explicit WebViewer(const QColor &p_background,
+                           qreal p_zoomFactor,
+                           QWidget *p_parent = nullptr);
 
         virtual ~WebViewer();
+
+    signals:
+        void linkHovered(const QString &p_url);
     };
 }
 

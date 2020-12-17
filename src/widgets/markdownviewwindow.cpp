@@ -414,6 +414,11 @@ void MarkdownViewWindow::setupViewer()
                 showZoomFactor(p_factor);
             });
 
+    connect(m_viewer, &WebViewer::linkHovered,
+            this, [this](const QString &p_url) {
+                showMessage(p_url);
+            });
+
     // Connect outline pipeline.
     connect(adapter, &MarkdownViewerAdapter::headingsChanged,
             this, [this]() {
