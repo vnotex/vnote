@@ -129,7 +129,7 @@ void CoreConfig::setToolBarIconSize(int p_size)
     updateConfig(m_toolBarIconSize, p_size, this);
 }
 
-int CoreConfig::getMinimizeToStystemTray() const{
+int CoreConfig::getMinimizeToSystemTray() const{
     return m_minimize_to_system_tray;
 }
 

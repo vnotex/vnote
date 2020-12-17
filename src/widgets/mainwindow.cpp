@@ -291,7 +291,7 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
 {
     // TODO: support minimized to system tray.
 
-    auto toTray = ConfigMgr::getInst().getCoreConfig().getMinimizeToStystemTray();
+    auto toTray = ConfigMgr::getInst().getCoreConfig().getMinimizeToSystemTray();
     bool isExit = m_requestQuit;
     m_requestQuit = 0;
 

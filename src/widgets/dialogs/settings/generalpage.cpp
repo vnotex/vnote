@@ -87,7 +87,7 @@ void GeneralPage::loadInternal()
     }
 
     if(m_systemTray){
-        auto toTray = coreConfig.getMinimizeToStystemTray();
+        auto toTray = coreConfig.getMinimizeToSystemTray();
         if(toTray)
             m_systemTray->setChecked(true);
     }

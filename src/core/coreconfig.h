@@ -47,7 +47,7 @@ namespace vnotex
         int getToolBarIconSize() const;
         void setToolBarIconSize(int p_size);
 
-        int getMinimizeToStystemTray() const;
+        int getMinimizeToSystemTray() const;
         void setMinimizeToSystemTray(bool state);
 
         static const QStringList &getAvailableLocales();
