@@ -124,13 +124,14 @@
                             "web/js/markdown-it/markdown-it-emoji.min.js",
                             "web/js/markdown-it/markdown-it-footnote.min.js",
                             "web/js/markdown-it/markdown-it-front-matter.js",
-                            "web/js/markdown-it/markdown-it-headinganchor.js",
                             "web/js/markdown-it/markdown-it-imsize.min.js",
                             "web/js/markdown-it/markdown-it-sub.min.js",
                             "web/js/markdown-it/markdown-it-sup.min.js",
                             "web/js/markdown-it/markdown-it-task-lists.js",
                             "web/js/markdown-it/markdown-it-texmath.js",
                             "web/js/markdown-it/markdown-it-inject-linenumbers.js",
+                            "web/js/markdown-it/markdownItAnchor.umd.js",
+                            "web/js/markdown-it/markdownItTocDoneRight.umd.js",
                             "web/js/markdownit.js"
                         ],
                         "styles" : [

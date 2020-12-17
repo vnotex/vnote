@@ -174,4 +174,8 @@ void NodeContentMediaUtils::fixMarkdownLinks(const QString &p_srcFolderPath,
                                              const QString &p_destFolderPath)
 {
     // TODO.
+    Q_UNUSED(p_srcFolderPath);
+    Q_UNUSED(p_backend);
+    Q_UNUSED(p_destFilePath);
+    Q_UNUSED(p_destFolderPath);
 }

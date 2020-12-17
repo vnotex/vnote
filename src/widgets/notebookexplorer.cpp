@@ -293,3 +293,5 @@ void NotebookExplorer::locateNode(Node *p_node)
     m_nodeExplorer->setCurrentNode(p_node);
     m_nodeExplorer->setFocus();
 }
+
+

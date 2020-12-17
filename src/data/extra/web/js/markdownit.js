@@ -111,7 +111,8 @@ class MarkdownIt extends VxWorker {
         this.codeNodesCollected = false;
 
         // Used to deduplicate header Ids.
-        this.headerIds = new Set();
+        // One for markdownItAnchor and one for markdownItTocDoneRight.
+        this.headerIds = [new Set(), new Set()];
 
         this.mdit = window.markdownit({
             html: this.options.enableHtmlTag,
@@ -139,16 +140,6 @@ class MarkdownIt extends VxWorker {
             let str = p_url.trim().toLowerCase();
             return /^file:/.test(str) ? true : this.defaultValidateLink(p_url);
         };
-
-        this.mdit.use(window.markdownitHeadingAnchor, {
-            anchorClass: 'vx-anchor',
-            addHeadingID: true,
-            addHeadingAnchor: false,
-            anchorIcon: '#',
-            slugify: (md, str) => {
-                return this.generateHeaderId(str);
-            },
-        });
 
         this.mdit.use(window.markdownitTaskLists);
 
@@ -216,6 +207,30 @@ class MarkdownIt extends VxWorker {
                                   this.mdit.use(window['markdown-it-xss']);
                               });
         }
+
+        this.mdit.use(window.markdownItAnchor, {
+            slugify: (str) => {
+                return this.generateHeaderId(this.headerIds[0], str);
+            },
+            permalink: true,
+            permalinkBefore: false,
+            permalinkClass: 'vx-header-anchor',
+            permalinkSpace: false,
+            // We use CSS:after to add the mark.
+            permalinkSymbol: '',
+            permalinkAttrs: (slug, state) => {
+                return {
+                    'vx-data-anchor-icon': '¶'
+                }
+            }
+        });
+
+        this.mdit.use(window.markdownItTocDoneRight, {
+            slugify: (str) => {
+                return this.generateHeaderId(this.headerIds[1], str);
+            },
+            containerClass: 'vx-table-of-contents'
+        });
     }
 
     registerInternal() {
@@ -233,7 +248,8 @@ class MarkdownIt extends VxWorker {
         this.frontMatterNode = null;
         this.codeNodesStore.clearNodes();
         this.codeNodesCollected = false;
-        this.headerIds.clear();
+        this.headerIds[0].clear();
+        this.headerIds[1].clear();
 
         if (p_node != this.lastContainerNode) {
             this.lastContainerNode = p_node;
@@ -300,15 +316,15 @@ class MarkdownIt extends VxWorker {
         return this.codeNodesStore.getNodes(p_langs);
     }
 
-    generateHeaderId(p_str) {
+    generateHeaderId(p_headerIds, p_str) {
         let idBase = p_str.replace(/\s/g, '-').toLowerCase();
         let id = idBase;
         let idx = 1;
-        while (this.headerIds.has(id)) {
+        while (p_headerIds.has(id)) {
             id = idBase + '-' + idx;
             ++idx;
         }
-        this.headerIds.add(id);
+        p_headerIds.add(id);
         return id;
     }
 }

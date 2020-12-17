@@ -3,11 +3,6 @@ v11.0.0
 Alex Kocharin  
 Vitaly Puzrin
 
-# [markdown-it-headinganchor](https://github.com/adam-p/markdown-it-headinganchor)
-v1.3.0  
-Adam Pritchard  
-Modified by Le Tan
-
 # [markdown-it-task-lists](https://github.com/revin/markdown-it-task-lists)
 v2.1.0  
 Revin Guillen
@@ -52,3 +47,9 @@ Modified by Le Tan
 
 # [markdown-it-xss](https://github.com/yzyeengang/markdown-it-xss)
 v1.0.0
+
+# [markdonw-it-anchor](https://github.com/valeriangalliat/markdown-it-anchor)
+v6.0.1
+
+# [markdonw-it-toc-done-right](https://github.com/nagaozen/markdown-it-toc-done-right)
+v4.2.0

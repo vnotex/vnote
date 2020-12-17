@@ -10,14 +10,14 @@ namespace vnotex
 {
     typedef quint64 ID;
 
-    static QPair<bool, ID> stringToID(const QString &p_str)
+    inline QPair<bool, ID> stringToID(const QString &p_str)
     {
         bool ok;
         ID id = p_str.toULongLong(&ok);
         return qMakePair(ok, id);
     }
 
-    static QString IDToString(ID p_id)
+    inline QString IDToString(ID p_id)
     {
         return QString::number(p_id);
     }
@@ -42,7 +42,8 @@ namespace vnotex
 
     enum { CONTENTS_MARGIN = 2 };
 
-    static QString QJsonObjectToString(const QJsonObject &p_obj) {
+    inline QString QJsonObjectToString(const QJsonObject &p_obj)
+    {
         QString str = "{";
 
         auto keys = p_obj.keys();
@@ -54,7 +55,7 @@ namespace vnotex
         return str;
     }
 
-    static QDebug operator<<(QDebug p_debug, const QJsonObject &p_obj)
+    inline QDebug operator<<(QDebug p_debug, const QJsonObject &p_obj)
     {
         QDebugStateSaver saver(p_debug);
         p_debug << QJsonObjectToString(p_obj);

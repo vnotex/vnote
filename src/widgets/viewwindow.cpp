@@ -927,18 +927,28 @@ bool ViewWindow::findAndReplaceWidgetVisible() const
 
 void ViewWindow::handleFindTextChanged(const QString &p_text, FindOptions p_options)
 {
+    Q_UNUSED(p_text);
+    Q_UNUSED(p_options);
 }
 
 void ViewWindow::handleFindNext(const QString &p_text, FindOptions p_options)
 {
+    Q_UNUSED(p_text);
+    Q_UNUSED(p_options);
 }
 
 void ViewWindow::handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
 {
+    Q_UNUSED(p_text);
+    Q_UNUSED(p_options);
+    Q_UNUSED(p_replaceText);
 }
 
 void ViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
 {
+    Q_UNUSED(p_text);
+    Q_UNUSED(p_options);
+    Q_UNUSED(p_replaceText);
 }
 
 void ViewWindow::handleFindAndReplaceWidgetClosed()
@@ -1006,3 +1016,5 @@ void ViewWindow::showReplaceResult(const QString &p_text, int p_totalReplaces)
         VNoteX::getInst().showStatusMessageShort(tr("Replaced %n match(es)", "", p_totalReplaces));
     }
 }
+
+

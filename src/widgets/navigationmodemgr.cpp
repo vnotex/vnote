@@ -123,7 +123,6 @@ bool NavigationModeMgr::eventFilter(QObject *p_obj, QEvent *p_event)
 bool NavigationModeMgr::handleKeyPress(QKeyEvent *p_event)
 {
     int key = p_event->key();
-    auto modifiers = p_event->modifiers();
 
     if (WidgetUtils::isMetaKey(key)) {
         return false;

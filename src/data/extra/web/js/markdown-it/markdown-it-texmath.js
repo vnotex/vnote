@@ -5,6 +5,7 @@
 'use strict';
 
 function texmath(md, options) {
+    texmath.escapeHtml = md.utils.escapeHtml;
     const delimitersList = options && options.delimitersList || ['dollars'];
     const katexOptions = options && options.katexOptions || { throwOnError: false };
     katexOptions.macros = options && options.macros || katexOptions.macros;  // ensure backwards compatibility
@@ -113,9 +114,9 @@ texmath.render = function(tex,displayMode,options) {
     }
     */
     if (displayMode) {
-        res = '$$$$' + tex + '$$$$';
+        res = '$$$$' + texmath.escapeHtml(tex) + '$$$$';
     } else {
-        res = '$$' + tex + '$$';
+        res = '$$' + texmath.escapeHtml(tex) + '$$';
     }
     return res;
 }
