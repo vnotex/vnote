@@ -3,6 +3,7 @@
 #include <QComboBox>
 #include <QFormLayout>
 #include <QTimer>
+#include <QSpinBox>
 
 #include <widgets/widgetsfactory.h>
 #include <core/editorconfig.h>
@@ -34,6 +35,21 @@ void EditorPage::setupUI()
         connect(m_autoSavePolicyComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &EditorPage::pageIsChanged);
     }
+
+    {
+        m_toolBarIconSizeSpinBox = WidgetsFactory::createSpinBox(this);
+        m_toolBarIconSizeSpinBox->setToolTip(tr("Icon size of the editor tool bar"));
+
+        m_toolBarIconSizeSpinBox->setRange(1, 48);
+        m_toolBarIconSizeSpinBox->setSingleStep(1);
+
+        const QString label(tr("Toolbar icon size:"));
+        mainLayout->addRow(label, m_toolBarIconSizeSpinBox);
+        addSearchItem(label, m_toolBarIconSizeSpinBox->toolTip(), m_toolBarIconSizeSpinBox);
+        connect(m_toolBarIconSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+                this, &EditorPage::pageIsChanged);
+
+    }
 }
 
 void EditorPage::loadInternal()
@@ -45,6 +61,9 @@ void EditorPage::loadInternal()
         Q_ASSERT(idx != -1);
         m_autoSavePolicyComboBox->setCurrentIndex(idx);
     }
+
+
+    m_toolBarIconSizeSpinBox->setValue(editorConfig.getToolBarIconSize());
 }
 
 void EditorPage::saveInternal()
@@ -55,6 +74,8 @@ void EditorPage::saveInternal()
         auto policy = m_autoSavePolicyComboBox->currentData().toInt();
         editorConfig.setAutoSavePolicy(static_cast<EditorConfig::AutoSavePolicy>(policy));
     }
+
+    editorConfig.setToolBarIconSize(m_toolBarIconSizeSpinBox->value());
 
     notifyEditorConfigChange();
 }
