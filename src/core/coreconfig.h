@@ -69,6 +69,10 @@ namespace vnotex
         // Icon size of MainWindow tool bar.
         int m_toolBarIconSize = 16;
 
+        // Whether to minimize to tray.
+        // -1 for prompting for user;
+        // 0 for disabling minimizing to system tray;
+        // 1 for enabling minimizing to system tray;
         int m_minimize_to_system_tray = -1;
 
         static QStringList s_availableLocales;

@@ -127,11 +127,10 @@ namespace vnotex
         }
 
         static bool isUnDefinedKey(const QJsonObject &p_default,
-                                 const QJsonObject &p_user,
-                                 const QString &p_key){
-            auto it = p_user.find(p_key);
-            auto it2 = p_default.find(p_key);
-            if (it == p_user.end() && it2 == p_default.end()) {
+                                   const QJsonObject &p_user,
+                                   const QString &p_key)
+        {
+            if (p_user.find(p_key) == p_user.end() && p_default.find(p_key) == p_default.end()) {
                 return true;
             }
             return false;

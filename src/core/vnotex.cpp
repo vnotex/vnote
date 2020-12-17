@@ -1,7 +1,7 @@
 #include "vnotex.h"
 
 #include <QDateTime>
-#include<QRandomGenerator>
+#include <QRandomGenerator>
 
 #include <widgets/mainwindow.h>
 #include "notebookmgr.h"

@@ -23,7 +23,7 @@ bool SingleInstanceGuard::tryRun()
     // this will attach to the old segment, then exit, freeing the old segment.
     if (m_sharedMemory.attach()) {
         qInfo() << "another instance is running";
-        // so try to show it?
+        // So try to show it?
         showInstance();
         return false;
     }
