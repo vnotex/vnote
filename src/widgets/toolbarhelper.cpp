@@ -224,6 +224,8 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
         auto stayOnTopAct = menu->addAction(generateIcon("stay_on_top.svg"), MainWindow::tr("Stay On Top"),
                                             p_win, &MainWindow::setStayOnTop);
         stayOnTopAct->setCheckable(true);
+        WidgetUtils::addActionShortcut(stayOnTopAct,
+                                       coreConfig.getShortcut(CoreConfig::Shortcut::StayOnTop));
 
         menu->addSeparator();
 
@@ -330,6 +332,17 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                         menu,
                         []() {
                             const auto file = DocsUtils::getDocFile(QStringLiteral("shortcuts.md"));
+                            if (!file.isEmpty()) {
+                                auto paras = QSharedPointer<FileOpenParameters>::create();
+                                paras->m_readOnly = true;
+                                emit VNoteX::getInst().openFileRequested(file, paras);
+                            }
+                        });
+
+        menu->addAction(MainWindow::tr("Markdown Guide"),
+                        menu,
+                        []() {
+                            const auto file = DocsUtils::getDocFile(QStringLiteral("markdown_guide.md"));
                             if (!file.isEmpty()) {
                                 auto paras = QSharedPointer<FileOpenParameters>::create();
                                 paras->m_readOnly = true;

@@ -21,6 +21,7 @@ namespace vnotex
     class OutlineProvider;
     class EditReadDiscardAction;
     class FindAndReplaceWidget;
+    class StatusWidget;
 
     class ViewWindow : public QFrame
     {
@@ -148,6 +149,9 @@ namespace vnotex
 
         virtual void handleFindAndReplaceWidgetOpened();
 
+        // Show message in status widget if exists. Otherwise, show it in the mainwindow's status widget.
+        void showMessage(const QString p_msg);
+
     protected:
         void setCentralWidget(QWidget *p_widget);
 
@@ -157,7 +161,7 @@ namespace vnotex
 
         void addBottomWidget(QWidget *p_widget);
 
-        void setStatusWidget(const QSharedPointer<QWidget> &p_widget);
+        void setStatusWidget(const QSharedPointer<StatusWidget> &p_widget);
 
         bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -202,13 +206,11 @@ namespace vnotex
         bool findAndReplaceWidgetVisible() const;
 
         // @p_currentMatchIndex: 0-based.
-        static void showFindResult(const QString &p_text, int p_totalMatches, int p_currentMatchIndex);
+        void showFindResult(const QString &p_text, int p_totalMatches, int p_currentMatchIndex);
 
-        static void showReplaceResult(const QString &p_text, int p_totalReplaces);
+        void showReplaceResult(const QString &p_text, int p_totalReplaces);
 
         static ViewWindow::Mode modeFromOpenParameters(const FileOpenParameters &p_paras);
-
-        QSharedPointer<QWidget> m_statusWidget;
 
         // The revision of the buffer of the last sync content.
         int m_bufferRevision = 0;
@@ -305,6 +307,8 @@ namespace vnotex
 
         // Last find info.
         FindInfo m_findInfo;
+
+        QSharedPointer<StatusWidget> m_statusWidget;
 
         static QIcon s_savedIcon;
         static QIcon s_modifiedIcon;

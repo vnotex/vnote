@@ -145,6 +145,8 @@ namespace vnotex
 
         QSharedPointer<QWidget> m_viewerStatusWidget;
 
+        QSharedPointer<QStackedWidget> m_mainStatusWidget;
+
         // Managed by QObject.
         PreviewHelper *m_previewHelper = nullptr;
 

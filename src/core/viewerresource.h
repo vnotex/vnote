@@ -20,13 +20,13 @@ namespace vnotex
 
                 m_styles.clear();
                 auto stylesArray = p_obj[QStringLiteral("styles")].toArray();
-                for (size_t i = 0; i < stylesArray.size(); ++i) {
+                for (int i = 0; i < stylesArray.size(); ++i) {
                     m_styles << stylesArray[i].toString();
                 }
 
                 m_scripts.clear();
                 auto scriptsArray = p_obj[QStringLiteral("scripts")].toArray();
-                for (size_t i = 0; i < scriptsArray.size(); ++i) {
+                for (int i = 0; i < scriptsArray.size(); ++i) {
                     m_scripts << scriptsArray[i].toString();
                 }
             }

@@ -8,6 +8,7 @@
         <file>docs/en/get_started.txt</file>
         <file>docs/en/about_vnotex.txt</file>
         <file>docs/en/shortcuts.md</file>
+        <file>docs/en/markdown_guide.md</file>
         <file>web/markdownviewertemplate.html</file>
         <file>web/css/globalstyles.css</file>
         <file>web/css/markdownit.css</file>

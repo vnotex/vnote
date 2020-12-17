@@ -16,6 +16,7 @@ namespace vnotex
         enum Shortcut
         {
             FullScreen,
+            StayOnTop,
             ExpandContentArea,
             Settings,
             NewNote,

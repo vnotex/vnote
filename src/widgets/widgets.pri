@@ -26,6 +26,7 @@ SOURCES += \
     $$PWD/editors/markdownviewer.cpp \
     $$PWD/editors/markdownvieweradapter.cpp \
     $$PWD/editors/previewhelper.cpp \
+    $$PWD/editors/statuswidget.cpp \
     $$PWD/editors/texteditor.cpp \
     $$PWD/editreaddiscardaction.cpp \
     $$PWD/filesystemviewer.cpp \
@@ -103,6 +104,7 @@ HEADERS += \
     $$PWD/editors/markdownviewer.h \
     $$PWD/editors/markdownvieweradapter.h \
     $$PWD/editors/previewhelper.h \
+    $$PWD/editors/statuswidget.h \
     $$PWD/editors/texteditor.h \
     $$PWD/editreaddiscardaction.h \
     $$PWD/filesystemviewer.h \

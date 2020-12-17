@@ -10,6 +10,7 @@
         "locale" : "",
         "shortcuts" : {
             "FullScreen" : "F11",
+            "StayOnTop" : "F10",
             "ExpandContentArea" : "Ctrl+G, E",
             "Settings" : "Ctrl+Alt+P",
             "NewNote" : "Ctrl+Alt+N",

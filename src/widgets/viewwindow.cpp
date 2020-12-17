@@ -31,6 +31,7 @@
 #include "attachmentdragdropareaindicator.h"
 #include "exception.h"
 #include "findandreplacewidget.h"
+#include "editors/statuswidget.h"
 
 using namespace vnotex;
 
@@ -231,7 +232,7 @@ void ViewWindow::addBottomWidget(QWidget *p_widget)
     m_bottomLayout->addWidget(p_widget);
 }
 
-void ViewWindow::setStatusWidget(const QSharedPointer<QWidget> &p_widget)
+void ViewWindow::setStatusWidget(const QSharedPointer<StatusWidget> &p_widget)
 {
     m_statusWidget = p_widget;
     m_bottomLayout->insertWidget(0, p_widget.data());
@@ -863,12 +864,12 @@ void ViewWindow::wheelEvent(QWheelEvent *p_event)
 
 void ViewWindow::showZoomFactor(qreal p_factor)
 {
-    VNoteX::getInst().showStatusMessageShort(tr("Zoomed: %1%").arg(p_factor * 100));
+    showMessage(tr("Zoomed: %1%").arg(p_factor * 100));
 }
 
 void ViewWindow::showZoomDelta(int p_delta)
 {
-    VNoteX::getInst().showStatusMessageShort(tr("Zoomed: %1%2").arg(p_delta > 0 ? "+" : "").arg(p_delta));
+    showMessage(tr("Zoomed: %1%2").arg(p_delta > 0 ? "+" : "").arg(p_delta));
 }
 
 void ViewWindow::showFindAndReplaceWidget()
@@ -1003,19 +1004,26 @@ void ViewWindow::replaceAll(const QString &p_text, FindOptions p_options, const 
 void ViewWindow::showFindResult(const QString &p_text, int p_totalMatches, int p_currentMatchIndex)
 {
     if (p_totalMatches == 0) {
-        VNoteX::getInst().showStatusMessageShort(tr("Pattern not found: %1").arg(p_text));
+        showMessage(tr("Pattern not found: %1").arg(p_text));
     } else {
-        VNoteX::getInst().showStatusMessageShort(tr("Match found: %1/%2").arg(p_currentMatchIndex + 1).arg(p_totalMatches));
+        showMessage(tr("Match found: %1/%2").arg(p_currentMatchIndex + 1).arg(p_totalMatches));
     }
 }
 
 void ViewWindow::showReplaceResult(const QString &p_text, int p_totalReplaces)
 {
     if (p_totalReplaces == 0) {
-        VNoteX::getInst().showStatusMessageShort(tr("Pattern not found: %1").arg(p_text));
+        showMessage(tr("Pattern not found: %1").arg(p_text));
     } else {
-        VNoteX::getInst().showStatusMessageShort(tr("Replaced %n match(es)", "", p_totalReplaces));
+        showMessage(tr("Replaced %n match(es)", "", p_totalReplaces));
     }
 }
 
-
+void ViewWindow::showMessage(const QString p_msg)
+{
+    if (m_statusWidget) {
+        m_statusWidget->showMessage(p_msg);
+    } else {
+        VNoteX::getInst().showStatusMessageShort(p_msg);
+    }
+}

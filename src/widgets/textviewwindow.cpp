@@ -13,6 +13,7 @@
 #include "editors/texteditor.h"
 #include <core/vnotex.h>
 #include <core/thememgr.h>
+#include "editors/statuswidget.h"
 
 using namespace vnotex;
 
@@ -45,7 +46,11 @@ void TextViewWindow::setupUI()
     TextViewWindowHelper::connectEditor(this);
 
     // Status widget.
-    setStatusWidget(m_editor->statusWidget());
+    {
+        auto statusWidget = QSharedPointer<StatusWidget>::create();
+        statusWidget->setEditorStatusWidget(m_editor->statusWidget());
+        setStatusWidget(statusWidget);
+    }
 
     setupToolBar();
 }
