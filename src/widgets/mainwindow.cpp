@@ -560,6 +560,7 @@ void MainWindow::initSystemTrayIcon(){
 #if !defined(Q_OS_MACOS) && !defined(Q_OS_MAC)
                 if (p_reason == QSystemTrayIcon::Trigger) {
                     this->show();
+                    this->activateWindow();
                 }
 #endif
             });
