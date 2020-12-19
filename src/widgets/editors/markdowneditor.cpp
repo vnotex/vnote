@@ -785,7 +785,13 @@ int MarkdownEditor::getHeadingIndexByBlockNumber(int p_blockNumber) const
         if (val == p_blockNumber) {
             return mid;
         } else if (val > p_blockNumber) {
+            // Skip the -1 headings.
+            // Bad case: [0, 2, 3, 43, 44, -1, 46, 60].
+            // If not skipped, [left, right] will be stuck at [4, 5].
             right = mid - 1;
+            while (right >= left && m_headings[right].m_blockNumber == -1) {
+                --right;
+            }
         } else {
             left = mid;
         }
@@ -794,7 +800,7 @@ int MarkdownEditor::getHeadingIndexByBlockNumber(int p_blockNumber) const
     if (m_headings[left].m_blockNumber <= p_blockNumber && m_headings[left].m_blockNumber != -1) {
         return left;
     }
-    // Find the last heading with block number not greater than @p_blockNumber.
+
     return -1;
 }
 
