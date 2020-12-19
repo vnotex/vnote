@@ -12,9 +12,11 @@ using namespace vnotex;
 
 QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win)
 {
-    QIcon icon(":/vnotex/data/core/logo/256x256/vnote.png");
 #if defined(Q_OS_MACOS)
+    QIcon icon(":/vnotex/data/core/logo/vnote_mono.png");
     icon.setIsMask(true);
+#else
+    QIcon icon(":/vnotex/data/core/logo/256x256/vnote.png");
 #endif
 
     auto trayIcon = new QSystemTrayIcon(icon, p_win);

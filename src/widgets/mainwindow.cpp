@@ -55,10 +55,6 @@ MainWindow::MainWindow(QWidget *p_parent)
 
     loadStateAndGeometry();
 
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-    QApplication::setQuitOnLastWindowClosed(false);
-#endif
-
     // The signal is particularly useful if your application has to do some last-second cleanup.
     // Note that no user interaction is possible in this state.
     connect(qApp, &QCoreApplication::aboutToQuit,
@@ -295,10 +291,7 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
 
 #if defined(Q_OS_MACOS)
     // Do not support minimized to tray on macOS.
-    if (!isExit) {
-        p_event->accept();
-        return;
-    }
+    isExit = true;
 #endif
 
     if(!isExit && toTray == -1){
