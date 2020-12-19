@@ -7,8 +7,6 @@
 #include "toolbarhelper.h"
 #include "statusbarhelper.h"
 
-#define RESTART_EXIT_CODE   1000
-
 class QDockWidget;
 class QSystemTrayIcon;
 
@@ -47,6 +45,10 @@ namespace vnotex
 
         void restart();
 
+        void showMainWindow();
+
+        void quitApp();
+
     signals:
         void mainWindowStarted();
 
@@ -60,6 +62,8 @@ namespace vnotex
 
     protected:
         void closeEvent(QCloseEvent *p_event) Q_DECL_OVERRIDE;
+
+        void changeEvent(QEvent *p_event) Q_DECL_OVERRIDE;
 
     private slots:
         void closeOnQuit();
@@ -105,13 +109,7 @@ namespace vnotex
 
         void setupShortcuts();
 
-        // Init system tray and correspondign context menu.
-        void initSystemTrayIcon();
-
-        // Tray icon.
-        QSystemTrayIcon *m_trayIcon;
-
-        bool m_requestQuit = false;
+        void setupSystemTray();
 
         ToolBarHelper m_toolBarHelper;
 
@@ -130,7 +128,14 @@ namespace vnotex
         QVector<QDockWidget *> m_docks;
 
         bool m_layoutReset = false;
-        
+
+        // -1: do not request to quit;
+        // 0 and above: exit code.
+        int m_requestQuit = -1;
+
+        Qt::WindowStates m_windowOldState = Qt::WindowMinimized;
+
+        QSystemTrayIcon *m_trayIcon = nullptr;
     };
 } // ns vnotex
 

@@ -308,6 +308,11 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
 
         menu->addSeparator();
 
+        menu->addAction(MainWindow::tr("Quit"),
+                        menu,
+                        [p_win]() {
+                            p_win->quitApp();
+                        });
         menu->addAction(MainWindow::tr("Restart"),
                         menu,
                         [p_win]() {

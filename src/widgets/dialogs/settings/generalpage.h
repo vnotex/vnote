@@ -29,7 +29,6 @@ namespace vnotex
         QComboBox *m_openGLComboBox = nullptr;
 
         QCheckBox *m_systemTrayCheckBox = nullptr;
-
     };
 }
 

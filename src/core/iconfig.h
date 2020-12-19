@@ -130,10 +130,13 @@ namespace vnotex
                                    const QJsonObject &p_user,
                                    const QString &p_key)
         {
-            if (p_user.find(p_key) == p_user.end() && p_default.find(p_key) == p_default.end()) {
-                return true;
-            }
-            return false;
+            return !p_default.contains(p_key) && !p_user.contains(p_key);
+        }
+
+        static bool isUndefinedKey(const QJsonObject &p_obj,
+                                   const QString &p_key)
+        {
+            return !p_obj.contains(p_key);
         }
 
         template <typename T>

@@ -48,9 +48,6 @@ namespace vnotex
         int getToolBarIconSize() const;
         void setToolBarIconSize(int p_size);
 
-        int getMinimizeToSystemTray() const;
-        void setMinimizeToSystemTray(bool state);
-
         static const QStringList &getAvailableLocales();
 
     private:
@@ -69,12 +66,6 @@ namespace vnotex
 
         // Icon size of MainWindow tool bar.
         int m_toolBarIconSize = 16;
-
-        // Whether to minimize to tray.
-        // -1 for prompting for user;
-        // 0 for disabling minimizing to system tray;
-        // 1 for enabling minimizing to system tray;
-        int m_minimizeToSystemTray = -1;
 
         static QStringList s_availableLocales;
     };
