@@ -13,6 +13,7 @@
 
 class QLayout;
 class QSplitter;
+class QTimer;
 
 namespace vnotex
 {
