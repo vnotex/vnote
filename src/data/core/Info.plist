@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>vnote</string>
+    <key>CFBundleShortVersionString</key>
+    <string>3.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>3.0.0.2</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Created by VNoteX</string>
+    <key>CFBundleIconFile</key>
+    <string>vnote.icns</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.vnotex.vnote</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.12</string>
+    <key>NOTE</key>
+    <string>Visit [GitHub VNote](https://github.com/vnotex/vnote) for details.</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>NSSupportsAutomaticGraphicsSwitching</key>
+    <true/>
+    <key>NSRequiresAquaSystemAppearance</key>
+    <true/>
+</dict>
+</plist>
