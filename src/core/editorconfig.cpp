@@ -131,6 +131,12 @@ int EditorConfig::getToolBarIconSize() const
     return m_toolBarIconSize;
 }
 
+void EditorConfig::setToolBarIconSize(int p_size)
+{
+    Q_ASSERT(p_size > 0);
+    updateConfig(m_toolBarIconSize, p_size, this);
+}
+
 const QString &EditorConfig::getShortcut(Shortcut p_shortcut) const
 {
     Q_ASSERT(p_shortcut < Shortcut::MaxShortcut);

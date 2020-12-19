@@ -126,6 +126,16 @@ namespace vnotex
             return read(p_default, p_user, p_key).toDouble();
         }
 
+        static bool isUndefinedKey(const QJsonObject &p_default,
+                                   const QJsonObject &p_user,
+                                   const QString &p_key)
+        {
+            if (p_user.find(p_key) == p_user.end() && p_default.find(p_key) == p_default.end()) {
+                return true;
+            }
+            return false;
+        }
+
         template <typename T>
         static void updateConfig(T &p_cur,
                                  const T &p_new,

@@ -7,7 +7,10 @@
 #include "toolbarhelper.h"
 #include "statusbarhelper.h"
 
+#define RESTART_EXIT_CODE   1000
+
 class QDockWidget;
+class QSystemTrayIcon;
 
 namespace vnotex
 {
@@ -41,6 +44,8 @@ namespace vnotex
         void focusViewArea();
 
         void setStayOnTop(bool p_enabled);
+
+        void restart();
 
     signals:
         void mainWindowStarted();
@@ -100,6 +105,14 @@ namespace vnotex
 
         void setupShortcuts();
 
+        // Init system tray and correspondign context menu.
+        void initSystemTrayIcon();
+
+        // Tray icon.
+        QSystemTrayIcon *m_trayIcon;
+
+        bool m_requestQuit = false;
+
         ToolBarHelper m_toolBarHelper;
 
         StatusBarHelper m_statusBarHelper;
@@ -117,6 +130,7 @@ namespace vnotex
         QVector<QDockWidget *> m_docks;
 
         bool m_layoutReset = false;
+        
     };
 } // ns vnotex
 

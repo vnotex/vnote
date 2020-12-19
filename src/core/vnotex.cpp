@@ -1,6 +1,7 @@
 #include "vnotex.h"
 
 #include <QDateTime>
+#include <QRandomGenerator>
 
 #include <widgets/mainwindow.h>
 #include "notebookmgr.h"
@@ -12,6 +13,7 @@
 
 #include <utils/docsutils.h>
 
+
 using namespace vnotex;
 
 VNoteX::VNoteX(QObject *p_parent)
@@ -19,9 +21,7 @@ VNoteX::VNoteX(QObject *p_parent)
       m_mainWindow(nullptr),
       m_notebookMgr(nullptr)
 {
-    qsrand(QDateTime::currentDateTime().toTime_t());
-
-    m_instanceId = qrand();
+    m_instanceId = QRandomGenerator::global()->generate64();
 
     initThemeMgr();
 

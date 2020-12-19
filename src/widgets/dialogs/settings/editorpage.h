@@ -4,6 +4,7 @@
 #include "settingspage.h"
 
 class QComboBox;
+class QSpinBox;
 
 namespace vnotex
 {
@@ -27,6 +28,7 @@ namespace vnotex
         void setupUI();
 
         QComboBox *m_autoSavePolicyComboBox = nullptr;
+        QSpinBox *m_toolBarIconSizeSpinBox = nullptr;
     };
 }
 

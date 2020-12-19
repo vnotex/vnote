@@ -75,6 +75,7 @@ namespace vnotex
         QJsonObject toJson() const Q_DECL_OVERRIDE;
 
         int getToolBarIconSize() const;
+        void setToolBarIconSize(int p_size);
 
         EditorConfig::AutoSavePolicy getAutoSavePolicy() const;
         void setAutoSavePolicy(EditorConfig::AutoSavePolicy p_policy);
