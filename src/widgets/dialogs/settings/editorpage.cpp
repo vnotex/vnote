@@ -43,7 +43,7 @@ void EditorPage::setupUI()
         m_toolBarIconSizeSpinBox->setRange(1, 48);
         m_toolBarIconSizeSpinBox->setSingleStep(1);
 
-        const QString label(tr("Toolbar icon size:"));
+        const QString label(tr("Tool bar icon size:"));
         mainLayout->addRow(label, m_toolBarIconSizeSpinBox);
         addSearchItem(label, m_toolBarIconSizeSpinBox->toolTip(), m_toolBarIconSizeSpinBox);
         connect(m_toolBarIconSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),

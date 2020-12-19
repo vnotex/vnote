@@ -28,6 +28,7 @@ namespace vnotex
         void setupUI();
 
         QComboBox *m_autoSavePolicyComboBox = nullptr;
+
         QSpinBox *m_toolBarIconSizeSpinBox = nullptr;
     };
 }

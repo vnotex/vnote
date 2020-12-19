@@ -72,7 +72,7 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
         m_openGL = stringToOpenGL(option);
     }
 
-    if (coreObj.contains(QStringLiteral("system_title_bar"))) {
+    if (!isUndefinedKey(coreObj, QStringLiteral("system_title_bar"))) {
         m_systemTitleBarEnabled = readBool(coreObj, QStringLiteral("system_title_bar"));
     } else {
         // Enable system title bar on macOS by default.
@@ -81,6 +81,10 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
 #else
         m_systemTitleBarEnabled = false;
 #endif
+    }
+
+    if (!isUndefinedKey(coreObj, QStringLiteral("minimize_to_system_tray"))) {
+        m_minimizeToSystemTray = readBool(coreObj, QStringLiteral("minimize_to_system_tray")) ? 1 : 0;
     }
 }
 
@@ -91,6 +95,9 @@ QJsonObject SessionConfig::saveCore() const
     coreObj[QStringLiteral("current_notebook_root_folder_path")] = m_currentNotebookRootFolderPath;
     coreObj[QStringLiteral("opengl")] = openGLToString(m_openGL);
     coreObj[QStringLiteral("system_title_bar")] = m_systemTitleBarEnabled;
+    if (m_minimizeToSystemTray != -1) {
+        coreObj[QStringLiteral("minimize_to_system_tray")] = m_minimizeToSystemTray > 0;
+    }
     return coreObj;
 }
 
@@ -259,4 +266,14 @@ bool SessionConfig::getSystemTitleBarEnabled() const
 void SessionConfig::setSystemTitleBarEnabled(bool p_enabled)
 {
     updateConfig(m_systemTitleBarEnabled, p_enabled, this);
+}
+
+int SessionConfig::getMinimizeToSystemTray() const
+{
+    return m_minimizeToSystemTray;
+}
+
+void SessionConfig::setMinimizeToSystemTray(bool p_enabled)
+{
+    updateConfig(m_minimizeToSystemTray, p_enabled ? 1 : 0, this);
 }

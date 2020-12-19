@@ -8,6 +8,7 @@
 #include <QOpenGLContext>
 #include <QDateTime>
 #include <QSysInfo>
+#include <QProcess>
 
 #include <core/configmgr.h>
 #include <core/mainconfig.h>
@@ -16,12 +17,11 @@
 #include <core/singleinstanceguard.h>
 #include <core/vnotex.h>
 #include <core/logger.h>
+#include <core/global.h>
 #include <widgets/mainwindow.h>
 #include <QWebEngineSettings>
 #include <core/exception.h>
 #include <widgets/messageboxhelper.h>
-
-#include <QProcess>
 
 using namespace vnotex;
 
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 
     loadTranslators(app);
 
-    MainWindow window(nullptr);
+    MainWindow window;
 
     window.show();
     VNoteX::getInst().getThemeMgr().setBaseBackground(window.palette().color(QPalette::Base));
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
     int ret = app.exec();
     if (ret == RESTART_EXIT_CODE) {
-        // Ask to restart VNote.
+        // Asked to restart VNote.
         guard.exit();
         QProcess::startDetached(qApp->applicationFilePath(), QStringList());
         return 0;

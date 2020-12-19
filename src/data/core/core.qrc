@@ -74,5 +74,6 @@
         <file>icons/find_replace_editor.svg</file>
         <file>logo/vnote.svg</file>
         <file>logo/vnote.png</file>
+        <file>logo/256x256/vnote.png</file>
     </qresource>
 </RCC>

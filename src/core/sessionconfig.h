@@ -79,6 +79,9 @@ namespace vnotex
         static QString openGLToString(OpenGL p_option);
         static OpenGL stringToOpenGL(const QString &p_str);
 
+        int getMinimizeToSystemTray() const;
+        void setMinimizeToSystemTray(bool p_enabled);
+
     private:
         void loadCore(const QJsonObject &p_session);
 
@@ -105,6 +108,12 @@ namespace vnotex
 
         // Whether use system's title bar or not.
         bool m_systemTitleBarEnabled = false;
+
+        // Whether to minimize to tray.
+        // -1 for prompting for user;
+        // 0 for disabling minimizing to system tray;
+        // 1 for enabling minimizing to system tray.
+        int m_minimizeToSystemTray = -1;
     };
 } // ns vnotex
 

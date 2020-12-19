@@ -43,6 +43,7 @@ SOURCES += \
     $$PWD/outlineprovider.cpp \
     $$PWD/outlineviewer.cpp \
     $$PWD/propertydefs.cpp \
+    $$PWD/systemtrayhelper.cpp \
     $$PWD/textviewwindow.cpp \
     $$PWD/toolbarhelper.cpp \
     $$PWD/treeview.cpp \
@@ -122,6 +123,7 @@ HEADERS += \
     $$PWD/outlineprovider.h \
     $$PWD/outlineviewer.h \
     $$PWD/propertydefs.h \
+    $$PWD/systemtrayhelper.h \
     $$PWD/textviewwindow.h \
     $$PWD/textviewwindowhelper.h \
     $$PWD/toolbarhelper.h \
