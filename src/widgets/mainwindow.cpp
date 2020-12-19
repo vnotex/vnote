@@ -15,6 +15,9 @@
 #include <QCoreApplication>
 #include <QApplication>
 #include <QShortcut>
+#include <QSystemTrayIcon>
+#include <QMenu>
+#include <QIcon>
 
 #include "toolbox.h"
 #include "notebookexplorer.h"

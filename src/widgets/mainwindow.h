@@ -4,18 +4,13 @@
 #include <QMainWindow>
 #include <QSharedPointer>
 
-#include <QMenu>
-#include <QIcon>
-#include <QSystemTrayIcon>
-#include <QTimer>
-
 #include "toolbarhelper.h"
 #include "statusbarhelper.h"
-#include <core/singleinstanceguard.h>
 
 #define RESTART_EXIT_CODE   1000
 
 class QDockWidget;
+class QSystemTrayIcon;
 
 namespace vnotex
 {
@@ -110,12 +105,6 @@ namespace vnotex
 
         void setupShortcuts();
 
-        // Init a timer to watch the change of the shared memory between instances of
-        // VNote.
-        void initSharedMemoryWatcher();
-        // Interval of the shared memory timer in ms.
-        static const int c_sharedMemTimerInterval;
-
         // Init system tray and correspondign context menu.
         void initSystemTrayIcon();
 
@@ -141,7 +130,6 @@ namespace vnotex
         QVector<QDockWidget *> m_docks;
 
         bool m_layoutReset = false;
-
         
     };
 } // ns vnotex
