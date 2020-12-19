@@ -13,6 +13,7 @@
 #include <QShortcut>
 #include <QProgressDialog>
 #include <QTemporaryFile>
+#include <QTimer>
 
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/previewmgr.h>
@@ -74,8 +75,13 @@ MarkdownEditor::MarkdownEditor(const MarkdownEditorConfig &p_config,
                 // TODO: insert heading sequence.
                 updateHeadings(p_headerRegions);
             });
-    connect(m_textEdit, &vte::VTextEdit::cursorLineChanged,
+
+    m_headingTimer = new QTimer(this);
+    m_headingTimer->setInterval(500);
+    connect(m_headingTimer, &QTimer::timeout,
             this, &MarkdownEditor::currentHeadingChanged);
+    connect(m_textEdit, &vte::VTextEdit::cursorLineChanged,
+            m_headingTimer, QOverload<void>::of(&QTimer::start));
 }
 
 MarkdownEditor::~MarkdownEditor()

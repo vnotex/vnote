@@ -163,6 +163,8 @@ namespace vnotex
 
         // TimeStamp used as sequence number to interact with Web side.
         TimeStamp m_timeStamp = 0;
+
+        QTimer *m_headingTimer = nullptr;
     };
 }
 

@@ -90,7 +90,6 @@ jobs:
       - name: Mac Deploy
         run: |
           pushd src
-          sed -i -e 's/com.yourcompany.vnote/com.vnotex.vnote/g' vnote.app/Contents/Info.plist
           macdeployqt vnote.app
           python ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py vnote.app/Contents/MacOS/vnote $Qt5_Dir
           # Fix Helpers/QtWebEngineProcess.app

@@ -65,7 +65,7 @@ void LegacyNotebookUtils::removeFolderConfigFile(const QString &p_folderPath)
 void LegacyNotebookUtils::forEachFolder(const QJsonObject &p_config, std::function<void(const QString &p_name)> p_func)
 {
     auto folderArray = p_config.value(QStringLiteral("sub_directories")).toArray();
-    for (size_t i = 0; i < folderArray.size(); ++i) {
+    for (int i = 0; i < folderArray.size(); ++i) {
         const auto name = folderArray[i].toObject().value(QStringLiteral("name")).toString();
         p_func(name);
     }
@@ -74,7 +74,7 @@ void LegacyNotebookUtils::forEachFolder(const QJsonObject &p_config, std::functi
 void LegacyNotebookUtils::forEachFile(const QJsonObject &p_config, std::function<void(const LegacyNotebookUtils::FileInfo &p_info)> p_func)
 {
     auto fileArray = p_config.value(QStringLiteral("files")).toArray();
-    for (size_t i = 0; i < fileArray.size(); ++i) {
+    for (int i = 0; i < fileArray.size(); ++i) {
         const auto obj = fileArray[i].toObject();
         FileInfo info;
         info.m_name = obj.value(QStringLiteral("name")).toString();
@@ -89,7 +89,7 @@ void LegacyNotebookUtils::forEachFile(const QJsonObject &p_config, std::function
         info.m_attachmentFolder = obj.value(QStringLiteral("attachment_folder")).toString();
         {
             auto arr = obj.value(QStringLiteral("tags")).toArray();
-            for (size_t i = 0; i < arr.size(); ++i) {
+            for (int i = 0; i < arr.size(); ++i) {
                 info.m_tags << arr[i].toString();
             }
         }
