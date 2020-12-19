@@ -62,6 +62,8 @@ QMAKE_EXTRA_COMPILERS += rcc_binary
 OTHER_FILES += $$RCC_BINARY_SOURCES
 
 macx {
+    QMAKE_INFO_PLIST = data/core/Info.plist
+
     # Process VTextEdit framework
     vte_lib_name = VTextEdit
     vte_lib_dir = $${OUT_PWD}/../libs/vtextedit/src/editor
