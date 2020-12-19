@@ -126,7 +126,7 @@ namespace vnotex
             return read(p_default, p_user, p_key).toDouble();
         }
 
-        static bool isUnDefinedKey(const QJsonObject &p_default,
+        static bool isUndefinedKey(const QJsonObject &p_default,
                                    const QJsonObject &p_user,
                                    const QString &p_key)
         {

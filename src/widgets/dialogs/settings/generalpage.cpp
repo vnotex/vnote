@@ -57,12 +57,12 @@ void GeneralPage::setupUI()
     }
 #endif
 
-#if not defined(Q_OS_MAC)
+#if not defined(Q_OS_MACOS)
     {
-        m_systemTray = WidgetsFactory::createCheckBox("System tray");
-        mainLayout->addRow(m_systemTray);
+        m_systemTrayCheckBox = WidgetsFactory::createCheckBox("System tray");
+        mainLayout->addRow(m_systemTrayCheckBox);
 
-        connect(m_systemTray, &QCheckBox::stateChanged,
+        connect(m_systemTrayCheckBox, &QCheckBox::stateChanged,
                 this, &GeneralPage::pageIsChanged);
     }
 #endif
@@ -86,10 +86,10 @@ void GeneralPage::loadInternal()
         m_openGLComboBox->setCurrentIndex(idx);
     }
 
-    if(m_systemTray){
+    if(m_systemTrayCheckBox){
         auto toTray = coreConfig.getMinimizeToSystemTray();
         if(toTray)
-            m_systemTray->setChecked(true);
+            m_systemTrayCheckBox->setChecked(true);
     }
 }
 
@@ -108,8 +108,8 @@ void GeneralPage::saveInternal()
         sessionConfig.setOpenGL(static_cast<SessionConfig::OpenGL>(opt));
     }
 
-    if(m_systemTray) {
-        coreConfig.setMinimizeToSystemTray(m_systemTray->isChecked());
+    if(m_systemTrayCheckBox) {
+        coreConfig.setMinimizeToSystemTray(m_systemTrayCheckBox->isChecked());
     }
 }
 

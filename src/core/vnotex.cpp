@@ -21,8 +21,8 @@ VNoteX::VNoteX(QObject *p_parent)
       m_mainWindow(nullptr),
       m_notebookMgr(nullptr)
 {
-
     m_instanceId = QRandomGenerator::global()->generate64();
+
     initThemeMgr();
 
     initNotebookMgr();

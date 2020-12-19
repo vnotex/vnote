@@ -42,8 +42,8 @@ void CoreConfig::init(const QJsonObject &p_app,
         m_toolBarIconSize = 16;
     }
 
-    if (!isUnDefinedKey(appObj, userObj, "minimize_to_system_tray")) {
-        m_minimize_to_system_tray = int(READBOOL(QStringLiteral("minimize_to_system_tray")));
+    if (!isUndefinedKey(appObj, userObj, "minimize_to_system_tray")) {
+        m_minimizeToSystemTray = READBOOL(QStringLiteral("minimize_to_system_tray")) ? 1 : 0;
     }
 }
 
@@ -54,8 +54,8 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("locale")] = m_locale;
     obj[QStringLiteral("shortcuts")] = saveShortcuts();
     obj[QStringLiteral("toolbar_icon_size")] = m_toolBarIconSize;
-    if (m_minimize_to_system_tray != -1) {
-        obj[QStringLiteral("minimize_to_system_tray")] = bool(m_minimize_to_system_tray);
+    if (m_minimizeToSystemTray != -1) {
+        obj[QStringLiteral("minimize_to_system_tray")] = m_minimizeToSystemTray > 0;
     }
     return obj;
 }
@@ -132,9 +132,9 @@ void CoreConfig::setToolBarIconSize(int p_size)
 }
 
 int CoreConfig::getMinimizeToSystemTray() const {
-    return m_minimize_to_system_tray;
+    return m_minimizeToSystemTray;
 }
 
 void CoreConfig::setMinimizeToSystemTray(bool state){
-    updateConfig(m_minimize_to_system_tray, int(state), this);
+    updateConfig(m_minimizeToSystemTray, int(state), this);
 }

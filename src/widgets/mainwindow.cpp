@@ -38,9 +38,8 @@
 
 using namespace vnotex;
 
-MainWindow::MainWindow(QWidget *p_parent, SingleInstanceGuard *p_guard)
-    : QMainWindow(p_parent),
-      m_guard(p_guard)
+MainWindow::MainWindow(QWidget *p_parent)
+    : QMainWindow(p_parent)
 {
     VNoteX::getInst().setMainWindow(this);
 
@@ -63,8 +62,6 @@ MainWindow::MainWindow(QWidget *p_parent, SingleInstanceGuard *p_guard)
     // Note that no user interaction is possible in this state.
     connect(qApp, &QCoreApplication::aboutToQuit,
             this, &MainWindow::closeOnQuit);
-
-    initSharedMemoryWatcher();
 }
 
 MainWindow::~MainWindow()
@@ -340,8 +337,6 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
             return;
         }
 
-        m_guard->exit();
-
         QMainWindow::closeEvent(p_event);
         qApp->quit();
     }else {
@@ -570,27 +565,6 @@ void MainWindow::initSystemTrayIcon(){
             });
 
     m_trayIcon->show();
-}
-
-const int MainWindow::c_sharedMemTimerInterval = 1000;
-void MainWindow::initSharedMemoryWatcher(){
-    if(!m_guard)return;
-    m_sharedMemTimer = new QTimer(this);
-    m_sharedMemTimer->setSingleShot(false);
-    m_sharedMemTimer->setInterval(c_sharedMemTimerInterval);
-    connect(m_sharedMemTimer, &QTimer::timeout,
-            this, &MainWindow::checkSharedMemory);
-
-    m_sharedMemTimer->start();
-}
-
-void MainWindow::checkSharedMemory(){
-    // TODO: Open files
-
-    if (m_guard->fetchAskedToShow()) {
-            qDebug() << "shared memory asked to show up";
-            show();
-        }
 }
 
 void MainWindow::restart(){

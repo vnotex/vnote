@@ -29,7 +29,7 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        explicit MainWindow(QWidget *p_parent = nullptr, SingleInstanceGuard *p_guard = nullptr);
+        explicit MainWindow(QWidget *p_parent = nullptr);
 
         ~MainWindow();
 
@@ -68,7 +68,6 @@ namespace vnotex
 
     private slots:
         void closeOnQuit();
-        void checkSharedMemory();
 
     private:
         // Index in m_docks.
@@ -122,8 +121,7 @@ namespace vnotex
 
         // Tray icon.
         QSystemTrayIcon *m_trayIcon;
-        SingleInstanceGuard *m_guard;
-        QTimer *m_sharedMemTimer;
+
         bool m_requestQuit = false;
 
         ToolBarHelper m_toolBarHelper;

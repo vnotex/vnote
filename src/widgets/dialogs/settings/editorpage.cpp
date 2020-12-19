@@ -62,7 +62,6 @@ void EditorPage::loadInternal()
         m_autoSavePolicyComboBox->setCurrentIndex(idx);
     }
 
-
     m_toolBarIconSizeSpinBox->setValue(editorConfig.getToolBarIconSize());
 }
 
