@@ -10,6 +10,7 @@
 
 class QMimeData;
 class QMenu;
+class QTimer;
 
 namespace vte
 {

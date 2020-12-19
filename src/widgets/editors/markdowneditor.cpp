@@ -81,7 +81,7 @@ MarkdownEditor::MarkdownEditor(const MarkdownEditorConfig &p_config,
     connect(m_headingTimer, &QTimer::timeout,
             this, &MarkdownEditor::currentHeadingChanged);
     connect(m_textEdit, &vte::VTextEdit::cursorLineChanged,
-            m_headingTimer, QOverload<void>::of(&QTimer::start));
+            m_headingTimer, QOverload<>::of(&QTimer::start));
 }
 
 MarkdownEditor::~MarkdownEditor()
