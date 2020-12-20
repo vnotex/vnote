@@ -130,9 +130,10 @@ int main(int argc, char *argv[])
     int ret = app.exec();
     if (ret == RESTART_EXIT_CODE) {
         // Asked to restart VNote.
+        qInfo() << "App path: " << ConfigMgr::getApplicationFilePath();
         guard.exit();
         QProcess::startDetached(ConfigMgr::getApplicationFilePath(), QStringList());
-        app.exit(0);
+        qInfo() << "Detached.";
         return 0;
     }
 
