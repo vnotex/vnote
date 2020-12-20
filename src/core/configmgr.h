@@ -94,6 +94,10 @@ namespace vnotex
         // Called at boostrap without QApplication instance.
         static QString locateSessionConfigFilePathAtBootstrap();
 
+        static QString getApplicationFilePath();
+
+        static QString getApplicationDirPath();
+
         static const QString c_orgName;
 
         static const QString c_appName;
