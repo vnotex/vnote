@@ -76,11 +76,12 @@ ConfigMgr::~ConfigMgr()
 
 void ConfigMgr::locateConfigFolder()
 {
+    const auto appDirPath = getApplicationDirPath();
+    qInfo() << "app folder" << appDirPath;
     // Check app config.
     {
         const QString configFolderName("vnotex_files");
-        QString folderPath(QCoreApplication::applicationDirPath()
-                           + '/' + configFolderName);
+        QString folderPath(appDirPath + '/' + configFolderName);
         if (QDir(folderPath).exists()) {
             // Config folder in app/.
             m_appConfigFolderPath = PathUtils::cleanPath(folderPath);
@@ -92,8 +93,7 @@ void ConfigMgr::locateConfigFolder()
     // Check user config.
     {
         const QString configFolderName("user_files");
-        QString folderPath(QCoreApplication::applicationDirPath()
-                           + '/' + configFolderName);
+        QString folderPath(appDirPath + '/' + configFolderName);
         if (QDir(folderPath).exists()) {
             // Config folder in app/.
             m_userConfigFolderPath = PathUtils::cleanPath(folderPath);
@@ -374,4 +374,26 @@ QString ConfigMgr::locateSessionConfigFilePathAtBootstrap()
 QString ConfigMgr::getLogFile() const
 {
     return PathUtils::concatenateFilePath(ConfigMgr::getInst().getUserFolder(), "vnotex.log");
+}
+
+QString ConfigMgr::getApplicationFilePath()
+{
+#if defined(Q_OS_Linux)
+    // TODO: Check if it is from AppImage.
+    // We could get the APPIMAGE env variable from the AppRun script and pass it to vnote via cmd.
+#elif defined(Q_OS_MACOS)
+    auto exePath = QCoreApplication::applicationFilePath();
+    const QString exeName = c_appName.toLower() + ".app";
+    int idx = exePath.indexOf(exeName + QStringLiteral("/Contents/MacOS/"));
+    if (idx != -1) {
+        return exePath.left(idx + exeName.size());
+    }
+#endif
+
+    return QCoreApplication::applicationFilePath();
+}
+
+QString ConfigMgr::getApplicationDirPath()
+{
+    return PathUtils::parentDirPath(getApplicationFilePath());
 }
