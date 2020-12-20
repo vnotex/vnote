@@ -35,7 +35,7 @@ bool AttachmentDragDropAreaIndicator::handleDropEvent(QDropEvent *p_event)
                 auto files = buffer->addAttachment(QString(), p_files);
                 if (!files.isEmpty()) {
                     VNoteX::getInst().showStatusMessageShort(
-                        m_viewWindow->tr("Attached %n file(s)", "", files.size()));
+                        ViewWindow::tr("Attached %n file(s)", "", files.size()));
                 }
             });
 }

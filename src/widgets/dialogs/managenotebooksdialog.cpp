@@ -232,7 +232,7 @@ void ManageNotebooksDialog::closeNotebook(const Notebook *p_notebook)
         VNoteX::getInst().getNotebookMgr().closeNotebook(p_notebook->getId());
     } catch (Exception &p_e) {
         MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                 tr("Fail to close notebook (%1)").arg(p_e.what()),
+                                 tr("Failed to close notebook (%1)").arg(p_e.what()),
                                  this);
         loadNotebooks(nullptr);
         return;
@@ -258,7 +258,7 @@ void ManageNotebooksDialog::removeNotebook(const Notebook *p_notebook)
         VNoteX::getInst().getNotebookMgr().removeNotebook(p_notebook->getId());
     } catch (Exception &p_e) {
         MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                 tr("Fail to delete notebook (%1)").arg(p_e.what()),
+                                 tr("Failed to delete notebook (%1)").arg(p_e.what()),
                                  this);
         loadNotebooks(nullptr);
         return;

@@ -19,14 +19,11 @@
 #include "attachmentpopup.h"
 #include "propertydefs.h"
 #include "outlinepopup.h"
+#include "viewwindow.h"
 
 using namespace vnotex;
 
 typedef EditorConfig::Shortcut Shortcut;
-
-static const char *s_context = "ViewWindowToolBarHelper";
-
-#define TR(x) QCoreApplication::translate(s_context, (x))
 
 // To get the right shortcut context, we use a separate QShrotcut for the action shortcut.
 // @p_parentAction: the parent action of @p_action which is in a menu of @p_parentAction.
@@ -87,18 +84,18 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
     switch (p_action) {
     case Action::Save:
         act = p_tb->addAction(ToolBarHelper::generateIcon("save_editor.svg"),
-                              TR("Save"));
+                              ViewWindow::tr("Save"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::Save), viewWindow);
         break;
 
     case Action::EditReadDiscard:
     {
         auto erdAct = new EditReadDiscardAction(ToolBarHelper::generateIcon("edit_editor.svg"),
-                                                TR("Edit"),
+                                                ViewWindow::tr("Edit"),
                                                 ToolBarHelper::generateIcon("read_editor.svg"),
-                                                TR("Read"),
+                                                ViewWindow::tr("Read"),
                                                 ToolBarHelper::generateIcon("discard_editor.svg"),
-                                                TR("Discard"),
+                                                ViewWindow::tr("Discard"),
                                                 p_tb);
         act = erdAct;
         addActionShortcut(erdAct, editorConfig.getShortcut(Shortcut::EditRead), viewWindow);
@@ -117,7 +114,7 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
     case Action::TypeHeading:
     {
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_heading_editor.svg"),
-                              TR("Heading"));
+                              ViewWindow::tr("Heading"));
 
         auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
         Q_ASSERT(toolBtn);
@@ -126,49 +123,49 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
 
         auto menu = WidgetsFactory::createMenu(p_tb);
 
-        auto act1 = menu->addAction(TR("Heading 1"));
+        auto act1 = menu->addAction(ViewWindow::tr("Heading 1"));
         addActionShortcut(act1,
                           editorConfig.getShortcut(EditorConfig::Shortcut::TypeHeading1),
                           viewWindow,
                           act);
         act1->setData(1);
 
-        auto act2 = menu->addAction(TR("Heading 2"));
+        auto act2 = menu->addAction(ViewWindow::tr("Heading 2"));
         addActionShortcut(act2,
                           editorConfig.getShortcut(EditorConfig::Shortcut::TypeHeading2),
                           viewWindow,
                           act);
         act2->setData(2);
 
-        auto act3 = menu->addAction(TR("Heading 3"));
+        auto act3 = menu->addAction(ViewWindow::tr("Heading 3"));
         addActionShortcut(act3,
                           editorConfig.getShortcut(EditorConfig::Shortcut::TypeHeading3),
                           viewWindow,
                           act);
         act3->setData(3);
 
-        auto act4 = menu->addAction(TR("Heading 4"));
+        auto act4 = menu->addAction(ViewWindow::tr("Heading 4"));
         addActionShortcut(act4,
                           editorConfig.getShortcut(EditorConfig::Shortcut::TypeHeading4),
                           viewWindow,
                           act);
         act4->setData(4);
 
-        auto act5 = menu->addAction(TR("Heading 5"));
+        auto act5 = menu->addAction(ViewWindow::tr("Heading 5"));
         addActionShortcut(act5,
                           editorConfig.getShortcut(EditorConfig::Shortcut::TypeHeading5),
                           viewWindow,
                           act);
         act5->setData(5);
 
-        auto act6 = menu->addAction(TR("Heading 6"));
+        auto act6 = menu->addAction(ViewWindow::tr("Heading 6"));
         addActionShortcut(act6,
                           editorConfig.getShortcut(EditorConfig::Shortcut::TypeHeading6),
                           viewWindow,
                           act);
         act6->setData(6);
 
-        auto act7 = menu->addAction(TR("Clear"));
+        auto act7 = menu->addAction(ViewWindow::tr("Clear"));
         addActionShortcut(act7,
                           editorConfig.getShortcut(EditorConfig::Shortcut::TypeHeadingNone),
                           viewWindow,
@@ -181,98 +178,98 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
 
     case Action::TypeBold:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_bold_editor.svg"),
-                              TR("Bold"));
+                              ViewWindow::tr("Bold"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeBold), viewWindow);
         break;
 
     case Action::TypeItalic:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_italic_editor.svg"),
-                              TR("Italic"));
+                              ViewWindow::tr("Italic"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeItalic), viewWindow);
         break;
 
     case Action::TypeStrikethrough:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_strikethrough_editor.svg"),
-                              TR("Strikethrough"));
+                              ViewWindow::tr("Strikethrough"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeStrikethrough), viewWindow);
         break;
 
     case Action::TypeUnorderedList:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_unordered_list_editor.svg"),
-                              TR("Unordered List"));
+                              ViewWindow::tr("Unordered List"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeUnorderedList), viewWindow);
         break;
 
     case Action::TypeOrderedList:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_ordered_list_editor.svg"),
-                              TR("Ordered List"));
+                              ViewWindow::tr("Ordered List"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeOrderedList), viewWindow);
         break;
 
     case Action::TypeTodoList:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_todo_list_editor.svg"),
-                              TR("Todo List"));
+                              ViewWindow::tr("Todo List"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTodoList), viewWindow);
         break;
 
     case Action::TypeCheckedTodoList:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_checked_todo_list_editor.svg"),
-                              TR("Checked Todo List"));
+                              ViewWindow::tr("Checked Todo List"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeCheckedTodoList), viewWindow);
         break;
 
     case Action::TypeCode:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_code_editor.svg"),
-                              TR("Code"));
+                              ViewWindow::tr("Code"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeCode), viewWindow);
         break;
 
     case Action::TypeCodeBlock:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_code_block_editor.svg"),
-                              TR("Code Block"));
+                              ViewWindow::tr("Code Block"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeCodeBlock), viewWindow);
         break;
 
     case Action::TypeMath:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_math_editor.svg"),
-                              TR("Math"));
+                              ViewWindow::tr("Math"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeMath), viewWindow);
         break;
 
     case Action::TypeMathBlock:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_math_block_editor.svg"),
-                              TR("Math Block"));
+                              ViewWindow::tr("Math Block"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeMathBlock), viewWindow);
         break;
 
     case Action::TypeQuote:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_quote_editor.svg"),
-                              TR("Quote"));
+                              ViewWindow::tr("Quote"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeQuote), viewWindow);
         break;
 
     case Action::TypeLink:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_link_editor.svg"),
-                              TR("Link"));
+                              ViewWindow::tr("Link"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeLink), viewWindow);
         break;
 
     case Action::TypeImage:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_image_editor.svg"),
-                              TR("Image"));
+                              ViewWindow::tr("Image"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeImage), viewWindow);
         break;
 
     case Action::TypeTable:
         act = p_tb->addAction(ToolBarHelper::generateIcon("type_table_editor.svg"),
-                              TR("Table"));
+                              ViewWindow::tr("Table"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTable), viewWindow);
         break;
 
     case Action::Attachment:
     {
         act = p_tb->addAction(ToolBarHelper::generateIcon("attachment_editor.svg"),
-                              TR("Attachments"));
+                              ViewWindow::tr("Attachments"));
 
         auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
         Q_ASSERT(toolBtn);
@@ -287,7 +284,7 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
     case Action::Outline:
     {
         act = p_tb->addAction(ToolBarHelper::generateIcon("outline_editor.svg"),
-                              TR("Outline"));
+                              ViewWindow::tr("Outline"));
 
         auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
         Q_ASSERT(toolBtn);
@@ -304,7 +301,7 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
     case Action::FindAndReplace:
     {
         act = p_tb->addAction(ToolBarHelper::generateIcon("find_replace_editor.svg"),
-                              TR("Find And Replace"));
+                              ViewWindow::tr("Find And Replace"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::FindAndReplace), viewWindow);
         break;
     }

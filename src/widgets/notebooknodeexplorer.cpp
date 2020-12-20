@@ -304,7 +304,7 @@ void NotebookNodeExplorer::generateNodeTree()
 
         loadRootNode(rootNode.data());
     } catch (Exception &p_e) {
-        QString msg = tr("Fail to load nodes of notebook (%1) (%2).")
+        QString msg = tr("Failed to load nodes of notebook (%1) (%2).")
                         .arg(m_notebook->getName(), p_e.what());
         qCritical() << msg;
         MessageBoxHelper::notify(MessageBoxHelper::Critical, msg, VNoteX::getInst().getMainWindow());
@@ -890,7 +890,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
                         m_notebook->emptyNode(rbNode, true);
                     } catch (Exception &p_e) {
                         MessageBoxHelper::notify(MessageBoxHelper::Critical,
-                                                 tr("Fail to empty recycle bin (%1) (%2).")
+                                                 tr("Failed to empty recycle bin (%1) (%2).")
                                                    .arg(rbNodePath, p_e.what()),
                                                   VNoteX::getInst().getMainWindow());
                     }
@@ -1007,7 +1007,7 @@ static QSharedPointer<Node> getNodeFromClipboardDataItem(const NodeClipboardData
     auto notebook = VNoteX::getInst().getNotebookMgr().findNotebookById(p_item->m_notebookId);
     if (!notebook) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("fail to find notebook by ID (%1)").arg(p_item->m_notebookId));
+                            QString("failed to find notebook by ID (%1)").arg(p_item->m_notebookId));
         return nullptr;
     }
 
@@ -1081,7 +1081,7 @@ void NotebookNodeExplorer::pasteNodesFromClipboard()
             pastedNodes.push_back(pastedNode.data());
         } catch (Exception &p_e) {
             MessageBoxHelper::notify(MessageBoxHelper::Critical,
-                                     tr("Fail to copy source (%1) to destination (%2) (%3).")
+                                     tr("Failed to copy source (%1) to destination (%2) (%3).")
                                        .arg(srcPath, destNode->fetchAbsolutePath(), p_e.what()),
                                      VNoteX::getInst().getMainWindow());
         }
@@ -1216,7 +1216,7 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes,
             ++nrDeleted;
         } catch (Exception &p_e) {
             MessageBoxHelper::notify(MessageBoxHelper::Critical,
-                                     tr("Fail to delete/remove item %1 (%2) (%3).")
+                                     tr("Failed to delete/remove item (%1) (%2) (%3).")
                                        .arg(srcName, srcPath, p_e.what()),
                                      VNoteX::getInst().getMainWindow());
         }

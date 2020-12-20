@@ -86,9 +86,9 @@ int main(int argc, char *argv[])
         app.setApplicationVersion(ConfigMgr::getInst().getConfig().getVersion());
     } catch (Exception &e) {
         MessageBoxHelper::notify(MessageBoxHelper::Critical,
-                                 QApplication::tr("%1 failed to start.").arg(ConfigMgr::c_appName),
-                                 QApplication::tr("Failed to initialize configuration manager. "
-                                                  "Please check if all the files are intact or reinstall the application."),
+                                 MainWindow::tr("%1 failed to start.").arg(ConfigMgr::c_appName),
+                                 MainWindow::tr("Failed to initialize configuration manager. "
+                                                "Please check if all the files are intact or reinstall the application."),
                                  e.what());
         return -1;
     }
@@ -150,7 +150,7 @@ void loadTranslators(QApplication &p_app)
     QLocale locale;
     qInfo() << "locale:" << locale.name();
 
-    const QString resourceTranslationFolder(QStringLiteral(":/translations"));
+    const QString resourceTranslationFolder(QStringLiteral(":/vnotex/data/core/translations"));
     const QString envTranslationFolder(QStringLiteral("translations"));
 
     // Load missing translation for Qt (QTextEdit/QPlainTextEdit/QTextBrowser).
@@ -179,6 +179,12 @@ void loadTranslators(QApplication &p_app)
     QScopedPointer<QTranslator> qtEnvTranslator(new QTranslator(&p_app));
     if (qtEnvTranslator->load(locale, "qt", "_", envTranslationFolder)) {
         p_app.installTranslator(qtEnvTranslator.take());
+    }
+
+    // Load translation for vnote from resource.
+    QScopedPointer<QTranslator> vnoteTranslator(new QTranslator(&p_app));
+    if (vnoteTranslator->load(locale, "vnote", "_", resourceTranslationFolder)) {
+        p_app.installTranslator(vnoteTranslator.take());
     }
 }
 

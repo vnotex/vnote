@@ -83,9 +83,9 @@ bool NewFolderDialog::newFolder()
     try {
         m_newNode = notebook->newNode(parentNode, Node::Type::Folder, m_infoWidget->getName());
     } catch (Exception &p_e) {
-        QString msg = tr("Fail to create folder under %1 in %2 (%3).").arg(parentNode->getName(),
-                                                                           notebook->getName(),
-                                                                           p_e.what());
+        QString msg = tr("Failed to create folder under (%1) in (%2) (%3).").arg(parentNode->getName(),
+                                                                                 notebook->getName(),
+                                                                                 p_e.what());
         qCritical() << msg;
         setInformationText(msg, ScrollDialog::InformationLevel::Error);
         return false;

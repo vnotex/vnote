@@ -24,7 +24,7 @@ QString BundleNotebookFactory::getName() const
 
 QString BundleNotebookFactory::getDisplayName() const
 {
-    return QObject::tr("Bundled Notebook");
+    return QObject::tr("Bundle Notebook");
 }
 
 QString BundleNotebookFactory::getDescription() const
