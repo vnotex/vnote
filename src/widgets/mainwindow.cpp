@@ -296,10 +296,10 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
 
     if(!isExit && toTray == -1){
         int ret =  MessageBoxHelper::questionYesNo(MessageBoxHelper::Question,
-                                                   tr("Close %1").arg(qApp->applicationName()),
                                                    tr("Do you want to minimize %1 to system tray "
-                                                      "instead of quitting when closing %1?").arg(qApp->applicationName()),
+                                                      "instead of quitting when closed?").arg(qApp->applicationName()),
                                                    tr("You could change the option in Settings later."),
+                                                   QString(),
                                                    this);
         if (ret == QMessageBox::Yes) {
             ConfigMgr::getInst().getSessionConfig().setMinimizeToSystemTray(true);

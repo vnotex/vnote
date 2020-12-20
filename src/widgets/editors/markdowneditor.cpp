@@ -839,6 +839,18 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
         pasteAct = WidgetUtils::findActionByObjectName(actions, "edit-paste");
     }
 
+    if (!m_textEdit->hasSelection()) {
+        auto readAct = new QAction(tr("&Read"), menu);
+        WidgetUtils::addActionShortcutText(readAct,
+                                           ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead));
+        connect(readAct, &QAction::triggered,
+                this, &MarkdownEditor::readRequested);
+        menu->insertAction(firstAct, readAct);
+        if (firstAct) {
+            menu->insertSeparator(firstAct);
+        }
+    }
+
     if (pasteAct && pasteAct->isEnabled()) {
         QClipboard *clipboard = QApplication::clipboard();
         const QMimeData *mimeData = clipboard->mimeData();

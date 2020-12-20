@@ -283,36 +283,26 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
     case ViewWindowToolBarHelper::EditReadDiscard:
     {
         // A combined button with Edit/Read/Discard.
+        Q_ASSERT(!m_editReadDiscardAct);
         act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
-        auto erdAct = dynamic_cast<EditReadDiscardAction *>(act);
-        Q_ASSERT(erdAct);
+        m_editReadDiscardAct = dynamic_cast<EditReadDiscardAction *>(act);
         connect(this, &ViewWindow::modeChanged,
-                this, [this, erdAct]() {
-                    updateEditReadDiscardActionState(erdAct);
+                this, [this]() {
+                    updateEditReadDiscardActionState(m_editReadDiscardAct);
                 });
-        connect(erdAct, QOverload<EditReadDiscardAction::Action>::of(&EditReadDiscardAction::triggered),
-                this, [this, erdAct](EditReadDiscardAction::Action p_act) {
-                    int ret = checkFileMissingOrChangedOutside();
-                    if (Normal != ret && SavedOrReloaded != ret) {
-                        // Recover the icon of the action.
-                        updateEditReadDiscardActionState(erdAct);
-                        return;
-                    }
-
+        connect(m_editReadDiscardAct, QOverload<EditReadDiscardAction::Action>::of(&EditReadDiscardAction::triggered),
+                this, [this](EditReadDiscardAction::Action p_act) {
                     switch (p_act) {
                     case EditReadDiscardAction::Action::Edit:
-                        setMode(Mode::Edit);
+                        edit();
                         break;
                     case EditReadDiscardAction::Action::Read:
-                        if (save(false)) {
-                            setMode(Mode::Read);
-                        }
+                        read(true);
                         break;
                     case EditReadDiscardAction::Action::Discard:
-                        discardChangesAndRead();
+                        read(false);
                         break;
                     }
-                    setFocus();
                 });
         break;
     }
@@ -1026,4 +1016,36 @@ void ViewWindow::showMessage(const QString p_msg)
     } else {
         VNoteX::getInst().showStatusMessageShort(p_msg);
     }
+}
+
+void ViewWindow::edit()
+{
+    int ret = checkFileMissingOrChangedOutside();
+    if (Normal != ret && SavedOrReloaded != ret) {
+        // Recover the icon of the action.
+        updateEditReadDiscardActionState(m_editReadDiscardAct);
+        return;
+    }
+
+    setMode(Mode::Edit);
+    setFocus();
+}
+
+void ViewWindow::read(bool p_save)
+{
+    int ret = checkFileMissingOrChangedOutside();
+    if (Normal != ret && SavedOrReloaded != ret) {
+        // Recover the icon of the action.
+        updateEditReadDiscardActionState(m_editReadDiscardAct);
+        return;
+    }
+
+    if (p_save) {
+        if (save(false)) {
+            setMode(Mode::Read);
+        }
+    } else {
+        discardChangesAndRead();
+    }
+    setFocus();
 }

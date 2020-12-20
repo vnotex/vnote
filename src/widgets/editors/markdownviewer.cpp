@@ -12,6 +12,9 @@
 #include <utils/clipboardutils.h>
 #include <utils/fileutils.h>
 #include <utils/utils.h>
+#include <utils/widgetutils.h>
+#include <core/configmgr.h>
+#include <core/editorconfig.h>
 #include "../widgetsfactory.h"
 
 using namespace vnotex;
@@ -111,6 +114,19 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event)
         }
     }
 #endif
+
+    if (!hasSelection()) {
+        auto firstAct = actions.isEmpty() ? nullptr : actions[0];
+        auto editAct = new QAction(tr("&Edit"), menu.data());
+        WidgetUtils::addActionShortcutText(editAct,
+                                           ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead));
+        connect(editAct, &QAction::triggered,
+                this, &MarkdownViewer::editRequested);
+        menu->insertAction(firstAct, editAct);
+        if (firstAct) {
+            menu->insertSeparator(firstAct);
+        }
+    }
 
     // We need to replace the "Copy Image" action:
     // - the default one use the fully-encoded URL to fetch the image while

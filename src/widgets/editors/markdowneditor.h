@@ -94,6 +94,8 @@ namespace vnotex
 
         void htmlToMarkdownRequested(quint64 p_id, TimeStamp p_timeStamp, const QString &p_html);
 
+        void readRequested();
+
     private slots:
         void handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled, bool *p_allowed);
 

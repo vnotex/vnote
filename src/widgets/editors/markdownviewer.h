@@ -27,6 +27,8 @@ namespace vnotex
     signals:
         void zoomFactorChanged(qreal p_factor);
 
+        void editRequested();
+
     protected:
         void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
 

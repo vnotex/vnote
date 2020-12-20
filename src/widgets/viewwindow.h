@@ -210,6 +210,10 @@ namespace vnotex
 
         void showReplaceResult(const QString &p_text, int p_totalReplaces);
 
+        void edit();
+
+        void read(bool p_save);
+
         static ViewWindow::Mode modeFromOpenParameters(const FileOpenParameters &p_paras);
 
         // The revision of the buffer of the last sync content.
@@ -309,6 +313,8 @@ namespace vnotex
         FindInfo m_findInfo;
 
         QSharedPointer<StatusWidget> m_statusWidget;
+
+        EditReadDiscardAction *m_editReadDiscardAct = nullptr;
 
         static QIcon s_savedIcon;
         static QIcon s_modifiedIcon;

@@ -342,6 +342,11 @@ void MarkdownViewWindow::setupTextEditor()
                     m_outlineProvider->setCurrentHeadingIndex(m_editor->getCurrentHeadingIndex());
                 }
             });
+
+    connect(m_editor, &MarkdownEditor::readRequested,
+            this, [this]() {
+                read(true);
+            });
 }
 
 QStackedWidget *MarkdownViewWindow::getMainStatusWidget() const
@@ -417,6 +422,11 @@ void MarkdownViewWindow::setupViewer()
     connect(m_viewer, &WebViewer::linkHovered,
             this, [this](const QString &p_url) {
                 showMessage(p_url);
+            });
+
+    connect(m_viewer, &MarkdownViewer::editRequested,
+            this, [this]() {
+                edit();
             });
 
     // Connect outline pipeline.
