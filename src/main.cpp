@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <QApplication>
 #include <QDebug>
 #include <QTextCodec>
@@ -29,8 +32,15 @@ void loadTranslators(QApplication &p_app);
 
 void initWebEngineSettings();
 
+void aboutMain(void);
+
+int ret;
+QString appPath;
+
 int main(int argc, char *argv[])
 {
+    atexit(aboutMain);
+
     SingleInstanceGuard guard;
     bool canRun = guard.tryRun();
     if (!canRun) {
@@ -127,13 +137,13 @@ int main(int argc, char *argv[])
 
     window.kickOffOnStart();
 
-    int ret = app.exec();
+    ret = app.exec();
     if (ret == RESTART_EXIT_CODE) {
         // Asked to restart VNote.
-        qInfo() << "App path: " << ConfigMgr::getApplicationFilePath();
+        appPath = ConfigMgr::getApplicationFilePath();
+        qInfo() << "App path: " << appPath;
         guard.exit();
-        QProcess::startDetached(ConfigMgr::getApplicationFilePath(), QStringList());
-        qInfo() << "Detached.";
+        qInfo() << "Exit.";
         return 0;
     }
 
@@ -186,4 +196,13 @@ void initWebEngineSettings()
 {
     auto settings = QWebEngineSettings::defaultSettings();
     settings->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+}
+
+void aboutMain(){
+    qInfo() << "App exit." << ret;
+    if (ret == RESTART_EXIT_CODE) {
+        qInfo() << "Start new instance.";
+        QProcess::startDetached(appPath, QStringList());
+        qInfo() << "Detached.";
+    }
 }
