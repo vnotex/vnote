@@ -379,8 +379,7 @@ QString ConfigMgr::getLogFile() const
 QString ConfigMgr::getApplicationFilePath()
 {
 #if defined(Q_OS_LINUX)
-    // TODO: Check if it is from AppImage.
-    // We could get the APPIMAGE env variable from the AppRun script and pass it to vnote via cmd.
+    // We could get the APPIMAGE env variable from the AppRun script.
     auto appImageVar = QString::fromLocal8Bit(qgetenv("APPIMAGE"));
     qInfo() << "APPIMAGE" << appImageVar;
     if (!appImageVar.isEmpty()) {
