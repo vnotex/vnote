@@ -132,7 +132,6 @@ int main(int argc, char *argv[])
         // Asked to restart VNote.
         guard.exit();
         QProcess::startDetached(ConfigMgr::getApplicationFilePath(), QStringList());
-        qInfo() << "Exit.";
         exit(0);
     }
 

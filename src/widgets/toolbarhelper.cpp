@@ -313,13 +313,13 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                         [p_win]() {
                             p_win->quitApp();
                         });
-//#if !defined(Q_OS_LINUX)
+
         menu->addAction(MainWindow::tr("Restart"),
                         menu,
                         [p_win]() {
                             p_win->restart();
                         });
-//#endif
+
     }
 
     // Help.
