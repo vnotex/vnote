@@ -18,6 +18,8 @@ namespace vnotex
     class Event;
     class OutlineViewer;
 
+    enum { RESTART_EXIT_CODE = 1000 };
+
     class MainWindow : public QMainWindow
     {
         Q_OBJECT

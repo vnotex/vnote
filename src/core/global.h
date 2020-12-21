@@ -72,9 +72,6 @@ namespace vnotex
         IncrementalSearch = 0x10U
     };
     Q_DECLARE_FLAGS(FindOptions, FindOption);
-
-    enum { RESTART_EXIT_CODE = 1000 };
-
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);

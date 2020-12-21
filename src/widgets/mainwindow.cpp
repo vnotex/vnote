@@ -29,7 +29,6 @@
 #include <core/coreconfig.h>
 #include <core/events.h>
 #include <core/fileopenparameters.h>
-#include <core/global.h>
 #include <widgets/dialogs/scrolldialog.h>
 #include "viewwindow.h"
 #include "outlineviewer.h"

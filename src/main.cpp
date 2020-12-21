@@ -17,7 +17,6 @@
 #include <core/singleinstanceguard.h>
 #include <core/vnotex.h>
 #include <core/logger.h>
-#include <core/global.h>
 #include <widgets/mainwindow.h>
 #include <QWebEngineSettings>
 #include <core/exception.h>
@@ -131,7 +130,10 @@ int main(int argc, char *argv[])
     if (ret == RESTART_EXIT_CODE) {
         // Asked to restart VNote.
         guard.exit();
-        QProcess::startDetached(ConfigMgr::getApplicationFilePath(), QStringList());
+        QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList());
+        // Must use exit() in Linux to quit the parent process in Qt 5.12.
+        // Thanks to @ygcaicn.
+        exit(0);
         return 0;
     }
 
