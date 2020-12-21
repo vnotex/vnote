@@ -24,14 +24,14 @@ win32:CONFIG(release, debug|release) {
 RC_ICONS = data/core/icons/vnote.ico
 ICON = data/core/icons/vnote.icns
 
+TRANSLATIONS += data/core/translations/vnote_zh_CN.ts
+
 SOURCES += \
     main.cpp
 
 INCLUDEPATH *= $$PWD
 
 LIBS_FOLDER = $$PWD/../libs
-
-include($$LIBS_FOLDER/vtitlebar/vtitlebar_export.pri)
 
 include($$LIBS_FOLDER/vtextedit/src/editor/editor_export.pri)
 

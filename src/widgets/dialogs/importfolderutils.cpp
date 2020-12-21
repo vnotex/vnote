@@ -8,8 +8,6 @@
 
 using namespace vnotex;
 
-#define TR(x) QCoreApplication::translate("ImportFolderUtils", (x))
-
 void ImportFolderUtils::importFolderContents(Notebook *p_notebook,
                                              Node *p_node,
                                              const QStringList &p_suffixes,
@@ -27,7 +25,7 @@ void ImportFolderUtils::importFolderContents(Notebook *p_notebook,
             try {
                 node = p_notebook->addAsNode(p_node, Node::Type::Folder, child.fileName(), NodeParameters());
             } catch (Exception &p_e) {
-                Utils::appendMsg(p_errMsg, TR("Failed to add folder (%1) as node (%2).").arg(child.fileName(), p_e.what()));
+                Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to add folder (%1) as node (%2).").arg(child.fileName(), p_e.what()));
                 continue;
             }
 
@@ -37,7 +35,7 @@ void ImportFolderUtils::importFolderContents(Notebook *p_notebook,
                 try {
                     p_notebook->addAsNode(p_node, Node::Type::File, child.fileName(), NodeParameters());
                 } catch (Exception &p_e) {
-                    Utils::appendMsg(p_errMsg, TR("Failed to add file (%1) as node (%2).").arg(child.filePath(), p_e.what()));
+                    Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to add file (%1) as node (%2).").arg(child.filePath(), p_e.what()));
                 }
             }
         }
@@ -58,12 +56,12 @@ void ImportFolderUtils::importFolderContentsByLegacyConfig(Notebook *p_notebook,
     // Folders.
     LegacyNotebookUtils::forEachFolder(config, [&rootDir, p_notebook, p_node, &p_errMsg](const QString &name) {
                 if (!rootDir.exists(name)) {
-                    Utils::appendMsg(p_errMsg, TR("Folder (%1) does not exist.").arg(name));
+                    Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Folder (%1) does not exist.").arg(name));
                     return;
                 }
 
                 if (p_notebook->isBuiltInFolder(p_node, name)) {
-                    Utils::appendMsg(p_errMsg, TR("Folder (%1) conflicts with built-in folder.").arg(name));
+                    Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Folder (%1) conflicts with built-in folder.").arg(name));
                     return;
                 }
 
@@ -73,7 +71,7 @@ void ImportFolderUtils::importFolderContentsByLegacyConfig(Notebook *p_notebook,
                     paras.m_createdTimeUtc = LegacyNotebookUtils::getCreatedTimeUtcOfFolder(rootDir.filePath(name));
                     node = p_notebook->addAsNode(p_node, Node::Type::Folder, name, paras);
                 } catch (Exception &p_e) {
-                    Utils::appendMsg(p_errMsg, TR("Failed to add folder (%1) as node (%2).").arg(name, p_e.what()));
+                    Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to add folder (%1) as node (%2).").arg(name, p_e.what()));
                     return;
                 }
 
@@ -83,12 +81,12 @@ void ImportFolderUtils::importFolderContentsByLegacyConfig(Notebook *p_notebook,
     // Files.
     LegacyNotebookUtils::forEachFile(config, [&rootDir, p_notebook, p_node, &p_errMsg](const LegacyNotebookUtils::FileInfo &info) {
                 if (!rootDir.exists(info.m_name)) {
-                    Utils::appendMsg(p_errMsg, TR("File (%1) does not exist.").arg(info.m_name));
+                    Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("File (%1) does not exist.").arg(info.m_name));
                     return;
                 }
 
                 if (p_notebook->isBuiltInFile(p_node, info.m_name)) {
-                    Utils::appendMsg(p_errMsg, TR("File (%1) conflicts with built-in file.").arg(info.m_name));
+                    Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("File (%1) conflicts with built-in file.").arg(info.m_name));
                     return;
                 }
 
@@ -101,7 +99,7 @@ void ImportFolderUtils::importFolderContentsByLegacyConfig(Notebook *p_notebook,
                     paras.m_tags = info.m_tags;
                     node = p_notebook->addAsNode(p_node, Node::Type::File, info.m_name, paras);
                 } catch (Exception &p_e) {
-                    Utils::appendMsg(p_errMsg, TR("Failed to add file (%1) as node (%2).").arg(info.m_name, p_e.what()));
+                    Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to add file (%1) as node (%2).").arg(info.m_name, p_e.what()));
                     return;
                 }
             });

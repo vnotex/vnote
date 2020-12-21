@@ -547,7 +547,7 @@ void ViewWindow::discardChangesAndRead()
     if (buffer->isModified()) {
         // Ask to save changes.
         int ret = MessageBoxHelper::questionSaveDiscardCancel(MessageBoxHelper::Question,
-                                                              tr("Discard changes to note %(1)?").arg(buffer->getName()),
+                                                              tr("Discard changes to note (%1)?").arg(buffer->getName()),
                                                               tr("Note path (%1).").arg(buffer->getPath()),
                                                               "",
                                                               this);
@@ -642,7 +642,7 @@ DragDropAreaIndicator *ViewWindow::getAttachmentDragDropArea()
     if (!m_attachmentDragDropIndicator) {
         m_attachmentDragDropIndicatorInterface.reset(new AttachmentDragDropAreaIndicator(this));
         m_attachmentDragDropIndicator = new DragDropAreaIndicator(m_attachmentDragDropIndicatorInterface.data(),
-                                                                  tr("Drag&Drop Files To Attach"),
+                                                                  tr("Drag And Drop Files To Attach"),
                                                                   this);
 
         m_attachmentDragDropIndicator->hide();

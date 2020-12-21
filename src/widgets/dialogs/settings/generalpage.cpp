@@ -61,7 +61,7 @@ void GeneralPage::setupUI()
     {
         const QString label(tr("Minimize to system tray"));
         m_systemTrayCheckBox = WidgetsFactory::createCheckBox(label, this);
-        m_systemTrayCheckBox->setToolTip(tr("Minimize to system tray when closing"));
+        m_systemTrayCheckBox->setToolTip(tr("Minimize to system tray when closed"));
         mainLayout->addRow(m_systemTrayCheckBox);
         addSearchItem(label, m_systemTrayCheckBox->toolTip(), m_systemTrayCheckBox);
         connect(m_systemTrayCheckBox, &QCheckBox::stateChanged,

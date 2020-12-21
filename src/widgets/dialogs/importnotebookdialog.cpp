@@ -124,7 +124,7 @@ bool ImportNotebookDialog::createNotebookToImport(QString &p_msg)
                                                      rootFolderPath,
                                                      backend);
     } catch (Exception &p_e) {
-        Utils::appendMsg(p_msg, tr("Fail to create notebook from root folder (%1) (%2).").arg(rootFolderPath, p_e.what()));
+        Utils::appendMsg(p_msg, tr("Failed to create notebook from root folder (%1) (%2).").arg(rootFolderPath, p_e.what()));
         return false;
     }
 
@@ -135,7 +135,7 @@ bool ImportNotebookDialog::createNotebookToImport(QString &p_msg)
 bool ImportNotebookDialog::importNotebook()
 {
     if (!m_notebookToImport) {
-        QString msg = tr("Fail to import notebook.");
+        QString msg = tr("Failed to import notebook.");
         qCritical() << msg;
         setInformationText(msg, ScrollDialog::InformationLevel::Error);
         return false;
@@ -145,7 +145,7 @@ bool ImportNotebookDialog::importNotebook()
         auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
         notebookMgr.importNotebook(m_notebookToImport);
     } catch (Exception &p_e) {
-        QString msg = tr("Fail to import notebook (%1).").arg(p_e.what());
+        QString msg = tr("Failed to import notebook (%1).").arg(p_e.what());
         qCritical() << msg;
         setInformationText(msg, ScrollDialog::InformationLevel::Error);
         return false;

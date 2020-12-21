@@ -225,7 +225,7 @@ void NotebookExplorer::importFile()
         node = m_currentNotebook->getRootNode().data();
     } else if (m_currentNotebook->isNodeInRecycleBin(node)) {
         MessageBoxHelper::notify(MessageBoxHelper::Information,
-                                 tr("Could not create file within Recycle Bin."),
+                                 tr("Could not create note within Recycle Bin."),
                                  VNoteX::getInst().getMainWindow());
         return;
     }

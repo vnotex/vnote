@@ -608,7 +608,7 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source)
                 linkUrl = url.toString(QUrl::EncodeSpaces);
             }
 
-            LinkInsertDialog linkDialog(QObject::tr("Insert Link"), linkText, linkUrl, false, this);
+            LinkInsertDialog linkDialog(tr("Insert Link"), linkText, linkUrl, false, this);
             if (linkDialog.exec() == QDialog::Accepted) {
                 linkText = linkDialog.getLinkText();
                 linkUrl = linkDialog.getLinkUrl();
@@ -889,8 +889,8 @@ void MarkdownEditor::setupShortcuts()
         auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::Shortcut::RichPaste),
                                                     this);
         if (shortcut) {
-            QObject::connect(shortcut, &QShortcut::activated,
-                             this, &MarkdownEditor::richPaste);
+            connect(shortcut, &QShortcut::activated,
+                    this, &MarkdownEditor::richPaste);
         }
     }
 }

@@ -136,7 +136,7 @@ bool NewNotebookDialog::newNotebook()
     try {
         notebookMgr.newNotebook(paras);
     } catch (Exception &p_e) {
-        QString msg = tr("Fail to create notebook in %1 (%2).")
+        QString msg = tr("Failed to create notebook in (%1) (%2).")
                         .arg(m_infoWidget->getRootFolderPath(), p_e.what());
         qCritical() << msg;
         setInformationText(msg, ScrollDialog::InformationLevel::Error);

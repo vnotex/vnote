@@ -19,10 +19,6 @@
   #define __has_cpp_attribute(x) 0  // Compatibility with non-supporting compilers.
 #endif
 
-#if !defined(V_TR)
-    #define V_TR(ctx, src) QCoreApplication::translate((ctx), (src))
-#endif
-
 class QWidget;
 
 namespace vnotex

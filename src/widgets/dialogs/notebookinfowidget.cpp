@@ -98,7 +98,7 @@ QLayout *NotebookInfoWidget::setupNotebookRootFolderPath(QWidget *p_parent)
 {
     m_rootFolderPathLineEdit = WidgetsFactory::createLineEdit(p_parent);
     m_rootFolderPathLineEdit->setPlaceholderText(tr("Path of notebook root folder"));
-    auto whatsThis = tr("<b>Notebook Root Folder</b> is the folder containing all data of one notebook in VNoteX.");
+    auto whatsThis = tr("<b>Notebook Root Folder</b> is the folder containing all data of one notebook in %1.").arg(ConfigMgr::c_appName);
     m_rootFolderPathLineEdit->setWhatsThis(whatsThis);
     connect(m_rootFolderPathLineEdit, &QLineEdit::textChanged,
             this, [this]() {
@@ -295,7 +295,7 @@ void NotebookInfoWidget::setStateAccordingToMode()
         break;
 
     case CreateFromLegacy:
-        // Support bundled notebook only.
+        // Support bundle notebook only.
         m_typeComboBox->setEnabled(false);
         break;
 

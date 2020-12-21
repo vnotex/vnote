@@ -297,21 +297,20 @@ void MarkdownViewer::hideUnusedActions(QMenu *p_menu)
         }
     }
 
-    // SavePage.
-    QAction *act = pageAction(QWebEnginePage::SavePage);
-    unusedActions.append(act);
+    QVector<QWebEnginePage::WebAction> pageActions = { QWebEnginePage::SavePage,
+                                                       QWebEnginePage::ViewSource,
+                                                       QWebEnginePage::DownloadImageToDisk,
+                                                       QWebEnginePage::DownloadLinkToDisk,
+                                                       QWebEnginePage::OpenLinkInThisWindow,
+                                                       QWebEnginePage::OpenLinkInNewBackgroundTab,
+                                                       QWebEnginePage::OpenLinkInNewTab,
+                                                       QWebEnginePage::OpenLinkInNewWindow
+                                                     };
 
-    // ViewSource.
-    act = pageAction(QWebEnginePage::ViewSource);
-    unusedActions.append(act);
-
-    // DownloadImageToDisk.
-    act = pageAction(QWebEnginePage::DownloadImageToDisk);
-    unusedActions.append(act);
-
-    // DownloadLinkToDisk.
-    act = pageAction(QWebEnginePage::DownloadLinkToDisk);
-    unusedActions.append(act);
+    for (auto pageAct : pageActions) {
+        auto act = pageAction(pageAct);
+        unusedActions.append(act);
+    }
 
     for (auto it : unusedActions) {
         if (it) {
@@ -392,7 +391,7 @@ void MarkdownViewer::setupCrossCopyMenu(QMenu *p_menu, QAction *p_copyAct)
     auto subMenu = WidgetsFactory::createMenu(tr("Cross Copy"), p_menu);
 
     for (const auto &target : targets) {
-        auto act = subMenu->addAction(target);
+        auto act = subMenu->addAction(m_adapter->getCrossCopyTargetDisplayName(target));
         act->setData(target);
     }
 

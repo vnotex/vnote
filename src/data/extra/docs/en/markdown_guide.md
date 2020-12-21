@@ -122,7 +122,7 @@ Here is another sentence within the quote.
 **Notes**:
 
 * `lang` is optional to specify the language of the code; if not specified, VNote won't highlight the code;
-* It is always a good practice to add one empty line before the whole fenced code block.
+* It is always a good practice to add one empty line before the whole fenced code block;
 
 ### Diagrams
 VNote supports the following engines to draw diagrams. You should specify particular language of the fenced code block and write the definition of your diagram within it.

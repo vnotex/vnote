@@ -1,12 +1,20 @@
 #ifndef IMPORTFOLDERUTILS_H
 #define IMPORTFOLDERUTILS_H
 
+#include <QObject>
+
 #include <QStringList>
 
 namespace vnotex
 {
     class Notebook;
     class Node;
+
+    // A dummy class used to do translations.
+    class ImportFolderUtilsTranslate : public QObject
+    {
+        Q_OBJECT
+    };
 
     class ImportFolderUtils
     {

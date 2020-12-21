@@ -36,8 +36,7 @@
 #include "navigationmodemgr.h"
 #include "messageboxhelper.h"
 #include "systemtrayhelper.h"
-
-#include <vtoolbar.h>
+#include "titletoolbar.h"
 
 using namespace vnotex;
 
@@ -447,7 +446,7 @@ void MainWindow::setupToolBar()
         winFlags &= ~framelessFlags;
         setWindowFlags(winFlags);
 
-        auto toolBar = new VToolBar(tr("Global"), this);
+        auto toolBar = new TitleToolBar(tr("Global"), this);
         toolBar->setIconSize(iconSize);
         m_toolBarHelper.setupToolBars(this, toolBar);
         toolBar->addTitleBarIcons(ToolBarHelper::generateIcon(QStringLiteral("minimize.svg")),
