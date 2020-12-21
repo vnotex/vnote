@@ -153,12 +153,7 @@ void loadTranslators(QApplication &p_app)
     const QString resourceTranslationFolder(QStringLiteral(":/vnotex/data/core/translations"));
     const QString envTranslationFolder(QStringLiteral("translations"));
 
-    // Load missing translation for Qt (QTextEdit/QPlainTextEdit/QTextBrowser).
-    QScopedPointer<QTranslator> widgetsTranslator(new QTranslator(&p_app));
-    if (widgetsTranslator->load(locale, "widgets", "_", resourceTranslationFolder)) {
-        p_app.installTranslator(widgetsTranslator.take());
-    }
-
+    // qt_zh_CN.ts does not cover the real QDialogButtonBox which uses QPlatformTheme.
     QScopedPointer<QTranslator> dialogButtonBoxTranslator(new QTranslator(&p_app));
     if (dialogButtonBoxTranslator->load(locale, "qdialogbuttonbox", "_", resourceTranslationFolder)) {
         p_app.installTranslator(dialogButtonBoxTranslator.take());

@@ -108,7 +108,8 @@ jobs:
           mv ../../src/vnote.app ./
           ln -s /Applications ./Applications
           popd
-          hdiutil create -srcfolder ./distrib/vnote -format UDBZ ./vnote-mac-x64_v${{env.VNOTE_VER}}.dmg
+          sleep 1m
+          hdiutil create -srcfolder ./distrib/vnote -format UDBZ vnote-mac-x64_v${{env.VNOTE_VER}}.dmg
           cp vnote-mac-x64_v${{env.VNOTE_VER}}.dmg vnote-mac-x64.dmg
         working-directory: ${{runner.workspace}}/build
 

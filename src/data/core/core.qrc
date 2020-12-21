@@ -76,7 +76,6 @@
         <file>logo/vnote.png</file>
         <file>logo/256x256/vnote.png</file>
         <file>logo/vnote_mono.png</file>
-        <file>translations/widgets_zh_CN.qm</file>
         <file>translations/qdialogbuttonbox_zh_CN.qm</file>
         <file>translations/qwebengine_zh_CN.qm</file>
         <file>translations/qt_zh_CN.qm</file>
