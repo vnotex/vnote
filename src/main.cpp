@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
         appPath = ConfigMgr::getApplicationFilePath();
         qInfo() << "App path: " << appPath;
         guard.exit();
+        QProcess::startDetached(appPath, QStringList());
         qInfo() << "Exit.";
         return 0;
     }
