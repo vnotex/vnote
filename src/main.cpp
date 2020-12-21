@@ -202,7 +202,7 @@ void aboutMain(){
     qInfo() << "App exit." << ret;
     if (ret == RESTART_EXIT_CODE) {
         qInfo() << "Start new instance.";
-        QProcess::startDetached(appPath, QStringList());
+//        QProcess::startDetached(appPath, QStringList());
         qInfo() << "Detached.";
     }
 }
