@@ -1,0 +1,7 @@
+<div style="color: grey; margin-left: 30px;">
+<h1>快速开始</h1>
+<ul>
+    <li>创建笔记本并在笔记本中创建文件夹和笔记</li>
+    <li>拖拽文件到此处</li>
+</ul>
+</div>

@@ -34,6 +34,7 @@ class CrossCopy {
         this.adapter.setCrossCopyTargets(targets);
     }
 
+    // ATTENTION: please add one entry in MarkdownViewerAdapter's getCrossCopyTargetDisplayName() for translations.
     addTarget(p_name, p_callback) {
         this.targets[p_name] = p_callback;
     }

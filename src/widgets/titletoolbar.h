@@ -1,18 +1,18 @@
-#ifndef VTOOLBAR_H
-#define VTOOLBAR_H
+#ifndef TITLETOOLBAR_H
+#define TITLETOOLBAR_H
 
 #include <QToolBar>
 #include <QIcon>
 
 namespace vnotex
 {
-    class VToolBar : public QToolBar
+    class TitleToolBar : public QToolBar
     {
         Q_OBJECT
     public:
-        explicit VToolBar(QWidget *p_parent = nullptr);
+        explicit TitleToolBar(QWidget *p_parent = nullptr);
 
-        VToolBar(const QString &p_title, QWidget *p_parent = nullptr);
+        TitleToolBar(const QString &p_title, QWidget *p_parent = nullptr);
 
         void addTitleBarIcons(const QIcon &p_minimizeIcon,
                               const QIcon &p_maximizeIcon,

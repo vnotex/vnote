@@ -110,14 +110,15 @@ int main(int argc, char *argv[])
 
     // TODO: parse command line options.
 
+    // Should set the correct locale before VNoteX::getInst().
+    loadTranslators(app);
+
     if (app.styleSheet().isEmpty()) {
         auto style = VNoteX::getInst().getThemeMgr().fetchQtStyleSheet();
         if (!style.isEmpty()) {
             app.setStyleSheet(style);
         }
     }
-
-    loadTranslators(app);
 
     MainWindow window;
 
@@ -153,6 +154,12 @@ void loadTranslators(QApplication &p_app)
     const QString resourceTranslationFolder(QStringLiteral(":/vnotex/data/core/translations"));
     const QString envTranslationFolder(QStringLiteral("translations"));
 
+    // For QTextEdit/QTextBrowser and other basic widgets.
+    QScopedPointer<QTranslator> qtbaseTranslator(new QTranslator(&p_app));
+    if (qtbaseTranslator->load(locale, "qtbase", "_", resourceTranslationFolder)) {
+        p_app.installTranslator(qtbaseTranslator.take());
+    }
+
     // qt_zh_CN.ts does not cover the real QDialogButtonBox which uses QPlatformTheme.
     QScopedPointer<QTranslator> dialogButtonBoxTranslator(new QTranslator(&p_app));
     if (dialogButtonBoxTranslator->load(locale, "qdialogbuttonbox", "_", resourceTranslationFolder)) {
@@ -180,6 +187,12 @@ void loadTranslators(QApplication &p_app)
     QScopedPointer<QTranslator> vnoteTranslator(new QTranslator(&p_app));
     if (vnoteTranslator->load(locale, "vnote", "_", resourceTranslationFolder)) {
         p_app.installTranslator(vnoteTranslator.take());
+    }
+
+    // Load translation for vtextedit from resource.
+    QScopedPointer<QTranslator> vtexteditTranslator(new QTranslator(&p_app));
+    if (vtexteditTranslator->load(locale, "vtextedit", "_", resourceTranslationFolder)) {
+        p_app.installTranslator(vtexteditTranslator.take());
     }
 }
 

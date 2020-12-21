@@ -21,19 +21,19 @@
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation>是 (&amp;Y)</translation>
+        <translation>是(&amp;Y)</translation>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation>全部选择是 (&amp;A)</translation>
+        <translation>全部选择是(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation>否 (&amp;N)</translation>
+        <translation>否(&amp;N)</translation>
     </message>
     <message>
         <source>N&amp;o to All</source>
-        <translation>全部选择否 (&amp;O)</translation>
+        <translation>全部选择否(&amp;O)</translation>
     </message>
     <message>
         <source>Abort</source>

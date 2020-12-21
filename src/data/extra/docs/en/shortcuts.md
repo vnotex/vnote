@@ -4,7 +4,7 @@
 
 ## General
 - `Ctrl+G E`  
-Toggle expanding the edit area.
+Toggle expanding the content area.
 - `Ctrl+Alt+N`  
 Create a note in current folder.
 - `Ctrl+F`  

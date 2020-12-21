@@ -33,8 +33,6 @@ INCLUDEPATH *= $$PWD
 
 LIBS_FOLDER = $$PWD/../libs
 
-include($$LIBS_FOLDER/vtitlebar/vtitlebar_export.pri)
-
 include($$LIBS_FOLDER/vtextedit/src/editor/editor_export.pri)
 
 include($$LIBS_FOLDER/vtextedit/src/libs/syntax-highlighting/syntax-highlighting_export.pri)

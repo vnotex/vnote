@@ -80,5 +80,7 @@
         <file>translations/qwebengine_zh_CN.qm</file>
         <file>translations/qt_zh_CN.qm</file>
         <file>translations/vnote_zh_CN.qm</file>
+        <file>translations/qtbase_zh_CN.qm</file>
+        <file>translations/vtextedit_zh_CN.qm</file>
     </qresource>
 </RCC>

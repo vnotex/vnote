@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
+<!--QWebEngineView uses different sources for its standard context menu.-->
+<!--https://code.woboq.org/qt5/qtwebengine/src/core/render_view_context_menu_qt.cpp.html-->
+<!--https://code.woboq.org/qt5/qtwebengine/src/webenginewidgets/api/qwebenginepage.cpp.html-->
 <context>
-    <name>QWebEnginePage</name>
+    <name>RenderViewContextMenuQt</name>
     <message>
         <source>Back</source>
         <translation>后退</translation>
@@ -12,16 +15,8 @@
         <translation>前进</translation>
     </message>
     <message>
-        <source>Stop</source>
-        <translation>停止</translation>
-    </message>
-    <message>
         <source>Reload</source>
         <translation>重新加载</translation>
-    </message>
-    <message>
-        <source>Reload and Bypass Cache</source>
-        <translation>忽略缓存重新加载</translation>
     </message>
     <message>
         <source>Cut</source>
@@ -37,67 +32,98 @@
     </message>
     <message>
         <source>Undo</source>
-        <translation>撤销</translation>
+        <translation>撤消</translation>
     </message>
     <message>
         <source>Redo</source>
         <translation>恢复</translation>
     </message>
     <message>
-        <source>Select All</source>
+        <source>Select all</source>
         <translation>选择全部</translation>
     </message>
     <message>
-        <source>Paste and Match Style</source>
+        <source>Paste and match style</source>
         <translation>粘贴并匹配样式</translation>
     </message>
     <message>
-        <source>Open Link in This Window</source>
-        <translation>在当前窗口打开链接</translation>
-    </message>
-    <message>
-        <source>Open Link in New Window</source>
+        <source>Open link in new window</source>
         <translation>在新窗口打开链接</translation>
     </message>
     <message>
-        <source>Open Link in New Tab</source>
+        <source>Open link in new tab</source>
         <translation>在新标签页打开链接</translation>
     </message>
     <message>
-        <source>Open Link in New Background Tab</source>
-        <translation>在后台新标签页打开链接</translation>
-    </message>
-    <message>
-        <source>Copy Link URL</source>
+        <source>Copy link address</source>
         <translation>复制链接地址</translation>
     </message>
     <message>
-        <source>Save Link</source>
+        <source>Save link</source>
         <translation>保存链接</translation>
     </message>
     <message>
-        <source>Copy Image</source>
+        <source>Copy image</source>
         <translation>复制图片</translation>
     </message>
     <message>
-        <source>Copy Image URL</source>
+        <source>Copy image address</source>
         <translation>复制图片地址</translation>
     </message>
     <message>
-        <source>Save Image</source>
+        <source>Save image</source>
         <translation>保存图片</translation>
     </message>
     <message>
-        <source>Copy Media URL</source>
+        <source>Copy media address</source>
         <translation>复制媒体地址</translation>
     </message>
     <message>
-        <source>Toggle Media Controls</source>
-        <translation>切换媒体控件</translation>
+        <source>Show controls</source>
+        <translation>显示控件</translation>
     </message>
     <message>
-        <source>Toggle Looping</source>
-        <translation>切换循环</translation>
+        <source>Loop</source>
+        <translation>循环</translation>
+    </message>
+    <message>
+        <source>Save media</source>
+        <translation>保存媒体</translation>
+    </message>
+    <message>
+        <source>Inspect</source>
+        <translation>查看</translation>
+    </message>
+    <message>
+        <source>Exit full screen</source>
+        <translation>退出全屏</translation>
+    </message>
+    <message>
+        <source>Save page</source>
+        <translation>保存页面</translation>
+    </message>
+    <message>
+        <source>View page source</source>
+        <translation>查看页面源码</translation>
+    </message>
+</context>
+<context>
+    <name>QWebEnginePage</name>
+    <message>
+        <source>Stop</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <source>Reload and Bypass Cache</source>
+        <translation>忽略缓存重新加载</translation>
+    </message>
+    <message>
+        <source>Open link in this window</source>
+        <translation>在当前窗口打开链接</translation>
+    </message>
+    <message>
+        <source>Open link in new background tab</source>
+        <translation>在后台新标签页打开链接</translation>
     </message>
     <message>
         <source>Toggle Play/Pause</source>
@@ -108,18 +134,6 @@
         <translation>切换静音</translation>
     </message>
     <message>
-        <source>Save Media</source>
-        <translation>保存媒体</translation>
-    </message>
-    <message>
-        <source>Inspect Element</source>
-        <translation>查看元素</translation>
-    </message>
-    <message>
-        <source>Exit Full Screen Mode</source>
-        <translation>退出全屏模式</translation>
-    </message>
-    <message>
         <source>Close Page</source>
         <translation>关闭页面</translation>
     </message>
@@ -128,32 +142,52 @@
         <translation>取消选择</translation>
     </message>
     <message>
-        <source>Save &amp;Page</source>
-        <translation>保存页面 (&amp;P)</translation>
+        <source>&amp;Bold</source>
+        <translation>粗体(&amp;B)</translation>
     </message>
     <message>
-        <source>Are you sure you want to leave this page?</source>
-        <translation>确认离开本页面？</translation>
+        <source>&amp;Italic</source>
+        <translation>斜体(&amp;I)</translation>
     </message>
     <message>
-        <source>Follow Link</source>
-        <translation>打开链接</translation>
+        <source>&amp;Underline</source>
+        <translation>下划线(&amp;U)</translation>
     </message>
     <message>
-        <source>&amp;Back</source>
-        <translation>后退 (&amp;B)</translation>
+        <source>&amp;Strikethrough</source>
+        <translation>删除线(&amp;S)</translation>
     </message>
     <message>
-        <source>&amp;Forward</source>
-        <translation>前进 (&amp;F)</translation>
+        <source>Align &amp;Left</source>
+        <translation>左对齐(&amp;L)</translation>
     </message>
     <message>
-        <source>&amp;Reload</source>
-        <translation>重新加载 (&amp;R)</translation>
+        <source>Align &amp;Center</source>
+        <translation>居中对齐(&amp;C)</translation>
     </message>
     <message>
-        <source>Select folder to upload</source>
-        <translation>选择文件夹上传</translation>
+        <source>Align &amp;Right</source>
+        <translation>右对齐(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Align &amp;Justified</source>
+        <translation>两端对齐(&amp;J)</translation>
+    </message>
+    <message>
+        <source>&amp;Indent</source>
+        <translation>缩进(&amp;I)</translation>
+    </message>
+    <message>
+        <source>&amp;Outdent</source>
+        <translation>减小缩进(&amp;O)</translation>
+    </message>
+    <message>
+        <source>Insert &amp;Ordered List</source>
+        <translation>插入有序列表(&amp;O)</translation>
+    </message>
+    <message>
+        <source>Insert &amp;Unordered List</source>
+        <translation>插入无序列表(&amp;U)</translation>
     </message>
 </context>
 </TS>

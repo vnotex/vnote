@@ -115,6 +115,8 @@ namespace vnotex
 
         const QStringList &getCrossCopyTargets() const;
 
+        QString getCrossCopyTargetDisplayName(const QString &p_target) const;
+
         void findText(const QString &p_text, FindOptions p_options);
 
         // Functions to be called from web side.

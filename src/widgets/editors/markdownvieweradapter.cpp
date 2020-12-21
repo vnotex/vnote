@@ -1,6 +1,7 @@
 #include "markdownvieweradapter.h"
 
 #include <QDebug>
+#include <QMap>
 
 #include "../outlineprovider.h"
 
@@ -272,6 +273,26 @@ void MarkdownViewerAdapter::setCrossCopyTargets(const QJsonArray &p_targets)
 const QStringList &MarkdownViewerAdapter::getCrossCopyTargets() const
 {
     return m_crossCopyTargets;
+}
+
+QString MarkdownViewerAdapter::getCrossCopyTargetDisplayName(const QString &p_target) const
+{
+    static QMap<QString, QString> maps;
+    if (maps.isEmpty()) {
+        maps.insert("No Background", tr("No Background"));
+        maps.insert("Evernote", tr("Evernote"));
+        maps.insert("OneNote", tr("OneNote"));
+        maps.insert("Microsoft Word", tr("Microsoft Word"));
+        maps.insert("WeChat Public Account Editor", tr("WeChat Public Account Editor"));
+        maps.insert("Raw HTML", tr("Raw HTML"));
+    }
+
+    auto it = maps.find(p_target);
+    if (it != maps.end()) {
+        return *it;
+    }
+    qWarning() << "missing cross copy target" << p_target;
+    return p_target;
 }
 
 void MarkdownViewerAdapter::setCrossCopyResult(quint64 p_id, quint64 p_timeStamp, const QString &p_html)

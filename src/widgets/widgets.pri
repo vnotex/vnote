@@ -74,6 +74,7 @@ SOURCES += \
     $$PWD/statusbarhelper.cpp \
     $$PWD/dialogs/deleteconfirmdialog.cpp \
     $$PWD/dialogs/importfolderutils.cpp \
+    $$PWD/titletoolbar.cpp \
     $$PWD/viewarea.cpp
 
 HEADERS += \
@@ -155,4 +156,5 @@ HEADERS += \
     $$PWD/dialogs/nodeinfowidget.h \
     $$PWD/statusbarhelper.h \
     $$PWD/dialogs/deleteconfirmdialog.h \
+    $$PWD/titletoolbar.h \
     $$PWD/viewarea.h
