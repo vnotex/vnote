@@ -41,11 +41,11 @@ int main(int argc, char *argv[])
 {
     atexit(aboutMain);
 
-    SingleInstanceGuard guard;
-    bool canRun = guard.tryRun();
-    if (!canRun) {
-        return 0;
-    }
+//    SingleInstanceGuard guard;
+//    bool canRun = guard.tryRun();
+//    if (!canRun) {
+//        return 0;
+//    }
 
     QTextCodec *codec = QTextCodec::codecForName("UTF8");
     if (codec) {
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
         // Asked to restart VNote.
         appPath = ConfigMgr::getApplicationFilePath();
         qInfo() << "App path: " << appPath;
-        guard.exit();
+//        guard.exit();
         QProcess::startDetached(appPath, QStringList());
         qInfo() << "Exit.";
         return 773;
