@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 //        guard.exit();
         QProcess::startDetached(appPath, QStringList());
         qInfo() << "Exit.";
-        return 773;
+        exit(0);
     }
 
     return ret;
