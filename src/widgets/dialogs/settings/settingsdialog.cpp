@@ -49,7 +49,7 @@ void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent)
     auto layout = new QVBoxLayout();
 
     m_searchEdit = WidgetsFactory::createLineEdit(p_parent);
-    m_searchEdit->setPlaceholderText(tr("Type to search"));
+    m_searchEdit->setPlaceholderText(tr("Search"));
     layout->addWidget(m_searchEdit);
 
     m_pageExplorer = new TreeWidget(TreeWidget::None, p_parent);

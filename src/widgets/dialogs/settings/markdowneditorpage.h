@@ -4,6 +4,7 @@
 #include "settingspage.h"
 
 class QCheckBox;
+class QGroupBox;
 
 namespace vnotex
 {
@@ -23,6 +24,10 @@ namespace vnotex
     private:
         void setupUI();
 
+        QGroupBox *setupReadGroup();
+
+        QGroupBox *setupEditGroup();
+
         QCheckBox *m_insertFileNameAsTitleCheckBox = nullptr;
 
         QCheckBox *m_sectionNumberCheckBox = nullptr;
@@ -32,6 +37,12 @@ namespace vnotex
         QCheckBox *m_constrainInPlacePreviewWidthCheckBox = nullptr;
 
         QCheckBox *m_fetchImagesToLocalCheckBox = nullptr;
+
+        QCheckBox *m_htmlTagCheckBox = nullptr;
+
+        QCheckBox *m_autoBreakCheckBox = nullptr;
+
+        QCheckBox *m_linkifyCheckBox = nullptr;
     };
 }
 

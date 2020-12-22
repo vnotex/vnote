@@ -62,6 +62,15 @@ namespace vnotex
 
         bool getProtectFromXss() const;
 
+        bool getHtmlTagEnabled() const;
+        void setHtmlTagEnabled(bool p_enabled);
+
+        bool getAutoBreakEnabled() const;
+        void setAutoBreakEnabled(bool p_enabled);
+
+        bool getLinkifyEnabled() const;
+        void setLinkifyEnabled(bool p_enabled);
+
     private:
         QSharedPointer<TextEditorConfig> m_textEditorConfig;
 
@@ -97,6 +106,15 @@ namespace vnotex
 
         // Whether protect from Cross-Site Scripting.
         bool m_protectFromXss = false;
+
+        // Whether allow HTML tag in Markdown source.
+        bool m_htmlTagEnabled = true;
+
+        // Whether auto break a line with `\n`.
+        bool m_autoBreakEnabled = false;
+
+        // Whether convert URL-like text to links.
+        bool m_linkifyEnabled = true;
     };
 }
 

@@ -94,6 +94,12 @@ class MarkdownIt extends VxWorker {
         this.name = 'markdownit';
 
         this.options = p_options;
+        if (!this.options) {
+            this.options = new MarkdownItOptions();
+            this.options.enableHtmlTag = window.vxOptions.htmlTagEnabled;
+            this.options.enableAutoBreaks = window.vxOptions.autoBreakEnabled;
+            this.options.enableLinkify = window.vxOptions.linkifyEnabled;
+        }
 
         // Languages of code blocks that need to skip highlight.
         this.langsToSkipHighlight = new Set();
@@ -332,4 +338,4 @@ class MarkdownIt extends VxWorker {
     }
 }
 
-window.vnotex.registerWorker(new MarkdownIt(new MarkdownItOptions()));
+window.vnotex.registerWorker(new MarkdownIt(null));

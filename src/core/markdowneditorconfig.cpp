@@ -39,6 +39,9 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     m_zoomFactorInReadMode = READREAL(QStringLiteral("zoom_factor_in_read_mode"));
     m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetch_images_in_parse_and_paste"));
     m_protectFromXss = READBOOL(QStringLiteral("protect_from_xss"));
+    m_htmlTagEnabled = READBOOL(QStringLiteral("html_tag"));
+    m_autoBreakEnabled = READBOOL(QStringLiteral("auto_break"));
+    m_linkifyEnabled = READBOOL(QStringLiteral("linkify"));
 }
 
 QJsonObject MarkdownEditorConfig::toJson() const
@@ -56,6 +59,9 @@ QJsonObject MarkdownEditorConfig::toJson() const
     obj[QStringLiteral("zoom_factor_in_read_mode")] = m_zoomFactorInReadMode;
     obj[QStringLiteral("fetch_images_in_parse_and_paste")] = m_fetchImagesInParseAndPaste;
     obj[QStringLiteral("protect_from_xss")] = m_protectFromXss;
+    obj[QStringLiteral("html_tag")] = m_htmlTagEnabled;
+    obj[QStringLiteral("auto_break")] = m_autoBreakEnabled;
+    obj[QStringLiteral("linkify")] = m_linkifyEnabled;
     return obj;
 }
 
@@ -194,4 +200,34 @@ void MarkdownEditorConfig::setFetchImagesInParseAndPaste(bool p_enabled)
 bool MarkdownEditorConfig::getProtectFromXss() const
 {
     return m_protectFromXss;
+}
+
+bool MarkdownEditorConfig::getHtmlTagEnabled() const
+{
+    return m_htmlTagEnabled;
+}
+
+void MarkdownEditorConfig::setHtmlTagEnabled(bool p_enabled)
+{
+    updateConfig(m_htmlTagEnabled, p_enabled, this);
+}
+
+bool MarkdownEditorConfig::getAutoBreakEnabled() const
+{
+    return m_autoBreakEnabled;
+}
+
+void MarkdownEditorConfig::setAutoBreakEnabled(bool p_enabled)
+{
+    updateConfig(m_autoBreakEnabled, p_enabled, this);
+}
+
+bool MarkdownEditorConfig::getLinkifyEnabled() const
+{
+    return m_linkifyEnabled;
+}
+
+void MarkdownEditorConfig::setLinkifyEnabled(bool p_enabled)
+{
+    updateConfig(m_linkifyEnabled, p_enabled, this);
 }
