@@ -413,6 +413,8 @@ void MainWindow::setupOutlineViewer()
     m_outlineViewer = new OutlineViewer(QString(), this);
     m_outlineViewer->setObjectName("OutlineViewer.vnotex");
 
+    NavigationModeMgr::getInst().registerNavigationTarget(m_outlineViewer->getNavigationModeWrapper());
+
     connect(m_viewArea, &ViewArea::currentViewWindowChanged,
             this, [this]() {
                 auto win = m_viewArea->getCurrentViewWindow();

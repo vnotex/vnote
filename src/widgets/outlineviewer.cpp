@@ -61,8 +61,6 @@ void OutlineViewer::setupUI(const QString &p_title)
     TreeWidget::setupSingleColumnHeaderlessTree(m_tree, false, false);
     m_tree->setSelectionMode(QAbstractItemView::SingleSelection);
     TreeWidget::showHorizontalScrollbar(m_tree);
-    m_navigationWrapper.reset(new NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>(m_tree));
-    NavigationModeMgr::getInst().registerNavigationTarget(m_navigationWrapper.data());
     mainLayout->addWidget(m_tree);
     connect(m_tree, &QTreeWidget::currentItemChanged,
             this, [this](QTreeWidgetItem *p_cur, QTreeWidgetItem *p_pre) {
@@ -77,6 +75,14 @@ void OutlineViewer::setupUI(const QString &p_title)
             });
 
     setFocusProxy(m_tree);
+}
+
+NavigationModeWrapper<QTreeWidget, QTreeWidgetItem> *OutlineViewer::getNavigationModeWrapper()
+{
+    if (!m_navigationWrapper) {
+        m_navigationWrapper.reset(new NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>(m_tree));
+    }
+    return m_navigationWrapper.data();
 }
 
 TitleBar *OutlineViewer::setupTitleBar(const QString &p_title, QWidget *p_parent)
