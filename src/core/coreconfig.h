@@ -25,6 +25,12 @@ namespace vnotex
             OutlineDock,
             NavigationMode,
             LocateNode,
+            VerticalSplit,
+            HorizontalSplit,
+            MaximizeSplit,
+            DistributeSplits,
+            RemoveSplitAndWorkspace,
+            NewWorkspace,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

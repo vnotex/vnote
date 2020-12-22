@@ -34,7 +34,7 @@ ViewArea::ViewArea(QWidget *p_parent)
 
     setAcceptDrops(true);
 
-    setupGlobalShortcuts();
+    setupShortcuts();
 
     connect(this, &ViewArea::viewSplitsCountChanged,
             this, &ViewArea::handleViewSplitsCountChange);
@@ -238,7 +238,7 @@ ViewSplit *ViewArea::createViewSplit(QWidget *p_parent)
             });
     connect(split, &ViewSplit::focused,
             this, [this](ViewSplit *p_split) {
-                setCurrentViewSplit(p_split);
+                setCurrentViewSplit(p_split, false);
                 checkCurrentViewWindowChange();
             });
     connect(split, &ViewSplit::currentViewWindowChanged,
@@ -285,10 +285,11 @@ void ViewArea::addFirstViewSplit()
     auto split = createViewSplit(this);
 
     m_splits.push_back(split);
-    setCurrentViewSplit(split);
 
     hideSceneWidget();
-    m_mainLayout->addWidget(m_currentSplit);
+    m_mainLayout->addWidget(split);
+
+    setCurrentViewSplit(split, false);
 
     emit viewSplitsCountChanged();
     checkCurrentViewWindowChange();
@@ -358,12 +359,12 @@ void ViewArea::removeViewSplit(ViewSplit *p_split, bool p_removeWorkspace)
     // Show scene widget and update current split.
     if (m_splits.isEmpty()) {
         Q_ASSERT(newCurrentSplit == nullptr);
-        setCurrentViewSplit(newCurrentSplit);
+        setCurrentViewSplit(newCurrentSplit, false);
         showSceneWidget();
 
         m_fileCheckTimer->stop();
     } else if (m_currentSplit == p_split) {
-        setCurrentViewSplit(newCurrentSplit);
+        setCurrentViewSplit(newCurrentSplit, true);
     }
 
     emit viewSplitsCountChanged();
@@ -385,9 +386,10 @@ void ViewArea::setCurrentViewWindow(ViewWindow *p_win)
     auto split = p_win->getViewSplit();
     Q_ASSERT(split);
 
-    setCurrentViewSplit(split);
-
     split->setCurrentViewWindow(p_win);
+
+    setCurrentViewSplit(split, false);
+
     checkCurrentViewWindowChange();
 }
 
@@ -396,7 +398,7 @@ ViewSplit *ViewArea::getCurrentViewSplit() const
     return m_currentSplit;
 }
 
-void ViewArea::setCurrentViewSplit(ViewSplit *p_split)
+void ViewArea::setCurrentViewSplit(ViewSplit *p_split, bool p_focus)
 {
     Q_ASSERT(!p_split || m_splits.contains(p_split));
     if (p_split == m_currentSplit) {
@@ -410,6 +412,9 @@ void ViewArea::setCurrentViewSplit(ViewSplit *p_split)
     m_currentSplit = p_split;
     if (m_currentSplit) {
         m_currentSplit->setActive(true);
+        if (p_focus) {
+            m_currentSplit->focus();
+        }
     }
 }
 
@@ -506,7 +511,7 @@ void ViewArea::splitViewSplit(ViewSplit *p_split, SplitType p_type)
     }
 
     m_splits.push_back(newSplit);
-    setCurrentViewSplit(newSplit);
+    setCurrentViewSplit(newSplit, true);
 
     // Let Qt decide the size of splitter first.
     QCoreApplication::sendPostedEvents();
@@ -653,19 +658,20 @@ void ViewArea::newWorkspaceInViewSplit(ViewSplit *p_split)
     m_workspaces.push_back(workspace);
 
     p_split->setWorkspace(workspace);
+    setCurrentViewSplit(p_split, true);
 }
 
 bool ViewArea::removeWorkspaceInViewSplit(ViewSplit *p_split, bool p_insertNew)
 {
     // Close all the ViewWindows.
-    setCurrentViewSplit(p_split);
-    bool stopped = !p_split->forEachViewWindow([this](ViewWindow *p_win) {
-                bool ret = closeViewWindow(p_win, false, false);
-                // User cancels closing this ViewWindow, thus cancals closing the ViewSplit.
-                return ret;
+    setCurrentViewSplit(p_split, true);
+    auto wins = getAllViewWindows(p_split, [](ViewWindow *) {
+                return true;
             });
-    if (stopped) {
-        return false;
+    for (const auto win : wins) {
+        if (!closeViewWindow(win, false, false)) {
+            return false;
+        }
     }
 
     Q_ASSERT(p_split->getViewWindowCount() == 0);
@@ -723,7 +729,7 @@ void ViewArea::handleViewSplitsCountChange()
     }
 }
 
-void ViewArea::forEachViewWindow(const std::function<bool(ViewWindow *)> &p_func)
+void ViewArea::forEachViewWindow(const ViewSplit::ViewWindowSelector &p_func)
 {
     for (auto split : m_splits) {
         if (!split->forEachViewWindow(p_func)) {
@@ -750,7 +756,7 @@ bool ViewArea::close(bool p_force)
            });
 }
 
-void ViewArea::setupGlobalShortcuts()
+void ViewArea::setupShortcuts()
 {
     const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
 
@@ -810,7 +816,7 @@ void ViewArea::checkCurrentViewWindowChange()
     emit currentViewWindowChanged();
 }
 
-bool ViewArea::closeIf(bool p_force, const std::function<bool(ViewWindow *)> &p_func)
+bool ViewArea::closeIf(bool p_force, const ViewSplit::ViewWindowSelector &p_func)
 {
     // Go through all hidden workspace. Use current split to show the workspace.
     if (m_workspaces.size() > m_splits.size()) {
@@ -835,18 +841,14 @@ bool ViewArea::closeIf(bool p_force, const std::function<bool(ViewWindow *)> &p_
             m_currentSplit->setWorkspace(ws);
 
             // Go through this split.
-            bool stopped = !m_currentSplit->forEachViewWindow([this, p_force, p_func](ViewWindow *p_win) {
-                    if (p_func(p_win)) {
-                        // Do not remove the split even if it is empty.
-                        bool ret = closeViewWindow(p_win, p_force, false);
-                        return ret;
-                    }
-                    return true;
-                });
-
-            if (stopped) {
-                // User cancels the close of one ViewWindow. No need to restore the workspace.
-                return false;
+            auto wins = getAllViewWindows(m_currentSplit, p_func);
+            for (const auto win : wins) {
+                // Do not remove the split even if it is empty.
+                bool ret = closeViewWindow(win, p_force, false);
+                if (!ret) {
+                    // User cancels the close of one ViewWindow. No need to restore the workspace.
+                    return false;
+                }
             }
 
             // Remove this workspace.
@@ -869,12 +871,8 @@ bool ViewArea::closeIf(bool p_force, const std::function<bool(ViewWindow *)> &p_
             emptySplits.push_back(split);
             continue;
         }
-        split->forEachViewWindow([p_func, &wins](ViewWindow *p_win) {
-                if (p_func(p_win)) {
-                    wins.push_back(p_win);
-                }
-                return true;
-            });
+
+        wins.append(getAllViewWindows(split, p_func));
     }
 
     if (!emptySplits.isEmpty()) {
@@ -901,9 +899,9 @@ bool ViewArea::closeIf(bool p_force, const std::function<bool(ViewWindow *)> &p_
 
 void ViewArea::focus()
 {
-    auto win = getCurrentViewWindow();
-    if (win) {
-        win->setFocus();
+    auto split = getCurrentViewSplit();
+    if (split) {
+        split->focus();
     }
 }
 
@@ -971,4 +969,16 @@ void ViewArea::dropEvent(QDropEvent *p_event)
     }
 
     QWidget::dropEvent(p_event);
+}
+
+QVector<ViewWindow *> ViewArea::getAllViewWindows(ViewSplit *p_split, const ViewSplit::ViewWindowSelector &p_func)
+{
+    QVector<ViewWindow *> wins;
+    p_split->forEachViewWindow([p_func, &wins](ViewWindow *p_win) {
+            if (p_func(p_win)) {
+                wins.push_back(p_win);
+            }
+            return true;
+        });
+    return wins;
 }

@@ -157,7 +157,7 @@ namespace vnotex
         void setCurrentViewWindow(ViewWindow *p_win);
 
         ViewSplit *getCurrentViewSplit() const;
-        void setCurrentViewSplit(ViewSplit *p_split);
+        void setCurrentViewSplit(ViewSplit *p_split, bool p_focus);
 
         QSharedPointer<ViewWorkspace> createWorkspace();
 
@@ -182,17 +182,19 @@ namespace vnotex
 
         // Iterate through all ViewWindows including both ViewSplits and Workspaces.
         // Should NOT use this function to close ViewWindow.
-        void forEachViewWindow(const std::function<bool(ViewWindow *)> &p_func);
+        void forEachViewWindow(const ViewSplit::ViewWindowSelector &p_func);
 
-        void setupGlobalShortcuts();
+        void setupShortcuts();
 
         // Close all ViewWindows related to @p_node.
         bool close(Node *p_node, bool p_force);
 
         // Go through all ViewWindows and judge whether to close it by @p_func.
-        bool closeIf(bool p_force, const std::function<bool(ViewWindow *)> &p_func);
+        bool closeIf(bool p_force, const ViewSplit::ViewWindowSelector &p_func);
 
         void checkCurrentViewWindowChange();
+
+        QVector<ViewWindow *> getAllViewWindows(ViewSplit *p_split, const ViewSplit::ViewWindowSelector &p_func);
 
         QLayout *m_mainLayout = nullptr;
 

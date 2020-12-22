@@ -18,7 +18,13 @@
             "NavigationDock" : "Ctrl+G, 1",
             "OutlineDock" : "Ctrl+G, 2",
             "NavigationMode" : "Ctrl+G, W",
-            "LocateNode" : "Ctrl+G, D"
+            "LocateNode" : "Ctrl+G, D",
+            "VerticalSplit" : "Ctrl+G, \\",
+            "HorizontalSplit" : "Ctrl+G, -",
+            "MaximizeSplit" : "Ctrl+G, Shift+\\",
+            "DistributeSplits" : "Ctrl+G, =",
+            "RemoveSplitAndWorkspace" : "Ctrl+G, R",
+            "NewWorkspace" : "Ctrl+G, N"
         },
         "toolbar_icon_size" : 16
     },
