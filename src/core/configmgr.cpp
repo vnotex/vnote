@@ -128,6 +128,7 @@ void ConfigMgr::checkAppConfig()
             auto defaultVersion = MainConfig::getVersion(defaultSettings->getJson());
             auto appVersion = MainConfig::getVersion(appSettings->getJson());
             if (defaultVersion != appVersion) {
+                qInfo() << "new version" << appVersion << defaultVersion;
                 needUpdate = true;
             }
         }

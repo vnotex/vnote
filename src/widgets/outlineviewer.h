@@ -26,6 +26,8 @@ namespace vnotex
 
         void setOutlineProvider(const QSharedPointer<OutlineProvider> &p_provider);
 
+        NavigationModeWrapper<QTreeWidget, QTreeWidgetItem> *getNavigationModeWrapper();
+
         static void updateTreeToOutline(QTreeWidget *p_tree, const Outline &p_outline);
 
     signals:
