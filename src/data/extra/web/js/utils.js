@@ -109,4 +109,8 @@ class Utils {
         }
         return true;
     }
+
+    static headingSequenceRegExp() {
+        return /^\d(?:\.\d)*\.? /;
+    }
 }
