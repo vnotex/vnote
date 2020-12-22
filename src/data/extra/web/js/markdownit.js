@@ -317,7 +317,10 @@ class MarkdownIt extends VxWorker {
     }
 
     generateHeaderId(p_headerIds, p_str) {
-        let idBase = p_str.replace(/\s/g, '-').toLowerCase();
+        // Remove leading heading sequence.
+        let regExp = Utils.headingSequenceRegExp();
+        let idBase = p_str.replace(regExp, '');
+        idBase = idBase.replace(/\s/g, '-').toLowerCase();
         let id = idBase;
         let idx = 1;
         while (p_headerIds.has(id)) {
