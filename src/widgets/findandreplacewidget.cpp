@@ -73,7 +73,7 @@ void FindAndReplaceWidget::setupUI()
         auto label = new QLabel(tr("Find:"), this);
 
         m_findLineEdit = WidgetsFactory::createLineEdit(this);
-        m_findLineEdit->setPlaceholderText(tr("Type to search"));
+        m_findLineEdit->setPlaceholderText(tr("Search"));
         connect(m_findLineEdit, &QLineEdit::textChanged,
                 m_findTextTimer, QOverload<>::of(&QTimer::start));
 

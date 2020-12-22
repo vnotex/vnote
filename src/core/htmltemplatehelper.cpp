@@ -21,6 +21,9 @@ QString WebGlobalOptions::toJavascriptObject() const
            + QString("webGraphviz: %1,\n").arg(Utils::boolToString(m_webGraphviz))
            + QString("constrainImageWidthEnabled: %1,\n").arg(Utils::boolToString(m_constrainImageWidthEnabled))
            + QString("protectFromXss: %1,\n").arg(Utils::boolToString(m_protectFromXss))
+           + QString("htmlTagEnabled: %1,\n").arg(Utils::boolToString(m_htmlTagEnabled))
+           + QString("autoBreakEnabled: %1,\n").arg(Utils::boolToString(m_autoBreakEnabled))
+           + QString("linkifyEnabled: %1,\n").arg(Utils::boolToString(m_linkifyEnabled))
            + QString("sectionNumberEnabled: %1\n").arg(Utils::boolToString(m_sectionNumberEnabled))
            + QStringLiteral("}");
 }
@@ -155,6 +158,9 @@ void HtmlTemplateHelper::updateMarkdownViewerTemplate(const MarkdownEditorConfig
         opts.m_sectionNumberEnabled = p_config.getSectionNumberEnabled();
         opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
         opts.m_protectFromXss = p_config.getProtectFromXss();
+        opts.m_htmlTagEnabled = p_config.getHtmlTagEnabled();
+        opts.m_autoBreakEnabled = p_config.getAutoBreakEnabled();
+        opts.m_linkifyEnabled = p_config.getLinkifyEnabled();
         fillGlobalOptions(s_markdownViewerTemplate.m_template, opts);
     }
 
