@@ -20,6 +20,8 @@ namespace vnotex
     {
         Q_OBJECT
     public:
+        typedef std::function<bool(ViewWindow *)> ViewWindowSelector;
+
         struct ViewWindowNavigationModeInfo
         {
             // Top left position of the ViewWindow relative to the view split.
@@ -54,9 +56,11 @@ namespace vnotex
 
         // @p_func: return true if going well, return false to stop the iteration.
         // Return false if there is a break.
-        bool forEachViewWindow(const std::function<bool(ViewWindow *)> &p_func);
+        bool forEachViewWindow(const ViewWindowSelector &p_func);
 
         QVector<ViewWindowNavigationModeInfo> getNavigationModeInfo() const;
+
+        void focus();
 
     signals:
         void viewWindowCloseRequested(ViewWindow *p_win);
@@ -101,6 +105,8 @@ namespace vnotex
         void setupCornerWidget();
 
         void setupTabBar();
+
+        void setupShortcuts();
 
         ViewWindow *getViewWindow(int p_idx) const;
 

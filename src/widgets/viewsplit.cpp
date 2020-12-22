@@ -9,6 +9,7 @@
 #include <QTabBar>
 #include <QMimeData>
 #include <QFileInfo>
+#include <QShortcut>
 
 #include "viewwindow.h"
 #include "viewarea.h"
@@ -48,6 +49,8 @@ ViewSplit::ViewSplit(const QVector<QSharedPointer<ViewWorkspace>> &p_allWorkspac
     setAcceptDrops(true);
 
     setupUI();
+
+    setupShortcuts();
 
     setWorkspace(p_workspace);
 }
@@ -95,6 +98,8 @@ void ViewSplit::focusCurrentViewWindow()
     auto win = getCurrentViewWindow();
     if (win) {
         win->setFocus();
+    } else {
+        setFocus();
     }
 }
 
@@ -409,6 +414,8 @@ void ViewSplit::updateWindowList(QMenu *p_menu)
 
 void ViewSplit::updateMenu(QMenu *p_menu)
 {
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+
     p_menu->clear();
 
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
@@ -445,10 +452,14 @@ void ViewSplit::updateMenu(QMenu *p_menu)
         }
 
         p_menu->addSeparator();
-        p_menu->addAction(tr("New Workspace"),
-                          [this]() {
-                              emit newWorkspaceRequested(this);
-                          });
+
+        {
+            auto act = p_menu->addAction(tr("New Workspace"),
+                                         [this]() {
+                                             emit newWorkspaceRequested(this);
+                                         });
+            WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::NewWorkspace));
+        }
 
         p_menu->addAction(tr("Remove Workspace"),
                           [this]() {
@@ -465,6 +476,7 @@ void ViewSplit::updateMenu(QMenu *p_menu)
                                      [this]() {
                                          emit verticalSplitRequested(this);
                                      });
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::VerticalSplit));
 
         icon = themeMgr.getIconFile(QStringLiteral("horizontal_split.svg"));
         act = p_menu->addAction(IconUtils::fetchIconWithDisabledState(icon),
@@ -472,16 +484,19 @@ void ViewSplit::updateMenu(QMenu *p_menu)
                                 [this]() {
                                     emit horizontalSplitRequested(this);
                                 });
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::HorizontalSplit));
 
         act = p_menu->addAction(tr("Maximize Split"),
                                 [this]() {
                                     emit maximizeSplitRequested(this);
                                 });
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::MaximizeSplit));
 
         act = p_menu->addAction(tr("Distribute Splits"),
                                 [this]() {
                                     emit distributeSplitsRequested();
                                 });
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::DistributeSplits));
 
         act = p_menu->addAction(tr("Remove Split"),
                                 [this]() {
@@ -492,6 +507,7 @@ void ViewSplit::updateMenu(QMenu *p_menu)
                                 [this]() {
                                     emit removeSplitAndWorkspaceRequested(this);
                                 });
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::RemoveSplitAndWorkspace));
     }
 }
 
@@ -588,7 +604,7 @@ void ViewSplit::mousePressEvent(QMouseEvent *p_event)
     emit focused(this);
 }
 
-bool ViewSplit::forEachViewWindow(const std::function<bool(ViewWindow *)> &p_func)
+bool ViewSplit::forEachViewWindow(const ViewWindowSelector &p_func)
 {
     int cnt = getViewWindowCount();
     for (int i = 0; i < cnt; ++i) {
@@ -639,4 +655,80 @@ void ViewSplit::dropEvent(QDropEvent *p_event)
     }
 
     QTabWidget::dropEvent(p_event);
+}
+
+void ViewSplit::setupShortcuts()
+{
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+
+    // NewWorkspace.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::NewWorkspace), this, Qt::WidgetWithChildrenShortcut);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        emit newWorkspaceRequested(this);
+                    });
+        }
+    }
+
+    // VerticalSplit.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::VerticalSplit), this, Qt::WidgetWithChildrenShortcut);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        emit verticalSplitRequested(this);
+                    });
+        }
+    }
+
+    // HorizontalSplit.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::HorizontalSplit), this, Qt::WidgetWithChildrenShortcut);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        emit horizontalSplitRequested(this);
+                    });
+        }
+    }
+
+    // MaximizeSplit.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::MaximizeSplit), this, Qt::WidgetWithChildrenShortcut);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        emit maximizeSplitRequested(this);
+                    });
+        }
+    }
+
+    // DistributeSplits.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::DistributeSplits), this, Qt::WidgetWithChildrenShortcut);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        emit distributeSplitsRequested();
+                    });
+        }
+    }
+
+    // RemoveSplitAndWorkspace.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::RemoveSplitAndWorkspace), this, Qt::WidgetWithChildrenShortcut);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        emit removeSplitAndWorkspaceRequested(this);
+                    });
+        }
+    }
+}
+
+void ViewSplit::focus()
+{
+    focusCurrentViewWindow();
 }
