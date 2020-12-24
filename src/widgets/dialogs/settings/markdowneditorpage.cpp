@@ -4,6 +4,7 @@
 #include <QVBoxLayout>
 #include <QCheckBox>
 #include <QGroupBox>
+#include <QDoubleSpinBox>
 
 #include <widgets/widgetsfactory.h>
 #include <core/editorconfig.h>
@@ -41,6 +42,8 @@ void MarkdownEditorPage::loadInternal()
 
     m_constrainImageWidthCheckBox->setChecked(markdownConfig.getConstrainImageWidthEnabled());
 
+    m_zoomFactorSpinBox->setValue(markdownConfig.getZoomFactorInReadMode());
+
     m_constrainInPlacePreviewWidthCheckBox->setChecked(markdownConfig.getConstrainInPlacePreviewWidthEnabled());
 
     m_fetchImagesToLocalCheckBox->setChecked(markdownConfig.getFetchImagesInParseAndPaste());
@@ -61,6 +64,8 @@ void MarkdownEditorPage::saveInternal()
     markdownConfig.setSectionNumberEnabled(m_sectionNumberCheckBox->isChecked());
 
     markdownConfig.setConstrainImageWidthEnabled(m_constrainImageWidthCheckBox->isChecked());
+
+    markdownConfig.setZoomFactorInReadMode(m_zoomFactorSpinBox->value());
 
     markdownConfig.setConstrainInPlacePreviewWidthEnabled(m_constrainInPlacePreviewWidthCheckBox->isChecked());
 
@@ -102,6 +107,20 @@ QGroupBox *MarkdownEditorPage::setupReadGroup()
         layout->addRow(m_constrainImageWidthCheckBox);
         addSearchItem(label, m_constrainImageWidthCheckBox->toolTip(), m_constrainImageWidthCheckBox);
         connect(m_constrainImageWidthCheckBox, &QCheckBox::stateChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        m_zoomFactorSpinBox = WidgetsFactory::createDoubleSpinBox(box);
+        m_zoomFactorSpinBox->setToolTip(tr("Zoom factor in read mode"));
+
+        m_zoomFactorSpinBox->setRange(0.25, 10);
+        m_zoomFactorSpinBox->setSingleStep(0.25);
+
+        const QString label(tr("Zoom factor:"));
+        layout->addRow(label, m_zoomFactorSpinBox);
+        addSearchItem(label, m_zoomFactorSpinBox->toolTip(), m_zoomFactorSpinBox);
+        connect(m_zoomFactorSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
                 this, &MarkdownEditorPage::pageIsChanged);
     }
 
