@@ -8,6 +8,7 @@
 #include <QToolButton>
 #include <QMenu>
 #include <QDebug>
+#include <QActionGroup>
 
 #include "toolbarhelper.h"
 #include <utils/iconutils.h>
@@ -20,6 +21,7 @@
 #include "propertydefs.h"
 #include "outlinepopup.h"
 #include "viewwindow.h"
+#include <core/global.h>
 
 using namespace vnotex;
 
@@ -303,6 +305,39 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         act = p_tb->addAction(ToolBarHelper::generateIcon("find_replace_editor.svg"),
                               ViewWindow::tr("Find And Replace"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::FindAndReplace), viewWindow);
+        break;
+    }
+
+    case Action::SectionNumber:
+    {
+        act = p_tb->addAction(ToolBarHelper::generateIcon("section_number_editor.svg"),
+                              ViewWindow::tr("Section Number"));
+
+        auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
+        Q_ASSERT(toolBtn);
+        toolBtn->setPopupMode(QToolButton::InstantPopup);
+        toolBtn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+
+        auto menu = WidgetsFactory::createMenu(p_tb);
+
+        auto actGroup = new QActionGroup(menu);
+        auto act1 = actGroup->addAction(ViewWindow::tr("Follow Configuration"));
+        act1->setCheckable(true);
+        act1->setChecked(true);
+        act1->setData(OverrideState::NoOverride);
+        menu->addAction(act1);
+
+        act1 = actGroup->addAction(ViewWindow::tr("Enabled"));
+        act1->setCheckable(true);
+        act1->setData(OverrideState::ForceEnable);
+        menu->addAction(act1);
+
+        act1 = actGroup->addAction(ViewWindow::tr("Disabled"));
+        act1->setCheckable(true);
+        act1->setData(OverrideState::ForceDisable);
+        menu->addAction(act1);
+
+        toolBtn->setMenu(menu);
         break;
     }
 

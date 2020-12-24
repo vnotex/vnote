@@ -20,6 +20,7 @@ SOURCES += \
     $$PWD/dialogs/settings/settingspage.cpp \
     $$PWD/dialogs/settings/settingsdialog.cpp \
     $$PWD/dialogs/settings/texteditorpage.cpp \
+    $$PWD/dialogs/settings/themepage.cpp \
     $$PWD/dragdropareaindicator.cpp \
     $$PWD/editors/editormarkdownvieweradapter.cpp \
     $$PWD/editors/markdowneditor.cpp \
@@ -100,6 +101,7 @@ HEADERS += \
     $$PWD/dialogs/settings/settingspage.h \
     $$PWD/dialogs/settings/settingsdialog.h \
     $$PWD/dialogs/settings/texteditorpage.h \
+    $$PWD/dialogs/settings/themepage.h \
     $$PWD/dragdropareaindicator.h \
     $$PWD/editors/editormarkdownvieweradapter.h \
     $$PWD/editors/markdowneditor.h \

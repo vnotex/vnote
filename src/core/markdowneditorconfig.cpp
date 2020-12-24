@@ -10,6 +10,7 @@ using namespace vnotex;
 #define READSTR(key) readString(appObj, userObj, (key))
 #define READBOOL(key) readBool(appObj, userObj, (key))
 #define READREAL(key) readReal(appObj, userObj, (key))
+#define READINT(key) readInt(appObj, userObj, (key))
 
 MarkdownEditorConfig::MarkdownEditorConfig(ConfigMgr *p_mgr,
                                            IConfig *p_topConfig,
@@ -33,7 +34,10 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     m_prependDotInRelativeLink = READBOOL(QStringLiteral("prepend_dot_in_relative_link"));
     m_confirmBeforeClearObsoleteImages = READBOOL(QStringLiteral("confirm_before_clear_obsolete_images"));
     m_insertFileNameAsTitle = READBOOL(QStringLiteral("insert_file_name_as_title"));
-    m_sectionNumberEnabled = READBOOL(QStringLiteral("section_number"));
+
+    m_sectionNumberMode = stringToSectionNumberMode(READSTR(QStringLiteral("section_number")));
+    m_sectionNumberBaseLevel = READINT(QStringLiteral("section_number_base_level"));
+
     m_constrainImageWidthEnabled = READBOOL(QStringLiteral("constrain_image_width"));
     m_constrainInPlacePreviewWidthEnabled = READBOOL(QStringLiteral("constrain_inplace_preview_width"));
     m_zoomFactorInReadMode = READREAL(QStringLiteral("zoom_factor_in_read_mode"));
@@ -53,7 +57,10 @@ QJsonObject MarkdownEditorConfig::toJson() const
     obj[QStringLiteral("prepend_dot_in_relative_link")] = m_prependDotInRelativeLink;
     obj[QStringLiteral("confirm_before_clear_obsolete_images")] = m_confirmBeforeClearObsoleteImages;
     obj[QStringLiteral("insert_file_name_as_title")] = m_insertFileNameAsTitle;
-    obj[QStringLiteral("section_number")] = m_sectionNumberEnabled;
+
+    obj[QStringLiteral("section_number")] = sectionNumberModeToString(m_sectionNumberMode);
+    obj[QStringLiteral("section_number_base_level")] = m_sectionNumberBaseLevel;
+
     obj[QStringLiteral("constrain_image_width")] = m_constrainImageWidthEnabled;
     obj[QStringLiteral("constrain_inplace_preview_width")] = m_constrainInPlacePreviewWidthEnabled;
     obj[QStringLiteral("zoom_factor_in_read_mode")] = m_zoomFactorInReadMode;
@@ -147,16 +154,6 @@ void MarkdownEditorConfig::setInsertFileNameAsTitle(bool p_enabled)
     updateConfig(m_insertFileNameAsTitle, p_enabled, this);
 }
 
-bool MarkdownEditorConfig::getSectionNumberEnabled() const
-{
-    return m_sectionNumberEnabled;
-}
-
-void MarkdownEditorConfig::setSectionNumberEnabled(bool p_enabled)
-{
-    updateConfig(m_sectionNumberEnabled, p_enabled, this);
-}
-
 bool MarkdownEditorConfig::getConstrainImageWidthEnabled() const
 {
     return m_constrainImageWidthEnabled;
@@ -230,4 +227,50 @@ bool MarkdownEditorConfig::getLinkifyEnabled() const
 void MarkdownEditorConfig::setLinkifyEnabled(bool p_enabled)
 {
     updateConfig(m_linkifyEnabled, p_enabled, this);
+}
+
+QString MarkdownEditorConfig::sectionNumberModeToString(SectionNumberMode p_mode) const
+{
+    switch (p_mode) {
+    case SectionNumberMode::None:
+        return QStringLiteral("none");
+
+    case SectionNumberMode::Edit:
+        return QStringLiteral("edit");
+
+    default:
+        return QStringLiteral("read");
+    }
+}
+
+MarkdownEditorConfig::SectionNumberMode MarkdownEditorConfig::stringToSectionNumberMode(const QString &p_str) const
+{
+    auto mode = p_str.toLower();
+    if (mode == QStringLiteral("none")) {
+        return SectionNumberMode::None;
+    } else if (mode == QStringLiteral("edit")) {
+        return SectionNumberMode::Edit;
+    } else {
+        return SectionNumberMode::Read;
+    }
+}
+
+MarkdownEditorConfig::SectionNumberMode MarkdownEditorConfig::getSectionNumberMode() const
+{
+    return m_sectionNumberMode;
+}
+
+void MarkdownEditorConfig::setSectionNumberMode(SectionNumberMode p_mode)
+{
+    updateConfig(m_sectionNumberMode, p_mode, this);
+}
+
+int MarkdownEditorConfig::getSectionNumberBaseLevel() const
+{
+    return m_sectionNumberBaseLevel;
+}
+
+void MarkdownEditorConfig::setSectionNumberBaseLevel(int p_level)
+{
+    updateConfig(m_sectionNumberBaseLevel, p_level, this);
 }

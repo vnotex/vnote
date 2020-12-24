@@ -64,6 +64,8 @@ namespace vnotex
         // call this function to tell us now the latest buffer revision.
         void setBufferRevisionAfterInvalidation(int p_bufferRevision);
 
+        void updateEditorFromConfig();
+
         static QSharedPointer<vte::TextEditorConfig> createTextEditorConfig(const TextEditorConfig &p_config);
 
         // Managed by QObject.

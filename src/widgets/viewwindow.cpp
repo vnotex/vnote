@@ -408,6 +408,23 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
                 });
         break;
     }
+
+    case ViewWindowToolBarHelper::SectionNumber:
+    {
+        act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
+        connect(this, &ViewWindow::modeChanged,
+                this, [this, act]() {
+                    act->setEnabled(inModeCanInsert() && getBuffer() && !getBuffer()->isReadOnly());
+                });
+        auto toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+        Q_ASSERT(toolBtn);
+        connect(toolBtn->menu(), &QMenu::triggered,
+                this, [this](QAction *p_act) {
+                    OverrideState state = static_cast<OverrideState>(p_act->data().toInt());
+                    handleSectionNumberOverride(state);
+                });
+        break;
+    }
     }
 
     return act;
@@ -583,6 +600,12 @@ bool ViewWindow::inModeCanInsert() const
 void ViewWindow::handleTypeAction(TypeAction p_action)
 {
     Q_UNUSED(p_action);
+    Q_ASSERT(false);
+}
+
+void ViewWindow::handleSectionNumberOverride(OverrideState p_state)
+{
+    Q_UNUSED(p_state);
     Q_ASSERT(false);
 }
 

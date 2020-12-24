@@ -44,6 +44,10 @@ namespace vnotex
 
         void forEachPage(const std::function<void(SettingsPage *)> &p_func);
 
+        QTreeWidgetItem *addPage(SettingsPage *p_page);
+
+        QTreeWidgetItem *addSubPage(SettingsPage *p_page, QTreeWidgetItem *p_parentItem);
+
         QLineEdit *m_searchEdit = nullptr;
 
         QTreeWidget *m_pageExplorer = nullptr;

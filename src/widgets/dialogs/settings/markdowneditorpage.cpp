@@ -5,6 +5,9 @@
 #include <QCheckBox>
 #include <QGroupBox>
 #include <QDoubleSpinBox>
+#include <QComboBox>
+#include <QSpinBox>
+#include <QHBoxLayout>
 
 #include <widgets/widgetsfactory.h>
 #include <core/editorconfig.h>
@@ -25,6 +28,9 @@ void MarkdownEditorPage::setupUI()
 {
     auto mainLayout = new QVBoxLayout(this);
 
+    auto generalBox = setupGeneralGroup();
+    mainLayout->addWidget(generalBox);
+
     auto readBox = setupReadGroup();
     mainLayout->addWidget(readBox);
 
@@ -38,7 +44,13 @@ void MarkdownEditorPage::loadInternal()
 
     m_insertFileNameAsTitleCheckBox->setChecked(markdownConfig.getInsertFileNameAsTitle());
 
-    m_sectionNumberCheckBox->setChecked(markdownConfig.getSectionNumberEnabled());
+    {
+        int idx = m_sectionNumberComboBox->findData(static_cast<int>(markdownConfig.getSectionNumberMode()));
+        Q_ASSERT(idx != -1);
+        m_sectionNumberComboBox->setCurrentIndex(idx);
+
+        m_sectionNumberBaseLevelSpinBox->setValue(markdownConfig.getSectionNumberBaseLevel());
+    }
 
     m_constrainImageWidthCheckBox->setChecked(markdownConfig.getConstrainImageWidthEnabled());
 
@@ -61,7 +73,14 @@ void MarkdownEditorPage::saveInternal()
 
     markdownConfig.setInsertFileNameAsTitle(m_insertFileNameAsTitleCheckBox->isChecked());
 
-    markdownConfig.setSectionNumberEnabled(m_sectionNumberCheckBox->isChecked());
+    {
+        auto mode = m_sectionNumberComboBox->currentData().toInt();
+        markdownConfig.setSectionNumberMode(static_cast<MarkdownEditorConfig::SectionNumberMode>(mode));
+
+        if (m_sectionNumberBaseLevelSpinBox->isEnabled()) {
+            markdownConfig.setSectionNumberBaseLevel(m_sectionNumberBaseLevelSpinBox->value());
+        }
+    }
 
     markdownConfig.setConstrainImageWidthEnabled(m_constrainImageWidthCheckBox->isChecked());
 
@@ -89,16 +108,6 @@ QGroupBox *MarkdownEditorPage::setupReadGroup()
 {
     auto box = new QGroupBox(tr("Read"), this);
     auto layout = new QFormLayout(box);
-
-    {
-        const QString label(tr("Section number"));
-        m_sectionNumberCheckBox = WidgetsFactory::createCheckBox(label, box);
-        m_sectionNumberCheckBox->setToolTip(tr("Display section number of headings in read mode"));
-        layout->addRow(m_sectionNumberCheckBox);
-        addSearchItem(label, m_sectionNumberCheckBox->toolTip(), m_sectionNumberCheckBox);
-        connect(m_sectionNumberCheckBox, &QCheckBox::stateChanged,
-                this, &MarkdownEditorPage::pageIsChanged);
-    }
 
     {
         const QString label(tr("Constrain image width"));
@@ -190,6 +199,46 @@ QGroupBox *MarkdownEditorPage::setupEditGroup()
         addSearchItem(label, m_fetchImagesToLocalCheckBox->toolTip(), m_fetchImagesToLocalCheckBox);
         connect(m_fetchImagesToLocalCheckBox, &QCheckBox::stateChanged,
                 this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    return box;
+}
+
+QGroupBox *MarkdownEditorPage::setupGeneralGroup()
+{
+    auto box = new QGroupBox(tr("General"), this);
+    auto layout = new QFormLayout(box);
+
+    {
+        auto sectionLayout = new QHBoxLayout();
+
+        m_sectionNumberComboBox = WidgetsFactory::createComboBox(this);
+        m_sectionNumberComboBox->setToolTip(tr("Section number mode"));
+
+        m_sectionNumberComboBox->addItem(tr("None"), (int)MarkdownEditorConfig::SectionNumberMode::None);
+        m_sectionNumberComboBox->addItem(tr("Read"), (int)MarkdownEditorConfig::SectionNumberMode::Read);
+        m_sectionNumberComboBox->addItem(tr("Edit"), (int)MarkdownEditorConfig::SectionNumberMode::Edit);
+
+        sectionLayout->addWidget(m_sectionNumberComboBox);
+        connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &MarkdownEditorPage::pageIsChanged);
+
+        m_sectionNumberBaseLevelSpinBox = WidgetsFactory::createSpinBox(this);
+        m_sectionNumberBaseLevelSpinBox->setToolTip(tr("Base level to start section numbering in edit mode"));
+        m_sectionNumberBaseLevelSpinBox->setRange(1, 6);
+        m_sectionNumberBaseLevelSpinBox->setSingleStep(1);
+
+        sectionLayout->addWidget(m_sectionNumberBaseLevelSpinBox);
+        connect(m_sectionNumberBaseLevelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+                this, &MarkdownEditorPage::pageIsChanged);
+        connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, [this](int p_index) {
+                    m_sectionNumberBaseLevelSpinBox->setEnabled(p_index == MarkdownEditorConfig::SectionNumberMode::Edit);
+                });
+
+        const QString label(tr("Section number:"));
+        layout->addRow(label, sectionLayout);
+        addSearchItem(label, m_sectionNumberComboBox->toolTip(), m_sectionNumberComboBox);
     }
 
     return box;

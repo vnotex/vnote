@@ -15,6 +15,13 @@ namespace vnotex
     class MarkdownEditorConfig : public IConfig
     {
     public:
+        enum SectionNumberMode
+        {
+            None,
+            Read,
+            Edit
+        };
+
         MarkdownEditorConfig(ConfigMgr *p_mgr,
                              IConfig *p_topConfig,
                              const QSharedPointer<TextEditorConfig> &p_textEditorConfig);
@@ -45,8 +52,11 @@ namespace vnotex
         bool getInsertFileNameAsTitle() const;
         void setInsertFileNameAsTitle(bool p_enabled);
 
-        bool getSectionNumberEnabled() const;
-        void setSectionNumberEnabled(bool p_enabled);
+        SectionNumberMode getSectionNumberMode() const;
+        void setSectionNumberMode(SectionNumberMode p_mode);
+
+        int getSectionNumberBaseLevel() const;
+        void setSectionNumberBaseLevel(int p_level);
 
         bool getConstrainImageWidthEnabled() const;
         void setConstrainImageWidthEnabled(bool p_enabled);
@@ -72,6 +82,9 @@ namespace vnotex
         void setLinkifyEnabled(bool p_enabled);
 
     private:
+        QString sectionNumberModeToString(SectionNumberMode p_mode) const;
+        SectionNumberMode stringToSectionNumberMode(const QString &p_str) const;
+
         QSharedPointer<TextEditorConfig> m_textEditorConfig;
 
         ViewerResource m_viewerResource;
@@ -91,7 +104,10 @@ namespace vnotex
         bool m_insertFileNameAsTitle = true;
 
         // Whether enable section numbering.
-        bool m_sectionNumberEnabled = true;
+        SectionNumberMode m_sectionNumberMode = SectionNumberMode::Read;
+
+        // 1 based.
+        int m_sectionNumberBaseLevel = 2;
 
         // Whether enable image width constraint.
         bool m_constrainImageWidthEnabled = true;
