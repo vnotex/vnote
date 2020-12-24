@@ -6,6 +6,8 @@
 class QCheckBox;
 class QGroupBox;
 class QDoubleSpinBox;
+class QSpinBox;
+class QComboBox;
 
 namespace vnotex
 {
@@ -25,13 +27,13 @@ namespace vnotex
     private:
         void setupUI();
 
+        QGroupBox *setupGeneralGroup();
+
         QGroupBox *setupReadGroup();
 
         QGroupBox *setupEditGroup();
 
         QCheckBox *m_insertFileNameAsTitleCheckBox = nullptr;
-
-        QCheckBox *m_sectionNumberCheckBox = nullptr;
 
         QCheckBox *m_constrainImageWidthCheckBox = nullptr;
 
@@ -46,6 +48,10 @@ namespace vnotex
         QCheckBox *m_linkifyCheckBox = nullptr;
 
         QDoubleSpinBox *m_zoomFactorSpinBox = nullptr;
+
+        QComboBox *m_sectionNumberComboBox = nullptr;
+
+        QSpinBox *m_sectionNumberBaseLevelSpinBox = nullptr;
     };
 }
 

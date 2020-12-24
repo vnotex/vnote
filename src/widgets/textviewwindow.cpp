@@ -38,9 +38,7 @@ void TextViewWindow::setupUI()
         m_editor = new TextEditor(config, this);
         setCentralWidget(m_editor);
 
-        if (textEditorConfig.getZoomDelta() != 0) {
-            m_editor->zoom(textEditorConfig.getZoomDelta());
-        }
+        updateEditorFromConfig();
     }
 
     TextViewWindowHelper::connectEditor(this);
@@ -135,9 +133,7 @@ void TextViewWindow::handleEditorConfigChange()
         auto config = createTextEditorConfig(textEditorConfig);
         m_editor->setConfig(config);
 
-        if (textEditorConfig.getZoomDelta() != 0) {
-            m_editor->zoom(textEditorConfig.getZoomDelta());
-        }
+        updateEditorFromConfig();
     }
 }
 
@@ -208,4 +204,13 @@ void TextViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_optio
 void TextViewWindow::handleFindAndReplaceWidgetClosed()
 {
     TextViewWindowHelper::handleFindAndReplaceWidgetClosed(this);
+}
+
+void TextViewWindow::updateEditorFromConfig()
+{
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+    const auto &textEditorConfig = editorConfig.getTextEditorConfig();
+    if (textEditorConfig.getZoomDelta() != 0) {
+        m_editor->zoom(textEditorConfig.getZoomDelta());
+    }
 }

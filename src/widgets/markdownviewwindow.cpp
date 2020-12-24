@@ -186,9 +186,7 @@ void MarkdownViewWindow::handleEditorConfigChange()
             auto config = createMarkdownEditorConfig(markdownEditorConfig);
             m_editor->setConfig(config);
 
-            if (markdownEditorConfig.getTextEditorConfig().getZoomDelta() != 0) {
-                m_editor->zoom(markdownEditorConfig.getTextEditorConfig().getZoomDelta());
-            }
+            m_editor->updateFromConfig();
         }
 
         updateWebViewerConfig(markdownEditorConfig);
@@ -269,6 +267,8 @@ void MarkdownViewWindow::setupToolBar()
 
     toolBar->addSeparator();
 
+    addAction(toolBar, ViewWindowToolBarHelper::SectionNumber);
+
     addAction(toolBar, ViewWindowToolBarHelper::TypeHeading);
     addAction(toolBar, ViewWindowToolBarHelper::TypeBold);
     addAction(toolBar, ViewWindowToolBarHelper::TypeItalic);
@@ -305,10 +305,6 @@ void MarkdownViewWindow::setupTextEditor()
                                   createMarkdownEditorConfig(markdownEditorConfig),
                                   this);
     m_splitter->insertWidget(0, m_editor);
-
-    if (markdownEditorConfig.getTextEditorConfig().getZoomDelta() != 0) {
-        m_editor->zoom(markdownEditorConfig.getTextEditorConfig().getZoomDelta());
-    }
 
     TextViewWindowHelper::connectEditor(this);
 
@@ -680,6 +676,13 @@ void MarkdownViewWindow::handleTypeAction(TypeAction p_action)
     default:
         qWarning() << "TypeAction not handled" << p_action;
         break;
+    }
+}
+
+void MarkdownViewWindow::handleSectionNumberOverride(OverrideState p_state)
+{
+    if (m_mode != Mode::Read) {
+        m_editor->overrideSectionNumber(p_state);
     }
 }
 

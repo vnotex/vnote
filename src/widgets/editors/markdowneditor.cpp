@@ -37,6 +37,7 @@
 #include <utils/textutils.h>
 #include <core/exception.h>
 #include <core/markdowneditorconfig.h>
+#include <core/texteditorconfig.h>
 #include <core/configmgr.h>
 #include <core/editorconfig.h>
 
@@ -48,9 +49,13 @@ using namespace vnotex;
 // We set the property of the clipboard to mark that we are requesting a rich paste.
 static const char *c_clipboardPropertyMark = "RichPaste";
 
-MarkdownEditor::Heading::Heading(const QString &p_name, int p_level, int p_blockNumber)
+MarkdownEditor::Heading::Heading(const QString &p_name,
+                                 int p_level,
+                                 const QString &p_sectionNumber,
+                                 int p_blockNumber)
     : m_name(p_name),
       m_level(p_level),
+      m_sectionNumber(p_sectionNumber),
       m_blockNumber(p_blockNumber)
 {
 }
@@ -71,17 +76,25 @@ MarkdownEditor::MarkdownEditor(const MarkdownEditorConfig &p_config,
             this, &MarkdownEditor::handleContextMenuEvent);
 
     connect(getHighlighter(), &vte::PegMarkdownHighlighter::headersUpdated,
-            this, [this](const QVector<vte::peg::ElementRegion> &p_headerRegions) {
-                // TODO: insert heading sequence.
-                updateHeadings(p_headerRegions);
-            });
+            this, &MarkdownEditor::updateHeadings);
 
     m_headingTimer = new QTimer(this);
     m_headingTimer->setInterval(500);
+    m_headingTimer->setSingleShot(true);
     connect(m_headingTimer, &QTimer::timeout,
             this, &MarkdownEditor::currentHeadingChanged);
     connect(m_textEdit, &vte::VTextEdit::cursorLineChanged,
             m_headingTimer, QOverload<>::of(&QTimer::start));
+
+    m_sectionNumberTimer = new QTimer(this);
+    m_sectionNumberTimer->setInterval(1000);
+    m_sectionNumberTimer->setSingleShot(true);
+    connect(m_sectionNumberTimer, &QTimer::timeout,
+            this, [this]() {
+                updateSectionNumber(m_headings);
+            });
+
+    updateFromConfig(false);
 }
 
 MarkdownEditor::~MarkdownEditor()
@@ -719,13 +732,29 @@ int MarkdownEditor::getCurrentHeadingIndex() const
 
 void MarkdownEditor::updateHeadings(const QVector<vte::peg::ElementRegion> &p_headerRegions)
 {
-    auto doc = document();
+    bool needUpdateSectionNumber = false;
+    if (isReadOnly()) {
+        m_sectionNumberEnabled = false;
+    } else {
+        needUpdateSectionNumber = m_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Edit;
+        if (m_overriddenSectionNumber != OverrideState::NoOverride) {
+            needUpdateSectionNumber = m_overriddenSectionNumber == OverrideState::ForceEnable;
+        }
+        if (needUpdateSectionNumber) {
+            m_sectionNumberEnabled = true;
+        } else if (m_sectionNumberEnabled) {
+            // On -> Off. We still need to do the clean up.
+            needUpdateSectionNumber = true;
+            m_sectionNumberEnabled = false;
+        }
+    }
 
     QVector<Heading> headings;
     headings.reserve(p_headerRegions.size());
 
     // Assume that each block contains only one line.
     // Only support # syntax for now.
+    auto doc = document();
     QRegExp headerReg(vte::MarkdownUtils::c_headerRegExp);
     for (auto const &reg : p_headerRegions) {
         auto block = doc->findBlock(reg.m_startPos);
@@ -738,13 +767,21 @@ void MarkdownEditor::updateHeadings(const QVector<vte::peg::ElementRegion> &p_he
         }
 
         if (headerReg.exactMatch(block.text())) {
-            int level = headerReg.cap(1).length();
-            Heading heading(headerReg.cap(2).trimmed(), level, block.blockNumber());
+            const int level = headerReg.cap(1).length();
+            Heading heading(headerReg.cap(2).trimmed(),
+                            level,
+                            headerReg.cap(3),
+                            block.blockNumber());
             headings.append(heading);
         }
     }
 
     OutlineProvider::makePerfectHeadings(headings, m_headings);
+
+    if (needUpdateSectionNumber) {
+        // Use a timer to kick off the update to let user have time to undo.
+        m_sectionNumberTimer->start();
+    }
 
     emit headingsChanged();
 
@@ -1044,4 +1081,122 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
     }
 
     proDlg.setValue(regs.size());
+}
+
+static void increaseSectionNumber(QVector<int> &p_sectionNumber, int p_level, int p_baseLevel)
+{
+    Q_ASSERT(p_level >= 1 && p_level < p_sectionNumber.size());
+    if (p_level < p_baseLevel) {
+        p_sectionNumber.fill(0);
+        return;
+    }
+
+    ++p_sectionNumber[p_level];
+    for (int i = p_level + 1; i < p_sectionNumber.size(); ++i) {
+        p_sectionNumber[i] = 0;
+    }
+}
+
+static QString joinSectionNumberStr(const QVector<int> &p_sectionNumber)
+{
+    QString res;
+    for (auto sec : p_sectionNumber) {
+        if (sec != 0) {
+            res = res + QString::number(sec) + '.';
+        } else if (res.isEmpty()) {
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    return res;
+}
+
+static bool updateHeadingSectionNumber(QTextCursor &p_cursor,
+                                       const QTextBlock &p_block,
+                                       QRegExp &p_headingReg,
+                                       QRegExp &p_prefixReg,
+                                       const QString &p_sectionNumber)
+{
+    if (!p_block.isValid()) {
+        return false;
+    }
+
+    QString text = p_block.text();
+    bool matched = p_headingReg.exactMatch(text);
+    Q_ASSERT(matched);
+
+    matched = p_prefixReg.exactMatch(text);
+    Q_ASSERT(matched);
+
+    int start = p_headingReg.cap(1).length() + 1;
+    int end = p_prefixReg.cap(1).length();
+
+    Q_ASSERT(start <= end);
+
+    p_cursor.setPosition(p_block.position() + start);
+    if (start != end) {
+        p_cursor.setPosition(p_block.position() + end, QTextCursor::KeepAnchor);
+    }
+
+    if (p_sectionNumber.isEmpty()) {
+        p_cursor.removeSelectedText();
+    } else {
+        p_cursor.insertText(p_sectionNumber + ' ');
+    }
+    return true;
+}
+
+bool MarkdownEditor::updateSectionNumber(const QVector<Heading> &p_headings)
+{
+    QVector<int> sectionNumber(7, 0);
+    int baseLevel = m_config.getSectionNumberBaseLevel();
+    if (baseLevel < 1 || baseLevel > 6) {
+        baseLevel = 1;
+    }
+
+    bool changed = false;
+    auto doc = document();
+    QRegExp headerReg(vte::MarkdownUtils::c_headerRegExp);
+    QRegExp prefixReg(vte::MarkdownUtils::c_headerPrefixRegExp);
+    QTextCursor cursor(doc);
+    cursor.beginEditBlock();
+    for (const auto &heading : p_headings) {
+        increaseSectionNumber(sectionNumber, heading.m_level, baseLevel);
+        auto sectionStr = m_sectionNumberEnabled ? joinSectionNumberStr(sectionNumber) : QString();
+        if (heading.m_blockNumber > -1 && sectionStr != heading.m_sectionNumber) {
+            if (updateHeadingSectionNumber(cursor,
+                                           doc->findBlockByNumber(heading.m_blockNumber),
+                                           headerReg,
+                                           prefixReg,
+                                           sectionStr)) {
+                changed = true;
+            }
+        }
+    }
+    cursor.endEditBlock();
+
+    return changed;
+}
+
+void MarkdownEditor::overrideSectionNumber(OverrideState p_state)
+{
+    if (m_overriddenSectionNumber == p_state) {
+        return;
+    }
+
+    m_overriddenSectionNumber = p_state;
+    getHighlighter()->updateHighlight();
+}
+
+void MarkdownEditor::updateFromConfig(bool p_initialized)
+{
+    if (m_config.getTextEditorConfig().getZoomDelta() != 0) {
+        zoom(m_config.getTextEditorConfig().getZoomDelta());
+    }
+
+    if (p_initialized) {
+        getHighlighter()->updateHighlight();
+    }
 }

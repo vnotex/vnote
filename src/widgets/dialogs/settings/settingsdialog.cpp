@@ -13,6 +13,7 @@
 #include "texteditorpage.h"
 #include "markdowneditorpage.h"
 #include "appearancepage.h"
+#include "themepage.h"
 
 using namespace vnotex;
 
@@ -72,45 +73,36 @@ void SettingsDialog::setupPages()
     // General.
     {
         auto page = new GeneralPage(this);
-        m_pageLayout->addWidget(page);
-
-        auto item = new QTreeWidgetItem(m_pageExplorer);
-        setupPage(item, page);
+        addPage(page);
     }
 
     // Appearance.
     {
         auto page = new AppearancePage(this);
-        m_pageLayout->addWidget(page);
+        auto item = addPage(page);
 
-        auto item = new QTreeWidgetItem(m_pageExplorer);
-        setupPage(item, page);
+        // Theme.
+        {
+            auto subPage = new ThemePage(this);
+            addSubPage(subPage, item);
+        }
     }
 
     // Editor.
     {
         auto page = new EditorPage(this);
-        m_pageLayout->addWidget(page);
-
-        auto item = new QTreeWidgetItem(m_pageExplorer);
-        setupPage(item, page);
+        auto item = addPage(page);
 
         // Text Editor.
         {
             auto subPage = new TextEditorPage(this);
-            m_pageLayout->addWidget(subPage);
-
-            auto subItem = new QTreeWidgetItem(item);
-            setupPage(subItem, subPage);
+            addSubPage(subPage, item);
         }
 
         // Markdown Editor.
         {
             auto subPage = new MarkdownEditorPage(this);
-            m_pageLayout->addWidget(subPage);
-
-            auto subItem = new QTreeWidgetItem(item);
-            setupPage(subItem, subPage);
+            addSubPage(subPage, item);
         }
     }
 
@@ -190,4 +182,22 @@ void SettingsDialog::forEachPage(const std::function<void(SettingsPage *)> &p_fu
         auto page = dynamic_cast<SettingsPage *>(m_pageLayout->widget(i));
         p_func(page);
     }
+}
+
+QTreeWidgetItem *SettingsDialog::addPage(SettingsPage *p_page)
+{
+    m_pageLayout->addWidget(p_page);
+
+    auto item = new QTreeWidgetItem(m_pageExplorer);
+    setupPage(item, p_page);
+    return item;
+}
+
+QTreeWidgetItem *SettingsDialog::addSubPage(SettingsPage *p_page, QTreeWidgetItem *p_parentItem)
+{
+    m_pageLayout->addWidget(p_page);
+
+    auto subItem = new QTreeWidgetItem(p_parentItem);
+    setupPage(subItem, p_page);
+    return subItem;
 }

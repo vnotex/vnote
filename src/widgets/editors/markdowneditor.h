@@ -31,11 +31,17 @@ namespace vnotex
         {
             Heading() = default;
 
-            Heading(const QString &p_name, int p_level, int p_blockNumber = -1);
+            Heading(const QString &p_name,
+                    int p_level,
+                    const QString &p_sectionNumber = QString(),
+                    int p_blockNumber = -1);
 
             QString m_name;
 
             int m_level = -1;
+
+            // 1.2. .
+            QString m_sectionNumber;
 
             int m_blockNumber = -1;
         };
@@ -83,6 +89,10 @@ namespace vnotex
         int getCurrentHeadingIndex() const;
 
         void scrollToHeading(int p_idx);
+
+        void overrideSectionNumber(OverrideState p_state);
+
+        void updateFromConfig(bool p_initialized = true);
 
     public slots:
         void handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text);
@@ -148,6 +158,8 @@ namespace vnotex
 
         QString getRelativeLink(const QString &p_path);
 
+        // Update section number.
+        // Update headings outline.
         void updateHeadings(const QVector<vte::peg::ElementRegion> &p_headerRegions);
 
         int getHeadingIndexByBlockNumber(int p_blockNumber) const;
@@ -155,6 +167,9 @@ namespace vnotex
         void setupShortcuts();
 
         void fetchImagesToLocalAndReplace(QString &p_text);
+
+        // Return true if there is change.
+        bool updateSectionNumber(const QVector<Heading> &p_headings);
 
         static QString generateImageFileNameToInsertAs(const QString &p_title, const QString &p_suffix);
 
@@ -168,6 +183,13 @@ namespace vnotex
         TimeStamp m_timeStamp = 0;
 
         QTimer *m_headingTimer = nullptr;
+
+        QTimer *m_sectionNumberTimer = nullptr;
+
+        // Used to detect the config change and do a clean up.
+        bool m_sectionNumberEnabled = true;
+
+        OverrideState m_overriddenSectionNumber = OverrideState::NoOverride;
     };
 }
 

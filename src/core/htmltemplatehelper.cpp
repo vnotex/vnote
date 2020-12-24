@@ -155,7 +155,7 @@ void HtmlTemplateHelper::updateMarkdownViewerTemplate(const MarkdownEditorConfig
         WebGlobalOptions opts;
         opts.m_webPlantUml = p_config.getWebPlantUml();
         opts.m_webGraphviz = p_config.getWebGraphviz();
-        opts.m_sectionNumberEnabled = p_config.getSectionNumberEnabled();
+        opts.m_sectionNumberEnabled = p_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Read;
         opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
         opts.m_protectFromXss = p_config.getProtectFromXss();
         opts.m_htmlTagEnabled = p_config.getHtmlTagEnabled();

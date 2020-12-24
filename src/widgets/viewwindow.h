@@ -137,6 +137,8 @@ namespace vnotex
         // Handle all kinds of type action.
         virtual void handleTypeAction(TypeAction p_action);
 
+        virtual void handleSectionNumberOverride(OverrideState p_state);
+
         virtual void handleFindTextChanged(const QString &p_text, FindOptions p_options);
 
         virtual void handleFindNext(const QString &p_text, FindOptions p_options);

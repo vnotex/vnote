@@ -292,6 +292,7 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
     isExit = true;
 #endif
 
+    bool needShowMessage = false;
     if(!isExit && toTray == -1){
         int ret =  MessageBoxHelper::questionYesNo(MessageBoxHelper::Question,
                                                    tr("Do you want to minimize %1 to system tray "
@@ -301,6 +302,7 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
                                                    this);
         if (ret == QMessageBox::Yes) {
             ConfigMgr::getInst().getSessionConfig().setMinimizeToSystemTray(true);
+            needShowMessage = true;
         } else if (ret == QMessageBox::No) {
             ConfigMgr::getInst().getSessionConfig().setMinimizeToSystemTray(false);
             isExit = true;
@@ -330,6 +332,9 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
     } else {
         hide();
         p_event->ignore();
+        if (needShowMessage) {
+            m_trayIcon->showMessage(ConfigMgr::c_appName, tr("%1 is still running here.").arg(ConfigMgr::c_appName));
+        }
     }
 }
 

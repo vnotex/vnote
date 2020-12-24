@@ -49,6 +49,8 @@ namespace vnotex
 
         void handleTypeAction(TypeAction p_action) Q_DECL_OVERRIDE;
 
+        void handleSectionNumberOverride(OverrideState p_state) Q_DECL_OVERRIDE;
+
         void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
 
         void handleFindNext(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;

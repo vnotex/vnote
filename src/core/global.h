@@ -72,6 +72,13 @@ namespace vnotex
         IncrementalSearch = 0x10U
     };
     Q_DECLARE_FLAGS(FindOptions, FindOption);
+
+    enum OverrideState
+    {
+        NoOverride = 0,
+        ForceEnable = 1,
+        ForceDisable = 2
+    };
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);
