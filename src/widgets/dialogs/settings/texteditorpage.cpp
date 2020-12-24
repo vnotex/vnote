@@ -117,6 +117,20 @@ void TextEditorPage::setupUI()
         connect(m_tabStopWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
                 this, &TextEditorPage::pageIsChanged);
     }
+
+    {
+        m_zoomDeltaSpinBox = WidgetsFactory::createSpinBox(this);
+        m_zoomDeltaSpinBox->setToolTip(tr("Zoom delta of the basic font size"));
+
+        m_zoomDeltaSpinBox->setRange(-20, 20);
+        m_zoomDeltaSpinBox->setSingleStep(1);
+
+        const QString label(tr("Zoom delta:"));
+        mainLayout->addRow(label, m_zoomDeltaSpinBox);
+        addSearchItem(label, m_zoomDeltaSpinBox->toolTip(), m_zoomDeltaSpinBox);
+        connect(m_zoomDeltaSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+                this, &TextEditorPage::pageIsChanged);
+    }
 }
 
 void TextEditorPage::loadInternal()
@@ -152,6 +166,8 @@ void TextEditorPage::loadInternal()
     m_expandTabCheckBox->setChecked(textConfig.getExpandTabEnabled());
 
     m_tabStopWidthSpinBox->setValue(textConfig.getTabStopWidth());
+
+    m_zoomDeltaSpinBox->setValue(textConfig.getZoomDelta());
 }
 
 void TextEditorPage::saveInternal()
@@ -183,6 +199,8 @@ void TextEditorPage::saveInternal()
     textConfig.setExpandTabEnabled(m_expandTabCheckBox->isChecked());
 
     textConfig.setTabStopWidth(m_tabStopWidthSpinBox->value());
+
+    textConfig.setZoomDelta(m_zoomDeltaSpinBox->value());
 
     EditorPage::notifyEditorConfigChange();
 }

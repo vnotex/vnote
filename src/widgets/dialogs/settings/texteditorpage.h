@@ -38,6 +38,8 @@ namespace vnotex
         QCheckBox *m_expandTabCheckBox = nullptr;
 
         QSpinBox *m_tabStopWidthSpinBox = nullptr;
+
+        QSpinBox *m_zoomDeltaSpinBox = nullptr;
     };
 }
 

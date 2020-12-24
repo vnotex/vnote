@@ -5,6 +5,7 @@
 
 class QCheckBox;
 class QGroupBox;
+class QDoubleSpinBox;
 
 namespace vnotex
 {
@@ -43,6 +44,8 @@ namespace vnotex
         QCheckBox *m_autoBreakCheckBox = nullptr;
 
         QCheckBox *m_linkifyCheckBox = nullptr;
+
+        QDoubleSpinBox *m_zoomFactorSpinBox = nullptr;
     };
 }
 
