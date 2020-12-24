@@ -45,7 +45,7 @@ You could help VNote's development in many ways.
 * Keep monitoring VNote and sending feedback for improvement.
 * Spread and promote VNote to your friends. Popularity is a strong power to drive developers.
 * Participate in the development of VNote and send [Pull Request](https://github.com/vnotex/vnote/pulls) to make VNote perfect.
-* Last, really appreciate your donate to VNote if VNote does help.
+* Last, really appreciate your donations to VNote if VNote does help.
 
 **PayPal**: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
 
