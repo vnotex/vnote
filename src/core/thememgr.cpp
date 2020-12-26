@@ -8,6 +8,8 @@
 #include "exception.h"
 #include <utils/iconutils.h>
 #include <vtextedit/vtexteditor.h>
+#include "configmgr.h"
+#include "coreconfig.h"
 
 using namespace vnotex;
 
@@ -37,11 +39,13 @@ QString ThemeMgr::getIconFile(const QString &p_icon) const
 
 void ThemeMgr::loadAvailableThemes()
 {
+    m_themes.clear();
+
     for (const auto &pa : s_searchPaths) {
         loadThemes(pa);
     }
 
-    if (m_availableThemes.isEmpty()) {
+    if (m_themes.isEmpty()) {
         Exception::throwOne(Exception::Type::EssentialFileMissing,
                             QString("no available themes found in paths: %1").arg(s_searchPaths.join(QLatin1Char(';'))));
     }
@@ -53,17 +57,21 @@ void ThemeMgr::loadThemes(const QString &p_path)
     QDir dir(p_path);
     dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     auto themeFolders = dir.entryList();
+    const auto localeStr = ConfigMgr::getInst().getCoreConfig().getLocaleToUse();
     for (auto &folder : themeFolders) {
-        checkAndAddThemeFolder(PathUtils::concatenateFilePath(p_path, folder));
+        checkAndAddThemeFolder(PathUtils::concatenateFilePath(p_path, folder), localeStr);
     }
 }
 
-void ThemeMgr::checkAndAddThemeFolder(const QString &p_folder)
+void ThemeMgr::checkAndAddThemeFolder(const QString &p_folder, const QString &p_locale)
 {
     if (Theme::isValidThemeFolder(p_folder)) {
-        QString themeName = PathUtils::dirName(p_folder);
-        m_availableThemes.insert(themeName, p_folder);
-        qDebug() << "add theme" << themeName << p_folder;
+        ThemeInfo info;
+        info.m_name = PathUtils::dirName(p_folder);
+        info.m_displayName = Theme::getDisplayName(p_folder, p_locale);
+        info.m_folderPath = p_folder;
+        m_themes.push_back(info);
+        qDebug() << "add theme" << info.m_name << info.m_displayName << info.m_folderPath;
     }
 }
 
@@ -76,14 +84,14 @@ void ThemeMgr::loadCurrentTheme(const QString &p_themeName)
 {
     auto themeFolder = findThemeFolder(p_themeName);
     if (themeFolder.isNull()) {
-        qCritical() << "fail to locate theme" << p_themeName;
+        qWarning() << "failed to locate theme" << p_themeName;
     } else {
         m_currentTheme.reset(loadTheme(themeFolder));
     }
 
     if (!m_currentTheme) {
         const QString defaultTheme("native");
-        qInfo() << "fall back to default theme" << defaultTheme;
+        qWarning() << "fall back to default theme" << defaultTheme;
         m_currentTheme.reset(loadTheme(findThemeFolder(defaultTheme)));
     }
 }
@@ -91,28 +99,38 @@ void ThemeMgr::loadCurrentTheme(const QString &p_themeName)
 Theme *ThemeMgr::loadTheme(const QString &p_themeFolder)
 {
     if (p_themeFolder.isEmpty()) {
-        qCritical("fail to load theme from empty folder");
+        qWarning("failed to load theme from empty folder");
         return nullptr;
     }
 
     try {
         return Theme::fromFolder(p_themeFolder);
     } catch (Exception &p_e) {
-        qCritical("fail to load theme from folder %s (%s)",
-                  p_themeFolder.toStdString().c_str(),
-                  p_e.what());
+        qWarning("failed to load theme from folder %s (%s)",
+                 p_themeFolder.toStdString().c_str(),
+                 p_e.what());
         return nullptr;
     }
 }
 
 QString ThemeMgr::findThemeFolder(const QString &p_name) const
 {
-    auto it = m_availableThemes.find(p_name);
-    if (it != m_availableThemes.end()) {
-        return it.value();
+    auto theme = findTheme(p_name);
+    if (theme) {
+        return theme->m_folderPath;
+    }
+    return QString();
+}
+
+const ThemeMgr::ThemeInfo *ThemeMgr::findTheme(const QString &p_name) const
+{
+    for (const auto &info : m_themes) {
+        if (info.m_name == p_name) {
+            return &info;
+        }
     }
 
-    return QString();
+    return nullptr;
 }
 
 QString ThemeMgr::fetchQtStyleSheet() const
@@ -164,4 +182,23 @@ const QColor &ThemeMgr::getBaseBackground() const
 void ThemeMgr::setBaseBackground(const QColor &p_bg)
 {
     m_baseBackground = p_bg;
+}
+
+const QVector<ThemeMgr::ThemeInfo> &ThemeMgr::getAllThemes() const
+{
+    return m_themes;
+}
+
+QPixmap ThemeMgr::getThemePreview(const QString &p_name) const
+{
+    auto theme = findTheme(p_name);
+    if (theme) {
+        return Theme::getCover(theme->m_folderPath);
+    }
+    return QPixmap();
+}
+
+void ThemeMgr::refresh()
+{
+    loadAvailableThemes();
 }

@@ -5,6 +5,7 @@
 #include <QHash>
 #include <QJsonObject>
 #include <QPair>
+#include <QPixmap>
 
 namespace tests
 {
@@ -26,6 +27,7 @@ namespace vnotex
             MarkdownEditorStyle,
             EditorHighlightStyle,
             MarkdownEditorHighlightStyle,
+            Cover,
             Max
         };
 
@@ -42,9 +44,15 @@ namespace vnotex
         // Return the file path of the theme or just the theme name.
         QString getMarkdownEditorHighlightTheme() const;
 
+        QString name() const;
+
         static bool isValidThemeFolder(const QString &p_folder);
 
         static Theme *fromFolder(const QString &p_folder);
+
+        static QString getDisplayName(const QString &p_folder, const QString &p_locale);
+
+        static QPixmap getCover(const QString &p_folder);
 
     private:
         struct Metadata
@@ -99,6 +107,8 @@ namespace vnotex
         static void translateScaledSize(qreal p_factor, QString &p_style);
 
         static QJsonObject readJsonFile(const QString &p_filePath);
+
+        static QJsonObject readPaletteFile(const QString &p_folder);
 
         // Whether @p_str is a reference definition like "@xxxx".
         static bool isRef(const QString &p_str);

@@ -20,6 +20,7 @@
 #include <QModelIndex>
 #include <QFontDatabase>
 #include <QMenu>
+#include <QDebug>
 
 using namespace vnotex;
 
@@ -188,29 +189,62 @@ void WidgetUtils::resizeToHideScrollBarLater(QScrollArea *p_scroll, bool p_verti
 
 void WidgetUtils::resizeToHideScrollBar(QScrollArea *p_scroll, bool p_vertical, bool p_horizontal)
 {
-    p_scroll->adjustSize();
+    bool changed = false;
+    auto parentWidget = p_scroll->parentWidget();
 
     if (p_horizontal && WidgetUtils::isScrollBarVisible(p_scroll, true)) {
         auto scrollBar = p_scroll->horizontalScrollBar();
         auto delta = scrollBar->maximum() - scrollBar->minimum();
-        int newWidth = p_scroll->width() + delta;
         auto availableSize = WidgetUtils::availableScreenSize(p_scroll);
-        if (newWidth <= availableSize.width()) {
-            p_scroll->resize(newWidth, p_scroll->height());
+
+        if (parentWidget) {
+            int newWidth = parentWidget->width() + delta;
+            if (newWidth <= availableSize.width()) {
+                changed = true;
+                p_scroll->resize(p_scroll->width() + delta, p_scroll->height());
+                auto geo = parentWidget->geometry();
+                parentWidget->setGeometry(geo.x() - delta / 2,
+                                          geo.y(),
+                                          newWidth,
+                                          geo.height());
+            }
+        } else {
+            int newWidth = p_scroll->width() + delta;
+            if (newWidth <= availableSize.width()) {
+                changed = true;
+                p_scroll->resize(newWidth, p_scroll->height());
+            }
         }
     }
 
     if (p_vertical && WidgetUtils::isScrollBarVisible(p_scroll, false)) {
         auto scrollBar = p_scroll->verticalScrollBar();
         auto delta = scrollBar->maximum() - scrollBar->minimum();
-        int newHeight = p_scroll->height() + delta;
         auto availableSize = WidgetUtils::availableScreenSize(p_scroll);
-        if (newHeight <= availableSize.height()) {
-            p_scroll->resize(p_scroll->width(), newHeight);
+
+        if (parentWidget) {
+            int newHeight = parentWidget->height() + delta;
+            if (newHeight <= availableSize.height()) {
+                changed = true;
+                p_scroll->resize(p_scroll->width(), p_scroll->height() + delta);
+                auto geo = parentWidget->geometry();
+                parentWidget->setGeometry(geo.x(),
+                                          geo.y() - delta / 2,
+                                          geo.width(),
+                                          newHeight);
+            }
+        } else {
+            int newHeight = p_scroll->height() + delta;
+            if (newHeight <= availableSize.height()) {
+                changed = true;
+                p_scroll->resize(p_scroll->width(), newHeight);
+            }
         }
     }
 
-    p_scroll->updateGeometry();
+    if (changed) {
+        p_scroll->updateGeometry();
+    }
 }
 
 QShortcut *WidgetUtils::createShortcut(const QString &p_shortcut,

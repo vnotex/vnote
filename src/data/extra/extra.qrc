@@ -5,6 +5,7 @@
         <file>themes/native/interface.qss</file>
         <file>themes/native/web.css</file>
         <file>themes/native/palette.json</file>
+        <file>themes/native/cover.png</file>
         <file>docs/en/get_started.txt</file>
         <file>docs/en/about_vnotex.txt</file>
         <file>docs/en/shortcuts.md</file>

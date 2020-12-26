@@ -4,10 +4,11 @@
 #include <QObject>
 
 #include <QString>
-#include <QHash>
 #include <QScopedPointer>
 #include <QStringList>
+#include <QVector>
 #include <QColor>
+#include <QPixmap>
 
 #include "theme.h"
 
@@ -17,6 +18,17 @@ namespace vnotex
     {
         Q_OBJECT
     public:
+        struct ThemeInfo
+        {
+            // Id.
+            QString m_name;
+
+            // Locale supported.
+            QString m_displayName;
+
+            QString m_folderPath;
+        };
+
         ThemeMgr(const QString &p_currentThemeName, QObject *p_parent = nullptr);
 
         // @p_icon: file path or file name of the icon.
@@ -40,6 +52,18 @@ namespace vnotex
         const QColor &getBaseBackground() const;
         void setBaseBackground(const QColor &p_bg);
 
+        const QVector<ThemeInfo> &getAllThemes() const;
+
+        const Theme &getCurrentTheme() const;
+
+        QPixmap getThemePreview(const QString &p_name) const;
+
+        const ThemeInfo *findTheme(const QString &p_name) const;
+
+        // Refresh the themes list.
+        // Won't affect current theme since we do not support changing theme real time for now.
+        void refresh();
+
         static void addSearchPath(const QString &p_path);
 
         static void addSyntaxHighlightingSearchPaths(const QStringList &p_paths);
@@ -49,9 +73,7 @@ namespace vnotex
 
         void loadThemes(const QString &p_path);
 
-        void checkAndAddThemeFolder(const QString &p_folder);
-
-        const Theme &getCurrentTheme() const;
+        void checkAndAddThemeFolder(const QString &p_folder, const QString &p_locale);
 
         void loadCurrentTheme(const QString &p_themeName);
 
@@ -59,8 +81,7 @@ namespace vnotex
 
         QString findThemeFolder(const QString &p_name) const;
 
-        // Theme name to folder path mapping.
-        QHash<QString, QString> m_availableThemes;
+        QVector<ThemeInfo> m_themes;
 
         QScopedPointer<Theme> m_currentTheme;
 

@@ -41,12 +41,35 @@ bool Theme::isValidThemeFolder(const QString &p_folder)
     return true;
 }
 
+QString Theme::getDisplayName(const QString &p_folder, const QString &p_locale)
+{
+    auto obj = readPaletteFile(p_folder);
+    const auto metaObj = obj[QStringLiteral("metadata")].toObject();
+    QString prefix("display_name");
+
+    if (!p_locale.isEmpty()) {
+        // Check full locale.
+        auto fullLocale = QString("%1_%2").arg(prefix, p_locale);
+        if (metaObj.contains(fullLocale)) {
+            return metaObj.value(fullLocale).toString();
+        }
+
+        auto shortLocale = QString("%1_%2").arg(prefix, p_locale.split('_')[0]);
+        if (metaObj.contains(shortLocale)) {
+            return metaObj.value(shortLocale).toString();
+        }
+    }
+
+    if (metaObj.contains(prefix)) {
+        return metaObj.value(prefix).toString();
+    }
+    return PathUtils::dirName(p_folder);
+}
+
 Theme *Theme::fromFolder(const QString &p_folder)
 {
     Q_ASSERT(!p_folder.isEmpty());
-    QDir dir(p_folder);
-
-    auto obj = readJsonFile(QDir(p_folder).filePath(getFileName(File::Palette)));
+    auto obj = readPaletteFile(p_folder);
     auto metadata = readMetadata(obj);
     auto paletteObj = translatePalette(obj);
     return new Theme(p_folder,
@@ -312,6 +335,12 @@ QJsonObject Theme::readJsonFile(const QString &p_filePath)
     return QJsonDocument::fromJson(bytes).object();
 }
 
+QJsonObject Theme::readPaletteFile(const QString &p_folder)
+{
+    auto obj = readJsonFile(QDir(p_folder).filePath(getFileName(File::Palette)));
+    return obj;
+}
+
 QJsonValue Theme::findValueByKeyPath(const Palette &p_palette, const QString &p_keyPath)
 {
     auto keys = p_keyPath.split('#');
@@ -366,6 +395,8 @@ QString Theme::getFileName(File p_fileType)
         return QStringLiteral("editor-highlight.theme");
     case File::MarkdownEditorHighlightStyle:
         return QStringLiteral("markdown-editor-highlight.theme");
+    case File::Cover:
+        return QStringLiteral("cover.png");
     default:
         Q_ASSERT(false);
         return "";
@@ -394,4 +425,19 @@ QString Theme::getMarkdownEditorHighlightTheme() const
     }
 
     return getEditorHighlightTheme();
+}
+
+QString Theme::name() const
+{
+    return PathUtils::dirName(m_themeFolderPath);
+}
+
+QPixmap Theme::getCover(const QString &p_folder)
+{
+    QDir dir(p_folder);
+    if (dir.exists(getFileName(File::Cover))) {
+        const auto coverFile = dir.filePath(getFileName(File::Cover));
+        return QPixmap(coverFile);
+    }
+    return QPixmap();
 }

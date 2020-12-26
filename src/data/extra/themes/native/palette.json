@@ -7,7 +7,10 @@
         "//comment" : "If there is a file named 'markdown-editor-highlight.theme' under theme folder, this value will be ignored.",
         "//comment" : "Otherwise, this value specify the theme name to use.",
         "//comment" : "If empty, editor-highlight-theme will be used.",
-        "markdown-editor-highlight-theme" : "Markdown Default"
+        "markdown-editor-highlight-theme" : "Markdown Default",
+        "display_name" : "Native",
+        "//comment" : "Display name for different locales",
+        "display_name_zh_CN" : "原素"
     },
     "base" : {
         "fg1" : "#31373c",

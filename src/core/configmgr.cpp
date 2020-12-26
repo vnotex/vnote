@@ -315,7 +315,9 @@ QString ConfigMgr::getAppThemeFolder() const
 
 QString ConfigMgr::getUserThemeFolder() const
 {
-    return PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("themes"));
+    auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("themes"));
+    QDir().mkpath(folderPath);
+    return folderPath;
 }
 
 QString ConfigMgr::getAppDocsFolder() const
@@ -325,7 +327,9 @@ QString ConfigMgr::getAppDocsFolder() const
 
 QString ConfigMgr::getUserDocsFolder() const
 {
-    return PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("docs"));
+    auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("docs"));
+    QDir().mkpath(folderPath);
+    return folderPath;
 }
 
 QString ConfigMgr::getAppSyntaxHighlightingFolder() const

@@ -35,7 +35,7 @@ void SettingsDialog::setupUI()
     setupPageExplorer(mainLayout, widget);
 
     m_pageLayout = new QStackedLayout();
-    mainLayout->addLayout(m_pageLayout, 3);
+    mainLayout->addLayout(m_pageLayout, 5);
 
     setDialogButtonBox(QDialogButtonBox::Ok
                        | QDialogButtonBox::Apply
@@ -56,6 +56,7 @@ void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent)
     m_pageExplorer = new TreeWidget(TreeWidget::None, p_parent);
     TreeWidget::setupSingleColumnHeaderlessTree(m_pageExplorer, false, false);
     TreeWidget::showHorizontalScrollbar(m_pageExplorer);
+    m_pageExplorer->setMinimumWidth(128);
     layout->addWidget(m_pageExplorer);
 
     connect(m_pageExplorer, &QTreeWidget::currentItemChanged,
@@ -65,7 +66,7 @@ void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent)
                 m_pageLayout->setCurrentWidget(page);
             });
 
-    p_layout->addLayout(layout, 1);
+    p_layout->addLayout(layout, 2);
 }
 
 void SettingsDialog::setupPages()

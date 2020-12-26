@@ -3,6 +3,9 @@
 
 #include "settingspage.h"
 
+class QListWidget;
+class QLabel;
+
 namespace vnotex
 {
     class ThemePage : public SettingsPage
@@ -20,6 +23,18 @@ namespace vnotex
 
     private:
         void setupUI();
+
+        void loadThemes();
+
+        void loadThemePreview(const QString &p_name);
+
+        QString currentTheme() const;
+
+        QListWidget *m_themeListWidget = nullptr;
+
+        QLabel *m_previewLabel = nullptr;
+
+        QString m_noPreviewText;
     };
 }
 
