@@ -1100,9 +1100,14 @@ static void increaseSectionNumber(QVector<int> &p_sectionNumber, int p_level, in
 static QString joinSectionNumberStr(const QVector<int> &p_sectionNumber)
 {
     QString res;
+    // TODO: make it configurable? 1.1 or 1.1.?
     for (auto sec : p_sectionNumber) {
         if (sec != 0) {
-            res = res + QString::number(sec) + '.';
+            if (res.isEmpty()) {
+                res = QString::number(sec);
+            } else {
+                res += '.' + QString::number(sec);
+            }
         } else if (res.isEmpty()) {
             continue;
         } else {
