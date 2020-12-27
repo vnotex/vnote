@@ -13,7 +13,7 @@ namespace vnotex
 
         static const char *s_toolButtonWithoutMenuIndicator;
 
-        static const char *s_dangerousButton;
+        static const char *s_dangerButton;
 
         // Values: info/warning/error.
         static const char *s_state;

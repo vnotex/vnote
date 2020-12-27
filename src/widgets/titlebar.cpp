@@ -20,7 +20,7 @@ const QString TitleBar::c_actionButtonForegroundName = "widgets#titlebar#button#
 
 const QString TitleBar::c_menuIconForegroundName = "widgets#titlebar#menu_icon#fg";
 
-const QString TitleBar::c_menuIconDisabledForegroundName = "widgets#titlebar#menu_icon#disabled_fg";
+const QString TitleBar::c_menuIconDisabledForegroundName = "widgets#titlebar#menu_icon#disabled#fg";
 
 TitleBar::TitleBar(const QString &p_title,
                    TitleBar::Actions p_actionFlags,

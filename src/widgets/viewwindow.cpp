@@ -125,7 +125,7 @@ void ViewWindow::initIcons()
 
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
     const QString savedIconName("saved.svg");
-    const QString unsavedIconFg("base#icon#warning_fg");
+    const QString unsavedIconFg("base#icon#warning#fg");
     s_savedIcon = IconUtils::fetchIcon(themeMgr.getIconFile(savedIconName));
     s_modifiedIcon = IconUtils::fetchIcon(themeMgr.getIconFile(savedIconName),
                                           themeMgr.paletteColor(unsavedIconFg));

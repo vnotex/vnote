@@ -1,6 +1,6 @@
 /* Qt Style Sheets file
  * Please refer to https://doc.qt.io/qt-5.12/stylesheet-reference.html
- * for detail inforamtion.
+ * for detailed inforamtion.
  * VNote specific syntax:
  *  - @widgets#toolbox#title#border: reference to a color defined in palette.ini;
  *  - $2px: 2 will be scaled by multiplying current display scaled factor.
@@ -22,8 +22,8 @@ vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"] {
 vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"]:checked {
     font-weight: bold;
     /* Reverse */
-    color: @widgets#toolbox#title#button#active_fg;
-    background-color: @widgets#toolbox#title#button#active_bg;
+    color: @widgets#toolbox#title#button#active#fg;
+    background-color: @widgets#toolbox#title#button#active#bg;
 }
 
 /* TitleBar */
@@ -85,9 +85,9 @@ QToolButton[NoMenuIndicator="true"]::menu-indicator {
 }
 
 /* QPushButton, QToolButton */
-QPushButton[DangerousButton="true"]:hover, QToolButton[DangerousButton="true"]:hover {
-    color: @base#dangerous_fg;
-    background-color: @base#dangerous_bg;
+QPushButton[DangerButton="true"]:hover, QToolButton[DangerButton="true"]:hover {
+    color: @base#danger#fg;
+    background-color: @base#danger#bg;
     border: none;
 }
 
@@ -106,13 +106,13 @@ vnotex--DragDropAreaIndicator QLabel {
 
 /* All widgets */
 *[State="info"] {
-    border: 2px solid @base#info_fg;
+    border: 2px solid @base#info#fg;
 }
 
 *[State="warning"] {
-    border: 2px solid @base#warning_fg;
+    border: 2px solid @base#warning#fg;
 }
 
 *[State="error"] {
-    border: 2px solid @base#error_fg;
+    border: 2px solid @base#error#fg;
 }

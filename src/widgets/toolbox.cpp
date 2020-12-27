@@ -22,7 +22,7 @@ const char *ToolBox::c_titleButtonProp = "ToolBoxTitleButton";
 
 const QString ToolBox::c_titleButtonForegroundName = "widgets#toolbox#title#button#fg";
 
-const QString ToolBox::c_titleButtonActiveForegroundName = "widgets#toolbox#title#button#active_fg";
+const QString ToolBox::c_titleButtonActiveForegroundName = "widgets#toolbox#title#button#active#fg";
 
 ToolBox::ToolBox(QWidget *p_parent)
     : QFrame(p_parent),

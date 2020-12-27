@@ -22,7 +22,7 @@ ThemeMgr::ThemeMgr(const QString &p_currentThemeName, QObject *p_parent)
 
     loadCurrentTheme(p_currentThemeName);
 
-    IconUtils::setDefaultIconForeground(paletteColor("base#icon#fg"), paletteColor("base#icon#disabled_fg"));
+    IconUtils::setDefaultIconForeground(paletteColor("base#icon#fg"), paletteColor("base#icon#disabled#fg"));
 }
 
 QString ThemeMgr::getIconFile(const QString &p_icon) const

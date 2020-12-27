@@ -42,6 +42,7 @@ namespace vnotex
         QJsonObject toJson() const Q_DECL_OVERRIDE;
 
         const QString &getTheme() const;
+        void setTheme(const QString &p_name);
 
         const QString &getLocale() const;
         void setLocale(const QString &p_locale);

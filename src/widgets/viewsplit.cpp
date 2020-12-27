@@ -36,7 +36,7 @@ QIcon ViewSplit::s_menuIcon;
 
 QIcon ViewSplit::s_menuActiveIcon;
 
-const QString ViewSplit::c_activeActionButtonForegroundName = "widgets#viewsplit#action_button#active_fg";
+const QString ViewSplit::c_activeActionButtonForegroundName = "widgets#viewsplit#action_button#active#fg";
 
 const QString ViewSplit::c_actionButtonForegroundName = "widgets#viewsplit#action_button#fg";
 

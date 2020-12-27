@@ -17,6 +17,7 @@
 #include <core/thememgr.h>
 #include <core/vnotex.h>
 #include <core/configmgr.h>
+#include <core/coreconfig.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
@@ -99,6 +100,10 @@ void ThemePage::loadInternal()
 
 void ThemePage::saveInternal()
 {
+    auto theme = currentTheme();
+    if (!theme.isEmpty()) {
+        ConfigMgr::getInst().getCoreConfig().setTheme(theme);
+    }
 }
 
 QString ThemePage::title() const

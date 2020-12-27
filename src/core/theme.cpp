@@ -326,7 +326,7 @@ QString Theme::paletteColor(const QString &p_name) const
         return val;
     }
     qWarning() << "undefined or invalid palette color" << p_name;
-    return QString();
+    return QString("#ff0000");
 }
 
 QJsonObject Theme::readJsonFile(const QString &p_filePath)

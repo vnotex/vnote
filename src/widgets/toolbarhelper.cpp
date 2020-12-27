@@ -406,8 +406,8 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
 }
 
 static const QString c_fgPalette = QStringLiteral("widgets#toolbar#icon#fg");
-static const QString c_disabledPalette = QStringLiteral("widgets#toolbar#icon#disabled_fg");
-static const QString c_dangerousPalette = QStringLiteral("widgets#toolbar#icon#dangerous_fg");
+static const QString c_disabledPalette = QStringLiteral("widgets#toolbar#icon#disabled#fg");
+static const QString c_dangerousPalette = QStringLiteral("widgets#toolbar#icon#danger#fg");
 
 QIcon ToolBarHelper::generateIcon(const QString &p_iconName)
 {

@@ -22,6 +22,11 @@ const QString &CoreConfig::getTheme() const
     return m_theme;
 }
 
+void CoreConfig::setTheme(const QString &p_name)
+{
+    updateConfig(m_theme, p_name, this);
+}
+
 void CoreConfig::init(const QJsonObject &p_app,
                       const QJsonObject &p_user)
 {
@@ -60,9 +65,7 @@ const QString &CoreConfig::getLocale() const
 
 void CoreConfig::setLocale(const QString &p_locale)
 {
-    updateConfig(m_locale,
-                 p_locale,
-                 this);
+    updateConfig(m_locale, p_locale, this);
 }
 
 QString CoreConfig::getLocaleToUse() const

@@ -5,6 +5,8 @@
 #include <QCoreApplication>
 #include <QToolButton>
 
+#include "propertydefs.h"
+
 using namespace vnotex;
 
 TitleToolBar::TitleToolBar(QWidget *p_parent)
@@ -90,7 +92,7 @@ void TitleToolBar::addTitleBarIcons(const QIcon &p_minimizeIcon,
                                       m_window->close();
                                   });
         auto btn = static_cast<QToolButton *>(widgetForAction(closeAct));
-        btn->setProperty("DangerousButton", true);
+        btn->setProperty(PropertyDefs::s_dangerButton, true);
     }
 
     updateMaximizeAct();
