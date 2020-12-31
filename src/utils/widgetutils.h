@@ -29,6 +29,8 @@ namespace vnotex
                                            const char *p_prop,
                                            const QVariant &p_val = QVariant());
 
+        static void updateStyle(QWidget *p_widget);
+
         static qreal calculateScaleFactor(bool p_update = false);
 
         static bool isScrollBarVisible(QAbstractScrollArea *p_widget, bool p_horizontal);

@@ -110,10 +110,6 @@ pre code {
     tab-size: 4;
 }
 
-pre code.markdown-metadata {
-    border-left: .5em solid #00897B;
-}
-
 aside {
     display: block;
     float: right;
@@ -137,7 +133,7 @@ hr {
     margin: 1em 0;
     border: none;
     height: 2px;
-    background: #999;
+    background-color: #999;
 }
 
 table {
@@ -178,117 +174,9 @@ table tr th :last-child, table tr td :last-child {
    margin-bottom: 0;
 }
 
-div.mermaid-diagram {
-    margin: 16px 0px 16px 0px;
-    overflow-y: hidden;
-}
-
-div.flowchart-diagram {
-    padding: 0px 5px 0px 5px;
-    margin: 16px 0px 16px 0px;
-    width: fit-content;
-    overflow: hidden;
-}
-
-div.wavedrom-diagram {
-    padding: 0px 5px 0px 5px;
-    margin: 16px 0px 16px 0px;
-    width: fit-content;
-    overflow: hidden;
-}
-
-div.plantuml-diagram {
-    padding: 5px 5px 0px 5px;
-    margin: 16px 0px 16px 0px;
-    width: fit-content;
-    overflow: hidden;
-}
-
-.img-package {
-    text-align: center;
-}
-
-img.img-center {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-span.img-caption {
-    min-width: 20%;
-    max-width: 80%;
-    display: inline-block;
-    padding: 10px;
-    margin: 0 auto;
-    border-bottom: 1px solid #c0c0c0;
-    color: #6c6c6c;
-    text-align: center;
-    line-height: 1.5;
-}
-
-.emoji_zero,.emoji_one,.emoji_two,.emoji_three,.emoji_four,.emoji_five,.emoji_six,.emoji_seven,.emoji_eight,.emoji_nine {
-    margin-left: 5px;
-    margin-right: 8px;
-}
-
-div.preview-hint {
-    opacity: 0.5;
-    margin-top: 30%;
-    margin-bottom: 30%;
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-/* For Highlight.js Line Number */
-table.hljs-ln tr {
-    border: none;
-    background-color: transparent;
-}
-
-table.hljs-ln tr td {
-    border: none;
-    background-color: transparent;
-}
-
-table.hljs-ln tr td.hljs-ln-numbers {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-
-    text-align: center;
-    color: #AAA;
-    border-right: 1px solid #CCC;
-    vertical-align: top;
-    padding-right: 5px;
-    white-space: nowrap;
-}
-
-table.hljs-ln tr td.hljs-ln-code {
-    padding-left: 10px;
-}
-
 ::selection {
-  background: #1976D2;
+  background-color: #1976D2;
   color: white;
-}
-
-.modal-box {
-    background-color: rgb(245, 245, 245);
-    background-color: rgba(245, 245, 245, 0.95);
-}
-
-span.modal-close {
-    color: #666666;
-}
-
-span.modal-close:hover,
-span.modal-close:focus {
-    color: #222222;
 }
 
 #vx-content span.vx-search-match {

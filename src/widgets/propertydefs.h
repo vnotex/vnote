@@ -15,6 +15,10 @@ namespace vnotex
 
         static const char *s_dangerButton;
 
+        static const char *s_dialogCentralWidget;
+
+        static const char *s_viewSplitCornerWidget;
+
         // Values: info/warning/error.
         static const char *s_state;
     };

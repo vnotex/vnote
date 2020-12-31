@@ -156,6 +156,14 @@ void MainWindow::setupDocks()
         tabifyDockWidget(m_docks[i - 1], m_docks[i]);
     }
 
+    for (auto dock : m_docks) {
+        connect(dock, &QDockWidget::visibilityChanged,
+                this, [this]() {
+                    updateTabBarStyle();
+                    emit layoutChanged();
+                });
+    }
+
     // Activate the first dock.
     activateDock(m_docks[0]);
 }
@@ -163,7 +171,7 @@ void MainWindow::setupDocks()
 void MainWindow::activateDock(QDockWidget *p_dock)
 {
     p_dock->show();
-    Q_FOREACH(QTabBar* tabBar, this->findChildren<QTabBar*>()) {
+    Q_FOREACH(QTabBar* tabBar, this->findChildren<QTabBar*>(QString(), Qt::FindDirectChildrenOnly)) {
         bool found = false;
         for (int i = 0; i < tabBar->count(); ++i) {
             if (p_dock == reinterpret_cast<QWidget *>(tabBar->tabData(i).toULongLong())) {
@@ -192,9 +200,6 @@ void MainWindow::setupNavigationDock()
     dock->setWidget(m_navigationToolBox);
     dock->setFocusProxy(m_navigationToolBox);
     addDockWidget(Qt::LeftDockWidgetArea, dock);
-
-    connect(dock, &QDockWidget::visibilityChanged,
-            this, &MainWindow::layoutChanged);
 }
 
 void MainWindow::setupOutlineDock()
@@ -209,9 +214,6 @@ void MainWindow::setupOutlineDock()
     dock->setWidget(m_outlineViewer);
     dock->setFocusProxy(m_outlineViewer);
     addDockWidget(Qt::LeftDockWidgetArea, dock);
-
-    connect(dock, &QDockWidget::visibilityChanged,
-            this, &MainWindow::layoutChanged);
 }
 
 void MainWindow::setupNavigationToolBox()
@@ -572,4 +574,11 @@ void MainWindow::quitApp()
 {
     m_requestQuit = 0;
     close();
+}
+
+void MainWindow::updateTabBarStyle()
+{
+    Q_FOREACH(QTabBar* tabBar, this->findChildren<QTabBar*>(QString(), Qt::FindDirectChildrenOnly)) {
+        tabBar->setDrawBase(false);
+    }
 }

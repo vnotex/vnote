@@ -70,6 +70,8 @@ namespace vnotex
     private slots:
         void closeOnQuit();
 
+        void updateTabBarStyle();
+
     private:
         // Index in m_docks.
         enum DockIndex

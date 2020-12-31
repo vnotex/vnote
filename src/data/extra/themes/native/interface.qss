@@ -1,10 +1,25 @@
 /* Qt Style Sheets file
  * Please refer to https://doc.qt.io/qt-5.12/stylesheet-reference.html
  * for detailed inforamtion.
+ * **Notice** that selectors using base class and child class are considered to have the
+ * same specificity and the rule that appears last takes precedence.
  * VNote specific syntax:
  *  - @widgets#toolbox#title#border: reference to a color defined in palette.ini;
  *  - $2px: 2 will be scaled by multiplying current display scaled factor.
  */
+
+/* All widgets */
+*[State="info"] {
+    border: 2px solid @base#info#fg;
+}
+
+*[State="warning"] {
+    border: 2px solid @base#warning#fg;
+}
+
+*[State="error"] {
+    border: 2px solid @base#error#fg;
+}
 
 /* ToolBox */
 vnotex--ToolBox QWidget[ToolBoxTitle="true"] {
@@ -102,17 +117,4 @@ vnotex--DragDropAreaIndicator QLabel {
     color: @widgets#dragdropareaindicator#fg;
     font-size: 12pt;
     font-weight: bold;
-}
-
-/* All widgets */
-*[State="info"] {
-    border: 2px solid @base#info#fg;
-}
-
-*[State="warning"] {
-    border: 2px solid @base#warning#fg;
-}
-
-*[State="error"] {
-    border: 2px solid @base#error#fg;
 }

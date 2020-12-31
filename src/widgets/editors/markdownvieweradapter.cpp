@@ -118,7 +118,12 @@ void MarkdownViewerAdapter::scrollToLine(int p_lineNumber)
     if (p_lineNumber == -1) {
         return;
     }
-    Q_ASSERT(m_viewerReady);
+
+    if (!m_viewerReady) {
+        qWarning() << "Markdown viewer is not ready";
+        return;
+    }
+
     m_topLineNumber = -1;
     emit editLineNumberUpdated(p_lineNumber);
 }

@@ -13,6 +13,8 @@
 
 #include <utils/widgetutils.h>
 
+#include <widgets/propertydefs.h>
+
 using namespace vnotex;
 
 ScrollDialog::ScrollDialog(QWidget *p_parent, Qt::WindowFlags p_flags)
@@ -27,6 +29,7 @@ void ScrollDialog::setCentralWidget(QWidget *p_widget)
 {
     Q_ASSERT(!m_centralWidget && p_widget);
     m_centralWidget = p_widget;
+    m_centralWidget->setProperty(PropertyDefs::s_dialogCentralWidget, true);
     m_scrollArea->setWidget(p_widget);
 }
 
