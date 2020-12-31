@@ -9,7 +9,7 @@
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New",
             "font-size" : 12,
-            "text-color" : "#d7dae0",
+            "text-color" : "#ccd1d8",
             "background-color" : "#333842",
             "selected-text-color" : "#e3e5e9",
             "selected-background-color" : "#0c7bff"
@@ -33,7 +33,7 @@
             "background-color" : "#2d323b"
         },
         "CurrentLineNumber" : {
-            "text-color" : "#d7dae0"
+            "text-color" : "#ccd1d8"
         },
         "Folding" : {
             "text-color" : "#838fd3"
@@ -69,7 +69,7 @@
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "冬青黑体, YaHei Consolas Hybrid, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, sans-serif, Tahoma, Arial, Geneva, Georgia, Times New Roman",
             "font-size" : 12,
-            "text-color" : "#d7dae0",
+            "text-color" : "#ccd1d8",
             "background-color" : "#333842",
             "selected-text-color" : "#e3e5e9",
             "selected-background-color" : "#0c7bff"
@@ -185,7 +185,7 @@
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "MARK" : {
-            "text-color" : "#d7dae0",
+            "text-color" : "#ccd1d8",
             "background-color" : "#551560"
         },
         "TABLE" : {

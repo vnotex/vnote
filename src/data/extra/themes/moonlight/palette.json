@@ -80,7 +80,7 @@
             "bg" : "@palette#bg1_51"
         },
         "content" : {
-            "fg" : "@palette#fg1_9",
+            "fg" : "@palette#fg1_8",
             "bg" : "@palette#bg10_5",
             "border" : "@base#normal#border",
             "disabled" : {
