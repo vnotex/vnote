@@ -4,6 +4,8 @@
 #include <QDebug>
 #include <QToolButton>
 
+#include <utils/widgetutils.h>
+
 using namespace vnotex;
 
 BiAction::BiAction(const QIcon &p_icon,
@@ -95,5 +97,6 @@ void BiAction::updateToolButtonPopupMode()
     if (m_toolBtn) {
         m_toolBtn->setPopupMode(menu() ? QToolButton::MenuButtonPopup
                                        : QToolButton::DelayedPopup);
+        WidgetUtils::updateStyle(m_toolBtn);
     }
 }

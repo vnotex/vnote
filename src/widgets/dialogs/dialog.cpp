@@ -25,6 +25,7 @@ void Dialog::setCentralWidget(QWidget *p_widget)
 {
     Q_ASSERT(!m_centralWidget && p_widget);
     m_centralWidget = p_widget;
+    m_centralWidget->setProperty(PropertyDefs::s_dialogCentralWidget, true);
     m_layout->addWidget(m_centralWidget);
 }
 

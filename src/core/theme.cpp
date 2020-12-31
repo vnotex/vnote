@@ -92,14 +92,18 @@ Theme::Metadata Theme::readMetadata(const Palette &p_obj)
 
 Theme::Palette Theme::translatePalette(const QJsonObject &p_obj)
 {
+    const QString paletteSection("palette");
     const QString baseSection("base");
     const QString widgetsSection("widgets");
 
     // @p_palette may contain referenced definitons: derived=@base#sub#sub2.
     Palette palette;
 
+    palette[paletteSection] = p_obj[paletteSection];
     palette[baseSection] = p_obj[baseSection];
     palette[widgetsSection] = p_obj[widgetsSection];
+
+    // Skip paletteSection since it will not contain any reference.
 
     translatePaletteObject(palette, palette, baseSection);
 
@@ -157,7 +161,7 @@ QPair<bool, int> Theme::translatePaletteObjectOnce(const Palette &p_palette,
                     break;
                 }
 
-                Q_ASSERT(refVal.isString());
+                Q_ASSERT_X(refVal.isString(), "translatePaletteObjectOnce", val.toString().toStdString().c_str());
                 it.value() = refVal.toString();
                 if (isRef(refVal.toString())) {
                     // It is another ref again.

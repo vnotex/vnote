@@ -86,6 +86,7 @@ void ThemeMgr::loadCurrentTheme(const QString &p_themeName)
     if (themeFolder.isNull()) {
         qWarning() << "failed to locate theme" << p_themeName;
     } else {
+        qInfo() << "using theme" << p_themeName;
         m_currentTheme.reset(loadTheme(themeFolder));
     }
 

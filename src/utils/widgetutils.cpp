@@ -29,6 +29,11 @@ void WidgetUtils::setPropertyDynamically(QWidget *p_widget,
                                          const QVariant &p_val)
 {
     p_widget->setProperty(p_prop, p_val);
+    updateStyle(p_widget);
+}
+
+void WidgetUtils::updateStyle(QWidget *p_widget)
+{
     p_widget->style()->unpolish(p_widget);
     p_widget->style()->polish(p_widget);
     p_widget->update();

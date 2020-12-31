@@ -8,4 +8,8 @@ const char *PropertyDefs::s_toolButtonWithoutMenuIndicator = "NoMenuIndicator";
 
 const char *PropertyDefs::s_dangerButton = "DangerButton";
 
+const char *PropertyDefs::s_dialogCentralWidget = "DialogCentralWidget";
+
+const char *PropertyDefs::s_viewSplitCornerWidget = "ViewSplitCornerWidget";
+
 const char *PropertyDefs::s_state = "State";

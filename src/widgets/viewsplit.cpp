@@ -109,6 +109,7 @@ void ViewSplit::setupCornerWidget()
 
     // Container.
     auto widget = new QWidget(this);
+    widget->setProperty(PropertyDefs::s_viewSplitCornerWidget, true);
     auto layout = new QHBoxLayout(widget);
     layout->setContentsMargins(0, 0, 0, 0);
 
@@ -187,6 +188,8 @@ bool ViewSplit::eventFilter(QObject *p_object, QEvent *p_event)
 void ViewSplit::setupTabBar()
 {
     auto bar = tabBar();
+    // If DrawBase is true, there is a border that we could not control the style.
+    bar->setDrawBase(false);
     bar->setContextMenuPolicy(Qt::CustomContextMenu);
 
     // Middle click to close tab.

@@ -12,6 +12,10 @@ class GraphPreviewer {
         // Used to decide the width with 100% relative value.
         this.windowWidth = 800;
 
+        this.firstPreview = true;
+
+        this.currentColor = null;
+
         window.addEventListener(
             'resize',
             () => {
@@ -26,6 +30,14 @@ class GraphPreviewer {
         if (p_text.length == 0) {
             this.setGraphPreviewData(p_id, p_timeStamp);
             return;
+        }
+
+        if (this.firstPreview) {
+            this.firstPreview = false;
+
+            let contentStyle = window.getComputedStyle(this.vnotex.contentContainer);
+            this.currentColor = contentStyle.getPropertyValue('color');
+            console.log('currentColor', this.currentColor);
         }
 
         if (p_lang === 'flow' || p_lang === 'flowchart') {
@@ -86,6 +98,7 @@ class GraphPreviewer {
             let id = p_id;
             let timeStamp = p_timeStamp;
             return function(p_svgNode) {
+                previewer.fixSvgCurrentColor(p_svgNode);
                 previewer.fixSvgRelativeWidth(p_svgNode);
                 previewer.processSvgAsPng(id, timeStamp, p_svgNode, p_dataSetter);
             };
@@ -163,6 +176,23 @@ class GraphPreviewer {
             } else {
                 // Set as window width.
                 p_svgNode.setAttribute('width', Math.max(this.windowWidth - 100, 100) + 'px');
+            }
+        }
+    }
+
+    // Fix SVG with stroke="currentColor" and fill="currentColor".
+    fixSvgCurrentColor(p_svgNode) {
+        let currentColor = this.currentColor;
+        if (currentColor) {
+            let nodes = p_svgNode.querySelectorAll("g[fill='currentColor']");
+            for (let i = 0; i < nodes.length; ++i) {
+                let node = nodes[i];
+                if (node.getAttribute('stroke') === 'currentColor') {
+                    node.setAttribute('stroke', currentColor);
+                }
+                if (node.getAttribute('fill') === 'currentColor') {
+                    node.setAttribute('fill', currentColor);
+                }
             }
         }
     }

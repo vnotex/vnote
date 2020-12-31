@@ -12,8 +12,7 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background-color: rgb(68, 68, 68);
-    background-color: rgba(68, 68, 68, 0.95);
+    background-color: rgba(51, 56, 66, 0.85);
 }
 
 .vx-modal-content {
@@ -48,7 +47,7 @@ span.vx-modal-close {
     z-index: 1000;
     top: 15px;
     right: 35px;
-    color: #DADADA;
+    color: #abb2bf;
     font-size: 40px;
     font-weight: bold;
     transition: 0.3s;
@@ -56,7 +55,7 @@ span.vx-modal-close {
 
 span.vx-modal-close:hover,
 span.vx-modal-close:focus {
-    color: #EEEEEE;
+    color: #d7dae0;
     text-decoration: none;
     cursor: pointer;
 }

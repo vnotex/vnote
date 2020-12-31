@@ -1,11 +1,5 @@
 <RCC>
     <qresource prefix="/vnotex/data/extra">
-        <file>themes/native/text-editor.theme</file>
-        <file>themes/native/highlight.css</file>
-        <file>themes/native/interface.qss</file>
-        <file>themes/native/web.css</file>
-        <file>themes/native/palette.json</file>
-        <file>themes/native/cover.png</file>
         <file>docs/en/get_started.txt</file>
         <file>docs/en/about_vnotex.txt</file>
         <file>docs/en/shortcuts.md</file>
@@ -72,7 +66,46 @@
         <file>web/js/turndown.js</file>
         <file>web/js/mark.js/mark.min.js</file>
         <file>web/js/markjs.js</file>
+        <file>themes/native/text-editor.theme</file>
+        <file>themes/native/highlight.css</file>
+        <file>themes/native/interface.qss</file>
+        <file>themes/native/web.css</file>
+        <file>themes/native/palette.json</file>
+        <file>themes/native/cover.png</file>
+        <file>themes/moonlight/arrow_dropdown.svg</file>
+        <file>themes/moonlight/arrow_dropdown_disabled.svg</file>
+        <file>themes/moonlight/branch_closed.svg</file>
+        <file>themes/moonlight/branch_open.svg</file>
+        <file>themes/moonlight/checkbox_checked.svg</file>
+        <file>themes/moonlight/checkbox_checked_disabled.svg</file>
+        <file>themes/moonlight/checkbox_unchecked.svg</file>
+        <file>themes/moonlight/checkbox_unchecked_disabled.svg</file>
+        <file>themes/moonlight/close.svg</file>
+        <file>themes/moonlight/close_grey.svg</file>
+        <file>themes/moonlight/cover.png</file>
+        <file>themes/moonlight/down.svg</file>
+        <file>themes/moonlight/down_disabled.svg</file>
+        <file>themes/moonlight/float.svg</file>
+        <file>themes/moonlight/highlight.css</file>
+        <file>themes/moonlight/interface.qss</file>
+        <file>themes/moonlight/left.svg</file>
+        <file>themes/moonlight/left_disabled.svg</file>
+        <file>themes/moonlight/menu_checkbox.svg</file>
+        <file>themes/moonlight/menu_radiobutton.svg</file>
+        <file>themes/moonlight/palette.json</file>
+        <file>themes/moonlight/radiobutton_checked.svg</file>
+        <file>themes/moonlight/radiobutton_checked_disabled.svg</file>
+        <file>themes/moonlight/radiobutton_unchecked.svg</file>
+        <file>themes/moonlight/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/moonlight/right.svg</file>
+        <file>themes/moonlight/right_disabled.svg</file>
+        <file>themes/moonlight/sizegrip.svg</file>
+        <file>themes/moonlight/text-editor.theme</file>
+        <file>themes/moonlight/up.svg</file>
+        <file>themes/moonlight/up_disabled.svg</file>
+        <file>themes/moonlight/web.css</file>
         <file>syntax-highlighting/themes/markdown-default.theme</file>
+        <file>syntax-highlighting/themes/markdown-breeze-dark.theme</file>
         <file>syntax-highlighting/themes/default.theme</file>
         <file>syntax-highlighting/themes/breeze-dark.theme</file>
         <file>syntax-highlighting/themes/printing.theme</file>
