@@ -44,6 +44,8 @@ namespace vnotex
 
         QJsonObject saveMetaData() const;
 
+        void doVersionSpecificOverride();
+
         // Version of VNoteX.
         QString m_version;
 

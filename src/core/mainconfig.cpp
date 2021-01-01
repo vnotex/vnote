@@ -42,6 +42,8 @@ void MainConfig::init()
     m_widgetConfig->init(appJobj, userJobj);
 
     if (isVersionChanged()) {
+        doVersionSpecificOverride();
+
         // Update user config.
         writeToSettings();
     }
@@ -110,4 +112,10 @@ QString MainConfig::getVersion(const QJsonObject &p_jobj)
 {
     const auto metadataObj = p_jobj.value(QStringLiteral("metadata")).toObject();
     return metadataObj.value(QStringLiteral("version")).toString();
+}
+
+void MainConfig::doVersionSpecificOverride()
+{
+    // In a new version, we may want to change one value by force.
+    m_coreConfig->setTheme(QStringLiteral("moonlight"));
 }
