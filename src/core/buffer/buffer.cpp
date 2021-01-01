@@ -209,7 +209,13 @@ Buffer::OperationCode Buffer::save(bool p_force)
             return OperationCode::FileChangedOutside;
         }
 
-        m_provider->write(m_content);
+        try {
+            m_provider->write(m_content);
+        } catch (Exception &p_e) {
+            qWarning() << "failed to write the buffer content" << getPath();
+            return OperationCode::Failed;
+        }
+
         setModified(false);
         m_state &= ~(StateFlag::FileMissingOnDisk | StateFlag::FileChangedOutside);
     }
@@ -312,11 +318,17 @@ void Buffer::autoSave()
         return;
 
     case EditorConfig::AutoSavePolicy::AutoSave:
-        save(false);
+        if (save(false) != OperationCode::Success) {
+            qWarning() << "AutoSave failed to save buffer, retry later";
+        }
         break;
 
     case EditorConfig::AutoSavePolicy::BackupFile:
-        writeBackupFile();
+        try {
+            writeBackupFile();
+        } catch (Exception &p_e) {
+            qWarning() << "AutoSave failed to write backup file, retry later";
+        }
         break;
     }
 }

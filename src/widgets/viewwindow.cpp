@@ -812,7 +812,7 @@ bool ViewWindow::save(bool p_force)
         MessageBoxHelper::notify(MessageBoxHelper::Warning,
                                  tr("Failed to save note (%1).").arg(m_buffer->getName()),
                                  tr("Please check the file (%1) and try it again.").arg(m_buffer->getPath()),
-                                 "",
+                                 tr("Maybe the file is occupied by another service temporarily."),
                                  this);
         return false;
     }

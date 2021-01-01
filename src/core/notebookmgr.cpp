@@ -102,7 +102,7 @@ QSharedPointer<INotebookBackend> NotebookMgr::createNotebookBackend(const QStrin
         return factory->createNotebookBackend(p_rootFolderPath);
     } else {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("fail to find notebook backend factory %1").arg(p_backendName));
+                            QString("failed to find notebook backend factory %1").arg(p_backendName));
     }
 
     return nullptr;
@@ -115,7 +115,7 @@ QSharedPointer<IVersionController> NotebookMgr::createVersionController(const QS
         return factory->createVersionController();
     } else {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("fail to find version controller factory %1").arg(p_controllerName));
+                            QString("failed to find version controller factory %1").arg(p_controllerName));
     }
 
     return nullptr;
@@ -129,7 +129,7 @@ QSharedPointer<INotebookConfigMgr> NotebookMgr::createNotebookConfigMgr(const QS
         return factory->createNotebookConfigMgr(p_backend);
     } else {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("fail to find notebook config manager factory %1").arg(p_mgrName));
+                            QString("failed to find notebook config manager factory %1").arg(p_mgrName));
     }
 
     return nullptr;
@@ -165,7 +165,7 @@ QSharedPointer<Notebook> NotebookMgr::newNotebook(const QSharedPointer<NotebookP
     auto factory = m_notebookServer->getItem(p_parameters->m_type);
     if (!factory) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("fail to find notebook factory %1").arg(p_parameters->m_type));
+                            QString("failed to find notebook factory %1").arg(p_parameters->m_type));
     }
 
     auto notebook = factory->newNotebook(*p_parameters);
@@ -225,7 +225,7 @@ void NotebookMgr::readNotebooksFromConfig()
             auto nb = readNotebookFromConfig(item);
             addNotebook(nb);
         } catch (Exception &p_e) {
-            qCritical("fail to read notebook (%s) from config (%s)",
+            qCritical("failed to read notebook (%s) from config (%s)",
                       item.m_rootFolderPath.toStdString().c_str(),
                       p_e.what());
         }
@@ -239,7 +239,7 @@ QSharedPointer<Notebook> NotebookMgr::readNotebookFromConfig(const SessionConfig
     auto factory = m_notebookServer->getItem(p_item.m_type);
     if (!factory) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("fail to find notebook factory %1").arg(p_item.m_type));
+                            QString("failed to find notebook factory %1").arg(p_item.m_type));
     }
 
     auto backend = createNotebookBackend(p_item.m_backend, p_item.m_rootFolderPath);
@@ -304,7 +304,7 @@ void NotebookMgr::closeNotebook(ID p_id)
                                return p_nb->getId() == p_id;
                            });
     if (it == m_notebooks.end()) {
-        qWarning() << "fail to find notebook of given id to close" << p_id;
+        qWarning() << "failed to find notebook of given id to close" << p_id;
         return;
     }
 
@@ -330,7 +330,7 @@ void NotebookMgr::removeNotebook(ID p_id)
                                return p_nb->getId() == p_id;
                            });
     if (it == m_notebooks.end()) {
-        qWarning() << "fail to find notebook of given id to remove" << p_id;
+        qWarning() << "failed to find notebook of given id to remove" << p_id;
         return;
     }
 
@@ -347,7 +347,7 @@ void NotebookMgr::removeNotebook(ID p_id)
     try {
         nbToRemove->remove();
     } catch (Exception &p_e) {
-        qWarning() << QString("fail to remove notebook %1 (%2) (%3)").arg(nbToRemove->getName(),
+        qWarning() << QString("failed to remove notebook %1 (%2) (%3)").arg(nbToRemove->getName(),
                                                                           nbToRemove->getRootFolderPath(),
                                                                           p_e.what());
         throw;
