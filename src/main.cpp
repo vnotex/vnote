@@ -30,12 +30,6 @@ void initWebEngineSettings();
 
 int main(int argc, char *argv[])
 {
-    SingleInstanceGuard guard;
-    bool canRun = guard.tryRun();
-    if (!canRun) {
-        return 0;
-    }
-
     QTextCodec *codec = QTextCodec::codecForName("UTF8");
     if (codec) {
         QTextCodec::setCodecForLocale(codec);
@@ -75,12 +69,22 @@ int main(int argc, char *argv[])
 
     initWebEngineSettings();
 
-    const QString iconPath = ":/vnotex/data/core/icons/vnote.ico";
-    // Make sense only on Windows.
-    app.setWindowIcon(QIcon(iconPath));
+    {
+        const QString iconPath = ":/vnotex/data/core/icons/vnote.ico";
+        // Make sense only on Windows.
+        app.setWindowIcon(QIcon(iconPath));
 
-    app.setApplicationName(ConfigMgr::c_appName);
-    app.setOrganizationName(ConfigMgr::c_orgName);
+        app.setApplicationName(ConfigMgr::c_appName);
+        app.setOrganizationName(ConfigMgr::c_orgName);
+    }
+
+    // Guarding.
+    SingleInstanceGuard guard;
+    bool canRun = guard.tryRun();
+    if (!canRun) {
+        guard.requestShow();
+        return 0;
+    }
 
     try {
         app.setApplicationVersion(ConfigMgr::getInst().getConfig().getVersion());
@@ -124,6 +128,9 @@ int main(int argc, char *argv[])
 
     window.show();
     VNoteX::getInst().getThemeMgr().setBaseBackground(window.palette().color(QPalette::Base));
+
+    QObject::connect(&guard, &SingleInstanceGuard::showRequested,
+                     &window, &MainWindow::showMainWindow);
 
     window.kickOffOnStart();
 
