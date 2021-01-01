@@ -9,6 +9,7 @@
 #include <QToolButton>
 
 #include "lineedit.h"
+#include "combobox.h"
 
 using namespace vnotex;
 
@@ -38,7 +39,7 @@ QLineEdit *WidgetsFactory::createLineEdit(const QString &p_contents, QWidget *p_
 
 QComboBox *WidgetsFactory::createComboBox(QWidget *p_parent)
 {
-    auto comboBox = new QComboBox(p_parent);
+    auto comboBox = new ComboBox(p_parent);
     auto itemDelegate = new QStyledItemDelegate(comboBox);
     comboBox->setItemDelegate(itemDelegate);
     return comboBox;
