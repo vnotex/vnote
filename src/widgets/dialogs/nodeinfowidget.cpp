@@ -8,6 +8,7 @@
 #include <utils/utils.h>
 #include "exception.h"
 #include "nodelabelwithupbutton.h"
+#include <utils/widgetutils.h>
 
 using namespace vnotex;
 
@@ -35,7 +36,7 @@ NodeInfoWidget::NodeInfoWidget(const Node *p_parentNode,
 
 void NodeInfoWidget::setupUI(const Node *p_parentNode)
 {
-    m_mainLayout = new QFormLayout(this);
+    m_mainLayout = WidgetUtils::createFormLayout(this);
 
     m_mainLayout->addRow(tr("Notebook:"),
                          new QLabel(p_parentNode->getNotebook()->getName(), this));

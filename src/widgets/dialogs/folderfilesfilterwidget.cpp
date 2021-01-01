@@ -35,7 +35,7 @@ FolderFilesFilterWidget::FolderFilesFilterWidget(QWidget *p_parent)
 
 void FolderFilesFilterWidget::setupUI()
 {
-    auto mainLayout = new QFormLayout(this);
+    auto mainLayout = WidgetUtils::createFormLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     {

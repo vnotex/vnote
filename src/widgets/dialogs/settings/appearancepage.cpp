@@ -8,6 +8,7 @@
 #include <core/sessionconfig.h>
 #include <core/coreconfig.h>
 #include <core/configmgr.h>
+#include <utils/widgetutils.h>
 
 using namespace vnotex;
 
@@ -19,7 +20,7 @@ AppearancePage::AppearancePage(QWidget *p_parent)
 
 void AppearancePage::setupUI()
 {
-    auto mainLayout = new QFormLayout(this);
+    auto mainLayout = WidgetUtils::createFormLayout(this);
 
     {
         const QString label(tr("System title bar"));

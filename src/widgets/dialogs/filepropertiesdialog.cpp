@@ -8,6 +8,7 @@
 #include "../lineedit.h"
 #include "../widgetsfactory.h"
 #include <utils/pathutils.h>
+#include <utils/widgetutils.h>
 
 
 using namespace vnotex;
@@ -29,7 +30,7 @@ void FilePropertiesDialog::setupUI()
     auto widget = new QWidget(this);
     setCentralWidget(widget);
 
-    auto mainLayout = new QFormLayout(widget);
+    auto mainLayout = WidgetUtils::createFormLayout(widget);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     const QFileInfo info(m_path);

@@ -21,6 +21,7 @@
 #include <QFontDatabase>
 #include <QMenu>
 #include <QDebug>
+#include <QFormLayout>
 
 using namespace vnotex;
 
@@ -352,4 +353,16 @@ void WidgetUtils::insertActionAfter(QMenu *p_menu, QAction *p_after, QAction *p_
         p_menu->removeAction(p_after);
         p_menu->insertAction(p_action, p_after);
     }
+}
+
+QFormLayout *WidgetUtils::createFormLayout(QWidget *p_parent)
+{
+    auto layout = new QFormLayout(p_parent);
+
+#if defined(Q_OS_MACOS)
+    layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+    layout->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+#endif
+
+    return layout;
 }

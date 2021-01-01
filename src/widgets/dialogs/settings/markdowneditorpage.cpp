@@ -13,6 +13,7 @@
 #include <core/editorconfig.h>
 #include <core/markdowneditorconfig.h>
 #include <core/configmgr.h>
+#include <utils/widgetutils.h>
 
 #include "editorpage.h"
 
@@ -107,7 +108,7 @@ QString MarkdownEditorPage::title() const
 QGroupBox *MarkdownEditorPage::setupReadGroup()
 {
     auto box = new QGroupBox(tr("Read"), this);
-    auto layout = new QFormLayout(box);
+    auto layout = WidgetUtils::createFormLayout(box);
 
     {
         const QString label(tr("Constrain image width"));
@@ -169,7 +170,7 @@ QGroupBox *MarkdownEditorPage::setupReadGroup()
 QGroupBox *MarkdownEditorPage::setupEditGroup()
 {
     auto box = new QGroupBox(tr("Edit"), this);
-    auto layout = new QFormLayout(box);
+    auto layout = WidgetUtils::createFormLayout(box);
 
     {
         const QString label(tr("Insert file name as title"));
@@ -207,7 +208,7 @@ QGroupBox *MarkdownEditorPage::setupEditGroup()
 QGroupBox *MarkdownEditorPage::setupGeneralGroup()
 {
     auto box = new QGroupBox(tr("General"), this);
-    auto layout = new QFormLayout(box);
+    auto layout = WidgetUtils::createFormLayout(box);
 
     {
         auto sectionLayout = new QHBoxLayout();

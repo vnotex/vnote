@@ -6,6 +6,7 @@
 
 #include <widgets/widgetsfactory.h>
 #include <widgets/lineedit.h>
+#include <utils/widgetutils.h>
 
 using namespace vnotex;
 
@@ -29,7 +30,7 @@ void LinkInsertDialog::setupUI(const QString &p_title,
     auto mainWidget = new QWidget(this);
     setCentralWidget(mainWidget);
 
-    auto mainLayout = new QFormLayout(mainWidget);
+    auto mainLayout = WidgetUtils::createFormLayout(mainWidget);
 
     m_linkTextEdit = WidgetsFactory::createLineEdit(p_linkText, mainWidget);
     mainLayout->addRow(tr("&Text:"), m_linkTextEdit);

@@ -8,6 +8,7 @@
 #include <widgets/widgetsfactory.h>
 #include <core/editorconfig.h>
 #include <core/configmgr.h>
+#include <utils/widgetutils.h>
 
 using namespace vnotex;
 
@@ -19,7 +20,7 @@ EditorPage::EditorPage(QWidget *p_parent)
 
 void EditorPage::setupUI()
 {
-    auto mainLayout = new QFormLayout(this);
+    auto mainLayout = WidgetUtils::createFormLayout(this);
 
     {
         m_autoSavePolicyComboBox = WidgetsFactory::createComboBox(this);

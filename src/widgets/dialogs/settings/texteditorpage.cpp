@@ -9,6 +9,7 @@
 #include <core/editorconfig.h>
 #include <core/texteditorconfig.h>
 #include <core/configmgr.h>
+#include <utils/widgetutils.h>
 
 #include "editorpage.h"
 
@@ -22,7 +23,7 @@ TextEditorPage::TextEditorPage(QWidget *p_parent)
 
 void TextEditorPage::setupUI()
 {
-    auto mainLayout = new QFormLayout(this);
+    auto mainLayout = WidgetUtils::createFormLayout(this);
 
     {
         m_lineNumberComboBox = WidgetsFactory::createComboBox(this);
