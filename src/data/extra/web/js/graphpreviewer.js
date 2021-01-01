@@ -26,19 +26,14 @@ class GraphPreviewer {
             { passive: true });
     }
 
+    // Interface 1.
     previewGraph(p_id, p_timeStamp, p_lang, p_text) {
         if (p_text.length == 0) {
             this.setGraphPreviewData(p_id, p_timeStamp);
             return;
         }
 
-        if (this.firstPreview) {
-            this.firstPreview = false;
-
-            let contentStyle = window.getComputedStyle(this.vnotex.contentContainer);
-            this.currentColor = contentStyle.getPropertyValue('color');
-            console.log('currentColor', this.currentColor);
-        }
+        this.initOnFirstPreview();
 
         if (p_lang === 'flow' || p_lang === 'flowchart') {
             this.vnotex.getWorker('flowchartjs').renderText(this.container,
@@ -89,6 +84,29 @@ class GraphPreviewer {
             return;
         } else {
             this.setGraphPreviewData(p_id, p_timeStamp);
+        }
+    }
+
+    // Interface 2.
+    previewMath(p_id, p_timeStamp, p_text) {
+        if (p_text.length == 0) {
+            this.setMathPreviewData(p_id, p_timeStamp);
+            return;
+        }
+
+        this.initOnFirstPreview();
+
+        // Do we need to go through TexMath plugin? I don't think so.
+        this.renderMath(p_id, p_timeStamp, p_text, this.setMathPreviewData.bind(this));
+    }
+
+    initOnFirstPreview() {
+        if (this.firstPreview) {
+            this.firstPreview = false;
+
+            let contentStyle = window.getComputedStyle(this.vnotex.contentContainer);
+            this.currentColor = contentStyle.getPropertyValue('color');
+            console.log('currentColor', this.currentColor);
         }
     }
 
@@ -160,11 +178,6 @@ class GraphPreviewer {
                 let png = dataUrl ? dataUrl.substring(dataUrl.indexOf(',') + 1) : '';
                 p_dataSetter(p_id, p_timeStamp, 'png', png, true, false);
         });
-    }
-
-    previewMath(p_id, p_timeStamp, p_text) {
-        // Do we need to go through TexMath plugin? I don't think so.
-        this.renderMath(p_id, p_timeStamp, p_text, this.setMathPreviewData.bind(this));
     }
 
     // Fix SVG with width and height being '100%'.

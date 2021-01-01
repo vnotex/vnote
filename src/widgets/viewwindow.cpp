@@ -753,8 +753,9 @@ int ViewWindow::checkFileMissingOrChangedOutside()
     } else if (m_buffer->checkFileChangedOutside()) {
         int ret = MessageBoxHelper::questionSaveDiscardCancel(MessageBoxHelper::Warning,
             tr("File is changed from outside (%1).").arg(m_buffer->getPath()),
-            tr("Do you want to override the file from buffer?"),
-            tr("The file is changed from outside. Please choose to save the buffer to the file or just discard the buffer and reload the file."),
+            tr("Do you want to save the buffer to the file to override, or discard the buffer?"),
+            tr("The file is changed from outside. Please choose to save the buffer to the file or "
+               "just discard the buffer and reload the file."),
             this);
         switch (ret) {
         case QMessageBox::Save:
