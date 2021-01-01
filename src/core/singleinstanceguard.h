@@ -1,68 +1,83 @@
 #ifndef SINGLEINSTANCEGUARD_H
 #define SINGLEINSTANCEGUARD_H
 
-#include <QSharedMemory>
-#include <QStringList>
+#include <QObject>
+#include <QString>
+#include <QSharedPointer>
+
+class QLocalServer;
+class QLocalSocket;
 
 namespace vnotex
 {
-    class SingleInstanceGuard
+    class SingleInstanceGuard : public QObject
     {
+        Q_OBJECT
     public:
         SingleInstanceGuard();
 
-        // Return ture if this is the only instance of VNote.
+        ~SingleInstanceGuard();
+
+        // Try to run. Return true on success.
         bool tryRun();
 
-        // There is already another instance running.
-        // Call this to ask that instance to open external files passed in
-        // via command line arguments.
-        void openExternalFiles(const QStringList &p_files);
-
-        // Ask another instance to show itself.
-        void showInstance();
-
-        // Fetch files from shared memory to open.
-        // Will clear the shared memory.
-        QStringList fetchFilesToOpen();
-
-        // Whether this instance is asked to show itself.
-        bool fetchAskedToShow();
-
+        // Server API.
+    public:
         // A running instance requests to exit.
         void exit();
 
+        // Clients API.
+    public:
+        void requestOpenFiles(const QStringList &p_files);
+
+        void requestShow();
+
+    signals:
+        void openFilesRequested(const QStringList &p_files);
+
+        void showRequested();
+
     private:
-        // The count of the entries in the buffer to hold the path of the files to open.
-        enum { FilesBufCount = 1024 };
-
-        struct SharedStruct {
-            // A magic number to identify if this struct is initialized
-            int m_magic;
-
-            // Next empty entry in m_filesBuf.
-            int m_filesBufIdx;
-
-            // File paths to be opened.
-            // Encoded in this way with 2 bytes for each size part.
-            // [size of file1][file1][size of file2][file 2]
-            // Unicode representation of QString.
-            ushort m_filesBuf[FilesBufCount];
-
-            // Whether other instances ask to show the legal instance.
-            bool m_askedToShow;
+        enum OpCode
+        {
+            Null = 0,
+            Show
         };
 
-        // Append @p_file to the shared struct files buffer.
-        // Returns true if succeeds or false if there is no enough space.
-        bool appendFileToBuffer(SharedStruct *p_str, const QString &p_file);
+        struct Command
+        {
+            void clear()
+            {
+                m_opCode = OpCode::Null;
+                m_size = 0;
+            }
 
-        bool m_online;
+            OpCode m_opCode = OpCode::Null;
+            int m_size = 0;
+        };
 
-        QSharedMemory m_sharedMemory;
+        QSharedPointer<QLocalSocket> tryConnect();
 
-        static const QString c_memKey;
-        static const int c_magic;
+        QSharedPointer<QLocalServer> tryListen();
+
+        void setupServer();
+
+        void receiveCommand(QLocalSocket *p_socket);
+
+        void sendRequest(QLocalSocket *p_socket, OpCode p_code, const QString &p_payload);
+
+        // Whether succeeded to run.
+        bool m_online = false;
+
+        QSharedPointer<QLocalSocket> m_client;
+
+        QSharedPointer<QLocalServer> m_server;
+
+        bool m_ongoingConnect = false;
+
+        Command m_command;
+
+        static const QString c_serverName;
     };
 } // ns vnotex
 
