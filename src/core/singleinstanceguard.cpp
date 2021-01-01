@@ -27,7 +27,6 @@ bool SingleInstanceGuard::tryRun()
 {
     Q_ASSERT(!m_online);
 
-#if defined(Q_OS_WIN)
     // On Windows, multiple servers on the same name are allowed.
     m_client = tryConnect();
     if (m_client) {
@@ -43,23 +42,6 @@ bool SingleInstanceGuard::tryRun()
         // We still allow the guard to run. There maybe a bug need to fix.
         qWarning() << "failed to connect to an existing instance or establish a new local server";
     }
-#else
-    m_server = tryListen();
-    if (m_server) {
-        // We are the lucky one.
-        qInfo() << "guard succeeds to run";
-    } else {
-        // Here we are sure there is another instance running. But we still use a socket to connect to make sure.
-        m_client = tryConnect();
-        if (m_client) {
-            // We are sure there is another instance running.
-            return false;
-        }
-
-        // We still allow the guard to run. There maybe a bug need to fix.
-        qWarning() << "failed to connect to an existing instance or establish a new local server";
-    }
-#endif
 
     setupServer();
 
