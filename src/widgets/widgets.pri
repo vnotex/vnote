@@ -2,6 +2,7 @@ SOURCES += \
     $$PWD/attachmentdragdropareaindicator.cpp \
     $$PWD/attachmentpopup.cpp \
     $$PWD/biaction.cpp \
+    $$PWD/combobox.cpp \
     $$PWD/dialogs/dialog.cpp \
     $$PWD/dialogs/filepropertiesdialog.cpp \
     $$PWD/dialogs/imageinsertdialog.cpp \
@@ -82,6 +83,7 @@ HEADERS += \
     $$PWD/attachmentdragdropareaindicator.h \
     $$PWD/attachmentpopup.h \
     $$PWD/biaction.h \
+    $$PWD/combobox.h \
     $$PWD/dialogs/dialog.h \
     $$PWD/dialogs/importfolderutils.h \
     $$PWD/dialogs/filepropertiesdialog.h \

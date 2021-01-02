@@ -8,6 +8,7 @@
 #include <core/coreconfig.h>
 #include <core/sessionconfig.h>
 #include <core/configmgr.h>
+#include <utils/widgetutils.h>
 
 using namespace vnotex;
 
@@ -19,7 +20,7 @@ GeneralPage::GeneralPage(QWidget *p_parent)
 
 void GeneralPage::setupUI()
 {
-    auto mainLayout = new QFormLayout(this);
+    auto mainLayout = WidgetUtils::createFormLayout(this);
 
     {
         m_localeComboBox = WidgetsFactory::createComboBox(this);

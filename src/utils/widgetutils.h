@@ -17,6 +17,7 @@ class QScrollArea;
 class QListView;
 class QMenu;
 class QShortcut;
+class QFormLayout;
 
 namespace vnotex
 {
@@ -76,6 +77,8 @@ namespace vnotex
         static QAction *findActionByObjectName(const QList<QAction *> &p_actions, const QString &p_objName);
 
         static void insertActionAfter(QMenu *p_menu, QAction *p_after, QAction *p_action);
+
+        static QFormLayout *createFormLayout(QWidget *p_parent = nullptr);
 
     private:
         static void resizeToHideScrollBar(QScrollArea *p_scroll, bool p_vertical, bool p_horizontal);
