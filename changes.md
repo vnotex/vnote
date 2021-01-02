@@ -6,6 +6,7 @@
 * More configs in Settings dialog for Markdown viewer
 * Support section number in edit mode (without the dot suffix)
 * Support link jump in Markdown viewer
+* Use socket for single instance guard
 
 ## v3.0.0-beta.3
 * Support `[TOC]`
