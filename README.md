@@ -25,6 +25,8 @@ VNote is **NOT** just a simple editor for Markdown. By providing notes managemen
 
 Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 
+![Main](pics/main.png)
+
 ## Downloads
 Continuous builds on `master` branch could be found at the [Continuous Build](https://github.com/vnotex/vnote/releases/tag/continuous-build) release.
 
