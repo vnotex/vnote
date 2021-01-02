@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-    VNOTE_VER: 3.0.0-beta.3
+    VNOTE_VER: 3.0.0-beta.4
 
 jobs:
   build:
