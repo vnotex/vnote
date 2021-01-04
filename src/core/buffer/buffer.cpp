@@ -212,7 +212,7 @@ Buffer::OperationCode Buffer::save(bool p_force)
         try {
             m_provider->write(m_content);
         } catch (Exception &p_e) {
-            qWarning() << "failed to write the buffer content" << getPath();
+            qWarning() << "failed to write the buffer content" << getPath() << p_e.what();
             return OperationCode::Failed;
         }
 
@@ -327,7 +327,7 @@ void Buffer::autoSave()
         try {
             writeBackupFile();
         } catch (Exception &p_e) {
-            qWarning() << "AutoSave failed to write backup file, retry later";
+            qWarning() << "AutoSave failed to write backup file, retry later" << p_e.what();
         }
         break;
     }

@@ -399,7 +399,7 @@ void MarkdownViewWindow::setupViewer()
     // Status widget.
     {
         // TODO: implement a real status widget for viewer.
-        auto label = new QLabel(tr("Markdown Web Viewer"), this);
+        auto label = new QLabel(tr("Markdown Viewer"), this);
         label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         m_viewerStatusWidget.reset(label);
         getMainStatusWidget()->addWidget(m_viewerStatusWidget.get());

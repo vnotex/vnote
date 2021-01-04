@@ -46,6 +46,7 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     m_htmlTagEnabled = READBOOL(QStringLiteral("html_tag"));
     m_autoBreakEnabled = READBOOL(QStringLiteral("auto_break"));
     m_linkifyEnabled = READBOOL(QStringLiteral("linkify"));
+    m_indentFirstLineEnabled = READBOOL(QStringLiteral("indent_first_line"));
 }
 
 QJsonObject MarkdownEditorConfig::toJson() const
@@ -69,6 +70,7 @@ QJsonObject MarkdownEditorConfig::toJson() const
     obj[QStringLiteral("html_tag")] = m_htmlTagEnabled;
     obj[QStringLiteral("auto_break")] = m_autoBreakEnabled;
     obj[QStringLiteral("linkify")] = m_linkifyEnabled;
+    obj[QStringLiteral("indent_first_line")] = m_indentFirstLineEnabled;
     return obj;
 }
 
@@ -227,6 +229,16 @@ bool MarkdownEditorConfig::getLinkifyEnabled() const
 void MarkdownEditorConfig::setLinkifyEnabled(bool p_enabled)
 {
     updateConfig(m_linkifyEnabled, p_enabled, this);
+}
+
+bool MarkdownEditorConfig::getIndentFirstLineEnabled() const
+{
+    return m_indentFirstLineEnabled;
+}
+
+void MarkdownEditorConfig::setIndentFirstLineEnabled(bool p_enabled)
+{
+    updateConfig(m_indentFirstLineEnabled, p_enabled, this);
 }
 
 QString MarkdownEditorConfig::sectionNumberModeToString(SectionNumberMode p_mode) const

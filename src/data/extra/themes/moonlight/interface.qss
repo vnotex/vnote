@@ -897,6 +897,11 @@ QAbstractSpinBox {
     selection-background-color: @widgets#qspinbox#selection#bg;
 }
 
+QAbstractSpinBox:disabled {
+    color: @widgets#qspinbox#disabled#fg;
+    background-color: @widgets#qspinbox#disabled#bg;
+}
+
 QAbstractSpinBox:focus {
     border: 2px solid @widgets#qspinbox#focus#border;
     background-color: @widgets#qspinbox#focus#bg;

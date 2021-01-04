@@ -76,6 +76,10 @@ QDialogButtonBox *Dialog::getDialogButtonBox() const
 void Dialog::setInformationText(const QString &p_text, InformationLevel p_level)
 {
     if (!m_infoTextEdit) {
+        if (p_text.isEmpty()) {
+            return;
+        }
+
         m_infoTextEdit = new QPlainTextEdit(this);
         m_infoTextEdit->setReadOnly(true);
         m_infoTextEdit->setMaximumHeight(m_infoTextEdit->minimumSizeHint().height());
@@ -83,7 +87,10 @@ void Dialog::setInformationText(const QString &p_text, InformationLevel p_level)
     }
 
     m_infoTextEdit->setPlainText(p_text);
-    m_infoTextEdit->setVisible(!p_text.isEmpty());
+
+    const bool visible = !p_text.isEmpty();
+    const bool needResize = visible != m_infoTextEdit->isVisible();
+    m_infoTextEdit->setVisible(visible);
 
     // Change the style.
     const char *level = "";
@@ -102,7 +109,9 @@ void Dialog::setInformationText(const QString &p_text, InformationLevel p_level)
     }
 
     WidgetUtils::setPropertyDynamically(m_infoTextEdit, PropertyDefs::s_state, level);
-    WidgetUtils::updateSize(this);
+    if (needResize) {
+        WidgetUtils::updateSize(this);
+    }
 }
 
 void Dialog::acceptedButtonClicked()

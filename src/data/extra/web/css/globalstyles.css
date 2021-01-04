@@ -81,3 +81,7 @@
     visibility: visible;
     vertical-align: middle;
 }
+
+#vx-content.vx-indent-first-line p {
+    text-indent: 2em;
+}

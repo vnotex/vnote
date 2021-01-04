@@ -66,6 +66,8 @@ void MarkdownEditorPage::loadInternal()
     m_autoBreakCheckBox->setChecked(markdownConfig.getAutoBreakEnabled());
 
     m_linkifyCheckBox->setChecked(markdownConfig.getLinkifyEnabled());
+
+    m_indentFirstLineCheckBox->setChecked(markdownConfig.getIndentFirstLineEnabled());
 }
 
 void MarkdownEditorPage::saveInternal()
@@ -96,6 +98,8 @@ void MarkdownEditorPage::saveInternal()
     markdownConfig.setAutoBreakEnabled(m_autoBreakCheckBox->isChecked());
 
     markdownConfig.setLinkifyEnabled(m_linkifyCheckBox->isChecked());
+
+    markdownConfig.setIndentFirstLineEnabled(m_indentFirstLineCheckBox->isChecked());
 
     EditorPage::notifyEditorConfigChange();
 }
@@ -161,6 +165,16 @@ QGroupBox *MarkdownEditorPage::setupReadGroup()
         layout->addRow(m_linkifyCheckBox);
         addSearchItem(label, m_linkifyCheckBox->toolTip(), m_linkifyCheckBox);
         connect(m_linkifyCheckBox, &QCheckBox::stateChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        const QString label(tr("Indent first line"));
+        m_indentFirstLineCheckBox = WidgetsFactory::createCheckBox(label, box);
+        m_indentFirstLineCheckBox->setToolTip(tr("Indent the first line of each paragraph"));
+        layout->addRow(m_indentFirstLineCheckBox);
+        addSearchItem(label, m_indentFirstLineCheckBox->toolTip(), m_indentFirstLineCheckBox);
+        connect(m_indentFirstLineCheckBox, &QCheckBox::stateChanged,
                 this, &MarkdownEditorPage::pageIsChanged);
     }
 

@@ -81,6 +81,9 @@ namespace vnotex
         bool getLinkifyEnabled() const;
         void setLinkifyEnabled(bool p_enabled);
 
+        bool getIndentFirstLineEnabled() const;
+        void setIndentFirstLineEnabled(bool p_enabled);
+
     private:
         QString sectionNumberModeToString(SectionNumberMode p_mode) const;
         SectionNumberMode stringToSectionNumberMode(const QString &p_str) const;
@@ -131,6 +134,9 @@ namespace vnotex
 
         // Whether convert URL-like text to links.
         bool m_linkifyEnabled = true;
+
+        // Whether indent the first line of a paragraph.
+        bool m_indentFirstLineEnabled = false;
     };
 }
 

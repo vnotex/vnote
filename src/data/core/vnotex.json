@@ -245,7 +245,9 @@
             "//comment" : "Whether auto break a line with '\\n'",
             "auto_break" : false,
             "//comment" : "Whether convert URL-like text to links",
-            "linkify" : true
+            "linkify" : true,
+            "//comment" : "Whether add indentation to the first line of paragraph",
+            "indent_first_line" : false
         }
     },
     "widget" : {
