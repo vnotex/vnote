@@ -47,6 +47,8 @@ namespace vnotex
 
         QCheckBox *m_linkifyCheckBox = nullptr;
 
+        QCheckBox *m_indentFirstLineCheckBox = nullptr;
+
         QDoubleSpinBox *m_zoomFactorSpinBox = nullptr;
 
         QComboBox *m_sectionNumberComboBox = nullptr;

@@ -136,7 +136,6 @@ class VNoteX extends EventEmitter {
     }
 
     setBasicMarkdownRendered() {
-        this.setConstrainImageWidthEnabled(window.vxOptions.constrainImageWidthEnabled);
         this.emit('basicMarkdownRendered');
     }
 
@@ -207,15 +206,6 @@ class VNoteX extends EventEmitter {
             this.contentContainer.classList.add(sectionClass);
         } else {
             this.contentContainer.classList.remove(sectionClass);
-        }
-    }
-
-    setConstrainImageWidthEnabled(p_enabled) {
-        let constrainClass = 'vx-constrain-image-width';
-        if (p_enabled) {
-            this.contentContainer.classList.add(constrainClass);
-        } else {
-            this.contentContainer.classList.remove(constrainClass);
         }
     }
 

@@ -516,6 +516,10 @@
             "border" : "@base#content#border",
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
+            "disabled" : {
+                "fg" : "@base#content#disabled#fg",
+                "bg" : "@base#content#disabled#bg"
+            },
             "selection" : {
                 "fg" : "@base#content#selection#fg",
                 "bg" : "@base#content#selection#bg"

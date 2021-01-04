@@ -26,6 +26,8 @@ namespace vnotex
 
         bool m_linkifyEnabled = true;
 
+        bool m_indentFirstLineEnabled = false;
+
         QString toJavascriptObject() const;
     };
 

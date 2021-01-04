@@ -187,7 +187,7 @@ namespace vnotex
         QTimer *m_sectionNumberTimer = nullptr;
 
         // Used to detect the config change and do a clean up.
-        bool m_sectionNumberEnabled = true;
+        bool m_sectionNumberEnabled = false;
 
         OverrideState m_overriddenSectionNumber = OverrideState::NoOverride;
     };
