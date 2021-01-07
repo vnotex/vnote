@@ -3,30 +3,65 @@
 
 #include <QString>
 #include <QMap>
-#include <QSharedPointer>
+#include <QVector>
 
 namespace vnotex
 {
-    typedef QString FileType;
+    class FileType
+    {
+    public:
+        // FileTypeHelper::Type.
+        int m_type = -1;
 
-    // Map file suffix to file type.
+        QString m_typeName;
+
+        QString m_displayName;
+
+        QStringList m_suffixes;
+
+        QString preferredSuffix() const
+        {
+            return m_suffixes.isEmpty() ? QString() : m_suffixes.first();
+        }
+    };
+
     class FileTypeHelper
     {
     public:
-        FileTypeHelper() = delete;
+        enum Type
+        {
+            Markdown = 0,
+            Text,
+            Others
+        };
 
-        static FileType fileType(const QString &p_filePath);
+        const FileType &getFileType(const QString &p_filePath) const;
 
-        static const FileType s_markdownFileType;
+        const FileType &getFileType(Type p_type) const;
 
-        static const FileType s_textFileType;
+        const FileType &getFileTypeByName(const QString &p_typeName) const;
 
-        static const FileType s_unknownFileType;
+        const FileType &getFileTypeBySuffix(const QString &p_suffix) const;
+
+        const QVector<FileType> &getAllFileTypes() const;
+
+        bool checkFileType(const QString &p_filePath, Type p_type) const;
+
+        static const FileTypeHelper &getInst();
 
     private:
-        static void init();
+        FileTypeHelper();
 
-        static QSharedPointer<QMap<QString, FileType>> s_fileTypeMap;
+        void setupBuiltInTypes();
+
+        void setupSuffixTypeMap();
+
+        // Built-in Type could be accessed via enum Type.
+        QVector<FileType> m_fileTypes;
+
+        // suffix -> index of m_fileTypes.
+        // TODO: handle suffix conflicts.
+        QMap<QString, int> m_suffixTypeMap;
     };
 } // ns vnotex
 

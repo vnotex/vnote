@@ -23,8 +23,8 @@ void NodeContentMediaUtils::copyMediaFiles(const Node *p_node,
                                            const QString &p_destFilePath)
 {
     Q_ASSERT(p_node->getType() == Node::Type::File);
-    auto fileType = FileTypeHelper::fileType(p_node->fetchAbsolutePath());
-    if (fileType == QStringLiteral("markdown")) {
+    const auto &fileType = FileTypeHelper::getInst().getFileType(p_node->fetchAbsolutePath());
+    if (fileType.m_type == FileTypeHelper::Markdown) {
         copyMarkdownMediaFiles(p_node->read(),
                                PathUtils::parentDirPath(p_node->fetchContentPath()),
                                p_backend,
@@ -36,8 +36,8 @@ void NodeContentMediaUtils::copyMediaFiles(const QString &p_filePath,
                                            INotebookBackend *p_backend,
                                            const QString &p_destFilePath)
 {
-    auto fileType = FileTypeHelper::fileType(p_filePath);
-    if (fileType == QStringLiteral("markdown")) {
+    const auto &fileType = FileTypeHelper::getInst().getFileType(p_filePath);
+    if (fileType.m_type == FileTypeHelper::Markdown) {
         copyMarkdownMediaFiles(FileUtils::readTextFile(p_filePath),
                                PathUtils::parentDirPath(p_filePath),
                                p_backend,
@@ -112,8 +112,8 @@ void NodeContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content,
 void NodeContentMediaUtils::removeMediaFiles(const Node *p_node)
 {
     Q_ASSERT(p_node->getType() == Node::Type::File);
-    auto fileType = FileTypeHelper::fileType(p_node->fetchAbsolutePath());
-    if (fileType == QStringLiteral("markdown")) {
+    const auto &fileType = FileTypeHelper::getInst().getFileType(p_node->fetchAbsolutePath());
+    if (fileType.m_type == FileTypeHelper::Markdown) {
         removeMarkdownMediaFiles(p_node);
     }
 }
@@ -162,8 +162,8 @@ void NodeContentMediaUtils::copyAttachment(Node *p_node,
         return;
     }
 
-    auto fileType = FileTypeHelper::fileType(p_node->fetchAbsolutePath());
-    if (fileType == QStringLiteral("markdown")) {
+    const auto &fileType = FileTypeHelper::getInst().getFileType(p_node->fetchAbsolutePath());
+    if (fileType.m_type == FileTypeHelper::Markdown) {
         fixMarkdownLinks(srcAttachmentFolderPath, p_backend, p_destFilePath, p_destAttachmentFolderPath);
     }
 }

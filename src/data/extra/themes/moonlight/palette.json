@@ -233,6 +233,14 @@
                 "active" : {
                     "fg" : "@base#icon#fg"
                 }
+            },
+            "tabbar" : {
+                "tab" : {
+                    "selected" : {
+                        "fg" : "@base#content#fg",
+                        "bg" : "@base#content#bg"
+                    }
+                }
             }
         },
         "qmainwindow" : {
@@ -403,8 +411,8 @@
                     "bg" : "@base#hover#bg"
                 },
                 "selected" : {
-                    "fg" : "@base#selected#fg",
-                    "bg" : "@base#selected#bg",
+                    "fg" : "@base#content#fg",
+                    "bg" : "@base#content#bg",
                     "border" : "@base#master#bg"
                 }
             }
@@ -583,6 +591,11 @@
             "subpage" : {
                 "border" : "@widgets#qslider#handle#border",
                 "bg" : "@base#master#alt"
+            }
+        },
+        "viewwindow" : {
+            "toolbar" : {
+                "bg" : "@base#content#bg"
             }
         }
     }

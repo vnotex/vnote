@@ -32,6 +32,7 @@
 #include "exception.h"
 #include "findandreplacewidget.h"
 #include "editors/statuswidget.h"
+#include "propertydefs.h"
 
 using namespace vnotex;
 
@@ -106,14 +107,17 @@ ViewWindow::~ViewWindow()
 void ViewWindow::setupUI()
 {
     m_mainLayout = new QVBoxLayout(this);
+    m_mainLayout->setSpacing(0);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
 
     m_topLayout = new QVBoxLayout();
     m_topLayout->setContentsMargins(0, 0, 0, 0);
+    m_topLayout->setSpacing(0);
     m_mainLayout->addLayout(m_topLayout, 0);
 
     m_bottomLayout = new QVBoxLayout();
     m_bottomLayout->setContentsMargins(0, 0, 0, 0);
+    m_bottomLayout->setSpacing(0);
     m_mainLayout->addLayout(m_bottomLayout, 0);
 }
 
@@ -1072,4 +1076,11 @@ void ViewWindow::read(bool p_save)
         discardChangesAndRead();
     }
     setFocus();
+}
+
+QToolBar *ViewWindow::createToolBar(QWidget *p_parent)
+{
+    auto toolBar = new QToolBar(p_parent);
+    toolBar->setProperty(PropertyDefs::s_viewWindowToolBar, true);
+    return toolBar;
 }

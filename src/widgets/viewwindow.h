@@ -11,6 +11,7 @@
 
 class QVBoxLayout;
 class QTimer;
+class QToolBar;
 
 namespace vnotex
 {
@@ -217,6 +218,8 @@ namespace vnotex
         void read(bool p_save);
 
         static ViewWindow::Mode modeFromOpenParameters(const FileOpenParameters &p_paras);
+
+        static QToolBar *createToolBar(QWidget *p_parent = nullptr);
 
         // The revision of the buffer of the last sync content.
         int m_bufferRevision = 0;

@@ -1079,3 +1079,18 @@ QSizeGrip {
     width: 16px;
     height: 16px;
 }
+
+/* ViewWindow */
+vnotex--ViewWindow QToolBar[ViewWindowToolBar="true"] {
+    background-color: @widgets#viewwindow#toolbar#bg;
+}
+
+/* ViewSplit */
+vnotex--ViewSplit QTabBar::tab:selected {
+    color: @widgets#viewsplit#tabbar#tab#selected#fg;
+    background-color: @widgets#viewsplit#tabbar#tab#selected#bg;
+}
+
+vte--VTextEdit {
+    border: none;
+}

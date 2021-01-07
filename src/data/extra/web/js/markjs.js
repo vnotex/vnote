@@ -61,7 +61,9 @@ class MarkJs {
             'className': this.className,
             'caseSensitive': p_options.caseSensitive,
             'accuracy': p_options.wholeWordOnly ? 'exactly' : 'partially',
-            'done': callbackFunc(this, p_text, p_options)
+            'done': callbackFunc(this, p_text, p_options),
+            // Ignore SVG, or SVG will be corrupted.
+            'exclude': ['svg *']
         }
 
         if (p_options.regularExpression) {

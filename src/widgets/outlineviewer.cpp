@@ -51,6 +51,7 @@ void OutlineViewer::setupUI(const QString &p_title)
 {
     auto mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
 
     {
         auto titleBar = setupTitleBar(p_title, this);

@@ -13,3 +13,5 @@ const char *PropertyDefs::s_dialogCentralWidget = "DialogCentralWidget";
 const char *PropertyDefs::s_viewSplitCornerWidget = "ViewSplitCornerWidget";
 
 const char *PropertyDefs::s_state = "State";
+
+const char *PropertyDefs::s_viewWindowToolBar = "ViewWindowToolBar";

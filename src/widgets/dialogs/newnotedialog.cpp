@@ -8,6 +8,7 @@
 #include <utils/pathutils.h>
 #include "exception.h"
 #include "nodeinfowidget.h"
+#include <utils/widgetutils.h>
 
 using namespace vnotex;
 
@@ -110,8 +111,7 @@ void NewNoteDialog::initDefaultValues()
     {
         auto lineEdit = m_infoWidget->getNameLineEdit();
         lineEdit->setText(c_defaultNoteName);
-        int dotIndex = c_defaultNoteName.lastIndexOf('.');
-        lineEdit->setSelection(0, (dotIndex == -1) ? c_defaultNoteName.size() : dotIndex);
+        WidgetUtils::selectBaseName(lineEdit);
 
         validateInputs();
     }
