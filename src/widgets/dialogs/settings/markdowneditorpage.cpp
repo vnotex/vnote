@@ -51,6 +51,10 @@ void MarkdownEditorPage::loadInternal()
         m_sectionNumberComboBox->setCurrentIndex(idx);
 
         m_sectionNumberBaseLevelSpinBox->setValue(markdownConfig.getSectionNumberBaseLevel());
+
+        idx = m_sectionNumberStyleComboBox->findData(static_cast<int>(markdownConfig.getSectionNumberStyle()));
+        Q_ASSERT(idx != -1);
+        m_sectionNumberStyleComboBox->setCurrentIndex(idx);
     }
 
     m_constrainImageWidthCheckBox->setChecked(markdownConfig.getConstrainImageWidthEnabled());
@@ -82,6 +86,11 @@ void MarkdownEditorPage::saveInternal()
 
         if (m_sectionNumberBaseLevelSpinBox->isEnabled()) {
             markdownConfig.setSectionNumberBaseLevel(m_sectionNumberBaseLevelSpinBox->value());
+        }
+
+        if (m_sectionNumberStyleComboBox->isEnabled()) {
+            auto style = m_sectionNumberStyleComboBox->currentData().toInt();
+            markdownConfig.setSectionNumberStyle(static_cast<MarkdownEditorConfig::SectionNumberStyle>(style));
         }
     }
 
@@ -229,11 +238,9 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
 
         m_sectionNumberComboBox = WidgetsFactory::createComboBox(this);
         m_sectionNumberComboBox->setToolTip(tr("Section number mode"));
-
         m_sectionNumberComboBox->addItem(tr("None"), (int)MarkdownEditorConfig::SectionNumberMode::None);
         m_sectionNumberComboBox->addItem(tr("Read"), (int)MarkdownEditorConfig::SectionNumberMode::Read);
         m_sectionNumberComboBox->addItem(tr("Edit"), (int)MarkdownEditorConfig::SectionNumberMode::Edit);
-
         sectionLayout->addWidget(m_sectionNumberComboBox);
         connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &MarkdownEditorPage::pageIsChanged);
@@ -242,13 +249,22 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
         m_sectionNumberBaseLevelSpinBox->setToolTip(tr("Base level to start section numbering in edit mode"));
         m_sectionNumberBaseLevelSpinBox->setRange(1, 6);
         m_sectionNumberBaseLevelSpinBox->setSingleStep(1);
-
         sectionLayout->addWidget(m_sectionNumberBaseLevelSpinBox);
         connect(m_sectionNumberBaseLevelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
                 this, &MarkdownEditorPage::pageIsChanged);
+
+        m_sectionNumberStyleComboBox = WidgetsFactory::createComboBox(this);
+        m_sectionNumberStyleComboBox->setToolTip(tr("Section number style"));
+        m_sectionNumberStyleComboBox->addItem(tr("1.1."), (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot);
+        m_sectionNumberStyleComboBox->addItem(tr("1.1"), (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDig);
+        sectionLayout->addWidget(m_sectionNumberStyleComboBox);
+        connect(m_sectionNumberStyleComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &MarkdownEditorPage::pageIsChanged);
+
         connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, [this](int p_index) {
                     m_sectionNumberBaseLevelSpinBox->setEnabled(p_index == MarkdownEditorConfig::SectionNumberMode::Edit);
+                    m_sectionNumberStyleComboBox->setEnabled(p_index == MarkdownEditorConfig::SectionNumberMode::Edit);
                 });
 
         const QString label(tr("Section number:"));

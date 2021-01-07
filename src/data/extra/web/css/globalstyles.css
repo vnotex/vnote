@@ -22,27 +22,27 @@
 
 #vx-content.vx-section-number h2::before {
     counter-increment: section1;
-    content: counter(section1) " ";
+    content: counter(section1) ". ";
 }
 
 #vx-content.vx-section-number h3::before {
     counter-increment: section2;
-    content: counter(section1) "." counter(section2) " ";
+    content: counter(section1) "." counter(section2) ". ";
 }
 
 #vx-content.vx-section-number h4::before {
     counter-increment: section3;
-    content: counter(section1) "." counter(section2) "." counter(section3) " ";
+    content: counter(section1) "." counter(section2) "." counter(section3) ". ";
 }
 
 #vx-content.vx-section-number h5::before {
     counter-increment: section4;
-    content: counter(section1) "." counter(section2) "." counter(section3) "." counter(section4) " ";
+    content: counter(section1) "." counter(section2) "." counter(section3) "." counter(section4) ". ";
 }
 
 #vx-content.vx-section-number h6::before {
     counter-increment: section5;
-    content: counter(section1) "." counter(section2) "." counter(section3) "." counter(section4) "." counter(section5) " ";
+    content: counter(section1) "." counter(section2) "." counter(section3) "." counter(section4) "." counter(section5) ". ";
 }
 
 #vx-content.vx-constrain-image-width img {

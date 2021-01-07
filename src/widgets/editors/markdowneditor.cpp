@@ -755,7 +755,6 @@ void MarkdownEditor::updateHeadings(const QVector<vte::peg::ElementRegion> &p_he
     // Assume that each block contains only one line.
     // Only support # syntax for now.
     auto doc = document();
-    QRegExp headerReg(vte::MarkdownUtils::c_headerRegExp);
     for (auto const &reg : p_headerRegions) {
         auto block = doc->findBlock(reg.m_startPos);
         if (!block.isValid()) {
@@ -766,11 +765,11 @@ void MarkdownEditor::updateHeadings(const QVector<vte::peg::ElementRegion> &p_he
             qWarning() << "header accross multiple blocks, starting from block" << block.blockNumber() << block.text();
         }
 
-        if (headerReg.exactMatch(block.text())) {
-            const int level = headerReg.cap(1).length();
-            Heading heading(headerReg.cap(2).trimmed(),
-                            level,
-                            headerReg.cap(3),
+        auto match = vte::MarkdownUtils::matchHeader(block.text());
+        if (match.m_matched) {
+            Heading heading(match.m_header,
+                            match.m_level,
+                            match.m_sequence,
                             block.blockNumber());
             headings.append(heading);
         }
@@ -1097,10 +1096,9 @@ static void increaseSectionNumber(QVector<int> &p_sectionNumber, int p_level, in
     }
 }
 
-static QString joinSectionNumberStr(const QVector<int> &p_sectionNumber)
+static QString joinSectionNumberStr(const QVector<int> &p_sectionNumber, bool p_endingDot)
 {
     QString res;
-    // TODO: make it configurable? 1.1 or 1.1.?
     for (auto sec : p_sectionNumber) {
         if (sec != 0) {
             if (res.isEmpty()) {
@@ -1115,28 +1113,41 @@ static QString joinSectionNumberStr(const QVector<int> &p_sectionNumber)
         }
     }
 
-    return res;
+    if (p_endingDot && !res.isEmpty()) {
+        return res + '.';
+    } else {
+        return res;
+    }
 }
 
 static bool updateHeadingSectionNumber(QTextCursor &p_cursor,
                                        const QTextBlock &p_block,
-                                       QRegExp &p_headingReg,
-                                       QRegExp &p_prefixReg,
-                                       const QString &p_sectionNumber)
+                                       const QString &p_sectionNumber,
+                                       bool p_endingDot)
 {
     if (!p_block.isValid()) {
         return false;
     }
 
     QString text = p_block.text();
-    bool matched = p_headingReg.exactMatch(text);
-    Q_ASSERT(matched);
+    auto match = vte::MarkdownUtils::matchHeader(text);
+    Q_ASSERT(match.m_matched);
 
-    matched = p_prefixReg.exactMatch(text);
-    Q_ASSERT(matched);
+    bool isSequence = false;
+    if (!match.m_sequence.isEmpty()) {
+        // Check if this sequence is the real sequence matching current style.
+        if (match.m_sequence.endsWith('.')) {
+            isSequence = p_endingDot;
+        } else {
+            isSequence = !p_endingDot;
+        }
+    }
 
-    int start = p_headingReg.cap(1).length() + 1;
-    int end = p_prefixReg.cap(1).length();
+    int start = match.m_level + 1;
+    int end = match.m_level + match.m_spacesAfterMarker;
+    if (isSequence) {
+        end += match.m_sequence.size() + match.m_spacesAfterSequence;
+    }
 
     Q_ASSERT(start <= end);
 
@@ -1162,20 +1173,18 @@ bool MarkdownEditor::updateSectionNumber(const QVector<Heading> &p_headings)
     }
 
     bool changed = false;
+    bool endingDot = m_config.getSectionNumberStyle() == MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot;
     auto doc = document();
-    QRegExp headerReg(vte::MarkdownUtils::c_headerRegExp);
-    QRegExp prefixReg(vte::MarkdownUtils::c_headerPrefixRegExp);
     QTextCursor cursor(doc);
     cursor.beginEditBlock();
     for (const auto &heading : p_headings) {
         increaseSectionNumber(sectionNumber, heading.m_level, baseLevel);
-        auto sectionStr = m_sectionNumberEnabled ? joinSectionNumberStr(sectionNumber) : QString();
+        auto sectionStr = m_sectionNumberEnabled ? joinSectionNumberStr(sectionNumber, endingDot) : QString();
         if (heading.m_blockNumber > -1 && sectionStr != heading.m_sectionNumber) {
             if (updateHeadingSectionNumber(cursor,
                                            doc->findBlockByNumber(heading.m_blockNumber),
-                                           headerReg,
-                                           prefixReg,
-                                           sectionStr)) {
+                                           sectionStr,
+                                           endingDot)) {
                 changed = true;
             }
         }
