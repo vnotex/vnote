@@ -22,6 +22,7 @@
 #include <QMenu>
 #include <QDebug>
 #include <QFormLayout>
+#include <QLineEdit>
 
 using namespace vnotex;
 
@@ -365,4 +366,11 @@ QFormLayout *WidgetUtils::createFormLayout(QWidget *p_parent)
 #endif
 
     return layout;
+}
+
+void WidgetUtils::selectBaseName(QLineEdit *p_lineEdit)
+{
+    auto text = p_lineEdit->text();
+    int dotIndex = text.lastIndexOf(QLatin1Char('.'));
+    p_lineEdit->setSelection(0, (dotIndex == -1) ? text.size() : dotIndex);
 }

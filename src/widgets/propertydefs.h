@@ -19,6 +19,8 @@ namespace vnotex
 
         static const char *s_viewSplitCornerWidget;
 
+        static const char *s_viewWindowToolBar;
+
         // Values: info/warning/error.
         static const char *s_state;
     };

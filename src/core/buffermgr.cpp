@@ -37,13 +37,15 @@ void BufferMgr::initBufferServer()
 {
     m_bufferServer.reset(new NameBasedServer<IBufferFactory>);
 
+    const auto &helper = FileTypeHelper::getInst();
+
     // Markdown.
     auto markdownFactory = QSharedPointer<MarkdownBufferFactory>::create();
-    m_bufferServer->registerItem(FileTypeHelper::s_markdownFileType, markdownFactory);
+    m_bufferServer->registerItem(helper.getFileType(FileTypeHelper::Markdown).m_typeName, markdownFactory);
 
     // Text.
     auto textFactory = QSharedPointer<TextBufferFactory>::create();
-    m_bufferServer->registerItem(FileTypeHelper::s_textFileType, textFactory);
+    m_bufferServer->registerItem(helper.getFileType(FileTypeHelper::Text).m_typeName, textFactory);
 }
 
 void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras)
@@ -59,11 +61,11 @@ void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_p
     auto buffer = findBuffer(p_node);
     if (!buffer) {
         auto nodePath = p_node->fetchAbsolutePath();
-        auto fileType = FileTypeHelper::fileType(nodePath);
+        auto fileType = FileTypeHelper::getInst().getFileType(nodePath).m_typeName;
         auto factory = m_bufferServer->getItem(fileType);
         if (!factory) {
             // No factory to open this file type.
-            qInfo() << "File will be opened by system:" << nodePath;
+            qInfo() << "file will be opened by default program" << nodePath;
             WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(nodePath));
             return;
         }
@@ -102,11 +104,11 @@ void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenPar
     auto buffer = findBuffer(p_filePath);
     if (!buffer) {
         // Open it as external file.
-        auto fileType = FileTypeHelper::fileType(p_filePath);
+        auto fileType = FileTypeHelper::getInst().getFileType(p_filePath).m_typeName;
         auto factory = m_bufferServer->getItem(fileType);
         if (!factory) {
             // No factory to open this file type.
-            qInfo() << "File will be opened by system:" << p_filePath;
+            qInfo() << "file will be opened by default program" << p_filePath;
             WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(p_filePath));
             return;
         }

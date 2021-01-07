@@ -27,9 +27,9 @@ void NodeLabelWithUpButton::setupUI()
 
     auto iconFile = VNoteX::getInst().getThemeMgr().getIconFile("up_parent_node.svg");
     m_upButton = new QPushButton(IconUtils::fetchIconWithDisabledState(iconFile),
-                                 "",
+                                 tr("Up"),
                                  this);
-    m_upButton->setToolTip(tr("Up"));
+    m_upButton->setToolTip(tr("Create note under an upper level node"));
     connect(m_upButton, &QPushButton::clicked,
             this, [this]() {
                 if (!m_node->isRoot()) {

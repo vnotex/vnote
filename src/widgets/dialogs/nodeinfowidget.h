@@ -8,6 +8,7 @@
 class QLineEdit;
 class QLabel;
 class QFormLayout;
+class QComboBox;
 
 namespace vnotex
 {
@@ -38,17 +39,19 @@ namespace vnotex
         void inputEdited();
 
     private:
-        void setupUI(const Node *p_parentNode);
+        void setupUI(const Node *p_parentNode, Node::Type p_newNodeType);
+
+        void setupFileTypeComboBox(QWidget *p_parent);
 
         void setupNameLineEdit(QWidget *p_parent);
-
-        void setStateAccordingToModeAndNodeType(Node::Type p_type);
 
         void setNode(const Node *p_node);
 
         Mode m_mode;
 
         QFormLayout *m_mainLayout = nullptr;
+
+        QComboBox *m_fileTypeComboBox = nullptr;
 
         QLineEdit *m_nameLineEdit = nullptr;
 
@@ -59,6 +62,8 @@ namespace vnotex
         QLabel *m_modifiedDateTimeLabel = nullptr;
 
         const Node *m_node = nullptr;
+
+        bool m_fileTypeComboBoxMuted = false;
     };
 } // ns vnotex
 

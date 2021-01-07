@@ -18,6 +18,7 @@ class QListView;
 class QMenu;
 class QShortcut;
 class QFormLayout;
+class QLineEdit;
 
 namespace vnotex
 {
@@ -79,6 +80,9 @@ namespace vnotex
         static void insertActionAfter(QMenu *p_menu, QAction *p_after, QAction *p_action);
 
         static QFormLayout *createFormLayout(QWidget *p_parent = nullptr);
+
+        // Select the base name part of the line edit content.
+        static void selectBaseName(QLineEdit *p_lineEdit);
 
     private:
         static void resizeToHideScrollBar(QScrollArea *p_scroll, bool p_vertical, bool p_horizontal);

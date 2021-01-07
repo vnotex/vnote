@@ -22,6 +22,14 @@ namespace vnotex
             Edit
         };
 
+        enum SectionNumberStyle
+        {
+            // 1.1.
+            DigDotDigDot,
+            // 1.1
+            DigDotDig
+        };
+
         MarkdownEditorConfig(ConfigMgr *p_mgr,
                              IConfig *p_topConfig,
                              const QSharedPointer<TextEditorConfig> &p_textEditorConfig);
@@ -58,6 +66,9 @@ namespace vnotex
         int getSectionNumberBaseLevel() const;
         void setSectionNumberBaseLevel(int p_level);
 
+        SectionNumberStyle getSectionNumberStyle() const;
+        void setSectionNumberStyle(SectionNumberStyle p_style);
+
         bool getConstrainImageWidthEnabled() const;
         void setConstrainImageWidthEnabled(bool p_enabled);
 
@@ -88,6 +99,9 @@ namespace vnotex
         QString sectionNumberModeToString(SectionNumberMode p_mode) const;
         SectionNumberMode stringToSectionNumberMode(const QString &p_str) const;
 
+        QString sectionNumberStyleToString(SectionNumberStyle p_style) const;
+        SectionNumberStyle stringToSectionNumberStyle(const QString &p_str) const;
+
         QSharedPointer<TextEditorConfig> m_textEditorConfig;
 
         ViewerResource m_viewerResource;
@@ -111,6 +125,9 @@ namespace vnotex
 
         // 1 based.
         int m_sectionNumberBaseLevel = 2;
+
+        // Section number style.
+        SectionNumberStyle m_sectionNumberStyle = SectionNumberStyle::DigDotDigDot;
 
         // Whether enable image width constraint.
         bool m_constrainImageWidthEnabled = true;

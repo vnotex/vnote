@@ -111,6 +111,6 @@ class Utils {
     }
 
     static headingSequenceRegExp() {
-        return /^\d{1,3}(?:\.\d+)*\.? /;
+        return /^\d{1,3}(?:\.\d+)*\. /;
     }
 }

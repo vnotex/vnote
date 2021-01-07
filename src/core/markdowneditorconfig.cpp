@@ -37,6 +37,7 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
 
     m_sectionNumberMode = stringToSectionNumberMode(READSTR(QStringLiteral("section_number")));
     m_sectionNumberBaseLevel = READINT(QStringLiteral("section_number_base_level"));
+    m_sectionNumberStyle = stringToSectionNumberStyle(READSTR(QStringLiteral("section_number_style")));
 
     m_constrainImageWidthEnabled = READBOOL(QStringLiteral("constrain_image_width"));
     m_constrainInPlacePreviewWidthEnabled = READBOOL(QStringLiteral("constrain_inplace_preview_width"));
@@ -61,6 +62,7 @@ QJsonObject MarkdownEditorConfig::toJson() const
 
     obj[QStringLiteral("section_number")] = sectionNumberModeToString(m_sectionNumberMode);
     obj[QStringLiteral("section_number_base_level")] = m_sectionNumberBaseLevel;
+    obj[QStringLiteral("section_number_style")] = sectionNumberStyleToString(m_sectionNumberStyle);
 
     obj[QStringLiteral("constrain_image_width")] = m_constrainImageWidthEnabled;
     obj[QStringLiteral("constrain_inplace_preview_width")] = m_constrainInPlacePreviewWidthEnabled;
@@ -267,6 +269,27 @@ MarkdownEditorConfig::SectionNumberMode MarkdownEditorConfig::stringToSectionNum
     }
 }
 
+QString MarkdownEditorConfig::sectionNumberStyleToString(SectionNumberStyle p_style) const
+{
+    switch (p_style) {
+    case SectionNumberStyle::DigDotDig:
+        return QStringLiteral("digdotdig");
+
+    default:
+        return QStringLiteral("digdotdigdot");
+    }
+}
+
+MarkdownEditorConfig::SectionNumberStyle MarkdownEditorConfig::stringToSectionNumberStyle(const QString &p_str) const
+{
+    auto style = p_str.toLower();
+    if (style == QStringLiteral("digdotdig")) {
+        return SectionNumberStyle::DigDotDig;
+    } else {
+        return SectionNumberStyle::DigDotDigDot;
+    }
+}
+
 MarkdownEditorConfig::SectionNumberMode MarkdownEditorConfig::getSectionNumberMode() const
 {
     return m_sectionNumberMode;
@@ -285,4 +308,14 @@ int MarkdownEditorConfig::getSectionNumberBaseLevel() const
 void MarkdownEditorConfig::setSectionNumberBaseLevel(int p_level)
 {
     updateConfig(m_sectionNumberBaseLevel, p_level, this);
+}
+
+MarkdownEditorConfig::SectionNumberStyle MarkdownEditorConfig::getSectionNumberStyle() const
+{
+    return m_sectionNumberStyle;
+}
+
+void MarkdownEditorConfig::setSectionNumberStyle(SectionNumberStyle p_style)
+{
+    updateConfig(m_sectionNumberStyle, p_style, this);
 }

@@ -251,7 +251,8 @@ void MarkdownViewWindow::handleBufferChangedInternal()
 
 void MarkdownViewWindow::setupToolBar()
 {
-    auto toolBar = new QToolBar(this);
+    auto toolBar = createToolBar(this);
+
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
     const int iconSize = editorConfig.getToolBarIconSize();
     toolBar->setIconSize(QSize(iconSize, iconSize));
