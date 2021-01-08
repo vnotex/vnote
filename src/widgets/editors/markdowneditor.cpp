@@ -24,6 +24,7 @@
 
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/imageinsertdialog.h>
+#include <widgets/dialogs/tableinsertdialog.h>
 #include <widgets/messageboxhelper.h>
 
 #include <widgets/dialogs/selectdialog.h>
@@ -43,6 +44,7 @@
 
 #include "previewhelper.h"
 #include "../outlineprovider.h"
+#include "markdowntablehelper.h"
 
 using namespace vnotex;
 
@@ -77,6 +79,8 @@ MarkdownEditor::MarkdownEditor(const MarkdownEditorConfig &p_config,
 
     connect(getHighlighter(), &vte::PegMarkdownHighlighter::headersUpdated,
             this, &MarkdownEditor::updateHeadings);
+
+    setupTableHelper();
 
     m_headingTimer = new QTimer(this);
     m_headingTimer->setInterval(500);
@@ -141,6 +145,12 @@ void MarkdownEditor::typeStrikethrough()
 {
     enterInsertModeIfApplicable();
     vte::MarkdownUtils::typeStrikethrough(m_textEdit);
+}
+
+void MarkdownEditor::typeMark()
+{
+    enterInsertModeIfApplicable();
+    vte::MarkdownUtils::typeMark(m_textEdit);
 }
 
 void MarkdownEditor::typeUnorderedList()
@@ -291,6 +301,40 @@ void MarkdownEditor::typeImage()
                                         dialog.getScaledWidth());
         }
     }
+}
+
+void MarkdownEditor::typeTable()
+{
+    TableInsertDialog dialog(tr("Insert Table"), this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    auto cursor = m_textEdit->textCursor();
+    cursor.beginEditBlock();
+    if (cursor.hasSelection()) {
+        cursor.setPosition(qMax(cursor.selectionStart(), cursor.selectionEnd()));
+    }
+
+    bool newBlock = !cursor.atBlockEnd();
+    if (!newBlock && !cursor.atBlockStart()) {
+        QString text = cursor.block().text().trimmed();
+        if (!text.isEmpty() && text != QStringLiteral(">")) {
+            // Insert a new block before inserting table.
+            newBlock = true;
+        }
+    }
+
+    if (newBlock) {
+        auto indentationStr = vte::TextEditUtils::fetchIndentationSpaces(cursor.block());
+        vte::TextEditUtils::insertBlock(cursor, false);
+        cursor.insertText(indentationStr);
+    }
+
+    cursor.endEditBlock();
+    m_textEdit->setTextCursor(cursor);
+
+    // Insert table.
 }
 
 void MarkdownEditor::setBuffer(Buffer *p_buffer)
@@ -1213,4 +1257,11 @@ void MarkdownEditor::updateFromConfig(bool p_initialized)
     if (p_initialized) {
         getHighlighter()->updateHighlight();
     }
+}
+
+void MarkdownEditor::setupTableHelper()
+{
+    m_tableHelper = new MarkdownTableHelper(this, this);
+    connect(getHighlighter(), &vte::PegMarkdownHighlighter::tableBlocksUpdated,
+            m_tableHelper, &MarkdownTableHelper::updateTableBlocks);
 }

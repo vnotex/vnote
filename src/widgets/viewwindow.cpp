@@ -360,6 +360,8 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
     case ViewWindowToolBarHelper::TypeImage:
         Q_FALLTHROUGH();
     case ViewWindowToolBarHelper::TypeTable:
+        Q_FALLTHROUGH();
+    case ViewWindowToolBarHelper::TypeMark:
     {
         act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
         connect(this, &ViewWindow::modeChanged,
@@ -616,7 +618,7 @@ void ViewWindow::handleSectionNumberOverride(OverrideState p_state)
 ViewWindow::TypeAction ViewWindow::toolBarActionToTypeAction(ViewWindowToolBarHelper::Action p_action)
 {
     Q_ASSERT(p_action >= ViewWindowToolBarHelper::Action::TypeBold
-             && p_action <= ViewWindowToolBarHelper::Action::TypeTable);
+             && p_action <= ViewWindowToolBarHelper::Action::TypeMax);
     return static_cast<TypeAction>(TypeAction::Bold + (p_action - ViewWindowToolBarHelper::Action::TypeBold));
 }
 

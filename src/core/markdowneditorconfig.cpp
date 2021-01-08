@@ -43,11 +43,15 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     m_constrainInPlacePreviewWidthEnabled = READBOOL(QStringLiteral("constrain_inplace_preview_width"));
     m_zoomFactorInReadMode = READREAL(QStringLiteral("zoom_factor_in_read_mode"));
     m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetch_images_in_parse_and_paste"));
+
     m_protectFromXss = READBOOL(QStringLiteral("protect_from_xss"));
     m_htmlTagEnabled = READBOOL(QStringLiteral("html_tag"));
     m_autoBreakEnabled = READBOOL(QStringLiteral("auto_break"));
     m_linkifyEnabled = READBOOL(QStringLiteral("linkify"));
     m_indentFirstLineEnabled = READBOOL(QStringLiteral("indent_first_line"));
+
+    m_smartTableEnabled = READBOOL(QStringLiteral("smart_table"));
+    m_smartTableInterval = READINT(QStringLiteral("smart_table_interval"));
 }
 
 QJsonObject MarkdownEditorConfig::toJson() const
@@ -73,6 +77,8 @@ QJsonObject MarkdownEditorConfig::toJson() const
     obj[QStringLiteral("auto_break")] = m_autoBreakEnabled;
     obj[QStringLiteral("linkify")] = m_linkifyEnabled;
     obj[QStringLiteral("indent_first_line")] = m_indentFirstLineEnabled;
+    obj[QStringLiteral("smart_table")] = m_smartTableEnabled;
+    obj[QStringLiteral("smart_table_interval")] = m_smartTableInterval;
     return obj;
 }
 
@@ -319,3 +325,19 @@ void MarkdownEditorConfig::setSectionNumberStyle(SectionNumberStyle p_style)
 {
     updateConfig(m_sectionNumberStyle, p_style, this);
 }
+
+bool MarkdownEditorConfig::getSmartTableEnabled() const
+{
+    return m_smartTableEnabled;
+}
+
+void MarkdownEditorConfig::setSmartTableEnabled(bool p_enabled)
+{
+    updateConfig(m_smartTableEnabled, p_enabled, this);
+}
+
+int MarkdownEditorConfig::getSmartTableInterval() const
+{
+    return m_smartTableInterval;
+}
+

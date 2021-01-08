@@ -36,6 +36,9 @@ namespace vnotex
             TypeLink,
             TypeImage,
             TypeTable,
+            TypeMark,
+            // Ending TypeXXX.
+            TypeMax,
 
             Attachment,
             Outline,

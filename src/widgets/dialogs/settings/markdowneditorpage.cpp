@@ -72,6 +72,8 @@ void MarkdownEditorPage::loadInternal()
     m_linkifyCheckBox->setChecked(markdownConfig.getLinkifyEnabled());
 
     m_indentFirstLineCheckBox->setChecked(markdownConfig.getIndentFirstLineEnabled());
+
+    m_smartTableCheckBox->setChecked(markdownConfig.getSmartTableEnabled());
 }
 
 void MarkdownEditorPage::saveInternal()
@@ -109,6 +111,8 @@ void MarkdownEditorPage::saveInternal()
     markdownConfig.setLinkifyEnabled(m_linkifyCheckBox->isChecked());
 
     markdownConfig.setIndentFirstLineEnabled(m_indentFirstLineCheckBox->isChecked());
+
+    markdownConfig.setSmartTableEnabled(m_smartTableCheckBox->isChecked());
 
     EditorPage::notifyEditorConfigChange();
 }
@@ -222,6 +226,16 @@ QGroupBox *MarkdownEditorPage::setupEditGroup()
         layout->addRow(m_fetchImagesToLocalCheckBox);
         addSearchItem(label, m_fetchImagesToLocalCheckBox->toolTip(), m_fetchImagesToLocalCheckBox);
         connect(m_fetchImagesToLocalCheckBox, &QCheckBox::stateChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        const QString label(tr("Smart table"));
+        m_smartTableCheckBox = WidgetsFactory::createCheckBox(label, box);
+        m_smartTableCheckBox->setToolTip(tr("Smart table formation"));
+        layout->addRow(m_smartTableCheckBox);
+        addSearchItem(label, m_smartTableCheckBox->toolTip(), m_smartTableCheckBox);
+        connect(m_smartTableCheckBox, &QCheckBox::stateChanged,
                 this, &MarkdownEditorPage::pageIsChanged);
     }
 
