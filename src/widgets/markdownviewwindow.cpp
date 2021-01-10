@@ -241,7 +241,7 @@ void MarkdownViewWindow::handleBufferChangedInternal()
         Q_ASSERT(m_mode != Mode::Read);
         const auto &markdownEditorConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
         if (markdownEditorConfig.getInsertFileNameAsTitle() && buffer->getContent().isEmpty()) {
-            const auto title = QString("# %1\n").arg(QFileInfo(buffer->getName()).baseName());
+            const auto title = QString("# %1\n").arg(QFileInfo(buffer->getName()).completeBaseName());
             m_editor->insertText(title);
         }
     }

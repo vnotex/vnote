@@ -93,6 +93,8 @@ namespace vnotex
 
         QJsonObject saveStateAndGeometry() const;
 
+        void doVersionSpecificOverride();
+
         QString m_newNotebookDefaultRootFolderPath;
 
         // Use root folder to identify a notebook uniquely.

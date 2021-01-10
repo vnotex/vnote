@@ -24,7 +24,10 @@ void FileTypeHelper::setupBuiltInTypes()
         type.m_type = Type::Markdown;
         type.m_displayName = Buffer::tr("Markdown");
         type.m_typeName = QStringLiteral("Markdown");
-        type.m_suffixes << QStringLiteral("md") << QStringLiteral("mkd") << QStringLiteral("markdown");
+        type.m_suffixes << QStringLiteral("md")
+                        << QStringLiteral("mkd")
+                        << QStringLiteral("rmd")
+                        << QStringLiteral("markdown");
         m_fileTypes.push_back(type);
     }
 

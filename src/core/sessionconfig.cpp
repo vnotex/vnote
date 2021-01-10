@@ -8,6 +8,7 @@
 #include <utils/fileutils.h>
 
 #include "configmgr.h"
+#include "mainconfig.h"
 
 using namespace vnotex;
 
@@ -53,6 +54,10 @@ void SessionConfig::init()
     const auto &sessionJobj = sessionSettings->getJson();
 
     loadCore(sessionJobj);
+
+    if (MainConfig::isVersionChanged()) {
+        doVersionSpecificOverride();
+    }
 }
 
 void SessionConfig::loadCore(const QJsonObject &p_session)
@@ -75,12 +80,7 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
     if (!isUndefinedKey(coreObj, QStringLiteral("system_title_bar"))) {
         m_systemTitleBarEnabled = readBool(coreObj, QStringLiteral("system_title_bar"));
     } else {
-        // Enable system title bar on macOS by default.
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
         m_systemTitleBarEnabled = true;
-#else
-        m_systemTitleBarEnabled = false;
-#endif
     }
 
     if (!isUndefinedKey(coreObj, QStringLiteral("minimize_to_system_tray"))) {
@@ -276,4 +276,11 @@ int SessionConfig::getMinimizeToSystemTray() const
 void SessionConfig::setMinimizeToSystemTray(bool p_enabled)
 {
     updateConfig(m_minimizeToSystemTray, p_enabled ? 1 : 0, this);
+}
+
+void SessionConfig::doVersionSpecificOverride()
+{
+    // In a new version, we may want to change one value by force.
+    // SHOULD set the in memory variable only, or will override the notebook list.
+    m_systemTitleBarEnabled = true;
 }

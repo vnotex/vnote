@@ -247,7 +247,7 @@
             "//comment" : "Whether allow HTML tags in source",
             "html_tag" : true,
             "//comment" : "Whether auto break a line with '\\n'",
-            "auto_break" : false,
+            "auto_break" : true,
             "//comment" : "Whether convert URL-like text to links",
             "linkify" : true,
             "//comment" : "Whether add indentation to the first line of paragraph",
