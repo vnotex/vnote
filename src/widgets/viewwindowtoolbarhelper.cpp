@@ -268,6 +268,12 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTable), viewWindow);
         break;
 
+    case Action::TypeMark:
+        act = p_tb->addAction(ToolBarHelper::generateIcon("type_mark_editor.svg"),
+                              ViewWindow::tr("Mark"));
+        addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeMark), viewWindow);
+        break;
+
     case Action::Attachment:
     {
         act = p_tb->addAction(ToolBarHelper::generateIcon("attachment_editor.svg"),

@@ -1644,11 +1644,11 @@ Do you want to delete it anyway?</source>
     <name>QGnomeTheme</name>
     <message>
         <source>&amp;OK</source>
-        <translation>確定(&amp;O)</translation>
+        <translation>确定(&amp;O)</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>儲存(&amp;S)</translation>
+        <translation>保存(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
@@ -1656,11 +1656,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>關閉(&amp;C)</translation>
+        <translation>关闭(&amp;C)</translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation>關閉而不儲存</translation>
+        <translation>关闭而不保存</translation>
     </message>
 </context>
 <context>
@@ -2438,11 +2438,11 @@ Do you want to delete it anyway?</source>
     <name>QMessageBox</name>
     <message>
         <source>Show Details...</source>
-        <translation>顯示詳情...</translation>
+        <translation>显示详情...</translation>
     </message>
     <message>
         <source>Hide Details...</source>
-        <translation>隱藏詳情...</translation>
+        <translation>隐藏详情...</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
@@ -2455,7 +2455,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>About Qt</source>
-        <translation>關於 Qt</translation>
+        <translation>关于 Qt</translation>
     </message>
     <message>
         <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
@@ -3540,15 +3540,15 @@ Do you want to delete it anyway?</source>
     <name>QPlatformTheme</name>
     <message>
         <source>OK</source>
-        <translation>確定</translation>
+        <translation>确定</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation>儲存</translation>
+        <translation>保存</translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation>全部儲存</translation>
+        <translation>全部保存</translation>
     </message>
     <message>
         <source>Open</source>
@@ -3584,7 +3584,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Close</source>
-        <translation>關閉</translation>
+        <translation>关闭</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3592,7 +3592,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Discard</source>
-        <translation>丟棄</translation>
+        <translation>丢弃</translation>
     </message>
     <message>
         <source>Help</source>

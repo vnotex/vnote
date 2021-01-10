@@ -128,7 +128,8 @@ namespace vnotex
             Quote,
             Link,
             Image,
-            TypeTable
+            Table,
+            Mark
         };
 
     protected slots:

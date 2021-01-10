@@ -56,6 +56,8 @@ namespace vnotex
         QSpinBox *m_sectionNumberBaseLevelSpinBox = nullptr;
 
         QComboBox *m_sectionNumberStyleComboBox = nullptr;
+
+        QCheckBox *m_smartTableCheckBox = nullptr;
     };
 }
 

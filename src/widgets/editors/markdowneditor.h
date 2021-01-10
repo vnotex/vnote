@@ -22,6 +22,7 @@ namespace vnotex
     class PreviewHelper;
     class Buffer;
     class MarkdownEditorConfig;
+    class MarkdownTableHelper;
 
     class MarkdownEditor : public vte::VMarkdownEditor
     {
@@ -65,6 +66,8 @@ namespace vnotex
 
         void typeStrikethrough();
 
+        void typeMark();
+
         void typeUnorderedList();
 
         void typeOrderedList();
@@ -84,6 +87,8 @@ namespace vnotex
         void typeLink();
 
         void typeImage();
+
+        void typeTable();
 
         const QVector<MarkdownEditor::Heading> &getHeadings() const;
         int getCurrentHeadingIndex() const;
@@ -171,6 +176,8 @@ namespace vnotex
         // Return true if there is change.
         bool updateSectionNumber(const QVector<Heading> &p_headings);
 
+        void setupTableHelper();
+
         static QString generateImageFileNameToInsertAs(const QString &p_title, const QString &p_suffix);
 
         const MarkdownEditorConfig &m_config;
@@ -190,6 +197,9 @@ namespace vnotex
         bool m_sectionNumberEnabled = false;
 
         OverrideState m_overriddenSectionNumber = OverrideState::NoOverride;
+
+        // Managed by QObject.
+        MarkdownTableHelper *m_tableHelper = nullptr;
     };
 }
 

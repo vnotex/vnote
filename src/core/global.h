@@ -79,6 +79,14 @@ namespace vnotex
         ForceEnable = 1,
         ForceDisable = 2
     };
+
+    enum class Alignment
+    {
+        None,
+        Left,
+        Center,
+        Right
+    };
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);

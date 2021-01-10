@@ -274,6 +274,7 @@ void MarkdownViewWindow::setupToolBar()
     addAction(toolBar, ViewWindowToolBarHelper::TypeBold);
     addAction(toolBar, ViewWindowToolBarHelper::TypeItalic);
     addAction(toolBar, ViewWindowToolBarHelper::TypeStrikethrough);
+    addAction(toolBar, ViewWindowToolBarHelper::TypeMark);
     addAction(toolBar, ViewWindowToolBarHelper::TypeUnorderedList);
     addAction(toolBar, ViewWindowToolBarHelper::TypeOrderedList);
     addAction(toolBar, ViewWindowToolBarHelper::TypeTodoList);
@@ -630,6 +631,10 @@ void MarkdownViewWindow::handleTypeAction(TypeAction p_action)
         m_editor->typeStrikethrough();
         break;
 
+    case TypeAction::Mark:
+        m_editor->typeMark();
+        break;
+
     case TypeAction::UnorderedList:
         m_editor->typeUnorderedList();
         break;
@@ -672,6 +677,10 @@ void MarkdownViewWindow::handleTypeAction(TypeAction p_action)
 
     case TypeAction::Image:
         m_editor->typeImage();
+        break;
+
+    case TypeAction::Table:
+        m_editor->typeTable();
         break;
 
     default:

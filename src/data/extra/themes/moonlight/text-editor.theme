@@ -185,8 +185,8 @@
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "MARK" : {
-            "text-color" : "#ccd1d8",
-            "background-color" : "#551560"
+            "text-color" : "#d7dae0",
+            "background-color" : "#898900"
         },
         "TABLE" : {
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"

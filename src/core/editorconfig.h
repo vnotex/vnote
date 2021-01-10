@@ -43,6 +43,7 @@ namespace vnotex
             TypeLink,
             TypeImage,
             TypeTable,
+            TypeMark,
             Outline,
             RichPaste,
             FindAndReplace,

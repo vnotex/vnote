@@ -95,6 +95,11 @@ namespace vnotex
         bool getIndentFirstLineEnabled() const;
         void setIndentFirstLineEnabled(bool p_enabled);
 
+        bool getSmartTableEnabled() const;
+        void setSmartTableEnabled(bool p_enabled);
+
+        int getSmartTableInterval() const;
+
     private:
         QString sectionNumberModeToString(SectionNumberMode p_mode) const;
         SectionNumberMode stringToSectionNumberMode(const QString &p_str) const;
@@ -154,6 +159,11 @@ namespace vnotex
 
         // Whether indent the first line of a paragraph.
         bool m_indentFirstLineEnabled = false;
+
+        bool m_smartTableEnabled = true;
+
+        // Interval time to do smart table format.
+        int m_smartTableInterval = 2000;
     };
 }
 

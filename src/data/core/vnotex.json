@@ -56,6 +56,7 @@
                 "TypeMath" : "Ctrl+,",
                 "TypeMathBlock" : "Ctrl+.",
                 "TypeTable" : "Ctrl+/",
+                "TypeMark" : "Ctrl+G, M",
                 "Outline" : "Ctrl+G, O",
                 "RichPaste" : "Ctrl+Shift+V",
                 "FindAndReplace" : "Ctrl+F",
@@ -250,7 +251,11 @@
             "//comment" : "Whether convert URL-like text to links",
             "linkify" : true,
             "//comment" : "Whether add indentation to the first line of paragraph",
-            "indent_first_line" : false
+            "indent_first_line" : false,
+            "//comment" : "Whether enable smart table (formation)",
+            "smart_table" : true,
+            "//comment" : "Time interval (milliseconds) to do smart table formation",
+            "smart_table_interval" : 2000
         }
     },
     "widget" : {
