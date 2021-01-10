@@ -1,4 +1,15 @@
 # Changes
+## v3.0.0-beta.5
+* Refine themes
+* Add section number style "1.1" and "1.1.", and use the later as default
+* Support indentation of first line of paragraph in read mode
+* Add file type combo box in NewNoteDialog
+* Add "Insert Mark" in tool bar
+* Support **Smart Table**
+* Support `*.rmd` as Markdown suffix
+* Turn on system title bar by default
+* Enable AutoBreak by default
+
 ## v3.0.0-beta.4
 * Add theme **moonlight** for dark mode
 * Add shortcuts for split and workspace
