@@ -20,6 +20,8 @@ namespace vnotex
     public:
         MarkdownTableHelper(vte::VTextEditor *p_editor, QObject *p_parent = nullptr);
 
+        void insertTable(int p_bodyRow, int p_col, Alignment p_alignment);
+
     public slots:
         void updateTableBlocks(const QVector<vte::peg::TableBlock> &p_blocks);
 

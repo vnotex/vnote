@@ -335,6 +335,7 @@ void MarkdownEditor::typeTable()
     m_textEdit->setTextCursor(cursor);
 
     // Insert table.
+    m_tableHelper->insertTable(dialog.getRowCount(), dialog.getColumnCount(), dialog.getAlignment());
 }
 
 void MarkdownEditor::setBuffer(Buffer *p_buffer)

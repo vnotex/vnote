@@ -78,7 +78,7 @@ namespace vnotex
             int m_coreLength = 0;
 
             // Pixel width of the core content.
-            int m_coreWidth = 0;
+            qreal m_coreWidth = 0;
         };
 
         void parseTableBlock(const vte::peg::TableBlock &p_block);
@@ -105,8 +105,40 @@ namespace vnotex
         void formatColumn(int p_idx, int p_cursorRowIdx, int p_cursorPib);
 
         void fetchCellInfoOfColumn(int p_idx,
+                                   int p_cursorRowIdx,
+                                   int p_cursorPib,
                                    QVector<CellInfo> &p_cellsInfo,
-                                   int &p_targetWidth) const;
+                                   qreal &p_targetWidth) const;
+
+        bool isHeaderRow(int p_idx) const;
+
+        bool isDelimiterRow(int p_idx) const;
+
+        qreal calculateTextWidth(const QTextBlock &p_block, int p_pib, int p_length) const;
+
+        Alignment getColumnAlignment(int p_idx) const;
+
+        bool isDelimiterCellWellFormatted(const Cell &p_cell,
+                                          const CellInfo &p_info,
+                                          qreal p_targetWidth) const;
+
+        // @p_nrSpaces: number of spaces to fill core content.
+        QString generateFormattedText(const QString &p_core,
+                                      int p_nrSpaces,
+                                      Alignment p_align = Alignment::Left) const;
+
+        bool isCellWellFormatted(const Row &p_row,
+                                 const Cell &p_cell,
+                                 const CellInfo &p_info,
+                                 int p_targetWidth,
+                                 Alignment p_align) const;
+
+        void writeTable();
+
+        void writeNewTable();
+
+        // Return -1 if it is an empty cell.
+        static int fetchCoreOffset(const QString &p_cellText);
 
         QTextEdit *m_textEdit = nullptr;
 
@@ -116,13 +148,13 @@ namespace vnotex
         // Header, delimiter, and body.
         QVector<Row> m_rows;
 
-        static int s_spaceWidth;
+        static qreal s_spaceWidth;
 
-        static int s_minusWidth;
+        static qreal s_minusWidth;
 
-        static int s_colonWidth;
+        static qreal s_colonWidth;
 
-        static int s_defaultDelimiterWidth;
+        static qreal s_defaultDelimiterWidth;
 
         static const QString c_defaultDelimiter;
 

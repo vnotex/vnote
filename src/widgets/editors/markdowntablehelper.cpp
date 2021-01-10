@@ -101,3 +101,13 @@ int MarkdownTableHelper::currentCursorTableBlock(const QVector<vte::peg::TableBl
 
     return -1;
 }
+
+void MarkdownTableHelper::insertTable(int p_bodyRow, int p_col, Alignment p_alignment)
+{
+    MarkdownTable table(m_editor->getTextEdit(), p_bodyRow, p_col, p_alignment);
+    if (!table.isValid()) {
+        return;
+    }
+
+    table.write();
+}
