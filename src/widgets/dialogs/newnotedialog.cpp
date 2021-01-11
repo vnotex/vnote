@@ -6,13 +6,12 @@
 #include "notebook/node.h"
 #include "../widgetsfactory.h"
 #include <utils/pathutils.h>
+#include <utils/fileutils.h>
 #include "exception.h"
 #include "nodeinfowidget.h"
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
-
-const QString NewNoteDialog::c_defaultNoteName = "new_note.md";
 
 NewNoteDialog::NewNoteDialog(Node *p_node, QWidget *p_parent)
     : ScrollDialog(p_parent)
@@ -20,7 +19,7 @@ NewNoteDialog::NewNoteDialog(Node *p_node, QWidget *p_parent)
     Q_ASSERT(p_node && p_node->isLoaded());
     setupUI(p_node);
 
-    initDefaultValues();
+    initDefaultValues(p_node);
 
     m_infoWidget->getNameLineEdit()->setFocus();
 }
@@ -106,11 +105,14 @@ const QSharedPointer<Node> &NewNoteDialog::getNewNode() const
     return m_newNode;
 }
 
-void NewNoteDialog::initDefaultValues()
+void NewNoteDialog::initDefaultValues(const Node *p_node)
 {
     {
         auto lineEdit = m_infoWidget->getNameLineEdit();
-        lineEdit->setText(c_defaultNoteName);
+        auto defaultName = FileUtils::generateFileNameWithSequence(p_node->fetchAbsolutePath(),
+                                                                   tr("note"),
+                                                                   QStringLiteral("md"));
+        lineEdit->setText(defaultName);
         WidgetUtils::selectBaseName(lineEdit);
 
         validateInputs();

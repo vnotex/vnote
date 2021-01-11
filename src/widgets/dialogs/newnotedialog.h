@@ -33,13 +33,11 @@ namespace vnotex
 
         bool newNote();
 
-        void initDefaultValues();
+        void initDefaultValues(const Node *p_node);
 
         NodeInfoWidget *m_infoWidget = nullptr;
 
         QSharedPointer<Node> m_newNode;
-
-        static const QString c_defaultNoteName;
     };
 } // ns vnotex
 
