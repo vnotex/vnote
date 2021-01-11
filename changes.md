@@ -1,4 +1,8 @@
 # Changes
+## v3.0.0-beta.6
+* Add theme **pure** for light mode
+* Small fixes
+
 ## v3.0.0-beta.5
 * Refine themes
 * Add section number style "1.1" and "1.1.", and use the later as default
