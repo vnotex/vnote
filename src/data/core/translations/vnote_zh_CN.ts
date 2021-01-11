@@ -1391,24 +1391,29 @@
 <context>
     <name>vnotex::NewNoteDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="36"/>
+        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="35"/>
         <source>New Note</source>
         <translation>新建笔记</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="63"/>
+        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="62"/>
         <source>Please specify a name for the note.</source>
         <translation>请为笔记指定一个名字。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="68"/>
+        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="67"/>
         <source>Name conflicts with existing note.</source>
         <translation>名字和已有笔记冲突。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="91"/>
+        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="90"/>
         <source>Failed to create note under (%1) in (%2) (%3).</source>
         <translation>无法在笔记本 (%2) 中文件夹 (%1) 下创建笔记 (%3)。</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="113"/>
+        <source>note</source>
+        <translation>笔记</translation>
     </message>
 </context>
 <context>
