@@ -6,7 +6,7 @@
         "version" : "3.0.0-beta.5"
     },
     "core" : {
-        "theme" : "moonlight",
+        "theme" : "pure",
         "locale" : "",
         "shortcuts" : {
             "FullScreen" : "F11",

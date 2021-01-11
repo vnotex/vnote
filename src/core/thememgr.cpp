@@ -91,7 +91,7 @@ void ThemeMgr::loadCurrentTheme(const QString &p_themeName)
     }
 
     if (!m_currentTheme) {
-        const QString defaultTheme("native");
+        const QString defaultTheme("pure");
         qWarning() << "fall back to default theme" << defaultTheme;
         m_currentTheme.reset(loadTheme(findThemeFolder(defaultTheme)));
     }
