@@ -13,6 +13,7 @@
         "display_name_zh_CN" : "纯净"
     },
     "palette" : {
+        "bg3_0" : "#bbbbbb",
         "bg3_1" : "#c0c0c0",
         "bg3_2" : "#cdcdcd",
         "bg3_3" : "#d2d2d2",
@@ -37,7 +38,7 @@
         "fg15_3" : "#b0b0b0",
         "fg15_4" : "#7a7a7a",
         "fg15_5" : "#222222",
-        "bg11" : "#6dafff"
+        "bg11" : "#1976d2"
     },
     "base" : {
         "normal" : {
@@ -85,7 +86,7 @@
                 "border" : "@base#master#bg"
             },
             "selection" : {
-                "fg" : "@palette#fg3_5",
+                "fg" : "@palette#bg3_6",
                 "bg" : "@palette#bg11"
             },
             "selected" : {
@@ -474,12 +475,12 @@
                 "bg" : "transparent"
             },
             "handle" : {
-                "bg" : "@palette#bg3_4",
+                "bg" : "@palette#bg3_2",
                 "hover" : {
-                    "bg" : "@palette#bg3_3"
+                    "bg" : "@palette#bg3_1"
                 },
                 "pressed" : {
-                    "bg" : "@palette#bg3_2"
+                    "bg" : "@palette#bg3_0"
                 }
             }
         },

@@ -190,7 +190,9 @@ namespace vnotex
         bool close(Node *p_node, bool p_force);
 
         // Go through all ViewWindows and judge whether to close it by @p_func.
-        bool closeIf(bool p_force, const ViewSplit::ViewWindowSelector &p_func);
+        bool closeIf(bool p_force,
+                     const ViewSplit::ViewWindowSelector &p_func,
+                     bool p_closeEmptySplit);
 
         void checkCurrentViewWindowChange();
 

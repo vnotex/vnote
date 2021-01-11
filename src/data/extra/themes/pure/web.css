@@ -201,8 +201,8 @@ div.vx-plantuml-graph {
 }
 
 ::selection {
-  background-color: #6dafff;
-  color: #222222;
+  background-color: #1976d2;
+  color: #f1f1f1;
 }
 
 ::-webkit-scrollbar {
@@ -239,15 +239,15 @@ div.vx-plantuml-graph {
 ::-webkit-scrollbar-thumb {
     /* This selector affects the styling of draggable element of the scollbar */
     border: none;
-    background-color: #dadada;
+    background-color: #cdcdcd;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: #d2d2d2;
+    background-color: #c0c0c0;
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background-color: #cdcdcd;
+    background-color: #bbbbbb;
 }
 
 ::-webkit-scrollbar-button:horizontal:increment {
