@@ -104,6 +104,38 @@
         <file>themes/moonlight/up.svg</file>
         <file>themes/moonlight/up_disabled.svg</file>
         <file>themes/moonlight/web.css</file>
+        <file>themes/pure/arrow_dropdown.svg</file>
+        <file>themes/pure/arrow_dropdown_disabled.svg</file>
+        <file>themes/pure/branch_closed.svg</file>
+        <file>themes/pure/branch_open.svg</file>
+        <file>themes/pure/checkbox_checked.svg</file>
+        <file>themes/pure/checkbox_checked_disabled.svg</file>
+        <file>themes/pure/checkbox_unchecked.svg</file>
+        <file>themes/pure/checkbox_unchecked_disabled.svg</file>
+        <file>themes/pure/close.svg</file>
+        <file>themes/pure/close_grey.svg</file>
+        <file>themes/pure/cover.png</file>
+        <file>themes/pure/down.svg</file>
+        <file>themes/pure/down_disabled.svg</file>
+        <file>themes/pure/float.svg</file>
+        <file>themes/pure/highlight.css</file>
+        <file>themes/pure/interface.qss</file>
+        <file>themes/pure/left.svg</file>
+        <file>themes/pure/left_disabled.svg</file>
+        <file>themes/pure/menu_checkbox.svg</file>
+        <file>themes/pure/menu_radiobutton.svg</file>
+        <file>themes/pure/palette.json</file>
+        <file>themes/pure/radiobutton_checked.svg</file>
+        <file>themes/pure/radiobutton_checked_disabled.svg</file>
+        <file>themes/pure/radiobutton_unchecked.svg</file>
+        <file>themes/pure/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/pure/right.svg</file>
+        <file>themes/pure/right_disabled.svg</file>
+        <file>themes/pure/sizegrip.svg</file>
+        <file>themes/pure/text-editor.theme</file>
+        <file>themes/pure/up.svg</file>
+        <file>themes/pure/up_disabled.svg</file>
+        <file>themes/pure/web.css</file>
         <file>syntax-highlighting/themes/markdown-default.theme</file>
         <file>syntax-highlighting/themes/markdown-breeze-dark.theme</file>
         <file>syntax-highlighting/themes/default.theme</file>

@@ -282,5 +282,4 @@ void SessionConfig::doVersionSpecificOverride()
 {
     // In a new version, we may want to change one value by force.
     // SHOULD set the in memory variable only, or will override the notebook list.
-    m_systemTitleBarEnabled = true;
 }
