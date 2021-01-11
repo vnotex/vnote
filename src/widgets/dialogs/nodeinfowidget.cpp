@@ -134,8 +134,11 @@ void NodeInfoWidget::setNode(const Node *p_node)
 
         auto createdTime = Utils::dateTimeString(m_node->getCreatedTimeUtc().toLocalTime());
         m_createdDateTimeLabel->setText(createdTime);
-        auto modifiedTime = Utils::dateTimeString(m_node->getModifiedTimeUtc().toLocalTime());
-        m_modifiedDateTimeLabel->setText(modifiedTime);
+
+        if (m_modifiedDateTimeLabel) {
+            auto modifiedTime = Utils::dateTimeString(m_node->getModifiedTimeUtc().toLocalTime());
+            m_modifiedDateTimeLabel->setText(modifiedTime);
+        }
     }
 }
 
@@ -167,6 +170,7 @@ void NodeInfoWidget::setupFileTypeComboBox(QWidget *p_parent)
 
                     if (!newName.isEmpty()) {
                         m_nameLineEdit->setText(newName);
+                        emit inputEdited();
                     }
                 }
 

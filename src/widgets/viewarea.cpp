@@ -753,7 +753,7 @@ bool ViewArea::close(bool p_force)
     return closeIf(p_force, [](ViewWindow *p_win) {
                Q_UNUSED(p_win);
                return true;
-           });
+           }, true);
 }
 
 void ViewArea::setupShortcuts()
@@ -797,7 +797,7 @@ bool ViewArea::close(Node *p_node, bool p_force)
     return closeIf(p_force, [p_node](ViewWindow *p_win) {
                 auto buffer = p_win->getBuffer();
                 return buffer->match(p_node) || buffer->isChildOf(p_node);
-            });
+            }, false);
 }
 
 bool ViewArea::close(const Notebook *p_notebook, bool p_force)
@@ -816,7 +816,7 @@ void ViewArea::checkCurrentViewWindowChange()
     emit currentViewWindowChanged();
 }
 
-bool ViewArea::closeIf(bool p_force, const ViewSplit::ViewWindowSelector &p_func)
+bool ViewArea::closeIf(bool p_force, const ViewSplit::ViewWindowSelector &p_func, bool p_closeEmptySplit)
 {
     // Go through all hidden workspace. Use current split to show the workspace.
     if (m_workspaces.size() > m_splits.size()) {
@@ -851,23 +851,24 @@ bool ViewArea::closeIf(bool p_force, const ViewSplit::ViewWindowSelector &p_func
                 }
             }
 
-            // Remove this workspace.
             m_currentSplit->setWorkspace(nullptr);
-            removeWorkspace(ws);
+
+            // Remove this workspace if it is empty.
+            if (ws->m_viewWindows.isEmpty()) {
+                removeWorkspace(ws);
+            }
         }
 
         // Restore.
         m_currentSplit->setWorkspace(currentWorkspace);
     }
 
-    Q_ASSERT(m_workspaces.size() == m_splits.size());
-
     // Go through all splits.
     // Collect the ViewWindows first. Collect empty splits.
     QVector<ViewWindow *> wins;
     QVector<ViewSplit *> emptySplits;
     for (auto split : m_splits) {
-        if (split->getViewWindowCount() == 0) {
+        if (p_closeEmptySplit && split->getViewWindowCount() == 0) {
             emptySplits.push_back(split);
             continue;
         }
