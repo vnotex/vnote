@@ -37,6 +37,8 @@ class VNoteX extends EventEmitter {
 
         this.turndown = null;
 
+        this.sectionNumberBaseLevel = 2;
+
         window.addEventListener('load', () => {
             console.log('window load finished');
 
@@ -51,6 +53,12 @@ class VNoteX extends EventEmitter {
             this.crossCopyer = new CrossCopy(this);
 
             this.searcher = new MarkJs(this, this.contentContainer);
+
+            this.sectionNumberBaseLevel = window.vxOptions.sectionNumberBaseLevel;
+            if (this.sectionNumberBaseLevel > 3) {
+                console.warn('only support section number base level less than 3', this.sectionNumberBaseLevel);
+                this.sectionNumberBaseLevel = 3;
+            }
 
             this.initialized = true;
 
@@ -202,10 +210,13 @@ class VNoteX extends EventEmitter {
 
     setSectionNumberEnabled(p_enabled) {
         let sectionClass = 'vx-section-number';
+        let sectionLevelClass = 'vx-section-number-' + this.sectionNumberBaseLevel;
         if (p_enabled) {
             this.contentContainer.classList.add(sectionClass);
+            this.contentContainer.classList.add(sectionLevelClass);
         } else {
             this.contentContainer.classList.remove(sectionClass);
+            this.contentContainer.classList.remove(sectionLevelClass);
         }
     }
 

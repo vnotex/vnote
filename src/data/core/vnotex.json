@@ -229,7 +229,7 @@
             "insert_file_name_as_title" : true,
             "//comment" : "none/read/edit",
             "section_number" : "read",
-            "//comment" : "Base level to start section numbering, valid only in edit mode",
+            "//comment" : "Base level to start section numbering",
             "section_number_base_level" : 2,
             "//comment" : "Style of the section number in edit mode",
             "//comment" : "digdotdigdot/digdotdig",

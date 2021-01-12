@@ -277,7 +277,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
 
         connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, [this](int p_index) {
-                    m_sectionNumberBaseLevelSpinBox->setEnabled(p_index == MarkdownEditorConfig::SectionNumberMode::Edit);
+                    m_sectionNumberBaseLevelSpinBox->setEnabled(p_index != MarkdownEditorConfig::SectionNumberMode::None);
                     m_sectionNumberStyleComboBox->setEnabled(p_index == MarkdownEditorConfig::SectionNumberMode::Edit);
                 });
 

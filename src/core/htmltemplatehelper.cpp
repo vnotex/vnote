@@ -25,7 +25,8 @@ QString WebGlobalOptions::toJavascriptObject() const
            + QString("autoBreakEnabled: %1,\n").arg(Utils::boolToString(m_autoBreakEnabled))
            + QString("linkifyEnabled: %1,\n").arg(Utils::boolToString(m_linkifyEnabled))
            + QString("indentFirstLineEnabled: %1,\n").arg(Utils::boolToString(m_indentFirstLineEnabled))
-           + QString("sectionNumberEnabled: %1\n").arg(Utils::boolToString(m_sectionNumberEnabled))
+           + QString("sectionNumberEnabled: %1,\n").arg(Utils::boolToString(m_sectionNumberEnabled))
+           + QString("sectionNumberBaseLevel: %1\n").arg(m_sectionNumberBaseLevel)
            + QStringLiteral("}");
 }
 
@@ -157,6 +158,7 @@ void HtmlTemplateHelper::updateMarkdownViewerTemplate(const MarkdownEditorConfig
         opts.m_webPlantUml = p_config.getWebPlantUml();
         opts.m_webGraphviz = p_config.getWebGraphviz();
         opts.m_sectionNumberEnabled = p_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Read;
+        opts.m_sectionNumberBaseLevel = p_config.getSectionNumberBaseLevel();
         opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
         opts.m_protectFromXss = p_config.getProtectFromXss();
         opts.m_htmlTagEnabled = p_config.getHtmlTagEnabled();
