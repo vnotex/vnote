@@ -252,10 +252,10 @@
             "linkify" : true,
             "//comment" : "Whether add indentation to the first line of paragraph",
             "indent_first_line" : false,
-            "//comment" : "Whether enable smart table (formation)",
+            "//comment" : "Whether enable smart table (formatting)",
             "smart_table" : true,
-            "//comment" : "Time interval (milliseconds) to do smart table formation",
-            "smart_table_interval" : 2000
+            "//comment" : "Time interval (milliseconds) to do smart table formatting",
+            "smart_table_interval" : 1000
         }
     },
     "widget" : {

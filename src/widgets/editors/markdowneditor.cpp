@@ -591,7 +591,7 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source)
     if (!localFile.isEmpty()) {
         dialog.addSelection(tr("Insert As Relative Link"), 3);
 
-        if (m_buffer->isAttachmentSupported() && !m_buffer->isAttachment(localFile)) {
+        if (m_buffer->isAttachmentSupported() && !m_buffer->isAttachment(localFile) && !PathUtils::isDir(localFile)) {
             dialog.addSelection(tr("Attach And Insert Link"), 6);
         }
     }

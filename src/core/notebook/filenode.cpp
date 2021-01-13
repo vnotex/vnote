@@ -81,6 +81,11 @@ QStringList FileNode::addAttachment(const QString &p_destFolderPath, const QStri
 {
     QStringList addedFiles;
     for (const auto &file : p_files) {
+        if (PathUtils::isDir(file)) {
+            qWarning() << "skip adding folder as attachment" << file;
+            continue;
+        }
+
         auto destFilePath = m_backend->renameIfExistsCaseInsensitive(
             PathUtils::concatenateFilePath(p_destFolderPath, PathUtils::fileName(file)));
         m_backend->copyFile(file, destFilePath);

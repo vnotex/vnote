@@ -32,6 +32,14 @@ QTimer *MarkdownTableHelper::getTimer()
         m_timer->setInterval(ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig().getSmartTableInterval());
         connect(m_timer, &QTimer::timeout,
                 this, &MarkdownTableHelper::formatTable);
+
+        connect(m_editor->getTextEdit(), &QTextEdit::cursorPositionChanged,
+                this, [this]() {
+                    if (m_timer->isActive()) {
+                        // Defer the formatting.
+                        m_timer->start();
+                    }
+                });
     }
 
     return m_timer;
