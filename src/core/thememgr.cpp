@@ -15,6 +15,8 @@ using namespace vnotex;
 
 QStringList ThemeMgr::s_searchPaths;
 
+QStringList ThemeMgr::s_webStylesSearchPaths;
+
 ThemeMgr::ThemeMgr(const QString &p_currentThemeName, QObject *p_parent)
     : QObject(p_parent)
 {
@@ -202,4 +204,40 @@ QPixmap ThemeMgr::getThemePreview(const QString &p_name) const
 void ThemeMgr::refresh()
 {
     loadAvailableThemes();
+}
+
+void ThemeMgr::addWebStylesSearchPath(const QString &p_path)
+{
+    s_webStylesSearchPaths << p_path;
+}
+
+QVector<QPair<QString, QString>> ThemeMgr::getWebStyles() const
+{
+    QVector<QPair<QString, QString>> styles;
+
+    // From themes.
+    for (const auto &th : m_themes) {
+        auto filePath = Theme::getFile(th.m_folderPath, Theme::File::WebStyleSheet);
+        if (!filePath.isEmpty()) {
+            styles.push_back(qMakePair(tr("[Theme] %1 %2").arg(th.m_displayName, PathUtils::fileName(filePath)),
+                                       filePath));
+        }
+
+        filePath = Theme::getFile(th.m_folderPath, Theme::File::HighlightStyleSheet);
+        if (!filePath.isEmpty()) {
+            styles.push_back(qMakePair(tr("[Theme] %1 %2").arg(th.m_displayName, PathUtils::fileName(filePath)),
+                                       filePath));
+        }
+    }
+
+    // From search paths.
+    for (const auto &pa : s_webStylesSearchPaths) {
+        QDir dir(pa);
+        auto styleFiles = dir.entryList({"*.css"}, QDir::Files);
+        for (const auto &file : styleFiles) {
+            styles.push_back(qMakePair(file, dir.filePath(file)));
+        }
+    }
+
+    return styles;
 }

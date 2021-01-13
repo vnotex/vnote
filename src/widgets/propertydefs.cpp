@@ -15,3 +15,5 @@ const char *PropertyDefs::s_viewSplitCornerWidget = "ViewSplitCornerWidget";
 const char *PropertyDefs::s_state = "State";
 
 const char *PropertyDefs::s_viewWindowToolBar = "ViewWindowToolBar";
+
+const char *PropertyDefs::s_consoleTextEdit = "ConsoleTextEdit";

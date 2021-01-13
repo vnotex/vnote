@@ -1,4 +1,4 @@
-#include "nodecontentmediautils.h"
+#include "contentmediautils.h"
 
 #include <QDebug>
 #include <QSet>
@@ -15,46 +15,53 @@
 
 #include <utils/pathutils.h>
 #include <utils/fileutils.h>
+#include <core/file.h>
 
 using namespace vnotex;
 
-void NodeContentMediaUtils::copyMediaFiles(const Node *p_node,
-                                           INotebookBackend *p_backend,
-                                           const QString &p_destFilePath)
+void ContentMediaUtils::copyMediaFiles(Node *p_node,
+                                       INotebookBackend *p_backend,
+                                       const QString &p_destFilePath)
 {
     Q_ASSERT(p_node->hasContent());
-    /*
-    const auto &fileType = FileTypeHelper::getInst().getFileType(p_node->fetchAbsolutePath());
-    if (fileType.m_type == FileTypeHelper::Markdown) {
-        copyMarkdownMediaFiles(p_node->read(),
-                               PathUtils::parentDirPath(p_node->fetchContentPath()),
+    auto file = p_node->getContentFile();
+    if (file->getContentType().isMarkdown()) {
+        copyMarkdownMediaFiles(file->read(),
+                               PathUtils::parentDirPath(file->getContentPath()),
                                p_backend,
                                p_destFilePath);
     }
-    */
 }
 
-void NodeContentMediaUtils::copyMediaFiles(const QString &p_filePath,
-                                           INotebookBackend *p_backend,
-                                           const QString &p_destFilePath)
+void ContentMediaUtils::copyMediaFiles(const QString &p_filePath,
+                                       INotebookBackend *p_backend,
+                                       const QString &p_destFilePath)
 {
-    /*
     const auto &fileType = FileTypeHelper::getInst().getFileType(p_filePath);
-    if (fileType.m_type == FileTypeHelper::Markdown) {
+    if (fileType.isMarkdown()) {
         copyMarkdownMediaFiles(FileUtils::readTextFile(p_filePath),
                                PathUtils::parentDirPath(p_filePath),
                                p_backend,
                                p_destFilePath);
     }
-    */
 }
 
-void NodeContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content,
-                                                   const QString &p_basePath,
-                                                   INotebookBackend *p_backend,
-                                                   const QString &p_destFilePath)
+void ContentMediaUtils::copyMediaFiles(const File *p_file,
+                                       const QString &p_destFilePath)
 {
-    /*
+    if (p_file->getContentType().isMarkdown()) {
+        copyMarkdownMediaFiles(p_file->read(),
+                               p_file->getResourcePath(),
+                               nullptr,
+                               p_destFilePath);
+    }
+}
+
+void ContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content,
+                                               const QString &p_basePath,
+                                               INotebookBackend *p_backend,
+                                               const QString &p_destFilePath)
+{
     auto content = p_content;
 
     // Images.
@@ -82,19 +89,20 @@ void NodeContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content,
         handledImages.insert(link.m_path);
 
         if (!QFileInfo::exists(link.m_path)) {
-            qWarning() << "Image of Markdown file does not exist" << link.m_path << link.m_urlInLink;
+            qWarning() << "image of Markdown file does not exist" << link.m_path << link.m_urlInLink;
             continue;
         }
 
         // Get the relative path of the image and apply it to the dest file path.
         const auto oldDestFilePath = destDir.filePath(link.m_urlInLink);
         destDir.mkpath(PathUtils::parentDirPath(oldDestFilePath));
-        auto destFilePath = p_backend->renameIfExistsCaseInsensitive(oldDestFilePath);
+        auto destFilePath = p_backend ? p_backend->renameIfExistsCaseInsensitive(oldDestFilePath)
+                                      : FileUtils::renameIfExistsCaseInsensitive(oldDestFilePath);
         if (oldDestFilePath != destFilePath) {
             // Rename happens.
             const auto oldFileName = PathUtils::fileName(oldDestFilePath);
             const auto newFileName = PathUtils::fileName(destFilePath);
-            qWarning() << QString("Image name conflicts when copy. Renamed from (%1) to (%2)").arg(oldFileName, newFileName);
+            qWarning() << QString("image name conflicts when copy. Renamed from (%1) to (%2)").arg(oldFileName, newFileName);
 
             // Update the text content.
             auto newUrlInLink(link.m_urlInLink);
@@ -106,38 +114,41 @@ void NodeContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content,
             renamedImages.insert(link.m_path, newUrlInLink);
         }
 
-        p_backend->copyFile(link.m_path, destFilePath);
+        if (p_backend) {
+            p_backend->copyFile(link.m_path, destFilePath);
+        } else {
+            FileUtils::copyFile(link.m_path, destFilePath);
+        }
     }
 
     if (!renamedImages.isEmpty()) {
-        p_backend->writeFile(p_destFilePath, content);
+        if (p_backend) {
+            p_backend->writeFile(p_destFilePath, content);
+        } else {
+            FileUtils::writeFile(p_destFilePath, content);
+        }
     }
-    */
 }
 
-void NodeContentMediaUtils::removeMediaFiles(const Node *p_node)
+void ContentMediaUtils::removeMediaFiles(Node *p_node)
 {
-    /*
-    Q_ASSERT(p_node->getType() == Node::Type::File);
-    const auto &fileType = FileTypeHelper::getInst().getFileType(p_node->fetchAbsolutePath());
-    if (fileType.m_type == FileTypeHelper::Markdown) {
-        removeMarkdownMediaFiles(p_node);
+    Q_ASSERT(p_node->hasContent());
+    auto file = p_node->getContentFile();
+    if (file->getContentType().isMarkdown()) {
+        removeMarkdownMediaFiles(file.data(), p_node->getBackend());
     }
-    */
 }
 
-void NodeContentMediaUtils::removeMarkdownMediaFiles(const Node *p_node)
+void ContentMediaUtils::removeMarkdownMediaFiles(const File *p_file, INotebookBackend *p_backend)
 {
-    /*
-    auto content = p_node->read();
+    auto content = p_file->read();
 
     // Images.
     const auto images =
         vte::MarkdownUtils::fetchImagesFromMarkdownText(content,
-                                                        PathUtils::parentDirPath(p_node->fetchContentPath()),
+                                                        p_file->getResourcePath(),
                                                         vte::MarkdownLink::TypeFlag::LocalRelativeInternal);
 
-    auto backend = p_node->getBackend();
     QSet<QString> handledImages;
     for (const auto &link : images) {
         if (handledImages.contains(link.m_path)) {
@@ -150,40 +161,42 @@ void NodeContentMediaUtils::removeMarkdownMediaFiles(const Node *p_node)
             qWarning() << "Image of Markdown file does not exist" << link.m_path << link.m_urlInLink;
             continue;
         }
-        backend->removeFile(link.m_path);
+        p_backend->removeFile(link.m_path);
     }
-    */
 }
 
-void NodeContentMediaUtils::copyAttachment(Node *p_node,
-                                           INotebookBackend *p_backend,
-                                           const QString &p_destFilePath,
-                                           const QString &p_destAttachmentFolderPath)
+void ContentMediaUtils::copyAttachment(Node *p_node,
+                                       INotebookBackend *p_backend,
+                                       const QString &p_destFilePath,
+                                       const QString &p_destAttachmentFolderPath)
 {
-    /*
-    Q_ASSERT(p_node->getType() == Node::Type::File);
+    Q_ASSERT(p_node->hasContent());
     Q_ASSERT(!p_node->getAttachmentFolder().isEmpty());
 
     // Copy the whole folder.
     const auto srcAttachmentFolderPath = p_node->fetchAttachmentFolderPath();
-    p_backend->copyDir(srcAttachmentFolderPath, p_destAttachmentFolderPath);
+    if (p_backend) {
+        p_backend->copyDir(srcAttachmentFolderPath, p_destAttachmentFolderPath);
+    } else {
+        FileUtils::copyDir(srcAttachmentFolderPath, p_destAttachmentFolderPath);
+    }
 
     // Check if we need to modify links in content.
+    // FIXME: check the whole relative path.
     if (p_node->getAttachmentFolder() == PathUtils::dirName(p_destAttachmentFolderPath)) {
         return;
     }
 
-    const auto &fileType = FileTypeHelper::getInst().getFileType(p_node->fetchAbsolutePath());
-    if (fileType.m_type == FileTypeHelper::Markdown) {
+    auto file = p_node->getContentFile();
+    if (file->getContentType().isMarkdown()) {
         fixMarkdownLinks(srcAttachmentFolderPath, p_backend, p_destFilePath, p_destAttachmentFolderPath);
     }
-    */
 }
 
-void NodeContentMediaUtils::fixMarkdownLinks(const QString &p_srcFolderPath,
-                                             INotebookBackend *p_backend,
-                                             const QString &p_destFilePath,
-                                             const QString &p_destFolderPath)
+void ContentMediaUtils::fixMarkdownLinks(const QString &p_srcFolderPath,
+                                         INotebookBackend *p_backend,
+                                         const QString &p_destFilePath,
+                                         const QString &p_destFolderPath)
 {
     // TODO.
     Q_UNUSED(p_srcFolderPath);

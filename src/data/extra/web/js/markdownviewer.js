@@ -43,6 +43,10 @@ new QWebChannel(qt.webChannelTransport,
             window.vnotex.findText(p_text, p_options);
         });
 
+        adapter.contentRequested.connect(function() {
+            window.vnotex.saveContent();
+        });
+
         console.log('QWebChannel has been set up');
         if (window.vnotex.initialized) {
             window.vnotex.kickOffMarkdown();

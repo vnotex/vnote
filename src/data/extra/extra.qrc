@@ -8,10 +8,13 @@
         <file>docs/zh_CN/about_vnotex.txt</file>
         <file>docs/zh_CN/shortcuts.md</file>
         <file>docs/zh_CN/markdown_guide.md</file>
-        <file>web/markdownviewertemplate.html</file>
+        <file>web/markdown-viewer-template.html</file>
+        <file>web/markdown-export-template.html</file>
         <file>web/css/globalstyles.css</file>
         <file>web/css/markdownit.css</file>
         <file>web/css/imageviewer.css</file>
+        <file>web/css/outline.css</file>
+        <file>web/css/exportglobalstyles.css</file>
         <file>web/js/qwebchannel.js</file>
         <file>web/js/eventemitter.js</file>
         <file>web/js/utils.js</file>
@@ -26,6 +29,7 @@
         <file>web/js/imageviewer.js</file>
         <file>web/js/easyaccess.js</file>
         <file>web/js/crosscopy.js</file>
+        <file>web/js/outline.js</file>
         <file>web/js/markdown-it/markdown-it-container.min.js</file>
         <file>web/js/markdown-it/markdown-it-emoji.min.js</file>
         <file>web/js/markdown-it/markdown-it-footnote.min.js</file>

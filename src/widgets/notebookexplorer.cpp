@@ -179,7 +179,9 @@ void NotebookExplorer::newNote()
 
 Node *NotebookExplorer::currentExploredFolderNode() const
 {
-    Q_ASSERT(m_currentNotebook);
+    if (!m_currentNotebook) {
+        return nullptr;
+    }
 
     auto node = m_nodeExplorer->getCurrentNode();
     if (node) {
@@ -294,4 +296,7 @@ void NotebookExplorer::locateNode(Node *p_node)
     m_nodeExplorer->setFocus();
 }
 
-
+const QSharedPointer<Notebook> &NotebookExplorer::currentNotebook() const
+{
+    return m_currentNotebook;
+}

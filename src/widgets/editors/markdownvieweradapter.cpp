@@ -94,6 +94,16 @@ void MarkdownViewerAdapter::setText(int p_revision,
     }
 }
 
+void MarkdownViewerAdapter::setText(const QString &p_text)
+{
+    m_revision = 0;
+    if (m_viewerReady) {
+        emit textUpdated(p_text);
+    } else {
+        m_pendingData.reset(new MarkdownData(p_text, -1, ""));
+    }
+}
+
 void MarkdownViewerAdapter::setReady(bool p_ready)
 {
     if (m_viewerReady == p_ready) {
@@ -327,4 +337,22 @@ void MarkdownViewerAdapter::findText(const QString &p_text, FindOptions p_option
 void MarkdownViewerAdapter::setFindText(const QString &p_text, int p_totalMatches, int p_currentMatchIndex)
 {
     emit findTextReady(p_text, p_totalMatches, p_currentMatchIndex);
+}
+
+void MarkdownViewerAdapter::setWorkFinished()
+{
+    emit workFinished();
+}
+
+void MarkdownViewerAdapter::saveContent()
+{
+    emit contentRequested();
+}
+
+void MarkdownViewerAdapter::setSavedContent(const QString &p_headContent,
+                                            const QString &p_styleContent,
+                                            const QString &p_content,
+                                            const QString &p_bodyClassList)
+{
+    emit contentReady(p_headContent, p_styleContent, p_content, p_bodyClassList);
 }

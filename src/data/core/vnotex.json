@@ -24,7 +24,8 @@
             "MaximizeSplit" : "Ctrl+G, Shift+\\",
             "DistributeSplits" : "Ctrl+G, =",
             "RemoveSplitAndWorkspace" : "Ctrl+G, R",
-            "NewWorkspace" : "Ctrl+G, N"
+            "NewWorkspace" : "Ctrl+G, N",
+            "Export" : "Ctrl+G, T"
         },
         "toolbar_icon_size" : 16
     },
@@ -83,7 +84,7 @@
         "markdown_editor" : {
             "override_viewer_resource" : true,
             "viewer_resource" : {
-                "template" : "web/markdownviewertemplate.html",
+                "template" : "web/markdown-viewer-template.html",
                 "resources" : [
                     {
                         "name" : "global_styles",
@@ -213,6 +214,28 @@
                         "scripts" : [
                             "web/js/mark.js/mark.min.js",
                             "web/js/markjs.js"
+                        ]
+                    }
+                ]
+            },
+            "export_resource" : {
+                "template" : "web/markdown-export-template.html",
+                "resources" : [
+                    {
+                        "name" : "global_styles",
+                        "enabled" : true,
+                        "styles" : [
+                            "web/css/exportglobalstyles.css"
+                        ]
+                    },
+                    {
+                        "name" : "outline",
+                        "enabled" : true,
+                        "styles" : [
+                            "web/css/outline.css"
+                        ],
+                        "scripts" : [
+                            "web/js/outline.js"
                         ]
                     }
                 ]

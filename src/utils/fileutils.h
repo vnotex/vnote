@@ -63,7 +63,7 @@ namespace vnotex
 
         static QString generateFileNameWithSequence(const QString &p_folderPath,
                                                     const QString &p_baseName,
-                                                    const QString &p_suffix);
+                                                    const QString &p_suffix = QString());
 
         static QTemporaryFile *createTemporaryFile(const QString &p_suffix);
 

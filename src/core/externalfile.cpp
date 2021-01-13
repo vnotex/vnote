@@ -8,6 +8,7 @@ using namespace vnotex;
 ExternalFile::ExternalFile(const QString &p_filePath)
     : c_filePath(p_filePath)
 {
+    setContentType(FileTypeHelper::getInst().getFileType(c_filePath).m_type);
 }
 
 QString ExternalFile::read() const

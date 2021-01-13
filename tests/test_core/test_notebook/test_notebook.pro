@@ -17,6 +17,7 @@ include($$LIBS_FOLDER/vtextedit/src/libs/syntax-highlighting/syntax-highlighting
 include($$CORE_FOLDER/core.pri)
 include($$SRC_FOLDER/widgets/widgets.pri)
 include($$SRC_FOLDER/utils/utils.pri)
+include($$SRC_FOLDER/export/export.pri)
 
 SOURCES += \
     test_notebook.cpp

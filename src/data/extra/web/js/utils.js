@@ -113,4 +113,55 @@ class Utils {
     static headingSequenceRegExp() {
         return /^\d{1,3}(?:\.\d+)*\. /;
     }
+
+    static fetchStyleContent() {
+        let styles = "";
+        for (let styleIdx = 0; styleIdx < document.styleSheets.length; ++styleIdx) {
+            let styleSheet = document.styleSheets[styleIdx];
+            if (styleSheet.cssRules) {
+                let baseUrl = null;
+                if (styleSheet.href) {
+                    let scheme = Utils.getUrlScheme(styleSheet.href);
+                    // We only translate local resources.
+                    if (scheme === 'file' || scheme === 'qrc') {
+                        baseUrl = styleSheet.href.substr(0, styleSheet.href.lastIndexOf('/'));
+                    }
+                }
+
+                for (let ruleIdx = 0; ruleIdx < styleSheet.cssRules.length; ++ruleIdx) {
+                    let css = styleSheet.cssRules[ruleIdx].cssText;
+                    if (baseUrl) {
+                        // Try to replace the url() with absolute path.
+                        css = Utils.translateCssUrlToAbsolute(baseUrl, css);
+                    }
+
+                    styles = styles + css + "\n";
+                }
+            }
+        }
+
+        return styles;
+    }
+
+    static translateCssUrlToAbsolute(p_baseUrl, p_css) {
+        let replaceCssUrl = function(baseUrl, match, p1, offset, str) {
+            if (Utils.getUrlScheme(p1)) {
+                return match;
+            }
+
+            let url = baseUrl + '/' + p1;
+            return "url(\"" + url + "\");";
+        };
+
+        return p_css.replace(/\burl\(\"([^\"\)]+)\"\);/g, replaceCssUrl.bind(undefined, p_baseUrl));
+    }
+
+    static getUrlScheme(p_url) {
+        let idx = p_url.indexOf(':');
+        if (idx > -1) {
+            return p_url.substr(0, idx);
+        } else {
+            return null;
+        }
+    }
 }

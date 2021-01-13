@@ -42,11 +42,11 @@ void BufferMgr::initBufferServer()
 
     // Markdown.
     auto markdownFactory = QSharedPointer<MarkdownBufferFactory>::create();
-    m_bufferServer->registerItem(helper.getFileType(FileTypeHelper::Markdown).m_typeName, markdownFactory);
+    m_bufferServer->registerItem(helper.getFileType(FileType::Markdown).m_typeName, markdownFactory);
 
     // Text.
     auto textFactory = QSharedPointer<TextBufferFactory>::create();
-    m_bufferServer->registerItem(helper.getFileType(FileTypeHelper::Text).m_typeName, textFactory);
+    m_bufferServer->registerItem(helper.getFileType(FileType::Text).m_typeName, textFactory);
 }
 
 void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras)
@@ -62,7 +62,9 @@ void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_p
     auto buffer = findBuffer(p_node);
     if (!buffer) {
         auto nodePath = p_node->fetchAbsolutePath();
-        auto fileType = FileTypeHelper::getInst().getFileType(nodePath).m_typeName;
+        auto nodeFile = p_node->getContentFile();
+        Q_ASSERT(nodeFile);
+        auto fileType = nodeFile->getContentType().m_typeName;
         auto factory = m_bufferServer->getItem(fileType);
         if (!factory) {
             // No factory to open this file type.
@@ -72,7 +74,7 @@ void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_p
         }
 
         BufferParameters paras;
-        paras.m_provider.reset(new NodeBufferProvider(p_node->sharedFromThis()));
+        paras.m_provider.reset(new NodeBufferProvider(p_node->sharedFromThis(), nodeFile));
         buffer = factory->createBuffer(paras, this);
         addBuffer(buffer);
     }
@@ -114,7 +116,8 @@ void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenPar
     auto buffer = findBuffer(p_filePath);
     if (!buffer) {
         // Open it as external file.
-        auto fileType = FileTypeHelper::getInst().getFileType(p_filePath).m_typeName;
+        auto externalFile = QSharedPointer<ExternalFile>::create(p_filePath);
+        auto fileType = externalFile->getContentType().m_typeName;
         auto factory = m_bufferServer->getItem(fileType);
         if (!factory) {
             // No factory to open this file type.
@@ -124,7 +127,7 @@ void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenPar
         }
 
         BufferParameters paras;
-        paras.m_provider.reset(new FileBufferProvider(QSharedPointer<ExternalFile>::create(p_filePath),
+        paras.m_provider.reset(new FileBufferProvider(externalFile,
                                                       p_paras->m_nodeAttachedTo,
                                                       p_paras->m_readOnly));
         buffer = factory->createBuffer(paras, this);

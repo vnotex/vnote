@@ -36,7 +36,7 @@ void NodeInfoWidget::setupUI(const Node *p_parentNode, Node::Flags p_newNodeFlag
     const bool createMode = m_mode == Mode::Create;
     const bool isNote = p_newNodeFlags & Node::Flag::Content;
 
-    m_mainLayout = WidgetUtils::createFormLayout(this);
+    m_mainLayout = WidgetsFactory::createFormLayout(this);
 
     m_mainLayout->addRow(tr("Notebook:"),
                          new QLabel(p_parentNode->getNotebook()->getName(), this));
@@ -84,7 +84,7 @@ void NodeInfoWidget::setupNameLineEdit(QWidget *p_parent)
                         const auto &fileType = FileTypeHelper::getInst().getFileTypeBySuffix(suffix);
                         typeName = fileType.m_typeName;
                     } else {
-                        typeName = FileTypeHelper::getInst().getFileType(FileTypeHelper::Others).m_typeName;
+                        typeName = FileTypeHelper::getInst().getFileType(FileType::Others).m_typeName;
                     }
 
                     int idx = m_fileTypeComboBox->findData(typeName);

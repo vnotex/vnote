@@ -12,6 +12,7 @@
 
 #include <utils/widgetutils.h>
 #include "../propertydefs.h"
+#include "../widgetsfactory.h"
 
 using namespace vnotex;
 
@@ -29,6 +30,11 @@ void Dialog::setCentralWidget(QWidget *p_widget)
     m_layout->addWidget(m_centralWidget);
 }
 
+void Dialog::addBottomWidget(QWidget *p_widget)
+{
+    m_layout->insertWidget(m_layout->indexOf(m_centralWidget) + 1, p_widget);
+}
+
 void Dialog::setDialogButtonBox(QDialogButtonBox::StandardButtons p_buttons,
                                 QDialogButtonBox::StandardButton p_defaultButton)
 {
@@ -38,7 +44,8 @@ void Dialog::setDialogButtonBox(QDialogButtonBox::StandardButtons p_buttons,
         m_dialogButtonBox = new QDialogButtonBox(p_buttons, this);
         connect(m_dialogButtonBox, &QDialogButtonBox::accepted,
                 this, &Dialog::acceptedButtonClicked);
-        connect(m_dialogButtonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        connect(m_dialogButtonBox, &QDialogButtonBox::rejected,
+                this, &Dialog::rejectedButtonClicked);
         connect(m_dialogButtonBox, &QDialogButtonBox::clicked,
                 this, [this](QAbstractButton *p_button) {
                     switch (m_dialogButtonBox->buttonRole(p_button)) {
@@ -80,13 +87,13 @@ void Dialog::setInformationText(const QString &p_text, InformationLevel p_level)
             return;
         }
 
-        m_infoTextEdit = new QPlainTextEdit(this);
-        m_infoTextEdit->setReadOnly(true);
+        m_infoTextEdit = WidgetsFactory::createPlainTextConsole(this);
         m_infoTextEdit->setMaximumHeight(m_infoTextEdit->minimumSizeHint().height());
-        m_layout->insertWidget(1, m_infoTextEdit);
+        m_layout->insertWidget(m_layout->count() - 1, m_infoTextEdit);
     }
 
     m_infoTextEdit->setPlainText(p_text);
+    m_infoTextEdit->ensureCursorVisible();
 
     const bool visible = !p_text.isEmpty();
     const bool needResize = visible != m_infoTextEdit->isVisible();
@@ -114,9 +121,32 @@ void Dialog::setInformationText(const QString &p_text, InformationLevel p_level)
     }
 }
 
+void Dialog::appendInformationText(const QString &p_text)
+{
+    if (!m_infoTextEdit) {
+        setInformationText(p_text);
+    } else {
+        m_infoTextEdit->appendPlainText(p_text);
+        m_infoTextEdit->moveCursor(QTextCursor::End);
+        m_infoTextEdit->ensureCursorVisible();
+    }
+}
+
+void Dialog::clearInformationText()
+{
+    if (m_infoTextEdit) {
+        m_infoTextEdit->clear();
+    }
+}
+
 void Dialog::acceptedButtonClicked()
 {
     QDialog::accept();
+}
+
+void Dialog::rejectedButtonClicked()
+{
+    QDialog::reject();
 }
 
 void Dialog::resetButtonClicked()

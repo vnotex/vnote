@@ -30,7 +30,7 @@ void FilePropertiesDialog::setupUI()
     auto widget = new QWidget(this);
     setCentralWidget(widget);
 
-    auto mainLayout = WidgetUtils::createFormLayout(widget);
+    auto mainLayout = WidgetsFactory::createFormLayout(widget);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     const QFileInfo info(m_path);

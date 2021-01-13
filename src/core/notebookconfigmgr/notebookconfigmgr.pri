@@ -1,5 +1,4 @@
 SOURCES += \
-    $$PWD/nodecontentmediautils.cpp \
     $$PWD/vxnotebookconfigmgr.cpp \
     $$PWD/vxnotebookconfigmgrfactory.cpp \
     $$PWD/inotebookconfigmgr.cpp \
@@ -8,7 +7,6 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/inotebookconfigmgr.h \
-    $$PWD/nodecontentmediautils.h \
     $$PWD/vxnotebookconfigmgr.h \
     $$PWD/inotebookconfigmgrfactory.h \
     $$PWD/vxnotebookconfigmgrfactory.h \

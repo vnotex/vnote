@@ -60,12 +60,40 @@ class VNoteX extends EventEmitter {
                 this.sectionNumberBaseLevel = 3;
             }
 
+            this.setContentContainerOption('vx-constrain-image-width',
+                                           window.vxOptions.constrainImageWidthEnabled || !window.vxOptions.scrollable);
+            this.setContentContainerOption('vx-indent-first-line',
+                                           window.vxOptions.indentFirstLineEnabled);
+            this.setBodyOption('vx-transparent-background',
+                               window.vxOptions.transparentBackgroundEnabled);
+            this.setContentContainerOption('vx-nonscrollable',
+                                           !window.vxOptions.scrollable);
+
+            this.setBodySize(window.vxOptions.bodyWidth, window.vxOptions.bodyHeight);
+            document.body.style.height = '800';
+
             this.initialized = true;
 
             // Signal out.
             this.emit('initialized');
             this.emit('ready');
         });
+    }
+
+    setContentContainerOption(p_class, p_enabled) {
+        if (p_enabled) {
+            this.contentContainer.classList.add(p_class);
+        } else {
+            this.contentContainer.classList.remove(p_class);
+        }
+    }
+
+    setBodyOption(p_class, p_enabled) {
+        if (p_enabled) {
+            document.body.classList.add(p_class);
+        } else {
+            document.body.classList.remove(p_class);
+        }
     }
 
     registerWorker(p_worker) {
@@ -79,6 +107,7 @@ class VNoteX extends EventEmitter {
         if (this.numOfOngoingWorkers == 0) {
             // Signal out anyway.
             this.emit('fullMarkdownRendered');
+            window.vxMarkdownAdapter.setWorkFinished();
 
             // Check pending work.
             if (this.pendingData.text) {
@@ -211,13 +240,8 @@ class VNoteX extends EventEmitter {
     setSectionNumberEnabled(p_enabled) {
         let sectionClass = 'vx-section-number';
         let sectionLevelClass = 'vx-section-number-' + this.sectionNumberBaseLevel;
-        if (p_enabled) {
-            this.contentContainer.classList.add(sectionClass);
-            this.contentContainer.classList.add(sectionLevelClass);
-        } else {
-            this.contentContainer.classList.remove(sectionClass);
-            this.contentContainer.classList.remove(sectionLevelClass);
-        }
+        this.setContentContainerOption(sectionClass, p_enabled);
+        this.setContentContainerOption(sectionLevelClass, p_enabled);
     }
 
     scroll(p_up) {
@@ -259,6 +283,28 @@ class VNoteX extends EventEmitter {
 
     showFindResult(p_text, p_totalMatches, p_currentMatchIndex) {
         window.vxMarkdownAdapter.setFindText(p_text, p_totalMatches, p_currentMatchIndex);
+    }
+
+    saveContent() {
+        if (!this.initialized) {
+            console.warn('saveContent() called before initialization');
+            window.vxMarkdownAdapter.setSavedContent('', '', '');
+            return;
+        }
+        window.vxMarkdownAdapter.setSavedContent("",
+                                                 Utils.fetchStyleContent(),
+                                                 this.contentContainer.outerHTML,
+                                                 document.body.classList.value);
+    }
+
+    setBodySize(p_width, p_height) {
+        if (p_width > 0) {
+            document.body.style.width = p_width + 'px';
+        }
+
+        if (p_height > 0) {
+            document.body.style.height = p_height + 'px';
+        }
     }
 
     static detectOS() {

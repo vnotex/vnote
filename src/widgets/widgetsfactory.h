@@ -10,6 +10,8 @@ class QCheckBox;
 class QSpinBox;
 class QToolButton;
 class QDoubleSpinBox;
+class QFormLayout;
+class QPlainTextEdit;
 
 namespace vnotex
 {
@@ -35,6 +37,10 @@ namespace vnotex
         static QDoubleSpinBox *createDoubleSpinBox(QWidget *p_parent = nullptr);
 
         static QToolButton *createToolButton(QWidget *p_parent = nullptr);
+
+        static QFormLayout *createFormLayout(QWidget *p_parent = nullptr);
+
+        static QPlainTextEdit *createPlainTextConsole(QWidget *p_parent = nullptr);
     };
 } // ns vnotex
 

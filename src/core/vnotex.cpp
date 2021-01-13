@@ -46,6 +46,8 @@ void VNoteX::initThemeMgr()
     ThemeMgr::addSyntaxHighlightingSearchPaths(
         QStringList() << configMgr.getUserSyntaxHighlightingFolder()
                       << configMgr.getAppSyntaxHighlightingFolder());
+    ThemeMgr::addWebStylesSearchPath(configMgr.getAppWebStylesFolder());
+    ThemeMgr::addWebStylesSearchPath(configMgr.getUserWebStylesFolder());
     m_themeMgr = new ThemeMgr(configMgr.getCoreConfig().getTheme(), this);
 }
 

@@ -8,12 +8,13 @@
 
 using namespace vnotex;
 
-NodeBufferProvider::NodeBufferProvider(const QSharedPointer<Node> &p_node, QObject *p_parent)
+NodeBufferProvider::NodeBufferProvider(const QSharedPointer<Node> &p_node,
+                                       const QSharedPointer<File> &p_file,
+                                       QObject *p_parent)
     : BufferProvider(p_parent),
       m_node(p_node),
-      m_nodeFile(p_node->getContentFile())
+      m_nodeFile(p_file)
 {
-    Q_ASSERT(m_nodeFile);
 }
 
 Buffer::ProviderType NodeBufferProvider::getType() const
@@ -155,4 +156,9 @@ Node *NodeBufferProvider::getNode() const
 bool NodeBufferProvider::isReadOnly() const
 {
     return m_node->isReadOnly();
+}
+
+QSharedPointer<File> NodeBufferProvider::getFile() const
+{
+    return m_nodeFile;
 }

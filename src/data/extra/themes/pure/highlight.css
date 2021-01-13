@@ -33,14 +33,14 @@ pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selectio
 code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
     text-shadow: none;
     background-color: #1976d2;
-    color: #f1f1f1;
+    color: #f5f5f5;
 }
 
 pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
 code[class*="language-"]::selection, code[class*="language-"] ::selection {
     text-shadow: none;
     background-color: #1976d2;
-    color: #f1f1f1;
+    color: #f5f5f5;
 }
 
 @media print {

@@ -20,15 +20,15 @@ QWidget[DialogCentralWidget="true"] {
 
 /* All widgets */
 *[State="info"] {
-    border: 2px solid @widgets#qwidget#info#border;
+    border: 1px solid @widgets#qwidget#info#border;
 }
 
 *[State="warning"] {
-    border: 2px solid @widgets#qwidget#warning#border;
+    border: 1px solid @widgets#qwidget#warning#border;
 }
 
 *[State="error"] {
-    border: 2px solid @widgets#qwidget#error#border;
+    border: 1px solid @widgets#qwidget#error#border;
 }
 
 /* QAbstractScrollArea */
@@ -428,6 +428,14 @@ QLineEdit:hover {
 
 QLineEdit:disabled {
     color: @widgets#qlineedit#disabled#fg;
+}
+
+/* QPlainTextEdit */
+QPlainTextEdit[ConsoleTextEdit="true"] {
+    color: @widgets#qlineedit#fg;
+    background-color: @widgets#qlineedit#bg;
+    selection-color: @widgets#qlineedit#selection#fg;
+    selection-background-color: @widgets#qlineedit#selection#bg;
 }
 
 /* QTabWidget */

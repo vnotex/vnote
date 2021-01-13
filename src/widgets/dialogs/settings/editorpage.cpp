@@ -20,7 +20,7 @@ EditorPage::EditorPage(QWidget *p_parent)
 
 void EditorPage::setupUI()
 {
-    auto mainLayout = WidgetUtils::createFormLayout(this);
+    auto mainLayout = WidgetsFactory::createFormLayout(this);
 
     {
         m_autoSavePolicyComboBox = WidgetsFactory::createComboBox(this);

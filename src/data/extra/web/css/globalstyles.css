@@ -73,9 +73,13 @@
     content: counter(section1) "." counter(section2) "." counter(section3) "." counter(section4) "." counter(section5) "." counter(section6) ". ";
 }
 
-#vx-content.vx-constrain-image-width img {
-    max-width: 100%;
-    height: auto;
+#vx-content.vx-constrain-image-width img,
+#vx-content.vx-constrain-image-width div.vx-plantuml-graph > svg,
+#vx-content.vx-constrain-image-width div.vx-mermaid-graph,
+#vx-content.vx-constrain-image-width div.vx-flowchartjs-graph,
+#vx-content.vx-constrain-image-width div.vx-wavedrom-graph {
+    max-width: 100% !important;
+    height: auto !important;
 }
 
 /* Table of Contents */
@@ -132,4 +136,24 @@
 
 #vx-content.vx-indent-first-line p {
     text-indent: 2em;
+}
+
+body.vx-transparent-background {
+    background-color: transparent !important;
+}
+
+#vx-content.vx-nonscrollable pre {
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+    overflow: hidden !important;
+}
+
+#vx-content.vx-nonscrollable pre code {
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+}
+
+#vx-content.vx-nonscrollable code,
+#vx-content.vx-nonscrollable a {
+    word-break: break-all !important;
 }

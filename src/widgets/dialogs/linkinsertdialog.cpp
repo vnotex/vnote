@@ -30,7 +30,7 @@ void LinkInsertDialog::setupUI(const QString &p_title,
     auto mainWidget = new QWidget(this);
     setCentralWidget(mainWidget);
 
-    auto mainLayout = WidgetUtils::createFormLayout(mainWidget);
+    auto mainLayout = WidgetsFactory::createFormLayout(mainWidget);
 
     m_linkTextEdit = WidgetsFactory::createLineEdit(p_linkText, mainWidget);
     mainLayout->addRow(tr("&Text:"), m_linkTextEdit);

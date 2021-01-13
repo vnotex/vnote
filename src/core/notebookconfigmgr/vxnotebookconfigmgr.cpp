@@ -14,7 +14,7 @@
 #include <utils/pathutils.h>
 #include <exception.h>
 
-#include "nodecontentmediautils.h"
+#include <utils/contentmediautils.h>
 
 using namespace vnotex;
 
@@ -581,13 +581,13 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFileNodeAsChildOf(const QSharedPoi
     getBackend()->copyFile(srcFilePath, destFilePath);
 
     // Copy media files fetched from content.
-    NodeContentMediaUtils::copyMediaFiles(p_src.data(), getBackend().data(), destFilePath);
+    ContentMediaUtils::copyMediaFiles(p_src.data(), getBackend().data(), destFilePath);
 
     // Copy attachment folder. Rename attachment folder if conflicts.
     QString attachmentFolder = p_src->getAttachmentFolder();
     if (!attachmentFolder.isEmpty()) {
         auto destAttachmentFolderPath = fetchNodeAttachmentFolder(destFilePath, attachmentFolder);
-        NodeContentMediaUtils::copyAttachment(p_src.data(), getBackend().data(), destFilePath, destAttachmentFolderPath);
+        ContentMediaUtils::copyAttachment(p_src.data(), getBackend().data(), destFilePath, destAttachmentFolderPath);
     }
 
     // Create a file node.
@@ -690,7 +690,7 @@ void VXNotebookConfigMgr::removeFilesOfNode(Node *p_node, bool p_force)
         }
 
         // Delete media files fetched from content.
-        NodeContentMediaUtils::removeMediaFiles(p_node);
+        ContentMediaUtils::removeMediaFiles(p_node);
 
         // Delete node file itself.
         auto filePath = p_node->fetchPath();
@@ -787,7 +787,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFileAsChildOf(const QString &p_src
     getBackend()->copyFile(p_srcPath, destFilePath);
 
     // Copy media files fetched from content.
-    NodeContentMediaUtils::copyMediaFiles(p_srcPath, getBackend().data(), destFilePath);
+    ContentMediaUtils::copyMediaFiles(p_srcPath, getBackend().data(), destFilePath);
 
     // Create a file node.
     auto currentTime = QDateTime::currentDateTimeUtc();

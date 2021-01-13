@@ -44,7 +44,7 @@ void NotebookInfoWidget::setupUI()
 QGroupBox *NotebookInfoWidget::setupBasicInfoGroupBox(QWidget *p_parent)
 {
     auto box = new QGroupBox(tr("Basic Information"), p_parent);
-    auto mainLayout = WidgetUtils::createFormLayout(box);
+    auto mainLayout = WidgetsFactory::createFormLayout(box);
 
     {
         setupNotebookTypeComboBox(box);
@@ -131,7 +131,7 @@ QLayout *NotebookInfoWidget::setupNotebookRootFolderPath(QWidget *p_parent)
 QGroupBox *NotebookInfoWidget::setupAdvancedInfoGroupBox(QWidget *p_parent)
 {
     auto box = new QGroupBox(tr("Advanced Information"), p_parent);
-    auto mainLayout = WidgetUtils::createFormLayout(box);
+    auto mainLayout = WidgetsFactory::createFormLayout(box);
 
     {
         setupConfigMgrComboBox(box);

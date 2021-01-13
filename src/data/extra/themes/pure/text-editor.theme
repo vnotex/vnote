@@ -10,8 +10,8 @@
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New",
             "font-size" : 12,
             "text-color" : "#222222",
-            "background-color" : "#f1f1f1",
-            "selected-text-color" : "#f1f1f1",
+            "background-color" : "#f5f5f5",
+            "selected-text-color" : "#f5f5f5",
             "selected-background-color" : "#1976d2"
         },
         "CursorLine" : {
@@ -30,7 +30,7 @@
         },
         "IndicatorsBorder" : {
             "text-color" : "#aaaaaa",
-            "background-color" : "#ededed"
+            "background-color" : "#f1f1f1"
         },
         "CurrentLineNumber" : {
             "text-color" : "#222222"
@@ -70,8 +70,8 @@
             "font-family" : "冬青黑体, YaHei Consolas Hybrid, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, sans-serif, Tahoma, Arial, Geneva, Georgia, Times New Roman",
             "font-size" : 12,
             "text-color" : "#222222",
-            "background-color" : "#f1f1f1",
-            "selected-text-color" : "#f1f1f1",
+            "background-color" : "#f5f5f5",
+            "selected-text-color" : "#f5f5f5",
             "selected-background-color" : "#1976d2"
         }
     },

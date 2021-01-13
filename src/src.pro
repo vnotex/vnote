@@ -42,6 +42,8 @@ include($$LIBS_FOLDER/vtextedit/src/libs/syntax-highlighting/syntax-highlighting
 
 include($$PWD/utils/utils.pri)
 
+include($$PWD/export/export.pri)
+
 include($$PWD/core/core.pri)
 
 include($$PWD/widgets/widgets.pri)

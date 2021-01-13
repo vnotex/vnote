@@ -100,6 +100,8 @@ namespace vnotex
                      const QString &p_text,
                      int p_lineNumber);
 
+        void setText(const QString &p_text);
+
         void scrollToPosition(const Position &p_pos);
 
         int getTopLineNumber() const;
@@ -119,9 +121,13 @@ namespace vnotex
 
         void findText(const QString &p_text, FindOptions p_options);
 
+        void saveContent();
+
         // Functions to be called from web side.
     public slots:
         void setReady(bool p_ready);
+
+        void setWorkFinished();
 
         // The line number at the top.
         void setTopLineNumber(int p_lineNumber);
@@ -161,6 +167,8 @@ namespace vnotex
 
         void setFindText(const QString &p_text, int p_totalMatches, int p_currentMatchIndex);
 
+        void setSavedContent(const QString &p_headContent, const QString &p_styleContent, const QString &p_content, const QString &p_bodyClassList);
+
         // Signals to be connected at web side.
     signals:
         // Current Markdown text is updated.
@@ -194,6 +202,9 @@ namespace vnotex
 
         void findTextRequested(const QString &p_text, const QJsonObject &p_options);
 
+        // Request to get the whole HTML content.
+        void contentRequested();
+
     // Signals to be connected at cpp side.
     signals:
         void graphPreviewDataReady(const PreviewData &p_data);
@@ -201,6 +212,9 @@ namespace vnotex
         void mathPreviewDataReady(const PreviewData &p_data);
 
         void viewerReady();
+
+        // All rendering work has finished.
+        void workFinished();
 
         void headingsChanged();
 
@@ -215,6 +229,11 @@ namespace vnotex
         void crossCopyReady(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
 
         void findTextReady(const QString &p_text, int p_totalMatches, int p_currentMatchIndex);
+
+        void contentReady(const QString &p_headContent,
+                          const QString &p_styleContent,
+                          const QString &p_content,
+                          const QString &p_bodyClassList);
 
     private:
         void scrollToLine(int p_lineNumber);

@@ -97,6 +97,8 @@ namespace vnotex
         // Requested to locate node in explorer.
         void locateNodeRequested(Node *p_node);
 
+        void exportRequested();
+
     private:
         explicit VNoteX(QObject *p_parent = nullptr);
 

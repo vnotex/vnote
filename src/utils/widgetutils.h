@@ -17,7 +17,6 @@ class QScrollArea;
 class QListView;
 class QMenu;
 class QShortcut;
-class QFormLayout;
 class QLineEdit;
 
 namespace vnotex
@@ -78,8 +77,6 @@ namespace vnotex
         static QAction *findActionByObjectName(const QList<QAction *> &p_actions, const QString &p_objName);
 
         static void insertActionAfter(QMenu *p_menu, QAction *p_after, QAction *p_action);
-
-        static QFormLayout *createFormLayout(QWidget *p_parent = nullptr);
 
         // Select the base name part of the line edit content.
         static void selectBaseName(QLineEdit *p_lineEdit);

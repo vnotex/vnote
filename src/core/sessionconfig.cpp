@@ -55,9 +55,13 @@ void SessionConfig::init()
 
     loadCore(sessionJobj);
 
+    loadStateAndGeometry(sessionJobj);
+
     if (MainConfig::isVersionChanged()) {
         doVersionSpecificOverride();
     }
+
+    m_exportOption.fromJson(sessionJobj[QStringLiteral("export_option")].toObject());
 }
 
 void SessionConfig::loadCore(const QJsonObject &p_session)
@@ -172,6 +176,7 @@ QJsonObject SessionConfig::toJson() const
     obj[QStringLiteral("core")] = saveCore();
     obj[QStringLiteral("notebooks")] = saveNotebooks();
     obj[QStringLiteral("state_geometry")] = saveStateAndGeometry();
+    obj[QStringLiteral("export_option")] = m_exportOption.toJson();
     return obj;
 }
 
@@ -185,22 +190,12 @@ QJsonObject SessionConfig::saveStateAndGeometry() const
 
 SessionConfig::MainWindowStateGeometry SessionConfig::getMainWindowStateGeometry() const
 {
-    auto sessionSettings = getMgr()->getSettings(ConfigMgr::Source::Session);
-    const auto &sessionJobj = sessionSettings->getJson();
-    const auto obj = sessionJobj.value(QStringLiteral("state_geometry")).toObject();
-
-    MainWindowStateGeometry sg;
-    sg.m_mainState = readByteArray(obj, QStringLiteral("main_window_state"));
-    sg.m_mainGeometry = readByteArray(obj, QStringLiteral("main_window_geometry"));
-
-    return sg;
+    return m_mainWindowStateGeometry;
 }
 
 void SessionConfig::setMainWindowStateGeometry(const SessionConfig::MainWindowStateGeometry &p_state)
 {
-    m_mainWindowStateGeometry = p_state;
-    ++m_revision;
-    writeToSettings();
+    updateConfig(m_mainWindowStateGeometry, p_state, this);
 }
 
 SessionConfig::OpenGL SessionConfig::getOpenGLAtBootstrap()
@@ -282,4 +277,21 @@ void SessionConfig::doVersionSpecificOverride()
 {
     // In a new version, we may want to change one value by force.
     // SHOULD set the in memory variable only, or will override the notebook list.
+}
+
+const ExportOption &SessionConfig::getExportOption() const
+{
+    return m_exportOption;
+}
+
+void SessionConfig::setExportOption(const ExportOption &p_option)
+{
+    updateConfig(m_exportOption, p_option, this);
+}
+
+void SessionConfig::loadStateAndGeometry(const QJsonObject &p_session)
+{
+    const auto obj = p_session.value(QStringLiteral("state_geometry")).toObject();
+    m_mainWindowStateGeometry.m_mainState = readByteArray(obj, QStringLiteral("main_window_state"));
+    m_mainWindowStateGeometry.m_mainGeometry = readByteArray(obj, QStringLiteral("main_window_geometry"));
 }

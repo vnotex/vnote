@@ -64,9 +64,15 @@ namespace vnotex
         // Won't affect current theme since we do not support changing theme real time for now.
         void refresh();
 
+        // Return all web stylesheets available, including those from themes and web styles search paths.
+        // <DisplayName, FilePath>.
+        QVector<QPair<QString, QString>> getWebStyles() const;
+
         static void addSearchPath(const QString &p_path);
 
         static void addSyntaxHighlightingSearchPaths(const QStringList &p_paths);
+
+        static void addWebStylesSearchPath(const QString &p_path);
 
     private:
         void loadAvailableThemes();
@@ -89,8 +95,11 @@ namespace vnotex
         // Set at runtime, not from the theme config.
         QColor m_baseBackground;
 
-        // List of path to search for themes.
+        // List of paths to search for themes.
         static QStringList s_searchPaths;
+
+        // List of paths to search for CSS styles, including CSS syntax highlighting styles.
+        static QStringList s_webStylesSearchPaths;
     };
 } // ns vnotex
 

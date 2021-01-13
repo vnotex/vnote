@@ -20,6 +20,10 @@ namespace vnotex
     public:
         explicit NotebookExplorer(QWidget *p_parent = nullptr);
 
+        const QSharedPointer<Notebook> &currentNotebook() const;
+
+        Node *currentExploredFolderNode() const;
+
     public slots:
         void newNotebook();
 
@@ -55,8 +59,6 @@ namespace vnotex
         void setupUI();
 
         TitleBar *setupTitleBar(QWidget *p_parent = nullptr);
-
-        Node *currentExploredFolderNode() const;
 
         Node *checkNotebookAndGetCurrentExploredFolderNode() const;
 

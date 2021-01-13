@@ -178,3 +178,8 @@ bool FileBufferProvider::isReadOnly() const
 {
     return m_readOnly;
 }
+
+QSharedPointer<File> FileBufferProvider::getFile() const
+{
+    return m_file;
+}

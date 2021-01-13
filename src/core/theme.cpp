@@ -368,7 +368,12 @@ bool Theme::isRef(const QString &p_str)
 
 QString Theme::getFile(File p_fileType) const
 {
-    QDir dir(m_themeFolderPath);
+    return getFile(m_themeFolderPath, p_fileType);
+}
+
+QString Theme::getFile(const QString &p_themeFolder, File p_fileType)
+{
+    QDir dir(p_themeFolder);
     if (dir.exists(getFileName(p_fileType))) {
         return dir.filePath(getFileName(p_fileType));
     } else if (p_fileType == File::MarkdownEditorStyle) {

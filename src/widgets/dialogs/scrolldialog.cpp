@@ -33,6 +33,11 @@ void ScrollDialog::setCentralWidget(QWidget *p_widget)
     m_scrollArea->setWidget(p_widget);
 }
 
+void ScrollDialog::addBottomWidget(QWidget *p_widget)
+{
+    m_layout->insertWidget(m_layout->indexOf(m_scrollArea) + 1, p_widget);
+}
+
 void ScrollDialog::showEvent(QShowEvent *p_event)
 {
     QDialog::showEvent(p_event);

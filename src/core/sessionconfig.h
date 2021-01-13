@@ -6,6 +6,8 @@
 #include <QString>
 #include <QVector>
 
+#include <export/exportdata.h>
+
 namespace vnotex
 {
     class SessionConfig : public IConfig
@@ -82,6 +84,9 @@ namespace vnotex
         int getMinimizeToSystemTray() const;
         void setMinimizeToSystemTray(bool p_enabled);
 
+        const ExportOption &getExportOption() const;
+        void setExportOption(const ExportOption &p_option);
+
     private:
         void loadCore(const QJsonObject &p_session);
 
@@ -90,6 +95,8 @@ namespace vnotex
         void loadNotebooks(const QJsonObject &p_session);
 
         QJsonArray saveNotebooks() const;
+
+        void loadStateAndGeometry(const QJsonObject &p_session);
 
         QJsonObject saveStateAndGeometry() const;
 
@@ -102,8 +109,6 @@ namespace vnotex
 
         QVector<SessionConfig::NotebookItem> m_notebooks;
 
-        // Used to store newly-set state and geometry, since there is no need to store the read-in
-        // data all the time.
         MainWindowStateGeometry m_mainWindowStateGeometry;
 
         OpenGL m_openGL = OpenGL::None;
@@ -116,6 +121,8 @@ namespace vnotex
         // 0 for disabling minimizing to system tray;
         // 1 for enabling minimizing to system tray.
         int m_minimizeToSystemTray = -1;
+
+        ExportOption m_exportOption;
     };
 } // ns vnotex
 

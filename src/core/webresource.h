@@ -1,5 +1,5 @@
-#ifndef VIEWERRESOURCE_H
-#define VIEWERRESOURCE_H
+#ifndef WEBRESOURCE_H
+#define WEBRESOURCE_H
 
 #include <QJsonObject>
 #include <QJsonArray>
@@ -8,8 +8,8 @@
 
 namespace vnotex
 {
-    // Resource for Web viewer.
-    struct ViewerResource
+    // Resource for Web.
+    struct WebResource
     {
         struct Resource
         {
@@ -49,6 +49,11 @@ namespace vnotex
                 }
                 obj[QStringLiteral("scripts")] = scriptsArray;
                 return obj;
+            }
+
+            bool isGlobal() const
+            {
+                return m_name == QStringLiteral("global_styles");
             }
 
             QString m_name;
@@ -96,4 +101,4 @@ namespace vnotex
 
 }
 
-#endif // VIEWERRESOURCE_H
+#endif // WEBRESOURCE_H

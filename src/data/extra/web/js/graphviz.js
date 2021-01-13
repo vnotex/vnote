@@ -19,7 +19,8 @@ class Graphviz extends GraphRenderer {
     registerInternal() {
         this.vnotex.on('basicMarkdownRendered', () => {
             this.reset();
-            this.renderCodeNodes(this.vnotex.contentContainer, 'svg');
+            this.renderCodeNodes(this.vnotex.contentContainer,
+                                 window.vxOptions.transformSvgToPngEnabled ? 'png' : 'svg');
         });
 
         this.vnotex.getWorker('markdownit').addLangsToSkipHighlight(this.langs);

@@ -10,15 +10,15 @@
 
 /* All widgets */
 *[State="info"] {
-    border: 2px solid @base#info#fg;
+    border: 1px solid @base#info#fg;
 }
 
 *[State="warning"] {
-    border: 2px solid @base#warning#fg;
+    border: 1px solid @base#warning#fg;
 }
 
 *[State="error"] {
-    border: 2px solid @base#error#fg;
+    border: 1px solid @base#error#fg;
 }
 
 /* ToolBox */

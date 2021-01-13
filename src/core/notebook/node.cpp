@@ -263,6 +263,10 @@ QDir Node::toDir() const
 
 void Node::load()
 {
+    if (isLoaded()) {
+        return;
+    }
+
     getConfigMgr()->loadNode(this);
 }
 

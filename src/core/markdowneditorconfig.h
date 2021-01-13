@@ -3,7 +3,7 @@
 
 #include "iconfig.h"
 
-#include "viewerresource.h"
+#include "webresource.h"
 
 #include <QSharedPointer>
 #include <QVector>
@@ -38,15 +38,14 @@ namespace vnotex
 
         QJsonObject toJson() const Q_DECL_OVERRIDE;
 
-        void loadViewerResource(const QJsonObject &p_app, const QJsonObject &p_user);
-        QJsonObject saveViewerResource() const;
-
         int revision() const Q_DECL_OVERRIDE;
 
         TextEditorConfig &getTextEditorConfig();
         const TextEditorConfig &getTextEditorConfig() const;
 
-        const ViewerResource &getViewerResource() const;
+        const WebResource &getViewerResource() const;
+
+        const WebResource &getExportResource() const;
 
         bool getWebPlantUml() const;
 
@@ -107,9 +106,17 @@ namespace vnotex
         QString sectionNumberStyleToString(SectionNumberStyle p_style) const;
         SectionNumberStyle stringToSectionNumberStyle(const QString &p_str) const;
 
+        void loadViewerResource(const QJsonObject &p_app, const QJsonObject &p_user);
+        QJsonObject saveViewerResource() const;
+
+        void loadExportResource(const QJsonObject &p_app, const QJsonObject &p_user);
+        QJsonObject saveExportResource() const;
+
         QSharedPointer<TextEditorConfig> m_textEditorConfig;
 
-        ViewerResource m_viewerResource;
+        WebResource m_viewerResource;
+
+        WebResource m_exportResource;
 
         // Whether use javascript or external program to render PlantUML.
         bool m_webPlantUml = true;

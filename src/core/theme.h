@@ -54,6 +54,8 @@ namespace vnotex
 
         static QPixmap getCover(const QString &p_folder);
 
+        static QString getFile(const QString &p_themeFolder, File p_fileType);
+
     private:
         struct Metadata
         {

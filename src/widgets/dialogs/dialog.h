@@ -15,8 +15,6 @@ namespace vnotex
     public:
         explicit Dialog(QWidget *p_parent = nullptr, Qt::WindowFlags p_flags = Qt::WindowFlags());
 
-        virtual void setCentralWidget(QWidget *p_widget);
-
         void setDialogButtonBox(QDialogButtonBox::StandardButtons p_buttons,
                                 QDialogButtonBox::StandardButton p_defaultButton = QDialogButtonBox::NoButton);
 
@@ -31,6 +29,10 @@ namespace vnotex
 
         void setInformationText(const QString &p_text, InformationLevel p_level = InformationLevel::Info);
 
+        void appendInformationText(const QString &p_text);
+
+        void clearInformationText();
+
         void setButtonEnabled(QDialogButtonBox::StandardButton p_button, bool p_enabled);
 
         // Dialog has completed but just stay the GUI to let user know information.
@@ -41,9 +43,16 @@ namespace vnotex
     protected:
         virtual void acceptedButtonClicked();
 
+        virtual void rejectedButtonClicked();
+
         virtual void resetButtonClicked();
 
         virtual void appliedButtonClicked();
+
+        virtual void setCentralWidget(QWidget *p_widget);
+
+        // Add @p_widget below the central widget.
+        virtual void addBottomWidget(QWidget *p_widget);
 
         QBoxLayout *m_layout = nullptr;
 

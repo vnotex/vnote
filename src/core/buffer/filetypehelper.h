@@ -10,7 +10,15 @@ namespace vnotex
     class FileType
     {
     public:
-        // FileTypeHelper::Type.
+        // There may be other types after Others.
+        enum Type
+        {
+            Markdown = 0,
+            Text,
+            Others
+        };
+
+        // Type.
         int m_type = -1;
 
         QString m_typeName;
@@ -19,25 +27,17 @@ namespace vnotex
 
         QStringList m_suffixes;
 
-        QString preferredSuffix() const
-        {
-            return m_suffixes.isEmpty() ? QString() : m_suffixes.first();
-        }
+        QString preferredSuffix() const;
+
+        bool isMarkdown() const;
     };
 
     class FileTypeHelper
     {
     public:
-        enum Type
-        {
-            Markdown = 0,
-            Text,
-            Others
-        };
-
         const FileType &getFileType(const QString &p_filePath) const;
 
-        const FileType &getFileType(Type p_type) const;
+        const FileType &getFileType(int p_type) const;
 
         const FileType &getFileTypeByName(const QString &p_typeName) const;
 
@@ -45,7 +45,7 @@ namespace vnotex
 
         const QVector<FileType> &getAllFileTypes() const;
 
-        bool checkFileType(const QString &p_filePath, Type p_type) const;
+        bool checkFileType(const QString &p_filePath, int p_type) const;
 
         static const FileTypeHelper &getInst();
 

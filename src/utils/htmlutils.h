@@ -11,6 +11,8 @@ namespace vnotex
         HtmlUtils() = delete;
 
         static bool hasOnlyImgTag(const QString &p_html);
+
+        static QString escapeHtml(QString p_text);
     };
 }
 

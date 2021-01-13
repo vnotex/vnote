@@ -65,6 +65,8 @@ namespace vnotex
 
         bool isReadOnly() const Q_DECL_OVERRIDE;
 
+        QSharedPointer<File> getFile() const Q_DECL_OVERRIDE;
+
     private:
         QSharedPointer<File> m_file;
 

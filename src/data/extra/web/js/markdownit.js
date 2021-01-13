@@ -240,33 +240,11 @@ class MarkdownIt extends VxWorker {
     }
 
     registerInternal() {
-        this.vnotex.on('ready', () => {
-            this.setConstrainImageWidthEnabled(window.vxOptions.constrainImageWidthEnabled);
-            this.setIndentFirstLineEnabled(window.vxOptions.indentFirstLineEnabled);
-        });
         this.vnotex.on('markdownTextUpdated', (p_text) => {
             this.render(this.vnotex.contentContainer,
                         p_text,
                         'window.vnotex.getWorker(\'markdownit\').markdownRenderFinished();');
         });
-    }
-
-    setConstrainImageWidthEnabled(p_enabled) {
-        let constrainClass = 'vx-constrain-image-width';
-        if (p_enabled) {
-            this.vnotex.contentContainer.classList.add(constrainClass);
-        } else {
-            this.vnotex.contentContainer.classList.remove(constrainClass);
-        }
-    }
-
-    setIndentFirstLineEnabled(p_enabled) {
-        let constrainClass = 'vx-indent-first-line';
-        if (p_enabled) {
-            this.vnotex.contentContainer.classList.add(constrainClass);
-        } else {
-            this.vnotex.contentContainer.classList.remove(constrainClass);
-        }
     }
 
     // Render Markdown @p_text to HTML in @p_node.

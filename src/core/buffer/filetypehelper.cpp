@@ -8,6 +8,16 @@
 
 using namespace vnotex;
 
+QString FileType::preferredSuffix() const
+{
+    return m_suffixes.isEmpty() ? QString() : m_suffixes.first();
+}
+
+bool FileType::isMarkdown() const
+{
+    return m_type == Type::Markdown;
+}
+
 FileTypeHelper::FileTypeHelper()
 {
     setupBuiltInTypes();
@@ -21,7 +31,7 @@ void FileTypeHelper::setupBuiltInTypes()
 {
     {
         FileType type;
-        type.m_type = Type::Markdown;
+        type.m_type = FileType::Markdown;
         type.m_displayName = Buffer::tr("Markdown");
         type.m_typeName = QStringLiteral("Markdown");
         type.m_suffixes << QStringLiteral("md")
@@ -33,7 +43,7 @@ void FileTypeHelper::setupBuiltInTypes()
 
     {
         FileType type;
-        type.m_type = Type::Text;
+        type.m_type = FileType::Text;
         type.m_typeName = QStringLiteral("Text");
         type.m_displayName = Buffer::tr("Text");
         type.m_suffixes << QStringLiteral("txt") << QStringLiteral("text") << QStringLiteral("log");
@@ -42,7 +52,7 @@ void FileTypeHelper::setupBuiltInTypes()
 
     {
         FileType type;
-        type.m_type = Type::Others;
+        type.m_type = FileType::Others;
         type.m_typeName = QStringLiteral("Others");
         type.m_displayName = Buffer::tr("Others");
         m_fileTypes.push_back(type);
@@ -62,10 +72,10 @@ const FileType &FileTypeHelper::getFileType(const QString &p_filePath) const
 
     // Treat all unknown text files as plain text files.
     if (FileUtils::isText(p_filePath)) {
-        return m_fileTypes[Type::Text];
+        return m_fileTypes[FileType::Text];
     }
 
-    return m_fileTypes[Type::Others];
+    return m_fileTypes[FileType::Others];
 }
 
 const FileType &FileTypeHelper::getFileTypeBySuffix(const QString &p_suffix) const
@@ -74,7 +84,7 @@ const FileType &FileTypeHelper::getFileTypeBySuffix(const QString &p_suffix) con
     if (it != m_suffixTypeMap.end()) {
         return m_fileTypes.at(it.value());
     } else {
-        return m_fileTypes[Type::Others];
+        return m_fileTypes[FileType::Others];
     }
 }
 
@@ -97,8 +107,9 @@ const QVector<FileType> &FileTypeHelper::getAllFileTypes() const
     return m_fileTypes;
 }
 
-const FileType &FileTypeHelper::getFileType(Type p_type) const
+const FileType &FileTypeHelper::getFileType(int p_type) const
 {
+    Q_ASSERT(p_type < m_fileTypes.size());
     return m_fileTypes[p_type];
 }
 
@@ -108,9 +119,9 @@ const FileTypeHelper &FileTypeHelper::getInst()
     return helper;
 }
 
-bool FileTypeHelper::checkFileType(const QString &p_filePath, Type p_type) const
+bool FileTypeHelper::checkFileType(const QString &p_filePath, int p_type) const
 {
-    return getFileType(p_filePath).m_type == static_cast<int>(p_type);
+    return getFileType(p_filePath).m_type == p_type;
 }
 
 const FileType &FileTypeHelper::getFileTypeByName(const QString &p_typeName) const
@@ -122,5 +133,5 @@ const FileType &FileTypeHelper::getFileTypeByName(const QString &p_typeName) con
     }
 
     Q_ASSERT(false);
-    return m_fileTypes[Type::Others];
+    return m_fileTypes[FileType::Others];
 }

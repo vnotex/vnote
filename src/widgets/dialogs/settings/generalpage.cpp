@@ -20,7 +20,7 @@ GeneralPage::GeneralPage(QWidget *p_parent)
 
 void GeneralPage::setupUI()
 {
-    auto mainLayout = WidgetUtils::createFormLayout(this);
+    auto mainLayout = WidgetsFactory::createFormLayout(this);
 
     {
         m_localeComboBox = WidgetsFactory::createComboBox(this);

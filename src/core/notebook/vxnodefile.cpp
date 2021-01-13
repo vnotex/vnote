@@ -15,6 +15,7 @@ VXNodeFile::VXNodeFile(const QSharedPointer<VXNode> &p_node)
     : m_node(p_node)
 {
     Q_ASSERT(m_node && m_node->hasContent());
+    setContentType(FileTypeHelper::getInst().getFileType(getContentPath()).m_type);
 }
 
 QString VXNodeFile::read() const

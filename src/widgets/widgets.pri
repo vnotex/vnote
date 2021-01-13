@@ -4,6 +4,7 @@ SOURCES += \
     $$PWD/biaction.cpp \
     $$PWD/combobox.cpp \
     $$PWD/dialogs/dialog.cpp \
+    $$PWD/dialogs/exportdialog.cpp \
     $$PWD/dialogs/filepropertiesdialog.cpp \
     $$PWD/dialogs/imageinsertdialog.cpp \
     $$PWD/dialogs/importfolderdialog.cpp \
@@ -88,6 +89,7 @@ HEADERS += \
     $$PWD/biaction.h \
     $$PWD/combobox.h \
     $$PWD/dialogs/dialog.h \
+    $$PWD/dialogs/exportdialog.h \
     $$PWD/dialogs/importfolderutils.h \
     $$PWD/dialogs/filepropertiesdialog.h \
     $$PWD/dialogs/imageinsertdialog.h \

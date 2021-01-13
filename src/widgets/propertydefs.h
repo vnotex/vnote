@@ -21,6 +21,8 @@ namespace vnotex
 
         static const char *s_viewWindowToolBar;
 
+        static const char *s_consoleTextEdit;
+
         // Values: info/warning/error.
         static const char *s_state;
     };

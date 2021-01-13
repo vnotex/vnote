@@ -20,7 +20,7 @@ AppearancePage::AppearancePage(QWidget *p_parent)
 
 void AppearancePage::setupUI()
 {
-    auto mainLayout = WidgetUtils::createFormLayout(this);
+    auto mainLayout = WidgetsFactory::createFormLayout(this);
 
     {
         const QString label(tr("System title bar"));

@@ -23,7 +23,7 @@ TextEditorPage::TextEditorPage(QWidget *p_parent)
 
 void TextEditorPage::setupUI()
 {
-    auto mainLayout = WidgetUtils::createFormLayout(this);
+    auto mainLayout = WidgetsFactory::createFormLayout(this);
 
     {
         m_lineNumberComboBox = WidgetsFactory::createComboBox(this);

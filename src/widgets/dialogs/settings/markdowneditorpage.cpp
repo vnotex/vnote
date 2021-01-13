@@ -125,7 +125,7 @@ QString MarkdownEditorPage::title() const
 QGroupBox *MarkdownEditorPage::setupReadGroup()
 {
     auto box = new QGroupBox(tr("Read"), this);
-    auto layout = WidgetUtils::createFormLayout(box);
+    auto layout = WidgetsFactory::createFormLayout(box);
 
     {
         const QString label(tr("Constrain image width"));
@@ -197,7 +197,7 @@ QGroupBox *MarkdownEditorPage::setupReadGroup()
 QGroupBox *MarkdownEditorPage::setupEditGroup()
 {
     auto box = new QGroupBox(tr("Edit"), this);
-    auto layout = WidgetUtils::createFormLayout(box);
+    auto layout = WidgetsFactory::createFormLayout(box);
 
     {
         const QString label(tr("Insert file name as title"));
@@ -245,7 +245,7 @@ QGroupBox *MarkdownEditorPage::setupEditGroup()
 QGroupBox *MarkdownEditorPage::setupGeneralGroup()
 {
     auto box = new QGroupBox(tr("General"), this);
-    auto layout = WidgetUtils::createFormLayout(box);
+    auto layout = WidgetsFactory::createFormLayout(box);
 
     {
         auto sectionLayout = new QHBoxLayout();

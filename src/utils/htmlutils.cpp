@@ -10,3 +10,9 @@ bool HtmlUtils::hasOnlyImgTag(const QString &p_html)
     QRegExp reg(QStringLiteral("<(?:p|span|div) "));
     return !p_html.contains(reg);
 }
+
+QString HtmlUtils::escapeHtml(QString p_text)
+{
+    p_text.replace(">", "&gt;").replace("<", "&lt;").replace("&", "&amp;");
+    return p_text;
+}

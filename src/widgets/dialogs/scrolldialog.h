@@ -13,11 +13,13 @@ namespace vnotex
     public:
         ScrollDialog(QWidget *p_parent = nullptr, Qt::WindowFlags p_flags = Qt::WindowFlags());
 
-        void setCentralWidget(QWidget *p_widget) Q_DECL_OVERRIDE;
-
         void resizeToHideScrollBarLater(bool p_vertical, bool p_horizontal);
 
     protected:
+        void setCentralWidget(QWidget *p_widget) Q_DECL_OVERRIDE;
+
+        void addBottomWidget(QWidget *p_widget) Q_DECL_OVERRIDE;
+
         void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
     private:

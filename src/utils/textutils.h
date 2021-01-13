@@ -20,9 +20,6 @@ namespace vnotex
 
         // Unindent multi-lines text according to the indentation of the first line.
         static QString unindentTextMultiLines(const QString &p_text);
-
-        // Remove query in the url (?xxx).
-        static QString purifyUrl(const QString &p_url);
     };
 }
 

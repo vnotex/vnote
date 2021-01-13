@@ -36,6 +36,7 @@
 #include <utils/htmlutils.h>
 #include <utils/widgetutils.h>
 #include <utils/textutils.h>
+#include <utils/webutils.h>
 #include <core/exception.h>
 #include <core/markdowneditorconfig.h>
 #include <core/texteditorconfig.h>
@@ -1075,7 +1076,7 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
 
         // Only handle absolute file path or network path.
         QString srcImagePath;
-        QFileInfo info(TextUtils::purifyUrl(imageUrl));
+        QFileInfo info(WebUtils::purifyUrl(imageUrl));
 
         // For network image.
         QScopedPointer<QTemporaryFile> tmpFile;

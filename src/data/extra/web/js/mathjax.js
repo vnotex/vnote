@@ -18,7 +18,8 @@ window.MathJax = {
     },
     svg: {
         // Make SVG self-contained.
-        fontCache: 'local'
+        fontCache: 'local',
+        scale: window.vxOptions.mathJaxScale > 0 ? window.vxOptions.mathJaxScale : 1
     }
 };
 

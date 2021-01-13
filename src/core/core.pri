@@ -32,7 +32,6 @@ SOURCES += \
     $$PWD/widgetconfig.cpp
 
 HEADERS += \
-    $$PWD/ViewerResource.h \
     $$PWD/buffermgr.h \
     $$PWD/configmgr.h \
     $$PWD/coreconfig.h \
@@ -58,4 +57,5 @@ HEADERS += \
     $$PWD/theme.h \
     $$PWD/sessionconfig.h \
     $$PWD/clipboarddata.h \
+    $$PWD/webresource.h \
     $$PWD/widgetconfig.h

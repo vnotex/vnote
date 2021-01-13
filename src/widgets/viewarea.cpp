@@ -940,6 +940,7 @@ void ViewArea::handleTargetHit(void *p_item)
 {
     if (p_item) {
         setCurrentViewWindow(static_cast<ViewWindow *>(p_item));
+        focus();
     }
 }
 

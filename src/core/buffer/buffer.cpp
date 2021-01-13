@@ -562,3 +562,8 @@ Buffer::StateFlags Buffer::state() const
 {
     return m_state;
 }
+
+QSharedPointer<File> Buffer::getFile() const
+{
+    return m_provider->getFile();
+}

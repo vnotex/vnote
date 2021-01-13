@@ -60,10 +60,10 @@ namespace vnotex
         const FileType &getContentType() const;
 
     protected:
-        void setContentType(FileTypeHelper::Type p_type);
+        void setContentType(int p_type);
 
     private:
-        FileTypeHelper::Type m_contentType = FileTypeHelper::Others;
+        int m_contentType = FileType::Others;
     };
 }
 

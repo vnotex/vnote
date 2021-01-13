@@ -15,7 +15,9 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        NodeBufferProvider(const QSharedPointer<Node> &p_node, QObject *p_parent = nullptr);
+        NodeBufferProvider(const QSharedPointer<Node> &p_node,
+                           const QSharedPointer<File> &p_file,
+                           QObject *p_parent = nullptr);
 
         Buffer::ProviderType getType() const Q_DECL_OVERRIDE;
 
@@ -64,6 +66,8 @@ namespace vnotex
         bool isAttachmentSupported() const Q_DECL_OVERRIDE;
 
         bool isReadOnly() const Q_DECL_OVERRIDE;
+
+        QSharedPointer<File> getFile() const Q_DECL_OVERRIDE;
 
     private:
         QSharedPointer<Node> m_node;

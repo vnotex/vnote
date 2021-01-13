@@ -21,7 +21,9 @@ WebViewer::WebViewer(const QColor &p_background,
 
     // Avoid white flash before loading content.
     // Setting Qt::transparent will force GrayScale antialias rendering.
-    viewPage->setBackgroundColor(p_background);
+    if (p_background.isValid()) {
+        viewPage->setBackgroundColor(p_background);
+    }
 
     if (!Utils::fuzzyEqual(p_zoomFactor, 1.0)) {
         setZoomFactor(p_zoomFactor);

@@ -74,6 +74,9 @@ namespace vnotex
 
         virtual bool isReadOnly() const = 0;
 
+        // Return nullptr if not available.
+        virtual QSharedPointer<File> getFile() const = 0;
+
     protected:
         virtual QDateTime getLastModifiedFromFile() const;
 

@@ -27,6 +27,7 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     const auto userObj = p_user.value(m_sessionName).toObject();
 
     loadViewerResource(appObj, userObj);
+    loadExportResource(appObj, userObj);
 
     m_webPlantUml = READBOOL(QStringLiteral("web_plantuml"));
     m_webGraphviz = READBOOL(QStringLiteral("web_graphviz"));
@@ -58,6 +59,7 @@ QJsonObject MarkdownEditorConfig::toJson() const
 {
     QJsonObject obj;
     obj[QStringLiteral("viewer_resource")] = saveViewerResource();
+    obj[QStringLiteral("export_resource")] = saveExportResource();
     obj[QStringLiteral("web_plantuml")] = m_webPlantUml;
     obj[QStringLiteral("web_graphviz")] = m_webGraphviz;
     obj[QStringLiteral("prepend_dot_in_relative_link")] = m_prependDotInRelativeLink;
@@ -122,9 +124,39 @@ QJsonObject MarkdownEditorConfig::saveViewerResource() const
     return m_viewerResource.toJson();
 }
 
-const ViewerResource &MarkdownEditorConfig::getViewerResource() const
+void MarkdownEditorConfig::loadExportResource(const QJsonObject &p_app, const QJsonObject &p_user)
+{
+    const QString name(QStringLiteral("export_resource"));
+
+    if (MainConfig::isVersionChanged()) {
+        bool needOverride = p_app[QStringLiteral("override_viewer_resource")].toBool();
+        if (needOverride) {
+            qInfo() << "override \"viewer_resource\" in user configuration due to version change";
+            m_exportResource.init(p_app[name].toObject());
+            return;
+        }
+    }
+
+    if (p_user.contains(name)) {
+        m_exportResource.init(p_user[name].toObject());
+    } else {
+        m_exportResource.init(p_app[name].toObject());
+    }
+}
+
+QJsonObject MarkdownEditorConfig::saveExportResource() const
+{
+    return m_exportResource.toJson();
+}
+
+const WebResource &MarkdownEditorConfig::getViewerResource() const
 {
     return m_viewerResource;
+}
+
+const WebResource &MarkdownEditorConfig::getExportResource() const
+{
+    return m_exportResource;
 }
 
 bool MarkdownEditorConfig::getWebPlantUml() const

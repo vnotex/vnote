@@ -75,13 +75,3 @@ QString TextUtils::unindentTextMultiLines(const QString &p_text)
 
     return res;
 }
-
-QString TextUtils::purifyUrl(const QString &p_url)
-{
-    int idx = p_url.indexOf('?');
-    if (idx > -1) {
-        return p_url.left(idx);
-    }
-
-    return p_url;
-}
