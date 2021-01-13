@@ -86,18 +86,27 @@ void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenPar
         return;
     }
 
-    {
-        QFileInfo info(p_filePath);
-        if (!info.exists() || info.isDir()) {
-            qWarning() << QString("failed to open file %1 exists:%2 isDir:%3").arg(p_filePath).arg(info.exists()).arg(info.isDir());
-            return;
-        }
+    QFileInfo finfo(p_filePath);
+    if (!finfo.exists()) {
+        qWarning() << QString("failed to open file %1 that does not exist").arg(p_filePath);
+        return;
     }
 
     // Check if it is an internal node or not.
     auto node = loadNodeByPath(p_filePath);
     if (node) {
-        open(node.data(), p_paras);
+        if (node->getType() == Node::File) {
+            open(node.data(), p_paras);
+            return;
+        } else {
+            // Folder node. Currently just locate to it.
+            emit VNoteX::getInst().locateNodeRequested(node.data());
+            return;
+        }
+    }
+
+    if (finfo.isDir()) {
+        WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(p_filePath));
         return;
     }
 
