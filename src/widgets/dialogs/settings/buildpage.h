@@ -3,6 +3,8 @@
 
 #include "settingspage.h"
 
+class QTreeWidget;
+
 namespace vnotex
 {
     class BuildPage : public SettingsPage
@@ -20,6 +22,10 @@ namespace vnotex
 
     private:
         void setupUI();
+        
+        void loadBuilds();
+        
+        QTreeWidget *m_buildTreeWidget = nullptr;
     };
 }
 
