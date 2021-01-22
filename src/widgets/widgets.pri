@@ -15,6 +15,7 @@ SOURCES += \
     $$PWD/dialogs/selectdialog.cpp \
     $$PWD/dialogs/selectionitemwidget.cpp \
     $$PWD/dialogs/settings/appearancepage.cpp \
+    $$PWD/dialogs/settings/buildpage.cpp \
     $$PWD/dialogs/settings/editorpage.cpp \
     $$PWD/dialogs/settings/generalpage.cpp \
     $$PWD/dialogs/settings/markdowneditorpage.cpp \
@@ -100,6 +101,7 @@ HEADERS += \
     $$PWD/dialogs/selectdialog.h \
     $$PWD/dialogs/selectionitemwidget.h \
     $$PWD/dialogs/settings/appearancepage.h \
+    $$PWD/dialogs/settings/buildpage.h \
     $$PWD/dialogs/settings/editorpage.h \
     $$PWD/dialogs/settings/generalpage.h \
     $$PWD/dialogs/settings/markdowneditorpage.h \

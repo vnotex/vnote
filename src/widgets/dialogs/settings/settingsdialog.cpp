@@ -14,6 +14,7 @@
 #include "markdowneditorpage.h"
 #include "appearancepage.h"
 #include "themepage.h"
+#include "buildpage.h"
 
 using namespace vnotex;
 
@@ -106,7 +107,13 @@ void SettingsDialog::setupPages()
             addSubPage(subPage, item);
         }
     }
-
+    
+    // Build.
+    {
+        auto page = new BuildPage(this);
+        addPage(page);
+    }
+    
     setChangesUnsaved(false);
     m_pageExplorer->setCurrentItem(m_pageExplorer->topLevelItem(0), 0, QItemSelectionModel::ClearAndSelect);
     m_pageLayout->setCurrentIndex(0);
