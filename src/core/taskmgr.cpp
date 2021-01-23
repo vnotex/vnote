@@ -18,7 +18,7 @@ TaskMgr::TaskMgr(QObject *parent)
     loadAvailableTasks();
 }
 
-const QVector<TaskMgr::TaskInfo> &TaskMgr::getAllTasks() const
+const TaskInfoList &TaskMgr::getAllTasks() const
 {
     return m_tasks;
 }
@@ -50,11 +50,8 @@ void TaskMgr::loadTasks(const QString &p_path)
 void TaskMgr::checkAndAddTaskFile(const QString &p_file, const QString &p_locale)
 {
     if (Task::isValidTaskFile(p_file)) {
-        TaskInfo info;
-        info.m_name = PathUtils::fileName(p_file);
-        info.m_displayName = Task::getDisplayName(p_file, p_locale);
-        info.m_filePath = p_file;
-        m_tasks.push_back(info);
-        qDebug() << "add task" << info.m_name << info.m_filePath;
+        auto ptr = Task::getTaskInfo(p_file, p_locale);
+        m_tasks.push_back(ptr);
+        qDebug() << "add task" << ptr->m_name << ptr->m_filePath;
     }
 }

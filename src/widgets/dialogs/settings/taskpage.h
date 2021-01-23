@@ -25,11 +25,12 @@ namespace vnotex
     private:
         void setupUI();
         
-        void setupTask(QTreeWidgetItem *p_item, const TaskMgr::TaskInfo &p_info);
+        void setupTask(QTreeWidgetItem *p_item, TaskInfo *p_info);
         
         void loadTasks();
         
-        void addTask(const TaskMgr::TaskInfo &p_info);
+        void addTask(TaskInfo *p_info, 
+                     QTreeWidgetItem *p_parentItem = nullptr);
         
         QTreeWidget *m_taskExplorer = nullptr;
     };

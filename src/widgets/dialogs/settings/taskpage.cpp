@@ -37,10 +37,9 @@ void TaskPage::setupUI()
     mainLayout->addWidget(deleteBtn, 4, 1, 1, 1);
 }
 
-void TaskPage::setupTask(QTreeWidgetItem *p_item, const TaskMgr::TaskInfo &p_info)
+void TaskPage::setupTask(QTreeWidgetItem *p_item, TaskInfo *p_info)
 {
-    qDebug() << "setupTask: " << p_info.m_name;
-    p_item->setText(0, p_info.m_displayName);
+    p_item->setText(0, p_info->m_displayName);
     p_item->setData(0, Qt::UserRole, QVariant::fromValue(p_info));
 }
 
@@ -55,11 +54,16 @@ void TaskPage::loadTasks()
     }
 }
 
-void TaskPage::addTask(const TaskMgr::TaskInfo &p_info)
+void TaskPage::addTask(TaskInfo *p_info, 
+                       QTreeWidgetItem *p_parentItem)
 {
-    auto item = new QTreeWidgetItem(m_taskExplorer);
-    
+    QTreeWidgetItem *item;
+    item = p_parentItem ? new QTreeWidgetItem(p_parentItem)
+                        : new QTreeWidgetItem(m_taskExplorer);
     setupTask(item, p_info);
+    for (auto subTask : p_info->m_subTask) {
+        addTask(subTask, item);
+    }
 }
 
 void TaskPage::loadInternal()
