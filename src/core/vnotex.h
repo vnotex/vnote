@@ -5,7 +5,7 @@
 #include <QScopedPointer>
 
 #include "thememgr.h"
-#include "buildmgr.h"
+#include "taskmgr.h"
 #include "global.h"
 
 namespace vnotex
@@ -37,7 +37,7 @@ namespace vnotex
 
         ThemeMgr &getThemeMgr() const;
         
-        BuildMgr &getBuildMgr() const;
+        TaskMgr &getTaskMgr() const;
 
         void setMainWindow(MainWindow *p_mainWindow);
         MainWindow *getMainWindow() const;
@@ -105,7 +105,7 @@ namespace vnotex
 
         void initThemeMgr();
         
-        void initBuildMgr();
+        void initTaskMgr();
 
         void initNotebookMgr();
 
@@ -119,7 +119,7 @@ namespace vnotex
         ThemeMgr *m_themeMgr;
         
         // QObject managed.
-        BuildMgr *m_buildMgr;
+        TaskMgr *m_taskMgr;
 
         // QObject managed.
         NotebookMgr *m_notebookMgr;

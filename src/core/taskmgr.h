@@ -5,16 +5,16 @@
 
 #include <QVector>
 
-#include "build.h"
+#include "task.h"
 
 namespace vnotex
 {
 
-    class BuildMgr : public QObject
+    class TaskMgr : public QObject
     {
         Q_OBJECT
     public:
-        struct BuildInfo
+        struct TaskInfo
         {
             // Id.
             QString m_name;
@@ -25,27 +25,27 @@ namespace vnotex
             QString m_filePath;
         };
         
-        explicit BuildMgr(QObject *parent = nullptr);
+        explicit TaskMgr(QObject *parent = nullptr);
         
-        const QVector<BuildInfo> &getAllBuilds() const;
+        const QVector<TaskInfo> &getAllTasks() const;
         
         static void addSearchPath(const QString &p_path);
         
     private:
-        void loadAvailableBuilds();
+        void loadAvailableTasks();
         
-        void loadBuilds(const QString &p_path);
+        void loadTasks(const QString &p_path);
         
-        void checkAndAddBuildFile(const QString &p_file, const QString &p_locale);
+        void checkAndAddTaskFile(const QString &p_file, const QString &p_locale);
         
-        QVector<BuildInfo> m_builds;
+        QVector<TaskInfo> m_tasks;
         
         // List of path to search for themes.
         static QStringList s_searchPaths;
     };
 }
 
-Q_DECLARE_METATYPE(vnotex::BuildMgr::BuildInfo);
+Q_DECLARE_METATYPE(vnotex::TaskMgr::TaskInfo);
 
 
 #endif // BUILDMGR_H

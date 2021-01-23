@@ -14,7 +14,7 @@
 #include "markdowneditorpage.h"
 #include "appearancepage.h"
 #include "themepage.h"
-#include "buildpage.h"
+#include "taskpage.h"
 
 using namespace vnotex;
 
@@ -108,9 +108,9 @@ void SettingsDialog::setupPages()
         }
     }
     
-    // Build.
+    // Task.
     {
-        auto page = new BuildPage(this);
+        auto page = new TaskPage(this);
         addPage(page);
     }
     

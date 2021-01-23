@@ -5,14 +5,14 @@
 
 namespace vnotex {
 
-    class Build
+    class Task
     {
     public:
-        Build();
+        Task();
         
         QString name() const;
         
-        static bool isValidBuildFile(const QString &p_file);
+        static bool isValidTaskFile(const QString &p_file);
     };
 } // ns vnotex
 

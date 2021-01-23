@@ -25,7 +25,7 @@ VNoteX::VNoteX(QObject *p_parent)
 
     initThemeMgr();
     
-    initBuildMgr();
+    initTaskMgr();
 
     initNotebookMgr();
 
@@ -51,13 +51,13 @@ void VNoteX::initThemeMgr()
     m_themeMgr = new ThemeMgr(configMgr.getCoreConfig().getTheme(), this);
 }
 
-void VNoteX::initBuildMgr()
+void VNoteX::initTaskMgr()
 {
-    Q_ASSERT(!m_buildMgr);
+    Q_ASSERT(!m_taskMgr);
     auto &configMgr = ConfigMgr::getInst();
-    BuildMgr::addSearchPath(configMgr.getAppBuildFolder());
-    BuildMgr::addSearchPath(configMgr.getUserBuildFolder());
-    m_buildMgr = new BuildMgr(this);
+    TaskMgr::addSearchPath(configMgr.getAppTaskFolder());
+    TaskMgr::addSearchPath(configMgr.getUserTaskFolder());
+    m_taskMgr = new TaskMgr(this);
 }
 
 ThemeMgr &VNoteX::getThemeMgr() const
@@ -65,9 +65,9 @@ ThemeMgr &VNoteX::getThemeMgr() const
     return *m_themeMgr;
 }
 
-BuildMgr &VNoteX::getBuildMgr() const
+TaskMgr &VNoteX::getTaskMgr() const
 {
-    return *m_buildMgr;
+    return *m_taskMgr;
 }
 
 void VNoteX::setMainWindow(MainWindow *p_mainWindow)

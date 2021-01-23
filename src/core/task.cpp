@@ -1,25 +1,25 @@
-#include "build.h"
+#include "task.h"
 
 #include <QFile>
 #include <QDebug>
 
 using namespace vnotex;
 
-Build::Build()
+Task::Task()
 {
     
 }
 
-QString Build::name() const
+QString Task::name() const
 {
     return "";
 }
 
-bool Build::isValidBuildFile(const QString &p_file)
+bool Task::isValidTaskFile(const QString &p_file)
 {
     QFile file(p_file);
     if (!file.exists()) {
-        qWarning() << "build file does not exist: " << p_file;
+        qWarning() << "task file does not exist: " << p_file;
         return false;
     }
     
