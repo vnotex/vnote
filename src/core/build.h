@@ -11,6 +11,8 @@ namespace vnotex {
         Build();
         
         QString name() const;
+        
+        static bool isValidBuildFile(const QString &p_file);
     };
 } // ns vnotex
 

@@ -5,6 +5,8 @@
 
 #include <QVector>
 
+#include "build.h"
+
 namespace vnotex
 {
 
@@ -25,12 +27,16 @@ namespace vnotex
         
         explicit BuildMgr(QObject *parent = nullptr);
         
+        const QVector<BuildInfo> &getAllBuilds() const;
+        
+        static void addSearchPath(const QString &p_path);
+        
     private:
         void loadAvailableBuilds();
         
         void loadBuilds(const QString &p_path);
         
-        void checkAndAddBuildEntry(const QString &p_entry, const QString &p_locale);
+        void checkAndAddBuildFile(const QString &p_file, const QString &p_locale);
         
         QVector<BuildInfo> m_builds;
         
@@ -38,6 +44,8 @@ namespace vnotex
         static QStringList s_searchPaths;
     };
 }
+
+Q_DECLARE_METATYPE(vnotex::BuildMgr::BuildInfo);
 
 
 #endif // BUILDMGR_H

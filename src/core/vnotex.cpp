@@ -24,6 +24,8 @@ VNoteX::VNoteX(QObject *p_parent)
     m_instanceId = QRandomGenerator::global()->generate64();
 
     initThemeMgr();
+    
+    initBuildMgr();
 
     initNotebookMgr();
 
@@ -49,9 +51,23 @@ void VNoteX::initThemeMgr()
     m_themeMgr = new ThemeMgr(configMgr.getCoreConfig().getTheme(), this);
 }
 
+void VNoteX::initBuildMgr()
+{
+    Q_ASSERT(!m_buildMgr);
+    auto &configMgr = ConfigMgr::getInst();
+    BuildMgr::addSearchPath(configMgr.getAppBuildFolder());
+    BuildMgr::addSearchPath(configMgr.getUserBuildFolder());
+    m_buildMgr = new BuildMgr(this);
+}
+
 ThemeMgr &VNoteX::getThemeMgr() const
 {
     return *m_themeMgr;
+}
+
+BuildMgr &VNoteX::getBuildMgr() const
+{
+    return *m_buildMgr;
 }
 
 void VNoteX::setMainWindow(MainWindow *p_mainWindow)

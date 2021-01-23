@@ -320,6 +320,18 @@ QString ConfigMgr::getUserThemeFolder() const
     return folderPath;
 }
 
+QString ConfigMgr::getAppBuildFolder() const
+{
+    return PathUtils::concatenateFilePath(m_appConfigFolderPath, QStringLiteral("builds"));    
+}
+
+QString ConfigMgr::getUserBuildFolder() const
+{
+    auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("builds"));
+    QDir().mkpath(folderPath);
+    return folderPath;
+}
+
 QString ConfigMgr::getAppDocsFolder() const
 {
     return PathUtils::concatenateFilePath(m_appConfigFolderPath, QStringLiteral("docs"));

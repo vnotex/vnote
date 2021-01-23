@@ -17,6 +17,16 @@ BuildMgr::BuildMgr(QObject *parent)
     
 }
 
+const QVector<BuildMgr::BuildInfo> &BuildMgr::getAllBuilds() const
+{
+    return m_builds;
+}
+
+void BuildMgr::addSearchPath(const QString &p_path)
+{
+    s_searchPaths << p_path;
+}
+
 void BuildMgr::loadAvailableBuilds()
 {
     m_builds.clear();
@@ -34,11 +44,12 @@ void BuildMgr::loadBuilds(const QString &p_path)
     auto buildEntrys = dir.entryList();
     const auto localeStr = ConfigMgr::getInst().getCoreConfig().getLocaleToUse();
     for (auto &entry : buildEntrys) {
-        checkAndAddBuildEntry(PathUtils::concatenateFilePath(p_path, entry), localeStr);
+        checkAndAddBuildFile(PathUtils::concatenateFilePath(p_path, entry), localeStr);
     }
 }
 
-void BuildMgr::checkAndAddBuildEntry(const QString &p_entry, const QString &p_locale)
+void BuildMgr::checkAndAddBuildFile(const QString &p_file, const QString &p_locale)
 {
-    qDebug() << "Check Build Entry: " << p_entry;
+    qDebug() << "Check Build Entry: " << p_file << ", locale: " << p_locale;
+    
 }

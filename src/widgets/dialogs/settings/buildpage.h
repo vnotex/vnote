@@ -2,8 +2,11 @@
 #define BUILDPAGE_H
 
 #include "settingspage.h"
+#include "buildmgr.h"
+// for BuildMgr::BuildInfo*
 
 class QTreeWidget;
+class QTreeWidgetItem;
 
 namespace vnotex
 {
@@ -23,9 +26,13 @@ namespace vnotex
     private:
         void setupUI();
         
+        void setupBuild(QTreeWidgetItem *p_item, const BuildMgr::BuildInfo &p_info);
+        
         void loadBuilds();
         
-        QTreeWidget *m_buildTreeWidget = nullptr;
+        void addBuild(const BuildMgr::BuildInfo &p_info);
+        
+        QTreeWidget *m_buildExplorer = nullptr;
     };
 }
 

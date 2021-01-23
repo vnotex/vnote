@@ -4,6 +4,10 @@
 #include <QPushButton>
 
 #include <widgets/treewidget.h>
+#include <core/vnotex.h>
+#include <core/buildmgr.h>
+
+#include "buildmgr.h"
 
 using namespace vnotex;
 
@@ -17,10 +21,10 @@ void BuildPage::setupUI()
 {
     auto mainLayout = new QGridLayout(this);
     
-    m_buildTreeWidget = new TreeWidget(this);
-    TreeWidget::setupSingleColumnHeaderlessTree(m_buildTreeWidget, true, true);
-    TreeWidget::showHorizontalScrollbar(m_buildTreeWidget);
-    mainLayout->addWidget(m_buildTreeWidget, 0, 0, 3, 2);
+    m_buildExplorer = new TreeWidget(this);
+    TreeWidget::setupSingleColumnHeaderlessTree(m_buildExplorer, true, true);
+    TreeWidget::showHorizontalScrollbar(m_buildExplorer);
+    mainLayout->addWidget(m_buildExplorer, 0, 0, 3, 2);
     
     auto refreshBtn = new QPushButton(tr("Refresh"), this);
     mainLayout->addWidget(refreshBtn, 3, 0, 1, 1);
@@ -35,9 +39,29 @@ void BuildPage::setupUI()
     mainLayout->addWidget(deleteBtn, 4, 1, 1, 1);
 }
 
+void BuildPage::setupBuild(QTreeWidgetItem *p_item, const BuildMgr::BuildInfo &p_info)
+{
+    qDebug() << "setupBuild: " << p_info.m_name;
+    p_item->setText(0, p_info.m_displayName);
+    p_item->setData(0, Qt::UserRole, QVariant::fromValue(p_info));
+}
+
 void BuildPage::loadBuilds()
 {
-    m_buildTreeWidget->clear();
+    const auto &buildMgr = VNoteX::getInst().getBuildMgr();
+    const auto &builds = buildMgr.getAllBuilds();
+    
+    m_buildExplorer->clear();
+    for (const auto &info : builds) {
+        addBuild(info);
+    }
+}
+
+void BuildPage::addBuild(const BuildMgr::BuildInfo &p_info)
+{
+    auto item = new QTreeWidgetItem(m_buildExplorer);
+    
+    setupBuild(item, p_info);
 }
 
 void BuildPage::loadInternal()
