@@ -2,6 +2,7 @@
 #define BUILD_H
 
 #include <QString>
+#include <QJsonObject>
 
 namespace vnotex {
 
@@ -13,6 +14,11 @@ namespace vnotex {
         QString name() const;
         
         static bool isValidTaskFile(const QString &p_file);
+        
+        static QString getDisplayName(const QString &p_file, const QString &p_locale);
+        
+    private:
+        static QJsonObject readTaskFile(const QString &p_file);
     };
 } // ns vnotex
 

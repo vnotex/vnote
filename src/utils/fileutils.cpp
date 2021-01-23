@@ -332,3 +332,22 @@ void FileUtils::removeEmptyDir(const QString &p_dirPath)
         removeDirIfEmpty(childPath);
     }
 }
+
+QStringList FileUtils::entryListRecursively(const QString &p_dirPath, const QStringList &p_nameFilters, const QString &p_base)
+{
+    QDir dir(p_dirPath);
+    qDebug() << "entryListRecursively" << p_dirPath << dir.isEmpty();
+    if (dir.isEmpty()) return {};
+    QStringList entrys;
+    const auto curEntrys = dir.entryList(p_nameFilters, QDir::Files | QDir::NoDotAndDotDot);
+    for (const auto &e : curEntrys) {
+        entrys.append(PathUtils::concatenateFilePath(p_base, e));
+    }
+    auto childDirs = dir.entryList(QDir::AllDirs | QDir::NoDotAndDotDot);
+    for (const auto &child : childDirs) {
+        const auto dirPath = PathUtils::concatenateFilePath(p_dirPath, child);
+        const auto base = PathUtils::concatenateFilePath(p_base, child);
+        entrys.append(entryListRecursively(dirPath, p_nameFilters, base));
+    }
+    return entrys;
+}
