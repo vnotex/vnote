@@ -23,6 +23,16 @@ const TaskInfoList &TaskMgr::getAllTasks() const
     return m_tasks;
 }
 
+const TaskInfo *TaskMgr::findTask(const QString &p_name) const
+{
+    for (const auto &task : m_tasks) {
+        if (task->m_name == p_name) {
+            return task;
+        }
+    }
+    return nullptr;
+}
+
 void TaskMgr::addSearchPath(const QString &p_path)
 {
     s_searchPaths << p_path;

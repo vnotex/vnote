@@ -34,6 +34,8 @@ namespace vnotex
         
         const TaskInfoList &getAllTasks() const;
         
+        const TaskInfo *findTask(const QString &p_name) const;
+        
         static void addSearchPath(const QString &p_path);
         
     private:
@@ -49,8 +51,5 @@ namespace vnotex
         static QStringList s_searchPaths;
     };
 } // ns vnotex
-
-Q_DECLARE_METATYPE(vnotex::TaskInfo*);
-
 
 #endif // TASKMGR_H

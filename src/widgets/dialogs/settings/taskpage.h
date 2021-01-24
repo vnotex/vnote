@@ -32,6 +32,8 @@ namespace vnotex
         void addTask(TaskInfo *p_info, 
                      QTreeWidgetItem *p_parentItem = nullptr);
         
+        TaskInfo *currentTask() const;
+        
         QTreeWidget *m_taskExplorer = nullptr;
     };
 } // ns vnotex
