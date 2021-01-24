@@ -10,7 +10,7 @@ class QMenu;
 namespace vnotex
 {
     class MainWindow;
-    struct TaskInfo;
+    class Task;
 
     // Tool bar helper for MainWindow.
     class ToolBarHelper
@@ -33,7 +33,7 @@ namespace vnotex
         
         static QMenu *setupTaskMenu(QToolBar *p_tb);
         
-        static void addTaskMenu(QMenu *p_menu, TaskInfo *p_task);
+        static void addTaskMenu(QMenu *p_menu, Task *p_task);
 
         static QToolBar *setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_toolBar);
 

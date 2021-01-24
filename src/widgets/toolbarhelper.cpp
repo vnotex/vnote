@@ -194,13 +194,13 @@ QMenu *ToolBarHelper::setupTaskMenu(QToolBar *p_tb)
     return menu;
 }
 
-void ToolBarHelper::addTaskMenu(QMenu *p_menu, TaskInfo *p_task)
+void ToolBarHelper::addTaskMenu(QMenu *p_menu, Task *p_task)
 {
-    if (p_task->m_subTask.isEmpty()) {
-        p_menu->addAction(p_task->m_displayName);   
+    if (p_task->subTasks().isEmpty()) {
+        p_menu->addAction(p_task->runAction());
     } else {
-        auto menu = p_menu->addMenu(p_task->m_displayName);
-        for (auto task : p_task->m_subTask) {
+        auto menu = p_menu->addMenu(p_task->label());
+        for (auto task : p_task->subTasks()) {
             addTaskMenu(menu, task);
         }
     }

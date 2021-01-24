@@ -35,7 +35,7 @@ void TaskPage::setupUI()
             this, [this]() {
         auto task = currentTask();
         if (task) {
-            auto path = QFileInfo(task->m_filePath).absolutePath();
+            auto path = QFileInfo(task->filePath()).absolutePath();
             WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(path));
         }
     });
@@ -47,11 +47,11 @@ void TaskPage::setupUI()
     mainLayout->addWidget(deleteBtn, 4, 1, 1, 1);
 }
 
-void TaskPage::setupTask(QTreeWidgetItem *p_item, TaskInfo *p_info)
+void TaskPage::setupTask(QTreeWidgetItem *p_item, Task *p_task)
 {
-    p_item->setText(0, p_info->m_displayName);
+    p_item->setText(0, p_task->label());
     p_item->setData(0, Qt::UserRole, 
-                    QVariant::fromValue(static_cast<void*>(p_info)));
+                    QVariant::fromValue(qobject_cast<QObject*>(p_task)));
 }
 
 void TaskPage::loadTasks()
@@ -65,27 +65,27 @@ void TaskPage::loadTasks()
     }
 }
 
-void TaskPage::addTask(TaskInfo *p_info, 
+void TaskPage::addTask(Task *p_task, 
                        QTreeWidgetItem *p_parentItem)
 {
     QTreeWidgetItem *item;
     item = p_parentItem ? new QTreeWidgetItem(p_parentItem)
                         : new QTreeWidgetItem(m_taskExplorer);
-    setupTask(item, p_info);
-    for (auto subTask : p_info->m_subTask) {
+    setupTask(item, p_task);
+    for (auto subTask : p_task->subTasks()) {
         addTask(subTask, item);
     }
 }
 
-TaskInfo *TaskPage::currentTask() const
+Task *TaskPage::currentTask() const
 {
     auto item = m_taskExplorer->currentItem();
     while (item && item->parent()) {
         item = item->parent();   
     }
     if (item) {
-        auto data = item->data(0, Qt::UserRole).value<void*>();
-        return static_cast<TaskInfo*>(data);
+        auto data = item->data(0, Qt::UserRole).value<QObject*>();
+        return qobject_cast<Task*>(data);
     }
     return nullptr;
 }

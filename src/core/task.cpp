@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include <QAction>
 
 #include "utils/fileutils.h"
 #include "utils/pathutils.h"
@@ -11,9 +12,68 @@
 
 using namespace vnotex;
 
-QString Task::name() const
+Task *Task::fromFile(const QString &p_file, QObject *p_parent)
 {
-    return "";
+    auto task = fromJson(readTaskFile(p_file), p_parent);
+    task->m_taskFilePath = p_file;
+    return task;
+}
+
+Task *Task::fromJson(const QJsonObject &p_obj, QObject *p_parent)
+{
+    auto task = new Task(p_parent);
+    task->m_command = p_obj["command"].toString();
+    task->m_label = p_obj["label"].toString();
+    auto subTasks = p_obj["tasks"].toArray();
+    for (const auto &subTask : subTasks) {
+        task->m_subTasks.append(fromJson(subTask.toObject(), task));
+    }
+    return task;
+}
+
+QString Task::label() const
+{
+    if (!m_label.isNull()) {
+        return m_label;
+    }
+    if (!m_taskFilePath.isNull()) {
+        return QFileInfo(m_taskFilePath).baseName();
+    }
+    return m_label;
+}
+
+QString Task::filePath() const
+{
+    return m_taskFilePath;
+}
+
+void Task::run()
+{
+    if (m_command.isEmpty()) return ;
+    qDebug() << "run task" << label() << m_command;
+    m_process->setProcessChannelMode(QProcess::MergedChannels);
+    connect(m_process, &QProcess::started,
+            this, &Task::started);
+    connect(m_process, &QProcess::errorOccurred,
+            this, &Task::errorOccurred);
+    connect(m_process, &QProcess::readyReadStandardOutput,
+            this, [this]() {
+        qDebug() << m_process->readAllStandardOutput();
+    });
+    m_process->start("cmd /c " + m_command);
+}
+
+QAction *Task::runAction()
+{
+    auto act = new QAction(label(), this);
+    connect(act, &QAction::triggered,
+            this, &Task::run);
+    return act;
+}
+
+const QVector<Task *> &Task::subTasks() const
+{
+    return m_subTasks;
 }
 
 bool Task::isValidTaskFile(const QString &p_file)
@@ -27,46 +87,14 @@ bool Task::isValidTaskFile(const QString &p_file)
     return true;
 }
 
-Task *Task::fromFile(const QString &p_file)
-{
-    Q_ASSERT(!p_file.isEmpty());
-    return new Task(p_file);
-}
-
-TaskInfo* Task::getTaskInfo(const QString &p_file, 
-                            const QString &p_locale)
-{
-    auto obj = readTaskFile(p_file);
-    auto ptr = getTaskInfoFromTaskDescription(obj, p_locale);
-    auto fileName = QFileInfo(p_file).baseName();
-    ptr->m_filePath = p_file;
-    if (ptr->m_name.isNull()) ptr->m_name = fileName; 
-    if (ptr->m_displayName.isNull()) ptr->m_displayName = fileName;
-    return ptr;
-}
-
 QJsonObject Task::readTaskFile(const QString &p_file)
 {
     auto bytes = FileUtils::readFile(p_file);
     return QJsonDocument::fromJson(bytes).object();
 }
 
-Task::Task(const QString &p_taskFilePath)
-    : m_taskFilePath(p_taskFilePath)
+Task::Task(QObject *p_parent)
+    : QObject(p_parent)
 {
-    
-}
-
-TaskInfo* Task::getTaskInfoFromTaskDescription(
-        const QJsonObject &p_obj, 
-        const QString &p_locale)
-{
-    auto ptr = new TaskInfo;
-    ptr->m_name = p_obj["label"].toString();
-    ptr->m_displayName = ptr->m_name;
-    for (const auto &task : p_obj["tasks"].toArray()) {
-        ptr->m_subTask.append(
-            getTaskInfoFromTaskDescription(task.toObject(), p_locale));
-    }
-    return ptr;
+    m_process = new QProcess(this);
 }

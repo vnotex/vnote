@@ -18,19 +18,9 @@ TaskMgr::TaskMgr(QObject *parent)
     loadAvailableTasks();
 }
 
-const TaskInfoList &TaskMgr::getAllTasks() const
+const QVector<Task*> &TaskMgr::getAllTasks() const
 {
     return m_tasks;
-}
-
-const TaskInfo *TaskMgr::findTask(const QString &p_name) const
-{
-    for (const auto &task : m_tasks) {
-        if (task->m_name == p_name) {
-            return task;
-        }
-    }
-    return nullptr;
 }
 
 void TaskMgr::addSearchPath(const QString &p_path)
@@ -51,17 +41,15 @@ void TaskMgr::loadTasks(const QString &p_path)
 {
     qDebug() << "search for tasks in " << p_path;
     const auto taskFiles = FileUtils::entryListRecursively(p_path, {"*.json"});
-    const auto localeStr = ConfigMgr::getInst().getCoreConfig().getLocaleToUse();
     for (auto &entry : taskFiles) {
-        checkAndAddTaskFile(PathUtils::concatenateFilePath(p_path, entry), localeStr);
+        checkAndAddTaskFile(PathUtils::concatenateFilePath(p_path, entry));
     }
 }
 
-void TaskMgr::checkAndAddTaskFile(const QString &p_file, const QString &p_locale)
+void TaskMgr::checkAndAddTaskFile(const QString &p_file)
 {
     if (Task::isValidTaskFile(p_file)) {
-        auto ptr = Task::getTaskInfo(p_file, p_locale);
-        m_tasks.push_back(ptr);
-        qDebug() << "add task" << ptr->m_name << ptr->m_filePath;
+        m_tasks.push_back(Task::fromFile(p_file, this));
+        qDebug() << "add task" << p_file;
     }
 }
