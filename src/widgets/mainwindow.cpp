@@ -436,6 +436,11 @@ const QVector<QDockWidget *> &MainWindow::getDocks() const
     return m_docks;
 }
 
+ViewArea *MainWindow::getViewArea() const
+{
+    return m_viewArea;
+}
+
 void MainWindow::focusViewArea()
 {
     m_viewArea->focus();

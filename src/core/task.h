@@ -43,13 +43,13 @@ namespace vnotex {
         
         static QJsonObject readTaskFile(const QString &p_file);
         
+        static QString replaceVariables(QString p_cmd);
+        
         QString m_taskFilePath;
         
         QString m_label;
         
         QString m_command;
-        
-        QProcess *m_process = nullptr;
         
         QVector<Task*> m_subTasks;
     };

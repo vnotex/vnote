@@ -180,7 +180,7 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
         auto taskMenu = setupTaskMenu(tb);
         btn->setMenu(taskMenu);
     }
-
+    
     return tb;
 }
 

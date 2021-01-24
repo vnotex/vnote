@@ -23,6 +23,11 @@ const QVector<Task*> &TaskMgr::getAllTasks() const
     return m_tasks;
 }
 
+void TaskMgr::refresh()
+{
+    loadAvailableTasks();
+}
+
 void TaskMgr::addSearchPath(const QString &p_path)
 {
     s_searchPaths << p_path;
@@ -51,5 +56,16 @@ void TaskMgr::checkAndAddTaskFile(const QString &p_file)
     if (Task::isValidTaskFile(p_file)) {
         m_tasks.push_back(Task::fromFile(p_file, this));
         qDebug() << "add task" << p_file;
+    }
+}
+
+void TaskMgr::deleteTask(Task *p_task)
+{
+    FileUtils::removeFile(p_task->filePath());
+    for (int i = 0; i < m_tasks.size(); i++) {
+        if (m_tasks.at(i) == p_task) {
+            m_tasks.remove(i);
+            break;
+        }
     }
 }

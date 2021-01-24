@@ -36,6 +36,8 @@ namespace vnotex
         void resetStateAndGeometry();
 
         const QVector<QDockWidget *> &getDocks() const;
+        
+        ViewArea *getViewArea() const;
 
         void setContentAreaExpanded(bool p_expanded);
         // Should be called after MainWindow is shown.

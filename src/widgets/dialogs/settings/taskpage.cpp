@@ -28,6 +28,11 @@ void TaskPage::setupUI()
     
     auto refreshBtn = new QPushButton(tr("Refresh"), this);
     mainLayout->addWidget(refreshBtn, 3, 0, 1, 1);
+    connect(refreshBtn, &QPushButton::clicked,
+            this, [this]() {
+        VNoteX::getInst().getTaskMgr().refresh();
+        loadTasks();
+    });
     
     auto openLocationBtn = new QPushButton(tr("Open Location"), this);
     mainLayout->addWidget(openLocationBtn, 3, 1, 1, 1);
@@ -45,6 +50,10 @@ void TaskPage::setupUI()
     
     auto deleteBtn = new QPushButton(tr("Delete"), this);
     mainLayout->addWidget(deleteBtn, 4, 1, 1, 1);
+    connect(deleteBtn, &QPushButton::clicked,
+            this, [this]() {
+        VNoteX::getInst().getTaskMgr().deleteTask(currentTask());
+    });
 }
 
 void TaskPage::setupTask(QTreeWidgetItem *p_item, Task *p_task)

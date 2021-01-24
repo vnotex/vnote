@@ -18,6 +18,10 @@ namespace vnotex
         
         const QVector<Task*> &getAllTasks() const;
         
+        void refresh();
+        
+        void deleteTask(Task *p_task);
+        
         static void addSearchPath(const QString &p_path);
         
     private:
