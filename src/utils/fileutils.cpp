@@ -336,7 +336,6 @@ void FileUtils::removeEmptyDir(const QString &p_dirPath)
 QStringList FileUtils::entryListRecursively(const QString &p_dirPath, const QStringList &p_nameFilters, const QString &p_base)
 {
     QDir dir(p_dirPath);
-    qDebug() << "entryListRecursively" << p_dirPath << dir.isEmpty();
     if (dir.isEmpty()) return {};
     QStringList entrys;
     const auto curEntrys = dir.entryList(p_nameFilters, QDir::Files | QDir::NoDotAndDotDot);

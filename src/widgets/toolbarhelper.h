@@ -5,10 +5,12 @@
 #include <QIcon>
 
 class QToolBar;
+class QMenu;
 
 namespace vnotex
 {
     class MainWindow;
+    struct TaskInfo;
 
     // Tool bar helper for MainWindow.
     class ToolBarHelper
@@ -28,6 +30,10 @@ namespace vnotex
 
     private:
         static QToolBar *setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar);
+        
+        static QMenu *setupTaskMenu(QToolBar *p_tb);
+        
+        static void addTaskMenu(QMenu *p_menu, TaskInfo *p_task);
 
         static QToolBar *setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_toolBar);
 

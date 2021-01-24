@@ -84,5 +84,6 @@
         <file>translations/vnote_zh_CN.qm</file>
         <file>translations/qtbase_zh_CN.qm</file>
         <file>translations/vtextedit_zh_CN.qm</file>
+        <file>icons/tasks.svg</file>
     </qresource>
 </RCC>

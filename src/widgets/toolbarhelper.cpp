@@ -168,8 +168,42 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
                                emit VNoteX::getInst().importFolderRequested();
                            });
     }
+    
+    // Tasks.
+    {
+        auto act = tb->addAction(generateIcon("tasks.svg"), MainWindow::tr("Tasks"));
+        auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
+        Q_ASSERT(btn);
+        btn->setPopupMode(QToolButton::InstantPopup);
+        btn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+        
+        auto taskMenu = setupTaskMenu(tb);
+        btn->setMenu(taskMenu);
+    }
 
     return tb;
+}
+
+QMenu *ToolBarHelper::setupTaskMenu(QToolBar *p_tb)
+{
+    auto menu = WidgetsFactory::createMenu(p_tb);
+    const auto &taskMgr = VNoteX::getInst().getTaskMgr();
+    for (auto task : taskMgr.getAllTasks()) {
+        addTaskMenu(menu, task);
+    }
+    return menu;
+}
+
+void ToolBarHelper::addTaskMenu(QMenu *p_menu, TaskInfo *p_task)
+{
+    if (p_task->m_subTask.isEmpty()) {
+        p_menu->addAction(p_task->m_displayName);   
+    } else {
+        auto menu = p_menu->addMenu(p_task->m_displayName);
+        for (auto task : p_task->m_subTask) {
+            addTaskMenu(menu, task);
+        }
+    }
 }
 
 QToolBar *ToolBarHelper::setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_toolBar)
