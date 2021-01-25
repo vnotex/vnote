@@ -61,7 +61,7 @@ void TaskMgr::checkAndAddTaskFile(const QString &p_file)
 
 void TaskMgr::deleteTask(Task *p_task)
 {
-    FileUtils::removeFile(p_task->filePath());
+    FileUtils::removeFile(p_task->getFilePath());
     for (int i = 0; i < m_tasks.size(); i++) {
         if (m_tasks.at(i) == p_task) {
             m_tasks.remove(i);

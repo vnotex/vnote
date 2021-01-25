@@ -199,7 +199,7 @@ void ToolBarHelper::addTaskMenu(QMenu *p_menu, Task *p_task)
     if (p_task->subTasks().isEmpty()) {
         p_menu->addAction(p_task->runAction());
     } else {
-        auto menu = p_menu->addMenu(p_task->label());
+        auto menu = p_menu->addMenu(p_task->getLabel());
         for (auto task : p_task->subTasks()) {
             addTaskMenu(menu, task);
         }

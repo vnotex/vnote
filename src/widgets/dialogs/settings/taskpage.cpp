@@ -40,7 +40,7 @@ void TaskPage::setupUI()
             this, [this]() {
         auto task = currentTask();
         if (task) {
-            auto path = QFileInfo(task->filePath()).absolutePath();
+            auto path = QFileInfo(task->getFilePath()).absolutePath();
             WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(path));
         }
     });
@@ -58,7 +58,7 @@ void TaskPage::setupUI()
 
 void TaskPage::setupTask(QTreeWidgetItem *p_item, Task *p_task)
 {
-    p_item->setText(0, p_task->label());
+    p_item->setText(0, p_task->getLabel());
     p_item->setData(0, Qt::UserRole, 
                     QVariant::fromValue(qobject_cast<QObject*>(p_task)));
 }

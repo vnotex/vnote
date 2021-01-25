@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QVector>
 #include <QProcess>
+#include <QMap>
 
 class QAction;
 
@@ -19,9 +20,15 @@ namespace vnotex {
         
         static Task* fromJson(const QJsonObject &p_obj, QObject *p_parent = nullptr);
         
-        QString label() const;
+        QString getLabel() const;
         
-        QString filePath() const;
+        QString getFilePath() const;
+        
+        QString getCommand() const;
+        
+        QStringList getArgs() const;
+        
+        QString getOptions_cwd() const;
         
         QAction *runAction();
         
@@ -41,17 +48,35 @@ namespace vnotex {
         
         void run();
         
+        static QStringList defaultShellArgs(const QString &shellType);
+        
         static QJsonObject readTaskFile(const QString &p_file);
         
-        static QString replaceVariables(QString p_cmd);
+        static QString replaceVariables(const QString &p_cmd);
+        
+        static QString getCurrentFile();
+        
+        static QString getCurrentNotebookFolder();
         
         QString m_taskFilePath;
         
         QString m_label;
         
+        QString m_type;
+        
         QString m_command;
         
+        QStringList m_args;
+        
         QVector<Task*> m_subTasks;
+        
+        QString m_options_cwd;
+        
+        QMap<QString, QString> m_options_env;
+        
+        QString m_options_shell_executable;
+        
+        QStringList m_options_shell_args;
     };
     
 } // ns vnotex
