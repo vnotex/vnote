@@ -1,84 +1,16 @@
-#ifndef TASK_H
-#define TASK_H
+#ifndef TASKCONFIG_H
+#define TASKCONFIG_H
 
 #include <QObject>
-#include <QString>
-#include <QJsonObject>
-#include <QVector>
-#include <QProcess>
-#include <QMap>
 
-class QAction;
-
-namespace vnotex {
-
-    class Task : public QObject
-    {
-        Q_OBJECT
-    public:
-        static Task* fromFile(const QString &p_file, QObject *p_parent = nullptr);
-        
-        static Task* fromJson(const QJsonObject &p_obj, QObject *p_parent = nullptr);
-        
-        QString getLabel() const;
-        
-        QString getFilePath() const;
-        
-        QString getCommand() const;
-        
-        QStringList getArgs() const;
-        
-        QString getOptions_cwd() const;
-        
-        QAction *runAction();
-        
-        const QVector<Task*> &subTasks() const;
-        
-        static bool isValidTaskFile(const QString &p_file);
-        
-        static Task* getTask(const QString &p_file);
-        
-    signals:
-        void started();
-        
-        void errorOccurred(QProcess::ProcessError error);
-        
-    private:
-        Task(QObject *p_parent = nullptr);
-        
-        void run();
-        
-        static QStringList defaultShellArgs(const QString &shellType);
-        
-        static QJsonObject readTaskFile(const QString &p_file);
-        
-        static QString replaceVariables(const QString &p_cmd);
-        
-        static QString getCurrentFile();
-        
-        static QString getCurrentNotebookFolder();
-        
-        QString m_taskFilePath;
-        
-        QString m_label;
-        
-        QString m_type;
-        
-        QString m_command;
-        
-        QStringList m_args;
-        
-        QVector<Task*> m_subTasks;
-        
-        QString m_options_cwd;
-        
-        QMap<QString, QString> m_options_env;
-        
-        QString m_options_shell_executable;
-        
-        QStringList m_options_shell_args;
-    };
+class TaskConfig : public QObject
+{
+    Q_OBJECT
+public:
+    explicit TaskConfig(QObject *parent = nullptr);
     
-} // ns vnotex
+signals:
+    
+};
 
-#endif // TASK_H
+#endif // TASKCONFIG_H
