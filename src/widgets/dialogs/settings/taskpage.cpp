@@ -7,6 +7,7 @@
 #include <widgets/treewidget.h>
 #include <core/vnotex.h>
 #include <core/taskmgr.h>
+#include <core/task.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
@@ -40,7 +41,7 @@ void TaskPage::setupUI()
             this, [this]() {
         auto task = currentTask();
         if (task) {
-            auto path = QFileInfo(task->getFilePath()).absolutePath();
+            auto path = QFileInfo(task->getFile()).absolutePath();
             WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(path));
         }
     });
@@ -69,8 +70,8 @@ void TaskPage::loadTasks()
     const auto &tasks = taskMgr.getAllTasks();
     
     m_taskExplorer->clear();
-    for (const auto &info : tasks) {
-        addTask(info);
+    for (const auto &task : tasks) {
+        addTask(task);
     }
 }
 
@@ -81,8 +82,8 @@ void TaskPage::addTask(Task *p_task,
     item = p_parentItem ? new QTreeWidgetItem(p_parentItem)
                         : new QTreeWidgetItem(m_taskExplorer);
     setupTask(item, p_task);
-    for (auto subTask : p_task->subTasks()) {
-        addTask(subTask, item);
+    for (auto task : p_task->getTasks()) {
+        addTask(task, item);
     }
 }
 

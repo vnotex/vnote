@@ -22,6 +22,7 @@
 #include <core/fileopenparameters.h>
 #include "propertydefs.h"
 #include "dialogs/settings/settingsdialog.h"
+#include <core/task.h>
 
 using namespace vnotex;
 
@@ -196,11 +197,11 @@ QMenu *ToolBarHelper::setupTaskMenu(QToolBar *p_tb)
 
 void ToolBarHelper::addTaskMenu(QMenu *p_menu, Task *p_task)
 {
-    if (p_task->subTasks().isEmpty()) {
-        p_menu->addAction(p_task->runAction());
+    if (p_task->getTasks().isEmpty()) {
+        p_menu->addAction(Task::runAction(p_task));
     } else {
         auto menu = p_menu->addMenu(p_task->getLabel());
-        for (auto task : p_task->subTasks()) {
+        for (auto task : p_task->getTasks()) {
             addTaskMenu(menu, task);
         }
     }
