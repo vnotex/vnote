@@ -29,13 +29,6 @@ namespace vnotex {
                                     const QString &p_locale,
                                     QObject *p_parent = nullptr);
         
-        static Task* fromJson(Task *p_task,
-                              const QJsonObject &p_obj);
-        
-        static Task* fromJsonV0(Task *p_task,
-                                const QJsonObject &p_obj,
-                                bool mergeTasks = false);
-        
         QString getVersion() const;
         
         QString getType() const;
@@ -75,7 +68,16 @@ namespace vnotex {
         
         static QStringList getStringList(const QJsonValue &p_value);
         
+    signals:
+        void showOutput(const QString &p_text) const;
+        
     private:
+        static Task* fromJson(Task *p_task,
+                              const QJsonObject &p_obj);
+        
+        static Task* fromJsonV0(Task *p_task,
+                                const QJsonObject &p_obj,
+                                bool mergeTasks = false);        
         
         explicit Task(const QString &p_locale, 
                             const QString &p_file = QString(), 
@@ -94,6 +96,10 @@ namespace vnotex {
         QMap<QString, QString> evaluateInputVariables(const QString &p_text) const;
         
         QString replaceInputVariables(const QString &p_text) const;
+        
+        static QString textDecode(const QByteArray &p_text);
+        
+        static QString textDecode(const QByteArray &p_text, const QByteArray &name);
         
         static QJsonObject readTaskFile(const QString &p_file);
         

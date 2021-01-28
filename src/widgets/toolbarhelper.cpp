@@ -199,6 +199,8 @@ void ToolBarHelper::addTaskMenu(QMenu *p_menu, Task *p_task)
 {
     if (p_task->getTasks().isEmpty()) {
         p_menu->addAction(Task::runAction(p_task));
+        MainWindow::connect(p_task, &Task::showOutput,
+                            &VNoteX::getInst(), &VNoteX::showOutputRequested);
     } else {
         auto menu = p_menu->addMenu(p_task->getLabel());
         for (auto task : p_task->getTasks()) {

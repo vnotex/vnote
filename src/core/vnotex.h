@@ -81,6 +81,9 @@ namespace vnotex
 
         // Requested to show status message.
         void statusMessageRequested(const QString &p_message, int timeoutMilliseconds);
+        
+        // Requested to show output message.
+        void showOutputRequested(const QString &p_text);
 
         // Requested to open @p_node.
         void openNodeRequested(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);

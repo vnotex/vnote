@@ -9,6 +9,7 @@
 
 class QDockWidget;
 class QSystemTrayIcon;
+class QTextEdit;
 
 namespace vnotex
 {
@@ -79,7 +80,8 @@ namespace vnotex
         enum DockIndex
         {
             NavigationDock = 0,
-            OutlineDock
+            OutlineDock,
+            OutputDock,
         };
 
         void setupUI();
@@ -89,10 +91,14 @@ namespace vnotex
         void setupNavigationToolBox();
 
         void setupOutlineViewer();
+        
+        void setupOutputViewer();
 
         void setupNavigationDock();
 
         void setupOutlineDock();
+        
+        void setupOutputDock();
 
         void setupNotebookExplorer(QWidget *p_parent = nullptr);
 
@@ -130,6 +136,8 @@ namespace vnotex
         QWidget *m_viewAreaStatusWidget = nullptr;
 
         OutlineViewer *m_outlineViewer = nullptr;
+        
+        QTextEdit *m_outputViewer = nullptr;
 
         QVector<QDockWidget *> m_docks;
 

@@ -151,10 +151,10 @@ void MainWindow::setupDocks()
     setupNavigationDock();
 
     setupOutlineDock();
+    
+    setupOutputDock();
 
-    for (int i = 1; i < m_docks.size(); ++i) {
-        tabifyDockWidget(m_docks[i - 1], m_docks[i]);
-    }
+    tabifyDockWidget(m_docks[DockIndex::NavigationDock], m_docks[DockIndex::OutlineDock]);
 
     for (auto dock : m_docks) {
         connect(dock, &QDockWidget::visibilityChanged,
@@ -214,6 +214,21 @@ void MainWindow::setupOutlineDock()
     dock->setWidget(m_outlineViewer);
     dock->setFocusProxy(m_outlineViewer);
     addDockWidget(Qt::LeftDockWidgetArea, dock);
+}
+
+void MainWindow::setupOutputDock()
+{
+    auto dock = new QDockWidget(tr("Output"), this);
+    m_docks.push_back(dock);
+
+    dock->setObjectName(QStringLiteral("OutputDock.vnotex"));
+    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+    setupOutputViewer();
+    dock->setWidget(m_outputViewer);
+    dock->setFocusProxy(m_outputViewer);
+    dock->hide();
+    addDockWidget(Qt::BottomDockWidgetArea, dock);
 }
 
 void MainWindow::setupNavigationToolBox()
@@ -429,6 +444,23 @@ void MainWindow::setupOutlineViewer()
             });
     connect(m_outlineViewer, &OutlineViewer::focusViewArea,
             this, &MainWindow::focusViewArea);
+}
+
+void MainWindow::setupOutputViewer()
+{
+    m_outputViewer = new QTextEdit(this);
+    m_outputViewer->setObjectName("OutputViewer.vnotex");
+    m_outputViewer->setReadOnly(true);
+    
+    connect(&VNoteX::getInst(), &VNoteX::showOutputRequested,
+            m_outputViewer, [this](const QString &p_text) {
+        m_outputViewer->insertPlainText(p_text);
+        auto scrollBar = m_outputViewer->verticalScrollBar();
+        if (scrollBar) {
+            scrollBar->setSliderPosition(scrollBar->maximum());
+        }
+        m_docks[DockIndex::OutputDock]->show();
+    });
 }
 
 const QVector<QDockWidget *> &MainWindow::getDocks() const

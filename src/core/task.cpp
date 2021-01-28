@@ -8,6 +8,7 @@
 #include <QAction>
 #include <QRegularExpression>
 #include <QInputDialog>
+#include <QTextCodec>
 
 #include "utils/fileutils.h"
 #include "vnotex.h"
@@ -44,7 +45,7 @@ Task* Task::fromJson(Task *p_task,
     return p_task;
 }
 
-Task *Task::fromJsonV0(Task *p_task, 
+Task *Task::fromJsonV0(Task *p_task,
                        const QJsonObject &p_obj,
                        bool mergeTasks)
 {
@@ -273,7 +274,7 @@ Task::Task(const QString &p_locale,
            const QString &p_file,
            QObject *p_parent)
     : QObject(p_parent)
-{
+{   
     m_file = p_file;
     m_version = s_latestVersion;
     m_type = "shell";
@@ -322,8 +323,6 @@ QProcess *Task::setupProcess() const
         // space quote
         if (!command.isEmpty() && !args.isEmpty()) {
             QString chars = "\"";
-            if (shell == "powershell") chars = "\\\"";
-            command = spaceQuote(command, chars);
             args = spaceQuote(args, chars);
         }
         QStringList allArgs;
@@ -339,20 +338,22 @@ QProcess *Task::setupProcess() const
 
     // connect signal and slot
     connect(process, &QProcess::errorOccurred,
-            this, [](QProcess::ProcessError error) {
-        qDebug() << "error" << error;
+            this, [this](QProcess::ProcessError error) {
+        emit showOutput(tr("[Task %1 error occurred with code %2]").arg(getLabel(), QString::number(error)));
     });
     connect(process, &QProcess::readyReadStandardOutput,
-            this, [process]() {
-        qDebug() << process->readAllStandardOutput();
+            this, [process, this]() {
+        auto text = process->readAllStandardOutput();
+        emit showOutput(textDecode(text));
     });
     connect(process, &QProcess::started,
             this, [this]() {
-        qDebug() << "task" << getLabel() << "started";
+        emit showOutput(tr("[Task %1 started]\n").arg(getLabel()));
     });
     connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this, [this, process]() {
-        qDebug() << "task" << getLabel() << "finished";
+            this, [this, process](int exitCode) {
+        emit showOutput(tr("\n[Task %1 finished with exit code %2]\n")
+                        .arg(getLabel(), QString::number(exitCode)));
         process->deleteLater();
     });
     return process;
@@ -428,6 +429,8 @@ QString Task::replaceVariables(const QString &p_text) const
     auto fileExtname = "." + fileInfo.suffix();
     
     cmd.replace("${notebookFolder}", notebookFolder);
+    cmd.replace("${notebookFolderBasename}", QDir(notebookFolder).dirName());
+    cmd.replace("${notebookName}", QDir(notebookFolder).dirName());
     cmd.replace("${file}", normalPath(file));
     cmd.replace("${fileBasename}", fileBasename);
     cmd.replace("${fileBasenameNoExtension}", fileBasenameNoExtension);
@@ -514,6 +517,33 @@ QString Task::replaceInputVariables(const QString &p_text) const
         text.replace(QString("${input:%1}").arg(i.key()), i.value());
     }
     return text;
+}
+
+QString Task::textDecode(const QByteArray &p_text)
+{
+    static QByteArrayList codecNames = {
+        "UTF-8",
+        "System",
+        "UTF-16",
+        "GB18030"
+    };
+    for (auto name : codecNames) {
+        auto text = textDecode(p_text, name);
+        if (!text.isNull()) return text;
+    }
+    return p_text;
+}
+
+QString Task::textDecode(const QByteArray &p_text, const QByteArray &name)
+{
+    auto codec = QTextCodec::codecForName(name);
+    if (codec) {
+        QTextCodec::ConverterState state;
+        auto text = codec->toUnicode(p_text.data(), p_text.size(), &state);
+        if (state.invalidChars > 0) return QString();
+        return text;
+    }
+    return QString();
 }
 
 QString Task::getCurrentFile()
