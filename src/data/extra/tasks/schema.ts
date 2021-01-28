@@ -1,9 +1,9 @@
-interface TaskConfiguration {
+interface BaseTaskConfiguration {
     /**
      * The configuration's version number
      * If omitted latest version is used.
      */
-    version?: '0.1.3';
+    version?: '0.1.4';
 
     /**
      * Windows specific task configuration
@@ -40,6 +40,13 @@ interface TaskConfiguration {
     args?: string[];
 
     /**
+      * The command options used when the command is executed. Can be omitted.
+      */
+    options?: CommandOptions;
+}
+
+interface TaskConfiguration extends BaseTaskConfiguration {
+    /**
      * The task's name.
      * If task has no parent, the file name is used.
      * If task has command, the command is used.
@@ -47,17 +54,18 @@ interface TaskConfiguration {
     label?: string | TranslatableString;
 
     /**
-      * The command options used when the command is executed. Can be omitted.
-      */
-    options?: CommandOptions;
-
-    /**
      * The configuration of the available tasks.
      * Tasks will not be inherited.
      * Tasks in OS-specific will be merged.
      */
     tasks?: TaskConfiguration[];
+
+    /**
+     * The configuration of the input variables.
+     */
+    inputs?: InputConfiguration[];
 }
+
 
 /**
  * Options to be passed to the external program or shell
@@ -110,4 +118,38 @@ interface CommandOptions {
 interface TranslatableString {
     en_US?: string,
     zh_CN?: string
+}
+
+/**
+ * Configuration of input variables
+ */
+interface InputConfiguration {
+    /**
+     * Input variable id
+     */
+    id: string,
+    /**
+     * the type of input variable
+     * if omitted, `promptString` is used.
+     */
+    type?: 'promptString' | 'pickString',
+    /**
+     * Provides context for the input.
+     */
+    description?: string | TranslatableString,
+    /**
+     * Default value that will be used if the user doesn't enter something else.
+     * If type is pickString, it must be one of the option values.
+     */
+    default?: string | TranslatableString,
+    /**
+     * Only avaliable when type is promptString
+     * Set to true to input with a password prompt that will not show the typed value.
+     */
+    password?: true | false,
+    /**
+     * Only avaliable when type is pickString
+     * An array of options for the user to pick from.
+     */
+    options?: TranslatableString[] | string[]
 }

@@ -15,6 +15,16 @@ namespace vnotex {
     {
         Q_OBJECT
     public:
+        
+        struct Input {
+            QString m_id;
+            QString m_type;
+            QString m_description;
+            QString m_default;
+            bool m_password;
+            QStringList m_options;
+        };
+        
         static Task* fromFile(const QString &p_file, 
                                     const QString &p_locale,
                                     QObject *p_parent = nullptr);
@@ -48,6 +58,10 @@ namespace vnotex {
         
         const QVector<Task*> &getTasks() const;
         
+        const QVector<Input> &getInputs() const;
+        
+        Input getInput(const QString &p_id) const;
+        
         QString getFile() const;
         
         static QAction *runAction(Task *p_task);
@@ -56,13 +70,30 @@ namespace vnotex {
         
         static bool isValidTaskFile(const QString &p_file);
         
+        static QString getLocaleString(const QJsonValue &p_value,
+                                       const QString &p_locale);
+        
+        static QStringList getStringList(const QJsonValue &p_value);
+        
     private:
         
         explicit Task(const QString &p_locale, 
                             const QString &p_file = QString(), 
                             QObject *p_parent = nullptr);
         
+        QProcess *setupProcess() const;
+        
         void run() const;
+        
+        QString replaceVariables(const QString &p_text) const;
+        
+        QStringList replaceVariables(const QStringList &p_list) const;
+        
+        QStringList getAllInputVariables(const QString &p_text) const;
+        
+        QMap<QString, QString> evaluateInputVariables(const QString &p_text) const;
+        
+        QString replaceInputVariables(const QString &p_text) const;
         
         static QJsonObject readTaskFile(const QString &p_file);
         
@@ -81,10 +112,6 @@ namespace vnotex {
         static QString spaceQuote(const QString &p_text, const QString &p_chars = "\"");
         
         static QStringList spaceQuote(const QStringList &p_list, const QString &p_chars = "\"");
-        
-        static QString replaceVariables(const QString &p_text);
-        
-        static QStringList replaceVariables(const QStringList &p_list);
         
         static QString getCurrentFile();
         
@@ -110,6 +137,8 @@ namespace vnotex {
         QStringList m_options_shell_args;
         
         QVector<Task*> m_tasks;
+        
+        QVector<Input> m_inputs;
         
         Task *m_parent = nullptr;
         

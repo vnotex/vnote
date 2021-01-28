@@ -6,6 +6,8 @@
 #include <QJsonValue>
 #include <QJsonArray>
 #include <QAction>
+#include <QRegularExpression>
+#include <QInputDialog>
 
 #include "utils/fileutils.h"
 #include "vnotex.h"
@@ -13,6 +15,7 @@
 #include <widgets/mainwindow.h>
 #include <widgets/viewarea.h>
 #include <widgets/viewwindow.h>
+#include <widgets/dialogs/selectdialog.h>
 
 using namespace vnotex;
 
@@ -54,20 +57,11 @@ Task *Task::fromJsonV0(Task *p_task,
     }
     
     if (p_obj.contains("args")) {
-        p_task->m_args.clear();
-        auto args = p_obj["args"].toArray();
-        for (auto arg : args) {
-            p_task->m_args << arg.toString();
-        }
+        p_task->m_args = getStringList(p_obj["args"]);
     }
     
     if (p_obj.contains("label")) {
-        auto label = p_obj["label"];
-        if (label.isObject()) {
-            p_task->m_label = label.toObject().value(p_task->m_locale).toString();
-        } else {
-            p_task->m_label = label.toString();
-        }
+        p_task->m_label = getLocaleString(p_obj["label"], p_task->m_locale);
     } else if (p_task->m_label.isNull() && !p_task->m_command.isNull()) {
         p_task->m_label = p_task->m_command;
     }
@@ -114,7 +108,52 @@ Task *Task::fromJsonV0(Task *p_task,
             auto t = new Task(p_task->m_locale,
                               p_task->getFile(),
                               p_task);
-            p_task->m_tasks.append(fromJsonV0(t, task.toObject()));
+            p_task->m_tasks.append(fromJson(t, task.toObject()));
+        }
+    }
+    
+    if (p_obj.contains("inputs")) {
+        p_task->m_inputs.clear();
+        auto inputs = p_obj["inputs"].toArray();
+        
+        for (const auto &input : inputs) {
+            auto in = input.toObject();
+            Input i;
+            if (in.contains("id")) {
+                i.m_id = in["id"].toString();
+            } else {
+                qWarning() << "Input configuration not contain id";
+            }
+            
+            if (in.contains("type")) {
+                i.m_type = in["type"].toString();
+            } else {
+                i.m_type = "promptString";
+            }
+            
+            if (in.contains("description")) {
+                i.m_description = getLocaleString(in["description"], p_task->m_locale);
+            }
+            
+            if (in.contains("default")) {
+                i.m_default = getLocaleString(in["default"], p_task->m_locale);
+            }
+            
+            if (i.m_type == "promptString" && in.contains("password")) {
+                i.m_password = in["password"].toBool();
+            } else {
+                i.m_password = false;
+            }
+            
+            if (i.m_type == "pickString" && in.contains("options")) {
+                i.m_options = getStringList(in["options"]);
+            }
+            
+            if (i.m_type == "pickString" && !i.m_default.isNull() && !i.m_options.contains(i.m_default)) {
+                qWarning() << "default must be one of the option values";
+            }
+            
+            p_task->m_inputs << i;
         }
     }
     
@@ -208,6 +247,23 @@ const QVector<Task *> &Task::getTasks() const
     return m_tasks;
 }
 
+const QVector<Task::Input> &Task::getInputs() const
+{
+    return m_inputs;
+}
+
+Task::Input Task::getInput(const QString &p_id) const
+{
+    for (auto i : m_inputs) {
+        if (i.m_id == p_id) {
+            return i;
+        }
+    }
+    qDebug() << getLabel();
+    qWarning() << "input" << p_id << "not found";
+    throw "Input variable can not found";
+}
+
 QString Task::getFile() const
 {
     return m_file;
@@ -222,7 +278,7 @@ Task::Task(const QString &p_locale,
     m_version = s_latestVersion;
     m_type = "shell";
 #ifdef Q_OS_WIN
-    m_options_shell_executable = "cmd.exe";
+    m_options_shell_executable = "PowerShell.exe";
 #else
     m_options_shell_executable = "/bin/bash";
 #endif
@@ -238,7 +294,7 @@ Task::Task(const QString &p_locale,
         m_options_env = m_parent->m_options_env;
         m_options_shell_executable = m_parent->m_options_shell_executable;
         m_options_shell_args = m_parent->m_options_shell_args;
-        // not inherit label and tasks
+        // not inherit label/inputs/tasks
     } else {
         m_label = QFileInfo(p_file).baseName();
     }
@@ -248,39 +304,34 @@ Task::Task(const QString &p_locale,
     }
 }
 
-void Task::run() const
+QProcess *Task::setupProcess() const
 {
     // Set process property
     auto command = getCommand();
-    if (command.isEmpty()) return ;
+    if (command.isEmpty()) return nullptr;
     auto process = new QProcess(this->parent());
     process->setProcessChannelMode(QProcess::MergedChannels);
     process->setWorkingDirectory(getOptionsCwd());
     
-    // space quote
     auto args = getArgs();
     auto shell = getShell();
-    if (!command.isEmpty() && !args.isEmpty()) {
-        QString chars = "\"";
-        if (shell == "powershell") chars = "\\\"";
-        command = spaceQuote(command, chars);
-        args = spaceQuote(args, chars);
-    }
+    auto type = getType();
     
     // set program and args
-    auto type = getType();
     if (type == "shell") {
-        auto cmd = QString("%1 %2").arg(getOptionsShellExecutable(),
-                                        getOptionsShellArgs().join(' '));
-        if (shell == "powershell") {
-            auto cmd_in = QString("%1 %2").arg(command, args.join(' '));
-            // escape powershell special character
-            cmd_in.replace("\"", "\\\"");
-            cmd += QString(" \'%1\'").arg(cmd_in);
-        } else {
-            cmd += QString(" %1 %2").arg(command, args.join(' '));
+        // space quote
+        if (!command.isEmpty() && !args.isEmpty()) {
+            QString chars = "\"";
+            if (shell == "powershell") chars = "\\\"";
+            command = spaceQuote(command, chars);
+            args = spaceQuote(args, chars);
         }
-        process->setProgram(cmd);
+        QStringList allArgs;
+        process->setProgram(getOptionsShellExecutable());
+        allArgs << getOptionsShellArgs();
+        allArgs << command;
+        allArgs << args;
+        process->setArguments(allArgs);
     } else if (getType() == "process") {
         process->setProgram(command);
         process->setArguments(args);
@@ -304,12 +355,24 @@ void Task::run() const
         qDebug() << "task" << getLabel() << "finished";
         process->deleteLater();
     });
-    
-    // start process
-    qDebug() << "run task" << process->program() << process->arguments();
-    process->start();
+    return process;
 }
 
+void Task::run() const
+{
+    QProcess *process;
+    try {
+        process = setupProcess();
+    }  catch (const char *msg) {
+        qDebug() << msg;
+        return ;
+    }
+    if (process) {
+        // start process
+        qDebug() << "run task" << process->program() << process->arguments();
+        process->start();
+    }
+}
 
 QJsonObject Task::readTaskFile(const QString &p_file)
 {
@@ -353,7 +416,7 @@ QStringList Task::spaceQuote(const QStringList &p_list, const QString &p_chars)
     return list;
 }
 
-QString Task::replaceVariables(const QString &p_text)
+QString Task::replaceVariables(const QString &p_text) const
 {
     auto cmd = p_text;
     auto notebookFolder = getCurrentNotebookFolder();
@@ -370,10 +433,15 @@ QString Task::replaceVariables(const QString &p_text)
     cmd.replace("${fileBasenameNoExtension}", fileBasenameNoExtension);
     cmd.replace("${fileDirname}", normalPath(fileDirname));
     cmd.replace("${fileExtname}", fileExtname);
+    
+    // Magic variables
+    cmd.replace("${magic:datetime}", QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+    
+    cmd = replaceInputVariables(cmd);
     return cmd;
 }
 
-QStringList Task::replaceVariables(const QStringList &p_list)
+QStringList Task::replaceVariables(const QStringList &p_list) const
 {
     QStringList list;
     for (auto s : p_list) {
@@ -381,6 +449,71 @@ QStringList Task::replaceVariables(const QStringList &p_list)
         if (!s.isEmpty()) list << s;
     }
     return list;
+}
+
+QStringList Task::getAllInputVariables(const QString &p_text) const
+{
+    QStringList list;
+    QRegularExpression re(R"(\$\{input:(.*?)\})");
+    auto it = re.globalMatch(p_text);
+    while (it.hasNext()) {
+        auto match = it.next();
+        auto input = getInput(match.captured(1));
+        list << input.m_id;
+    }
+    list.erase(std::unique(list.begin(), list.end()), list.end());
+    return list;
+}
+
+QMap<QString, QString> Task::evaluateInputVariables(const QString &p_text) const
+{
+    QMap<QString, QString> map;
+    auto list = getAllInputVariables(p_text);
+    for (const auto &id : list) {
+        auto input = getInput(id);
+        QString text;
+        auto mainwin = VNoteX::getInst().getMainWindow();
+        if (input.m_type == "promptString") {
+            auto desc = replaceVariables(input.m_description);
+            auto defaultText = replaceVariables(input.m_default);
+            QInputDialog dialog(mainwin);
+            dialog.setInputMode(QInputDialog::TextInput);
+            if (input.m_password) dialog.setTextEchoMode(QLineEdit::Password);
+            else dialog.setTextEchoMode(QLineEdit::Normal);
+            dialog.setWindowTitle(getLabel());
+            dialog.setLabelText(desc);
+            dialog.setTextValue(defaultText);
+            if (dialog.exec() == QDialog::Accepted) {
+                text = dialog.textValue();
+            } else {
+                throw "TaskCancle";
+            }
+        } else if (input.m_type == "pickString") {
+            SelectDialog dialog(getLabel(), mainwin);
+            for (int i = 0; i < input.m_options.size(); i++) {
+                dialog.addSelection(input.m_options.at(i), i);
+            }
+    
+            if (dialog.exec() == QDialog::Accepted) {
+                int selection = dialog.getSelection();
+                text = input.m_options.at(selection);
+            } else {
+                throw "TaskCancle";
+            }
+        }
+        map.insert(input.m_id, text);
+    }
+    return map;
+}
+
+QString Task::replaceInputVariables(const QString &p_text) const
+{
+    auto map = evaluateInputVariables(p_text);
+    auto text = p_text;
+    for (auto i = map.begin(); i != map.end(); i++) {
+        text.replace(QString("${input:%1}").arg(i.key()), i.value());
+    }
+    return text;
 }
 
 QString Task::getCurrentFile()
@@ -408,6 +541,34 @@ bool Task::isValidTaskFile(const QString &p_file)
     }
     
     return true;
+}
+
+QString Task::getLocaleString(const QJsonValue &p_value, const QString &p_locale)
+{
+    if (p_value.isObject()) {
+        auto obj = p_value.toObject();
+        if (obj.contains(p_locale)) {
+            return obj.value(p_locale).toString();
+        } else{
+            qWarning() << "current locale" << p_locale << "not found";
+            if (!obj.isEmpty()){
+                return obj.begin().value().toString();
+            } else {
+                return QString();
+            }
+        }
+    } else {
+        return p_value.toString();
+    }
+}
+
+QStringList Task::getStringList(const QJsonValue &p_value)
+{
+    QStringList list;
+    for (auto value : p_value.toArray()) {
+        list << value.toString();
+    }
+    return list;
 }
 
 QAction *Task::runAction(Task *p_task)
