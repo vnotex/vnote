@@ -66,6 +66,9 @@ namespace vnotex {
         static QString getLocaleString(const QJsonValue &p_value,
                                        const QString &p_locale);
         
+        static QStringList getLocaleStringList(const QJsonValue &p_value,
+                                          const QString &p_locale);
+        
         static QStringList getStringList(const QJsonValue &p_value);
         
     signals:

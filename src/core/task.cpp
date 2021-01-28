@@ -54,11 +54,11 @@ Task *Task::fromJsonV0(Task *p_task,
     }
     
     if (p_obj.contains("command")) {
-        p_task->m_command = p_obj["command"].toString();
+        p_task->m_command = getLocaleString(p_obj["command"], p_task->m_locale);
     }
     
     if (p_obj.contains("args")) {
-        p_task->m_args = getStringList(p_obj["args"]);
+        p_task->m_args = getLocaleStringList(p_obj["args"], p_task->m_locale);
     }
     
     if (p_obj.contains("label")) {
@@ -147,7 +147,7 @@ Task *Task::fromJsonV0(Task *p_task,
             }
             
             if (i.m_type == "pickString" && in.contains("options")) {
-                i.m_options = getStringList(in["options"]);
+                i.m_options = getLocaleStringList(in["options"], p_task->m_locale);
             }
             
             if (i.m_type == "pickString" && !i.m_default.isNull() && !i.m_options.contains(i.m_default)) {
@@ -492,8 +492,10 @@ QMap<QString, QString> Task::evaluateInputVariables(const QString &p_text) const
                 throw "TaskCancle";
             }
         } else if (input.m_type == "pickString") {
+            // TODO: select description
             SelectDialog dialog(getLabel(), mainwin);
             for (int i = 0; i < input.m_options.size(); i++) {
+                qDebug() << "addSelection" << input.m_options.at(i);
                 dialog.addSelection(input.m_options.at(i), i);
             }
     
@@ -590,6 +592,15 @@ QString Task::getLocaleString(const QJsonValue &p_value, const QString &p_locale
     } else {
         return p_value.toString();
     }
+}
+
+QStringList Task::getLocaleStringList(const QJsonValue &p_value, const QString &p_locale)
+{
+    QStringList list;
+    for (auto value : p_value.toArray()) {
+        list << getLocaleString(value, p_locale);
+    }
+    return list;
 }
 
 QStringList Task::getStringList(const QJsonValue &p_value)

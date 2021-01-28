@@ -1,9 +1,9 @@
-interface BaseTaskConfiguration {
+interface TaskConfiguration {
     /**
      * The configuration's version number
      * If omitted latest version is used.
      */
-    version?: '0.1.4';
+    version?: '0.1.5';
 
     /**
      * Windows specific task configuration
@@ -32,26 +32,24 @@ interface BaseTaskConfiguration {
      * The command to be executed. Can be an external program or a shell
      * command. Can be omitted.
      */
-    command?: string;
+    command?: TranslatableString;
 
     /**
      * The arguments passed to the command. Can be omitted.
      */
-    args?: string[];
+    args?: TranslatableString[];
 
-    /**
-      * The command options used when the command is executed. Can be omitted.
-      */
-    options?: CommandOptions;
-}
-
-interface TaskConfiguration extends BaseTaskConfiguration {
     /**
      * The task's name.
      * If task has no parent, the file name is used.
      * If task has command, the command is used.
      */
-    label?: string | TranslatableString;
+    label?: TranslatableString;
+
+    /**
+      * The command options used when the command is executed. Can be omitted.
+      */
+    options?: CommandOptions;
 
     /**
      * The configuration of the available tasks.
@@ -65,7 +63,6 @@ interface TaskConfiguration extends BaseTaskConfiguration {
      */
     inputs?: InputConfiguration[];
 }
-
 
 /**
  * Options to be passed to the external program or shell
@@ -115,10 +112,12 @@ interface CommandOptions {
 /**
  * Localization
  */
-interface TranslatableString {
+interface LocaleString {
     en_US?: string,
     zh_CN?: string
 }
+
+type TranslatableString = string | LocaleString;
 
 /**
  * Configuration of input variables
@@ -136,20 +135,20 @@ interface InputConfiguration {
     /**
      * Provides context for the input.
      */
-    description?: string | TranslatableString,
+    description?: TranslatableString,
     /**
      * Default value that will be used if the user doesn't enter something else.
      * If type is pickString, it must be one of the option values.
      */
-    default?: string | TranslatableString,
+    default?: TranslatableString,
     /**
      * Only avaliable when type is promptString
      * Set to true to input with a password prompt that will not show the typed value.
      */
-    password?: true | false,
+    password?: boolean,
     /**
      * Only avaliable when type is pickString
      * An array of options for the user to pick from.
      */
-    options?: TranslatableString[] | string[]
+    options?: TranslatableString[]
 }
