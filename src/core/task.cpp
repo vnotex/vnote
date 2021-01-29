@@ -430,7 +430,6 @@ QString Task::replaceVariables(const QString &p_text) const
     
     cmd.replace("${notebookFolder}", notebookFolder);
     cmd.replace("${notebookFolderBasename}", QDir(notebookFolder).dirName());
-    cmd.replace("${notebookName}", QDir(notebookFolder).dirName());
     cmd.replace("${file}", normalPath(file));
     cmd.replace("${fileBasename}", fileBasename);
     cmd.replace("${fileBasenameNoExtension}", fileBasenameNoExtension);
