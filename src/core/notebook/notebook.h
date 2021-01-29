@@ -65,27 +65,24 @@ namespace vnotex
 
         QSharedPointer<Node> getRecycleBinNode() const;
 
-        QSharedPointer<Node> newNode(Node *p_parent, Node::Type p_type, const QString &p_name);
+        QSharedPointer<Node> newNode(Node *p_parent,
+                                     Node::Flags p_flags,
+                                     const QString &p_name);
 
         // Add @p_name under @p_parent to add as a new node @p_type.
         QSharedPointer<Node> addAsNode(Node *p_parent,
-                                       Node::Type p_type,
+                                       Node::Flags p_flags,
                                        const QString &p_name,
                                        const NodeParameters &p_paras);
 
         // Copy @p_path to @p_parent and add as a new node @p_type.
         QSharedPointer<Node> copyAsNode(Node *p_parent,
-                                        Node::Type p_type,
+                                        Node::Flags p_flags,
                                         const QString &p_path);
 
         virtual ID getNextNodeId() const = 0;
 
         virtual ID getAndUpdateNextNodeId() = 0;
-
-        virtual void load(Node *p_node);
-        virtual void save(const Node *p_node);
-
-        virtual void rename(Node *p_node, const QString &p_name);
 
         virtual void updateNotebookConfig() = 0;
 

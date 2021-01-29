@@ -15,7 +15,7 @@ QByteArray FileUtils::readFile(const QString &p_filePath)
     QFile file(p_filePath);
     if (!file.open(QIODevice::ReadOnly)) {
         Exception::throwOne(Exception::Type::FailToReadFile,
-                            QString("fail to read file: %1").arg(p_filePath));
+                            QString("failed to read file: %1").arg(p_filePath));
     }
 
     return file.readAll();
@@ -26,7 +26,7 @@ QString FileUtils::readTextFile(const QString &p_filePath)
     QFile file(p_filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         Exception::throwOne(Exception::Type::FailToReadFile,
-                            QString("fail to read file: %1").arg(p_filePath));
+                            QString("failed to read file: %1").arg(p_filePath));
     }
 
     QString text(file.readAll());
@@ -39,7 +39,7 @@ void FileUtils::writeFile(const QString &p_filePath, const QByteArray &p_data)
     QFile file(p_filePath);
     if (!file.open(QIODevice::WriteOnly)) {
         Exception::throwOne(Exception::Type::FailToWriteFile,
-                            QString("fail to write to file: %1").arg(p_filePath));
+                            QString("failed to write to file: %1").arg(p_filePath));
     }
 
     file.write(p_data);
@@ -51,7 +51,7 @@ void FileUtils::writeFile(const QString &p_filePath, const QString &p_text)
     QFile file(p_filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         Exception::throwOne(Exception::Type::FailToWriteFile,
-                            QString("fail to write to file: %1").arg(p_filePath));
+                            QString("failed to write to file: %1").arg(p_filePath));
     }
 
     QTextStream stream(&file);
@@ -66,7 +66,7 @@ void FileUtils::renameFile(const QString &p_path, const QString &p_name)
     QFile file(p_path);
     if (!file.exists() || !file.rename(newFilePath)) {
         Exception::throwOne(Exception::Type::FailToRenameFile,
-                            QString("fail to rename file: %1").arg(p_path));
+                            QString("failed to rename file: %1").arg(p_path));
     }
 }
 
@@ -104,7 +104,7 @@ void FileUtils::copyFile(const QString &p_filePath,
     QDir dir;
     if (!dir.mkpath(PathUtils::parentDirPath(p_destPath))) {
         Exception::throwOne(Exception::Type::FailToCreateDir,
-            QString("fail to create directory: %1").arg(PathUtils::parentDirPath(p_destPath)));
+            QString("failed to create directory: %1").arg(PathUtils::parentDirPath(p_destPath)));
     }
 
     bool failed = false;
@@ -121,7 +121,7 @@ void FileUtils::copyFile(const QString &p_filePath,
 
     if (failed) {
         Exception::throwOne(Exception::Type::FailToCopyFile,
-                            QString("fail to copy file: %1 %2").arg(p_filePath, p_destPath));
+                            QString("failed to copy file: %1 %2").arg(p_filePath, p_destPath));
     }
 }
 
@@ -144,7 +144,7 @@ void FileUtils::copyDir(const QString &p_dirPath,
     QDir destDir(p_destPath);
     if (!destDir.mkpath(p_destPath)) {
         Exception::throwOne(Exception::Type::FailToCreateDir,
-            QString("fail to create directory: %1").arg(p_destPath));
+            QString("failed to create directory: %1").arg(p_destPath));
     }
 
     // Copy directory contents recursively.
@@ -167,7 +167,7 @@ void FileUtils::copyDir(const QString &p_dirPath,
     if (p_move) {
         if (!destDir.rmdir(p_dirPath)) {
             Exception::throwOne(Exception::Type::FailToRemoveDir,
-                QString("fail to remove source directory after move: %1").arg(p_dirPath));
+                QString("failed to remove source directory after move: %1").arg(p_dirPath));
         }
     }
 }
@@ -198,7 +198,7 @@ void FileUtils::removeFile(const QString &p_filePath)
     QFile file(p_filePath);
     if (!file.remove()) {
         Exception::throwOne(Exception::Type::FailToRemoveFile,
-                            QString("fail to remove file: %1").arg(p_filePath));
+                            QString("failed to remove file: %1").arg(p_filePath));
     }
 }
 
@@ -211,7 +211,7 @@ bool FileUtils::removeDirIfEmpty(const QString &p_dirPath)
 
     if (!dir.rmdir(p_dirPath)) {
         Exception::throwOne(Exception::Type::FailToRemoveFile,
-                            QString("fail to remove directory: %1").arg(p_dirPath));
+                            QString("failed to remove directory: %1").arg(p_dirPath));
         return false;
     }
 
@@ -223,7 +223,7 @@ void FileUtils::removeDir(const QString &p_dirPath)
     QDir dir(p_dirPath);
     if (!dir.removeRecursively()) {
         Exception::throwOne(Exception::Type::FailToRemoveFile,
-                            QString("fail to remove directory recursively: %1").arg(p_dirPath));
+                            QString("failed to remove directory recursively: %1").arg(p_dirPath));
     }
 }
 

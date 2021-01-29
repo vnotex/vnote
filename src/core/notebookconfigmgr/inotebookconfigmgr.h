@@ -44,16 +44,16 @@ namespace vnotex
         virtual void renameNode(Node *p_node, const QString &p_name) = 0;
 
         virtual QSharedPointer<Node> newNode(Node *p_parent,
-                                             Node::Type p_type,
+                                             Node::Flags p_flags,
                                              const QString &p_name) = 0;
 
         virtual QSharedPointer<Node> addAsNode(Node *p_parent,
-                                               Node::Type p_type,
+                                               Node::Flags p_flags,
                                                const QString &p_name,
                                                const NodeParameters &p_paras) = 0;
 
         virtual QSharedPointer<Node> copyAsNode(Node *p_parent,
-                                                Node::Type p_type,
+                                                Node::Flags p_flags,
                                                 const QString &p_path) = 0;
 
         Notebook *getNotebook() const;
@@ -68,19 +68,12 @@ namespace vnotex
 
         virtual void removeNode(const QSharedPointer<Node> &p_node, bool p_force, bool p_configOnly) = 0;
 
-        virtual bool nodeExistsOnDisk(const Node *p_node) const = 0;
-
-        virtual QString readNode(const Node *p_node) const = 0;
-        virtual void writeNode(Node *p_node, const QString &p_content) = 0;
-
-        virtual QString fetchNodeImageFolderPath(Node *p_node) = 0;
-
-        virtual QString fetchNodeAttachmentFolderPath(Node *p_node) = 0;
-
         // Whether @p_name is a built-in file under @p_node.
         virtual bool isBuiltInFile(const Node *p_node, const QString &p_name) const = 0;
 
         virtual bool isBuiltInFolder(const Node *p_node, const QString &p_name) const = 0;
+
+        virtual QString fetchNodeAttachmentFolderPath(Node *p_node) = 0;
 
     protected:
         // Version of the config processing code.

@@ -45,7 +45,7 @@ void NodeLabelWithUpButton::setupUI()
 
 void NodeLabelWithUpButton::updateLabelAndButton()
 {
-    m_label->setText(m_node->fetchRelativePath());
+    m_label->setText(m_node->fetchPath());
     m_upButton->setVisible(!m_readOnly && !m_node->isRoot());
 }
 

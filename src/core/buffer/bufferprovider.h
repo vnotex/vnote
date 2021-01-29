@@ -34,6 +34,8 @@ namespace vnotex
 
         virtual QString getContentPath() const = 0;
 
+        virtual QString getResourcePath() const = 0;
+
         virtual void write(const QString &p_content) = 0;
 
         virtual QString read() const = 0;

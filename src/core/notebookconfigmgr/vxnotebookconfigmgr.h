@@ -12,8 +12,6 @@ class QJsonObject;
 
 namespace vnotex
 {
-    class FolderNode;
-
     // Config manager for VNoteX's bundle notebook.
     class VXNotebookConfigMgr : public BundleNotebookConfigMgr
     {
@@ -41,16 +39,16 @@ namespace vnotex
         void renameNode(Node *p_node, const QString &p_name) Q_DECL_OVERRIDE;
 
         QSharedPointer<Node> newNode(Node *p_parent,
-                                     Node::Type p_type,
+                                     Node::Flags p_flags,
                                      const QString &p_name) Q_DECL_OVERRIDE;
 
         QSharedPointer<Node> addAsNode(Node *p_parent,
-                                       Node::Type p_type,
+                                       Node::Flags p_flags,
                                        const QString &p_name,
                                        const NodeParameters &p_paras) Q_DECL_OVERRIDE;
 
         QSharedPointer<Node> copyAsNode(Node *p_parent,
-                                        Node::Type p_type,
+                                        Node::Flags p_flags,
                                         const QString &p_path) Q_DECL_OVERRIDE;
 
         QSharedPointer<Node> loadNodeByPath(const QSharedPointer<Node> &p_root,
@@ -62,13 +60,11 @@ namespace vnotex
 
         void removeNode(const QSharedPointer<Node> &p_node, bool p_force = false, bool p_configOnly = false) Q_DECL_OVERRIDE;
 
-        bool nodeExistsOnDisk(const Node *p_node) const Q_DECL_OVERRIDE;
+        bool isBuiltInFile(const Node *p_node, const QString &p_name) const Q_DECL_OVERRIDE;
 
-        QString readNode(const Node *p_node) const Q_DECL_OVERRIDE;
+        bool isBuiltInFolder(const Node *p_node, const QString &p_name) const Q_DECL_OVERRIDE;
 
-        void writeNode(Node *p_node, const QString &p_content) Q_DECL_OVERRIDE;
-
-        QString fetchNodeImageFolderPath(Node *p_node) Q_DECL_OVERRIDE;
+        QString fetchNodeImageFolderPath(Node *p_node);
 
         QString fetchNodeAttachmentFolderPath(Node *p_node) Q_DECL_OVERRIDE;
 
@@ -105,7 +101,8 @@ namespace vnotex
 
             NodeConfig(const QString &p_version,
                        ID p_id,
-                       const QDateTime &p_createdTimeUtc);
+                       const QDateTime &p_createdTimeUtc,
+                       const QDateTime &p_modifiedTimeUtc);
 
             QJsonObject toJson() const;
 
@@ -114,6 +111,7 @@ namespace vnotex
             QString m_version;
             ID m_id = Node::InvalidId;
             QDateTime m_createdTimeUtc;
+            QDateTime m_modifiedTimeUtc;
             QVector<NodeFileConfig> m_files;
             QVector<NodeFolderConfig> m_folders;
 
@@ -147,7 +145,7 @@ namespace vnotex
                                               const QString &p_name,
                                               Node *p_parent = nullptr) const;
 
-        void loadFolderNode(FolderNode *p_node, const NodeConfig &p_config) const;
+        void loadFolderNode(Node *p_node, const NodeConfig &p_config) const;
 
         QSharedPointer<VXNotebookConfigMgr::NodeConfig> nodeToNodeConfig(const Node *p_node) const;
 
@@ -185,10 +183,6 @@ namespace vnotex
         // @p_folderName: suggested folder name if not empty, may be renamed due to conflicts.
         // Return the attachment folder path.
         QString fetchNodeAttachmentFolder(const QString &p_nodePath, QString &p_folderName);
-
-        bool isBuiltInFile(const Node *p_node, const QString &p_name) const Q_DECL_OVERRIDE;
-
-        bool isBuiltInFolder(const Node *p_node, const QString &p_name) const Q_DECL_OVERRIDE;
 
         void inheritNodeFlags(const Node *p_node, Node *p_child) const;
 

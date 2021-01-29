@@ -86,7 +86,7 @@ bool ImportFolderDialog::importFolder()
     auto nb = m_parentNode->getNotebook();
     m_newNode = nullptr;
     try {
-        m_newNode = nb->copyAsNode(m_parentNode, Node::Type::Folder, folder);
+        m_newNode = nb->copyAsNode(m_parentNode, Node::Flag::Container, folder);
     } catch (Exception &p_e) {
         auto msg = tr("Failed to add folder (%1) as node (%2).").arg(folder, p_e.what());
         qCritical() << msg;

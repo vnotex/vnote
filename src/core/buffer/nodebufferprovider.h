@@ -1,16 +1,21 @@
 #ifndef NODEBUFFERPROVIDER_H
 #define NODEBUFFERPROVIDER_H
 
+#include <QSharedPointer>
+
 #include "bufferprovider.h"
 
 namespace vnotex
 {
+    class File;
+    class IFileWithImage;
+
     // Buffer provider based on an internal node.
     class NodeBufferProvider : public BufferProvider
     {
         Q_OBJECT
     public:
-        NodeBufferProvider(Node *p_node, QObject *p_parent = nullptr);
+        NodeBufferProvider(const QSharedPointer<Node> &p_node, QObject *p_parent = nullptr);
 
         Buffer::ProviderType getType() const Q_DECL_OVERRIDE;
 
@@ -23,6 +28,8 @@ namespace vnotex
         QString getPath() const Q_DECL_OVERRIDE;
 
         QString getContentPath() const Q_DECL_OVERRIDE;
+
+        QString getResourcePath() const Q_DECL_OVERRIDE;
 
         void write(const QString &p_content) Q_DECL_OVERRIDE;
 
@@ -59,13 +66,9 @@ namespace vnotex
         bool isReadOnly() const Q_DECL_OVERRIDE;
 
     private:
-        Node *m_node = nullptr;
+        QSharedPointer<Node> m_node;
 
-        // Used as cache.
-        QString m_path;
-
-        // Used as cache.
-        QString m_contentPath;
+        QSharedPointer<File> m_nodeFile;
     };
 }
 

@@ -35,7 +35,7 @@ void MarkdownBuffer::fetchInitialImages()
 {
     Q_ASSERT(m_initialImages.isEmpty());
     m_initialImages = vte::MarkdownUtils::fetchImagesFromMarkdownText(getContent(),
-                                                                      getContentBasePath(),
+                                                                      getResourcePath(),
                                                                       vte::MarkdownLink::TypeFlag::LocalRelativeInternal);
 }
 
@@ -56,7 +56,7 @@ QSet<QString> MarkdownBuffer::clearObsoleteImages()
     const bool discarded = state() & StateFlag::Discarded;
     const auto latestImages =
         vte::MarkdownUtils::fetchImagesFromMarkdownText(!discarded ? getContent() : m_provider->read(),
-                                                        getContentBasePath(),
+                                                        getResourcePath(),
                                                         vte::MarkdownLink::TypeFlag::LocalRelativeInternal);
     QSet<QString> latestImagesPath;
     for (const auto &link : latestImages) {

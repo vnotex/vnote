@@ -5,12 +5,14 @@
 
 namespace vnotex
 {
+    class File;
+
     // Buffer provider based on external file.
     class FileBufferProvider : public BufferProvider
     {
         Q_OBJECT
     public:
-        FileBufferProvider(const QString &p_filePath,
+        FileBufferProvider(const QSharedPointer<File> &m_file,
                            Node *p_nodeAttachedTo,
                            bool p_readOnly,
                            QObject *p_parent = nullptr);
@@ -26,6 +28,8 @@ namespace vnotex
         QString getPath() const Q_DECL_OVERRIDE;
 
         QString getContentPath() const Q_DECL_OVERRIDE;
+
+        QString getResourcePath() const Q_DECL_OVERRIDE;
 
         void write(const QString &p_content) Q_DECL_OVERRIDE;
 
@@ -62,7 +66,7 @@ namespace vnotex
         bool isReadOnly() const Q_DECL_OVERRIDE;
 
     private:
-        const QString c_filePath;
+        QSharedPointer<File> m_file;
 
         Node *c_nodeAttachedTo = nullptr;
 

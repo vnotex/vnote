@@ -460,7 +460,7 @@ void MarkdownViewWindow::syncTextEditorFromBuffer(bool p_syncPositionFromReadMod
     m_editor->setBuffer(buffer);
     if (buffer) {
         m_editor->setReadOnly(buffer->isReadOnly());
-        m_editor->setBasePath(buffer->getContentBasePath());
+        m_editor->setBasePath(buffer->getResourcePath());
         m_editor->setText(buffer->getContent());
         m_editor->setModified(buffer->isModified());
 
