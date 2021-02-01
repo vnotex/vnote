@@ -4,15 +4,16 @@
 
 #include <notebook/node.h>
 #include <utils/pathutils.h>
+#include <core/file.h>
 
 using namespace vnotex;
 
-NodeBufferProvider::NodeBufferProvider(Node *p_node, QObject *p_parent)
+NodeBufferProvider::NodeBufferProvider(const QSharedPointer<Node> &p_node, QObject *p_parent)
     : BufferProvider(p_parent),
       m_node(p_node),
-      m_path(m_node->fetchAbsolutePath()),
-      m_contentPath(m_node->fetchContentPath())
+      m_nodeFile(p_node->getContentFile())
 {
+    Q_ASSERT(m_nodeFile);
 }
 
 Buffer::ProviderType NodeBufferProvider::getType() const
@@ -22,7 +23,7 @@ Buffer::ProviderType NodeBufferProvider::getType() const
 
 bool NodeBufferProvider::match(const Node *p_node) const
 {
-    return m_node == p_node;
+    return m_node.data() == p_node;
 }
 
 bool NodeBufferProvider::match(const QString &p_filePath) const
@@ -37,34 +38,45 @@ QString NodeBufferProvider::getName() const
 
 QString NodeBufferProvider::getPath() const
 {
-    return m_path;
+    return m_nodeFile->getFilePath();
 }
 
 QString NodeBufferProvider::getContentPath() const
 {
-    return m_contentPath;
+    return m_nodeFile->getContentPath();
+}
+
+QString NodeBufferProvider::getResourcePath() const
+{
+    return m_nodeFile->getResourcePath();
 }
 
 void NodeBufferProvider::write(const QString &p_content)
 {
-    m_node->write(p_content);
+    m_nodeFile->write(p_content);
     m_lastModified = getLastModifiedFromFile();
 }
 
 QString NodeBufferProvider::read() const
 {
     const_cast<NodeBufferProvider *>(this)->m_lastModified = getLastModifiedFromFile();
-    return m_node->read();
+    return m_nodeFile->read();
 }
 
 QString NodeBufferProvider::fetchImageFolderPath()
 {
-    return m_node->fetchImageFolderPath();
+    auto file = m_nodeFile->getImageInterface();
+    if (file) {
+        return file->fetchImageFolderPath();
+    } else {
+        Q_ASSERT(false);
+        return getContentPath();
+    }
 }
 
 bool NodeBufferProvider::isChildOf(const Node *p_node) const
 {
-    return Node::isAncestor(p_node, m_node);
+    return Node::isAncestor(p_node, m_node.data());
 }
 
 QString NodeBufferProvider::getAttachmentFolder() const
@@ -104,17 +116,30 @@ void NodeBufferProvider::removeAttachment(const QStringList &p_paths)
 
 QString NodeBufferProvider::insertImage(const QString &p_srcImagePath, const QString &p_imageFileName)
 {
-    return m_node->insertImage(p_srcImagePath, p_imageFileName);
+    auto file = m_nodeFile->getImageInterface();
+    if (file) {
+        return file->insertImage(p_srcImagePath, p_imageFileName);
+    } else {
+        return QString();
+    }
 }
 
 QString NodeBufferProvider::insertImage(const QImage &p_image, const QString &p_imageFileName)
 {
-    return m_node->insertImage(p_image, p_imageFileName);
+    auto file = m_nodeFile->getImageInterface();
+    if (file) {
+        return file->insertImage(p_image, p_imageFileName);
+    } else {
+        return QString();
+    }
 }
 
 void NodeBufferProvider::removeImage(const QString &p_imagePath)
 {
-    m_node->removeImage(p_imagePath);
+    auto file = m_nodeFile->getImageInterface();
+    if (file) {
+        file->removeImage(p_imagePath);
+    }
 }
 
 bool NodeBufferProvider::isAttachmentSupported() const
@@ -124,7 +149,7 @@ bool NodeBufferProvider::isAttachmentSupported() const
 
 Node *NodeBufferProvider::getNode() const
 {
-    return m_node;
+    return m_node.data();
 }
 
 bool NodeBufferProvider::isReadOnly() const

@@ -183,10 +183,10 @@ Node *NotebookExplorer::currentExploredFolderNode() const
 
     auto node = m_nodeExplorer->getCurrentNode();
     if (node) {
-        if (node->getType() == Node::Type::File) {
+        if (!node->isContainer()) {
             node = node->getParent();
         }
-        Q_ASSERT(node && node->getType() == Node::Type::Folder);
+        Q_ASSERT(node && node->isContainer());
     } else {
         node = m_currentNotebook->getRootNode().data();
     }
@@ -241,7 +241,7 @@ void NotebookExplorer::importFile()
     QString errMsg;
     for (const auto &file : files) {
         try {
-            m_currentNotebook->copyAsNode(node, Node::Type::File, file);
+            m_currentNotebook->copyAsNode(node, Node::Flag::Content, file);
         } catch (Exception &p_e) {
             errMsg += tr("Failed to add file (%1) as node (%2).\n").arg(file, p_e.what());
         }

@@ -33,7 +33,7 @@ void NewFolderDialog::setupUI(const Node *p_node)
 
 void NewFolderDialog::setupNodeInfoWidget(const Node *p_node, QWidget *p_parent)
 {
-    m_infoWidget = new NodeInfoWidget(p_node, Node::Type::Folder, p_parent);
+    m_infoWidget = new NodeInfoWidget(p_node, Node::Flag::Container, p_parent);
     connect(m_infoWidget, &NodeInfoWidget::inputEdited,
             this, &NewFolderDialog::validateInputs);
 }
@@ -59,7 +59,7 @@ bool NewFolderDialog::validateNameInput(QString &p_msg)
         return false;
     }
 
-    if (m_infoWidget->getParentNode()->hasChild(name, false)) {
+    if (m_infoWidget->getParentNode()->containsChild(name, false)) {
         p_msg = tr("Name conflicts with existing folder.");
         return false;
     }
@@ -81,7 +81,7 @@ bool NewFolderDialog::newFolder()
     Notebook *notebook = const_cast<Notebook *>(m_infoWidget->getNotebook());
     Node *parentNode = const_cast<Node *>(m_infoWidget->getParentNode());
     try {
-        m_newNode = notebook->newNode(parentNode, Node::Type::Folder, m_infoWidget->getName());
+        m_newNode = notebook->newNode(parentNode, Node::Flag::Container, m_infoWidget->getName());
     } catch (Exception &p_e) {
         QString msg = tr("Failed to create folder under (%1) in (%2) (%3).").arg(parentNode->getName(),
                                                                                  notebook->getName(),

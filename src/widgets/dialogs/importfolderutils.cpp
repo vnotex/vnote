@@ -23,7 +23,7 @@ void ImportFolderUtils::importFolderContents(Notebook *p_notebook,
 
             QSharedPointer<Node> node;
             try {
-                node = p_notebook->addAsNode(p_node, Node::Type::Folder, child.fileName(), NodeParameters());
+                node = p_notebook->addAsNode(p_node, Node::Flag::Container, child.fileName(), NodeParameters());
             } catch (Exception &p_e) {
                 Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to add folder (%1) as node (%2).").arg(child.fileName(), p_e.what()));
                 continue;
@@ -33,7 +33,7 @@ void ImportFolderUtils::importFolderContents(Notebook *p_notebook,
         } else if (!p_notebook->isBuiltInFile(p_node, child.fileName())) {
             if (p_suffixes.contains(child.suffix())) {
                 try {
-                    p_notebook->addAsNode(p_node, Node::Type::File, child.fileName(), NodeParameters());
+                    p_notebook->addAsNode(p_node, Node::Flag::Content, child.fileName(), NodeParameters());
                 } catch (Exception &p_e) {
                     Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to add file (%1) as node (%2).").arg(child.filePath(), p_e.what()));
                 }
@@ -69,7 +69,7 @@ void ImportFolderUtils::importFolderContentsByLegacyConfig(Notebook *p_notebook,
                 try {
                     NodeParameters paras;
                     paras.m_createdTimeUtc = LegacyNotebookUtils::getCreatedTimeUtcOfFolder(rootDir.filePath(name));
-                    node = p_notebook->addAsNode(p_node, Node::Type::Folder, name, paras);
+                    node = p_notebook->addAsNode(p_node, Node::Flag::Container, name, paras);
                 } catch (Exception &p_e) {
                     Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to add folder (%1) as node (%2).").arg(name, p_e.what()));
                     return;
@@ -97,7 +97,7 @@ void ImportFolderUtils::importFolderContentsByLegacyConfig(Notebook *p_notebook,
                     paras.m_modifiedTimeUtc = info.m_modifiedTimeUtc;
                     paras.m_attachmentFolder = info.m_attachmentFolder;
                     paras.m_tags = info.m_tags;
-                    node = p_notebook->addAsNode(p_node, Node::Type::File, info.m_name, paras);
+                    node = p_notebook->addAsNode(p_node, Node::Flag::Content, info.m_name, paras);
                 } catch (Exception &p_e) {
                     Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to add file (%1) as node (%2).").arg(info.m_name, p_e.what()));
                     return;

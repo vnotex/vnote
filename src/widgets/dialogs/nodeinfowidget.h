@@ -24,7 +24,7 @@ namespace vnotex
         NodeInfoWidget(const Node *p_node, QWidget *p_parent = nullptr);
 
         NodeInfoWidget(const Node *p_parentNode,
-                       Node::Type p_typeToCreate,
+                       Node::Flags p_flags,
                        QWidget *p_parent = nullptr);
 
         QLineEdit *getNameLineEdit() const;
@@ -39,7 +39,7 @@ namespace vnotex
         void inputEdited();
 
     private:
-        void setupUI(const Node *p_parentNode, Node::Type p_newNodeType);
+        void setupUI(const Node *p_parentNode, Node::Flags p_newNodeFlags);
 
         void setupFileTypeComboBox(QWidget *p_parent);
 

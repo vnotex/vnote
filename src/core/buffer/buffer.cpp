@@ -105,9 +105,9 @@ QString Buffer::getContentPath() const
     return m_provider->getContentPath();
 }
 
-QString Buffer::getContentBasePath() const
+QString Buffer::getResourcePath() const
 {
-    return PathUtils::parentDirPath(getContentPath());
+    return m_provider->getResourcePath();
 }
 
 ID Buffer::getID() const
@@ -337,7 +337,7 @@ void Buffer::writeBackupFile()
 {
     if (m_backupFilePath.isEmpty()) {
         const auto &config = ConfigMgr::getInst().getEditorConfig();
-        QString backupDirPath(QDir(getContentBasePath()).filePath(config.getBackupFileDirectory()));
+        QString backupDirPath(QDir(getResourcePath()).filePath(config.getBackupFileDirectory()));
         backupDirPath = QDir::cleanPath(backupDirPath);
         auto backupFileName = FileUtils::generateFileNameWithSequence(backupDirPath,
                                                                       getName(),
@@ -365,7 +365,7 @@ void Buffer::checkBackupFileOfPreviousSession()
         return;
     }
 
-    QString backupDirPath(QDir(getContentBasePath()).filePath(config.getBackupFileDirectory()));
+    QString backupDirPath(QDir(getResourcePath()).filePath(config.getBackupFileDirectory()));
     backupDirPath = QDir::cleanPath(backupDirPath);
     QDir backupDir(backupDirPath);
     QStringList backupFiles;

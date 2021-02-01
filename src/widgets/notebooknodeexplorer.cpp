@@ -419,18 +419,14 @@ void NotebookNodeExplorer::fillTreeItem(QTreeWidgetItem *p_item, Node *p_node, b
 
 QIcon NotebookNodeExplorer::getNodeItemIcon(const Node *p_node) const
 {
-    switch (p_node->getType()) {
-    case Node::Type::File:
+    if (p_node->hasContent()) {
         return s_fileNodeIcon;
-
-    case Node::Type::Folder:
-    {
+    } else {
         if (p_node->getUse() == Node::Use::RecycleBin) {
             return s_recycleBinNodeIcon;
         }
 
         return s_folderNodeIcon;
-    }
     }
 
     return QIcon();
@@ -794,18 +790,12 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
                     }
 
                     int ret = QDialog::Rejected;
-                    switch (node->getType()) {
-                    case Node::Type::File:
-                    {
+                    if (node->hasContent()) {
                         NotePropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
                         ret = dialog.exec();
-                        break;
-                    }
-
-                    case Node::Type::Folder:
+                    } else {
                         FolderPropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
                         ret = dialog.exec();
-                        break;
                     }
 
                     if (ret == QDialog::Accepted) {
@@ -822,7 +812,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
                     auto node = getCurrentNode();
                     if (node) {
                         locationPath = node->fetchAbsolutePath();
-                        if (node->getType() == Node::Type::File) {
+                        if (!node->isContainer()) {
                             locationPath = PathUtils::parentDirPath(locationPath);
                         }
                     } else if (m_notebook) {
@@ -940,7 +930,7 @@ void NotebookNodeExplorer::copySelectedNodes(bool p_move)
                         p_move ? ClipboardData::MoveNode : ClipboardData::CopyNode);
     for (auto node : nodes) {
         auto item = QSharedPointer<NodeClipboardDataItem>::create(node->getNotebook()->getId(),
-                                                                  node->fetchRelativePath());
+                                                                  node->fetchPath());
         cdata.addItem(item);
     }
 
@@ -1012,7 +1002,7 @@ static QSharedPointer<Node> getNodeFromClipboardDataItem(const NodeClipboardData
     }
 
     auto node = notebook->loadNodeByPath(p_item->m_nodeRelativePath);
-    Q_ASSERT(!node || node->fetchRelativePath() == p_item->m_nodeRelativePath);
+    Q_ASSERT(!node || node->fetchPath() == p_item->m_nodeRelativePath);
     return node;
 }
 
@@ -1024,12 +1014,12 @@ void NotebookNodeExplorer::pasteNodesFromClipboard()
         destNode = m_notebook->getRootNode().data();
     } else {
         // Current node may be a file node.
-        if (destNode->getType() == Node::Type::File) {
+        if (!destNode->isContainer()) {
             destNode = destNode->getParent();
         }
     }
 
-    Q_ASSERT(destNode && destNode->getType() == Node::Type::Folder);
+    Q_ASSERT(destNode && destNode->isContainer());
 
     // Fetch source nodes from clipboard.
     auto cdata = tryFetchClipboardData();

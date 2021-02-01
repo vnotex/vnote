@@ -37,7 +37,7 @@ void NewNoteDialog::setupUI(const Node *p_node)
 
 void NewNoteDialog::setupNodeInfoWidget(const Node *p_node, QWidget *p_parent)
 {
-    m_infoWidget = new NodeInfoWidget(p_node, Node::Type::File, p_parent);
+    m_infoWidget = new NodeInfoWidget(p_node, Node::Flag::Content, p_parent);
     connect(m_infoWidget, &NodeInfoWidget::inputEdited,
             this, &NewNoteDialog::validateInputs);
 }
@@ -63,7 +63,7 @@ bool NewNoteDialog::validateNameInput(QString &p_msg)
         return false;
     }
 
-    if (m_infoWidget->getParentNode()->hasChild(name, false)) {
+    if (m_infoWidget->getParentNode()->containsChild(name, false)) {
         p_msg = tr("Name conflicts with existing note.");
         return false;
     }
@@ -85,7 +85,7 @@ bool NewNoteDialog::newNote()
     Notebook *notebook = const_cast<Notebook *>(m_infoWidget->getNotebook());
     Node *parentNode = const_cast<Node *>(m_infoWidget->getParentNode());
     try {
-        m_newNode = notebook->newNode(parentNode, Node::Type::File, m_infoWidget->getName());
+        m_newNode = notebook->newNode(parentNode, Node::Flag::Content, m_infoWidget->getName());
     } catch (Exception &p_e) {
         QString msg = tr("Failed to create note under (%1) in (%2) (%3).").arg(parentNode->getName(),
                                                                                notebook->getName(),

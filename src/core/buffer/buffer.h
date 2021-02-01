@@ -81,7 +81,7 @@ namespace vnotex
         QString getContentPath() const;
 
         // Get the base path to resolve resources.
-        QString getContentBasePath() const;
+        QString getResourcePath() const;
 
         ID getID() const;
 

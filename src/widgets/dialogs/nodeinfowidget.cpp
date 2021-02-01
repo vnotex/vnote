@@ -17,24 +17,24 @@ NodeInfoWidget::NodeInfoWidget(const Node *p_node, QWidget *p_parent)
     : QWidget(p_parent),
       m_mode(Mode::Edit)
 {
-    setupUI(p_node->getParent(), p_node->getType());
+    setupUI(p_node->getParent(), p_node->getFlags());
 
     setNode(p_node);
 }
 
 NodeInfoWidget::NodeInfoWidget(const Node *p_parentNode,
-                               Node::Type p_typeToCreate,
+                               Node::Flags p_flags,
                                QWidget *p_parent)
     : QWidget(p_parent),
       m_mode(Mode::Create)
 {
-    setupUI(p_parentNode, p_typeToCreate);
+    setupUI(p_parentNode, p_flags);
 }
 
-void NodeInfoWidget::setupUI(const Node *p_parentNode, Node::Type p_newNodeType)
+void NodeInfoWidget::setupUI(const Node *p_parentNode, Node::Flags p_newNodeFlags)
 {
     const bool createMode = m_mode == Mode::Create;
-    const bool isNote = p_newNodeType == Node::Type::File;
+    const bool isNote = p_newNodeFlags & Node::Flag::Content;
 
     m_mainLayout = WidgetUtils::createFormLayout(this);
 

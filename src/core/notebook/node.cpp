@@ -10,39 +10,39 @@
 
 using namespace vnotex;
 
-Node::Node(Type p_type,
+Node::Node(Flags p_flags,
            ID p_id,
            const QString &p_name,
            const QDateTime &p_createdTimeUtc,
+           const QDateTime &p_modifiedTimeUtc,
+           const QStringList &p_tags,
+           const QString &p_attachmentFolder,
            Notebook *p_notebook,
            Node *p_parent)
     : m_notebook(p_notebook),
-      m_type(p_type),
+      m_loaded(true),
+      m_flags(p_flags),
       m_id(p_id),
       m_name(p_name),
       m_createdTimeUtc(p_createdTimeUtc),
-      m_loaded(true),
+      m_modifiedTimeUtc(p_modifiedTimeUtc),
+      m_tags(p_tags),
+      m_attachmentFolder(p_attachmentFolder),
       m_parent(p_parent)
 {
-    if (m_notebook) {
-        m_configMgr = m_notebook->getConfigMgr();
-        m_backend = m_notebook->getBackend();
-    }
+    Q_ASSERT(m_notebook);
 }
 
-Node::Node(Type p_type,
+Node::Node(Flags p_flags,
            const QString &p_name,
            Notebook *p_notebook,
            Node *p_parent)
     : m_notebook(p_notebook),
-      m_type(p_type),
+      m_flags(p_flags),
       m_name(p_name),
       m_parent(p_parent)
 {
-    if (m_notebook) {
-        m_configMgr = m_notebook->getConfigMgr();
-        m_backend = m_notebook->getBackend();
-    }
+    Q_ASSERT(m_notebook);
 }
 
 Node::~Node()
@@ -54,23 +54,24 @@ bool Node::isLoaded() const
     return m_loaded;
 }
 
-void Node::setLoaded(bool p_loaded)
-{
-    m_loaded = p_loaded;
-}
-
-void Node::loadInfo(ID p_id, const QDateTime &p_createdTimeUtc)
+void Node::loadCompleteInfo(ID p_id,
+                            const QDateTime &p_createdTimeUtc,
+                            const QDateTime &p_modifiedTimeUtc,
+                            const QStringList &p_tags,
+                            const QVector<QSharedPointer<Node>> &p_children)
 {
     Q_ASSERT(!m_loaded);
-
     m_id = p_id;
     m_createdTimeUtc = p_createdTimeUtc;
+    m_modifiedTimeUtc = p_modifiedTimeUtc;
+    m_tags = p_tags;
+    m_children = p_children;
     m_loaded = true;
 }
 
 bool Node::isRoot() const
 {
-    return !m_parent;
+    return !m_parent && m_use == Use::Root;
 }
 
 const QString &Node::getName() const
@@ -78,12 +79,29 @@ const QString &Node::getName() const
     return m_name;
 }
 
-bool Node::hasChild(const QString &p_name, bool p_caseSensitive) const
+void Node::setName(const QString &p_name)
+{
+    m_name = p_name;
+}
+
+void Node::updateName(const QString &p_name)
+{
+    if (m_name == p_name) {
+        return;
+    }
+
+    getConfigMgr()->renameNode(this, p_name);
+    Q_ASSERT(m_name == p_name);
+
+    emit m_notebook->nodeUpdated(this);
+}
+
+bool Node::containsChild(const QString &p_name, bool p_caseSensitive) const
 {
     return findChild(p_name, p_caseSensitive) != nullptr;
 }
 
-bool Node::hasChild(const QSharedPointer<Node> &p_node) const
+bool Node::containsChild(const QSharedPointer<Node> &p_node) const
 {
     return getChildren().indexOf(p_node) != -1;
 }
@@ -111,19 +129,9 @@ Node *Node::getParent() const
     return m_parent;
 }
 
-Node::Type Node::getType() const
-{
-    return m_type;
-}
-
 Node::Flags Node::getFlags() const
 {
     return m_flags;
-}
-
-void Node::setFlags(Node::Flags p_flags)
-{
-    m_flags = p_flags;
 }
 
 Node::Use Node::getUse() const
@@ -146,56 +154,50 @@ const QDateTime &Node::getCreatedTimeUtc() const
     return m_createdTimeUtc;
 }
 
+const QDateTime &Node::getModifiedTimeUtc() const
+{
+    return m_modifiedTimeUtc;
+}
+
+void Node::setModifiedTimeUtc()
+{
+    m_modifiedTimeUtc = QDateTime::currentDateTimeUtc();
+}
+
+const QVector<QSharedPointer<Node>> &Node::getChildren() const
+{
+    return m_children;
+}
+
+int Node::getChildrenCount() const
+{
+    return m_children.size();
+}
+
+void Node::addChild(const QSharedPointer<Node> &p_node)
+{
+    insertChild(m_children.size(), p_node);
+}
+
+void Node::insertChild(int p_idx, const QSharedPointer<Node> &p_node)
+{
+    Q_ASSERT(isContainer());
+
+    p_node->setParent(this);
+
+    m_children.insert(p_idx, p_node);
+}
+
+void Node::removeChild(const QSharedPointer<Node> &p_child)
+{
+    if (m_children.removeOne(p_child)) {
+        p_child->setParent(nullptr);
+    }
+}
+
 Notebook *Node::getNotebook() const
 {
     return m_notebook;
-}
-
-QString Node::fetchRelativePath() const
-{
-    if (!m_parent) {
-        return QString();
-    } else {
-        return PathUtils::concatenateFilePath(m_parent->fetchRelativePath(), m_name);
-    }
-}
-
-QString Node::fetchAbsolutePath() const
-{
-    return PathUtils::concatenateFilePath(m_notebook->getRootFolderAbsolutePath(),
-                                          fetchRelativePath());
-}
-
-QString Node::fetchContentPath() const
-{
-    return fetchAbsolutePath();
-}
-
-void Node::load()
-{
-    Q_ASSERT(m_notebook);
-    m_notebook->load(this);
-}
-
-void Node::save()
-{
-    Q_ASSERT(m_notebook);
-    m_notebook->save(this);
-}
-
-void Node::setName(const QString &p_name)
-{
-    m_name = p_name;
-}
-
-void Node::updateName(const QString &p_name)
-{
-    if (m_name == p_name) {
-        return;
-    }
-
-    m_notebook->rename(this, p_name);
-    Q_ASSERT(m_name == p_name);
 }
 
 bool Node::isAncestor(const Node *p_ancestor, const Node *p_child)
@@ -214,122 +216,82 @@ bool Node::isAncestor(const Node *p_ancestor, const Node *p_child)
     return false;
 }
 
-bool Node::existsOnDisk() const
+const QStringList &Node::getTags() const
 {
-    return m_configMgr->nodeExistsOnDisk(this);
-}
-
-QString Node::read() const
-{
-    return m_configMgr->readNode(this);
-}
-
-void Node::write(const QString &p_content)
-{
-    m_configMgr->writeNode(this, p_content);
-}
-
-QString Node::fetchImageFolderPath()
-{
-    return m_configMgr->fetchNodeImageFolderPath(this);
-}
-
-QString Node::insertImage(const QString &p_srcImagePath, const QString &p_imageFileName)
-{
-    const auto imageFolderPath = fetchImageFolderPath();
-    auto destFilePath = m_backend->renameIfExistsCaseInsensitive(PathUtils::concatenateFilePath(imageFolderPath, p_imageFileName));
-    m_backend->copyFile(p_srcImagePath, destFilePath);
-    return destFilePath;
-}
-
-QString Node::insertImage(const QImage &p_image, const QString &p_imageFileName)
-{
-    const auto imageFolderPath = fetchImageFolderPath();
-    auto destFilePath = m_backend->renameIfExistsCaseInsensitive(PathUtils::concatenateFilePath(imageFolderPath, p_imageFileName));
-    p_image.save(destFilePath);
-    m_backend->addFile(destFilePath);
-    return destFilePath;
-}
-
-void Node::removeImage(const QString &p_imagePath)
-{
-    // Just move it to recycle bin but not added as a child node of recycle bin.
-    m_notebook->moveFileToRecycleBin(p_imagePath);
-}
-
-QString Node::getAttachmentFolder() const
-{
-    Q_ASSERT(false);
-    return QString();
-}
-
-void Node::setAttachmentFolder(const QString &p_folder)
-{
-    Q_UNUSED(p_folder);
-    Q_ASSERT(false);
-}
-
-QString Node::fetchAttachmentFolderPath()
-{
-    return m_configMgr->fetchNodeAttachmentFolderPath(this);
-}
-
-QStringList Node::addAttachment(const QString &p_destFolderPath, const QStringList &p_files)
-{
-    Q_UNUSED(p_destFolderPath);
-    Q_UNUSED(p_files);
-    Q_ASSERT(false);
-    return QStringList();
-}
-
-QString Node::newAttachmentFile(const QString &p_destFolderPath, const QString &p_name)
-{
-    Q_UNUSED(p_destFolderPath);
-    Q_UNUSED(p_name);
-    Q_ASSERT(false);
-    return QString();
-}
-
-QString Node::newAttachmentFolder(const QString &p_destFolderPath, const QString &p_name)
-{
-    Q_UNUSED(p_destFolderPath);
-    Q_UNUSED(p_name);
-    Q_ASSERT(false);
-    return QString();
-}
-
-QString Node::renameAttachment(const QString &p_path, const QString &p_name)
-{
-    Q_UNUSED(p_path);
-    Q_UNUSED(p_name);
-    Q_ASSERT(false);
-    return QString();
-}
-
-void Node::removeAttachment(const QStringList &p_paths)
-{
-    Q_UNUSED(p_paths);
-    Q_ASSERT(false);
-}
-
-QStringList Node::getTags() const
-{
-    Q_ASSERT(false);
-    return QStringList();
-}
-
-QDir Node::toDir() const
-{
-    Q_ASSERT(false);
-    return QDir();
-}
-
-INotebookBackend *Node::getBackend() const
-{
-    return m_backend.data();
+    return m_tags;
 }
 
 bool Node::isReadOnly() const
 {
     return m_flags & Flag::ReadOnly;
+}
+
+void Node::setReadOnly(bool p_readOnly)
+{
+    if (p_readOnly) {
+        m_flags |= Flag::ReadOnly;
+    } else {
+        m_flags &= ~Flag::ReadOnly;
+    }
+}
+
+QString Node::fetchPath() const
+{
+    if (!m_parent) {
+        return QString();
+    } else {
+        return PathUtils::concatenateFilePath(m_parent->fetchPath(), m_name);
+    }
+}
+
+bool Node::isContainer() const
+{
+    return m_flags & Flag::Container;
+}
+
+bool Node::hasContent() const
+{
+    return m_flags & Flag::Content;
+}
+
+QDir Node::toDir() const
+{
+    if (isContainer()) {
+        return QDir(fetchAbsolutePath());
+    }
+}
+
+void Node::load()
+{
+    getConfigMgr()->loadNode(this);
+}
+
+void Node::save()
+{
+    getConfigMgr()->saveNode(this);
+}
+
+INotebookConfigMgr *Node::getConfigMgr() const
+{
+    return m_notebook->getConfigMgr().data();
+}
+
+const QString &Node::getAttachmentFolder() const
+{
+    return m_attachmentFolder;
+}
+
+void Node::setAttachmentFolder(const QString &p_attachmentFolder)
+{
+    m_attachmentFolder = p_attachmentFolder;
+}
+
+QString Node::fetchAttachmentFolderPath()
+{
+    return getConfigMgr()->fetchNodeAttachmentFolderPath(this);
+}
+
+INotebookBackend *Node::getBackend() const
+{
+    return m_notebook->getBackend().data();
 }

@@ -5,15 +5,16 @@
 #include <utils/pathutils.h>
 #include <utils/fileutils.h>
 #include <notebook/node.h>
+#include <core/file.h>
 
 using namespace vnotex;
 
-FileBufferProvider::FileBufferProvider(const QString &p_filePath,
+FileBufferProvider::FileBufferProvider(const QSharedPointer<File> &p_file,
                                        Node *p_nodeAttachedTo,
                                        bool p_readOnly,
                                        QObject *p_parent)
     : BufferProvider(p_parent),
-      c_filePath(p_filePath),
+      m_file(p_file),
       c_nodeAttachedTo(p_nodeAttachedTo),
       m_readOnly(p_readOnly)
 {
@@ -32,42 +33,49 @@ bool FileBufferProvider::match(const Node *p_node) const
 
 bool FileBufferProvider::match(const QString &p_filePath) const
 {
-    return PathUtils::areSamePaths(c_filePath, p_filePath);
+    return PathUtils::areSamePaths(m_file->getFilePath(), p_filePath);
 }
 
 QString FileBufferProvider::getName() const
 {
-    return PathUtils::fileName(c_filePath);
+    return m_file->getName();
 }
 
 QString FileBufferProvider::getPath() const
 {
-    return c_filePath;
+    return m_file->getFilePath();
 }
 
 QString FileBufferProvider::getContentPath() const
 {
-    // TODO.
-    return getPath();
+    return m_file->getContentPath();
+}
+
+QString FileBufferProvider::getResourcePath() const
+{
+    return m_file->getResourcePath();
 }
 
 void FileBufferProvider::write(const QString &p_content)
 {
-    FileUtils::writeFile(getContentPath(), p_content);
+    m_file->write(p_content);
     m_lastModified = getLastModifiedFromFile();
 }
 
 QString FileBufferProvider::read() const
 {
     const_cast<FileBufferProvider *>(this)->m_lastModified = getLastModifiedFromFile();
-    return FileUtils::readTextFile(getContentPath());
+    return m_file->read();
 }
 
 QString FileBufferProvider::fetchImageFolderPath()
 {
-    auto pa = PathUtils::concatenateFilePath(PathUtils::parentDirPath(getContentPath()), QStringLiteral("vx_images"));
-    QDir().mkpath(pa);
-    return pa;
+    auto file = m_file->getImageInterface();
+    if (file) {
+        return file->fetchImageFolderPath();
+    } else {
+        return QString();
+    }
 }
 
 bool FileBufferProvider::isChildOf(const Node *p_node) const
@@ -130,23 +138,30 @@ void FileBufferProvider::removeAttachment(const QStringList &p_paths)
 
 QString FileBufferProvider::insertImage(const QString &p_srcImagePath, const QString &p_imageFileName)
 {
-    const auto imageFolderPath = fetchImageFolderPath();
-    auto destFilePath = FileUtils::renameIfExistsCaseInsensitive(PathUtils::concatenateFilePath(imageFolderPath, p_imageFileName));
-    FileUtils::copyFile(p_srcImagePath, destFilePath);
-    return destFilePath;
+    auto file = m_file->getImageInterface();
+    if (file) {
+        return file->insertImage(p_srcImagePath, p_imageFileName);
+    } else {
+        return QString();
+    }
 }
 
 QString FileBufferProvider::insertImage(const QImage &p_image, const QString &p_imageFileName)
 {
-    const auto imageFolderPath = fetchImageFolderPath();
-    auto destFilePath = FileUtils::renameIfExistsCaseInsensitive(PathUtils::concatenateFilePath(imageFolderPath, p_imageFileName));
-    p_image.save(destFilePath);
-    return destFilePath;
+    auto file = m_file->getImageInterface();
+    if (file) {
+        return file->insertImage(p_image, p_imageFileName);
+    } else {
+        return QString();
+    }
 }
 
 void FileBufferProvider::removeImage(const QString &p_imagePath)
 {
-    FileUtils::removeFile(p_imagePath);
+    auto file = m_file->getImageInterface();
+    if (file) {
+        file->removeImage(p_imagePath);
+    }
 }
 
 bool FileBufferProvider::isAttachmentSupported() const

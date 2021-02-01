@@ -13,6 +13,7 @@
 #include <utils/widgetutils.h>
 #include "notebookmgr.h"
 #include "vnotex.h"
+#include "externalfile.h"
 
 #include "fileopenparameters.h"
 
@@ -54,7 +55,7 @@ void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_p
         return;
     }
 
-    if (p_node->getType() == Node::Type::Folder) {
+    if (p_node->isContainer()) {
         return;
     }
 
@@ -71,7 +72,7 @@ void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_p
         }
 
         BufferParameters paras;
-        paras.m_provider.reset(new NodeBufferProvider(p_node));
+        paras.m_provider.reset(new NodeBufferProvider(p_node->sharedFromThis()));
         buffer = factory->createBuffer(paras, this);
         addBuffer(buffer);
     }
@@ -95,7 +96,7 @@ void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenPar
     // Check if it is an internal node or not.
     auto node = loadNodeByPath(p_filePath);
     if (node) {
-        if (node->getType() == Node::File) {
+        if (node->hasContent()) {
             open(node.data(), p_paras);
             return;
         } else {
@@ -123,7 +124,7 @@ void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenPar
         }
 
         BufferParameters paras;
-        paras.m_provider.reset(new FileBufferProvider(p_filePath,
+        paras.m_provider.reset(new FileBufferProvider(QSharedPointer<ExternalFile>::create(p_filePath),
                                                       p_paras->m_nodeAttachedTo,
                                                       p_paras->m_readOnly));
         buffer = factory->createBuffer(paras, this);
