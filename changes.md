@@ -1,4 +1,9 @@
 # Changes
+## v3.0.0-beta.7
+* Support export to Markdown/HTML/PDF
+* Support base level 1/2/3 for section number in read mode
+* Support opening link to folder in read mode
+
 ## v3.0.0-beta.6
 * Add theme **pure** for light mode
 * Small fixes
