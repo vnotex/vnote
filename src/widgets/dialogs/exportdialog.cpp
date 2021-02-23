@@ -137,11 +137,11 @@ QGroupBox *ExportDialog::setupTargetGroup(QWidget *p_parent)
                     AdvancedSettings settings = AdvancedSettings::Max;
                     int format = m_targetFormatComboBox->currentData().toInt();
                     switch (format) {
-                    case ExportFormat::HTML:
+                    case static_cast<int>(ExportFormat::HTML):
                         settings = AdvancedSettings::HTML;
                         break;
 
-                    case ExportFormat::PDF:
+                    case static_cast<int>(ExportFormat::PDF):
                         settings = AdvancedSettings::PDF;
                         break;
 
