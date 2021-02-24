@@ -80,6 +80,7 @@ bool ExportPdfOption::operator==(const ExportPdfOption &p_other) const
 QJsonObject ExportOption::toJson() const
 {
     QJsonObject obj;
+    obj["target_format"] = static_cast<int>(m_targetFormat);
     obj["use_transparent_bg"] = m_useTransparentBg;
     obj["output_dir"] = m_outputDir;
     obj["recursive"] = m_recursive;
@@ -95,6 +96,29 @@ void ExportOption::fromJson(const QJsonObject &p_obj)
         return;
     }
 
+    {
+        int fmt = p_obj["target_format"].toInt();
+        switch (fmt) {
+        case static_cast<int>(ExportFormat::Markdown):
+            m_targetFormat = ExportFormat::Markdown;
+            break;
+
+        case static_cast<int>(ExportFormat::PDF):
+            m_targetFormat = ExportFormat::PDF;
+            break;
+
+        case static_cast<int>(ExportFormat::Custom):
+            m_targetFormat = ExportFormat::Custom;
+            break;
+
+        case static_cast<int>(ExportFormat::HTML):
+            Q_FALLTHROUGH();
+        default:
+            m_targetFormat = ExportFormat::HTML;
+            break;
+        }
+    }
+
     m_useTransparentBg = p_obj["use_transparent_bg"].toBool();
     m_outputDir = p_obj["output_dir"].toString();
     m_recursive = p_obj["recursive"].toBool();
@@ -105,7 +129,8 @@ void ExportOption::fromJson(const QJsonObject &p_obj)
 
 bool ExportOption::operator==(const ExportOption &p_other) const
 {
-    bool ret = m_useTransparentBg == p_other.m_useTransparentBg
+    bool ret = m_targetFormat == p_other.m_targetFormat
+               && m_useTransparentBg == p_other.m_useTransparentBg
                && m_outputDir == p_other.m_outputDir
                && m_recursive == p_other.m_recursive
                && m_exportAttachments == p_other.m_exportAttachments;

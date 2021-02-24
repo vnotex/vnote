@@ -45,16 +45,13 @@ void TitleBar::setupUI(const QString &p_title, TitleBar::Actions p_actionFlags)
     mainLayout->addStretch();
 
     {
-        setupActionButtons(p_actionFlags);
-
         m_buttonWidget = new QWidget(this);
         mainLayout->addWidget(m_buttonWidget);
 
         auto btnLayout = new QHBoxLayout(m_buttonWidget);
         btnLayout->setContentsMargins(0, 0, 0, 0);
-        for (auto btn : m_actionButtons) {
-            btnLayout->addWidget(btn);
-        }
+
+        setupActionButtons(p_actionFlags);
 
         setActionButtonsVisible(false);
     }
@@ -79,31 +76,16 @@ QToolButton *TitleBar::newActionButton(const QString &p_iconName, const QString 
 
 void TitleBar::setupActionButtons(TitleBar::Actions p_actionFlags)
 {
+    if (p_actionFlags & Action::Menu) {
+        m_menu = WidgetsFactory::createMenu(this);
+        addActionButton("menu.svg", tr("Menu"), m_menu);
+    }
+
     if (p_actionFlags & Action::Settings) {
-        auto btn = newActionButton("settings.svg", tr("Settings"), this);
+        auto btn = addActionButton("settings.svg", tr("Settings"));
         connect(btn, &QToolButton::triggered,
                 this, []() {
                     // TODO.
-                });
-        m_actionButtons.push_back(btn);
-    }
-
-    if (p_actionFlags & Action::Menu) {
-        auto btn = newActionButton("menu.svg", tr("Menu"), this);
-        btn->setPopupMode(QToolButton::InstantPopup);
-        m_actionButtons.push_back(btn);
-
-        m_menu = WidgetsFactory::createMenu(this);
-        btn->setMenu(m_menu);
-        connect(m_menu, &QMenu::aboutToShow,
-                this, [this]() {
-                    m_alwaysShowActionButtons = true;
-                    setActionButtonsVisible(true);
-                });
-        connect(m_menu, &QMenu::aboutToHide,
-                this, [this]() {
-                    m_alwaysShowActionButtons = false;
-                    setActionButtonsVisible(false);
                 });
     }
 }
@@ -160,9 +142,32 @@ QToolButton *TitleBar::addActionButton(const QString &p_iconName, const QString 
         layout->addWidget(btn);
     } else {
         int idx = m_actionButtons.size() - 1;
+        if (idx < 0) {
+            idx = 0;
+        }
         m_actionButtons.insert(idx, btn);
         layout->insertWidget(idx, btn);
     }
+    return btn;
+}
+
+QToolButton *TitleBar::addActionButton(const QString &p_iconName, const QString &p_text, QMenu *p_menu)
+{
+    p_menu->setParent(this);
+
+    auto btn = addActionButton(p_iconName, p_text);
+    btn->setPopupMode(QToolButton::InstantPopup);
+    btn->setMenu(p_menu);
+    connect(p_menu, &QMenu::aboutToShow,
+            this, [this]() {
+                m_alwaysShowActionButtons = true;
+                setActionButtonsVisible(true);
+            });
+    connect(p_menu, &QMenu::aboutToHide,
+            this, [this]() {
+                m_alwaysShowActionButtons = false;
+                setActionButtonsVisible(false);
+            });
     return btn;
 }
 

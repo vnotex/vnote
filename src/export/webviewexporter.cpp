@@ -478,6 +478,11 @@ bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QStr
 
 bool WebViewExporter::doExportWkhtmltopdf(const ExportPdfOption &p_pdfOption, const QString &p_outputFile, const QUrl &p_baseUrl)
 {
+    if (p_pdfOption.m_wkhtmltopdfExePath.isEmpty()) {
+        qWarning() << "invalid wkhtmltopdf executable path";
+        return false;
+    }
+
     ExportState state = ExportState::Busy;
 
     connect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady,

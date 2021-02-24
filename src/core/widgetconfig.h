@@ -24,10 +24,15 @@ namespace vnotex
         FindOptions getFindAndReplaceOptions() const;
         void setFindAndReplaceOptions(FindOptions p_options);
 
+        int getNoteExplorerViewOrder() const;
+        void setNoteExplorerViewOrder(int p_viewOrder);
+
     private:
         int m_outlineAutoExpandedLevel = 6;
 
         FindOptions m_findAndReplaceOptions = FindOption::None;
+
+        int m_noteExplorerViewOrder = 0;
     };
 }
 

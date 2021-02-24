@@ -76,6 +76,18 @@ namespace vnotex
             bool m_loaded = false;
         };
 
+        enum ViewOrder
+        {
+            OrderedByConfiguration = 0,
+            OrderedByName,
+            OrderedByNameReversed,
+            OrderedByCreatedTime,
+            OrderedByCreatedTimeReversed,
+            OrderedByModifiedTime,
+            OrderedByModifiedTimeReversed,
+            ViewOrderMax
+        };
+
         explicit NotebookNodeExplorer(QWidget *p_parent = nullptr);
 
         void setNotebook(const QSharedPointer<Notebook> &p_notebook);
@@ -190,6 +202,11 @@ namespace vnotex
 
         // Skip the recycle bin node if possible.
         void focusNormalNode();
+
+        void sortNodes(QVector<QSharedPointer<Node>> &p_nodes) const;
+
+        // [p_start, p_end).
+        void sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int p_start, int p_end, int p_viewOrder) const;
 
         static NotebookNodeExplorer::NodeData getItemNodeData(const QTreeWidgetItem *p_item);
 

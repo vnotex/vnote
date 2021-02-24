@@ -2,6 +2,9 @@
 
 #include <QVBoxLayout>
 #include <QFileDialog>
+#include <QToolButton>
+#include <QMenu>
+#include <QActionGroup>
 
 #include "titlebar.h"
 #include "dialogs/newnotebookdialog.h"
@@ -24,10 +27,12 @@
 #include "messageboxhelper.h"
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
+#include <core/widgetconfig.h>
 #include <core/events.h>
 #include <core/exception.h>
 #include <core/fileopenparameters.h>
 #include "navigationmodemgr.h"
+#include "widgetsfactory.h"
 
 using namespace vnotex;
 
@@ -76,6 +81,15 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
                                  TitleBar::Action::Menu,
                                  p_parent);
     titleBar->setWhatsThis(tr("This title bar contains buttons and menu to manage notebooks and notes."));
+
+    {
+        auto viewMenu = WidgetsFactory::createMenu(titleBar);
+        titleBar->addActionButton(QStringLiteral("view.svg"), tr("View"), viewMenu);
+        connect(viewMenu, &QMenu::aboutToShow,
+                this, [this, viewMenu]() {
+                    setupViewMenu(viewMenu);
+                });
+    }
 
     titleBar->addMenuAction(QStringLiteral("manage_notebooks.svg"),
                             tr("&Manage Notebooks"),
@@ -299,4 +313,64 @@ void NotebookExplorer::locateNode(Node *p_node)
 const QSharedPointer<Notebook> &NotebookExplorer::currentNotebook() const
 {
     return m_currentNotebook;
+}
+
+void NotebookExplorer::setupViewMenu(QMenu *p_menu)
+{
+    if (!p_menu->isEmpty()) {
+        return;
+    }
+
+    auto ag = new QActionGroup(p_menu);
+
+    auto act = ag->addAction(tr("View By Configuration"));
+    act->setCheckable(true);
+    act->setChecked(true);
+    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByConfiguration);
+    p_menu->addAction(act);
+
+    act = ag->addAction(tr("View By Name"));
+    act->setCheckable(true);
+    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByName);
+    p_menu->addAction(act);
+
+    act = ag->addAction(tr("View By Name (Reversed)"));
+    act->setCheckable(true);
+    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByNameReversed);
+    p_menu->addAction(act);
+
+    act = ag->addAction(tr("View By Created Time"));
+    act->setCheckable(true);
+    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByCreatedTime);
+    p_menu->addAction(act);
+
+    act = ag->addAction(tr("View By Created Time (Reversed)"));
+    act->setCheckable(true);
+    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByCreatedTimeReversed);
+    p_menu->addAction(act);
+
+    act = ag->addAction(tr("View By Modified Time"));
+    act->setCheckable(true);
+    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByModifiedTime);
+    p_menu->addAction(act);
+
+    act = ag->addAction(tr("View By Modified Time (Reversed)"));
+    act->setCheckable(true);
+    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByModifiedTimeReversed);
+    p_menu->addAction(act);
+
+    int viewOrder = ConfigMgr::getInst().getWidgetConfig().getNoteExplorerViewOrder();
+    for (const auto &act : ag->actions()) {
+        if (act->data().toInt() == viewOrder) {
+            act->setChecked(true);
+        }
+    }
+
+    connect(ag, &QActionGroup::triggered,
+            this, [this](QAction *p_action) {
+                int order = p_action->data().toInt();
+                ConfigMgr::getInst().getWidgetConfig().setNoteExplorerViewOrder(order);
+
+                m_nodeExplorer->reload();
+            });
 }

@@ -28,6 +28,8 @@ namespace vnotex
 
         QToolButton *addActionButton(const QString &p_iconName, const QString &p_text);
 
+        QToolButton *addActionButton(const QString &p_iconName, const QString &p_text, QMenu *p_menu);
+
         // Add action to the menu.
         QAction *addMenuAction(const QString &p_iconName, const QString &p_text);
 
