@@ -359,6 +359,7 @@ void ExportDialog::startExport()
 
     // On start.
     {
+        clearInformationText();
         m_exportedFile.clear();
         m_exportOngoing = true;
         updateUIOnExport();
@@ -407,7 +408,14 @@ void ExportDialog::updateUIOnExport()
 
 int ExportDialog::doExport(ExportOption p_option)
 {
-    // TODO: Check ExportOption.
+    if (p_option.m_targetFormat == ExportFormat::PDF && p_option.m_pdfOption.m_useWkhtmltopdf) {
+        // Check wkhtmltopdf executable.
+        const auto &wkExePath = p_option.m_pdfOption.m_wkhtmltopdfExePath;
+        if (wkExePath.isEmpty() || !QFileInfo::exists(wkExePath)) {
+            appendLog(tr("Please specify a valid wkhtmltopdf executable file (%1)").arg(wkExePath));
+            return 0;
+        }
+    }
 
     int exportedFilesCount = 0;
 

@@ -22,6 +22,8 @@
 
 #include <core/fileopenparameters.h>
 #include <core/events.h>
+#include <core/configmgr.h>
+#include <core/widgetconfig.h>
 
 using namespace vnotex;
 
@@ -333,7 +335,9 @@ void NotebookNodeExplorer::loadRootNode(const Node *p_node) const
         loadRecycleBinNode(recycleBinNode.data());
     }
 
-    for (auto &child : p_node->getChildren()) {
+    auto children = p_node->getChildren();
+    sortNodes(children);
+    for (auto &child : children) {
         if (recycleBinNode == child) {
             continue;
         }
@@ -374,7 +378,9 @@ void NotebookNodeExplorer::loadChildren(QTreeWidgetItem *p_item, Node *p_node, i
         return;
     }
 
-    for (auto &child : p_node->getChildren()) {
+    auto children = p_node->getChildren();
+    sortNodes(children);
+    for (auto &child : children) {
         auto item = new QTreeWidgetItem(p_item);
         loadNode(item, child.data(), p_level);
     }
@@ -1314,5 +1320,76 @@ void NotebookNodeExplorer::focusNormalNode()
     auto cnt = m_masterExplorer->topLevelItemCount();
     if (cnt > 1) {
         m_masterExplorer->setCurrentItem(m_masterExplorer->topLevelItem(1));
+    }
+}
+
+void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes) const
+{
+    int viewOrder = ConfigMgr::getInst().getWidgetConfig().getNoteExplorerViewOrder();
+    if (viewOrder == ViewOrder::OrderedByConfiguration) {
+        return;
+    }
+
+    // Put containers first.
+    int firstFileIndex = p_nodes.size();
+    for (int i = 0; i < p_nodes.size(); ++i) {
+        if (!p_nodes[i]->isContainer()) {
+            firstFileIndex = i;
+            break;
+        }
+    }
+
+    // Sort containers.
+    sortNodes(p_nodes, 0, firstFileIndex, viewOrder);
+
+    // Sort non-containers.
+    sortNodes(p_nodes, firstFileIndex, p_nodes.size(), viewOrder);
+}
+
+void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int p_start, int p_end, int p_viewOrder) const
+{
+    bool reversed = false;
+    switch (p_viewOrder) {
+    case ViewOrder::OrderedByNameReversed:
+        reversed = true;
+        Q_FALLTHROUGH();
+    case ViewOrder::OrderedByName:
+        std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end, [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> p_b) {
+            if (reversed) {
+                return p_b->getName() < p_a->getName();
+            } else {
+                return p_a->getName() < p_b->getName();
+            }
+        });
+        break;
+
+    case ViewOrder::OrderedByCreatedTimeReversed:
+        reversed = true;
+        Q_FALLTHROUGH();
+    case ViewOrder::OrderedByCreatedTime:
+        std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end, [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> p_b) {
+            if (reversed) {
+                return p_b->getCreatedTimeUtc() < p_a->getCreatedTimeUtc();
+            } else {
+                return p_a->getCreatedTimeUtc() < p_b->getCreatedTimeUtc();
+            }
+        });
+        break;
+
+    case ViewOrder::OrderedByModifiedTimeReversed:
+        reversed = true;
+        Q_FALLTHROUGH();
+    case ViewOrder::OrderedByModifiedTime:
+        std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end, [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> p_b) {
+            if (reversed) {
+                return p_b->getModifiedTimeUtc() < p_a->getModifiedTimeUtc();
+            } else {
+                return p_a->getModifiedTimeUtc() < p_b->getModifiedTimeUtc();
+            }
+        });
+        break;
+
+    default:
+        break;
     }
 }

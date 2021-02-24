@@ -285,6 +285,8 @@
         "//comment" : "Level of the heading in outline that should expand to automatically (1-6)",
         "outline_auto_expanded_level" : 6,
         "//comment" : "Default find options in FindAndReplace",
-        "find_and_replace_options" : 16
+        "find_and_replace_options" : 16,
+        "//comment" : "View order of the note explorer",
+        "note_explorer_view_order" : 0
     }
 }
