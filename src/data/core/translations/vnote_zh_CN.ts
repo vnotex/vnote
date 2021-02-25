@@ -1918,7 +1918,7 @@
     <message>
         <location filename="../../../widgets/notebookexplorer.cpp" line="337"/>
         <source>View By Name (Reversed)</source>
-        <translation>按名字反向查看</translation>
+        <translation>按名字倒序查看</translation>
     </message>
     <message>
         <location filename="../../../widgets/notebookexplorer.cpp" line="342"/>
@@ -1928,7 +1928,7 @@
     <message>
         <location filename="../../../widgets/notebookexplorer.cpp" line="347"/>
         <source>View By Created Time (Reversed)</source>
-        <translation>按创建时间反向查看</translation>
+        <translation>按创建时间倒序查看</translation>
     </message>
     <message>
         <location filename="../../../widgets/notebookexplorer.cpp" line="352"/>
@@ -1938,7 +1938,7 @@
     <message>
         <location filename="../../../widgets/notebookexplorer.cpp" line="357"/>
         <source>View By Modified Time (Reversed)</source>
-        <translation>按修改时间反向查看</translation>
+        <translation>按修改时间倒序查看</translation>
     </message>
 </context>
 <context>
