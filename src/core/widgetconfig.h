@@ -27,12 +27,17 @@ namespace vnotex
         int getNoteExplorerViewOrder() const;
         void setNoteExplorerViewOrder(int p_viewOrder);
 
+        bool isNoteExplorerRecycleBinNodeShown() const;
+        void setNoteExplorerRecycleBinNodeShown(bool p_shown);
+
     private:
         int m_outlineAutoExpandedLevel = 6;
 
         FindOptions m_findAndReplaceOptions = FindOption::None;
 
         int m_noteExplorerViewOrder = 0;
+
+        bool m_noteExplorerRecycleBinNodeShown = false;
     };
 }
 

@@ -64,6 +64,7 @@ void NotebookExplorer::setupUI()
     mainLayout->addWidget(m_selector);
 
     m_nodeExplorer = new NotebookNodeExplorer(this);
+    m_nodeExplorer->setRecycleBinNodeVisible(ConfigMgr::getInst().getWidgetConfig().isNoteExplorerRecycleBinNodeShown());
     connect(m_nodeExplorer, &NotebookNodeExplorer::nodeActivated,
             &VNoteX::getInst(), &VNoteX::openNodeRequested);
     connect(m_nodeExplorer, &NotebookNodeExplorer::nodeAboutToMove,
@@ -88,6 +89,18 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
         connect(viewMenu, &QMenu::aboutToShow,
                 this, [this, viewMenu]() {
                     setupViewMenu(viewMenu);
+                });
+    }
+
+    {
+        auto btn = titleBar->addActionButton(QStringLiteral("recycle_bin.svg"), tr("Toggle Recycle Bin Node"));
+        btn->defaultAction()->setCheckable(true);
+        btn->defaultAction()->setChecked(ConfigMgr::getInst().getWidgetConfig().isNoteExplorerRecycleBinNodeShown());
+        connect(btn, &QToolButton::triggered,
+                this, [this](QAction *p_act) {
+                    const bool checked = p_act->isChecked();
+                    ConfigMgr::getInst().getWidgetConfig().setNoteExplorerRecycleBinNodeShown(checked);
+                    m_nodeExplorer->setRecycleBinNodeVisible(checked);
                 });
     }
 

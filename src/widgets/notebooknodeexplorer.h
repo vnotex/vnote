@@ -102,6 +102,8 @@ namespace vnotex
 
         void reload();
 
+        void setRecycleBinNodeVisible(bool p_visible);
+
     signals:
         void nodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
 
@@ -221,6 +223,8 @@ namespace vnotex
         QHash<const Notebook *, QSharedPointer<QTreeWidgetStateCache<Node *>>> m_stateCache;
 
         QScopedPointer<NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>> m_navigationWrapper;
+
+        bool m_recycleBinNodeVisible = false;
 
         static QIcon s_folderNodeIcon;
         static QIcon s_fileNodeIcon;

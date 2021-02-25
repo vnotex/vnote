@@ -388,6 +388,10 @@ void NotebookNodeExplorer::loadChildren(QTreeWidgetItem *p_item, Node *p_node, i
 
 void NotebookNodeExplorer::loadRecycleBinNode(Node *p_node) const
 {
+    if (!m_recycleBinNodeVisible) {
+        return;
+    }
+
     auto item = new QTreeWidgetItem();
     item->setWhatsThis(Column::Name,
                        tr("Recycle bin of this notebook. Deleted files could be found here. "
@@ -400,6 +404,10 @@ void NotebookNodeExplorer::loadRecycleBinNode(Node *p_node) const
 
 void NotebookNodeExplorer::loadRecycleBinNode(QTreeWidgetItem *p_item, Node *p_node, int p_level) const
 {
+    if (!m_recycleBinNodeVisible) {
+        return;
+    }
+
     if (!p_node->isLoaded()) {
         p_node->load();
     }
@@ -1392,4 +1400,14 @@ void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int
     default:
         break;
     }
+}
+
+void NotebookNodeExplorer::setRecycleBinNodeVisible(bool p_visible)
+{
+    if (m_recycleBinNodeVisible == p_visible) {
+        return;
+    }
+
+    m_recycleBinNodeVisible = p_visible;
+    reload();
 }
