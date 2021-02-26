@@ -1,4 +1,11 @@
 # Changes
+## v3.0.0-beta.8
+* Note explorer supports different view orders
+* Fix `Ctrl+V` paste in editor
+* Fix Linux HTTPS crash bug
+* Add button to show/hide recycle bin node
+* Other small fixes
+
 ## v3.0.0-beta.7
 * Support export to Markdown/HTML/PDF
 * Support base level 1/2/3 for section number in read mode

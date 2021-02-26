@@ -1857,86 +1857,91 @@
         <translation>从全部笔记本中选择一个作为当前笔记本。&lt;br/&gt;移动鼠标到某个项目上查看详情。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="80"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="81"/>
         <source>Notebook</source>
         <translation>笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="83"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="84"/>
         <source>This title bar contains buttons and menu to manage notebooks and notes.</source>
         <translation>该标题栏包含管理笔记本和笔记的按钮和菜单。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="87"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="88"/>
         <source>View</source>
         <translation>查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="95"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="96"/>
+        <source>Toggle Recycle Bin Node</source>
+        <translation>显示/隐藏回收站节点</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="108"/>
         <source>&amp;Manage Notebooks</source>
         <translation>管理笔记本(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="155"/>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="285"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="168"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="298"/>
         <source>Could not create folder within Recycle Bin.</source>
         <translation>无法在回收站内创建文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="177"/>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="244"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="190"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="257"/>
         <source>Could not create note within Recycle Bin.</source>
         <translation>无法在回收站内创建笔记。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="217"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="230"/>
         <source>Please first create a notebook to hold your data.</source>
         <translation>请先创建一个笔记本来保存数据。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="251"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="264"/>
         <source>Select Files To Import</source>
         <translation>选择文件导入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="262"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="275"/>
         <source>Failed to add file (%1) as node (%2).
 </source>
         <translation>无法添加文件 (%1) 为节点 (%2)。
 </translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="326"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="339"/>
         <source>View By Configuration</source>
         <translation>按配置查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="332"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="345"/>
         <source>View By Name</source>
         <translation>按名字查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="337"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="350"/>
         <source>View By Name (Reversed)</source>
         <translation>按名字倒序查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="342"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="355"/>
         <source>View By Created Time</source>
         <translation>按创建时间查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="347"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="360"/>
         <source>View By Created Time (Reversed)</source>
         <translation>按创建时间倒序查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="352"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="365"/>
         <source>View By Modified Time</source>
         <translation>按修改时间查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="357"/>
+        <location filename="../../../widgets/notebookexplorer.cpp" line="370"/>
         <source>View By Modified Time (Reversed)</source>
         <translation>按修改时间倒序查看</translation>
     </message>
@@ -2080,87 +2085,87 @@
         <translation>无法加载笔记本 (%1) 节点 (%2)。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="393"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="397"/>
         <source>Recycle bin of this notebook. Deleted files could be found here. It is organized in folders named by date. Nodes could be moved to other folders by Cut and Paste.</source>
         <translation>笔记本回收站。被删除的文件可以在此找回。按以日期命名的文件夹进行组织。节点可以通过剪切粘贴移动到其他文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="410"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="418"/>
         <source>Recycle Bin</source>
         <translation>回收站</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="769"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="778"/>
         <source>New N&amp;ote</source>
         <translation>新建笔记(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="779"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="788"/>
         <source>New &amp;Folder</source>
         <translation>新建文件夹(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="789"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="798"/>
         <source>&amp;Properties</source>
         <translation>属性(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="814"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="823"/>
         <source>Open &amp;Location</source>
         <translation>打开路径(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="835"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="844"/>
         <source>Cop&amp;y Path</source>
         <translation>复制路径(&amp;Y)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="842"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="851"/>
         <source>Copied path: %1</source>
         <translation>已复制路径: %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="848"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="857"/>
         <source>&amp;Copy</source>
         <translation>复制(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="856"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="865"/>
         <source>C&amp;ut</source>
         <translation>剪切(&amp;U)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="864"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="873"/>
         <source>&amp;Paste</source>
         <translation>粘贴(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="872"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="881"/>
         <source>&amp;Empty</source>
         <translation>清空(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="878"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="887"/>
         <source>Empty the recycle bin of this notebook?</source>
         <translation>清空该笔记本的回收站？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="879"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="888"/>
         <source>All files in recycle bin will be deleted permanently.</source>
         <translation>回收站中的全部文件都会被永久删除。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="880"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="889"/>
         <source>Location of recycle bin: %1</source>
         <translation>回收站路径: %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="889"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="898"/>
         <source>Failed to empty recycle bin (%1) (%2).</source>
         <translation>无法清空回收站 (%1) (%2)。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1080"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1089"/>
         <source>Failed to copy source (%1) to destination (%2) (%3).</source>
         <translation>无法复制源 (%1) 至 目标 (%2) (%3)。</translation>
     </message>
@@ -2169,93 +2174,93 @@
         <translation type="vanished">无法删除或移除项目 %1 (%2) (%3)。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="899"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="908"/>
         <source>&amp;Delete</source>
         <translation>删除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="907"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="916"/>
         <source>&amp;Delete From Recycle Bin</source>
         <translation>从回收站中删除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="915"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="924"/>
         <source>&amp;Remove From Index</source>
         <translation>从索引中移除(&amp;R)</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="947"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="956"/>
         <source>Copied %n item(s)</source>
         <translation>
             <numerusform>已复制 %n 项</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1034"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1043"/>
         <source>Invalid clipboard data to paste.</source>
         <translation>无效的剪切板数据用于粘贴。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1049"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1058"/>
         <source>Destination is detected in sources (%1). Operation is cancelled.</source>
         <translation>目标包含在源 (%1) 中。操作取消。</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1105"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1114"/>
         <source>Pasted %n item(s)</source>
         <translation>
             <numerusform>已粘贴 %n 项</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1134"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1143"/>
         <source>Delete these folders and notes permanently?</source>
         <translation>永久删除这些文件夹和笔记？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1135"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1144"/>
         <source>Files will be deleted permanently and could not be found even in operating system&apos;s recycle bin.</source>
         <translation>文件将会被永久删除，即使在操作系统的回收站中也无法找回。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1138"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1147"/>
         <source>Delete these folders and notes?</source>
         <translation>删除这些文件夹和笔记？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1139"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1148"/>
         <source>Deleted files could be found in the recycle bin of notebook.</source>
         <translation>被删除的文件可以在笔记本回收站中找回。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1142"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1151"/>
         <source>Confirm Deletion</source>
         <translation>确认删除</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1215"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1224"/>
         <source>Failed to delete/remove item (%1) (%2) (%3).</source>
         <translation>无法删除或移除项目 (%1) (%2) (%3)。</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1231"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1240"/>
         <source>Deleted/Removed %n item(s)</source>
         <translation>
             <numerusform>删除或移除 %n 项</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1236"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1245"/>
         <source>Confirm Removal</source>
         <translation>确认移除</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1237"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1246"/>
         <source>Remove these folders and notes from index?</source>
         <translation>从索引中移除这些文件夹和笔记？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1238"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1247"/>
         <source>Files are not touched but just removed from notebook index.</source>
         <translation>文件不会被改动，仅仅是从笔记本索引中移除。</translation>
     </message>
