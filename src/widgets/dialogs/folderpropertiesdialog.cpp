@@ -63,8 +63,8 @@ bool FolderPropertiesDialog::validateNameInput(QString &p_msg)
         return false;
     }
 
-    if (name != m_node->getName()
-        && m_infoWidget->getParentNode()->containsChild(name, false)) {
+    Q_ASSERT(m_infoWidget->getParentNode() == m_node->getParent());
+    if (!m_node->canRename(name)) {
         p_msg = tr("Name conflicts with existing folder.");
         return false;
     }

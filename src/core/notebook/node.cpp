@@ -301,3 +301,29 @@ INotebookBackend *Node::getBackend() const
 {
     return m_notebook->getBackend().data();
 }
+
+bool Node::canRename(const QString &p_newName) const
+{
+    if (p_newName == m_name) {
+        return true;
+    }
+
+    if (p_newName.isEmpty()) {
+        return false;
+    }
+
+    Q_ASSERT(m_parent);
+    if (p_newName.toLower() == m_name.toLower()) {
+        if (m_parent->containsChild(p_newName, true)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    if (m_parent->containsChild(p_newName, false)) {
+        return false;
+    }
+
+    return true;
+}

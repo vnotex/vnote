@@ -1,4 +1,4 @@
-var toc = [];
+var vxOutlineToc = [];
 
 var setVisible = function(node, visible) {
     var cl = 'hide-none';
@@ -61,32 +61,32 @@ window.addEventListener('load', function() {
 
     // Fetch the outline.
     var headers = postContent.querySelectorAll("h1, h2, h3, h4, h5, h6");
-    toc = [];
+    vxOutlineToc = [];
     for (var i = 0; i < headers.length; ++i) {
         var header = headers[i];
 
-        toc.push({
+        vxOutlineToc.push({
             level: parseInt(header.tagName.substr(1)),
             anchor: header.id,
             title: escapeHtml(header.textContent)
         });
     }
 
-    if (toc.length == 0) {
+    if (vxOutlineToc.length == 0) {
         setOutlinePanelVisible(false);
         setVisible(floatingContainer, false);
         return;
     }
 
-    var baseLevel = baseLevelOfToc(toc);
-    var tocTree = tocToTree(toPerfectToc(toc, baseLevel), baseLevel);
+    var baseLevel = baseLevelOfToc(vxOutlineToc);
+    var tocTree = tocToTree(toPerfectToc(vxOutlineToc, baseLevel), baseLevel);
 
     outlineContent.innerHTML = tocTree;
     setOutlinePanelVisible(true);
     setVisible(floatingContainer, true);
 });
 
-// Return the topest level of @toc, starting from 1.
+// Return the topest level of @vxOutlineToc, starting from 1.
 var baseLevelOfToc = function(p_toc) {
     var level = -1;
     for (i in p_toc) {
@@ -130,7 +130,7 @@ var toPerfectToc = function(p_toc, p_baseLevel) {
 };
 
 var itemToHtml = function(item) {
-    return '<a href="#' + item.anchor + '" data="' + item.anchor + '">' + item.title + '</a>';
+    return '<a href="#' + item.anchor + '" title="' + item.title + '" data="' + item.anchor + '">' + item.title + '</a>';
 };
 
 // Turn a perfect toc to a tree using <ul>
@@ -175,7 +175,7 @@ var tocToTree = function(p_toc, p_baseLevel) {
 };
 
 var toggleMore = function() {
-    if (toc.length == 0) {
+    if (vxOutlineToc.length == 0) {
         return;
     }
 
@@ -190,7 +190,7 @@ var toggleMore = function() {
 };
 
 window.addEventListener('scroll', function() {
-    if (toc.length == 0 || !isOutlinePanelVisible()) {
+    if (vxOutlineToc.length == 0 || !isOutlinePanelVisible()) {
         return;
     }
 

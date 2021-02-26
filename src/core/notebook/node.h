@@ -156,6 +156,8 @@ namespace vnotex
 
         INotebookBackend *getBackend() const;
 
+        bool canRename(const QString &p_newName) const;
+
         static bool isAncestor(const Node *p_ancestor, const Node *p_child);
 
     protected:

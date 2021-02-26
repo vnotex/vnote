@@ -620,8 +620,9 @@ void NotebookNodeExplorer::setCurrentNode(Node *p_node)
 
     Q_ASSERT(getItemNodeData(item).getNode() == p_node);
 
-    for (auto &it : items) {
-        it->setExpanded(true);
+    // Do not expand the last item.
+    for (int i = 0; i < items.size() - 1; ++i) {
+        items[i]->setExpanded(true);
     }
 
     m_masterExplorer->setCurrentItem(item);
@@ -1232,7 +1233,7 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes,
         updateNode(node);
     }
 
-    if (!p_configOnly && !p_skipRecycleBin) {
+    if (!p_configOnly && !p_skipRecycleBin && m_recycleBinNodeVisible) {
         updateNode(m_notebook->getRecycleBinNode().data());
     }
 
@@ -1320,15 +1321,12 @@ void NotebookNodeExplorer::reload()
 void NotebookNodeExplorer::focusNormalNode()
 {
     auto item = m_masterExplorer->currentItem();
-    if (item && item != m_masterExplorer->topLevelItem(0)) {
+    if (item && (!m_recycleBinNodeVisible || item != m_masterExplorer->topLevelItem(0))) {
         // Not recycle bin.
         return;
     }
 
-    auto cnt = m_masterExplorer->topLevelItemCount();
-    if (cnt > 1) {
-        m_masterExplorer->setCurrentItem(m_masterExplorer->topLevelItem(1));
-    }
+    m_masterExplorer->setCurrentItem(m_masterExplorer->topLevelItem(m_recycleBinNodeVisible ? 1 : 0));
 }
 
 void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes) const
@@ -1341,7 +1339,10 @@ void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes) con
     // Put containers first.
     int firstFileIndex = p_nodes.size();
     for (int i = 0; i < p_nodes.size(); ++i) {
-        if (!p_nodes[i]->isContainer()) {
+        if (p_nodes[i]->isContainer()) {
+            // If it is a container, load it to set its created time and modified time.
+            p_nodes[i]->load();
+        } else {
             firstFileIndex = i;
             break;
         }
@@ -1356,6 +1357,10 @@ void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes) con
 
 void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int p_start, int p_end, int p_viewOrder) const
 {
+    if (p_start >= p_end) {
+        return;
+    }
+
     bool reversed = false;
     switch (p_viewOrder) {
     case ViewOrder::OrderedByNameReversed:

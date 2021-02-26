@@ -135,6 +135,7 @@
 
 .section-nav a {
     color: inherit !important;
+    white-space: nowrap;
 }
 
 .row {
