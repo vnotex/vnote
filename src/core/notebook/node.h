@@ -158,6 +158,8 @@ namespace vnotex
 
         bool canRename(const QString &p_newName) const;
 
+        void sortChildren(const QVector<int> &p_beforeIdx, const QVector<int> &p_afterIdx);
+
         static bool isAncestor(const Node *p_ancestor, const Node *p_child);
 
     protected:

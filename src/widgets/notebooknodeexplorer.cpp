@@ -1,6 +1,11 @@
 #include "notebooknodeexplorer.h"
 
-#include <QtWidgets>
+#include <QTreeWidget>
+#include <QVBoxLayout>
+#include <QSplitter>
+#include <QTreeWidget>
+#include <QMenu>
+#include <QAction>
 
 #include <notebook/notebook.h>
 #include <notebook/node.h>
@@ -13,6 +18,7 @@
 #include "dialogs/notepropertiesdialog.h"
 #include "dialogs/folderpropertiesdialog.h"
 #include "dialogs/deleteconfirmdialog.h"
+#include "dialogs/sortdialog.h"
 #include <utils/widgetutils.h>
 #include <utils/pathutils.h>
 #include <utils/clipboardutils.h>
@@ -742,6 +748,11 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
         act = createAction(Action::RemoveFromConfig, p_menu);
         p_menu->addAction(act);
 
+        p_menu->addSeparator();
+
+        act = createAction(Action::Sort, p_menu);
+        p_menu->addAction(act);
+
         if (selectedSize == 1) {
             p_menu->addSeparator();
 
@@ -913,6 +924,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         break;
 
     case Action::DeleteFromRecycleBin:
+        // It is fine to have &D with Action::Delete since they won't be at the same context.
         act = new QAction(tr("&Delete From Recycle Bin"), p_parent);
         connect(act, &QAction::triggered,
                 this, [this]() {
@@ -925,6 +937,14 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         connect(act, &QAction::triggered,
                 this, [this]() {
                     removeSelectedNodesFromConfig();
+                });
+        break;
+
+    case Action::Sort:
+        act = new QAction(generateMenuActionIcon("sort.svg"), tr("&Sort"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this]() {
+                    manualSort();
                 });
         break;
     }
@@ -1415,4 +1435,66 @@ void NotebookNodeExplorer::setRecycleBinNodeVisible(bool p_visible)
 
     m_recycleBinNodeVisible = p_visible;
     reload();
+}
+
+void NotebookNodeExplorer::manualSort()
+{
+    auto node = getCurrentNode();
+    if (!node) {
+        return;
+    }
+
+    auto parentNode = node->getParent();
+    bool isNotebook = parentNode->isRoot();
+
+    // Check whether sort files or folders based on current node type.
+    bool sortFolders = node->isContainer();
+
+    SortDialog sortDlg(sortFolders ? tr("Sort Folders") : tr("Sort Notes"),
+                       tr("Sort nodes under %1 (%2) in the configuration file.").arg(
+                           isNotebook ? tr("notebook") : tr("folder"),
+                           isNotebook ? m_notebook->getName() : parentNode->getName()),
+                       VNoteX::getInst().getMainWindow());
+
+    QVector<int> selectedIdx;
+
+    // Update the tree.
+    {
+        auto treeWidget = sortDlg.getTreeWidget();
+        treeWidget->clear();
+        treeWidget->setColumnCount(2);
+        treeWidget->setHeaderLabels({tr("Name"), tr("Created Time"), tr("Modified Time")});
+
+        const auto &children = parentNode->getChildren();
+        for (int i = 0; i < children.size(); ++i) {
+            const auto &child = children[i];
+            if (m_notebook->isRecycleBinNode(child.data())) {
+                continue;
+            }
+
+            bool selected = sortFolders ? child->isContainer() : !child->isContainer();
+            if (selected) {
+                selectedIdx.push_back(i);
+
+                QStringList cols {child->getName(),
+                                  Utils::dateTimeString(child->getCreatedTimeUtc().toLocalTime()),
+                                  Utils::dateTimeString(child->getModifiedTimeUtc().toLocalTime())};
+                auto item = new QTreeWidgetItem(treeWidget, cols);
+                item->setData(0, Qt::UserRole, i);
+            }
+        }
+
+        sortDlg.updateTreeWidget();
+    }
+
+    if (sortDlg.exec() == QDialog::Accepted) {
+        const auto data = sortDlg.getSortedData();
+        Q_ASSERT(data.size() == selectedIdx.size());
+        QVector<int> sortedIdx(data.size(), -1);
+        for (int i = 0; i < data.size(); ++i) {
+            sortedIdx[i] = data[i].toInt();
+        }
+        parentNode->sortChildren(selectedIdx, sortedIdx);
+        updateNode(parentNode);
+    }
 }

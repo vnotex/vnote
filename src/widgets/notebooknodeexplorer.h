@@ -118,9 +118,22 @@ namespace vnotex
     private:
         enum Column { Name = 0 };
 
-        enum Action { NewNote, NewFolder, Properties, OpenLocation, CopyPath,
-                      Copy, Cut, Paste, EmptyRecycleBin, Delete,
-                      DeleteFromRecycleBin, RemoveFromConfig };
+        enum class Action
+        {
+            NewNote,
+            NewFolder,
+            Properties,
+            OpenLocation,
+            CopyPath,
+            Copy,
+            Cut,
+            Paste,
+            EmptyRecycleBin,
+            Delete,
+            DeleteFromRecycleBin,
+            RemoveFromConfig,
+            Sort
+        };
 
         void setupUI();
 
@@ -209,6 +222,9 @@ namespace vnotex
 
         // [p_start, p_end).
         void sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int p_start, int p_end, int p_viewOrder) const;
+
+        // Sort nodes in config file.
+        void manualSort();
 
         static NotebookNodeExplorer::NodeData getItemNodeData(const QTreeWidgetItem *p_item);
 

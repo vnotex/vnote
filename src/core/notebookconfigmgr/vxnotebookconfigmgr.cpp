@@ -488,11 +488,10 @@ void VXNotebookConfigMgr::loadNode(Node *p_node) const
 
 void VXNotebookConfigMgr::saveNode(const Node *p_node)
 {
-    Q_ASSERT(!p_node->isRoot());
-
     if (p_node->isContainer()) {
         writeNodeConfig(p_node);
     } else {
+        Q_ASSERT(!p_node->isRoot());
         writeNodeConfig(p_node->getParent());
     }
 }

@@ -327,3 +327,23 @@ bool Node::canRename(const QString &p_newName) const
 
     return true;
 }
+
+void Node::sortChildren(const QVector<int> &p_beforeIdx, const QVector<int> &p_afterIdx)
+{
+    Q_ASSERT(isContainer());
+
+    Q_ASSERT(p_beforeIdx.size() == p_afterIdx.size());
+
+    if (p_beforeIdx == p_afterIdx) {
+        return;
+    }
+
+    auto ori = m_children;
+    for (int i = 0; i < p_beforeIdx.size(); ++i) {
+        if (p_beforeIdx[i] != p_afterIdx[i]) {
+            m_children[p_beforeIdx[i]] = ori[p_afterIdx[i]];
+        }
+    }
+
+    save();
+}

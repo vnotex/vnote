@@ -34,10 +34,16 @@ namespace vnotex
 
         static QVector<QTreeWidgetItem *> getVisibleItems(const QTreeWidget *p_widget);
 
+    signals:
+        // Rows [@p_first, @p_last] were moved to @p_row.
+        void rowsMoved(int p_first, int p_last, int p_row);
+
     protected:
         void mousePressEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
 
         void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
+        void dropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
 
     private:
         static QTreeWidgetItem *findItemHelper(QTreeWidgetItem *p_item, const QVariant &p_data);

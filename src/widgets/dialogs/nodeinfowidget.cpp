@@ -58,9 +58,7 @@ void NodeInfoWidget::setupUI(const Node *p_parentNode, Node::Flags p_newNodeFlag
     if (!createMode) {
         m_createdDateTimeLabel = new QLabel(this);
         m_mainLayout->addRow(tr("Created time:"), m_createdDateTimeLabel);
-    }
 
-    if (!createMode && isNote) {
         m_modifiedDateTimeLabel = new QLabel(this);
         m_mainLayout->addRow(tr("Modified time:"), m_modifiedDateTimeLabel);
     }
@@ -135,10 +133,8 @@ void NodeInfoWidget::setNode(const Node *p_node)
         auto createdTime = Utils::dateTimeString(m_node->getCreatedTimeUtc().toLocalTime());
         m_createdDateTimeLabel->setText(createdTime);
 
-        if (m_modifiedDateTimeLabel) {
-            auto modifiedTime = Utils::dateTimeString(m_node->getModifiedTimeUtc().toLocalTime());
-            m_modifiedDateTimeLabel->setText(modifiedTime);
-        }
+        auto modifiedTime = Utils::dateTimeString(m_node->getModifiedTimeUtc().toLocalTime());
+        m_modifiedDateTimeLabel->setText(modifiedTime);
     }
 }
 
