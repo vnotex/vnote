@@ -80,6 +80,9 @@ void Exporter::exportAttachments(Node *p_node,
                                  const QString &p_outputFolder,
                                  const QString &p_destFilePath)
 {
+    if (!p_node) {
+        return;
+    }
     const auto &attachmentFolder = p_node->getAttachmentFolder();
     if (!attachmentFolder.isEmpty()) {
         auto relativePath = PathUtils::relativePath(PathUtils::parentDirPath(p_srcFilePath),
