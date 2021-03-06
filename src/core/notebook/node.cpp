@@ -103,13 +103,13 @@ bool Node::containsChild(const QString &p_name, bool p_caseSensitive) const
 
 bool Node::containsChild(const QSharedPointer<Node> &p_node) const
 {
-    return getChildren().indexOf(p_node) != -1;
+    return m_children.indexOf(p_node) != -1;
 }
 
 QSharedPointer<Node> Node::findChild(const QString &p_name, bool p_caseSensitive) const
 {
     auto targetName = p_caseSensitive ? p_name : p_name.toLower();
-    for (auto &child : getChildren()) {
+    for (const auto &child : m_children) {
         if (p_caseSensitive ? child->getName() == targetName
                             : child->getName().toLower() == targetName) {
             return child;
@@ -164,7 +164,12 @@ void Node::setModifiedTimeUtc()
     m_modifiedTimeUtc = QDateTime::currentDateTimeUtc();
 }
 
-const QVector<QSharedPointer<Node>> &Node::getChildren() const
+const QVector<QSharedPointer<Node>> &Node::getChildrenRef() const
+{
+    return m_children;
+}
+
+QVector<QSharedPointer<Node>> Node::getChildren() const
 {
     return m_children;
 }
@@ -346,4 +351,55 @@ void Node::sortChildren(const QVector<int> &p_beforeIdx, const QVector<int> &p_a
     }
 
     save();
+}
+
+QVector<QSharedPointer<ExternalNode>> Node::fetchExternalChildren() const
+{
+    return getConfigMgr()->fetchExternalChildren(const_cast<Node *>(this));
+}
+
+bool Node::containsContainerChild(const QString &p_name) const
+{
+    // TODO: we assume that m_children is sorted first the container children.
+    for (auto &child : m_children) {
+        if (!child->isContainer()) {
+            break;
+        }
+
+        if (child->getName() == p_name) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Node::containsContentChild(const QString &p_name) const
+{
+    // TODO: we assume that m_children is sorted: first the container children then content children.
+    for (int i = m_children.size() - 1; i >= 0; --i) {
+        if (m_children[i]->isContainer()) {
+            break;
+        }
+
+        if (m_children[i]->getName() == p_name) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Node::exists() const
+{
+    return m_flags & Flag::Exists;
+}
+
+void Node::setExists(bool p_exists)
+{
+    if (p_exists) {
+        m_flags |= Flag::Exists;
+    } else {
+        m_flags &= ~Flag::Exists;
+    }
 }

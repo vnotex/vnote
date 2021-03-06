@@ -63,10 +63,15 @@ void NotebookExplorer::setupUI()
             });
     mainLayout->addWidget(m_selector);
 
+    const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
     m_nodeExplorer = new NotebookNodeExplorer(this);
-    m_nodeExplorer->setRecycleBinNodeVisible(ConfigMgr::getInst().getWidgetConfig().isNoteExplorerRecycleBinNodeShown());
+    m_nodeExplorer->setRecycleBinNodeVisible(widgetConfig.isNodeExplorerRecycleBinNodeVisible());
+    m_nodeExplorer->setViewOrder(widgetConfig.getNodeExplorerViewOrder());
+    m_nodeExplorer->setExternalFilesVisible(widgetConfig.isNodeExplorerExternalFilesVisible());
     connect(m_nodeExplorer, &NotebookNodeExplorer::nodeActivated,
             &VNoteX::getInst(), &VNoteX::openNodeRequested);
+    connect(m_nodeExplorer, &NotebookNodeExplorer::fileActivated,
+            &VNoteX::getInst(), &VNoteX::openFileRequested);
     connect(m_nodeExplorer, &NotebookNodeExplorer::nodeAboutToMove,
             &VNoteX::getInst(), &VNoteX::nodeAboutToMove);
     connect(m_nodeExplorer, &NotebookNodeExplorer::nodeAboutToRemove,
@@ -78,6 +83,8 @@ void NotebookExplorer::setupUI()
 
 TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
 {
+    const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
+
     auto titleBar = new TitleBar(tr("Notebook"),
                                  TitleBar::Action::Menu,
                                  p_parent);
@@ -95,11 +102,11 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
     {
         auto btn = titleBar->addActionButton(QStringLiteral("recycle_bin.svg"), tr("Toggle Recycle Bin Node"));
         btn->defaultAction()->setCheckable(true);
-        btn->defaultAction()->setChecked(ConfigMgr::getInst().getWidgetConfig().isNoteExplorerRecycleBinNodeShown());
+        btn->defaultAction()->setChecked(widgetConfig.isNodeExplorerRecycleBinNodeVisible());
         connect(btn, &QToolButton::triggered,
                 this, [this](QAction *p_act) {
                     const bool checked = p_act->isChecked();
-                    ConfigMgr::getInst().getWidgetConfig().setNoteExplorerRecycleBinNodeShown(checked);
+                    ConfigMgr::getInst().getWidgetConfig().setNodeExplorerRecycleBinNodeVisible(checked);
                     m_nodeExplorer->setRecycleBinNodeVisible(checked);
                 });
     }
@@ -112,6 +119,33 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
                                                              VNoteX::getInst().getMainWindow());
                                 dialog.exec();
                             });
+
+    titleBar->addMenuSeparator();
+
+    // External Files menu.
+    {
+        auto subMenu = titleBar->addMenuSubMenu(tr("External Files"));
+        auto showAct = titleBar->addMenuAction(
+            subMenu,
+            tr("Show External Files"),
+            titleBar,
+            [this](bool p_checked) {
+                ConfigMgr::getInst().getWidgetConfig().setNodeExplorerExternalFilesVisible(p_checked);
+                m_nodeExplorer->setExternalFilesVisible(p_checked);
+            });
+        showAct->setCheckable(true);
+        showAct->setChecked(widgetConfig.isNodeExplorerExternalFilesVisible());
+
+        auto importAct = titleBar->addMenuAction(
+            subMenu,
+            tr("Import External Files When Activated"),
+            titleBar,
+            [this](bool p_checked) {
+                ConfigMgr::getInst().getWidgetConfig().setNodeExplorerAutoImportExternalFilesEnabled(p_checked);
+            });
+        importAct->setCheckable(true);
+        importAct->setChecked(widgetConfig.getNodeExplorerAutoImportExternalFilesEnabled());
+    }
 
     return titleBar;
 }
@@ -206,21 +240,7 @@ void NotebookExplorer::newNote()
 
 Node *NotebookExplorer::currentExploredFolderNode() const
 {
-    if (!m_currentNotebook) {
-        return nullptr;
-    }
-
-    auto node = m_nodeExplorer->getCurrentNode();
-    if (node) {
-        if (!node->isContainer()) {
-            node = node->getParent();
-        }
-        Q_ASSERT(node && node->isContainer());
-    } else {
-        node = m_currentNotebook->getRootNode().data();
-    }
-
-    return node;
+    return m_nodeExplorer->currentExploredFolderNode();
 }
 
 Node *NotebookExplorer::checkNotebookAndGetCurrentExploredFolderNode() const
@@ -372,7 +392,7 @@ void NotebookExplorer::setupViewMenu(QMenu *p_menu)
     act->setData(NotebookNodeExplorer::ViewOrder::OrderedByModifiedTimeReversed);
     p_menu->addAction(act);
 
-    int viewOrder = ConfigMgr::getInst().getWidgetConfig().getNoteExplorerViewOrder();
+    int viewOrder = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerViewOrder();
     for (const auto &act : ag->actions()) {
         if (act->data().toInt() == viewOrder) {
             act->setChecked(true);
@@ -382,8 +402,7 @@ void NotebookExplorer::setupViewMenu(QMenu *p_menu)
     connect(ag, &QActionGroup::triggered,
             this, [this](QAction *p_action) {
                 int order = p_action->data().toInt();
-                ConfigMgr::getInst().getWidgetConfig().setNoteExplorerViewOrder(order);
-
-                m_nodeExplorer->reload();
+                ConfigMgr::getInst().getWidgetConfig().setNodeExplorerViewOrder(order);
+                m_nodeExplorer->setViewOrder(order);
             });
 }

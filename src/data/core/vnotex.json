@@ -286,8 +286,10 @@
         "outline_auto_expanded_level" : 6,
         "//comment" : "Default find options in FindAndReplace",
         "find_and_replace_options" : 16,
-        "//comment" : "View order of the note explorer",
-        "note_explorer_view_order" : 0,
-        "note_explorer_recycle_bin_node_shown" : false
+        "//comment" : "View order of the node explorer",
+        "node_explorer_view_order" : 0,
+        "node_explorer_recycle_bin_node_visible" : false,
+        "node_explorer_external_files_visible" : true,
+        "node_explorer_auto_import_external_files_enabled" : true
     }
 }

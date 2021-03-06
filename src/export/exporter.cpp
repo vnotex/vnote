@@ -119,7 +119,7 @@ QStringList Exporter::doExport(const ExportOption &p_option, const QString &p_ou
     }
 
     p_folder->load();
-    const auto &children = p_folder->getChildren();
+    const auto &children = p_folder->getChildrenRef();
     emit progressUpdated(0, children.size());
     for (int i = 0; i < children.size(); ++i) {
         if (checkAskedToStop()) {
@@ -192,7 +192,7 @@ QStringList Exporter::doExport(const ExportOption &p_option, Notebook *p_noteboo
     auto rootNode = p_notebook->getRootNode();
     Q_ASSERT(rootNode->isLoaded());
 
-    const auto &children = rootNode->getChildren();
+    const auto &children = rootNode->getChildrenRef();
     emit progressUpdated(0, children.size());
     for (int i = 0; i < children.size(); ++i) {
         if (checkAskedToStop()) {

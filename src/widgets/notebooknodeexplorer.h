@@ -5,6 +5,7 @@
 #include <QSharedPointer>
 #include <QHash>
 #include <QScopedPointer>
+#include <QPair>
 
 #include "qtreewidgetstatecache.h"
 #include "clipboarddata.h"
@@ -22,6 +23,7 @@ namespace vnotex
     class TreeWidget;
     struct FileOpenParameters;
     class Event;
+    class ExternalNode;
 
     class NotebookNodeExplorer : public QWidget
     {
@@ -32,13 +34,13 @@ namespace vnotex
         class NodeData
         {
         public:
-            enum class NodeType { Node, Attachment, Invalid };
+            enum class NodeType { Node, ExternalNode, Invalid };
 
             NodeData();
 
             explicit NodeData(Node *p_node, bool p_loaded);
 
-            explicit NodeData(const QString &p_name);
+            explicit NodeData(const QSharedPointer<ExternalNode> &p_externalNode);
 
             NodeData(const NodeData &p_other);
 
@@ -50,13 +52,13 @@ namespace vnotex
 
             bool isNode() const;
 
-            bool isAttachment() const;
+            bool isExternalNode() const;
 
             NodeData::NodeType getType() const;
 
             Node *getNode() const;
 
-            const QString &getName() const;
+            ExternalNode *getExternalNode() const;
 
             void clear();
 
@@ -67,11 +69,9 @@ namespace vnotex
         private:
             NodeType m_type = NodeType::Invalid;
 
-            union
-            {
-                Node *m_node = nullptr;
-                QString m_name;
-            };
+            Node *m_node = nullptr;
+
+            QSharedPointer<ExternalNode> m_externalNode;
 
             bool m_loaded = false;
         };
@@ -104,10 +104,18 @@ namespace vnotex
 
         void setRecycleBinNodeVisible(bool p_visible);
 
+        void setViewOrder(int p_order);
+
+        void setExternalFilesVisible(bool p_visible);
+
+        void setAutoImportExternalFiles(bool p_enabled);
+
+        Node *currentExploredFolderNode() const;
+
     signals:
         void nodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
 
-        void fileActivated(const QString &p_path);
+        void fileActivated(const QString &p_path, const QSharedPointer<FileOpenParameters> &p_paras);
 
         // @m_response of @p_event: true to continue the move, false to cancel the move.
         void nodeAboutToMove(Node *p_node, const QSharedPointer<Event> &p_event);
@@ -132,7 +140,10 @@ namespace vnotex
             Delete,
             DeleteFromRecycleBin,
             RemoveFromConfig,
-            Sort
+            Sort,
+            Reload,
+            ImportToConfig,
+            Open
         };
 
         void setupUI();
@@ -149,13 +160,19 @@ namespace vnotex
 
         void loadChildren(QTreeWidgetItem *p_item, Node *p_node, int p_level) const;
 
+        void loadNode(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const;
+
         void loadRecycleBinNode(Node *p_node) const;
 
         void loadRecycleBinNode(QTreeWidgetItem *p_item, Node *p_node, int p_level) const;
 
         void fillTreeItem(QTreeWidgetItem *p_item, Node *p_node, bool p_loaded) const;
 
-        QIcon getNodeItemIcon(const Node *p_node) const;
+        void fillTreeItem(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const;
+
+        const QIcon &getNodeItemIcon(const Node *p_node) const;
+
+        const QIcon &getNodeItemIcon(const ExternalNode *p_node) const;
 
         void initNodeIcons() const;
 
@@ -177,7 +194,7 @@ namespace vnotex
 
         void createContextMenuOnNode(QMenu *p_menu, const Node *p_node);
 
-        void createContextMenuOnAttachment(QMenu *p_menu, const QString &p_name);
+        void createContextMenuOnExternalNode(QMenu *p_menu, const ExternalNode *p_node);
 
         // Factory function to create action.
         QAction *createAction(Action p_act, QObject *p_parent);
@@ -186,8 +203,7 @@ namespace vnotex
 
         void pasteNodesFromClipboard();
 
-        // Only return selected Nodes.
-        QVector<Node *> getSelectedNodes() const;
+        QPair<QVector<Node *>, QVector<ExternalNode *>> getSelectedNodes() const;
 
         void removeSelectedNodes(bool p_skipRecycleBin);
 
@@ -226,6 +242,16 @@ namespace vnotex
         // Sort nodes in config file.
         void manualSort();
 
+        void openSelectedNodes();
+
+        QSharedPointer<Node> importToIndex(const ExternalNode *p_node);
+
+        void importToIndex(const QVector<ExternalNode *> &p_nodes);
+
+        // Check whether @p_node is a valid node. Will notify user.
+        // Return true if it is invalid.
+        bool checkInvalidNode(const Node *p_node) const;
+
         static NotebookNodeExplorer::NodeData getItemNodeData(const QTreeWidgetItem *p_item);
 
         static void setItemNodeData(QTreeWidgetItem *p_item, const NodeData &p_data);
@@ -242,11 +268,25 @@ namespace vnotex
 
         bool m_recycleBinNodeVisible = false;
 
+        int m_viewOrder = ViewOrder::OrderedByConfiguration;
+
+        bool m_externalFilesVisible = true;
+
+        bool m_autoImportExternalFiles = true;
+
         static QIcon s_folderNodeIcon;
+
         static QIcon s_fileNodeIcon;
+
+        static QIcon s_invalidFolderNodeIcon;
+
+        static QIcon s_invalidFileNodeIcon;
+
         static QIcon s_recycleBinNodeIcon;
 
-        static const QString c_nodeIconForegroundName;
+        static QIcon s_externalFolderNodeIcon;
+
+        static QIcon s_externalFileNodeIcon;
     };
 }
 

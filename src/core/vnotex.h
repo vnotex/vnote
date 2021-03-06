@@ -91,6 +91,9 @@ namespace vnotex
         // @m_response of @p_event: true to continue the rename, false to cancel the rename.
         void nodeAboutToRename(Node *p_node, const QSharedPointer<Event> &p_event);
 
+        // @m_response of @p_event: true to continue the reload, false to cancel the reload.
+        void nodeAboutToReload(Node *p_node, const QSharedPointer<Event> &p_event);
+
         // Requested to open @p_filePath.
         void openFileRequested(const QString &p_filePath, const QSharedPointer<FileOpenParameters> &p_paras);
 

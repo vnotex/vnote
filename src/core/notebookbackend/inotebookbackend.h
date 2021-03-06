@@ -67,6 +67,10 @@ namespace vnotex
 
         virtual bool exists(const QString &p_path) const = 0;
 
+        virtual bool existsFile(const QString &p_path) const = 0;
+
+        virtual bool existsDir(const QString &p_path) const = 0;
+
         virtual bool childExistsCaseInsensitive(const QString &p_dirPath, const QString &p_name) const = 0;
 
         virtual bool isFile(const QString &p_path) const = 0;

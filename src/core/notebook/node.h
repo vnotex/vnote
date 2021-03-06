@@ -15,6 +15,7 @@ namespace vnotex
     class INotebookConfigMgr;
     class INotebookBackend;
     class File;
+    class ExternalNode;
 
     // Used when add/new a node.
     struct NodeParameters
@@ -35,7 +36,9 @@ namespace vnotex
             Content = 0x1,
             // A node with children.
             Container = 0x2,
-            ReadOnly = 0x4
+            ReadOnly = 0x4,
+            // Whether a node exists on disk.
+            Exists = 0x10
         };
         Q_DECLARE_FLAGS(Flags, Flag)
 
@@ -86,6 +89,11 @@ namespace vnotex
 
         bool hasContent() const;
 
+        // Whether the node exists on disk.
+        bool exists() const;
+
+        void setExists(bool p_exists);
+
         Node::Flags getFlags() const;
 
         Node::Use getUse() const;
@@ -98,7 +106,8 @@ namespace vnotex
         const QDateTime &getModifiedTimeUtc() const;
         void setModifiedTimeUtc();
 
-        const QVector<QSharedPointer<Node>> &getChildren() const;
+        const QVector<QSharedPointer<Node>> &getChildrenRef() const;
+        QVector<QSharedPointer<Node>> getChildren() const;
         int getChildrenCount() const;
 
         QSharedPointer<Node> findChild(const QString &p_name, bool p_caseSensitive = true) const;
@@ -107,11 +116,19 @@ namespace vnotex
 
         bool containsChild(const QSharedPointer<Node> &p_node) const;
 
+        // Case sensitive.
+        bool containsContainerChild(const QString &p_name) const;
+
+        // Case sensitive.
+        bool containsContentChild(const QString &p_name) const;
+
         void addChild(const QSharedPointer<Node> &p_node);
 
         void insertChild(int p_idx, const QSharedPointer<Node> &p_node);
 
         void removeChild(const QSharedPointer<Node> &p_node);
+
+        QVector<QSharedPointer<ExternalNode>> fetchExternalChildren() const;
 
         void setParent(Node *p_parent);
         Node *getParent() const;

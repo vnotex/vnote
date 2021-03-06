@@ -127,6 +127,11 @@ QAction *TitleBar::addMenuAction(const QString &p_iconName, const QString &p_tex
     return act;
 }
 
+QMenu *TitleBar::addMenuSubMenu(const QString &p_text)
+{
+    return m_menu->addMenu(p_text);
+}
+
 void TitleBar::addMenuSeparator()
 {
     Q_ASSERT(m_menu);

@@ -99,11 +99,11 @@ namespace vnotex
         // @p_configOnly: if true, will just remove node from config.
         void removeNode(const QSharedPointer<Node> &p_node, bool p_force = false, bool p_configOnly = false);
 
-        void removeNode(const Node *p_node, bool p_force = false, bool p_configOnly = false);
+        void removeNode(Node *p_node, bool p_force = false, bool p_configOnly = false);
 
         void moveNodeToRecycleBin(const QSharedPointer<Node> &p_node);
 
-        void moveNodeToRecycleBin(const Node *p_node);
+        void moveNodeToRecycleBin(Node *p_node);
 
         // Move @p_filePath to the recycle bin, without adding it as a child node.
         void moveFileToRecycleBin(const QString &p_filePath);
@@ -126,6 +126,8 @@ namespace vnotex
         bool isBuiltInFile(const Node *p_node, const QString &p_name) const;
 
         bool isBuiltInFolder(const Node *p_node, const QString &p_name) const;
+
+        void reloadNode(Node *p_node);
 
         static const QString c_defaultAttachmentFolder;
 

@@ -24,8 +24,10 @@ void WidgetConfig::init(const QJsonObject &p_app,
 
     m_findAndReplaceOptions = static_cast<FindOptions>(READINT(QStringLiteral("find_and_replace_options")));
 
-    m_noteExplorerViewOrder = READINT(QStringLiteral("note_explorer_view_order"));
-    m_noteExplorerRecycleBinNodeShown = READBOOL(QStringLiteral("note_explorer_recycle_bin_node_shown"));
+    m_nodeExplorerViewOrder = READINT(QStringLiteral("node_explorer_view_order"));
+    m_nodeExplorerRecycleBinNodeVisible = READBOOL(QStringLiteral("node_explorer_recycle_bin_node_visible"));
+    m_nodeExplorerExternalFilesVisible = READBOOL(QStringLiteral("node_explorer_external_files_visible"));
+    m_nodeExplorerAutoImportExternalFilesEnabled = READBOOL(QStringLiteral("node_explorer_auto_import_external_files_enabled"));
 }
 
 QJsonObject WidgetConfig::toJson() const
@@ -33,8 +35,10 @@ QJsonObject WidgetConfig::toJson() const
     QJsonObject obj;
     obj[QStringLiteral("outline_auto_expanded_level")] = m_outlineAutoExpandedLevel;
     obj[QStringLiteral("find_and_replace_options")] = static_cast<int>(m_findAndReplaceOptions);
-    obj[QStringLiteral("note_explorer_view_order")] = m_noteExplorerViewOrder;
-    obj[QStringLiteral("note_explorer_recycle_bin_node_shown")] = m_noteExplorerRecycleBinNodeShown;
+    obj[QStringLiteral("node_explorer_view_order")] = m_nodeExplorerViewOrder;
+    obj[QStringLiteral("node_explorer_recycle_bin_node_visible")] = m_nodeExplorerRecycleBinNodeVisible;
+    obj[QStringLiteral("node_explorer_external_files_visible")] = m_nodeExplorerExternalFilesVisible;
+    obj[QStringLiteral("node_explorer_auto_import_external_files_enabled")] = m_nodeExplorerAutoImportExternalFilesEnabled;
     return obj;
 }
 
@@ -58,22 +62,42 @@ void WidgetConfig::setFindAndReplaceOptions(FindOptions p_options)
     updateConfig(m_findAndReplaceOptions, p_options, this);
 }
 
-int WidgetConfig::getNoteExplorerViewOrder() const
+int WidgetConfig::getNodeExplorerViewOrder() const
 {
-    return m_noteExplorerViewOrder;
+    return m_nodeExplorerViewOrder;
 }
 
-void WidgetConfig::setNoteExplorerViewOrder(int p_viewOrder)
+void WidgetConfig::setNodeExplorerViewOrder(int p_viewOrder)
 {
-    updateConfig(m_noteExplorerViewOrder, p_viewOrder, this);
+    updateConfig(m_nodeExplorerViewOrder, p_viewOrder, this);
 }
 
-bool WidgetConfig::isNoteExplorerRecycleBinNodeShown() const
+bool WidgetConfig::isNodeExplorerRecycleBinNodeVisible() const
 {
-    return m_noteExplorerRecycleBinNodeShown;
+    return m_nodeExplorerRecycleBinNodeVisible;
 }
 
-void WidgetConfig::setNoteExplorerRecycleBinNodeShown(bool p_shown)
+void WidgetConfig::setNodeExplorerRecycleBinNodeVisible(bool p_visible)
 {
-    updateConfig(m_noteExplorerRecycleBinNodeShown, p_shown, this);
+    updateConfig(m_nodeExplorerRecycleBinNodeVisible, p_visible, this);
+}
+
+bool WidgetConfig::isNodeExplorerExternalFilesVisible() const
+{
+    return m_nodeExplorerExternalFilesVisible;
+}
+
+void WidgetConfig::setNodeExplorerExternalFilesVisible(bool p_visible)
+{
+    updateConfig(m_nodeExplorerExternalFilesVisible, p_visible, this);
+}
+
+bool WidgetConfig::getNodeExplorerAutoImportExternalFilesEnabled() const
+{
+    return m_nodeExplorerAutoImportExternalFilesEnabled;
+}
+
+void WidgetConfig::setNodeExplorerAutoImportExternalFilesEnabled(bool p_enabled)
+{
+    updateConfig(m_nodeExplorerAutoImportExternalFilesEnabled, p_enabled, this);
 }
