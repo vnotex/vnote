@@ -804,7 +804,7 @@ QString VXNotebookConfigMgr::fetchNodeAttachmentFolder(const QString &p_nodePath
 bool VXNotebookConfigMgr::isBuiltInFile(const Node *p_node, const QString &p_name) const
 {
     const auto name = p_name.toLower();
-    if (name == c_nodeConfigName) {
+    if (name == c_nodeConfigName || name == "_vnote.json") {
         return true;
     }
     return BundleNotebookConfigMgr::isBuiltInFile(p_node, p_name);
