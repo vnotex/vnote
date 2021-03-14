@@ -1,4 +1,9 @@
 # Changes
+## v3.0.0-beta.9
+* Fix crash when exporting external files
+* Support manual sorting folders and notes
+* Support showing external files in notebook
+
 ## v3.0.0-beta.8
 * Note explorer supports different view orders
 * Fix `Ctrl+V` paste in editor

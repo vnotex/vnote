@@ -35,7 +35,7 @@ void ImportLegacyNotebookDialog::acceptedButtonClicked()
     // Warn user about the transformation.
     int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
                                                  tr("Once imported, the legacy notebook could no longer be recognized by legacy VNote!"),
-                                                 QString(),
+                                                 tr("This operation is irreversible. Please make sure the new VNote already meets all your needs before continue."),
                                                  tr("Welcome to VNoteX and the new VNote!"),
                                                  this);
     if (ret == QMessageBox::Ok && importLegacyNotebook()) {
