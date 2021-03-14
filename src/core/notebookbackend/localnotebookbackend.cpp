@@ -86,6 +86,18 @@ bool LocalNotebookBackend::exists(const QString &p_path) const
     return QFileInfo::exists(getFullPath(p_path));
 }
 
+bool LocalNotebookBackend::existsFile(const QString &p_path) const
+{
+    QFileInfo fi(getFullPath(p_path));
+    return fi.exists() && fi.isFile();
+}
+
+bool LocalNotebookBackend::existsDir(const QString &p_path) const
+{
+    QFileInfo fi(getFullPath(p_path));
+    return fi.exists() && fi.isDir();
+}
+
 bool LocalNotebookBackend::childExistsCaseInsensitive(const QString &p_dirPath, const QString &p_name) const
 {
     return FileUtils::childExistsCaseInsensitive(getFullPath(p_dirPath), p_name);

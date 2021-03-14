@@ -1,4 +1,5 @@
 SOURCES += \
+    $$PWD/externalnode.cpp \
     $$PWD/notebook.cpp \
     $$PWD/bundlenotebookfactory.cpp \
     $$PWD/notebookparameters.cpp \
@@ -8,6 +9,7 @@ SOURCES += \
     $$PWD/vxnodefile.cpp
 
 HEADERS += \
+    $$PWD/externalnode.h \
     $$PWD/notebook.h \
     $$PWD/inotebookfactory.h \
     $$PWD/bundlenotebookfactory.h \

@@ -123,6 +123,9 @@ namespace vnotex
 
         void saveContent();
 
+        // Should be called before WebViewer.setHtml().
+        void reset();
+
         // Functions to be called from web side.
     public slots:
         void setReady(bool p_ready);

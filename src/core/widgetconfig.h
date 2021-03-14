@@ -24,20 +24,30 @@ namespace vnotex
         FindOptions getFindAndReplaceOptions() const;
         void setFindAndReplaceOptions(FindOptions p_options);
 
-        int getNoteExplorerViewOrder() const;
-        void setNoteExplorerViewOrder(int p_viewOrder);
+        int getNodeExplorerViewOrder() const;
+        void setNodeExplorerViewOrder(int p_viewOrder);
 
-        bool isNoteExplorerRecycleBinNodeShown() const;
-        void setNoteExplorerRecycleBinNodeShown(bool p_shown);
+        bool isNodeExplorerRecycleBinNodeVisible() const;
+        void setNodeExplorerRecycleBinNodeVisible(bool p_visible);
+
+        bool isNodeExplorerExternalFilesVisible() const;
+        void setNodeExplorerExternalFilesVisible(bool p_visible);
+
+        bool getNodeExplorerAutoImportExternalFilesEnabled() const;
+        void setNodeExplorerAutoImportExternalFilesEnabled(bool p_enabled);
 
     private:
         int m_outlineAutoExpandedLevel = 6;
 
         FindOptions m_findAndReplaceOptions = FindOption::None;
 
-        int m_noteExplorerViewOrder = 0;
+        int m_nodeExplorerViewOrder = 0;
 
-        bool m_noteExplorerRecycleBinNodeShown = false;
+        bool m_nodeExplorerRecycleBinNodeVisible = false;
+
+        bool m_nodeExplorerExternalFilesVisible = true;
+
+        bool m_nodeExplorerAutoImportExternalFilesEnabled = true;
     };
 }
 

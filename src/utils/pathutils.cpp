@@ -48,7 +48,7 @@ bool PathUtils::isEmptyDir(const QString &p_path)
 
 QString PathUtils::concatenateFilePath(const QString &p_dirPath, const QString &p_name)
 {
-    auto dirPath = cleanPath(p_dirPath);
+    QString dirPath = cleanPath(p_dirPath);
     if (p_name.isEmpty()) {
         return dirPath;
     }
@@ -57,7 +57,7 @@ QString PathUtils::concatenateFilePath(const QString &p_dirPath, const QString &
         return p_name;
     }
 
-    return dirPath + '/' + p_name;
+    return dirPath + "/" + p_name;
 }
 
 QString PathUtils::dirName(const QString &p_path)

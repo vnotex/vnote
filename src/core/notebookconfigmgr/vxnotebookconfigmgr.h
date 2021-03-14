@@ -31,7 +31,7 @@ namespace vnotex
 
         void createEmptySkeleton(const NotebookParameters &p_paras) Q_DECL_OVERRIDE;
 
-        QSharedPointer<Node> loadRootNode() const Q_DECL_OVERRIDE;
+        QSharedPointer<Node> loadRootNode() Q_DECL_OVERRIDE;
 
         void loadNode(Node *p_node) const Q_DECL_OVERRIDE;
         void saveNode(const Node *p_node) Q_DECL_OVERRIDE;
@@ -67,6 +67,10 @@ namespace vnotex
         QString fetchNodeImageFolderPath(Node *p_node);
 
         QString fetchNodeAttachmentFolderPath(Node *p_node) Q_DECL_OVERRIDE;
+
+        QVector<QSharedPointer<ExternalNode>> fetchExternalChildren(Node *p_node) const Q_DECL_OVERRIDE;
+
+        void reloadNode(Node *p_node) Q_DECL_OVERRIDE;
 
     private:
         // Config of a file child.
@@ -173,7 +177,7 @@ namespace vnotex
 
         void removeFilesOfNode(Node *p_node, bool p_force);
 
-        bool markRecycleBinNode(const QSharedPointer<Node> &p_root) const;
+        bool markRecycleBinNode(const QSharedPointer<Node> &p_root);
 
         void markNodeReadOnly(Node *p_node) const;
 

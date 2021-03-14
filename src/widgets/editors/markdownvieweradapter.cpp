@@ -356,3 +356,14 @@ void MarkdownViewerAdapter::setSavedContent(const QString &p_headContent,
 {
     emit contentReady(p_headContent, p_styleContent, p_content, p_bodyClassList);
 }
+
+void MarkdownViewerAdapter::reset()
+{
+    m_revision = 0;
+    m_viewerReady = false;
+    m_pendingData.reset();
+    m_topLineNumber = -1;
+    m_headings.clear();
+    m_currentHeadingIndex = -1;
+    m_crossCopyTargets.clear();
+}

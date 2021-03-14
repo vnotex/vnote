@@ -47,6 +47,10 @@ namespace vnotex
 
         bool exists(const QString &p_path) const Q_DECL_OVERRIDE;
 
+        bool existsFile(const QString &p_path) const Q_DECL_OVERRIDE;
+
+        bool existsDir(const QString &p_path) const Q_DECL_OVERRIDE;
+
         bool childExistsCaseInsensitive(const QString &p_dirPath, const QString &p_name) const Q_DECL_OVERRIDE;
 
         bool isFile(const QString &p_path) const Q_DECL_OVERRIDE;

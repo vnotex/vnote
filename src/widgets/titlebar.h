@@ -39,6 +39,11 @@ namespace vnotex
         template <typename Functor>
         QAction *addMenuAction(const QString &p_text, const QObject *p_context, Functor p_functor);
 
+        template <typename Functor>
+        QAction *addMenuAction(QMenu *p_subMenu, const QString &p_text, const QObject *p_context, Functor p_functor);
+
+        QMenu *addMenuSubMenu(const QString &p_text);
+
         void addMenuSeparator();
 
     protected:
@@ -89,6 +94,14 @@ namespace vnotex
     QAction *TitleBar::addMenuAction(const QString &p_text, const QObject *p_context, Functor p_functor)
     {
         auto act = m_menu->addAction(p_text, p_context, p_functor);
+        return act;
+    }
+
+    template <typename Functor>
+    QAction *TitleBar::addMenuAction(QMenu *p_subMenu, const QString &p_text, const QObject *p_context, Functor p_functor)
+    {
+        Q_ASSERT(p_subMenu->parent() == m_menu);
+        auto act = p_subMenu->addAction(p_text, p_context, p_functor);
         return act;
     }
 } // ns vnotex

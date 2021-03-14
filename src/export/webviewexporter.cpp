@@ -61,6 +61,7 @@ bool WebViewExporter::doExport(const ExportOption &p_option,
     m_webViewStates = WebViewState::Started;
 
     auto baseUrl = PathUtils::pathToUrl(p_file->getContentPath());
+    m_viewer->adapter()->reset();
     m_viewer->setHtml(m_htmlTemplate, baseUrl);
 
     auto textContent = p_file->read();
@@ -93,7 +94,7 @@ bool WebViewExporter::doExport(const ExportOption &p_option,
 
     switch (p_option.m_targetFormat) {
     case ExportFormat::HTML:
-        // TODO: not supported yet.
+        // TODO: MIME HTML format is not supported yet.
         Q_ASSERT(!p_option.m_htmlOption.m_useMimeHtmlFormat);
         ret = doExportHtml(p_option.m_htmlOption, p_outputFile, baseUrl);
         break;

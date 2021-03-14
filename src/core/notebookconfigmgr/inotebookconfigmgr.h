@@ -36,7 +36,7 @@ namespace vnotex
 
         const QSharedPointer<INotebookBackend> &getBackend() const;
 
-        virtual QSharedPointer<Node> loadRootNode() const = 0;
+        virtual QSharedPointer<Node> loadRootNode() = 0;
 
         virtual void loadNode(Node *p_node) const = 0;
         virtual void saveNode(const Node *p_node) = 0;
@@ -74,6 +74,10 @@ namespace vnotex
         virtual bool isBuiltInFolder(const Node *p_node, const QString &p_name) const = 0;
 
         virtual QString fetchNodeAttachmentFolderPath(Node *p_node) = 0;
+
+        virtual QVector<QSharedPointer<ExternalNode>> fetchExternalChildren(Node *p_node) const = 0;
+
+        virtual void reloadNode(Node *p_node) = 0;
 
     protected:
         // Version of the config processing code.

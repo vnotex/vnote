@@ -83,7 +83,13 @@
         },
         "notebookexplorer" : {
             "node_icon" : {
-                "fg" : "@base#icon#fg"
+                "fg" : "@base#icon#fg",
+                "invalid" : {
+                    "fg" : "@base#icon#warning#fg"
+                }
+            },
+            "external_node_icon" : {
+                "fg" : "@base#icon#disabled#fg"
             }
         },
         "viewsplit" : {
