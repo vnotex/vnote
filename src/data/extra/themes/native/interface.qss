@@ -118,3 +118,8 @@ vnotex--DragDropAreaIndicator QLabel {
     font-size: 12pt;
     font-weight: bold;
 }
+
+vnotex--MainWindow QLabel#MainWindowTipsLabel {
+    font-size: 18pt;
+    font-weight: bold;
+}

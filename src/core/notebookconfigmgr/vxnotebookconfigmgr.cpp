@@ -14,6 +14,8 @@
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 #include <exception.h>
+#include <core/configmgr.h>
+#include <core/editorconfig.h>
 
 #include <utils/contentmediautils.h>
 
@@ -803,8 +805,12 @@ QString VXNotebookConfigMgr::fetchNodeAttachmentFolder(const QString &p_nodePath
 
 bool VXNotebookConfigMgr::isBuiltInFile(const Node *p_node, const QString &p_name) const
 {
+    static const QString backupFileExtension = ConfigMgr::getInst().getEditorConfig().getBackupFileExtension().toLower();
+
     const auto name = p_name.toLower();
-    if (name == c_nodeConfigName || name == "_vnote.json") {
+    if (name == c_nodeConfigName
+        || name == QStringLiteral("_vnote.json")
+        || name.endsWith(backupFileExtension)) {
         return true;
     }
     return BundleNotebookConfigMgr::isBuiltInFile(p_node, p_name);

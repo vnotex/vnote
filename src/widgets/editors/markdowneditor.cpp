@@ -42,6 +42,7 @@
 #include <core/texteditorconfig.h>
 #include <core/configmgr.h>
 #include <core/editorconfig.h>
+#include <core/vnotex.h>
 
 #include "previewhelper.h"
 #include "../outlineprovider.h"
@@ -443,6 +444,9 @@ void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p
     QClipboard *clipboard = QApplication::clipboard();
     if (!clipboard->property(c_clipboardPropertyMark).toBool()) {
         // Default paste.
+        // Give tips about the Rich Paste and Parse As Markdown And Paste features.
+        VNoteX::getInst().showStatusMessageShort(
+            tr("For advanced paste, try the \"Rich Paste\" and \"Parse To Markdown And Paste\" on the editor's context menu"));
         return;
     } else {
         clipboard->setProperty(c_clipboardPropertyMark, false);

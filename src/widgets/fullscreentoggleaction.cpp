@@ -25,6 +25,7 @@ FullScreenToggleAction::FullScreenToggleAction(QWidget *p_window,
                 if ((p_checked && !m_window->isFullScreen())
                     || (!p_checked && m_window->isFullScreen())) {
                     setWindowFullScreen(m_window, p_checked);
+                    emit fullScreenToggled(p_checked);
                 }
             });
 }

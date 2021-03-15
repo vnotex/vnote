@@ -122,12 +122,13 @@ int MessageBoxHelper::questionOkCancel(MessageBoxHelper::Type p_type,
                                        const QString &p_detailedText,
                                        QWidget *p_parent)
 {
+    bool dangerous = p_type == Type::Warning || p_type == Type::Critical;
     int ret = showMessageBox(p_type,
                              p_text,
                              p_informationText,
                              p_detailedText,
                              QMessageBox::Ok | QMessageBox::Cancel,
-                             QMessageBox::Ok,
+                             dangerous ? QMessageBox::Cancel : QMessageBox::Ok,
                              p_parent);
     return ret;
 }

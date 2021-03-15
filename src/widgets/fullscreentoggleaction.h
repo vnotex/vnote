@@ -13,13 +13,16 @@ namespace vnotex
                                const QIcon &p_icon,
                                QObject *p_parent = nullptr);
 
-        static void setWindowFullScreen(QWidget *p_window, bool p_set);
+    signals:
+        bool fullScreenToggled(bool p_fullScreen);
 
     protected:
         bool eventFilter(QObject *p_object, QEvent *p_event) Q_DECL_OVERRIDE;
 
     private:
-        QWidget *m_window;
+        static void setWindowFullScreen(QWidget *p_window, bool p_set);
+
+        QWidget *m_window = nullptr;
     };
 } // ns vnotex
 

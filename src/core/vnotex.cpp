@@ -98,14 +98,19 @@ BufferMgr &VNoteX::getBufferMgr() const
     return *m_bufferMgr;
 }
 
-void VNoteX::showStatusMessage(const QString &p_message, int timeoutMilliseconds)
+void VNoteX::showStatusMessage(const QString &p_message, int p_timeoutMilliseconds)
 {
-    emit statusMessageRequested(p_message, timeoutMilliseconds);
+    emit statusMessageRequested(p_message, p_timeoutMilliseconds);
 }
 
 void VNoteX::showStatusMessageShort(const QString &p_message)
 {
     showStatusMessage(p_message, 3000);
+}
+
+void VNoteX::showTips(const QString &p_message, int p_timeoutMilliseconds)
+{
+    emit tipsRequested(p_message, p_timeoutMilliseconds);
 }
 
 ID VNoteX::getInstanceId() const

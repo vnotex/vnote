@@ -46,9 +46,11 @@ namespace vnotex
         ID getInstanceId() const;
 
     public slots:
-        void showStatusMessage(const QString &p_message, int timeoutMilliseconds = 0);
+        void showStatusMessage(const QString &p_message, int p_timeoutMilliseconds = 0);
 
         void showStatusMessageShort(const QString &p_message);
+
+        void showTips(const QString &p_message, int p_timeoutMilliseconds = 3000);
 
     signals:
         // Requested to new a notebook.
@@ -77,7 +79,9 @@ namespace vnotex
         void newFolderRequested();
 
         // Requested to show status message.
-        void statusMessageRequested(const QString &p_message, int timeoutMilliseconds);
+        void statusMessageRequested(const QString &p_message, int p_timeoutMilliseconds);
+
+        void tipsRequested(const QString &p_message, int p_timeoutMilliseconds);
 
         // Requested to open @p_node.
         void openNodeRequested(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);

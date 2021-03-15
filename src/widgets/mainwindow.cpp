@@ -17,6 +17,7 @@
 #include <QShortcut>
 #include <QSystemTrayIcon>
 #include <QWindowStateChangeEvent>
+#include <QTimer>
 
 #include "toolbox.h"
 #include "notebookexplorer.h"
@@ -86,6 +87,7 @@ void MainWindow::setupUI()
     setupDocks();
     setupToolBar();
     setupStatusBar();
+    setupTipsArea();
     setupSystemTray();
 
     activateDock(m_docks[DockIndex::NavigationDock]);
@@ -96,6 +98,24 @@ void MainWindow::setupStatusBar()
     m_statusBarHelper.setupStatusBar(this);
     connect(&VNoteX::getInst(), &VNoteX::statusMessageRequested,
             statusBar(), &QStatusBar::showMessage);
+}
+
+void MainWindow::setupTipsArea()
+{
+    m_tipsLabel = new QLabel(this);
+    m_tipsLabel->setObjectName("MainWindowTipsLabel");
+    m_tipsLabel->hide();
+
+    m_tipsTimer = new QTimer(this);
+    m_tipsTimer->setSingleShot(true);
+    m_tipsTimer->setInterval(3000);
+    connect(m_tipsTimer, &QTimer::timeout,
+            this, [this]() {
+                setTipsAreaVisible(false);
+            });
+
+    connect(&VNoteX::getInst(), &VNoteX::tipsRequested,
+            this, &MainWindow::showTips);
 }
 
 void MainWindow::setupCentralWidget()
@@ -599,4 +619,42 @@ void MainWindow::exportNotes()
                         viewWindow ? viewWindow->getBuffer() : nullptr,
                         this);
     dialog.exec();
+}
+
+void MainWindow::showTips(const QString &p_message, int p_timeoutMilliseconds)
+{
+    m_tipsTimer->stop();
+
+    setTipsAreaVisible(false);
+
+    if (p_message.isEmpty()) {
+        return;
+    }
+
+    m_tipsLabel->setText(p_message);
+    setTipsAreaVisible(true);
+
+    m_tipsTimer->start(p_timeoutMilliseconds);
+}
+
+void MainWindow::setTipsAreaVisible(bool p_visible)
+{
+    if (p_visible) {
+        m_tipsLabel->adjustSize();
+        int labelW = m_tipsLabel->width();
+        int labelH = m_tipsLabel->height();
+        int x = (width() - labelW) / 2;
+        int y = (height() - labelH) / 2;
+        if (x < 0) {
+            x = 0;
+        }
+        if (y < 0) {
+            y = 0;
+        }
+
+        m_tipsLabel->move(x, y);
+        m_tipsLabel->show();
+    } else {
+        m_tipsLabel->hide();
+    }
 }

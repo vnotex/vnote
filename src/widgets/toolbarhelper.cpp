@@ -224,12 +224,23 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                             });
         btn->setDefaultAction(expandAct);
 
-        auto fullScreenAct = new FullScreenToggleAction(p_win,
-                                                        generateIcon("fullscreen.svg"),
-                                                        menu);
-        WidgetUtils::addActionShortcut(fullScreenAct,
-                                       coreConfig.getShortcut(CoreConfig::Shortcut::FullScreen));
-        menu->addAction(fullScreenAct);
+        {
+            auto fullScreenAct = new FullScreenToggleAction(p_win,
+                                                            generateIcon("fullscreen.svg"),
+                                                            menu);
+            const auto shortcut = coreConfig.getShortcut(CoreConfig::Shortcut::FullScreen);
+            WidgetUtils::addActionShortcut(fullScreenAct, shortcut);
+            MainWindow::connect(fullScreenAct, &FullScreenToggleAction::fullScreenToggled,
+                                p_win, [shortcut](bool p_fullScreen) {
+                                    if (p_fullScreen) {
+                                        VNoteX::getInst().showTips(
+                                            MainWindow::tr("Press %1 To Exit Full Screen").arg(shortcut));
+                                    } else {
+                                        VNoteX::getInst().showTips("");
+                                    }
+                                });
+            menu->addAction(fullScreenAct);
+        }
 
         auto stayOnTopAct = menu->addAction(generateIcon("stay_on_top.svg"), MainWindow::tr("Stay On Top"),
                                             p_win, &MainWindow::setStayOnTop);
