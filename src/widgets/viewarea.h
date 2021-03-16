@@ -127,6 +127,8 @@ namespace vnotex
 
         bool close(bool p_force);
 
+        void handleNodeChange(Node *p_node, const QSharedPointer<Event> &p_event);
+
     private:
         enum class SplitType
         {

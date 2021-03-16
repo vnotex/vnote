@@ -3,6 +3,7 @@
 
 #include <QSharedPointer>
 #include <QJsonObject>
+#include <QJsonArray>
 
 namespace vnotex
 {
@@ -78,6 +79,19 @@ namespace vnotex
                                   const QString &p_key)
         {
             return read(p_default, p_user, p_key).toString();
+        }
+
+        static QStringList readStringList(const QJsonObject &p_default,
+                                          const QJsonObject &p_user,
+                                          const QString &p_key)
+        {
+            auto arr = read(p_default, p_user, p_key).toArray();
+            QStringList res;
+            res.reserve(arr.size());
+            for (const auto &ele : arr) {
+                res.push_back(ele.toString());
+            }
+            return res;
         }
 
         static QString readString(const QJsonObject &p_obj,

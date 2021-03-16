@@ -16,6 +16,7 @@
 #include <exception.h>
 #include <core/configmgr.h>
 #include <core/editorconfig.h>
+#include <core/coreconfig.h>
 
 #include <utils/contentmediautils.h>
 
@@ -166,6 +167,10 @@ const QString VXNotebookConfigMgr::c_nodeConfigName = "vx.json";
 
 const QString VXNotebookConfigMgr::c_recycleBinFolderName = "vx_recycle_bin";
 
+bool VXNotebookConfigMgr::s_initialized = false;
+
+QVector<QRegExp> VXNotebookConfigMgr::s_externalNodeExcludePatterns;
+
 VXNotebookConfigMgr::VXNotebookConfigMgr(const QString &p_name,
                                          const QString &p_displayName,
                                          const QString &p_description,
@@ -174,6 +179,17 @@ VXNotebookConfigMgr::VXNotebookConfigMgr(const QString &p_name,
     : BundleNotebookConfigMgr(p_backend, p_parent),
       m_info(p_name, p_displayName, p_description)
 {
+    if (!s_initialized) {
+        s_initialized = true;
+
+        const auto &patterns = ConfigMgr::getInst().getCoreConfig().getExternalNodeExcludePatterns();
+        s_externalNodeExcludePatterns.reserve(patterns.size());
+        for (const auto &pat : patterns) {
+            if (!pat.isEmpty()) {
+                s_externalNodeExcludePatterns.push_back(QRegExp(pat, Qt::CaseInsensitive, QRegExp::Wildcard));
+            }
+        }
+    }
 }
 
 QString VXNotebookConfigMgr::getName() const
@@ -927,6 +943,10 @@ QVector<QSharedPointer<ExternalNode>> VXNotebookConfigMgr::fetchExternalChildren
                 continue;
             }
 
+            if (isExcludedFromExternalNode(folder)) {
+                continue;
+            }
+
             if (p_node->containsContainerChild(folder)) {
                 continue;
             }
@@ -943,6 +963,10 @@ QVector<QSharedPointer<ExternalNode>> VXNotebookConfigMgr::fetchExternalChildren
                 continue;
             }
 
+            if (isExcludedFromExternalNode(file)) {
+                continue;
+            }
+
             if (p_node->containsContentChild(file)) {
                 continue;
             }
@@ -954,7 +978,12 @@ QVector<QSharedPointer<ExternalNode>> VXNotebookConfigMgr::fetchExternalChildren
     return externalNodes;
 }
 
-void VXNotebookConfigMgr::reloadNode(Node *p_node)
+bool VXNotebookConfigMgr::isExcludedFromExternalNode(const QString &p_name) const
 {
-    // TODO.
+    for (const auto &regExp : s_externalNodeExcludePatterns) {
+        if (regExp.exactMatch(p_name)) {
+            return true;
+        }
+    }
+    return false;
 }

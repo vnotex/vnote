@@ -27,7 +27,16 @@
             "NewWorkspace" : "Ctrl+G, N",
             "Export" : "Ctrl+G, T"
         },
-        "toolbar_icon_size" : 16
+        "toolbar_icon_size" : 16,
+        "note_management" : {
+            "external_node" : {
+                "//comment" : "Wildcard patterns of files and folders to exclude as external files",
+                "exclude_patterns" : [
+                    ".gitignore",
+                    ".git"
+                ]
+            }
+        }
     },
     "editor" : {
         "core": {

@@ -61,37 +61,16 @@ ViewArea::ViewArea(QWidget *p_parent)
             });
 
     connect(&VNoteX::getInst(), &VNoteX::nodeAboutToMove,
-            this, [this](Node *p_node, const QSharedPointer<Event> &p_event) {
-                if (p_event->m_handled) {
-                    return;
-                }
-
-                bool ret = close(p_node, false);
-                p_event->m_response = ret;
-                p_event->m_handled = !ret;
-            });
+            this, &ViewArea::handleNodeChange);
 
     connect(&VNoteX::getInst(), &VNoteX::nodeAboutToRemove,
-            this, [this](Node *p_node, const QSharedPointer<Event> &p_event) {
-                if (p_event->m_handled) {
-                    return;
-                }
-
-                bool ret = close(p_node, false);
-                p_event->m_response = ret;
-                p_event->m_handled = !ret;
-            });
+            this, &ViewArea::handleNodeChange);
 
     connect(&VNoteX::getInst(), &VNoteX::nodeAboutToRename,
-            this, [this](Node *p_node, const QSharedPointer<Event> &p_event) {
-                if (p_event->m_handled) {
-                    return;
-                }
+            this, &ViewArea::handleNodeChange);
 
-                bool ret = close(p_node, false);
-                p_event->m_response = ret;
-                p_event->m_handled = !ret;
-            });
+    connect(&VNoteX::getInst(), &VNoteX::nodeAboutToReload,
+            this, &ViewArea::handleNodeChange);
 
     auto &configMgr = ConfigMgr::getInst();
     connect(&configMgr, &ConfigMgr::editorConfigChanged,
@@ -128,6 +107,17 @@ ViewArea::~ViewArea()
     // All splits/workspaces/windows should be released during close() before destruction.
     Q_ASSERT(m_splits.isEmpty() && m_currentSplit == nullptr);
     Q_ASSERT(m_workspaces.isEmpty());
+}
+
+void ViewArea::handleNodeChange(Node *p_node, const QSharedPointer<Event> &p_event)
+{
+    if (p_event->m_handled) {
+        return;
+    }
+
+    bool ret = close(p_node, false);
+    p_event->m_response = ret;
+    p_event->m_handled = !ret;
 }
 
 void ViewArea::setupUI()

@@ -127,7 +127,7 @@ namespace vnotex
 
         bool isBuiltInFolder(const Node *p_node, const QString &p_name) const;
 
-        void reloadNode(Node *p_node);
+        void reloadNodes();
 
         static const QString c_defaultAttachmentFolder;
 

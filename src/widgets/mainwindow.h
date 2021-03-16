@@ -106,6 +106,8 @@ namespace vnotex
 
         void setupTipsArea();
 
+        void createTipsArea();
+
         void saveStateAndGeometry();
 
         void loadStateAndGeometry();

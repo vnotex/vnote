@@ -56,10 +56,14 @@ namespace vnotex
         int getToolBarIconSize() const;
         void setToolBarIconSize(int p_size);
 
+        const QStringList &getExternalNodeExcludePatterns() const;
+
         static const QStringList &getAvailableLocales();
 
     private:
         void loadShortcuts(const QJsonObject &p_app, const QJsonObject &p_user);
+
+        void loadNoteManagement(const QJsonObject &p_app, const QJsonObject &p_user);
 
         QJsonObject saveShortcuts() const;
 
@@ -74,6 +78,8 @@ namespace vnotex
 
         // Icon size of MainWindow tool bar.
         int m_toolBarIconSize = 16;
+
+        QStringList m_externalNodeExcludePatterns;
 
         static QStringList s_availableLocales;
     };

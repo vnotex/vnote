@@ -76,6 +76,8 @@ void NotebookExplorer::setupUI()
             &VNoteX::getInst(), &VNoteX::nodeAboutToMove);
     connect(m_nodeExplorer, &NotebookNodeExplorer::nodeAboutToRemove,
             &VNoteX::getInst(), &VNoteX::nodeAboutToRemove);
+    connect(m_nodeExplorer, &NotebookNodeExplorer::nodeAboutToReload,
+            &VNoteX::getInst(), &VNoteX::nodeAboutToReload);
     mainLayout->addWidget(m_nodeExplorer);
 
     setFocusProxy(m_nodeExplorer);

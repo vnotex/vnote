@@ -5,6 +5,7 @@
 
 #include <QDateTime>
 #include <QVector>
+#include <QRegExp>
 
 #include "../global.h"
 
@@ -69,8 +70,6 @@ namespace vnotex
         QString fetchNodeAttachmentFolderPath(Node *p_node) Q_DECL_OVERRIDE;
 
         QVector<QSharedPointer<ExternalNode>> fetchExternalChildren(Node *p_node) const Q_DECL_OVERRIDE;
-
-        void reloadNode(Node *p_node) Q_DECL_OVERRIDE;
 
     private:
         // Config of a file child.
@@ -190,7 +189,13 @@ namespace vnotex
 
         void inheritNodeFlags(const Node *p_node, Node *p_child) const;
 
+        bool isExcludedFromExternalNode(const QString &p_name) const;
+
         Info m_info;
+
+        static bool s_initialized;
+
+        static QVector<QRegExp> s_externalNodeExcludePatterns;
 
         // Name of the node's config file.
         static const QString c_nodeConfigName;

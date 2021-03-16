@@ -123,6 +123,8 @@ namespace vnotex
         // @m_response of @p_event: true to continue the removal, false to cancel the removal.
         void nodeAboutToRemove(Node *p_node, const QSharedPointer<Event> &p_event);
 
+        void nodeAboutToReload(Node *p_node, const QSharedPointer<Event> &p_event);
+
     private:
         enum Column { Name = 0 };
 
@@ -142,6 +144,7 @@ namespace vnotex
             RemoveFromConfig,
             Sort,
             Reload,
+            ReloadIndex,
             ImportToConfig,
             Open
         };

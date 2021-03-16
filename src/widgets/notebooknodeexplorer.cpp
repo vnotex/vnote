@@ -761,6 +761,9 @@ void NotebookNodeExplorer::createContextMenuOnRoot(QMenu *p_menu)
     act = createAction(Action::Reload, p_menu);
     p_menu->addAction(act);
 
+    act = createAction(Action::ReloadIndex, p_menu);
+    p_menu->addAction(act);
+
     act = createAction(Action::OpenLocation, p_menu);
     p_menu->addAction(act);
 }
@@ -773,6 +776,9 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
     if (m_notebook->isRecycleBinNode(p_node)) {
         // Recycle bin node.
         act = createAction(Action::Reload, p_menu);
+        p_menu->addAction(act);
+
+        act = createAction(Action::ReloadIndex, p_menu);
         p_menu->addAction(act);
 
         if (selectedSize == 1) {
@@ -798,6 +804,9 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
         p_menu->addSeparator();
 
         act = createAction(Action::Reload, p_menu);
+        p_menu->addAction(act);
+
+        act = createAction(Action::ReloadIndex, p_menu);
         p_menu->addAction(act);
 
         if (selectedSize == 1) {
@@ -843,6 +852,9 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
         p_menu->addSeparator();
 
         act = createAction(Action::Reload, p_menu);
+        p_menu->addAction(act);
+
+        act = createAction(Action::ReloadIndex, p_menu);
         p_menu->addAction(act);
 
         act = createAction(Action::Sort, p_menu);
@@ -1091,11 +1103,25 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         connect(act, &QAction::triggered,
                 this, [this]() {
                     auto node = currentExploredFolderNode();
-                    if (m_notebook && node) {
-                        // TODO: emit signals to notify other components.
-                        m_notebook->reloadNode(node);
-                    }
                     updateNode(node);
+                });
+        break;
+
+    case Action::ReloadIndex:
+        act = new QAction(tr("Re&load Index From Disk"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this]() {
+                    if (!m_notebook) {
+                        return;
+                    }
+
+                    auto event = QSharedPointer<Event>::create();
+                    emit nodeAboutToReload(m_notebook->getRootNode().data(), event);
+                    if (!event->m_response.toBool()) {
+                        return;
+                    }
+
+                    reload();
                 });
         break;
 

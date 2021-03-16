@@ -347,7 +347,8 @@ QSharedPointer<Node> Notebook::copyAsNode(Node *p_parent,
     return m_configMgr->copyAsNode(p_parent, p_flags, p_path);
 }
 
-void Notebook::reloadNode(Node *p_node)
+void Notebook::reloadNodes()
 {
-    m_configMgr->reloadNode(p_node);
+    m_root.clear();
+    getRootNode();
 }

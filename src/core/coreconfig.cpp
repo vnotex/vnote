@@ -8,6 +8,7 @@ using namespace vnotex;
 #define READSTR(key) readString(appObj, userObj, (key))
 #define READINT(key) readInt(appObj, userObj, (key))
 #define READBOOL(key) readBool(appObj, userObj, (key))
+#define READSTRLIST(key) readStringList(appObj, userObj, (key))
 
 QStringList CoreConfig::s_availableLocales;
 
@@ -46,6 +47,8 @@ void CoreConfig::init(const QJsonObject &p_app,
     if (m_toolBarIconSize <= 0) {
         m_toolBarIconSize = 16;
     }
+
+    loadNoteManagement(appObj, userObj);
 }
 
 QJsonObject CoreConfig::toJson() const
@@ -97,6 +100,20 @@ void CoreConfig::loadShortcuts(const QJsonObject &p_app, const QJsonObject &p_us
     }
 }
 
+void CoreConfig::loadNoteManagement(const QJsonObject &p_app, const QJsonObject &p_user)
+{
+    const auto topAppObj = p_app.value(QStringLiteral("note_management")).toObject();
+    const auto topUserObj = p_user.value(QStringLiteral("note_management")).toObject();
+
+    // External node.
+    {
+        const auto appObj = topAppObj.value(QStringLiteral("external_node")).toObject();
+        const auto userObj = topUserObj.value(QStringLiteral("external_node")).toObject();
+
+        m_externalNodeExcludePatterns = READSTRLIST(QStringLiteral("exclude_patterns"));
+    }
+}
+
 QJsonObject CoreConfig::saveShortcuts() const
 {
     QJsonObject obj;
@@ -125,4 +142,9 @@ void CoreConfig::setToolBarIconSize(int p_size)
 {
     Q_ASSERT(p_size > 0);
     updateConfig(m_toolBarIconSize, p_size, this);
+}
+
+const QStringList &CoreConfig::getExternalNodeExcludePatterns() const
+{
+    return m_externalNodeExcludePatterns;
 }

@@ -77,8 +77,6 @@ namespace vnotex
 
         virtual QVector<QSharedPointer<ExternalNode>> fetchExternalChildren(Node *p_node) const = 0;
 
-        virtual void reloadNode(Node *p_node) = 0;
-
     protected:
         // Version of the config processing code.
         virtual QString getCodeVersion() const;

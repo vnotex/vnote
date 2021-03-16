@@ -102,6 +102,16 @@ void MainWindow::setupStatusBar()
 
 void MainWindow::setupTipsArea()
 {
+    connect(&VNoteX::getInst(), &VNoteX::tipsRequested,
+            this, &MainWindow::showTips);
+}
+
+void MainWindow::createTipsArea()
+{
+    if (m_tipsLabel) {
+        return;
+    }
+
     m_tipsLabel = new QLabel(this);
     m_tipsLabel->setObjectName("MainWindowTipsLabel");
     m_tipsLabel->hide();
@@ -113,9 +123,6 @@ void MainWindow::setupTipsArea()
             this, [this]() {
                 setTipsAreaVisible(false);
             });
-
-    connect(&VNoteX::getInst(), &VNoteX::tipsRequested,
-            this, &MainWindow::showTips);
 }
 
 void MainWindow::setupCentralWidget()
@@ -623,6 +630,8 @@ void MainWindow::exportNotes()
 
 void MainWindow::showTips(const QString &p_message, int p_timeoutMilliseconds)
 {
+    createTipsArea();
+
     m_tipsTimer->stop();
 
     setTipsAreaVisible(false);
@@ -639,6 +648,7 @@ void MainWindow::showTips(const QString &p_message, int p_timeoutMilliseconds)
 
 void MainWindow::setTipsAreaVisible(bool p_visible)
 {
+    Q_ASSERT(m_tipsLabel);
     if (p_visible) {
         m_tipsLabel->adjustSize();
         int labelW = m_tipsLabel->width();
