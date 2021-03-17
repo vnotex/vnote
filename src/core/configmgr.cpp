@@ -229,7 +229,7 @@ QString ConfigMgr::getConfigFilePath(Source p_src) const
     QString configPath;
     switch (p_src) {
     case Source::Default:
-        configPath = QStringLiteral(":/vnotex/data/core/") + c_configFileName;
+        configPath = getDefaultConfigFilePath();
         break;
 
     case Source::App:
@@ -255,9 +255,13 @@ QString ConfigMgr::getConfigFilePath(Source p_src) const
     return configPath;
 }
 
+QString ConfigMgr::getDefaultConfigFilePath()
+{
+    return QStringLiteral(":/vnotex/data/core/") + c_configFileName;
+}
+
 QSharedPointer<ConfigMgr::Settings> ConfigMgr::getSettings(Source p_src) const
 {
-
     return ConfigMgr::Settings::fromFile(getConfigFilePath(p_src));
 }
 
@@ -432,4 +436,19 @@ QString ConfigMgr::getDocumentOrHomePath()
     }
 
     return docHomePath;
+}
+
+QString ConfigMgr::getApplicationVersion()
+{
+    static QString appVersion;
+
+    if (appVersion.isEmpty()) {
+        auto defaultSettings = ConfigMgr::Settings::fromFile(getDefaultConfigFilePath());
+        const auto &defaultObj = defaultSettings->getJson();
+
+        auto metaDataObj = defaultObj.value(QStringLiteral("metadata")).toObject();
+        appVersion = metaDataObj.value(QStringLiteral("version")).toString();
+    }
+
+    return appVersion;
 }

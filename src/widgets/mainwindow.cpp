@@ -70,15 +70,26 @@ MainWindow::~MainWindow()
     m_viewArea = nullptr;
 }
 
-void MainWindow::kickOffOnStart()
+void MainWindow::kickOffOnStart(const QStringList &p_paths)
 {
-    VNoteX::getInst().initLoad();
+    QTimer::singleShot(300, [this, p_paths]() {
+        VNoteX::getInst().initLoad();
 
-    emit mainWindowStarted();
+        emit mainWindowStarted();
 
-    emit layoutChanged();
+        emit layoutChanged();
 
-    demoWidget();
+        demoWidget();
+
+        openFiles(p_paths);
+    });
+}
+
+void MainWindow::openFiles(const QStringList &p_files)
+{
+    for (const auto &file : p_files) {
+        emit VNoteX::getInst().openFileRequested(file, QSharedPointer<FileOpenParameters>::create());
+    }
 }
 
 void MainWindow::setupUI()

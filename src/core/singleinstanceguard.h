@@ -41,7 +41,8 @@ namespace vnotex
         enum OpCode
         {
             Null = 0,
-            Show
+            Show,
+            OpenFiles
         };
 
         struct Command
@@ -78,6 +79,8 @@ namespace vnotex
         Command m_command;
 
         static const QString c_serverName;
+
+        static const QChar c_stringListSeparator;
     };
 } // ns vnotex
 

@@ -30,6 +30,7 @@ ICON = data/core/icons/vnote.icns
 TRANSLATIONS += data/core/translations/vnote_zh_CN.ts
 
 SOURCES += \
+    commandlineoptions.cpp \
     main.cpp
 
 INCLUDEPATH *= $$PWD
@@ -137,3 +138,6 @@ unix:!macx {
     INSTALLS += extraresource
     message("VNote will be installed in prefix $${PREFIX}")
 }
+
+HEADERS += \
+    commandlineoptions.h

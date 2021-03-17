@@ -12,6 +12,8 @@ using namespace vnotex;
 
 const QString SingleInstanceGuard::c_serverName = "vnote";
 
+const QChar SingleInstanceGuard::c_stringListSeparator = '>';
+
 SingleInstanceGuard::SingleInstanceGuard()
 {
     qInfo() << "guarding is on";
@@ -54,6 +56,14 @@ void SingleInstanceGuard::requestOpenFiles(const QStringList &p_files)
     if (p_files.isEmpty()) {
         return;
     }
+
+    Q_ASSERT(!m_online);
+    if (!m_client || m_client->state() != QLocalSocket::ConnectedState) {
+        qWarning() << "failed to request open files" << m_client->errorString();
+        return ;
+    }
+
+    sendRequest(m_client.data(), OpCode::OpenFiles, p_files.join(c_stringListSeparator));
 }
 
 void SingleInstanceGuard::requestShow()
@@ -157,34 +167,49 @@ void SingleInstanceGuard::receiveCommand(QLocalSocket *p_socket)
     inStream.setDevice(p_socket);
     inStream.setVersion(QDataStream::Qt_5_12);
 
-    if (m_command.m_opCode == OpCode::Null) {
-        // Relies on the fact that QDataStream serializes a quint32 into
-        // sizeof(quint32) bytes.
-        if (p_socket->bytesAvailable() < (int)sizeof(quint32) * 2) {
+    while (p_socket->bytesAvailable() > 0) {
+        if (m_command.m_opCode == OpCode::Null) {
+            // Relies on the fact that QDataStream serializes a quint32 into
+            // sizeof(quint32) bytes.
+            if (p_socket->bytesAvailable() < (int)sizeof(quint32) * 2) {
+                return;
+            }
+
+            quint32 opCode = 0;
+            inStream >> opCode;
+            m_command.m_opCode = static_cast<OpCode>(opCode);
+            inStream >> m_command.m_size;
+        }
+
+        if (p_socket->bytesAvailable() < m_command.m_size) {
             return;
         }
 
-        quint32 opCode = 0;
-        inStream >> opCode;
-        m_command.m_opCode = static_cast<OpCode>(opCode);
-        inStream >> m_command.m_size;
-    }
+        qDebug() << "op code" << m_command.m_opCode << m_command.m_size << p_socket->bytesAvailable();
 
-    if (p_socket->bytesAvailable() < m_command.m_size) {
-        return;
-    }
+        switch (m_command.m_opCode) {
+        case OpCode::Show:
+            Q_ASSERT(m_command.m_size == 0);
+            emit showRequested();
+            break;
 
-    qDebug() << "op code" << m_command.m_opCode << m_command.m_size;
+        case OpCode::OpenFiles:
+        {
+            Q_ASSERT(m_command.m_size != 0);
+            QString payload;
+            inStream >> payload;
+            const auto files = payload.split(c_stringListSeparator);
+            emit openFilesRequested(files);
+            break;
+        }
 
-    switch (m_command.m_opCode) {
-    case OpCode::Show:
-        Q_ASSERT(m_command.m_size == 0);
-        emit showRequested();
-        break;
+        default:
+            qWarning() << "unknown op code" << m_command.m_opCode;
+            m_command.clear();
+            return;
+        }
 
-    default:
-        qWarning() << "unknown op code" << m_command.m_opCode;
-        break;
+        m_command.clear();
     }
 }
 

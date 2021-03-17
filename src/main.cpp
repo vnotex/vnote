@@ -21,12 +21,15 @@
 #include <QWebEngineSettings>
 #include <core/exception.h>
 #include <widgets/messageboxhelper.h>
+#include "commandlineoptions.h"
 
 using namespace vnotex;
 
 void loadTranslators(QApplication &p_app);
 
 void initWebEngineSettings();
+
+void showMessageOnCommandLineIfAvailable(const QString &p_msg);
 
 int main(int argc, char *argv[])
 {
@@ -76,18 +79,44 @@ int main(int argc, char *argv[])
 
         app.setApplicationName(ConfigMgr::c_appName);
         app.setOrganizationName(ConfigMgr::c_orgName);
+
+        app.setApplicationVersion(ConfigMgr::getApplicationVersion());
+    }
+
+    CommandLineOptions cmdOptions;
+    switch (cmdOptions.parse(app.arguments())) {
+    case CommandLineOptions::Ok:
+        break;
+
+    case CommandLineOptions::Error:
+        showMessageOnCommandLineIfAvailable(cmdOptions.m_errorMsg);
+        return -1;
+
+    case CommandLineOptions::VersionRequested:
+    {
+        auto versionStr = QString("%1 %2").arg(app.applicationName()).arg(app.applicationVersion());
+        showMessageOnCommandLineIfAvailable(versionStr);
+        return 0;
+    }
+
+    case CommandLineOptions::HelpRequested:
+        Q_FALLTHROUGH();
+    default:
+        showMessageOnCommandLineIfAvailable(cmdOptions.m_helpText);
+        return 0;
     }
 
     // Guarding.
     SingleInstanceGuard guard;
     bool canRun = guard.tryRun();
     if (!canRun) {
+        guard.requestOpenFiles(cmdOptions.m_pathsToOpen);
         guard.requestShow();
         return 0;
     }
 
     try {
-        app.setApplicationVersion(ConfigMgr::getInst().getConfig().getVersion());
+        ConfigMgr::getInst();
     } catch (Exception &e) {
         MessageBoxHelper::notify(MessageBoxHelper::Critical,
                                  MainWindow::tr("%1 failed to start.").arg(ConfigMgr::c_appName),
@@ -98,7 +127,7 @@ int main(int argc, char *argv[])
     }
 
     // Init logger after app info is set.
-    Logger::init(false);
+    Logger::init(cmdOptions.m_verbose);
 
     qInfo() << QString("%1 (v%2) started at %3 (%4)").arg(ConfigMgr::c_appName,
                                                           app.applicationVersion(),
@@ -111,8 +140,6 @@ int main(int argc, char *argv[])
     if (QSslSocket::sslLibraryBuildVersionNumber() != QSslSocket::sslLibraryVersionNumber()) {
         qWarning() << "versions of the built and linked OpenSSL mismatch, network may not work";
     }
-
-    // TODO: parse command line options.
 
     // Should set the correct locale before VNoteX::getInst().
     loadTranslators(app);
@@ -131,8 +158,10 @@ int main(int argc, char *argv[])
 
     QObject::connect(&guard, &SingleInstanceGuard::showRequested,
                      &window, &MainWindow::showMainWindow);
+    QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested,
+                     &window, &MainWindow::openFiles);
 
-    window.kickOffOnStart();
+    window.kickOffOnStart(cmdOptions.m_pathsToOpen);
 
     int ret = app.exec();
     if (ret == RESTART_EXIT_CODE) {
@@ -207,4 +236,14 @@ void initWebEngineSettings()
 {
     auto settings = QWebEngineSettings::defaultSettings();
     settings->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+}
+
+void showMessageOnCommandLineIfAvailable(const QString &p_msg)
+{
+#if defined(Q_OS_WIN)
+    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                             QString("<pre>%1</pre>").arg(p_msg));
+#else
+    printf("%s\n", qPrintable(p_msg));
+#endif
 }

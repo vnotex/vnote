@@ -33,7 +33,7 @@ namespace vnotex
         MainWindow(const MainWindow &) = delete;
         void operator=(const MainWindow &) = delete;
 
-        void kickOffOnStart();
+        void kickOffOnStart(const QStringList &p_paths);
 
         void resetStateAndGeometry();
 
@@ -52,6 +52,8 @@ namespace vnotex
         void showMainWindow();
 
         void quitApp();
+
+        void openFiles(const QStringList &p_files);
 
     signals:
         void mainWindowStarted();
