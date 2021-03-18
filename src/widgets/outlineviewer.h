@@ -22,7 +22,7 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        explicit OutlineViewer(const QString &p_title, QWidget *p_parent = nullptr);
+        OutlineViewer(const QString &p_title, QWidget *p_parent = nullptr);
 
         void setOutlineProvider(const QSharedPointer<OutlineProvider> &p_provider);
 

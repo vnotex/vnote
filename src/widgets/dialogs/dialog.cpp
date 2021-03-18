@@ -26,7 +26,7 @@ void Dialog::setCentralWidget(QWidget *p_widget)
 {
     Q_ASSERT(!m_centralWidget && p_widget);
     m_centralWidget = p_widget;
-    m_centralWidget->setProperty(PropertyDefs::s_dialogCentralWidget, true);
+    m_centralWidget->setProperty(PropertyDefs::c_dialogCentralWidget, true);
     m_layout->addWidget(m_centralWidget);
 }
 
@@ -115,7 +115,7 @@ void Dialog::setInformationText(const QString &p_text, InformationLevel p_level)
         break;
     }
 
-    WidgetUtils::setPropertyDynamically(m_infoTextEdit, PropertyDefs::s_state, level);
+    WidgetUtils::setPropertyDynamically(m_infoTextEdit, PropertyDefs::c_state, level);
     if (needResize) {
         WidgetUtils::updateSize(this);
     }

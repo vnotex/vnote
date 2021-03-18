@@ -387,8 +387,8 @@ void ExportDialog::rejectedButtonClicked()
 {
     if (m_exportOngoing) {
         // Just cancel the export.
-        appendLog(tr("Cancelling the export."));
-        m_exporter->stop();
+        appendLog(tr("Cancelling the export"));
+        getExporter()->stop();
     } else {
         Dialog::rejectedButtonClicked();
     }

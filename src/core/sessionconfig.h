@@ -7,6 +7,7 @@
 #include <QVector>
 
 #include <export/exportdata.h>
+#include <search/searchdata.h>
 
 namespace vnotex
 {
@@ -87,6 +88,9 @@ namespace vnotex
         const ExportOption &getExportOption() const;
         void setExportOption(const ExportOption &p_option);
 
+        const SearchOption &getSearchOption() const;
+        void setSearchOption(const SearchOption &p_option);
+
     private:
         void loadCore(const QJsonObject &p_session);
 
@@ -123,6 +127,8 @@ namespace vnotex
         int m_minimizeToSystemTray = -1;
 
         ExportOption m_exportOption;
+
+        SearchOption m_searchOption;
     };
 } // ns vnotex
 

@@ -39,7 +39,7 @@ namespace vnotex
     private:
         int m_outlineAutoExpandedLevel = 6;
 
-        FindOptions m_findAndReplaceOptions = FindOption::None;
+        FindOptions m_findAndReplaceOptions = FindOption::FindNone;
 
         int m_nodeExplorerViewOrder = 0;
 

@@ -7,6 +7,7 @@
 
 class QToolButton;
 class QHBoxLayout;
+class QLabel;
 
 namespace vnotex
 {
@@ -23,6 +24,7 @@ namespace vnotex
         Q_DECLARE_FLAGS(Actions, Action)
 
         TitleBar(const QString &p_title,
+                 bool p_hasInfoLabel,
                  TitleBar::Actions p_actionFlags,
                  QWidget *p_parent = nullptr);
 
@@ -46,13 +48,17 @@ namespace vnotex
 
         void addMenuSeparator();
 
+        void setInfoLabel(const QString &p_info);
+
+        void setActionButtonsAlwaysShown(bool p_shown);
+
     protected:
         void enterEvent(QEvent *p_event) Q_DECL_OVERRIDE;
 
         void leaveEvent(QEvent *p_event) Q_DECL_OVERRIDE;
 
     private:
-        void setupUI(const QString &p_title, TitleBar::Actions p_actionFlags);
+        void setupUI(const QString &p_title, bool p_hasInfoLabel, TitleBar::Actions p_actionFlags);
 
         void setupActionButtons(TitleBar::Actions p_actionFlags);
 
@@ -64,11 +70,15 @@ namespace vnotex
 
         static QIcon generateMenuActionIcon(const QString &p_iconName);
 
+        QLabel *m_infoLabel = nullptr;
+
         QVector<QToolButton *> m_actionButtons;
 
         QWidget *m_buttonWidget = nullptr;
 
-        bool m_alwaysShowActionButtons = false;
+        bool m_actionButtonsAlwaysShown = false;
+
+        bool m_actionButtonsForcedShown = false;
 
         QMenu *m_menu = nullptr;
 

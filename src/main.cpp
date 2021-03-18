@@ -89,8 +89,9 @@ int main(int argc, char *argv[])
         break;
 
     case CommandLineOptions::Error:
-        showMessageOnCommandLineIfAvailable(cmdOptions.m_errorMsg);
-        return -1;
+        fprintf(stderr, "%s\n", qPrintable(cmdOptions.m_errorMsg));
+        // Arguments to WebEngineView will be unknown ones. So just let it go.
+        break;
 
     case CommandLineOptions::VersionRequested:
     {
@@ -244,6 +245,6 @@ void showMessageOnCommandLineIfAvailable(const QString &p_msg)
     MessageBoxHelper::notify(MessageBoxHelper::Information,
                              QString("<pre>%1</pre>").arg(p_msg));
 #else
-    printf("%s\n", qPrintable(p_msg));
+    fprintf(stderr, "%s\n", qPrintable(p_msg));
 #endif
 }

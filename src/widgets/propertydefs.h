@@ -9,22 +9,24 @@ namespace vnotex
     public:
         PropertyDefs() = delete;
 
-        static const char *s_actionToolButton;
+        static const char *c_actionToolButton;
 
-        static const char *s_toolButtonWithoutMenuIndicator;
+        static const char *c_toolButtonWithoutMenuIndicator;
 
-        static const char *s_dangerButton;
+        static const char *c_dangerButton;
 
-        static const char *s_dialogCentralWidget;
+        static const char *c_dialogCentralWidget;
 
-        static const char *s_viewSplitCornerWidget;
+        static const char *c_viewSplitCornerWidget;
 
-        static const char *s_viewWindowToolBar;
+        static const char *c_viewWindowToolBar;
 
-        static const char *s_consoleTextEdit;
+        static const char *c_consoleTextEdit;
+
+        static const char *c_embeddedLineEdit;
 
         // Values: info/warning/error.
-        static const char *s_state;
+        static const char *c_state;
     };
 }
 

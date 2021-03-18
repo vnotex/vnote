@@ -92,7 +92,7 @@ void TitleToolBar::addTitleBarIcons(const QIcon &p_minimizeIcon,
                                       m_window->close();
                                   });
         auto btn = static_cast<QToolButton *>(widgetForAction(closeAct));
-        btn->setProperty(PropertyDefs::s_dangerButton, true);
+        btn->setProperty(PropertyDefs::c_dangerButton, true);
     }
 
     updateMaximizeAct();

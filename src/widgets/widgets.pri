@@ -43,6 +43,7 @@ SOURCES += \
     $$PWD/lineedit.cpp \
     $$PWD/lineeditdelegate.cpp \
     $$PWD/listwidget.cpp \
+    $$PWD/locationlist.cpp \
     $$PWD/mainwindow.cpp \
     $$PWD/markdownviewwindow.cpp \
     $$PWD/navigationmodemgr.cpp \
@@ -50,6 +51,8 @@ SOURCES += \
     $$PWD/outlineprovider.cpp \
     $$PWD/outlineviewer.cpp \
     $$PWD/propertydefs.cpp \
+    $$PWD/searchinfoprovider.cpp \
+    $$PWD/searchpanel.cpp \
     $$PWD/systemtrayhelper.cpp \
     $$PWD/textviewwindow.cpp \
     $$PWD/toolbarhelper.cpp \
@@ -130,6 +133,7 @@ HEADERS += \
     $$PWD/lineedit.h \
     $$PWD/lineeditdelegate.h \
     $$PWD/listwidget.h \
+    $$PWD/locationlist.h \
     $$PWD/mainwindow.h \
     $$PWD/markdownviewwindow.h \
     $$PWD/navigationmodemgr.h \
@@ -138,6 +142,8 @@ HEADERS += \
     $$PWD/outlineprovider.h \
     $$PWD/outlineviewer.h \
     $$PWD/propertydefs.h \
+    $$PWD/searchinfoprovider.h \
+    $$PWD/searchpanel.h \
     $$PWD/systemtrayhelper.h \
     $$PWD/textviewwindow.h \
     $$PWD/textviewwindowhelper.h \

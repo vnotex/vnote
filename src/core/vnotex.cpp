@@ -8,6 +8,7 @@
 #include "buffermgr.h"
 #include "configmgr.h"
 #include "coreconfig.h"
+#include "location.h"
 
 #include "fileopenparameters.h"
 

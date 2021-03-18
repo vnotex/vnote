@@ -2,18 +2,20 @@
 
 using namespace vnotex;
 
-const char *PropertyDefs::s_actionToolButton = "ActionToolButton";
+const char *PropertyDefs::c_actionToolButton = "ActionToolButton";
 
-const char *PropertyDefs::s_toolButtonWithoutMenuIndicator = "NoMenuIndicator";
+const char *PropertyDefs::c_toolButtonWithoutMenuIndicator = "NoMenuIndicator";
 
-const char *PropertyDefs::s_dangerButton = "DangerButton";
+const char *PropertyDefs::c_dangerButton = "DangerButton";
 
-const char *PropertyDefs::s_dialogCentralWidget = "DialogCentralWidget";
+const char *PropertyDefs::c_dialogCentralWidget = "DialogCentralWidget";
 
-const char *PropertyDefs::s_viewSplitCornerWidget = "ViewSplitCornerWidget";
+const char *PropertyDefs::c_viewSplitCornerWidget = "ViewSplitCornerWidget";
 
-const char *PropertyDefs::s_state = "State";
+const char *PropertyDefs::c_state = "State";
 
-const char *PropertyDefs::s_viewWindowToolBar = "ViewWindowToolBar";
+const char *PropertyDefs::c_viewWindowToolBar = "ViewWindowToolBar";
 
-const char *PropertyDefs::s_consoleTextEdit = "ConsoleTextEdit";
+const char *PropertyDefs::c_consoleTextEdit = "ConsoleTextEdit";
+
+const char *PropertyDefs::c_embeddedLineEdit = "EmbeddedLineEdit";

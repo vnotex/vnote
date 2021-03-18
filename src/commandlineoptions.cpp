@@ -5,28 +5,36 @@
 #include <QCoreApplication>
 #include <QDebug>
 
-#define TR(x) QCoreApplication::translate("main", (x))
+#include <widgets/mainwindow.h>
+
+using vnotex::MainWindow;
 
 CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_arguments)
 {
     QCommandLineParser parser;
-    parser.setApplicationDescription(TR("A pleasant note-taking platform."));
+    parser.setApplicationDescription(MainWindow::tr("A pleasant note-taking platform."));
     const auto helpOpt = parser.addHelpOption();
     const auto versionOpt = parser.addVersionOption();
 
     // Positional arguments.
-    parser.addPositionalArgument("paths", TR("Files or folders to open."));
+    parser.addPositionalArgument("paths", MainWindow::tr("Files or folders to open."));
 
-    const QCommandLineOption verboseOpt("verbose", TR("Print more logs."));
+    const QCommandLineOption verboseOpt("verbose", MainWindow::tr("Print more logs."));
     parser.addOption(verboseOpt);
 
     // WebEngine options.
     // No need to handle them. Just add them to the parser to avoid parse error.
-    QCommandLineOption webRemoteDebuggingPortOpt("remote-debugging-port",
-                                                 TR("WebEngine remote debugging port."),
-                                                 "port_number");
-    webRemoteDebuggingPortOpt.setFlags(QCommandLineOption::HiddenFromHelp);
-    parser.addOption(webRemoteDebuggingPortOpt);
+    {
+        QCommandLineOption webRemoteDebuggingPortOpt("remote-debugging-port",
+                                                     MainWindow::tr("WebEngine remote debugging port."),
+                                                     "port_number");
+        webRemoteDebuggingPortOpt.setFlags(QCommandLineOption::HiddenFromHelp);
+        parser.addOption(webRemoteDebuggingPortOpt);
+
+        QCommandLineOption webNoSandboxOpt("no-sandbox", MainWindow::tr("WebEngine without sandbox."));
+        webNoSandboxOpt.setFlags(QCommandLineOption::HiddenFromHelp);
+        parser.addOption(webNoSandboxOpt);
+    }
 
     if (!parser.parse(p_arguments)) {
         m_errorMsg = parser.errorText();

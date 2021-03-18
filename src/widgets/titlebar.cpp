@@ -23,19 +23,21 @@ const QString TitleBar::c_menuIconForegroundName = "widgets#titlebar#menu_icon#f
 const QString TitleBar::c_menuIconDisabledForegroundName = "widgets#titlebar#menu_icon#disabled#fg";
 
 TitleBar::TitleBar(const QString &p_title,
+                   bool p_hasInfoLabel,
                    TitleBar::Actions p_actionFlags,
                    QWidget *p_parent)
     : QWidget(p_parent)
 {
-    setupUI(p_title, p_actionFlags);
+    setupUI(p_title, p_hasInfoLabel, p_actionFlags);
 }
 
-void TitleBar::setupUI(const QString &p_title, TitleBar::Actions p_actionFlags)
+void TitleBar::setupUI(const QString &p_title, bool p_hasInfoLabel, TitleBar::Actions p_actionFlags)
 {
     auto mainLayout = new QHBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     // Title label.
+    // Should always add it even if title is empty. Otherwise, we could not catch the hover event to show actions.
     {
         auto titleLabel = new QLabel(p_title, this);
         titleLabel->setProperty(c_titleProp, true);
@@ -56,13 +58,20 @@ void TitleBar::setupUI(const QString &p_title, TitleBar::Actions p_actionFlags)
         setActionButtonsVisible(false);
     }
 
+    // Info label.
+    if (p_hasInfoLabel) {
+        m_infoLabel = new QLabel(this);
+        m_infoLabel->setProperty(c_titleProp, true);
+        mainLayout->addWidget(m_infoLabel);
+    }
+
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
 QToolButton *TitleBar::newActionButton(const QString &p_iconName, const QString &p_text, QWidget *p_parent)
 {
     auto btn = new QToolButton(p_parent);
-    btn->setProperty(PropertyDefs::s_actionToolButton, true);
+    btn->setProperty(PropertyDefs::c_actionToolButton, true);
 
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
     auto iconFile = themeMgr.getIconFile(p_iconName);
@@ -99,7 +108,7 @@ void TitleBar::enterEvent(QEvent *p_event)
 void TitleBar::leaveEvent(QEvent *p_event)
 {
     QWidget::leaveEvent(p_event);
-    setActionButtonsVisible(m_alwaysShowActionButtons);
+    setActionButtonsVisible(m_actionButtonsForcedShown || m_actionButtonsAlwaysShown);
 }
 
 void TitleBar::setActionButtonsVisible(bool p_visible)
@@ -165,12 +174,12 @@ QToolButton *TitleBar::addActionButton(const QString &p_iconName, const QString 
     btn->setMenu(p_menu);
     connect(p_menu, &QMenu::aboutToShow,
             this, [this]() {
-                m_alwaysShowActionButtons = true;
+                m_actionButtonsForcedShown = true;
                 setActionButtonsVisible(true);
             });
     connect(p_menu, &QMenu::aboutToHide,
             this, [this]() {
-                m_alwaysShowActionButtons = false;
+                m_actionButtonsForcedShown = false;
                 setActionButtonsVisible(false);
             });
     return btn;
@@ -179,4 +188,18 @@ QToolButton *TitleBar::addActionButton(const QString &p_iconName, const QString 
 QHBoxLayout *TitleBar::actionButtonLayout() const
 {
     return static_cast<QHBoxLayout *>(m_buttonWidget->layout());
+}
+
+void TitleBar::setInfoLabel(const QString &p_info)
+{
+    Q_ASSERT(m_infoLabel);
+    if (m_infoLabel) {
+        m_infoLabel->setText(p_info);
+    }
+}
+
+void TitleBar::setActionButtonsAlwaysShown(bool p_shown)
+{
+    m_actionButtonsAlwaysShown = p_shown;
+    setActionButtonsVisible(m_actionButtonsForcedShown || m_actionButtonsAlwaysShown);
 }

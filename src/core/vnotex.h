@@ -16,6 +16,7 @@ namespace vnotex
     struct FileOpenParameters;
     class Event;
     class Notebook;
+    struct ComplexLocation;
 
     class VNoteX : public QObject
     {

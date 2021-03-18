@@ -77,7 +77,7 @@ namespace vnotex
 
         QCheckBox *m_incrementalSearchCheckBox = nullptr;
 
-        FindOptions m_options = FindOption::None;
+        FindOptions m_options = FindOption::FindNone;
 
         QTimer *m_findTextTimer = nullptr;
 

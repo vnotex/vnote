@@ -229,6 +229,11 @@
                 "fg" : "@base#icon#inactive#fg"
             }
         },
+        "locationlist" : {
+            "node_icon" : {
+                "fg" : "@base#icon#fg"
+            }
+        },
         "viewsplit" : {
             "action_button" : {
                 "fg" : "@base#icon#inactive#fg",

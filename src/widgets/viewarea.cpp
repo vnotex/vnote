@@ -10,6 +10,7 @@
 #include <QDropEvent>
 #include <QTimer>
 #include <QApplication>
+#include <QSet>
 
 #include "viewwindow.h"
 #include "mainwindow.h"
@@ -655,9 +656,7 @@ bool ViewArea::removeWorkspaceInViewSplit(ViewSplit *p_split, bool p_insertNew)
 {
     // Close all the ViewWindows.
     setCurrentViewSplit(p_split, true);
-    auto wins = getAllViewWindows(p_split, [](ViewWindow *) {
-                return true;
-            });
+    auto wins = getAllViewWindows(p_split);
     for (const auto win : wins) {
         if (!closeViewWindow(win, false, false)) {
             return false;
@@ -963,7 +962,7 @@ void ViewArea::dropEvent(QDropEvent *p_event)
     QWidget::dropEvent(p_event);
 }
 
-QVector<ViewWindow *> ViewArea::getAllViewWindows(ViewSplit *p_split, const ViewSplit::ViewWindowSelector &p_func)
+QVector<ViewWindow *> ViewArea::getAllViewWindows(ViewSplit *p_split, const ViewSplit::ViewWindowSelector &p_func) const
 {
     QVector<ViewWindow *> wins;
     p_split->forEachViewWindow([p_func, &wins](ViewWindow *p_win) {
@@ -973,4 +972,25 @@ QVector<ViewWindow *> ViewArea::getAllViewWindows(ViewSplit *p_split, const View
             return true;
         });
     return wins;
+}
+
+QVector<ViewWindow *> ViewArea::getAllViewWindows(ViewSplit *p_split) const
+{
+   return getAllViewWindows(p_split, [](ViewWindow *) {
+              return true;
+          });
+}
+
+QList<Buffer *> ViewArea::getAllBuffersInViewSplits() const
+{
+    QSet<Buffer *> bufferSet;
+
+    for (auto split : m_splits) {
+        auto wins = getAllViewWindows(split);
+        for (auto win : wins) {
+            bufferSet.insert(win->getBuffer());
+        }
+    }
+
+    return bufferSet.values();
 }

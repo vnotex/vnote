@@ -840,7 +840,9 @@ void MarkdownViewWindow::zoom(bool p_zoomIn)
 void MarkdownViewWindow::handleFindTextChanged(const QString &p_text, FindOptions p_options)
 {
     if (m_mode == Mode::Read) {
-        adapter()->findText(p_text, p_options);
+        if (p_options & FindOption::IncrementalSearch) {
+            adapter()->findText(p_text, p_options);
+        }
     } else {
         TextViewWindowHelper::handleFindTextChanged(this, p_text, p_options);
     }
@@ -849,9 +851,7 @@ void MarkdownViewWindow::handleFindTextChanged(const QString &p_text, FindOption
 void MarkdownViewWindow::handleFindNext(const QString &p_text, FindOptions p_options)
 {
     if (m_mode == Mode::Read) {
-        if (p_options & FindOption::IncrementalSearch) {
-            adapter()->findText(p_text, p_options);
-        }
+        adapter()->findText(p_text, p_options);
     } else {
         TextViewWindowHelper::handleFindNext(this, p_text, p_options);
     }
@@ -880,7 +880,7 @@ void MarkdownViewWindow::handleFindAndReplaceWidgetClosed()
     if (m_editor) {
         TextViewWindowHelper::handleFindAndReplaceWidgetClosed(this);
     } else {
-        adapter()->findText("", FindOption::None);
+        adapter()->findText("", FindOption::FindNone);
     }
 }
 

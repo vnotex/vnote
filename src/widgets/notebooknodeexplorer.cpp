@@ -941,7 +941,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
 
     case Action::Properties:
         act = new QAction(generateMenuActionIcon("properties.svg"),
-                          tr("&Properties"),
+                          tr("&Properties (Rename)"),
                           p_parent);
         connect(act, &QAction::triggered,
                 this, [this]() {

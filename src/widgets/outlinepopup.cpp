@@ -3,6 +3,8 @@
 #include <QVBoxLayout>
 #include <QToolButton>
 
+#include <core/global.h>
+#include <utils/widgetutils.h>
 #include "outlineviewer.h"
 
 using namespace vnotex;
@@ -22,6 +24,7 @@ OutlinePopup::OutlinePopup(QToolButton *p_btn, QWidget *p_parent)
 void OutlinePopup::setupUI()
 {
     auto mainLayout = new QVBoxLayout(this);
+    WidgetUtils::setContentsMargins(mainLayout);
 
     m_viewer = new OutlineViewer(tr("Outline"), this);
     mainLayout->addWidget(m_viewer);

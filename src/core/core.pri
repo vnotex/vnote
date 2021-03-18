@@ -42,6 +42,7 @@ HEADERS += \
     $$PWD/filelocator.h \
     $$PWD/fileopenparameters.h \
     $$PWD/htmltemplatehelper.h \
+    $$PWD/location.h \
     $$PWD/logger.h \
     $$PWD/mainconfig.h \
     $$PWD/markdowneditorconfig.h \

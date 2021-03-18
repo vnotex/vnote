@@ -35,8 +35,8 @@
         <file>icons/remove_notebook.svg</file>
         <file>icons/close_notebook.svg</file>
         <file>icons/recycle_bin.svg</file>
-        <file>icons/saved.svg</file>
         <file>icons/save_editor.svg</file>
+        <file>icons/buffer.svg</file>
         <file>icons/attachment_editor.svg</file>
         <file>icons/attachment_full_editor.svg</file>
         <file>icons/split_menu.svg</file>
@@ -74,6 +74,8 @@
         <file>icons/stay_on_top.svg</file>
         <file>icons/outline_editor.svg</file>
         <file>icons/find_replace_editor.svg</file>
+        <file>icons/search.svg</file>
+        <file>icons/cancel.svg</file>
         <file>icons/section_number_editor.svg</file>
         <file>icons/sort.svg</file>
         <file>logo/vnote.svg</file>

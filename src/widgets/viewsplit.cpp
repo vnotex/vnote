@@ -109,7 +109,7 @@ void ViewSplit::setupCornerWidget()
 
     // Container.
     auto widget = new QWidget(this);
-    widget->setProperty(PropertyDefs::s_viewSplitCornerWidget, true);
+    widget->setProperty(PropertyDefs::c_viewSplitCornerWidget, true);
     auto layout = new QHBoxLayout(widget);
     layout->setContentsMargins(0, 0, 0, 0);
 
@@ -117,7 +117,7 @@ void ViewSplit::setupCornerWidget()
     {
         m_windowListButton = new QToolButton(this);
         m_windowListButton->setPopupMode(QToolButton::InstantPopup);
-        m_windowListButton->setProperty(PropertyDefs::s_actionToolButton, true);
+        m_windowListButton->setProperty(PropertyDefs::c_actionToolButton, true);
 
         auto act = new QAction(s_windowListIcon, tr("Windows List"), m_windowListButton);
         m_windowListButton->setDefaultAction(act);
@@ -141,7 +141,7 @@ void ViewSplit::setupCornerWidget()
     {
         m_menuButton = new QToolButton(this);
         m_menuButton->setPopupMode(QToolButton::InstantPopup);
-        m_menuButton->setProperty(PropertyDefs::s_actionToolButton, true);
+        m_menuButton->setProperty(PropertyDefs::c_actionToolButton, true);
 
         auto act = new QAction(s_menuIcon, tr("Workspaces and Splits"), m_menuButton);
         m_menuButton->setDefaultAction(act);
@@ -607,7 +607,7 @@ void ViewSplit::mousePressEvent(QMouseEvent *p_event)
     emit focused(this);
 }
 
-bool ViewSplit::forEachViewWindow(const ViewWindowSelector &p_func)
+bool ViewSplit::forEachViewWindow(const ViewWindowSelector &p_func) const
 {
     int cnt = getViewWindowCount();
     for (int i = 0; i < cnt; ++i) {

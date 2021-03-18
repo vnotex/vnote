@@ -92,6 +92,11 @@
                 "fg" : "@base#icon#disabled#fg"
             }
         },
+        "locationlist" : {
+            "node_icon" : {
+                "fg" : "@base#icon#fg"
+            }
+        },
         "viewsplit" : {
             "action_button" : {
                 "fg" : "#808080",

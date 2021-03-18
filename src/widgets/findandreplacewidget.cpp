@@ -55,7 +55,7 @@ void FindAndReplaceWidget::setupUI()
         const auto &themeMgr = VNoteX::getInst().getThemeMgr();
         auto iconFile = themeMgr.getIconFile(QStringLiteral("close.svg"));
         auto closeBtn = new QToolButton(this);
-        closeBtn->setProperty(PropertyDefs::s_actionToolButton, true);
+        closeBtn->setProperty(PropertyDefs::c_actionToolButton, true);
         titleLayout->addWidget(closeBtn);
 
         auto closeAct = new QAction(IconUtils::fetchIcon(iconFile), QString(), closeBtn);
@@ -223,7 +223,7 @@ void FindAndReplaceWidget::updateFindOptions()
         return;
     }
 
-    FindOptions options = FindOption::None;
+    FindOptions options = FindOption::FindNone;
 
     if (m_caseSensitiveCheckBox->isChecked()) {
         options |= FindOption::CaseSensitive;

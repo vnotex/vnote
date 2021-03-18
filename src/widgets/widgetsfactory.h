@@ -12,6 +12,7 @@ class QToolButton;
 class QDoubleSpinBox;
 class QFormLayout;
 class QPlainTextEdit;
+class QRadioButton;
 
 namespace vnotex
 {
@@ -31,6 +32,8 @@ namespace vnotex
         static QComboBox *createComboBox(QWidget *p_parent = nullptr);
 
         static QCheckBox *createCheckBox(const QString &p_text, QWidget *p_parent = nullptr);
+
+        static QRadioButton *createRadioButton(const QString &p_text, QWidget *p_parent = nullptr);
 
         static QSpinBox *createSpinBox(QWidget *p_parent = nullptr);
 

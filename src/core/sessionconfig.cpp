@@ -62,6 +62,8 @@ void SessionConfig::init()
     }
 
     m_exportOption.fromJson(sessionJobj[QStringLiteral("export_option")].toObject());
+
+    m_searchOption.fromJson(sessionJobj[QStringLiteral("search_option")].toObject());
 }
 
 void SessionConfig::loadCore(const QJsonObject &p_session)
@@ -177,6 +179,7 @@ QJsonObject SessionConfig::toJson() const
     obj[QStringLiteral("notebooks")] = saveNotebooks();
     obj[QStringLiteral("state_geometry")] = saveStateAndGeometry();
     obj[QStringLiteral("export_option")] = m_exportOption.toJson();
+    obj[QStringLiteral("search_option")] = m_searchOption.toJson();
     return obj;
 }
 
@@ -287,6 +290,16 @@ const ExportOption &SessionConfig::getExportOption() const
 void SessionConfig::setExportOption(const ExportOption &p_option)
 {
     updateConfig(m_exportOption, p_option, this);
+}
+
+const SearchOption &SessionConfig::getSearchOption() const
+{
+    return m_searchOption;
+}
+
+void SessionConfig::setSearchOption(const SearchOption &p_option)
+{
+    updateConfig(m_searchOption, p_option, this);
 }
 
 void SessionConfig::loadStateAndGeometry(const QJsonObject &p_session)

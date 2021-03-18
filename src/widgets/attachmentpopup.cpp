@@ -204,7 +204,7 @@ void AttachmentPopup::setupUI()
 QToolButton *AttachmentPopup::createButton()
 {
     auto btn = new QToolButton(this);
-    btn->setProperty(PropertyDefs::s_actionToolButton, true);
+    btn->setProperty(PropertyDefs::c_actionToolButton, true);
     return btn;
 }
 
