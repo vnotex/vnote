@@ -148,7 +148,8 @@ namespace vnotex
             Reload,
             ReloadIndex,
             ImportToConfig,
-            Open
+            Open,
+            ExpandAll
         };
 
         void setupUI();
@@ -256,6 +257,10 @@ namespace vnotex
         // Check whether @p_node is a valid node. Will notify user.
         // Return true if it is invalid.
         bool checkInvalidNode(const Node *p_node) const;
+
+        void expandCurrentNodeAll();
+
+        void expandItemRecursively(QTreeWidgetItem *p_item);
 
         static NotebookNodeExplorer::NodeData getItemNodeData(const QTreeWidgetItem *p_item);
 

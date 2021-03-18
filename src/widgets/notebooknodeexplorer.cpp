@@ -793,6 +793,11 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
         act = createAction(Action::Open, p_menu);
         p_menu->addAction(act);
 
+        if (selectedSize == 1 && p_node->isContainer()) {
+            act = createAction(Action::ExpandAll, p_menu);
+            p_menu->addAction(act);
+        }
+
         p_menu->addSeparator();
 
         act = createAction(Action::Cut, p_menu);
@@ -821,6 +826,11 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
     } else {
         act = createAction(Action::Open, p_menu);
         p_menu->addAction(act);
+
+        if (selectedSize == 1 && p_node->isContainer()) {
+            act = createAction(Action::ExpandAll, p_menu);
+            p_menu->addAction(act);
+        }
 
         p_menu->addSeparator();
 
@@ -1138,6 +1148,12 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         act = new QAction(tr("&Open"), p_parent);
         connect(act, &QAction::triggered,
                 this, &NotebookNodeExplorer::openSelectedNodes);
+        break;
+
+    case Action::ExpandAll:
+        act = new QAction(tr("&Expand All\t*"), p_parent);
+        connect(act, &QAction::triggered,
+                this, &NotebookNodeExplorer::expandCurrentNodeAll);
         break;
     }
 
@@ -1830,4 +1846,35 @@ bool NotebookNodeExplorer::checkInvalidNode(const Node *p_node) const
     }
 
     return false;
+}
+
+void NotebookNodeExplorer::expandCurrentNodeAll()
+{
+    auto item = m_masterExplorer->currentItem();
+    if (!item || item->childCount() == 0) {
+        return;
+    }
+    auto data = getItemNodeData(item);
+    if (!data.isNode()) {
+        return;
+    }
+
+    expandItemRecursively(item);
+}
+
+void NotebookNodeExplorer::expandItemRecursively(QTreeWidgetItem *p_item)
+{
+    if (!p_item) {
+        return;
+    }
+
+    p_item->setExpanded(true);
+    const int cnt = p_item->childCount();
+    if (cnt == 0) {
+        return;
+    }
+
+    for (int i = 0; i < cnt; ++i) {
+        expandItemRecursively(p_item->child(i));
+    }
 }
