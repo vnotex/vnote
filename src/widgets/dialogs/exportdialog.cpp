@@ -37,11 +37,13 @@ using namespace vnotex;
 
 ExportDialog::ExportDialog(Notebook *p_notebook,
                            Node *p_folder,
+                           Node *p_note,
                            Buffer *p_buffer,
                            QWidget *p_parent)
     : ScrollDialog(p_parent),
       m_notebook(p_notebook),
       m_folder(p_folder),
+      m_note(p_note),
       m_buffer(p_buffer)
 {
     setupUI();
@@ -93,6 +95,10 @@ QGroupBox *ExportDialog::setupSourceGroup(QWidget *p_parent)
         if (m_buffer) {
             m_sourceComboBox->addItem(tr("Current Buffer (%1)").arg(m_buffer->getName()),
                                       static_cast<int>(ExportSource::CurrentBuffer));
+        }
+        if (m_note && m_note->hasContent()) {
+            m_sourceComboBox->addItem(tr("Current Note (%1)").arg(m_note->getName()),
+                                      static_cast<int>(ExportSource::CurrentNote));
         }
         if (m_folder && m_folder->isContainer()) {
             m_sourceComboBox->addItem(tr("Current Folder (%1)").arg(m_folder->getName()),
@@ -431,10 +437,21 @@ int ExportDialog::doExport(ExportOption p_option)
         break;
     }
 
+    case ExportSource::CurrentNote:
+    {
+        Q_ASSERT(m_note);
+        const auto outputFile = getExporter()->doExport(p_option, m_note);
+        exportedFilesCount = outputFile.isEmpty() ? 0 : 1;
+        if (exportedFilesCount == 1 && p_option.m_targetFormat == ExportFormat::HTML) {
+            m_exportedFile = outputFile;
+        }
+        break;
+    }
+
     case ExportSource::CurrentFolder:
     {
         Q_ASSERT(m_folder);
-        const auto outputFiles = getExporter()->doExport(p_option, m_folder);
+        const auto outputFiles = getExporter()->doExportFolder(p_option, m_folder);
         exportedFilesCount = outputFiles.size();
         break;
     }

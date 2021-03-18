@@ -24,8 +24,11 @@ namespace vnotex
         // Return exported output file.
         QString doExport(const ExportOption &p_option, Buffer *p_buffer);
 
+        // Return exported output file.
+        QString doExport(const ExportOption &p_option, Node *p_note);
+
         // Return exported output files.
-        QStringList doExport(const ExportOption &p_option, Node *p_folder);
+        QStringList doExportFolder(const ExportOption &p_option, Node *p_folder);
 
         QStringList doExport(const ExportOption &p_option, Notebook *p_notebook);
 

@@ -245,6 +245,11 @@ Node *NotebookExplorer::currentExploredFolderNode() const
     return m_nodeExplorer->currentExploredFolderNode();
 }
 
+Node *NotebookExplorer::currentExploredNode() const
+{
+    return m_nodeExplorer->currentExploredNode();
+}
+
 Node *NotebookExplorer::checkNotebookAndGetCurrentExploredFolderNode() const
 {
     if (!m_currentNotebook) {

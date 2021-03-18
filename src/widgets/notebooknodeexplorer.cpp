@@ -1738,6 +1738,15 @@ Node *NotebookNodeExplorer::currentExploredFolderNode() const
     return node;
 }
 
+Node *NotebookNodeExplorer::currentExploredNode() const
+{
+    if (!m_notebook) {
+        return nullptr;
+    }
+
+    return getCurrentNode();
+}
+
 void NotebookNodeExplorer::setViewOrder(int p_order)
 {
     if (m_viewOrder == p_order) {

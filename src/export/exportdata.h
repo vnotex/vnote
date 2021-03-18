@@ -10,6 +10,7 @@ namespace vnotex
     enum class ExportSource
     {
         CurrentBuffer = 0,
+        CurrentNote,
         CurrentFolder,
         CurrentNotebook
     };

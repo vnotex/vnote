@@ -93,7 +93,27 @@ void Exporter::exportAttachments(Node *p_node,
     }
 }
 
-QStringList Exporter::doExport(const ExportOption &p_option, Node *p_folder)
+QString Exporter::doExport(const ExportOption &p_option, Node *p_note)
+{
+    m_askedToStop = false;
+
+    QString outputFile;
+    auto file = p_note->getContentFile();
+
+    // Make sure output folder exists.
+    if (!QDir().mkpath(p_option.m_outputDir)) {
+        emit logRequested(tr("Failed to create output folder %1.").arg(p_option.m_outputDir));
+        return outputFile;
+    }
+
+    outputFile = doExport(p_option, p_option.m_outputDir, file.data());
+
+    cleanUp();
+
+    return outputFile;
+}
+
+QStringList Exporter::doExportFolder(const ExportOption &p_option, Node *p_folder)
 {
     m_askedToStop = false;
 

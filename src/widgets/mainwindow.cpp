@@ -632,8 +632,13 @@ void MainWindow::exportNotes()
     if (folderNode && (folderNode->isRoot() || currentNotebook->isRecycleBinNode(folderNode))) {
         folderNode = nullptr;
     }
+    auto noteNode = m_notebookExplorer->currentExploredNode();
+    if (noteNode && !noteNode->hasContent()) {
+        noteNode = nullptr;
+    }
     ExportDialog dialog(currentNotebook,
                         folderNode,
+                        noteNode,
                         viewWindow ? viewWindow->getBuffer() : nullptr,
                         this);
     dialog.exec();

@@ -30,6 +30,7 @@ namespace vnotex
         // Current notebook/folder/buffer.
         ExportDialog(Notebook *p_notebook,
                      Node *p_folder,
+                     Node *p_note,
                      Buffer *p_buffer,
                      QWidget *p_parent = nullptr);
 
@@ -103,6 +104,8 @@ namespace vnotex
         Notebook *m_notebook = nullptr;
 
         Node *m_folder = nullptr;
+
+        Node *m_note = nullptr;
 
         Buffer *m_buffer = nullptr;
 

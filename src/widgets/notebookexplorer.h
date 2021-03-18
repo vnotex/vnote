@@ -26,6 +26,8 @@ namespace vnotex
 
         Node *currentExploredFolderNode() const;
 
+        Node *currentExploredNode() const;
+
     public slots:
         void newNotebook();
 

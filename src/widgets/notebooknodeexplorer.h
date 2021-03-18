@@ -112,6 +112,8 @@ namespace vnotex
 
         Node *currentExploredFolderNode() const;
 
+        Node *currentExploredNode() const;
+
     signals:
         void nodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
 
