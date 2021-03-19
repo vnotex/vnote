@@ -1,4 +1,12 @@
 # Changes
+## v3.0.0-beta.10
+* Show more tips
+* Add exclude patterns for external nodes
+* Add command line parser and support opening files from command line
+* Update Mermaid.js to 8.9.1
+* Support exporting current note
+* Add ExpandAll to node explorer
+
 ## v3.0.0-beta.9
 * Fix crash when exporting external files
 * Support manual sorting folders and notes

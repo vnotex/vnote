@@ -1118,7 +1118,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         break;
 
     case Action::ReloadIndex:
-        act = new QAction(tr("Re&load Index From Disk"), p_parent);
+        act = new QAction(tr("Relo&ad Index From Disk"), p_parent);
         connect(act, &QAction::triggered,
                 this, [this]() {
                     if (!m_notebook) {
