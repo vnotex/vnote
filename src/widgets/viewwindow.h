@@ -6,6 +6,7 @@
 #include <QSharedPointer>
 
 #include <buffer/buffer.h>
+#include <core/global.h>
 
 #include "viewwindowtoolbarhelper.h"
 
@@ -28,22 +29,13 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        enum Mode
-        {
-            Read,
-            Edit,
-            FullPreview,
-            FocusPreview,
-            Invalid
-        };
-
         explicit ViewWindow(QWidget *p_parent = nullptr);
 
         virtual ~ViewWindow();
 
         Buffer *getBuffer() const;
 
-        void attachToBuffer(Buffer *p_buffer);
+        void attachToBuffer(Buffer *p_buffer, const QSharedPointer<FileOpenParameters> &p_paras);
 
         void detachFromBuffer(bool p_quiet = false);
 
@@ -68,8 +60,8 @@ namespace vnotex
         // Return true if it is OK to proceed.
         bool aboutToClose(bool p_force);
 
-        ViewWindow::Mode getMode() const;
-        virtual void setMode(Mode p_mode) = 0;
+        ViewWindowMode getMode() const;
+        virtual void setMode(ViewWindowMode p_mode) = 0;
 
         virtual QSharedPointer<OutlineProvider> getOutlineProvider();
 
@@ -134,7 +126,7 @@ namespace vnotex
 
     protected slots:
         // Handle current buffer change.
-        virtual void handleBufferChangedInternal() = 0;
+        virtual void handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras) = 0;
 
         // Handle all kinds of type action.
         virtual void handleTypeAction(TypeAction p_action);
@@ -218,8 +210,6 @@ namespace vnotex
 
         void read(bool p_save);
 
-        static ViewWindow::Mode modeFromOpenParameters(const FileOpenParameters &p_paras);
-
         static QToolBar *createToolBar(QWidget *p_parent = nullptr);
 
         // The revision of the buffer of the last sync content.
@@ -229,7 +219,7 @@ namespace vnotex
         // Subclass should maintain it.
         int m_editorConfigRevision = 0;
 
-        Mode m_mode = Mode::Invalid;
+        ViewWindowMode m_mode = ViewWindowMode::Invalid;
 
         // Managed by QObject.
         FindAndReplaceWidget *m_findAndReplace = nullptr;
@@ -281,6 +271,8 @@ namespace vnotex
         int checkFileMissingOrChangedOutside();
 
         void findNextOnLastFind(bool p_forward = true);
+
+        void handleBufferChanged(const QSharedPointer<FileOpenParameters> &p_paras);
 
         static ViewWindow::TypeAction toolBarActionToTypeAction(ViewWindowToolBarHelper::Action p_action);
 

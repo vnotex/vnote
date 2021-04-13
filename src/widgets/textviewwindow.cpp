@@ -20,7 +20,7 @@ using namespace vnotex;
 TextViewWindow::TextViewWindow(QWidget *p_parent)
     : ViewWindow(p_parent)
 {
-    m_mode = Mode::Edit;
+    m_mode = ViewWindowMode::Edit;
     setupUI();
 }
 
@@ -72,8 +72,9 @@ void TextViewWindow::setupToolBar()
     addAction(toolBar, ViewWindowToolBarHelper::FindAndReplace);
 }
 
-void TextViewWindow::handleBufferChangedInternal()
+void TextViewWindow::handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras)
 {
+    Q_UNUSED(p_paras);
     TextViewWindowHelper::handleBufferChanged(this);
 }
 
@@ -142,7 +143,7 @@ void TextViewWindow::setBufferRevisionAfterInvalidation(int p_bufferRevision)
     m_bufferRevision = p_bufferRevision;
 }
 
-void TextViewWindow::setMode(Mode p_mode)
+void TextViewWindow::setMode(ViewWindowMode p_mode)
 {
     Q_UNUSED(p_mode);
     Q_ASSERT(false);

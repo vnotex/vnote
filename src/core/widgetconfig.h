@@ -36,6 +36,9 @@ namespace vnotex
         bool getNodeExplorerAutoImportExternalFilesEnabled() const;
         void setNodeExplorerAutoImportExternalFilesEnabled(bool p_enabled);
 
+        bool isSearchPanelAdvancedSettingsVisible() const;
+        void setSearchPanelAdvancedSettingsVisible(bool p_visible);
+
     private:
         int m_outlineAutoExpandedLevel = 6;
 
@@ -48,6 +51,8 @@ namespace vnotex
         bool m_nodeExplorerExternalFilesVisible = true;
 
         bool m_nodeExplorerAutoImportExternalFilesEnabled = true;
+
+        bool m_searchPanelAdvancedSettingsVisible = true;
     };
 }
 

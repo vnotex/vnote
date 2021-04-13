@@ -1,22 +1,15 @@
 #ifndef FILEOPENPARAMETERS_H
 #define FILEOPENPARAMETERS_H
 
+#include "global.h"
+
 namespace vnotex
 {
     class Node;
 
     struct FileOpenParameters
     {
-        // Some modes may be not supported by some editors.
-        enum Mode
-        {
-            Read,
-            Edit,
-            FullPreview,
-            FocusPreview
-        };
-
-        Mode m_mode = Mode::Read;
+        ViewWindowMode m_mode = ViewWindowMode::Read;
 
         // Whether focus to the opened window.
         bool m_focus = true;

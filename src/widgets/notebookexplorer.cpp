@@ -235,7 +235,7 @@ void NotebookExplorer::newNote()
 
         // Open it right now.
         auto paras = QSharedPointer<FileOpenParameters>::create();
-        paras->m_mode = FileOpenParameters::Mode::Edit;
+        paras->m_mode = ViewWindowMode::Edit;
         paras->m_newFile = true;
         emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
     }

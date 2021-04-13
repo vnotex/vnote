@@ -94,6 +94,8 @@ namespace vnotex
 
         QToolButton *m_searchBtn = nullptr;
 
+        QToolButton *m_advancedSettingsBtn = nullptr;
+
         QComboBox *m_keywordComboBox = nullptr;
 
         QComboBox *m_searchScopeComboBox = nullptr;
@@ -126,6 +128,8 @@ namespace vnotex
         QRadioButton *m_fuzzySearchRadioBtn = nullptr;
 
         QRadioButton *m_regularExpressionRadioBtn = nullptr;
+
+        QWidget *m_advancedSettings = nullptr;
 
         QProgressBar *m_progressBar = nullptr;
 

@@ -748,3 +748,9 @@ void MainWindow::setLocationListVisible(bool p_visible)
         m_docks[DockIndex::LocationListDock]->hide();
     }
 }
+
+void MainWindow::toggleLocationListVisible()
+{
+    bool visible = m_docks[DockIndex::LocationListDock]->isVisible();
+    setLocationListVisible(!visible);
+}

@@ -17,6 +17,7 @@
 
 #include <core/configmgr.h>
 #include <core/sessionconfig.h>
+#include <core/widgetconfig.h>
 #include <core/vnotex.h>
 #include <core/fileopenparameters.h>
 #include <notebook/node.h>
@@ -55,7 +56,7 @@ void SearchPanel::setupUI()
         mainLayout->addWidget(titleBar);
     }
 
-    auto inputsLayout = new QFormLayout();
+    auto inputsLayout = WidgetsFactory::createFormLayout();
     mainLayout->addLayout(inputsLayout);
 
     m_keywordComboBox = WidgetsFactory::createComboBox(this);
@@ -77,21 +78,31 @@ void SearchPanel::setupUI()
     m_searchScopeComboBox->addItem(tr("All Notebooks"), static_cast<int>(SearchScope::AllNotebooks));
     inputsLayout->addRow(tr("Scope:"), m_searchScopeComboBox);
 
-    setupSearchObject(inputsLayout);
+    {
+        // Advanced settings.
+        m_advancedSettings = new QWidget(this);
+        inputsLayout->addRow(m_advancedSettings);
 
-    setupSearchTarget(inputsLayout);
+        auto advLayout = WidgetsFactory::createFormLayout(m_advancedSettings);
+        advLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_filePatternComboBox = WidgetsFactory::createComboBox(this);
-    m_filePatternComboBox->setEditable(true);
-    m_filePatternComboBox->setLineEdit(WidgetsFactory::createLineEdit(this));
-    m_filePatternComboBox->lineEdit()->setPlaceholderText(tr("Wildcard pattern of files and folders to search"));
-    m_filePatternComboBox->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
-    m_filePatternComboBox->completer()->setCaseSensitivity(Qt::CaseSensitive);
-    inputsLayout->addRow(tr("File pattern:"), m_filePatternComboBox);
+        setupSearchObject(advLayout);
 
-    setupFindOption(inputsLayout);
+        setupSearchTarget(advLayout);
+
+        m_filePatternComboBox = WidgetsFactory::createComboBox(m_advancedSettings);
+        m_filePatternComboBox->setEditable(true);
+        m_filePatternComboBox->setLineEdit(WidgetsFactory::createLineEdit(m_advancedSettings));
+        m_filePatternComboBox->lineEdit()->setPlaceholderText(tr("Wildcard pattern of files to search"));
+        m_filePatternComboBox->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
+        m_filePatternComboBox->completer()->setCaseSensitivity(Qt::CaseSensitive);
+        advLayout->addRow(tr("File pattern:"), m_filePatternComboBox);
+
+        setupFindOption(advLayout);
+    }
 
     {
+        // TODO: use a global progress bar.
         m_progressBar = new QProgressBar(this);
         m_progressBar->setRange(0, 0);
         m_progressBar->hide();
@@ -115,10 +126,17 @@ TitleBar *SearchPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
         connect(cancelBtn, &QToolButton::triggered,
                 this, &SearchPanel::stopSearch);
 
-        auto closeLocationListBtn = titleBar->addActionButton(QStringLiteral("close.svg"), tr("Close Location List"));
-        connect(closeLocationListBtn, &QToolButton::triggered,
+        auto toggleLocationListBtn = titleBar->addActionButton(QStringLiteral("search_location_list.svg"), tr("Toggle Location List"));
+        connect(toggleLocationListBtn, &QToolButton::triggered,
                 this, [this]() {
+                    VNoteX::getInst().getMainWindow()->toggleLocationListVisible();
+                });
 
+        m_advancedSettingsBtn = titleBar->addActionButton(QStringLiteral("advanced_settings.svg"), tr("Advanced Settings"));
+        m_advancedSettingsBtn->defaultAction()->setCheckable(true);
+        connect(m_advancedSettingsBtn, &QToolButton::triggered,
+                this, [this](QAction *p_act) {
+                    m_advancedSettings->setVisible(p_act->isChecked());
                 });
     }
 
@@ -192,7 +210,7 @@ void SearchPanel::setupFindOption(QFormLayout *p_layout)
 
 void SearchPanel::initOptions()
 {
-    // Read it from config.
+    // Read search option from config.
     m_option = QSharedPointer<SearchOption>::create(ConfigMgr::getInst().getSessionConfig().getSearchOption());
 
     connect(VNoteX::getInst().getMainWindow(), &MainWindow::mainWindowClosedOnQuit,
@@ -200,6 +218,10 @@ void SearchPanel::initOptions()
                 saveFields(*m_option);
                 ConfigMgr::getInst().getSessionConfig().setSearchOption(*m_option);
             });
+
+    // Init layout.
+    const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
+    m_advancedSettingsBtn->defaultAction()->setChecked(widgetConfig.isSearchPanelAdvancedSettingsVisible());
 }
 
 void SearchPanel::restoreFields(const SearchOption &p_option)
@@ -303,6 +325,7 @@ void SearchPanel::appendLog(const QString &p_text)
     if (!m_infoTextEdit) {
         m_infoTextEdit = WidgetsFactory::createPlainTextConsole(this);
         m_infoTextEdit->setMaximumHeight(m_infoTextEdit->minimumSizeHint().height());
+        // Before progress bar.
         static_cast<QVBoxLayout *>(layout())->insertWidget(layout()->count() - 1, m_infoTextEdit);
     }
 

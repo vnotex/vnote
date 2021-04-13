@@ -89,6 +89,15 @@ namespace vnotex
         Center,
         Right
     };
+
+    enum class ViewWindowMode
+    {
+        Read,
+        Edit,
+        FullPreview,
+        FocusPreview,
+        Invalid
+    };
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);

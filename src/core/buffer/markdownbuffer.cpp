@@ -18,7 +18,8 @@ MarkdownBuffer::MarkdownBuffer(const BufferParameters &p_parameters,
 
 ViewWindow *MarkdownBuffer::createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras, QWidget *p_parent)
 {
-    return new MarkdownViewWindow(p_paras, p_parent);
+    Q_UNUSED(p_paras);
+    return new MarkdownViewWindow(p_parent);
 }
 
 QString MarkdownBuffer::insertImage(const QString &p_srcImagePath, const QString &p_imageFileName)

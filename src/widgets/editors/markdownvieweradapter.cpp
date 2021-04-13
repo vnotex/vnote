@@ -130,7 +130,11 @@ void MarkdownViewerAdapter::scrollToLine(int p_lineNumber)
     }
 
     if (!m_viewerReady) {
-        qWarning() << "Markdown viewer is not ready";
+        if (m_pendingData) {
+            m_pendingData->m_position = Position(p_lineNumber, QString());
+        } else {
+            qWarning() << "Markdown viewer is not ready";
+        }
         return;
     }
 

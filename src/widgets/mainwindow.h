@@ -61,6 +61,8 @@ namespace vnotex
 
         void setLocationListVisible(bool p_visible);
 
+        void toggleLocationListVisible();
+
     signals:
         void mainWindowStarted();
 

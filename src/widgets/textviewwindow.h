@@ -23,7 +23,7 @@ namespace vnotex
 
         QString getLatestContent() const Q_DECL_OVERRIDE;
 
-        void setMode(Mode p_mode) Q_DECL_OVERRIDE;
+        void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
     public slots:
         void handleEditorConfigChange() Q_DECL_OVERRIDE;
@@ -31,7 +31,7 @@ namespace vnotex
     protected slots:
         void setModified(bool p_modified) Q_DECL_OVERRIDE;
 
-        void handleBufferChangedInternal() Q_DECL_OVERRIDE;
+        void handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras) Q_DECL_OVERRIDE;
 
         void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
 

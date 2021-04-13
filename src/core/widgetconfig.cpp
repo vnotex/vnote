@@ -28,6 +28,7 @@ void WidgetConfig::init(const QJsonObject &p_app,
     m_nodeExplorerRecycleBinNodeVisible = READBOOL(QStringLiteral("node_explorer_recycle_bin_node_visible"));
     m_nodeExplorerExternalFilesVisible = READBOOL(QStringLiteral("node_explorer_external_files_visible"));
     m_nodeExplorerAutoImportExternalFilesEnabled = READBOOL(QStringLiteral("node_explorer_auto_import_external_files_enabled"));
+    m_searchPanelAdvancedSettingsVisible = READBOOL(QStringLiteral("search_panel_advanced_settings_visible"));
 }
 
 QJsonObject WidgetConfig::toJson() const
@@ -39,6 +40,7 @@ QJsonObject WidgetConfig::toJson() const
     obj[QStringLiteral("node_explorer_recycle_bin_node_visible")] = m_nodeExplorerRecycleBinNodeVisible;
     obj[QStringLiteral("node_explorer_external_files_visible")] = m_nodeExplorerExternalFilesVisible;
     obj[QStringLiteral("node_explorer_auto_import_external_files_enabled")] = m_nodeExplorerAutoImportExternalFilesEnabled;
+    obj[QStringLiteral("search_panel_advanced_settings_visible")] = m_searchPanelAdvancedSettingsVisible;
     return obj;
 }
 
@@ -100,4 +102,14 @@ bool WidgetConfig::getNodeExplorerAutoImportExternalFilesEnabled() const
 void WidgetConfig::setNodeExplorerAutoImportExternalFilesEnabled(bool p_enabled)
 {
     updateConfig(m_nodeExplorerAutoImportExternalFilesEnabled, p_enabled, this);
+}
+
+bool WidgetConfig::isSearchPanelAdvancedSettingsVisible() const
+{
+    return m_searchPanelAdvancedSettingsVisible;
+}
+
+void WidgetConfig::setSearchPanelAdvancedSettingsVisible(bool p_visible)
+{
+    updateConfig(m_searchPanelAdvancedSettingsVisible, p_visible, this);
 }

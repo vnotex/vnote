@@ -75,7 +75,7 @@ ViewWindow *Buffer::createViewWindow(const QSharedPointer<FileOpenParameters> &p
 {
     auto window = createViewWindowInternal(p_paras, p_parent);
     Q_ASSERT(window);
-    window->attachToBuffer(this);
+    window->attachToBuffer(this, p_paras);
     return window;
 }
 
