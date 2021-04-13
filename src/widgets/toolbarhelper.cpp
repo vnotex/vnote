@@ -48,8 +48,9 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
 
         auto toolBtn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
         Q_ASSERT(toolBtn);
+        toolBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         toolBtn->setPopupMode(QToolButton::InstantPopup);
-        toolBtn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+        toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
         auto newMenu = WidgetsFactory::createMenu(tb);
         toolBtn->setMenu(newMenu);
@@ -149,7 +150,7 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
         auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
         Q_ASSERT(btn);
         btn->setPopupMode(QToolButton::InstantPopup);
-        btn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+        btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
         auto newMenu = WidgetsFactory::createMenu(tb);
         btn->setMenu(newMenu);
@@ -269,7 +270,7 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
         auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
         Q_ASSERT(btn);
         btn->setPopupMode(QToolButton::InstantPopup);
-        btn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+        btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
         auto menu = WidgetsFactory::createMenu(tb);
         btn->setMenu(menu);
@@ -348,7 +349,7 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
         auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
         Q_ASSERT(btn);
         btn->setPopupMode(QToolButton::InstantPopup);
-        btn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+        btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
         auto menu = WidgetsFactory::createMenu(tb);
         btn->setMenu(menu);

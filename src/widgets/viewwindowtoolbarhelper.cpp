@@ -121,7 +121,7 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
         Q_ASSERT(toolBtn);
         toolBtn->setPopupMode(QToolButton::InstantPopup);
-        toolBtn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+        toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
         auto menu = WidgetsFactory::createMenu(p_tb);
 
@@ -282,7 +282,7 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
         Q_ASSERT(toolBtn);
         toolBtn->setPopupMode(QToolButton::InstantPopup);
-        toolBtn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+        toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
         auto menu = new AttachmentPopup(toolBtn, p_tb);
         toolBtn->setMenu(menu);
@@ -297,7 +297,7 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
         Q_ASSERT(toolBtn);
         toolBtn->setPopupMode(QToolButton::InstantPopup);
-        toolBtn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+        toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
         addButtonShortcut(toolBtn, editorConfig.getShortcut(Shortcut::Outline), viewWindow);
 
@@ -322,7 +322,7 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
         Q_ASSERT(toolBtn);
         toolBtn->setPopupMode(QToolButton::InstantPopup);
-        toolBtn->setProperty(PropertyDefs::s_toolButtonWithoutMenuIndicator, true);
+        toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
         auto menu = WidgetsFactory::createMenu(p_tb);
 

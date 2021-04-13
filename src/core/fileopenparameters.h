@@ -29,6 +29,9 @@ namespace vnotex
 
         // Open as read-only.
         bool m_readOnly = false;
+
+        // If m_lineNumber > -1, it indicates the line to scroll to after opening the file.
+        int m_lineNumber = -1;
     };
 }
 

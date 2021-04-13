@@ -23,6 +23,8 @@ namespace vnotex
             CloseTab,
             NavigationDock,
             OutlineDock,
+            SearchDock,
+            LocationListDock,
             NavigationMode,
             LocateNode,
             VerticalSplit,

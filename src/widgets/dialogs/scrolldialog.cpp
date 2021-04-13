@@ -29,7 +29,7 @@ void ScrollDialog::setCentralWidget(QWidget *p_widget)
 {
     Q_ASSERT(!m_centralWidget && p_widget);
     m_centralWidget = p_widget;
-    m_centralWidget->setProperty(PropertyDefs::s_dialogCentralWidget, true);
+    m_centralWidget->setProperty(PropertyDefs::c_dialogCentralWidget, true);
     m_scrollArea->setWidget(p_widget);
 }
 

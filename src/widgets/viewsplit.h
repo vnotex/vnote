@@ -56,7 +56,7 @@ namespace vnotex
 
         // @p_func: return true if going well, return false to stop the iteration.
         // Return false if there is a break.
-        bool forEachViewWindow(const ViewWindowSelector &p_func);
+        bool forEachViewWindow(const ViewWindowSelector &p_func) const;
 
         QVector<ViewWindowNavigationModeInfo> getNavigationModeInfo() const;
 

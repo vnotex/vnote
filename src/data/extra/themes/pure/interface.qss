@@ -412,6 +412,24 @@ vnotex--MainWindow QLabel#MainWindowTipsLabel {
 }
 
 /* QLineEdit */
+QLineEdit[EmbeddedLineEdit="true"] {
+    border: none;
+    padding: 0px;
+    margin: 0px;
+    color: @widgets#qlineedit#fg;
+    background-color: transparent;
+}
+
+QLineEdit[EmbeddedLineEdit="true"]:focus {
+    border: none;
+    background-color: @widgets#qlineedit#focus#bg;
+}
+
+QLineEdit[EmbeddedLineEdit="true"]:hover {
+    border: none;
+    background-color: @widgets#qlineedit#hover#bg;
+}
+
 QLineEdit {
     border: 1px solid @widgets#qlineedit#border;
     padding: 3px;

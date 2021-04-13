@@ -9,6 +9,7 @@
 #include <QToolButton>
 #include <QFormLayout>
 #include <QPlainTextEdit>
+#include <QRadioButton>
 
 #include "lineedit.h"
 #include "combobox.h"
@@ -50,6 +51,11 @@ QComboBox *WidgetsFactory::createComboBox(QWidget *p_parent)
 QCheckBox *WidgetsFactory::createCheckBox(const QString &p_text, QWidget *p_parent)
 {
     return new QCheckBox(p_text, p_parent);
+}
+
+QRadioButton *WidgetsFactory::createRadioButton(const QString &p_text, QWidget *p_parent)
+{
+    return new QRadioButton(p_text, p_parent);
 }
 
 QSpinBox *WidgetsFactory::createSpinBox(QWidget *p_parent)

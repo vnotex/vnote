@@ -128,7 +128,7 @@ void ViewWindow::initIcons()
     }
 
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    const QString savedIconName("saved.svg");
+    const QString savedIconName("buffer.svg");
     const QString unsavedIconFg("base#icon#warning#fg");
     s_savedIcon = IconUtils::fetchIcon(themeMgr.getIconFile(savedIconName));
     s_modifiedIcon = IconUtils::fetchIcon(themeMgr.getIconFile(savedIconName),
@@ -1083,6 +1083,6 @@ void ViewWindow::read(bool p_save)
 QToolBar *ViewWindow::createToolBar(QWidget *p_parent)
 {
     auto toolBar = new QToolBar(p_parent);
-    toolBar->setProperty(PropertyDefs::s_viewWindowToolBar, true);
+    toolBar->setProperty(PropertyDefs::c_viewWindowToolBar, true);
     return toolBar;
 }

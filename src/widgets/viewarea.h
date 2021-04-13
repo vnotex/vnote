@@ -68,6 +68,9 @@ namespace vnotex
 
         QSize sizeHint() const Q_DECL_OVERRIDE;
 
+        // Not all Workspace. Just all ViewSplits.
+        QList<Buffer *> getAllBuffersInViewSplits() const;
+
     public slots:
         void openBuffer(Buffer *p_buffer, const QSharedPointer<FileOpenParameters> &p_paras);
 
@@ -198,7 +201,9 @@ namespace vnotex
 
         void checkCurrentViewWindowChange();
 
-        QVector<ViewWindow *> getAllViewWindows(ViewSplit *p_split, const ViewSplit::ViewWindowSelector &p_func);
+        QVector<ViewWindow *> getAllViewWindows(ViewSplit *p_split, const ViewSplit::ViewWindowSelector &p_func) const;
+
+        QVector<ViewWindow *> getAllViewWindows(ViewSplit *p_split) const;
 
         QLayout *m_mainLayout = nullptr;
 

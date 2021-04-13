@@ -71,7 +71,7 @@ void ManageNotebooksDialog::setupUI()
                 });
 
         m_deleteNotebookBtn = new QPushButton(tr("Delete (DANGER)"), infoWidget);
-        WidgetUtils::setPropertyDynamically(m_deleteNotebookBtn, PropertyDefs::s_dangerButton, true);
+        WidgetUtils::setPropertyDynamically(m_deleteNotebookBtn, PropertyDefs::c_dangerButton, true);
         btnLayout->addWidget(m_deleteNotebookBtn);
         connect(m_deleteNotebookBtn, &QPushButton::clicked,
                 this, [this]() {
