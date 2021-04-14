@@ -16,6 +16,7 @@ class QToolButton;
 class QPlainTextEdit;
 class QRadioButton;
 class QButtonGroup;
+class QVBoxLayout;
 
 namespace vnotex
 {
@@ -64,11 +65,11 @@ namespace vnotex
 
         TitleBar *setupTitleBar(const QString &p_title, QWidget *p_parent = nullptr);
 
-        void setupSearchObject(QFormLayout *p_layout);
+        void setupSearchObject(QFormLayout *p_layout, QWidget *p_parent = nullptr);
 
-        void setupSearchTarget(QFormLayout *p_layout);
+        void setupSearchTarget(QFormLayout *p_layout, QWidget *p_parent = nullptr);
 
-        void setupFindOption(QFormLayout *p_layout);
+        void setupFindOption(QFormLayout *p_layout, QWidget *p_parent = nullptr);
 
         void initOptions();
 
@@ -91,6 +92,8 @@ namespace vnotex
         void handleLocationActivated(const Location &p_location);
 
         QSharedPointer<ISearchInfoProvider> m_provider;
+
+        QVBoxLayout *m_mainLayout = nullptr;
 
         QToolButton *m_searchBtn = nullptr;
 

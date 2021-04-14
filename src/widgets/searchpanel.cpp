@@ -14,6 +14,7 @@
 #include <QCoreApplication>
 #include <QRadioButton>
 #include <QButtonGroup>
+#include <QScrollArea>
 
 #include <core/configmgr.h>
 #include <core/sessionconfig.h>
@@ -48,21 +49,34 @@ SearchPanel::SearchPanel(const QSharedPointer<ISearchInfoProvider> &p_provider, 
 
 void SearchPanel::setupUI()
 {
-    auto mainLayout = new QVBoxLayout(this);
-    WidgetUtils::setContentsMargins(mainLayout);
+    auto layout = new QVBoxLayout(this);
+    WidgetUtils::setContentsMargins(layout);
 
+    // Title.
     {
         auto titleBar = setupTitleBar(QString(), this);
-        mainLayout->addWidget(titleBar);
+        layout->addWidget(titleBar);
     }
 
-    auto inputsLayout = WidgetsFactory::createFormLayout();
-    mainLayout->addLayout(inputsLayout);
+    // Body.
+    auto scrollArea = new QScrollArea(this);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setWidgetResizable(true);
+    layout->addWidget(scrollArea);
 
-    m_keywordComboBox = WidgetsFactory::createComboBox(this);
+    auto mainWidget = new QWidget(scrollArea);
+    scrollArea->setWidget(mainWidget);
+
+    m_mainLayout = new QVBoxLayout(mainWidget);
+    WidgetUtils::setContentsMargins(m_mainLayout);
+
+    auto inputsLayout = WidgetsFactory::createFormLayout();
+    m_mainLayout->addLayout(inputsLayout);
+
+    m_keywordComboBox = WidgetsFactory::createComboBox(mainWidget);
     m_keywordComboBox->setToolTip(SearchToken::getHelpText());
     m_keywordComboBox->setEditable(true);
-    m_keywordComboBox->setLineEdit(WidgetsFactory::createLineEdit(this));
+    m_keywordComboBox->setLineEdit(WidgetsFactory::createLineEdit(mainWidget));
     m_keywordComboBox->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
     m_keywordComboBox->completer()->setCaseSensitivity(Qt::CaseSensitive);
     connect(m_keywordComboBox->lineEdit(), &QLineEdit::returnPressed,
@@ -71,7 +85,7 @@ void SearchPanel::setupUI()
             });
     inputsLayout->addRow(tr("Keyword:"), m_keywordComboBox);
 
-    m_searchScopeComboBox = WidgetsFactory::createComboBox(this);
+    m_searchScopeComboBox = WidgetsFactory::createComboBox(mainWidget);
     m_searchScopeComboBox->addItem(tr("Buffers"), static_cast<int>(SearchScope::Buffers));
     m_searchScopeComboBox->addItem(tr("Current Folder"), static_cast<int>(SearchScope::CurrentFolder));
     m_searchScopeComboBox->addItem(tr("Current Notebook"), static_cast<int>(SearchScope::CurrentNotebook));
@@ -80,15 +94,15 @@ void SearchPanel::setupUI()
 
     {
         // Advanced settings.
-        m_advancedSettings = new QWidget(this);
+        m_advancedSettings = new QWidget(mainWidget);
         inputsLayout->addRow(m_advancedSettings);
 
         auto advLayout = WidgetsFactory::createFormLayout(m_advancedSettings);
         advLayout->setContentsMargins(0, 0, 0, 0);
 
-        setupSearchObject(advLayout);
+        setupSearchObject(advLayout, m_advancedSettings);
 
-        setupSearchTarget(advLayout);
+        setupSearchTarget(advLayout, m_advancedSettings);
 
         m_filePatternComboBox = WidgetsFactory::createComboBox(m_advancedSettings);
         m_filePatternComboBox->setEditable(true);
@@ -98,18 +112,18 @@ void SearchPanel::setupUI()
         m_filePatternComboBox->completer()->setCaseSensitivity(Qt::CaseSensitive);
         advLayout->addRow(tr("File pattern:"), m_filePatternComboBox);
 
-        setupFindOption(advLayout);
+        setupFindOption(advLayout, m_advancedSettings);
     }
 
     {
         // TODO: use a global progress bar.
-        m_progressBar = new QProgressBar(this);
+        m_progressBar = new QProgressBar(mainWidget);
         m_progressBar->setRange(0, 0);
         m_progressBar->hide();
-        mainLayout->addWidget(m_progressBar);
+        m_mainLayout->addWidget(m_progressBar);
     }
 
-    mainLayout->addStretch();
+    m_mainLayout->addStretch();
 }
 
 TitleBar *SearchPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
@@ -143,68 +157,71 @@ TitleBar *SearchPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
     return titleBar;
 }
 
-void SearchPanel::setupSearchObject(QFormLayout *p_layout)
+void SearchPanel::setupSearchObject(QFormLayout *p_layout, QWidget *p_parent)
 {
     auto gridLayout = new QGridLayout();
+    gridLayout->setContentsMargins(0, 0, 0, 0);
     p_layout->addRow(tr("Object:"), gridLayout);
 
-    m_searchObjectNameCheckBox = WidgetsFactory::createCheckBox(tr("Name"), this);
+    m_searchObjectNameCheckBox = WidgetsFactory::createCheckBox(tr("Name"), p_parent);
     gridLayout->addWidget(m_searchObjectNameCheckBox, 0, 0);
 
-    m_searchObjectContentCheckBox = WidgetsFactory::createCheckBox(tr("Content"), this);
+    m_searchObjectContentCheckBox = WidgetsFactory::createCheckBox(tr("Content"), p_parent);
     gridLayout->addWidget(m_searchObjectContentCheckBox, 0, 1);
 
-    m_searchObjectOutlineCheckBox = WidgetsFactory::createCheckBox(tr("Outline"), this);
-    gridLayout->addWidget(m_searchObjectOutlineCheckBox, 0, 2);
+    m_searchObjectOutlineCheckBox = WidgetsFactory::createCheckBox(tr("Outline"), p_parent);
+    gridLayout->addWidget(m_searchObjectOutlineCheckBox, 1, 0);
 
-    m_searchObjectTagCheckBox = WidgetsFactory::createCheckBox(tr("Tag"), this);
-    gridLayout->addWidget(m_searchObjectTagCheckBox, 1, 0);
+    m_searchObjectTagCheckBox = WidgetsFactory::createCheckBox(tr("Tag"), p_parent);
+    gridLayout->addWidget(m_searchObjectTagCheckBox, 1, 1);
 
-    m_searchObjectPathCheckBox = WidgetsFactory::createCheckBox(tr("Path"), this);
-    gridLayout->addWidget(m_searchObjectPathCheckBox, 1, 1);
+    m_searchObjectPathCheckBox = WidgetsFactory::createCheckBox(tr("Path"), p_parent);
+    gridLayout->addWidget(m_searchObjectPathCheckBox, 2, 0);
 }
 
-void SearchPanel::setupSearchTarget(QFormLayout *p_layout)
+void SearchPanel::setupSearchTarget(QFormLayout *p_layout, QWidget *p_parent)
 {
     auto gridLayout = new QGridLayout();
+    gridLayout->setContentsMargins(0, 0, 0, 0);
     p_layout->addRow(tr("Target:"), gridLayout);
 
-    m_searchTargetFileCheckBox = WidgetsFactory::createCheckBox(tr("File"), this);
+    m_searchTargetFileCheckBox = WidgetsFactory::createCheckBox(tr("File"), p_parent);
     gridLayout->addWidget(m_searchTargetFileCheckBox, 0, 0);
 
-    m_searchTargetFolderCheckBox = WidgetsFactory::createCheckBox(tr("Folder"), this);
+    m_searchTargetFolderCheckBox = WidgetsFactory::createCheckBox(tr("Folder"), p_parent);
     gridLayout->addWidget(m_searchTargetFolderCheckBox, 0, 1);
 
-    m_searchTargetNotebookCheckBox = WidgetsFactory::createCheckBox(tr("Notebook"), this);
-    gridLayout->addWidget(m_searchTargetNotebookCheckBox, 0, 2);
+    m_searchTargetNotebookCheckBox = WidgetsFactory::createCheckBox(tr("Notebook"), p_parent);
+    gridLayout->addWidget(m_searchTargetNotebookCheckBox, 1, 0);
 }
 
-void SearchPanel::setupFindOption(QFormLayout *p_layout)
+void SearchPanel::setupFindOption(QFormLayout *p_layout, QWidget *p_parent)
 {
     auto gridLayout = new QGridLayout();
+    gridLayout->setContentsMargins(0, 0, 0, 0);
     p_layout->addRow(tr("Option:"), gridLayout);
 
-    m_caseSensitiveCheckBox = WidgetsFactory::createCheckBox(tr("&Case sensitive"), this);
+    m_caseSensitiveCheckBox = WidgetsFactory::createCheckBox(tr("&Case sensitive"), p_parent);
     gridLayout->addWidget(m_caseSensitiveCheckBox, 0, 0);
 
     {
-        QButtonGroup *btnGroup = new QButtonGroup(this);
+        QButtonGroup *btnGroup = new QButtonGroup(p_parent);
 
-        m_plainTextRadioBtn = WidgetsFactory::createRadioButton(tr("&Plain text"), this);
+        m_plainTextRadioBtn = WidgetsFactory::createRadioButton(tr("&Plain text"), p_parent);
         btnGroup->addButton(m_plainTextRadioBtn);
         gridLayout->addWidget(m_plainTextRadioBtn, 1, 0);
 
-        m_wholeWordOnlyRadioBtn = WidgetsFactory::createRadioButton(tr("&Whole word only"), this);
+        m_wholeWordOnlyRadioBtn = WidgetsFactory::createRadioButton(tr("&Whole word only"), p_parent);
         btnGroup->addButton(m_wholeWordOnlyRadioBtn);
-        gridLayout->addWidget(m_wholeWordOnlyRadioBtn, 1, 1);
+        gridLayout->addWidget(m_wholeWordOnlyRadioBtn, 2, 0);
 
-        m_fuzzySearchRadioBtn = WidgetsFactory::createRadioButton(tr("&Fuzzy search"), this);
+        m_fuzzySearchRadioBtn = WidgetsFactory::createRadioButton(tr("&Fuzzy search"), p_parent);
         btnGroup->addButton(m_fuzzySearchRadioBtn);
-        gridLayout->addWidget(m_fuzzySearchRadioBtn, 2, 0);
+        gridLayout->addWidget(m_fuzzySearchRadioBtn, 3, 0);
 
-        m_regularExpressionRadioBtn = WidgetsFactory::createRadioButton(tr("Re&gular expression"), this);
+        m_regularExpressionRadioBtn = WidgetsFactory::createRadioButton(tr("Re&gular expression"), p_parent);
         btnGroup->addButton(m_regularExpressionRadioBtn);
-        gridLayout->addWidget(m_regularExpressionRadioBtn, 2, 1);
+        gridLayout->addWidget(m_regularExpressionRadioBtn, 4, 0);
     }
 }
 
@@ -326,7 +343,7 @@ void SearchPanel::appendLog(const QString &p_text)
         m_infoTextEdit = WidgetsFactory::createPlainTextConsole(this);
         m_infoTextEdit->setMaximumHeight(m_infoTextEdit->minimumSizeHint().height());
         // Before progress bar.
-        static_cast<QVBoxLayout *>(layout())->insertWidget(layout()->count() - 1, m_infoTextEdit);
+        m_mainLayout->insertWidget(m_mainLayout->count() - 1, m_infoTextEdit);
     }
 
     m_infoTextEdit->appendPlainText(">>> " + p_text);

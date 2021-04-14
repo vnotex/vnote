@@ -41,6 +41,10 @@ QAbstractScrollArea::corner {
     border: none;
 }
 
+vnotex--SearchPanel QAbstractScrollArea {
+    border: none;
+}
+
 /* ToolBox */
 vnotex--ToolBox QWidget[ToolBoxTitle="true"] {
     border-bottom: 2px solid @widgets#toolbox#title#border;
