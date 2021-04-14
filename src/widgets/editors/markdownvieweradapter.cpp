@@ -138,7 +138,7 @@ void MarkdownViewerAdapter::scrollToLine(int p_lineNumber)
         return;
     }
 
-    m_topLineNumber = -1;
+    m_topLineNumber = p_lineNumber;
     emit editLineNumberUpdated(p_lineNumber);
 }
 

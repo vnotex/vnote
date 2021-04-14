@@ -117,7 +117,7 @@ void LocationList::setItemLocationLineAndText(QTreeWidgetItem *p_item, const Com
 {
     p_item->setData(Columns::LineColumn, Qt::UserRole, p_line.m_lineNumber);
     if (p_line.m_lineNumber != -1) {
-        p_item->setText(Columns::LineColumn, QString::number(p_line.m_lineNumber));
+        p_item->setText(Columns::LineColumn, QString::number(p_line.m_lineNumber + 1));
     }
     p_item->setText(Columns::TextColumn, p_line.m_text);
 }

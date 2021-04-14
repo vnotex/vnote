@@ -918,3 +918,10 @@ bool MarkdownViewWindow::isReadMode() const
 {
     return m_mode == ViewWindowMode::Read;
 }
+
+void MarkdownViewWindow::openTwice(const QSharedPointer<FileOpenParameters> &p_paras)
+{
+    qDebug() << p_paras->m_lineNumber;
+    Q_ASSERT(!p_paras || !p_paras->m_newFile);
+    handleFileOpenParameters(p_paras);
+}

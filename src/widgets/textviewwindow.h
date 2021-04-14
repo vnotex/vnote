@@ -25,6 +25,8 @@ namespace vnotex
 
         void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
+        void openTwice(const QSharedPointer<FileOpenParameters> &p_paras) Q_DECL_OVERRIDE;
+
     public slots:
         void handleEditorConfigChange() Q_DECL_OVERRIDE;
 
@@ -65,6 +67,8 @@ namespace vnotex
         void setBufferRevisionAfterInvalidation(int p_bufferRevision);
 
         void updateEditorFromConfig();
+
+        void handleFileOpenParameters(const QSharedPointer<FileOpenParameters> &p_paras);
 
         static QSharedPointer<vte::TextEditorConfig> createTextEditorConfig(const TextEditorConfig &p_config);
 

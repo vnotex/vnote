@@ -87,7 +87,7 @@ void FileSearchEngineWorker::searchFile(const QString &p_filePath, const QString
 
     QSharedPointer<SearchResultItem> resultItem;
 
-    int lineNum = 1;
+    int lineNum = 0;
     QTextStream ins(&file);
     while (!ins.atEnd()) {
         if (isAskedToStop()) {

@@ -39,6 +39,9 @@ namespace vnotex
 
         void detachFromBuffer(bool p_quiet = false);
 
+        // User request to open the buffer attached to this ViewWindow again.
+        virtual void openTwice(const QSharedPointer<FileOpenParameters> &p_paras) = 0;
+
         virtual const QIcon &getIcon() const;
 
         virtual QString getName() const;

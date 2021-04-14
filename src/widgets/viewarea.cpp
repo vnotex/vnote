@@ -167,6 +167,8 @@ void ViewArea::openBuffer(Buffer *p_buffer, const QSharedPointer<FileOpenParamet
             }
         }
 
+        selectedWin->openTwice(p_paras);
+
         setCurrentViewWindow(selectedWin);
     }
 

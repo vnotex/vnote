@@ -276,7 +276,7 @@ bool Searcher::searchContent(const File *p_file)
 
     QSharedPointer<SearchResultItem> resultItem;
 
-    int lineNum = 1;
+    int lineNum = 0;
     int pos = 0;
     int contentSize = content.size();
     QRegularExpression newlineRegExp("\\n|\\r\\n|\\r");

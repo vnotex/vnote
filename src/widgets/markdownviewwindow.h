@@ -38,6 +38,8 @@ namespace vnotex
 
         QSharedPointer<OutlineProvider> getOutlineProvider() Q_DECL_OVERRIDE;
 
+        void openTwice(const QSharedPointer<FileOpenParameters> &p_paras) Q_DECL_OVERRIDE;
+
     public slots:
         void handleEditorConfigChange() Q_DECL_OVERRIDE;
 

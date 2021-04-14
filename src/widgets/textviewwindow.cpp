@@ -14,6 +14,7 @@
 #include <core/vnotex.h>
 #include <core/thememgr.h>
 #include "editors/statuswidget.h"
+#include <core/fileopenparameters.h>
 
 using namespace vnotex;
 
@@ -76,6 +77,8 @@ void TextViewWindow::handleBufferChangedInternal(const QSharedPointer<FileOpenPa
 {
     Q_UNUSED(p_paras);
     TextViewWindowHelper::handleBufferChanged(this);
+
+    handleFileOpenParameters(p_paras);
 }
 
 void TextViewWindow::syncEditorFromBuffer()
@@ -213,5 +216,21 @@ void TextViewWindow::updateEditorFromConfig()
     const auto &textEditorConfig = editorConfig.getTextEditorConfig();
     if (textEditorConfig.getZoomDelta() != 0) {
         m_editor->zoom(textEditorConfig.getZoomDelta());
+    }
+}
+
+void TextViewWindow::openTwice(const QSharedPointer<FileOpenParameters> &p_paras)
+{
+    handleFileOpenParameters(p_paras);
+}
+
+void TextViewWindow::handleFileOpenParameters(const QSharedPointer<FileOpenParameters> &p_paras)
+{
+    if (!p_paras) {
+        return;
+    }
+
+    if (p_paras->m_lineNumber > -1) {
+        m_editor->scrollToLine(p_paras->m_lineNumber, true);
     }
 }

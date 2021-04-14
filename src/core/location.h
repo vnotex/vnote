@@ -19,6 +19,7 @@ namespace vnotex
 
         QString m_displayPath;
 
+        // 0-based.
         int m_lineNumber = -1;
     };
 
@@ -42,6 +43,7 @@ namespace vnotex
             {
             }
 
+            // 0-based.
             int m_lineNumber = -1;
 
             QString m_text;
