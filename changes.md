@@ -1,4 +1,7 @@
 # Changes
+## v3.0.0-beta.11
+* Full-text search
+
 ## v3.0.0-beta.10
 * Show more tips
 * Add exclude patterns for external nodes
