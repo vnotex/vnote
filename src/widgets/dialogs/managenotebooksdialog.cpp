@@ -163,8 +163,12 @@ void ManageNotebooksDialog::loadNotebooks(const Notebook *p_notebook)
         }
     }
 
-    if (!hasCurrentItem && !notebooks.isEmpty()) {
-        m_notebookList->setCurrentRow(0);
+    if (!hasCurrentItem) {
+        if (notebooks.isEmpty()) {
+            selectNotebook(nullptr);
+        } else {
+            m_notebookList->setCurrentRow(0);
+        }
     }
 }
 
@@ -172,6 +176,10 @@ void ManageNotebooksDialog::selectNotebook(Notebook *p_notebook)
 {
     m_notebookInfoWidget->setNotebook(p_notebook);
     setChangesUnsaved(false);
+
+    // Update buttons.
+    m_closeNotebookBtn->setEnabled(p_notebook);
+    m_deleteNotebookBtn->setEnabled(p_notebook);
 
     WidgetUtils::resizeToHideScrollBarLater(m_infoScrollArea, false, true);
 }
@@ -217,7 +225,10 @@ bool ManageNotebooksDialog::saveChangesToNotebook()
 
 void ManageNotebooksDialog::closeNotebook(const Notebook *p_notebook)
 {
-    Q_ASSERT(p_notebook);
+    if (!p_notebook) {
+        return;
+    }
+
     int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question,
                                                  tr("Close notebook (%1)?")
                                                    .arg(p_notebook->getName()),
@@ -244,7 +255,10 @@ void ManageNotebooksDialog::closeNotebook(const Notebook *p_notebook)
 
 void ManageNotebooksDialog::removeNotebook(const Notebook *p_notebook)
 {
-    Q_ASSERT(p_notebook);
+    if (!p_notebook) {
+        return;
+    }
+
     int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
                                                  tr("Delete notebook (%1) from disk?").arg(p_notebook->getName()),
                                                  tr("CALM DOWN! CALM DOWN! CALM DOWN! It will delete all files belonging to this notebook from disk. "

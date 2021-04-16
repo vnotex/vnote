@@ -84,6 +84,15 @@ bool ImportFolderDialog::importFolder()
 {
     const auto folder = m_filterWidget->getFolderPath();
     auto nb = m_parentNode->getNotebook();
+    if (PathUtils::pathContains(folder, m_parentNode->fetchAbsolutePath()))
+    {
+        // Avoid recursive import.
+        auto msg = tr("Failed to add folder (%1) as node under (%2).").arg(folder, m_parentNode->fetchAbsolutePath());
+        qCritical() << msg;
+        setInformationText(msg, ScrollDialog::InformationLevel::Error);
+        return false;
+    }
+
     m_newNode = nullptr;
     try {
         m_newNode = nb->copyAsNode(m_parentNode, Node::Flag::Container, folder);
