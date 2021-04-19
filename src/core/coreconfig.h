@@ -25,6 +25,7 @@ namespace vnotex
             OutlineDock,
             SearchDock,
             LocationListDock,
+            Search,
             NavigationMode,
             LocateNode,
             VerticalSplit,

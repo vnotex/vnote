@@ -19,6 +19,7 @@
             "OutlineDock" : "Ctrl+G, 2",
             "SearchDock" : "Ctrl+G, 3",
             "LocationListDock" : "Ctrl+G, 4",
+            "Search" : "Ctrl+Alt+F",
             "NavigationMode" : "Ctrl+G, W",
             "LocateNode" : "Ctrl+G, D",
             "VerticalSplit" : "Ctrl+G, \\",

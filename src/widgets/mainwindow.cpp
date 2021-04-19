@@ -585,6 +585,9 @@ void MainWindow::setupShortcuts()
 
     setupDockActivateShortcut(m_docks[DockIndex::SearchDock],
                               coreConfig.getShortcut(CoreConfig::Shortcut::SearchDock));
+    // Extra shortcut for SearchDock.
+    setupDockActivateShortcut(m_docks[DockIndex::SearchDock],
+                              coreConfig.getShortcut(CoreConfig::Shortcut::Search));
 
     setupDockActivateShortcut(m_docks[DockIndex::LocationListDock],
                               coreConfig.getShortcut(CoreConfig::Shortcut::LocationListDock));
