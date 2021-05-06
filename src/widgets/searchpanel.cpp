@@ -79,6 +79,7 @@ void SearchPanel::setupUI()
     m_keywordComboBox->setLineEdit(WidgetsFactory::createLineEdit(mainWidget));
     m_keywordComboBox->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
     m_keywordComboBox->completer()->setCaseSensitivity(Qt::CaseSensitive);
+    setFocusProxy(m_keywordComboBox);
     connect(m_keywordComboBox->lineEdit(), &QLineEdit::returnPressed,
             this, [this]() {
                 m_searchBtn->animateClick();

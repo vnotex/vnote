@@ -18,6 +18,7 @@
 #include <QSystemTrayIcon>
 #include <QWindowStateChangeEvent>
 #include <QTimer>
+#include <QBitArray>
 
 #include "toolbox.h"
 #include "notebookexplorer.h"
@@ -478,9 +479,27 @@ void MainWindow::resetStateAndGeometry()
 
 void MainWindow::setContentAreaExpanded(bool p_expanded)
 {
-    for (auto dock : m_docks) {
-        if (!dock->isFloating()) {
-            dock->setVisible(!p_expanded);
+    static QBitArray dockStateCache(m_docks.size(), false);
+
+    if (p_expanded) {
+        // Store the state and hide.
+        for (int i = 0; i < m_docks.size(); ++i) {
+            if (m_docks[i]->isFloating()) {
+                dockStateCache[i] = true;
+                continue;
+            }
+
+            dockStateCache[i] = m_docks[i]->isVisible();
+            m_docks[i]->setVisible(false);
+        }
+    } else {
+        // Restore the state.
+        for (int i = 0; i < m_docks.size(); ++i) {
+            if (m_docks[i]->isFloating()) {
+                continue;
+            }
+
+            m_docks[i]->setVisible(dockStateCache[i]);
         }
     }
 }
