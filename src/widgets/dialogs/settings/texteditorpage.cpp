@@ -132,6 +132,16 @@ void TextEditorPage::setupUI()
         connect(m_zoomDeltaSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
                 this, &TextEditorPage::pageIsChanged);
     }
+
+    {
+        const QString label(tr("Spell check"));
+        m_spellCheckCheckBox = WidgetsFactory::createCheckBox(label, this);
+        m_spellCheckCheckBox->setToolTip(tr("Spell check"));
+        mainLayout->addRow(m_spellCheckCheckBox);
+        addSearchItem(label, m_spellCheckCheckBox->toolTip(), m_spellCheckCheckBox);
+        connect(m_spellCheckCheckBox, &QCheckBox::stateChanged,
+                this, &TextEditorPage::pageIsChanged);
+    }
 }
 
 void TextEditorPage::loadInternal()
@@ -169,6 +179,8 @@ void TextEditorPage::loadInternal()
     m_tabStopWidthSpinBox->setValue(textConfig.getTabStopWidth());
 
     m_zoomDeltaSpinBox->setValue(textConfig.getZoomDelta());
+
+    m_spellCheckCheckBox->setChecked(textConfig.isSpellCheckEnabled());
 }
 
 void TextEditorPage::saveInternal()
@@ -202,6 +214,8 @@ void TextEditorPage::saveInternal()
     textConfig.setTabStopWidth(m_tabStopWidthSpinBox->value());
 
     textConfig.setZoomDelta(m_zoomDeltaSpinBox->value());
+
+    textConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
 
     EditorPage::notifyEditorConfigChange();
 }

@@ -99,6 +99,9 @@ namespace vnotex
 
         int getSmartTableInterval() const;
 
+        bool isSpellCheckEnabled() const;
+        void setSpellCheckEnabled(bool p_enabled);
+
     private:
         QString sectionNumberModeToString(SectionNumberMode p_mode) const;
         SectionNumberMode stringToSectionNumberMode(const QString &p_str) const;
@@ -171,6 +174,9 @@ namespace vnotex
 
         // Interval time to do smart table format.
         int m_smartTableInterval = 2000;
+
+        // Override the config in TextEditorConfig.
+        bool m_spellCheckEnabled = true;
     };
 }
 

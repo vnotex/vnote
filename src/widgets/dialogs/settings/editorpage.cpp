@@ -4,11 +4,16 @@
 #include <QFormLayout>
 #include <QTimer>
 #include <QSpinBox>
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QUrl>
 
 #include <widgets/widgetsfactory.h>
 #include <core/editorconfig.h>
 #include <core/configmgr.h>
 #include <utils/widgetutils.h>
+#include <vtextedit/spellchecker.h>
+#include <widgets/messageboxhelper.h>
 
 using namespace vnotex;
 
@@ -51,6 +56,43 @@ void EditorPage::setupUI()
                 this, &EditorPage::pageIsChanged);
 
     }
+
+    {
+        auto lineLayout = new QHBoxLayout();
+
+        m_spellCheckDictComboBox = WidgetsFactory::createComboBox(this);
+        m_spellCheckDictComboBox->setToolTip(tr("Default dictionary used for spell check"));
+        lineLayout->addWidget(m_spellCheckDictComboBox);
+
+        {
+            auto dicts = vte::SpellChecker::getInst().availableDictionaries();
+            for (auto it = dicts.constBegin(); it != dicts.constEnd(); ++it) {
+                m_spellCheckDictComboBox->addItem(it.key(), it.value());
+            }
+        }
+
+        auto addBtn = new QPushButton(tr("Add Dictionary"), this);
+        connect(addBtn, &QPushButton::clicked,
+                this, [this]() {
+                    const auto dictsFolder = ConfigMgr::getInst().getUserDictsFolder();
+                    MessageBoxHelper::notify(
+                        MessageBoxHelper::Information,
+                        tr("VNote uses [Hunspell](http://hunspell.github.io/) for spell check."),
+                        tr("Please download Hunspell's dictionaries, put them under (%1) and restart VNote.").arg(dictsFolder),
+                        QString(),
+                        this);
+                    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(dictsFolder));
+                });
+        lineLayout->addWidget(addBtn);
+
+        lineLayout->addStretch();
+
+        const QString label(tr("Spell check dictionary:"));
+        mainLayout->addRow(label, lineLayout);
+        addSearchItem(label, m_spellCheckDictComboBox->toolTip(), m_spellCheckDictComboBox);
+        connect(m_spellCheckDictComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &EditorPage::pageIsChanged);
+    }
 }
 
 void EditorPage::loadInternal()
@@ -64,6 +106,11 @@ void EditorPage::loadInternal()
     }
 
     m_toolBarIconSizeSpinBox->setValue(editorConfig.getToolBarIconSize());
+
+    {
+        int idx = m_spellCheckDictComboBox->findData(editorConfig.getSpellCheckDefaultDictionary());
+        m_spellCheckDictComboBox->setCurrentIndex(idx == -1 ? 0 : idx);
+    }
 }
 
 void EditorPage::saveInternal()
@@ -76,6 +123,10 @@ void EditorPage::saveInternal()
     }
 
     editorConfig.setToolBarIconSize(m_toolBarIconSizeSpinBox->value());
+
+    {
+        editorConfig.setSpellCheckDefaultDictionary(m_spellCheckDictComboBox->currentData().toString());
+    }
 
     notifyEditorConfigChange();
 }

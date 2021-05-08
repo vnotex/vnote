@@ -66,6 +66,9 @@ namespace vnotex
         int getZoomDelta() const;
         void setZoomDelta(int p_delta);
 
+        bool isSpellCheckEnabled() const;
+        void setSpellCheckEnabled(bool p_enabled);
+
     private:
         QString lineNumberTypeToString(LineNumberType p_type) const;
         LineNumberType stringToLineNumberType(const QString &p_str) const;
@@ -94,6 +97,8 @@ namespace vnotex
         int m_tabStopWidth = 4;
 
         int m_zoomDelta = 0;
+
+        bool m_spellCheckEnabled = false;
     };
 }
 

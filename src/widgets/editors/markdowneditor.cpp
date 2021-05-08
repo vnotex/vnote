@@ -66,8 +66,9 @@ MarkdownEditor::Heading::Heading(const QString &p_name,
 
 MarkdownEditor::MarkdownEditor(const MarkdownEditorConfig &p_config,
                                const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
+                               const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
                                QWidget *p_parent)
-    : vte::VMarkdownEditor(p_editorConfig, p_parent),
+    : vte::VMarkdownEditor(p_editorConfig, p_editorParas, p_parent),
       m_config(p_config)
 {
     setupShortcuts();
@@ -915,15 +916,10 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
     p_menu->reset(m_textEdit->createStandardContextMenu(p_event->pos()));
     auto menu = p_menu->data();
 
-    QAction *copyAct = nullptr;
-    QAction *pasteAct = nullptr;
-    QAction *firstAct = nullptr;
-    {
-        const auto actions = menu->actions();
-        firstAct = actions.isEmpty() ? nullptr : actions.first();
-        copyAct = WidgetUtils::findActionByObjectName(actions, "edit-copy");
-        pasteAct = WidgetUtils::findActionByObjectName(actions, "edit-paste");
-    }
+    const auto actions = menu->actions();
+    QAction *firstAct = actions.isEmpty() ? nullptr : actions.first();
+    // QAction *copyAct = WidgetUtils::findActionByObjectName(actions, "edit-copy");
+    QAction *pasteAct = WidgetUtils::findActionByObjectName(actions, "edit-paste");
 
     if (!m_textEdit->hasSelection()) {
         auto readAct = new QAction(tr("&Read"), menu);
@@ -957,6 +953,8 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
             WidgetUtils::insertActionAfter(menu, richPasteAct, parsePasteAct);
         }
     }
+
+    appendSpellCheckMenu(p_event, menu);
 }
 
 void MarkdownEditor::richPaste()

@@ -75,7 +75,9 @@
                 "FindAndReplace" : "Ctrl+F",
                 "FindNext" : "F3",
                 "FindPrevious" : "Shift+F3"
-            }
+            },
+            "spell_check_auto_detect_language" : false,
+            "spell_check_default_dictionary" : "en_US"
         },
         "text_editor" : {
             "theme" : "",
@@ -91,7 +93,8 @@
             "expand_tab": true,
             "tab_stop_width": 4,
             "//comment" : "Positive to zoom in and negative to zoom out",
-            "zoom_delta": 0
+            "zoom_delta": 0,
+            "spell_check": false
         },
         "markdown_editor" : {
             "override_viewer_resource" : true,
@@ -290,7 +293,8 @@
             "//comment" : "Whether enable smart table (formatting)",
             "smart_table" : true,
             "//comment" : "Time interval (milliseconds) to do smart table formatting",
-            "smart_table_interval" : 1000
+            "smart_table_interval" : 1000,
+            "spell_check" : true
         }
     },
     "widget" : {

@@ -149,6 +149,8 @@ namespace vnotex
 
         void setupDockActivateShortcut(QDockWidget *p_dock, const QString &p_keys);
 
+        void setupSpellCheck();
+
         ToolBarHelper m_toolBarHelper;
 
         StatusBarHelper m_statusBarHelper;

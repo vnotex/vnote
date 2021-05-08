@@ -11,6 +11,7 @@ class QStackedWidget;
 namespace vte
 {
     class MarkdownEditorConfig;
+    struct TextEditorParameters;
 }
 
 namespace vnotex
@@ -21,6 +22,7 @@ namespace vnotex
     class PreviewHelper;
     struct Outline;
     class MarkdownEditorConfig;
+    class EditorConfig;
 
     class MarkdownViewWindow : public ViewWindow
     {
@@ -137,6 +139,8 @@ namespace vnotex
         static QSharedPointer<Outline> headingsToOutline(const QVector<T> &p_headings);
 
         static QSharedPointer<vte::MarkdownEditorConfig> createMarkdownEditorConfig(const MarkdownEditorConfig &p_config);
+
+        static QSharedPointer<vte::TextEditorParameters> createMarkdownEditorParameters(const EditorConfig& p_editorConfig, const MarkdownEditorConfig &p_config);
 
         // Splitter to hold editor and viewer.
         QSplitter *m_splitter = nullptr;

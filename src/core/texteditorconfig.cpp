@@ -45,6 +45,8 @@ void TextEditorConfig::init(const QJsonObject &p_app,
     m_tabStopWidth = READINT(QStringLiteral("tab_stop_width"));
 
     m_zoomDelta = READINT(QStringLiteral("zoom_delta"));
+
+    m_spellCheckEnabled = READBOOL(QStringLiteral("spell_check"));
 }
 
 QJsonObject TextEditorConfig::toJson() const
@@ -58,6 +60,7 @@ QJsonObject TextEditorConfig::toJson() const
     obj[QStringLiteral("expand_tab")] = m_expandTab;
     obj[QStringLiteral("tab_stop_width")] = m_tabStopWidth;
     obj[QStringLiteral("zoom_delta")] = m_zoomDelta;
+    obj[QStringLiteral("spell_check")] = m_spellCheckEnabled;
     return obj;
 }
 
@@ -243,4 +246,14 @@ int TextEditorConfig::getZoomDelta() const
 void TextEditorConfig::setZoomDelta(int p_delta)
 {
     updateConfig(m_zoomDelta, p_delta, this);
+}
+
+bool TextEditorConfig::isSpellCheckEnabled() const
+{
+    return m_spellCheckEnabled;
+}
+
+void TextEditorConfig::setSpellCheckEnabled(bool p_enabled)
+{
+    updateConfig(m_spellCheckEnabled, p_enabled, this);
 }
