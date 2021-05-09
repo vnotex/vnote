@@ -93,5 +93,6 @@
         <file>translations/qt_ja.qm</file>
         <file>translations/vnote_ja.qm</file>
         <file>translations/qtbase_ja.qm</file>
+	<file>translations/vtextedit_ja.qm</file>
     </qresource>
 </RCC>
