@@ -1,4 +1,10 @@
 # Changes
+## v3.0.1
+* Support spell check via Hunspell
+* `Ctrl+Alt+F` to trigger full-text search
+* Auto focus to the input widget when activating full-text search
+* Fix Expand Content Area with panels
+
 ## v3.0.0-beta.11
 * Full-text search
 
