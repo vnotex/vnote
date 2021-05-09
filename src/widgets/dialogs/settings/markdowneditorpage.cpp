@@ -74,6 +74,8 @@ void MarkdownEditorPage::loadInternal()
     m_indentFirstLineCheckBox->setChecked(markdownConfig.getIndentFirstLineEnabled());
 
     m_smartTableCheckBox->setChecked(markdownConfig.getSmartTableEnabled());
+
+    m_spellCheckCheckBox->setChecked(markdownConfig.isSpellCheckEnabled());
 }
 
 void MarkdownEditorPage::saveInternal()
@@ -113,6 +115,8 @@ void MarkdownEditorPage::saveInternal()
     markdownConfig.setIndentFirstLineEnabled(m_indentFirstLineCheckBox->isChecked());
 
     markdownConfig.setSmartTableEnabled(m_smartTableCheckBox->isChecked());
+
+    markdownConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
 
     EditorPage::notifyEditorConfigChange();
 }
@@ -236,6 +240,16 @@ QGroupBox *MarkdownEditorPage::setupEditGroup()
         layout->addRow(m_smartTableCheckBox);
         addSearchItem(label, m_smartTableCheckBox->toolTip(), m_smartTableCheckBox);
         connect(m_smartTableCheckBox, &QCheckBox::stateChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        const QString label(tr("Spell check"));
+        m_spellCheckCheckBox = WidgetsFactory::createCheckBox(label, box);
+        m_spellCheckCheckBox->setToolTip(tr("Spell check"));
+        layout->addRow(m_spellCheckCheckBox);
+        addSearchItem(label, m_spellCheckCheckBox->toolTip(), m_spellCheckCheckBox);
+        connect(m_spellCheckCheckBox, &QCheckBox::stateChanged,
                 this, &MarkdownEditorPage::pageIsChanged);
     }
 

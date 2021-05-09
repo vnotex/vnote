@@ -58,6 +58,8 @@ namespace vnotex
         QComboBox *m_sectionNumberStyleComboBox = nullptr;
 
         QCheckBox *m_smartTableCheckBox = nullptr;
+
+        QCheckBox *m_spellCheckCheckBox = nullptr;
     };
 }
 

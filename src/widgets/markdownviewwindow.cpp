@@ -295,6 +295,7 @@ void MarkdownViewWindow::setupTextEditor()
 
     m_editor = new MarkdownEditor(markdownEditorConfig,
                                   createMarkdownEditorConfig(markdownEditorConfig),
+                                  createMarkdownEditorParameters(editorConfig, markdownEditorConfig),
                                   this);
     m_splitter->insertWidget(0, m_editor);
 
@@ -782,6 +783,15 @@ QSharedPointer<vte::MarkdownEditorConfig> MarkdownViewWindow::createMarkdownEdit
     auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
     editorConfig->m_constrainInPlacePreviewWidthEnabled = p_config.getConstrainInPlacePreviewWidthEnabled();
     return editorConfig;
+}
+
+QSharedPointer<vte::TextEditorParameters> MarkdownViewWindow::createMarkdownEditorParameters(const EditorConfig& p_editorConfig, const MarkdownEditorConfig &p_config)
+{
+    auto paras = QSharedPointer<vte::TextEditorParameters>::create();
+    paras->m_spellCheckEnabled = p_config.isSpellCheckEnabled();
+    paras->m_autoDetectLanguageEnabled = p_editorConfig.isSpellCheckAutoDetectLanguageEnabled();
+    paras->m_defaultSpellCheckLanguage = p_editorConfig.getSpellCheckDefaultDictionary();
+    return paras;
 }
 
 void MarkdownViewWindow::scrollUp()

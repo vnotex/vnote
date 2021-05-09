@@ -35,8 +35,9 @@ void TextViewWindow::setupUI()
 
     // Central widget.
     {
-        auto config = createTextEditorConfig(textEditorConfig);
-        m_editor = new TextEditor(config, this);
+        m_editor = new TextEditor(createTextEditorConfig(textEditorConfig),
+                                  createTextEditorParameters(editorConfig, textEditorConfig),
+                                  this);
         setCentralWidget(m_editor);
 
         updateEditorFromConfig();
@@ -159,6 +160,15 @@ QSharedPointer<vte::TextEditorConfig> TextViewWindow::createTextEditorConfig(con
                                                                themeMgr.getFile(Theme::File::TextEditorStyle),
                                                                themeMgr.getEditorHighlightTheme());
     return config;
+}
+
+QSharedPointer<vte::TextEditorParameters> TextViewWindow::createTextEditorParameters(const EditorConfig& p_editorConfig, const TextEditorConfig &p_config)
+{
+    auto paras = QSharedPointer<vte::TextEditorParameters>::create();
+    paras->m_spellCheckEnabled = p_config.isSpellCheckEnabled();
+    paras->m_autoDetectLanguageEnabled = p_editorConfig.isSpellCheckAutoDetectLanguageEnabled();
+    paras->m_defaultSpellCheckLanguage = p_editorConfig.getSpellCheckDefaultDictionary();
+    return paras;
 }
 
 void TextViewWindow::scrollUp()

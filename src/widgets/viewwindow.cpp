@@ -433,6 +433,10 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
                 });
         break;
     }
+
+    default:
+        Q_ASSERT(false);
+        break;
     }
 
     return act;

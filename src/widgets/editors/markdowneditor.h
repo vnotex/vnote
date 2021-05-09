@@ -49,6 +49,7 @@ namespace vnotex
 
         MarkdownEditor(const MarkdownEditorConfig &p_config,
                        const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
+                       const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
                        QWidget *p_parent = nullptr);
 
         virtual ~MarkdownEditor();

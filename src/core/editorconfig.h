@@ -87,6 +87,11 @@ namespace vnotex
 
         const QString &getShortcut(Shortcut p_shortcut) const;
 
+        bool isSpellCheckAutoDetectLanguageEnabled() const;
+
+        const QString &getSpellCheckDefaultDictionary() const;
+        void setSpellCheckDefaultDictionary(const QString &p_dict);
+
     private:
         void loadCore(const QJsonObject &p_app, const QJsonObject &p_user);
 
@@ -116,6 +121,10 @@ namespace vnotex
         QSharedPointer<TextEditorConfig> m_textEditorConfig;
 
         QScopedPointer<MarkdownEditorConfig> m_markdownEditorConfig;
+
+        bool m_spellCheckAutoDetectLanguageEnabled = false;
+
+        QString m_spellCheckDefaultDictionary;
     };
 }
 

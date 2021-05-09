@@ -171,7 +171,7 @@ void NotebookExplorer::setCurrentNotebook(const QSharedPointer<Notebook> &p_note
 {
     m_currentNotebook = p_notebook;
 
-    ID id = p_notebook ? p_notebook->getId() : Notebook::InvalidId;
+    ID id = p_notebook ? p_notebook->getId() : static_cast<ID>(Notebook::InvalidId);
     m_selector->setCurrentNotebook(id);
 
     m_nodeExplorer->setNotebook(p_notebook);

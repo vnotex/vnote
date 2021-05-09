@@ -10,6 +10,7 @@ namespace vnotex
         Q_OBJECT
     public:
         TextEditor(const QSharedPointer<vte::TextEditorConfig> &p_config,
+                   const QSharedPointer<vte::TextEditorParameters> &p_paras,
                    QWidget *p_parent = nullptr);
     };
 }

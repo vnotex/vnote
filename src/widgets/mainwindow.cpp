@@ -43,6 +43,7 @@
 #include "searchpanel.h"
 #include <notebook/notebook.h>
 #include "searchinfoprovider.h"
+#include <vtextedit/spellchecker.h>
 
 using namespace vnotex;
 
@@ -85,6 +86,8 @@ void MainWindow::kickOffOnStart(const QStringList &p_paths)
         emit layoutChanged();
 
         demoWidget();
+
+        setupSpellCheck();
 
         openFiles(p_paths);
     });
@@ -775,4 +778,11 @@ void MainWindow::toggleLocationListVisible()
 {
     bool visible = m_docks[DockIndex::LocationListDock]->isVisible();
     setLocationListVisible(!visible);
+}
+
+void MainWindow::setupSpellCheck()
+{
+    const auto &configMgr = ConfigMgr::getInst();
+    vte::SpellChecker::addDictionaryCustomSearchPaths(
+        QStringList() << configMgr.getUserDictsFolder() << configMgr.getAppDictsFolder());
 }

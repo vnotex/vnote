@@ -30,6 +30,8 @@ namespace vnotex
         QComboBox *m_autoSavePolicyComboBox = nullptr;
 
         QSpinBox *m_toolBarIconSizeSpinBox = nullptr;
+
+        QComboBox *m_spellCheckDictComboBox = nullptr;
     };
 }
 

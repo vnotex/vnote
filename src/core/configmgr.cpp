@@ -219,6 +219,12 @@ void ConfigMgr::checkAppConfig()
     FileUtils::copyDir(extraDataRoot + QStringLiteral("/web"),
                        appConfigDir.filePath(QStringLiteral("web")));
 
+    // Copy dicts.
+    qApp->processEvents();
+    splash->showMessage("Copying dicts");
+    FileUtils::copyDir(extraDataRoot + QStringLiteral("/dicts"),
+                       appConfigDir.filePath(QStringLiteral("dicts")));
+
     // Main config file.
     FileUtils::copyFile(getConfigFilePath(Source::Default), appConfigDir.filePath(c_configFileName));
 
@@ -356,8 +362,24 @@ QString ConfigMgr::getAppSyntaxHighlightingFolder() const
 
 QString ConfigMgr::getUserSyntaxHighlightingFolder() const
 {
-    return PathUtils::concatenateFilePath(m_userConfigFolderPath,
-                                          QStringLiteral("syntax-highlighting"));
+    auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath,
+                                                     QStringLiteral("syntax-highlighting"));
+    QDir().mkpath(folderPath);
+    return folderPath;
+}
+
+QString ConfigMgr::getAppDictsFolder() const
+{
+    return PathUtils::concatenateFilePath(m_appConfigFolderPath,
+                                          QStringLiteral("dicts"));
+}
+
+QString ConfigMgr::getUserDictsFolder() const
+{
+    auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath,
+                                                     QStringLiteral("dicts"));
+    QDir().mkpath(folderPath);
+    return folderPath;
 }
 
 QString ConfigMgr::getUserOrAppFile(const QString &p_filePath) const

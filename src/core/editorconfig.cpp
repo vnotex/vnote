@@ -10,6 +10,7 @@ using namespace vnotex;
 
 #define READINT(key) readInt(appObj, userObj, (key))
 #define READSTR(key) readString(appObj, userObj, (key))
+#define READBOOL(key) readBool(appObj, userObj, (key))
 
 EditorConfig::EditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig),
@@ -57,6 +58,12 @@ void EditorConfig::loadCore(const QJsonObject &p_app, const QJsonObject &p_user)
     m_backupFileExtension = READSTR(QStringLiteral("backup_file_extension"));
 
     loadShortcuts(appObj, userObj);
+
+    m_spellCheckAutoDetectLanguageEnabled = READBOOL(QStringLiteral("spell_check_auto_detect_language"));
+    m_spellCheckDefaultDictionary = READSTR(QStringLiteral("spell_check_default_dictionary"));
+    if (m_spellCheckDefaultDictionary.isEmpty()) {
+        m_spellCheckDefaultDictionary = QStringLiteral("en_US");
+    }
 }
 
 QJsonObject EditorConfig::saveCore() const
@@ -67,6 +74,8 @@ QJsonObject EditorConfig::saveCore() const
     obj[QStringLiteral("backup_file_directory")] = m_backupFileDirectory;
     obj[QStringLiteral("backup_file_extension")] = m_backupFileExtension;
     obj[QStringLiteral("shortcuts")] = saveShortcuts();
+    obj[QStringLiteral("spell_check_auto_detect_language")] = m_spellCheckAutoDetectLanguageEnabled;
+    obj[QStringLiteral("spell_check_default_dictionary")] = m_spellCheckDefaultDictionary;
     return obj;
 }
 
@@ -187,4 +196,19 @@ const QString &EditorConfig::getBackupFileDirectory() const
 const QString &EditorConfig::getBackupFileExtension() const
 {
     return m_backupFileExtension;
+}
+
+bool EditorConfig::isSpellCheckAutoDetectLanguageEnabled() const
+{
+    return m_spellCheckAutoDetectLanguageEnabled;
+}
+
+const QString &EditorConfig::getSpellCheckDefaultDictionary() const
+{
+    return m_spellCheckDefaultDictionary;
+}
+
+void EditorConfig::setSpellCheckDefaultDictionary(const QString &p_dict)
+{
+    updateConfig(m_spellCheckDefaultDictionary, p_dict, this);
 }
