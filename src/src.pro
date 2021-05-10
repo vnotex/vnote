@@ -27,7 +27,9 @@ win32:CONFIG(release, debug|release) {
 RC_ICONS = data/core/icons/vnote.ico
 ICON = data/core/icons/vnote.icns
 
-TRANSLATIONS += data/core/translations/vnote_zh_CN.ts
+TRANSLATIONS += \
+    data/core/translations/vnote_zh_CN.ts \
+    data/core/translations/vnote_ja.ts
 
 SOURCES += \
     commandlineoptions.cpp \
