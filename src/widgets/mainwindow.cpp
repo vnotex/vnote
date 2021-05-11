@@ -79,6 +79,9 @@ MainWindow::~MainWindow()
 void MainWindow::kickOffOnStart(const QStringList &p_paths)
 {
     QTimer::singleShot(300, [this, p_paths]() {
+        // Need to load the state of dock widgets again after the main window is shown.
+        loadStateAndGeometry(true);
+
         VNoteX::getInst().initLoad();
 
         emit mainWindowStarted();
@@ -453,12 +456,12 @@ void MainWindow::saveStateAndGeometry()
     sessionConfig.setMainWindowStateGeometry(sg);
 }
 
-void MainWindow::loadStateAndGeometry()
+void MainWindow::loadStateAndGeometry(bool p_stateOnly)
 {
     const auto& sessionConfig = ConfigMgr::getInst().getSessionConfig();
     const auto sg = sessionConfig.getMainWindowStateGeometry();
 
-    if (!sg.m_mainGeometry.isEmpty()) {
+    if (!p_stateOnly && !sg.m_mainGeometry.isEmpty()) {
         restoreGeometry(sg.m_mainGeometry);
     }
 

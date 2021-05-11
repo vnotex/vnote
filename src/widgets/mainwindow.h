@@ -130,7 +130,7 @@ namespace vnotex
 
         void saveStateAndGeometry();
 
-        void loadStateAndGeometry();
+        void loadStateAndGeometry(bool p_stateOnly = false);
 
         // Used to test widget in development.
         void demoWidget();
