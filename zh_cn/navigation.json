@@ -17,18 +17,18 @@
         },
         {
             "text": "博客",
-            "target": "blogs/_vnote.json",
+            "target": "blogs/vx.json",
             "navi": true
         },
         {
             "text": "文档",
-            "target": "docs/_vnote.json",
+            "target": "docs/vx.json",
             "navi": true,
             "navi_index": "用户/欢迎使用.md"
         },
         {
-            "text": "捐赠",
-            "target": "donate.md",
+            "text": "VNoteX",
+            "target": "vnotex.md",
             "toc": false
         },
         {
@@ -47,7 +47,7 @@
         {
             "text": "GitHub",
             "icon": "css/github.svg",
-            "target": "https://github.com/tamlok/vnote"
+            "target": "https://github.com/vnotex/vnote"
         },
         {
             "text": "Slack",

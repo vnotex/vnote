@@ -16,19 +16,14 @@
             "toc": false
         },
         {
-            "text": "Blogs",
-            "target": "blogs/_vnote.json",
-            "navi": true
-        },
-        {
             "text": "Documentation",
-            "target": "docs/_vnote.json",
+            "target": "docs/vx.json",
             "navi": true,
             "navi_index": "Users/welcome.md"
         },
         {
-            "text": "Donate",
-            "target": "donate.md",
+            "text": "VNoteX",
+            "target": "vnotex.md",
             "toc": false
         },
         {
@@ -47,7 +42,7 @@
         {
             "text": "GitHub",
             "icon": "css/github.svg",
-            "target": "https://github.com/tamlok/vnote"
+            "target": "https://github.com/vnotex/vnote"
         },
         {
             "text": "Slack",

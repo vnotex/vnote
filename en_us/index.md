@@ -1,21 +1,18 @@
 # VNote
-**A note-taking application that knows programmers and Markdown better!**
+**A pleasant note-taking platform!**
 
 ::: alert-success
 
-VNote 2.9.1 is released! Check out [what's new](https://github.com/tamlok/vnote/releases)!
-
-Check this [showcase screencast](https://www.youtube.com/watch?v=EFCmCFZKxJ4) to know what you could do with VNote!
+VNote 3.0.1 is released! Check out [what's new](https://github.com/vnotex/vnote/releases)!
 
 :::
 
-- Join VNote on [GitHub](https://github.com/tamlok/vnote)
+- Join VNote on [GitHub](https://github.com/vnotex/vnote)
 - Chat on [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)
 - [Telegram](https://t.me/vnotex)
-- Subscribe to WeChat **vnote_md**
 
 ## Open source and free
-- Open source in [MIT](http://opensource.org/licenses/MIT) license
+- Open source in [GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0) license
 - Powered by Qt and C++
 - Available on Linux, Windows, and macOS
 
@@ -58,7 +55,7 @@ Check this [showcase screencast](https://www.youtube.com/watch?v=EFCmCFZKxJ4) to
 ![](_v_images/20181124160655553_1770055980.svg =512x)
 
 ## By programmers, for programmers
-- Vim mode and Vim-like navigation
+- Vi mode and Vi-like navigation
 - Line number in editor
 - Multiple tabs
 - Window splits

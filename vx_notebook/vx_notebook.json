@@ -1,0 +1,11 @@
+{
+    "attachment_folder": "_v_attachments",
+    "config_mgr": "vx.vnotex",
+    "created_time": "2018-11-24T05:00:58Z",
+    "description": "",
+    "image_folder": "vx_images",
+    "name": "vnote-docs",
+    "next_node_id": "3",
+    "version": "1",
+    "version_controller": "dummy.vnotex"
+}

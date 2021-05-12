@@ -1,7 +1,7 @@
 {
     "brand": "VNote",
     "brand_icon": "css/vnote_white.svg",
-    "title": "VNote - 一个更懂程序员和Markdown的笔记",
+    "title": "VNote - 一个舒适的笔记平台",
     "favicon": "css/vnote.ico",
     "footer": "VNote is developed and maintained by Le Tan.",
     "show_suffix": false,

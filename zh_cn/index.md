@@ -3,20 +3,18 @@
 
 ::: alert-success
 
-VNote 2.9.1 已发布！ 看看都有 [哪些更新](https://github.com/tamlok/vnote/releases) ！
+VNote 3.0.1 已发布！ 看看都有 [哪些更新](https://github.com/vnotex/vnote/releases) ！
 
 观看[展示录屏](https://www.bilibili.com/video/av77455284) ！
 
 :::
 
-- 加入VNote [GitHub](https://github.com/tamlok/vnote)
+- 加入VNote [GitHub](https://github.com/vnotex/vnote)
 - 聊聊VNote [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)
 - [Telegram](https://t.me/vnotex)
-- 关注VNote微信公众号 **vnote_md**  
-![扫码关注](_v_images/20181125110021007_339926743.jpg =248x)
 
 ## 开源和自由
-- 遵从 [MIT](http://opensource.org/licenses/MIT) 开源协议
+- 遵从 [GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0) 开源协议
 - 由Qt和C++提供强劲性能
 - 支持主流操作系统Linux，Windows，和macOS
 

@@ -1,7 +1,7 @@
 {
     "brand": "VNote",
     "brand_icon": "css/vnote_white.svg",
-    "title": "VNote - A note-taking application that knows programmers and Markdown better",
+    "title": "VNote - A pleasant note-taking platform",
     "favicon": "css/vnote.ico",
     "footer": "VNote is developed and maintained by Le Tan.",
     "show_suffix": false,
