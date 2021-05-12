@@ -37,6 +37,7 @@
 #include <utils/widgetutils.h>
 #include <utils/textutils.h>
 #include <utils/webutils.h>
+#include <utils/imageutils.h>
 #include <core/exception.h>
 #include <core/markdowneditorconfig.h>
 #include <core/texteditorconfig.h>
@@ -1092,7 +1093,11 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
             // Network path.
             QByteArray data = vte::Downloader::download(QUrl(imageUrl));
             if (!data.isEmpty()) {
-                tmpFile.reset(FileUtils::createTemporaryFile(info.suffix()));
+                auto suffix = info.suffix();
+                if (suffix.isEmpty()) {
+                    suffix = ImageUtils::guessImageSuffix(data);
+                }
+                tmpFile.reset(FileUtils::createTemporaryFile(suffix));
                 if (tmpFile->open() && tmpFile->write(data) > -1) {
                     srcImagePath = tmpFile->fileName();
                 }
