@@ -64,6 +64,8 @@ void SessionConfig::init()
     m_exportOption.fromJson(sessionJobj[QStringLiteral("export_option")].toObject());
 
     m_searchOption.fromJson(sessionJobj[QStringLiteral("search_option")].toObject());
+
+    m_viewAreaSession = readByteArray(sessionJobj, QStringLiteral("viewarea_session"));
 }
 
 void SessionConfig::loadCore(const QJsonObject &p_session)
@@ -180,6 +182,7 @@ QJsonObject SessionConfig::toJson() const
     obj[QStringLiteral("state_geometry")] = saveStateAndGeometry();
     obj[QStringLiteral("export_option")] = m_exportOption.toJson();
     obj[QStringLiteral("search_option")] = m_searchOption.toJson();
+    writeByteArray(obj, QStringLiteral("viewarea_session"), m_viewAreaSession);
     return obj;
 }
 
@@ -307,4 +310,16 @@ void SessionConfig::loadStateAndGeometry(const QJsonObject &p_session)
     const auto obj = p_session.value(QStringLiteral("state_geometry")).toObject();
     m_mainWindowStateGeometry.m_mainState = readByteArray(obj, QStringLiteral("main_window_state"));
     m_mainWindowStateGeometry.m_mainGeometry = readByteArray(obj, QStringLiteral("main_window_geometry"));
+}
+
+QByteArray SessionConfig::getViewAreaSessionAndClear()
+{
+    QByteArray bytes;
+    m_viewAreaSession.swap(bytes);
+    return bytes;
+}
+
+void SessionConfig::setViewAreaSession(const QByteArray &p_bytes)
+{
+    updateConfigWithoutCheck(m_viewAreaSession, p_bytes, this);
 }

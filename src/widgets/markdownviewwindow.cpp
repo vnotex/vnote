@@ -935,3 +935,13 @@ void MarkdownViewWindow::openTwice(const QSharedPointer<FileOpenParameters> &p_p
     Q_ASSERT(!p_paras || !p_paras->m_newFile);
     handleFileOpenParameters(p_paras);
 }
+
+ViewWindowSession MarkdownViewWindow::saveSession() const
+{
+    auto session = ViewWindow::saveSession();
+    if (getBuffer()) {
+        session.m_lineNumber = isReadMode() ? adapter()->getTopLineNumber()
+                                            : m_editor->getCursorPosition().first;
+    }
+    return session;
+}

@@ -30,9 +30,10 @@ namespace vnotex
             ViewWindow *m_viewWindow = nullptr;
         };
 
-        explicit ViewSplit(const QVector<QSharedPointer<ViewWorkspace>> &p_allWorkspaces,
-                           const QSharedPointer<ViewWorkspace> &p_workspace,
-                           QWidget *p_parent = nullptr);
+        ViewSplit(const QVector<QSharedPointer<ViewWorkspace>> &p_allWorkspaces,
+                  const QSharedPointer<ViewWorkspace> &p_workspace,
+                  ID p_id,
+                  QWidget *p_parent = nullptr);
 
         ~ViewSplit();
 
@@ -44,6 +45,8 @@ namespace vnotex
 
         ViewWindow *getCurrentViewWindow() const;
         void setCurrentViewWindow(ViewWindow *p_win);
+
+        void setCurrentViewWindow(int p_idx);
 
         // @p_win is not deleted.
         void takeViewWindow(ViewWindow *p_win);
@@ -61,6 +64,10 @@ namespace vnotex
         QVector<ViewWindowNavigationModeInfo> getNavigationModeInfo() const;
 
         void focus();
+
+        ID getId() const;
+
+        void updateStateToWorkspace() const;
 
     signals:
         void viewWindowCloseRequested(ViewWindow *p_win);
@@ -121,6 +128,8 @@ namespace vnotex
         void createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx) const;
 
         void focusCurrentViewWindow();
+
+        ID m_id = 0;
 
         const QVector<QSharedPointer<ViewWorkspace>> &m_allWorkspaces;
 

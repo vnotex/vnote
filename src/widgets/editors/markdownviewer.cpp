@@ -360,8 +360,8 @@ void MarkdownViewer::handleWebKeyPress(int p_key, bool p_ctrl, bool p_shift, boo
 void MarkdownViewer::zoomOut()
 {
     qreal factor = zoomFactor();
-    if (factor > 0.25) {
-        factor -= 0.25;
+    if (factor > 0.1) {
+        factor -= 0.1;
         setZoomFactor(factor);
         emit zoomFactorChanged(factor);
     }
@@ -370,7 +370,7 @@ void MarkdownViewer::zoomOut()
 void MarkdownViewer::zoomIn()
 {
     qreal factor = zoomFactor();
-    factor += 0.25;
+    factor += 0.1;
     setZoomFactor(factor);
     emit zoomFactorChanged(factor);
 }

@@ -25,7 +25,7 @@ Buffer::Buffer(const BufferParameters &p_parameters,
                QObject *p_parent)
     : QObject(p_parent),
       m_provider(p_parameters.m_provider),
-      c_id(generateBufferID()),
+      m_id(generateBufferID()),
       m_readOnly(m_provider->isReadOnly())
 {
     m_autoSaveTimer = new QTimer(this);
@@ -110,9 +110,9 @@ QString Buffer::getResourcePath() const
     return m_provider->getResourcePath();
 }
 
-ID Buffer::getID() const
+ID Buffer::getId() const
 {
-    return c_id;
+    return m_id;
 }
 
 const QString &Buffer::getContent() const

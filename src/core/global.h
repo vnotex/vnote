@@ -98,6 +98,9 @@ namespace vnotex
         FocusPreview,
         Invalid
     };
+
+    enum { InvalidViewSplitId = 0 };
+
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);

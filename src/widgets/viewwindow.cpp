@@ -1079,3 +1079,14 @@ QToolBar *ViewWindow::createToolBar(QWidget *p_parent)
     toolBar->setProperty(PropertyDefs::c_viewWindowToolBar, true);
     return toolBar;
 }
+
+ViewWindowSession ViewWindow::saveSession() const
+{
+    ViewWindowSession session;
+    if (m_buffer) {
+        session.m_bufferPath = m_buffer->getPath();
+        session.m_readOnly = m_buffer->isReadOnly();
+    }
+    session.m_viewWindowMode = getMode();
+    return session;
+}

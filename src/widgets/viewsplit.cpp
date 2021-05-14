@@ -42,8 +42,10 @@ const QString ViewSplit::c_actionButtonForegroundName = "widgets#viewsplit#actio
 
 ViewSplit::ViewSplit(const QVector<QSharedPointer<ViewWorkspace>> &p_allWorkspaces,
                      const QSharedPointer<ViewWorkspace> &p_workspace,
+                     ID p_id,
                      QWidget *p_parent)
     : QTabWidget(p_parent),
+      m_id(p_id),
       m_allWorkspaces(p_allWorkspaces)
 {
     setAcceptDrops(true);
@@ -258,17 +260,12 @@ void ViewSplit::setWorkspace(const QSharedPointer<ViewWorkspace> &p_workspace)
 void ViewSplit::updateAndTakeCurrentWorkspace()
 {
     if (m_workspace) {
-        // Store current workspace.
-        m_workspace->m_currentViewWindowIndex = currentIndex();
+        updateStateToWorkspace();
 
         // Take all the view windows out.
         int cnt = getViewWindowCount();
-        m_workspace->m_viewWindows.resize(cnt);
         for (int i = cnt - 1; i >= 0; --i) {
-            auto window = getViewWindow(i);
-            takeViewWindow(window);
-
-            m_workspace->m_viewWindows[i] = window;
+            takeViewWindow(getViewWindow(i));
         }
 
         m_workspace->m_visible = false;
@@ -276,6 +273,23 @@ void ViewSplit::updateAndTakeCurrentWorkspace()
         m_workspace = nullptr;
     } else {
         Q_ASSERT(getViewWindowCount() == 0);
+    }
+}
+
+void ViewSplit::updateStateToWorkspace() const
+{
+    if (!m_workspace) {
+        return;
+    }
+
+    Q_ASSERT(m_workspace->m_visible);
+
+    m_workspace->m_currentViewWindowIndex = currentIndex();
+
+    int cnt = getViewWindowCount();
+    m_workspace->m_viewWindows.resize(cnt);
+    for (int i = cnt - 1; i >= 0; --i) {
+        m_workspace->m_viewWindows[i] = getViewWindow(i);
     }
 }
 
@@ -441,7 +455,7 @@ void ViewSplit::updateMenu(QMenu *p_menu)
         }
 
         for (int i = 0; i < m_allWorkspaces.size(); ++i) {
-            auto act = new QAction(tr("Workspace %1").arg(m_allWorkspaces[i]->c_id),
+            auto act = new QAction(tr("Workspace %1").arg(m_allWorkspaces[i]->m_id),
                                    m_workspaceActionGroup);
             act->setData(i);
             act->setCheckable(true);
@@ -734,4 +748,15 @@ void ViewSplit::setupShortcuts()
 void ViewSplit::focus()
 {
     focusCurrentViewWindow();
+}
+
+ID ViewSplit::getId() const
+{
+    return m_id;
+}
+
+void ViewSplit::setCurrentViewWindow(int p_idx)
+{
+    auto win = getViewWindow(p_idx);
+    setCurrentViewWindow(win);
 }

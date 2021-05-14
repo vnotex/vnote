@@ -39,7 +39,8 @@
                     ".git"
                 ]
             }
-        }
+        },
+        "recover_last_session_on_start" : true
     },
     "editor" : {
         "core": {
