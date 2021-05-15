@@ -49,6 +49,8 @@ void CoreConfig::init(const QJsonObject &p_app,
     }
 
     loadNoteManagement(appObj, userObj);
+
+    m_recoverLastSessionOnStartEnabled = READBOOL(QStringLiteral("recover_last_session_on_start"));
 }
 
 QJsonObject CoreConfig::toJson() const
@@ -58,6 +60,7 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("locale")] = m_locale;
     obj[QStringLiteral("shortcuts")] = saveShortcuts();
     obj[QStringLiteral("toolbar_icon_size")] = m_toolBarIconSize;
+    obj[QStringLiteral("recover_last_session_on_start")] = m_recoverLastSessionOnStartEnabled;
     return obj;
 }
 
@@ -148,4 +151,14 @@ void CoreConfig::setToolBarIconSize(int p_size)
 const QStringList &CoreConfig::getExternalNodeExcludePatterns() const
 {
     return m_externalNodeExcludePatterns;
+}
+
+bool CoreConfig::isRecoverLastSessionOnStartEnabled() const
+{
+    return m_recoverLastSessionOnStartEnabled;
+}
+
+void CoreConfig::setRecoverLastSessionOnStartEnabled(bool p_enabled)
+{
+    updateConfig(m_recoverLastSessionOnStartEnabled, p_enabled, this);
 }

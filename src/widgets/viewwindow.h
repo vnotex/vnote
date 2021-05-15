@@ -9,6 +9,7 @@
 #include <core/global.h>
 
 #include "viewwindowtoolbarhelper.h"
+#include "viewwindowsession.h"
 
 class QVBoxLayout;
 class QTimer;
@@ -70,6 +71,8 @@ namespace vnotex
 
         // Called by upside.
         void checkFileMissingOrChangedOutsidePeriodically();
+
+        virtual ViewWindowSession saveSession() const;
 
     public slots:
         virtual void handleEditorConfigChange() = 0;

@@ -154,14 +154,20 @@ namespace vnotex
         }
 
         template <typename T>
-        static void updateConfig(T &p_cur,
-                                 const T &p_new,
-                                 IConfig *p_config)
+        static void updateConfig(T &p_cur, const T &p_new, IConfig *p_config)
         {
             if (p_cur == p_new) {
                 return;
             }
 
+            ++p_config->m_revision;
+            p_cur = p_new;
+            p_config->writeToSettings();
+        }
+
+        template <typename T>
+        static void updateConfigWithoutCheck(T &p_cur, const T &p_new, IConfig *p_config)
+        {
             ++p_config->m_revision;
             p_cur = p_new;
             p_config->writeToSettings();

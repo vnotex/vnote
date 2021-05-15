@@ -145,8 +145,8 @@ QGroupBox *MarkdownEditorPage::setupReadGroup()
         m_zoomFactorSpinBox = WidgetsFactory::createDoubleSpinBox(box);
         m_zoomFactorSpinBox->setToolTip(tr("Zoom factor in read mode"));
 
-        m_zoomFactorSpinBox->setRange(0.25, 10);
-        m_zoomFactorSpinBox->setSingleStep(0.25);
+        m_zoomFactorSpinBox->setRange(0.1, 10);
+        m_zoomFactorSpinBox->setSingleStep(0.1);
 
         const QString label(tr("Zoom factor:"));
         layout->addRow(label, m_zoomFactorSpinBox);

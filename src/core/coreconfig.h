@@ -63,6 +63,9 @@ namespace vnotex
 
         static const QStringList &getAvailableLocales();
 
+        bool isRecoverLastSessionOnStartEnabled() const;
+        void setRecoverLastSessionOnStartEnabled(bool p_enabled);
+
     private:
         void loadShortcuts(const QJsonObject &p_app, const QJsonObject &p_user);
 
@@ -83,6 +86,9 @@ namespace vnotex
         int m_toolBarIconSize = 16;
 
         QStringList m_externalNodeExcludePatterns;
+
+        // Whether recover last session on start.
+        bool m_recoverLastSessionOnStartEnabled = true;
 
         static QStringList s_availableLocales;
     };

@@ -57,8 +57,10 @@ SOURCES += \
     $$PWD/textviewwindow.cpp \
     $$PWD/toolbarhelper.cpp \
     $$PWD/treeview.cpp \
+    $$PWD/viewareasession.cpp \
     $$PWD/viewsplit.cpp \
     $$PWD/viewwindow.cpp \
+    $$PWD/viewwindowsession.cpp \
     $$PWD/viewwindowtoolbarhelper.cpp \
     $$PWD/webpage.cpp \
     $$PWD/webviewer.cpp \
@@ -149,8 +151,10 @@ HEADERS += \
     $$PWD/textviewwindowhelper.h \
     $$PWD/toolbarhelper.h \
     $$PWD/treeview.h \
+    $$PWD/viewareasession.h \
     $$PWD/viewsplit.h \
     $$PWD/viewwindow.h \
+    $$PWD/viewwindowsession.h \
     $$PWD/viewwindowtoolbarhelper.h \
     $$PWD/webpage.h \
     $$PWD/webviewer.h \

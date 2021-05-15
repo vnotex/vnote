@@ -69,6 +69,16 @@ void GeneralPage::setupUI()
                 this, &GeneralPage::pageIsChanged);
     }
 #endif
+
+    {
+        const QString label(tr("Recover last session on start"));
+        m_recoverLastSessionCheckBox = WidgetsFactory::createCheckBox(label, this);
+        m_recoverLastSessionCheckBox->setToolTip(tr("Recover last session (like buffers) on start of VNote"));
+        mainLayout->addRow(m_recoverLastSessionCheckBox);
+        addSearchItem(label, m_recoverLastSessionCheckBox->toolTip(), m_recoverLastSessionCheckBox);
+        connect(m_recoverLastSessionCheckBox, &QCheckBox::stateChanged,
+                this, &GeneralPage::pageIsChanged);
+    }
 }
 
 void GeneralPage::loadInternal()
@@ -92,6 +102,8 @@ void GeneralPage::loadInternal()
         int toTray = sessionConfig.getMinimizeToSystemTray();
         m_systemTrayCheckBox->setChecked(toTray > 0);
     }
+
+    m_recoverLastSessionCheckBox->setChecked(coreConfig.isRecoverLastSessionOnStartEnabled());
 }
 
 void GeneralPage::saveInternal()
@@ -113,6 +125,8 @@ void GeneralPage::saveInternal()
         // This will override the -1 state. That is fine.
         sessionConfig.setMinimizeToSystemTray(m_systemTrayCheckBox->isChecked());
     }
+
+    coreConfig.setRecoverLastSessionOnStartEnabled(m_recoverLastSessionCheckBox->isChecked());
 }
 
 QString GeneralPage::title() const

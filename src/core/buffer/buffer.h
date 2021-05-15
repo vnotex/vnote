@@ -87,7 +87,7 @@ namespace vnotex
         // Return nullptr if not available.
         QSharedPointer<File> getFile() const;
 
-        ID getID() const;
+        ID getId() const;
 
         // Get buffer content.
         // It may differ from the content on disk.
@@ -212,7 +212,7 @@ namespace vnotex
         bool isBackupFileOfBuffer(const QString &p_file) const;
 
         // Will be assigned uniquely once created.
-        const ID c_id = 0;
+        const ID m_id = 0;
 
         // Revision of contents.
         int m_revision = 0;

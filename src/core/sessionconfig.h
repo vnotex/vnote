@@ -91,6 +91,9 @@ namespace vnotex
         const SearchOption &getSearchOption() const;
         void setSearchOption(const SearchOption &p_option);
 
+        QByteArray getViewAreaSessionAndClear();
+        void setViewAreaSession(const QByteArray &p_obj);
+
     private:
         void loadCore(const QJsonObject &p_session);
 
@@ -129,6 +132,8 @@ namespace vnotex
         ExportOption m_exportOption;
 
         SearchOption m_searchOption;
+
+        QByteArray m_viewAreaSession;
     };
 } // ns vnotex
 
