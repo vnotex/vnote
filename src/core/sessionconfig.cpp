@@ -66,6 +66,8 @@ void SessionConfig::init()
     m_searchOption.fromJson(sessionJobj[QStringLiteral("search_option")].toObject());
 
     m_viewAreaSession = readByteArray(sessionJobj, QStringLiteral("viewarea_session"));
+
+    m_notebookExplorerSession = readByteArray(sessionJobj, QStringLiteral("notebook_explorer_session"));
 }
 
 void SessionConfig::loadCore(const QJsonObject &p_session)
@@ -183,6 +185,7 @@ QJsonObject SessionConfig::toJson() const
     obj[QStringLiteral("export_option")] = m_exportOption.toJson();
     obj[QStringLiteral("search_option")] = m_searchOption.toJson();
     writeByteArray(obj, QStringLiteral("viewarea_session"), m_viewAreaSession);
+    writeByteArray(obj, QStringLiteral("notebook_explorer_session"), m_notebookExplorerSession);
     return obj;
 }
 
@@ -322,4 +325,16 @@ QByteArray SessionConfig::getViewAreaSessionAndClear()
 void SessionConfig::setViewAreaSession(const QByteArray &p_bytes)
 {
     updateConfigWithoutCheck(m_viewAreaSession, p_bytes, this);
+}
+
+QByteArray SessionConfig::getNotebookExplorerSessionAndClear()
+{
+    QByteArray bytes;
+    m_notebookExplorerSession.swap(bytes);
+    return bytes;
+}
+
+void SessionConfig::setNotebookExplorerSession(const QByteArray &p_bytes)
+{
+    updateConfigWithoutCheck(m_notebookExplorerSession, p_bytes, this);
 }

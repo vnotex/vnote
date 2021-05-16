@@ -4,7 +4,9 @@
 #include <QFrame>
 #include <QSharedPointer>
 
-#include "global.h"
+#include <core/global.h>
+
+#include "notebookexplorersession.h"
 
 class QMenu;
 
@@ -68,11 +70,23 @@ namespace vnotex
 
         void setupViewMenu(QMenu *p_menu);
 
+        void saveSession();
+
+        void loadSession();
+
+        void updateSession();
+
+        void recoverSession();
+
         NotebookSelector *m_selector = nullptr;
 
         NotebookNodeExplorer *m_nodeExplorer = nullptr;
 
         QSharedPointer<Notebook> m_currentNotebook;
+
+        NotebookExplorerSession m_session;
+
+        bool m_sessionLoaded = false;
     };
 } // ns vnotex
 

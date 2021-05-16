@@ -47,6 +47,7 @@ SOURCES += \
     $$PWD/mainwindow.cpp \
     $$PWD/markdownviewwindow.cpp \
     $$PWD/navigationmodemgr.cpp \
+    $$PWD/notebookexplorersession.cpp \
     $$PWD/outlinepopup.cpp \
     $$PWD/outlineprovider.cpp \
     $$PWD/outlineviewer.cpp \
@@ -140,6 +141,7 @@ HEADERS += \
     $$PWD/markdownviewwindow.h \
     $$PWD/navigationmodemgr.h \
     $$PWD/navigationmodewrapper.h \
+    $$PWD/notebookexplorersession.h \
     $$PWD/outlinepopup.h \
     $$PWD/outlineprovider.h \
     $$PWD/outlineviewer.h \

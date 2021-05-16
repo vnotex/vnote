@@ -415,8 +415,7 @@ void ViewSplit::updateWindowList(QMenu *p_menu)
     for (int i = 0; i < cnt; ++i) {
         auto window = getViewWindow(i);
 
-        auto act = new QAction(window->getIcon(),
-                               window->getName(),
+        auto act = new QAction(window->getName(),
                                m_windowListActionGroup);
         act->setToolTip(window->getTitle());
         act->setData(i);

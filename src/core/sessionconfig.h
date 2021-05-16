@@ -92,7 +92,10 @@ namespace vnotex
         void setSearchOption(const SearchOption &p_option);
 
         QByteArray getViewAreaSessionAndClear();
-        void setViewAreaSession(const QByteArray &p_obj);
+        void setViewAreaSession(const QByteArray &p_bytes);
+
+        QByteArray getNotebookExplorerSessionAndClear();
+        void setNotebookExplorerSession(const QByteArray &p_bytes);
 
     private:
         void loadCore(const QJsonObject &p_session);
@@ -134,6 +137,8 @@ namespace vnotex
         SearchOption m_searchOption;
 
         QByteArray m_viewAreaSession;
+
+        QByteArray m_notebookExplorerSession;
     };
 } // ns vnotex
 
