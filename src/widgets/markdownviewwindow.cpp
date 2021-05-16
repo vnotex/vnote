@@ -904,9 +904,11 @@ void MarkdownViewWindow::handleFileOpenParameters(const QSharedPointer<FileOpenP
             const auto title = QString("# %1\n").arg(QFileInfo(buffer->getName()).completeBaseName());
             m_editor->insertText(title);
         }
-    }
+    } else {
+        setMode(p_paras->m_mode);
 
-    scrollToLine(p_paras->m_lineNumber);
+        scrollToLine(p_paras->m_lineNumber);
+    }
 }
 
 void MarkdownViewWindow::scrollToLine(int p_lineNumber)
@@ -931,7 +933,6 @@ bool MarkdownViewWindow::isReadMode() const
 
 void MarkdownViewWindow::openTwice(const QSharedPointer<FileOpenParameters> &p_paras)
 {
-    qDebug() << p_paras->m_lineNumber;
     Q_ASSERT(!p_paras || !p_paras->m_newFile);
     handleFileOpenParameters(p_paras);
 }

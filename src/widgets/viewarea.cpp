@@ -65,10 +65,8 @@ ViewArea::ViewArea(QWidget *p_parent)
                 close(true);
             });
 
-    if (ConfigMgr::getInst().getCoreConfig().isRecoverLastSessionOnStartEnabled()) {
-        connect(mainWindow, &MainWindow::mainWindowStarted,
-                this, &ViewArea::loadSession);
-    }
+    connect(mainWindow, &MainWindow::mainWindowStarted,
+            this, &ViewArea::loadSession);
 
     connect(&VNoteX::getInst(), &VNoteX::nodeAboutToMove,
             this, &ViewArea::handleNodeChange);
@@ -1024,7 +1022,13 @@ QList<Buffer *> ViewArea::getAllBuffersInViewSplits() const
 void ViewArea::loadSession()
 {
     auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+    // Clear it if recover is disabled.
     auto sessionData = sessionConfig.getViewAreaSessionAndClear();
+
+    if (!ConfigMgr::getInst().getCoreConfig().isRecoverLastSessionOnStartEnabled()) {
+        showSceneWidget();
+        return;
+    }
 
     auto session = ViewAreaSession::deserialize(sessionData);
 

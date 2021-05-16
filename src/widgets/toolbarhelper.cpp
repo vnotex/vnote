@@ -19,9 +19,11 @@
 #include "fullscreentoggleaction.h"
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
+#include <core/sessionconfig.h>
 #include <core/fileopenparameters.h>
 #include "propertydefs.h"
 #include "dialogs/settings/settingsdialog.h"
+#include "messageboxhelper.h"
 
 using namespace vnotex;
 
@@ -180,6 +182,31 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
                                        coreConfig.getShortcut(CoreConfig::Shortcut::Export));
     }
 
+    // Quick Access.
+    {
+        auto flashPageAct = tb->addAction(generateIcon("flash_page_menu.svg"),
+                                          MainWindow::tr("Flash Page"),
+                                          tb,
+                                          [p_win]() {
+                                              const auto &flashPage = ConfigMgr::getInst().getSessionConfig().getFlashPage();
+                                              if (flashPage.isEmpty()) {
+                                                  MessageBoxHelper::notify(
+                                                      MessageBoxHelper::Type::Information,
+                                                      MainWindow::tr("Please set the Flash Page location in the Settings dialog first."),
+                                                      MainWindow::tr("Flash Page is a temporary page for a flash of inspiration."),
+                                                      QString(),
+                                                      p_win);
+                                                  return;
+                                              }
+
+                                              auto paras = QSharedPointer<FileOpenParameters>::create();
+                                              paras->m_mode = ViewWindowMode::Edit;
+                                              emit VNoteX::getInst().openFileRequested(flashPage, paras);
+                                          });
+        WidgetUtils::addActionShortcut(flashPageAct,
+                                       coreConfig.getShortcut(CoreConfig::Shortcut::FlashPage));
+    }
+
     return tb;
 }
 
@@ -330,17 +357,20 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
 
         menu->addSeparator();
 
-        menu->addAction(MainWindow::tr("Quit"),
-                        menu,
-                        [p_win]() {
-                            p_win->quitApp();
-                        });
-
         menu->addAction(MainWindow::tr("Restart"),
                         menu,
                         [p_win]() {
                             p_win->restart();
                         });
+
+        auto quitAct = menu->addAction(MainWindow::tr("Quit"),
+                                       menu,
+                                       [p_win]() {
+                                           p_win->quitApp();
+                                       });
+        quitAct->setMenuRole(QAction::QuitRole);
+        WidgetUtils::addActionShortcut(quitAct,
+                                       coreConfig.getShortcut(CoreConfig::Shortcut::Quit));
     }
 
     // Help.

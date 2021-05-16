@@ -97,6 +97,9 @@ namespace vnotex
         QByteArray getNotebookExplorerSessionAndClear();
         void setNotebookExplorerSession(const QByteArray &p_bytes);
 
+        const QString &getFlashPage() const;
+        void setFlashPage(const QString &p_file);
+
     private:
         void loadCore(const QJsonObject &p_session);
 
@@ -139,6 +142,8 @@ namespace vnotex
         QByteArray m_viewAreaSession;
 
         QByteArray m_notebookExplorerSession;
+
+        QString m_flashPage;
     };
 } // ns vnotex
 

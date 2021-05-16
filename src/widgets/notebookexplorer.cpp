@@ -475,8 +475,6 @@ void NotebookExplorer::recoverSession()
 
     auto it = m_session.m_notebooks.find(m_currentNotebook->getRootFolderPath());
     if (it != m_session.m_notebooks.end()) {
-        qDebug() << it.value().m_recovered << it.value().m_currentNodePath;
-
         if (it.value().m_recovered || it.value().m_currentNodePath.isEmpty()) {
             return;
         }
@@ -484,7 +482,6 @@ void NotebookExplorer::recoverSession()
         it.value().m_recovered = true;
 
         auto node = m_currentNotebook->loadNodeByPath(it.value().m_currentNodePath);
-        qDebug() << "node" << node;
         if (node) {
             m_nodeExplorer->setCurrentNode(node.data());
         }

@@ -35,6 +35,8 @@ namespace vnotex
             RemoveSplitAndWorkspace,
             NewWorkspace,
             Export,
+            Quit,
+            FlashPage,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

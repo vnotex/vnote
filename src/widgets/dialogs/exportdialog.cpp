@@ -32,6 +32,7 @@
 #include <utils/pathutils.h>
 #include <utils/clipboardutils.h>
 #include <export/exporter.h>
+#include <widgets/locationinputwithbrowsebutton.h>
 
 using namespace vnotex;
 
@@ -181,14 +182,9 @@ QGroupBox *ExportDialog::setupTargetGroup(QWidget *p_parent)
     }
 
     {
-        auto outputLayout = new QHBoxLayout();
-
-        m_outputDirLineEdit = WidgetsFactory::createLineEdit(box);
-        outputLayout->addWidget(m_outputDirLineEdit);
-
-        auto browseBtn = new QPushButton(tr("Browse"), box);
-        outputLayout->addWidget(browseBtn);
-        connect(browseBtn, &QPushButton::clicked,
+        m_outputDirInput = new LocationInputWithBrowseButton(box);
+        layout->addRow(tr("Output directory:"), m_outputDirInput);
+        connect(m_outputDirInput, &LocationInputWithBrowseButton::clicked,
                 this, [this]() {
                     QString initPath = getOutputDir();
                     if (!QFileInfo::exists(initPath)) {
@@ -202,11 +198,9 @@ QGroupBox *ExportDialog::setupTargetGroup(QWidget *p_parent)
                                                                         | QFileDialog::DontResolveSymlinks);
 
                     if (!dirPath.isEmpty()) {
-                        m_outputDirLineEdit->setText(dirPath);
+                        m_outputDirInput->setText(dirPath);
                     }
                 });
-
-        layout->addRow(tr("Output directory:"), outputLayout);
     }
 
     return box;
@@ -281,7 +275,7 @@ void ExportDialog::setupButtonBox()
 
 QString ExportDialog::getOutputDir() const
 {
-    return m_outputDirLineEdit->text();
+    return m_outputDirInput->text();
 }
 
 void ExportDialog::initOptions()
@@ -330,7 +324,7 @@ void ExportDialog::restoreFields(const ExportOption &p_option)
         }
     }
 
-    m_outputDirLineEdit->setText(p_option.m_outputDir);
+    m_outputDirInput->setText(p_option.m_outputDir);
 
     m_recursiveCheckBox->setChecked(p_option.m_recursive);
 

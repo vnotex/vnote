@@ -19,6 +19,7 @@ SOURCES += \
     $$PWD/dialogs/settings/editorpage.cpp \
     $$PWD/dialogs/settings/generalpage.cpp \
     $$PWD/dialogs/settings/markdowneditorpage.cpp \
+    $$PWD/dialogs/settings/quickaccesspage.cpp \
     $$PWD/dialogs/settings/settingspage.cpp \
     $$PWD/dialogs/settings/settingsdialog.cpp \
     $$PWD/dialogs/settings/texteditorpage.cpp \
@@ -43,6 +44,7 @@ SOURCES += \
     $$PWD/lineedit.cpp \
     $$PWD/lineeditdelegate.cpp \
     $$PWD/listwidget.cpp \
+    $$PWD/locationinputwithbrowsebutton.cpp \
     $$PWD/locationlist.cpp \
     $$PWD/mainwindow.cpp \
     $$PWD/markdownviewwindow.cpp \
@@ -112,6 +114,7 @@ HEADERS += \
     $$PWD/dialogs/settings/editorpage.h \
     $$PWD/dialogs/settings/generalpage.h \
     $$PWD/dialogs/settings/markdowneditorpage.h \
+    $$PWD/dialogs/settings/quickaccesspage.h \
     $$PWD/dialogs/settings/settingspage.h \
     $$PWD/dialogs/settings/settingsdialog.h \
     $$PWD/dialogs/settings/texteditorpage.h \
@@ -136,6 +139,7 @@ HEADERS += \
     $$PWD/lineedit.h \
     $$PWD/lineeditdelegate.h \
     $$PWD/listwidget.h \
+    $$PWD/locationinputwithbrowsebutton.h \
     $$PWD/locationlist.h \
     $$PWD/mainwindow.h \
     $$PWD/markdownviewwindow.h \
