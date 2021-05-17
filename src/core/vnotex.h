@@ -107,6 +107,8 @@ namespace vnotex
 
         void exportRequested();
 
+        void pinToQuickAccessRequested(const QStringList &p_files);
+
     private:
         explicit VNoteX(QObject *p_parent = nullptr);
 
@@ -117,6 +119,8 @@ namespace vnotex
         void initBufferMgr();
 
         void initDocsUtils();
+
+        void initQuickAccess();
 
         MainWindow *m_mainWindow;
 

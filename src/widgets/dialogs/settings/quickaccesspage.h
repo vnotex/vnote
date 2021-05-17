@@ -4,6 +4,7 @@
 #include "settingspage.h"
 
 class QGroupBox;
+class QPlainTextEdit;
 
 namespace vnotex
 {
@@ -27,7 +28,11 @@ namespace vnotex
 
         QGroupBox *setupFlashPageGroup();
 
+        QGroupBox *setupQuickAccessGroup();
+
         LocationInputWithBrowseButton *m_flashPageInput = nullptr;
+
+        QPlainTextEdit *m_quickAccessTextEdit = nullptr;
     };
 }
 

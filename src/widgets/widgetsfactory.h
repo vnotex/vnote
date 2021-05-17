@@ -44,6 +44,8 @@ namespace vnotex
         static QFormLayout *createFormLayout(QWidget *p_parent = nullptr);
 
         static QPlainTextEdit *createPlainTextConsole(QWidget *p_parent = nullptr);
+
+        static QPlainTextEdit *createPlainTextEdit(QWidget *p_parent = nullptr);
     };
 } // ns vnotex
 

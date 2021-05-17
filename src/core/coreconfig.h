@@ -37,6 +37,7 @@ namespace vnotex
             Export,
             Quit,
             FlashPage,
+            QuickAccess,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

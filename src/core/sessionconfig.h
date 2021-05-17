@@ -100,6 +100,9 @@ namespace vnotex
         const QString &getFlashPage() const;
         void setFlashPage(const QString &p_file);
 
+        const QStringList &getQuickAccessFiles() const;
+        void setQuickAccessFiles(const QStringList &p_files);
+
     private:
         void loadCore(const QJsonObject &p_session);
 
@@ -144,6 +147,8 @@ namespace vnotex
         QByteArray m_notebookExplorerSession;
 
         QString m_flashPage;
+
+        QStringList m_quickAccessFiles;
     };
 } // ns vnotex
 

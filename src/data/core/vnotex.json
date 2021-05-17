@@ -30,7 +30,8 @@
             "NewWorkspace" : "Ctrl+G, N",
             "Export" : "Ctrl+G, T",
             "Quit" : "Ctrl+Q",
-            "FlashPage" : "Ctrl+Alt+L"
+            "FlashPage" : "Ctrl+Alt+L",
+            "QuickAccess" : "Ctrl+Alt+I"
         },
         "toolbar_icon_size" : 16,
         "note_management" : {

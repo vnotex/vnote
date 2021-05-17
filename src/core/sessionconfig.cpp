@@ -97,6 +97,8 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
     }
 
     m_flashPage = readString(coreObj, QStringLiteral("flash_page"));
+
+    m_quickAccessFiles = readStringList(coreObj, QStringLiteral("quick_access"));
 }
 
 QJsonObject SessionConfig::saveCore() const
@@ -110,6 +112,7 @@ QJsonObject SessionConfig::saveCore() const
         coreObj[QStringLiteral("minimize_to_system_tray")] = m_minimizeToSystemTray > 0;
     }
     coreObj[QStringLiteral("flash_page")] = m_flashPage;
+    writeStringList(coreObj, QStringLiteral("quick_access"), m_quickAccessFiles);
     return coreObj;
 }
 
@@ -349,4 +352,14 @@ const QString &SessionConfig::getFlashPage() const
 void SessionConfig::setFlashPage(const QString &p_file)
 {
     updateConfig(m_flashPage, p_file, this);
+}
+
+const QStringList &SessionConfig::getQuickAccessFiles() const
+{
+    return m_quickAccessFiles;
+}
+
+void SessionConfig::setQuickAccessFiles(const QStringList &p_files)
+{
+    updateConfig(m_quickAccessFiles, p_files, this);
 }
