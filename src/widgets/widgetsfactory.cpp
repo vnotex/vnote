@@ -95,3 +95,9 @@ QPlainTextEdit *WidgetsFactory::createPlainTextConsole(QWidget *p_parent)
     edit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
     return edit;
 }
+
+QPlainTextEdit *WidgetsFactory::createPlainTextEdit(QWidget *p_parent)
+{
+    auto edit = new QPlainTextEdit(p_parent);
+    return edit;
+}

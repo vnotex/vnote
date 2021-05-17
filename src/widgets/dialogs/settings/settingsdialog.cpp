@@ -13,6 +13,7 @@
 #include "texteditorpage.h"
 #include "markdowneditorpage.h"
 #include "appearancepage.h"
+#include "quickaccesspage.h"
 #include "themepage.h"
 
 using namespace vnotex;
@@ -87,6 +88,12 @@ void SettingsDialog::setupPages()
             auto subPage = new ThemePage(this);
             addSubPage(subPage, item);
         }
+    }
+
+    // Quick Access.
+    {
+        auto page = new QuickAccessPage(this);
+        addPage(page);
     }
 
     // Editor.

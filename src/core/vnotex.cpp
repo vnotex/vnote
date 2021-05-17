@@ -11,6 +11,7 @@
 #include "location.h"
 
 #include "fileopenparameters.h"
+#include "quickaccesshelper.h"
 
 #include <utils/docsutils.h>
 
@@ -31,6 +32,8 @@ VNoteX::VNoteX(QObject *p_parent)
     initBufferMgr();
 
     initDocsUtils();
+
+    initQuickAccess();
 }
 
 void VNoteX::initLoad()
@@ -127,4 +130,10 @@ void VNoteX::initDocsUtils()
     DocsUtils::addSearchPath(configMgr.getAppDocsFolder());
 
     DocsUtils::setLocale(configMgr.getCoreConfig().getLocaleToUse());
+}
+
+void VNoteX::initQuickAccess()
+{
+    connect(this, &VNoteX::pinToQuickAccessRequested,
+            this, &QuickAccessHelper::pinToQuickAccess);
 }

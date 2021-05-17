@@ -22,6 +22,7 @@ namespace vnotex
     class Node;
     class Buffer;
     class Exporter;
+    class LocationInputWithBrowseButton;
 
     class ExportDialog : public ScrollDialog
     {
@@ -130,7 +131,7 @@ namespace vnotex
 
         QComboBox *m_syntaxHighlightStyleComboBox = nullptr;
 
-        QLineEdit *m_outputDirLineEdit = nullptr;
+        LocationInputWithBrowseButton *m_outputDirInput = nullptr;
 
         QProgressBar *m_progressBar = nullptr;
 

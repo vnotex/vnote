@@ -79,8 +79,7 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
         m_newNotebookDefaultRootFolderPath = QDir::homePath();
     }
 
-    m_currentNotebookRootFolderPath = readString(coreObj,
-        QStringLiteral("current_notebook_root_folder_path"));
+    m_currentNotebookRootFolderPath = readString(coreObj, QStringLiteral("current_notebook_root_folder_path"));
 
     {
         auto option = readString(coreObj, QStringLiteral("opengl"));
@@ -96,6 +95,10 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
     if (!isUndefinedKey(coreObj, QStringLiteral("minimize_to_system_tray"))) {
         m_minimizeToSystemTray = readBool(coreObj, QStringLiteral("minimize_to_system_tray")) ? 1 : 0;
     }
+
+    m_flashPage = readString(coreObj, QStringLiteral("flash_page"));
+
+    m_quickAccessFiles = readStringList(coreObj, QStringLiteral("quick_access"));
 }
 
 QJsonObject SessionConfig::saveCore() const
@@ -108,6 +111,8 @@ QJsonObject SessionConfig::saveCore() const
     if (m_minimizeToSystemTray != -1) {
         coreObj[QStringLiteral("minimize_to_system_tray")] = m_minimizeToSystemTray > 0;
     }
+    coreObj[QStringLiteral("flash_page")] = m_flashPage;
+    writeStringList(coreObj, QStringLiteral("quick_access"), m_quickAccessFiles);
     return coreObj;
 }
 
@@ -337,4 +342,24 @@ QByteArray SessionConfig::getNotebookExplorerSessionAndClear()
 void SessionConfig::setNotebookExplorerSession(const QByteArray &p_bytes)
 {
     updateConfigWithoutCheck(m_notebookExplorerSession, p_bytes, this);
+}
+
+const QString &SessionConfig::getFlashPage() const
+{
+    return m_flashPage;
+}
+
+void SessionConfig::setFlashPage(const QString &p_file)
+{
+    updateConfig(m_flashPage, p_file, this);
+}
+
+const QStringList &SessionConfig::getQuickAccessFiles() const
+{
+    return m_quickAccessFiles;
+}
+
+void SessionConfig::setQuickAccessFiles(const QStringList &p_files)
+{
+    updateConfig(m_quickAccessFiles, p_files, this);
 }

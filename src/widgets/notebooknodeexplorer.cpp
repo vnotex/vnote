@@ -870,6 +870,13 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
         act = createAction(Action::Sort, p_menu);
         p_menu->addAction(act);
 
+        {
+            p_menu->addSeparator();
+
+            act = createAction(Action::PinToQuickAccess, p_menu);
+            p_menu->addAction(act);
+        }
+
         if (selectedSize == 1) {
             p_menu->addSeparator();
 
@@ -897,6 +904,13 @@ void NotebookNodeExplorer::createContextMenuOnExternalNode(QMenu *p_menu, const 
 
     act = createAction(Action::ImportToConfig, p_menu);
     p_menu->addAction(act);
+
+    {
+        p_menu->addSeparator();
+
+        act = createAction(Action::PinToQuickAccess, p_menu);
+        p_menu->addAction(act);
+    }
 
     if (selectedSize == 1) {
         p_menu->addSeparator();
@@ -1154,6 +1168,27 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         act = new QAction(tr("&Expand All\t*"), p_parent);
         connect(act, &QAction::triggered,
                 this, &NotebookNodeExplorer::expandCurrentNodeAll);
+
+    case Action::PinToQuickAccess:
+        act = new QAction(tr("Pin To &Quick Access"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this]() {
+                    auto nodes = getSelectedNodes();
+                    QStringList files;
+                    for (const auto &node : nodes.first) {
+                        if (node->hasContent()) {
+                            files.push_back(node->fetchAbsolutePath());
+                        }
+                    }
+                    for (const auto &node : nodes.second) {
+                        if (!node->isFolder()) {
+                            files.push_back(node->fetchAbsolutePath());
+                        }
+                    }
+                    if (!files.isEmpty()) {
+                        emit VNoteX::getInst().pinToQuickAccessRequested(files);
+                    }
+                });
         break;
     }
 

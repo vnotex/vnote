@@ -94,6 +94,30 @@ namespace vnotex
             return res;
         }
 
+        static QStringList readStringList(const QJsonObject &p_obj,
+                                          const QString &p_key)
+        {
+            auto arr = p_obj.value(p_key).toArray();
+            QStringList res;
+            res.reserve(arr.size());
+            for (const auto &ele : arr) {
+                res.push_back(ele.toString());
+            }
+            return res;
+        }
+
+        static void writeStringList(QJsonObject &p_obj,
+                                    const QString &p_key,
+                                    const QStringList &p_list)
+        {
+            QJsonArray arr;
+            for (const auto &ele : p_list) {
+                arr.push_back(ele);
+            }
+
+            p_obj[p_key] = arr;
+        }
+
         static QString readString(const QJsonObject &p_obj,
                                   const QString &p_key)
         {

@@ -149,7 +149,8 @@ namespace vnotex
             ReloadIndex,
             ImportToConfig,
             Open,
-            ExpandAll
+            ExpandAll,
+            PinToQuickAccess
         };
 
         void setupUI();
