@@ -15,8 +15,8 @@ VNote 3.0.1 已发布！ 看看都有 [哪些更新](https://github.com/vnotex/v
 
 ## 开源和自由
 - 遵从 [GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0) 开源协议
-- 由Qt和C++提供强劲性能
-- 支持主流操作系统Linux，Windows，和macOS
+- 由 Qt 和 C++ 提供强劲性能
+- 支持主流操作系统 Linux，Windows，和macOS
 
 ![](_v_images/20181124154422086_1815676907.svg =512x)
 
@@ -41,8 +41,8 @@ VNote 3.0.1 已发布！ 看看都有 [哪些更新](https://github.com/vnotex/v
 
 ![](_v_images/20181124155541581_1337512834.svg =512x)
 
-## 舒适的Markdown体验
-- 最小化Markdown阅读和书写的鸿沟
+## 舒适的 Markdown 体验
+- 最小化 Markdown 阅读和书写的鸿沟
 - 语法高亮和原地预览
 - 高效的图片管理
 - 交互式的大纲
@@ -57,7 +57,7 @@ VNote 3.0.1 已发布！ 看看都有 [哪些更新](https://github.com/vnotex/v
 ![](_v_images/20181124160655553_1770055980.svg =512x)
 
 ## 程序员为程序员优化打造
-- Vim模式和Vim式导航
+- Vi 模式和 Vi 式导航
 - 编辑器行号
 - 多标签页
 - 窗口分割
@@ -68,6 +68,6 @@ VNote 3.0.1 已发布！ 看看都有 [哪些更新](https://github.com/vnotex/v
 
 ::: alert-success
 
-[**下载VNote**](downloads.md)，开始Markdown之旅！
+[**下载 VNote**](downloads.md)，开始 Markdown 之旅！
 
 :::
