@@ -1168,6 +1168,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         act = new QAction(tr("&Expand All\t*"), p_parent);
         connect(act, &QAction::triggered,
                 this, &NotebookNodeExplorer::expandCurrentNodeAll);
+        break;
 
     case Action::PinToQuickAccess:
         act = new QAction(tr("Pin To &Quick Access"), p_parent);

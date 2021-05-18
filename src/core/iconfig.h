@@ -4,6 +4,8 @@
 #include <QSharedPointer>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QBitArray>
+#include <QDataStream>
 
 namespace vnotex
 {
@@ -135,6 +137,34 @@ namespace vnotex
                                    const QByteArray &p_bytes)
         {
             p_obj.insert(p_key, QLatin1String(p_bytes.toBase64()));
+        }
+
+        static QBitArray readBitArray(const QJsonObject &p_obj,
+                                      const QString &p_key)
+        {
+            auto bytes = readByteArray(p_obj, p_key);
+            if (bytes.isEmpty()) {
+                return QBitArray();
+            }
+
+            QDataStream ds(bytes);
+            ds.setVersion(QDataStream::Qt_5_12);
+
+            QBitArray bits;
+            ds >> bits;
+            return bits;
+        }
+
+        static void writeBitArray(QJsonObject &p_obj,
+                                  const QString &p_key,
+                                  const QBitArray &p_bits)
+        {
+            QByteArray bytes;
+            QDataStream ds(&bytes, QIODevice::WriteOnly);
+            ds.setVersion(QDataStream::Qt_5_12);
+            ds << p_bits;
+
+            writeByteArray(p_obj, p_key, bytes);
         }
 
         static bool readBool(const QJsonObject &p_default,

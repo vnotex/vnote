@@ -18,7 +18,6 @@
 #include <QSystemTrayIcon>
 #include <QWindowStateChangeEvent>
 #include <QTimer>
-#include <QBitArray>
 
 #include "toolbox.h"
 #include "notebookexplorer.h"
@@ -29,6 +28,7 @@
 #include <core/configmgr.h>
 #include <core/sessionconfig.h>
 #include <core/coreconfig.h>
+#include <core/widgetconfig.h>
 #include <core/events.h>
 #include <core/fileopenparameters.h>
 #include <widgets/dialogs/exportdialog.h>
@@ -251,9 +251,9 @@ void MainWindow::setupNavigationDock()
     dock->setObjectName(QStringLiteral("NavigationDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    setupNavigationToolBox();
-    dock->setWidget(m_navigationToolBox);
-    dock->setFocusProxy(m_navigationToolBox);
+    setupNotebookExplorer(this);
+    dock->setWidget(m_notebookExplorer);
+    dock->setFocusProxy(m_notebookExplorer);
     addDockWidget(Qt::LeftDockWidgetArea, dock);
 }
 
@@ -316,39 +316,6 @@ void MainWindow::setupLocationList()
     m_locationList->setObjectName("LocationList.vnotex");
 
     NavigationModeMgr::getInst().registerNavigationTarget(m_locationList->getNavigationModeWrapper());
-}
-
-void MainWindow::setupNavigationToolBox()
-{
-    m_navigationToolBox = new ToolBox(this);
-    m_navigationToolBox->setObjectName("NavigationToolBox.vnotex");
-
-    NavigationModeMgr::getInst().registerNavigationTarget(m_navigationToolBox);
-
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-
-    // Notebook explorer.
-    setupNotebookExplorer(m_navigationToolBox);
-    m_navigationToolBox->addItem(m_notebookExplorer,
-                                 themeMgr.getIconFile("notebook_explorer.svg"),
-                                 tr("Notebooks"),
-                                 nullptr);
-
-    /*
-    // History explorer.
-    auto historyExplorer = new QWidget(this);
-    m_navigationToolBox->addItem(historyExplorer,
-                                 themeMgr.getIconFile("history_explorer.svg"),
-                                 tr("History"),
-                                 nullptr);
-
-    // Tag explorer.
-    auto tagExplorer = new QWidget(this);
-    m_navigationToolBox->addItem(tagExplorer,
-                                 themeMgr.getIconFile("tag_explorer.svg"),
-                                 tr("Tags"),
-                                 nullptr);
-     */
 }
 
 void MainWindow::setupNotebookExplorer(QWidget *p_parent)
@@ -451,6 +418,7 @@ void MainWindow::saveStateAndGeometry()
     SessionConfig::MainWindowStateGeometry sg;
     sg.m_mainState = saveState();
     sg.m_mainGeometry = saveGeometry();
+    sg.m_docksVisibilityBeforeExpand = m_docksVisibilityBeforeExpand;
 
     auto& sessionConfig = ConfigMgr::getInst().getSessionConfig();
     sessionConfig.setMainWindowStateGeometry(sg);
@@ -469,6 +437,17 @@ void MainWindow::loadStateAndGeometry(bool p_stateOnly)
         // Will also restore the state of dock widgets.
         restoreState(sg.m_mainState);
     }
+
+    if (!p_stateOnly) {
+        m_docksVisibilityBeforeExpand = sg.m_docksVisibilityBeforeExpand;
+        if (m_docksVisibilityBeforeExpand.isEmpty()) {
+            // Init.
+            m_docksVisibilityBeforeExpand.resize(m_docks.size());
+            for (int i = 0; i < m_docks.size(); ++i) {
+                m_docksVisibilityBeforeExpand.setBit(i, m_docks[i]->isVisible());
+            }
+        }
+    }
 }
 
 void MainWindow::resetStateAndGeometry()
@@ -485,35 +464,46 @@ void MainWindow::resetStateAndGeometry()
 
 void MainWindow::setContentAreaExpanded(bool p_expanded)
 {
-    static QBitArray dockStateCache(m_docks.size(), false);
+    const auto &keepDocks = ConfigMgr::getInst().getWidgetConfig().getMainWindowKeepDocksExpandingContentArea();
 
     if (p_expanded) {
         // Store the state and hide.
         for (int i = 0; i < m_docks.size(); ++i) {
-            if (m_docks[i]->isFloating()) {
-                dockStateCache[i] = true;
+            m_docksVisibilityBeforeExpand[i] = m_docks[i]->isVisible();
+
+            if (m_docks[i]->isFloating() || keepDocks.contains(m_docks[i]->objectName())) {
                 continue;
             }
 
-            dockStateCache[i] = m_docks[i]->isVisible();
             m_docks[i]->setVisible(false);
         }
     } else {
         // Restore the state.
+        bool hasVisible = false;
         for (int i = 0; i < m_docks.size(); ++i) {
-            if (m_docks[i]->isFloating()) {
+            if (m_docks[i]->isFloating() || keepDocks.contains(m_docks[i]->objectName())) {
                 continue;
             }
 
-            m_docks[i]->setVisible(dockStateCache[i]);
+            if (m_docksVisibilityBeforeExpand[i]) {
+                hasVisible = true;
+            }
+
+            m_docks[i]->setVisible(m_docksVisibilityBeforeExpand[i]);
+        }
+
+        if (!hasVisible) {
+            // At least make one visible.
+            m_docks[DockIndex::NavigationDock]->setVisible(true);
         }
     }
 }
 
 bool MainWindow::isContentAreaExpanded() const
 {
+    const auto &keepDocks = ConfigMgr::getInst().getWidgetConfig().getMainWindowKeepDocksExpandingContentArea();
     for (auto dock : m_docks) {
-        if (!dock->isFloating() && dock->isVisible()) {
+        if (!dock->isFloating() && dock->isVisible() && !keepDocks.contains(dock->objectName())) {
             return false;
         }
     }

@@ -34,11 +34,15 @@ namespace vnotex
             bool operator==(const MainWindowStateGeometry &p_other) const
             {
                 return m_mainState == p_other.m_mainState
-                       && m_mainGeometry == p_other.m_mainGeometry;
+                       && m_mainGeometry == p_other.m_mainGeometry
+                       && m_docksVisibilityBeforeExpand == p_other.m_docksVisibilityBeforeExpand;
             }
 
             QByteArray m_mainState;
+
             QByteArray m_mainGeometry;
+
+            QBitArray m_docksVisibilityBeforeExpand;
         };
 
         enum OpenGL

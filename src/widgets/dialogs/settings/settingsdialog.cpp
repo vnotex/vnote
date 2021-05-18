@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QStackedLayout>
+#include <QScrollArea>
 
 #include <widgets/treewidget.h>
 #include <widgets/lineedit.h>
@@ -19,7 +20,7 @@
 using namespace vnotex;
 
 SettingsDialog::SettingsDialog(QWidget *p_parent)
-    : ScrollDialog(p_parent)
+    : Dialog(p_parent)
 {
     setupUI();
 
@@ -35,8 +36,16 @@ void SettingsDialog::setupUI()
 
     setupPageExplorer(mainLayout, widget);
 
-    m_pageLayout = new QStackedLayout();
-    mainLayout->addLayout(m_pageLayout, 5);
+    {
+        auto scrollArea = new QScrollArea(widget);
+        scrollArea->setWidgetResizable(true);
+        mainLayout->addWidget(scrollArea, 5);
+
+        auto scrollWidget = new QWidget(scrollArea);
+        scrollArea->setWidget(scrollWidget);
+
+        m_pageLayout = new QStackedLayout(scrollWidget);
+    }
 
     setDialogButtonBox(QDialogButtonBox::Ok
                        | QDialogButtonBox::Apply
@@ -116,6 +125,7 @@ void SettingsDialog::setupPages()
 
     setChangesUnsaved(false);
     m_pageExplorer->setCurrentItem(m_pageExplorer->topLevelItem(0), 0, QItemSelectionModel::ClearAndSelect);
+    m_pageExplorer->expandAll();
     m_pageLayout->setCurrentIndex(0);
 
     m_ready = true;

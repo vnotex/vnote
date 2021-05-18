@@ -3,6 +3,9 @@
 
 #include "settingspage.h"
 
+#include <QVector>
+#include <QPair>
+
 class QCheckBox;
 class QSpinBox;
 
@@ -27,6 +30,9 @@ namespace vnotex
         QCheckBox *m_systemTitleBarCheckBox = nullptr;
 
         QSpinBox *m_toolBarIconSizeSpinBox = nullptr;
+
+        // <CheckBox, ObjectName>.
+        QVector<QPair<QCheckBox *, QString>> m_keepDocksExpandingContentArea;
     };
 }
 

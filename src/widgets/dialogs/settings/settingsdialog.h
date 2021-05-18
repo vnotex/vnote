@@ -1,7 +1,7 @@
 #ifndef SETTINGSDIALOG_H
 #define SETTINGSDIALOG_H
 
-#include "../scrolldialog.h"
+#include "../dialog.h"
 
 #include <functional>
 
@@ -14,7 +14,7 @@ namespace vnotex
 {
     class SettingsPage;
 
-    class SettingsDialog : public ScrollDialog
+    class SettingsDialog : public Dialog
     {
         Q_OBJECT
     public:

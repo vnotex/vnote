@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QSharedPointer>
+#include <QBitArray>
 
 #include "toolbarhelper.h"
 #include "statusbarhelper.h"
@@ -102,8 +103,6 @@ namespace vnotex
 
         void setupCentralWidget();
 
-        void setupNavigationToolBox();
-
         void setupOutlineViewer();
 
         void setupNavigationDock();
@@ -184,6 +183,8 @@ namespace vnotex
         QLabel *m_tipsLabel = nullptr;
 
         QTimer *m_tipsTimer = nullptr;
+
+        QBitArray m_docksVisibilityBeforeExpand;
     };
 } // ns vnotex
 

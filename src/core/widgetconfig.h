@@ -39,6 +39,9 @@ namespace vnotex
         bool isSearchPanelAdvancedSettingsVisible() const;
         void setSearchPanelAdvancedSettingsVisible(bool p_visible);
 
+        const QStringList &getMainWindowKeepDocksExpandingContentArea() const;
+        void setMainWindowKeepDocksExpandingContentArea(const QStringList &p_docks);
+
     private:
         int m_outlineAutoExpandedLevel = 6;
 
@@ -53,6 +56,9 @@ namespace vnotex
         bool m_nodeExplorerAutoImportExternalFilesEnabled = true;
 
         bool m_searchPanelAdvancedSettingsVisible = true;
+
+        // Object name of those docks that should be kept when expanding content area.
+        QStringList m_mainWindowKeepDocksExpandingContentArea;
     };
 }
 

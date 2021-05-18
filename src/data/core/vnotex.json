@@ -311,6 +311,8 @@
         "node_explorer_recycle_bin_node_visible" : false,
         "node_explorer_external_files_visible" : true,
         "node_explorer_auto_import_external_files_enabled" : true,
-        "search_panel_advanced_settings_visible" : true
+        "search_panel_advanced_settings_visible" : true,
+        "//comment" : "Docks to ignore when expanding content area of main window",
+        "main_window_keep_docks_expanding_content_area": []
     }
 }
