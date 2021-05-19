@@ -18,13 +18,15 @@
         {
             "text": "博客",
             "target": "blogs/vx.json",
-            "navi": true
+            "navi": true,
+            "navi_expand_level": 1
         },
         {
             "text": "文档",
             "target": "docs/vx.json",
             "navi": true,
-            "navi_index": "用户/欢迎使用.md"
+            "navi_index": "用户/欢迎使用.md",
+            "navi_expand_level": 1
         },
         {
             "text": "VNoteX",

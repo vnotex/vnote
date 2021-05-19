@@ -19,7 +19,8 @@
             "text": "Documentation",
             "target": "docs/vx.json",
             "navi": true,
-            "navi_index": "Users/welcome.md"
+            "navi_index": "Users/welcome.md",
+            "navi_expand_level": 1
         },
         {
             "text": "VNoteX",
