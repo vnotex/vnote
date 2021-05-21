@@ -1,4 +1,14 @@
 # Changes
+## v3.1.0
+* Support Japanese translation (Thanks @miurahr)
+* MarkdownEditor: guess image suffix when fetching to local
+* Refine read mode styles (Thanks @heartnn)
+* Support recovering edit session on start
+* Support recovering notebook explorer session on start
+* Support Flash Page
+* Support Quick Access
+* Allow to keep docks (like Outline) when expanding content area
+
 ## v3.0.1
 * Support spell check via Hunspell
 * `Ctrl+Alt+F` to trigger full-text search
