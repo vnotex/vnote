@@ -39,6 +39,9 @@ class VNoteX extends EventEmitter {
 
         this.sectionNumberBaseLevel = 2;
 
+        // Dict mapping from {id, index} to callback for renderGraph().
+        this.renderGraphCallbacks = {}
+
         window.addEventListener('load', () => {
             console.log('window load finished');
 
@@ -304,6 +307,19 @@ class VNoteX extends EventEmitter {
 
         if (p_height > 0) {
             document.body.style.height = p_height + 'px';
+        }
+    }
+
+    renderGraph(p_id, p_index, p_format, p_lang, p_text, p_callback) {
+        this.renderGraphCallbacks[p_id + '_' + p_index] = p_callback;
+        window.vxMarkdownAdapter.renderGraph(p_id, p_index, p_format, p_lang, p_text);
+    }
+
+    graphRenderDataReady(p_id, p_index, p_format, p_data) {
+        let key = p_id + '_' + p_index;
+        if (key in this.renderGraphCallbacks) {
+            this.renderGraphCallbacks[key](p_id, p_index, p_format, p_data);
+            delete this.renderGraphCallbacks[key];
         }
     }
 

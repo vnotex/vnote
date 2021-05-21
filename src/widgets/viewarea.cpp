@@ -22,10 +22,14 @@
 #include <core/vnotex.h>
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
+#include <core/editorconfig.h>
+#include <core/markdowneditorconfig.h>
 #include <core/sessionconfig.h>
 #include <core/fileopenparameters.h>
 #include <notebook/node.h>
 #include <notebook/notebook.h>
+#include "editors/plantumlhelper.h"
+#include "editors/graphvizhelper.h"
 
 using namespace vnotex;
 
@@ -87,6 +91,12 @@ ViewArea::ViewArea(QWidget *p_parent)
                     p_win->handleEditorConfigChange();
                     return true;
                 });
+
+                const auto &markdownEditorConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
+                PlantUmlHelper::getInst().update(markdownEditorConfig.getPlantUmlJar(),
+                                                 markdownEditorConfig.getGraphvizExe(),
+                                                 markdownEditorConfig.getPlantUmlCommand());
+                GraphvizHelper::getInst().update(markdownEditorConfig.getGraphvizExe());
             });
 
     m_fileCheckTimer = new QTimer(this);

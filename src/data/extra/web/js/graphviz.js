@@ -14,21 +14,30 @@ class Graphviz extends GraphRenderer {
         this.format = 'svg';
 
         this.langs = ['dot'];
+
+        this.useWeb = true;
+
+        this.nextLocalGraphIndex = 1;
     }
 
     registerInternal() {
         this.vnotex.on('basicMarkdownRendered', () => {
             this.reset();
-            this.renderCodeNodes(this.vnotex.contentContainer,
-                                 window.vxOptions.transformSvgToPngEnabled ? 'png' : 'svg');
+            this.renderCodeNodes(window.vxOptions.transformSvgToPngEnabled ? 'png' : 'svg');
         });
 
         this.vnotex.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
+        this.useWeb = window.vxOptions.webGraphviz;
+        if (!this.useWeb) {
+            this.extraScripts = [];
+        }
     }
 
     initialize(p_callback) {
         return super.initialize(() => {
-            this.viz = new Viz();
+            if (this.useWeb) {
+                this.viz = new Viz();
+            }
             p_callback();
         });
     }
@@ -41,13 +50,22 @@ class Graphviz extends GraphRenderer {
     }
 
     // Interface 2.
-    renderCodeNodes(p_node, p_format) {
+    renderCodeNodes(p_format) {
         this.format = p_format;
 
-        super.renderCodeNodes(p_node);
+        super.renderCodeNodes();
     }
 
     renderOne(p_node, p_idx) {
+        if (this.useWeb) {
+            this.renderOnline(p_node, p_idx);
+        } else {
+            this.renderLocal(p_node);
+        }
+    }
+
+    renderOnline(p_node, p_idx) {
+        console.assert(this.viz);
         let func = function(p_graphviz, p_renderNode) {
             let graphviz = p_graphviz;
             let node = p_renderNode;
@@ -85,13 +103,61 @@ class Graphviz extends GraphRenderer {
                 });
 
         }
+
         return true;
+    }
+
+    renderLocal(p_node) {
+        let func = function(p_graphviz, p_renderNode) {
+            let graphviz = p_graphviz;
+            let node = p_renderNode;
+            return function(format, data) {
+                if (node && data.length > 0) {
+                    let obj = null;
+                    if (format == 'svg') {
+                        obj = document.createElement('div');
+                        obj.classList.add(graphviz.graphDivClass);
+                        obj.innerHTML = data;
+                        window.vxImageViewer.setupSVGToView(obj.children[0], false);
+                    } else {
+                        obj = document.createElement('div');
+                        obj.classList.add(graphviz.graphDivClass);
+
+                        let imgObj = document.createElement('img');
+                        obj.appendChild(imgObj);
+                        imgObj.src = "data:image/" + format + ";base64, " + data;
+                        window.vxImageViewer.setupIMGToView(imgObj);
+                    }
+
+                    Utils.checkSourceLine(p_node, obj);
+
+                    Utils.replaceNodeWithPreCheck(p_node, obj);
+                }
+                graphviz.finishRenderingOne();
+            };
+        };
+
+        let callback = func(this, p_node);
+        this.vnotex.renderGraph(this.id,
+            this.nextLocalGraphIndex++,
+            this.format,
+            'dot',
+            p_node.textContent,
+            function(id, index, format, data) {
+                callback(format, data);
+            });
     }
 
     // Render a graph from @p_text in SVG format.
     // p_callback(svgNode).
     renderText(p_text, p_callback) {
+        console.assert(this.useWeb, "renderText() should be called only when web Graphviz is enabled");
+
         let func = () => {
+            if (!this.viz) {
+                console.log("viz is not ready yet");
+                return;
+            }
             this.viz.renderSVGElement(p_text)
                 .then(p_callback)
                 .catch(function(err) {

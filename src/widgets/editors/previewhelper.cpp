@@ -12,6 +12,8 @@
 #include <utils/utils.h>
 
 #include "markdowneditor.h"
+#include "plantumlhelper.h"
+#include "graphvizhelper.h"
 
 using namespace vnotex;
 
@@ -134,9 +136,11 @@ void PreviewHelper::codeBlocksUpdated(vte::TimeStamp p_timeStamp,
     ++m_codeBlockTimeStamp;
     m_codeBlocksData.clear();
 
-    bool needUpdateEditorInplacePreview = true;
+    QVector<int> needPreviewBlocks;
 
-    for (const auto &cb : p_codeBlocks) {
+    for (int i = 0; i < p_codeBlocks.size(); ++i) {
+        const auto &cb = p_codeBlocks[i];
+
         const auto needPreview = isLangNeedPreview(cb.m_lang);
         if (!needPreview.first && !needPreview.second) {
             continue;
@@ -158,16 +162,16 @@ void PreviewHelper::codeBlocksUpdated(vte::TimeStamp p_timeStamp,
         }
 
         if (m_inplacePreviewEnabled && needPreview.first && !cacheHit) {
-            // No need to update in-place preview for now.
-            needUpdateEditorInplacePreview = false;
             m_codeBlocksData[blockPreviewIdx].m_text = cb.m_text;
-            inplacePreviewCodeBlock(blockPreviewIdx);
+            needPreviewBlocks.push_back(blockPreviewIdx);
         }
     }
 
-    if (needUpdateEditorInplacePreview) {
-        updateEditorInplacePreviewCodeBlock();
+    for (auto idx : needPreviewBlocks) {
+        inplacePreviewCodeBlock(idx);
     }
+
+    updateEditorInplacePreviewCodeBlock();
 }
 
 bool PreviewHelper::checkPreviewSourceLang(SourceFlag p_flag, const QString &p_lang) const
@@ -221,13 +225,38 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx)
     if (checkPreviewSourceLang(SourceFlag::FlowChart, blockData.m_lang)
         || checkPreviewSourceLang(SourceFlag::WaveDrom, blockData.m_lang)
         || checkPreviewSourceLang(SourceFlag::Mermaid, blockData.m_lang)
-        || checkPreviewSourceLang(SourceFlag::PlantUml, blockData.m_lang)
-        || checkPreviewSourceLang(SourceFlag::Graphviz, blockData.m_lang)
+        || (checkPreviewSourceLang(SourceFlag::PlantUml, blockData.m_lang) && m_webPlantUmlEnabled)
+        || (checkPreviewSourceLang(SourceFlag::Graphviz, blockData.m_lang) && m_webGraphvizEnabled)
         || checkPreviewSourceLang(SourceFlag::Math, blockData.m_lang)) {
         emit graphPreviewRequested(p_blockPreviewIdx,
                                    m_codeBlockTimeStamp,
                                    blockData.m_lang,
                                    TextUtils::removeCodeBlockFence(blockData.m_text));
+        return;
+    }
+
+    if (!m_webPlantUmlEnabled && checkPreviewSourceLang(SourceFlag::PlantUml, blockData.m_lang)) {
+        // Local PlantUml.
+        PlantUmlHelper::getInst().process(static_cast<quint64>(p_blockPreviewIdx),
+                                          m_codeBlockTimeStamp,
+                                          QStringLiteral("svg"),
+                                          TextUtils::removeCodeBlockFence(blockData.m_text),
+                                          [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
+                                              handleLocalData(id, timeStamp, format, data, true);
+                                          });
+        return;
+    }
+
+    if (!m_webGraphvizEnabled && checkPreviewSourceLang(SourceFlag::Graphviz, blockData.m_lang)) {
+        // Local PlantUml.
+        GraphvizHelper::getInst().process(static_cast<quint64>(p_blockPreviewIdx),
+                                          m_codeBlockTimeStamp,
+                                          QStringLiteral("svg"),
+                                          TextUtils::removeCodeBlockFence(blockData.m_text),
+                                          [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
+                                              handleLocalData(id, timeStamp, format, data, false);
+                                          });
+        return;
     }
 }
 
@@ -242,10 +271,11 @@ void PreviewHelper::handleGraphPreviewData(const MarkdownViewerAdapter::PreviewD
     }
 
     auto &blockData = m_codeBlocksData[p_data.m_id];
+    const bool forcedBackground = needForcedBackground(blockData.m_lang);
     auto previewData = QSharedPointer<GraphPreviewData>::create(p_data.m_timeStamp,
                                                                 p_data.m_format,
                                                                 p_data.m_data,
-                                                                0,
+                                                                forcedBackground ? m_editor->getPreviewBackground() : 0,
                                                                 p_data.m_needScale ? getEditorScaleFactor() : 1);
     m_codeBlockCache.set(blockData.m_text, previewData);
     blockData.m_text.clear();
@@ -413,4 +443,59 @@ qreal PreviewHelper::getEditorScaleFactor() const
     }
 
     return 1;
+}
+
+void PreviewHelper::setWebPlantUmlEnabled(bool p_enabled)
+{
+    m_webPlantUmlEnabled = p_enabled;
+}
+
+void PreviewHelper::setWebGraphvizEnabled(bool p_enabled)
+{
+    m_webGraphvizEnabled = p_enabled;
+}
+
+void PreviewHelper::handleLocalData(quint64 p_id,
+                                    TimeStamp p_timeStamp,
+                                    const QString &p_format,
+                                    const QString &p_data,
+                                    bool p_forcedBackground)
+{
+    if (p_timeStamp != m_codeBlockTimeStamp) {
+        return;
+    }
+
+    Q_UNUSED(p_format);
+    Q_ASSERT(p_format == QStringLiteral("svg"));
+
+    if (p_id >= static_cast<quint64>(m_codeBlocksData.size()) || p_data.isEmpty()) {
+        updateEditorInplacePreviewCodeBlock();
+        return;
+    }
+
+    auto &blockData = m_codeBlocksData[p_id];
+    auto previewData = QSharedPointer<GraphPreviewData>::create(p_timeStamp,
+                                                                p_format,
+                                                                p_data.toUtf8(),
+                                                                p_forcedBackground ? m_editor->getPreviewBackground() : 0,
+                                                                getEditorScaleFactor());
+    m_codeBlockCache.set(blockData.m_text, previewData);
+    blockData.m_text.clear();
+
+    blockData.updateInplacePreview(m_document,
+                                   previewData->m_image,
+                                   previewData->m_name,
+                                   previewData->m_background,
+                                   m_tabStopWidth);
+
+    updateEditorInplacePreviewCodeBlock();
+}
+
+bool PreviewHelper::needForcedBackground(const QString &p_lang) const
+{
+    if (checkPreviewSourceLang(SourceFlag::PlantUml, p_lang)) {
+        return true;
+    }
+
+    return false;
 }

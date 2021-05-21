@@ -6,6 +6,8 @@
 #include <QJsonObject>
 #include <QScopedPointer>
 
+#include "noncopyable.h"
+
 namespace vnotex
 {
     class MainConfig;
@@ -14,7 +16,7 @@ namespace vnotex
     class EditorConfig;
     class WidgetConfig;
 
-    class ConfigMgr : public QObject
+    class ConfigMgr : public QObject, private Noncopyable
     {
         Q_OBJECT
     public:

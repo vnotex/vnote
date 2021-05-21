@@ -47,6 +47,7 @@ HEADERS += \
     $$PWD/logger.h \
     $$PWD/mainconfig.h \
     $$PWD/markdowneditorconfig.h \
+    $$PWD/noncopyable.h \
     $$PWD/quickaccesshelper.h \
     $$PWD/singleinstanceguard.h \
     $$PWD/iconfig.h \

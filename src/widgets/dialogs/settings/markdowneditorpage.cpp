@@ -8,6 +8,8 @@
 #include <QComboBox>
 #include <QSpinBox>
 #include <QHBoxLayout>
+#include <QPushButton>
+#include <QFileDialog>
 
 #include <widgets/widgetsfactory.h>
 #include <core/editorconfig.h>
@@ -16,6 +18,10 @@
 #include <utils/widgetutils.h>
 
 #include "editorpage.h"
+#include <widgets/locationinputwithbrowsebutton.h>
+#include <widgets/messageboxhelper.h>
+#include <widgets/editors/plantumlhelper.h>
+#include <widgets/editors/graphvizhelper.h>
 
 using namespace vnotex;
 
@@ -76,6 +82,20 @@ void MarkdownEditorPage::loadInternal()
     m_smartTableCheckBox->setChecked(markdownConfig.getSmartTableEnabled());
 
     m_spellCheckCheckBox->setChecked(markdownConfig.isSpellCheckEnabled());
+
+    {
+        int idx = m_plantUmlModeComboBox->findData(markdownConfig.getWebPlantUml() ? 0 : 1);
+        m_plantUmlModeComboBox->setCurrentIndex(idx);
+    }
+
+    m_plantUmlJarFileInput->setText(markdownConfig.getPlantUmlJar());
+
+    {
+        int idx = m_graphvizModeComboBox->findData(markdownConfig.getWebGraphviz() ? 0 : 1);
+        m_graphvizModeComboBox->setCurrentIndex(idx);
+    }
+
+    m_graphvizFileInput->setText(markdownConfig.getGraphvizExe());
 }
 
 void MarkdownEditorPage::saveInternal()
@@ -117,6 +137,14 @@ void MarkdownEditorPage::saveInternal()
     markdownConfig.setSmartTableEnabled(m_smartTableCheckBox->isChecked());
 
     markdownConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
+
+    markdownConfig.setWebPlantUml(m_plantUmlModeComboBox->currentData().toInt() == 0);
+
+    markdownConfig.setPlantUmlJar(m_plantUmlJarFileInput->text());
+
+    markdownConfig.setWebGraphviz(m_graphvizModeComboBox->currentData().toInt() == 0);
+
+    markdownConfig.setGraphvizExe(m_graphvizFileInput->text());
 
     EditorPage::notifyEditorConfigChange();
 }
@@ -264,7 +292,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
     {
         auto sectionLayout = new QHBoxLayout();
 
-        m_sectionNumberComboBox = WidgetsFactory::createComboBox(this);
+        m_sectionNumberComboBox = WidgetsFactory::createComboBox(box);
         m_sectionNumberComboBox->setToolTip(tr("Section number mode"));
         m_sectionNumberComboBox->addItem(tr("None"), (int)MarkdownEditorConfig::SectionNumberMode::None);
         m_sectionNumberComboBox->addItem(tr("Read"), (int)MarkdownEditorConfig::SectionNumberMode::Read);
@@ -273,7 +301,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
         connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &MarkdownEditorPage::pageIsChanged);
 
-        m_sectionNumberBaseLevelSpinBox = WidgetsFactory::createSpinBox(this);
+        m_sectionNumberBaseLevelSpinBox = WidgetsFactory::createSpinBox(box);
         m_sectionNumberBaseLevelSpinBox->setToolTip(tr("Base level to start section numbering in edit mode"));
         m_sectionNumberBaseLevelSpinBox->setRange(1, 6);
         m_sectionNumberBaseLevelSpinBox->setSingleStep(1);
@@ -281,7 +309,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
         connect(m_sectionNumberBaseLevelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
                 this, &MarkdownEditorPage::pageIsChanged);
 
-        m_sectionNumberStyleComboBox = WidgetsFactory::createComboBox(this);
+        m_sectionNumberStyleComboBox = WidgetsFactory::createComboBox(box);
         m_sectionNumberStyleComboBox->setToolTip(tr("Section number style"));
         m_sectionNumberStyleComboBox->addItem(tr("1.1."), (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot);
         m_sectionNumberStyleComboBox->addItem(tr("1.1"), (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDig);
@@ -298,6 +326,123 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
         const QString label(tr("Section number:"));
         layout->addRow(label, sectionLayout);
         addSearchItem(label, m_sectionNumberComboBox->toolTip(), m_sectionNumberComboBox);
+    }
+
+    {
+        m_plantUmlModeComboBox = WidgetsFactory::createComboBox(box);
+        m_plantUmlModeComboBox->setToolTip(tr("Use online service or local JAR file to render PlantUml graphs"));
+
+        m_plantUmlModeComboBox->addItem(tr("Online Service"), 0);
+        m_plantUmlModeComboBox->addItem(tr("Local JAR"), 1);
+
+        const QString label(tr("PlantUml:"));
+        layout->addRow(label, m_plantUmlModeComboBox);
+        addSearchItem(label, m_plantUmlModeComboBox->toolTip(), m_plantUmlModeComboBox);
+        connect(m_plantUmlModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        auto jarLayout = new QHBoxLayout();
+
+        m_plantUmlJarFileInput = new LocationInputWithBrowseButton(box);
+        m_plantUmlJarFileInput->setToolTip(tr("Local JAR file to render PlantUML graphs"));
+        connect(m_plantUmlJarFileInput, &LocationInputWithBrowseButton::clicked,
+                this, [this]() {
+                    auto filePath = QFileDialog::getOpenFileName(this,
+                                                                 tr("Select PlantUml JAR File"),
+                                                                 QDir::homePath(),
+                                                                 "PlantUml JAR (*.jar)");
+                    if (!filePath.isEmpty()) {
+                        m_plantUmlJarFileInput->setText(filePath);
+                    }
+                });
+        jarLayout->addWidget(m_plantUmlJarFileInput, 1);
+
+        auto testBtn = new QPushButton(tr("Test"), box);
+        testBtn->setToolTip(tr("Test PlantUml JAR and Java Runtime Environment"));
+        connect(testBtn, &QPushButton::clicked,
+                this, [this]() {
+                    const auto jar = m_plantUmlJarFileInput->text();
+                    if (jar.isEmpty() || !QFileInfo::exists(jar)) {
+                        MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                                 tr("The JAR file (%1) specified does not exist.").arg(jar),
+                                                 this);
+                        return;
+                    }
+
+                    auto testRet = PlantUmlHelper::testPlantUml(jar);
+                    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                                             tr("Test %1.").arg(testRet.first ? tr("succeeded") : tr("failed")),
+                                             QString(),
+                                             testRet.second,
+                                             this);
+                });
+        jarLayout->addWidget(testBtn);
+
+        const QString label(tr("PlantUml JAR file:"));
+        layout->addRow(label, jarLayout);
+        addSearchItem(label, m_plantUmlJarFileInput->toolTip(), m_plantUmlJarFileInput);
+        connect(m_plantUmlJarFileInput, &LocationInputWithBrowseButton::textChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        m_graphvizModeComboBox = WidgetsFactory::createComboBox(box);
+        m_graphvizModeComboBox->setToolTip(tr("Use online service or local executable file to render Graphviz graphs"));
+
+        m_graphvizModeComboBox->addItem(tr("Online Service"), 0);
+        m_graphvizModeComboBox->addItem(tr("Local Executable"), 1);
+
+        const QString label(tr("Graphviz:"));
+        layout->addRow(label, m_graphvizModeComboBox);
+        addSearchItem(label, m_graphvizModeComboBox->toolTip(), m_graphvizModeComboBox);
+        connect(m_graphvizModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        auto fileLayout = new QHBoxLayout();
+
+        m_graphvizFileInput = new LocationInputWithBrowseButton(box);
+        m_graphvizFileInput->setToolTip(tr("Local executable file to render Graphviz graphs"));
+        connect(m_graphvizFileInput, &LocationInputWithBrowseButton::clicked,
+                this, [this]() {
+                    auto filePath = QFileDialog::getOpenFileName(this,
+                                                                 tr("Select Graphviz Executable File"),
+                                                                 QDir::homePath());
+                    if (!filePath.isEmpty()) {
+                        m_graphvizFileInput->setText(filePath);
+                    }
+                });
+        fileLayout->addWidget(m_graphvizFileInput, 1);
+
+        auto testBtn = new QPushButton(tr("Test"), box);
+        testBtn->setToolTip(tr("Test Graphviz executable file"));
+        connect(testBtn, &QPushButton::clicked,
+                this, [this]() {
+                    const auto exe = m_graphvizFileInput->text();
+                    if (exe.isEmpty() || !QFileInfo::exists(exe)) {
+                        MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                                 tr("The executable file (%1) specified does not exist.").arg(exe),
+                                                 this);
+                        return;
+                    }
+
+                    auto testRet = GraphvizHelper::testGraphviz(exe);
+                    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                                             tr("Test %1.").arg(testRet.first ? tr("succeeded") : tr("failed")),
+                                             QString(),
+                                             testRet.second,
+                                             this);
+                });
+        fileLayout->addWidget(testBtn);
+
+        const QString label(tr("Graphviz executable file:"));
+        layout->addRow(label, fileLayout);
+        addSearchItem(label, m_graphvizFileInput->toolTip(), m_graphvizFileInput);
+        connect(m_graphvizFileInput, &LocationInputWithBrowseButton::textChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
     }
 
     return box;

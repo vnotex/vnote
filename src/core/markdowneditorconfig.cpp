@@ -30,7 +30,14 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     loadExportResource(appObj, userObj);
 
     m_webPlantUml = READBOOL(QStringLiteral("web_plantuml"));
+
+    m_plantUmlJar = READSTR(QStringLiteral("plantuml_jar"));
+
+    m_plantUmlCommand = READSTR(QStringLiteral("plantuml_command"));
+
     m_webGraphviz = READBOOL(QStringLiteral("web_graphviz"));
+
+    m_graphvizExe = READSTR(QStringLiteral("graphviz_exe"));
 
     m_prependDotInRelativeLink = READBOOL(QStringLiteral("prepend_dot_in_relative_link"));
     m_confirmBeforeClearObsoleteImages = READBOOL(QStringLiteral("confirm_before_clear_obsolete_images"));
@@ -63,7 +70,10 @@ QJsonObject MarkdownEditorConfig::toJson() const
     obj[QStringLiteral("viewer_resource")] = saveViewerResource();
     obj[QStringLiteral("export_resource")] = saveExportResource();
     obj[QStringLiteral("web_plantuml")] = m_webPlantUml;
+    obj[QStringLiteral("plantuml_jar")] = m_plantUmlJar;
+    obj[QStringLiteral("plantuml_command")] = m_plantUmlCommand;
     obj[QStringLiteral("web_graphviz")] = m_webGraphviz;
+    obj[QStringLiteral("graphviz_exe")] = m_graphvizExe;
     obj[QStringLiteral("prepend_dot_in_relative_link")] = m_prependDotInRelativeLink;
     obj[QStringLiteral("confirm_before_clear_obsolete_images")] = m_confirmBeforeClearObsoleteImages;
     obj[QStringLiteral("insert_file_name_as_title")] = m_insertFileNameAsTitle;
@@ -167,9 +177,44 @@ bool MarkdownEditorConfig::getWebPlantUml() const
     return m_webPlantUml;
 }
 
+void MarkdownEditorConfig::setWebPlantUml(bool p_enabled)
+{
+    updateConfig(m_webPlantUml, p_enabled, this);
+}
+
+const QString &MarkdownEditorConfig::getPlantUmlJar() const
+{
+    return m_plantUmlJar;
+}
+
+void MarkdownEditorConfig::setPlantUmlJar(const QString &p_jar)
+{
+    updateConfig(m_plantUmlJar, p_jar, this);
+}
+
+const QString &MarkdownEditorConfig::getPlantUmlCommand() const
+{
+    return m_plantUmlCommand;
+}
+
 bool MarkdownEditorConfig::getWebGraphviz() const
 {
     return m_webGraphviz;
+}
+
+void MarkdownEditorConfig::setWebGraphviz(bool p_enabled)
+{
+    updateConfig(m_webGraphviz, p_enabled, this);
+}
+
+const QString &MarkdownEditorConfig::getGraphvizExe() const
+{
+    return m_graphvizExe;
+}
+
+void MarkdownEditorConfig::setGraphvizExe(const QString &p_exe)
+{
+    updateConfig(m_graphvizExe, p_exe, this);
 }
 
 bool MarkdownEditorConfig::getPrependDotInRelativeLink() const

@@ -100,6 +100,8 @@ namespace vnotex
 
         void updateFromConfig(bool p_initialized = true);
 
+        QRgb getPreviewBackground() const;
+
     public slots:
         void handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text);
 

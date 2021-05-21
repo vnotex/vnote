@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QScopedPointer>
 
+#include "noncopyable.h"
 #include "thememgr.h"
 #include "global.h"
 
@@ -18,7 +19,7 @@ namespace vnotex
     class Notebook;
     struct ComplexLocation;
 
-    class VNoteX : public QObject
+    class VNoteX : public QObject, private Noncopyable
     {
         Q_OBJECT
     public:
@@ -27,9 +28,6 @@ namespace vnotex
             static VNoteX inst;
             return inst;
         }
-
-        VNoteX(const VNoteX &) = delete;
-        void operator=(const VNoteX &) = delete;
 
         // MUST be called to load some heavy data.
         // It is good to call it after MainWindow is shown.

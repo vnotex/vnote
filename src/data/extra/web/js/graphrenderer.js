@@ -30,7 +30,7 @@ class GraphRenderer extends VxWorker {
     registerInternal() {
         this.vnotex.on('basicMarkdownRendered', () => {
             this.reset();
-            this.renderCodeNodes(this.vnotex.contentContainer);
+            this.renderCodeNodes();
         });
 
         this.vnotex.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
@@ -78,8 +78,9 @@ class GraphRenderer extends VxWorker {
 
     // Interface 2.
     // Get code nodes from markdownIt directly.
-    renderCodeNodes(p_node) {
+    renderCodeNodes() {
         this.nodesToRender = this.vnotex.getWorker('markdownit').getCodeNodes(this.langs);
+        this.numOfRenderedNodes = 0;
         this.doRender();
     }
 

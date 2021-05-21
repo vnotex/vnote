@@ -4,6 +4,8 @@
 #include <QMap>
 
 #include "../outlineprovider.h"
+#include "plantumlhelper.h"
+#include "graphvizhelper.h"
 
 using namespace vnotex;
 
@@ -370,4 +372,36 @@ void MarkdownViewerAdapter::reset()
     m_headings.clear();
     m_currentHeadingIndex = -1;
     m_crossCopyTargets.clear();
+}
+
+void MarkdownViewerAdapter::renderGraph(quint64 p_id,
+                                        quint64 p_index,
+                                        const QString &p_format,
+                                        const QString &p_lang,
+                                        const QString &p_text)
+{
+    if (p_text.isEmpty()) {
+        emit graphRenderDataReady(p_id, p_index, p_format, QString());
+        return;
+    }
+
+    if (p_lang == QStringLiteral("puml")) {
+        PlantUmlHelper::getInst().process(p_id,
+                                          p_index,
+                                          p_format,
+                                          p_text,
+                                          [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
+                                              emit graphRenderDataReady(id, timeStamp, format, data);
+                                          });
+    } else if (p_lang == QStringLiteral("dot")) {
+        GraphvizHelper::getInst().process(p_id,
+                                          p_index,
+                                          p_format,
+                                          p_text,
+                                          [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
+                                              emit graphRenderDataReady(id, timeStamp, format, data);
+                                          });
+    } else {
+        Q_ASSERT(false);
+    }
 }

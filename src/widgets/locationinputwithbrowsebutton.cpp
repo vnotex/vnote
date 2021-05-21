@@ -12,6 +12,7 @@ LocationInputWithBrowseButton::LocationInputWithBrowseButton(QWidget *p_parent)
     : QWidget(p_parent)
 {
     auto layout = new QHBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
 
     m_lineEdit = WidgetsFactory::createLineEdit(this);
     layout->addWidget(m_lineEdit, 1);

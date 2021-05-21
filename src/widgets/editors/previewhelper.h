@@ -47,6 +47,10 @@ namespace vnotex
 
         void setMarkdownEditor(MarkdownEditor *p_editor);
 
+        void setWebPlantUmlEnabled(bool p_enabled);
+
+        void setWebGraphvizEnabled(bool p_enabled);
+
     public slots:
         void codeBlocksUpdated(vte::TimeStamp p_timeStamp,
                                const QVector<vte::peg::FencedCodeBlock> &p_codeBlocks);
@@ -180,7 +184,15 @@ namespace vnotex
 
         void updateEditorInplacePreviewMathBlock();
 
+        void handleLocalData(quint64 p_id,
+                             TimeStamp p_timeStamp,
+                             const QString &p_format,
+                             const QString &p_data,
+                             bool p_forcedBackground);
+
         qreal getEditorScaleFactor() const;
+
+        bool needForcedBackground(const QString &p_lang) const;
 
         MarkdownEditor *m_editor = nullptr;
 
@@ -213,6 +225,10 @@ namespace vnotex
         vte::LruCache<QString, QSharedPointer<GraphPreviewData>> m_codeBlockCache;
 
         vte::LruCache<QString, QSharedPointer<GraphPreviewData>> m_mathBlockCache;
+
+        bool m_webPlantUmlEnabled = true;
+
+        bool m_webGraphvizEnabled = true;
     };
 }
 

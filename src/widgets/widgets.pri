@@ -28,11 +28,14 @@ SOURCES += \
     $$PWD/dialogs/tableinsertdialog.cpp \
     $$PWD/dragdropareaindicator.cpp \
     $$PWD/editors/editormarkdownvieweradapter.cpp \
+    $$PWD/editors/graphhelper.cpp \
+    $$PWD/editors/graphvizhelper.cpp \
     $$PWD/editors/markdowneditor.cpp \
     $$PWD/editors/markdowntable.cpp \
     $$PWD/editors/markdowntablehelper.cpp \
     $$PWD/editors/markdownviewer.cpp \
     $$PWD/editors/markdownvieweradapter.cpp \
+    $$PWD/editors/plantumlhelper.cpp \
     $$PWD/editors/previewhelper.cpp \
     $$PWD/editors/statuswidget.cpp \
     $$PWD/editors/texteditor.cpp \
@@ -123,11 +126,14 @@ HEADERS += \
     $$PWD/dialogs/tableinsertdialog.h \
     $$PWD/dragdropareaindicator.h \
     $$PWD/editors/editormarkdownvieweradapter.h \
+    $$PWD/editors/graphhelper.h \
+    $$PWD/editors/graphvizhelper.h \
     $$PWD/editors/markdowneditor.h \
     $$PWD/editors/markdowntable.h \
     $$PWD/editors/markdowntablehelper.h \
     $$PWD/editors/markdownviewer.h \
     $$PWD/editors/markdownvieweradapter.h \
+    $$PWD/editors/plantumlhelper.h \
     $$PWD/editors/previewhelper.h \
     $$PWD/editors/statuswidget.h \
     $$PWD/editors/texteditor.h \
