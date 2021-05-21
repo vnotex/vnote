@@ -1,5 +1,5 @@
 # VNote
-**一个更懂程序员和Markdown的笔记！**
+**一个舒适的笔记平台！**
 
 ::: alert-success
 
