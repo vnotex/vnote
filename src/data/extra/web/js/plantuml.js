@@ -14,16 +14,24 @@ class PlantUml extends GraphRenderer {
         this.format = 'svg';
 
         this.langs = ['plantuml', 'puml'];
+
+        this.useWeb = true;
+
+        this.nextLocalGraphIndex = 1;
     }
 
     registerInternal() {
         this.vnotex.on('basicMarkdownRendered', () => {
             this.reset();
-            this.renderCodeNodes(this.vnotex.contentContainer,
-                                 window.vxOptions.transformSvgToPngEnabled ? 'png' : 'svg');
+            this.renderCodeNodes(window.vxOptions.transformSvgToPngEnabled ? 'png' : 'svg');
         });
 
         this.vnotex.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
+
+        this.useWeb = window.vxOptions.webPlantUml;
+        if (!this.useWeb) {
+            this.extraScripts = [];
+        }
     }
 
 
@@ -35,10 +43,10 @@ class PlantUml extends GraphRenderer {
     }
 
     // Interface 2.
-    renderCodeNodes(p_node, p_format) {
+    renderCodeNodes(p_format) {
         this.format = p_format;
 
-        super.renderCodeNodes(p_node);
+        super.renderCodeNodes();
     }
 
     renderOne(p_node, p_idx) {
@@ -46,20 +54,26 @@ class PlantUml extends GraphRenderer {
             let plantUml = p_plantUml;
             let node = p_node;
             return function(p_format, p_data) {
-                plantUml.handlePlantUmlResult(node, 0, p_format, p_data);
+                plantUml.handlePlantUmlResult(node, p_format, p_data);
             };
         };
 
-        this.renderOnline(this.serverUrl,
-                          this.format,
-                          p_node.textContent,
-                          func(this, p_node));
+        if (this.useWeb) {
+            this.renderOnline(this.serverUrl,
+                              this.format,
+                              p_node.textContent,
+                              func(this, p_node));
+        } else {
+            this.renderLocal(this.format, p_node.textContent, func(this, p_node));
+        }
         return true;
     }
 
     // Render a graph from @p_text in SVG format.
     // p_callback(format, data).
     renderText(p_text, p_callback) {
+        console.assert(this.useWeb, "renderText() should be called only when web PlantUml is enabled");
+
         let func = () => {
             this.renderOnline(this.serverUrl,
                               'svg',
@@ -111,7 +125,19 @@ class PlantUml extends GraphRenderer {
         return url;
     }
 
-    handlePlantUmlResult(p_node, p_timeStamp, p_format, p_result) {
+    // A helper function to render PlantUml via local JAR.
+    renderLocal(p_format, p_text, p_callback) {
+        this.vnotex.renderGraph(this.id,
+            this.nextLocalGraphIndex++,
+            p_format,
+            'puml',
+            p_text,
+            function(id, index, format, data) {
+                p_callback(format, data);
+            });
+    }
+
+    handlePlantUmlResult(p_node, p_format, p_result) {
         if (p_node && p_result.length > 0) {
             let obj = null;
             if (p_format == 'svg') {
@@ -120,9 +146,13 @@ class PlantUml extends GraphRenderer {
                 obj.innerHTML = p_result;
                 window.vxImageViewer.setupSVGToView(obj.children[0], false);
             } else {
-                obj = document.createElement('img');
-                obj.src = "data:image/" + p_format + ";base64, " + p_result;
-                window.vxImageViewer.setupIMGToView(obj);
+                obj = document.createElement('div');
+                obj.classList.add(this.graphDivClass);
+
+                let imgObj = document.createElement('img');
+                obj.appendChild(imgObj);
+                imgObj.src = "data:image/" + p_format + ";base64, " + p_result;
+                window.vxImageViewer.setupIMGToView(imgObj);
             }
 
             Utils.checkSourceLine(p_node, obj);

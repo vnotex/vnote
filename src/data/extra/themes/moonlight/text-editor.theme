@@ -73,6 +73,9 @@
             "background-color" : "#333842",
             "selected-text-color" : "#e3e5e9",
             "selected-background-color" : "#0c7bff"
+        },
+        "Preview" : {
+            "background-color" : "#b0bec5"
         }
     },
     "markdown-syntax-styles" : {

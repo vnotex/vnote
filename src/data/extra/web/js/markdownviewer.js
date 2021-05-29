@@ -47,6 +47,10 @@ new QWebChannel(qt.webChannelTransport,
             window.vnotex.saveContent();
         });
 
+        adapter.graphRenderDataReady.connect(function(p_id, p_index, p_format, p_data) {
+            window.vnotex.graphRenderDataReady(p_id, p_index, p_format, p_data);
+        });
+
         console.log('QWebChannel has been set up');
         if (window.vnotex.initialized) {
             window.vnotex.kickOffMarkdown();

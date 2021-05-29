@@ -172,6 +172,13 @@ namespace vnotex
 
         void setSavedContent(const QString &p_headContent, const QString &p_styleContent, const QString &p_content, const QString &p_bodyClassList);
 
+        // Call local CPP code to render graph.
+        void renderGraph(quint64 p_id,
+                         quint64 p_index,
+                         const QString &p_format,
+                         const QString &p_lang,
+                         const QString &p_text);
+
         // Signals to be connected at web side.
     signals:
         // Current Markdown text is updated.
@@ -207,6 +214,11 @@ namespace vnotex
 
         // Request to get the whole HTML content.
         void contentRequested();
+
+        void graphRenderDataReady(quint64 p_id,
+                                  quint64 p_index,
+                                  const QString &p_format,
+                                  const QString &p_data);
 
     // Signals to be connected at cpp side.
     signals:

@@ -21,6 +21,7 @@
 #include <vtextedit/vtextedit.h>
 #include <vtextedit/texteditutils.h>
 #include <vtextedit/networkutils.h>
+#include <vtextedit/theme.h>
 
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/imageinsertdialog.h>
@@ -1273,4 +1274,11 @@ void MarkdownEditor::setupTableHelper()
     m_tableHelper = new MarkdownTableHelper(this, this);
     connect(getHighlighter(), &vte::PegMarkdownHighlighter::tableBlocksUpdated,
             m_tableHelper, &MarkdownTableHelper::updateTableBlocks);
+}
+
+QRgb MarkdownEditor::getPreviewBackground() const
+{
+    auto th = theme();
+    const auto &fmt = th->editorStyle(vte::Theme::EditorStyle::Preview);
+    return fmt.m_backgroundColor;
 }

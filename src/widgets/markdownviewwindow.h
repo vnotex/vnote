@@ -97,6 +97,8 @@ namespace vnotex
 
         void setupViewer();
 
+        void setupPreviewHelper();
+
         void syncTextEditorFromBuffer(bool p_syncPositionFromReadMode);
 
         void syncViewerFromBuffer(bool p_syncPositionFromEditMode);
@@ -131,7 +133,7 @@ namespace vnotex
 
         void setModeInternal(ViewWindowMode p_mode, bool p_syncBuffer);
 
-        void handleFileOpenParameters(const QSharedPointer<FileOpenParameters> &p_paras);
+        void handleFileOpenParameters(const QSharedPointer<FileOpenParameters> &p_paras, bool p_twice);
 
         void scrollToLine(int p_lineNumber);
 

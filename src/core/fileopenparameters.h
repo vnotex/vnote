@@ -11,6 +11,9 @@ namespace vnotex
     {
         ViewWindowMode m_mode = ViewWindowMode::Read;
 
+        // Force to enter m_mode.
+        bool m_forceMode = false;
+
         // Whether focus to the opened window.
         bool m_focus = true;
 

@@ -3,6 +3,11 @@ class VxWorker {
     constructor() {
         this.name = '';
         this.vnotex = null;
+
+        if (!window.vxWorkerId) {
+            window.vxWorkerId = 1;
+        }
+        this.id = window.vxWorkerId++;
     }
 
     // Called when registering this worker.
