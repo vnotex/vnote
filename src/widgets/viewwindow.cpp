@@ -180,14 +180,11 @@ void ViewWindow::detachFromBuffer(bool p_quiet)
 
 QIcon ViewWindow::getIcon() const
 {
-    /*
     if (m_buffer) {
         return m_buffer->isModified() ? s_modifiedIcon : s_savedIcon;
     } else {
         return s_savedIcon;
     }
-    */
-    return QIcon();
 }
 
 QString ViewWindow::getName() const

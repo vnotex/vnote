@@ -38,6 +38,18 @@ namespace vnotex
             Quit,
             FlashPage,
             QuickAccess,
+            ActivateTab1,
+            ActivateTab2,
+            ActivateTab3,
+            ActivateTab4,
+            ActivateTab5,
+            ActivateTab6,
+            ActivateTab7,
+            ActivateTab8,
+            ActivateTab9,
+            AlternateTab,
+            ActivateNextTab,
+            ActivatePreviousTab,
             MaxShortcut
         };
         Q_ENUM(Shortcut)
@@ -70,6 +82,8 @@ namespace vnotex
         void setRecoverLastSessionOnStartEnabled(bool p_enabled);
 
     private:
+        friend class MainConfig;
+
         void loadShortcuts(const QJsonObject &p_app, const QJsonObject &p_user);
 
         void loadNoteManagement(const QJsonObject &p_app, const QJsonObject &p_user);

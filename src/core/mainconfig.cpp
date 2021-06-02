@@ -117,4 +117,10 @@ QString MainConfig::getVersion(const QJsonObject &p_jobj)
 void MainConfig::doVersionSpecificOverride()
 {
     // In a new version, we may want to change one value by force.
+    m_coreConfig->m_shortcuts[CoreConfig::Shortcut::NavigationDock] = "Ctrl+G, A";
+    m_coreConfig->m_shortcuts[CoreConfig::Shortcut::OutlineDock] = "Ctrl+G, U";
+    m_coreConfig->m_shortcuts[CoreConfig::Shortcut::SearchDock] = "Ctrl+G, S";
+    m_coreConfig->m_shortcuts[CoreConfig::Shortcut::LocationListDock] = "Ctrl+G, L";
+    m_coreConfig->m_shortcuts[CoreConfig::Shortcut::NewWorkspace] = "Ctrl+G, M";
+    m_coreConfig->writeToSettings();
 }
