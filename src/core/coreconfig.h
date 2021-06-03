@@ -50,6 +50,7 @@ namespace vnotex
             AlternateTab,
             ActivateNextTab,
             ActivatePreviousTab,
+            FocusContentArea,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

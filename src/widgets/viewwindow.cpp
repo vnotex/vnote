@@ -409,7 +409,12 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
         connect(act, &QAction::triggered,
                 this, [this]() {
                     if (findAndReplaceWidgetVisible()) {
-                        hideFindAndReplaceWidget();
+                        const auto focusWidget = QApplication::focusWidget();
+                        if (m_findAndReplace == focusWidget || m_findAndReplace->isAncestorOf(focusWidget)) {
+                            hideFindAndReplaceWidget();
+                        } else {
+                            showFindAndReplaceWidget();
+                        }
                     } else {
                         showFindAndReplaceWidget();
                     }

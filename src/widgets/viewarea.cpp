@@ -813,6 +813,22 @@ void ViewArea::setupShortcuts()
                     });
         }
     }
+
+    // FocusContentArea.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::FocusContentArea), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        auto win = getCurrentViewWindow();
+                        if (win) {
+                            win->setFocus();
+                        } else {
+                            setFocus();
+                        }
+                    });
+        }
+    }
 }
 
 bool ViewArea::close(Node *p_node, bool p_force)

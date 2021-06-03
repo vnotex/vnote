@@ -43,7 +43,8 @@
             "ActivateTab9" : "Ctrl+G, 9",
             "AlternateTab" : "Ctrl+G, 0",
             "ActivateNextTab" : "Ctrl+G, N",
-            "ActivatePreviousTab" : "Ctrl+G, P"
+            "ActivatePreviousTab" : "Ctrl+G, P",
+            "FocusContentArea" : "Ctrl+G, Y"
         },
         "toolbar_icon_size" : 16,
         "note_management" : {

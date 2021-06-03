@@ -59,6 +59,7 @@ void FindAndReplaceWidget::setupUI()
         titleLayout->addWidget(closeBtn);
 
         auto closeAct = new QAction(IconUtils::fetchIcon(iconFile), QString(), closeBtn);
+        closeAct->setToolTip(tr("Close"));
         closeBtn->setDefaultAction(closeAct);
         connect(closeAct, &QAction::triggered,
                 this, &FindAndReplaceWidget::close);
@@ -76,6 +77,8 @@ void FindAndReplaceWidget::setupUI()
         m_findLineEdit->setPlaceholderText(tr("Search"));
         connect(m_findLineEdit, &QLineEdit::textChanged,
                 m_findTextTimer, QOverload<>::of(&QTimer::start));
+
+        setFocusProxy(m_findLineEdit);
 
         auto findNextBtn = new QPushButton(tr("Find &Next"), this);
         findNextBtn->setDefault(true);
