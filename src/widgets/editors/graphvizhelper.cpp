@@ -34,8 +34,10 @@ void GraphvizHelper::prepareProgramAndArgs(const QString &p_graphvizFile,
                                            QString &p_program,
                                            QStringList &p_args)
 {
-    p_program = p_graphvizFile.isEmpty() ? QStringLiteral("dot") : p_graphvizFile;
+    p_program.clear();
     p_args.clear();
+
+    p_program = p_graphvizFile.isEmpty() ? QStringLiteral("dot") : p_graphvizFile;
 }
 
 QPair<bool, QString> GraphvizHelper::testGraphviz(const QString &p_graphvizFile)

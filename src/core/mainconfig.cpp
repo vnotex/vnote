@@ -123,4 +123,8 @@ void MainConfig::doVersionSpecificOverride()
     m_coreConfig->m_shortcuts[CoreConfig::Shortcut::LocationListDock] = "Ctrl+G, L";
     m_coreConfig->m_shortcuts[CoreConfig::Shortcut::NewWorkspace] = "Ctrl+G, M";
     m_coreConfig->writeToSettings();
+
+    m_editorConfig->m_shortcuts[EditorConfig::Shortcut::TypeMath] = "Ctrl+.";
+    m_editorConfig->m_shortcuts[EditorConfig::Shortcut::TypeMathBlock] = "Ctrl+G, .";
+    m_editorConfig->writeToSettings();
 }

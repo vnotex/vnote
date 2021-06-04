@@ -45,6 +45,9 @@ void PlantUmlHelper::prepareProgramAndArgs(const QString &p_plantUmlJarFile,
                                            QString &p_program,
                                            QStringList &p_args)
 {
+    p_program.clear();
+    p_args.clear();
+
 #if defined(Q_OS_WIN)
     p_program = "java";
 #else

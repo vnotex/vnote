@@ -62,6 +62,8 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     m_smartTableInterval = READINT(QStringLiteral("smart_table_interval"));
 
     m_spellCheckEnabled = READBOOL(QStringLiteral("spell_check"));
+
+    m_editorOverriddenFontFamily = READSTR(QStringLiteral("editor_overridden_font_family"));
 }
 
 QJsonObject MarkdownEditorConfig::toJson() const
@@ -94,6 +96,7 @@ QJsonObject MarkdownEditorConfig::toJson() const
     obj[QStringLiteral("smart_table")] = m_smartTableEnabled;
     obj[QStringLiteral("smart_table_interval")] = m_smartTableInterval;
     obj[QStringLiteral("spell_check")] = m_spellCheckEnabled;
+    obj[QStringLiteral("editor_overridden_font_family")] = m_editorOverriddenFontFamily;
     return obj;
 }
 
@@ -429,4 +432,14 @@ bool MarkdownEditorConfig::isSpellCheckEnabled() const
 void MarkdownEditorConfig::setSpellCheckEnabled(bool p_enabled)
 {
     updateConfig(m_spellCheckEnabled, p_enabled, this);
+}
+
+const QString &MarkdownEditorConfig::getEditorOverriddenFontFamily() const
+{
+    return m_editorOverriddenFontFamily;
+}
+
+void MarkdownEditorConfig::setEditorOverriddenFontFamily(const QString &p_family)
+{
+    updateConfig(m_editorOverriddenFontFamily, p_family, this);
 }

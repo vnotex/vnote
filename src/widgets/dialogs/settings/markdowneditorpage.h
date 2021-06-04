@@ -8,6 +8,7 @@ class QGroupBox;
 class QDoubleSpinBox;
 class QSpinBox;
 class QComboBox;
+class QFontComboBox;
 
 namespace vnotex
 {
@@ -70,6 +71,10 @@ namespace vnotex
         QComboBox *m_graphvizModeComboBox = nullptr;
 
         LocationInputWithBrowseButton *m_graphvizFileInput = nullptr;
+
+        QCheckBox *m_editorOverriddenFontFamilyCheckBox = nullptr;
+
+        QFontComboBox *m_editorOverriddenFontFamilyComboBox = nullptr;
     };
 }
 

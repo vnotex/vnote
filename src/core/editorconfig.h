@@ -93,6 +93,8 @@ namespace vnotex
         void setSpellCheckDefaultDictionary(const QString &p_dict);
 
     private:
+        friend class MainConfig;
+
         void loadCore(const QJsonObject &p_app, const QJsonObject &p_user);
 
         QJsonObject saveCore() const;

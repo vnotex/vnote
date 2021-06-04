@@ -10,6 +10,8 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QFileDialog>
+#include <QFontComboBox>
+#include <QFont>
 
 #include <widgets/widgetsfactory.h>
 #include <core/editorconfig.h>
@@ -96,6 +98,16 @@ void MarkdownEditorPage::loadInternal()
     }
 
     m_graphvizFileInput->setText(markdownConfig.getGraphvizExe());
+
+    {
+        const auto &fontFamily = markdownConfig.getEditorOverriddenFontFamily();
+        m_editorOverriddenFontFamilyCheckBox->setChecked(!fontFamily.isEmpty());
+        if (!fontFamily.isEmpty()) {
+            QFont font;
+            font.setFamily(fontFamily);
+            m_editorOverriddenFontFamilyComboBox->setCurrentFont(font);
+        }
+    }
 }
 
 void MarkdownEditorPage::saveInternal()
@@ -145,6 +157,11 @@ void MarkdownEditorPage::saveInternal()
     markdownConfig.setWebGraphviz(m_graphvizModeComboBox->currentData().toInt() == 0);
 
     markdownConfig.setGraphvizExe(m_graphvizFileInput->text());
+
+    {
+        bool checked = m_editorOverriddenFontFamilyCheckBox->isChecked();
+        markdownConfig.setEditorOverriddenFontFamily(checked ? m_editorOverriddenFontFamilyComboBox->currentFont().family() : QString());
+    }
 
     EditorPage::notifyEditorConfigChange();
 }
@@ -281,6 +298,33 @@ QGroupBox *MarkdownEditorPage::setupEditGroup()
                 this, &MarkdownEditorPage::pageIsChanged);
     }
 
+    {
+        auto fontLayout = new QHBoxLayout();
+        fontLayout->setContentsMargins(0, 0, 0, 0);
+
+        const QString label(tr("Override font"));
+        m_editorOverriddenFontFamilyCheckBox = WidgetsFactory::createCheckBox(label, box);
+        m_editorOverriddenFontFamilyCheckBox->setToolTip(tr("Override editor font family of theme"));
+        fontLayout->addWidget(m_editorOverriddenFontFamilyCheckBox);
+        addSearchItem(label, m_editorOverriddenFontFamilyCheckBox->toolTip(), m_editorOverriddenFontFamilyCheckBox);
+
+        m_editorOverriddenFontFamilyComboBox = new QFontComboBox(box);
+        m_editorOverriddenFontFamilyComboBox->setEnabled(false);
+        fontLayout->addWidget(m_editorOverriddenFontFamilyComboBox);
+        connect(m_editorOverriddenFontFamilyComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &MarkdownEditorPage::pageIsChanged);
+
+        fontLayout->addStretch();
+
+        connect(m_editorOverriddenFontFamilyCheckBox, &QCheckBox::stateChanged,
+                this, [this](int state) {
+                    m_editorOverriddenFontFamilyComboBox->setEnabled(state == Qt::Checked);
+                    emit pageIsChanged();
+                });
+
+        layout->addRow(fontLayout);
+    }
+
     return box;
 }
 
@@ -291,6 +335,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
 
     {
         auto sectionLayout = new QHBoxLayout();
+        sectionLayout->setContentsMargins(0, 0, 0, 0);
 
         m_sectionNumberComboBox = WidgetsFactory::createComboBox(box);
         m_sectionNumberComboBox->setToolTip(tr("Section number mode"));
@@ -305,6 +350,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
         m_sectionNumberBaseLevelSpinBox->setToolTip(tr("Base level to start section numbering in edit mode"));
         m_sectionNumberBaseLevelSpinBox->setRange(1, 6);
         m_sectionNumberBaseLevelSpinBox->setSingleStep(1);
+        m_sectionNumberBaseLevelSpinBox->setEnabled(false);
         sectionLayout->addWidget(m_sectionNumberBaseLevelSpinBox);
         connect(m_sectionNumberBaseLevelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
                 this, &MarkdownEditorPage::pageIsChanged);
@@ -313,6 +359,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
         m_sectionNumberStyleComboBox->setToolTip(tr("Section number style"));
         m_sectionNumberStyleComboBox->addItem(tr("1.1."), (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot);
         m_sectionNumberStyleComboBox->addItem(tr("1.1"), (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDig);
+        m_sectionNumberStyleComboBox->setEnabled(false);
         sectionLayout->addWidget(m_sectionNumberStyleComboBox);
         connect(m_sectionNumberStyleComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &MarkdownEditorPage::pageIsChanged);
@@ -344,6 +391,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
 
     {
         auto jarLayout = new QHBoxLayout();
+        jarLayout->setContentsMargins(0, 0, 0, 0);
 
         m_plantUmlJarFileInput = new LocationInputWithBrowseButton(box);
         m_plantUmlJarFileInput->setToolTip(tr("Local JAR file to render PlantUML graphs"));
@@ -403,6 +451,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
 
     {
         auto fileLayout = new QHBoxLayout();
+        fileLayout->setContentsMargins(0, 0, 0, 0);
 
         m_graphvizFileInput = new LocationInputWithBrowseButton(box);
         m_graphvizFileInput->setToolTip(tr("Local executable file to render Graphviz graphs"));

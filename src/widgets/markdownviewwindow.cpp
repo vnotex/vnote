@@ -784,10 +784,14 @@ void MarkdownViewWindow::setupOutlineProvider()
 QSharedPointer<vte::MarkdownEditorConfig> MarkdownViewWindow::createMarkdownEditorConfig(const MarkdownEditorConfig &p_config)
 {
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+
     auto textEditorConfig = TextViewWindowHelper::createTextEditorConfig(p_config.getTextEditorConfig(),
                                                                          themeMgr.getFile(Theme::File::MarkdownEditorStyle),
                                                                          themeMgr.getMarkdownEditorHighlightTheme());
+
     auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
+    editorConfig->overrideTextFontFamily(p_config.getEditorOverriddenFontFamily());
+
     editorConfig->m_constrainInPlacePreviewWidthEnabled = p_config.getConstrainInPlacePreviewWidthEnabled();
     return editorConfig;
 }

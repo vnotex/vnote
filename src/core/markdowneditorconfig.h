@@ -112,6 +112,9 @@ namespace vnotex
         bool isSpellCheckEnabled() const;
         void setSpellCheckEnabled(bool p_enabled);
 
+        const QString &getEditorOverriddenFontFamily() const;
+        void setEditorOverriddenFontFamily(const QString &p_family);
+
     private:
         QString sectionNumberModeToString(SectionNumberMode p_mode) const;
         SectionNumberMode stringToSectionNumberMode(const QString &p_str) const;
@@ -197,6 +200,9 @@ namespace vnotex
 
         // Override the config in TextEditorConfig.
         bool m_spellCheckEnabled = true;
+
+        // Font family to override the editor's theme.
+        QString m_editorOverriddenFontFamily;
     };
 }
 
