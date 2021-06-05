@@ -394,7 +394,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
         jarLayout->setContentsMargins(0, 0, 0, 0);
 
         m_plantUmlJarFileInput = new LocationInputWithBrowseButton(box);
-        m_plantUmlJarFileInput->setToolTip(tr("Local JAR file to render PlantUML graphs"));
+        m_plantUmlJarFileInput->setToolTip(tr("Local JAR file to render PlantUml graphs"));
         connect(m_plantUmlJarFileInput, &LocationInputWithBrowseButton::clicked,
                 this, [this]() {
                     auto filePath = QFileDialog::getOpenFileName(this,

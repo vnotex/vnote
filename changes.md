@@ -1,4 +1,9 @@
 # Changes
+## v3.2.0
+* Support local PlantUml and Graphviz rendering
+* Add shortcuts to tab navigation in ViewSplit
+* Editor: support auto bracket and overridding font family
+
 ## v3.1.0
 * Support Japanese translation (Thanks @miurahr)
 * MarkdownEditor: guess image suffix when fetching to local
