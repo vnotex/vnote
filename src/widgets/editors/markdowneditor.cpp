@@ -36,7 +36,6 @@
 #include <utils/pathutils.h>
 #include <utils/htmlutils.h>
 #include <utils/widgetutils.h>
-#include <utils/textutils.h>
 #include <utils/webutils.h>
 #include <utils/imageutils.h>
 #include <core/exception.h>

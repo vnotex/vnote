@@ -7,8 +7,8 @@
 #include <vtextedit/pegmarkdownhighlighterdata.h>
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/previewmgr.h>
+#include <vtextedit/textutils.h>
 
-#include <utils/textutils.h>
 #include <utils/utils.h>
 
 #include "markdowneditor.h"
@@ -231,7 +231,7 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx)
         emit graphPreviewRequested(p_blockPreviewIdx,
                                    m_codeBlockTimeStamp,
                                    blockData.m_lang,
-                                   TextUtils::removeCodeBlockFence(blockData.m_text));
+                                   vte::TextUtils::removeCodeBlockFence(blockData.m_text));
         return;
     }
 
@@ -240,7 +240,7 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx)
         PlantUmlHelper::getInst().process(static_cast<quint64>(p_blockPreviewIdx),
                                           m_codeBlockTimeStamp,
                                           QStringLiteral("svg"),
-                                          TextUtils::removeCodeBlockFence(blockData.m_text),
+                                          vte::TextUtils::removeCodeBlockFence(blockData.m_text),
                                           [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
                                               handleLocalData(id, timeStamp, format, data, true);
                                           });
@@ -252,7 +252,7 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx)
         GraphvizHelper::getInst().process(static_cast<quint64>(p_blockPreviewIdx),
                                           m_codeBlockTimeStamp,
                                           QStringLiteral("svg"),
-                                          TextUtils::removeCodeBlockFence(blockData.m_text),
+                                          vte::TextUtils::removeCodeBlockFence(blockData.m_text),
                                           [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
                                               handleLocalData(id, timeStamp, format, data, false);
                                           });

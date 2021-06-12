@@ -56,9 +56,6 @@ namespace vnotex
 
         ~ConfigMgr();
 
-        ConfigMgr(const ConfigMgr &) = delete;
-        void operator=(const ConfigMgr &) = delete;
-
         MainConfig &getConfig();
 
         SessionConfig &getSessionConfig();

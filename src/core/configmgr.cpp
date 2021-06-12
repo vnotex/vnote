@@ -71,7 +71,6 @@ ConfigMgr::ConfigMgr(QObject *p_parent)
 
 ConfigMgr::~ConfigMgr()
 {
-
 }
 
 void ConfigMgr::locateConfigFolder()

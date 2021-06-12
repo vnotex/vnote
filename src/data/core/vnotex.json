@@ -60,7 +60,7 @@
     },
     "editor" : {
         "core": {
-            "toolbar_icon_size" : 14,
+            "toolbar_icon_size" : 16,
             "//comment" : "none/autosave/backupfile",
             "auto_save_policy" : "autosave",
             "backup_file_extension" : "vswp",

@@ -107,7 +107,7 @@ namespace vnotex
         AutoSavePolicy stringToAutoSavePolicy(const QString &p_str) const;
 
         // Icon size of editor tool bar.
-        int m_toolBarIconSize = 14;
+        int m_toolBarIconSize = 16;
 
         QString m_shortcuts[Shortcut::MaxShortcut];
 
