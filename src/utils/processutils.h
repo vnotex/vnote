@@ -35,6 +35,8 @@ namespace vnotex
                            const std::function<void(const QString &)> &p_logger,
                            const bool &p_askedToStop);
 
+        static void startDetached(const QString &p_command);
+
         // Copied from QProcess code.
         static QStringList parseCombinedArgString(const QString &p_args);
 

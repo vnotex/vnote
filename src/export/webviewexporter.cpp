@@ -333,7 +333,9 @@ void WebViewExporter::prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOp
 
     // Must be put after the global object options.
     if (p_pdfOption.m_addTableOfContents) {
-        m_wkhtmltopdfArgs << "toc" << "--toc-text-size-shrink" << "1.0";
+        m_wkhtmltopdfArgs << "toc";
+        m_wkhtmltopdfArgs << "--toc-text-size-shrink" << "1.0";
+        m_wkhtmltopdfArgs << "--toc-header-text" << tr("Table of Contents");
     }
 }
 

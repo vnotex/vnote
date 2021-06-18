@@ -51,6 +51,7 @@ namespace vnotex
             ActivateNextTab,
             ActivatePreviousTab,
             FocusContentArea,
+            OpenWithDefaultProgram,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

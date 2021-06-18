@@ -569,6 +569,25 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx) const
 
     p_menu->addSeparator();
 
+    {
+        auto act = p_menu->addAction(tr("Auto Reload"));
+        act->setToolTip(tr("Reload file from disk automatically if it is changed outside"));
+        act->setCheckable(true);
+        auto win = getViewWindow(p_tabIdx);
+        Q_ASSERT(win);
+        act->setChecked(win->getWindowFlags() & ViewWindow::AutoReload);
+        connect(act, &QAction::triggered,
+                this, [win](bool p_checked) {
+                    if (p_checked) {
+                        win->setWindowFlags(win->getWindowFlags() | ViewWindow::AutoReload);
+                    } else {
+                        win->setWindowFlags(win->getWindowFlags() & ~ViewWindow::AutoReload);
+                    }
+                });
+    }
+
+    p_menu->addSeparator();
+
     // Copy Path.
     p_menu->addAction(tr("Copy Path"),
                       [this, p_tabIdx]() {

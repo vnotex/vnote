@@ -155,6 +155,8 @@ namespace vnotex
 
         void setupUI();
 
+        void setupShortcuts();
+
         void setupMasterExplorer(QWidget *p_parent = nullptr);
 
         void clearExplorer();
@@ -262,6 +264,14 @@ namespace vnotex
         void expandCurrentNodeAll();
 
         void expandItemRecursively(QTreeWidgetItem *p_item);
+
+        void addOpenWithMenu(QMenu *p_menu);
+
+        QStringList getSelectedNodesPath() const;
+
+        void openSelectedNodesWithDefaultProgram();
+
+        void openSelectedNodesWithExternalProgram(const QString &p_command);
 
         static NotebookNodeExplorer::NodeData getItemNodeData(const QTreeWidgetItem *p_item);
 

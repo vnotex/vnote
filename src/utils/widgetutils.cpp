@@ -175,6 +175,10 @@ void WidgetUtils::addActionShortcut(QAction *p_action,
 void WidgetUtils::addActionShortcutText(QAction *p_action,
                                         const QString &p_shortcut)
 {
+    if (p_shortcut.isEmpty()) {
+        return;
+    }
+
     QKeySequence kseq(p_shortcut);
     if (kseq.isEmpty()) {
         return;

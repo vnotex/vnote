@@ -19,6 +19,7 @@ SOURCES += \
     $$PWD/dialogs/settings/editorpage.cpp \
     $$PWD/dialogs/settings/generalpage.cpp \
     $$PWD/dialogs/settings/markdowneditorpage.cpp \
+    $$PWD/dialogs/settings/miscpage.cpp \
     $$PWD/dialogs/settings/quickaccesspage.cpp \
     $$PWD/dialogs/settings/settingspage.cpp \
     $$PWD/dialogs/settings/settingsdialog.cpp \
@@ -117,6 +118,7 @@ HEADERS += \
     $$PWD/dialogs/settings/editorpage.h \
     $$PWD/dialogs/settings/generalpage.h \
     $$PWD/dialogs/settings/markdowneditorpage.h \
+    $$PWD/dialogs/settings/miscpage.h \
     $$PWD/dialogs/settings/quickaccesspage.h \
     $$PWD/dialogs/settings/settingspage.h \
     $$PWD/dialogs/settings/settingsdialog.h \

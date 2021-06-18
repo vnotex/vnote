@@ -755,12 +755,15 @@ int ViewWindow::checkFileMissingOrChangedOutside()
             return Failed;
         }
     } else if (m_buffer->checkFileChangedOutside()) {
-        int ret = MessageBoxHelper::questionSaveDiscardCancel(MessageBoxHelper::Warning,
-            tr("File is changed from outside (%1).").arg(m_buffer->getPath()),
-            tr("Do you want to save the buffer to the file to override, or discard the buffer?"),
-            tr("The file is changed from outside. Please choose to save the buffer to the file or "
-               "just discard the buffer and reload the file."),
-            this);
+        int ret = QMessageBox::Discard;
+        if (!(getWindowFlags() & WindowFlag::AutoReload)) {
+            ret = MessageBoxHelper::questionSaveDiscardCancel(MessageBoxHelper::Warning,
+                tr("File is changed from outside (%1).").arg(m_buffer->getPath()),
+                tr("Do you want to save the buffer to the file to override, or discard the buffer?"),
+                tr("The file is changed from outside. Please choose to save the buffer to the file or "
+                   "just discard the buffer and reload the file."),
+                this);
+        }
         switch (ret) {
         case QMessageBox::Save:
             if (!save(true)) {
@@ -1094,4 +1097,14 @@ ViewWindowSession ViewWindow::saveSession() const
     }
     session.m_viewWindowMode = getMode();
     return session;
+}
+
+ViewWindow::WindowFlags ViewWindow::getWindowFlags() const
+{
+    return m_flags;
+}
+
+void ViewWindow::setWindowFlags(WindowFlags p_flags)
+{
+    m_flags = p_flags;
 }

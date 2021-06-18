@@ -7,6 +7,7 @@
 #include <QMenu>
 #include <QAction>
 #include <QSet>
+#include <QShortcut>
 
 #include <notebook/notebook.h>
 #include <notebook/node.h>
@@ -16,6 +17,8 @@
 #include "vnotex.h"
 #include "mainwindow.h"
 #include <utils/iconutils.h>
+#include <utils/docsutils.h>
+#include <utils/processutils.h>
 #include "treewidget.h"
 #include "dialogs/notepropertiesdialog.h"
 #include "dialogs/folderpropertiesdialog.h"
@@ -31,6 +34,8 @@
 #include <core/fileopenparameters.h>
 #include <core/events.h>
 #include <core/configmgr.h>
+#include <core/coreconfig.h>
+#include <core/sessionconfig.h>
 
 using namespace vnotex;
 
@@ -177,6 +182,8 @@ NotebookNodeExplorer::NotebookNodeExplorer(QWidget *p_parent)
     initNodeIcons();
 
     setupUI();
+
+    setupShortcuts();
 }
 
 void NotebookNodeExplorer::initNodeIcons() const
@@ -793,6 +800,10 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
         act = createAction(Action::Open, p_menu);
         p_menu->addAction(act);
 
+        addOpenWithMenu(p_menu);
+
+        p_menu->addSeparator();
+
         if (selectedSize == 1 && p_node->isContainer()) {
             act = createAction(Action::ExpandAll, p_menu);
             p_menu->addAction(act);
@@ -826,6 +837,10 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
     } else {
         act = createAction(Action::Open, p_menu);
         p_menu->addAction(act);
+
+        addOpenWithMenu(p_menu);
+
+        p_menu->addSeparator();
 
         if (selectedSize == 1 && p_node->isContainer()) {
             act = createAction(Action::ExpandAll, p_menu);
@@ -901,6 +916,10 @@ void NotebookNodeExplorer::createContextMenuOnExternalNode(QMenu *p_menu, const 
 
     act = createAction(Action::Open, p_menu);
     p_menu->addAction(act);
+
+    addOpenWithMenu(p_menu);
+
+    p_menu->addSeparator();
 
     act = createAction(Action::ImportToConfig, p_menu);
     p_menu->addAction(act);
@@ -1831,6 +1850,27 @@ void NotebookNodeExplorer::openSelectedNodes()
     }
 }
 
+QStringList NotebookNodeExplorer::getSelectedNodesPath() const
+{
+    QStringList files;
+
+    // Support nodes and external nodes.
+    auto selectedNodes = getSelectedNodes();
+    for (const auto &externalNode : selectedNodes.second) {
+        files << externalNode->fetchAbsolutePath();
+    }
+
+    for (const auto &node : selectedNodes.first) {
+        if (checkInvalidNode(node)) {
+            continue;
+        }
+
+        files << node->fetchAbsolutePath();
+    }
+
+    return files;
+}
+
 QSharedPointer<Node> NotebookNodeExplorer::importToIndex(const ExternalNode *p_node)
 {
     auto node = m_notebook->addAsNode(p_node->getNode(),
@@ -1912,5 +1952,95 @@ void NotebookNodeExplorer::expandItemRecursively(QTreeWidgetItem *p_item)
 
     for (int i = 0; i < cnt; ++i) {
         expandItemRecursively(p_item->child(i));
+    }
+}
+
+void NotebookNodeExplorer::addOpenWithMenu(QMenu *p_menu)
+{
+    auto subMenu = p_menu->addMenu(tr("Open &With"));
+
+    {
+        const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+        for (const auto &pro : sessionConfig.getExternalPrograms()) {
+            QAction *act = subMenu->addAction(pro.m_name);
+            connect(act, &QAction::triggered,
+                    this, [this, act]() {
+                        openSelectedNodesWithExternalProgram(act->data().toString());
+                    });
+            act->setData(pro.m_command);
+            WidgetUtils::addActionShortcutText(act, pro.m_shortcut);
+        }
+    }
+
+    subMenu->addSeparator();
+
+    {
+        auto defaultAct = subMenu->addAction(tr("System Default Program"),
+                                             this,
+                                             &NotebookNodeExplorer::openSelectedNodesWithDefaultProgram);
+        const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+        WidgetUtils::addActionShortcutText(defaultAct, coreConfig.getShortcut(CoreConfig::OpenWithDefaultProgram));
+    }
+
+    subMenu->addAction(tr("Add External Program"),
+                       this,
+                       []() {
+                            const auto file = DocsUtils::getDocFile(QStringLiteral("external_programs.md"));
+                            if (!file.isEmpty()) {
+                                auto paras = QSharedPointer<FileOpenParameters>::create();
+                                paras->m_readOnly = true;
+                                emit VNoteX::getInst().openFileRequested(file, paras);
+                            }
+                       });
+}
+
+void NotebookNodeExplorer::setupShortcuts()
+{
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+
+    // OpenWithDefaultProgram.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::OpenWithDefaultProgram), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, &NotebookNodeExplorer::openSelectedNodesWithDefaultProgram);
+        }
+    }
+
+    const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+    for (const auto &pro : sessionConfig.getExternalPrograms()) {
+        auto shortcut = WidgetUtils::createShortcut(pro.m_shortcut, this);
+        const auto &command = pro.m_command;
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this, command]() {
+                        openSelectedNodesWithExternalProgram(command);
+                    });
+        }
+    }
+}
+
+void NotebookNodeExplorer::openSelectedNodesWithDefaultProgram()
+{
+   const auto files = getSelectedNodesPath();
+   for (const auto &file : files) {
+       if (file.isEmpty()) {
+           continue;
+       }
+       WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(file));
+   }
+}
+
+void NotebookNodeExplorer::openSelectedNodesWithExternalProgram(const QString &p_command)
+{
+    const auto files = getSelectedNodesPath();
+    for (const auto &file : files) {
+        if (file.isEmpty()) {
+            continue;
+        }
+
+        auto command = p_command;
+        command.replace(QStringLiteral("%1"), QString("\"%1\"").arg(file));
+        ProcessUtils::startDetached(command);
     }
 }

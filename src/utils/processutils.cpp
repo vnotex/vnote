@@ -156,3 +156,12 @@ ProcessUtils::State ProcessUtils::start(const QString &p_program,
 
     return proc.exitStatus() == QProcess::NormalExit ? State::Succeeded : State::Crashed;
 }
+
+void ProcessUtils::startDetached(const QString &p_command)
+{
+    Q_ASSERT(!p_command.isEmpty());
+    auto process = new QProcess();
+    QObject::connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                     process, &QProcess::deleteLater);
+    process->start(p_command);
+}

@@ -30,6 +30,13 @@ namespace vnotex
     {
         Q_OBJECT
     public:
+        enum WindowFlag
+        {
+            None = 0,
+            AutoReload = 0x1
+        };
+        Q_DECLARE_FLAGS(WindowFlags, WindowFlag);
+
         explicit ViewWindow(QWidget *p_parent = nullptr);
 
         virtual ~ViewWindow();
@@ -73,6 +80,9 @@ namespace vnotex
         void checkFileMissingOrChangedOutsidePeriodically();
 
         virtual ViewWindowSession saveSession() const;
+
+        WindowFlags getWindowFlags() const;
+        void setWindowFlags(WindowFlags p_flags);
 
     public slots:
         virtual void handleEditorConfigChange() = 0;
@@ -320,9 +330,13 @@ namespace vnotex
 
         EditReadDiscardAction *m_editReadDiscardAct = nullptr;
 
+        WindowFlags m_flags = WindowFlag::None;
+
         static QIcon s_savedIcon;
         static QIcon s_modifiedIcon;
     };
 } // ns vnotex
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::ViewWindow::WindowFlags)
 
 #endif // VIEWWINDOW_H

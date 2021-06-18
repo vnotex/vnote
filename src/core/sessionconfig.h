@@ -53,6 +53,20 @@ namespace vnotex
             Software
         };
 
+        struct ExternalProgram
+        {
+            void fromJson(const QJsonObject &p_jobj);
+
+            QJsonObject toJson() const;
+
+            QString m_name;
+
+            // %1: the file paths to open.
+            QString m_command;
+
+            QString m_shortcut;
+        };
+
         explicit SessionConfig(ConfigMgr *p_mgr);
 
         ~SessionConfig();
@@ -65,7 +79,7 @@ namespace vnotex
         const QString &getCurrentNotebookRootFolderPath() const;
         void setCurrentNotebookRootFolderPath(const QString &p_path);
 
-        const QVector<SessionConfig::NotebookItem> &getNotebooks();
+        const QVector<SessionConfig::NotebookItem> &getNotebooks() const;
         void setNotebooks(const QVector<SessionConfig::NotebookItem> &p_notebooks);
 
         void writeToSettings() const Q_DECL_OVERRIDE;
@@ -107,6 +121,8 @@ namespace vnotex
         const QStringList &getQuickAccessFiles() const;
         void setQuickAccessFiles(const QStringList &p_files);
 
+        const QVector<ExternalProgram> &getExternalPrograms() const;
+
     private:
         void loadCore(const QJsonObject &p_session);
 
@@ -119,6 +135,10 @@ namespace vnotex
         void loadStateAndGeometry(const QJsonObject &p_session);
 
         QJsonObject saveStateAndGeometry() const;
+
+        void loadExternalPrograms(const QJsonObject &p_session);
+
+        QJsonArray saveExternalPrograms() const;
 
         void doVersionSpecificOverride();
 
@@ -153,6 +173,8 @@ namespace vnotex
         QString m_flashPage;
 
         QStringList m_quickAccessFiles;
+
+        QVector<ExternalProgram> m_externalPrograms;
     };
 } // ns vnotex
 

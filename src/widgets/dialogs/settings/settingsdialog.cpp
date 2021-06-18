@@ -10,6 +10,7 @@
 #include <widgets/widgetsfactory.h>
 
 #include "generalpage.h"
+#include "miscpage.h"
 #include "editorpage.h"
 #include "texteditorpage.h"
 #include "markdowneditorpage.h"
@@ -121,6 +122,14 @@ void SettingsDialog::setupPages()
             auto subPage = new MarkdownEditorPage(this);
             addSubPage(subPage, item);
         }
+    }
+
+    // Misc.
+    {
+        /*
+        auto page = new MiscPage(this);
+        addPage(page);
+        */
     }
 
     setChangesUnsaved(false);
