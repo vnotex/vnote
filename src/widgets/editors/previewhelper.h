@@ -6,6 +6,8 @@
 
 #include <vtextedit/global.h>
 #include <vtextedit/lrucache.h>
+#include <vtextedit/pegmarkdownhighlighterdata.h>
+
 #include <core/global.h>
 #include "markdownvieweradapter.h"
 
@@ -14,12 +16,6 @@ class QTextDocument;
 
 namespace vte
 {
-    namespace peg
-    {
-        struct FencedCodeBlock;
-        struct MathBlock;
-    }
-
     struct PreviewItem;
 }
 
