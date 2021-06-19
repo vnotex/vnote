@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QTextDocument>
 #include <QTextBlock>
+#include <QTimer>
 
 #include <vtextedit/pegmarkdownhighlighterdata.h>
 #include <vtextedit/texteditorconfig.h>
@@ -123,6 +124,19 @@ PreviewHelper::PreviewHelper(MarkdownEditor *p_editor, QObject *p_parent)
       m_mathBlockCache(100, nullptr)
 {
     setMarkdownEditor(p_editor);
+
+    const int interval = 1000;
+    m_codeBlockTimer = new QTimer(this);
+    m_codeBlockTimer->setSingleShot(true);
+    m_codeBlockTimer->setInterval(interval);
+    connect(m_codeBlockTimer, &QTimer::timeout,
+            this, &PreviewHelper::handleCodeBlocksUpdate);
+
+    m_mathBlockTimer = new QTimer(this);
+    m_mathBlockTimer->setSingleShot(true);
+    m_mathBlockTimer->setInterval(interval);
+    connect(m_mathBlockTimer, &QTimer::timeout,
+            this, &PreviewHelper::handleMathBlocksUpdate);
 }
 
 void PreviewHelper::codeBlocksUpdated(vte::TimeStamp p_timeStamp,
@@ -133,13 +147,19 @@ void PreviewHelper::codeBlocksUpdated(vte::TimeStamp p_timeStamp,
         return;
     }
 
+    m_pendingCodeBlocks = p_codeBlocks;
+    m_codeBlockTimer->start();
+}
+
+void PreviewHelper::handleCodeBlocksUpdate()
+{
     ++m_codeBlockTimeStamp;
     m_codeBlocksData.clear();
 
     QVector<int> needPreviewBlocks;
 
-    for (int i = 0; i < p_codeBlocks.size(); ++i) {
-        const auto &cb = p_codeBlocks[i];
+    for (int i = 0; i < m_pendingCodeBlocks.size(); ++i) {
+        const auto &cb = m_pendingCodeBlocks[i];
 
         const auto needPreview = isLangNeedPreview(cb.m_lang);
         if (!needPreview.first && !needPreview.second) {
@@ -172,6 +192,8 @@ void PreviewHelper::codeBlocksUpdated(vte::TimeStamp p_timeStamp,
     }
 
     updateEditorInplacePreviewCodeBlock();
+
+    m_pendingCodeBlocks.clear();
 }
 
 bool PreviewHelper::checkPreviewSourceLang(SourceFlag p_flag, const QString &p_lang) const
@@ -337,13 +359,19 @@ void PreviewHelper::mathBlocksUpdated(const QVector<vte::peg::MathBlock> &p_math
         return;
     }
 
+    m_pendingMathBlocks = p_mathBlocks;
+    m_mathBlockTimer->start();
+}
+
+void PreviewHelper::handleMathBlocksUpdate()
+{
     ++m_mathBlockTimeStamp;
     m_mathBlocksData.clear();
-    m_mathBlocksData.reserve(p_mathBlocks.size());
+    m_mathBlocksData.reserve(m_pendingMathBlocks.size());
 
     bool needUpdateEditorInplacePreview = true;
 
-    for (const auto &mb : p_mathBlocks) {
+    for (const auto &mb : m_pendingMathBlocks) {
         m_mathBlocksData.append(MathBlockPreviewData(mb));
         const int blockPreviewIdx = m_mathBlocksData.size() - 1;
 
@@ -368,6 +396,8 @@ void PreviewHelper::mathBlocksUpdated(const QVector<vte::peg::MathBlock> &p_math
     if (needUpdateEditorInplacePreview) {
         updateEditorInplacePreviewMathBlock();
     }
+
+    m_pendingMathBlocks.clear();
 }
 
 void PreviewHelper::inplacePreviewMathBlock(int p_blockPreviewIdx)

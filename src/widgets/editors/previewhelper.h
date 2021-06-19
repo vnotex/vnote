@@ -194,6 +194,10 @@ namespace vnotex
 
         bool needForcedBackground(const QString &p_lang) const;
 
+        void handleCodeBlocksUpdate();
+
+        void handleMathBlocksUpdate();
+
         MarkdownEditor *m_editor = nullptr;
 
         QTextDocument *m_document = nullptr;
@@ -229,6 +233,14 @@ namespace vnotex
         bool m_webPlantUmlEnabled = true;
 
         bool m_webGraphvizEnabled = true;
+
+        QVector<vte::peg::FencedCodeBlock> m_pendingCodeBlocks;
+
+        QTimer *m_codeBlockTimer = nullptr;
+
+        QVector<vte::peg::MathBlock> m_pendingMathBlocks;
+
+        QTimer *m_mathBlockTimer = nullptr;
     };
 }
 
