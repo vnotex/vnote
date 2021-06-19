@@ -5,7 +5,6 @@
 #include <QTextBlock>
 #include <QTimer>
 
-#include <vtextedit/pegmarkdownhighlighterdata.h>
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/previewmgr.h>
 #include <vtextedit/textutils.h>

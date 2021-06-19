@@ -1,4 +1,9 @@
 # Changes
+## v3.3.0
+* Editor: support auto indent, auto list
+* Support opening notes with external programs
+* Add a delay after code/math blocks update before preview
+
 ## v3.2.0
 * Support local PlantUml and Graphviz rendering
 * Add shortcuts to tab navigation in ViewSplit
