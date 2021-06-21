@@ -45,7 +45,8 @@ namespace vnotex
 
         virtual QSharedPointer<Node> newNode(Node *p_parent,
                                              Node::Flags p_flags,
-                                             const QString &p_name) = 0;
+                                             const QString &p_name,
+                                             const QString &p_content) = 0;
 
         virtual QSharedPointer<Node> addAsNode(Node *p_parent,
                                                Node::Flags p_flags,

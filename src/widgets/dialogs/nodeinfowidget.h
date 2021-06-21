@@ -35,6 +35,9 @@ namespace vnotex
 
         const Node *getParentNode() const;
 
+        // Allow upper level to add more widgets to the layout.
+        QFormLayout *getMainLayout() const;
+
     signals:
         void inputEdited();
 

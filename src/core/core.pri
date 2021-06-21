@@ -23,6 +23,7 @@ SOURCES += \
     $$PWD/markdowneditorconfig.cpp \
     $$PWD/quickaccesshelper.cpp \
     $$PWD/singleinstanceguard.cpp \
+    $$PWD/templatemgr.cpp \
     $$PWD/texteditorconfig.cpp \
     $$PWD/vnotex.cpp \
     $$PWD/thememgr.cpp \
@@ -51,6 +52,7 @@ HEADERS += \
     $$PWD/quickaccesshelper.h \
     $$PWD/singleinstanceguard.h \
     $$PWD/iconfig.h \
+    $$PWD/templatemgr.h \
     $$PWD/texteditorconfig.h \
     $$PWD/vnotex.h \
     $$PWD/thememgr.h \

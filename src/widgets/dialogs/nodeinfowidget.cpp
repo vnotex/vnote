@@ -1,6 +1,9 @@
 #include "nodeinfowidget.h"
 
-#include <QtWidgets>
+#include <QComboBox>
+#include <QLabel>
+#include <QLineEdit>
+#include <QFormLayout>
 
 #include "notebook/notebook.h"
 #include "../widgetsfactory.h"
@@ -173,4 +176,9 @@ void NodeInfoWidget::setupFileTypeComboBox(QWidget *p_parent)
                 WidgetUtils::selectBaseName(m_nameLineEdit);
                 m_nameLineEdit->setFocus();
             });
+}
+
+QFormLayout *NodeInfoWidget::getMainLayout() const
+{
+    return m_mainLayout;
 }

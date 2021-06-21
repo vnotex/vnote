@@ -41,7 +41,8 @@ namespace vnotex
 
         QSharedPointer<Node> newNode(Node *p_parent,
                                      Node::Flags p_flags,
-                                     const QString &p_name) Q_DECL_OVERRIDE;
+                                     const QString &p_name,
+                                     const QString &p_content) Q_DECL_OVERRIDE;
 
         QSharedPointer<Node> addAsNode(Node *p_parent,
                                        Node::Flags p_flags,
@@ -154,6 +155,7 @@ namespace vnotex
 
         QSharedPointer<Node> newFileNode(Node *p_parent,
                                          const QString &p_name,
+                                         const QString &p_content,
                                          bool p_create,
                                          const NodeParameters &p_paras);
 

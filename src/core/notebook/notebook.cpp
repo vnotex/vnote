@@ -175,9 +175,12 @@ QSharedPointer<Node> Notebook::getRecycleBinNode() const
     return nullptr;
 }
 
-QSharedPointer<Node> Notebook::newNode(Node *p_parent, Node::Flags p_flags, const QString &p_name)
+QSharedPointer<Node> Notebook::newNode(Node *p_parent,
+                                       Node::Flags p_flags,
+                                       const QString &p_name,
+                                       const QString &p_content)
 {
-    return m_configMgr->newNode(p_parent, p_flags, p_name);
+    return m_configMgr->newNode(p_parent, p_flags, p_name, p_content);
 }
 
 const QDateTime &Notebook::getCreatedTimeUtc() const

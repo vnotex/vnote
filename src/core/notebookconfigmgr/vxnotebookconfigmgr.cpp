@@ -273,7 +273,7 @@ void VXNotebookConfigMgr::createRecycleBinNode(const QSharedPointer<Node> &p_roo
 {
     Q_ASSERT(p_root->isRoot());
 
-    auto node = newNode(p_root.data(), Node::Flag::Container, c_recycleBinFolderName);
+    auto node = newNode(p_root.data(), Node::Flag::Container, c_recycleBinFolderName, "");
     node->setUse(Node::Use::RecycleBin);
     markNodeReadOnly(node.data());
 }
@@ -376,7 +376,8 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
 
 QSharedPointer<Node> VXNotebookConfigMgr::newNode(Node *p_parent,
                                                   Node::Flags p_flags,
-                                                  const QString &p_name)
+                                                  const QString &p_name,
+                                                  const QString &p_content)
 {
     Q_ASSERT(p_parent && p_parent->isContainer() && !p_name.isEmpty());
 
@@ -384,7 +385,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::newNode(Node *p_parent,
 
     if (p_flags & Node::Flag::Content) {
         Q_ASSERT(!(p_flags & Node::Flag::Container));
-        node = newFileNode(p_parent, p_name, true, NodeParameters());
+        node = newFileNode(p_parent, p_name, p_content, true, NodeParameters());
     } else {
         node = newFolderNode(p_parent, p_name, true, NodeParameters());
     }
@@ -403,7 +404,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::addAsNode(Node *p_parent,
     QSharedPointer<Node> node;
     if (p_flags & Node::Flag::Content) {
         Q_ASSERT(!(p_flags & Node::Flag::Container));
-        node = newFileNode(p_parent, p_name, false, p_paras);
+        node = newFileNode(p_parent, p_name, "", false, p_paras);
     } else {
         node = newFolderNode(p_parent, p_name, false, p_paras);
     }
@@ -430,6 +431,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyAsNode(Node *p_parent,
 
 QSharedPointer<Node> VXNotebookConfigMgr::newFileNode(Node *p_parent,
                                                       const QString &p_name,
+                                                      const QString &p_content,
                                                       bool p_create,
                                                       const NodeParameters &p_paras)
 {
@@ -447,7 +449,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::newFileNode(Node *p_parent,
 
     // Write empty file.
     if (p_create) {
-        getBackend()->writeFile(node->fetchPath(), QString());
+        getBackend()->writeFile(node->fetchPath(), p_content);
         node->setExists(true);
     } else {
         node->setExists(getBackend()->existsFile(node->fetchPath()));
