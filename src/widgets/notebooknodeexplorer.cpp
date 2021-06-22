@@ -1906,13 +1906,19 @@ void NotebookNodeExplorer::importToIndex(const QVector<ExternalNode *> &p_nodes)
     }
 }
 
-bool NotebookNodeExplorer::checkInvalidNode(const Node *p_node) const
+bool NotebookNodeExplorer::checkInvalidNode(Node *p_node) const
 {
     if (!p_node) {
         return true;
     }
 
-    if (!p_node->exists()) {
+    bool nodeExists = p_node->exists();
+    if (nodeExists) {
+        p_node->checkExists();
+        nodeExists = p_node->exists();
+    }
+
+    if (!nodeExists) {
         MessageBoxHelper::notify(MessageBoxHelper::Warning,
                                  tr("Invalid node (%1).").arg(p_node->getName()),
                                  tr("Please check if the node exists on the disk."),

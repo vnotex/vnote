@@ -403,3 +403,13 @@ void Node::setExists(bool p_exists)
         m_flags &= ~Flag::Exists;
     }
 }
+
+bool Node::checkExists()
+{
+    bool before = exists();
+    bool after = getConfigMgr()->checkNodeExists(this);
+    if (before != after) {
+        emit m_notebook->nodeUpdated(this);
+    }
+    return after;
+}

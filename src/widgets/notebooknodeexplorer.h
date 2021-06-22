@@ -259,7 +259,7 @@ namespace vnotex
 
         // Check whether @p_node is a valid node. Will notify user.
         // Return true if it is invalid.
-        bool checkInvalidNode(const Node *p_node) const;
+        bool checkInvalidNode(Node *p_node) const;
 
         void expandCurrentNodeAll();
 

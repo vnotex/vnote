@@ -72,6 +72,8 @@ namespace vnotex
 
         QVector<QSharedPointer<ExternalNode>> fetchExternalChildren(Node *p_node) const Q_DECL_OVERRIDE;
 
+        bool checkNodeExists(Node *p_node) Q_DECL_OVERRIDE;
+
     private:
         // Config of a file child.
         struct NodeFileConfig

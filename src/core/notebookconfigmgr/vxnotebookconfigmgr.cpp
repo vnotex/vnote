@@ -989,3 +989,10 @@ bool VXNotebookConfigMgr::isExcludedFromExternalNode(const QString &p_name) cons
     }
     return false;
 }
+
+bool VXNotebookConfigMgr::checkNodeExists(Node *p_node)
+{
+    bool exists = getBackend()->exists(p_node->fetchPath());
+    p_node->setExists(exists);
+    return exists;
+}

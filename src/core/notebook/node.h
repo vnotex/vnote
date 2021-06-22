@@ -89,8 +89,10 @@ namespace vnotex
 
         bool hasContent() const;
 
-        // Whether the node exists on disk.
+        // Whether the node exists on disk (without real check).
         bool exists() const;
+
+        bool checkExists();
 
         void setExists(bool p_exists);
 
