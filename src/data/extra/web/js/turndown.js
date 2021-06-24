@@ -21,10 +21,13 @@ class TurndownConverter {
 
         // TODO: verify and copy several rules from VNote 2.0.
         this.fixMark();
+
+        this.fixParagraph();
     }
 
     turndown(p_html) {
-        return this.ts.turndown(p_html);
+        let markdown = this.ts.turndown(p_html);
+        return markdown;
     }
 
     // Trim a string into 3 parts: leading spaces, content, trailing spaces.
@@ -65,6 +68,25 @@ class TurndownConverter {
                 }
 
                 return '<mark>' + content + '</mark>';
+            }
+        });
+    }
+
+    fixParagraph() {
+        this.ts.addRule('paragraph', {
+            filter: 'p',
+            replacement: function(content) {
+                // Replace leading spaces with &nbsp; to avoid being parsed as code block.
+                let lRe = /^\s+/;
+                let ret = lRe.exec(content);
+                if (ret) {
+                    let leadingSpaces = ret[0];
+                    if (leadingSpaces.length > 3) {
+                        content = '&nbsp;'.repeat(leadingSpaces.length) + content.slice(leadingSpaces.length);
+                    }
+                }
+
+                return '\n\n' + content + '\n\n'
             }
         });
     }

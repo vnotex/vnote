@@ -61,6 +61,8 @@ void ImageInsertDialog::setupUI(const QString &p_title,
     auto gridLayout = new QGridLayout();
     mainLayout->addLayout(gridLayout);
 
+    mainLayout->addStretch();
+
     // Image Path.
     m_imagePathEdit = WidgetsFactory::createLineEdit(p_imagePath, mainWidget);
     m_imagePathEdit->setReadOnly(!m_browserEnabled);
@@ -172,7 +174,13 @@ void ImageInsertDialog::checkImagePathInput()
     }
 
     if (url.isLocalFile()) {
-        setImage(FileUtils::imageFromFile(url.toLocalFile()));
+        const auto localFile = url.toLocalFile();
+        if (QFileInfo::exists(localFile)) {
+            setImage(FileUtils::imageFromFile(localFile));
+        } else {
+            setImage(QImage());
+        }
+
         m_source = Source::LocalFile;
     } else {
         setImage(QImage());

@@ -1049,7 +1049,7 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
         }
 
         const QString imageTitle = purifyImageTitle(regExp.cap(1).trimmed());
-        const QString imageUrl = regExp.cap(2).trimmed();
+        QString imageUrl = regExp.cap(2).trimmed();
 
         const int maxUrlLength = 100;
         QString urlToDisplay(imageUrl);
@@ -1091,6 +1091,10 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
             }
         } else {
             // Network path.
+            // Prepend the protocol if missing.
+            if (imageUrl.startsWith(QStringLiteral("//"))) {
+                imageUrl.prepend(QStringLiteral("https:"));
+            }
             QByteArray data = vte::Downloader::download(QUrl(imageUrl));
             if (!data.isEmpty()) {
                 auto suffix = info.suffix();
