@@ -24,6 +24,7 @@ namespace vnotex
             NavigationDock,
             OutlineDock,
             SearchDock,
+            SnippetDock,
             LocationListDock,
             Search,
             NavigationMode,

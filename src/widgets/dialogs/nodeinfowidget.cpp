@@ -13,6 +13,7 @@
 #include "nodelabelwithupbutton.h"
 #include <utils/widgetutils.h>
 #include <buffer/filetypehelper.h>
+#include "../lineeditwithsnippet.h"
 
 using namespace vnotex;
 
@@ -69,7 +70,7 @@ void NodeInfoWidget::setupUI(const Node *p_parentNode, Node::Flags p_newNodeFlag
 
 void NodeInfoWidget::setupNameLineEdit(QWidget *p_parent)
 {
-    m_nameLineEdit = WidgetsFactory::createLineEdit(p_parent);
+    m_nameLineEdit = WidgetsFactory::createLineEditWithSnippet(p_parent);
     auto validator = new QRegularExpressionValidator(QRegularExpression(PathUtils::c_fileNameRegularExpression),
                                                      m_nameLineEdit);
     m_nameLineEdit->setValidator(validator);
@@ -107,7 +108,7 @@ QLineEdit *NodeInfoWidget::getNameLineEdit() const
 
 QString NodeInfoWidget::getName() const
 {
-    return getNameLineEdit()->text().trimmed();
+    return m_nameLineEdit->evaluatedText().trimmed();
 }
 
 const Notebook *NodeInfoWidget::getNotebook() const

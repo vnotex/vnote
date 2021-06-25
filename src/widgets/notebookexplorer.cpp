@@ -105,6 +105,7 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
                                  TitleBar::Action::Menu,
                                  p_parent);
     titleBar->setWhatsThis(tr("This title bar contains buttons and menu to manage notebooks and notes."));
+    titleBar->setActionButtonsAlwaysShown(true);
 
     {
         auto viewMenu = WidgetsFactory::createMenu(titleBar);

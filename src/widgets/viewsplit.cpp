@@ -623,6 +623,16 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx) const
         WidgetUtils::addActionShortcutText(locateNodeAct,
                                            ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::LocateNode));
     }
+
+    // Pin To Quick Access.
+    p_menu->addAction(tr("Pin To Quick Access"),
+                      [this, p_tabIdx]() {
+                          auto win = getViewWindow(p_tabIdx);
+                          if (win) {
+                              const QStringList files(win->getBuffer()->getPath());
+                              emit VNoteX::getInst().pinToQuickAccessRequested(files);
+                          }
+                      });
 }
 
 void ViewSplit::closeTab(int p_idx)

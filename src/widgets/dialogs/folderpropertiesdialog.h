@@ -17,9 +17,6 @@ namespace vnotex
     protected:
         void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
-    private slots:
-        void validateInputs();
-
     private:
         void setupUI();
 
@@ -28,6 +25,8 @@ namespace vnotex
         bool validateNameInput(QString &p_msg);
 
         bool saveFolderProperties();
+
+        bool validateInputs();
 
         NodeInfoWidget *m_infoWidget = nullptr;
 

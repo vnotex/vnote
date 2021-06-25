@@ -49,6 +49,8 @@ include($$PWD/export/export.pri)
 
 include($$PWD/search/search.pri)
 
+include($$PWD/snippet/snippet.pri)
+
 include($$PWD/core/core.pri)
 
 include($$PWD/widgets/widgets.pri)

@@ -30,7 +30,6 @@ void FolderPropertiesDialog::setupUI()
     setCentralWidget(m_infoWidget);
 
     setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    setButtonEnabled(QDialogButtonBox::Ok, false);
 
     setWindowTitle(m_node->getName() + QStringLiteral(" ") + tr("Properties"));
 }
@@ -38,11 +37,9 @@ void FolderPropertiesDialog::setupUI()
 void FolderPropertiesDialog::setupNodeInfoWidget(QWidget *p_parent)
 {
     m_infoWidget = new NodeInfoWidget(m_node, p_parent);
-    connect(m_infoWidget, &NodeInfoWidget::inputEdited,
-            this, &FolderPropertiesDialog::validateInputs);
 }
 
-void FolderPropertiesDialog::validateInputs()
+bool FolderPropertiesDialog::validateInputs()
 {
     bool valid = true;
     QString msg;
@@ -50,7 +47,7 @@ void FolderPropertiesDialog::validateInputs()
     valid = valid && validateNameInput(msg);
     setInformationText(msg, valid ? ScrollDialog::InformationLevel::Info
                                   : ScrollDialog::InformationLevel::Error);
-    setButtonEnabled(QDialogButtonBox::Ok, valid);
+    return valid;
 }
 
 bool FolderPropertiesDialog::validateNameInput(QString &p_msg)
@@ -74,7 +71,7 @@ bool FolderPropertiesDialog::validateNameInput(QString &p_msg)
 
 void FolderPropertiesDialog::acceptedButtonClicked()
 {
-    if (saveFolderProperties()) {
+    if (validateInputs() && saveFolderProperties()) {
         accept();
     }
 }

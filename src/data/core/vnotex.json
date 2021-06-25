@@ -18,6 +18,7 @@
             "NavigationDock" : "Ctrl+G, A",
             "OutlineDock" : "Ctrl+G, U",
             "SearchDock" : "Ctrl+G, S",
+            "SnippetDock" : "",
             "LocationListDock" : "Ctrl+G, L",
             "Search" : "Ctrl+Alt+F",
             "NavigationMode" : "Ctrl+G, W",

@@ -13,6 +13,7 @@ SOURCES += \
     $$PWD/dialogs/legacynotebookutils.cpp \
     $$PWD/dialogs/linkinsertdialog.cpp \
     $$PWD/dialogs/newnotebookfromfolderdialog.cpp \
+    $$PWD/dialogs/newsnippetdialog.cpp \
     $$PWD/dialogs/selectdialog.cpp \
     $$PWD/dialogs/selectionitemwidget.cpp \
     $$PWD/dialogs/settings/appearancepage.cpp \
@@ -25,6 +26,8 @@ SOURCES += \
     $$PWD/dialogs/settings/settingsdialog.cpp \
     $$PWD/dialogs/settings/texteditorpage.cpp \
     $$PWD/dialogs/settings/themepage.cpp \
+    $$PWD/dialogs/snippetinfowidget.cpp \
+    $$PWD/dialogs/snippetpropertiesdialog.cpp \
     $$PWD/dialogs/sortdialog.cpp \
     $$PWD/dialogs/tableinsertdialog.cpp \
     $$PWD/dragdropareaindicator.cpp \
@@ -47,6 +50,7 @@ SOURCES += \
     $$PWD/fullscreentoggleaction.cpp \
     $$PWD/lineedit.cpp \
     $$PWD/lineeditdelegate.cpp \
+    $$PWD/lineeditwithsnippet.cpp \
     $$PWD/listwidget.cpp \
     $$PWD/locationinputwithbrowsebutton.cpp \
     $$PWD/locationlist.cpp \
@@ -60,6 +64,7 @@ SOURCES += \
     $$PWD/propertydefs.cpp \
     $$PWD/searchinfoprovider.cpp \
     $$PWD/searchpanel.cpp \
+    $$PWD/snippetpanel.cpp \
     $$PWD/systemtrayhelper.cpp \
     $$PWD/textviewwindow.cpp \
     $$PWD/toolbarhelper.cpp \
@@ -112,6 +117,7 @@ HEADERS += \
     $$PWD/dialogs/legacynotebookutils.h \
     $$PWD/dialogs/linkinsertdialog.h \
     $$PWD/dialogs/newnotebookfromfolderdialog.h \
+    $$PWD/dialogs/newsnippetdialog.h \
     $$PWD/dialogs/selectdialog.h \
     $$PWD/dialogs/selectionitemwidget.h \
     $$PWD/dialogs/settings/appearancepage.h \
@@ -124,6 +130,8 @@ HEADERS += \
     $$PWD/dialogs/settings/settingsdialog.h \
     $$PWD/dialogs/settings/texteditorpage.h \
     $$PWD/dialogs/settings/themepage.h \
+    $$PWD/dialogs/snippetinfowidget.h \
+    $$PWD/dialogs/snippetpropertiesdialog.h \
     $$PWD/dialogs/sortdialog.h \
     $$PWD/dialogs/tableinsertdialog.h \
     $$PWD/dragdropareaindicator.h \
@@ -146,6 +154,7 @@ HEADERS += \
     $$PWD/fullscreentoggleaction.h \
     $$PWD/lineedit.h \
     $$PWD/lineeditdelegate.h \
+    $$PWD/lineeditwithsnippet.h \
     $$PWD/listwidget.h \
     $$PWD/locationinputwithbrowsebutton.h \
     $$PWD/locationlist.h \
@@ -160,6 +169,7 @@ HEADERS += \
     $$PWD/propertydefs.h \
     $$PWD/searchinfoprovider.h \
     $$PWD/searchpanel.h \
+    $$PWD/snippetpanel.h \
     $$PWD/systemtrayhelper.h \
     $$PWD/textviewwindow.h \
     $$PWD/textviewwindowhelper.h \

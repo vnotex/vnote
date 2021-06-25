@@ -26,7 +26,6 @@ void NewFolderDialog::setupUI(const Node *p_node)
     setCentralWidget(m_infoWidget);
 
     setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    setButtonEnabled(QDialogButtonBox::Ok, false);
 
     setWindowTitle(tr("New Folder"));
 }
@@ -34,11 +33,9 @@ void NewFolderDialog::setupUI(const Node *p_node)
 void NewFolderDialog::setupNodeInfoWidget(const Node *p_node, QWidget *p_parent)
 {
     m_infoWidget = new NodeInfoWidget(p_node, Node::Flag::Container, p_parent);
-    connect(m_infoWidget, &NodeInfoWidget::inputEdited,
-            this, &NewFolderDialog::validateInputs);
 }
 
-void NewFolderDialog::validateInputs()
+bool NewFolderDialog::validateInputs()
 {
     bool valid = true;
     QString msg;
@@ -46,7 +43,7 @@ void NewFolderDialog::validateInputs()
     valid = valid && validateNameInput(msg);
     setInformationText(msg, valid ? ScrollDialog::InformationLevel::Info
                                   : ScrollDialog::InformationLevel::Error);
-    setButtonEnabled(QDialogButtonBox::Ok, valid);
+    return valid;
 }
 
 bool NewFolderDialog::validateNameInput(QString &p_msg)
@@ -69,7 +66,7 @@ bool NewFolderDialog::validateNameInput(QString &p_msg)
 
 void NewFolderDialog::acceptedButtonClicked()
 {
-    if (newFolder()) {
+    if (validateInputs() && newFolder()) {
         accept();
     }
 }

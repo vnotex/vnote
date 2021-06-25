@@ -44,6 +44,8 @@ namespace vnotex
 
         ViewWindowSession saveSession() const Q_DECL_OVERRIDE;
 
+        void applySnippet(const QString &p_name) Q_DECL_OVERRIDE;
+
     public slots:
         void handleEditorConfigChange() Q_DECL_OVERRIDE;
 

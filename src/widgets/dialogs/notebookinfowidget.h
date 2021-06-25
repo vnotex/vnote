@@ -11,6 +11,7 @@ class QGroupBox;
 namespace vnotex
 {
     class Notebook;
+    class LineEditWithSnippet;
 
     class NotebookInfoWidget : public QWidget
     {
@@ -92,7 +93,7 @@ namespace vnotex
 
         const Notebook *m_notebook = nullptr;
 
-        QLineEdit *m_nameLineEdit = nullptr;
+        LineEditWithSnippet *m_nameLineEdit = nullptr;
 
         QLineEdit *m_descriptionLineEdit = nullptr;
 

@@ -35,14 +35,14 @@ namespace vnotex
             {
                 return m_mainState == p_other.m_mainState
                        && m_mainGeometry == p_other.m_mainGeometry
-                       && m_docksVisibilityBeforeExpand == p_other.m_docksVisibilityBeforeExpand;
+                       && m_visibleDocksBeforeExpand == p_other.m_visibleDocksBeforeExpand;
             }
 
             QByteArray m_mainState;
 
             QByteArray m_mainGeometry;
 
-            QBitArray m_docksVisibilityBeforeExpand;
+            QStringList m_visibleDocksBeforeExpand;
         };
 
         enum OpenGL

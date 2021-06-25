@@ -51,6 +51,10 @@ void ViewWindowToolBarHelper::addActionShortcut(QAction *p_action,
                              }
                          }
                      });
+    QObject::connect(shortcut, &QShortcut::activatedAmbiguously,
+                     p_action, [p_action]() {
+                         qWarning() << "ViewWindow shortcut activated ambiguously" << p_action->text();
+                     });
     p_action->setText(QString("%1\t%2").arg(p_action->text(), shortcut->key().toString(QKeySequence::NativeText)));
 }
 

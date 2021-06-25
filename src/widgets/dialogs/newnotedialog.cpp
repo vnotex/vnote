@@ -16,6 +16,7 @@
 #include "nodeinfowidget.h"
 #include <utils/widgetutils.h>
 #include <core/templatemgr.h>
+#include <snippet/snippetmgr.h>
 
 using namespace vnotex;
 
@@ -62,7 +63,6 @@ void NewNoteDialog::setupUI(const Node *p_node)
     }
 
     setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    setButtonEnabled(QDialogButtonBox::Ok, false);
 
     setWindowTitle(tr("New Note"));
 }
@@ -70,11 +70,9 @@ void NewNoteDialog::setupUI(const Node *p_node)
 void NewNoteDialog::setupNodeInfoWidget(const Node *p_node, QWidget *p_parent)
 {
     m_infoWidget = new NodeInfoWidget(p_node, Node::Flag::Content, p_parent);
-    connect(m_infoWidget, &NodeInfoWidget::inputEdited,
-            this, &NewNoteDialog::validateInputs);
 }
 
-void NewNoteDialog::validateInputs()
+bool NewNoteDialog::validateInputs()
 {
     bool valid = true;
     QString msg;
@@ -82,7 +80,7 @@ void NewNoteDialog::validateInputs()
     valid = valid && validateNameInput(msg);
     setInformationText(msg, valid ? ScrollDialog::InformationLevel::Info
                                   : ScrollDialog::InformationLevel::Error);
-    setButtonEnabled(QDialogButtonBox::Ok, valid);
+    return valid;
 }
 
 bool NewNoteDialog::validateNameInput(QString &p_msg)
@@ -90,8 +88,8 @@ bool NewNoteDialog::validateNameInput(QString &p_msg)
     p_msg.clear();
 
     auto name = m_infoWidget->getName();
-    if (name.isEmpty()) {
-        p_msg = tr("Please specify a name for the note.");
+    if (name.isEmpty() || !PathUtils::isLegalFileName(name)) {
+        p_msg = tr("Please specify a valid name for the note.");
         return false;
     }
 
@@ -107,7 +105,7 @@ void NewNoteDialog::acceptedButtonClicked()
 {
     s_lastTemplate = m_templateComboBox->currentData().toString();
 
-    if (newNote()) {
+    if (validateInputs() && newNote()) {
         accept();
     }
 }
@@ -151,8 +149,6 @@ void NewNoteDialog::initDefaultValues(const Node *p_node)
                                                                    QStringLiteral("md"));
         lineEdit->setText(defaultName);
         WidgetUtils::selectBaseName(lineEdit);
-
-        validateInputs();
     }
 }
 
@@ -209,6 +205,9 @@ void NewNoteDialog::setupTemplateComboBox(QWidget *p_parent)
 
 QString NewNoteDialog::getTemplateContent() const
 {
-    // TODO: parse snippets of the template.
-    return m_templateContent;
+    int cursorOffset = 0;
+    return SnippetMgr::getInst().applySnippetBySymbol(m_templateContent,
+                                                      QString(),
+                                                      cursorOffset,
+                                                      SnippetMgr::generateOverrides(m_infoWidget->getName()));
 }

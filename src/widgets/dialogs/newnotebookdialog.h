@@ -22,13 +22,12 @@ namespace vnotex
 
         NotebookInfoWidget *m_infoWidget = nullptr;
 
-    private slots:
-        void validateInputs();
-
     private:
         void setupUI();
 
         void setupNotebookInfoWidget(QWidget *p_parent = nullptr);
+
+        bool validateInputs();
 
         bool validateNameInput(QString &p_msg);
 

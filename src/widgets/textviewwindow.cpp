@@ -15,6 +15,7 @@
 #include <core/thememgr.h>
 #include "editors/statuswidget.h"
 #include <core/fileopenparameters.h>
+#include <snippet/snippetmgr.h>
 
 using namespace vnotex;
 
@@ -252,4 +253,17 @@ ViewWindowSession TextViewWindow::saveSession() const
         session.m_lineNumber = m_editor->getCursorPosition().first;
     }
     return session;
+}
+
+void TextViewWindow::applySnippet(const QString &p_name)
+{
+    if (m_editor->isReadOnly()) {
+        qWarning() << "failed to apply snippet to a read-only buffer" << p_name;
+        return;
+    }
+
+    m_editor->enterInsertModeIfApplicable();
+    SnippetMgr::getInst().applySnippet(p_name,
+                                       m_editor->getTextEdit(),
+                                       SnippetMgr::generateOverrides(getBuffer()));
 }

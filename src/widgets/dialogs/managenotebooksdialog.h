@@ -51,6 +51,10 @@ namespace vnotex
 
         bool checkUnsavedChanges();
 
+        bool validateInputs();
+
+        bool validateNameInput(QString &p_msg);
+
         QListWidget *m_notebookList = nullptr;
 
         NotebookInfoWidget *m_notebookInfoWidget = nullptr;

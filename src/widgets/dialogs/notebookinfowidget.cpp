@@ -18,6 +18,7 @@
 #include <utils/pathutils.h>
 #include "exception.h"
 #include <utils/widgetutils.h>
+#include "../lineeditwithsnippet.h"
 
 using namespace vnotex;
 
@@ -52,7 +53,7 @@ QGroupBox *NotebookInfoWidget::setupBasicInfoGroupBox(QWidget *p_parent)
     }
 
     {
-        m_nameLineEdit = WidgetsFactory::createLineEdit(box);
+        m_nameLineEdit = WidgetsFactory::createLineEditWithSnippet(box);
         m_nameLineEdit->setPlaceholderText(tr("Name of notebook"));
         connect(m_nameLineEdit, &QLineEdit::textEdited,
                 this, &NotebookInfoWidget::basicInfoEdited);
@@ -312,7 +313,7 @@ QComboBox *NotebookInfoWidget::getBackendComboBox() const
 
 QString NotebookInfoWidget::getName() const
 {
-    return getNameLineEdit()->text().trimmed();
+    return m_nameLineEdit->evaluatedText().trimmed();
 }
 
 QString NotebookInfoWidget::getDescription() const

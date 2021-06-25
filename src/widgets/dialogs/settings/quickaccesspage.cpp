@@ -5,6 +5,7 @@
 #include <QGroupBox>
 #include <QPlainTextEdit>
 #include <QDebug>
+#include <QFileDialog>
 
 #include <widgets/widgetsfactory.h>
 #include <core/sessionconfig.h>
@@ -79,6 +80,15 @@ QGroupBox *QuickAccessPage::setupFlashPageGroup()
         addSearchItem(label, m_flashPageInput->toolTip(), m_flashPageInput);
         connect(m_flashPageInput, &LocationInputWithBrowseButton::textChanged,
                 this, &QuickAccessPage::pageIsChanged);
+        connect(m_flashPageInput, &LocationInputWithBrowseButton::clicked,
+                this, [this]() {
+                    auto filePath = QFileDialog::getOpenFileName(this,
+                                                                 tr("Select Flash Page File"),
+                                                                 QDir::homePath());
+                    if (!filePath.isEmpty()) {
+                        m_flashPageInput->setText(filePath);
+                    }
+                });
     }
 
     return box;

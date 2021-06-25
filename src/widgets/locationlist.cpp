@@ -9,6 +9,7 @@
 
 #include <core/vnotex.h>
 #include <utils/iconutils.h>
+#include <utils/widgetutils.h>
 
 using namespace vnotex;
 
@@ -29,8 +30,7 @@ LocationList::LocationList(QWidget *p_parent)
 void LocationList::setupUI()
 {
     auto mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(0);
+    WidgetUtils::setContentsMargins(mainLayout);
 
     {
         setupTitleBar(QString(), this);
@@ -96,6 +96,7 @@ NavigationModeWrapper<QTreeWidget, QTreeWidgetItem> *LocationList::getNavigation
 void LocationList::setupTitleBar(const QString &p_title, QWidget *p_parent)
 {
     m_titleBar = new TitleBar(p_title, true, TitleBar::Action::None, p_parent);
+    m_titleBar->setActionButtonsAlwaysShown(true);
 
     {
         auto clearBtn = m_titleBar->addActionButton(QStringLiteral("clear.svg"), tr("Clear"));
@@ -175,6 +176,6 @@ void LocationList::updateItemsCountLabel()
     if (cnt == 0) {
         m_titleBar->setInfoLabel("");
     } else {
-        m_titleBar->setInfoLabel(tr("%n Item(s)", "", m_tree->topLevelItemCount()));
+        m_titleBar->setInfoLabel(tr("%n Item(s)", "", cnt));
     }
 }

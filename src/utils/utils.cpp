@@ -117,3 +117,12 @@ QString Utils::boolToString(bool p_val)
 {
     return p_val ? QStringLiteral("true") : QStringLiteral("false");
 }
+
+QString Utils::intToString(int p_val, int p_width)
+{
+    auto str = QString::number(p_val);
+    if (str.size() < p_width) {
+        str.prepend(QString(p_width - str.size(), QLatin1Char('0')));
+    }
+    return str;
+}

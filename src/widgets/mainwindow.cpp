@@ -41,6 +41,7 @@
 #include "titletoolbar.h"
 #include "locationlist.h"
 #include "searchpanel.h"
+#include "snippetpanel.h"
 #include <notebook/notebook.h>
 #include "searchinfoprovider.h"
 #include <vtextedit/spellchecker.h>
@@ -84,13 +85,14 @@ void MainWindow::kickOffOnStart(const QStringList &p_paths)
 
         VNoteX::getInst().initLoad();
 
+        setupSpellCheck();
+
+        // Do necessary stuffs before emitting this signal.
         emit mainWindowStarted();
 
         emit layoutChanged();
 
         demoWidget();
-
-        setupSpellCheck();
 
         openFiles(p_paths);
     });
@@ -206,6 +208,8 @@ void MainWindow::setupDocks()
 
     setupSearchDock();
 
+    setupSnippetDock();
+
     for (int i = 1; i < m_docks.size(); ++i) {
         tabifyDockWidget(m_docks[i - 1], m_docks[i]);
     }
@@ -293,6 +297,34 @@ void MainWindow::setupSearchPanel()
                                                    &VNoteX::getInst().getNotebookMgr()),
         this);
     m_searchPanel->setObjectName("SearchPanel.vnotex");
+}
+
+void MainWindow::setupSnippetDock()
+{
+    auto dock = new QDockWidget(tr("Snippets"), this);
+    m_docks.push_back(dock);
+
+    dock->setObjectName(QStringLiteral("SnippetDock.vnotex"));
+    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+    setupSnippetPanel();
+    dock->setWidget(m_snippetPanel);
+    dock->setFocusProxy(m_snippetPanel);
+    addDockWidget(Qt::LeftDockWidgetArea, dock);
+}
+
+void MainWindow::setupSnippetPanel()
+{
+    m_snippetPanel = new SnippetPanel(this);
+    m_snippetPanel->setObjectName("SnippetPanel.vnotex");
+    connect(m_snippetPanel, &SnippetPanel::applySnippetRequested,
+            this, [this](const QString &p_name) {
+                auto viewWindow = m_viewArea->getCurrentViewWindow();
+                if (viewWindow) {
+                    viewWindow->applySnippet(p_name);
+                    viewWindow->setFocus();
+                }
+            });
 }
 
 void MainWindow::setupLocationListDock()
@@ -418,7 +450,7 @@ void MainWindow::saveStateAndGeometry()
     SessionConfig::MainWindowStateGeometry sg;
     sg.m_mainState = saveState();
     sg.m_mainGeometry = saveGeometry();
-    sg.m_docksVisibilityBeforeExpand = m_docksVisibilityBeforeExpand;
+    sg.m_visibleDocksBeforeExpand = m_visibleDocksBeforeExpand;
 
     auto& sessionConfig = ConfigMgr::getInst().getSessionConfig();
     sessionConfig.setMainWindowStateGeometry(sg);
@@ -439,12 +471,13 @@ void MainWindow::loadStateAndGeometry(bool p_stateOnly)
     }
 
     if (!p_stateOnly) {
-        m_docksVisibilityBeforeExpand = sg.m_docksVisibilityBeforeExpand;
-        if (m_docksVisibilityBeforeExpand.isEmpty()) {
-            // Init.
-            m_docksVisibilityBeforeExpand.resize(m_docks.size());
+        m_visibleDocksBeforeExpand = sg.m_visibleDocksBeforeExpand;
+        if (m_visibleDocksBeforeExpand.isEmpty()) {
+            // Init (or init again if there is no visible dock).
             for (int i = 0; i < m_docks.size(); ++i) {
-                m_docksVisibilityBeforeExpand.setBit(i, m_docks[i]->isVisible());
+                if (m_docks[i]->isVisible()) {
+                    m_visibleDocksBeforeExpand.push_back(m_docks[i]->objectName());
+                }
             }
         }
     }
@@ -468,10 +501,14 @@ void MainWindow::setContentAreaExpanded(bool p_expanded)
 
     if (p_expanded) {
         // Store the state and hide.
+        m_visibleDocksBeforeExpand.clear();
         for (int i = 0; i < m_docks.size(); ++i) {
-            m_docksVisibilityBeforeExpand[i] = m_docks[i]->isVisible();
+            const auto objName = m_docks[i]->objectName();
+            if (m_docks[i]->isVisible()) {
+                m_visibleDocksBeforeExpand.push_back(objName);
+            }
 
-            if (m_docks[i]->isFloating() || keepDocks.contains(m_docks[i]->objectName())) {
+            if (m_docks[i]->isFloating() || keepDocks.contains(objName)) {
                 continue;
             }
 
@@ -481,15 +518,15 @@ void MainWindow::setContentAreaExpanded(bool p_expanded)
         // Restore the state.
         bool hasVisible = false;
         for (int i = 0; i < m_docks.size(); ++i) {
-            if (m_docks[i]->isFloating() || keepDocks.contains(m_docks[i]->objectName())) {
+            const auto objName = m_docks[i]->objectName();
+            if (m_docks[i]->isFloating() || keepDocks.contains(objName)) {
                 continue;
             }
 
-            if (m_docksVisibilityBeforeExpand[i]) {
-                hasVisible = true;
-            }
+            const bool visible = m_visibleDocksBeforeExpand.contains(objName);
+            hasVisible = hasVisible || visible;
 
-            m_docks[i]->setVisible(m_docksVisibilityBeforeExpand[i]);
+            m_docks[i]->setVisible(visible);
         }
 
         if (!hasVisible) {
@@ -606,6 +643,9 @@ void MainWindow::setupShortcuts()
 
     setupDockActivateShortcut(m_docks[DockIndex::LocationListDock],
                               coreConfig.getShortcut(CoreConfig::Shortcut::LocationListDock));
+
+    setupDockActivateShortcut(m_docks[DockIndex::SnippetDock],
+                              coreConfig.getShortcut(CoreConfig::Shortcut::SnippetDock));
 }
 
 void MainWindow::setupDockActivateShortcut(QDockWidget *p_dock, const QString &p_keys)

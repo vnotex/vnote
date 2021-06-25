@@ -14,6 +14,7 @@
 #include "notebookmgr.h"
 #include "../messageboxhelper.h"
 #include <utils/iconutils.h>
+#include <utils/utils.h>
 #include <utils/widgetutils.h>
 #include "../widgetsfactory.h"
 #include "exception.h"
@@ -212,10 +213,36 @@ void ManageNotebooksDialog::setChangesUnsaved(bool p_unsaved)
     setButtonEnabled(QDialogButtonBox::Reset, m_changesUnsaved);
 }
 
+bool ManageNotebooksDialog::validateInputs()
+{
+    bool valid = true;
+    QString msg;
+
+    valid = valid && validateNameInput(msg);
+
+    setInformationText(msg, valid ? Dialog::InformationLevel::Info
+                                  : Dialog::InformationLevel::Error);
+    return valid;
+}
+
+bool ManageNotebooksDialog::validateNameInput(QString &p_msg)
+{
+    if (m_notebookInfoWidget->getName().isEmpty()) {
+        Utils::appendMsg(p_msg, tr("Please specify a name for the notebook."));
+        return false;
+    }
+
+    return true;
+}
+
 bool ManageNotebooksDialog::saveChangesToNotebook()
 {
     if (!m_changesUnsaved || !m_notebook) {
         return true;
+    }
+
+    if (!validateInputs()) {
+        return false;
     }
 
     m_notebook->updateName(m_notebookInfoWidget->getName());

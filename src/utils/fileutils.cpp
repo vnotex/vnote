@@ -4,6 +4,7 @@
 #include <QMimeDatabase>
 #include <QDateTime>
 #include <QTemporaryFile>
+#include <QJsonDocument>
 
 #include "../core/exception.h"
 #include "pathutils.h"
@@ -34,6 +35,11 @@ QString FileUtils::readTextFile(const QString &p_filePath)
     return text;
 }
 
+QJsonObject FileUtils::readJsonFile(const QString &p_filePath)
+{
+    return QJsonDocument::fromJson(readFile(p_filePath)).object();
+}
+
 void FileUtils::writeFile(const QString &p_filePath, const QByteArray &p_data)
 {
     QFile file(p_filePath);
@@ -57,6 +63,11 @@ void FileUtils::writeFile(const QString &p_filePath, const QString &p_text)
     QTextStream stream(&file);
     stream << p_text;
     file.close();
+}
+
+void FileUtils::writeFile(const QString &p_filePath, const QJsonObject &p_jobj)
+{
+    writeFile(p_filePath, QJsonDocument(p_jobj).toJson());
 }
 
 void FileUtils::renameFile(const QString &p_path, const QString &p_name)
@@ -194,7 +205,7 @@ QString FileUtils::renameIfExistsCaseInsensitive(const QString &p_path)
 
 void FileUtils::removeFile(const QString &p_filePath)
 {
-    Q_ASSERT(QFileInfo(p_filePath).isFile());
+    Q_ASSERT(!QFileInfo::exists(p_filePath) || QFileInfo(p_filePath).isFile());
     QFile file(p_filePath);
     if (!file.remove()) {
         Exception::throwOne(Exception::Type::FailToRemoveFile,

@@ -50,6 +50,8 @@ namespace vnotex
         static bool fuzzyEqual(qreal p_a, qreal p_b);
 
         static QString boolToString(bool p_val);
+
+        static QString intToString(int p_val, int p_width = 0);
     };
 } // ns vnotex
 

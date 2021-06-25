@@ -24,15 +24,14 @@ namespace vnotex
     protected:
         void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
-    private slots:
-        void validateInputs();
-
     private:
         void setupUI(const Node *p_node);
 
         void setupNodeInfoWidget(const Node *p_node, QWidget *p_parent);
 
         void setupTemplateComboBox(QWidget *p_parent);
+
+        bool validateInputs();
 
         bool validateNameInput(QString &p_msg);
 

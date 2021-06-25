@@ -29,7 +29,6 @@ void NewNotebookDialog::setupUI()
     setCentralWidget(m_infoWidget);
 
     setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    setButtonEnabled(QDialogButtonBox::Ok, false);
 
     setWindowTitle(tr("New Notebook"));
 }
@@ -39,8 +38,6 @@ void NewNotebookDialog::setupNotebookInfoWidget(QWidget *p_parent)
     m_infoWidget = new NotebookInfoWidget(NotebookInfoWidget::Create, p_parent);
     connect(m_infoWidget, &NotebookInfoWidget::rootFolderEdited,
             this, &NewNotebookDialog::handleRootFolderPathChanged);
-    connect(m_infoWidget, &NotebookInfoWidget::basicInfoEdited,
-            this, &NewNotebookDialog::validateInputs);
 
     {
         auto whatsThis = tr("<br/>Both absolute and relative paths are supported. ~ and environment variable are not supported now.");
@@ -49,7 +46,7 @@ void NewNotebookDialog::setupNotebookInfoWidget(QWidget *p_parent)
     }
 }
 
-void NewNotebookDialog::validateInputs()
+bool NewNotebookDialog::validateInputs()
 {
     bool valid = true;
     QString msg;
@@ -59,7 +56,7 @@ void NewNotebookDialog::validateInputs()
 
     setInformationText(msg, valid ? ScrollDialog::InformationLevel::Info
                                   : ScrollDialog::InformationLevel::Error);
-    setButtonEnabled(QDialogButtonBox::Ok, valid);
+    return valid;
 }
 
 bool NewNotebookDialog::validateNameInput(QString &p_msg)
@@ -113,7 +110,7 @@ bool NewNotebookDialog::validateRootFolderInput(QString &p_msg)
 
 void NewNotebookDialog::acceptedButtonClicked()
 {
-    if (newNotebook()) {
+    if (validateInputs() && newNotebook()) {
         accept();
     }
 }

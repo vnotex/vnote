@@ -19,6 +19,7 @@ include($$SRC_FOLDER/widgets/widgets.pri)
 include($$SRC_FOLDER/utils/utils.pri)
 include($$SRC_FOLDER/export/export.pri)
 include($$SRC_FOLDER/search/search.pri)
+include($$SRC_FOLDER/snippet/snippet.pri)
 
 SOURCES += \
     test_notebook.cpp

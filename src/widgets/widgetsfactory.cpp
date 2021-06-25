@@ -11,7 +11,7 @@
 #include <QPlainTextEdit>
 #include <QRadioButton>
 
-#include "lineedit.h"
+#include "lineeditwithsnippet.h"
 #include "combobox.h"
 
 using namespace vnotex;
@@ -38,6 +38,16 @@ QLineEdit *WidgetsFactory::createLineEdit(QWidget *p_parent)
 QLineEdit *WidgetsFactory::createLineEdit(const QString &p_contents, QWidget *p_parent)
 {
     return new LineEdit(p_contents, p_parent);
+}
+
+LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(QWidget *p_parent)
+{
+    return new LineEditWithSnippet(p_parent);
+}
+
+LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(const QString &p_contents, QWidget *p_parent)
+{
+    return new LineEditWithSnippet(p_contents, p_parent);
 }
 
 QComboBox *WidgetsFactory::createComboBox(QWidget *p_parent)

@@ -72,12 +72,12 @@ namespace vnotex
         // Not all Workspace. Just all ViewSplits.
         QList<Buffer *> getAllBuffersInViewSplits() const;
 
+        ViewWindow *getCurrentViewWindow() const;
+
     public slots:
         void openBuffer(Buffer *p_buffer, const QSharedPointer<FileOpenParameters> &p_paras);
 
         bool close(const Notebook *p_notebook, bool p_force);
-
-        ViewWindow *getCurrentViewWindow() const;
 
         void focus();
 

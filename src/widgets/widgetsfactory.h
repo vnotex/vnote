@@ -16,6 +16,8 @@ class QRadioButton;
 
 namespace vnotex
 {
+    class LineEditWithSnippet;
+
     class WidgetsFactory
     {
     public:
@@ -28,6 +30,10 @@ namespace vnotex
         static QLineEdit *createLineEdit(QWidget *p_parent = nullptr);
 
         static QLineEdit *createLineEdit(const QString &p_contents, QWidget *p_parent = nullptr);
+
+        static LineEditWithSnippet *createLineEditWithSnippet(QWidget *p_parent = nullptr);
+
+        static LineEditWithSnippet *createLineEditWithSnippet(const QString &p_contents, QWidget *p_parent = nullptr);
 
         static QComboBox *createComboBox(QWidget *p_parent = nullptr);
 

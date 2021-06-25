@@ -180,7 +180,7 @@ QToolButton *TitleBar::addActionButton(const QString &p_iconName, const QString 
     connect(p_menu, &QMenu::aboutToHide,
             this, [this]() {
                 m_actionButtonsForcedShown = false;
-                setActionButtonsVisible(false);
+                setActionButtonsVisible(m_actionButtonsAlwaysShown);
             });
     return btn;
 }

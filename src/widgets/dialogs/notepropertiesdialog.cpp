@@ -1,7 +1,5 @@
 #include "notepropertiesdialog.h"
 
-#include <QtWidgets>
-
 #include "notebook/notebook.h"
 #include "notebook/node.h"
 #include "../widgetsfactory.h"
@@ -32,19 +30,16 @@ void NotePropertiesDialog::setupUI()
     setCentralWidget(m_infoWidget);
 
     setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    setButtonEnabled(QDialogButtonBox::Ok, false);
 
-    setWindowTitle(m_node->getName() + QStringLiteral(" ") + tr("Properties"));
+    setWindowTitle(tr("%1 Properties").arg(m_node->getName()));
 }
 
 void NotePropertiesDialog::setupNodeInfoWidget(QWidget *p_parent)
 {
     m_infoWidget = new NodeInfoWidget(m_node, p_parent);
-    connect(m_infoWidget, &NodeInfoWidget::inputEdited,
-            this, &NotePropertiesDialog::validateInputs);
 }
 
-void NotePropertiesDialog::validateInputs()
+bool NotePropertiesDialog::validateInputs()
 {
     bool valid = true;
     QString msg;
@@ -52,7 +47,7 @@ void NotePropertiesDialog::validateInputs()
     valid = valid && validateNameInput(msg);
     setInformationText(msg, valid ? ScrollDialog::InformationLevel::Info
                                   : ScrollDialog::InformationLevel::Error);
-    setButtonEnabled(QDialogButtonBox::Ok, valid);
+    return valid;
 }
 
 bool NotePropertiesDialog::validateNameInput(QString &p_msg)
@@ -60,8 +55,8 @@ bool NotePropertiesDialog::validateNameInput(QString &p_msg)
     p_msg.clear();
 
     auto name = m_infoWidget->getName();
-    if (name.isEmpty()) {
-        p_msg = tr("Please specify a name for the note.");
+    if (name.isEmpty() || !PathUtils::isLegalFileName(name)) {
+        p_msg = tr("Please specify a valid name for the note.");
         return false;
     }
 
@@ -76,7 +71,7 @@ bool NotePropertiesDialog::validateNameInput(QString &p_msg)
 
 void NotePropertiesDialog::acceptedButtonClicked()
 {
-    if (saveNoteProperties()) {
+    if (validateInputs() && saveNoteProperties()) {
         accept();
     }
 }

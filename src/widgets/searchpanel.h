@@ -47,7 +47,7 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        explicit SearchPanel(const QSharedPointer<ISearchInfoProvider> &p_provider, QWidget *p_parent = nullptr);
+        SearchPanel(const QSharedPointer<ISearchInfoProvider> &p_provider, QWidget *p_parent = nullptr);
 
     private slots:
         void startSearch();

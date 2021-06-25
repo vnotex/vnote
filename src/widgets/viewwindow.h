@@ -84,6 +84,8 @@ namespace vnotex
         WindowFlags getWindowFlags() const;
         void setWindowFlags(WindowFlags p_flags);
 
+        virtual void applySnippet(const QString &p_name) = 0;
+
     public slots:
         virtual void handleEditorConfigChange() = 0;
 

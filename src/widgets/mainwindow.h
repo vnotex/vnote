@@ -22,6 +22,7 @@ namespace vnotex
     class OutlineViewer;
     class LocationList;
     class SearchPanel;
+    class SnippetPanel;
 
     enum { RESTART_EXIT_CODE = 1000 };
 
@@ -96,6 +97,7 @@ namespace vnotex
             NavigationDock = 0,
             OutlineDock,
             SearchDock,
+            SnippetDock,
             LocationListDock
         };
 
@@ -116,6 +118,10 @@ namespace vnotex
         void setupLocationListDock();
 
         void setupLocationList();
+
+        void setupSnippetDock();
+
+        void setupSnippetPanel();
 
         void setupNotebookExplorer(QWidget *p_parent = nullptr);
 
@@ -168,6 +174,8 @@ namespace vnotex
 
         SearchPanel *m_searchPanel = nullptr;
 
+        SnippetPanel *m_snippetPanel = nullptr;
+
         QVector<QDockWidget *> m_docks;
 
         bool m_layoutReset = false;
@@ -184,7 +192,7 @@ namespace vnotex
 
         QTimer *m_tipsTimer = nullptr;
 
-        QBitArray m_docksVisibilityBeforeExpand;
+        QStringList m_visibleDocksBeforeExpand;
     };
 } // ns vnotex
 

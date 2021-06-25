@@ -31,6 +31,7 @@
 #include "editors/statuswidget.h"
 #include "editors/plantumlhelper.h"
 #include "editors/graphvizhelper.h"
+#include <snippet/snippetmgr.h>
 
 using namespace vnotex;
 
@@ -974,4 +975,17 @@ void MarkdownViewWindow::setupPreviewHelper()
                                    markdownEditorConfig.getGraphvizExe(),
                                    markdownEditorConfig.getPlantUmlCommand());
     GraphvizHelper::getInst().init(markdownEditorConfig.getGraphvizExe());
+}
+
+void MarkdownViewWindow::applySnippet(const QString &p_name)
+{
+    if (isReadMode() || m_editor->isReadOnly()) {
+        qWarning() << "failed to apply snippet in read mode or to a read-only buffer" << p_name;
+        return;
+    }
+
+    m_editor->enterInsertModeIfApplicable();
+    SnippetMgr::getInst().applySnippet(p_name,
+                                       m_editor->getTextEdit(),
+                                       SnippetMgr::generateOverrides(getBuffer()));
 }

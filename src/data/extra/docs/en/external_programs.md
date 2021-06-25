@@ -1,7 +1,7 @@
 # External Programs
 VNote allows user to open notes with **external programs** via the `Open With` in the context menu of the node explorer.
 
-To add custom external programs, user needs to edit the session configuration. A sample may look like this:
+To add custom external programs, user needs to edit the session configuration (the `session.json` file in user configuration folder). A sample may look like this:
 
 ```json
 {
@@ -27,4 +27,4 @@ An external program could have 3 properties:
     1. Use `%1` as a placeholder which will be replaced by the real file paths (automatically wrapped by double quotes);
 3. `shortcut`: the shortcut assigned to this external program;
 
-Close VNote before editting the session configuration.
+**Close VNote** before editting the session configuration.

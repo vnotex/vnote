@@ -24,7 +24,7 @@
 using namespace vnotex;
 
 #ifndef QT_NO_DEBUG
-    #define VX_DEBUG_WEB
+//    #define VX_DEBUG_WEB
 #endif
 
 const QString ConfigMgr::c_orgName = "VNote";
@@ -384,6 +384,13 @@ QString ConfigMgr::getUserDictsFolder() const
 QString ConfigMgr::getUserTemplateFolder() const
 {
     auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("templates"));
+    QDir().mkpath(folderPath);
+    return folderPath;
+}
+
+QString ConfigMgr::getUserSnippetFolder() const
+{
+    auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("snippets"));
     QDir().mkpath(folderPath);
     return folderPath;
 }

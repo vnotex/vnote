@@ -93,6 +93,8 @@ namespace vnotex
 
         QString getUserTemplateFolder() const;
 
+        QString getUserSnippetFolder() const;
+
         // If @p_filePath is absolute, just return it.
         // Otherwise, first try to find it in user folder, then in app folder.
         QString getUserOrAppFile(const QString &p_filePath) const;

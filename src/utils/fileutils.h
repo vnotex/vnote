@@ -5,6 +5,7 @@
 #include <QString>
 #include <QImage>
 #include <QPixmap>
+#include <QJsonObject>
 
 class QTemporaryFile;
 
@@ -19,9 +20,13 @@ namespace vnotex
 
         static QString readTextFile(const QString &p_filePath);
 
+        static QJsonObject readJsonFile(const QString &p_filePath);
+
         static void writeFile(const QString &p_filePath, const QByteArray &p_data);
 
         static void writeFile(const QString &p_filePath, const QString &p_text);
+
+        static void writeFile(const QString &p_filePath, const QJsonObject &p_jobj);
 
         // Rename file or dir.
         static void renameFile(const QString &p_path, const QString &p_name);
