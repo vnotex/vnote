@@ -997,6 +997,7 @@ void MarkdownEditor::parseToMarkdownAndPaste()
 void MarkdownEditor::handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text)
 {
     Q_UNUSED(p_id);
+    qDebug() << "htmlToMarkdownData" << p_timeStamp;
     if (m_timeStamp == p_timeStamp && !p_text.isEmpty()) {
         QString text(p_text);
 
@@ -1048,6 +1049,8 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
             continue;
         }
 
+        qDebug() << "fetching image link" << linkText;
+
         const QString imageTitle = purifyImageTitle(regExp.cap(1).trimmed());
         QString imageUrl = regExp.cap(2).trimmed();
 
@@ -1097,9 +1100,12 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
             }
             QByteArray data = vte::Downloader::download(QUrl(imageUrl));
             if (!data.isEmpty()) {
-                auto suffix = info.suffix();
+                // Prefer the suffix from the real data.
+                auto suffix = ImageUtils::guessImageSuffix(data);
                 if (suffix.isEmpty()) {
-                    suffix = ImageUtils::guessImageSuffix(data);
+                    suffix = info.suffix();
+                } else if (info.suffix() != suffix) {
+                    qWarning() << "guess a different suffix from image data" << info.suffix() << suffix;
                 }
                 tmpFile.reset(FileUtils::createTemporaryFile(suffix));
                 if (tmpFile->open() && tmpFile->write(data) > -1) {
