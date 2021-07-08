@@ -1,6 +1,7 @@
 #include "lineedit.h"
 
 #include <QKeyEvent>
+#include <QCoreApplication>
 
 #include <utils/widgetutils.h>
 
@@ -21,19 +22,35 @@ void LineEdit::keyPressEvent(QKeyEvent *p_event)
     // Note that QKeyEvent starts with isAccepted() == true, so you do not
     // need to call QKeyEvent::accept() - just do not call the base class
     // implementation if you act upon the key.
-    bool accept = false;
+    bool accepted = false;
     int modifiers = p_event->modifiers();
     switch (p_event->key()) {
-    case Qt::Key_H:
-        // Backspace.
+    case Qt::Key_BracketLeft:
+    {
         if (WidgetUtils::isViControlModifier(modifiers)) {
-            backspace();
-            accept = true;
+            auto escEvent = new QKeyEvent(QEvent::KeyPress,
+                                          Qt::Key_Escape,
+                                          Qt::NoModifier);
+            QCoreApplication::postEvent(this, escEvent);
+            accepted = true;
         }
 
         break;
+    }
+
+    case Qt::Key_H:
+    {
+        // Backspace.
+        if (WidgetUtils::isViControlModifier(modifiers)) {
+            backspace();
+            accepted = true;
+        }
+
+        break;
+    }
 
     case Qt::Key_W:
+    {
         // Delete one word backward.
         if (WidgetUtils::isViControlModifier(modifiers)) {
             if (!hasSelectedText()) {
@@ -41,10 +58,11 @@ void LineEdit::keyPressEvent(QKeyEvent *p_event)
             }
 
             backspace();
-            accept = true;
+            accepted = true;
         }
 
         break;
+    }
 
     case Qt::Key_U:
     {
@@ -59,7 +77,7 @@ void LineEdit::keyPressEvent(QKeyEvent *p_event)
                 }
             }
 
-            accept = true;
+            accepted = true;
         }
 
         break;
@@ -69,7 +87,7 @@ void LineEdit::keyPressEvent(QKeyEvent *p_event)
         break;
     }
 
-    if (!accept) {
+    if (!accepted) {
         QLineEdit::keyPressEvent(p_event);
     }
 }
