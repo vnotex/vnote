@@ -44,6 +44,11 @@ void SnippetInfoWidget::setupUI()
 
     setFocusProxy(m_nameLineEdit);
 
+    m_descriptionLineEdit = WidgetsFactory::createLineEdit(this);
+    connect(m_descriptionLineEdit, &QLineEdit::textEdited,
+            this, &SnippetInfoWidget::inputEdited);
+    mainLayout->addRow(tr("Description:"), m_descriptionLineEdit);
+
     setupTypeComboBox(this);
     mainLayout->addRow(tr("Type:"), m_typeComboBox);
 
@@ -134,6 +139,11 @@ QString SnippetInfoWidget::getContent() const
     return m_contentTextEdit->toPlainText();
 }
 
+QString SnippetInfoWidget::getDescription() const
+{
+    return m_descriptionLineEdit->text();
+}
+
 void SnippetInfoWidget::setSnippet(const Snippet *p_snippet)
 {
     if (m_snippet == p_snippet) {
@@ -144,15 +154,26 @@ void SnippetInfoWidget::setSnippet(const Snippet *p_snippet)
     m_snippet = p_snippet;
     initShortcutComboBox();
     if (m_snippet) {
+        const bool readOnly = m_snippet->isReadOnly();
         m_nameLineEdit->setText(m_snippet->getName());
+        m_nameLineEdit->setEnabled(!readOnly);
+        m_descriptionLineEdit->setText(m_snippet->getDescription());
+        m_descriptionLineEdit->setEnabled(!readOnly);
         m_typeComboBox->setCurrentIndex(m_typeComboBox->findData(static_cast<int>(m_snippet->getType())));
+        m_typeComboBox->setEnabled(!readOnly);
         m_shortcutComboBox->setCurrentIndex(m_shortcutComboBox->findData(m_snippet->getShortcut()));
+        m_shortcutComboBox->setEnabled(!readOnly);
         m_cursorMarkLineEdit->setText(m_snippet->getCursorMark());
+        m_cursorMarkLineEdit->setEnabled(!readOnly);
         m_selectionMarkLineEdit->setText(m_snippet->getSelectionMark());
+        m_selectionMarkLineEdit->setEnabled(!readOnly);
         m_indentAsFirstLineCheckBox->setChecked(m_snippet->isIndentAsFirstLineEnabled());
+        m_indentAsFirstLineCheckBox->setEnabled(!readOnly);
         m_contentTextEdit->setPlainText(m_snippet->getContent());
+        m_contentTextEdit->setEnabled(!readOnly);
     } else {
         m_nameLineEdit->clear();
+        m_descriptionLineEdit->clear();
         m_typeComboBox->setCurrentIndex(m_typeComboBox->findData(static_cast<int>(Snippet::Type::Text)));
         m_shortcutComboBox->setCurrentIndex(m_shortcutComboBox->findData(Snippet::InvalidShortcut));
         m_cursorMarkLineEdit->setText(Snippet::c_defaultCursorMark);

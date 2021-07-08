@@ -20,12 +20,12 @@ DeleteConfirmDialog::DeleteConfirmDialog(const QString &p_title,
                                          const QString &p_info,
                                          const QVector<ConfirmItemInfo> &p_items,
                                          DeleteConfirmDialog::Flags p_flags,
-                                         bool p_noAskChecked,
+                                         bool p_noAskAgainChecked,
                                          QWidget *p_parent)
     : ScrollDialog(p_parent),
       m_items(p_items)
 {
-    setupUI(p_title, p_text, p_info, p_flags, p_noAskChecked);
+    setupUI(p_title, p_text, p_info, p_flags, p_noAskAgainChecked);
 
     updateItemsList();
 
@@ -36,7 +36,7 @@ void DeleteConfirmDialog::setupUI(const QString &p_title,
                                   const QString &p_text,
                                   const QString &p_info,
                                   DeleteConfirmDialog::Flags p_flags,
-                                  bool p_noAskChecked)
+                                  bool p_noAskAgainChecked)
 {
     auto mainWidget = new QWidget(this);
     setCentralWidget(mainWidget);
@@ -60,7 +60,7 @@ void DeleteConfirmDialog::setupUI(const QString &p_title,
     // Ask again.
     if (p_flags & Flag::AskAgain) {
         m_noAskCB = new QCheckBox(tr("Do not ask again"), mainWidget);
-        m_noAskCB->setChecked(p_noAskChecked);
+        m_noAskCB->setChecked(p_noAskAgainChecked);
         mainLayout->addWidget(m_noAskCB);
     }
 

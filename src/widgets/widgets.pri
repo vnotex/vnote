@@ -47,6 +47,7 @@ SOURCES += \
     $$PWD/filesystemviewer.cpp \
     $$PWD/dialogs/folderfilesfilterwidget.cpp \
     $$PWD/findandreplacewidget.cpp \
+    $$PWD/floatingwidget.cpp \
     $$PWD/fullscreentoggleaction.cpp \
     $$PWD/lineedit.cpp \
     $$PWD/lineeditdelegate.cpp \
@@ -62,6 +63,7 @@ SOURCES += \
     $$PWD/outlineprovider.cpp \
     $$PWD/outlineviewer.cpp \
     $$PWD/propertydefs.cpp \
+    $$PWD/quickselector.cpp \
     $$PWD/searchinfoprovider.cpp \
     $$PWD/searchpanel.cpp \
     $$PWD/snippetpanel.cpp \
@@ -151,6 +153,7 @@ HEADERS += \
     $$PWD/filesystemviewer.h \
     $$PWD/dialogs/folderfilesfilterwidget.h \
     $$PWD/findandreplacewidget.h \
+    $$PWD/floatingwidget.h \
     $$PWD/fullscreentoggleaction.h \
     $$PWD/lineedit.h \
     $$PWD/lineeditdelegate.h \
@@ -167,6 +170,7 @@ HEADERS += \
     $$PWD/outlineprovider.h \
     $$PWD/outlineviewer.h \
     $$PWD/propertydefs.h \
+    $$PWD/quickselector.h \
     $$PWD/searchinfoprovider.h \
     $$PWD/searchpanel.h \
     $$PWD/snippetpanel.h \

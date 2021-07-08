@@ -66,12 +66,12 @@ namespace vnotex
         Q_DECLARE_FLAGS(Flags, Flag)
 
         DeleteConfirmDialog(const QString &p_title,
-                           const QString &p_text,
-                           const QString &p_info,
-                           const QVector<ConfirmItemInfo> &p_items,
-                           DeleteConfirmDialog::Flags p_flags,
-                           bool p_noAskChecked,
-                           QWidget *p_parent = nullptr);
+                            const QString &p_text,
+                            const QString &p_info,
+                            const QVector<ConfirmItemInfo> &p_items,
+                            DeleteConfirmDialog::Flags p_flags,
+                            bool p_noAskAgainChecked,
+                            QWidget *p_parent = nullptr);
 
         QVector<ConfirmItemInfo> getConfirmedItems() const;
 
@@ -87,7 +87,7 @@ namespace vnotex
                      const QString &p_text,
                      const QString &p_info,
                      DeleteConfirmDialog::Flags p_flags,
-                     bool p_noAskChecked);
+                     bool p_noAskAgainChecked);
 
         void updateItemsList();
 

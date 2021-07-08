@@ -17,8 +17,8 @@
             "CloseTab" : "Ctrl+G, X",
             "NavigationDock" : "Ctrl+G, A",
             "OutlineDock" : "Ctrl+G, U",
-            "SearchDock" : "Ctrl+G, S",
-            "SnippetDock" : "",
+            "SearchDock" : "",
+            "SnippetDock" : "Ctrl+G, S",
             "LocationListDock" : "Ctrl+G, L",
             "Search" : "Ctrl+Alt+F",
             "NavigationMode" : "Ctrl+G, W",
@@ -93,7 +93,8 @@
                 "RichPaste" : "Ctrl+Shift+V",
                 "FindAndReplace" : "Ctrl+F",
                 "FindNext" : "F3",
-                "FindPrevious" : "Shift+F3"
+                "FindPrevious" : "Shift+F3",
+                "ApplySnippet" : "Ctrl+G, I"
             },
             "spell_check_auto_detect_language" : false,
             "spell_check_default_dictionary" : "en_US"

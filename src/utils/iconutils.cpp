@@ -2,6 +2,9 @@
 
 #include <QRegExp>
 #include <QFileInfo>
+#include <QPixmap>
+#include <QPainter>
+#include <QDebug>
 
 #include "fileutils.h"
 
@@ -80,4 +83,41 @@ QIcon IconUtils::fetchIconWithDisabledState(const QString &p_iconFile)
     colors.push_back(OverriddenColor(s_defaultIconForeground, QIcon::Normal, QIcon::Off));
     colors.push_back(OverriddenColor(s_defaultIconDisabledForeground, QIcon::Disabled, QIcon::Off));
     return fetchIcon(p_iconFile, colors);
+}
+
+QIcon IconUtils::drawTextIcon(const QString &p_text,
+                              const QString &p_fg,
+                              const QString &p_border)
+{
+    const int wid = 64;
+    QPixmap pixmap(wid, wid);
+    pixmap.fill(Qt::transparent);
+
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    auto pen = painter.pen();
+    pen.setColor(p_border);
+    pen.setWidth(3);
+    painter.setPen(pen);
+
+    painter.drawRoundedRect(4, 4, wid - 8, wid - 8, 8, 8);
+
+    if (!p_text.isEmpty()) {
+        pen.setColor(p_fg);
+        painter.setPen(pen);
+
+        auto font = painter.font();
+        font.setPointSize(36);
+        painter.setFont(font);
+
+        auto requriedRect = painter.boundingRect(4, 4, wid - 8, wid - 8,
+                                                 Qt::AlignCenter,
+                                                 p_text);
+        painter.drawText(requriedRect, p_text);
+    }
+
+    QIcon icon;
+    icon.addPixmap(pixmap);
+    return icon;
 }

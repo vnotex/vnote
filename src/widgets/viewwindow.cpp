@@ -13,6 +13,7 @@
 #include <QFocusEvent>
 #include <QShortcut>
 #include <QWheelEvent>
+#include <QWidgetAction>
 
 #include <core/fileopenparameters.h>
 #include "toolbarhelper.h"
@@ -33,6 +34,7 @@
 #include "findandreplacewidget.h"
 #include "editors/statuswidget.h"
 #include "propertydefs.h"
+#include "floatingwidget.h"
 
 using namespace vnotex;
 
@@ -865,6 +867,17 @@ void ViewWindow::setupShortcuts()
                     });
         }
     }
+
+    // ApplySnippet.
+    {
+        auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::ApplySnippet), this, Qt::WidgetWithChildrenShortcut);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        applySnippet();
+                    });
+        }
+    }
 }
 
 void ViewWindow::wheelEvent(QWheelEvent *p_event)
@@ -1107,4 +1120,25 @@ ViewWindow::WindowFlags ViewWindow::getWindowFlags() const
 void ViewWindow::setWindowFlags(WindowFlags p_flags)
 {
     m_flags = p_flags;
+}
+
+QVariant ViewWindow::showFloatingWidget(FloatingWidget *p_widget)
+{
+    // Show the widget through a QWidgetAction in menu.
+    QMenu menu;
+
+    auto act = new QWidgetAction(&menu);
+    // @act will own @p_widget.
+    act->setDefaultWidget(p_widget);
+    menu.addAction(act);
+
+    p_widget->setMenu(&menu);
+
+    menu.exec(getFloatingWidgetPosition());
+    return p_widget->result();
+}
+
+QPoint ViewWindow::getFloatingWidgetPosition()
+{
+    return mapToGlobal(QPoint(5, 5));
 }

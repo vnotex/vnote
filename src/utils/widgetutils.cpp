@@ -130,6 +130,32 @@ bool WidgetUtils::processKeyEventLikeVi(QWidget *p_widget,
         break;
     }
 
+    case Qt::Key_H:
+    {
+        if (isViControlModifier(modifiers)) {
+            auto upEvent = new QKeyEvent(QEvent::KeyPress,
+                                         Qt::Key_Left,
+                                         Qt::NoModifier);
+            QCoreApplication::postEvent(p_widget, upEvent);
+            eventHandled = true;
+        }
+
+        break;
+    }
+
+    case Qt::Key_L:
+    {
+        if (isViControlModifier(modifiers)) {
+            auto upEvent = new QKeyEvent(QEvent::KeyPress,
+                                         Qt::Key_Right,
+                                         Qt::NoModifier);
+            QCoreApplication::postEvent(p_widget, upEvent);
+            eventHandled = true;
+        }
+
+        break;
+    }
+
     default:
         break;
     }

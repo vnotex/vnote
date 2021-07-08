@@ -9,6 +9,7 @@ DynamicSnippet::DynamicSnippet(const QString &p_name,
                                const Callback &p_callback)
     : Snippet(p_name,
               p_description,
+              QString(),
               Snippet::InvalidShortcut,
               false,
               QString(),

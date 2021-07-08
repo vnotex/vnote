@@ -33,6 +33,8 @@ namespace vnotex
 
         void applySnippet(const QString &p_name) Q_DECL_OVERRIDE;
 
+        void applySnippet() Q_DECL_OVERRIDE;
+
     public slots:
         void handleEditorConfigChange() Q_DECL_OVERRIDE;
 
@@ -61,6 +63,8 @@ namespace vnotex
         void scrollDown() Q_DECL_OVERRIDE;
 
         void zoom(bool p_zoomIn) Q_DECL_OVERRIDE;
+
+        QPoint getFloatingWidgetPosition() Q_DECL_OVERRIDE;
 
     private:
         void setupUI();

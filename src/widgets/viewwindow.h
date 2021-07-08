@@ -25,6 +25,7 @@ namespace vnotex
     class EditReadDiscardAction;
     class FindAndReplaceWidget;
     class StatusWidget;
+    class FloatingWidget;
 
     class ViewWindow : public QFrame
     {
@@ -85,6 +86,12 @@ namespace vnotex
         void setWindowFlags(WindowFlags p_flags);
 
         virtual void applySnippet(const QString &p_name) = 0;
+
+        virtual void applySnippet() = 0;
+
+        // Take ownership of @p_widget.
+        // Return the result from the FloatingWidget.
+        QVariant showFloatingWidget(FloatingWidget *p_widget);
 
     public slots:
         virtual void handleEditorConfigChange() = 0;
@@ -163,9 +170,6 @@ namespace vnotex
 
         virtual void handleFindAndReplaceWidgetOpened();
 
-        // Show message in status widget if exists. Otherwise, show it in the mainwindow's status widget.
-        void showMessage(const QString p_msg);
-
     protected:
         void setCentralWidget(QWidget *p_widget);
 
@@ -227,6 +231,11 @@ namespace vnotex
         void edit();
 
         void read(bool p_save);
+
+        // Show message in status widget if exists. Otherwise, show it in the mainwindow's status widget.
+        void showMessage(const QString p_msg);
+
+        virtual QPoint getFloatingWidgetPosition();
 
         static QToolBar *createToolBar(QWidget *p_parent = nullptr);
 

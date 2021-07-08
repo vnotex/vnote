@@ -36,6 +36,8 @@ namespace vnotex
 
         QString getContent() const;
 
+        QString getDescription() const;
+
     signals:
         void inputEdited();
 
@@ -55,6 +57,8 @@ namespace vnotex
         const Snippet *m_snippet = nullptr;
 
         QLineEdit *m_nameLineEdit = nullptr;
+
+        QLineEdit *m_descriptionLineEdit = nullptr;
 
         QComboBox *m_typeComboBox = nullptr;
 

@@ -24,6 +24,7 @@ namespace vnotex
         explicit Snippet(const QString &p_name);
 
         Snippet(const QString &p_name,
+                const QString &p_description,
                 const QString &p_content,
                 int p_shortcut,
                 bool p_indentAsFirstLine,
@@ -42,6 +43,8 @@ namespace vnotex
         void setReadOnly(bool p_readOnly);
 
         const QString &getName() const;
+
+        const QString &getDescription() const;
 
         Type getType() const;
 
@@ -77,6 +80,8 @@ namespace vnotex
         // Name (and file name) of the snippet.
         // To avoid mixed with shortcut, the name should not contain digits.
         QString m_name;
+
+        QString m_description;
 
         // Content of the snippet if it is Text.
         // Embedded snippet is supported.

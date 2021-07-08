@@ -46,6 +46,10 @@ namespace vnotex
 
         static QIcon fetchIconWithDisabledState(const QString &p_iconFile);
 
+        static QIcon drawTextIcon(const QString &p_text,
+                                  const QString &p_fg,
+                                  const QString &p_border);
+
     private:
         static QString replaceForegroundOfIcon(const QString &p_iconContent, const QString &p_foreground);
 

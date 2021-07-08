@@ -79,6 +79,7 @@ void SnippetPropertiesDialog::acceptedButtonClicked()
 bool SnippetPropertiesDialog::saveSnippetProperties()
 {
     auto snip = QSharedPointer<Snippet>::create(m_infoWidget->getName(),
+                                                m_infoWidget->getDescription(),
                                                 m_infoWidget->getContent(),
                                                 m_infoWidget->getShortcut(),
                                                 m_infoWidget->shouldIndentAsFirstLine(),

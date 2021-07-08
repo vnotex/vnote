@@ -49,6 +49,7 @@ namespace vnotex
             FindAndReplace,
             FindNext,
             FindPrevious,
+            ApplySnippet,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

@@ -16,6 +16,7 @@ Snippet::Snippet(const QString &p_name)
 }
 
 Snippet::Snippet(const QString &p_name,
+                 const QString &p_description,
                  const QString &p_content,
                  int p_shortcut,
                  bool p_indentAsFirstLine,
@@ -23,6 +24,7 @@ Snippet::Snippet(const QString &p_name,
                  const QString &p_selectionMark)
     : m_type(Type::Text),
       m_name(p_name),
+      m_description(p_description),
       m_content(p_content),
       m_shortcut(p_shortcut),
       m_indentAsFirstLine(p_indentAsFirstLine),
@@ -36,6 +38,7 @@ QJsonObject Snippet::toJson() const
     QJsonObject obj;
 
     obj[QStringLiteral("type")] = static_cast<int>(m_type);
+    obj[QStringLiteral("description")] = m_description;
     obj[QStringLiteral("content")] = m_content;
     obj[QStringLiteral("shortcut")] = m_shortcut;
     obj[QStringLiteral("indent_as_first_line")] = m_indentAsFirstLine;
@@ -48,6 +51,7 @@ QJsonObject Snippet::toJson() const
 void Snippet::fromJson(const QJsonObject &p_jobj)
 {
     m_type = static_cast<Type>(p_jobj[QStringLiteral("type")].toInt());
+    m_description = p_jobj[QStringLiteral("description")].toString();
     m_content = p_jobj[QStringLiteral("content")].toString();
     m_shortcut = p_jobj[QStringLiteral("shortcut")].toInt();
     m_indentAsFirstLine = p_jobj[QStringLiteral("indent_as_first_line")].toBool();
@@ -102,6 +106,11 @@ bool Snippet::isIndentAsFirstLineEnabled() const
 const QString &Snippet::getContent() const
 {
     return m_content;
+}
+
+const QString &Snippet::getDescription() const
+{
+    return m_description;
 }
 
 QString Snippet::apply(const QString &p_selectedText,

@@ -103,6 +103,7 @@ void SnippetPanel::updateSnippetList()
         }
 
         item->setData(Qt::UserRole, snippet->getName());
+        item->setToolTip(snippet->getDescription());
     }
 
     updateItemsCountLabel();
