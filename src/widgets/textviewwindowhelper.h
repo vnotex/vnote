@@ -200,7 +200,7 @@ namespace vnotex
                                                p_win->m_editor->getTextEdit(),
                                                SnippetMgr::generateOverrides(p_win->getBuffer()));
             p_win->m_editor->enterInsertModeIfApplicable();
-            p_win->showMessage(ViewWindow::tr("Snippet applied: %1").arg(p_name));
+            p_win->showMessage(vnotex::ViewWindow::tr("Snippet applied: %1").arg(p_name));
         }
 
         template <typename _ViewWindow>
@@ -227,7 +227,7 @@ namespace vnotex
                     // Found one symbol under current cursor.
                     snippetName = match.captured(1);
                     if (!SnippetMgr::getInst().find(snippetName)) {
-                        p_win->showMessage(ViewWindow::tr("Snippet (%1) not found").arg(snippetName));
+                        p_win->showMessage(vnotex::ViewWindow::tr("Snippet (%1) not found").arg(snippetName));
                         return;
                     }
 
@@ -254,7 +254,7 @@ namespace vnotex
         {
             const auto snippets = SnippetMgr::getInst().getSnippets();
             if (snippets.isEmpty()) {
-                p_win->showMessage(ViewWindow::tr("Snippet not available"));
+                p_win->showMessage(vnotex::ViewWindow::tr("Snippet not available"));
                 return QString();
             }
 
@@ -267,7 +267,7 @@ namespace vnotex
             }
 
             // Ownership will be transferred to showFloatingWidget().
-            auto selector = new QuickSelector(ViewWindow::tr("Select Snippet"),
+            auto selector = new QuickSelector(vnotex::ViewWindow::tr("Select Snippet"),
                                               items,
                                               true,
                                               p_win);

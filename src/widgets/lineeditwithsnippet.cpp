@@ -18,7 +18,7 @@ LineEditWithSnippet::LineEditWithSnippet(const QString &p_contents, QWidget *p_p
 
 void LineEditWithSnippet::setTips()
 {
-    const auto tips = tr("Snippet is supported via %name%");
+    const auto tips = tr("Snippet is supported via \"%name%\"");
     setToolTip(tips);
     setPlaceholderText(tips);
 }
