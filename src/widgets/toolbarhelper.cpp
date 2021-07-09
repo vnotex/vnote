@@ -491,6 +491,12 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
 
         menu->addSeparator();
 
+        menu->addAction(MainWindow::tr("%1 Home Page").arg(qApp->applicationDisplayName()),
+                        menu,
+                        []() {
+                            WidgetUtils::openUrlByDesktop(QUrl("https://vnotex.github.io/vnote"));
+                        });
+
         menu->addAction(MainWindow::tr("Feedback And Discussions"),
                         menu,
                         []() {

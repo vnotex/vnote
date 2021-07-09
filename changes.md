@@ -1,4 +1,12 @@
 # Changes
+## v3.4.0
+* Support Snippet
+    * `Ctrl+G S` to insert a snippet
+    * `%snippet_name%` to insert a snippet (the legacy Magic Word)
+        * Snippet is supported in some dialogs (such as creating a new note)
+* Support note template (snippet is supported)
+* Remove `'` and `"` from auot-brackets
+
 ## v3.3.0
 * Editor: support auto indent, auto list
 * Support opening notes with external programs
