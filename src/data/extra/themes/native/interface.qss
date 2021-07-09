@@ -74,14 +74,14 @@ QMainWindow::separator {
 
 /* NotebookExplorer */
 vnotex--NotebookNodeExplorer QTreeView::item {
-    padding-top: 3px;
-    padding-bottom: 3px;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 /* OutlineViewer */
 vnotex--OutlineViewer QTreeView::item {
-    padding-top: 3px;
-    padding-bottom: 3px;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 /* QToolButton used for action */

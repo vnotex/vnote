@@ -580,8 +580,8 @@ QTreeView {
 }
 
 QTreeView::item {
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 QTreeView::item:hover {
@@ -639,8 +639,8 @@ QListView {
 }
 
 QListView::item {
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 QListView::item:hover {

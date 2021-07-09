@@ -117,6 +117,12 @@
         "navigationlabel" : {
             "fg" : "@widgets#toolbox#title#button#active#fg",
             "bg" : "@widgets#toolbox#title#button#active#bg"
+        },
+        "quickselector" : {
+            "item_icon" : {
+                "fg" : "#535c65",
+                "border" : "#535c65"
+            }
         }
     }
 }

@@ -608,6 +608,12 @@
             "toolbar" : {
                 "bg" : "@base#content#bg"
             }
+        },
+        "quickselector" : {
+            "item_icon" : {
+                "fg" : "@palette#bg2_9",
+                "border" : "@palette#bg2_9"
+            }
         }
     }
 }

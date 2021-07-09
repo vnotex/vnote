@@ -11,6 +11,8 @@
 
 #include <utils/widgetutils.h>
 #include <utils/iconutils.h>
+#include <core/thememgr.h>
+#include <core/vnotex.h>
 
 #include "lineedit.h"
 #include "listwidget.h"
@@ -93,11 +95,15 @@ void QuickSelector::updateItemList()
 {
     m_itemList->clear();
 
+    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+
     for (int i = 0; i < m_items.size(); ++i) {
         const auto &item = m_items[i];
 
         auto listItem = new QListWidgetItem(m_itemList);
-        auto icon = IconUtils::drawTextIcon(item.m_shortcut, "blue", "darkgreen");
+        auto icon = IconUtils::drawTextIcon(item.m_shortcut,
+                                            themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg")),
+                                            themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#border")));
         listItem->setIcon(icon);
 
         listItem->setText(item.m_name);

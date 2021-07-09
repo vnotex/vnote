@@ -604,6 +604,12 @@
             "toolbar" : {
                 "bg" : "@base#content#bg"
             }
+        },
+        "quickselector" : {
+            "item_icon" : {
+                "fg" : "@base#master#bg",
+                "border" : "@base#master#bg"
+            }
         }
     }
 }
