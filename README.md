@@ -1,20 +1,11 @@
-# vnote
+# VNote
 ![CI-Windows](https://github.com/vnotex/vnote/workflows/CI-Windows/badge.svg) ![CI-Linux](https://github.com/vnotex/vnote/workflows/CI-Linux/badge.svg) ![CI-MacOS](https://github.com/vnotex/vnote/workflows/CI-MacOS/badge.svg)
+
+[简体中文](README_zh_CN.md)
 
 A pleasant note-taking platform.
 
-> At early 2019, I decided to refactor VNote as VNoteX. Now a fresh VNote is ready!  
-> VNoteX is closed source and is intended to keep several premium features compared to VNote. Most of VNoteX's code base will be open source as VNote 3.0, so VNote will share most of the code base with VNoteX and continue to be open source from 3.0.  
-> **Welcome to VNoteX and VNote 3.0!**
-
-**ATTENTION**:
-
-* The notebook format of VNote 3.0 is not compatible with that of earlier versions of VNote. Feel free to decide the right time to jump to VNote 3.0.
-* Features supported by VNote 3.0 now is NOT on par with VNote 2.0. The [migration](https://github.com/vnotex/vnote/projects/1) takes time.
-
-The obsolete code base of VNote 2.0 is available at the [vnote2.0](https://github.com/vnotex/vnote/tree/vnote2.0) branch.
-
-For more information, please visit [**VNote's Homepage**](https://vnotex.github.io/vnote).
+For more information, please visit [**VNote's Home Page**](https://vnotex.github.io/vnote).
 
 ![VNote](pics/vnote.png)
 
