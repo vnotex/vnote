@@ -238,16 +238,7 @@ void NotebookNodeExplorer::setupMasterExplorer(QWidget *p_parent)
     NavigationModeMgr::getInst().registerNavigationTarget(m_navigationWrapper.data());
 
     connect(m_masterExplorer, &QTreeWidget::itemExpanded,
-            this, [this](QTreeWidgetItem *p_item) {
-                auto cnt = p_item->childCount();
-                for (int i = 0; i < cnt; ++i) {
-                    auto child = p_item->child(i);
-                    auto data = getItemNodeData(child);
-                    if (data.isNode() && !data.isLoaded()) {
-                        loadNode(child, data.getNode(), 1);
-                    }
-                }
-            });
+            this, &NotebookNodeExplorer::loadItemChildren);
 
     connect(m_masterExplorer, &QTreeWidget::customContextMenuRequested,
             this, [this](const QPoint &p_pos) {
@@ -421,8 +412,13 @@ void NotebookNodeExplorer::loadNode(QTreeWidgetItem *p_item, Node *p_node, int p
 
     loadChildren(p_item, p_node, p_level - 1);
 
-    if (stateCache()->contains(p_item)) {
-        p_item->setExpanded(true);
+    if (stateCache()->contains(p_item) && p_item->childCount() > 0) {
+        if (p_item->isExpanded()) {
+            loadItemChildren(p_item);
+        } else {
+            // itemExpanded() will trigger loadItemChildren().
+            p_item->setExpanded(true);
+        }
     }
 }
 
@@ -2048,5 +2044,17 @@ void NotebookNodeExplorer::openSelectedNodesWithExternalProgram(const QString &p
         auto command = p_command;
         command.replace(QStringLiteral("%1"), QString("\"%1\"").arg(file));
         ProcessUtils::startDetached(command);
+    }
+}
+
+void NotebookNodeExplorer::loadItemChildren(QTreeWidgetItem *p_item) const
+{
+    auto cnt = p_item->childCount();
+    for (int i = 0; i < cnt; ++i) {
+        auto child = p_item->child(i);
+        auto data = getItemNodeData(child);
+        if (data.isNode() && !data.isLoaded()) {
+            loadNode(child, data.getNode(), 1);
+        }
     }
 }

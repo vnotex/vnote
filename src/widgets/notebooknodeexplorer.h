@@ -169,6 +169,8 @@ namespace vnotex
 
         void loadChildren(QTreeWidgetItem *p_item, Node *p_node, int p_level) const;
 
+        void loadItemChildren(QTreeWidgetItem *p_item) const;
+
         void loadNode(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const;
 
         void loadRecycleBinNode(Node *p_node) const;

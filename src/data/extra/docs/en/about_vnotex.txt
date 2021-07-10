@@ -1,5 +1,5 @@
 <p>
-VNoteX is designed to be a pleasant note-taking platform, refactored from VNote, which is an open source note-taking application for Markdown since 2016. VNote shares most of the code base with VNoteX since version 3.0 and continue to be open source.
+VNoteX is designed to be a pleasant note-taking platform, refactored from VNote, which is an open source note-taking application for Markdown since 2016. VNote shares most of the code base with VNoteX since version 3 and continue to be open source.
 <br/><br/>
 Source code of VNote could be found at <a href="https://github.com/vnotex/vnote">GitHub</a>.
 <br/><br/>
