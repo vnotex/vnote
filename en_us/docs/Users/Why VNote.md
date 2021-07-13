@@ -1,8 +1,10 @@
 # Why VNote
 ## What is VNote
-VNote is a **V**im-inspired **Note**-taking application, designed specially for **Markdown**. It is not yet just another Markdown editor. VNote is designed to be a powerful Markdown editor with sweet note management, or a note-taking application with pleasant Markdown experience.
+At the very beginning, VNote is a **V**im-inspired **Note**-taking application, designed specially for **Markdown**. It is not yet just another Markdown editor. VNote is designed to be a powerful Markdown editor with sweet note management, or a note-taking application with pleasant Markdown experience.
 
-VNote is free, and open source. You could get VNote for Linux, Windows, and macOS.
+Now VNote is intended to be a pleasant note-taking platform, supporting more document types in the future.
+
+VNote is free and open source. You could get VNote for Linux, Windows, and macOS.
 
 ## Why Another Markdown Wheel
 ### Insights About Markdown

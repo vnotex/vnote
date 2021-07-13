@@ -1,33 +1,33 @@
 # Build VNote
-You need **Qt 5.9** and above to build VNote from source.
+You need **Qt 5.12** and above to build VNote from source.
 
 ## Get the Source Code of VNote
-VNote's source code is available on [Github](https://github.com/tamlok/vnote). You could download the ZIP archive of the code. Please be aware of that VNote depends on some submodules, so you should also download the source codes of these modules.
+VNote's source code is available on [GitHub](https://github.com/vnotex/vnote). You could download the ZIP archive of the code. Please be aware of that VNote depends on some submodules, so you should also download the source codes of these modules.
 
 The recommended way is using **git** like this:
 
 ```
-git clone https://github.com/tamlok/vnote.git vnote.git
+git clone https://github.com/vnotex/vnote.git vnote.git
 cd vnote.git
-git submodule update --init
+git submodule update --init --recursive
 ```
 
-## Get Qt 5.9
-You could get the standalone Qt SDK from [Qt Downloads](http://info.qt.io/download-qt-for-application-development). For users in China, you could speed up the download via the [TUNA Mirrors](https://mirrors4.tuna.tsinghua.edu.cn/qt/official_releases/qt/5.9/).
+## Get Qt 5.12
+You could get the standalone Qt SDK from [Qt Downloads](http://info.qt.io/download-qt-for-application-development). For users in China, you could speed up the download via the [TUNA Mirrors](https://mirrors4.tuna.tsinghua.edu.cn/qt/official_releases/qt/5.12/).
 
 ## Windows
-On Windows, you need **Visual Studio 2015** or above to compile VNote.
+On Windows, you need **Visual Studio 2015** or above to compile VNote (Mingw is **not** supported).
 
-Open **Qt Creator** and open `vnote.git\VNote.pro` as project. Now you are ready to tune and compile VNote!
+Open **Qt Creator** and open `vnote.git\vnote.pro` as project. Now you are ready to tune and compile VNote!
 
 ## Linux
-In Ubuntu, you could get Qt 5.9 from PPA like this:
+In Ubuntu, you could get Qt 5.12 from PPA like this:
 
 ```sh
-sudo add-apt-repository ppa:beineri/opt-qt591-trusty -y
+sudo add-apt-repository ppa:beineri/opt-qt-5.12.10-bionic -y
 sudo apt-get update -qq
-sudo apt-get -y install qt59base qt59webengine
-sudo apt-get -y install qt59webchannel qt59svg qt59location qt59tools qt59translations
+sudo apt-get -y install qt512base qt512webengine
+sudo apt-get -y install qt512webchannel qt512svg qt512location qt512tools qt512translations
 source /opt/qt*/bin/qt*-env.sh
 ```
 
@@ -37,7 +37,7 @@ Then compile and install VNote like this:
 cd vnote.git
 mkdir build
 cd build
-qmake ../VNote.pro
+qmake ../vnote.pro
 make
 sudo make install
 ```
@@ -56,12 +56,10 @@ If there is no such lib, you may need to install and configure Fcitx for Qt5 cor
 Then you need to copy the lib to Qt's plugin directory:
 
 ```
-<path_to_Qt_installation_directory>/5.9.3/gcc_64/plugins/platforminputcontexts/
+<path_to_Qt_installation_directory>/5.12.10/gcc_64/plugins/platforminputcontexts/
 ```
 
 ### OpenSSL
-VNote needs **openSSL 1.0** for networking. To verify if it has been setup correctly, you could check for updates in the *Help* menu of VNote. If VNote fails to check for updates, then you need to copy libraries of openSSL to Qt's library directory.
-
 After the installation of openSSL, you could find two lib files:
 
 ```
@@ -72,7 +70,7 @@ After the installation of openSSL, you could find two lib files:
 Copy these two files to Qt's library directory:
 
 ```
-<path_to_Qt_installation_directory>/5.9.3/gcc_64/lib/
+<path_to_Qt_installation_directory>/5.12.10/gcc_64/lib/
 ```
 
 In Qt's library directory, create symlinks for these two files:
@@ -86,16 +84,16 @@ ln -s libssl.so.1.0.0 libssl.so
 If you prefer command line on macOS, you could follow these steps.
 
 1. Install Xcode and Homebrew;
-2. Install Qt 5.9.1 via Homebrew:
+2. Install Qt 5.12.10 via Homebrew:
 
     ```
-    brew install qt@5.9.1
+    brew install qt@5.12.10
     ```
 
 3. In the project directory, create `build_macos.sh` like this:
 
     ```sh
-    QTDIR="/usr/local/opt/qt@5.9.1"
+    QTDIR="/usr/local/opt/qt@5.12.10"
     PATH="$QTDIR/bin:$PATH"
     LDFLAGS=-L$QTDIR/lib
     CPPFLAGS=-I$QTDIR/include
@@ -103,7 +101,7 @@ If you prefer command line on macOS, you could follow these steps.
     mkdir -p build
     cd build
     qmake -v
-    qmake CONFIG-=debug CONFIG+=release ../VNote.pro
+    qmake CONFIG-=debug CONFIG+=release ../vnote.pro
     make -j2
     ```
 
@@ -114,4 +112,4 @@ If you prefer command line on macOS, you could follow these steps.
     ./build_macos.sh
     ```
 
-5. Now you got the bundle `path/to/project/build/src/VNote.app`.
+5. Now you got the bundle `path/to/project/build/src/vnote.app`.

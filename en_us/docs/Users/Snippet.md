@@ -1,42 +1,40 @@
 # Snippet
-Snippet is designed to facilitate the repeated input of some words.
+Snippet is designed to facilitate the repeated inputs of some words.
 
 ## Snippet Management
-You could manage snippets via the `Tools` dock widget.
+There is a `json` file for a user-defined snippet. There are some built-in snippets, such as inputting current date. Built-in snippets are read-only and there is a `*` suffix in after their names.
 
-![](_v_images/_1517130666_1123329589.png)
-
-In this panel, we could:
-
-1. Create a snippet;
-2. Open snippet folder;  
-VNote uses a folder in the configuration folder to store all the snippets and use configuration file `snippet.json` for management. Each snippet corresponds to one file.
-3. View and edit the information about a snippet;
-4. Sort and delete snippets;
-5. Apply (insert) a snippet into the editor;
+![](vx_images/4184025170752.png)
 
 ## Define A Snippet
-A snippet contains:
+![](vx_images/1104828189178.png)
 
-- Snippet Name
-    - Identifies a snippet. It is also the name of the corresponding file in the snippet folder.
-- Snippet Type
-    - Plain text or HTML. Currently only plain text is supported.
-- Shortcut
-    - You could designate one of the 26 characters (`a` to `z`) to insert snippet quickly.
-- Cursor Mark
-    - VNote uses Cursor Mark to mark the position of the cursor after applying a snippet. Should appears only once in the `Content`.
-- Selection Mark
-    - VNote uses Selection Mark to mark the position to insert the selected text before applying a snippet. Selection mark could appear multiple times in the `Content`. After applying a snippet, all the selection marks will be replaced with the selected text.
-- Content
-    - The content of the snippet which will be inserted at the position of current cursor while applying a snippet.
+- Snippet Name: The identifier of a snippet. It will be used to search for a snippet.
+- Shortcut: You could assign a shortcut to s snippet to quickly locate a snippet. The shortcut is two digits.
+- Cursor Mark: VNote uses Cursor Mark to mark the position of the cursor after applying a snippet. Should appears only once in the `Content`.
+- Selection Mark: VNote uses Selection Mark to mark the position to insert the selected text before applying a snippet. Selection mark could appear multiple times in the `Content`. After applying a snippet, all the selection marks will be replaced with the selected text.
 
 ## Apply A Snippet
 ### Snippet Panel
 Place the cursor at the proper position and double click a snippet in the snippet panel to apply a snippet.
 
 ### Shortcuts
-You could use **Captain Mode** to apply a snippet quickly. In edit mode, press `Ctrl+E S` to activate snippet selection dialog, which shows all the snippets **with shortcut defined**. Press the corresponding shortcut key to apply a snippet.
+In editor, press `Ctrl+G, I` will call out a panel containing all the snippets.
+
+You could directly type `00` to apply `My First Snippet`. Or you could type keyword `my` to search snippets by name and press `Enter` to apply the first hit snippet.
+
+You could press `Tab` to focus on the snippet list and use `Ctrl+H/J/K/L` to navigate through items and press `Enter` to apply the selected snippet.
+
+![](vx_images/2520536170752.png)
+
+### Symbol
+Another simple way to apply a snippet is type `%snippet_name%` in the editor directly and press `Ctrl+G, I` to translate that symbol into snippet `snippet_name`.
+
+Many line edit widgets in VNote also support snippet in this way, such as:
+
+* New Note dialog;
+* New Notebook dialog;
+* Note template;
 
 ## Examples
 ### Insert Code Block with CPP

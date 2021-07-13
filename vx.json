@@ -4,13 +4,13 @@
     ],
     "folders": [
         {
-            "name": "vx_recycle_bin"
-        },
-        {
             "name": "en_us"
         },
         {
             "name": "zh_cn"
+        },
+        {
+            "name": "vx_recycle_bin"
         }
     ],
     "id": "1",
