@@ -14,6 +14,9 @@ You could download the MathJax ([howto](https://docs.mathjax.org/en/latest/web/h
 this.mathJaxScript = 'file://c:/Users/foo/mathjax/tex-svg.js';
 ```
 
+## Crash After Version Update
+Open user configuration folder and delete all the contents in this folder (please backup your custom files if there is any). Then open VNote which should work fine now. Please import your notebooks into VNote again.
+
 ## Interface Is Freezed
 ## Cursor Is Not Visible in Edit Mode
 ## Crash When Opening A Note
