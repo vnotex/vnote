@@ -1126,6 +1126,10 @@ vnotex--ViewSplit QTabBar::tab:selected {
     background-color: @widgets#viewsplit#tabbar#tab#selected#bg;
 }
 
+vnotex--ViewSplit QTabBar[ViewSplitFlash="true"]::tab:selected {
+    background-color: @widgets#viewsplit#flash#bg;
+}
+
 vte--VTextEdit {
     border: none;
 }

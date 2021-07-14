@@ -5,7 +5,7 @@
 
 一个舒适的笔记平台！
 
-更多信息，请访问 [VNote 主页](https://vnotex.github.io/vnote) 。
+更多信息，请访问 [VNote 主页](https://tamlok.gitee.io/vnote) 或者 [Gitee 托管主页](https://tamlok.gitee.io/vnote) 。
 
 ![VNote](pics/vnote.png)
 

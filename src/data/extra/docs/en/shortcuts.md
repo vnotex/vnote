@@ -1,6 +1,7 @@
 # Shortcuts
 1. All the keys without special notice are **case insensitive**;
-2. On macOS, `Ctrl` corresponds to `Command` except in Vi mode.
+2. On macOS, `Ctrl` corresponds to `Command` except in Vi mode;
+3. For a complete shortcuts list, please view the `vnotex.json` configuration file.
 
 ## General
 - `Ctrl+G E`  

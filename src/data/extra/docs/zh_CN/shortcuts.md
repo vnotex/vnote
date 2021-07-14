@@ -1,6 +1,7 @@
 # 快捷键
 1. 以下按键除特别说明外，都不区分大小写；
-2. 在 macOS 下，`Ctrl`对应于`Command`，在 Vi 模式下除外。
+2. 在 macOS 下，`Ctrl`对应于`Command`，在 Vi 模式下除外；
+3. 可以通过查看配置文件 `vnotex.json` 来获取一个完整的快捷键列表。
 
 ## 通用
 - `Ctrl+G E`  

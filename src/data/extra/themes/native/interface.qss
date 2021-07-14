@@ -123,3 +123,7 @@ vnotex--MainWindow QLabel#MainWindowTipsLabel {
     font-size: 18pt;
     font-weight: bold;
 }
+
+vnotex--ViewSplit QTabBar[ViewSplitFlash="true"]::tab:selected {
+    background-color: @widgets#viewsplit#flash#bg;
+}

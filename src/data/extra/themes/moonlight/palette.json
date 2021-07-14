@@ -252,6 +252,9 @@
                         "bg" : "@base#content#bg"
                     }
                 }
+            },
+            "flash" : {
+                "bg" : "@base#master#alt"
             }
         },
         "qmainwindow" : {

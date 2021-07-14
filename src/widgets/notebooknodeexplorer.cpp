@@ -581,6 +581,11 @@ void NotebookNodeExplorer::updateNode(Node *p_node)
 
         item->setExpanded(expanded);
     } else {
+        if (m_notebook->isRecycleBinNode(p_node) && !m_recycleBinNodeVisible) {
+            // No need to update.
+            return;
+        }
+
         saveNotebookTreeState(false);
 
         generateNodeTree();

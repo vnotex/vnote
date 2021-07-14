@@ -12,13 +12,15 @@
 #include <QApplication>
 #include <QSet>
 #include <QHash>
+#include <QTabBar>
 
 #include "viewwindow.h"
 #include "mainwindow.h"
-#include "events.h"
+#include "propertydefs.h"
 #include <utils/widgetutils.h>
 #include <utils/docsutils.h>
 #include <utils/urldragdroputils.h>
+#include <core/events.h>
 #include <core/vnotex.h>
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
@@ -314,7 +316,18 @@ void ViewArea::addFirstViewSplit()
 void ViewArea::postFirstViewSplit()
 {
     Q_ASSERT(!m_splits.isEmpty());
-    setCurrentViewSplit(m_splits.first(), false);
+    auto currentSplit = m_splits.first();
+    // Check if any split has focus. If there is any, then set it as current split.
+    auto focusWidget = QApplication::focusWidget();
+    if (focusWidget) {
+        for (const auto &split : m_splits) {
+            if (split == focusWidget || split->isAncestorOf(focusWidget)) {
+                currentSplit = split;
+                break;
+            }
+        }
+    }
+    setCurrentViewSplit(currentSplit, false);
 
     emit viewSplitsCountChanged();
     checkCurrentViewWindowChange();
@@ -372,7 +385,6 @@ void ViewArea::removeViewSplit(ViewSplit *p_split, bool p_removeWorkspace)
             unwrapSplitter(splitter);
         }
     } else {
-        Q_ASSERT(m_splits.isEmpty());
         m_mainLayout->removeWidget(p_split);
         if (!m_splits.isEmpty()) {
             newCurrentSplit = m_splits.first();
@@ -427,6 +439,9 @@ void ViewArea::setCurrentViewSplit(ViewSplit *p_split, bool p_focus)
 {
     Q_ASSERT(!p_split || m_splits.contains(p_split));
     if (p_split == m_currentSplit) {
+        if (p_split && p_focus) {
+            p_split->focus();
+        }
         return;
     }
 
@@ -826,6 +841,50 @@ void ViewArea::setupShortcuts()
                         } else {
                             setFocus();
                         }
+                    });
+        }
+    }
+
+    // OneSplitLeft.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::OneSplitLeft), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        focusSplitByDirection(Direction::Left);
+                    });
+        }
+    }
+
+    // OneSplitDown.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::OneSplitDown), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        focusSplitByDirection(Direction::Down);
+                    });
+        }
+    }
+
+    // OneSplitUp.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::OneSplitUp), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        focusSplitByDirection(Direction::Up);
+                    });
+        }
+    }
+
+    // OneSplitRight.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::OneSplitRight), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        focusSplitByDirection(Direction::Right);
                     });
         }
     }
@@ -1231,4 +1290,96 @@ void ViewArea::openViewWindowFromSession(const ViewWindowSession &p_session)
     paras->m_alwaysNewWindow = true;
 
     emit VNoteX::getInst().openFileRequested(p_session.m_bufferPath, paras);
+}
+
+void ViewArea::focusSplitByDirection(Direction p_direction)
+{
+    if (!m_currentSplit) {
+        return;
+    }
+
+    QWidget *widget = m_currentSplit;
+    auto targetSplitType = SplitType::Vertical;
+    if (p_direction == Direction::Up || p_direction == Direction::Down) {
+        targetSplitType = SplitType::Horizontal;
+    }
+    int splitIdx = 0;
+
+    QSplitter *targetSplitter = nullptr;
+    while (true) {
+        auto splitter = tryGetParentSplitter(widget);
+        if (!splitter) {
+            return;
+        }
+
+        if (checkSplitType(splitter) == targetSplitType) {
+            targetSplitter = splitter;
+            splitIdx = splitter->indexOf(widget);
+            break;
+        } else {
+            widget = splitter;
+        }
+    }
+
+    Q_ASSERT(targetSplitter);
+    switch (p_direction) {
+    case Direction::Left:
+        --splitIdx;
+        break;
+
+    case Direction::Right:
+        ++splitIdx;
+        break;
+
+    case Direction::Up:
+        --splitIdx;
+        break;
+
+    case Direction::Down:
+        ++splitIdx;
+        break;
+    }
+
+    if (splitIdx < 0 || splitIdx >= targetSplitter->count()) {
+        return;
+    }
+
+    auto targetWidget = targetSplitter->widget(splitIdx);
+    // Find first split from targetWidget.
+    while (true) {
+        auto splitter = dynamic_cast<QSplitter *>(targetWidget);
+        if (splitter) {
+            if (splitter->count() == 0) {
+                // Should not be an empty splitter.
+                Q_ASSERT(false);
+                return;
+            }
+            targetWidget = splitter->widget(0);
+        } else {
+            auto viewSplit = dynamic_cast<ViewSplit *>(targetWidget);
+            Q_ASSERT(viewSplit);
+            setCurrentViewSplit(viewSplit, true);
+            flashViewSplit(viewSplit);
+            break;
+        }
+    }
+}
+
+ViewArea::SplitType ViewArea::checkSplitType(const QSplitter *p_splitter) const
+{
+    return p_splitter->orientation() == Qt::Horizontal ? SplitType::Vertical : SplitType::Horizontal;
+}
+
+void ViewArea::flashViewSplit(ViewSplit *p_split)
+{
+    auto tabBar = p_split->tabBar();
+    if (!tabBar) {
+        return;
+    }
+
+    // Directly set the property of ViewSplit won't work.
+    WidgetUtils::setPropertyDynamically(tabBar, PropertyDefs::c_viewSplitFlash, true);
+    QTimer::singleShot(1000, tabBar, [tabBar]() {
+                WidgetUtils::setPropertyDynamically(tabBar, PropertyDefs::c_viewSplitFlash, false);
+            });
 }

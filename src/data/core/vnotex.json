@@ -19,7 +19,7 @@
             "OutlineDock" : "Ctrl+G, U",
             "SearchDock" : "",
             "SnippetDock" : "Ctrl+G, S",
-            "LocationListDock" : "Ctrl+G, L",
+            "LocationListDock" : "Ctrl+G, C",
             "Search" : "Ctrl+Alt+F",
             "NavigationMode" : "Ctrl+G, W",
             "LocateNode" : "Ctrl+G, D",
@@ -46,7 +46,11 @@
             "ActivateNextTab" : "Ctrl+G, N",
             "ActivatePreviousTab" : "Ctrl+G, P",
             "FocusContentArea" : "Ctrl+G, Y",
-            "OpenWithDefaultProgram" : "F9"
+            "OpenWithDefaultProgram" : "F9",
+            "OneSplitLeft" : "Ctrl+G, H",
+            "OneSplitDown" : "Ctrl+G, J",
+            "OneSplitUp" : "Ctrl+G, K",
+            "OneSplitRight" : "Ctrl+G, L"
         },
         "toolbar_icon_size" : 16,
         "note_management" : {

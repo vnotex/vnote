@@ -144,6 +144,14 @@ namespace vnotex
             Horizontal
         };
 
+        enum class Direction
+        {
+            Left,
+            Down,
+            Up,
+            Right
+        };
+
         void setupUI();
 
         // Find given @p_buffer among all view splits.
@@ -217,6 +225,12 @@ namespace vnotex
         void loadSplitterFromSession(const ViewAreaSession::Node &p_node, QSplitter *p_splitter);
 
         void openViewWindowFromSession(const ViewWindowSession &p_session);
+
+        void focusSplitByDirection(Direction p_direction);
+
+        SplitType checkSplitType(const QSplitter *p_splitter) const;
+
+        void flashViewSplit(ViewSplit *p_split);
 
         QLayout *m_mainLayout = nullptr;
 

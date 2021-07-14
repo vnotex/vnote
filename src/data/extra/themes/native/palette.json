@@ -103,6 +103,9 @@
                 "active" : {
                     "fg" : "@base#icon#fg"
                 }
+            },
+            "flash" : {
+                "bg" : "@base#lighter#fg"
             }
         },
         "qmainwindow" : {

@@ -19,6 +19,8 @@ namespace vnotex
 
         static const char *c_viewSplitCornerWidget;
 
+        static const char *c_viewSplitFlash;
+
         static const char *c_viewWindowToolBar;
 
         static const char *c_consoleTextEdit;

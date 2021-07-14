@@ -5,7 +5,7 @@
 
 A pleasant note-taking platform.
 
-For more information, please visit [**VNote's Home Page**](https://vnotex.github.io/vnote).
+For more information, please visit [**VNote's Home Page**](https://vnotex.github.io/vnote) or [Home Page on Gitee](https://tamlok.gitee.io/vnote).
 
 ![VNote](pics/vnote.png)
 
