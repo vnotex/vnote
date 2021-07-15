@@ -31,6 +31,7 @@ void WidgetConfig::init(const QJsonObject &p_app,
     m_nodeExplorerAutoImportExternalFilesEnabled = READBOOL(QStringLiteral("node_explorer_auto_import_external_files_enabled"));
     m_searchPanelAdvancedSettingsVisible = READBOOL(QStringLiteral("search_panel_advanced_settings_visible"));
     m_mainWindowKeepDocksExpandingContentArea = READSTRLIST(QStringLiteral("main_window_keep_docks_expanding_content_area"));
+    m_snippetPanelBuiltInSnippetsVisible = READBOOL(QStringLiteral("snippet_panel_builtin_snippets_visible"));
 }
 
 QJsonObject WidgetConfig::toJson() const
@@ -43,6 +44,7 @@ QJsonObject WidgetConfig::toJson() const
     obj[QStringLiteral("node_explorer_external_files_visible")] = m_nodeExplorerExternalFilesVisible;
     obj[QStringLiteral("node_explorer_auto_import_external_files_enabled")] = m_nodeExplorerAutoImportExternalFilesEnabled;
     obj[QStringLiteral("search_panel_advanced_settings_visible")] = m_searchPanelAdvancedSettingsVisible;
+    obj[QStringLiteral("snippet_panel_builtin_snippets_visible")] = m_snippetPanelBuiltInSnippetsVisible;
     writeStringList(obj,
                     QStringLiteral("main_window_keep_docks_expanding_content_area"),
                     m_mainWindowKeepDocksExpandingContentArea);
@@ -127,4 +129,14 @@ const QStringList &WidgetConfig::getMainWindowKeepDocksExpandingContentArea() co
 void WidgetConfig::setMainWindowKeepDocksExpandingContentArea(const QStringList &p_docks)
 {
     updateConfig(m_mainWindowKeepDocksExpandingContentArea, p_docks, this);
+}
+
+bool WidgetConfig::isSnippetPanelBuiltInSnippetsVisible() const
+{
+    return m_snippetPanelBuiltInSnippetsVisible;
+}
+
+void WidgetConfig::setSnippetPanelBuiltInSnippetsVisible(bool p_visible)
+{
+    updateConfig(m_snippetPanelBuiltInSnippetsVisible, p_visible, this);
 }

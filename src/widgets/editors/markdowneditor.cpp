@@ -431,7 +431,9 @@ void MarkdownEditor::insertImageLink(const QString &p_title,
 void MarkdownEditor::handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled, bool *p_allowed)
 {
     if (p_source->hasImage() || p_source->hasUrls()) {
-        if (p_source->hasImage() || (!p_source->hasText() && !p_source->hasHtml())) {
+        if (p_source->hasImage()
+            || (!p_source->hasText() && !p_source->hasHtml())
+            || QGuiApplication::keyboardModifiers() == Qt::ShiftModifier) {
             // Change to Rich Paste.
             QClipboard *clipboard = QApplication::clipboard();
             clipboard->setProperty(c_clipboardPropertyMark, true);

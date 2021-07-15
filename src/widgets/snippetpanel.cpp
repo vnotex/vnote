@@ -8,6 +8,8 @@
 #include <snippet/snippetmgr.h>
 #include <core/vnotex.h>
 #include <core/exception.h>
+#include <core/configmgr.h>
+#include <core/widgetconfig.h>
 
 #include "titlebar.h"
 #include "listwidget.h"
@@ -22,6 +24,7 @@ using namespace vnotex;
 SnippetPanel::SnippetPanel(QWidget *p_parent)
     : QFrame(p_parent)
 {
+    m_builtInSnippetsVisible = ConfigMgr::getInst().getWidgetConfig().isSnippetPanelBuiltInSnippetsVisible();
     setupUI();
 }
 
@@ -49,7 +52,7 @@ void SnippetPanel::setupUI()
 
 void SnippetPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
 {
-    m_titleBar = new TitleBar(p_title, true, TitleBar::Action::None, p_parent);
+    m_titleBar = new TitleBar(p_title, true, TitleBar::Action::Menu, p_parent);
     m_titleBar->setActionButtonsAlwaysShown(true);
 
     {
@@ -65,6 +68,15 @@ void SnippetPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
                     WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(SnippetMgr::getInst().getSnippetFolder()));
                 });
     }
+
+    auto showAct = m_titleBar->addMenuAction(tr("Show Built-In Snippets"),
+                                             m_titleBar,
+                                             [this](bool p_checked) {
+                                                 ConfigMgr::getInst().getWidgetConfig().setSnippetPanelBuiltInSnippetsVisible(p_checked);
+                                                 setBuiltInSnippetsVisible(p_checked);
+                                             });
+    showAct->setCheckable(true);
+    showAct->setChecked(m_builtInSnippetsVisible);
 }
 
 void SnippetPanel::newSnippet()
@@ -91,6 +103,10 @@ void SnippetPanel::updateSnippetList()
 
     const auto &snippets = SnippetMgr::getInst().getSnippets();
     for (const auto &snippet : snippets) {
+        if (snippet->isReadOnly() && !m_builtInSnippetsVisible) {
+            continue;
+        }
+
         auto item = new QListWidgetItem(m_snippetList);
         QString suffix;
         if (snippet->isReadOnly()) {
@@ -230,4 +246,15 @@ void SnippetPanel::applySnippet(const QListWidgetItem *p_item)
     if (!name.isEmpty()) {
         emit applySnippetRequested(name);
     }
+}
+
+void SnippetPanel::setBuiltInSnippetsVisible(bool p_visible)
+{
+    if (m_builtInSnippetsVisible == p_visible) {
+        return;
+    }
+
+    m_builtInSnippetsVisible = p_visible;
+
+    updateSnippetList();
 }

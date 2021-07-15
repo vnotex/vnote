@@ -42,6 +42,9 @@ namespace vnotex
         const QStringList &getMainWindowKeepDocksExpandingContentArea() const;
         void setMainWindowKeepDocksExpandingContentArea(const QStringList &p_docks);
 
+        bool isSnippetPanelBuiltInSnippetsVisible() const;
+        void setSnippetPanelBuiltInSnippetsVisible(bool p_visible);
+
     private:
         int m_outlineAutoExpandedLevel = 6;
 
@@ -59,6 +62,8 @@ namespace vnotex
 
         // Object name of those docks that should be kept when expanding content area.
         QStringList m_mainWindowKeepDocksExpandingContentArea;
+
+        bool m_snippetPanelBuiltInSnippetsVisible = true;
     };
 }
 

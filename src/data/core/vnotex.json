@@ -50,7 +50,11 @@
             "OneSplitLeft" : "Ctrl+G, H",
             "OneSplitDown" : "Ctrl+G, J",
             "OneSplitUp" : "Ctrl+G, K",
-            "OneSplitRight" : "Ctrl+G, L"
+            "OneSplitRight" : "Ctrl+G, L",
+            "MoveOneSplitLeft" : "Ctrl+G, Shift+H",
+            "MoveOneSplitDown" : "Ctrl+G, Shift+J",
+            "MoveOneSplitUp" : "Ctrl+G, Shift+K",
+            "MoveOneSplitRight" : "Ctrl+G, Shift+L"
         },
         "toolbar_icon_size" : 16,
         "note_management" : {
@@ -341,6 +345,7 @@
         "node_explorer_auto_import_external_files_enabled" : true,
         "search_panel_advanced_settings_visible" : true,
         "//comment" : "Docks to ignore when expanding content area of main window",
-        "main_window_keep_docks_expanding_content_area": []
+        "main_window_keep_docks_expanding_content_area": [],
+        "snippet_panel_builtin_snippets_visible" : true
     }
 }

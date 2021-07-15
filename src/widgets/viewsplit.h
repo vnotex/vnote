@@ -6,6 +6,7 @@
 #include <functional>
 
 #include <buffer/buffer.h>
+#include <core/global.h>
 
 class QToolButton;
 class QMenu;
@@ -92,6 +93,8 @@ namespace vnotex
 
         void currentViewWindowChanged(ViewWindow *p_win);
 
+        void moveViewWindowOneSplitRequested(ViewSplit *p_split, ViewWindow *p_win, Direction p_direction);
+
     protected:
         bool eventFilter(QObject *p_object, QEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -125,7 +128,7 @@ namespace vnotex
 
         void updateMenu(QMenu *p_menu);
 
-        void createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx) const;
+        void createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx);
 
         void focusCurrentViewWindow();
 

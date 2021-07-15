@@ -57,6 +57,10 @@ namespace vnotex
             OneSplitDown,
             OneSplitUp,
             OneSplitRight,
+            MoveOneSplitLeft,
+            MoveOneSplitDown,
+            MoveOneSplitUp,
+            MoveOneSplitRight,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

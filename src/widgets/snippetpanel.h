@@ -42,11 +42,15 @@ namespace vnotex
 
         QString getSnippetName(const QListWidgetItem *p_item);
 
+        void setBuiltInSnippetsVisible(bool p_visible);
+
         TitleBar *m_titleBar = nullptr;
 
         QListWidget *m_snippetList = nullptr;
 
         bool m_listInitialized = false;
+
+        bool m_builtInSnippetsVisible = true;
     };
 }
 

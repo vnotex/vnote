@@ -101,6 +101,14 @@ namespace vnotex
 
     enum { InvalidViewSplitId = 0 };
 
+    enum class Direction
+    {
+        Left,
+        Down,
+        Up,
+        Right
+    };
+
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);
