@@ -74,6 +74,8 @@ void NotebookExplorer::setupUI()
                 auto id = static_cast<ID>(m_selector->itemData(p_idx).toULongLong());
                 emit notebookActivated(id);
             });
+    connect(m_selector, &NotebookSelector::newNotebookRequested,
+            this, &NotebookExplorer::newNotebook);
     mainLayout->addWidget(m_selector);
 
     const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();

@@ -23,6 +23,9 @@ namespace vnotex
 
         void setCurrentNotebook(ID p_id);
 
+    signals:
+        void newNotebookRequested();
+
     // NavigationMode.
     protected:
         QVector<void *> getVisibleNavigationItems() Q_DECL_OVERRIDE;
@@ -35,6 +38,8 @@ namespace vnotex
 
     protected:
         bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
+
+        void mousePressEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
 
     private:
         void addNotebookItem(const QSharedPointer<Notebook> &p_notebook);

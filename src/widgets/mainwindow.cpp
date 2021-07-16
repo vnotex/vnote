@@ -28,6 +28,7 @@
 #include <core/configmgr.h>
 #include <core/sessionconfig.h>
 #include <core/coreconfig.h>
+#include <core/mainconfig.h>
 #include <core/widgetconfig.h>
 #include <core/events.h>
 #include <core/fileopenparameters.h>
@@ -45,6 +46,7 @@
 #include <notebook/notebook.h>
 #include "searchinfoprovider.h"
 #include <vtextedit/spellchecker.h>
+#include <utils/docsutils.h>
 
 using namespace vnotex;
 
@@ -95,6 +97,15 @@ void MainWindow::kickOffOnStart(const QStringList &p_paths)
         demoWidget();
 
         openFiles(p_paths);
+
+        if (MainConfig::isVersionChanged()) {
+            const auto file = DocsUtils::getDocFile(QStringLiteral("welcome.md"));
+            if (!file.isEmpty()) {
+                auto paras = QSharedPointer<FileOpenParameters>::create();
+                paras->m_readOnly = true;
+                emit VNoteX::getInst().openFileRequested(file, paras);
+            }
+        }
     });
 }
 

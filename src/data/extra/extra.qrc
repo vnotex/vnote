@@ -5,11 +5,13 @@
         <file>docs/en/shortcuts.md</file>
         <file>docs/en/markdown_guide.md</file>
         <file>docs/en/external_programs.md</file>
+        <file>docs/en/welcome.md</file>
         <file>docs/zh_CN/get_started.txt</file>
         <file>docs/zh_CN/about_vnotex.txt</file>
         <file>docs/zh_CN/shortcuts.md</file>
         <file>docs/zh_CN/markdown_guide.md</file>
         <file>docs/zh_CN/external_programs.md</file>
+        <file>docs/zh_CN/welcome.md</file>
         <file>web/markdown-viewer-template.html</file>
         <file>web/markdown-export-template.html</file>
         <file>web/css/globalstyles.css</file>

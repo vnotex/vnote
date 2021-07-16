@@ -176,3 +176,13 @@ void NotebookSelector::clearNavigation()
 
     NavigationMode::clearNavigation();
 }
+
+void NotebookSelector::mousePressEvent(QMouseEvent *p_event)
+{
+    if (count() == 0) {
+        emit newNotebookRequested();
+        return;
+    }
+
+    QComboBox::mousePressEvent(p_event);
+}

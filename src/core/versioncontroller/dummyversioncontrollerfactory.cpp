@@ -17,7 +17,7 @@ QString DummyVersionControllerFactory::getName() const
 
 QString DummyVersionControllerFactory::getDisplayName() const
 {
-    return QObject::tr("Dummy Version Control");
+    return QObject::tr("No Version Control");
 }
 
 QString DummyVersionControllerFactory::getDescription() const

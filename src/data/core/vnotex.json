@@ -28,7 +28,7 @@
             "MaximizeSplit" : "Ctrl+G, Shift+\\",
             "DistributeSplits" : "Ctrl+G, =",
             "RemoveSplitAndWorkspace" : "Ctrl+G, R",
-            "NewWorkspace" : "Ctrl+G, M",
+            "NewWorkspace" : "",
             "Export" : "Ctrl+G, T",
             "Quit" : "Ctrl+Q",
             "FlashPage" : "Ctrl+Alt+L",
