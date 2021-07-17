@@ -142,7 +142,7 @@ void PreviewHelper::codeBlocksUpdated(vte::TimeStamp p_timeStamp,
                                       const QVector<vte::peg::FencedCodeBlock> &p_codeBlocks)
 {
     Q_UNUSED(p_timeStamp);
-    if (!m_inplacePreviewEnabled) {
+    if (!m_inplacePreviewCodeBlocksEnabled) {
         return;
     }
 
@@ -180,7 +180,7 @@ void PreviewHelper::handleCodeBlocksUpdate()
                                                                    m_tabStopWidth);
         }
 
-        if (m_inplacePreviewEnabled && needPreview.first && !cacheHit) {
+        if (m_inplacePreviewCodeBlocksEnabled && needPreview.first && !cacheHit) {
             m_codeBlocksData[blockPreviewIdx].m_text = cb.m_text;
             needPreviewBlocks.push_back(blockPreviewIdx);
         }
@@ -354,7 +354,7 @@ void PreviewHelper::setMarkdownEditor(MarkdownEditor *p_editor)
 
 void PreviewHelper::mathBlocksUpdated(const QVector<vte::peg::MathBlock> &p_mathBlocks)
 {
-    if (!m_inplacePreviewEnabled || !isInplacePreviewSourceEnabled(SourceFlag::Math)) {
+    if (!m_inplacePreviewMathBlocksEnabled || !isInplacePreviewSourceEnabled(SourceFlag::Math)) {
         return;
     }
 
@@ -527,4 +527,19 @@ bool PreviewHelper::needForcedBackground(const QString &p_lang) const
     }
 
     return false;
+}
+
+void PreviewHelper::setInplacePreviewSources(SourceFlags p_srcs)
+{
+    m_inplacePreviewSources = p_srcs;
+}
+
+void PreviewHelper::setInplacePreviewCodeBlocksEnabled(bool p_enabled)
+{
+    m_inplacePreviewCodeBlocksEnabled = p_enabled;
+}
+
+void PreviewHelper::setInplacePreviewMathBlocksEnabled(bool p_enabled)
+{
+    m_inplacePreviewMathBlocksEnabled = p_enabled;
 }

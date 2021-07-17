@@ -47,6 +47,12 @@ namespace vnotex
 
         void setWebGraphvizEnabled(bool p_enabled);
 
+        void setInplacePreviewSources(SourceFlags p_srcs);
+
+        void setInplacePreviewCodeBlocksEnabled(bool p_enabled);
+
+        void setInplacePreviewMathBlocksEnabled(bool p_enabled);
+
     public slots:
         void codeBlocksUpdated(vte::TimeStamp p_timeStamp,
                                const QVector<vte::peg::FencedCodeBlock> &p_codeBlocks);
@@ -201,7 +207,9 @@ namespace vnotex
         // Need to init it in the constructor.
         SourceFlags m_inplacePreviewSources;
 
-        bool m_inplacePreviewEnabled = true;
+        bool m_inplacePreviewCodeBlocksEnabled = true;
+
+        bool m_inplacePreviewMathBlocksEnabled = true;
 
         TimeStamp m_codeBlockTimeStamp = 0;
 

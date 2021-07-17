@@ -179,8 +179,7 @@ void MarkdownViewWindow::handleEditorConfigChange()
     if (markdownEditorConfig.revision() != m_markdownEditorConfigRevision) {
         m_markdownEditorConfigRevision = markdownEditorConfig.revision();
 
-        m_previewHelper->setWebPlantUmlEnabled(markdownEditorConfig.getWebPlantUml());
-        m_previewHelper->setWebGraphvizEnabled(markdownEditorConfig.getWebGraphviz());
+        updatePreviewHelperFromConfig(markdownEditorConfig);
 
         HtmlTemplateHelper::updateMarkdownViewerTemplate(markdownEditorConfig);
 
@@ -792,7 +791,23 @@ QSharedPointer<vte::MarkdownEditorConfig> MarkdownViewWindow::createMarkdownEdit
     auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
     editorConfig->overrideTextFontFamily(p_config.getEditorOverriddenFontFamily());
 
-    editorConfig->m_constrainInPlacePreviewWidthEnabled = p_config.getConstrainInPlacePreviewWidthEnabled();
+    editorConfig->m_constrainInplacePreviewWidthEnabled = p_config.getConstrainInplacePreviewWidthEnabled();
+
+    {
+        auto srcs = p_config.getInplacePreviewSources();
+        vte::MarkdownEditorConfig::InplacePreviewSources editorSrcs = vte::MarkdownEditorConfig::NoInplacePreview;
+        if (srcs & MarkdownEditorConfig::InplacePreviewSource::ImageLink) {
+            editorSrcs |= vte::MarkdownEditorConfig::ImageLink;
+        }
+        if (srcs & MarkdownEditorConfig::InplacePreviewSource::CodeBlock) {
+            editorSrcs |= vte::MarkdownEditorConfig::CodeBlock;
+        }
+        if (srcs & MarkdownEditorConfig::InplacePreviewSource::Math) {
+            editorSrcs |= vte::MarkdownEditorConfig::Math;
+        }
+        editorConfig->m_inplacePreviewSources = editorSrcs;
+    }
+
     return editorConfig;
 }
 
@@ -967,13 +982,22 @@ void MarkdownViewWindow::setupPreviewHelper()
     m_previewHelper = new PreviewHelper(nullptr, this);
 
     const auto &markdownEditorConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
-    m_previewHelper->setWebPlantUmlEnabled(markdownEditorConfig.getWebPlantUml());
-    m_previewHelper->setWebGraphvizEnabled(markdownEditorConfig.getWebGraphviz());
+    updatePreviewHelperFromConfig(markdownEditorConfig);
 
     PlantUmlHelper::getInst().init(markdownEditorConfig.getPlantUmlJar(),
                                    markdownEditorConfig.getGraphvizExe(),
                                    markdownEditorConfig.getPlantUmlCommand());
     GraphvizHelper::getInst().init(markdownEditorConfig.getGraphvizExe());
+}
+
+void MarkdownViewWindow::updatePreviewHelperFromConfig(const MarkdownEditorConfig &p_config)
+{
+    m_previewHelper->setWebPlantUmlEnabled(p_config.getWebPlantUml());
+    m_previewHelper->setWebGraphvizEnabled(p_config.getWebGraphviz());
+
+    const auto srcs = p_config.getInplacePreviewSources();
+    m_previewHelper->setInplacePreviewCodeBlocksEnabled(srcs & MarkdownEditorConfig::CodeBlock);
+    m_previewHelper->setInplacePreviewMathBlocksEnabled(srcs & MarkdownEditorConfig::Math);
 }
 
 void MarkdownViewWindow::applySnippet(const QString &p_name)

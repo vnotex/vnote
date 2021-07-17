@@ -30,6 +30,15 @@ namespace vnotex
             DigDotDig
         };
 
+        enum InplacePreviewSource
+        {
+            NoInplacePreview = 0,
+            ImageLink = 0x1,
+            CodeBlock = 0x2,
+            Math = 0x4
+        };
+        Q_DECLARE_FLAGS(InplacePreviewSources, InplacePreviewSource);
+
         MarkdownEditorConfig(ConfigMgr *p_mgr,
                              IConfig *p_topConfig,
                              const QSharedPointer<TextEditorConfig> &p_textEditorConfig);
@@ -81,8 +90,8 @@ namespace vnotex
         bool getConstrainImageWidthEnabled() const;
         void setConstrainImageWidthEnabled(bool p_enabled);
 
-        bool getConstrainInPlacePreviewWidthEnabled() const;
-        void setConstrainInPlacePreviewWidthEnabled(bool p_enabled);
+        bool getConstrainInplacePreviewWidthEnabled() const;
+        void setConstrainInplacePreviewWidthEnabled(bool p_enabled);
 
         qreal getZoomFactorInReadMode() const;
         void setZoomFactorInReadMode(qreal p_factor);
@@ -115,6 +124,9 @@ namespace vnotex
         const QString &getEditorOverriddenFontFamily() const;
         void setEditorOverriddenFontFamily(const QString &p_family);
 
+        InplacePreviewSources getInplacePreviewSources() const;
+        void setInplacePreviewSources(InplacePreviewSources p_src);
+
     private:
         QString sectionNumberModeToString(SectionNumberMode p_mode) const;
         SectionNumberMode stringToSectionNumberMode(const QString &p_str) const;
@@ -127,6 +139,9 @@ namespace vnotex
 
         void loadExportResource(const QJsonObject &p_app, const QJsonObject &p_user);
         QJsonObject saveExportResource() const;
+
+        QString inplacePreviewSourceToString(InplacePreviewSource p_src) const;
+        InplacePreviewSource stringToInplacePreviewSource(const QString &p_str) const;
 
         QSharedPointer<TextEditorConfig> m_textEditorConfig;
 
@@ -171,7 +186,7 @@ namespace vnotex
         bool m_constrainImageWidthEnabled = true;
 
         // Whether enable in-place preview width constraint.
-        bool m_constrainInPlacePreviewWidthEnabled = false;
+        bool m_constrainInplacePreviewWidthEnabled = false;
 
         qreal m_zoomFactorInReadMode = 1.0;
 
@@ -203,7 +218,11 @@ namespace vnotex
 
         // Font family to override the editor's theme.
         QString m_editorOverriddenFontFamily;
+
+        InplacePreviewSources m_inplacePreviewSources = InplacePreviewSource::NoInplacePreview;
     };
 }
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::MarkdownEditorConfig::InplacePreviewSources)
 
 #endif // MARKDOWNEDITORCONFIG_H

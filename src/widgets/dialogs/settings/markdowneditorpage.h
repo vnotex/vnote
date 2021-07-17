@@ -40,7 +40,13 @@ namespace vnotex
 
         QCheckBox *m_constrainImageWidthCheckBox = nullptr;
 
-        QCheckBox *m_constrainInPlacePreviewWidthCheckBox = nullptr;
+        QCheckBox *m_constrainInplacePreviewWidthCheckBox = nullptr;
+
+        QCheckBox *m_inplacePreviewSourceImageLinkCheckBox = nullptr;
+
+        QCheckBox *m_inplacePreviewSourceCodeBlockCheckBox = nullptr;
+
+        QCheckBox *m_inplacePreviewSourceMathCheckBox = nullptr;
 
         QCheckBox *m_fetchImagesToLocalCheckBox = nullptr;
 

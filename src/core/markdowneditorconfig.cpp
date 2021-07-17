@@ -48,7 +48,7 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     m_sectionNumberStyle = stringToSectionNumberStyle(READSTR(QStringLiteral("section_number_style")));
 
     m_constrainImageWidthEnabled = READBOOL(QStringLiteral("constrain_image_width"));
-    m_constrainInPlacePreviewWidthEnabled = READBOOL(QStringLiteral("constrain_inplace_preview_width"));
+    m_constrainInplacePreviewWidthEnabled = READBOOL(QStringLiteral("constrain_inplace_preview_width"));
     m_zoomFactorInReadMode = READREAL(QStringLiteral("zoom_factor_in_read_mode"));
     m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetch_images_in_parse_and_paste"));
 
@@ -64,6 +64,14 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     m_spellCheckEnabled = READBOOL(QStringLiteral("spell_check"));
 
     m_editorOverriddenFontFamily = READSTR(QStringLiteral("editor_overridden_font_family"));
+
+    {
+        m_inplacePreviewSources = InplacePreviewSource::NoInplacePreview;
+        auto srcs = READSTR(QStringLiteral("inplace_preview_sources")).split(QLatin1Char(';'));
+        for (const auto &src : srcs) {
+            m_inplacePreviewSources |= stringToInplacePreviewSource(src);
+        }
+    }
 }
 
 QJsonObject MarkdownEditorConfig::toJson() const
@@ -85,7 +93,7 @@ QJsonObject MarkdownEditorConfig::toJson() const
     obj[QStringLiteral("section_number_style")] = sectionNumberStyleToString(m_sectionNumberStyle);
 
     obj[QStringLiteral("constrain_image_width")] = m_constrainImageWidthEnabled;
-    obj[QStringLiteral("constrain_inplace_preview_width")] = m_constrainInPlacePreviewWidthEnabled;
+    obj[QStringLiteral("constrain_inplace_preview_width")] = m_constrainInplacePreviewWidthEnabled;
     obj[QStringLiteral("zoom_factor_in_read_mode")] = m_zoomFactorInReadMode;
     obj[QStringLiteral("fetch_images_in_parse_and_paste")] = m_fetchImagesInParseAndPaste;
     obj[QStringLiteral("protect_from_xss")] = m_protectFromXss;
@@ -97,6 +105,21 @@ QJsonObject MarkdownEditorConfig::toJson() const
     obj[QStringLiteral("smart_table_interval")] = m_smartTableInterval;
     obj[QStringLiteral("spell_check")] = m_spellCheckEnabled;
     obj[QStringLiteral("editor_overridden_font_family")] = m_editorOverriddenFontFamily;
+
+    {
+        QStringList srcs;
+        if (m_inplacePreviewSources & InplacePreviewSource::ImageLink) {
+            srcs << inplacePreviewSourceToString(InplacePreviewSource::ImageLink);
+        }
+        if (m_inplacePreviewSources & InplacePreviewSource::CodeBlock) {
+            srcs << inplacePreviewSourceToString(InplacePreviewSource::CodeBlock);
+        }
+        if (m_inplacePreviewSources & InplacePreviewSource::Math) {
+            srcs << inplacePreviewSourceToString(InplacePreviewSource::Math);
+        }
+        obj[QStringLiteral("inplace_preview_sources")] = srcs.join(QLatin1Char(';'));
+    }
+
     return obj;
 }
 
@@ -257,14 +280,14 @@ void MarkdownEditorConfig::setConstrainImageWidthEnabled(bool p_enabled)
     updateConfig(m_constrainImageWidthEnabled, p_enabled, this);
 }
 
-bool MarkdownEditorConfig::getConstrainInPlacePreviewWidthEnabled() const
+bool MarkdownEditorConfig::getConstrainInplacePreviewWidthEnabled() const
 {
-    return m_constrainInPlacePreviewWidthEnabled;
+    return m_constrainInplacePreviewWidthEnabled;
 }
 
-void MarkdownEditorConfig::setConstrainInPlacePreviewWidthEnabled(bool p_enabled)
+void MarkdownEditorConfig::setConstrainInplacePreviewWidthEnabled(bool p_enabled)
 {
-    updateConfig(m_constrainInPlacePreviewWidthEnabled, p_enabled, this);
+    updateConfig(m_constrainInplacePreviewWidthEnabled, p_enabled, this);
 }
 
 qreal MarkdownEditorConfig::getZoomFactorInReadMode() const
@@ -379,6 +402,37 @@ MarkdownEditorConfig::SectionNumberStyle MarkdownEditorConfig::stringToSectionNu
     }
 }
 
+QString MarkdownEditorConfig::inplacePreviewSourceToString(InplacePreviewSource p_src) const
+{
+    switch (p_src) {
+    case InplacePreviewSource::ImageLink:
+        return QStringLiteral("imagelink");
+
+    case InplacePreviewSource::CodeBlock:
+        return QStringLiteral("codeblock");
+
+    case InplacePreviewSource::Math:
+        return QStringLiteral("math");
+
+    default:
+        return "";
+    }
+}
+
+MarkdownEditorConfig::InplacePreviewSource MarkdownEditorConfig::stringToInplacePreviewSource(const QString &p_str) const
+{
+    auto src = p_str.toLower();
+    if (src == QStringLiteral("imagelink")) {
+        return InplacePreviewSource::ImageLink;
+    } else if (src == QStringLiteral("codeblock")) {
+        return InplacePreviewSource::CodeBlock;
+    } else if (src == QStringLiteral("math")) {
+        return InplacePreviewSource::Math;
+    } else {
+        return InplacePreviewSource::NoInplacePreview;
+    }
+}
+
 MarkdownEditorConfig::SectionNumberMode MarkdownEditorConfig::getSectionNumberMode() const
 {
     return m_sectionNumberMode;
@@ -442,4 +496,14 @@ const QString &MarkdownEditorConfig::getEditorOverriddenFontFamily() const
 void MarkdownEditorConfig::setEditorOverriddenFontFamily(const QString &p_family)
 {
     updateConfig(m_editorOverriddenFontFamily, p_family, this);
+}
+
+MarkdownEditorConfig::InplacePreviewSources MarkdownEditorConfig::getInplacePreviewSources() const
+{
+    return m_inplacePreviewSources;
+}
+
+void MarkdownEditorConfig::setInplacePreviewSources(InplacePreviewSources p_src)
+{
+    updateConfig(m_inplacePreviewSources, p_src, this);
 }

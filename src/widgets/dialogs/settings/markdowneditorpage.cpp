@@ -69,7 +69,14 @@ void MarkdownEditorPage::loadInternal()
 
     m_zoomFactorSpinBox->setValue(markdownConfig.getZoomFactorInReadMode());
 
-    m_constrainInPlacePreviewWidthCheckBox->setChecked(markdownConfig.getConstrainInPlacePreviewWidthEnabled());
+    m_constrainInplacePreviewWidthCheckBox->setChecked(markdownConfig.getConstrainInplacePreviewWidthEnabled());
+
+    {
+        auto srcs = markdownConfig.getInplacePreviewSources();
+        m_inplacePreviewSourceImageLinkCheckBox->setChecked(srcs & MarkdownEditorConfig::InplacePreviewSource::ImageLink);
+        m_inplacePreviewSourceCodeBlockCheckBox->setChecked(srcs & MarkdownEditorConfig::InplacePreviewSource::CodeBlock);
+        m_inplacePreviewSourceMathCheckBox->setChecked(srcs & MarkdownEditorConfig::InplacePreviewSource::Math);
+    }
 
     m_fetchImagesToLocalCheckBox->setChecked(markdownConfig.getFetchImagesInParseAndPaste());
 
@@ -134,7 +141,22 @@ void MarkdownEditorPage::saveInternal()
 
     markdownConfig.setZoomFactorInReadMode(m_zoomFactorSpinBox->value());
 
-    markdownConfig.setConstrainInPlacePreviewWidthEnabled(m_constrainInPlacePreviewWidthCheckBox->isChecked());
+    markdownConfig.setConstrainInplacePreviewWidthEnabled(m_constrainInplacePreviewWidthCheckBox->isChecked());
+
+    {
+        MarkdownEditorConfig::InplacePreviewSources srcs = MarkdownEditorConfig::InplacePreviewSource::NoInplacePreview;
+        if (m_inplacePreviewSourceImageLinkCheckBox->isChecked()) {
+            srcs |= MarkdownEditorConfig::InplacePreviewSource::ImageLink;
+        }
+        if (m_inplacePreviewSourceCodeBlockCheckBox->isChecked()) {
+            srcs |= MarkdownEditorConfig::InplacePreviewSource::CodeBlock;
+        }
+        if (m_inplacePreviewSourceMathCheckBox->isChecked()) {
+            srcs |= MarkdownEditorConfig::InplacePreviewSource::Math;
+        }
+
+        markdownConfig.setInplacePreviewSources(srcs);
+    }
 
     markdownConfig.setFetchImagesInParseAndPaste(m_fetchImagesToLocalCheckBox->isChecked());
 
@@ -260,11 +282,31 @@ QGroupBox *MarkdownEditorPage::setupEditGroup()
 
     {
         const QString label(tr("Constrain in-place preview width"));
-        m_constrainInPlacePreviewWidthCheckBox = WidgetsFactory::createCheckBox(label, box);
-        m_constrainInPlacePreviewWidthCheckBox->setToolTip(tr("Constrain in-place preview width to the window"));
-        layout->addRow(m_constrainInPlacePreviewWidthCheckBox);
-        addSearchItem(label, m_constrainInPlacePreviewWidthCheckBox->toolTip(), m_constrainInPlacePreviewWidthCheckBox);
-        connect(m_constrainInPlacePreviewWidthCheckBox, &QCheckBox::stateChanged,
+        m_constrainInplacePreviewWidthCheckBox = WidgetsFactory::createCheckBox(label, box);
+        m_constrainInplacePreviewWidthCheckBox->setToolTip(tr("Constrain in-place preview width to the window"));
+        layout->addRow(m_constrainInplacePreviewWidthCheckBox);
+        addSearchItem(label, m_constrainInplacePreviewWidthCheckBox->toolTip(), m_constrainInplacePreviewWidthCheckBox);
+        connect(m_constrainInplacePreviewWidthCheckBox, &QCheckBox::stateChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        auto srcLayout = new QVBoxLayout();
+        layout->addRow(tr("In-place preview sources:"), srcLayout);
+
+        m_inplacePreviewSourceImageLinkCheckBox = WidgetsFactory::createCheckBox(tr("Image link"), box);
+        srcLayout->addWidget(m_inplacePreviewSourceImageLinkCheckBox);
+        connect(m_inplacePreviewSourceImageLinkCheckBox, &QCheckBox::stateChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+
+        m_inplacePreviewSourceCodeBlockCheckBox = WidgetsFactory::createCheckBox(tr("Code block"), box);
+        srcLayout->addWidget(m_inplacePreviewSourceCodeBlockCheckBox);
+        connect(m_inplacePreviewSourceCodeBlockCheckBox, &QCheckBox::stateChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+
+        m_inplacePreviewSourceMathCheckBox = WidgetsFactory::createCheckBox(tr("Math"), box);
+        srcLayout->addWidget(m_inplacePreviewSourceMathCheckBox);
+        connect(m_inplacePreviewSourceMathCheckBox, &QCheckBox::stateChanged,
                 this, &MarkdownEditorPage::pageIsChanged);
     }
 

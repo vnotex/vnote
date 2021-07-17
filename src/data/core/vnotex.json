@@ -330,7 +330,10 @@
             "//comment" : "Time interval (milliseconds) to do smart table formatting",
             "smart_table_interval" : 1000,
             "spell_check" : true,
-            "editor_overridden_font_family" : ""
+            "editor_overridden_font_family" : "",
+            "//comment" : "Sources to enable inplace preview, separated by ;",
+            "//comment" : "imagelink/codeblock/math",
+            "inplace_preview_sources" : "imagelink;codeblock;math"
         }
     },
     "widget" : {

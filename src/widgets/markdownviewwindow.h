@@ -145,6 +145,8 @@ namespace vnotex
 
         bool isReadMode() const;
 
+        void updatePreviewHelperFromConfig(const MarkdownEditorConfig &p_config);
+
         template <class T>
         static QSharedPointer<Outline> headingsToOutline(const QVector<T> &p_headings);
 
