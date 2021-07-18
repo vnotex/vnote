@@ -1,6 +1,7 @@
 #include "graphvizhelper.h"
 
 #include <QDebug>
+#include <QDir>
 
 #include <utils/processutils.h>
 
@@ -37,7 +38,7 @@ void GraphvizHelper::prepareProgramAndArgs(const QString &p_graphvizFile,
     p_program.clear();
     p_args.clear();
 
-    p_program = p_graphvizFile.isEmpty() ? QStringLiteral("dot") : p_graphvizFile;
+    p_program = p_graphvizFile.isEmpty() ? QStringLiteral("dot") : QDir::toNativeSeparators(p_graphvizFile);
 }
 
 QPair<bool, QString> GraphvizHelper::testGraphviz(const QString &p_graphvizFile)

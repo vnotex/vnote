@@ -1,6 +1,7 @@
 #include "plantumlhelper.h"
 
 #include <QDebug>
+#include <QDir>
 
 #include <utils/processutils.h>
 
@@ -58,12 +59,12 @@ void PlantUmlHelper::prepareProgramAndArgs(const QString &p_plantUmlJarFile,
 
     p_args << "-Djava.awt.headless=true";
 
-    p_args << "-jar" << p_plantUmlJarFile;
+    p_args << "-jar" << QDir::toNativeSeparators(p_plantUmlJarFile);
 
     p_args << "-charset" << "UTF-8";
 
     if (!p_graphvizFile.isEmpty()) {
-        p_args << "-graphvizdot" << p_graphvizFile;
+        p_args << "-graphvizdot" << QDir::toNativeSeparators(p_graphvizFile);
     }
 
     p_args << "-pipe";
