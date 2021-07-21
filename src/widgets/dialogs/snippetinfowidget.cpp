@@ -32,7 +32,7 @@ SnippetInfoWidget::SnippetInfoWidget(const Snippet *p_snippet, QWidget *p_parent
 
 void SnippetInfoWidget::setupUI()
 {
-    auto mainLayout = new QFormLayout(this);
+    auto mainLayout = WidgetsFactory::createFormLayout(this);
 
     m_nameLineEdit = WidgetsFactory::createLineEdit(this);
     auto validator = new QRegularExpressionValidator(QRegularExpression(PathUtils::c_fileNameRegularExpression),

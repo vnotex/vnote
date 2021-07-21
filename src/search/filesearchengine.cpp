@@ -97,17 +97,18 @@ void FileSearchEngineWorker::searchFile(const QString &p_filePath, const QString
 
         const auto lineText = ins.readLine();
         bool matched = false;
+        QVector<Segment> segments;
         if (!shouldStartBatchMode) {
-            matched = m_token.matched(lineText);
+            matched = m_token.matched(lineText, &segments);
         } else {
-            matched = m_token.matchedInBatchMode(lineText);
+            matched = m_token.matchedInBatchMode(lineText, &segments);
         }
 
         if (matched) {
             if (resultItem) {
-                resultItem->addLine(lineNum, lineText);
+                resultItem->addLine(lineNum, lineText, segments);
             } else {
-                resultItem = SearchResultItem::createFileItem(p_filePath, p_displayPath, lineNum, lineText);
+                resultItem = SearchResultItem::createFileItem(p_filePath, p_displayPath, lineNum, lineText, segments);
             }
         }
 

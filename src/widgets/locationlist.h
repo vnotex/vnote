@@ -68,6 +68,10 @@ namespace vnotex
         static QIcon s_folderIcon;
 
         static QIcon s_notebookIcon;
+
+        static QString s_textHighlightForeground;
+
+        static QString s_textHighlightBackground;
     };
 }
 

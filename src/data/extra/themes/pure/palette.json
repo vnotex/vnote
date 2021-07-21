@@ -232,6 +232,10 @@
         "locationlist" : {
             "node_icon" : {
                 "fg" : "@base#icon#fg"
+            },
+            "text_highlight" : {
+                "fg" : "@base#master#fg",
+                "bg" : "@base#master#bg"
             }
         },
         "viewsplit" : {

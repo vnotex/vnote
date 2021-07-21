@@ -2,12 +2,14 @@
 
 #include <QVBoxLayout>
 #include <QToolButton>
+#include <QLabel>
 
 #include "treewidget.h"
 #include "widgetsfactory.h"
 #include "titlebar.h"
 
 #include <core/vnotex.h>
+#include <core/thememgr.h>
 #include <utils/iconutils.h>
 #include <utils/widgetutils.h>
 
@@ -21,10 +23,20 @@ QIcon LocationList::s_folderIcon;
 
 QIcon LocationList::s_notebookIcon;
 
+QString LocationList::s_textHighlightForeground;
+
+QString LocationList::s_textHighlightBackground;
+
 LocationList::LocationList(QWidget *p_parent)
     : QFrame(p_parent)
 {
     setupUI();
+
+    if (s_textHighlightForeground.isEmpty()) {
+        const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+        s_textHighlightForeground = themeMgr.paletteColor(QStringLiteral("widgets#locationlist#text_highlight#fg"));
+        s_textHighlightBackground = themeMgr.paletteColor(QStringLiteral("widgets#locationlist#text_highlight#bg"));
+    }
 }
 
 void LocationList::setupUI()
@@ -120,7 +132,38 @@ void LocationList::setItemLocationLineAndText(QTreeWidgetItem *p_item, const Com
     if (p_line.m_lineNumber != -1) {
         p_item->setText(Columns::LineColumn, QString::number(p_line.m_lineNumber + 1));
     }
-    p_item->setText(Columns::TextColumn, p_line.m_text);
+
+    if (p_line.m_segments.isEmpty()) {
+        p_item->setText(Columns::TextColumn, p_line.m_text);
+    } else {
+        auto segments = p_line.m_segments;
+        std::sort(segments.begin(), segments.end());
+
+        // Use \n as a marker for < and use \r for >.
+        QString text(p_line.m_text);
+        int lastOffset = text.size();
+        for (int i = segments.size() - 1; i >= 0; --i) {
+            Q_ASSERT(segments[i].m_length > 0);
+            if (segments[i].m_offset + segments[i].m_length > lastOffset) {
+                // Interset.
+                continue;
+            }
+
+            lastOffset = segments[i].m_offset;
+            text.insert(segments[i].m_offset + segments[i].m_length, QStringLiteral("\n/span\r"));
+            text.insert(segments[i].m_offset,
+                        QString("\nspan style='color:%1;background-color:%2'\r").arg(s_textHighlightForeground, s_textHighlightBackground));
+        }
+
+        text = text.toHtmlEscaped();
+        text.replace(QLatin1Char('\n'), QLatin1Char('<'));
+        text.replace(QLatin1Char('\r'), QLatin1Char('>'));
+
+        auto label = new QLabel(m_tree);
+        label->setTextFormat(Qt::RichText);
+        label->setText(text);
+        m_tree->setItemWidget(p_item, Columns::TextColumn, label);
+    }
 }
 
 void LocationList::addLocation(const ComplexLocation &p_location)

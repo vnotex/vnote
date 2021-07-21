@@ -3,6 +3,8 @@
 
 #include <QDebug>
 
+#include "global.h"
+
 namespace vnotex
 {
     struct Location
@@ -37,9 +39,10 @@ namespace vnotex
         {
             Line() = default;
 
-            Line(int p_lineNumber, const QString &p_text)
+            Line(int p_lineNumber, const QString &p_text, const QVector<Segment> &p_segments)
                 : m_lineNumber(p_lineNumber),
-                  m_text(p_text)
+                  m_text(p_text),
+                  m_segments(p_segments)
             {
             }
 
@@ -47,11 +50,13 @@ namespace vnotex
             int m_lineNumber = -1;
 
             QString m_text;
+
+            QVector<Segment> m_segments;
         };
 
-        void addLine(int p_lineNumber, const QString &p_text)
+        void addLine(int p_lineNumber, const QString &p_text, const QVector<Segment> &p_segments)
         {
-            m_lines.push_back(Line(p_lineNumber, p_text));
+            m_lines.push_back(Line(p_lineNumber, p_text, p_segments));
         }
 
         friend QDebug operator<<(QDebug p_dbg, const ComplexLocation &p_loc)

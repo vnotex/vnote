@@ -31,7 +31,7 @@ void SearchToken::append(const QRegularExpression &p_regExp)
     m_regularExpressions.append(p_regExp);
 }
 
-bool SearchToken::matched(const QString &p_text) const
+bool SearchToken::matched(const QString &p_text, QVector<Segment> *p_segments) const
 {
     const int consSize = constraintSize();
     if (consSize == 0) {
@@ -42,9 +42,22 @@ bool SearchToken::matched(const QString &p_text) const
     for (int i = 0; i < consSize; ++i) {
         bool consMatched = false;
         if (m_type == Type::PlainText) {
-            consMatched = p_text.contains(m_keywords[i], m_caseSensitivity);
+            int idx = p_text.indexOf(m_keywords[i], 0, m_caseSensitivity);
+            if (idx > -1) {
+                consMatched = true;
+                if (p_segments) {
+                    p_segments->push_back(Segment(idx, m_keywords[i].size()));
+                }
+            }
         } else {
-            consMatched = p_text.contains(m_regularExpressions[i]);
+            QRegularExpressionMatch match;
+            int idx = p_text.indexOf(m_regularExpressions[i], 0, &match);
+            if (idx > -1) {
+                consMatched = true;
+                if (p_segments) {
+                    p_segments->push_back(Segment(idx, match.capturedLength()));
+                }
+            }
         }
 
         if (consMatched) {
@@ -77,7 +90,7 @@ void SearchToken::startBatchMode()
     m_matchedConstraintsCountInBatchMode = 0;
 }
 
-bool SearchToken::matchedInBatchMode(const QString &p_text)
+bool SearchToken::matchedInBatchMode(const QString &p_text, QVector<Segment> *p_segments)
 {
     bool isMatched = false;
     const int consSize = m_matchedConstraintsInBatchMode.size();
@@ -88,9 +101,22 @@ bool SearchToken::matchedInBatchMode(const QString &p_text)
 
         bool consMatched = false;
         if (m_type == Type::PlainText) {
-            consMatched = p_text.contains(m_keywords[i], m_caseSensitivity);
+            int idx = p_text.indexOf(m_keywords[i], 0, m_caseSensitivity);
+            if (idx > -1) {
+                consMatched = true;
+                if (p_segments) {
+                    p_segments->push_back(Segment(idx, m_keywords[i].size()));
+                }
+            }
         } else {
-            consMatched = p_text.contains(m_regularExpressions[i]);
+            QRegularExpressionMatch match;
+            int idx = p_text.indexOf(m_regularExpressions[i], 0, &match);
+            if (idx > -1) {
+                consMatched = true;
+                if (p_segments) {
+                    p_segments->push_back(Segment(idx, match.capturedLength()));
+                }
+            }
         }
 
         if (consMatched) {

@@ -207,13 +207,13 @@ bool Searcher::firstPhaseSearch(const File *p_file)
 
     if (testObject(SearchObject::SearchName)) {
         if (isTokenMatched(name)) {
-            emit resultItemAdded(SearchResultItem::createBufferItem(filePath, relativePath, -1, name));
+            emit resultItemAdded(SearchResultItem::createBufferItem(filePath, relativePath));
         }
     }
 
     if (testObject(SearchObject::SearchPath)) {
         if (isTokenMatched(relativePath)) {
-            emit resultItemAdded(SearchResultItem::createBufferItem(filePath, relativePath, -1, name));
+            emit resultItemAdded(SearchResultItem::createBufferItem(filePath, relativePath));
         }
     }
 
@@ -294,17 +294,18 @@ bool Searcher::searchContent(const File *p_file)
         if (idx > pos) {
             QString lineText = content.mid(pos, idx - pos);
             bool matched = false;
+            QVector<Segment> segments;
             if (!shouldStartBatchMode) {
-                matched = m_token.matched(lineText);
+                matched = m_token.matched(lineText, &segments);
             } else {
-                matched = m_token.matchedInBatchMode(lineText);
+                matched = m_token.matchedInBatchMode(lineText, &segments);
             }
 
             if (matched) {
                 if (resultItem) {
-                    resultItem->addLine(lineNum, lineText);
+                    resultItem->addLine(lineNum, lineText, segments);
                 } else {
-                    resultItem = SearchResultItem::createBufferItem(filePath, relativePath, lineNum, lineText);
+                    resultItem = SearchResultItem::createBufferItem(filePath, relativePath, lineNum, lineText, segments);
                 }
             }
         }
@@ -407,13 +408,13 @@ bool Searcher::firstPhaseSearch(Node *p_node, QVector<SearchSecondPhaseItem> &p_
 
     if (testObject(SearchObject::SearchName)) {
         if (isTokenMatched(name)) {
-            emit resultItemAdded(SearchResultItem::createFileItem(filePath, relativePath, -1, name));
+            emit resultItemAdded(SearchResultItem::createFileItem(filePath, relativePath));
         }
     }
 
     if (testObject(SearchObject::SearchPath)) {
         if (isTokenMatched(relativePath)) {
-            emit resultItemAdded(SearchResultItem::createFileItem(filePath, relativePath, -1, name));
+            emit resultItemAdded(SearchResultItem::createFileItem(filePath, relativePath));
         }
     }
 

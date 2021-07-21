@@ -44,6 +44,10 @@
             "danger" : {
                 "fg": "@base#danger#fg"
             }
+        },
+        "master" : {
+            "fg" : "#fbffff",
+            "bg" : "#535c65"
         }
     },
     "widgets" : {
@@ -53,8 +57,8 @@
                 "button": {
                     "fg" : "@base#normal#fg",
                     "active" : {
-                        "fg" : "#fbffff",
-                        "bg" : "#535c65"
+                        "fg" : "@base#master#fg",
+                        "bg" : "@base#master#bg"
                     }
                 }
             }
@@ -95,6 +99,10 @@
         "locationlist" : {
             "node_icon" : {
                 "fg" : "@base#icon#fg"
+            },
+            "text_highlight" : {
+                "fg" : "@base#master#fg",
+                "bg" : "@base#master#bg"
             }
         },
         "viewsplit" : {
@@ -123,8 +131,8 @@
         },
         "quickselector" : {
             "item_icon" : {
-                "fg" : "#535c65",
-                "border" : "#535c65"
+                "fg" : "@base#master#bg",
+                "border" : "@base#master#bg"
             }
         }
     }

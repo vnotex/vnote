@@ -109,6 +109,30 @@ namespace vnotex
         Right
     };
 
+    struct Segment
+    {
+        Segment() = default;
+
+        Segment(int p_offset, int p_length)
+            : m_offset(p_offset),
+              m_length(p_length)
+        {
+        }
+
+        bool operator<(const Segment &p_other) const
+        {
+            if (m_offset < p_other.m_offset) {
+                return true;;
+            } else {
+                return m_length < p_other.m_length;
+            }
+        }
+
+        int m_offset = 0;
+
+        int m_length = -1;
+    };
+
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);
