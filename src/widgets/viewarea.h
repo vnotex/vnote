@@ -228,6 +228,8 @@ namespace vnotex
 
         void flashViewSplit(ViewSplit *p_split);
 
+        void updateHistory(const ViewWindowSession &p_session, Notebook *p_notebook) const;
+
         static SplitType splitTypeOfDirection(Direction p_direction);
 
         QLayout *m_mainLayout = nullptr;

@@ -42,9 +42,6 @@ namespace vnotex
 
         void addBuffer(Buffer *p_buffer);
 
-        // Try to load @p_path as a node if it is within one notebook.
-        QSharedPointer<Node> loadNodeByPath(const QString &p_path);
-
         QSharedPointer<NameBasedServer<IBufferFactory>> m_bufferServer;
 
         // Managed by QObject.

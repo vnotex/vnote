@@ -51,6 +51,11 @@ void CoreConfig::init(const QJsonObject &p_app,
     loadNoteManagement(appObj, userObj);
 
     m_recoverLastSessionOnStartEnabled = READBOOL(QStringLiteral("recover_last_session_on_start"));
+
+    m_historyMaxCount = READINT(QStringLiteral("history_max_count"));
+    if (m_historyMaxCount < 0) {
+        m_historyMaxCount = 100;
+    }
 }
 
 QJsonObject CoreConfig::toJson() const
@@ -61,6 +66,7 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("shortcuts")] = saveShortcuts();
     obj[QStringLiteral("toolbar_icon_size")] = m_toolBarIconSize;
     obj[QStringLiteral("recover_last_session_on_start")] = m_recoverLastSessionOnStartEnabled;
+    obj[QStringLiteral("history_max_count")] = m_historyMaxCount;
     return obj;
 }
 
@@ -161,4 +167,9 @@ bool CoreConfig::isRecoverLastSessionOnStartEnabled() const
 void CoreConfig::setRecoverLastSessionOnStartEnabled(bool p_enabled)
 {
     updateConfig(m_recoverLastSessionOnStartEnabled, p_enabled, this);
+}
+
+int CoreConfig::getHistoryMaxCount() const
+{
+    return m_historyMaxCount;
 }

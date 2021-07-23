@@ -374,3 +374,15 @@ void NotebookMgr::addNotebook(const QSharedPointer<Notebook> &p_notebook)
                 emit notebookUpdated(notebook);
             });
 }
+
+QSharedPointer<Node> NotebookMgr::loadNodeByPath(const QString &p_path)
+{
+    for (const auto &nb : m_notebooks) {
+        auto node = nb->loadNodeByPath(p_path);
+        if (node) {
+            return node;
+        }
+    }
+
+    return nullptr;
+}

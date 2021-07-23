@@ -14,8 +14,15 @@ namespace vnotex
 
         static QVector<QListWidgetItem *> getVisibleItems(const QListWidget *p_widget);
 
+        static QListWidgetItem *createSeparatorItem(const QString &p_text);
+
+        static bool isSeparatorItem(const QListWidgetItem *p_item);
+
     protected:
         void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
+    private:
+        static const int c_separatorType = 2000;
     };
 }
 

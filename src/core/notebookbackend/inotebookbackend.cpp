@@ -21,3 +21,9 @@ QString INotebookBackend::getFullPath(const QString &p_path) const
     constrainPath(p_path);
     return QDir(m_rootPath).filePath(p_path);
 }
+
+QString INotebookBackend::getRelativePath(const QString &p_path) const
+{
+    constrainPath(p_path);
+    return PathUtils::relativePath(m_rootPath, p_path);
+}

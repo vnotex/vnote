@@ -6,8 +6,9 @@
 #include <QSharedPointer>
 
 #include "notebookparameters.h"
-#include "../global.h"
+#include <core/global.h>
 #include "node.h"
+#include <core/historyitem.h>
 
 namespace vnotex
 {
@@ -129,6 +130,10 @@ namespace vnotex
         bool isBuiltInFolder(const Node *p_node, const QString &p_name) const;
 
         void reloadNodes();
+
+        virtual const QVector<HistoryItem> &getHistory() const = 0;
+        virtual void addHistory(const HistoryItem &p_item) = 0;
+        virtual void clearHistory() = 0;
 
         static const QString c_defaultAttachmentFolder;
 

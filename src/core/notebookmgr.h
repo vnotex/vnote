@@ -21,6 +21,7 @@ namespace vnotex
     class INotebookBackendFactory;
     class INotebookFactory;
     class NotebookParameters;
+    class Node;
 
     class NotebookMgr : public QObject
     {
@@ -66,6 +67,9 @@ namespace vnotex
         void closeNotebook(ID p_id);
 
         void removeNotebook(ID p_id);
+
+        // Try to load @p_path as a node if it is within one notebook.
+        QSharedPointer<Node> loadNodeByPath(const QString &p_path);
 
     public slots:
         void setCurrentNotebook(ID p_notebookId);

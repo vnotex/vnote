@@ -20,6 +20,7 @@
             "SearchDock" : "",
             "SnippetDock" : "Ctrl+G, S",
             "LocationListDock" : "Ctrl+G, C",
+            "HistoryDock" : "",
             "Search" : "Ctrl+Alt+F",
             "NavigationMode" : "Ctrl+G, W",
             "LocateNode" : "Ctrl+G, D",
@@ -54,7 +55,8 @@
             "MoveOneSplitLeft" : "Ctrl+G, Shift+H",
             "MoveOneSplitDown" : "Ctrl+G, Shift+J",
             "MoveOneSplitUp" : "Ctrl+G, Shift+K",
-            "MoveOneSplitRight" : "Ctrl+G, Shift+L"
+            "MoveOneSplitRight" : "Ctrl+G, Shift+L",
+            "OpenLastClosedFile" : "Ctrl+Shift+T"
         },
         "toolbar_icon_size" : 16,
         "note_management" : {
@@ -66,7 +68,9 @@
                 ]
             }
         },
-        "recover_last_session_on_start" : true
+        "recover_last_session_on_start" : true,
+        "//comment" : "Max count of the history items for each notebook and session config",
+        "history_max_count" : 100
     },
     "editor" : {
         "core": {

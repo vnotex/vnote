@@ -32,6 +32,7 @@
 #include <notebook/notebook.h>
 #include "editors/plantumlhelper.h"
 #include "editors/graphvizhelper.h"
+#include <core/historymgr.h>
 
 using namespace vnotex;
 
@@ -464,9 +465,22 @@ bool ViewArea::closeViewWindow(ViewWindow *p_win, bool p_force, bool p_removeSpl
     // Make it current ViewWindow.
     setCurrentViewWindow(p_win);
 
+    // Get info before close.
+    const auto session = p_win->saveSession();
+    Notebook *notebook = nullptr;
+    if (p_win->getBuffer()) {
+        auto node = p_win->getBuffer()->getNode();
+        if (node) {
+            notebook = node->getNotebook();
+        }
+    }
+
     if (!p_win->aboutToClose(p_force)) {
         return false;
     }
+
+    // Update history.
+    updateHistory(session, notebook);
 
     // Remove the status widget.
     if (m_currentStatusWidget && p_win == getCurrentViewWindow()) {
@@ -887,6 +901,26 @@ void ViewArea::setupShortcuts()
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
                         focusSplitByDirection(Direction::Right);
+                    });
+        }
+    }
+
+    // OpenLastClosedFile.
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::OpenLastClosedFile), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        auto file = HistoryMgr::getInst().popLastClosedFile();
+                        if (file.m_path.isEmpty()) {
+                            VNoteX::getInst().showStatusMessageShort(tr("No recently closed file"));
+                            return;
+                        }
+                        auto paras = QSharedPointer<FileOpenParameters>::create();
+                        paras->m_lineNumber = file.m_lineNumber;
+                        paras->m_mode = file.m_mode;
+                        paras->m_readOnly = file.m_readOnly;
+                        emit VNoteX::getInst().openFileRequested(file.m_path, paras);
                     });
         }
     }
@@ -1440,4 +1474,13 @@ ViewArea::SplitType ViewArea::splitTypeOfDirection(Direction p_direction)
     } else {
         return SplitType::Vertical;
     }
+}
+
+void ViewArea::updateHistory(const ViewWindowSession &p_session, Notebook *p_notebook) const
+{
+    HistoryMgr::getInst().add(p_session.m_bufferPath,
+                              p_session.m_lineNumber,
+                              p_session.m_viewWindowMode,
+                              p_session.m_readOnly,
+                              p_notebook);
 }

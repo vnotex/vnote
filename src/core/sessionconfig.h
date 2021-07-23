@@ -8,6 +8,7 @@
 
 #include <export/exportdata.h>
 #include <search/searchdata.h>
+#include "historyitem.h"
 
 namespace vnotex
 {
@@ -123,6 +124,10 @@ namespace vnotex
 
         const QVector<ExternalProgram> &getExternalPrograms() const;
 
+        const QVector<HistoryItem> &getHistory() const;
+        void addHistory(const HistoryItem &p_item);
+        void clearHistory();
+
     private:
         void loadCore(const QJsonObject &p_session);
 
@@ -141,6 +146,10 @@ namespace vnotex
         QJsonArray saveExternalPrograms() const;
 
         void doVersionSpecificOverride();
+
+        void loadHistory(const QJsonObject &p_session);
+
+        QJsonArray saveHistory() const;
 
         QString m_newNotebookDefaultRootFolderPath;
 
@@ -175,6 +184,8 @@ namespace vnotex
         QStringList m_quickAccessFiles;
 
         QVector<ExternalProgram> m_externalPrograms;
+
+        QVector<HistoryItem> m_history;
     };
 } // ns vnotex
 

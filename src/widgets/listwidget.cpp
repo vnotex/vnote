@@ -41,3 +41,15 @@ QVector<QListWidgetItem *> ListWidget::getVisibleItems(const QListWidget *p_widg
 
     return items;
 }
+
+QListWidgetItem *ListWidget::createSeparatorItem(const QString &p_text)
+{
+    QListWidgetItem *item = new QListWidgetItem(p_text, nullptr, c_separatorType);
+    item->setFlags(Qt::NoItemFlags);
+    return item;
+}
+
+bool ListWidget::isSeparatorItem(const QListWidgetItem *p_item)
+{
+    return p_item->type() == c_separatorType;
+}

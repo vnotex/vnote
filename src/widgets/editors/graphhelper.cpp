@@ -42,6 +42,7 @@ void GraphHelper::process(quint64 p_id,
                           TimeStamp p_timeStamp,
                           const QString &p_format,
                           const QString &p_text,
+                          QObject *p_owner,
                           const ResultCallback &p_callback)
 {
     Task task;
@@ -49,6 +50,7 @@ void GraphHelper::process(quint64 p_id,
     task.m_timeStamp = p_timeStamp;
     task.m_format = p_format;
     task.m_text = p_text;
+    task.m_owner = p_owner;
     task.m_callback = p_callback;
 
     m_tasks.enqueue(task);
@@ -126,10 +128,10 @@ void GraphHelper::finishOneTask(QProcess *p_process, int p_exitCode, QProcess::E
             QString data;
             if (task.m_format == QStringLiteral("svg")) {
                 data = QString::fromLocal8Bit(outBa);
-                task.m_callback(id, timeStamp, task.m_format, data);
+                callbackOneTask(task, id, timeStamp, task.m_format, data);
             } else {
                 data = QString::fromLocal8Bit(outBa.toBase64());
-                task.m_callback(id, timeStamp, task.m_format, data);
+                callbackOneTask(task, id, timeStamp, task.m_format, data);
             }
 
             CacheItem item;
@@ -152,7 +154,7 @@ void GraphHelper::finishOneTask(QProcess *p_process, int p_exitCode, QProcess::E
     }
 
     if (failed) {
-        task.m_callback(id, task.m_timeStamp, task.m_format, QString());
+        callbackOneTask(task, id, task.m_timeStamp, task.m_format, QString());
     }
 
     p_process->deleteLater();
@@ -169,7 +171,7 @@ void GraphHelper::finishOneTask(const QString &p_data)
 
     qDebug() << "Graph task" << task.m_id << task.m_timeStamp << "finished by cache" << p_data.size();
 
-    task.m_callback(task.m_id, task.m_timeStamp, task.m_format, p_data);
+    callbackOneTask(task, task.m_id, task.m_timeStamp, task.m_format, p_data);
 
     m_taskOngoing = false;
     processOneTask();
@@ -197,5 +199,12 @@ void GraphHelper::checkValidProgram()
             QFileInfo finfo(m_program);
             m_programValid = !finfo.isAbsolute() || finfo.isExecutable();
         }
+    }
+}
+
+void GraphHelper::callbackOneTask(const Task &p_task, quint64 p_id, TimeStamp p_timeStamp, const QString &p_format, const QString &p_data) const
+{
+    if (p_task.m_owner) {
+        p_task.m_callback(p_id, p_timeStamp, p_format, p_data);
     }
 }

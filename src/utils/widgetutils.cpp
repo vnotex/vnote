@@ -296,6 +296,10 @@ QShortcut *WidgetUtils::createShortcut(const QString &p_shortcut,
     }
 
     auto shortcut = new QShortcut(kseq, p_widget, nullptr, nullptr, p_context);
+    if (shortcut->key().isEmpty()) {
+        delete shortcut;
+        return nullptr;
+    }
     return shortcut;
 }
 

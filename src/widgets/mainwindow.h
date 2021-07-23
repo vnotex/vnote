@@ -23,6 +23,7 @@ namespace vnotex
     class LocationList;
     class SearchPanel;
     class SnippetPanel;
+    class HistoryPanel;
 
     enum { RESTART_EXIT_CODE = 1000 };
 
@@ -96,6 +97,7 @@ namespace vnotex
         {
             NavigationDock = 0,
             OutlineDock,
+            HistoryDock,
             SearchDock,
             SnippetDock,
             LocationListDock
@@ -122,6 +124,10 @@ namespace vnotex
         void setupSnippetDock();
 
         void setupSnippetPanel();
+
+        void setupHistoryDock();
+
+        void setupHistoryPanel();
 
         void setupNotebookExplorer(QWidget *p_parent = nullptr);
 
@@ -175,6 +181,8 @@ namespace vnotex
         SearchPanel *m_searchPanel = nullptr;
 
         SnippetPanel *m_snippetPanel = nullptr;
+
+        HistoryPanel *m_historyPanel = nullptr;
 
         QVector<QDockWidget *> m_docks;
 

@@ -5,16 +5,18 @@
 #include <notebookconfigmgr/bundlenotebookconfigmgr.h>
 #include <notebookconfigmgr/notebookconfig.h>
 #include <utils/fileutils.h>
+#include <core/historymgr.h>
+#include <notebookbackend/inotebookbackend.h>
 
 using namespace vnotex;
 
 BundleNotebook::BundleNotebook(const NotebookParameters &p_paras,
+                               const QSharedPointer<NotebookConfig> &p_notebookConfig,
                                QObject *p_parent)
     : Notebook(p_paras, p_parent)
 {
-    auto configMgr = getBundleNotebookConfigMgr();
-    auto config = configMgr->readNotebookConfig();
-    m_nextNodeId = config->m_nextNodeId;
+    m_nextNodeId = p_notebookConfig->m_nextNodeId;
+    m_history = p_notebookConfig->m_history;
 }
 
 BundleNotebookConfigMgr *BundleNotebook::getBundleNotebookConfigMgr() const
@@ -57,4 +59,25 @@ void BundleNotebook::remove()
         qInfo() << QString("root folder of notebook (%1) is not empty and needs manual clean up")
                           .arg(getRootFolderAbsolutePath());
     }
+}
+
+const QVector<HistoryItem> &BundleNotebook::getHistory() const
+{
+    return m_history;
+}
+
+void BundleNotebook::addHistory(const HistoryItem &p_item)
+{
+    HistoryItem item(p_item);
+    item.m_path = getBackend()->getRelativePath(item.m_path);
+    HistoryMgr::insertHistoryItem(m_history, p_item);
+
+    updateNotebookConfig();
+}
+
+void BundleNotebook::clearHistory()
+{
+    m_history.clear();
+
+    updateNotebookConfig();
 }

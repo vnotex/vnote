@@ -43,6 +43,7 @@
 #include "locationlist.h"
 #include "searchpanel.h"
 #include "snippetpanel.h"
+#include "historypanel.h"
 #include <notebook/notebook.h>
 #include "searchinfoprovider.h"
 #include <vtextedit/spellchecker.h>
@@ -217,6 +218,8 @@ void MainWindow::setupDocks()
 
     setupOutlineDock();
 
+    setupHistoryDock();
+
     setupSearchDock();
 
     setupSnippetDock();
@@ -225,6 +228,7 @@ void MainWindow::setupDocks()
         tabifyDockWidget(m_docks[i - 1], m_docks[i]);
     }
 
+    // Following are non-tabfieid docks.
     setupLocationListDock();
 
     for (auto dock : m_docks) {
@@ -338,6 +342,26 @@ void MainWindow::setupSnippetPanel()
             });
 }
 
+void MainWindow::setupHistoryDock()
+{
+    auto dock = new QDockWidget(tr("History"), this);
+    m_docks.push_back(dock);
+
+    dock->setObjectName(QStringLiteral("HistoryDock.vnotex"));
+    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+    setupHistoryPanel();
+    dock->setWidget(m_historyPanel);
+    dock->setFocusProxy(m_historyPanel);
+    addDockWidget(Qt::LeftDockWidgetArea, dock);
+}
+
+void MainWindow::setupHistoryPanel()
+{
+    m_historyPanel = new HistoryPanel(this);
+    m_historyPanel->setObjectName("HistoryPanel.vnotex");
+}
+
 void MainWindow::setupLocationListDock()
 {
     auto dock = new QDockWidget(tr("Location List"), this);
@@ -381,7 +405,10 @@ void MainWindow::setupNotebookExplorer(QWidget *p_parent)
     connect(&VNoteX::getInst(), &VNoteX::importLegacyNotebookRequested,
             m_notebookExplorer, &NotebookExplorer::importLegacyNotebook);
     connect(&VNoteX::getInst(), &VNoteX::locateNodeRequested,
-            m_notebookExplorer, &NotebookExplorer::locateNode);
+            this, [this](Node *p_node) {
+                activateDock(m_docks[DockIndex::NavigationDock]);
+                m_notebookExplorer->locateNode(p_node);
+            });
 
     auto notebookMgr = &VNoteX::getInst().getNotebookMgr();
     connect(notebookMgr, &NotebookMgr::notebooksUpdated,
@@ -645,6 +672,9 @@ void MainWindow::setupShortcuts()
 
     setupDockActivateShortcut(m_docks[DockIndex::OutlineDock],
                               coreConfig.getShortcut(CoreConfig::Shortcut::OutlineDock));
+
+    setupDockActivateShortcut(m_docks[DockIndex::HistoryDock],
+                              coreConfig.getShortcut(CoreConfig::Shortcut::HistoryDock));
 
     setupDockActivateShortcut(m_docks[DockIndex::SearchDock],
                               coreConfig.getShortcut(CoreConfig::Shortcut::SearchDock));

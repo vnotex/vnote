@@ -135,14 +135,14 @@ void SnippetPanel::showEvent(QShowEvent *p_event)
     }
 }
 
-void SnippetPanel::handleContextMenuRequested(QPoint p_pos)
+void SnippetPanel::handleContextMenuRequested(const QPoint &p_pos)
 {
-    QMenu menu(this);
-
     auto item = m_snippetList->itemAt(p_pos);
     if (!item) {
         return;
     }
+
+    QMenu menu(this);
 
     const int selectedCount = m_snippetList->selectedItems().size();
     if (selectedCount == 1) {

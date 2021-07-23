@@ -55,7 +55,8 @@ QSharedPointer<Notebook> BundleNotebookFactory::newNotebook(const NotebookParame
 
     p_paras.m_notebookConfigMgr->createEmptySkeleton(p_paras);
 
-    auto notebook = QSharedPointer<BundleNotebook>::create(p_paras);
+    auto nbConfig = BundleNotebookConfigMgr::readNotebookConfig(p_paras.m_notebookBackend);
+    auto notebook = QSharedPointer<BundleNotebook>::create(p_paras, nbConfig);
     return notebook;
 }
 
@@ -78,7 +79,7 @@ QSharedPointer<Notebook> BundleNotebookFactory::createNotebook(const NotebookMgr
                                                               nbConfig->m_versionController,
                                                               nbConfig->m_notebookConfigMgr);
     checkParameters(*paras);
-    auto notebook = QSharedPointer<BundleNotebook>::create(*paras);
+    auto notebook = QSharedPointer<BundleNotebook>::create(*paras, nbConfig);
     return notebook;
 }
 

@@ -72,6 +72,15 @@ QString PathUtils::fileName(const QString &p_path)
     return fi.fileName();
 }
 
+QString PathUtils::fileNameCheap(const QString &p_path)
+{
+    int idx = p_path.lastIndexOf(QRegularExpression("[\\\\/]"));
+    if (idx == -1) {
+        return p_path;
+    }
+    return p_path.mid(idx + 1);
+}
+
 QString PathUtils::normalizePath(const QString &p_path)
 {
     auto absPath = QDir::cleanPath(QDir(p_path).absolutePath());

@@ -19,6 +19,7 @@ namespace vnotex
 
         ExternalNode(Node *p_parent, const QString &p_name, Type p_type);
 
+        // Get parent node.
         Node *getNode() const;
 
         const QString &getName() const;

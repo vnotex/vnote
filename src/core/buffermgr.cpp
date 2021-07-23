@@ -105,7 +105,7 @@ void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenPar
     }
 
     // Check if it is an internal node or not.
-    auto node = loadNodeByPath(p_filePath);
+    auto node = VNoteX::getInst().getNotebookMgr().loadNodeByPath(p_filePath);
     if (node) {
         if (node->hasContent()) {
             open(node.data(), p_paras);
@@ -186,17 +186,4 @@ void BufferMgr::addBuffer(Buffer *p_buffer)
                 p_buffer->close();
                 p_buffer->deleteLater();
             });
-}
-
-QSharedPointer<Node> BufferMgr::loadNodeByPath(const QString &p_path)
-{
-    const auto &notebooks = VNoteX::getInst().getNotebookMgr().getNotebooks();
-    for (const auto &nb : notebooks) {
-        auto node = nb->loadNodeByPath(p_path);
-        if (node) {
-            return node;
-        }
-    }
-
-    return nullptr;
 }

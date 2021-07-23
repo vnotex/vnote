@@ -65,6 +65,8 @@ namespace vnotex
 
         QString getFullPath(const QString &p_path) const;
 
+        QString getRelativePath(const QString &p_path) const;
+
         virtual bool exists(const QString &p_path) const = 0;
 
         virtual bool existsFile(const QString &p_path) const = 0;

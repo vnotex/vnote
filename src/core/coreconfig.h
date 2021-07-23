@@ -26,6 +26,7 @@ namespace vnotex
             SearchDock,
             SnippetDock,
             LocationListDock,
+            HistoryDock,
             Search,
             NavigationMode,
             LocateNode,
@@ -61,6 +62,7 @@ namespace vnotex
             MoveOneSplitDown,
             MoveOneSplitUp,
             MoveOneSplitRight,
+            OpenLastClosedFile,
             MaxShortcut
         };
         Q_ENUM(Shortcut)
@@ -92,6 +94,8 @@ namespace vnotex
         bool isRecoverLastSessionOnStartEnabled() const;
         void setRecoverLastSessionOnStartEnabled(bool p_enabled);
 
+        int getHistoryMaxCount() const;
+
     private:
         friend class MainConfig;
 
@@ -117,6 +121,9 @@ namespace vnotex
 
         // Whether recover last session on start.
         bool m_recoverLastSessionOnStartEnabled = true;
+
+        // Max count of the history items for each notebook and session config.
+        int m_historyMaxCount = 100;
 
         static QStringList s_availableLocales;
     };

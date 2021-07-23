@@ -7,12 +7,14 @@
 namespace vnotex
 {
     class BundleNotebookConfigMgr;
+    class NotebookConfig;
 
     class BundleNotebook : public Notebook
     {
         Q_OBJECT
     public:
         BundleNotebook(const NotebookParameters &p_paras,
+                       const QSharedPointer<NotebookConfig> &p_notebookConfig,
                        QObject *p_parent = nullptr);
 
         ID getNextNodeId() const Q_DECL_OVERRIDE;
@@ -25,10 +27,16 @@ namespace vnotex
 
         void remove() Q_DECL_OVERRIDE;
 
+        const QVector<HistoryItem> &getHistory() const Q_DECL_OVERRIDE;
+        void addHistory(const HistoryItem &p_item) Q_DECL_OVERRIDE;
+        void clearHistory() Q_DECL_OVERRIDE;
+
     private:
         BundleNotebookConfigMgr *getBundleNotebookConfigMgr() const;
 
         ID m_nextNodeId = 1;
+
+        QVector<HistoryItem> m_history;
     };
 } // ns vnotex
 

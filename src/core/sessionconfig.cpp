@@ -9,6 +9,7 @@
 
 #include "configmgr.h"
 #include "mainconfig.h"
+#include "historymgr.h"
 
 using namespace vnotex;
 
@@ -86,6 +87,8 @@ void SessionConfig::init()
     loadExternalPrograms(sessionJobj);
 
     loadNotebooks(sessionJobj);
+
+    loadHistory(sessionJobj);
 
     if (MainConfig::isVersionChanged()) {
         doVersionSpecificOverride();
@@ -208,6 +211,7 @@ QJsonObject SessionConfig::toJson() const
     writeByteArray(obj, QStringLiteral("viewarea_session"), m_viewAreaSession);
     writeByteArray(obj, QStringLiteral("notebook_explorer_session"), m_notebookExplorerSession);
     obj[QStringLiteral("external_programs")] = saveExternalPrograms();
+    obj[QStringLiteral("history")] = saveHistory();
     return obj;
 }
 
@@ -404,4 +408,39 @@ QJsonArray SessionConfig::saveExternalPrograms() const
 const QVector<SessionConfig::ExternalProgram> &SessionConfig::getExternalPrograms() const
 {
     return m_externalPrograms;
+}
+
+const QVector<HistoryItem> &SessionConfig::getHistory() const
+{
+    return m_history;
+}
+
+void SessionConfig::addHistory(const HistoryItem &p_item)
+{
+    HistoryMgr::insertHistoryItem(m_history, p_item);
+    update();
+}
+
+void SessionConfig::clearHistory()
+{
+    m_history.clear();
+    update();
+}
+
+void SessionConfig::loadHistory(const QJsonObject &p_session)
+{
+    auto arr = p_session[QStringLiteral("history")].toArray();
+    m_history.resize(arr.size());
+    for (int i = 0; i < arr.size(); ++i) {
+        m_history[i].fromJson(arr[i].toObject());
+    }
+}
+
+QJsonArray SessionConfig::saveHistory() const
+{
+    QJsonArray arr;
+    for (const auto &item : m_history) {
+        arr.append(item.toJson());
+    }
+    return arr;
 }
