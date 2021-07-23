@@ -43,6 +43,7 @@
 #include "locationlist.h"
 #include "searchpanel.h"
 #include "snippetpanel.h"
+#include "historypanel.h"
 #include <notebook/notebook.h>
 #include "searchinfoprovider.h"
 #include <vtextedit/spellchecker.h>
@@ -217,6 +218,8 @@ void MainWindow::setupDocks()
 
     setupOutlineDock();
 
+    setupHistoryDock();
+
     setupSearchDock();
 
     setupSnippetDock();
@@ -225,6 +228,7 @@ void MainWindow::setupDocks()
         tabifyDockWidget(m_docks[i - 1], m_docks[i]);
     }
 
+    // Following are non-tabfieid docks.
     setupLocationListDock();
 
     for (auto dock : m_docks) {
@@ -336,6 +340,26 @@ void MainWindow::setupSnippetPanel()
                     viewWindow->setFocus();
                 }
             });
+}
+
+void MainWindow::setupHistoryDock()
+{
+    auto dock = new QDockWidget(tr("History"), this);
+    m_docks.push_back(dock);
+
+    dock->setObjectName(QStringLiteral("HistoryDock.vnotex"));
+    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+    setupHistoryPanel();
+    dock->setWidget(m_historyPanel);
+    dock->setFocusProxy(m_historyPanel);
+    addDockWidget(Qt::LeftDockWidgetArea, dock);
+}
+
+void MainWindow::setupHistoryPanel()
+{
+    m_historyPanel = new HistoryPanel(this);
+    m_historyPanel->setObjectName("HistoryPanel.vnotex");
 }
 
 void MainWindow::setupLocationListDock()

@@ -135,7 +135,7 @@ void SnippetPanel::showEvent(QShowEvent *p_event)
     }
 }
 
-void SnippetPanel::handleContextMenuRequested(QPoint p_pos)
+void SnippetPanel::handleContextMenuRequested(const QPoint &p_pos)
 {
     QMenu menu(this);
 

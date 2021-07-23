@@ -58,6 +58,8 @@ QJsonObject NotebookConfig::toJson() const
     jobj[NotebookConfig::c_configMgr] = m_notebookConfigMgr;
     jobj[NotebookConfig::c_nextNodeId] = QString::number(m_nextNodeId);
 
+    jobj[QStringLiteral("history")] = saveHistory();
+
     return jobj;
 }
 
@@ -69,7 +71,7 @@ void NotebookConfig::fromJson(const QJsonObject &p_jobj)
         || !p_jobj.contains(NotebookConfig::c_versionController)
         || !p_jobj.contains(NotebookConfig::c_configMgr)) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("fail to read notebook configuration from JSON (%1)").arg(QJsonObjectToString(p_jobj)));
+                            QString("failed to read notebook configuration from JSON (%1)").arg(QJsonObjectToString(p_jobj)));
         return;
     }
 
@@ -90,6 +92,8 @@ void NotebookConfig::fromJson(const QJsonObject &p_jobj)
             m_nextNodeId = BundleNotebookConfigMgr::RootNodeId;
         }
     }
+
+    loadHistory(p_jobj);
 }
 
 QSharedPointer<NotebookConfig> NotebookConfig::fromNotebook(const QString &p_version,
@@ -106,6 +110,25 @@ QSharedPointer<NotebookConfig> NotebookConfig::fromNotebook(const QString &p_ver
     config->m_versionController = p_notebook->getVersionController()->getName();
     config->m_notebookConfigMgr = p_notebook->getConfigMgr()->getName();
     config->m_nextNodeId = p_notebook->getNextNodeId();
+    config->m_history = p_notebook->getHistory();
 
     return config;
+}
+
+QJsonArray NotebookConfig::saveHistory() const
+{
+    QJsonArray arr;
+    for (const auto &item : m_history) {
+        arr.append(item.toJson());
+    }
+    return arr;
+}
+
+void NotebookConfig::loadHistory(const QJsonObject &p_jobj)
+{
+    auto arr = p_jobj[QStringLiteral("history")].toArray();
+    m_history.resize(arr.size());
+    for (int i = 0; i < arr.size(); ++i) {
+        m_history[i].fromJson(arr[i].toObject());
+    }
 }

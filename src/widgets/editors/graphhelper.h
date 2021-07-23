@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QPair>
 #include <QQueue>
+#include <QPointer>
 
 #include <core/noncopyable.h>
 #include <core/global.h>
@@ -23,6 +24,7 @@ namespace vnotex
                      TimeStamp p_timeStamp,
                      const QString &p_format,
                      const QString &p_text,
+                     QObject *p_owner,
                      const ResultCallback &p_callback);
 
     protected:
@@ -55,6 +57,8 @@ namespace vnotex
 
             QString m_text;
 
+            QPointer<QObject> m_owner;
+
             ResultCallback m_callback;
         };
 
@@ -75,6 +79,8 @@ namespace vnotex
         void finishOneTask(QProcess *p_process, int p_exitCode, QProcess::ExitStatus p_exitStatus);
 
         void finishOneTask(const QString &p_data);
+
+        void callbackOneTask(const Task &p_task, quint64 p_id, TimeStamp p_timeStamp, const QString &p_format, const QString &p_data) const;
 
         QQueue<Task> m_tasks;
 

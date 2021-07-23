@@ -262,6 +262,7 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx)
                                           m_codeBlockTimeStamp,
                                           QStringLiteral("svg"),
                                           vte::TextUtils::removeCodeBlockFence(blockData.m_text),
+                                          this,
                                           [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
                                               handleLocalData(id, timeStamp, format, data, true);
                                           });
@@ -274,6 +275,7 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx)
                                           m_codeBlockTimeStamp,
                                           QStringLiteral("svg"),
                                           vte::TextUtils::removeCodeBlockFence(blockData.m_text),
+                                          this,
                                           [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
                                               handleLocalData(id, timeStamp, format, data, false);
                                           });

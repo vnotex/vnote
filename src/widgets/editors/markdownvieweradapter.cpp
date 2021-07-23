@@ -390,6 +390,7 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id,
                                           p_index,
                                           p_format,
                                           p_text,
+                                          this,
                                           [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
                                               emit graphRenderDataReady(id, timeStamp, format, data);
                                           });
@@ -398,6 +399,7 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id,
                                           p_index,
                                           p_format,
                                           p_text,
+                                          this,
                                           [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
                                               emit graphRenderDataReady(id, timeStamp, format, data);
                                           });

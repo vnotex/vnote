@@ -49,6 +49,7 @@ SOURCES += \
     $$PWD/findandreplacewidget.cpp \
     $$PWD/floatingwidget.cpp \
     $$PWD/fullscreentoggleaction.cpp \
+    $$PWD/historypanel.cpp \
     $$PWD/lineedit.cpp \
     $$PWD/lineeditdelegate.cpp \
     $$PWD/lineeditwithsnippet.cpp \
@@ -155,6 +156,7 @@ HEADERS += \
     $$PWD/findandreplacewidget.h \
     $$PWD/floatingwidget.h \
     $$PWD/fullscreentoggleaction.h \
+    $$PWD/historypanel.h \
     $$PWD/lineedit.h \
     $$PWD/lineeditdelegate.h \
     $$PWD/lineeditwithsnippet.h \

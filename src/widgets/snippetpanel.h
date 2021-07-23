@@ -25,7 +25,7 @@ namespace vnotex
     private slots:
         void newSnippet();
 
-        void handleContextMenuRequested(QPoint p_pos);
+        void handleContextMenuRequested(const QPoint &p_pos);
 
         void removeSelectedSnippets();
 

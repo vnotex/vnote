@@ -4,9 +4,12 @@
 #include <QJsonObject>
 #include <QSharedPointer>
 #include <QDateTime>
+#include <QVector>
+#include <QJsonArray>
 
 #include "bundlenotebookconfigmgr.h"
-#include "global.h"
+#include <core/global.h>
+#include <core/historyitem.h>
 
 namespace vnotex
 {
@@ -44,6 +47,13 @@ namespace vnotex
         QString m_notebookConfigMgr;
 
         ID m_nextNodeId = BundleNotebookConfigMgr::RootNodeId + 1;
+
+        QVector<HistoryItem> m_history;
+
+    private:
+        QJsonArray saveHistory() const;
+
+        void loadHistory(const QJsonObject &p_jobj);
 
         static const QString c_version;
 

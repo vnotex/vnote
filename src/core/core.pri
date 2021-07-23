@@ -17,6 +17,8 @@ SOURCES += \
     $$PWD/editorconfig.cpp \
     $$PWD/externalfile.cpp \
     $$PWD/file.cpp \
+    $$PWD/historyitem.cpp \
+    $$PWD/historymgr.cpp \
     $$PWD/htmltemplatehelper.cpp \
     $$PWD/logger.cpp \
     $$PWD/mainconfig.cpp \
@@ -43,6 +45,8 @@ HEADERS += \
     $$PWD/file.h \
     $$PWD/filelocator.h \
     $$PWD/fileopenparameters.h \
+    $$PWD/historyitem.h \
+    $$PWD/historymgr.h \
     $$PWD/htmltemplatehelper.h \
     $$PWD/location.h \
     $$PWD/logger.h \

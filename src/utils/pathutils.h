@@ -38,6 +38,8 @@ namespace vnotex
         // Get file name of @p_path file/directory.
         static QString fileName(const QString &p_path);
 
+        static QString fileNameCheap(const QString &p_path);
+
         static QString absolutePath(const QString &p_path)
         {
             return QDir(p_path).absolutePath();

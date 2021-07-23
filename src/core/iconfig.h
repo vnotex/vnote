@@ -57,6 +57,12 @@ namespace vnotex
             return m_revision;
         }
 
+        void update()
+        {
+            ++m_revision;
+            writeToSettings();
+        }
+
     protected:
         ConfigMgr *getMgr() const
         {
