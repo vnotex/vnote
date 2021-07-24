@@ -72,7 +72,8 @@ void QuickSelector::setupUI(const QString &p_title)
         mainLayout->addWidget(new QLabel(p_title, this));
     }
 
-    m_searchLineEdit = WidgetsFactory::createLineEdit(this);
+    m_searchLineEdit = dynamic_cast<LineEdit *>(WidgetsFactory::createLineEdit(this));
+    m_searchLineEdit->setInputMethodEnabled(false);
     connect(m_searchLineEdit, &QLineEdit::textEdited,
             this, &QuickSelector::searchAndFilter);
     mainLayout->addWidget(m_searchLineEdit);

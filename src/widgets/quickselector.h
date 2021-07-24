@@ -6,12 +6,13 @@
 #include <QVariant>
 #include <QVector>
 
-class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
 
 namespace vnotex
 {
+    class LineEdit;
+
     struct QuickSelectorItem
     {
         QuickSelectorItem() = default;
@@ -63,7 +64,7 @@ namespace vnotex
 
         QVector<QuickSelectorItem> m_items;
 
-        QLineEdit *m_searchLineEdit = nullptr;
+        LineEdit *m_searchLineEdit = nullptr;
 
         QListWidget *m_itemList = nullptr;
 

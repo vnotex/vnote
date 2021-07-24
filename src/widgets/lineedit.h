@@ -14,10 +14,18 @@ namespace vnotex
 
         LineEdit(const QString &p_contents, QWidget *p_parent = nullptr);
 
+        QVariant inputMethodQuery(Qt::InputMethodQuery p_query) const Q_DECL_OVERRIDE;
+
+        void setInputMethodEnabled(bool p_enabled);
+
         static void selectBaseName(QLineEdit *p_lineEdit);
 
     protected:
         void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
+    private:
+        // Whether enable input method.
+        bool m_inputMethodEnabled = true;
     };
 }
 

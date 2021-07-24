@@ -2,6 +2,8 @@
 
 #include <QKeyEvent>
 #include <QCoreApplication>
+#include <QInputMethod>
+#include <QGuiApplication>
 
 #include <utils/widgetutils.h>
 
@@ -97,4 +99,25 @@ void LineEdit::selectBaseName(QLineEdit *p_lineEdit)
     auto name = p_lineEdit->text();
     int dotIndex = name.lastIndexOf('.');
     p_lineEdit->setSelection(0, (dotIndex == -1) ? name.size() : dotIndex);
+}
+
+QVariant LineEdit::inputMethodQuery(Qt::InputMethodQuery p_query) const
+{
+    if (p_query == Qt::ImEnabled) {
+        return m_inputMethodEnabled;
+    }
+
+    return QLineEdit::inputMethodQuery(p_query);
+}
+
+void LineEdit::setInputMethodEnabled(bool p_enabled)
+{
+    if (m_inputMethodEnabled != p_enabled) {
+        m_inputMethodEnabled = p_enabled;
+
+        QInputMethod *im = QGuiApplication::inputMethod();
+        im->reset();
+        // Ask input method to query current state, which will call inputMethodQuery().
+        im->update(Qt::ImEnabled);
+    }
 }
