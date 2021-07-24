@@ -441,6 +441,16 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
         break;
     }
 
+    case ViewWindowToolBarHelper::InplacePreview:
+    {
+        act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
+        connect(this, &ViewWindow::modeChanged,
+                this, [this, act]() {
+                    act->setEnabled(inModeCanInsert() && getBuffer());
+                });
+        break;
+    }
+
     default:
         Q_ASSERT(false);
         break;

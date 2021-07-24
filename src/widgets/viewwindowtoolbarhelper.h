@@ -43,7 +43,8 @@ namespace vnotex
             Attachment,
             Outline,
             FindAndReplace,
-            SectionNumber
+            SectionNumber,
+            InplacePreview
         };
 
         static QAction *addAction(QToolBar *p_tb, Action p_action);

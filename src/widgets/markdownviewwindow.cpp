@@ -250,6 +250,8 @@ void MarkdownViewWindow::setupToolBar()
     auto toolBar = createToolBar(this);
 
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+    const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
+
     const int iconSize = editorConfig.getToolBarIconSize();
     toolBar->setIconSize(QSize(iconSize, iconSize));
 
@@ -265,6 +267,16 @@ void MarkdownViewWindow::setupToolBar()
     toolBar->addSeparator();
 
     addAction(toolBar, ViewWindowToolBarHelper::SectionNumber);
+
+    {
+        auto act = addAction(toolBar, ViewWindowToolBarHelper::InplacePreview);
+        connect(act, &QAction::triggered,
+                this, [this, act](bool p_checked) {
+                    if (!isReadMode()) {
+                        m_editor->setInplacePreviewEnabled(p_checked);
+                    }
+                });
+    }
 
     addAction(toolBar, ViewWindowToolBarHelper::TypeHeading);
     addAction(toolBar, ViewWindowToolBarHelper::TypeBold);

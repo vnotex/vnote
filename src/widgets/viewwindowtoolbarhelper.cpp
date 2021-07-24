@@ -351,6 +351,15 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         break;
     }
 
+    case Action::InplacePreview:
+    {
+        act = p_tb->addAction(ToolBarHelper::generateIcon("inplace_preview_editor.svg"),
+                              ViewWindow::tr("Toggle In-Place Preview"));
+        act->setCheckable(true);
+        act->setChecked(true);
+        break;
+    }
+
     default:
         Q_ASSERT(false);
         break;

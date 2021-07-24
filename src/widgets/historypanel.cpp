@@ -6,6 +6,7 @@
 
 #include <utils/widgetutils.h>
 #include <utils/pathutils.h>
+#include <utils/utils.h>
 #include <core/vnotex.h>
 #include <core/exception.h>
 #include <core/configmgr.h>
@@ -215,9 +216,12 @@ void HistoryPanel::addItem(const HistoryItemFull &p_hisItem)
     item->setText(PathUtils::fileNameCheap(p_hisItem.m_item.m_path));
     item->setData(Qt::UserRole, p_hisItem.m_item.m_path);
     if (p_hisItem.m_notebookName.isEmpty()) {
-        item->setToolTip(p_hisItem.m_item.m_path);
+        item->setToolTip(tr("%1\n%2").arg(p_hisItem.m_item.m_path,
+                                          Utils::dateTimeString(p_hisItem.m_item.m_lastAccessedTimeUtc.toLocalTime())));
     } else {
-        item->setToolTip(tr("[%1] %2").arg(p_hisItem.m_notebookName, p_hisItem.m_item.m_path));
+        item->setToolTip(tr("[%1] %2\n%3").arg(p_hisItem.m_notebookName,
+                                               p_hisItem.m_item.m_path,
+                                               Utils::dateTimeString(p_hisItem.m_item.m_lastAccessedTimeUtc.toLocalTime())));
     }
 }
 
