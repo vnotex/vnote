@@ -1,4 +1,16 @@
 # Changes
+## v3.5.0
+* Support History
+* ViewArea
+    * `Ctrl+G, H/J/K/L` to navigate through ViewSplits
+    * `Ctrl+G, Shift+H/J/K/L` to move ViewWindow across ViewSplits
+* MarkdownEditor
+    * Add configs for in-place preview sources
+    * Add a tool button to disable in-place preview
+* Vi: support align and indent commands `=` and `>`
+* LocationList: highlight matched text segments
+* SelectDialog: support shortcuts (such as Rich Paste)
+
 ## v3.4.0
 * Support Snippet
     * `Ctrl+G S` to insert a snippet
