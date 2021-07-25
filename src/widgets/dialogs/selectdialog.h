@@ -24,6 +24,8 @@ namespace vnotex
 
         int getSelection() const;
 
+        bool eventFilter(QObject *p_watched, QEvent *p_event) Q_DECL_OVERRIDE;
+
     protected:
         void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -42,6 +44,16 @@ namespace vnotex
         int m_choice = CANCEL_ID;
 
         QListWidget *m_list = nullptr;
+
+        QMap<QChar, QListWidgetItem *> m_shortcuts;
+
+        QString m_shortcutIconForeground;
+
+        QString m_shortcutIconBorder;
+
+        QChar m_nextShortcut = QLatin1Char('a');
+
+        static const QChar c_cancelShortcut;
     };
 } // ns vnotex
 

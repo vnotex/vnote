@@ -187,7 +187,7 @@ bool ViewSplit::eventFilter(QObject *p_object, QEvent *p_event)
         }
     }
 
-    return false;
+    return QTabWidget::eventFilter(p_object, p_event);
 }
 
 void ViewSplit::setupTabBar()

@@ -98,16 +98,15 @@ void QuickSelector::updateItemList()
 
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
 
+    const auto fg = themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg"));
+    const auto border = themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#border"));
+
     for (int i = 0; i < m_items.size(); ++i) {
         const auto &item = m_items[i];
 
-        auto listItem = new QListWidgetItem(m_itemList);
-        auto icon = IconUtils::drawTextIcon(item.m_shortcut,
-                                            themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg")),
-                                            themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#border")));
-        listItem->setIcon(icon);
+        const auto icon = IconUtils::drawTextIcon(item.m_shortcut, fg, border);
+        auto listItem = new QListWidgetItem(icon, item.m_name, m_itemList);
 
-        listItem->setText(item.m_name);
         listItem->setToolTip(item.m_tip);
         listItem->setData(Qt::UserRole, i);
     }
