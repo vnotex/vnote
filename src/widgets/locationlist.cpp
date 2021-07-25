@@ -3,6 +3,7 @@
 #include <QVBoxLayout>
 #include <QToolButton>
 #include <QLabel>
+#include <QHeaderView>
 
 #include "treewidget.h"
 #include "widgetsfactory.h"
@@ -53,6 +54,7 @@ void LocationList::setupUI()
     // When updated, pay attention to the Columns enum.
     m_tree->setHeaderLabels(QStringList() << tr("Path") << tr("Line") << tr("Text"));
     TreeWidget::showHorizontalScrollbar(m_tree);
+    m_tree->header()->setSectionResizeMode(QHeaderView::Interactive);
     connect(m_tree, &QTreeWidget::itemActivated,
             this, [this](QTreeWidgetItem *p_item, int p_col) {
                 Q_UNUSED(p_col);
