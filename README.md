@@ -24,6 +24,7 @@ Continuous builds on `master` branch could be found at the [Continuous Build](ht
 Latest stable builds could be found at the [latest release](https://github.com/vnotex/vnote/releases/latest). Alternative download services are available:
 
 * [Tianyi Netdisk](https://cloud.189.cn/t/Av67NvmEJVBv)
+* [Baidu Netdisk](https://pan.baidu.com/s/1Fou1flmBsQUQ8Qs9V_M6Aw) with the code `note`
 
 ## Supports
 * [GitHub Issues](https://github.com/vnotex/vnote/issues);

@@ -24,6 +24,7 @@ VNote 不是一个简单的 Markdown 编辑器。通过提供强大的笔记管�
 最新的 [稳定版本发布](https://github.com/vnotex/vnote/releases/latest) 。 其他下载选项：
 
 * [天翼云盘](https://cloud.189.cn/t/Av67NvmEJVBv)
+* [百度云盘](https://pan.baidu.com/s/1Fou1flmBsQUQ8Qs9V_M6Aw) 提取码 `note`
 
 ## 支持
 * [GitHub Issues](https://github.com/vnotex/vnote/issues) ；
