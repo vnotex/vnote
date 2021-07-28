@@ -133,10 +133,10 @@ namespace vnotex
         int m_length = -1;
     };
 
-    Q_DECLARE_METATYPE(Segment);
-
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);
+
+Q_DECLARE_METATYPE(vnotex::Segment);
 
 #endif // GLOBAL_H
