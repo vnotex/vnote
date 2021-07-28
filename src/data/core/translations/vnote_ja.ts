@@ -859,53 +859,53 @@
 <context>
     <name>vnotex::HistoryPanel</name>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="61"/>
+        <location filename="../../../widgets/historypanel.cpp" line="60"/>
         <source>Clear</source>
         <translation type="unfinished">クリア</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="78"/>
+        <location filename="../../../widgets/historypanel.cpp" line="77"/>
         <source>&amp;Open</source>
         <translation type="unfinished">開く(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="88"/>
+        <location filename="../../../widgets/historypanel.cpp" line="87"/>
         <source>&amp;Locate Node</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="118"/>
+        <location filename="../../../widgets/historypanel.cpp" line="117"/>
         <source>Clear all the history?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="163"/>
+        <location filename="../../../widgets/historypanel.cpp" line="162"/>
         <source>&gt;&gt;&gt; Older</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="195"/>
+        <location filename="../../../widgets/historypanel.cpp" line="194"/>
         <source>&gt;&gt;&gt; Today</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="197"/>
+        <location filename="../../../widgets/historypanel.cpp" line="196"/>
         <source>&gt;&gt;&gt; Yesterday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="199"/>
+        <location filename="../../../widgets/historypanel.cpp" line="198"/>
         <source>&gt;&gt;&gt; Last 7 Days</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="219"/>
+        <location filename="../../../widgets/historypanel.cpp" line="218"/>
         <source>%1
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="222"/>
+        <location filename="../../../widgets/historypanel.cpp" line="221"/>
         <source>[%1] %2
 %3</source>
         <translation type="unfinished"></translation>
@@ -1125,27 +1125,27 @@
 <context>
     <name>vnotex::LocationList</name>
     <message>
-        <location filename="../../../widgets/locationlist.cpp" line="54"/>
+        <location filename="../../../widgets/locationlist.cpp" line="46"/>
         <source>Path</source>
         <translation>パス</translation>
     </message>
     <message>
-        <location filename="../../../widgets/locationlist.cpp" line="54"/>
+        <location filename="../../../widgets/locationlist.cpp" line="46"/>
         <source>Line</source>
         <translation>ライン</translation>
     </message>
     <message>
-        <location filename="../../../widgets/locationlist.cpp" line="54"/>
+        <location filename="../../../widgets/locationlist.cpp" line="46"/>
         <source>Text</source>
         <translation>テキスト</translation>
     </message>
     <message>
-        <location filename="../../../widgets/locationlist.cpp" line="114"/>
+        <location filename="../../../widgets/locationlist.cpp" line="106"/>
         <source>Clear</source>
         <translation>クリア</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/locationlist.cpp" line="222"/>
+        <location filename="../../../widgets/locationlist.cpp" line="192"/>
         <source>%n Item(s)</source>
         <translation>
             <numerusform>%n アイテム</numerusform>
@@ -1995,28 +1995,28 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
 <context>
     <name>vnotex::MarkdownViewWindow</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="413"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="412"/>
         <source>Markdown Viewer</source>
         <translation>Markdownビューア</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="738"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="737"/>
         <source>Clear Obsolete Images</source>
         <translation>古いイメージをクリア</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="739"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="738"/>
         <source>These images seems not in use anymore. Please confirm the deletion of them.</source>
         <translation>これらのイメージはもう使用されていないようです。これらの画像の削除を確認してください。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="740"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="739"/>
         <source>Deleted images could be found in the recycle bin of notebook if it is from a bundle notebook.</source>
         <translation>削除されたされたイメージは、ノートブックのごみ箱で見つけることができます。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="901"/>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="910"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="900"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="909"/>
         <source>Replace is not supported in read mode</source>
         <translation>置換は読み取りモードではサポートされていません</translation>
     </message>
@@ -2572,293 +2572,293 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
 <context>
     <name>vnotex::NotebookNodeExplorer</name>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="343"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="341"/>
         <source>Failed to load nodes of notebook (%1) (%2).</source>
         <translation>ノートブック(%1)(%2)のノードをロードできませんでした。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="466"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="464"/>
         <source>Recycle bin of this notebook. Deleted files could be found here. It is organized in folders named by date. Nodes could be moved to other folders by Cut and Paste.</source>
         <translation>このノートのごみ箱です。削除されたファイルはここにあります。日付順のフォルダに整理されています。ノードは、[切り取り]と[貼り付け]によって他のフォルダに移動できます。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="487"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="485"/>
         <source>Recycle Bin</source>
         <translation>ごみ箱</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="500"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="498"/>
         <source>[Invalid] %1</source>
         <translation>[無効] %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="508"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="506"/>
         <source>[External] %1</source>
         <translation>[外部] %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="958"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="956"/>
         <source>New N&amp;ote</source>
         <translation>新規ノート(&amp;N)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="968"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="966"/>
         <source>New &amp;Folder</source>
         <translation>新規フォルダ(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="978"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="976"/>
         <source>&amp;Properties (Rename)</source>
         <translation>プロパティ(名前変更)(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1003"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1001"/>
         <source>Open &amp;Location</source>
         <translation>場所を開く(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1041"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1039"/>
         <source>Cop&amp;y Path</source>
         <translation>パスをコピー(&amp;Y)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1061"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1059"/>
         <source>Copied path: %1</source>
         <translation>コピーされたファイルパス: %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1067"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1065"/>
         <source>&amp;Copy</source>
         <translation>コピー(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1075"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1073"/>
         <source>C&amp;ut</source>
         <translation>切り取り(&amp;U)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1083"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1081"/>
         <source>&amp;Paste</source>
         <translation>貼り付け(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1091"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1089"/>
         <source>&amp;Empty</source>
         <translation>ごみ箱を空にする(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1097"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1095"/>
         <source>Empty the recycle bin of this notebook?</source>
         <translation>このノートブックのごみ箱を空にする</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1098"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1096"/>
         <source>All files in recycle bin will be deleted permanently.</source>
         <translation>ごみ箱内のすべてのファイルが完全に削除されます。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1099"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1097"/>
         <source>Location of recycle bin: %1</source>
         <translation>ごみ箱の場所: %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1108"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1106"/>
         <source>Failed to empty recycle bin (%1) (%2).</source>
         <translation>ごみ箱(%1)(%2)を空にできませんでした。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1117"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1115"/>
         <source>&amp;Delete</source>
         <translation>削除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1126"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1124"/>
         <source>&amp;Delete From Recycle Bin</source>
         <translation>ごみ箱から削除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1134"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1132"/>
         <source>&amp;Remove From Index</source>
         <translation>インデックスから削除(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1140"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1138"/>
         <source>&amp;Sort</source>
         <translation>整列(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1146"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1144"/>
         <source>Re&amp;load</source>
         <translation>再ロード(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1155"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1153"/>
         <source>Relo&amp;ad Index From Disk</source>
         <translation>ディスクからインデックスを再作成(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1173"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1171"/>
         <source>&amp;Import To Index</source>
         <translation>インデックスに読み込む(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1182"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1180"/>
         <source>&amp;Open</source>
         <translation>開く(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1188"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1186"/>
         <source>&amp;Expand All	*</source>
         <translation>全て展開(&amp;E)	*</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1194"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1192"/>
         <source>Pin To &amp;Quick Access</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1244"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1242"/>
         <source>Copied %n item(s)</source>
         <translation>
             <numerusform>%n アイテムをコピーしました</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1335"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1333"/>
         <source>Invalid clipboard data to paste.</source>
         <translation>貼り付けるクリップボードデータが無効です。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1350"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1348"/>
         <source>Destination is detected in sources (%1). Operation is cancelled.</source>
         <translation>宛先がソース(%1)で検出されました。操作がキャンセルされました。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1383"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1381"/>
         <source>Failed to copy source (%1) to destination (%2) (%3).</source>
         <translation>コピー元(%1)をコピー先(%2)(%3)にコピーできませんでした。</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1408"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1406"/>
         <source>Pasted %n item(s)</source>
         <translation>
             <numerusform>%n アイテムを貼り付けました</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1437"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1435"/>
         <source>Delete these folders and notes permanently?</source>
         <translation>これらのフォルダとメモを完全に削除しますか?</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1438"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1436"/>
         <source>Files will be deleted permanently and could not be found even in operating system&apos;s recycle bin.</source>
         <translation>ファイルは永久に削除され、オペレーティングシステムのごみ箱にもはいりません。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1441"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1439"/>
         <source>Delete these folders and notes?</source>
         <translation>これらのフォルダとメモを削除しますか?</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1442"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1440"/>
         <source>Deleted files could be found in the recycle bin of notebook.</source>
         <translation>削除されたファイルはノートブックのごみ箱にあります。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1445"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1443"/>
         <source>Confirm Deletion</source>
         <translation>削除の確認</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1518"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1516"/>
         <source>Failed to delete/remove item (%1) (%2) (%3).</source>
         <translation>アイテム(%1)(%2)(%3)の削除/削除に失敗しました。</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1534"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1532"/>
         <source>Deleted/Removed %n item(s)</source>
         <translation>
             <numerusform>%nアイテムを削除しました</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1539"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1537"/>
         <source>Confirm Removal</source>
         <translation>削除の確認</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1540"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1538"/>
         <source>Remove these folders and notes from index?</source>
         <translation>これらのフォルダとメモをインデックスから削除しますか?</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1541"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1539"/>
         <source>Files are not touched but just removed from notebook index.</source>
         <translation>ファイルには触れずに、ただインデックスから削除されます。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1745"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1743"/>
         <source>Sort Folders</source>
         <translation>フォルダの整列</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1745"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1743"/>
         <source>Sort Notes</source>
         <translation>ノートの整列</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1746"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1744"/>
         <source>Sort nodes under %1 (%2) in the configuration file.</source>
         <translation>設定ファイル内の%1(%2)以下のノードを整列します。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1747"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1745"/>
         <source>notebook</source>
         <translation>ノートブック</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1747"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1745"/>
         <source>folder</source>
         <translation>フォルダ</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1758"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1756"/>
         <source>Name</source>
         <translation>名前</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1758"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1756"/>
         <source>Created Time</source>
         <translation>作成日時</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1758"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1756"/>
         <source>Modified Time</source>
         <translation>最終変更日時</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1924"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1922"/>
         <source>Invalid node (%1).</source>
         <translation>無効なノード(%1)です。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1925"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1923"/>
         <source>Please check if the node exists on the disk.</source>
         <translation>ノードがディスク上に存在するかどうかを確認してください。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1967"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1965"/>
         <source>Open &amp;With</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1985"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1983"/>
         <source>System Default Program</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1992"/>
+        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1990"/>
         <source>Add External Program</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3126,27 +3126,27 @@ Description: %3</source>
         <translation>正規表現(&amp;G)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/searchpanel.cpp" line="320"/>
+        <location filename="../../../widgets/searchpanel.cpp" line="322"/>
         <source>Search finished: %1</source>
         <translation>検索が終了しました:%1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/searchpanel.cpp" line="492"/>
+        <location filename="../../../widgets/searchpanel.cpp" line="494"/>
         <source>Invalid keyword</source>
         <translation>キーワードが無効です</translation>
     </message>
     <message>
-        <location filename="../../../widgets/searchpanel.cpp" line="497"/>
+        <location filename="../../../widgets/searchpanel.cpp" line="499"/>
         <source>No object specified</source>
         <translation>オブジェクトが指定されていません</translation>
     </message>
     <message>
-        <location filename="../../../widgets/searchpanel.cpp" line="502"/>
+        <location filename="../../../widgets/searchpanel.cpp" line="504"/>
         <source>No target specified</source>
         <translation>ターゲットが指定されていません</translation>
     </message>
     <message>
-        <location filename="../../../widgets/searchpanel.cpp" line="508"/>
+        <location filename="../../../widgets/searchpanel.cpp" line="510"/>
         <source>Fuzzy search is not allowed when searching content</source>
         <translation>コンテンツの検索時にあいまい検索はできません</translation>
     </message>
@@ -3214,6 +3214,13 @@ Description: %3</source>
         <location filename="../../../search/searcher.cpp" line="426"/>
         <source>Searching tag is not supported yet</source>
         <translation>検索タグはまだサポートされていません</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../../../search/searcher.cpp" line="484"/>
+        <source>Start second-phase search: %n files(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>
