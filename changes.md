@@ -1,4 +1,7 @@
 # Changes
+## v3.5.1
+* LocationList: fix recently introduced regression when highlighting segments of text
+
 ## v3.5.0
 * Support History
 * ViewArea
