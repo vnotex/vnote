@@ -35,7 +35,7 @@ namespace vnotex
         void append(const QRegularExpression &p_regExp);
 
         // Whether @p_text is matched.
-        bool matched(const QString &p_text, QVector<Segment> *p_segments = nullptr) const;
+        bool matched(const QString &p_text, QList<Segment> *p_segments = nullptr) const;
 
         int constraintSize() const;
 
@@ -48,7 +48,7 @@ namespace vnotex
 
         // Match one string in batch mode.
         // Return true if @p_text is matched.
-        bool matchedInBatchMode(const QString &p_text, QVector<Segment> *p_segments = nullptr);
+        bool matchedInBatchMode(const QString &p_text, QList<Segment> *p_segments = nullptr);
 
         bool readyToEndBatchMode() const;
 

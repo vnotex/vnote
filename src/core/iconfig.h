@@ -96,8 +96,8 @@ namespace vnotex
             auto arr = read(p_default, p_user, p_key).toArray();
             QStringList res;
             res.reserve(arr.size());
-            for (const auto &ele : arr) {
-                res.push_back(ele.toString());
+            for (int i = 0; i < arr.size(); ++i) {
+                res.push_back(arr[i].toString());
             }
             return res;
         }
@@ -108,8 +108,8 @@ namespace vnotex
             auto arr = p_obj.value(p_key).toArray();
             QStringList res;
             res.reserve(arr.size());
-            for (const auto &ele : arr) {
-                res.push_back(ele.toString());
+            for (int i = 0; i < arr.size(); ++i) {
+                res.push_back(arr[i].toString());
             }
             return res;
         }

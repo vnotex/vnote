@@ -23,7 +23,11 @@ namespace vnotex
     protected:
         void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
+        void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+
     private:
+        void updateInputMethod() const;
+
         // Whether enable input method.
         bool m_inputMethodEnabled = true;
     };

@@ -6,7 +6,7 @@ QSharedPointer<SearchResultItem> SearchResultItem::createBufferItem(const QStrin
                                                                     const QString &p_displayPath,
                                                                     int p_lineNumber,
                                                                     const QString &p_text,
-                                                                    const QVector<Segment> &p_segments)
+                                                                    const QList<Segment> &p_segments)
 {
     auto item = createBufferItem(p_targetPath, p_displayPath);
     item->m_location.addLine(p_lineNumber, p_text, p_segments);
@@ -27,7 +27,7 @@ QSharedPointer<SearchResultItem> SearchResultItem::createFileItem(const QString 
                                                                   const QString &p_displayPath,
                                                                   int p_lineNumber,
                                                                   const QString &p_text,
-                                                                  const QVector<Segment> &p_segments)
+                                                                  const QList<Segment> &p_segments)
 {
     auto item = createFileItem(p_targetPath, p_displayPath);
     item->m_location.addLine(p_lineNumber, p_text, p_segments);
@@ -64,7 +64,7 @@ QSharedPointer<SearchResultItem> SearchResultItem::createNotebookItem(const QStr
     return item;
 }
 
-void SearchResultItem::addLine(int p_lineNumber, const QString &p_text, const QVector<Segment> &p_segments)
+void SearchResultItem::addLine(int p_lineNumber, const QString &p_text, const QList<Segment> &p_segments)
 {
     m_location.addLine(p_lineNumber, p_text, p_segments);
 }

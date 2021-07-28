@@ -313,6 +313,8 @@ void SearchPanel::startSearch()
 
 void SearchPanel::handleSearchFinished(SearchState p_state)
 {
+    qDebug() << "handleSearchFinished" << (int)p_state;
+
     Q_ASSERT(m_searchOngoing);
     Q_ASSERT(p_state != SearchState::Idle);
 

@@ -17,13 +17,13 @@ namespace vnotex
             return p_dbg;
         }
 
-        void addLine(int p_lineNumber, const QString &p_text, const QVector<Segment> &p_segments);
+        void addLine(int p_lineNumber, const QString &p_text, const QList<Segment> &p_segments);
 
         static QSharedPointer<SearchResultItem> createBufferItem(const QString &p_targetPath,
                                                                  const QString &p_displayPath,
                                                                  int p_lineNumber,
                                                                  const QString &p_text,
-                                                                 const QVector<Segment> &p_segments);
+                                                                 const QList<Segment> &p_segments);
 
         static QSharedPointer<SearchResultItem> createBufferItem(const QString &p_targetPath,
                                                                  const QString &p_displayPath);
@@ -32,7 +32,7 @@ namespace vnotex
                                                                const QString &p_displayPath,
                                                                int p_lineNumber,
                                                                const QString &p_text,
-                                                               const QVector<Segment> &p_segments);
+                                                               const QList<Segment> &p_segments);
 
         static QSharedPointer<SearchResultItem> createFileItem(const QString &p_targetPath,
                                                                const QString &p_displayPath);

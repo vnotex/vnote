@@ -8,6 +8,7 @@
 #include "treewidget.h"
 #include "widgetsfactory.h"
 #include "titlebar.h"
+#include "styleditemdelegate.h"
 
 #include <core/vnotex.h>
 #include <core/thememgr.h>
@@ -24,20 +25,10 @@ QIcon LocationList::s_folderIcon;
 
 QIcon LocationList::s_notebookIcon;
 
-QString LocationList::s_textHighlightForeground;
-
-QString LocationList::s_textHighlightBackground;
-
 LocationList::LocationList(QWidget *p_parent)
     : QFrame(p_parent)
 {
     setupUI();
-
-    if (s_textHighlightForeground.isEmpty()) {
-        const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-        s_textHighlightForeground = themeMgr.paletteColor(QStringLiteral("widgets#locationlist#text_highlight#fg"));
-        s_textHighlightBackground = themeMgr.paletteColor(QStringLiteral("widgets#locationlist#text_highlight#bg"));
-    }
 }
 
 void LocationList::setupUI()
@@ -50,11 +41,10 @@ void LocationList::setupUI()
         mainLayout->addWidget(m_titleBar);
     }
 
-    m_tree = new TreeWidget(TreeWidget::Flag::None, this);
+    m_tree = new TreeWidget(TreeWidget::Flag::EnhancedStyle, this);
     // When updated, pay attention to the Columns enum.
     m_tree->setHeaderLabels(QStringList() << tr("Path") << tr("Line") << tr("Text"));
     TreeWidget::showHorizontalScrollbar(m_tree);
-    m_tree->header()->setSectionResizeMode(QHeaderView::Interactive);
     connect(m_tree, &QTreeWidget::itemActivated,
             this, [this](QTreeWidgetItem *p_item, int p_col) {
                 Q_UNUSED(p_col);
@@ -135,36 +125,15 @@ void LocationList::setItemLocationLineAndText(QTreeWidgetItem *p_item, const Com
         p_item->setText(Columns::LineColumn, QString::number(p_line.m_lineNumber + 1));
     }
 
-    if (p_line.m_segments.isEmpty()) {
-        p_item->setText(Columns::TextColumn, p_line.m_text);
+    // Truncate the text.
+    if (p_line.m_text.size() > 500) {
+        p_item->setText(Columns::TextColumn, p_line.m_text.left(500));
     } else {
-        auto segments = p_line.m_segments;
-        std::sort(segments.begin(), segments.end());
+        p_item->setText(Columns::TextColumn, p_line.m_text);
+    }
 
-        // Use \n as a marker for < and use \r for >.
-        QString text(p_line.m_text);
-        int lastOffset = text.size();
-        for (int i = segments.size() - 1; i >= 0; --i) {
-            Q_ASSERT(segments[i].m_length > 0);
-            if (segments[i].m_offset + segments[i].m_length > lastOffset) {
-                // Interset.
-                continue;
-            }
-
-            lastOffset = segments[i].m_offset;
-            text.insert(segments[i].m_offset + segments[i].m_length, QStringLiteral("\n/span\r"));
-            text.insert(segments[i].m_offset,
-                        QString("\nspan style='color:%1;background-color:%2'\r").arg(s_textHighlightForeground, s_textHighlightBackground));
-        }
-
-        text = text.toHtmlEscaped();
-        text.replace(QLatin1Char('\n'), QLatin1Char('<'));
-        text.replace(QLatin1Char('\r'), QLatin1Char('>'));
-
-        auto label = new QLabel(m_tree);
-        label->setTextFormat(Qt::RichText);
-        label->setText(text);
-        m_tree->setItemWidget(p_item, Columns::TextColumn, label);
+    if (!p_line.m_segments.isEmpty()) {
+        p_item->setData(Columns::TextColumn, HighlightsRole, QVariant::fromValue(p_line.m_segments));
     }
 }
 
@@ -172,9 +141,8 @@ void LocationList::addLocation(const ComplexLocation &p_location)
 {
     auto item = new QTreeWidgetItem(m_tree);
     item->setText(Columns::PathColumn, p_location.m_displayPath);
-    item->setData(Columns::PathColumn, Qt::UserRole, p_location.m_path);
-
     item->setIcon(Columns::PathColumn, getItemIcon(p_location.m_type));
+    item->setData(Columns::PathColumn, Qt::UserRole, p_location.m_path);
 
     if (p_location.m_lines.size() == 1) {
         setItemLocationLineAndText(item, p_location.m_lines[0]);

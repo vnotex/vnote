@@ -12,6 +12,8 @@ namespace vnotex
     public:
         explicit ListWidget(QWidget *p_parent = nullptr);
 
+        ListWidget(bool p_enhancedStyle, QWidget *p_parent = nullptr);
+
         static QVector<QListWidgetItem *> getVisibleItems(const QListWidget *p_widget);
 
         static QListWidgetItem *createSeparatorItem(const QString &p_text);
@@ -22,7 +24,16 @@ namespace vnotex
         void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
     private:
-        static const int c_separatorType = 2000;
+        enum
+        {
+            ItemTypeSeparator = 2000
+        };
+
+        void initialize();
+
+        static QBrush s_separatorForeground;
+
+        static QBrush s_separatorBackground;
     };
 }
 

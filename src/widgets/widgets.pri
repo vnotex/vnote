@@ -50,6 +50,7 @@ SOURCES += \
     $$PWD/floatingwidget.cpp \
     $$PWD/fullscreentoggleaction.cpp \
     $$PWD/historypanel.cpp \
+    $$PWD/itemproxystyle.cpp \
     $$PWD/lineedit.cpp \
     $$PWD/lineeditdelegate.cpp \
     $$PWD/lineeditwithsnippet.cpp \
@@ -67,7 +68,9 @@ SOURCES += \
     $$PWD/quickselector.cpp \
     $$PWD/searchinfoprovider.cpp \
     $$PWD/searchpanel.cpp \
+    $$PWD/simplesegmenthighlighter.cpp \
     $$PWD/snippetpanel.cpp \
+    $$PWD/styleditemdelegate.cpp \
     $$PWD/systemtrayhelper.cpp \
     $$PWD/textviewwindow.cpp \
     $$PWD/toolbarhelper.cpp \
@@ -157,6 +160,7 @@ HEADERS += \
     $$PWD/floatingwidget.h \
     $$PWD/fullscreentoggleaction.h \
     $$PWD/historypanel.h \
+    $$PWD/itemproxystyle.h \
     $$PWD/lineedit.h \
     $$PWD/lineeditdelegate.h \
     $$PWD/lineeditwithsnippet.h \
@@ -175,7 +179,9 @@ HEADERS += \
     $$PWD/quickselector.h \
     $$PWD/searchinfoprovider.h \
     $$PWD/searchpanel.h \
+    $$PWD/simplesegmenthighlighter.h \
     $$PWD/snippetpanel.h \
+    $$PWD/styleditemdelegate.h \
     $$PWD/systemtrayhelper.h \
     $$PWD/textviewwindow.h \
     $$PWD/textviewwindowhelper.h \

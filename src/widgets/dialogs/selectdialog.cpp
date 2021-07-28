@@ -118,21 +118,6 @@ void SelectDialog::keyPressEvent(QKeyEvent *p_event)
         return;
     }
 
-    // On Mac OS X, it is `Command+O` to activate an item, instead of Return.
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-    {
-        const int key = p_event->key();
-        if (key == Qt::Key_Return || key == Qt::Key_Enter) {
-            p_event->accept();
-            if (auto item = m_list->currentItem()) {
-                selectionChosen(item);
-            }
-
-            return;
-        }
-    }
-#endif
-
     QDialog::keyPressEvent(p_event);
 }
 

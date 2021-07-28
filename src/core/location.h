@@ -39,7 +39,7 @@ namespace vnotex
         {
             Line() = default;
 
-            Line(int p_lineNumber, const QString &p_text, const QVector<Segment> &p_segments)
+            Line(int p_lineNumber, const QString &p_text, const QList<Segment> &p_segments)
                 : m_lineNumber(p_lineNumber),
                   m_text(p_text),
                   m_segments(p_segments)
@@ -51,10 +51,10 @@ namespace vnotex
 
             QString m_text;
 
-            QVector<Segment> m_segments;
+            QList<Segment> m_segments;
         };
 
-        void addLine(int p_lineNumber, const QString &p_text, const QVector<Segment> &p_segments)
+        void addLine(int p_lineNumber, const QString &p_text, const QList<Segment> &p_segments)
         {
             m_lines.push_back(Line(p_lineNumber, p_text, p_segments));
         }

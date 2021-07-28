@@ -250,7 +250,6 @@ void MarkdownViewWindow::setupToolBar()
     auto toolBar = createToolBar(this);
 
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
-    const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
 
     const int iconSize = editorConfig.getToolBarIconSize();
     toolBar->setIconSize(QSize(iconSize, iconSize));

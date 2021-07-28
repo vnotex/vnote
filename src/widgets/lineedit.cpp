@@ -115,9 +115,23 @@ void LineEdit::setInputMethodEnabled(bool p_enabled)
     if (m_inputMethodEnabled != p_enabled) {
         m_inputMethodEnabled = p_enabled;
 
-        QInputMethod *im = QGuiApplication::inputMethod();
-        im->reset();
-        // Ask input method to query current state, which will call inputMethodQuery().
-        im->update(Qt::ImEnabled);
+        updateInputMethod();
     }
+}
+
+void LineEdit::showEvent(QShowEvent *p_event)
+{
+    QLineEdit::showEvent(p_event);
+
+    if (!m_inputMethodEnabled) {
+        updateInputMethod();
+    }
+}
+
+void LineEdit::updateInputMethod() const
+{
+    QInputMethod *im = QGuiApplication::inputMethod();
+    im->reset();
+    // Ask input method to query current state, which will call inputMethodQuery().
+    im->update(Qt::ImEnabled);
 }

@@ -14,7 +14,6 @@
 #include <core/notebookmgr.h>
 #include <core/fileopenparameters.h>
 
-
 #include "titlebar.h"
 #include "listwidget.h"
 #include "mainwindow.h"
@@ -40,7 +39,7 @@ void HistoryPanel::setupUI()
         mainLayout->addWidget(m_titleBar);
     }
 
-    m_historyList = new ListWidget(this);
+    m_historyList = new ListWidget(true, this);
     m_historyList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_historyList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     connect(m_historyList, &QListWidget::customContextMenuRequested,

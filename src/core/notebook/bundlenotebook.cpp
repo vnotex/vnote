@@ -70,7 +70,7 @@ void BundleNotebook::addHistory(const HistoryItem &p_item)
 {
     HistoryItem item(p_item);
     item.m_path = getBackend()->getRelativePath(item.m_path);
-    HistoryMgr::insertHistoryItem(m_history, p_item);
+    HistoryMgr::insertHistoryItem(m_history, item);
 
     updateNotebookConfig();
 }

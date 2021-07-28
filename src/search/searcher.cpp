@@ -294,7 +294,7 @@ bool Searcher::searchContent(const File *p_file)
         if (idx > pos) {
             QString lineText = content.mid(pos, idx - pos);
             bool matched = false;
-            QVector<Segment> segments;
+            QList<Segment> segments;
             if (!shouldStartBatchMode) {
                 matched = m_token.matched(lineText, &segments);
             } else {
@@ -480,17 +480,21 @@ bool Searcher::firstPhaseSearch(Notebook *p_notebook, QVector<SearchSecondPhaseI
 bool Searcher::secondPhaseSearch(const QVector<SearchSecondPhaseItem> &p_secondPhaseItems)
 {
     Q_ASSERT(!p_secondPhaseItems.isEmpty());
+
+    emit logRequested(tr("Start second-phase search: %n files(s)", "", p_secondPhaseItems.size()));
     qDebug() << "secondPhaseSearch" << p_secondPhaseItems.size();
 
     createSearchEngine();
 
-    m_engine->search(m_option, m_token, p_secondPhaseItems);
     connect(m_engine.data(), &ISearchEngine::finished,
             this, &Searcher::finished);
     connect(m_engine.data(), &ISearchEngine::logRequested,
             this, &Searcher::logRequested);
     connect(m_engine.data(), &ISearchEngine::resultItemsAdded,
             this, &Searcher::resultItemsAdded);
+
+    m_engine->search(m_option, m_token, p_secondPhaseItems);
+
     return true;
 }
 

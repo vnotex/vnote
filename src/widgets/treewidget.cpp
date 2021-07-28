@@ -6,6 +6,7 @@
 #include <QDropEvent>
 
 #include <utils/widgetutils.h>
+#include "styleditemdelegate.h"
 
 using namespace vnotex;
 
@@ -18,6 +19,11 @@ TreeWidget::TreeWidget(TreeWidget::Flags p_flags, QWidget *p_parent)
     : QTreeWidget(p_parent),
       m_flags(p_flags)
 {
+    if (m_flags & Flag::EnhancedStyle) {
+        auto interface = QSharedPointer<StyledItemDelegateTreeWidget>::create(this);
+        auto delegate = new StyledItemDelegate(interface, StyledItemDelegate::Highlights, this);
+        setItemDelegate(delegate);
+    }
 }
 
 void TreeWidget::mousePressEvent(QMouseEvent *p_event)
@@ -92,22 +98,15 @@ void TreeWidget::keyPressEvent(QKeyEvent *p_event)
         return;
     }
 
-    switch (p_event->key()) {
-    case Qt::Key_Return:
-        Q_FALLTHROUGH();
-    case Qt::Key_Enter:
-    {
-        auto item = currentItem();
-        if (item && item->childCount() > 0) {
-            item->setExpanded(!item->isExpanded());
+    // On Mac OS X, it is `Command+O` to activate an item, instead of Return.
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    if (p_event->key() == Qt::Key_Return) {
+        if (auto item = currentItem()) {
+            emit itemActivated(item, currentColumn());
         }
-
-        break;
+        return;
     }
-
-    default:
-        break;
-    }
+#endif
 
     QTreeWidget::keyPressEvent(p_event);
 }

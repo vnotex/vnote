@@ -31,7 +31,7 @@ void SearchToken::append(const QRegularExpression &p_regExp)
     m_regularExpressions.append(p_regExp);
 }
 
-bool SearchToken::matched(const QString &p_text, QVector<Segment> *p_segments) const
+bool SearchToken::matched(const QString &p_text, QList<Segment> *p_segments) const
 {
     const int consSize = constraintSize();
     if (consSize == 0) {
@@ -90,7 +90,7 @@ void SearchToken::startBatchMode()
     m_matchedConstraintsCountInBatchMode = 0;
 }
 
-bool SearchToken::matchedInBatchMode(const QString &p_text, QVector<Segment> *p_segments)
+bool SearchToken::matchedInBatchMode(const QString &p_text, QList<Segment> *p_segments)
 {
     bool isMatched = false;
     const int consSize = m_matchedConstraintsInBatchMode.size();

@@ -6,6 +6,7 @@
 
 class QLabel;
 class QTimer;
+class QStackedLayout;
 
 namespace vnotex
 {
@@ -22,7 +23,14 @@ namespace vnotex
 
         void setEditorStatusWidget(const QSharedPointer<QWidget> &p_editorWidget);
 
+    protected:
+        void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
+
     private:
+        void clearMessage();
+
+        QStackedLayout *m_mainLayout = nullptr;
+
         QLabel *m_messageLabel = nullptr;
 
         QTimer *m_messageTimer = nullptr;

@@ -1,9 +1,7 @@
 #include "notebooknodeexplorer.h"
 
-#include <QTreeWidget>
 #include <QVBoxLayout>
 #include <QSplitter>
-#include <QTreeWidget>
 #include <QMenu>
 #include <QAction>
 #include <QSet>

@@ -8,6 +8,7 @@
 #include "vnotex.h"
 #include "notebookmgr.h"
 #include <notebook/notebook.h>
+#include <notebookbackend/inotebookbackend.h>
 
 using namespace vnotex;
 
@@ -59,9 +60,11 @@ void HistoryMgr::loadHistory()
         const auto &notebooks = VNoteX::getInst().getNotebookMgr().getNotebooks();
         for (const auto &nb : notebooks) {
             const auto &history = nb->getHistory();
+            const auto &backend = nb->getBackend();
             for (const auto &item : history) {
                 auto fullItem = QSharedPointer<HistoryItemFull>::create();
                 fullItem->m_item = item;
+                fullItem->m_item.m_path = backend->getFullPath(item.m_path);
                 fullItem->m_notebookName = nb->getName();
                 m_history.push_back(fullItem);
             }

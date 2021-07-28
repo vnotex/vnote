@@ -236,10 +236,6 @@
         "locationlist" : {
             "node_icon" : {
                 "fg" : "@base#icon#fg"
-            },
-            "text_highlight" : {
-                "fg" : "@base#master#fg",
-                "bg" : "@base#master#bg"
             }
         },
         "viewsplit" : {
@@ -620,6 +616,16 @@
             "item_icon" : {
                 "fg" : "@palette#bg2_9",
                 "border" : "@palette#bg2_9"
+            }
+        },
+        "styleditemdelegate" : {
+            "separator" : {
+                "fg" : "@base#normal#fg",
+                "bg" : "@widgets#separator#bg"
+            },
+            "highlight" : {
+                "fg" : "@base#master#fg",
+                "bg" : "@base#master#bg"
             }
         }
     }

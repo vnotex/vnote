@@ -97,7 +97,7 @@ void FileSearchEngineWorker::searchFile(const QString &p_filePath, const QString
 
         const auto lineText = ins.readLine();
         bool matched = false;
-        QVector<Segment> segments;
+        QList<Segment> segments;
         if (!shouldStartBatchMode) {
             matched = m_token.matched(lineText, &segments);
         } else {
@@ -172,6 +172,9 @@ void FileSearchEngine::search(const QSharedPointer<SearchOption> &p_option,
     const int step = totalSize / numThread;
     int remain = totalSize % numThread;
     int start = 0;
+
+    qDebug() << "start async file search" << totalSize << numThread;
+
     for (int i = 0; i < numThread && start < totalSize; ++i) {
         int len = step;
         if (remain) {

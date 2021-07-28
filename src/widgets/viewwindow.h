@@ -171,6 +171,13 @@ namespace vnotex
         virtual void handleFindAndReplaceWidgetOpened();
 
     protected:
+        bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
+
+        void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
+
+        void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
+    protected:
         void setCentralWidget(QWidget *p_widget);
 
         void addTopWidget(QWidget *p_widget);
@@ -180,12 +187,6 @@ namespace vnotex
         void addBottomWidget(QWidget *p_widget);
 
         void setStatusWidget(const QSharedPointer<StatusWidget> &p_widget);
-
-        bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
-
-        void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
-
-        void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
         // Provide some common actions of tool bar for ViewWindow.
         QAction *addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Action p_action);

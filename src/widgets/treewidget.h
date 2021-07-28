@@ -13,7 +13,8 @@ namespace vnotex
         enum Flag
         {
             None = 0,
-            ClickSpaceToClearSelection = 0x1
+            ClickSpaceToClearSelection = 0x1,
+            EnhancedStyle = 0x2
         };
         Q_DECLARE_FLAGS(Flags, Flag)
 
