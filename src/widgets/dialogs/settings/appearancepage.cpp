@@ -94,7 +94,7 @@ void AppearancePage::loadInternal()
     }
 }
 
-void AppearancePage::saveInternal()
+bool AppearancePage::saveInternal()
 {
     auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
     auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
@@ -115,6 +115,8 @@ void AppearancePage::saveInternal()
         }
         widgetConfig.setMainWindowKeepDocksExpandingContentArea(docks);
     }
+
+    return true;
 }
 
 QString AppearancePage::title() const

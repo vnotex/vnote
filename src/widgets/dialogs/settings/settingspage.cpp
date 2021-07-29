@@ -53,14 +53,18 @@ void SettingsPage::load()
     m_changed = false;
 }
 
-void SettingsPage::save()
+bool SettingsPage::save()
 {
     if (!m_changed) {
-        return;
+        return true;
     }
 
-    saveInternal();
-    m_changed = false;
+    if (saveInternal()) {
+        m_changed = false;
+        return true;
+    }
+
+    return false;
 }
 
 void SettingsPage::reset()
@@ -70,4 +74,14 @@ void SettingsPage::reset()
     }
 
     load();
+}
+
+const QString &SettingsPage::error() const
+{
+    return m_error;
+}
+
+void SettingsPage::setError(const QString &p_err)
+{
+    m_error = p_err;
 }

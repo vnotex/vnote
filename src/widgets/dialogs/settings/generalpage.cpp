@@ -106,7 +106,7 @@ void GeneralPage::loadInternal()
     m_recoverLastSessionCheckBox->setChecked(coreConfig.isRecoverLastSessionOnStartEnabled());
 }
 
-void GeneralPage::saveInternal()
+bool GeneralPage::saveInternal()
 {
     auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
     auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
@@ -127,6 +127,8 @@ void GeneralPage::saveInternal()
     }
 
     coreConfig.setRecoverLastSessionOnStartEnabled(m_recoverLastSessionCheckBox->isChecked());
+
+    return true;
 }
 
 QString GeneralPage::title() const

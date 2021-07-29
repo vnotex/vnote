@@ -76,6 +76,7 @@ void SnippetInfoWidget::setupUI()
     mainLayout->addRow(m_indentAsFirstLineCheckBox);
 
     m_contentTextEdit = WidgetsFactory::createPlainTextEdit(this);
+    m_contentTextEdit->setPlaceholderText(tr("Nested snippet is supported, like `%time%` to embed the snippet `time`"));
     connect(m_contentTextEdit, &QPlainTextEdit::textChanged,
             this, &SnippetInfoWidget::inputEdited);
     mainLayout->addRow(tr("Content:"), m_contentTextEdit);

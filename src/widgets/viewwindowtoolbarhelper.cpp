@@ -360,6 +360,21 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         break;
     }
 
+    case Action::ImageHost:
+    {
+        act = p_tb->addAction(ToolBarHelper::generateIcon("image_host_editor.svg"),
+                              ViewWindow::tr("Image Host"));
+
+        auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
+        Q_ASSERT(toolBtn);
+        toolBtn->setPopupMode(QToolButton::InstantPopup);
+        toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+
+        auto menu = WidgetsFactory::createMenu(p_tb);
+        toolBtn->setMenu(menu);
+        break;
+    }
+
     default:
         Q_ASSERT(false);
         break;

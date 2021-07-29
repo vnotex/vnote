@@ -45,6 +45,7 @@ void LocationList::setupUI()
     // When updated, pay attention to the Columns enum.
     m_tree->setHeaderLabels(QStringList() << tr("Path") << tr("Line") << tr("Text"));
     TreeWidget::showHorizontalScrollbar(m_tree);
+    m_tree->header()->setStretchLastSection(true);
     connect(m_tree, &QTreeWidget::itemActivated,
             this, [this](QTreeWidgetItem *p_item, int p_col) {
                 Q_UNUSED(p_col);
@@ -154,6 +155,10 @@ void LocationList::addLocation(const ComplexLocation &p_location)
         }
 
         item->setExpanded(true);
+    }
+
+    if (m_tree->topLevelItemCount() == 1) {
+        m_tree->setCurrentItem(item);
     }
 
     updateItemsCountLabel();

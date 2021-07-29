@@ -60,6 +60,8 @@ QJsonObject NotebookConfig::toJson() const
 
     jobj[QStringLiteral("history")] = saveHistory();
 
+    jobj[QStringLiteral("extra_configs")] = m_extraConfigs;
+
     return jobj;
 }
 
@@ -94,6 +96,8 @@ void NotebookConfig::fromJson(const QJsonObject &p_jobj)
     }
 
     loadHistory(p_jobj);
+
+    m_extraConfigs = p_jobj[QStringLiteral("extra_configs")].toObject();
 }
 
 QSharedPointer<NotebookConfig> NotebookConfig::fromNotebook(const QString &p_version,
@@ -111,6 +115,7 @@ QSharedPointer<NotebookConfig> NotebookConfig::fromNotebook(const QString &p_ver
     config->m_notebookConfigMgr = p_notebook->getConfigMgr()->getName();
     config->m_nextNodeId = p_notebook->getNextNodeId();
     config->m_history = p_notebook->getHistory();
+    config->m_extraConfigs = p_notebook->getExtraConfigs();
 
     return config;
 }

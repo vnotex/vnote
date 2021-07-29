@@ -117,7 +117,7 @@ void MarkdownEditorPage::loadInternal()
     }
 }
 
-void MarkdownEditorPage::saveInternal()
+bool MarkdownEditorPage::saveInternal()
 {
     auto &markdownConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
 
@@ -186,6 +186,8 @@ void MarkdownEditorPage::saveInternal()
     }
 
     EditorPage::notifyEditorConfigChange();
+
+    return true;
 }
 
 QString MarkdownEditorPage::title() const

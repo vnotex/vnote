@@ -51,6 +51,8 @@ include($$PWD/search/search.pri)
 
 include($$PWD/snippet/snippet.pri)
 
+include($$PWD/imagehost/imagehost.pri)
+
 include($$PWD/core/core.pri)
 
 include($$PWD/widgets/widgets.pri)

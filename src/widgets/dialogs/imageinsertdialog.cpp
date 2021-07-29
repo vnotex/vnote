@@ -187,12 +187,12 @@ void ImageInsertDialog::checkImagePathInput()
         m_source = Source::ImageData;
 
         if (!m_downloader) {
-            m_downloader = new vte::Downloader(this);
-            connect(m_downloader, &vte::Downloader::downloadFinished,
+            m_downloader = new vte::NetworkAccess(this);
+            connect(m_downloader, &vte::NetworkAccess::requestFinished,
                     this, &ImageInsertDialog::handleImageDownloaded);
         }
 
-        m_downloader->downloadAsync(url);
+        m_downloader->requestAsync(url);
     }
 
     m_imageTitleEdit->setText(QFileInfo(text).baseName());
@@ -300,17 +300,17 @@ int ImageInsertDialog::getScaledWidth() const
     return val == m_image.width() ? 0 : val;
 }
 
-void ImageInsertDialog::handleImageDownloaded(const QByteArray &p_data, const QString &p_url)
+void ImageInsertDialog::handleImageDownloaded(const vte::NetworkReply &p_data, const QString &p_url)
 {
-    setImage(QImage::fromData(p_data));
+    setImage(QImage::fromData(p_data.m_data));
 
     // Save it to a temp file to avoid potential data loss via QImage.
     bool savedToFile = false;
-    if (!p_data.isEmpty()) {
+    if (!p_data.m_data.isEmpty()) {
         auto format = QFileInfo(PathUtils::removeUrlParameters(p_url)).suffix();
         m_tempFile.reset(FileUtils::createTemporaryFile(format));
         if (m_tempFile->open()) {
-            savedToFile = -1 != m_tempFile->write(p_data);
+            savedToFile = -1 != m_tempFile->write(p_data.m_data);
             m_tempFile->close();
         }
     }

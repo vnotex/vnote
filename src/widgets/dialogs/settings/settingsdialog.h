@@ -9,6 +9,7 @@ class QTreeWidget;
 class QStackedLayout;
 class QLineEdit;
 class QTreeWidgetItem;
+class QScrollArea;
 
 namespace vnotex
 {
@@ -27,6 +28,8 @@ namespace vnotex
 
         void appliedButtonClicked() Q_DECL_OVERRIDE;
 
+        void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+
     private:
         void setupUI();
 
@@ -40,9 +43,10 @@ namespace vnotex
 
         void setChangesUnsaved(bool p_unsaved);
 
-        void savePages();
+        bool savePages();
 
-        void forEachPage(const std::function<void(SettingsPage *)> &p_func);
+        // @p_func: return true to continue the iteration.
+        void forEachPage(const std::function<bool(SettingsPage *)> &p_func);
 
         QTreeWidgetItem *addPage(SettingsPage *p_page);
 
@@ -52,11 +56,15 @@ namespace vnotex
 
         QTreeWidget *m_pageExplorer = nullptr;
 
+        QScrollArea *m_scrollArea = nullptr;
+
         QStackedLayout *m_pageLayout = nullptr;
 
         bool m_changesUnsaved = false;
 
         bool m_ready = false;
+
+        bool m_firstShown = true;
     };
 }
 

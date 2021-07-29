@@ -35,9 +35,10 @@ QString MarkdownBuffer::insertImage(const QImage &p_image, const QString &p_imag
 void MarkdownBuffer::fetchInitialImages()
 {
     Q_ASSERT(m_initialImages.isEmpty());
+    vte::MarkdownLink::TypeFlags linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal | vte::MarkdownLink::TypeFlag::Remote;
     m_initialImages = vte::MarkdownUtils::fetchImagesFromMarkdownText(getContent(),
                                                                       getResourcePath(),
-                                                                      vte::MarkdownLink::TypeFlag::LocalRelativeInternal);
+                                                                      linkFlags);
 }
 
 void MarkdownBuffer::addInsertedImage(const QString &p_imagePath, const QString &p_urlInLink)
@@ -45,41 +46,51 @@ void MarkdownBuffer::addInsertedImage(const QString &p_imagePath, const QString 
     vte::MarkdownLink link;
     link.m_path = p_imagePath;
     link.m_urlInLink = p_urlInLink;
-    link.m_type = vte::MarkdownLink::TypeFlag::LocalRelativeInternal;
+    // There are two types: local internal and remote for image host.
+    link.m_type = PathUtils::isLocalFile(p_imagePath) ? vte::MarkdownLink::TypeFlag::LocalRelativeInternal : vte::MarkdownLink::TypeFlag::Remote;
     m_insertedImages.append(link);
 }
 
-QSet<QString> MarkdownBuffer::clearObsoleteImages()
+QHash<QString, bool> MarkdownBuffer::clearObsoleteImages()
 {
-    QSet<QString> obsoleteImages;
+    QHash<QString, bool> obsoleteImages;
 
     Q_ASSERT(!isModified());
     const bool discarded = state() & StateFlag::Discarded;
+    const vte::MarkdownLink::TypeFlags linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal | vte::MarkdownLink::TypeFlag::Remote;
     const auto latestImages =
         vte::MarkdownUtils::fetchImagesFromMarkdownText(!discarded ? getContent() : m_provider->read(),
                                                         getResourcePath(),
-                                                        vte::MarkdownLink::TypeFlag::LocalRelativeInternal);
+                                                        linkFlags);
     QSet<QString> latestImagesPath;
     for (const auto &link : latestImages) {
-        latestImagesPath.insert(PathUtils::normalizePath(link.m_path));
+        if (link.m_type & vte::MarkdownLink::TypeFlag::Remote) {
+            latestImagesPath.insert(link.m_path);
+        } else {
+            latestImagesPath.insert(PathUtils::normalizePath(link.m_path));
+        }
     }
 
     for (const auto &link : m_insertedImages) {
-        if (!(link.m_type & vte::MarkdownLink::TypeFlag::LocalRelativeInternal)) {
+        if (!(link.m_type & linkFlags)) {
             continue;
         }
 
-        if (!latestImagesPath.contains(PathUtils::normalizePath(link.m_path))) {
-            obsoleteImages.insert(link.m_path);
+        const bool isRemote = link.m_type & vte::MarkdownLink::TypeFlag::Remote;
+        const auto linkPath = isRemote ? link.m_path : PathUtils::normalizePath(link.m_path);
+        if (!latestImagesPath.contains(linkPath)) {
+            obsoleteImages.insert(link.m_path, isRemote);
         }
     }
 
     m_insertedImages.clear();
 
     for (const auto &link : m_initialImages) {
-        Q_ASSERT(link.m_type & vte::MarkdownLink::TypeFlag::LocalRelativeInternal);
-        if (!latestImagesPath.contains(PathUtils::normalizePath(link.m_path))) {
-            obsoleteImages.insert(link.m_path);
+        Q_ASSERT(link.m_type & linkFlags);
+        const bool isRemote = link.m_type & vte::MarkdownLink::TypeFlag::Remote;
+        const auto linkPath = isRemote ? link.m_path : PathUtils::normalizePath(link.m_path);
+        if (!latestImagesPath.contains(linkPath)) {
+            obsoleteImages.insert(link.m_path, isRemote);
         }
     }
 

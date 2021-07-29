@@ -19,7 +19,7 @@ namespace vnotex
     protected:
         void loadInternal() Q_DECL_OVERRIDE;
 
-        void saveInternal() Q_DECL_OVERRIDE;
+        bool saveInternal() Q_DECL_OVERRIDE;
 
     private:
         void setupUI();

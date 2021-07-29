@@ -41,6 +41,8 @@ namespace vnotex
 
         QString getTemplateContent() const;
 
+        void updateCurrentTemplate();
+
         NodeInfoWidget *m_infoWidget = nullptr;
 
         QComboBox *m_templateComboBox = nullptr;

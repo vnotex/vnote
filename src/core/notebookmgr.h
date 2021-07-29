@@ -105,13 +105,13 @@ namespace vnotex
 
         void addNotebook(const QSharedPointer<Notebook> &p_notebook);
 
-        QSharedPointer<NameBasedServer<IVersionControllerFactory>> m_versionControllerServer;
+        QScopedPointer<NameBasedServer<IVersionControllerFactory>> m_versionControllerServer;
 
-        QSharedPointer<NameBasedServer<INotebookConfigMgrFactory>> m_configMgrServer;
+        QScopedPointer<NameBasedServer<INotebookConfigMgrFactory>> m_configMgrServer;
 
-        QSharedPointer<NameBasedServer<INotebookBackendFactory>> m_backendServer;
+        QScopedPointer<NameBasedServer<INotebookBackendFactory>> m_backendServer;
 
-        QSharedPointer<NameBasedServer<INotebookFactory>> m_notebookServer;
+        QScopedPointer<NameBasedServer<INotebookFactory>> m_notebookServer;
 
         QVector<QSharedPointer<Notebook>> m_notebooks;
 

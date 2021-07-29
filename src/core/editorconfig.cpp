@@ -12,6 +12,30 @@ using namespace vnotex;
 #define READSTR(key) readString(appObj, userObj, (key))
 #define READBOOL(key) readBool(appObj, userObj, (key))
 
+bool EditorConfig::ImageHostItem::operator==(const ImageHostItem &p_other) const
+{
+    return m_type == p_other.m_type
+           && m_name == p_other.m_name
+           && m_config == p_other.m_config;
+}
+
+void EditorConfig::ImageHostItem::fromJson(const QJsonObject &p_jobj)
+{
+    m_type = p_jobj[QStringLiteral("type")].toInt();
+    m_name = p_jobj[QStringLiteral("name")].toString();
+    m_config = p_jobj[QStringLiteral("config")].toObject();
+}
+
+QJsonObject EditorConfig::ImageHostItem::toJson() const
+{
+    QJsonObject obj;
+    obj[QStringLiteral("type")] = m_type;
+    obj[QStringLiteral("name")] = m_name;
+    obj[QStringLiteral("config")] = m_config;
+    return obj;
+}
+
+
 EditorConfig::EditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig),
       m_textEditorConfig(new TextEditorConfig(p_mgr, p_topConfig)),
@@ -31,6 +55,8 @@ void EditorConfig::init(const QJsonObject &p_app,
     const auto userObj = p_user.value(m_sessionName).toObject();
 
     loadCore(appObj, userObj);
+
+    loadImageHost(appObj, userObj);
 
     m_textEditorConfig->init(appObj, userObj);
     m_markdownEditorConfig->init(appObj, userObj);
@@ -112,6 +138,7 @@ QJsonObject EditorConfig::toJson() const
     obj[m_textEditorConfig->getSessionName()] = m_textEditorConfig->toJson();
     obj[m_markdownEditorConfig->getSessionName()] = m_markdownEditorConfig->toJson();
     obj[QStringLiteral("core")] = saveCore();
+    obj[QStringLiteral("image_host")] = saveImageHost();
     return obj;
 }
 
@@ -211,4 +238,69 @@ const QString &EditorConfig::getSpellCheckDefaultDictionary() const
 void EditorConfig::setSpellCheckDefaultDictionary(const QString &p_dict)
 {
     updateConfig(m_spellCheckDefaultDictionary, p_dict, this);
+}
+
+void EditorConfig::loadImageHost(const QJsonObject &p_app, const QJsonObject &p_user)
+{
+    const auto appObj = p_app.value(QStringLiteral("image_host")).toObject();
+    const auto userObj = p_user.value(QStringLiteral("image_host")).toObject();
+
+    {
+        auto arr = read(appObj, userObj, QStringLiteral("hosts")).toArray();
+        m_imageHosts.resize(arr.size());
+        for (int i = 0; i < arr.size(); ++i) {
+            m_imageHosts[i].fromJson(arr[i].toObject());
+        }
+    }
+
+    m_defaultImageHost = READSTR(QStringLiteral("default_image_host"));
+    m_clearObsoleteImageAtImageHost = READBOOL(QStringLiteral("clear_obsolete_image"));
+}
+
+QJsonObject EditorConfig::saveImageHost() const
+{
+    QJsonObject obj;
+
+    {
+        QJsonArray arr;
+        for (const auto &item : m_imageHosts) {
+            arr.append(item.toJson());
+        }
+        obj[QStringLiteral("hosts")] = arr;
+    }
+
+    obj[QStringLiteral("default_image_host")] = m_defaultImageHost;
+    obj[QStringLiteral("clear_obsolete_image")] = m_clearObsoleteImageAtImageHost;
+
+    return obj;
+}
+
+const QVector<EditorConfig::ImageHostItem> &EditorConfig::getImageHosts() const
+{
+    return m_imageHosts;
+}
+
+void EditorConfig::setImageHosts(const QVector<ImageHostItem> &p_hosts)
+{
+    updateConfig(m_imageHosts, p_hosts, this);
+}
+
+const QString &EditorConfig::getDefaultImageHost() const
+{
+    return m_defaultImageHost;
+}
+
+void EditorConfig::setDefaultImageHost(const QString &p_host)
+{
+    updateConfig(m_defaultImageHost, p_host, this);
+}
+
+bool EditorConfig::isClearObsoleteImageAtImageHostEnabled() const
+{
+    return m_clearObsoleteImageAtImageHost;
+}
+
+void EditorConfig::setClearObsoleteImageAtImageHostEnabled(bool p_enabled)
+{
+    updateConfig(m_clearObsoleteImageAtImageHost, p_enabled, this);
 }

@@ -17,6 +17,7 @@
 #include "appearancepage.h"
 #include "quickaccesspage.h"
 #include "themepage.h"
+#include "imagehostpage.h"
 
 using namespace vnotex;
 
@@ -38,12 +39,12 @@ void SettingsDialog::setupUI()
     setupPageExplorer(mainLayout, widget);
 
     {
-        auto scrollArea = new QScrollArea(widget);
-        scrollArea->setWidgetResizable(true);
-        mainLayout->addWidget(scrollArea, 5);
+        m_scrollArea = new QScrollArea(widget);
+        m_scrollArea->setWidgetResizable(true);
+        mainLayout->addWidget(m_scrollArea, 6);
 
-        auto scrollWidget = new QWidget(scrollArea);
-        scrollArea->setWidget(scrollWidget);
+        auto scrollWidget = new QWidget(m_scrollArea);
+        m_scrollArea->setWidget(scrollWidget);
 
         m_pageLayout = new QStackedLayout(scrollWidget);
     }
@@ -111,6 +112,12 @@ void SettingsDialog::setupPages()
         auto page = new EditorPage(this);
         auto item = addPage(page);
 
+        // Image Host.
+        {
+            auto subPage = new ImageHostPage(this);
+            addSubPage(subPage, item);
+        }
+
         // Text Editor.
         {
             auto subPage = new TextEditorPage(this);
@@ -171,7 +178,10 @@ void SettingsDialog::setChangesUnsaved(bool p_unsaved)
 void SettingsDialog::acceptedButtonClicked()
 {
     if (m_changesUnsaved) {
-        savePages();
+        if (savePages()) {
+            accept();
+        }
+        return;
     }
 
     accept();
@@ -179,9 +189,12 @@ void SettingsDialog::acceptedButtonClicked()
 
 void SettingsDialog::resetButtonClicked()
 {
+    clearInformationText();
+
     m_ready = false;
     forEachPage([](SettingsPage *p_page) {
         p_page->reset();
+        return true;
     });
     m_ready = true;
 
@@ -194,20 +207,39 @@ void SettingsDialog::appliedButtonClicked()
     savePages();
 }
 
-void SettingsDialog::savePages()
+bool SettingsDialog::savePages()
 {
-    forEachPage([](SettingsPage *p_page) {
-        p_page->save();
+    clearInformationText();
+
+    bool allSaved = true;
+    forEachPage([this, &allSaved](SettingsPage *p_page) {
+        if (!p_page->save()) {
+            allSaved = false;
+            m_pageLayout->setCurrentWidget(p_page);
+            if (!p_page->error().isEmpty()) {
+                setInformationText(p_page->error(), InformationLevel::Error);
+            }
+            return false;
+        }
+
+        return true;
     });
 
-    setChangesUnsaved(false);
+    if (allSaved) {
+        setChangesUnsaved(false);
+        return true;
+    }
+
+    return false;
 }
 
-void SettingsDialog::forEachPage(const std::function<void(SettingsPage *)> &p_func)
+void SettingsDialog::forEachPage(const std::function<bool(SettingsPage *)> &p_func)
 {
     for (int i = 0; i < m_pageLayout->count(); ++i) {
         auto page = dynamic_cast<SettingsPage *>(m_pageLayout->widget(i));
-        p_func(page);
+        if (!p_func(page)) {
+            break;
+        }
     }
 }
 
@@ -227,4 +259,15 @@ QTreeWidgetItem *SettingsDialog::addSubPage(SettingsPage *p_page, QTreeWidgetIte
     auto subItem = new QTreeWidgetItem(p_parentItem);
     setupPage(subItem, p_page);
     return subItem;
+}
+
+void SettingsDialog::showEvent(QShowEvent *p_event)
+{
+    Dialog::showEvent(p_event);
+
+    if (m_firstShown) {
+        m_firstShown = false;
+        const auto sz = size();
+        resize(sz * 1.2);
+    }
 }

@@ -17,6 +17,7 @@ BundleNotebook::BundleNotebook(const NotebookParameters &p_paras,
 {
     m_nextNodeId = p_notebookConfig->m_nextNodeId;
     m_history = p_notebookConfig->m_history;
+    m_extraConfigs = p_notebookConfig->m_extraConfigs;
 }
 
 BundleNotebookConfigMgr *BundleNotebook::getBundleNotebookConfigMgr() const
@@ -78,6 +79,18 @@ void BundleNotebook::addHistory(const HistoryItem &p_item)
 void BundleNotebook::clearHistory()
 {
     m_history.clear();
+
+    updateNotebookConfig();
+}
+
+const QJsonObject &BundleNotebook::getExtraConfigs() const
+{
+    return m_extraConfigs;
+}
+
+void BundleNotebook::setExtraConfig(const QString &p_key, const QJsonObject &p_obj)
+{
+    m_extraConfigs[p_key] = p_obj;
 
     updateNotebookConfig();
 }

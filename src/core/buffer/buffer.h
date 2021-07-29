@@ -77,7 +77,7 @@ namespace vnotex
 
         QString getPath() const;
 
-        // In some cases, getPath() may point to a ocntainer containting all the stuffs.
+        // In some cases, getPath() may point to a container containting all the stuffs.
         // getContentPath() will return the real path to the file providing the content.
         QString getContentPath() const;
 

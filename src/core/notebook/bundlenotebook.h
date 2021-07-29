@@ -31,12 +31,17 @@ namespace vnotex
         void addHistory(const HistoryItem &p_item) Q_DECL_OVERRIDE;
         void clearHistory() Q_DECL_OVERRIDE;
 
+        const QJsonObject &getExtraConfigs() const Q_DECL_OVERRIDE;
+        void setExtraConfig(const QString &p_key, const QJsonObject &p_obj) Q_DECL_OVERRIDE;
+
     private:
         BundleNotebookConfigMgr *getBundleNotebookConfigMgr() const;
 
         ID m_nextNodeId = 1;
 
         QVector<HistoryItem> m_history;
+
+        QJsonObject m_extraConfigs;
     };
 } // ns vnotex
 

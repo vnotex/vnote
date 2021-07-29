@@ -1,7 +1,8 @@
 # Shortcuts
 1. All the keys without special notice are **case insensitive**;
 2. On macOS, `Ctrl` corresponds to `Command` except in Vi mode;
-3. For a complete shortcuts list, please view the `vnotex.json` configuration file.
+3. The key sequence `Ctrl+G, I` means that first press both `Ctrl` and `G` simultaneously, release them, then press `I` and release;
+4. For a complete shortcuts list, please view the `vnotex.json` configuration file.
 
 ## General
 - `Ctrl+G E`  

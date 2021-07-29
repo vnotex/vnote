@@ -15,7 +15,7 @@ namespace vnotex
 
         void load();
 
-        void save();
+        bool save();
 
         void reset();
 
@@ -23,13 +23,15 @@ namespace vnotex
 
         bool search(const QString &p_key);
 
+        const QString &error() const;
+
     signals:
         void changed();
 
     protected:
         virtual void loadInternal() = 0;
 
-        virtual void saveInternal() = 0;
+        virtual bool saveInternal() = 0;
 
         // Subclass could override this method to highlight matched target.
         virtual void searchHit(QWidget *p_target);
@@ -37,6 +39,8 @@ namespace vnotex
         void addSearchItem(const QString &p_words, QWidget *p_target);
 
         void addSearchItem(const QString &p_name, const QString &p_tooltip, QWidget *p_target);
+
+        void setError(const QString &p_err);
 
     protected slots:
         void pageIsChanged();
@@ -59,6 +63,8 @@ namespace vnotex
         QVector<SearchItem> m_searchItems;
 
         bool m_changed = false;
+
+        QString m_error;
     };
 }
 

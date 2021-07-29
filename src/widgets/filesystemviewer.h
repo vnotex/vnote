@@ -38,6 +38,8 @@ namespace vnotex
         // Resize the first column.
         void resizeTreeToContents();
 
+        void handleContextMenuRequested(const QPoint &p_pos);
+
     private:
         enum Action {
             Open,

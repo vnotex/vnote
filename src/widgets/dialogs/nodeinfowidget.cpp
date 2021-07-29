@@ -71,9 +71,6 @@ void NodeInfoWidget::setupUI(const Node *p_parentNode, Node::Flags p_newNodeFlag
 void NodeInfoWidget::setupNameLineEdit(QWidget *p_parent)
 {
     m_nameLineEdit = WidgetsFactory::createLineEditWithSnippet(p_parent);
-    auto validator = new QRegularExpressionValidator(QRegularExpression(PathUtils::c_fileNameRegularExpression),
-                                                     m_nameLineEdit);
-    m_nameLineEdit->setValidator(validator);
     connect(m_nameLineEdit, &QLineEdit::textEdited,
             this, [this]() {
                 // Choose the correct file type.

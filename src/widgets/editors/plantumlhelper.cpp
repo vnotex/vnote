@@ -57,7 +57,9 @@ void PlantUmlHelper::prepareProgramAndArgs(const QString &p_plantUmlJarFile,
     p_args << "java";
 #endif
 
+#if defined(Q_OS_MACOS)
     p_args << "-Djava.awt.headless=true";
+#endif
 
     p_args << "-jar" << QDir::toNativeSeparators(p_plantUmlJarFile);
 

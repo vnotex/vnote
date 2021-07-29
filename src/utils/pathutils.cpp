@@ -83,6 +83,8 @@ QString PathUtils::fileNameCheap(const QString &p_path)
 
 QString PathUtils::normalizePath(const QString &p_path)
 {
+    Q_ASSERT(isLocalFile(p_path));
+
     auto absPath = QDir::cleanPath(QDir(p_path).absolutePath());
 #if defined(Q_OS_WIN)
     return absPath.toLower();
@@ -233,4 +235,18 @@ bool PathUtils::isImageUrl(const QString &p_url)
 bool PathUtils::isDir(const QString &p_path)
 {
     return QFileInfo(p_path).isDir();
+}
+
+bool PathUtils::isLocalFile(const QString &p_path)
+{
+    if (p_path.isEmpty()) {
+        return false;
+    }
+
+    QRegularExpression regExp("^(?:ftp|http|https)://");
+    if (regExp.match(p_path).hasMatch()) {
+        return false;
+    }
+
+    return true;
 }

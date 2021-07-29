@@ -20,6 +20,7 @@ include($$SRC_FOLDER/utils/utils.pri)
 include($$SRC_FOLDER/export/export.pri)
 include($$SRC_FOLDER/search/search.pri)
 include($$SRC_FOLDER/snippet/snippet.pri)
+include($$SRC_FOLDER/imagehost/imagehost.pri)
 
 SOURCES += \
     test_notebook.cpp

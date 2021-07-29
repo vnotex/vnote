@@ -183,7 +183,7 @@ void TextEditorPage::loadInternal()
     m_spellCheckCheckBox->setChecked(textConfig.isSpellCheckEnabled());
 }
 
-void TextEditorPage::saveInternal()
+bool TextEditorPage::saveInternal()
 {
     auto &textConfig = ConfigMgr::getInst().getEditorConfig().getTextEditorConfig();
 
@@ -218,6 +218,8 @@ void TextEditorPage::saveInternal()
     textConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
 
     EditorPage::notifyEditorConfigChange();
+
+    return true;
 }
 
 QString TextEditorPage::title() const

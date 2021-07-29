@@ -113,7 +113,7 @@ void EditorPage::loadInternal()
     }
 }
 
-void EditorPage::saveInternal()
+bool EditorPage::saveInternal()
 {
     auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
 
@@ -129,6 +129,8 @@ void EditorPage::saveInternal()
     }
 
     notifyEditorConfigChange();
+
+    return true;
 }
 
 QString EditorPage::title() const

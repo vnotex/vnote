@@ -128,6 +128,8 @@ namespace vnotex
         void setInplacePreviewSources(InplacePreviewSources p_src);
 
     private:
+        friend class MainConfig;
+
         QString sectionNumberModeToString(SectionNumberMode p_mode) const;
         SectionNumberMode stringToSectionNumberMode(const QString &p_str) const;
 

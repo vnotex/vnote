@@ -98,12 +98,14 @@ void ThemePage::loadInternal()
     loadThemes();
 }
 
-void ThemePage::saveInternal()
+bool ThemePage::saveInternal()
 {
     auto theme = currentTheme();
     if (!theme.isEmpty()) {
         ConfigMgr::getInst().getCoreConfig().setTheme(theme);
     }
+
+    return true;
 }
 
 QString ThemePage::title() const

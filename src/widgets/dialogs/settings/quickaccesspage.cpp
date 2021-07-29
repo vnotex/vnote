@@ -47,7 +47,7 @@ void QuickAccessPage::loadInternal()
     }
 }
 
-void QuickAccessPage::saveInternal()
+bool QuickAccessPage::saveInternal()
 {
     auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
 
@@ -59,6 +59,8 @@ void QuickAccessPage::saveInternal()
             sessionConfig.setQuickAccessFiles(text.split(QChar('\n')));
         }
     }
+
+    return true;
 }
 
 QString QuickAccessPage::title() const

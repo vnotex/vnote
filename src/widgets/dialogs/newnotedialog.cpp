@@ -150,6 +150,16 @@ void NewNoteDialog::initDefaultValues(const Node *p_node)
         lineEdit->setText(defaultName);
         WidgetUtils::selectBaseName(lineEdit);
     }
+
+    if (!s_lastTemplate.isEmpty()) {
+        // Restore.
+        int idx = m_templateComboBox->findData(s_lastTemplate);
+        if (idx != -1) {
+            m_templateComboBox->setCurrentIndex(idx);
+        } else {
+            s_lastTemplate.clear();
+        }
+    }
 }
 
 void NewNoteDialog::setupTemplateComboBox(QWidget *p_parent)
@@ -166,41 +176,10 @@ void NewNoteDialog::setupTemplateComboBox(QWidget *p_parent)
         m_templateComboBox->setItemData(idx++, temp, Qt::ToolTipRole);
     }
 
-    if (!s_lastTemplate.isEmpty()) {
-        // Restore.
-        int idx = m_templateComboBox->findData(s_lastTemplate);
-        if (idx != -1) {
-            m_templateComboBox->setCurrentIndex(idx);
-        } else {
-            s_lastTemplate.clear();
-        }
-    }
+    m_templateComboBox->setCurrentIndex(0);
 
     connect(m_templateComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, [this]() {
-                m_templateContent.clear();
-                m_templateTextEdit->clear();
-
-                auto temp = m_templateComboBox->currentData().toString();
-                if (temp.isEmpty()) {
-                    m_templateTextEdit->hide();
-                    return;
-                }
-
-                const auto filePath = TemplateMgr::getInst().getTemplateFilePath(temp);
-                try {
-                    m_templateContent = FileUtils::readTextFile(filePath);
-                    m_templateTextEdit->setPlainText(m_templateContent);
-                    m_templateTextEdit->show();
-                } catch (Exception &p_e) {
-                    m_templateTextEdit->hide();
-
-                    QString msg = tr("Failed to load template (%1) (%2).")
-                                    .arg(filePath, p_e.what());
-                    qCritical() << msg;
-                    setInformationText(msg, ScrollDialog::InformationLevel::Error);
-                }
-        });
+            this, &NewNoteDialog::updateCurrentTemplate);
 }
 
 QString NewNoteDialog::getTemplateContent() const
@@ -210,4 +189,30 @@ QString NewNoteDialog::getTemplateContent() const
                                                       QString(),
                                                       cursorOffset,
                                                       SnippetMgr::generateOverrides(m_infoWidget->getName()));
+}
+
+void NewNoteDialog::updateCurrentTemplate()
+{
+    m_templateContent.clear();
+    m_templateTextEdit->clear();
+
+    auto temp = m_templateComboBox->currentData().toString();
+    if (temp.isEmpty()) {
+        m_templateTextEdit->hide();
+        return;
+    }
+
+    const auto filePath = TemplateMgr::getInst().getTemplateFilePath(temp);
+    try {
+        m_templateContent = FileUtils::readTextFile(filePath);
+        m_templateTextEdit->setPlainText(m_templateContent);
+        m_templateTextEdit->show();
+    } catch (Exception &p_e) {
+        m_templateTextEdit->hide();
+
+        QString msg = tr("Failed to load template (%1) (%2).")
+            .arg(filePath, p_e.what());
+        qCritical() << msg;
+        setInformationText(msg, ScrollDialog::InformationLevel::Error);
+    }
 }

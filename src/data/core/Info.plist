@@ -21,9 +21,9 @@
     <key>CFBundleExecutable</key>
     <string>vnote</string>
     <key>CFBundleShortVersionString</key>
-    <string>3.0.0</string>
+    <string>3.5.1</string>
     <key>CFBundleVersion</key>
-    <string>3.0.0.3</string>
+    <string>3.5.1.1</string>
     <key>NSHumanReadableCopyright</key>
     <string>Created by VNoteX</string>
     <key>CFBundleIconFile</key>

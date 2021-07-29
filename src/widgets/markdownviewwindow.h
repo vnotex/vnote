@@ -23,6 +23,7 @@ namespace vnotex
     struct Outline;
     class MarkdownEditorConfig;
     class EditorConfig;
+    class ImageHost;
 
     class MarkdownViewWindow : public ViewWindow
     {
@@ -59,6 +60,8 @@ namespace vnotex
         void handleTypeAction(TypeAction p_action) Q_DECL_OVERRIDE;
 
         void handleSectionNumberOverride(OverrideState p_state) Q_DECL_OVERRIDE;
+
+        void handleImageHostChanged(const QString &p_hostName) Q_DECL_OVERRIDE;
 
         void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
 
@@ -147,6 +150,8 @@ namespace vnotex
 
         void updatePreviewHelperFromConfig(const MarkdownEditorConfig &p_config);
 
+        void removeFromImageHost(const QString &p_url);
+
         template <class T>
         static QSharedPointer<Outline> headingsToOutline(const QVector<T> &p_headings);
 
@@ -184,6 +189,8 @@ namespace vnotex
         ViewWindowMode m_previousMode = ViewWindowMode::Invalid;
 
         QSharedPointer<OutlineProvider> m_outlineProvider;
+
+        ImageHost *m_imageHost = nullptr;
     };
 }
 

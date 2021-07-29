@@ -42,23 +42,7 @@ void FileSystemViewer::setupUI()
     }
 
     connect(m_viewer, &QTreeView::customContextMenuRequested,
-            this, [this](const QPoint &p_pos) {
-                // @p_pos is the position in the coordinate of parent widget if parent is a popup.
-                auto pos = p_pos;
-                if (m_fixContextMenuPos) {
-                    pos = mapFromParent(p_pos);
-                    pos = m_viewer->mapFromParent(pos);
-                }
-                auto index = m_viewer->indexAt(pos);
-                QScopedPointer<QMenu> menu(WidgetsFactory::createMenu());
-                if (index.isValid()) {
-                    createContextMenuOnItem(menu.data());
-                }
-
-                if (!menu->isEmpty()) {
-                    menu->exec(m_viewer->mapToGlobal(pos));
-                }
-            });
+            this, &FileSystemViewer::handleContextMenuRequested);
     connect(m_viewer, &QTreeView::activated,
             this, [this](const QModelIndex &p_index) {
                 if (!this->fileModel()->isDir(p_index)) {
@@ -142,8 +126,7 @@ void FileSystemViewer::createContextMenuOnItem(QMenu *p_menu)
     act = createAction(Action::Delete, p_menu);
     p_menu->addAction(act);
 
-    const auto modelIndexList = m_viewer->selectionModel()->selectedRows();
-    if (modelIndexList.size() == 1) {
+    if (selectedCount() == 1) {
         act = createAction(Action::CopyPath, p_menu);
         p_menu->addAction(act);
 
@@ -224,7 +207,38 @@ void FileSystemViewer::scrollToAndSelect(const QStringList &p_paths)
                 m_viewer->scrollTo(index);
                 isFirst = false;
             }
-            selectionModel->select(index, QItemSelectionModel::SelectCurrent);
+            selectionModel->select(index, QItemSelectionModel::SelectCurrent | QItemSelectionModel::Rows);
         }
+    }
+}
+
+void FileSystemViewer::handleContextMenuRequested(const QPoint &p_pos)
+{
+    // @p_pos is the position in the coordinate of parent widget if parent is a popup.
+    auto pos = p_pos;
+    if (m_fixContextMenuPos) {
+        pos = mapFromParent(p_pos);
+        pos = m_viewer->mapFromParent(pos);
+    }
+
+    QScopedPointer<QMenu> menu(WidgetsFactory::createMenu());
+
+    auto index = m_viewer->indexAt(pos);
+    if (index.isValid()) {
+        auto selectionModel = m_viewer->selectionModel();
+        if (!selectionModel->isSelected(index)) {
+            // Must select entire row since we use selectedRows() to count.
+            selectionModel->setCurrentIndex(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        }
+
+        m_viewer->update();
+
+        createContextMenuOnItem(menu.data());
+    }
+
+    m_viewer->update();
+
+    if (!menu->isEmpty()) {
+        menu->exec(m_viewer->mapToGlobal(pos));
     }
 }

@@ -4,7 +4,7 @@
 #include "buffer.h"
 
 #include <QVector>
-#include <QSet>
+#include <QHash>
 
 #include <vtextedit/markdownutils.h>
 
@@ -28,7 +28,8 @@ namespace vnotex
         // Clear obsolete images.
         // Won't delete images, just return a list of obsolete images path.
         // Will re-init m_initialImages and clear m_insertedImages.
-        QSet<QString> clearObsoleteImages();
+        // Return [ImagePath] -> IsRemote.
+        QHash<QString, bool> clearObsoleteImages();
 
     protected:
         ViewWindow *createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras, QWidget *p_parent) Q_DECL_OVERRIDE;

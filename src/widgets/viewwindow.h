@@ -14,6 +14,8 @@
 class QVBoxLayout;
 class QTimer;
 class QToolBar;
+class QMenu;
+class QActionGroup;
 
 namespace vnotex
 {
@@ -157,6 +159,8 @@ namespace vnotex
         virtual void handleTypeAction(TypeAction p_action);
 
         virtual void handleSectionNumberOverride(OverrideState p_state);
+
+        virtual void handleImageHostChanged(const QString &p_hostName);
 
         virtual void handleFindTextChanged(const QString &p_text, FindOptions p_options);
 
@@ -302,6 +306,8 @@ namespace vnotex
 
         void handleBufferChanged(const QSharedPointer<FileOpenParameters> &p_paras);
 
+        void updateImageHostMenu();
+
         static ViewWindow::TypeAction toolBarActionToTypeAction(ViewWindowToolBarHelper::Action p_action);
 
         Buffer *m_buffer = nullptr;
@@ -343,6 +349,10 @@ namespace vnotex
         EditReadDiscardAction *m_editReadDiscardAct = nullptr;
 
         WindowFlags m_flags = WindowFlag::None;
+
+        QMenu *m_imageHostMenu = nullptr;
+
+        QActionGroup *m_imageHostActionGroup = nullptr;
 
         static QIcon s_savedIcon;
         static QIcon s_modifiedIcon;

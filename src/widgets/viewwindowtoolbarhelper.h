@@ -44,7 +44,8 @@ namespace vnotex
             Outline,
             FindAndReplace,
             SectionNumber,
-            InplacePreview
+            InplacePreview,
+            ImageHost
         };
 
         static QAction *addAction(QToolBar *p_tb, Action p_action);

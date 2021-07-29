@@ -36,7 +36,7 @@ QString WebUtils::toDataUri(const QUrl &p_url, bool p_keepTitle)
     QByteArray data;
     if (p_url.scheme() == "https" || p_url.scheme() == "http") {
         // Download it.
-        data = vte::Downloader::download(p_url);
+        data = vte::NetworkAccess::request(p_url).m_data;
     } else if (finfo.exists()) {
         data = FileUtils::readFile(filePath);
     }
@@ -86,7 +86,7 @@ QString WebUtils::copyResource(const QUrl &p_url, const QString &p_folder)
     try {
         if (p_url.scheme() == "https" || p_url.scheme() == "http") {
             // Download it.
-            auto data = vte::Downloader::download(p_url);
+            auto data = vte::NetworkAccess::request(p_url).m_data;
             if (!data.isEmpty()) {
                 FileUtils::writeFile(targetFile, data);
             }

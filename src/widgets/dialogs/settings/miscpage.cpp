@@ -25,9 +25,9 @@ void MiscPage::loadInternal()
 
 }
 
-void MiscPage::saveInternal()
+bool MiscPage::saveInternal()
 {
-
+    return true;
 }
 
 QString MiscPage::title() const

@@ -20,6 +20,7 @@
 #endif
 
 class QWidget;
+class QJsonObject;
 
 namespace vnotex
 {
@@ -52,6 +53,10 @@ namespace vnotex
         static QString boolToString(bool p_val);
 
         static QString intToString(int p_val, int p_width = 0);
+
+        static QByteArray toJsonString(const QJsonObject &p_obj);
+
+        static QJsonObject fromJsonString(const QByteArray &p_data);
     };
 } // ns vnotex
 

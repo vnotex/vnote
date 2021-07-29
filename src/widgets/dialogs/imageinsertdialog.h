@@ -17,7 +17,8 @@ class QScrollArea;
 
 namespace vte
 {
-    class Downloader;
+    class NetworkAccess;
+    struct NetworkReply;
 }
 
 namespace vnotex
@@ -65,7 +66,7 @@ namespace vnotex
 
         void browseFile();
 
-        void handleImageDownloaded(const QByteArray &p_data, const QString &p_url);
+        void handleImageDownloaded(const vte::NetworkReply &p_data, const QString &p_url);
 
         void handleScaleSliderValueChanged(int p_val);
 
@@ -102,7 +103,7 @@ namespace vnotex
         QImage m_image;
 
         // Managed by QObject.
-        vte::Downloader *m_downloader = nullptr;
+        vte::NetworkAccess *m_downloader = nullptr;
 
         // Managed by QObject.
         QTimer *m_imagePathCheckTimer = nullptr;

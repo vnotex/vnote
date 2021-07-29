@@ -7,6 +7,8 @@
 #include <QCoreApplication>
 #include <QScrollBar>
 #include <QLabel>
+#include <QApplication>
+#include <QProgressDialog>
 
 #include <core/fileopenparameters.h>
 #include <core/editorconfig.h>
@@ -19,6 +21,8 @@
 #include <buffer/markdownbuffer.h>
 #include <core/vnotex.h>
 #include <core/thememgr.h>
+#include <imagehost/imagehostmgr.h>
+#include <imagehost/imagehost.h>
 #include "editors/markdowneditor.h"
 #include "textviewwindowhelper.h"
 #include "editors/markdownviewer.h"
@@ -31,6 +35,7 @@
 #include "editors/statuswidget.h"
 #include "editors/plantumlhelper.h"
 #include "editors/graphvizhelper.h"
+#include "messageboxhelper.h"
 
 using namespace vnotex;
 
@@ -277,6 +282,10 @@ void MarkdownViewWindow::setupToolBar()
                 });
     }
 
+    addAction(toolBar, ViewWindowToolBarHelper::ImageHost);
+
+    toolBar->addSeparator();
+
     addAction(toolBar, ViewWindowToolBarHelper::TypeHeading);
     addAction(toolBar, ViewWindowToolBarHelper::TypeBold);
     addAction(toolBar, ViewWindowToolBarHelper::TypeItalic);
@@ -325,6 +334,8 @@ void MarkdownViewWindow::setupTextEditor()
 
     m_previewHelper->setMarkdownEditor(m_editor);
     m_editor->setPreviewHelper(m_previewHelper);
+
+    m_editor->setImageHost(m_imageHost);
 
     // Connect viewer and editor.
     connect(adapter(), &MarkdownViewerAdapter::viewerReady,
@@ -727,16 +738,31 @@ void MarkdownViewWindow::clearObsoleteImages()
 
     auto buffer = getBuffer();
     Q_ASSERT(buffer);
-    auto &markdownEditorConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
+    auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+    auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
+    const bool clearRemote = editorConfig.isClearObsoleteImageAtImageHostEnabled();
+    const auto &hostMgr = ImageHostMgr::getInst();
+
+    QVector<QPair<QString, bool>> imagesToDelete;
+    imagesToDelete.reserve(obsoleteImages.size());
+
     if (markdownEditorConfig.getConfirmBeforeClearObsoleteImages()) {
         QVector<ConfirmItemInfo> items;
-        for (auto const &imgPath : obsoleteImages) {
-            items.push_back(ConfirmItemInfo(imgPath, imgPath, imgPath, nullptr));
+        for (auto it = obsoleteImages.constBegin(); it != obsoleteImages.constEnd(); ++it) {
+            if (!it.value() || (clearRemote && hostMgr.findByImageUrl(it.key()))) {
+                const auto imgPath = it.key();
+                // Use the @m_data field to denote whether it is remote.
+                items.push_back(ConfirmItemInfo(imgPath, imgPath, imgPath, it.value() ? reinterpret_cast<void *>(1ULL) : nullptr));
+            }
+        }
+
+        if (items.isEmpty()) {
+            return;
         }
 
         DeleteConfirmDialog dialog(tr("Clear Obsolete Images"),
-            tr("These images seems not in use anymore. Please confirm the deletion of them."),
-            tr("Deleted images could be found in the recycle bin of notebook if it is from a bundle notebook."),
+            tr("These images seems to be not in use anymore. Please confirm the deletion of them."),
+            tr("Deleted local images could be found in the recycle bin of notebook if it is from a bundle notebook."),
             items,
             DeleteConfirmDialog::Flag::AskAgain | DeleteConfirmDialog::Flag::Preview,
             false,
@@ -745,14 +771,49 @@ void MarkdownViewWindow::clearObsoleteImages()
             items = dialog.getConfirmedItems();
             markdownEditorConfig.setConfirmBeforeClearObsoleteImages(!dialog.isNoAskChecked());
             for (const auto &item : items) {
-                buffer->removeImage(item.m_path);
+                imagesToDelete.push_back(qMakePair(item.m_path, item.m_data != nullptr));
             }
         }
     } else {
-        for (const auto &imgPath : obsoleteImages) {
-            buffer->removeImage(imgPath);
+        for (auto it = obsoleteImages.constBegin(); it != obsoleteImages.constEnd(); ++it) {
+            if (clearRemote || !it.value()) {
+                imagesToDelete.push_back(qMakePair(it.key(), it.value()));
+            }
         }
     }
+
+    if (imagesToDelete.isEmpty()) {
+        return;
+    }
+
+    QProgressDialog proDlg(tr("Clearing obsolete images..."),
+                           tr("Abort"),
+                           0,
+                           imagesToDelete.size(),
+                           this);
+    proDlg.setWindowModality(Qt::WindowModal);
+    proDlg.setWindowTitle(tr("Clear Obsolete Images"));
+
+    int cnt = 0;
+    for (int i = 0; i < imagesToDelete.size(); ++i) {
+        proDlg.setValue(i + 1);
+        if (proDlg.wasCanceled()) {
+            break;
+        }
+
+        proDlg.setLabelText(tr("Clear image (%1)").arg(imagesToDelete[i].first));
+        if (imagesToDelete[i].second) {
+            removeFromImageHost(imagesToDelete[i].first);
+        } else {
+            buffer->removeImage(imagesToDelete[i].first);
+        }
+        ++cnt;
+    }
+
+    proDlg.setValue(imagesToDelete.size());
+
+    // It may be deleted so showMessage() is not available.
+    VNoteX::getInst().showStatusMessageShort(tr("Cleared %n obsolete images", "", cnt));
 }
 
 QSharedPointer<OutlineProvider> MarkdownViewWindow::getOutlineProvider()
@@ -897,7 +958,7 @@ void MarkdownViewWindow::handleFindNext(const QString &p_text, FindOptions p_opt
 void MarkdownViewWindow::handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
 {
     if (isReadMode()) {
-        VNoteX::getInst().showStatusMessageShort(tr("Replace is not supported in read mode"));
+        showMessage(tr("Replace is not supported in read mode"));
     } else {
         TextViewWindowHelper::handleReplace(this, p_text, p_options, p_replaceText);
     }
@@ -906,7 +967,7 @@ void MarkdownViewWindow::handleReplace(const QString &p_text, FindOptions p_opti
 void MarkdownViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
 {
     if (isReadMode()) {
-        VNoteX::getInst().showStatusMessageShort(tr("Replace is not supported in read mode"));
+        showMessage(tr("Replace is not supported in read mode"));
     } else {
         TextViewWindowHelper::handleReplaceAll(this, p_text, p_options, p_replaceText);
     }
@@ -1034,4 +1095,34 @@ void MarkdownViewWindow::applySnippet()
 QPoint MarkdownViewWindow::getFloatingWidgetPosition()
 {
     return TextViewWindowHelper::getFloatingWidgetPosition(this);
+}
+
+void MarkdownViewWindow::handleImageHostChanged(const QString &p_hostName)
+{
+    m_imageHost = ImageHostMgr::getInst().find(p_hostName);
+
+    if (m_editor) {
+        m_editor->setImageHost(m_imageHost);
+    }
+}
+
+void MarkdownViewWindow::removeFromImageHost(const QString &p_url)
+{
+    auto host = ImageHostMgr::getInst().findByImageUrl(p_url);
+    if (!host) {
+        return;
+    }
+
+    QString errMsg;
+    QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+    auto ret = host->remove(p_url, errMsg);
+    QApplication::restoreOverrideCursor();
+
+    if (!ret) {
+        MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                 QString("Failed to delete image (%1) from image host (%2).").arg(p_url, host->getName()),
+                                 QString(),
+                                 errMsg,
+                                 this);
+    }
 }

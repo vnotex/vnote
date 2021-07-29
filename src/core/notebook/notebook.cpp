@@ -355,3 +355,9 @@ void Notebook::reloadNodes()
     m_root.clear();
     getRootNode();
 }
+
+QJsonObject Notebook::getExtraConfig(const QString &p_key) const
+{
+    const auto &configs = getExtraConfigs();
+    return configs.value(p_key).toObject();
+}

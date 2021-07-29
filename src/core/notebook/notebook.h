@@ -135,6 +135,11 @@ namespace vnotex
         virtual void addHistory(const HistoryItem &p_item) = 0;
         virtual void clearHistory() = 0;
 
+        // Hold extra 3rd party configs.
+        virtual const QJsonObject &getExtraConfigs() const = 0;
+        QJsonObject getExtraConfig(const QString &p_key) const;
+        virtual void setExtraConfig(const QString &p_key, const QJsonObject &p_obj) = 0;
+
         static const QString c_defaultAttachmentFolder;
 
         static const QString c_defaultImageFolder;

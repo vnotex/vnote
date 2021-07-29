@@ -9,6 +9,8 @@
 #include <QRegularExpression>
 #include <QSvgRenderer>
 #include <QPainter>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 #include <cmath>
 
@@ -125,4 +127,15 @@ QString Utils::intToString(int p_val, int p_width)
         str.prepend(QString(p_width - str.size(), QLatin1Char('0')));
     }
     return str;
+}
+
+QByteArray Utils::toJsonString(const QJsonObject &p_obj)
+{
+    QJsonDocument doc(p_obj);
+    return doc.toJson(QJsonDocument::Compact);
+}
+
+QJsonObject Utils::fromJsonString(const QByteArray &p_data)
+{
+    return QJsonDocument::fromJson(p_data).object();
 }

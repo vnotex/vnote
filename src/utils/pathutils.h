@@ -73,6 +73,8 @@ namespace vnotex
 
         static bool isImageUrl(const QString &p_url);
 
+        static bool isLocalFile(const QString &p_path);
+
         // Regular expression string for file/folder name.
         // Forbidden chars: \/:*?"<>| and whitespaces except spaces.
         static const QString c_fileNameRegularExpression;

@@ -50,6 +50,10 @@ namespace vnotex
 
         QVector<HistoryItem> m_history;
 
+        // Hold all the extra configs for other components or 3rd party plugins.
+        // Use a unique name as the key and the value is a QJsonObject.
+        QJsonObject m_extraConfigs;
+
     private:
         QJsonArray saveHistory() const;
 

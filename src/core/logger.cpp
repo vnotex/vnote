@@ -71,6 +71,7 @@ void Logger::log(QtMsgType p_type, const QMessageLogContext &p_context, const QS
 
     case QtFatalMsg:
         header = QStringLiteral("Fatal:");
+        break;
     }
 
     QString fileName = getFileName(p_context.file);
@@ -109,6 +110,7 @@ void Logger::log(QtMsgType p_type, const QMessageLogContext &p_context, const QS
         fprintf(stderr, "%s(%s:%u) %s\n",
                 header.toStdString().c_str(), file, p_context.line, localMsg.constData());
         abort();
+        break;
     }
 
     fflush(stderr);

@@ -14,6 +14,7 @@
 #include <QProgressDialog>
 #include <QTemporaryFile>
 #include <QTimer>
+#include <QBuffer>
 
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/previewmgr.h>
@@ -44,6 +45,9 @@
 #include <core/configmgr.h>
 #include <core/editorconfig.h>
 #include <core/vnotex.h>
+#include <imagehost/imagehostutils.h>
+#include <imagehost/imagehost.h>
+#include <imagehost/imagehostmgr.h>
 
 #include "previewhelper.h"
 #include "../outlineprovider.h"
@@ -358,22 +362,34 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
     auto destFileName = generateImageFileNameToInsertAs(p_title, QFileInfo(p_srcImagePath).suffix());
 
     QString destFilePath;
-    try {
-        destFilePath = m_buffer->insertImage(p_srcImagePath, destFileName);
-    } catch (Exception e) {
-        MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                 QString("Failed to insert image from local file %1 (%2)").arg(p_srcImagePath, e.what()),
-                                 this);
-        return false;
+
+    if (m_imageHost) {
+        // Save to image host.
+        QByteArray ba;
+        try {
+            ba = FileUtils::readFile(p_srcImagePath);
+        } catch (Exception &e) {
+            MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                     QString("Failed to read local image file (%1) (%2).").arg(p_srcImagePath, e.what()),
+                                     this);
+            return false;
+        }
+        destFilePath = saveToImageHost(ba, destFileName);
+        if (destFilePath.isEmpty()) {
+            return false;
+        }
+    } else {
+        try {
+            destFilePath = m_buffer->insertImage(p_srcImagePath, destFileName);
+        } catch (Exception &e) {
+            MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                     QString("Failed to insert image from local file (%1) (%2).").arg(p_srcImagePath, e.what()),
+                                     this);
+            return false;
+        }
     }
 
-    insertImageLink(p_title,
-                    p_altText,
-                    destFilePath,
-                    p_scaledWidth,
-                    p_scaledHeight,
-                    p_insertText,
-                    p_urlInLink);
+    insertImageLink(p_title, p_altText, destFilePath, p_scaledWidth, p_scaledHeight, p_insertText, p_urlInLink);
     return true;
 }
 
@@ -389,16 +405,31 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title,
                                                  int p_scaledHeight)
 {
     // Save as PNG by default.
-    auto destFileName = generateImageFileNameToInsertAs(p_title, QStringLiteral("png"));
+    const QString format("png");
+    const auto destFileName = generateImageFileNameToInsertAs(p_title, format);
 
     QString destFilePath;
-    try {
-        destFilePath = m_buffer->insertImage(p_image, destFileName);
-    } catch (Exception e) {
-        MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                 QString("Failed to insert image from data (%1)").arg(e.what()),
-                                 this);
-        return false;
+
+    if (m_imageHost) {
+        // Save to image host.
+        QByteArray ba;
+        QBuffer buffer(&ba);
+        buffer.open(QIODevice::WriteOnly);
+        p_image.save(&buffer, format.toStdString().c_str());
+
+        destFilePath = saveToImageHost(ba, destFileName);
+        if (destFilePath.isEmpty()) {
+            return false;
+        }
+    } else {
+        try {
+            destFilePath = m_buffer->insertImage(p_image, destFileName);
+        } catch (Exception &e) {
+            MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                     QString("Failed to insert image from data (%1).").arg(e.what()),
+                                     this);
+            return false;
+        }
     }
 
     insertImageLink(p_title, p_altText, destFilePath, p_scaledWidth, p_scaledHeight);
@@ -764,13 +795,17 @@ void MarkdownEditor::insertImageFromUrl(const QString &p_url)
 
 QString MarkdownEditor::getRelativeLink(const QString &p_path)
 {
-    auto relativePath = PathUtils::relativePath(PathUtils::parentDirPath(m_buffer->getContentPath()), p_path);
-    auto link = PathUtils::encodeSpacesInPath(QDir::fromNativeSeparators(relativePath));
-    if (m_config.getPrependDotInRelativeLink()) {
-        PathUtils::prependDotIfRelative(link);
-    }
+    if (PathUtils::isLocalFile(p_path)) {
+        auto relativePath = PathUtils::relativePath(PathUtils::parentDirPath(m_buffer->getContentPath()), p_path);
+        auto link = PathUtils::encodeSpacesInPath(QDir::fromNativeSeparators(relativePath));
+        if (m_config.getPrependDotInRelativeLink()) {
+            PathUtils::prependDotIfRelative(link);
+        }
 
-    return link;
+        return link;
+    } else {
+        return p_path;
+    }
 }
 
 const QVector<MarkdownEditor::Heading> &MarkdownEditor::getHeadings() const
@@ -957,6 +992,8 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
         }
     }
 
+    appendImageHostMenu(menu);
+
     appendSpellCheckMenu(p_event, menu);
 }
 
@@ -1100,7 +1137,7 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
             if (imageUrl.startsWith(QStringLiteral("//"))) {
                 imageUrl.prepend(QStringLiteral("https:"));
             }
-            QByteArray data = vte::Downloader::download(QUrl(imageUrl));
+            QByteArray data = vte::NetworkAccess::request(QUrl(imageUrl)).m_data;
             if (!data.isEmpty()) {
                 // Prefer the suffix from the real data.
                 auto suffix = ImageUtils::guessImageSuffix(data);
@@ -1292,4 +1329,65 @@ QRgb MarkdownEditor::getPreviewBackground() const
     auto th = theme();
     const auto &fmt = th->editorStyle(vte::Theme::EditorStyle::Preview);
     return fmt.m_backgroundColor;
+}
+
+void MarkdownEditor::setImageHost(ImageHost *p_host)
+{
+    // It may be different than the global default image host.
+    m_imageHost = p_host;
+}
+
+QString MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName)
+{
+    Q_ASSERT(m_imageHost);
+
+    auto destPath = ImageHostUtils::generateRelativePath(m_buffer);
+    if (destPath.isEmpty()) {
+        destPath = p_destFileName;
+    } else {
+        destPath += "/" + p_destFileName;
+    }
+
+    QString errMsg;
+
+    QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+    auto targetUrl = m_imageHost->create(p_imageData, destPath, errMsg);
+    QApplication::restoreOverrideCursor();
+
+    if (targetUrl.isEmpty()) {
+        MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                 QString("Failed to upload image to image host (%1) as (%2).").arg(m_imageHost->getName(), destPath),
+                                 QString(),
+                                 errMsg,
+                                 this);
+    }
+
+    return targetUrl;
+}
+
+void MarkdownEditor::appendImageHostMenu(QMenu *p_menu)
+{
+    p_menu->addSeparator();
+    auto subMenu = p_menu->addMenu(tr("Upload Images To Image Host"));
+
+    const auto &hosts = ImageHostMgr::getInst().getImageHosts();
+    if (hosts.isEmpty()) {
+        auto act = subMenu->addAction(tr("None"));
+        act->setEnabled(false);
+        return;
+    }
+
+    for (const auto &host : hosts) {
+        auto act = subMenu->addAction(host->getName(),
+                                      this,
+                                      &MarkdownEditor::uploadImagesToImageHost);
+        act->setData(host->getName());
+    }
+}
+
+void MarkdownEditor::uploadImagesToImageHost()
+{
+    auto act = static_cast<QAction *>(sender());
+    auto host = ImageHostMgr::getInst().find(act->data().toString());
+    Q_ASSERT(host);
 }

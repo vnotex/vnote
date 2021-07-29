@@ -23,6 +23,7 @@ namespace vnotex
     class Buffer;
     class MarkdownEditorConfig;
     class MarkdownTableHelper;
+    class ImageHost;
 
     class MarkdownEditor : public vte::VMarkdownEditor
     {
@@ -101,6 +102,8 @@ namespace vnotex
         void updateFromConfig(bool p_initialized = true);
 
         QRgb getPreviewBackground() const;
+
+        void setImageHost(ImageHost *p_host);
 
     public slots:
         void handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text);
@@ -181,6 +184,13 @@ namespace vnotex
 
         void setupTableHelper();
 
+        // Return the dest file path of the image on success.
+        QString saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName);
+
+        void appendImageHostMenu(QMenu *p_menu);
+
+        void uploadImagesToImageHost();
+
         static QString generateImageFileNameToInsertAs(const QString &p_title, const QString &p_suffix);
 
         const MarkdownEditorConfig &m_config;
@@ -203,6 +213,8 @@ namespace vnotex
 
         // Managed by QObject.
         MarkdownTableHelper *m_tableHelper = nullptr;
+
+        ImageHost *m_imageHost = nullptr;
     };
 }
 

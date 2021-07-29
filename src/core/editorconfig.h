@@ -6,6 +6,7 @@
 #include <QScopedPointer>
 #include <QSharedPointer>
 #include <QObject>
+#include <QVector>
 
 namespace vnotex
 {
@@ -62,6 +63,23 @@ namespace vnotex
         };
         Q_ENUM(AutoSavePolicy)
 
+        struct ImageHostItem
+        {
+            ImageHostItem() = default;
+
+            bool operator==(const ImageHostItem &p_other) const;
+
+            void fromJson(const QJsonObject &p_jobj);
+
+            QJsonObject toJson() const;
+
+            int m_type = 0;
+
+            QString m_name;
+
+            QJsonObject m_config;
+        };
+
         EditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
 
         ~EditorConfig();
@@ -93,6 +111,15 @@ namespace vnotex
         const QString &getSpellCheckDefaultDictionary() const;
         void setSpellCheckDefaultDictionary(const QString &p_dict);
 
+        const QVector<ImageHostItem> &getImageHosts() const;
+        void setImageHosts(const QVector<ImageHostItem> &p_hosts);
+
+        const QString &getDefaultImageHost() const;
+        void setDefaultImageHost(const QString &p_host);
+
+        bool isClearObsoleteImageAtImageHostEnabled() const;
+        void setClearObsoleteImageAtImageHostEnabled(bool p_enabled);
+
     private:
         friend class MainConfig;
 
@@ -106,6 +133,10 @@ namespace vnotex
 
         QString autoSavePolicyToString(AutoSavePolicy p_policy) const;
         AutoSavePolicy stringToAutoSavePolicy(const QString &p_str) const;
+
+        void loadImageHost(const QJsonObject &p_app, const QJsonObject &p_user);
+
+        QJsonObject saveImageHost() const;
 
         // Icon size of editor tool bar.
         int m_toolBarIconSize = 16;
@@ -128,6 +159,12 @@ namespace vnotex
         bool m_spellCheckAutoDetectLanguageEnabled = false;
 
         QString m_spellCheckDefaultDictionary;
+
+        QVector<ImageHostItem> m_imageHosts;
+
+        QString m_defaultImageHost;
+
+        bool m_clearObsoleteImageAtImageHost = false;
     };
 }
 

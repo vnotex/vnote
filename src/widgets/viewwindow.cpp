@@ -14,6 +14,7 @@
 #include <QShortcut>
 #include <QWheelEvent>
 #include <QWidgetAction>
+#include <QActionGroup>
 
 #include <core/fileopenparameters.h>
 #include "toolbarhelper.h"
@@ -23,6 +24,7 @@
 #include <utils/widgetutils.h>
 #include <core/configmgr.h>
 #include <core/editorconfig.h>
+#include <imagehost/imagehostmgr.h>
 #include "messageboxhelper.h"
 #include "editreaddiscardaction.h"
 #include "viewsplit.h"
@@ -451,6 +453,28 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
         break;
     }
 
+    case ViewWindowToolBarHelper::ImageHost:
+    {
+        act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
+        connect(this, &ViewWindow::modeChanged,
+                this, [this, act]() {
+                    act->setEnabled(inModeCanInsert() && getBuffer() && !getBuffer()->isReadOnly());
+                });
+        auto toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+        Q_ASSERT(toolBtn);
+        m_imageHostMenu = toolBtn->menu();
+        Q_ASSERT(m_imageHostMenu);
+        updateImageHostMenu();
+        connect(m_imageHostMenu, &QMenu::triggered,
+                this, [this](QAction *p_act) {
+                    handleImageHostChanged(p_act->data().toString());
+                });
+
+        connect(&ImageHostMgr::getInst(), &ImageHostMgr::imageHostChanged,
+                this, &ViewWindow::updateImageHostMenu);
+        break;
+    }
+
     default:
         Q_ASSERT(false);
         break;
@@ -622,6 +646,12 @@ void ViewWindow::handleTypeAction(TypeAction p_action)
 void ViewWindow::handleSectionNumberOverride(OverrideState p_state)
 {
     Q_UNUSED(p_state);
+    Q_ASSERT(false);
+}
+
+void ViewWindow::handleImageHostChanged(const QString &p_hostName)
+{
+    Q_UNUSED(p_hostName);
     Q_ASSERT(false);
 }
 
@@ -1151,4 +1181,37 @@ QVariant ViewWindow::showFloatingWidget(FloatingWidget *p_widget)
 QPoint ViewWindow::getFloatingWidgetPosition()
 {
     return mapToGlobal(QPoint(5, 5));
+}
+
+void ViewWindow::updateImageHostMenu()
+{
+    Q_ASSERT(m_imageHostMenu);
+    m_imageHostMenu->clear();
+
+    if (m_imageHostActionGroup) {
+        m_imageHostActionGroup->deleteLater();
+    }
+
+    m_imageHostActionGroup = new QActionGroup(m_imageHostMenu);
+
+    auto act = m_imageHostActionGroup->addAction(tr("Local"));
+    act->setCheckable(true);
+    m_imageHostMenu->addAction(act);
+    act->setChecked(true);
+
+    const auto &hosts = ImageHostMgr::getInst().getImageHosts();
+    auto curHost = ImageHostMgr::getInst().getDefaultImageHost();
+
+    for (const auto &host : hosts) {
+        auto act = m_imageHostActionGroup->addAction(host->getName());
+        act->setCheckable(true);
+        act->setData(host->getName());
+        m_imageHostMenu->addAction(act);
+
+        if (curHost == host) {
+            act->setChecked(true);
+        }
+    }
+
+    handleImageHostChanged(curHost ? curHost->getName() : nullptr);
 }

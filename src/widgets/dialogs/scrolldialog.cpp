@@ -40,7 +40,7 @@ void ScrollDialog::addBottomWidget(QWidget *p_widget)
 
 void ScrollDialog::showEvent(QShowEvent *p_event)
 {
-    QDialog::showEvent(p_event);
+    Dialog::showEvent(p_event);
 
     resizeToHideScrollBarLater(false, true);
 }
