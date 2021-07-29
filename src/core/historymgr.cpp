@@ -9,6 +9,7 @@
 #include "notebookmgr.h"
 #include <notebook/notebook.h>
 #include <notebookbackend/inotebookbackend.h>
+#include "exception.h"
 
 using namespace vnotex;
 
@@ -64,7 +65,15 @@ void HistoryMgr::loadHistory()
             for (const auto &item : history) {
                 auto fullItem = QSharedPointer<HistoryItemFull>::create();
                 fullItem->m_item = item;
-                fullItem->m_item.m_path = backend->getFullPath(item.m_path);
+
+                // We saved the absolute path by mistake in previous version.
+                try {
+                    fullItem->m_item.m_path = backend->getFullPath(item.m_path);
+                } catch (Exception &p_e) {
+                    qWarning() << "skipped loading history item" << item.m_path << "from notebook" << nb->getName() << p_e.what();
+                    continue;
+                }
+
                 fullItem->m_notebookName = nb->getName();
                 m_history.push_back(fullItem);
             }
