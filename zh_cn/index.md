@@ -3,20 +3,20 @@
 
 ::: alert-success
 
-VNote 3.4.0 已发布！ 看看都有 [哪些更新](https://github.com/vnotex/vnote/releases) ！
+VNote 3.5.1 已发布！ 看看都有[哪些更新](https://github.com/vnotex/vnote/releases) ！
 
 观看[展示录屏](https://www.bilibili.com/video/av77455284) ！
 
 :::
 
-- 加入VNote [GitHub](https://github.com/vnotex/vnote)
-- 聊聊VNote [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)
+- 参与 VNote [GitHub](https://github.com/vnotex/vnote)
+- 聊聊 VNote [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)
 - [Telegram](https://t.me/vnotex)
 
 ## 开源和自由
 - 遵从 [GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0) 开源协议
 - 由 Qt 和 C++ 提供强劲性能
-- 支持主流操作系统 Linux，Windows，和macOS
+- 支持主流操作系统 Linux，Windows，和 macOS
 
 ![](_v_images/20181124154422086_1815676907.svg =512x)
 

@@ -3,6 +3,18 @@
     "config_mgr": "vx.vnotex",
     "created_time": "2018-11-24T05:00:58Z",
     "description": "",
+    "history": [
+        {
+            "last_accessed_time": "2021-07-29T13:15:45Z",
+            "line_number": -1,
+            "path": "zh_cn/docs/用户/主题和样式.md"
+        },
+        {
+            "last_accessed_time": "2021-07-29T13:15:46Z",
+            "line_number": -1,
+            "path": "en_us/docs/Users/Themes and Styles.md"
+        }
+    ],
     "image_folder": "vx_images",
     "name": "vnote-docs",
     "next_node_id": "3",
