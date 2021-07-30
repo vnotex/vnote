@@ -66,7 +66,7 @@ void ViewSplit::setupUI()
 {
     // Property of QTabWidget.
     setUsesScrollButtons(true);
-    setElideMode(Qt::ElideRight);
+    setElideMode(Qt::ElideNone);
     setTabsClosable(true);
     setMovable(true);
     setDocumentMode(true);

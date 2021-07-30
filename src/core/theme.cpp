@@ -298,6 +298,8 @@ void Theme::translateScaledSize(qreal p_factor, QString &p_style)
     const int signCapturedIdx = 2;
     const int numCapturedIdx = 3;
 
+    qDebug() << "translateScaledSize of Qt style sheet" << p_factor;
+
     int pos = 0;
     QRegularExpressionMatch match;
     while (pos < p_style.size()) {

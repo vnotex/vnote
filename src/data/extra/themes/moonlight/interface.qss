@@ -546,7 +546,7 @@ QTabBar::close-button:hover {
 }
 
 QTabBar::scroller {
-    width: 20px;
+    width: $20px;
 }
 
 QTabBar QToolButton {
