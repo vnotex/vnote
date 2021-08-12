@@ -12,6 +12,7 @@
 #include <core/configmgr.h>
 #include <buffer/buffer.h>
 #include <utils/fileutils.h>
+#include <utils/utils.h>
 #include <utils/pathutils.h>
 #include <vtextedit/vtextedit.h>
 #include <vtextedit/texteditutils.h>
@@ -348,6 +349,12 @@ QVector<QSharedPointer<Snippet>> SnippetMgr::loadBuiltInSnippets() const
                       tr("the week number (`1` to `53`)"),
                       [](const QString &) {
                           return QString::number(QDate::currentDate().weekNumber());
+                      });
+    addDynamicSnippet(snippets,
+                      "ww",
+                      tr("the week number with a leading zero (`01` to `53`)"),
+                      [](const QString &) {
+                          return Utils::intToString(QDate::currentDate().weekNumber(), 2);
                       });
     addDynamicSnippet(snippets,
                       "H",
