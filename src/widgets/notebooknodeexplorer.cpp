@@ -10,7 +10,7 @@
 #include <notebook/notebook.h>
 #include <notebook/node.h>
 #include <notebook/externalnode.h>
-#include "exception.h"
+#include <core/exception.h>
 #include "messageboxhelper.h"
 #include "vnotex.h"
 #include "mainwindow.h"

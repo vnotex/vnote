@@ -5,6 +5,7 @@
 
 #include <buffer/buffer.h>
 #include <core/file.h>
+#include <core/exception.h>
 #include <notebook/node.h>
 #include <notebook/notebook.h>
 
@@ -348,7 +349,15 @@ bool Searcher::firstPhaseSearchFolder(Node *p_node, QVector<SearchSecondPhaseIte
     Q_ASSERT(p_node->isContainer());
     Q_ASSERT(testTarget(SearchTarget::SearchFile) || testTarget(SearchTarget::SearchFolder));
 
-    p_node->load();
+    try {
+        p_node->load();
+    } catch (Exception &p_e) {
+        QString msg = tr("Failed to load node to search (%1) (%2).")
+                        .arg(p_node->getName(), p_e.what());
+        qCritical() << msg;
+        emit logRequested(msg);
+        return false;
+    }
 
     if (testTarget(SearchTarget::SearchFolder)) {
         const auto name = p_node->getName();
