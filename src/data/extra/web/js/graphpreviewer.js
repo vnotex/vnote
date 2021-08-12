@@ -68,7 +68,7 @@ class GraphPreviewer {
             };
             this.vnotex.getWorker('plantuml').renderText(p_text, func(this, p_id, p_timeStamp));
             return;
-        } else if (p_lang === 'dot') {
+        } else if (p_lang === 'dot' || p_lang === 'graphviz') {
             let func = function(p_previewer, p_id, p_timeStamp) {
                 let previewer = p_previewer;
                 let id = p_id;

@@ -211,7 +211,7 @@ bool PreviewHelper::checkPreviewSourceLang(SourceFlag p_flag, const QString &p_l
         return p_lang == QStringLiteral("puml") || p_lang == QStringLiteral("plantuml");
 
     case SourceFlag::Graphviz:
-        return p_lang == QStringLiteral("dot");
+        return p_lang == QStringLiteral("dot") || p_lang == QStringLiteral("graphviz");
 
     case SourceFlag::Math:
         return p_lang == QStringLiteral("mathjax");

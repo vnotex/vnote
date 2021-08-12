@@ -13,7 +13,7 @@ class Graphviz extends GraphRenderer {
 
         this.format = 'svg';
 
-        this.langs = ['dot'];
+        this.langs = ['dot', 'graphviz'];
 
         this.useWeb = true;
 
