@@ -1,5 +1,5 @@
-#ifndef GITHUBIMAGEHOST_H
-#define GITHUBIMAGEHOST_H
+#ifndef GITEEIMAGEHOST_H
+#define GITEEIMAGEHOST_H
 
 #include "imagehost.h"
 
@@ -7,11 +7,11 @@
 
 namespace vnotex
 {
-    class GitHubImageHost : public ImageHost
+    class GiteeImageHost : public ImageHost
     {
         Q_OBJECT
     public:
-        explicit GitHubImageHost(QObject *p_parent);
+        explicit GiteeImageHost(QObject *p_parent);
 
         bool ready() const Q_DECL_OVERRIDE;
 
@@ -29,15 +29,6 @@ namespace vnotex
 
         bool ownsUrl(const QString &p_url) const Q_DECL_OVERRIDE;
 
-    protected:
-        QString m_personalAccessToken;
-
-        QString m_userName;
-
-        QString m_repoName;
-
-        QString m_imageUrlPrefix;
-
     private:
         // Used to test.
         vte::NetworkReply getRepoInfo(const QString &p_token, const QString &p_userName, const QString &p_repoName) const;
@@ -47,14 +38,20 @@ namespace vnotex
                                 QString &p_userName,
                                 QString &p_repoName);
 
-        static QPair<QByteArray, QByteArray> authorizationHeader(const QString &p_token);
+        static vte::NetworkAccess::RawHeaderPairs prepareCommonHeaders();
 
-        static QPair<QByteArray, QByteArray> acceptHeader();
+        static QString addAccessToken(const QString &p_token, QString p_url);
 
-        static vte::NetworkAccess::RawHeaderPairs prepareCommonHeaders(const QString &p_token);
+        QString m_personalAccessToken;
+
+        QString m_userName;
+
+        QString m_repoName;
+
+        QString m_imageUrlPrefix;
 
         static const QString c_apiUrl;
     };
 }
 
-#endif // GITHUBIMAGEHOST_H
+#endif // GITEEIMAGEHOST_H

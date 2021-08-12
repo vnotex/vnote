@@ -21,6 +21,7 @@
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/vtextedit.h>
 #include <vtextedit/texteditutils.h>
+#include <vtextedit/markdownutils.h>
 #include <vtextedit/networkutils.h>
 #include <vtextedit/theme.h>
 
@@ -1337,16 +1338,22 @@ void MarkdownEditor::setImageHost(ImageHost *p_host)
     m_imageHost = p_host;
 }
 
-QString MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName)
+static QString generateImageHostFileName(const Buffer *p_buffer, const QString &p_destFileName)
 {
-    Q_ASSERT(m_imageHost);
-
-    auto destPath = ImageHostUtils::generateRelativePath(m_buffer);
+    auto destPath = ImageHostUtils::generateRelativePath(p_buffer);
     if (destPath.isEmpty()) {
         destPath = p_destFileName;
     } else {
         destPath += "/" + p_destFileName;
     }
+    return destPath;
+}
+
+QString MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName)
+{
+    Q_ASSERT(m_imageHost);
+
+    const auto destPath = generateImageHostFileName(m_buffer, p_destFileName);
 
     QString errMsg;
 
@@ -1390,4 +1397,79 @@ void MarkdownEditor::uploadImagesToImageHost()
     auto act = static_cast<QAction *>(sender());
     auto host = ImageHostMgr::getInst().find(act->data().toString());
     Q_ASSERT(host);
+
+    // Only LocalRelativeInternal images.
+    // Descending order of the link position.
+    auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(m_buffer->getContent(),
+                                                                  m_buffer->getResourcePath(),
+                                                                  vte::MarkdownLink::TypeFlag::LocalRelativeInternal);
+    if (images.isEmpty()) {
+        return;
+    }
+
+    QProgressDialog proDlg(tr("Uploading local images..."),
+                           tr("Abort"),
+                           0,
+                           images.size(),
+                           this);
+    proDlg.setWindowModality(Qt::WindowModal);
+    proDlg.setWindowTitle(tr("Upload Images To Image Host"));
+
+    int cnt = 0;
+    auto cursor = m_textEdit->textCursor();
+    cursor.beginEditBlock();
+    for (int i = 0; i < images.size(); ++i) {
+        const auto &link = images[i];
+
+        proDlg.setValue(i + 1);
+        if (proDlg.wasCanceled()) {
+            break;
+        }
+        proDlg.setLabelText(tr("Upload image (%1)").arg(link.m_path));
+
+        Q_ASSERT(i == 0 || link.m_urlInLinkPos < images[i - 1].m_urlInLinkPos);
+
+        QByteArray ba;
+        try {
+            ba = FileUtils::readFile(link.m_path);
+        } catch (Exception &e) {
+            MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                     QString("Failed to read local image file (%1) (%2).").arg(link.m_path, e.what()),
+                                     this);
+            continue;
+        }
+
+        if (ba.isEmpty()) {
+            qWarning() << "Skipped uploading empty image" << link.m_path;
+            continue;
+        }
+
+        const auto destPath = generateImageHostFileName(m_buffer, PathUtils::fileName(link.m_path));
+        QString errMsg;
+        QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+        const auto targetUrl = host->create(ba, destPath, errMsg);
+        QApplication::restoreOverrideCursor();
+
+        if (targetUrl.isEmpty()) {
+            MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                     QString("Failed to upload image to image host (%1) as (%2).").arg(host->getName(), destPath),
+                                     QString(),
+                                     errMsg,
+                                     this);
+            continue;
+        }
+
+        // Update the link URL.
+        cursor.setPosition(link.m_urlInLinkPos);
+        cursor.setPosition(link.m_urlInLinkPos + link.m_urlInLink.size(), QTextCursor::KeepAnchor);
+        cursor.insertText(targetUrl);
+        ++cnt;
+    }
+    cursor.endEditBlock();
+
+    proDlg.setValue(images.size());
+
+    if (cnt > 0) {
+        m_textEdit->setTextCursor(cursor);
+    }
 }

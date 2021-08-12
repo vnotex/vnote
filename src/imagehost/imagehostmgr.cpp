@@ -6,6 +6,7 @@
 #include <core/editorconfig.h>
 
 #include "githubimagehost.h"
+#include "giteeimagehost.h"
 
 using namespace vnotex;
 
@@ -63,6 +64,9 @@ ImageHost *ImageHostMgr::createImageHost(ImageHost::Type p_type, QObject *p_pare
     switch (p_type) {
     case ImageHost::Type::GitHub:
         return new GitHubImageHost(p_parent);
+
+    case ImageHost::Type::Gitee:
+        return new GiteeImageHost(p_parent);
 
     default:
         return nullptr;

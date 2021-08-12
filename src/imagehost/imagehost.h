@@ -18,6 +18,7 @@ namespace vnotex
         enum Type
         {
             GitHub = 0,
+            Gitee,
             MaxHost
         };
 
