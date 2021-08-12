@@ -23,6 +23,9 @@ QString ImageHost::typeString(ImageHost::Type p_type)
     case Type::GitHub:
         return tr("GitHub");
 
+    case Type::Gitee:
+        return tr("Gitee");
+
     default:
         Q_ASSERT(false);
         return QString("Unknown");

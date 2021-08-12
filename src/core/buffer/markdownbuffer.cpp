@@ -35,10 +35,11 @@ QString MarkdownBuffer::insertImage(const QImage &p_image, const QString &p_imag
 void MarkdownBuffer::fetchInitialImages()
 {
     Q_ASSERT(m_initialImages.isEmpty());
-    vte::MarkdownLink::TypeFlags linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal | vte::MarkdownLink::TypeFlag::Remote;
+    // There is compilation error on Linux and macOS using TypeFlags directly.
+    int linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal | vte::MarkdownLink::TypeFlag::Remote;
     m_initialImages = vte::MarkdownUtils::fetchImagesFromMarkdownText(getContent(),
                                                                       getResourcePath(),
-                                                                      linkFlags);
+                                                                      static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
 }
 
 void MarkdownBuffer::addInsertedImage(const QString &p_imagePath, const QString &p_urlInLink)
@@ -57,11 +58,11 @@ QHash<QString, bool> MarkdownBuffer::clearObsoleteImages()
 
     Q_ASSERT(!isModified());
     const bool discarded = state() & StateFlag::Discarded;
-    const vte::MarkdownLink::TypeFlags linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal | vte::MarkdownLink::TypeFlag::Remote;
+    const int linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal | vte::MarkdownLink::TypeFlag::Remote;
     const auto latestImages =
         vte::MarkdownUtils::fetchImagesFromMarkdownText(!discarded ? getContent() : m_provider->read(),
                                                         getResourcePath(),
-                                                        linkFlags);
+                                                        static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
     QSet<QString> latestImagesPath;
     for (const auto &link : latestImages) {
         if (link.m_type & vte::MarkdownLink::TypeFlag::Remote) {
