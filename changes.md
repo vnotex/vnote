@@ -1,4 +1,8 @@
 # Changes
+## v3.6.0
+* Support **Image Host**: GitHub and Gitee
+* Add config page for Vi
+
 ## v3.5.1
 * LocationList: fix recently introduced regression when highlighting segments of text
 
