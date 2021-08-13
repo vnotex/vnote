@@ -346,7 +346,7 @@ QVector<QSharedPointer<Snippet>> SnippetMgr::loadBuiltInSnippets() const
                       std::bind(formattedDateTime, "yyyy"));
     addDynamicSnippet(snippets,
                       "w",
-                      tr("the week number (`1` to `53`)"),
+                      tr("the week number without a leading zero (`1` to `53`)"),
                       [](const QString &) {
                           return QString::number(QDate::currentDate().weekNumber());
                       });

@@ -109,7 +109,7 @@ QString GiteeImageHost::create(const QByteArray &p_data, const QString &p_path, 
     }
 
     if (!ready()) {
-        p_msg = tr("Invalid GitHub image host configuration.");
+        p_msg = tr("Invalid Gitee image host configuration.");
         return QString();
     }
 
@@ -161,7 +161,7 @@ bool GiteeImageHost::remove(const QString &p_url, QString &p_msg)
     Q_ASSERT(ownsUrl(p_url));
 
     if (!ready()) {
-        p_msg = tr("Invalid GitHub image host configuration.");
+        p_msg = tr("Invalid Gitee image host configuration.");
         return false;
     }
 

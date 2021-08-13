@@ -117,7 +117,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/appearancepage.cpp" line="122"/>
+        <location filename="../../../widgets/dialogs/settings/appearancepage.cpp" line="124"/>
         <source>Appearance</source>
         <translation>外観</translation>
     </message>
@@ -275,7 +275,7 @@
         <translation>スペルチェック辞書:</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="136"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="138"/>
         <source>Editor</source>
         <translation>エディタ</translation>
     </message>
@@ -611,27 +611,27 @@
 <context>
     <name>vnotex::FileSystemViewer</name>
     <message>
-        <location filename="../../../widgets/filesystemviewer.cpp" line="161"/>
+        <location filename="../../../widgets/filesystemviewer.cpp" line="144"/>
         <source>&amp;Open</source>
         <translation>開く(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/filesystemviewer.cpp" line="171"/>
+        <location filename="../../../widgets/filesystemviewer.cpp" line="154"/>
         <source>&amp;Delete</source>
         <translation>削除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/filesystemviewer.cpp" line="181"/>
+        <location filename="../../../widgets/filesystemviewer.cpp" line="164"/>
         <source>&amp;Properties</source>
         <translation>設定(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/filesystemviewer.cpp" line="200"/>
+        <location filename="../../../widgets/filesystemviewer.cpp" line="183"/>
         <source>Cop&amp;y Path</source>
         <translation>パスをコピー(&amp;Y)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/filesystemviewer.cpp" line="206"/>
+        <location filename="../../../widgets/filesystemviewer.cpp" line="189"/>
         <source>Copied path: %1</source>
         <translation>コピーされたファイルパス: %1</translation>
     </message>
@@ -851,9 +851,109 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="134"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="136"/>
         <source>General</source>
         <translation>一般</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::GitHubImageHost</name>
+    <message>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="53"/>
+        <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="104"/>
+        <source>Failed to create image with empty path.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="109"/>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="158"/>
+        <source>Invalid GitHub image host configuration.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="119"/>
+        <source>The resource already exists at the image host (%1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="122"/>
+        <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="133"/>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="140"/>
+        <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="170"/>
+        <source>Failed to fetch information about the resource (%1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="178"/>
+        <source>Failed to fetch SHA about the resource (%1) (%2).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/githubimagehost.cpp" line="189"/>
+        <source>Failed to delete resource (%1) (%2).</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::GiteeImageHost</name>
+    <message>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="53"/>
+        <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="107"/>
+        <source>Failed to create image with empty path.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="112"/>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="164"/>
+        <source>Invalid Gitee image host configuration.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="123"/>
+        <source>The resource already exists at the image host (%1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="127"/>
+        <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="139"/>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="146"/>
+        <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="176"/>
+        <source>Failed to fetch information about the resource (%1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="184"/>
+        <source>Failed to fetch SHA about the resource (%1) (%2).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/giteeimagehost.cpp" line="196"/>
+        <source>Failed to delete resource (%1) (%2).</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -908,6 +1008,107 @@
         <location filename="../../../widgets/historypanel.cpp" line="221"/>
         <source>[%1] %2
 %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::ImageHost</name>
+    <message>
+        <location filename="../../../imagehost/imagehost.cpp" line="24"/>
+        <source>GitHub</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../imagehost/imagehost.cpp" line="27"/>
+        <source>Gitee</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::ImageHostPage</name>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="40"/>
+        <source>New Image Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="53"/>
+        <source>General</source>
+        <translation type="unfinished">一般</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="61"/>
+        <source>Default image host:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="69"/>
+        <source>Clear obsolete images</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="71"/>
+        <source>Clear unused images at image host (based on current file only)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="94"/>
+        <source>Local</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="158"/>
+        <source>Failed to rename image host (%1) to (%2).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="181"/>
+        <source>Image Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="206"/>
+        <source>Test</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="214"/>
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="223"/>
+        <source>Type:</source>
+        <translation type="unfinished">種類:</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="227"/>
+        <source>Name:</source>
+        <translation type="unfinished">名前:</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="238"/>
+        <source>%1:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="250"/>
+        <source>Delete image host (%1)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="292"/>
+        <source>Test %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="292"/>
+        <source>succeeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="292"/>
+        <source>failed</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1140,12 +1341,12 @@
         <translation>テキスト</translation>
     </message>
     <message>
-        <location filename="../../../widgets/locationlist.cpp" line="106"/>
+        <location filename="../../../widgets/locationlist.cpp" line="107"/>
         <source>Clear</source>
         <translation>クリア</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/locationlist.cpp" line="192"/>
+        <location filename="../../../widgets/locationlist.cpp" line="197"/>
         <source>%n Item(s)</source>
         <translation>
             <numerusform>%n アイテム</numerusform>
@@ -1559,435 +1760,457 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
 <context>
     <name>vnotex::MarkdownEditor</name>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="242"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="678"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="247"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="710"/>
         <source>Insert Link</source>
         <translation>リンクを挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="255"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="260"/>
         <source>Insert Image</source>
         <translation>画像を挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="312"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="317"/>
         <source>Insert Table</source>
         <translation>表を挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="453"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="485"/>
         <source>For advanced paste, try the &quot;Rich Paste&quot; and &quot;Parse To Markdown And Paste&quot; on the editor&apos;s context menu</source>
         <translation>高度な貼り付けを行うには、エディタのコンテキストメニューの[リッチ貼り付け]と[解析してMarkdown化して貼り付け]を試してください</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="487"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="524"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="590"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="519"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="556"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="622"/>
         <source>Insert From Clipboard</source>
         <translation>クリップボードから挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="488"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="520"/>
         <source>Insert From URL</source>
         <translation>URLから挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="489"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="521"/>
         <source>Insert From Image Data</source>
         <translation>イメージデータから挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="490"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="527"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="593"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="522"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="559"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="625"/>
         <source>Insert As Image Link</source>
         <translation>イメージリンクとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="525"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="592"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="557"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="624"/>
         <source>Insert As Image</source>
         <translation>イメージとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="526"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="608"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="558"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="640"/>
         <source>Insert As Text</source>
         <translation>テキストとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="595"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="627"/>
         <source>Insert As Relative Image Link</source>
         <translation>相対イメージリンクとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="599"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="631"/>
         <source>Insert As Link</source>
         <translation>リンクとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="601"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="633"/>
         <source>Insert As Relative Link</source>
         <translation>相対リンクとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="604"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="636"/>
         <source>Attach And Insert Link</source>
         <translation>リンクを添付して挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="610"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="642"/>
         <source>Insert File Content</source>
         <translation>ファイルの内容を挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="731"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="763"/>
         <source>Insert Image From Clipboard</source>
         <translation>クリップボードからイメージを挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="744"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="776"/>
         <source>Insert Image From URL</source>
         <translation>URLからイメージを挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="928"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="964"/>
         <source>&amp;Read</source>
         <translation>読み取り(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="944"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="980"/>
         <source>Rich Paste</source>
         <translation>リッチ貼り付け</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="953"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="989"/>
         <source>Parse To Markdown And Paste</source>
         <translation>解析してMarkdown化して貼り付け</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1031"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1069"/>
         <source>Fetching images to local...</source>
         <translation>ローカルにイメージを取得しています...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1032"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1070"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1411"/>
         <source>Abort</source>
         <translation>中止</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1037"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1075"/>
         <source>Fetch Images To Local</source>
         <translation>イメージをローカルに取得</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1064"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1102"/>
         <source>Fetching image (%1)</source>
         <translation>イメージ (%1) を取得しています</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1378"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1416"/>
+        <source>Upload Images To Image Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1382"/>
+        <source>None</source>
+        <translation type="unfinished">なし</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1410"/>
+        <source>Uploading local images...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1428"/>
+        <source>Upload image (%1)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="193"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="195"/>
         <source>Markdown Editor</source>
         <translation>Markdownエディタ</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="198"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="385"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="200"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="387"/>
         <source>Read</source>
         <translation>読み取り</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="202"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="204"/>
         <source>Constrain image width</source>
         <translation>イメージの幅を制限する</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="204"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="206"/>
         <source>Constrain image width to the window</source>
         <translation>イメージの幅をウィンドウに制限する</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="213"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="215"/>
         <source>Zoom factor in read mode</source>
         <translation>読み取りモードのズーム倍率</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="218"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="220"/>
         <source>Zoom factor:</source>
         <translation>ズーム倍率:</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="226"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="228"/>
         <source>HTML tag</source>
         <translation>HTMLタグ</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="228"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="230"/>
         <source>Allow HTML tags in source</source>
         <translation>ソース内のHTMLタグを許可</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="236"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="238"/>
         <source>Auto break</source>
         <translation>自動ブレーク</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="238"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="240"/>
         <source>Automatically break a line with &apos;\n&apos;</source>
         <translation>&apos;\n&apos; で自動的に改行する</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="246"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="248"/>
         <source>Linkify</source>
         <translation>リンク変換</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="248"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="250"/>
         <source>Convert URL-like text to links</source>
         <translation>URLに似たテキストをリンクに変換する</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="256"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="258"/>
         <source>Indent first line</source>
         <translation>最初の行をインデント</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="258"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="260"/>
         <source>Indent the first line of each paragraph</source>
         <translation>各段落の最初の行をインデントする</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="270"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="386"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="272"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="388"/>
         <source>Edit</source>
         <translation>編集</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="274"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="276"/>
         <source>Insert file name as title</source>
         <translation>ファイル名をタイトルとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="276"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="278"/>
         <source>Insert file name as title when creating note</source>
         <translation>ノート作成時にファイル名をタイトルとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="284"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="286"/>
         <source>Constrain in-place preview width</source>
         <translation>インプレイスプレビューの幅を制約する</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="286"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="288"/>
         <source>Constrain in-place preview width to the window</source>
         <translation>インプレイスプレビューをウインドウ幅に制約する</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="295"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="297"/>
         <source>In-place preview sources:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="297"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="299"/>
         <source>Image link</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="302"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="304"/>
         <source>Code block</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="307"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="309"/>
         <source>Math</source>
         <translation type="unfinished">数式</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="314"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="316"/>
         <source>Fetch images to local in Parse And Paste</source>
         <translation>[解析と貼り付け]でイメージをローカルに取得</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="316"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="318"/>
         <source>Fetch images to local in Parse To Markdown And Paste</source>
         <translation type="unfinished">[Markdown解析と貼り付け]でイメージをローカルに取得</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="324"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="326"/>
         <source>Smart table</source>
         <translation>スマートテーブル</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="326"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="328"/>
         <source>Smart table formation</source>
         <translation type="unfinished">スマートテーブルにフォーマット</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="334"/>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="336"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="338"/>
         <source>Spell check</source>
         <translation>スペルチェック</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="347"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="349"/>
         <source>Override font</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="349"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="351"/>
         <source>Override editor font family of theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="375"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="377"/>
         <source>General</source>
         <translation>一般</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="383"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="385"/>
         <source>Section number mode</source>
         <translation>セクション番号モード</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="384"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="386"/>
         <source>None</source>
         <translation>なし</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="392"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="394"/>
         <source>Base level to start section numbering in edit mode</source>
         <translation>編集モードでセクション番号付けを開始するベースレベル</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="401"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="403"/>
         <source>Section number style</source>
         <translation>セクション番号スタイル</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="402"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="404"/>
         <source>1.1.</source>
         <translation>1.1.</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="403"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="405"/>
         <source>1.1</source>
         <translation>1.1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="415"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="417"/>
         <source>Section number:</source>
         <translation>セクション番号:</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="422"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="424"/>
         <source>Use online service or local JAR file to render PlantUml graphs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="424"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="484"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="426"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="486"/>
         <source>Online Service</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="425"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="427"/>
         <source>Local JAR</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="427"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="429"/>
         <source>PlantUml:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="439"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="441"/>
         <source>Local JAR file to render PlantUml graphs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="443"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="445"/>
         <source>Select PlantUml JAR File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="452"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="511"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="454"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="513"/>
         <source>Test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="453"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="455"/>
         <source>Test PlantUml JAR and Java Runtime Environment</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="459"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="461"/>
         <source>The JAR file (%1) specified does not exist.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="466"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="525"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="468"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="527"/>
         <source>Test %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="466"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="525"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="468"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="527"/>
         <source>succeeded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="466"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="525"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="468"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="527"/>
         <source>failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="473"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="475"/>
         <source>PlantUml JAR file:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="482"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="484"/>
         <source>Use online service or local executable file to render Graphviz graphs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="485"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="487"/>
         <source>Local Executable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="487"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="489"/>
         <source>Graphviz:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="499"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="501"/>
         <source>Local executable file to render Graphviz graphs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="503"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="505"/>
         <source>Select Graphviz Executable File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="512"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="514"/>
         <source>Test Graphviz executable file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="518"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="520"/>
         <source>The executable file (%1) specified does not exist.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="532"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="534"/>
         <source>Graphviz executable file:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1995,28 +2218,59 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
 <context>
     <name>vnotex::MarkdownViewWindow</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="412"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="419"/>
         <source>Markdown Viewer</source>
         <translation>Markdownビューア</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="737"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="759"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="791"/>
         <source>Clear Obsolete Images</source>
         <translation>古いイメージをクリア</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="738"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="760"/>
+        <source>These images seems to be not in use anymore. Please confirm the deletion of them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="761"/>
+        <source>Deleted local images could be found in the recycle bin of notebook if it is from a bundle notebook.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="785"/>
+        <source>Clearing obsolete images...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="786"/>
+        <source>Abort</source>
+        <translation type="unfinished">中止</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="800"/>
+        <source>Clear image (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="812"/>
+        <source>Cleared %n obsolete images</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
         <source>These images seems not in use anymore. Please confirm the deletion of them.</source>
-        <translation>これらのイメージはもう使用されていないようです。これらの画像の削除を確認してください。</translation>
+        <translation type="vanished">これらのイメージはもう使用されていないようです。これらの画像の削除を確認してください。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="739"/>
         <source>Deleted images could be found in the recycle bin of notebook if it is from a bundle notebook.</source>
-        <translation>削除されたされたイメージは、ノートブックのごみ箱で見つけることができます。</translation>
+        <translation type="vanished">削除されたされたイメージは、ノートブックのごみ箱で見つけることができます。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="900"/>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="909"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="958"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="967"/>
         <source>Replace is not supported in read mode</source>
         <translation>置換は読み取りモードではサポートされていません</translation>
     </message>
@@ -2099,6 +2353,39 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
     </message>
 </context>
 <context>
+    <name>vnotex::NewImageHostDialog</name>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/newimagehostdialog.cpp" line="28"/>
+        <source>Type:</source>
+        <translation type="unfinished">種類:</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/newimagehostdialog.cpp" line="36"/>
+        <source>Name:</source>
+        <translation type="unfinished">名前:</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/newimagehostdialog.cpp" line="40"/>
+        <source>New Image Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/newimagehostdialog.cpp" line="57"/>
+        <source>Please specify a valid name for the image host.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/newimagehostdialog.cpp" line="60"/>
+        <source>Name conflicts with existing image host.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/newimagehostdialog.cpp" line="77"/>
+        <source>Failed to create image host (%1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>vnotex::NewNoteDialog</name>
     <message>
         <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="67"/>
@@ -2140,12 +2427,12 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <translation>ノート</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="160"/>
+        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="170"/>
         <source>None</source>
         <translation type="unfinished">なし</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="198"/>
+        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="213"/>
         <source>Failed to load template (%1) (%2).</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2912,38 +3199,38 @@ Description: %3</source>
 <context>
     <name>vnotex::QuickAccessPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="66"/>
-        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="99"/>
+        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="68"/>
+        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="101"/>
         <source>Quick Access</source>
         <translation type="unfinished">クイックアクセス</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="71"/>
+        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="73"/>
         <source>Flash Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="76"/>
+        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="78"/>
         <source>Flash Page location (user could copy the path of one note and paste it here)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="78"/>
+        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="80"/>
         <source>Flash Page:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="86"/>
+        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="88"/>
         <source>Select Flash Page File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="104"/>
+        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="106"/>
         <source>Edit the files pinned to Quick Access (one file per line)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="106"/>
+        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="108"/>
         <source>Quick Access:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3182,41 +3469,46 @@ Description: %3</source>
 <context>
     <name>vnotex::Searcher</name>
     <message numerus="yes">
-        <location filename="../../../search/searcher.cpp" line="53"/>
+        <location filename="../../../search/searcher.cpp" line="54"/>
         <source>Searching %n buffer(s)</source>
         <translation>
             <numerusform>%nバッファを検索中</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../search/searcher.cpp" line="88"/>
+        <location filename="../../../search/searcher.cpp" line="89"/>
         <source>Searching folder (%1)</source>
         <translation>フォルダ(%1)を検索しています</translation>
     </message>
     <message>
-        <location filename="../../../search/searcher.cpp" line="129"/>
+        <location filename="../../../search/searcher.cpp" line="130"/>
         <source>Searching notebook (%1)</source>
         <translation>ノートブック(%1)を検索しています</translation>
     </message>
     <message>
-        <location filename="../../../search/searcher.cpp" line="164"/>
+        <location filename="../../../search/searcher.cpp" line="165"/>
         <source>Failed to compile tokens (%1)</source>
         <translation>単語トークンの抽出に失敗しました(%1)</translation>
     </message>
     <message>
-        <location filename="../../../search/searcher.cpp" line="221"/>
-        <location filename="../../../search/searcher.cpp" line="422"/>
+        <location filename="../../../search/searcher.cpp" line="222"/>
+        <location filename="../../../search/searcher.cpp" line="431"/>
         <source>Searching outline is not supported yet</source>
         <translation>アウトラインの検索はサポートされていません</translation>
     </message>
     <message>
-        <location filename="../../../search/searcher.cpp" line="225"/>
-        <location filename="../../../search/searcher.cpp" line="426"/>
+        <location filename="../../../search/searcher.cpp" line="226"/>
+        <location filename="../../../search/searcher.cpp" line="435"/>
         <source>Searching tag is not supported yet</source>
         <translation>検索タグはまだサポートされていません</translation>
     </message>
+    <message>
+        <location filename="../../../search/searcher.cpp" line="355"/>
+        <source>Failed to load node to search (%1) (%2).</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message numerus="yes">
-        <location filename="../../../search/searcher.cpp" line="484"/>
+        <location filename="../../../search/searcher.cpp" line="493"/>
         <source>Start second-phase search: %n files(s)</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -3234,12 +3526,12 @@ Description: %3</source>
 <context>
     <name>vnotex::SettingsDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/settingsdialog.cpp" line="56"/>
+        <location filename="../../../widgets/dialogs/settings/settingsdialog.cpp" line="58"/>
         <source>Settings</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/settingsdialog.cpp" line="64"/>
+        <location filename="../../../widgets/dialogs/settings/settingsdialog.cpp" line="66"/>
         <source>Search</source>
         <translation>検索</translation>
     </message>
@@ -3292,22 +3584,27 @@ Description: %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="81"/>
+        <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="79"/>
+        <source>Nested snippet is supported, like `%time%` to embed the snippet `time`</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="82"/>
         <source>Content:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="87"/>
+        <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="88"/>
         <source>Text</source>
         <translation type="unfinished">テキスト</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="89"/>
+        <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="90"/>
         <source>Dynamic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="189"/>
+        <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="190"/>
         <source>None</source>
         <translation type="unfinished">なし</translation>
     </message>
@@ -3315,123 +3612,128 @@ Description: %3</source>
 <context>
     <name>vnotex::SnippetMgr</name>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="308"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="309"/>
         <source>the day as number without a leading zero (`1` to `31`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="312"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="313"/>
         <source>the day as number with a leading zero (`01` to `31`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="316"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="317"/>
         <source>the abbreviated localized day name (e.g. `Mon` to `Sun`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="320"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="321"/>
         <source>the long localized day name (e.g. `Monday` to `Sunday`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="324"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="325"/>
         <source>the month as number without a leading zero (`1` to `12`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="328"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="329"/>
         <source>the month as number with a leading zero (`01` to `12`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="332"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="333"/>
         <source>the abbreviated localized month name (e.g. `Jan` to `Dec`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="336"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="337"/>
         <source>the long localized month name (e.g. `January` to `December`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="340"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="341"/>
         <source>the year as two digit numbers (`00` to `99`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="344"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="345"/>
         <source>the year as four digit numbers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="348"/>
-        <source>the week number (`1` to `53`)</source>
+        <location filename="../../../snippet/snippetmgr.cpp" line="349"/>
+        <source>the week number without a leading zero (`1` to `53`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="354"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="355"/>
+        <source>the week number with a leading zero (`01` to `53`)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../snippet/snippetmgr.cpp" line="361"/>
         <source>the hour without a leading zero (`0` to `23` even with AM/PM display)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="358"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="365"/>
         <source>the hour with a leading zero (`00` to `23` even with AM/PM display)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="362"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="369"/>
         <source>the minute without a leading zero (`0` to `59`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="366"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="373"/>
         <source>the minute with a leading zero (`00` to `59`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="370"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="377"/>
         <source>the second without a leading zero (`0` to `59`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="374"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="381"/>
         <source>the second with a leading zero (`00` to `59`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="378"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="385"/>
         <source>date (`2021-02-24`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="382"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="389"/>
         <source>the abbreviated date (`20210224`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="386"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="393"/>
         <source>time (`16:51:02`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="390"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="397"/>
         <source>date and time (`2021-02-24_16:51:02`)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="397"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="404"/>
         <source>name of current note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="399"/>
-        <location filename="../../../snippet/snippetmgr.cpp" line="405"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="406"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="412"/>
         <source>[Value Not Available]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="403"/>
+        <location filename="../../../snippet/snippetmgr.cpp" line="410"/>
         <source>complete base name of current note</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3744,7 +4046,7 @@ Description: %3</source>
         <translation>スペルチェック</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="225"/>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="227"/>
         <source>Text Editor</source>
         <translation>テキストエディタ</translation>
     </message>
@@ -3791,7 +4093,7 @@ Description: %3</source>
         <translation>優先スタイル</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/themepage.cpp" line="111"/>
+        <location filename="../../../widgets/dialogs/settings/themepage.cpp" line="113"/>
         <source>Theme</source>
         <translation>テーマ</translation>
     </message>
@@ -3831,6 +4133,24 @@ Description: %3</source>
         <location filename="../../../widgets/titletoolbar.cpp" line="115"/>
         <source>Restore Down</source>
         <translation>復元ダウン</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::ViPage</name>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/vipage.cpp" line="28"/>
+        <source>Control-C to copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/vipage.cpp" line="30"/>
+        <source>Use Control-C to copy text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/vipage.cpp" line="61"/>
+        <source>Vi Input Mode</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3998,39 +4318,39 @@ Description: %3</source>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="197"/>
-        <location filename="../../../widgets/viewwindow.cpp" line="216"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="199"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="218"/>
         <source>[No Buffer]</source>
         <translation>[バッファなし]</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="523"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="547"/>
         <source>Save changes before closing note (%1)?</source>
         <translation>ノート(%1)を閉じる前に変更を保存しますか?</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="524"/>
-        <location filename="../../../widgets/viewwindow.cpp" line="584"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="548"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="608"/>
         <source>Note path (%1).</source>
         <translation>ノートのパス(%1)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="583"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="607"/>
         <source>Discard changes to note (%1)?</source>
         <translation>ノート(%1)への変更を破棄しますか?</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="653"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="683"/>
         <source>Found backup file (%1) of file (%2). Do you want to recover from backup file?</source>
         <translation>ファイル(%2)のバックアップファイル(%1)が見つかりました。バックアップファイルからリカバリしますか?</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="654"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="684"/>
         <source>&apos;Yes&apos; to recover from backup file, &apos;No&apos; to discard it, and &apos;Cancel&apos; to exit.</source>
         <translation>バックアップファイルからリカバリする場合は[はい]、破棄する場合は[いいえ]、終了する場合は[キャンセル]をクリックします。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="655"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="685"/>
         <source>It may be caused by crash while editing this file before.
 
 File last modified time: %1
@@ -4041,92 +4361,97 @@ Backup file last modified time: %2</source>
 バックアップファイルの最終変更時刻:%2</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="684"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="714"/>
         <source>Drag And Drop Files To Attach</source>
         <translation>添付するファイルをドラッグアンドドロップ</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="749"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="779"/>
         <source>File is missing on disk (%1).</source>
         <translation>ディスク(%1)にファイルがありません。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="750"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="780"/>
         <source>Do you want to force to save the buffer to the file?</source>
         <translation>バッファをファイルに保存しますか?</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="751"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="781"/>
         <source>The file may be deleted from outside. Please choose to save the buffer to a new file or just discard it.</source>
         <translation>ファイルが外部から削除されている可能性があります。バッファを新しいファイルに保存するか、破棄するかを選択してください。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="773"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="803"/>
         <source>File is changed from outside (%1).</source>
         <translation>ファイルが外部(%1)から変更されました。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="774"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="804"/>
         <source>Do you want to save the buffer to the file to override, or discard the buffer?</source>
         <translation>上書きするファイルにバッファを保存しますか?それともバッファを破棄しますか?</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="775"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="805"/>
         <source>The file is changed from outside. Please choose to save the buffer to the file or just discard the buffer and reload the file.</source>
         <translation>ファイルが外部から変更されました。バッファをファイルに保存するか、バッファを破棄してファイルを再ロードするかを選択してください。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="823"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="853"/>
         <source>This is a read-only note (%1), on which modification is not allowed.</source>
         <translation>これは読み取り専用のノート(%1)です。変更はできません。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="824"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="854"/>
         <source>Please save your changes to another note.</source>
         <translation>手動で変更を他のノートとして保存してください。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="832"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="862"/>
         <source>Failed to save note (%1).</source>
         <translation>ノート(%1)を保存できませんでした。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="833"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="863"/>
         <source>Please check the file (%1) and try it again.</source>
         <translation>ファイルを確認してからもう一度実行してください。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="834"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="864"/>
         <source>Maybe the file is occupied by another service temporarily.</source>
         <translation>ファイルが一時的に他のサービスに占有されている可能性があります。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="911"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="941"/>
         <source>Zoomed: %1%</source>
         <translation>ズーム: %1%</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="916"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="946"/>
         <source>Zoomed: %1%2</source>
         <translation>ズーム: %1%2</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="1051"/>
-        <location filename="../../../widgets/viewwindow.cpp" line="1060"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1081"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1090"/>
         <source>Pattern not found: %1</source>
         <translation>パターンが見つかりません:%1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="1053"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1083"/>
         <source>Match found: %1/%2</source>
         <translation>一致が見つかりました: %1/%2</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/viewwindow.cpp" line="1062"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1092"/>
         <source>Replaced %n match(es)</source>
         <translation>
             <numerusform></numerusform>
         </translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/viewwindow.cpp" line="1197"/>
+        <source>Local</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="93"/>
@@ -4309,22 +4634,27 @@ Backup file last modified time: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="203"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="366"/>
+        <source>Image Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="211"/>
         <source>Snippet applied: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="230"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="238"/>
         <source>Snippet (%1) not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="257"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="265"/>
         <source>Snippet not available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="270"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="278"/>
         <source>Select Snippet</source>
         <translation type="unfinished"></translation>
     </message>

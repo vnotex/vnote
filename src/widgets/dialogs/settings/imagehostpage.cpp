@@ -66,7 +66,7 @@ QGroupBox *ImageHostPage::setupGeneralBox(QWidget *p_parent)
     }
 
     {
-        const QString label(tr("Clear obsolete image"));
+        const QString label(tr("Clear obsolete images"));
         m_clearObsoleteImageCheckBox = WidgetsFactory::createCheckBox(label, box);
         m_clearObsoleteImageCheckBox->setToolTip(tr("Clear unused images at image host (based on current file only)"));
         layout->addRow(m_clearObsoleteImageCheckBox);
