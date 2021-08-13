@@ -6,6 +6,8 @@
 #include "texteditorconfig.h"
 #include "markdowneditorconfig.h"
 
+#include <vtextedit/viconfig.h>
+
 using namespace vnotex;
 
 #define READINT(key) readInt(appObj, userObj, (key))
@@ -57,6 +59,9 @@ void EditorConfig::init(const QJsonObject &p_app,
     loadCore(appObj, userObj);
 
     loadImageHost(appObj, userObj);
+
+    m_viConfig = QSharedPointer<vte::ViConfig>::create();
+    m_viConfig->fromJson(read(appObj, userObj, QStringLiteral("vi")).toObject());
 
     m_textEditorConfig->init(appObj, userObj);
     m_markdownEditorConfig->init(appObj, userObj);
@@ -139,6 +144,7 @@ QJsonObject EditorConfig::toJson() const
     obj[m_markdownEditorConfig->getSessionName()] = m_markdownEditorConfig->toJson();
     obj[QStringLiteral("core")] = saveCore();
     obj[QStringLiteral("image_host")] = saveImageHost();
+    obj[QStringLiteral("vi")] = m_viConfig->toJson();
     return obj;
 }
 
@@ -303,4 +309,9 @@ bool EditorConfig::isClearObsoleteImageAtImageHostEnabled() const
 void EditorConfig::setClearObsoleteImageAtImageHostEnabled(bool p_enabled)
 {
     updateConfig(m_clearObsoleteImageAtImageHost, p_enabled, this);
+}
+
+const QSharedPointer<vte::ViConfig> &EditorConfig::getViConfig() const
+{
+    return m_viConfig;
 }

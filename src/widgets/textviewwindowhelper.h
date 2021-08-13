@@ -14,6 +14,11 @@
 
 #include "quickselector.h"
 
+namespace vte
+{
+    class ViConfig;
+}
+
 namespace vnotex
 {
     class TextEditorConfig;
@@ -57,10 +62,13 @@ namespace vnotex
         }
 
         static QSharedPointer<vte::TextEditorConfig> createTextEditorConfig(const TextEditorConfig &p_config,
+                                                                            const QSharedPointer<vte::ViConfig> &p_viConfig,
                                                                             const QString &p_themeFile,
                                                                             const QString &p_syntaxTheme)
         {
             auto editorConfig = QSharedPointer<vte::TextEditorConfig>::create();
+
+            editorConfig->m_viConfig = p_viConfig;
 
             if (!p_themeFile.isEmpty()) {
                 editorConfig->m_theme = vte::Theme::createThemeFromFile(p_themeFile);

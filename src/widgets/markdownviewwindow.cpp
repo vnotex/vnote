@@ -181,15 +181,13 @@ void MarkdownViewWindow::handleEditorConfigChange()
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
     const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
 
-    if (markdownEditorConfig.revision() != m_markdownEditorConfigRevision) {
-        m_markdownEditorConfigRevision = markdownEditorConfig.revision();
-
+    if (updateConfigRevision()) {
         updatePreviewHelperFromConfig(markdownEditorConfig);
 
         HtmlTemplateHelper::updateMarkdownViewerTemplate(markdownEditorConfig);
 
         if (m_editor) {
-            auto config = createMarkdownEditorConfig(markdownEditorConfig);
+            auto config = createMarkdownEditorConfig(editorConfig, markdownEditorConfig);
             m_editor->setConfig(config);
 
             m_editor->updateFromConfig();
@@ -316,11 +314,10 @@ void MarkdownViewWindow::setupTextEditor()
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
     const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
 
-    m_editorConfigRevision = editorConfig.revision();
-    m_markdownEditorConfigRevision = markdownEditorConfig.revision();
+    updateConfigRevision();
 
     m_editor = new MarkdownEditor(markdownEditorConfig,
-                                  createMarkdownEditorConfig(markdownEditorConfig),
+                                  createMarkdownEditorConfig(editorConfig, markdownEditorConfig),
                                   createMarkdownEditorParameters(editorConfig, markdownEditorConfig),
                                   this);
     m_splitter->insertWidget(0, m_editor);
@@ -405,8 +402,7 @@ void MarkdownViewWindow::setupViewer()
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
     const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
 
-    m_editorConfigRevision = editorConfig.revision();
-    m_markdownEditorConfigRevision = markdownEditorConfig.revision();
+    updateConfigRevision();
 
     HtmlTemplateHelper::updateMarkdownViewerTemplate(markdownEditorConfig);
 
@@ -852,11 +848,12 @@ void MarkdownViewWindow::setupOutlineProvider()
             });
 }
 
-QSharedPointer<vte::MarkdownEditorConfig> MarkdownViewWindow::createMarkdownEditorConfig(const MarkdownEditorConfig &p_config)
+QSharedPointer<vte::MarkdownEditorConfig> MarkdownViewWindow::createMarkdownEditorConfig(const EditorConfig &p_editorConfig, const MarkdownEditorConfig &p_config)
 {
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
 
     auto textEditorConfig = TextViewWindowHelper::createTextEditorConfig(p_config.getTextEditorConfig(),
+                                                                         p_editorConfig.getViConfig(),
                                                                          themeMgr.getFile(Theme::File::MarkdownEditorStyle),
                                                                          themeMgr.getMarkdownEditorHighlightTheme());
 
@@ -883,7 +880,7 @@ QSharedPointer<vte::MarkdownEditorConfig> MarkdownViewWindow::createMarkdownEdit
     return editorConfig;
 }
 
-QSharedPointer<vte::TextEditorParameters> MarkdownViewWindow::createMarkdownEditorParameters(const EditorConfig& p_editorConfig, const MarkdownEditorConfig &p_config)
+QSharedPointer<vte::TextEditorParameters> MarkdownViewWindow::createMarkdownEditorParameters(const EditorConfig &p_editorConfig, const MarkdownEditorConfig &p_config)
 {
     auto paras = QSharedPointer<vte::TextEditorParameters>::create();
     paras->m_spellCheckEnabled = p_config.isSpellCheckEnabled();
@@ -1125,4 +1122,28 @@ void MarkdownViewWindow::removeFromImageHost(const QString &p_url)
                                  errMsg,
                                  this);
     }
+}
+
+bool MarkdownViewWindow::updateConfigRevision()
+{
+    bool changed = false;
+
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+
+    if (m_editorConfigRevision != editorConfig.revision()) {
+        changed = true;
+        m_editorConfigRevision = editorConfig.revision();
+    }
+
+    if (m_textEditorConfigRevision != editorConfig.getTextEditorConfig().revision()) {
+        changed = true;
+        m_textEditorConfigRevision = editorConfig.getTextEditorConfig().revision();
+    }
+
+    if (m_markdownEditorConfigRevision != editorConfig.getMarkdownEditorConfig().revision()) {
+        changed = true;
+        m_markdownEditorConfigRevision = editorConfig.getMarkdownEditorConfig().revision();
+    }
+
+    return changed;
 }

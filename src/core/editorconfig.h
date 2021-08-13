@@ -8,6 +8,11 @@
 #include <QObject>
 #include <QVector>
 
+namespace vte
+{
+    class ViConfig;
+}
+
 namespace vnotex
 {
     class TextEditorConfig;
@@ -120,6 +125,8 @@ namespace vnotex
         bool isClearObsoleteImageAtImageHostEnabled() const;
         void setClearObsoleteImageAtImageHostEnabled(bool p_enabled);
 
+        const QSharedPointer<vte::ViConfig> &getViConfig() const;
+
     private:
         friend class MainConfig;
 
@@ -165,6 +172,8 @@ namespace vnotex
         QString m_defaultImageHost;
 
         bool m_clearObsoleteImageAtImageHost = false;
+
+        QSharedPointer<vte::ViConfig> m_viConfig;
     };
 }
 

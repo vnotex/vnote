@@ -344,6 +344,9 @@
             ],
             "default_image_host" : "",
             "clear_obsolete_image" : false
+        },
+        "vi" : {
+            "control_c_to_copy" : false
         }
     },
     "widget" : {

@@ -28,6 +28,7 @@ SOURCES += \
     $$PWD/dialogs/settings/settingsdialog.cpp \
     $$PWD/dialogs/settings/texteditorpage.cpp \
     $$PWD/dialogs/settings/themepage.cpp \
+    $$PWD/dialogs/settings/vipage.cpp \
     $$PWD/dialogs/snippetinfowidget.cpp \
     $$PWD/dialogs/snippetpropertiesdialog.cpp \
     $$PWD/dialogs/sortdialog.cpp \
@@ -140,6 +141,7 @@ HEADERS += \
     $$PWD/dialogs/settings/settingsdialog.h \
     $$PWD/dialogs/settings/texteditorpage.h \
     $$PWD/dialogs/settings/themepage.h \
+    $$PWD/dialogs/settings/vipage.h \
     $$PWD/dialogs/snippetinfowidget.h \
     $$PWD/dialogs/snippetpropertiesdialog.h \
     $$PWD/dialogs/sortdialog.h \

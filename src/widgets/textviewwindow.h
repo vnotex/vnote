@@ -80,9 +80,11 @@ namespace vnotex
 
         void handleFileOpenParameters(const QSharedPointer<FileOpenParameters> &p_paras);
 
-        static QSharedPointer<vte::TextEditorConfig> createTextEditorConfig(const TextEditorConfig &p_config);
+        bool updateConfigRevision();
 
-        static QSharedPointer<vte::TextEditorParameters> createTextEditorParameters(const EditorConfig& p_editorConfig, const TextEditorConfig &p_config);
+        static QSharedPointer<vte::TextEditorConfig> createTextEditorConfig(const EditorConfig &p_editorConfig, const TextEditorConfig &p_config);
+
+        static QSharedPointer<vte::TextEditorParameters> createTextEditorParameters(const EditorConfig &p_editorConfig, const TextEditorConfig &p_config);
 
         // Managed by QObject.
         TextEditor *m_editor = nullptr;

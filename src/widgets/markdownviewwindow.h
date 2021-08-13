@@ -152,12 +152,14 @@ namespace vnotex
 
         void removeFromImageHost(const QString &p_url);
 
+        bool updateConfigRevision();
+
         template <class T>
         static QSharedPointer<Outline> headingsToOutline(const QVector<T> &p_headings);
 
-        static QSharedPointer<vte::MarkdownEditorConfig> createMarkdownEditorConfig(const MarkdownEditorConfig &p_config);
+        static QSharedPointer<vte::MarkdownEditorConfig> createMarkdownEditorConfig(const EditorConfig &p_editorConfig, const MarkdownEditorConfig &p_config);
 
-        static QSharedPointer<vte::TextEditorParameters> createMarkdownEditorParameters(const EditorConfig& p_editorConfig, const MarkdownEditorConfig &p_config);
+        static QSharedPointer<vte::TextEditorParameters> createMarkdownEditorParameters(const EditorConfig &p_editorConfig, const MarkdownEditorConfig &p_config);
 
         // Splitter to hold editor and viewer.
         QSplitter *m_splitter = nullptr;
@@ -183,6 +185,8 @@ namespace vnotex
         int m_textEditorBufferRevision = 0;
 
         int m_viewerBufferRevision = 0;
+
+        int m_textEditorConfigRevision = 0;
 
         int m_markdownEditorConfigRevision = 0;
 

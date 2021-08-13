@@ -36,8 +36,6 @@
         <file>icons/manage_notebooks.svg</file>
         <file>icons/up_parent_node.svg</file>
         <file>icons/properties.svg</file>
-        <file>icons/remove_notebook.svg</file>
-        <file>icons/close_notebook.svg</file>
         <file>icons/recycle_bin.svg</file>
         <file>icons/search_location_list.svg</file>
         <file>icons/save_editor.svg</file>

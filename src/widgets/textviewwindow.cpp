@@ -30,12 +30,11 @@ void TextViewWindow::setupUI()
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
     const auto &textEditorConfig = editorConfig.getTextEditorConfig();
 
-    m_editorConfigRevision = editorConfig.revision();
-    m_textEditorConfigRevision = textEditorConfig.revision();
+    updateConfigRevision();
 
     // Central widget.
     {
-        m_editor = new TextEditor(createTextEditorConfig(textEditorConfig),
+        m_editor = new TextEditor(createTextEditorConfig(editorConfig, textEditorConfig),
                                   createTextEditorParameters(editorConfig, textEditorConfig),
                                   this);
         setCentralWidget(m_editor);
@@ -133,13 +132,31 @@ void TextViewWindow::handleEditorConfigChange()
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
     const auto &textEditorConfig = editorConfig.getTextEditorConfig();
 
-    if (m_textEditorConfigRevision != textEditorConfig.revision()) {
-        m_textEditorConfigRevision = textEditorConfig.revision();
-        auto config = createTextEditorConfig(textEditorConfig);
+    if (updateConfigRevision()) {
+        auto config = createTextEditorConfig(editorConfig, textEditorConfig);
         m_editor->setConfig(config);
 
         updateEditorFromConfig();
     }
+}
+
+bool TextViewWindow::updateConfigRevision()
+{
+    bool changed = false;
+
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+
+    if (m_editorConfigRevision != editorConfig.revision()) {
+        changed = true;
+        m_editorConfigRevision = editorConfig.revision();
+    }
+
+    if (m_textEditorConfigRevision != editorConfig.getTextEditorConfig().revision()) {
+        changed = true;
+        m_textEditorConfigRevision = editorConfig.getTextEditorConfig().revision();
+    }
+
+    return changed;
 }
 
 void TextViewWindow::setBufferRevisionAfterInvalidation(int p_bufferRevision)
@@ -153,16 +170,17 @@ void TextViewWindow::setMode(ViewWindowMode p_mode)
     Q_ASSERT(false);
 }
 
-QSharedPointer<vte::TextEditorConfig> TextViewWindow::createTextEditorConfig(const TextEditorConfig &p_config)
+QSharedPointer<vte::TextEditorConfig> TextViewWindow::createTextEditorConfig(const EditorConfig &p_editorConfig, const TextEditorConfig &p_config)
 {
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
     auto config = TextViewWindowHelper::createTextEditorConfig(p_config,
+                                                               p_editorConfig.getViConfig(),
                                                                themeMgr.getFile(Theme::File::TextEditorStyle),
                                                                themeMgr.getEditorHighlightTheme());
     return config;
 }
 
-QSharedPointer<vte::TextEditorParameters> TextViewWindow::createTextEditorParameters(const EditorConfig& p_editorConfig, const TextEditorConfig &p_config)
+QSharedPointer<vte::TextEditorParameters> TextViewWindow::createTextEditorParameters(const EditorConfig &p_editorConfig, const TextEditorConfig &p_config)
 {
     auto paras = QSharedPointer<vte::TextEditorParameters>::create();
     paras->m_spellCheckEnabled = p_config.isSpellCheckEnabled();

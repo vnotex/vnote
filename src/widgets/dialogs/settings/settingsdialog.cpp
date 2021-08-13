@@ -18,6 +18,7 @@
 #include "quickaccesspage.h"
 #include "themepage.h"
 #include "imagehostpage.h"
+#include "vipage.h"
 
 using namespace vnotex;
 
@@ -115,6 +116,12 @@ void SettingsDialog::setupPages()
         // Image Host.
         {
             auto subPage = new ImageHostPage(this);
+            addSubPage(subPage, item);
+        }
+
+        // Vi.
+        {
+            auto subPage = new ViPage(this);
             addSubPage(subPage, item);
         }
 
