@@ -32,6 +32,7 @@ TRANSLATIONS += \
     data/core/translations/vnote_ja.ts
 
 SOURCES += \
+    application.cpp \
     commandlineoptions.cpp \
     main.cpp
 
@@ -148,4 +149,5 @@ unix:!macx {
 }
 
 HEADERS += \
+    application.h \
     commandlineoptions.h

@@ -1,4 +1,3 @@
-#include <QApplication>
 #include <QDebug>
 #include <QTextCodec>
 #include <QSslSocket>
@@ -22,6 +21,7 @@
 #include <core/exception.h>
 #include <widgets/messageboxhelper.h>
 #include "commandlineoptions.h"
+#include "application.h"
 
 using namespace vnotex;
 
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    QApplication app(argc, argv);
+    Application app(argc, argv);
 
     initWebEngineSettings();
 
@@ -161,6 +161,11 @@ int main(int argc, char *argv[])
                      &window, &MainWindow::showMainWindow);
     QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested,
                      &window, &MainWindow::openFiles);
+
+    QObject::connect(&app, &Application::openFileRequested,
+                     &window, [&window](const QString &p_filePath) {
+                         window.openFiles(QStringList() << p_filePath);
+                     });
 
     window.kickOffOnStart(cmdOptions.m_pathsToOpen);
 
