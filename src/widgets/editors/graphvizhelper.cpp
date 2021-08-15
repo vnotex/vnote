@@ -4,6 +4,7 @@
 #include <QDir>
 
 #include <utils/processutils.h>
+#include <utils/pathutils.h>
 
 using namespace vnotex;
 
@@ -38,7 +39,7 @@ void GraphvizHelper::prepareProgramAndArgs(const QString &p_graphvizFile,
     p_program.clear();
     p_args.clear();
 
-    p_program = p_graphvizFile.isEmpty() ? QStringLiteral("dot") : QDir::toNativeSeparators(p_graphvizFile);
+    p_program = p_graphvizFile.isEmpty() ? QStringLiteral("dot") : QDir::toNativeSeparators(PathUtils::absolutePath(p_graphvizFile));
 }
 
 QPair<bool, QString> GraphvizHelper::testGraphviz(const QString &p_graphvizFile)

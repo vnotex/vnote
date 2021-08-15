@@ -4,6 +4,7 @@
 #include <QDir>
 
 #include <utils/processutils.h>
+#include <utils/pathutils.h>
 
 using namespace vnotex;
 
@@ -61,12 +62,12 @@ void PlantUmlHelper::prepareProgramAndArgs(const QString &p_plantUmlJarFile,
     p_args << "-Djava.awt.headless=true";
 #endif
 
-    p_args << "-jar" << QDir::toNativeSeparators(p_plantUmlJarFile);
+    p_args << "-jar" << QDir::toNativeSeparators(PathUtils::absolutePath(p_plantUmlJarFile));
 
     p_args << "-charset" << "UTF-8";
 
     if (!p_graphvizFile.isEmpty()) {
-        p_args << "-graphvizdot" << QDir::toNativeSeparators(p_graphvizFile);
+        p_args << "-graphvizdot" << QDir::toNativeSeparators(PathUtils::absolutePath(p_graphvizFile));
     }
 
     p_args << "-pipe";
