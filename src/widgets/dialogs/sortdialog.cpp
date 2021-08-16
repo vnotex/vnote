@@ -8,6 +8,7 @@
 
 #include <widgets/treewidget.h>
 #include <widgets/widgetsfactory.h>
+#include <widgets/treewidgetitem.h>
 
 using namespace vnotex;
 
@@ -37,6 +38,8 @@ void SortDialog::setupUI(const QString &p_title, const QString &p_info)
         mainLayout->addLayout(bodyLayout);
 
         // Tree widget.
+        // We want to sort it case-insensitive. QTreeView and QSortFilterProxyModel should be the choice.
+        // For simplicity, we subclass QTreeWidgetItem here.
         m_treeWidget = new TreeWidget(mainWidget);
         m_treeWidget->setRootIsDecorated(false);
         m_treeWidget->setSelectionMode(QAbstractItemView::ContiguousSelection);
@@ -254,4 +257,10 @@ void SortDialog::handleMoveOperation(MoveOperation p_op)
         m_treeWidget->setCurrentItem(firstItem);
         m_treeWidget->scrollToItem(firstItem);
     }
+}
+
+QTreeWidgetItem *SortDialog::addItem(const QStringList &p_cols)
+{
+    auto item = new TreeWidgetItem(m_treeWidget, p_cols);
+    return item;
 }

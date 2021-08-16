@@ -78,6 +78,7 @@ SOURCES += \
     $$PWD/textviewwindow.cpp \
     $$PWD/toolbarhelper.cpp \
     $$PWD/treeview.cpp \
+    $$PWD/treewidgetitem.cpp \
     $$PWD/viewareasession.cpp \
     $$PWD/viewsplit.cpp \
     $$PWD/viewwindow.cpp \
@@ -193,6 +194,7 @@ HEADERS += \
     $$PWD/textviewwindowhelper.h \
     $$PWD/toolbarhelper.h \
     $$PWD/treeview.h \
+    $$PWD/treewidgetitem.h \
     $$PWD/viewareasession.h \
     $$PWD/viewsplit.h \
     $$PWD/viewwindow.h \

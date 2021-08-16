@@ -4,6 +4,7 @@
 #include "scrolldialog.h"
 
 class QTreeWidget;
+class QTreeWidgetItem;
 class QPushButton;
 
 namespace vnotex
@@ -21,6 +22,9 @@ namespace vnotex
 
         // Get user data of column 0 from sorted items.
         QVector<QVariant> getSortedData() const;
+
+        // Add one item to the tree.
+        QTreeWidgetItem *addItem(const QStringList &p_cols);
 
     private:
         enum MoveOperation

@@ -1660,9 +1660,9 @@ void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int
     case ViewOrder::OrderedByName:
         std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end, [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> p_b) {
             if (reversed) {
-                return p_b->getName() < p_a->getName();
+                return p_b->getName().toLower() < p_a->getName().toLower();
             } else {
-                return p_a->getName() < p_b->getName();
+                return p_a->getName().toLower() < p_b->getName().toLower();
             }
         });
         break;
@@ -1769,7 +1769,7 @@ void NotebookNodeExplorer::manualSort()
                 QStringList cols {child->getName(),
                                   Utils::dateTimeString(child->getCreatedTimeUtc().toLocalTime()),
                                   Utils::dateTimeString(child->getModifiedTimeUtc().toLocalTime())};
-                auto item = new QTreeWidgetItem(treeWidget, cols);
+                auto item = sortDlg.addItem(cols);
                 item->setData(0, Qt::UserRole, i);
             }
         }
