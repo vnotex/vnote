@@ -34,6 +34,7 @@
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
 #include <core/sessionconfig.h>
+#include <core/widgetconfig.h>
 
 using namespace vnotex;
 
@@ -2027,21 +2028,40 @@ void NotebookNodeExplorer::setupShortcuts()
 
 void NotebookNodeExplorer::openSelectedNodesWithDefaultProgram()
 {
+    const bool closeBefore = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerCloseBeforeOpenWithEnabled();
    const auto files = getSelectedNodesPath();
    for (const auto &file : files) {
        if (file.isEmpty()) {
            continue;
        }
+
+        if (closeBefore) {
+            auto event = QSharedPointer<Event>::create();
+            emit closeFileRequested(file, event);
+            if (!event->m_response.toBool()) {
+                continue;
+            }
+        }
+
        WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(file));
    }
 }
 
 void NotebookNodeExplorer::openSelectedNodesWithExternalProgram(const QString &p_command)
 {
+    const bool closeBefore = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerCloseBeforeOpenWithEnabled();
     const auto files = getSelectedNodesPath();
     for (const auto &file : files) {
         if (file.isEmpty()) {
             continue;
+        }
+
+        if (closeBefore) {
+            auto event = QSharedPointer<Event>::create();
+            emit closeFileRequested(file, event);
+            if (!event->m_response.toBool()) {
+                continue;
+            }
         }
 
         auto command = p_command;

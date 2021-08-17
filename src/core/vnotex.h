@@ -107,6 +107,8 @@ namespace vnotex
 
         void pinToQuickAccessRequested(const QStringList &p_files);
 
+        void closeFileRequested(const QString &p_filePath, const QSharedPointer<Event> &p_event);
+
     private:
         explicit VNoteX(QObject *p_parent = nullptr);
 

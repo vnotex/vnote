@@ -358,6 +358,8 @@
     "widget" : {
         "//comment" : "Level of the heading in outline that should expand to automatically (1-6)",
         "outline_auto_expanded_level" : 6,
+        "//comment" : "Add section number in the outline viewer",
+        "outline_section_number_enabled" : false,
         "//comment" : "Default find options in FindAndReplace",
         "find_and_replace_options" : 16,
         "//comment" : "View order of the node explorer",
@@ -365,6 +367,8 @@
         "node_explorer_recycle_bin_node_visible" : false,
         "node_explorer_external_files_visible" : true,
         "node_explorer_auto_import_external_files_enabled" : true,
+        "//comment" : "Whether close the file before opening it with external program",
+        "node_explorer_close_before_open_with_enabled" : true,
         "search_panel_advanced_settings_visible" : true,
         "//comment" : "Docks to ignore when expanding content area of main window",
         "main_window_keep_docks_expanding_content_area": [],

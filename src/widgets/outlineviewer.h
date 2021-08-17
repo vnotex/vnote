@@ -28,8 +28,6 @@ namespace vnotex
 
         NavigationModeWrapper<QTreeWidget, QTreeWidgetItem> *getNavigationModeWrapper();
 
-        static void updateTreeToOutline(QTreeWidget *p_tree, const Outline &p_outline);
-
     signals:
         void focusViewArea();
 
@@ -42,6 +40,8 @@ namespace vnotex
         void setupUI(const QString &p_title);
 
         TitleBar *setupTitleBar(const QString &p_title, QWidget *p_parent = nullptr);
+
+        void updateTree(bool p_force = false);
 
         void updateOutline(const QSharedPointer<Outline> &p_outline);
 
@@ -61,9 +61,17 @@ namespace vnotex
                                       int p_level,
                                       QTreeWidget *p_tree,
                                       QTreeWidgetItem *p_parentItem,
-                                      QTreeWidgetItem *p_lastItem);
+                                      QTreeWidgetItem *p_lastItem,
+                                      int p_sectionNumberBaseLevel,
+                                      SectionNumber &p_sectionNumber,
+                                      bool p_sectionNumberEndingDot);
 
-        static void fillTreeItem(QTreeWidgetItem *p_item, const Outline::Heading &p_heading, int p_index);
+        static void fillTreeItem(QTreeWidgetItem *p_item,
+                                 const Outline::Heading &p_heading,
+                                 int p_index,
+                                 const QString &p_sectionStr);
+
+        static void updateTreeToOutline(QTreeWidget *p_tree, const Outline &p_outline);
 
         bool m_muted = false;
 

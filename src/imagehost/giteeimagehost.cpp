@@ -5,7 +5,7 @@
 #include <QByteArray>
 
 #include <utils/utils.h>
-#include <utils/webutils.h>
+#include "githubimagehost.h"
 
 using namespace vnotex;
 
@@ -39,7 +39,8 @@ void GiteeImageHost::setConfig(const QJsonObject &p_jobj)
 {
     parseConfig(p_jobj, m_personalAccessToken, m_userName, m_repoName);
 
-    m_imageUrlPrefix = QString("https://gitee.com/%1/%2/raw/master/").arg(m_userName, m_repoName);
+    // Do not assume the default branch.
+    m_imageUrlPrefix = QString("https://gitee.com/%1/%2/raw/").arg(m_userName, m_repoName);
 }
 
 bool GiteeImageHost::testConfig(const QJsonObject &p_jobj, QString &p_msg)
@@ -165,7 +166,7 @@ bool GiteeImageHost::remove(const QString &p_url, QString &p_msg)
         return false;
     }
 
-    const QString resourcePath = WebUtils::purifyUrl(p_url.mid(m_imageUrlPrefix.size()));
+    const auto resourcePath = GitHubImageHost::fetchResourcePath(m_imageUrlPrefix, p_url);
 
     auto rawHeader = prepareCommonHeaders();
     const auto urlStr = QString("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, resourcePath);

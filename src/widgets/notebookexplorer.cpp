@@ -93,6 +93,8 @@ void NotebookExplorer::setupUI()
             &VNoteX::getInst(), &VNoteX::nodeAboutToRemove);
     connect(m_nodeExplorer, &NotebookNodeExplorer::nodeAboutToReload,
             &VNoteX::getInst(), &VNoteX::nodeAboutToReload);
+    connect(m_nodeExplorer, &NotebookNodeExplorer::closeFileRequested,
+            &VNoteX::getInst(), &VNoteX::closeFileRequested);
     mainLayout->addWidget(m_nodeExplorer);
 
     setFocusProxy(m_nodeExplorer);
@@ -159,11 +161,21 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
             subMenu,
             tr("Import External Files When Activated"),
             titleBar,
-            [this](bool p_checked) {
+            [](bool p_checked) {
                 ConfigMgr::getInst().getWidgetConfig().setNodeExplorerAutoImportExternalFilesEnabled(p_checked);
             });
         importAct->setCheckable(true);
         importAct->setChecked(widgetConfig.getNodeExplorerAutoImportExternalFilesEnabled());
+    }
+
+    {
+        auto act = titleBar->addMenuAction(tr("Close File Before Open With External Program"),
+                                           titleBar,
+                                           [](bool p_checked) {
+                                               ConfigMgr::getInst().getWidgetConfig().setNodeExplorerCloseBeforeOpenWithEnabled(p_checked);
+                                           });
+        act->setCheckable(true);
+        act->setChecked(widgetConfig.getNodeExplorerCloseBeforeOpenWithEnabled());
     }
 
     return titleBar;

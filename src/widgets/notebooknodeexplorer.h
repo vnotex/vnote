@@ -127,6 +127,9 @@ namespace vnotex
 
         void nodeAboutToReload(Node *p_node, const QSharedPointer<Event> &p_event);
 
+        // @p_filePath is either an external file or a node.
+        void closeFileRequested(const QString &p_filePath, const QSharedPointer<Event> &p_event);
+
     private:
         enum Column { Name = 0 };
 

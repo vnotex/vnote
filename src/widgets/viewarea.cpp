@@ -23,6 +23,7 @@
 #include <core/events.h>
 #include <core/vnotex.h>
 #include <core/configmgr.h>
+#include <core/notebookmgr.h>
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/markdowneditorconfig.h>
@@ -86,6 +87,9 @@ ViewArea::ViewArea(QWidget *p_parent)
 
     connect(&VNoteX::getInst(), &VNoteX::nodeAboutToReload,
             this, &ViewArea::handleNodeChange);
+
+    connect(&VNoteX::getInst(), &VNoteX::closeFileRequested,
+            this, &ViewArea::closeFile);
 
     auto &configMgr = ConfigMgr::getInst();
     connect(&configMgr, &ConfigMgr::editorConfigChanged,
@@ -931,7 +935,7 @@ bool ViewArea::close(Node *p_node, bool p_force)
     return closeIf(p_force, [p_node](ViewWindow *p_win) {
                 auto buffer = p_win->getBuffer();
                 return buffer->match(p_node) || buffer->isChildOf(p_node);
-            }, false);
+            }, true);
 }
 
 bool ViewArea::close(const Notebook *p_notebook, bool p_force)
@@ -1483,4 +1487,25 @@ void ViewArea::updateHistory(const ViewWindowSession &p_session, Notebook *p_not
                               p_session.m_viewWindowMode,
                               p_session.m_readOnly,
                               p_notebook);
+}
+
+void ViewArea::closeFile(const QString &p_filePath, const QSharedPointer<Event> &p_event)
+{
+    if (p_event->m_handled) {
+        return;
+    }
+
+    auto node = VNoteX::getInst().getNotebookMgr().loadNodeByPath(p_filePath);
+    bool done = false;
+    if (node) {
+        done = close(node.data(), false);
+    } else {
+        done = closeIf(false, [p_filePath](ViewWindow *p_win) {
+                    auto buffer = p_win->getBuffer();
+                    return buffer->match(p_filePath);
+                }, true);
+    }
+
+    p_event->m_response = done;
+    p_event->m_handled = !done;
 }

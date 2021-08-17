@@ -1185,44 +1185,6 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
     proDlg.setValue(regs.size());
 }
 
-static void increaseSectionNumber(QVector<int> &p_sectionNumber, int p_level, int p_baseLevel)
-{
-    Q_ASSERT(p_level >= 1 && p_level < p_sectionNumber.size());
-    if (p_level < p_baseLevel) {
-        p_sectionNumber.fill(0);
-        return;
-    }
-
-    ++p_sectionNumber[p_level];
-    for (int i = p_level + 1; i < p_sectionNumber.size(); ++i) {
-        p_sectionNumber[i] = 0;
-    }
-}
-
-static QString joinSectionNumberStr(const QVector<int> &p_sectionNumber, bool p_endingDot)
-{
-    QString res;
-    for (auto sec : p_sectionNumber) {
-        if (sec != 0) {
-            if (res.isEmpty()) {
-                res = QString::number(sec);
-            } else {
-                res += '.' + QString::number(sec);
-            }
-        } else if (res.isEmpty()) {
-            continue;
-        } else {
-            break;
-        }
-    }
-
-    if (p_endingDot && !res.isEmpty()) {
-        return res + '.';
-    } else {
-        return res;
-    }
-}
-
 static bool updateHeadingSectionNumber(QTextCursor &p_cursor,
                                        const QTextBlock &p_block,
                                        const QString &p_sectionNumber,
@@ -1269,7 +1231,7 @@ static bool updateHeadingSectionNumber(QTextCursor &p_cursor,
 
 bool MarkdownEditor::updateSectionNumber(const QVector<Heading> &p_headings)
 {
-    QVector<int> sectionNumber(7, 0);
+    SectionNumber sectionNumber(7, 0);
     int baseLevel = m_config.getSectionNumberBaseLevel();
     if (baseLevel < 1 || baseLevel > 6) {
         baseLevel = 1;
@@ -1281,8 +1243,8 @@ bool MarkdownEditor::updateSectionNumber(const QVector<Heading> &p_headings)
     QTextCursor cursor(doc);
     cursor.beginEditBlock();
     for (const auto &heading : p_headings) {
-        increaseSectionNumber(sectionNumber, heading.m_level, baseLevel);
-        auto sectionStr = m_sectionNumberEnabled ? joinSectionNumberStr(sectionNumber, endingDot) : QString();
+        OutlineProvider::increaseSectionNumber(sectionNumber, heading.m_level, baseLevel);
+        auto sectionStr = m_sectionNumberEnabled ? OutlineProvider::joinSectionNumber(sectionNumber, endingDot) : QString();
         if (heading.m_blockNumber > -1 && sectionStr != heading.m_sectionNumber) {
             if (updateHeadingSectionNumber(cursor,
                                            doc->findBlockByNumber(heading.m_blockNumber),

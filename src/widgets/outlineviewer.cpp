@@ -14,8 +14,8 @@
 #include "treewidget.h"
 #include "titlebar.h"
 
-#include "configmgr.h"
-#include "widgetconfig.h"
+#include <core/configmgr.h>
+#include <core/widgetconfig.h>
 #include "navigationmodemgr.h"
 
 using namespace vnotex;
@@ -89,7 +89,7 @@ NavigationModeWrapper<QTreeWidget, QTreeWidgetItem> *OutlineViewer::getNavigatio
 
 TitleBar *OutlineViewer::setupTitleBar(const QString &p_title, QWidget *p_parent)
 {
-    auto titleBar = new TitleBar(p_title, false, TitleBar::Action::None, p_parent);
+    auto titleBar = new TitleBar(p_title, false, TitleBar::Action::Menu, p_parent);
     titleBar->setActionButtonsAlwaysShown(true);
 
     auto decreaseBtn = titleBar->addActionButton(QStringLiteral("decrease_outline_level.svg"), tr("Decrease Expansion Level"));
@@ -122,6 +122,17 @@ TitleBar *OutlineViewer::setupTitleBar(const QString &p_title, QWidget *p_parent
                 showLevel();
             });
 
+    {
+        auto act = titleBar->addMenuAction(tr("Section Number"),
+                                           titleBar,
+                                           [this](bool p_checked) {
+                                               ConfigMgr::getInst().getWidgetConfig().setOutlineSectionNumberEnabled(p_checked);
+                                               updateTree(true);
+                                           });
+        act->setCheckable(true);
+        act->setChecked(ConfigMgr::getInst().getWidgetConfig().getOutlineSectionNumberEnabled());
+    }
+
     return titleBar;
 }
 
@@ -148,27 +159,32 @@ void OutlineViewer::setOutlineProvider(const QSharedPointer<OutlineProvider> &p_
                 this, [this]() {
                     updateCurrentHeading(m_provider->getCurrentHeadingIndex());
                 });
-        if (isVisible()) {
-            updateOutline(m_provider->getOutline());
-            updateCurrentHeading(m_provider->getCurrentHeadingIndex());
-        }
-    } else {
-        updateOutline(nullptr);
-        updateCurrentHeading(-1);
     }
 
+    if (isVisible()) {
+        updateTree();
+    }
 }
 
 void OutlineViewer::showEvent(QShowEvent *p_event)
 {
     QFrame::showEvent(p_event);
 
-    // Update the tree.
+    updateTree();
+}
+
+void OutlineViewer::updateTree(bool p_force)
+{
+    if (p_force) {
+        m_outline.clear();
+    }
+
     if (m_provider) {
         updateOutline(m_provider->getOutline());
         updateCurrentHeading(m_provider->getCurrentHeadingIndex());
     } else {
         updateOutline(nullptr);
+        updateCurrentHeading(-1);
     }
 }
 
@@ -219,8 +235,24 @@ void OutlineViewer::updateTreeToOutline(QTreeWidget *p_tree, const Outline &p_ou
         return;
     }
 
+    int sectionNumberBaseLevel = -1;
+    const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
+    if (widgetConfig.getOutlineSectionNumberEnabled()) {
+        sectionNumberBaseLevel = p_outline.m_sectionNumberBaseLevel;
+    }
+
+    SectionNumber sectionNumber(7, 0);
+
     int idx = 0;
-    renderTreeAtLevel(p_outline.m_headings, idx, 1, p_tree, nullptr, nullptr);
+    renderTreeAtLevel(p_outline.m_headings,
+                      idx,
+                      1,
+                      p_tree,
+                      nullptr,
+                      nullptr,
+                      sectionNumberBaseLevel,
+                      sectionNumber,
+                      p_outline.m_sectionNumberEndingDot);
 }
 
 void OutlineViewer::renderTreeAtLevel(const QVector<Outline::Heading> &p_headings,
@@ -228,34 +260,60 @@ void OutlineViewer::renderTreeAtLevel(const QVector<Outline::Heading> &p_heading
                                       int p_level,
                                       QTreeWidget *p_tree,
                                       QTreeWidgetItem *p_parentItem,
-                                      QTreeWidgetItem *p_lastItem)
+                                      QTreeWidgetItem *p_lastItem,
+                                      int p_sectionNumberBaseLevel,
+                                      SectionNumber &p_sectionNumber,
+                                      bool p_sectionNumberEndingDot)
 {
     while (p_index < p_headings.size()) {
         const auto &heading = p_headings[p_index];
+        if (heading.m_level < p_level) {
+            return;
+        }
+
         QTreeWidgetItem *item = nullptr;
         if (heading.m_level == p_level) {
+            QString sectionStr;
+            if (p_sectionNumberBaseLevel > 0) {
+                OutlineProvider::increaseSectionNumber(p_sectionNumber, heading.m_level, p_sectionNumberBaseLevel);
+                sectionStr = OutlineProvider::joinSectionNumber(p_sectionNumber, p_sectionNumberEndingDot);
+            }
+
             if (p_parentItem) {
                 item = new QTreeWidgetItem(p_parentItem);
             } else {
                 item = new QTreeWidgetItem(p_tree);
             }
 
-            fillTreeItem(item, heading, p_index);
+            fillTreeItem(item, heading, p_index, sectionStr);
 
             p_lastItem = item;
             ++p_index;
-        } else if (heading.m_level < p_level) {
-            return;
         } else {
-            renderTreeAtLevel(p_headings, p_index, p_level + 1, p_tree, p_lastItem, nullptr);
+            renderTreeAtLevel(p_headings,
+                              p_index,
+                              p_level + 1,
+                              p_tree,
+                              p_lastItem,
+                              nullptr,
+                              p_sectionNumberBaseLevel,
+                              p_sectionNumber,
+                              p_sectionNumberEndingDot);
         }
     }
 }
 
-void OutlineViewer::fillTreeItem(QTreeWidgetItem *p_item, const Outline::Heading &p_heading, int p_index)
+void OutlineViewer::fillTreeItem(QTreeWidgetItem *p_item,
+                                 const Outline::Heading &p_heading,
+                                 int p_index,
+                                 const QString &p_sectionStr)
 {
     p_item->setData(Column::Name, Qt::UserRole, p_index);
-    p_item->setText(Column::Name, p_heading.m_name);
+    if (p_sectionStr.isEmpty()) {
+        p_item->setText(Column::Name, p_heading.m_name);
+    } else {
+        p_item->setText(Column::Name, tr("%1 %2").arg(p_sectionStr, p_heading.m_name));
+    }
     p_item->setToolTip(Column::Name, p_heading.m_name);
 }
 

@@ -139,6 +139,8 @@ namespace vnotex
 
         void moveViewWindowOneSplit(ViewSplit *p_split, ViewWindow *p_win, Direction p_direction);
 
+        void closeFile(const QString &p_filePath, const QSharedPointer<Event> &p_event);
+
     private:
         enum class SplitType
         {

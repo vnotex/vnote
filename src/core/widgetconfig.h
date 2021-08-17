@@ -21,6 +21,9 @@ namespace vnotex
         int getOutlineAutoExpandedLevel() const;
         void setOutlineAutoExpandedLevel(int p_level);
 
+        bool getOutlineSectionNumberEnabled() const;
+        void setOutlineSectionNumberEnabled(bool p_enabled);
+
         FindOptions getFindAndReplaceOptions() const;
         void setFindAndReplaceOptions(FindOptions p_options);
 
@@ -36,6 +39,9 @@ namespace vnotex
         bool getNodeExplorerAutoImportExternalFilesEnabled() const;
         void setNodeExplorerAutoImportExternalFilesEnabled(bool p_enabled);
 
+        bool getNodeExplorerCloseBeforeOpenWithEnabled() const;
+        void setNodeExplorerCloseBeforeOpenWithEnabled(bool p_enabled);
+
         bool isSearchPanelAdvancedSettingsVisible() const;
         void setSearchPanelAdvancedSettingsVisible(bool p_visible);
 
@@ -48,6 +54,8 @@ namespace vnotex
     private:
         int m_outlineAutoExpandedLevel = 6;
 
+        bool m_outlineSectionNumberEnabled = false;
+
         FindOptions m_findAndReplaceOptions = FindOption::FindNone;
 
         int m_nodeExplorerViewOrder = 0;
@@ -57,6 +65,8 @@ namespace vnotex
         bool m_nodeExplorerExternalFilesVisible = true;
 
         bool m_nodeExplorerAutoImportExternalFilesEnabled = true;
+
+        bool m_nodeExplorerCloseBeforeOpenWithEnabled = true;
 
         bool m_searchPanelAdvancedSettingsVisible = true;
 

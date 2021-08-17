@@ -39,7 +39,8 @@ void GitHubImageHost::setConfig(const QJsonObject &p_jobj)
 {
     parseConfig(p_jobj, m_personalAccessToken, m_userName, m_repoName);
 
-    m_imageUrlPrefix = QString("https://raw.githubusercontent.com/%1/%2/master/").arg(m_userName, m_repoName);
+    // Do not assume the default branch.
+    m_imageUrlPrefix = QString("https://raw.githubusercontent.com/%1/%2/").arg(m_userName, m_repoName);
 }
 
 bool GitHubImageHost::testConfig(const QJsonObject &p_jobj, QString &p_msg)
@@ -150,6 +151,15 @@ bool GitHubImageHost::ownsUrl(const QString &p_url) const
     return p_url.startsWith(m_imageUrlPrefix);
 }
 
+QString GitHubImageHost::fetchResourcePath(const QString &p_prefix, const QString &p_url)
+{
+    auto resourcePath = p_url.mid(p_prefix.size());
+    // Skip the branch name.
+    resourcePath = resourcePath.mid(resourcePath.indexOf(QLatin1Char('/')) + 1);
+    resourcePath = WebUtils::purifyUrl(resourcePath);
+    return resourcePath;
+}
+
 bool GitHubImageHost::remove(const QString &p_url, QString &p_msg)
 {
     Q_ASSERT(ownsUrl(p_url));
@@ -159,7 +169,7 @@ bool GitHubImageHost::remove(const QString &p_url, QString &p_msg)
         return false;
     }
 
-    const QString resourcePath = WebUtils::purifyUrl(p_url.mid(m_imageUrlPrefix.size()));
+    const auto resourcePath = fetchResourcePath(m_imageUrlPrefix, p_url);
 
     auto rawHeader = prepareCommonHeaders(m_personalAccessToken);
     const auto urlStr = QString("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, resourcePath);

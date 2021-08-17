@@ -828,6 +828,14 @@ QSharedPointer<Outline> MarkdownViewWindow::headingsToOutline(const QVector<T> &
         }
     }
 
+    const auto &markdownConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
+    if (markdownConfig.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Edit) {
+        outline->m_sectionNumberBaseLevel = -1;
+    } else {
+        outline->m_sectionNumberBaseLevel = markdownConfig.getSectionNumberBaseLevel();
+        outline->m_sectionNumberEndingDot = markdownConfig.getSectionNumberStyle() == MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot;
+    }
+
     return outline;
 }
 

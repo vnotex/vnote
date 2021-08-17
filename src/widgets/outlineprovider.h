@@ -7,6 +7,8 @@
 
 namespace vnotex
 {
+    typedef QVector<int> SectionNumber;
+
     // Toc content.
     struct Outline
     {
@@ -31,6 +33,12 @@ namespace vnotex
         bool isEmpty() const;
 
         QVector<Heading> m_headings;
+
+        // 1-based.
+        // -1 to disable section number by force.
+        int m_sectionNumberBaseLevel = 1;
+
+        bool m_sectionNumberEndingDot = true;
     };
 
     // Used to hold toc-related data of one ViewWindow.
@@ -52,6 +60,10 @@ namespace vnotex
 
         template <class T>
         static void makePerfectHeadings(const QVector<T> &p_headings, QVector<T> &p_perfectHeadings);
+
+        static void increaseSectionNumber(SectionNumber &p_sectionNumber, int p_level, int p_baseLevel);
+
+        static QString joinSectionNumber(const SectionNumber &p_sectionNumber, bool p_endingDot);
 
     signals:
         void outlineChanged();

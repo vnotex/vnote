@@ -63,3 +63,41 @@ void OutlineProvider::setCurrentHeadingIndex(int p_idx)
     m_currentHeadingIndex = p_idx;
     emit currentHeadingChanged();
 }
+
+void OutlineProvider::increaseSectionNumber(SectionNumber &p_sectionNumber, int p_level, int p_baseLevel)
+{
+    Q_ASSERT(p_level >= 1 && p_level < p_sectionNumber.size());
+    if (p_level < p_baseLevel) {
+        p_sectionNumber.fill(0);
+        return;
+    }
+
+    ++p_sectionNumber[p_level];
+    for (int i = p_level + 1; i < p_sectionNumber.size(); ++i) {
+        p_sectionNumber[i] = 0;
+    }
+}
+
+QString OutlineProvider::joinSectionNumber(const SectionNumber &p_sectionNumber, bool p_endingDot)
+{
+    QString res;
+    for (auto sec : p_sectionNumber) {
+        if (sec != 0) {
+            if (res.isEmpty()) {
+                res = QString::number(sec);
+            } else {
+                res += '.' + QString::number(sec);
+            }
+        } else if (res.isEmpty()) {
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    if (p_endingDot && !res.isEmpty()) {
+        return res + '.';
+    } else {
+        return res;
+    }
+}

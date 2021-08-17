@@ -29,6 +29,8 @@ namespace vnotex
 
         bool ownsUrl(const QString &p_url) const Q_DECL_OVERRIDE;
 
+        static QString fetchResourcePath(const QString &p_prefix, const QString &p_url);
+
     protected:
         QString m_personalAccessToken;
 
