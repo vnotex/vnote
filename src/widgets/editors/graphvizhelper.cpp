@@ -5,26 +5,26 @@
 
 #include <utils/processutils.h>
 #include <utils/pathutils.h>
+#include <core/configmgr.h>
+#include <core/editorconfig.h>
+#include <core/markdowneditorconfig.h>
 
 using namespace vnotex;
 
-void GraphvizHelper::init(const QString &p_graphvizFile)
+GraphvizHelper &GraphvizHelper::getInst()
 {
-    if (m_initialized) {
-        return;
+    static bool initialized = false;
+    static GraphvizHelper inst;
+    if (!initialized) {
+        initialized = true;
+        const auto &markdownEditorConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
+        inst.update(markdownEditorConfig.getGraphvizExe());
     }
-
-    m_initialized = true;
-
-    update(p_graphvizFile);
+    return inst;
 }
 
 void GraphvizHelper::update(const QString &p_graphvizFile)
 {
-    if (!m_initialized) {
-        return;
-    }
-
     prepareProgramAndArgs(p_graphvizFile, m_program, m_args);
 
     checkValidProgram();

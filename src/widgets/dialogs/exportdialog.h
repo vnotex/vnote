@@ -162,6 +162,8 @@ namespace vnotex
 
         QCheckBox *m_useWkhtmltopdfCheckBox = nullptr;
 
+        QCheckBox *m_allInOneCheckBox = nullptr;
+
         QLineEdit *m_wkhtmltopdfExePathLineEdit = nullptr;
 
         QLineEdit *m_wkhtmltopdfArgsLineEdit = nullptr;

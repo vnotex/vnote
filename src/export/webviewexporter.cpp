@@ -263,7 +263,12 @@ void WebViewExporter::prepare(const ExportOption &p_option)
                 });
     }
 
-    const bool scrollable = p_option.m_targetFormat != ExportFormat::PDF;
+    bool scrollable = true;
+    if (p_option.m_targetFormat == ExportFormat::PDF
+        || (p_option.m_targetFormat == ExportFormat::HTML && !p_option.m_htmlOption.m_scrollable)) {
+        scrollable = false;
+    }
+
     const auto &config = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
     bool useWkhtmltopdf = false;
     QSize pageBodySize(1024, 768);
@@ -524,7 +529,7 @@ bool WebViewExporter::doExportWkhtmltopdf(const ExportPdfOption &p_pdfOption, co
                 }
 
                 // Convert HTML to PDF via wkhtmltopdf.
-                if (doWkhtmltopdf(p_pdfOption, QStringList() << tmpHtmlFile, p_outputFile)) {
+                if (htmlToPdfViaWkhtmltopdf(p_pdfOption, QStringList() << tmpHtmlFile, p_outputFile)) {
                     state = ExportState::Finished;
                 } else {
                     state = ExportState::Failed;
@@ -544,7 +549,7 @@ bool WebViewExporter::doExportWkhtmltopdf(const ExportPdfOption &p_pdfOption, co
     return state == ExportState::Finished;
 }
 
-bool WebViewExporter::doWkhtmltopdf(const ExportPdfOption &p_pdfOption, const QStringList &p_htmlFiles, const QString &p_outputFile)
+bool WebViewExporter::htmlToPdfViaWkhtmltopdf(const ExportPdfOption &p_pdfOption, const QStringList &p_htmlFiles, const QString &p_outputFile)
 {
     // Note: system's locale settings (Language for non-Unicode programs) is important to wkhtmltopdf.
     // Input file could be encoded via QUrl::fromLocalFile(p_htmlFile).toString(QUrl::EncodeUnicode) to

@@ -5,30 +5,30 @@
 
 #include <utils/processutils.h>
 #include <utils/pathutils.h>
+#include <core/configmgr.h>
+#include <core/editorconfig.h>
+#include <core/markdowneditorconfig.h>
 
 using namespace vnotex;
 
-void PlantUmlHelper::init(const QString &p_plantUmlJarFile,
-                          const QString &p_graphvizFile,
-                          const QString &p_overriddenCommand)
+PlantUmlHelper &PlantUmlHelper::getInst()
 {
-    if (m_initialized) {
-        return;
+    static bool initialized = false;
+    static PlantUmlHelper inst;
+    if (!initialized) {
+        initialized = true;
+        const auto &markdownEditorConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
+        inst.update(markdownEditorConfig.getPlantUmlJar(),
+                    markdownEditorConfig.getGraphvizExe(),
+                    markdownEditorConfig.getPlantUmlCommand());
     }
-
-    m_initialized = true;
-
-    update(p_plantUmlJarFile, p_graphvizFile, p_overriddenCommand);
+    return inst;
 }
 
 void PlantUmlHelper::update(const QString &p_plantUmlJarFile,
                             const QString &p_graphvizFile,
                             const QString &p_overriddenCommand)
 {
-    if (!m_initialized) {
-        return;
-    }
-
     m_overriddenCommand = p_overriddenCommand;
     if (m_overriddenCommand.isEmpty()) {
         prepareProgramAndArgs(p_plantUmlJarFile, p_graphvizFile, m_program, m_args);

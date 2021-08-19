@@ -90,7 +90,7 @@ namespace vnotex
         vte::LruCache<QString, CacheItem> m_cache;
 
         // Whether @m_program is valid.
-        bool m_programValid = true;
+        bool m_programValid = false;
     };
 }
 

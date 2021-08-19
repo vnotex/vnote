@@ -41,6 +41,8 @@ namespace vnotex
 
         void stop();
 
+        bool htmlToPdfViaWkhtmltopdf(const ExportPdfOption &p_pdfOption, const QStringList &p_htmlFiles, const QString &p_outputFile);
+
     signals:
         void logRequested(const QString &p_log);
 
@@ -81,8 +83,6 @@ namespace vnotex
         bool doExportWkhtmltopdf(const ExportPdfOption &p_pdfOption, const QString &p_outputFile, const QUrl &p_baseUrl);
 
         QSize pageLayoutSize(const QPageLayout &p_layout) const;
-
-        bool doWkhtmltopdf(const ExportPdfOption &p_pdfOption, const QStringList &p_htmlFiles, const QString &p_outputFile);
 
         void prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOption);
 

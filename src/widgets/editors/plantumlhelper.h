@@ -8,19 +8,11 @@ namespace vnotex
     class PlantUmlHelper : public GraphHelper
     {
     public:
-        void init(const QString &p_plantUmlJarFile,
-                  const QString &p_graphvizFile,
-                  const QString &p_overriddenCommand);
-
         void update(const QString &p_plantUmlJarFile,
                     const QString &p_graphvizFile,
                     const QString &p_overriddenCommand);
 
-        static PlantUmlHelper &getInst()
-        {
-            static PlantUmlHelper inst;
-            return inst;
-        }
+        static PlantUmlHelper &getInst();
 
         static QPair<bool, QString> testPlantUml(const QString &p_plantUmlJarFile);
 
@@ -33,8 +25,6 @@ namespace vnotex
                                           const QString &p_graphvizFile,
                                           QString &p_program,
                                           QStringList &p_args);
-
-        bool m_initialized = false;
     };
 }
 

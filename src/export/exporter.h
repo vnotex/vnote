@@ -50,6 +50,10 @@ namespace vnotex
 
         QString doExportPdf(const ExportOption &p_option, const QString &p_outputDir, const File *p_file);
 
+        QString doExportAllInOne(const ExportOption &p_option, Node *p_folder);
+
+        QString doExportAllInOne(const ExportOption &p_option, Notebook *p_notebook);
+
         void exportAttachments(Node *p_node,
                                const QString &p_srcFilePath,
                                const QString &p_outputFolder,
@@ -62,6 +66,10 @@ namespace vnotex
         void cleanUp();
 
         bool checkAskedToStop() const;
+
+        QStringList doExportNotebook(const ExportOption &p_option, const QString &p_outputDir, Notebook *p_notebook);
+
+        static ExportOption getExportOptionForIntermediateHtml(const ExportOption &p_option, const QString &p_outputDir);
 
         // Managed by QObject.
         WebViewExporter *m_webViewExporter = nullptr;

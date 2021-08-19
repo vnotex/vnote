@@ -14,6 +14,7 @@ QJsonObject ExportHtmlOption::toJson() const
     obj["embed_images"] = m_embedImages;
     obj["use_mime_html_format"] = m_useMimeHtmlFormat;
     obj["add_outline_panel"] = m_addOutlinePanel;
+    obj["scrollable"] = m_scrollable;
     return obj;
 }
 
@@ -28,6 +29,7 @@ void ExportHtmlOption::fromJson(const QJsonObject &p_obj)
     m_embedImages = p_obj["embed_images"].toBool();
     m_useMimeHtmlFormat = p_obj["use_mime_html_format"].toBool();
     m_addOutlinePanel = p_obj["add_outline_panel"].toBool();
+    m_scrollable = p_obj["scrollable"].toBool(true);
 }
 
 bool ExportHtmlOption::operator==(const ExportHtmlOption &p_other) const
@@ -36,7 +38,8 @@ bool ExportHtmlOption::operator==(const ExportHtmlOption &p_other) const
            && m_completePage == p_other.m_completePage
            && m_embedImages == p_other.m_embedImages
            && m_useMimeHtmlFormat == p_other.m_useMimeHtmlFormat
-           && m_addOutlinePanel == p_other.m_addOutlinePanel;
+           && m_addOutlinePanel == p_other.m_addOutlinePanel
+           && m_scrollable == p_other.m_scrollable;
 }
 
 ExportPdfOption::ExportPdfOption()
@@ -52,6 +55,7 @@ QJsonObject ExportPdfOption::toJson() const
     QJsonObject obj;
     obj["add_table_of_contents"] = m_addTableOfContents;
     obj["use_wkhtmltopdf"] = m_useWkhtmltopdf;
+    obj["all_in_one"] = m_allInOne;
     obj["wkhtmltopdf_exe_path"] = m_wkhtmltopdfExePath;
     obj["wkhtmltopdf_args"] = m_wkhtmltopdfArgs;
     return obj;
@@ -65,6 +69,7 @@ void ExportPdfOption::fromJson(const QJsonObject &p_obj)
 
     m_addTableOfContents = p_obj["add_table_of_contents"].toBool();
     m_useWkhtmltopdf = p_obj["use_wkhtmltopdf"].toBool();
+    m_allInOne = p_obj["all_in_one"].toBool();
     m_wkhtmltopdfExePath = p_obj["wkhtmltopdf_exe_path"].toString();
     m_wkhtmltopdfArgs = p_obj["wkhtmltopdf_args"].toString();
 }
@@ -73,6 +78,7 @@ bool ExportPdfOption::operator==(const ExportPdfOption &p_other) const
 {
     return m_addTableOfContents == p_other.m_addTableOfContents
            && m_useWkhtmltopdf == p_other.m_useWkhtmltopdf
+           && m_allInOne == p_other.m_allInOne
            && m_wkhtmltopdfExePath == p_other.m_wkhtmltopdfExePath
            && m_wkhtmltopdfArgs == p_other.m_wkhtmltopdfArgs;
 }

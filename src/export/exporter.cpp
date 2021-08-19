@@ -1,6 +1,7 @@
 #include "exporter.h"
 
 #include <QWidget>
+#include <QTemporaryDir>
 
 #include <notebook/notebook.h>
 #include <notebook/node.h>
@@ -31,7 +32,7 @@ QString Exporter::doExport(const ExportOption &p_option, Buffer *p_buffer)
 
     // Make sure output folder exists.
     if (!QDir().mkpath(p_option.m_outputDir)) {
-        emit logRequested(tr("Failed to create output folder %1.").arg(p_option.m_outputDir));
+        emit logRequested(tr("Failed to create output folder (%1).").arg(p_option.m_outputDir));
         return outputFile;
     }
 
@@ -40,6 +41,17 @@ QString Exporter::doExport(const ExportOption &p_option, Buffer *p_buffer)
     cleanUp();
 
     return outputFile;
+}
+
+static QString makeOutputFolder(const QString &p_outputDir, const QString &p_folderName)
+{
+    const auto name = FileUtils::generateFileNameWithSequence(p_outputDir, p_folderName);
+    const auto outputFolder = PathUtils::concatenateFilePath(p_outputDir, name);
+    if (!QDir().mkpath(outputFolder)) {
+        return QString();
+    }
+
+    return outputFolder;
 }
 
 QString Exporter::doExportMarkdown(const ExportOption &p_option, const QString &p_outputDir, const File *p_file)
@@ -51,11 +63,11 @@ QString Exporter::doExportMarkdown(const ExportOption &p_option, const QString &
     }
 
     // Export it to a folder with the same name.
-    auto name = FileUtils::generateFileNameWithSequence(p_outputDir, p_file->getName(), "");
-    auto outputFolder = PathUtils::concatenateFilePath(p_outputDir, name);
+    const auto name = FileUtils::generateFileNameWithSequence(p_outputDir, p_file->getName(), "");
+    const auto outputFolder = PathUtils::concatenateFilePath(p_outputDir, name);
     QDir outDir(outputFolder);
     if (!outDir.mkpath(outputFolder)) {
-        emit logRequested(tr("Failed to create output folder %1.").arg(outputFolder));
+        emit logRequested(tr("Failed to create output folder under (%1).").arg(p_outputDir));
         return outputFile;
     }
 
@@ -113,11 +125,102 @@ QString Exporter::doExport(const ExportOption &p_option, Node *p_note)
     return outputFile;
 }
 
+QString Exporter::doExportAllInOne(const ExportOption &p_option, Node *p_folder)
+{
+    // Make path.
+    const auto outputFolder = makeOutputFolder(p_option.m_outputDir, p_folder->getName());
+    if (outputFolder.isEmpty()) {
+        emit logRequested(tr("Failed to create output folder under (%1).").arg(p_option.m_outputDir));
+        return QString();
+    }
+
+    // Export to HTML to a tmp dir first.
+    QTemporaryDir tmpDir;
+    if (!tmpDir.isValid()) {
+        emit logRequested(tr("Failed to create temporary dir to hold HTML files."));
+        return QString();
+    }
+
+    auto tmpOption(getExportOptionForIntermediateHtml(p_option, tmpDir.path()));
+
+    auto htmlFiles = doExport(tmpOption, tmpDir.path(), p_folder);
+    if (htmlFiles.isEmpty()) {
+        return QString();
+    }
+
+    if (checkAskedToStop()) {
+        return QString();
+    }
+
+    cleanUpWebViewExporter();
+
+    auto fileName = FileUtils::generateFileNameWithSequence(outputFolder,
+                                                            tr("all_in_one_export"),
+                                                            "pdf");
+    auto destFilePath = PathUtils::concatenateFilePath(outputFolder, fileName);
+    if (getWebViewExporter(p_option)->htmlToPdfViaWkhtmltopdf(p_option.m_pdfOption, htmlFiles, destFilePath)) {
+        emit logRequested(tr("Exported to (%1).").arg(destFilePath));
+        return destFilePath;
+    }
+
+    return QString();
+}
+
+QString Exporter::doExportAllInOne(const ExportOption &p_option, Notebook *p_notebook)
+{
+    // Make path.
+    const auto outputFolder = makeOutputFolder(p_option.m_outputDir, tr("notebook_%1").arg(p_notebook->getName()));
+    if (outputFolder.isEmpty()) {
+        emit logRequested(tr("Failed to create output folder under (%1).").arg(p_option.m_outputDir));
+        return QString();
+    }
+
+    // Export to HTML to a tmp dir first.
+    QTemporaryDir tmpDir;
+    if (!tmpDir.isValid()) {
+        emit logRequested(tr("Failed to create temporary dir to hold HTML files."));
+        return QString();
+    }
+
+    auto tmpOption(getExportOptionForIntermediateHtml(p_option, tmpDir.path()));
+
+    auto htmlFiles = doExportNotebook(tmpOption, tmpDir.path(), p_notebook);
+    if (htmlFiles.isEmpty()) {
+        return QString();
+    }
+
+    if (checkAskedToStop()) {
+        return QString();
+    }
+
+    cleanUpWebViewExporter();
+
+    auto fileName = FileUtils::generateFileNameWithSequence(outputFolder,
+                                                            tr("all_in_one_export"),
+                                                            "pdf");
+    auto destFilePath = PathUtils::concatenateFilePath(outputFolder, fileName);
+    if (getWebViewExporter(p_option)->htmlToPdfViaWkhtmltopdf(p_option.m_pdfOption, htmlFiles, destFilePath)) {
+        emit logRequested(tr("Exported to (%1).").arg(destFilePath));
+        return destFilePath;
+    }
+
+    return QString();
+}
+
 QStringList Exporter::doExportFolder(const ExportOption &p_option, Node *p_folder)
 {
     m_askedToStop = false;
 
-    auto outputFiles = doExport(p_option, p_option.m_outputDir, p_folder);
+    QStringList outputFiles;
+
+    if (p_option.m_targetFormat == ExportFormat::PDF && p_option.m_pdfOption.m_useWkhtmltopdf && p_option.m_pdfOption.m_allInOne) {
+        auto file = doExportAllInOne(p_option, p_folder);
+        if (!file.isEmpty()) {
+            outputFiles << file;
+        }
+    } else {
+        outputFiles = doExport(p_option, p_option.m_outputDir, p_folder);
+    }
 
     cleanUp();
 
@@ -131,10 +234,9 @@ QStringList Exporter::doExport(const ExportOption &p_option, const QString &p_ou
     QStringList outputFiles;
 
     // Make path.
-    auto name = FileUtils::generateFileNameWithSequence(p_outputDir, p_folder->getName());
-    auto outputFolder = PathUtils::concatenateFilePath(p_outputDir, name);
-    if (!QDir().mkpath(outputFolder)) {
-        emit logRequested(tr("Failed to create output folder %1.").arg(outputFolder));
+    const auto outputFolder = makeOutputFolder(p_outputDir, p_folder->getName());
+    if (outputFolder.isEmpty()) {
+        emit logRequested(tr("Failed to create output folder under (%1).").arg(p_outputDir));
         return outputFiles;
     }
 
@@ -200,12 +302,30 @@ QStringList Exporter::doExport(const ExportOption &p_option, Notebook *p_noteboo
 
     QStringList outputFiles;
 
+    if (p_option.m_targetFormat == ExportFormat::PDF && p_option.m_pdfOption.m_useWkhtmltopdf && p_option.m_pdfOption.m_allInOne) {
+        auto file = doExportAllInOne(p_option, p_notebook);
+        if (!file.isEmpty()) {
+            outputFiles << file;
+        }
+    } else {
+        outputFiles = doExportNotebook(p_option, p_option.m_outputDir, p_notebook);
+    }
+
+    cleanUp();
+
+    return outputFiles;
+}
+
+QStringList Exporter::doExportNotebook(const ExportOption &p_option, const QString &p_outputDir, Notebook *p_notebook)
+{
+    m_askedToStop = false;
+
+    QStringList outputFiles;
+
     // Make path.
-    auto name = FileUtils::generateFileNameWithSequence(p_option.m_outputDir,
-                                                        tr("notebook_%1").arg(p_notebook->getName()));
-    auto outputFolder = PathUtils::concatenateFilePath(p_option.m_outputDir, name);
-    if (!QDir().mkpath(outputFolder)) {
-        emit logRequested(tr("Failed to create output folder %1.").arg(outputFolder));
+    const auto outputFolder = makeOutputFolder(p_outputDir, tr("notebook_%1").arg(p_notebook->getName()));
+    if (outputFolder.isEmpty()) {
+        emit logRequested(tr("Failed to create output folder under (%1).").arg(p_outputDir));
         return outputFiles;
     }
 
@@ -332,4 +452,17 @@ QString Exporter::doExportPdf(const ExportOption &p_option, const QString &p_out
         }
     }
     return outputFile;
+}
+
+ExportOption Exporter::getExportOptionForIntermediateHtml(const ExportOption &p_option, const QString &p_outputDir)
+{
+    ExportOption tmpOption(p_option);
+    tmpOption.m_targetFormat = ExportFormat::HTML;
+    tmpOption.m_htmlOption.m_embedStyles = true;
+    tmpOption.m_htmlOption.m_completePage = true;
+    tmpOption.m_htmlOption.m_embedImages = false;
+    tmpOption.m_htmlOption.m_scrollable = false;
+    tmpOption.m_outputDir = p_outputDir;
+
+    return tmpOption;
 }

@@ -1060,11 +1060,6 @@ void MarkdownViewWindow::setupPreviewHelper()
 
     const auto &markdownEditorConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
     updatePreviewHelperFromConfig(markdownEditorConfig);
-
-    PlantUmlHelper::getInst().init(markdownEditorConfig.getPlantUmlJar(),
-                                   markdownEditorConfig.getGraphvizExe(),
-                                   markdownEditorConfig.getPlantUmlCommand());
-    GraphvizHelper::getInst().init(markdownEditorConfig.getGraphvizExe());
 }
 
 void MarkdownViewWindow::updatePreviewHelperFromConfig(const MarkdownEditorConfig &p_config)

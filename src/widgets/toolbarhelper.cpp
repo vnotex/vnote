@@ -148,7 +148,7 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
 
     // Import and export.
     {
-        auto act = tb->addAction(generateIcon("import_export_menu.svg"), MainWindow::tr("Import And Export"));
+        auto act = tb->addAction(generateIcon("import_export_menu.svg"), MainWindow::tr("Import/Export"));
 
         auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
         Q_ASSERT(btn);
@@ -223,13 +223,12 @@ QToolBar *ToolBarHelper::setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_
     // Quick Access.
     {
         auto toolBtn = WidgetsFactory::createToolButton(tb);
-        toolBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
         auto btnMenu = WidgetsFactory::createMenu(tb);
         toolBtn->setMenu(btnMenu);
 
         // Quick Acces.
-        auto quickAccessAct = new QAction(generateIcon("quick_access_menu.svg"), MainWindow::tr("Quick Access"), toolBtn);
+        auto quickAccessAct = btnMenu->addAction(generateIcon("quick_access_menu.svg"), MainWindow::tr("Quick Access"));
         MainWindow::connect(quickAccessAct, &QAction::triggered,
                             p_win, [p_win]() {
                                 const auto &quickAccess = ConfigMgr::getInst().getSessionConfig().getQuickAccessFiles();
@@ -250,8 +249,6 @@ QToolBar *ToolBarHelper::setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_
                                        coreConfig.getShortcut(CoreConfig::Shortcut::QuickAccess));
 
         toolBtn->setDefaultAction(quickAccessAct);
-        // To hide the shortcut text shown in button.
-        toolBtn->setText(MainWindow::tr("Quick Access"));
 
         MainWindow::connect(btnMenu, &QMenu::aboutToShow,
                             btnMenu, [btnMenu]() {

@@ -40,6 +40,9 @@ namespace vnotex
 
         // Whether add outline panel.
         bool m_addOutlinePanel = true;
+
+        // When exporting to PDF or custom format, we may need to export to HTML first without scrollable.
+        bool m_scrollable = true;
     };
 
     struct ExportPdfOption
@@ -53,10 +56,13 @@ namespace vnotex
 
         QSharedPointer<QPageLayout> m_layout;
 
-        // Add TOC at the front to complement the missing of outline.
+        // Add TOC at the front.
         bool m_addTableOfContents = false;
 
         bool m_useWkhtmltopdf = false;
+
+        // Valid only when wkhtmltopdf is used.
+        bool m_allInOne = false;
 
         QString m_wkhtmltopdfExePath;
 
