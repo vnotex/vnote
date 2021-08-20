@@ -48,6 +48,11 @@ void CoreConfig::init(const QJsonObject &p_app,
         m_toolBarIconSize = 16;
     }
 
+    m_docksTabBarIconSize = READINT(QStringLiteral("docks_tabbar_icon_size"));
+    if (m_docksTabBarIconSize <= 0) {
+        m_docksTabBarIconSize = 20;
+    }
+
     loadNoteManagement(appObj, userObj);
 
     m_recoverLastSessionOnStartEnabled = READBOOL(QStringLiteral("recover_last_session_on_start"));
@@ -65,6 +70,7 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("locale")] = m_locale;
     obj[QStringLiteral("shortcuts")] = saveShortcuts();
     obj[QStringLiteral("toolbar_icon_size")] = m_toolBarIconSize;
+    obj[QStringLiteral("docks_tabbar_icon_size")] = m_docksTabBarIconSize;
     obj[QStringLiteral("recover_last_session_on_start")] = m_recoverLastSessionOnStartEnabled;
     obj[QStringLiteral("history_max_count")] = m_historyMaxCount;
     return obj;
@@ -152,6 +158,17 @@ void CoreConfig::setToolBarIconSize(int p_size)
 {
     Q_ASSERT(p_size > 0);
     updateConfig(m_toolBarIconSize, p_size, this);
+}
+
+int CoreConfig::getDocksTabBarIconSize() const
+{
+    return m_docksTabBarIconSize;
+}
+
+void CoreConfig::setDocksTabBarIconSize(int p_size)
+{
+    Q_ASSERT(p_size > 0);
+    updateConfig(m_docksTabBarIconSize, p_size, this);
 }
 
 const QStringList &CoreConfig::getExternalNodeExcludePatterns() const

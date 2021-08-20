@@ -267,14 +267,3 @@ QTreeWidgetItem *SettingsDialog::addSubPage(SettingsPage *p_page, QTreeWidgetIte
     setupPage(subItem, p_page);
     return subItem;
 }
-
-void SettingsDialog::showEvent(QShowEvent *p_event)
-{
-    Dialog::showEvent(p_event);
-
-    if (m_firstShown) {
-        m_firstShown = false;
-        const auto sz = size();
-        resize(sz * 1.2);
-    }
-}

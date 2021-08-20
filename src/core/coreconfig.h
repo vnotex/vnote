@@ -87,6 +87,9 @@ namespace vnotex
         int getToolBarIconSize() const;
         void setToolBarIconSize(int p_size);
 
+        int getDocksTabBarIconSize() const;
+        void setDocksTabBarIconSize(int p_size);
+
         const QStringList &getExternalNodeExcludePatterns() const;
 
         static const QStringList &getAvailableLocales();
@@ -116,6 +119,9 @@ namespace vnotex
 
         // Icon size of MainWindow tool bar.
         int m_toolBarIconSize = 16;
+
+        // Icon size of MainWindow QDockWidgets tab bar.
+        int m_docksTabBarIconSize = 20;
 
         QStringList m_externalNodeExcludePatterns;
 

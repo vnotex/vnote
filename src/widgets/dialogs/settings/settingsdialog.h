@@ -28,8 +28,6 @@ namespace vnotex
 
         void appliedButtonClicked() Q_DECL_OVERRIDE;
 
-        void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
-
     private:
         void setupUI();
 
@@ -63,8 +61,6 @@ namespace vnotex
         bool m_changesUnsaved = false;
 
         bool m_ready = false;
-
-        bool m_firstShown = true;
     };
 }
 

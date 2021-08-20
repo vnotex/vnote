@@ -15,7 +15,6 @@
         <file>icons/read_editor.svg</file>
         <file>icons/expand.svg</file>
         <file>icons/fullscreen.svg</file>
-        <file>icons/history_explorer.svg</file>
         <file>icons/tag_explorer.svg</file>
         <file>icons/help.svg</file>
         <file>icons/menu.svg</file>
@@ -81,6 +80,12 @@
         <file>icons/cancel.svg</file>
         <file>icons/section_number_editor.svg</file>
         <file>icons/sort.svg</file>
+        <file>icons/navigation_dock.svg</file>
+        <file>icons/history_dock.svg</file>
+        <file>icons/outline_dock.svg</file>
+        <file>icons/search_dock.svg</file>
+        <file>icons/snippet_dock.svg</file>
+        <file>icons/location_list_dock.svg</file>
         <file>logo/vnote.svg</file>
         <file>logo/vnote.png</file>
         <file>logo/256x256/vnote.png</file>

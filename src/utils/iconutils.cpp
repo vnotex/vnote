@@ -15,7 +15,8 @@ QString IconUtils::s_defaultIconForeground;
 QString IconUtils::s_defaultIconDisabledForeground;
 
 QIcon IconUtils::fetchIcon(const QString &p_iconFile,
-                           const QVector<OverriddenColor> &p_overriddenColors)
+                           const QVector<OverriddenColor> &p_overriddenColors,
+                           qreal p_angle)
 {
     const auto suffix = QFileInfo(p_iconFile).suffix().toLower().toStdString();
     if (p_overriddenColors.isEmpty() || suffix != "svg") {
@@ -33,6 +34,9 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
         auto data = overriddenContent.toLocal8Bit();
         QPixmap pixmap;
         pixmap.loadFromData(data, suffix.c_str());
+        if (p_angle > 0) {
+            pixmap = pixmap.transformed(QTransform().rotate(p_angle));
+        }
         icon.addPixmap(pixmap, color.m_mode, color.m_state);
     }
 

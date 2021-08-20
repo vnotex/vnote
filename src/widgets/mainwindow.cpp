@@ -4,8 +4,8 @@
 #include <QDebug>
 #include <QResizeEvent>
 #include <QSplitter>
-#include <QVariant>
 #include <QDockWidget>
+#include <QVariant>
 #include <QTextEdit>
 #include <QStatusBar>
 #include <QCloseEvent>
@@ -18,6 +18,7 @@
 #include <QSystemTrayIcon>
 #include <QWindowStateChangeEvent>
 #include <QTimer>
+#include <QBitArray>
 
 #include "toolbox.h"
 #include "notebookexplorer.h"
@@ -48,8 +49,13 @@
 #include "searchinfoprovider.h"
 #include <vtextedit/spellchecker.h>
 #include <utils/docsutils.h>
+#include <utils/iconutils.h>
+#include <core/thememgr.h>
 
 using namespace vnotex;
+
+const char *MainWindow::c_propertyDockIndex = "DockIndex";
+const char *MainWindow::c_propertyDockTitle = "DockTitle";
 
 MainWindow::MainWindow(QWidget *p_parent)
     : QMainWindow(p_parent)
@@ -63,6 +69,15 @@ MainWindow::MainWindow(QWidget *p_parent)
     setupShortcuts();
 
     loadStateAndGeometry();
+
+    {
+        updateDockWidgetTabBar();
+
+        for (auto dock : m_docks) {
+            connect(dock, &QDockWidget::visibilityChanged,
+                    this, &MainWindow::updateDockWidgetTabBar);
+        }
+    }
 
     // The signal is particularly useful if your application has to do some last-second cleanup.
     // Note that no user interaction is possible in this state.
@@ -213,6 +228,38 @@ void MainWindow::setupDocks()
     setTabPosition(Qt::BottomDockWidgetArea, QTabWidget::North);
     setDockNestingEnabled(true);
 
+    // Init docks icon.
+    {
+        m_dockIcons.resize(DockIndex::MaxDock);
+
+        const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+        const auto fg = themeMgr.paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#fg");
+        const auto selectedFg = themeMgr.paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#selected#fg");
+
+        QVector<IconUtils::OverriddenColor> colors;
+        colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+        // FIXME: the Selected Mode is not used by the selected tab of a QTabBar.
+        colors.push_back(IconUtils::OverriddenColor(selectedFg, QIcon::Selected));
+
+        auto iconFile = themeMgr.getIconFile("navigation_dock.svg");
+        m_dockIcons[DockIndex::NavigationDock] = IconUtils::fetchIcon(iconFile, colors, 90);
+
+        iconFile = themeMgr.getIconFile("outline_dock.svg");
+        m_dockIcons[DockIndex::OutlineDock] = IconUtils::fetchIcon(iconFile, colors, 90);
+
+        iconFile = themeMgr.getIconFile("history_dock.svg");
+        m_dockIcons[DockIndex::HistoryDock] = IconUtils::fetchIcon(iconFile, colors, 90);
+
+        iconFile = themeMgr.getIconFile("search_dock.svg");
+        m_dockIcons[DockIndex::SearchDock] = IconUtils::fetchIcon(iconFile, colors, 90);
+
+        iconFile = themeMgr.getIconFile("snippet_dock.svg");
+        m_dockIcons[DockIndex::SnippetDock] = IconUtils::fetchIcon(iconFile, colors, 90);
+
+        iconFile = themeMgr.getIconFile("location_list_dock.svg");
+        m_dockIcons[DockIndex::LocationListDock] = IconUtils::fetchIcon(iconFile, colors, 90);
+    }
+
     // The order of m_docks should be identical with enum DockIndex.
     setupNavigationDock();
 
@@ -230,16 +277,6 @@ void MainWindow::setupDocks()
 
     // Following are non-tabfieid docks.
     setupLocationListDock();
-
-    for (auto dock : m_docks) {
-        connect(dock, &QDockWidget::visibilityChanged,
-                this, [this]() {
-                    updateTabBarStyle();
-                    emit layoutChanged();
-                });
-    }
-
-    activateDock(m_docks[DockIndex::NavigationDock]);
 }
 
 void MainWindow::activateDock(QDockWidget *p_dock)
@@ -264,8 +301,7 @@ void MainWindow::activateDock(QDockWidget *p_dock)
 
 void MainWindow::setupNavigationDock()
 {
-    auto dock = new QDockWidget(tr("Navigation"), this);
-    m_docks.push_back(dock);
+    auto dock = createDockWidget(DockIndex::NavigationDock, tr("Navigation"), this);
 
     dock->setObjectName(QStringLiteral("NavigationDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -278,8 +314,7 @@ void MainWindow::setupNavigationDock()
 
 void MainWindow::setupOutlineDock()
 {
-    auto dock = new QDockWidget(tr("Outline"), this);
-    m_docks.push_back(dock);
+    auto dock = createDockWidget(DockIndex::OutlineDock, tr("Outline"), this);
 
     dock->setObjectName(QStringLiteral("OutlineDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -292,8 +327,7 @@ void MainWindow::setupOutlineDock()
 
 void MainWindow::setupSearchDock()
 {
-    auto dock = new QDockWidget(tr("Search"), this);
-    m_docks.push_back(dock);
+    auto dock = createDockWidget(DockIndex::SearchDock, tr("Search"), this);
 
     dock->setObjectName(QStringLiteral("SearchDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -316,8 +350,7 @@ void MainWindow::setupSearchPanel()
 
 void MainWindow::setupSnippetDock()
 {
-    auto dock = new QDockWidget(tr("Snippets"), this);
-    m_docks.push_back(dock);
+    auto dock = createDockWidget(DockIndex::SnippetDock, tr("Snippets"), this);
 
     dock->setObjectName(QStringLiteral("SnippetDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -344,8 +377,7 @@ void MainWindow::setupSnippetPanel()
 
 void MainWindow::setupHistoryDock()
 {
-    auto dock = new QDockWidget(tr("History"), this);
-    m_docks.push_back(dock);
+    auto dock = createDockWidget(DockIndex::HistoryDock, tr("History"), this);
 
     dock->setObjectName(QStringLiteral("HistoryDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -364,8 +396,7 @@ void MainWindow::setupHistoryPanel()
 
 void MainWindow::setupLocationListDock()
 {
-    auto dock = new QDockWidget(tr("Location List"), this);
-    m_docks.push_back(dock);
+    auto dock = createDockWidget(DockIndex::LocationListDock, tr("Location List"), this);
 
     dock->setObjectName(QStringLiteral("LocationListDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -766,11 +797,47 @@ void MainWindow::quitApp()
     close();
 }
 
-void MainWindow::updateTabBarStyle()
+void MainWindow::updateDockWidgetTabBar()
 {
+    QBitArray tabifiedDocks(m_docks.size(), false);
     Q_FOREACH(QTabBar* tabBar, this->findChildren<QTabBar*>(QString(), Qt::FindDirectChildrenOnly)) {
         tabBar->setDrawBase(false);
+
+        const int sz = ConfigMgr::getInst().getCoreConfig().getDocksTabBarIconSize();
+        tabBar->setIconSize(QSize(sz, sz));
+
+        auto tabShape = tabBar->shape();
+        bool iconOnly = tabShape == QTabBar::RoundedWest || tabShape == QTabBar::RoundedEast
+                        || tabShape == QTabBar::TriangularWest || tabShape == QTabBar::TriangularEast;
+        const int cnt = tabBar->count();
+        if (cnt == 1) {
+            iconOnly = false;
+        }
+        for (int i = 0; i < cnt; ++i) {
+            auto dock = reinterpret_cast<QDockWidget *>(tabBar->tabData(i).toULongLong());
+            if (!dock) {
+                continue;
+            }
+            int dockIdx = dock->property(c_propertyDockIndex).toInt();
+            tabifiedDocks.setBit(dockIdx);
+            if (iconOnly) {
+                dock->setWindowTitle(QString());
+                tabBar->setTabIcon(i, m_dockIcons[dockIdx]);
+            } else if (dock->windowTitle().isEmpty()) {
+                dock->setWindowTitle(dock->property(c_propertyDockTitle).toString());
+                tabBar->setTabIcon(i, QIcon());
+            }
+        }
     }
+
+    // Non-tabified docks.
+    for (int i = 0; i < m_docks.size(); ++i) {
+        if (!tabifiedDocks[i] && m_docks[i]->windowTitle().isEmpty()) {
+            m_docks[i]->setWindowTitle(m_docks[i]->property(c_propertyDockTitle).toString());
+        }
+    }
+
+    emit layoutChanged();
 }
 
 void MainWindow::exportNotes()
@@ -859,4 +926,14 @@ void MainWindow::setupSpellCheck()
     const auto &configMgr = ConfigMgr::getInst();
     vte::SpellChecker::addDictionaryCustomSearchPaths(
         QStringList() << configMgr.getUserDictsFolder() << configMgr.getAppDictsFolder());
+}
+
+QDockWidget *MainWindow::createDockWidget(DockIndex p_dockIndex, const QString &p_title, QWidget *p_parent)
+{
+    auto dock = new QDockWidget(p_title, p_parent);
+    dock->setToolTip(p_title);
+    dock->setProperty(c_propertyDockIndex, p_dockIndex);
+    dock->setProperty(c_propertyDockTitle, p_title);
+    m_docks.push_back(dock);
+    return dock;
 }

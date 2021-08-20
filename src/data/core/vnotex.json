@@ -59,6 +59,7 @@
             "OpenLastClosedFile" : "Ctrl+Shift+T"
         },
         "toolbar_icon_size" : 16,
+        "docks_tabbar_icon_size" : 20,
         "note_management" : {
             "external_node" : {
                 "//comment" : "Wildcard patterns of files and folders to exclude as external files",

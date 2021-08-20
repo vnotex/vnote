@@ -59,7 +59,7 @@ void AppearancePage::setupUI()
         auto layout = new QVBoxLayout();
 
         for (int i = 0; i < docks.size(); ++i) {
-            m_keepDocksExpandingContentArea[i].first = WidgetsFactory::createCheckBox(docks[i]->windowTitle(), this);
+            m_keepDocksExpandingContentArea[i].first = WidgetsFactory::createCheckBox(docks[i]->property(MainWindow::c_propertyDockTitle).toString(), this);
             m_keepDocksExpandingContentArea[i].second = docks[i]->objectName();
             layout->addWidget(m_keepDocksExpandingContentArea[i].first);
             connect(m_keepDocksExpandingContentArea[i].first, &QCheckBox::stateChanged,

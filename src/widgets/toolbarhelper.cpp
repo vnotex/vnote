@@ -77,7 +77,7 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
 
         // Import notebook.
         btnMenu->addAction(generateIcon("import_notebook.svg"),
-                           MainWindow::tr("Import Notebook"),
+                           MainWindow::tr("Open Other Notebooks"),
                            btnMenu,
                            []() {
                                emit VNoteX::getInst().importNotebookRequested();
@@ -85,7 +85,7 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
 
         // Import notebook of VNote 2.
         btnMenu->addAction(generateIcon("import_notebook_of_vnote2.svg"),
-                           MainWindow::tr("Import Legacy Notebook Of VNote 2"),
+                           MainWindow::tr("Open Legacy Notebooks Of VNote 2"),
                            btnMenu,
                            []() {
                                emit VNoteX::getInst().importLegacyNotebookRequested();
@@ -174,7 +174,7 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
 
         newMenu->addSeparator();
 
-        auto exportAct = newMenu->addAction(MainWindow::tr("Export"),
+        auto exportAct = newMenu->addAction(MainWindow::tr("Export (Convert Format)"),
                                             newMenu,
                                             []() {
                                                 emit VNoteX::getInst().exportRequested();
@@ -337,9 +337,26 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
 
         {
             // Windows.
+            // MainWindow will clear the title of the dock widget for the tab bar, so we need to use
+            // another action to wrap the no-text action.
             auto subMenu = menu->addMenu(MainWindow::tr("Windows"));
             for (auto dock : p_win->getDocks()) {
-                subMenu->addAction(dock->toggleViewAction());
+                // @act is owned by the QDockWidget.
+                auto act = dock->toggleViewAction();
+                auto actWrapper = subMenu->addAction(act->text());
+                actWrapper->setCheckable(act->isCheckable());
+                actWrapper->setChecked(act->isChecked());
+                MainWindow::connect(act, &QAction::toggled,
+                                    actWrapper, [actWrapper](bool checked) {
+                                        if (actWrapper->isChecked() != checked) {
+                                            actWrapper->setChecked(checked);
+                                        }
+                                    });
+                MainWindow::connect(actWrapper, &QAction::triggered,
+                                    act, [p_win, act]() {
+                                        act->trigger();
+                                        p_win->updateDockWidgetTabBar();
+                                    });
             }
         }
 

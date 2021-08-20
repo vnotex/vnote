@@ -160,6 +160,9 @@
             },
             "danger" : {
                 "fg": "@base#danger#fg"
+            },
+            "selected" : {
+                "fg" : "@base#master#bg"
             }
         }
     },
@@ -622,6 +625,16 @@
             "highlight" : {
                 "fg" : "@base#master#fg",
                 "bg" : "@base#master#bg"
+            }
+        },
+        "mainwindow" : {
+            "dockwidget_tabbar" : {
+                "icon" : {
+                    "fg" : "@base#icon#fg",
+                    "selected" : {
+                        "fg" : "@base#icon#selected#fg"
+                    }
+                }
             }
         }
     }

@@ -37,7 +37,8 @@ namespace vnotex
         static void setDefaultIconForeground(const QString &p_fg, const QString &p_disabledFg);
 
         static QIcon fetchIcon(const QString &p_iconFile,
-                               const QVector<OverriddenColor> &p_overriddenColors);
+                               const QVector<OverriddenColor> &p_overriddenColors,
+                               qreal p_angle = -1);
 
         static QIcon fetchIcon(const QString &p_iconFile, const QString &p_overriddenForeground);
 

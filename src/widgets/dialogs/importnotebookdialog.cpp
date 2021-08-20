@@ -34,7 +34,7 @@ void ImportNotebookDialog::setupUI()
     setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     setButtonEnabled(QDialogButtonBox::Ok, false);
 
-    setWindowTitle(tr("Import Notebook"));
+    setWindowTitle(tr("Open Notebook"));
 }
 
 void ImportNotebookDialog::setupNotebookInfoWidget(QWidget *p_parent)
@@ -135,7 +135,7 @@ bool ImportNotebookDialog::createNotebookToImport(QString &p_msg)
 bool ImportNotebookDialog::importNotebook()
 {
     if (!m_notebookToImport) {
-        QString msg = tr("Failed to import notebook.");
+        QString msg = tr("Failed to open notebook.");
         qCritical() << msg;
         setInformationText(msg, ScrollDialog::InformationLevel::Error);
         return false;
@@ -145,7 +145,7 @@ bool ImportNotebookDialog::importNotebook()
         auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
         notebookMgr.importNotebook(m_notebookToImport);
     } catch (Exception &p_e) {
-        QString msg = tr("Failed to import notebook (%1).").arg(p_e.what());
+        QString msg = tr("Failed to open notebook (%1).").arg(p_e.what());
         qCritical() << msg;
         setInformationText(msg, ScrollDialog::InformationLevel::Error);
         return false;

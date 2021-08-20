@@ -19,7 +19,7 @@ using namespace vnotex;
 ImportLegacyNotebookDialog::ImportLegacyNotebookDialog(QWidget *p_parent)
     : NewNotebookDialog(p_parent)
 {
-    setWindowTitle(tr("Import Legacy Notebook"));
+    setWindowTitle(tr("Open Legacy Notebook"));
 
     m_infoWidget->setMode(NotebookInfoWidget::Mode::CreateFromLegacy);
     m_infoWidget->getRootFolderPathLineEdit()->setFocus();
@@ -34,8 +34,8 @@ void ImportLegacyNotebookDialog::acceptedButtonClicked()
 
     // Warn user about the transformation.
     int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
-                                                 tr("Once imported, the legacy notebook could no longer be recognized by legacy VNote!"),
-                                                 tr("This operation is irreversible. Please make sure the new VNote already meets all your needs before continue."),
+                                                 tr("Once opened, the legacy notebook could no longer be recognized by legacy VNote!"),
+                                                 QString(),
                                                  tr("Welcome to VNoteX and the new VNote!"),
                                                  this);
     if (ret == QMessageBox::Ok && importLegacyNotebook()) {
@@ -48,7 +48,7 @@ bool ImportLegacyNotebookDialog::validateRootFolderInput(QString &p_msg)
 {
     const auto rootFolderPath = m_infoWidget->getRootFolderPath();
     if (!QFileInfo::exists(rootFolderPath) || !PathUtils::isLegalPath(rootFolderPath)) {
-        Utils::appendMsg(p_msg, tr("Please specify a valid root folder to import."));
+        Utils::appendMsg(p_msg, tr("Please specify a valid root folder to open."));
         return false;
     }
 
@@ -76,14 +76,30 @@ bool ImportLegacyNotebookDialog::importLegacyNotebook()
     const auto rootFolderPath = m_infoWidget->getRootFolderPath();
 
     auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
-    auto imageFolder = LegacyNotebookUtils::getImageFolderOfNotebook(rootFolderPath);
-    if (imageFolder.isEmpty()) {
-        imageFolder = Notebook::c_defaultImageFolder;
+
+    QString imageFolder;
+    QString attachmentFolder;
+    QDateTime createdTimeUtc;
+
+    try {
+        imageFolder = LegacyNotebookUtils::getImageFolderOfNotebook(rootFolderPath);
+        if (imageFolder.isEmpty()) {
+            imageFolder = Notebook::c_defaultImageFolder;
+        }
+
+        attachmentFolder = LegacyNotebookUtils::getAttachmentFolderOfNotebook(rootFolderPath);
+        if (attachmentFolder.isEmpty()) {
+            attachmentFolder = Notebook::c_defaultAttachmentFolder;
+        }
+
+        createdTimeUtc = LegacyNotebookUtils::getCreatedTimeUtcOfFolder(rootFolderPath);
+    } catch (Exception &p_e) {
+        QString msg = tr("Failed to read legacy notebook configuration in (%1) (%2).").arg(rootFolderPath, p_e.what());
+        qCritical() << msg;
+        setInformationText(msg, ScrollDialog::InformationLevel::Error);
+        return false;
     }
-    auto attachmentFolder = LegacyNotebookUtils::getAttachmentFolderOfNotebook(rootFolderPath);
-    if (attachmentFolder.isEmpty()) {
-        attachmentFolder = Notebook::c_defaultAttachmentFolder;
-    }
+
     auto paras = NotebookParameters::createNotebookParameters(notebookMgr,
                                                               m_infoWidget->getType(),
                                                               m_infoWidget->getName(),
@@ -92,7 +108,7 @@ bool ImportLegacyNotebookDialog::importLegacyNotebook()
                                                               m_infoWidget->getIcon(),
                                                               imageFolder,
                                                               attachmentFolder,
-                                                              LegacyNotebookUtils::getCreatedTimeUtcOfFolder(rootFolderPath),
+                                                              createdTimeUtc,
                                                               m_infoWidget->getBackend(),
                                                               m_infoWidget->getVersionController(),
                                                               m_infoWidget->getConfigMgr());
@@ -101,7 +117,7 @@ bool ImportLegacyNotebookDialog::importLegacyNotebook()
     try {
         nb = notebookMgr.newNotebook(paras);
     } catch (Exception &p_e) {
-        QString msg = tr("Failed to create notebook in %1 (%2).").arg(rootFolderPath, p_e.what());
+        QString msg = tr("Failed to create notebook in (%1) (%2).").arg(rootFolderPath, p_e.what());
         qCritical() << msg;
         setInformationText(msg, ScrollDialog::InformationLevel::Error);
         return false;
@@ -123,7 +139,12 @@ bool ImportLegacyNotebookDialog::importLegacyNotebook()
     }
 
     auto rootNode = nb->getRootNode();
-    ImportFolderUtils::importFolderContentsByLegacyConfig(nb.data(), rootNode.data(), errMsg);
+
+    try {
+        ImportFolderUtils::importFolderContentsByLegacyConfig(nb.data(), rootNode.data(), errMsg);
+    } catch (Exception &p_e) {
+        errMsg = tr("Failed to import folder contents by legacy config in (%1) (%2).").arg(rootFolderPath, p_e.what());
+    }
 
     emit nb->nodeUpdated(rootNode.data());
 

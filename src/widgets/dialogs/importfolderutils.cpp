@@ -48,7 +48,13 @@ void ImportFolderUtils::importFolderContentsByLegacyConfig(Notebook *p_notebook,
 {
     auto rootDir = p_node->toDir();
 
-    const auto config = LegacyNotebookUtils::getFolderConfig(rootDir.absolutePath());
+    QJsonObject config;
+    try {
+        config = LegacyNotebookUtils::getFolderConfig(rootDir.absolutePath());
+    } catch (Exception &p_e) {
+        Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to read folder config (%1).").arg(rootDir.absolutePath()));
+        return;
+    }
 
     // Remove the config file.
     LegacyNotebookUtils::removeFolderConfigFile(rootDir.absolutePath());

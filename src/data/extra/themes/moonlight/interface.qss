@@ -511,6 +511,22 @@ QTabBar::tab:left {
     min-width: 20px;
 }
 
+/* Tabified QDockWidget */
+QMainWindow > QTabBar::tab:right {
+    border-right: 3px solid transparent;
+    border-bottom: none;
+    margin: 0px;
+    padding: -10px 2px 5px 2px;
+}
+
+/* Tabified QDockWidget */
+QMainWindow > QTabBar::tab:left {
+    border-left: 3px solid transparent;
+    border-bottom: none;
+    margin: 0px;
+    padding: -10px 2px 5px 2px;
+}
+
 QTabBar::tab:hover {
     color: @widgets#qtabbar#tab#hover#fg;
     background-color: @widgets#qtabbar#tab#hover#bg;

@@ -66,6 +66,12 @@ namespace vnotex
 
         void toggleLocationListVisible();
 
+        void updateDockWidgetTabBar();
+
+        static const char *c_propertyDockIndex;
+
+        static const char *c_propertyDockTitle;
+
     signals:
         void mainWindowStarted();
 
@@ -85,8 +91,6 @@ namespace vnotex
     private slots:
         void closeOnQuit();
 
-        void updateTabBarStyle();
-
         void exportNotes();
 
         void showTips(const QString &p_message, int p_timeoutMilliseconds);
@@ -100,7 +104,8 @@ namespace vnotex
             HistoryDock,
             SearchDock,
             SnippetDock,
-            LocationListDock
+            LocationListDock,
+            MaxDock
         };
 
         void setupUI();
@@ -162,6 +167,8 @@ namespace vnotex
 
         void setupSpellCheck();
 
+        QDockWidget *createDockWidget(DockIndex p_dockIndex, const QString &p_title, QWidget *p_parent);
+
         ToolBarHelper m_toolBarHelper;
 
         StatusBarHelper m_statusBarHelper;
@@ -185,6 +192,8 @@ namespace vnotex
         HistoryPanel *m_historyPanel = nullptr;
 
         QVector<QDockWidget *> m_docks;
+
+        QVector<QIcon> m_dockIcons;
 
         bool m_layoutReset = false;
 
