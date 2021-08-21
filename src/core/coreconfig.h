@@ -21,6 +21,8 @@ namespace vnotex
             Settings,
             NewNote,
             CloseTab,
+            CloseOtherTabs,
+            CloseTabsToTheRight,
             NavigationDock,
             OutlineDock,
             SearchDock,

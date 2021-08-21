@@ -534,38 +534,50 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
 {
     Q_ASSERT(p_tabIdx > -1);
 
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+
     // Close Tab.
-    auto closeTabAct = p_menu->addAction(tr("Close Tab"),
-                                         [this, p_tabIdx]() {
-                                             closeTab(p_tabIdx);
-                                         });
-    WidgetUtils::addActionShortcutText(closeTabAct,
-                                       ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::CloseTab));
+    {
+        auto closeTabAct = p_menu->addAction(tr("Close Tab"),
+                                             [this, p_tabIdx]() {
+                                                 closeTab(p_tabIdx);
+                                             });
+        WidgetUtils::addActionShortcutText(closeTabAct,
+                                           coreConfig.getShortcut(CoreConfig::Shortcut::CloseTab));
+    }
 
     // Close Other Tabs.
-    p_menu->addAction(tr("Close Other Tabs"),
-                      [this, p_tabIdx]() {
-                          QVector<ViewWindow *> windowsNeedToClose;
-                          int cnt = getViewWindowCount();
-                          for (int i = 0; i < cnt; ++i) {
-                              if (i != p_tabIdx) {
-                                  windowsNeedToClose.push_back(getViewWindow(i));
-                              }
-                          }
+    {
+        auto closeTabAct = p_menu->addAction(tr("Close Other Tabs"),
+                                             [this, p_tabIdx]() {
+                                                 QVector<ViewWindow *> windowsNeedToClose;
+                                                 int cnt = getViewWindowCount();
+                                                 for (int i = 0; i < cnt; ++i) {
+                                                     if (i != p_tabIdx) {
+                                                         windowsNeedToClose.push_back(getViewWindow(i));
+                                                     }
+                                                 }
 
-                          for (auto win : windowsNeedToClose) {
-                              emit viewWindowCloseRequested(win);
-                          }
-                      });
+                                                 for (auto win : windowsNeedToClose) {
+                                                     emit viewWindowCloseRequested(win);
+                                                 }
+                                             });
+        WidgetUtils::addActionShortcutText(closeTabAct,
+                                           coreConfig.getShortcut(CoreConfig::Shortcut::CloseOtherTabs));
+    }
 
     // Close Tabs To The Right.
-    p_menu->addAction(tr("Close Tabs To The Right"),
-                      [this, p_tabIdx]() {
-                          int cnt = getViewWindowCount();
-                          for (int i = cnt - 1; i > p_tabIdx; --i) {
-                              closeTab(i);
-                          }
-                      });
+    {
+        auto closeTabAct = p_menu->addAction(tr("Close Tabs To The Right"),
+                                             [this, p_tabIdx]() {
+                                                 int cnt = getViewWindowCount();
+                                                 for (int i = cnt - 1; i > p_tabIdx; --i) {
+                                                     closeTab(i);
+                                                 }
+                                             });
+        WidgetUtils::addActionShortcutText(closeTabAct,
+                                           coreConfig.getShortcut(CoreConfig::Shortcut::CloseTabsToTheRight));
+    }
 
     p_menu->addSeparator();
 
@@ -621,7 +633,7 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
                                                    }
                                                });
         WidgetUtils::addActionShortcutText(locateNodeAct,
-                                           ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::LocateNode));
+                                           coreConfig.getShortcut(CoreConfig::Shortcut::LocateNode));
     }
 
     // Pin To Quick Access.
@@ -645,7 +657,7 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
                     }
                 });
         WidgetUtils::addActionShortcutText(splitAct,
-                                           ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::MoveOneSplitLeft));
+                                           coreConfig.getShortcut(CoreConfig::Shortcut::MoveOneSplitLeft));
     }
 
     {
@@ -657,7 +669,7 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
                     }
                 });
         WidgetUtils::addActionShortcutText(splitAct,
-                                           ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::MoveOneSplitRight));
+                                           coreConfig.getShortcut(CoreConfig::Shortcut::MoveOneSplitRight));
     }
 
     {
@@ -669,7 +681,7 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
                     }
                 });
         WidgetUtils::addActionShortcutText(splitAct,
-                                           ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::MoveOneSplitUp));
+                                           coreConfig.getShortcut(CoreConfig::Shortcut::MoveOneSplitUp));
     }
 
     {
@@ -681,7 +693,7 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
                     }
                 });
         WidgetUtils::addActionShortcutText(splitAct,
-                                           ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::MoveOneSplitDown));
+                                           coreConfig.getShortcut(CoreConfig::Shortcut::MoveOneSplitDown));
     }
 }
 
