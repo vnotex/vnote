@@ -25,6 +25,7 @@
 #include "propertydefs.h"
 #include "dialogs/settings/settingsdialog.h"
 #include "messageboxhelper.h"
+#include "dialogs/updater.h"
 
 using namespace vnotex;
 
@@ -511,13 +512,20 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                             WidgetUtils::openUrlByDesktop(QUrl("https://vnotex.github.io/vnote"));
                         });
 
-        menu->addAction(MainWindow::tr("Feedback And Discussions"),
+        menu->addAction(MainWindow::tr("Feedback and Discussions"),
                         menu,
                         []() {
                             WidgetUtils::openUrlByDesktop(QUrl("https://github.com/vnotex/vnote/discussions"));
                         });
 
         menu->addSeparator();
+
+        menu->addAction(MainWindow::tr("Check for Updates"),
+                        menu,
+                        [p_win]() {
+                            Updater updater(p_win);
+                            updater.exec();
+                        });
 
         menu->addAction(MainWindow::tr("About"),
                         menu,

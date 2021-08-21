@@ -33,6 +33,7 @@ SOURCES += \
     $$PWD/dialogs/snippetpropertiesdialog.cpp \
     $$PWD/dialogs/sortdialog.cpp \
     $$PWD/dialogs/tableinsertdialog.cpp \
+    $$PWD/dialogs/updater.cpp \
     $$PWD/dragdropareaindicator.cpp \
     $$PWD/editors/editormarkdownvieweradapter.cpp \
     $$PWD/editors/graphhelper.cpp \
@@ -147,6 +148,7 @@ HEADERS += \
     $$PWD/dialogs/snippetpropertiesdialog.h \
     $$PWD/dialogs/sortdialog.h \
     $$PWD/dialogs/tableinsertdialog.h \
+    $$PWD/dialogs/updater.h \
     $$PWD/dragdropareaindicator.h \
     $$PWD/editors/editormarkdownvieweradapter.h \
     $$PWD/editors/graphhelper.h \

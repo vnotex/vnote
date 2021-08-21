@@ -57,6 +57,8 @@ void CoreConfig::init(const QJsonObject &p_app,
 
     m_recoverLastSessionOnStartEnabled = READBOOL(QStringLiteral("recover_last_session_on_start"));
 
+    m_checkForUpdatesOnStartEnabled = READBOOL(QStringLiteral("check_for_updates_on_start"));
+
     m_historyMaxCount = READINT(QStringLiteral("history_max_count"));
     if (m_historyMaxCount < 0) {
         m_historyMaxCount = 100;
@@ -72,6 +74,7 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("toolbar_icon_size")] = m_toolBarIconSize;
     obj[QStringLiteral("docks_tabbar_icon_size")] = m_docksTabBarIconSize;
     obj[QStringLiteral("recover_last_session_on_start")] = m_recoverLastSessionOnStartEnabled;
+    obj[QStringLiteral("check_for_updates_on_start")] = m_checkForUpdatesOnStartEnabled;
     obj[QStringLiteral("history_max_count")] = m_historyMaxCount;
     return obj;
 }
@@ -184,6 +187,16 @@ bool CoreConfig::isRecoverLastSessionOnStartEnabled() const
 void CoreConfig::setRecoverLastSessionOnStartEnabled(bool p_enabled)
 {
     updateConfig(m_recoverLastSessionOnStartEnabled, p_enabled, this);
+}
+
+bool CoreConfig::isCheckForUpdatesOnStartEnabled() const
+{
+    return m_checkForUpdatesOnStartEnabled;
+}
+
+void CoreConfig::setCheckForUpdatesOnStartEnabled(bool p_enabled)
+{
+    updateConfig(m_checkForUpdatesOnStartEnabled, p_enabled, this);
 }
 
 int CoreConfig::getHistoryMaxCount() const

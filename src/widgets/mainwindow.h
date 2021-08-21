@@ -169,6 +169,8 @@ namespace vnotex
 
         QDockWidget *createDockWidget(DockIndex p_dockIndex, const QString &p_title, QWidget *p_parent);
 
+        void checkForUpdates();
+
         ToolBarHelper m_toolBarHelper;
 
         StatusBarHelper m_statusBarHelper;

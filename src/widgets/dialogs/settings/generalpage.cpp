@@ -79,6 +79,16 @@ void GeneralPage::setupUI()
         connect(m_recoverLastSessionCheckBox, &QCheckBox::stateChanged,
                 this, &GeneralPage::pageIsChanged);
     }
+
+    {
+        const QString label(tr("Check for updates on start"));
+        m_checkForUpdatesCheckBox = WidgetsFactory::createCheckBox(label, this);
+        m_checkForUpdatesCheckBox->setToolTip(tr("Check for updates on start of VNote"));
+        mainLayout->addRow(m_checkForUpdatesCheckBox);
+        addSearchItem(label, m_checkForUpdatesCheckBox->toolTip(), m_checkForUpdatesCheckBox);
+        connect(m_checkForUpdatesCheckBox, &QCheckBox::stateChanged,
+                this, &GeneralPage::pageIsChanged);
+    }
 }
 
 void GeneralPage::loadInternal()
@@ -104,6 +114,8 @@ void GeneralPage::loadInternal()
     }
 
     m_recoverLastSessionCheckBox->setChecked(coreConfig.isRecoverLastSessionOnStartEnabled());
+
+    m_checkForUpdatesCheckBox->setChecked(coreConfig.isCheckForUpdatesOnStartEnabled());
 }
 
 bool GeneralPage::saveInternal()
@@ -127,6 +139,8 @@ bool GeneralPage::saveInternal()
     }
 
     coreConfig.setRecoverLastSessionOnStartEnabled(m_recoverLastSessionCheckBox->isChecked());
+
+    coreConfig.setCheckForUpdatesOnStartEnabled(m_checkForUpdatesCheckBox->isChecked());
 
     return true;
 }

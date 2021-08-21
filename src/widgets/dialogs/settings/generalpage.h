@@ -31,6 +31,8 @@ namespace vnotex
         QCheckBox *m_systemTrayCheckBox = nullptr;
 
         QCheckBox *m_recoverLastSessionCheckBox = nullptr;
+
+        QCheckBox *m_checkForUpdatesCheckBox = nullptr;
     };
 }
 

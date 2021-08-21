@@ -51,6 +51,7 @@
 #include <utils/docsutils.h>
 #include <utils/iconutils.h>
 #include <core/thememgr.h>
+#include "dialogs/updater.h"
 
 using namespace vnotex;
 
@@ -121,6 +122,10 @@ void MainWindow::kickOffOnStart(const QStringList &p_paths)
                 paras->m_readOnly = true;
                 emit VNoteX::getInst().openFileRequested(file, paras);
             }
+        }
+
+        if (ConfigMgr::getInst().getCoreConfig().isCheckForUpdatesOnStartEnabled()) {
+            QTimer::singleShot(5 * 60 * 1000, this, &MainWindow::checkForUpdates);
         }
     });
 }
@@ -936,4 +941,15 @@ QDockWidget *MainWindow::createDockWidget(DockIndex p_dockIndex, const QString &
     dock->setProperty(c_propertyDockTitle, p_title);
     m_docks.push_back(dock);
     return dock;
+}
+
+void MainWindow::checkForUpdates()
+{
+    Updater::checkForUpdates(this, [this](bool p_hasUpdate, const QString &p_version, const QString &p_errMsg) {
+                if (p_version.isEmpty()) {
+                    statusBar()->showMessage(tr("Failed to check for updates (%1)").arg(p_errMsg), 3000);
+                } else if (p_hasUpdate) {
+                    statusBar()->showMessage(tr("Updates available: %1").arg(p_version));
+                }
+            });
 }

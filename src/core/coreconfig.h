@@ -97,6 +97,9 @@ namespace vnotex
         bool isRecoverLastSessionOnStartEnabled() const;
         void setRecoverLastSessionOnStartEnabled(bool p_enabled);
 
+        bool isCheckForUpdatesOnStartEnabled() const;
+        void setCheckForUpdatesOnStartEnabled(bool p_enabled);
+
         int getHistoryMaxCount() const;
 
     private:
@@ -127,6 +130,8 @@ namespace vnotex
 
         // Whether recover last session on start.
         bool m_recoverLastSessionOnStartEnabled = true;
+
+        bool m_checkForUpdatesOnStartEnabled = true;
 
         // Max count of the history items for each notebook and session config.
         int m_historyMaxCount = 100;
