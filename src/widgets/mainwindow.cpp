@@ -857,12 +857,17 @@ void MainWindow::exportNotes()
     if (noteNode && !noteNode->hasContent()) {
         noteNode = nullptr;
     }
-    ExportDialog dialog(currentNotebook,
-                        folderNode,
-                        noteNode,
-                        viewWindow ? viewWindow->getBuffer() : nullptr,
-                        this);
-    dialog.exec();
+    auto dialog = new ExportDialog(currentNotebook,
+                                   folderNode,
+                                   noteNode,
+                                   viewWindow ? viewWindow->getBuffer() : nullptr,
+                                   nullptr);
+    connect(dialog, &QDialog::finished,
+            this, [this, dialog]() {
+                dialog->deleteLater();
+            });
+    // Let it be able to run at background.
+    dialog->show();
 }
 
 void MainWindow::showTips(const QString &p_message, int p_timeoutMilliseconds)

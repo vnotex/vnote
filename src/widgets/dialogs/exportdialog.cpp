@@ -53,6 +53,8 @@ ExportDialog::ExportDialog(Notebook *p_notebook,
 
     restoreFields(m_option);
 
+    setWindowFlags(windowFlags() | Qt::WindowMinimizeButtonHint);
+
     connect(this, &QDialog::finished,
             this, [this]() {
                 saveFields(m_option);
