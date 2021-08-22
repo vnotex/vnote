@@ -107,6 +107,9 @@ namespace vnotex
         const ExportOption &getExportOption() const;
         void setExportOption(const ExportOption &p_option);
 
+        const QVector<ExportCustomOption> &getCustomExportOptions() const;
+        void setCustomExportOptions(const QVector<ExportCustomOption> &p_options);
+
         const SearchOption &getSearchOption() const;
         void setSearchOption(const SearchOption &p_option);
 
@@ -151,6 +154,10 @@ namespace vnotex
 
         QJsonArray saveHistory() const;
 
+        void loadExportOption(const QJsonObject &p_session);
+
+        QJsonObject saveExportOption() const;
+
         QString m_newNotebookDefaultRootFolderPath;
 
         // Use root folder to identify a notebook uniquely.
@@ -172,6 +179,8 @@ namespace vnotex
         int m_minimizeToSystemTray = -1;
 
         ExportOption m_exportOption;
+
+        QVector<ExportCustomOption> m_customExportOptions;
 
         SearchOption m_searchOption;
 

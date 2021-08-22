@@ -76,7 +76,7 @@ void SessionConfig::init()
 
     loadStateAndGeometry(sessionJobj);
 
-    m_exportOption.fromJson(sessionJobj[QStringLiteral("export_option")].toObject());
+    loadExportOption(sessionJobj);
 
     m_searchOption.fromJson(sessionJobj[QStringLiteral("search_option")].toObject());
 
@@ -206,7 +206,7 @@ QJsonObject SessionConfig::toJson() const
     obj[QStringLiteral("core")] = saveCore();
     obj[QStringLiteral("notebooks")] = saveNotebooks();
     obj[QStringLiteral("state_geometry")] = saveStateAndGeometry();
-    obj[QStringLiteral("export_option")] = m_exportOption.toJson();
+    obj[QStringLiteral("export")] = saveExportOption();
     obj[QStringLiteral("search_option")] = m_searchOption.toJson();
     writeByteArray(obj, QStringLiteral("viewarea_session"), m_viewAreaSession);
     writeByteArray(obj, QStringLiteral("notebook_explorer_session"), m_notebookExplorerSession);
@@ -323,6 +323,16 @@ const ExportOption &SessionConfig::getExportOption() const
 void SessionConfig::setExportOption(const ExportOption &p_option)
 {
     updateConfig(m_exportOption, p_option, this);
+}
+
+const QVector<ExportCustomOption> &SessionConfig::getCustomExportOptions() const
+{
+    return m_customExportOptions;
+}
+
+void SessionConfig::setCustomExportOptions(const QVector<ExportCustomOption> &p_options)
+{
+    updateConfig(m_customExportOptions, p_options, this);
 }
 
 const SearchOption &SessionConfig::getSearchOption() const
@@ -443,4 +453,32 @@ QJsonArray SessionConfig::saveHistory() const
         arr.append(item.toJson());
     }
     return arr;
+}
+
+void SessionConfig::loadExportOption(const QJsonObject &p_session)
+{
+    auto exportObj = p_session[QStringLiteral("export")].toObject();
+
+    m_exportOption.fromJson(exportObj[QStringLiteral("export_option")].toObject());
+
+    auto customArr = exportObj[QStringLiteral("custom_options")].toArray();
+    m_customExportOptions.resize(customArr.size());
+    for (int i = 0; i < customArr.size(); ++i) {
+        m_customExportOptions[i].fromJson(customArr[i].toObject());
+    }
+}
+
+QJsonObject SessionConfig::saveExportOption() const
+{
+    QJsonObject obj;
+
+    obj[QStringLiteral("export_option")] = m_exportOption.toJson();
+
+    QJsonArray customArr;
+    for (int i = 0; i < m_customExportOptions.size(); ++i) {
+        customArr.push_back(m_customExportOptions[i].toJson());
+    }
+    obj[QStringLiteral("custom_options")] = customArr;
+
+    return obj;
 }

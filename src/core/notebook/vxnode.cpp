@@ -48,6 +48,7 @@ QString VXNode::fetchAbsolutePath() const
 
 QSharedPointer<File> VXNode::getContentFile()
 {
+    Q_ASSERT(hasContent());
     // We should not keep the shared ptr of VXNodeFile, or there is a cyclic ref.
     return QSharedPointer<VXNodeFile>::create(sharedFromThis().dynamicCast<VXNode>());
 }

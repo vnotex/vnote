@@ -128,16 +128,31 @@ ProcessUtils::State ProcessUtils::start(const QString &p_program,
 {
     QProcess proc;
     proc.start(p_program, p_args);
+    return handleProcess(&proc, p_logger, p_askedToStop);
+}
 
-    if (!proc.waitForStarted()) {
+ProcessUtils::State ProcessUtils::start(const QString &p_command,
+                                        const std::function<void(const QString &)> &p_logger,
+                                        const bool &p_askedToStop)
+{
+    QProcess proc;
+    proc.start(p_command);
+    return handleProcess(&proc, p_logger, p_askedToStop);
+}
+
+ProcessUtils::State ProcessUtils::handleProcess(QProcess *p_process,
+                                                const std::function<void(const QString &)> &p_logger,
+                                                const bool &p_askedToStop)
+{
+    if (!p_process->waitForStarted()) {
         return State::FailedToStart;
     }
 
-    while (proc.state() != QProcess::NotRunning) {
+    while (p_process->state() != QProcess::NotRunning) {
         Utils::sleepWait(100);
 
-        auto outBa = proc.readAllStandardOutput();
-        auto errBa = proc.readAllStandardError();
+        auto outBa = p_process->readAllStandardOutput();
+        auto errBa = p_process->readAllStandardError();
         QString msg;
         if (!outBa.isEmpty()) {
             msg += QString::fromLocal8Bit(outBa);
@@ -154,7 +169,7 @@ ProcessUtils::State ProcessUtils::start(const QString &p_program,
         }
     }
 
-    return proc.exitStatus() == QProcess::NormalExit ? State::Succeeded : State::Crashed;
+    return p_process->exitStatus() == QProcess::NormalExit ? State::Succeeded : State::Crashed;
 }
 
 void ProcessUtils::startDetached(const QString &p_command)

@@ -18,6 +18,7 @@
 #include <QPrinter>
 #include <QPageSetupDialog>
 #include <QPageLayout>
+#include <QInputDialog>
 
 #include <notebook/notebook.h>
 #include <notebook/node.h>
@@ -33,6 +34,7 @@
 #include <utils/clipboardutils.h>
 #include <export/exporter.h>
 #include <widgets/locationinputwithbrowsebutton.h>
+#include <widgets/messageboxhelper.h>
 
 using namespace vnotex;
 
@@ -152,6 +154,10 @@ QGroupBox *ExportDialog::setupTargetGroup(QWidget *p_parent)
 
                     case static_cast<int>(ExportFormat::PDF):
                         settings = AdvancedSettings::PDF;
+                        break;
+
+                    case static_cast<int>(ExportFormat::Custom):
+                        settings = AdvancedSettings::Custom;
                         break;
 
                     default:
@@ -283,7 +289,9 @@ QString ExportDialog::getOutputDir() const
 void ExportDialog::initOptions()
 {
     // Read it from config.
-    m_option = ConfigMgr::getInst().getSessionConfig().getExportOption();
+    const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+    m_option = sessionConfig.getExportOption();
+    m_customOptions = sessionConfig.getCustomExportOptions();
 
     const auto &theme = VNoteX::getInst().getThemeMgr().getCurrentTheme();
     m_option.m_renderingStyleFile = theme.getFile(Theme::File::WebStyleSheet);
@@ -291,6 +299,10 @@ void ExportDialog::initOptions()
 
     if (m_option.m_outputDir.isEmpty()) {
         m_option.m_outputDir = getDefaultOutputDir();
+    }
+
+    if (findCustomOption(m_option.m_customExport) == -1) {
+        m_option.m_customExport = m_customOptions.isEmpty() ? QString() : m_customOptions[0].m_name;
     }
 }
 
@@ -350,6 +362,10 @@ void ExportDialog::saveFields(ExportOption &p_option)
 
     if (m_advancedSettings[AdvancedSettings::PDF]) {
         saveFields(p_option.m_pdfOption);
+    }
+
+    if (m_advancedSettings[AdvancedSettings::Custom]) {
+        saveCustomFields(p_option);
     }
 }
 
@@ -417,6 +433,17 @@ int ExportDialog::doExport(ExportOption p_option)
             appendLog(tr("Please specify a valid wkhtmltopdf executable file (%1)").arg(wkExePath));
             return 0;
         }
+
+        p_option.m_transformSvgToPngEnabled = true;
+        p_option.m_removeCodeToolBarEnabled = true;
+    } else if (p_option.m_targetFormat == ExportFormat::Custom) {
+        int optIdx = findCustomOption(p_option.m_customExport);
+        if (optIdx == -1) {
+            appendLog(tr("Please specify a valid scheme"));
+            return 0;
+        }
+
+        p_option.m_customOption = &m_customOptions[optIdx];
     }
 
     int exportedFilesCount = 0;
@@ -562,6 +589,10 @@ void ExportDialog::showAdvancedSettings(AdvancedSettings p_settings)
         widget = getPdfAdvancedSettings();
         break;
 
+    case AdvancedSettings::Custom:
+        widget = getCustomAdvancedSettings();
+        break;
+
     default:
         break;
     }
@@ -640,7 +671,7 @@ QWidget *ExportDialog::getPdfAdvancedSettings()
         }
 
         {
-            m_allInOneCheckBox = WidgetsFactory::createCheckBox(tr("All In One"), widget);
+            m_allInOneCheckBox = WidgetsFactory::createCheckBox(tr("All-In-One"), widget);
             m_allInOneCheckBox->setToolTip(tr("Export all source files into one file"));
             connect(m_useWkhtmltopdfCheckBox, &QCheckBox::stateChanged,
                     this, [this](int p_state) {
@@ -686,6 +717,103 @@ QWidget *ExportDialog::getPdfAdvancedSettings()
     return m_advancedSettings[AdvancedSettings::PDF];
 }
 
+QWidget *ExportDialog::getCustomAdvancedSettings()
+{
+    if (!m_advancedSettings[AdvancedSettings::Custom]) {
+        QWidget *widget = new QWidget(m_advancedGroupBox);
+        auto layout = WidgetsFactory::createFormLayout(widget);
+        layout->setContentsMargins(0, 0, 0, 0);
+
+        {
+            auto schemeLayout = new QHBoxLayout();
+            layout->addRow(tr("Scheme:"), schemeLayout);
+
+            m_customExportComboBox = WidgetsFactory::createComboBox(widget);
+            m_customExportComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+            schemeLayout->addWidget(m_customExportComboBox, 1);
+
+            auto addBtn = new QPushButton(tr("New"), widget);
+            addBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+            connect(addBtn, &QPushButton::clicked,
+                    this, &ExportDialog::addCustomExportScheme);
+            schemeLayout->addWidget(addBtn);
+
+            auto delBtn = new QPushButton(tr("Delete"), widget);
+            delBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+            connect(delBtn, &QPushButton::clicked,
+                    this, &ExportDialog::removeCustomExportScheme);
+            schemeLayout->addWidget(delBtn);
+        }
+
+        {
+            m_targetSuffixLineEdit = WidgetsFactory::createLineEdit(widget);
+            m_targetSuffixLineEdit->setToolTip(tr("Suffix of the target file like docs/pdf/epub"));
+            m_targetSuffixLineEdit->setEnabled(false);
+            layout->addRow(tr("Target file suffix:"), m_targetSuffixLineEdit);
+        }
+
+        {
+            m_resourcePathSeparatorLineEdit = WidgetsFactory::createLineEdit(widget);
+            m_resourcePathSeparatorLineEdit->setToolTip(tr("Separator used to concatenate resource folder paths"));
+            m_resourcePathSeparatorLineEdit->setEnabled(false);
+            layout->addRow(tr("Resource path separator:"), m_resourcePathSeparatorLineEdit);
+        }
+
+        {
+            m_useHtmlInputCheckBox = WidgetsFactory::createCheckBox(tr("Use HTML format as input"), widget);
+            m_useHtmlInputCheckBox->setToolTip(tr("Convert to HTMl format first as the input of the custom export command"));
+            m_useHtmlInputCheckBox->setEnabled(false);
+            layout->addRow(m_useHtmlInputCheckBox);
+        }
+
+        {
+            m_allInOneCheckBox = WidgetsFactory::createCheckBox(tr("All-In-One"), widget);
+            m_allInOneCheckBox->setToolTip(tr("Export all source files into one file"));
+            m_allInOneCheckBox->setEnabled(false);
+            layout->addRow(m_allInOneCheckBox);
+        }
+
+        {
+            m_targetPageScrollableCheckBox = WidgetsFactory::createCheckBox(tr("Target page scrollable"), widget);
+            m_targetPageScrollableCheckBox->setToolTip(tr("Whether the page of the target file is scrollable"));
+            m_targetPageScrollableCheckBox->setEnabled(false);
+            layout->addRow(m_targetPageScrollableCheckBox);
+        }
+
+        {
+            auto usage = tr("%1: List of input files.\n"
+                            "%2: List of paths to search for images and other resources.\n"
+                            "%3: Path of rendering CSS style sheet.\n"
+                            "%4: Path of syntax highlighting CSS style sheet.\n"
+                            "%5: Path of output file.\n");
+            layout->addRow(tr("Command usage:"), new QLabel(usage, widget));
+        }
+
+        {
+            m_commandTextEdit = WidgetsFactory::createPlainTextEdit(widget);
+#if defined(Q_OS_WIN)
+            m_commandTextEdit->setPlaceholderText("pandoc.exe --resource-path=.;%2 --css=%3 --css=%4 -s -o %5 %1");
+#else
+            m_commandTextEdit->setPlaceholderText("pandoc --resource-path=.:%2 --css=%3 --css=%4 -s -o %5 %1");
+#endif
+            m_commandTextEdit->setMaximumHeight(m_commandTextEdit->minimumSizeHint().height());
+            m_commandTextEdit->setEnabled(false);
+            layout->addRow(tr("Command:"), m_commandTextEdit);
+        }
+
+        connect(m_customExportComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &ExportDialog::customExportCurrentSchemeChanged);
+
+        m_advancedGroupBox->layout()->addWidget(widget);
+
+        m_advancedSettings[AdvancedSettings::Custom] = widget;
+
+        restoreCustomFields(m_option);
+    }
+
+    return m_advancedSettings[AdvancedSettings::Custom];
+}
+
 void ExportDialog::restoreFields(const ExportPdfOption &p_option)
 {
     m_pageLayout = p_option.m_layout;
@@ -708,10 +836,150 @@ void ExportDialog::saveFields(ExportPdfOption &p_option)
     p_option.m_wkhtmltopdfArgs = m_wkhtmltopdfArgsLineEdit->text();
 }
 
+void ExportDialog::restoreCustomFields(const ExportOption &p_option)
+{
+    m_customExportComboBox->clear();
+    int curIndex = -1;
+    for (int i = 0; i < m_customOptions.size(); ++i) {
+        m_customExportComboBox->addItem(m_customOptions[i].m_name, m_customOptions[i].m_name);
+        if (m_customOptions[i].m_name == p_option.m_customExport) {
+            curIndex = i;
+        }
+    }
+    m_customExportComboBox->setCurrentIndex(curIndex);
+}
+
+void ExportDialog::saveCustomFields(ExportOption &p_option)
+{
+    p_option.m_customExport = m_customExportComboBox->currentData().toString();
+
+    int idx = findCustomOption(p_option.m_customExport);
+    if (idx > -1) {
+        auto &opt = m_customOptions[idx];
+        opt.m_targetSuffix = m_targetSuffixLineEdit->text();
+        opt.m_resourcePathSeparator = m_resourcePathSeparatorLineEdit->text();
+        opt.m_useHtmlInput = m_useHtmlInputCheckBox->isChecked();
+        opt.m_allInOne = m_allInOneCheckBox->isChecked();
+        opt.m_targetPageScrollable = m_targetPageScrollableCheckBox->isChecked();
+
+        opt.m_command = m_commandTextEdit->toPlainText().trimmed();
+        int lineIdx = opt.m_command.indexOf(QLatin1Char('\n'));
+        if (lineIdx > -1) {
+            opt.m_command = opt.m_command.left(lineIdx);
+        }
+
+        ConfigMgr::getInst().getSessionConfig().setCustomExportOptions(m_customOptions);
+    }
+}
+
 void ExportDialog::updatePageLayoutButtonLabel()
 {
     Q_ASSERT(m_pageLayout);
     m_pageLayoutBtn->setText(
         QString("%1, %2").arg(m_pageLayout->pageSize().name(),
                               m_pageLayout->orientation() == QPageLayout::Portrait ? tr("Portrait") : tr("Landscape")));
+}
+
+int ExportDialog::findCustomOption(const QString &p_name) const
+{
+    if (p_name.isEmpty()) {
+        return -1;
+    }
+
+    for (int i = 0; i < m_customOptions.size(); ++i) {
+        if (m_customOptions[i].m_name == p_name) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void ExportDialog::addCustomExportScheme()
+{
+    QString name;
+    while (true) {
+        name = QInputDialog::getText(this, tr("New Custom Export Scheme"), tr("Scheme name:"));
+        if (name.isEmpty()) {
+            return;
+        }
+
+        if (findCustomOption(name) != -1) {
+            MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                     tr("Name conflicts with existing scheme."),
+                                     this);
+        } else {
+            break;
+        }
+    }
+
+    // Based on current scheme.
+    ExportCustomOption newOption;
+
+    {
+        int curIndex = findCustomOption(m_customExportComboBox->currentData().toString());
+        if (curIndex > -1) {
+            newOption = m_customOptions[curIndex];
+        }
+    }
+
+    newOption.m_name = name;
+    m_customOptions.append(newOption);
+    ConfigMgr::getInst().getSessionConfig().setCustomExportOptions(m_customOptions);
+
+    // Add it to combo box.
+    m_customExportComboBox->addItem(name, name);
+    m_customExportComboBox->setCurrentIndex(m_customExportComboBox->findData(name));
+}
+
+void ExportDialog::removeCustomExportScheme()
+{
+    auto name = m_customExportComboBox->currentData().toString();
+    if (name.isEmpty()) {
+        return;
+    }
+
+    int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
+                                                 tr("Delete scheme (%1)?").arg(name),
+                                                 QString(),
+                                                 QString(),
+                                                 this);
+    if (ret != QMessageBox::Ok) {
+        return;
+    }
+
+    int idx = findCustomOption(name);
+    Q_ASSERT(idx > -1);
+    m_customOptions.remove(idx);
+    ConfigMgr::getInst().getSessionConfig().setCustomExportOptions(m_customOptions);
+
+    m_customExportComboBox->removeItem(m_customExportComboBox->currentIndex());
+}
+
+void ExportDialog::customExportCurrentSchemeChanged(int p_comboIdx)
+{
+    const bool enabled = p_comboIdx >= 0;
+    m_targetSuffixLineEdit->setEnabled(enabled);
+    m_resourcePathSeparatorLineEdit->setEnabled(enabled);
+    m_useHtmlInputCheckBox->setEnabled(enabled);
+    m_allInOneCheckBox->setEnabled(enabled);
+    m_targetPageScrollableCheckBox->setEnabled(enabled);
+    m_commandTextEdit->setEnabled(enabled);
+
+    if (p_comboIdx < 0) {
+        m_option.m_customExport.clear();
+        return;
+    }
+
+    auto name = m_customExportComboBox->currentData().toString();
+    m_option.m_customExport = name;
+    int curIndex = findCustomOption(name);
+    Q_ASSERT(curIndex > -1);
+    const auto &opt = m_customOptions[curIndex];
+    m_targetSuffixLineEdit->setText(opt.m_targetSuffix);
+    m_resourcePathSeparatorLineEdit->setText(opt.m_resourcePathSeparator);
+    m_useHtmlInputCheckBox->setChecked(opt.m_useHtmlInput);
+    m_allInOneCheckBox->setChecked(opt.m_allInOne);
+    m_targetPageScrollableCheckBox->setChecked(opt.m_targetPageScrollable);
+    m_commandTextEdit->setPlainText(opt.m_command);
 }

@@ -50,9 +50,17 @@ namespace vnotex
 
         QString doExportPdf(const ExportOption &p_option, const QString &p_outputDir, const File *p_file);
 
-        QString doExportAllInOne(const ExportOption &p_option, Node *p_folder);
+        QString doExportCustom(const ExportOption &p_option, const QString &p_outputDir, const File *p_file);
 
-        QString doExportAllInOne(const ExportOption &p_option, Notebook *p_notebook);
+        bool doExportCustom(const ExportOption &p_option,
+                            const QStringList &p_files,
+                            const QStringList &p_resourcePaths,
+                            const QString &p_filePath);
+
+        // Export @p_notebook or @p_folder. @p_folder will be considered only when @p_notebook is null.
+        QString doExportPdfAllInOne(const ExportOption &p_option, Notebook *p_notebook, Node *p_folder);
+
+        QString doExportCustomAllInOne(const ExportOption &p_option, Notebook *p_notebook, Node *p_folder);
 
         void exportAttachments(Node *p_node,
                                const QString &p_srcFilePath,
@@ -70,6 +78,15 @@ namespace vnotex
         QStringList doExportNotebook(const ExportOption &p_option, const QString &p_outputDir, Notebook *p_notebook);
 
         static ExportOption getExportOptionForIntermediateHtml(const ExportOption &p_option, const QString &p_outputDir);
+
+        static QString evaluateCommand(const ExportOption &p_option,
+                                       const QStringList &p_files,
+                                       const QStringList &p_resourcePaths,
+                                       const QString &p_filePath);
+
+        static QString getQuotedPath(const QString &p_path);
+
+        static void collectFiles(const QList<QSharedPointer<File>> &p_files, QStringList &p_inputFiles, QStringList &p_resourcePaths);
 
         // Managed by QObject.
         WebViewExporter *m_webViewExporter = nullptr;

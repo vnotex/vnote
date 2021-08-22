@@ -15,8 +15,6 @@ using namespace vnotex;
 
 HtmlTemplateHelper::Template HtmlTemplateHelper::s_markdownViewerTemplate;
 
-static const QString c_globalStylesPlaceholder = "/* VX_GLOBAL_STYLES_PLACEHOLDER */";
-
 QString WebGlobalOptions::toJavascriptObject() const
 {
     return QStringLiteral("window.vxOptions = {\n")
@@ -35,6 +33,7 @@ QString WebGlobalOptions::toJavascriptObject() const
            + QString("bodyHeight: %1,\n").arg(m_bodyHeight)
            + QString("transformSvgToPngEnabled: %1,\n").arg(Utils::boolToString(m_transformSvgToPngEnabled))
            + QString("mathJaxScale: %1,\n").arg(m_mathJaxScale)
+           + QString("removeCodeToolBarEnabled: %1,\n").arg(Utils::boolToString(m_removeCodeToolBarEnabled))
            + QString("sectionNumberBaseLevel: %1\n").arg(m_sectionNumberBaseLevel)
            + QStringLiteral("}");
 }
@@ -59,7 +58,7 @@ static void fillGlobalStyles(QString &p_template, const WebResource &p_resource,
     styles += p_additionalStyles;
 
     if (!styles.isEmpty()) {
-        p_template.replace(c_globalStylesPlaceholder, styles);
+        p_template.replace("/* VX_GLOBAL_STYLES_PLACEHOLDER */", styles);
     }
 }
 
@@ -175,22 +174,15 @@ void HtmlTemplateHelper::updateMarkdownViewerTemplate(const MarkdownEditorConfig
 
     s_markdownViewerTemplate.m_revision = p_config.revision();
 
+    Paras paras;
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    s_markdownViewerTemplate.m_template =
-        generateMarkdownViewerTemplate(p_config,
-                                       themeMgr.getFile(Theme::File::WebStyleSheet),
-                                       themeMgr.getFile(Theme::File::HighlightStyleSheet));
+    paras.m_webStyleSheetFile = themeMgr.getFile(Theme::File::WebStyleSheet);
+    paras.m_highlightStyleSheetFile = themeMgr.getFile(Theme::File::HighlightStyleSheet);
+
+    s_markdownViewerTemplate.m_template = generateMarkdownViewerTemplate(p_config, paras);
 }
 
-QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config,
-                                                           const QString &p_webStyleSheetFile,
-                                                           const QString &p_highlightStyleSheetFile,
-                                                           bool p_useTransparentBg,
-                                                           bool p_scrollable,
-                                                           int p_bodyWidth,
-                                                           int p_bodyHeight,
-                                                           bool p_transformSvgToPng,
-                                                           qreal p_mathJaxScale)
+QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config, const Paras &p_paras)
 {
     const auto &viewerResource = p_config.getViewerResource();
     const auto templateFile = ConfigMgr::getInst().getUserOrAppFile(viewerResource.m_template);
@@ -198,7 +190,7 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
 
     fillGlobalStyles(htmlTemplate, viewerResource, "");
 
-    fillThemeStyles(htmlTemplate, p_webStyleSheetFile, p_highlightStyleSheetFile);
+    fillThemeStyles(htmlTemplate, p_paras.m_webStyleSheetFile, p_paras.m_highlightStyleSheetFile);
 
     {
         WebGlobalOptions opts;
@@ -212,12 +204,13 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
         opts.m_autoBreakEnabled = p_config.getAutoBreakEnabled();
         opts.m_linkifyEnabled = p_config.getLinkifyEnabled();
         opts.m_indentFirstLineEnabled = p_config.getIndentFirstLineEnabled();
-        opts.m_transparentBackgroundEnabled = p_useTransparentBg;
-        opts.m_scrollable = p_scrollable;
-        opts.m_bodyWidth = p_bodyWidth;
-        opts.m_bodyHeight = p_bodyHeight;
-        opts.m_transformSvgToPngEnabled = p_transformSvgToPng;
-        opts.m_mathJaxScale = p_mathJaxScale;
+        opts.m_transparentBackgroundEnabled = p_paras.m_transparentBackgroundEnabled;
+        opts.m_scrollable = p_paras.m_scrollable;
+        opts.m_bodyWidth = p_paras.m_bodyWidth;
+        opts.m_bodyHeight = p_paras.m_bodyHeight;
+        opts.m_transformSvgToPngEnabled = p_paras.m_transformSvgToPngEnabled;
+        opts.m_mathJaxScale = p_paras.m_mathJaxScale;
+        opts.m_removeCodeToolBarEnabled = p_paras.m_removeCodeToolBarEnabled;
         fillGlobalOptions(htmlTemplate, opts);
     }
 
@@ -235,17 +228,36 @@ QString HtmlTemplateHelper::generateExportTemplate(const MarkdownEditorConfig &p
 
     fillGlobalStyles(htmlTemplate, exportResource, "");
 
-    // Outline panel.
-    for (auto &ele : exportResource.m_resources) {
+    fillOutlinePanel(htmlTemplate, exportResource, p_addOutlinePanel);
+
+    fillResourcesByContent(htmlTemplate, exportResource);
+
+    return htmlTemplate;
+}
+
+void HtmlTemplateHelper::fillOutlinePanel(QString &p_template, WebResource &p_exportResource, bool p_addOutlinePanel)
+{
+    for (auto &ele : p_exportResource.m_resources) {
         if (ele.m_name == QStringLiteral("outline")) {
             ele.m_enabled = p_addOutlinePanel;
             break;
         }
     }
 
-    fillResourcesByContent(htmlTemplate, exportResource);
+    // Remove static content to make the page clean.
+    if (!p_addOutlinePanel) {
+        int startIdx = p_template.indexOf("<!-- VX_OUTLINE_PANEL_START -->");
+        QString endMark("<!-- VX_OUTLINE_PANEL_END -->");
+        int endIdx = p_template.lastIndexOf(endMark);
+        Q_ASSERT(startIdx > -1 && endIdx > startIdx);
+        p_template.remove(startIdx, endIdx + endMark.size() - startIdx);
 
-    return htmlTemplate;
+        startIdx = p_template.indexOf("<!-- VX_OUTLINE_BUTTON_START -->");
+        endMark = "<!-- VX_OUTLINE_BUTTON_END -->";
+        endIdx = p_template.lastIndexOf(endMark);
+        Q_ASSERT(startIdx > -1 && endIdx > startIdx);
+        p_template.remove(startIdx, endIdx + endMark.size() - startIdx);
+    }
 }
 
 void HtmlTemplateHelper::fillTitle(QString &p_template, const QString &p_title)

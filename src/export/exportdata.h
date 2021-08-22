@@ -69,6 +69,34 @@ namespace vnotex
         QString m_wkhtmltopdfArgs;
     };
 
+    struct ExportCustomOption
+    {
+        QJsonObject toJson() const;
+        void fromJson(const QJsonObject &p_obj);
+
+        bool operator==(const ExportCustomOption &p_other) const;
+
+        QString m_name;
+
+        QString m_targetSuffix;
+
+        QString m_command;
+
+        bool m_useHtmlInput = true;
+
+        bool m_allInOne = false;
+
+        // Whether the page of target format is scrollable.
+        bool m_targetPageScrollable = false;
+
+        // The default value here follows the rules of Pandoc.
+#if defined(Q_OS_WIN)
+        QString m_resourcePathSeparator = ";";
+#else
+        QString m_resourcePathSeparator = ":";
+#endif
+    };
+
     struct ExportOption
     {
         QJsonObject toJson() const;
@@ -95,6 +123,15 @@ namespace vnotex
         ExportHtmlOption m_htmlOption;
 
         ExportPdfOption m_pdfOption;
+
+        QString m_customExport;
+
+        // Following fields are used in runtime only.
+        ExportCustomOption *m_customOption = nullptr;
+
+        bool m_transformSvgToPngEnabled = false;
+
+        bool m_removeCodeToolBarEnabled = true;
     };
 
     inline QString exportFormatString(ExportFormat p_format)

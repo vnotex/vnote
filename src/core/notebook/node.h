@@ -179,6 +179,9 @@ namespace vnotex
 
         void sortChildren(const QVector<int> &p_beforeIdx, const QVector<int> &p_afterIdx);
 
+        // Get content files recursively.
+        QList<QSharedPointer<File>> collectFiles();
+
         static bool isAncestor(const Node *p_ancestor, const Node *p_child);
 
     protected:

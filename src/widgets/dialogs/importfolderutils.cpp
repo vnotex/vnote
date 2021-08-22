@@ -52,7 +52,7 @@ void ImportFolderUtils::importFolderContentsByLegacyConfig(Notebook *p_notebook,
     try {
         config = LegacyNotebookUtils::getFolderConfig(rootDir.absolutePath());
     } catch (Exception &p_e) {
-        Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to read folder config (%1).").arg(rootDir.absolutePath()));
+        Utils::appendMsg(p_errMsg, ImportFolderUtilsTranslate::tr("Failed to read folder config (%1) (%2).").arg(rootDir.absolutePath(), p_e.what()));
         return;
     }
 

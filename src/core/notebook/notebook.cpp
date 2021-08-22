@@ -361,3 +361,20 @@ QJsonObject Notebook::getExtraConfig(const QString &p_key) const
     const auto &configs = getExtraConfigs();
     return configs.value(p_key).toObject();
 }
+
+QList<QSharedPointer<File>> Notebook::collectFiles()
+{
+    QList<QSharedPointer<File>> files;
+
+    auto rootNode = getRootNode();
+
+    const auto &children = rootNode->getChildrenRef();
+    for (const auto &child : children) {
+        if (child->getUse() != Node::Use::Normal) {
+            continue;
+        }
+        files.append(child->collectFiles());
+    }
+
+    return files;
+}

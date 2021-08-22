@@ -109,5 +109,6 @@ QPlainTextEdit *WidgetsFactory::createPlainTextConsole(QWidget *p_parent)
 QPlainTextEdit *WidgetsFactory::createPlainTextEdit(QWidget *p_parent)
 {
     auto edit = new QPlainTextEdit(p_parent);
+    edit->setProperty("ConsoleTextEdit", true);
     return edit;
 }

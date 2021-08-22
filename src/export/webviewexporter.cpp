@@ -248,6 +248,8 @@ QSize WebViewExporter::pageLayoutSize(const QPageLayout &p_layout) const
 void WebViewExporter::prepare(const ExportOption &p_option)
 {
     Q_ASSERT(!m_viewer && !m_exportOngoing);
+    Q_ASSERT(p_option.m_targetFormat == ExportFormat::PDF || p_option.m_targetFormat == ExportFormat::HTML);
+
     {
         // Adapter will be managed by MarkdownViewer.
         auto adapter = new MarkdownViewerAdapter(this);
@@ -265,7 +267,8 @@ void WebViewExporter::prepare(const ExportOption &p_option)
 
     bool scrollable = true;
     if (p_option.m_targetFormat == ExportFormat::PDF
-        || (p_option.m_targetFormat == ExportFormat::HTML && !p_option.m_htmlOption.m_scrollable)) {
+        || (p_option.m_targetFormat == ExportFormat::HTML && !p_option.m_htmlOption.m_scrollable)
+        || (p_option.m_targetFormat == ExportFormat::Custom && !p_option.m_customOption->m_targetPageScrollable)) {
         scrollable = false;
     }
 
@@ -276,16 +279,21 @@ void WebViewExporter::prepare(const ExportOption &p_option)
         useWkhtmltopdf = p_option.m_pdfOption.m_useWkhtmltopdf;
         pageBodySize = pageLayoutSize(*(p_option.m_pdfOption.m_layout));
     }
+
     qDebug() << "export page body size" << pageBodySize;
-    m_htmlTemplate = HtmlTemplateHelper::generateMarkdownViewerTemplate(config,
-                                                                        p_option.m_renderingStyleFile,
-                                                                        p_option.m_syntaxHighlightStyleFile,
-                                                                        p_option.m_useTransparentBg,
-                                                                        scrollable,
-                                                                        pageBodySize.width(),
-                                                                        pageBodySize.height(),
-                                                                        useWkhtmltopdf,
-                                                                        useWkhtmltopdf ? 2.5 : -1);
+
+    HtmlTemplateHelper::Paras paras;
+    paras.m_webStyleSheetFile = p_option.m_renderingStyleFile;
+    paras.m_highlightStyleSheetFile = p_option.m_syntaxHighlightStyleFile;
+    paras.m_transparentBackgroundEnabled = p_option.m_useTransparentBg;
+    paras.m_scrollable = scrollable;
+    paras.m_bodyWidth = pageBodySize.width();
+    paras.m_bodyHeight = pageBodySize.height();
+    paras.m_transformSvgToPngEnabled = p_option.m_transformSvgToPngEnabled;
+    paras.m_mathJaxScale = useWkhtmltopdf ? 2.5 : -1;
+    paras.m_removeCodeToolBarEnabled = p_option.m_removeCodeToolBarEnabled;
+
+    m_htmlTemplate = HtmlTemplateHelper::generateMarkdownViewerTemplate(config, paras);
 
     {
         const bool addOutlinePanel = p_option.m_targetFormat == ExportFormat::HTML && p_option.m_htmlOption.m_addOutlinePanel;

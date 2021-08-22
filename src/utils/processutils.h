@@ -35,6 +35,10 @@ namespace vnotex
                            const std::function<void(const QString &)> &p_logger,
                            const bool &p_askedToStop);
 
+        static State start(const QString &p_command,
+                           const std::function<void(const QString &)> &p_logger,
+                           const bool &p_askedToStop);
+
         static void startDetached(const QString &p_command);
 
         // Copied from QProcess code.
@@ -48,6 +52,10 @@ namespace vnotex
                                    int &p_exitCodeOnSuccess,
                                    QByteArray &p_stdOut,
                                    QByteArray &p_stdErr);
+
+        static State handleProcess(QProcess *p_process,
+                                   const std::function<void(const QString &)> &p_logger,
+                                   const bool &p_askedToStop);
     };
 }
 

@@ -43,12 +43,15 @@ namespace vnotex
 
         void appendLog(const QString &p_log);
 
+        void customExportCurrentSchemeChanged(int p_comboIdx);
+
     private:
         enum AdvancedSettings
         {
             General,
             HTML,
             PDF,
+            Custom,
             Max
         };
 
@@ -65,6 +68,8 @@ namespace vnotex
         QWidget *getHtmlAdvancedSettings();
 
         QWidget *getPdfAdvancedSettings();
+
+        QWidget *getCustomAdvancedSettings();
 
         void showAdvancedSettings(AdvancedSettings p_settings);
 
@@ -86,6 +91,10 @@ namespace vnotex
 
         void saveFields(ExportPdfOption &p_option);
 
+        void restoreCustomFields(const ExportOption &p_option);
+
+        void saveCustomFields(ExportOption &p_option);
+
         void startExport();
 
         void updateUIOnExport();
@@ -98,6 +107,12 @@ namespace vnotex
         QString getDefaultOutputDir() const;
 
         void updatePageLayoutButtonLabel();
+
+        int findCustomOption(const QString &p_name) const;
+
+        void addCustomExportScheme();
+
+        void removeCustomExportScheme();
 
         // Managed by QObject.
         Exporter *m_exporter = nullptr;
@@ -170,7 +185,24 @@ namespace vnotex
 
         QSharedPointer<QPageLayout> m_pageLayout;
 
+        // Custom settings.
+        QComboBox *m_customExportComboBox = nullptr;
+
+        QLineEdit *m_targetSuffixLineEdit = nullptr;
+
+        QLineEdit *m_resourcePathSeparatorLineEdit = nullptr;
+
+        QCheckBox *m_useHtmlInputCheckBox = nullptr;
+
+        QCheckBox *m_customAllInOneCheckBox = nullptr;
+
+        QCheckBox *m_targetPageScrollableCheckBox = nullptr;
+
+        QPlainTextEdit *m_commandTextEdit = nullptr;
+
         ExportOption m_option;
+
+        QVector<ExportCustomOption> m_customOptions;
     };
 }
 

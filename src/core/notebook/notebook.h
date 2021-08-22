@@ -16,6 +16,7 @@ namespace vnotex
     class IVersionController;
     class INotebookConfigMgr;
     struct NodeParameters;
+    class File;
 
     // Base class of notebook.
     class Notebook : public QObject
@@ -139,6 +140,9 @@ namespace vnotex
         virtual const QJsonObject &getExtraConfigs() const = 0;
         QJsonObject getExtraConfig(const QString &p_key) const;
         virtual void setExtraConfig(const QString &p_key, const QJsonObject &p_obj) = 0;
+
+        // Get content files recursively.
+        QList<QSharedPointer<File>> collectFiles();
 
         static const QString c_defaultAttachmentFolder;
 

@@ -413,3 +413,22 @@ bool Node::checkExists()
     }
     return after;
 }
+
+QList<QSharedPointer<File>> Node::collectFiles()
+{
+    QList<QSharedPointer<File>> files;
+
+    load();
+
+    if (hasContent()) {
+        files.append(getContentFile());
+    }
+
+    if (isContainer()) {
+        for (const auto &child : m_children) {
+            files.append(child->collectFiles());
+        }
+    }
+
+    return files;
+}

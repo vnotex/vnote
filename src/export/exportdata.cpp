@@ -83,6 +83,45 @@ bool ExportPdfOption::operator==(const ExportPdfOption &p_other) const
            && m_wkhtmltopdfArgs == p_other.m_wkhtmltopdfArgs;
 }
 
+QJsonObject ExportCustomOption::toJson() const
+{
+    QJsonObject obj;
+    obj["name"] = m_name;
+    obj["target_suffix"] = m_targetSuffix;
+    obj["command"] = m_command;
+    obj["use_html_input"] = m_useHtmlInput;
+    obj["all_in_one"] = m_allInOne;
+    obj["target_page_scrollable"] = m_targetPageScrollable;
+    obj["resource_path_separator"] = m_resourcePathSeparator;
+    return obj;
+}
+
+void ExportCustomOption::fromJson(const QJsonObject &p_obj)
+{
+    if (p_obj.isEmpty()) {
+        return;
+    }
+
+    m_name = p_obj["name"].toString();
+    m_targetSuffix = p_obj["target_suffix"].toString();
+    m_command = p_obj["command"].toString();
+    m_useHtmlInput = p_obj["use_html_input"].toBool();
+    m_allInOne = p_obj["all_in_one"].toBool();
+    m_targetPageScrollable = p_obj["target_page_scrollable"].toBool();
+    m_resourcePathSeparator = p_obj["resource_path_separator"].toString();
+}
+
+bool ExportCustomOption::operator==(const ExportCustomOption &p_other) const
+{
+    return m_name == p_other.m_name
+           && m_useHtmlInput == p_other.m_useHtmlInput
+           && m_targetSuffix == p_other.m_targetSuffix
+           && m_command == p_other.m_command
+           && m_allInOne == p_other.m_allInOne
+           && m_targetPageScrollable == p_other.m_targetPageScrollable
+           && m_resourcePathSeparator == p_other.m_resourcePathSeparator;
+}
+
 QJsonObject ExportOption::toJson() const
 {
     QJsonObject obj;
@@ -93,6 +132,7 @@ QJsonObject ExportOption::toJson() const
     obj["export_attachments"] = m_exportAttachments;
     obj["html_option"] = m_htmlOption.toJson();
     obj["pdf_option"] = m_pdfOption.toJson();
+    obj["custom_export"] = m_customExport;
     return obj;
 }
 
@@ -131,6 +171,7 @@ void ExportOption::fromJson(const QJsonObject &p_obj)
     m_exportAttachments = p_obj["export_attachments"].toBool();
     m_htmlOption.fromJson(p_obj["html_option"].toObject());
     m_pdfOption.fromJson(p_obj["pdf_option"].toObject());
+    m_customExport = p_obj["custom_export"].toString();
 }
 
 bool ExportOption::operator==(const ExportOption &p_other) const

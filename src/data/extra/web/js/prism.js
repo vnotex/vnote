@@ -86,9 +86,23 @@ class PrismRenderer extends VxWorker {
             p_containerNode.classList.add('line-numbers');
 
             Prism.highlightAllUnder(p_containerNode, false /* async or not */);
+
+            // Remove the toolbar.
+            if (window.vxOptions.removeCodeToolBarEnabled) {
+                this.removeToolBar(p_containerNode);
+            }
         }
 
         this.finishWork();
+    }
+
+    removeToolBar(p_containerNode) {
+        // Static list.
+        let toolBarNodes = p_containerNode.querySelectorAll('div.code-toolbar > div.toolbar');
+        for (let i = 0; i < toolBarNodes.length; ++i) {
+            toolBarNodes[i].outerHTML = '';
+            delete toolBarNodes[i];
+        }
     }
 }
 

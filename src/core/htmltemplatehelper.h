@@ -6,6 +6,7 @@
 namespace vnotex
 {
     class MarkdownEditorConfig;
+    struct WebResource;
 
     // Global options to be passed to Web side at the very beginning.
     struct WebGlobalOptions
@@ -48,6 +49,9 @@ namespace vnotex
         // wkhtmltopdf will make the MathJax formula too small.
         qreal m_mathJaxScale = -1;
 
+        // Whether remove the tool bar of code blocks added by Prism.js.
+        bool m_removeCodeToolBarEnabled = false;
+
         QString toJavascriptObject() const;
     };
 
@@ -55,20 +59,33 @@ namespace vnotex
     class HtmlTemplateHelper
     {
     public:
+        struct Paras
+        {
+            QString m_webStyleSheetFile;
+
+            QString m_highlightStyleSheetFile;
+
+            bool m_transparentBackgroundEnabled = false;
+
+            bool m_scrollable = true;
+
+            int m_bodyWidth = -1;
+
+            int m_bodyHeight = -1;
+
+            bool m_transformSvgToPngEnabled = false;
+
+            qreal m_mathJaxScale = -1;
+
+            bool m_removeCodeToolBarEnabled = false;
+        };
+
         HtmlTemplateHelper() = delete;
 
         static const QString &getMarkdownViewerTemplate();
         static void updateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config);
 
-        static QString generateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config,
-                                                      const QString &p_webStyleSheetFile,
-                                                      const QString &p_highlightStyleSheetFile,
-                                                      bool p_useTransparentBg = false,
-                                                      bool p_scrollable = true,
-                                                      int p_bodyWidth = -1,
-                                                      int p_bodyHeight = -1,
-                                                      bool p_transformSvgToPng = false,
-                                                      qreal p_mathJaxScale = -1);
+        static QString generateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config, const Paras &p_paras);
 
         static QString generateExportTemplate(const MarkdownEditorConfig &p_config,
                                               bool p_addOutlinePanel);
@@ -82,6 +99,8 @@ namespace vnotex
         static void fillContent(QString &p_template, const QString &p_content);
 
         static void fillBodyClassList(QString &p_template, const QString &p_classList);
+
+        static void fillOutlinePanel(QString &p_template, WebResource &p_exportResource, bool p_addOutlinePanel);
 
     private:
         struct Template
