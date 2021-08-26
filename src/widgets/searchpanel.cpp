@@ -554,6 +554,9 @@ void SearchPanel::prepareLocationList()
     }
 
     m_locationList->clear();
+
+    m_searchTokenOfSession.clear();
+
     m_locationList->startSession([this](const Location &p_location) {
                 handleLocationActivated(p_location);
             });
@@ -561,9 +564,15 @@ void SearchPanel::prepareLocationList()
 
 void SearchPanel::handleLocationActivated(const Location &p_location)
 {
-    qDebug() << "location activated" << p_location;
+    Q_ASSERT(m_searcher);
+
+    if (!m_searchTokenOfSession) {
+        m_searchTokenOfSession = QSharedPointer<SearchToken>::create(m_searcher->getToken());
+    }
+
     // TODO: decode the path of location and handle different types of destination.
     auto paras = QSharedPointer<FileOpenParameters>::create();
     paras->m_lineNumber = p_location.m_lineNumber;
+    paras->m_searchToken = m_searchTokenOfSession;
     emit VNoteX::getInst().openFileRequested(p_location.m_path, paras);
 }

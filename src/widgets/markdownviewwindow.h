@@ -24,6 +24,7 @@ namespace vnotex
     class MarkdownEditorConfig;
     class EditorConfig;
     class ImageHost;
+    class SearchToken;
 
     class MarkdownViewWindow : public ViewWindow
     {
@@ -65,7 +66,7 @@ namespace vnotex
 
         void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
 
-        void handleFindNext(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
+        void handleFindNext(const QStringList &p_texts, FindOptions p_options) Q_DECL_OVERRIDE;
 
         void handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText) Q_DECL_OVERRIDE;
 
@@ -145,6 +146,8 @@ namespace vnotex
         void handleFileOpenParameters(const QSharedPointer<FileOpenParameters> &p_paras, bool p_twice);
 
         void scrollToLine(int p_lineNumber);
+
+        void findTextBySearchToken(const QSharedPointer<SearchToken> &p_token, int p_currentMatchLine);
 
         bool isReadMode() const;
 

@@ -6,16 +6,9 @@
 #include "../outlineprovider.h"
 #include "plantumlhelper.h"
 #include "graphvizhelper.h"
+#include <utils/utils.h>
 
 using namespace vnotex;
-
-MarkdownViewerAdapter::MarkdownData::MarkdownData(const QString &p_text,
-                                                  int p_lineNumber,
-                                                  const QString &p_anchor)
-    : m_text(p_text),
-      m_position(p_lineNumber, p_anchor)
-{
-}
 
 MarkdownViewerAdapter::Position::Position(int p_lineNumber, const QString &p_anchor)
     : m_lineNumber(p_lineNumber),
@@ -92,7 +85,10 @@ void MarkdownViewerAdapter::setText(int p_revision,
         emit textUpdated(p_text);
         scrollToPosition(Position(p_lineNumber, ""));
     } else {
-        m_pendingData.reset(new MarkdownData(p_text, p_lineNumber, ""));
+        m_pendingActions.append([this, p_text, p_lineNumber]() {
+            emit textUpdated(p_text);
+            scrollToPosition(Position(p_lineNumber, ""));
+        });
     }
 }
 
@@ -102,7 +98,9 @@ void MarkdownViewerAdapter::setText(const QString &p_text)
     if (m_viewerReady) {
         emit textUpdated(p_text);
     } else {
-        m_pendingData.reset(new MarkdownData(p_text, -1, ""));
+        m_pendingActions.append([this, p_text]() {
+            emit textUpdated(p_text);
+        });
     }
 }
 
@@ -114,15 +112,12 @@ void MarkdownViewerAdapter::setReady(bool p_ready)
 
     m_viewerReady = p_ready;
     if (m_viewerReady) {
-        if (m_pendingData) {
-            emit textUpdated(m_pendingData->m_text);
-            scrollToPosition(m_pendingData->m_position);
-            m_pendingData.reset();
+        for (auto &act : m_pendingActions) {
+            act();
         }
-
+        m_pendingActions.clear();
         emit viewerReady();
     }
-
 }
 
 void MarkdownViewerAdapter::scrollToLine(int p_lineNumber)
@@ -132,11 +127,9 @@ void MarkdownViewerAdapter::scrollToLine(int p_lineNumber)
     }
 
     if (!m_viewerReady) {
-        if (m_pendingData) {
-            m_pendingData->m_position = Position(p_lineNumber, QString());
-        } else {
-            qWarning() << "Markdown viewer is not ready";
-        }
+        m_pendingActions.append([this, p_lineNumber]() {
+            scrollToPosition(Position(p_lineNumber, ""));
+        });
         return;
     }
 
@@ -321,7 +314,7 @@ void MarkdownViewerAdapter::setCrossCopyResult(quint64 p_id, quint64 p_timeStamp
     emit crossCopyReady(p_id, p_timeStamp, p_html);
 }
 
-void MarkdownViewerAdapter::findText(const QString &p_text, FindOptions p_options)
+void MarkdownViewerAdapter::findText(const QStringList &p_texts, FindOptions p_options, int p_currentMatchLine)
 {
     FindOption opts;
     if (p_options & vnotex::FindOption::FindBackward) {
@@ -337,12 +330,20 @@ void MarkdownViewerAdapter::findText(const QString &p_text, FindOptions p_option
         opts.m_regularExpression = true;
     }
 
-    emit findTextRequested(p_text, opts.toJson());
+    if (m_viewerReady) {
+        emit findTextRequested(p_texts, opts.toJson(), p_currentMatchLine);
+    } else {
+        m_pendingActions.append([this, p_texts, opts, p_currentMatchLine]() {
+            // FIXME: highlights will be clear once the page is ready. Add a delay here.
+            Utils::sleepWait(1000);
+            emit findTextRequested(p_texts, opts.toJson(), p_currentMatchLine);
+        });
+    }
 }
 
-void MarkdownViewerAdapter::setFindText(const QString &p_text, int p_totalMatches, int p_currentMatchIndex)
+void MarkdownViewerAdapter::setFindText(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex)
 {
-    emit findTextReady(p_text, p_totalMatches, p_currentMatchIndex);
+    emit findTextReady(p_texts, p_totalMatches, p_currentMatchIndex);
 }
 
 void MarkdownViewerAdapter::setWorkFinished()
@@ -367,7 +368,7 @@ void MarkdownViewerAdapter::reset()
 {
     m_revision = 0;
     m_viewerReady = false;
-    m_pendingData.reset();
+    m_pendingActions.clear();
     m_topLineNumber = -1;
     m_headings.clear();
     m_currentHeadingIndex = -1;

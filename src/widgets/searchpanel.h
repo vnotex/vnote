@@ -26,6 +26,7 @@ namespace vnotex
     class Notebook;
     class LocationList;
     struct Location;
+    class SearchToken;
 
     class ISearchInfoProvider
     {
@@ -145,6 +146,8 @@ namespace vnotex
         Searcher *m_searcher = nullptr;
 
         LocationList *m_locationList = nullptr;
+
+        QSharedPointer<SearchToken> m_searchTokenOfSession;
     };
 }
 

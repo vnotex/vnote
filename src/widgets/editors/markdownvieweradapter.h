@@ -29,19 +29,6 @@ namespace vnotex
             QString m_anchor;
         };
 
-        struct MarkdownData
-        {
-            MarkdownData() = default;
-
-            MarkdownData(const QString &p_text,
-                         int p_lineNumber,
-                         const QString &p_anchor);
-
-            QString m_text;
-
-            Position m_position;
-        };
-
         struct PreviewData
         {
             PreviewData() = default;
@@ -119,7 +106,7 @@ namespace vnotex
 
         QString getCrossCopyTargetDisplayName(const QString &p_target) const;
 
-        void findText(const QString &p_text, FindOptions p_options);
+        void findText(const QStringList &p_texts, FindOptions p_options, int p_currentMatchLine = -1);
 
         void saveContent();
 
@@ -168,7 +155,7 @@ namespace vnotex
 
         void setCrossCopyResult(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
 
-        void setFindText(const QString &p_text, int p_totalMatches, int p_currentMatchIndex);
+        void setFindText(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex);
 
         void setSavedContent(const QString &p_headContent, const QString &p_styleContent, const QString &p_content, const QString &p_bodyClassList);
 
@@ -210,7 +197,7 @@ namespace vnotex
                                 const QString &p_baseUrl,
                                 const QString &p_html);
 
-        void findTextRequested(const QString &p_text, const QJsonObject &p_options);
+        void findTextRequested(const QStringList &p_texts, const QJsonObject &p_options, int p_currentMatchLine);
 
         // Request to get the whole HTML content.
         void contentRequested();
@@ -243,7 +230,7 @@ namespace vnotex
 
         void crossCopyReady(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
 
-        void findTextReady(const QString &p_text, int p_totalMatches, int p_currentMatchIndex);
+        void findTextReady(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex);
 
         void contentReady(const QString &p_headContent,
                           const QString &p_styleContent,
@@ -260,8 +247,8 @@ namespace vnotex
         // Whether web side viewer is ready to handle text update.
         bool m_viewerReady = false;
 
-        // Pending Markdown data for the viewer once it is ready.
-        QScopedPointer<MarkdownData> m_pendingData;
+        // Pending actions for the viewer once it is ready.
+        QVector<std::function<void()>> m_pendingActions;
 
         // Source line number of the top element node at web side.
         int m_topLineNumber = -1;

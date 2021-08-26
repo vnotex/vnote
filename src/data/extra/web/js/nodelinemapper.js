@@ -65,6 +65,22 @@ class NodeLineMapper {
         this.adapter.setHeadings(headings);
     }
 
+    getViewYOfLine(p_lineNumber) {
+        if (p_lineNumber == 0) {
+            return null;
+        }
+
+        this.fetchAllNodesWithLineNumber();
+
+        // Binary search the last node with line number not larger than @p_lineNumber.
+        let targetNode = this.binarySearchNodeForLineNumber(this.nodesWithSourceLine, p_lineNumber);
+        if (targetNode) {
+            return targetNode.getBoundingClientRect().top;
+        } else {
+            return null;
+        }
+    }
+
     scrollToLine(p_lineNumber) {
         if (p_lineNumber == 0) {
             this.scrollToY(0, false, true);

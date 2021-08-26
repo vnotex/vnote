@@ -159,7 +159,7 @@ void HistoryPanel::updateHistoryList()
 
     if (itemIdx >= 0) {
         // Older.
-        auto sepItem = ListWidget::createSeparatorItem(tr(">>> Older"));
+        auto sepItem = ListWidget::createSeparatorItem(tr("Older"));
         m_historyList->addItem(sepItem);
 
         for (; itemIdx >= 0; --itemIdx) {
@@ -191,11 +191,11 @@ void HistoryPanel::updateSeparators()
     auto curDateTime = QDateTime::currentDateTime();
     curDateTime.setTime(QTime());
 
-    m_separators[0].m_text = tr(">>> Today");
+    m_separators[0].m_text = tr("Today");
     m_separators[0].m_dateUtc = curDateTime.toUTC();
-    m_separators[1].m_text = tr(">>> Yesterday");
+    m_separators[1].m_text = tr("Yesterday");
     m_separators[1].m_dateUtc = curDateTime.addDays(-1).toUTC();
-    m_separators[2].m_text = tr(">>> Last 7 Days");
+    m_separators[2].m_text = tr("Last 7 Days");
     m_separators[2].m_dateUtc = curDateTime.addDays(-7).toUTC();
 }
 

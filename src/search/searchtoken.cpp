@@ -271,3 +271,21 @@ QString SearchToken::getHelpText()
     // Skip the first line containing the application name.
     return text.mid(text.indexOf('\n') + 1);
 }
+
+QPair<QStringList, FindOptions> SearchToken::toPatterns() const
+{
+    QPair<QStringList, FindOptions> ret;
+
+    ret.second = m_caseSensitivity == Qt::CaseSensitive ? FindOption::CaseSensitive : FindOption::FindNone;
+    if (m_type == Type::RegularExpression) {
+        ret.second |= FindOption::RegularExpression;
+
+        for (const auto &reg : m_regularExpressions) {
+            ret.first << reg.pattern();
+        }
+    } else {
+        ret.first = m_keywords;
+    }
+
+    return ret;
+}

@@ -54,6 +54,8 @@ namespace vnotex
 
         void endBatchMode();
 
+        QPair<QStringList, FindOptions> toPatterns() const;
+
         // Compile tokens from keyword.
         // Support some magic switchs in the keyword which will suppress the given options.
         static bool compile(const QString &p_keyword, FindOptions p_options, SearchToken &p_token);

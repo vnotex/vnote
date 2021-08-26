@@ -19,6 +19,7 @@ class QMenu;
 class QShortcut;
 class QLineEdit;
 class QLayout;
+class QPushButton;
 
 namespace vnotex
 {
@@ -60,8 +61,9 @@ namespace vnotex
                                       Qt::ShortcutContext p_context = Qt::WindowShortcut);
 
         // Just add a shortcut text hint to the action.
-        static void addActionShortcutText(QAction *p_action,
-                                          const QString &p_shortcut);
+        static void addActionShortcutText(QAction *p_action, const QString &p_shortcut);
+
+        static void addButtonShortcutText(QPushButton *p_button, const QString &p_shortcut);
 
         static QShortcut *createShortcut(const QString &p_shortcut,
                                          QWidget *p_widget,

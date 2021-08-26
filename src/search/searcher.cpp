@@ -513,3 +513,8 @@ void Searcher::createSearchEngine()
 
     m_engine.reset(new FileSearchEngine());
 }
+
+const SearchToken &Searcher::getToken() const
+{
+    return m_token;
+}

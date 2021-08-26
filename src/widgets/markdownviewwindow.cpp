@@ -457,8 +457,8 @@ void MarkdownViewWindow::setupViewer()
                 }
             });
     connect(adapter, &MarkdownViewerAdapter::findTextReady,
-            this, [this](const QString &p_text, int p_totalMatches, int p_currentMatchIndex) {
-                this->showFindResult(p_text, p_totalMatches, p_currentMatchIndex);
+            this, [this](const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex) {
+                this->showFindResult(p_texts, p_totalMatches, p_currentMatchIndex);
             });
 }
 
@@ -944,19 +944,19 @@ void MarkdownViewWindow::handleFindTextChanged(const QString &p_text, FindOption
 {
     if (isReadMode()) {
         if (p_options & FindOption::IncrementalSearch) {
-            adapter()->findText(p_text, p_options);
+            adapter()->findText(QStringList(p_text), p_options);
         }
     } else {
         TextViewWindowHelper::handleFindTextChanged(this, p_text, p_options);
     }
 }
 
-void MarkdownViewWindow::handleFindNext(const QString &p_text, FindOptions p_options)
+void MarkdownViewWindow::handleFindNext(const QStringList &p_texts, FindOptions p_options)
 {
     if (isReadMode()) {
-        adapter()->findText(p_text, p_options);
+        adapter()->findText(p_texts, p_options);
     } else {
-        TextViewWindowHelper::handleFindNext(this, p_text, p_options);
+        TextViewWindowHelper::handleFindNext(this, p_texts, p_options);
     }
 }
 
@@ -983,7 +983,7 @@ void MarkdownViewWindow::handleFindAndReplaceWidgetClosed()
     if (m_editor) {
         TextViewWindowHelper::handleFindAndReplaceWidgetClosed(this);
     } else {
-        adapter()->findText("", FindOption::FindNone);
+        adapter()->findText(QStringList(), FindOption::FindNone);
     }
 }
 
@@ -1013,6 +1013,10 @@ void MarkdownViewWindow::handleFileOpenParameters(const QSharedPointer<FileOpenP
         }
 
         scrollToLine(p_paras->m_lineNumber);
+
+        if (p_paras->m_searchToken) {
+            findTextBySearchToken(p_paras->m_searchToken, p_paras->m_lineNumber);
+        }
     }
 }
 
@@ -1028,6 +1032,19 @@ void MarkdownViewWindow::scrollToLine(int p_lineNumber)
     } else {
         Q_ASSERT(m_editor);
         m_editor->scrollToLine(p_lineNumber, true);
+    }
+}
+
+void MarkdownViewWindow::findTextBySearchToken(const QSharedPointer<SearchToken> &p_token, int p_currentMatchLine)
+{
+    if (isReadMode()) {
+        Q_ASSERT(m_viewer);
+        const auto patterns = p_token->toPatterns();
+        updateLastFindInfo(patterns.first, patterns.second);
+        adapter()->findText(patterns.first, patterns.second, p_currentMatchLine);
+    } else {
+        Q_ASSERT(m_editor);
+        TextViewWindowHelper::findTextBySearchToken(this, p_token, p_currentMatchLine);
     }
 }
 

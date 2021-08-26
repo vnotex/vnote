@@ -280,12 +280,12 @@ class VNoteX extends EventEmitter {
         window.vxMarkdownAdapter.setCrossCopyResult(p_id, p_timeStamp, p_html);
     }
 
-    findText(p_text, p_options) {
-        this.searcher.findText(p_text, p_options);
+    findText(p_texts, p_options, p_currentMatchLine) {
+        this.searcher.findText(p_texts, p_options, p_currentMatchLine);
     }
 
-    showFindResult(p_text, p_totalMatches, p_currentMatchIndex) {
-        window.vxMarkdownAdapter.setFindText(p_text, p_totalMatches, p_currentMatchIndex);
+    showFindResult(p_texts, p_totalMatches, p_currentMatchIndex) {
+        window.vxMarkdownAdapter.setFindText(p_texts, p_totalMatches, p_currentMatchIndex);
     }
 
     saveContent() {

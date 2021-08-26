@@ -34,6 +34,8 @@ namespace vnotex
 
         SearchState search(const QSharedPointer<SearchOption> &p_option, const QVector<Notebook *> &p_notebooks);
 
+        const SearchToken &getToken() const;
+
     signals:
         void progressUpdated(int p_val, int p_maximum);
 

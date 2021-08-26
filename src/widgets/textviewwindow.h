@@ -45,7 +45,7 @@ namespace vnotex
 
         void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
 
-        void handleFindNext(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
+        void handleFindNext(const QStringList &p_texts, FindOptions p_options) Q_DECL_OVERRIDE;
 
         void handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText) Q_DECL_OVERRIDE;
 

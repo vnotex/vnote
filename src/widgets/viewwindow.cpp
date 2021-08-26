@@ -1007,9 +1007,9 @@ void ViewWindow::handleFindTextChanged(const QString &p_text, FindOptions p_opti
     Q_UNUSED(p_options);
 }
 
-void ViewWindow::handleFindNext(const QString &p_text, FindOptions p_options)
+void ViewWindow::handleFindNext(const QStringList &p_texts, FindOptions p_options)
 {
-    Q_UNUSED(p_text);
+    Q_UNUSED(p_texts);
     Q_UNUSED(p_options);
 }
 
@@ -1039,46 +1039,49 @@ void ViewWindow::findNextOnLastFind(bool p_forward)
 {
     // Check if need to update the find info.
     if (m_findAndReplace && m_findAndReplace->isVisible()) {
-        m_findInfo.m_text = m_findAndReplace->getFindText();
+        m_findInfo.m_texts = QStringList(m_findAndReplace->getFindText());
         m_findInfo.m_options = m_findAndReplace->getOptions();
     }
 
-    if (m_findInfo.m_text.isEmpty()) {
+    if (m_findInfo.m_texts.isEmpty()) {
         return;
     }
 
     if (p_forward) {
-        handleFindNext(m_findInfo.m_text, m_findInfo.m_options & ~FindOption::FindBackward);
+        handleFindNext(m_findInfo.m_texts, m_findInfo.m_options & ~FindOption::FindBackward);
     } else {
-        handleFindNext(m_findInfo.m_text, m_findInfo.m_options | FindOption::FindBackward);
+        handleFindNext(m_findInfo.m_texts, m_findInfo.m_options | FindOption::FindBackward);
     }
 }
 
 void ViewWindow::findNext(const QString &p_text, FindOptions p_options)
 {
-    m_findInfo.m_text = p_text;
+    const QStringList texts(p_text);
+
+    m_findInfo.m_texts = texts;
     m_findInfo.m_options = p_options;
-    handleFindNext(p_text, p_options);
+    handleFindNext(texts, p_options);
 }
 
 void ViewWindow::replace(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
 {
-    m_findInfo.m_text = p_text;
+    m_findInfo.m_texts = QStringList(p_text);
     m_findInfo.m_options = p_options;
     handleReplace(p_text, p_options, p_replaceText);
 }
 
 void ViewWindow::replaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
 {
-    m_findInfo.m_text = p_text;
+    m_findInfo.m_texts = QStringList(p_text);
     m_findInfo.m_options = p_options;
     handleReplaceAll(p_text, p_options, p_replaceText);
 }
 
-void ViewWindow::showFindResult(const QString &p_text, int p_totalMatches, int p_currentMatchIndex)
+void ViewWindow::showFindResult(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex)
 {
     if (p_totalMatches == 0) {
-        showMessage(tr("Pattern not found: %1").arg(p_text));
+        showMessage(tr("Pattern not found: %1%2").arg(p_texts.isEmpty() ? QString() : p_texts[0],
+                                                      p_texts.size() > 1 ? tr(" [+]"): QString()));
     } else {
         showMessage(tr("Match found: %1/%2").arg(p_currentMatchIndex + 1).arg(p_totalMatches));
     }
@@ -1214,4 +1217,10 @@ void ViewWindow::updateImageHostMenu()
     }
 
     handleImageHostChanged(curHost ? curHost->getName() : nullptr);
+}
+
+void ViewWindow::updateLastFindInfo(const QStringList &p_texts, FindOptions p_options)
+{
+    m_findInfo.m_texts = p_texts;
+    m_findInfo.m_options = p_options;
 }

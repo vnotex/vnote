@@ -218,9 +218,9 @@ void TextViewWindow::handleFindTextChanged(const QString &p_text, FindOptions p_
     TextViewWindowHelper::handleFindTextChanged(this, p_text, p_options);
 }
 
-void TextViewWindow::handleFindNext(const QString &p_text, FindOptions p_options)
+void TextViewWindow::handleFindNext(const QStringList &p_texts, FindOptions p_options)
 {
-    TextViewWindowHelper::handleFindNext(this, p_text, p_options);
+    TextViewWindowHelper::handleFindNext(this, p_texts, p_options);
 }
 
 void TextViewWindow::handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText)
@@ -260,6 +260,10 @@ void TextViewWindow::handleFileOpenParameters(const QSharedPointer<FileOpenParam
 
     if (p_paras->m_lineNumber > -1) {
         m_editor->scrollToLine(p_paras->m_lineNumber, true);
+    }
+
+    if (p_paras->m_searchToken) {
+        TextViewWindowHelper::findTextBySearchToken(this, p_paras->m_searchToken, p_paras->m_lineNumber);
     }
 }
 

@@ -1,11 +1,14 @@
 #ifndef FILEOPENPARAMETERS_H
 #define FILEOPENPARAMETERS_H
 
+#include <QSharedPointer>
+
 #include "global.h"
 
 namespace vnotex
 {
     class Node;
+    class SearchToken;
 
     struct FileOpenParameters
     {
@@ -32,6 +35,9 @@ namespace vnotex
 
         // Whether always open a new window for file.
         bool m_alwaysNewWindow = false;
+
+        // If not empty, use this token to do a search text highlight.
+        QSharedPointer<SearchToken> m_searchToken;
     };
 }
 

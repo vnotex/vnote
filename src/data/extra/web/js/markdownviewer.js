@@ -39,8 +39,8 @@ new QWebChannel(qt.webChannelTransport,
             window.vnotex.crossCopy(p_id, p_timeStamp, p_target, p_baseUrl, p_html);
         });
 
-        adapter.findTextRequested.connect(function(p_text, p_options) {
-            window.vnotex.findText(p_text, p_options);
+        adapter.findTextRequested.connect(function(p_texts, p_options, p_currentMatchLine) {
+            window.vnotex.findText(p_texts, p_options, p_currentMatchLine);
         });
 
         adapter.contentRequested.connect(function() {

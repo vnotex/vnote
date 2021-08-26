@@ -781,12 +781,13 @@ QWidget *ExportDialog::getCustomAdvancedSettings()
         }
 
         {
-            auto usage = tr("%1: List of input files.\n"
-                            "%2: List of paths to search for images and other resources.\n"
-                            "%3: Path of rendering CSS style sheet.\n"
-                            "%4: Path of syntax highlighting CSS style sheet.\n"
-                            "%5: Path of output file.\n");
-            layout->addRow(tr("Command usage:"), new QLabel(usage, widget));
+            auto usage = tr("Command:\n"
+                            "\t%1: List of input files.\n"
+                            "\t%2: List of paths to search for images and other resources.\n"
+                            "\t%3: Path of rendering CSS style sheet.\n"
+                            "\t%4: Path of syntax highlighting CSS style sheet.\n"
+                            "\t%5: Path of output file.\n");
+            layout->addRow(new QLabel(usage, widget));
         }
 
         {
@@ -798,7 +799,7 @@ QWidget *ExportDialog::getCustomAdvancedSettings()
 #endif
             m_commandTextEdit->setMaximumHeight(m_commandTextEdit->minimumSizeHint().height());
             m_commandTextEdit->setEnabled(false);
-            layout->addRow(tr("Command:"), m_commandTextEdit);
+            layout->addRow(m_commandTextEdit);
         }
 
         connect(m_customExportComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),

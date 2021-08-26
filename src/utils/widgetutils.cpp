@@ -23,6 +23,7 @@
 #include <QDebug>
 #include <QLineEdit>
 #include <QLayout>
+#include <QPushButton>
 
 #include <core/global.h>
 
@@ -198,8 +199,7 @@ void WidgetUtils::addActionShortcut(QAction *p_action,
     p_action->setText(QString("%1\t%2").arg(p_action->text(), kseq.toString(QKeySequence::NativeText)));
 }
 
-void WidgetUtils::addActionShortcutText(QAction *p_action,
-                                        const QString &p_shortcut)
+void WidgetUtils::addActionShortcutText(QAction *p_action, const QString &p_shortcut)
 {
     if (p_shortcut.isEmpty()) {
         return;
@@ -211,6 +211,20 @@ void WidgetUtils::addActionShortcutText(QAction *p_action,
     }
 
     p_action->setText(QString("%1\t%2").arg(p_action->text(), kseq.toString(QKeySequence::NativeText)));
+}
+
+void WidgetUtils::addButtonShortcutText(QPushButton *p_button, const QString &p_shortcut)
+{
+    if (p_shortcut.isEmpty()) {
+        return;
+    }
+
+    QKeySequence kseq(p_shortcut);
+    if (kseq.isEmpty()) {
+        return;
+    }
+
+    p_button->setText(QString("%1 (%2)").arg(p_button->text(), kseq.toString(QKeySequence::NativeText)));
 }
 
 void WidgetUtils::updateSize(QWidget *p_widget)

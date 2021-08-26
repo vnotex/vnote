@@ -5,12 +5,14 @@
 #include <QTextCursor>
 #include <QRegularExpression>
 #include <QTextBlock>
+#include <QSharedPointer>
 
 #include <vtextedit/texteditorconfig.h>
 #include <core/texteditorconfig.h>
 #include <core/configmgr.h>
 #include <utils/widgetutils.h>
 #include <snippet/snippetmgr.h>
+#include <search/searchtoken.h>
 
 #include "quickselector.h"
 
@@ -169,10 +171,10 @@ namespace vnotex
         }
 
         template <typename _ViewWindow>
-        static void handleFindNext(_ViewWindow *p_win, const QString &p_text, FindOptions p_options)
+        static void handleFindNext(_ViewWindow *p_win, const QStringList &p_texts, FindOptions p_options)
         {
-            const auto result = p_win->m_editor->findText(p_text, toEditorFindFlags(p_options));
-            p_win->showFindResult(p_text, result.m_totalMatches, result.m_currentMatchIndex);
+            const auto result = p_win->m_editor->findText(p_texts, toEditorFindFlags(p_options));
+            p_win->showFindResult(p_texts, result.m_totalMatches, result.m_currentMatchIndex);
         }
 
         template <typename _ViewWindow>
@@ -292,6 +294,15 @@ namespace vnotex
                 localPos = QPoint(5, 5);
             }
             return textEdit->mapToGlobal(localPos);
+        }
+
+        template <typename _ViewWindow>
+        static void findTextBySearchToken(_ViewWindow *p_win, const QSharedPointer<SearchToken> &p_token, int p_currentMatchLine)
+        {
+            const auto patterns = p_token->toPatterns();
+            p_win->updateLastFindInfo(patterns.first, patterns.second);
+            const auto result = p_win->m_editor->findText(patterns.first, toEditorFindFlags(patterns.second), 0, -1, p_currentMatchLine);
+            p_win->showFindResult(patterns.first, result.m_totalMatches, result.m_currentMatchIndex);
         }
     };
 }

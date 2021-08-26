@@ -164,7 +164,7 @@ namespace vnotex
 
         virtual void handleFindTextChanged(const QString &p_text, FindOptions p_options);
 
-        virtual void handleFindNext(const QString &p_text, FindOptions p_options);
+        virtual void handleFindNext(const QStringList &p_texts, FindOptions p_options);
 
         virtual void handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
 
@@ -229,7 +229,7 @@ namespace vnotex
         bool findAndReplaceWidgetVisible() const;
 
         // @p_currentMatchIndex: 0-based.
-        void showFindResult(const QString &p_text, int p_totalMatches, int p_currentMatchIndex);
+        void showFindResult(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex);
 
         void showReplaceResult(const QString &p_text, int p_totalReplaces);
 
@@ -239,6 +239,8 @@ namespace vnotex
 
         // Show message in status widget if exists. Otherwise, show it in the mainwindow's status widget.
         void showMessage(const QString p_msg);
+
+        void updateLastFindInfo(const QStringList &p_texts, FindOptions p_options);
 
         virtual QPoint getFloatingWidgetPosition();
 
@@ -259,7 +261,7 @@ namespace vnotex
     private:
         struct FindInfo
         {
-            QString m_text;
+            QStringList m_texts;
             FindOptions m_options;
         };
 

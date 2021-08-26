@@ -14,11 +14,13 @@
 #include "lineedit.h"
 #include "widgetsfactory.h"
 #include <utils/iconutils.h>
+#include <utils/widgetutils.h>
 #include <core/thememgr.h>
 #include <core/vnotex.h>
 #include "propertydefs.h"
-#include "configmgr.h"
-#include "widgetconfig.h"
+#include <core/configmgr.h>
+#include <core/editorconfig.h>
+#include <widgetconfig.h>
 
 using namespace vnotex;
 
@@ -80,12 +82,16 @@ void FindAndReplaceWidget::setupUI()
 
         setFocusProxy(m_findLineEdit);
 
+        const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+
         auto findNextBtn = new QPushButton(tr("Find &Next"), this);
+        WidgetUtils::addButtonShortcutText(findNextBtn, editorConfig.getShortcut(EditorConfig::FindNext));
         findNextBtn->setDefault(true);
         connect(findNextBtn, &QPushButton::clicked,
                 this, &FindAndReplaceWidget::findNext);
 
         auto findPrevBtn = new QPushButton(tr("Find &Previous"), this);
+        WidgetUtils::addButtonShortcutText(findPrevBtn, editorConfig.getShortcut(EditorConfig::FindPrevious));
         connect(findPrevBtn, &QPushButton::clicked,
                 this, &FindAndReplaceWidget::findPrevious);
 
