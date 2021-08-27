@@ -119,7 +119,9 @@
                 "ApplySnippet" : "Ctrl+G, I"
             },
             "spell_check_auto_detect_language" : false,
-            "spell_check_default_dictionary" : "en_US"
+            "spell_check_default_dictionary" : "en_US",
+            "//comment" : "platform/file/lf/crlf/cr",
+            "line_ending" : "lf"
         },
         "text_editor" : {
             "theme" : "",

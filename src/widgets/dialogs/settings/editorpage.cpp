@@ -43,6 +43,23 @@ void EditorPage::setupUI()
     }
 
     {
+        m_lineEndingComboBox = WidgetsFactory::createComboBox(this);
+        m_lineEndingComboBox->setToolTip(tr("Line ending"));
+
+        m_lineEndingComboBox->addItem(tr("Follow Platform"), (int)LineEndingPolicy::Platform);
+        m_lineEndingComboBox->addItem(tr("Follow File"), (int)LineEndingPolicy::File);
+        m_lineEndingComboBox->addItem(tr("LF (Linux/macOS)"), (int)LineEndingPolicy::LF);
+        m_lineEndingComboBox->addItem(tr("CR LF (Windows)"), (int)LineEndingPolicy::CRLF);
+        m_lineEndingComboBox->addItem(tr("CR"), (int)LineEndingPolicy::CR);
+
+        const QString label(tr("Line ending:"));
+        mainLayout->addRow(label, m_lineEndingComboBox);
+        addSearchItem(label, m_lineEndingComboBox->toolTip(), m_lineEndingComboBox);
+        connect(m_lineEndingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &EditorPage::pageIsChanged);
+    }
+
+    {
         m_toolBarIconSizeSpinBox = WidgetsFactory::createSpinBox(this);
         m_toolBarIconSizeSpinBox->setToolTip(tr("Icon size of the editor tool bar"));
 
@@ -105,6 +122,12 @@ void EditorPage::loadInternal()
         m_autoSavePolicyComboBox->setCurrentIndex(idx);
     }
 
+    {
+        int idx = m_lineEndingComboBox->findData(static_cast<int>(editorConfig.getLineEndingPolicy()));
+        Q_ASSERT(idx != -1);
+        m_lineEndingComboBox->setCurrentIndex(idx);
+    }
+
     m_toolBarIconSizeSpinBox->setValue(editorConfig.getToolBarIconSize());
 
     {
@@ -120,6 +143,11 @@ bool EditorPage::saveInternal()
     {
         auto policy = m_autoSavePolicyComboBox->currentData().toInt();
         editorConfig.setAutoSavePolicy(static_cast<EditorConfig::AutoSavePolicy>(policy));
+    }
+
+    {
+        auto ending = m_lineEndingComboBox->currentData().toInt();
+        editorConfig.setLineEndingPolicy(static_cast<LineEndingPolicy>(ending));
     }
 
     editorConfig.setToolBarIconSize(m_toolBarIconSizeSpinBox->value());

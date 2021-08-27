@@ -863,7 +863,8 @@ QSharedPointer<vte::MarkdownEditorConfig> MarkdownViewWindow::createMarkdownEdit
     auto textEditorConfig = TextViewWindowHelper::createTextEditorConfig(p_config.getTextEditorConfig(),
                                                                          p_editorConfig.getViConfig(),
                                                                          themeMgr.getFile(Theme::File::MarkdownEditorStyle),
-                                                                         themeMgr.getMarkdownEditorHighlightTheme());
+                                                                         themeMgr.getMarkdownEditorHighlightTheme(),
+                                                                         p_editorConfig.getLineEndingPolicy());
 
     auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
     editorConfig->overrideTextFontFamily(p_config.getEditorOverriddenFontFamily());

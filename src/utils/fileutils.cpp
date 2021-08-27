@@ -6,7 +6,9 @@
 #include <QTemporaryFile>
 #include <QJsonDocument>
 
-#include "../core/exception.h"
+#include <core/exception.h>
+#include <core/global.h>
+
 #include "pathutils.h"
 
 using namespace vnotex;
@@ -25,11 +27,12 @@ QByteArray FileUtils::readFile(const QString &p_filePath)
 QString FileUtils::readTextFile(const QString &p_filePath)
 {
     QFile file(p_filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::ReadOnly)) {
         Exception::throwOne(Exception::Type::FailToReadFile,
                             QString("failed to read file: %1").arg(p_filePath));
     }
 
+    // TODO: determine the encoding of the text.
     QString text(file.readAll());
     file.close();
     return text;
@@ -55,7 +58,7 @@ void FileUtils::writeFile(const QString &p_filePath, const QByteArray &p_data)
 void FileUtils::writeFile(const QString &p_filePath, const QString &p_text)
 {
     QFile file(p_filePath);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::WriteOnly)) {
         Exception::throwOne(Exception::Type::FailToWriteFile,
                             QString("failed to write to file: %1").arg(p_filePath));
     }

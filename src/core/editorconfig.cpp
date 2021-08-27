@@ -95,6 +95,11 @@ void EditorConfig::loadCore(const QJsonObject &p_app, const QJsonObject &p_user)
     if (m_spellCheckDefaultDictionary.isEmpty()) {
         m_spellCheckDefaultDictionary = QStringLiteral("en_US");
     }
+
+    {
+        auto lineEnding = READSTR(QStringLiteral("line_ending"));
+        m_lineEnding = stringToLineEndingPolicy(lineEnding);
+    }
 }
 
 QJsonObject EditorConfig::saveCore() const
@@ -107,6 +112,7 @@ QJsonObject EditorConfig::saveCore() const
     obj[QStringLiteral("shortcuts")] = saveShortcuts();
     obj[QStringLiteral("spell_check_auto_detect_language")] = m_spellCheckAutoDetectLanguageEnabled;
     obj[QStringLiteral("spell_check_default_dictionary")] = m_spellCheckDefaultDictionary;
+    obj[QStringLiteral("line_ending")] = lineEndingPolicyToString(m_lineEnding);
     return obj;
 }
 
@@ -211,6 +217,44 @@ EditorConfig::AutoSavePolicy EditorConfig::stringToAutoSavePolicy(const QString 
     }
 }
 
+QString EditorConfig::lineEndingPolicyToString(LineEndingPolicy p_ending) const
+{
+    switch (p_ending) {
+    case LineEndingPolicy::Platform:
+        return QStringLiteral("platform");
+
+    case LineEndingPolicy::File:
+        return QStringLiteral("file");
+
+    case LineEndingPolicy::LF:
+        return QStringLiteral("lf");
+
+    case LineEndingPolicy::CRLF:
+        return QStringLiteral("crlf");
+
+    case LineEndingPolicy::CR:
+        return QStringLiteral("cr");
+    }
+
+    return QStringLiteral("platform");
+}
+
+LineEndingPolicy EditorConfig::stringToLineEndingPolicy(const QString &p_str) const
+{
+    auto ending = p_str.toLower();
+    if (ending == QStringLiteral("file")) {
+        return LineEndingPolicy::File;
+    } else if (ending == QStringLiteral("lf")) {
+        return LineEndingPolicy::LF;
+    } else if (ending == QStringLiteral("crlf")) {
+        return LineEndingPolicy::CRLF;
+    } else if (ending == QStringLiteral("cr")) {
+        return LineEndingPolicy::CR;
+    } else {
+        return LineEndingPolicy::Platform;
+    }
+}
+
 EditorConfig::AutoSavePolicy EditorConfig::getAutoSavePolicy() const
 {
     return m_autoSavePolicy;
@@ -219,6 +263,16 @@ EditorConfig::AutoSavePolicy EditorConfig::getAutoSavePolicy() const
 void EditorConfig::setAutoSavePolicy(EditorConfig::AutoSavePolicy p_policy)
 {
     updateConfig(m_autoSavePolicy, p_policy, this);
+}
+
+LineEndingPolicy EditorConfig::getLineEndingPolicy() const
+{
+    return m_lineEnding;
+}
+
+void EditorConfig::setLineEndingPolicy(LineEndingPolicy p_ending)
+{
+    updateConfig(m_lineEnding, p_ending, this);
 }
 
 const QString &EditorConfig::getBackupFileDirectory() const

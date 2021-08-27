@@ -66,7 +66,8 @@ namespace vnotex
         static QSharedPointer<vte::TextEditorConfig> createTextEditorConfig(const TextEditorConfig &p_config,
                                                                             const QSharedPointer<vte::ViConfig> &p_viConfig,
                                                                             const QString &p_themeFile,
-                                                                            const QString &p_syntaxTheme)
+                                                                            const QString &p_syntaxTheme,
+                                                                            LineEndingPolicy p_lineEndingPolicy)
         {
             auto editorConfig = QSharedPointer<vte::TextEditorConfig>::create();
 
@@ -140,6 +141,24 @@ namespace vnotex
 
             editorConfig->m_expandTab = p_config.getExpandTabEnabled();
             editorConfig->m_tabStopWidth = p_config.getTabStopWidth();
+
+            switch (p_lineEndingPolicy) {
+            case LineEndingPolicy::Platform:
+                editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::Platform;
+                break;
+            case LineEndingPolicy::File:
+                editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::File;
+                break;
+            case LineEndingPolicy::LF:
+                editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::LF;
+                break;
+            case LineEndingPolicy::CRLF:
+                editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::CRLF;
+                break;
+            case LineEndingPolicy::CR:
+                editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::CR;
+                break;
+            }
 
             return editorConfig;
         }

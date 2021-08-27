@@ -133,6 +133,14 @@ namespace vnotex
         int m_length = -1;
     };
 
+    enum class LineEndingPolicy
+    {
+        Platform,
+        File,
+        LF,
+        CRLF,
+        CR
+    };
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);

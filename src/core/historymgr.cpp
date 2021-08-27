@@ -145,8 +145,8 @@ void HistoryMgr::add(const QString &p_path,
         file.m_mode = p_mode;
         file.m_readOnly = p_readOnly;
 
-        if (m_lastClosedFiles.size() > 100) {
-            m_lastClosedFiles.remove(0, m_lastClosedFiles.size() - 100);
+        if (m_lastClosedFiles.size() > s_maxHistoryCount) {
+            m_lastClosedFiles.remove(0, m_lastClosedFiles.size() - s_maxHistoryCount);
         }
     }
 

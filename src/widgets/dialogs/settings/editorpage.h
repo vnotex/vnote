@@ -32,6 +32,8 @@ namespace vnotex
         QSpinBox *m_toolBarIconSizeSpinBox = nullptr;
 
         QComboBox *m_spellCheckDictComboBox = nullptr;
+
+        QComboBox *m_lineEndingComboBox = nullptr;
     };
 }
 

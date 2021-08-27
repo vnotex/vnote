@@ -8,6 +8,8 @@
 #include <QObject>
 #include <QVector>
 
+#include "global.h"
+
 namespace vte
 {
     class ViConfig;
@@ -127,6 +129,9 @@ namespace vnotex
 
         const QSharedPointer<vte::ViConfig> &getViConfig() const;
 
+        LineEndingPolicy getLineEndingPolicy() const;
+        void setLineEndingPolicy(LineEndingPolicy p_ending);
+
     private:
         friend class MainConfig;
 
@@ -140,6 +145,9 @@ namespace vnotex
 
         QString autoSavePolicyToString(AutoSavePolicy p_policy) const;
         AutoSavePolicy stringToAutoSavePolicy(const QString &p_str) const;
+
+        QString lineEndingPolicyToString(LineEndingPolicy p_ending) const;
+        LineEndingPolicy stringToLineEndingPolicy(const QString &p_str) const;
 
         void loadImageHost(const QJsonObject &p_app, const QJsonObject &p_user);
 
@@ -174,6 +182,8 @@ namespace vnotex
         bool m_clearObsoleteImageAtImageHost = false;
 
         QSharedPointer<vte::ViConfig> m_viConfig;
+
+        LineEndingPolicy m_lineEnding = LineEndingPolicy::LF;
     };
 }
 

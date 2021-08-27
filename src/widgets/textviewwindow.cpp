@@ -176,7 +176,8 @@ QSharedPointer<vte::TextEditorConfig> TextViewWindow::createTextEditorConfig(con
     auto config = TextViewWindowHelper::createTextEditorConfig(p_config,
                                                                p_editorConfig.getViConfig(),
                                                                themeMgr.getFile(Theme::File::TextEditorStyle),
-                                                               themeMgr.getEditorHighlightTheme());
+                                                               themeMgr.getEditorHighlightTheme(),
+                                                               p_editorConfig.getLineEndingPolicy());
     return config;
 }
 
