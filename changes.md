@@ -1,4 +1,18 @@
 # Changes
+## v3.7.0
+* PlantUml/Graphviz: support relative path executable
+* macOS: support opening file with VNote in Finder
+* Sort notes by name case-insensitively
+* Export
+    * Support All-in-One in PDF format
+    * Support Custom export format (like Pandoc)
+    * Allow minimizing the export dialog and doing export at background
+* MainWindow: use icon-only bar for docks
+* Support update check
+* Add shortcuts for CloseOtherTabs and CloseTabsToTheRight
+* Search: highlight matched items in opened files
+* Editor: support specifying line ending
+
 ## v3.6.0
 * Support **Image Host**: GitHub and Gitee
 * Add config page for Vi
