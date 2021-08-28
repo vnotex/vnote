@@ -786,7 +786,7 @@ QWidget *ExportDialog::getCustomAdvancedSettings()
                             "\t%2: List of paths to search for images and other resources.\n"
                             "\t%3: Path of rendering CSS style sheet.\n"
                             "\t%4: Path of syntax highlighting CSS style sheet.\n"
-                            "\t%5: Path of output file.\n");
+                            "\t%5: Path of output file.");
             layout->addRow(new QLabel(usage, widget));
         }
 

@@ -143,7 +143,7 @@ QString Exporter::doExportPdfAllInOne(const ExportOption &p_option, Notebook *p_
     // Export to HTML to a tmp dir first.
     QTemporaryDir tmpDir;
     if (!tmpDir.isValid()) {
-        emit logRequested(tr("Failed to create temporary dir to hold HTML files."));
+        emit logRequested(tr("Failed to create temporary directory to hold HTML files."));
         return QString();
     }
 
@@ -197,7 +197,7 @@ QString Exporter::doExportCustomAllInOne(const ExportOption &p_option, Notebook 
     if (p_option.m_customOption->m_useHtmlInput) {
         // Export to HTML to a tmp dir first.
         if (!tmpDir.isValid()) {
-            emit logRequested(tr("Failed to create temporary dir to hold HTML files."));
+            emit logRequested(tr("Failed to create temporary directory to hold HTML files."));
             return QString();
         }
 
@@ -542,7 +542,7 @@ QString Exporter::doExportCustom(const ExportOption &p_option, const QString &p_
     if (p_option.m_customOption->m_useHtmlInput) {
         // Export to HTML to a tmp dir first.
         if (!tmpDir.isValid()) {
-            emit logRequested(tr("Failed to create temporary dir to hold HTML files."));
+            emit logRequested(tr("Failed to create temporary directory to hold HTML files."));
             return QString();
         }
 
