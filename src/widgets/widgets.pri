@@ -23,6 +23,7 @@ SOURCES += \
     $$PWD/dialogs/settings/markdowneditorpage.cpp \
     $$PWD/dialogs/settings/miscpage.cpp \
     $$PWD/dialogs/settings/newimagehostdialog.cpp \
+    $$PWD/dialogs/settings/notemanagementpage.cpp \
     $$PWD/dialogs/settings/quickaccesspage.cpp \
     $$PWD/dialogs/settings/settingspage.cpp \
     $$PWD/dialogs/settings/settingsdialog.cpp \
@@ -138,6 +139,7 @@ HEADERS += \
     $$PWD/dialogs/settings/markdowneditorpage.h \
     $$PWD/dialogs/settings/miscpage.h \
     $$PWD/dialogs/settings/newimagehostdialog.h \
+    $$PWD/dialogs/settings/notemanagementpage.h \
     $$PWD/dialogs/settings/quickaccesspage.h \
     $$PWD/dialogs/settings/settingspage.h \
     $$PWD/dialogs/settings/settingsdialog.h \

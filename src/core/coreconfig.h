@@ -104,6 +104,9 @@ namespace vnotex
 
         int getHistoryMaxCount() const;
 
+        bool isPerNotebookHistoryEnabled() const;
+        void setPerNotebookHistoryEnabled(bool p_enabled);
+
     private:
         friend class MainConfig;
 
@@ -137,6 +140,9 @@ namespace vnotex
 
         // Max count of the history items for each notebook and session config.
         int m_historyMaxCount = 100;
+
+        // Whether store history in each notebook.
+        bool m_perNotebookHistoryEnabled = true;
 
         static QStringList s_availableLocales;
     };

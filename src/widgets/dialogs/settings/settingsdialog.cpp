@@ -19,6 +19,7 @@
 #include "themepage.h"
 #include "imagehostpage.h"
 #include "vipage.h"
+#include "notemanagementpage.h"
 
 using namespace vnotex;
 
@@ -87,6 +88,12 @@ void SettingsDialog::setupPages()
     // General.
     {
         auto page = new GeneralPage(this);
+        addPage(page);
+    }
+
+    // Note Management.
+    {
+        auto page = new NoteManagementPage(this);
         addPage(page);
     }
 

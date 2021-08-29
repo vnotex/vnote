@@ -63,6 +63,8 @@ void CoreConfig::init(const QJsonObject &p_app,
     if (m_historyMaxCount < 0) {
         m_historyMaxCount = 100;
     }
+
+    m_perNotebookHistoryEnabled = READBOOL(QStringLiteral("per_notebook_history"));
 }
 
 QJsonObject CoreConfig::toJson() const
@@ -76,6 +78,7 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("recover_last_session_on_start")] = m_recoverLastSessionOnStartEnabled;
     obj[QStringLiteral("check_for_updates_on_start")] = m_checkForUpdatesOnStartEnabled;
     obj[QStringLiteral("history_max_count")] = m_historyMaxCount;
+    obj[QStringLiteral("per_notebook_history")] = m_perNotebookHistoryEnabled;
     return obj;
 }
 
@@ -202,4 +205,14 @@ void CoreConfig::setCheckForUpdatesOnStartEnabled(bool p_enabled)
 int CoreConfig::getHistoryMaxCount() const
 {
     return m_historyMaxCount;
+}
+
+bool CoreConfig::isPerNotebookHistoryEnabled() const
+{
+    return m_perNotebookHistoryEnabled;
+}
+
+void CoreConfig::setPerNotebookHistoryEnabled(bool p_enabled)
+{
+    updateConfig(m_perNotebookHistoryEnabled, p_enabled, this);
 }

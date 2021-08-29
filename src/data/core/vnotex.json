@@ -74,7 +74,8 @@
         "recover_last_session_on_start" : true,
         "check_for_updates_on_start" : true,
         "//comment" : "Max count of the history items for each notebook and session config",
-        "history_max_count" : 100
+        "history_max_count" : 100,
+        "per_notebook_history" : true
     },
     "editor" : {
         "core": {

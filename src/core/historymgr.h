@@ -74,7 +74,7 @@ namespace vnotex
 
         QVector<LastClosedFile> m_lastClosedFiles;
 
-        static int s_maxHistoryCount;
+        const bool m_perNotebookHistoryEnabled = false;
     };
 }
 

@@ -25,12 +25,9 @@ bool HistoryItemFull::operator<(const HistoryItemFull &p_other) const
 }
 
 
-int HistoryMgr::s_maxHistoryCount = 100;
-
 HistoryMgr::HistoryMgr()
+    : m_perNotebookHistoryEnabled(ConfigMgr::getInst().getCoreConfig().isPerNotebookHistoryEnabled())
 {
-    s_maxHistoryCount = ConfigMgr::getInst().getCoreConfig().getHistoryMaxCount();
-
     connect(&VNoteX::getInst().getNotebookMgr(), &NotebookMgr::notebooksUpdated,
             this, &HistoryMgr::loadHistory);
 
@@ -57,7 +54,7 @@ void HistoryMgr::loadHistory()
     }
 
     // Load from notebooks.
-    {
+    if (m_perNotebookHistoryEnabled) {
         const auto &notebooks = VNoteX::getInst().getNotebookMgr().getNotebooks();
         for (const auto &nb : notebooks) {
             const auto &history = nb->getHistory();
@@ -98,13 +95,14 @@ void HistoryMgr::add(const QString &p_path,
                      bool p_readOnly,
                      Notebook *p_notebook)
 {
-    if (p_path.isEmpty() || s_maxHistoryCount == 0) {
+    const int maxHistoryCount = ConfigMgr::getInst().getCoreConfig().getHistoryMaxCount();
+    if (p_path.isEmpty() || maxHistoryCount == 0) {
         return;
     }
 
     HistoryItem item(p_path, p_lineNumber, QDateTime::currentDateTimeUtc());
 
-    if (p_notebook) {
+    if (p_notebook && m_perNotebookHistoryEnabled) {
         p_notebook->addHistory(item);
     } else {
         auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
@@ -145,8 +143,8 @@ void HistoryMgr::add(const QString &p_path,
         file.m_mode = p_mode;
         file.m_readOnly = p_readOnly;
 
-        if (m_lastClosedFiles.size() > s_maxHistoryCount) {
-            m_lastClosedFiles.remove(0, m_lastClosedFiles.size() - s_maxHistoryCount);
+        if (m_lastClosedFiles.size() > maxHistoryCount) {
+            m_lastClosedFiles.remove(0, m_lastClosedFiles.size() - maxHistoryCount);
         }
     }
 
@@ -165,8 +163,9 @@ void HistoryMgr::insertHistoryItem(QVector<HistoryItem> &p_history, const Histor
 
     p_history.append(p_item);
 
-    if (p_history.size() > s_maxHistoryCount) {
-        p_history.remove(0, p_history.size() - s_maxHistoryCount);
+    const int maxHistoryCount = ConfigMgr::getInst().getCoreConfig().getHistoryMaxCount();
+    if (p_history.size() > maxHistoryCount) {
+        p_history.remove(0, p_history.size() - maxHistoryCount);
     }
 }
 
@@ -174,9 +173,11 @@ void HistoryMgr::clear()
 {
     ConfigMgr::getInst().getSessionConfig().clearHistory();
 
-    const auto &notebooks = VNoteX::getInst().getNotebookMgr().getNotebooks();
-    for (const auto &nb : notebooks) {
-        nb->clearHistory();
+    if (m_perNotebookHistoryEnabled) {
+        const auto &notebooks = VNoteX::getInst().getNotebookMgr().getNotebooks();
+        for (const auto &nb : notebooks) {
+            nb->clearHistory();
+        }
     }
 
     loadHistory();
