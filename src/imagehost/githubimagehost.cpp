@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QFileInfo>
 #include <QByteArray>
+#include <QJsonArray>
+#include <QJsonDocument>
 
 #include <utils/utils.h>
 #include <utils/webutils.h>
@@ -175,15 +177,36 @@ bool GitHubImageHost::remove(const QString &p_url, QString &p_msg)
     const auto urlStr = QString("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, resourcePath);
 
     // Get the SHA of the resource.
+    QString sha = "";
     auto reply = vte::NetworkAccess::request(QUrl(urlStr), rawHeader);
-    if (reply.m_error != QNetworkReply::NoError) {
-        p_msg = tr("Failed to fetch information about the resource (%1).").arg(resourcePath);
-        return false;
+    if (reply.m_error == QNetworkReply::NoError) {
+        auto replyObj = Utils::fromJsonString(reply.m_data);
+        Q_ASSERT(!replyObj.isEmpty());
+        sha = replyObj[QStringLiteral("sha")].toString();
+    } else if (reply.m_error == QNetworkReply::ContentAccessDenied) { // File larger than 1M
+
+        // Get all file information under the warehouse directory
+        const auto fileInfo = QFileInfo(urlStr);
+        const auto urlFilePath = QUrl(fileInfo.path());
+        const auto fleName = fileInfo.fileName();
+        reply = vte::NetworkAccess::request(urlFilePath, rawHeader);
+
+        if (QNetworkReply::NoError == reply.m_error) {
+            const auto jsonArray = QJsonDocument::fromJson(reply.m_data).array();
+            for (auto i = jsonArray.begin(); i < jsonArray.end(); i++) {
+                if (!i->isObject()) {
+                    continue;
+                }
+                const auto jsonObj = i->toObject();
+                const auto name = jsonObj[QStringLiteral("name")].toString();
+                if (name == fleName) {
+                    sha = jsonObj[QStringLiteral("sha")].toString();
+                    break;
+                }
+            }
+        }
     }
 
-    auto replyObj = Utils::fromJsonString(reply.m_data);
-    Q_ASSERT(!replyObj.isEmpty());
-    const auto sha = replyObj[QStringLiteral("sha")].toString();
     if (sha.isEmpty()) {
         p_msg = tr("Failed to fetch SHA about the resource (%1) (%2).").arg(resourcePath, QString::fromUtf8(reply.m_data));
         return false;
