@@ -671,7 +671,7 @@ QWidget *ExportDialog::getPdfAdvancedSettings()
         }
 
         {
-            m_allInOneCheckBox = WidgetsFactory::createCheckBox(tr("All-In-One"), widget);
+            m_allInOneCheckBox = WidgetsFactory::createCheckBox(tr("All-in-One"), widget);
             m_allInOneCheckBox->setToolTip(tr("Export all source files into one file"));
             connect(m_useWkhtmltopdfCheckBox, &QCheckBox::stateChanged,
                     this, [this](int p_state) {
@@ -767,7 +767,7 @@ QWidget *ExportDialog::getCustomAdvancedSettings()
         }
 
         {
-            m_allInOneCheckBox = WidgetsFactory::createCheckBox(tr("All-In-One"), widget);
+            m_allInOneCheckBox = WidgetsFactory::createCheckBox(tr("All-in-One"), widget);
             m_allInOneCheckBox->setToolTip(tr("Export all source files into one file"));
             m_allInOneCheckBox->setEnabled(false);
             layout->addRow(m_allInOneCheckBox);
