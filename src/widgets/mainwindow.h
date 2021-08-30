@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QSharedPointer>
 #include <QBitArray>
+#include <QSet>
 
 #include "toolbarhelper.h"
 #include "statusbarhelper.h"
@@ -87,6 +88,8 @@ namespace vnotex
         void closeEvent(QCloseEvent *p_event) Q_DECL_OVERRIDE;
 
         void changeEvent(QEvent *p_event) Q_DECL_OVERRIDE;
+
+        bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
     private slots:
         void closeOnQuit();
@@ -212,6 +215,9 @@ namespace vnotex
         QTimer *m_tipsTimer = nullptr;
 
         QStringList m_visibleDocksBeforeExpand;
+
+        // We need to install event filter to the tabbar of tabified dock widgets.
+        QSet<QTabBar *> m_tabBarsMonitored;
     };
 } // ns vnotex
 

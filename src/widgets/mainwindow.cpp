@@ -19,6 +19,8 @@
 #include <QWindowStateChangeEvent>
 #include <QTimer>
 #include <QBitArray>
+#include <QHelpEvent>
+#include <QToolTip>
 
 #include "toolbox.h"
 #include "notebookexplorer.h"
@@ -806,6 +808,11 @@ void MainWindow::updateDockWidgetTabBar()
 {
     QBitArray tabifiedDocks(m_docks.size(), false);
     Q_FOREACH(QTabBar* tabBar, this->findChildren<QTabBar*>(QString(), Qt::FindDirectChildrenOnly)) {
+        if (!m_tabBarsMonitored.contains(tabBar)) {
+            m_tabBarsMonitored.insert(tabBar);
+            tabBar->installEventFilter(this);
+        }
+
         tabBar->setDrawBase(false);
 
         const int sz = ConfigMgr::getInst().getCoreConfig().getDocksTabBarIconSize();
@@ -957,4 +964,31 @@ void MainWindow::checkForUpdates()
                     statusBar()->showMessage(tr("Updates available: %1").arg(p_version));
                 }
             });
+}
+
+bool MainWindow::eventFilter(QObject *p_obj, QEvent *p_event)
+{
+    if (p_event->type() == QEvent::ToolTip) {
+        // The QTabBar of the tabified dock widgets does not show tooltip due to Qt's internal implementation.
+        auto helpEve = static_cast<QHelpEvent *>(p_event);
+        auto tabBar = static_cast<QTabBar *>(p_obj);
+        int idx = tabBar->tabAt(helpEve->pos());
+        bool done = false;
+        if (idx > -1) {
+            auto dock = reinterpret_cast<QDockWidget *>(tabBar->tabData(idx).toULongLong());
+            if (dock) {
+                done = true;
+                QToolTip::showText(helpEve->globalPos(), dock->property(c_propertyDockTitle).toString());
+            }
+        }
+
+        if (!done) {
+            QToolTip::hideText();
+            p_event->ignore();
+        }
+
+        return true;
+    }
+
+    return QMainWindow::eventFilter(p_obj, p_event);
 }
