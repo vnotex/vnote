@@ -35,6 +35,7 @@ SOURCES += \
     $$PWD/dialogs/sortdialog.cpp \
     $$PWD/dialogs/tableinsertdialog.cpp \
     $$PWD/dialogs/updater.cpp \
+    $$PWD/dockwidgethelper.cpp \
     $$PWD/dragdropareaindicator.cpp \
     $$PWD/editors/editormarkdownvieweradapter.cpp \
     $$PWD/editors/graphhelper.cpp \
@@ -151,6 +152,7 @@ HEADERS += \
     $$PWD/dialogs/sortdialog.h \
     $$PWD/dialogs/tableinsertdialog.h \
     $$PWD/dialogs/updater.h \
+    $$PWD/dockwidgethelper.h \
     $$PWD/dragdropareaindicator.h \
     $$PWD/editors/editormarkdownvieweradapter.h \
     $$PWD/editors/graphhelper.h \

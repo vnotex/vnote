@@ -228,6 +228,7 @@ void NotebookMgr::readNotebooksFromConfig()
             qCritical("failed to read notebook (%s) from config (%s)",
                       item.m_rootFolderPath.toStdString().c_str(),
                       p_e.what());
+            m_notebooksFailedToLoad.push_back(item.m_rootFolderPath);
         }
     }
 
@@ -385,4 +386,15 @@ QSharedPointer<Node> NotebookMgr::loadNodeByPath(const QString &p_path)
     }
 
     return nullptr;
+}
+
+const QStringList &NotebookMgr::getNotebooksFailedToLoad() const
+{
+    return m_notebooksFailedToLoad;
+}
+
+void NotebookMgr::clearNotebooksFailedToLoad()
+{
+    m_notebooksFailedToLoad.clear();
+    saveNotebooksToConfig();
 }

@@ -7,8 +7,13 @@
 
 using namespace vnotex;
 
-void StatusBarHelper::setupStatusBar(MainWindow *p_win)
+StatusBarHelper::StatusBarHelper(MainWindow *p_mainWindow)
+    : m_mainWindow(p_mainWindow)
 {
-    m_statusBar = new QStatusBar(p_win);
-    p_win->setStatusBar(m_statusBar);
+}
+
+void StatusBarHelper::setupStatusBar()
+{
+    m_statusBar = new QStatusBar(m_mainWindow);
+    m_mainWindow->setStatusBar(m_statusBar);
 }

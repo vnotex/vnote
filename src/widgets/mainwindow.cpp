@@ -18,9 +18,6 @@
 #include <QSystemTrayIcon>
 #include <QWindowStateChangeEvent>
 #include <QTimer>
-#include <QBitArray>
-#include <QHelpEvent>
-#include <QToolTip>
 
 #include "toolbox.h"
 #include "notebookexplorer.h"
@@ -57,11 +54,11 @@
 
 using namespace vnotex;
 
-const char *MainWindow::c_propertyDockIndex = "DockIndex";
-const char *MainWindow::c_propertyDockTitle = "DockTitle";
-
 MainWindow::MainWindow(QWidget *p_parent)
-    : QMainWindow(p_parent)
+    : QMainWindow(p_parent),
+      m_toolBarHelper(this),
+      m_statusBarHelper(this),
+      m_dockWidgetHelper(this)
 {
     VNoteX::getInst().setMainWindow(this);
 
@@ -73,14 +70,7 @@ MainWindow::MainWindow(QWidget *p_parent)
 
     loadStateAndGeometry();
 
-    {
-        updateDockWidgetTabBar();
-
-        for (auto dock : m_docks) {
-            connect(dock, &QDockWidget::visibilityChanged,
-                    this, &MainWindow::updateDockWidgetTabBar);
-        }
-    }
+    m_dockWidgetHelper.postSetup();
 
     // The signal is particularly useful if your application has to do some last-second cleanup.
     // Note that no user interaction is possible in this state.
@@ -112,6 +102,8 @@ void MainWindow::kickOffOnStart(const QStringList &p_paths)
         emit mainWindowStarted();
 
         emit layoutChanged();
+
+        checkNotebooksFailedToLoad();
 
         demoWidget();
 
@@ -148,12 +140,12 @@ void MainWindow::setupUI()
     setupTipsArea();
     setupSystemTray();
 
-    activateDock(m_docks[DockIndex::NavigationDock]);
+    m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
 }
 
 void MainWindow::setupStatusBar()
 {
-    m_statusBarHelper.setupStatusBar(this);
+    m_statusBarHelper.setupStatusBar();
     connect(&VNoteX::getInst(), &VNoteX::statusMessageRequested,
             statusBar(), &QStatusBar::showMessage);
 }
@@ -213,12 +205,12 @@ void MainWindow::setupCentralWidget()
             });
 
     {
-        auto notebookMgr = &VNoteX::getInst().getNotebookMgr();
-        connect(notebookMgr, &NotebookMgr::notebookAboutToClose,
+        auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
+        connect(&notebookMgr, &NotebookMgr::notebookAboutToClose,
                 this, [this](const Notebook *p_notebook) {
                     m_viewArea->close(p_notebook, true);
                 });
-        connect(notebookMgr, &NotebookMgr::notebookAboutToRemove,
+        connect(&notebookMgr, &NotebookMgr::notebookAboutToRemove,
                 this, [this](const Notebook *p_notebook) {
                     m_viewArea->close(p_notebook, true);
                 });
@@ -229,120 +221,21 @@ void MainWindow::setupCentralWidget()
 
 void MainWindow::setupDocks()
 {
-    setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::West);
-    setTabPosition(Qt::RightDockWidgetArea, QTabWidget::East);
-    setTabPosition(Qt::TopDockWidgetArea, QTabWidget::North);
-    setTabPosition(Qt::BottomDockWidgetArea, QTabWidget::North);
-    setDockNestingEnabled(true);
-
-    // Init docks icon.
-    {
-        m_dockIcons.resize(DockIndex::MaxDock);
-
-        const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-        const auto fg = themeMgr.paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#fg");
-        const auto selectedFg = themeMgr.paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#selected#fg");
-
-        QVector<IconUtils::OverriddenColor> colors;
-        colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
-        // FIXME: the Selected Mode is not used by the selected tab of a QTabBar.
-        colors.push_back(IconUtils::OverriddenColor(selectedFg, QIcon::Selected));
-
-        auto iconFile = themeMgr.getIconFile("navigation_dock.svg");
-        m_dockIcons[DockIndex::NavigationDock] = IconUtils::fetchIcon(iconFile, colors, 90);
-
-        iconFile = themeMgr.getIconFile("outline_dock.svg");
-        m_dockIcons[DockIndex::OutlineDock] = IconUtils::fetchIcon(iconFile, colors, 90);
-
-        iconFile = themeMgr.getIconFile("history_dock.svg");
-        m_dockIcons[DockIndex::HistoryDock] = IconUtils::fetchIcon(iconFile, colors, 90);
-
-        iconFile = themeMgr.getIconFile("search_dock.svg");
-        m_dockIcons[DockIndex::SearchDock] = IconUtils::fetchIcon(iconFile, colors, 90);
-
-        iconFile = themeMgr.getIconFile("snippet_dock.svg");
-        m_dockIcons[DockIndex::SnippetDock] = IconUtils::fetchIcon(iconFile, colors, 90);
-
-        iconFile = themeMgr.getIconFile("location_list_dock.svg");
-        m_dockIcons[DockIndex::LocationListDock] = IconUtils::fetchIcon(iconFile, colors, 90);
-    }
-
-    // The order of m_docks should be identical with enum DockIndex.
-    setupNavigationDock();
-
-    setupOutlineDock();
-
-    setupHistoryDock();
-
-    setupSearchDock();
-
-    setupSnippetDock();
-
-    for (int i = 1; i < m_docks.size(); ++i) {
-        tabifyDockWidget(m_docks[i - 1], m_docks[i]);
-    }
-
-    // Following are non-tabfieid docks.
-    setupLocationListDock();
-}
-
-void MainWindow::activateDock(QDockWidget *p_dock)
-{
-    p_dock->show();
-    Q_FOREACH(QTabBar* tabBar, this->findChildren<QTabBar*>(QString(), Qt::FindDirectChildrenOnly)) {
-        bool found = false;
-        for (int i = 0; i < tabBar->count(); ++i) {
-            if (p_dock == reinterpret_cast<QWidget *>(tabBar->tabData(i).toULongLong())) {
-                tabBar->setCurrentIndex(i);
-                found = true;
-                break;
-            }
-        }
-
-        if (found) {
-            break;
-        }
-    }
-    p_dock->setFocus();
-}
-
-void MainWindow::setupNavigationDock()
-{
-    auto dock = createDockWidget(DockIndex::NavigationDock, tr("Navigation"), this);
-
-    dock->setObjectName(QStringLiteral("NavigationDock.vnotex"));
-    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-
     setupNotebookExplorer(this);
-    dock->setWidget(m_notebookExplorer);
-    dock->setFocusProxy(m_notebookExplorer);
-    addDockWidget(Qt::LeftDockWidgetArea, dock);
-}
-
-void MainWindow::setupOutlineDock()
-{
-    auto dock = createDockWidget(DockIndex::OutlineDock, tr("Outline"), this);
-
-    dock->setObjectName(QStringLiteral("OutlineDock.vnotex"));
-    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
     setupOutlineViewer();
-    dock->setWidget(m_outlineViewer);
-    dock->setFocusProxy(m_outlineViewer);
-    addDockWidget(Qt::LeftDockWidgetArea, dock);
-}
 
-void MainWindow::setupSearchDock()
-{
-    auto dock = createDockWidget(DockIndex::SearchDock, tr("Search"), this);
-
-    dock->setObjectName(QStringLiteral("SearchDock.vnotex"));
-    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+    setupHistoryPanel();
 
     setupSearchPanel();
-    dock->setWidget(m_searchPanel);
-    dock->setFocusProxy(m_searchPanel);
-    addDockWidget(Qt::LeftDockWidgetArea, dock);
+
+    setupSnippetPanel();
+
+    setupLocationList();
+
+    m_dockWidgetHelper.setupDocks();
+
+    NavigationModeMgr::getInst().registerNavigationTarget(&m_dockWidgetHelper);
 }
 
 void MainWindow::setupSearchPanel()
@@ -353,19 +246,6 @@ void MainWindow::setupSearchPanel()
                                                    &VNoteX::getInst().getNotebookMgr()),
         this);
     m_searchPanel->setObjectName("SearchPanel.vnotex");
-}
-
-void MainWindow::setupSnippetDock()
-{
-    auto dock = createDockWidget(DockIndex::SnippetDock, tr("Snippets"), this);
-
-    dock->setObjectName(QStringLiteral("SnippetDock.vnotex"));
-    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-
-    setupSnippetPanel();
-    dock->setWidget(m_snippetPanel);
-    dock->setFocusProxy(m_snippetPanel);
-    addDockWidget(Qt::LeftDockWidgetArea, dock);
 }
 
 void MainWindow::setupSnippetPanel()
@@ -382,37 +262,10 @@ void MainWindow::setupSnippetPanel()
             });
 }
 
-void MainWindow::setupHistoryDock()
-{
-    auto dock = createDockWidget(DockIndex::HistoryDock, tr("History"), this);
-
-    dock->setObjectName(QStringLiteral("HistoryDock.vnotex"));
-    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-
-    setupHistoryPanel();
-    dock->setWidget(m_historyPanel);
-    dock->setFocusProxy(m_historyPanel);
-    addDockWidget(Qt::LeftDockWidgetArea, dock);
-}
-
 void MainWindow::setupHistoryPanel()
 {
     m_historyPanel = new HistoryPanel(this);
     m_historyPanel->setObjectName("HistoryPanel.vnotex");
-}
-
-void MainWindow::setupLocationListDock()
-{
-    auto dock = createDockWidget(DockIndex::LocationListDock, tr("Location List"), this);
-
-    dock->setObjectName(QStringLiteral("LocationListDock.vnotex"));
-    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-
-    setupLocationList();
-    dock->setWidget(m_locationList);
-    dock->setFocusProxy(m_locationList);
-    addDockWidget(Qt::BottomDockWidgetArea, dock);
-    dock->hide();
 }
 
 void MainWindow::setupLocationList()
@@ -444,19 +297,19 @@ void MainWindow::setupNotebookExplorer(QWidget *p_parent)
             m_notebookExplorer, &NotebookExplorer::importLegacyNotebook);
     connect(&VNoteX::getInst(), &VNoteX::locateNodeRequested,
             this, [this](Node *p_node) {
-                activateDock(m_docks[DockIndex::NavigationDock]);
+                m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
                 m_notebookExplorer->locateNode(p_node);
             });
 
-    auto notebookMgr = &VNoteX::getInst().getNotebookMgr();
-    connect(notebookMgr, &NotebookMgr::notebooksUpdated,
+    auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
+    connect(&notebookMgr, &NotebookMgr::notebooksUpdated,
             m_notebookExplorer, &NotebookExplorer::loadNotebooks);
-    connect(notebookMgr, &NotebookMgr::notebookUpdated,
+    connect(&notebookMgr, &NotebookMgr::notebookUpdated,
             m_notebookExplorer, &NotebookExplorer::reloadNotebook);
-    connect(notebookMgr, &NotebookMgr::currentNotebookChanged,
+    connect(&notebookMgr, &NotebookMgr::currentNotebookChanged,
             m_notebookExplorer, &NotebookExplorer::setCurrentNotebook);
     connect(m_notebookExplorer, &NotebookExplorer::notebookActivated,
-            notebookMgr, &NotebookMgr::setCurrentNotebook);
+            &notebookMgr, &NotebookMgr::setCurrentNotebook);
 }
 
 void MainWindow::closeEvent(QCloseEvent *p_event)
@@ -550,11 +403,7 @@ void MainWindow::loadStateAndGeometry(bool p_stateOnly)
         m_visibleDocksBeforeExpand = sg.m_visibleDocksBeforeExpand;
         if (m_visibleDocksBeforeExpand.isEmpty()) {
             // Init (or init again if there is no visible dock).
-            for (int i = 0; i < m_docks.size(); ++i) {
-                if (m_docks[i]->isVisible()) {
-                    m_visibleDocksBeforeExpand.push_back(m_docks[i]->objectName());
-                }
-            }
+            m_visibleDocksBeforeExpand = m_dockWidgetHelper.getVisibleDocks();
         }
     }
 }
@@ -573,54 +422,18 @@ void MainWindow::resetStateAndGeometry()
 
 void MainWindow::setContentAreaExpanded(bool p_expanded)
 {
-    const auto &keepDocks = ConfigMgr::getInst().getWidgetConfig().getMainWindowKeepDocksExpandingContentArea();
-
     if (p_expanded) {
         // Store the state and hide.
-        m_visibleDocksBeforeExpand.clear();
-        for (int i = 0; i < m_docks.size(); ++i) {
-            const auto objName = m_docks[i]->objectName();
-            if (m_docks[i]->isVisible()) {
-                m_visibleDocksBeforeExpand.push_back(objName);
-            }
-
-            if (m_docks[i]->isFloating() || keepDocks.contains(objName)) {
-                continue;
-            }
-
-            m_docks[i]->setVisible(false);
-        }
+        m_visibleDocksBeforeExpand = m_dockWidgetHelper.hideDocks();
     } else {
         // Restore the state.
-        bool hasVisible = false;
-        for (int i = 0; i < m_docks.size(); ++i) {
-            const auto objName = m_docks[i]->objectName();
-            if (m_docks[i]->isFloating() || keepDocks.contains(objName)) {
-                continue;
-            }
-
-            const bool visible = m_visibleDocksBeforeExpand.contains(objName);
-            hasVisible = hasVisible || visible;
-
-            m_docks[i]->setVisible(visible);
-        }
-
-        if (!hasVisible) {
-            // At least make one visible.
-            m_docks[DockIndex::NavigationDock]->setVisible(true);
-        }
+        m_dockWidgetHelper.restoreDocks(m_visibleDocksBeforeExpand);
     }
 }
 
 bool MainWindow::isContentAreaExpanded() const
 {
-    const auto &keepDocks = ConfigMgr::getInst().getWidgetConfig().getMainWindowKeepDocksExpandingContentArea();
-    for (auto dock : m_docks) {
-        if (!dock->isFloating() && dock->isVisible() && !keepDocks.contains(dock->objectName())) {
-            return false;
-        }
-    }
-    return true;
+    return !m_dockWidgetHelper.isAnyDockVisible();
 }
 
 void MainWindow::demoWidget()
@@ -656,7 +469,7 @@ void MainWindow::setupOutlineViewer()
 
 const QVector<QDockWidget *> &MainWindow::getDocks() const
 {
-    return m_docks;
+    return m_dockWidgetHelper.getDocks();
 }
 
 void MainWindow::focusViewArea()
@@ -680,7 +493,7 @@ void MainWindow::setupToolBar()
 
         auto toolBar = new TitleToolBar(tr("Global"), this);
         toolBar->setIconSize(iconSize);
-        m_toolBarHelper.setupToolBars(this, toolBar);
+        m_toolBarHelper.setupToolBars(toolBar);
         toolBar->addTitleBarIcons(ToolBarHelper::generateIcon(QStringLiteral("minimize.svg")),
                                   ToolBarHelper::generateIcon(QStringLiteral("maximize.svg")),
                                   ToolBarHelper::generateIcon(QStringLiteral("maximize_restore.svg")),
@@ -688,7 +501,7 @@ void MainWindow::setupToolBar()
     } else {
         auto toolBar = new QToolBar(tr("Global"), this);
         toolBar->setIconSize(iconSize);
-        m_toolBarHelper.setupToolBars(this, toolBar);
+        m_toolBarHelper.setupToolBars(toolBar);
     }
 
     // Disable the context menu above tool bar.
@@ -703,41 +516,6 @@ void MainWindow::closeOnQuit()
 
 void MainWindow::setupShortcuts()
 {
-    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
-
-    setupDockActivateShortcut(m_docks[DockIndex::NavigationDock],
-                              coreConfig.getShortcut(CoreConfig::Shortcut::NavigationDock));
-
-    setupDockActivateShortcut(m_docks[DockIndex::OutlineDock],
-                              coreConfig.getShortcut(CoreConfig::Shortcut::OutlineDock));
-
-    setupDockActivateShortcut(m_docks[DockIndex::HistoryDock],
-                              coreConfig.getShortcut(CoreConfig::Shortcut::HistoryDock));
-
-    setupDockActivateShortcut(m_docks[DockIndex::SearchDock],
-                              coreConfig.getShortcut(CoreConfig::Shortcut::SearchDock));
-    // Extra shortcut for SearchDock.
-    setupDockActivateShortcut(m_docks[DockIndex::SearchDock],
-                              coreConfig.getShortcut(CoreConfig::Shortcut::Search));
-
-    setupDockActivateShortcut(m_docks[DockIndex::LocationListDock],
-                              coreConfig.getShortcut(CoreConfig::Shortcut::LocationListDock));
-
-    setupDockActivateShortcut(m_docks[DockIndex::SnippetDock],
-                              coreConfig.getShortcut(CoreConfig::Shortcut::SnippetDock));
-}
-
-void MainWindow::setupDockActivateShortcut(QDockWidget *p_dock, const QString &p_keys)
-{
-    auto shortcut = WidgetUtils::createShortcut(p_keys, this);
-    if (shortcut) {
-        p_dock->setToolTip(QString("%1\t%2").arg(p_dock->windowTitle(),
-                                                 QKeySequence(p_keys).toString(QKeySequence::NativeText)));
-        connect(shortcut, &QShortcut::activated,
-                this, [this, p_dock]() {
-                    activateDock(p_dock);
-                });
-    }
 }
 
 void MainWindow::setStayOnTop(bool p_enabled)
@@ -806,50 +584,7 @@ void MainWindow::quitApp()
 
 void MainWindow::updateDockWidgetTabBar()
 {
-    QBitArray tabifiedDocks(m_docks.size(), false);
-    Q_FOREACH(QTabBar* tabBar, this->findChildren<QTabBar*>(QString(), Qt::FindDirectChildrenOnly)) {
-        if (!m_tabBarsMonitored.contains(tabBar)) {
-            m_tabBarsMonitored.insert(tabBar);
-            tabBar->installEventFilter(this);
-        }
-
-        tabBar->setDrawBase(false);
-
-        const int sz = ConfigMgr::getInst().getCoreConfig().getDocksTabBarIconSize();
-        tabBar->setIconSize(QSize(sz, sz));
-
-        auto tabShape = tabBar->shape();
-        bool iconOnly = tabShape == QTabBar::RoundedWest || tabShape == QTabBar::RoundedEast
-                        || tabShape == QTabBar::TriangularWest || tabShape == QTabBar::TriangularEast;
-        const int cnt = tabBar->count();
-        if (cnt == 1) {
-            iconOnly = false;
-        }
-        for (int i = 0; i < cnt; ++i) {
-            auto dock = reinterpret_cast<QDockWidget *>(tabBar->tabData(i).toULongLong());
-            if (!dock) {
-                continue;
-            }
-            int dockIdx = dock->property(c_propertyDockIndex).toInt();
-            tabifiedDocks.setBit(dockIdx);
-            if (iconOnly) {
-                dock->setWindowTitle(QString());
-                tabBar->setTabIcon(i, m_dockIcons[dockIdx]);
-            } else if (dock->windowTitle().isEmpty()) {
-                dock->setWindowTitle(dock->property(c_propertyDockTitle).toString());
-                tabBar->setTabIcon(i, QIcon());
-            }
-        }
-    }
-
-    // Non-tabified docks.
-    for (int i = 0; i < m_docks.size(); ++i) {
-        if (!tabifiedDocks[i] && m_docks[i]->windowTitle().isEmpty()) {
-            m_docks[i]->setWindowTitle(m_docks[i]->property(c_propertyDockTitle).toString());
-        }
-    }
-
-    emit layoutChanged();
+    m_dockWidgetHelper.updateDockWidgetTabBar();
 }
 
 void MainWindow::exportNotes()
@@ -926,15 +661,15 @@ LocationList *MainWindow::getLocationList() const
 void MainWindow::setLocationListVisible(bool p_visible)
 {
     if (p_visible) {
-        activateDock(m_docks[DockIndex::LocationListDock]);
+        m_dockWidgetHelper.activateDock(DockWidgetHelper::LocationListDock);
     } else {
-        m_docks[DockIndex::LocationListDock]->hide();
+        m_dockWidgetHelper.getDock(DockWidgetHelper::LocationListDock)->hide();
     }
 }
 
 void MainWindow::toggleLocationListVisible()
 {
-    bool visible = m_docks[DockIndex::LocationListDock]->isVisible();
+    bool visible = m_dockWidgetHelper.getDock(DockWidgetHelper::LocationListDock)->isVisible();
     setLocationListVisible(!visible);
 }
 
@@ -943,16 +678,6 @@ void MainWindow::setupSpellCheck()
     const auto &configMgr = ConfigMgr::getInst();
     vte::SpellChecker::addDictionaryCustomSearchPaths(
         QStringList() << configMgr.getUserDictsFolder() << configMgr.getAppDictsFolder());
-}
-
-QDockWidget *MainWindow::createDockWidget(DockIndex p_dockIndex, const QString &p_title, QWidget *p_parent)
-{
-    auto dock = new QDockWidget(p_title, p_parent);
-    dock->setToolTip(p_title);
-    dock->setProperty(c_propertyDockIndex, p_dockIndex);
-    dock->setProperty(c_propertyDockTitle, p_title);
-    m_docks.push_back(dock);
-    return dock;
 }
 
 void MainWindow::checkForUpdates()
@@ -966,29 +691,22 @@ void MainWindow::checkForUpdates()
             });
 }
 
-bool MainWindow::eventFilter(QObject *p_obj, QEvent *p_event)
+void MainWindow::checkNotebooksFailedToLoad()
 {
-    if (p_event->type() == QEvent::ToolTip) {
-        // The QTabBar of the tabified dock widgets does not show tooltip due to Qt's internal implementation.
-        auto helpEve = static_cast<QHelpEvent *>(p_event);
-        auto tabBar = static_cast<QTabBar *>(p_obj);
-        int idx = tabBar->tabAt(helpEve->pos());
-        bool done = false;
-        if (idx > -1) {
-            auto dock = reinterpret_cast<QDockWidget *>(tabBar->tabData(idx).toULongLong());
-            if (dock) {
-                done = true;
-                QToolTip::showText(helpEve->globalPos(), dock->property(c_propertyDockTitle).toString());
-            }
-        }
-
-        if (!done) {
-            QToolTip::hideText();
-            p_event->ignore();
-        }
-
-        return true;
+    auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
+    const auto &notebooks = notebookMgr.getNotebooksFailedToLoad();
+    if (notebooks.isEmpty()) {
+        return;
     }
 
-    return QMainWindow::eventFilter(p_obj, p_event);
+    int ret = MessageBoxHelper::questionYesNo(MessageBoxHelper::Warning,
+                                              tr("Failed to load %n notebook(s).", "", notebooks.size()),
+                                              tr("These notebooks may be moved or deleted. It is recommended to remove "
+                                                 "them from configuration and open them with the correct root folder path later.\n"
+                                                 "Remove them from the configuration?"),
+                                              notebooks.join(QLatin1Char('\n')),
+                                              this);
+    if (ret == QMessageBox::Yes) {
+        notebookMgr.clearNotebooksFailedToLoad();
+    }
 }

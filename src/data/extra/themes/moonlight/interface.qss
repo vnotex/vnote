@@ -457,8 +457,8 @@ QLineEdit:disabled {
     color: @widgets#qlineedit#disabled#fg;
 }
 
-/* QPlainTextEdit */
-QPlainTextEdit[ConsoleTextEdit="true"] {
+/* QPlainTextEdit and QTextEdit */
+QPlainTextEdit, QTextEdit {
     color: @widgets#qlineedit#fg;
     background-color: @widgets#qlineedit#bg;
     selection-color: @widgets#qlineedit#selection#fg;

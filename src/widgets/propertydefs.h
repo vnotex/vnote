@@ -29,6 +29,10 @@ namespace vnotex
 
         // Values: info/warning/error.
         static const char *c_state;
+
+        static const char *c_dockWidgetIndex;
+
+        static const char *c_dockWidgetTitle;
     };
 }
 

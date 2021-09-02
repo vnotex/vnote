@@ -10,6 +10,7 @@
 #include "sessionconfig.h"
 #include "global.h"
 #include "notebook/notebook.h"
+#include "noncopyable.h"
 
 namespace vnotex
 {
@@ -23,7 +24,7 @@ namespace vnotex
     class NotebookParameters;
     class Node;
 
-    class NotebookMgr : public QObject
+    class NotebookMgr : public QObject, private Noncopyable
     {
         Q_OBJECT
     public:
@@ -71,6 +72,10 @@ namespace vnotex
         // Try to load @p_path as a node if it is within one notebook.
         QSharedPointer<Node> loadNodeByPath(const QString &p_path);
 
+        const QStringList &getNotebooksFailedToLoad() const;
+
+        void clearNotebooksFailedToLoad();
+
     public slots:
         void setCurrentNotebook(ID p_notebookId);
 
@@ -116,6 +121,8 @@ namespace vnotex
         QVector<QSharedPointer<Notebook>> m_notebooks;
 
         ID m_currentNotebookId = 0;
+
+        QStringList m_notebooksFailedToLoad;
     };
 } // ns vnotex
 

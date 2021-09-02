@@ -11,13 +11,13 @@ namespace vnotex
     class StatusBarHelper
     {
     public:
-        StatusBarHelper()
-        {
-        }
+        explicit StatusBarHelper(MainWindow *p_mainWindow);
 
-        void setupStatusBar(MainWindow *p_win);
+        void setupStatusBar();
 
     private:
+        MainWindow *m_mainWindow = nullptr;
+
         QStatusBar *m_statusBar;
     };
 } // ns vnotex

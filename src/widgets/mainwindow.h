@@ -7,6 +7,7 @@
 #include <QSet>
 
 #include "toolbarhelper.h"
+#include "dockwidgethelper.h"
 #include "statusbarhelper.h"
 
 class QDockWidget;
@@ -32,6 +33,8 @@ namespace vnotex
     {
         Q_OBJECT
     public:
+        friend class DockWidgetHelper;
+
         explicit MainWindow(QWidget *p_parent = nullptr);
 
         ~MainWindow();
@@ -69,10 +72,6 @@ namespace vnotex
 
         void updateDockWidgetTabBar();
 
-        static const char *c_propertyDockIndex;
-
-        static const char *c_propertyDockTitle;
-
     signals:
         void mainWindowStarted();
 
@@ -89,8 +88,6 @@ namespace vnotex
 
         void changeEvent(QEvent *p_event) Q_DECL_OVERRIDE;
 
-        bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
-
     private slots:
         void closeOnQuit();
 
@@ -99,41 +96,17 @@ namespace vnotex
         void showTips(const QString &p_message, int p_timeoutMilliseconds);
 
     private:
-        // Index in m_docks.
-        enum DockIndex
-        {
-            NavigationDock = 0,
-            OutlineDock,
-            HistoryDock,
-            SearchDock,
-            SnippetDock,
-            LocationListDock,
-            MaxDock
-        };
-
         void setupUI();
 
         void setupCentralWidget();
 
         void setupOutlineViewer();
 
-        void setupNavigationDock();
-
-        void setupOutlineDock();
-
-        void setupSearchDock();
-
         void setupSearchPanel();
-
-        void setupLocationListDock();
 
         void setupLocationList();
 
-        void setupSnippetDock();
-
         void setupSnippetPanel();
-
-        void setupHistoryDock();
 
         void setupHistoryPanel();
 
@@ -156,8 +129,6 @@ namespace vnotex
 
         QString getViewAreaTitle() const;
 
-        void activateDock(QDockWidget *p_dock);
-
         void setupToolBar();
 
         void setupShortcuts();
@@ -166,17 +137,17 @@ namespace vnotex
 
         void setTipsAreaVisible(bool p_visible);
 
-        void setupDockActivateShortcut(QDockWidget *p_dock, const QString &p_keys);
-
         void setupSpellCheck();
 
-        QDockWidget *createDockWidget(DockIndex p_dockIndex, const QString &p_title, QWidget *p_parent);
-
         void checkForUpdates();
+
+        void checkNotebooksFailedToLoad();
 
         ToolBarHelper m_toolBarHelper;
 
         StatusBarHelper m_statusBarHelper;
+
+        DockWidgetHelper m_dockWidgetHelper;
 
         ToolBox *m_navigationToolBox = nullptr;
 
@@ -196,10 +167,6 @@ namespace vnotex
 
         HistoryPanel *m_historyPanel = nullptr;
 
-        QVector<QDockWidget *> m_docks;
-
-        QVector<QIcon> m_dockIcons;
-
         bool m_layoutReset = false;
 
         // -1: do not request to quit;
@@ -215,9 +182,6 @@ namespace vnotex
         QTimer *m_tipsTimer = nullptr;
 
         QStringList m_visibleDocksBeforeExpand;
-
-        // We need to install event filter to the tabbar of tabified dock widgets.
-        QSet<QTabBar *> m_tabBarsMonitored;
     };
 } // ns vnotex
 

@@ -11,7 +11,7 @@
 #include <QFileDialog>
 
 #include "mainwindow.h"
-#include "vnotex.h"
+#include <core/vnotex.h>
 #include "widgetsfactory.h"
 #include <utils/iconutils.h>
 #include <utils/widgetutils.h>
@@ -28,6 +28,11 @@
 #include "dialogs/updater.h"
 
 using namespace vnotex;
+
+ToolBarHelper::ToolBarHelper(MainWindow *p_mainWindow)
+    : m_mainWindow(p_mainWindow)
+{
+}
 
 static QToolBar *createToolBar(MainWindow *p_win, const QString &p_title, const QString &p_name)
 {
@@ -147,12 +152,13 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
         tb->addWidget(newBtn);
     }
 
-    // Import and export.
+    // Import.
     {
-        auto act = tb->addAction(generateIcon("import_export_menu.svg"), MainWindow::tr("Import/Export"));
+        auto act = tb->addAction(generateIcon("import_menu.svg"), MainWindow::tr("Import"));
 
         auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
         Q_ASSERT(btn);
+        btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         btn->setPopupMode(QToolButton::InstantPopup);
         btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
@@ -172,16 +178,24 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
                            []() {
                                emit VNoteX::getInst().importFolderRequested();
                            });
+    }
 
-        newMenu->addSeparator();
+    // Export.
+    {
+        auto exportAct = tb->addAction(generateIcon("export_menu.svg"),
+                                       MainWindow::tr("Export (Convert Format)"),
+                                       []() {
+                                           emit VNoteX::getInst().exportRequested();
+                                       });
 
-        auto exportAct = newMenu->addAction(MainWindow::tr("Export (Convert Format)"),
-                                            newMenu,
-                                            []() {
-                                                emit VNoteX::getInst().exportRequested();
-                                            });
         WidgetUtils::addActionShortcut(exportAct,
                                        coreConfig.getShortcut(CoreConfig::Shortcut::Export));
+
+        // To hide the shortcut text shown in button.
+        auto toolBtn = dynamic_cast<QToolButton *>(tb->widgetForAction(exportAct));
+        Q_ASSERT(toolBtn);
+        toolBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        toolBtn->setText(MainWindow::tr("Export"));
     }
 
     return tb;
@@ -579,31 +593,31 @@ QIcon ToolBarHelper::generateDangerousIcon(const QString &p_iconName)
     return IconUtils::fetchIcon(iconFile, colors);
 }
 
-void ToolBarHelper::setupToolBars(MainWindow *p_win)
+void ToolBarHelper::setupToolBars()
 {
     m_toolBars.clear();
 
-    auto fileTab = setupFileToolBar(p_win, nullptr);
+    auto fileTab = setupFileToolBar(m_mainWindow, nullptr);
     m_toolBars.insert(fileTab->objectName(), fileTab);
 
-    auto quickAccessTb = setupQuickAccessToolBar(p_win, nullptr);
+    auto quickAccessTb = setupQuickAccessToolBar(m_mainWindow, nullptr);
     m_toolBars.insert(quickAccessTb->objectName(), quickAccessTb);
 
-    auto settingsToolBar = setupSettingsToolBar(p_win, nullptr);
+    auto settingsToolBar = setupSettingsToolBar(m_mainWindow, nullptr);
     m_toolBars.insert(settingsToolBar->objectName(), settingsToolBar);
 }
 
-void ToolBarHelper::setupToolBars(MainWindow *p_win, QToolBar *p_toolBar)
+void ToolBarHelper::setupToolBars(QToolBar *p_toolBar)
 {
     m_toolBars.clear();
 
     p_toolBar->setObjectName(QStringLiteral("UnifiedToolBar"));
     p_toolBar->setMovable(false);
-    p_win->addToolBar(p_toolBar);
+    m_mainWindow->addToolBar(p_toolBar);
 
-    setupFileToolBar(p_win, p_toolBar);
-    setupQuickAccessToolBar(p_win, p_toolBar);
-    setupSettingsToolBar(p_win, p_toolBar);
+    setupFileToolBar(m_mainWindow, p_toolBar);
+    setupQuickAccessToolBar(m_mainWindow, p_toolBar);
+    setupSettingsToolBar(m_mainWindow, p_toolBar);
     m_toolBars.insert(p_toolBar->objectName(), p_toolBar);
 }
 

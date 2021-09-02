@@ -21,3 +21,7 @@ const char *PropertyDefs::c_viewWindowToolBar = "ViewWindowToolBar";
 const char *PropertyDefs::c_consoleTextEdit = "ConsoleTextEdit";
 
 const char *PropertyDefs::c_embeddedLineEdit = "EmbeddedLineEdit";
+
+const char *PropertyDefs::c_dockWidgetIndex = "DockIndex";
+
+const char *PropertyDefs::c_dockWidgetTitle = "DockTitle";

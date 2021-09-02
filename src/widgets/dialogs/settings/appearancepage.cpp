@@ -7,12 +7,13 @@
 #include <QDockWidget>
 
 #include <widgets/widgetsfactory.h>
+#include <widgets/mainwindow.h>
 #include <core/sessionconfig.h>
 #include <core/coreconfig.h>
 #include <core/widgetconfig.h>
 #include <core/configmgr.h>
 #include <utils/widgetutils.h>
-#include <widgets/mainwindow.h>
+#include <widgets/propertydefs.h>
 #include <core/vnotex.h>
 
 using namespace vnotex;
@@ -59,7 +60,7 @@ void AppearancePage::setupUI()
         auto layout = new QVBoxLayout();
 
         for (int i = 0; i < docks.size(); ++i) {
-            m_keepDocksExpandingContentArea[i].first = WidgetsFactory::createCheckBox(docks[i]->property(MainWindow::c_propertyDockTitle).toString(), this);
+            m_keepDocksExpandingContentArea[i].first = WidgetsFactory::createCheckBox(docks[i]->property(PropertyDefs::c_dockWidgetTitle).toString(), this);
             m_keepDocksExpandingContentArea[i].second = docks[i]->objectName();
             layout->addWidget(m_keepDocksExpandingContentArea[i].first);
             connect(m_keepDocksExpandingContentArea[i].first, &QCheckBox::stateChanged,

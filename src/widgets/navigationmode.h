@@ -54,7 +54,7 @@ namespace vnotex
 
         virtual QVector<void *> getVisibleNavigationItems();
 
-        // @p_idx: -1 for SingleKey and the major stage of StagedDoubleKeys.
+        // @p_idx: will be -1 for SingleKey case and the major stage of StagedDoubleKeys case.
         virtual void placeNavigationLabel(int p_idx, void * p_item, QLabel *p_label) = 0;
 
         virtual void showNavigationWithDoubleKeys();

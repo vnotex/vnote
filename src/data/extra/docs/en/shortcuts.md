@@ -2,7 +2,7 @@
 1. All the keys without special notice are **case insensitive**;
 2. On macOS, `Ctrl` corresponds to `Command` except in Vi mode;
 3. The key sequence `Ctrl+G, I` means that first press both `Ctrl` and `G` simultaneously, release them, then press `I` and release;
-4. For a complete shortcuts list, please view the `vnotex.json` configuration file.
+4. For a **complete shortcuts list**, please view the `vnotex.json` configuration file.
 
 ## General
 - `Ctrl+G E`  
@@ -23,15 +23,11 @@ Recover last closed file.
 Open Flash Page.
 - `Ctrl+Alt+I`  
 Open Quick Access.
-- `Ctrl+G 1`  
-Focus the Navigation dock.
-- `Ctrl+G 2`  
-Focus the Outline dock.
-- `Ctrl+G X`   
+- `Ctrl+G X`  
 Close current tab.
-- `Ctrl+G D`   
+- `Ctrl+G D`  
 Locate to the folder of current note.
-- `Ctrl+G O`   
+- `Ctrl+G O`  
 Open the Outline popup.
 
 ## Text Editor
@@ -93,7 +89,7 @@ Shares the same shortcuts with Text Editor.
 
 - `Ctrl+T`  
 Edit current note or save changes and exit edit mode.
-- `Ctrl+G Q`   
+- `Ctrl+G Q`  
 Discard current changes and exit edit mode.
 
 #### Text Editing
