@@ -378,3 +378,8 @@ QList<QSharedPointer<File>> Notebook::collectFiles()
 
     return files;
 }
+
+QStringList Notebook::scanAndImportExternalFiles()
+{
+    return m_configMgr->scanAndImportExternalFiles(getRootNode().data());
+}

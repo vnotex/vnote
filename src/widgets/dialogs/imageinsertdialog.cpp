@@ -15,6 +15,7 @@
 #include <QFileDialog>
 #include <QTimer>
 #include <QTemporaryFile>
+#include <QCheckBox>
 
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/networkutils.h>
@@ -27,6 +28,10 @@
 using namespace vnotex;
 
 int ImageInsertDialog::s_lastScaleSliderValue = 10;
+
+int ImageInsertDialog::s_lastScaleWidth = -1;
+
+bool ImageInsertDialog::s_fixedScaleWidth = false;
 
 ImageInsertDialog::ImageInsertDialog(const QString &p_title,
                                      const QString &p_imageTitle,
@@ -108,12 +113,14 @@ void ImageInsertDialog::setupUI(const QString &p_title,
 
                 int height = m_image.height() * (1.0 * p_val / m_image.width());
                 m_imageLabel->resize(p_val, height);
+
+                s_lastScaleWidth = p_val;
             });
     // 0.1 to 2.0 -> 1 to 20.
     m_scaleSlider = new QSlider(mainWidget);
     m_scaleSlider->setOrientation(Qt::Horizontal);
     m_scaleSlider->setMinimum(1);
-    m_scaleSlider->setMaximum(20);
+    m_scaleSlider->setMaximum(50);
     m_scaleSlider->setValue(s_lastScaleSliderValue);
     m_scaleSlider->setSingleStep(1);
     m_scaleSlider->setPageStep(5);
@@ -125,6 +132,16 @@ void ImageInsertDialog::setupUI(const QString &p_title,
     gridLayout->addWidget(m_scaleSlider, 3, 2, 1, 2);
     gridLayout->addWidget(m_sliderLabel, 3, 4, 1, 1);
 
+    {
+        auto fixedWidthCheckBox = WidgetsFactory::createCheckBox(tr("Fixed scaling width"), mainWidget);
+        fixedWidthCheckBox->setChecked(s_fixedScaleWidth);
+        connect(fixedWidthCheckBox, &QCheckBox::stateChanged,
+                this, [this](int p_state) {
+                    s_fixedScaleWidth = p_state == Qt::Checked;
+                });
+        gridLayout->addWidget(fixedWidthCheckBox, 4, 1, 1, 1);
+    }
+
     // Preview area.
     m_imageLabel = new QLabel(mainWidget);
     m_imageLabel->setScaledContents(true);
@@ -132,7 +149,7 @@ void ImageInsertDialog::setupUI(const QString &p_title,
     m_previewArea->setBackgroundRole(QPalette::Dark);
     m_previewArea->setWidget(m_imageLabel);
     m_previewArea->setMinimumSize(256, 256);
-    gridLayout->addWidget(m_previewArea, 4, 0, 1, 5);
+    gridLayout->addWidget(m_previewArea, 5, 0, 1, 5);
 
     setImageControlsVisible(false);
 
@@ -271,11 +288,16 @@ void ImageInsertDialog::setImage(const QImage &p_image)
 
         m_widthSpin->setMaximum(m_image.width() * 5);
 
-        // Set the scaling widgets.
-        if (m_scaleSlider->value() == s_lastScaleSliderValue) {
-            handleScaleSliderValueChanged(s_lastScaleSliderValue);
+        if (s_fixedScaleWidth) {
+            m_widthSpin->setValue(s_lastScaleWidth);
         } else {
-            m_scaleSlider->setValue(s_lastScaleSliderValue);
+            // Set the scaling widgets.
+            if (m_scaleSlider->value() == s_lastScaleSliderValue) {
+                // Trigger it manually.
+                handleScaleSliderValueChanged(s_lastScaleSliderValue);
+            } else {
+                m_scaleSlider->setValue(s_lastScaleSliderValue);
+            }
         }
 
         setImageControlsVisible(true);

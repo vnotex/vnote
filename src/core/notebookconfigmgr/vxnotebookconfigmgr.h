@@ -74,6 +74,8 @@ namespace vnotex
 
         bool checkNodeExists(Node *p_node) Q_DECL_OVERRIDE;
 
+        QStringList scanAndImportExternalFiles(Node *p_node) Q_DECL_OVERRIDE;
+
     private:
         // Config of a file child.
         struct NodeFileConfig
@@ -194,6 +196,8 @@ namespace vnotex
         void inheritNodeFlags(const Node *p_node, Node *p_child) const;
 
         bool isExcludedFromExternalNode(const QString &p_name) const;
+
+        static bool isLikelyImageFolder(const QString &p_dirPath);
 
         Info m_info;
 

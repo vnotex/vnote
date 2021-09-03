@@ -261,6 +261,16 @@ bool FileUtils::isText(const QString &p_filePath)
     return mimeType.inherits(QStringLiteral("text/plain"));
 }
 
+bool FileUtils::isImage(const QString &p_filePath)
+{
+    QMimeDatabase mimeDatabase;
+    auto mimeType = mimeDatabase.mimeTypeForFile(p_filePath);
+    if (mimeType.name().startsWith(QStringLiteral("image/"))) {
+        return true;
+    }
+    return false;
+}
+
 QImage FileUtils::imageFromFile(const QString &p_filePath)
 {
     QImage img(p_filePath);

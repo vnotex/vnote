@@ -132,6 +132,38 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
                 });
     }
 
+    {
+        auto btn = titleBar->addActionButton(QStringLiteral("scan_import.svg"), tr("Scan and Import"));
+        connect(btn, &QToolButton::clicked,
+                this, [this]() {
+                    if (!m_currentNotebook) {
+                        MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                                 tr("Please select one notebook first."),
+                                                 VNoteX::getInst().getMainWindow());
+                        return;
+                    }
+                    int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
+                                                                 tr("Scan the whole notebook (%1) and import external files automatically.").arg(m_currentNotebook->getName()),
+                                                                 tr("This operation helps importing external files that are added outside VNote. "
+                                                                    "It may import unexpected files."),
+                                                                 tr("It is recommended to always manage files within VNote."),
+                                                                 VNoteX::getInst().getMainWindow());
+                    if (ret != QMessageBox::Ok) {
+                        return;
+                    }
+
+                    auto importedFiles = m_currentNotebook->scanAndImportExternalFiles();
+                    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                                            tr("Imported %n file(s).", "", importedFiles.size()),
+                                            QString(),
+                                            importedFiles.join('\n'),
+                                            VNoteX::getInst().getMainWindow());
+                    if (!importedFiles.isEmpty()) {
+                        m_nodeExplorer->reload();
+                    }
+                });
+    }
+
     titleBar->addMenuAction(QStringLiteral("manage_notebooks.svg"),
                             tr("&Manage Notebooks"),
                             titleBar,

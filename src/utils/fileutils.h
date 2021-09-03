@@ -56,6 +56,8 @@ namespace vnotex
 
         static bool isText(const QString &p_filePath);
 
+        static bool isImage(const QString &p_filePath);
+
         static QImage imageFromFile(const QString &p_filePath);
 
         static QPixmap pixmapFromFile(const QString &p_filePath);

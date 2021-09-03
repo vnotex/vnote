@@ -112,6 +112,10 @@ namespace vnotex
         QSharedPointer<QTemporaryFile> m_tempFile;
 
         static int s_lastScaleSliderValue;
+
+        static int s_lastScaleWidth;
+
+        static bool s_fixedScaleWidth;
     };
 }
 

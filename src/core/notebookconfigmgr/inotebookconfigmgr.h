@@ -80,6 +80,8 @@ namespace vnotex
 
         virtual bool checkNodeExists(Node *p_node) = 0;
 
+        virtual QStringList scanAndImportExternalFiles(Node *p_node) = 0;
+
     protected:
         // Version of the config processing code.
         virtual QString getCodeVersion() const;

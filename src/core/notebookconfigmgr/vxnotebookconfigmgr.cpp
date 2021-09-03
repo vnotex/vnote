@@ -996,3 +996,59 @@ bool VXNotebookConfigMgr::checkNodeExists(Node *p_node)
     p_node->setExists(exists);
     return exists;
 }
+
+QStringList VXNotebookConfigMgr::scanAndImportExternalFiles(Node *p_node)
+{
+    QStringList files;
+    if (!p_node->isContainer() || p_node->getUse() == Node::Use::RecycleBin) {
+        return files;
+    }
+
+    // External nodes.
+    auto dir = p_node->toDir();
+    auto externalNodes = fetchExternalChildren(p_node);
+    for (const auto &node : externalNodes) {
+        Node::Flags flags = Node::Flag::Content;
+        if (node->isFolder()) {
+            if (isLikelyImageFolder(dir.filePath(node->getName()))) {
+                qWarning() << "skip importing folder containing only images" << node->getName();
+                continue;
+            }
+            flags = Node::Flag::Container;
+        }
+
+        addAsNode(p_node, flags, node->getName(), NodeParameters());
+        files << dir.filePath(node->getName());
+    }
+
+    // Children folders (including newly-added external nodes).
+    for (const auto &child : p_node->getChildrenRef()) {
+        if (child->isContainer()) {
+            files << scanAndImportExternalFiles(child.data());
+        }
+    }
+
+    return files;
+}
+
+bool VXNotebookConfigMgr::isLikelyImageFolder(const QString &p_dirPath)
+{
+    QDir dir(p_dirPath);
+    const auto folders = dir.entryList(QDir::Dirs | QDir::NoSymLinks | QDir::NoDotAndDotDot);
+    if (!folders.isEmpty()) {
+        return false;
+    }
+
+    const auto files = dir.entryList(QDir::Files);
+    if (files.isEmpty()) {
+        return false;
+    }
+
+    for (const auto &file : files) {
+        if (!FileUtils::isImage(dir.filePath(file))) {
+            return false;
+        }
+    }
+
+    return true;
+}

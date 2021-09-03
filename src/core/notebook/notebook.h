@@ -144,6 +144,8 @@ namespace vnotex
         // Get content files recursively.
         QList<QSharedPointer<File>> collectFiles();
 
+        QStringList scanAndImportExternalFiles();
+
         static const QString c_defaultAttachmentFolder;
 
         static const QString c_defaultImageFolder;
