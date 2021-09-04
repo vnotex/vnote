@@ -5,6 +5,7 @@
 #include <QByteArray>
 
 #include <utils/utils.h>
+#include <utils/pathutils.h>
 #include "githubimagehost.h"
 
 using namespace vnotex;
@@ -146,6 +147,7 @@ QString GiteeImageHost::create(const QByteArray &p_data, const QString &p_path, 
         if (targetUrl.isEmpty()) {
             p_msg = tr("Failed to create resource at the image host (%1) (%2) (%3).").arg(urlStr, reply.errorStr(), reply.m_data);
         } else {
+            targetUrl = PathUtils::encodeSpacesInPath(targetUrl);
             qDebug() << "created resource" << targetUrl;
         }
         return targetUrl;
