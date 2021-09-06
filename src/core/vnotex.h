@@ -64,6 +64,8 @@ namespace vnotex
         // Requested to import a legacy notebook from VNote 2.0.
         void importLegacyNotebookRequested();
 
+        void manageNotebooksRequested();
+
         // Requested to import files.
         void importFileRequested();
 

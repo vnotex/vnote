@@ -55,6 +55,8 @@ namespace vnotex
 
         void locateNode(Node *p_node);
 
+        void manageNotebooks();
+
     signals:
         void notebookActivated(ID p_notebookId);
 

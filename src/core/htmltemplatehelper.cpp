@@ -10,6 +10,7 @@
 #include <utils/htmlutils.h>
 #include <core/thememgr.h>
 #include <core/vnotex.h>
+#include <core/exception.h>
 
 using namespace vnotex;
 
@@ -48,7 +49,11 @@ static void fillGlobalStyles(QString &p_template, const WebResource &p_resource,
                 for (const auto &style : ele.m_styles) {
                     // Read the style file content.
                     auto styleFile = ConfigMgr::getInst().getUserOrAppFile(style);
-                    styles += FileUtils::readTextFile(styleFile);
+                    try {
+                        styles += FileUtils::readTextFile(styleFile);
+                    } catch (Exception &p_e) {
+                        qWarning() << "failed to read global styles" << ele.m_name << styleFile << p_e.what();
+                    }
                 }
             }
             break;
@@ -138,16 +143,20 @@ static void fillResourcesByContent(QString &p_template, const WebResource &p_res
 
     for (const auto &ele : p_resource.m_resources) {
         if (ele.m_enabled && !ele.isGlobal()) {
-            // Styles.
-            for (const auto &style : ele.m_styles) {
-                auto styleFile = ConfigMgr::getInst().getUserOrAppFile(style);
-                styles += FileUtils::readTextFile(styleFile);
-            }
+            try {
+                // Styles.
+                for (const auto &style : ele.m_styles) {
+                    auto styleFile = ConfigMgr::getInst().getUserOrAppFile(style);
+                    styles += FileUtils::readTextFile(styleFile);
+                }
 
-            // Scripts.
-            for (const auto &script : ele.m_scripts) {
-                auto scriptFile = ConfigMgr::getInst().getUserOrAppFile(script);
-                scripts += FileUtils::readTextFile(scriptFile);
+                // Scripts.
+                for (const auto &script : ele.m_scripts) {
+                    auto scriptFile = ConfigMgr::getInst().getUserOrAppFile(script);
+                    scripts += FileUtils::readTextFile(scriptFile);
+                }
+            } catch (Exception &p_e) {
+                qWarning() << "failed to read resource" << ele.m_name << p_e.what();
             }
         }
     }
@@ -186,7 +195,13 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
 {
     const auto &viewerResource = p_config.getViewerResource();
     const auto templateFile = ConfigMgr::getInst().getUserOrAppFile(viewerResource.m_template);
-    auto htmlTemplate = FileUtils::readTextFile(templateFile);
+    QString htmlTemplate;
+    try {
+        htmlTemplate = FileUtils::readTextFile(templateFile);
+    } catch (Exception &p_e) {
+        qWarning() << "failed to read HTML template" << templateFile << p_e.what();
+        return errorPage();
+    }
 
     fillGlobalStyles(htmlTemplate, viewerResource, "");
 
@@ -224,7 +239,13 @@ QString HtmlTemplateHelper::generateExportTemplate(const MarkdownEditorConfig &p
 {
     auto exportResource = p_config.getExportResource();
     const auto templateFile = ConfigMgr::getInst().getUserOrAppFile(exportResource.m_template);
-    auto htmlTemplate = FileUtils::readTextFile(templateFile);
+    QString htmlTemplate;
+    try {
+        htmlTemplate = FileUtils::readTextFile(templateFile);
+    } catch (Exception &p_e) {
+        qWarning() << "failed to read export HTML template" << templateFile << p_e.what();
+        return errorPage();
+    }
 
     fillGlobalStyles(htmlTemplate, exportResource, "");
 
@@ -286,4 +307,10 @@ void HtmlTemplateHelper::fillContent(QString &p_template, const QString &p_conte
 void HtmlTemplateHelper::fillBodyClassList(QString &p_template, const QString &p_classList)
 {
     p_template.replace("<!-- VX_BODY_CLASS_LIST_PLACEHOLDER -->", p_classList);
+}
+
+QString HtmlTemplateHelper::errorPage()
+{
+    return VNoteX::tr("Failed to load HTML template. Check the logs for details. "
+                      "Try deleting the user configuration file and the default configuration file.");
 }

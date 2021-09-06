@@ -96,6 +96,16 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
                            []() {
                                emit VNoteX::getInst().importLegacyNotebookRequested();
                            });
+
+        btnMenu->addSeparator();
+
+        // Manage notebook.
+        btnMenu->addAction(generateIcon("manage_notebooks.svg"),
+                           MainWindow::tr("Manage Notebooks"),
+                           btnMenu,
+                           []() {
+                               emit VNoteX::getInst().manageNotebooksRequested();
+                           });
     }
 
     // New Note.

@@ -164,16 +164,11 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
                 });
     }
 
-    titleBar->addMenuAction(QStringLiteral("manage_notebooks.svg"),
-                            tr("&Manage Notebooks"),
-                            titleBar,
-                            [this]() {
-                                ManageNotebooksDialog dialog(m_currentNotebook.data(),
-                                                             VNoteX::getInst().getMainWindow());
-                                dialog.exec();
-                            });
-
-    titleBar->addMenuSeparator();
+    {
+        auto btn = titleBar->addActionButton(QStringLiteral("manage_notebooks.svg"), tr("Manage Notebooks"));
+        connect(btn, &QToolButton::clicked,
+                this, &NotebookExplorer::manageNotebooks);
+    }
 
     // External Files menu.
     {
@@ -401,6 +396,12 @@ void NotebookExplorer::importFolder()
 void NotebookExplorer::importLegacyNotebook()
 {
     ImportLegacyNotebookDialog dialog(VNoteX::getInst().getMainWindow());
+    dialog.exec();
+}
+
+void NotebookExplorer::manageNotebooks()
+{
+    ManageNotebooksDialog dialog(m_currentNotebook.data(), VNoteX::getInst().getMainWindow());
     dialog.exec();
 }
 

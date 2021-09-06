@@ -103,6 +103,8 @@ namespace vnotex
         static void fillOutlinePanel(QString &p_template, WebResource &p_exportResource, bool p_addOutlinePanel);
 
     private:
+        static QString errorPage();
+
         struct Template
         {
             int m_revision = -1;
