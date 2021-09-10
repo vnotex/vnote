@@ -8,6 +8,7 @@ namespace vnotex
 {
     class BundleNotebookConfigMgr;
     class NotebookConfig;
+    class NotebookDatabaseAccess;
 
     class BundleNotebook : public Notebook
     {
@@ -17,9 +18,7 @@ namespace vnotex
                        const QSharedPointer<NotebookConfig> &p_notebookConfig,
                        QObject *p_parent = nullptr);
 
-        ID getNextNodeId() const Q_DECL_OVERRIDE;
-
-        ID getAndUpdateNextNodeId() Q_DECL_OVERRIDE;
+        ~BundleNotebook();
 
         void updateNotebookConfig() Q_DECL_OVERRIDE;
 
@@ -34,14 +33,30 @@ namespace vnotex
         const QJsonObject &getExtraConfigs() const Q_DECL_OVERRIDE;
         void setExtraConfig(const QString &p_key, const QJsonObject &p_obj) Q_DECL_OVERRIDE;
 
+        bool rebuildDatabase() Q_DECL_OVERRIDE;
+
+        NotebookDatabaseAccess *getDatabaseAccess() const;
+
+    protected:
+        void initializeInternal() Q_DECL_OVERRIDE;
+
     private:
         BundleNotebookConfigMgr *getBundleNotebookConfigMgr() const;
 
-        ID m_nextNodeId = 1;
+        void setupDatabase();
+
+        void fillNodeTableFromConfig(Node *p_node, bool p_ignoreId, int &p_totalCnt);
+
+        void initDatabase();
+
+        const int m_configVersion;
 
         QVector<HistoryItem> m_history;
 
         QJsonObject m_extraConfigs;
+
+        // Managed by QObject.
+        NotebookDatabaseAccess *m_dbAccess = nullptr;
     };
 } // ns vnotex
 

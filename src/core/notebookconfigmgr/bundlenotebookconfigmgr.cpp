@@ -75,6 +75,11 @@ QString BundleNotebookConfigMgr::getConfigFilePath()
     return PathUtils::concatenateFilePath(c_configFolderName, c_configName);
 }
 
+QString BundleNotebookConfigMgr::getDatabasePath()
+{
+    return PathUtils::concatenateFilePath(c_configFolderName, "notebook.db");
+}
+
 BundleNotebook *BundleNotebookConfigMgr::getBundleNotebook() const
 {
     return dynamic_cast<BundleNotebook *>(getNotebook());
@@ -93,4 +98,9 @@ bool BundleNotebookConfigMgr::isBuiltInFolder(const Node *p_node, const QString 
         return p_name.toLower() == c_configFolderName;
     }
     return false;
+}
+
+int BundleNotebookConfigMgr::getCodeVersion() const
+{
+    return 2;
 }

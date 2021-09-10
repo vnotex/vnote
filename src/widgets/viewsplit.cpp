@@ -437,8 +437,6 @@ void ViewSplit::updateMenu(QMenu *p_menu)
 
     p_menu->clear();
 
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-
     // Workspaces.
     {
         p_menu->addSection(tr("Workspaces"));
@@ -488,18 +486,15 @@ void ViewSplit::updateMenu(QMenu *p_menu)
 
     // Splits.
     {
+        // Do not add icon here since it will consume too much space.
         p_menu->addSection(tr("Split"));
-        auto icon = themeMgr.getIconFile(QStringLiteral("vertical_split.svg"));
-        auto act = p_menu->addAction(IconUtils::fetchIconWithDisabledState(icon),
-                                     tr("Vertical Split"),
+        auto act = p_menu->addAction(tr("Vertical Split"),
                                      [this]() {
                                          emit verticalSplitRequested(this);
                                      });
         WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::VerticalSplit));
 
-        icon = themeMgr.getIconFile(QStringLiteral("horizontal_split.svg"));
-        act = p_menu->addAction(IconUtils::fetchIconWithDisabledState(icon),
-                                tr("Horizontal Split"),
+        act = p_menu->addAction(tr("Horizontal Split"),
                                 [this]() {
                                     emit horizontalSplitRequested(this);
                                 });

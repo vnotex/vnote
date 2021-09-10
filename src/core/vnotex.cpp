@@ -38,6 +38,7 @@ VNoteX::VNoteX(QObject *p_parent)
 
 void VNoteX::initLoad()
 {
+    qDebug() << "start init which may take a while";
     m_notebookMgr->loadNotebooks();
 }
 

@@ -559,20 +559,32 @@ bool WebViewExporter::doExportWkhtmltopdf(const ExportPdfOption &p_pdfOption, co
 
 bool WebViewExporter::htmlToPdfViaWkhtmltopdf(const ExportPdfOption &p_pdfOption, const QStringList &p_htmlFiles, const QString &p_outputFile)
 {
-    // Note: system's locale settings (Language for non-Unicode programs) is important to wkhtmltopdf.
-    // Input file could be encoded via QUrl::fromLocalFile(p_htmlFile).toString(QUrl::EncodeUnicode) to
-    // handle non-ASCII path.
-
     QStringList args(m_wkhtmltopdfArgs);
 
     // Prepare the args.
     for (auto const &file : p_htmlFiles) {
-        args << QDir::toNativeSeparators(file);
+        // Note: system's locale settings (Language for non-Unicode programs) is important to wkhtmltopdf.
+        // Input file could be encoded via QUrl::fromLocalFile(p_htmlFile).toString(QUrl::EncodeUnicode) to
+        // handle non-ASCII path. But for the output file, it is useless.
+        args << QUrl::fromLocalFile(QDir::toNativeSeparators(file)).toString(QUrl::EncodeUnicode);
     }
 
-    args << QDir::toNativeSeparators(p_outputFile);
+    // To handle non-ASCII path, export it to a temp file and then copy it.
+    QTemporaryDir tmpDir;
+    if (!tmpDir.isValid()) {
+        return false;
+    }
 
-    return startProcess(p_pdfOption.m_wkhtmltopdfExePath, args);
+    const auto tmpFile = tmpDir.filePath("vx_tmp_output.pdf");
+    args << QDir::toNativeSeparators(tmpFile);
+
+    bool ret = startProcess(QDir::toNativeSeparators(p_pdfOption.m_wkhtmltopdfExePath), args);
+    if (ret && QFileInfo::exists(tmpFile)) {
+        emit logRequested(tr("Copy output file (%1) to (%2).").arg(tmpFile, p_outputFile));
+        FileUtils::copyFile(tmpFile, p_outputFile);
+    }
+
+    return ret;
 }
 
 bool WebViewExporter::startProcess(const QString &p_program, const QStringList &p_args)

@@ -553,6 +553,7 @@ QWidget *ExportDialog::getHtmlAdvancedSettings()
                     });
             // TODO: do not support MHTML for now.
             m_useMimeHtmlFormatCheckBox->setEnabled(false);
+            m_useMimeHtmlFormatCheckBox->hide();
             layout->addRow(m_useMimeHtmlFormatCheckBox);
         }
 
@@ -673,6 +674,7 @@ QWidget *ExportDialog::getPdfAdvancedSettings()
         {
             m_allInOneCheckBox = WidgetsFactory::createCheckBox(tr("All-in-One"), widget);
             m_allInOneCheckBox->setToolTip(tr("Export all source files into one file"));
+            m_allInOneCheckBox->setEnabled(false);
             connect(m_useWkhtmltopdfCheckBox, &QCheckBox::stateChanged,
                     this, [this](int p_state) {
                         m_allInOneCheckBox->setEnabled(p_state == Qt::Checked);

@@ -79,7 +79,6 @@ void SearchPanel::setupUI()
     m_keywordComboBox->setLineEdit(WidgetsFactory::createLineEdit(mainWidget));
     m_keywordComboBox->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
     m_keywordComboBox->completer()->setCaseSensitivity(Qt::CaseSensitive);
-    setFocusProxy(m_keywordComboBox);
     connect(m_keywordComboBox->lineEdit(), &QLineEdit::returnPressed,
             this, [this]() {
                 m_searchBtn->animateClick();
@@ -575,4 +574,12 @@ void SearchPanel::handleLocationActivated(const Location &p_location)
     paras->m_lineNumber = p_location.m_lineNumber;
     paras->m_searchToken = m_searchTokenOfSession;
     emit VNoteX::getInst().openFileRequested(p_location.m_path, paras);
+}
+
+void SearchPanel::focusInEvent(QFocusEvent *p_event)
+{
+    QFrame::focusInEvent(p_event);
+
+    WidgetUtils::selectBaseName(m_keywordComboBox->lineEdit());
+    m_keywordComboBox->setFocus();
 }

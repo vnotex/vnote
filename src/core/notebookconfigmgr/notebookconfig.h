@@ -20,17 +20,17 @@ namespace vnotex
     public:
         virtual ~NotebookConfig() {}
 
-        static QSharedPointer<NotebookConfig> fromNotebookParameters(const QString &p_version,
+        static QSharedPointer<NotebookConfig> fromNotebookParameters(int p_version,
                                                                      const NotebookParameters &p_paras);
 
-        static QSharedPointer<NotebookConfig> fromNotebook(const QString &p_version,
+        static QSharedPointer<NotebookConfig> fromNotebook(int p_version,
                                                            const Notebook *p_notebook);
 
         virtual QJsonObject toJson() const;
 
         virtual void fromJson(const QJsonObject &p_jobj);
 
-        QString m_version;
+        int m_version = 0;
 
         QString m_name;
 
@@ -45,8 +45,6 @@ namespace vnotex
         QString m_versionController;
 
         QString m_notebookConfigMgr;
-
-        ID m_nextNodeId = BundleNotebookConfigMgr::RootNodeId + 1;
 
         QVector<HistoryItem> m_history;
 
@@ -74,8 +72,6 @@ namespace vnotex
         static const QString c_versionController;
 
         static const QString c_configMgr;
-
-        static const QString c_nextNodeId;
     };
 } // ns vnotex
 

@@ -12,7 +12,7 @@ namespace vnotex
     class INotebookBackend;
     class NotebookParameters;
     class Notebook;
-    struct NodeParameters;
+    class NodeParameters;
 
     // Abstract class for notebook config manager, which is responsible for config
     // files access and note nodes access.
@@ -38,7 +38,7 @@ namespace vnotex
 
         virtual QSharedPointer<Node> loadRootNode() = 0;
 
-        virtual void loadNode(Node *p_node) const = 0;
+        virtual void loadNode(Node *p_node) = 0;
         virtual void saveNode(const Node *p_node) = 0;
 
         virtual void renameNode(Node *p_node, const QString &p_name) = 0;
@@ -82,9 +82,8 @@ namespace vnotex
 
         virtual QStringList scanAndImportExternalFiles(Node *p_node) = 0;
 
-    protected:
         // Version of the config processing code.
-        virtual QString getCodeVersion() const;
+        virtual int getCodeVersion() const = 0;
 
     private:
         QSharedPointer<INotebookBackend> m_backend;

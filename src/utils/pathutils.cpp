@@ -240,7 +240,7 @@ bool PathUtils::isDir(const QString &p_path)
 bool PathUtils::isLocalFile(const QString &p_path)
 {
     if (p_path.isEmpty()) {
-        return false;
+        return true;
     }
 
     QRegularExpression regExp("^(?:ftp|http|https)://");

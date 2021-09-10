@@ -7,7 +7,8 @@
 #include <notebookconfigmgr/inotebookconfigmgr.h>
 #include <utils/pathutils.h>
 #include <utils/fileutils.h>
-#include "exception.h"
+#include <core/exception.h>
+#include "nodeparameters.h"
 
 using namespace vnotex;
 
@@ -43,11 +44,28 @@ Notebook::Notebook(const NotebookParameters &p_paras,
     if (m_attachmentFolder.isEmpty()) {
         m_attachmentFolder = c_defaultAttachmentFolder;
     }
+
     m_configMgr->setNotebook(this);
+}
+
+Notebook::Notebook(const QString &p_name, QObject *p_parent)
+    : QObject(p_parent),
+      m_name(p_name)
+{
 }
 
 Notebook::~Notebook()
 {
+}
+
+void Notebook::initialize()
+{
+    if (m_initialized) {
+        return;
+    }
+
+    m_initialized = true;
+    initializeInternal();
 }
 
 vnotex::ID Notebook::getId() const
@@ -292,7 +310,7 @@ QSharedPointer<Node> Notebook::getOrCreateRecycleBinDateNode()
 
 void Notebook::emptyNode(const Node *p_node, bool p_force)
 {
-    // Copy the children.
+    // Empty the children.
     auto children = p_node->getChildren();
     for (const auto &child : children) {
         removeNode(child, p_force);
@@ -382,4 +400,9 @@ QList<QSharedPointer<File>> Notebook::collectFiles()
 QStringList Notebook::scanAndImportExternalFiles()
 {
     return m_configMgr->scanAndImportExternalFiles(getRootNode().data());
+}
+
+bool Notebook::rebuildDatabase()
+{
+    return false;
 }

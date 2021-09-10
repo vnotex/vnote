@@ -51,7 +51,7 @@ bool NewFolderDialog::validateNameInput(QString &p_msg)
     p_msg.clear();
 
     auto name = m_infoWidget->getName();
-    if (name.isEmpty()) {
+    if (name.isEmpty() || !PathUtils::isLegalFileName(name)) {
         p_msg = tr("Please specify a name for the folder.");
         return false;
     }

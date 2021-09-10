@@ -10,6 +10,7 @@
 #include <notebook/notebook.h>
 #include <notebook/node.h>
 #include <notebook/externalnode.h>
+#include <notebook/nodeparameters.h>
 #include <core/exception.h>
 #include "messageboxhelper.h"
 #include "vnotex.h"
@@ -146,10 +147,10 @@ Node *NotebookNodeExplorer::NodeData::getNode() const
     return m_node;
 }
 
-ExternalNode *NotebookNodeExplorer::NodeData::getExternalNode() const
+const QSharedPointer<ExternalNode> &NotebookNodeExplorer::NodeData::getExternalNode() const
 {
     Q_ASSERT(isExternalNode());
-    return m_externalNode.data();
+    return m_externalNode;
 }
 
 void NotebookNodeExplorer::NodeData::clear()
@@ -258,7 +259,7 @@ void NotebookNodeExplorer::setupMasterExplorer(QWidget *p_parent)
                     if (data.isNode()) {
                         createContextMenuOnNode(menu.data(), data.getNode());
                     } else if (data.isExternalNode()) {
-                        createContextMenuOnExternalNode(menu.data(), data.getExternalNode());
+                        createContextMenuOnExternalNode(menu.data(), data.getExternalNode().data());
                     }
                 }
 
@@ -1023,7 +1024,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
                             locationPath = PathUtils::parentDirPath(locationPath);
                         }
                     } else if (data.isExternalNode()) {
-                        auto externalNode = data.getExternalNode();
+                        const auto &externalNode = data.getExternalNode();
                         locationPath = externalNode->fetchAbsolutePath();
                         if (!externalNode->isFolder()) {
                             locationPath = PathUtils::parentDirPath(locationPath);
@@ -1243,9 +1244,9 @@ void NotebookNodeExplorer::copySelectedNodes(bool p_move)
     VNoteX::getInst().showStatusMessageShort(tr("Copied %n item(s)", "", static_cast<int>(nrItems)));
 }
 
-QPair<QVector<Node *>, QVector<ExternalNode *>> NotebookNodeExplorer::getSelectedNodes() const
+QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> NotebookNodeExplorer::getSelectedNodes() const
 {
-    QPair<QVector<Node *>, QVector<ExternalNode *>> nodes;
+    QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> nodes;
 
     auto items = m_masterExplorer->selectedItems();
     for (auto &item : items) {
@@ -1871,7 +1872,7 @@ QStringList NotebookNodeExplorer::getSelectedNodesPath() const
     return files;
 }
 
-QSharedPointer<Node> NotebookNodeExplorer::importToIndex(const ExternalNode *p_node)
+QSharedPointer<Node> NotebookNodeExplorer::importToIndex(QSharedPointer<ExternalNode> p_node)
 {
     auto node = m_notebook->addAsNode(p_node->getNode(),
                                       p_node->isFolder() ? Node::Flag::Container : Node::Flag::Content,
@@ -1884,12 +1885,12 @@ QSharedPointer<Node> NotebookNodeExplorer::importToIndex(const ExternalNode *p_n
     return node;
 }
 
-void NotebookNodeExplorer::importToIndex(const QVector<ExternalNode *> &p_nodes)
+void NotebookNodeExplorer::importToIndex(const QVector<QSharedPointer<ExternalNode>> &p_nodes)
 {
     QSet<Node *> nodesToUpdate;
     Node *currentNode = nullptr;
 
-    for (auto externalNode : p_nodes) {
+    for (const auto &externalNode : p_nodes) {
         auto node = m_notebook->addAsNode(externalNode->getNode(),
                                           externalNode->isFolder() ? Node::Flag::Container : Node::Flag::Content,
                                           externalNode->getName(),

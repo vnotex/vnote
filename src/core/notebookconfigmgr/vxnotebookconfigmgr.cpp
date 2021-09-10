@@ -10,6 +10,7 @@
 #include <notebook/vxnode.h>
 #include <notebook/externalnode.h>
 #include <notebook/bundlenotebook.h>
+#include <notebook/notebookdatabaseaccess.h>
 #include <utils/utils.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
@@ -20,148 +21,11 @@
 
 #include <utils/contentmediautils.h>
 
+#include "vxnodeconfig.h"
+
 using namespace vnotex;
 
-const QString VXNotebookConfigMgr::NodeConfig::c_version = "version";
-
-const QString VXNotebookConfigMgr::NodeConfig::c_id = "id";
-
-const QString VXNotebookConfigMgr::NodeConfig::c_createdTimeUtc = "created_time";
-
-const QString VXNotebookConfigMgr::NodeConfig::c_files = "files";
-
-const QString VXNotebookConfigMgr::NodeConfig::c_folders = "folders";
-
-const QString VXNotebookConfigMgr::NodeConfig::c_name = "name";
-
-const QString VXNotebookConfigMgr::NodeConfig::c_modifiedTimeUtc = "modified_time";
-
-const QString VXNotebookConfigMgr::NodeConfig::c_attachmentFolder = "attachment_folder";
-
-const QString VXNotebookConfigMgr::NodeConfig::c_tags = "tags";
-
-QJsonObject VXNotebookConfigMgr::NodeFileConfig::toJson() const
-{
-    QJsonObject jobj;
-
-    jobj[NodeConfig::c_name] = m_name;
-    jobj[NodeConfig::c_id] = QString::number(m_id);
-    jobj[NodeConfig::c_createdTimeUtc] = Utils::dateTimeStringUniform(m_createdTimeUtc);
-    jobj[NodeConfig::c_modifiedTimeUtc] = Utils::dateTimeStringUniform(m_modifiedTimeUtc);
-    jobj[NodeConfig::c_attachmentFolder] = m_attachmentFolder;
-    jobj[NodeConfig::c_tags] = QJsonArray::fromStringList(m_tags);
-
-    return jobj;
-}
-
-void VXNotebookConfigMgr::NodeFileConfig::fromJson(const QJsonObject &p_jobj)
-{
-    m_name = p_jobj[NodeConfig::c_name].toString();
-
-    {
-        auto idStr = p_jobj[NodeConfig::c_id].toString();
-        bool ok;
-        m_id = idStr.toULongLong(&ok);
-        if (!ok) {
-            m_id = Node::InvalidId;
-        }
-    }
-
-    m_createdTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_createdTimeUtc].toString());
-    m_modifiedTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_modifiedTimeUtc].toString());
-
-    m_attachmentFolder = p_jobj[NodeConfig::c_attachmentFolder].toString();
-
-    {
-        auto arr = p_jobj[NodeConfig::c_tags].toArray();
-        for (int i = 0; i < arr.size(); ++i) {
-            m_tags << arr[i].toString();
-        }
-    }
-}
-
-QJsonObject VXNotebookConfigMgr::NodeFolderConfig::toJson() const
-{
-    QJsonObject jobj;
-
-    jobj[NodeConfig::c_name] = m_name;
-
-    return jobj;
-}
-
-void VXNotebookConfigMgr::NodeFolderConfig::fromJson(const QJsonObject &p_jobj)
-{
-    m_name = p_jobj[NodeConfig::c_name].toString();
-}
-
-VXNotebookConfigMgr::NodeConfig::NodeConfig()
-{
-}
-
-VXNotebookConfigMgr::NodeConfig::NodeConfig(const QString &p_version,
-                                            ID p_id,
-                                            const QDateTime &p_createdTimeUtc,
-                                            const QDateTime &p_modifiedTimeUtc)
-    : m_version(p_version),
-      m_id(p_id),
-      m_createdTimeUtc(p_createdTimeUtc),
-      m_modifiedTimeUtc(p_modifiedTimeUtc)
-{
-}
-
-QJsonObject VXNotebookConfigMgr::NodeConfig::toJson() const
-{
-    QJsonObject jobj;
-
-    jobj[NodeConfig::c_version] = m_version;
-    jobj[NodeConfig::c_id] = QString::number(m_id);
-    jobj[NodeConfig::c_createdTimeUtc] = Utils::dateTimeStringUniform(m_createdTimeUtc);
-    jobj[NodeConfig::c_modifiedTimeUtc] = Utils::dateTimeStringUniform(m_modifiedTimeUtc);
-
-    QJsonArray files;
-    for (const auto &file : m_files) {
-        files.append(file.toJson());
-    }
-    jobj[NodeConfig::c_files] = files;
-
-    QJsonArray folders;
-    for (const auto& folder : m_folders) {
-        folders.append(folder.toJson());
-    }
-    jobj[NodeConfig::c_folders] = folders;
-
-    return jobj;
-}
-
-void VXNotebookConfigMgr::NodeConfig::fromJson(const QJsonObject &p_jobj)
-{
-    m_version = p_jobj[NodeConfig::c_version].toString();
-
-    {
-    auto idStr = p_jobj[NodeConfig::c_id].toString();
-    bool ok;
-    m_id = idStr.toULongLong(&ok);
-    if (!ok) {
-        m_id = Node::InvalidId;
-    }
-    }
-
-    m_createdTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_createdTimeUtc].toString());
-    m_modifiedTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_modifiedTimeUtc].toString());
-
-    auto filesJson = p_jobj[NodeConfig::c_files].toArray();
-    m_files.resize(filesJson.size());
-    for (int i = 0; i < filesJson.size(); ++i) {
-        m_files[i].fromJson(filesJson[i].toObject());
-    }
-
-    auto foldersJson = p_jobj[NodeConfig::c_folders].toArray();
-    m_folders.resize(foldersJson.size());
-    for (int i = 0; i < foldersJson.size(); ++i) {
-        m_folders[i].fromJson(foldersJson[i].toObject());
-    }
-}
-
+using namespace vnotex::vx_node_config;
 
 const QString VXNotebookConfigMgr::c_nodeConfigName = "vx.json";
 
@@ -218,7 +82,8 @@ void VXNotebookConfigMgr::createEmptyRootNode()
 {
     auto currentTime = QDateTime::currentDateTimeUtc();
     NodeConfig node(getCodeVersion(),
-                    BundleNotebookConfigMgr::RootNodeId,
+                    Node::InvalidId,
+                    Node::InvalidId,
                     currentTime,
                     currentTime);
     writeNodeConfig(c_nodeConfigName, node);
@@ -278,7 +143,7 @@ void VXNotebookConfigMgr::createRecycleBinNode(const QSharedPointer<Node> &p_roo
     markNodeReadOnly(node.data());
 }
 
-QSharedPointer<VXNotebookConfigMgr::NodeConfig> VXNotebookConfigMgr::readNodeConfig(const QString &p_path) const
+QSharedPointer<NodeConfig> VXNotebookConfigMgr::readNodeConfig(const QString &p_path) const
 {
     auto backend = getBackend();
     if (!backend->exists(p_path)) {
@@ -319,18 +184,20 @@ void VXNotebookConfigMgr::writeNodeConfig(const Node *p_node)
 
 QSharedPointer<Node> VXNotebookConfigMgr::nodeConfigToNode(const NodeConfig &p_config,
                                                            const QString &p_name,
-                                                           Node *p_parent) const
+                                                           Node *p_parent)
 {
     auto node = QSharedPointer<VXNode>::create(p_name, getNotebook(), p_parent);
     loadFolderNode(node.data(), p_config);
     return node;
 }
 
-void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_config) const
+void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_config)
 {
     QVector<QSharedPointer<Node>> children;
     children.reserve(p_config.m_files.size() + p_config.m_folders.size());
     const auto basePath = p_node->fetchPath();
+
+    bool needUpdateConfig = false;
 
     for (const auto &folder : p_config.m_folders) {
         if (folder.m_name.isEmpty()) {
@@ -354,12 +221,11 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
             continue;
         }
 
-        auto fileNode = QSharedPointer<VXNode>::create(file.m_id,
-                                                       file.m_name,
-                                                       file.m_createdTimeUtc,
-                                                       file.m_modifiedTimeUtc,
-                                                       file.m_tags,
-                                                       file.m_attachmentFolder,
+        // For compability only.
+        needUpdateConfig = needUpdateConfig || file.m_signature == Node::InvalidId;
+
+        auto fileNode = QSharedPointer<VXNode>::create(file.m_name,
+                                                       file.toNodeParameters(),
                                                        getNotebook(),
                                                        p_node);
         inheritNodeFlags(p_node, fileNode.data());
@@ -367,11 +233,12 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
         children.push_back(fileNode);
     }
 
-    p_node->loadCompleteInfo(p_config.m_id,
-                             p_config.m_createdTimeUtc,
-                             p_config.m_modifiedTimeUtc,
-                             QStringList(),
-                             children);
+    p_node->loadCompleteInfo(p_config.toNodeParameters(), children);
+
+    needUpdateConfig = needUpdateConfig || p_config.m_signature == Node::InvalidId;
+    if (needUpdateConfig) {
+        writeNodeConfig(p_node);
+    }
 }
 
 QSharedPointer<Node> VXNotebookConfigMgr::newNode(Node *p_parent,
@@ -435,15 +302,13 @@ QSharedPointer<Node> VXNotebookConfigMgr::newFileNode(Node *p_parent,
                                                       bool p_create,
                                                       const NodeParameters &p_paras)
 {
+    ensureNodeInDatabase(p_parent);
+
     auto notebook = getNotebook();
 
     // Create file node.
-    auto node = QSharedPointer<VXNode>::create(Node::InvalidId,
-                                               p_name,
-                                               p_paras.m_createdTimeUtc,
-                                               p_paras.m_modifiedTimeUtc,
-                                               p_paras.m_tags,
-                                               p_paras.m_attachmentFolder,
+    auto node = QSharedPointer<VXNode>::create(p_name,
+                                               p_paras,
                                                notebook,
                                                p_parent);
 
@@ -458,6 +323,8 @@ QSharedPointer<Node> VXNotebookConfigMgr::newFileNode(Node *p_parent,
     addChildNode(p_parent, node);
     writeNodeConfig(p_parent);
 
+    addNodeToDatabase(node.data());
+
     return node;
 }
 
@@ -466,15 +333,13 @@ QSharedPointer<Node> VXNotebookConfigMgr::newFolderNode(Node *p_parent,
                                                         bool p_create,
                                                         const NodeParameters &p_paras)
 {
+    ensureNodeInDatabase(p_parent);
+
     auto notebook = getNotebook();
 
     // Create folder node.
     auto node = QSharedPointer<VXNode>::create(p_name, notebook, p_parent);
-    node->loadCompleteInfo(Node::InvalidId,
-                           p_paras.m_createdTimeUtc,
-                           p_paras.m_modifiedTimeUtc,
-                           QStringList(),
-                           QVector<QSharedPointer<Node>>());
+    node->loadCompleteInfo(p_paras, QVector<QSharedPointer<Node>>());
 
     // Make folder.
     if (p_create) {
@@ -489,15 +354,19 @@ QSharedPointer<Node> VXNotebookConfigMgr::newFolderNode(Node *p_parent,
     addChildNode(p_parent, node);
     writeNodeConfig(p_parent);
 
+    addNodeToDatabase(node.data());
+
     return node;
 }
 
-QSharedPointer<VXNotebookConfigMgr::NodeConfig> VXNotebookConfigMgr::nodeToNodeConfig(const Node *p_node) const
+QSharedPointer<NodeConfig> VXNotebookConfigMgr::nodeToNodeConfig(const Node *p_node) const
 {
     Q_ASSERT(p_node->isContainer());
+    Q_ASSERT(p_node->isLoaded());
 
     auto config = QSharedPointer<NodeConfig>::create(getCodeVersion(),
                                                      p_node->getId(),
+                                                     p_node->getSignature(),
                                                      p_node->getCreatedTimeUtc(),
                                                      p_node->getModifiedTimeUtc());
 
@@ -506,6 +375,7 @@ QSharedPointer<VXNotebookConfigMgr::NodeConfig> VXNotebookConfigMgr::nodeToNodeC
             NodeFileConfig fileConfig;
             fileConfig.m_name = child->getName();
             fileConfig.m_id = child->getId();
+            fileConfig.m_signature = child->getSignature();
             fileConfig.m_createdTimeUtc = child->getCreatedTimeUtc();
             fileConfig.m_modifiedTimeUtc = child->getModifiedTimeUtc();
             fileConfig.m_attachmentFolder = child->getAttachmentFolder();
@@ -524,7 +394,7 @@ QSharedPointer<VXNotebookConfigMgr::NodeConfig> VXNotebookConfigMgr::nodeToNodeC
     return config;
 }
 
-void VXNotebookConfigMgr::loadNode(Node *p_node) const
+void VXNotebookConfigMgr::loadNode(Node *p_node)
 {
     if (p_node->isLoaded() || !p_node->exists()) {
         return;
@@ -548,6 +418,7 @@ void VXNotebookConfigMgr::saveNode(const Node *p_node)
 void VXNotebookConfigMgr::renameNode(Node *p_node, const QString &p_name)
 {
     Q_ASSERT(!p_node->isRoot());
+
     if (p_node->isContainer()) {
         getBackend()->renameDir(p_node->fetchPath(), p_name);
     } else {
@@ -556,8 +427,12 @@ void VXNotebookConfigMgr::renameNode(Node *p_node, const QString &p_name)
 
     p_node->setName(p_name);
     writeNodeConfig(p_node->getParent());
+
+    ensureNodeInDatabase(p_node);
+    updateNodeInDatabase(p_node);
 }
 
+// Do not touch DB here since it will be called at different scenarios.
 void VXNotebookConfigMgr::addChildNode(Node *p_parent, const QSharedPointer<Node> &p_child) const
 {
     if (p_child->isContainer()) {
@@ -605,10 +480,19 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyNodeAsChildOf(const QSharedPointer
                                                             Node *p_dest,
                                                             bool p_move)
 {
+    return copyNodeAsChildOf(p_src, p_dest, p_move, true);
+}
+
+QSharedPointer<Node> VXNotebookConfigMgr::copyNodeAsChildOf(const QSharedPointer<Node> &p_src,
+                                                            Node *p_dest,
+                                                            bool p_move,
+                                                            bool p_updateDatabase)
+{
     Q_ASSERT(p_dest->isContainer());
 
     if (!p_src->exists()) {
         if (p_move) {
+            // It is OK to always update the database.
             p_src->getNotebook()->removeNode(p_src);
         }
         return nullptr;
@@ -616,9 +500,9 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyNodeAsChildOf(const QSharedPointer
 
     QSharedPointer<Node> node;
     if (p_src->isContainer()) {
-        node = copyFolderNodeAsChildOf(p_src, p_dest, p_move);
+        node = copyFolderNodeAsChildOf(p_src, p_dest, p_move, p_updateDatabase);
     } else {
-        node = copyFileNodeAsChildOf(p_src, p_dest, p_move);
+        node = copyFileNodeAsChildOf(p_src, p_dest, p_move, p_updateDatabase);
     }
 
     return node;
@@ -626,7 +510,8 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyNodeAsChildOf(const QSharedPointer
 
 QSharedPointer<Node> VXNotebookConfigMgr::copyFileNodeAsChildOf(const QSharedPointer<Node> &p_src,
                                                                 Node *p_dest,
-                                                                bool p_move)
+                                                                bool p_move,
+                                                                bool p_updateDatabase)
 {
     // Copy source file itself.
     auto srcFilePath = p_src->fetchAbsolutePath();
@@ -647,27 +532,51 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFileNodeAsChildOf(const QSharedPoi
 
     // Create a file node.
     auto notebook = getNotebook();
-    auto id = p_src->getId();
-    if (!p_move || p_src->getNotebook() != notebook) {
-        // Use a new id.
-        id = notebook->getAndUpdateNextNodeId();
+    const bool sameNotebook = p_src->getNotebook() == notebook;
+
+    if (p_updateDatabase) {
+        ensureNodeInDatabase(p_dest);
+        if (sameNotebook) {
+            ensureNodeInDatabase(p_src.data());
+        }
     }
 
-    auto destNode = QSharedPointer<VXNode>::create(id,
-                                                   PathUtils::fileName(destFilePath),
-                                                   p_src->getCreatedTimeUtc(),
-                                                   p_src->getModifiedTimeUtc(),
-                                                   p_src->getTags(),
-                                                   attachmentFolder,
+    NodeParameters paras;
+    if (p_move && sameNotebook) {
+        paras.m_id = p_src->getId();
+        paras.m_signature = p_src->getSignature();
+    }
+    paras.m_createdTimeUtc = p_src->getCreatedTimeUtc();
+    paras.m_modifiedTimeUtc = p_src->getModifiedTimeUtc();
+    paras.m_tags = p_src->getTags();
+    paras.m_attachmentFolder = attachmentFolder;
+    auto destNode = QSharedPointer<VXNode>::create(PathUtils::fileName(destFilePath),
+                                                   paras,
                                                    notebook,
                                                    p_dest);
     destNode->setExists(true);
+
     addChildNode(p_dest, destNode);
     writeNodeConfig(p_dest);
 
+    if (p_updateDatabase) {
+        if (p_move && sameNotebook) {
+            updateNodeInDatabase(destNode.data());
+        } else {
+            addNodeToDatabase(destNode.data());
+        }
+
+        Q_ASSERT(nodeExistsInDatabase(destNode.data()));
+    }
+
     if (p_move) {
-        // Delete src node.
-        p_src->getNotebook()->removeNode(p_src);
+        if (sameNotebook) {
+            // The same notebook. Do not directly call removeNode() since we need to update the record
+            // in database directly.
+            removeNode(p_src, false, false, false);
+        } else {
+            p_src->getNotebook()->removeNode(p_src);
+        }
     }
 
     return destNode;
@@ -675,7 +584,8 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFileNodeAsChildOf(const QSharedPoi
 
 QSharedPointer<Node> VXNotebookConfigMgr::copyFolderNodeAsChildOf(const QSharedPointer<Node> &p_src,
                                                                   Node *p_dest,
-                                                                  bool p_move)
+                                                                  bool p_move,
+                                                                  bool p_updateDatabase)
 {
     auto srcFolderPath = p_src->fetchAbsolutePath();
     auto destFolderPath = PathUtils::concatenateFilePath(p_dest->fetchPath(),
@@ -687,34 +597,56 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFolderNodeAsChildOf(const QSharedP
 
     // Create a folder node.
     auto notebook = getNotebook();
-    auto id = p_src->getId();
-    if (!p_move || p_src->getNotebook() != notebook) {
-        // Use a new id.
-        id = notebook->getAndUpdateNextNodeId();
+    const bool sameNotebook = p_src->getNotebook() == notebook;
+
+    if (p_updateDatabase) {
+        ensureNodeInDatabase(p_dest);
+        if (sameNotebook) {
+            ensureNodeInDatabase(p_src.data());
+        }
     }
+
     auto destNode = QSharedPointer<VXNode>::create(PathUtils::fileName(destFolderPath),
                                                    notebook,
                                                    p_dest);
-    destNode->loadCompleteInfo(id,
-                               p_src->getCreatedTimeUtc(),
-                               p_src->getModifiedTimeUtc(),
-                               QStringList(),
-                               QVector<QSharedPointer<Node>>());
-    destNode->setExists(true);
+    {
+        NodeParameters paras;
+        if (p_move && sameNotebook) {
+            paras.m_id = p_src->getId();
+            paras.m_signature = p_src->getSignature();
+        }
+        paras.m_createdTimeUtc = p_src->getCreatedTimeUtc();
+        paras.m_modifiedTimeUtc = p_src->getModifiedTimeUtc();
+        destNode->loadCompleteInfo(paras, QVector<QSharedPointer<Node>>());
+    }
 
+    destNode->setExists(true);
     writeNodeConfig(destNode.data());
 
     addChildNode(p_dest, destNode);
     writeNodeConfig(p_dest);
 
+    if (p_updateDatabase) {
+        if (p_move && sameNotebook) {
+            p_updateDatabase = false;
+            updateNodeInDatabase(destNode.data());
+        } else {
+            addNodeToDatabase(destNode.data());
+        }
+    }
+
     // Copy children node.
     auto children = p_src->getChildren();
     for (const auto &childNode : children) {
-        copyNodeAsChildOf(childNode, destNode.data(), p_move);
+        copyNodeAsChildOf(childNode, destNode.data(), p_move, p_updateDatabase);
     }
 
     if (p_move) {
-        p_src->getNotebook()->removeNode(p_src);
+        if (sameNotebook) {
+            removeNode(p_src, false, false, false);
+        } else {
+            p_src->getNotebook()->removeNode(p_src);
+        }
     }
 
     return destNode;
@@ -722,12 +654,21 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFolderNodeAsChildOf(const QSharedP
 
 void VXNotebookConfigMgr::removeNode(const QSharedPointer<Node> &p_node, bool p_force, bool p_configOnly)
 {
+    removeNode(p_node, p_force, p_configOnly, true);
+}
+
+void VXNotebookConfigMgr::removeNode(const QSharedPointer<Node> &p_node,
+                                     bool p_force,
+                                     bool p_configOnly,
+                                     bool p_updateDatabase)
+{
     auto parentNode = p_node->getParent();
     if (!p_configOnly && p_node->exists()) {
         // Remove all children.
         auto children = p_node->getChildren();
         for (const auto &childNode : children) {
-            removeNode(childNode, p_force, p_configOnly);
+            // With DELETE CASCADE, we could just touch the DB at parent level.
+            removeNode(childNode, p_force, p_configOnly, false);
         }
 
         try {
@@ -735,6 +676,11 @@ void VXNotebookConfigMgr::removeNode(const QSharedPointer<Node> &p_node, bool p_
         } catch (Exception &p_e) {
             qWarning() << "failed to remove files of node" << p_node->fetchPath() << p_e.what();
         }
+    }
+
+    if (p_updateDatabase) {
+        // Remove it from data base before modifying the parent.
+        removeNodeFromDatabase(p_node.data());
     }
 
     if (parentNode) {
@@ -861,26 +807,26 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFileAsChildOf(const QString &p_src
         ContentMediaUtils::copyMediaFiles(p_srcPath, getBackend().data(), destFilePath);
     }
 
+    ensureNodeInDatabase(p_dest);
+
     const auto name = PathUtils::fileName(destFilePath);
     auto destNode = p_dest->findChild(name, true);
     if (destNode) {
         // Already have the node.
+        ensureNodeInDatabase(destNode.data());
         return destNode;
     }
 
     // Create a file node.
-    auto currentTime = QDateTime::currentDateTimeUtc();
-    destNode = QSharedPointer<VXNode>::create(getNotebook()->getAndUpdateNextNodeId(),
-                                              name,
-                                              currentTime,
-                                              currentTime,
-                                              QStringList(),
-                                              QString(),
+    destNode = QSharedPointer<VXNode>::create(name,
+                                              NodeParameters(),
                                               getNotebook(),
                                               p_dest);
     destNode->setExists(true);
     addChildNode(p_dest, destNode);
     writeNodeConfig(p_dest);
+
+    addNodeToDatabase(destNode.data());
 
     return destNode;
 }
@@ -897,28 +843,28 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFolderAsChildOf(const QString &p_s
         getBackend()->copyDir(p_srcPath, destFolderPath);
     }
 
+    ensureNodeInDatabase(p_dest);
+
     const auto name = PathUtils::fileName(destFolderPath);
     auto destNode = p_dest->findChild(name, true);
     if (destNode) {
         // Already have the node.
+        ensureNodeInDatabase(destNode.data());
         return destNode;
     }
 
     // Create a folder node.
     auto notebook = getNotebook();
     destNode = QSharedPointer<VXNode>::create(name, notebook, p_dest);
-    auto currentTime = QDateTime::currentDateTimeUtc();
-    destNode->loadCompleteInfo(notebook->getAndUpdateNextNodeId(),
-                               currentTime,
-                               currentTime,
-                               QStringList(),
-                               QVector<QSharedPointer<Node>>());
+    destNode->loadCompleteInfo(NodeParameters(), QVector<QSharedPointer<Node>>());
     destNode->setExists(true);
 
     writeNodeConfig(destNode.data());
 
     addChildNode(p_dest, destNode);
     writeNodeConfig(p_dest);
+
+    addNodeToDatabase(destNode.data());
 
     return destNode;
 }
@@ -1051,4 +997,58 @@ bool VXNotebookConfigMgr::isLikelyImageFolder(const QString &p_dirPath)
     }
 
     return true;
+}
+
+NotebookDatabaseAccess *VXNotebookConfigMgr::getDatabaseAccess() const
+{
+    return static_cast<BundleNotebook *>(getNotebook())->getDatabaseAccess();
+}
+
+void VXNotebookConfigMgr::updateNodeInDatabase(Node *p_node)
+{
+    Q_ASSERT(sameNotebook(p_node));
+    getDatabaseAccess()->updateNode(p_node);
+}
+
+void VXNotebookConfigMgr::ensureNodeInDatabase(Node *p_node)
+{
+    if (!p_node) {
+        return;
+    }
+
+    Q_ASSERT(sameNotebook(p_node));
+
+    auto db = getDatabaseAccess();
+    if (db->existsNode(p_node)) {
+        return;
+    }
+
+    ensureNodeInDatabase(p_node->getParent());
+    db->addNode(p_node, false);
+    db->clearObsoleteNodes();
+}
+
+void VXNotebookConfigMgr::addNodeToDatabase(Node *p_node)
+{
+    Q_ASSERT(sameNotebook(p_node));
+    auto db = getDatabaseAccess();
+    db->addNode(p_node, false);
+    db->clearObsoleteNodes();
+}
+
+bool VXNotebookConfigMgr::nodeExistsInDatabase(const Node *p_node)
+{
+    Q_ASSERT(sameNotebook(p_node));
+    return getDatabaseAccess()->existsNode(p_node);
+}
+
+void VXNotebookConfigMgr::removeNodeFromDatabase(const Node *p_node)
+{
+    Q_ASSERT(sameNotebook(p_node));
+    getDatabaseAccess()->removeNode(p_node);
+}
+
+bool VXNotebookConfigMgr::sameNotebook(const Node *p_node) const
+{
+    return p_node ? p_node->getNotebook() == getNotebook() : true;
 }

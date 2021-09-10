@@ -1,6 +1,7 @@
 #include "importfolderutils.h"
 
 #include <notebook/notebook.h>
+#include <notebook/nodeparameters.h>
 #include <core/exception.h>
 #include <QCoreApplication>
 #include "legacynotebookutils.h"

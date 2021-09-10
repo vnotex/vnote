@@ -1,40 +1,65 @@
 #include "bundlenotebook.h"
 
 #include <QDebug>
+#include <QCoreApplication>
 
 #include <notebookconfigmgr/bundlenotebookconfigmgr.h>
 #include <notebookconfigmgr/notebookconfig.h>
 #include <utils/fileutils.h>
 #include <core/historymgr.h>
+#include <core/exception.h>
 #include <notebookbackend/inotebookbackend.h>
+
+#include "notebookdatabaseaccess.h"
 
 using namespace vnotex;
 
 BundleNotebook::BundleNotebook(const NotebookParameters &p_paras,
                                const QSharedPointer<NotebookConfig> &p_notebookConfig,
                                QObject *p_parent)
-    : Notebook(p_paras, p_parent)
+    : Notebook(p_paras, p_parent),
+      m_configVersion(p_notebookConfig->m_version),
+      m_history(p_notebookConfig->m_history),
+      m_extraConfigs(p_notebookConfig->m_extraConfigs)
 {
-    m_nextNodeId = p_notebookConfig->m_nextNodeId;
-    m_history = p_notebookConfig->m_history;
-    m_extraConfigs = p_notebookConfig->m_extraConfigs;
+    setupDatabase();
+}
+
+BundleNotebook::~BundleNotebook()
+{
+    m_dbAccess->close();
 }
 
 BundleNotebookConfigMgr *BundleNotebook::getBundleNotebookConfigMgr() const
 {
-    return dynamic_cast<BundleNotebookConfigMgr *>(getConfigMgr().data());
+    return static_cast<BundleNotebookConfigMgr *>(getConfigMgr().data());
 }
 
-ID BundleNotebook::getNextNodeId() const
+void BundleNotebook::setupDatabase()
 {
-    return m_nextNodeId;
+    auto dbPath = getBackend()->getFullPath(BundleNotebookConfigMgr::getDatabasePath());
+    m_dbAccess = new NotebookDatabaseAccess(this, dbPath, this);
 }
 
-ID BundleNotebook::getAndUpdateNextNodeId()
+void BundleNotebook::initializeInternal()
 {
-    auto id = m_nextNodeId++;
-    getBundleNotebookConfigMgr()->writeNotebookConfig();
-    return id;
+    initDatabase();
+
+    if (m_configVersion != getConfigMgr()->getCodeVersion()) {
+        updateNotebookConfig();
+    }
+}
+
+void BundleNotebook::initDatabase()
+{
+    m_dbAccess->initialize(m_configVersion);
+
+    if (m_dbAccess->isFresh()) {
+        // For previous version notebook without DB, just ignore the node Id from config.
+        int cnt = 0;
+        fillNodeTableFromConfig(getRootNode().data(), m_configVersion < 2, cnt);
+        qDebug() << "fillNodeTableFromConfig nodes count" << cnt;
+    }
 }
 
 void BundleNotebook::updateNotebookConfig()
@@ -93,4 +118,53 @@ void BundleNotebook::setExtraConfig(const QString &p_key, const QJsonObject &p_o
     m_extraConfigs[p_key] = p_obj;
 
     updateNotebookConfig();
+}
+
+void BundleNotebook::fillNodeTableFromConfig(Node *p_node, bool p_ignoreId, int &p_totalCnt)
+{
+    bool ret = m_dbAccess->addNode(p_node, p_ignoreId);
+    if (!ret) {
+        qWarning() << "failed to add node to DB" << p_node->getName() << p_ignoreId;
+        return;
+    }
+
+    if (++p_totalCnt % 10) {
+        QCoreApplication::processEvents();
+    }
+
+    const auto &children = p_node->getChildrenRef();
+    for (const auto &child : children) {
+        fillNodeTableFromConfig(child.data(), p_ignoreId, p_totalCnt);
+    }
+}
+
+NotebookDatabaseAccess *BundleNotebook::getDatabaseAccess() const
+{
+    return m_dbAccess;
+}
+
+bool BundleNotebook::rebuildDatabase()
+{
+    Q_ASSERT(m_dbAccess);
+    m_dbAccess->close();
+
+    auto backend = getBackend();
+    const auto dbPath = BundleNotebookConfigMgr::getDatabasePath();
+    if (backend->exists(dbPath)) {
+        try {
+            backend->removeFile(dbPath);
+        } catch (Exception &p_e) {
+            qWarning() << "failed to delete database file" << dbPath << p_e.what();
+            if (!m_dbAccess->open()) {
+                qWarning() << "failed to open notebook database (restart is needed)";
+            }
+            return false;
+        }
+    }
+
+    m_dbAccess->deleteLater();
+
+    setupDatabase();
+    initDatabase();
+    return true;
 }

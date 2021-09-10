@@ -310,8 +310,9 @@ QString FileUtils::generateRandomFileName(const QString &p_hints, const QString 
 {
     Q_UNUSED(p_hints);
 
-    const QString timeStamp(QDateTime::currentDateTime().toString(QStringLiteral("sszzzmmHHMMdd")));
-    QString baseName = QString::number(timeStamp.toLongLong() + qrand());
+    // Do not use toSecsSinceEpoch() here since we want a short name.
+    const QString timeStamp(QDateTime::currentDateTime().toString(QStringLiteral("sszzzmmHHyyMMdd")));
+    const QString baseName(QString::number(timeStamp.toLongLong() + qrand()));
 
     QString suffix;
     if (!p_suffix.isEmpty()) {

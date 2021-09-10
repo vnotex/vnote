@@ -1,7 +1,9 @@
 SOURCES += \
     $$PWD/externalnode.cpp \
+    $$PWD/nodeparameters.cpp \
     $$PWD/notebook.cpp \
     $$PWD/bundlenotebookfactory.cpp \
+    $$PWD/notebookdatabaseaccess.cpp \
     $$PWD/notebookparameters.cpp \
     $$PWD/bundlenotebook.cpp \
     $$PWD/node.cpp \
@@ -10,9 +12,11 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/externalnode.h \
+    $$PWD/nodeparameters.h \
     $$PWD/notebook.h \
     $$PWD/inotebookfactory.h \
     $$PWD/bundlenotebookfactory.h \
+    $$PWD/notebookdatabaseaccess.h \
     $$PWD/notebookparameters.h \
     $$PWD/bundlenotebook.h \
     $$PWD/node.h \

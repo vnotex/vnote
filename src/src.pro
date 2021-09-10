@@ -3,6 +3,7 @@ lessThan(QT_MAJOR_VERSION, 5): error("requires Qt 5 and above")
 equals(QT_MAJOR_VERSION, 5):lessThan(QT_MINOR_VERSION, 12): error("requires Qt 5.12 and above")
 
 QT += core gui widgets webenginewidgets webchannel network svg printsupport
+QT += sql
 
 CONFIG -= qtquickcompiler
 
@@ -88,7 +89,7 @@ macx {
     app_target = $${app_bundle_dir}/$${TARGET}
     QMAKE_POST_LINK += \
         install_name_tool -add_rpath $${vte_lib_dir} $${app_target} && \
-        install_name_tool -change $${vte_lib_full_name} @rpath/$${vte_lib_full_name} $${app_target} &&
+        install_name_tool -change $${vte_lib_full_name} @rpath/$${vte_lib_full_name} $${app_target} && \
 
     # Process VSyntaxHighlighting framework
     sh_lib_name = VSyntaxHighlighting

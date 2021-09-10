@@ -369,6 +369,7 @@ void NotebookMgr::setCurrentNotebookAfterUpdate()
 
 void NotebookMgr::addNotebook(const QSharedPointer<Notebook> &p_notebook)
 {
+    p_notebook->initialize();
     m_notebooks.push_back(p_notebook);
     connect(p_notebook.data(), &Notebook::updated,
             this, [this, notebook = p_notebook.data()]() {

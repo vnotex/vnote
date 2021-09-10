@@ -482,7 +482,7 @@ void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p
         // Default paste.
         // Give tips about the Rich Paste and Parse As Markdown And Paste features.
         VNoteX::getInst().showStatusMessageShort(
-            tr("For advanced paste, try the \"Rich Paste\" and \"Parse To Markdown And Paste\" on the editor's context menu"));
+            tr("For advanced paste, try the \"Rich Paste\" and \"Parse to Markdown and Paste\" on the editor's context menu"));
         return;
     } else {
         clipboard->setProperty(c_clipboardPropertyMark, false);
@@ -985,12 +985,20 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
         WidgetUtils::insertActionAfter(menu, pasteAct, richPasteAct);
 
         if (mimeData->hasHtml()) {
-            // Parse To Markdown And Paste.
-            auto parsePasteAct = new QAction(tr("Parse To Markdown And Paste"), menu);
+            // Parse to Markdown and Paste.
+            auto parsePasteAct = new QAction(tr("Parse to Markdown and Paste"), menu);
             connect(parsePasteAct, &QAction::triggered,
                     this, &MarkdownEditor::parseToMarkdownAndPaste);
             WidgetUtils::insertActionAfter(menu, richPasteAct, parsePasteAct);
         }
+    }
+
+    {
+        menu->addSeparator();
+
+        auto snippetAct = menu->addAction(tr("Insert Snippet"), this, &MarkdownEditor::applySnippetRequested);
+        WidgetUtils::addActionShortcutText(snippetAct,
+                                           ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::ApplySnippet));
     }
 
     appendImageHostMenu(menu);

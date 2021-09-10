@@ -50,6 +50,9 @@ namespace vnotex
     public:
         SearchPanel(const QSharedPointer<ISearchInfoProvider> &p_provider, QWidget *p_parent = nullptr);
 
+    protected:
+        void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
+
     private slots:
         void startSearch();
 

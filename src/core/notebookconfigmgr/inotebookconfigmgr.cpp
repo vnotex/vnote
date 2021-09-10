@@ -20,12 +20,6 @@ const QSharedPointer<INotebookBackend> &INotebookConfigMgr::getBackend() const
     return m_backend;
 }
 
-QString INotebookConfigMgr::getCodeVersion() const
-{
-    const QString version("1");
-    return version;
-}
-
 Notebook *INotebookConfigMgr::getNotebook() const
 {
     return m_notebook;

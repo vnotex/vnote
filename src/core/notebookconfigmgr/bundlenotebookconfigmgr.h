@@ -26,15 +26,17 @@ namespace vnotex
 
         bool isBuiltInFolder(const Node *p_node, const QString &p_name) const Q_DECL_OVERRIDE;
 
+        int getCodeVersion() const Q_DECL_OVERRIDE;
+
         static const QString &getConfigFolderName();
 
         static const QString &getConfigName();
 
         static QString getConfigFilePath();
 
-        static QSharedPointer<NotebookConfig> readNotebookConfig(const QSharedPointer<INotebookBackend> &p_backend);
+        static QString getDatabasePath();
 
-        enum { RootNodeId = 1 };
+        static QSharedPointer<NotebookConfig> readNotebookConfig(const QSharedPointer<INotebookBackend> &p_backend);
 
     protected:
         BundleNotebook *getBundleNotebook() const;

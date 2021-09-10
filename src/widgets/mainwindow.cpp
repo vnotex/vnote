@@ -18,6 +18,7 @@
 #include <QSystemTrayIcon>
 #include <QWindowStateChangeEvent>
 #include <QTimer>
+#include <QProgressDialog>
 
 #include "toolbox.h"
 #include "notebookexplorer.h"
@@ -31,6 +32,7 @@
 #include <core/mainconfig.h>
 #include <core/widgetconfig.h>
 #include <core/events.h>
+#include <core/exception.h>
 #include <core/fileopenparameters.h>
 #include <widgets/dialogs/exportdialog.h>
 #include "viewwindow.h"
@@ -94,9 +96,20 @@ void MainWindow::kickOffOnStart(const QStringList &p_paths)
         // Need to load the state of dock widgets again after the main window is shown.
         loadStateAndGeometry(true);
 
-        VNoteX::getInst().initLoad();
+        {
+            QProgressDialog proDlg(tr("Initializing core components..."),
+                                   QString(),
+                                   0,
+                                   0,
+                                   this);
+            proDlg.setWindowFlags(proDlg.windowFlags() & ~Qt::WindowCloseButtonHint);
+            proDlg.setWindowModality(Qt::WindowModal);
+            proDlg.setValue(0);
 
-        setupSpellCheck();
+            VNoteX::getInst().initLoad();
+
+            setupSpellCheck();
+        }
 
         // Do necessary stuffs before emitting this signal.
         emit mainWindowStarted();
@@ -110,6 +123,19 @@ void MainWindow::kickOffOnStart(const QStringList &p_paths)
         openFiles(p_paths);
 
         if (MainConfig::isVersionChanged()) {
+            QString tips;
+            try {
+                tips = DocsUtils::getDocText("features_tips.txt");
+            } catch (Exception &p_e) {
+                // Just ignore it.
+                Q_UNUSED(p_e);
+            }
+            if (!tips.isEmpty()) {
+                MessageBoxHelper::notify(MessageBoxHelper::Information,
+                                         tips,
+                                         this);
+            }
+
             const auto file = DocsUtils::getDocFile(QStringLiteral("welcome.md"));
             if (!file.isEmpty()) {
                 auto paras = QSharedPointer<FileOpenParameters>::create();

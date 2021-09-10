@@ -7,30 +7,30 @@
 #include <utils/pathutils.h>
 #include <core/exception.h>
 #include "notebook.h"
+#include "nodeparameters.h"
 
 using namespace vnotex;
 
 Node::Node(Flags p_flags,
-           ID p_id,
            const QString &p_name,
-           const QDateTime &p_createdTimeUtc,
-           const QDateTime &p_modifiedTimeUtc,
-           const QStringList &p_tags,
-           const QString &p_attachmentFolder,
+           const NodeParameters &p_paras,
            Notebook *p_notebook,
            Node *p_parent)
     : m_notebook(p_notebook),
       m_loaded(true),
       m_flags(p_flags),
-      m_id(p_id),
+      m_id(p_paras.m_id),
+      m_signature(p_paras.m_signature),
       m_name(p_name),
-      m_createdTimeUtc(p_createdTimeUtc),
-      m_modifiedTimeUtc(p_modifiedTimeUtc),
-      m_tags(p_tags),
-      m_attachmentFolder(p_attachmentFolder),
+      m_createdTimeUtc(p_paras.m_createdTimeUtc),
+      m_modifiedTimeUtc(p_paras.m_modifiedTimeUtc),
+      m_tags(p_paras.m_tags),
+      m_attachmentFolder(p_paras.m_attachmentFolder),
       m_parent(p_parent)
 {
     Q_ASSERT(m_notebook);
+
+    checkSignature();
 }
 
 Node::Node(Flags p_flags,
@@ -54,19 +54,22 @@ bool Node::isLoaded() const
     return m_loaded;
 }
 
-void Node::loadCompleteInfo(ID p_id,
-                            const QDateTime &p_createdTimeUtc,
-                            const QDateTime &p_modifiedTimeUtc,
-                            const QStringList &p_tags,
+void Node::loadCompleteInfo(const NodeParameters &p_paras,
                             const QVector<QSharedPointer<Node>> &p_children)
 {
     Q_ASSERT(!m_loaded);
-    m_id = p_id;
-    m_createdTimeUtc = p_createdTimeUtc;
-    m_modifiedTimeUtc = p_modifiedTimeUtc;
-    m_tags = p_tags;
+
+    m_id = p_paras.m_id;
+    m_signature = p_paras.m_signature;
+    m_createdTimeUtc = p_paras.m_createdTimeUtc;
+    m_modifiedTimeUtc = p_paras.m_modifiedTimeUtc;
+    Q_ASSERT(p_paras.m_tags.isEmpty());
+    Q_ASSERT(p_paras.m_attachmentFolder.isEmpty());
+
     m_children = p_children;
     m_loaded = true;
+
+    checkSignature();
 }
 
 bool Node::isRoot() const
@@ -147,6 +150,22 @@ void Node::setUse(Node::Use p_use)
 ID Node::getId() const
 {
     return m_id;
+}
+
+void Node::updateId(ID p_id)
+{
+    if (m_id == p_id) {
+        return;
+    }
+
+    m_id = p_id;
+    save();
+    emit m_notebook->nodeUpdated(this);
+}
+
+ID Node::getSignature() const
+{
+    return m_signature;
 }
 
 const QDateTime &Node::getCreatedTimeUtc() const
@@ -431,4 +450,16 @@ QList<QSharedPointer<File>> Node::collectFiles()
     }
 
     return files;
+}
+
+ID Node::generateSignature()
+{
+    return static_cast<ID>(QDateTime::currentDateTime().toSecsSinceEpoch() + (static_cast<qulonglong>(qrand()) << 32));
+}
+
+void Node::checkSignature()
+{
+    if (m_signature == InvalidId) {
+        m_signature = generateSignature();
+    }
 }

@@ -11,6 +11,7 @@
 #include <QPixmap>
 #include <QSplashScreen>
 #include <QScopedPointer>
+#include <QTemporaryDir>
 
 #include <utils/pathutils.h>
 #include <utils/fileutils.h>
@@ -56,14 +57,26 @@ void ConfigMgr::Settings::writeToFile(const QString &p_jsonFilePath) const
     FileUtils::writeFile(p_jsonFilePath, QJsonDocument(this->m_jobj).toJson());
 }
 
-ConfigMgr::ConfigMgr(QObject *p_parent)
+ConfigMgr::ConfigMgr(bool p_isUnitTest, QObject *p_parent)
     : QObject(p_parent),
       m_config(new MainConfig(this)),
       m_sessionConfig(new SessionConfig(this))
 {
-    locateConfigFolder();
+    if (p_isUnitTest) {
+        m_dirForUnitTest.reset(new QTemporaryDir());
+        if (!m_dirForUnitTest->isValid()) {
+            qWarning() << "failed to init ConfigMgr for UnitTest";
+            return;
+        }
+        m_appConfigFolderPath = m_dirForUnitTest->filePath("vnotex_files");
+        m_userConfigFolderPath = m_dirForUnitTest->filePath("user_files");
 
-    checkAppConfig();
+        FileUtils::copyFile(getConfigFilePath(Source::Default), PathUtils::concatenateFilePath(m_appConfigFolderPath, c_configFileName));
+    } else {
+        locateConfigFolder();
+
+        checkAppConfig();
+    }
 
     m_config->init();
     m_sessionConfig->init();
@@ -71,6 +84,17 @@ ConfigMgr::ConfigMgr(QObject *p_parent)
 
 ConfigMgr::~ConfigMgr()
 {
+}
+
+ConfigMgr &ConfigMgr::getInst(bool p_isUnitTest)
+{
+    static ConfigMgr inst(p_isUnitTest);
+    return inst;
+}
+
+void ConfigMgr::initForUnitTest()
+{
+    getInst(true);
 }
 
 void ConfigMgr::locateConfigFolder()

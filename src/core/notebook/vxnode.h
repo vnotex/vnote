@@ -10,12 +10,8 @@ namespace vnotex
     {
     public:
         // For content node.
-        VXNode(ID p_id,
-               const QString &p_name,
-               const QDateTime &p_createdTimeUtc,
-               const QDateTime &p_modifiedTimeUtc,
-               const QStringList &p_tags,
-               const QString &p_attachmentFolder,
+        VXNode(const QString &p_name,
+               const NodeParameters &p_paras,
                Notebook *p_notebook,
                Node *p_parent);
 
@@ -37,8 +33,6 @@ namespace vnotex
         QString renameAttachment(const QString &p_path, const QString &p_name) Q_DECL_OVERRIDE;
 
         void removeAttachment(const QStringList &p_paths) Q_DECL_OVERRIDE;
-
-    private:
     };
 }
 

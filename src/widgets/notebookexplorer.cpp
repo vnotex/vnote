@@ -5,6 +5,7 @@
 #include <QToolButton>
 #include <QMenu>
 #include <QActionGroup>
+#include <QProgressDialog>
 
 #include "titlebar.h"
 #include "dialogs/newnotebookdialog.h"
@@ -170,6 +171,12 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
                 this, &NotebookExplorer::manageNotebooks);
     }
 
+    titleBar->addMenuAction(tr("Rebuild Notebook Database"),
+                            titleBar,
+                            [this]() {
+                                rebuildDatabase();
+                            });
+
     // External Files menu.
     {
         auto subMenu = titleBar->addMenuSubMenu(tr("External Files"));
@@ -186,7 +193,7 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
 
         auto importAct = titleBar->addMenuAction(
             subMenu,
-            tr("Import External Files When Activated"),
+            tr("Import External Files when Activated"),
             titleBar,
             [](bool p_checked) {
                 ConfigMgr::getInst().getWidgetConfig().setNodeExplorerAutoImportExternalFilesEnabled(p_checked);
@@ -196,7 +203,7 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
     }
 
     {
-        auto act = titleBar->addMenuAction(tr("Close File Before Open With External Program"),
+        auto act = titleBar->addMenuAction(tr("Close File Before Open with External Program"),
                                            titleBar,
                                            [](bool p_checked) {
                                                ConfigMgr::getInst().getWidgetConfig().setNodeExplorerCloseBeforeOpenWithEnabled(p_checked);
@@ -532,6 +539,34 @@ void NotebookExplorer::recoverSession()
         auto node = m_currentNotebook->loadNodeByPath(it.value().m_currentNodePath);
         if (node) {
             m_nodeExplorer->setCurrentNode(node.data());
+        }
+    }
+}
+
+void NotebookExplorer::rebuildDatabase()
+{
+    if (m_currentNotebook) {
+
+        QProgressDialog proDlg(tr("Rebuilding notebook database..."),
+                               QString(),
+                               0,
+                               0,
+                               this);
+        proDlg.setWindowFlags(proDlg.windowFlags() & ~Qt::WindowCloseButtonHint);
+        proDlg.setWindowModality(Qt::WindowModal);
+        proDlg.setMinimumDuration(1000);
+        proDlg.setValue(0);
+
+        bool ret = m_currentNotebook->rebuildDatabase();
+
+        proDlg.cancel();
+
+        if (ret) {
+            MessageBoxHelper::notify(MessageBoxHelper::Type::Information,
+                                     tr("Notebook database has been rebuilt."));
+        } else {
+            MessageBoxHelper::notify(MessageBoxHelper::Type::Warning,
+                                     tr("Failed to rebuild notebook database."));
         }
     }
 }

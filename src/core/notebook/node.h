@@ -16,15 +16,7 @@ namespace vnotex
     class INotebookBackend;
     class File;
     class ExternalNode;
-
-    // Used when add/new a node.
-    struct NodeParameters
-    {
-        QDateTime m_createdTimeUtc = QDateTime::currentDateTimeUtc();
-        QDateTime m_modifiedTimeUtc = QDateTime::currentDateTimeUtc();
-        QString m_attachmentFolder;
-        QStringList m_tags;
-    };
+    class NodeParameters;
 
     // Node of notebook.
     class Node : public QEnableSharedFromThis<Node>
@@ -52,12 +44,8 @@ namespace vnotex
 
         // Constructor with all information loaded.
         Node(Flags p_flags,
-             ID p_id,
              const QString &p_name,
-             const QDateTime &p_createdTimeUtc,
-             const QDateTime &p_modifiedTimeUtc,
-             const QStringList &p_tags,
-             const QString &p_attachmentFolder,
+             const NodeParameters &p_paras,
              Notebook *p_notebook,
              Node *p_parent);
 
@@ -102,6 +90,9 @@ namespace vnotex
         void setUse(Node::Use p_use);
 
         ID getId() const;
+        void updateId(ID p_id);
+
+        ID getSignature() const;
 
         const QDateTime &getCreatedTimeUtc() const;
 
@@ -137,8 +128,8 @@ namespace vnotex
 
         Notebook *getNotebook() const;
 
-        void load();
-        void save();
+        virtual void load();
+        virtual void save();
 
         const QStringList &getTags() const;
 
@@ -165,10 +156,7 @@ namespace vnotex
         // Get File if this node has content.
         virtual QSharedPointer<File> getContentFile() = 0;
 
-        void loadCompleteInfo(ID p_id,
-                              const QDateTime &p_createdTimeUtc,
-                              const QDateTime &p_modifiedTimeUtc,
-                              const QStringList &p_tags,
+        void loadCompleteInfo(const NodeParameters &p_paras,
                               const QVector<QSharedPointer<Node>> &p_children);
 
         INotebookConfigMgr *getConfigMgr() const;
@@ -184,17 +172,25 @@ namespace vnotex
 
         static bool isAncestor(const Node *p_ancestor, const Node *p_child);
 
+        static ID generateSignature();
+
     protected:
         Notebook *m_notebook = nullptr;
 
-    private:
         bool m_loaded = false;
+
+    private:
+        void checkSignature();
 
         Flags m_flags = Flag::None;
 
         Use m_use = Use::Normal;
 
         ID m_id = InvalidId;
+
+        // A long random number created when the node is created.
+        // Use to avoid conflicts of m_id.
+        ID m_signature = InvalidId;
 
         QString m_name;
 

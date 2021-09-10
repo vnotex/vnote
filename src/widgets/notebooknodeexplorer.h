@@ -58,7 +58,8 @@ namespace vnotex
 
             Node *getNode() const;
 
-            ExternalNode *getExternalNode() const;
+            // Return shared ptr to avoid wild pointer after destruction of item.
+            const QSharedPointer<ExternalNode> &getExternalNode() const;
 
             void clear();
 
@@ -217,7 +218,7 @@ namespace vnotex
 
         void pasteNodesFromClipboard();
 
-        QPair<QVector<Node *>, QVector<ExternalNode *>> getSelectedNodes() const;
+        QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> getSelectedNodes() const;
 
         void removeSelectedNodes(bool p_skipRecycleBin);
 
@@ -258,9 +259,9 @@ namespace vnotex
 
         void openSelectedNodes();
 
-        QSharedPointer<Node> importToIndex(const ExternalNode *p_node);
+        QSharedPointer<Node> importToIndex(QSharedPointer<ExternalNode> p_node);
 
-        void importToIndex(const QVector<ExternalNode *> &p_nodes);
+        void importToIndex(const QVector<QSharedPointer<ExternalNode>> &p_nodes);
 
         // Check whether @p_node is a valid node. Will notify user.
         // Return true if it is invalid.

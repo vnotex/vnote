@@ -117,6 +117,8 @@ namespace vnotex
 
         void readRequested();
 
+        void applySnippetRequested();
+
     private slots:
         void handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled, bool *p_allowed);
 

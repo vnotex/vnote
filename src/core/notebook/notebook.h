@@ -15,7 +15,7 @@ namespace vnotex
     class INotebookBackend;
     class IVersionController;
     class INotebookConfigMgr;
-    struct NodeParameters;
+    class NodeParameters;
     class File;
 
     // Base class of notebook.
@@ -26,7 +26,12 @@ namespace vnotex
         Notebook(const NotebookParameters &p_paras,
                  QObject *p_parent = nullptr);
 
+        // Used for UT only.
+        Notebook(const QString &p_name, QObject *p_parent = nullptr);
+
         virtual ~Notebook();
+
+        void initialize();
 
         enum { InvalidId = 0 };
 
@@ -82,10 +87,6 @@ namespace vnotex
         QSharedPointer<Node> copyAsNode(Node *p_parent,
                                         Node::Flags p_flags,
                                         const QString &p_path);
-
-        virtual ID getNextNodeId() const = 0;
-
-        virtual ID getAndUpdateNextNodeId() = 0;
 
         virtual void updateNotebookConfig() = 0;
 
@@ -146,6 +147,8 @@ namespace vnotex
 
         QStringList scanAndImportExternalFiles();
 
+        virtual bool rebuildDatabase();
+
         static const QString c_defaultAttachmentFolder;
 
         static const QString c_defaultImageFolder;
@@ -155,8 +158,13 @@ namespace vnotex
 
         void nodeUpdated(const Node *p_node);
 
+    protected:
+        virtual void initializeInternal() = 0;
+
     private:
         QSharedPointer<Node> getOrCreateRecycleBinDateNode();
+
+        bool m_initialized = false;
 
         // ID of this notebook.
         // Will be assigned uniquely once loaded.

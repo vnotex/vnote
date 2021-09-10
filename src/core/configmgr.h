@@ -8,6 +8,8 @@
 
 #include "noncopyable.h"
 
+class QTemporaryDir;
+
 namespace vnotex
 {
     class MainConfig;
@@ -48,13 +50,9 @@ namespace vnotex
             QJsonObject m_jobj;
         };
 
-        static ConfigMgr &getInst()
-        {
-            static ConfigMgr inst;
-            return inst;
-        }
-
         ~ConfigMgr();
+
+        static ConfigMgr &getInst(bool p_isUnitTest = false);
 
         MainConfig &getConfig();
 
@@ -112,6 +110,8 @@ namespace vnotex
 
         static QString getApplicationVersion();
 
+        static void initForUnitTest();
+
         static const QString c_orgName;
 
         static const QString c_appName;
@@ -128,7 +128,7 @@ namespace vnotex
         void editorConfigChanged();
 
     private:
-        explicit ConfigMgr(QObject *p_parent = nullptr);
+        ConfigMgr(bool p_isUnitTest, QObject *p_parent = nullptr);
 
         // Locate the folder path where the config file exists.
         void locateConfigFolder();
@@ -149,6 +149,9 @@ namespace vnotex
 
         // Absolute path of the user config folder.
         QString m_userConfigFolderPath;
+
+        // In UnitTest, we use a temp dir to hold the user files and app files.
+        QScopedPointer<QTemporaryDir> m_dirForUnitTest;
 
         // Name of the core config file.
         static const QString c_configFileName;

@@ -25,9 +25,7 @@ const QString NotebookConfig::c_versionController = "version_controller";
 
 const QString NotebookConfig::c_configMgr = "config_mgr";
 
-const QString NotebookConfig::c_nextNodeId = "next_node_id";
-
-QSharedPointer<NotebookConfig> NotebookConfig::fromNotebookParameters(const QString &p_version,
+QSharedPointer<NotebookConfig> NotebookConfig::fromNotebookParameters(int p_version,
                                                                       const NotebookParameters &p_paras)
 {
     auto config = QSharedPointer<NotebookConfig>::create();
@@ -56,7 +54,6 @@ QJsonObject NotebookConfig::toJson() const
     jobj[NotebookConfig::c_createdTimeUtc] = Utils::dateTimeStringUniform(m_createdTimeUtc);
     jobj[NotebookConfig::c_versionController] = m_versionController;
     jobj[NotebookConfig::c_configMgr] = m_notebookConfigMgr;
-    jobj[NotebookConfig::c_nextNodeId] = QString::number(m_nextNodeId);
 
     jobj[QStringLiteral("history")] = saveHistory();
 
@@ -77,7 +74,7 @@ void NotebookConfig::fromJson(const QJsonObject &p_jobj)
         return;
     }
 
-    m_version = p_jobj[NotebookConfig::c_version].toString();
+    m_version = p_jobj[NotebookConfig::c_version].toInt();
     m_name = p_jobj[NotebookConfig::c_name].toString();
     m_description = p_jobj[NotebookConfig::c_description].toString();
     m_imageFolder = p_jobj[NotebookConfig::c_imageFolder].toString();
@@ -86,21 +83,12 @@ void NotebookConfig::fromJson(const QJsonObject &p_jobj)
     m_versionController = p_jobj[NotebookConfig::c_versionController].toString();
     m_notebookConfigMgr = p_jobj[NotebookConfig::c_configMgr].toString();
 
-    {
-        auto nextNodeIdStr = p_jobj[NotebookConfig::c_nextNodeId].toString();
-        bool ok;
-        m_nextNodeId = nextNodeIdStr.toULongLong(&ok);
-        if (!ok) {
-            m_nextNodeId = BundleNotebookConfigMgr::RootNodeId;
-        }
-    }
-
     loadHistory(p_jobj);
 
     m_extraConfigs = p_jobj[QStringLiteral("extra_configs")].toObject();
 }
 
-QSharedPointer<NotebookConfig> NotebookConfig::fromNotebook(const QString &p_version,
+QSharedPointer<NotebookConfig> NotebookConfig::fromNotebook(int p_version,
                                                             const Notebook *p_notebook)
 {
     auto config = QSharedPointer<NotebookConfig>::create();
@@ -113,7 +101,6 @@ QSharedPointer<NotebookConfig> NotebookConfig::fromNotebook(const QString &p_ver
     config->m_createdTimeUtc = p_notebook->getCreatedTimeUtc();
     config->m_versionController = p_notebook->getVersionController()->getName();
     config->m_notebookConfigMgr = p_notebook->getConfigMgr()->getName();
-    config->m_nextNodeId = p_notebook->getNextNodeId();
     config->m_history = p_notebook->getHistory();
     config->m_extraConfigs = p_notebook->getExtraConfigs();
 

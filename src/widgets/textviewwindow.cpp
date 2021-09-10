@@ -39,6 +39,9 @@ void TextViewWindow::setupUI()
                                   this);
         setCentralWidget(m_editor);
 
+        connect(m_editor, &TextEditor::applySnippetRequested,
+                this, QOverload<>::of(&TextViewWindow::applySnippet));
+
         updateEditorFromConfig();
     }
 

@@ -361,6 +361,9 @@ void MarkdownViewWindow::setupTextEditor()
             this, [this]() {
                 read(true);
             });
+
+    connect(m_editor, &MarkdownEditor::applySnippetRequested,
+            this, QOverload<>::of(&MarkdownViewWindow::applySnippet));
 }
 
 QStackedWidget *MarkdownViewWindow::getMainStatusWidget() const

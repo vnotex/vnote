@@ -80,6 +80,8 @@ namespace vnotex
 
         void recoverSession();
 
+        void rebuildDatabase();
+
         NotebookSelector *m_selector = nullptr;
 
         NotebookNodeExplorer *m_nodeExplorer = nullptr;

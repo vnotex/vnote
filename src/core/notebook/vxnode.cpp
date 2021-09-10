@@ -10,21 +10,13 @@
 
 using namespace vnotex;
 
-VXNode::VXNode(ID p_id,
-               const QString &p_name,
-               const QDateTime &p_createdTimeUtc,
-               const QDateTime &p_modifiedTimeUtc,
-               const QStringList &p_tags,
-               const QString &p_attachmentFolder,
+VXNode::VXNode(const QString &p_name,
+               const NodeParameters &p_paras,
                Notebook *p_notebook,
                Node *p_parent)
     : Node(Node::Flag::Content,
-           p_id,
            p_name,
-           p_createdTimeUtc,
-           p_modifiedTimeUtc,
-           p_tags,
-           p_attachmentFolder,
+           p_paras,
            p_notebook,
            p_parent)
 {

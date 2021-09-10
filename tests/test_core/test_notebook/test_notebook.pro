@@ -1,5 +1,7 @@
 include($$PWD/../../common.pri)
 
+QT += sql
+
 TARGET = test_notebook
 TEMPLATE = app
 
@@ -23,7 +25,13 @@ include($$SRC_FOLDER/snippet/snippet.pri)
 include($$SRC_FOLDER/imagehost/imagehost.pri)
 
 SOURCES += \
-    test_notebook.cpp
+    dummynode.cpp \
+    dummynotebook.cpp \
+    test_notebook.cpp \
+    testnotebookdatabase.cpp
 
 HEADERS += \
-    test_notebook.h
+    dummynode.h \
+    dummynotebook.h \
+    test_notebook.h \
+    testnotebookdatabase.h
