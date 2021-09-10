@@ -31,5 +31,7 @@ VNote allows to export files using customized command. It is common to use `pand
 The following command on Windows could export to nearly every format via `pandoc`. Just change the `Target file suffix` into `docx`, `epub`, and so on.
 
 ```
-pandoc.exe --resource-path=.;%2 --css=%3 --css=%4 -s -o %5 %1
+"c:\your\path\to\the\downloaded\executable\pandoc.exe" --resource-path=.;%2 --css=%3 --css=%4 -s -o %5 %1
 ```
+
+On non-Windows platforms, please change the separator from `;` to `:`.
