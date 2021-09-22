@@ -90,24 +90,29 @@ void DockWidgetHelper::setupDocks()
     m_dockIcons.resize(DockIndex::MaxDock);
 
     // The order of m_docks should be identical with enum DockIndex.
+    QVector<int> tabifiedDockIndex;
+
+    tabifiedDockIndex.append(m_docks.size());
     setupNavigationDock();
 
     setupOutlineDock();
 
+    tabifiedDockIndex.append(m_docks.size());
     setupHistoryDock();
 
+    tabifiedDockIndex.append(m_docks.size());
     setupSearchDock();
 
+    tabifiedDockIndex.append(m_docks.size());
     setupSnippetDock();
 
-    for (int i = 1; i < m_docks.size(); ++i) {
-        m_mainWindow->tabifyDockWidget(m_docks[i - 1], m_docks[i]);
-    }
-
-    // Following are non-tabfieid docks.
     setupLocationListDock();
 
     setupShortcuts();
+
+    for (int i = 1; i < tabifiedDockIndex.size(); ++i) {
+        m_mainWindow->tabifyDockWidget(m_docks[tabifiedDockIndex[i - 1]], m_docks[tabifiedDockIndex[i]]);
+    }
 }
 
 void DockWidgetHelper::setupNavigationDock()
@@ -131,7 +136,7 @@ void DockWidgetHelper::setupOutlineDock()
 
     dock->setWidget(m_mainWindow->m_outlineViewer);
     dock->setFocusProxy(m_mainWindow->m_outlineViewer);
-    m_mainWindow->addDockWidget(Qt::LeftDockWidgetArea, dock);
+    m_mainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
 }
 
 void DockWidgetHelper::setupSearchDock()
@@ -406,6 +411,8 @@ void DockWidgetHelper::restoreDocks(const QStringList &p_visibleDocks)
         // At least make one visible.
         getDock(DockIndex::NavigationDock)->setVisible(true);
     }
+
+    updateDockWidgetTabBar();
 }
 
 bool DockWidgetHelper::isAnyDockVisible() const
