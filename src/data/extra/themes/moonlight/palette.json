@@ -302,7 +302,10 @@
                 "bg" : "@widgets#separator#bg"
             },
             "extension" : {
-                "bg" : "@base#normal#fg"
+                "bg" : "@base#normal#border",
+                "hover" : {
+                    "bg" : "@base#hover#bg"
+                }
             }
         },
         "qtoolbutton" : {

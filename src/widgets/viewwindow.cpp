@@ -1146,6 +1146,16 @@ QToolBar *ViewWindow::createToolBar(QWidget *p_parent)
 {
     auto toolBar = new QToolBar(p_parent);
     toolBar->setProperty(PropertyDefs::c_viewWindowToolBar, true);
+
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+    const int iconSize = editorConfig.getToolBarIconSize();
+    toolBar->setIconSize(QSize(iconSize, iconSize));
+
+    /*
+    auto extBtn = toolBar->findChild<QToolButton *>(QLatin1String("qt_toolbar_ext_button"));
+    Q_ASSERT(extBtn);
+    */
+
     return toolBar;
 }
 

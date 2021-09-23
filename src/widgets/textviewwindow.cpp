@@ -60,10 +60,6 @@ void TextViewWindow::setupUI()
 void TextViewWindow::setupToolBar()
 {
     auto toolBar = createToolBar(this);
-    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
-    const int iconSize = editorConfig.getToolBarIconSize();
-    toolBar->setIconSize(QSize(iconSize, iconSize));
-
     addToolBar(toolBar);
 
     addAction(toolBar, ViewWindowToolBarHelper::Save);

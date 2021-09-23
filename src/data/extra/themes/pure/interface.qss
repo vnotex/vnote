@@ -152,8 +152,14 @@ QToolBar::separator {
     background-color: @widgets#qtoolbar#separator#bg;
 }
 
-QToolBarExtension {
+QToolBarExtension#qt_toolbar_ext_button {
     background-color: @widgets#qtoolbar#extension#bg;
+    margin: 30px;
+}
+
+QToolBarExtension#qt_toolbar_ext_button:hover {
+    background-color: @widgets#qtoolbar#extension#hover#bg;
+    margin: 30px;
 }
 
 /* QToolButton */

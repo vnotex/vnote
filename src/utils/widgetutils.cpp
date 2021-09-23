@@ -415,5 +415,6 @@ void WidgetUtils::selectBaseName(QLineEdit *p_lineEdit)
 
 void WidgetUtils::setContentsMargins(QLayout *p_layout)
 {
-    p_layout->setContentsMargins(CONTENTS_MARGIN, CONTENTS_MARGIN, CONTENTS_MARGIN, CONTENTS_MARGIN);
+    // Use 0 bottom margin to align dock widgets with the content area.
+    p_layout->setContentsMargins(CONTENTS_MARGIN, CONTENTS_MARGIN, CONTENTS_MARGIN, 0);
 }
