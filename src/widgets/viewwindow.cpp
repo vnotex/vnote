@@ -655,6 +655,11 @@ void ViewWindow::handleImageHostChanged(const QString &p_hostName)
     Q_ASSERT(false);
 }
 
+QString ViewWindow::viewerOrEditorSelectedText()
+{
+    return QString();
+}
+
 ViewWindow::TypeAction ViewWindow::toolBarActionToTypeAction(ViewWindowToolBarHelper::Action p_action)
 {
     Q_ASSERT(p_action >= ViewWindowToolBarHelper::Action::TypeBold
@@ -970,7 +975,7 @@ void ViewWindow::showFindAndReplaceWidget()
                 this, &ViewWindow::handleFindAndReplaceWidgetOpened);
     }
 
-    m_findAndReplace->open(QString());
+    m_findAndReplace->open(viewerOrEditorSelectedText());
 }
 
 void ViewWindow::hideFindAndReplaceWidget()
