@@ -487,7 +487,7 @@ void MainWindow::setupToolBar()
                               | Qt::WindowCloseButtonHint | Qt::WindowFullscreenButtonHint;
 
         auto winFlags = windowFlags();
-        winFlags |= Qt::CustomizeWindowHint;
+        winFlags |= Qt::CustomizeWindowHint | Qt::FramelessWindowHint;
         winFlags &= ~framelessFlags;
         setWindowFlags(winFlags);
 
