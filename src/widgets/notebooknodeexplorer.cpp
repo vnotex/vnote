@@ -23,6 +23,7 @@
 #include "dialogs/folderpropertiesdialog.h"
 #include "dialogs/deleteconfirmdialog.h"
 #include "dialogs/sortdialog.h"
+#include "dialogs/viewtagsdialog.h"
 #include <utils/widgetutils.h>
 #include <utils/pathutils.h>
 #include <utils/clipboardutils.h>
@@ -39,19 +40,7 @@
 
 using namespace vnotex;
 
-QIcon NotebookNodeExplorer::s_folderNodeIcon;
-
-QIcon NotebookNodeExplorer::s_fileNodeIcon;
-
-QIcon NotebookNodeExplorer::s_invalidFolderNodeIcon;
-
-QIcon NotebookNodeExplorer::s_invalidFileNodeIcon;
-
-QIcon NotebookNodeExplorer::s_recycleBinNodeIcon;
-
-QIcon NotebookNodeExplorer::s_externalFolderNodeIcon;
-
-QIcon NotebookNodeExplorer::s_externalFileNodeIcon;
+QIcon NotebookNodeExplorer::s_nodeIcons[NodeIcon::MaxIcons];
 
 NotebookNodeExplorer::NodeData::NodeData()
 {
@@ -188,7 +177,7 @@ NotebookNodeExplorer::NotebookNodeExplorer(QWidget *p_parent)
 
 void NotebookNodeExplorer::initNodeIcons() const
 {
-    if (!s_folderNodeIcon.isNull()) {
+    if (!s_nodeIcons[0].isNull()) {
         return;
     }
 
@@ -205,13 +194,13 @@ void NotebookNodeExplorer::initNodeIcons() const
     const QString fileIconName("file_node.svg");
     const QString recycleBinIconName("recycle_bin.svg");
 
-    s_folderNodeIcon = IconUtils::fetchIcon(themeMgr.getIconFile(folderIconName), fg);
-    s_fileNodeIcon = IconUtils::fetchIcon(themeMgr.getIconFile(fileIconName), fg);
-    s_invalidFolderNodeIcon = IconUtils::fetchIcon(themeMgr.getIconFile(folderIconName), invalidFg);
-    s_invalidFileNodeIcon = IconUtils::fetchIcon(themeMgr.getIconFile(fileIconName), invalidFg);
-    s_recycleBinNodeIcon = IconUtils::fetchIcon(themeMgr.getIconFile(recycleBinIconName), fg);
-    s_externalFolderNodeIcon = IconUtils::fetchIcon(themeMgr.getIconFile(folderIconName), externalFg);
-    s_externalFileNodeIcon = IconUtils::fetchIcon(themeMgr.getIconFile(fileIconName), externalFg);
+    s_nodeIcons[NodeIcon::FolderNode] = IconUtils::fetchIcon(themeMgr.getIconFile(folderIconName), fg);
+    s_nodeIcons[NodeIcon::FileNode] = IconUtils::fetchIcon(themeMgr.getIconFile(fileIconName), fg);
+    s_nodeIcons[NodeIcon::InvalidFolderNode] = IconUtils::fetchIcon(themeMgr.getIconFile(folderIconName), invalidFg);
+    s_nodeIcons[NodeIcon::InvalidFileNode] = IconUtils::fetchIcon(themeMgr.getIconFile(fileIconName), invalidFg);
+    s_nodeIcons[NodeIcon::RecycleBinNode] = IconUtils::fetchIcon(themeMgr.getIconFile(recycleBinIconName), fg);
+    s_nodeIcons[NodeIcon::ExternalFolderNode] = IconUtils::fetchIcon(themeMgr.getIconFile(folderIconName), externalFg);
+    s_nodeIcons[NodeIcon::ExternalFileNode] = IconUtils::fetchIcon(themeMgr.getIconFile(fileIconName), externalFg);
 }
 
 void NotebookNodeExplorer::setupUI()
@@ -497,7 +486,7 @@ void NotebookNodeExplorer::fillTreeItem(QTreeWidgetItem *p_item, Node *p_node, b
     setItemNodeData(p_item, NodeData(p_node, p_loaded));
     p_item->setText(Column::Name, p_node->getName());
     p_item->setIcon(Column::Name, getNodeItemIcon(p_node));
-    p_item->setToolTip(Column::Name, p_node->exists() ? p_node->getName() : (tr("[Invalid] %1").arg(p_node->getName())));
+    p_item->setToolTip(Column::Name, generateToolTip(p_node));
 }
 
 void NotebookNodeExplorer::fillTreeItem(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const
@@ -511,19 +500,19 @@ void NotebookNodeExplorer::fillTreeItem(QTreeWidgetItem *p_item, const QSharedPo
 const QIcon &NotebookNodeExplorer::getNodeItemIcon(const Node *p_node) const
 {
     if (p_node->hasContent()) {
-        return p_node->exists() ? s_fileNodeIcon : s_invalidFileNodeIcon;
+        return p_node->exists() ? s_nodeIcons[NodeIcon::FileNode] : s_nodeIcons[NodeIcon::InvalidFileNode];
     } else {
         if (p_node->getUse() == Node::Use::RecycleBin) {
-            return s_recycleBinNodeIcon;
+            return s_nodeIcons[NodeIcon::RecycleBinNode];
         }
 
-        return p_node->exists() ? s_folderNodeIcon : s_invalidFolderNodeIcon;
+        return p_node->exists() ? s_nodeIcons[NodeIcon::FolderNode] : s_nodeIcons[NodeIcon::InvalidFolderNode];
     }
 }
 
 const QIcon &NotebookNodeExplorer::getNodeItemIcon(const ExternalNode *p_node) const
 {
-    return p_node->isFolder() ? s_externalFolderNodeIcon : s_externalFileNodeIcon;
+    return p_node->isFolder() ? s_nodeIcons[NodeIcon::ExternalFolderNode] : s_nodeIcons[NodeIcon::ExternalFileNode];
 }
 
 Node *NotebookNodeExplorer::getCurrentNode() const
@@ -752,158 +741,126 @@ void NotebookNodeExplorer::clearStateCache(const Notebook *p_notebook)
 
 void NotebookNodeExplorer::createContextMenuOnRoot(QMenu *p_menu)
 {
-    auto act = createAction(Action::NewNote, p_menu);
-    p_menu->addAction(act);
+    createAndAddAction(Action::NewNote, p_menu);
 
-    act = createAction(Action::NewFolder, p_menu);
-    p_menu->addAction(act);
+    createAndAddAction(Action::NewFolder, p_menu);
 
     if (isPasteOnNodeAvailable(nullptr)) {
         p_menu->addSeparator();
-        act = createAction(Action::Paste, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Paste, p_menu);
     }
 
     p_menu->addSeparator();
 
-    act = createAction(Action::Reload, p_menu);
-    p_menu->addAction(act);
+    createAndAddAction(Action::Reload, p_menu);
 
-    act = createAction(Action::ReloadIndex, p_menu);
-    p_menu->addAction(act);
+    createAndAddAction(Action::ReloadIndex, p_menu);
 
-    act = createAction(Action::OpenLocation, p_menu);
-    p_menu->addAction(act);
+    createAndAddAction(Action::OpenLocation, p_menu);
 }
 
 void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_node)
 {
     const int selectedSize = m_masterExplorer->selectedItems().size();
-    QAction *act = nullptr;
-
     if (m_notebook->isRecycleBinNode(p_node)) {
         // Recycle bin node.
-        act = createAction(Action::Reload, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Reload, p_menu);
 
-        act = createAction(Action::ReloadIndex, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::ReloadIndex, p_menu);
 
         if (selectedSize == 1) {
-            act = createAction(Action::EmptyRecycleBin, p_menu);
-            p_menu->addAction(act);
+            createAndAddAction(Action::EmptyRecycleBin, p_menu);
 
-            act = createAction(Action::OpenLocation, p_menu);
-            p_menu->addAction(act);
+            createAndAddAction(Action::OpenLocation, p_menu);
         }
     } else if (m_notebook->isNodeInRecycleBin(p_node)) {
         // Node in recycle bin.
-        act = createAction(Action::Open, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Open, p_menu);
 
         addOpenWithMenu(p_menu);
 
         p_menu->addSeparator();
 
         if (selectedSize == 1 && p_node->isContainer()) {
-            act = createAction(Action::ExpandAll, p_menu);
-            p_menu->addAction(act);
+            createAndAddAction(Action::ExpandAll, p_menu);
         }
 
         p_menu->addSeparator();
 
-        act = createAction(Action::Cut, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Cut, p_menu);
 
-        act = createAction(Action::DeleteFromRecycleBin, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::DeleteFromRecycleBin, p_menu);
 
         p_menu->addSeparator();
 
-        act = createAction(Action::Reload, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Reload, p_menu);
 
-        act = createAction(Action::ReloadIndex, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::ReloadIndex, p_menu);
 
         if (selectedSize == 1) {
             p_menu->addSeparator();
 
-            act = createAction(Action::CopyPath, p_menu);
-            p_menu->addAction(act);
+            createAndAddAction(Action::CopyPath, p_menu);
 
-            act = createAction(Action::OpenLocation, p_menu);
-            p_menu->addAction(act);
+            createAndAddAction(Action::OpenLocation, p_menu);
         }
     } else {
-        act = createAction(Action::Open, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Open, p_menu);
 
         addOpenWithMenu(p_menu);
 
         p_menu->addSeparator();
 
         if (selectedSize == 1 && p_node->isContainer()) {
-            act = createAction(Action::ExpandAll, p_menu);
-            p_menu->addAction(act);
+            createAndAddAction(Action::ExpandAll, p_menu);
         }
 
         p_menu->addSeparator();
 
-        act = createAction(Action::NewNote, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::NewNote, p_menu);
 
-        act = createAction(Action::NewFolder, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::NewFolder, p_menu);
 
         p_menu->addSeparator();
 
-        act = createAction(Action::Copy, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Copy, p_menu);
 
-        act = createAction(Action::Cut, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Cut, p_menu);
 
         if (selectedSize == 1 && isPasteOnNodeAvailable(p_node)) {
-            act = createAction(Action::Paste, p_menu);
-            p_menu->addAction(act);
+            createAndAddAction(Action::Paste, p_menu);
         }
 
-        act = createAction(Action::Delete, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Delete, p_menu);
 
-        act = createAction(Action::RemoveFromConfig, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::RemoveFromConfig, p_menu);
 
         p_menu->addSeparator();
 
-        act = createAction(Action::Reload, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Reload, p_menu);
 
-        act = createAction(Action::ReloadIndex, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::ReloadIndex, p_menu);
 
-        act = createAction(Action::Sort, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::Sort, p_menu);
 
-        {
+        if (selectedSize == 1
+            && m_notebook->tag()
+            && !p_node->isContainer()) {
             p_menu->addSeparator();
 
-            act = createAction(Action::PinToQuickAccess, p_menu);
-            p_menu->addAction(act);
+            createAndAddAction(Action::Tag, p_menu);
         }
 
+        p_menu->addSeparator();
+
+        createAndAddAction(Action::PinToQuickAccess, p_menu);
+
         if (selectedSize == 1) {
-            p_menu->addSeparator();
+            createAndAddAction(Action::CopyPath, p_menu);
 
-            act = createAction(Action::CopyPath, p_menu);
-            p_menu->addAction(act);
+            createAndAddAction(Action::OpenLocation, p_menu);
 
-            act = createAction(Action::OpenLocation, p_menu);
-            p_menu->addAction(act);
-
-            act = createAction(Action::Properties, p_menu);
-            p_menu->addAction(act);
+            createAndAddAction(Action::Properties, p_menu);
         }
     }
 }
@@ -913,33 +870,22 @@ void NotebookNodeExplorer::createContextMenuOnExternalNode(QMenu *p_menu, const 
     Q_UNUSED(p_node);
 
     const int selectedSize = m_masterExplorer->selectedItems().size();
-    QAction *act = nullptr;
-
-    act = createAction(Action::Open, p_menu);
-    p_menu->addAction(act);
+    createAndAddAction(Action::Open, p_menu);
 
     addOpenWithMenu(p_menu);
 
     p_menu->addSeparator();
 
-    act = createAction(Action::ImportToConfig, p_menu);
-    p_menu->addAction(act);
+    createAndAddAction(Action::ImportToConfig, p_menu);
 
-    {
-        p_menu->addSeparator();
+    p_menu->addSeparator();
 
-        act = createAction(Action::PinToQuickAccess, p_menu);
-        p_menu->addAction(act);
-    }
+    createAndAddAction(Action::PinToQuickAccess, p_menu);
 
     if (selectedSize == 1) {
-        p_menu->addSeparator();
+        createAndAddAction(Action::CopyPath, p_menu);
 
-        act = createAction(Action::CopyPath, p_menu);
-        p_menu->addAction(act);
-
-        act = createAction(Action::OpenLocation, p_menu);
-        p_menu->addAction(act);
+        createAndAddAction(Action::OpenLocation, p_menu);
     }
 }
 
@@ -1191,28 +1137,70 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         break;
 
     case Action::PinToQuickAccess:
-        act = new QAction(tr("Pin To &Quick Access"), p_parent);
+        act = new QAction(generateMenuActionIcon(QStringLiteral("quick_access_menu.svg")),
+                          tr("Pin To &Quick Access"),
+                          p_parent);
         connect(act, &QAction::triggered,
                 this, [this]() {
                     auto nodes = getSelectedNodes();
                     QStringList files;
+                    bool hasFilteredAway = false;
                     for (const auto &node : nodes.first) {
                         if (node->hasContent()) {
                             files.push_back(node->fetchAbsolutePath());
+                        } else {
+                            hasFilteredAway = true;
                         }
                     }
                     for (const auto &node : nodes.second) {
                         if (!node->isFolder()) {
                             files.push_back(node->fetchAbsolutePath());
+                        } else {
+                            hasFilteredAway = true;
                         }
                     }
                     if (!files.isEmpty()) {
                         emit VNoteX::getInst().pinToQuickAccessRequested(files);
                     }
+                    if (hasFilteredAway) {
+                        VNoteX::getInst().showStatusMessageShort(tr("Folder is not supported by quick access"));
+                    }
                 });
+        break;
+
+    case Action::Tag:
+        act = new QAction(generateMenuActionIcon(QStringLiteral("tag.svg")), tr("&Tags"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this]() {
+                    auto item = m_masterExplorer->currentItem();
+                    if (!item || !m_notebook->tag()) {
+                        return;
+                    }
+                    auto data = getItemNodeData(item);
+                    if (data.isNode()) {
+                        auto node = data.getNode();
+                        if (checkInvalidNode(node)) {
+                            return;
+                        }
+
+                        ViewTagsDialog dialog(node, VNoteX::getInst().getMainWindow());
+                        dialog.exec();
+                    }
+                });
+        break;
+
+    default:
+        Q_ASSERT(false);
         break;
     }
 
+    return act;
+}
+
+QAction *NotebookNodeExplorer::createAndAddAction(Action p_act, QMenu *p_menu)
+{
+    auto act = createAction(p_act, p_menu);
+    p_menu->addAction(act);
     return act;
 }
 
@@ -2081,4 +2069,24 @@ void NotebookNodeExplorer::loadItemChildren(QTreeWidgetItem *p_item) const
             loadNode(child, data.getNode(), 1);
         }
     }
+}
+
+QString NotebookNodeExplorer::generateToolTip(const Node *p_node)
+{
+    Q_ASSERT(p_node->isLoaded());
+    QString tip = p_node->exists() ? p_node->getName() : (tr("[Invalid] %1").arg(p_node->getName()));
+    tip += QLatin1String("\n\n");
+
+    if (!p_node->getTags().isEmpty()) {
+        const auto &tags = p_node->getTags();
+        QString tagString = tags.first();
+        for (int i = 1; i < tags.size(); ++i) {
+            tagString += QLatin1String("; ") + tags[i];
+        }
+        tip += tr("Tags: %1\n").arg(tagString);
+    }
+
+    tip += tr("Created Time: %1\n").arg(Utils::dateTimeString(p_node->getCreatedTimeUtc().toLocalTime()));
+    tip += tr("Modified Time: %1").arg(Utils::dateTimeString(p_node->getModifiedTimeUtc().toLocalTime()));
+    return tip;
 }

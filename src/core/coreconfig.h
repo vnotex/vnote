@@ -29,6 +29,7 @@ namespace vnotex
             SnippetDock,
             LocationListDock,
             HistoryDock,
+            TagDock,
             Search,
             NavigationMode,
             LocateNode,

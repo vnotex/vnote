@@ -165,6 +165,8 @@ namespace vnotex
         // Judge whether file @p_path is attachment.
         bool isAttachment(const QString &p_path) const;
 
+        bool isTagSupported() const;
+
         ProviderType getProviderType() const;
 
         bool checkFileExistsOnDisk();

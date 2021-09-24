@@ -8,6 +8,7 @@
 #include "vnotex.h"
 #include "notebookmgr.h"
 #include <notebook/notebook.h>
+#include <notebook/historyi.h>
 #include <notebookbackend/inotebookbackend.h>
 #include "exception.h"
 
@@ -57,7 +58,11 @@ void HistoryMgr::loadHistory()
     if (m_perNotebookHistoryEnabled) {
         const auto &notebooks = VNoteX::getInst().getNotebookMgr().getNotebooks();
         for (const auto &nb : notebooks) {
-            const auto &history = nb->getHistory();
+            auto historyI = nb->history();
+            if (!historyI) {
+                continue;
+            }
+            const auto &history = historyI->getHistory();
             const auto &backend = nb->getBackend();
             for (const auto &item : history) {
                 auto fullItem = QSharedPointer<HistoryItemFull>::create();
@@ -102,8 +107,8 @@ void HistoryMgr::add(const QString &p_path,
 
     HistoryItem item(p_path, p_lineNumber, QDateTime::currentDateTimeUtc());
 
-    if (p_notebook && m_perNotebookHistoryEnabled) {
-        p_notebook->addHistory(item);
+    if (p_notebook && m_perNotebookHistoryEnabled && p_notebook->history()) {
+        p_notebook->history()->addHistory(item);
     } else {
         auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
         sessionConfig.addHistory(item);
@@ -176,7 +181,9 @@ void HistoryMgr::clear()
     if (m_perNotebookHistoryEnabled) {
         const auto &notebooks = VNoteX::getInst().getNotebookMgr().getNotebooks();
         for (const auto &nb : notebooks) {
-            nb->clearHistory();
+            if (auto historyI = nb->history()) {
+                historyI->clearHistory();
+            }
         }
     }
 

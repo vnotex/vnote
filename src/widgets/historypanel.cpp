@@ -6,6 +6,7 @@
 
 #include <utils/widgetutils.h>
 #include <utils/pathutils.h>
+#include <utils/iconutils.h>
 #include <utils/utils.h>
 #include <core/vnotex.h>
 #include <core/exception.h>
@@ -18,15 +19,24 @@
 #include "listwidget.h"
 #include "mainwindow.h"
 #include "messageboxhelper.h"
+#include "navigationmodemgr.h"
 
 using namespace vnotex;
 
 HistoryPanel::HistoryPanel(QWidget *p_parent)
     : QFrame(p_parent)
 {
+    initIcons();
+
     setupUI();
 
     updateSeparators();
+}
+
+void HistoryPanel::initIcons()
+{
+    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+    m_fileIcon = IconUtils::fetchIcon(themeMgr.getIconFile(QStringLiteral("file_node.svg")));
 }
 
 void HistoryPanel::setupUI()
@@ -34,10 +44,8 @@ void HistoryPanel::setupUI()
     auto mainLayout = new QVBoxLayout(this);
     WidgetUtils::setContentsMargins(mainLayout);
 
-    {
-        setupTitleBar(QString(), this);
-        mainLayout->addWidget(m_titleBar);
-    }
+    setupTitleBar(QString(), this);
+    mainLayout->addWidget(m_titleBar);
 
     m_historyList = new ListWidget(true, this);
     m_historyList->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -47,6 +55,9 @@ void HistoryPanel::setupUI()
     connect(m_historyList, &QListWidget::itemActivated,
             this, &HistoryPanel::openItem);
     mainLayout->addWidget(m_historyList);
+
+    m_navigationWrapper.reset(new NavigationModeWrapper<QListWidget, QListWidgetItem>(m_historyList));
+    NavigationModeMgr::getInst().registerNavigationTarget(m_navigationWrapper.data());
 
     setFocusProxy(m_historyList);
 }
@@ -132,8 +143,6 @@ bool HistoryPanel::isValidItem(const QListWidgetItem *p_item) const
 
 void HistoryPanel::updateHistoryList()
 {
-    m_pendingUpdate = false;
-
     m_historyList->clear();
 
     const auto &history = HistoryMgr::getInst().getHistory();
@@ -168,19 +177,12 @@ void HistoryPanel::updateHistoryList()
     }
 }
 
-void HistoryPanel::showEvent(QShowEvent *p_event)
+void HistoryPanel::initialize()
 {
-    QFrame::showEvent(p_event);
+    connect(&HistoryMgr::getInst(), &HistoryMgr::historyUpdated,
+            this, &HistoryPanel::updateHistoryList);
 
-    if (!m_initialized) {
-        m_initialized = true;
-        connect(&HistoryMgr::getInst(), &HistoryMgr::historyUpdated,
-                this, &HistoryPanel::updateHistoryListIfProper);
-    }
-
-    if (m_pendingUpdate) {
-        updateHistoryList();
-    }
+    updateHistoryList();
 }
 
 void HistoryPanel::updateSeparators()
@@ -199,21 +201,13 @@ void HistoryPanel::updateSeparators()
     m_separators[2].m_dateUtc = curDateTime.addDays(-7).toUTC();
 }
 
-void HistoryPanel::updateHistoryListIfProper()
-{
-    if (isVisible()) {
-        updateHistoryList();
-    } else {
-        m_pendingUpdate = true;
-    }
-}
-
 void HistoryPanel::addItem(const HistoryItemFull &p_hisItem)
 {
     auto item = new QListWidgetItem(m_historyList);
 
     item->setText(PathUtils::fileNameCheap(p_hisItem.m_item.m_path));
     item->setData(Qt::UserRole, p_hisItem.m_item.m_path);
+    item->setIcon(m_fileIcon);
     if (p_hisItem.m_notebookName.isEmpty()) {
         item->setToolTip(tr("%1\n%2").arg(p_hisItem.m_item.m_path,
                                           Utils::dateTimeString(p_hisItem.m_item.m_lastAccessedTimeUtc.toLocalTime())));

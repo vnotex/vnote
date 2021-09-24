@@ -23,6 +23,7 @@
             "SnippetDock" : "Ctrl+G, S",
             "LocationListDock" : "Ctrl+G, C",
             "HistoryDock" : "",
+            "TagDock" : "",
             "Search" : "Ctrl+Alt+F",
             "NavigationMode" : "Ctrl+G, W",
             "LocateNode" : "Ctrl+G, D",
@@ -117,7 +118,8 @@
                 "FindAndReplace" : "Ctrl+F",
                 "FindNext" : "F3",
                 "FindPrevious" : "Shift+F3",
-                "ApplySnippet" : "Ctrl+G, I"
+                "ApplySnippet" : "Ctrl+G, I",
+                "Tag" : "Ctrl+G, B"
             },
             "spell_check_auto_detect_language" : false,
             "spell_check_default_dictionary" : "en_US",
@@ -379,6 +381,7 @@
         "search_panel_advanced_settings_visible" : true,
         "//comment" : "Docks to ignore when expanding content area of main window",
         "main_window_keep_docks_expanding_content_area": ["OutlineDock.vnotex"],
-        "snippet_panel_builtin_snippets_visible" : true
+        "snippet_panel_builtin_snippets_visible" : true,
+        "tag_explorer_two_columns_enabled" : true
     }
 }

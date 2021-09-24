@@ -19,6 +19,7 @@ namespace vnotex
 {
     class ToolBox;
     class NotebookExplorer;
+    class TagExplorer;
     class ViewArea;
     class Event;
     class OutlineViewer;
@@ -110,7 +111,9 @@ namespace vnotex
 
         void setupHistoryPanel();
 
-        void setupNotebookExplorer(QWidget *p_parent = nullptr);
+        void setupNotebookExplorer();
+
+        void setupTagExplorer();
 
         void setupDocks();
 
@@ -143,6 +146,8 @@ namespace vnotex
 
         void checkNotebooksFailedToLoad();
 
+        void loadWidgetsData();
+
         ToolBarHelper m_toolBarHelper;
 
         StatusBarHelper m_statusBarHelper;
@@ -152,6 +157,8 @@ namespace vnotex
         ToolBox *m_navigationToolBox = nullptr;
 
         NotebookExplorer *m_notebookExplorer = nullptr;
+
+        TagExplorer *m_tagExplorer = nullptr;
 
         ViewArea *m_viewArea = nullptr;
 

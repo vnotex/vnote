@@ -23,6 +23,7 @@
 #include "searchpanel.h"
 #include "snippetpanel.h"
 #include "historypanel.h"
+#include "tagexplorer.h"
 
 using namespace vnotex;
 
@@ -68,6 +69,8 @@ QString DockWidgetHelper::iconFileName(DockIndex p_dockIndex)
         return "outline_dock.svg";
     case DockIndex::HistoryDock:
         return "history_dock.svg";
+    case DockIndex::TagDock:
+        return "tag_dock.svg";
     case DockIndex::SearchDock:
         return "search_dock.svg";
     case DockIndex::SnippetDock:
@@ -95,16 +98,19 @@ void DockWidgetHelper::setupDocks()
     tabifiedDockIndex.append(m_docks.size());
     setupNavigationDock();
 
-    setupOutlineDock();
-
     tabifiedDockIndex.append(m_docks.size());
     setupHistoryDock();
+
+    tabifiedDockIndex.append(m_docks.size());
+    setupTagDock();
 
     tabifiedDockIndex.append(m_docks.size());
     setupSearchDock();
 
     tabifiedDockIndex.append(m_docks.size());
     setupSnippetDock();
+
+    setupOutlineDock();
 
     setupLocationListDock();
 
@@ -172,6 +178,18 @@ void DockWidgetHelper::setupHistoryDock()
 
     dock->setWidget(m_mainWindow->m_historyPanel);
     dock->setFocusProxy(m_mainWindow->m_historyPanel);
+    m_mainWindow->addDockWidget(Qt::LeftDockWidgetArea, dock);
+}
+
+void DockWidgetHelper::setupTagDock()
+{
+    auto dock = createDockWidget(DockIndex::TagDock, tr("Tags"), m_mainWindow);
+
+    dock->setObjectName(QStringLiteral("TagDock.vnotex"));
+    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+    dock->setWidget(m_mainWindow->m_tagExplorer);
+    dock->setFocusProxy(m_mainWindow->m_tagExplorer);
     m_mainWindow->addDockWidget(Qt::LeftDockWidgetArea, dock);
 }
 
@@ -247,6 +265,9 @@ void DockWidgetHelper::setupShortcuts()
 
     setupDockActivateShortcut(m_docks[DockIndex::HistoryDock],
                               coreConfig.getShortcut(CoreConfig::Shortcut::HistoryDock));
+
+    setupDockActivateShortcut(m_docks[DockIndex::TagDock],
+                              coreConfig.getShortcut(CoreConfig::Shortcut::TagDock));
 
     setupDockActivateShortcut(m_docks[DockIndex::SearchDock],
                               coreConfig.getShortcut(CoreConfig::Shortcut::SearchDock));

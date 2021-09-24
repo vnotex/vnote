@@ -132,6 +132,7 @@ namespace vnotex
         virtual void save();
 
         const QStringList &getTags() const;
+        void updateTags(const QStringList &p_tags);
 
         const QString &getAttachmentFolder() const;
         void setAttachmentFolder(const QString &p_attachmentFolder);

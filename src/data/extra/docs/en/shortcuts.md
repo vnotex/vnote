@@ -2,7 +2,7 @@
 1. All the keys without special notice are **case insensitive**;
 2. On macOS, `Ctrl` corresponds to `Command` except in Vi mode;
 3. The key sequence `Ctrl+G, I` means that first press both `Ctrl` and `G` simultaneously, release them, then press `I` and release;
-4. For a **complete shortcuts list**, please view the `vnotex.json` configuration file.
+4. For a **complete latest shortcuts list**, please view the `vnotex.json` configuration file.
 
 ## General
 - `Ctrl+G E`  
@@ -101,10 +101,10 @@ Insert italic. Press `Ctrl+I` again to exit. Current selected text will be chang
 Insert inline code. Press `Ctrl+;` again to exit. Current selected text will be changed to inline code if exists.
 - `Ctrl+'`  
 Insert fenced code block. Press `Ctrl+'` again to exit. Current selected text will be wrapped into a code block if exists.
-- `Ctrl+,`  
-Insert inline math. Press `Ctrl+,` again to exit. Current selected text will be changed to inline math if exists.
 - `Ctrl+.`  
-Insert math block. Press `Ctrl+.` again to exit. Current selected text will be changed to math block if exists.
+Insert inline math. Press `Ctrl+.` again to exit. Current selected text will be changed to inline math if exists.
+- `Ctrl+G, .`  
+Insert math block. Press `Ctrl+G, .` again to exit. Current selected text will be changed to math block if exists.
 - `Ctrl+/`  
 Insert table.
 - `Ctrl+<Num>`  

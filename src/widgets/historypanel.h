@@ -3,6 +3,10 @@
 
 #include <QFrame>
 #include <QDateTime>
+#include <QIcon>
+#include <QScopedPointer>
+
+#include "navigationmodewrapper.h"
 
 class QListWidget;
 class QListWidgetItem;
@@ -18,8 +22,7 @@ namespace vnotex
     public:
         explicit HistoryPanel(QWidget *p_parent = nullptr);
 
-    protected:
-        void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+        void initialize();
 
     private slots:
         void handleContextMenuRequested(const QPoint &p_pos);
@@ -36,13 +39,13 @@ namespace vnotex
             QDateTime m_dateUtc;
         };
 
+        void initIcons();
+
         void setupUI();
 
         void setupTitleBar(const QString &p_title, QWidget *p_parent = nullptr);
 
         void updateHistoryList();
-
-        void updateHistoryListIfProper();
 
         void updateSeparators();
 
@@ -56,11 +59,11 @@ namespace vnotex
 
         QListWidget *m_historyList = nullptr;
 
-        bool m_initialized = false;
-
-        bool m_pendingUpdate = true;
+        QScopedPointer<NavigationModeWrapper<QListWidget, QListWidgetItem>> m_navigationWrapper;
 
         QVector<SeparatorData> m_separators;
+
+        QIcon m_fileIcon;
     };
 }
 

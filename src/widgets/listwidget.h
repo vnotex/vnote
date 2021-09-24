@@ -2,6 +2,9 @@
 #define LISTWIDGET_H
 
 #include <QListWidget>
+
+#include <functional>
+
 #include <QVector>
 
 namespace vnotex
@@ -19,6 +22,11 @@ namespace vnotex
         static QListWidgetItem *createSeparatorItem(const QString &p_text);
 
         static bool isSeparatorItem(const QListWidgetItem *p_item);
+
+        static QListWidgetItem *findItem(const QListWidget *p_widget, const QVariant &p_data);
+
+        // @p_func: return false to abort the iteration.
+        static void forEachItem(const QListWidget *p_widget, const std::function<bool(QListWidgetItem *p_item)> &p_func);
 
     protected:
         void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;

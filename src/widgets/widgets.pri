@@ -11,9 +11,12 @@ SOURCES += \
     $$PWD/dialogs/importlegacynotebookdialog.cpp \
     $$PWD/dialogs/importnotebookdialog.cpp \
     $$PWD/dialogs/legacynotebookutils.cpp \
+    $$PWD/dialogs/levellabelwithupbutton.cpp \
     $$PWD/dialogs/linkinsertdialog.cpp \
     $$PWD/dialogs/newnotebookfromfolderdialog.cpp \
     $$PWD/dialogs/newsnippetdialog.cpp \
+    $$PWD/dialogs/newtagdialog.cpp \
+    $$PWD/dialogs/renametagdialog.cpp \
     $$PWD/dialogs/selectdialog.cpp \
     $$PWD/dialogs/selectionitemwidget.cpp \
     $$PWD/dialogs/settings/appearancepage.cpp \
@@ -35,6 +38,7 @@ SOURCES += \
     $$PWD/dialogs/sortdialog.cpp \
     $$PWD/dialogs/tableinsertdialog.cpp \
     $$PWD/dialogs/updater.cpp \
+    $$PWD/dialogs/viewtagsdialog.cpp \
     $$PWD/dockwidgethelper.cpp \
     $$PWD/dragdropareaindicator.cpp \
     $$PWD/editors/editormarkdownvieweradapter.cpp \
@@ -78,6 +82,9 @@ SOURCES += \
     $$PWD/snippetpanel.cpp \
     $$PWD/styleditemdelegate.cpp \
     $$PWD/systemtrayhelper.cpp \
+    $$PWD/tagexplorer.cpp \
+    $$PWD/tagpopup.cpp \
+    $$PWD/tagviewer.cpp \
     $$PWD/textviewwindow.cpp \
     $$PWD/toolbarhelper.cpp \
     $$PWD/treeview.cpp \
@@ -104,7 +111,6 @@ SOURCES += \
     $$PWD/dialogs/newnotedialog.cpp \
     $$PWD/dialogs/managenotebooksdialog.cpp \
     $$PWD/dialogs/notebookinfowidget.cpp \
-    $$PWD/dialogs/nodelabelwithupbutton.cpp \
     $$PWD/dialogs/notepropertiesdialog.cpp \
     $$PWD/dialogs/folderpropertiesdialog.cpp \
     $$PWD/dialogs/nodeinfowidget.cpp \
@@ -128,9 +134,12 @@ HEADERS += \
     $$PWD/dialogs/importlegacynotebookdialog.h \
     $$PWD/dialogs/importnotebookdialog.h \
     $$PWD/dialogs/legacynotebookutils.h \
+    $$PWD/dialogs/levellabelwithupbutton.h \
     $$PWD/dialogs/linkinsertdialog.h \
     $$PWD/dialogs/newnotebookfromfolderdialog.h \
     $$PWD/dialogs/newsnippetdialog.h \
+    $$PWD/dialogs/newtagdialog.h \
+    $$PWD/dialogs/renametagdialog.h \
     $$PWD/dialogs/selectdialog.h \
     $$PWD/dialogs/selectionitemwidget.h \
     $$PWD/dialogs/settings/appearancepage.h \
@@ -152,6 +161,7 @@ HEADERS += \
     $$PWD/dialogs/sortdialog.h \
     $$PWD/dialogs/tableinsertdialog.h \
     $$PWD/dialogs/updater.h \
+    $$PWD/dialogs/viewtagsdialog.h \
     $$PWD/dockwidgethelper.h \
     $$PWD/dragdropareaindicator.h \
     $$PWD/editors/editormarkdownvieweradapter.h \
@@ -196,6 +206,9 @@ HEADERS += \
     $$PWD/snippetpanel.h \
     $$PWD/styleditemdelegate.h \
     $$PWD/systemtrayhelper.h \
+    $$PWD/tagexplorer.h \
+    $$PWD/tagpopup.h \
+    $$PWD/tagviewer.h \
     $$PWD/textviewwindow.h \
     $$PWD/textviewwindowhelper.h \
     $$PWD/toolbarhelper.h \
@@ -224,7 +237,6 @@ HEADERS += \
     $$PWD/dialogs/newnotedialog.h \
     $$PWD/dialogs/managenotebooksdialog.h \
     $$PWD/dialogs/notebookinfowidget.h \
-    $$PWD/dialogs/nodelabelwithupbutton.h \
     $$PWD/dialogs/notepropertiesdialog.h \
     $$PWD/dialogs/folderpropertiesdialog.h \
     $$PWD/dialogs/nodeinfowidget.h \

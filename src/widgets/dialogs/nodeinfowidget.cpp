@@ -10,7 +10,7 @@
 #include <utils/pathutils.h>
 #include <utils/utils.h>
 #include "exception.h"
-#include "nodelabelwithupbutton.h"
+#include "levellabelwithupbutton.h"
 #include <utils/widgetutils.h>
 #include <buffer/filetypehelper.h>
 #include "../lineeditwithsnippet.h"
@@ -35,6 +35,20 @@ NodeInfoWidget::NodeInfoWidget(const Node *p_parentNode,
     setupUI(p_parentNode, p_flags);
 }
 
+static QVector<LevelLabelWithUpButton::Level> nodeToLevels(const Node *p_node)
+{
+    QVector<LevelLabelWithUpButton::Level> levels;
+    while (p_node) {
+        LevelLabelWithUpButton::Level level;
+        level.m_name = p_node->fetchPath();
+        level.m_data = static_cast<const void *>(p_node);
+        levels.push_back(level);
+        p_node = p_node->getParent();
+    }
+
+    return levels;
+}
+
 void NodeInfoWidget::setupUI(const Node *p_parentNode, Node::Flags p_newNodeFlags)
 {
     const bool createMode = m_mode == Mode::Create;
@@ -45,11 +59,14 @@ void NodeInfoWidget::setupUI(const Node *p_parentNode, Node::Flags p_newNodeFlag
     m_mainLayout->addRow(tr("Notebook:"),
                          new QLabel(p_parentNode->getNotebook()->getName(), this));
 
-    m_parentNodeLabel = new NodeLabelWithUpButton(p_parentNode, this);
-    m_parentNodeLabel->setReadOnly(!createMode);
-    connect(m_parentNodeLabel, &NodeLabelWithUpButton::nodeChanged,
-            this, &NodeInfoWidget::inputEdited);
-    m_mainLayout->addRow(tr("Location:"), m_parentNodeLabel);
+    {
+        m_parentNodeLabel = new LevelLabelWithUpButton(this);
+        m_parentNodeLabel->setReadOnly(!createMode);
+        m_parentNodeLabel->setLevels(nodeToLevels(p_parentNode));
+        connect(m_parentNodeLabel, &LevelLabelWithUpButton::levelChanged,
+                this, &NodeInfoWidget::inputEdited);
+        m_mainLayout->addRow(tr("Location:"), m_parentNodeLabel);
+    }
 
     if (createMode && isNote) {
         setupFileTypeComboBox(this);
@@ -115,7 +132,7 @@ const Notebook *NodeInfoWidget::getNotebook() const
 
 const Node *NodeInfoWidget::getParentNode() const
 {
-    return m_parentNodeLabel->getNode();
+    return static_cast<const Node *>(m_parentNodeLabel->getLevel().m_data);
 }
 
 void NodeInfoWidget::setNode(const Node *p_node)
@@ -129,7 +146,7 @@ void NodeInfoWidget::setNode(const Node *p_node)
     if (m_node) {
         Q_ASSERT(getNotebook() == m_node->getNotebook());
         m_nameLineEdit->setText(m_node->getName());
-        m_parentNodeLabel->setNode(m_node->getParent());
+        m_parentNodeLabel->setLevels(nodeToLevels(m_node->getParent()));
 
         auto createdTime = Utils::dateTimeString(m_node->getCreatedTimeUtc().toLocalTime());
         m_createdDateTimeLabel->setText(createdTime);

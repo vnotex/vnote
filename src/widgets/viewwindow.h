@@ -95,6 +95,8 @@ namespace vnotex
         // Return the result from the FloatingWidget.
         QVariant showFloatingWidget(FloatingWidget *p_widget);
 
+        bool isSessionEnabled() const;
+
     public slots:
         virtual void handleEditorConfigChange() = 0;
 
@@ -316,6 +318,14 @@ namespace vnotex
 
         Buffer *m_buffer = nullptr;
 
+        // Whether check file missing or changed outside.
+        bool m_fileChangeCheckEnabled = true;
+
+        // Last find info.
+        FindInfo m_findInfo;
+
+        bool m_sessionEnabled = true;
+
         // Null if this window has not been added to any split.
         ViewSplit *m_viewSplit = nullptr;
 
@@ -341,12 +351,6 @@ namespace vnotex
 
         // Managed by QObject.
         QToolBar *m_toolBar = nullptr;
-
-        // Whether check file missing or changed outside.
-        bool m_fileChangeCheckEnabled = true;
-
-        // Last find info.
-        FindInfo m_findInfo;
 
         QSharedPointer<StatusWidget> m_statusWidget;
 

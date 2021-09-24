@@ -406,3 +406,13 @@ bool Notebook::rebuildDatabase()
 {
     return false;
 }
+
+HistoryI *Notebook::history()
+{
+    return nullptr;
+}
+
+TagI *Notebook::tag()
+{
+    return nullptr;
+}

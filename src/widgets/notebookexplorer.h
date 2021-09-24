@@ -60,9 +60,6 @@ namespace vnotex
     signals:
         void notebookActivated(ID p_notebookId);
 
-        // Internal use only.
-        void updateTitleBarMenuActions();
-
     private:
         void setupUI();
 

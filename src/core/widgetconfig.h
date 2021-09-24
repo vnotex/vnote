@@ -51,6 +51,9 @@ namespace vnotex
         bool isSnippetPanelBuiltInSnippetsVisible() const;
         void setSnippetPanelBuiltInSnippetsVisible(bool p_visible);
 
+        bool getTagExplorerTwoColumnsEnabled() const;
+        void setTagExplorerTwoColumnsEnabled(bool p_enabled);
+
     private:
         int m_outlineAutoExpandedLevel = 6;
 
@@ -74,6 +77,9 @@ namespace vnotex
         QStringList m_mainWindowKeepDocksExpandingContentArea;
 
         bool m_snippetPanelBuiltInSnippetsVisible = true;
+
+        // Whether enable two columns for tag explorer.
+        bool m_tagExplorerTwoColumnsEnabled = false;
     };
 }
 

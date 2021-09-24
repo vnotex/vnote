@@ -26,7 +26,7 @@ namespace vnotex
 
         static void showHorizontalScrollbar(QTreeWidget *p_tree);
 
-        static QTreeWidgetItem *findItem(const QTreeWidget *p_widget, const QVariant &p_data);
+        static QTreeWidgetItem *findItem(const QTreeWidget *p_widget, const QVariant &p_data, int p_column = 0);
 
         // Next visible item.
         static QTreeWidgetItem *nextItem(const QTreeWidget* p_tree,
@@ -36,8 +36,8 @@ namespace vnotex
         static QVector<QTreeWidgetItem *> getVisibleItems(const QTreeWidget *p_widget);
 
     signals:
-        // Rows [@p_first, @p_last] were moved to @p_row.
-        void rowsMoved(int p_first, int p_last, int p_row);
+        // Emit when single item is selected and Drag&Drop to move internally.
+        void itemMoved(QTreeWidgetItem *p_item);
 
     protected:
         void mousePressEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
@@ -47,7 +47,7 @@ namespace vnotex
         void dropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
 
     private:
-        static QTreeWidgetItem *findItemHelper(QTreeWidgetItem *p_item, const QVariant &p_data);
+        static QTreeWidgetItem *findItemHelper(QTreeWidgetItem *p_item, const QVariant &p_data, int p_column);
 
         static QTreeWidgetItem *nextSibling(const QTreeWidget *p_widget,
                                             QTreeWidgetItem *p_item,

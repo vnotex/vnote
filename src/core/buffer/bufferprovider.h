@@ -68,6 +68,8 @@ namespace vnotex
 
         virtual bool isAttachmentSupported() const = 0;
 
+        virtual bool isTagSupported() const = 0;
+
         virtual bool checkFileExistsOnDisk() const;
 
         virtual bool checkFileChangedOutside() const;

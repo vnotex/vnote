@@ -13,7 +13,7 @@ class QComboBox;
 namespace vnotex
 {
     class Notebook;
-    class NodeLabelWithUpButton;
+    class LevelLabelWithUpButton;
     class LineEditWithSnippet;
 
     class NodeInfoWidget : public QWidget
@@ -59,7 +59,7 @@ namespace vnotex
 
         LineEditWithSnippet *m_nameLineEdit = nullptr;
 
-        NodeLabelWithUpButton *m_parentNodeLabel = nullptr;
+        LevelLabelWithUpButton *m_parentNodeLabel = nullptr;
 
         QLabel *m_createdDateTimeLabel = nullptr;
 

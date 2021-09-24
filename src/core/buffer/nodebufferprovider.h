@@ -65,6 +65,8 @@ namespace vnotex
 
         bool isAttachmentSupported() const Q_DECL_OVERRIDE;
 
+        bool isTagSupported() const Q_DECL_OVERRIDE;
+
         bool isReadOnly() const Q_DECL_OVERRIDE;
 
         QSharedPointer<File> getFile() const Q_DECL_OVERRIDE;

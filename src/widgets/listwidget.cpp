@@ -99,3 +99,28 @@ bool ListWidget::isSeparatorItem(const QListWidgetItem *p_item)
 {
     return p_item->type() == ItemTypeSeparator;
 }
+
+QListWidgetItem *ListWidget::findItem(const QListWidget *p_widget, const QVariant &p_data)
+{
+    QListWidgetItem *item = nullptr;
+    forEachItem(p_widget, [&item, &p_data](QListWidgetItem *itemIter) {
+        if (itemIter->data(Qt::UserRole) == p_data) {
+            item = itemIter;
+            return false;
+        }
+
+        return true;
+    });
+
+    return item;
+}
+
+void ListWidget::forEachItem(const QListWidget *p_widget, const std::function<bool(QListWidgetItem *p_item)> &p_func)
+{
+    int cnt = p_widget->count();
+    for (int i = 0; i < cnt; ++i) {
+        if (!p_func(p_widget->item(i))) {
+            return;
+        }
+    }
+}

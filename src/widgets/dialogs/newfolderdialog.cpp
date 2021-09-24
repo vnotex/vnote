@@ -2,11 +2,12 @@
 
 #include <QLineEdit>
 
-#include "notebook/notebook.h"
-#include "notebook/node.h"
-#include "../widgetsfactory.h"
+#include <notebook/notebook.h>
+#include <notebook/node.h>
 #include <utils/pathutils.h>
-#include "exception.h"
+#include <core/exception.h>
+
+#include "../widgetsfactory.h"
 #include "nodeinfowidget.h"
 
 using namespace vnotex;

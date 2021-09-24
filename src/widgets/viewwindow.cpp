@@ -29,6 +29,7 @@
 #include "editreaddiscardaction.h"
 #include "viewsplit.h"
 #include "attachmentpopup.h"
+#include "tagpopup.h"
 #include "outlinepopup.h"
 #include "dragdropareaindicator.h"
 #include "attachmentdragdropareaindicator.h"
@@ -140,6 +141,8 @@ void ViewWindow::handleBufferChanged(const QSharedPointer<FileOpenParameters> &p
         connect(buffer, &Buffer::attachmentChanged,
                 this, &ViewWindow::attachmentChanged);
     }
+
+    m_sessionEnabled = p_paras->m_sessionEnabled;
 
     handleBufferChangedInternal(p_paras);
 
@@ -395,6 +398,19 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
         connect(this, &ViewWindow::attachmentChanged,
                 this, [this, act]() {
                     act->setIcon(getAttachmentIcon(getBuffer()));
+                });
+        break;
+    }
+
+    case ViewWindowToolBarHelper::Tag:
+    {
+        act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
+        auto popup = static_cast<TagPopup *>(static_cast<QToolButton *>(p_toolBar->widgetForAction(act))->menu());
+        connect(this, &ViewWindow::bufferChanged,
+                this, [this, act, popup]() {
+                    auto buffer = getBuffer();
+                    act->setEnabled(buffer ? buffer->isTagSupported() : false);
+                    popup->setBuffer(buffer);
                 });
         break;
     }
@@ -1152,6 +1168,7 @@ QToolBar *ViewWindow::createToolBar(QWidget *p_parent)
     toolBar->setIconSize(QSize(iconSize, iconSize));
 
     /*
+    // The extension button of tool bar.
     auto extBtn = toolBar->findChild<QToolButton *>(QLatin1String("qt_toolbar_ext_button"));
     Q_ASSERT(extBtn);
     */
@@ -1238,4 +1255,9 @@ void ViewWindow::updateLastFindInfo(const QStringList &p_texts, FindOptions p_op
 {
     m_findInfo.m_texts = p_texts;
     m_findInfo.m_options = p_options;
+}
+
+bool ViewWindow::isSessionEnabled() const
+{
+    return m_sessionEnabled;
 }

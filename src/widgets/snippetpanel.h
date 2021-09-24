@@ -16,11 +16,10 @@ namespace vnotex
     public:
         explicit SnippetPanel(QWidget *p_parent = nullptr);
 
+        void initialize();
+
     signals:
         void applySnippetRequested(const QString &p_name);
-
-    protected:
-        void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
     private slots:
         void newSnippet();
@@ -47,8 +46,6 @@ namespace vnotex
         TitleBar *m_titleBar = nullptr;
 
         QListWidget *m_snippetList = nullptr;
-
-        bool m_listInitialized = false;
 
         bool m_builtInSnippetsVisible = true;
     };

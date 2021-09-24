@@ -18,6 +18,7 @@ namespace vnotex
     public:
         ~NavigationModeMgr();
 
+        // Maybe we need a unregisterNavigationTarget()?
         void registerNavigationTarget(NavigationMode *p_target);
 
         static NavigationModeMgr &getInst();

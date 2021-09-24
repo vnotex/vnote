@@ -41,6 +41,7 @@ namespace vnotex
             TypeMax,
 
             Attachment,
+            Tag,
             Outline,
             FindAndReplace,
             SectionNumber,

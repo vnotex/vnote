@@ -24,8 +24,6 @@ namespace vnotex
 
         explicit LocationList(QWidget *p_parent = nullptr);
 
-        NavigationModeWrapper<QTreeWidget, QTreeWidgetItem> *getNavigationModeWrapper();
-
         void clear();
 
         void addLocation(const ComplexLocation &p_location);

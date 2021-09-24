@@ -68,6 +68,8 @@ void TextViewWindow::setupToolBar()
 
     addAction(toolBar, ViewWindowToolBarHelper::Attachment);
 
+    addAction(toolBar, ViewWindowToolBarHelper::Tag);
+
     ToolBarHelper::addSpacer(toolBar);
     addAction(toolBar, ViewWindowToolBarHelper::FindAndReplace);
 }

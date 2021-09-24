@@ -42,6 +42,8 @@ void WidgetConfig::init(const QJsonObject &p_app,
     m_mainWindowKeepDocksExpandingContentArea = READSTRLIST(QStringLiteral("main_window_keep_docks_expanding_content_area"));
 
     m_snippetPanelBuiltInSnippetsVisible = READBOOL(QStringLiteral("snippet_panel_builtin_snippets_visible"));
+
+    m_tagExplorerTwoColumnsEnabled = READBOOL(QStringLiteral("tag_explorer_two_columns_enabled"));
 }
 
 QJsonObject WidgetConfig::toJson() const
@@ -59,7 +61,7 @@ QJsonObject WidgetConfig::toJson() const
     obj[QStringLiteral("node_explorer_close_before_open_with_enabled")] = m_nodeExplorerCloseBeforeOpenWithEnabled;
 
     obj[QStringLiteral("search_panel_advanced_settings_visible")] = m_searchPanelAdvancedSettingsVisible;
-    obj[QStringLiteral("snippet_panel_builtin_snippets_visible")] = m_snippetPanelBuiltInSnippetsVisible;
+    obj[QStringLiteral("tag_explorer_two_columns_enabled")] = m_tagExplorerTwoColumnsEnabled;
     writeStringList(obj,
                     QStringLiteral("main_window_keep_docks_expanding_content_area"),
                     m_mainWindowKeepDocksExpandingContentArea);
@@ -176,3 +178,12 @@ void WidgetConfig::setSnippetPanelBuiltInSnippetsVisible(bool p_visible)
     updateConfig(m_snippetPanelBuiltInSnippetsVisible, p_visible, this);
 }
 
+bool WidgetConfig::getTagExplorerTwoColumnsEnabled() const
+{
+    return m_tagExplorerTwoColumnsEnabled;
+}
+
+void WidgetConfig::setTagExplorerTwoColumnsEnabled(bool p_enabled)
+{
+    updateConfig(m_tagExplorerTwoColumnsEnabled, p_enabled, this);
+}

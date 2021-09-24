@@ -24,10 +24,11 @@ namespace vnotex
         enum DockIndex
         {
             NavigationDock = 0,
-            OutlineDock,
             HistoryDock,
+            TagDock,
             SearchDock,
             SnippetDock,
+            OutlineDock,
             LocationListDock,
             MaxDock
         };
@@ -101,6 +102,8 @@ namespace vnotex
         void setupSnippetDock();
 
         void setupHistoryDock();
+
+        void setupTagDock();
 
         void setupLocationListDock();
 

@@ -1,8 +1,6 @@
 #include "quickselector.h"
 
 #include <QVBoxLayout>
-#include <QWidgetAction>
-#include <QMenu>
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QKeyEvent>
@@ -72,10 +70,14 @@ void QuickSelector::setupUI(const QString &p_title)
         mainLayout->addWidget(new QLabel(p_title, this));
     }
 
-    m_searchLineEdit = dynamic_cast<LineEdit *>(WidgetsFactory::createLineEdit(this));
+    m_searchLineEdit = static_cast<LineEdit *>(WidgetsFactory::createLineEdit(this));
     m_searchLineEdit->setInputMethodEnabled(false);
     connect(m_searchLineEdit, &QLineEdit::textEdited,
             this, &QuickSelector::searchAndFilter);
+    connect(m_searchLineEdit, &QLineEdit::returnPressed,
+            this, [this]() {
+                activateItem(m_itemList->currentItem());
+            });
     mainLayout->addWidget(m_searchLineEdit);
 
     setFocusProxy(m_searchLineEdit);
@@ -154,11 +156,6 @@ bool QuickSelector::eventFilter(QObject *p_obj, QEvent *p_event)
                 m_searchLineEdit->setFocus();
             }
             return true;
-        } else if (key == Qt::Key_Enter || key == Qt::Key_Return) {
-            if (p_obj == m_searchLineEdit) {
-                activateItem(m_itemList->currentItem());
-                return true;
-            }
         }
     }
     return FloatingWidget::eventFilter(p_obj, p_event);

@@ -245,6 +245,17 @@ const QStringList &Node::getTags() const
     return m_tags;
 }
 
+void Node::updateTags(const QStringList &p_tags)
+{
+    if (p_tags == m_tags) {
+        return;
+    }
+
+    m_tags = p_tags;
+    save();
+    emit m_notebook->nodeUpdated(this);
+}
+
 bool Node::isReadOnly() const
 {
     return m_flags & Flag::ReadOnly;

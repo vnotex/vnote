@@ -50,6 +50,11 @@ void SnippetPanel::setupUI()
     setFocusProxy(m_snippetList);
 }
 
+void SnippetPanel::initialize()
+{
+    updateSnippetList();
+}
+
 void SnippetPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
 {
     m_titleBar = new TitleBar(p_title, true, TitleBar::Action::Menu, p_parent);
@@ -123,16 +128,6 @@ void SnippetPanel::updateSnippetList()
     }
 
     updateItemsCountLabel();
-}
-
-void SnippetPanel::showEvent(QShowEvent *p_event)
-{
-    QFrame::showEvent(p_event);
-
-    if (!m_listInitialized) {
-        m_listInitialized = true;
-        updateSnippetList();
-    }
 }
 
 void SnippetPanel::handleContextMenuRequested(const QPoint &p_pos)

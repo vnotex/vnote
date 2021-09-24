@@ -35,7 +35,7 @@ QSharedPointer<NotebookConfig> BundleNotebookConfigMgr::readNotebookConfig() con
 
 void BundleNotebookConfigMgr::writeNotebookConfig()
 {
-    auto config = NotebookConfig::fromNotebook(getCodeVersion(), getNotebook());
+    auto config = NotebookConfig::fromNotebook(getCodeVersion(), getBundleNotebook());
     writeNotebookConfig(*config);
 }
 
@@ -82,7 +82,7 @@ QString BundleNotebookConfigMgr::getDatabasePath()
 
 BundleNotebook *BundleNotebookConfigMgr::getBundleNotebook() const
 {
-    return dynamic_cast<BundleNotebook *>(getNotebook());
+    return static_cast<BundleNotebook *>(getNotebook());
 }
 
 bool BundleNotebookConfigMgr::isBuiltInFile(const Node *p_node, const QString &p_name) const

@@ -1,14 +1,15 @@
 #include "notepropertiesdialog.h"
 
-#include "notebook/notebook.h"
-#include "notebook/node.h"
-#include "../widgetsfactory.h"
+#include <notebook/notebook.h>
+#include <notebook/node.h>
 #include <utils/pathutils.h>
-#include "exception.h"
-#include "nodeinfowidget.h"
-#include "../lineedit.h"
+#include <core/exception.h>
 #include <core/events.h>
 #include <core/vnotex.h>
+
+#include "../widgetsfactory.h"
+#include "nodeinfowidget.h"
+#include "../lineedit.h"
 
 using namespace vnotex;
 

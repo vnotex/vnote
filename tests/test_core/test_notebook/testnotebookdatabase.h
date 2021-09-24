@@ -20,12 +20,22 @@ namespace tests
     private:
         void testNode();
 
+        void testTag();
+
+        void testNodeTag();
+
     private:
         void addAndQueryNode(vnotex::Node *p_node, bool p_ignoreId);
 
-        void testQueryNodePath(const vnotex::Node *p_node);
+        void testQueryNodeParentPath(const vnotex::Node *p_node);
 
         void queryAndVerifyNode(const vnotex::Node *p_node);
+
+        void addAndQueryTag(const QString &p_name, const QString &p_parentName);
+
+        void queryAndVerifyTag(const QString &p_name, const QString &p_parentName);
+
+        void updateNodeTagsAndCheck(vnotex::Node *p_node);
 
         QTemporaryDir m_testDir;
 

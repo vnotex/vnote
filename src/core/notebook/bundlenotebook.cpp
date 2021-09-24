@@ -11,6 +11,7 @@
 #include <notebookbackend/inotebookbackend.h>
 
 #include "notebookdatabaseaccess.h"
+#include "notebooktagmgr.h"
 
 using namespace vnotex;
 
@@ -20,6 +21,7 @@ BundleNotebook::BundleNotebook(const NotebookParameters &p_paras,
     : Notebook(p_paras, p_parent),
       m_configVersion(p_notebookConfig->m_version),
       m_history(p_notebookConfig->m_history),
+      m_tagGraph(p_notebookConfig->m_tagGraph),
       m_extraConfigs(p_notebookConfig->m_extraConfigs)
 {
     setupDatabase();
@@ -59,6 +61,15 @@ void BundleNotebook::initDatabase()
         int cnt = 0;
         fillNodeTableFromConfig(getRootNode().data(), m_configVersion < 2, cnt);
         qDebug() << "fillNodeTableFromConfig nodes count" << cnt;
+
+        fillTagTableFromTagGraph();
+
+        cnt = 0;
+        fillTagTableFromConfig(getRootNode().data(), cnt);
+    }
+
+    if (m_tagMgr) {
+        m_tagMgr->update();
     }
 }
 
@@ -85,6 +96,11 @@ void BundleNotebook::remove()
         qInfo() << QString("root folder of notebook (%1) is not empty and needs manual clean up")
                           .arg(getRootFolderAbsolutePath());
     }
+}
+
+HistoryI *BundleNotebook::history()
+{
+    return this;
 }
 
 const QVector<HistoryItem> &BundleNotebook::getHistory() const
@@ -166,5 +182,75 @@ bool BundleNotebook::rebuildDatabase()
 
     setupDatabase();
     initDatabase();
+
+    emit tagsUpdated();
+
     return true;
+}
+
+const QString &BundleNotebook::getTagGraph() const
+{
+    return m_tagGraph;
+}
+
+void BundleNotebook::updateTagGraph(const QString &p_tagGraph)
+{
+    if (m_tagGraph == p_tagGraph) {
+        return;
+    }
+
+    m_tagGraph = p_tagGraph;
+    updateNotebookConfig();
+}
+
+void BundleNotebook::fillTagTableFromTagGraph()
+{
+    auto tagGraph = NotebookTagMgr::stringToTagGraph(m_tagGraph);
+    for (const auto &tagPair : tagGraph) {
+        if (!m_dbAccess->addTag(tagPair.m_parent)) {
+            qWarning() << "failed to add tag to DB" << tagPair.m_parent;
+            continue;
+        }
+
+        if (!m_dbAccess->addTag(tagPair.m_child, tagPair.m_parent)) {
+            qWarning() << "failed to add tag to DB" << tagPair.m_child;
+            continue;
+        }
+    }
+
+    QCoreApplication::processEvents();
+}
+
+void BundleNotebook::fillTagTableFromConfig(Node *p_node, int &p_totalCnt)
+{
+    // @p_node must already exists in node table.
+    bool ret = m_dbAccess->updateNodeTags(p_node);
+    if (!ret) {
+        qWarning() << "failed to add tags of node to DB" << p_node->getName() << p_node->getTags();
+        return;
+    }
+
+    if (++p_totalCnt % 10) {
+        QCoreApplication::processEvents();
+    }
+
+    const auto &children = p_node->getChildrenRef();
+    for (const auto &child : children) {
+        fillTagTableFromConfig(child.data(), p_totalCnt);
+    }
+}
+
+NotebookTagMgr *BundleNotebook::getTagMgr() const
+{
+    if (!m_tagMgr) {
+        auto th = const_cast<BundleNotebook *>(this);
+        th->m_tagMgr = new NotebookTagMgr(th);
+    }
+
+    return m_tagMgr;
+}
+
+TagI *BundleNotebook::tag()
+{
+    return getTagMgr();
 }

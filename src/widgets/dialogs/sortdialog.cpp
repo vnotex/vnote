@@ -44,22 +44,6 @@ void SortDialog::setupUI(const QString &p_title, const QString &p_info)
         m_treeWidget->setRootIsDecorated(false);
         m_treeWidget->setSelectionMode(QAbstractItemView::ContiguousSelection);
         m_treeWidget->setDragDropMode(QAbstractItemView::InternalMove);
-        connect(static_cast<TreeWidget *>(m_treeWidget), &TreeWidget::rowsMoved,
-                this, [this](int p_first, int p_last, int p_row) {
-                    auto item = m_treeWidget->topLevelItem(p_row);
-                    if (item) {
-                        // Keep all items selected.
-                        m_treeWidget->setCurrentItem(item);
-
-                        const int cnt = p_last - p_first + 1;
-                        for (int i = 0; i < cnt; ++i) {
-                            auto it = m_treeWidget->topLevelItem(p_row + i);
-                            if (it) {
-                                it->setSelected(true);
-                            }
-                        }
-                    }
-                });
         bodyLayout->addWidget(m_treeWidget);
 
         // Buttons for top/up/down/bottom.

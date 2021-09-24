@@ -17,10 +17,6 @@ namespace tests
 
         void remove() Q_DECL_OVERRIDE;
 
-        const QVector<vnotex::HistoryItem> &getHistory() const Q_DECL_OVERRIDE;
-        void addHistory(const vnotex::HistoryItem &p_item) Q_DECL_OVERRIDE;
-        void clearHistory() Q_DECL_OVERRIDE;
-
         const QJsonObject &getExtraConfigs() const Q_DECL_OVERRIDE;
         void setExtraConfig(const QString &p_key, const QJsonObject &p_obj) Q_DECL_OVERRIDE;
 
@@ -28,8 +24,6 @@ namespace tests
 
     protected:
         void initializeInternal() Q_DECL_OVERRIDE;
-
-        QVector<vnotex::HistoryItem> m_history;
 
         QJsonObject m_extraConfigs;
     };

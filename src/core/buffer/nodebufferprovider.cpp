@@ -3,6 +3,7 @@
 #include <QFileInfo>
 
 #include <notebook/node.h>
+#include <notebook/notebook.h>
 #include <utils/pathutils.h>
 #include <core/file.h>
 
@@ -146,6 +147,11 @@ void NodeBufferProvider::removeImage(const QString &p_imagePath)
 bool NodeBufferProvider::isAttachmentSupported() const
 {
     return true;
+}
+
+bool NodeBufferProvider::isTagSupported() const
+{
+    return m_node->getNotebook()->tag() != nullptr;
 }
 
 Node *NodeBufferProvider::getNode() const

@@ -58,11 +58,11 @@ void TreeWidget::showHorizontalScrollbar(QTreeWidget *p_tree)
     p_tree->header()->setStretchLastSection(false);
 }
 
-QTreeWidgetItem *TreeWidget::findItem(const QTreeWidget *p_widget, const QVariant &p_data)
+QTreeWidgetItem *TreeWidget::findItem(const QTreeWidget *p_widget, const QVariant &p_data, int p_column)
 {
     int nrTop = p_widget->topLevelItemCount();
     for (int i = 0; i < nrTop; ++i) {
-        auto item = findItemHelper(p_widget->topLevelItem(i), p_data);
+        auto item = findItemHelper(p_widget->topLevelItem(i), p_data, p_column);
         if (item) {
             return item;
         }
@@ -71,7 +71,7 @@ QTreeWidgetItem *TreeWidget::findItem(const QTreeWidget *p_widget, const QVarian
     return nullptr;
 }
 
-QTreeWidgetItem *TreeWidget::findItemHelper(QTreeWidgetItem *p_item, const QVariant &p_data)
+QTreeWidgetItem *TreeWidget::findItemHelper(QTreeWidgetItem *p_item, const QVariant &p_data, int p_column)
 {
     if (!p_item) {
         return nullptr;
@@ -83,7 +83,7 @@ QTreeWidgetItem *TreeWidget::findItemHelper(QTreeWidgetItem *p_item, const QVari
 
     int nrChild = p_item->childCount();
     for (int i = 0; i < nrChild; ++i) {
-        auto item = findItemHelper(p_item->child(i), p_data);
+        auto item = findItemHelper(p_item->child(i), p_data, p_column);
         if (item) {
             return item;
         }
@@ -217,24 +217,9 @@ void TreeWidget::dropEvent(QDropEvent *p_event)
 {
     auto dragItems = selectedItems();
 
-    int first = -1, last = -1;
-    QTreeWidgetItem *firstItem = NULL;
-    for (int i = 0; i < dragItems.size(); ++i) {
-        int row = indexFromItem(dragItems[i]).row();
-        if (row > last) {
-            last = row;
-        }
-
-        if (first == -1 || row < first) {
-            first = row;
-            firstItem = dragItems[i];
-        }
-    }
-
-    Q_ASSERT(firstItem);
-
     QTreeWidget::dropEvent(p_event);
 
-    int target = indexFromItem(firstItem).row();
-    emit rowsMoved(first, last, target);
+    if (dragItems.size() == 1) {
+        emit itemMoved(dragItems[0]);
+    }
 }

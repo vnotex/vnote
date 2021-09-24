@@ -16,10 +16,10 @@
 #include "dialogs/importnotebookdialog.h"
 #include "dialogs/importfolderdialog.h"
 #include "dialogs/importlegacynotebookdialog.h"
-#include "vnotex.h"
+#include <core/vnotex.h>
 #include "mainwindow.h"
-#include "notebook/notebook.h"
-#include "notebookmgr.h"
+#include <notebook/notebook.h>
+#include <core/notebookmgr.h>
 #include <utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <utils/pathutils.h>
@@ -144,8 +144,8 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
                         return;
                     }
                     int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
-                                                                 tr("Scan the whole notebook (%1) and import external files automatically.").arg(m_currentNotebook->getName()),
-                                                                 tr("This operation helps importing external files that are added outside VNote. "
+                                                                 tr("Scan the whole notebook (%1) and import external files automatically?").arg(m_currentNotebook->getName()),
+                                                                 tr("This operation helps importing external files that are added outside from VNote. "
                                                                     "It may import unexpected files."),
                                                                  tr("It is recommended to always manage files within VNote."),
                                                                  VNoteX::getInst().getMainWindow());
@@ -220,8 +220,6 @@ void NotebookExplorer::loadNotebooks()
     auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
     const auto &notebooks = notebookMgr.getNotebooks();
     m_selector->setNotebooks(notebooks);
-
-    emit updateTitleBarMenuActions();
 }
 
 void NotebookExplorer::reloadNotebook(const Notebook *p_notebook)
@@ -241,8 +239,6 @@ void NotebookExplorer::setCurrentNotebook(const QSharedPointer<Notebook> &p_note
     m_nodeExplorer->setNotebook(p_notebook);
 
     recoverSession();
-
-    emit updateTitleBarMenuActions();
 }
 
 void NotebookExplorer::newNotebook()
@@ -546,6 +542,14 @@ void NotebookExplorer::recoverSession()
 void NotebookExplorer::rebuildDatabase()
 {
     if (m_currentNotebook) {
+        int okRet = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
+            tr("Rebuild the database of notebook (%1)?").arg(m_currentNotebook->getName()),
+            tr("This operation will rebuild the notebook database from configuration files. It may take time."),
+            tr("A notebook may use a database for cache, such as IDs of nodes and tags."),
+            VNoteX::getInst().getMainWindow());
+        if (okRet != QMessageBox::Ok) {
+            return;
+        }
 
         QProgressDialog proDlg(tr("Rebuilding notebook database..."),
                                QString(),
@@ -563,10 +567,12 @@ void NotebookExplorer::rebuildDatabase()
 
         if (ret) {
             MessageBoxHelper::notify(MessageBoxHelper::Type::Information,
-                                     tr("Notebook database has been rebuilt."));
+                                     tr("Notebook database has been rebuilt."),
+                                     VNoteX::getInst().getMainWindow());
         } else {
             MessageBoxHelper::notify(MessageBoxHelper::Type::Warning,
-                                     tr("Failed to rebuild notebook database."));
+                                     tr("Failed to rebuild notebook database."),
+                                     VNoteX::getInst().getMainWindow());
         }
     }
 }

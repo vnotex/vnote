@@ -169,6 +169,11 @@ bool FileBufferProvider::isAttachmentSupported() const
     return false;
 }
 
+bool FileBufferProvider::isTagSupported() const
+{
+    return false;
+}
+
 Node *FileBufferProvider::getNode() const
 {
     return c_nodeAttachedTo;

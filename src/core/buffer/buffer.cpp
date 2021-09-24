@@ -526,6 +526,11 @@ bool Buffer::isAttachment(const QString &p_path) const
     return PathUtils::pathContains(getAttachmentFolderPath(), p_path);
 }
 
+bool Buffer::isTagSupported() const
+{
+    return m_provider->isTagSupported();
+}
+
 Buffer::ProviderType Buffer::getProviderType() const
 {
     return m_provider->getType();

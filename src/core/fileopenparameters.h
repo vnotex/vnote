@@ -38,6 +38,9 @@ namespace vnotex
 
         // If not empty, use this token to do a search text highlight.
         QSharedPointer<SearchToken> m_searchToken;
+
+        // Whether should save this file into session.
+        bool m_sessionEnabled = true;
     };
 }
 

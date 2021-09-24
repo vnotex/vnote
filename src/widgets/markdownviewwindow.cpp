@@ -260,6 +260,8 @@ void MarkdownViewWindow::setupToolBar()
 
     addAction(toolBar, ViewWindowToolBarHelper::Attachment);
 
+    addAction(toolBar, ViewWindowToolBarHelper::Tag);
+
     toolBar->addSeparator();
 
     addAction(toolBar, ViewWindowToolBarHelper::SectionNumber);
@@ -1115,18 +1117,21 @@ QPoint MarkdownViewWindow::getFloatingWidgetPosition()
 QString MarkdownViewWindow::selectedText() const
 {
     switch (m_mode) {
-    case ViewWindowMode::FullPreview:
-    case ViewWindowMode::Invalid:
-        Q_FALLTHROUGH();
     case ViewWindowMode::Read:
         Q_ASSERT(m_viewer);
         return m_viewer->selectedText();
+
     case ViewWindowMode::Edit:
+        Q_FALLTHROUGH();
+    case ViewWindowMode::FullPreview:
+        Q_FALLTHROUGH();
     case ViewWindowMode::FocusPreview:
         Q_ASSERT(m_editor);
         return m_editor->getTextEdit()->selectedText();
+
+    default:
+        return QString();
     }
-    return QString("");
 }
 
 void MarkdownViewWindow::handleImageHostChanged(const QString &p_hostName)

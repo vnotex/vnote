@@ -24,6 +24,13 @@ namespace vnotex
     public:
         enum { InvalidId = 0 };
 
+        struct TagRecord
+        {
+            QString m_name;
+
+            QString m_parentName;
+        };
+
         friend class tests::TestNotebookDatabase;
 
         NotebookDatabaseAccess(Notebook *p_notebook, const QString &p_databaseFile, QObject *p_parent = nullptr);
@@ -38,6 +45,8 @@ namespace vnotex
 
         void close();
 
+        // Node table.
+    public:
         bool addNode(Node *p_node, bool p_ignoreId);
 
         // Whether there is a record with the same ID in DB and has the same path.
@@ -48,6 +57,29 @@ namespace vnotex
         bool updateNode(const Node *p_node);
 
         bool removeNode(const Node *p_node);
+
+        // Tag table.
+    public:
+        // Will update the tag if exists.
+        bool addTag(const QString &p_name, const QString &p_parentName);
+
+        bool addTag(const QString &p_name);
+
+        bool renameTag(const QString &p_name, const QString &p_newName);
+
+        bool removeTag(const QString &p_name);
+
+        // Sorted by parent_name.
+        QList<TagRecord> getAllTags();
+
+        QStringList queryTagAndChildren(const QString &p_tag);
+
+        // Node_tag table.
+    public:
+        bool updateNodeTags(Node *p_node);
+
+        // Return the relative path of nodes of tags @p_tags.
+        QStringList getNodesOfTags(const QStringList &p_tags);
 
     private:
         struct NodeRecord
@@ -68,7 +100,9 @@ namespace vnotex
         // Return null if not exists.
         QSharedPointer<NodeRecord> queryNode(ID p_id);
 
-        QStringList queryNodePath(ID p_id);
+        QStringList queryNodeParentPath(ID p_id);
+
+        QString queryNodePath(ID p_id);
 
         bool nodeEqual(const NodeRecord *p_rec, const Node *p_node) const;
 
@@ -77,6 +111,23 @@ namespace vnotex
         bool checkNodePath(const Node *p_node, const QStringList &p_nodePath) const;
 
         bool removeNode(ID p_id);
+
+        // Return null if not exists.
+        QSharedPointer<TagRecord> queryTag(const QString &p_name);
+
+        bool updateTagParent(const QString &p_name, const QString &p_parentName);
+
+        bool addTag(const QString &p_name, const QString &p_parentName, bool p_updateOnExists);
+
+        QStringList queryNodeTags(ID p_id);
+
+        QList<ID> queryTagNodes(const QString &p_tag);
+
+        QList<ID> queryTagNodesRecursive(const QString &p_tag);
+
+        bool removeNodeTags(ID p_id);
+
+        bool addNodeTags(ID p_id, const QStringList &p_tags);
 
         Notebook *m_notebook = nullptr;
 

@@ -352,7 +352,7 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
             menu->addAction(fullScreenAct);
         }
 
-        auto stayOnTopAct = menu->addAction(generateIcon("stay_on_top.svg"), MainWindow::tr("Stay On Top"),
+        auto stayOnTopAct = menu->addAction(generateIcon("stay_on_top.svg"), MainWindow::tr("Stay on Top"),
                                             p_win, &MainWindow::setStayOnTop);
         stayOnTopAct->setCheckable(true);
         WidgetUtils::addActionShortcut(stayOnTopAct,

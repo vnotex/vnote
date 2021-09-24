@@ -1,29 +1,13 @@
 #include "notebookconfig.h"
 
 #include <notebook/notebookparameters.h>
-#include <notebook/notebook.h>
+#include <notebook/bundlenotebook.h>
 #include <versioncontroller/iversioncontroller.h>
 #include <utils/utils.h>
 #include "exception.h"
 #include "global.h"
 
 using namespace vnotex;
-
-const QString NotebookConfig::c_version = "version";
-
-const QString NotebookConfig::c_name = "name";
-
-const QString NotebookConfig::c_description = "description";
-
-const QString NotebookConfig::c_imageFolder = "image_folder";
-
-const QString NotebookConfig::c_attachmentFolder = "attachment_folder";
-
-const QString NotebookConfig::c_createdTimeUtc = "created_time";
-
-const QString NotebookConfig::c_versionController = "version_controller";
-
-const QString NotebookConfig::c_configMgr = "config_mgr";
 
 QSharedPointer<NotebookConfig> NotebookConfig::fromNotebookParameters(int p_version,
                                                                       const NotebookParameters &p_paras)
@@ -46,16 +30,18 @@ QJsonObject NotebookConfig::toJson() const
 {
     QJsonObject jobj;
 
-    jobj[NotebookConfig::c_version] = m_version;
-    jobj[NotebookConfig::c_name] = m_name;
-    jobj[NotebookConfig::c_description] = m_description;
-    jobj[NotebookConfig::c_imageFolder] = m_imageFolder;
-    jobj[NotebookConfig::c_attachmentFolder] = m_attachmentFolder;
-    jobj[NotebookConfig::c_createdTimeUtc] = Utils::dateTimeStringUniform(m_createdTimeUtc);
-    jobj[NotebookConfig::c_versionController] = m_versionController;
-    jobj[NotebookConfig::c_configMgr] = m_notebookConfigMgr;
+    jobj[QStringLiteral("version")] = m_version;
+    jobj[QStringLiteral("name")] = m_name;
+    jobj[QStringLiteral("description")] = m_description;
+    jobj[QStringLiteral("image_folder")] = m_imageFolder;
+    jobj[QStringLiteral("attachment_folder")] = m_attachmentFolder;
+    jobj[QStringLiteral("created_time")] = Utils::dateTimeStringUniform(m_createdTimeUtc);
+    jobj[QStringLiteral("version_controller")] = m_versionController;
+    jobj[QStringLiteral("config_mgr")] = m_notebookConfigMgr;
 
     jobj[QStringLiteral("history")] = saveHistory();
+
+    jobj[QStringLiteral("tag_graph")] = m_tagGraph;
 
     jobj[QStringLiteral("extra_configs")] = m_extraConfigs;
 
@@ -64,32 +50,34 @@ QJsonObject NotebookConfig::toJson() const
 
 void NotebookConfig::fromJson(const QJsonObject &p_jobj)
 {
-    if (!p_jobj.contains(NotebookConfig::c_version)
-        || !p_jobj.contains(NotebookConfig::c_name)
-        || !p_jobj.contains(NotebookConfig::c_createdTimeUtc)
-        || !p_jobj.contains(NotebookConfig::c_versionController)
-        || !p_jobj.contains(NotebookConfig::c_configMgr)) {
+    if (!p_jobj.contains(QStringLiteral("version"))
+        || !p_jobj.contains(QStringLiteral("name"))
+        || !p_jobj.contains(QStringLiteral("created_time"))
+        || !p_jobj.contains(QStringLiteral("version_controller"))
+        || !p_jobj.contains(QStringLiteral("config_mgr"))) {
         Exception::throwOne(Exception::Type::InvalidArgument,
                             QString("failed to read notebook configuration from JSON (%1)").arg(QJsonObjectToString(p_jobj)));
         return;
     }
 
-    m_version = p_jobj[NotebookConfig::c_version].toInt();
-    m_name = p_jobj[NotebookConfig::c_name].toString();
-    m_description = p_jobj[NotebookConfig::c_description].toString();
-    m_imageFolder = p_jobj[NotebookConfig::c_imageFolder].toString();
-    m_attachmentFolder = p_jobj[NotebookConfig::c_attachmentFolder].toString();
-    m_createdTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NotebookConfig::c_createdTimeUtc].toString());
-    m_versionController = p_jobj[NotebookConfig::c_versionController].toString();
-    m_notebookConfigMgr = p_jobj[NotebookConfig::c_configMgr].toString();
+    m_version = p_jobj[QStringLiteral("version")].toInt();
+    m_name = p_jobj[QStringLiteral("name")].toString();
+    m_description = p_jobj[QStringLiteral("description")].toString();
+    m_imageFolder = p_jobj[QStringLiteral("image_folder")].toString();
+    m_attachmentFolder = p_jobj[QStringLiteral("attachment_folder")].toString();
+    m_createdTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[QStringLiteral("created_time")].toString());
+    m_versionController = p_jobj[QStringLiteral("version_controller")].toString();
+    m_notebookConfigMgr = p_jobj[QStringLiteral("config_mgr")].toString();
 
     loadHistory(p_jobj);
+
+    m_tagGraph = p_jobj[QStringLiteral("tag_graph")].toString();
 
     m_extraConfigs = p_jobj[QStringLiteral("extra_configs")].toObject();
 }
 
 QSharedPointer<NotebookConfig> NotebookConfig::fromNotebook(int p_version,
-                                                            const Notebook *p_notebook)
+                                                            const BundleNotebook *p_notebook)
 {
     auto config = QSharedPointer<NotebookConfig>::create();
 
@@ -102,6 +90,7 @@ QSharedPointer<NotebookConfig> NotebookConfig::fromNotebook(int p_version,
     config->m_versionController = p_notebook->getVersionController()->getName();
     config->m_notebookConfigMgr = p_notebook->getConfigMgr()->getName();
     config->m_history = p_notebook->getHistory();
+    config->m_tagGraph = p_notebook->getTagGraph();
     config->m_extraConfigs = p_notebook->getExtraConfigs();
 
     return config;

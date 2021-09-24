@@ -9,6 +9,7 @@
 #include "widgetsfactory.h"
 #include "titlebar.h"
 #include "styleditemdelegate.h"
+#include "navigationmodemgr.h"
 
 #include <core/vnotex.h>
 #include <core/thememgr.h>
@@ -56,6 +57,9 @@ void LocationList::setupUI()
             });
     mainLayout->addWidget(m_tree);
 
+    m_navigationWrapper.reset(new NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>(m_tree));
+    NavigationModeMgr::getInst().registerNavigationTarget(m_navigationWrapper.data());
+
     setFocusProxy(m_tree);
 }
 
@@ -88,14 +92,6 @@ const QIcon &LocationList::getItemIcon(LocationType p_type)
     default:
         return s_notebookIcon;
     }
-}
-
-NavigationModeWrapper<QTreeWidget, QTreeWidgetItem> *LocationList::getNavigationModeWrapper()
-{
-    if (!m_navigationWrapper) {
-        m_navigationWrapper.reset(new NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>(m_tree));
-    }
-    return m_navigationWrapper.data();
 }
 
 void LocationList::setupTitleBar(const QString &p_title, QWidget *p_parent)

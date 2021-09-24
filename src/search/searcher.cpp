@@ -470,6 +470,11 @@ bool Searcher::firstPhaseSearch(Notebook *p_notebook, QVector<SearchSecondPhaseI
             return true;
         }
 
+        if (p_notebook->isRecycleBinNode(child.data())) {
+            qDebug() << "skipped searching recycle bin";
+            continue;
+        }
+
         if (child->hasContent() && testTarget(SearchTarget::SearchFile)) {
             if (!firstPhaseSearch(child.data(), p_secondPhaseItems)) {
                 return false;

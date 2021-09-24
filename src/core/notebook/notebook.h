@@ -8,7 +8,6 @@
 #include "notebookparameters.h"
 #include <core/global.h>
 #include "node.h"
-#include <core/historyitem.h>
 
 namespace vnotex
 {
@@ -17,6 +16,8 @@ namespace vnotex
     class INotebookConfigMgr;
     class NodeParameters;
     class File;
+    class HistoryI;
+    class TagI;
 
     // Base class of notebook.
     class Notebook : public QObject
@@ -133,10 +134,6 @@ namespace vnotex
 
         void reloadNodes();
 
-        virtual const QVector<HistoryItem> &getHistory() const = 0;
-        virtual void addHistory(const HistoryItem &p_item) = 0;
-        virtual void clearHistory() = 0;
-
         // Hold extra 3rd party configs.
         virtual const QJsonObject &getExtraConfigs() const = 0;
         QJsonObject getExtraConfig(const QString &p_key) const;
@@ -153,10 +150,19 @@ namespace vnotex
 
         static const QString c_defaultImageFolder;
 
+    public:
+        // Return null if history is not suported.
+        virtual HistoryI *history();
+
+        // Return null if tag is not suported.
+        virtual TagI *tag();
+
     signals:
         void updated();
 
         void nodeUpdated(const Node *p_node);
+
+        void tagsUpdated();
 
     protected:
         virtual void initializeInternal() = 0;

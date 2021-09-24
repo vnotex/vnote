@@ -1292,7 +1292,9 @@ void ViewArea::takeSnapshot(ViewAreaSession &p_session) const
         }
         wsSnap.m_currentViewWindowIndex = ws->m_currentViewWindowIndex;
         for (auto win : ws->m_viewWindows) {
-            wsSnap.m_viewWindows.push_back(win->saveSession());
+            if (win->isSessionEnabled()) {
+                wsSnap.m_viewWindows.push_back(win->saveSession());
+            }
         }
     }
 }

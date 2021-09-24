@@ -4,8 +4,6 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QImageReader>
-#include <QValidator>
-#include <QRegularExpressionValidator>
 
 using namespace vnotex;
 
@@ -138,13 +136,12 @@ bool PathUtils::isLegalPath(const QString &p_path)
     }
 
     bool ret = false;
-    int pos = -1;
     QString basePath = parentDirPath(p_path);
     QString name = dirName(p_path);
-    QScopedPointer<QValidator> validator(new QRegularExpressionValidator(QRegularExpression(c_fileNameRegularExpression)));
+    QRegularExpression nameRegExp(c_fileNameRegularExpression);
     while (!name.isEmpty()) {
-        QValidator::State validFile = validator->validate(name, pos);
-        if (validFile != QValidator::Acceptable) {
+        auto match = nameRegExp.match(name);
+        if (!match.hasMatch()) {
             break;
         }
 

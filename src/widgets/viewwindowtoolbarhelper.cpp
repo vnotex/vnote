@@ -18,6 +18,7 @@
 #include "editreaddiscardaction.h"
 #include "widgetsfactory.h"
 #include "attachmentpopup.h"
+#include "tagpopup.h"
 #include "propertydefs.h"
 #include "outlinepopup.h"
 #include "viewwindow.h"
@@ -289,6 +290,23 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
         auto menu = new AttachmentPopup(toolBtn, p_tb);
+        toolBtn->setMenu(menu);
+        break;
+    }
+
+    case Action::Tag:
+    {
+        act = p_tb->addAction(ToolBarHelper::generateIcon("tag_editor.svg"),
+                              ViewWindow::tr("Tags"));
+
+        auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
+        Q_ASSERT(toolBtn);
+        toolBtn->setPopupMode(QToolButton::InstantPopup);
+        toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+
+        addButtonShortcut(toolBtn, editorConfig.getShortcut(Shortcut::Tag), viewWindow);
+
+        auto menu = new TagPopup(toolBtn, p_tb);
         toolBtn->setMenu(menu);
         break;
     }

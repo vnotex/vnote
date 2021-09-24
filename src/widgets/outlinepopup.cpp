@@ -14,6 +14,11 @@ OutlinePopup::OutlinePopup(QToolButton *p_btn, QWidget *p_parent)
       m_button(p_btn)
 {
     setupUI();
+
+    connect(this, &QMenu::aboutToShow,
+            this, [this]() {
+                m_viewer->setFocus();
+            });
 }
 
 void OutlinePopup::setupUI()
@@ -35,8 +40,6 @@ void OutlinePopup::setOutlineProvider(const QSharedPointer<OutlineProvider> &p_p
 void OutlinePopup::showEvent(QShowEvent* p_event)
 {
     QMenu::showEvent(p_event);
-
-    m_viewer->setFocus();
 
     // Move it to be right-aligned.
     if (m_button->isVisible()) {

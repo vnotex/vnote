@@ -15,6 +15,7 @@ namespace vnotex
 {
     class NotebookParameters;
 
+    // Notebook config of BundleNotebook.
     class NotebookConfig
     {
     public:
@@ -24,7 +25,7 @@ namespace vnotex
                                                                      const NotebookParameters &p_paras);
 
         static QSharedPointer<NotebookConfig> fromNotebook(int p_version,
-                                                           const Notebook *p_notebook);
+                                                           const BundleNotebook *p_notebook);
 
         virtual QJsonObject toJson() const;
 
@@ -48,6 +49,9 @@ namespace vnotex
 
         QVector<HistoryItem> m_history;
 
+        // Graph of tags of this notebook like "parent>chlid;parent2>chlid2".
+        QString m_tagGraph;
+
         // Hold all the extra configs for other components or 3rd party plugins.
         // Use a unique name as the key and the value is a QJsonObject.
         QJsonObject m_extraConfigs;
@@ -56,22 +60,6 @@ namespace vnotex
         QJsonArray saveHistory() const;
 
         void loadHistory(const QJsonObject &p_jobj);
-
-        static const QString c_version;
-
-        static const QString c_name;
-
-        static const QString c_description;
-
-        static const QString c_imageFolder;
-
-        static const QString c_attachmentFolder;
-
-        static const QString c_createdTimeUtc;
-
-        static const QString c_versionController;
-
-        static const QString c_configMgr;
     };
 } // ns vnotex
 

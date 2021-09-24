@@ -23,20 +23,6 @@ void DummyNotebook::remove()
 {
 }
 
-const QVector<vnotex::HistoryItem> &DummyNotebook::getHistory() const
-{
-    return m_history;
-}
-
-void DummyNotebook::addHistory(const vnotex::HistoryItem &p_item)
-{
-    Q_UNUSED(p_item);
-}
-
-void DummyNotebook::clearHistory()
-{
-}
-
 void DummyNotebook::initializeInternal()
 {
 }

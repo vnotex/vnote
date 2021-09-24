@@ -58,6 +58,7 @@ namespace vnotex
             FindNext,
             FindPrevious,
             ApplySnippet,
+            Tag,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

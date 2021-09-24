@@ -115,6 +115,8 @@ namespace vnotex
 
         Node *currentExploredNode() const;
 
+        static QString generateToolTip(const Node *p_node);
+
     signals:
         void nodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
 
@@ -154,7 +156,8 @@ namespace vnotex
             ImportToConfig,
             Open,
             ExpandAll,
-            PinToQuickAccess
+            PinToQuickAccess,
+            Tag
         };
 
         void setupUI();
@@ -213,6 +216,8 @@ namespace vnotex
 
         // Factory function to create action.
         QAction *createAction(Action p_act, QObject *p_parent);
+
+        QAction *createAndAddAction(Action p_act, QMenu *p_menu);
 
         void copySelectedNodes(bool p_move);
 
@@ -301,19 +306,19 @@ namespace vnotex
 
         bool m_autoImportExternalFiles = true;
 
-        static QIcon s_folderNodeIcon;
+        enum NodeIcon
+        {
+            FolderNode = 0,
+            FileNode,
+            InvalidFolderNode,
+            InvalidFileNode,
+            RecycleBinNode,
+            ExternalFolderNode,
+            ExternalFileNode,
+            MaxIcons
+        };
 
-        static QIcon s_fileNodeIcon;
-
-        static QIcon s_invalidFolderNodeIcon;
-
-        static QIcon s_invalidFileNodeIcon;
-
-        static QIcon s_recycleBinNodeIcon;
-
-        static QIcon s_externalFolderNodeIcon;
-
-        static QIcon s_externalFileNodeIcon;
+        static QIcon s_nodeIcons[NodeIcon::MaxIcons];
     };
 }
 

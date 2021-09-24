@@ -53,6 +53,7 @@
 #include <utils/iconutils.h>
 #include <core/thememgr.h>
 #include "dialogs/updater.h"
+#include "tagexplorer.h"
 
 using namespace vnotex;
 
@@ -118,6 +119,8 @@ void MainWindow::kickOffOnStart(const QStringList &p_paths)
 
         checkNotebooksFailedToLoad();
 
+        loadWidgetsData();
+
         demoWidget();
 
         openFiles(p_paths);
@@ -140,6 +143,7 @@ void MainWindow::kickOffOnStart(const QStringList &p_paths)
             if (!file.isEmpty()) {
                 auto paras = QSharedPointer<FileOpenParameters>::create();
                 paras->m_readOnly = true;
+                paras->m_sessionEnabled = false;
                 emit VNoteX::getInst().openFileRequested(file, paras);
             }
         }
@@ -247,7 +251,9 @@ void MainWindow::setupCentralWidget()
 
 void MainWindow::setupDocks()
 {
-    setupNotebookExplorer(this);
+    setupNotebookExplorer();
+
+    setupTagExplorer();
 
     setupOutlineViewer();
 
@@ -298,13 +304,11 @@ void MainWindow::setupLocationList()
 {
     m_locationList = new LocationList(this);
     m_locationList->setObjectName("LocationList.vnotex");
-
-    NavigationModeMgr::getInst().registerNavigationTarget(m_locationList->getNavigationModeWrapper());
 }
 
-void MainWindow::setupNotebookExplorer(QWidget *p_parent)
+void MainWindow::setupNotebookExplorer()
 {
-    m_notebookExplorer = new NotebookExplorer(p_parent);
+    m_notebookExplorer = new NotebookExplorer(this);
     connect(&VNoteX::getInst(), &VNoteX::newNotebookRequested,
             m_notebookExplorer, &NotebookExplorer::newNotebook);
     connect(&VNoteX::getInst(), &VNoteX::newNotebookFromFolderRequested,
@@ -387,6 +391,8 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
             return;
         }
 
+        m_trayIcon->hide();
+
         QMainWindow::closeEvent(p_event);
         qApp->exit(exitCode > -1 ? exitCode : 0);
     } else {
@@ -408,6 +414,7 @@ void MainWindow::saveStateAndGeometry()
     sg.m_mainState = saveState();
     sg.m_mainGeometry = saveGeometry();
     sg.m_visibleDocksBeforeExpand = m_visibleDocksBeforeExpand;
+    sg.m_tagExplorerState = m_tagExplorer->saveState();
 
     auto& sessionConfig = ConfigMgr::getInst().getSessionConfig();
     sessionConfig.setMainWindowStateGeometry(sg);
@@ -433,6 +440,10 @@ void MainWindow::loadStateAndGeometry(bool p_stateOnly)
             // Init (or init again if there is no visible dock).
             m_visibleDocksBeforeExpand = m_dockWidgetHelper.getVisibleDocks();
         }
+    }
+
+    if (!sg.m_tagExplorerState.isEmpty()) {
+        m_tagExplorer->restoreState(sg.m_tagExplorerState);
     }
 }
 
@@ -484,6 +495,7 @@ void MainWindow::setupOutlineViewer()
     m_outlineViewer = new OutlineViewer(QString(), this);
     m_outlineViewer->setObjectName("OutlineViewer.vnotex");
 
+    // There are OutlineViewers in each ViewWindow. We only need to register navigation mode for the outline panel.
     NavigationModeMgr::getInst().registerNavigationTarget(m_outlineViewer->getNavigationModeWrapper());
 
     connect(m_viewArea, &ViewArea::currentViewWindowChanged,
@@ -737,4 +749,18 @@ void MainWindow::checkNotebooksFailedToLoad()
     if (ret == QMessageBox::Yes) {
         notebookMgr.clearNotebooksFailedToLoad();
     }
+}
+
+void MainWindow::setupTagExplorer()
+{
+    m_tagExplorer = new TagExplorer(this);
+    connect(&VNoteX::getInst().getNotebookMgr(), &NotebookMgr::currentNotebookChanged,
+            m_tagExplorer, &TagExplorer::setNotebook);
+}
+
+void MainWindow::loadWidgetsData()
+{
+    m_historyPanel->initialize();
+
+    m_snippetPanel->initialize();
 }

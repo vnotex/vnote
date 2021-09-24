@@ -15,7 +15,9 @@
         <file>icons/read_editor.svg</file>
         <file>icons/expand.svg</file>
         <file>icons/fullscreen.svg</file>
-        <file>icons/tag_explorer.svg</file>
+        <file>icons/tag_dock.svg</file>
+        <file>icons/tag.svg</file>
+        <file>icons/tag_selected.svg</file>
         <file>icons/help.svg</file>
         <file>icons/menu.svg</file>
         <file>icons/settings.svg</file>
@@ -34,7 +36,7 @@
         <file>icons/file_node.svg</file>
         <file>icons/folder_node.svg</file>
         <file>icons/manage_notebooks.svg</file>
-        <file>icons/up_parent_node.svg</file>
+        <file>icons/up_level.svg</file>
         <file>icons/properties.svg</file>
         <file>icons/recycle_bin.svg</file>
         <file>icons/scan_import.svg</file>
@@ -43,6 +45,7 @@
         <file>icons/buffer.svg</file>
         <file>icons/attachment_editor.svg</file>
         <file>icons/attachment_full_editor.svg</file>
+        <file>icons/tag_editor.svg</file>
         <file>icons/split_menu.svg</file>
         <file>icons/split_window_list.svg</file>
         <file>icons/type_heading_editor.svg</file>

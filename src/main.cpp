@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 #if defined(Q_OS_WIN)
     {
         auto option = SessionConfig::getOpenGLAtBootstrap();
-        qInfo() << "OpenGL option" << SessionConfig::openGLToString(option);
+        qDebug() << "OpenGL option" << SessionConfig::openGLToString(option);
         switch (option) {
         case SessionConfig::OpenGL::Desktop:
             QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);

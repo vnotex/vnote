@@ -18,7 +18,9 @@ namespace vnotex
 
     enum
     {
-        HighlightsRole = 0x0101
+        // Qt::UserRole = 0x0100
+        UserRole2 = 0x0101,
+        HighlightsRole = 0x0102
     };
 
 
