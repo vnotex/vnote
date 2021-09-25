@@ -291,3 +291,9 @@ QPoint TextViewWindow::getFloatingWidgetPosition()
 {
     return TextViewWindowHelper::getFloatingWidgetPosition(this);
 }
+
+QString TextViewWindow::selectedText() const
+{
+    Q_ASSERT(m_editor);
+    return m_editor->getTextEdit()->selectedText();
+}

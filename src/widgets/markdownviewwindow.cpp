@@ -1115,9 +1115,12 @@ QPoint MarkdownViewWindow::getFloatingWidgetPosition()
     return TextViewWindowHelper::getFloatingWidgetPosition(this);
 }
 
-QString MarkdownViewWindow::viewerOrEditorSelectedText()
+QString MarkdownViewWindow::selectedText() const
 {
     switch (m_mode) {
+    case ViewWindowMode::FullPreview:
+    case ViewWindowMode::Invalid:
+        Q_FALLTHROUGH();
     case ViewWindowMode::Read:
         Q_ASSERT(m_viewer);
         return m_viewer->selectedText();
@@ -1125,9 +1128,8 @@ QString MarkdownViewWindow::viewerOrEditorSelectedText()
     case ViewWindowMode::FocusPreview:
         Q_ASSERT(m_editor);
         return m_editor->getTextEdit()->selectedText();
-    default:
-        return QString("");
     }
+    return QString("");
 }
 
 void MarkdownViewWindow::handleImageHostChanged(const QString &p_hostName)

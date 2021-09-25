@@ -655,7 +655,7 @@ void ViewWindow::handleImageHostChanged(const QString &p_hostName)
     Q_ASSERT(false);
 }
 
-QString ViewWindow::viewerOrEditorSelectedText()
+QString ViewWindow::selectedText() const
 {
     return QString();
 }
@@ -975,7 +975,7 @@ void ViewWindow::showFindAndReplaceWidget()
                 this, &ViewWindow::handleFindAndReplaceWidgetOpened);
     }
 
-    m_findAndReplace->open(viewerOrEditorSelectedText());
+    m_findAndReplace->open(selectedText());
 }
 
 void ViewWindow::hideFindAndReplaceWidget()
