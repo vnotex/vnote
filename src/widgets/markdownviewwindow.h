@@ -93,6 +93,8 @@ namespace vnotex
 
         QPoint getFloatingWidgetPosition() Q_DECL_OVERRIDE;
 
+        QString selectedText() const Q_DECL_OVERRIDE;
+
     private:
         void setupUI();
 

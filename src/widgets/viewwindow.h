@@ -218,6 +218,8 @@ namespace vnotex
 
         virtual void zoom(bool p_zoomIn) = 0;
 
+        virtual QString selectedText() const;
+
         void showZoomFactor(qreal p_factor);
 
         void showZoomDelta(int p_delta);
