@@ -21,6 +21,10 @@ QVector<NotebookTagMgr::TagGraphPair> NotebookTagMgr::stringToTagGraph(const QSt
     QVector<TagGraphPair> tagGraph;
     auto pairs = p_text.split(QLatin1Char(';'));
     for (const auto &pa : pairs) {
+        if (pa.isEmpty()) {
+            continue;
+        }
+
         auto paCh = pa.split(QLatin1Char('>'));
         if (paCh.size() != 2 || paCh[0].isEmpty() || paCh[1].isEmpty()) {
             qWarning() << "ignore invalid <parent, child> tag pair" << pa;

@@ -1,7 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+#include "framelessmainwindow/framelessmainwindowimpl.h"
+
 #include <QSharedPointer>
 #include <QBitArray>
 #include <QSet>
@@ -30,7 +31,7 @@ namespace vnotex
 
     enum { RESTART_EXIT_CODE = 1000 };
 
-    class MainWindow : public QMainWindow
+    class MainWindow : public FramelessMainWindowImpl
     {
         Q_OBJECT
     public:

@@ -58,7 +58,7 @@
 using namespace vnotex;
 
 MainWindow::MainWindow(QWidget *p_parent)
-    : QMainWindow(p_parent),
+    : FramelessMainWindowImpl(!ConfigMgr::getInst().getSessionConfig().getSystemTitleBarEnabled(), p_parent),
       m_toolBarHelper(this),
       m_statusBarHelper(this),
       m_dockWidgetHelper(this)
@@ -393,7 +393,7 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
 
         m_trayIcon->hide();
 
-        QMainWindow::closeEvent(p_event);
+        FramelessMainWindowImpl::closeEvent(p_event);
         qApp->exit(exitCode > -1 ? exitCode : 0);
     } else {
         hide();
@@ -521,16 +521,8 @@ void MainWindow::setupToolBar()
 {
     const int sz = ConfigMgr::getInst().getCoreConfig().getToolBarIconSize();
     const QSize iconSize(sz, sz);
-    if (!ConfigMgr::getInst().getSessionConfig().getSystemTitleBarEnabled()) {
-        // Use unified tool bar as title bar.
-        auto framelessFlags = Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint
-                              | Qt::WindowCloseButtonHint | Qt::WindowFullscreenButtonHint;
 
-        auto winFlags = windowFlags();
-        winFlags |= Qt::CustomizeWindowHint | Qt::FramelessWindowHint;
-        winFlags &= ~framelessFlags;
-        setWindowFlags(winFlags);
-
+    if (isFrameless()) {
         auto toolBar = new TitleToolBar(tr("Global"), this);
         toolBar->setIconSize(iconSize);
         m_toolBarHelper.setupToolBars(toolBar);
@@ -538,6 +530,9 @@ void MainWindow::setupToolBar()
                                   ToolBarHelper::generateIcon(QStringLiteral("maximize.svg")),
                                   ToolBarHelper::generateIcon(QStringLiteral("maximize_restore.svg")),
                                   ToolBarHelper::generateDangerousIcon(QStringLiteral("close.svg")));
+        setTitleBar(toolBar);
+        connect(this, &FramelessMainWindowImpl::windowStateChanged,
+                toolBar, &TitleToolBar::updateMaximizeAct);
     } else {
         auto toolBar = new QToolBar(tr("Global"), this);
         toolBar->setIconSize(iconSize);
@@ -594,7 +589,7 @@ void MainWindow::changeEvent(QEvent *p_event)
         m_windowOldState = eve->oldState();
     }
 
-    QMainWindow::changeEvent(p_event);
+    FramelessMainWindowImpl::changeEvent(p_event);
 }
 
 void MainWindow::showMainWindow()

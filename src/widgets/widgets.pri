@@ -58,6 +58,8 @@ SOURCES += \
     $$PWD/dialogs/folderfilesfilterwidget.cpp \
     $$PWD/findandreplacewidget.cpp \
     $$PWD/floatingwidget.cpp \
+    $$PWD/framelessmainwindow/framelessmainwindow.cpp \
+    $$PWD/framelessmainwindow/framelessmainwindowwin.cpp \
     $$PWD/fullscreentoggleaction.cpp \
     $$PWD/historypanel.cpp \
     $$PWD/itemproxystyle.cpp \
@@ -181,6 +183,9 @@ HEADERS += \
     $$PWD/dialogs/folderfilesfilterwidget.h \
     $$PWD/findandreplacewidget.h \
     $$PWD/floatingwidget.h \
+    $$PWD/framelessmainwindow/framelessmainwindow.h \
+    $$PWD/framelessmainwindow/framelessmainwindowimpl.h \
+    $$PWD/framelessmainwindow/framelessmainwindowwin.h \
     $$PWD/fullscreentoggleaction.h \
     $$PWD/historypanel.h \
     $$PWD/itemproxystyle.h \

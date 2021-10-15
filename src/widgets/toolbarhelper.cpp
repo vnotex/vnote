@@ -167,8 +167,6 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
         auto act = tb->addAction(generateIcon("import_menu.svg"), MainWindow::tr("Import"));
 
         auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
-        Q_ASSERT(btn);
-        btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         btn->setPopupMode(QToolButton::InstantPopup);
         btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
@@ -200,12 +198,6 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
 
         WidgetUtils::addActionShortcut(exportAct,
                                        coreConfig.getShortcut(CoreConfig::Shortcut::Export));
-
-        // To hide the shortcut text shown in button.
-        auto toolBtn = dynamic_cast<QToolButton *>(tb->widgetForAction(exportAct));
-        Q_ASSERT(toolBtn);
-        toolBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-        toolBtn->setText(MainWindow::tr("Export"));
     }
 
     return tb;

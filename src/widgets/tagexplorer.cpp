@@ -106,9 +106,9 @@ void TagExplorer::setupTagTree(QWidget *p_parent)
     TreeWidget::showHorizontalScrollbar(m_tagTree);
     m_tagTree->setDragDropMode(QAbstractItemView::InternalMove);
     connect(m_tagTree, &QTreeWidget::currentItemChanged,
-            timer, QOverload<void>::of(&QTimer::start));
+            timer, QOverload<>::of(&QTimer::start));
     connect(m_tagTree, &QTreeWidget::itemClicked,
-            timer, QOverload<void>::of(&QTimer::start));
+            timer, QOverload<>::of(&QTimer::start));
     connect(m_tagTree, &QTreeWidget::customContextMenuRequested,
             this, &TagExplorer::handleTagTreeContextMenuRequested);
     connect(m_tagTree, &TreeWidget::itemMoved,

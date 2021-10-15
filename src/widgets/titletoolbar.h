@@ -19,27 +19,12 @@ namespace vnotex
                               const QIcon &p_restoreIcon,
                               const QIcon &p_closeIcon);
 
-    protected:
-        void mousePressEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
-
-        void mouseReleaseEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
-
-        void mouseMoveEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
-
-        void mouseDoubleClickEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
-
-        bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
+        void updateMaximizeAct();
 
     private:
         void setupUI();
 
         void maximizeRestoreWindow();
-
-        void updateMaximizeAct();
-
-        QPoint m_lastPos;
-
-        bool m_ignoreNextMove = false;
 
         QWidget *m_window = nullptr;
 
