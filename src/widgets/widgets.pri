@@ -59,6 +59,7 @@ SOURCES += \
     $$PWD/findandreplacewidget.cpp \
     $$PWD/floatingwidget.cpp \
     $$PWD/framelessmainwindow/framelessmainwindow.cpp \
+    $$PWD/framelessmainwindow/framelessmainwindowlinux.cpp \
     $$PWD/framelessmainwindow/framelessmainwindowwin.cpp \
     $$PWD/fullscreentoggleaction.cpp \
     $$PWD/historypanel.cpp \
@@ -185,6 +186,7 @@ HEADERS += \
     $$PWD/floatingwidget.h \
     $$PWD/framelessmainwindow/framelessmainwindow.h \
     $$PWD/framelessmainwindow/framelessmainwindowimpl.h \
+    $$PWD/framelessmainwindow/framelessmainwindowlinux.h \
     $$PWD/framelessmainwindow/framelessmainwindowwin.h \
     $$PWD/fullscreentoggleaction.h \
     $$PWD/historypanel.h \

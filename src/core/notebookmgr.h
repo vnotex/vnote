@@ -32,6 +32,8 @@ namespace vnotex
 
         void init();
 
+        void close();
+
         QSharedPointer<INotebookFactory> getBundleNotebookFactory() const;
 
         QList<QSharedPointer<INotebookFactory>> getAllNotebookFactories() const;

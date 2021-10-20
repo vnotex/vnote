@@ -10,7 +10,7 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        FramelessMainWindowWin(bool p_frameless = true, QWidget *p_parent = nullptr);
+        FramelessMainWindowWin(bool p_frameless, QWidget *p_parent = nullptr);
 
     protected:
 #if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
@@ -27,6 +27,8 @@ namespace vnotex
 
         void updateMargins();
 
+        int m_resizeAreaWidth = 6;
+
         QTimer *m_redrawTimer = nullptr;
 
         QSize m_sizeBeforeMove;
@@ -34,6 +36,10 @@ namespace vnotex
         QMargins m_maximizedMargins;
 
         int m_titleBarHeight = 0;
+    };
+#else
+    class FramelessMainWindowWinDummy
+    {
     };
 #endif
 }

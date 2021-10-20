@@ -13,11 +13,11 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        FramelessMainWindow(bool p_frameless, QWidget *p_parent);
+        FramelessMainWindow(bool p_frameless, QWidget *p_parent = nullptr);
 
         bool isFrameless() const;
 
-        void setTitleBar(QWidget *p_titleBar);
+        virtual void setTitleBar(QWidget *p_titleBar);
 
     signals:
         void windowStateChanged(Qt::WindowStates p_state);
@@ -29,8 +29,6 @@ namespace vnotex
         bool isMaximized() const;
 
         const bool m_frameless = true;
-
-        int m_resizeAreaWidth = 5;
 
         bool m_movable = true;
 

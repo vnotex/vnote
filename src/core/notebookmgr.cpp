@@ -21,6 +21,12 @@ NotebookMgr::NotebookMgr(QObject *p_parent)
 {
 }
 
+void NotebookMgr::close()
+{
+    m_notebooks.clear();
+    m_currentNotebookId = -1;
+}
+
 void NotebookMgr::init()
 {
     initVersionControllerServer();

@@ -18,6 +18,8 @@ FramelessMainWindowWin::FramelessMainWindowWin(bool p_frameless, QWidget *p_pare
     : FramelessMainWindow(p_frameless, p_parent)
 {
     if (m_frameless) {
+        m_resizeAreaWidth *= devicePixelRatio();
+
         m_redrawTimer = new QTimer(this);
         m_redrawTimer->setSingleShot(true);
         m_redrawTimer->setInterval(500);
@@ -68,31 +70,36 @@ bool FramelessMainWindowWin::nativeEvent(const QByteArray &p_eventType, void *p_
             ::GetWindowRect(msg->hwnd, &windowRect);
 
             // x and y could not be compared with width() and height() in hidpi case.
-            int x = static_cast<int>(GET_X_LPARAM(msg->lParam) - windowRect.left);
-            int y = static_cast<int>(GET_Y_LPARAM(msg->lParam) - windowRect.top);
-
-            bool onLeft = x < m_resizeAreaWidth;
-            bool onRight = x > windowRect.right - windowRect.left - m_resizeAreaWidth;
-            bool onTop = y < m_resizeAreaWidth;
-            bool onBottom = y > windowRect.bottom - windowRect.top - m_resizeAreaWidth;
+            const int x = static_cast<int>(GET_X_LPARAM(msg->lParam) - windowRect.left);
+            const int y = static_cast<int>(GET_Y_LPARAM(msg->lParam) - windowRect.top);
 
             *p_result = 0;
             if (m_resizable) {
-                if (onLeft && onTop) {
-                    *p_result = HTTOPLEFT;
-                } else if (onLeft && onBottom) {
-                    *p_result = HTBOTTOMLEFT;
-                } else if (onRight && onTop) {
-                    *p_result = HTTOPRIGHT;
-                } else if (onRight && onBottom) {
-                    *p_result = HTBOTTOMRIGHT;
-                } else if (onLeft) {
-                    *p_result = HTLEFT;
-                } else if (onRight) {
-                    *p_result = HTRIGHT;
-                } else if (onTop) {
+                if (x < m_resizeAreaWidth) {
+                    // Left.
+                    if (y < m_resizeAreaWidth) {
+                        // Top.
+                        *p_result = HTTOPLEFT;
+                    } else if (y > windowRect.bottom - windowRect.top - m_resizeAreaWidth) {
+                        // Bottom.
+                        *p_result = HTBOTTOMLEFT;
+                    } else {
+                        *p_result = HTLEFT;
+                    }
+                } else if (x > windowRect.right - windowRect.left - m_resizeAreaWidth) {
+                    // Right.
+                    if (y < m_resizeAreaWidth) {
+                        // Top.
+                        *p_result = HTTOPRIGHT;
+                    } else if (y > windowRect.bottom - windowRect.top - m_resizeAreaWidth) {
+                        // Bottom.
+                        *p_result = HTBOTTOMRIGHT;
+                    } else {
+                        *p_result = HTRIGHT;
+                    }
+                } else if (y < m_resizeAreaWidth) {
                     *p_result = HTTOP;
-                } else if (onBottom) {
+                } else if (y > windowRect.bottom - windowRect.top - m_resizeAreaWidth) {
                     *p_result = HTBOTTOM;
                 }
             }

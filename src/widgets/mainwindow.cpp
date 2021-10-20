@@ -547,6 +547,8 @@ void MainWindow::closeOnQuit()
 {
     // No user interaction is available.
     emit mainWindowClosedOnQuit();
+
+    VNoteX::getInst().getNotebookMgr().close();
 }
 
 void MainWindow::setupShortcuts()

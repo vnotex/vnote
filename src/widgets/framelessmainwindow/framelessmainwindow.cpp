@@ -10,8 +10,6 @@ FramelessMainWindow::FramelessMainWindow(bool p_frameless, QWidget *p_parent)
       m_defaultFlags(windowFlags())
 {
     if (m_frameless) {
-        m_resizeAreaWidth *= devicePixelRatio();
-
         setWindowFlags(m_defaultFlags | Qt::FramelessWindowHint);
     }
 }
@@ -27,7 +25,6 @@ void FramelessMainWindow::setTitleBar(QWidget *p_titleBar)
     Q_ASSERT(!m_titleBar && m_frameless);
 
     m_titleBar = p_titleBar;
-    m_titleBar->installEventFilter(this);
 }
 
 void FramelessMainWindow::changeEvent(QEvent *p_event)
@@ -36,7 +33,8 @@ void FramelessMainWindow::changeEvent(QEvent *p_event)
 
     if (p_event->type() == QEvent::WindowStateChange) {
         m_windowStates = windowState();
-        m_resizable = m_movable = m_windowStates == Qt::WindowNoState;
+        m_resizable = m_windowStates == Qt::WindowNoState;
+        m_movable = m_windowStates == Qt::WindowNoState;
         emit windowStateChanged(m_windowStates);
     }
 }
