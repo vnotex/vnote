@@ -91,11 +91,17 @@ jobs:
         run: |
           pushd src
           macdeployqt vnote.app
+
+          # Remove unused sql drivers
+          rm vnote.app/Contents/Plugins/sqldrivers/libqsqlodbc.dylib
+          rm vnote.app/Contents/Plugins/sqldrivers/libqsqlpsql.dylib
+
           python ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py vnote.app/Contents/MacOS/vnote $Qt5_Dir
           # Fix Helpers/QtWebEngineProcess.app
           pushd vnote.app/Contents/Frameworks/QtWebEngineCore.framework/Versions/5/Helpers
           python ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess $Qt5_Dir
           popd
+
           popd
           tree ./
         working-directory: ${{runner.workspace}}/build
