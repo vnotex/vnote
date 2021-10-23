@@ -7,6 +7,7 @@
 #include <QMenu>
 #include <QTimer>
 #include <QPushButton>
+#include <QUrl>
 
 #include "notebook/notebook.h"
 #include "notebookinfowidget.h"
@@ -60,7 +61,7 @@ void ManageNotebooksDialog::setupUI()
         auto btnLayout = new QHBoxLayout();
         infoLayout->addLayout(btnLayout);
 
-        m_closeNotebookBtn = new QPushButton(tr("Close"), infoWidget);
+        m_closeNotebookBtn = new QPushButton(tr("Close Noteboook"), infoWidget);
         btnLayout->addStretch();
         btnLayout->addWidget(m_closeNotebookBtn);
         connect(m_closeNotebookBtn, &QPushButton::clicked,
@@ -71,7 +72,7 @@ void ManageNotebooksDialog::setupUI()
                     closeNotebook(m_notebookInfoWidget->getNotebook());
                 });
 
-        m_deleteNotebookBtn = new QPushButton(tr("Delete (DANGER)"), infoWidget);
+        m_deleteNotebookBtn = new QPushButton(tr("Delete"), infoWidget);
         WidgetUtils::setPropertyDynamically(m_deleteNotebookBtn, PropertyDefs::c_dangerButton, true);
         btnLayout->addWidget(m_deleteNotebookBtn);
         connect(m_deleteNotebookBtn, &QPushButton::clicked,
@@ -287,28 +288,15 @@ void ManageNotebooksDialog::removeNotebook(const Notebook *p_notebook)
     }
 
     int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
-                                                 tr("Delete notebook (%1) from disk?").arg(p_notebook->getName()),
-                                                 tr("CALM DOWN! CALM DOWN! CALM DOWN! It will delete all files belonging to this notebook from disk. "
-                                                    "It is dangerous since it will bypass system's recycle bin!"),
-                                                 tr("Notebook location: %1\nUse the \"Close\" button if you just want to remove it from %2.")
-                                                 .arg(p_notebook->getRootFolderAbsolutePath())
-                                                 .arg(ConfigMgr::c_appName),
+                                                 tr("Please close the notebook in VNote first and delete the notebook root folder files manually."),
+                                                 tr("Press \"Ok\" to open the location of the notebook root folder."),
+                                                 tr("Notebook location: %1").arg(p_notebook->getRootFolderAbsolutePath()),
                                                  this);
     if (ret != QMessageBox::Ok) {
         return;
     }
 
-    try {
-        VNoteX::getInst().getNotebookMgr().removeNotebook(p_notebook->getId());
-    } catch (Exception &p_e) {
-        MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                 tr("Failed to delete notebook (%1)").arg(p_e.what()),
-                                 this);
-        loadNotebooks(nullptr);
-        return;
-    }
-
-    loadNotebooks(nullptr);
+    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(p_notebook->getRootFolderAbsolutePath()));
 }
 
 bool ManageNotebooksDialog::checkUnsavedChanges()

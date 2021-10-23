@@ -173,7 +173,7 @@ namespace vnotex
         OpenGL m_openGL = OpenGL::None;
 
         // Whether use system's title bar or not.
-        bool m_systemTitleBarEnabled = false;
+        bool m_systemTitleBarEnabled = true;
 
         // Whether to minimize to tray.
         // -1 for prompting for user;
