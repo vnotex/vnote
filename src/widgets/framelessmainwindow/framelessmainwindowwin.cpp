@@ -144,20 +144,20 @@ bool FramelessMainWindowWin::nativeEvent(const QByteArray &p_eventType, void *p_
                 RECT frame = {0, 0, 0, 0};
                 ::AdjustWindowRectEx(&frame, WS_OVERLAPPEDWINDOW, false, 0);
                 const int dpiScale = devicePixelRatio();
-                m_maximizedMargins.setLeft(qAbs(frame.left) / dpiScale);
                 // Use bottom as top.
-                m_maximizedMargins.setTop(qAbs(frame.bottom) / dpiScale);
-                m_maximizedMargins.setRight(frame.right / dpiScale);
-                m_maximizedMargins.setBottom(frame.bottom / dpiScale);
+                QMargins newMargins(qAbs(frame.left) / dpiScale,
+                                    qAbs(frame.bottom) / dpiScale,
+                                    frame.right / dpiScale,
+                                    frame.bottom / dpiScale);
+                if (newMargins != m_maximizedMargins) {
+                    m_maximizedMargins = newMargins;
+                    updateMargins();
+                }
             }
             break;
         }
 
         default:
-            if (msg->wParam == PBT_APMRESUMESUSPEND) {
-                // Show after resuming from sleep.
-                showNormal();
-            }
             break;
         }
     }
