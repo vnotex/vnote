@@ -30,8 +30,9 @@ QIcon TagViewer::s_tagIcon;
 
 QIcon TagViewer::s_selectedTagIcon;
 
-TagViewer::TagViewer(QWidget *p_parent)
-    : QFrame(p_parent)
+TagViewer::TagViewer(bool p_isPopup, QWidget *p_parent)
+    : QFrame(p_parent),
+      m_isPopup(p_isPopup)
 {
     initIcons();
 
@@ -55,7 +56,9 @@ void TagViewer::setupUI()
     m_searchLineEdit->setValidator(tagNameValidator);
 
     setFocusProxy(m_searchLineEdit);
-    m_searchLineEdit->installEventFilter(this);
+    if (m_isPopup) {
+        m_searchLineEdit->installEventFilter(this);
+    }
 
     m_tagList = new ListWidget(this);
     m_tagList->setWrapping(true);
@@ -67,12 +70,15 @@ void TagViewer::setupUI()
             this, &TagViewer::toggleItemTag);
     mainLayout->addWidget(m_tagList);
 
-    m_tagList->installEventFilter(this);
+    if (m_isPopup) {
+        m_tagList->installEventFilter(this);
+    }
 }
 
 bool TagViewer::eventFilter(QObject *p_obj, QEvent *p_event)
 {
-    if ((p_obj == m_searchLineEdit || p_obj == m_tagList)
+    if (m_isPopup
+        && (p_obj == m_searchLineEdit || p_obj == m_tagList)
         && p_event->type() == QEvent::KeyPress) {
         auto keyEve = static_cast<QKeyEvent *>(p_event);
         const auto key = keyEve->key();
@@ -86,6 +92,7 @@ bool TagViewer::eventFilter(QObject *p_obj, QEvent *p_event)
             return true;
         }
     }
+
     return QFrame::eventFilter(p_obj, p_event);
 }
 

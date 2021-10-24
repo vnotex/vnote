@@ -19,6 +19,8 @@ namespace vnotex
     protected:
         void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
+        void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
     private:
         void setupUI();
 

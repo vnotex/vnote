@@ -23,7 +23,7 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        explicit TagViewer(QWidget *p_parent = nullptr);
+        TagViewer(bool p_isPopup, QWidget *p_parent = nullptr);
 
         void setNode(Node *p_node);
 
@@ -60,6 +60,8 @@ namespace vnotex
         QListWidgetItem *findItem(const QString &p_tagName) const;
 
         static void initIcons();
+
+        bool m_isPopup = false;
 
         // View the tags of @m_node.
         Node *m_node = nullptr;

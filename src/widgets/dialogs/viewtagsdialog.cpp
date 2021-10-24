@@ -2,6 +2,7 @@
 
 #include <QFormLayout>
 #include <QLabel>
+#include <QKeyEvent>
 
 #include <notebook/node.h>
 
@@ -30,7 +31,7 @@ void ViewTagsDialog::setupUI()
     m_nodeNameLabel = new QLabel(mainWidget);
     mainLayout->addRow(tr("Name:"), m_nodeNameLabel);
 
-    m_tagViewer = new TagViewer(mainWidget);
+    m_tagViewer = new TagViewer(false, mainWidget);
     mainLayout->addRow(tr("Tags:"), m_tagViewer);
 
     setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -55,4 +56,14 @@ void ViewTagsDialog::setNode(Node *p_node)
 
     m_nodeNameLabel->setText(m_node->getName());
     m_tagViewer->setNode(m_node);
+}
+
+void ViewTagsDialog::keyPressEvent(QKeyEvent *p_event)
+{
+    if (p_event->key() == Qt::Key_Enter || p_event->key() == Qt::Key_Return) {
+        // Prevent it from closing the dialog.
+        return;
+    }
+
+    Dialog::keyPressEvent(p_event);
 }

@@ -33,7 +33,7 @@ void TagPopup::setupUI()
     auto mainLayout = new QVBoxLayout(this);
     WidgetUtils::setContentsMargins(mainLayout);
 
-    m_tagViewer = new TagViewer(this);
+    m_tagViewer = new TagViewer(true, this);
     mainLayout->addWidget(m_tagViewer);
 
     setMinimumSize(256, 320);
