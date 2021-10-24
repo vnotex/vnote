@@ -1,4 +1,12 @@
 # Changes
+## v3.8.0
+* Support tags
+* Introduce notebook database using SQLITE
+* A perfect frameless main window on Windows
+* Add switch to control whether store history in notebook
+* Refine dock widgets of main window
+* NotebookExplorer: support scan notebook and import external files
+
 ## v3.7.0
 * PlantUml/Graphviz: support relative path executable
 * macOS: support opening file with VNote in Finder
