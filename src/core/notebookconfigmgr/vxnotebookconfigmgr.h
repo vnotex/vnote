@@ -27,11 +27,7 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        explicit VXNotebookConfigMgr(const QString &p_name,
-                                     const QString &p_displayName,
-                                     const QString &p_description,
-                                     const QSharedPointer<INotebookBackend> &p_backend,
-                                     QObject *p_parent = nullptr);
+        VXNotebookConfigMgr(const QSharedPointer<INotebookBackend> &p_backend, QObject *p_parent = nullptr);
 
         QString getName() const Q_DECL_OVERRIDE;
 
@@ -70,6 +66,8 @@ namespace vnotex
                                                bool p_move) Q_DECL_OVERRIDE;
 
         void removeNode(const QSharedPointer<Node> &p_node, bool p_force = false, bool p_configOnly = false) Q_DECL_OVERRIDE;
+
+        void removeNodeToFolder(const QSharedPointer<Node> &p_node, const QString &p_destFolder) Q_DECL_OVERRIDE;
 
         bool isBuiltInFile(const Node *p_node, const QString &p_name) const Q_DECL_OVERRIDE;
 
@@ -137,11 +135,9 @@ namespace vnotex
 
         void removeFilesOfNode(Node *p_node, bool p_force);
 
-        bool markRecycleBinNode(const QSharedPointer<Node> &p_root);
-
         void markNodeReadOnly(Node *p_node) const;
 
-        void createRecycleBinNode(const QSharedPointer<Node> &p_root);
+        void removeLegacyRecycleBinNode(const QSharedPointer<Node> &p_root);
 
         // Generate node attachment folder.
         // @p_folderName: suggested folder name if not empty, may be renamed due to conflicts.
@@ -171,9 +167,16 @@ namespace vnotex
 
         bool sameNotebook(const Node *p_node) const;
 
-        static bool isLikelyImageFolder(const QString &p_dirPath);
+        void removeFolderNodeToFolder(const QSharedPointer<Node> &p_node, const QString &p_destFolder);
 
-        Info m_info;
+        void removeFileNodeToFolder(const QSharedPointer<Node> &p_node, const QString &p_destFolder);
+
+        void copyFilesOfFileNode(const QSharedPointer<Node> &p_node,
+                                 const QString &p_destFolder,
+                                 QString &p_destFilePath,
+                                 QString &p_attachmentFolder);
+
+        static bool isLikelyImageFolder(const QString &p_dirPath);
 
         static bool s_initialized;
 
@@ -181,9 +184,6 @@ namespace vnotex
 
         // Name of the node's config file.
         static const QString c_nodeConfigName;
-
-        // Name of the recycle bin folder which should be a child of the root node.
-        static const QString c_recycleBinFolderName;
     };
 } // ns vnotex
 

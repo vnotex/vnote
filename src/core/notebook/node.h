@@ -36,7 +36,6 @@ namespace vnotex
 
         enum Use {
             Normal,
-            RecycleBin,
             Root
         };
 
@@ -114,6 +113,8 @@ namespace vnotex
 
         // Case sensitive.
         bool containsContentChild(const QString &p_name) const;
+
+        bool isLegalNameForNewChild(const QString &p_name) const;
 
         void addChild(const QSharedPointer<Node> &p_node);
 

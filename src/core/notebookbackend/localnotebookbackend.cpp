@@ -123,7 +123,7 @@ void LocalNotebookBackend::renameDir(const QString &p_dirPath, const QString &p_
     FileUtils::renameFile(dirPath, p_name);
 }
 
-void LocalNotebookBackend::copyFile(const QString &p_filePath, const QString &p_destPath)
+void LocalNotebookBackend::copyFile(const QString &p_filePath, const QString &p_destPath, bool p_move)
 {
     auto filePath = p_filePath;
     if (QFileInfo(filePath).isRelative()) {
@@ -132,10 +132,10 @@ void LocalNotebookBackend::copyFile(const QString &p_filePath, const QString &p_
 
     Q_ASSERT(QFileInfo(filePath).isFile());
 
-    FileUtils::copyFile(filePath, getFullPath(p_destPath));
+    FileUtils::copyFile(filePath, getFullPath(p_destPath), p_move);
 }
 
-void LocalNotebookBackend::copyDir(const QString &p_dirPath, const QString &p_destPath)
+void LocalNotebookBackend::copyDir(const QString &p_dirPath, const QString &p_destPath, bool p_move)
 {
     auto dirPath = p_dirPath;
     if (QFileInfo(dirPath).isRelative()) {
@@ -144,7 +144,7 @@ void LocalNotebookBackend::copyDir(const QString &p_dirPath, const QString &p_de
 
     Q_ASSERT(QFileInfo(dirPath).isDir());
 
-    FileUtils::copyDir(dirPath, getFullPath(p_destPath));
+    FileUtils::copyDir(dirPath, getFullPath(p_destPath), p_move);
 }
 
 void LocalNotebookBackend::removeFile(const QString &p_filePath)

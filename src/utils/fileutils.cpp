@@ -118,7 +118,7 @@ void FileUtils::copyFile(const QString &p_filePath,
     QDir dir;
     if (!dir.mkpath(PathUtils::parentDirPath(p_destPath))) {
         Exception::throwOne(Exception::Type::FailToCreateDir,
-            QString("failed to create directory: %1").arg(PathUtils::parentDirPath(p_destPath)));
+                            QString("failed to create directory: %1").arg(PathUtils::parentDirPath(p_destPath)));
     }
 
     bool failed = false;

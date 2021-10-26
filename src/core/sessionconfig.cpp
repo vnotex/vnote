@@ -114,11 +114,7 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
     if (!isUndefinedKey(coreObj, QStringLiteral("system_title_bar"))) {
         m_systemTitleBarEnabled = readBool(coreObj, QStringLiteral("system_title_bar"));
     } else {
-#ifdef Q_OS_WIN
-        m_systemTitleBarEnabled = false;
-#else
         m_systemTitleBarEnabled = true;
-#endif
     }
 
     if (!isUndefinedKey(coreObj, QStringLiteral("minimize_to_system_tray"))) {
@@ -318,9 +314,6 @@ void SessionConfig::doVersionSpecificOverride()
 {
     // In a new version, we may want to change one value by force.
     // SHOULD set the in memory variable only, or will override the notebook list.
-#ifdef Q_OS_WIN
-    m_systemTitleBarEnabled = false;
-#endif
 }
 
 const ExportOption &SessionConfig::getExportOption() const

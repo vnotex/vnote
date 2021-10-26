@@ -41,6 +41,8 @@ namespace vnotex
 
         TagI *tag() Q_DECL_OVERRIDE;
 
+        int getConfigVersion() const;
+
         // HistoryI.
     public:
         HistoryI *history() Q_DECL_OVERRIDE;

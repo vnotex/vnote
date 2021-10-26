@@ -93,8 +93,8 @@ bool NewNoteDialog::validateNameInput(QString &p_msg)
         return false;
     }
 
-    if (m_infoWidget->getParentNode()->containsChild(name, false)) {
-        p_msg = tr("Name conflicts with existing note.");
+    if (!m_infoWidget->getParentNode()->isLegalNameForNewChild(name)) {
+        p_msg = tr("Name conflicts with existing or built-in note.");
         return false;
     }
 

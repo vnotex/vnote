@@ -239,11 +239,6 @@ void TagExplorer::updateNodeList(const QString &p_tag)
             continue;
         }
 
-        if (m_notebook->isNodeInRecycleBin(node.data())) {
-            qDebug() << "skipped node in recycle bin" << p_tag << pa;
-            continue;
-        }
-
         auto item = new QListWidgetItem(m_nodeList);
         item->setText(node->getName());
         item->setToolTip(NotebookNodeExplorer::generateToolTip(node.data()));

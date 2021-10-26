@@ -95,12 +95,14 @@ bool BundleNotebookConfigMgr::isBuiltInFile(const Node *p_node, const QString &p
 bool BundleNotebookConfigMgr::isBuiltInFolder(const Node *p_node, const QString &p_name) const
 {
     if (p_node->isRoot()) {
-        return p_name.toLower() == c_configFolderName;
+        const auto name = p_name.toLower();
+        return (name == c_configFolderName
+                || name == getNotebook()->getRecycleBinFolder().toLower());
     }
     return false;
 }
 
 int BundleNotebookConfigMgr::getCodeVersion() const
 {
-    return 2;
+    return 3;
 }

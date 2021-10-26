@@ -22,6 +22,7 @@
 #include <utils/contentmediautils.h>
 
 #include "vxnodeconfig.h"
+#include "vxnotebookconfigmgrfactory.h"
 
 using namespace vnotex;
 
@@ -29,19 +30,12 @@ using namespace vnotex::vx_node_config;
 
 const QString VXNotebookConfigMgr::c_nodeConfigName = "vx.json";
 
-const QString VXNotebookConfigMgr::c_recycleBinFolderName = "vx_recycle_bin";
-
 bool VXNotebookConfigMgr::s_initialized = false;
 
 QVector<QRegExp> VXNotebookConfigMgr::s_externalNodeExcludePatterns;
 
-VXNotebookConfigMgr::VXNotebookConfigMgr(const QString &p_name,
-                                         const QString &p_displayName,
-                                         const QString &p_description,
-                                         const QSharedPointer<INotebookBackend> &p_backend,
-                                         QObject *p_parent)
-    : BundleNotebookConfigMgr(p_backend, p_parent),
-      m_info(p_name, p_displayName, p_description)
+VXNotebookConfigMgr::VXNotebookConfigMgr(const QSharedPointer<INotebookBackend> &p_backend, QObject *p_parent)
+    : BundleNotebookConfigMgr(p_backend, p_parent)
 {
     if (!s_initialized) {
         s_initialized = true;
@@ -58,17 +52,17 @@ VXNotebookConfigMgr::VXNotebookConfigMgr(const QString &p_name,
 
 QString VXNotebookConfigMgr::getName() const
 {
-    return m_info.m_name;
+    return VXNotebookConfigMgrFactory::c_name;
 }
 
 QString VXNotebookConfigMgr::getDisplayName() const
 {
-    return m_info.m_displayName;
+    return VXNotebookConfigMgrFactory::c_displayName;
 }
 
 QString VXNotebookConfigMgr::getDescription() const
 {
-    return m_info.m_description;
+    return VXNotebookConfigMgrFactory::c_description;
 }
 
 void VXNotebookConfigMgr::createEmptySkeleton(const NotebookParameters &p_paras)
@@ -97,29 +91,21 @@ QSharedPointer<Node> VXNotebookConfigMgr::loadRootNode()
     root->setExists(true);
     Q_ASSERT(root->isLoaded());
 
-    if (!markRecycleBinNode(root)) {
-        const_cast<VXNotebookConfigMgr *>(this)->createRecycleBinNode(root);
+    if (static_cast<BundleNotebook *>(getNotebook())->getConfigVersion() < 3) {
+        removeLegacyRecycleBinNode(root);
     }
 
     return root;
 }
 
-bool VXNotebookConfigMgr::markRecycleBinNode(const QSharedPointer<Node> &p_root)
+void VXNotebookConfigMgr::removeLegacyRecycleBinNode(const QSharedPointer<Node> &p_root)
 {
-    auto node = p_root->findChild(c_recycleBinFolderName,
+    // Do not support recycle bin node as it complicates everything.
+    auto node = p_root->findChild(QStringLiteral("vx_recycle_bin"),
                                   FileUtils::isPlatformNameCaseSensitive());
     if (node) {
-        if (!node->exists()) {
-            removeNode(node, true, true);
-            return false;
-        }
-
-        node->setUse(Node::Use::RecycleBin);
-        markNodeReadOnly(node.data());
-        return true;
+        removeNode(node, true, true);
     }
-
-    return false;
 }
 
 void VXNotebookConfigMgr::markNodeReadOnly(Node *p_node) const
@@ -132,15 +118,6 @@ void VXNotebookConfigMgr::markNodeReadOnly(Node *p_node) const
     for (const auto &child : p_node->getChildrenRef()) {
         markNodeReadOnly(child.data());
     }
-}
-
-void VXNotebookConfigMgr::createRecycleBinNode(const QSharedPointer<Node> &p_root)
-{
-    Q_ASSERT(p_root->isRoot());
-
-    auto node = newNode(p_root.data(), Node::Flag::Container, c_recycleBinFolderName, "");
-    node->setUse(Node::Use::RecycleBin);
-    markNodeReadOnly(node.data());
 }
 
 QSharedPointer<NodeConfig> VXNotebookConfigMgr::readNodeConfig(const QString &p_path) const
@@ -314,6 +291,13 @@ QSharedPointer<Node> VXNotebookConfigMgr::newFileNode(Node *p_parent,
 
     // Write empty file.
     if (p_create) {
+        if (getBackend()->childExistsCaseInsensitive(p_parent->fetchPath(), p_name)) {
+            // File already exists. Exception.
+            Exception::throwOne(Exception::Type::FileExistsOnCreate,
+                                QString("file (%1) already exists when creating new node").arg(node->fetchPath()));
+            return nullptr;
+        }
+
         getBackend()->writeFile(node->fetchPath(), p_content);
         node->setExists(true);
     } else {
@@ -343,6 +327,13 @@ QSharedPointer<Node> VXNotebookConfigMgr::newFolderNode(Node *p_parent,
 
     // Make folder.
     if (p_create) {
+        if (getBackend()->childExistsCaseInsensitive(p_parent->fetchPath(), p_name)) {
+            // Dir already exists. Exception.
+            Exception::throwOne(Exception::Type::DirExistsOnCreate,
+                                QString("dir (%1) already exists when creating new node").arg(node->fetchPath()));
+            return nullptr;
+        }
+
         getBackend()->makePath(node->fetchPath());
         node->setExists(true);
     } else {
@@ -513,22 +504,9 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFileNodeAsChildOf(const QSharedPoi
                                                                 bool p_move,
                                                                 bool p_updateDatabase)
 {
-    // Copy source file itself.
-    auto srcFilePath = p_src->fetchAbsolutePath();
-    auto destFilePath = PathUtils::concatenateFilePath(p_dest->fetchPath(),
-                                                       PathUtils::fileName(srcFilePath));
-    destFilePath = getBackend()->renameIfExistsCaseInsensitive(destFilePath);
-    getBackend()->copyFile(srcFilePath, destFilePath);
-
-    // Copy media files fetched from content.
-    ContentMediaUtils::copyMediaFiles(p_src.data(), getBackend().data(), destFilePath);
-
-    // Copy attachment folder. Rename attachment folder if conflicts.
-    QString attachmentFolder = p_src->getAttachmentFolder();
-    if (!attachmentFolder.isEmpty()) {
-        auto destAttachmentFolderPath = fetchNodeAttachmentFolder(destFilePath, attachmentFolder);
-        ContentMediaUtils::copyAttachment(p_src.data(), getBackend().data(), destFilePath, destAttachmentFolderPath);
-    }
+    QString destFilePath;
+    QString attachmentFolder;
+    copyFilesOfFileNode(p_src, p_dest->fetchPath(), destFilePath, attachmentFolder);
 
     // Create a file node.
     auto notebook = getNotebook();
@@ -571,7 +549,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFileNodeAsChildOf(const QSharedPoi
 
     if (p_move) {
         if (sameNotebook) {
-            // The same notebook. Do not directly call removeNode() since we need to update the record
+            // The same notebook. Do not directly call removeNode() since we already update the record
             // in database directly.
             removeNode(p_src, false, false, false);
         } else {
@@ -587,9 +565,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::copyFolderNodeAsChildOf(const QSharedP
                                                                   bool p_move,
                                                                   bool p_updateDatabase)
 {
-    auto srcFolderPath = p_src->fetchAbsolutePath();
-    auto destFolderPath = PathUtils::concatenateFilePath(p_dest->fetchPath(),
-                                                         PathUtils::fileName(srcFolderPath));
+    auto destFolderPath = PathUtils::concatenateFilePath(p_dest->fetchPath(), p_src->getName());
     destFolderPath = getBackend()->renameIfExistsCaseInsensitive(destFolderPath);
 
     // Make folder.
@@ -662,7 +638,6 @@ void VXNotebookConfigMgr::removeNode(const QSharedPointer<Node> &p_node,
                                      bool p_configOnly,
                                      bool p_updateDatabase)
 {
-    auto parentNode = p_node->getParent();
     if (!p_configOnly && p_node->exists()) {
         // Remove all children.
         auto children = p_node->getChildren();
@@ -683,7 +658,7 @@ void VXNotebookConfigMgr::removeNode(const QSharedPointer<Node> &p_node,
         removeNodeFromDatabase(p_node.data());
     }
 
-    if (parentNode) {
+    if (auto parentNode = p_node->getParent()) {
         parentNode->removeChild(p_node);
         writeNodeConfig(parentNode);
     }
@@ -722,10 +697,74 @@ void VXNotebookConfigMgr::removeFilesOfNode(Node *p_node, bool p_force)
     }
 }
 
+void VXNotebookConfigMgr::removeNodeToFolder(const QSharedPointer<Node> &p_node, const QString &p_destFolder)
+{
+    if (p_node->isContainer()) {
+        removeFolderNodeToFolder(p_node, p_destFolder);
+    } else {
+        removeFileNodeToFolder(p_node, p_destFolder);
+    }
+}
+
+void VXNotebookConfigMgr::removeFolderNodeToFolder(const QSharedPointer<Node> &p_node, const QString &p_destFolder)
+{
+    auto destFolderPath = PathUtils::concatenateFilePath(p_destFolder, p_node->getName());
+    destFolderPath = getBackend()->renameIfExistsCaseInsensitive(destFolderPath);
+
+    // Make folder.
+    getBackend()->makePath(destFolderPath);
+
+    // Children.
+    auto children = p_node->getChildren();
+    for (const auto &child : children) {
+        removeNodeToFolder(child, destFolderPath);
+    }
+
+    removeNode(p_node, false, false);
+}
+
+void VXNotebookConfigMgr::removeFileNodeToFolder(const QSharedPointer<Node> &p_node, const QString &p_destFolder)
+{
+    // Use a wrapper folder.
+    auto destFolderPath = PathUtils::concatenateFilePath(p_destFolder, p_node->getName());
+    destFolderPath = getBackend()->renameIfExistsCaseInsensitive(destFolderPath);
+
+    // Make folder.
+    getBackend()->makePath(destFolderPath);
+
+    QString destFilePath;
+    QString attachmentFolder;
+    copyFilesOfFileNode(p_node, destFolderPath, destFilePath, attachmentFolder);
+
+    removeNode(p_node, false, false);
+}
+
+void VXNotebookConfigMgr::copyFilesOfFileNode(const QSharedPointer<Node> &p_node,
+                                              const QString &p_destFolder,
+                                              QString &p_destFilePath,
+                                              QString &p_attachmentFolder)
+{
+    // Copy source file itself.
+    auto nodeFilePath = p_node->fetchAbsolutePath();
+    p_destFilePath = PathUtils::concatenateFilePath(p_destFolder, PathUtils::fileName(nodeFilePath));
+    p_destFilePath = getBackend()->renameIfExistsCaseInsensitive(p_destFilePath);
+    getBackend()->copyFile(nodeFilePath, p_destFilePath);
+
+    // Copy media files fetched from content.
+    ContentMediaUtils::copyMediaFiles(p_node.data(), getBackend().data(), p_destFilePath);
+
+    // Copy attachment folder. Rename attachment folder if conflicts.
+    p_attachmentFolder = p_node->getAttachmentFolder();
+    if (!p_attachmentFolder.isEmpty()) {
+        auto destAttachmentFolderPath = fetchNodeAttachmentFolder(p_destFilePath, p_attachmentFolder);
+        ContentMediaUtils::copyAttachment(p_node.data(), getBackend().data(), p_destFilePath, destAttachmentFolderPath);
+    }
+}
+
 QString VXNotebookConfigMgr::fetchNodeImageFolderPath(Node *p_node)
 {
     auto pa = PathUtils::concatenateFilePath(PathUtils::parentDirPath(p_node->fetchAbsolutePath()),
-                                             getNotebook()->getImageFolder());
+            getNotebook()->getImageFolder());
     // Do not make the folder when it is a folder node request.
     if (p_node->hasContent()) {
         getBackend()->makePath(pa);
@@ -736,7 +775,7 @@ QString VXNotebookConfigMgr::fetchNodeImageFolderPath(Node *p_node)
 QString VXNotebookConfigMgr::fetchNodeAttachmentFolderPath(Node *p_node)
 {
     auto notebookFolder = PathUtils::concatenateFilePath(PathUtils::parentDirPath(p_node->fetchAbsolutePath()),
-                                                         getNotebook()->getAttachmentFolder());
+            getNotebook()->getAttachmentFolder());
     if (p_node->hasContent()) {
         auto nodeFolder = p_node->getAttachmentFolder();
         if (nodeFolder.isEmpty()) {
@@ -783,9 +822,9 @@ bool VXNotebookConfigMgr::isBuiltInFile(const Node *p_node, const QString &p_nam
 bool VXNotebookConfigMgr::isBuiltInFolder(const Node *p_node, const QString &p_name) const
 {
     const auto name = p_name.toLower();
-    if (name == c_recycleBinFolderName
-        || name == getNotebook()->getImageFolder().toLower()
-        || name == getNotebook()->getAttachmentFolder().toLower()
+    const auto &nb = getNotebook();
+    if (name == nb->getImageFolder().toLower()
+        || name == nb->getAttachmentFolder().toLower()
         || name == QStringLiteral("_v_images")
         || name == QStringLiteral("_v_attachments")) {
         return true;
@@ -946,7 +985,7 @@ bool VXNotebookConfigMgr::checkNodeExists(Node *p_node)
 QStringList VXNotebookConfigMgr::scanAndImportExternalFiles(Node *p_node)
 {
     QStringList files;
-    if (!p_node->isContainer() || p_node->getUse() == Node::Use::RecycleBin) {
+    if (!p_node->isContainer()) {
         return files;
     }
 

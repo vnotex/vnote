@@ -83,13 +83,13 @@ namespace vnotex
 
         // Copy @p_filePath to @p_destPath.
         // @p_filePath could be outside notebook.
-        virtual void copyFile(const QString &p_filePath, const QString &p_destPath) = 0;
+        virtual void copyFile(const QString &p_filePath, const QString &p_destPath, bool p_move = false) = 0;
 
         // Delete @p_filePath from disk.
         virtual void removeFile(const QString &p_filePath) = 0;
 
         // Copy  @p_dirPath to as @p_destPath.
-        virtual void copyDir(const QString &p_dirPath, const QString &p_destPath) = 0;
+        virtual void copyDir(const QString &p_dirPath, const QString &p_destPath, bool p_move = false) = 0;
 
         // Delete @p_dirPath from disk if it is empty.
         // Return false if it is not deleted due to non-empty.

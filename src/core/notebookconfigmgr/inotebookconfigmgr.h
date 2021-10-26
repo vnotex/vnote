@@ -69,6 +69,8 @@ namespace vnotex
 
         virtual void removeNode(const QSharedPointer<Node> &p_node, bool p_force, bool p_configOnly) = 0;
 
+        virtual void removeNodeToFolder(const QSharedPointer<Node> &p_node, const QString &p_destFolder) = 0;
+
         // Whether @p_name is a built-in file under @p_node.
         virtual bool isBuiltInFile(const Node *p_node, const QString &p_name) const = 0;
 

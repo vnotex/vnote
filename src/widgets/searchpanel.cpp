@@ -448,7 +448,7 @@ SearchState SearchPanel::search(const QSharedPointer<SearchOption> &p_option)
             break;
         }
         auto folder = m_provider->getCurrentFolder();
-        if (folder && (folder->isRoot() || notebook->isRecycleBinNode(folder))) {
+        if (folder && (folder->isRoot())) {
             folder = nullptr;
         }
         if (!folder) {

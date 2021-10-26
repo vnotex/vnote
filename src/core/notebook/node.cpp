@@ -109,6 +109,24 @@ bool Node::containsChild(const QSharedPointer<Node> &p_node) const
     return m_children.indexOf(p_node) != -1;
 }
 
+bool Node::isLegalNameForNewChild(const QString &p_name) const
+{
+    if (p_name.isEmpty()) {
+        return false;
+    }
+
+    auto mgr = getConfigMgr();
+    if (mgr->isBuiltInFile(this, p_name) || mgr->isBuiltInFolder(this, p_name)) {
+        return false;
+    }
+
+    if (containsChild(p_name, false)) {
+        return false;
+    }
+
+    return true;
+}
+
 QSharedPointer<Node> Node::findChild(const QString &p_name, bool p_caseSensitive) const
 {
     auto targetName = p_caseSensitive ? p_name : p_name.toLower();
@@ -356,7 +374,7 @@ bool Node::canRename(const QString &p_newName) const
         }
     }
 
-    if (m_parent->containsChild(p_newName, false)) {
+    if (!m_parent->isLegalNameForNewChild(p_newName)) {
         return false;
     }
 

@@ -69,6 +69,8 @@ namespace vnotex
 
         void setupViewMenu(QMenu *p_menu);
 
+        void setupRecycleBinMenu(QMenu *p_menu);
+
         void saveSession();
 
         void loadSession();

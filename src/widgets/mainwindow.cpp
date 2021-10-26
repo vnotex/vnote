@@ -629,7 +629,7 @@ void MainWindow::exportNotes()
     auto currentNotebook = m_notebookExplorer->currentNotebook().data();
     auto viewWindow = m_viewArea->getCurrentViewWindow();
     auto folderNode = m_notebookExplorer->currentExploredFolderNode();
-    if (folderNode && (folderNode->isRoot() || currentNotebook->isRecycleBinNode(folderNode))) {
+    if (folderNode && (folderNode->isRoot())) {
         folderNode = nullptr;
     }
     auto noteNode = m_notebookExplorer->currentExploredNode();

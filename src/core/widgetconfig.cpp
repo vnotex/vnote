@@ -31,7 +31,6 @@ void WidgetConfig::init(const QJsonObject &p_app,
 
     {
         m_nodeExplorerViewOrder = READINT(QStringLiteral("node_explorer_view_order"));
-        m_nodeExplorerRecycleBinNodeVisible = READBOOL(QStringLiteral("node_explorer_recycle_bin_node_visible"));
         m_nodeExplorerExternalFilesVisible = READBOOL(QStringLiteral("node_explorer_external_files_visible"));
         m_nodeExplorerAutoImportExternalFilesEnabled = READBOOL(QStringLiteral("node_explorer_auto_import_external_files_enabled"));
         m_nodeExplorerCloseBeforeOpenWithEnabled = READBOOL(QStringLiteral("node_explorer_close_before_open_with_enabled"));
@@ -55,7 +54,6 @@ QJsonObject WidgetConfig::toJson() const
     obj[QStringLiteral("find_and_replace_options")] = static_cast<int>(m_findAndReplaceOptions);
 
     obj[QStringLiteral("node_explorer_view_order")] = m_nodeExplorerViewOrder;
-    obj[QStringLiteral("node_explorer_recycle_bin_node_visible")] = m_nodeExplorerRecycleBinNodeVisible;
     obj[QStringLiteral("node_explorer_external_files_visible")] = m_nodeExplorerExternalFilesVisible;
     obj[QStringLiteral("node_explorer_auto_import_external_files_enabled")] = m_nodeExplorerAutoImportExternalFilesEnabled;
     obj[QStringLiteral("node_explorer_close_before_open_with_enabled")] = m_nodeExplorerCloseBeforeOpenWithEnabled;
@@ -106,16 +104,6 @@ int WidgetConfig::getNodeExplorerViewOrder() const
 void WidgetConfig::setNodeExplorerViewOrder(int p_viewOrder)
 {
     updateConfig(m_nodeExplorerViewOrder, p_viewOrder, this);
-}
-
-bool WidgetConfig::isNodeExplorerRecycleBinNodeVisible() const
-{
-    return m_nodeExplorerRecycleBinNodeVisible;
-}
-
-void WidgetConfig::setNodeExplorerRecycleBinNodeVisible(bool p_visible)
-{
-    updateConfig(m_nodeExplorerRecycleBinNodeVisible, p_visible, this);
 }
 
 bool WidgetConfig::isNodeExplorerExternalFilesVisible() const

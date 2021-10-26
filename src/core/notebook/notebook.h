@@ -61,6 +61,10 @@ namespace vnotex
 
         const QString &getAttachmentFolder() const;
 
+        const QString &getRecycleBinFolder() const;
+
+        QString getRecycleBinFolderAbsolutePath() const;
+
         const QDateTime &getCreatedTimeUtc() const;
 
         const QSharedPointer<INotebookBackend> &getBackend() const;
@@ -70,8 +74,6 @@ namespace vnotex
         const QSharedPointer<INotebookConfigMgr> &getConfigMgr() const;
 
         const QSharedPointer<Node> &getRootNode() const;
-
-        QSharedPointer<Node> getRecycleBinNode() const;
 
         QSharedPointer<Node> newNode(Node *p_parent,
                                      Node::Flags p_flags,
@@ -116,16 +118,10 @@ namespace vnotex
         // Move @p_dirPath to the recycle bin, without adding it as a child node.
         void moveDirToRecycleBin(const QString &p_dirPath);
 
+        virtual void emptyRecycleBin();
+
         // Remove all files of this notebook from disk.
         virtual void remove() = 0;
-
-        bool isRecycleBinNode(const Node *p_node) const;
-
-        bool isNodeInRecycleBin(const Node *p_node) const;
-
-        // Remove all children node of @p_node.
-        // @p_force: if true, just delete all folders and files under @p_node.
-        void emptyNode(const Node *p_node, bool p_force = false);
 
         // Whether @p_name is a built-in file under @p_node.
         bool isBuiltInFile(const Node *p_node, const QString &p_name) const;
@@ -150,6 +146,8 @@ namespace vnotex
 
         static const QString c_defaultImageFolder;
 
+        static const QString c_defaultRecycleBinFolder;
+
     public:
         // Return null if history is not suported.
         virtual HistoryI *history();
@@ -168,7 +166,7 @@ namespace vnotex
         virtual void initializeInternal() = 0;
 
     private:
-        QSharedPointer<Node> getOrCreateRecycleBinDateNode();
+        QString getOrCreateRecycleBinDateFolder();
 
         bool m_initialized = false;
 
@@ -195,6 +193,9 @@ namespace vnotex
 
         // Name of the folder to hold attachments.
         QString m_attachmentFolder;
+
+        // Name or path of the folder to hold deleted files.
+        QString m_recycleBinFolder;
 
         QDateTime m_createdTimeUtc;
 

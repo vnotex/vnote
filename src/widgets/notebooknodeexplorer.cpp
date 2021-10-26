@@ -192,13 +192,11 @@ void NotebookNodeExplorer::initNodeIcons() const
 
     const QString folderIconName("folder_node.svg");
     const QString fileIconName("file_node.svg");
-    const QString recycleBinIconName("recycle_bin.svg");
 
     s_nodeIcons[NodeIcon::FolderNode] = IconUtils::fetchIcon(themeMgr.getIconFile(folderIconName), fg);
     s_nodeIcons[NodeIcon::FileNode] = IconUtils::fetchIcon(themeMgr.getIconFile(fileIconName), fg);
     s_nodeIcons[NodeIcon::InvalidFolderNode] = IconUtils::fetchIcon(themeMgr.getIconFile(folderIconName), invalidFg);
     s_nodeIcons[NodeIcon::InvalidFileNode] = IconUtils::fetchIcon(themeMgr.getIconFile(fileIconName), invalidFg);
-    s_nodeIcons[NodeIcon::RecycleBinNode] = IconUtils::fetchIcon(themeMgr.getIconFile(recycleBinIconName), fg);
     s_nodeIcons[NodeIcon::ExternalFolderNode] = IconUtils::fetchIcon(themeMgr.getIconFile(folderIconName), externalFg);
     s_nodeIcons[NodeIcon::ExternalFileNode] = IconUtils::fetchIcon(themeMgr.getIconFile(fileIconName), externalFg);
 }
@@ -341,7 +339,6 @@ void NotebookNodeExplorer::generateNodeTree()
     if (currentNode) {
         setCurrentNode(currentNode);
     } else {
-        // Do not focus the recycle bin.
         focusNormalNode();
     }
 
@@ -351,12 +348,6 @@ void NotebookNodeExplorer::generateNodeTree()
 void NotebookNodeExplorer::loadRootNode(const Node *p_node) const
 {
     Q_ASSERT(p_node->isLoaded() && p_node->isContainer());
-
-    // Render recycle bin node first.
-    auto recycleBinNode = m_notebook->getRecycleBinNode();
-    if (recycleBinNode) {
-        loadRecycleBinNode(recycleBinNode.data());
-    }
 
     // External children.
     if (m_externalFilesVisible) {
@@ -372,10 +363,6 @@ void NotebookNodeExplorer::loadRootNode(const Node *p_node) const
     auto children = p_node->getChildren();
     sortNodes(children);
     for (const auto &child : children) {
-        if (recycleBinNode == child) {
-            continue;
-        }
-
         auto item = new QTreeWidgetItem(m_masterExplorer);
         loadNode(item, child.data(), 1);
     }
@@ -444,43 +431,6 @@ void NotebookNodeExplorer::loadChildren(QTreeWidgetItem *p_item, Node *p_node, i
     }
 }
 
-void NotebookNodeExplorer::loadRecycleBinNode(Node *p_node) const
-{
-    if (!m_recycleBinNodeVisible) {
-        return;
-    }
-
-    auto item = new QTreeWidgetItem();
-    item->setWhatsThis(Column::Name,
-                       tr("Recycle bin of this notebook. Deleted files could be found here. "
-                          "It is organized in folders named by date. Nodes could be moved to "
-                          "other folders by Cut and Paste."));
-    m_masterExplorer->insertTopLevelItem(0, item);
-
-    loadRecycleBinNode(item, p_node, 1);
-}
-
-void NotebookNodeExplorer::loadRecycleBinNode(QTreeWidgetItem *p_item, Node *p_node, int p_level) const
-{
-    if (!m_recycleBinNodeVisible) {
-        return;
-    }
-
-    if (!p_node->isLoaded()) {
-        p_node->load();
-    }
-
-    clearTreeWigetItemChildren(p_item);
-
-    setItemNodeData(p_item, NodeData(p_node, true));
-    p_item->setText(Column::Name, tr("Recycle Bin"));
-    p_item->setIcon(Column::Name, getNodeItemIcon(p_node));
-
-    loadChildren(p_item, p_node, p_level - 1);
-
-    // No need to restore state.
-}
-
 void NotebookNodeExplorer::fillTreeItem(QTreeWidgetItem *p_item, Node *p_node, bool p_loaded) const
 {
     setItemNodeData(p_item, NodeData(p_node, p_loaded));
@@ -502,10 +452,6 @@ const QIcon &NotebookNodeExplorer::getNodeItemIcon(const Node *p_node) const
     if (p_node->hasContent()) {
         return p_node->exists() ? s_nodeIcons[NodeIcon::FileNode] : s_nodeIcons[NodeIcon::InvalidFileNode];
     } else {
-        if (p_node->getUse() == Node::Use::RecycleBin) {
-            return s_nodeIcons[NodeIcon::RecycleBinNode];
-        }
-
         return p_node->exists() ? s_nodeIcons[NodeIcon::FolderNode] : s_nodeIcons[NodeIcon::InvalidFolderNode];
     }
 }
@@ -561,20 +507,9 @@ void NotebookNodeExplorer::updateNode(Node *p_node)
     if (item) {
         bool expanded = item->isExpanded();
         item->setExpanded(false);
-
-        if (m_notebook->isRecycleBinNode(p_node)) {
-            loadRecycleBinNode(item, p_node, 1);
-        } else {
-            loadNode(item, p_node, 1);
-        }
-
+        loadNode(item, p_node, 1);
         item->setExpanded(expanded);
     } else {
-        if (m_notebook->isRecycleBinNode(p_node) && !m_recycleBinNodeVisible) {
-            // No need to update.
-            return;
-        }
-
         saveNotebookTreeState(false);
 
         generateNodeTree();
@@ -762,106 +697,63 @@ void NotebookNodeExplorer::createContextMenuOnRoot(QMenu *p_menu)
 void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_node)
 {
     const int selectedSize = m_masterExplorer->selectedItems().size();
-    if (m_notebook->isRecycleBinNode(p_node)) {
-        // Recycle bin node.
-        createAndAddAction(Action::Reload, p_menu);
 
-        createAndAddAction(Action::ReloadIndex, p_menu);
+    createAndAddAction(Action::Open, p_menu);
 
-        if (selectedSize == 1) {
-            createAndAddAction(Action::EmptyRecycleBin, p_menu);
+    addOpenWithMenu(p_menu);
 
-            createAndAddAction(Action::OpenLocation, p_menu);
-        }
-    } else if (m_notebook->isNodeInRecycleBin(p_node)) {
-        // Node in recycle bin.
-        createAndAddAction(Action::Open, p_menu);
+    p_menu->addSeparator();
 
-        addOpenWithMenu(p_menu);
+    if (selectedSize == 1 && p_node->isContainer()) {
+        createAndAddAction(Action::ExpandAll, p_menu);
+    }
 
+    p_menu->addSeparator();
+
+    createAndAddAction(Action::NewNote, p_menu);
+
+    createAndAddAction(Action::NewFolder, p_menu);
+
+    p_menu->addSeparator();
+
+    createAndAddAction(Action::Copy, p_menu);
+
+    createAndAddAction(Action::Cut, p_menu);
+
+    if (selectedSize == 1 && isPasteOnNodeAvailable(p_node)) {
+        createAndAddAction(Action::Paste, p_menu);
+    }
+
+    createAndAddAction(Action::Delete, p_menu);
+
+    createAndAddAction(Action::RemoveFromConfig, p_menu);
+
+    p_menu->addSeparator();
+
+    createAndAddAction(Action::Reload, p_menu);
+
+    createAndAddAction(Action::ReloadIndex, p_menu);
+
+    createAndAddAction(Action::Sort, p_menu);
+
+    if (selectedSize == 1
+        && m_notebook->tag()
+        && !p_node->isContainer()) {
         p_menu->addSeparator();
 
-        if (selectedSize == 1 && p_node->isContainer()) {
-            createAndAddAction(Action::ExpandAll, p_menu);
-        }
+        createAndAddAction(Action::Tag, p_menu);
+    }
 
-        p_menu->addSeparator();
+    p_menu->addSeparator();
 
-        createAndAddAction(Action::Cut, p_menu);
+    createAndAddAction(Action::PinToQuickAccess, p_menu);
 
-        createAndAddAction(Action::DeleteFromRecycleBin, p_menu);
+    if (selectedSize == 1) {
+        createAndAddAction(Action::CopyPath, p_menu);
 
-        p_menu->addSeparator();
+        createAndAddAction(Action::OpenLocation, p_menu);
 
-        createAndAddAction(Action::Reload, p_menu);
-
-        createAndAddAction(Action::ReloadIndex, p_menu);
-
-        if (selectedSize == 1) {
-            p_menu->addSeparator();
-
-            createAndAddAction(Action::CopyPath, p_menu);
-
-            createAndAddAction(Action::OpenLocation, p_menu);
-        }
-    } else {
-        createAndAddAction(Action::Open, p_menu);
-
-        addOpenWithMenu(p_menu);
-
-        p_menu->addSeparator();
-
-        if (selectedSize == 1 && p_node->isContainer()) {
-            createAndAddAction(Action::ExpandAll, p_menu);
-        }
-
-        p_menu->addSeparator();
-
-        createAndAddAction(Action::NewNote, p_menu);
-
-        createAndAddAction(Action::NewFolder, p_menu);
-
-        p_menu->addSeparator();
-
-        createAndAddAction(Action::Copy, p_menu);
-
-        createAndAddAction(Action::Cut, p_menu);
-
-        if (selectedSize == 1 && isPasteOnNodeAvailable(p_node)) {
-            createAndAddAction(Action::Paste, p_menu);
-        }
-
-        createAndAddAction(Action::Delete, p_menu);
-
-        createAndAddAction(Action::RemoveFromConfig, p_menu);
-
-        p_menu->addSeparator();
-
-        createAndAddAction(Action::Reload, p_menu);
-
-        createAndAddAction(Action::ReloadIndex, p_menu);
-
-        createAndAddAction(Action::Sort, p_menu);
-
-        if (selectedSize == 1
-            && m_notebook->tag()
-            && !p_node->isContainer()) {
-            p_menu->addSeparator();
-
-            createAndAddAction(Action::Tag, p_menu);
-        }
-
-        p_menu->addSeparator();
-
-        createAndAddAction(Action::PinToQuickAccess, p_menu);
-
-        if (selectedSize == 1) {
-            createAndAddAction(Action::CopyPath, p_menu);
-
-            createAndAddAction(Action::OpenLocation, p_menu);
-
-            createAndAddAction(Action::Properties, p_menu);
-        }
+        createAndAddAction(Action::Properties, p_menu);
     }
 }
 
@@ -901,7 +793,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
     switch (p_act) {
     case Action::NewNote:
         act = new QAction(generateMenuActionIcon("new_note.svg"),
-                          tr("New N&ote"),
+                          tr("New &Note"),
                           p_parent);
         connect(act, &QAction::triggered,
                 this, []() {
@@ -1033,47 +925,10 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
                 });
         break;
 
-    case Action::EmptyRecycleBin:
-        act = new QAction(tr("&Empty"), p_parent);
-        connect(act, &QAction::triggered,
-                this, [this]() {
-                    auto rbNode = m_notebook->getRecycleBinNode().data();
-                    auto rbNodePath = rbNode->fetchAbsolutePath();
-                    int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
-                                                                 tr("Empty the recycle bin of this notebook?"),
-                                                                 tr("All files in recycle bin will be deleted permanently."),
-                                                                 tr("Location of recycle bin: %1").arg(rbNodePath));
-                    if (ret != QMessageBox::Ok) {
-                        return;
-                    }
-
-                    try {
-                        m_notebook->emptyNode(rbNode, true);
-                    } catch (Exception &p_e) {
-                        MessageBoxHelper::notify(MessageBoxHelper::Critical,
-                                                 tr("Failed to empty recycle bin (%1) (%2).").arg(rbNodePath, p_e.what()),
-                                                 VNoteX::getInst().getMainWindow());
-                    }
-
-                    updateNode(rbNode);
-                });
-        break;
-
     case Action::Delete:
         act = new QAction(tr("&Delete"), p_parent);
         connect(act, &QAction::triggered,
-                this, [this]() {
-                    removeSelectedNodes(false);
-                });
-        break;
-
-    case Action::DeleteFromRecycleBin:
-        // It is fine to have &D with Action::Delete since they won't be at the same context.
-        act = new QAction(tr("&Delete From Recycle Bin"), p_parent);
-        connect(act, &QAction::triggered,
-                this, [this]() {
-                    removeSelectedNodes(true);
-                });
+                this, &NotebookNodeExplorer::removeSelectedNodes);
         break;
 
     case Action::RemoveFromConfig:
@@ -1417,21 +1272,12 @@ void NotebookNodeExplorer::selectNodes(const QVector<const Node *> &p_nodes)
     }
 }
 
-void NotebookNodeExplorer::removeSelectedNodes(bool p_skipRecycleBin)
+void NotebookNodeExplorer::removeSelectedNodes()
 {
-    QString text;
-    QString info;
-    if (p_skipRecycleBin) {
-        text = tr("Delete these folders and notes permanently?");
-        info = tr("Files will be deleted permanently and could not be found even "
-                  "in operating system's recycle bin.");
-    } else {
-        text = tr("Delete these folders and notes?");
-        info = tr("Deleted files could be found in the recycle bin of notebook.");
-    }
-
+    const QString text = tr("Delete these folders and notes?");
+    const QString info = tr("Deleted files could be found in the recycle bin of notebook.");
     auto nodes = confirmSelectedNodes(tr("Confirm Deletion"), text, info);
-    removeNodes(nodes, p_skipRecycleBin, false);
+    removeNodes(nodes, false);
 }
 
 QVector<Node *> NotebookNodeExplorer::confirmSelectedNodes(const QString &p_title,
@@ -1471,9 +1317,7 @@ QVector<Node *> NotebookNodeExplorer::confirmSelectedNodes(const QString &p_titl
     return nodesToDelete;
 }
 
-void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes,
-                                       bool p_skipRecycleBin,
-                                       bool p_configOnly)
+void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnly)
 {
     if (p_nodes.isEmpty()) {
         return;
@@ -1494,8 +1338,8 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes,
                 continue;
             }
 
-            if (p_configOnly || p_skipRecycleBin) {
-                m_notebook->removeNode(node, false, p_configOnly);
+            if (p_configOnly) {
+                m_notebook->removeNode(node, false, true);
             } else {
                 m_notebook->moveNodeToRecycleBin(node);
             }
@@ -1515,10 +1359,6 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes,
         updateNode(node);
     }
 
-    if (!p_configOnly && !p_skipRecycleBin && m_recycleBinNodeVisible) {
-        updateNode(m_notebook->getRecycleBinNode().data());
-    }
-
     VNoteX::getInst().showStatusMessageShort(tr("Deleted/Removed %n item(s)", "", nrDeleted));
 }
 
@@ -1527,7 +1367,7 @@ void NotebookNodeExplorer::removeSelectedNodesFromConfig()
     auto nodes = confirmSelectedNodes(tr("Confirm Removal"),
                                       tr("Remove these folders and notes from index?"),
                                       tr("Files are not touched but just removed from notebook index."));
-    removeNodes(nodes, false, true);
+    removeNodes(nodes, true);
 }
 
 void NotebookNodeExplorer::filterAwayChildrenNodes(QVector<Node *> &p_nodes)
@@ -1569,29 +1409,6 @@ bool NotebookNodeExplorer::allSelectedItemsSameType() const
         }
     }
 
-    if (type == NodeData::NodeType::Node) {
-        bool hasNormalNode = false;
-        bool hasNodeInRecycleBin = false;
-        for (auto &item : items) {
-            auto node = getItemNodeData(item).getNode();
-            if (m_notebook->isRecycleBinNode(node)) {
-                return false;
-            } else if (m_notebook->isNodeInRecycleBin(node)) {
-                if (hasNormalNode) {
-                    return false;
-                }
-
-                hasNodeInRecycleBin = true;
-            } else {
-                if (hasNodeInRecycleBin) {
-                    return false;
-                }
-
-                hasNormalNode = true;
-            }
-        }
-    }
-
     return true;
 }
 
@@ -1603,12 +1420,11 @@ void NotebookNodeExplorer::reload()
 void NotebookNodeExplorer::focusNormalNode()
 {
     auto item = m_masterExplorer->currentItem();
-    if (item && (!m_recycleBinNodeVisible || item != m_masterExplorer->topLevelItem(0))) {
-        // Not recycle bin.
+    if (item) {
         return;
     }
 
-    m_masterExplorer->setCurrentItem(m_masterExplorer->topLevelItem(m_recycleBinNodeVisible ? 1 : 0));
+    m_masterExplorer->setCurrentItem(m_masterExplorer->topLevelItem(0));
 }
 
 void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes) const
@@ -1688,16 +1504,6 @@ void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int
     }
 }
 
-void NotebookNodeExplorer::setRecycleBinNodeVisible(bool p_visible)
-{
-    if (m_recycleBinNodeVisible == p_visible) {
-        return;
-    }
-
-    m_recycleBinNodeVisible = p_visible;
-    reload();
-}
-
 void NotebookNodeExplorer::setExternalFilesVisible(bool p_visible)
 {
     if (m_externalFilesVisible == p_visible) {
@@ -1748,11 +1554,7 @@ void NotebookNodeExplorer::manualSort()
         const auto &children = parentNode->getChildrenRef();
         for (int i = 0; i < children.size(); ++i) {
             const auto &child = children[i];
-            if (m_notebook->isRecycleBinNode(child.data())) {
-                continue;
-            }
-
-            bool selected = sortFolders ? child->isContainer() : !child->isContainer();
+            const bool selected = sortFolders ? child->isContainer() : !child->isContainer();
             if (selected) {
                 selectedIdx.push_back(i);
 

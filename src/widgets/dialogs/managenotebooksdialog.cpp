@@ -260,7 +260,7 @@ void ManageNotebooksDialog::closeNotebook(const Notebook *p_notebook)
     int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question,
                                                  tr("Close notebook (%1)?")
                                                    .arg(p_notebook->getName()),
-                                                 tr("The notebook could be imported again later."),
+                                                 tr("The notebook could be opened by VNote again."),
                                                  tr("Notebook location: %1").arg(p_notebook->getRootFolderAbsolutePath()),
                                                  this);
     if (ret != QMessageBox::Ok) {
@@ -289,14 +289,18 @@ void ManageNotebooksDialog::removeNotebook(const Notebook *p_notebook)
 
     int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
                                                  tr("Please close the notebook in VNote first and delete the notebook root folder files manually."),
-                                                 tr("Press \"Ok\" to open the location of the notebook root folder."),
+                                                 tr("Press \"Ok\" to close the notebook and open the location of the notebook root folder."),
                                                  tr("Notebook location: %1").arg(p_notebook->getRootFolderAbsolutePath()),
                                                  this);
     if (ret != QMessageBox::Ok) {
         return;
     }
 
-    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(p_notebook->getRootFolderAbsolutePath()));
+    const auto rootFolder = p_notebook->getRootFolderAbsolutePath();
+
+    closeNotebook(p_notebook);
+
+    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(rootFolder));
 }
 
 bool ManageNotebooksDialog::checkUnsavedChanges()

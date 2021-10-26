@@ -254,3 +254,8 @@ TagI *BundleNotebook::tag()
 {
     return getTagMgr();
 }
+
+int BundleNotebook::getConfigVersion() const
+{
+    return m_configVersion;
+}

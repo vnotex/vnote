@@ -103,8 +103,6 @@ namespace vnotex
 
         void reload();
 
-        void setRecycleBinNodeVisible(bool p_visible);
-
         void setViewOrder(int p_order);
 
         void setExternalFilesVisible(bool p_visible);
@@ -146,9 +144,7 @@ namespace vnotex
             Copy,
             Cut,
             Paste,
-            EmptyRecycleBin,
             Delete,
-            DeleteFromRecycleBin,
             RemoveFromConfig,
             Sort,
             Reload,
@@ -179,10 +175,6 @@ namespace vnotex
         void loadItemChildren(QTreeWidgetItem *p_item) const;
 
         void loadNode(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const;
-
-        void loadRecycleBinNode(Node *p_node) const;
-
-        void loadRecycleBinNode(QTreeWidgetItem *p_item, Node *p_node, int p_level) const;
 
         void fillTreeItem(QTreeWidgetItem *p_item, Node *p_node, bool p_loaded) const;
 
@@ -225,7 +217,7 @@ namespace vnotex
 
         QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> getSelectedNodes() const;
 
-        void removeSelectedNodes(bool p_skipRecycleBin);
+        void removeSelectedNodes();
 
         void removeSelectedNodesFromConfig();
 
@@ -241,8 +233,7 @@ namespace vnotex
 
         void selectNodes(const QVector<const Node *> &p_nodes);
 
-        // @p_skipRecycleBin is irrelevant if @p_configOnly is true.
-        void removeNodes(QVector<Node *> p_nodes, bool p_skipRecycleBin, bool p_configOnly);
+        void removeNodes(QVector<Node *> p_nodes, bool p_configOnly);
 
         void filterAwayChildrenNodes(QVector<Node *> &p_nodes);
 
@@ -251,7 +242,6 @@ namespace vnotex
         // Check if all selected items are the same type for operations.
         bool allSelectedItemsSameType() const;
 
-        // Skip the recycle bin node if possible.
         void focusNormalNode();
 
         void sortNodes(QVector<QSharedPointer<Node>> &p_nodes) const;
@@ -298,8 +288,6 @@ namespace vnotex
 
         QScopedPointer<NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>> m_navigationWrapper;
 
-        bool m_recycleBinNodeVisible = false;
-
         int m_viewOrder = ViewOrder::OrderedByConfiguration;
 
         bool m_externalFilesVisible = true;
@@ -312,7 +300,6 @@ namespace vnotex
             FileNode,
             InvalidFolderNode,
             InvalidFileNode,
-            RecycleBinNode,
             ExternalFolderNode,
             ExternalFileNode,
             MaxIcons

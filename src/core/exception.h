@@ -23,6 +23,8 @@ namespace vnotex
             FailToRemoveDir,
             FileMissingOnDisk,
             EssentialFileMissing,
+            FileExistsOnCreate,
+            DirExistsOnCreate,
             InvalidArgument
         };
 

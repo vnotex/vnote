@@ -81,7 +81,6 @@ void NotebookExplorer::setupUI()
 
     const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
     m_nodeExplorer = new NotebookNodeExplorer(this);
-    m_nodeExplorer->setRecycleBinNodeVisible(widgetConfig.isNodeExplorerRecycleBinNodeVisible());
     m_nodeExplorer->setViewOrder(widgetConfig.getNodeExplorerViewOrder());
     m_nodeExplorer->setExternalFilesVisible(widgetConfig.isNodeExplorerExternalFilesVisible());
     connect(m_nodeExplorer, &NotebookNodeExplorer::nodeActivated,
@@ -122,15 +121,9 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
     }
 
     {
-        auto btn = titleBar->addActionButton(QStringLiteral("recycle_bin.svg"), tr("Toggle Recycle Bin Node"));
-        btn->defaultAction()->setCheckable(true);
-        btn->defaultAction()->setChecked(widgetConfig.isNodeExplorerRecycleBinNodeVisible());
-        connect(btn, &QToolButton::triggered,
-                this, [this](QAction *p_act) {
-                    const bool checked = p_act->isChecked();
-                    ConfigMgr::getInst().getWidgetConfig().setNodeExplorerRecycleBinNodeVisible(checked);
-                    m_nodeExplorer->setRecycleBinNodeVisible(checked);
-                });
+        auto recycleBinMenu = WidgetsFactory::createMenu(titleBar);
+        setupRecycleBinMenu(recycleBinMenu);
+        titleBar->addActionButton(QStringLiteral("recycle_bin.svg"), tr("Recycle Bin"), recycleBinMenu);
     }
 
     {
@@ -260,15 +253,6 @@ void NotebookExplorer::newFolder()
         return;
     }
 
-    if (m_currentNotebook->isRecycleBinNode(node)) {
-        node = m_currentNotebook->getRootNode().data();
-    } else if (m_currentNotebook->isNodeInRecycleBin(node)) {
-        MessageBoxHelper::notify(MessageBoxHelper::Information,
-                                 tr("Could not create folder within Recycle Bin."),
-                                 VNoteX::getInst().getMainWindow());
-        return;
-    }
-
     NewFolderDialog dialog(node, VNoteX::getInst().getMainWindow());
     if (dialog.exec() == QDialog::Accepted) {
         m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
@@ -279,15 +263,6 @@ void NotebookExplorer::newNote()
 {
     auto node = checkNotebookAndGetCurrentExploredFolderNode();
     if (!node) {
-        return;
-    }
-
-    if (m_currentNotebook->isRecycleBinNode(node)) {
-        node = m_currentNotebook->getRootNode().data();
-    } else if (m_currentNotebook->isNodeInRecycleBin(node)) {
-        MessageBoxHelper::notify(MessageBoxHelper::Information,
-                                 tr("Could not create note within Recycle Bin."),
-                                 VNoteX::getInst().getMainWindow());
         return;
     }
 
@@ -340,15 +315,6 @@ void NotebookExplorer::importFile()
         return;
     }
 
-    if (m_currentNotebook->isRecycleBinNode(node)) {
-        node = m_currentNotebook->getRootNode().data();
-    } else if (m_currentNotebook->isNodeInRecycleBin(node)) {
-        MessageBoxHelper::notify(MessageBoxHelper::Information,
-                                 tr("Could not create note within Recycle Bin."),
-                                 VNoteX::getInst().getMainWindow());
-        return;
-    }
-
     static QString lastFolderPath = QDir::homePath();
     QStringList files = QFileDialog::getOpenFileNames(VNoteX::getInst().getMainWindow(),
                                                       tr("Select Files To Import"),
@@ -378,15 +344,6 @@ void NotebookExplorer::importFolder()
 {
     auto node = checkNotebookAndGetCurrentExploredFolderNode();
     if (!node) {
-        return;
-    }
-
-    if (m_currentNotebook->isRecycleBinNode(node)) {
-        node = m_currentNotebook->getRootNode().data();
-    } else if (m_currentNotebook->isNodeInRecycleBin(node)) {
-        MessageBoxHelper::notify(MessageBoxHelper::Information,
-                                 tr("Could not create folder within Recycle Bin."),
-                                 VNoteX::getInst().getMainWindow());
         return;
     }
 
@@ -481,6 +438,33 @@ void NotebookExplorer::setupViewMenu(QMenu *p_menu)
                 ConfigMgr::getInst().getWidgetConfig().setNodeExplorerViewOrder(order);
                 m_nodeExplorer->setViewOrder(order);
             });
+}
+
+void NotebookExplorer::setupRecycleBinMenu(QMenu *p_menu)
+{
+    p_menu->addAction(tr("Open Recycle Bin"),
+                      this,
+                      [this]() {
+                          if (m_currentNotebook) {
+                              WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(m_currentNotebook->getRecycleBinFolderAbsolutePath()));
+                          }
+                      });
+
+    p_menu->addAction(tr("Empty Recycle Bin"),
+                      this,
+                      [this]() {
+                          if (!m_currentNotebook) {
+                              return;
+                          }
+                          int okRet = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Warning,
+                              tr("Empty the recycle bin of notebook (%1)?").arg(m_currentNotebook->getName()),
+                              tr("CAUTION! All the files under the recycle bin folder will be deleted and unrecoverable!"),
+                              tr("Recycle bin folder: %1").arg(m_currentNotebook->getRecycleBinFolderAbsolutePath()),
+                              VNoteX::getInst().getMainWindow());
+                          if (okRet == QMessageBox::Ok) {
+                              m_currentNotebook->emptyRecycleBin();
+                          }
+                      });
 }
 
 void NotebookExplorer::saveSession()

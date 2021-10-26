@@ -69,10 +69,10 @@ namespace vnotex
 
         // Copy @p_filePath to @p_destPath.
         // @p_filePath may beyond this notebook backend.
-        void copyFile(const QString &p_filePath, const QString &p_destPath) Q_DECL_OVERRIDE;
+        void copyFile(const QString &p_filePath, const QString &p_destPath, bool p_move = false) Q_DECL_OVERRIDE;
 
         // Copy @p_dirPath to as @p_destPath.
-        void copyDir(const QString &p_dirPath, const QString &p_destPath) Q_DECL_OVERRIDE;
+        void copyDir(const QString &p_dirPath, const QString &p_destPath, bool p_move = false) Q_DECL_OVERRIDE;
 
         QString renameIfExistsCaseInsensitive(const QString &p_path) const Q_DECL_OVERRIDE;
 

@@ -16,6 +16,8 @@ const QString Notebook::c_defaultAttachmentFolder = QStringLiteral("vx_attachmen
 
 const QString Notebook::c_defaultImageFolder = QStringLiteral("vx_images");
 
+const QString Notebook::c_defaultRecycleBinFolder = QStringLiteral("vx_recycle_bin");
+
 static vnotex::ID generateNotebookID()
 {
     static vnotex::ID id = Notebook::InvalidId;
@@ -43,6 +45,9 @@ Notebook::Notebook(const NotebookParameters &p_paras,
     }
     if (m_attachmentFolder.isEmpty()) {
         m_attachmentFolder = c_defaultAttachmentFolder;
+    }
+    if (m_recycleBinFolder.isEmpty()) {
+        m_recycleBinFolder = c_defaultRecycleBinFolder;
     }
 
     m_configMgr->setNotebook(this);
@@ -151,6 +156,28 @@ const QString &Notebook::getAttachmentFolder() const
     return m_attachmentFolder;
 }
 
+const QString &Notebook::getRecycleBinFolder() const
+{
+    return m_recycleBinFolder;
+}
+
+QString Notebook::getRecycleBinFolderAbsolutePath() const
+{
+    if (QDir::isAbsolutePath(m_recycleBinFolder)) {
+        if (!QFileInfo::exists(m_recycleBinFolder)) {
+            QDir dir(m_recycleBinFolder);
+            dir.mkpath(m_recycleBinFolder);
+        }
+        return m_recycleBinFolder;
+    } else {
+        auto folderPath = getBackend()->getFullPath(m_recycleBinFolder);
+        if (!getBackend()->exists(m_recycleBinFolder)) {
+            getBackend()->makePath(m_recycleBinFolder);
+        }
+        return folderPath;
+    }
+}
+
 const QSharedPointer<INotebookBackend> &Notebook::getBackend() const
 {
     return m_backend;
@@ -174,23 +201,6 @@ const QSharedPointer<Node> &Notebook::getRootNode() const
     }
 
     return m_root;
-}
-
-QSharedPointer<Node> Notebook::getRecycleBinNode() const
-{
-    auto root = getRootNode();
-    const auto &children = root->getChildrenRef();
-    auto it = std::find_if(children.begin(),
-                           children.end(),
-                           [this](const QSharedPointer<Node> &p_node) {
-                               return isRecycleBinNode(p_node.data());
-                           });
-
-    if (it != children.end()) {
-        return *it;
-    }
-
-    return nullptr;
 }
 
 QSharedPointer<Node> Notebook::newNode(Node *p_parent,
@@ -259,27 +269,6 @@ void Notebook::removeNode(Node *p_node, bool p_force, bool p_configOnly)
     removeNode(p_node->sharedFromThis(), p_force, p_configOnly);
 }
 
-bool Notebook::isRecycleBinNode(const Node *p_node) const
-{
-    return p_node && p_node->getUse() == Node::Use::RecycleBin;
-}
-
-bool Notebook::isNodeInRecycleBin(const Node *p_node) const
-{
-    if (p_node) {
-        p_node = p_node->getParent();
-        while (p_node) {
-            if (isRecycleBinNode(p_node)) {
-                return true;
-            }
-
-            p_node = p_node->getParent();
-        }
-    }
-
-    return false;
-}
-
 void Notebook::moveNodeToRecycleBin(Node *p_node)
 {
     moveNodeToRecycleBin(p_node->sharedFromThis());
@@ -288,59 +277,41 @@ void Notebook::moveNodeToRecycleBin(Node *p_node)
 void Notebook::moveNodeToRecycleBin(const QSharedPointer<Node> &p_node)
 {
     Q_ASSERT(p_node && !p_node->isRoot());
-    auto destNode = getOrCreateRecycleBinDateNode();
-    copyNodeAsChildOf(p_node, destNode.data(), true);
+    m_configMgr->removeNodeToFolder(p_node, getOrCreateRecycleBinDateFolder());
 }
 
-QSharedPointer<Node> Notebook::getOrCreateRecycleBinDateNode()
+QString Notebook::getOrCreateRecycleBinDateFolder()
 {
     // Name after date.
-    auto dateNodeName = QDate::currentDate().toString(QStringLiteral("yyyyMMdd"));
-
-    auto recycleBinNode = getRecycleBinNode();
-    auto dateNode = recycleBinNode->findChild(dateNodeName,
-                                              FileUtils::isPlatformNameCaseSensitive());
-    if (!dateNode) {
-        // Create a date node.
-        dateNode = newNode(recycleBinNode.data(), Node::Flag::Container, dateNodeName);
+    auto dateFolderName = QDate::currentDate().toString(QStringLiteral("yyyyMMdd"));
+    auto folderPath = PathUtils::concatenateFilePath(getRecycleBinFolder(), dateFolderName);
+    if (QDir::isAbsolutePath(folderPath)) {
+        qDebug() << "using absolute recycle bin folder" << folderPath;
+        QDir dir(folderPath);
+        if (dir.exists()) {
+            dir.mkpath(folderPath);
+        }
+    } else {
+        if (!getBackend()->exists(folderPath)) {
+            getBackend()->makePath(folderPath);
+        }
     }
 
-    return dateNode;
-}
-
-void Notebook::emptyNode(const Node *p_node, bool p_force)
-{
-    // Empty the children.
-    auto children = p_node->getChildren();
-    for (const auto &child : children) {
-        removeNode(child, p_force);
-    }
+    return folderPath;
 }
 
 void Notebook::moveFileToRecycleBin(const QString &p_filePath)
 {
-    auto node = getOrCreateRecycleBinDateNode();
-    auto destFilePath = PathUtils::concatenateFilePath(node->fetchPath(),
-                                                       PathUtils::fileName(p_filePath));
+    auto destFilePath = PathUtils::concatenateFilePath(getOrCreateRecycleBinDateFolder(), PathUtils::fileName(p_filePath));
     destFilePath = getBackend()->renameIfExistsCaseInsensitive(destFilePath);
-    m_backend->copyFile(p_filePath, destFilePath);
-
-    getBackend()->removeFile(p_filePath);
-
-    emit nodeUpdated(node.data());
+    m_backend->copyFile(p_filePath, destFilePath, true);
 }
 
 void Notebook::moveDirToRecycleBin(const QString &p_dirPath)
 {
-    auto node = getOrCreateRecycleBinDateNode();
-    auto destDirPath = PathUtils::concatenateFilePath(node->fetchPath(),
-                                                      PathUtils::fileName(p_dirPath));
+    auto destDirPath = PathUtils::concatenateFilePath(getOrCreateRecycleBinDateFolder(), PathUtils::fileName(p_dirPath));
     destDirPath = getBackend()->renameIfExistsCaseInsensitive(destDirPath);
-    m_backend->copyDir(p_dirPath, destDirPath);
-
-    getBackend()->removeDir(p_dirPath);
-
-    emit nodeUpdated(node.data());
+    m_backend->copyDir(p_dirPath, destDirPath, true);
 }
 
 QSharedPointer<Node> Notebook::addAsNode(Node *p_parent,
@@ -415,4 +386,13 @@ HistoryI *Notebook::history()
 TagI *Notebook::tag()
 {
     return nullptr;
+}
+
+void Notebook::emptyRecycleBin()
+{
+    QDir dir(getRecycleBinFolderAbsolutePath());
+    auto children = dir.entryList(QDir::Dirs | QDir::NoSymLinks | QDir::NoDotAndDotDot);
+    for (const auto &child : children) {
+        FileUtils::removeDir(dir.filePath(child));
+    }
 }
