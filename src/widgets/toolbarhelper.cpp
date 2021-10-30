@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QFileDialog>
+#include <QWidgetAction>
 
 #include "mainwindow.h"
 #include <core/vnotex.h>
@@ -24,15 +25,11 @@
 #include <core/fileopenparameters.h>
 #include "propertydefs.h"
 #include "dialogs/settings/settingsdialog.h"
-#include "messageboxhelper.h"
 #include "dialogs/updater.h"
+#include "messageboxhelper.h"
+#include "labelwithbuttonswidget.h"
 
 using namespace vnotex;
-
-ToolBarHelper::ToolBarHelper(MainWindow *p_mainWindow)
-    : m_mainWindow(p_mainWindow)
-{
-}
 
 static QToolBar *createToolBar(MainWindow *p_win, const QString &p_title, const QString &p_name)
 {
@@ -269,19 +266,7 @@ QToolBar *ToolBarHelper::setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_
 
         MainWindow::connect(btnMenu, &QMenu::aboutToShow,
                             btnMenu, [btnMenu]() {
-                                btnMenu->clear();
-                                const auto &quickAccess = ConfigMgr::getInst().getSessionConfig().getQuickAccessFiles();
-                                if (quickAccess.isEmpty()) {
-                                    auto act = btnMenu->addAction(MainWindow::tr("Quick Access Not Set"));
-                                    act->setEnabled(false);
-                                    return;
-                                }
-
-                                for (const auto &file : quickAccess) {
-                                    auto act = btnMenu->addAction(PathUtils::fileName(file));
-                                    act->setData(file);
-                                    act->setToolTip(file);
-                                }
+                                ToolBarHelper::updateQuickAccessMenu(btnMenu);
                             });
         MainWindow::connect(btnMenu, &QMenu::triggered,
                             btnMenu, [](QAction *p_act) {
@@ -567,13 +552,17 @@ static const QString c_dangerousPalette = QStringLiteral("widgets#toolbar#icon#d
 
 QIcon ToolBarHelper::generateIcon(const QString &p_iconName)
 {
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    const auto fg = themeMgr.paletteColor(c_fgPalette);
-    const auto disabledFg = themeMgr.paletteColor(c_disabledPalette);
+    static QVector<IconUtils::OverriddenColor> colors;
 
-    QVector<IconUtils::OverriddenColor> colors;
-    colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
-    colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
+    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+
+    if (colors.isEmpty()) {
+        const auto fg = themeMgr.paletteColor(c_fgPalette);
+        const auto disabledFg = themeMgr.paletteColor(c_disabledPalette);
+
+        colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+        colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
+    }
 
     auto iconFile = themeMgr.getIconFile(p_iconName);
     return IconUtils::fetchIcon(iconFile, colors);
@@ -595,32 +584,24 @@ QIcon ToolBarHelper::generateDangerousIcon(const QString &p_iconName)
     return IconUtils::fetchIcon(iconFile, colors);
 }
 
-void ToolBarHelper::setupToolBars()
+void ToolBarHelper::setupToolBars(MainWindow *p_mainWindow)
 {
-    m_toolBars.clear();
+    setupFileToolBar(p_mainWindow, nullptr);
 
-    auto fileTab = setupFileToolBar(m_mainWindow, nullptr);
-    m_toolBars.insert(fileTab->objectName(), fileTab);
+    setupQuickAccessToolBar(p_mainWindow, nullptr);
 
-    auto quickAccessTb = setupQuickAccessToolBar(m_mainWindow, nullptr);
-    m_toolBars.insert(quickAccessTb->objectName(), quickAccessTb);
-
-    auto settingsToolBar = setupSettingsToolBar(m_mainWindow, nullptr);
-    m_toolBars.insert(settingsToolBar->objectName(), settingsToolBar);
+    setupSettingsToolBar(p_mainWindow, nullptr);
 }
 
-void ToolBarHelper::setupToolBars(QToolBar *p_toolBar)
+void ToolBarHelper::setupToolBars(MainWindow *p_mainWindow, QToolBar *p_toolBar)
 {
-    m_toolBars.clear();
-
     p_toolBar->setObjectName(QStringLiteral("UnifiedToolBar"));
     p_toolBar->setMovable(false);
-    m_mainWindow->addToolBar(p_toolBar);
+    p_mainWindow->addToolBar(p_toolBar);
 
-    setupFileToolBar(m_mainWindow, p_toolBar);
-    setupQuickAccessToolBar(m_mainWindow, p_toolBar);
-    setupSettingsToolBar(m_mainWindow, p_toolBar);
-    m_toolBars.insert(p_toolBar->objectName(), p_toolBar);
+    setupFileToolBar(p_mainWindow, p_toolBar);
+    setupQuickAccessToolBar(p_mainWindow, p_toolBar);
+    setupSettingsToolBar(p_mainWindow, p_toolBar);
 }
 
 void ToolBarHelper::addSpacer(QToolBar *p_toolBar)
@@ -629,4 +610,36 @@ void ToolBarHelper::addSpacer(QToolBar *p_toolBar)
     spacer->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     auto act = p_toolBar->addWidget(spacer);
     act->setEnabled(false);
+}
+
+void ToolBarHelper::updateQuickAccessMenu(QMenu *p_menu)
+{
+    p_menu->clear();
+    const auto &quickAccess = ConfigMgr::getInst().getSessionConfig().getQuickAccessFiles();
+    if (quickAccess.isEmpty()) {
+        auto act = p_menu->addAction(MainWindow::tr("Quick Access Not Set"));
+        act->setEnabled(false);
+        return;
+    }
+
+    for (const auto &file : quickAccess) {
+        auto act = new QWidgetAction(p_menu);
+        auto widget = new LabelWithButtonsWidget(PathUtils::fileName(file), LabelWithButtonsWidget::Delete);
+        p_menu->connect(widget, &LabelWithButtonsWidget::triggered,
+                        p_menu, [p_menu, act]() {
+                            const auto qaFile = act->data().toString();
+                            ConfigMgr::getInst().getSessionConfig().removeQuickAccessFile(qaFile);
+                            p_menu->removeAction(act);
+                            if (p_menu->isEmpty()) {
+                                p_menu->hide();
+                            }
+                        });
+        // @act will own @widget.
+        act->setDefaultWidget(widget);
+        act->setData(file);
+        act->setToolTip(file);
+
+        // Must call after setDefaultWidget().
+        p_menu->addAction(act);
+    }
 }

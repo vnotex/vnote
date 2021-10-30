@@ -54,13 +54,13 @@
 #include <core/thememgr.h>
 #include "dialogs/updater.h"
 #include "tagexplorer.h"
+#include "toolbarhelper.h"
+#include "statusbarhelper.h"
 
 using namespace vnotex;
 
 MainWindow::MainWindow(QWidget *p_parent)
     : FramelessMainWindowImpl(!ConfigMgr::getInst().getSessionConfig().getSystemTitleBarEnabled(), p_parent),
-      m_toolBarHelper(this),
-      m_statusBarHelper(this),
       m_dockWidgetHelper(this)
 {
     VNoteX::getInst().setMainWindow(this);
@@ -175,7 +175,7 @@ void MainWindow::setupUI()
 
 void MainWindow::setupStatusBar()
 {
-    m_statusBarHelper.setupStatusBar();
+    StatusBarHelper::setupStatusBar(this);
     connect(&VNoteX::getInst(), &VNoteX::statusMessageRequested,
             statusBar(), &QStatusBar::showMessage);
 }
@@ -525,7 +525,7 @@ void MainWindow::setupToolBar()
     if (isFrameless()) {
         auto toolBar = new TitleToolBar(tr("Global"), this);
         toolBar->setIconSize(iconSize);
-        m_toolBarHelper.setupToolBars(toolBar);
+        ToolBarHelper::setupToolBars(this, toolBar);
         toolBar->addTitleBarIcons(ToolBarHelper::generateIcon(QStringLiteral("minimize.svg")),
                                   ToolBarHelper::generateIcon(QStringLiteral("maximize.svg")),
                                   ToolBarHelper::generateIcon(QStringLiteral("maximize_restore.svg")),
@@ -536,7 +536,7 @@ void MainWindow::setupToolBar()
     } else {
         auto toolBar = new QToolBar(tr("Global"), this);
         toolBar->setIconSize(iconSize);
-        m_toolBarHelper.setupToolBars(toolBar);
+        ToolBarHelper::setupToolBars(this, toolBar);
     }
 
     // Disable the context menu above tool bar.

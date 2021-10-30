@@ -1,10 +1,10 @@
 #ifndef TOOLBARHELPER_H
 #define TOOLBARHELPER_H
 
-#include <QHash>
 #include <QIcon>
 
 class QToolBar;
+class QMenu;
 
 namespace vnotex
 {
@@ -14,13 +14,13 @@ namespace vnotex
     class ToolBarHelper
     {
     public:
-        explicit ToolBarHelper(MainWindow *p_mainWindow);
+        ToolBarHelper() = delete;
 
         // Setup all tool bars of main window.
-        void setupToolBars();
+        static void setupToolBars(MainWindow *p_mainWindow);
 
         // Setup tool bars of main window into one unified tool bar.
-        void setupToolBars(QToolBar *p_toolBar);
+        static void setupToolBars(MainWindow *p_mainWindow, QToolBar *p_toolBar);
 
         static QIcon generateIcon(const QString &p_iconName);
 
@@ -35,9 +35,7 @@ namespace vnotex
 
         static QToolBar *setupSettingsToolBar(MainWindow *p_win, QToolBar *p_toolBar);
 
-        MainWindow *m_mainWindow = nullptr;
-
-        QHash<QString, QToolBar *> m_toolBars;
+        static void updateQuickAccessMenu(QMenu *p_menu);
     };
 } // ns vnotex
 

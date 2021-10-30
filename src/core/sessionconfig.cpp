@@ -396,7 +396,21 @@ const QStringList &SessionConfig::getQuickAccessFiles() const
 
 void SessionConfig::setQuickAccessFiles(const QStringList &p_files)
 {
-    updateConfig(m_quickAccessFiles, p_files, this);
+    QStringList files;
+    for (const auto &file : p_files) {
+        auto fi = file.trimmed();
+        if (!fi.isEmpty()) {
+            files << fi;
+        }
+    }
+    updateConfig(m_quickAccessFiles, files, this);
+}
+
+void SessionConfig::removeQuickAccessFile(const QString &p_file)
+{
+    if (m_quickAccessFiles.removeOne(p_file)) {
+        update();
+    }
 }
 
 void SessionConfig::loadExternalPrograms(const QJsonObject &p_session)

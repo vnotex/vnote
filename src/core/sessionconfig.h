@@ -128,6 +128,8 @@ namespace vnotex
         const QStringList &getQuickAccessFiles() const;
         void setQuickAccessFiles(const QStringList &p_files);
 
+        void removeQuickAccessFile(const QString &p_file);
+
         const QVector<ExternalProgram> &getExternalPrograms() const;
 
         const QVector<HistoryItem> &getHistory() const;

@@ -7,9 +7,7 @@
 #include <QBitArray>
 #include <QSet>
 
-#include "toolbarhelper.h"
 #include "dockwidgethelper.h"
-#include "statusbarhelper.h"
 
 class QDockWidget;
 class QSystemTrayIcon;
@@ -148,10 +146,6 @@ namespace vnotex
         void checkNotebooksFailedToLoad();
 
         void loadWidgetsData();
-
-        ToolBarHelper m_toolBarHelper;
-
-        StatusBarHelper m_statusBarHelper;
 
         DockWidgetHelper m_dockWidgetHelper;
 

@@ -64,6 +64,7 @@ SOURCES += \
     $$PWD/fullscreentoggleaction.cpp \
     $$PWD/historypanel.cpp \
     $$PWD/itemproxystyle.cpp \
+    $$PWD/labelwithbuttonswidget.cpp \
     $$PWD/lineedit.cpp \
     $$PWD/lineeditdelegate.cpp \
     $$PWD/lineeditwithsnippet.cpp \
@@ -191,6 +192,7 @@ HEADERS += \
     $$PWD/fullscreentoggleaction.h \
     $$PWD/historypanel.h \
     $$PWD/itemproxystyle.h \
+    $$PWD/labelwithbuttonswidget.h \
     $$PWD/lineedit.h \
     $$PWD/lineeditdelegate.h \
     $$PWD/lineeditwithsnippet.h \

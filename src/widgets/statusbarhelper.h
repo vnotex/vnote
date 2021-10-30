@@ -1,9 +1,6 @@
 #ifndef STATUSBARHELPER_H
 #define STATUSBARHELPER_H
 
-class QStatusBar;
-class QWidget;
-
 namespace vnotex
 {
     class MainWindow;
@@ -11,14 +8,9 @@ namespace vnotex
     class StatusBarHelper
     {
     public:
-        explicit StatusBarHelper(MainWindow *p_mainWindow);
+        StatusBarHelper() = delete;
 
-        void setupStatusBar();
-
-    private:
-        MainWindow *m_mainWindow = nullptr;
-
-        QStatusBar *m_statusBar;
+        static void setupStatusBar(MainWindow *p_mainWindow);
     };
 } // ns vnotex
 

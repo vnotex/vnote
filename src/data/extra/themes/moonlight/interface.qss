@@ -329,6 +329,23 @@ QMenu::indicator:exclusive:unchecked {
 QMenu::indicator:exclusive:checked {
     image: url(menu_radiobutton.svg);
 }
+
+/* QWidgetAction item */
+vnotex--LabelWithButtonsWidget {
+    background-color: @widgets#qmenu#bg;
+}
+
+vnotex--LabelWithButtonsWidget:hover {
+    background-color: @widgets#qmenu#item#selected#bg;
+}
+
+vnotex--LabelWithButtonsWidget QLabel {
+    color: @widgets#qmenu#fg;
+}
+
+vnotex--LabelWithButtonsWidget QLabel:hover {
+    color: @widgets#qmenu#item#selected#fg;
+}
 /* End QMenu */
 
 QDialog {
