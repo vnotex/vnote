@@ -57,6 +57,7 @@ namespace vnotex
         ObjectNone = 0,
         SearchName = 0x1UL,
         SearchContent = 0x2UL,
+        // SearchOutline is not supported yet.
         SearchOutline = 0x4UL,
         SearchTag = 0x8UL,
         SearchPath = 0x10UL

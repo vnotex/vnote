@@ -218,12 +218,10 @@ bool Searcher::firstPhaseSearch(const File *p_file)
         }
     }
 
-    if (testObject(SearchObject::SearchOutline)) {
-        emit logRequested(tr("Searching outline is not supported yet"));
-    }
-
     if (testObject(SearchObject::SearchTag)) {
-        emit logRequested(tr("Searching tag is not supported yet"));
+        if (searchTag(p_file->getNode())) {
+            emit resultItemAdded(SearchResultItem::createBufferItem(filePath, relativePath));
+        }
     }
 
     // Make SearchContent always the last one to check.
@@ -427,12 +425,10 @@ bool Searcher::firstPhaseSearch(Node *p_node, QVector<SearchSecondPhaseItem> &p_
         }
     }
 
-    if (testObject(SearchObject::SearchOutline)) {
-        emit logRequested(tr("Searching outline is not supported yet"));
-    }
-
     if (testObject(SearchObject::SearchTag)) {
-        emit logRequested(tr("Searching tag is not supported yet"));
+        if (searchTag(p_node)) {
+            emit resultItemAdded(SearchResultItem::createBufferItem(filePath, relativePath));
+        }
     }
 
     if (testObject(SearchObject::SearchContent)) {
@@ -517,4 +513,21 @@ void Searcher::createSearchEngine()
 const SearchToken &Searcher::getToken() const
 {
     return m_token;
+}
+
+bool Searcher::searchTag(const Node *p_node) const
+{
+    if (!p_node) {
+        return false;
+    }
+
+    Q_ASSERT(p_node->isLoaded());
+
+    for (const auto &tag : p_node->getTags()) {
+        if (isTokenMatched(tag)) {
+            return true;
+        }
+    }
+
+    return false;
 }

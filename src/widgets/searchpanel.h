@@ -111,8 +111,6 @@ namespace vnotex
 
         QCheckBox *m_searchObjectContentCheckBox = nullptr;
 
-        QCheckBox *m_searchObjectOutlineCheckBox = nullptr;
-
         QCheckBox *m_searchObjectTagCheckBox = nullptr;
 
         QCheckBox *m_searchObjectPathCheckBox = nullptr;

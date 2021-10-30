@@ -169,14 +169,11 @@ void SearchPanel::setupSearchObject(QFormLayout *p_layout, QWidget *p_parent)
     m_searchObjectContentCheckBox = WidgetsFactory::createCheckBox(tr("Content"), p_parent);
     gridLayout->addWidget(m_searchObjectContentCheckBox, 0, 1);
 
-    m_searchObjectOutlineCheckBox = WidgetsFactory::createCheckBox(tr("Outline"), p_parent);
-    gridLayout->addWidget(m_searchObjectOutlineCheckBox, 1, 0);
-
     m_searchObjectTagCheckBox = WidgetsFactory::createCheckBox(tr("Tag"), p_parent);
-    gridLayout->addWidget(m_searchObjectTagCheckBox, 1, 1);
+    gridLayout->addWidget(m_searchObjectTagCheckBox, 1, 0);
 
     m_searchObjectPathCheckBox = WidgetsFactory::createCheckBox(tr("Path"), p_parent);
-    gridLayout->addWidget(m_searchObjectPathCheckBox, 2, 0);
+    gridLayout->addWidget(m_searchObjectPathCheckBox, 1, 1);
 }
 
 void SearchPanel::setupSearchTarget(QFormLayout *p_layout, QWidget *p_parent)
@@ -256,7 +253,6 @@ void SearchPanel::restoreFields(const SearchOption &p_option)
     {
         m_searchObjectNameCheckBox->setChecked(p_option.m_objects & SearchObject::SearchName);
         m_searchObjectContentCheckBox->setChecked(p_option.m_objects & SearchObject::SearchContent);
-        m_searchObjectOutlineCheckBox->setChecked(p_option.m_objects & SearchObject::SearchOutline);
         m_searchObjectTagCheckBox->setChecked(p_option.m_objects & SearchObject::SearchTag);
         m_searchObjectPathCheckBox->setChecked(p_option.m_objects & SearchObject::SearchPath);
     }
@@ -378,9 +374,6 @@ void SearchPanel::saveFields(SearchOption &p_option)
         }
         if (m_searchObjectContentCheckBox->isChecked()) {
             p_option.m_objects |= SearchObject::SearchContent;
-        }
-        if (m_searchObjectOutlineCheckBox->isChecked()) {
-            p_option.m_objects |= SearchObject::SearchOutline;
         }
         if (m_searchObjectTagCheckBox->isChecked()) {
             p_option.m_objects |= SearchObject::SearchTag;
@@ -566,7 +559,9 @@ void SearchPanel::handleLocationActivated(const Location &p_location)
     Q_ASSERT(m_searcher);
 
     if (!m_searchTokenOfSession) {
-        m_searchTokenOfSession = QSharedPointer<SearchToken>::create(m_searcher->getToken());
+        if (m_option->m_objects & SearchObject::SearchContent) {
+            m_searchTokenOfSession = QSharedPointer<SearchToken>::create(m_searcher->getToken());
+        }
     }
 
     // TODO: decode the path of location and handle different types of destination.

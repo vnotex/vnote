@@ -78,6 +78,9 @@ namespace vnotex
 
         bool searchContent(const File *p_file);
 
+        // Return true if matched.
+        bool searchTag(const Node *p_node) const;
+
         void createSearchEngine();
 
         QSharedPointer<SearchOption> m_option;
