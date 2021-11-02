@@ -65,6 +65,8 @@ class VNoteX extends EventEmitter {
 
             this.setContentContainerOption('vx-constrain-image-width',
                                            window.vxOptions.constrainImageWidthEnabled || !window.vxOptions.scrollable);
+            this.setContentContainerOption('vx-image-align-center',
+                                           window.vxOptions.imageAlignCenterEnabled);
             this.setContentContainerOption('vx-indent-first-line',
                                            window.vxOptions.indentFirstLineEnabled);
             this.setBodyOption('vx-transparent-background',

@@ -82,6 +82,30 @@
     height: auto !important;
 }
 
+figure {
+    margin: auto;
+}
+
+figcaption {
+    font-style: italic;
+}
+
+#vx-content.vx-image-align-center figure {
+    text-align: center;
+}
+
+#vx-content.vx-image-align-center figcaption {
+    text-align: center;
+}
+
+#vx-content.vx-image-align-center div.vx-plantuml-graph,
+#vx-content.vx-image-align-center div.vx-mermaid-graph,
+#vx-content.vx-image-align-center div.vx-flowchartjs-graph,
+#vx-content.vx-image-align-center div.vx-wavedrom-graph {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* Table of Contents */
 .vx-table-of-contents ol {
     list-style: none;

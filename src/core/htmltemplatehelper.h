@@ -21,6 +21,8 @@ namespace vnotex
 
         bool m_constrainImageWidthEnabled = true;
 
+        bool m_imageAlignCenterEnabled = true;
+
         bool m_protectFromXss = false;
 
         bool m_htmlTagEnabled = true;

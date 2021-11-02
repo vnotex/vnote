@@ -53,3 +53,6 @@ v6.0.1
 
 # [markdonw-it-toc-done-right](https://github.com/nagaozen/markdown-it-toc-done-right)
 v4.2.0
+
+# [markdown-it-implicit-figures](https://github.com/arve0/markdown-it-implicit-figures)
+v0.10.0

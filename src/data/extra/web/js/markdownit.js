@@ -237,6 +237,10 @@ class MarkdownIt extends VxWorker {
             },
             containerClass: 'vx-table-of-contents'
         });
+
+        this.mdit.use(window.markdownitImplicitFigure, {
+            figcaption: true
+        });
     }
 
     registerInternal() {

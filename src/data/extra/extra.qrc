@@ -49,6 +49,7 @@
         <file>web/js/markdown-it/markdown-it-texmath.js</file>
         <file>web/js/markdown-it/markdown-it-inject-linenumbers.js</file>
         <file>web/js/markdown-it/markdown-it-xss.min.js</file>
+        <file>web/js/markdown-it/markdown-it-implicit-figure.js</file>
         <file>web/js/markdown-it/markdown-it.min.js</file>
         <file>web/js/markdownit.js</file>
         <file>web/js/mermaid/mermaid.min.js</file>

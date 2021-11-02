@@ -48,6 +48,7 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     m_sectionNumberStyle = stringToSectionNumberStyle(READSTR(QStringLiteral("section_number_style")));
 
     m_constrainImageWidthEnabled = READBOOL(QStringLiteral("constrain_image_width"));
+    m_imageAlignCenterEnabled = READBOOL(QStringLiteral("image_align_center"));
     m_constrainInplacePreviewWidthEnabled = READBOOL(QStringLiteral("constrain_inplace_preview_width"));
     m_zoomFactorInReadMode = READREAL(QStringLiteral("zoom_factor_in_read_mode"));
     m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetch_images_in_parse_and_paste"));
@@ -93,6 +94,7 @@ QJsonObject MarkdownEditorConfig::toJson() const
     obj[QStringLiteral("section_number_style")] = sectionNumberStyleToString(m_sectionNumberStyle);
 
     obj[QStringLiteral("constrain_image_width")] = m_constrainImageWidthEnabled;
+    obj[QStringLiteral("image_align_center")] = m_imageAlignCenterEnabled;
     obj[QStringLiteral("constrain_inplace_preview_width")] = m_constrainInplacePreviewWidthEnabled;
     obj[QStringLiteral("zoom_factor_in_read_mode")] = m_zoomFactorInReadMode;
     obj[QStringLiteral("fetch_images_in_parse_and_paste")] = m_fetchImagesInParseAndPaste;
@@ -278,6 +280,16 @@ bool MarkdownEditorConfig::getConstrainImageWidthEnabled() const
 void MarkdownEditorConfig::setConstrainImageWidthEnabled(bool p_enabled)
 {
     updateConfig(m_constrainImageWidthEnabled, p_enabled, this);
+}
+
+bool MarkdownEditorConfig::getImageAlignCenterEnabled() const
+{
+    return m_imageAlignCenterEnabled;
+}
+
+void MarkdownEditorConfig::setImageAlignCenterEnabled(bool p_enabled)
+{
+    updateConfig(m_imageAlignCenterEnabled, p_enabled, this);
 }
 
 bool MarkdownEditorConfig::getConstrainInplacePreviewWidthEnabled() const

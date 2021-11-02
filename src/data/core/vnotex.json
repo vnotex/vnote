@@ -144,7 +144,7 @@
             "spell_check": false
         },
         "markdown_editor" : {
-            "override_viewer_resource" : false,
+            "override_viewer_resource" : true,
             "viewer_resource" : {
                 "template" : "web/markdown-viewer-template.html",
                 "resources" : [
@@ -203,6 +203,7 @@
                             "web/js/markdown-it/markdown-it-inject-linenumbers.js",
                             "web/js/markdown-it/markdownItAnchor.umd.js",
                             "web/js/markdown-it/markdownItTocDoneRight.umd.js",
+                            "web/js/markdown-it/markdown-it-implicit-figure.js",
                             "web/js/markdownit.js"
                         ],
                         "styles" : [
@@ -328,6 +329,7 @@
             "section_number_style" : "digdotdigdot",
             "//comment" : "Whether enable image width constraint",
             "constrain_image_width" : true,
+            "image_align_center" : true,
             "//comment" : "Whether enable in-place preview width constraint",
             "constrain_inplace_preview_width" : false,
             "//comment" : "Zoom factor in read mode",

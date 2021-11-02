@@ -22,6 +22,7 @@ QString WebGlobalOptions::toJavascriptObject() const
            + QString("webPlantUml: %1,\n").arg(Utils::boolToString(m_webPlantUml))
            + QString("webGraphviz: %1,\n").arg(Utils::boolToString(m_webGraphviz))
            + QString("constrainImageWidthEnabled: %1,\n").arg(Utils::boolToString(m_constrainImageWidthEnabled))
+           + QString("imageAlignCenterEnabled: %1,\n").arg(Utils::boolToString(m_imageAlignCenterEnabled))
            + QString("protectFromXss: %1,\n").arg(Utils::boolToString(m_protectFromXss))
            + QString("htmlTagEnabled: %1,\n").arg(Utils::boolToString(m_htmlTagEnabled))
            + QString("autoBreakEnabled: %1,\n").arg(Utils::boolToString(m_autoBreakEnabled))
@@ -214,6 +215,7 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
         opts.m_sectionNumberEnabled = p_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Read;
         opts.m_sectionNumberBaseLevel = p_config.getSectionNumberBaseLevel();
         opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
+        opts.m_imageAlignCenterEnabled = p_config.getImageAlignCenterEnabled();
         opts.m_protectFromXss = p_config.getProtectFromXss();
         opts.m_htmlTagEnabled = p_config.getHtmlTagEnabled();
         opts.m_autoBreakEnabled = p_config.getAutoBreakEnabled();

@@ -67,6 +67,8 @@ void MarkdownEditorPage::loadInternal()
 
     m_constrainImageWidthCheckBox->setChecked(markdownConfig.getConstrainImageWidthEnabled());
 
+    m_imageAlignCenterCheckBox->setChecked(markdownConfig.getImageAlignCenterEnabled());
+
     m_zoomFactorSpinBox->setValue(markdownConfig.getZoomFactorInReadMode());
 
     m_constrainInplacePreviewWidthCheckBox->setChecked(markdownConfig.getConstrainInplacePreviewWidthEnabled());
@@ -139,6 +141,8 @@ bool MarkdownEditorPage::saveInternal()
 
     markdownConfig.setConstrainImageWidthEnabled(m_constrainImageWidthCheckBox->isChecked());
 
+    markdownConfig.setImageAlignCenterEnabled(m_imageAlignCenterCheckBox->isChecked());
+
     markdownConfig.setZoomFactorInReadMode(m_zoomFactorSpinBox->value());
 
     markdownConfig.setConstrainInplacePreviewWidthEnabled(m_constrainInplacePreviewWidthCheckBox->isChecked());
@@ -207,6 +211,16 @@ QGroupBox *MarkdownEditorPage::setupReadGroup()
         layout->addRow(m_constrainImageWidthCheckBox);
         addSearchItem(label, m_constrainImageWidthCheckBox->toolTip(), m_constrainImageWidthCheckBox);
         connect(m_constrainImageWidthCheckBox, &QCheckBox::stateChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        const QString label(tr("Center image"));
+        m_imageAlignCenterCheckBox = WidgetsFactory::createCheckBox(label, box);
+        m_imageAlignCenterCheckBox->setToolTip(tr("Center images"));
+        layout->addRow(m_imageAlignCenterCheckBox);
+        addSearchItem(label, m_imageAlignCenterCheckBox->toolTip(), m_imageAlignCenterCheckBox);
+        connect(m_imageAlignCenterCheckBox, &QCheckBox::stateChanged,
                 this, &MarkdownEditorPage::pageIsChanged);
     }
 
