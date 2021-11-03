@@ -188,6 +188,9 @@ namespace vnotex
 
         void attachmentChanged();
 
+        // This buffer is AutoSavePolicy::AutoSave.
+        void autoSaved();
+
     protected:
         virtual ViewWindow *createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras, QWidget *p_parent) = 0;
 

@@ -35,6 +35,8 @@ void NotebookSelector::setNotebooks(const QVector<QSharedPointer<Notebook>> &p_n
     }
 
     updateGeometry();
+
+    m_notebooksInitialized = true;
 }
 
 void NotebookSelector::reloadNotebook(const Notebook *p_notebook)
@@ -179,7 +181,8 @@ void NotebookSelector::clearNavigation()
 
 void NotebookSelector::mousePressEvent(QMouseEvent *p_event)
 {
-    if (count() == 0) {
+    // Only when notebooks are loaded and there is no notebook, we could prompt for new notebook.
+    if (m_notebooksInitialized && count() == 0) {
         emit newNotebookRequested();
         return;
     }

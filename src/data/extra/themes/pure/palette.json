@@ -638,6 +638,10 @@
                         "fg" : "@base#icon#selected#fg"
                     }
                 }
+            },
+            "tips_label" : {
+                "fg" : "@base#master#fg",
+                "bg" : "@base#master#bg"
             }
         }
     }

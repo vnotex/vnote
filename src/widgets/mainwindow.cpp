@@ -377,6 +377,11 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
     }
 
     if (isVisible()) {
+        // Avoid geometry corruption caused by fullscreen or minimized window.
+        const auto state = windowState();
+        if (state & (Qt::WindowMinimized | Qt::WindowFullScreen)) {
+            showNormal();
+        }
         saveStateAndGeometry();
     }
 
@@ -626,6 +631,15 @@ void MainWindow::updateDockWidgetTabBar()
 
 void MainWindow::exportNotes()
 {
+    if (m_exportDialog) {
+        MessageBoxHelper::notify(MessageBoxHelper::Information,
+                                 tr("There is one export dialog running. Please close it first."),
+                                 this);
+        m_exportDialog->activateWindow();
+        m_exportDialog->show();
+        return;
+    }
+
     auto currentNotebook = m_notebookExplorer->currentNotebook().data();
     auto viewWindow = m_viewArea->getCurrentViewWindow();
     auto folderNode = m_notebookExplorer->currentExploredFolderNode();
@@ -636,17 +650,20 @@ void MainWindow::exportNotes()
     if (noteNode && !noteNode->hasContent()) {
         noteNode = nullptr;
     }
-    auto dialog = new ExportDialog(currentNotebook,
-                                   folderNode,
-                                   noteNode,
-                                   viewWindow ? viewWindow->getBuffer() : nullptr,
-                                   nullptr);
-    connect(dialog, &QDialog::finished,
-            this, [this, dialog]() {
-                dialog->deleteLater();
+
+    m_exportDialog = new ExportDialog(currentNotebook,
+                                      folderNode,
+                                      noteNode,
+                                      viewWindow ? viewWindow->getBuffer() : nullptr,
+                                      nullptr);
+    connect(m_exportDialog, &QDialog::finished,
+            this, [this]() {
+                m_exportDialog->deleteLater();
+                m_exportDialog = nullptr;
             });
+
     // Let it be able to run at background.
-    dialog->show();
+    m_exportDialog->show();
 }
 
 void MainWindow::showTips(const QString &p_message, int p_timeoutMilliseconds)
@@ -675,7 +692,7 @@ void MainWindow::setTipsAreaVisible(bool p_visible)
         int labelW = m_tipsLabel->width();
         int labelH = m_tipsLabel->height();
         int x = (width() - labelW) / 2;
-        int y = (height() - labelH) / 2;
+        int y = (height() - labelH) / 3;
         if (x < 0) {
             x = 0;
         }

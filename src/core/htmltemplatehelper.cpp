@@ -176,9 +176,9 @@ const QString &HtmlTemplateHelper::getMarkdownViewerTemplate()
     return s_markdownViewerTemplate.m_template;
 }
 
-void HtmlTemplateHelper::updateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config)
+void HtmlTemplateHelper::updateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config, bool p_force)
 {
-    if (p_config.revision() == s_markdownViewerTemplate.m_revision) {
+    if (!p_force && p_config.revision() == s_markdownViewerTemplate.m_revision) {
         return;
     }
 

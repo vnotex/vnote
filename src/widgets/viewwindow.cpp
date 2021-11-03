@@ -16,7 +16,6 @@
 #include <QWidgetAction>
 #include <QActionGroup>
 
-#include <core/fileopenparameters.h>
 #include "toolbarhelper.h"
 #include "vnotex.h"
 #include <utils/iconutils.h>
@@ -140,9 +139,16 @@ void ViewWindow::handleBufferChanged(const QSharedPointer<FileOpenParameters> &p
 
         connect(buffer, &Buffer::attachmentChanged,
                 this, &ViewWindow::attachmentChanged);
+
+        connect(buffer, &Buffer::autoSaved,
+                this, [this]() {
+                    executeHook(FileOpenParameters::PostSave);
+                });
     }
 
     m_sessionEnabled = p_paras->m_sessionEnabled;
+
+    m_openParas = p_paras;
 
     handleBufferChangedInternal(p_paras);
 
@@ -887,7 +893,16 @@ bool ViewWindow::save(bool p_force)
         return false;
     }
 
+    executeHook(FileOpenParameters::PostSave);
+
     return true;
+}
+
+void ViewWindow::executeHook(FileOpenParameters::Hook p_hook) const
+{
+    if (m_openParas && m_openParas->m_hooks[p_hook]) {
+        m_openParas->m_hooks[p_hook]();
+    }
 }
 
 void ViewWindow::updateEditReadDiscardActionState(EditReadDiscardAction *p_act)

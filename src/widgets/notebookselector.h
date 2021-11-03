@@ -53,6 +53,8 @@ namespace vnotex
 
         int findNotebook(ID p_id) const;
 
+        bool m_notebooksInitialized = false;
+
         QVector<QModelIndex> m_navigationIndexes;
     };
 } // ns vnotex

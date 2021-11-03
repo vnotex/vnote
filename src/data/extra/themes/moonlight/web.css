@@ -1,6 +1,6 @@
 body {
     margin: 0 auto;
-    font-family: -apple-system, "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, sans-serif, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "YaHei Consolas Hybrid", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
+    font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
     color: #ccd1d8;
     line-height: 1.5;
     padding: 16px;
@@ -95,7 +95,7 @@ pre {
 }
 
 code {
-    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, Monospace, Courier;
+    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
     color: #98c379;
     word-break: break-word;
 }
@@ -107,7 +107,7 @@ pre code {
     color: #98c379;
     background-color: #2d323b;
     line-height: 1.5;
-    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, Monospace, Courier;
+    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
     white-space: pre;
     -moz-tab-size: 4;
     -o-tab-size: 4;

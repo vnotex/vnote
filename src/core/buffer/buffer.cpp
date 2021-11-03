@@ -320,6 +320,8 @@ void Buffer::autoSave()
     case EditorConfig::AutoSavePolicy::AutoSave:
         if (save(false) != OperationCode::Success) {
             qWarning() << "AutoSave failed to save buffer, retry later";
+        } else {
+            emit autoSaved();
         }
         break;
 

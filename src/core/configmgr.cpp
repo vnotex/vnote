@@ -75,7 +75,10 @@ ConfigMgr::ConfigMgr(bool p_isUnitTest, QObject *p_parent)
     } else {
         locateConfigFolder();
 
-        checkAppConfig();
+        bool needUpdate = checkAppConfig();
+        if (needUpdate) {
+            checkUserConfig();
+        }
     }
 
     m_config->init();
@@ -134,7 +137,7 @@ void ConfigMgr::locateConfigFolder()
     qInfo() << "user config folder" << m_userConfigFolderPath;
 }
 
-void ConfigMgr::checkAppConfig()
+bool ConfigMgr::checkAppConfig()
 {
     bool needUpdate = false;
     QDir appConfigDir(m_appConfigFolderPath);
@@ -212,7 +215,7 @@ void ConfigMgr::checkAppConfig()
         FileUtils::copyFile(getConfigFilePath(Source::Default), mainConfigFilePath);
         FileUtils::copyDir(extraDataRoot + QStringLiteral("/web"),
                            appConfigDir.filePath(QStringLiteral("web")));
-        return;
+        return needUpdate;
     }
 #else
     Q_ASSERT(needUpdate);
@@ -251,6 +254,27 @@ void ConfigMgr::checkAppConfig()
     // Main config file.
     FileUtils::copyFile(getConfigFilePath(Source::Default), appConfigDir.filePath(c_configFileName));
 
+    return needUpdate;
+}
+
+void ConfigMgr::checkUserConfig()
+{
+    // Mainly check if the user config and session config is read-only.
+    const auto userFile = getConfigFilePath(Source::User);
+    if (QFileInfo::exists(userFile)) {
+        if (!(QFile::permissions(userFile) & QFile::WriteUser)) {
+            qDebug() << "make user config file writable" << userFile;
+            QFile::setPermissions(userFile, QFile::WriteUser);
+        }
+    }
+
+    const auto sessionFile = getConfigFilePath(Source::Session);
+    if (QFileInfo::exists(sessionFile)) {
+        if (!(QFile::permissions(sessionFile) & QFile::WriteUser)) {
+            qDebug() << "make session config file writable" << sessionFile;
+            QFile::setPermissions(sessionFile, QFile::WriteUser);
+        }
+    }
 }
 
 QString ConfigMgr::getConfigFilePath(Source p_src) const
@@ -417,6 +441,17 @@ QString ConfigMgr::getUserSnippetFolder() const
     auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("snippets"));
     QDir().mkpath(folderPath);
     return folderPath;
+}
+
+QString ConfigMgr::getUserMarkdownUserStyleFile() const
+{
+    auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("web/css"));
+    auto filePath = PathUtils::concatenateFilePath(folderPath, QStringLiteral("user.css"));
+    if (!QFileInfo::exists(filePath)) {
+        QDir().mkpath(folderPath);
+        FileUtils::writeFile(filePath, QByteArray());
+    }
+    return filePath;
 }
 
 QString ConfigMgr::getUserOrAppFile(const QString &p_filePath) const

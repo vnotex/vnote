@@ -93,6 +93,9 @@ namespace vnotex
 
         QString getUserSnippetFolder() const;
 
+        // web/css/user.css.
+        QString getUserMarkdownUserStyleFile() const;
+
         // If @p_filePath is absolute, just return it.
         // Otherwise, first try to find it in user folder, then in app folder.
         QString getUserOrAppFile(const QString &p_filePath) const;
@@ -135,7 +138,10 @@ namespace vnotex
 
         // Check if app config exists and is updated.
         // Update it if in need.
-        void checkAppConfig();
+        // Return true if there is update.
+        bool checkAppConfig();
+
+        void checkUserConfig();
 
         static QString getDefaultConfigFilePath();
 

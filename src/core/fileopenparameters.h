@@ -1,6 +1,8 @@
 #ifndef FILEOPENPARAMETERS_H
 #define FILEOPENPARAMETERS_H
 
+#include <functional>
+
 #include <QSharedPointer>
 
 #include "global.h"
@@ -12,6 +14,12 @@ namespace vnotex
 
     struct FileOpenParameters
     {
+        enum Hook
+        {
+            PostSave,
+            MaxHook
+        };
+
         ViewWindowMode m_mode = ViewWindowMode::Read;
 
         // Force to enter m_mode.
@@ -41,6 +49,8 @@ namespace vnotex
 
         // Whether should save this file into session.
         bool m_sessionEnabled = true;
+
+        std::function<void()> m_hooks[Hook::MaxHook];
     };
 }
 

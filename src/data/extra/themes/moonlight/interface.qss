@@ -434,8 +434,10 @@ vnotex--DragDropAreaIndicator QLabel {
 }
 
 vnotex--MainWindow QLabel#MainWindowTipsLabel {
-    font-size: 18pt;
+    font-size: 20pt;
     font-weight: bold;
+    color: @widgets#mainwindow#tips_label#fg;
+    background-color: @widgets#mainwindow#tips_label#bg;
 }
 
 /* QLineEdit */

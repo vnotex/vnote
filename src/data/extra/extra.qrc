@@ -16,6 +16,7 @@
         <file>docs/zh_CN/features_tips.txt</file>
         <file>web/markdown-viewer-template.html</file>
         <file>web/markdown-export-template.html</file>
+        <file>web/css/user.css</file>
         <file>web/css/globalstyles.css</file>
         <file>web/css/markdownit.css</file>
         <file>web/css/imageviewer.css</file>

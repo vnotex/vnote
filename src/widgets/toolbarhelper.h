@@ -36,6 +36,8 @@ namespace vnotex
         static QToolBar *setupSettingsToolBar(MainWindow *p_win, QToolBar *p_toolBar);
 
         static void updateQuickAccessMenu(QMenu *p_menu);
+
+        static void setupConfigurationMenu(QMenu *p_menu);
     };
 } // ns vnotex
 

@@ -85,7 +85,7 @@ namespace vnotex
         HtmlTemplateHelper() = delete;
 
         static const QString &getMarkdownViewerTemplate();
-        static void updateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config);
+        static void updateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config, bool p_force = false);
 
         static QString generateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config, const Paras &p_paras);
 

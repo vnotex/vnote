@@ -26,6 +26,7 @@ namespace vnotex
     class SearchPanel;
     class SnippetPanel;
     class HistoryPanel;
+    class ExportDialog;
 
     enum { RESTART_EXIT_CODE = 1000 };
 
@@ -169,6 +170,14 @@ namespace vnotex
 
         HistoryPanel *m_historyPanel = nullptr;
 
+        ExportDialog *m_exportDialog = nullptr;
+
+        QSystemTrayIcon *m_trayIcon = nullptr;
+
+        QLabel *m_tipsLabel = nullptr;
+
+        QTimer *m_tipsTimer = nullptr;
+
         bool m_layoutReset = false;
 
         // -1: do not request to quit;
@@ -176,12 +185,6 @@ namespace vnotex
         int m_requestQuit = -1;
 
         Qt::WindowStates m_windowOldState = Qt::WindowMinimized;
-
-        QSystemTrayIcon *m_trayIcon = nullptr;
-
-        QLabel *m_tipsLabel = nullptr;
-
-        QTimer *m_tipsTimer = nullptr;
 
         QStringList m_visibleDocksBeforeExpand;
     };

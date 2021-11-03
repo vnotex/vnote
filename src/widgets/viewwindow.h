@@ -7,6 +7,7 @@
 
 #include <buffer/buffer.h>
 #include <core/global.h>
+#include <core/fileopenparameters.h>
 
 #include "viewwindowtoolbarhelper.h"
 #include "viewwindowsession.h"
@@ -20,7 +21,6 @@ class QActionGroup;
 namespace vnotex
 {
     class ViewSplit;
-    struct FileOpenParameters;
     class DragDropAreaIndicator;
     class DragDropAreaIndicatorInterface;
     class OutlineProvider;
@@ -262,6 +262,8 @@ namespace vnotex
         // Managed by QObject.
         FindAndReplaceWidget *m_findAndReplace = nullptr;
 
+        QSharedPointer<FileOpenParameters> m_openParas;
+
     private:
         struct FindInfo
         {
@@ -314,6 +316,8 @@ namespace vnotex
 
         void updateImageHostMenu();
 
+        void executeHook(FileOpenParameters::Hook p_hook) const;
+
         static ViewWindow::TypeAction toolBarActionToTypeAction(ViewWindowToolBarHelper::Action p_action);
 
         Buffer *m_buffer = nullptr;
@@ -324,6 +328,7 @@ namespace vnotex
         // Last find info.
         FindInfo m_findInfo;
 
+        // Whether this ViewWindow should be recored to session.
         bool m_sessionEnabled = true;
 
         // Null if this window has not been added to any split.
