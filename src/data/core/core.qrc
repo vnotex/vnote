@@ -77,6 +77,7 @@
         <file>icons/maximize_restore.svg</file>
         <file>icons/close.svg</file>
         <file>icons/delete.svg</file>
+        <file>icons/debug_editor.svg</file>
         <file>icons/stay_on_top.svg</file>
         <file>icons/outline_editor.svg</file>
         <file>icons/find_replace_editor.svg</file>

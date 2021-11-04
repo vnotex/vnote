@@ -30,6 +30,11 @@ WebViewer::WebViewer(const QColor &p_background,
     }
 }
 
+WebViewer::WebViewer(const QColor &p_background, QWidget *p_parent)
+    : WebViewer(p_background, 1.0, p_parent)
+{
+}
+
 WebViewer::~WebViewer()
 {
 }

@@ -7,6 +7,7 @@
 
 class QSplitter;
 class QStackedWidget;
+class QWebEngineView;
 
 namespace vte
 {
@@ -75,6 +76,8 @@ namespace vnotex
         void handleFindAndReplaceWidgetClosed() Q_DECL_OVERRIDE;
 
         void handleFindAndReplaceWidgetOpened() Q_DECL_OVERRIDE;
+
+        void toggleDebug() Q_DECL_OVERRIDE;
 
     protected:
         void syncEditorFromBuffer() Q_DECL_OVERRIDE;
@@ -159,6 +162,8 @@ namespace vnotex
 
         bool updateConfigRevision();
 
+        void setupDebugViewer();
+
         template <class T>
         static QSharedPointer<Outline> headingsToOutline(const QVector<T> &p_headings);
 
@@ -180,6 +185,9 @@ namespace vnotex
         QSharedPointer<QWidget> m_viewerStatusWidget;
 
         QSharedPointer<QStackedWidget> m_mainStatusWidget;
+
+        // Used to debug web view.
+        QWebEngineView *m_debugViewer = nullptr;
 
         // Managed by QObject.
         PreviewHelper *m_previewHelper = nullptr;

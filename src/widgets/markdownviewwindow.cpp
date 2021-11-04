@@ -126,10 +126,20 @@ void MarkdownViewWindow::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffe
 
     case ViewWindowMode::Edit:
     {
+        if (m_debugViewer && m_debugViewer->isVisible()) {
+            toggleDebug();
+        }
+
+        bool hideViewer = true;
         if (!m_editor) {
             // We need viewer to preview.
             if (!m_viewer) {
                 setupViewer();
+
+                // Must show the viewer to let it init with the correct DPI.
+                // Will hide it when viewerReady().
+                m_viewer->show();
+                hideViewer = false;
             }
 
             setupTextEditor();
@@ -143,8 +153,10 @@ void MarkdownViewWindow::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffe
         m_editor->show();
         m_editor->setFocus();
 
-        Q_ASSERT(m_viewer);
-        m_viewer->hide();
+        if (hideViewer) {
+            Q_ASSERT(m_viewer);
+            m_viewer->hide();
+        }
 
         getMainStatusWidget()->setCurrentWidget(m_textEditorStatusWidget.get());
         break;
@@ -274,6 +286,10 @@ void MarkdownViewWindow::setupToolBar()
                         m_editor->setInplacePreviewEnabled(p_checked);
                     }
                 });
+        connect(this, &ViewWindow::modeChanged,
+                this, [this, act]() {
+                    act->setEnabled(inModeCanInsert() && getBuffer());
+                });
     }
 
     addAction(toolBar, ViewWindowToolBarHelper::ImageHost);
@@ -301,6 +317,14 @@ void MarkdownViewWindow::setupToolBar()
     ToolBarHelper::addSpacer(toolBar);
     addAction(toolBar, ViewWindowToolBarHelper::FindAndReplace);
     addAction(toolBar, ViewWindowToolBarHelper::Outline);
+
+    {
+        auto act = addAction(toolBar, ViewWindowToolBarHelper::Debug);
+        connect(this, &ViewWindow::modeChanged,
+                this, [this, act]() {
+                    act->setEnabled(m_mode != ViewWindowMode::Edit);
+                });
+    }
 }
 
 void MarkdownViewWindow::setupTextEditor()
@@ -458,6 +482,12 @@ void MarkdownViewWindow::setupViewer()
     connect(adapter, &MarkdownViewerAdapter::findTextReady,
             this, [this](const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex) {
                 this->showFindResult(p_texts, p_totalMatches, p_currentMatchIndex);
+            });
+    connect(adapter, &MarkdownViewerAdapter::viewerReady,
+            this, [this]() {
+                if (m_mode == ViewWindowMode::Edit) {
+                    m_viewer->hide();
+                }
             });
 }
 
@@ -1186,4 +1216,36 @@ bool MarkdownViewWindow::updateConfigRevision()
     }
 
     return changed;
+}
+
+void MarkdownViewWindow::toggleDebug()
+{
+    Q_ASSERT(m_viewer);
+    if (m_debugViewer) {
+        bool shouldEnable = !m_debugViewer->isVisible();
+        m_debugViewer->setVisible(shouldEnable);
+        m_viewer->page()->setDevToolsPage(shouldEnable ? m_debugViewer->page() : nullptr);
+    } else {
+        setupDebugViewer();
+        m_viewer->page()->setDevToolsPage(m_debugViewer->page());
+    }
+}
+
+void MarkdownViewWindow::setupDebugViewer()
+{
+    Q_ASSERT(!m_debugViewer);
+
+    // Need a vertical QSplitter to hold the original QSplitter and the debug viewer.
+    auto mainSplitter = new QSplitter(this);
+    mainSplitter->setContentsMargins(0, 0, 0, 0);
+    mainSplitter->setOrientation(Qt::Vertical);
+
+    replaceCentralWidget(mainSplitter);
+
+    mainSplitter->addWidget(m_splitter);
+    mainSplitter->setFocusProxy(m_splitter);
+
+    m_debugViewer = new WebViewer(VNoteX::getInst().getThemeMgr().getBaseBackground(), this);
+    m_debugViewer->resize(m_splitter->width(), m_splitter->height() / 2);
+    mainSplitter->addWidget(m_debugViewer);
 }

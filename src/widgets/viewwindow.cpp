@@ -237,7 +237,16 @@ void ViewWindow::setCentralWidget(QWidget *p_widget)
     m_mainLayout->insertWidget(1, m_centralWidget, 1);
 
     setFocusProxy(m_centralWidget);
+    m_centralWidget->show();
+}
 
+void ViewWindow::replaceCentralWidget(QWidget *p_widget)
+{
+    Q_ASSERT(m_centralWidget);
+    m_mainLayout->replaceWidget(m_centralWidget, p_widget);
+
+    m_centralWidget = p_widget;
+    setFocusProxy(m_centralWidget);
     m_centralWidget->show();
 }
 
@@ -248,14 +257,19 @@ void ViewWindow::addTopWidget(QWidget *p_widget)
 
 void ViewWindow::addBottomWidget(QWidget *p_widget)
 {
-    m_bottomLayout->addWidget(p_widget);
+    if (m_statusWidgetInBottomLayout) {
+        m_bottomLayout->insertWidget(m_bottomLayout->count() - 1, p_widget);
+    } else {
+        m_bottomLayout->addWidget(p_widget);
+    }
 }
 
 void ViewWindow::setStatusWidget(const QSharedPointer<StatusWidget> &p_widget)
 {
     m_statusWidget = p_widget;
-    m_bottomLayout->insertWidget(0, p_widget.data());
+    m_bottomLayout->addWidget(p_widget.data());
     p_widget->show();
+    m_statusWidgetInBottomLayout = true;
 }
 
 QSharedPointer<QWidget> ViewWindow::statusWidget()
@@ -272,6 +286,7 @@ void ViewWindow::setStatusWidgetVisible(bool p_visible)
             setStatusWidget(m_statusWidget);
         } else {
             m_statusWidget->hide();
+            m_statusWidgetInBottomLayout = false;
         }
     }
 }
@@ -468,10 +483,6 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
     case ViewWindowToolBarHelper::InplacePreview:
     {
         act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
-        connect(this, &ViewWindow::modeChanged,
-                this, [this, act]() {
-                    act->setEnabled(inModeCanInsert() && getBuffer());
-                });
         break;
     }
 
@@ -494,6 +505,14 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
 
         connect(&ImageHostMgr::getInst(), &ImageHostMgr::imageHostChanged,
                 this, &ViewWindow::updateImageHostMenu);
+        break;
+    }
+
+    case ViewWindowToolBarHelper::Debug:
+    {
+        act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
+        connect(act, &QAction::triggered,
+                this, &ViewWindow::toggleDebug);
         break;
     }
 
@@ -1275,4 +1294,9 @@ void ViewWindow::updateLastFindInfo(const QStringList &p_texts, FindOptions p_op
 bool ViewWindow::isSessionEnabled() const
 {
     return m_sessionEnabled;
+}
+
+void ViewWindow::toggleDebug()
+{
+    qDebug() << "debug is not supported";
 }

@@ -25,7 +25,7 @@
 using namespace vnotex;
 
 #ifndef QT_NO_DEBUG
-    #define VX_DEBUG_WEB
+    // #define VX_DEBUG_WEB
 #endif
 
 const QString ConfigMgr::c_orgName = "VNote";
@@ -171,7 +171,7 @@ bool ConfigMgr::checkAppConfig()
 
 #ifndef VX_DEBUG_WEB
     if (!needUpdate) {
-        return;
+        return false;
     }
 #endif
 
@@ -215,7 +215,7 @@ bool ConfigMgr::checkAppConfig()
         FileUtils::copyFile(getConfigFilePath(Source::Default), mainConfigFilePath);
         FileUtils::copyDir(extraDataRoot + QStringLiteral("/web"),
                            appConfigDir.filePath(QStringLiteral("web")));
-        return needUpdate;
+        return false;
     }
 #else
     Q_ASSERT(needUpdate);

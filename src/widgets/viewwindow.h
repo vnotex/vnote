@@ -176,6 +176,8 @@ namespace vnotex
 
         virtual void handleFindAndReplaceWidgetOpened();
 
+        virtual void toggleDebug();
+
     protected:
         bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -185,6 +187,8 @@ namespace vnotex
 
     protected:
         void setCentralWidget(QWidget *p_widget);
+
+        void replaceCentralWidget(QWidget *p_widget);
 
         void addTopWidget(QWidget *p_widget);
 
@@ -366,6 +370,8 @@ namespace vnotex
         QMenu *m_imageHostMenu = nullptr;
 
         QActionGroup *m_imageHostActionGroup = nullptr;
+
+        bool m_statusWidgetInBottomLayout = false;
 
         static QIcon s_savedIcon;
         static QIcon s_modifiedIcon;

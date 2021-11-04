@@ -23,8 +23,13 @@ bool WebPage::acceptNavigationRequest(const QUrl &p_url,
         return false;
     } if (!p_isMainFrame) {
         return true;
-    } else if (p_url.scheme() == QStringLiteral("data")) {
+    }
+
+    const auto scheme = p_url.scheme();
+    if (scheme == QStringLiteral("data")) {
         // Qt 5.12 and above will trigger this when calling QWebEngineView::setHtml().
+        return true;
+    } else if (scheme == QStringLiteral("chrome-devtools")) {
         return true;
     }
 

@@ -61,6 +61,7 @@ void Buffer::attachViewWindow(ViewWindow *p_win)
 
 void Buffer::detachViewWindow(ViewWindow *p_win)
 {
+    Q_UNUSED(p_win);
     Q_ASSERT(p_win != m_viewWindowToSync);
 
     --m_attachedViewWindowCount;

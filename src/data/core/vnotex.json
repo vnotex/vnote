@@ -62,7 +62,7 @@
             "OpenLastClosedFile" : "Ctrl+Shift+T"
         },
         "toolbar_icon_size" : 16,
-        "docks_tabbar_icon_size" : 26,
+        "docks_tabbar_icon_size" : 24,
         "note_management" : {
             "external_node" : {
                 "//comment" : "Wildcard patterns of files and folders to exclude as external files",
@@ -119,7 +119,8 @@
                 "FindNext" : "F3",
                 "FindPrevious" : "Shift+F3",
                 "ApplySnippet" : "Ctrl+G, I",
-                "Tag" : "Ctrl+G, B"
+                "Tag" : "Ctrl+G, B",
+                "Debug" : "F12"
             },
             "spell_check_auto_detect_language" : false,
             "spell_check_default_dictionary" : "en_US",

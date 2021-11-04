@@ -393,6 +393,13 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         break;
     }
 
+    case Action::Debug:
+    {
+        act = p_tb->addAction(ToolBarHelper::generateIcon("debug_editor.svg"), ViewWindow::tr("Debug"));
+        addActionShortcut(act, editorConfig.getShortcut(Shortcut::Debug), viewWindow);
+        break;
+    }
+
     default:
         Q_ASSERT(false);
         break;
