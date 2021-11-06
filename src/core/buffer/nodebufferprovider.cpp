@@ -6,6 +6,7 @@
 #include <notebook/notebook.h>
 #include <utils/pathutils.h>
 #include <core/file.h>
+#include <core/exception.h>
 
 using namespace vnotex;
 
@@ -140,7 +141,11 @@ void NodeBufferProvider::removeImage(const QString &p_imagePath)
 {
     auto file = m_nodeFile->getImageInterface();
     if (file) {
-        file->removeImage(p_imagePath);
+        try {
+            file->removeImage(p_imagePath);
+        } catch (Exception &e) {
+            qWarning() << "failed to remove image" << p_imagePath << e.what();
+        }
     }
 }
 

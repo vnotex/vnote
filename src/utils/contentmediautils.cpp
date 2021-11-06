@@ -12,10 +12,12 @@
 #include <buffer/filetypehelper.h>
 
 #include <vtextedit/markdownutils.h>
+#include <vtextedit/textutils.h>
 
 #include <utils/pathutils.h>
 #include <utils/fileutils.h>
 #include <core/file.h>
+#include <core/exception.h>
 
 using namespace vnotex;
 
@@ -78,6 +80,8 @@ void ContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content,
         Q_ASSERT(link.m_urlInLinkPos < lastPos);
         lastPos = link.m_urlInLinkPos;
 
+        qDebug() << "link" << link.m_path << link.m_urlInLink;
+
         if (handledImages.contains(link.m_path)) {
             auto it = renamedImages.find(link.m_path);
             if (it != renamedImages.end()) {
@@ -94,7 +98,8 @@ void ContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content,
         }
 
         // Get the relative path of the image and apply it to the dest file path.
-        const auto oldDestFilePath = destDir.filePath(link.m_urlInLink);
+        const auto decodedUrlInLink = vte::TextUtils::decodeUrl(link.m_urlInLink);
+        const auto oldDestFilePath = destDir.filePath(decodedUrlInLink);
         destDir.mkpath(PathUtils::parentDirPath(oldDestFilePath));
         auto destFilePath = p_backend ? p_backend->renameIfExistsCaseInsensitive(oldDestFilePath)
                                       : FileUtils::renameIfExistsCaseInsensitive(oldDestFilePath);
@@ -102,13 +107,15 @@ void ContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content,
             // Rename happens.
             const auto oldFileName = PathUtils::fileName(oldDestFilePath);
             const auto newFileName = PathUtils::fileName(destFilePath);
-            qWarning() << QString("image name conflicts when copy. Renamed from (%1) to (%2)").arg(oldFileName, newFileName);
+            qWarning() << QString("image name conflicts when copy, renamed from (%1) to (%2)").arg(oldFileName, newFileName);
 
             // Update the text content.
+            const auto encodedOldFileName = vte::TextUtils::encodeUrl(oldFileName);
+            const auto encodedNewFileName = vte::TextUtils::encodeUrl(newFileName);
             auto newUrlInLink(link.m_urlInLink);
-            newUrlInLink.replace(newUrlInLink.size() - oldFileName.size(),
-                                 oldFileName.size(),
-                                 newFileName);
+            newUrlInLink.replace(newUrlInLink.size() - encodedOldFileName.size(),
+                                 encodedOldFileName.size(),
+                                 encodedNewFileName);
 
             content.replace(link.m_urlInLinkPos, link.m_urlInLink.size(), newUrlInLink);
             renamedImages.insert(link.m_path, newUrlInLink);
@@ -158,7 +165,7 @@ void ContentMediaUtils::removeMarkdownMediaFiles(const File *p_file, INotebookBa
         handledImages.insert(link.m_path);
 
         if (!QFileInfo::exists(link.m_path)) {
-            qWarning() << "Image of Markdown file does not exist" << link.m_path << link.m_urlInLink;
+            qWarning() << "image of Markdown file does not exist" << link.m_path << link.m_urlInLink;
             continue;
         }
         p_backend->removeFile(link.m_path);
@@ -175,10 +182,15 @@ void ContentMediaUtils::copyAttachment(Node *p_node,
 
     // Copy the whole folder.
     const auto srcAttachmentFolderPath = p_node->fetchAttachmentFolderPath();
-    if (p_backend) {
-        p_backend->copyDir(srcAttachmentFolderPath, p_destAttachmentFolderPath);
-    } else {
-        FileUtils::copyDir(srcAttachmentFolderPath, p_destAttachmentFolderPath);
+    try {
+        if (p_backend) {
+            p_backend->copyDir(srcAttachmentFolderPath, p_destAttachmentFolderPath);
+        } else {
+            FileUtils::copyDir(srcAttachmentFolderPath, p_destAttachmentFolderPath);
+        }
+    } catch (Exception &e) {
+        qWarning() << "failed to copy attachment folder" << srcAttachmentFolderPath << e.what();
+        return;
     }
 
     // Check if we need to modify links in content.

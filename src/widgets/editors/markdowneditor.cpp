@@ -15,6 +15,7 @@
 #include <QTemporaryFile>
 #include <QTimer>
 #include <QBuffer>
+#include <QPainter>
 
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/previewmgr.h>
@@ -24,6 +25,8 @@
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/networkutils.h>
 #include <vtextedit/theme.h>
+#include <vtextedit/previewdata.h>
+#include <vtextedit/textblockdata.h>
 
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/imageinsertdialog.h>
@@ -40,12 +43,14 @@
 #include <utils/widgetutils.h>
 #include <utils/webutils.h>
 #include <utils/imageutils.h>
+#include <utils/clipboardutils.h>
 #include <core/exception.h>
 #include <core/markdowneditorconfig.h>
 #include <core/texteditorconfig.h>
 #include <core/configmgr.h>
 #include <core/editorconfig.h>
 #include <core/vnotex.h>
+#include <core/fileopenparameters.h>
 #include <imagehost/imagehostutils.h>
 #include <imagehost/imagehost.h>
 #include <imagehost/imagehostmgr.h>
@@ -960,7 +965,9 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
     // QAction *copyAct = WidgetUtils::findActionByObjectName(actions, "edit-copy");
     QAction *pasteAct = WidgetUtils::findActionByObjectName(actions, "edit-paste");
 
-    if (!m_textEdit->hasSelection()) {
+    const bool hasSelection = m_textEdit->hasSelection();
+
+    if (!hasSelection) {
         auto readAct = new QAction(tr("&Read"), menu);
         WidgetUtils::addActionShortcutText(readAct,
                                            ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead));
@@ -970,6 +977,8 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
         if (firstAct) {
             menu->insertSeparator(firstAct);
         }
+
+        prependContextSensitiveMenu(menu, p_event->pos());
     }
 
     if (pasteAct && pasteAct->isEnabled()) {
@@ -1001,7 +1010,9 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
                                            ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::ApplySnippet));
     }
 
-    appendImageHostMenu(menu);
+    if (!hasSelection) {
+        appendImageHostMenu(menu);
+    }
 
     appendSpellCheckMenu(p_event, menu);
 }
@@ -1442,4 +1453,204 @@ void MarkdownEditor::uploadImagesToImageHost()
     if (cnt > 0) {
         m_textEdit->setTextCursor(cursor);
     }
+}
+
+void MarkdownEditor::prependContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos)
+{
+    auto cursor = m_textEdit->cursorForPosition(p_pos);
+    const int pos = cursor.position();
+    const auto block = cursor.block();
+
+    Q_ASSERT(!p_menu->isEmpty());
+    auto firstAct = p_menu->actions().at(0);
+
+    bool ret = prependImageMenu(p_menu, firstAct, pos, block);
+    if (ret) {
+        return;
+    }
+
+    ret = prependLinkMenu(p_menu, firstAct, pos, block);
+    if (ret) {
+        return;
+    }
+
+    if (prependInPlacePreviewMenu(p_menu, firstAct, pos, block)) {
+        p_menu->insertSeparator(firstAct);
+    }
+}
+
+bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos, const QTextBlock &p_block)
+{
+    const auto text = p_block.text();
+
+    if (!vte::MarkdownUtils::hasImageLink(text)) {
+        return false;
+    }
+
+    QString imgPath;
+
+    const auto &regions = getHighlighter()->getImageRegions();
+    for (const auto &reg : regions) {
+        if (!reg.contains(p_cursorPos) && (!reg.contains(p_cursorPos - 1) || p_cursorPos != p_block.position() + text.size())) {
+            continue;
+        }
+
+        if (reg.m_endPos > p_block.position() + text.size()) {
+            return true;
+        }
+
+        const auto linkText = text.mid(reg.m_startPos - p_block.position(), reg.m_endPos - reg.m_startPos);
+        int linkWidth = 0;
+        int linkHeight = 0;
+        const auto shortUrl = vte::MarkdownUtils::fetchImageLinkUrl(linkText, linkWidth, linkHeight);
+        if (shortUrl.isEmpty()) {
+            return true;
+        }
+
+        imgPath = vte::MarkdownUtils::linkUrlToPath(getBasePath(), shortUrl);
+        break;
+    }
+
+    {
+        auto act = new QAction(tr("View Image"), p_menu);
+        connect(act, &QAction::triggered,
+                p_menu, [imgPath]() {
+                    WidgetUtils::openUrlByDesktop(PathUtils::pathToUrl(imgPath));
+                });
+        p_menu->insertAction(p_before, act);
+    }
+
+    {
+        auto act = new QAction(tr("Copy Image URL"), p_menu);
+        connect(act, &QAction::triggered,
+                p_menu, [imgPath]() {
+                    ClipboardUtils::setLinkToClipboard(imgPath);
+                });
+        p_menu->insertAction(p_before, act);
+    }
+
+    if (QFileInfo::exists(imgPath)) {
+        // Local image.
+        auto act = new QAction(tr("Copy Image"), p_menu);
+        connect(act, &QAction::triggered,
+                p_menu, [imgPath]() {
+                    auto clipboard = QApplication::clipboard();
+                    clipboard->clear();
+
+                    auto img = FileUtils::imageFromFile(imgPath);
+                    if (!img.isNull()) {
+                        ClipboardUtils::setImageToClipboard(clipboard, img);
+                    }
+                });
+        p_menu->insertAction(p_before, act);
+    } else {
+        // Online image.
+        prependInPlacePreviewMenu(p_menu, p_before, p_cursorPos, p_block);
+    }
+
+    p_menu->insertSeparator(p_before);
+
+    return true;
+}
+
+bool MarkdownEditor::prependInPlacePreviewMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos, const QTextBlock &p_block)
+{
+    auto data = vte::TextBlockData::get(p_block);
+    if (!data) {
+        return false;
+    }
+
+    auto previewData = data->getBlockPreviewData();
+    if (!previewData) {
+        return false;
+    }
+
+    QPixmap image;
+    QRgb background = 0;
+    const int pib = p_cursorPos - p_block.position();
+    for (const auto &info : previewData->getPreviewData()) {
+        const auto *imageData = info->getImageData();
+        if (!imageData) {
+            continue;
+        }
+
+        if (imageData->contains(pib) || (imageData->contains(pib - 1) && pib == p_block.length() - 1)) {
+            const auto *img = findImageFromDocumentResourceMgr(imageData->m_imageName);
+            if (img) {
+                image = *img;
+                background = imageData->m_backgroundColor;
+            }
+            break;
+        }
+    }
+
+    if (image.isNull()) {
+        return false;
+    }
+
+    auto act = new QAction(tr("Copy In-Place Preview"), p_menu);
+    connect(act, &QAction::triggered,
+            p_menu, [this, image, background]() {
+                QColor color(background);
+                if (background == 0) {
+                    color = m_textEdit->palette().color(QPalette::Base);
+                }
+                QImage img(image.size(), QImage::Format_ARGB32);
+                img.fill(color);
+                QPainter painter(&img);
+                painter.drawPixmap(img.rect(), image);
+
+                auto clipboard = QApplication::clipboard();
+                clipboard->clear();
+                ClipboardUtils::setImageToClipboard(clipboard, img);
+            });
+
+    p_menu->insertAction(p_before, act);
+
+    return true;
+}
+
+bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos, const QTextBlock &p_block)
+{
+    const auto text = p_block.text();
+
+    QRegularExpression regExp(vte::MarkdownUtils::c_linkRegExp);
+    QString linkText;
+    const int pib = p_cursorPos - p_block.position();
+    auto matchIter = regExp.globalMatch(text);
+    while (matchIter.hasNext()) {
+        auto match = matchIter.next();
+        if (pib >= match.capturedStart() && pib < match.capturedEnd()) {
+            linkText = match.captured(2);
+            break;
+        }
+    }
+
+    if (linkText.isEmpty()) {
+        return false;
+    }
+
+    const auto linkUrl = vte::MarkdownUtils::linkUrlToPath(getBasePath(), linkText);
+
+    {
+        auto act = new QAction(tr("Open Link"), p_menu);
+        connect(act, &QAction::triggered,
+                p_menu, [linkUrl]() {
+                    emit VNoteX::getInst().openFileRequested(linkUrl, QSharedPointer<FileOpenParameters>::create());
+                });
+        p_menu->insertAction(p_before, act);
+    }
+
+    {
+        auto act = new QAction(tr("Copy Link"), p_menu);
+        connect(act, &QAction::triggered,
+                p_menu, [linkUrl]() {
+                    ClipboardUtils::setLinkToClipboard(linkUrl);
+                });
+        p_menu->insertAction(p_before, act);
+    }
+
+    p_menu->insertSeparator(p_before);
+
+    return true;
 }

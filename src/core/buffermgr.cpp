@@ -101,6 +101,7 @@ void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenPar
         auto msg = QString("Failed to open file that does not exist (%1)").arg(p_filePath);
         qWarning() << msg;
         VNoteX::getInst().showStatusMessageShort(msg);
+        WidgetUtils::openUrlByDesktop(QUrl::fromUserInput(p_filePath));
         return;
     }
 

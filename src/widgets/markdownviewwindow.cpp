@@ -130,7 +130,7 @@ void MarkdownViewWindow::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffe
             toggleDebug();
         }
 
-        bool hideViewer = true;
+        bool hideViewer = m_viewerReady;
         if (!m_editor) {
             // We need viewer to preview.
             if (!m_viewer) {
@@ -485,6 +485,7 @@ void MarkdownViewWindow::setupViewer()
             });
     connect(adapter, &MarkdownViewerAdapter::viewerReady,
             this, [this]() {
+                m_viewerReady = true;
                 if (m_mode == ViewWindowMode::Edit) {
                     m_viewer->hide();
                 }

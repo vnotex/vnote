@@ -7,22 +7,30 @@
 #include <QDebug>
 #include <QUrl>
 #include <QAction>
+#include <QList>
 
 #include "utils.h"
+#include "pathutils.h"
 
 using namespace vnotex;
 
 QString ClipboardUtils::getTextFromClipboard()
 {
     QClipboard *clipboard = QApplication::clipboard();
-    QString subtype("plain");
-    return clipboard->text(subtype);
+    QString subType(QStringLiteral("plain"));
+    return clipboard->text(subType, QClipboard::Clipboard);
 }
 
 void ClipboardUtils::setTextToClipboard(const QString &p_text)
 {
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(p_text);
+}
+
+void ClipboardUtils::setLinkToClipboard(const QString &p_link)
+{
+    QClipboard *clipboard = QApplication::clipboard();
+    setMimeDataToClipboard(clipboard, linkMimeData(p_link).release());
 }
 
 void ClipboardUtils::clearClipboard()
@@ -193,4 +201,22 @@ void ClipboardUtils::setImageLoop(QClipboard *p_clipboard,
         qWarning() << "failed to set image, retry" << i;
         Utils::sleepWait(100 /* ms */);
     }
+}
+
+std::unique_ptr<QMimeData> ClipboardUtils::linkMimeData(const QString &p_link)
+{
+    QList<QUrl> urls;
+    urls.append(PathUtils::pathToUrl(p_link));
+    std::unique_ptr<QMimeData> data(new QMimeData());
+    data->setUrls(urls);
+
+    QString text = urls[0].toEncoded();
+#if defined(Q_OS_WIN)
+    if (urls[0].isLocalFile()) {
+        text = urls[0].toString(QUrl::EncodeSpaces);
+    }
+#endif
+
+    data->setText(text);
+    return data;
 }

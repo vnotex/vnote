@@ -193,6 +193,14 @@ namespace vnotex
 
         void uploadImagesToImageHost();
 
+        void prependContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos);
+
+        bool prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos, const QTextBlock &p_block);
+
+        bool prependInPlacePreviewMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos, const QTextBlock &p_block);
+
+        bool prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos, const QTextBlock &p_block);
+
         static QString generateImageFileNameToInsertAs(const QString &p_title, const QString &p_suffix);
 
         const MarkdownEditorConfig &m_config;

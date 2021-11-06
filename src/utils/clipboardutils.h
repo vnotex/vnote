@@ -16,6 +16,8 @@ namespace vnotex
 
         static void setTextToClipboard(const QString &p_text);
 
+        static void setLinkToClipboard(const QString &p_link);
+
         // @p_mimeData will be owned by utils.
         static void setMimeDataToClipboard(QClipboard *p_clipboard,
                                            QMimeData *p_mimeData,
@@ -39,6 +41,8 @@ namespace vnotex
         static void setImageLoop(QClipboard *p_clipboard,
                                  const QImage &p_image,
                                  QClipboard::Mode p_mode);
+
+        static std::unique_ptr<QMimeData> linkMimeData(const QString &p_link);
     };
 } // ns vnotex
 

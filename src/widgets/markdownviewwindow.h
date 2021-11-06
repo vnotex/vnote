@@ -208,6 +208,8 @@ namespace vnotex
         QSharedPointer<OutlineProvider> m_outlineProvider;
 
         ImageHost *m_imageHost = nullptr;
+
+        bool m_viewerReady = false;
     };
 }
 
