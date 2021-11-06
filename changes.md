@@ -1,4 +1,13 @@
 # Changes
+## v3.9.0
+* Remove recycle bin node (now recycle bin is just a simple folder)
+* Quick Access: support removing items directly
+* MarkdownEditor
+    * Support centering images in read mode
+    * Add user.css for user styles in read mode
+    * Add debugger by F12
+    * Support context-sensitive context menu for images and links
+
 ## v3.8.0
 * Support tags
 * Introduce notebook database using SQLITE
