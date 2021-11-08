@@ -120,6 +120,16 @@ void TextEditorPage::setupUI()
     }
 
     {
+        const QString label(tr("Highlight whitespace"));
+        m_highlightWhitespaceCheckBox = WidgetsFactory::createCheckBox(label, this);
+        m_highlightWhitespaceCheckBox->setToolTip(tr("Highlight Tab and trailing space"));
+        mainLayout->addRow(m_highlightWhitespaceCheckBox);
+        addSearchItem(label, m_highlightWhitespaceCheckBox->toolTip(), m_highlightWhitespaceCheckBox);
+        connect(m_highlightWhitespaceCheckBox, &QCheckBox::stateChanged,
+                this, &TextEditorPage::pageIsChanged);
+    }
+
+    {
         m_zoomDeltaSpinBox = WidgetsFactory::createSpinBox(this);
         m_zoomDeltaSpinBox->setToolTip(tr("Zoom delta of the basic font size"));
 
@@ -178,6 +188,8 @@ void TextEditorPage::loadInternal()
 
     m_tabStopWidthSpinBox->setValue(textConfig.getTabStopWidth());
 
+    m_highlightWhitespaceCheckBox->setChecked(textConfig.getHighlightWhitespaceEnabled());
+
     m_zoomDeltaSpinBox->setValue(textConfig.getZoomDelta());
 
     m_spellCheckCheckBox->setChecked(textConfig.isSpellCheckEnabled());
@@ -212,6 +224,8 @@ bool TextEditorPage::saveInternal()
     textConfig.setExpandTabEnabled(m_expandTabCheckBox->isChecked());
 
     textConfig.setTabStopWidth(m_tabStopWidthSpinBox->value());
+
+    textConfig.setHighlightWhitespaceEnabled(m_highlightWhitespaceCheckBox->isChecked());
 
     textConfig.setZoomDelta(m_zoomDeltaSpinBox->value());
 

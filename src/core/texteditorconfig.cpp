@@ -44,6 +44,8 @@ void TextEditorConfig::init(const QJsonObject &p_app,
 
     m_tabStopWidth = READINT(QStringLiteral("tab_stop_width"));
 
+    m_highlightWhitespace = READBOOL(QStringLiteral("highlight_whitespace"));
+
     m_zoomDelta = READINT(QStringLiteral("zoom_delta"));
 
     m_spellCheckEnabled = READBOOL(QStringLiteral("spell_check"));
@@ -59,6 +61,7 @@ QJsonObject TextEditorConfig::toJson() const
     obj[QStringLiteral("wrap_mode")] = wrapModeToString(m_wrapMode);
     obj[QStringLiteral("expand_tab")] = m_expandTab;
     obj[QStringLiteral("tab_stop_width")] = m_tabStopWidth;
+    obj[QStringLiteral("highlight_whitespace")] = m_highlightWhitespace;
     obj[QStringLiteral("zoom_delta")] = m_zoomDelta;
     obj[QStringLiteral("spell_check")] = m_spellCheckEnabled;
     return obj;
@@ -183,9 +186,9 @@ bool TextEditorConfig::getTextFoldingEnabled() const
     return m_textFoldingEnabled;
 }
 
-void TextEditorConfig::setTextFoldingEnabled(bool p_enable)
+void TextEditorConfig::setTextFoldingEnabled(bool p_enabled)
 {
-    updateConfig(m_textFoldingEnabled, p_enable, this);
+    updateConfig(m_textFoldingEnabled, p_enabled, this);
 }
 
 TextEditorConfig::InputMode TextEditorConfig::getInputMode() const
@@ -223,9 +226,19 @@ bool TextEditorConfig::getExpandTabEnabled() const
     return m_expandTab;
 }
 
-void TextEditorConfig::setExpandTabEnabled(bool p_enable)
+void TextEditorConfig::setExpandTabEnabled(bool p_enabled)
 {
-    updateConfig(m_expandTab, p_enable, this);
+    updateConfig(m_expandTab, p_enabled, this);
+}
+
+bool TextEditorConfig::getHighlightWhitespaceEnabled() const
+{
+    return m_highlightWhitespace;
+}
+
+void TextEditorConfig::setHighlightWhitespaceEnabled(bool p_enabled)
+{
+    updateConfig(m_highlightWhitespace, p_enabled, this);
 }
 
 int TextEditorConfig::getTabStopWidth() const

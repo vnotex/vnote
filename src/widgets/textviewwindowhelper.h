@@ -142,6 +142,8 @@ namespace vnotex
             editorConfig->m_expandTab = p_config.getExpandTabEnabled();
             editorConfig->m_tabStopWidth = p_config.getTabStopWidth();
 
+            editorConfig->m_highlightWhitespace = p_config.getHighlightWhitespaceEnabled();
+
             switch (p_lineEndingPolicy) {
             case LineEndingPolicy::Platform:
                 editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::Platform;

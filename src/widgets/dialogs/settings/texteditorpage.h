@@ -39,6 +39,8 @@ namespace vnotex
 
         QSpinBox *m_tabStopWidthSpinBox = nullptr;
 
+        QCheckBox *m_highlightWhitespaceCheckBox = nullptr;
+
         QSpinBox *m_zoomDeltaSpinBox = nullptr;
 
         QCheckBox *m_spellCheckCheckBox = nullptr;
