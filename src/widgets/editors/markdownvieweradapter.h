@@ -87,7 +87,8 @@ namespace vnotex
                      const QString &p_text,
                      int p_lineNumber);
 
-        void setText(const QString &p_text);
+        // @p_lineNumber: the line number needed to sync, -1 for invalid.
+        void setText(const QString &p_text, int p_lineNumber = -1);
 
         void scrollToPosition(const Position &p_pos);
 

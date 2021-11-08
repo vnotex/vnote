@@ -4821,7 +4821,7 @@ Description: %3</source>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="57"/>
         <source>Normal</source>
-        <translation>正常</translation>
+        <translation>普通</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="58"/>

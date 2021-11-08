@@ -826,7 +826,9 @@ bool VXNotebookConfigMgr::isBuiltInFolder(const Node *p_node, const QString &p_n
     if (name == nb->getImageFolder().toLower()
         || name == nb->getAttachmentFolder().toLower()
         || name == QStringLiteral("_v_images")
-        || name == QStringLiteral("_v_attachments")) {
+        || name == QStringLiteral("_v_attachments")
+        || name == QStringLiteral("vx_images")
+        || name == QStringLiteral("vx_attachments")) {
         return true;
     }
     return BundleNotebookConfigMgr::isBuiltInFolder(p_node, p_name);

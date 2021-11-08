@@ -17,6 +17,7 @@ namespace vnotex
         {
             Save,
             EditReadDiscard,
+            ViewMode,
 
             // Make sure they are put together.
             // Including Heading1-6 and HeadingNone.

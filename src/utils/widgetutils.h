@@ -20,6 +20,7 @@ class QShortcut;
 class QLineEdit;
 class QLayout;
 class QPushButton;
+class QSplitter;
 
 namespace vnotex
 {
@@ -85,6 +86,8 @@ namespace vnotex
         static void selectBaseName(QLineEdit *p_lineEdit);
 
         static void setContentsMargins(QLayout *p_layout);
+
+        static bool distributeWidgetsOfSplitter(QSplitter *p_splitter);
 
     private:
         static void resizeToHideScrollBar(QScrollArea *p_scroll, bool p_vertical, bool p_horizontal);

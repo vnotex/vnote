@@ -143,7 +143,7 @@ namespace vnotex
         int m_historyMaxCount = 100;
 
         // Whether store history in each notebook.
-        bool m_perNotebookHistoryEnabled = true;
+        bool m_perNotebookHistoryEnabled = false;
 
         static QStringList s_availableLocales;
     };

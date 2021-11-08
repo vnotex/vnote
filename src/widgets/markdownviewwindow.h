@@ -5,9 +5,12 @@
 
 #include <QScopedPointer>
 
+#include <core/markdowneditorconfig.h>
+
 class QSplitter;
 class QStackedWidget;
 class QWebEngineView;
+class QActionGroup;
 
 namespace vte
 {
@@ -22,7 +25,6 @@ namespace vnotex
     class EditorMarkdownViewerAdapter;
     class PreviewHelper;
     struct Outline;
-    class MarkdownEditorConfig;
     class EditorConfig;
     class ImageHost;
     class SearchToken;
@@ -98,6 +100,8 @@ namespace vnotex
 
         QString selectedText() const Q_DECL_OVERRIDE;
 
+        void updateViewModeMenu(QMenu *p_menu) Q_DECL_OVERRIDE;
+
     private:
         void setupUI();
 
@@ -164,6 +168,12 @@ namespace vnotex
 
         void setupDebugViewer();
 
+        void setEditViewMode(MarkdownEditorConfig::EditViewMode p_mode);
+
+        void syncEditorContentsToPreview();
+
+        void syncEditorPositionToPreview();
+
         template <class T>
         static QSharedPointer<Outline> headingsToOutline(const QVector<T> &p_headings);
 
@@ -210,6 +220,10 @@ namespace vnotex
         ImageHost *m_imageHost = nullptr;
 
         bool m_viewerReady = false;
+
+        QActionGroup *m_viewModeActionGroup = nullptr;
+
+        MarkdownEditorConfig::EditViewMode m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;
     };
 }
 

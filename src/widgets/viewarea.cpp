@@ -596,28 +596,8 @@ QSplitter *ViewArea::tryGetParentSplitter(const QWidget *p_widget) const
 
 void ViewArea::distributeViewSplitsOfSplitter(QSplitter *p_splitter)
 {
-    if (!p_splitter || p_splitter->count() <= 1) {
+    if (!WidgetUtils::distributeWidgetsOfSplitter(p_splitter)) {
         return;
-    }
-
-    // Distribute the direct children of splitter.
-    {
-        auto sizes = p_splitter->sizes();
-        int totalWidth = 0;
-        for (auto sz : sizes) {
-            totalWidth += sz;
-        }
-
-        int newWidth = totalWidth / sizes.size();
-        if (newWidth <= 0) {
-            return;
-        }
-
-        for (int i = 0; i < sizes.size(); ++i) {
-            sizes[i] = newWidth;
-        }
-
-        p_splitter->setSizes(sizes);
     }
 
     // Distribute child splitter.

@@ -76,7 +76,7 @@
         "check_for_updates_on_start" : true,
         "//comment" : "Max count of the history items for each notebook and session config",
         "history_max_count" : 100,
-        "per_notebook_history" : true
+        "per_notebook_history" : false
     },
     "editor" : {
         "core": {
@@ -357,7 +357,9 @@
             "editor_overridden_font_family" : "",
             "//comment" : "Sources to enable inplace preview, separated by ;",
             "//comment" : "imagelink/codeblock/math",
-            "inplace_preview_sources" : "imagelink;codeblock;math"
+            "inplace_preview_sources" : "imagelink;codeblock;math",
+            "//comment" : "view mode of edit mode: editonly/editpreview",
+            "edit_view_mode" : "editonly"
         },
         "image_host" : {
             "hosts" : [

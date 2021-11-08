@@ -37,6 +37,7 @@
 #include "editors/statuswidget.h"
 #include "propertydefs.h"
 #include "floatingwidget.h"
+#include "widgetsfactory.h"
 
 using namespace vnotex;
 
@@ -337,6 +338,25 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
                         read(false);
                         break;
                     }
+                });
+        break;
+    }
+
+    case ViewWindowToolBarHelper::ViewMode:
+    {
+        act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
+        connect(this, &ViewWindow::bufferChanged,
+                this, [this, act]() {
+                    act->setEnabled(getBuffer());
+                });
+
+        auto toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+        Q_ASSERT(toolBtn);
+        auto menu = WidgetsFactory::createMenu(p_toolBar);
+        toolBtn->setMenu(menu);
+        connect(menu, &QMenu::aboutToShow,
+                this, [this, menu]() {
+                    updateViewModeMenu(menu);
                 });
         break;
     }
@@ -675,7 +695,7 @@ void ViewWindow::discardChangesAndRead()
 
 bool ViewWindow::inModeCanInsert() const
 {
-    return m_mode == ViewWindowMode::Edit || m_mode == ViewWindowMode::FocusPreview || m_mode == ViewWindowMode::FullPreview;
+    return m_mode == ViewWindowMode::Edit;
 }
 
 void ViewWindow::handleTypeAction(TypeAction p_action)
@@ -1299,4 +1319,12 @@ bool ViewWindow::isSessionEnabled() const
 void ViewWindow::toggleDebug()
 {
     qDebug() << "debug is not supported";
+}
+
+void ViewWindow::updateViewModeMenu(QMenu *p_menu)
+{
+    p_menu->clear();
+
+    auto act = p_menu->addAction(tr("View Mode Not Supported"));
+    act->setEnabled(false);
 }

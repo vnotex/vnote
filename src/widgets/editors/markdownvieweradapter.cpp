@@ -74,7 +74,7 @@ void MarkdownViewerAdapter::setText(int p_revision,
                                     const QString &p_text,
                                     int p_lineNumber)
 {
-    if (p_revision == m_revision) {
+    if (p_revision == m_revision && p_revision != 0) {
         // Only sync line number position.
         scrollToPosition(Position(p_lineNumber, ""));
         return;
@@ -92,16 +92,9 @@ void MarkdownViewerAdapter::setText(int p_revision,
     }
 }
 
-void MarkdownViewerAdapter::setText(const QString &p_text)
+void MarkdownViewerAdapter::setText(const QString &p_text, int p_lineNumber)
 {
-    m_revision = 0;
-    if (m_viewerReady) {
-        emit textUpdated(p_text);
-    } else {
-        m_pendingActions.append([this, p_text]() {
-            emit textUpdated(p_text);
-        });
-    }
+    setText(0, p_text, p_lineNumber);
 }
 
 void MarkdownViewerAdapter::setReady(bool p_ready)

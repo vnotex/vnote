@@ -73,6 +73,8 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
             m_inplacePreviewSources |= stringToInplacePreviewSource(src);
         }
     }
+
+    m_editViewMode = stringToEditViewMode(READSTR(QStringLiteral("edit_view_mode")));
 }
 
 QJsonObject MarkdownEditorConfig::toJson() const
@@ -121,6 +123,8 @@ QJsonObject MarkdownEditorConfig::toJson() const
         }
         obj[QStringLiteral("inplace_preview_sources")] = srcs.join(QLatin1Char(';'));
     }
+
+    obj[QStringLiteral("edit_view_mode")] = editViewModeToString(m_editViewMode);
 
     return obj;
 }
@@ -518,4 +522,35 @@ MarkdownEditorConfig::InplacePreviewSources MarkdownEditorConfig::getInplacePrev
 void MarkdownEditorConfig::setInplacePreviewSources(InplacePreviewSources p_src)
 {
     updateConfig(m_inplacePreviewSources, p_src, this);
+}
+
+QString MarkdownEditorConfig::editViewModeToString(EditViewMode p_mode) const
+{
+    switch (p_mode) {
+    case EditViewMode::EditPreview:
+        return QStringLiteral("editpreview");
+
+    default:
+        return QStringLiteral("editonly");
+    }
+}
+
+MarkdownEditorConfig::EditViewMode MarkdownEditorConfig::stringToEditViewMode(const QString &p_str) const
+{
+    auto mode = p_str.toLower();
+    if (mode == QStringLiteral("editpreview")) {
+        return EditViewMode::EditPreview;
+    } else {
+        return EditViewMode::EditOnly;
+    }
+}
+
+MarkdownEditorConfig::EditViewMode MarkdownEditorConfig::getEditViewMode() const
+{
+    return m_editViewMode;
+}
+
+void MarkdownEditorConfig::setEditViewMode(EditViewMode p_mode)
+{
+    updateConfig(m_editViewMode, p_mode, this);
 }

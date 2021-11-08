@@ -94,8 +94,6 @@ namespace vnotex
     {
         Read,
         Edit,
-        FullPreview,
-        FocusPreview,
         Invalid
     };
 

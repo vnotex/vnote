@@ -525,11 +525,10 @@ void MainWindow::focusViewArea()
 void MainWindow::setupToolBar()
 {
     const int sz = ConfigMgr::getInst().getCoreConfig().getToolBarIconSize();
-    const QSize iconSize(sz, sz);
 
     if (isFrameless()) {
         auto toolBar = new TitleToolBar(tr("Global"), this);
-        toolBar->setIconSize(iconSize);
+        toolBar->setIconSize(QSize(sz + 4, sz + 4));
         ToolBarHelper::setupToolBars(this, toolBar);
         toolBar->addTitleBarIcons(ToolBarHelper::generateIcon(QStringLiteral("minimize.svg")),
                                   ToolBarHelper::generateIcon(QStringLiteral("maximize.svg")),
@@ -540,7 +539,7 @@ void MainWindow::setupToolBar()
                 toolBar, &TitleToolBar::updateMaximizeAct);
     } else {
         auto toolBar = new QToolBar(tr("Global"), this);
-        toolBar->setIconSize(iconSize);
+        toolBar->setIconSize(QSize(sz, sz));
         ToolBarHelper::setupToolBars(this, toolBar);
     }
 

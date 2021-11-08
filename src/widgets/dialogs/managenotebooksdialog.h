@@ -45,7 +45,7 @@ namespace vnotex
 
         Notebook *getNotebookFromItem(const QListWidgetItem *p_item) const;
 
-        void closeNotebook(const Notebook *p_notebook);
+        bool closeNotebook(const Notebook *p_notebook);
 
         void removeNotebook(const Notebook *p_notebook);
 
