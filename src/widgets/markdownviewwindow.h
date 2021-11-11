@@ -11,6 +11,7 @@ class QSplitter;
 class QStackedWidget;
 class QWebEngineView;
 class QActionGroup;
+class QTimer;
 
 namespace vte
 {
@@ -224,6 +225,8 @@ namespace vnotex
         QActionGroup *m_viewModeActionGroup = nullptr;
 
         MarkdownEditorConfig::EditViewMode m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;
+
+        QTimer *m_syncPreviewTimer = nullptr;
     };
 }
 

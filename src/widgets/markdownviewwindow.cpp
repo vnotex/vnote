@@ -11,6 +11,7 @@
 #include <QProgressDialog>
 #include <QMenu>
 #include <QActionGroup>
+#include <QTimer>
 
 #include <core/fileopenparameters.h>
 #include <core/editorconfig.h>
@@ -147,13 +148,15 @@ void MarkdownViewWindow::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffe
             if (p_syncBuffer) {
                 syncTextEditorFromBuffer(true);
             }
+
+            m_editor->show();
+
+            setEditViewMode(ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig().getEditViewMode());
         }
 
         // Avoid focus glitch.
         m_editor->show();
         m_editor->setFocus();
-
-        setEditViewMode(m_editViewMode);
 
         getMainStatusWidget()->setCurrentWidget(m_textEditorStatusWidget.get());
         break;
@@ -320,7 +323,7 @@ void MarkdownViewWindow::setupToolBar()
         auto act = addAction(toolBar, ViewWindowToolBarHelper::Debug);
         connect(this, &ViewWindow::modeChanged,
                 this, [this, act]() {
-                    act->setEnabled(m_mode != ViewWindowMode::Edit);
+                    act->setEnabled(m_mode == ViewWindowMode::Read || m_editViewMode != MarkdownEditorConfig::EditViewMode::EditOnly);
                 });
     }
 }
@@ -333,8 +336,6 @@ void MarkdownViewWindow::setupTextEditor()
     const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
 
     updateConfigRevision();
-
-    m_editViewMode = markdownEditorConfig.getEditViewMode();
 
     m_editor = new MarkdownEditor(markdownEditorConfig,
                                   createMarkdownEditorConfig(editorConfig, markdownEditorConfig),
@@ -432,6 +433,7 @@ void MarkdownViewWindow::setupViewer()
 
     auto adapter = new EditorMarkdownViewerAdapter(nullptr, this);
     m_viewer = new MarkdownViewer(adapter,
+                                  this,
                                   VNoteX::getInst().getThemeMgr().getBaseBackground(),
                                   markdownEditorConfig.getZoomFactorInReadMode(),
                                   this);
@@ -1298,7 +1300,11 @@ void MarkdownViewWindow::setEditViewMode(MarkdownEditorConfig::EditViewMode p_mo
 {
     Q_ASSERT(m_mode == ViewWindowMode::Edit);
 
-    m_editViewMode = p_mode;
+    bool modeChanged = false;
+    if (m_editViewMode != p_mode) {
+        m_editViewMode = p_mode;
+        modeChanged = true;
+    }
 
     switch (p_mode) {
     case MarkdownEditorConfig::EditViewMode::EditOnly:
@@ -1307,10 +1313,12 @@ void MarkdownViewWindow::setEditViewMode(MarkdownEditorConfig::EditViewMode p_mo
             m_viewer->hide();
         }
 
-        disconnect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged,
-                   this, &MarkdownViewWindow::syncEditorContentsToPreview);
-        disconnect(m_editor, &MarkdownEditor::topLineChanged,
-                   this, &MarkdownViewWindow::syncEditorPositionToPreview);
+        if (modeChanged) {
+            disconnect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged,
+                       m_syncPreviewTimer, QOverload<>::of(&QTimer::start));
+            disconnect(m_editor, &MarkdownEditor::topLineChanged,
+                       this, &MarkdownViewWindow::syncEditorPositionToPreview);
+        }
         break;
     }
 
@@ -1319,16 +1327,24 @@ void MarkdownViewWindow::setEditViewMode(MarkdownEditorConfig::EditViewMode p_mo
         m_viewer->show();
         WidgetUtils::distributeWidgetsOfSplitter(m_splitter);
 
-        if (m_viewerReady) {
+        if (modeChanged) {
+            if (!m_syncPreviewTimer) {
+                m_syncPreviewTimer = new QTimer(this);
+                m_syncPreviewTimer->setSingleShot(true);
+                m_syncPreviewTimer->setInterval(300);
+                connect(m_syncPreviewTimer, &QTimer::timeout,
+                        this, &MarkdownViewWindow::syncEditorContentsToPreview);
+            }
+
             connect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged,
-                    this, &MarkdownViewWindow::syncEditorContentsToPreview,
+                    m_syncPreviewTimer, QOverload<>::of(&QTimer::start),
                     Qt::UniqueConnection);
             connect(m_editor, &MarkdownEditor::topLineChanged,
                     this, &MarkdownViewWindow::syncEditorPositionToPreview,
                     Qt::UniqueConnection);
-
-            syncEditorContentsToPreview();
         }
+
+        syncEditorContentsToPreview();
 
         break;
     }
@@ -1341,7 +1357,7 @@ void MarkdownViewWindow::setEditViewMode(MarkdownEditorConfig::EditViewMode p_mo
 
 void MarkdownViewWindow::syncEditorContentsToPreview()
 {
-    if (isReadMode() || m_editViewMode == MarkdownEditorConfig::EditViewMode::EditOnly) {
+    if (!m_viewerReady || isReadMode() || m_editViewMode == MarkdownEditorConfig::EditViewMode::EditOnly) {
         return;
     }
 
@@ -1350,7 +1366,7 @@ void MarkdownViewWindow::syncEditorContentsToPreview()
 
 void MarkdownViewWindow::syncEditorPositionToPreview()
 {
-    if (isReadMode() || m_editViewMode == MarkdownEditorConfig::EditViewMode::EditOnly) {
+    if (!m_viewerReady || isReadMode() || m_editViewMode == MarkdownEditorConfig::EditViewMode::EditOnly) {
         return;
     }
 

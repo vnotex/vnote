@@ -201,6 +201,8 @@ class NodeLineMapper {
         let lineNumber = -1;
         if (idx > -1) {
             lineNumber = parseInt(this.nodesWithSourceLine[idx].getAttribute(this.sourceLineAttributeName));
+        } else if (document.documentElement.scrollTop < 30) {
+            lineNumber = 0;
         }
 
         this.adapter.setTopLineNumber(lineNumber);

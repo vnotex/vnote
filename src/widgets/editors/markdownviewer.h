@@ -9,6 +9,7 @@ namespace vnotex
 {
     class MarkdownViewerAdapter;
     class PreviewHelper;
+    class ViewWindow;
 
     class MarkdownViewer : public WebViewer
     {
@@ -16,6 +17,12 @@ namespace vnotex
     public:
         // @p_adapter will be managed by MarkdownViewer.
         MarkdownViewer(MarkdownViewerAdapter *p_adapter,
+                       const QColor &p_background,
+                       qreal p_zoomFactor,
+                       QWidget *p_parent = nullptr);
+
+        MarkdownViewer(MarkdownViewerAdapter *p_adapter,
+                       const ViewWindow *p_viewWindow,
                        const QColor &p_background,
                        qreal p_zoomFactor,
                        QWidget *p_parent = nullptr);
@@ -61,6 +68,9 @@ namespace vnotex
 
         // Managed by QObject.
         MarkdownViewerAdapter *m_adapter = nullptr;
+
+        // Nullable.
+        const ViewWindow *m_viewWindow = nullptr;
 
         // Whether this view has hooked the Copy Image Url action.
         bool m_copyImageUrlActionHooked = false;

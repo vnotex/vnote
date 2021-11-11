@@ -500,6 +500,12 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
                             updater.exec();
                         });
 
+        menu->addAction(MainWindow::tr("Contributors"),
+                        menu,
+                        []() {
+                            WidgetUtils::openUrlByDesktop(QUrl("https://github.com/vnotex/vnote/graphs/contributors"));
+                        });
+
         menu->addAction(MainWindow::tr("About"),
                         menu,
                         [p_win]() {

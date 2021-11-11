@@ -16,6 +16,7 @@
 #include <core/configmgr.h>
 #include <core/editorconfig.h>
 #include "../widgetsfactory.h"
+#include "../viewwindow.h"
 
 using namespace vnotex;
 
@@ -30,8 +31,18 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter,
                                const QColor &p_background,
                                qreal p_zoomFactor,
                                QWidget *p_parent)
+    : MarkdownViewer(p_adapter, nullptr, p_background, p_zoomFactor, p_parent)
+{
+}
+
+MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter,
+                               const ViewWindow *p_viewWindow,
+                               const QColor &p_background,
+                               qreal p_zoomFactor,
+                               QWidget *p_parent)
     : WebViewer(p_background, p_zoomFactor, p_parent),
-      m_adapter(p_adapter)
+      m_adapter(p_adapter),
+      m_viewWindow(p_viewWindow)
 {
     m_adapter->setParent(this);
 
@@ -115,7 +126,7 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event)
     }
 #endif
 
-    if (!hasSelection()) {
+    if (!hasSelection() && m_viewWindow && m_viewWindow->getMode() == ViewWindowMode::Read) {
         auto firstAct = actions.isEmpty() ? nullptr : actions[0];
         auto editAct = new QAction(tr("&Edit"), menu.data());
         WidgetUtils::addActionShortcutText(editAct,
