@@ -27,10 +27,6 @@
 <context>
     <name>QObject</name>
     <message>
-        <source>Bundled Notebook</source>
-        <translation type="vanished">自包含笔记本</translation>
-    </message>
-    <message>
         <location filename="../../../core/notebook/bundlenotebookfactory.cpp" line="27"/>
         <source>Bundle Notebook</source>
         <translation>自包含笔记本</translation>
@@ -61,10 +57,6 @@
         <translation>内建的 VNoteX 笔记本配置</translation>
     </message>
     <message>
-        <source>Dummy Version Control</source>
-        <translation type="vanished">空版本控制</translation>
-    </message>
-    <message>
         <location filename="../../../core/versioncontroller/dummyversioncontrollerfactory.cpp" line="20"/>
         <source>No Version Control</source>
         <translation>无版本控制</translation>
@@ -78,38 +70,19 @@
 <context>
     <name>QWebEnginePage</name>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="289"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="300"/>
         <source>&amp;Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="290"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="301"/>
         <source>&amp;Forward</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="291"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="302"/>
         <source>&amp;Reload</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>ViewWindow</name>
-    <message>
-        <source>Snippet applied: %1</source>
-        <translation type="vanished">片段已应用: %1</translation>
-    </message>
-    <message>
-        <source>Snippet (%1) not found</source>
-        <translation type="vanished">无法找到片段 (%1)</translation>
-    </message>
-    <message>
-        <source>Snippet not available</source>
-        <translation type="vanished">没有可用片段</translation>
-    </message>
-    <message>
-        <source>Select Snippet</source>
-        <translation type="vanished">选择片段</translation>
     </message>
 </context>
 <context>
@@ -480,10 +453,6 @@
         <translation>使用 wkhtmltopdf (支持大纲)</translation>
     </message>
     <message>
-        <source>All-In-One</source>
-        <translation type="vanished">多合一</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/dialogs/exportdialog.cpp" line="676"/>
         <location filename="../../../widgets/dialogs/exportdialog.cpp" line="773"/>
         <source>Export all source files into one file</source>
@@ -582,10 +551,6 @@
         <translation>正在取消导出</translation>
     </message>
     <message>
-        <source>Cancelling the export.</source>
-        <translation type="vanished">正在取消导出。</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/dialogs/exportdialog.cpp" line="433"/>
         <source>Please specify a valid wkhtmltopdf executable file (%1)</source>
         <translation>请指定一个有效的 wkhtmltopdf 可执行文件 (%1)</translation>
@@ -629,14 +594,6 @@
         <location filename="../../../widgets/dialogs/exportdialog.cpp" line="650"/>
         <source>Page layout:</source>
         <translation>页面布局:</translation>
-    </message>
-    <message>
-        <source>Add Table-Of-Contents</source>
-        <translation type="vanished">添加内容导航表格</translation>
-    </message>
-    <message>
-        <source>Use wkhtmltopdf</source>
-        <translation type="vanished">使用 wkhtmltopdf</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/exportdialog.cpp" line="664"/>
@@ -910,10 +867,6 @@
         <translation>查找:</translation>
     </message>
     <message>
-        <source>Type to search</source>
-        <translation type="vanished">输入以开始查找</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/findandreplacewidget.cpp" line="79"/>
         <source>Search</source>
         <translation>查找</translation>
@@ -1161,10 +1114,6 @@
         <translation>无法在图床创建资源 (%1) (%2) (%3)。</translation>
     </message>
     <message>
-        <source>Failed to fetch information about the resource (%1).</source>
-        <translation type="vanished">无法获取该资源的信息 (%1)。</translation>
-    </message>
-    <message>
         <location filename="../../../imagehost/githubimagehost.cpp" line="211"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
         <translation>无法获取该资源的 SHA 值 (%1) (%2)。</translation>
@@ -1268,22 +1217,6 @@
         <translation>过去 7 天</translation>
     </message>
     <message>
-        <source>&gt;&gt;&gt; Older</source>
-        <translation type="vanished">&gt;&gt;&gt; 更早</translation>
-    </message>
-    <message>
-        <source>&gt;&gt;&gt; Today</source>
-        <translation type="vanished">&gt;&gt;&gt; 今天</translation>
-    </message>
-    <message>
-        <source>&gt;&gt;&gt; Yesterday</source>
-        <translation type="vanished">&gt;&gt;&gt; 昨天</translation>
-    </message>
-    <message>
-        <source>&gt;&gt;&gt; Last 7 Days</source>
-        <translation type="vanished">&gt;&gt;&gt; 过去 7 天</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/historypanel.cpp" line="212"/>
         <source>%1
 %2</source>
@@ -1327,10 +1260,6 @@
         <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="61"/>
         <source>Default image host:</source>
         <translation>默认图床:</translation>
-    </message>
-    <message>
-        <source>Clear obsolete image</source>
-        <translation type="obsolete">清空无用图片</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="69"/>
@@ -1517,25 +1446,9 @@
 <context>
     <name>vnotex::ImportLegacyNotebookDialog</name>
     <message>
-        <source>Import Legacy Notebook</source>
-        <translation type="vanished">导入遗留笔记本</translation>
-    </message>
-    <message>
-        <source>Once imported, the legacy notebook could no longer be recognized by legacy VNote!</source>
-        <translation type="vanished">一旦导入，该遗留笔记本将无法被旧版本的VNote所识别！</translation>
-    </message>
-    <message>
-        <source>This operation is irreversible. Please make sure the new VNote already meets all your needs before continue.</source>
-        <translation type="vanished">该操作是不可逆的。继续之前，请确保新的 VNote 满足个人所有的需求。</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/dialogs/importlegacynotebookdialog.cpp" line="39"/>
         <source>Welcome to VNoteX and the new VNote!</source>
         <translation>欢迎使用VNoteX和全新的VNote！</translation>
-    </message>
-    <message>
-        <source>Please specify a valid root folder to import.</source>
-        <translation type="vanished">请指定一个有效根文件夹进行导入。</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/importlegacynotebookdialog.cpp" line="22"/>
@@ -1577,17 +1490,9 @@
         <source>Failed to import folder contents by legacy config in (%1) (%2).</source>
         <translation>无法在 (%1) 中根据遗留配置导入文件夹内容 (%2)。</translation>
     </message>
-    <message>
-        <source>Failed to create notebook in %1 (%2).</source>
-        <translation type="vanished">无法在 (%1) 创建笔记本 (%2)。</translation>
-    </message>
 </context>
 <context>
     <name>vnotex::ImportNotebookDialog</name>
-    <message>
-        <source>Import Notebook</source>
-        <translation type="vanished">导入笔记本</translation>
-    </message>
     <message>
         <location filename="../../../widgets/dialogs/importnotebookdialog.cpp" line="37"/>
         <source>Open Notebook</source>
@@ -1622,14 +1527,6 @@
         <location filename="../../../widgets/dialogs/importnotebookdialog.cpp" line="148"/>
         <source>Failed to open notebook (%1).</source>
         <translation>无法打开笔记本 (%1)。</translation>
-    </message>
-    <message>
-        <source>Failed to import notebook.</source>
-        <translation type="vanished">无法导入笔记本。</translation>
-    </message>
-    <message>
-        <source>Failed to import notebook (%1).</source>
-        <translation type="vanished">无法导入笔记本 (%1)。</translation>
     </message>
 </context>
 <context>
@@ -1715,42 +1612,14 @@
 <context>
     <name>vnotex::MainWindow</name>
     <message>
-        <source>Navigation</source>
-        <translation type="vanished">导航</translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <translation type="vanished">大纲</translation>
-    </message>
-    <message>
-        <source>Search</source>
-        <translation type="vanished">搜索</translation>
-    </message>
-    <message>
-        <source>Snippets</source>
-        <translation type="vanished">片段</translation>
-    </message>
-    <message>
-        <source>History</source>
-        <translation type="vanished">历史</translation>
-    </message>
-    <message>
-        <source>Location List</source>
-        <translation type="vanished">位置列表</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/mainwindow.cpp" line="741"/>
+        <location filename="../../../widgets/mainwindow.cpp" line="740"/>
         <source>Failed to check for updates (%1)</source>
         <translation>无法检查更新 (%1)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow.cpp" line="743"/>
+        <location filename="../../../widgets/mainwindow.cpp" line="742"/>
         <source>Updates available: %1</source>
         <translation>有可用更新: %1</translation>
-    </message>
-    <message>
-        <source>Notebooks</source>
-        <translation type="vanished">笔记本</translation>
     </message>
     <message>
         <location filename="../../../widgets/mainwindow.cpp" line="101"/>
@@ -1773,37 +1642,37 @@
         <translation>%1 仍然在此运行。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow.cpp" line="531"/>
-        <location filename="../../../widgets/mainwindow.cpp" line="542"/>
+        <location filename="../../../widgets/mainwindow.cpp" line="530"/>
+        <location filename="../../../widgets/mainwindow.cpp" line="541"/>
         <source>Global</source>
         <translation>全局</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow.cpp" line="636"/>
+        <location filename="../../../widgets/mainwindow.cpp" line="635"/>
         <source>There is one export dialog running. Please close it first.</source>
         <translation>已有导出对话框运行。请先将其关闭。</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/mainwindow.cpp" line="757"/>
+        <location filename="../../../widgets/mainwindow.cpp" line="756"/>
         <source>Failed to load %n notebook(s).</source>
         <translation>
             <numerusform>无法加载 %n 个笔记本。</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow.cpp" line="758"/>
+        <location filename="../../../widgets/mainwindow.cpp" line="757"/>
         <source>These notebooks may be moved or deleted. It is recommended to remove them from configuration and open them with the correct root folder path later.
 Remove them from the configuration?</source>
         <translation>这些笔记本可能已被移动或者删除。推荐将其从配置中移除并稍后使用正确的根文件夹路径重新打开。
 从配置中移除它们？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/systemtrayhelper.cpp" line="37"/>
+        <location filename="../../../widgets/systemtrayhelper.cpp" line="38"/>
         <source>Show Main Window</source>
         <translation>显示主窗口</translation>
     </message>
     <message>
-        <location filename="../../../widgets/systemtrayhelper.cpp" line="43"/>
+        <location filename="../../../widgets/systemtrayhelper.cpp" line="44"/>
         <location filename="../../../widgets/toolbarhelper.cpp" line="414"/>
         <source>Quit</source>
         <translation>退出</translation>
@@ -1829,18 +1698,6 @@ Remove them from the configuration?</source>
         <translation>从文件夹新建笔记本</translation>
     </message>
     <message>
-        <source>Import Notebook</source>
-        <translation type="vanished">导入笔记本</translation>
-    </message>
-    <message>
-        <source>Import Legacy Notebook Of VNote 2.0</source>
-        <translation type="vanished">导入 VNote 2.0 的遗留笔记本</translation>
-    </message>
-    <message>
-        <source>Import Legacy Notebook Of VNote 2</source>
-        <translation type="vanished">导入 VNote 2 的遗留笔记本</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/toolbarhelper.cpp" line="122"/>
         <location filename="../../../widgets/toolbarhelper.cpp" line="131"/>
         <source>New Note</source>
@@ -1858,10 +1715,6 @@ Remove them from the configuration?</source>
         <translation>打开文件</translation>
     </message>
     <message>
-        <source>Import And Export</source>
-        <translation type="vanished">导入导出</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/toolbarhelper.cpp" line="177"/>
         <source>Import File</source>
         <translation>导入文件</translation>
@@ -1872,10 +1725,6 @@ Remove them from the configuration?</source>
         <translation>导入文件夹</translation>
     </message>
     <message>
-        <source>Export</source>
-        <translation type="vanished">导出</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/toolbarhelper.cpp" line="86"/>
         <source>Open Other Notebooks</source>
         <translation>打开其他笔记本</translation>
@@ -1884,10 +1733,6 @@ Remove them from the configuration?</source>
         <location filename="../../../widgets/toolbarhelper.cpp" line="94"/>
         <source>Open Legacy Notebooks Of VNote 2</source>
         <translation>打开 VNote 2 的遗留笔记本</translation>
-    </message>
-    <message>
-        <source>Import/Export</source>
-        <translation type="vanished">导入/导出</translation>
     </message>
     <message>
         <location filename="../../../widgets/toolbarhelper.cpp" line="194"/>
@@ -1931,27 +1776,32 @@ Remove them from the configuration?</source>
         <translation>可以在设置对话框中管理快速访问。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="523"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="503"/>
+        <source>Contributors</source>
+        <translation>贡献者</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="529"/>
         <source>Configuration</source>
         <translation>配置</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="525"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="531"/>
         <source>Edit User Configuration File</source>
         <translation>编辑用户配置文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="550"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="556"/>
         <source>Edit Markdown User Styles</source>
         <translation>编辑 Markdown 用户样式</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="563"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="569"/>
         <source>Edit the user styles of Markdown editor read mode</source>
         <translation>编辑 Markdown 编辑器阅读模式的用户样式</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="637"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="643"/>
         <source>Quick Access Not Set</source>
         <translation>快速访问未设置</translation>
     </message>
@@ -1971,10 +1821,6 @@ Remove them from the configuration?</source>
         <location filename="../../../widgets/toolbarhelper.cpp" line="327"/>
         <source>Press %1 To Exit Full Screen</source>
         <translation>按 %1 退出全屏</translation>
-    </message>
-    <message>
-        <source>Stay On Top</source>
-        <translation type="vanished">置顶</translation>
     </message>
     <message>
         <location filename="../../../widgets/toolbarhelper.cpp" line="104"/>
@@ -1997,22 +1843,14 @@ Remove them from the configuration?</source>
         <translation>窗口</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="534"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="540"/>
         <source>Open User Configuration Folder</source>
         <translation>打开用户配置文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="541"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="547"/>
         <source>Open Default Configuration Folder</source>
         <translation>打开默认配置文件夹</translation>
-    </message>
-    <message>
-        <source>Edit User Configuration</source>
-        <translation type="vanished">编辑用户配置</translation>
-    </message>
-    <message>
-        <source>Open Default Configuration</source>
-        <translation type="vanished">打开默认配置</translation>
     </message>
     <message>
         <location filename="../../../widgets/toolbarhelper.cpp" line="400"/>
@@ -2070,17 +1908,13 @@ Remove them from the configuration?</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <source>Feedback And Discussions</source>
-        <translation type="vanished">反馈和讨论</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="503"/>
         <location filename="../../../widgets/toolbarhelper.cpp" line="509"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="515"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="506"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="512"/>
         <source>&lt;h3&gt;%1&lt;/h3&gt;
 &lt;span&gt;%2&lt;/span&gt;
 </source>
@@ -2089,7 +1923,7 @@ Remove them from the configuration?</source>
 </translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="512"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="518"/>
         <source>About Qt</source>
         <translation>关于 Qt</translation>
     </message>
@@ -2132,10 +1966,6 @@ Remove them from the configuration?</source>
 <context>
     <name>vnotex::ManageNotebooksDialog</name>
     <message>
-        <source>Close</source>
-        <translation type="vanished">关闭</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="75"/>
         <source>Delete</source>
         <translation>删除</translation>
@@ -2144,14 +1974,6 @@ Remove them from the configuration?</source>
         <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="92"/>
         <source>Manage Notebooks</source>
         <translation>管理笔记本</translation>
-    </message>
-    <message>
-        <source>Close notebook %1?</source>
-        <translation type="vanished">关闭笔记本 %1？</translation>
-    </message>
-    <message>
-        <source>Delete (DANGER)</source>
-        <translation type="vanished">删除 (危险)</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="64"/>
@@ -2174,17 +1996,13 @@ Remove them from the configuration?</source>
         <translation>该笔记本可以使用 VNote 重新打开。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="292"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="291"/>
         <source>Press &quot;Ok&quot; to close the notebook and open the location of the notebook root folder.</source>
         <translation>按“确认”关闭该笔记本并打开笔记本根文件夹所在位置。</translation>
     </message>
     <message>
-        <source>The notebook could be imported again later.</source>
-        <translation type="vanished">稍后可以重新导入该笔记本。</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="264"/>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="293"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="292"/>
         <source>Notebook location: %1</source>
         <translation>笔记本路径: %1</translation>
     </message>
@@ -2194,42 +2012,12 @@ Remove them from the configuration?</source>
         <translation>无法关闭笔记本 (%1)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="291"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="290"/>
         <source>Please close the notebook in VNote first and delete the notebook root folder files manually.</source>
         <translation>请先在 VNote 中关闭该笔记本，然后手动删除该笔记本的根文件夹等文件。</translation>
     </message>
     <message>
-        <source>Press &quot;Ok&quot; to open the location of the notebook root folder.</source>
-        <translation type="vanished">按“确认”打开笔记本根文件夹所在位置。</translation>
-    </message>
-    <message>
-        <source>Delete notebook (%1) from disk?</source>
-        <translation type="vanished">从磁盘中删除笔记本 (%1)?</translation>
-    </message>
-    <message>
-        <source>CALM DOWN! CALM DOWN! CALM DOWN! It will delete all files belonging to this notebook from disk. It is dangerous since it will bypass system&apos;s recycle bin!</source>
-        <translation type="vanished">冷静！冷静！冷静！这会从磁盘中删除该笔记本相关的全部文件。该操作会跳过系统的回收站，危险！</translation>
-    </message>
-    <message>
-        <source>Notebook location: %1
-Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
-        <translation type="vanished">笔记本位置: %1
-如果仅要从 %2 中移除该该笔记本，请使用“关闭”按钮。</translation>
-    </message>
-    <message>
-        <source>Failed to delete notebook (%1)</source>
-        <translation type="vanished">无法删除笔记本 (%1)</translation>
-    </message>
-    <message>
-        <source>Delete notebook %1 from disk?</source>
-        <translation type="vanished">从磁盘中删除笔记本 %1?</translation>
-    </message>
-    <message>
-        <source>It will delete all files belonging to this notebook from disk. It is dangerous since it will bypass system&apos;s recycle bin!</source>
-        <translation type="vanished">这会从磁盘中删除该笔记本相关的全部文件。该操作会跳过系统的回收站，危险！</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="310"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="309"/>
         <source>There are unsaved changes to current notebook.</source>
         <translation>当前笔记本有尚未保存的更改。</translation>
     </message>
@@ -2251,10 +2039,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <location filename="../../../widgets/editors/markdowneditor.cpp" line="322"/>
         <source>Insert Table</source>
         <translation>插入表格</translation>
-    </message>
-    <message>
-        <source>For advanced paste, try the &quot;Rich Paste&quot; and &quot;Parse To Markdown And Paste&quot; on the editor&apos;s context menu</source>
-        <translation type="vanished">更多高级粘贴，请尝试编辑器上下文菜单中的“多功能粘贴”和“解析为 Markdown 并粘贴”功能</translation>
     </message>
     <message>
         <location filename="../../../widgets/editors/markdowneditor.cpp" line="490"/>
@@ -2383,10 +2167,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <translation>复制链接</translation>
     </message>
     <message>
-        <source>Parse To Markdown And Paste</source>
-        <translation type="vanished">解析为 Markodwn 并粘贴</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/editors/markdowneditor.cpp" line="1088"/>
         <source>Fetching images to local...</source>
         <translation>正在获取图片到本地...</translation>
@@ -2440,14 +2220,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="292"/>
         <source>Insert file name as title when creating note</source>
         <translation>创建笔记时将文件名作为标题插入</translation>
-    </message>
-    <message>
-        <source>Section number</source>
-        <translation type="vanished">小节序号</translation>
-    </message>
-    <message>
-        <source>Display section number of headings in read mode</source>
-        <translation type="vanished">在阅读模式中为标题显示小节序号</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="204"/>
@@ -2756,63 +2528,66 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
 <context>
     <name>vnotex::MarkdownViewWindow</name>
     <message>
-        <source>Markdown Web Viewer</source>
-        <translation type="vanished">Markdown 查看器</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="442"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="445"/>
         <source>Markdown Viewer</source>
         <translation>Markdown 查看器</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="789"/>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="821"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="793"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="825"/>
         <source>Clear Obsolete Images</source>
         <translation>清空无用图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="790"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="794"/>
         <source>These images seems to be not in use anymore. Please confirm the deletion of them.</source>
         <translation>这些图片似乎已经不再使用。请确认并删除。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="791"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="795"/>
         <source>Deleted local images could be found in the recycle bin of notebook if it is from a bundle notebook.</source>
         <translation>如果这是一个自包含笔记本，已删除的本地图片可以在笔记本回收站中找回。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="815"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="819"/>
         <source>Clearing obsolete images...</source>
         <translation>正在清空无用图片...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="816"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="820"/>
         <source>Abort</source>
         <translation>终止</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="830"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="834"/>
         <source>Clear image (%1)</source>
         <translation>清空图片 (%1)</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="842"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="846"/>
         <source>Cleared %n obsolete images</source>
         <translation>
             <numerusform>清空 %n 无用图片</numerusform>
         </translation>
     </message>
     <message>
-        <source>These images seems not in use anymore. Please confirm the deletion of them.</source>
-        <translation type="vanished">这些图片似乎已经不再使用。请确认并删除。</translation>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="1259"/>
+        <source>View Mode Not Supported In Read Mode</source>
+        <translation>阅读模式不支持查看模式</translation>
     </message>
     <message>
-        <source>Deleted images could be found in the recycle bin of notebook if it is from a bundle notebook.</source>
-        <translation type="vanished">如果这是一个自包含笔记本，已删除的图片可以在笔记本回收站中找回。</translation>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="1277"/>
+        <source>Edit Only</source>
+        <translation>纯编辑</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="997"/>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="1006"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="1288"/>
+        <source>Edit with Preview</source>
+        <translation>预览辅助的编辑</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="1001"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="1010"/>
         <source>Replace is not supported in read mode</source>
         <translation>阅读模式不支持替换</translation>
     </message>
@@ -2820,12 +2595,12 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
 <context>
     <name>vnotex::MarkdownViewer</name>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="120"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="131"/>
         <source>&amp;Edit</source>
         <translation>编辑(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="391"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="402"/>
         <source>Cross Copy</source>
         <translation>交叉复制</translation>
     </message>
@@ -2833,32 +2608,32 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
 <context>
     <name>vnotex::MarkdownViewerAdapter</name>
     <message>
-        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="296"/>
+        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="289"/>
         <source>No Background</source>
         <translation>无背景</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="297"/>
+        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="290"/>
         <source>Evernote</source>
         <translation>印象笔记</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="298"/>
+        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="291"/>
         <source>OneNote</source>
         <translation>OneNote</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="299"/>
+        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="292"/>
         <source>Microsoft Word</source>
         <translation>Microsoft Word</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="300"/>
+        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="293"/>
         <source>WeChat Public Account Editor</source>
         <translation>微信公众号编辑器</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="301"/>
+        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="294"/>
         <source>Raw HTML</source>
         <translation>原始HTML</translation>
     </message>
@@ -2887,10 +2662,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <location filename="../../../widgets/dialogs/newfolderdialog.cpp" line="61"/>
         <source>Name conflicts with existing or built-in folder.</source>
         <translation>名字和已有或内建文件夹冲突。</translation>
-    </message>
-    <message>
-        <source>Name conflicts with existing folder.</source>
-        <translation type="vanished">名字和已有文件夹冲突。</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/newfolderdialog.cpp" line="84"/>
@@ -2939,10 +2710,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <translation>新建笔记</translation>
     </message>
     <message>
-        <source>Please specify a name for the note.</source>
-        <translation type="vanished">请为笔记指定一个名字。</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="46"/>
         <source>Template:</source>
         <translation>模板:</translation>
@@ -2956,10 +2723,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="92"/>
         <source>Please specify a valid name for the note.</source>
         <translation>请为笔记指定一个有效名字。</translation>
-    </message>
-    <message>
-        <source>Name conflicts with existing note.</source>
-        <translation type="vanished">名字和已有笔记冲突。</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="97"/>
@@ -3153,17 +2916,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
     </message>
 </context>
 <context>
-    <name>vnotex::NodeLabelWithUpButton</name>
-    <message>
-        <source>Up</source>
-        <translation type="vanished">向上</translation>
-    </message>
-    <message>
-        <source>Create note under an upper level node</source>
-        <translation type="vanished">在上一层节点下创建笔记</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::NoteManagementPage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="25"/>
@@ -3183,14 +2935,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
 </context>
 <context>
     <name>vnotex::NotePropertiesDialog</name>
-    <message>
-        <source>Properties</source>
-        <translation type="vanished">属性</translation>
-    </message>
-    <message>
-        <source>Please specify a name for the note.</source>
-        <translation type="vanished">请为笔记指定一个名字。</translation>
-    </message>
     <message>
         <location filename="../../../widgets/dialogs/notepropertiesdialog.cpp" line="35"/>
         <source>%1 Properties</source>
@@ -3235,14 +2979,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <translation>查看</translation>
     </message>
     <message>
-        <source>Toggle Recycle Bin Node</source>
-        <translation type="vanished">显示/隐藏回收站节点</translation>
-    </message>
-    <message>
-        <source>&amp;Manage Notebooks</source>
-        <translation type="vanished">管理笔记本(&amp;M)</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/notebookexplorer.cpp" line="175"/>
         <source>External Files</source>
         <translation>外部文件</translation>
@@ -3251,14 +2987,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <location filename="../../../widgets/notebookexplorer.cpp" line="178"/>
         <source>Show External Files</source>
         <translation>显示外部文件</translation>
-    </message>
-    <message>
-        <source>Import External Files When Activated</source>
-        <translation type="vanished">激活时自动导入外部文件</translation>
-    </message>
-    <message>
-        <source>Close File Before Open With External Program</source>
-        <translation type="vanished">以外部程序打开前关闭文件</translation>
     </message>
     <message>
         <location filename="../../../widgets/notebookexplorer.cpp" line="130"/>
@@ -3311,14 +3039,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <location filename="../../../widgets/notebookexplorer.cpp" line="199"/>
         <source>Close File Before Open with External Program</source>
         <translation>以外部程序打开前关闭文件</translation>
-    </message>
-    <message>
-        <source>Could not create folder within Recycle Bin.</source>
-        <translation type="vanished">无法在回收站内创建文件夹。</translation>
-    </message>
-    <message>
-        <source>Could not create note within Recycle Bin.</source>
-        <translation type="vanished">无法在回收站内创建笔记。</translation>
     </message>
     <message>
         <location filename="../../../widgets/notebookexplorer.cpp" line="126"/>
@@ -3572,14 +3292,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <translation>无法加载笔记本 (%1) 节点 (%2)。</translation>
     </message>
     <message>
-        <source>Recycle bin of this notebook. Deleted files could be found here. It is organized in folders named by date. Nodes could be moved to other folders by Cut and Paste.</source>
-        <translation type="vanished">笔记本回收站。被删除的文件可以在此找回。按以日期命名的文件夹进行组织。节点可以通过剪切粘贴移动到其他文件夹。</translation>
-    </message>
-    <message>
-        <source>Recycle Bin</source>
-        <translation type="vanished">回收站</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1879"/>
         <source>[Invalid] %1</source>
         <translation>[无效] %1</translation>
@@ -3590,17 +3302,9 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <translation>[外部] %1</translation>
     </message>
     <message>
-        <source>New N&amp;ote</source>
-        <translation type="vanished">新建笔记(&amp;O)</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="806"/>
         <source>New &amp;Folder</source>
         <translation>新建文件夹(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;Properties</source>
-        <translation type="vanished">属性(&amp;P)</translation>
     </message>
     <message>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="841"/>
@@ -3633,26 +3337,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <translation>粘贴(&amp;P)</translation>
     </message>
     <message>
-        <source>&amp;Empty</source>
-        <translation type="vanished">清空(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Empty the recycle bin of this notebook?</source>
-        <translation type="vanished">清空该笔记本的回收站？</translation>
-    </message>
-    <message>
-        <source>All files in recycle bin will be deleted permanently.</source>
-        <translation type="vanished">回收站中的全部文件都会被永久删除。</translation>
-    </message>
-    <message>
-        <source>Location of recycle bin: %1</source>
-        <translation type="vanished">回收站路径: %1</translation>
-    </message>
-    <message>
-        <source>Failed to empty recycle bin (%1) (%2).</source>
-        <translation type="vanished">无法清空回收站 (%1) (%2)。</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="941"/>
         <source>&amp;Sort</source>
         <translation>排序(&amp;S)</translation>
@@ -3661,10 +3345,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="947"/>
         <source>Re&amp;load</source>
         <translation>重新加载(&amp;L)</translation>
-    </message>
-    <message>
-        <source>Re&amp;load Index From Disk</source>
-        <translation type="obsolete">从磁盘重新加载索引(&amp;L)</translation>
     </message>
     <message>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="796"/>
@@ -3742,10 +3422,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <translation>请检查该节点在磁盘上是否存在。</translation>
     </message>
     <message>
-        <source>Failed to delete/remove item %1 (%2) (%3).</source>
-        <translation type="vanished">无法删除或移除项目 %1 (%2) (%3)。</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="816"/>
         <source>&amp;Properties (Rename)</source>
         <translation>属性(重命名)(&amp;P)</translation>
@@ -3754,10 +3430,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="929"/>
         <source>&amp;Delete</source>
         <translation>删除(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Delete From Recycle Bin</source>
-        <translation type="vanished">从回收站中删除(&amp;D)</translation>
     </message>
     <message>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="935"/>
@@ -3807,14 +3479,6 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
         <translation>
             <numerusform>已粘贴 %n 项</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>Delete these folders and notes permanently?</source>
-        <translation type="vanished">永久删除这些文件夹和笔记？</translation>
-    </message>
-    <message>
-        <source>Files will be deleted permanently and could not be found even in operating system&apos;s recycle bin.</source>
-        <translation type="vanished">文件将会被永久删除，即使在操作系统的回收站中也无法找回。</translation>
     </message>
     <message>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1277"/>
@@ -3890,8 +3554,7 @@ Use the &quot;Close&quot; button if you just want to remove it from %2.</source>
     <message>
         <location filename="../../../widgets/notebooknodeexplorer.cpp" line="1892"/>
         <source>Modified Time: %1</source>
-        <translation>修改时间: %1
-</translation>
+        <translation>修改时间: %1</translation>
     </message>
 </context>
 <context>
@@ -4130,10 +3793,6 @@ Description: %3</source>
         <translation>内容</translation>
     </message>
     <message>
-        <source>Outline</source>
-        <translation type="vanished">大纲</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/searchpanel.cpp" line="172"/>
         <source>Tag</source>
         <translation>标签</translation>
@@ -4272,14 +3931,6 @@ Description: %3</source>
         <translation>无法编译令牌 (%1)</translation>
     </message>
     <message>
-        <source>Searching outline is not supported yet</source>
-        <translation type="vanished">搜索大纲暂不支持</translation>
-    </message>
-    <message>
-        <source>Searching tag is not supported yet</source>
-        <translation type="vanished">搜索标签暂不支持</translation>
-    </message>
-    <message>
         <location filename="../../../search/searcher.cpp" line="353"/>
         <source>Failed to load node to search (%1) (%2).</source>
         <translation>无法加载节点进行搜索 (%1) (%2)。</translation>
@@ -4311,10 +3962,6 @@ Description: %3</source>
         <location filename="../../../widgets/dialogs/settings/settingsdialog.cpp" line="67"/>
         <source>Search</source>
         <translation>查找</translation>
-    </message>
-    <message>
-        <source>Type to search</source>
-        <translation type="vanished">输入以开始查找</translation>
     </message>
 </context>
 <context>
@@ -4441,10 +4088,6 @@ Description: %3</source>
         <location filename="../../../snippet/snippetmgr.cpp" line="345"/>
         <source>the year as four digit numbers</source>
         <translation>四位数的年份数字</translation>
-    </message>
-    <message>
-        <source>the week number (`1` to `53`)</source>
-        <translation type="vanished">星期数字 (`1` 到 `53`)</translation>
     </message>
     <message>
         <location filename="../../../snippet/snippetmgr.cpp" line="349"/>
@@ -4909,23 +4552,33 @@ Description: %3</source>
         <translation>制表符宽度:</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="124"/>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="123"/>
+        <source>Highlight whitespace</source>
+        <translation>高亮空白字符</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="125"/>
+        <source>Highlight Tab and trailing space</source>
+        <translation>高亮制表符和结尾空格</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="134"/>
         <source>Zoom delta of the basic font size</source>
         <translation>基础字体的缩放大小</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="129"/>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="139"/>
         <source>Zoom delta:</source>
         <translation>缩放大小:</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="137"/>
-        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="139"/>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="147"/>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="149"/>
         <source>Spell check</source>
         <translation>拼写检查</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="227"/>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="241"/>
         <source>Text Editor</source>
         <translation>文本编辑器</translation>
     </message>
@@ -5076,7 +4729,7 @@ Description: %3</source>
 <context>
     <name>vnotex::ViewArea</name>
     <message>
-        <location filename="../../../widgets/viewarea.cpp" line="920"/>
+        <location filename="../../../widgets/viewarea.cpp" line="900"/>
         <source>No recently closed file</source>
         <translation>没有最近关闭文件</translation>
     </message>
@@ -5092,10 +4745,6 @@ Description: %3</source>
         <location filename="../../../widgets/viewsplit.cpp" line="151"/>
         <source>Workspaces and Splits</source>
         <translation>工作空间和拆分</translation>
-    </message>
-    <message>
-        <source>No window to show here</source>
-        <translation type="vanished">没有窗口可以展示</translation>
     </message>
     <message>
         <location filename="../../../widgets/viewsplit.cpp" line="413"/>
@@ -5256,39 +4905,39 @@ Description: %3</source>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="208"/>
-        <location filename="../../../widgets/viewwindow.cpp" line="227"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="209"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="228"/>
         <source>[No Buffer]</source>
         <translation>[无缓冲区]</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="588"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="608"/>
         <source>Save changes before closing note (%1)?</source>
         <translation>关闭笔记 (%1) 前是否保存更改？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="589"/>
-        <location filename="../../../widgets/viewwindow.cpp" line="649"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="609"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="669"/>
         <source>Note path (%1).</source>
         <translation>笔记路径 (%1)。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="648"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="668"/>
         <source>Discard changes to note (%1)?</source>
         <translation>放弃对笔记 (%1) 的更改？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="729"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="749"/>
         <source>Found backup file (%1) of file (%2). Do you want to recover from backup file?</source>
         <translation>发现文件 (%2) 的备份文件 (%1)。是否要从备份文件中恢复？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="730"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="750"/>
         <source>&apos;Yes&apos; to recover from backup file, &apos;No&apos; to discard it, and &apos;Cancel&apos; to exit.</source>
         <translation>“是” 以从备份文件中恢复，“否” 以放弃该备份文件，“取消” 以退出。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="731"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="751"/>
         <source>It may be caused by crash while editing this file before.
 
 File last modified time: %1
@@ -5299,106 +4948,107 @@ Backup file last modified time: %2</source>
 备份文件最后修改时间: %2</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="760"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="780"/>
         <source>Drag And Drop Files To Attach</source>
         <translation>拖拽文件以添加为附件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="825"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="845"/>
         <source>File is missing on disk (%1).</source>
         <translation>文件在磁盘中丢失 (%1)。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="826"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="846"/>
         <source>Do you want to force to save the buffer to the file?</source>
         <translation>是否强制保存缓冲区内容到文件？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="827"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="847"/>
         <source>The file may be deleted from outside. Please choose to save the buffer to a new file or just discard it.</source>
         <translation>该文件可能已经被删除。请选择将缓冲区的内容保存为新文件或者放弃缓冲区。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="849"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="869"/>
         <source>File is changed from outside (%1).</source>
         <translation>文件被更改 (%1)。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="850"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="870"/>
         <source>Do you want to save the buffer to the file to override, or discard the buffer?</source>
         <translation>是否保存缓冲区覆盖到文件，或者放弃缓冲区？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="1138"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1158"/>
         <source>Pattern not found: %1%2</source>
         <translation>无法找到模式: %1%2</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="1139"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1159"/>
         <source> [+]</source>
         <translation> [+]</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="1266"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1286"/>
         <source>Local</source>
         <translation>本地</translation>
     </message>
     <message>
-        <source>Do you want to override the file from buffer?</source>
-        <translation type="vanished">是否用缓冲区的内容覆盖该文件？</translation>
+        <location filename="../../../widgets/viewwindow.cpp" line="1328"/>
+        <source>View Mode Not Supported</source>
+        <translation>不支持查看模式</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="851"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="871"/>
         <source>The file is changed from outside. Please choose to save the buffer to the file or just discard the buffer and reload the file.</source>
         <translation>该文件已经被更改。请选择保存缓冲区到该文件或者放弃缓冲区并重新加载文件。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="899"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="919"/>
         <source>This is a read-only note (%1), on which modification is not allowed.</source>
         <translation>这是一个只读笔记 (%1)，不支持修改。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="900"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="920"/>
         <source>Please save your changes to another note.</source>
         <translation>请保存更改到另一个笔记。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="908"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="928"/>
         <source>Failed to save note (%1).</source>
         <translation>无法保存笔记 (%1)。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="909"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="929"/>
         <source>Please check the file (%1) and try it again.</source>
         <translation>请检查文件 (%1) 并重试。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="910"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="930"/>
         <source>Maybe the file is occupied by another service temporarily.</source>
         <translation>可能该文件正在被第三方应用临时占用。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="996"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1016"/>
         <source>Zoomed: %1%</source>
         <translation>缩放: %1%</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="1001"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1021"/>
         <source>Zoomed: %1%2</source>
         <translation>缩放: %1%2</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="1148"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1168"/>
         <source>Pattern not found: %1</source>
         <translation>无法找到模式: %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="1141"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1161"/>
         <source>Match found: %1/%2</source>
         <translation>找到匹配: %1/%2</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/viewwindow.cpp" line="1150"/>
+        <location filename="../../../widgets/viewwindow.cpp" line="1170"/>
         <source>Replaced %n match(es)</source>
         <translation>
             <numerusform>替换 %n 处匹配</numerusform>
@@ -5426,196 +5076,201 @@ Backup file last modified time: %2</source>
     </message>
     <message>
         <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="124"/>
+        <source>View Mode</source>
+        <translation>查看模式</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="136"/>
         <source>Heading</source>
         <translation>标题</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="133"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="145"/>
         <source>Heading 1</source>
         <translation>标题1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="140"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="152"/>
         <source>Heading 2</source>
         <translation>标题2</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="147"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="159"/>
         <source>Heading 3</source>
         <translation>标题3</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="154"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="166"/>
         <source>Heading 4</source>
         <translation>标题4</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="161"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="173"/>
         <source>Heading 5</source>
         <translation>标题5</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="168"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="180"/>
         <source>Heading 6</source>
         <translation>标题6</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="175"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="187"/>
         <source>Clear</source>
         <translation>清空</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="188"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="200"/>
         <source>Bold</source>
         <translation>粗体</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="194"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="206"/>
         <source>Italic</source>
         <translation>斜体</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="200"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="212"/>
         <source>Strikethrough</source>
         <translation>删除线</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="206"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="218"/>
         <source>Unordered List</source>
         <translation>无序列表</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="212"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="224"/>
         <source>Ordered List</source>
         <translation>有序列表</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="218"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="230"/>
         <source>Todo List</source>
         <translation>待办列表</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="224"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="236"/>
         <source>Checked Todo List</source>
         <translation>已完成待办列表</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="230"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="242"/>
         <source>Code</source>
         <translation>代码</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="236"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="248"/>
         <source>Code Block</source>
         <translation>代码块</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="242"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="254"/>
         <source>Math</source>
         <translation>数学公式</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="248"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="260"/>
         <source>Math Block</source>
         <translation>数学公式块</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="254"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="266"/>
         <source>Quote</source>
         <translation>引用块</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="260"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="272"/>
         <source>Link</source>
         <translation>链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="266"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="278"/>
         <source>Image</source>
         <translation>图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="272"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="284"/>
         <source>Table</source>
         <translation>表格</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="278"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="290"/>
         <source>Mark</source>
         <translation>标记</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="285"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="297"/>
         <source>Attachments</source>
         <translation>附件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="300"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="312"/>
         <source>Tags</source>
         <translation>标签</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="317"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="329"/>
         <source>Outline</source>
         <translation>大纲</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="334"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="346"/>
         <source>Find And Replace</source>
         <translation>查找替换</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="342"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="354"/>
         <source>Section Number</source>
         <translation>小节序号</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="352"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="364"/>
         <source>Follow Configuration</source>
         <translation>跟随配置</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="358"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="370"/>
         <source>Enabled</source>
         <translation>启用</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="363"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="375"/>
         <source>Disabled</source>
         <translation>禁用</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="375"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="387"/>
         <source>Toggle In-Place Preview</source>
         <translation>启用/关闭原地预览</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="384"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="396"/>
         <source>Image Host</source>
         <translation>图床</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="398"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="410"/>
         <source>Debug</source>
         <translation>调试</translation>
     </message>
     <message>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="232"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="234"/>
         <source>Snippet applied: %1</source>
         <translation>片段已应用: %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="259"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="261"/>
         <source>Snippet (%1) not found</source>
         <translation>无法找到片段 (%1)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="286"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="288"/>
         <source>Snippet not available</source>
         <translation>没有可用片段</translation>
     </message>
     <message>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="299"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="301"/>
         <source>Select Snippet</source>
         <translation>选择片段</translation>
     </message>

@@ -1,4 +1,10 @@
 # Changes
+## v3.10.0
+* MarkdownEditor
+    * Support side-by-side edit with preview
+    * Support config for highlighting whitespace
+* Tag: fix input method issue on macOS
+
 ## v3.9.0
 * Remove recycle bin node (now recycle bin is just a simple folder)
 * Quick Access: support removing items directly
