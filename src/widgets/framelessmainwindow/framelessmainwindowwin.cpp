@@ -221,4 +221,10 @@ void FramelessMainWindowWin::forceRedraw()
     }
 }
 
+#else
+using namespace vnotex;
+
+FramelessMainWindowWinDummy::FramelessMainWindowWinDummy()
+{
+}
 #endif

@@ -16,6 +16,12 @@ TagPopup::TagPopup(QToolButton *p_btn, QWidget *p_parent)
 {
     setupUI();
 
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    // Qt::Popup on macOS does not work well with input method.
+    setWindowFlags(Qt::Tool | Qt::NoDropShadowWindowHint);
+    setWindowModality(Qt::ApplicationModal);
+#endif
+
     connect(this, &QMenu::aboutToShow,
             this, [this]() {
                 m_tagViewer->setNode(m_buffer ? m_buffer->getNode() : nullptr);

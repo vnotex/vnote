@@ -42,7 +42,7 @@ void Updater::setupUI()
         auto btnBox = getDialogButtonBox();
         auto viewBtn = btnBox->addButton(tr("View Releases"), QDialogButtonBox::AcceptRole);
         connect(viewBtn, &QPushButton::clicked,
-                this, [this]() {
+                this, []() {
                     WidgetUtils::openUrlByDesktop(QUrl("https://github.com/vnotex/vnote/releases"));
                 });
     }

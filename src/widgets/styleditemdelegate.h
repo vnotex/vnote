@@ -35,9 +35,6 @@ namespace vnotex
     {
     public:
         explicit StyledItemDelegateListWidget(const ListWidget *p_listWidget);
-
-    private:
-        const ListWidget *m_listWidget = nullptr;
     };
 
 
@@ -45,9 +42,6 @@ namespace vnotex
     {
     public:
         explicit StyledItemDelegateTreeWidget(const TreeWidget *p_treeWidget);
-
-    private:
-        const TreeWidget *m_treeWidget = nullptr;
     };
 
 

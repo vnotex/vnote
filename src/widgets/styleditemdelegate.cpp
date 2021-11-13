@@ -16,14 +16,14 @@
 using namespace vnotex;
 
 StyledItemDelegateListWidget::StyledItemDelegateListWidget(const ListWidget *p_listWidget)
-    : m_listWidget(p_listWidget)
 {
+    Q_UNUSED(p_listWidget);
 }
 
 
 StyledItemDelegateTreeWidget::StyledItemDelegateTreeWidget(const TreeWidget *p_treeWidget)
-    : m_treeWidget(p_treeWidget)
 {
+    Q_UNUSED(p_treeWidget);
 }
 
 

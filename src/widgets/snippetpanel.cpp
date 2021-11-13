@@ -69,7 +69,7 @@ void SnippetPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
     {
         auto openFolderBtn = m_titleBar->addActionButton(QStringLiteral("open_folder.svg"), tr("Open Folder"));
         connect(openFolderBtn, &QToolButton::triggered,
-                this, [this]() {
+                this, []() {
                     WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(SnippetMgr::getInst().getSnippetFolder()));
                 });
     }

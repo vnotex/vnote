@@ -282,7 +282,7 @@ void MarkdownViewWindow::setupToolBar()
     {
         auto act = addAction(toolBar, ViewWindowToolBarHelper::InplacePreview);
         connect(act, &QAction::triggered,
-                this, [this, act](bool p_checked) {
+                this, [this](bool p_checked) {
                     if (!isReadMode()) {
                         m_editor->setInplacePreviewEnabled(p_checked);
                     }

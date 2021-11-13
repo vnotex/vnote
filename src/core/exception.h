@@ -79,6 +79,12 @@ namespace vnotex
             case Type::EssentialFileMissing:
                 return QString("EssentialFileMissing");
 
+            case Type::FileExistsOnCreate:
+                return QString("FileExistsOnCreate");
+
+            case Type::DirExistsOnCreate:
+                return QString("DirExistsOnCreate");
+
             case Type::InvalidArgument:
                 return QString("InvalidArgument");
             }

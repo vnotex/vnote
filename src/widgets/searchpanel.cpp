@@ -142,7 +142,7 @@ TitleBar *SearchPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
 
         auto toggleLocationListBtn = titleBar->addActionButton(QStringLiteral("search_location_list.svg"), tr("Toggle Location List"));
         connect(toggleLocationListBtn, &QToolButton::triggered,
-                this, [this]() {
+                this, []() {
                     VNoteX::getInst().getMainWindow()->toggleLocationListVisible();
                 });
 

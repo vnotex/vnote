@@ -230,4 +230,10 @@ void FramelessMainWindowLinux::showEvent(QShowEvent *p_event)
     }
 }
 
+#else
+using namespace vnotex;
+
+FramelessMainWindowLinuxDummy::FramelessMainWindowLinuxDummy()
+{
+}
 #endif

@@ -53,5 +53,4 @@ namespace vnotex
         void logRequested(const QString &p_log);
     };
 }
-
 #endif // ISEARCHENGINE_H

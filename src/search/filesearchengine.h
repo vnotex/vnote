@@ -71,7 +71,7 @@ namespace vnotex
 
         void search(const QSharedPointer<SearchOption> &p_option,
                     const SearchToken &p_token,
-                    const QVector<SearchSecondPhaseItem> &p_items);
+                    const QVector<SearchSecondPhaseItem> &p_items) Q_DECL_OVERRIDE;
 
         void stop() Q_DECL_OVERRIDE;
 

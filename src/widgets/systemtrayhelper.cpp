@@ -24,6 +24,7 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win)
 
     MainWindow::connect(trayIcon, &QSystemTrayIcon::activated,
                         p_win, [p_win](QSystemTrayIcon::ActivationReason p_reason) {
+                            Q_UNUSED(p_reason);
 #if !defined(Q_OS_MACOS)
                             if (p_reason == QSystemTrayIcon::Trigger) {
                                 p_win->showMainWindow();

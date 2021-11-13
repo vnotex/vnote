@@ -196,7 +196,7 @@ class GraphPreviewer {
     // Fix SVG with stroke="currentColor" and fill="currentColor".
     fixSvgCurrentColor(p_svgNode) {
         let currentColor = this.currentColor;
-        if (currentColor) {
+        if (currentColor && p_svgNode) {
             let nodes = p_svgNode.querySelectorAll("g[fill='currentColor']");
             for (let i = 0; i < nodes.length; ++i) {
                 let node = nodes[i];
@@ -212,7 +212,7 @@ class GraphPreviewer {
 
     scaleSvg(p_svgNode) {
         let scaleFactor = window.devicePixelRatio;
-        if (scaleFactor == 1) {
+        if (scaleFactor == 1 || !p_svgNode) {
             return;
         }
 

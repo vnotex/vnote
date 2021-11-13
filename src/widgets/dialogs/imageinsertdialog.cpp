@@ -136,7 +136,7 @@ void ImageInsertDialog::setupUI(const QString &p_title,
         auto fixedWidthCheckBox = WidgetsFactory::createCheckBox(tr("Fixed scaling width"), mainWidget);
         fixedWidthCheckBox->setChecked(s_fixedScaleWidth);
         connect(fixedWidthCheckBox, &QCheckBox::stateChanged,
-                this, [this](int p_state) {
+                this, [](int p_state) {
                     s_fixedScaleWidth = p_state == Qt::Checked;
                 });
         gridLayout->addWidget(fixedWidthCheckBox, 4, 1, 1, 1);

@@ -188,7 +188,6 @@ bool NotebookDatabaseAccess::addNode(Node *p_node, bool p_ignoreId)
     }
 
     const ID id = query.lastInsertId().toULongLong();
-    const ID preId = p_node->getId();
     p_node->updateId(id);
 
     qDebug() << "added node id" << id << p_node->getName();

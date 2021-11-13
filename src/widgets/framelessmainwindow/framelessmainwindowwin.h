@@ -40,6 +40,8 @@ namespace vnotex
 #else
     class FramelessMainWindowWinDummy
     {
+    public:
+        FramelessMainWindowWinDummy();
     };
 #endif
 }
