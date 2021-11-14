@@ -1,4 +1,6 @@
 #include "settingspage.h"
+#include "utils/widgetutils.h"
+#include "../../propertydefs.h"
 
 using namespace vnotex;
 
@@ -19,16 +21,17 @@ bool SettingsPage::search(const QString &p_key)
         if (item.m_words.contains(p_key, Qt::CaseInsensitive)) {
             // Continue to search all the matched targets.
             hit = true;
-            searchHit(item.m_target);
+            searchHit(item.m_target, true);
         }
     }
 
     return hit;
 }
 
-void SettingsPage::searchHit(QWidget *p_target)
+void SettingsPage::searchHit(QWidget *p_target, bool hit)
 {
     Q_UNUSED(p_target);
+    WidgetUtils::setPropertyDynamically(p_target, PropertyDefs::c_hitSettingWidght, hit);
 }
 
 void SettingsPage::addSearchItem(const QString &p_words, QWidget *p_target)

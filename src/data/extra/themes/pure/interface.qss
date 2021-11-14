@@ -31,6 +31,10 @@ QWidget[DialogCentralWidget="true"] {
     border: 1px solid @widgets#qwidget#error#border;
 }
 
+[HitSettingWidget="true"] {
+    border: 4px solid @widgets#qwidget#info#border;
+}
+
 /* QAbstractScrollArea */
 QAbstractScrollArea {
     border: 1px solid @widgets#qabstractscrollarea#border;

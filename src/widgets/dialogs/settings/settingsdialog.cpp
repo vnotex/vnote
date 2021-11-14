@@ -21,6 +21,14 @@
 #include "vipage.h"
 #include "notemanagementpage.h"
 
+#include <QDebug>
+#include <QTimer>
+#include <QColor>
+#include "settingspage.h"
+#include "utils/widgetutils.h"
+#include "../../propertydefs.h"
+#include <core/vnotex.h>
+
 using namespace vnotex;
 
 SettingsDialog::SettingsDialog(QWidget *p_parent)
@@ -66,6 +74,19 @@ void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent)
     m_searchEdit = WidgetsFactory::createLineEdit(p_parent);
     m_searchEdit->setPlaceholderText(tr("Search"));
     layout->addWidget(m_searchEdit);
+    connect(m_searchEdit,&QLineEdit::textChanged,
+            this, [this]() { QTimer::singleShot(500, this, [this](){
+            forEachPage([this](SettingsPage *p_page) {
+                bool hit = p_page->search(m_searchEdit->text());
+                if (hit) {
+                    qDebug() << p_page->title();
+                    // 目前只能找到tree的 通过 外观 笔记管理，快速访问与编辑器好像没有加入到tree的搜索中
+                    // 不知道如何找到item并且高亮
+                }
+                return hit;
+            });
+        });
+    });
 
     m_pageExplorer = new TreeWidget(TreeWidget::None, p_parent);
     TreeWidget::setupSingleColumnHeaderlessTree(m_pageExplorer, false, false);
