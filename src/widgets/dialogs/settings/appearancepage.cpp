@@ -67,7 +67,7 @@ void AppearancePage::setupUI()
                     this, &AppearancePage::pageIsChanged);
         }
 
-        const QString label(tr("Keep dock widgets when expanding content area:"));
+        const QString label(tr("Dock widgets kept when expanding content area:"));
         mainLayout->addRow(label, layout);
         addSearchItem(label, label, m_keepDocksExpandingContentArea.first().first);
     }

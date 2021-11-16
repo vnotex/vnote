@@ -152,6 +152,8 @@ void MarkdownViewWindow::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffe
             m_editor->show();
 
             setEditViewMode(ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig().getEditViewMode());
+        } else {
+            setEditViewMode(m_editViewMode);
         }
 
         // Avoid focus glitch.
