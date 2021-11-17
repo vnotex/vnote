@@ -53,6 +53,8 @@ namespace vnotex
 
         void handleFindAndReplaceWidgetClosed() Q_DECL_OVERRIDE;
 
+        void print() Q_DECL_OVERRIDE;
+
     protected:
         void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 

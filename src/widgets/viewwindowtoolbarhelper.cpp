@@ -412,6 +412,13 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         break;
     }
 
+    case Action::Print:
+    {
+        act = p_tb->addAction(ToolBarHelper::generateIcon("print_editor.svg"), ViewWindow::tr("Print"));
+        addActionShortcut(act, editorConfig.getShortcut(Shortcut::Print), viewWindow);
+        break;
+    }
+
     default:
         Q_ASSERT(false);
         break;

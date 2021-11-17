@@ -536,6 +536,14 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
         break;
     }
 
+    case ViewWindowToolBarHelper::Print:
+    {
+        act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
+        connect(act, &QAction::triggered,
+                this, &ViewWindow::print);
+        break;
+    }
+
     default:
         Q_ASSERT(false);
         break;
@@ -1318,7 +1326,7 @@ bool ViewWindow::isSessionEnabled() const
 
 void ViewWindow::toggleDebug()
 {
-    qDebug() << "debug is not supported";
+    qWarning() << "debug is not supported";
 }
 
 void ViewWindow::updateViewModeMenu(QMenu *p_menu)
@@ -1327,4 +1335,9 @@ void ViewWindow::updateViewModeMenu(QMenu *p_menu)
 
     auto act = p_menu->addAction(tr("View Mode Not Supported"));
     act->setEnabled(false);
+}
+
+void ViewWindow::print()
+{
+    qWarning() << "print is not supported";
 }

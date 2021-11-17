@@ -2,10 +2,10 @@
 1. All the keys without special notice are **case insensitive**;
 2. On macOS, `Ctrl` corresponds to `Command` except in Vi mode;
 3. The key sequence `Ctrl+G, I` means that first press both `Ctrl` and `G` simultaneously, release them, then press `I` and release;
-4. For a **complete latest shortcuts list**, please view the `vnotex.json` configuration file.
+4. For a **complete latest shortcuts list** or modifying default shortcuts, please view the `vnotex.json` configuration file.
 
 ## General
-- `Ctrl+G E`  
+- `Ctrl+G, E`  
 Toggle expanding the content area.
 - `Ctrl+Alt+N`  
 Create a note in current folder.
@@ -23,11 +23,11 @@ Recover last closed file.
 Open Flash Page.
 - `Ctrl+Alt+I`  
 Open Quick Access.
-- `Ctrl+G X`  
+- `Ctrl+G, X`  
 Close current tab.
-- `Ctrl+G D`  
+- `Ctrl+G, D`  
 Locate to the folder of current note.
-- `Ctrl+G O`  
+- `Ctrl+G, O`  
 Open the Outline popup.
 
 ## Text Editor
@@ -89,7 +89,7 @@ Shares the same shortcuts with Text Editor.
 
 - `Ctrl+T`  
 Edit current note or save changes and exit edit mode.
-- `Ctrl+G Q`  
+- `Ctrl+G, Q`  
 Discard current changes and exit edit mode.
 
 #### Text Editing
@@ -117,4 +117,4 @@ Increase or decrease the indentation. If any text is selected, the indentation w
 Insert two spaces followed by a new line, namely a soft linebreak in Markdown.
 
 ## Navigation Mode
-`Ctrl+G W` will turn VNote into **Navigation Mode**. In this mode, VNote will display at most two characters on some major widgets, and then pressing corresponding characters will jump to that widget.
+`Ctrl+G, W` will turn VNote into **Navigation Mode**. In this mode, VNote will display at most two characters on some major widgets, and then pressing corresponding characters will jump to that widget.

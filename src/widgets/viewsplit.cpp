@@ -148,7 +148,7 @@ void ViewSplit::setupCornerWidget()
         m_menuButton->setPopupMode(QToolButton::InstantPopup);
         m_menuButton->setProperty(PropertyDefs::c_actionToolButton, true);
 
-        auto act = new QAction(s_menuIcon, tr("Workspaces and Splits"), m_menuButton);
+        auto act = new QAction(s_menuIcon, tr("Menu"), m_menuButton);
         m_menuButton->setDefaultAction(act);
 
         auto menu = WidgetsFactory::createMenu(m_menuButton);

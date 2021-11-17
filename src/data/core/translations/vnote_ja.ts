@@ -109,7 +109,7 @@
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/appearancepage.cpp" line="70"/>
-        <source>Keep dock widgets when expanding content area:</source>
+        <source>Dock widgets kept when expanding content area:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -690,9 +690,8 @@
         <translation>ファイルベースのないバッファ(%1)をスキップしました。</translation>
     </message>
     <message>
-        <location filename="../../../export/exporter.cpp" line="120"/>
         <source>Failed to create output folder %1.</source>
-        <translation>出力フォルダ%1の作成に失敗しました。</translation>
+        <translation type="vanished">出力フォルダ%1の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../../../export/exporter.cpp" line="64"/>
@@ -701,6 +700,7 @@
     </message>
     <message>
         <location filename="../../../export/exporter.cpp" line="38"/>
+        <location filename="../../../export/exporter.cpp" line="120"/>
         <source>Failed to create output folder (%1).</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1503,8 +1503,12 @@
     </message>
     <message>
         <location filename="../../../widgets/dialogs/importnotebookdialog.cpp" line="103"/>
+        <source>Not a valid (%1) root folder (%2).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Not a valid %1 root folder (%2).</source>
-        <translation>有効な%1ルートフォルダ(%2)ではありません。</translation>
+        <translation type="vanished">有効な%1ルートフォルダ(%2)ではありません。</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/importnotebookdialog.cpp" line="127"/>
@@ -1700,7 +1704,7 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/systemtrayhelper.cpp" line="44"/>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="414"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="565"/>
         <source>Quit</source>
         <translation>終了</translation>
     </message>
@@ -1803,49 +1807,59 @@ Remove them from the configuration?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="503"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="577"/>
+        <source>Menu</source>
+        <translation type="unfinished">メニュー</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="624"/>
+        <source>Home Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="645"/>
         <source>Contributors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="529"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="305"/>
         <source>Configuration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="531"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="307"/>
         <source>Edit User Configuration File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="556"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="332"/>
         <source>Edit Markdown User Styles</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="569"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="345"/>
         <source>Edit the user styles of Markdown editor read mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="643"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="419"/>
         <source>Quick Access Not Set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/toolbarhelper.cpp" line="289"/>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="375"/>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="385"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="526"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="536"/>
         <source>Settings</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="305"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="456"/>
         <source>Expand Content Area</source>
         <translation>コンテンツ領域の拡大</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="327"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="478"/>
         <source>Press %1 To Exit Full Screen</source>
         <translation>%1 を押して全画面表示を終了する</translation>
     </message>
@@ -1860,88 +1874,81 @@ Remove them from the configuration?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="335"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="486"/>
         <source>Stay on Top</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="347"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="498"/>
         <source>Windows</source>
         <translation>ウインドウ</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="540"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="316"/>
         <source>Open User Configuration Folder</source>
         <translation>ユーザー設定フォルダを開く</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="547"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="323"/>
         <source>Open Default Configuration Folder</source>
         <translation>既定の設定フォルダを開く</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="400"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="551"/>
         <source>Reset Main Window Layout</source>
         <translation>メインウィンドウのレイアウトをリセット</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="408"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="559"/>
         <source>Restart</source>
         <translation>再起動</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="426"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="622"/>
         <source>Help</source>
         <translation>ヘルプ</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="436"/>
         <source>What&apos;s This?</source>
-        <translation>これは何ですか?</translation>
+        <translation type="vanished">これは何ですか?</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="441"/>
         <source>Enter WhatsThis mode and click somewhere to show help information</source>
-        <translation>[これは何]モードに入り、ヘルプ情報を表示する場所をクリックします</translation>
+        <translation type="vanished">[これは何]モードに入り、ヘルプ情報を表示する場所をクリックします</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="445"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="600"/>
         <source>Shortcuts Help</source>
         <translation>ショートカットヘルプ</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="456"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="611"/>
         <source>Markdown Guide</source>
         <translation>Markdown ガイド</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="469"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="586"/>
         <source>View Logs</source>
         <translation>ログの表示</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="482"/>
-        <source>%1 Home Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="488"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="630"/>
         <source>Feedback and Discussions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="496"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="638"/>
         <source>Check for Updates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="509"/>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="515"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="651"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="657"/>
         <source>About</source>
         <translation>バージョン情報</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="512"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="654"/>
         <source>&lt;h3&gt;%1&lt;/h3&gt;
 &lt;span&gt;%2&lt;/span&gt;
 </source>
@@ -1950,7 +1957,7 @@ Remove them from the configuration?</source>
 </translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="518"/>
+        <location filename="../../../widgets/toolbarhelper.cpp" line="660"/>
         <source>About Qt</source>
         <translation>Qtについて</translation>
     </message>
@@ -2520,66 +2527,66 @@ Remove them from the configuration?</source>
 <context>
     <name>vnotex::MarkdownViewWindow</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="445"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="447"/>
         <source>Markdown Viewer</source>
         <translation>Markdownビューア</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="793"/>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="825"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="795"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="827"/>
         <source>Clear Obsolete Images</source>
         <translation>古いイメージをクリア</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="794"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="796"/>
         <source>These images seems to be not in use anymore. Please confirm the deletion of them.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="795"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="797"/>
         <source>Deleted local images could be found in the recycle bin of notebook if it is from a bundle notebook.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="819"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="821"/>
         <source>Clearing obsolete images...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="820"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="822"/>
         <source>Abort</source>
         <translation type="unfinished">中止</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="834"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="836"/>
         <source>Clear image (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="846"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="848"/>
         <source>Cleared %n obsolete images</source>
         <translation type="unfinished">
             <numerusform></numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="1259"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="1261"/>
         <source>View Mode Not Supported In Read Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="1277"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="1279"/>
         <source>Edit Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="1288"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="1290"/>
         <source>Edit with Preview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="1001"/>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="1010"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="1003"/>
+        <location filename="../../../widgets/markdownviewwindow.cpp" line="1012"/>
         <source>Replace is not supported in read mode</source>
         <translation>置換は読み取りモードではサポートされていません</translation>
     </message>
@@ -4732,9 +4739,13 @@ Description: %3</source>
         <translation>ウインドウリスト</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit.cpp" line="151"/>
         <source>Workspaces and Splits</source>
-        <translation>ワークスペースと分割</translation>
+        <translation type="vanished">ワークスペースと分割</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/viewsplit.cpp" line="151"/>
+        <source>Menu</source>
+        <translation type="unfinished">メニュー</translation>
     </message>
     <message>
         <location filename="../../../widgets/viewsplit.cpp" line="413"/>

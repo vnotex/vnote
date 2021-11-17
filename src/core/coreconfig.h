@@ -127,7 +127,7 @@ namespace vnotex
         QString m_shortcuts[Shortcut::MaxShortcut];
 
         // Icon size of MainWindow tool bar.
-        int m_toolBarIconSize = 16;
+        int m_toolBarIconSize = 18;
 
         // Icon size of MainWindow QDockWidgets tab bar.
         int m_docksTabBarIconSize = 20;

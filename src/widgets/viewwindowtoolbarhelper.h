@@ -48,7 +48,8 @@ namespace vnotex
             SectionNumber,
             InplacePreview,
             ImageHost,
-            Debug
+            Debug,
+            Print
         };
 
         static QAction *addAction(QToolBar *p_tb, Action p_action);

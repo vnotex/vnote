@@ -100,7 +100,7 @@ bool ImportNotebookDialog::validateRootFolderInput(QString &p_msg)
         auto backend = notebookMgr.createNotebookBackend(backendName, rootFolderPath);
         if (!factory->checkRootFolder(backend)) {
             Utils::appendMsg(p_msg,
-                tr("Not a valid %1 root folder (%2).").arg(factory->getDisplayName(), rootFolderPath));
+                tr("Not a valid (%1) root folder (%2).").arg(factory->getDisplayName(), rootFolderPath));
             return false;
         }
 

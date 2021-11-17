@@ -6,6 +6,7 @@ SOURCES += \
     $$PWD/htmlutils.cpp \
     $$PWD/imageutils.cpp \
     $$PWD/pathutils.cpp \
+    $$PWD/printutils.cpp \
     $$PWD/processutils.cpp \
     $$PWD/urldragdroputils.cpp \
     $$PWD/utils.cpp \
@@ -21,6 +22,7 @@ HEADERS += \
     $$PWD/htmlutils.h \
     $$PWD/imageutils.h \
     $$PWD/pathutils.h \
+    $$PWD/printutils.h \
     $$PWD/processutils.h \
     $$PWD/urldragdroputils.h \
     $$PWD/utils.h \

@@ -61,7 +61,7 @@
             "MoveOneSplitRight" : "Ctrl+G, Shift+L",
             "OpenLastClosedFile" : "Ctrl+Shift+T"
         },
-        "toolbar_icon_size" : 16,
+        "toolbar_icon_size" : 18,
         "docks_tabbar_icon_size" : 24,
         "note_management" : {
             "external_node" : {
@@ -120,7 +120,8 @@
                 "FindPrevious" : "Shift+F3",
                 "ApplySnippet" : "Ctrl+G, I",
                 "Tag" : "Ctrl+G, B",
-                "Debug" : "F12"
+                "Debug" : "F12",
+                "Print" : ""
             },
             "spell_check_auto_detect_language" : false,
             "spell_check_default_dictionary" : "en_US",

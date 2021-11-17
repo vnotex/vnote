@@ -187,8 +187,8 @@ bool NotebookTagMgr::updateNodeTags(Node *p_node)
     auto db = m_notebook->getDatabaseAccess();
 
     // Make sure the node exists in DB.
-    if (!db->addNode(p_node, false)) {
-        qWarning() << "failed to add node to DB" << p_node->fetchPath() << p_node->getId();
+    if (!db->addNodeRecursively(p_node, false)) {
+        qWarning() << "failed to add node to DB" << p_node->fetchPath() << p_node->getId() << (p_node->getParent() ? p_node->getParent()->getId() : -1);
         return false;
     }
 

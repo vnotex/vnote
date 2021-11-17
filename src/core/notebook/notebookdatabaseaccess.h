@@ -49,6 +49,8 @@ namespace vnotex
     public:
         bool addNode(Node *p_node, bool p_ignoreId);
 
+        bool addNodeRecursively(Node *p_node, bool p_ignoreId);
+
         // Whether there is a record with the same ID in DB and has the same path.
         bool existsNode(const Node *p_node);
 

@@ -194,6 +194,20 @@ bool NotebookDatabaseAccess::addNode(Node *p_node, bool p_ignoreId)
     return true;
 }
 
+bool NotebookDatabaseAccess::addNodeRecursively(Node *p_node, bool p_ignoreId)
+{
+    if (!p_node) {
+        return false;
+    }
+
+    auto paNode = p_node->getParent();
+    if (paNode && !addNodeRecursively(paNode, p_ignoreId)) {
+        return false;
+    }
+
+    return addNode(p_node, p_ignoreId);
+}
+
 QSharedPointer<NotebookDatabaseAccess::NodeRecord> NotebookDatabaseAccess::queryNode(ID p_id)
 {
     auto db = getDatabase();

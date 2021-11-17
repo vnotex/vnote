@@ -83,6 +83,20 @@ void TestNotebookDatabase::testNode()
     QScopedPointer<DummyNode> node6(new DummyNode(Node::Flag::Content, 5, "cab", m_notebook.data(), node4.data()));
     addAndQueryNode(node6.data(), false);
 
+    // Node 7/8, with non-exist parent.
+    QScopedPointer<DummyNode> node7(new DummyNode(Node::Flag::Content, 55, "caba", m_notebook.data(), node6.data()));
+    QScopedPointer<DummyNode> node8(new DummyNode(Node::Flag::Content, 555, "cabaa", m_notebook.data(), node7.data()));
+    {
+        bool ret = m_dbAccess->addNode(node8.data(), false);
+        QVERIFY(!ret);
+
+        ret = m_dbAccess->addNodeRecursively(node8.data(), false);
+        queryAndVerifyNode(node7.data());
+        QVERIFY(m_dbAccess->existsNode(node7.data()));
+        queryAndVerifyNode(node8.data());
+        QVERIFY(m_dbAccess->existsNode(node8.data()));
+    }
+
     // queryNodeParentPath().
     {
         testQueryNodeParentPath(rootNode.data());

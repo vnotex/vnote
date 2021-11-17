@@ -4,6 +4,7 @@
 #include <QVBoxLayout>
 #include <QStackedLayout>
 #include <QScrollArea>
+#include <QScrollBar>
 
 #include <widgets/treewidget.h>
 #include <widgets/lineedit.h>
@@ -78,6 +79,10 @@ void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent)
                 Q_UNUSED(p_previous);
                 auto page = itemPage(p_item);
                 m_pageLayout->setCurrentWidget(page);
+                auto vsb = m_scrollArea->verticalScrollBar();
+                if (vsb) {
+                    vsb->setValue(0);
+                }
             });
 
     p_layout->addLayout(layout, 2);

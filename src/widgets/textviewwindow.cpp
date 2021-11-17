@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QScrollBar>
 #include <QToolBar>
+#include <QPrinter>
 
 #include <vtextedit/vtextedit.h>
 #include <core/editorconfig.h>
@@ -15,6 +16,7 @@
 #include <core/thememgr.h>
 #include "editors/statuswidget.h"
 #include <core/fileopenparameters.h>
+#include <utils/printutils.h>
 
 using namespace vnotex;
 
@@ -67,11 +69,12 @@ void TextViewWindow::setupToolBar()
     toolBar->addSeparator();
 
     addAction(toolBar, ViewWindowToolBarHelper::Attachment);
-
     addAction(toolBar, ViewWindowToolBarHelper::Tag);
 
     ToolBarHelper::addSpacer(toolBar);
+
     addAction(toolBar, ViewWindowToolBarHelper::FindAndReplace);
+    addAction(toolBar, ViewWindowToolBarHelper::Print);
 }
 
 void TextViewWindow::handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras)
@@ -297,4 +300,12 @@ QString TextViewWindow::selectedText() const
 {
     Q_ASSERT(m_editor);
     return m_editor->getTextEdit()->selectedText();
+}
+
+void TextViewWindow::print()
+{
+    auto printer = PrintUtils::promptForPrint(m_editor->getTextEdit()->hasSelection(), this);
+    if (printer) {
+        m_editor->getTextEdit()->print(printer.data());
+    }
 }

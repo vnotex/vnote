@@ -45,7 +45,7 @@ void CoreConfig::init(const QJsonObject &p_app,
 
     m_toolBarIconSize = READINT(QStringLiteral("toolbar_icon_size"));
     if (m_toolBarIconSize <= 0) {
-        m_toolBarIconSize = 16;
+        m_toolBarIconSize = 18;
     }
 
     m_docksTabBarIconSize = READINT(QStringLiteral("docks_tabbar_icon_size"));

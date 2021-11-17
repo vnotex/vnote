@@ -60,6 +60,7 @@ namespace vnotex
             ApplySnippet,
             Tag,
             Debug,
+            Print,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

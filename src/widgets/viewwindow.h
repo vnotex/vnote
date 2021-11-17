@@ -178,6 +178,8 @@ namespace vnotex
 
         virtual void toggleDebug();
 
+        virtual void print();
+
     protected:
         bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 

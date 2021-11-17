@@ -117,7 +117,7 @@ QString Exporter::doExport(const ExportOption &p_option, Node *p_note)
 
     // Make sure output folder exists.
     if (!QDir().mkpath(p_option.m_outputDir)) {
-        emit logRequested(tr("Failed to create output folder %1.").arg(p_option.m_outputDir));
+        emit logRequested(tr("Failed to create output folder (%1).").arg(p_option.m_outputDir));
         return outputFile;
     }
 
