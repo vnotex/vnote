@@ -1,4 +1,9 @@
 # Changes
+## v3.10.1
+* MarkdownEditor: fix view mode issue
+* Support print
+* Refine icons
+
 ## v3.10.0
 * MarkdownEditor
     * Support side-by-side edit with preview
