@@ -7,6 +7,7 @@
             "id": "19",
             "modified_time": "2021-08-29T03:16:36Z",
             "name": "index.md",
+            "signature": "79316798291059",
             "tags": [
             ]
         },
@@ -16,6 +17,7 @@
             "id": "20",
             "modified_time": "2021-05-12T12:56:52Z",
             "name": "downloads.md",
+            "signature": "27205960088691",
             "tags": [
             ]
         },
@@ -25,6 +27,7 @@
             "id": "21",
             "modified_time": "2021-08-29T03:21:42Z",
             "name": "screenshots.md",
+            "signature": "113818270579827",
             "tags": [
             ]
         },
@@ -34,6 +37,7 @@
             "id": "22",
             "modified_time": "2021-05-12T12:16:02Z",
             "name": "navigation.json",
+            "signature": "82331865332851",
             "tags": [
             ]
         },
@@ -43,6 +47,7 @@
             "id": "23",
             "modified_time": "2021-05-12T12:59:21Z",
             "name": "vnotex.md",
+            "signature": "67535702998131",
             "tags": [
             ]
         }
@@ -54,5 +59,6 @@
     ],
     "id": "2",
     "modified_time": "2021-05-12T12:13:25Z",
-    "version": 1
+    "signature": "49299271859315",
+    "version": 3
 }

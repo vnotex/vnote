@@ -7,6 +7,7 @@
             "id": "5",
             "modified_time": "2021-07-11T08:59:08Z",
             "name": "Welcome.md",
+            "signature": "115802545470579",
             "tags": [
             ]
         },
@@ -16,6 +17,7 @@
             "id": "6",
             "modified_time": "2021-07-11T09:02:39Z",
             "name": "Why VNote.md",
+            "signature": "105073717165171",
             "tags": [
             ]
         },
@@ -25,6 +27,7 @@
             "id": "7",
             "modified_time": "2021-07-12T12:41:51Z",
             "name": "Get Started.md",
+            "signature": "24504425659507",
             "tags": [
             ]
         },
@@ -34,6 +37,7 @@
             "id": "8",
             "modified_time": "2021-07-12T12:50:26Z",
             "name": "Notes Management.md",
+            "signature": "120883491781747",
             "tags": [
             ]
         },
@@ -43,6 +47,7 @@
             "id": "9",
             "modified_time": "2021-07-12T01:40:43Z",
             "name": "Configuration.md",
+            "signature": "99992770854003",
             "tags": [
             ]
         },
@@ -52,6 +57,7 @@
             "id": "10",
             "modified_time": "2021-07-11T09:41:37Z",
             "name": "Snippet.md",
+            "signature": "72273051925619",
             "tags": [
             ]
         },
@@ -61,6 +67,7 @@
             "id": "11",
             "modified_time": "2021-07-11T09:44:41Z",
             "name": "Template.md",
+            "signature": "42783806471283",
             "tags": [
             ]
         },
@@ -70,6 +77,7 @@
             "id": "12",
             "modified_time": "2021-07-29T13:14:53Z",
             "name": "Themes and Styles.md",
+            "signature": "2110466178163",
             "tags": [
             ]
         },
@@ -79,6 +87,7 @@
             "id": "13",
             "modified_time": "2021-08-14T01:11:21Z",
             "name": "Image Host.md",
+            "signature": "12865064287347",
             "tags": [
             ]
         },
@@ -88,6 +97,7 @@
             "id": "14",
             "modified_time": "2021-08-29T03:44:20Z",
             "name": "Export.md",
+            "signature": "51292136684659",
             "tags": [
             ]
         },
@@ -97,6 +107,7 @@
             "id": "15",
             "modified_time": "2021-07-13T12:08:47Z",
             "name": "Frequently Asked Questions.md",
+            "signature": "20733444373619",
             "tags": [
             ]
         }
@@ -105,5 +116,6 @@
     ],
     "id": "4",
     "modified_time": "2021-05-12T12:13:25Z",
-    "version": 1
+    "signature": "23349079456883",
+    "version": 3
 }

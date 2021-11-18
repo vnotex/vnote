@@ -59,7 +59,7 @@
     ],
     "image_folder": "vx_images",
     "name": "vnote-docs",
-    "next_node_id": "3",
-    "version": "1",
+    "tag_graph": "",
+    "version": 3,
     "version_controller": "dummy.vnotex"
 }

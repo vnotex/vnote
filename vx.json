@@ -8,12 +8,10 @@
         },
         {
             "name": "zh_cn"
-        },
-        {
-            "name": "vx_recycle_bin"
         }
     ],
     "id": "1",
     "modified_time": "2021-05-12T12:13:25Z",
-    "version": "1"
+    "signature": "177730894963",
+    "version": 3
 }
