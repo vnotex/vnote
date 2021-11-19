@@ -10,4 +10,4 @@
 国内的用户可以尝试以下下载：
 
 * [天翼云盘](https://cloud.189.cn/t/Av67NvmEJVBv)
-* [百度云盘](https://pan.baidu.com/s/1Fou1flmBsQUQ8Qs9V_M6Aw) 提取码`code`
+* [百度云盘](https://pan.baidu.com/s/1Fou1flmBsQUQ8Qs9V_M6Aw) 提取码`note`
