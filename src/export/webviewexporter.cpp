@@ -17,6 +17,7 @@
 #include <utils/fileutils.h>
 #include <utils/webutils.h>
 #include <utils/processutils.h>
+#include <utils/htmlutils.h>
 #include <core/file.h>
 
 using namespace vnotex;
@@ -348,7 +349,7 @@ void WebViewExporter::prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOp
     if (p_pdfOption.m_addTableOfContents) {
         m_wkhtmltopdfArgs << "toc";
         m_wkhtmltopdfArgs << "--toc-text-size-shrink" << "1.0";
-        m_wkhtmltopdfArgs << "--toc-header-text" << tr("Table of Contents");
+        m_wkhtmltopdfArgs << "--toc-header-text" << HtmlUtils::unicodeEncode(tr("Table of Contents"));
     }
 }
 

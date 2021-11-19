@@ -37,8 +37,6 @@ namespace vnotex
 
         static void updateQuickAccessMenu(QMenu *p_menu);
 
-        static void setupConfigurationMenu(QMenu *p_menu);
-
         static void setupExpandButton(MainWindow *p_win, QToolBar *p_toolBar);
 
         static void setupSettingsButton(MainWindow *p_win, QToolBar *p_toolBar);
