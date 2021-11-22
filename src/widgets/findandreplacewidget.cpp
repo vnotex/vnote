@@ -77,6 +77,7 @@ void FindAndReplaceWidget::setupUI()
 
         m_findLineEdit = WidgetsFactory::createLineEdit(this);
         m_findLineEdit->setPlaceholderText(tr("Search"));
+        m_findLineEdit->setClearButtonEnabled(true);
         connect(m_findLineEdit, &QLineEdit::textChanged,
                 m_findTextTimer, QOverload<>::of(&QTimer::start));
 

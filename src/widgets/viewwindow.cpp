@@ -1162,9 +1162,13 @@ void ViewWindow::replaceAll(const QString &p_text, FindOptions p_options, const 
 
 void ViewWindow::showFindResult(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex)
 {
+    if (p_texts.isEmpty() || p_texts[0].isEmpty()) {
+        showMessage(QString());
+        return;
+    }
+
     if (p_totalMatches == 0) {
-        showMessage(tr("Pattern not found: %1%2").arg(p_texts.isEmpty() ? QString() : p_texts[0],
-                                                      p_texts.size() > 1 ? tr(" [+]"): QString()));
+        showMessage(tr("Pattern not found: %1").arg(p_texts.join(QStringLiteral("; "))));
     } else {
         showMessage(tr("Match found: %1/%2").arg(p_currentMatchIndex + 1).arg(p_totalMatches));
     }

@@ -40,7 +40,7 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 -->
-<language name="Intel x86 (NASM)" section="Assembler" version="3" kateversion="2.3" extensions="*.asm" mimetype="" author="Nicola Gigante (nicola.gigante@gmail.com)" license="GPLv2+">
+<language name="Intel x86 (NASM)" section="Assembler" version="3" kateversion="2.3" extensions="*.asm;*.nasm" mimetype="" author="Nicola Gigante (nicola.gigante@gmail.com)" license="GPLv2+">
   <highlighting>
     <list name="registers">
       <!-- General purpose registers -->

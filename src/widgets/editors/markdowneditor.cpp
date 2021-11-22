@@ -16,6 +16,7 @@
 #include <QTimer>
 #include <QBuffer>
 #include <QPainter>
+#include <QHash>
 
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/previewmgr.h>
@@ -1396,11 +1397,21 @@ void MarkdownEditor::uploadImagesToImageHost()
     proDlg.setWindowModality(Qt::WindowModal);
     proDlg.setWindowTitle(tr("Upload Images To Image Host"));
 
+    QHash<QString, QString> uploadedImages;
+
     int cnt = 0;
     auto cursor = m_textEdit->textCursor();
     cursor.beginEditBlock();
     for (int i = 0; i < images.size(); ++i) {
         const auto &link = images[i];
+
+        auto it = uploadedImages.find(link.m_path);
+        if (it != uploadedImages.end()) {
+            cursor.setPosition(link.m_urlInLinkPos);
+            cursor.setPosition(link.m_urlInLinkPos + link.m_urlInLink.size(), QTextCursor::KeepAnchor);
+            cursor.insertText(it.value());
+            continue;
+        }
 
         proDlg.setValue(i + 1);
         if (proDlg.wasCanceled()) {
@@ -1444,6 +1455,7 @@ void MarkdownEditor::uploadImagesToImageHost()
         cursor.setPosition(link.m_urlInLinkPos);
         cursor.setPosition(link.m_urlInLinkPos + link.m_urlInLink.size(), QTextCursor::KeepAnchor);
         cursor.insertText(targetUrl);
+        uploadedImages.insert(link.m_path, targetUrl);
         ++cnt;
     }
     cursor.endEditBlock();

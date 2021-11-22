@@ -78,6 +78,7 @@ void SearchPanel::setupUI()
     m_keywordComboBox->setEditable(true);
     m_keywordComboBox->setLineEdit(WidgetsFactory::createLineEdit(mainWidget));
     m_keywordComboBox->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
+    m_keywordComboBox->lineEdit()->setClearButtonEnabled(true);
     m_keywordComboBox->completer()->setCaseSensitivity(Qt::CaseSensitive);
     connect(m_keywordComboBox->lineEdit(), &QLineEdit::returnPressed,
             this, [this]() {

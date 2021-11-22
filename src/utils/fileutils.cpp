@@ -254,7 +254,8 @@ bool FileUtils::isText(const QString &p_filePath)
 {
     QMimeDatabase mimeDatabase;
     auto mimeType = mimeDatabase.mimeTypeForFile(p_filePath);
-    if (mimeType.name().startsWith(QStringLiteral("text/"))) {
+    const auto name = mimeType.name();
+    if (name.startsWith(QStringLiteral("text/")) || name == QStringLiteral("application/x-zerosize")) {
         return true;
     }
 
@@ -345,7 +346,6 @@ QString FileUtils::generateFileNameWithSequence(const QString &p_folderPath,
 void FileUtils::removeEmptyDir(const QString &p_dirPath)
 {
     QDir dir(p_dirPath);
-    qDebug() << "removeEmptyDir" << p_dirPath << dir.isEmpty();
     if (dir.isEmpty()) {
         return;
     }
