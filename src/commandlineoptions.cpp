@@ -34,6 +34,10 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
         QCommandLineOption webNoSandboxOpt("no-sandbox", MainWindow::tr("WebEngine without sandbox."));
         webNoSandboxOpt.setFlags(QCommandLineOption::HiddenFromHelp);
         parser.addOption(webNoSandboxOpt);
+
+        QCommandLineOption webDisableGpu("disable-gpu", MainWindow::tr("WebEngine with GPU disabled."));
+        webDisableGpu.setFlags(QCommandLineOption::HiddenFromHelp);
+        parser.addOption(webDisableGpu);
     }
 
     if (!parser.parse(p_arguments)) {
