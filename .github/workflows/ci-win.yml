@@ -2,7 +2,7 @@ name: CI-Windows
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, feature/tasksystem ]
   pull_request:
     branches: [ master ]
 
