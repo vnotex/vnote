@@ -6,6 +6,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QJsonObject>
+#include <QDir>
 
 class QTemporaryFile;
 
@@ -77,6 +78,12 @@ namespace vnotex
         // Go through @p_dirPath recursively and delete all empty dirs.
         // @p_dirPath itself is not deleted.
         static void removeEmptyDir(const QString &p_dirPath);
+
+        // Go through @p_dirPath recursively and get all entrys.
+        // @p_nameFilters is for each dir, not for all.
+        static QStringList entryListRecursively(const QString &p_dirPath,
+                                                const QStringList &p_nameFilters,
+                                                QDir::Filters p_filters=QDir::NoFilter);
     };
 } // ns vnotex
 

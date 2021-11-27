@@ -6,6 +6,7 @@
 #include <QHelpEvent>
 #include <QToolTip>
 #include <QShortcut>
+#include <QTextEdit>
 
 #include <core/vnotex.h>
 #include <core/thememgr.h>
@@ -112,6 +113,8 @@ void DockWidgetHelper::setupDocks()
 
     setupOutlineDock();
 
+    setupOutputDock();
+
     setupLocationListDock();
 
     setupShortcuts();
@@ -143,6 +146,19 @@ void DockWidgetHelper::setupOutlineDock()
     dock->setWidget(m_mainWindow->m_outlineViewer);
     dock->setFocusProxy(m_mainWindow->m_outlineViewer);
     m_mainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
+}
+
+void DockWidgetHelper::setupOutputDock()
+{
+    auto dock = createDockWidget(DockIndex::OutputDock, tr("Output"), m_mainWindow);
+
+    dock->setObjectName(QStringLiteral("OutputDock.vnotex"));
+    dock->setAllowedAreas(Qt::BottomDockWidgetArea);
+
+    dock->setWidget(m_mainWindow->m_outputViewer);
+    dock->setFocusProxy(m_mainWindow->m_outputViewer);
+    dock->hide();
+    m_mainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
 }
 
 void DockWidgetHelper::setupSearchDock()

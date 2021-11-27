@@ -10,6 +10,7 @@ class QListWidget;
 class QListWidgetItem;
 class QShowEvent;
 class QKeyEvent;
+class QLabel;
 
 namespace vnotex
 {
@@ -18,6 +19,10 @@ namespace vnotex
         Q_OBJECT
     public:
         SelectDialog(const QString &p_title, QWidget *p_parent = nullptr);
+
+        SelectDialog(const QString &p_title,
+                     const QString &p_text,
+                     QWidget *p_parent = nullptr);
 
         // @p_selectID should >= 0.
         void addSelection(const QString &p_selectStr, int p_selectID);
@@ -37,11 +42,13 @@ namespace vnotex
     private:
         enum { CANCEL_ID = -1 };
 
-        void setupUI(const QString &p_title);
+        void setupUI(const QString &p_title, const QString &p_text = QString());
 
         void updateSize();
 
         int m_choice = CANCEL_ID;
+
+        QLabel *m_label = nullptr;
 
         QListWidget *m_list = nullptr;
 

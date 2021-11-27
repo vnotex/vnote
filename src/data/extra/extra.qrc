@@ -150,6 +150,14 @@
         <file>themes/pure/up.svg</file>
         <file>themes/pure/up_disabled.svg</file>
         <file>themes/pure/web.css</file>
+        <file>tasks/git/git.json</file>
+        <file>tasks/git/git.svg</file>
+        <file>tasks/git/commit.svg</file>
+        <file>tasks/git/history.svg</file>
+        <file>tasks/git/initialization.svg</file>
+        <file>tasks/git/pull.svg</file>
+        <file>tasks/git/push.svg</file>
+        <file>tasks/git/status.svg</file>
         <file>syntax-highlighting/themes/markdown-default.theme</file>
         <file>syntax-highlighting/themes/markdown-breeze-dark.theme</file>
         <file>syntax-highlighting/themes/default.theme</file>

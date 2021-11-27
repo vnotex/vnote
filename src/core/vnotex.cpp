@@ -27,6 +27,8 @@ VNoteX::VNoteX(QObject *p_parent)
 
     initThemeMgr();
 
+    initTaskMgr();
+
     initNotebookMgr();
 
     initBufferMgr();
@@ -40,6 +42,7 @@ void VNoteX::initLoad()
 {
     qDebug() << "start init which may take a while";
     m_notebookMgr->loadNotebooks();
+    m_taskMgr->init();
 }
 
 void VNoteX::initThemeMgr()
@@ -56,9 +59,20 @@ void VNoteX::initThemeMgr()
     m_themeMgr = new ThemeMgr(configMgr.getCoreConfig().getTheme(), this);
 }
 
+void VNoteX::initTaskMgr()
+{
+    Q_ASSERT(!m_taskMgr);
+    m_taskMgr = new TaskMgr(this);
+}
+
 ThemeMgr &VNoteX::getThemeMgr() const
 {
     return *m_themeMgr;
+}
+
+TaskMgr &VNoteX::getTaskMgr() const
+{
+    return *m_taskMgr;
 }
 
 void VNoteX::setMainWindow(MainWindow *p_mainWindow)

@@ -13,6 +13,7 @@ class QDockWidget;
 class QSystemTrayIcon;
 class QTimer;
 class QLabel;
+class QTextEdit;
 
 namespace vnotex
 {
@@ -48,6 +49,8 @@ namespace vnotex
         void resetStateAndGeometry();
 
         const QVector<QDockWidget *> &getDocks() const;
+
+        ViewArea *getViewArea() const;
 
         void setContentAreaExpanded(bool p_expanded);
         // Should be called after MainWindow is shown.
@@ -102,6 +105,8 @@ namespace vnotex
         void setupCentralWidget();
 
         void setupOutlineViewer();
+
+        void setupOutputViewer();
 
         void setupSearchPanel();
 
@@ -161,6 +166,8 @@ namespace vnotex
         QWidget *m_viewAreaStatusWidget = nullptr;
 
         OutlineViewer *m_outlineViewer = nullptr;
+
+        QTextEdit *m_outputViewer = nullptr;
 
         LocationList *m_locationList = nullptr;
 

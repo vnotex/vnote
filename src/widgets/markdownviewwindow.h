@@ -42,6 +42,8 @@ namespace vnotex
 
         QString getLatestContent() const Q_DECL_OVERRIDE;
 
+        QString selectedText() const Q_DECL_OVERRIDE;
+
         void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
         QSharedPointer<OutlineProvider> getOutlineProvider() Q_DECL_OVERRIDE;
@@ -100,8 +102,6 @@ namespace vnotex
         void zoom(bool p_zoomIn) Q_DECL_OVERRIDE;
 
         QPoint getFloatingWidgetPosition() Q_DECL_OVERRIDE;
-
-        QString selectedText() const Q_DECL_OVERRIDE;
 
         void updateViewModeMenu(QMenu *p_menu) Q_DECL_OVERRIDE;
 

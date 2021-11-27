@@ -29,6 +29,11 @@ SOURCES += \
     $$PWD/texteditorconfig.cpp \
     $$PWD/vnotex.cpp \
     $$PWD/thememgr.cpp \
+    $$PWD/task.cpp \
+    $$PWD/taskhelper.cpp \
+    $$PWD/taskmgr.cpp \
+    $$PWD/taskvariablemgr.cpp \
+    $$PWD/shellexecution.cpp \
     $$PWD/notebookmgr.cpp \
     $$PWD/theme.cpp \
     $$PWD/sessionconfig.cpp \
@@ -60,6 +65,11 @@ HEADERS += \
     $$PWD/texteditorconfig.h \
     $$PWD/vnotex.h \
     $$PWD/thememgr.h \
+    $$PWD/task.h \
+    $$PWD/taskhelper.h \
+    $$PWD/taskmgr.h \
+    $$PWD/taskvariablemgr.h \
+    $$PWD/shellexecution.h \
     $$PWD/global.h \
     $$PWD/namebasedserver.h \
     $$PWD/exception.h \

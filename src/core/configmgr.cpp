@@ -227,6 +227,12 @@ bool ConfigMgr::checkAppConfig()
     FileUtils::copyDir(extraDataRoot + QStringLiteral("/themes"),
                        appConfigDir.filePath(QStringLiteral("themes")));
 
+    // Copy tasks.
+    qApp->processEvents();
+    splash->showMessage("Copying tasks");
+    FileUtils::copyDir(extraDataRoot + QStringLiteral("/tasks"),
+                       appConfigDir.filePath(QStringLiteral("tasks")));
+
     // Copy docs.
     qApp->processEvents();
     splash->showMessage("Copying docs");
@@ -373,6 +379,18 @@ QString ConfigMgr::getAppThemeFolder() const
 QString ConfigMgr::getUserThemeFolder() const
 {
     auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("themes"));
+    QDir().mkpath(folderPath);
+    return folderPath;
+}
+
+QString ConfigMgr::getAppTaskFolder() const
+{
+    return PathUtils::concatenateFilePath(m_appConfigFolderPath, QStringLiteral("tasks"));
+}
+
+QString ConfigMgr::getUserTaskFolder() const
+{
+    auto folderPath = PathUtils::concatenateFilePath(m_userConfigFolderPath, QStringLiteral("tasks"));
     QDir().mkpath(folderPath);
     return folderPath;
 }
