@@ -178,6 +178,8 @@ class MathJaxRenderer extends VxWorker {
             display = true;
         } else if (text.startsWith('$') && text.endsWith('$')) {
             text = text.substring(1, text.length - 1);
+        } else if (text.match(/^\\begin\s*\{\S+}[\s\S]+\\end\s*\{\S+\}$/)) {
+            display = true;
         } else {
             return null;
         }

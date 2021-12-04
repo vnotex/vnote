@@ -131,10 +131,6 @@ void MarkdownViewWindow::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffe
 
     case ViewWindowMode::Edit:
     {
-        if (m_debugViewer && m_debugViewer->isVisible()) {
-            toggleDebug();
-        }
-
         if (!m_editor) {
             // We need viewer to preview.
             if (!m_viewer) {
@@ -325,13 +321,7 @@ void MarkdownViewWindow::setupToolBar()
     addAction(toolBar, ViewWindowToolBarHelper::FindAndReplace);
     addAction(toolBar, ViewWindowToolBarHelper::Print);
 
-    {
-        auto act = addAction(toolBar, ViewWindowToolBarHelper::Debug);
-        connect(this, &ViewWindow::modeChanged,
-                this, [this, act]() {
-                    act->setEnabled(m_mode == ViewWindowMode::Read || m_editViewMode != MarkdownEditorConfig::EditViewMode::EditOnly);
-                });
-    }
+    addAction(toolBar, ViewWindowToolBarHelper::Debug);
 }
 
 void MarkdownViewWindow::setupTextEditor()

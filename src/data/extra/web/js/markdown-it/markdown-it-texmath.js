@@ -186,19 +186,19 @@ texmath.$_post = (str,end) => {
 texmath.rules = {
     brackets: {
         inline: [
-            {   name: 'math_inline',
+            {   name: 'math_brackets_inline',
                 rex: /\\\((.+?)\\\)/gy,
                 tmpl: '<eq class="tex-to-render">$1</eq>',
                 tag: '\\('
             }
         ],
         block: [
-            {   name: 'math_block_eqno',
+            {   name: 'math_brackets_block_eqno',
                 rex: /\\\[(((?!\\\]|\\\[)[\s\S])+?)\\\]\s*?\(([^)$\r\n]+?)\)\s*$/gmy,
                 tmpl: '<section class="eqno"><eqn class="tex-to-render">$1</eqn><span>($2)</span></section>',
                 tag: '\\['
             },
-            {   name: 'math_block',
+            {   name: 'math_brackets_block',
                 rex: /\\\[([\s\S]+?)\\\]\s*$/gmy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '\\['
@@ -207,19 +207,19 @@ texmath.rules = {
     },
     gitlab: {
         inline: [
-            {   name: 'math_inline',
+            {   name: 'math_gitlab_inline',
                 rex: /\$`(.+?)`\$/gy,
                 tmpl: '<eq class="tex-to-render">$1</eq>',
                 tag: '$`'
             }
         ],
         block: [
-            {   name: 'math_block_eqno',
+            {   name: 'math_gitlab_block_eqno',
                 rex: /`{3}math\s*([^`]+?)\s*?`{3}\s*\(([^)\r\n]+?)\)/gm,
                 tmpl: '<section class="eqno"><eqn class="tex-to-render">$1</eqn><span>($2)</span></section>',
                 tag: '```math'
             },
-            {   name: 'math_block',
+            {   name: 'math_gitlab_block',
                 rex: /`{3}math\s*([^`]*?)\s*`{3}/gm,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '```math'
@@ -228,12 +228,12 @@ texmath.rules = {
     },
     julia: {
         inline: [
-            {   name: 'math_inline',
+            {   name: 'math_julia_inline',
                 rex: /`{2}([^`]+?)`{2}/gy,
                 tmpl: '<eq class="tex-to-render">$1</eq>',
                 tag: '``'
             },
-            {   name: 'math_inline',
+            {   name: 'math_julia_inline',
                 rex: /\$((?:\S?)|(?:\S.*?\S))\$/gy,
                 tmpl: '<eq class="tex-to-render">$1</eq>',
                 tag: '$',
@@ -242,12 +242,12 @@ texmath.rules = {
             }
         ],
         block: [
-            {   name: 'math_block_eqno',
+            {   name: 'math_julia_block_eqno',
                 rex: /`{3}math\s+?([^`]+?)\s+?`{3}\s*?\(([^)$\r\n]+?)\)\s*$/gmy,
                 tmpl: '<section class="eqno"><eqn class="tex-to-render">$1</eqn><span>($2)</span></section>',
                 tag: '```math'
             },
-            {   name: 'math_block',
+            {   name: 'math_julia_block',
                 rex: /`{3}math\s+?([^`]+?)\s+?`{3}\s*$/gmy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '```math'
@@ -256,19 +256,19 @@ texmath.rules = {
     },
     kramdown: {
         inline: [
-            {   name: 'math_inline',
+            {   name: 'math_kramdown_inline',
                 rex: /\${2}(.+?)\${2}/gy,
                 tmpl: '<eq class="tex-to-render">$1</eq>',
                 tag: '$$'
             }
         ],
         block: [
-            {   name: 'math_block_eqno',
+            {   name: 'math_kramdown_block_eqno',
                 rex: /\${2}([^$]+?)\${2}\s*?\(([^)\s]+?)\)\s*$/gmy,
                 tmpl: '<section class="eqno"><eqn class="tex-to-render">$1</eqn><span>($2)</span></section>',
                 tag: '$$'
             },
-            {   name: 'math_block',
+            {   name: 'math_kramdown_block',
                 rex: /\${2}([^$]+?)\${2}\s*$/gmy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '$$'
@@ -277,7 +277,7 @@ texmath.rules = {
     },
     dollars: {
         inline: [
-            {   name: 'math_inline_double',
+            {   name: 'math_dollars_inline_double',
                 rex: /\${2}((?:\S)|(?:\S.*?\S))\${2}/gy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '$$',
@@ -285,7 +285,7 @@ texmath.rules = {
                 pre: texmath.$_pre,
                 post: texmath.$_post
             },
-            {   name: 'math_inline',
+            {   name: 'math_dollars_inline',
                 rex: /\$((?:\S)|(?:\S.*?\S))\$/gy,
                 tmpl: '<eq class="tex-to-render">$1</eq>',
                 tag: '$',
@@ -294,13 +294,13 @@ texmath.rules = {
             }
         ],
         block: [
-            {   name: 'math_block_eqno',
-                rex: /\${2}([^$]+?)\${2}\s*?\(([^)\s]+?)\)\s*$/gmy,
+            {   name: 'math_dollars_block_eqno',
+                rex: /\${2}((?:[^$]|\$(?!\$))+?)\${2}\s*?\(([^)\s]+?)\)\s*$/gmy,
                 tmpl: '<section class="eqno"><eqn class="tex-to-render">$1</eqn><span>($2)</span></section>',
                 tag: '$$'
             },
-            {   name: 'math_block',
-                rex: /\${2}([^$]+?)\${2}\s*$/gmy,
+            {   name: 'math_dollars_block',
+                rex: /\${2}((?:[^$]|\$(?!\$))+?)\${2}\s*$/gmy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '$$'
             }
@@ -310,7 +310,7 @@ texmath.rules = {
         inline: [],
         block: [
             {
-                name: 'math_block',
+                name: 'math_raw_block',
                 rex: /(\\begin\s*\{([^{}\s\r\n]+)\}(?:[^\\]|\\(?!end\s*\{\2\}))*\\end\s*\{\2\})\s*$/gmy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '\\begin'

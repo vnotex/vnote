@@ -164,7 +164,7 @@ class MarkdownIt extends VxWorker {
 
         this.mdit.use(window['markdown-it-imsize.js']);
 
-        this.mdit.use(texmath, { delimiters: ['dollars', 'raw'] });
+        this.mdit.use(texmath, { delimitersList: ['dollars', 'raw'] });
 
         // Support '::: alert-xxx \n contents \n :::\n'.
         this.mdit.use(window.markdownitContainer, 'alert', {

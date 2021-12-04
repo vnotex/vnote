@@ -143,7 +143,7 @@ class GraphPreviewer {
             p_dataSetter = this.setGraphPreviewData.bind(this);
         }
         if (!p_svgNode) {
-            console.error('failed to preview graph', p_id, p_timeStamp);
+            console.warn('failed to preview graph', p_id, p_timeStamp);
             p_dataSetter(p_id, p_timeStamp);
             return;
         }
@@ -182,6 +182,10 @@ class GraphPreviewer {
 
     // Fix SVG with width and height being '100%'.
     fixSvgRelativeWidth(p_svgNode) {
+        if (!p_svgNode) {
+            return;
+        }
+
         if (p_svgNode.getAttribute('width').indexOf('%') != -1) {
             // Try maxWidth.
             if (p_svgNode.style.maxWidth && p_svgNode.style.maxWidth.endsWith('px')) {
