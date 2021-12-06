@@ -21,6 +21,7 @@ class QLineEdit;
 class QLayout;
 class QPushButton;
 class QSplitter;
+class QScreen;
 
 namespace vnotex
 {
@@ -35,7 +36,7 @@ namespace vnotex
 
         static void updateStyle(QWidget *p_widget);
 
-        static qreal calculateScaleFactor(bool p_update = false);
+        static qreal calculateScaleFactor(const QScreen *p_screen = nullptr);
 
         static bool isScrollBarVisible(QAbstractScrollArea *p_widget, bool p_horizontal);
 

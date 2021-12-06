@@ -45,12 +45,14 @@ void WidgetUtils::updateStyle(QWidget *p_widget)
     p_widget->update();
 }
 
-qreal WidgetUtils::calculateScaleFactor(bool p_update)
+qreal WidgetUtils::calculateScaleFactor(const QScreen *p_screen)
 {
     static qreal factor = -1;
 
-    if (factor < 0 || p_update) {
-        factor =  QGuiApplication::primaryScreen()->devicePixelRatio();
+    if (factor < 0 || p_screen) {
+        auto screen = p_screen ? p_screen : QGuiApplication::primaryScreen();
+        factor =  screen->devicePixelRatio();
+        qDebug() << screen->name() << "dpi" << factor;
     }
 
     return factor;
