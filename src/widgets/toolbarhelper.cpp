@@ -26,6 +26,7 @@
 #include <core/markdowneditorconfig.h>
 #include <core/fileopenparameters.h>
 #include <core/htmltemplatehelper.h>
+#include <core/exception.h>
 #include "propertydefs.h"
 #include "dialogs/settings/settingsdialog.h"
 #include "dialogs/updater.h"
@@ -282,6 +283,78 @@ QToolBar *ToolBarHelper::setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_
     return tb;
 }
 
+void ToolBarHelper::setupTaskMenu(QMenu *p_menu)
+{
+    p_menu->clear();
+    const auto &taskMgr = VNoteX::getInst().getTaskMgr();
+    for (auto task : taskMgr.getAppTasks()) {
+        addTaskMenu(p_menu, task);
+    }
+    p_menu->addSeparator();
+    for (auto task : taskMgr.getUserTasks()) {
+        addTaskMenu(p_menu, task);
+    }
+    p_menu->addSeparator();
+    for (auto task : taskMgr.getNotebookTasks()) {
+        addTaskMenu(p_menu, task);
+    }
+}
+
+void ToolBarHelper::addTaskMenu(QMenu *p_menu, Task *p_task)
+{
+    MainWindow::connect(p_task, &Task::showOutput,
+                        &VNoteX::getInst(), &VNoteX::showOutputRequested);
+    QAction *action = nullptr;
+    const auto &tasks = p_task->getTasks();
+    auto label = p_task->getLabel();
+    label = label.replace("&", "&&");
+    QIcon icon;
+    try {
+        auto taskIcon = p_task->getIcon();
+        if (!taskIcon.isEmpty()) {
+            icon = generateIcon(p_task->getIcon());
+        }
+    }  catch (Exception e) {
+        if (e.m_type != Exception::Type::FailToReadFile) {
+            throw;
+        }
+    }
+    if (tasks.isEmpty()) {
+        action = p_menu->addAction(label);
+    } else {
+        auto menu = p_menu->addMenu(label);
+        for (auto task : tasks) {
+            addTaskMenu(menu, task);
+        }
+        action = menu->menuAction();
+    }
+    action->setIcon(icon);
+    WidgetUtils::addActionShortcut(action, p_task->getShortcut());
+    MainWindow::connect(action, &QAction::triggered,
+                        p_task, &Task::run);
+}
+
+QToolBar *ToolBarHelper::setupTaskToolBar(MainWindow *p_win, QToolBar *p_toolBar)
+{
+    auto tb = p_toolBar;
+    if (!tb) {
+        tb = createToolBar(p_win, MainWindow::tr("Task"), "TaskToolBar");
+    }
+
+    auto act = tb->addAction(generateIcon("task_menu.svg"), MainWindow::tr("Task"));
+    auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
+    btn->setPopupMode(QToolButton::InstantPopup);
+    btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+
+    auto taskMenu = WidgetsFactory::createMenu(tb);
+    MainWindow::connect(&VNoteX::getInst().getTaskMgr(), &TaskMgr::taskChanged,
+                        taskMenu, [taskMenu]() {
+        setupTaskMenu(taskMenu);
+    });
+    btn->setMenu(taskMenu);
+    return tb;
+}
+
 QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_toolBar)
 {
     auto tb = p_toolBar;
@@ -344,6 +417,8 @@ void ToolBarHelper::setupToolBars(MainWindow *p_mainWindow)
 
     setupQuickAccessToolBar(p_mainWindow, nullptr);
 
+    setupTaskToolBar(p_mainWindow, nullptr);
+
     setupSettingsToolBar(p_mainWindow, nullptr);
 }
 
@@ -355,6 +430,7 @@ void ToolBarHelper::setupToolBars(MainWindow *p_mainWindow, QToolBar *p_toolBar)
 
     setupFileToolBar(p_mainWindow, p_toolBar);
     setupQuickAccessToolBar(p_mainWindow, p_toolBar);
+    setupTaskToolBar(p_mainWindow, p_toolBar);
     setupSettingsToolBar(p_mainWindow, p_toolBar);
 }
 

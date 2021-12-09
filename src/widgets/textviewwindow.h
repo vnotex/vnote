@@ -25,6 +25,8 @@ namespace vnotex
 
         QString getLatestContent() const Q_DECL_OVERRIDE;
 
+        QString selectedText() const Q_DECL_OVERRIDE;
+
         void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
         void openTwice(const QSharedPointer<FileOpenParameters> &p_paras) Q_DECL_OVERRIDE;
@@ -67,8 +69,6 @@ namespace vnotex
         void zoom(bool p_zoomIn) Q_DECL_OVERRIDE;
 
         QPoint getFloatingWidgetPosition() Q_DECL_OVERRIDE;
-
-        QString selectedText() const Q_DECL_OVERRIDE;
 
     private:
         void setupUI();

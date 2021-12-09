@@ -59,8 +59,8 @@ QString IconUtils::replaceForegroundOfIcon(const QString &p_iconContent, const Q
         return p_iconContent;
     }
 
-    // Must have a # to avoid fill="none".
-    QRegExp styleRe("(\\s|\"|;)(fill|stroke)(:|(=\"))#[^#\"\\s]+");
+    // Negative lookahead to avoid fill="none".
+    QRegExp styleRe(R"((\s|"|;)(fill|stroke)(:|(="))(?!none)[^;"]*)");
     if (p_iconContent.indexOf(styleRe) > -1) {
         auto newContent(p_iconContent);
         newContent.replace(styleRe, QString("\\1\\2\\3%1").arg(p_foreground));

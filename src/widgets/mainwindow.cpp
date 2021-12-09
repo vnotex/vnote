@@ -257,6 +257,8 @@ void MainWindow::setupDocks()
 
     setupOutlineViewer();
 
+    setupOutputViewer();
+
     setupHistoryPanel();
 
     setupSearchPanel();
@@ -512,9 +514,34 @@ void MainWindow::setupOutlineViewer()
             this, &MainWindow::focusViewArea);
 }
 
+void MainWindow::setupOutputViewer()
+{
+    m_outputViewer = new QTextEdit(this);
+    m_outputViewer->setObjectName("OutputViewer.vnotex");
+    m_outputViewer->setReadOnly(true);
+
+    connect(&VNoteX::getInst(), &VNoteX::showOutputRequested,
+            m_outputViewer, [this](const QString &p_text) {
+        auto cursor = m_outputViewer->textCursor();
+        cursor.movePosition(QTextCursor::End);
+        m_outputViewer->setTextCursor(cursor);
+        m_outputViewer->insertPlainText(p_text);
+        auto scrollBar = m_outputViewer->verticalScrollBar();
+        if (scrollBar) {
+            scrollBar->setSliderPosition(scrollBar->maximum());
+        }
+        m_dockWidgetHelper.getDock(DockWidgetHelper::OutputDock)->show();
+    });
+}
+
 const QVector<QDockWidget *> &MainWindow::getDocks() const
 {
     return m_dockWidgetHelper.getDocks();
+}
+
+ViewArea *MainWindow::getViewArea() const
+{
+    return m_viewArea;
 }
 
 void MainWindow::focusViewArea()

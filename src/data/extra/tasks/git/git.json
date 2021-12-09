@@ -1,0 +1,80 @@
+{
+    "version": "0.1.4",
+    "label": "Git",
+    "icon": "git.svg",
+    "tasks": [
+        {
+            "label": {
+                "en_US": "Initialize",
+                "zh_CN": "初始化",
+                "ja_JP": "イニシャライズ"
+            },
+            "icon": "initialization.svg",
+            "command": "git init -b main"
+        },
+        {
+            "label": {
+                "en_US": "Status",
+                "zh_CN": "状态",
+                "ja_JP": "ステータス"
+            },
+            "icon": "status.svg",
+            "command": "git status"
+        },
+        {
+            "label": {
+                "en_US": "Commit",
+                "zh_CN": "提交",
+                "ja_JP": "全てコミット"
+            },
+            "icon": "commit.svg",
+            "windows" :{
+                "command": "git add -A -- . ; if ($?) { git commit --message=\"${input:msg}\" }"
+            },
+            "command": "git add -A -- . && git commit --message=\"${input:msg}\"",
+            "inputs": [
+                {
+                    "id": "msg",
+                    "type": "promptString",
+                    "description": {
+                        "en_US": "Please provide a commit message",
+                        "zh_CN": "请输入提交信息",
+                        "ja_JP": "コミットメッセージを提供してください"
+                    },
+                    "default": {
+                        "en_US": "Update note on ${magic:datetime}",
+                        "zh_CN": "更新笔记于 ${magic:datetime}",
+                        "ja_JP": "アップデート ${magic:datetime}"
+                    }
+                }
+            ]
+        },
+        {
+            "label": {
+                "en_US": "Push",
+                "zh_CN": "上传",
+                "ja_JP": "プッシュ"
+            },
+            "icon": "push.svg",
+            "command": "git push"
+        },
+        {
+            "label": {
+                "en_US": "Pull",
+                "zh_CN": "下载",
+                "ja_JP": "プル"
+            },
+            "icon": "pull.svg",
+            "command": "git pull --no-rebase"
+        },
+        {
+            "label": {
+                "en_US": "Log",
+                "zh_CN": "日志",
+                "ja_JP": "ログ"
+            },
+            "icon": "history.svg",
+            "command": "git log -10 --graph --pretty=format:'%h -%d %s (%cr) <%an>' --abbrev-commit"
+        }
+    ]
+}
