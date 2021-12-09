@@ -10,6 +10,7 @@
 #include <QProcess>
 #include <QWebEngineSettings>
 #include <QWindow>
+#include <QAccessible>
 
 #include <core/configmgr.h>
 #include <core/mainconfig.h>
@@ -24,6 +25,7 @@
 #include <widgets/messageboxhelper.h>
 #include "commandlineoptions.h"
 #include "application.h"
+#include "fakeaccessible.h"
 
 using namespace vnotex;
 
@@ -73,6 +75,8 @@ int main(int argc, char *argv[])
     Application app(argc, argv);
 
     initWebEngineSettings();
+
+    QAccessible::installFactory(&FakeAccessible::accessibleFactory);
 
     {
         const QString iconPath = ":/vnotex/data/core/icons/vnote.ico";

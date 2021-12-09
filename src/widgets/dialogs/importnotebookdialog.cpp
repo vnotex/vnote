@@ -103,7 +103,6 @@ bool ImportNotebookDialog::validateRootFolderInput(QString &p_msg)
                 tr("Not a valid (%1) root folder (%2).").arg(factory->getDisplayName(), rootFolderPath));
             return false;
         }
-
     }
 
     return true;

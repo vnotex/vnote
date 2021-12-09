@@ -12,4 +12,3 @@ For more information, please visit [**VNote's Home Page**](https://vnotex.github
 
 ### Windows Users
 * if VNote hangs frequently or behaves unexpectedly in interface, please check the **OpenGL** option. [Details here](https://github.com/vnotex/vnote/issues/853).
-* Please close *Youdao Dict* or disable its fetching-word feature.

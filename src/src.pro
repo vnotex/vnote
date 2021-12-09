@@ -35,6 +35,7 @@ TRANSLATIONS += \
 SOURCES += \
     application.cpp \
     commandlineoptions.cpp \
+    fakeaccessible.cpp \
     main.cpp
 
 INCLUDEPATH *= $$PWD
@@ -151,4 +152,5 @@ unix:!macx {
 
 HEADERS += \
     application.h \
-    commandlineoptions.h
+    commandlineoptions.h \
+    fakeaccessible.h

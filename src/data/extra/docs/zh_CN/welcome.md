@@ -12,4 +12,3 @@
 
 ## Windows用户
 * 如果VNote经常卡顿或无响应，或者界面异常，请检查**OpenGL**选项。[详情](https://github.com/vnotex/vnote/issues/853)。
-* 请关闭*有道词典*或者禁用其取词翻译功能。

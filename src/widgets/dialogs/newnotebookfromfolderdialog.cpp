@@ -101,14 +101,27 @@ bool NewNotebookFromFolderDialog::validateRootFolderInput(QString &p_msg)
         return false;
     }
 
+    auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
+
     // Check if there already exists one notebook with the same root folder.
     {
-        auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
         auto notebook = notebookMgr.findNotebookByRootFolderPath(rootFolderPath);
         if (notebook) {
             Utils::appendMsg(p_msg,
                 tr("There already exists a notebook (%1) with the same root folder.").arg(notebook->getName()));
             return false;
+        }
+    }
+
+    // Warn if it is a valid bundle notebook root folder.
+    {
+        auto factory = notebookMgr.getBundleNotebookFactory();
+        auto backend = notebookMgr.createNotebookBackend(QStringLiteral("local.vnotex"), rootFolderPath);
+        if (factory->checkRootFolder(backend)) {
+            Utils::appendMsg(p_msg,
+                tr("The folder is likely to be the root folder of a valid bundle notebook. "
+                    "You may want to use \"Open Other Notebooks\" to open it. "
+                    "If continue, all existing information of the notebook may be lost."));
         }
     }
 

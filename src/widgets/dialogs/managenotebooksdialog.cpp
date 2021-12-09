@@ -260,7 +260,7 @@ bool ManageNotebooksDialog::closeNotebook(const Notebook *p_notebook)
     int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question,
                                                  tr("Close notebook (%1)?")
                                                    .arg(p_notebook->getName()),
-                                                 tr("The notebook could be opened by VNote again."),
+                                                 tr("The notebook could be opened by VNote again via \"Open Other Notebooks\" operation."),
                                                  tr("Notebook location: %1").arg(p_notebook->getRootFolderAbsolutePath()),
                                                  this);
     if (ret != QMessageBox::Ok) {
