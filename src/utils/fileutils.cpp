@@ -362,17 +362,23 @@ QStringList FileUtils::entryListRecursively(const QString &p_dirPath,
                                             const QStringList &p_nameFilters,
                                             QDir::Filters p_filters)
 {
+    QStringList entries;
+
     QDir dir(p_dirPath);
-    if (dir.isEmpty()) return {};
-    QStringList entrys;
-    const auto curEntrys = dir.entryList(p_nameFilters, p_filters | QDir::NoDotAndDotDot);
-    for (const auto &e : curEntrys) {
-        entrys.append(PathUtils::concatenateFilePath(p_dirPath, e));
+    if (!dir.exists()) {
+        return entries;
     }
-    auto subdirs = dir.entryList(QDir::AllDirs | QDir::NoDotAndDotDot);
+
+    const auto curEntries = dir.entryList(p_nameFilters, p_filters | QDir::NoDotAndDotDot);
+    for (const auto &e : curEntries) {
+        entries.append(PathUtils::concatenateFilePath(p_dirPath, e));
+    }
+
+    const auto subdirs = dir.entryList(QDir::AllDirs | QDir::NoDotAndDotDot);
     for (const auto &subdir : subdirs) {
         const auto dirPath = PathUtils::concatenateFilePath(p_dirPath, subdir);
-        entrys.append(entryListRecursively(dirPath, p_nameFilters, p_filters));
+        entries.append(entryListRecursively(dirPath, p_nameFilters, p_filters));
     }
-    return entrys;
+
+    return entries;
 }

@@ -60,13 +60,18 @@ namespace vnotex
                                      int &p_cursorOffset,
                                      const OverrideMap &p_overrides = OverrideMap()) const;
 
-        QString applySnippetBySymbol(const QString &p_content) const;
+        QString applySnippetBySymbol(const QString &p_content,
+                                     const OverrideMap &p_overrides = OverrideMap()) const;
 
         // Generate standard overrides for given buffer.
         static OverrideMap generateOverrides(const Buffer *p_buffer);
 
-        // Generate standard overrides.
+        // Generate standard overrides for given file name.
         static OverrideMap generateOverrides(const QString &p_fileName);
+
+        static QString generateSnippetSymbol(const QString &p_snippetName);
+
+        static const QChar c_snippetSymbolGuard;
 
         // %name%.
         // Captured texts:

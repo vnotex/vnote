@@ -41,7 +41,7 @@ namespace vnotex
     class FramelessMainWindowWinDummy
     {
     public:
-        FramelessMainWindowWinDummy();
+        FramelessMainWindowWinDummy() = default;
     };
 #endif
 }

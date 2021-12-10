@@ -13,13 +13,8 @@ using namespace vnotex;
 const QChar SelectDialog::c_cancelShortcut = QLatin1Char('z');
 
 SelectDialog::SelectDialog(const QString &p_title, QWidget *p_parent)
-    : QDialog(p_parent)
+    : SelectDialog(p_title, QString(), p_parent)
 {
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    m_shortcutIconForeground = themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg"));
-    m_shortcutIconBorder = themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#border"));
-
-    setupUI(p_title);
 }
 
 SelectDialog::SelectDialog(const QString &p_title,

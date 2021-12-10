@@ -4,13 +4,15 @@
 #include <QDir>
 #include <QKeySequence>
 #include <QWidget>
-#include <QVariant>
 #include <QFontDatabase>
 #include <QRegularExpression>
+#include <QRegularExpressionMatch>
 #include <QSvgRenderer>
 #include <QPainter>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QJsonDocument>
+#include <QDebug>
 
 #include <cmath>
 
@@ -138,4 +140,55 @@ QByteArray Utils::toJsonString(const QJsonObject &p_obj)
 QJsonObject Utils::fromJsonString(const QByteArray &p_data)
 {
     return QJsonDocument::fromJson(p_data).object();
+}
+
+QJsonValue Utils::parseAndReadJson(const QJsonObject &p_obj, const QString &p_exp)
+{
+    // abc[0] or abc.
+    QRegularExpression regExp(R"(^([^\[\]\s]+)(?:\[(\d+)\])?$)");
+
+    QJsonValue val(p_obj);
+
+    bool valid = true;
+    const auto tokens = p_exp.split(QLatin1Char('.'));
+    for (int i = 0; i < tokens.size(); ++i) {
+        const auto &token = tokens[i];
+        if (token.isEmpty()) {
+            continue;
+        }
+
+        auto match = regExp.match(token);
+        if (!match.hasMatch()) {
+            valid = false;
+            break;
+        }
+
+        const auto key = match.captured(1);
+        const auto obj = val.toObject();
+        if (obj.contains(key)) {
+            val = obj.value(key);
+        } else {
+            valid = false;
+            break;
+        }
+
+        if (!match.captured(2).isEmpty()) {
+            // Array.
+            const auto arr = val.toArray();
+            int idx = match.captured(2).toInt();
+            if (idx < 0 || idx >= arr.size()) {
+                valid = false;
+                break;
+            }
+
+            val = arr[idx];
+        }
+    }
+
+    if (!valid) {
+        qWarning() << "invalid expression to parse for JSON" << p_exp;
+        return QJsonValue();
+    }
+
+    return val;
 }

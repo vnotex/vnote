@@ -56,6 +56,7 @@
 #include "tagexplorer.h"
 #include "toolbarhelper.h"
 #include "statusbarhelper.h"
+#include "terminalviewer.h"
 
 using namespace vnotex;
 
@@ -257,7 +258,7 @@ void MainWindow::setupDocks()
 
     setupOutlineViewer();
 
-    setupOutputViewer();
+    setupTerminalViewer();
 
     setupHistoryPanel();
 
@@ -514,23 +515,15 @@ void MainWindow::setupOutlineViewer()
             this, &MainWindow::focusViewArea);
 }
 
-void MainWindow::setupOutputViewer()
+void MainWindow::setupTerminalViewer()
 {
-    m_outputViewer = new QTextEdit(this);
-    m_outputViewer->setObjectName("OutputViewer.vnotex");
-    m_outputViewer->setReadOnly(true);
+    m_terminalViewer = new TerminalViewer(this);
+    m_terminalViewer->setObjectName("TerminalViewer.vnotex");
 
     connect(&VNoteX::getInst(), &VNoteX::showOutputRequested,
-            m_outputViewer, [this](const QString &p_text) {
-        auto cursor = m_outputViewer->textCursor();
-        cursor.movePosition(QTextCursor::End);
-        m_outputViewer->setTextCursor(cursor);
-        m_outputViewer->insertPlainText(p_text);
-        auto scrollBar = m_outputViewer->verticalScrollBar();
-        if (scrollBar) {
-            scrollBar->setSliderPosition(scrollBar->maximum());
-        }
-        m_dockWidgetHelper.getDock(DockWidgetHelper::OutputDock)->show();
+            this, [this](const QString &p_text) {
+        m_terminalViewer->append(p_text);
+        m_dockWidgetHelper.activateDock(DockWidgetHelper::TerminalDock);
     });
 }
 

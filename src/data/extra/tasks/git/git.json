@@ -37,12 +37,12 @@
                     "id": "msg",
                     "type": "promptString",
                     "description": {
-                        "en_US": "Please provide a commit message",
+                        "en_US": "Please input the commit message",
                         "zh_CN": "请输入提交信息",
                         "ja_JP": "コミットメッセージを提供してください"
                     },
                     "default": {
-                        "en_US": "Update note on ${magic:datetime}",
+                        "en_US": "Update note at ${magic:datetime}",
                         "zh_CN": "更新笔记于 ${magic:datetime}",
                         "ja_JP": "アップデート ${magic:datetime}"
                     }

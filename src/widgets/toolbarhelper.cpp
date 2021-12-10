@@ -27,6 +27,7 @@
 #include <core/fileopenparameters.h>
 #include <core/htmltemplatehelper.h>
 #include <core/exception.h>
+#include <task/taskmgr.h>
 #include "propertydefs.h"
 #include "dialogs/settings/settingsdialog.h"
 #include "dialogs/updater.h"
@@ -286,52 +287,80 @@ QToolBar *ToolBarHelper::setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_
 void ToolBarHelper::setupTaskMenu(QMenu *p_menu)
 {
     p_menu->clear();
+
+    setupTaskActionMenu(p_menu);
+
+    p_menu->addSeparator();
+
     const auto &taskMgr = VNoteX::getInst().getTaskMgr();
-    for (auto task : taskMgr.getAppTasks()) {
-        addTaskMenu(p_menu, task);
+    for (const auto &task : taskMgr.getAppTasks()) {
+        addTaskMenu(p_menu, task.data());
     }
+
     p_menu->addSeparator();
-    for (auto task : taskMgr.getUserTasks()) {
-        addTaskMenu(p_menu, task);
+
+    for (const auto &task : taskMgr.getUserTasks()) {
+        addTaskMenu(p_menu, task.data());
     }
+
     p_menu->addSeparator();
-    for (auto task : taskMgr.getNotebookTasks()) {
-        addTaskMenu(p_menu, task);
+
+    for (const auto &task : taskMgr.getNotebookTasks()) {
+        addTaskMenu(p_menu, task.data());
     }
+}
+
+void ToolBarHelper::setupTaskActionMenu(QMenu *p_menu)
+{
+    p_menu->addAction(MainWindow::tr("Add Task"),
+                      p_menu,
+                      []() {
+                          WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(ConfigMgr::getInst().getUserTaskFolder()));
+                      });
+
+    p_menu->addAction(MainWindow::tr("Reload"),
+                      p_menu,
+                      []() {
+                          VNoteX::getInst().getTaskMgr().reload();
+                      });
 }
 
 void ToolBarHelper::addTaskMenu(QMenu *p_menu, Task *p_task)
 {
-    MainWindow::connect(p_task, &Task::showOutput,
-                        &VNoteX::getInst(), &VNoteX::showOutputRequested);
     QAction *action = nullptr;
-    const auto &tasks = p_task->getTasks();
+
+    const auto &children = p_task->getChildren();
+
     auto label = p_task->getLabel();
-    label = label.replace("&", "&&");
+    // '&' will be considered shortuct symbol in QAction.
+    label.replace("&", "&&");
+
+    if (children.isEmpty()) {
+        action = p_menu->addAction(label);
+    } else {
+        auto subMenu = p_menu->addMenu(label);
+        for (auto task : children) {
+            addTaskMenu(subMenu, task);
+        }
+        action = subMenu->menuAction();
+    }
+
     QIcon icon;
     try {
         auto taskIcon = p_task->getIcon();
         if (!taskIcon.isEmpty()) {
             icon = generateIcon(p_task->getIcon());
         }
-    }  catch (Exception e) {
+    }  catch (Exception &e) {
         if (e.m_type != Exception::Type::FailToReadFile) {
-            throw;
+            throw e;
         }
-    }
-    if (tasks.isEmpty()) {
-        action = p_menu->addAction(label);
-    } else {
-        auto menu = p_menu->addMenu(label);
-        for (auto task : tasks) {
-            addTaskMenu(menu, task);
-        }
-        action = menu->menuAction();
     }
     action->setIcon(icon);
+
+    action->setData(reinterpret_cast<qulonglong>(p_task));
+
     WidgetUtils::addActionShortcut(action, p_task->getShortcut());
-    MainWindow::connect(action, &QAction::triggered,
-                        p_task, &Task::run);
 }
 
 QToolBar *ToolBarHelper::setupTaskToolBar(MainWindow *p_win, QToolBar *p_toolBar)
@@ -347,11 +376,19 @@ QToolBar *ToolBarHelper::setupTaskToolBar(MainWindow *p_win, QToolBar *p_toolBar
     btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
     auto taskMenu = WidgetsFactory::createMenu(tb);
-    MainWindow::connect(&VNoteX::getInst().getTaskMgr(), &TaskMgr::taskChanged,
+    setupTaskActionMenu(taskMenu);
+    btn->setMenu(taskMenu);
+    MainWindow::connect(taskMenu, &QMenu::triggered,
+                        taskMenu, [](QAction *act) {
+        auto task = reinterpret_cast<Task *>(act->data().toULongLong());
+        Q_ASSERT(task);
+        task->run();
+    });
+    MainWindow::connect(&VNoteX::getInst().getTaskMgr(), &TaskMgr::tasksUpdated,
                         taskMenu, [taskMenu]() {
         setupTaskMenu(taskMenu);
     });
-    btn->setMenu(taskMenu);
+
     return tb;
 }
 
@@ -683,6 +720,12 @@ void ToolBarHelper::setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar)
                             helpMenu,
                             []() {
                                 WidgetUtils::openUrlByDesktop(QUrl("https://vnotex.github.io/vnote"));
+                            });
+
+        helpMenu->addAction(MainWindow::tr("Documentation"),
+                            helpMenu,
+                            []() {
+                                WidgetUtils::openUrlByDesktop(QUrl("https://vnotex.github.io/vnote/en_us/#!docs/vx.json"));
                             });
 
         helpMenu->addAction(MainWindow::tr("Feedback and Discussions"),

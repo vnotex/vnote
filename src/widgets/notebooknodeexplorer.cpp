@@ -838,7 +838,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         break;
 
     case Action::OpenLocation:
-        act = new QAction(tr("Open &Location"), p_parent);
+        act = new QAction(tr("Open Locat&ion"), p_parent);
         connect(act, &QAction::triggered,
                 this, [this]() {
                     auto item = m_masterExplorer->currentItem();

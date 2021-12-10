@@ -2,13 +2,77 @@
 
 #include <QDebug>
 #include <QTemporaryDir>
+#include <QJsonArray>
 
+#include <utils/utils.h>
 #include <utils/pathutils.h>
 #include <utils/fileutils.h>
 
 using namespace tests;
 
 using namespace vnotex;
+
+TestUtils::TestUtils(QObject *p_parent)
+    : QObject(p_parent)
+{
+}
+
+void TestUtils::initTestCase()
+{
+    m_obj["a"] = "a";
+
+    {
+        QJsonObject objb;
+        objb["a"] = "ba";
+        objb["b"] = 2;
+
+        {
+            QJsonObject objbc;
+            objbc["a"] = "bca";
+
+            objb["c"] = objbc;
+        }
+
+        m_obj["b"] = objb;
+    }
+
+    {
+        QJsonObject objc;
+        objc["a"] = "ca";
+
+        QJsonArray arr;
+        arr.append("cb0");
+        arr.append("cb1");
+        arr.append("cb2");
+        objc["b"] = arr;
+
+        m_obj["c"] = objc;
+    }
+}
+
+void TestUtils::testParseAndReadJson_data()
+{
+    QTest::addColumn<QString>("exp");
+    QTest::addColumn<QJsonValue>("result");
+
+    QTest::newRow("empty") << "" << QJsonValue(m_obj);
+    QTest::newRow("a") << "a" << QJsonValue("a");
+    QTest::newRow("ba") << "b.a" << QJsonValue("ba");
+    QTest::newRow("bb") << "b.b" << QJsonValue(2);
+    QTest::newRow("bca") << "b.c.a" << QJsonValue("bca");
+    QTest::newRow("ca") << "c.a" << QJsonValue("ca");
+    QTest::newRow("cb0") << "c.b[0]" << QJsonValue("cb0");
+    QTest::newRow("cb1") << "c.b[1]" << QJsonValue("cb1");
+    QTest::newRow("cb2") << "c.b[2]" << QJsonValue("cb2");
+}
+
+void TestUtils::testParseAndReadJson()
+{
+    QFETCH(QString, exp);
+    QFETCH(QJsonValue, result);
+
+    QCOMPARE(Utils::parseAndReadJson(m_obj, exp), result);
+}
 
 void TestUtils::testParentDirPath_data()
 {

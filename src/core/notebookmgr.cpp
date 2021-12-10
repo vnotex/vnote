@@ -265,6 +265,11 @@ ID NotebookMgr::getCurrentNotebookId() const
     return m_currentNotebookId;
 }
 
+QSharedPointer<Notebook> NotebookMgr::getCurrentNotebook() const
+{
+    return findNotebookById(m_currentNotebookId);
+}
+
 void NotebookMgr::setCurrentNotebook(ID p_notebookId)
 {
     auto lastId = m_currentNotebookId;

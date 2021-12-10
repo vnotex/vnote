@@ -36,6 +36,10 @@ const QString ConfigMgr::c_configFileName = "vnotex.json";
 
 const QString ConfigMgr::c_sessionFileName = "session.json";
 
+const QString ConfigMgr::c_userFilesFolder = "user_files";
+
+const QString ConfigMgr::c_appFilesFolder = "vnotex_files";
+
 const QJsonObject &ConfigMgr::Settings::getJson() const
 {
     return m_jobj;
@@ -68,17 +72,21 @@ ConfigMgr::ConfigMgr(bool p_isUnitTest, QObject *p_parent)
             qWarning() << "failed to init ConfigMgr for UnitTest";
             return;
         }
-        m_appConfigFolderPath = m_dirForUnitTest->filePath("vnotex_files");
-        m_userConfigFolderPath = m_dirForUnitTest->filePath("user_files");
 
-        FileUtils::copyFile(getConfigFilePath(Source::Default), PathUtils::concatenateFilePath(m_appConfigFolderPath, c_configFileName));
-    } else {
-        locateConfigFolder();
+        QDir dir(m_dirForUnitTest->path());
+        dir.mkdir(c_appFilesFolder);
+        dir.mkdir(c_userFilesFolder);
 
-        bool needUpdate = checkAppConfig();
-        if (needUpdate) {
-            checkUserConfig();
-        }
+        m_appConfigFolderPath = m_dirForUnitTest->filePath(c_appFilesFolder);
+        m_userConfigFolderPath = m_dirForUnitTest->filePath(c_userFilesFolder);
+        return;
+    }
+
+    locateConfigFolder();
+
+    bool needUpdate = checkAppConfig();
+    if (needUpdate) {
+        checkUserConfig();
     }
 
     m_config->init();
@@ -106,8 +114,7 @@ void ConfigMgr::locateConfigFolder()
     qInfo() << "app folder" << appDirPath;
     // Check app config.
     {
-        const QString configFolderName("vnotex_files");
-        QString folderPath(appDirPath + '/' + configFolderName);
+        QString folderPath(appDirPath + '/' + c_appFilesFolder);
         if (QDir(folderPath).exists()) {
             // Config folder in app/.
             m_appConfigFolderPath = PathUtils::cleanPath(folderPath);
@@ -118,8 +125,7 @@ void ConfigMgr::locateConfigFolder()
 
     // Check user config.
     {
-        const QString configFolderName("user_files");
-        QString folderPath(appDirPath + '/' + configFolderName);
+        QString folderPath(appDirPath + '/' + c_userFilesFolder);
         if (QDir(folderPath).exists()) {
             // Config folder in app/.
             m_userConfigFolderPath = PathUtils::cleanPath(folderPath);
@@ -563,4 +569,15 @@ QString ConfigMgr::getApplicationVersion()
     }
 
     return appVersion;
+}
+
+QJsonValue ConfigMgr::parseAndReadConfig(const QString &p_exp) const
+{
+    if (p_exp.startsWith(QStringLiteral("main."))) {
+        return Utils::parseAndReadJson(m_config->toJson(), p_exp.mid(5));
+    } else if (p_exp.startsWith(QStringLiteral("session."))) {
+        return Utils::parseAndReadJson(m_sessionConfig->toJson(), p_exp.mid(8));
+    } else {
+        return QJsonValue();
+    }
 }

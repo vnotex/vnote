@@ -14,6 +14,7 @@
 #include "quickaccesshelper.h"
 
 #include <utils/docsutils.h>
+#include <task/taskmgr.h>
 
 
 using namespace vnotex;
@@ -63,6 +64,8 @@ void VNoteX::initTaskMgr()
 {
     Q_ASSERT(!m_taskMgr);
     m_taskMgr = new TaskMgr(this);
+    connect(m_taskMgr, &TaskMgr::taskOutputRequested,
+            this, &VNoteX::showOutputRequested);
 }
 
 ThemeMgr &VNoteX::getThemeMgr() const

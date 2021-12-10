@@ -97,6 +97,8 @@ namespace vnotex
 
         bool isSessionEnabled() const;
 
+        virtual QString selectedText() const;
+
     public slots:
         virtual void handleEditorConfigChange() = 0;
 
@@ -225,8 +227,6 @@ namespace vnotex
         virtual void scrollDown() = 0;
 
         virtual void zoom(bool p_zoomIn) = 0;
-
-        virtual QString selectedText() const;
 
         void showZoomFactor(qreal p_factor);
 

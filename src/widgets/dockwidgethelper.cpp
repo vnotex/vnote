@@ -25,6 +25,7 @@
 #include "snippetpanel.h"
 #include "historypanel.h"
 #include "tagexplorer.h"
+#include "terminalviewer.h"
 
 using namespace vnotex;
 
@@ -113,7 +114,7 @@ void DockWidgetHelper::setupDocks()
 
     setupOutlineDock();
 
-    setupOutputDock();
+    setupTerminalDock();
 
     setupLocationListDock();
 
@@ -148,17 +149,17 @@ void DockWidgetHelper::setupOutlineDock()
     m_mainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
 }
 
-void DockWidgetHelper::setupOutputDock()
+void DockWidgetHelper::setupTerminalDock()
 {
-    auto dock = createDockWidget(DockIndex::OutputDock, tr("Output"), m_mainWindow);
+    auto dock = createDockWidget(DockIndex::TerminalDock, tr("Terminal"), m_mainWindow);
 
-    dock->setObjectName(QStringLiteral("OutputDock.vnotex"));
-    dock->setAllowedAreas(Qt::BottomDockWidgetArea);
+    dock->setObjectName(QStringLiteral("TerminalDock.vnotex"));
+    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    dock->setWidget(m_mainWindow->m_outputViewer);
-    dock->setFocusProxy(m_mainWindow->m_outputViewer);
-    dock->hide();
+    dock->setWidget(m_mainWindow->m_terminalViewer);
+    dock->setFocusProxy(m_mainWindow->m_terminalViewer);
     m_mainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
+    dock->hide();
 }
 
 void DockWidgetHelper::setupSearchDock()

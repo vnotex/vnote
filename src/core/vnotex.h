@@ -6,7 +6,6 @@
 
 #include "noncopyable.h"
 #include "thememgr.h"
-#include "taskmgr.h"
 #include "global.h"
 
 namespace vnotex
@@ -19,6 +18,7 @@ namespace vnotex
     class Event;
     class Notebook;
     struct ComplexLocation;
+    class TaskMgr;
 
     class VNoteX : public QObject, private Noncopyable
     {

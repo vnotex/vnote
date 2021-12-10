@@ -192,13 +192,15 @@ bool WebViewExporter::writeHtmlFile(const QString &p_file,
                                     bool p_embedImages)
 {
     const auto baseName = QFileInfo(p_file).completeBaseName();
-    auto title = QString("%1 - %2").arg(baseName, ConfigMgr::c_appName);
+
     const QString resourceFolderName = baseName + "_files";
     auto resourceFolder = PathUtils::concatenateFilePath(PathUtils::parentDirPath(p_file), resourceFolderName);
 
     qDebug() << "HTML files folder" << resourceFolder;
 
     auto htmlContent = m_exportHtmlTemplate;
+
+    const auto title = QString("%1").arg(baseName);
     HtmlTemplateHelper::fillTitle(htmlContent, title);
 
     if (!p_styleContent.isEmpty() && p_embedStyles) {

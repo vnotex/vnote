@@ -10,10 +10,12 @@ INCLUDEPATH *= $$SRC_FOLDER
 
 SOURCES += \
     test_utils.cpp \
+    $$UTILS_FOLDER/utils.cpp \
     $$UTILS_FOLDER/pathutils.cpp \
     $$UTILS_FOLDER/fileutils.cpp
 
 HEADERS += \
     test_utils.h \
+    $$UTILS_FOLDER/utils.h \
     $$UTILS_FOLDER/pathutils.h \
     $$UTILS_FOLDER/fileutils.h

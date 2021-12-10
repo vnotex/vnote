@@ -20,7 +20,9 @@
 
 using namespace vnotex;
 
-const QString SnippetMgr::c_snippetSymbolRegExp = QString("%([^%]+)%");
+const QChar SnippetMgr::c_snippetSymbolGuard = QLatin1Char('%');
+
+const QString SnippetMgr::c_snippetSymbolRegExp = QString("%1([^%]+)%1").arg(c_snippetSymbolGuard);
 
 SnippetMgr::SnippetMgr()
 {
@@ -231,10 +233,11 @@ void SnippetMgr::applySnippet(const QString &p_name,
     p_textEdit->setTextCursor(cursor);
 }
 
-QString SnippetMgr::applySnippetBySymbol(const QString &p_content) const
+QString SnippetMgr::applySnippetBySymbol(const QString &p_content,
+                                         const OverrideMap &p_overrides) const
 {
     int offset = 0;
-    return applySnippetBySymbol(p_content, QString(), offset);
+    return applySnippetBySymbol(p_content, QString(), offset, p_overrides);
 }
 
 QString SnippetMgr::applySnippetBySymbol(const QString &p_content,
@@ -244,11 +247,11 @@ QString SnippetMgr::applySnippetBySymbol(const QString &p_content,
 {
     QString content(p_content);
 
-    int maxTimes = 100;
+    int maxTimesAtSamePos = 100;
 
     QRegularExpression regExp(c_snippetSymbolRegExp);
     int pos = 0;
-    while (pos < content.size() && maxTimes-- > 0) {
+    while (pos < content.size()) {
         QRegularExpressionMatch match;
         int idx = content.indexOf(regExp, pos, &match);
         if (idx == -1) {
@@ -288,6 +291,13 @@ QString SnippetMgr::applySnippetBySymbol(const QString &p_content,
         }
 
         // @afterText may still contains snippet symbol.
+        if (pos == idx) {
+            if (--maxTimesAtSamePos == 0) {
+                break;
+            }
+        } else {
+            maxTimesAtSamePos = 100;
+        }
         pos = idx;
     }
 
@@ -426,8 +436,10 @@ void SnippetMgr::addDynamicSnippet(QVector<QSharedPointer<Snippet>> &p_snippets,
 SnippetMgr::OverrideMap SnippetMgr::generateOverrides(const Buffer *p_buffer)
 {
     OverrideMap overrides;
-    overrides.insert(QStringLiteral("note"), p_buffer->getName());
-    overrides.insert(QStringLiteral("no"), QFileInfo(p_buffer->getName()).completeBaseName());
+    if (p_buffer) {
+        overrides.insert(QStringLiteral("note"), p_buffer->getName());
+        overrides.insert(QStringLiteral("no"), QFileInfo(p_buffer->getName()).completeBaseName());
+    }
     return overrides;
 }
 
@@ -437,4 +449,9 @@ SnippetMgr::OverrideMap SnippetMgr::generateOverrides(const QString &p_fileName)
     overrides.insert(QStringLiteral("note"), p_fileName);
     overrides.insert(QStringLiteral("no"), QFileInfo(p_fileName).completeBaseName());
     return overrides;
+}
+
+QString SnippetMgr::generateSnippetSymbol(const QString &p_snippetName)
+{
+    return c_snippetSymbolGuard + p_snippetName + c_snippetSymbolGuard;
 }

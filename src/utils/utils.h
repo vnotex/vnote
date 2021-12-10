@@ -57,6 +57,10 @@ namespace vnotex
         static QByteArray toJsonString(const QJsonObject &p_obj);
 
         static QJsonObject fromJsonString(const QByteArray &p_data);
+
+        // Parse @p_exp into tokens and read the target value from @p_obj.
+        // Format: obj1.obj2.arr[2].obj3.
+        static QJsonValue parseAndReadJson(const QJsonObject &p_obj, const QString &p_exp);
     };
 } // ns vnotex
 

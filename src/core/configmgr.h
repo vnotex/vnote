@@ -106,6 +106,9 @@ namespace vnotex
 
         QString getConfigFilePath(Source p_src) const;
 
+        // Parse exp like "[main|session].core.shortcuts.FullScreen" and return the config value.
+        QJsonValue parseAndReadConfig(const QString &p_exp) const;
+
         // Called at boostrap without QApplication instance.
         static QString locateSessionConfigFilePathAtBootstrap();
 
@@ -168,6 +171,10 @@ namespace vnotex
 
         // Name of the session config file.
         static const QString c_sessionFileName;
+
+        static const QString c_userFilesFolder;
+
+        static const QString c_appFilesFolder;
     };
 } // ns vnotex
 

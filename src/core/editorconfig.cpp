@@ -150,7 +150,11 @@ QJsonObject EditorConfig::toJson() const
     obj[m_markdownEditorConfig->getSessionName()] = m_markdownEditorConfig->toJson();
     obj[QStringLiteral("core")] = saveCore();
     obj[QStringLiteral("image_host")] = saveImageHost();
-    obj[QStringLiteral("vi")] = m_viConfig->toJson();
+
+    // In UT, it may be nullptr.
+    if (m_viConfig) {
+        obj[QStringLiteral("vi")] = m_viConfig->toJson();
+    }
     return obj;
 }
 

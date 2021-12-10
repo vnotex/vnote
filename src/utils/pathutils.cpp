@@ -16,7 +16,6 @@ QString PathUtils::parentDirPath(const QString &p_path)
     }
 
     QFileInfo info(p_path);
-    Q_ASSERT(info.isAbsolute());
     return cleanPath(info.absolutePath());
 }
 

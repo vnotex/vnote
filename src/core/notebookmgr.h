@@ -62,6 +62,8 @@ namespace vnotex
 
         ID getCurrentNotebookId() const;
 
+        QSharedPointer<Notebook> getCurrentNotebook() const;
+
         // Find the notebook with the same directory as root folder.
         QSharedPointer<Notebook> findNotebookByRootFolderPath(const QString &p_rootFolderPath) const;
 

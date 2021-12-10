@@ -65,7 +65,7 @@ namespace vnotex
     class FramelessMainWindowLinuxDummy
     {
     public:
-        FramelessMainWindowLinuxDummy();
+        FramelessMainWindowLinuxDummy() = default;
     };
 #endif
 }

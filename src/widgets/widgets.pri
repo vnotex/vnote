@@ -89,6 +89,7 @@ SOURCES += \
     $$PWD/tagexplorer.cpp \
     $$PWD/tagpopup.cpp \
     $$PWD/tagviewer.cpp \
+    $$PWD/terminalviewer.cpp \
     $$PWD/textviewwindow.cpp \
     $$PWD/toolbarhelper.cpp \
     $$PWD/treeview.cpp \
@@ -218,6 +219,7 @@ HEADERS += \
     $$PWD/tagexplorer.h \
     $$PWD/tagpopup.h \
     $$PWD/tagviewer.h \
+    $$PWD/terminalviewer.h \
     $$PWD/textviewwindow.h \
     $$PWD/textviewwindowhelper.h \
     $$PWD/toolbarhelper.h \
