@@ -26,4 +26,4 @@ const char *PropertyDefs::c_dockWidgetIndex = "DockIndex";
 
 const char *PropertyDefs::c_dockWidgetTitle = "DockTitle";
 
-const char *PropertyDefs::c_hitSettingWidght = "HitSettingWidget";
+const char *PropertyDefs::c_hitSettingWidget = "HitSettingWidget";

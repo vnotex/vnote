@@ -22,6 +22,10 @@ namespace vnotex
 
         TreeWidget(TreeWidget::Flags p_flags, QWidget *p_parent = nullptr);
 
+        void mark(QTreeWidgetItem *p_item, int p_column);
+
+        void unmark(QTreeWidgetItem *p_item, int p_column);
+
         static void setupSingleColumnHeaderlessTree(QTreeWidget *p_widget, bool p_contextMenu, bool p_extendedSelection);
 
         static void showHorizontalScrollbar(QTreeWidget *p_tree);
@@ -34,6 +38,9 @@ namespace vnotex
                                          bool p_forward);
 
         static QVector<QTreeWidgetItem *> getVisibleItems(const QTreeWidget *p_widget);
+
+        // @p_func: return false to abort the iteration.
+        static void forEachItem(const QTreeWidget *p_widget, const std::function<bool(QTreeWidgetItem *p_item)> &p_func);
 
     signals:
         // Emit when single item is selected and Drag&Drop to move internally.
@@ -54,6 +61,10 @@ namespace vnotex
                                             bool p_forward);
 
         static QTreeWidgetItem *lastItemOfTree(QTreeWidgetItem *p_item);
+
+        // @p_func: return false to abort the iteration.
+        // Return false to abort the ieration.
+        static bool forEachItem(QTreeWidgetItem *p_item, const std::function<bool(QTreeWidgetItem *p_item)> &p_func);
 
         Flags m_flags = Flag::None;
     };

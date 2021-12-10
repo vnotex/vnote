@@ -18,6 +18,10 @@ QWidget[DialogCentralWidget="true"] {
     border: none;
 }
 
+QWidget[HitSettingWidget="true"] {
+    border: 2px solid @widgets#qwidget#info#border;
+}
+
 /* All widgets */
 *[State="info"] {
     border: 1px solid @widgets#qwidget#info#border;

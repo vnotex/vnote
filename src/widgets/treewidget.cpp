@@ -223,3 +223,45 @@ void TreeWidget::dropEvent(QDropEvent *p_event)
         emit itemMoved(dragItems[0]);
     }
 }
+
+void TreeWidget::forEachItem(const QTreeWidget *p_widget, const std::function<bool(QTreeWidgetItem *p_item)> &p_func)
+{
+    const int cnt = p_widget->topLevelItemCount();
+    for (int i = 0; i < cnt; ++i) {
+        if (!forEachItem(p_widget->topLevelItem(i), p_func)) {
+            break;
+        }
+    }
+}
+
+bool TreeWidget::forEachItem(QTreeWidgetItem *p_item, const std::function<bool(QTreeWidgetItem *p_item)> &p_func)
+{
+    if (!p_item) {
+        return true;
+    }
+
+    if (!p_func(p_item)) {
+        return false;
+    }
+
+    const int cnt = p_item->childCount();
+    for (int i = 0; i < cnt; ++i) {
+        if (!forEachItem(p_item->child(i), p_func)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void TreeWidget::mark(QTreeWidgetItem *p_item, int p_column)
+{
+    p_item->setData(p_column, Qt::ForegroundRole, StyledItemDelegate::s_highlightForeground);
+    p_item->setData(p_column, Qt::BackgroundRole, StyledItemDelegate::s_highlightBackground);
+}
+
+void TreeWidget::unmark(QTreeWidgetItem *p_item, int p_column)
+{
+    p_item->setData(p_column, Qt::ForegroundRole, QVariant());
+    p_item->setData(p_column, Qt::BackgroundRole, QVariant());
+}

@@ -8,6 +8,10 @@
  *  - $2px: 2 will be scaled by multiplying current display scaled factor.
  */
 
+QWidget[HitSettingWidget="true"] {
+    border: 2px solid @base#info#fg;
+}
+
 /* All widgets */
 *[State="info"] {
     border: 1px solid @base#info#fg;

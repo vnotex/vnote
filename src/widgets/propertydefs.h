@@ -34,7 +34,7 @@ namespace vnotex
 
         static const char *c_dockWidgetTitle;
 
-        static const char *c_hitSettingWidght;
+        static const char *c_hitSettingWidget;
     };
 }
 

@@ -34,7 +34,7 @@ namespace vnotex
         virtual bool saveInternal() = 0;
 
         // Subclass could override this method to highlight matched target.
-        virtual void searchHit(QWidget *p_target, bool hit);
+        virtual void searchHit(QWidget *p_target, bool p_hit);
 
         void addSearchItem(const QString &p_words, QWidget *p_target);
 

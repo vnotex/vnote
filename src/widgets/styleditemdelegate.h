@@ -67,6 +67,10 @@ namespace vnotex
 
         QSize sizeHint(const QStyleOptionViewItem &p_option, const QModelIndex &p_index) const Q_DECL_OVERRIDE;
 
+        static QBrush s_highlightForeground;
+
+        static QBrush s_highlightBackground;
+
     private:
         void initialize();
 
@@ -82,10 +86,6 @@ namespace vnotex
         QTextDocument *m_document = nullptr;
 
         SimpleSegmentHighlighter *m_highlighter = nullptr;
-
-        static QBrush s_highlightForeground;
-
-        static QBrush s_highlightBackground;
     };
 }
 

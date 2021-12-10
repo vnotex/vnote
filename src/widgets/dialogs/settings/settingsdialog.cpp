@@ -5,10 +5,16 @@
 #include <QStackedLayout>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QDebug>
+#include <QTimer>
+#include <QColor>
 
 #include <widgets/treewidget.h>
 #include <widgets/lineedit.h>
 #include <widgets/widgetsfactory.h>
+#include <widgets/propertydefs.h>
+#include <utils/widgetutils.h>
+#include <core/vnotex.h>
 
 #include "generalpage.h"
 #include "miscpage.h"
@@ -21,14 +27,6 @@
 #include "imagehostpage.h"
 #include "vipage.h"
 #include "notemanagementpage.h"
-
-#include <QDebug>
-#include <QTimer>
-#include <QColor>
-#include "settingspage.h"
-#include "utils/widgetutils.h"
-#include "../../propertydefs.h"
-#include <core/vnotex.h>
 
 using namespace vnotex;
 
@@ -72,24 +70,20 @@ void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent)
 {
     auto layout = new QVBoxLayout();
 
+    m_searchTimer = new QTimer(this);
+    m_searchTimer->setSingleShot(true);
+    m_searchTimer->setInterval(500);
+    connect(m_searchTimer, &QTimer::timeout,
+            this, &SettingsDialog::search);
+
     m_searchEdit = WidgetsFactory::createLineEdit(p_parent);
     m_searchEdit->setPlaceholderText(tr("Search"));
+    m_searchEdit->setClearButtonEnabled(true);
     layout->addWidget(m_searchEdit);
-    connect(m_searchEdit,&QLineEdit::textChanged,
-            this, [this]() { QTimer::singleShot(500, this, [this](){
-            forEachPage([this](SettingsPage *p_page) {
-                bool hit = p_page->search(m_searchEdit->text());
-                if (hit) {
-                    qDebug() << p_page->title();
-                    // 目前只能找到tree的 通过 外观 笔记管理，快速访问与编辑器好像没有加入到tree的搜索中
-                    // 不知道如何找到item并且高亮
-                }
-                return hit;
-            });
-        });
-    });
+    connect(m_searchEdit, &QLineEdit::textChanged,
+            m_searchTimer, QOverload<>::of(&QTimer::start));
 
-    m_pageExplorer = new TreeWidget(TreeWidget::None, p_parent);
+    m_pageExplorer = new TreeWidget(TreeWidget::EnhancedStyle, p_parent);
     TreeWidget::setupSingleColumnHeaderlessTree(m_pageExplorer, false, false);
     TreeWidget::showHorizontalScrollbar(m_pageExplorer);
     m_pageExplorer->setMinimumWidth(128);
@@ -276,7 +270,7 @@ bool SettingsDialog::savePages()
 void SettingsDialog::forEachPage(const std::function<bool(SettingsPage *)> &p_func)
 {
     for (int i = 0; i < m_pageLayout->count(); ++i) {
-        auto page = dynamic_cast<SettingsPage *>(m_pageLayout->widget(i));
+        auto page = static_cast<SettingsPage *>(m_pageLayout->widget(i));
         if (!p_func(page)) {
             break;
         }
@@ -299,4 +293,18 @@ QTreeWidgetItem *SettingsDialog::addSubPage(SettingsPage *p_page, QTreeWidgetIte
     auto subItem = new QTreeWidgetItem(p_parentItem);
     setupPage(subItem, p_page);
     return subItem;
+}
+
+void SettingsDialog::search()
+{
+    auto keywords = m_searchEdit->text().trimmed();
+    TreeWidget::forEachItem(m_pageExplorer, [this, keywords](QTreeWidgetItem *item) {
+            auto page = itemPage(item);
+            if (page->search(keywords)) {
+                m_pageExplorer->mark(item, 0);
+            } else {
+                m_pageExplorer->unmark(item, 0);
+            }
+            return true;
+        });
 }

@@ -5,14 +5,15 @@
 
 #include <functional>
 
-class QTreeWidget;
 class QStackedLayout;
 class QLineEdit;
 class QTreeWidgetItem;
 class QScrollArea;
+class QTimer;
 
 namespace vnotex
 {
+    class TreeWidget;
     class SettingsPage;
 
     class SettingsDialog : public Dialog
@@ -50,9 +51,11 @@ namespace vnotex
 
         QTreeWidgetItem *addSubPage(SettingsPage *p_page, QTreeWidgetItem *p_parentItem);
 
+        void search();
+
         QLineEdit *m_searchEdit = nullptr;
 
-        QTreeWidget *m_pageExplorer = nullptr;
+        TreeWidget *m_pageExplorer = nullptr;
 
         QScrollArea *m_scrollArea = nullptr;
 
@@ -61,6 +64,8 @@ namespace vnotex
         bool m_changesUnsaved = false;
 
         bool m_ready = false;
+
+        QTimer *m_searchTimer = nullptr;
     };
 }
 

@@ -360,7 +360,7 @@
             "//comment" : "imagelink/codeblock/math",
             "inplace_preview_sources" : "imagelink;codeblock;math",
             "//comment" : "view mode of edit mode: editonly/editpreview",
-            "edit_view_mode" : "editonly"
+            "edit_view_mode" : "editpreview"
         },
         "image_host" : {
             "hosts" : [
