@@ -45,6 +45,13 @@ jobs:
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
 
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v1  # not v2!
+        with:
+          path: ../Qt
+          key: ${{ runner.os }}-${{matrix.config.arch}}-QtCache
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
@@ -53,6 +60,7 @@ jobs:
           arch: ${{matrix.config.arch}}
           modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
           tools: tools_openssl_${{matrix.config.platform}},1.1.1-4,qt.tools.openssl.win_${{matrix.config.platform}}
+          cached: ${{ steps.cache-qt.outputs.cache-hit }}
 
       - name: Create Build Dir
         shell: bash

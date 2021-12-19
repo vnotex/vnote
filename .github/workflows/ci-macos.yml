@@ -39,12 +39,21 @@ jobs:
           git clone https://github.com/tamlok/macdeployqtfix.git macdeployqtfix --depth=1
         working-directory: ${{runner.workspace}}
 
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v1  # not v2!
+        with:
+          path: ../Qt
+          key: ${{ runner.os }}-QtCache
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
           version: 5.12.10
           target: desktop
           modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+
 
       - name: Create Build Dir
         run: mkdir build
