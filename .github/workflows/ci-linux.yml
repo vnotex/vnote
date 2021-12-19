@@ -40,6 +40,13 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev tree
 
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v1  # not v2!
+        with:
+          path: ../Qt
+          key: ${{ runner.os }}-QtCache
+          
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
@@ -47,6 +54,7 @@ jobs:
           target: desktop
           modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
           tools: tools_openssl_x64,1.1.1-4,qt.tools.openssl.gcc_64
+          cached: ${{ steps.cache-qt.outputs.cache-hit }}
 
       - name: Create Build Dir
         run: mkdir build
