@@ -150,6 +150,70 @@
         <file>themes/pure/up.svg</file>
         <file>themes/pure/up_disabled.svg</file>
         <file>themes/pure/web.css</file>
+        <file>themes/solarized-dark/arrow_dropdown.svg</file>
+        <file>themes/solarized-dark/arrow_dropdown_disabled.svg</file>
+        <file>themes/solarized-dark/branch_closed.svg</file>
+        <file>themes/solarized-dark/branch_open.svg</file>
+        <file>themes/solarized-dark/checkbox_checked.svg</file>
+        <file>themes/solarized-dark/checkbox_checked_disabled.svg</file>
+        <file>themes/solarized-dark/checkbox_unchecked.svg</file>
+        <file>themes/solarized-dark/checkbox_unchecked_disabled.svg</file>
+        <file>themes/solarized-dark/close.svg</file>
+        <file>themes/solarized-dark/close_grey.svg</file>
+        <file>themes/solarized-dark/cover.png</file>
+        <file>themes/solarized-dark/down.svg</file>
+        <file>themes/solarized-dark/down_disabled.svg</file>
+        <file>themes/solarized-dark/float.svg</file>
+        <file>themes/solarized-dark/highlight.css</file>
+        <file>themes/solarized-dark/interface.qss</file>
+        <file>themes/solarized-dark/left.svg</file>
+        <file>themes/solarized-dark/left_disabled.svg</file>
+        <file>themes/solarized-dark/menu_checkbox.svg</file>
+        <file>themes/solarized-dark/menu_radiobutton.svg</file>
+        <file>themes/solarized-dark/palette.json</file>
+        <file>themes/solarized-dark/radiobutton_checked.svg</file>
+        <file>themes/solarized-dark/radiobutton_checked_disabled.svg</file>
+        <file>themes/solarized-dark/radiobutton_unchecked.svg</file>
+        <file>themes/solarized-dark/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/solarized-dark/right.svg</file>
+        <file>themes/solarized-dark/right_disabled.svg</file>
+        <file>themes/solarized-dark/sizegrip.svg</file>
+        <file>themes/solarized-dark/text-editor.theme</file>
+        <file>themes/solarized-dark/up.svg</file>
+        <file>themes/solarized-dark/up_disabled.svg</file>
+        <file>themes/solarized-dark/web.css</file>
+        <file>themes/solarized-light/arrow_dropdown.svg</file>
+        <file>themes/solarized-light/arrow_dropdown_disabled.svg</file>
+        <file>themes/solarized-light/branch_closed.svg</file>
+        <file>themes/solarized-light/branch_open.svg</file>
+        <file>themes/solarized-light/checkbox_checked.svg</file>
+        <file>themes/solarized-light/checkbox_checked_disabled.svg</file>
+        <file>themes/solarized-light/checkbox_unchecked.svg</file>
+        <file>themes/solarized-light/checkbox_unchecked_disabled.svg</file>
+        <file>themes/solarized-light/close.svg</file>
+        <file>themes/solarized-light/close_grey.svg</file>
+        <file>themes/solarized-light/cover.png</file>
+        <file>themes/solarized-light/down.svg</file>
+        <file>themes/solarized-light/down_disabled.svg</file>
+        <file>themes/solarized-light/float.svg</file>
+        <file>themes/solarized-light/highlight.css</file>
+        <file>themes/solarized-light/interface.qss</file>
+        <file>themes/solarized-light/left.svg</file>
+        <file>themes/solarized-light/left_disabled.svg</file>
+        <file>themes/solarized-light/menu_checkbox.svg</file>
+        <file>themes/solarized-light/menu_radiobutton.svg</file>
+        <file>themes/solarized-light/palette.json</file>
+        <file>themes/solarized-light/radiobutton_checked.svg</file>
+        <file>themes/solarized-light/radiobutton_checked_disabled.svg</file>
+        <file>themes/solarized-light/radiobutton_unchecked.svg</file>
+        <file>themes/solarized-light/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/solarized-light/right.svg</file>
+        <file>themes/solarized-light/right_disabled.svg</file>
+        <file>themes/solarized-light/sizegrip.svg</file>
+        <file>themes/solarized-light/text-editor.theme</file>
+        <file>themes/solarized-light/up.svg</file>
+        <file>themes/solarized-light/up_disabled.svg</file>
+        <file>themes/solarized-light/web.css</file>
         <file>tasks/git/git.json</file>
         <file>tasks/git/git.svg</file>
         <file>tasks/git/commit.svg</file>
