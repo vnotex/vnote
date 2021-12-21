@@ -1,0 +1,302 @@
+/* 
+    https://github.com/Nriver/vnote-solarized-theme
+    made by Nriver
+*/
+
+body {
+    margin: 0 auto;
+    font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
+    color: #657B83;
+    line-height: 1.5;
+    padding: 16px;
+    background-color: #EEE8D5;
+    font-size: 16px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #CA8465;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding: 0;
+}
+
+p {
+    padding: 0;
+    margin-bottom: 16px;
+}
+
+h1 {
+    font-size: 26px;
+}
+
+h2 {
+    font-size: 24px;
+}
+
+h3 {
+    font-size: 22px;
+}
+
+h4 {
+    font-size: 20px;
+}
+
+h5 {
+    font-size: 19px;
+}
+
+h6 {
+    font-size: 18px;
+}
+
+a {
+    color: #2AA198;
+    margin: 0;
+    padding: 0;
+    vertical-align: baseline;
+    text-decoration: none;
+    word-break: break-word;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a:visited {
+    color: #ba68c8;
+}
+
+ul, ol {
+    padding: 0;
+    padding-left: 24px;
+}
+
+li {
+    line-height: 24px;
+}
+
+li ul, li ol {
+    margin-left: 16px;
+}
+
+p, ul, ol {
+    font-size: 16px;
+    line-height: 24px;
+}
+
+mark {
+    color: #000000;
+    background-color: #c4c400;
+}
+
+pre {
+    display: block;
+    overflow-y: hidden;
+    overflow-x: auto;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+}
+
+code {
+    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
+    color: #D7BA7D;
+    word-break: break-word;
+}
+
+pre code {
+    display: block;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    color: #D7BA7D;
+    background-color: #FDF6E3;
+    line-height: 1.5;
+    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
+    white-space: pre;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+}
+
+aside {
+    display: block;
+    float: right;
+    width: 390px;
+}
+
+blockquote {
+    color: #abb2bf;
+    border-left: .5em solid #abb2bf;
+    padding: 0 1em;
+    margin-left: 0;
+}
+
+blockquote p {
+    color: #abb2bf;
+}
+
+hr {
+    display: block;
+    text-align: left;
+    margin: 1em 0;
+    border: none;
+    height: 2px;
+    background-color: #4c5562;
+}
+
+table {
+   padding: 0;
+   margin: 1rem 0.5rem;
+   border-collapse: collapse;
+}
+
+table tr {
+   border-top: 1px solid #4c5562;
+   background-color: #efe8d6;
+   margin: 0;
+   padding: 0;
+}
+
+table tr:hover {
+   background-color: #FDF6E3;
+}
+
+table tr th {
+   font-weight: bold;
+   border: 1px solid #4c5562;
+   margin: 0;
+   padding: 6px 13px;
+}
+
+table tr td {
+   border: 1px solid #4c5562;
+   margin: 0;
+   padding: 6px 13px;
+}
+
+table tr th :first-child, table tr td :first-child {
+   margin-top: 0;
+}
+
+table tr th :last-child, table tr td :last-child {
+   margin-bottom: 0;
+}
+
+div.vx-mermaid-graph {
+    margin: 16px 0px 16px 0px;
+    overflow-y: hidden;
+    background: #B0BEC5;
+    color: #6C6C6C;
+}
+
+div.vx-flowchartjs-graph {
+    padding: 0px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+    background: #B0BEC5;
+    color: #6C6C6C;
+}
+
+div.vx-wavedrom-graph {
+    padding: 0px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+    background: #B0BEC5;
+    color: #6C6C6C;
+}
+
+div.vx-plantuml-graph {
+    padding: 5px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+    background: #B0BEC5;
+    color: #6C6C6C;
+}
+
+::selection {
+  background-color: #0c7bff;
+  color: #e3e5e9;
+}
+
+::-webkit-scrollbar {
+    background-color: #FDF6E3;
+    width: 14px;
+    height: 14px;
+    border: none;
+}
+
+::-webkit-scrollbar-corner {
+    background-color: #FDF6E3;
+}
+
+::-webkit-scrollbar-button {
+    /* This selector affects the styling of both the up & down and left & right buttons of a scrollbar */
+    height: 14px;
+    width: 14px;
+    background-color: #FDF6E3;
+}
+
+::-webkit-scrollbar-button:hover {
+    background-color: #918F8A;
+}
+
+::-webkit-scrollbar-button:active {
+    background-color: #65625B;
+}
+
+::-webkit-scrollbar-track {
+    /* This selector affects the styling of the area in the scrollbar between the two buttons */
+    background-color: #FDF6E3;
+}
+
+::-webkit-scrollbar-thumb {
+    /* This selector affects the styling of draggable element of the scollbar */
+    border: none;
+    background-color: #C0BCB0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #918F8A;
+}
+
+::-webkit-scrollbar-thumb:active {
+    background-color: #65625B;
+}
+
+::-webkit-scrollbar-button:horizontal:increment {
+    background-image: url(right.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+::-webkit-scrollbar-button:horizontal:decrement {
+    background-image: url(left.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+::-webkit-scrollbar-button:vertical:increment {
+    background-image: url(down.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+::-webkit-scrollbar-button:vertical:decrement {
+    background-image: url(up.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+#vx-content span.vx-search-match {
+    color: #222222;
+    background-color: #4db6ac;
+}
+
+#vx-content span.vx-current-search-match {
+    color: #222222;
+    background-color: #66bb6a;
+}
