@@ -12,7 +12,6 @@ QWidget {
     color: @widgets#qwidget#fg;
     background-color: @widgets#qwidget#bg;
     font-family: "冬青黑体", "YaHei Consolas Hybrid", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", "Dengxian", "等线体", "STXihei", "华文细黑", "Liberation Sans", "Droid Sans", "NSimSun", "新宋体", "SimSun", "宋体", "Helvetica", "sans-serif", "Tahoma", "Arial", "Verdana", "Geneva", "Georgia", "Times New Roman";
-    text-color: #657B83;
 }
 
 QWidget[DialogCentralWidget="true"] {
