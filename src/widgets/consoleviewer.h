@@ -1,5 +1,5 @@
-#ifndef TERMINALVIEWER_H
-#define TERMINALVIEWER_H
+#ifndef CONSOLEVIEWER_H
+#define CONSOLEVIEWER_H
 
 #include <QFrame>
 
@@ -9,11 +9,11 @@ namespace vnotex
 {
     class TitleBar;
 
-    class TerminalViewer : public QFrame
+    class ConsoleViewer : public QFrame
     {
         Q_OBJECT
     public:
-        explicit TerminalViewer(QWidget *p_parent = nullptr);
+        explicit ConsoleViewer(QWidget *p_parent = nullptr);
 
         void append(const QString &p_text);
 
@@ -30,4 +30,4 @@ namespace vnotex
     };
 }
 
-#endif // TERMINALVIEWER_H
+#endif // CONSOLEVIEWER_H

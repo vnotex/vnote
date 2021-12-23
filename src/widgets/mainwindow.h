@@ -28,7 +28,7 @@ namespace vnotex
     class SnippetPanel;
     class HistoryPanel;
     class ExportDialog;
-    class TerminalViewer;
+    class ConsoleViewer;
 
     enum { RESTART_EXIT_CODE = 1000 };
 
@@ -107,7 +107,7 @@ namespace vnotex
 
         void setupOutlineViewer();
 
-        void setupTerminalViewer();
+        void setupConsoleViewer();
 
         void setupSearchPanel();
 
@@ -168,7 +168,7 @@ namespace vnotex
 
         OutlineViewer *m_outlineViewer = nullptr;
 
-        TerminalViewer *m_terminalViewer = nullptr;
+        ConsoleViewer *m_consoleViewer = nullptr;
 
         LocationList *m_locationList = nullptr;
 

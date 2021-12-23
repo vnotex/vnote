@@ -3,6 +3,7 @@ SOURCES += \
     $$PWD/attachmentpopup.cpp \
     $$PWD/biaction.cpp \
     $$PWD/combobox.cpp \
+    $$PWD/consoleviewer.cpp \
     $$PWD/dialogs/dialog.cpp \
     $$PWD/dialogs/exportdialog.cpp \
     $$PWD/dialogs/filepropertiesdialog.cpp \
@@ -89,7 +90,6 @@ SOURCES += \
     $$PWD/tagexplorer.cpp \
     $$PWD/tagpopup.cpp \
     $$PWD/tagviewer.cpp \
-    $$PWD/terminalviewer.cpp \
     $$PWD/textviewwindow.cpp \
     $$PWD/toolbarhelper.cpp \
     $$PWD/treeview.cpp \
@@ -130,6 +130,7 @@ HEADERS += \
     $$PWD/attachmentpopup.h \
     $$PWD/biaction.h \
     $$PWD/combobox.h \
+    $$PWD/consoleviewer.h \
     $$PWD/dialogs/dialog.h \
     $$PWD/dialogs/exportdialog.h \
     $$PWD/dialogs/importfolderutils.h \
@@ -219,7 +220,6 @@ HEADERS += \
     $$PWD/tagexplorer.h \
     $$PWD/tagpopup.h \
     $$PWD/tagviewer.h \
-    $$PWD/terminalviewer.h \
     $$PWD/textviewwindow.h \
     $$PWD/textviewwindowhelper.h \
     $$PWD/toolbarhelper.h \

@@ -106,3 +106,8 @@ int BundleNotebookConfigMgr::getCodeVersion() const
 {
     return 3;
 }
+
+QString BundleNotebookConfigMgr::getConfigFolderPath() const
+{
+    return c_configFolderName;
+}

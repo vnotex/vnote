@@ -55,6 +55,13 @@ const QVector<QSharedPointer<Task>> &TaskMgr::getNotebookTasks() const
 
 QString TaskMgr::getNotebookTaskFolder()
 {
+    auto nb = VNoteX::getInst().getNotebookMgr().getCurrentNotebook();
+    if (nb) {
+        const auto folderPath = nb->getConfigFolderAbsolutePath();
+        if (!folderPath.isEmpty()) {
+            return PathUtils::concatenateFilePath(folderPath, QStringLiteral("tasks"));
+        }
+    }
     return QString();
 }
 
@@ -80,6 +87,7 @@ void TaskMgr::loadGlobalTasks()
 
 void TaskMgr::loadTasksFromFolder(QVector<QSharedPointer<Task>> &p_tasks, const QString &p_folder)
 {
+    qDebug() << "load tasks from folder" << p_folder;
     p_tasks.clear();
 
     if (p_folder.isEmpty()) {

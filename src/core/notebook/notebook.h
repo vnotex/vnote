@@ -54,6 +54,9 @@ namespace vnotex
 
         QString getRootFolderAbsolutePath() const;
 
+        // Get the absolute path of the config folder if applicable.
+        QString getConfigFolderAbsolutePath() const;
+
         const QIcon &getIcon() const;
         void setIcon(const QIcon &p_icon);
 

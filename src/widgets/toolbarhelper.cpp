@@ -381,8 +381,9 @@ QToolBar *ToolBarHelper::setupTaskToolBar(MainWindow *p_win, QToolBar *p_toolBar
     MainWindow::connect(taskMenu, &QMenu::triggered,
                         taskMenu, [](QAction *act) {
         auto task = reinterpret_cast<Task *>(act->data().toULongLong());
-        Q_ASSERT(task);
-        task->run();
+        if (task) {
+            task->run();
+        }
     });
     MainWindow::connect(&VNoteX::getInst().getTaskMgr(), &TaskMgr::tasksUpdated,
                         taskMenu, [taskMenu]() {

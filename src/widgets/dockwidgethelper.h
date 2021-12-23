@@ -29,7 +29,7 @@ namespace vnotex
             SearchDock,
             SnippetDock,
             OutlineDock,
-            TerminalDock,
+            ConsoleDock,
             LocationListDock,
             MaxDock
         };
@@ -98,7 +98,7 @@ namespace vnotex
 
         void setupOutlineDock();
 
-        void setupTerminalDock();
+        void setupConsoleDock();
 
         void setupSearchDock();
 

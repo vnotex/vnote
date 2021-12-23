@@ -1,4 +1,4 @@
-#include "terminalviewer.h"
+#include "consoleviewer.h"
 
 #include <QVBoxLayout>
 #include <QPlainTextEdit>
@@ -12,13 +12,13 @@
 
 using namespace vnotex;
 
-TerminalViewer::TerminalViewer(QWidget *p_parent)
+ConsoleViewer::ConsoleViewer(QWidget *p_parent)
     : QFrame(p_parent)
 {
     setupUI();
 }
 
-void TerminalViewer::setupUI()
+void ConsoleViewer::setupUI()
 {
     auto mainLayout = new QVBoxLayout(this);
     WidgetUtils::setContentsMargins(mainLayout);
@@ -35,7 +35,7 @@ void TerminalViewer::setupUI()
     setFocusProxy(m_consoleEdit);
 }
 
-void TerminalViewer::setupTitleBar(const QString &p_title, QWidget *p_parent)
+void ConsoleViewer::setupTitleBar(const QString &p_title, QWidget *p_parent)
 {
     m_titleBar = new TitleBar(p_title, true, TitleBar::Action::None, p_parent);
     m_titleBar->setActionButtonsAlwaysShown(true);
@@ -43,11 +43,11 @@ void TerminalViewer::setupTitleBar(const QString &p_title, QWidget *p_parent)
     {
         auto clearBtn = m_titleBar->addActionButton(QStringLiteral("clear.svg"), tr("Clear"));
         connect(clearBtn, &QToolButton::triggered,
-                this, &TerminalViewer::clear);
+                this, &ConsoleViewer::clear);
     }
 }
 
-void TerminalViewer::append(const QString &p_text)
+void ConsoleViewer::append(const QString &p_text)
 {
     m_consoleEdit->appendPlainText(p_text);
     auto scrollBar = m_consoleEdit->verticalScrollBar();
@@ -56,7 +56,7 @@ void TerminalViewer::append(const QString &p_text)
     }
 }
 
-void TerminalViewer::clear()
+void ConsoleViewer::clear()
 {
     m_consoleEdit->clear();
 }

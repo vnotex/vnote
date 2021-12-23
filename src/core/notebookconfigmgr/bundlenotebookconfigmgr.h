@@ -28,6 +28,8 @@ namespace vnotex
 
         int getCodeVersion() const Q_DECL_OVERRIDE;
 
+        QString getConfigFolderPath() const Q_DECL_OVERRIDE;
+
         static const QString &getConfigFolderName();
 
         static const QString &getConfigName();

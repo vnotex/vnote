@@ -25,7 +25,7 @@
 #include "snippetpanel.h"
 #include "historypanel.h"
 #include "tagexplorer.h"
-#include "terminalviewer.h"
+#include "consoleviewer.h"
 
 using namespace vnotex;
 
@@ -114,7 +114,7 @@ void DockWidgetHelper::setupDocks()
 
     setupOutlineDock();
 
-    setupTerminalDock();
+    setupConsoleDock();
 
     setupLocationListDock();
 
@@ -149,15 +149,15 @@ void DockWidgetHelper::setupOutlineDock()
     m_mainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
 }
 
-void DockWidgetHelper::setupTerminalDock()
+void DockWidgetHelper::setupConsoleDock()
 {
-    auto dock = createDockWidget(DockIndex::TerminalDock, tr("Terminal"), m_mainWindow);
+    auto dock = createDockWidget(DockIndex::ConsoleDock, tr("Console"), m_mainWindow);
 
-    dock->setObjectName(QStringLiteral("TerminalDock.vnotex"));
+    dock->setObjectName(QStringLiteral("ConsoleDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    dock->setWidget(m_mainWindow->m_terminalViewer);
-    dock->setFocusProxy(m_mainWindow->m_terminalViewer);
+    dock->setWidget(m_mainWindow->m_consoleViewer);
+    dock->setFocusProxy(m_mainWindow->m_consoleViewer);
     m_mainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
     dock->hide();
 }

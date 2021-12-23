@@ -56,7 +56,7 @@
 #include "tagexplorer.h"
 #include "toolbarhelper.h"
 #include "statusbarhelper.h"
-#include "terminalviewer.h"
+#include "consoleviewer.h"
 
 using namespace vnotex;
 
@@ -258,7 +258,7 @@ void MainWindow::setupDocks()
 
     setupOutlineViewer();
 
-    setupTerminalViewer();
+    setupConsoleViewer();
 
     setupHistoryPanel();
 
@@ -515,15 +515,15 @@ void MainWindow::setupOutlineViewer()
             this, &MainWindow::focusViewArea);
 }
 
-void MainWindow::setupTerminalViewer()
+void MainWindow::setupConsoleViewer()
 {
-    m_terminalViewer = new TerminalViewer(this);
-    m_terminalViewer->setObjectName("TerminalViewer.vnotex");
+    m_consoleViewer = new ConsoleViewer(this);
+    m_consoleViewer->setObjectName("ConsoleViewer.vnotex");
 
     connect(&VNoteX::getInst(), &VNoteX::showOutputRequested,
             this, [this](const QString &p_text) {
-        m_terminalViewer->append(p_text);
-        m_dockWidgetHelper.activateDock(DockWidgetHelper::TerminalDock);
+        m_consoleViewer->append(p_text);
+        m_dockWidgetHelper.activateDock(DockWidgetHelper::ConsoleDock);
     });
 }
 

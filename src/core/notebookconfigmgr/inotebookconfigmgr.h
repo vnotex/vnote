@@ -87,6 +87,8 @@ namespace vnotex
         // Version of the config processing code.
         virtual int getCodeVersion() const = 0;
 
+        virtual QString getConfigFolderPath() const = 0;
+
     private:
         QSharedPointer<INotebookBackend> m_backend;
 

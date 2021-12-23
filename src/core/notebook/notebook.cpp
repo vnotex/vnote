@@ -136,6 +136,16 @@ QString Notebook::getRootFolderAbsolutePath() const
     return PathUtils::absolutePath(m_rootFolderPath);
 }
 
+QString Notebook::getConfigFolderAbsolutePath() const
+{
+    const auto &folderPath = m_configMgr->getConfigFolderPath();
+    if (folderPath.isEmpty()) {
+        return QString();
+    }
+
+    return getBackend()->getFullPath(folderPath);
+}
+
 const QIcon &Notebook::getIcon() const
 {
     return m_icon;
