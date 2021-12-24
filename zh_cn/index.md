@@ -3,7 +3,7 @@
 
 ::: alert-success
 
-VNote 3.10.1已发布！ 看看都有[哪些更新](https://github.com/vnotex/vnote/releases) ！
+VNote 3.11.0已发布！ 看看都有[哪些更新](https://github.com/vnotex/vnote/releases) ！
 
 观看[展示录屏](https://www.bilibili.com/video/av77455284) ！
 
@@ -36,7 +36,7 @@ VNote 3.10.1已发布！ 看看都有[哪些更新](https://github.com/vnotex/vn
 ![](_v_images/20181124155408890_125984506.svg =512x)
 
 ## 专注
-- 没有双边实时预览
+- 原地预览或者双边实时预览
 - 通过**阅读**和**编辑**模式以专注于笔记
 
 ![](_v_images/20181124155541581_1337512834.svg =512x)

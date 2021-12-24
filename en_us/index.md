@@ -3,7 +3,7 @@
 
 ::: alert-success
 
-VNote 3.10.1 is released! Check out [what's new](https://github.com/vnotex/vnote/releases)!
+VNote 3.11.0 is released! Check out [what's new](https://github.com/vnotex/vnote/releases)!
 
 :::
 
@@ -34,7 +34,7 @@ VNote 3.10.1 is released! Check out [what's new](https://github.com/vnotex/vnote
 ![](_v_images/20181124155408890_125984506.svg =512x)
 
 ## Concentration
-- **No** live preview side by side
+- In-place preview or side-by-side live preview
 - Focus on your note in both **read** and **edit** mode
 
 ![](_v_images/20181124155541581_1337512834.svg =512x)

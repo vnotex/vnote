@@ -19,7 +19,7 @@ Some key files of a theme:
 - `highlight.css`: style sheet file of the read mode of Markdown for code block syntax highlight; VNote uses [Prism](https://prismjs.com/) for syntax highlight in read mode;
 
 ## Samples
-### Custom Fonts
+### Customize Editor Fonts
 #### Read Mode
 For the font in **read mode**, it is specified in `web.css` by the `font-family` and `font-size`.
 
@@ -124,5 +124,34 @@ Markdown editor:
             "selected-background-color" : "#1976d2"
         }
     }
+}
+```
+
+### Customize Interface Fonts
+We need to edit `interface.qss` to customize the fonts of interface, such as the menu and the navigation tree.
+
+[Qt docs](https://doc.qt.io/qt-5/stylesheet-examples.html) provides many detailed examples about the Qt stylesheet.
+
+Change the font size of all the widgets:
+
+```css
+QWidget {
+    font-size: 12pt;
+}
+```
+
+Change the font size of all the tree view and list view:
+
+```css
+QTreeView, QListView {
+    font-size: 12pt;
+}
+```
+
+Change the font size of the notebook node explorer:
+
+```css
+vnotex--NotebookNodeExplorer QTreeView {
+    font-size: 14pt;
 }
 ```
