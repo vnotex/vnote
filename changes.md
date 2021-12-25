@@ -1,4 +1,13 @@
 # Changes
+## v3.11.0
+* Task: support a simple task system (@tootal)
+* Theme: add user-provided Solarized-Dark and Solarized-Light themes
+* Export: fix wkhtmltopdf table-of-contents translation
+* Support equation begin in MathJax
+* MainWindow: decide DPI on the screen vnote starts
+* Settings: support searching
+* Fix crash caused by Youdao Dict
+
 ## v3.10.1
 * MarkdownEditor: fix view mode issue
 * Support print
