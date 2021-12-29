@@ -87,7 +87,7 @@ The `type` property of one task defines how the command will be executed.
 {
     "type": "process",
     "label": "Open File with",
-    "args": ["${file}"],
+    "args": ["${buffer}"],
     "tasks": [
         {
             "label": "Typora",
@@ -120,7 +120,7 @@ VNote does not provide a terminal. We may need to use `start` or `gnome-terminal
     "args": [
         "--execute",
         "vim",
-        "${file}"
+        "${buffer}"
     ]
 }
 ```
@@ -143,7 +143,7 @@ We could use `windows`/`linux`/`osx` keyword to specify options for different pl
 {
     "type": "process",
     "label": "Open File with",
-    "args": ["${file}"],
+    "args": ["${buffer}"],
     "tasks": [
         {
             "label": "Typora",
@@ -281,7 +281,7 @@ Compile and run:
 
 ```json
 {
-    "command": "g++ \"${file}\" -o \"${fileBasenameNoExtension}\"; if ($?) { start cmd \"/c `\"${fileBasenameNoExtension}`\" & pause\" }"
+    "command": "g++ \"${buffer}\" -o \"${bufferBaseName}\"; if ($?) { start cmd \"/c `\"${bufferBaseName}`\" & pause\" }"
 }
 ```
 
