@@ -67,6 +67,7 @@ namespace vnotex
 
             // Use for MarkdownEditor code block highlight.
             // If not specified, will use m_editorHighlightTheme.
+            // Valid only when KSyntaxCodeBlockHighlighter is used.
             QString m_markdownEditorHighlightTheme;
         };
 

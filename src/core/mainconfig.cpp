@@ -7,6 +7,7 @@
 #include "coreconfig.h"
 #include "editorconfig.h"
 #include "widgetconfig.h"
+#include "texteditorconfig.h"
 #include "markdowneditorconfig.h"
 
 using namespace vnotex;
@@ -118,4 +119,5 @@ QString MainConfig::getVersion(const QJsonObject &p_jobj)
 void MainConfig::doVersionSpecificOverride()
 {
     // In a new version, we may want to change one value by force.
+    m_editorConfig->getTextEditorConfig().m_highlightWhitespace = false;
 }

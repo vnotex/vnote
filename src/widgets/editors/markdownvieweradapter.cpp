@@ -1,6 +1,5 @@
 #include "markdownvieweradapter.h"
 
-#include <QDebug>
 #include <QMap>
 
 #include "../outlineprovider.h"
@@ -59,6 +58,35 @@ QJsonObject MarkdownViewerAdapter::FindOption::toJson() const
     obj["wholeWordOnly"] = m_wholeWordOnly;
     obj["regularExpression"] = m_regularExpression;
     return obj;
+}
+
+MarkdownViewerAdapter::CssRuleStyle MarkdownViewerAdapter::CssRuleStyle::fromJson(const QJsonObject &p_obj)
+{
+    CssRuleStyle style;
+    style.m_selector = p_obj[QStringLiteral("selector")].toString();
+    style.m_color = p_obj[QStringLiteral("color")].toString();
+    style.m_backgroundColor = p_obj[QStringLiteral("backgroundColor")].toString();
+    style.m_fontWeight = p_obj[QStringLiteral("fontWeight")].toString();
+    style.m_fontStyle = p_obj[QStringLiteral("fontStyle")].toString();
+    return style;
+}
+
+QTextCharFormat MarkdownViewerAdapter::CssRuleStyle::toTextCharFormat() const
+{
+    QTextCharFormat fmt;
+    if (!m_color.isEmpty()) {
+        fmt.setForeground(Utils::toColor(m_color));
+    }
+    if (!m_backgroundColor.isEmpty()) {
+        fmt.setBackground(QColor(m_color));
+    }
+    if (m_fontWeight.contains(QStringLiteral("bold"))) {
+        fmt.setFontWeight(QFont::Bold);
+    }
+    if (m_fontStyle.contains(QStringLiteral("italic"))) {
+        fmt.setFontItalic(true);
+    }
+    return fmt;
 }
 
 MarkdownViewerAdapter::MarkdownViewerAdapter(QObject *p_parent)
@@ -269,6 +297,11 @@ void MarkdownViewerAdapter::setMarkdownFromHtml(quint64 p_id, quint64 p_timeStam
     emit htmlToMarkdownReady(p_id, p_timeStamp, p_text);
 }
 
+void MarkdownViewerAdapter::setCodeBlockHighlightHtml(int p_idx, quint64 p_timeStamp, const QString &p_html)
+{
+    emit highlightCodeBlockReady(p_idx, p_timeStamp, p_html);
+}
+
 void MarkdownViewerAdapter::setCrossCopyTargets(const QJsonArray &p_targets)
 {
     m_crossCopyTargets.clear();
@@ -399,5 +432,46 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id,
                                           });
     } else {
         Q_ASSERT(false);
+    }
+}
+
+void MarkdownViewerAdapter::highlightCodeBlock(int p_idx, quint64 p_timeStamp, const QString &p_text)
+{
+    if (m_viewerReady) {
+        emit highlightCodeBlockRequested(p_idx, p_timeStamp, p_text);
+    } else {
+        m_pendingActions.append([this, p_idx, p_timeStamp, p_text]() {
+            emit highlightCodeBlockRequested(p_idx, p_timeStamp, p_text);
+        });
+    }
+}
+
+void MarkdownViewerAdapter::setStyleSheetStyles(quint64 p_id, const QJsonArray &p_styles)
+{
+    QVector<CssRuleStyle> ruleStyles;
+    ruleStyles.reserve(p_styles.size());
+    for (int i = 0; i < p_styles.size(); ++i) {
+        ruleStyles.push_back(CssRuleStyle::fromJson(p_styles[i].toObject()));
+    }
+
+    m_callbackPool.call(p_id, &ruleStyles);
+}
+
+void MarkdownViewerAdapter::fetchStylesFromStyleSheet(const QString &p_styleSheet,
+                                                      const std::function<void(const QVector<CssRuleStyle> *)> &p_callback)
+{
+    if (p_styleSheet.isEmpty()) {
+        return;
+    }
+
+    const quint64 id = m_callbackPool.add([p_callback](void *data) {
+        p_callback(reinterpret_cast<const QVector<CssRuleStyle> *>(data));
+    });
+    if (m_viewerReady) {
+        emit parseStyleSheetRequested(id, p_styleSheet);
+    } else {
+        m_pendingActions.append([this, p_styleSheet, id]() {
+            emit parseStyleSheetRequested(id, p_styleSheet);
+        });
     }
 }

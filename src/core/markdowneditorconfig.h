@@ -241,7 +241,7 @@ namespace vnotex
         InplacePreviewSources m_inplacePreviewSources = InplacePreviewSource::NoInplacePreview;
 
         // View mode in edit mode.
-        EditViewMode m_editViewMode = EditViewMode::EditPreview;
+        EditViewMode m_editViewMode = EditViewMode::EditOnly;
     };
 }
 

@@ -383,7 +383,11 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
         // Avoid geometry corruption caused by fullscreen or minimized window.
         const auto state = windowState();
         if (state & (Qt::WindowMinimized | Qt::WindowFullScreen)) {
-            showNormal();
+            if (m_windowOldState & Qt::WindowMaximized) {
+                showMaximized();
+            } else {
+                showNormal();
+            }
         }
         saveStateAndGeometry();
     }

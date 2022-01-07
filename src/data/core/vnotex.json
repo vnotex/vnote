@@ -141,7 +141,7 @@
             "wrap_mode": "word_anywhere",
             "expand_tab": true,
             "tab_stop_width": 4,
-            "highlight_whitespace": true,
+            "highlight_whitespace": false,
             "//comment" : "Positive to zoom in and negative to zoom out",
             "zoom_delta": 0,
             "spell_check": false
@@ -360,7 +360,7 @@
             "//comment" : "imagelink/codeblock/math",
             "inplace_preview_sources" : "imagelink;codeblock;math",
             "//comment" : "view mode of edit mode: editonly/editpreview",
-            "edit_view_mode" : "editpreview"
+            "edit_view_mode" : "editonly"
         },
         "image_host" : {
             "hosts" : [

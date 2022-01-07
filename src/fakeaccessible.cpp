@@ -8,24 +8,8 @@ using namespace vnotex;
 QAccessibleInterface *FakeAccessible::accessibleFactory(const QString &p_className, QObject *p_obj)
 {
     // Try to fix non-responsible issue caused by Youdao Dict.
-    if (p_className == QLatin1String("vnotex::LineEdit")
-        || p_className == QLatin1String("vnotex::TitleBar")
-        || p_className == QLatin1String("vnotex::NotebookSelector")
-        || p_className == QLatin1String("vnotex::TagExplorer")
-        || p_className == QLatin1String("vnotex::SearchPanel")
-        || p_className == QLatin1String("vnotex::SnippetPanel")
-        || p_className == QLatin1String("vnotex::OutlineViewer")
-        || p_className == QLatin1String("vnotex::TitleToolBar")
-        || p_className == QLatin1String("vnotex::MainWindow")
-        || p_className == QLatin1String("vnotex::ViewArea")
-        || p_className == QLatin1String("vte::VTextEdit")
-        || p_className == QLatin1String("vte::IndicatorsBorder")
-        || p_className == QLatin1String("vte::MarkdownEditor")
-        || p_className == QLatin1String("vte::VMarkdownEditor")
-        || p_className == QLatin1String("vte::VTextEditor")
-        || p_className == QLatin1String("vte::ViStatusBar")
-        || p_className == QLatin1String("vte::StatusIndicator")
-        || p_className == QLatin1String("vte::ScrollBar")) {
+    if (p_className.startsWith(QStringLiteral("vnotex::"))
+        || p_className.startsWith(QStringLiteral("vte::"))) {
         return new FakeAccessibleInterface(p_obj);
     }
 

@@ -17,12 +17,14 @@
 #include <core/fileopenparameters.h>
 #include <core/editorconfig.h>
 #include <core/htmltemplatehelper.h>
+#include <core/exception.h>
 #include <vtextedit/vtextedit.h>
 #include <vtextedit/pegmarkdownhighlighter.h>
 #include <vtextedit/markdowneditorconfig.h>
 #include <utils/pathutils.h>
 #include <utils/widgetutils.h>
 #include <utils/printutils.h>
+#include <utils/fileutils.h>
 #include <buffer/markdownbuffer.h>
 #include <core/vnotex.h>
 #include <core/thememgr.h>
@@ -359,6 +361,10 @@ void MarkdownViewWindow::setupTextEditor()
             adapter(), &MarkdownViewerAdapter::htmlToMarkdownRequested);
     connect(adapter(), &MarkdownViewerAdapter::htmlToMarkdownReady,
             m_editor, &MarkdownEditor::handleHtmlToMarkdownData);
+    connect(m_editor, &vte::VMarkdownEditor::externalCodeBlockHighlightRequested,
+            this, &MarkdownViewWindow::handleExternalCodeBlockHighlightRequest);
+    connect(adapter(), &MarkdownViewerAdapter::highlightCodeBlockReady,
+            m_editor, &vte::VMarkdownEditor::handleExternalCodeBlockHighlightData);
 
     // Connect outline pipeline.
     connect(m_editor, &MarkdownEditor::headingsChanged,
@@ -1382,4 +1388,53 @@ void MarkdownViewWindow::print()
                     printer.reset();
                 });
     }
+}
+
+void MarkdownViewWindow::handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp, const QString &p_text)
+{
+    static bool stylesInitialized = false;
+    if (!stylesInitialized) {
+        stylesInitialized = true;
+        const auto file = VNoteX::getInst().getThemeMgr().getFile(Theme::File::HighlightStyleSheet);
+        if (file.isEmpty()) {
+            qWarning() << "no highlight style sheet specified for external code block highlight";
+        } else {
+            QString content;
+            try {
+                content = FileUtils::readTextFile(file);
+            } catch (Exception &e) {
+                qWarning() << "failed to read highlight style sheet for external code block highlight" << file << e.what();
+            }
+            adapter()->fetchStylesFromStyleSheet(content, [this](const QVector<MarkdownViewerAdapter::CssRuleStyle> *rules) {
+                MarkdownEditor::ExternalCodeBlockHighlightStyles styles;
+
+                const QString prefix(".token.");
+                for (const auto &rule : *rules) {
+                    bool isFirst = true;
+                    QTextCharFormat fmt;
+
+                    // Just fetch `.token.attr` styles.
+                    auto selects = rule.m_selector.split(QLatin1Char(','));
+                    for (const auto &sel : selects) {
+                        const auto ts = sel.trimmed();
+                        if (!ts.startsWith(prefix)) {
+                            continue;
+                        }
+                        auto classList = ts.mid(prefix.size()).split(QLatin1Char('.'));
+                        for (const auto &cla : classList) {
+                            if (isFirst) {
+                                fmt = rule.toTextCharFormat();
+                                isFirst = false;
+                            }
+                            styles.insert(cla, fmt);
+                        }
+                    }
+                }
+
+                MarkdownEditor::setExternalCodeBlockHighlihgtStyles(styles);
+            });
+        }
+    }
+
+    adapter()->highlightCodeBlock(p_idx, p_timeStamp, p_text);
 }

@@ -61,6 +61,8 @@ namespace vnotex
         // Parse @p_exp into tokens and read the target value from @p_obj.
         // Format: obj1.obj2.arr[2].obj3.
         static QJsonValue parseAndReadJson(const QJsonObject &p_obj, const QString &p_exp);
+
+        static QColor toColor(const QString &p_color);
     };
 } // ns vnotex
 

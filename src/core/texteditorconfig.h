@@ -5,6 +5,8 @@
 
 namespace vnotex
 {
+    class MainConfig;
+
     class TextEditorConfig : public IConfig
     {
     public:
@@ -73,6 +75,8 @@ namespace vnotex
         void setSpellCheckEnabled(bool p_enabled);
 
     private:
+        friend class MainConfig;
+
         QString lineNumberTypeToString(LineNumberType p_type) const;
         LineNumberType stringToLineNumberType(const QString &p_str) const;
 
@@ -99,7 +103,7 @@ namespace vnotex
 
         int m_tabStopWidth = 4;
 
-        bool m_highlightWhitespace = true;
+        bool m_highlightWhitespace = false;
 
         int m_zoomDelta = 0;
 

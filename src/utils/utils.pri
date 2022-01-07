@@ -1,6 +1,7 @@
 QT += widgets svg
 
 SOURCES += \
+    $$PWD/callbackpool.cpp \
     $$PWD/contentmediautils.cpp \
     $$PWD/docsutils.cpp \
     $$PWD/htmlutils.cpp \
@@ -17,6 +18,7 @@ SOURCES += \
     $$PWD/clipboardutils.cpp
 
 HEADERS += \
+    $$PWD/callbackpool.h \
     $$PWD/contentmediautils.h \
     $$PWD/docsutils.h \
     $$PWD/htmlutils.h \

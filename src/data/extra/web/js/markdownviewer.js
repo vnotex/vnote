@@ -35,6 +35,14 @@ new QWebChannel(qt.webChannelTransport,
             window.vnotex.htmlToMarkdown(p_id, p_timeStamp, p_html);
         });
 
+        adapter.highlightCodeBlockRequested.connect(function(p_idx, p_timeStamp, p_text) {
+            window.vnotex.highlightCodeBlock(p_idx, p_timeStamp, p_text);
+        });
+
+        adapter.parseStyleSheetRequested.connect(function(p_id, p_styleSheet) {
+            window.vnotex.parseStyleSheet(p_id, p_styleSheet);
+        });
+
         adapter.crossCopyRequested.connect(function(p_id, p_timeStamp, p_target, p_baseUrl, p_html) {
             window.vnotex.crossCopy(p_id, p_timeStamp, p_target, p_baseUrl, p_html);
         });

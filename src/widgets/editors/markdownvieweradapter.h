@@ -6,8 +6,10 @@
 #include <QJsonObject>
 #include <QScopedPointer>
 #include <QJsonArray>
+#include <QTextCharFormat>
 
 #include <core/global.h>
+#include <utils/callbackpool.h>
 
 namespace vnotex
 {
@@ -78,6 +80,23 @@ namespace vnotex
             bool m_regularExpression = false;
         };
 
+        struct CssRuleStyle
+        {
+            QTextCharFormat toTextCharFormat() const;
+
+            static CssRuleStyle fromJson(const QJsonObject &p_obj);
+
+            QString m_selector;
+
+            QString m_color;
+
+            QString m_backgroundColor;
+
+            QString m_fontWeight;
+
+            QString m_fontStyle;
+        };
+
         explicit MarkdownViewerAdapter(QObject *p_parent = nullptr);
 
         virtual ~MarkdownViewerAdapter();
@@ -113,6 +132,12 @@ namespace vnotex
 
         // Should be called before WebViewer.setHtml().
         void reset();
+
+        void highlightCodeBlock(int p_idx, quint64 p_timeStamp, const QString &p_text);
+
+        // Parse style sheet and fetch the styles.
+        void fetchStylesFromStyleSheet(const QString &p_styleSheet,
+                                       const std::function<void(const QVector<CssRuleStyle> *)> &p_callback);
 
         // Functions to be called from web side.
     public slots:
@@ -152,6 +177,8 @@ namespace vnotex
         // Set back the result of htmlToMarkdown() call.
         void setMarkdownFromHtml(quint64 p_id, quint64 p_timeStamp, const QString &p_text);
 
+        void setCodeBlockHighlightHtml(int p_idx, quint64 p_timeStamp, const QString &p_html);
+
         void setCrossCopyTargets(const QJsonArray &p_targets);
 
         void setCrossCopyResult(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
@@ -166,6 +193,8 @@ namespace vnotex
                          const QString &p_format,
                          const QString &p_lang,
                          const QString &p_text);
+
+        void setStyleSheetStyles(quint64 p_id, const QJsonArray &p_styles);
 
         // Signals to be connected at web side.
     signals:
@@ -208,6 +237,10 @@ namespace vnotex
                                   const QString &p_format,
                                   const QString &p_data);
 
+        void highlightCodeBlockRequested(int p_idx, quint64 p_timeStamp, const QString &p_text);
+
+        void parseStyleSheetRequested(quint64 p_id, const QString &p_styleSheet);
+
     // Signals to be connected at cpp side.
     signals:
         void graphPreviewDataReady(const PreviewData &p_data);
@@ -238,6 +271,8 @@ namespace vnotex
                           const QString &p_content,
                           const QString &p_bodyClassList);
 
+        void highlightCodeBlockReady(int p_idx, quint64 p_timeStamp, const QString &p_html);
+
     private:
         void scrollToLine(int p_lineNumber);
 
@@ -261,6 +296,8 @@ namespace vnotex
 
         // Targets supported by cross copy. Set by web.
         QStringList m_crossCopyTargets;
+
+        CallbackPool m_callbackPool;
     };
 }
 

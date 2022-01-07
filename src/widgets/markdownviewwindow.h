@@ -177,6 +177,8 @@ namespace vnotex
 
         void syncEditorPositionToPreview();
 
+        void handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp, const QString &p_text);
+
         template <class T>
         static QSharedPointer<Outline> headingsToOutline(const QVector<T> &p_headings);
 
