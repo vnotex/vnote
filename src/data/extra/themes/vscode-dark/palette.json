@@ -3,14 +3,14 @@
         "revision" : 0,
         "//comment" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
         "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
-        "editor-highlight-theme" : "dark_vs",
+        "editor-highlight-theme" : "vscode-dark",
         "//comment" : "If there is a file named 'markdown-editor-highlight.theme' under theme folder, this value will be ignored.",
         "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "//comment" : "If empty, 'editor-highlight-theme' will be used.",
-        "markdown-editor-highlight-theme" : "dark_vs",
-        "display_name" : "dark_vs",
+        "markdown-editor-highlight-theme" : "vscode-dark",
+        "display_name" : "VSCode-dark",
         "//comment" : "Display name for different locales",
-        "display_name_zh_CN" : "黑暗"
+        "display_name_zh_CN" : "VSCode-深色"
     },
     "palette" : {
         "bg1_1" : "#07080d",

@@ -540,5 +540,39 @@
         <file>syntax-highlighting/syntax/yang.xml</file>
         <file>syntax-highlighting/syntax/zonnon.xml</file>
         <file>syntax-highlighting/syntax/zsh.xml</file>
+        <file>syntax-highlighting/themes/vscode-dark.theme</file>
+        <file>themes/vscode-dark/arrow_dropdown.svg</file>
+        <file>themes/vscode-dark/arrow_dropdown_disabled.svg</file>
+        <file>themes/vscode-dark/branch_closed.svg</file>
+        <file>themes/vscode-dark/branch_open.svg</file>
+        <file>themes/vscode-dark/checkbox_checked.svg</file>
+        <file>themes/vscode-dark/checkbox_checked_disabled.svg</file>
+        <file>themes/vscode-dark/checkbox_unchecked.svg</file>
+        <file>themes/vscode-dark/checkbox_unchecked_disabled.svg</file>
+        <file>themes/vscode-dark/close.svg</file>
+        <file>themes/vscode-dark/close_grey.svg</file>
+        <file>themes/vscode-dark/cover.png</file>
+        <file>themes/vscode-dark/down.svg</file>
+        <file>themes/vscode-dark/down_disabled.svg</file>
+        <file>themes/vscode-dark/float.svg</file>
+        <file>themes/vscode-dark/highlight.css</file>
+        <file>themes/vscode-dark/interface.qss</file>
+        <file>themes/vscode-dark/left.svg</file>
+        <file>themes/vscode-dark/left_disabled.svg</file>
+        <file>themes/vscode-dark/menu_checkbox.svg</file>
+        <file>themes/vscode-dark/menu_radiobutton.svg</file>
+        <file>themes/vscode-dark/palette.json</file>
+        <file>themes/vscode-dark/radiobutton_checked.svg</file>
+        <file>themes/vscode-dark/radiobutton_checked_disabled.svg</file>
+        <file>themes/vscode-dark/radiobutton_unchecked.svg</file>
+        <file>themes/vscode-dark/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/vscode-dark/readme.md</file>
+        <file>themes/vscode-dark/right.svg</file>
+        <file>themes/vscode-dark/right_disabled.svg</file>
+        <file>themes/vscode-dark/sizegrip.svg</file>
+        <file>themes/vscode-dark/text-editor.theme</file>
+        <file>themes/vscode-dark/up.svg</file>
+        <file>themes/vscode-dark/up_disabled.svg</file>
+        <file>themes/vscode-dark/web.css</file>
     </qresource>
 </RCC>

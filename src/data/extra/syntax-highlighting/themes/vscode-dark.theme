@@ -1,7 +1,7 @@
     {
     "metadata" : {
         "revision" : 1,
-        "name" : "dark_vs"
+        "name" : "vscode-dark"
     },
     "text-styles": {
         "Normal" : {

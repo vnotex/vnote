@@ -93,6 +93,7 @@
         <file>icons/search_dock.svg</file>
         <file>icons/snippet_dock.svg</file>
         <file>icons/location_list_dock.svg</file>
+        <file>icons/console_dock.svg</file>
         <file>logo/vnote.svg</file>
         <file>logo/vnote.png</file>
         <file>logo/256x256/vnote.png</file>

@@ -1,7 +1,7 @@
 {
     "metadata" : {
         "revision" : 0,
-        "name" : "dark_vs",
+        "name" : "vscode-dark",
         "type" : "vtextedit"
     },
     "editor-styles" : {

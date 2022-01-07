@@ -79,6 +79,8 @@ QString DockWidgetHelper::iconFileName(DockIndex p_dockIndex)
         return "snippet_dock.svg";
     case DockIndex::LocationListDock:
         return "location_list_dock.svg";
+    case DockIndex::ConsoleDock:
+        return "console_dock.svg";
     default:
         return QString();
     }
