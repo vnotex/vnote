@@ -243,6 +243,8 @@ void DockWidgetHelper::activateDock(DockIndex p_dockIndex)
 
 void DockWidgetHelper::activateDock(QDockWidget *p_dock)
 {
+    bool needUpdateTabBar = !p_dock->isVisible();
+
     p_dock->show();
     Q_FOREACH(QTabBar* tabBar, m_mainWindow->findChildren<QTabBar*>(QString(), Qt::FindDirectChildrenOnly)) {
         bool found = false;
@@ -258,7 +260,12 @@ void DockWidgetHelper::activateDock(QDockWidget *p_dock)
             break;
         }
     }
+
     p_dock->setFocus();
+
+    if (needUpdateTabBar) {
+        updateDockWidgetTabBar();
+    }
 }
 
 const QVector<QDockWidget *> &DockWidgetHelper::getDocks() const
