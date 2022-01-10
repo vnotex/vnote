@@ -83,8 +83,6 @@ class PrismRenderer extends VxWorker {
                 }
             }
 
-            p_containerNode.classList.add('line-numbers');
-
             Prism.highlightAllUnder(p_containerNode, false /* async or not */);
 
             // Remove the toolbar.

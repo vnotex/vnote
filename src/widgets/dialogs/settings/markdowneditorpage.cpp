@@ -24,6 +24,7 @@
 #include <widgets/messageboxhelper.h>
 #include <widgets/editors/plantumlhelper.h>
 #include <widgets/editors/graphvizhelper.h>
+#include <widgets/lineedit.h>
 
 using namespace vnotex;
 
@@ -90,6 +91,8 @@ void MarkdownEditorPage::loadInternal()
 
     m_indentFirstLineCheckBox->setChecked(markdownConfig.getIndentFirstLineEnabled());
 
+    m_codeBlockLineNumberCheckBox->setChecked(markdownConfig.getCodeBlockLineNumberEnabled());
+
     m_smartTableCheckBox->setChecked(markdownConfig.getSmartTableEnabled());
 
     m_spellCheckCheckBox->setChecked(markdownConfig.isSpellCheckEnabled());
@@ -107,6 +110,8 @@ void MarkdownEditorPage::loadInternal()
     }
 
     m_graphvizFileInput->setText(markdownConfig.getGraphvizExe());
+
+    m_mathJaxScriptLineEdit->setText(markdownConfig.getMathJaxScript());
 
     {
         const auto &fontFamily = markdownConfig.getEditorOverriddenFontFamily();
@@ -172,6 +177,8 @@ bool MarkdownEditorPage::saveInternal()
 
     markdownConfig.setIndentFirstLineEnabled(m_indentFirstLineCheckBox->isChecked());
 
+    markdownConfig.setCodeBlockLineNumberEnabled(m_codeBlockLineNumberCheckBox->isChecked());
+
     markdownConfig.setSmartTableEnabled(m_smartTableCheckBox->isChecked());
 
     markdownConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
@@ -183,6 +190,8 @@ bool MarkdownEditorPage::saveInternal()
     markdownConfig.setWebGraphviz(m_graphvizModeComboBox->currentData().toInt() == 0);
 
     markdownConfig.setGraphvizExe(m_graphvizFileInput->text());
+
+    markdownConfig.setMathJaxScript(m_mathJaxScriptLineEdit->text());
 
     {
         bool checked = m_editorOverriddenFontFamilyCheckBox->isChecked();
@@ -275,6 +284,16 @@ QGroupBox *MarkdownEditorPage::setupReadGroup()
         layout->addRow(m_indentFirstLineCheckBox);
         addSearchItem(label, m_indentFirstLineCheckBox->toolTip(), m_indentFirstLineCheckBox);
         connect(m_indentFirstLineCheckBox, &QCheckBox::stateChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        const QString label(tr("Code block line number"));
+        m_codeBlockLineNumberCheckBox = WidgetsFactory::createCheckBox(label, box);
+        m_codeBlockLineNumberCheckBox->setToolTip(tr("Add line number to code block"));
+        layout->addRow(m_codeBlockLineNumberCheckBox);
+        addSearchItem(label, m_codeBlockLineNumberCheckBox->toolTip(), m_codeBlockLineNumberCheckBox);
+        connect(m_codeBlockLineNumberCheckBox, &QCheckBox::stateChanged,
                 this, &MarkdownEditorPage::pageIsChanged);
     }
 
@@ -549,6 +568,17 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
         layout->addRow(label, fileLayout);
         addSearchItem(label, m_graphvizFileInput->toolTip(), m_graphvizFileInput);
         connect(m_graphvizFileInput, &LocationInputWithBrowseButton::textChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
+    }
+
+    {
+        m_mathJaxScriptLineEdit = WidgetsFactory::createLineEdit(box);
+        m_mathJaxScriptLineEdit->setToolTip(tr("Override the MathJax script used to render math formulas"));
+
+        const QString label(tr("MathJax script:"));
+        layout->addRow(label, m_mathJaxScriptLineEdit);
+        addSearchItem(label, m_mathJaxScriptLineEdit->toolTip(), m_mathJaxScriptLineEdit);
+        connect(m_mathJaxScriptLineEdit, &QLineEdit::textChanged,
                 this, &MarkdownEditorPage::pageIsChanged);
     }
 

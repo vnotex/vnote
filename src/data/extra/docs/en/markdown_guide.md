@@ -21,8 +21,8 @@ Here is an overview of Markdown syntax supported by VNote.
 
 **Notes**:
 
-* At least one space is needed after the `#`;
-* A header should occupy one entire line;
+* At least one space is needed after the `#`
+* A header should occupy one entire line
 
 ### Emphasis
 ```md
@@ -35,8 +35,8 @@ __This text will be bold__
 
 **Notes**:
 
-* `*` is recommended in VNote;
-* If the render failed, try to add an additional space before the first `*` and after the last `*`. The space is necessary if the surrounded text begins or ends with full width punctuation;
+* `*` is recommended in VNote
+* If the render failed, try to add an additional space before the first `*` and after the last `*`. The space is necessary if the surrounded text begins or ends with full width punctuation
 
 ### Lists
 #### Unordered
@@ -107,8 +107,8 @@ Here is another sentence within the quote.
 
 **Notes**:
 
-* Space is needed after the marker `>`;
-* You could just add only one `>` at the first line;
+* Space is needed after the marker `>`
+* You could just add only one `>` at the first line
 
 ### Fenced Code Block
     ```lang
@@ -121,15 +121,16 @@ Here is another sentence within the quote.
 
 **Notes**:
 
-* `lang` is optional to specify the language of the code; if not specified, VNote won't highlight the code;
-* It is always a good practice to add one empty line before the whole fenced code block;
+* `lang` is optional to specify the language of the code; if not specified, VNote won't highlight the code
+    * For a detailed supported languages list, please visit [Prism](https://prismjs.com/#supported-languages)
+* It is always a good practice to add one empty line before the whole fenced code block
 
 ### Diagrams
 VNote supports the following engines to draw diagrams. You should specify particular language of the fenced code block and write the definition of your diagram within it.
 
-* [Flowchart.js](http://flowchart.js.org/) for *flowchart* with language `flow` or `flowchart`;
-* [Mermaid](https://mermaidjs.github.io/) with language `mermaid`;
-* [WaveDrom](https://wavedrom.com/) for *digital timing diagram* with language `wavedrom`;
+* [Flowchart.js](http://flowchart.js.org/) for *flowchart* with language `flow` or `flowchart`
+* [Mermaid](https://mermaidjs.github.io/) with language `mermaid`
+* [WaveDrom](https://wavedrom.com/) for *digital timing diagram* with language `wavedrom`
 
 For example,
 
@@ -162,11 +163,11 @@ VNote supports [Graphviz](http://www.graphviz.org/) to draw diagrams. You should
 ### Math Formulas
 VNote supports math formulas via [MathJax](https://www.mathjax.org/). The default math delimiters are `$$...$$` for **displayed mathematics**, and `$...$` for **inline mathematics**.
 
-* Inline mathematics should not cross multiple lines;
-* Forms like `3$abc$`, `$abc$4`, `$ abc$`, and `$abc $` will not be treated as mathematics;
-* Use `\` to escape `$`;
-* There should be only space chars before opening `$$` and after closing `$$`;
-* Use `\\` to new a line within a displayed mathematics;
+* Inline mathematics should not cross multiple lines
+* Forms like `3$abc$`, `$abc$4`, `$ abc$`, and `$abc $` will not be treated as mathematics
+* Use `\` to escape `$`
+* There should be only space chars before opening `$$` and after closing `$$`
+* Use `\\` to new a line within a displayed mathematics
 
 VNote also supports displayed mathematics via fenced code block with language `mathjax` specified.
 

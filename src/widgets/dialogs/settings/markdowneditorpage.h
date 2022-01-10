@@ -9,6 +9,7 @@ class QDoubleSpinBox;
 class QSpinBox;
 class QComboBox;
 class QFontComboBox;
+class QLineEdit;
 
 namespace vnotex
 {
@@ -60,6 +61,8 @@ namespace vnotex
 
         QCheckBox *m_indentFirstLineCheckBox = nullptr;
 
+        QCheckBox *m_codeBlockLineNumberCheckBox = nullptr;
+
         QDoubleSpinBox *m_zoomFactorSpinBox = nullptr;
 
         QComboBox *m_sectionNumberComboBox = nullptr;
@@ -79,6 +82,8 @@ namespace vnotex
         QComboBox *m_graphvizModeComboBox = nullptr;
 
         LocationInputWithBrowseButton *m_graphvizFileInput = nullptr;
+
+        QLineEdit *m_mathJaxScriptLineEdit = nullptr;
 
         QCheckBox *m_editorOverriddenFontFamilyCheckBox = nullptr;
 

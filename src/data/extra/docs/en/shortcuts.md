@@ -1,8 +1,8 @@
 # Shortcuts
-1. All the keys without special notice are **case insensitive**;
-2. On macOS, `Ctrl` corresponds to `Command` except in Vi mode;
-3. The key sequence `Ctrl+G, I` means that first press both `Ctrl` and `G` simultaneously, release them, then press `I` and release;
-4. For a **complete latest shortcuts list** or modifying default shortcuts, please view the `vnotex.json` configuration file.
+1. All the keys without special notice are **case insensitive**
+2. On macOS, `Ctrl` corresponds to `Command` except in Vi mode
+3. The key sequence `Ctrl+G, I` means that first press both `Ctrl` and `G` simultaneously, release them, then press `I` and release
+4. For a **complete latest shortcuts list** or modifying default shortcuts, please view the `vnotex.json` configuration file
 
 ## General
 - `Ctrl+G, E`  
@@ -77,12 +77,12 @@ Zoom in/out the page through the mouse scroll.
 - `Ctrl+0`  
 Recover the page zoom factor to 100%.
 - Jump between titles
-    - `<N>[[`: jump to previous `N` title;
-    - `<N>]]`: jump to next `N` title;
-    - `<N>[]`: jump to previous `N` title at the same level;
-    - `<N>][`: jump to next `N` title at the same level;
-    - `<N>[{`: jump to previous `N` title at a higher level;
-    - `<N>]}`: jump to next `N` title at a higher level;
+    - `<N>[[`: jump to previous `N` title
+    - `<N>]]`: jump to next `N` title
+    - `<N>[]`: jump to previous `N` title at the same level
+    - `<N>][`: jump to next `N` title at the same level
+    - `<N>[{`: jump to previous `N` title at a higher level
+    - `<N>]}`: jump to next `N` title at a higher level
 
 ### Edit Mode
 Shares the same shortcuts with Text Editor.

@@ -26,6 +26,10 @@ namespace vnotex
         // Add one item to the tree.
         QTreeWidgetItem *addItem(const QStringList &p_cols);
 
+        // Add one item to the tree.
+        // @p_comparisonCols: for column i, if it is not null, use it for comparison.
+        QTreeWidgetItem *addItem(const QStringList &p_cols, const QStringList &p_comparisonCols);
+
     private:
         enum MoveOperation
         {

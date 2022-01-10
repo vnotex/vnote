@@ -69,6 +69,8 @@ class VNoteX extends EventEmitter {
                                            window.vxOptions.imageAlignCenterEnabled);
             this.setContentContainerOption('vx-indent-first-line',
                                            window.vxOptions.indentFirstLineEnabled);
+            this.setContentContainerOption('line-numbers',
+                                           window.vxOptions.codeBlockLineNumberEnabled);
             this.setBodyOption('vx-transparent-background',
                                window.vxOptions.transparentBackgroundEnabled);
             this.setContentContainerOption('vx-nonscrollable',

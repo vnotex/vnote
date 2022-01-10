@@ -1561,7 +1561,10 @@ void NotebookNodeExplorer::manualSort()
                 QStringList cols {child->getName(),
                                   Utils::dateTimeString(child->getCreatedTimeUtc().toLocalTime()),
                                   Utils::dateTimeString(child->getModifiedTimeUtc().toLocalTime())};
-                auto item = sortDlg.addItem(cols);
+                QStringList comparisonCols {QString(),
+                                            Utils::dateTimeStringUniform(child->getCreatedTimeUtc().toLocalTime()),
+                                            Utils::dateTimeStringUniform(child->getModifiedTimeUtc().toLocalTime())};
+                auto item = sortDlg.addItem(cols, comparisonCols);
                 item->setData(0, Qt::UserRole, i);
             }
         }

@@ -20,6 +20,9 @@ class TurndownConverter {
         this.ts.use(turndownPluginGfm.gfm);
 
         // TODO: verify and copy several rules from VNote 2.0.
+        // No <head> and <style> parse.
+        this.ts.remove(['head', 'style']);
+
         this.fixMark();
 
         this.fixParagraph();

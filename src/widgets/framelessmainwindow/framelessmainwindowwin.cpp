@@ -3,7 +3,6 @@
 #ifdef Q_OS_WIN
 
 #include <QTimer>
-#include <QDebug>
 #include <QEvent>
 
 #include <windows.h>
@@ -218,6 +217,16 @@ void FramelessMainWindowWin::forceRedraw()
         } else {
             resize(m_sizeBeforeMove);
         }
+    }
+}
+
+void FramelessMainWindowWin::setWindowFlagsOnUpdate()
+{
+    if (m_frameless) {
+        // We need to re-set the window flags again in some cases, such as after StayOnTop.
+        HWND hwnd = reinterpret_cast<HWND>(winId());
+        DWORD style = ::GetWindowLong(hwnd, GWL_STYLE);
+        ::SetWindowLong(hwnd, GWL_STYLE, style | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_CAPTION);
     }
 }
 

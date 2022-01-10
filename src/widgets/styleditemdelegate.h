@@ -16,14 +16,6 @@ namespace vnotex
     class TreeWidget;
     class SimpleSegmentHighlighter;
 
-    enum
-    {
-        // Qt::UserRole = 0x0100
-        UserRole2 = 0x0101,
-        HighlightsRole = 0x0102
-    };
-
-
     class StyledItemDelegateInterface
     {
     public:

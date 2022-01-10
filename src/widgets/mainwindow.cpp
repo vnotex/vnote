@@ -595,6 +595,8 @@ void MainWindow::setStayOnTop(bool p_enabled)
         setWindowFlags(flags ^ magicFlag);
     }
 
+    setWindowFlagsOnUpdate();
+
     if (shown) {
         show();
     }

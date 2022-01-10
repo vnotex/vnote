@@ -1069,7 +1069,6 @@ void MarkdownEditor::handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStam
     }
 }
 
-
 static QString purifyImageTitle(QString p_title)
 {
     return p_title.remove(QRegExp("[\\r\\n\\[\\]]"));

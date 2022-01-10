@@ -139,6 +139,15 @@ namespace vnotex
         CRLF,
         CR
     };
+
+    enum Role
+    {
+        // Qt::UserRole = 0x0100
+        UserRole2 = 0x0101,
+        HighlightsRole = 0x0102,
+        // Used for comparison.
+        ComparisonRole = 0x0103
+    };
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);

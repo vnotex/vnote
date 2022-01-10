@@ -21,6 +21,7 @@ QString WebGlobalOptions::toJavascriptObject() const
     return QStringLiteral("window.vxOptions = {\n")
            + QString("webPlantUml: %1,\n").arg(Utils::boolToString(m_webPlantUml))
            + QString("webGraphviz: %1,\n").arg(Utils::boolToString(m_webGraphviz))
+           + QString("mathJaxScript: '%1',\n").arg(m_mathJaxScript)
            + QString("constrainImageWidthEnabled: %1,\n").arg(Utils::boolToString(m_constrainImageWidthEnabled))
            + QString("imageAlignCenterEnabled: %1,\n").arg(Utils::boolToString(m_imageAlignCenterEnabled))
            + QString("protectFromXss: %1,\n").arg(Utils::boolToString(m_protectFromXss))
@@ -28,6 +29,7 @@ QString WebGlobalOptions::toJavascriptObject() const
            + QString("autoBreakEnabled: %1,\n").arg(Utils::boolToString(m_autoBreakEnabled))
            + QString("linkifyEnabled: %1,\n").arg(Utils::boolToString(m_linkifyEnabled))
            + QString("indentFirstLineEnabled: %1,\n").arg(Utils::boolToString(m_indentFirstLineEnabled))
+           + QString("codeBlockLineNumberEnabled: %1,\n").arg(Utils::boolToString(m_codeBlockLineNumberEnabled))
            + QString("sectionNumberEnabled: %1,\n").arg(Utils::boolToString(m_sectionNumberEnabled))
            + QString("transparentBackgroundEnabled: %1,\n").arg(Utils::boolToString(m_transparentBackgroundEnabled))
            + QString("scrollable: %1,\n").arg(Utils::boolToString(m_scrollable))
@@ -212,6 +214,7 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
         WebGlobalOptions opts;
         opts.m_webPlantUml = p_config.getWebPlantUml();
         opts.m_webGraphviz = p_config.getWebGraphviz();
+        opts.m_mathJaxScript = p_config.getMathJaxScript();
         opts.m_sectionNumberEnabled = p_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Read;
         opts.m_sectionNumberBaseLevel = p_config.getSectionNumberBaseLevel();
         opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
@@ -221,6 +224,7 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
         opts.m_autoBreakEnabled = p_config.getAutoBreakEnabled();
         opts.m_linkifyEnabled = p_config.getLinkifyEnabled();
         opts.m_indentFirstLineEnabled = p_config.getIndentFirstLineEnabled();
+        opts.m_codeBlockLineNumberEnabled = p_config.getCodeBlockLineNumberEnabled();
         opts.m_transparentBackgroundEnabled = p_paras.m_transparentBackgroundEnabled;
         opts.m_scrollable = p_paras.m_scrollable;
         opts.m_bodyWidth = p_paras.m_bodyWidth;

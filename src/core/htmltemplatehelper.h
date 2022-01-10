@@ -15,6 +15,8 @@ namespace vnotex
 
         bool m_webGraphviz = true;
 
+        QString m_mathJaxScript;
+
         bool m_sectionNumberEnabled = true;
 
         int m_sectionNumberBaseLevel = 2;
@@ -32,6 +34,8 @@ namespace vnotex
         bool m_linkifyEnabled = true;
 
         bool m_indentFirstLineEnabled = false;
+
+        bool m_codeBlockLineNumberEnabled = true;
 
         // Force to use transparent background.
         bool m_transparentBackgroundEnabled = false;

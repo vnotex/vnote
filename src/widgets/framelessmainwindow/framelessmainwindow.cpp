@@ -43,3 +43,8 @@ bool FramelessMainWindow::isMaximized() const
 {
     return (m_windowStates & Qt::WindowMaximized) && !(m_windowStates & Qt::WindowFullScreen);
 }
+
+void FramelessMainWindow::setWindowFlagsOnUpdate()
+{
+    // Do nothing by default.
+}

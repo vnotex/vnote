@@ -28,6 +28,8 @@ namespace vnotex
     protected:
         bool isMaximized() const;
 
+        virtual void setWindowFlagsOnUpdate();
+
         const bool m_frameless = true;
 
         bool m_movable = true;

@@ -56,6 +56,10 @@ class MathJaxRenderer extends VxWorker {
 
         this.initialized = true;
         this.readyCallback = p_callback;
+        if (!!window.vxOptions.mathJaxScript) {
+            this.mathJaxScript = window.vxOptions.mathJaxScript;
+            console.log('override MathJax script', this.mathJaxScript);
+        }
         Utils.loadScript(this.mathJaxScript, null);
         return false;
     }

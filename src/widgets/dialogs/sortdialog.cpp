@@ -9,6 +9,7 @@
 #include <widgets/treewidget.h>
 #include <widgets/widgetsfactory.h>
 #include <widgets/treewidgetitem.h>
+#include <core/global.h>
 
 using namespace vnotex;
 
@@ -246,5 +247,17 @@ void SortDialog::handleMoveOperation(MoveOperation p_op)
 QTreeWidgetItem *SortDialog::addItem(const QStringList &p_cols)
 {
     auto item = new TreeWidgetItem(m_treeWidget, p_cols);
+    return item;
+}
+
+QTreeWidgetItem *SortDialog::addItem(const QStringList &p_cols, const QStringList &p_comparisonCols)
+{
+    Q_ASSERT(p_cols.size() == p_comparisonCols.size());
+    auto item = new TreeWidgetItem(m_treeWidget, p_cols);
+    for (int i = 0; i < p_cols.size(); ++i) {
+        if (!p_comparisonCols[i].isNull()) {
+            item->setData(i, Role::ComparisonRole, p_comparisonCols[i]);
+        }
+    }
     return item;
 }

@@ -21,8 +21,8 @@ Markdown是一种通过少量简单的标记字符来格式化文本的方法。
 
 **注意**：
 
-* `#`之后需要至少一个空格；
-* 一个标题应该占一整行；
+* `#`之后需要至少一个空格
+* 一个标题应该占一整行
 
 ### 强调
 ```md
@@ -35,8 +35,8 @@ __This text will be bold__
 
 **注意**：
 
-* VNote推荐使用`*`；
-* 如果渲染错误，请尝试在第一个`*`之前以及最后一个`*`之后添加一个空格。如果被标记的文本是以全角符号开始或结尾，一般都需要前后添加一个空格；
+* VNote推荐使用`*`
+* 如果渲染错误，请尝试在第一个`*`之前以及最后一个`*`之后添加一个空格。如果被标记的文本是以全角符号开始或结尾，一般都需要前后添加一个空格
 
 ### 列表
 #### 无序列表
@@ -107,8 +107,8 @@ Here is another sentence within the quote.
 
 **注意**：
 
-* `>`标记后面需要至少一个空格；
-* 多行连续的引用可以只在第一行添加标记；
+* `>`标记后面需要至少一个空格
+* 多行连续的引用可以只在第一行添加标记
 
 ### 代码块
     ```lang
@@ -121,15 +121,16 @@ Here is another sentence within the quote.
 
 **注意**：
 
-* `lang`用于指定代码块的代码语言，可选；如果不指定，VNote不会尝试高亮代码；
-* 总是在一个代码块前面添加一个空行是一个不错的实践；
+* `lang`用于指定代码块的代码语言，可选；如果不指定，VNote不会尝试高亮代码
+    * 请访问[Prism](https://prismjs.com/#supported-languages)获取一个完整的支持语言列表
+* 总是在一个代码块前面添加一个空行是一个不错的实践
 
 ### 图表
 VNote支持使用以下引擎来绘制图表。您需要使用代码块，并标明特定语言，然后在代码块里面定义图表。
 
-* [Flowchart.js](http://flowchart.js.org/)，语言为`flow`或`flowchart`；
-* [Mermaid](https://mermaidjs.github.io/)，语言为`mermaid`；
-* [WaveDrom](https://wavedrom.com/)，数字时序图，语言为`wavedrom`；
+* [Flowchart.js](http://flowchart.js.org/)，语言为`flow`或`flowchart`
+* [Mermaid](https://mermaidjs.github.io/)，语言为`mermaid`
+* [WaveDrom](https://wavedrom.com/)，数字时序图，语言为`wavedrom`
 
 例如，
 
@@ -162,11 +163,11 @@ VNote支持[Graphviz](http://www.graphviz.org/)来绘制图表。您需要使用
 ### 数学公式
 VNote通过[MathJax](https://www.mathjax.org/)来支持数学公式。默认的**公式块**的分隔符是`$$...$$`，**行内公式**的分隔符是`$...$`。
 
-* 行内公式不能跨多行；
-* 形如`3$abc$`/`$abc$4`/`$ abc$`和`$abc $`的不会被解析为公式；
-* 使用`\`转义`$`；
-* 开始的`$$`之前以及结束的`$$`之后都只允许出现空格字符；
-* 在公式块中，使用`\\`来换行；
+* 行内公式不能跨多行
+* 形如`3$abc$`/`$abc$4`/`$ abc$`和`$abc $`的不会被解析为公式
+* 使用`\`转义`$`
+* 开始的`$$`之前以及结束的`$$`之后都只允许出现空格字符
+* 在公式块中，使用`\\`来换行
 
 VNote也可以使用标明语言`mathjax`的代码块来实现公式块。
 
