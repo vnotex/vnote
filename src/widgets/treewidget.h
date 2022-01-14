@@ -42,6 +42,8 @@ namespace vnotex
         // @p_func: return false to abort the iteration.
         static void forEachItem(const QTreeWidget *p_widget, const std::function<bool(QTreeWidgetItem *p_item)> &p_func);
 
+        static void expandRecursively(QTreeWidgetItem *p_item);
+
     signals:
         // Emit when single item is selected and Drag&Drop to move internally.
         void itemMoved(QTreeWidgetItem *p_item);

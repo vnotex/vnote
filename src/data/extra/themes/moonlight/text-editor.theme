@@ -30,7 +30,7 @@
         },
         "IndicatorsBorder" : {
             "text-color" : "#8a93a6",
-            "background-color" : "#2d323b"
+            "background-color" : "#3c414d"
         },
         "CurrentLineNumber" : {
             "text-color" : "#ccd1d8"

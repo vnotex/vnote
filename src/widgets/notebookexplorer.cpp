@@ -82,6 +82,7 @@ void NotebookExplorer::setupUI()
     const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
     m_nodeExplorer = new NotebookNodeExplorer(this);
     m_nodeExplorer->setViewOrder(widgetConfig.getNodeExplorerViewOrder());
+    m_nodeExplorer->setExploreMode(widgetConfig.getNodeExplorerExploreMode());
     m_nodeExplorer->setExternalFilesVisible(widgetConfig.isNodeExplorerExternalFilesVisible());
     connect(m_nodeExplorer, &NotebookNodeExplorer::nodeActivated,
             &VNoteX::getInst(), &VNoteX::openNodeRequested);
@@ -113,11 +114,8 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
 
     {
         auto viewMenu = WidgetsFactory::createMenu(titleBar);
+        setupViewMenu(viewMenu);
         titleBar->addActionButton(QStringLiteral("view.svg"), tr("View"), viewMenu);
-        connect(viewMenu, &QMenu::aboutToShow,
-                this, [this, viewMenu]() {
-                    setupViewMenu(viewMenu);
-                });
     }
 
     {
@@ -204,6 +202,8 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
         act->setCheckable(true);
         act->setChecked(widgetConfig.getNodeExplorerCloseBeforeOpenWithEnabled());
     }
+
+    setupExploreModeMenu(titleBar);
 
     return titleBar;
 }
@@ -383,10 +383,6 @@ const QSharedPointer<Notebook> &NotebookExplorer::currentNotebook() const
 
 void NotebookExplorer::setupViewMenu(QMenu *p_menu)
 {
-    if (!p_menu->isEmpty()) {
-        return;
-    }
-
     auto ag = new QActionGroup(p_menu);
 
     auto act = ag->addAction(tr("View By Configuration"));
@@ -465,6 +461,45 @@ void NotebookExplorer::setupRecycleBinMenu(QMenu *p_menu)
                               m_currentNotebook->emptyRecycleBin();
                           }
                       });
+}
+
+void NotebookExplorer::setupExploreModeMenu(TitleBar *p_titleBar)
+{
+    auto menu = p_titleBar->addMenuSubMenu(tr("Explore Mode"));
+
+    auto ag = new QActionGroup(menu);
+
+    auto act = ag->addAction(tr("Combined"));
+    act->setCheckable(true);
+    act->setChecked(true);
+    act->setData(NotebookNodeExplorer::ExploreMode::Combined);
+    menu->addAction(act);
+
+    act = ag->addAction(tr("Separate, Single Column"));
+    act->setCheckable(true);
+    act->setChecked(true);
+    act->setData(NotebookNodeExplorer::ExploreMode::SeparateSingle);
+    menu->addAction(act);
+
+    act = ag->addAction(tr("Separate, Double Columns"));
+    act->setCheckable(true);
+    act->setChecked(true);
+    act->setData(NotebookNodeExplorer::ExploreMode::SeparateDouble);
+    menu->addAction(act);
+
+    int mode = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerExploreMode();
+    for (const auto &act : ag->actions()) {
+        if (act->data().toInt() == mode) {
+            act->setChecked(true);
+        }
+    }
+
+    connect(ag, &QActionGroup::triggered,
+            this, [this](QAction *action) {
+                int mode = action->data().toInt();
+                ConfigMgr::getInst().getWidgetConfig().setNodeExplorerExploreMode(mode);
+                m_nodeExplorer->setExploreMode(mode);
+            });
 }
 
 void NotebookExplorer::saveSession()
@@ -559,4 +594,14 @@ void NotebookExplorer::rebuildDatabase()
                                      VNoteX::getInst().getMainWindow());
         }
     }
+}
+
+QByteArray NotebookExplorer::saveState() const
+{
+    return m_nodeExplorer->saveState();
+}
+
+void NotebookExplorer::restoreState(const QByteArray &p_data)
+{
+    m_nodeExplorer->restoreState(p_data);
 }

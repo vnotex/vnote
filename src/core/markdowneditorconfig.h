@@ -211,7 +211,7 @@ namespace vnotex
         // Whether enable image width constraint.
         bool m_constrainImageWidthEnabled = true;
 
-        bool m_imageAlignCenterEnabled = true;
+        bool m_imageAlignCenterEnabled = false;
 
         // Whether enable in-place preview width constraint.
         bool m_constrainInplacePreviewWidthEnabled = false;

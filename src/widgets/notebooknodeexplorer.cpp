@@ -19,6 +19,7 @@
 #include <utils/docsutils.h>
 #include <utils/processutils.h>
 #include "treewidget.h"
+#include "listwidget.h"
 #include "dialogs/notepropertiesdialog.h"
 #include "dialogs/folderpropertiesdialog.h"
 #include "dialogs/deleteconfirmdialog.h"
@@ -159,9 +160,27 @@ bool NotebookNodeExplorer::NodeData::matched(const Node *p_node) const
     return false;
 }
 
+bool NotebookNodeExplorer::NodeData::matched(const QString &p_name) const
+{
+    if (isNode()) {
+        return m_node->getName() == p_name;
+    } else {
+        return m_externalNode->getName() == p_name;
+    }
+}
+
 bool NotebookNodeExplorer::NodeData::isLoaded() const
 {
     return m_loaded;
+}
+
+
+void NotebookNodeExplorer::CacheData::clear()
+{
+    if (m_masterStateCache) {
+        m_masterStateCache->clear();
+    }
+    m_currentSlaveName.clear();
 }
 
 
@@ -221,68 +240,123 @@ void NotebookNodeExplorer::setupMasterExplorer(QWidget *p_parent)
     TreeWidget::setupSingleColumnHeaderlessTree(m_masterExplorer, true, true);
     TreeWidget::showHorizontalScrollbar(m_masterExplorer);
 
-    m_navigationWrapper.reset(new NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>(m_masterExplorer));
-    NavigationModeMgr::getInst().registerNavigationTarget(m_navigationWrapper.data());
+    m_masterNavigationWrapper.reset(new NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>(m_masterExplorer));
+    NavigationModeMgr::getInst().registerNavigationTarget(m_masterNavigationWrapper.data());
 
     connect(m_masterExplorer, &QTreeWidget::itemExpanded,
-            this, &NotebookNodeExplorer::loadItemChildren);
+            this, &NotebookNodeExplorer::loadMasterItemChildren);
 
     connect(m_masterExplorer, &QTreeWidget::customContextMenuRequested,
-            this, [this](const QPoint &p_pos) {
+            this, [this](const QPoint &pos) {
                 if (!m_notebook) {
                     return;
                 }
 
-                auto item = m_masterExplorer->itemAt(p_pos);
-                auto data = getItemNodeData(item);
+                auto item = m_masterExplorer->itemAt(pos);
                 QScopedPointer<QMenu> menu(WidgetsFactory::createMenu());
-                if (!data.isValid()) {
-                    createContextMenuOnRoot(menu.data());
+                if (!item) {
+                    createMasterContextMenuOnRoot(menu.data());
                 } else {
-                    if (!allSelectedItemsSameType()) {
+                    if (!isMasterAllSelectedItemsSameType()) {
                         return;
                     }
 
+                    auto data = getItemNodeData(item);
                     if (data.isNode()) {
-                        createContextMenuOnNode(menu.data(), data.getNode());
+                        createContextMenuOnNode(menu.data(), data.getNode(), true);
                     } else if (data.isExternalNode()) {
-                        createContextMenuOnExternalNode(menu.data(), data.getExternalNode().data());
+                        createContextMenuOnExternalNode(menu.data(), data.getExternalNode().data(), true);
                     }
                 }
 
                 if (!menu->isEmpty()) {
-                    menu->exec(m_masterExplorer->mapToGlobal(p_pos));
+                    menu->exec(m_masterExplorer->mapToGlobal(pos));
                 }
             });
 
     connect(m_masterExplorer, &QTreeWidget::itemActivated,
             this, [this](QTreeWidgetItem *p_item, int p_column) {
                 Q_UNUSED(p_column);
+                if (!isCombinedExploreMode()) {
+                    return;
+                }
                 auto data = getItemNodeData(p_item);
-                if (!data.isValid()) {
+                activateItemNode(data);
+            });
+}
+
+void NotebookNodeExplorer::activateItemNode(const NodeData &p_data)
+{
+    if (!p_data.isValid()) {
+        return;
+    }
+
+    if (p_data.isNode()) {
+        if (checkInvalidNode(p_data.getNode())) {
+            return;
+        }
+        emit nodeActivated(p_data.getNode(), QSharedPointer<FileOpenParameters>::create());
+    } else if (p_data.isExternalNode()) {
+        // Import to config first.
+        if (m_autoImportExternalFiles) {
+            auto importedNode = importToIndex(p_data.getExternalNode());
+            if (importedNode) {
+                emit nodeActivated(importedNode.data(), QSharedPointer<FileOpenParameters>::create());
+            }
+            return;
+        }
+
+        // Just open it.
+        emit fileActivated(p_data.getExternalNode()->fetchAbsolutePath(), QSharedPointer<FileOpenParameters>::create());
+    }
+}
+
+void NotebookNodeExplorer::setupSlaveExplorer()
+{
+    Q_ASSERT(!m_slaveExplorer);
+    m_slaveExplorer = new ListWidget(m_splitter);
+    m_splitter->addWidget(m_slaveExplorer);
+
+    m_slaveExplorer->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_slaveExplorer->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+    connect(m_slaveExplorer, &QListWidget::customContextMenuRequested,
+            this, [this](const QPoint &pos) {
+                Q_ASSERT(!isCombinedExploreMode());
+                if (!m_notebook) {
                     return;
                 }
 
-                if (data.isNode()) {
-                    if (checkInvalidNode(data.getNode())) {
-                        return;
-                    }
-                    emit nodeActivated(data.getNode(), QSharedPointer<FileOpenParameters>::create());
-                } else if (data.isExternalNode()) {
-                    // Import to config first.
-                    if (m_autoImportExternalFiles) {
-                        auto importedNode = importToIndex(data.getExternalNode());
-                        if (importedNode) {
-                            emit nodeActivated(importedNode.data(), QSharedPointer<FileOpenParameters>::create());
-                        }
+                auto item = m_slaveExplorer->itemAt(pos);
+                QScopedPointer<QMenu> menu(WidgetsFactory::createMenu());
+                if (!item) {
+                    createSlaveContextMenuOnMasterNode(menu.data());
+                } else {
+                    if (!isSlaveAllSelectedItemsSameType()) {
                         return;
                     }
 
-                    // Just open it.
-                    emit fileActivated(data.getExternalNode()->fetchAbsolutePath(),
-                                       QSharedPointer<FileOpenParameters>::create());
+                    auto data = getItemNodeData(item);
+                    if (data.isNode()) {
+                        createContextMenuOnNode(menu.data(), data.getNode(), false);
+                    } else if (data.isExternalNode()) {
+                        createContextMenuOnExternalNode(menu.data(), data.getExternalNode().data(), false);
+                    }
+                }
+
+                if (!menu->isEmpty()) {
+                    menu->exec(m_slaveExplorer->mapToGlobal(pos));
                 }
             });
+    connect(m_slaveExplorer, &QListWidget::itemActivated,
+            this, [this](QListWidgetItem *p_item) {
+                Q_ASSERT(!isCombinedExploreMode());
+                auto data = getItemNodeData(p_item);
+                activateItemNode(data);
+            });
+
+    m_slaveNavigationWrapper.reset(new NavigationModeWrapper<QListWidget, QListWidgetItem>(m_slaveExplorer));
+    NavigationModeMgr::getInst().registerNavigationTarget(m_slaveNavigationWrapper.data());
 }
 
 void NotebookNodeExplorer::setNotebook(const QSharedPointer<Notebook> &p_notebook)
@@ -295,7 +369,7 @@ void NotebookNodeExplorer::setNotebook(const QSharedPointer<Notebook> &p_noteboo
         disconnect(m_notebook.data(), nullptr, this, nullptr);
     }
 
-    saveNotebookTreeState();
+    cacheState(true);
 
     m_notebook = p_notebook;
 
@@ -306,17 +380,12 @@ void NotebookNodeExplorer::setNotebook(const QSharedPointer<Notebook> &p_noteboo
                 });
     }
 
-    generateNodeTree();
+    generateMasterNodeTree();
 }
 
-void NotebookNodeExplorer::clearExplorer()
+void NotebookNodeExplorer::generateMasterNodeTree()
 {
     m_masterExplorer->clear();
-}
-
-void NotebookNodeExplorer::generateNodeTree()
-{
-    clearExplorer();
 
     if (!m_notebook) {
         return;
@@ -334,15 +403,25 @@ void NotebookNodeExplorer::generateNodeTree()
     }
 
     // Restore current item.
-    auto currentNode = stateCache()->getCurrentItem();
-
-    if (currentNode) {
-        setCurrentNode(currentNode);
-    } else {
+    bool restored = false;
+    auto &cacheData = getCache();
+    auto curMasterNode = cacheData.m_masterStateCache->getCurrentItem();
+    if (curMasterNode) {
+        restored = true;
+        setCurrentMasterNode(curMasterNode);
+    } else if (!isCombinedExploreMode()) {
+        // Manually update slave explorer on first run of generation.
+        updateSlaveExplorer();
+    }
+    if (!cacheData.m_currentSlaveName.isEmpty() && !isCombinedExploreMode()) {
+        restored = true;
+        setCurrentSlaveNode(cacheData.m_currentSlaveName);
+    }
+    if (!restored) {
         focusNormalNode();
     }
 
-    stateCache()->clear();
+   cacheData.clear();
 }
 
 void NotebookNodeExplorer::loadRootNode(const Node *p_node) const
@@ -354,8 +433,12 @@ void NotebookNodeExplorer::loadRootNode(const Node *p_node) const
         auto externalChildren = p_node->fetchExternalChildren();
         // TODO: Sort external children.
         for (const auto &child : externalChildren) {
+            if (!belongsToMasterExplorer(child.data())) {
+                continue;
+            }
+
             auto item = new QTreeWidgetItem(m_masterExplorer);
-            loadNode(item, child);
+            loadMasterExternalNode(item, child);
         }
     }
 
@@ -363,12 +446,16 @@ void NotebookNodeExplorer::loadRootNode(const Node *p_node) const
     auto children = p_node->getChildren();
     sortNodes(children);
     for (const auto &child : children) {
+        if (!belongsToMasterExplorer(child.data())) {
+            continue;
+        }
+
         auto item = new QTreeWidgetItem(m_masterExplorer);
-        loadNode(item, child.data(), 1);
+        loadMasterNode(item, child.data(), 1);
     }
 }
 
-static void clearTreeWigetItemChildren(QTreeWidgetItem *p_item)
+static void clearTreeWidgetItemChildren(QTreeWidgetItem *p_item)
 {
     auto children = p_item->takeChildren();
     for (auto &child : children) {
@@ -376,38 +463,38 @@ static void clearTreeWigetItemChildren(QTreeWidgetItem *p_item)
     }
 }
 
-void NotebookNodeExplorer::loadNode(QTreeWidgetItem *p_item, Node *p_node, int p_level) const
+void NotebookNodeExplorer::loadMasterNode(QTreeWidgetItem *p_item, Node *p_node, int p_level) const
 {
     if (!p_node->isLoaded()) {
         p_node->load();
     }
 
-    clearTreeWigetItemChildren(p_item);
+    clearTreeWidgetItemChildren(p_item);
 
-    fillTreeItem(p_item, p_node, p_level > 0);
+    fillMasterItem(p_item, p_node, p_level > 0);
 
-    loadChildren(p_item, p_node, p_level - 1);
+    loadMasterNodeChildren(p_item, p_node, p_level - 1);
 
-    if (stateCache()->contains(p_item) && p_item->childCount() > 0) {
+    if (getCache().m_masterStateCache->contains(p_item) && p_item->childCount() > 0) {
         if (p_item->isExpanded()) {
-            loadItemChildren(p_item);
+            loadMasterItemChildren(p_item);
         } else {
-            // itemExpanded() will trigger loadItemChildren().
+            // itemExpanded() will trigger loadMasterItemChildren().
             p_item->setExpanded(true);
         }
     }
 }
 
-void NotebookNodeExplorer::loadNode(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const
+void NotebookNodeExplorer::loadMasterExternalNode(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const
 {
-    clearTreeWigetItemChildren(p_item);
+    clearTreeWidgetItemChildren(p_item);
 
-    fillTreeItem(p_item, p_node);
+    fillMasterItem(p_item, p_node);
 
     // No children for external node.
 }
 
-void NotebookNodeExplorer::loadChildren(QTreeWidgetItem *p_item, Node *p_node, int p_level) const
+void NotebookNodeExplorer::loadMasterNodeChildren(QTreeWidgetItem *p_item, Node *p_node, int p_level) const
 {
     if (p_level < 0) {
         return;
@@ -418,36 +505,60 @@ void NotebookNodeExplorer::loadChildren(QTreeWidgetItem *p_item, Node *p_node, i
         auto externalChildren = p_node->fetchExternalChildren();
         // TODO: Sort external children.
         for (const auto &child : externalChildren) {
+            if (!belongsToMasterExplorer(child.data())) {
+                continue;
+            }
+
             auto item = new QTreeWidgetItem(p_item);
-            loadNode(item, child);
+            loadMasterExternalNode(item, child);
         }
     }
 
     auto children = p_node->getChildren();
     sortNodes(children);
     for (const auto &child : children) {
+        if (!belongsToMasterExplorer(child.data())) {
+            continue;
+        }
+
         auto item = new QTreeWidgetItem(p_item);
-        loadNode(item, child.data(), p_level);
+        loadMasterNode(item, child.data(), p_level);
     }
 }
 
-void NotebookNodeExplorer::fillTreeItem(QTreeWidgetItem *p_item, Node *p_node, bool p_loaded) const
+void NotebookNodeExplorer::fillMasterItem(QTreeWidgetItem *p_item, Node *p_node, bool p_loaded) const
 {
     setItemNodeData(p_item, NodeData(p_node, p_loaded));
     p_item->setText(Column::Name, p_node->getName());
-    p_item->setIcon(Column::Name, getNodeItemIcon(p_node));
+    p_item->setIcon(Column::Name, getIcon(p_node));
     p_item->setToolTip(Column::Name, generateToolTip(p_node));
 }
 
-void NotebookNodeExplorer::fillTreeItem(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const
+void NotebookNodeExplorer::fillMasterItem(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const
 {
     setItemNodeData(p_item, NodeData(p_node));
     p_item->setText(Column::Name, p_node->getName());
-    p_item->setIcon(Column::Name, getNodeItemIcon(p_node.data()));
+    p_item->setIcon(Column::Name, getIcon(p_node.data()));
     p_item->setToolTip(Column::Name, tr("[External] %1").arg(p_node->getName()));
 }
 
-const QIcon &NotebookNodeExplorer::getNodeItemIcon(const Node *p_node) const
+void NotebookNodeExplorer::fillSlaveItem(QListWidgetItem *p_item, Node *p_node) const
+{
+    setItemNodeData(p_item, NodeData(p_node, true));
+    p_item->setText(p_node->getName());
+    p_item->setIcon(getIcon(p_node));
+    p_item->setToolTip(generateToolTip(p_node));
+}
+
+void NotebookNodeExplorer::fillSlaveItem(QListWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const
+{
+    setItemNodeData(p_item, NodeData(p_node));
+    p_item->setText(p_node->getName());
+    p_item->setIcon(getIcon(p_node.data()));
+    p_item->setToolTip(tr("[External] %1").arg(p_node->getName()));
+}
+
+const QIcon &NotebookNodeExplorer::getIcon(const Node *p_node) const
 {
     if (p_node->hasContent()) {
         return p_node->exists() ? s_nodeIcons[NodeIcon::FileNode] : s_nodeIcons[NodeIcon::InvalidFileNode];
@@ -456,12 +567,12 @@ const QIcon &NotebookNodeExplorer::getNodeItemIcon(const Node *p_node) const
     }
 }
 
-const QIcon &NotebookNodeExplorer::getNodeItemIcon(const ExternalNode *p_node) const
+const QIcon &NotebookNodeExplorer::getIcon(const ExternalNode *p_node) const
 {
     return p_node->isFolder() ? s_nodeIcons[NodeIcon::ExternalFolderNode] : s_nodeIcons[NodeIcon::ExternalFileNode];
 }
 
-Node *NotebookNodeExplorer::getCurrentNode() const
+Node *NotebookNodeExplorer::getCurrentMasterNode() const
 {
     auto item = m_masterExplorer->currentItem();
     if (item) {
@@ -483,6 +594,37 @@ Node *NotebookNodeExplorer::getCurrentNode() const
     return nullptr;
 }
 
+Node *NotebookNodeExplorer::getCurrentSlaveNode() const
+{
+    auto item = m_slaveExplorer->currentItem();
+    if (item) {
+        auto data = getItemNodeData(item);
+        if (data.isNode()) {
+            return data.getNode();
+        }
+    }
+
+    return nullptr;
+}
+
+NotebookNodeExplorer::NodeData NotebookNodeExplorer::getCurrentMasterNodeData() const
+{
+    auto item = m_masterExplorer->currentItem();
+    if (item) {
+        return getItemNodeData(item);
+    }
+    return NodeData();
+}
+
+NotebookNodeExplorer::NodeData NotebookNodeExplorer::getCurrentSlaveNodeData() const
+{
+    auto item = m_slaveExplorer->currentItem();
+    if (item) {
+        return getItemNodeData(item);
+    }
+    return NodeData();
+}
+
 void NotebookNodeExplorer::setItemNodeData(QTreeWidgetItem *p_item, const NodeData &p_data)
 {
     p_item->setData(Column::Name, Qt::UserRole, QVariant::fromValue(p_data));
@@ -497,26 +639,50 @@ NotebookNodeExplorer::NodeData NotebookNodeExplorer::getItemNodeData(const QTree
     return p_item->data(Column::Name, Qt::UserRole).value<NotebookNodeExplorer::NodeData>();
 }
 
+void NotebookNodeExplorer::setItemNodeData(QListWidgetItem *p_item, const NodeData &p_data)
+{
+    p_item->setData(Qt::UserRole, QVariant::fromValue(p_data));
+}
+
+NotebookNodeExplorer::NodeData NotebookNodeExplorer::getItemNodeData(const QListWidgetItem *p_item)
+{
+    if (!p_item) {
+        return NodeData();
+    }
+
+    return p_item->data(Qt::UserRole).value<NotebookNodeExplorer::NodeData>();
+}
+
 void NotebookNodeExplorer::updateNode(Node *p_node)
 {
     if (p_node && p_node->getNotebook() != m_notebook) {
         return;
     }
 
-    auto item = findNode(p_node);
+    if (p_node && !belongsToMasterExplorer(p_node)) {
+        updateSlaveExplorer();
+        return;
+    }
+
+    auto item = findMasterNode(p_node);
     if (item) {
         bool expanded = item->isExpanded();
         item->setExpanded(false);
-        loadNode(item, p_node, 1);
+        loadMasterNode(item, p_node, 1);
         item->setExpanded(expanded);
-    } else {
-        saveNotebookTreeState(false);
 
-        generateNodeTree();
+        if (!isCombinedExploreMode()) {
+            updateSlaveExplorer();
+        }
+    } else {
+        cacheState(false);
+
+        generateMasterNodeTree();
     }
 }
 
-QTreeWidgetItem *NotebookNodeExplorer::findNode(const Node *p_node) const
+// TODO: we could do it faster by going from the root node directly.
+QTreeWidgetItem *NotebookNodeExplorer::findMasterNode(const Node *p_node) const
 {
     if (!p_node) {
         return nullptr;
@@ -524,7 +690,7 @@ QTreeWidgetItem *NotebookNodeExplorer::findNode(const Node *p_node) const
 
     auto cnt = m_masterExplorer->topLevelItemCount();
     for (int i = 0; i < cnt; ++i) {
-        auto item = findNode(m_masterExplorer->topLevelItem(i), p_node);
+        auto item = findMasterNode(m_masterExplorer->topLevelItem(i), p_node);
         if (item) {
             return item;
         }
@@ -533,7 +699,7 @@ QTreeWidgetItem *NotebookNodeExplorer::findNode(const Node *p_node) const
     return nullptr;
 }
 
-QTreeWidgetItem *NotebookNodeExplorer::findNode(QTreeWidgetItem *p_item, const Node *p_node) const
+QTreeWidgetItem *NotebookNodeExplorer::findMasterNode(QTreeWidgetItem *p_item, const Node *p_node) const
 {
     auto data = getItemNodeData(p_item);
     if (data.matched(p_node)) {
@@ -542,7 +708,7 @@ QTreeWidgetItem *NotebookNodeExplorer::findNode(QTreeWidgetItem *p_item, const N
 
     auto cnt = p_item->childCount();
     for (int i = 0; i < cnt; ++i) {
-        auto item = findNode(p_item->child(i), p_node);
+        auto item = findMasterNode(p_item->child(i), p_node);
         if (item) {
             return item;
         }
@@ -551,54 +717,55 @@ QTreeWidgetItem *NotebookNodeExplorer::findNode(QTreeWidgetItem *p_item, const N
     return nullptr;
 }
 
-QTreeWidgetItem *NotebookNodeExplorer::findNodeChild(QTreeWidgetItem *p_item, const Node *p_node) const
+QListWidgetItem *NotebookNodeExplorer::findSlaveNode(const Node *p_node) const
 {
-    auto cnt = p_item->childCount();
-    for (int i = 0; i < cnt; ++i) {
-        auto child = p_item->child(i);
-        auto data = getItemNodeData(child);
+    for (int i = 0; i < m_slaveExplorer->count(); ++i) {
+        auto data = getItemNodeData(m_slaveExplorer->item(i));
         if (data.matched(p_node)) {
-            return child;
+            return m_slaveExplorer->item(i);
         }
     }
-
-    return nullptr;
-}
-
-QTreeWidgetItem *NotebookNodeExplorer::findNodeTopLevelItem(QTreeWidget *p_tree, const Node *p_node) const
-{
-    auto cnt = p_tree->topLevelItemCount();
-    for (int i = 0; i < cnt; ++i) {
-        auto child = p_tree->topLevelItem(i);
-        auto data = getItemNodeData(child);
-        if (data.matched(p_node)) {
-            return child;
-        }
-    }
-
     return nullptr;
 }
 
 void NotebookNodeExplorer::setCurrentNode(Node *p_node)
 {
-    if (!p_node || !p_node->getParent()) {
+    if (!p_node) {
         m_masterExplorer->setCurrentItem(nullptr);
         return;
     }
 
     Q_ASSERT(p_node->getNotebook() == m_notebook);
 
-    // Nodes from root to p_node.
+    if (belongsToMasterExplorer(p_node)) {
+        setCurrentMasterNode(p_node);
+    } else {
+        setCurrentMasterNode(p_node->getParent());
+
+        setCurrentSlaveNode(p_node);
+    }
+}
+
+void NotebookNodeExplorer::setCurrentMasterNode(Node *p_node)
+{
+    if (!p_node || p_node->isRoot()) {
+        m_masterExplorer->setCurrentItem(nullptr);
+        return;
+    }
+
+    Q_ASSERT(p_node && belongsToMasterExplorer(p_node));
+
+    // (rootNode, p_node].
     QList<Node *> nodes;
     auto node = p_node;
-    while (node->getParent()) {
+    while (!node->isRoot()) {
         nodes.push_front(node);
         node = node->getParent();
     }
 
     QList<QTreeWidgetItem *> items;
     auto nodeIt = nodes.constBegin();
-    auto item = findNodeTopLevelItem(m_masterExplorer, *nodeIt);
+    auto item = findMasterNodeInTopLevelItems(m_masterExplorer, *nodeIt);
     if (!item) {
         return;
     }
@@ -614,16 +781,15 @@ void NotebookNodeExplorer::setCurrentNode(Node *p_node)
         auto data = getItemNodeData(item);
         Q_ASSERT(data.isNode());
         if (!data.isLoaded()) {
-            loadNode(item, data.getNode(), 1);
+            loadMasterNode(item, data.getNode(), 1);
         }
 
-        auto childItem = findNodeChild(item, *nodeIt);
+        auto childItem = findMasterNodeInDirectChildren(item, *nodeIt);
         if (!childItem) {
             return;
         }
-        items.push_back(childItem);
-
         item = childItem;
+        items.push_back(item);
         ++nodeIt;
     }
 
@@ -637,18 +803,100 @@ void NotebookNodeExplorer::setCurrentNode(Node *p_node)
     m_masterExplorer->setCurrentItem(item);
 }
 
-void NotebookNodeExplorer::saveNotebookTreeState(bool p_saveCurrentItem)
+QTreeWidgetItem *NotebookNodeExplorer::findMasterNodeInDirectChildren(QTreeWidgetItem *p_item, const Node *p_node) const
 {
-    if (m_notebook) {
-        stateCache()->save(m_masterExplorer, p_saveCurrentItem);
+    auto cnt = p_item->childCount();
+    for (int i = 0; i < cnt; ++i) {
+        auto child = p_item->child(i);
+        auto data = getItemNodeData(child);
+        if (data.matched(p_node)) {
+            return child;
+        }
+    }
+
+    return nullptr;
+}
+
+QTreeWidgetItem *NotebookNodeExplorer::findMasterNodeInTopLevelItems(QTreeWidget *p_tree, const Node *p_node) const
+{
+    auto cnt = p_tree->topLevelItemCount();
+    for (int i = 0; i < cnt; ++i) {
+        auto child = p_tree->topLevelItem(i);
+        auto data = getItemNodeData(child);
+        if (data.matched(p_node)) {
+            return child;
+        }
+    }
+
+    return nullptr;
+}
+
+void NotebookNodeExplorer::setCurrentSlaveNode(const Node *p_node)
+{
+    if (!p_node) {
+        m_slaveExplorer->setCurrentItem(nullptr);
+        return;
+    }
+
+    Q_ASSERT(!belongsToMasterExplorer(p_node));
+
+    ListWidget::forEachItem(m_slaveExplorer, [this, p_node](QListWidgetItem *item) {
+        auto data = getItemNodeData(item);
+        if (data.matched(p_node)) {
+            m_slaveExplorer->setCurrentItem(item);
+            return false;
+        }
+        return true;
+    });
+
+    if (m_slaveExplorer->currentItem() && m_masterExplorer->hasFocus()) {
+        // To get focus after creating a new note.
+        m_slaveExplorer->setFocus();
     }
 }
 
-QSharedPointer<QTreeWidgetStateCache<Node *>> NotebookNodeExplorer::stateCache() const
+void NotebookNodeExplorer::setCurrentSlaveNode(const QString &p_name)
+{
+    if (p_name.isEmpty()) {
+        m_slaveExplorer->setCurrentItem(nullptr);
+        return;
+    }
+
+    ListWidget::forEachItem(m_slaveExplorer, [this, &p_name](QListWidgetItem *item) {
+        auto data = getItemNodeData(item);
+        if (data.matched(p_name)) {
+            m_slaveExplorer->setCurrentItem(item);
+            return false;
+        }
+        return true;
+    });
+}
+
+void NotebookNodeExplorer::cacheState(bool p_saveCurrent)
+{
+    if (m_notebook) {
+        auto &cacheData = getCache();
+        cacheData.m_masterStateCache->save(m_masterExplorer, p_saveCurrent);
+        if (p_saveCurrent && !isCombinedExploreMode()) {
+            cacheData.m_currentSlaveName.clear();
+            auto item = m_slaveExplorer->currentItem();
+            if (item) {
+                auto data = getItemNodeData(item);
+                if (data.isNode()) {
+                    cacheData.m_currentSlaveName = data.getNode()->getName();
+                } else {
+                    cacheData.m_currentSlaveName = data.getExternalNode()->getName();
+                }
+            }
+        }
+    }
+}
+
+NotebookNodeExplorer::CacheData &NotebookNodeExplorer::getCache() const
 {
     Q_ASSERT(m_notebook);
-    auto it = m_stateCache.find(m_notebook.data());
-    if (it == m_stateCache.end()) {
+    auto it = const_cast<NotebookNodeExplorer *>(this)->m_cache.find(m_notebook.data());
+    if (it == const_cast<NotebookNodeExplorer *>(this)->m_cache.end()) {
         auto keyFunc = [](const QTreeWidgetItem *p_item, bool &p_ok) {
                            auto data = NotebookNodeExplorer::getItemNodeData(p_item);
                            if (data.isNode()) {
@@ -659,22 +907,22 @@ QSharedPointer<QTreeWidgetStateCache<Node *>> NotebookNodeExplorer::stateCache()
                            p_ok = false;
                            return static_cast<Node *>(nullptr);
                        };
-        auto cache = QSharedPointer<QTreeWidgetStateCache<Node *>>::create(keyFunc);
-        it = const_cast<NotebookNodeExplorer *>(this)->m_stateCache.insert(m_notebook.data(), cache);
+        it = const_cast<NotebookNodeExplorer *>(this)->m_cache.insert(m_notebook.data(), CacheData());
+        it.value().m_masterStateCache = QSharedPointer<QTreeWidgetStateCache<Node *>>::create(keyFunc);
     }
 
     return it.value();
 }
 
-void NotebookNodeExplorer::clearStateCache(const Notebook *p_notebook)
+void NotebookNodeExplorer::clearCache(const Notebook *p_notebook)
 {
-    auto it = m_stateCache.find(p_notebook);
-    if (it != m_stateCache.end()) {
-        it.value()->clear();
+    auto it = m_cache.find(p_notebook);
+    if (it != m_cache.end()) {
+        it.value().clear();
     }
 }
 
-void NotebookNodeExplorer::createContextMenuOnRoot(QMenu *p_menu)
+void NotebookNodeExplorer::createMasterContextMenuOnRoot(QMenu *p_menu)
 {
     createAndAddAction(Action::NewNote, p_menu);
 
@@ -694,91 +942,114 @@ void NotebookNodeExplorer::createContextMenuOnRoot(QMenu *p_menu)
     createAndAddAction(Action::OpenLocation, p_menu);
 }
 
-void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_node)
+void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_node, bool p_master)
 {
-    const int selectedSize = m_masterExplorer->selectedItems().size();
+    const int selectedSize = p_master ? m_masterExplorer->selectedItems().size() : m_slaveExplorer->selectedItems().size();
 
-    createAndAddAction(Action::Open, p_menu);
+    createAndAddAction(Action::Open, p_menu, p_master);
 
-    addOpenWithMenu(p_menu);
+    addOpenWithMenu(p_menu, p_master);
 
     p_menu->addSeparator();
 
     if (selectedSize == 1 && p_node->isContainer()) {
-        createAndAddAction(Action::ExpandAll, p_menu);
+        createAndAddAction(Action::ExpandAll, p_menu, p_master);
     }
 
     p_menu->addSeparator();
 
-    createAndAddAction(Action::NewNote, p_menu);
+    createAndAddAction(Action::NewNote, p_menu, p_master);
 
-    createAndAddAction(Action::NewFolder, p_menu);
+    createAndAddAction(Action::NewFolder, p_menu, p_master);
 
     p_menu->addSeparator();
 
-    createAndAddAction(Action::Copy, p_menu);
+    createAndAddAction(Action::Copy, p_menu, p_master);
 
-    createAndAddAction(Action::Cut, p_menu);
+    createAndAddAction(Action::Cut, p_menu, p_master);
 
     if (selectedSize == 1 && isPasteOnNodeAvailable(p_node)) {
-        createAndAddAction(Action::Paste, p_menu);
+        createAndAddAction(Action::Paste, p_menu, p_master);
     }
 
-    createAndAddAction(Action::Delete, p_menu);
+    createAndAddAction(Action::Delete, p_menu, p_master);
 
-    createAndAddAction(Action::RemoveFromConfig, p_menu);
+    createAndAddAction(Action::RemoveFromConfig, p_menu, p_master);
 
     p_menu->addSeparator();
 
-    createAndAddAction(Action::Reload, p_menu);
+    createAndAddAction(Action::Reload, p_menu, p_master);
 
-    createAndAddAction(Action::ReloadIndex, p_menu);
-
-    createAndAddAction(Action::Sort, p_menu);
+    createAndAddAction(Action::Sort, p_menu, p_master);
 
     if (selectedSize == 1
         && m_notebook->tag()
         && !p_node->isContainer()) {
         p_menu->addSeparator();
 
-        createAndAddAction(Action::Tag, p_menu);
+        createAndAddAction(Action::Tag, p_menu, p_master);
     }
 
     p_menu->addSeparator();
 
-    createAndAddAction(Action::PinToQuickAccess, p_menu);
+    createAndAddAction(Action::PinToQuickAccess, p_menu, p_master);
 
     if (selectedSize == 1) {
-        createAndAddAction(Action::CopyPath, p_menu);
+        createAndAddAction(Action::CopyPath, p_menu, p_master);
 
-        createAndAddAction(Action::OpenLocation, p_menu);
+        createAndAddAction(Action::OpenLocation, p_menu, p_master);
 
-        createAndAddAction(Action::Properties, p_menu);
+        createAndAddAction(Action::Properties, p_menu, p_master);
     }
 }
 
-void NotebookNodeExplorer::createContextMenuOnExternalNode(QMenu *p_menu, const ExternalNode *p_node)
+void NotebookNodeExplorer::createContextMenuOnExternalNode(QMenu *p_menu, const ExternalNode *p_node, bool p_master)
 {
     Q_UNUSED(p_node);
 
-    const int selectedSize = m_masterExplorer->selectedItems().size();
-    createAndAddAction(Action::Open, p_menu);
+    const int selectedSize = p_master ? m_masterExplorer->selectedItems().size() : m_slaveExplorer->selectedItems().size();
 
-    addOpenWithMenu(p_menu);
+    createAndAddAction(Action::Open, p_menu, p_master);
 
-    p_menu->addSeparator();
-
-    createAndAddAction(Action::ImportToConfig, p_menu);
+    addOpenWithMenu(p_menu, p_master);
 
     p_menu->addSeparator();
 
-    createAndAddAction(Action::PinToQuickAccess, p_menu);
+    createAndAddAction(Action::ImportToConfig, p_menu, p_master);
+
+    p_menu->addSeparator();
+
+    createAndAddAction(Action::PinToQuickAccess, p_menu, p_master);
 
     if (selectedSize == 1) {
-        createAndAddAction(Action::CopyPath, p_menu);
+        createAndAddAction(Action::CopyPath, p_menu, p_master);
 
-        createAndAddAction(Action::OpenLocation, p_menu);
+        createAndAddAction(Action::OpenLocation, p_menu, p_master);
     }
+}
+
+void NotebookNodeExplorer::createSlaveContextMenuOnMasterNode(QMenu *p_menu)
+{
+    auto masterNode = getSlaveExplorerMasterNode();
+    if (!masterNode) {
+        // Current master node may be an external node.
+        return;
+    }
+
+    createAndAddAction(Action::NewNote, p_menu, false);
+
+    createAndAddAction(Action::NewFolder, p_menu, false);
+
+    if (isPasteOnNodeAvailable(masterNode)) {
+        p_menu->addSeparator();
+        createAndAddAction(Action::Paste, p_menu, false);
+    }
+
+    p_menu->addSeparator();
+
+    createAndAddAction(Action::Reload, p_menu, false);
+
+    createAndAddAction(Action::OpenLocation, p_menu, false);
 }
 
 static QIcon generateMenuActionIcon(const QString &p_name)
@@ -787,7 +1058,7 @@ static QIcon generateMenuActionIcon(const QString &p_name)
     return IconUtils::fetchIconWithDisabledState(themeMgr.getIconFile(p_name));
 }
 
-QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
+QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, bool p_master)
 {
     QAction *act = nullptr;
     switch (p_act) {
@@ -816,8 +1087,8 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
                           tr("&Properties (Rename)"),
                           p_parent);
         connect(act, &QAction::triggered,
-                this, [this]() {
-                    auto node = getCurrentNode();
+                this, [this, p_master]() {
+                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
                     if (checkInvalidNode(node)) {
                         return;
                     }
@@ -841,6 +1112,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         act = new QAction(tr("Open Locat&ion"), p_parent);
         connect(act, &QAction::triggered,
                 this, [this]() {
+                    // Always use the master node no matter it is in master/slave explorer.
                     auto item = m_masterExplorer->currentItem();
                     if (!item) {
                         if (m_notebook) {
@@ -849,24 +1121,23 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
                         }
                         return;
                     }
-                    auto data = getItemNodeData(item);
-                    QString locationPath;
-                    if (data.isNode()) {
-                        auto node = data.getNode();
-                        if (checkInvalidNode(node)) {
-                            return;
-                        }
 
-                        locationPath = node->fetchAbsolutePath();
-                        if (!node->isContainer()) {
-                            locationPath = PathUtils::parentDirPath(locationPath);
-                        }
-                    } else if (data.isExternalNode()) {
-                        const auto &externalNode = data.getExternalNode();
-                        locationPath = externalNode->fetchAbsolutePath();
-                        if (!externalNode->isFolder()) {
-                            locationPath = PathUtils::parentDirPath(locationPath);
-                        }
+                    auto data = getItemNodeData(item);
+                    Node *node = nullptr;
+                    if (data.isNode()) {
+                        node = data.getNode();
+                    } else {
+                        // Open the parent folder of the external node.
+                        node = data.getExternalNode()->getNode();
+                    }
+
+                    if (checkInvalidNode(node)) {
+                        return;
+                    }
+
+                    auto locationPath = node->fetchAbsolutePath();
+                    if (!node->isContainer()) {
+                        locationPath = PathUtils::parentDirPath(locationPath);
                     }
 
                     if (!locationPath.isEmpty()) {
@@ -878,12 +1149,12 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
     case Action::CopyPath:
         act = new QAction(tr("Cop&y Path"), p_parent);
         connect(act, &QAction::triggered,
-                this, [this]() {
-                    auto item = m_masterExplorer->currentItem();
-                    if (!item) {
+                this, [this, p_master]() {
+                    NodeData data = p_master ? getCurrentMasterNodeData() : getCurrentSlaveNodeData();
+                    if (!data.isValid()) {
                         return;
                     }
-                    auto data = getItemNodeData(item);
+
                     QString nodePath;
                     if (data.isNode()) {
                         auto node = data.getNode();
@@ -904,43 +1175,47 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
     case Action::Copy:
         act = new QAction(tr("&Copy"), p_parent);
         connect(act, &QAction::triggered,
-                this, [this]() {
-                    copySelectedNodes(false);
+                this, [this, p_master]() {
+                    copySelectedNodes(false, p_master);
                 });
         break;
 
     case Action::Cut:
         act = new QAction(tr("C&ut"), p_parent);
         connect(act, &QAction::triggered,
-                this, [this]() {
-                    copySelectedNodes(true);
+                this, [this, p_master]() {
+                    copySelectedNodes(true, p_master);
                 });
         break;
 
     case Action::Paste:
         act = new QAction(tr("&Paste"), p_parent);
         connect(act, &QAction::triggered,
-                this, [this]() {
-                    pasteNodesFromClipboard();
-                });
+                this, &NotebookNodeExplorer::pasteNodesFromClipboard);
         break;
 
     case Action::Delete:
         act = new QAction(tr("&Delete"), p_parent);
         connect(act, &QAction::triggered,
-                this, &NotebookNodeExplorer::removeSelectedNodes);
+                this, [this, p_master]() {
+                    removeSelectedNodes(p_master);
+                });
         break;
 
     case Action::RemoveFromConfig:
         act = new QAction(tr("&Remove From Index"), p_parent);
         connect(act, &QAction::triggered,
-                this, &NotebookNodeExplorer::removeSelectedNodesFromConfig);
+                this, [this, p_master]() {
+                    removeSelectedNodesFromConfig(p_master);
+                });
         break;
 
     case Action::Sort:
         act = new QAction(generateMenuActionIcon("sort.svg"), tr("&Sort"), p_parent);
         connect(act, &QAction::triggered,
-                this, &NotebookNodeExplorer::manualSort);
+                this, [this, p_master]() {
+                    manualSort(p_master);
+                });
         break;
 
     case Action::Reload:
@@ -953,7 +1228,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
         break;
 
     case Action::ReloadIndex:
-        act = new QAction(tr("Relo&ad Index From Disk"), p_parent);
+        act = new QAction(tr("Relo&ad Index Of Notebook From Disk"), p_parent);
         connect(act, &QAction::triggered,
                 this, [this]() {
                     if (!m_notebook) {
@@ -966,6 +1241,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
                         return;
                     }
 
+                    m_notebook->reloadNodes();
                     reload();
                 });
         break;
@@ -973,8 +1249,8 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
     case Action::ImportToConfig:
         act = new QAction(tr("&Import To Index"), p_parent);
         connect(act, &QAction::triggered,
-                this, [this]() {
-                    auto nodes = getSelectedNodes().second;
+                this, [this, p_master]() {
+                    auto nodes = p_master ? getMasterSelectedNodesAndExternalNodes().second : getSlaveSelectedNodesAndExternalNodes().second;
                     importToIndex(nodes);
                 });
         break;
@@ -982,13 +1258,43 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
     case Action::Open:
         act = new QAction(tr("&Open"), p_parent);
         connect(act, &QAction::triggered,
-                this, &NotebookNodeExplorer::openSelectedNodes);
+                this, [this, p_master]() {
+                    // Support nodes and external nodes.
+                    // Do nothing for folders.
+                    auto selectedNodes = p_master ? getMasterSelectedNodesAndExternalNodes() : getSlaveSelectedNodesAndExternalNodes();
+                    for (const auto &externalNode : selectedNodes.second) {
+                        if (!externalNode->isFolder()) {
+                            emit fileActivated(externalNode->fetchAbsolutePath(), QSharedPointer<FileOpenParameters>::create());
+                        }
+                    }
+
+                    for (const auto &node : selectedNodes.first) {
+                        if (checkInvalidNode(node)) {
+                            continue;
+                        }
+
+                        if (node->hasContent()) {
+                            emit nodeActivated(node, QSharedPointer<FileOpenParameters>::create());
+                        }
+                    }
+                });
         break;
 
     case Action::ExpandAll:
         act = new QAction(tr("&Expand All\t*"), p_parent);
         connect(act, &QAction::triggered,
-                this, &NotebookNodeExplorer::expandCurrentNodeAll);
+                this, [this]() {
+                    auto item = m_masterExplorer->currentItem();
+                    if (!item || item->childCount() == 0) {
+                        return;
+                    }
+                    auto data = getItemNodeData(item);
+                    if (!data.isNode()) {
+                        return;
+                    }
+
+                    TreeWidget::expandRecursively(item);
+                });
         break;
 
     case Action::PinToQuickAccess:
@@ -996,8 +1302,8 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
                           tr("Pin To &Quick Access"),
                           p_parent);
         connect(act, &QAction::triggered,
-                this, [this]() {
-                    auto nodes = getSelectedNodes();
+                this, [this, p_master]() {
+                    auto nodes = p_master ? getMasterSelectedNodesAndExternalNodes() : getSlaveSelectedNodesAndExternalNodes();
                     QStringList files;
                     bool hasFilteredAway = false;
                     for (const auto &node : nodes.first) {
@@ -1026,21 +1332,15 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
     case Action::Tag:
         act = new QAction(generateMenuActionIcon(QStringLiteral("tag.svg")), tr("&Tags"), p_parent);
         connect(act, &QAction::triggered,
-                this, [this]() {
-                    auto item = m_masterExplorer->currentItem();
-                    if (!item || !m_notebook->tag()) {
+                this, [this, p_master]() {
+                    Q_ASSERT(m_notebook->tag());
+                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+                    Q_ASSERT(node);
+                    if (checkInvalidNode(node)) {
                         return;
                     }
-                    auto data = getItemNodeData(item);
-                    if (data.isNode()) {
-                        auto node = data.getNode();
-                        if (checkInvalidNode(node)) {
-                            return;
-                        }
-
-                        ViewTagsDialog dialog(node, VNoteX::getInst().getMainWindow());
-                        dialog.exec();
-                    }
+                    ViewTagsDialog dialog(node, VNoteX::getInst().getMainWindow());
+                    dialog.exec();
                 });
         break;
 
@@ -1052,16 +1352,16 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent)
     return act;
 }
 
-QAction *NotebookNodeExplorer::createAndAddAction(Action p_act, QMenu *p_menu)
+QAction *NotebookNodeExplorer::createAndAddAction(Action p_act, QMenu *p_menu, bool p_master)
 {
-    auto act = createAction(p_act, p_menu);
+    auto act = createAction(p_act, p_menu, p_master);
     p_menu->addAction(act);
     return act;
 }
 
-void NotebookNodeExplorer::copySelectedNodes(bool p_move)
+void NotebookNodeExplorer::copySelectedNodes(bool p_move, bool p_master)
 {
-    auto nodes = getSelectedNodes().first;
+    auto nodes = p_master ? getMasterSelectedNodesAndExternalNodes().first : getSlaveSelectedNodesAndExternalNodes().first;
     if (nodes.isEmpty()) {
         return;
     }
@@ -1087,11 +1387,28 @@ void NotebookNodeExplorer::copySelectedNodes(bool p_move)
     VNoteX::getInst().showStatusMessageShort(tr("Copied %n item(s)", "", static_cast<int>(nrItems)));
 }
 
-QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> NotebookNodeExplorer::getSelectedNodes() const
+QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> NotebookNodeExplorer::getMasterSelectedNodesAndExternalNodes() const
 {
     QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> nodes;
 
     auto items = m_masterExplorer->selectedItems();
+    for (auto &item : items) {
+        auto data = getItemNodeData(item);
+        if (data.isNode()) {
+            nodes.first.push_back(data.getNode());
+        } else if (data.isExternalNode()) {
+            nodes.second.push_back(data.getExternalNode());
+        }
+    }
+
+    return nodes;
+}
+
+QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> NotebookNodeExplorer::getSlaveSelectedNodesAndExternalNodes() const
+{
+    QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> nodes;
+
+    auto items = m_slaveExplorer->selectedItems();
     for (auto &item : items) {
         auto data = getItemNodeData(item);
         if (data.isNode()) {
@@ -1157,8 +1474,11 @@ static QSharedPointer<Node> getNodeFromClipboardDataItem(const NodeClipboardData
 void NotebookNodeExplorer::pasteNodesFromClipboard()
 {
     // Identify the dest node.
-    auto destNode = getCurrentNode();
+    auto destNode = getCurrentMasterNode();
     if (!destNode) {
+        if (!m_notebook) {
+            return;
+        }
         destNode = m_notebook->getRootNode().data();
     } else {
         // Current node may be a file node.
@@ -1237,7 +1557,7 @@ void NotebookNodeExplorer::pasteNodesFromClipboard()
         updateNode(node);
 
         // Deleted src nodes may be the current node in cache. Clear the cache.
-        clearStateCache(node->getNotebook());
+        clearCache(node->getNotebook());
     }
 
     // Update and expand dest node. Select all pasted nodes.
@@ -1251,9 +1571,9 @@ void NotebookNodeExplorer::pasteNodesFromClipboard()
     VNoteX::getInst().showStatusMessageShort(tr("Pasted %n item(s)", "", pastedNodes.size()));
 }
 
-void NotebookNodeExplorer::setNodeExpanded(const Node *p_node, bool p_expanded)
+void NotebookNodeExplorer::setMasterNodeExpanded(const Node *p_node, bool p_expanded)
 {
-    auto item = findNode(p_node);
+    auto item = findMasterNode(p_node);
     if (item) {
         item->setExpanded(p_expanded);
     }
@@ -1261,37 +1581,55 @@ void NotebookNodeExplorer::setNodeExpanded(const Node *p_node, bool p_expanded)
 
 void NotebookNodeExplorer::selectNodes(const QVector<const Node *> &p_nodes)
 {
-    bool firstItem = true;
-    for (auto node : p_nodes) {
-        auto item = findNode(node);
-        if (item) {
-            auto flags = firstItem ? QItemSelectionModel::ClearAndSelect : QItemSelectionModel::Select;
-            m_masterExplorer->setCurrentItem(item, 0, flags);
-            firstItem = false;
+    if (p_nodes.isEmpty()) {
+        return;
+    }
+
+    // All the nodes should either belong to master or slave explorer.
+    if (belongsToMasterExplorer(p_nodes[0])) {
+        bool firstItem = true;
+        for (auto node : p_nodes) {
+            auto item = findMasterNode(node);
+            if (item) {
+                auto flags = firstItem ? QItemSelectionModel::ClearAndSelect : QItemSelectionModel::Select;
+                m_masterExplorer->setCurrentItem(item, 0, flags);
+                firstItem = false;
+            }
+        }
+    } else {
+        bool firstItem = true;
+        for (auto node : p_nodes) {
+            auto item = findSlaveNode(node);
+            if (item) {
+                auto flags = firstItem ? QItemSelectionModel::ClearAndSelect : QItemSelectionModel::Select;
+                m_slaveExplorer->setCurrentItem(item, flags);
+                firstItem = false;
+            }
         }
     }
 }
 
-void NotebookNodeExplorer::removeSelectedNodes()
+void NotebookNodeExplorer::removeSelectedNodes(bool p_master)
 {
     const QString text = tr("Delete these folders and notes?");
     const QString info = tr("Deleted files could be found in the recycle bin of notebook.");
-    auto nodes = confirmSelectedNodes(tr("Confirm Deletion"), text, info);
+    auto nodes = confirmSelectedNodes(tr("Confirm Deletion"), text, info, p_master);
     removeNodes(nodes, false);
 }
 
 QVector<Node *> NotebookNodeExplorer::confirmSelectedNodes(const QString &p_title,
                                                            const QString &p_text,
-                                                           const QString &p_info) const
+                                                           const QString &p_info,
+                                                           bool p_master) const
 {
-    auto nodes = getSelectedNodes().first;
+    auto nodes = p_master ? getMasterSelectedNodesAndExternalNodes().first : getSlaveSelectedNodesAndExternalNodes().first;
     if (nodes.isEmpty()) {
         return nodes;
     }
 
     QVector<ConfirmItemInfo> items;
     for (const auto &node : nodes) {
-        items.push_back(ConfirmItemInfo(getNodeItemIcon(node),
+        items.push_back(ConfirmItemInfo(getIcon(node),
                                         node->getName(),
                                         node->fetchAbsolutePath(),
                                         node->fetchAbsolutePath(),
@@ -1362,11 +1700,12 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
     VNoteX::getInst().showStatusMessageShort(tr("Deleted/Removed %n item(s)", "", nrDeleted));
 }
 
-void NotebookNodeExplorer::removeSelectedNodesFromConfig()
+void NotebookNodeExplorer::removeSelectedNodesFromConfig(bool p_master)
 {
     auto nodes = confirmSelectedNodes(tr("Confirm Removal"),
                                       tr("Remove these folders and notes from index?"),
-                                      tr("Files are not touched but just removed from notebook index."));
+                                      tr("Files are not touched but just removed from notebook index."),
+                                      p_master);
     removeNodes(nodes, true);
 }
 
@@ -1389,14 +1728,32 @@ void NotebookNodeExplorer::filterAwayChildrenNodes(QVector<Node *> &p_nodes)
 
 void NotebookNodeExplorer::updateAndExpandNode(Node *p_node)
 {
-    setNodeExpanded(p_node, false);
+    setMasterNodeExpanded(p_node, false);
     updateNode(p_node);
-    setNodeExpanded(p_node, true);
+    setMasterNodeExpanded(p_node, true);
 }
 
-bool NotebookNodeExplorer::allSelectedItemsSameType() const
+bool NotebookNodeExplorer::isMasterAllSelectedItemsSameType() const
 {
     auto items = m_masterExplorer->selectedItems();
+    if (items.size() < 2) {
+        return true;
+    }
+
+    auto type = getItemNodeData(items.first()).getType();
+    for (int i = 1; i < items.size(); ++i) {
+        auto itype = getItemNodeData(items[i]).getType();
+        if (itype != type) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool NotebookNodeExplorer::isSlaveAllSelectedItemsSameType() const
+{
+    auto items = m_slaveExplorer->selectedItems();
     if (items.size() < 2) {
         return true;
     }
@@ -1419,12 +1776,13 @@ void NotebookNodeExplorer::reload()
 
 void NotebookNodeExplorer::focusNormalNode()
 {
-    auto item = m_masterExplorer->currentItem();
-    if (item) {
-        return;
+    if (isCombinedExploreMode()) {
+        m_masterExplorer->setCurrentItem(m_masterExplorer->topLevelItem(0));
+    } else {
+        if (m_slaveExplorer->count() > 0) {
+            m_slaveExplorer->setCurrentRow(0);
+        }
     }
-
-    m_masterExplorer->setCurrentItem(m_masterExplorer->topLevelItem(0));
 }
 
 void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes) const
@@ -1452,7 +1810,7 @@ void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes) con
     sortNodes(p_nodes, firstFileIndex, p_nodes.size(), m_viewOrder);
 }
 
-void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int p_start, int p_end, int p_viewOrder) const
+void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int p_start, int p_end, ViewOrder p_viewOrder) const
 {
     if (p_start >= p_end) {
         return;
@@ -1523,9 +1881,9 @@ void NotebookNodeExplorer::setAutoImportExternalFiles(bool p_enabled)
     m_autoImportExternalFiles = p_enabled;
 }
 
-void NotebookNodeExplorer::manualSort()
+void NotebookNodeExplorer::manualSort(bool p_master)
 {
-    auto node = getCurrentNode();
+    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
     if (!node) {
         return;
     }
@@ -1590,7 +1948,7 @@ Node *NotebookNodeExplorer::currentExploredFolderNode() const
         return nullptr;
     }
 
-    auto node = getCurrentNode();
+    auto node = getCurrentMasterNode();
     if (node) {
         if (!node->isContainer()) {
             node = node->getParent();
@@ -1609,7 +1967,15 @@ Node *NotebookNodeExplorer::currentExploredNode() const
         return nullptr;
     }
 
-    return getCurrentNode();
+    if (isCombinedExploreMode()) {
+        return getCurrentMasterNode();
+    } else {
+        auto node = getCurrentSlaveNode();
+        if (!node) {
+            node = getCurrentMasterNode();
+        }
+        return node;
+    }
 }
 
 void NotebookNodeExplorer::setViewOrder(int p_order)
@@ -1618,38 +1984,63 @@ void NotebookNodeExplorer::setViewOrder(int p_order)
         return;
     }
 
-    m_viewOrder = p_order;
-    reload();
+    if (p_order >= 0 && p_order < ViewOrder::ViewOrderMax) {
+        m_viewOrder = static_cast<ViewOrder>(p_order);
+        reload();
+    }
 }
 
-void NotebookNodeExplorer::openSelectedNodes()
+void NotebookNodeExplorer::setExploreMode(int p_mode)
 {
-    // Support nodes and external nodes.
-    // Do nothing for folders.
-    auto selectedNodes = getSelectedNodes();
-    for (const auto &externalNode : selectedNodes.second) {
-        if (!externalNode->isFolder()) {
-            emit fileActivated(externalNode->fetchAbsolutePath(), QSharedPointer<FileOpenParameters>::create());
-        }
+    if (m_exploreMode == p_mode) {
+        return;
     }
 
-    for (const auto &node : selectedNodes.first) {
-        if (checkInvalidNode(node)) {
-            continue;
+    if (p_mode >= 0 && p_mode < ExploreMode::ExploreModeMax) {
+        m_exploreMode = static_cast<ExploreMode>(p_mode);
+        switch (m_exploreMode) {
+        case ExploreMode::Combined:
+            setFocusProxy(m_masterExplorer);
+
+            Q_ASSERT(m_slaveExplorer);
+            m_slaveExplorer->clear();
+            m_slaveExplorer->hide();
+
+            disconnect(m_masterExplorer, &QTreeWidget::currentItemChanged,
+                       this, &NotebookNodeExplorer::updateSlaveExplorer);
+            break;
+
+        case ExploreMode::SeparateSingle:
+            Q_FALLTHROUGH();
+        case ExploreMode::SeparateDouble:
+            if (!m_slaveExplorer) {
+                setupSlaveExplorer();
+            }
+
+            setFocusProxy(m_slaveExplorer);
+
+            m_slaveExplorer->show();
+            m_splitter->setOrientation(m_exploreMode == ExploreMode::SeparateSingle ? Qt::Vertical : Qt::Horizontal);
+
+            connect(m_masterExplorer, &QTreeWidget::currentItemChanged,
+                    this, &NotebookNodeExplorer::updateSlaveExplorer);
+            break;
+
+        default:
+            Q_ASSERT(false);
+            return;
         }
 
-        if (node->hasContent()) {
-            emit nodeActivated(node, QSharedPointer<FileOpenParameters>::create());
-        }
+        reload();
     }
 }
 
-QStringList NotebookNodeExplorer::getSelectedNodesPath() const
+QStringList NotebookNodeExplorer::getSelectedNodesPath(bool p_master) const
 {
     QStringList files;
 
     // Support nodes and external nodes.
-    auto selectedNodes = getSelectedNodes();
+    auto selectedNodes = p_master ? getMasterSelectedNodesAndExternalNodes() : getSlaveSelectedNodesAndExternalNodes();
     for (const auto &externalNode : selectedNodes.second) {
         files << externalNode->fetchAbsolutePath();
     }
@@ -1658,7 +2049,6 @@ QStringList NotebookNodeExplorer::getSelectedNodesPath() const
         if (checkInvalidNode(node)) {
             continue;
         }
-
         files << node->fetchAbsolutePath();
     }
 
@@ -1724,38 +2114,7 @@ bool NotebookNodeExplorer::checkInvalidNode(Node *p_node) const
     return false;
 }
 
-void NotebookNodeExplorer::expandCurrentNodeAll()
-{
-    auto item = m_masterExplorer->currentItem();
-    if (!item || item->childCount() == 0) {
-        return;
-    }
-    auto data = getItemNodeData(item);
-    if (!data.isNode()) {
-        return;
-    }
-
-    expandItemRecursively(item);
-}
-
-void NotebookNodeExplorer::expandItemRecursively(QTreeWidgetItem *p_item)
-{
-    if (!p_item) {
-        return;
-    }
-
-    p_item->setExpanded(true);
-    const int cnt = p_item->childCount();
-    if (cnt == 0) {
-        return;
-    }
-
-    for (int i = 0; i < cnt; ++i) {
-        expandItemRecursively(p_item->child(i));
-    }
-}
-
-void NotebookNodeExplorer::addOpenWithMenu(QMenu *p_menu)
+void NotebookNodeExplorer::addOpenWithMenu(QMenu *p_menu, bool p_master)
 {
     auto subMenu = p_menu->addMenu(tr("Open &With"));
 
@@ -1764,8 +2123,8 @@ void NotebookNodeExplorer::addOpenWithMenu(QMenu *p_menu)
         for (const auto &pro : sessionConfig.getExternalPrograms()) {
             QAction *act = subMenu->addAction(pro.m_name);
             connect(act, &QAction::triggered,
-                    this, [this, act]() {
-                        openSelectedNodesWithExternalProgram(act->data().toString());
+                    this, [this, act, p_master]() {
+                        openSelectedNodesWithCommand(act->data().toString(), p_master);
                     });
             act->setData(pro.m_command);
             WidgetUtils::addActionShortcutText(act, pro.m_shortcut);
@@ -1775,9 +2134,11 @@ void NotebookNodeExplorer::addOpenWithMenu(QMenu *p_menu)
     subMenu->addSeparator();
 
     {
-        auto defaultAct = subMenu->addAction(tr("System Default Program"),
-                                             this,
-                                             &NotebookNodeExplorer::openSelectedNodesWithDefaultProgram);
+        auto defaultAct = subMenu->addAction(tr("System Default Program"));
+        connect(defaultAct, &QAction::triggered,
+                this, [this, defaultAct, p_master]() {
+                    openSelectedNodesWithCommand(QString(), p_master);
+                });
         const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
         WidgetUtils::addActionShortcutText(defaultAct, coreConfig.getShortcut(CoreConfig::OpenWithDefaultProgram));
     }
@@ -1803,7 +2164,13 @@ void NotebookNodeExplorer::setupShortcuts()
         auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::OpenWithDefaultProgram), this);
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
-                    this, &NotebookNodeExplorer::openSelectedNodesWithDefaultProgram);
+                    this, [this]() {
+                        bool isMaster = true;
+                        if (!isCombinedExploreMode()) {
+                            isMaster = m_masterExplorer->hasFocus();
+                        }
+                        openSelectedNodesWithCommand(QString(), isMaster);
+                    });
         }
     }
 
@@ -1814,37 +2181,20 @@ void NotebookNodeExplorer::setupShortcuts()
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this, command]() {
-                        openSelectedNodesWithExternalProgram(command);
+                        bool isMaster = true;
+                        if (!isCombinedExploreMode()) {
+                            isMaster = m_masterExplorer->hasFocus();
+                        }
+                        openSelectedNodesWithCommand(command, isMaster);
                     });
         }
     }
 }
 
-void NotebookNodeExplorer::openSelectedNodesWithDefaultProgram()
+void NotebookNodeExplorer::openSelectedNodesWithCommand(const QString &p_command, bool p_master)
 {
     const bool closeBefore = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerCloseBeforeOpenWithEnabled();
-   const auto files = getSelectedNodesPath();
-   for (const auto &file : files) {
-       if (file.isEmpty()) {
-           continue;
-       }
-
-        if (closeBefore) {
-            auto event = QSharedPointer<Event>::create();
-            emit closeFileRequested(file, event);
-            if (!event->m_response.toBool()) {
-                continue;
-            }
-        }
-
-       WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(file));
-   }
-}
-
-void NotebookNodeExplorer::openSelectedNodesWithExternalProgram(const QString &p_command)
-{
-    const bool closeBefore = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerCloseBeforeOpenWithEnabled();
-    const auto files = getSelectedNodesPath();
+    const auto files = getSelectedNodesPath(p_master);
     for (const auto &file : files) {
         if (file.isEmpty()) {
             continue;
@@ -1858,20 +2208,24 @@ void NotebookNodeExplorer::openSelectedNodesWithExternalProgram(const QString &p
             }
         }
 
-        auto command = p_command;
-        command.replace(QStringLiteral("%1"), QString("\"%1\"").arg(file));
-        ProcessUtils::startDetached(command);
+        if (p_command.isEmpty()) {
+            WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(file));
+        } else {
+            auto command = p_command;
+            command.replace(QStringLiteral("%1"), QString("\"%1\"").arg(file));
+            ProcessUtils::startDetached(command);
+        }
     }
 }
 
-void NotebookNodeExplorer::loadItemChildren(QTreeWidgetItem *p_item) const
+void NotebookNodeExplorer::loadMasterItemChildren(QTreeWidgetItem *p_item) const
 {
     auto cnt = p_item->childCount();
     for (int i = 0; i < cnt; ++i) {
         auto child = p_item->child(i);
         auto data = getItemNodeData(child);
         if (data.isNode() && !data.isLoaded()) {
-            loadNode(child, data.getNode(), 1);
+            loadMasterNode(child, data.getNode(), 1);
         }
     }
 }
@@ -1894,4 +2248,116 @@ QString NotebookNodeExplorer::generateToolTip(const Node *p_node)
     tip += tr("Created Time: %1\n").arg(Utils::dateTimeString(p_node->getCreatedTimeUtc().toLocalTime()));
     tip += tr("Modified Time: %1").arg(Utils::dateTimeString(p_node->getModifiedTimeUtc().toLocalTime()));
     return tip;
+}
+
+QByteArray NotebookNodeExplorer::saveState() const
+{
+    return m_splitter->saveState();
+}
+
+void NotebookNodeExplorer::restoreState(const QByteArray &p_data)
+{
+    m_splitter->restoreState(p_data);
+}
+
+bool NotebookNodeExplorer::belongsToMasterExplorer(const Node *p_node) const
+{
+    switch (m_exploreMode) {
+    case ExploreMode::Combined:
+        return true;
+
+    case ExploreMode::SeparateSingle:
+        Q_FALLTHROUGH();
+    case ExploreMode::SeparateDouble:
+        return p_node ? p_node->isContainer() : true;
+        break;
+
+    default:
+        Q_ASSERT(false);
+        break;
+    }
+
+    return true;
+}
+
+bool NotebookNodeExplorer::belongsToMasterExplorer(const ExternalNode *p_node) const
+{
+    if (isCombinedExploreMode()) {
+        return true;
+    } else {
+        return p_node ? p_node->isFolder() : false;
+    }
+}
+
+void NotebookNodeExplorer::updateSlaveExplorer()
+{
+    Q_ASSERT(!isCombinedExploreMode());
+    m_slaveExplorer->clear();
+
+    const Node *masterNode = nullptr;
+    auto item = m_masterExplorer->currentItem();
+    if (item) {
+        const int selectedSize = m_masterExplorer->selectedItems().size();
+        if (selectedSize > 1) {
+            return;
+        }
+
+        masterNode = getCurrentMasterNode();
+    } else {
+        // Root node.
+        masterNode = m_notebook ? m_notebook->getRootNode().data() : nullptr;
+    }
+
+    if (!masterNode) {
+        return;
+    }
+
+    Q_ASSERT(masterNode->isContainer() && masterNode->isLoaded());
+
+    // External children.
+    if (m_externalFilesVisible) {
+        auto externalChildren = masterNode->fetchExternalChildren();
+        // TODO: Sort external children.
+        for (const auto &child : externalChildren) {
+            if (child->isFolder()) {
+                continue;
+            }
+
+            auto item = new QListWidgetItem(m_slaveExplorer);
+            fillSlaveItem(item, child);
+        }
+    }
+
+    auto children = masterNode->getChildren();
+    sortNodes(children);
+    for (const auto &child : children) {
+        if (child->isContainer()) {
+            continue;
+        }
+
+        Q_ASSERT(child->isLoaded());
+        auto item = new QListWidgetItem(m_slaveExplorer);
+        fillSlaveItem(item, child.data());
+    }
+}
+
+bool NotebookNodeExplorer::isCombinedExploreMode() const
+{
+    return m_exploreMode == ExploreMode::Combined;
+}
+
+Node *NotebookNodeExplorer::getSlaveExplorerMasterNode() const
+{
+    Q_ASSERT(!isCombinedExploreMode());
+    auto item = m_masterExplorer->currentItem();
+    if (item) {
+        const int selectedSize = m_masterExplorer->selectedItems().size();
+        if (selectedSize > 1) {
+            return nullptr;
+        }
+        return getCurrentMasterNode();
+    } else {
+        // Root node.
+        return (m_notebook ? m_notebook->getRootNode().data() : nullptr);
+    }
 }

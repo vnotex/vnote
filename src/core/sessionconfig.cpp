@@ -222,6 +222,7 @@ QJsonObject SessionConfig::saveStateAndGeometry() const
     writeByteArray(obj, QStringLiteral("main_window_geometry"), m_mainWindowStateGeometry.m_mainGeometry);
     writeStringList(obj, QStringLiteral("visible_docks_before_expand"), m_mainWindowStateGeometry.m_visibleDocksBeforeExpand);
     writeByteArray(obj, QStringLiteral("tag_explorer_state"), m_mainWindowStateGeometry.m_tagExplorerState);
+    writeByteArray(obj, QStringLiteral("notebook_explorer_state"), m_mainWindowStateGeometry.m_notebookExplorerState);
     return obj;
 }
 
@@ -353,6 +354,7 @@ void SessionConfig::loadStateAndGeometry(const QJsonObject &p_session)
     m_mainWindowStateGeometry.m_mainGeometry = readByteArray(obj, QStringLiteral("main_window_geometry"));
     m_mainWindowStateGeometry.m_visibleDocksBeforeExpand = readStringList(obj, QStringLiteral("visible_docks_before_expand"));
     m_mainWindowStateGeometry.m_tagExplorerState = readByteArray(obj, QStringLiteral("tag_explorer_state"));
+    m_mainWindowStateGeometry.m_notebookExplorerState = readByteArray(obj, QStringLiteral("notebook_explorer_state"));
 }
 
 QByteArray SessionConfig::getViewAreaSessionAndClear()

@@ -10,6 +10,7 @@ QAccessibleInterface *FakeAccessible::accessibleFactory(const QString &p_classNa
     // Try to fix non-responsible issue caused by Youdao Dict.
     if (p_className.startsWith(QStringLiteral("vnotex::"))
         || p_className.startsWith(QStringLiteral("vte::"))) {
+        // Qt's docs: All interfaces are managed by an internal cache and should not be deleted.
         return new FakeAccessibleInterface(p_obj);
     }
 

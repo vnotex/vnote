@@ -30,6 +30,9 @@ namespace vnotex
         int getNodeExplorerViewOrder() const;
         void setNodeExplorerViewOrder(int p_viewOrder);
 
+        int getNodeExplorerExploreMode() const;
+        void setNodeExplorerExploreMode(int p_mode);
+
         bool isNodeExplorerExternalFilesVisible() const;
         void setNodeExplorerExternalFilesVisible(bool p_visible);
 
@@ -59,6 +62,8 @@ namespace vnotex
         FindOptions m_findAndReplaceOptions = FindOption::FindNone;
 
         int m_nodeExplorerViewOrder = 0;
+
+        int m_nodeExplorerExploreMode = 1;
 
         bool m_nodeExplorerExternalFilesVisible = true;
 

@@ -30,6 +30,10 @@ namespace vnotex
 
         Node *currentExploredNode() const;
 
+        QByteArray saveState() const;
+
+        void restoreState(const QByteArray &p_data);
+
     public slots:
         void newNotebook();
 
@@ -70,6 +74,8 @@ namespace vnotex
         void setupViewMenu(QMenu *p_menu);
 
         void setupRecycleBinMenu(QMenu *p_menu);
+
+        void setupExploreModeMenu(TitleBar *p_titleBar);
 
         void saveSession();
 

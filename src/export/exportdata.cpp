@@ -42,6 +42,44 @@ bool ExportHtmlOption::operator==(const ExportHtmlOption &p_other) const
            && m_scrollable == p_other.m_scrollable;
 }
 
+static QJsonObject pageLayoutToJsonObject(const QPageLayout &p_layout)
+{
+    QJsonObject obj;
+    obj["page_size"] = static_cast<int>(p_layout.pageSize().id());
+    obj["orientation"] = static_cast<int>(p_layout.orientation());
+    obj["units"] = static_cast<int>(p_layout.units());
+    {
+        QStringList marginsStr;
+        const auto margins = p_layout.margins();
+        marginsStr << QString::number(margins.left());
+        marginsStr << QString::number(margins.top());
+        marginsStr << QString::number(margins.right());
+        marginsStr << QString::number(margins.bottom());
+        obj["margins"] = marginsStr.join(QLatin1Char(','));
+    }
+    return obj;
+}
+
+static void jsonObjectToPageLayout(const QJsonObject &p_obj, QPageLayout &p_layout)
+{
+    const int pageSize = p_obj["page_size"].toInt(static_cast<int>(QPageSize::A4));
+    p_layout.setPageSize(QPageSize(static_cast<QPageSize::PageSizeId>(pageSize)));
+
+    const int orientation = p_obj["orientation"].toInt(static_cast<int>(QPageLayout::Portrait));
+    p_layout.setOrientation(static_cast<QPageLayout::Orientation>(orientation));
+
+    const int units = p_obj["units"].toInt(static_cast<int>(QPageLayout::Millimeter));
+    p_layout.setUnits(static_cast<QPageLayout::Unit>(units));
+
+    auto marginsStr = p_obj["margins"].toString().split(QLatin1Char(','));
+    if (marginsStr.size() == 4) {
+        p_layout.setMargins(QMarginsF(marginsStr[0].toDouble(),
+                                      marginsStr[1].toDouble(),
+                                      marginsStr[2].toDouble(),
+                                      marginsStr[3].toDouble()));
+    }
+}
+
 ExportPdfOption::ExportPdfOption()
     : m_layout(new QPageLayout(QPageSize(QPageSize::A4),
                                QPageLayout::Portrait,
@@ -58,6 +96,7 @@ QJsonObject ExportPdfOption::toJson() const
     obj["all_in_one"] = m_allInOne;
     obj["wkhtmltopdf_exe_path"] = m_wkhtmltopdfExePath;
     obj["wkhtmltopdf_args"] = m_wkhtmltopdfArgs;
+    obj["layout"] = pageLayoutToJsonObject(*m_layout);
     return obj;
 }
 
@@ -72,6 +111,7 @@ void ExportPdfOption::fromJson(const QJsonObject &p_obj)
     m_allInOne = p_obj["all_in_one"].toBool();
     m_wkhtmltopdfExePath = p_obj["wkhtmltopdf_exe_path"].toString();
     m_wkhtmltopdfArgs = p_obj["wkhtmltopdf_args"].toString();
+    jsonObjectToPageLayout(p_obj["layout"].toObject(), *m_layout);
 }
 
 bool ExportPdfOption::operator==(const ExportPdfOption &p_other) const

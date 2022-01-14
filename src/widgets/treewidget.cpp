@@ -265,3 +265,20 @@ void TreeWidget::unmark(QTreeWidgetItem *p_item, int p_column)
     p_item->setData(p_column, Qt::ForegroundRole, QVariant());
     p_item->setData(p_column, Qt::BackgroundRole, QVariant());
 }
+
+void TreeWidget::expandRecursively(QTreeWidgetItem *p_item)
+{
+    if (!p_item) {
+        return;
+    }
+
+    p_item->setExpanded(true);
+    const int cnt = p_item->childCount();
+    if (cnt == 0) {
+        return;
+    }
+
+    for (int i = 0; i < cnt; ++i) {
+        expandRecursively(p_item->child(i));
+    }
+}

@@ -12,8 +12,6 @@
 #include "navigationmodewrapper.h"
 
 class QSplitter;
-class QTreeWidget;
-class QTreeWidgetItem;
 class QMenu;
 
 namespace vnotex
@@ -21,6 +19,7 @@ namespace vnotex
     class Notebook;
     class Node;
     class TreeWidget;
+    class ListWidget;
     struct FileOpenParameters;
     class Event;
     class ExternalNode;
@@ -65,6 +64,8 @@ namespace vnotex
 
             bool matched(const Node *p_node) const;
 
+            bool matched(const QString &p_name) const;
+
             bool isLoaded() const;
 
         private:
@@ -89,21 +90,25 @@ namespace vnotex
             ViewOrderMax
         };
 
+        enum ExploreMode
+        {
+            Combined = 0,
+            SeparateSingle,
+            SeparateDouble,
+            ExploreModeMax
+        };
+
         explicit NotebookNodeExplorer(QWidget *p_parent = nullptr);
 
         void setNotebook(const QSharedPointer<Notebook> &p_notebook);
-
-        Node *getCurrentNode() const;
-
-        // Update the tree of @p_node.
-        // If @p_node is null, update the whole tree.
-        void updateNode(Node *p_node);
 
         void setCurrentNode(Node *p_node);
 
         void reload();
 
         void setViewOrder(int p_order);
+
+        void setExploreMode(int p_mode);
 
         void setExternalFilesVisible(bool p_visible);
 
@@ -112,6 +117,10 @@ namespace vnotex
         Node *currentExploredFolderNode() const;
 
         Node *currentExploredNode() const;
+
+        QByteArray saveState() const;
+
+        void restoreState(const QByteArray &p_data);
 
         static QString generateToolTip(const Node *p_node);
 
@@ -156,81 +165,103 @@ namespace vnotex
             Tag
         };
 
+        struct CacheData
+        {
+            void clear();
+
+            QSharedPointer<QTreeWidgetStateCache<Node *>> m_masterStateCache;
+
+            QString m_currentSlaveName;
+        };
+
         void setupUI();
 
         void setupShortcuts();
 
         void setupMasterExplorer(QWidget *p_parent = nullptr);
 
-        void clearExplorer();
+        void setupSlaveExplorer();
 
-        void generateNodeTree();
+        void generateMasterNodeTree();
 
         void loadRootNode(const Node *p_node) const;
 
-        void loadNode(QTreeWidgetItem *p_item, Node *p_node, int p_level) const;
+        void loadMasterNode(QTreeWidgetItem *p_item, Node *p_node, int p_level) const;
 
-        void loadChildren(QTreeWidgetItem *p_item, Node *p_node, int p_level) const;
+        void loadMasterNodeChildren(QTreeWidgetItem *p_item, Node *p_node, int p_level) const;
 
-        void loadItemChildren(QTreeWidgetItem *p_item) const;
+        void loadMasterItemChildren(QTreeWidgetItem *p_item) const;
 
-        void loadNode(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const;
+        void loadMasterExternalNode(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const;
 
-        void fillTreeItem(QTreeWidgetItem *p_item, Node *p_node, bool p_loaded) const;
+        void fillMasterItem(QTreeWidgetItem *p_item, Node *p_node, bool p_loaded) const;
 
-        void fillTreeItem(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const;
+        void fillMasterItem(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const;
 
-        const QIcon &getNodeItemIcon(const Node *p_node) const;
+        void fillSlaveItem(QListWidgetItem *p_item, Node *p_node) const;
 
-        const QIcon &getNodeItemIcon(const ExternalNode *p_node) const;
+        void fillSlaveItem(QListWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const;
+
+        const QIcon &getIcon(const Node *p_node) const;
+
+        const QIcon &getIcon(const ExternalNode *p_node) const;
 
         void initNodeIcons() const;
 
-        QTreeWidgetItem *findNode(const Node *p_node) const;
+        QTreeWidgetItem *findMasterNode(const Node *p_node) const;
 
-        QTreeWidgetItem *findNode(QTreeWidgetItem *p_item, const Node *p_node) const;
+        QTreeWidgetItem *findMasterNode(QTreeWidgetItem *p_item, const Node *p_node) const;
 
-        QTreeWidgetItem *findNodeChild(QTreeWidgetItem *p_item, const Node *p_node) const;
+        QTreeWidgetItem *findMasterNodeInDirectChildren(QTreeWidgetItem *p_item, const Node *p_node) const;
 
-        QTreeWidgetItem *findNodeTopLevelItem(QTreeWidget *p_tree, const Node *p_node) const;
+        QTreeWidgetItem *findMasterNodeInTopLevelItems(QTreeWidget *p_tree, const Node *p_node) const;
 
-        void saveNotebookTreeState(bool p_saveCurrentItem = true);
+        QListWidgetItem *findSlaveNode(const Node *p_node) const;
 
-        QSharedPointer<QTreeWidgetStateCache<Node *>> stateCache() const;
+        void cacheState(bool p_saveCurrent);
 
-        void clearStateCache(const Notebook *p_notebook);
+        // Get cache data of current notebook.
+        CacheData &getCache() const;
 
-        void createContextMenuOnRoot(QMenu *p_menu);
+        void clearCache(const Notebook *p_notebook);
 
-        void createContextMenuOnNode(QMenu *p_menu, const Node *p_node);
+        void createMasterContextMenuOnRoot(QMenu *p_menu);
 
-        void createContextMenuOnExternalNode(QMenu *p_menu, const ExternalNode *p_node);
+        void createContextMenuOnNode(QMenu *p_menu, const Node *p_node, bool p_master);
+
+        void createContextMenuOnExternalNode(QMenu *p_menu, const ExternalNode *p_node, bool p_master);
+
+        void createSlaveContextMenuOnMasterNode(QMenu *p_menu);
 
         // Factory function to create action.
-        QAction *createAction(Action p_act, QObject *p_parent);
+        QAction *createAction(Action p_act, QObject *p_parent, bool p_master);
 
-        QAction *createAndAddAction(Action p_act, QMenu *p_menu);
+        QAction *createAndAddAction(Action p_act, QMenu *p_menu, bool p_master = true);
 
-        void copySelectedNodes(bool p_move);
+        void copySelectedNodes(bool p_move, bool p_master);
 
         void pasteNodesFromClipboard();
 
-        QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> getSelectedNodes() const;
+        QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> getMasterSelectedNodesAndExternalNodes() const;
 
-        void removeSelectedNodes();
+        QPair<QVector<Node *>, QVector<QSharedPointer<ExternalNode>>> getSlaveSelectedNodesAndExternalNodes() const;
 
-        void removeSelectedNodesFromConfig();
+        void removeSelectedNodes(bool p_master);
+
+        void removeSelectedNodesFromConfig(bool p_master);
 
         QVector<Node *> confirmSelectedNodes(const QString &p_title,
                                              const QString &p_text,
-                                             const QString &p_info) const;
+                                             const QString &p_info,
+                                             bool p_master) const;
 
         static QSharedPointer<ClipboardData> tryFetchClipboardData();
 
         bool isPasteOnNodeAvailable(const Node *p_node) const;
 
-        void setNodeExpanded(const Node *p_node, bool p_expanded);
+        void setMasterNodeExpanded(const Node *p_node, bool p_expanded);
 
+        // Select both master and slave nodes.
         void selectNodes(const QVector<const Node *> &p_nodes);
 
         void removeNodes(QVector<Node *> p_nodes, bool p_configOnly);
@@ -240,19 +271,19 @@ namespace vnotex
         void updateAndExpandNode(Node *p_node);
 
         // Check if all selected items are the same type for operations.
-        bool allSelectedItemsSameType() const;
+        bool isMasterAllSelectedItemsSameType() const;
+
+        bool isSlaveAllSelectedItemsSameType() const;
 
         void focusNormalNode();
 
         void sortNodes(QVector<QSharedPointer<Node>> &p_nodes) const;
 
         // [p_start, p_end).
-        void sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int p_start, int p_end, int p_viewOrder) const;
+        void sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int p_start, int p_end, ViewOrder p_viewOrder) const;
 
         // Sort nodes in config file.
-        void manualSort();
-
-        void openSelectedNodes();
+        void manualSort(bool p_master);
 
         QSharedPointer<Node> importToIndex(QSharedPointer<ExternalNode> p_node);
 
@@ -262,33 +293,67 @@ namespace vnotex
         // Return true if it is invalid.
         bool checkInvalidNode(Node *p_node) const;
 
-        void expandCurrentNodeAll();
+        void addOpenWithMenu(QMenu *p_menu, bool p_master);
 
-        void expandItemRecursively(QTreeWidgetItem *p_item);
+        QStringList getSelectedNodesPath(bool p_master) const;
 
-        void addOpenWithMenu(QMenu *p_menu);
+        void openSelectedNodesWithCommand(const QString &p_command, bool p_master);
 
-        QStringList getSelectedNodesPath() const;
+        bool belongsToMasterExplorer(const Node *p_node) const;
 
-        void openSelectedNodesWithDefaultProgram();
+        bool belongsToMasterExplorer(const ExternalNode *p_node) const;
 
-        void openSelectedNodesWithExternalProgram(const QString &p_command);
+        void updateSlaveExplorer();
+
+        Node *getCurrentMasterNode() const;
+
+        Node *getCurrentSlaveNode() const;
+
+        NodeData getCurrentMasterNodeData() const;
+
+        NodeData getCurrentSlaveNodeData() const;
+
+        Node *getSlaveExplorerMasterNode() const;
+
+        bool isCombinedExploreMode() const;
+
+        // Update the tree of @p_node if there is any. Or update the node itself if it is in slave explorer.
+        // If @p_node is null, update the whole tree.
+        void updateNode(Node *p_node);
+
+        void setCurrentMasterNode(Node *p_node);
+
+        void setCurrentSlaveNode(const Node *p_node);
+
+        void setCurrentSlaveNode(const QString &p_name);
+
+        void activateItemNode(const NodeData &p_data);
 
         static NotebookNodeExplorer::NodeData getItemNodeData(const QTreeWidgetItem *p_item);
 
+        static NotebookNodeExplorer::NodeData getItemNodeData(const QListWidgetItem *p_item);
+
         static void setItemNodeData(QTreeWidgetItem *p_item, const NodeData &p_data);
+
+        static void setItemNodeData(QListWidgetItem *p_item, const NodeData &p_data);
 
         QSplitter *m_splitter = nullptr;
 
         TreeWidget *m_masterExplorer = nullptr;
 
+        ListWidget *m_slaveExplorer = nullptr;
+
         QSharedPointer<Notebook> m_notebook;
 
-        QHash<const Notebook *, QSharedPointer<QTreeWidgetStateCache<Node *>>> m_stateCache;
+        QHash<const Notebook *, CacheData> m_cache;
 
-        QScopedPointer<NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>> m_navigationWrapper;
+        QScopedPointer<NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>> m_masterNavigationWrapper;
 
-        int m_viewOrder = ViewOrder::OrderedByConfiguration;
+        QScopedPointer<NavigationModeWrapper<QListWidget, QListWidgetItem>> m_slaveNavigationWrapper;
+
+        ViewOrder m_viewOrder = ViewOrder::OrderedByConfiguration;
+
+        ExploreMode m_exploreMode = ExploreMode::Combined;
 
         bool m_externalFilesVisible = true;
 
