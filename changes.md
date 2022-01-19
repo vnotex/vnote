@@ -1,4 +1,15 @@
 # Changes
+## v3.12.0
+* NotebookExplorer: support separate node explorer
+* Theme: add user-provided VSCode-Dark theme
+* MarkdownEditor: use web to highlight code blocks
+* MarkdownViewWindow
+    * Add switch for code block line number
+    * Fix ParseToMarkdown `<style>` issue
+    * Add config for overridding MathJax script
+* SortDialog: fix sorting issue of date
+* FramelessMainWindow: fix StayOnTop issue
+
 ## v3.11.0
 * Task: support a simple task system (@tootal)
 * Theme: add user-provided Solarized-Dark and Solarized-Light themes
