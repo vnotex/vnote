@@ -8,6 +8,7 @@
 
 #include <vtextedit/vtextedit.h>
 #include <core/editorconfig.h>
+#include <core/coreconfig.h>
 
 #include "textviewwindowhelper.h"
 #include "toolbarhelper.h"
@@ -245,10 +246,17 @@ void TextViewWindow::handleFindAndReplaceWidgetClosed()
 
 void TextViewWindow::updateEditorFromConfig()
 {
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
     const auto &textEditorConfig = editorConfig.getTextEditorConfig();
+
     if (textEditorConfig.getZoomDelta() != 0) {
         m_editor->zoom(textEditorConfig.getZoomDelta());
+    }
+
+    {
+        vte::Key leaderKey(coreConfig.getShortcutLeaderKey());
+        m_editor->setLeaderKeyToSkip(leaderKey.m_key, leaderKey.m_modifiers);
     }
 }
 

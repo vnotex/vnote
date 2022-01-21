@@ -151,7 +151,9 @@ namespace vnotex
 
         void setupOutlineProvider();
 
-        void updateWebViewerConfig(const MarkdownEditorConfig &p_config);
+        void updateEditorFromConfig();
+
+        void updateWebViewerConfig();
 
         void setModeInternal(ViewWindowMode p_mode, bool p_syncBuffer);
 

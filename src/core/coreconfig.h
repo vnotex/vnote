@@ -108,6 +108,8 @@ namespace vnotex
         bool isPerNotebookHistoryEnabled() const;
         void setPerNotebookHistoryEnabled(bool p_enabled);
 
+        const QString &getShortcutLeaderKey() const;
+
     private:
         friend class MainConfig;
 
@@ -125,6 +127,9 @@ namespace vnotex
         QString m_locale;
 
         QString m_shortcuts[Shortcut::MaxShortcut];
+
+        // Leader key of shortcuts defined in m_shortctus.
+        QString m_shortcutLeaderKey;
 
         // Icon size of MainWindow tool bar.
         int m_toolBarIconSize = 18;

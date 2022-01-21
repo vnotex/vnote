@@ -43,6 +43,8 @@ void CoreConfig::init(const QJsonObject &p_app,
 
     loadShortcuts(appObj, userObj);
 
+    m_shortcutLeaderKey = READSTR(QStringLiteral("shortcut_leader_key"));
+
     m_toolBarIconSize = READINT(QStringLiteral("toolbar_icon_size"));
     if (m_toolBarIconSize <= 0) {
         m_toolBarIconSize = 18;
@@ -73,6 +75,7 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("theme")] = m_theme;
     obj[QStringLiteral("locale")] = m_locale;
     obj[QStringLiteral("shortcuts")] = saveShortcuts();
+    obj[QStringLiteral("shortcut_leader_key")] = m_shortcutLeaderKey;
     obj[QStringLiteral("toolbar_icon_size")] = m_toolBarIconSize;
     obj[QStringLiteral("docks_tabbar_icon_size")] = m_docksTabBarIconSize;
     obj[QStringLiteral("recover_last_session_on_start")] = m_recoverLastSessionOnStartEnabled;
@@ -215,4 +218,9 @@ bool CoreConfig::isPerNotebookHistoryEnabled() const
 void CoreConfig::setPerNotebookHistoryEnabled(bool p_enabled)
 {
     updateConfig(m_perNotebookHistoryEnabled, p_enabled, this);
+}
+
+const QString &CoreConfig::getShortcutLeaderKey() const
+{
+    return m_shortcutLeaderKey;
 }

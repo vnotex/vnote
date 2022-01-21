@@ -16,6 +16,7 @@
 
 #include <core/fileopenparameters.h>
 #include <core/editorconfig.h>
+#include <core/coreconfig.h>
 #include <core/htmltemplatehelper.h>
 #include <core/exception.h>
 #include <vtextedit/vtextedit.h>
@@ -205,9 +206,11 @@ void MarkdownViewWindow::handleEditorConfigChange()
             m_editor->setConfig(config);
 
             m_editor->updateFromConfig();
+
+            updateEditorFromConfig();
         }
 
-        updateWebViewerConfig(markdownEditorConfig);
+        updateWebViewerConfig();
     }
 }
 
@@ -353,6 +356,8 @@ void MarkdownViewWindow::setupTextEditor()
     m_editor->setPreviewHelper(m_previewHelper);
 
     m_editor->setImageHost(m_imageHost);
+
+    updateEditorFromConfig();
 
     // Connect viewer and editor.
     connect(adapter(), &MarkdownViewerAdapter::viewerReady,
@@ -958,13 +963,16 @@ void MarkdownViewWindow::scrollDown()
     }
 }
 
-void MarkdownViewWindow::updateWebViewerConfig(const MarkdownEditorConfig &p_config)
+void MarkdownViewWindow::updateWebViewerConfig()
 {
     if (!m_viewer) {
         return;
     }
 
-    m_viewer->setZoomFactor(p_config.getZoomFactorInReadMode());
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+    const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
+
+    m_viewer->setZoomFactor(markdownEditorConfig.getZoomFactorInReadMode());
 }
 
 void MarkdownViewWindow::zoom(bool p_zoomIn)
@@ -1437,4 +1445,14 @@ void MarkdownViewWindow::handleExternalCodeBlockHighlightRequest(int p_idx, quin
     }
 
     adapter()->highlightCodeBlock(p_idx, p_timeStamp, p_text);
+}
+
+void MarkdownViewWindow::updateEditorFromConfig()
+{
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+
+    {
+        vte::Key leaderKey(coreConfig.getShortcutLeaderKey());
+        m_editor->setLeaderKeyToSkip(leaderKey.m_key, leaderKey.m_modifiers);
+    }
 }

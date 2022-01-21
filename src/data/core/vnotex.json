@@ -61,6 +61,7 @@
             "MoveOneSplitRight" : "Ctrl+G, Shift+L",
             "OpenLastClosedFile" : "Ctrl+Shift+T"
         },
+        "shortcut_leader_key" : "Ctrl+G",
         "toolbar_icon_size" : 18,
         "docks_tabbar_icon_size" : 24,
         "note_management" : {
