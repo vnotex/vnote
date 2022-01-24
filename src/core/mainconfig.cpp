@@ -119,7 +119,4 @@ QString MainConfig::getVersion(const QJsonObject &p_jobj)
 void MainConfig::doVersionSpecificOverride()
 {
     // In a new version, we may want to change one value by force.
-    // For 3.12.0.
-    m_editorConfig->getTextEditorConfig().m_highlightWhitespace = false;
-    m_editorConfig->getMarkdownEditorConfig().m_imageAlignCenterEnabled = false;
 }

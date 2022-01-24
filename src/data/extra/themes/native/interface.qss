@@ -63,10 +63,6 @@ vnotex--NotebookSelector {
     icon-size: 20px;
 }
 
-vnotex--NotebookSelector QAbstractItemView::item {
-    padding: 5px, 2px, 5px, 2px;
-}
-
 /* QMainWindow */
 QMainWindow::separator {
     /* For vertical */

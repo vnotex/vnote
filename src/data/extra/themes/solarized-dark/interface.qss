@@ -109,15 +109,6 @@ QDockWidget::float-button {
     top: 0px; right: 18px; bottom: 0px;
 }
 
-/* NotebookSelector */
-vnotex--NotebookSelector {
-    icon-size: 20px;
-}
-
-vnotex--NotebookSelector QAbstractItemView::item {
-    padding: 5px, 2px, 5px, 2px;
-}
-
 QToolTip
 {
     border: none;
@@ -418,6 +409,11 @@ QComboBox QAbstractItemView::item {
 QComboBox QAbstractItemView::item:hover {
     color: @widgets#qcombobox#item#hover#fg;
     background-color: @widgets#qcombobox#item#hover#bg;
+}
+
+/* NotebookSelector */
+vnotex--NotebookSelector {
+    icon-size: 20px;
 }
 
 /* QLabel */
