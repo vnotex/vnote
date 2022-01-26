@@ -261,8 +261,7 @@ QToolBar *ToolBarHelper::setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_
                                     return;
                                 }
 
-                                emit VNoteX::getInst().openFileRequested(quickAccess.first(),
-                                                                         QSharedPointer<FileOpenParameters>::create());
+                                activateQuickAccess(quickAccess.first());
                             });
         WidgetUtils::addActionShortcut(quickAccessAct,
                                        coreConfig.getShortcut(CoreConfig::Shortcut::QuickAccess));
@@ -275,8 +274,7 @@ QToolBar *ToolBarHelper::setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_
                             });
         MainWindow::connect(btnMenu, &QMenu::triggered,
                             btnMenu, [](QAction *p_act) {
-                                emit VNoteX::getInst().openFileRequested(p_act->data().toString(),
-                                                                         QSharedPointer<FileOpenParameters>::create());
+                                activateQuickAccess(p_act->data().toString());
                             });
         tb->addWidget(toolBtn);
     }
@@ -782,4 +780,9 @@ void ToolBarHelper::setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar)
     quitAct->setMenuRole(QAction::QuitRole);
     WidgetUtils::addActionShortcut(quitAct,
                                    coreConfig.getShortcut(CoreConfig::Shortcut::Quit));
+}
+
+void ToolBarHelper::activateQuickAccess(const QString &p_file)
+{
+    emit VNoteX::getInst().openFileRequested(p_file, QSharedPointer<FileOpenParameters>::create());
 }
