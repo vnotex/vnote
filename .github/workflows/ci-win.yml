@@ -23,12 +23,12 @@ jobs:
         config:
           - {
             name: "Build On Win64",
-            arch: win64_msvc2017_64,
+            arch: win64_msvc2019_64,
             platform: x64
           }
           - {
             name: "Build On Win32",
-            arch: win32_msvc2017,
+            arch: win32_msvc2019,
             platform: x86
           }
 
@@ -55,7 +55,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          version: 5.12.10
+          version: 5.15.2
           target: desktop
           arch: ${{matrix.config.arch}}
           modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
@@ -76,7 +76,7 @@ jobs:
       - name: Configure and Build Project
         shell: cmd
         run: |
-          call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" ${{matrix.config.platform}}
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.config.platform}}
           qmake -r -spec win32-msvc CONFIG-=debug CONFIG+=release %GITHUB_WORKSPACE%\vnote.pro
           nmake
         working-directory: ${{runner.workspace}}/build

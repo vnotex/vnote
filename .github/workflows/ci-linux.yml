@@ -46,11 +46,11 @@ jobs:
         with:
           path: ../Qt
           key: ${{ runner.os }}-QtCache
-          
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          version: 5.12.10
+          version: 5.15.2
           target: desktop
           modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
           tools: tools_openssl_x64,1.1.1-4,qt.tools.openssl.gcc_64

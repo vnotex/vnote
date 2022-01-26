@@ -49,7 +49,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          version: 5.12.10
+          version: 5.15.2
           target: desktop
           modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
