@@ -17,6 +17,7 @@ SOURCES += \
     $$PWD/editorconfig.cpp \
     $$PWD/externalfile.cpp \
     $$PWD/file.cpp \
+    $$PWD/global.cpp \
     $$PWD/historyitem.cpp \
     $$PWD/historymgr.cpp \
     $$PWD/htmltemplatehelper.cpp \

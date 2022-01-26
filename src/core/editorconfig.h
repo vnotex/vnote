@@ -149,9 +149,6 @@ namespace vnotex
         QString autoSavePolicyToString(AutoSavePolicy p_policy) const;
         AutoSavePolicy stringToAutoSavePolicy(const QString &p_str) const;
 
-        QString lineEndingPolicyToString(LineEndingPolicy p_ending) const;
-        LineEndingPolicy stringToLineEndingPolicy(const QString &p_str) const;
-
         void loadImageHost(const QJsonObject &p_app, const QJsonObject &p_user);
 
         QJsonObject saveImageHost() const;

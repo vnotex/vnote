@@ -77,7 +77,9 @@
         "check_for_updates_on_start" : true,
         "//comment" : "Max count of the history items for each notebook and session config",
         "history_max_count" : 100,
-        "per_notebook_history" : false
+        "per_notebook_history" : false,
+        "//comment" : "Line ending policy for config files, platform/lf/crlf/cr",
+        "line_ending" : "lf"
     },
     "editor" : {
         "core": {

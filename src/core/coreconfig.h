@@ -7,6 +7,8 @@
 #include <QString>
 #include <QStringList>
 
+#include "global.h"
+
 namespace vnotex
 {
     class CoreConfig : public IConfig
@@ -110,6 +112,9 @@ namespace vnotex
 
         const QString &getShortcutLeaderKey() const;
 
+        LineEndingPolicy getLineEndingPolicy() const;
+        void setLineEndingPolicy(LineEndingPolicy p_ending);
+
     private:
         friend class MainConfig;
 
@@ -149,6 +154,8 @@ namespace vnotex
 
         // Whether store history in each notebook.
         bool m_perNotebookHistoryEnabled = false;
+
+        LineEndingPolicy m_lineEnding = LineEndingPolicy::LF;
 
         static QStringList s_availableLocales;
     };

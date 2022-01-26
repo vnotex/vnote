@@ -6,9 +6,13 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 
+#include <vtextedit/textutils.h>
+
 #include <utils/pathutils.h>
-#include "exception.h"
 #include <utils/fileutils.h>
+#include "exception.h"
+#include "coreconfig.h"
+#include "configmgr.h"
 
 using namespace vnotex;
 
@@ -66,7 +70,40 @@ void LocalNotebookBackend::writeFile(const QString &p_filePath, const QString &p
 
 void LocalNotebookBackend::writeFile(const QString &p_filePath, const QJsonObject &p_jobj)
 {
-    writeFile(p_filePath, QJsonDocument(p_jobj).toJson());
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+    auto data = QJsonDocument(p_jobj).toJson();
+    vte::LineEnding before = vte::LineEnding::LF;
+    QString text;
+    switch (coreConfig.getLineEndingPolicy()) {
+    case LineEndingPolicy::Platform:
+#if defined(Q_OS_WIN)
+        text = QString::fromUtf8(data);
+        vte::TextUtils::transformLineEnding(text, before, vte::LineEnding::CRLF);
+#endif
+        break;
+
+    case LineEndingPolicy::File:
+        // Not supported.
+        Q_FALLTHROUGH();
+    case LineEndingPolicy::LF:
+        break;
+
+    case LineEndingPolicy::CRLF:
+        text = QString::fromUtf8(data);
+        vte::TextUtils::transformLineEnding(text, before, vte::LineEnding::CRLF);
+        break;
+
+    case LineEndingPolicy::CR:
+        text = QString::fromUtf8(data);
+        vte::TextUtils::transformLineEnding(text, before, vte::LineEnding::CR);
+        break;
+    }
+
+    if (!text.isEmpty()) {
+        writeFile(p_filePath, text);
+    } else {
+        writeFile(p_filePath, data);
+    }
 }
 
 QString LocalNotebookBackend::readTextFile(const QString &p_filePath)

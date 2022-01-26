@@ -67,6 +67,12 @@ void CoreConfig::init(const QJsonObject &p_app,
     }
 
     m_perNotebookHistoryEnabled = READBOOL(QStringLiteral("per_notebook_history"));
+
+
+    {
+        auto lineEnding = READSTR(QStringLiteral("line_ending"));
+        m_lineEnding = stringToLineEndingPolicy(lineEnding);
+    }
 }
 
 QJsonObject CoreConfig::toJson() const
@@ -82,6 +88,7 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("check_for_updates_on_start")] = m_checkForUpdatesOnStartEnabled;
     obj[QStringLiteral("history_max_count")] = m_historyMaxCount;
     obj[QStringLiteral("per_notebook_history")] = m_perNotebookHistoryEnabled;
+    obj[QStringLiteral("line_ending")] = lineEndingPolicyToString(m_lineEnding);
     return obj;
 }
 
@@ -223,4 +230,14 @@ void CoreConfig::setPerNotebookHistoryEnabled(bool p_enabled)
 const QString &CoreConfig::getShortcutLeaderKey() const
 {
     return m_shortcutLeaderKey;
+}
+
+LineEndingPolicy CoreConfig::getLineEndingPolicy() const
+{
+    return m_lineEnding;
+}
+
+void CoreConfig::setLineEndingPolicy(LineEndingPolicy p_ending)
+{
+    updateConfig(m_lineEnding, p_ending, this);
 }

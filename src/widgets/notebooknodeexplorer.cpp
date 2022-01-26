@@ -2302,7 +2302,11 @@ void NotebookNodeExplorer::updateSlaveExplorer()
             return;
         }
 
-        masterNode = getCurrentMasterNode();
+        auto data = getItemNodeData(item);
+        if (data.isNode()) {
+            masterNode = data.getNode();
+            Q_ASSERT(masterNode->isContainer());
+        }
     } else {
         // Root node.
         masterNode = m_notebook ? m_notebook->getRootNode().data() : nullptr;

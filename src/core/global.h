@@ -140,6 +140,44 @@ namespace vnotex
         CR
     };
 
+    inline QString lineEndingPolicyToString(LineEndingPolicy p_ending)
+    {
+        switch (p_ending) {
+        case LineEndingPolicy::Platform:
+            return QStringLiteral("platform");
+
+        case LineEndingPolicy::File:
+            return QStringLiteral("file");
+
+        case LineEndingPolicy::LF:
+            return QStringLiteral("lf");
+
+        case LineEndingPolicy::CRLF:
+            return QStringLiteral("crlf");
+
+        case LineEndingPolicy::CR:
+            return QStringLiteral("cr");
+        }
+
+        return QStringLiteral("platform");
+    }
+
+    inline LineEndingPolicy stringToLineEndingPolicy(const QString &p_str)
+    {
+        auto ending = p_str.toLower();
+        if (ending == QStringLiteral("file")) {
+            return LineEndingPolicy::File;
+        } else if (ending == QStringLiteral("lf")) {
+            return LineEndingPolicy::LF;
+        } else if (ending == QStringLiteral("crlf")) {
+            return LineEndingPolicy::CRLF;
+        } else if (ending == QStringLiteral("cr")) {
+            return LineEndingPolicy::CR;
+        } else {
+            return LineEndingPolicy::Platform;
+        }
+    }
+
     enum Role
     {
         // Qt::UserRole = 0x0100

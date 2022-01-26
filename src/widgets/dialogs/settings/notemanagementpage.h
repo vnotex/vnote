@@ -4,6 +4,7 @@
 #include "settingspage.h"
 
 class QCheckBox;
+class QComboBox;
 
 namespace vnotex
 {
@@ -24,6 +25,8 @@ namespace vnotex
         void setupUI();
 
         QCheckBox *m_perNotebookHistoryCheckBox = nullptr;
+
+        QComboBox *m_lineEndingComboBox = nullptr;
     };
 }
 
