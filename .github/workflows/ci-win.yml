@@ -58,7 +58,7 @@ jobs:
           version: 5.15.2
           target: desktop
           arch: ${{matrix.config.arch}}
-          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+          modules: qtwebengine
           tools: tools_openssl_${{matrix.config.platform}},1.1.1-4,qt.tools.openssl.win_${{matrix.config.platform}}
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
 

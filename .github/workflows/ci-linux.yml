@@ -52,7 +52,7 @@ jobs:
         with:
           version: 5.15.2
           target: desktop
-          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+          modules: qtwebengine
           tools: tools_openssl_x64,1.1.1-4,qt.tools.openssl.gcc_64
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
 

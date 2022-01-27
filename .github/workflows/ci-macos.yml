@@ -51,7 +51,7 @@ jobs:
         with:
           version: 5.15.2
           target: desktop
-          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+          modules: qtwebengine
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
 
 
