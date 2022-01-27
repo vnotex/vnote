@@ -23,12 +23,12 @@ jobs:
         config:
           - {
             name: "Build On Win64",
-            arch: win64_msvc2017_64,
+            arch: win64_msvc2019_64,
             platform: x64
           }
           - {
             name: "Build On Win32",
-            arch: win32_msvc2017,
+            arch: win32_msvc2019,
             platform: x86
           }
 
@@ -50,15 +50,15 @@ jobs:
         uses: actions/cache@v1  # not v2!
         with:
           path: ../Qt
-          key: ${{ runner.os }}-${{matrix.config.arch}}-QtCache
+          key: ${{ runner.os }}-${{matrix.config.arch}}-QtCache-5.15-1
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          version: 5.12.10
+          version: 5.15.2
           target: desktop
           arch: ${{matrix.config.arch}}
-          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+          modules: qtwebengine
           tools: tools_openssl_${{matrix.config.platform}},1.1.1-4,qt.tools.openssl.win_${{matrix.config.platform}}
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
 
@@ -76,7 +76,7 @@ jobs:
       - name: Configure and Build Project
         shell: cmd
         run: |
-          call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" ${{matrix.config.platform}}
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.config.platform}}
           qmake -r -spec win32-msvc CONFIG-=debug CONFIG+=release %GITHUB_WORKSPACE%\vnote.pro
           nmake
         working-directory: ${{runner.workspace}}/build
@@ -85,7 +85,7 @@ jobs:
         shell: cmd
         run: |
           mkdir "%DISTRIB_PATH%"
-          call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" ${{matrix.config.platform}}
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.config.platform}}
           windeployqt.exe --dir "%DISTRIB_PATH%" .\src\release\vnote.exe
           copy .\src\release\vnote.exe "%DISTRIB_PATH%\vnote.exe"
           copy .\src\release\vnote_extra.rcc "%DISTRIB_PATH%\vnote_extra.rcc"
@@ -94,7 +94,7 @@ jobs:
           rem set qt_dir=%Qt5_Dir:/=\%
           rem for %%I in ("%qt_dir%\..\..") do set "qt_topdir=%%~fI"
           rem set openssl_dir=%qt_topdir%\Tools\OpenSSL\Win_${{matrix.config.platform}}\bin
-          set openssl_dir=openssl-utils.git\1.1.1g\Win_${{matrix.config.platform}}
+          set openssl_dir=openssl-utils.git\1.1.1j\Win_${{matrix.config.platform}}
           copy %openssl_dir%\lib*.dll "%DISTRIB_PATH%\"
           copy "%GITHUB_WORKSPACE%\README.md" "%DISTRIB_PATH%\README.md"
           copy "%GITHUB_WORKSPACE%\COPYING.LESSER" "%DISTRIB_PATH%\COPYING.LESSER"
