@@ -25,6 +25,7 @@
 #include <QLayout>
 #include <QPushButton>
 #include <QSplitter>
+#include <QFormLayout>
 
 #include <core/global.h>
 
@@ -459,4 +460,11 @@ bool WidgetUtils::distributeWidgetsOfSplitter(QSplitter *p_splitter)
     }
 
     return false;
+}
+
+void WidgetUtils::clearLayout(QFormLayout *p_layout)
+{
+    for (int i = p_layout->rowCount() - 1; i >= 0; --i) {
+        p_layout->removeRow(i);
+    }
 }

@@ -297,7 +297,7 @@ namespace vnotex
 
         QStringList getSelectedNodesPath(bool p_master) const;
 
-        void openSelectedNodesWithCommand(const QString &p_command, bool p_master);
+        void openSelectedNodesWithProgram(const QString &p_name, bool p_master);
 
         bool belongsToMasterExplorer(const Node *p_node) const;
 

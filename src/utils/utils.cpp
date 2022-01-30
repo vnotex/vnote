@@ -204,3 +204,12 @@ QColor Utils::toColor(const QString &p_color)
 
     return QColor(p_color);
 }
+
+QStringList Utils::toLower(const QStringList &p_list)
+{
+    QStringList lowerList;
+    for (const auto &ele : p_list) {
+        lowerList << ele.toLower();
+    }
+    return lowerList;
+}

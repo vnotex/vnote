@@ -11,13 +11,18 @@
 #include <buffer/nodebufferprovider.h>
 #include <buffer/filebufferprovider.h>
 #include <utils/widgetutils.h>
+#include <utils/processutils.h>
 #include "notebookmgr.h"
 #include "vnotex.h"
 #include "externalfile.h"
+#include "sessionconfig.h"
+#include "configmgr.h"
 
 #include "fileopenparameters.h"
 
 using namespace vnotex;
+
+QMap<QString, QString> BufferMgr::s_suffixToFileType;
 
 BufferMgr::BufferMgr(QObject *p_parent)
     : QObject(p_parent)
@@ -66,12 +71,27 @@ void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_p
         return;
     }
 
+    const auto nodePath = p_node->fetchAbsolutePath();
+
+    auto fileType = p_paras->m_fileType;
+    if (fileType.isEmpty()) {
+        // Check if we need to open it with external program by default according to the suffix.
+        fileType = findFileTypeByFile(nodePath);
+        if (openWithExternalProgram(nodePath, fileType)) {
+            return;
+        }
+    }
+
     auto buffer = findBuffer(p_node);
-    if (!buffer) {
-        auto nodePath = p_node->fetchAbsolutePath();
+    if (!buffer || !isSameTypeBuffer(buffer, fileType)) {
         auto nodeFile = p_node->getContentFile();
         Q_ASSERT(nodeFile);
-        auto fileType = nodeFile->getContentType().m_typeName;
+        if (fileType.isEmpty()) {
+            fileType = nodeFile->getContentType().m_typeName;
+        } else if (fileType != nodeFile->getContentType().m_typeName) {
+            nodeFile->setContentType(FileTypeHelper::getInst().getFileTypeByName(fileType).m_type);
+        }
+
         auto factory = m_bufferServer->getItem(fileType);
         if (!factory) {
             // No factory to open this file type.
@@ -93,6 +113,11 @@ void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_p
 void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenParameters> &p_paras)
 {
     if (p_filePath.isEmpty()) {
+        return;
+    }
+
+    // Check if it is requested to open with external program.
+    if (openWithExternalProgram(p_filePath, p_paras->m_fileType)) {
         return;
     }
 
@@ -123,11 +148,25 @@ void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenPar
         return;
     }
 
+    auto fileType = p_paras->m_fileType;
+    if (fileType.isEmpty()) {
+        // Check if we need to open it with external program by default according to the suffix.
+        fileType = findFileTypeByFile(p_filePath);
+        if (openWithExternalProgram(p_filePath, fileType)) {
+            return;
+        }
+    }
+
     auto buffer = findBuffer(p_filePath);
-    if (!buffer) {
+    if (!buffer || !isSameTypeBuffer(buffer, fileType)) {
         // Open it as external file.
         auto externalFile = QSharedPointer<ExternalFile>::create(p_filePath);
-        auto fileType = externalFile->getContentType().m_typeName;
+        if (fileType.isEmpty()) {
+            fileType = externalFile->getContentType().m_typeName;
+        } else if (fileType != externalFile->getContentType().m_typeName) {
+            externalFile->setContentType(FileTypeHelper::getInst().getFileTypeByName(fileType).m_type);
+        }
+
         auto factory = m_bufferServer->getItem(fileType);
         if (!factory) {
             // No factory to open this file type.
@@ -187,4 +226,65 @@ void BufferMgr::addBuffer(Buffer *p_buffer)
                 p_buffer->close();
                 p_buffer->deleteLater();
             });
+}
+
+bool BufferMgr::openWithExternalProgram(const QString &p_filePath, const QString &p_name) const
+{
+    if (p_name.isEmpty()) {
+        return false;
+    }
+
+    if (auto pro = ConfigMgr::getInst().getSessionConfig().findExternalProgram(p_name)) {
+        const auto command = pro->fetchCommand(p_filePath);
+        if (!command.isEmpty()) {
+            ProcessUtils::startDetached(command);
+        }
+        return true;
+    }
+
+    return false;
+}
+
+bool BufferMgr::isSameTypeBuffer(const Buffer *p_buffer, const QString &p_typeName) const
+{
+    if (p_typeName.isEmpty()) {
+        return true;
+    }
+
+    auto factory = m_bufferServer->getItem(p_typeName);
+    Q_ASSERT(factory);
+    if (factory) {
+        return factory->isBufferCreatedByFactory(p_buffer);
+    }
+
+    return true;
+}
+
+void BufferMgr::updateSuffixToFileType(const QVector<CoreConfig::FileTypeSuffix> &p_fileTypeSuffixes)
+{
+    s_suffixToFileType.clear();
+
+    for (const auto &fts : p_fileTypeSuffixes) {
+        for (const auto &suf : fts.m_suffixes) {
+            auto it = s_suffixToFileType.find(suf);
+            if (it != s_suffixToFileType.end()) {
+                qWarning() << "suffix conflicts for file types" << fts.m_name << it.value();
+                it.value() = fts.m_name;
+            } else {
+                s_suffixToFileType.insert(suf, fts.m_name);
+            }
+        }
+    }
+}
+
+QString BufferMgr::findFileTypeByFile(const QString &p_filePath)
+{
+    QFileInfo fi(p_filePath);
+    auto suffix = fi.suffix().toLower();
+    auto it = s_suffixToFileType.find(suffix);
+    if (it != s_suffixToFileType.end()) {
+        return it.value();
+    } else {
+        return QString();
+    }
 }

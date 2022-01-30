@@ -32,6 +32,7 @@ namespace vnotex
         bool isMarkdown() const;
     };
 
+    // Only handle built-in editors.
     class FileTypeHelper
     {
     public:
@@ -47,7 +48,9 @@ namespace vnotex
 
         bool checkFileType(const QString &p_filePath, int p_type) const;
 
-        static const FileTypeHelper &getInst();
+        void reload();
+
+        static FileTypeHelper &getInst();
 
     private:
         FileTypeHelper();

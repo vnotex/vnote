@@ -3,12 +3,25 @@
 #include <QMetaEnum>
 #include <QLocale>
 
+#include <utils/utils.h>
+
 using namespace vnotex;
 
 #define READSTR(key) readString(appObj, userObj, (key))
 #define READINT(key) readInt(appObj, userObj, (key))
 #define READBOOL(key) readBool(appObj, userObj, (key))
 #define READSTRLIST(key) readStringList(appObj, userObj, (key))
+
+CoreConfig::FileTypeSuffix::FileTypeSuffix(const QString &p_name, const QStringList &p_suffixes)
+    : m_name(p_name),
+      m_suffixes(p_suffixes)
+{
+}
+
+bool CoreConfig::FileTypeSuffix::operator==(const FileTypeSuffix &p_other) const
+{
+    return m_name == p_other.m_name && m_suffixes == p_other.m_suffixes;
+}
 
 QStringList CoreConfig::s_availableLocales;
 
@@ -73,6 +86,8 @@ void CoreConfig::init(const QJsonObject &p_app,
         auto lineEnding = READSTR(QStringLiteral("line_ending"));
         m_lineEnding = stringToLineEndingPolicy(lineEnding);
     }
+
+    loadFileTypeSuffixes(appObj, userObj);
 }
 
 QJsonObject CoreConfig::toJson() const
@@ -89,6 +104,7 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("history_max_count")] = m_historyMaxCount;
     obj[QStringLiteral("per_notebook_history")] = m_perNotebookHistoryEnabled;
     obj[QStringLiteral("line_ending")] = lineEndingPolicyToString(m_lineEnding);
+    obj[QStringLiteral("file_type_suffixes")] = saveFileTypeSuffixes();
     return obj;
 }
 
@@ -240,4 +256,68 @@ LineEndingPolicy CoreConfig::getLineEndingPolicy() const
 void CoreConfig::setLineEndingPolicy(LineEndingPolicy p_ending)
 {
     updateConfig(m_lineEnding, p_ending, this);
+}
+
+void CoreConfig::loadFileTypeSuffixes(const QJsonObject &p_app, const QJsonObject &p_user)
+{
+    m_fileTypeSuffixes.clear();
+
+    QJsonArray arr;
+    if (p_user.contains(QStringLiteral("file_type_suffixes"))) {
+        arr = p_user[QStringLiteral("file_type_suffixes")].toArray();
+    } else {
+        arr = p_app[QStringLiteral("file_type_suffixes")].toArray();
+    }
+
+    m_fileTypeSuffixes.reserve(arr.size());
+
+    for (int i = 0; i < arr.size(); ++i) {
+        const auto obj = arr[i].toObject();
+        const auto name = obj[QStringLiteral("name")].toString();
+        if (name.isEmpty()) {
+            continue;
+        }
+        const auto suffixes = readStringList(obj, QStringLiteral("suffixes"));
+        if (suffixes.isEmpty()) {
+            continue;
+        }
+        m_fileTypeSuffixes.push_back(FileTypeSuffix(name, Utils::toLower(suffixes)));
+    }
+}
+
+QJsonArray CoreConfig::saveFileTypeSuffixes() const
+{
+    QJsonArray arr;
+    for (const auto &fts : m_fileTypeSuffixes) {
+        QJsonObject obj;
+        obj[QStringLiteral("name")] = fts.m_name;
+        writeStringList(obj, QStringLiteral("suffixes"), fts.m_suffixes);
+        arr.push_back(obj);
+    }
+    return arr;
+}
+
+const QVector<CoreConfig::FileTypeSuffix> &CoreConfig::getFileTypeSuffixes() const
+{
+    return m_fileTypeSuffixes;
+}
+
+void CoreConfig::setFileTypeSuffixes(const QVector<CoreConfig::FileTypeSuffix> &p_fileTypeSuffixes)
+{
+    updateConfig(m_fileTypeSuffixes, p_fileTypeSuffixes, this);
+}
+
+const QStringList *CoreConfig::findFileTypeSuffix(const QString &p_name) const
+{
+    if (p_name.isEmpty()) {
+        return nullptr;
+    }
+
+    for (const auto &fts : m_fileTypeSuffixes) {
+        if (fts.m_name == p_name) {
+            return &fts.m_suffixes;
+        }
+    }
+
+    return nullptr;
 }

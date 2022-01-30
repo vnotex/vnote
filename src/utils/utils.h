@@ -63,6 +63,8 @@ namespace vnotex
         static QJsonValue parseAndReadJson(const QJsonObject &p_obj, const QString &p_exp);
 
         static QColor toColor(const QString &p_color);
+
+        static QStringList toLower(const QStringList &p_list);
     };
 } // ns vnotex
 

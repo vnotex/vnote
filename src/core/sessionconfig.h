@@ -66,6 +66,8 @@ namespace vnotex
 
             QJsonObject toJson() const;
 
+            QString fetchCommand(const QString &p_file) const;
+
             QString m_name;
 
             // %1: the file paths to open.
@@ -134,6 +136,7 @@ namespace vnotex
         void removeQuickAccessFile(const QString &p_file);
 
         const QVector<ExternalProgram> &getExternalPrograms() const;
+        const ExternalProgram *findExternalProgram(const QString &p_name) const;
 
         const QVector<HistoryItem> &getHistory() const;
         void addHistory(const HistoryItem &p_item);

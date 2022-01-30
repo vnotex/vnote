@@ -17,7 +17,6 @@
 #include "mainwindow.h"
 #include <utils/iconutils.h>
 #include <utils/docsutils.h>
-#include <utils/processutils.h>
 #include "treewidget.h"
 #include "listwidget.h"
 #include "dialogs/notepropertiesdialog.h"
@@ -38,6 +37,7 @@
 #include <core/coreconfig.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
+#include <buffer/filetypehelper.h>
 
 using namespace vnotex;
 
@@ -2106,15 +2106,32 @@ void NotebookNodeExplorer::addOpenWithMenu(QMenu *p_menu, bool p_master)
 {
     auto subMenu = p_menu->addMenu(tr("Open &With"));
 
+    const auto &types = FileTypeHelper::getInst().getAllFileTypes();
+
+    for (const auto &ft : types) {
+        if (ft.m_type == FileType::Others) {
+            continue;
+        }
+
+        QAction *act = subMenu->addAction(ft.m_displayName);
+        connect(act, &QAction::triggered,
+                this, [this, act, p_master]() {
+                    openSelectedNodesWithProgram(act->data().toString(), p_master);
+                });
+        act->setData(ft.m_typeName);
+    }
+
+    subMenu->addSeparator();
+
     {
         const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
         for (const auto &pro : sessionConfig.getExternalPrograms()) {
             QAction *act = subMenu->addAction(pro.m_name);
             connect(act, &QAction::triggered,
                     this, [this, act, p_master]() {
-                        openSelectedNodesWithCommand(act->data().toString(), p_master);
+                        openSelectedNodesWithProgram(act->data().toString(), p_master);
                     });
-            act->setData(pro.m_command);
+            act->setData(pro.m_name);
             WidgetUtils::addActionShortcutText(act, pro.m_shortcut);
         }
     }
@@ -2125,7 +2142,7 @@ void NotebookNodeExplorer::addOpenWithMenu(QMenu *p_menu, bool p_master)
         auto defaultAct = subMenu->addAction(tr("System Default Program"));
         connect(defaultAct, &QAction::triggered,
                 this, [this, defaultAct, p_master]() {
-                    openSelectedNodesWithCommand(QString(), p_master);
+                    openSelectedNodesWithProgram(QString(), p_master);
                 });
         const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
         WidgetUtils::addActionShortcutText(defaultAct, coreConfig.getShortcut(CoreConfig::OpenWithDefaultProgram));
@@ -2157,7 +2174,7 @@ void NotebookNodeExplorer::setupShortcuts()
                         if (!isCombinedExploreMode()) {
                             isMaster = m_masterExplorer->hasFocus();
                         }
-                        openSelectedNodesWithCommand(QString(), isMaster);
+                        openSelectedNodesWithProgram(QString(), isMaster);
                     });
         }
     }
@@ -2165,21 +2182,21 @@ void NotebookNodeExplorer::setupShortcuts()
     const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
     for (const auto &pro : sessionConfig.getExternalPrograms()) {
         auto shortcut = WidgetUtils::createShortcut(pro.m_shortcut, this);
-        const auto &command = pro.m_command;
+        const auto &name = pro.m_name;
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
-                    this, [this, command]() {
+                    this, [this, name]() {
                         bool isMaster = true;
                         if (!isCombinedExploreMode()) {
                             isMaster = m_masterExplorer->hasFocus();
                         }
-                        openSelectedNodesWithCommand(command, isMaster);
+                        openSelectedNodesWithProgram(name, isMaster);
                     });
         }
     }
 }
 
-void NotebookNodeExplorer::openSelectedNodesWithCommand(const QString &p_command, bool p_master)
+void NotebookNodeExplorer::openSelectedNodesWithProgram(const QString &p_name, bool p_master)
 {
     const bool closeBefore = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerCloseBeforeOpenWithEnabled();
     const auto files = getSelectedNodesPath(p_master);
@@ -2196,12 +2213,12 @@ void NotebookNodeExplorer::openSelectedNodesWithCommand(const QString &p_command
             }
         }
 
-        if (p_command.isEmpty()) {
+        if (p_name.isEmpty()) {
             WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(file));
         } else {
-            auto command = p_command;
-            command.replace(QStringLiteral("%1"), QString("\"%1\"").arg(file));
-            ProcessUtils::startDetached(command);
+            auto paras = QSharedPointer<FileOpenParameters>::create();
+            paras->m_fileType = p_name;
+            emit VNoteX::getInst().openFileRequested(file, paras);
         }
     }
 }

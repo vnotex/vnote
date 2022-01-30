@@ -5,6 +5,8 @@
 
 #include <utils/fileutils.h>
 #include "buffer.h"
+#include <core/configmgr.h>
+#include <core/coreconfig.h>
 
 using namespace vnotex;
 
@@ -20,24 +22,38 @@ bool FileType::isMarkdown() const
 
 FileTypeHelper::FileTypeHelper()
 {
-    setupBuiltInTypes();
+    reload();
+}
 
-    // TODO: read configuration file.
+void FileTypeHelper::reload()
+{
+    setupBuiltInTypes();
 
     setupSuffixTypeMap();
 }
 
 void FileTypeHelper::setupBuiltInTypes()
 {
+    m_fileTypes.clear();
+
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+
     {
         FileType type;
         type.m_type = FileType::Markdown;
-        type.m_displayName = Buffer::tr("Markdown");
         type.m_typeName = QStringLiteral("Markdown");
-        type.m_suffixes << QStringLiteral("md")
-                        << QStringLiteral("mkd")
-                        << QStringLiteral("rmd")
-                        << QStringLiteral("markdown");
+        type.m_displayName = Buffer::tr("Markdown");
+
+        auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+        if (suffixes && !suffixes->isEmpty()) {
+            type.m_suffixes = *suffixes;
+        } else {
+            type.m_suffixes << QStringLiteral("md")
+                            << QStringLiteral("mkd")
+                            << QStringLiteral("rmd")
+                            << QStringLiteral("markdown");
+        }
+
         m_fileTypes.push_back(type);
     }
 
@@ -46,7 +62,14 @@ void FileTypeHelper::setupBuiltInTypes()
         type.m_type = FileType::Text;
         type.m_typeName = QStringLiteral("Text");
         type.m_displayName = Buffer::tr("Text");
-        type.m_suffixes << QStringLiteral("txt") << QStringLiteral("text") << QStringLiteral("log");
+
+        auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+        if (suffixes && !suffixes->isEmpty()) {
+            type.m_suffixes = *suffixes;
+        } else {
+            type.m_suffixes << QStringLiteral("txt") << QStringLiteral("text") << QStringLiteral("log");
+        }
+
         m_fileTypes.push_back(type);
     }
 
@@ -88,10 +111,10 @@ const FileType &FileTypeHelper::getFileTypeBySuffix(const QString &p_suffix) con
     }
 }
 
-#define ADD(x, y) m_suffixTypeMap.insert((x), (y))
-
 void FileTypeHelper::setupSuffixTypeMap()
 {
+    m_suffixTypeMap.clear();
+
     for (int i = 0; i < m_fileTypes.size(); ++i) {
         for (const auto &suffix : m_fileTypes[i].m_suffixes) {
             if (m_suffixTypeMap.contains(suffix)) {
@@ -113,7 +136,7 @@ const FileType &FileTypeHelper::getFileType(int p_type) const
     return m_fileTypes[p_type];
 }
 
-const FileTypeHelper &FileTypeHelper::getInst()
+FileTypeHelper &FileTypeHelper::getInst()
 {
     static FileTypeHelper helper;
     return helper;

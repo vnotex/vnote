@@ -6,7 +6,7 @@
         "version" : "3.12.0"
     },
     "core" : {
-        "theme" : "moonlight",
+        "theme" : "pure",
         "locale" : "",
         "shortcuts" : {
             "FullScreen" : "F11",
@@ -61,6 +61,25 @@
             "MoveOneSplitRight" : "Ctrl+G, Shift+L",
             "OpenLastClosedFile" : "Ctrl+Shift+T"
         },
+        "file_type_suffixes" : [
+            {
+                "name" : "Markdown",
+                "suffixes" : [
+                    "md",
+                    "mkd",
+                    "rmd",
+                    "markdown"
+                ]
+            },
+            {
+                "name" : "Text",
+                "suffixes" : [
+                    "txt",
+                    "text",
+                    "log"
+                ]
+            }
+        ],
         "shortcut_leader_key" : "Ctrl+G",
         "toolbar_icon_size" : 18,
         "docks_tabbar_icon_size" : 24,

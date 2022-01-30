@@ -27,6 +27,7 @@
 #include "imagehostpage.h"
 #include "vipage.h"
 #include "notemanagementpage.h"
+#include "fileassociationpage.h"
 
 using namespace vnotex;
 
@@ -171,6 +172,12 @@ void SettingsDialog::setupPages()
         auto page = new MiscPage(this);
         addPage(page);
         */
+    }
+
+    // File Association.
+    {
+        auto page = new FileAssociationPage(this);
+        addPage(page);
     }
 
     setChangesUnsaved(false);

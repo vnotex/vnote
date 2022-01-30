@@ -18,6 +18,8 @@ namespace vnotex
 
         virtual Buffer *createBuffer(const BufferParameters &p_parameters,
                                      QObject *p_parent) = 0;
+
+        virtual bool isBufferCreatedByFactory(const Buffer *p_buffer) const = 0;
     };
 } // ns vnotex
 

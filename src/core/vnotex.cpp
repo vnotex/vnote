@@ -99,6 +99,8 @@ void VNoteX::initNotebookMgr()
 
 void VNoteX::initBufferMgr()
 {
+    BufferMgr::updateSuffixToFileType(ConfigMgr::getInst().getCoreConfig().getFileTypeSuffixes());
+
     Q_ASSERT(!m_bufferMgr);
     m_bufferMgr = new BufferMgr(this);
     m_bufferMgr->init();

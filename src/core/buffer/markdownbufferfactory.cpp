@@ -9,3 +9,8 @@ Buffer *MarkdownBufferFactory::createBuffer(const BufferParameters &p_parameters
 {
     return new MarkdownBuffer(p_parameters, p_parent);
 }
+
+bool MarkdownBufferFactory::isBufferCreatedByFactory(const Buffer *p_buffer) const
+{
+    return dynamic_cast<const MarkdownBuffer *>(p_buffer) != nullptr;
+}

@@ -50,6 +50,9 @@ namespace vnotex
         // Whether should save this file into session.
         bool m_sessionEnabled = true;
 
+        // Whether specify the built-in file type to open as or the external program to open with.
+        QString m_fileType;
+
         std::function<void()> m_hooks[Hook::MaxHook];
     };
 }

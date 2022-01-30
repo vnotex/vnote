@@ -59,7 +59,6 @@ namespace vnotex
 
         const FileType &getContentType() const;
 
-    protected:
         void setContentType(int p_type);
 
     private:

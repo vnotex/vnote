@@ -72,6 +72,19 @@ namespace vnotex
         };
         Q_ENUM(Shortcut)
 
+        struct FileTypeSuffix
+        {
+            FileTypeSuffix() = default;
+
+            FileTypeSuffix(const QString &p_name, const QStringList &p_suffixes);
+
+            bool operator==(const FileTypeSuffix &p_other) const;
+
+            QString m_name;
+
+            QStringList m_suffixes;
+        };
+
         CoreConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
 
         void init(const QJsonObject &p_app, const QJsonObject &p_user) Q_DECL_OVERRIDE;
@@ -115,6 +128,11 @@ namespace vnotex
         LineEndingPolicy getLineEndingPolicy() const;
         void setLineEndingPolicy(LineEndingPolicy p_ending);
 
+        const QVector<FileTypeSuffix> &getFileTypeSuffixes() const;
+        void setFileTypeSuffixes(const QVector<FileTypeSuffix> &p_fileTypeSuffixes);
+
+        const QStringList *findFileTypeSuffix(const QString &p_name) const;
+
     private:
         friend class MainConfig;
 
@@ -123,6 +141,10 @@ namespace vnotex
         void loadNoteManagement(const QJsonObject &p_app, const QJsonObject &p_user);
 
         QJsonObject saveShortcuts() const;
+
+        void loadFileTypeSuffixes(const QJsonObject &p_app, const QJsonObject &p_user);
+
+        QJsonArray saveFileTypeSuffixes() const;
 
         // Theme name.
         QString m_theme;
@@ -156,6 +178,8 @@ namespace vnotex
         bool m_perNotebookHistoryEnabled = false;
 
         LineEndingPolicy m_lineEnding = LineEndingPolicy::LF;
+
+        QVector<FileTypeSuffix> m_fileTypeSuffixes;
 
         static QStringList s_availableLocales;
     };

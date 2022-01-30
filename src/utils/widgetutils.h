@@ -22,6 +22,7 @@ class QLayout;
 class QPushButton;
 class QSplitter;
 class QScreen;
+class QFormLayout;
 
 namespace vnotex
 {
@@ -89,6 +90,8 @@ namespace vnotex
         static void setContentsMargins(QLayout *p_layout);
 
         static bool distributeWidgetsOfSplitter(QSplitter *p_splitter);
+
+        static void clearLayout(QFormLayout *p_layout);
 
     private:
         static void resizeToHideScrollBar(QScrollArea *p_scroll, bool p_vertical, bool p_horizontal);
