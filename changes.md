@@ -1,4 +1,13 @@
 # Changes
+## v3.12.888
+* Fix shortcuts in key sequence with input method (like `Ctrl+G, E`)
+* Add line ending settings for config files
+* FindAndReplace: fix zero-length search
+* QuickAccess: support folders
+* Upgrade to Qt 5.15.2
+* Support file associations
+* NewNoteDialog: remember default file type
+
 ## v3.12.0
 * NotebookExplorer: support separate node explorer
 * Theme: add user-provided VSCode-Dark theme
