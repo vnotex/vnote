@@ -44,6 +44,8 @@ void WidgetConfig::init(const QJsonObject &p_app,
     m_snippetPanelBuiltInSnippetsVisible = READBOOL(QStringLiteral("snippet_panel_builtin_snippets_visible"));
 
     m_tagExplorerTwoColumnsEnabled = READBOOL(QStringLiteral("tag_explorer_two_columns_enabled"));
+
+    m_newNoteDefaultFileType = READINT(QStringLiteral("new_note_default_file_type"));
 }
 
 QJsonObject WidgetConfig::toJson() const
@@ -65,6 +67,7 @@ QJsonObject WidgetConfig::toJson() const
     writeStringList(obj,
                     QStringLiteral("main_window_keep_docks_expanding_content_area"),
                     m_mainWindowKeepDocksExpandingContentArea);
+    obj[QStringLiteral("new_note_default_file_type")] = m_newNoteDefaultFileType;
     return obj;
 }
 
@@ -186,4 +189,14 @@ bool WidgetConfig::getTagExplorerTwoColumnsEnabled() const
 void WidgetConfig::setTagExplorerTwoColumnsEnabled(bool p_enabled)
 {
     updateConfig(m_tagExplorerTwoColumnsEnabled, p_enabled, this);
+}
+
+int WidgetConfig::getNewNoteDefaultFileType() const
+{
+    return m_newNoteDefaultFileType;
+}
+
+void WidgetConfig::setNewNoteDefaultFileType(int p_type)
+{
+    updateConfig(m_newNoteDefaultFileType, p_type, this);
 }

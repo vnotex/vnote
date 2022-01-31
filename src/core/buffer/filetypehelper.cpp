@@ -132,7 +132,9 @@ const QVector<FileType> &FileTypeHelper::getAllFileTypes() const
 
 const FileType &FileTypeHelper::getFileType(int p_type) const
 {
-    Q_ASSERT(p_type < m_fileTypes.size());
+    if (p_type >= m_fileTypes.size()) {
+        p_type = FileType::Others;
+    }
     return m_fileTypes[p_type];
 }
 

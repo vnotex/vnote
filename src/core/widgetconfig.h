@@ -54,6 +54,9 @@ namespace vnotex
         bool getTagExplorerTwoColumnsEnabled() const;
         void setTagExplorerTwoColumnsEnabled(bool p_enabled);
 
+        int getNewNoteDefaultFileType() const;
+        void setNewNoteDefaultFileType(int p_type);
+
     private:
         int m_outlineAutoExpandedLevel = 6;
 
@@ -80,6 +83,8 @@ namespace vnotex
 
         // Whether enable two columns for tag explorer.
         bool m_tagExplorerTwoColumnsEnabled = false;
+
+        int m_newNoteDefaultFileType = 0;
     };
 }
 

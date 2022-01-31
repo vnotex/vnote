@@ -16,7 +16,10 @@
 #include "nodeinfowidget.h"
 #include <utils/widgetutils.h>
 #include <core/templatemgr.h>
+#include <core/configmgr.h>
+#include <core/widgetconfig.h>
 #include <snippet/snippetmgr.h>
+#include <buffer/filetypehelper.h>
 
 using namespace vnotex;
 
@@ -105,6 +108,11 @@ void NewNoteDialog::acceptedButtonClicked()
 {
     s_lastTemplate = m_templateComboBox->currentData().toString();
 
+    {
+        auto fileType = FileTypeHelper::getInst().getFileTypeByName(m_infoWidget->getFileType()).m_type;
+        ConfigMgr::getInst().getWidgetConfig().setNewNoteDefaultFileType(static_cast<int>(fileType));
+    }
+
     if (validateInputs() && newNote()) {
         accept();
     }
@@ -143,10 +151,15 @@ const QSharedPointer<Node> &NewNoteDialog::getNewNode() const
 void NewNoteDialog::initDefaultValues(const Node *p_node)
 {
     {
+        int defaultType = ConfigMgr::getInst().getWidgetConfig().getNewNoteDefaultFileType();
+        const auto &fileType = FileTypeHelper::getInst().getFileType(defaultType);
+
+        m_infoWidget->setFileType(fileType.m_typeName);
+
         auto lineEdit = m_infoWidget->getNameLineEdit();
         auto defaultName = FileUtils::generateFileNameWithSequence(p_node->fetchAbsolutePath(),
                                                                    tr("note"),
-                                                                   QStringLiteral("md"));
+                                                                   fileType.preferredSuffix());
         lineEdit->setText(defaultName);
         WidgetUtils::selectBaseName(lineEdit);
     }

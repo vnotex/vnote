@@ -39,6 +39,9 @@ namespace vnotex
         // Allow upper level to add more widgets to the layout.
         QFormLayout *getMainLayout() const;
 
+        QString getFileType() const;
+        void setFileType(const QString &p_typeName);
+
     signals:
         void inputEdited();
 

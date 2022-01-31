@@ -197,3 +197,16 @@ QFormLayout *NodeInfoWidget::getMainLayout() const
 {
     return m_mainLayout;
 }
+
+QString NodeInfoWidget::getFileType() const
+{
+    return m_fileTypeComboBox->currentData().toString();
+}
+
+void NodeInfoWidget::setFileType(const QString &p_typeName)
+{
+    int idx = m_fileTypeComboBox->findData(p_typeName);
+    if (idx != -1) {
+        m_fileTypeComboBox->setCurrentIndex(idx);
+    }
+}
