@@ -5,6 +5,7 @@
 #include <QSharedPointer>
 #include <QScopedPointer>
 #include <QRegularExpression>
+#include <QThread>
 
 #include "searchdata.h"
 #include "searchtoken.h"
@@ -17,6 +18,7 @@ namespace vnotex
     struct SearchResultItem;
     class Node;
     class Notebook;
+    class AsyncWorkerWithFunctor;
 
     class Searcher : public QObject
     {
@@ -83,6 +85,9 @@ namespace vnotex
 
         void createSearchEngine();
 
+        // Will be called after m_firstPhaseWorker finished.
+        void doSecondPhaseSearch();
+
         QSharedPointer<SearchOption> m_option;
 
         SearchToken m_token;
@@ -92,6 +97,11 @@ namespace vnotex
         bool m_askedToStop = false;
 
         QScopedPointer<ISearchEngine> m_engine;
+
+        AsyncWorkerWithFunctor *m_firstPhaseWorker = nullptr;
+
+        // Pending second phase items.
+        QVector<SearchSecondPhaseItem> m_secondPhaseItems;
     };
 }
 

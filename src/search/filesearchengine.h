@@ -8,6 +8,8 @@
 #include <QAtomicInt>
 #include <QVector>
 
+#include <utils/asyncworker.h>
+
 #include "searchtoken.h"
 #include "searchdata.h"
 
@@ -15,7 +17,7 @@ namespace vnotex
 {
     struct SearchResultItem;
 
-    class FileSearchEngineWorker : public QThread
+    class FileSearchEngineWorker : public AsyncWorker
     {
         Q_OBJECT
         friend class FileSearchEngine;
@@ -27,9 +29,6 @@ namespace vnotex
         void setData(const QVector<SearchSecondPhaseItem> &p_items,
                      const QSharedPointer<SearchOption> &p_option,
                      const SearchToken &p_token);
-
-    public slots:
-        void stop();
 
     signals:
         void resultItemsReady(const QVector<QSharedPointer<SearchResultItem>> &p_items);
@@ -43,10 +42,6 @@ namespace vnotex
         void searchFile(const QString &p_filePath, const QString &p_displayPath);
 
         void processBatchResults();
-
-        bool isAskedToStop() const;
-
-        QAtomicInt m_askedToStop = 0;
 
         QVector<SearchSecondPhaseItem> m_items;
 

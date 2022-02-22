@@ -9,7 +9,7 @@
 using namespace vnotex;
 
 FileSearchEngineWorker::FileSearchEngineWorker(QObject *p_parent)
-    : QThread(p_parent)
+    : AsyncWorker(p_parent)
 {
 }
 
@@ -20,16 +20,6 @@ void FileSearchEngineWorker::setData(const QVector<SearchSecondPhaseItem> &p_ite
     m_items = p_items;
     m_option = p_option;
     m_token = p_token;
-}
-
-void FileSearchEngineWorker::stop()
-{
-    m_askedToStop.store(1);
-}
-
-bool FileSearchEngineWorker::isAskedToStop() const
-{
-    return m_askedToStop.load() == 1;
 }
 
 void FileSearchEngineWorker::run()

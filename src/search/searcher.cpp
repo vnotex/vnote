@@ -8,6 +8,7 @@
 #include <core/exception.h>
 #include <notebook/node.h>
 #include <notebook/notebook.h>
+#include <utils/asyncworker.h>
 
 #include "searchresultitem.h"
 #include "filesearchengine.h"
@@ -53,25 +54,31 @@ SearchState Searcher::search(const QSharedPointer<SearchOption> &p_option, const
 
     emit logRequested(tr("Searching %n buffer(s)", "", p_buffers.size()));
 
-    emit progressUpdated(0, p_buffers.size());
-    for (int i = 0; i < p_buffers.size(); ++i) {
-        if (!p_buffers[i]) {
-            continue;
+    m_firstPhaseWorker->doWork([this, p_buffers]() {
+        emit progressUpdated(0, p_buffers.size());
+        for (int i = 0; i < p_buffers.size(); ++i) {
+            if (!p_buffers[i]) {
+                continue;
+            }
+
+            if (isAskedToStop()) {
+                emit finished(SearchState::Stopped);
+                return;
+            }
+
+            auto file = p_buffers[i]->getFile();
+            if (!firstPhaseSearch(file.data())) {
+                emit finished(SearchState::Failed);
+                return;
+            }
+
+            emit progressUpdated(i + 1, p_buffers.size());
         }
 
-        if (isAskedToStop()) {
-            return SearchState::Stopped;
-        }
+        emit finished(SearchState::Finished);
+    });
 
-        auto file = p_buffers[i]->getFile();
-        if (!firstPhaseSearch(file.data())) {
-            return SearchState::Failed;
-        }
-
-        emit progressUpdated(i + 1, p_buffers.size());
-    }
-
-    return SearchState::Finished;
+    return SearchState::Busy;
 }
 
 SearchState Searcher::search(const QSharedPointer<SearchOption> &p_option, Node *p_folder)
@@ -88,29 +95,19 @@ SearchState Searcher::search(const QSharedPointer<SearchOption> &p_option, Node 
 
     emit logRequested(tr("Searching folder (%1)").arg(p_folder->getName()));
 
-    QVector<SearchSecondPhaseItem> secondPhaseItems;
-    if (!firstPhaseSearchFolder(p_folder, secondPhaseItems)) {
-        return SearchState::Failed;
-    }
-
-    if (isAskedToStop()) {
-        return SearchState::Stopped;
-    }
-
-    if (!secondPhaseItems.isEmpty()) {
-        // Do second phase search.
-        if (!secondPhaseSearch(secondPhaseItems)) {
-            return SearchState::Failed;
+    m_firstPhaseWorker->doWork([this, p_folder]() {
+        if (!firstPhaseSearchFolder(p_folder, m_secondPhaseItems)) {
+            m_secondPhaseItems.clear();
+            emit finished(SearchState::Failed);
+            return;
         }
 
-        if (isAskedToStop()) {
-            return SearchState::Stopped;
+        if (m_secondPhaseItems.isEmpty()) {
+            emit finished(SearchState::Finished);
         }
+    });
 
-        return SearchState::Busy;
-    }
-
-    return SearchState::Finished;
+    return SearchState::Busy;
 }
 
 SearchState Searcher::search(const QSharedPointer<SearchOption> &p_option, const QVector<Notebook *> &p_notebooks)
@@ -119,41 +116,32 @@ SearchState Searcher::search(const QSharedPointer<SearchOption> &p_option, const
         return SearchState::Failed;
     }
 
-    QVector<SearchSecondPhaseItem> secondPhaseItems;
+    m_firstPhaseWorker->doWork([this, p_notebooks]() {
+        emit progressUpdated(0, p_notebooks.size());
+        for (int i = 0; i < p_notebooks.size(); ++i) {
+            if (isAskedToStop()) {
+                m_secondPhaseItems.clear();
+                emit finished(SearchState::Stopped);
+                return;
+            }
 
-    emit progressUpdated(0, p_notebooks.size());
-    for (int i = 0; i < p_notebooks.size(); ++i) {
-        if (isAskedToStop()) {
-            return SearchState::Stopped;
+            emit logRequested(tr("Searching notebook (%1)").arg(p_notebooks[i]->getName()));
+
+            if (!firstPhaseSearch(p_notebooks[i], m_secondPhaseItems)) {
+                m_secondPhaseItems.clear();
+                emit finished(SearchState::Failed);
+                return;
+            }
+
+            emit progressUpdated(i + 1, p_notebooks.size());
         }
 
-        emit logRequested(tr("Searching notebook (%1)").arg(p_notebooks[i]->getName()));
-
-        if (!firstPhaseSearch(p_notebooks[i], secondPhaseItems)) {
-            return SearchState::Failed;
+        if (m_secondPhaseItems.isEmpty()) {
+            emit finished(SearchState::Finished);
         }
+    });
 
-        emit progressUpdated(i + 1, p_notebooks.size());
-    }
-
-    if (isAskedToStop()) {
-        return SearchState::Stopped;
-    }
-
-    if (!secondPhaseItems.isEmpty()) {
-        // Do second phase search.
-        if (!secondPhaseSearch(secondPhaseItems)) {
-            return SearchState::Failed;
-        }
-
-        if (isAskedToStop()) {
-            return SearchState::Stopped;
-        }
-
-        return SearchState::Busy;
-    }
-
-    return SearchState::Finished;
+    return SearchState::Busy;
 }
 
 bool Searcher::prepare(const QSharedPointer<SearchOption> &p_option)
@@ -172,12 +160,24 @@ bool Searcher::prepare(const QSharedPointer<SearchOption> &p_option)
         m_filePattern = QRegularExpression(QRegularExpression::wildcardToRegularExpression(m_option->m_filePattern), QRegularExpression::CaseInsensitiveOption);
     }
 
+    if (!m_firstPhaseWorker) {
+        m_firstPhaseWorker = new AsyncWorkerWithFunctor(this);
+        connect(m_firstPhaseWorker, &AsyncWorkerWithFunctor::finished,
+                this, &Searcher::doSecondPhaseSearch);
+    }
+
+    if (m_firstPhaseWorker->isRunning()) {
+        emit logRequested(tr("Failed to search due to worker is busy"));
+        return false;
+    }
+
+    m_secondPhaseItems.clear();
+
     return true;
 }
 
 bool Searcher::isAskedToStop() const
 {
-    QCoreApplication::sendPostedEvents();
     return m_askedToStop;
 }
 
@@ -357,7 +357,7 @@ bool Searcher::firstPhaseSearchFolder(Node *p_node, QVector<SearchSecondPhaseIte
         return false;
     }
 
-    if (testTarget(SearchTarget::SearchFolder)) {
+    if (testTarget(SearchTarget::SearchFolder) && !p_node->isRoot()) {
         const auto name = p_node->getName();
         const auto folderPath = p_node->fetchAbsolutePath();
         const auto relativePath = p_node->fetchPath();
@@ -530,4 +530,27 @@ bool Searcher::searchTag(const Node *p_node) const
     }
 
     return false;
+}
+
+void Searcher::doSecondPhaseSearch()
+{
+    if (m_secondPhaseItems.isEmpty()) {
+        return;
+    }
+
+    if (isAskedToStop()) {
+        emit finished(SearchState::Stopped);
+        return;
+    }
+
+    // Do second phase search.
+    if (!secondPhaseSearch(m_secondPhaseItems)) {
+        emit finished(SearchState::Failed);
+        return;
+    }
+
+    if (isAskedToStop()) {
+        emit finished(SearchState::Stopped);
+        return;
+    }
 }

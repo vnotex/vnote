@@ -1,6 +1,7 @@
 QT += widgets svg
 
 SOURCES += \
+    $$PWD/asyncworker.cpp \
     $$PWD/callbackpool.cpp \
     $$PWD/contentmediautils.cpp \
     $$PWD/docsutils.cpp \
@@ -18,6 +19,7 @@ SOURCES += \
     $$PWD/clipboardutils.cpp
 
 HEADERS += \
+    $$PWD/asyncworker.h \
     $$PWD/callbackpool.h \
     $$PWD/contentmediautils.h \
     $$PWD/docsutils.h \
