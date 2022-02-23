@@ -292,11 +292,14 @@ void MarkdownViewer::removeHtmlFromImageData(QClipboard *p_clipboard,
 
 void MarkdownViewer::hideUnusedActions(QMenu *p_menu)
 {
+    Q_UNUSED(p_menu);
+
     QList<QAction *> unusedActions;
 
-    // QWebEnginePage uses different actions of Back/Forward/Reload.
+    // QWebEnginePage uses different actions of Back/Forward/Reload before Qt 5.15.
     // [Woboq](https://code.woboq.org/qt5/qtwebengine/src/webenginewidgets/api/qwebenginepage.cpp.html#1652)
     // We tell these three actions by name.
+#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 0))
    const QStringList actionNames({QWebEnginePage::tr("&Back"),
                                   QWebEnginePage::tr("&Forward"),
                                   QWebEnginePage::tr("&Reload")});
@@ -307,6 +310,7 @@ void MarkdownViewer::hideUnusedActions(QMenu *p_menu)
             unusedActions.append(it);
         }
     }
+#endif
 
     QVector<QWebEnginePage::WebAction> pageActions = { QWebEnginePage::SavePage,
                                                        QWebEnginePage::ViewSource,
@@ -315,7 +319,12 @@ void MarkdownViewer::hideUnusedActions(QMenu *p_menu)
                                                        QWebEnginePage::OpenLinkInThisWindow,
                                                        QWebEnginePage::OpenLinkInNewBackgroundTab,
                                                        QWebEnginePage::OpenLinkInNewTab,
-                                                       QWebEnginePage::OpenLinkInNewWindow
+                                                       QWebEnginePage::OpenLinkInNewWindow,
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+                                                       QWebEnginePage::Forward,
+                                                       QWebEnginePage::Back,
+                                                       QWebEnginePage::Reload
+#endif
                                                      };
 
     for (auto pageAct : pageActions) {
