@@ -15,7 +15,7 @@
 using namespace vnotex;
 
 NotebookSelector::NotebookSelector(QWidget *p_parent)
-    : QComboBox(p_parent),
+    : ComboBox(p_parent),
       NavigationMode(NavigationMode::Type::StagedDoubleKeys, this)
 {
     auto itemDelegate = new QStyledItemDelegate(this);
@@ -169,7 +169,7 @@ bool NotebookSelector::eventFilter(QObject *p_obj, QEvent *p_event)
             return true;
         }
     }
-    return QComboBox::eventFilter(p_obj, p_event);
+    return ComboBox::eventFilter(p_obj, p_event);
 }
 
 void NotebookSelector::clearNavigation()
@@ -187,5 +187,5 @@ void NotebookSelector::mousePressEvent(QMouseEvent *p_event)
         return;
     }
 
-    QComboBox::mousePressEvent(p_event);
+    ComboBox::mousePressEvent(p_event);
 }

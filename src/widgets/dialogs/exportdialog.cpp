@@ -5,7 +5,6 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QComboBox>
 #include <QPushButton>
 #include <QCheckBox>
 #include <QLineEdit>
@@ -35,6 +34,7 @@
 #include <export/exporter.h>
 #include <widgets/locationinputwithbrowsebutton.h>
 #include <widgets/messageboxhelper.h>
+#include <widgets/combobox.h>
 
 using namespace vnotex;
 

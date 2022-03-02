@@ -1,17 +1,17 @@
 #ifndef NOTEBOOKSELECTOR_H
 #define NOTEBOOKSELECTOR_H
 
-#include <QComboBox>
 #include <QModelIndex>
 
 #include "global.h"
 #include "navigationmode.h"
+#include "combobox.h"
 
 namespace vnotex
 {
     class Notebook;
 
-    class NotebookSelector : public QComboBox, public NavigationMode
+    class NotebookSelector : public ComboBox, public NavigationMode
     {
         Q_OBJECT
     public:
