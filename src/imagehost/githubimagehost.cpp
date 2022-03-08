@@ -7,14 +7,13 @@
 #include <QJsonDocument>
 
 #include <utils/utils.h>
-#include <utils/webutils.h>
 
 using namespace vnotex;
 
 const QString GitHubImageHost::c_apiUrl = "https://api.github.com";
 
 GitHubImageHost::GitHubImageHost(QObject *p_parent)
-    : ImageHost(p_parent)
+    : RepoImageHost(p_parent)
 {
 }
 
@@ -45,23 +44,6 @@ void GitHubImageHost::setConfig(const QJsonObject &p_jobj)
     m_imageUrlPrefix = QString("https://raw.githubusercontent.com/%1/%2/").arg(m_userName, m_repoName);
 }
 
-bool GitHubImageHost::testConfig(const QJsonObject &p_jobj, QString &p_msg)
-{
-    p_msg.clear();
-
-    QString token, userName, repoName;
-    parseConfig(p_jobj, token, userName, repoName);
-
-    if (token.isEmpty() || userName.isEmpty() || repoName.isEmpty()) {
-        p_msg = tr("PersonalAccessToken/UserName/RepositoryName should not be empty.");
-        return false;
-    }
-
-    auto reply = getRepoInfo(token, userName, repoName);
-    p_msg = QString::fromUtf8(reply.m_data);
-    return reply.m_error == QNetworkReply::NoError;
-}
-
 QPair<QByteArray, QByteArray> GitHubImageHost::authorizationHeader(const QString &p_token)
 {
     auto token = "token " + p_token;
@@ -87,16 +69,6 @@ vte::NetworkReply GitHubImageHost::getRepoInfo(const QString &p_token, const QSt
     const auto urlStr = QString("%1/repos/%2/%3").arg(c_apiUrl, p_userName, p_repoName);
     auto reply = vte::NetworkAccess::request(QUrl(urlStr), rawHeader);
     return reply;
-}
-
-void GitHubImageHost::parseConfig(const QJsonObject &p_jobj,
-                                  QString &p_token,
-                                  QString &p_userName,
-                                  QString &p_repoName)
-{
-    p_token = p_jobj[QStringLiteral("personal_access_token")].toString();
-    p_userName = p_jobj[QStringLiteral("user_name")].toString();
-    p_repoName = p_jobj[QStringLiteral("repository_name")].toString();
 }
 
 QString GitHubImageHost::create(const QByteArray &p_data, const QString &p_path, QString &p_msg)
@@ -151,15 +123,6 @@ QString GitHubImageHost::create(const QByteArray &p_data, const QString &p_path,
 bool GitHubImageHost::ownsUrl(const QString &p_url) const
 {
     return p_url.startsWith(m_imageUrlPrefix);
-}
-
-QString GitHubImageHost::fetchResourcePath(const QString &p_prefix, const QString &p_url)
-{
-    auto resourcePath = p_url.mid(p_prefix.size());
-    // Skip the branch name.
-    resourcePath = resourcePath.mid(resourcePath.indexOf(QLatin1Char('/')) + 1);
-    resourcePath = WebUtils::purifyUrl(resourcePath);
-    return resourcePath;
 }
 
 bool GitHubImageHost::remove(const QString &p_url, QString &p_msg)

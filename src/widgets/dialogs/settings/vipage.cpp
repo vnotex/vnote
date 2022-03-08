@@ -25,9 +25,9 @@ void ViPage::setupUI()
     auto mainLayout = WidgetsFactory::createFormLayout(this);
 
     {
-        const QString label(tr("Control-C to copy"));
+        const QString label(tr("Ctrl+C/X to copy/cut"));
         m_controlCToCopyCheckBox = WidgetsFactory::createCheckBox(label, this);
-        m_controlCToCopyCheckBox->setToolTip(tr("Use Control-C to copy text"));
+        m_controlCToCopyCheckBox->setToolTip(tr("Use Ctrl+C/X to copy/cut text"));
         mainLayout->addRow(m_controlCToCopyCheckBox);
         addSearchItem(label, m_controlCToCopyCheckBox->toolTip(), m_controlCToCopyCheckBox);
         connect(m_controlCToCopyCheckBox, &QCheckBox::stateChanged,

@@ -6,14 +6,13 @@
 
 #include <utils/utils.h>
 #include <utils/pathutils.h>
-#include "githubimagehost.h"
 
 using namespace vnotex;
 
 const QString GiteeImageHost::c_apiUrl = "https://gitee.com/api/v5";
 
 GiteeImageHost::GiteeImageHost(QObject *p_parent)
-    : ImageHost(p_parent)
+    : RepoImageHost(p_parent)
 {
 }
 
@@ -44,23 +43,6 @@ void GiteeImageHost::setConfig(const QJsonObject &p_jobj)
     m_imageUrlPrefix = QString("https://gitee.com/%1/%2/raw/").arg(m_userName, m_repoName);
 }
 
-bool GiteeImageHost::testConfig(const QJsonObject &p_jobj, QString &p_msg)
-{
-    p_msg.clear();
-
-    QString token, userName, repoName;
-    parseConfig(p_jobj, token, userName, repoName);
-
-    if (token.isEmpty() || userName.isEmpty() || repoName.isEmpty()) {
-        p_msg = tr("PersonalAccessToken/UserName/RepositoryName should not be empty.");
-        return false;
-    }
-
-    auto reply = getRepoInfo(token, userName, repoName);
-    p_msg = QString::fromUtf8(reply.m_data);
-    return reply.m_error == QNetworkReply::NoError;
-}
-
 vte::NetworkAccess::RawHeaderPairs GiteeImageHost::prepareCommonHeaders()
 {
     vte::NetworkAccess::RawHeaderPairs rawHeader;
@@ -84,16 +66,6 @@ vte::NetworkReply GiteeImageHost::getRepoInfo(const QString &p_token, const QStr
     auto urlStr = QString("%1/repos/%2/%3").arg(c_apiUrl, p_userName, p_repoName);
     auto reply = vte::NetworkAccess::request(QUrl(addAccessToken(p_token, urlStr)), rawHeader);
     return reply;
-}
-
-void GiteeImageHost::parseConfig(const QJsonObject &p_jobj,
-                                  QString &p_token,
-                                  QString &p_userName,
-                                  QString &p_repoName)
-{
-    p_token = p_jobj[QStringLiteral("personal_access_token")].toString();
-    p_userName = p_jobj[QStringLiteral("user_name")].toString();
-    p_repoName = p_jobj[QStringLiteral("repository_name")].toString();
 }
 
 static bool isEmptyResponse(const QByteArray &p_data)
@@ -168,7 +140,7 @@ bool GiteeImageHost::remove(const QString &p_url, QString &p_msg)
         return false;
     }
 
-    const auto resourcePath = GitHubImageHost::fetchResourcePath(m_imageUrlPrefix, p_url);
+    const auto resourcePath = fetchResourcePath(m_imageUrlPrefix, p_url);
 
     auto rawHeader = prepareCommonHeaders();
     const auto urlStr = QString("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, resourcePath);
