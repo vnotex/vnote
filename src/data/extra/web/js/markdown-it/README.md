@@ -33,7 +33,7 @@ v1.4.0
 Vitaly Puzrin
 
 # [markdown-it-texmath](https://github.com/vnotex/markdown-it-texmath)
-83e3fd3cd0799593d825298466053793a5461e42
+b08ddd342f26ddcdc3afa2218f1b55410f44029b
 Stefan Goessner
 Le Tan
 

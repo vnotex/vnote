@@ -1990,6 +1990,8 @@ void NotebookNodeExplorer::setExploreMode(int p_mode)
         case ExploreMode::Combined:
             setFocusProxy(m_masterExplorer);
 
+            WidgetUtils::distributeWidgetsOfSplitter(m_splitter);
+
             Q_ASSERT(m_slaveExplorer);
             m_slaveExplorer->clear();
             m_slaveExplorer->hide();
@@ -2009,6 +2011,7 @@ void NotebookNodeExplorer::setExploreMode(int p_mode)
 
             m_slaveExplorer->show();
             m_splitter->setOrientation(m_exploreMode == ExploreMode::SeparateSingle ? Qt::Vertical : Qt::Horizontal);
+            WidgetUtils::distributeWidgetsOfSplitter(m_splitter);
 
             connect(m_masterExplorer, &QTreeWidget::currentItemChanged,
                     this, &NotebookNodeExplorer::updateSlaveExplorer);

@@ -1,17 +1,26 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Stefan Goessner - 2017-20. All rights reserved.
+ *  Copyright (c) Stefan Goessner - 2017-21. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-function texmath(md, options) {
-    texmath.escapeHtml = md.utils.escapeHtml;
-    const delimitersList = options && options.delimitersList || ['dollars'];
-    const katexOptions = options && options.katexOptions || { throwOnError: false };
-    katexOptions.macros = options && options.macros || katexOptions.macros;  // ensure backwards compatibility
+function escapeHTML(text) {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
-    /*
-    if (!texmath.katex) { // else ... depricated `use` method was used ...
+function texmath(md, options) {
+    const delimitersList = options && options.delimitersList || ['dollars'];
+    const outerSpace = options && options.outerSpace || false;         // inline rules, effectively `dollars` require surrounding spaces, i.e ` $\psi$ `, to be accepted as inline formulas. This is primarily a guard against misinterpreting single `$`'s in normal markdown text (relevant for inline math only. Default: `false`, for backwards compatibility).
+    const katexOptions = options && options.katexOptions || {};
+    katexOptions.throwOnError = katexOptions.throwOnError || false;
+    katexOptions.macros = katexOptions.macros || options && options.macros;  // ensure backwards compatibility
+
+    if (!texmath.katex) { // else ... deprecated `use` method was used ...
         if (options && typeof options.engine === 'object') {
             texmath.katex = options.engine;
         }
@@ -20,53 +29,56 @@ function texmath(md, options) {
         else  // artifical error object.
             texmath.katex = { renderToString() { return 'No math renderer found.' } };
     }
-    */
 
     delimitersList.forEach(function(delimiters) {
         if (delimiters in texmath.rules) {
             for (const rule of texmath.rules[delimiters].inline) {
+                if (!!outerSpace && 'outerSpace' in rule) rule.outerSpace = true;
                 md.inline.ruler.before('escape', rule.name, texmath.inline(rule));  // ! important
                 md.renderer.rules[rule.name] = (tokens, idx) => rule.tmpl.replace(/\$1/,texmath.render(tokens[idx].content,!!rule.displayMode,katexOptions));
             }
 
             for (const rule of texmath.rules[delimiters].block) {
                 md.block.ruler.before('fence', rule.name, texmath.block(rule));  // ! important for ```math delimiters
-                md.renderer.rules[rule.name] = (tokens, idx) => rule.tmpl.replace(/\$2/,tokens[idx].info)  // equation number .. ?
+                md.renderer.rules[rule.name] = (tokens, idx) => rule.tmpl.replace(/\$2/,escapeHTML(tokens[idx].info))  // equation number .. ?
                                                                          .replace(/\$1/,texmath.render(tokens[idx].content,true,katexOptions));
             }
         }
     });
 }
 
-texmath.applyRule = function(rule, pos, str) {
-    const pre = str.startsWith(rule.tag, rule.rex.lastIndex = pos) && (!rule.pre || rule.pre(str, pos));  // valid pre-condition ...
-    const match = pre && rule.rex.exec(str);
-    const res = !!match && pos < rule.rex.lastIndex && (!rule.post || rule.post(str, rule.rex.lastIndex - 1));
-    return { ret: res, match: match };
-}
-
 // texmath.inline = (rule) => dollar;  // just for debugging/testing ..
 
 texmath.inline = (rule) =>
     function(state, silent) {
-        const res = texmath.applyRule(rule, state.pos, state.src);
-        if (res.ret) {
+        const pos = state.pos;
+        const str = state.src;
+        const pre = str.startsWith(rule.tag, rule.rex.lastIndex = pos) && (!rule.pre || rule.pre(str, rule.outerSpace, pos));  // valid pre-condition ...
+        const match = pre && rule.rex.exec(str);
+        const res = !!match && pos < rule.rex.lastIndex && (!rule.post || rule.post(str, rule.outerSpace, rule.rex.lastIndex - 1));
+
+        if (res) {
             if (!silent) {
                 const token = state.push(rule.name, 'math', 0);
-                token.content = res.match[1];
+                token.content = match[1];
                 token.markup = rule.tag;
             }
             state.pos = rule.rex.lastIndex;
         }
-        return res.ret;
+        return res;
     }
 
 texmath.block = (rule) =>
     function block(state, begLine, endLine, silent) {
         const pos = state.bMarks[begLine] + state.tShift[begLine];
         const str = state.src;
-        const res = texmath.applyRule(rule, pos, str);
-        if (res.ret && !silent) {    // match and valid post-condition ...
+        const pre = str.startsWith(rule.tag, rule.rex.lastIndex = pos) && (!rule.pre || rule.pre(str, false, pos));  // valid pre-condition ....
+        const match = pre && rule.rex.exec(str);
+        const res = !!match
+                 && pos < rule.rex.lastIndex
+                 && (!rule.post || rule.post(str, false, rule.rex.lastIndex - 1));
+
+        if (res && !silent) {    // match and valid post-condition ...
             const endpos = rule.rex.lastIndex - 1;
             let curline;
 
@@ -82,24 +94,23 @@ texmath.block = (rule) =>
             state.parentType = 'math';
 
             if (parentType === 'blockquote') // remove all leading '>' inside multiline formula
-                res.match[1] = res.match[1].replace(/(\n*?^(?:\s*>)+)/gm,'');
+                match[1] = match[1].replace(/(\n*?^(?:\s*>)+)/gm,'');
             // begin token
             let token = state.push(rule.name, 'math', 1);  // 'math_block'
             token.block = true;
-            token.markup = rule.tag;
-            token.content = res.match[1];
-            token.info = res.match[res.match.length-1];    // eq.no
+            token.tag = rule.tag;
+            token.markup = '';
+            token.content = match[1];
+            token.info = match[match.length-1];    // eq.no
             token.map = [ begLine, curline ];
-            // end token
-            token = state.push(rule.name+'_end', 'math', -1);
-            token.block  = true;
-            token.markup = rule.tag;
+//            token.hidden = true;
+            // end token ... superfluous ...
 
             state.parentType = parentType;
             state.lineMax = lineMax;
             state.line = curline+1;
         }
-        return res.ret;
+        return res;
     }
 
 texmath.render = function(tex,displayMode,options) {
@@ -114,9 +125,9 @@ texmath.render = function(tex,displayMode,options) {
     }
     */
     if (displayMode) {
-        res = '$$$$' + texmath.escapeHtml(tex) + '$$$$';
+        res = '$$$$' + escapeHTML(tex) + '$$$$';
     } else {
-        res = '$$' + texmath.escapeHtml(tex) + '$$';
+        res = '$$' + escapeHTML(tex) + '$$';
     }
     return res;
 }
@@ -173,14 +184,19 @@ function dollar(state, silent) {
 texmath.inlineRuleNames = ['math_inline','math_inline_double'];
 texmath.blockRuleNames  = ['math_block','math_block_eqno'];
 
-texmath.$_pre = (str,beg) => {
+texmath.$_pre = (str,outerSpace,beg) => {
     const prv = beg > 0 ? str[beg-1].charCodeAt(0) : false;
-    return !prv || prv !== 0x5c                // no backslash,
-                && (prv < 0x30 || prv > 0x39); // no decimal digit .. before opening '$'
+    return outerSpace ? !prv || prv === 0x20           // space  (avoiding regex's for performance reasons)
+                      : !prv || prv !== 0x5c           // no backslash,
+                             && (prv < 0x30 || prv > 0x39); // no decimal digit .. before opening '$'
 }
-texmath.$_post = (str,end) => {
+texmath.$_post = (str,outerSpace,end) => {
     const nxt = str[end+1] && str[end+1].charCodeAt(0);
-    return !nxt || nxt < 0x30 || nxt > 0x39;   // no decimal digit .. after closing '$'
+    return outerSpace ? !nxt || nxt === 0x20           // space  (avoiding regex's for performance reasons)
+                             || nxt === 0x2e           // '.'
+                             || nxt === 0x2c           // ','
+                             || nxt === 0x3b           // ';'
+                      : !nxt || nxt < 0x30 || nxt > 0x39;   // no decimal digit .. after closing '$'
 }
 
 texmath.rules = {
@@ -194,14 +210,35 @@ texmath.rules = {
         ],
         block: [
             {   name: 'math_brackets_block_eqno',
-                rex: /\\\[(((?!\\\]|\\\[)[\s\S])+?)\\\]\s*?\(([^)$\r\n]+?)\)\s*$/gmy,
+                rex: /\\\[(((?!\\\]|\\\[)[\s\S])+?)\\\]\s*?\(([^)$\r\n]+?)\)/gmy,
                 tmpl: '<section class="eqno"><eqn class="tex-to-render">$1</eqn><span>($2)</span></section>',
                 tag: '\\['
             },
             {   name: 'math_brackets_block',
-                rex: /\\\[([\s\S]+?)\\\]\s*$/gmy,
+                rex: /\\\[([\s\S]+?)\\\]/gmy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '\\['
+            }
+        ]
+    },
+    doxygen: {
+        inline: [
+            {   name: 'math_doxygen_inline',
+                rex: /\\f\$(.+?)\\f\$/gy,
+                tmpl: '<eq>$1</eq>',
+                tag: '\\f$'
+            }
+        ],
+        block: [
+            {   name: 'math_doxygen_block_eqno',
+                rex: /\\f\[([^]+?)\\f\]\s*?\(([^)\s]+?)\)/gmy,
+                tmpl: '<section class="eqno"><eqn>$1</eqn><span>($2)</span></section>',
+                tag: '\\f['
+            },
+            {   name: 'math_doxygen_block',
+                rex: /\\f\[([^]+?)\\f\]/gmy,
+                tmpl: '<section><eqn>$1</eqn></section>',
+                tag: '\\f['
             }
         ]
     },
@@ -237,18 +274,19 @@ texmath.rules = {
                 rex: /\$((?:\S?)|(?:\S.*?\S))\$/gy,
                 tmpl: '<eq class="tex-to-render">$1</eq>',
                 tag: '$',
+				spaceEnclosed: false,
                 pre: texmath.$_pre,
                 post: texmath.$_post
             }
         ],
         block: [
             {   name: 'math_julia_block_eqno',
-                rex: /`{3}math\s+?([^`]+?)\s+?`{3}\s*?\(([^)$\r\n]+?)\)\s*$/gmy,
+                rex: /`{3}math\s+?([^`]+?)\s+?`{3}\s*?\(([^)$\r\n]+?)\)/gmy,
                 tmpl: '<section class="eqno"><eqn class="tex-to-render">$1</eqn><span>($2)</span></section>',
                 tag: '```math'
             },
             {   name: 'math_julia_block',
-                rex: /`{3}math\s+?([^`]+?)\s+?`{3}\s*$/gmy,
+                rex: /`{3}math\s+?([^`]+?)\s+?`{3}/gmy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '```math'
             }
@@ -264,12 +302,12 @@ texmath.rules = {
         ],
         block: [
             {   name: 'math_kramdown_block_eqno',
-                rex: /\${2}([^$]+?)\${2}\s*?\(([^)\s]+?)\)\s*$/gmy,
+                rex: /\${2}([^$]+?)\${2}\s*?\(([^)\s]+?)\)/gmy,
                 tmpl: '<section class="eqno"><eqn class="tex-to-render">$1</eqn><span>($2)</span></section>',
                 tag: '$$'
             },
             {   name: 'math_kramdown_block',
-                rex: /\${2}([^$]+?)\${2}\s*$/gmy,
+                rex: /\${2}([^$]+?)\${2}/gmy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '$$'
             }
@@ -278,7 +316,7 @@ texmath.rules = {
     dollars: {
         inline: [
             {   name: 'math_dollars_inline_double',
-                rex: /\${2}((?:\S)|(?:\S.*?\S))\${2}/gy,
+                rex: /\${2}([^$]*?[^\\])\${2}/gy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '$$',
                 displayMode: true,
@@ -286,9 +324,10 @@ texmath.rules = {
                 post: texmath.$_post
             },
             {   name: 'math_dollars_inline',
-                rex: /\$((?:\S)|(?:\S.*?\S))\$/gy,
+                rex: /\$((?:[^\s\\])|(?:\S.*?[^\s\\]))\$/gy,
                 tmpl: '<eq class="tex-to-render">$1</eq>',
                 tag: '$',
+                outerSpace: false,
                 pre: texmath.$_pre,
                 post: texmath.$_post
             }
@@ -311,7 +350,7 @@ texmath.rules = {
         block: [
             {
                 name: 'math_raw_block',
-                rex: /(\\begin\s*\{([^{}\s\r\n]+)\}(?:[^\\]|\\(?!end\s*\{\2\}))*\\end\s*\{\2\})\s*$/gmy,
+                rex: /(\\begin\s*\{([^{}\s\r\n]+)\}(?:[^\\]|\\(?!end\s*\{\2\}))*\\end\s*\{\2\})/gmy,
                 tmpl: '<section><eqn class="tex-to-render">$1</eqn></section>',
                 tag: '\\begin'
             }
