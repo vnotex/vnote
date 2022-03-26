@@ -1,5 +1,5 @@
 # Build VNote
-You need **Qt 5.12** and above to build VNote from source.
+You need **Qt 5.15** and above to build VNote from source.
 
 ## Get the Source Code of VNote
 VNote's source code is available on [GitHub](https://github.com/vnotex/vnote). You could download the ZIP archive of the code. Please be aware of that VNote depends on some submodules, so you should also download the source codes of these modules.
@@ -12,8 +12,8 @@ cd vnote.git
 git submodule update --init --recursive
 ```
 
-## Get Qt 5.12
-You could get the standalone Qt SDK from [Qt Downloads](http://info.qt.io/download-qt-for-application-development). For users in China, you could speed up the download via the [TUNA Mirrors](https://mirrors4.tuna.tsinghua.edu.cn/qt/official_releases/qt/5.12/).
+## Get Qt 5.15
+You could get the standalone Qt SDK from [Qt Downloads](http://info.qt.io/download-qt-for-application-development). For users in China, you could speed up the download via the [TUNA Mirrors](https://mirrors4.tuna.tsinghua.edu.cn/qt/official_releases/qt/5.15/).
 
 ## Windows
 On Windows, you need **Visual Studio 2015** or above to compile VNote (Mingw is **not** supported).
@@ -21,10 +21,10 @@ On Windows, you need **Visual Studio 2015** or above to compile VNote (Mingw is 
 Open **Qt Creator** and open `vnote.git\vnote.pro` as project. Now you are ready to tune and compile VNote!
 
 ## Linux
-In Ubuntu, you could get Qt 5.12 from PPA like this:
+In Ubuntu, you could get Qt 5.15 from PPA like this:
 
 ```sh
-sudo add-apt-repository ppa:beineri/opt-qt-5.12.10-bionic -y
+sudo add-apt-repository ppa:beineri/opt-qt-5.15.10-bionic -y
 sudo apt-get update -qq
 sudo apt-get -y install qt512base qt512webengine
 sudo apt-get -y install qt512webchannel qt512svg qt512location qt512tools qt512translations
@@ -56,7 +56,7 @@ If there is no such lib, you may need to install and configure Fcitx for Qt5 cor
 Then you need to copy the lib to Qt's plugin directory:
 
 ```
-<path_to_Qt_installation_directory>/5.12.10/gcc_64/plugins/platforminputcontexts/
+<path_to_Qt_installation_directory>/5.15.2/gcc_64/plugins/platforminputcontexts/
 ```
 
 ### OpenSSL
@@ -70,7 +70,7 @@ After the installation of openSSL, you could find two lib files:
 Copy these two files to Qt's library directory:
 
 ```
-<path_to_Qt_installation_directory>/5.12.10/gcc_64/lib/
+<path_to_Qt_installation_directory>/5.15.2/gcc_64/lib/
 ```
 
 In Qt's library directory, create symlinks for these two files:
@@ -84,16 +84,16 @@ ln -s libssl.so.1.0.0 libssl.so
 If you prefer command line on macOS, you could follow these steps.
 
 1. Install Xcode and Homebrew;
-2. Install Qt 5.12.10 via Homebrew:
+2. Install Qt 5.15.2 via Homebrew:
 
     ```
-    brew install qt@5.12.10
+    brew install qt@5.15.2
     ```
 
 3. In the project directory, create `build_macos.sh` like this:
 
     ```sh
-    QTDIR="/usr/local/opt/qt@5.12.10"
+    QTDIR="/usr/local/opt/qt@5.15.2"
     PATH="$QTDIR/bin:$PATH"
     LDFLAGS=-L$QTDIR/lib
     CPPFLAGS=-I$QTDIR/include
