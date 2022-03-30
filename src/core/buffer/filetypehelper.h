@@ -52,6 +52,8 @@ namespace vnotex
 
         static FileTypeHelper &getInst();
 
+        static QString s_systemDefaultProgram;
+
     private:
         FileTypeHelper();
 

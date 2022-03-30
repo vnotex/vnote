@@ -20,6 +20,8 @@ bool FileType::isMarkdown() const
     return m_type == Type::Markdown;
 }
 
+QString FileTypeHelper::s_systemDefaultProgram = QStringLiteral("System");
+
 FileTypeHelper::FileTypeHelper()
 {
     reload();

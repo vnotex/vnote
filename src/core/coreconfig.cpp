@@ -4,6 +4,7 @@
 #include <QLocale>
 
 #include <utils/utils.h>
+#include <buffer/filetypehelper.h>
 
 using namespace vnotex;
 
@@ -274,17 +275,25 @@ void CoreConfig::loadFileTypeSuffixes(const QJsonObject &p_app, const QJsonObjec
 
     m_fileTypeSuffixes.reserve(arr.size());
 
+    bool hasSystemDefined = false;
+
     for (int i = 0; i < arr.size(); ++i) {
         const auto obj = arr[i].toObject();
         const auto name = obj[QStringLiteral("name")].toString();
         if (name.isEmpty()) {
             continue;
         }
-        const auto suffixes = readStringList(obj, QStringLiteral("suffixes"));
-        if (suffixes.isEmpty()) {
-            continue;
+
+        if (!hasSystemDefined && name == FileTypeHelper::s_systemDefaultProgram) {
+            hasSystemDefined = true;
         }
+
+        const auto suffixes = readStringList(obj, QStringLiteral("suffixes"));
         m_fileTypeSuffixes.push_back(FileTypeSuffix(name, Utils::toLower(suffixes)));
+    }
+
+    if (!hasSystemDefined) {
+        m_fileTypeSuffixes.push_back(FileTypeSuffix(FileTypeHelper::s_systemDefaultProgram, QStringList()));
     }
 }
 

@@ -234,6 +234,13 @@ bool BufferMgr::openWithExternalProgram(const QString &p_filePath, const QString
         return false;
     }
 
+    if (p_name == FileTypeHelper::s_systemDefaultProgram) {
+        // Open it by system default program.
+        qInfo() << "file will be opened by default program" << p_filePath;
+        WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(p_filePath));
+        return true;
+    }
+
     if (auto pro = ConfigMgr::getInst().getSessionConfig().findExternalProgram(p_name)) {
         const auto command = pro->fetchCommand(p_filePath);
         if (!command.isEmpty()) {

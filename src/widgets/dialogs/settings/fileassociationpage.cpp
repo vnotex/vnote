@@ -63,9 +63,6 @@ bool FileAssociationPage::saveInternal()
             continue;
         }
         auto suffixes = lineEdit->text().split(c_suffixSeparator, Qt::SkipEmptyParts);
-        if (suffixes.isEmpty()) {
-            continue;
-        }
         fileTypeSuffixes.push_back(CoreConfig::FileTypeSuffix(name, Utils::toLower(suffixes)));
     }
 
@@ -114,17 +111,25 @@ void FileAssociationPage::loadExternalProgramsGroup(QGroupBox *p_box)
 
     const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
     const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+
+    QStringList names;
     for (const auto &pro : sessionConfig.getExternalPrograms()) {
+        names.push_back(pro.m_name);
+    }
+
+    names << FileTypeHelper::s_systemDefaultProgram;
+
+    for (const auto &name : names) {
         auto lineEdit = WidgetsFactory::createLineEdit(p_box);
-        layout->addRow(pro.m_name, lineEdit);
+        layout->addRow(name, lineEdit);
         connect(lineEdit, &QLineEdit::textChanged,
                 this, &FileAssociationPage::pageIsChanged);
 
         lineEdit->setPlaceholderText(tr("Suffixes separated by ;"));
-        lineEdit->setToolTip(tr("List of suffixes to open with external program"));
-        lineEdit->setProperty(c_nameProperty, pro.m_name);
+        lineEdit->setToolTip(tr("List of suffixes to open with external program (or system default program)"));
+        lineEdit->setProperty(c_nameProperty, name);
 
-        auto suffixes = coreConfig.findFileTypeSuffix(pro.m_name);
+        auto suffixes = coreConfig.findFileTypeSuffix(name);
         if (suffixes) {
             lineEdit->setText(suffixes->join(c_suffixSeparator));
         }
