@@ -45,3 +45,8 @@ bool SearchOption::operator==(const SearchOption &p_other) const
            && m_engine == p_other.m_engine
            && m_findOptions == p_other.m_findOptions;
 }
+
+bool SearchOption::strictEquals(const SearchOption &p_other) const
+{
+    return (*this == p_other) && m_keyword == p_other.m_keyword;
+}

@@ -40,8 +40,6 @@ namespace vnotex
 
         static void addTaskMenu(QMenu *p_menu, Task *p_task);
 
-        static QToolBar *setupTaskToolBar(MainWindow *p_win, QToolBar *p_toolBar);
-
         static QToolBar *setupSettingsToolBar(MainWindow *p_win, QToolBar *p_toolBar);
 
         static void updateQuickAccessMenu(QMenu *p_menu);

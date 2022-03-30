@@ -468,3 +468,23 @@ void WidgetUtils::clearLayout(QFormLayout *p_layout)
         p_layout->removeRow(i);
     }
 }
+
+// Different from QWidget::isAncestorOf(): unnecessary to be within the same window.
+bool WidgetUtils::isOrAncestorOf(const QWidget *p_widget, const QWidget *p_child)
+{
+    Q_ASSERT(p_widget);
+
+    if (!p_child) {
+        return false;
+    }
+
+    const QWidget *pa = p_child;
+    while (pa) {
+        if (pa == p_widget) {
+            return true;
+        }
+        pa = pa->parentWidget();
+    }
+
+    return false;
+}

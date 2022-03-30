@@ -68,6 +68,7 @@ namespace vnotex
             MoveOneSplitUp,
             MoveOneSplitRight,
             OpenLastClosedFile,
+            UnitedEntry,
             MaxShortcut
         };
         Q_ENUM(Shortcut)
@@ -133,6 +134,9 @@ namespace vnotex
 
         const QStringList *findFileTypeSuffix(const QString &p_name) const;
 
+        const QJsonArray &getUnitedEntryAlias() const;
+        void setUnitedEntryAlias(const QJsonArray &p_alias);
+
     private:
         friend class MainConfig;
 
@@ -145,6 +149,10 @@ namespace vnotex
         void loadFileTypeSuffixes(const QJsonObject &p_app, const QJsonObject &p_user);
 
         QJsonArray saveFileTypeSuffixes() const;
+
+        void loadUnitedEntry(const QJsonObject &p_app, const QJsonObject &p_user);
+
+        QJsonObject saveUnitedEntry() const;
 
         // Theme name.
         QString m_theme;
@@ -180,6 +188,8 @@ namespace vnotex
         LineEndingPolicy m_lineEnding = LineEndingPolicy::LF;
 
         QVector<FileTypeSuffix> m_fileTypeSuffixes;
+
+        QJsonArray m_unitedEntryAlias;
 
         static QStringList s_availableLocales;
     };

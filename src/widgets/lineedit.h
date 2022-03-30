@@ -18,6 +18,8 @@ namespace vnotex
 
         void setInputMethodEnabled(bool p_enabled);
 
+        QRect cursorRect() const;
+
         static void selectBaseName(QLineEdit *p_lineEdit);
 
     protected:

@@ -62,6 +62,8 @@ include($$PWD/core/core.pri)
 
 include($$PWD/widgets/widgets.pri)
 
+include($$PWD/unitedentry/unitedentry.pri)
+
 RESOURCES += \
     $$PWD/data/core/core.qrc
 

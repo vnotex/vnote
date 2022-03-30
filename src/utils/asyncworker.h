@@ -2,6 +2,7 @@
 #define ASYNCWORKER_H
 
 #include <QThread>
+
 #include <QAtomicInt>
 
 namespace vnotex

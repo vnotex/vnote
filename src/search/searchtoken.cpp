@@ -8,8 +8,6 @@
 
 using namespace vnotex;
 
-QScopedPointer<QCommandLineParser> SearchToken::s_parser;
-
 void SearchToken::clear()
 {
     m_type = Type::PlainText;
@@ -157,31 +155,40 @@ bool SearchToken::isEmpty() const
     return constraintSize() == 0;
 }
 
-void SearchToken::createCommandLineParser()
+QCommandLineParser *SearchToken::getCommandLineParser()
 {
-    if (s_parser) {
-        return;
+    static QScopedPointer<QCommandLineParser> parser;
+
+    if (parser) {
+        return parser.data();
     }
 
-    s_parser.reset(new QCommandLineParser());
-    s_parser->setApplicationDescription(SearchPanel::tr("Full-text search."));
+    parser.reset(new QCommandLineParser());
+    parser->setApplicationDescription(SearchPanel::tr("Full-text search."));
 
+    parser->addPositionalArgument("keywords", SearchPanel::tr("Keywords to search for."));
+
+    addSearchOptionsToCommand(parser.data());
+
+    return parser.data();
+}
+
+void SearchToken::addSearchOptionsToCommand(QCommandLineParser *p_parser)
+{
     QCommandLineOption caseSensitiveOpt(QStringList() << "c" << "case-sensitive", SearchPanel::tr("Search in case sensitive."));
-    s_parser->addOption(caseSensitiveOpt);
+    p_parser->addOption(caseSensitiveOpt);
 
     QCommandLineOption regularExpressionOpt(QStringList() << "r" << "regular-expression", SearchPanel::tr("Search by regular expression."));
-    s_parser->addOption(regularExpressionOpt);
+    p_parser->addOption(regularExpressionOpt);
 
     QCommandLineOption wholeWordOnlyOpt(QStringList() << "w" << "whole-word-only", SearchPanel::tr("Search whole word only."));
-    s_parser->addOption(wholeWordOnlyOpt);
+    p_parser->addOption(wholeWordOnlyOpt);
 
     QCommandLineOption fuzzySearchOpt(QStringList() << "f" << "fuzzy-search", SearchPanel::tr("Do a fuzzy search (not applicable to content search)."));
-    s_parser->addOption(fuzzySearchOpt);
+    p_parser->addOption(fuzzySearchOpt);
 
     QCommandLineOption orOpt(QStringList() << "o" << "or", SearchPanel::tr("Do an OR combination of keywords."));
-    s_parser->addOption(orOpt);
-
-    s_parser->addPositionalArgument("keywords", SearchPanel::tr("Keywords to search."));
+    p_parser->addOption(orOpt);
 }
 
 bool SearchToken::compile(const QString &p_keyword, FindOptions p_options, SearchToken &p_token)
@@ -193,7 +200,7 @@ bool SearchToken::compile(const QString &p_keyword, FindOptions p_options, Searc
         return false;
     }
 
-    createCommandLineParser();
+    auto parser = getCommandLineParser();
 
     auto caseSensitivity = p_options & FindOption::CaseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive;
     bool isRegularExpression = p_options & FindOption::RegularExpression;
@@ -203,25 +210,25 @@ bool SearchToken::compile(const QString &p_keyword, FindOptions p_options, Searc
     auto args = ProcessUtils::parseCombinedArgString(p_keyword);
     // The parser needs the first arg to be the application name.
     args.prepend("vnotex");
-    if (!s_parser->parse(args))
+    if (!parser->parse(args))
     {
         return false;
     }
 
-    if (s_parser->isSet("c")) {
+    if (parser->isSet("c")) {
         caseSensitivity = Qt::CaseSensitive;
     }
-    if (s_parser->isSet("r")) {
+    if (parser->isSet("r")) {
         isRegularExpression = true;
     }
-    if (s_parser->isSet("w")) {
+    if (parser->isSet("w")) {
         isWholeWordOnly = true;
     }
-    if (s_parser->isSet("f")) {
+    if (parser->isSet("f")) {
         isFuzzySearch = true;
     }
 
-    args = s_parser->positionalArguments();
+    args = parser->positionalArguments();
     if (args.isEmpty()) {
         return false;
     }
@@ -232,7 +239,7 @@ bool SearchToken::compile(const QString &p_keyword, FindOptions p_options, Searc
     } else {
         p_token.m_type = Type::PlainText;
     }
-    p_token.m_operator = s_parser->isSet("o") ? Operator::Or : Operator::And;
+    p_token.m_operator = parser->isSet("o") ? Operator::Or : Operator::And;
 
     auto patternOptions = caseSensitivity == Qt::CaseInsensitive ? QRegularExpression::CaseInsensitiveOption
                                                                  : QRegularExpression::NoPatternOption;
@@ -266,8 +273,8 @@ bool SearchToken::compile(const QString &p_keyword, FindOptions p_options, Searc
 
 QString SearchToken::getHelpText()
 {
-    createCommandLineParser();
-    auto text = s_parser->helpText();
+    auto parser = getCommandLineParser();
+    auto text = parser->helpText();
     // Skip the first line containing the application name.
     return text.mid(text.indexOf('\n') + 1);
 }

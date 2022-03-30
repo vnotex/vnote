@@ -93,6 +93,8 @@ namespace vnotex
 
         static void clearLayout(QFormLayout *p_layout);
 
+        static bool isOrAncestorOf(const QWidget *p_widget, const QWidget *p_child);
+
     private:
         static void resizeToHideScrollBar(QScrollArea *p_scroll, bool p_vertical, bool p_horizontal);
     };

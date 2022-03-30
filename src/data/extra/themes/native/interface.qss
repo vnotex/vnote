@@ -127,3 +127,7 @@ vnotex--MainWindow QLabel#MainWindowTipsLabel {
 vnotex--ViewSplit QTabBar[ViewSplitFlash="true"]::tab:selected {
     background-color: @widgets#viewsplit#flash#bg;
 }
+
+vnotex--EntryPopup {
+    border: 1px solid @widgets#unitedentry#popup#border;
+}

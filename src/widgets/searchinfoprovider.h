@@ -1,13 +1,16 @@
 #ifndef SEARCHINFOPROVIDER_H
 #define SEARCHINFOPROVIDER_H
 
-#include "searchpanel.h"
+#include <search/isearchinfoprovider.h>
+
+#include <QSharedPointer>
 
 namespace vnotex
 {
     class ViewArea;
     class NotebookExplorer;
     class NotebookMgr;
+    class MainWindow;
 
     class SearchInfoProvider : public ISearchInfoProvider
     {
@@ -23,6 +26,8 @@ namespace vnotex
         Notebook *getCurrentNotebook() const Q_DECL_OVERRIDE;
 
         QVector<Notebook *> getNotebooks() const Q_DECL_OVERRIDE;
+
+        static QSharedPointer<SearchInfoProvider> create(const MainWindow *p_mainWindow);
 
     private:
         const ViewArea *m_viewArea = nullptr;

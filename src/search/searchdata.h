@@ -87,6 +87,8 @@ namespace vnotex
 
         bool operator==(const SearchOption &p_other) const;
 
+        bool strictEquals(const SearchOption &p_other) const;
+
         QString m_keyword;
 
         QString m_filePattern;

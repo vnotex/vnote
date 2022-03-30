@@ -88,6 +88,8 @@ void CoreConfig::init(const QJsonObject &p_app,
     }
 
     loadFileTypeSuffixes(appObj, userObj);
+
+    loadUnitedEntry(appObj, userObj);
 }
 
 QJsonObject CoreConfig::toJson() const
@@ -105,6 +107,7 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("per_notebook_history")] = m_perNotebookHistoryEnabled;
     obj[QStringLiteral("line_ending")] = lineEndingPolicyToString(m_lineEnding);
     obj[QStringLiteral("file_type_suffixes")] = saveFileTypeSuffixes();
+    obj[QStringLiteral("united_entry")] = saveUnitedEntry();
     return obj;
 }
 
@@ -297,6 +300,25 @@ QJsonArray CoreConfig::saveFileTypeSuffixes() const
     return arr;
 }
 
+void CoreConfig::loadUnitedEntry(const QJsonObject &p_app, const QJsonObject &p_user)
+{
+    QJsonObject unitedObj;
+    if (p_user.contains(QStringLiteral("united_entry"))) {
+        unitedObj = p_user[QStringLiteral("united_entry")].toObject();
+    } else {
+        unitedObj = p_app[QStringLiteral("united_entry")].toObject();
+    }
+
+    m_unitedEntryAlias = unitedObj[QStringLiteral("alias")].toArray();
+}
+
+QJsonObject CoreConfig::saveUnitedEntry() const
+{
+    QJsonObject unitedObj;
+    unitedObj[QStringLiteral("alias")] = m_unitedEntryAlias;
+    return unitedObj;
+}
+
 const QVector<CoreConfig::FileTypeSuffix> &CoreConfig::getFileTypeSuffixes() const
 {
     return m_fileTypeSuffixes;
@@ -320,4 +342,14 @@ const QStringList *CoreConfig::findFileTypeSuffix(const QString &p_name) const
     }
 
     return nullptr;
+}
+
+const QJsonArray &CoreConfig::getUnitedEntryAlias() const
+{
+    return m_unitedEntryAlias;
+}
+
+void CoreConfig::setUnitedEntryAlias(const QJsonArray &p_alias)
+{
+    updateConfig(m_unitedEntryAlias, p_alias, this);
 }

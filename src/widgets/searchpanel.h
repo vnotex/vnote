@@ -3,7 +3,6 @@
 
 #include <QFrame>
 #include <QSharedPointer>
-#include <QList>
 
 #include <search/searchdata.h>
 #include <search/searcher.h>
@@ -21,28 +20,10 @@ class QVBoxLayout;
 namespace vnotex
 {
     class TitleBar;
-    class Buffer;
-    class Node;
-    class Notebook;
     class LocationList;
     struct Location;
     class SearchToken;
-
-    class ISearchInfoProvider
-    {
-    public:
-        ISearchInfoProvider() = default;
-
-        virtual ~ISearchInfoProvider() = default;
-
-        virtual QList<Buffer *> getBuffers() const = 0;
-
-        virtual Node *getCurrentFolder() const = 0;
-
-        virtual Notebook *getCurrentNotebook() const = 0;
-
-        virtual QVector<Notebook *> getNotebooks() const = 0;
-    };
+    class ISearchInfoProvider;
 
     class SearchPanel : public QFrame
     {
@@ -84,10 +65,6 @@ namespace vnotex
         void updateUIOnSearch();
 
         void clearLog();
-
-        SearchState search(const QSharedPointer<SearchOption> &p_option);
-
-        bool isSearchOptionValid(const SearchOption &p_option);
 
         Searcher *getSearcher();
 

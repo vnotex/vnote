@@ -9,6 +9,7 @@
         <file>icons/new_notebook.svg</file>
         <file>icons/notebook_menu.svg</file>
         <file>icons/task_menu.svg</file>
+        <file>icons/united_entry.svg</file>
         <file>icons/advanced_settings.svg</file>
         <file>icons/new_notebook_from_folder.svg</file>
         <file>icons/discard_editor.svg</file>
@@ -36,6 +37,7 @@
         <file>icons/notebook_default.svg</file>
         <file>icons/file_node.svg</file>
         <file>icons/folder_node.svg</file>
+        <file>icons/other_item.svg</file>
         <file>icons/manage_notebooks.svg</file>
         <file>icons/up_level.svg</file>
         <file>icons/properties.svg</file>

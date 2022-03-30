@@ -140,6 +140,7 @@ void LocationList::addLocation(const ComplexLocation &p_location)
     item->setText(Columns::PathColumn, p_location.m_displayPath);
     item->setIcon(Columns::PathColumn, getItemIcon(p_location.m_type));
     item->setData(Columns::PathColumn, Qt::UserRole, p_location.m_path);
+    item->setToolTip(Columns::PathColumn, p_location.m_path);
 
     if (p_location.m_lines.size() == 1) {
         setItemLocationLineAndText(item, p_location.m_lines[0]);

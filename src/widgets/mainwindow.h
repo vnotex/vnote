@@ -53,6 +53,8 @@ namespace vnotex
 
         ViewArea *getViewArea() const;
 
+        NotebookExplorer *getNotebookExplorer() const;
+
         void setContentAreaExpanded(bool p_expanded);
         // Should be called after MainWindow is shown.
         bool isContentAreaExpanded() const;

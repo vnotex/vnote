@@ -648,6 +648,17 @@
                 "fg" : "@base#master#fg",
                 "bg" : "@base#master#bg"
             }
+        },
+        "unitedentry" : {
+            "icon" : {
+                "fg" : "@base#icon#fg",
+                "busy" : {
+                    "fg" : "@base#master#bg"
+                }
+            },
+            "popup" : {
+                "border" : "@base#normal#border"
+            }
         }
     }
 }

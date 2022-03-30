@@ -62,8 +62,10 @@ namespace vnotex
 
         static QString getHelpText();
 
+        static void addSearchOptionsToCommand(QCommandLineParser *p_parser);
+
     private:
-        static void createCommandLineParser();
+        static QCommandLineParser *getCommandLineParser();
 
         Type m_type = Type::PlainText;
 
@@ -79,8 +81,6 @@ namespace vnotex
         QBitArray m_matchedConstraintsInBatchMode;
 
         int m_matchedConstraintsCountInBatchMode = 0;
-
-        static QScopedPointer<QCommandLineParser> s_parser;
     };
 }
 

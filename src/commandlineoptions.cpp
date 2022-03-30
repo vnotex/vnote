@@ -27,7 +27,7 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
     {
         QCommandLineOption webRemoteDebuggingPortOpt("remote-debugging-port",
                                                      MainWindow::tr("WebEngine remote debugging port."),
-                                                     "port_number");
+                                                     MainWindow::tr("port_number"));
         webRemoteDebuggingPortOpt.setFlags(QCommandLineOption::HiddenFromHelp);
         parser.addOption(webRemoteDebuggingPortOpt);
 

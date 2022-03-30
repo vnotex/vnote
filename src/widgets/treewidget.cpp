@@ -282,3 +282,46 @@ void TreeWidget::expandRecursively(QTreeWidgetItem *p_item)
         expandRecursively(p_item->child(i));
     }
 }
+
+void TreeWidget::selectParentItem(QTreeWidget *p_widget)
+{
+    auto item = p_widget->currentItem();
+    if (item) {
+        auto pitem = item->parent();
+        if (pitem) {
+            p_widget->setCurrentItem(pitem, 0, QItemSelectionModel::ClearAndSelect);
+        }
+    }
+}
+
+static bool isItemTreeExpanded(const QTreeWidgetItem *p_item)
+{
+    if (!p_item) {
+        return true;
+    }
+
+    if (p_item->isHidden() || !p_item->isExpanded()) {
+        return false;
+    }
+
+    int cnt = p_item->childCount();
+    for (int i = 0; i < cnt; ++i) {
+        if (!isItemTreeExpanded(p_item->child(i))) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool TreeWidget::isExpanded(const QTreeWidget *p_widget)
+{
+    int cnt = p_widget->topLevelItemCount();
+    for (int i = 0; i < cnt; ++i) {
+        if (!isItemTreeExpanded(p_widget->topLevelItem(i))) {
+            return false;
+        }
+    }
+
+    return true;
+}

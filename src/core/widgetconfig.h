@@ -57,6 +57,9 @@ namespace vnotex
         int getNewNoteDefaultFileType() const;
         void setNewNoteDefaultFileType(int p_type);
 
+        bool getUnitedEntryExpandAllEnabled() const;
+        void setUnitedEntryExpandAllEnabled(bool p_enabled);
+
     private:
         int m_outlineAutoExpandedLevel = 6;
 
@@ -85,6 +88,8 @@ namespace vnotex
         bool m_tagExplorerTwoColumnsEnabled = false;
 
         int m_newNoteDefaultFileType = 0;
+
+        bool m_unitedEntryExpandAllEnabled = false;
     };
 }
 

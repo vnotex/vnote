@@ -44,6 +44,10 @@ namespace vnotex
 
         static void expandRecursively(QTreeWidgetItem *p_item);
 
+        static void selectParentItem(QTreeWidget *p_widget);
+
+        static bool isExpanded(const QTreeWidget *p_widget);
+
     signals:
         // Emit when single item is selected and Drag&Drop to move internally.
         void itemMoved(QTreeWidgetItem *p_item);

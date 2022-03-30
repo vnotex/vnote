@@ -551,6 +551,12 @@ void MainWindow::focusViewArea()
     m_viewArea->focus();
 }
 
+NotebookExplorer *MainWindow::getNotebookExplorer() const
+{
+    Q_ASSERT(m_notebookExplorer);
+    return m_notebookExplorer;
+}
+
 void MainWindow::setupToolBar()
 {
     const int sz = ConfigMgr::getInst().getCoreConfig().getToolBarIconSize();

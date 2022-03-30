@@ -29,6 +29,8 @@
 #include "mainwindow.h"
 #include <search/searchtoken.h>
 #include <search/searchresultitem.h>
+#include <search/isearchinfoprovider.h>
+#include <search/searchhelper.h>
 #include <utils/widgetutils.h>
 #include "locationlist.h"
 
@@ -305,7 +307,11 @@ void SearchPanel::startSearch()
 
     saveFields(*m_option);
 
-    auto state = search(m_option);
+    QString msg;
+    auto state = SearchHelper::searchOnProvider(getSearcher(), m_option, m_provider, msg);
+    if (!msg.isEmpty()) {
+        appendLog(msg);
+    }
 
     // On end.
     handleSearchFinished(state);
@@ -313,8 +319,6 @@ void SearchPanel::startSearch()
 
 void SearchPanel::handleSearchFinished(SearchState p_state)
 {
-    qDebug() << "handleSearchFinished" << (int)p_state;
-
     Q_ASSERT(m_searchOngoing);
     Q_ASSERT(p_state != SearchState::Idle);
 
@@ -418,94 +422,6 @@ void SearchPanel::saveFields(SearchOption &p_option)
             p_option.m_findOptions |= FindOption::RegularExpression;
         }
     }
-}
-
-SearchState SearchPanel::search(const QSharedPointer<SearchOption> &p_option)
-{
-    if (!isSearchOptionValid(*p_option)) {
-        return SearchState::Failed;
-    }
-
-    SearchState state = SearchState::Finished;
-
-    switch (p_option->m_scope) {
-    case SearchScope::Buffers:
-    {
-        auto buffers = m_provider->getBuffers();
-        if (buffers.isEmpty()) {
-            break;
-        }
-        state = getSearcher()->search(p_option, buffers);
-        break;
-    }
-
-    case SearchScope::CurrentFolder:
-    {
-        auto notebook = m_provider->getCurrentNotebook();
-        if (!notebook) {
-            break;
-        }
-        auto folder = m_provider->getCurrentFolder();
-        if (!folder) {
-            break;
-        }
-
-        state = getSearcher()->search(p_option, folder);
-        break;
-    }
-
-    case SearchScope::CurrentNotebook:
-    {
-        auto notebook = m_provider->getCurrentNotebook();
-        if (!notebook) {
-            break;
-        }
-
-        QVector<Notebook *> notebooks;
-        notebooks.push_back(notebook);
-        state = getSearcher()->search(p_option, notebooks);
-        break;
-    }
-
-    case SearchScope::AllNotebooks:
-    {
-        auto notebooks = m_provider->getNotebooks();
-        if (notebooks.isEmpty()) {
-            break;
-        }
-
-        state = getSearcher()->search(p_option, notebooks);
-        break;
-    }
-    }
-
-    return state;
-}
-
-bool SearchPanel::isSearchOptionValid(const SearchOption &p_option)
-{
-    if (p_option.m_keyword.isEmpty()) {
-        appendLog(tr("Invalid keyword"));
-        return false;
-    }
-
-    if (p_option.m_objects == SearchObject::ObjectNone) {
-        appendLog(tr("No object specified"));
-        return false;
-    }
-
-    if (p_option.m_targets == SearchTarget::TargetNone) {
-        appendLog(tr("No target specified"));
-        return false;
-    }
-
-    if (p_option.m_findOptions & FindOption::FuzzySearch
-        && p_option.m_objects & SearchObject::SearchContent) {
-        appendLog(tr("Fuzzy search is not allowed when searching content"));
-        return false;
-    }
-
-    return true;
 }
 
 Searcher *SearchPanel::getSearcher()

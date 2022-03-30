@@ -59,7 +59,8 @@
             "MoveOneSplitDown" : "Ctrl+G, Shift+J",
             "MoveOneSplitUp" : "Ctrl+G, Shift+K",
             "MoveOneSplitRight" : "Ctrl+G, Shift+L",
-            "OpenLastClosedFile" : "Ctrl+Shift+T"
+            "OpenLastClosedFile" : "Ctrl+Shift+T",
+            "UnitedEntry" : "Ctrl+G, G"
         },
         "file_type_suffixes" : [
             {
@@ -98,7 +99,71 @@
         "history_max_count" : 100,
         "per_notebook_history" : false,
         "//comment" : "Line ending policy for config files, platform/lf/crlf/cr",
-        "line_ending" : "lf"
+        "line_ending" : "lf",
+        "united_entry" : {
+            "alias" : [
+                {
+                    "name" : "q",
+                    "description" : "Search for folders/files by name in all notebooks",
+                    "value" : "find --scope all_notebook --object name --target file --target folder"
+                },
+                {
+                    "name" : "a",
+                    "description" : "Search for files by content in all notebooks",
+                    "value" : "find --scope all_notebook --object content --target file"
+                },
+                {
+                    "name" : "z",
+                    "description" : "Search for files by tag in all notebooks",
+                    "value" : "find --scope all_notebook --object tag --target file"
+                },
+                {
+                    "name" : "w",
+                    "description" : "Search for notebooks by name in all notebooks",
+                    "value" : "find --scope all_notebook --object name --target notebook"
+                },
+                {
+                    "name" : "e",
+                    "description" : "Search for folders/files by name in current notebook",
+                    "value" : "find --scope notebook --object name --target file --target folder"
+                },
+                {
+                    "name" : "d",
+                    "description" : "Search for files by content in current notebook",
+                    "value" : "find --scope notebook --object content --target file"
+                },
+                {
+                    "name" : "c",
+                    "description" : "Search for files by tag in current notebook",
+                    "value" : "find --scope notebook --object tag --target file"
+                },
+                {
+                    "name" : "r",
+                    "description" : "Search for folders/files by name in current folder",
+                    "value" : "find --scope folder --object name --target file --target folder"
+                },
+                {
+                    "name" : "f",
+                    "description" : "Search for files by content in current folder",
+                    "value" : "find --scope folder --object content --target file"
+                },
+                {
+                    "name" : "v",
+                    "description" : "Search for files by tag in current folder",
+                    "value" : "find --scope folder --object tag --target file"
+                },
+                {
+                    "name" : "t",
+                    "description" : "Search for files by name in buffers",
+                    "value" : "find --scope buffer --object name --target file"
+                },
+                {
+                    "name" : "g",
+                    "description" : "Search for files by content in buffers",
+                    "value" : "find --scope buffer --object content --target file"
+                }
+            ]
+        }
     },
     "editor" : {
         "core": {
@@ -131,7 +196,7 @@
                 "TypeMath" : "Ctrl+.",
                 "TypeMathBlock" : "Ctrl+G, .",
                 "TypeQuote" : "",
-                "TypeLink" : "",
+                "TypeLink" : "Ctrl+,",
                 "TypeImage" : "",
                 "TypeTable" : "Ctrl+/",
                 "TypeMark" : "Ctrl+G, M",
@@ -418,6 +483,7 @@
         "main_window_keep_docks_expanding_content_area": ["OutlineDock.vnotex"],
         "snippet_panel_builtin_snippets_visible" : true,
         "tag_explorer_two_columns_enabled" : true,
-        "new_note_default_file_type" : 0
+        "new_note_default_file_type" : 0,
+        "united_entry_expand_all" : false
     }
 }

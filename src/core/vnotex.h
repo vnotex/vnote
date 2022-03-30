@@ -132,19 +132,19 @@ namespace vnotex
 
         void initQuickAccess();
 
-        MainWindow *m_mainWindow;
+        MainWindow *m_mainWindow = nullptr;
 
         // QObject managed.
-        ThemeMgr *m_themeMgr;
+        ThemeMgr *m_themeMgr = nullptr;
 
         // QObject managed.
-        TaskMgr *m_taskMgr;
+        TaskMgr *m_taskMgr = nullptr;
 
         // QObject managed.
-        NotebookMgr *m_notebookMgr;
+        NotebookMgr *m_notebookMgr = nullptr;
 
         // QObject managed.
-        BufferMgr *m_bufferMgr;
+        BufferMgr *m_bufferMgr = nullptr;
 
         // Used to identify app's instance.
         ID m_instanceId = 0;

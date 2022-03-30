@@ -20,9 +20,7 @@
 using namespace vnotex;
 
 VNoteX::VNoteX(QObject *p_parent)
-    : QObject(p_parent),
-      m_mainWindow(nullptr),
-      m_notebookMgr(nullptr)
+    : QObject(p_parent)
 {
     m_instanceId = QRandomGenerator::global()->generate64();
 

@@ -465,12 +465,12 @@ QLineEdit {
 }
 
 QLineEdit:focus {
-    border: 2px solid @widgets#qlineedit#focus#border;
+    border: 1px solid @widgets#qlineedit#focus#border;
     background-color: @widgets#qlineedit#focus#bg;
 }
 
 QLineEdit:hover {
-    border: 2px solid @widgets#qlineedit#hover#border;
+    border: 1px solid @widgets#qlineedit#hover#border;
     background-color: @widgets#qlineedit#hover#bg;
 }
 
@@ -1169,4 +1169,8 @@ vnotex--ViewSplit QTabBar[ViewSplitFlash="true"]::tab:selected {
 
 vte--VTextEdit {
     border: none;
+}
+
+vnotex--EntryPopup {
+    border: 1px solid @widgets#unitedentry#popup#border;
 }

@@ -1,17 +1,19 @@
 #include "searchinfoprovider.h"
 
+#include <core/vnotex.h>
 #include "viewarea.h"
 #include "notebookexplorer.h"
 #include "notebookmgr.h"
+#include "mainwindow.h"
 
 using namespace vnotex;
 
 SearchInfoProvider::SearchInfoProvider(const ViewArea *p_viewArea,
-                                       const NotebookExplorer *p_notebookExplorer,
-                                       const NotebookMgr *p_notebookMgr)
+        const NotebookExplorer *p_notebookExplorer,
+        const NotebookMgr *p_notebookMgr)
     : m_viewArea(p_viewArea),
-      m_notebookExplorer(p_notebookExplorer),
-      m_notebookMgr(p_notebookMgr)
+    m_notebookExplorer(p_notebookExplorer),
+    m_notebookMgr(p_notebookMgr)
 {
 }
 
@@ -40,4 +42,11 @@ QVector<Notebook *> SearchInfoProvider::getNotebooks() const
     }
 
     return nbs;
+}
+
+QSharedPointer<SearchInfoProvider> SearchInfoProvider::create(const MainWindow *p_mainWindow)
+{
+    return QSharedPointer<SearchInfoProvider>::create(p_mainWindow->getViewArea(),
+                                                      p_mainWindow->getNotebookExplorer(),
+                                                      &VNoteX::getInst().getNotebookMgr());
 }

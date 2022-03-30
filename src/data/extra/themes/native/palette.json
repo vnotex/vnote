@@ -153,6 +153,17 @@
                     }
                 }
             }
+        },
+        "unitedentry" : {
+            "icon" : {
+                "fg" : "@base#icon#fg",
+                "busy" : {
+                    "fg" : "@base#info#fg"
+                }
+            },
+            "popup" : {
+                "border" : "@base#normal#border"
+            }
         }
     }
 }

@@ -46,6 +46,8 @@ void WidgetConfig::init(const QJsonObject &p_app,
     m_tagExplorerTwoColumnsEnabled = READBOOL(QStringLiteral("tag_explorer_two_columns_enabled"));
 
     m_newNoteDefaultFileType = READINT(QStringLiteral("new_note_default_file_type"));
+
+    m_unitedEntryExpandAllEnabled = READBOOL(QStringLiteral("united_entry_expand_all"));
 }
 
 QJsonObject WidgetConfig::toJson() const
@@ -68,6 +70,7 @@ QJsonObject WidgetConfig::toJson() const
                     QStringLiteral("main_window_keep_docks_expanding_content_area"),
                     m_mainWindowKeepDocksExpandingContentArea);
     obj[QStringLiteral("new_note_default_file_type")] = m_newNoteDefaultFileType;
+    obj[QStringLiteral("united_entry_expand_all")] = m_unitedEntryExpandAllEnabled;
     return obj;
 }
 
@@ -199,4 +202,14 @@ int WidgetConfig::getNewNoteDefaultFileType() const
 void WidgetConfig::setNewNoteDefaultFileType(int p_type)
 {
     updateConfig(m_newNoteDefaultFileType, p_type, this);
+}
+
+bool WidgetConfig::getUnitedEntryExpandAllEnabled() const
+{
+    return m_unitedEntryExpandAllEnabled;
+}
+
+void WidgetConfig::setUnitedEntryExpandAllEnabled(bool p_enabled)
+{
+    updateConfig(m_unitedEntryExpandAllEnabled, p_enabled, this);
 }

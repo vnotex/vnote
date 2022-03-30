@@ -135,3 +135,8 @@ void LineEdit::updateInputMethod() const
     // Ask input method to query current state, which will call inputMethodQuery().
     im->update(Qt::ImEnabled);
 }
+
+QRect LineEdit::cursorRect() const
+{
+    return QLineEdit::cursorRect();
+}
