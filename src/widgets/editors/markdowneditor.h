@@ -126,7 +126,7 @@ namespace vnotex
 
         void handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_handled, QScopedPointer<QMenu> *p_menu);
 
-        void richPaste();
+        void altPaste();
 
         void parseToMarkdownAndPaste();
 
@@ -225,6 +225,12 @@ namespace vnotex
         MarkdownTableHelper *m_tableHelper = nullptr;
 
         ImageHost *m_imageHost = nullptr;
+
+        bool m_shouldTriggerRichPaste = false;
+
+        bool m_richPasteAsked = false;
+
+        bool m_plainTextPasteAsked = false;
     };
 }
 

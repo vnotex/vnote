@@ -88,6 +88,8 @@ namespace vnotex
         QCheckBox *m_editorOverriddenFontFamilyCheckBox = nullptr;
 
         QFontComboBox *m_editorOverriddenFontFamilyComboBox = nullptr;
+
+        QCheckBox *m_richPasteByDefaultCheckBox = nullptr;
     };
 }
 

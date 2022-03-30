@@ -145,6 +145,9 @@ namespace vnotex
         EditViewMode getEditViewMode() const;
         void setEditViewMode(EditViewMode p_mode);
 
+        bool getRichPasteByDefaultEnabled() const;
+        void setRichPasteByDefaultEnabled(bool p_enabled);
+
     private:
         friend class MainConfig;
 
@@ -254,6 +257,8 @@ namespace vnotex
 
         // View mode in edit mode.
         EditViewMode m_editViewMode = EditViewMode::EditOnly;
+
+        bool m_richPasteByDefaultEnabled = true;
     };
 }
 

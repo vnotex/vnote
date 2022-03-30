@@ -78,6 +78,8 @@ void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_u
     }
 
     m_editViewMode = stringToEditViewMode(READSTR(QStringLiteral("edit_view_mode")));
+
+    m_richPasteByDefaultEnabled = READBOOL(QStringLiteral("rich_paste_by_default"));
 }
 
 QJsonObject MarkdownEditorConfig::toJson() const
@@ -130,6 +132,8 @@ QJsonObject MarkdownEditorConfig::toJson() const
     }
 
     obj[QStringLiteral("edit_view_mode")] = editViewModeToString(m_editViewMode);
+
+    obj[QStringLiteral("rich_paste_by_default")] = m_richPasteByDefaultEnabled;
 
     return obj;
 }
@@ -578,4 +582,14 @@ MarkdownEditorConfig::EditViewMode MarkdownEditorConfig::getEditViewMode() const
 void MarkdownEditorConfig::setEditViewMode(EditViewMode p_mode)
 {
     updateConfig(m_editViewMode, p_mode, this);
+}
+
+bool MarkdownEditorConfig::getRichPasteByDefaultEnabled() const
+{
+    return m_richPasteByDefaultEnabled;
+}
+
+void MarkdownEditorConfig::setRichPasteByDefaultEnabled(bool p_enabled)
+{
+    updateConfig(m_richPasteByDefaultEnabled, p_enabled, this);
 }

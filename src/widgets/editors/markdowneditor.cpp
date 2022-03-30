@@ -62,9 +62,6 @@
 
 using namespace vnotex;
 
-// We set the property of the clipboard to mark that we are requesting a rich paste.
-static const char *c_clipboardPropertyMark = "RichPaste";
-
 MarkdownEditor::Heading::Heading(const QString &p_name,
                                  int p_level,
                                  const QString &p_sectionNumber,
@@ -468,31 +465,55 @@ void MarkdownEditor::insertImageLink(const QString &p_title,
 
 void MarkdownEditor::handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled, bool *p_allowed)
 {
-    if (p_source->hasImage() || p_source->hasUrls()) {
-        if (p_source->hasImage()
-            || (!p_source->hasText() && !p_source->hasHtml())
-            || QGuiApplication::keyboardModifiers() == Qt::ShiftModifier) {
-            // Change to Rich Paste.
-            QClipboard *clipboard = QApplication::clipboard();
-            clipboard->setProperty(c_clipboardPropertyMark, true);
-        }
+    m_shouldTriggerRichPaste = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig().getRichPasteByDefaultEnabled();
+
+    if (m_plainTextPasteAsked) {
+        m_shouldTriggerRichPaste = false;
+        return;
+    }
+
+    if (m_richPasteAsked) {
+        m_shouldTriggerRichPaste = true;
         *p_handled = true;
         *p_allowed = true;
+        return;
+    }
+
+    if (QGuiApplication::keyboardModifiers() == Qt::ShiftModifier) {
+        m_shouldTriggerRichPaste = !m_shouldTriggerRichPaste;
+    }
+
+    if (m_shouldTriggerRichPaste) {
+        *p_handled = true;
+        *p_allowed = true;
+        return;
+    }
+
+    if (p_source->hasImage()) {
+        m_shouldTriggerRichPaste = true;
+        *p_handled = true;
+        *p_allowed = true;
+        return;
+    }
+
+    if (p_source->hasUrls()) {
+        *p_handled = true;
+        *p_allowed = true;
+        return;
     }
 }
 
 void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p_handled)
 {
-    QClipboard *clipboard = QApplication::clipboard();
-    if (!clipboard->property(c_clipboardPropertyMark).toBool()) {
+    if (!m_shouldTriggerRichPaste) {
         // Default paste.
-        // Give tips about the Rich Paste and Parse As Markdown And Paste features.
+        // Give tips about the Rich Paste and Parse to Markdown And Paste features.
         VNoteX::getInst().showStatusMessageShort(
             tr("For advanced paste, try the \"Rich Paste\" and \"Parse to Markdown and Paste\" on the editor's context menu"));
         return;
-    } else {
-        clipboard->setProperty(c_clipboardPropertyMark, false);
     }
+
+    m_shouldTriggerRichPaste = false;
 
     if (processHtmlFromMimeData(p_source)) {
         *p_handled = true;
@@ -516,9 +537,10 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source)
         return false;
     }
 
+    const QString html(p_source->html());
+
     // Process <img>.
     QRegExp reg("<img ([^>]*)src=\"([^\"]+)\"([^>]*)>");
-    const QString html(p_source->html());
     if (reg.indexIn(html) != -1 && HtmlUtils::hasOnlyImgTag(html)) {
         if (p_source->hasImage()) {
             // Both image data and URL are embedded.
@@ -546,6 +568,24 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source)
 
         insertImageFromUrl(reg.cap(2));
         return true;
+    }
+
+    // Parse to Markdown and Paste.
+    SelectDialog dialog(tr("Insert From Clipboard"), this);
+    dialog.addSelection(tr("Insert As Text"), 0);
+    dialog.addSelection(tr("Parse to Markdown and Paste"), 1);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        int selection = dialog.getSelection();
+        if (selection == 0) {
+            // Insert as text.
+            m_textEdit->insertFromMimeDataOfBase(p_source);
+            return true;
+        } else if (selection == 1) {
+            // Parse to Markdown and Paste.
+            parseToMarkdownAndPaste();
+            return true;
+        }
     }
 
     return false;
@@ -957,6 +997,8 @@ void MarkdownEditor::scrollToHeading(int p_idx)
 
 void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_handled, QScopedPointer<QMenu> *p_menu)
 {
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+
     *p_handled = true;
     p_menu->reset(m_textEdit->createStandardContextMenu(p_event->pos()));
     auto menu = p_menu->data();
@@ -970,8 +1012,7 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
 
     if (!hasSelection) {
         auto readAct = new QAction(tr("&Read"), menu);
-        WidgetUtils::addActionShortcutText(readAct,
-                                           ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead));
+        WidgetUtils::addActionShortcutText(readAct, editorConfig.getShortcut(EditorConfig::Shortcut::EditRead));
         connect(readAct, &QAction::triggered,
                 this, &MarkdownEditor::readRequested);
         menu->insertAction(firstAct, readAct);
@@ -986,20 +1027,21 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
         QClipboard *clipboard = QApplication::clipboard();
         const QMimeData *mimeData = clipboard->mimeData();
 
-        // Rich Paste.
-        auto richPasteAct = new QAction(tr("Rich Paste"), menu);
-        WidgetUtils::addActionShortcutText(richPasteAct,
-                                           ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::RichPaste));
-        connect(richPasteAct, &QAction::triggered,
-                this, &MarkdownEditor::richPaste);
-        WidgetUtils::insertActionAfter(menu, pasteAct, richPasteAct);
+        // Rich Paste or Plain Text Paste.
+        const bool richPasteByDefault = editorConfig.getMarkdownEditorConfig().getRichPasteByDefaultEnabled();
+        auto altPasteAct = new QAction(richPasteByDefault ? tr("Paste as Plain Text") : tr("Rich Paste"), menu);
+        WidgetUtils::addActionShortcutText(altPasteAct,
+                                           editorConfig.getShortcut(EditorConfig::Shortcut::AltPaste));
+        connect(altPasteAct, &QAction::triggered,
+                this, &MarkdownEditor::altPaste);
+        WidgetUtils::insertActionAfter(menu, pasteAct, altPasteAct);
 
         if (mimeData->hasHtml()) {
             // Parse to Markdown and Paste.
             auto parsePasteAct = new QAction(tr("Parse to Markdown and Paste"), menu);
             connect(parsePasteAct, &QAction::triggered,
                     this, &MarkdownEditor::parseToMarkdownAndPaste);
-            WidgetUtils::insertActionAfter(menu, richPasteAct, parsePasteAct);
+            WidgetUtils::insertActionAfter(menu, altPasteAct, parsePasteAct);
         }
     }
 
@@ -1008,7 +1050,7 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
 
         auto snippetAct = menu->addAction(tr("Insert Snippet"), this, &MarkdownEditor::applySnippetRequested);
         WidgetUtils::addActionShortcutText(snippetAct,
-                                           ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::ApplySnippet));
+                                           editorConfig.getShortcut(EditorConfig::Shortcut::ApplySnippet));
     }
 
     if (!hasSelection) {
@@ -1018,25 +1060,38 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
     appendSpellCheckMenu(p_event, menu);
 }
 
-void MarkdownEditor::richPaste()
+void MarkdownEditor::altPaste()
 {
-    QClipboard *clipboard = QApplication::clipboard();
-    clipboard->setProperty(c_clipboardPropertyMark, true);
-    m_textEdit->paste();
-    clipboard->setProperty(c_clipboardPropertyMark, false);
+    const bool richPasteByDefault = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig().getRichPasteByDefaultEnabled();
+
+    if (richPasteByDefault) {
+        // Paste as plain text.
+        m_plainTextPasteAsked = true;
+        m_richPasteAsked = false;
+    } else {
+        // Rich paste.
+        m_plainTextPasteAsked = false;
+        m_richPasteAsked = true;
+    }
+
+    // handleCanInsertFromMimeData() is called before this function. Call it manually.
+    if (m_textEdit->canPaste()) {
+        m_textEdit->paste();
+    }
+
+    m_plainTextPasteAsked = false;
+    m_richPasteAsked = false;
 }
 
 void MarkdownEditor::setupShortcuts()
 {
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
 
-    {
-        auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::Shortcut::RichPaste),
-                                                    this);
-        if (shortcut) {
-            connect(shortcut, &QShortcut::activated,
-                    this, &MarkdownEditor::richPaste);
-        }
+    auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::Shortcut::AltPaste),
+                                                this);
+    if (shortcut) {
+        connect(shortcut, &QShortcut::activated,
+                this, &MarkdownEditor::altPaste);
     }
 }
 

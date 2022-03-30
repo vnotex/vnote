@@ -122,6 +122,8 @@ void MarkdownEditorPage::loadInternal()
             m_editorOverriddenFontFamilyComboBox->setCurrentFont(font);
         }
     }
+
+    m_richPasteByDefaultCheckBox->setChecked(markdownConfig.getRichPasteByDefaultEnabled());
 }
 
 bool MarkdownEditorPage::saveInternal()
@@ -197,6 +199,8 @@ bool MarkdownEditorPage::saveInternal()
         bool checked = m_editorOverriddenFontFamilyCheckBox->isChecked();
         markdownConfig.setEditorOverriddenFontFamily(checked ? m_editorOverriddenFontFamilyComboBox->currentFont().family() : QString());
     }
+
+    markdownConfig.setRichPasteByDefaultEnabled(m_richPasteByDefaultCheckBox->isChecked());
 
     EditorPage::notifyEditorConfigChange();
 
@@ -400,6 +404,16 @@ QGroupBox *MarkdownEditorPage::setupEditGroup()
                 });
 
         layout->addRow(fontLayout);
+    }
+
+    {
+        const QString label(tr("Use Rich Paste by default"));
+        m_richPasteByDefaultCheckBox = WidgetsFactory::createCheckBox(label, box);
+        m_richPasteByDefaultCheckBox->setToolTip(tr("Use Rich Paste by default when pasting text"));
+        layout->addRow(m_richPasteByDefaultCheckBox);
+        addSearchItem(label, m_richPasteByDefaultCheckBox->toolTip(), m_richPasteByDefaultCheckBox);
+        connect(m_richPasteByDefaultCheckBox, &QCheckBox::stateChanged,
+                this, &MarkdownEditorPage::pageIsChanged);
     }
 
     return box;

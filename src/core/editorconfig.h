@@ -53,7 +53,7 @@ namespace vnotex
             TypeTable,
             TypeMark,
             Outline,
-            RichPaste,
+            AltPaste,
             FindAndReplace,
             FindNext,
             FindPrevious,
