@@ -50,12 +50,12 @@ jobs:
         uses: actions/cache@v1  # not v2!
         with:
           path: ../Qt
-          key: ${{ runner.os }}-${{matrix.config.arch}}-QtCache-5.15-2
+          key: ${{ runner.os }}-${{matrix.config.arch}}-QtCache-5.15-1
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          version: 5.15.3
+          version: 5.15.2
           target: desktop
           arch: ${{matrix.config.arch}}
           modules: qtwebengine
