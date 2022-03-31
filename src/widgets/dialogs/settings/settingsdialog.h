@@ -53,6 +53,8 @@ namespace vnotex
 
         void search();
 
+        void checkOnFinish();
+
         QLineEdit *m_searchEdit = nullptr;
 
         TreeWidget *m_pageExplorer = nullptr;

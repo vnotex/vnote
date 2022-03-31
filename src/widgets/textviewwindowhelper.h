@@ -213,7 +213,7 @@ namespace vnotex
         }
 
         template <typename _ViewWindow>
-        static void handleFindAndReplaceWidgetClosed(_ViewWindow *p_win)
+        static void clearSearchHighlights(_ViewWindow *p_win)
         {
             p_win->m_editor->clearIncrementalSearchHighlight();
             p_win->m_editor->clearSearchHighlight();

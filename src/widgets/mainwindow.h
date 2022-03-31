@@ -85,6 +85,8 @@ namespace vnotex
         // @m_response of @p_event: true to continue the close, false to stop the close.
         void mainWindowClosed(const QSharedPointer<Event> &p_event);
 
+        void minimizedToSystemTray();
+
         // No user interaction is available.
         void mainWindowClosedOnQuit();
 

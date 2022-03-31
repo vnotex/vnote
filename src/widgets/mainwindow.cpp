@@ -389,6 +389,7 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
                 showNormal();
             }
         }
+
         saveStateAndGeometry();
     }
 
@@ -408,6 +409,8 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
         FramelessMainWindowImpl::closeEvent(p_event);
         qApp->exit(exitCode > -1 ? exitCode : 0);
     } else {
+        emit minimizedToSystemTray();
+
         hide();
         p_event->ignore();
         if (needShowMessage) {

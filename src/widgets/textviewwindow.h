@@ -70,6 +70,8 @@ namespace vnotex
 
         QPoint getFloatingWidgetPosition() Q_DECL_OVERRIDE;
 
+        void clearHighlights() Q_DECL_OVERRIDE;
+
     private:
         void setupUI();
 

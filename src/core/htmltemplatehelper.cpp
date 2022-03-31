@@ -20,6 +20,7 @@ QString WebGlobalOptions::toJavascriptObject() const
 {
     return QStringLiteral("window.vxOptions = {\n")
            + QString("webPlantUml: %1,\n").arg(Utils::boolToString(m_webPlantUml))
+           + QString("plantUmlWebService: '%1',\n").arg(m_plantUmlWebService)
            + QString("webGraphviz: %1,\n").arg(Utils::boolToString(m_webGraphviz))
            + QString("mathJaxScript: '%1',\n").arg(m_mathJaxScript)
            + QString("constrainImageWidthEnabled: %1,\n").arg(Utils::boolToString(m_constrainImageWidthEnabled))
@@ -213,6 +214,7 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
     {
         WebGlobalOptions opts;
         opts.m_webPlantUml = p_config.getWebPlantUml();
+        opts.m_plantUmlWebService = p_config.getPlantUmlWebService();
         opts.m_webGraphviz = p_config.getWebGraphviz();
         opts.m_mathJaxScript = p_config.getMathJaxScript();
         opts.m_sectionNumberEnabled = p_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Read;

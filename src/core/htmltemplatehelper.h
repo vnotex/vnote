@@ -13,6 +13,8 @@ namespace vnotex
     {
         bool m_webPlantUml = true;
 
+        QString m_plantUmlWebService;
+
         bool m_webGraphviz = true;
 
         QString m_mathJaxScript;

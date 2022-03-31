@@ -62,7 +62,7 @@ bool FileAssociationPage::saveInternal()
         if (name.isEmpty()) {
             continue;
         }
-        auto suffixes = lineEdit->text().split(c_suffixSeparator, Qt::SkipEmptyParts);
+        auto suffixes = lineEdit->text().split(c_suffixSeparator, QString::SkipEmptyParts);
         fileTypeSuffixes.push_back(CoreConfig::FileTypeSuffix(name, Utils::toLower(suffixes)));
     }
 

@@ -79,6 +79,8 @@ namespace vnotex
 
         LocationInputWithBrowseButton *m_plantUmlJarFileInput = nullptr;
 
+        QLineEdit *m_plantUmlWebServiceLineEdit = nullptr;
+
         QComboBox *m_graphvizModeComboBox = nullptr;
 
         LocationInputWithBrowseButton *m_graphvizFileInput = nullptr;

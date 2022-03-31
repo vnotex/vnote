@@ -34,6 +34,18 @@ class PlantUml extends GraphRenderer {
         }
     }
 
+    initialize(p_callback) {
+        if (super.initialized) {
+            return true;
+        }
+
+        if (!!window.vxOptions.plantUmlWebService) {
+            this.serverUrl = window.vxOptions.plantUmlWebService;
+            console.log('override PlantUml Web service', this.serverUrl);
+        }
+
+        return super.initialize(p_callback);
+    }
 
     // Interface 1.
     render(p_node, p_format) {

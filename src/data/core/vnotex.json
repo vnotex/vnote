@@ -208,7 +208,8 @@
                 "ApplySnippet" : "Ctrl+G, I",
                 "Tag" : "Ctrl+G, B",
                 "Debug" : "F12",
-                "Print" : ""
+                "Print" : "",
+                "ClearHighlights" : "Ctrl+G, Space"
             },
             "spell_check_auto_detect_language" : false,
             "spell_check_default_dictionary" : "en_US",
@@ -401,6 +402,8 @@
             "//commnet" : "Command to render PlantUML via stdin and stdout (overrides plantuml_jar)",
             "//commnet" : "- %1: the format to render in",
             "plantuml_command" : "",
+            "//commnet" : "PlantUml Web service to use",
+            "plantuml_web_service" : "",
             "//comment" : "Whether use javascript or external program to render Graphviz",
             "web_graphviz" : true,
             "//commnet" : "Local Graphviz executable file to render Graphviz",

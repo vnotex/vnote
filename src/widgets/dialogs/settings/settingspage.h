@@ -25,6 +25,8 @@ namespace vnotex
 
         const QString &error() const;
 
+        bool isRestartNeeded() const;
+
     signals:
         void changed();
 
@@ -63,6 +65,8 @@ namespace vnotex
         QVector<SearchItem> m_searchItems;
 
         bool m_changed = false;
+
+        bool m_restartNeeded = false;
 
         QString m_error;
     };

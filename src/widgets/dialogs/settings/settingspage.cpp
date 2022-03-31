@@ -78,6 +78,8 @@ bool SettingsPage::save()
 
     if (saveInternal()) {
         m_changed = false;
+        // TODO: may need finer-grain check.
+        m_restartNeeded = true;
         return true;
     }
 
@@ -101,4 +103,9 @@ const QString &SettingsPage::error() const
 void SettingsPage::setError(const QString &p_err)
 {
     m_error = p_err;
+}
+
+bool SettingsPage::isRestartNeeded() const
+{
+    return m_restartNeeded;
 }

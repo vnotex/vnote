@@ -13,6 +13,8 @@
 #include <widgets/lineedit.h>
 #include <widgets/widgetsfactory.h>
 #include <widgets/propertydefs.h>
+#include <widgets/messageboxhelper.h>
+#include <widgets/mainwindow.h>
 #include <utils/widgetutils.h>
 #include <core/vnotex.h>
 
@@ -37,6 +39,9 @@ SettingsDialog::SettingsDialog(QWidget *p_parent)
     setupUI();
 
     setupPages();
+
+    connect(this, &QDialog::finished,
+            this, &SettingsDialog::checkOnFinish);
 }
 
 void SettingsDialog::setupUI()
@@ -314,4 +319,26 @@ void SettingsDialog::search()
             }
             return true;
         });
+}
+
+void SettingsDialog::checkOnFinish()
+{
+    // Check whether need to prompt for restart.
+    forEachPage([this](const SettingsPage *p_page) {
+        if (p_page->isRestartNeeded()) {
+            // Restart VNote.
+            int ret = MessageBoxHelper::questionYesNo(MessageBoxHelper::Type::Information,
+                                                      tr("A restart of VNote may be needed to make changes take effect. Restart VNote now?"),
+                                                      QString(),
+                                                      QString(),
+                                                      this);
+            if (ret == QMessageBox::Yes) {
+                QMetaObject::invokeMethod(VNoteX::getInst().getMainWindow(),
+                                          &MainWindow::restart,
+                                          Qt::QueuedConnection);
+            }
+            return false;
+        }
+        return true;
+    });
 }

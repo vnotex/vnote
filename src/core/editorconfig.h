@@ -61,6 +61,7 @@ namespace vnotex
             Tag,
             Debug,
             Print,
+            ClearHighlights,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

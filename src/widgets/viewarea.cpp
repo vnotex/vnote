@@ -67,6 +67,13 @@ ViewArea::ViewArea(QWidget *p_parent)
                     p_event->m_handled = true;
                 }
             });
+    connect(mainWindow, &MainWindow::minimizedToSystemTray,
+            this, [this]() {
+                if (ConfigMgr::getInst().getCoreConfig().isRecoverLastSessionOnStartEnabled()) {
+                    // Save it here, too. Avoid losing session when VNote is closed unexpectedly.
+                    saveSession();
+                }
+            });
 
     connect(mainWindow, &MainWindow::mainWindowClosedOnQuit,
             this, [this]() {

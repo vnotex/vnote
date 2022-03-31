@@ -86,6 +86,8 @@ namespace vnotex
 
         void print() Q_DECL_OVERRIDE;
 
+        void clearHighlights() Q_DECL_OVERRIDE;
+
     protected:
         void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 

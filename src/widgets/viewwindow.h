@@ -256,6 +256,8 @@ namespace vnotex
 
         virtual void updateViewModeMenu(QMenu *p_menu);
 
+        virtual void clearHighlights();
+
         static QToolBar *createToolBar(QWidget *p_parent = nullptr);
 
         // The revision of the buffer of the last sync content.

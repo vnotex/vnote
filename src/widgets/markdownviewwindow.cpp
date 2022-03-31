@@ -1025,10 +1025,19 @@ void MarkdownViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_o
 
 void MarkdownViewWindow::handleFindAndReplaceWidgetClosed()
 {
-    if (m_editor) {
-        TextViewWindowHelper::handleFindAndReplaceWidgetClosed(this);
-    } else {
+    if (isReadMode()) {
         adapter()->findText(QStringList(), FindOption::FindNone);
+    } else {
+        TextViewWindowHelper::clearSearchHighlights(this);
+    }
+}
+
+void MarkdownViewWindow::clearHighlights()
+{
+    if (isReadMode()) {
+        adapter()->findText(QStringList(), FindOption::FindNone);
+    } else {
+        TextViewWindowHelper::clearSearchHighlights(this);
     }
 }
 

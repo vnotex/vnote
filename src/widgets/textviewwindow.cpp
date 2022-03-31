@@ -241,7 +241,7 @@ void TextViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_optio
 
 void TextViewWindow::handleFindAndReplaceWidgetClosed()
 {
-    TextViewWindowHelper::handleFindAndReplaceWidgetClosed(this);
+    TextViewWindowHelper::clearSearchHighlights(this);
 }
 
 void TextViewWindow::updateEditorFromConfig()
@@ -316,4 +316,9 @@ void TextViewWindow::print()
     if (printer) {
         m_editor->getTextEdit()->print(printer.data());
     }
+}
+
+void TextViewWindow::clearHighlights()
+{
+    TextViewWindowHelper::clearSearchHighlights(this);
 }
