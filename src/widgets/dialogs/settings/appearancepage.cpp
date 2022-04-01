@@ -35,7 +35,7 @@ void AppearancePage::setupUI()
         mainLayout->addRow(m_systemTitleBarCheckBox);
         addSearchItem(label, m_systemTitleBarCheckBox->toolTip(), m_systemTitleBarCheckBox);
         connect(m_systemTitleBarCheckBox, &QCheckBox::stateChanged,
-                this, &AppearancePage::pageIsChanged);
+                this, &AppearancePage::pageIsChangedWithRestartNeeded);
     }
 
     {
@@ -49,7 +49,7 @@ void AppearancePage::setupUI()
         mainLayout->addRow(label, m_toolBarIconSizeSpinBox);
         addSearchItem(label, m_toolBarIconSizeSpinBox->toolTip(), m_toolBarIconSizeSpinBox);
         connect(m_toolBarIconSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-                this, &AppearancePage::pageIsChanged);
+                this, &AppearancePage::pageIsChangedWithRestartNeeded);
     }
 
     {

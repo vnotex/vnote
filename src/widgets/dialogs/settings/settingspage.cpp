@@ -64,10 +64,18 @@ void SettingsPage::pageIsChanged()
     emit changed();
 }
 
+void SettingsPage::pageIsChangedWithRestartNeeded()
+{
+    m_changed = true;
+    m_restartNeeded = true;
+    emit changed();
+}
+
 void SettingsPage::load()
 {
     loadInternal();
     m_changed = false;
+    m_restartNeeded = false;
 }
 
 bool SettingsPage::save()
@@ -78,8 +86,6 @@ bool SettingsPage::save()
 
     if (saveInternal()) {
         m_changed = false;
-        // TODO: may need finer-grain check.
-        m_restartNeeded = true;
         return true;
     }
 

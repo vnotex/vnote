@@ -47,6 +47,8 @@ namespace vnotex
     protected slots:
         void pageIsChanged();
 
+        void pageIsChangedWithRestartNeeded();
+
     private:
         struct SearchItem
         {

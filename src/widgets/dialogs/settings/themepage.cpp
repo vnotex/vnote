@@ -43,7 +43,7 @@ void ThemePage::setupUI()
                 this, [this](QListWidgetItem *p_current, QListWidgetItem *p_previous) {
                     Q_UNUSED(p_previous);
                     loadThemePreview(p_current ? p_current->data(Qt::UserRole).toString() : QString());
-                    pageIsChanged();
+                    pageIsChangedWithRestartNeeded();
                 });
 
         auto refreshBtn = new QPushButton(tr("Refresh"), this);

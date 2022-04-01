@@ -37,7 +37,7 @@ void GeneralPage::setupUI()
         mainLayout->addRow(label, m_localeComboBox);
         addSearchItem(label, m_localeComboBox->toolTip(), m_localeComboBox);
         connect(m_localeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-                this, &GeneralPage::pageIsChanged);
+                this, &GeneralPage::pageIsChangedWithRestartNeeded);
     }
 
 #if defined(Q_OS_WIN)
@@ -54,7 +54,7 @@ void GeneralPage::setupUI()
         mainLayout->addRow(label, m_openGLComboBox);
         addSearchItem(label, m_openGLComboBox->toolTip(), m_openGLComboBox);
         connect(m_openGLComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-                this, &GeneralPage::pageIsChanged);
+                this, &GeneralPage::pageIsChangedWithRestartNeeded);
     }
 #endif
 

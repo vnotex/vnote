@@ -13,9 +13,9 @@ IUnitedEntry::IUnitedEntry(const QString &p_name,
                            const UnitedEntryMgr *p_mgr,
                            QObject *p_parent)
     : QObject(p_parent),
+      m_mgr(p_mgr),
       m_name(p_name),
-      m_description(p_description),
-      m_mgr(p_mgr)
+      m_description(p_description)
 {
 }
 
