@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v1  # not v2!
         with:
           path: ../Qt
-          key: ${{ runner.os }}-QtCache-5.15-1
+          key: ${{ runner.os }}-QtCache-5.15-2
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
@@ -53,6 +53,7 @@ jobs:
           target: desktop
           modules: qtwebengine
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          setup-python: 'false'
 
 
       - name: Create Build Dir
