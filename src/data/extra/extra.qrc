@@ -79,7 +79,7 @@
         <file>web/js/mark.js/mark.min.js</file>
         <file>web/js/markjs.js</file>
         <file>web/js/mind-elixir/MindElixir.min.js</file>
-        <file>web/js/mind-elixir/painter.min.js</file>
+        <file>web/js/mind-elixir/painter.js</file>
         <file>dicts/en_US.aff</file>
         <file>dicts/en_US.dic</file>
         <file>themes/native/text-editor.theme</file>

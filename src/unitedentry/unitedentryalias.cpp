@@ -59,7 +59,7 @@ void UnitedEntryAlias::processInternal(const QString &p_args,
                                        const std::function<void(const QSharedPointer<QWidget> &)> &p_popupWidgetFunc)
 {
     if (!m_realEntry) {
-        auto label = EntryWidgetFactory::createLabel(tr("Invalid UnitedEntry alias: %1").arg(m_value));
+        auto label = EntryWidgetFactory::createLabel(tr("Invalid United Entry alias: %1").arg(m_value));
         p_popupWidgetFunc(label);
         emit finished();
         return;

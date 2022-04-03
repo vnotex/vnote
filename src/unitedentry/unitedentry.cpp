@@ -98,7 +98,7 @@ void UnitedEntry::setupUI()
     m_lineEdit->setClearButtonEnabled(true);
     m_lineEdit->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Fixed);
     connect(m_lineEdit, &QLineEdit::textChanged,
-            m_processTimer, QOverload<void>::of(&QTimer::start));
+            m_processTimer, QOverload<>::of(&QTimer::start));
     setFocusProxy(m_lineEdit);
 
     // Popup.

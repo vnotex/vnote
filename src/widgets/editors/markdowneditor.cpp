@@ -570,24 +570,6 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source)
         return true;
     }
 
-    // Parse to Markdown and Paste.
-    SelectDialog dialog(tr("Insert From Clipboard"), this);
-    dialog.addSelection(tr("Insert As Text"), 0);
-    dialog.addSelection(tr("Parse to Markdown and Paste"), 1);
-
-    if (dialog.exec() == QDialog::Accepted) {
-        int selection = dialog.getSelection();
-        if (selection == 0) {
-            // Insert as text.
-            m_textEdit->insertFromMimeDataOfBase(p_source);
-            return true;
-        } else if (selection == 1) {
-            // Parse to Markdown and Paste.
-            parseToMarkdownAndPaste();
-            return true;
-        }
-    }
-
     return false;
 }
 
