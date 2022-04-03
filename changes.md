@@ -1,4 +1,7 @@
 # Changes
+## v3.13.0
+* United Entry: migration of Universal Entry
+
 ## v3.12.888
 * Fix shortcuts in key sequence with input method (like `Ctrl+G, E`)
 * Add line ending settings for config files
