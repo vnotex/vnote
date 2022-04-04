@@ -60,7 +60,9 @@
             "MoveOneSplitUp" : "Ctrl+G, Shift+K",
             "MoveOneSplitRight" : "Ctrl+G, Shift+L",
             "OpenLastClosedFile" : "Ctrl+Shift+T",
-            "UnitedEntry" : "Ctrl+G, G"
+            "UnitedEntry" : "Ctrl+G, G",
+            "Copy" : "Ctrl+C",
+            "Paste" : "Ctrl+V"
         },
         "file_type_suffixes" : [
             {

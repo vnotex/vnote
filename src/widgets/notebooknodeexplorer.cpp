@@ -2182,6 +2182,29 @@ void NotebookNodeExplorer::setupShortcuts()
         }
     }
 
+    // Copy
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Copy), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        copySelectedNodes(false, false);
+                    });
+
+        }
+    }
+
+    // Paste
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Paste), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        pasteNodesFromClipboard();
+                    });
+        }
+    }
+
     const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
     for (const auto &pro : sessionConfig.getExternalPrograms()) {
         auto shortcut = WidgetUtils::createShortcut(pro.m_shortcut, this);
