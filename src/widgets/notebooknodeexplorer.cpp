@@ -2163,7 +2163,7 @@ void NotebookNodeExplorer::addOpenWithMenu(QMenu *p_menu, bool p_master)
                        });
 }
 
-// shortcut auxiliary, it can also be used to determine the browser
+// Shortcut auxiliary, it can also be used to determine the browser.
 bool NotebookNodeExplorer::isActionFromMaster() const
 {
     if (!isCombinedExploreMode()) {
