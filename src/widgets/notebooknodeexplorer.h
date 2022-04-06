@@ -176,7 +176,7 @@ namespace vnotex
 
         void setupUI();
 
-        bool isActionFromMaster();
+        bool isActionFromMaster() const;
 
         void setupShortcuts();
 
