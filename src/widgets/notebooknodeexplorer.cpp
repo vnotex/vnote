@@ -2169,7 +2169,7 @@ bool NotebookNodeExplorer::isActionFromMaster() const
     if (!isCombinedExploreMode()) {
         return m_masterExplorer->hasFocus();
     }
-    return false;
+    return true;
 }
 
 void NotebookNodeExplorer::setupShortcuts()
