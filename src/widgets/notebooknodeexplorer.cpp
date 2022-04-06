@@ -2163,6 +2163,15 @@ void NotebookNodeExplorer::addOpenWithMenu(QMenu *p_menu, bool p_master)
                        });
 }
 
+// shortcut auxiliary, it can also be used to determine the browser
+bool NotebookNodeExplorer::isActionFromMaster()
+{
+    if (!isCombinedExploreMode()) {
+        return m_masterExplorer->hasFocus();
+    }
+    return false;
+}
+
 void NotebookNodeExplorer::setupShortcuts()
 {
     const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
@@ -2173,11 +2182,7 @@ void NotebookNodeExplorer::setupShortcuts()
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
-                        bool isMaster = true;
-                        if (!isCombinedExploreMode()) {
-                            isMaster = m_masterExplorer->hasFocus();
-                        }
-                        openSelectedNodesWithProgram(QString(), isMaster);
+                        openSelectedNodesWithProgram(QString(), isActionFromMaster());
                     });
         }
     }
@@ -2188,9 +2193,8 @@ void NotebookNodeExplorer::setupShortcuts()
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
-                        copySelectedNodes(false, false);
+                        copySelectedNodes(false, isActionFromMaster());
                     });
-
         }
     }
 
@@ -2199,9 +2203,7 @@ void NotebookNodeExplorer::setupShortcuts()
         auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Paste), this);
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
-                    this, [this]() {
-                        pasteNodesFromClipboard();
-                    });
+                    this, &NotebookNodeExplorer::pasteNodesFromClipboard);
         }
     }
 
