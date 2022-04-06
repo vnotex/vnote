@@ -176,6 +176,8 @@ namespace vnotex
 
         void setupUI();
 
+        bool isActionFromMaster() const;
+
         void setupShortcuts();
 
         void setupMasterExplorer(QWidget *p_parent = nullptr);
