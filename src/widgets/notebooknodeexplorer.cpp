@@ -2207,6 +2207,34 @@ void NotebookNodeExplorer::setupShortcuts()
         }
     }
 
+    // Properties
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Properties), this);
+        if (shortcut) {
+            connect(shortcut,  &QShortcut::activated,
+                    this, [this]() {
+                            auto node = isActionFromMaster() ? getCurrentMasterNode() : getCurrentSlaveNode();
+                            if (checkInvalidNode(node)) {
+                                return;
+                            }
+
+                            int ret = QDialog::Rejected;
+                            if (node->hasContent()) {
+                                NotePropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
+                                ret = dialog.exec();
+                            } else {
+                                FolderPropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
+                                ret = dialog.exec();
+                            }
+
+                            if (ret == QDialog::Accepted) {
+                                setCurrentNode(node);
+                            }
+                        }
+                    );
+        }
+    }
+
     const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
     for (const auto &pro : sessionConfig.getExternalPrograms()) {
         auto shortcut = WidgetUtils::createShortcut(pro.m_shortcut, this);

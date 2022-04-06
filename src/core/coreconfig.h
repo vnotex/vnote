@@ -71,6 +71,7 @@ namespace vnotex
             UnitedEntry,
             Copy,
             Paste,
+            Properties,
             MaxShortcut
         };
         Q_ENUM(Shortcut)
