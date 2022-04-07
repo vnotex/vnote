@@ -1088,23 +1088,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                           p_parent);
         connect(act, &QAction::triggered,
                 this, [this, p_master]() {
-                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
-                    if (checkInvalidNode(node)) {
-                        return;
-                    }
-
-                    int ret = QDialog::Rejected;
-                    if (node->hasContent()) {
-                        NotePropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
-                        ret = dialog.exec();
-                    } else {
-                        FolderPropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
-                        ret = dialog.exec();
-                    }
-
-                    if (ret == QDialog::Accepted) {
-                        setCurrentNode(node);
-                    }
+                    openSelectedNodesProperties(p_master);
                 });
         break;
 
@@ -2213,25 +2197,8 @@ void NotebookNodeExplorer::setupShortcuts()
         if (shortcut) {
             connect(shortcut,  &QShortcut::activated,
                     this, [this]() {
-                            auto node = isActionFromMaster() ? getCurrentMasterNode() : getCurrentSlaveNode();
-                            if (checkInvalidNode(node)) {
-                                return;
-                            }
-
-                            int ret = QDialog::Rejected;
-                            if (node->hasContent()) {
-                                NotePropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
-                                ret = dialog.exec();
-                            } else {
-                                FolderPropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
-                                ret = dialog.exec();
-                            }
-
-                            if (ret == QDialog::Accepted) {
-                                setCurrentNode(node);
-                            }
-                        }
-                    );
+                        openSelectedNodesProperties(isActionFromMaster());
+                    });
         }
     }
 
@@ -2278,6 +2245,25 @@ void NotebookNodeExplorer::openSelectedNodesWithProgram(const QString &p_name, b
         }
     }
 }
+
+void NotebookNodeExplorer::openSelectedNodesProperties(bool p_master) {
+    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+    if (checkInvalidNode(node)) {
+        return;
+    }
+    int ret = QDialog::Rejected;
+    if (node->hasContent()) {
+        NotePropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
+        ret = dialog.exec();
+    } else {
+        FolderPropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
+        ret = dialog.exec();
+    }
+    if (ret == QDialog::Accepted) {
+        setCurrentNode(node);
+    }
+}
+
 
 void NotebookNodeExplorer::loadMasterItemChildren(QTreeWidgetItem *p_item) const
 {
