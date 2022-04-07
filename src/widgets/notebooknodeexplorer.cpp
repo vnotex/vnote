@@ -2246,7 +2246,8 @@ void NotebookNodeExplorer::openSelectedNodesWithProgram(const QString &p_name, b
     }
 }
 
-void NotebookNodeExplorer::openSelectedNodesProperties(bool p_master) {
+void NotebookNodeExplorer::openSelectedNodesProperties(bool p_master)
+{
     auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
     if (checkInvalidNode(node)) {
         return;
@@ -2263,7 +2264,6 @@ void NotebookNodeExplorer::openSelectedNodesProperties(bool p_master) {
         setCurrentNode(node);
     }
 }
-
 
 void NotebookNodeExplorer::loadMasterItemChildren(QTreeWidgetItem *p_item) const
 {
