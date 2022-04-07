@@ -301,7 +301,7 @@ namespace vnotex
 
         void openSelectedNodesWithProgram(const QString &p_name, bool p_master);
 
-        void openSelectedNodesProperties(bool p_master);
+        void openCurrentNodeProperties(bool p_master);
 
         bool belongsToMasterExplorer(const Node *p_node) const;
 

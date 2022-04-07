@@ -1088,7 +1088,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                           p_parent);
         connect(act, &QAction::triggered,
                 this, [this, p_master]() {
-                    openSelectedNodesProperties(p_master);
+                    openCurrentNodeProperties(p_master);
                 });
         break;
 
@@ -2197,7 +2197,7 @@ void NotebookNodeExplorer::setupShortcuts()
         if (shortcut) {
             connect(shortcut,  &QShortcut::activated,
                     this, [this]() {
-                        openSelectedNodesProperties(isActionFromMaster());
+                        openCurrentNodeProperties(isActionFromMaster());
                     });
         }
     }
@@ -2246,7 +2246,7 @@ void NotebookNodeExplorer::openSelectedNodesWithProgram(const QString &p_name, b
     }
 }
 
-void NotebookNodeExplorer::openSelectedNodesProperties(bool p_master)
+void NotebookNodeExplorer::openCurrentNodeProperties(bool p_master)
 {
     const int selectedSize = p_master ? m_masterExplorer->selectedItems().size() : m_slaveExplorer->selectedItems().size();
     if (selectedSize != 1) {
