@@ -2248,6 +2248,10 @@ void NotebookNodeExplorer::openSelectedNodesWithProgram(const QString &p_name, b
 
 void NotebookNodeExplorer::openSelectedNodesProperties(bool p_master)
 {
+    const int selectedSize = p_master ? m_masterExplorer->selectedItems().size() : m_slaveExplorer->selectedItems().size();
+    if (selectedSize != 1) {
+        return;
+    }
     auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
     if (checkInvalidNode(node)) {
         return;
