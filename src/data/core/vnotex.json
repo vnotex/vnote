@@ -62,7 +62,8 @@
             "OpenLastClosedFile" : "Ctrl+Shift+T",
             "UnitedEntry" : "Ctrl+G, G",
             "Copy" : "Ctrl+C",
-            "Paste" : "Ctrl+V"
+            "Paste" : "Ctrl+V",
+            "Properties" : "F2"
         },
         "file_type_suffixes" : [
             {

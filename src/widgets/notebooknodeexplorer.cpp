@@ -1088,23 +1088,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                           p_parent);
         connect(act, &QAction::triggered,
                 this, [this, p_master]() {
-                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
-                    if (checkInvalidNode(node)) {
-                        return;
-                    }
-
-                    int ret = QDialog::Rejected;
-                    if (node->hasContent()) {
-                        NotePropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
-                        ret = dialog.exec();
-                    } else {
-                        FolderPropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
-                        ret = dialog.exec();
-                    }
-
-                    if (ret == QDialog::Accepted) {
-                        setCurrentNode(node);
-                    }
+                    openCurrentNodeProperties(p_master);
                 });
         break;
 
@@ -2207,6 +2191,17 @@ void NotebookNodeExplorer::setupShortcuts()
         }
     }
 
+    // Properties
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Properties), this);
+        if (shortcut) {
+            connect(shortcut,  &QShortcut::activated,
+                    this, [this]() {
+                        openCurrentNodeProperties(isActionFromMaster());
+                    });
+        }
+    }
+
     const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
     for (const auto &pro : sessionConfig.getExternalPrograms()) {
         auto shortcut = WidgetUtils::createShortcut(pro.m_shortcut, this);
@@ -2248,6 +2243,29 @@ void NotebookNodeExplorer::openSelectedNodesWithProgram(const QString &p_name, b
             paras->m_fileType = p_name;
             emit VNoteX::getInst().openFileRequested(file, paras);
         }
+    }
+}
+
+void NotebookNodeExplorer::openCurrentNodeProperties(bool p_master)
+{
+    const int selectedSize = p_master ? m_masterExplorer->selectedItems().size() : m_slaveExplorer->selectedItems().size();
+    if (selectedSize != 1) {
+        return;
+    }
+    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+    if (checkInvalidNode(node)) {
+        return;
+    }
+    int ret = QDialog::Rejected;
+    if (node->hasContent()) {
+        NotePropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
+        ret = dialog.exec();
+    } else {
+        FolderPropertiesDialog dialog(node, VNoteX::getInst().getMainWindow());
+        ret = dialog.exec();
+    }
+    if (ret == QDialog::Accepted) {
+        setCurrentNode(node);
     }
 }
 
