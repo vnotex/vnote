@@ -1060,6 +1060,7 @@ static QIcon generateMenuActionIcon(const QString &p_name)
 
 QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, bool p_master)
 {
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
     QAction *act = nullptr;
     switch (p_act) {
     case Action::NewNote:
@@ -1090,6 +1091,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                 this, [this, p_master]() {
                     openCurrentNodeProperties(p_master);
                 });
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Properties));
         break;
 
     case Action::OpenLocation:
@@ -1162,6 +1164,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                 this, [this, p_master]() {
                     copySelectedNodes(false, p_master);
                 });
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Copy));
         break;
 
     case Action::Cut:
@@ -1176,6 +1179,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
         act = new QAction(tr("&Paste"), p_parent);
         connect(act, &QAction::triggered,
                 this, &NotebookNodeExplorer::pasteNodesFromClipboard);
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Paste));
         break;
 
     case Action::Delete:
