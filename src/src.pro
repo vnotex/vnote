@@ -46,6 +46,8 @@ include($$LIBS_FOLDER/vtextedit/src/editor/editor_export.pri)
 
 include($$LIBS_FOLDER/vtextedit/src/libs/syntax-highlighting/syntax-highlighting_export.pri)
 
+include($$LIBS_FOLDER/QHotkey/QHotkey_export.pri)
+
 include($$PWD/utils/utils.pri)
 
 include($$PWD/export/export.pri)
