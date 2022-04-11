@@ -1,3 +1,6 @@
 [submodule "libs/vtextedit"]
 	path = libs/vtextedit
 	url = https://github.com/vnotex/vtextedit.git
+[submodule "libs/QHotkey"]
+	path = libs/QHotkey
+	url = https://github.com/vnotex/QHotkey.git
