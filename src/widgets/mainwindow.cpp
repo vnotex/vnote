@@ -59,7 +59,6 @@
 #include "statusbarhelper.h"
 #include "consoleviewer.h"
 
-
 using namespace vnotex;
 
 MainWindow::MainWindow(QWidget *p_parent)
