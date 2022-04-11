@@ -63,7 +63,8 @@
             "UnitedEntry" : "Ctrl+G, G",
             "Copy" : "Ctrl+C",
             "Paste" : "Ctrl+V",
-            "Properties" : "F2"
+            "Properties" : "F2",
+            "WakeUp" : "Ctrl+Alt+U"
         },
         "file_type_suffixes" : [
             {

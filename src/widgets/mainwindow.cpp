@@ -19,6 +19,7 @@
 #include <QWindowStateChangeEvent>
 #include <QTimer>
 #include <QProgressDialog>
+#include <QHotkey>
 
 #include "toolbox.h"
 #include "notebookexplorer.h"
@@ -57,6 +58,7 @@
 #include "toolbarhelper.h"
 #include "statusbarhelper.h"
 #include "consoleviewer.h"
+
 
 using namespace vnotex;
 
@@ -595,6 +597,18 @@ void MainWindow::closeOnQuit()
 
 void MainWindow::setupShortcuts()
 {
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+
+    auto qHotkey = new QHotkey(QKeySequence(coreConfig.getShortcut(CoreConfig::WakeUp)), true, qApp);
+
+    // WakeUp
+    {
+        if (qHotkey) {
+            connect(qHotkey , &QHotkey::activated, qApp, [this](){
+                showMainWindow();
+            });
+        }
+    }
 }
 
 void MainWindow::setStayOnTop(bool p_enabled)

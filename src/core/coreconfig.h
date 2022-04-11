@@ -72,6 +72,7 @@ namespace vnotex
             Copy,
             Paste,
             Properties,
+            WakeUp,
             MaxShortcut
         };
         Q_ENUM(Shortcut)
