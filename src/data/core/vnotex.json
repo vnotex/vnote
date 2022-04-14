@@ -64,7 +64,7 @@
             "Copy" : "Ctrl+C",
             "Paste" : "Ctrl+V",
             "Properties" : "F2",
-            "WakeUp" : "Ctrl+Alt+U"
+            "Global_WakeUp" : "Ctrl+Alt+U"
         },
         "file_type_suffixes" : [
             {

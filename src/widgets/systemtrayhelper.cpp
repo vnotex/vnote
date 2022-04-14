@@ -47,7 +47,7 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win)
                                        p_win->showMainWindow();
                                    });
 
-        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::WakeUp));
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Global_WakeUp));
     }
 
     menu->addSeparator();
