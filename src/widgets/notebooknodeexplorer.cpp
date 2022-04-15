@@ -1071,6 +1071,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                 this, []() {
                     emit VNoteX::getInst().newNoteRequested();
                 });
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::NewNote));
         break;
 
     case Action::NewFolder:
@@ -1081,6 +1082,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                 this, []() {
                     emit VNoteX::getInst().newFolderRequested();
                 });
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::NewFolder));
         break;
 
     case Action::Properties:

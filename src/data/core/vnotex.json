@@ -14,6 +14,7 @@
             "ExpandContentArea" : "Ctrl+G, E",
             "Settings" : "Ctrl+Alt+P",
             "NewNote" : "Ctrl+Alt+N",
+            "NewFolder" : "Ctrl+Alt+S",
             "CloseTab" : "Ctrl+G, X",
             "CloseOtherTabs" : "",
             "CloseTabsToTheRight" : "",
