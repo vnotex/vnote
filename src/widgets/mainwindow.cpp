@@ -599,13 +599,10 @@ void MainWindow::setupShortcuts()
     const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
 
     // For cross-platform global shortcuts, the external library QHotkey is used.
-    auto qHotkey = new QHotkey(QKeySequence(coreConfig.getShortcut(CoreConfig::Global_WakeUp)), true, qApp);
-
-    // Global_WakeUp
-    {
-        connect(qHotkey , &QHotkey::activated, this, [this](){
-            showMainWindow();
-        });
+    QKeySequence wakeUp = QKeySequence(coreConfig.getShortcut(CoreConfig::Global_WakeUp));
+    if (!wakeUp.isEmpty()) {
+        auto qHotkey = new QHotkey(wakeUp, true, this);
+        connect(qHotkey , &QHotkey::activated, this, &MainWindow::showMainWindow);
     }
 }
 
