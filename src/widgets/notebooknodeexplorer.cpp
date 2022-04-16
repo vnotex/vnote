@@ -1173,6 +1173,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                 this, [this, p_master]() {
                     copySelectedNodes(true, p_master);
                 });
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Cut));
         break;
 
     case Action::Paste:
@@ -2182,6 +2183,17 @@ void NotebookNodeExplorer::setupShortcuts()
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
                         copySelectedNodes(false, isActionFromMaster());
+                    });
+        }
+    }
+
+    // Cut
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Cut), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        copySelectedNodes(true, isActionFromMaster());
                     });
         }
     }

@@ -71,6 +71,7 @@ namespace vnotex
             UnitedEntry,
             Copy,
             Paste,
+            Cut,
             Properties,
             Global_WakeUp,
             MaxShortcut
