@@ -5,6 +5,9 @@
 #include <QSystemTrayIcon>
 #include <QApplication>
 
+#include <utils/widgetutils.h>
+#include <core/configmgr.h>
+#include <core/coreconfig.h>
 #include "mainwindow.h"
 #include "widgetsfactory.h"
 
@@ -35,11 +38,19 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win)
     auto menu = WidgetsFactory::createMenu(p_win);
     trayIcon->setContextMenu(menu);
 
-    menu->addAction(MainWindow::tr("Show Main Window"),
-                    menu,
-                    [p_win]() {
-                        p_win->showMainWindow();
-                    });
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+
+    {
+        auto act = menu->addAction(MainWindow::tr("Show Main Window"),
+                                   menu,
+                                   [p_win]() {
+                                       p_win->showMainWindow();
+                                   });
+
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Global_WakeUp));
+    }
+
+    menu->addSeparator();
 
     menu->addAction(MainWindow::tr("Quit"),
                     menu,
