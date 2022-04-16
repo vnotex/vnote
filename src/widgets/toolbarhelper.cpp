@@ -134,12 +134,14 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
         newBtn->setText(MainWindow::tr("New Note"));
 
         // New folder.
-        newMenu->addAction(generateIcon("new_folder.svg"),
-                           MainWindow::tr("New Folder"),
-                           newMenu,
-                           []() {
-                               emit VNoteX::getInst().newFolderRequested();
-                           });
+        auto newFolderAct = newMenu->addAction(generateIcon("new_folder.svg"),
+                                               MainWindow::tr("New Folder"),
+                                               newMenu,
+                                               []() {
+                                                   emit VNoteX::getInst().newFolderRequested();
+                                               });
+        WidgetUtils::addActionShortcut(newFolderAct,
+                                       coreConfig.getShortcut(CoreConfig::Shortcut::NewFolder));
 
         newMenu->addSeparator();
 
