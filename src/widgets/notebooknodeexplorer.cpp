@@ -2180,7 +2180,7 @@ void NotebookNodeExplorer::setupShortcuts()
 
     // Copy
     {
-        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Copy), this);
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Copy), this, Qt::WidgetWithChildrenShortcut);
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
