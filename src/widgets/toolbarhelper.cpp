@@ -421,7 +421,7 @@ QIcon ToolBarHelper::generateIcon(const QString &p_iconName)
 
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
 
-    if (colors.isEmpty()) {
+    if (colors.isEmpty() && themeMgr.customIconsPath.isEmpty() ) {
         const auto fg = themeMgr.paletteColor(c_fgPalette);
         const auto disabledFg = themeMgr.paletteColor(c_disabledPalette);
 

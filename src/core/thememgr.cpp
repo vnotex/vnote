@@ -36,7 +36,14 @@ QString ThemeMgr::getIconFile(const QString &p_icon) const
         return p_icon;
     }
 
-    return ":/vnotex/data/core/icons/" + p_icon;
+    // If there is an ICONS folder in the theme configuration, use the custom ICONS from it.
+    QString customIcons = this->customIconsPath + p_icon;
+    QFile iconsFile(customIcons);
+    if (iconsFile.exists()) {
+        return customIcons;
+    } else {
+        return ":/vnotex/data/core/icons/" + p_icon;
+    }
 }
 
 void ThemeMgr::loadAvailableThemes()
@@ -85,6 +92,13 @@ const Theme &ThemeMgr::getCurrentTheme() const
 void ThemeMgr::loadCurrentTheme(const QString &p_themeName)
 {
     auto themeFolder = findThemeFolder(p_themeName);
+
+    QString customIconsPath = themeFolder + "/icons/";
+    QDir customIconsDir(customIconsPath);
+    if (customIconsDir.exists()) {
+        this->customIconsPath = customIconsPath;
+    }
+
     if (themeFolder.isNull()) {
         qWarning() << "failed to locate theme" << p_themeName;
     } else {

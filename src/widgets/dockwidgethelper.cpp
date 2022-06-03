@@ -512,16 +512,20 @@ QVector<void *> DockWidgetHelper::getVisibleNavigationItems()
 
 const QIcon &DockWidgetHelper::getDockIcon(DockIndex p_dockIndex)
 {
-    static const auto fg = VNoteX::getInst().getThemeMgr().paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#fg");
-    static const auto selectedFg = VNoteX::getInst().getThemeMgr().paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#selected#fg");
+    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+
+    static const auto fg = themeMgr.paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#fg");
+    static const auto selectedFg = themeMgr.paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#selected#fg");
 
     const auto area = m_mainWindow->dockWidgetArea(m_docks[p_dockIndex]);
     const int newAngle = rotationAngle(area);
     if (m_dockIcons[p_dockIndex].m_rotationAngle != newAngle && area != Qt::NoDockWidgetArea) {
         QVector<IconUtils::OverriddenColor> colors;
-        colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
-        // FIXME: the Selected Mode is not used by the selected tab of a QTabBar.
-        colors.push_back(IconUtils::OverriddenColor(selectedFg, QIcon::Selected));
+        if (themeMgr.customIconsPath.isEmpty()) {
+            colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+            // FIXME: the Selected Mode is not used by the selected tab of a QTabBar.
+            colors.push_back(IconUtils::OverriddenColor(selectedFg, QIcon::Selected));
+        }
 
         auto iconFile = VNoteX::getInst().getThemeMgr().getIconFile(iconFileName(p_dockIndex));
         m_dockIcons[p_dockIndex].m_icon = IconUtils::fetchIcon(iconFile, colors, newAngle);
