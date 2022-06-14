@@ -2169,7 +2169,9 @@ void NotebookNodeExplorer::setupShortcuts()
 
     // OpenWithDefaultProgram.
     {
-        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::OpenWithDefaultProgram), this);
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::OpenWithDefaultProgram),
+                                                    this,
+                                                    Qt::WidgetWithChildrenShortcut);
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
@@ -2180,7 +2182,9 @@ void NotebookNodeExplorer::setupShortcuts()
 
     // Copy
     {
-        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Copy), this, Qt::WidgetWithChildrenShortcut);
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Copy),
+                                                    this,
+                                                    Qt::WidgetWithChildrenShortcut);
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
@@ -2191,7 +2195,9 @@ void NotebookNodeExplorer::setupShortcuts()
 
     // Cut
     {
-        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Cut), this);
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Cut),
+                                                    this,
+                                                    Qt::WidgetWithChildrenShortcut);
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
@@ -2202,7 +2208,9 @@ void NotebookNodeExplorer::setupShortcuts()
 
     // Paste
     {
-        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Paste), this);
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Paste),
+                                                    this,
+                                                    Qt::WidgetWithChildrenShortcut);
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, &NotebookNodeExplorer::pasteNodesFromClipboard);
@@ -2211,7 +2219,9 @@ void NotebookNodeExplorer::setupShortcuts()
 
     // Properties
     {
-        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Properties), this);
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Properties),
+                                                    this,
+                                                    Qt::WidgetWithChildrenShortcut);
         if (shortcut) {
             connect(shortcut,  &QShortcut::activated,
                     this, [this]() {
@@ -2222,7 +2232,7 @@ void NotebookNodeExplorer::setupShortcuts()
 
     const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
     for (const auto &pro : sessionConfig.getExternalPrograms()) {
-        auto shortcut = WidgetUtils::createShortcut(pro.m_shortcut, this);
+        auto shortcut = WidgetUtils::createShortcut(pro.m_shortcut, this, Qt::WidgetWithChildrenShortcut);
         const auto &name = pro.m_name;
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,

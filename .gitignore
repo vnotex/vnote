@@ -3,3 +3,6 @@
 .ccls
 compile_commands.json
 compile_flags.txt
+.cache
+.tasks
+.vimspector.json
