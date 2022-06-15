@@ -47,6 +47,10 @@ void UnitedEntryMgr::addEntry(const QSharedPointer<IUnitedEntry> &p_entry)
             this, [this]() {
                 emit entryFinished(reinterpret_cast<IUnitedEntry *>(sender()));
             });
+    connect(p_entry.data(), &IUnitedEntry::itemActivated,
+            this, [this](bool quit, bool restoreFocus) {
+                emit entryItemActivated(reinterpret_cast<IUnitedEntry *>(sender()), quit, restoreFocus);
+            });
 }
 
 QList<QSharedPointer<IUnitedEntry>> UnitedEntryMgr::getEntries() const

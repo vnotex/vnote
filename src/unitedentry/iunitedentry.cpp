@@ -6,11 +6,13 @@
 
 #include <widgets/treewidget.h>
 
+#include "unitedentrymgr.h"
+
 using namespace vnotex;
 
 IUnitedEntry::IUnitedEntry(const QString &p_name,
                            const QString &p_description,
-                           const UnitedEntryMgr *p_mgr,
+                           UnitedEntryMgr *p_mgr,
                            QObject *p_parent)
     : QObject(p_parent),
       m_mgr(p_mgr),
@@ -135,4 +137,10 @@ void IUnitedEntry::handleActionCommon(Action p_act, QWidget *p_widget)
         Q_ASSERT(false);
         break;
     }
+}
+
+bool IUnitedEntry::isAliasOf(const IUnitedEntry *p_entry) const
+{
+    Q_UNUSED(p_entry);
+    return false;
 }

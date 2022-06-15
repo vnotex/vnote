@@ -28,7 +28,7 @@ namespace vnotex
 
         IUnitedEntry(const QString &p_name,
                      const QString &p_description,
-                     const UnitedEntryMgr *p_mgr,
+                     UnitedEntryMgr *p_mgr,
                      QObject *p_parent = nullptr);
 
         const QString &name() const;
@@ -46,10 +46,14 @@ namespace vnotex
 
         virtual QSharedPointer<QWidget> currentPopupWidget() const = 0;
 
+        virtual bool isAliasOf(const IUnitedEntry *p_entry) const;
+
         static void handleActionCommon(Action p_act, QWidget *p_widget);
 
     signals:
         void finished();
+
+        void itemActivated(bool p_quit, bool p_restoreFocus);
 
     protected:
         virtual void initOnFirstProcess() = 0;
@@ -61,7 +65,7 @@ namespace vnotex
 
         virtual void setOngoing(bool p_ongoing);
 
-        const UnitedEntryMgr *m_mgr = nullptr;
+        UnitedEntryMgr *m_mgr = nullptr;
 
     private:
         bool m_initialized = false;

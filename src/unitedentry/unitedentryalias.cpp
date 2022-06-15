@@ -11,7 +11,7 @@ using namespace vnotex;
 UnitedEntryAlias::UnitedEntryAlias(const QString &p_name,
                                    const QString &p_description,
                                    const QString &p_value,
-                                   const UnitedEntryMgr *p_mgr,
+                                   UnitedEntryMgr *p_mgr,
                                    QObject *p_parent)
     : IUnitedEntry(p_name, p_description, p_mgr, p_parent),
       m_value(p_value)
@@ -20,7 +20,7 @@ UnitedEntryAlias::UnitedEntryAlias(const QString &p_name,
 }
 
 UnitedEntryAlias::UnitedEntryAlias(const QJsonObject &p_obj,
-                                   const UnitedEntryMgr *p_mgr,
+                                   UnitedEntryMgr *p_mgr,
                                    QObject *p_parent)
     : UnitedEntryAlias(p_obj[QStringLiteral("name")].toString(),
                        p_obj[QStringLiteral("description")].toString(),
@@ -52,6 +52,8 @@ void UnitedEntryAlias::initOnFirstProcess()
     } else {
         connect(m_realEntry, &IUnitedEntry::finished,
                 this, &IUnitedEntry::finished);
+        connect(m_realEntry, &IUnitedEntry::itemActivated,
+                this, &IUnitedEntry::itemActivated);
     }
 }
 
@@ -96,4 +98,9 @@ QSharedPointer<QWidget> UnitedEntryAlias::currentPopupWidget() const
     }
 
     return nullptr;
+}
+
+bool UnitedEntryAlias::isAliasOf(const IUnitedEntry *p_entry) const
+{
+    return p_entry == m_realEntry;
 }

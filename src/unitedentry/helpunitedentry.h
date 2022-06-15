@@ -13,7 +13,7 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        HelpUnitedEntry(const UnitedEntryMgr *p_mgr, QObject *p_parent = nullptr);
+        HelpUnitedEntry(UnitedEntryMgr *p_mgr, QObject *p_parent = nullptr);
 
         QSharedPointer<QWidget> currentPopupWidget() const Q_DECL_OVERRIDE;
 

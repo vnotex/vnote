@@ -23,7 +23,7 @@
 using namespace vnotex;
 
 FindUnitedEntry::FindUnitedEntry(const QSharedPointer<ISearchInfoProvider> &p_provider,
-                                 const UnitedEntryMgr *p_mgr,
+                                 UnitedEntryMgr *p_mgr,
                                  QObject *p_parent)
     : IUnitedEntry("find",
                    tr("Search for files in notebooks"),
@@ -343,4 +343,6 @@ void FindUnitedEntry::handleItemActivated(QTreeWidgetItem *p_item, int p_column)
 
     paras->m_searchToken = m_searchTokenOfSession;
     emit VNoteX::getInst().openFileRequested(itemPath, paras);
+
+    emit itemActivated(true, false);
 }

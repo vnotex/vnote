@@ -307,8 +307,9 @@ QToolBar *ToolBarHelper::setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_
 
     // United Entry.
     {
-        auto ueEdit = new UnitedEntry(tb);
-        tb->addWidget(ueEdit);
+        // Managed by QObject.
+        auto ue = new UnitedEntry(p_win);
+        tb->addAction(ue->getTriggerAction());
     }
 
     return tb;

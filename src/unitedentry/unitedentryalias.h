@@ -19,11 +19,11 @@ namespace vnotex
         UnitedEntryAlias(const QString &p_name,
                          const QString &p_description,
                          const QString &p_value,
-                         const UnitedEntryMgr *p_mgr,
+                         UnitedEntryMgr *p_mgr,
                          QObject *p_parent = nullptr);
 
         UnitedEntryAlias(const QJsonObject &p_obj,
-                         const UnitedEntryMgr *p_mgr,
+                         UnitedEntryMgr *p_mgr,
                          QObject *p_parent = nullptr);
 
         QJsonObject toJson() const;
@@ -35,6 +35,8 @@ namespace vnotex
         void handleAction(Action p_act) Q_DECL_OVERRIDE;
 
         QSharedPointer<QWidget> currentPopupWidget() const Q_DECL_OVERRIDE;
+
+        bool isAliasOf(const IUnitedEntry *p_entry) const Q_DECL_OVERRIDE;
 
     protected:
         void initOnFirstProcess() Q_DECL_OVERRIDE;

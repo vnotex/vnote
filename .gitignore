@@ -6,3 +6,8 @@ compile_flags.txt
 .cache
 .tasks
 .vimspector.json
+GPATH
+GRTAGS
+GTAGS
+aqtinstall.log
+tags

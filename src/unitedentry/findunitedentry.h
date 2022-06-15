@@ -24,7 +24,7 @@ namespace vnotex
         Q_OBJECT
     public:
         FindUnitedEntry(const QSharedPointer<ISearchInfoProvider> &p_provider,
-                        const UnitedEntryMgr *p_mgr,
+                        UnitedEntryMgr *p_mgr,
                         QObject *p_parent = nullptr);
 
         void stop() Q_DECL_OVERRIDE;

@@ -36,6 +36,8 @@ namespace vnotex
     signals:
         void entryFinished(IUnitedEntry *p_entry);
 
+        void entryItemActivated(IUnitedEntry *p_entry, bool p_quit, bool p_restoreFocus);
+
     private:
         explicit UnitedEntryMgr(QObject *p_parent = nullptr);
 

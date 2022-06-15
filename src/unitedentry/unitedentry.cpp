@@ -1,6 +1,6 @@
 #include "unitedentry.h"
 
-#include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QSizePolicy>
 #include <QAction>
 #include <QFocusEvent>
@@ -13,11 +13,11 @@
 #include <QLabel>
 #include <QFont>
 #include <QMenu>
+#include <QMainWindow>
 
 #include <widgets/lineeditwithsnippet.h>
 #include <widgets/widgetsfactory.h>
 #include <widgets/propertydefs.h>
-#include <widgets/mainwindow.h>
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
 #include <core/widgetconfig.h>
@@ -34,8 +34,9 @@
 
 using namespace vnotex;
 
-UnitedEntry::UnitedEntry(QWidget *p_parent)
-    : QWidget(p_parent)
+UnitedEntry::UnitedEntry(QMainWindow *p_mainWindow)
+    : QFrame(p_mainWindow),
+      m_mainWindow(p_mainWindow)
 {
     m_processTimer = new QTimer(this);
     m_processTimer->setSingleShot(true);
@@ -45,11 +46,20 @@ UnitedEntry::UnitedEntry(QWidget *p_parent)
 
     setupUI();
 
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    setWindowFlags(Qt::Tool | Qt::NoDropShadowWindowHint);
+    setWindowModality(Qt::ApplicationModal);
+#else
+    setWindowFlags(Qt::ToolTip);
+#endif
+
     connect(qApp, &QApplication::focusChanged,
             this, &UnitedEntry::handleFocusChanged);
 
     connect(&UnitedEntryMgr::getInst(), &UnitedEntryMgr::entryFinished,
             this, &UnitedEntry::handleEntryFinished);
+    connect(&UnitedEntryMgr::getInst(), &UnitedEntryMgr::entryItemActivated,
+            this, &UnitedEntry::handleEntryItemActivated);
 }
 
 UnitedEntry::~UnitedEntry()
@@ -58,79 +68,62 @@ UnitedEntry::~UnitedEntry()
 
 void UnitedEntry::setupUI()
 {
-    auto mainLayout = new QHBoxLayout(this);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-
-    setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Fixed);
-
-    // Shortcut.
-    const auto shortcut = ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::UnitedEntry);
-    const QKeySequence kseq(shortcut);
-    const auto shortcutText = kseq.isEmpty() ? QString() : kseq.toString(QKeySequence::NativeText);
-    if (!kseq.isEmpty()) {
-        auto sc = WidgetUtils::createShortcut(shortcut, this, Qt::ShortcutContext::ApplicationShortcut);
-        if (sc) {
-            connect(sc, &QShortcut::activated,
-                    this, [this]() {
-                        if (m_lineEdit->hasFocus()) {
-                            return;
-                        }
-
-                        bool popupVisible = m_popup->isVisible();
-                        if (popupVisible) {
-                            // Make m_lineEdit->setFocus() work.
-                            m_popup->hide();
-                        }
-                        m_lineEdit->setFocus();
-                        if (popupVisible) {
-                            m_popup->show();
-                        }
-                    });
-        }
-    }
-    setToolTip(shortcutText.isEmpty() ? tr("United Entry") : tr("United Entry (%1)").arg(shortcutText));
+    auto mainLayout = new QVBoxLayout(this);
 
     // Line edit.
     m_lineEdit = WidgetsFactory::createLineEditWithSnippet(this);
     mainLayout->addWidget(m_lineEdit);
-    m_lineEdit->setToolTip(QString());
-    m_lineEdit->setPlaceholderText(shortcutText.isEmpty() ? tr("Type to command") : tr("Type to command (%1)").arg(shortcutText));
+    m_lineEdit->setPlaceholderText(tr("Type to command"));
     m_lineEdit->setClearButtonEnabled(true);
-    m_lineEdit->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Fixed);
+    m_lineEdit->installEventFilter(this);
     connect(m_lineEdit, &QLineEdit::textChanged,
             m_processTimer, QOverload<>::of(&QTimer::start));
     setFocusProxy(m_lineEdit);
 
+    setupActions();
+
     // Popup.
     m_popup = new EntryPopup(this);
+    mainLayout->addWidget(m_popup);
     m_popup->installEventFilter(this);
-    m_popup->hide();
 
-    setupIcons();
+    hide();
 }
 
-void UnitedEntry::setupIcons()
+QAction *UnitedEntry::getTriggerAction()
 {
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
     const auto fg = themeMgr.paletteColor("widgets#unitedentry#icon#fg");
-    // Use QIcon::Disabled as the busy state.
-    const auto busyFg = themeMgr.paletteColor("widgets#unitedentry#icon#busy#fg");
-    QVector<IconUtils::OverriddenColor> colors;
-    colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
-    colors.push_back(IconUtils::OverriddenColor(busyFg, QIcon::Disabled));
 
-    const auto icon = IconUtils::fetchIcon(themeMgr.getIconFile("united_entry.svg"), colors);
-    m_iconAction = m_lineEdit->addAction(icon, QLineEdit::ActionPosition::LeadingPosition);
-    m_iconAction->setText(tr("Options"));
+    const auto icon = IconUtils::fetchIcon(themeMgr.getIconFile("united_entry.svg"), fg);
+    auto act = new QAction(icon, tr("United Entry"), this);
+    connect(act, &QAction::triggered,
+            this, &UnitedEntry::activateUnitedEntry);
+
+    const auto shortcut = ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::UnitedEntry);
+    WidgetUtils::addActionShortcut(act, shortcut, Qt::ApplicationShortcut);
+
+    return act;
+}
+
+void UnitedEntry::setupActions()
+{
+    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+    const auto fg = themeMgr.paletteColor("widgets#unitedentry#icon#fg");
+    const auto busyFg = themeMgr.paletteColor("widgets#unitedentry#icon#busy#fg");
 
     // Menu.
+    const auto menuIcon = IconUtils::fetchIcon(themeMgr.getIconFile("menu.svg"), fg);
+    m_menuIconAction = m_lineEdit->addAction(menuIcon, QLineEdit::ActionPosition::TrailingPosition);
+    m_menuIconAction->setText(tr("Options"));
+
     auto menu = WidgetsFactory::createMenu(this);
-    m_iconAction->setMenu(menu);
+    m_menuIconAction->setMenu(menu);
 
     {
         auto expandAct = menu->addAction(tr("Expand All"),
                                          this,
-                                         [this](bool checked) {
+                                         [](bool checked) {
                                             ConfigMgr::getInst().getWidgetConfig().setUnitedEntryExpandAllEnabled(checked);
                                             UnitedEntryMgr::getInst().setExpandAllEnabled(checked);
                                          });
@@ -139,12 +132,18 @@ void UnitedEntry::setupIcons()
         UnitedEntryMgr::getInst().setExpandAllEnabled(expandAct->isChecked());
     }
 
-    connect(m_iconAction, &QAction::triggered,
+    connect(m_menuIconAction, &QAction::triggered,
             this, [this]() {
-                auto pos = mapToGlobal(QPoint(0, height()));
-                auto menu = m_iconAction->menu();
+                const auto pos = QCursor::pos();
+                auto menu = m_menuIconAction->menu();
                 menu->exec(pos);
             });
+
+    // Busy.
+    const auto busyIcon = IconUtils::fetchIcon(themeMgr.getIconFile("busy.svg"), busyFg);
+    m_busyIconAction = m_lineEdit->addAction(busyIcon, QLineEdit::ActionPosition::TrailingPosition);
+    m_busyIconAction->setText(tr("Busy"));
+    m_busyIconAction->setVisible(false);
 }
 
 void UnitedEntry::activateUnitedEntry()
@@ -159,12 +158,15 @@ void UnitedEntry::activateUnitedEntry()
 
     m_activated = true;
 
-    setSizePolicy(QSizePolicy::Policy::MinimumExpanding, QSizePolicy::Policy::Fixed);
+    m_previousFocusWidget = QApplication::focusWidget();
+
+    show();
+
+    m_processTimer->stop();
+    processInput();
 
     m_lineEdit->selectAll();
     m_lineEdit->setFocus();
-
-    m_processTimer->start();
 }
 
 void UnitedEntry::deactivateUnitedEntry()
@@ -176,28 +178,7 @@ void UnitedEntry::deactivateUnitedEntry()
     m_activated = false;
     m_previousFocusWidget = nullptr;
 
-    setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Fixed);
-
-    m_popup->hide();
-}
-
-void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now)
-{
-    if (p_now == m_lineEdit) {
-        activateUnitedEntry();
-        if (!m_previousFocusWidget && p_old != this && !WidgetUtils::isOrAncestorOf(this, p_old)) {
-            m_previousFocusWidget = p_old;
-        }
-        return;
-    }
-
-    if (!m_activated) {
-        return;
-    }
-
-    if (!p_now || (p_now != this && !WidgetUtils::isOrAncestorOf(this, p_now))) {
-        deactivateUnitedEntry();
-    }
+    hide();
 }
 
 void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
@@ -310,13 +291,13 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
         break;
     }
 
-    QWidget::keyPressEvent(p_event);
+    QFrame::keyPressEvent(p_event);
 }
 
 void UnitedEntry::clear()
 {
-    m_lineEdit->setFocus();
     m_lineEdit->clear();
+    m_lineEdit->setFocus();
 }
 
 void UnitedEntry::processInput()
@@ -324,11 +305,6 @@ void UnitedEntry::processInput()
     m_hasPending = false;
 
     if (!m_activated) {
-        return;
-    }
-
-    if (m_iconAction->menu()->isVisible()) {
-        // Do not display the popup which will hide the menu.
         return;
     }
 
@@ -375,7 +351,8 @@ void UnitedEntry::processInput()
 void UnitedEntry::popupWidget(const QSharedPointer<QWidget> &p_widget)
 {
     m_popup->setWidget(p_widget);
-    m_popup->show();
+
+    m_lineEdit->setFocus();
 }
 
 const QSharedPointer<QTreeWidget> &UnitedEntry::getEntryListWidget()
@@ -397,18 +374,6 @@ const QSharedPointer<QTreeWidget> &UnitedEntry::getEntryListWidget()
 QSharedPointer<QLabel> UnitedEntry::getInfoWidget(const QString &p_info)
 {
     return EntryWidgetFactory::createLabel(p_info);
-}
-
-void UnitedEntry::resizeEvent(QResizeEvent *p_event)
-{
-    QWidget::resizeEvent(p_event);
-
-    updatePopupGeometry();
-}
-
-void UnitedEntry::updatePopupGeometry()
-{
-    m_popup->updateGeometryToContents();
 }
 
 bool UnitedEntry::filterEntryListWidgetEntries(const QString &p_name)
@@ -445,14 +410,29 @@ void UnitedEntry::handleEntryFinished(IUnitedEntry *p_entry)
     }
 }
 
+void UnitedEntry::handleEntryItemActivated(IUnitedEntry *p_entry, bool p_quit, bool p_restoreFocus)
+{
+    if (p_entry != m_lastEntry.data()) {
+        return;
+    }
+
+    if (p_quit) {
+        if (p_restoreFocus) {
+            exitUnitedEntry();
+        } else {
+            deactivateUnitedEntry();
+        }
+    }
+}
+
 void UnitedEntry::setBusy(bool p_busy)
 {
-    m_iconAction->setEnabled(!p_busy);
+    m_busyIconAction->setVisible(p_busy);
 }
 
 bool UnitedEntry::eventFilter(QObject *p_watched, QEvent *p_event)
 {
-    if (p_watched == m_popup) {
+    if (p_watched == m_popup || p_watched == m_lineEdit) {
         if (p_event->type() == QEvent::KeyPress) {
             auto eve = static_cast<QKeyEvent *>(p_event);
             switch (eve->key()) {
@@ -463,8 +443,6 @@ bool UnitedEntry::eventFilter(QObject *p_watched, QEvent *p_event)
                 Q_FALLTHROUGH();
             case Qt::Key_Escape:
                 exitUnitedEntry();
-                // Need to call deactivateUnitedEntry() again since focusChanged is not triggered.
-                deactivateUnitedEntry();
                 return true;
 
             default:
@@ -473,7 +451,7 @@ bool UnitedEntry::eventFilter(QObject *p_watched, QEvent *p_event)
         }
     }
 
-    return QWidget::eventFilter(p_watched, p_event);
+    return QFrame::eventFilter(p_watched, p_event);
 }
 
 void UnitedEntry::exitUnitedEntry()
@@ -482,6 +460,52 @@ void UnitedEntry::exitUnitedEntry()
         // Deactivate and focus previous widget.
         m_previousFocusWidget->setFocus();
     } else {
-        VNoteX::getInst().getMainWindow()->setFocus();
+        m_mainWindow->setFocus();
+    }
+    deactivateUnitedEntry();
+}
+
+void UnitedEntry::showEvent(QShowEvent *p_event)
+{
+    QFrame::showEvent(p_event);
+
+    // Fix input method issue.
+    activateWindow();
+
+    m_lineEdit->setFocus();
+
+    updateGeometryToContents();
+}
+
+void UnitedEntry::updateGeometryToContents()
+{
+    adjustSize();
+
+    const auto winSize = m_mainWindow->size();
+    const auto sz = preferredSize();
+    auto pos = parentWidget()->mapToGlobal(QPoint((winSize.width() - sz.width()) / 2,
+                                                  (winSize.height() - sz.height()) / 2));
+    setGeometry(QRect(pos, preferredSize()));
+}
+
+QSize UnitedEntry::preferredSize() const
+{
+    const int minWidth = 400;
+    const int minHeight = 300;
+
+    const auto winSize = m_mainWindow->size();
+    int w = minWidth;
+    int h = sizeHint().height();
+    w = qMax(w, qMin(winSize.width() / 2, 900));
+    h = qMax(h, qMin(winSize.height() - 300, 800));
+    return QSize(qMax(minWidth, w), qMax(h, minHeight));
+}
+
+void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now)
+{
+    Q_UNUSED(p_old);
+    if (m_activated &&
+        (!p_now || (p_now != this && !WidgetUtils::isOrAncestorOf(this, p_now)))) {
+        deactivateUnitedEntry();
     }
 }

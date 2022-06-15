@@ -16,14 +16,7 @@ namespace vnotex
 
         void setWidget(const QSharedPointer<QWidget> &p_widget);
 
-        void updateGeometryToContents();
-
-    protected:
-        void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
-
     private:
-        QSize preferredSize() const;
-
         void takeWidget(QWidget *p_widget);
 
     private:

@@ -6,7 +6,7 @@
 
 using namespace vnotex;
 
-HelpUnitedEntry::HelpUnitedEntry(const UnitedEntryMgr *p_mgr, QObject *p_parent)
+HelpUnitedEntry::HelpUnitedEntry(UnitedEntryMgr *p_mgr, QObject *p_parent)
     : IUnitedEntry("help",
                    tr("Help information about United Entry"),
                    p_mgr,
