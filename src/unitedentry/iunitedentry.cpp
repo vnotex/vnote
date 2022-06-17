@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include <QCoreApplication>
+#include <QDebug>
 #include <QKeyEvent>
 
 #include <widgets/treewidget.h>

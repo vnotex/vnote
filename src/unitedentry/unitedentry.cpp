@@ -194,7 +194,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
         Q_FALLTHROUGH();
     case Qt::Key_Escape:
         exitUnitedEntry();
-        break;
+        return;
 
     // Up/Down Ctrl+K/J to navigate to previous/next item.
     case Qt::Key_Up:
@@ -206,7 +206,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
         } else if (m_entryListWidget && m_entryListWidget->isVisible()) {
             IUnitedEntry::handleActionCommon(act, m_entryListWidget.data());
         }
-        break;
+        return;
 
     case Qt::Key_K:
         act = IUnitedEntry::Action::PreviousItem;
@@ -219,7 +219,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
                 IUnitedEntry::handleActionCommon(act, m_entryListWidget.data());
             }
         }
-        break;
+        return;
 
     case Qt::Key_Enter:
         Q_FALLTHROUGH();
@@ -227,7 +227,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
         if (m_lastEntry) {
             m_lastEntry->handleAction(IUnitedEntry::Action::Activate);
         }
-        break;
+        return;
 
     case Qt::Key_E:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -238,7 +238,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
                 m_lineEdit->setText(entry.m_name + QLatin1Char(' '));
             }
         }
-        break;
+        return;
 
     case Qt::Key_F:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -249,7 +249,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
                 m_lineEdit->setSelection(0, entry.m_name.size());
             }
         }
-        break;
+        return;
 
     case Qt::Key_D:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -258,7 +258,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
                 m_lastEntry->stop();
             }
         }
-        break;
+        return;
 
     case Qt::Key_L:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -267,7 +267,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
                 m_lastEntry->handleAction(IUnitedEntry::Action::LevelUp);
             }
         }
-        break;
+        return;
 
     case Qt::Key_I:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -276,7 +276,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
                 m_lastEntry->handleAction(IUnitedEntry::Action::ExpandCollapse);
             }
         }
-        break;
+        return;
 
     case Qt::Key_B:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -285,7 +285,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
                 m_lastEntry->handleAction(IUnitedEntry::Action::ExpandCollapseAll);
             }
         }
-        break;
+        return;
 
     default:
         break;
