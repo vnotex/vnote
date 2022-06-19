@@ -50,7 +50,7 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile, const QString &p_overridde
     QVector<OverriddenColor> colors;
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
 
-    if (!p_overriddenForeground.isEmpty() && themeMgr.customIconsPath.isEmpty()) {
+    if (!p_overriddenForeground.isEmpty() && themeMgr.getIconMonochrome()) {
         colors.push_back(OverriddenColor(p_overriddenForeground, QIcon::Normal, QIcon::Off));
     }
 

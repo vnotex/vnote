@@ -44,12 +44,12 @@ namespace vnotex
 
         QString getFile(Theme::File p_fileType) const;
 
-        QString customIconsPath;
-
         // Return the file path of the theme or just the theme name.
         QString getEditorHighlightTheme() const;
 
         QString getMarkdownEditorHighlightTheme() const;
+
+        bool getIconMonochrome() const;
 
         const QColor &getBaseBackground() const;
         void setBaseBackground(const QColor &p_bg);

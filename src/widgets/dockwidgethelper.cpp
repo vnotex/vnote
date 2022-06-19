@@ -521,7 +521,7 @@ const QIcon &DockWidgetHelper::getDockIcon(DockIndex p_dockIndex)
     const int newAngle = rotationAngle(area);
     if (m_dockIcons[p_dockIndex].m_rotationAngle != newAngle && area != Qt::NoDockWidgetArea) {
         QVector<IconUtils::OverriddenColor> colors;
-        if (themeMgr.customIconsPath.isEmpty()) {
+        if (themeMgr.getIconMonochrome()) {
             colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
             // FIXME: the Selected Mode is not used by the selected tab of a QTabBar.
             colors.push_back(IconUtils::OverriddenColor(selectedFg, QIcon::Selected));

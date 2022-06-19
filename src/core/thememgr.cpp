@@ -10,6 +10,7 @@
 #include <vtextedit/vtexteditor.h>
 #include "configmgr.h"
 #include "coreconfig.h"
+#include "theme.h"
 
 using namespace vnotex;
 
@@ -37,10 +38,10 @@ QString ThemeMgr::getIconFile(const QString &p_icon) const
     }
 
     // If there is an ICONS folder in the theme configuration, use the custom ICONS from it.
-    QString customIcons = this->customIconsPath + p_icon;
-    QFile iconsFile(customIcons);
-    if (iconsFile.exists()) {
-        return customIcons;
+    QString customIcon = getFile(Theme::File::Icon) + "/" + p_icon;
+    QFile customIconFile(customIcon);
+    if (customIconFile.exists()) {
+        return customIcon;
     } else {
         return ":/vnotex/data/core/icons/" + p_icon;
     }
@@ -92,12 +93,6 @@ const Theme &ThemeMgr::getCurrentTheme() const
 void ThemeMgr::loadCurrentTheme(const QString &p_themeName)
 {
     auto themeFolder = findThemeFolder(p_themeName);
-
-    QString customIconsPath = themeFolder + "/icons/";
-    QDir customIconsDir(customIconsPath);
-    if (customIconsDir.exists()) {
-        this->customIconsPath = customIconsPath;
-    }
 
     if (themeFolder.isNull()) {
         qWarning() << "failed to locate theme" << p_themeName;
@@ -184,6 +179,11 @@ QString ThemeMgr::getEditorHighlightTheme() const
 QString ThemeMgr::getMarkdownEditorHighlightTheme() const
 {
     return m_currentTheme->getMarkdownEditorHighlightTheme();
+}
+
+bool ThemeMgr::getIconMonochrome() const
+{
+    return m_currentTheme->getIconMonochrome();
 }
 
 void ThemeMgr::addSyntaxHighlightingSearchPaths(const QStringList &p_paths)
