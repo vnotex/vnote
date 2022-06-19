@@ -29,8 +29,6 @@ namespace vnotex
         QAction *getTriggerAction();
 
     protected:
-        void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
-
         void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
     private:
@@ -68,6 +66,9 @@ namespace vnotex
         void updateGeometryToContents();
 
         QSize preferredSize() const;
+
+        // Return true if want to stop the propogation.
+        bool handleLineEditKeyPress(QKeyEvent *p_event);
 
         QMainWindow *m_mainWindow = nullptr;
 

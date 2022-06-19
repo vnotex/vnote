@@ -181,7 +181,7 @@ void UnitedEntry::deactivateUnitedEntry()
     hide();
 }
 
-void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
+bool UnitedEntry::handleLineEditKeyPress(QKeyEvent *p_event)
 {
     const int key = p_event->key();
     const int modifiers = p_event->modifiers();
@@ -194,7 +194,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
         Q_FALLTHROUGH();
     case Qt::Key_Escape:
         exitUnitedEntry();
-        return;
+        return true;
 
     // Up/Down Ctrl+K/J to navigate to previous/next item.
     case Qt::Key_Up:
@@ -206,7 +206,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
         } else if (m_entryListWidget && m_entryListWidget->isVisible()) {
             IUnitedEntry::handleActionCommon(act, m_entryListWidget.data());
         }
-        return;
+        return true;
 
     case Qt::Key_K:
         act = IUnitedEntry::Action::PreviousItem;
@@ -218,8 +218,9 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
             } else if (m_entryListWidget && m_entryListWidget->isVisible()) {
                 IUnitedEntry::handleActionCommon(act, m_entryListWidget.data());
             }
+            return true;
         }
-        return;
+        break;
 
     case Qt::Key_Enter:
         Q_FALLTHROUGH();
@@ -227,7 +228,7 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
         if (m_lastEntry) {
             m_lastEntry->handleAction(IUnitedEntry::Action::Activate);
         }
-        return;
+        return true;
 
     case Qt::Key_E:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -237,8 +238,9 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
             if (!entry.m_name.isEmpty()) {
                 m_lineEdit->setText(entry.m_name + QLatin1Char(' '));
             }
+            return true;
         }
-        return;
+        break;
 
     case Qt::Key_F:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -248,8 +250,9 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
             if (!entry.m_name.isEmpty()) {
                 m_lineEdit->setSelection(0, entry.m_name.size());
             }
+            return true;
         }
-        return;
+        break;
 
     case Qt::Key_D:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -257,8 +260,9 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
             if (m_lastEntry) {
                 m_lastEntry->stop();
             }
+            return true;
         }
-        return;
+        break;
 
     case Qt::Key_L:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -266,8 +270,9 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
             if (m_lastEntry) {
                 m_lastEntry->handleAction(IUnitedEntry::Action::LevelUp);
             }
+            return true;
         }
-        return;
+        break;
 
     case Qt::Key_I:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -275,8 +280,9 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
             if (m_lastEntry) {
                 m_lastEntry->handleAction(IUnitedEntry::Action::ExpandCollapse);
             }
+            return true;
         }
-        return;
+        break;
 
     case Qt::Key_B:
         if (WidgetUtils::isViControlModifier(modifiers)) {
@@ -284,14 +290,15 @@ void UnitedEntry::keyPressEvent(QKeyEvent *p_event)
             if (m_lastEntry) {
                 m_lastEntry->handleAction(IUnitedEntry::Action::ExpandCollapseAll);
             }
+            return true;
         }
-        return;
+        break;
 
     default:
         break;
     }
 
-    QFrame::keyPressEvent(p_event);
+    return false;
 }
 
 void UnitedEntry::clear()
@@ -432,7 +439,7 @@ void UnitedEntry::setBusy(bool p_busy)
 
 bool UnitedEntry::eventFilter(QObject *p_watched, QEvent *p_event)
 {
-    if (p_watched == m_popup || p_watched == m_lineEdit) {
+    if (p_watched == m_popup) {
         if (p_event->type() == QEvent::KeyPress) {
             auto eve = static_cast<QKeyEvent *>(p_event);
             switch (eve->key()) {
@@ -447,6 +454,13 @@ bool UnitedEntry::eventFilter(QObject *p_watched, QEvent *p_event)
 
             default:
                 break;
+            }
+        }
+    } else if (p_watched == m_lineEdit) {
+        if (p_event->type() == QEvent::KeyPress) {
+            auto eve = static_cast<QKeyEvent *>(p_event);
+            if (handleLineEditKeyPress(eve)) {
+                return true;
             }
         }
     }
