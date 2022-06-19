@@ -3,7 +3,7 @@
     "metadata" : {
         "//comment": "When releasing new version, please go through the following configs to check if override is needed.",
         "//Comment": "markdown_editor#override_viewer_resource",
-        "version" : "3.13.0"
+        "version" : "3.13.1"
     },
     "core" : {
         "theme" : "pure",

@@ -1,4 +1,9 @@
 # Changes
+## v3.13.1
+* Shortcuts for Copy/Paste/Properties in node explorer
+* Global shortcut to call out main window
+* UnitedEntry: bug fix for macOS
+
 ## v3.13.0
 * United Entry: migration of Universal Entry
 
