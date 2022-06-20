@@ -21,7 +21,8 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
                            qreal p_angle)
 {
     const auto suffix = QFileInfo(p_iconFile).suffix().toLower().toStdString();
-    if (p_overriddenColors.isEmpty() || suffix != "svg") {
+    if ((p_overriddenColors.isEmpty() || suffix != "svg")
+            && !VNoteX::getInst().getThemeMgr().getIconMonochrome()) {
         return QIcon(p_iconFile);
     }
 

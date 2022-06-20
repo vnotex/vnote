@@ -28,8 +28,8 @@ namespace vnotex
             EditorHighlightStyle,
             MarkdownEditorHighlightStyle,
             Cover,
-            Max,
-            Icon
+            Icon,
+            Max
         };
 
         QString fetchQtStyleSheet() const;
@@ -74,7 +74,7 @@ namespace vnotex
             QString m_markdownEditorHighlightTheme;
 
             // Whether the icon of the current theme uses monochrome.
-            // default is monochrome.
+            // Default is monochrome.
             bool m_IconMonochrome = true;
         };
 

@@ -443,7 +443,7 @@ QString Theme::getMarkdownEditorHighlightTheme() const
 
 bool Theme::getIconMonochrome() const
 {
-    return this->m_metadata.m_IconMonochrome;
+    return m_metadata.m_IconMonochrome;
 }
 
 QString Theme::name() const
