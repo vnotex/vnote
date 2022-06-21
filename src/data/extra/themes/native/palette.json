@@ -11,7 +11,7 @@
         "display_name" : "Native",
         "//comment" : "Display name for different locales",
         "display_name_zh_CN" : "原素",
-        "icon-monochrome": false
+        "icon-monochrome": true
     },
     "base" : {
         "normal" : {
