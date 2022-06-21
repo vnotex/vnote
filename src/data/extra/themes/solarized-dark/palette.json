@@ -11,7 +11,8 @@
         "display_name" : "Solarized-dark",
         "//comment" : "Display name for different locales",
         "display_name_zh_CN" : "Solarized-dark",
-        "author": "nriver"
+        "author": "nriver",
+        "icon-monochrome": true
     },
     "palette" : {
         "bg1_1" : "#002b36",

@@ -28,6 +28,7 @@ namespace vnotex
             EditorHighlightStyle,
             MarkdownEditorHighlightStyle,
             Cover,
+            Icon,
             Max
         };
 
@@ -43,6 +44,8 @@ namespace vnotex
 
         // Return the file path of the theme or just the theme name.
         QString getMarkdownEditorHighlightTheme() const;
+
+        bool getIconMonochrome() const;
 
         QString name() const;
 
@@ -69,6 +72,10 @@ namespace vnotex
             // If not specified, will use m_editorHighlightTheme.
             // Valid only when KSyntaxCodeBlockHighlighter is used.
             QString m_markdownEditorHighlightTheme;
+
+            // Whether the icon of the current theme uses monochrome.
+            // Default is monochrome.
+            bool m_IconMonochrome = true;
         };
 
         typedef QJsonObject Palette;

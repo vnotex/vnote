@@ -10,6 +10,7 @@
 #include <vtextedit/vtexteditor.h>
 #include "configmgr.h"
 #include "coreconfig.h"
+#include "theme.h"
 
 using namespace vnotex;
 
@@ -36,7 +37,13 @@ QString ThemeMgr::getIconFile(const QString &p_icon) const
         return p_icon;
     }
 
-    return ":/vnotex/data/core/icons/" + p_icon;
+    // If there is an ICONS folder in the theme configuration, use the custom ICONS from it.
+    QString customIcon = getFile(Theme::File::Icon) + "/" + p_icon;
+    if (QFile::exists(customIcon)) {
+        return customIcon;
+    } else {
+        return ":/vnotex/data/core/icons/" + p_icon;
+    }
 }
 
 void ThemeMgr::loadAvailableThemes()
@@ -170,6 +177,11 @@ QString ThemeMgr::getEditorHighlightTheme() const
 QString ThemeMgr::getMarkdownEditorHighlightTheme() const
 {
     return m_currentTheme->getMarkdownEditorHighlightTheme();
+}
+
+bool ThemeMgr::getIconMonochrome() const
+{
+    return m_currentTheme->getIconMonochrome();
 }
 
 void ThemeMgr::addSyntaxHighlightingSearchPaths(const QStringList &p_paths)

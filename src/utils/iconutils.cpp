@@ -6,6 +6,8 @@
 #include <QPainter>
 #include <QDebug>
 
+#include <core/vnotex.h>
+
 #include "fileutils.h"
 
 using namespace vnotex;
@@ -19,7 +21,8 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
                            qreal p_angle)
 {
     const auto suffix = QFileInfo(p_iconFile).suffix().toLower().toStdString();
-    if (p_overriddenColors.isEmpty() || suffix != "svg") {
+    if ((p_overriddenColors.isEmpty() || suffix != "svg")
+            && !VNoteX::getInst().getThemeMgr().getIconMonochrome()) {
         return QIcon(p_iconFile);
     }
 
@@ -46,7 +49,9 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
 QIcon IconUtils::fetchIcon(const QString &p_iconFile, const QString &p_overriddenForeground)
 {
     QVector<OverriddenColor> colors;
-    if (!p_overriddenForeground.isEmpty()) {
+    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+
+    if (!p_overriddenForeground.isEmpty() && themeMgr.getIconMonochrome()) {
         colors.push_back(OverriddenColor(p_overriddenForeground, QIcon::Normal, QIcon::Off));
     }
 

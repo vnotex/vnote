@@ -514,7 +514,6 @@ const QIcon &DockWidgetHelper::getDockIcon(DockIndex p_dockIndex)
 {
     static const auto fg = VNoteX::getInst().getThemeMgr().paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#fg");
     static const auto selectedFg = VNoteX::getInst().getThemeMgr().paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#selected#fg");
-
     const auto area = m_mainWindow->dockWidgetArea(m_docks[p_dockIndex]);
     const int newAngle = rotationAngle(area);
     if (m_dockIcons[p_dockIndex].m_rotationAngle != newAngle && area != Qt::NoDockWidgetArea) {

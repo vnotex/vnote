@@ -10,7 +10,8 @@
         "markdown-editor-highlight-theme" : "Markdown Default",
         "display_name" : "Native",
         "//comment" : "Display name for different locales",
-        "display_name_zh_CN" : "原素"
+        "display_name_zh_CN" : "原素",
+        "icon-monochrome": true
     },
     "base" : {
         "normal" : {
