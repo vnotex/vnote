@@ -22,7 +22,7 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
 {
     const auto suffix = QFileInfo(p_iconFile).suffix().toLower().toStdString();
     if ((p_overriddenColors.isEmpty() || suffix != "svg")
-            && !VNoteX::getInst().getThemeMgr().getIconMonochrome()) {
+            && VNoteX::getInst().getThemeMgr().getIconMonochrome()) {
         return QIcon(p_iconFile);
     }
 
