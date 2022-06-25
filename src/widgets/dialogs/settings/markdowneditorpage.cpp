@@ -533,6 +533,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
     {
         m_plantUmlWebServiceLineEdit = WidgetsFactory::createLineEdit(box);
         m_plantUmlWebServiceLineEdit->setToolTip(tr("Override the Web service used to render PlantUml graphs"));
+        m_plantUmlWebServiceLineEdit->setPlaceholderText(tr("Empty to use default one"));
 
         const QString label(tr("Override PlantUml Web service:"));
         layout->addRow(label, m_plantUmlWebServiceLineEdit);
@@ -603,6 +604,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup()
     {
         m_mathJaxScriptLineEdit = WidgetsFactory::createLineEdit(box);
         m_mathJaxScriptLineEdit->setToolTip(tr("Override the MathJax script used to render math formulas"));
+        m_mathJaxScriptLineEdit->setPlaceholderText(tr("Empty to use default one"));
 
         const QString label(tr("Override MathJax script:"));
         layout->addRow(label, m_mathJaxScriptLineEdit);

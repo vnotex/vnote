@@ -22,6 +22,8 @@
 #include "messageboxhelper.h"
 #include "fileopenparameters.h"
 #include <core/exception.h>
+#include <core/sessionconfig.h>
+#include <core/configmgr.h>
 
 using namespace vnotex;
 
@@ -63,13 +65,15 @@ void AttachmentPopup::setupUI()
                         // Get dest folder path before other dialogs.
                         const auto destFolderPath = getDestFolderPath();
 
-                        static QString lastDirPath = QDir::homePath();
-                        auto files = QFileDialog::getOpenFileNames(this, tr("Select Files As Attachments"), lastDirPath);
+                        auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+                        auto files = QFileDialog::getOpenFileNames(this,
+                                                                   tr("Select Files As Attachments"),
+                                                                   sessionConfig.getExternalMediaDefaultPath());
                         if (files.isEmpty()) {
                             return;
                         }
 
-                        lastDirPath = QFileInfo(files[0]).path();
+                        sessionConfig.setExternalMediaDefaultPath(QFileInfo(files[0]).path());
 
                         addAttachments(destFolderPath, files);
                     }

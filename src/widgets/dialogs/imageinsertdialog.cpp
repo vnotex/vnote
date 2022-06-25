@@ -24,6 +24,8 @@
 #include <widgets/lineedit.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
+#include <core/sessionconfig.h>
+#include <core/configmgr.h>
 
 using namespace vnotex;
 
@@ -224,14 +226,16 @@ void ImageInsertDialog::checkInput()
 
 void ImageInsertDialog::browseFile()
 {
-    QString bpath(QDir::homePath());
+    auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
     QString filePath = QFileDialog::getOpenFileName(this,
                                                     tr("Select Image To Insert"),
-                                                    bpath,
+                                                    sessionConfig.getExternalMediaDefaultPath(),
                                                     tr("Images (*.png *.xpm *.jpg *.bmp *.gif *.svg *.webp);;All (*.*)"));
     if (filePath.isEmpty()) {
         return;
     }
+
+    sessionConfig.setExternalMediaDefaultPath(filePath);
 
     m_source = Source::LocalFile;
 

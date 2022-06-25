@@ -85,6 +85,9 @@ namespace vnotex
         const QString &getNewNotebookDefaultRootFolderPath() const;
         void setNewNotebookDefaultRootFolderPath(const QString &p_path);
 
+        const QString &getExternalMediaDefaultPath() const;
+        void setExternalMediaDefaultPath(const QString &p_path);
+
         const QString &getCurrentNotebookRootFolderPath() const;
         void setCurrentNotebookRootFolderPath(const QString &p_path);
 
@@ -206,6 +209,9 @@ namespace vnotex
         QVector<ExternalProgram> m_externalPrograms;
 
         QVector<HistoryItem> m_history;
+
+        // Default folder path to open for external media like images and files.
+        QString m_externalMediaDefaultPath;;
     };
 } // ns vnotex
 

@@ -243,6 +243,7 @@ bool BufferMgr::openWithExternalProgram(const QString &p_filePath, const QString
 
     if (auto pro = ConfigMgr::getInst().getSessionConfig().findExternalProgram(p_name)) {
         const auto command = pro->fetchCommand(p_filePath);
+        qDebug() << "external program" << command;
         if (!command.isEmpty()) {
             ProcessUtils::startDetached(command);
         }
