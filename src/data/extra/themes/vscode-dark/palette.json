@@ -10,8 +10,7 @@
         "markdown-editor-highlight-theme" : "vscode-dark",
         "display_name" : "VSCode-dark",
         "//comment" : "Display name for different locales",
-        "display_name_zh_CN" : "VSCode-深色",
-        "icon-monochrome": true
+        "display_name_zh_CN" : "VSCode-深色"
     },
     "palette" : {
         "bg1_1" : "#07080d",

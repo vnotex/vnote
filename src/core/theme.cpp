@@ -86,7 +86,6 @@ Theme::Metadata Theme::readMetadata(const Palette &p_obj)
     data.m_revision = metaObj[QStringLiteral("revision")].toInt();
     data.m_editorHighlightTheme = metaObj[QStringLiteral("editor-highlight-theme")].toString();
     data.m_markdownEditorHighlightTheme = metaObj[QStringLiteral("markdown-editor-highlight-theme")].toString();
-    data.m_IconMonochrome = metaObj[QStringLiteral("icon-monochrome")].toBool();
 
     return data;
 }
@@ -439,11 +438,6 @@ QString Theme::getMarkdownEditorHighlightTheme() const
     }
 
     return getEditorHighlightTheme();
-}
-
-bool Theme::getIconMonochrome() const
-{
-    return m_metadata.m_IconMonochrome;
 }
 
 QString Theme::name() const

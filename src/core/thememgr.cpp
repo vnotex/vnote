@@ -179,11 +179,6 @@ QString ThemeMgr::getMarkdownEditorHighlightTheme() const
     return m_currentTheme->getMarkdownEditorHighlightTheme();
 }
 
-bool ThemeMgr::getIconMonochrome() const
-{
-    return m_currentTheme->getIconMonochrome();
-}
-
 void ThemeMgr::addSyntaxHighlightingSearchPaths(const QStringList &p_paths)
 {
     vte::VTextEditor::addSyntaxCustomSearchPaths(p_paths);

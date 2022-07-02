@@ -1,6 +1,7 @@
 #include "iconutils.h"
 
 #include <QRegExp>
+#include <QRegExpValidator>
 #include <QFileInfo>
 #include <QPixmap>
 #include <QPainter>
@@ -21,8 +22,7 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
                            qreal p_angle)
 {
     const auto suffix = QFileInfo(p_iconFile).suffix().toLower().toStdString();
-    if ((p_overriddenColors.isEmpty() || suffix != "svg")
-            && VNoteX::getInst().getThemeMgr().getIconMonochrome()) {
+    if (p_overriddenColors.isEmpty() || suffix != "svg") {
         return QIcon(p_iconFile);
     }
 
@@ -32,9 +32,16 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
     }
 
     QIcon icon;
+    QRegExp monoReg("#([0-9]{6}|[a-z]{6}|[A-Z]{6})");
     for (const auto &color : p_overriddenColors) {
         auto overriddenContent = replaceForegroundOfIcon(content, color.m_foreground);
         auto data = overriddenContent.toLocal8Bit();
+
+        QString qData = QString::fromStdString(data.toStdString());
+        if (monoReg.indexIn(qData) == -1) {
+            return QIcon(p_iconFile);
+        }
+
         QPixmap pixmap;
         pixmap.loadFromData(data, suffix.c_str());
         if (p_angle > 0) {
@@ -49,9 +56,7 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
 QIcon IconUtils::fetchIcon(const QString &p_iconFile, const QString &p_overriddenForeground)
 {
     QVector<OverriddenColor> colors;
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-
-    if (!p_overriddenForeground.isEmpty() && themeMgr.getIconMonochrome()) {
+    if (!p_overriddenForeground.isEmpty()) {
         colors.push_back(OverriddenColor(p_overriddenForeground, QIcon::Normal, QIcon::Off));
     }
 

@@ -10,8 +10,7 @@
         "markdown-editor-highlight-theme" : "Markdown Breeze Dark",
         "display_name" : "Moonlight",
         "//comment" : "Display name for different locales",
-        "display_name_zh_CN" : "月夜",
-        "icon-monochrome": true
+        "display_name_zh_CN" : "月夜"
     },
     "palette" : {
         "bg1_1" : "#07080d",
