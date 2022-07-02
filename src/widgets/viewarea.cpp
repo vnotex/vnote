@@ -13,6 +13,7 @@
 #include <QSet>
 #include <QHash>
 #include <QTabBar>
+#include <QDebug>
 
 #include "viewwindow.h"
 #include "mainwindow.h"
@@ -818,6 +819,49 @@ void ViewArea::setupShortcuts()
                     });
         }
     }
+
+    // CloseOtherTabs
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseOtherTabs), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        auto cur = getCurrentViewWindow();
+                        for (auto win : getAllViewWindows(getCurrentViewSplit())) {
+                            if (win && win != cur) {
+                                closeViewWindow(win, false, true);
+                            }
+                        }
+                    });
+        }
+    }
+
+    // CloseTabsToTheRight
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseTabsToTheRight), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        auto allWin = getAllViewWindows(getCurrentViewSplit());
+                        int cnt = allWin.count();
+
+                        auto cur = getCurrentViewWindow();
+                        int curIdx = 0;
+                        for (int i = 0; i < allWin.length(); i++) {
+                            if (allWin[i] == cur) {
+                                curIdx = i;
+                            }
+                        }
+
+                        for (int i = cnt - 1; i > curIdx; i--) {
+                            if (allWin[i]) {
+                                closeViewWindow(allWin[i], false, true);
+                            }
+                        }
+                    });
+        }
+    }
+
 
     // LocateNode.
     {
