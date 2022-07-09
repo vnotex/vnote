@@ -44,8 +44,6 @@ namespace vnotex
 
         void addViewWindow(ViewWindow *p_win);
 
-        int getCurrentViewWindowIndex();
-
         ViewWindow *getCurrentViewWindow() const;
         void setCurrentViewWindow(ViewWindow *p_win);
 
@@ -72,14 +70,14 @@ namespace vnotex
 
         void updateStateToWorkspace() const;
 
-        enum CloseTabMode {
-            All,
-            Other,
-            Left,
-            Right
+        enum class CloseTabMode {
+            CloseAllTabs,
+            CloseOtherTabs,
+            CloseTabsToTheLeft,
+            CloseTabsToTheRight
         };
 
-        void closeMultipleTabs(int p_idx, CloseTabMode);
+        void closeMultipleTabs(CloseTabMode ctm);
 
     signals:
         void viewWindowCloseRequested(ViewWindow *p_win);
@@ -146,6 +144,8 @@ namespace vnotex
         void alternateTab();
 
         void activateNextTab(bool p_backward);
+
+        void closeMultipleTabs(int p_idx, CloseTabMode ctm);
 
         ID m_id = 0;
 

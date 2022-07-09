@@ -431,14 +431,6 @@ ViewWindow *ViewArea::getCurrentViewWindow() const
     return nullptr;
 }
 
-int ViewArea::getCurrentViewWindowIndex()
-{
-    auto split = getCurrentViewSplit();
-    if (split) {
-        return split->getCurrentViewWindowIndex();
-    }
-}
-
 void ViewArea::setCurrentViewWindow(ViewWindow *p_win)
 {
     auto split = p_win->getViewSplit();
@@ -828,13 +820,35 @@ void ViewArea::setupShortcuts()
         }
     }
 
+    // CloseAllTabs
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseAllTabs), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        getCurrentViewSplit()->closeMultipleTabs(ViewSplit::CloseTabMode::CloseAllTabs);
+                    });
+        }
+    }
+
     // CloseOtherTabs
     {
         auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseOtherTabs), this);
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
-                        getCurrentViewSplit()->closeMultipleTabs(getCurrentViewWindowIndex(), ViewSplit::CloseTabMode::Other);
+                        getCurrentViewSplit()->closeMultipleTabs(ViewSplit::CloseTabMode::CloseOtherTabs);
+                    });
+        }
+    }
+
+    // CloseTabsToTheLeft
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseTabsToTheLeft), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        getCurrentViewSplit()->closeMultipleTabs(ViewSplit::CloseTabMode::CloseTabsToTheLeft);
                     });
         }
     }
@@ -845,7 +859,7 @@ void ViewArea::setupShortcuts()
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
-                        getCurrentViewSplit()->closeMultipleTabs(getCurrentViewWindowIndex(), ViewSplit::CloseTabMode::Right);
+                        getCurrentViewSplit()->closeMultipleTabs(ViewSplit::CloseTabMode::CloseTabsToTheRight);
                     });
         }
     }

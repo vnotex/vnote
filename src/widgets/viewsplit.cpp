@@ -355,11 +355,6 @@ ViewWindow *ViewSplit::getCurrentViewWindow() const
     return dynamic_cast<ViewWindow *>(currentWidget());
 }
 
-int ViewSplit::getCurrentViewWindowIndex()
-{
-    return currentIndex();
-}
-
 void ViewSplit::setCurrentViewWindow(ViewWindow *p_win)
 {
     if (!p_win) {
@@ -546,21 +541,41 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
                                            coreConfig.getShortcut(CoreConfig::Shortcut::CloseTab));
     }
 
+    // Close All Tabs.
+    {
+        auto closeTabAct = p_menu->addAction(tr("Close All Tabs"),
+                                             [this, p_tabIdx]() {
+                                                 closeMultipleTabs(p_tabIdx, CloseTabMode::CloseAllTabs);
+                                             });
+        WidgetUtils::addActionShortcutText(closeTabAct,
+                                           coreConfig.getShortcut(CoreConfig::Shortcut::CloseAllTabs));
+    }
+
     // Close Other Tabs.
     {
         auto closeTabAct = p_menu->addAction(tr("Close Other Tabs"),
                                              [this, p_tabIdx]() {
-                                                 closeMultipleTabs(p_tabIdx, CloseTabMode::Other);
+                                                 closeMultipleTabs(p_tabIdx, CloseTabMode::CloseOtherTabs);
                                              });
         WidgetUtils::addActionShortcutText(closeTabAct,
                                            coreConfig.getShortcut(CoreConfig::Shortcut::CloseOtherTabs));
+    }
+
+    // Close Tabs To The Left
+    {
+        auto closeTabAct = p_menu->addAction(tr("Close Tabs To The Left"),
+                                             [this, p_tabIdx]() {
+                                                 closeMultipleTabs(p_tabIdx, CloseTabMode::CloseTabsToTheLeft);
+                                             });
+        WidgetUtils::addActionShortcutText(closeTabAct,
+                                           coreConfig.getShortcut(CoreConfig::Shortcut::CloseTabsToTheLeft));
     }
 
     // Close Tabs To The Right.
     {
         auto closeTabAct = p_menu->addAction(tr("Close Tabs To The Right"),
                                              [this, p_tabIdx]() {
-                                                 closeMultipleTabs(p_tabIdx, CloseTabMode::Right);
+                                                 closeMultipleTabs(p_tabIdx, CloseTabMode::CloseTabsToTheRight);
                                              });
         WidgetUtils::addActionShortcutText(closeTabAct,
                                            coreConfig.getShortcut(CoreConfig::Shortcut::CloseTabsToTheRight));
@@ -692,19 +707,24 @@ void ViewSplit::closeTab(int p_idx)
     }
 }
 
+void ViewSplit::closeMultipleTabs(CloseTabMode ctm)
+{
+    closeMultipleTabs(currentIndex(), ctm);
+}
+
 void ViewSplit::closeMultipleTabs(int p_idx, CloseTabMode ctm)
 {
     QVector<ViewWindow *> windowsNeedToClose;
     int cnt = getViewWindowCount();
 
     // Close All.
-    if (ctm == CloseTabMode::All) {
+    if (ctm == CloseTabMode::CloseAllTabs) {
         for (int i = 0; i < cnt; i++) {
             windowsNeedToClose.push_back(getViewWindow(i));
         }
     }
     // Close other tab.
-    if (ctm == CloseTabMode::Other) {
+    if (ctm == CloseTabMode::CloseOtherTabs) {
         for (int i = 0; i < cnt; i++) {
             if (i != p_idx) {
                 windowsNeedToClose.push_back(getViewWindow(i));
@@ -712,13 +732,13 @@ void ViewSplit::closeMultipleTabs(int p_idx, CloseTabMode ctm)
         }
     }
     // Close tab to the left.
-    if (ctm == CloseTabMode::Left) {
+    if (ctm == CloseTabMode::CloseTabsToTheLeft) {
         for (int i = 0; i < p_idx; i++) {
              windowsNeedToClose.push_back(getViewWindow(i));
         }
     }
     // Close tab to the right.
-    if (ctm == CloseTabMode::Right) {
+    if (ctm == CloseTabMode::CloseTabsToTheRight) {
         for (int i = cnt - 1; i > p_idx; i--) {
              windowsNeedToClose.push_back(getViewWindow(i));
         }
