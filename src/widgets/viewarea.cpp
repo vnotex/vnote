@@ -814,7 +814,6 @@ void ViewArea::setupShortcuts()
 {
     const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
 
-
     // CloseTab.
     {
         auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseTab), this);
@@ -850,7 +849,6 @@ void ViewArea::setupShortcuts()
                     });
         }
     }
-
 
     // LocateNode.
     {
