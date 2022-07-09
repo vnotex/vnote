@@ -44,6 +44,8 @@ namespace vnotex
 
         void addViewWindow(ViewWindow *p_win);
 
+        int getCurrentViewWindowIndex();
+
         ViewWindow *getCurrentViewWindow() const;
         void setCurrentViewWindow(ViewWindow *p_win);
 
@@ -69,6 +71,15 @@ namespace vnotex
         ID getId() const;
 
         void updateStateToWorkspace() const;
+
+        enum CloseTabMode {
+            All,
+            Other,
+            Left,
+            Right
+        };
+
+        void closeMultipleTabs(int p_idx, CloseTabMode);
 
     signals:
         void viewWindowCloseRequested(ViewWindow *p_win);

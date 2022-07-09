@@ -431,6 +431,14 @@ ViewWindow *ViewArea::getCurrentViewWindow() const
     return nullptr;
 }
 
+int ViewArea::getCurrentViewWindowIndex()
+{
+    auto split = getCurrentViewSplit();
+    if (split) {
+        return split->getCurrentViewWindowIndex();
+    }
+}
+
 void ViewArea::setCurrentViewWindow(ViewWindow *p_win)
 {
     auto split = p_win->getViewSplit();
@@ -806,6 +814,7 @@ void ViewArea::setupShortcuts()
 {
     const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
 
+
     // CloseTab.
     {
         auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseTab), this);
@@ -826,12 +835,7 @@ void ViewArea::setupShortcuts()
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
-                        auto cur = getCurrentViewWindow();
-                        for (auto win : getAllViewWindows(getCurrentViewSplit())) {
-                            if (win && win != cur) {
-                                closeViewWindow(win, false, true);
-                            }
-                        }
+                        getCurrentViewSplit()->closeMultipleTabs(getCurrentViewWindowIndex(), ViewSplit::CloseTabMode::Other);
                     });
         }
     }
@@ -842,22 +846,7 @@ void ViewArea::setupShortcuts()
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, [this]() {
-                        auto allWin = getAllViewWindows(getCurrentViewSplit());
-                        int cnt = allWin.count();
-
-                        auto cur = getCurrentViewWindow();
-                        int curIdx = 0;
-                        for (int i = 0; i < allWin.length(); i++) {
-                            if (allWin[i] == cur) {
-                                curIdx = i;
-                            }
-                        }
-
-                        for (int i = cnt - 1; i > curIdx; i--) {
-                            if (allWin[i]) {
-                                closeViewWindow(allWin[i], false, true);
-                            }
-                        }
+                        getCurrentViewSplit()->closeMultipleTabs(getCurrentViewWindowIndex(), ViewSplit::CloseTabMode::Right);
                     });
         }
     }

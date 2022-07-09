@@ -74,6 +74,8 @@ namespace vnotex
 
         ViewWindow *getCurrentViewWindow() const;
 
+        int getCurrentViewWindowIndex();
+
     public slots:
         void openBuffer(Buffer *p_buffer, const QSharedPointer<FileOpenParameters> &p_paras);
 
