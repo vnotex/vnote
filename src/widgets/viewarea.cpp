@@ -13,7 +13,6 @@
 #include <QSet>
 #include <QHash>
 #include <QTabBar>
-#include <QDebug>
 
 #include "viewwindow.h"
 #include "mainwindow.h"
