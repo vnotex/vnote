@@ -31,17 +31,14 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
         return QIcon();
     }
 
+    if (isMonochrome(content)) {
+        return QIcon(p_iconFile);
+    }
+
     QIcon icon;
-    QRegExp monoReg("#([0-9]{6}|[a-z]{6}|[A-Z]{6})");
     for (const auto &color : p_overriddenColors) {
         auto overriddenContent = replaceForegroundOfIcon(content, color.m_foreground);
         auto data = overriddenContent.toLocal8Bit();
-
-        QString qData = QString::fromStdString(data.toStdString());
-        if (monoReg.indexIn(qData) == -1) {
-            return QIcon(p_iconFile);
-        }
-
         QPixmap pixmap;
         pixmap.loadFromData(data, suffix.c_str());
         if (p_angle > 0) {
@@ -78,6 +75,15 @@ QString IconUtils::replaceForegroundOfIcon(const QString &p_iconContent, const Q
     }
 
     return p_iconContent;
+}
+
+bool IconUtils::isMonochrome(const QString &p_iconContent)
+{
+     QRegExp monoRe("#([0-9]{6}|[a-z]{6}|[A-Z]{6})");
+    if (p_iconContent.indexOf(monoRe) > -1) {
+        return true;
+    }
+    return false;
 }
 
 QIcon IconUtils::fetchIcon(const QString &p_iconFile)
