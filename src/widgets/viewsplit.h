@@ -77,7 +77,7 @@ namespace vnotex
             CloseTabsToTheRight
         };
 
-        void closeMultipleTabs(CloseTabMode ctm);
+        void closeMultipleTabs(CloseTabMode p_ctm);
 
     signals:
         void viewWindowCloseRequested(ViewWindow *p_win);

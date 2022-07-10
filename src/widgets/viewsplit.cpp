@@ -707,45 +707,47 @@ void ViewSplit::closeTab(int p_idx)
     }
 }
 
-void ViewSplit::closeMultipleTabs(CloseTabMode ctm)
+void ViewSplit::closeMultipleTabs(CloseTabMode p_ctm)
 {
-    closeMultipleTabs(currentIndex(), ctm);
+    closeMultipleTabs(currentIndex(), p_ctm);
 }
 
-void ViewSplit::closeMultipleTabs(int p_idx, CloseTabMode ctm)
+void ViewSplit::closeMultipleTabs(int p_idx, CloseTabMode p_ctm)
 {
     QVector<ViewWindow *> windowsNeedToClose;
     int cnt = getViewWindowCount();
 
-    // Close All.
-    if (ctm == CloseTabMode::CloseAllTabs) {
+    switch (p_ctm) {
+    case CloseTabMode::CloseAllTabs:
         for (int i = 0; i < cnt; i++) {
             windowsNeedToClose.push_back(getViewWindow(i));
         }
-    }
-    // Close other tab.
-    if (ctm == CloseTabMode::CloseOtherTabs) {
+        break;
+    case CloseTabMode::CloseOtherTabs:
         for (int i = 0; i < cnt; i++) {
             if (i != p_idx) {
                 windowsNeedToClose.push_back(getViewWindow(i));
             }
         }
-    }
-    // Close tab to the left.
-    if (ctm == CloseTabMode::CloseTabsToTheLeft) {
+        break;
+    case CloseTabMode::CloseTabsToTheLeft:
         for (int i = 0; i < p_idx; i++) {
              windowsNeedToClose.push_back(getViewWindow(i));
         }
-    }
-    // Close tab to the right.
-    if (ctm == CloseTabMode::CloseTabsToTheRight) {
+        break;
+    case CloseTabMode::CloseTabsToTheRight:
         for (int i = cnt - 1; i > p_idx; i--) {
              windowsNeedToClose.push_back(getViewWindow(i));
         }
+        break;
+    default:
+        break;
     }
 
-    for (auto win : windowsNeedToClose) {
-        emit viewWindowCloseRequested(win);
+    if (!windowsNeedToClose.isEmpty()) {
+        for (auto win : windowsNeedToClose) {
+            emit viewWindowCloseRequested(win);
+        }
     }
 }
 
