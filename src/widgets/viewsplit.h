@@ -70,6 +70,15 @@ namespace vnotex
 
         void updateStateToWorkspace() const;
 
+        enum class CloseTabMode {
+            CloseAllTabs,
+            CloseOtherTabs,
+            CloseTabsToTheLeft,
+            CloseTabsToTheRight
+        };
+
+        void closeMultipleTabs(CloseTabMode p_ctm);
+
     signals:
         void viewWindowCloseRequested(ViewWindow *p_win);
 
@@ -135,6 +144,8 @@ namespace vnotex
         void alternateTab();
 
         void activateNextTab(bool p_backward);
+
+        void closeMultipleTabs(int p_idx, CloseTabMode ctm);
 
         ID m_id = 0;
 
