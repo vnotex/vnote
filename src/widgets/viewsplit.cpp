@@ -740,14 +740,10 @@ void ViewSplit::closeMultipleTabs(int p_idx, CloseTabMode p_ctm)
              windowsNeedToClose.push_back(getViewWindow(i));
         }
         break;
-    default:
-        break;
     }
 
-    if (!windowsNeedToClose.isEmpty()) {
-        for (auto win : windowsNeedToClose) {
-            emit viewWindowCloseRequested(win);
-        }
+    for (auto win : windowsNeedToClose) {
+        emit viewWindowCloseRequested(win);
     }
 }
 
