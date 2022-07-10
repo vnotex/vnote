@@ -819,6 +819,50 @@ void ViewArea::setupShortcuts()
         }
     }
 
+    // CloseAllTabs
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseAllTabs), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        getCurrentViewSplit()->closeMultipleTabs(ViewSplit::CloseTabMode::CloseAllTabs);
+                    });
+        }
+    }
+
+    // CloseOtherTabs
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseOtherTabs), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        getCurrentViewSplit()->closeMultipleTabs(ViewSplit::CloseTabMode::CloseOtherTabs);
+                    });
+        }
+    }
+
+    // CloseTabsToTheLeft
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseTabsToTheLeft), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        getCurrentViewSplit()->closeMultipleTabs(ViewSplit::CloseTabMode::CloseTabsToTheLeft);
+                    });
+        }
+    }
+
+    // CloseTabsToTheRight
+    {
+        auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::CloseTabsToTheRight), this);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this]() {
+                        getCurrentViewSplit()->closeMultipleTabs(ViewSplit::CloseTabMode::CloseTabsToTheRight);
+                    });
+        }
+    }
+
     // LocateNode.
     {
         auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::LocateNode), this);
