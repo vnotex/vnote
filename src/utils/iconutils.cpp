@@ -31,7 +31,7 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
         return QIcon();
     }
 
-    if (isMonochrome(content)) {
+    if (!isMonochrome(content)) {
         return QIcon(p_iconFile);
     }
 
@@ -79,7 +79,7 @@ QString IconUtils::replaceForegroundOfIcon(const QString &p_iconContent, const Q
 
 bool IconUtils::isMonochrome(const QString &p_iconContent)
 {
-    QRegExp monoRe("#([0-9]{6}|[a-z]{6}|[A-Z]{6})");
+    QRegExp monoRe("#000000");
     if (p_iconContent.indexOf(monoRe) > -1) {
         return true;
     }
