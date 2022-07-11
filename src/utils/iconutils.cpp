@@ -79,8 +79,18 @@ QString IconUtils::replaceForegroundOfIcon(const QString &p_iconContent, const Q
 
 bool IconUtils::isMonochrome(const QString &p_iconContent)
 {
-    QRegExp monoRe("#000000");
-    if (p_iconContent.indexOf(monoRe) > -1) {
+    // Match color-hex codes.
+    QRegExp monoRe("#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})");
+
+    int i = 0;
+    QMap<QString, int> fill_color;
+
+    while ((i = monoRe.indexIn(p_iconContent, i)) != -1) {
+        fill_color[monoRe.cap(1)] = 0;
+        i += monoRe.matchedLength();
+    }
+
+    if (fill_color.keys().length() == 1) {
         return true;
     }
     return false;
