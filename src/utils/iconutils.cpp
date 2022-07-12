@@ -1,7 +1,6 @@
 #include "iconutils.h"
 
 #include <QRegExp>
-#include <QRegExpValidator>
 #include <QFileInfo>
 #include <QPixmap>
 #include <QPainter>
@@ -88,8 +87,7 @@ bool IconUtils::isMonochrome(const QString &p_iconContent)
         i += hexRe.matchedLength();
     }
 
-    qDebug() << fillColor.length();
-
+    // Check one or more.
     QRegExp monoRe("#([0-9]{6}|[a-z]{6}|[A-Z]{6})");
     if (fillColor.length() == 1) {
         if (p_iconContent.indexOf(monoRe) == -1) {
