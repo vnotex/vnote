@@ -235,7 +235,7 @@ void ImageInsertDialog::browseFile()
         return;
     }
 
-    sessionConfig.setExternalMediaDefaultPath(filePath);
+    sessionConfig.setExternalMediaDefaultPath(PathUtils::parentDirPath(filePath));
 
     m_source = Source::LocalFile;
 
