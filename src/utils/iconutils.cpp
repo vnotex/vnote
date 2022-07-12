@@ -80,30 +80,14 @@ bool IconUtils::isMonochrome(const QString &p_iconContent)
 {
     // Match all color-hex codes.
     QRegExp hexRe("#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})");
-    int i = 0;
-    QStringList fillColor;
-    while ((i = hexRe.indexIn(p_iconContent, i)) != -1) {
-        fillColor.append(hexRe.cap(1));
-        i += hexRe.matchedLength();
-    }
-
-    // Check one or more.
-    QRegExp monoRe("#([0-9]{6}|[a-z]{6}|[A-Z]{6})");
-    if (fillColor.length() == 1) {
-        if (p_iconContent.indexOf(monoRe) == -1) {
+    if (hexRe.indexIn(p_iconContent) != -1) {
+        if (hexRe.cap(2).isEmpty()){
             return false;
         }
-    } else {
-        for (int i = 0; i < fillColor.length(); i++) {
-            if (fillColor[i] != fillColor[i + 1]) {
-                return false;
-            }
-            if (i + 2 == fillColor.length()) {
-                break;
-            }
+        if (hexRe.cap(1) != hexRe.cap(2)) {
+            return false;
         }
     }
-
     return true;
 }
 
