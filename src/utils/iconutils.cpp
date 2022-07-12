@@ -84,7 +84,7 @@ bool IconUtils::isMonochrome(const QString &p_iconContent)
     QString cur, next;
     while (it.hasNext()) {
         QRegularExpressionMatch match = it.next();
-        if (match.hasMatch()){
+        if (match.hasMatch()) {
             next = cur;
             cur = match.captured(0);
         }
