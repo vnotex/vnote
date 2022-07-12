@@ -79,21 +79,34 @@ QString IconUtils::replaceForegroundOfIcon(const QString &p_iconContent, const Q
 
 bool IconUtils::isMonochrome(const QString &p_iconContent)
 {
-    // Match color-hex codes.
-    QRegExp monoRe("#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})");
-
+    // Match all color-hex codes.
+    QRegExp hexRe("#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})");
     int i = 0;
-    QMap<QString, int> fill_color;
-
-    while ((i = monoRe.indexIn(p_iconContent, i)) != -1) {
-        fill_color[monoRe.cap(1)] = 0;
-        i += monoRe.matchedLength();
+    QStringList fillColor;
+    while ((i = hexRe.indexIn(p_iconContent, i)) != -1) {
+        fillColor.append(hexRe.cap(1));
+        i += hexRe.matchedLength();
     }
 
-    if (fill_color.keys().length() == 1) {
-        return true;
+    qDebug() << fillColor.length();
+
+    QRegExp monoRe("#([0-9]{6}|[a-z]{6}|[A-Z]{6})");
+    if (fillColor.length() == 1) {
+        if (p_iconContent.indexOf(monoRe) == -1) {
+            return false;
+        }
+    } else {
+        for (int i = 0; i < fillColor.length(); i++) {
+            if (fillColor[i] != fillColor[i + 1]) {
+                return false;
+            }
+            if (i + 2 == fillColor.length()) {
+                break;
+            }
+        }
     }
-    return false;
+
+    return true;
 }
 
 QIcon IconUtils::fetchIcon(const QString &p_iconFile)
