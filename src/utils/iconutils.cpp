@@ -79,18 +79,20 @@ QString IconUtils::replaceForegroundOfIcon(const QString &p_iconContent, const Q
 bool IconUtils::isMonochrome(const QString &p_iconContent)
 {
     // Match color-hex codes.
-    QRegularExpression hexRe("#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})");
-    QRegularExpressionMatchIterator it = hexRe.globalMatch(p_iconContent);
-    QString cur, next;
-    while (it.hasNext()) {
-        QRegularExpressionMatch match = it.next();
-        if (match.hasMatch()) {
+    QRegExp monoRe("#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})");
+
+    int i = 0;
+    QString cur, next = "";
+    while ((i = monoRe.indexIn(p_iconContent, i)) != -1) {
+        if (i != 0) {
             next = cur;
-            cur = match.captured(0);
         }
-        if (cur != next) {
+        cur = monoRe.cap(1);
+        if (next != "" && cur != next) {
             return false;
         }
+
+        i += monoRe.matchedLength();
     }
     return true;
 }
