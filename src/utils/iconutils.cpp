@@ -81,19 +81,32 @@ bool IconUtils::isMonochrome(const QString &p_iconContent)
     // Match color-hex codes.
     QRegExp monoRe("#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})");
 
-    int i = 0;
-    QString cur, next = "";
-    while ((i = monoRe.indexIn(p_iconContent, i)) != -1) {
-        if (i != 0) {
-            next = cur;
-        }
-        cur = monoRe.cap(1);
-        if (next != "" && cur != next) {
-            return false;
+    QString lastColor = "";
+    int pos = 0;
+    while (pos < p_iconContent.size()) {
+        int idx = p_iconContent.indexOf(monoRe, pos);
+        if (idx == -1) {
+            break;
         }
 
-        i += monoRe.matchedLength();
+        auto curColor = monoRe.cap(1);
+        if (curColor.size() == 3) {
+            for (int i = curColor.size() - 1; i >= 0; --i) {
+                curColor.insert(i, curColor[i]);
+            }
+        }
+
+        if (lastColor != curColor) {
+            if (lastColor.isEmpty()) {
+                lastColor = curColor;
+            } else {
+                return false;
+            }
+        }
+
+        pos += monoRe.matchedLength();
     }
+
     return true;
 }
 

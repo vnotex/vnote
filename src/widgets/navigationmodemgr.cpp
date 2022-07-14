@@ -9,6 +9,8 @@
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
 #include <utils/widgetutils.h>
+#include <vtextedit/vtextedit.h>
+
 #include "navigationmode.h"
 
 using namespace vnotex;
@@ -73,6 +75,9 @@ void NavigationModeMgr::triggerNavigationMode()
 
     qApp->installEventFilter(this);
 
+    // Qt bug: the shortcut key sequence may be swallowed by input method first.
+    vte::VTextEdit::forceInputMethodDisabled(true);
+
     for (auto &target : m_targets) {
         target.m_available = true;
         target.m_target->showNavigation();
@@ -88,6 +93,8 @@ void NavigationModeMgr::exitNavigationMode()
 {
     m_activated = false;
     qApp->removeEventFilter(this);
+
+    vte::VTextEdit::forceInputMethodDisabled(false);
 
     for (auto &target : m_targets) {
         target.m_available = true;
