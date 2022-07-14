@@ -49,8 +49,6 @@ namespace vnotex
 
         QString getMarkdownEditorHighlightTheme() const;
 
-        bool getIconMonochrome() const;
-
         const QColor &getBaseBackground() const;
         void setBaseBackground(const QColor &p_bg);
 

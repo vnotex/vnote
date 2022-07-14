@@ -10,8 +10,7 @@
         "markdown-editor-highlight-theme" : "Markdown Default",
         "display_name" : "Pure",
         "//comment" : "Display name for different locales",
-        "display_name_zh_CN" : "纯净",
-        "icon-monochrome": true
+        "display_name_zh_CN" : "纯净"
     },
     "palette" : {
         "bg3_0" : "#bbbbbb",

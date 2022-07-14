@@ -21,14 +21,17 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
                            qreal p_angle)
 {
     const auto suffix = QFileInfo(p_iconFile).suffix().toLower().toStdString();
-    if ((p_overriddenColors.isEmpty() || suffix != "svg")
-            && VNoteX::getInst().getThemeMgr().getIconMonochrome()) {
+    if (p_overriddenColors.isEmpty() || suffix != "svg") {
         return QIcon(p_iconFile);
     }
 
     auto content = FileUtils::readTextFile(p_iconFile);
     if (content.isEmpty()) {
         return QIcon();
+    }
+
+    if (!isMonochrome(content)) {
+        return QIcon(p_iconFile);
     }
 
     QIcon icon;
@@ -49,9 +52,7 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
 QIcon IconUtils::fetchIcon(const QString &p_iconFile, const QString &p_overriddenForeground)
 {
     QVector<OverriddenColor> colors;
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-
-    if (!p_overriddenForeground.isEmpty() && themeMgr.getIconMonochrome()) {
+    if (!p_overriddenForeground.isEmpty()) {
         colors.push_back(OverriddenColor(p_overriddenForeground, QIcon::Normal, QIcon::Off));
     }
 
@@ -73,6 +74,27 @@ QString IconUtils::replaceForegroundOfIcon(const QString &p_iconContent, const Q
     }
 
     return p_iconContent;
+}
+
+bool IconUtils::isMonochrome(const QString &p_iconContent)
+{
+    // Match color-hex codes.
+    QRegExp monoRe("#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})");
+
+    int i = 0;
+    QString cur, next = "";
+    while ((i = monoRe.indexIn(p_iconContent, i)) != -1) {
+        if (i != 0) {
+            next = cur;
+        }
+        cur = monoRe.cap(1);
+        if (next != "" && cur != next) {
+            return false;
+        }
+
+        i += monoRe.matchedLength();
+    }
+    return true;
 }
 
 QIcon IconUtils::fetchIcon(const QString &p_iconFile)

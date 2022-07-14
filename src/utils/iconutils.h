@@ -57,6 +57,8 @@ namespace vnotex
         static QString s_defaultIconForeground;
 
         static QString s_defaultIconDisabledForeground;
+
+        static bool isMonochrome(const QString &p_iconContent);
     };
 } // ns vnotex
 
