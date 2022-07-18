@@ -89,7 +89,7 @@ bool IconUtils::isMonochrome(const QString &p_iconContent)
             break;
         }
 
-        auto curColor = monoRe.cap(1);
+        auto curColor = monoRe.cap(1).toLower();
         if (curColor.size() == 3) {
             for (int i = curColor.size() - 1; i >= 0; --i) {
                 curColor.insert(i, curColor[i]);
