@@ -2312,20 +2312,7 @@ void NotebookNodeExplorer::loadMasterItemChildren(QTreeWidgetItem *p_item) const
 QString NotebookNodeExplorer::generateToolTip(const Node *p_node)
 {
     Q_ASSERT(p_node->isLoaded());
-    QString tip = p_node->exists() ? p_node->getName() : (tr("[Invalid] %1").arg(p_node->getName()));
-    tip += QLatin1String("\n\n");
-
-    if (!p_node->getTags().isEmpty()) {
-        const auto &tags = p_node->getTags();
-        QString tagString = tags.first();
-        for (int i = 1; i < tags.size(); ++i) {
-            tagString += QLatin1String("; ") + tags[i];
-        }
-        tip += tr("Tags: %1\n").arg(tagString);
-    }
-
-    tip += tr("Created Time: %1\n").arg(Utils::dateTimeString(p_node->getCreatedTimeUtc().toLocalTime()));
-    tip += tr("Modified Time: %1").arg(Utils::dateTimeString(p_node->getModifiedTimeUtc().toLocalTime()));
+    const QString tip = p_node->exists() ? p_node->getName() : (tr("[Invalid] %1").arg(p_node->getName()));
     return tip;
 }
 

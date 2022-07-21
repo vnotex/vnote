@@ -432,6 +432,7 @@ void MainWindow::saveStateAndGeometry()
     sg.m_visibleDocksBeforeExpand = m_visibleDocksBeforeExpand;
     sg.m_tagExplorerState = m_tagExplorer->saveState();
     sg.m_notebookExplorerState = m_notebookExplorer->saveState();
+    sg.m_locationListState = m_locationList->saveState();
 
     auto& sessionConfig = ConfigMgr::getInst().getSessionConfig();
     sessionConfig.setMainWindowStateGeometry(sg);
@@ -465,6 +466,10 @@ void MainWindow::loadStateAndGeometry(bool p_stateOnly)
 
     if (!sg.m_notebookExplorerState.isEmpty()) {
         m_notebookExplorer->restoreState(sg.m_notebookExplorerState);
+    }
+
+    if (!sg.m_locationListState.isEmpty()) {
+        m_locationList->restoreState(sg.m_locationListState);
     }
 }
 

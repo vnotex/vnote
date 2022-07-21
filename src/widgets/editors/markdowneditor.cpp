@@ -622,7 +622,7 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source)
         if (QFileInfo::exists(text)) {
             url = QUrl::fromLocalFile(text);
         } else {
-            url = QUrl::fromUserInput(text);
+            url.setUrl(text);
             if (url.scheme() != QStringLiteral("https") && url.scheme() != QStringLiteral("http")) {
                 url.clear();
             }

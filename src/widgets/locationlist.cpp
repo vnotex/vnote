@@ -45,7 +45,7 @@ void LocationList::setupUI()
     m_tree = new TreeWidget(TreeWidget::Flag::EnhancedStyle, this);
     // When updated, pay attention to the Columns enum.
     m_tree->setHeaderLabels(QStringList() << tr("Path") << tr("Line") << tr("Text"));
-    TreeWidget::showHorizontalScrollbar(m_tree);
+    m_tree->header()->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_tree->header()->setStretchLastSection(true);
     connect(m_tree, &QTreeWidget::itemActivated,
             this, [this](QTreeWidgetItem *p_item, int p_col) {
@@ -193,4 +193,14 @@ void LocationList::updateItemsCountLabel()
     } else {
         m_titleBar->setInfoLabel(tr("%n Item(s)", "", cnt));
     }
+}
+
+QByteArray LocationList::saveState() const
+{
+    return m_tree->header()->saveState();
+}
+
+void LocationList::restoreState(const QByteArray &p_data)
+{
+    m_tree->header()->restoreState(p_data);
 }

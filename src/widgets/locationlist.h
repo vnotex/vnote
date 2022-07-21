@@ -31,6 +31,9 @@ namespace vnotex
         // Start a new session of the location list to set a callback for activation handling.
         void startSession(const LocationCallback &p_callback);
 
+        QByteArray saveState() const;
+        void restoreState(const QByteArray &p_data);
+
     private:
         enum Columns
         {

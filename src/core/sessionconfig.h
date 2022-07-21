@@ -38,7 +38,8 @@ namespace vnotex
                        && m_mainGeometry == p_other.m_mainGeometry
                        && m_visibleDocksBeforeExpand == p_other.m_visibleDocksBeforeExpand
                        && m_tagExplorerState == p_other.m_tagExplorerState
-                       && m_notebookExplorerState == p_other.m_notebookExplorerState;
+                       && m_notebookExplorerState == p_other.m_notebookExplorerState
+                       && m_locationListState == p_other.m_locationListState;
             }
 
             QByteArray m_mainState;
@@ -50,6 +51,8 @@ namespace vnotex
             QByteArray m_tagExplorerState;
 
             QByteArray m_notebookExplorerState;
+
+            QByteArray m_locationListState;
         };
 
         enum OpenGL
