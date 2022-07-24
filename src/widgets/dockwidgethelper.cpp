@@ -127,6 +127,12 @@ void DockWidgetHelper::setupDocks()
     }
 }
 
+static void addWidgetToDock(QDockWidget *p_dock, QWidget *p_widget)
+{
+    p_dock->setWidget(p_widget);
+    p_dock->setFocusProxy(p_widget);
+}
+
 void DockWidgetHelper::setupNavigationDock()
 {
     auto dock = createDockWidget(DockIndex::NavigationDock, tr("Navigation"), m_mainWindow);
@@ -134,8 +140,7 @@ void DockWidgetHelper::setupNavigationDock()
     dock->setObjectName(QStringLiteral("NavigationDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    dock->setWidget(m_mainWindow->m_notebookExplorer);
-    dock->setFocusProxy(m_mainWindow->m_notebookExplorer);
+    addWidgetToDock(dock, m_mainWindow->m_notebookExplorer);
     m_mainWindow->addDockWidget(Qt::LeftDockWidgetArea, dock);
 }
 
@@ -146,8 +151,7 @@ void DockWidgetHelper::setupOutlineDock()
     dock->setObjectName(QStringLiteral("OutlineDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    dock->setWidget(m_mainWindow->m_outlineViewer);
-    dock->setFocusProxy(m_mainWindow->m_outlineViewer);
+    addWidgetToDock(dock, m_mainWindow->m_outlineViewer);
     m_mainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
 }
 
@@ -158,8 +162,7 @@ void DockWidgetHelper::setupConsoleDock()
     dock->setObjectName(QStringLiteral("ConsoleDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    dock->setWidget(m_mainWindow->m_consoleViewer);
-    dock->setFocusProxy(m_mainWindow->m_consoleViewer);
+    addWidgetToDock(dock, m_mainWindow->m_consoleViewer);
     m_mainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
     dock->hide();
 }
@@ -171,8 +174,7 @@ void DockWidgetHelper::setupSearchDock()
     dock->setObjectName(QStringLiteral("SearchDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    dock->setWidget(m_mainWindow->m_searchPanel);
-    dock->setFocusProxy(m_mainWindow->m_searchPanel);
+    addWidgetToDock(dock, m_mainWindow->m_searchPanel);
     m_mainWindow->addDockWidget(Qt::LeftDockWidgetArea, dock);
 }
 
@@ -183,8 +185,7 @@ void DockWidgetHelper::setupSnippetDock()
     dock->setObjectName(QStringLiteral("SnippetDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    dock->setWidget(m_mainWindow->m_snippetPanel);
-    dock->setFocusProxy(m_mainWindow->m_snippetPanel);
+    addWidgetToDock(dock, m_mainWindow->m_snippetPanel);
     m_mainWindow->addDockWidget(Qt::LeftDockWidgetArea, dock);
 }
 
@@ -195,8 +196,7 @@ void DockWidgetHelper::setupHistoryDock()
     dock->setObjectName(QStringLiteral("HistoryDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    dock->setWidget(m_mainWindow->m_historyPanel);
-    dock->setFocusProxy(m_mainWindow->m_historyPanel);
+    addWidgetToDock(dock, m_mainWindow->m_historyPanel);
     m_mainWindow->addDockWidget(Qt::LeftDockWidgetArea, dock);
 }
 
@@ -207,8 +207,7 @@ void DockWidgetHelper::setupTagDock()
     dock->setObjectName(QStringLiteral("TagDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    dock->setWidget(m_mainWindow->m_tagExplorer);
-    dock->setFocusProxy(m_mainWindow->m_tagExplorer);
+    addWidgetToDock(dock, m_mainWindow->m_tagExplorer);
     m_mainWindow->addDockWidget(Qt::LeftDockWidgetArea, dock);
 }
 
@@ -219,8 +218,7 @@ void DockWidgetHelper::setupLocationListDock()
     dock->setObjectName(QStringLiteral("LocationListDock.vnotex"));
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    dock->setWidget(m_mainWindow->m_locationList);
-    dock->setFocusProxy(m_mainWindow->m_locationList);
+    addWidgetToDock(dock, m_mainWindow->m_locationList);
     m_mainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
     dock->hide();
 }
@@ -354,6 +352,12 @@ void DockWidgetHelper::updateDockWidgetTabBar()
         if (cnt == 1) {
             iconOnly = false;
         }
+
+        bool isSideBar = iconOnly && (tabShape == QTabBar::RoundedWest || tabShape == QTabBar::TriangularWest);
+        if (tabBar->property(PropertyDefs::c_mainWindowSideBar).toBool() != isSideBar) {
+            WidgetUtils::setPropertyDynamically(tabBar, PropertyDefs::c_mainWindowSideBar, isSideBar);
+        }
+
         for (int i = 0; i < cnt; ++i) {
             auto dock = reinterpret_cast<QDockWidget *>(tabBar->tabData(i).toULongLong());
             if (!dock) {
@@ -366,7 +370,11 @@ void DockWidgetHelper::updateDockWidgetTabBar()
             } else if (dock->windowTitle().isEmpty()) {
                 dock->setWindowTitle(dock->property(PropertyDefs::c_dockWidgetTitle).toString());
             }
-            tabBar->setTabIcon(i, getDockIcon(static_cast<DockIndex>(dockIdx)));
+            tabBar->setTabIcon(i, getDockIcon(static_cast<DockIndex>(dockIdx), isSideBar));
+
+            if (dock->property(PropertyDefs::c_mainWindowSideBar).toBool() != isSideBar) {
+                WidgetUtils::setPropertyDynamically(dock, PropertyDefs::c_mainWindowSideBar, isSideBar);
+            }
         }
     }
 
@@ -510,21 +518,35 @@ QVector<void *> DockWidgetHelper::getVisibleNavigationItems()
     return items;
 }
 
-const QIcon &DockWidgetHelper::getDockIcon(DockIndex p_dockIndex)
+const QIcon &DockWidgetHelper::getDockIcon(DockIndex p_dockIndex, bool p_isSideBar)
 {
     static const auto fg = VNoteX::getInst().getThemeMgr().paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#fg");
     static const auto selectedFg = VNoteX::getInst().getThemeMgr().paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#selected#fg");
+    static auto sideBarFg = VNoteX::getInst().getThemeMgr().paletteColor("widgets#mainwindow#side_bar#icon#fg");
+    static auto sideBarSelectedFg = VNoteX::getInst().getThemeMgr().paletteColor("widgets#mainwindow#side_bar#icon#selected#fg");
+
+    if (sideBarFg.isEmpty()) {
+        sideBarFg = fg;
+    }
+    if (sideBarSelectedFg.isEmpty()) {
+        sideBarSelectedFg = selectedFg;
+    }
+
     const auto area = m_mainWindow->dockWidgetArea(m_docks[p_dockIndex]);
     const int newAngle = rotationAngle(area);
-    if (m_dockIcons[p_dockIndex].m_rotationAngle != newAngle && area != Qt::NoDockWidgetArea) {
+    if ((m_dockIcons[p_dockIndex].m_rotationAngle != newAngle
+         || m_dockIcons[p_dockIndex].m_isSideBar != p_isSideBar)
+        && area != Qt::NoDockWidgetArea) {
         QVector<IconUtils::OverriddenColor> colors;
-        colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+        colors.push_back(IconUtils::OverriddenColor(p_isSideBar ? sideBarFg : fg, QIcon::Normal));
         // FIXME: the Selected Mode is not used by the selected tab of a QTabBar.
-        colors.push_back(IconUtils::OverriddenColor(selectedFg, QIcon::Selected));
+        colors.push_back(IconUtils::OverriddenColor(p_isSideBar ? sideBarSelectedFg : selectedFg,
+                                                    QIcon::Selected));
 
         auto iconFile = VNoteX::getInst().getThemeMgr().getIconFile(iconFileName(p_dockIndex));
         m_dockIcons[p_dockIndex].m_icon = IconUtils::fetchIcon(iconFile, colors, newAngle);
         m_dockIcons[p_dockIndex].m_rotationAngle = newAngle;
+        m_dockIcons[p_dockIndex].m_isSideBar = p_isSideBar;
     }
 
     return m_dockIcons[p_dockIndex].m_icon;

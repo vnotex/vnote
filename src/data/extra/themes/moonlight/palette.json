@@ -1,6 +1,6 @@
 {
     "metadata" : {
-        "revision" : 0,
+        "revision" : 1,
         "//comment" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
         "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "editor-highlight-theme" : "Breeze Dark",

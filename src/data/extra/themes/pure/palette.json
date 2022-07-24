@@ -1,6 +1,6 @@
 {
     "metadata" : {
-        "revision" : 0,
+        "revision" : 1,
         "//comment" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
         "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "editor-highlight-theme" : "Default",
@@ -38,7 +38,11 @@
         "fg15_3" : "#b0b0b0",
         "fg15_4" : "#7a7a7a",
         "fg15_5" : "#222222",
-        "bg11" : "#1976d2"
+        "bg11" : "#1976d2",
+        "layer1" : "#354259",
+        "layer2" : "#1b2430",
+        "layer3" : "#6b778d",
+        "layer4" : "#eeeeee"
     },
     "base" : {
         "normal" : {
@@ -260,7 +264,7 @@
             "fg" : "@base#normal#fg",
             "bg" : "@base#normal#bg",
             "separator" : {
-                "bg" : "@widgets#separator#bg"
+                "bg" : "transparent"
             }
         },
         "dragdropareaindicator" : {
@@ -490,7 +494,7 @@
             "bg" : "@base#footer#bg"
         },
         "qscrollbar" : {
-            "bg" : "@base#normal#bg",
+            "bg" : "transparent",
             "addpage" : {
                 "bg" : "transparent"
             },
@@ -631,6 +635,26 @@
             }
         },
         "mainwindow" : {
+            "side_bar" : {
+                "fg" : "@palette#bg3_5",
+                "bg" : "@palette#layer1",
+                "selected" : {
+                    "fg" : "@palette#bg2_7",
+                    "bg" : "@palette#layer2"
+                },
+                "icon" : {
+                    "fg" : "@widgets#mainwindow#side_bar#fg",
+                    "selected" : {
+                        "fg" : "@widgets#mainwindow#side_bar#selected#fg"
+                    }
+                },
+                "hover" : {
+                    "bg" : "@palette#layer3"
+                },
+                "widget" : {
+                    "bg" : "@palette#layer4"
+                }
+            },
             "dockwidget_tabbar" : {
                 "icon" : {
                     "fg" : "@base#icon#fg",

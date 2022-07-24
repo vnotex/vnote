@@ -26,7 +26,7 @@ TitleBar::TitleBar(const QString &p_title,
                    bool p_hasInfoLabel,
                    TitleBar::Actions p_actionFlags,
                    QWidget *p_parent)
-    : QWidget(p_parent)
+    : QFrame(p_parent)
 {
     setupUI(p_title, p_hasInfoLabel, p_actionFlags);
 }

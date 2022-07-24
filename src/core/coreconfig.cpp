@@ -66,7 +66,7 @@ void CoreConfig::init(const QJsonObject &p_app,
 
     m_docksTabBarIconSize = READINT(QStringLiteral("docks_tabbar_icon_size"));
     if (m_docksTabBarIconSize <= 0) {
-        m_docksTabBarIconSize = 20;
+        m_docksTabBarIconSize = 18;
     }
 
     loadNoteManagement(appObj, userObj);

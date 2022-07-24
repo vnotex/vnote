@@ -1,7 +1,7 @@
 #ifndef TITLEBAR_H
 #define TITLEBAR_H
 
-#include <QWidget>
+#include <QFrame>
 #include <QVector>
 #include <QMenu>
 
@@ -11,7 +11,7 @@ class QLabel;
 
 namespace vnotex
 {
-    class TitleBar : public QWidget
+    class TitleBar : public QFrame
     {
         Q_OBJECT
     public:

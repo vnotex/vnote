@@ -77,6 +77,25 @@ vnotex--TitleBar QLabel[TitleBarTitle="true"] {
 }
 
 /* QDockWidget */
+QDockWidget[MainWindowSideBar="true"] QWidget {
+    background-color: @widgets#mainwindow#side_bar#widget#bg;
+}
+
+QDockWidget[MainWindowSideBar="true"] QToolButton:checked {
+    color: @widgets#qtoolbutton#checked#fg;
+    background-color: @widgets#qtoolbutton#checked#bg;
+}
+
+QDockWidget[MainWindowSideBar="true"] QToolButton:hover {
+    color: @widgets#qtoolbutton#hover#fg;
+    background-color: @widgets#qtoolbutton#hover#bg;
+}
+
+QDockWidget[MainWindowSideBar="true"] QToolButton:pressed {
+    color: @widgets#qtoolbutton#pressed#fg;
+    background-color: @widgets#qtoolbutton#pressed#bg;
+}
+
 QDockWidget {
     color: @widgets#qdockwidget#fg;
     background-color: @widgets#qdockwidget#bg;
@@ -504,6 +523,41 @@ QTabWidget::tab-bar {
 }
 
 /* QTabBar */
+QTabBar[MainWindowSideBar="true"] {
+    background-color: @widgets#mainwindow#side_bar#bg;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab {
+    color: @widgets#mainwindow#side_bar#fg;
+    background-color: @widgets#mainwindow#side_bar#bg;
+    border: none;
+}
+
+QMainWindow > QTabBar::tab:right {
+    border-right: 3px solid transparent;
+    border-bottom: none;
+    margin: 0px;
+    padding: 8px 8px -8px 8px;
+}
+
+QMainWindow > QTabBar::tab:left {
+    border-left: 3px solid transparent;
+    border-bottom: none;
+    margin: 0px;
+    padding: -8px 8px 8px 8px;
+}
+
+/* Only the left one is the mainwindow side bar */
+QMainWindow > QTabBar::tab:left:hover {
+    color: @widgets#mainwindow#side_bar#hover#fg;
+    background-color: @widgets#mainwindow#side_bar#hover#bg;
+}
+
+QMainWindow > QTabBar::tab:left:selected {
+    color: @widgets#mainwindow#side_bar#selected#fg;
+    background-color: @widgets#mainwindow#side_bar#selected#bg;
+}
+
 QTabBar {
     border: none;
 }
@@ -534,22 +588,6 @@ QTabBar::tab:left {
     border-bottom: 1px solid @widgets#qtabbar#tab#border;
     padding: 5px 2px 5px 2px;
     min-width: 20px;
-}
-
-/* Tabified QDockWidget */
-QMainWindow > QTabBar::tab:right {
-    border-right: 3px solid transparent;
-    border-bottom: none;
-    margin: 0px;
-    padding: 6px 2px -10px 2px;
-}
-
-/* Tabified QDockWidget */
-QMainWindow > QTabBar::tab:left {
-    border-left: 3px solid transparent;
-    border-bottom: none;
-    margin: 0px;
-    padding: -10px 2px 6px 2px;
 }
 
 QTabBar::tab:hover {

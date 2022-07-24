@@ -35,6 +35,8 @@ namespace vnotex
         static const char *c_dockWidgetTitle;
 
         static const char *c_hitSettingWidget;
+
+        static const char *c_mainWindowSideBar;
     };
 }
 

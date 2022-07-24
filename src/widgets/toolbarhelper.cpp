@@ -405,8 +405,6 @@ QToolBar *ToolBarHelper::setupSettingsToolBar(MainWindow *p_win, QToolBar *p_too
 
     setupExpandButton(p_win, tb);
 
-    setupSettingsButton(p_win, tb);
-
     setupMenuButton(p_win, tb);
 
     return tb;
@@ -586,81 +584,6 @@ void ToolBarHelper::setupExpandButton(MainWindow *p_win, QToolBar *p_toolBar)
     p_toolBar->addWidget(btn);
 }
 
-void ToolBarHelper::setupSettingsButton(MainWindow *p_win, QToolBar *p_toolBar)
-{
-    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
-
-    auto act = p_toolBar->addAction(generateIcon("settings_menu.svg"), MainWindow::tr("Settings"));
-    auto btn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
-    Q_ASSERT(btn);
-    btn->setPopupMode(QToolButton::InstantPopup);
-    btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
-
-    auto menu = WidgetsFactory::createMenu(p_toolBar);
-    btn->setMenu(menu);
-
-    auto settingsAct = menu->addAction(MainWindow::tr("Settings"),
-                                       menu,
-                                       [p_win]() {
-                                           SettingsDialog dialog(p_win);
-                                           dialog.exec();
-                                       });
-    WidgetUtils::addActionShortcut(settingsAct,
-                                   coreConfig.getShortcut(CoreConfig::Shortcut::Settings));
-
-    menu->addSeparator();
-
-    menu->addAction(MainWindow::tr("Edit User Configuration File"),
-                    menu,
-                    []() {
-                        auto file = ConfigMgr::getInst().getConfigFilePath(ConfigMgr::Source::User);
-                        auto paras = QSharedPointer<FileOpenParameters>::create();
-                        paras->m_sessionEnabled = false;
-                        emit VNoteX::getInst().openFileRequested(file, paras);
-                    });
-
-    menu->addAction(MainWindow::tr("Open User Configuration Folder"),
-                    menu,
-                    []() {
-                        auto folderPath = ConfigMgr::getInst().getUserFolder();
-                        WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(folderPath));
-                    });
-
-    menu->addAction(MainWindow::tr("Open Default Configuration Folder"),
-                    menu,
-                    []() {
-                        auto folderPath = ConfigMgr::getInst().getAppFolder();
-                        WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(folderPath));
-                    });
-
-    menu->addSeparator();
-
-    {
-        auto act = menu->addAction(MainWindow::tr("Edit Markdown User Styles"),
-                                   menu,
-                                   []() {
-                                       const auto file = ConfigMgr::getInst().getUserMarkdownUserStyleFile();
-                                       auto paras = QSharedPointer<FileOpenParameters>::create();
-                                       paras->m_sessionEnabled = false;
-                                       paras->m_hooks[FileOpenParameters::PostSave] = []() {
-                                           qDebug() << "post save";
-                                           const auto &markdownConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
-                                           HtmlTemplateHelper::updateMarkdownViewerTemplate(markdownConfig, true);
-                                       };
-                                       emit VNoteX::getInst().openFileRequested(file, paras);
-                                   });
-        act->setStatusTip(MainWindow::tr("Edit the user styles of Markdown editor read mode"));
-    }
-
-    menu->addSeparator();
-
-    menu->addAction(MainWindow::tr("Reset Main Window Layout"),
-                    menu,
-                    [p_win]() {
-                        p_win->resetStateAndGeometry();
-                    });
-}
-
 void ToolBarHelper::setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar)
 {
     const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
@@ -673,6 +596,71 @@ void ToolBarHelper::setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar)
 
     auto menu = WidgetsFactory::createMenu(p_toolBar);
     btn->setMenu(menu);
+
+    {
+        auto settingsAct = menu->addAction(MainWindow::tr("Settings"),
+                                           menu,
+                                           [p_win]() {
+                                               SettingsDialog dialog(p_win);
+                                               dialog.exec();
+                                           });
+        WidgetUtils::addActionShortcut(settingsAct,
+                                       coreConfig.getShortcut(CoreConfig::Shortcut::Settings));
+
+        menu->addSeparator();
+
+        menu->addAction(MainWindow::tr("Edit User Configuration File"),
+                        menu,
+                        []() {
+                            auto file = ConfigMgr::getInst().getConfigFilePath(ConfigMgr::Source::User);
+                            auto paras = QSharedPointer<FileOpenParameters>::create();
+                            paras->m_sessionEnabled = false;
+                            emit VNoteX::getInst().openFileRequested(file, paras);
+                        });
+
+        menu->addAction(MainWindow::tr("Open User Configuration Folder"),
+                        menu,
+                        []() {
+                            auto folderPath = ConfigMgr::getInst().getUserFolder();
+                            WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(folderPath));
+                        });
+
+        menu->addAction(MainWindow::tr("Open Default Configuration Folder"),
+                        menu,
+                        []() {
+                            auto folderPath = ConfigMgr::getInst().getAppFolder();
+                            WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(folderPath));
+                        });
+
+        menu->addSeparator();
+
+        {
+            auto act = menu->addAction(MainWindow::tr("Edit Markdown User Styles"),
+                                       menu,
+                                       []() {
+                                           const auto file = ConfigMgr::getInst().getUserMarkdownUserStyleFile();
+                                           auto paras = QSharedPointer<FileOpenParameters>::create();
+                                           paras->m_sessionEnabled = false;
+                                           paras->m_hooks[FileOpenParameters::PostSave] = []() {
+                                               qDebug() << "post save";
+                                               const auto &markdownConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
+                                               HtmlTemplateHelper::updateMarkdownViewerTemplate(markdownConfig, true);
+                                           };
+                                           emit VNoteX::getInst().openFileRequested(file, paras);
+                                       });
+            act->setStatusTip(MainWindow::tr("Edit the user styles of Markdown editor read mode"));
+        }
+
+        menu->addSeparator();
+
+        menu->addAction(MainWindow::tr("Reset Main Window Layout"),
+                        menu,
+                        [p_win]() {
+                            p_win->resetStateAndGeometry();
+                        });
+    }
+
+    menu->addSeparator();
 
     menu->addAction(MainWindow::tr("View Logs"),
                     menu,

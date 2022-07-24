@@ -92,6 +92,8 @@ namespace vnotex
             QIcon m_icon;
 
             int m_rotationAngle = INT_MIN;
+
+            bool m_isSideBar = false;
         };
 
         void setupNavigationDock();
@@ -118,7 +120,7 @@ namespace vnotex
 
         void setupDockActivateShortcut(QDockWidget *p_dock, const QString &p_keys);
 
-        const QIcon &getDockIcon(DockIndex p_dockIndex);
+        const QIcon &getDockIcon(DockIndex p_dockIndex, bool p_isSideBar);
 
         static QString iconFileName(DockIndex p_dockIndex);
 
