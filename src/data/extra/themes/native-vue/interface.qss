@@ -1,0 +1,138 @@
+/* Qt Style Sheets file
+ * Please refer to https://doc.qt.io/qt-5.12/stylesheet-reference.html
+ * for detailed inforamtion.
+ * **Notice** that selectors using base class and child class are considered to have the
+ * same specificity and the rule that appears last takes precedence.
+ * VNote specific syntax:
+ *  - @widgets#toolbox#title#border: reference to a color defined in palette.ini;
+ *  - $2px: 2 will be scaled by multiplying current display scaled factor.
+ */
+
+/* All widgets */
+*[State="info"] {
+    border: 1px solid @base#info#fg;
+}
+
+*[State="warning"] {
+    border: 1px solid @base#warning#fg;
+}
+
+*[State="error"] {
+    border: 1px solid @base#error#fg;
+}
+
+/* ToolBox */
+vnotex--ToolBox QWidget[ToolBoxTitle="true"] {
+    border-bottom: 2px solid @widgets#toolbox#title#border;
+    margin: 0px;
+    padding: 0px;
+}
+
+vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"] {
+    padding: 4px 10px 4px 4px;
+    margin: 0px;
+    border: none;
+}
+
+vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"]:checked {
+    font-weight: bold;
+    /* Reverse */
+    color: @widgets#toolbox#title#button#active#fg;
+    background-color: @widgets#toolbox#title#button#active#bg;
+}
+
+/* TitleBar */
+/* The height should be large enough regarding to the action buttons. */
+vnotex--TitleBar QLabel[TitleBarTitle="true"] {
+    padding: 5px 1px;
+    margin: 0px;
+}
+
+/* QDockWidget */
+QDockWidget::Title {
+    background-color: transparent;
+    text-align: center left;
+}
+
+/* NotebookSelector */
+vnotex--NotebookSelector {
+    icon-size: 20px;
+}
+
+vnotex--NotebookSelector QAbstractItemView::item {
+    padding: 5px, 2px, 5px, 2px;
+}
+
+/* QMainWindow */
+QMainWindow::separator {
+    /* For vertical */
+    width: 1px;
+    /* For horizontal */
+    height: 1px;
+    background-color: @widgets#qmainwindow#separator#bg;
+}
+
+/* NotebookExplorer */
+vnotex--NotebookNodeExplorer QTreeView::item {
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+QWidget {
+    /* font-size: 10pt; */
+    /* font-family: "YaHei Consolas Hybrid"; */
+}
+
+/* OutlineViewer */
+vnotex--OutlineViewer QTreeView::item {
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+/* QToolButton used for action */
+QToolButton[ActionToolButton="true"]:!hover {
+    padding: 1px;
+    margin: 0px;
+    border: none;
+}
+
+QToolButton[ActionToolButton="true"]::menu-indicator {
+    image: none;
+}
+
+QToolButton[NoMenuIndicator="true"]::menu-indicator {
+    image: none;
+}
+
+/* QPushButton, QToolButton */
+QPushButton[DangerButton="true"]:hover, QToolButton[DangerButton="true"]:hover {
+    color: @base#danger#fg;
+    background-color: @base#danger#bg;
+    border: none;
+}
+
+/* DrapDropAreaIndicator */
+vnotex--DragDropAreaIndicator {
+    border: 2px dashed @widgets#dragdropareaindicator#border;
+    margin: 2px;
+    max-height: 200px;
+}
+
+vnotex--DragDropAreaIndicator QLabel {
+    color: @widgets#dragdropareaindicator#fg;
+    font-size: 12pt;
+    font-weight: bold;
+}
+
+vnotex--MainWindow QLabel#MainWindowTipsLabel {
+    font-size: 20pt;
+    font-weight: bold;
+}
+
+vnotex--ViewSplit QTabBar[ViewSplitFlash="true"]::tab:selected {
+    background-color: @widgets#viewsplit#flash#bg;
+}
+
+vnotex--EntryPopup {
+    border: 1px solid @widgets#unitedentry#popup#border;
+}
