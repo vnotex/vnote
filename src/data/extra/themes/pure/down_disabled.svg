@@ -1,8 +1,1 @@
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
- <g>
-  <title>Layer 1</title>
-  <g transform="null" id="svg_1">
-   <polygon points="128,192 256,320 384,192  " id="svg_2" fill="#b0b0b0"/>
-  </g>
- </g>
-</svg>
+<?xml version="1.0" encoding="UTF-8"?><svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M36 18L24 30L12 18" stroke="#b0b0b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>

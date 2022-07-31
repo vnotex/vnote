@@ -1,14 +1,1 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 16.2.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 width="512px" height="512px" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
-<g>
-	<path style="fill:#000000" d="M32,376h283.35c6.186-14.112,20.281-24,36.65-24s30.465,9.888,36.65,24H480v32h-91.35c-6.186,14.112-20.281,24-36.65,24
-		s-30.465-9.888-36.65-24H32"/>
-	<path style="fill:#000000" d="M32,240h91.35c6.186-14.112,20.281-24,36.65-24s30.465,9.888,36.65,24H480v32H196.65c-6.186,14.112-20.281,24-36.65,24
-		s-30.465-9.888-36.65-24H32"/>
-	<path style="fill:#000000" d="M32,104h283.35c6.186-14.112,20.281-24,36.65-24s30.465,9.888,36.65,24H480v32h-91.35c-6.186,14.112-20.281,24-36.65,24
-		s-30.465-9.888-36.65-24H32"/>
-</g>
-</svg>
+<?xml version="1.0" encoding="UTF-8"?><svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4Z" fill="none" stroke="#000000" stroke-width="4" stroke-linejoin="round"/><path d="M18 28H6C4.89543 28 4 28.8954 4 30V42C4 43.1046 4.89543 44 6 44H18C19.1046 44 20 43.1046 20 42V30C20 28.8954 19.1046 28 18 28Z" fill="none" stroke="#000000" stroke-width="4" stroke-linejoin="round"/><path d="M42 4H30C28.8954 4 28 4.89543 28 6V18C28 19.1046 28.8954 20 30 20H42C43.1046 20 44 19.1046 44 18V6C44 4.89543 43.1046 4 42 4Z" fill="none" stroke="#000000" stroke-width="4" stroke-linejoin="round"/><path d="M28 28H44" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M36 36H44" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 44H44" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>

@@ -67,16 +67,14 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
         auto btnMenu = WidgetsFactory::createMenu(tb);
         toolBtn->setMenu(btnMenu);
 
-        btnMenu->addAction(generateIcon("new_notebook.svg"),
-                           MainWindow::tr("New Notebook"),
+        btnMenu->addAction(MainWindow::tr("New Notebook"),
                            btnMenu,
                            []() {
                                emit VNoteX::getInst().newNotebookRequested();
                            });
 
         // New notebook from folder.
-        btnMenu->addAction(generateIcon("new_notebook_from_folder.svg"),
-                           MainWindow::tr("New Notebook From Folder"),
+        btnMenu->addAction(MainWindow::tr("New Notebook From Folder"),
                            btnMenu,
                            []() {
                                emit VNoteX::getInst().newNotebookFromFolderRequested();
@@ -85,16 +83,14 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
         btnMenu->addSeparator();
 
         // Import notebook.
-        btnMenu->addAction(generateIcon("import_notebook.svg"),
-                           MainWindow::tr("Open Other Notebooks"),
+        btnMenu->addAction(MainWindow::tr("Open Other Notebooks"),
                            btnMenu,
                            []() {
                                emit VNoteX::getInst().importNotebookRequested();
                            });
 
         // Import notebook of VNote 2.
-        btnMenu->addAction(generateIcon("import_notebook_of_vnote2.svg"),
-                           MainWindow::tr("Open Legacy Notebooks Of VNote 2"),
+        btnMenu->addAction(MainWindow::tr("Open Legacy Notebooks Of VNote 2"),
                            btnMenu,
                            []() {
                                emit VNoteX::getInst().importLegacyNotebookRequested();
@@ -103,8 +99,7 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
         btnMenu->addSeparator();
 
         // Manage notebook.
-        btnMenu->addAction(generateIcon("manage_notebooks.svg"),
-                           MainWindow::tr("Manage Notebooks"),
+        btnMenu->addAction(MainWindow::tr("Manage Notebooks"),
                            btnMenu,
                            []() {
                                emit VNoteX::getInst().manageNotebooksRequested();

@@ -1,7 +1,1 @@
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
- <g>
-  <title>Layer 1</title>
-  <rect id="svg_6" fill-opacity="0" height="299" width="299" y="106.5" x="106.5" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="30" stroke="#4D5765" fill="#000000"/>
-  <path stroke-opacity="0" id="svg_3" d="m126,243.24589l27.93756,-27.94743l76.53449,76.52461l127.58052,-127.54102l27.94743,27.92768l-155.52795,155.50821" stroke-width="5" fill="#4D5765" stroke="#000000"/>
- </g>
-</svg>
+<?xml version="1.0" encoding="UTF-8"?><svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#icon-50a44fcc353e4f38)"><path d="M42 20V39C42 40.6569 40.6569 42 39 42H9C7.34315 42 6 40.6569 6 39V9C6 7.34315 7.34315 6 9 6H30" stroke="#4d5765" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 20L26 28L41 7" stroke="#4d5765" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g><defs><clipPath id="icon-50a44fcc353e4f38"><rect width="48" height="48" fill="#4d5765"/></clipPath></defs></svg>
