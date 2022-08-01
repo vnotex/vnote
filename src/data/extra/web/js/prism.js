@@ -99,7 +99,7 @@ class PrismRenderer extends VxWorker {
         let toolBarNodes = p_containerNode.querySelectorAll('div.code-toolbar > div.toolbar');
         for (let i = 0; i < toolBarNodes.length; ++i) {
             toolBarNodes[i].outerHTML = '';
-            delete toolBarNodes[i];
+            try { delete toolBarNodes[i]; } catch (err) {}
         }
     }
 }
