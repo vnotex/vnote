@@ -1,4 +1,9 @@
 # Changes
+## v3.14.0
+* Theme: support custom icons
+* Theme: refine icons
+* NavigationMode: fix issue for input method
+
 ## v3.13.1
 * Shortcuts for Copy/Paste/Properties in node explorer
 * Global shortcut to call out main window
