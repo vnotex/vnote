@@ -649,6 +649,7 @@
                     }
                 },
                 "hover" : {
+                    "fg" : "@widgets#mainwindow#side_bar#fg",
                     "bg" : "@palette#layer3"
                 },
                 "widget" : {

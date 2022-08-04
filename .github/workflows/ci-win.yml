@@ -22,14 +22,22 @@ jobs:
       matrix:
         config:
           - {
-            name: "Build On Win64",
+            name: "Build On Win64 Qt 5.12",
             arch: win64_msvc2017_64,
-            platform: x64
+            platform: x64,
+            qt: 5.12.11
           }
           - {
-            name: "Build On Win32",
+            name: "Build On Win32 Qt 5.12",
             arch: win32_msvc2017,
-            platform: x86
+            platform: x86,
+            qt: 5.12.11
+          }
+          - {
+            name: "Build On Win64 Qt 5.15",
+            arch: win64_msvc2019_64,
+            platform: x64,
+            qt: 5.15.2
           }
 
     steps:
@@ -55,7 +63,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          version: 5.12.11
+          version: ${{matrix.config.qt}}
           target: desktop
           arch: ${{matrix.config.arch}}
           modules: qtwebengine
@@ -108,7 +116,7 @@ jobs:
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: vnote-win-${{matrix.config.platform}}_v${{env.VNOTE_VER}}
+          name: vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}
           path: ${{env.DISTRIB_PATH}}
         env:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
@@ -125,6 +133,6 @@ jobs:
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/vnote-win-${{matrix.config.platform}}.zip
+          files: ${{runner.workspace}}/build/vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip
           release: Continuous Build
           tag: continuous-build
