@@ -18,6 +18,8 @@ VNote不是一个简单的Markdown编辑器。通过提供强大的笔记管理�
 
 ![主界面](pics/main.png)
 
+![主界面2](pics/main2.png)
+
 ## 下载
 基于`master`分支的[持续构建版本发布](https://github.com/vnotex/vnote/releases/tag/continuous-build)。
 
