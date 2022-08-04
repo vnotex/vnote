@@ -108,7 +108,7 @@ jobs:
           copy "%GITHUB_WORKSPACE%\COPYING.LESSER" "%DISTRIB_PATH%\COPYING.LESSER"
           echo %GITHUB_SHA% > "%DISTRIB_PATH%\commit"
           del /F /Q "%DISTRIB_PATH%\translations\qt_*.qm"
-          7z a vnote-win-${{matrix.config.platform}}.zip "%DISTRIB_PATH%"
+          7z a vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip "%DISTRIB_PATH%"
         working-directory: ${{runner.workspace}}/build
         env:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
