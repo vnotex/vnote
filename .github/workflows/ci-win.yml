@@ -22,19 +22,19 @@ jobs:
       matrix:
         config:
           - {
-            name: "Build On Win64",
+            name: "Build On Win64 Qt 5.12",
             arch: win64_msvc2017_64,
             platform: x64,
             qt: 5.12.11
           }
           - {
-            name: "Build On Win32",
+            name: "Build On Win32 Qt 5.12",
             arch: win32_msvc2017,
             platform: x86,
             qt: 5.12.11
           }
           - {
-            name: "Build On Win64",
+            name: "Build On Win64 Qt 5.15",
             arch: win64_msvc2019_64,
             platform: x64,
             qt: 5.15.2
