@@ -43,6 +43,9 @@
         }
     ],
     "folders": [
+        {
+            "name": "file"
+        }
     ],
     "id": "25",
     "modified_time": "2021-05-12T12:13:25Z",
