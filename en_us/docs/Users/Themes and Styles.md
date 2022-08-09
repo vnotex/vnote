@@ -17,7 +17,7 @@ Some key files of a theme:
 - `text-editor.theme`: theme file of the text editor (as well as Markdown editor);
 - `web.css`: style sheet file of the read mode of Markdown;
 - `highlight.css`: style sheet file of the read mode of Markdown for code block syntax highlight; VNote uses [Prism](https://prismjs.com/) for syntax highlight in read mode;
-- `icons`: customize the icon folder **optional** ；
+- `icons`: folder for customized icons (**optional**);
 
 ## Samples
 ### Customize Editor Fonts
