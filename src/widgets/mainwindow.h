@@ -27,6 +27,7 @@ namespace vnotex
     class SearchPanel;
     class SnippetPanel;
     class HistoryPanel;
+    class WindowsPanel;
     class ExportDialog;
     class ConsoleViewer;
 
@@ -121,6 +122,8 @@ namespace vnotex
 
         void setupHistoryPanel();
 
+        void setupWindowsPanel();
+
         void setupNotebookExplorer();
 
         void setupTagExplorer();
@@ -181,6 +184,8 @@ namespace vnotex
         SnippetPanel *m_snippetPanel = nullptr;
 
         HistoryPanel *m_historyPanel = nullptr;
+
+        WindowsPanel *m_windowsPanel = nullptr;
 
         ExportDialog *m_exportDialog = nullptr;
 

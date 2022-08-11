@@ -7,12 +7,21 @@
 
 #include <QVector>
 
+class QTimer;
+
 namespace vnotex
 {
     class ListWidget : public QListWidget
     {
         Q_OBJECT
     public:
+        enum ActivateReason
+        {
+            SingleClick = 0,
+            DoubleClick,
+            Button
+        };
+
         explicit ListWidget(QWidget *p_parent = nullptr);
 
         ListWidget(bool p_enhancedStyle, QWidget *p_parent = nullptr);
@@ -28,6 +37,10 @@ namespace vnotex
         // @p_func: return false to abort the iteration.
         static void forEachItem(const QListWidget *p_widget, const std::function<bool(QListWidgetItem *p_item)> &p_func);
 
+    signals:
+        // Item activated not by mouse clicking.
+        void itemActivatedPlus(QListWidgetItem *p_item, ActivateReason p_source);
+
     protected:
         void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -37,11 +50,13 @@ namespace vnotex
             ItemTypeSeparator = 2000
         };
 
-        void initialize();
+        void handleItemClick();
 
-        static QBrush s_separatorForeground;
+        QTimer *m_clickTimer = nullptr;
 
-        static QBrush s_separatorBackground;
+        QListWidgetItem *m_clickedItem = nullptr;
+
+        bool m_isDoubleClick = false;
     };
 }
 

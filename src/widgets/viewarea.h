@@ -74,6 +74,10 @@ namespace vnotex
 
         ViewWindow *getCurrentViewWindow() const;
 
+        const QVector<ViewSplit *>& getAllViewSplits() const;
+
+        void setCurrentViewWindow(ID p_splitId, int p_windowIndex);
+
     public slots:
         void openBuffer(Buffer *p_buffer, const QSharedPointer<FileOpenParameters> &p_paras);
 
@@ -103,7 +107,7 @@ namespace vnotex
         // MainWindow should set the corresponding status widget accordingly.
         void statusWidgetChanged(QWidget *p_widget);
 
-        // Count of ViewSplit is chagned.
+        // Count of ViewSplit is changed.
         // Used internally.
         void viewSplitsCountChanged();
 
@@ -111,6 +115,10 @@ namespace vnotex
 
         // State of current view window has update.
         void currentViewWindowUpdated();
+
+        // ViewWindow reordered/added/removed/updated.
+        // ViewSplit added/removed/updated.
+        void windowsChanged();
 
     private slots:
         // Return true if @p_win is closed.
@@ -212,8 +220,6 @@ namespace vnotex
 
         QVector<ViewWindow *> getAllViewWindows(ViewSplit *p_split, const ViewSplit::ViewWindowSelector &p_func) const;
 
-        QVector<ViewWindow *> getAllViewWindows(ViewSplit *p_split) const;
-
         void takeSnapshot(ViewAreaSession &p_session) const;
 
         void postFirstViewSplit();
@@ -225,6 +231,8 @@ namespace vnotex
         void focusSplitByDirection(Direction p_direction);
 
         ViewSplit *findSplitByDirection(ViewSplit *p_split, Direction p_direction);
+
+        ViewSplit *findSplitById(ID p_splitId) const;
 
         SplitType checkSplitType(const QSplitter *p_splitter) const;
 

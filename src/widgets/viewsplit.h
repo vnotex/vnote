@@ -49,6 +49,8 @@ namespace vnotex
 
         void setCurrentViewWindow(int p_idx);
 
+        QVector<ViewWindow *> getAllViewWindows() const;
+
         // @p_win is not deleted.
         void takeViewWindow(ViewWindow *p_win);
 

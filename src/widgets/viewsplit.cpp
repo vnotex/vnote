@@ -124,7 +124,7 @@ void ViewSplit::setupCornerWidget()
         m_windowListButton->setPopupMode(QToolButton::InstantPopup);
         m_windowListButton->setProperty(PropertyDefs::c_actionToolButton, true);
 
-        auto act = new QAction(s_windowListIcon, tr("Windows List"), m_windowListButton);
+        auto act = new QAction(s_windowListIcon, tr("Open Windows"), m_windowListButton);
         m_windowListButton->setDefaultAction(act);
 
         auto menu = WidgetsFactory::createMenu(m_windowListButton);
@@ -313,6 +313,18 @@ QVector<ViewWindow *> ViewSplit::findBuffer(const Buffer *p_buffer) const
 ViewWindow *ViewSplit::getViewWindow(int p_idx) const
 {
     return dynamic_cast<ViewWindow *>(widget(p_idx));
+}
+
+QVector<ViewWindow *> ViewSplit::getAllViewWindows() const
+{
+    QVector<ViewWindow *> wins;
+    int cnt = getViewWindowCount();
+    for (int i = 0; i < cnt; ++i) {
+        auto win = getViewWindow(i);
+        wins.push_back(win);
+    }
+
+    return wins;
 }
 
 int ViewSplit::getViewWindowCount() const

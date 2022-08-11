@@ -86,6 +86,7 @@
         <file>icons/navigation_dock.svg</file>
         <file>icons/history_dock.svg</file>
         <file>icons/outline_dock.svg</file>
+        <file>icons/windows_dock.svg</file>
         <file>icons/search_dock.svg</file>
         <file>icons/snippet_dock.svg</file>
         <file>icons/location_list_dock.svg</file>

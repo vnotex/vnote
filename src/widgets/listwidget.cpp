@@ -1,6 +1,8 @@
 #include "listwidget.h"
 
 #include <QKeyEvent>
+#include <QApplication>
+#include <QTimer>
 
 #include <core/vnotex.h>
 #include <core/thememgr.h>
@@ -9,20 +11,39 @@
 
 using namespace vnotex;
 
-QBrush ListWidget::s_separatorForeground;
-
-QBrush ListWidget::s_separatorBackground;
-
 ListWidget::ListWidget(QWidget *p_parent)
-    : QListWidget(p_parent)
+    : ListWidget(false, p_parent)
 {
-    initialize();
 }
 
 ListWidget::ListWidget(bool p_enhancedStyle, QWidget *p_parent)
     : QListWidget(p_parent)
 {
-    initialize();
+    m_clickTimer = new QTimer(this);
+    m_clickTimer->setSingleShot(true);
+    connect(m_clickTimer, &QTimer::timeout,
+            this, &ListWidget::handleItemClick);
+
+    connect(this, &QListWidget::itemClicked,
+            this, [this](QListWidgetItem *item) {
+                if (m_isDoubleClick && m_clickedItem == item) {
+                    // There will be a single click right after double click.
+                    m_clickTimer->stop();
+                    handleItemClick();
+                    return;
+                }
+
+                m_isDoubleClick = false;
+                m_clickedItem = item;
+                m_clickTimer->start(QApplication::doubleClickInterval());
+            });
+
+    connect(this, &QListWidget::itemDoubleClicked,
+            this, [this](QListWidgetItem *item) {
+                m_clickTimer->stop();
+                m_isDoubleClick = true;
+                m_clickedItem = item;
+            });
 
     if (p_enhancedStyle) {
         auto delegate = new StyledItemDelegate(QSharedPointer<StyledItemDelegateListWidget>::create(this),
@@ -32,33 +53,31 @@ ListWidget::ListWidget(bool p_enhancedStyle, QWidget *p_parent)
     }
 }
 
-void ListWidget::initialize()
-{
-    static bool initialized = false;
-    if (!initialized) {
-        initialized = true;
-
-        const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-        s_separatorForeground = QColor(themeMgr.paletteColor(QStringLiteral("widgets#styleditemdelegate#separator#fg")));
-        s_separatorBackground = QColor(themeMgr.paletteColor(QStringLiteral("widgets#styleditemdelegate#separator#bg")));
-    }
-}
-
 void ListWidget::keyPressEvent(QKeyEvent *p_event)
 {
     if (WidgetUtils::processKeyEventLikeVi(this, p_event)) {
         return;
     }
 
+    bool activateItem = false;
+    const int key = p_event->key();
+    if (key == Qt::Key_Return || key == Qt::Key_Enter) {
+        activateItem = true;
+    }
     // On Mac OS X, it is `Command+O` to activate an item, instead of Return.
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-    if (p_event->key() == Qt::Key_Return) {
+    if (key == Qt::Key_O && p_event->modifiers() == Qt::ControlModifier) {
+        activateItem = true;
+    }
+#endif
+
+    if (activateItem) {
         if (auto item = currentItem()) {
             emit itemActivated(item);
+            emit itemActivatedPlus(item, ActivateReason::Button);
         }
         return;
     }
-#endif
 
     QListWidget::keyPressEvent(p_event);
 }
@@ -86,11 +105,31 @@ QVector<QListWidgetItem *> ListWidget::getVisibleItems(const QListWidget *p_widg
     return items;
 }
 
+static const QBrush &separatorForeground()
+{
+    static QBrush fg;
+    if (fg == QBrush()) {
+        const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+        fg = QColor(themeMgr.paletteColor(QStringLiteral("widgets#styleditemdelegate#separator#fg")));
+    }
+    return fg;
+}
+
+static const QBrush &separatorBackground()
+{
+    static QBrush bg;
+    if (bg == QBrush()) {
+        const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+        bg = QColor(themeMgr.paletteColor(QStringLiteral("widgets#styleditemdelegate#separator#bg")));
+    }
+    return bg;
+}
+
 QListWidgetItem *ListWidget::createSeparatorItem(const QString &p_text)
 {
     QListWidgetItem *item = new QListWidgetItem(p_text, nullptr, ItemTypeSeparator);
-    item->setData(Qt::ForegroundRole, s_separatorForeground);
-    item->setData(Qt::BackgroundRole, s_separatorBackground);
+    item->setData(Qt::ForegroundRole, separatorForeground());
+    item->setData(Qt::BackgroundRole, separatorBackground());
     item->setFlags(Qt::NoItemFlags);
     return item;
 }
@@ -122,5 +161,16 @@ void ListWidget::forEachItem(const QListWidget *p_widget, const std::function<bo
         if (!p_func(p_widget->item(i))) {
             return;
         }
+    }
+}
+
+void ListWidget::handleItemClick()
+{
+    if (m_clickedItem) {
+        emit itemActivatedPlus(m_clickedItem,
+                               m_isDoubleClick ? ActivateReason::DoubleClick
+                                               : ActivateReason::SingleClick);
+        m_isDoubleClick = false;
+        m_clickedItem = nullptr;
     }
 }

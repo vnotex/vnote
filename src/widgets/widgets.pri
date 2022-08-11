@@ -124,7 +124,9 @@ SOURCES += \
     $$PWD/dialogs/deleteconfirmdialog.cpp \
     $$PWD/dialogs/importfolderutils.cpp \
     $$PWD/titletoolbar.cpp \
-    $$PWD/viewarea.cpp
+    $$PWD/viewarea.cpp \
+    $$PWD/windowspanel.cpp \
+    $$PWD/windowsprovider.cpp
 
 HEADERS += \
     $$PWD/attachmentdragdropareaindicator.h \
@@ -256,4 +258,6 @@ HEADERS += \
     $$PWD/statusbarhelper.h \
     $$PWD/dialogs/deleteconfirmdialog.h \
     $$PWD/titletoolbar.h \
-    $$PWD/viewarea.h
+    $$PWD/viewarea.h \
+    $$PWD/windowspanel.h \
+    $$PWD/windowsprovider.h

@@ -47,6 +47,8 @@
 #include "searchpanel.h"
 #include "snippetpanel.h"
 #include "historypanel.h"
+#include "windowspanel.h"
+#include "windowsprovider.h"
 #include <notebook/notebook.h>
 #include "searchinfoprovider.h"
 #include <vtextedit/spellchecker.h>
@@ -263,6 +265,8 @@ void MainWindow::setupDocks()
 
     setupHistoryPanel();
 
+    setupWindowsPanel();
+
     setupSearchPanel();
 
     setupSnippetPanel();
@@ -302,6 +306,12 @@ void MainWindow::setupHistoryPanel()
 {
     m_historyPanel = new HistoryPanel(this);
     m_historyPanel->setObjectName("HistoryPanel.vnotex");
+}
+
+void MainWindow::setupWindowsPanel()
+{
+    m_windowsPanel = new WindowsPanel(QSharedPointer<WindowsProvider>::create(m_viewArea), this);
+    m_windowsPanel->setObjectName("WindowsPanel.vnotex");
 }
 
 void MainWindow::setupLocationList()

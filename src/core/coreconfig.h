@@ -34,6 +34,7 @@ namespace vnotex
             SnippetDock,
             LocationListDock,
             HistoryDock,
+            WindowsDock,
             TagDock,
             Search,
             NavigationMode,
