@@ -157,11 +157,12 @@ vnotex--NotebookNodeExplorer QTreeView {
 }
 ```
 
-### Customize ICONS
+### Customize Icons
+Customizing the icons used in VNote is supported by putting all related icon files in the folder `icons` within a theme.
 
-Vnotex Support for adding custom icon folders in themes `icons`, After placing the `SVG` format image of the corresponding name inside, the icon customization in the theme can be realized.
+For a complete list of file names of the icons, please check [icons](https://github.com/vnotex/vnote/tree/master/src/data/core/icons).
 
-Sample directory: 
+A sample directory structure:
 
 ```
 .
@@ -177,7 +178,7 @@ Sample directory:
 └── web.css
 ```
 
-Mapping between common ICONS: 
+Some common icons:
 
 **Notes**
 
@@ -188,9 +189,7 @@ Mapping between common ICONS:
 | folder_node.svg | Folder of nodes |
 | file_node.svg   | Nodes           |
 
-**Top Menu bar**
-
-From left to right.
+**Top Menu Bar**
 
 ![](vx_images/52411495826601.png)
 
@@ -208,9 +207,7 @@ From left to right.
 | settings_menu.svg     | Settings            |
 | menu.svg              | Menu                |
 
-**Left navigation bar**
-
-From top to down.
+**Left Navigation Bar**
 
 ![](vx_images/55762704615693.png)
 
@@ -223,7 +220,6 @@ From top to down.
 | snippet_dock.svg    | Snippets   |
 
 
-Demo: 
+An example theme:
 
 ![](vx_images/508490695826601.png)
-
