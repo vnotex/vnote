@@ -70,6 +70,9 @@ namespace vnotex
             // If not specified, will use m_editorHighlightTheme.
             // Valid only when KSyntaxCodeBlockHighlighter is used.
             QString m_markdownEditorHighlightTheme;
+
+            // Whether this theme needs to backfill current standard palette to the theme palette.
+            bool m_backfillSystemPalette = false;
         };
 
         typedef QJsonObject Palette;
@@ -86,7 +89,9 @@ namespace vnotex
 
         static Metadata readMetadata(const QJsonObject &p_obj);
 
-        static Theme::Palette translatePalette(const QJsonObject &p_obj);
+        static Theme::Palette translatePalette(const QJsonObject &p_obj, bool p_backfillSystemPalette);
+
+        static QJsonObject backfillSystemPalette(QJsonObject p_obj);
 
         static void translatePaletteObject(const Palette &p_palette,
                                            QJsonObject &p_obj,

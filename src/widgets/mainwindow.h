@@ -17,7 +17,6 @@ class QTextEdit;
 
 namespace vnotex
 {
-    class ToolBox;
     class NotebookExplorer;
     class TagExplorer;
     class ViewArea;
@@ -162,8 +161,6 @@ namespace vnotex
         void loadWidgetsData();
 
         DockWidgetHelper m_dockWidgetHelper;
-
-        ToolBox *m_navigationToolBox = nullptr;
 
         NotebookExplorer *m_notebookExplorer = nullptr;
 

@@ -21,7 +21,6 @@
 #include <QProgressDialog>
 #include <QHotkey>
 
-#include "toolbox.h"
 #include "notebookexplorer.h"
 #include "vnotex.h"
 #include "notebookmgr.h"

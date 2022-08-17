@@ -1,6 +1,6 @@
 {
     "metadata" : {
-        "revision" : 0,
+        "revision" : 1,
         "//comment" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
         "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "editor-highlight-theme" : "Default",
@@ -10,33 +10,39 @@
         "markdown-editor-highlight-theme" : "Markdown Default",
         "display_name" : "Native",
         "//comment" : "Display name for different locales",
-        "display_name_zh_CN" : "原素"
+        "display_name_zh_CN" : "原素",
+        "backfill-system-palette": true
+    },
+    "palette" : {
+        "//comment" : "VNote will backfill the standard system palette."
     },
     "base" : {
         "normal" : {
-            "fg" : "#31373c",
-            "border" : "@base#lighter#fg"
+            "fg" : "@palette#active#window_text",
+            "border" : "@palette#active#dark",
+            "bg" : "@palette#active#window"
         },
-        "lighter" : {
-            "fg" : "#babdc1"
+        "selected" : {
+            "fg" : "@palette#active#highlighted_text",
+            "bg" : "@palette#active#highlight"
         },
         "error" : {
             "fg" : "#b71c1c"
         },
         "warning" : {
-            "fg" : "#880e4f"
+            "fg" : "#fc766a"
         },
         "info" : {
-            "fg" : "#283593"
+            "fg" : "#00a4cc"
         },
         "danger" : {
             "fg": "#f5f5f5",
-            "bg": "#c9302c"
+            "bg": "#ed2b33"
         },
         "icon" : {
-            "fg" : "#434b52",
+            "fg" : "@palette#active#text",
             "disabled" : {
-                "fg" : "@base#lighter#fg"
+                "fg" : "@palette#disabled#text"
             },
             "warning" : {
                 "fg" : "@base#warning#fg"
@@ -49,8 +55,8 @@
             }
         },
         "master" : {
-            "fg" : "#fbffff",
-            "bg" : "#535c65"
+            "fg" : "#fcf6f5",
+            "bg" : "#89abe3"
         }
     },
     "widgets" : {
@@ -106,27 +112,32 @@
         },
         "viewsplit" : {
             "action_button" : {
-                "fg" : "#808080",
+                "fg" : "@palette#active#dark",
                 "active" : {
                     "fg" : "@base#icon#fg"
                 }
             },
             "flash" : {
-                "bg" : "@base#lighter#fg"
-            }
-        },
-        "qmainwindow" : {
-            "separator" : {
-                "bg" : "@base#normal#border"
+                "bg" : "@base#info#fg"
             }
         },
         "dragdropareaindicator" : {
-            "fg" : "@base#normal#fg",
-            "border" : "@widgets#dragdropareaindicator#fg"
+            "border" : "@base#normal#border"
         },
         "navigationlabel" : {
             "fg" : "@widgets#toolbox#title#button#active#fg",
             "bg" : "@widgets#toolbox#title#button#active#bg"
+        },
+        "qmenu" : {
+            "fg" : "@base#normal#fg",
+            "bg" : "@base#normal#bg",
+            "border" : "@base#normal#border",
+            "item" : {
+                "selected" : {
+                    "fg" : "@base#selected#fg",
+                    "bg" : "@base#selected#bg"
+                }
+            }
         },
         "quickselector" : {
             "item_icon" : {

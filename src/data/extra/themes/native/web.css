@@ -4,6 +4,7 @@ body {
     color: #222222;
     line-height: 1.5;
     padding: 16px;
+    background-color: #ffffff;
     font-size: 16px;
 }
 
@@ -55,11 +56,10 @@ a {
 
 a:hover {
     text-decoration: underline;
-    color: #ff6600;
 }
 
 a:visited {
-    color: purple;
+    color: #800080;
 }
 
 ul, ol {
@@ -91,7 +91,7 @@ pre {
 
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
-    color: #8E24AA;
+    color: #8e24aa;
     word-break: break-word;
 }
 
@@ -100,7 +100,7 @@ pre code {
     padding-left: 0.5em;
     padding-right: 0.5em;
     color: #222222;
-    background-color: #E0E0E0;
+    background-color: #e0e0e0;
     line-height: 1.5;
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
     white-space: pre;
@@ -116,14 +116,14 @@ aside {
 }
 
 blockquote {
-    color: #666;
-    border-left: .5em solid #7A7A7A;
+    color: #666666;
+    border-left: .5em solid #7a7a7a;
     padding: 0 1em;
     margin-left: 0;
 }
 
 blockquote p {
-    color: #666;
+    color: #666666;
 }
 
 hr {
@@ -132,7 +132,7 @@ hr {
     margin: 1em 0;
     border: none;
     height: 2px;
-    background-color: #999;
+    background-color: #999999;
 }
 
 table {
@@ -143,13 +143,13 @@ table {
 
 table tr {
    border-top: 1px solid #cccccc;
-   background-color: white;
+   background-color: #ffffff;
    margin: 0;
    padding: 0;
 }
 
 table tr:hover {
-   background-color: #f8f8f8;
+   background-color: #dadada;
 }
 
 table tr th {
@@ -173,9 +173,35 @@ table tr th :last-child, table tr td :last-child {
    margin-bottom: 0;
 }
 
+div.vx-mermaid-graph {
+    margin: 16px 0px 16px 0px;
+    overflow-y: hidden;
+}
+
+div.vx-flowchartjs-graph {
+    padding: 0px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+}
+
+div.vx-wavedrom-graph {
+    padding: 0px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+}
+
+div.vx-plantuml-graph {
+    padding: 5px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+}
+
 ::selection {
-  background-color: #1976D2;
-  color: white;
+  background-color: #1976d2;
+  color: #ffffff;
 }
 
 #vx-content span.vx-search-match {

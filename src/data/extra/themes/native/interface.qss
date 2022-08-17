@@ -27,7 +27,7 @@ QWidget[HitSettingWidget="true"] {
 
 /* ToolBox */
 vnotex--ToolBox QWidget[ToolBoxTitle="true"] {
-    border-bottom: 2px solid @widgets#toolbox#title#border;
+    border-bottom: 2px solid;
     margin: 0px;
     padding: 0px;
 }
@@ -40,9 +40,6 @@ vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"] {
 
 vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"]:checked {
     font-weight: bold;
-    /* Reverse */
-    color: @widgets#toolbox#title#button#active#fg;
-    background-color: @widgets#toolbox#title#button#active#bg;
 }
 
 /* TitleBar */
@@ -69,7 +66,6 @@ QMainWindow::separator {
     width: 1px;
     /* For horizontal */
     height: 1px;
-    background-color: @widgets#qmainwindow#separator#bg;
 }
 
 /* NotebookExplorer */
@@ -114,7 +110,6 @@ vnotex--DragDropAreaIndicator {
 }
 
 vnotex--DragDropAreaIndicator QLabel {
-    color: @widgets#dragdropareaindicator#fg;
     font-size: 12pt;
     font-weight: bold;
 }
@@ -130,4 +125,21 @@ vnotex--ViewSplit QTabBar[ViewSplitFlash="true"]::tab:selected {
 
 vnotex--EntryPopup {
     border: 1px solid @widgets#unitedentry#popup#border;
+}
+
+/* QWidgetAction item */
+vnotex--LabelWithButtonsWidget {
+    background-color: @widgets#qmenu#bg;
+}
+
+vnotex--LabelWithButtonsWidget:hover {
+    background-color: @widgets#qmenu#item#selected#bg;
+}
+
+vnotex--LabelWithButtonsWidget QLabel {
+    color: @widgets#qmenu#fg;
+}
+
+vnotex--LabelWithButtonsWidget QLabel:hover {
+    color: @widgets#qmenu#item#selected#fg;
 }

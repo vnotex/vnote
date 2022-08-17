@@ -10,7 +10,6 @@ code[class*="language-"],
 pre[class*="language-"] {
     color: black;
     background: none;
-    text-shadow: 0 1px white;
     font-size: 1em;
     text-align: left;
     white-space: pre;
@@ -32,15 +31,15 @@ pre[class*="language-"] {
 pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
 code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
     text-shadow: none;
-    background-color: #1976D2;
-    color: white;
+    background-color: #1976d2;
+    color: #ffffff;
 }
 
 pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
 code[class*="language-"]::selection, code[class*="language-"] ::selection {
     text-shadow: none;
-    background-color: #1976D2;
-    color: white;
+    background-color: #1976d2;
+    color: #ffffff;
 }
 
 @media print {
@@ -59,7 +58,7 @@ pre[class*="language-"] {
 
 :not(pre) > code[class*="language-"],
 pre[class*="language-"] {
-    background: #f5f2f0;
+    background: #ede8e4;
 }
 
 /* Inline code */
@@ -109,8 +108,6 @@ pre[class*="language-"] {
 .language-css .token.string,
 .style .token.string {
     color: #9a6e3a;
-    /* This background color was intended by the author of this theme. */
-    background: hsla(0, 0%, 100%, .5);
 }
 
 .token.atrule,

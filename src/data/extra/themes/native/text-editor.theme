@@ -1,14 +1,16 @@
 {
     "metadata" : {
         "revision" : 0,
-        "name" : "Default",
+        "name" : "Native",
         "type" : "vtextedit"
     },
     "editor-styles" : {
         "Text" : {
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New",
-            "font-size" : 12
+            "font-size" : 12,
+            "text-color" : "#222222",
+            "background-color" : "#ffffff"
         },
         "CursorLine" : {
             "background-color" : "#c5cae9"
@@ -26,7 +28,7 @@
         },
         "IndicatorsBorder" : {
             "text-color" : "#aaaaaa",
-            "background-color" : "#eeeeee"
+            "background-color" : "#fafafa"
         },
         "CurrentLineNumber" : {
             "text-color" : "#222222"
@@ -64,7 +66,9 @@
         "Text" : {
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, Tahoma, Arial, Geneva, Georgia, Times New Roman",
-            "font-size" : 12
+            "font-size" : 12,
+            "text-color" : "#222222",
+            "background-color" : "#ffffff"
         }
     },
     "markdown-syntax-styles" : {
