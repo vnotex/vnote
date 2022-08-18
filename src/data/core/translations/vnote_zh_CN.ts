@@ -223,44 +223,49 @@
 <context>
     <name>vnotex::DockWidgetHelper</name>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="138"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="143"/>
         <source>Navigation</source>
         <translation>导航</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="149"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="154"/>
         <source>Outline</source>
         <translation>大纲</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="160"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="176"/>
         <source>Console</source>
         <translation>控制台</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="172"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="188"/>
         <source>Search</source>
         <translation>搜索</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="183"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="199"/>
         <source>Snippets</source>
         <translation>片段</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="194"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="210"/>
         <source>History</source>
         <translation>历史</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="205"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="221"/>
         <source>Tags</source>
         <translation>标签</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="216"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="232"/>
         <source>Location List</source>
         <translation>位置列表</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="165"/>
+        <source>Open Windows</source>
+        <translation>已打开窗口</translation>
     </message>
 </context>
 <context>
