@@ -265,7 +265,7 @@
     <message>
         <location filename="../../../widgets/dockwidgethelper.cpp" line="165"/>
         <source>Open Windows</source>
-        <translation>打开窗口</translation>
+        <translation>已打开窗口</translation>
     </message>
 </context>
 <context>
