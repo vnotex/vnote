@@ -283,8 +283,6 @@ namespace vnotex
 
         void setupUI();
 
-        void initIcons();
-
         void setupShortcuts();
 
         void discardChangesAndRead();
@@ -378,9 +376,6 @@ namespace vnotex
         QActionGroup *m_imageHostActionGroup = nullptr;
 
         bool m_statusWidgetInBottomLayout = false;
-
-        static QIcon s_savedIcon;
-        static QIcon s_modifiedIcon;
     };
 } // ns vnotex
 

@@ -13,10 +13,22 @@ env:
     VNOTE_VER: 3.14.0
 
 jobs:
-  build-linux:
+  build:
     name: Build On MacOS
     runs-on: macos-latest
     timeout-minutes: 120
+
+    strategy:
+      matrix:
+        config:
+          - {
+            name: "Build Qt 5.12",
+            qt: 5.12.12
+          }
+          - {
+            name: "Build Qt 5.15",
+            qt: 5.15.2
+          }
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
@@ -44,12 +56,12 @@ jobs:
         uses: actions/cache@v1  # not v2!
         with:
           path: ../Qt
-          key: ${{ runner.os }}-QtCache-5.12-2
+          key: ${{ runner.os }}-QtCache-${{ matrix.config.qt }}
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v3
         with:
-          version: 5.12.12
+          version: ${{ matrix.config.qt }}
           target: desktop
           modules: qtwebengine
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
@@ -125,13 +137,13 @@ jobs:
           popd
           sleep 1m
           hdiutil create -srcfolder ./distrib/vnote -format UDBZ vnote-mac-x64_v${{env.VNOTE_VER}}.dmg
-          cp vnote-mac-x64_v${{env.VNOTE_VER}}.dmg vnote-mac-x64.dmg
+          cp vnote-mac-x64_v${{env.VNOTE_VER}}.dmg vnote-mac-x64-qt${{matrix.config.qt}}.dmg
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: vnote-mac-x64_v${{env.VNOTE_VER}}
+          name: vnote-mac-x64-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}
           path: ${{runner.workspace}}/build/vnote-mac-x64_v${{env.VNOTE_VER}}.dmg
 
       - name: Update Tag
@@ -145,6 +157,6 @@ jobs:
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/vnote-mac-x64.dmg
+          files: ${{runner.workspace}}/build/vnote-mac-x64-qt${{matrix.config.qt}}.dmg
           release: Continuous Build
           tag: continuous-build

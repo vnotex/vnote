@@ -40,6 +40,12 @@ jobs:
             qt: 5.15.2
           }
           - {
+            name: "Build On Win32 Qt 5.15",
+            arch: win32_msvc2019,
+            platform: x86,
+            qt: 5.15.2
+          }
+          - {
             name: "Build On Win64 Qt 5.15.5",
             arch: win64_msvc2019_64,
             platform: x64,
@@ -80,7 +86,7 @@ jobs:
       - name: Install Qt Private Build
         if: ${{ matrix.config.qt == '5.15.x' }}
         shell: cmd
-        # https://build-qt.fsu0413.me/5.15-series/5.15.5-for-windows/
+        # https://build-qt.fsu0413.me/5.15-series
         run: |
           C:\msys64\usr\bin\wget.exe -q https://mirrors.gigenet.com/OSDN//users/38/38692/Qt5.15.5-Windows-x86_64-VS2019-16.11.16-20220627.7z
           7z x Qt5.15*.7z
