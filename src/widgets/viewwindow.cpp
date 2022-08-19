@@ -41,16 +41,10 @@
 
 using namespace vnotex;
 
-QIcon ViewWindow::s_savedIcon;
-
-QIcon ViewWindow::s_modifiedIcon;
-
 ViewWindow::ViewWindow(QWidget *p_parent)
     : QFrame(p_parent)
 {
     setupUI();
-
-    initIcons();
 
     setupShortcuts();
 
@@ -100,20 +94,6 @@ void ViewWindow::setupUI()
     m_bottomLayout->setContentsMargins(0, 0, 0, 0);
     m_bottomLayout->setSpacing(0);
     m_mainLayout->addLayout(m_bottomLayout, 0);
-}
-
-void ViewWindow::initIcons()
-{
-    if (!s_savedIcon.isNull()) {
-        return;
-    }
-
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    const QString savedIconName("buffer.svg");
-    const QString unsavedIconFg("base#icon#warning#fg");
-    s_savedIcon = IconUtils::fetchIcon(themeMgr.getIconFile(savedIconName));
-    s_modifiedIcon = IconUtils::fetchIcon(themeMgr.getIconFile(savedIconName),
-                                          themeMgr.paletteColor(unsavedIconFg));
 }
 
 Buffer *ViewWindow::getBuffer() const
@@ -194,11 +174,8 @@ void ViewWindow::detachFromBuffer(bool p_quiet)
 
 QIcon ViewWindow::getIcon() const
 {
-    if (m_buffer) {
-        return m_buffer->isModified() ? s_modifiedIcon : s_savedIcon;
-    } else {
-        return s_savedIcon;
-    }
+    // Unnecessary to provide an icon for the tab.
+    return QIcon();
 }
 
 QString ViewWindow::getName() const

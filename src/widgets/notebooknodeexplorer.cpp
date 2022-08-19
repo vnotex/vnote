@@ -2135,7 +2135,7 @@ void NotebookNodeExplorer::addOpenWithMenu(QMenu *p_menu, bool p_master)
     {
         auto defaultAct = subMenu->addAction(tr("System Default Program"));
         connect(defaultAct, &QAction::triggered,
-                this, [this, defaultAct, p_master]() {
+                this, [this, p_master]() {
                     openSelectedNodesWithProgram(QString(), p_master);
                 });
         const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
