@@ -47,6 +47,20 @@ void NoteManagementPage::setupUI()
         connect(m_lineEndingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &NoteManagementPage::pageIsChanged);
     }
+
+    {
+        m_defaultOpenModeComboBox = WidgetsFactory::createComboBox(this);
+        m_defaultOpenModeComboBox->setToolTip(tr("Default mode when opening notes"));
+
+        m_defaultOpenModeComboBox->addItem(tr("Read"), (int)ViewWindowMode::Read);
+        m_defaultOpenModeComboBox->addItem(tr("Edit"), (int)ViewWindowMode::Edit);
+
+        const QString label(tr("Default open mode:"));
+        mainLayout->addRow(label, m_defaultOpenModeComboBox);
+        addSearchItem(label, m_defaultOpenModeComboBox->toolTip(), m_defaultOpenModeComboBox);
+        connect(m_defaultOpenModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &NoteManagementPage::pageIsChanged);
+    }
 }
 
 void NoteManagementPage::loadInternal()
@@ -62,6 +76,14 @@ void NoteManagementPage::loadInternal()
         }
         m_lineEndingComboBox->setCurrentIndex(idx);
     }
+
+    {
+        int idx = m_defaultOpenModeComboBox->findData(static_cast<int>(coreConfig.getDefaultOpenMode()));
+        if (idx == -1) {
+            idx = 0;
+        }
+        m_defaultOpenModeComboBox->setCurrentIndex(idx);
+    }
 }
 
 bool NoteManagementPage::saveInternal()
@@ -73,6 +95,11 @@ bool NoteManagementPage::saveInternal()
     {
         auto ending = m_lineEndingComboBox->currentData().toInt();
         coreConfig.setLineEndingPolicy(static_cast<LineEndingPolicy>(ending));
+    }
+
+    {
+        auto mode = m_defaultOpenModeComboBox->currentData().toInt();
+        coreConfig.setDefaultOpenMode(static_cast<ViewWindowMode>(mode));
     }
 
     return true;

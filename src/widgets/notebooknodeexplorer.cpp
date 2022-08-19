@@ -291,23 +291,32 @@ void NotebookNodeExplorer::activateItemNode(const NodeData &p_data)
         return;
     }
 
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+    auto defaultMode = coreConfig.getDefaultOpenMode();
+
     if (p_data.isNode()) {
         if (checkInvalidNode(p_data.getNode())) {
             return;
         }
-        emit nodeActivated(p_data.getNode(), QSharedPointer<FileOpenParameters>::create());
+        auto paras = QSharedPointer<FileOpenParameters>::create();
+        paras->m_mode = defaultMode;
+        emit nodeActivated(p_data.getNode(), paras);
     } else if (p_data.isExternalNode()) {
         // Import to config first.
         if (m_autoImportExternalFiles) {
             auto importedNode = importToIndex(p_data.getExternalNode());
             if (importedNode) {
-                emit nodeActivated(importedNode.data(), QSharedPointer<FileOpenParameters>::create());
+                auto paras = QSharedPointer<FileOpenParameters>::create();
+                paras->m_mode = defaultMode;
+                emit nodeActivated(importedNode.data(), paras);
             }
             return;
         }
 
         // Just open it.
-        emit fileActivated(p_data.getExternalNode()->fetchAbsolutePath(), QSharedPointer<FileOpenParameters>::create());
+        auto paras = QSharedPointer<FileOpenParameters>::create();
+        paras->m_mode = defaultMode;
+        emit fileActivated(p_data.getExternalNode()->fetchAbsolutePath(), paras);
     }
 }
 
@@ -946,7 +955,9 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
 {
     const int selectedSize = p_master ? m_masterExplorer->selectedItems().size() : m_slaveExplorer->selectedItems().size();
 
-    createAndAddAction(Action::Open, p_menu, p_master);
+    createAndAddAction(Action::Edit, p_menu, p_master);
+
+    createAndAddAction(Action::Read, p_menu, p_master);
 
     addOpenWithMenu(p_menu, p_master);
 
@@ -1009,7 +1020,9 @@ void NotebookNodeExplorer::createContextMenuOnExternalNode(QMenu *p_menu, const 
 
     const int selectedSize = p_master ? m_masterExplorer->selectedItems().size() : m_slaveExplorer->selectedItems().size();
 
-    createAndAddAction(Action::Open, p_menu, p_master);
+    createAndAddAction(Action::Edit, p_menu, p_master);
+
+    createAndAddAction(Action::Read, p_menu, p_master);
 
     addOpenWithMenu(p_menu, p_master);
 
@@ -1194,7 +1207,7 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
         break;
 
     case Action::RemoveFromConfig:
-        act = new QAction(tr("&Remove From Index"), p_parent);
+        act = new QAction(tr("Remo&ve From Index"), p_parent);
         connect(act, &QAction::triggered,
                 this, [this, p_master]() {
                     removeSelectedNodesFromConfig(p_master);
@@ -1247,6 +1260,8 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
         break;
 
     case Action::Open:
+        // Use Edit and Read instead.
+        Q_ASSERT(false);
         act = new QAction(tr("&Open"), p_parent);
         connect(act, &QAction::triggered,
                 this, [this, p_master]() {
@@ -1271,8 +1286,44 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                 });
         break;
 
+    case Action::Edit:
+        Q_FALLTHROUGH();
+    case Action::Read:
+    {
+        const bool isEdit = p_act == Action::Edit;
+        act = new QAction(isEdit ? tr("&Edit") : tr("&Read"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this, p_master, isEdit]() {
+                    // Support nodes and external nodes.
+                    // Do nothing for folders.
+                    auto selectedNodes = p_master ? getMasterSelectedNodesAndExternalNodes() : getSlaveSelectedNodesAndExternalNodes();
+                    for (const auto &externalNode : selectedNodes.second) {
+                        if (!externalNode->isFolder()) {
+                            auto paras = QSharedPointer<FileOpenParameters>::create();
+                            paras->m_mode = isEdit ? ViewWindowMode::Edit : ViewWindowMode::Read;
+                            paras->m_forceMode = true;
+                            emit fileActivated(externalNode->fetchAbsolutePath(), paras);
+                        }
+                    }
+
+                    for (const auto &node : selectedNodes.first) {
+                        if (checkInvalidNode(node)) {
+                            continue;
+                        }
+
+                        if (node->hasContent()) {
+                            auto paras = QSharedPointer<FileOpenParameters>::create();
+                            paras->m_mode = isEdit ? ViewWindowMode::Edit : ViewWindowMode::Read;
+                            paras->m_forceMode = true;
+                            emit nodeActivated(node, paras);
+                        }
+                    }
+                });
+        break;
+    }
+
     case Action::ExpandAll:
-        act = new QAction(tr("&Expand All\t*"), p_parent);
+        act = new QAction(tr("E&xpand All\t*"), p_parent);
         connect(act, &QAction::triggered,
                 this, [this]() {
                     auto item = m_masterExplorer->currentItem();

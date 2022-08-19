@@ -146,6 +146,9 @@ namespace vnotex
         const QJsonArray &getUnitedEntryAlias() const;
         void setUnitedEntryAlias(const QJsonArray &p_alias);
 
+        ViewWindowMode getDefaultOpenMode() const;
+        void setDefaultOpenMode(ViewWindowMode p_mode);
+
     private:
         friend class MainConfig;
 
@@ -162,6 +165,9 @@ namespace vnotex
         void loadUnitedEntry(const QJsonObject &p_app, const QJsonObject &p_user);
 
         QJsonObject saveUnitedEntry() const;
+
+        static ViewWindowMode stringToViewWindowMode(const QString &p_mode);
+        static QString viewWindowModeToString(ViewWindowMode p_mode);
 
         // Theme name.
         QString m_theme;
@@ -199,6 +205,8 @@ namespace vnotex
         QVector<FileTypeSuffix> m_fileTypeSuffixes;
 
         QJsonArray m_unitedEntryAlias;
+
+        ViewWindowMode m_defaultOpenMode = ViewWindowMode::Read;
 
         static QStringList s_availableLocales;
     };

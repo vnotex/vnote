@@ -160,6 +160,8 @@ namespace vnotex
             ReloadIndex,
             ImportToConfig,
             Open,
+            Edit,
+            Read,
             ExpandAll,
             PinToQuickAccess,
             Tag

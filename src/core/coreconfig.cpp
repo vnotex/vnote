@@ -82,10 +82,14 @@ void CoreConfig::init(const QJsonObject &p_app,
 
     m_perNotebookHistoryEnabled = READBOOL(QStringLiteral("per_notebook_history"));
 
-
     {
         auto lineEnding = READSTR(QStringLiteral("line_ending"));
         m_lineEnding = stringToLineEndingPolicy(lineEnding);
+    }
+
+    {
+        auto mode = READSTR(QStringLiteral("default_open_mode"));
+        m_defaultOpenMode = stringToViewWindowMode(mode);
     }
 
     loadFileTypeSuffixes(appObj, userObj);
@@ -109,6 +113,7 @@ QJsonObject CoreConfig::toJson() const
     obj[QStringLiteral("line_ending")] = lineEndingPolicyToString(m_lineEnding);
     obj[QStringLiteral("file_type_suffixes")] = saveFileTypeSuffixes();
     obj[QStringLiteral("united_entry")] = saveUnitedEntry();
+    obj[QStringLiteral("default_open_mode")] = viewWindowModeToString(m_defaultOpenMode);
     return obj;
 }
 
@@ -361,4 +366,34 @@ const QJsonArray &CoreConfig::getUnitedEntryAlias() const
 void CoreConfig::setUnitedEntryAlias(const QJsonArray &p_alias)
 {
     updateConfig(m_unitedEntryAlias, p_alias, this);
+}
+
+ViewWindowMode CoreConfig::getDefaultOpenMode() const
+{
+    return m_defaultOpenMode;
+}
+
+void CoreConfig::setDefaultOpenMode(ViewWindowMode p_mode)
+{
+    updateConfig(m_defaultOpenMode, p_mode, this);
+}
+
+ViewWindowMode CoreConfig::stringToViewWindowMode(const QString &p_mode)
+{
+    if (p_mode == "edit") {
+        return ViewWindowMode::Edit;
+    }
+
+    return ViewWindowMode::Read;
+}
+
+QString CoreConfig::viewWindowModeToString(ViewWindowMode p_mode)
+{
+    switch (p_mode) {
+    case ViewWindowMode::Edit:
+        return "edit";
+
+    default:
+        return "read";
+    }
 }

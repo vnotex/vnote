@@ -27,6 +27,8 @@ namespace vnotex
         QCheckBox *m_perNotebookHistoryCheckBox = nullptr;
 
         QComboBox *m_lineEndingComboBox = nullptr;
+
+        QComboBox *m_defaultOpenModeComboBox = nullptr;
     };
 }
 

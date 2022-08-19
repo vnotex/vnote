@@ -109,6 +109,8 @@
         "per_notebook_history" : false,
         "//comment" : "Line ending policy for config files, platform/lf/crlf/cr",
         "line_ending" : "lf",
+        "//comment" : "read/edit",
+        "default_open_mode" : "read",
         "united_entry" : {
             "alias" : [
                 {
