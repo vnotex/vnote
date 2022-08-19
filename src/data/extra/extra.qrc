@@ -576,5 +576,37 @@
         <file>themes/vscode-dark/up.svg</file>
         <file>themes/vscode-dark/up_disabled.svg</file>
         <file>themes/vscode-dark/web.css</file>
+        <file>themes/vue-light/arrow_dropdown.svg</file>
+        <file>themes/vue-light/arrow_dropdown_disabled.svg</file>
+        <file>themes/vue-light/branch_closed.svg</file>
+        <file>themes/vue-light/branch_open.svg</file>
+        <file>themes/vue-light/checkbox_checked.svg</file>
+        <file>themes/vue-light/checkbox_checked_disabled.svg</file>
+        <file>themes/vue-light/checkbox_unchecked.svg</file>
+        <file>themes/vue-light/checkbox_unchecked_disabled.svg</file>
+        <file>themes/vue-light/close.svg</file>
+        <file>themes/vue-light/close_grey.svg</file>
+        <file>themes/vue-light/cover.png</file>
+        <file>themes/vue-light/down.svg</file>
+        <file>themes/vue-light/down_disabled.svg</file>
+        <file>themes/vue-light/float.svg</file>
+        <file>themes/vue-light/highlight.css</file>
+        <file>themes/vue-light/interface.qss</file>
+        <file>themes/vue-light/left.svg</file>
+        <file>themes/vue-light/left_disabled.svg</file>
+        <file>themes/vue-light/menu_checkbox.svg</file>
+        <file>themes/vue-light/menu_radiobutton.svg</file>
+        <file>themes/vue-light/palette.json</file>
+        <file>themes/vue-light/radiobutton_checked.svg</file>
+        <file>themes/vue-light/radiobutton_checked_disabled.svg</file>
+        <file>themes/vue-light/radiobutton_unchecked.svg</file>
+        <file>themes/vue-light/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/vue-light/right.svg</file>
+        <file>themes/vue-light/right_disabled.svg</file>
+        <file>themes/vue-light/sizegrip.svg</file>
+        <file>themes/vue-light/text-editor.theme</file>
+        <file>themes/vue-light/up.svg</file>
+        <file>themes/vue-light/up_disabled.svg</file>
+        <file>themes/vue-light/web.css</file>
     </qresource>
 </RCC>
