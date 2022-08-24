@@ -325,6 +325,47 @@ namespace vnotex
             const auto result = p_win->m_editor->findText(patterns.first, toEditorFindFlags(patterns.second), 0, -1, p_currentMatchLine);
             p_win->showFindResult(patterns.first, result.m_totalMatches, result.m_currentMatchIndex);
         }
+
+        static ViewWindow::WordCountInfo calculateWordCountInfo(const QString &p_text)
+        {
+            ViewWindow::WordCountInfo info;
+
+            // Char without spaces.
+            int cns = 0;
+            int wc = 0;
+            // Remove th ending new line.
+            int cc = p_text.size();
+            // 0 - not in word;
+            // 1 - in English word;
+            // 2 - in non-English word;
+            int state = 0;
+
+            for (int i = 0; i < cc; ++i) {
+                QChar ch = p_text[i];
+                if (ch.isSpace()) {
+                    if (state) {
+                        state = 0;
+                    }
+
+                    continue;
+                } else if (ch.unicode() < 128) {
+                    if (state != 1) {
+                        state = 1;
+                        ++wc;
+                    }
+                } else {
+                    state = 2;
+                    ++wc;
+                }
+
+                ++cns;
+            }
+
+            info.m_wordCount = wc;
+            info.m_charWithoutSpaceCount = cns;
+            info.m_charWithSpaceCount = cc;
+            return info;
+        }
     };
 }
 

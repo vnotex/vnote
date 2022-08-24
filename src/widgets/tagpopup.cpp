@@ -11,16 +11,9 @@
 using namespace vnotex;
 
 TagPopup::TagPopup(QToolButton *p_btn, QWidget *p_parent)
-    : QMenu(p_parent),
-      m_button(p_btn)
+    : ButtonPopup(p_btn, p_parent)
 {
     setupUI();
-
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-    // Qt::Popup on macOS does not work well with input method.
-    setWindowFlags(Qt::Tool | Qt::NoDropShadowWindowHint);
-    setWindowModality(Qt::ApplicationModal);
-#endif
 
     connect(this, &QMenu::aboutToShow,
             this, [this]() {
@@ -36,11 +29,8 @@ TagPopup::TagPopup(QToolButton *p_btn, QWidget *p_parent)
 
 void TagPopup::setupUI()
 {
-    auto mainLayout = new QVBoxLayout(this);
-    WidgetUtils::setContentsMargins(mainLayout);
-
     m_tagViewer = new TagViewer(true, this);
-    mainLayout->addWidget(m_tagViewer);
+    setCentralWidget(m_tagViewer);
 
     setMinimumSize(256, 320);
 }

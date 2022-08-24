@@ -19,6 +19,7 @@
 #include "widgetsfactory.h"
 #include "attachmentpopup.h"
 #include "tagpopup.h"
+#include "wordcountpopup.h"
 #include "propertydefs.h"
 #include "outlinepopup.h"
 #include "viewwindow.h"
@@ -84,7 +85,7 @@ void ViewWindowToolBarHelper::addButtonShortcut(QToolButton *p_btn,
 
 QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
 {
-    auto viewWindow = static_cast<QWidget *>(p_tb->parent());
+    auto viewWindow = static_cast<ViewWindow *>(p_tb->parent());
     const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
 
     QAction *act = nullptr;
@@ -301,6 +302,8 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         toolBtn->setPopupMode(QToolButton::InstantPopup);
         toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
 
+        addButtonShortcut(toolBtn, editorConfig.getShortcut(Shortcut::Attachment), viewWindow);
+
         auto menu = new AttachmentPopup(toolBtn, p_tb);
         toolBtn->setMenu(menu);
         break;
@@ -416,6 +419,23 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
     {
         act = p_tb->addAction(ToolBarHelper::generateIcon("print_editor.svg"), ViewWindow::tr("Print"));
         addActionShortcut(act, editorConfig.getShortcut(Shortcut::Print), viewWindow);
+        break;
+    }
+
+    case Action::WordCount:
+    {
+        act = p_tb->addAction(ToolBarHelper::generateIcon("word_count_editor.svg"),
+                              ViewWindow::tr("Word Count"));
+
+        auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
+        Q_ASSERT(toolBtn);
+        toolBtn->setPopupMode(QToolButton::InstantPopup);
+        toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+
+        addButtonShortcut(toolBtn, editorConfig.getShortcut(Shortcut::WordCount), viewWindow);
+
+        auto menu = new WordCountPopup(toolBtn, viewWindow, p_tb);
+        toolBtn->setMenu(menu);
         break;
     }
 

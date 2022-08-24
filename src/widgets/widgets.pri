@@ -2,6 +2,7 @@ SOURCES += \
     $$PWD/attachmentdragdropareaindicator.cpp \
     $$PWD/attachmentpopup.cpp \
     $$PWD/biaction.cpp \
+    $$PWD/buttonpopup.cpp \
     $$PWD/combobox.cpp \
     $$PWD/consoleviewer.cpp \
     $$PWD/dialogs/dialog.cpp \
@@ -126,12 +127,14 @@ SOURCES += \
     $$PWD/titletoolbar.cpp \
     $$PWD/viewarea.cpp \
     $$PWD/windowspanel.cpp \
-    $$PWD/windowsprovider.cpp
+    $$PWD/windowsprovider.cpp \
+    $$PWD/wordcountpopup.cpp
 
 HEADERS += \
     $$PWD/attachmentdragdropareaindicator.h \
     $$PWD/attachmentpopup.h \
     $$PWD/biaction.h \
+    $$PWD/buttonpopup.h \
     $$PWD/combobox.h \
     $$PWD/consoleviewer.h \
     $$PWD/dialogs/dialog.h \
@@ -260,4 +263,5 @@ HEADERS += \
     $$PWD/titletoolbar.h \
     $$PWD/viewarea.h \
     $$PWD/windowspanel.h \
-    $$PWD/windowsprovider.h
+    $$PWD/windowsprovider.h \
+    $$PWD/wordcountpopup.h

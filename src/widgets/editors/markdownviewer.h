@@ -31,6 +31,8 @@ namespace vnotex
 
         void setPreviewHelper(PreviewHelper *p_previewHelper);
 
+        void saveContent(const std::function<void(const QString &p_content)> &p_callback);
+
     signals:
         void zoomFactorChanged(qreal p_factor);
 

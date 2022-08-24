@@ -49,7 +49,8 @@ namespace vnotex
             InplacePreview,
             ImageHost,
             Debug,
-            Print
+            Print,
+            WordCount
         };
 
         static QAction *addAction(QToolBar *p_tb, Action p_action);

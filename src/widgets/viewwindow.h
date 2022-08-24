@@ -40,6 +40,14 @@ namespace vnotex
         };
         Q_DECLARE_FLAGS(WindowFlags, WindowFlag);
 
+        struct WordCountInfo
+        {
+            bool m_isSelection = false;
+            int m_wordCount = 0;
+            int m_charWithoutSpaceCount = 0;
+            int m_charWithSpaceCount = 0;
+        };
+
         explicit ViewWindow(QWidget *p_parent = nullptr);
 
         virtual ~ViewWindow();
@@ -98,6 +106,8 @@ namespace vnotex
         bool isSessionEnabled() const;
 
         virtual QString selectedText() const;
+
+        virtual void fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &p_callback) const = 0;
 
     public slots:
         virtual void handleEditorConfigChange() = 0;

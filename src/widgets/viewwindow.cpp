@@ -456,6 +456,12 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
         break;
     }
 
+    case ViewWindowToolBarHelper::WordCount:
+    {
+        act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
+        break;
+    }
+
     case ViewWindowToolBarHelper::Outline:
     {
         act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);

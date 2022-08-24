@@ -56,6 +56,8 @@ namespace vnotex
 
         void applySnippet() Q_DECL_OVERRIDE;
 
+        void fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &p_callback) const Q_DECL_OVERRIDE;
+
     public slots:
         void handleEditorConfigChange() Q_DECL_OVERRIDE;
 

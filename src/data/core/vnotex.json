@@ -218,6 +218,8 @@
                 "FindPrevious" : "Shift+F3",
                 "ApplySnippet" : "Ctrl+G, I",
                 "Tag" : "Ctrl+G, B",
+                "Attachment" : "",
+                "WordCount" : "",
                 "Debug" : "F12",
                 "Print" : "",
                 "ClearHighlights" : "Ctrl+G, Space"

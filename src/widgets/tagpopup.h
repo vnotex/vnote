@@ -1,7 +1,7 @@
 #ifndef TAGPOPUP_H
 #define TAGPOPUP_H
 
-#include <QMenu>
+#include "buttonpopup.h"
 
 class QToolButton;
 
@@ -10,7 +10,7 @@ namespace vnotex
     class Buffer;
     class TagViewer;
 
-    class TagPopup : public QMenu
+    class TagPopup : public ButtonPopup
     {
         Q_OBJECT
     public:
@@ -22,9 +22,6 @@ namespace vnotex
         void setupUI();
 
         Buffer *m_buffer = nullptr;
-
-        // Button for this menu.
-        QToolButton *m_button = nullptr;
 
         // Managed by QObject.
         TagViewer *m_tagViewer = nullptr;

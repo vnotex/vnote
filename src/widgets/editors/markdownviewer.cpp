@@ -435,3 +435,10 @@ void MarkdownViewer::crossCopy(const QString &p_target, const QString &p_baseUrl
 {
     emit m_adapter->crossCopyRequested(0, 0, p_target, p_baseUrl, p_html);
 }
+
+void MarkdownViewer::saveContent(const std::function<void(const QString &p_content)> &p_callback)
+{
+    page()->runJavaScript("document.getElementById('vx-content').textContent", [p_callback](const QVariant &v) {
+        p_callback(v.toString());
+    });
+}

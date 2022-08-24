@@ -66,6 +66,7 @@ void TextViewWindow::setupToolBar()
     addToolBar(toolBar);
 
     addAction(toolBar, ViewWindowToolBarHelper::Save);
+    addAction(toolBar, ViewWindowToolBarHelper::WordCount);
 
     toolBar->addSeparator();
 
@@ -321,4 +322,19 @@ void TextViewWindow::print()
 void TextViewWindow::clearHighlights()
 {
     TextViewWindowHelper::clearSearchHighlights(this);
+}
+
+void TextViewWindow::fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &p_callback) const
+{
+    auto text = selectedText();
+    if (text.isEmpty()) {
+        text = getLatestContent();
+        auto info = TextViewWindowHelper::calculateWordCountInfo(text);
+        info.m_isSelection = false;
+        p_callback(info);
+    } else {
+        auto info = TextViewWindowHelper::calculateWordCountInfo(text);
+        info.m_isSelection = true;
+        p_callback(info);
+    }
 }
