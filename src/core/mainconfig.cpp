@@ -119,5 +119,4 @@ QString MainConfig::getVersion(const QJsonObject &p_jobj)
 void MainConfig::doVersionSpecificOverride()
 {
     // In a new version, we may want to change one value by force.
-    m_coreConfig->m_docksTabBarIconSize = 18;
 }

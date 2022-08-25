@@ -571,8 +571,7 @@ QTabBar::tab {
 QTabBar::tab:top, QTabBar::tab:bottom {
     border-top: 2px solid transparent;
     border-right: 1px solid @widgets#qtabbar#tab#border;
-    /* MUST leave right and left padding 0px. */
-    padding: 2px 0px 2px 0px;
+    padding: 2px 2px 2px 2px;
     height: 20px;
 }
 

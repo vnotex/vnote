@@ -1474,6 +1474,7 @@ void MarkdownViewWindow::fetchWordCountInfo(const std::function<void(const WordC
         auto info = TextViewWindowHelper::calculateWordCountInfo(text);
         info.m_isSelection = true;
         p_callback(info);
+        return;
     }
 
     switch (m_mode) {
