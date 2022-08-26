@@ -1,4 +1,11 @@
 # Changes
+## v3.15.0
+* Editor supports Word Count
+* Add Open Windows panel
+* Theme: add Vue-light theme
+* Support default open mode
+* NotebookSelector: support dynamic icons for notebooks
+
 ## v3.14.0
 * Theme: support custom icons
 * Theme: refine icons
