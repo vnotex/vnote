@@ -133,6 +133,17 @@ QIcon IconUtils::drawTextIcon(const QString &p_text,
                               const QString &p_fg,
                               const QString &p_border)
 {
+    return drawTextRectIcon(p_text, p_fg, "", p_border, 56, 56, 8);
+}
+
+QIcon IconUtils::drawTextRectIcon(const QString &p_text,
+                                  const QString &p_fg,
+                                  const QString &p_bg,
+                                  const QString &p_border,
+                                  int p_rectWidth,
+                                  int p_rectHeight,
+                                  int p_rectRadius)
+{
     const int wid = 64;
     QPixmap pixmap(wid, wid);
     pixmap.fill(Qt::transparent);
@@ -140,22 +151,33 @@ QIcon IconUtils::drawTextIcon(const QString &p_text,
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    auto pen = painter.pen();
-    pen.setColor(p_border);
-    pen.setWidth(3);
-    painter.setPen(pen);
+    QPainterPath bgPath;
+    bgPath.addRoundedRect(QRect((wid - p_rectWidth) / 2, (wid - p_rectHeight) / 2, p_rectWidth, p_rectHeight),
+                          p_rectRadius,
+                          p_rectRadius);
 
-    painter.drawRoundedRect(4, 4, wid - 8, wid - 8, 8, 8);
+    if (!p_bg.isEmpty()) {
+        painter.fillPath(bgPath, QColor(p_bg));
+    }
+
+    const int strokeWidth = 3;
+
+    if (!p_border.isEmpty()) {
+        QPen pen(QColor(p_border), strokeWidth);
+        painter.setPen(pen);
+        painter.drawPath(bgPath);
+    }
 
     if (!p_text.isEmpty()) {
-        pen.setColor(p_fg);
+        QPen pen(QColor(p_fg), strokeWidth);
         painter.setPen(pen);
 
         auto font = painter.font();
         font.setPointSize(36);
+        font.setBold(true);
         painter.setFont(font);
 
-        auto requriedRect = painter.boundingRect(4, 4, wid - 8, wid - 8,
+        auto requriedRect = painter.boundingRect(bgPath.boundingRect(),
                                                  Qt::AlignCenter,
                                                  p_text);
         painter.drawText(requriedRect, p_text);

@@ -62,22 +62,49 @@ void NotebookSelector::addNotebookItem(const QSharedPointer<Notebook> &p_noteboo
     setItemToolTip(idx, generateItemToolTip(p_notebook.data()));
 }
 
+void NotebookSelector::fetchIconColor(const QString &p_name, QString &p_fg, QString &p_bg)
+{
+    static QVector<QString> backgroundColors = {
+        "#80558c",
+        "#df7861",
+        "#f65a83",
+        "#3b9ae1",
+        "#277bc0",
+        "#42855b",
+        "#a62349",
+        "#a66cff",
+        "#9c9efe",
+        "#54bab9",
+        "#79b4b7",
+        "#57cc99",
+        "#916bbf",
+        "#5c7aea",
+        "#6867ac",
+    };
+
+    int hashVal = 0;
+    for (int i = 0; i < p_name.size(); ++i) {
+        hashVal += p_name[i].unicode();
+    }
+
+    p_fg = "#ffffff";
+    p_bg = backgroundColors[hashVal % backgroundColors.size()];
+}
+
 QIcon NotebookSelector::generateItemIcon(const Notebook *p_notebook)
 {
     if (!p_notebook->getIcon().isNull()) {
         return p_notebook->getIcon();
     }
 
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    QString iconFile;
-    const auto &type = p_notebook->getType();
-    if (type == "native.vnotex") {
-        iconFile = themeMgr.getIconFile("native_notebook_default.svg");
-    } else {
-        iconFile = themeMgr.getIconFile("notebook_default.svg");
-    }
-
-    return IconUtils::fetchIcon(iconFile);
+    QString fg, bg;
+    fetchIconColor(p_notebook->getName(), fg, bg);
+    return IconUtils::drawTextRectIcon(p_notebook->getName().at(0).toUpper(),
+                                       fg,
+                                       bg,
+                                       "",
+                                       50,
+                                       58);
 }
 
 QString NotebookSelector::generateItemToolTip(const Notebook *p_notebook)

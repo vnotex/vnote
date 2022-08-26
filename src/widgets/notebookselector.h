@@ -53,6 +53,8 @@ namespace vnotex
 
         int findNotebook(ID p_id) const;
 
+        static void fetchIconColor(const QString &p_name, QString &p_fg, QString &p_bg);
+
         bool m_notebooksInitialized = false;
 
         QVector<QModelIndex> m_navigationIndexes;
