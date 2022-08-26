@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QPixmap>
 #include <QPainter>
+#include <QPainterPath>
 #include <QDebug>
 
 #include <core/vnotex.h>
