@@ -81,7 +81,9 @@ class MarkJs {
             'caseSensitive': p_options.caseSensitive,
             'accuracy': p_options.wholeWordOnly ? 'exactly' : 'partially',
             // Ignore SVG, or SVG will be corrupted.
-            'exclude': ['svg *']
+            'exclude': ['svg *'],
+            'separateWordSearch': false,
+            'acrossElements': true
         }
         return opt;
     }

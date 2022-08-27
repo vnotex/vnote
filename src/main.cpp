@@ -72,6 +72,11 @@ int main(int argc, char *argv[])
     }
 #endif
 
+#if defined(Q_OS_LINUX)
+    // Disable sandbox on Linux.
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--no-sandbox");
+#endif
+
     Application app(argc, argv);
 
     initWebEngineSettings();
