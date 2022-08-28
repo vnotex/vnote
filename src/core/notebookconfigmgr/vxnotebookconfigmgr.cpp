@@ -4,6 +4,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QDebug>
+#include <QSet>
 
 #include <notebookbackend/inotebookbackend.h>
 #include <notebook/notebookparameters.h>
@@ -170,6 +171,8 @@ QSharedPointer<Node> VXNotebookConfigMgr::nodeConfigToNode(const NodeConfig &p_c
 
 void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_config)
 {
+    QSet<QString> seenNames;
+
     QVector<QSharedPointer<Node>> children;
     children.reserve(p_config.m_files.size() + p_config.m_folders.size());
     const auto basePath = p_node->fetchPath();
@@ -182,6 +185,12 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
             qWarning() << "skipped loading node with empty name under" << p_node->fetchPath();
             continue;
         }
+
+        if (seenNames.contains(folder.m_name)) {
+            qWarning() << "skipped loading node with duplicated name under" << p_node->fetchPath();
+            continue;
+        }
+        seenNames.insert(folder.m_name);
 
         auto folderNode = QSharedPointer<VXNode>::create(folder.m_name,
                                                          getNotebook(),
@@ -197,6 +206,12 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
             qWarning() << "skipped loading node with empty name under" << p_node->fetchPath();
             continue;
         }
+
+        if (seenNames.contains(file.m_name)) {
+            qWarning() << "skipped loading node with duplicated name under" << p_node->fetchPath();
+            continue;
+        }
+        seenNames.insert(file.m_name);
 
         // For compability only.
         needUpdateConfig = needUpdateConfig || file.m_signature == Node::InvalidId;
