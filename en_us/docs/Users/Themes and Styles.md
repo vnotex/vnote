@@ -17,6 +17,7 @@ Some key files of a theme:
 - `text-editor.theme`: theme file of the text editor (as well as Markdown editor);
 - `web.css`: style sheet file of the read mode of Markdown;
 - `highlight.css`: style sheet file of the read mode of Markdown for code block syntax highlight; VNote uses [Prism](https://prismjs.com/) for syntax highlight in read mode;
+- `icons`: folder for customized icons (**optional**);
 
 ## Samples
 ### Customize Editor Fonts
@@ -155,3 +156,70 @@ vnotex--NotebookNodeExplorer QTreeView {
     font-size: 14pt;
 }
 ```
+
+### Customize Icons
+Customizing the icons used in VNote is supported by putting all related icon files in the folder `icons` within a theme.
+
+For a complete list of file names of the icons, please check [icons](https://github.com/vnotex/vnote/tree/master/src/data/core/icons).
+
+A sample directory structure:
+
+```
+.
+├── cover.png
+├── highlight.css
+├── icons
+│   ├── ***.svg
+│   ├── ***.svg
+│   └── ***.svg
+├── interface.qss
+├── palette.json
+├── text-editor.theme
+└── web.css
+```
+
+Some common icons:
+
+**Notes**
+
+![](vx_images/567140813269078.png)
+
+| Name            | Explain         |
+| :-------------- | :-------------- |
+| folder_node.svg | Folder of nodes |
+| file_node.svg   | Nodes           |
+
+**Top Menu Bar**
+
+![](vx_images/52411495826601.png)
+
+| Name                  | Explain             |
+| :-------------------- | :------------------ |
+| notebook_menu.svg     | Notebook            |
+| new_note.svg          | New Note            |
+| import_menu.svg       | Import              |
+| export_menu.svg       | Export              |
+| flash_page_menu.svg   | Flash Page          |
+| quick_access_menu.svg | Quick Access        |
+| task_menu.svg         | Task                |
+| united_entry.svg      | United Entry        |
+| expand.svg            | Expand Content Area |
+| settings_menu.svg     | Settings            |
+| menu.svg              | Menu                |
+
+**Left Navigation Bar**
+
+![](vx_images/55762704615693.png)
+
+| Name                | Explain    |
+| :------------------ | :--------- |
+| navigation_dock.svg | Navigation |
+| history_dock.svg    | History    |
+| tag_dock.svg        | Tags       |
+| search_dock.svg     | Search     |
+| snippet_dock.svg    | Snippets   |
+
+
+An example theme:
+
+![](vx_images/508490695826601.png)
