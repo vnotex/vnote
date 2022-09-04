@@ -1,0 +1,386 @@
+body {
+    margin: 0 auto;
+    font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
+    color: #E3E3E3;
+    line-height: 1.5;
+    padding: 16px;
+    background-color: #242424;
+    font-size: 16px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #E1E1E1;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding: 0;
+}
+
+p {
+    padding: 0;
+    margin-bottom: 16px;
+}
+
+h1 {
+    font-size: 26px;
+}
+
+h2 {
+    font-size: 24px;
+}
+
+h3 {
+    font-size: 22px;
+}
+
+h4 {
+    font-size: 20px;
+}
+
+h5 {
+    font-size: 19px;
+}
+
+h6 {
+    font-size: 18px;
+}
+
+a {
+    color: #9499FF;
+    margin: 0;
+    padding: 0;
+    vertical-align: baseline;
+    text-decoration: none;
+    word-break: break-word;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a:visited {
+    color: #ba68c8;
+}
+
+ul, ol {
+    padding: 0;
+    padding-left: 24px;
+}
+
+li {
+    line-height: 24px;
+}
+
+li ul, li ol {
+    margin-left: 16px;
+}
+
+p, ul, ol {
+    font-size: 16px;
+    line-height: 24px;
+}
+
+mark {
+    color: #000000;
+    background-color: #c4c400;
+}
+
+pre {
+    display: block;
+    overflow-y: hidden;
+    overflow-x: auto;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+}
+
+code {
+    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
+    color: #C9DEF1;
+    word-break: break-word;
+}
+
+pre code {
+    display: block;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    color: #C9DEF1;
+    background-color: #2d323b;
+    line-height: 1.5;
+    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
+    white-space: pre;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+}
+
+aside {
+    display: block;
+    float: right;
+    width: 390px;
+}
+
+blockquote {
+    color: #2F2F2F;
+    border-left: .2em solid #abb2bf;
+    margin: 1em 0;
+    padding: .3em .5rem;
+    background-color: #3A3A3A;
+}
+
+blockquote p,blockquote ul {
+    color: #abb2bf;
+    margin: 8px 0;
+}
+
+hr {
+    display: block;
+    text-align: left;
+    margin: 1em 0;
+    border: none;
+    height: 2px;
+    background-color: #4c5562;
+}
+
+table {
+   padding: 0;
+   margin: 1rem 0;
+   width: 100%;
+   border-collapse: collapse;
+}
+
+table tr {
+   border-top: 1px solid rgba(84, 84, 84, .65);;
+   background-color: #242424;
+   margin: 0;
+   padding: 0;
+}
+
+table tr:hover {
+   background-color: #3b424c;
+}
+
+table tr:nth-child(2n){
+    background-color: #2f2f2f;
+}
+
+table tr th {
+   font-weight: bold;
+   border: 1px solid rgba(84, 84, 84, .65);;
+   background-color: #1A1A1A;
+   color: #E1E1E1;
+   margin: 0;
+   padding: 12px 16px;
+}
+
+table tr td {
+   border: 1px solid rgba(84, 84, 84, .65);;
+   margin: 0;
+   padding: 12px 16px;
+}
+
+table tr th :first-child, table tr td :first-child {
+   margin-top: 0;
+}
+
+table tr th :last-child, table tr td :last-child {
+   margin-bottom: 0;
+}
+
+div.vx-mermaid-graph {
+    margin: 16px 0px 16px 0px;
+    overflow-y: hidden;
+    background: #B0BEC5;
+    color: #6C6C6C;
+}
+
+div.vx-flowchartjs-graph {
+    padding: 0px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+    background: #B0BEC5;
+    color: #6C6C6C;
+}
+
+div.vx-wavedrom-graph {
+    padding: 0px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+    background: #B0BEC5;
+    color: #6C6C6C;
+}
+
+div.vx-plantuml-graph {
+    padding: 5px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+    background: #B0BEC5;
+    color: #6C6C6C;
+}
+
+::selection {
+  background-color: #0c7bff;
+  color: #e3e5e9;
+}
+
+::-webkit-scrollbar {
+    background-color: #1A1A1A;
+    width: 14px;
+    height: 14px;
+    border: none;
+}
+
+::-webkit-scrollbar-corner {
+    background-color: #1A1A1A;
+}
+
+::-webkit-scrollbar-button {
+    /* This selector affects the styling of both the up & down and left & right buttons of a scrollbar */
+    height: 14px;
+    width: 14px;
+    background-color: #1A1A1A;
+}
+
+::-webkit-scrollbar-button:hover {
+    background-color: #535d6c;
+}
+
+::-webkit-scrollbar-button:active {
+    background-color: #313740;
+}
+
+::-webkit-scrollbar-track {
+    /* This selector affects the styling of the area in the scrollbar between the two buttons */
+    background-color: #1A1A1A;
+}
+
+::-webkit-scrollbar-thumb {
+    /* This selector affects the styling of draggable element of the scollbar */
+    border: none;
+    background-color: #424242;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #535d6c;
+}
+
+::-webkit-scrollbar-thumb:active {
+    background-color: #4c5562;
+}
+
+::-webkit-scrollbar-button:horizontal:increment {
+    background-image: url(right.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+::-webkit-scrollbar-button:horizontal:decrement {
+    background-image: url(left.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+::-webkit-scrollbar-button:vertical:increment {
+    background-image: url(down.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+::-webkit-scrollbar-button:vertical:decrement {
+    background-image: url(up.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+#vx-content span.vx-search-match {
+    color: #222222;
+    background-color: #4db6ac;
+}
+
+#vx-content span.vx-current-search-match {
+    color: #222222;
+    background-color: #66bb6a;
+}
+
+/* 宽度设定 */
+
+#vx-content {
+    margin: 0 auto;
+    padding: 30px 30px 40px;
+}
+
+@media screen and (min-width: 1180px) {
+    #vx-content {
+        max-width: 1100px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    #vx-content {
+        max-width: 100%;
+        padding: 30px 15px 40px;
+    }
+}
+
+/* 重新定义 alert */
+
+.vx-alert {
+    padding: 16px !important;
+    border: 1px solid #747BFF !important;
+    background-color: #292935 !important;
+    border-radius: 8px !important;
+    margin: 16px 0;
+    font-size: 14px !important;
+    color: #BCC0FF !important;
+}
+
+.vx-alert p,.vx-alert ul {margin: 8px 0;line-height: 24px;font-size: 14px !important;}
+.vx-alert code {
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    color: inherit;
+    font-size: 13px !important;
+    line-height: 21px;
+    background-color: rgba(100, 108, 255, .08);
+}
+
+.alert-success,.alert-s{
+    border-color: #23996E !important;
+    background-color: rgba(35, 153, 110, .08) !important;
+    color: rgba(35, 153, 110, .5) !important;
+}
+
+.alert-warning,.alert-w{
+    border-color: #ffa502 !important;
+    background-color: rgba(255, 165, 2, .08) !important;
+    color: rgba(255, 165, 2, .5) !important;
+}
+
+
+.alert-info,.alert-i{
+    border-color: #70a1ff !important;
+    background-color: rgba(112, 161, 255, .08) !important;
+    color: rgba(112, 161, 255, .5) !important;
+}
+
+.alert-danger,.alert-d{
+    border-color: #ff4757 !important;
+    background-color: rgba(255, 71, 87, .08) !important;
+    color: rgba(255, 71, 87, .5) !important;
+}
+
+.alert-light{
+    border-color: #C1C1C1 !important;
+    background-color: rgba(193, 193, 193, .08) !important;
+    color: rgba(193, 193, 193, .5) !important;
+}
+
+.alert-dark{
+    border-color: #111 !important;
+    background-color: #1E1E1E !important;
+    color: #999 !important;
+}
