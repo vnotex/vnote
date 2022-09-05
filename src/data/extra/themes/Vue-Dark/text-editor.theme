@@ -1,0 +1,202 @@
+{
+    "metadata" : {
+        "revision" : 0,
+        "name" : "Moonlight",
+        "type" : "vtextedit"
+    },
+    "editor-styles" : {
+        "Text" : {
+            "//comment" : "Support a list of fonts separated by ,",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New",
+            "font-size" : 12,
+            "text-color" : "#ccd1d8",
+            "background-color" : "#242424",
+            "selected-text-color" : "#e3e5e9",
+            "selected-background-color" : "#0c7bff"
+        },
+        "CursorLine" : {
+            "background-color" : "#424242"
+        },
+        "TrailingSpace" : {
+            "background-color" : "#959eae"
+        },
+        "Tab" : {
+            "background-color" : "#a0a8b7"
+        },
+        "SelectedText" : {
+            "//comment" : "Selected text highlight",
+            "text-color" : "#222222",
+            "background-color" : "#dfdf00"
+        },
+        "IndicatorsBorder" : {
+            "text-color" : "#525252",
+            "background-color" : "#2F2F2F"
+        },
+        "CurrentLineNumber" : {
+            "text-color" : "#ccd1d8"
+        },
+        "Folding" : {
+            "text-color" : "#838fd3"
+        },
+        "FoldedFolding" : {
+            "text-color" : "#919cd8"
+        },
+        "FoldingHighlight" : {
+            "text-color" : "#4c5562"
+        },
+        "FoldedFoldingRangeLine" : {
+            "background-color" : "#3a4ba6"
+        },
+        "IncrementalSearch" : {
+            "//comment" : "Incremental search highlight",
+            "text-color" : "#222222",
+            "background-color" : "#ce93d8"
+        },
+        "Search" : {
+            "//comment" : "Search highlight",
+            "text-color" : "#222222",
+            "background-color" : "#4db6ac"
+        },
+        "SearchUnderCursor" : {
+            "//comment" : "Search highlight under cursor",
+            "text-color" : "#222222",
+            "background-color" : "#66bb6a"
+        }
+    },
+    "//comment" : "Override the Text style in editor-styles",
+    "markdown-editor-styles" : {
+        "Text" : {
+            "//comment" : "Support a list of fonts separated by ,",
+            "font-family" : "YaHei Consolas Hybrid, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, Tahoma, Arial, Geneva, Georgia, Times New Roman",
+            "font-size" : 12,
+            "text-color" : "#ccd1d8",
+            "background-color" : "#242424",
+            "selected-text-color" : "#e3e5e9",
+            "selected-background-color" : "#0c7bff"
+        },
+        "Preview" : {
+            "background-color" : "#b0bec5"
+        }
+    },
+    "markdown-syntax-styles" : {
+        "H1" : {
+            "text-color" : "#E3E3E3",
+            "bold" : true,
+            "font-size" : 17
+        },
+        "H2" : {
+            "text-color" : "#E3E3E3",
+            "bold" : true,
+            "font-size" : 16
+        },
+        "H3" : {
+            "text-color" : "#E3E3E3",
+            "bold" : true,
+            "font-size" : 15
+        },
+        "H4" : {
+            "text-color" : "#E3E3E3",
+            "bold" : true,
+            "font-size" : 14
+        },
+        "H5" : {
+            "text-color" : "#E3E3E3",
+            "bold" : true,
+            "font-size" : 13
+        },
+        "H6" : {
+            "text-color" : "#E3E3E3",
+            "bold" : true,
+            "font-size" : 12
+        },
+        "HRULE" : {
+            "text-color" : "#abb2bf",
+            "background-color" : "#864046"
+        },
+        "LIST_BULLET" : {
+            "text-color" : "#E3E3E3",
+            "bold" : true
+        },
+        "LIST_ENUMERATOR" : {
+            "text-color" : "#E3E3E3"
+        },
+        "LINK" : {
+            "text-color" : "#61afef"
+        },
+        "AUTO_LINK_URL" : {
+            "text-color" : "#61afef"
+        },
+        "AUTO_LINK_EMAIL" : {
+            "text-color" : "#61afef"
+        },
+        "IMAGE" : {
+            "text-color" : "#4883b3"
+        },
+        "REFERENCE" : {
+            "text-color" : "#56b6c2"
+        },
+        "CODE" : {
+            "text-color" : "#98c379",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "EMPH" : {
+            "italic" : true
+        },
+        "STRONG" : {
+            "bold" : true
+        },
+        "HTML_ENTITY" : {
+            "text-color" : "#c07855"
+        },
+        "HTML" : {
+            "text-color" : "#c07855"
+        },
+        "HTMLBLOCK" : {
+            "text-color" : "#c07855"
+        },
+        "COMMENT" : {
+            "text-color" : "#7e899d"
+        },
+        "VERBATIM" : {
+            "text-color" : "#98c379",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "//comment" : "Please modify the syntax highlight theme as well if you change this",
+        "FENCEDCODEBLOCK" : {
+            "text-color" : "#98c379",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "BLOCKQUOTE" : {
+            "text-color" : "#7482ce"
+        },
+        "NOTE" : {
+            "text-color" : "#9575cd"
+        },
+        "STRIKE" : {
+            "text-color" : "#e57373",
+            "strike-through" : true
+        },
+        "FRONTMATTER" : {
+            "text-color" : "#6e7686"
+        },
+        "INLINEEQUATION" : {
+            "text-color" : "#4db6ac",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "DISPLAYFORMULA" : {
+            "text-color" : "#4db6ac",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "MARK" : {
+            "text-color" : "#d7dae0",
+            "background-color" : "#898900"
+        },
+        "TABLE" : {
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "TABLEBORDER" : {
+            "text-color" : "#FFFFFF",
+            "background-color" : "#424242"
+        }
+   }
+}
