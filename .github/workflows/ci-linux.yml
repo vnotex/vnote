@@ -62,7 +62,7 @@ jobs:
 
       - name: Compile qt5ct
         run: |
-          wget --no-check-certificate -c https://excellmedia.dl.sourceforge.net/project/qt5ct/qt5ct-1.1.tar.bz2
+          wget --no-check-certificate -c https://versaweb.dl.sourceforge.net/project/qt5ct/qt5ct-1.1.tar.bz2
           tar xf qt5ct-1.*.tar.bz2
           cd qt5ct-1.*/
           QT_SELECT=5 qmake
