@@ -1,0 +1,9 @@
+{
+    "content": ":::alert-dark\n$$@@\n:::",
+    "cursor_mark": "@@",
+    "description": "实验",
+    "indent_as_first_line": false,
+    "selection_mark": "$$",
+    "shortcut": 3,
+    "type": 1
+}
