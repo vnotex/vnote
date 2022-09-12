@@ -1,0 +1,297 @@
+
+/**
+ * One Light theme for prism.js
+ * Based on Atom's One Light theme: https://github.com/atom/atom/tree/master/packages/one-light-syntax
+ */
+
+/**
+ * One Light colours in terms of RGB (accurate as of commit eb064bf on 19 Feb 2021)
+ * @mono-1: #383a42
+ * @mono-2: #696c77
+ * @mono-3: #a0a1a7
+ * @hue-1: #0184bc <- cyan
+ * @hue-2: #4078f2 <- blue
+ * @hue-3: #a626a4 <- purple
+ * @hue-4: #16a085 <- green
+ * @hue-5: #e45649 <- red 1
+ * @hue-5-2: #ca1243 <- red 2
+ * @hue-6: #b76b01 <- orange 1
+ * @hue-6-2: #cb7701 <- orange 2
+ * @syntax-fg: #383a42
+ * @syntax-bg: #f4f7f9
+ * @syntax-gutter: #9d9d9f
+ * @syntax-guide: #383a4233
+ * @syntax-accent: #526eff
+ */
+
+ code[class*="language-"],
+ pre[class*="language-"] {
+	 background: #f4f7f9;
+	 color: #383a42;
+	 font-family: "YaHei Consolas Hybrid", JetBrains Mono NL, Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	 direction: ltr;
+	 text-align: left;
+	 white-space: pre;
+	 word-spacing: normal;
+	 word-break: normal;
+	 line-height: 1.5;
+ 
+	 -moz-tab-size: 2;
+	 -o-tab-size: 2;
+	 tab-size: 2;
+ 
+	 -webkit-hyphens: none;
+	 -moz-hyphens: none;
+	 -ms-hyphens: none;
+	 hyphens: none;
+ }
+
+ 
+ /* Code blocks */
+ pre[class*="language-"] {
+	 padding: 1em;
+	 margin: 0.5em 0;
+	 overflow: auto;
+	 border-radius: 0.3em;
+ }
+ 
+ /* Inline code */
+ :not(pre) > code[class*="language-"] {
+	 padding: 0.2em 0.3em;
+	 border-radius: 0.3em;
+	 white-space: normal;
+ }
+ 
+ .token.comment,
+ .token.prolog,
+ .token.cdata {
+	 color: #00804e;
+ }
+ 
+ .token.doctype,
+ .token.punctuation,
+ .token.entity {
+	 color: #383a42;
+ }
+ 
+ .token.attr-name,
+ .token.class-name,
+ .token.boolean,
+ .token.constant,
+ .token.number,
+ .token.atrule {
+	 color: #b76b01;
+ }
+ 
+ .token.keyword {
+	 color: #a626a4;
+ }
+ 
+ .token.property,
+ .token.tag,
+ .token.symbol,
+ .token.deleted,
+ .token.important {
+	 color: #e45649;
+ }
+ 
+ .token.selector,
+ .token.string,
+ .token.char,
+ .token.builtin,
+ .token.inserted,
+ .token.regex,
+ .token.attr-value,
+ .token.attr-value > .token.punctuation {
+	 color: #16a085;
+ }
+ 
+ .token.variable,
+ .token.operator,
+ .token.function {
+	 color: #4078f2;
+ }
+ 
+ .token.url {
+	 color: #0184bc;
+	 text-decoration: underline;
+ }
+ 
+ /* HTML overrides */
+ .token.attr-value > .token.punctuation.attr-equals,
+ .token.special-attr > .token.attr-value > .token.value.css {
+	 color: #383a42;
+ }
+ 
+ /* CSS overrides */
+ .language-css .token.selector {
+	 color: #e45649;
+ }
+ 
+ .language-css .token.property {
+	 color: #383a42;
+ }
+ 
+ .language-css .token.url {
+	 text-decoration: none;
+ }
+ 
+ .language-css .token.function,
+ .language-css .token.url > .token.function {
+	 color: #0184bc;
+ }
+ 
+ .language-css .token.url > .token.string.url {
+	 color: #16a085;
+ }
+ 
+ .language-css .token.important,
+ .language-css .token.atrule .token.rule {
+	 color: #a626a4;
+ }
+ 
+ /* JS overrides */
+ .language-javascript .token.operator {
+	 color: #a626a4;
+ }
+ 
+ .language-javascript .token.template-string > .token.interpolation > .token.interpolation-punctuation.punctuation {
+	 color: #ca1243;
+ }
+ 
+ /* JSON overrides */
+ .language-json .token.operator {
+	 color: #383a42;
+ }
+ 
+ .language-json .token.null.keyword {
+	 color: #b76b01;
+ }
+ 
+ /* MD overrides */
+ .language-markdown .token.url,
+ .language-markdown .token.url > .token.operator,
+ .language-markdown .token.url-reference.url > .token.string {
+	 color: #383a42;
+	 text-decoration: none;
+ }
+ 
+ .language-markdown .token.url > .token.content {
+	 color: #4078f2;
+	 text-decoration: none;
+ }
+ 
+ .language-markdown .token.url > .token.url,
+ .language-markdown .token.url-reference.url {
+	 color: #0184bc;
+	 text-decoration: underline;
+ }
+ 
+ .language-markdown .token.blockquote.punctuation,
+ .language-markdown .token.hr.punctuation {
+	 color: #a0a1a7;
+	 font-style: italic;
+ }
+ 
+ .language-markdown .token.code-snippet {
+	 color: #16a085;
+ }
+ 
+ .language-markdown .token.bold .token.content {
+	 color: #b76b01;
+ }
+ 
+ .language-markdown .token.italic .token.content {
+	 color: #a626a4;
+ }
+ 
+ .language-markdown .token.strike .token.content,
+ .language-markdown .token.strike .token.punctuation,
+ .language-markdown .token.list.punctuation,
+ .language-markdown .token.title.important > .token.punctuation {
+	 color: #e45649;
+ }
+ 
+ /* General */
+ .token.bold {
+	 font-weight: bold;
+ }
+ 
+ /* .token.comment, */
+ .token.italic {
+	 font-style: italic;
+ }
+ 
+ .token.entity {
+	 cursor: help;
+ }
+ 
+ .token.namespace {
+	 opacity: 0.8;
+ }
+ 
+ div.code-toolbar {
+	 position: relative;
+ }
+ 
+ div.code-toolbar > .toolbar {
+	 position: absolute;
+	 top: .3em;
+	 right: .2em;
+	 transition: opacity 0.3s ease-in-out;
+	 opacity: 0;
+ }
+ 
+ div.code-toolbar:hover > .toolbar {
+	 opacity: 1;
+ }
+ 
+ /* Separate line b/c rules are thrown out if selector is invalid.
+	IE11 and old Edge versions don't support :focus-within. */
+ div.code-toolbar:focus-within > .toolbar {
+	 opacity: 1;
+ }
+ 
+ div.code-toolbar > .toolbar .toolbar-item {
+	 display: inline-block;
+ }
+ 
+ div.code-toolbar > .toolbar a {
+	 cursor: pointer;
+ }
+ 
+ div.code-toolbar > .toolbar button {
+	 background: none;
+	 border: 0;
+	 color: inherit;
+	 font: inherit;
+	 line-height: normal;
+	 overflow: visible;
+	 padding: 0;
+	 -webkit-user-select: none; /* for button */
+	 -moz-user-select: none;
+	 -ms-user-select: none;
+ }
+ 
+ div.code-toolbar > .toolbar a,
+ div.code-toolbar > .toolbar button,
+ div.code-toolbar > .toolbar span {
+	 color: #757F9A;
+	 font-size: .8em;
+	 padding: 0 .5em;
+	 background: #D7DDE8;
+	 box-shadow: 0 2px 0 0 rgba(58, 91, 134, 0.1);
+	 border-radius: .5em;
+ }
+ 
+ div.code-toolbar > .toolbar a:hover,
+ div.code-toolbar > .toolbar a:focus,
+ div.code-toolbar > .toolbar button:hover,
+ div.code-toolbar > .toolbar button:focus,
+ div.code-toolbar > .toolbar span:hover,
+ div.code-toolbar > .toolbar span:focus {
+	 color: #757F9A;
+	 text-decoration: none;
+ }
+ 
+ 

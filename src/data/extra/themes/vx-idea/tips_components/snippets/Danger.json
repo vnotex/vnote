@@ -1,0 +1,9 @@
+{
+    "content": ":::alert-danger\n$$@@\n:::",
+    "cursor_mark": "@@",
+    "description": "警告",
+    "indent_as_first_line": true,
+    "selection_mark": "$$",
+    "shortcut": 4,
+    "type": 1
+}
