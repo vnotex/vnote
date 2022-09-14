@@ -27,7 +27,6 @@ QMap<QString, QString> BufferMgr::s_suffixToFileType;
 BufferMgr::BufferMgr(QObject *p_parent)
     : QObject(p_parent)
 {
-
 }
 
 BufferMgr::~BufferMgr()
