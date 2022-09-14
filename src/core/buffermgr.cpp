@@ -27,6 +27,7 @@ QMap<QString, QString> BufferMgr::s_suffixToFileType;
 BufferMgr::BufferMgr(QObject *p_parent)
     : QObject(p_parent)
 {
+
 }
 
 BufferMgr::~BufferMgr()
@@ -56,6 +57,9 @@ void BufferMgr::initBufferServer()
 
 void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras)
 {
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+    p_paras->m_mode = coreConfig.getDefaultOpenMode();
+
     if (!p_node) {
         return;
     }
