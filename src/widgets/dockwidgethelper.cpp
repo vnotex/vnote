@@ -490,17 +490,6 @@ void DockWidgetHelper::restoreDocks(const QStringList &p_visibleDocks)
     updateDockWidgetTabBar();
 }
 
-bool DockWidgetHelper::isAnyDockVisible() const
-{
-    const auto &keepDocks = ConfigMgr::getInst().getWidgetConfig().getMainWindowKeepDocksExpandingContentArea();
-    for (const auto dock : m_docks) {
-        if (!dock->isFloating() && dock->isVisible() && !keepDocks.contains(dock->objectName())) {
-            return true;
-        }
-    }
-    return false;
-}
-
 QVector<void *> DockWidgetHelper::getVisibleNavigationItems()
 {
     m_navigationItems.clear();

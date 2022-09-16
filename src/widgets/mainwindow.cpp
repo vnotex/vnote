@@ -400,6 +400,9 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
             }
         }
 
+        // Do not expand the content area.
+        setContentAreaExpanded(false);
+
         saveStateAndGeometry();
     }
 
@@ -496,6 +499,11 @@ void MainWindow::resetStateAndGeometry()
 
 void MainWindow::setContentAreaExpanded(bool p_expanded)
 {
+    if (m_contentAreaExpanded == p_expanded) {
+        return;
+    }
+
+    m_contentAreaExpanded = p_expanded;
     if (p_expanded) {
         // Store the state and hide.
         m_visibleDocksBeforeExpand = m_dockWidgetHelper.hideDocks();
@@ -507,7 +515,7 @@ void MainWindow::setContentAreaExpanded(bool p_expanded)
 
 bool MainWindow::isContentAreaExpanded() const
 {
-    return !m_dockWidgetHelper.isAnyDockVisible();
+    return m_contentAreaExpanded;
 }
 
 void MainWindow::demoWidget()

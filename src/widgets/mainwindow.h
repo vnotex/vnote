@@ -201,6 +201,8 @@ namespace vnotex
         Qt::WindowStates m_windowOldState = Qt::WindowMinimized;
 
         QStringList m_visibleDocksBeforeExpand;
+
+        bool m_contentAreaExpanded = false;
     };
 } // ns vnotex
 

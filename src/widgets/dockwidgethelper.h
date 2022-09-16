@@ -56,9 +56,6 @@ namespace vnotex
 
         void restoreDocks(const QStringList &p_visibleDocks);
 
-        // If there is any dock that does not belong to keep docks visible.
-        bool isAnyDockVisible() const;
-
     // NavigationMode.
     protected:
         QVector<void *> getVisibleNavigationItems() Q_DECL_OVERRIDE;
