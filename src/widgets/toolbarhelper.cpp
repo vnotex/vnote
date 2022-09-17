@@ -767,5 +767,9 @@ void ToolBarHelper::setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar)
 
 void ToolBarHelper::activateQuickAccess(const QString &p_file)
 {
-    emit VNoteX::getInst().openFileRequested(p_file, QSharedPointer<FileOpenParameters>::create());
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+    auto paras = QSharedPointer<FileOpenParameters>::create();
+    paras->m_mode = coreConfig.getDefaultOpenMode();
+
+    emit VNoteX::getInst().openFileRequested(p_file, paras);
 }
