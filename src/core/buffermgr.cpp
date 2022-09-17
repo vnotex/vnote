@@ -56,9 +56,6 @@ void BufferMgr::initBufferServer()
 
 void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras)
 {
-    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
-    p_paras->m_mode = coreConfig.getDefaultOpenMode();
-
     if (!p_node) {
         return;
     }
