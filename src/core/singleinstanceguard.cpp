@@ -14,14 +14,8 @@ const QString SingleInstanceGuard::c_serverName = "vnote";
 
 const QChar SingleInstanceGuard::c_stringListSeparator = '>';
 
-SingleInstanceGuard::SingleInstanceGuard()
-{
-    qInfo() << "guarding is on";
-}
-
 SingleInstanceGuard::~SingleInstanceGuard()
 {
-    qInfo() << "guarding is off";
     exit();
 }
 

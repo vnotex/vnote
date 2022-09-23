@@ -14,7 +14,7 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        SingleInstanceGuard();
+        SingleInstanceGuard() = default;
 
         ~SingleInstanceGuard();
 
