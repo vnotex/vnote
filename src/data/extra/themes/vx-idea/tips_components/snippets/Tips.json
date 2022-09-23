@@ -1,9 +1,0 @@
-{
-    "content": "::: alert-info\n$$@@\n:::",
-    "cursor_mark": "@@",
-    "description": "提示",
-    "indent_as_first_line": false,
-    "selection_mark": "$$",
-    "shortcut": 0,
-    "type": 1
-}

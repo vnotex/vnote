@@ -19,10 +19,11 @@
 
 使用主题时，请将`code_highlight`文件夹下样式，复制重命名替换主题根目录下`highlight.css`样式，重启Vnotex即可生效。
 
+主题首选字体是`YaHei Consolas Hybrid`，可自行搜索下载安装。
+
 ```ini
 highlight-dark.css #dark样式
 highlight-one-light.css #light样式
-YaHei Consolas Hybrid 1.12.ttf #主题首选字体，可选
 ```
 
 
@@ -33,7 +34,7 @@ YaHei Consolas Hybrid 1.12.ttf #主题首选字体，可选
 
 ![提示组件预览效果](tips_components/alert.png)
 
-复制 `tips_components/style.css` 中样式——>追加至 `web.css` 文件尾即可。
+复制 `tips_components/style.css` 中样式然后追加至 `web.css` 文件尾即可。
 
 ## 2. 预览
 
