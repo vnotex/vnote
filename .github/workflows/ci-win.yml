@@ -45,12 +45,6 @@ jobs:
             platform: x86,
             qt: 5.15.2
           }
-          - {
-            name: "Build On Win64 Qt 5.15.5",
-            arch: win64_msvc2019_64,
-            platform: x64,
-            qt: 5.15.x
-          }
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
@@ -73,7 +67,6 @@ jobs:
           key: ${{ runner.os }}-${{matrix.config.arch}}-QtCache-5.12-1
 
       - name: Install Qt Official Build
-        if: ${{matrix.config.qt != '5.15.x'}}
         uses: jurplel/install-qt-action@v2
         with:
           version: ${{matrix.config.qt}}
@@ -82,16 +75,6 @@ jobs:
           modules: qtwebengine
           tools: tools_openssl_${{matrix.config.platform}},1.1.1-4,qt.tools.openssl.win_${{matrix.config.platform}}
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
-
-      - name: Install Qt Private Build
-        if: ${{ matrix.config.qt == '5.15.x' }}
-        shell: cmd
-        # https://build-qt.fsu0413.me/5.15-series
-        run: |
-          C:\msys64\usr\bin\wget.exe -q https://mirrors.gigenet.com/OSDN//users/38/38692/Qt5.15.5-Windows-x86_64-VS2019-16.11.16-20220627.7z
-          7z x Qt5.15*.7z
-          del Qt5.15*.7z
-          move Qt5.15* Qt5.15
 
       - name: Create Build Dir
         shell: bash
@@ -107,7 +90,6 @@ jobs:
       - name: Configure and Build Project
         shell: cmd
         run: |
-          set PATH=%PATH%;%GITHUB_WORKSPACE%\Qt5.15\bin
           qmake --version
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.config.platform}}
           qmake -r -spec win32-msvc CONFIG-=debug CONFIG+=release %GITHUB_WORKSPACE%\vnote.pro
@@ -117,7 +99,6 @@ jobs:
       - name: Package Project
         shell: cmd
         run: |
-          set PATH=%PATH%;%GITHUB_WORKSPACE%\Qt5.15\bin
           qmake --version
           mkdir "%DISTRIB_PATH%"
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.config.platform}}
