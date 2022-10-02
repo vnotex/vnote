@@ -120,6 +120,13 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         env:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
+      
+      - name: Package Installer
+        shell: cmd
+        run: |
+          git clone https://github.com/vnotex/mkmsi.git mkmsi.git --depth=1
+          python .\mkmsi.git\mkmsi.py --auto-create qt --source-dir "%DISTRIB_PATH% --wix-root "C:\Program Files (x86)\WiX Toolset v3.11"
+        working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
