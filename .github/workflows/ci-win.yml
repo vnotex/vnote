@@ -125,7 +125,7 @@ jobs:
         shell: cmd
         run: |
           git clone https://github.com/vnotex/mkmsi.git mkmsi.git --depth=1
-          python .\mkmsi.git\mkmsi.py --auto-create qt --source-dir "%DISTRIB_PATH% --wix-root "C:\\Program Files (x86)\\WiX Toolset v3.11"
+          python .\mkmsi.git\mkmsi.py --auto-create qt --source-dir "%DISTRIB_PATH%" --wix-root "C:\Program Files (x86)\WiX Toolset v3.11"
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
