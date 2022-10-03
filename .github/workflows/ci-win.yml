@@ -163,3 +163,12 @@ jobs:
           files: ${{runner.workspace}}/build/vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip
           release: Continuous Build
           tag: continuous-build
+
+      - name: Rlease
+        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ${{runner.workspace}}/build/vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip ${{runner.workspace}}/build/distrib/VNote*.msi
+          release: Release v${{env.VNOTE_VER}}
+          tag: v${{env.VNOTE_VER}}
