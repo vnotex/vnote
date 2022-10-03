@@ -150,9 +150,11 @@ jobs:
 
       - name: Release
         if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
-        uses: johnwbyrd/update-release@v1.0.0
+        uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/vnote-linux-x64.AppImage
+          artifacts: ${{runner.workspace}}/build/vnote-linux-x64.AppImage
           release: Release v${{env.VNOTE_VER}}
+          commit: ${{GITHUB_SHA}}
           tag: v${{env.VNOTE_VER}}
+
