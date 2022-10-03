@@ -157,4 +157,3 @@ jobs:
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
-

@@ -164,11 +164,12 @@ jobs:
           release: Continuous Build
           tag: continuous-build
 
-      - name: Rlease
+      - name: Release
         if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
-        uses: johnwbyrd/update-release@v1.0.0
+        uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip ${{runner.workspace}}/build/distrib/VNote*.msi
-          release: Release v${{env.VNOTE_VER}}
+          artifacts: ${{runner.workspace}}/build/vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip,${{runner.workspace}}/build/distrib/VNote*.msi
+          commit: master
           tag: v${{env.VNOTE_VER}}
+          allowUpdates: true

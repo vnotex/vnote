@@ -163,9 +163,10 @@ jobs:
 
       - name: Release
         if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
-        uses: johnwbyrd/update-release@v1.0.0
+        uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/vnote-mac-x64-qt${{matrix.config.qt}}.dmg
-          release: Release v${{env.VNOTE_VER}}
+          artifacts: ${{runner.workspace}}/build/vnote-mac-x64-qt${{matrix.config.qt}}.dmg
+          commit: master
           tag: v${{env.VNOTE_VER}}
+          allowUpdates: true
