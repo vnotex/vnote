@@ -160,3 +160,12 @@ jobs:
           files: ${{runner.workspace}}/build/vnote-mac-x64-qt${{matrix.config.qt}}.dmg
           release: Continuous Build
           tag: continuous-build
+
+      - name: Release
+        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ${{runner.workspace}}/build/vnote-mac-x64-qt${{matrix.config.qt}}.dmg
+          release: Release v${{env.VNOTE_VER}}
+          tag: v${{env.VNOTE_VER}}
