@@ -154,6 +154,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: ${{runner.workspace}}/build/vnote-linux-x64.AppImage
-          commit: $${github.sha}}
+          commit: master
           tag: v${{env.VNOTE_VER}}
+          allowUpdates: true
 
