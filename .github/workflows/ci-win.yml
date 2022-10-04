@@ -18,8 +18,6 @@ jobs:
     runs-on: windows-2019
     timeout-minutes: 120
 
-    permissions: read-all|write-all
-
     strategy:
       matrix:
         config:
@@ -120,6 +118,7 @@ jobs:
           echo %GITHUB_SHA% > "%DISTRIB_PATH%\commit"
           del /F /Q "%DISTRIB_PATH%\translations\qt_*.qm"
           7z a vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip "%DISTRIB_PATH%"
+          copy vnote-win-*.zip vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.zip
         working-directory: ${{runner.workspace}}/build
         env:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
@@ -178,7 +177,7 @@ jobs:
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: ${{runner.workspace}}\build\vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip,${{runner.workspace}}\build\distrib\VNote*.msi
+          artifacts: ${{runner.workspace}}\build\vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.zip
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true

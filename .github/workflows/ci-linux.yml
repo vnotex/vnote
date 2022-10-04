@@ -18,8 +18,6 @@ jobs:
     runs-on: ubuntu-18.04
     timeout-minutes: 120
 
-    permissions: read-all|write-all
-
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
       - uses: actions/checkout@v2
