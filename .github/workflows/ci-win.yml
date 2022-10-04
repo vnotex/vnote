@@ -18,6 +18,8 @@ jobs:
     runs-on: windows-2019
     timeout-minutes: 120
 
+    permissions: read-all|write-all
+
     strategy:
       matrix:
         config:

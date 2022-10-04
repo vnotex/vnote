@@ -18,6 +18,8 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 120
 
+    permissions: read-all|write-all
+
     strategy:
       matrix:
         config:
