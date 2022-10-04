@@ -177,7 +177,7 @@ jobs:
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: ${{runner.workspace}}\build\vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.zip
+          artifacts: "${{runner.workspace}}\build\vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.zip"
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
