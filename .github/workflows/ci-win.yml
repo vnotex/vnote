@@ -164,6 +164,13 @@ jobs:
           release: Continuous Build
           tag: continuous-build
 
+      - name: Test
+        shell: cmd
+        run: |
+          dir .
+          dir .\distrib
+        working-directory: ${{runner.workspace}}/build
+
       - name: Release
         if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
         uses: ncipollo/release-action@v1.11.0
