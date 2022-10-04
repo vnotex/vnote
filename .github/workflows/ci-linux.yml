@@ -153,7 +153,8 @@ jobs:
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: ${{runner.workspace}}/build/vnote-linux-x64.AppImage
+          artifacts: ${{runner.workspace}}/build/vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
+          draft: true
