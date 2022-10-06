@@ -81,6 +81,7 @@ SOURCES += \
     $$PWD/outlinepopup.cpp \
     $$PWD/outlineprovider.cpp \
     $$PWD/outlineviewer.cpp \
+    $$PWD/pdfviewwindow.cpp \
     $$PWD/propertydefs.cpp \
     $$PWD/quickselector.cpp \
     $$PWD/searchinfoprovider.cpp \
@@ -216,6 +217,7 @@ HEADERS += \
     $$PWD/outlinepopup.h \
     $$PWD/outlineprovider.h \
     $$PWD/outlineviewer.h \
+    $$PWD/pdfviewwindow.h \
     $$PWD/propertydefs.h \
     $$PWD/quickselector.h \
     $$PWD/searchinfoprovider.h \
