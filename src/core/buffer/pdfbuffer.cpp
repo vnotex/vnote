@@ -1,6 +1,7 @@
 #include "pdfbuffer.h"
 
 #include <QDir>
+#include <QDebug>
 
 #include <widgets/markdownviewwindow.h>
 #include <widgets/pdfviewwindow.h>
@@ -19,5 +20,6 @@ PdfBuffer::PdfBuffer(const BufferParameters &p_parameters,
 ViewWindow *PdfBuffer::createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras, QWidget *p_parent)
 {
     Q_UNUSED(p_paras);
+    qDebug() << "------> start pdf";
     return new PdfViewWindow(p_parent);
 }

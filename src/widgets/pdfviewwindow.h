@@ -19,6 +19,8 @@ namespace vte
 
 namespace vnotex
 {
+    class PdfViewer;
+
     class PdfViewWindow : public ViewWindow
     {
         Q_OBJECT
@@ -32,8 +34,6 @@ namespace vnotex
         QString selectedText() const Q_DECL_OVERRIDE;
 
         void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
-
-        QSharedPointer<OutlineProvider> getOutlineProvider() Q_DECL_OVERRIDE;
 
         void openTwice(const QSharedPointer<FileOpenParameters> &p_paras) Q_DECL_OVERRIDE;
 
@@ -53,38 +53,12 @@ namespace vnotex
 
         void handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras) Q_DECL_OVERRIDE;
 
-        void handleTypeAction(TypeAction p_action) Q_DECL_OVERRIDE;
-
-        void handleSectionNumberOverride(OverrideState p_state) Q_DECL_OVERRIDE;
-
-        void handleImageHostChanged(const QString &p_hostName) Q_DECL_OVERRIDE;
-
-        void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
-
-        void handleFindNext(const QStringList &p_texts, FindOptions p_options) Q_DECL_OVERRIDE;
-
-        void handleReplace(const QString &p_text, FindOptions p_options, const QString &p_replaceText) Q_DECL_OVERRIDE;
-
-        void handleReplaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText) Q_DECL_OVERRIDE;
-
-        void handleFindAndReplaceWidgetClosed() Q_DECL_OVERRIDE;
-
-        void handleFindAndReplaceWidgetOpened() Q_DECL_OVERRIDE;
-
-        void toggleDebug() Q_DECL_OVERRIDE;
-
         void print() Q_DECL_OVERRIDE;
-
-        void clearHighlights() Q_DECL_OVERRIDE;
 
     protected:
         void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 
         void syncEditorFromBufferContent() Q_DECL_OVERRIDE;
-
-        bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
-
-        void detachFromBufferInternal() Q_DECL_OVERRIDE;
 
         void scrollUp() Q_DECL_OVERRIDE;
 
@@ -92,12 +66,14 @@ namespace vnotex
 
         void zoom(bool p_zoomIn) Q_DECL_OVERRIDE;
 
-        QPoint getFloatingWidgetPosition() Q_DECL_OVERRIDE;
-
-        void updateViewModeMenu(QMenu *p_menu) Q_DECL_OVERRIDE;
-
     private:
         void setupUI();
+
+        // Splitter to hold editor and viewer.
+//        QSplitter *m_splitter = nullptr;
+
+        // Managed by QObject.
+//        PdfViewer *m_viewer = nullptr;
     };
 }
 

@@ -6,7 +6,7 @@
 #include <QToolBar>
 #include <QPrinter>
 
-#include <vtextedit/vtextedit.h>
+//#include <vtextedit/vtextedit.h>
 #include <core/editorconfig.h>
 #include <core/coreconfig.h>
 
@@ -30,18 +30,86 @@ PdfViewWindow::PdfViewWindow(QWidget *p_parent)
 
 PdfViewWindow::~PdfViewWindow()
 {
-
+    // TODO
 }
 
 void PdfViewWindow::setupUI()
 {
+    // TODO
+}
 
+QString PdfViewWindow::getLatestContent() const
+{
+    return NULL;
+}
+
+QString PdfViewWindow::selectedText() const
+{
+    return QString();
+}
+
+void PdfViewWindow::setMode(ViewWindowMode p_mode)
+{
+    Q_UNUSED(p_mode);
+    Q_ASSERT(false);
+}
+
+void PdfViewWindow::openTwice(const QSharedPointer<FileOpenParameters> &p_paras)
+{
+
+}
+
+ViewWindowSession PdfViewWindow::saveSession() const
+{
+}
+
+void PdfViewWindow::applySnippet(const QString &p_name)
+{
+}
+
+void PdfViewWindow::applySnippet()
+{
+}
+
+void PdfViewWindow::fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &p_callback) const
+{
 }
 
 void PdfViewWindow::handleEditorConfigChange()
 {
-//    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
-//    const auto &textEditorConfig = editorConfig.getTextEditorConfig();
-
-    // TODO
+    qDebug() << "hello";
 }
+
+void PdfViewWindow::setModified(bool p_modified)
+{
+}
+
+void PdfViewWindow::handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras)
+{
+}
+
+void PdfViewWindow::print()
+{
+   qDebug() << "print";
+}
+
+void PdfViewWindow::syncEditorFromBuffer()
+{
+}
+
+void PdfViewWindow::syncEditorFromBufferContent()
+{
+}
+
+void PdfViewWindow::scrollUp()
+{
+}
+
+void PdfViewWindow::scrollDown()
+{
+}
+
+void PdfViewWindow::zoom(bool p_zoomIn)
+{
+}
+

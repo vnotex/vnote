@@ -52,6 +52,7 @@ SOURCES += \
     $$PWD/editors/markdowntablehelper.cpp \
     $$PWD/editors/markdownviewer.cpp \
     $$PWD/editors/markdownvieweradapter.cpp \
+    $$PWD/editors/pdfviewer.cpp \
     $$PWD/editors/plantumlhelper.cpp \
     $$PWD/editors/previewhelper.cpp \
     $$PWD/editors/statuswidget.cpp \
@@ -186,6 +187,7 @@ HEADERS += \
     $$PWD/editors/markdowntablehelper.h \
     $$PWD/editors/markdownviewer.h \
     $$PWD/editors/markdownvieweradapter.h \
+    $$PWD/editors/pdfviewer.h \
     $$PWD/editors/plantumlhelper.h \
     $$PWD/editors/previewhelper.h \
     $$PWD/editors/statuswidget.h \
