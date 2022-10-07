@@ -27,7 +27,7 @@ namespace vnotex
     public:
         PdfViewWindow(QWidget *p_parent = nullptr);
 
-        ~PdfViewWindow();
+        // ~PdfViewWindow();
 
         QString getLatestContent() const Q_DECL_OVERRIDE;
 
@@ -70,10 +70,12 @@ namespace vnotex
         void setupUI();
 
         // Splitter to hold editor and viewer.
-//        QSplitter *m_splitter = nullptr;
+        QSplitter *m_splitter = nullptr;
 
         // Managed by QObject.
-//        PdfViewer *m_viewer = nullptr;
+        // PdfViewer *m_viewer = nullptr;
+
+        // MarkdownEditor *m_editor = nullptr;
     };
 }
 

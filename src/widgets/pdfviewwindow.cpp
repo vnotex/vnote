@@ -1,9 +1,17 @@
 #include "pdfviewwindow.h"
 
-#include <QTextDocument>
-#include <QDebug>
-#include <QScrollBar>
+#include <QSplitter>
 #include <QToolBar>
+#include <QStackedWidget>
+#include <QEvent>
+#include <QCoreApplication>
+#include <QScrollBar>
+#include <QLabel>
+#include <QApplication>
+#include <QProgressDialog>
+#include <QMenu>
+#include <QActionGroup>
+#include <QTimer>
 #include <QPrinter>
 
 //#include <vtextedit/vtextedit.h>
@@ -28,14 +36,17 @@ PdfViewWindow::PdfViewWindow(QWidget *p_parent)
     setupUI();
 }
 
-PdfViewWindow::~PdfViewWindow()
-{
-    // TODO
-}
+//PdfViewWindow::~PdfViewWindow()
+//{
+//    // TODO
+//}
 
 void PdfViewWindow::setupUI()
 {
-    // TODO
+    // Central widget.
+    m_splitter = new QSplitter(this);
+    m_splitter->setContentsMargins(0, 0, 0, 0);
+    setCentralWidget(m_splitter);
 }
 
 QString PdfViewWindow::getLatestContent() const
@@ -61,6 +72,9 @@ void PdfViewWindow::openTwice(const QSharedPointer<FileOpenParameters> &p_paras)
 
 ViewWindowSession PdfViewWindow::saveSession() const
 {
+    auto session = ViewWindow::saveSession();
+    session.m_lineNumber = 1;
+    return session;
 }
 
 void PdfViewWindow::applySnippet(const QString &p_name)
