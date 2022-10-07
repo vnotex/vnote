@@ -186,6 +186,18 @@ namespace vnotex
         // Used for comparison.
         ComparisonRole = 0x0103
     };
+
+    enum ViewOrder
+    {
+        OrderedByConfiguration = 0,
+        OrderedByName,
+        OrderedByNameReversed,
+        OrderedByCreatedTime,
+        OrderedByCreatedTimeReversed,
+        OrderedByModifiedTime,
+        OrderedByModifiedTimeReversed,
+        ViewOrderMax
+    };
 } // ns vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::FindOptions);

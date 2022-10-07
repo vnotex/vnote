@@ -6,6 +6,7 @@
 #include "global.h"
 #include "navigationmode.h"
 #include "combobox.h"
+#include "notebooknodeexplorer.h"
 
 namespace vnotex
 {
@@ -17,11 +18,13 @@ namespace vnotex
     public:
         explicit NotebookSelector(QWidget *p_parent = nullptr);
 
-        void setNotebooks(const QVector<QSharedPointer<Notebook>> &p_notebooks);
+        void loadNotebooks();
 
         void reloadNotebook(const Notebook *p_notebook);
 
         void setCurrentNotebook(ID p_id);
+
+        void setViewOrder(int p_order);
 
     signals:
         void newNotebookRequested();
@@ -53,11 +56,15 @@ namespace vnotex
 
         int findNotebook(ID p_id) const;
 
+        void sortNotebooks(QVector<QSharedPointer<Notebook>> &p_notebooks) const;
+
         static void fetchIconColor(const QString &p_name, QString &p_fg, QString &p_bg);
 
         bool m_notebooksInitialized = false;
 
         QVector<QModelIndex> m_navigationIndexes;
+
+        ViewOrder m_viewOrder = ViewOrder::OrderedByConfiguration;
     };
 } // ns vnotex
 

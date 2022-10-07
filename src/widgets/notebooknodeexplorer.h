@@ -10,6 +10,7 @@
 #include "qtreewidgetstatecache.h"
 #include "clipboarddata.h"
 #include "navigationmodewrapper.h"
+#include "global.h"
 
 class QSplitter;
 class QMenu;
@@ -76,18 +77,6 @@ namespace vnotex
             QSharedPointer<ExternalNode> m_externalNode;
 
             bool m_loaded = false;
-        };
-
-        enum ViewOrder
-        {
-            OrderedByConfiguration = 0,
-            OrderedByName,
-            OrderedByNameReversed,
-            OrderedByCreatedTime,
-            OrderedByCreatedTimeReversed,
-            OrderedByModifiedTime,
-            OrderedByModifiedTimeReversed,
-            ViewOrderMax
         };
 
         enum ExploreMode

@@ -7,8 +7,9 @@
 #include <QListView>
 #include <QScrollBar>
 
-#include "vnotex.h"
-#include "notebook/notebook.h"
+#include <notebook/notebook.h>
+#include <core/notebookmgr.h>
+#include <core/vnotex.h>
 #include <utils/iconutils.h>
 #include <utils/widgetutils.h>
 
@@ -26,17 +27,56 @@ NotebookSelector::NotebookSelector(QWidget *p_parent)
     setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 }
 
-void NotebookSelector::setNotebooks(const QVector<QSharedPointer<Notebook>> &p_notebooks)
+void NotebookSelector::loadNotebooks()
 {
     clear();
 
-    for (auto &nb : p_notebooks) {
+    auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
+    auto notebooks = notebookMgr.getNotebooks();
+    sortNotebooks(notebooks);
+
+    for (auto &nb : notebooks) {
         addNotebookItem(nb);
     }
 
     updateGeometry();
 
     m_notebooksInitialized = true;
+}
+
+void NotebookSelector::sortNotebooks(QVector<QSharedPointer<Notebook>> &p_notebooks) const
+{
+    bool reversed = false;
+    switch (m_viewOrder) {
+    case ViewOrder::OrderedByNameReversed:
+        reversed = true;
+        Q_FALLTHROUGH();
+    case ViewOrder::OrderedByName:
+        std::sort(p_notebooks.begin(), p_notebooks.end(), [reversed](const QSharedPointer<Notebook> &p_a, const QSharedPointer<Notebook> &p_b) {
+            if (reversed) {
+                return p_b->getName().toLower() < p_a->getName().toLower();
+            } else {
+                return p_a->getName().toLower() < p_b->getName().toLower();
+            }
+        });
+        break;
+
+    case ViewOrder::OrderedByCreatedTimeReversed:
+        reversed = true;
+        Q_FALLTHROUGH();
+    case ViewOrder::OrderedByCreatedTime:
+        std::sort(p_notebooks.begin(), p_notebooks.end(), [reversed](const QSharedPointer<Notebook> &p_a, const QSharedPointer<Notebook> &p_b) {
+            if (reversed) {
+                return p_b->getCreatedTimeUtc() < p_a->getCreatedTimeUtc();
+            } else {
+                return p_a->getCreatedTimeUtc() < p_b->getCreatedTimeUtc();
+            }
+        });
+        break;
+
+    default:
+        break;
+    }
 }
 
 void NotebookSelector::reloadNotebook(const Notebook *p_notebook)
@@ -215,4 +255,16 @@ void NotebookSelector::mousePressEvent(QMouseEvent *p_event)
     }
 
     ComboBox::mousePressEvent(p_event);
+}
+
+void NotebookSelector::setViewOrder(int p_order)
+{
+    if (m_viewOrder == p_order) {
+        return;
+    }
+
+    if (p_order >= 0 && p_order < ViewOrder::ViewOrderMax) {
+        m_viewOrder = static_cast<ViewOrder>(p_order);
+        loadNotebooks();
+    }
 }

@@ -27,6 +27,9 @@ namespace vnotex
         FindOptions getFindAndReplaceOptions() const;
         void setFindAndReplaceOptions(FindOptions p_options);
 
+        int getNotebookSelectorViewOrder() const;
+        void setNotebookSelectorViewOrder(int p_viewOrder);
+
         int getNodeExplorerViewOrder() const;
         void setNodeExplorerViewOrder(int p_viewOrder);
 
@@ -66,6 +69,8 @@ namespace vnotex
         bool m_outlineSectionNumberEnabled = false;
 
         FindOptions m_findAndReplaceOptions = FindOption::FindNone;
+
+        int m_notebookSelectorViewOrder = 0;
 
         int m_nodeExplorerViewOrder = 0;
 

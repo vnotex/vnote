@@ -29,6 +29,8 @@ void WidgetConfig::init(const QJsonObject &p_app,
 
     m_findAndReplaceOptions = static_cast<FindOptions>(READINT(QStringLiteral("find_and_replace_options")));
 
+    m_notebookSelectorViewOrder = READINT(QStringLiteral("notebook_selector_view_order"));
+
     {
         m_nodeExplorerViewOrder = READINT(QStringLiteral("node_explorer_view_order"));
         m_nodeExplorerExploreMode = READINT(QStringLiteral("node_explorer_explore_mode"));
@@ -57,6 +59,8 @@ QJsonObject WidgetConfig::toJson() const
     obj[QStringLiteral("outline_section_number_enabled")] = m_outlineSectionNumberEnabled;
 
     obj[QStringLiteral("find_and_replace_options")] = static_cast<int>(m_findAndReplaceOptions);
+
+    obj[QStringLiteral("notebook_selector_view_order")] = m_notebookSelectorViewOrder;
 
     obj[QStringLiteral("node_explorer_view_order")] = m_nodeExplorerViewOrder;
     obj[QStringLiteral("node_explorer_explore_mode")] = m_nodeExplorerExploreMode;
@@ -112,6 +116,16 @@ int WidgetConfig::getNodeExplorerViewOrder() const
 void WidgetConfig::setNodeExplorerViewOrder(int p_viewOrder)
 {
     updateConfig(m_nodeExplorerViewOrder, p_viewOrder, this);
+}
+
+int WidgetConfig::getNotebookSelectorViewOrder() const
+{
+    return m_notebookSelectorViewOrder;
+}
+
+void WidgetConfig::setNotebookSelectorViewOrder(int p_viewOrder)
+{
+    updateConfig(m_notebookSelectorViewOrder, p_viewOrder, this);
 }
 
 int WidgetConfig::getNodeExplorerExploreMode() const

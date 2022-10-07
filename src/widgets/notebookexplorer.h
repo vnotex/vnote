@@ -71,7 +71,7 @@ namespace vnotex
 
         Node *checkNotebookAndGetCurrentExploredFolderNode() const;
 
-        void setupViewMenu(QMenu *p_menu);
+        void setupViewMenu(QMenu *p_menu, bool p_isNotebookView);
 
         void setupRecycleBinMenu(QMenu *p_menu);
 

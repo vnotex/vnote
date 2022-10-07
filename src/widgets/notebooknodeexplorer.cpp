@@ -1852,7 +1852,7 @@ void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int
         reversed = true;
         Q_FALLTHROUGH();
     case ViewOrder::OrderedByName:
-        std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end, [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> p_b) {
+        std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end, [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> &p_b) {
             if (reversed) {
                 return p_b->getName().toLower() < p_a->getName().toLower();
             } else {
@@ -1865,7 +1865,7 @@ void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int
         reversed = true;
         Q_FALLTHROUGH();
     case ViewOrder::OrderedByCreatedTime:
-        std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end, [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> p_b) {
+        std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end, [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> &p_b) {
             if (reversed) {
                 return p_b->getCreatedTimeUtc() < p_a->getCreatedTimeUtc();
             } else {
@@ -1878,7 +1878,7 @@ void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int
         reversed = true;
         Q_FALLTHROUGH();
     case ViewOrder::OrderedByModifiedTime:
-        std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end, [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> p_b) {
+        std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end, [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> &p_b) {
             if (reversed) {
                 return p_b->getModifiedTimeUtc() < p_a->getModifiedTimeUtc();
             } else {

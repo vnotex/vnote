@@ -19,7 +19,6 @@
 #include <core/vnotex.h>
 #include "mainwindow.h"
 #include <notebook/notebook.h>
-#include <core/notebookmgr.h>
 #include <utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <utils/pathutils.h>
@@ -29,6 +28,7 @@
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
 #include <core/widgetconfig.h>
+#include <core/sessionconfig.h>
 #include <core/events.h>
 #include <core/exception.h>
 #include <core/fileopenparameters.h>
@@ -65,11 +65,14 @@ void NotebookExplorer::setupUI()
     auto titleBar = setupTitleBar(this);
     mainLayout->addWidget(titleBar);
 
+    const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
+
     // Selector.
     m_selector = new NotebookSelector(this);
     m_selector->setWhatsThis(tr("Select one of all the notebooks as current notebook.<br/>"
                                 "Move mouse on one item to check its details."));
     NavigationModeMgr::getInst().registerNavigationTarget(m_selector);
+    m_selector->setViewOrder(widgetConfig.getNotebookSelectorViewOrder());
     connect(m_selector, QOverload<int>::of(&QComboBox::activated),
             this, [this](int p_idx) {
                 auto id = static_cast<ID>(m_selector->itemData(p_idx).toULongLong());
@@ -79,7 +82,6 @@ void NotebookExplorer::setupUI()
             this, &NotebookExplorer::newNotebook);
     mainLayout->addWidget(m_selector);
 
-    const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
     m_nodeExplorer = new NotebookNodeExplorer(this);
     m_nodeExplorer->setViewOrder(widgetConfig.getNodeExplorerViewOrder());
     m_nodeExplorer->setExploreMode(widgetConfig.getNodeExplorerExploreMode());
@@ -114,8 +116,13 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
 
     {
         auto viewMenu = WidgetsFactory::createMenu(titleBar);
-        setupViewMenu(viewMenu);
-        titleBar->addActionButton(QStringLiteral("view.svg"), tr("View"), viewMenu);
+
+        auto notebookMenu = viewMenu->addMenu(tr("Notebooks"));
+        setupViewMenu(notebookMenu, true);
+        auto nodeMenu = viewMenu->addMenu(tr("Notes"));
+        setupViewMenu(nodeMenu, false);
+
+        titleBar->addActionButton(QStringLiteral("view.svg"), tr("View By"), viewMenu);
     }
 
     {
@@ -210,9 +217,7 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent)
 
 void NotebookExplorer::loadNotebooks()
 {
-    auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
-    const auto &notebooks = notebookMgr.getNotebooks();
-    m_selector->setNotebooks(notebooks);
+    m_selector->loadNotebooks();
 }
 
 void NotebookExplorer::reloadNotebook(const Notebook *p_notebook)
@@ -381,47 +386,50 @@ const QSharedPointer<Notebook> &NotebookExplorer::currentNotebook() const
     return m_currentNotebook;
 }
 
-void NotebookExplorer::setupViewMenu(QMenu *p_menu)
+void NotebookExplorer::setupViewMenu(QMenu *p_menu, bool p_isNotebookView)
 {
     auto ag = new QActionGroup(p_menu);
 
     auto act = ag->addAction(tr("View By Configuration"));
     act->setCheckable(true);
     act->setChecked(true);
-    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByConfiguration);
+    act->setData(ViewOrder::OrderedByConfiguration);
     p_menu->addAction(act);
 
     act = ag->addAction(tr("View By Name"));
     act->setCheckable(true);
-    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByName);
+    act->setData(ViewOrder::OrderedByName);
     p_menu->addAction(act);
 
     act = ag->addAction(tr("View By Name (Reversed)"));
     act->setCheckable(true);
-    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByNameReversed);
+    act->setData(ViewOrder::OrderedByNameReversed);
     p_menu->addAction(act);
 
     act = ag->addAction(tr("View By Created Time"));
     act->setCheckable(true);
-    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByCreatedTime);
+    act->setData(ViewOrder::OrderedByCreatedTime);
     p_menu->addAction(act);
 
     act = ag->addAction(tr("View By Created Time (Reversed)"));
     act->setCheckable(true);
-    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByCreatedTimeReversed);
+    act->setData(ViewOrder::OrderedByCreatedTimeReversed);
     p_menu->addAction(act);
 
-    act = ag->addAction(tr("View By Modified Time"));
-    act->setCheckable(true);
-    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByModifiedTime);
-    p_menu->addAction(act);
+    if (!p_isNotebookView) {
+        act = ag->addAction(tr("View By Modified Time"));
+        act->setCheckable(true);
+        act->setData(ViewOrder::OrderedByModifiedTime);
+        p_menu->addAction(act);
 
-    act = ag->addAction(tr("View By Modified Time (Reversed)"));
-    act->setCheckable(true);
-    act->setData(NotebookNodeExplorer::ViewOrder::OrderedByModifiedTimeReversed);
-    p_menu->addAction(act);
+        act = ag->addAction(tr("View By Modified Time (Reversed)"));
+        act->setCheckable(true);
+        act->setData(ViewOrder::OrderedByModifiedTimeReversed);
+        p_menu->addAction(act);
+    }
 
-    int viewOrder = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerViewOrder();
+    const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
+    int viewOrder = p_isNotebookView ? widgetConfig.getNotebookSelectorViewOrder() : widgetConfig.getNodeExplorerViewOrder();
     for (const auto &act : ag->actions()) {
         if (act->data().toInt() == viewOrder) {
             act->setChecked(true);
@@ -429,10 +437,15 @@ void NotebookExplorer::setupViewMenu(QMenu *p_menu)
     }
 
     connect(ag, &QActionGroup::triggered,
-            this, [this](QAction *p_action) {
-                int order = p_action->data().toInt();
-                ConfigMgr::getInst().getWidgetConfig().setNodeExplorerViewOrder(order);
-                m_nodeExplorer->setViewOrder(order);
+            this, [this, p_isNotebookView](QAction *p_action) {
+                const int order = p_action->data().toInt();
+                if (p_isNotebookView) {
+                    ConfigMgr::getInst().getWidgetConfig().setNotebookSelectorViewOrder(order);
+                    m_selector->setViewOrder(order);
+                } else {
+                    ConfigMgr::getInst().getWidgetConfig().setNodeExplorerViewOrder(order);
+                    m_nodeExplorer->setViewOrder(order);
+                }
             });
 }
 
