@@ -677,5 +677,11 @@
         <file>themes/vx-idea/up.svg</file>
         <file>themes/vx-idea/up_disabled.svg</file>
         <file>themes/vx-idea/web.css</file>
+        <file>web/js/pdf.js/pdf.worker.js.map</file>
+        <file>web/js/pdf.js/pdf.js.map</file>
+        <file>web/js/pdf.js/pdf.sandbox.js</file>
+        <file>web/js/pdf.js/pdf.sandbox.js.map</file>
+        <file>web/js/pdf.js/pdf.worker.js</file>
+        <file>web/js/pdf.js/pdf.js</file>
     </qresource>
 </RCC>

@@ -5,6 +5,8 @@
 
 #include <QScopedPointer>
 
+#include <core/markdowneditorconfig.h>
+
 class QSplitter;
 class QStackedWidget;
 class QWebEngineView;
@@ -20,6 +22,8 @@ namespace vte
 namespace vnotex
 {
     class PdfViewer;
+    class PdfViewerAdapter;
+    class EditorConfig;
 
     class PdfViewWindow : public ViewWindow
     {
@@ -69,15 +73,19 @@ namespace vnotex
     private:
         void setupUI();
 
-        // Splitter to hold editor and viewer.
-        QSplitter *m_splitter = nullptr;
+        void setupViewer();
+
+        void setModeInternal(bool p_syncBuffer);
+
+        void syncViewerFromBuffer();
+
+        void syncViewerFromBufferContent();
+
+        PdfViewerAdapter *adapter() const;
 
         // Managed by QObject.
-        // PdfViewer *m_viewer = nullptr;
-
-        // MarkdownEditor *m_editor = nullptr;
+        PdfViewer *m_viewer = nullptr;
     };
 }
-
 
 #endif // PDFVIEWWINDOW_H

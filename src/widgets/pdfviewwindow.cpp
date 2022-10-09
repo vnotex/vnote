@@ -14,18 +14,39 @@
 #include <QTimer>
 #include <QPrinter>
 
-//#include <vtextedit/vtextedit.h>
+#include <core/fileopenparameters.h>
 #include <core/editorconfig.h>
 #include <core/coreconfig.h>
-
-//#include "textviewwindowhelper.h"
-//#include "toolbarhelper.h"
-//#include "editors/texteditor.h"
+#include <core/htmltemplatehelper.h>
+#include <core/exception.h>
+#include <vtextedit/vtextedit.h>
+#include <vtextedit/pegmarkdownhighlighter.h>
+#include <vtextedit/markdowneditorconfig.h>
+#include <utils/pathutils.h>
+#include <utils/widgetutils.h>
+#include <utils/printutils.h>
+#include <utils/fileutils.h>
+#include <buffer/markdownbuffer.h>
 #include <core/vnotex.h>
 #include <core/thememgr.h>
-//#include "editors/statuswidget.h"
-#include <core/fileopenparameters.h>
-#include <utils/printutils.h>
+#include <imagehost/imagehostmgr.h>
+#include <imagehost/imagehost.h>
+#include "editors/markdowneditor.h"
+#include "textviewwindowhelper.h"
+#include "editors/markdownviewer.h"
+#include "editors/editormarkdownvieweradapter.h"
+#include "editors/previewhelper.h"
+#include "dialogs/deleteconfirmdialog.h"
+#include "outlineprovider.h"
+#include "toolbarhelper.h"
+#include "findandreplacewidget.h"
+#include "editors/statuswidget.h"
+#include "editors/plantumlhelper.h"
+#include "editors/graphvizhelper.h"
+#include "messageboxhelper.h"
+
+#include "editors/pdfviewer.h"
+#include "editors/pdfvieweradapter.h"
 
 using namespace vnotex;
 
@@ -34,6 +55,7 @@ PdfViewWindow::PdfViewWindow(QWidget *p_parent)
 {
     m_mode = ViewWindowMode::Read;
     setupUI();
+    qDebug() << "------ pdf view window ------";
 }
 
 //PdfViewWindow::~PdfViewWindow()
@@ -43,10 +65,21 @@ PdfViewWindow::PdfViewWindow(QWidget *p_parent)
 
 void PdfViewWindow::setupUI()
 {
-    // Central widget.
-    m_splitter = new QSplitter(this);
-    m_splitter->setContentsMargins(0, 0, 0, 0);
-    setCentralWidget(m_splitter);
+}
+
+void PdfViewWindow::setupViewer()
+{
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+    const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
+
+    HtmlTemplateHelper::updateMarkdownViewerTemplate(markdownEditorConfig);
+
+    auto adapter = new PdfViewerAdapter(nullptr);
+    m_viewer = new PdfViewer(adapter,
+                             this,
+                             VNoteX::getInst().getThemeMgr().getBaseBackground(),
+                             markdownEditorConfig.getZoomFactorInReadMode(),
+                             this);
 }
 
 QString PdfViewWindow::getLatestContent() const
@@ -61,8 +94,6 @@ QString PdfViewWindow::selectedText() const
 
 void PdfViewWindow::setMode(ViewWindowMode p_mode)
 {
-    Q_UNUSED(p_mode);
-    Q_ASSERT(false);
 }
 
 void PdfViewWindow::openTwice(const QSharedPointer<FileOpenParameters> &p_paras)
@@ -91,7 +122,6 @@ void PdfViewWindow::fetchWordCountInfo(const std::function<void(const WordCountI
 
 void PdfViewWindow::handleEditorConfigChange()
 {
-    qDebug() << "hello";
 }
 
 void PdfViewWindow::setModified(bool p_modified)
@@ -100,11 +130,48 @@ void PdfViewWindow::setModified(bool p_modified)
 
 void PdfViewWindow::handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras)
 {
+    qDebug() << "------ start build pdf from buffer --------";
+    setModeInternal(false);
+}
+
+void PdfViewWindow::setModeInternal(bool p_syncBuffer)
+{
+    qDebug() << "------ 1 --------";
+    setupViewer();
+    syncViewerFromBuffer();
+
+    qDebug() << "------ 3 --------";
+    // Avoid focus glitch.
+    m_viewer->show();
+    m_viewer->setFocus();
+
+
+//    if (p_mode == m_mode) {
+//        return;
+//    }
+
+//    m_mode = p_mode;
+//    switch (m_mode) {
+//    case ViewWindowMode::Read:
+//    case ViewWindowMode::Edit:
+//    {
+//        setupViewer();
+//        syncViewerFromBuffer();
+
+//        qDebug() << "------ 3 --------";
+//        // Avoid focus glitch.
+//        m_viewer->show();
+//        m_viewer->setFocus();
+//        break;
+//    }
+//    default:
+//        Q_ASSERT(false);
+//        break;
+//    }
 }
 
 void PdfViewWindow::print()
 {
-   qDebug() << "print";
 }
 
 void PdfViewWindow::syncEditorFromBuffer()
@@ -127,3 +194,31 @@ void PdfViewWindow::zoom(bool p_zoomIn)
 {
 }
 
+void PdfViewWindow::syncViewerFromBuffer()
+{
+//    if (!m_viewer) {
+//        return;
+//    }
+
+    auto buffer = getBuffer();
+
+    qDebug() << "------ 2 --------";
+    // adapter()->reset();
+    m_viewer->setHtml(HtmlTemplateHelper::getMarkdownViewerTemplate(),
+                      PathUtils::pathToUrl(buffer->getContentPath()));
+    adapter()->setText(m_bufferRevision, buffer->getContent(), 1);
+}
+
+
+void PdfViewWindow::syncViewerFromBufferContent()
+{
+}
+
+PdfViewerAdapter *PdfViewWindow::adapter() const
+{
+    if (m_viewer) {
+        return dynamic_cast<PdfViewerAdapter *>(m_viewer->adapter());
+    }
+
+    return nullptr;
+}

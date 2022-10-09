@@ -1,5 +1,6 @@
 #include "markdownviewer.h"
 
+#include <QDebug>
 #include <QWebChannel>
 #include <QContextMenuEvent>
 #include <QMenu>
@@ -70,6 +71,8 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter,
                 mimeData->setHtml(p_html);
                 ClipboardUtils::setMimeDataToClipboard(QApplication::clipboard(), mimeData.release());
             });
+
+    qDebug() << "---------- readx ------" << m_adapter;
 }
 
 MarkdownViewerAdapter *MarkdownViewer::adapter() const
