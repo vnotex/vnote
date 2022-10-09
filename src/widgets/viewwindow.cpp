@@ -358,6 +358,36 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
                 this, [this, menu]() {
                     updateViewModeMenu(menu);
                 });
+
+        // Add shortcut to alternate among view modes.
+        const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+        auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::AlternateViewMode),
+                                                    this,
+                                                    Qt::WidgetWithChildrenShortcut);
+        if (shortcut) {
+            connect(shortcut, &QShortcut::activated,
+                    this, [this, act, menu] {
+                        if (!act->isEnabled()) {
+                            return;
+                        }
+                        updateViewModeMenu(menu);
+                        auto actions = menu->actions();
+                        int idx = -1;
+                        for (int i = 0; i < actions.size(); ++i) {
+                            if (actions[i]->isChecked()) {
+                                idx = i + 1;
+                                break;
+                            }
+                        }
+                        if (idx == -1) {
+                            return;
+                        }
+                        if (idx >= actions.size()) {
+                            idx = 0;
+                        }
+                        actions[idx]->trigger();
+                    });
+        }
         break;
     }
 

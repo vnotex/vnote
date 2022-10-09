@@ -124,6 +124,8 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action)
         act = p_tb->addAction(ToolBarHelper::generateIcon("view_mode_editor.svg"),
                               ViewWindow::tr("View Mode"));
 
+        WidgetUtils::addActionShortcutText(act, editorConfig.getShortcut(Shortcut::AlternateViewMode));
+
         auto toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
         Q_ASSERT(toolBtn);
         toolBtn->setPopupMode(QToolButton::InstantPopup);

@@ -64,6 +64,7 @@ namespace vnotex
             ClearHighlights,
             WordCount,
             Attachment,
+            AlternateViewMode,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

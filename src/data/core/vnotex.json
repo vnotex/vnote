@@ -219,6 +219,7 @@
                 "ApplySnippet" : "Ctrl+G, I",
                 "Tag" : "Ctrl+G, B",
                 "Attachment" : "",
+                "AlternateViewMode" : "Ctrl+G, V",
                 "WordCount" : "",
                 "Debug" : "F12",
                 "Print" : "",
