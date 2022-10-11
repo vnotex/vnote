@@ -1085,7 +1085,6 @@ void MarkdownEditor::setupShortcuts()
     {
         auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::Shortcut::PasteToMarkdown),
                                                     this);
-
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
                     this, &MarkdownEditor::parseToMarkdownAndPaste);
