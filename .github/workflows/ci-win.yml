@@ -113,7 +113,6 @@ jobs:
           set openssl_dir=openssl-utils.git\1.1.1j\Win_${{matrix.config.platform}}
           copy %openssl_dir%\lib*.dll "%DISTRIB_PATH%\"
           copy "%GITHUB_WORKSPACE%\README.md" "%DISTRIB_PATH%\README.md"
-          copy "%GITHUB_WORKSPACE%\src\data\core\icons\vnote.ico" "%DISTRIB_PATH%\vnote.ico"
           copy "%GITHUB_WORKSPACE%\COPYING.LESSER" "%DISTRIB_PATH%\COPYING.LESSER"
           echo %GITHUB_SHA% > "%DISTRIB_PATH%\commit"
           del /F /Q "%DISTRIB_PATH%\translations\qt_*.qm"
@@ -126,9 +125,11 @@ jobs:
       - name: Package Installer
         shell: cmd
         run: |
+          copy "%GITHUB_WORKSPACE%\src\data\core\icons\vnote.ico" "%DISTRIB_PATH%\vnote.ico"
           git clone https://github.com/vnotex/mkmsi.git mkmsi.git --depth=1
           python .\mkmsi.git\mkmsi.py --auto-create qt --source-dir "%DISTRIB_PATH%" --wix-root "C:\Program Files (x86)\WiX Toolset v3.11" --merge-module "C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC140_CRT_${{matrix.config.platform}}.msm" --add-desktop-shortcut --project-version ${{env.VNOTE_VER}} --license %GITHUB_WORKSPACE%\package\lgpl-3.0.rtf --executable vnote.exe --wix-banner %GITHUB_WORKSPACE%\package\wix_banner.png --wix-dialog %GITHUB_WORKSPACE%\package\wix_dialog.png VNote
           move VNote.msi .\distrib\VNote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.msi
+          del "%DISTRIB_PATH%\vnote.ico"
         working-directory: ${{runner.workspace}}/build
         env:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
