@@ -223,7 +223,8 @@
                 "WordCount" : "",
                 "Debug" : "F12",
                 "Print" : "",
-                "ClearHighlights" : "Ctrl+G, Space"
+                "ClearHighlights" : "Ctrl+G, Space",
+                "ParseToMarkdownAndPaste" : "Ctrl+G, Ctrl+P"
             },
             "spell_check_auto_detect_language" : false,
             "spell_check_default_dictionary" : "en_US",
