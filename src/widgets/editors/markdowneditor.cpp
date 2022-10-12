@@ -1022,7 +1022,7 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
             // Parse to Markdown and Paste.
             auto parsePasteAct = new QAction(tr("Parse to Markdown and Paste"), menu);
             WidgetUtils::addActionShortcutText(parsePasteAct,
-                                               editorConfig.getShortcut(EditorConfig::PasteToMarkdown));
+                                               editorConfig.getShortcut(EditorConfig::Shortcut::ParseToMarkdownAndPaste));
             connect(parsePasteAct, &QAction::triggered,
                     this, &MarkdownEditor::parseToMarkdownAndPaste);
             WidgetUtils::insertActionAfter(menu, altPasteAct, parsePasteAct);
@@ -1083,7 +1083,7 @@ void MarkdownEditor::setupShortcuts()
 
     // Parse to Markdown and Paste.
     {
-        auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::Shortcut::PasteToMarkdown),
+        auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::Shortcut::ParseToMarkdownAndPaste),
                                                     this);
         if (shortcut) {
             connect(shortcut, &QShortcut::activated,
