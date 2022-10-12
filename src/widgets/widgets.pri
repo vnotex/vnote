@@ -52,6 +52,8 @@ SOURCES += \
     $$PWD/editors/markdowntablehelper.cpp \
     $$PWD/editors/markdownviewer.cpp \
     $$PWD/editors/markdownvieweradapter.cpp \
+    $$PWD/editors/pdfviewer.cpp \
+    $$PWD/editors/pdfvieweradapter.cpp \
     $$PWD/editors/plantumlhelper.cpp \
     $$PWD/editors/previewhelper.cpp \
     $$PWD/editors/statuswidget.cpp \
@@ -81,6 +83,7 @@ SOURCES += \
     $$PWD/outlinepopup.cpp \
     $$PWD/outlineprovider.cpp \
     $$PWD/outlineviewer.cpp \
+    $$PWD/pdfviewwindow.cpp \
     $$PWD/propertydefs.cpp \
     $$PWD/quickselector.cpp \
     $$PWD/searchinfoprovider.cpp \
@@ -185,6 +188,8 @@ HEADERS += \
     $$PWD/editors/markdowntablehelper.h \
     $$PWD/editors/markdownviewer.h \
     $$PWD/editors/markdownvieweradapter.h \
+    $$PWD/editors/pdfviewer.h \
+    $$PWD/editors/pdfvieweradapter.h \
     $$PWD/editors/plantumlhelper.h \
     $$PWD/editors/previewhelper.h \
     $$PWD/editors/statuswidget.h \
@@ -216,6 +221,7 @@ HEADERS += \
     $$PWD/outlinepopup.h \
     $$PWD/outlineprovider.h \
     $$PWD/outlineviewer.h \
+    $$PWD/pdfviewwindow.h \
     $$PWD/propertydefs.h \
     $$PWD/quickselector.h \
     $$PWD/searchinfoprovider.h \

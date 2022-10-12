@@ -15,7 +15,8 @@ namespace vnotex
         {
             Markdown = 0,
             Text,
-            Others
+            Others,
+            Pdf
         };
 
         // Type.
