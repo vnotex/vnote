@@ -109,7 +109,8 @@ pre {
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
     color: #e96900;
-    padding: 2px 4px;
+    padding: 0 4px;
+    margin: 4px 0;
     border-radius: 2px;
     background-color: #f8f8f8;
     word-break: break-word;
