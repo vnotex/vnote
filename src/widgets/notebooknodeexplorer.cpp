@@ -1693,12 +1693,14 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
 
     filterAwayChildrenNodes(p_nodes);
 
+    auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
     int nrDeleted = 0;
     QSet<Node *> nodesNeedUpdate;
     for (auto node : p_nodes) {
         auto srcName = node->getName();
         auto srcPath = node->fetchAbsolutePath();
         auto srcParentNode = node->getParent();
+        qDebug() << "remove node" << srcName << "," << srcPath;
         try {
             auto event = QSharedPointer<Event>::create();
             emit nodeAboutToRemove(node, event);
@@ -1711,6 +1713,9 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
             } else {
                 m_notebook->moveNodeToRecycleBin(node);
             }
+
+            HistoryItem item(srcPath, 0, QDateTime::currentDateTimeUtc());
+            sessionConfig.delHistory(item);
 
             ++nrDeleted;
         } catch (Exception &p_e) {

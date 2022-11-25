@@ -156,7 +156,12 @@ void HistoryMgr::add(const QString &p_path,
     emit historyUpdated();
 }
 
-void HistoryMgr::insertHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item)
+void HistoryMgr::updateAgain()
+{
+    emit historyUpdated();
+}
+
+void HistoryMgr::deleteHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item)
 {
     for (int i = p_history.size() - 1; i >= 0; --i) {
         if (p_history[i].m_path == p_item.m_path) {
@@ -165,7 +170,11 @@ void HistoryMgr::insertHistoryItem(QVector<HistoryItem> &p_history, const Histor
             break;
         }
     }
+}
 
+void HistoryMgr::insertHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item)
+{
+    deleteHistoryItem(p_history, p_item);
     p_history.append(p_item);
 
     const int maxHistoryCount = ConfigMgr::getInst().getCoreConfig().getHistoryMaxCount();

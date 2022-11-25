@@ -484,6 +484,13 @@ void SessionConfig::addHistory(const HistoryItem &p_item)
     update();
 }
 
+void SessionConfig::delHistory(const HistoryItem &p_item)
+{
+    HistoryMgr::deleteHistoryItem(m_history, p_item);
+    HistoryMgr::getInst().updateAgain();
+    update();
+}
+
 void SessionConfig::clearHistory()
 {
     m_history.clear();

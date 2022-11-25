@@ -55,9 +55,12 @@ namespace vnotex
                  bool p_readOnly,
                  Notebook *p_notebook);
 
+        void updateAgain();
         void clear();
 
         LastClosedFile popLastClosedFile();
+
+        static void deleteHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item);
 
         static void insertHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item);
 

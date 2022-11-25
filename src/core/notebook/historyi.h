@@ -17,6 +17,8 @@ namespace vnotex
 
         virtual void addHistory(const HistoryItem &p_item) = 0;
 
+        virtual void delHistory(const HistoryItem &p_item) = 0;
+
         virtual void clearHistory() = 0;
     };
 }
