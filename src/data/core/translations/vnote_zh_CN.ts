@@ -1357,6 +1357,11 @@
 <context>
     <name>vnotex::HistoryPanel</name>
     <message>
+        <location filename="../../../widgets/historypanel.cpp" line="67"/>
+        <source>History</source>
+        <translation>历史</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/historypanel.cpp" line="71"/>
         <source>Clear</source>
         <translation>清空</translation>
@@ -4159,6 +4164,11 @@ Description: %3</source>
         <translation>文件模式:</translation>
     </message>
     <message>
+        <location filename="../../../widgets/searchpanel.cpp" line="138"/>
+        <source>Search</source>
+        <translation>搜索</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/searchpanel.cpp" line="142"/>
         <source>Search</source>
         <translation>搜索</translation>
@@ -4596,6 +4606,11 @@ Description: %3</source>
 <context>
     <name>vnotex::SnippetPanel</name>
     <message>
+        <location filename="../../../widgets/snippetpanel.cpp" line="60"/>
+        <source>Snippet</source>
+        <translation>片段</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/snippetpanel.cpp" line="64"/>
         <source>New Snippet</source>
         <translation>新建片段</translation>
@@ -4754,6 +4769,11 @@ Description: %3</source>
 </context>
 <context>
     <name>vnotex::TagExplorer</name>
+    <message>
+        <location filename="../../../widgets/tagexplorer.cpp" line="76"/>
+        <source>Tag</source>
+        <translation>标签</translation>
+    </message>
     <message>
         <location filename="../../../widgets/tagexplorer.cpp" line="79"/>
         <source>Two Columns</source>

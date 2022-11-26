@@ -48,7 +48,7 @@ namespace vnotex
     private:
         void setupUI();
 
-        TitleBar *setupTitleBar(const QString &p_title, QWidget *p_parent = nullptr);
+        TitleBar *setupTitleBar(QWidget *p_parent = nullptr);
 
         void setupSearchObject(QFormLayout *p_layout, QWidget *p_parent = nullptr);
 

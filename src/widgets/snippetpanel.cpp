@@ -34,7 +34,7 @@ void SnippetPanel::setupUI()
     WidgetUtils::setContentsMargins(mainLayout);
 
     {
-        setupTitleBar(QString(), this);
+        setupTitleBar(this);
         mainLayout->addWidget(m_titleBar);
     }
 
@@ -55,9 +55,9 @@ void SnippetPanel::initialize()
     updateSnippetList();
 }
 
-void SnippetPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
+void SnippetPanel::setupTitleBar(QWidget *p_parent)
 {
-    m_titleBar = new TitleBar(p_title, true, TitleBar::Action::Menu, p_parent);
+    m_titleBar = new TitleBar(tr("Snippet"), true, TitleBar::Action::Menu, p_parent);
     m_titleBar->setActionButtonsAlwaysShown(true);
 
     {

@@ -60,7 +60,7 @@ void SearchPanel::setupUI()
 
     // Title.
     {
-        auto titleBar = setupTitleBar(QString(), this);
+        auto titleBar = setupTitleBar(this);
         layout->addWidget(titleBar);
     }
 
@@ -133,9 +133,9 @@ void SearchPanel::setupUI()
     m_mainLayout->addStretch();
 }
 
-TitleBar *SearchPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
+TitleBar *SearchPanel::setupTitleBar(QWidget *p_parent)
 {
-    auto titleBar = new TitleBar(p_title, false, TitleBar::Action::None, p_parent);
+    auto titleBar = new TitleBar(tr("Search"), false, TitleBar::Action::None, p_parent);
     titleBar->setActionButtonsAlwaysShown(true);
 
     {

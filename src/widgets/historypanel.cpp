@@ -44,7 +44,7 @@ void HistoryPanel::setupUI()
     auto mainLayout = new QVBoxLayout(this);
     WidgetUtils::setContentsMargins(mainLayout);
 
-    setupTitleBar(QString(), this);
+    setupTitleBar(this);
     mainLayout->addWidget(m_titleBar);
 
     m_historyList = new ListWidget(true, this);
@@ -62,9 +62,9 @@ void HistoryPanel::setupUI()
     setFocusProxy(m_historyList);
 }
 
-void HistoryPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
+void HistoryPanel::setupTitleBar(QWidget *p_parent)
 {
-    m_titleBar = new TitleBar(p_title, false, TitleBar::Action::None, p_parent);
+    m_titleBar = new TitleBar(tr("History"), false, TitleBar::Action::None, p_parent);
     m_titleBar->setActionButtonsAlwaysShown(true);
 
     {

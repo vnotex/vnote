@@ -73,7 +73,7 @@ void TagExplorer::setupUI()
 
 void TagExplorer::setupTitleBar(QWidget *p_parent)
 {
-    m_titleBar = new TitleBar(QString(), false, TitleBar::Action::Menu, p_parent);
+    m_titleBar = new TitleBar(tr("Tag"), false, TitleBar::Action::Menu, p_parent);
     m_titleBar->setActionButtonsAlwaysShown(true);
 
     auto twoColumnsAct = m_titleBar->addMenuAction(tr("Two Columns"),

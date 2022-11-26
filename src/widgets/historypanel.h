@@ -43,7 +43,7 @@ namespace vnotex
 
         void setupUI();
 
-        void setupTitleBar(const QString &p_title, QWidget *p_parent = nullptr);
+        void setupTitleBar(QWidget *p_parent = nullptr);
 
         void updateHistoryList();
 

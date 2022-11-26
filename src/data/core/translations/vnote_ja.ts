@@ -1340,6 +1340,11 @@
 <context>
     <name>vnotex::HistoryPanel</name>
     <message>
+        <location filename="../../../widgets/historypanel.cpp" line="67"/>
+        <source>History</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../../widgets/historypanel.cpp" line="71"/>
         <source>Clear</source>
         <translation type="unfinished">クリア</translation>
@@ -4532,6 +4537,11 @@ Description: %3</source>
 <context>
     <name>vnotex::SnippetPanel</name>
     <message>
+        <location filename="../../../widgets/snippetpanel.cpp" line="60"/>
+        <source>Snippet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../../widgets/snippetpanel.cpp" line="64"/>
         <source>New Snippet</source>
         <translation type="unfinished"></translation>
@@ -4690,6 +4700,11 @@ Description: %3</source>
 </context>
 <context>
     <name>vnotex::TagExplorer</name>
+    <message>
+        <location filename="../../../widgets/tagexplorer.cpp" line="76"/>
+        <source>Tag</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <location filename="../../../widgets/tagexplorer.cpp" line="79"/>
         <source>Two Columns</source>
