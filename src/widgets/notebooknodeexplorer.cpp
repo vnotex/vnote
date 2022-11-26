@@ -1700,7 +1700,6 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
         auto srcName = node->getName();
         auto srcPath = node->fetchAbsolutePath();
         auto srcParentNode = node->getParent();
-        qDebug() << "remove node" << srcName << "," << srcPath;
         try {
             auto event = QSharedPointer<Event>::create();
             emit nodeAboutToRemove(node, event);
