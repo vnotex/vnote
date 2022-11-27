@@ -76,9 +76,9 @@ void SnippetPanel::setupTitleBar(const QString &p_title, QWidget *p_parent)
 
     auto showAct = m_titleBar->addMenuAction(tr("Show Built-In Snippets"),
                                              m_titleBar,
-                                             [this](bool m_builtInSnippetsVisible) {
-                                                 ConfigMgr::getInst().getWidgetConfig().setSnippetPanelBuiltInSnippetsVisible(m_builtInSnippetsVisible);
-                                                 setBuiltInSnippetsVisible(m_builtInSnippetsVisible);
+                                             [this](bool p_checked) {
+                                                 ConfigMgr::getInst().getWidgetConfig().setSnippetPanelBuiltInSnippetsVisible(p_checked);
+                                                 setBuiltInSnippetsVisible(p_checked);
                                              });
     showAct->setCheckable(true);
     showAct->setChecked(m_builtInSnippetsVisible);
