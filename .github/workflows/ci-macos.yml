@@ -135,7 +135,7 @@ jobs:
           mv ../../src/vnote.app ./
           ln -s /Applications ./Applications
           popd
-          sleep 1m
+          sleep 60
           hdiutil create -srcfolder ./distrib/vnote -format UDBZ vnote-mac-x64_v${{env.VNOTE_VER}}.dmg
           cp vnote-mac-x64_v${{env.VNOTE_VER}}.dmg vnote-mac-x64-qt${{matrix.config.qt}}.dmg
           mv vnote-mac-x64_v${{env.VNOTE_VER}}.dmg vnote-mac-x64-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.dmg
