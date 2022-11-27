@@ -69,6 +69,7 @@ QJsonObject WidgetConfig::toJson() const
     obj[QStringLiteral("node_explorer_close_before_open_with_enabled")] = m_nodeExplorerCloseBeforeOpenWithEnabled;
 
     obj[QStringLiteral("search_panel_advanced_settings_visible")] = m_searchPanelAdvancedSettingsVisible;
+    obj[QStringLiteral("snippet_panel_builtin_snippets_visible")] = m_snippetPanelBuiltInSnippetsVisible;
     obj[QStringLiteral("tag_explorer_two_columns_enabled")] = m_tagExplorerTwoColumnsEnabled;
     writeStringList(obj,
                     QStringLiteral("main_window_keep_docks_expanding_content_area"),
