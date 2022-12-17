@@ -156,6 +156,12 @@ void ViewWindow::handleBufferChanged(const QSharedPointer<FileOpenParameters> &p
     emit bufferChanged();
 }
 
+void ViewWindow::handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras)
+{
+    Q_UNUSED(p_paras);
+    syncEditorFromBuffer();
+}
+
 void ViewWindow::attachToBuffer(Buffer *p_buffer, const QSharedPointer<FileOpenParameters> &p_paras)
 {
     Q_ASSERT(p_buffer);

@@ -5,19 +5,7 @@
 
 #include <QScopedPointer>
 
-#include <core/markdowneditorconfig.h>
-
-class QSplitter;
-class QStackedWidget;
 class QWebEngineView;
-class QActionGroup;
-class QTimer;
-
-namespace vte
-{
-    class MarkdownEditorConfig;
-    struct TextEditorParameters;
-}
 
 namespace vnotex
 {
@@ -29,9 +17,7 @@ namespace vnotex
     {
         Q_OBJECT
     public:
-        PdfViewWindow(QWidget *p_parent = nullptr);
-
-        // ~PdfViewWindow();
+        explicit PdfViewWindow(QWidget *p_parent = nullptr);
 
         QString getLatestContent() const Q_DECL_OVERRIDE;
 
@@ -55,8 +41,6 @@ namespace vnotex
     protected slots:
         void setModified(bool p_modified) Q_DECL_OVERRIDE;
 
-        void handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras) Q_DECL_OVERRIDE;
-
         void print() Q_DECL_OVERRIDE;
 
     protected:
@@ -75,16 +59,14 @@ namespace vnotex
 
         void setupViewer();
 
-        void setModeInternal(bool p_syncBuffer);
-
-        void syncViewerFromBuffer();
-
-        void syncViewerFromBufferContent();
-
         PdfViewerAdapter *adapter() const;
+
+        bool updateConfigRevision();
 
         // Managed by QObject.
         PdfViewer *m_viewer = nullptr;
+
+        int m_viewerConfigRevision = 0;
     };
 }
 

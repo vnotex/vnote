@@ -23,7 +23,7 @@ namespace vnotex
 {
     class MarkdownEditor;
     class MarkdownViewer;
-    class EditorMarkdownViewerAdapter;
+    class MarkdownViewerAdapter;
     class PreviewHelper;
     struct Outline;
     class EditorConfig;
@@ -141,7 +141,7 @@ namespace vnotex
         // call this function to tell us now the latest buffer revision.
         void setBufferRevisionAfterInvalidation(int p_bufferRevision);
 
-        EditorMarkdownViewerAdapter *adapter() const;
+        MarkdownViewerAdapter *adapter() const;
 
         // Get the position to sync from editor.
         // Return -1 for an invalid position.

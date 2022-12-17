@@ -44,7 +44,6 @@ SOURCES += \
     $$PWD/dialogs/viewtagsdialog.cpp \
     $$PWD/dockwidgethelper.cpp \
     $$PWD/dragdropareaindicator.cpp \
-    $$PWD/editors/editormarkdownvieweradapter.cpp \
     $$PWD/editors/graphhelper.cpp \
     $$PWD/editors/graphvizhelper.cpp \
     $$PWD/editors/markdowneditor.cpp \
@@ -180,7 +179,6 @@ HEADERS += \
     $$PWD/dialogs/viewtagsdialog.h \
     $$PWD/dockwidgethelper.h \
     $$PWD/dragdropareaindicator.h \
-    $$PWD/editors/editormarkdownvieweradapter.h \
     $$PWD/editors/graphhelper.h \
     $$PWD/editors/graphvizhelper.h \
     $$PWD/editors/markdowneditor.h \

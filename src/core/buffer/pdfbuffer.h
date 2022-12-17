@@ -3,9 +3,6 @@
 
 #include "buffer.h"
 
-//#include <QVector>
-#include <QHash>
-
 namespace vnotex
 {
     class PdfBuffer : public Buffer
@@ -13,13 +10,12 @@ namespace vnotex
         Q_OBJECT
     public:
         PdfBuffer(const BufferParameters &p_parameters,
-                       QObject *p_parent = nullptr);
+                  QObject *p_parent = nullptr);
 
     protected:
-        ViewWindow *createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras, QWidget *p_parent) Q_DECL_OVERRIDE;
+        ViewWindow *createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras,
+                                             QWidget *p_parent) Q_DECL_OVERRIDE;
 
-    private:
-        // TODO
     };
 } // ns vnotex
 

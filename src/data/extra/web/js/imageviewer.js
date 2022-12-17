@@ -4,7 +4,7 @@ class ImageViewer {
         this.viewBoxOffsetToMouse = { x: 0, y: 0 }
         this.viewImageClass = 'vx-image-view-image';
 
-        window.vnotex.on('ready', () => {
+        window.vxcore.on('ready', () => {
             this.viewBoxContainer = document.getElementById('vx-image-view-box');
             this.viewBox = document.getElementById('vx-image-view');
             this.closeButton = document.getElementById('vx-image-view-close');

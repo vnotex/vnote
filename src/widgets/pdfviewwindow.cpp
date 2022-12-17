@@ -1,49 +1,12 @@
 #include "pdfviewwindow.h"
 
-#include <QSplitter>
-#include <QToolBar>
-#include <QStackedWidget>
-#include <QEvent>
-#include <QCoreApplication>
-#include <QScrollBar>
-#include <QLabel>
-#include <QApplication>
-#include <QProgressDialog>
-#include <QMenu>
-#include <QActionGroup>
-#include <QTimer>
-#include <QPrinter>
-
-#include <core/fileopenparameters.h>
-#include <core/editorconfig.h>
-#include <core/coreconfig.h>
-#include <core/htmltemplatehelper.h>
-#include <core/exception.h>
-#include <vtextedit/vtextedit.h>
-#include <vtextedit/pegmarkdownhighlighter.h>
-#include <vtextedit/markdowneditorconfig.h>
-#include <utils/pathutils.h>
-#include <utils/widgetutils.h>
-#include <utils/printutils.h>
-#include <utils/fileutils.h>
-#include <buffer/markdownbuffer.h>
 #include <core/vnotex.h>
 #include <core/thememgr.h>
-#include <imagehost/imagehostmgr.h>
-#include <imagehost/imagehost.h>
-#include "editors/markdowneditor.h"
-#include "textviewwindowhelper.h"
-#include "editors/markdownviewer.h"
-#include "editors/editormarkdownvieweradapter.h"
-#include "editors/previewhelper.h"
-#include "dialogs/deleteconfirmdialog.h"
-#include "outlineprovider.h"
-#include "toolbarhelper.h"
-#include "findandreplacewidget.h"
-#include "editors/statuswidget.h"
-#include "editors/plantumlhelper.h"
-#include "editors/graphvizhelper.h"
-#include "messageboxhelper.h"
+#include <core/htmltemplatehelper.h>
+#include <core/configmgr.h>
+#include <core/editorconfig.h>
+#include <core/pdfviewerconfig.h>
+#include <utils/pathutils.h>
 
 #include "editors/pdfviewer.h"
 #include "editors/pdfvieweradapter.h"
@@ -55,30 +18,29 @@ PdfViewWindow::PdfViewWindow(QWidget *p_parent)
 {
     m_mode = ViewWindowMode::Read;
     setupUI();
-    qDebug() << "------ pdf view window ------";
 }
-
-//PdfViewWindow::~PdfViewWindow()
-//{
-//    // TODO
-//}
 
 void PdfViewWindow::setupUI()
 {
+    setupViewer();
+    setCentralWidget(m_viewer);
 }
 
 void PdfViewWindow::setupViewer()
 {
-    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
-    const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
+    Q_ASSERT(!m_viewer);
 
-    HtmlTemplateHelper::updateMarkdownViewerTemplate(markdownEditorConfig);
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+    const auto &pdfViewerConfig = editorConfig.getPdfViewerConfig();
+
+    updateConfigRevision();
+
+    HtmlTemplateHelper::updatePdfViewerTemplate(pdfViewerConfig);
 
     auto adapter = new PdfViewerAdapter(nullptr);
     m_viewer = new PdfViewer(adapter,
-                             this,
                              VNoteX::getInst().getThemeMgr().getBaseBackground(),
-                             markdownEditorConfig.getZoomFactorInReadMode(),
+                             1.0,
                              this);
 }
 
@@ -94,11 +56,13 @@ QString PdfViewWindow::selectedText() const
 
 void PdfViewWindow::setMode(ViewWindowMode p_mode)
 {
+    Q_UNUSED(p_mode);
+    Q_ASSERT(false);
 }
 
 void PdfViewWindow::openTwice(const QSharedPointer<FileOpenParameters> &p_paras)
 {
-
+    Q_UNUSED(p_paras);
 }
 
 ViewWindowSession PdfViewWindow::saveSession() const
@@ -110,6 +74,7 @@ ViewWindowSession PdfViewWindow::saveSession() const
 
 void PdfViewWindow::applySnippet(const QString &p_name)
 {
+    Q_UNUSED(p_name);
 }
 
 void PdfViewWindow::applySnippet()
@@ -118,56 +83,22 @@ void PdfViewWindow::applySnippet()
 
 void PdfViewWindow::fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &p_callback) const
 {
+    Q_UNUSED(p_callback);
 }
 
 void PdfViewWindow::handleEditorConfigChange()
 {
+    if (updateConfigRevision()) {
+        const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+        const auto &pdfViewerConfig = editorConfig.getPdfViewerConfig();
+
+        HtmlTemplateHelper::updatePdfViewerTemplate(pdfViewerConfig);
+    }
 }
 
 void PdfViewWindow::setModified(bool p_modified)
 {
-}
-
-void PdfViewWindow::handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras)
-{
-    qDebug() << "------ start build pdf from buffer --------";
-    setModeInternal(false);
-}
-
-void PdfViewWindow::setModeInternal(bool p_syncBuffer)
-{
-    qDebug() << "------ 1 --------";
-    setupViewer();
-    syncViewerFromBuffer();
-
-    qDebug() << "------ 3 --------";
-    // Avoid focus glitch.
-    m_viewer->show();
-    m_viewer->setFocus();
-
-
-//    if (p_mode == m_mode) {
-//        return;
-//    }
-
-//    m_mode = p_mode;
-//    switch (m_mode) {
-//    case ViewWindowMode::Read:
-//    case ViewWindowMode::Edit:
-//    {
-//        setupViewer();
-//        syncViewerFromBuffer();
-
-//        qDebug() << "------ 3 --------";
-//        // Avoid focus glitch.
-//        m_viewer->show();
-//        m_viewer->setFocus();
-//        break;
-//    }
-//    default:
-//        Q_ASSERT(false);
-//        break;
-//    }
+    Q_UNUSED(p_modified);
 }
 
 void PdfViewWindow::print()
@@ -176,6 +107,17 @@ void PdfViewWindow::print()
 
 void PdfViewWindow::syncEditorFromBuffer()
 {
+    auto buffer = getBuffer();
+    if (buffer) {
+        m_viewer->setHtml(HtmlTemplateHelper::getPdfViewerTemplate(),
+                          PathUtils::pathToUrl(HtmlTemplateHelper::getPdfViewerTemplatePath()));
+
+        const auto url = PathUtils::pathToUrl(buffer->getContentPath());
+        adapter()->setUrl(url.toString(QUrl::EncodeSpaces));
+    } else {
+        m_viewer->setHtml("");
+        adapter()->setUrl("");
+    }
 }
 
 void PdfViewWindow::syncEditorFromBufferContent()
@@ -192,26 +134,7 @@ void PdfViewWindow::scrollDown()
 
 void PdfViewWindow::zoom(bool p_zoomIn)
 {
-}
-
-void PdfViewWindow::syncViewerFromBuffer()
-{
-//    if (!m_viewer) {
-//        return;
-//    }
-
-    auto buffer = getBuffer();
-
-    qDebug() << "------ 2 --------";
-    // adapter()->reset();
-    m_viewer->setHtml(HtmlTemplateHelper::getMarkdownViewerTemplate(),
-                      PathUtils::pathToUrl(buffer->getContentPath()));
-    adapter()->setText(m_bufferRevision, buffer->getContent(), 1);
-}
-
-
-void PdfViewWindow::syncViewerFromBufferContent()
-{
+    Q_UNUSED(p_zoomIn);
 }
 
 PdfViewerAdapter *PdfViewWindow::adapter() const
@@ -221,4 +144,23 @@ PdfViewerAdapter *PdfViewWindow::adapter() const
     }
 
     return nullptr;
+}
+
+bool PdfViewWindow::updateConfigRevision()
+{
+    bool changed = false;
+
+    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+
+    if (m_editorConfigRevision != editorConfig.revision()) {
+        changed = true;
+        m_editorConfigRevision = editorConfig.revision();
+    }
+
+    if (m_viewerConfigRevision != editorConfig.getPdfViewerConfig().revision()) {
+        changed = true;
+        m_viewerConfigRevision = editorConfig.getPdfViewerConfig().revision();
+    }
+
+    return changed;
 }

@@ -7,18 +7,28 @@ PdfViewerAdapter::PdfViewerAdapter(QObject *p_parent)
 {
 }
 
-PdfViewerAdapter::~PdfViewerAdapter()
+void PdfViewerAdapter::setUrl(const QString &p_url)
 {
+    if (m_viewerReady) {
+        emit urlUpdated(p_url);
+    } else {
+        m_pendingActions.append([this, p_url]() {
+            emit urlUpdated(p_url);
+        });
+    }
 }
 
-void PdfViewerAdapter::setText(int p_revision,
-                                    const QString &p_text,
-                                    int p_lineNumber)
+void PdfViewerAdapter::setReady(bool p_ready)
 {
-    emit textUpdated(p_text);
-}
+    if (m_viewerReady == p_ready) {
+        return;
+    }
 
-void PdfViewerAdapter::setText(const QString &p_text, int p_lineNumber)
-{
-    setText(0, p_text, p_lineNumber);
+    m_viewerReady = p_ready;
+    if (m_viewerReady) {
+        for (auto &act : m_pendingActions) {
+            act();
+        }
+        m_pendingActions.clear();
+    }
 }

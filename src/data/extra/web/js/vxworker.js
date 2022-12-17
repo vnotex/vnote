@@ -2,7 +2,7 @@
 class VxWorker {
     constructor() {
         this.name = '';
-        this.vnotex = null;
+        this.vxcore = null;
 
         if (!window.vxWorkerId) {
             window.vxWorkerId = 1;
@@ -11,8 +11,8 @@ class VxWorker {
     }
 
     // Called when registering this worker.
-    register(p_vnotex) {
-        this.vnotex = p_vnotex;
+    register(p_vxcore) {
+        this.vxcore = p_vxcore;
 
         this.registerInternal();
     }
@@ -23,6 +23,6 @@ class VxWorker {
 
     finishWork() {
         console.log('worker finished', this.name);
-        this.vnotex.finishWorker(this.name);
+        this.vxcore.finishWorker(this.name);
     }
 }

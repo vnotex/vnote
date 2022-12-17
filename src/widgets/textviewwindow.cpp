@@ -135,10 +135,10 @@ void TextViewWindow::setModified(bool p_modified)
 
 void TextViewWindow::handleEditorConfigChange()
 {
-    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
-    const auto &textEditorConfig = editorConfig.getTextEditorConfig();
-
     if (updateConfigRevision()) {
+        const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+        const auto &textEditorConfig = editorConfig.getTextEditorConfig();
+
         auto config = createTextEditorConfig(editorConfig, textEditorConfig);
         m_editor->setConfig(config);
 

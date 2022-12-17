@@ -5,6 +5,7 @@
 
 #include "texteditorconfig.h"
 #include "markdowneditorconfig.h"
+#include "pdfviewerconfig.h"
 
 #include <vtextedit/viconfig.h>
 
@@ -41,7 +42,8 @@ QJsonObject EditorConfig::ImageHostItem::toJson() const
 EditorConfig::EditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig),
       m_textEditorConfig(new TextEditorConfig(p_mgr, p_topConfig)),
-      m_markdownEditorConfig(new MarkdownEditorConfig(p_mgr, p_topConfig, m_textEditorConfig))
+      m_markdownEditorConfig(new MarkdownEditorConfig(p_mgr, p_topConfig, m_textEditorConfig)),
+      m_pdfViewerConfig(new PdfViewerConfig(p_mgr, p_topConfig))
 {
     m_sessionName = QStringLiteral("editor");
 }
@@ -65,6 +67,7 @@ void EditorConfig::init(const QJsonObject &p_app,
 
     m_textEditorConfig->init(appObj, userObj);
     m_markdownEditorConfig->init(appObj, userObj);
+    m_pdfViewerConfig->init(appObj, userObj);
 }
 
 void EditorConfig::loadCore(const QJsonObject &p_app, const QJsonObject &p_user)
@@ -148,6 +151,7 @@ QJsonObject EditorConfig::toJson() const
     QJsonObject obj;
     obj[m_textEditorConfig->getSessionName()] = m_textEditorConfig->toJson();
     obj[m_markdownEditorConfig->getSessionName()] = m_markdownEditorConfig->toJson();
+    obj[m_pdfViewerConfig->getSessionName()] = m_pdfViewerConfig->toJson();
     obj[QStringLiteral("core")] = saveCore();
     obj[QStringLiteral("image_host")] = saveImageHost();
 
@@ -176,6 +180,16 @@ MarkdownEditorConfig &EditorConfig::getMarkdownEditorConfig()
 const MarkdownEditorConfig &EditorConfig::getMarkdownEditorConfig() const
 {
     return *m_markdownEditorConfig;
+}
+
+PdfViewerConfig &EditorConfig::getPdfViewerConfig()
+{
+    return *m_pdfViewerConfig;
+}
+
+const PdfViewerConfig &EditorConfig::getPdfViewerConfig() const
+{
+    return *m_pdfViewerConfig;
 }
 
 int EditorConfig::getToolBarIconSize() const

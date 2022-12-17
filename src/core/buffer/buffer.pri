@@ -9,7 +9,8 @@ SOURCES += \
     $$PWD/pdfbuffer.cpp \
     $$PWD/pdfbufferfactory.cpp \
     $$PWD/textbuffer.cpp \
-    $$PWD/textbufferfactory.cpp
+    $$PWD/textbufferfactory.cpp \
+    $$PWD/urlbasedbufferprovider.cpp
 
 HEADERS += \
     $$PWD/bufferprovider.h \
@@ -23,4 +24,5 @@ HEADERS += \
     $$PWD/pdfbuffer.h \
     $$PWD/pdfbufferfactory.h \
     $$PWD/textbuffer.h \
-    $$PWD/textbufferfactory.h
+    $$PWD/textbufferfactory.h \
+    $$PWD/urlbasedbufferprovider.h

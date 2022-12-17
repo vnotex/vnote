@@ -77,4 +77,4 @@ class WaveDromRenderer extends GraphRenderer {
     }
 }
 
-window.vnotex.registerWorker(new WaveDromRenderer());
+window.vxcore.registerWorker(new WaveDromRenderer());

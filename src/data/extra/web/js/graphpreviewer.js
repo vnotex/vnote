@@ -1,6 +1,6 @@
 class GraphPreviewer {
-    constructor(p_vnotex, p_container) {
-        this.vnotex = p_vnotex;
+    constructor(p_vxcore, p_container) {
+        this.vxcore = p_vxcore;
 
         // Preview will take place here.
         this.container = p_container;
@@ -36,21 +36,21 @@ class GraphPreviewer {
         this.initOnFirstPreview();
 
         if (p_lang === 'flow' || p_lang === 'flowchart') {
-            this.vnotex.getWorker('flowchartjs').renderText(this.container,
+            this.vxcore.getWorker('flowchartjs').renderText(this.container,
                 p_text,
                 this.flowchartJsIdx++,
                 (graphDiv) => {
                     this.processGraph(p_id, p_timeStamp, graphDiv);
                 });
         } else if (p_lang === 'wavedrom') {
-            this.vnotex.getWorker('wavedrom').renderText(this.container,
+            this.vxcore.getWorker('wavedrom').renderText(this.container,
                 p_text,
                 this.waveDromIdx++,
                 (graphDiv) => {
                     this.processGraph(p_id, p_timeStamp, graphDiv);
                 });
         } else if (p_lang === 'mermaid') {
-            this.vnotex.getWorker('mermaid').renderText(this.container,
+            this.vxcore.getWorker('mermaid').renderText(this.container,
                 p_text,
                 this.mermaidIdx++,
                 (graphDiv) => {
@@ -66,7 +66,7 @@ class GraphPreviewer {
                     previewer.setGraphPreviewData(id, timeStamp, p_format, p_data, false, true);
                 };
             };
-            this.vnotex.getWorker('plantuml').renderText(p_text, func(this, p_id, p_timeStamp));
+            this.vxcore.getWorker('plantuml').renderText(p_text, func(this, p_id, p_timeStamp));
             return;
         } else if (p_lang === 'dot' || p_lang === 'graphviz') {
             let func = function(p_previewer, p_id, p_timeStamp) {
@@ -77,7 +77,7 @@ class GraphPreviewer {
                     previewer.setGraphPreviewData(id, timeStamp, 'svg', p_svgNode.outerHTML, false, true);
                 };
             };
-            this.vnotex.getWorker('graphviz').renderText(p_text, func(this, p_id, p_timeStamp));
+            this.vxcore.getWorker('graphviz').renderText(p_text, func(this, p_id, p_timeStamp));
             return;
         } else if (p_lang === 'mathjax') {
             this.renderMath(p_id, p_timeStamp, p_text, null);
@@ -104,7 +104,7 @@ class GraphPreviewer {
         if (this.firstPreview) {
             this.firstPreview = false;
 
-            let contentStyle = window.getComputedStyle(this.vnotex.contentContainer);
+            let contentStyle = window.getComputedStyle(this.vxcore.contentContainer);
             this.currentColor = contentStyle.getPropertyValue('color');
             console.log('currentColor', this.currentColor);
         }
@@ -121,7 +121,7 @@ class GraphPreviewer {
                 previewer.processSvgAsPng(id, timeStamp, p_svgNode, p_dataSetter);
             };
         };
-        this.vnotex.getWorker('mathjax').renderText(this.container,
+        this.vxcore.getWorker('mathjax').renderText(this.container,
                                                     p_text,
                                                     func(this, p_id, p_timeStamp));
     }
@@ -237,7 +237,7 @@ class GraphPreviewer {
             base64: p_base64,
             needScale: p_needScale
         };
-        this.vnotex.setGraphPreviewData(previewData);
+        this.vxcore.setGraphPreviewData(previewData);
     }
 
     setMathPreviewData(p_id, p_timeStamp, p_format = '', p_data = '', p_base64 = false, p_needScale = false) {
@@ -249,6 +249,6 @@ class GraphPreviewer {
             base64: p_base64,
             needScale: p_needScale
         };
-        this.vnotex.setMathPreviewData(previewData);
+        this.vxcore.setMathPreviewData(previewData);
     }
 }

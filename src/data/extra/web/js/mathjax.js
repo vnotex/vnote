@@ -12,7 +12,7 @@ window.MathJax = {
         ready: function() {
             MathJax.startup.defaultReady();
             MathJax.startup.promise.then(() => {
-                window.vnotex.getWorker('mathjax').setMathJaxReady();
+                window.vxcore.getWorker('mathjax').setMathJaxReady();
             });
         }
     },
@@ -42,11 +42,11 @@ class MathJaxRenderer extends VxWorker {
     }
 
     registerInternal() {
-        this.vnotex.on('basicMarkdownRendered', () => {
-            this.render(this.vnotex.contentContainer, 'tex-to-render');
+        this.vxcore.on('basicMarkdownRendered', () => {
+            this.render(this.vxcore.contentContainer, 'tex-to-render');
         });
 
-        this.vnotex.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
+        this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
     }
 
     initialize(p_callback) {
@@ -74,7 +74,7 @@ class MathJaxRenderer extends VxWorker {
         this.nodesToRender = [];
 
         // Transform extra class nodes.
-        let extraNodes = this.vnotex.getWorker('markdownit').getCodeNodes(this.langs);
+        let extraNodes = this.vxcore.getWorker('markdownit').getCodeNodes(this.langs);
         this.transformExtraNodes(p_node, p_className, extraNodes);
 
         // Collect nodes to render.
@@ -192,4 +192,4 @@ class MathJaxRenderer extends VxWorker {
     }
 }
 
-window.vnotex.registerWorker(new MathJaxRenderer());
+window.vxcore.registerWorker(new MathJaxRenderer());
