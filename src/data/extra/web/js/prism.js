@@ -18,8 +18,8 @@ class PrismRenderer extends VxWorker {
     }
 
     registerInternal() {
-        this.vnotex.on('basicMarkdownRendered', () => {
-            this.renderCodeNodes(this.vnotex.contentContainer);
+        this.vxcore.on('basicMarkdownRendered', () => {
+            this.renderCodeNodes(this.vxcore.contentContainer);
         });
     }
 
@@ -30,7 +30,7 @@ class PrismRenderer extends VxWorker {
 
         this.initialized = true;
 
-        let markdownIt = this.vnotex.getWorker('markdownit');
+        let markdownIt = this.vxcore.getWorker('markdownit');
         Prism.plugins.filterHighlightAll.add((p_env) => {
             return !markdownIt.langsToSkipHighlight.has(p_env.language);
         });
@@ -58,7 +58,7 @@ class PrismRenderer extends VxWorker {
     renderCodeNodes(p_node) {
         this.initialize();
 
-        let codeNodes = this.vnotex.getWorker('markdownit').getCodeNodes(null);
+        let codeNodes = this.vxcore.getWorker('markdownit').getCodeNodes(null);
         this.doRender(p_node, codeNodes);
     }
 
@@ -104,4 +104,4 @@ class PrismRenderer extends VxWorker {
     }
 }
 
-window.vnotex.registerWorker(new PrismRenderer());
+window.vxcore.registerWorker(new PrismRenderer());

@@ -167,7 +167,7 @@ namespace vnotex
 
     protected slots:
         // Handle current buffer change.
-        virtual void handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras) = 0;
+        virtual void handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras);
 
         // Handle all kinds of type action.
         virtual void handleTypeAction(TypeAction p_action);

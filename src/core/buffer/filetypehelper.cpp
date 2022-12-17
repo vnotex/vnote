@@ -77,6 +77,22 @@ void FileTypeHelper::setupBuiltInTypes()
 
     {
         FileType type;
+        type.m_type = FileType::Pdf;
+        type.m_typeName = QStringLiteral("PDF");
+        type.m_displayName = Buffer::tr("Portable Document Format");
+
+        auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+        if (suffixes && !suffixes->isEmpty()) {
+            type.m_suffixes = *suffixes;
+        } else {
+            type.m_suffixes << QStringLiteral("pdf");
+        }
+
+        m_fileTypes.push_back(type);
+    }
+
+    {
+        FileType type;
         type.m_type = FileType::Others;
         type.m_typeName = QStringLiteral("Others");
         type.m_displayName = Buffer::tr("Others");

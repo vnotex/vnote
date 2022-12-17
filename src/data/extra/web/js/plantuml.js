@@ -21,12 +21,12 @@ class PlantUml extends GraphRenderer {
     }
 
     registerInternal() {
-        this.vnotex.on('basicMarkdownRendered', () => {
+        this.vxcore.on('basicMarkdownRendered', () => {
             this.reset();
             this.renderCodeNodes(window.vxOptions.transformSvgToPngEnabled ? 'png' : 'svg');
         });
 
-        this.vnotex.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
+        this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
 
         this.useWeb = window.vxOptions.webPlantUml;
         if (!this.useWeb) {
@@ -139,7 +139,7 @@ class PlantUml extends GraphRenderer {
 
     // A helper function to render PlantUml via local JAR.
     renderLocal(p_format, p_text, p_callback) {
-        this.vnotex.renderGraph(this.id,
+        this.vxcore.renderGraph(this.id,
             this.nextLocalGraphIndex++,
             p_format,
             'puml',
@@ -175,4 +175,4 @@ class PlantUml extends GraphRenderer {
     }
 }
 
-window.vnotex.registerWorker(new PlantUml());
+window.vxcore.registerWorker(new PlantUml());

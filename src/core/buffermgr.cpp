@@ -7,6 +7,7 @@
 #include <buffer/filetypehelper.h>
 #include <buffer/markdownbufferfactory.h>
 #include <buffer/textbufferfactory.h>
+#include <buffer/pdfbufferfactory.h>
 #include <buffer/buffer.h>
 #include <buffer/nodebufferprovider.h>
 #include <buffer/filebufferprovider.h>
@@ -52,6 +53,10 @@ void BufferMgr::initBufferServer()
     // Text.
     auto textFactory = QSharedPointer<TextBufferFactory>::create();
     m_bufferServer->registerItem(helper.getFileType(FileType::Text).m_typeName, textFactory);
+
+    // Pdf.
+    auto pdfFactory = QSharedPointer<PdfBufferFactory>::create();
+    m_bufferServer->registerItem(helper.getFileType(FileType::Pdf).m_typeName, pdfFactory);
 }
 
 void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras)

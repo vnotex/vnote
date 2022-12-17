@@ -213,7 +213,7 @@ class CrossCopy {
 
             // Check if we need to fix the encoding.
             // Win needs only space-encoded.
-            if (window.vnotex.os === "Windows") {
+            if (window.vxcore.os === "Windows") {
                 let decodedUrl = decodeURI(img.src);
                 if (decodedUrl.length != img.src.length) {
                     // May need other encoding.

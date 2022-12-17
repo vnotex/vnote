@@ -34,7 +34,7 @@
 #include "editors/markdowneditor.h"
 #include "textviewwindowhelper.h"
 #include "editors/markdownviewer.h"
-#include "editors/editormarkdownvieweradapter.h"
+#include "editors/markdownvieweradapter.h"
 #include "editors/previewhelper.h"
 #include "dialogs/deleteconfirmdialog.h"
 #include "outlineprovider.h"
@@ -193,10 +193,10 @@ void MarkdownViewWindow::setModified(bool p_modified)
 
 void MarkdownViewWindow::handleEditorConfigChange()
 {
-    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
-    const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
-
     if (updateConfigRevision()) {
+        const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+        const auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
+
         updatePreviewHelperFromConfig(markdownEditorConfig);
 
         HtmlTemplateHelper::updateMarkdownViewerTemplate(markdownEditorConfig);
@@ -439,7 +439,7 @@ void MarkdownViewWindow::setupViewer()
 
     HtmlTemplateHelper::updateMarkdownViewerTemplate(markdownEditorConfig);
 
-    auto adapter = new EditorMarkdownViewerAdapter(nullptr, this);
+    auto adapter = new MarkdownViewerAdapter(this);
     m_viewer = new MarkdownViewer(adapter,
                                   this,
                                   VNoteX::getInst().getThemeMgr().getBaseBackground(),
@@ -544,7 +544,6 @@ void MarkdownViewWindow::syncViewerFromBuffer(bool p_syncPositionFromEditMode)
     }
 
     auto buffer = getBuffer();
-    adapter()->setBuffer(buffer);
     if (buffer) {
         int lineNumber = -1;
         if (p_syncPositionFromEditMode) {
@@ -624,10 +623,10 @@ void MarkdownViewWindow::setBufferRevisionAfterInvalidation(int p_bufferRevision
     }
 }
 
-EditorMarkdownViewerAdapter *MarkdownViewWindow::adapter() const
+MarkdownViewerAdapter *MarkdownViewWindow::adapter() const
 {
     if (m_viewer) {
-        return dynamic_cast<EditorMarkdownViewerAdapter *>(m_viewer->adapter());
+        return m_viewer->adapter();
     }
 
     return nullptr;

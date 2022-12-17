@@ -110,4 +110,4 @@ class FlowchartJs extends GraphRenderer {
     }
 }
 
-window.vnotex.registerWorker(new FlowchartJs());
+window.vxcore.registerWorker(new FlowchartJs());

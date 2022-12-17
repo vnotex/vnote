@@ -3,6 +3,7 @@
 #include <QDebug>
 
 #include <core/markdowneditorconfig.h>
+#include <core/pdfviewerconfig.h>
 #include <core/configmgr.h>
 #include <utils/utils.h>
 #include <utils/fileutils.h>
@@ -16,7 +17,9 @@ using namespace vnotex;
 
 HtmlTemplateHelper::Template HtmlTemplateHelper::s_markdownViewerTemplate;
 
-QString WebGlobalOptions::toJavascriptObject() const
+HtmlTemplateHelper::Template HtmlTemplateHelper::s_pdfViewerTemplate;
+
+QString MarkdownWebGlobalOptions::toJavascriptObject() const
 {
     return QStringLiteral("window.vxOptions = {\n")
            + QString("webPlantUml: %1,\n").arg(Utils::boolToString(m_webPlantUml))
@@ -101,7 +104,7 @@ static void fillThemeStyles(QString &p_template, const QString &p_webStyleSheetF
     }
 }
 
-static void fillGlobalOptions(QString &p_template, const WebGlobalOptions &p_opts)
+static void fillGlobalOptions(QString &p_template, const MarkdownWebGlobalOptions &p_opts)
 {
     p_template.replace(QStringLiteral("/* VX_GLOBAL_OPTIONS_PLACEHOLDER */"),
                        p_opts.toJavascriptObject());
@@ -187,7 +190,7 @@ void HtmlTemplateHelper::updateMarkdownViewerTemplate(const MarkdownEditorConfig
 
     s_markdownViewerTemplate.m_revision = p_config.revision();
 
-    Paras paras;
+    MarkdownParas paras;
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
     paras.m_webStyleSheetFile = themeMgr.getFile(Theme::File::WebStyleSheet);
     paras.m_highlightStyleSheetFile = themeMgr.getFile(Theme::File::HighlightStyleSheet);
@@ -195,7 +198,8 @@ void HtmlTemplateHelper::updateMarkdownViewerTemplate(const MarkdownEditorConfig
     s_markdownViewerTemplate.m_template = generateMarkdownViewerTemplate(p_config, paras);
 }
 
-QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config, const Paras &p_paras)
+QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config,
+                                                           const MarkdownParas &p_paras)
 {
     const auto &viewerResource = p_config.getViewerResource();
     const auto templateFile = ConfigMgr::getInst().getUserOrAppFile(viewerResource.m_template);
@@ -212,7 +216,7 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
     fillThemeStyles(htmlTemplate, p_paras.m_webStyleSheetFile, p_paras.m_highlightStyleSheetFile);
 
     {
-        WebGlobalOptions opts;
+        MarkdownWebGlobalOptions opts;
         opts.m_webPlantUml = p_config.getWebPlantUml();
         opts.m_plantUmlWebService = p_config.getPlantUmlWebService();
         opts.m_webGraphviz = p_config.getWebGraphviz();
@@ -242,8 +246,8 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
     return htmlTemplate;
 }
 
-QString HtmlTemplateHelper::generateExportTemplate(const MarkdownEditorConfig &p_config,
-                                                   bool p_addOutlinePanel)
+QString HtmlTemplateHelper::generateMarkdownExportTemplate(const MarkdownEditorConfig &p_config,
+                                                           bool p_addOutlinePanel)
 {
     auto exportResource = p_config.getExportResource();
     const auto templateFile = ConfigMgr::getInst().getUserOrAppFile(exportResource.m_template);
@@ -251,7 +255,7 @@ QString HtmlTemplateHelper::generateExportTemplate(const MarkdownEditorConfig &p
     try {
         htmlTemplate = FileUtils::readTextFile(templateFile);
     } catch (Exception &p_e) {
-        qWarning() << "failed to read export HTML template" << templateFile << p_e.what();
+        qWarning() << "failed to read Markdown export HTML template" << templateFile << p_e.what();
         return errorPage();
     }
 
@@ -321,4 +325,39 @@ QString HtmlTemplateHelper::errorPage()
 {
     return VNoteX::tr("Failed to load HTML template. Check the logs for details. "
                       "Try deleting the user configuration file and the default configuration file.");
+}
+
+const QString &HtmlTemplateHelper::getPdfViewerTemplate()
+{
+    return s_pdfViewerTemplate.m_template;
+}
+
+const QString &HtmlTemplateHelper::getPdfViewerTemplatePath()
+{
+    return s_pdfViewerTemplate.m_templatePath;
+}
+
+void HtmlTemplateHelper::updatePdfViewerTemplate(const PdfViewerConfig &p_config, bool p_force)
+{
+    if (!p_force && p_config.revision() == s_markdownViewerTemplate.m_revision) {
+        return;
+    }
+
+    s_pdfViewerTemplate.m_revision = p_config.revision();
+    generatePdfViewerTemplate(p_config, s_pdfViewerTemplate);
+}
+
+void HtmlTemplateHelper::generatePdfViewerTemplate(const PdfViewerConfig &p_config, Template& p_template)
+{
+    const auto &viewerResource = p_config.getViewerResource();
+    p_template.m_templatePath = ConfigMgr::getInst().getUserOrAppFile(viewerResource.m_template);
+    try {
+        p_template.m_template = FileUtils::readTextFile(p_template.m_templatePath);
+    } catch (Exception &p_e) {
+        qWarning() << "failed to read HTML template" << p_template.m_templatePath << p_e.what();
+        p_template.m_template = errorPage();
+        return;
+    }
+
+    fillResources(p_template.m_template, viewerResource);
 }

@@ -244,10 +244,10 @@ class MarkdownIt extends VxWorker {
     }
 
     registerInternal() {
-        this.vnotex.on('markdownTextUpdated', (p_text) => {
-            this.render(this.vnotex.contentContainer,
+        this.vxcore.on('markdownTextUpdated', (p_text) => {
+            this.render(this.vxcore.contentContainer,
                         p_text,
-                        'window.vnotex.getWorker(\'markdownit\').markdownRenderFinished();');
+                        'window.vxcore.getWorker(\'markdownit\').markdownRenderFinished();');
         });
     }
 
@@ -307,7 +307,7 @@ class MarkdownIt extends VxWorker {
     // Will be called when basic markdown is rendered.
     markdownRenderFinished() {
         window.vxImageViewer.setupForAllImages(this.lastContainerNode);
-        this.vnotex.setBasicMarkdownRendered();
+        this.vxcore.setBasicMarkdownRendered();
     }
 
     getCodeNodes(p_langs) {
@@ -342,4 +342,4 @@ class MarkdownIt extends VxWorker {
     }
 }
 
-window.vnotex.registerWorker(new MarkdownIt(null));
+window.vxcore.registerWorker(new MarkdownIt(null));
