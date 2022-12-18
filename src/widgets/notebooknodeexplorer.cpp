@@ -31,6 +31,7 @@
 #include "widgetsfactory.h"
 #include "navigationmodemgr.h"
 
+#include <core/historymgr.h>
 #include <core/fileopenparameters.h>
 #include <core/events.h>
 #include <core/configmgr.h>
@@ -1693,9 +1694,9 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
 
     filterAwayChildrenNodes(p_nodes);
 
-    auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
     int nrDeleted = 0;
     QSet<Node *> nodesNeedUpdate;
+    QVector<QString> pathsNeedRemove;
     for (auto node : p_nodes) {
         auto srcName = node->getName();
         auto srcPath = node->fetchAbsolutePath();
@@ -1713,8 +1714,9 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
                 m_notebook->moveNodeToRecycleBin(node);
             }
 
-            HistoryItem item(srcPath, 0, QDateTime::currentDateTimeUtc());
-            sessionConfig.delHistory(item);
+            if (!srcPath.isEmpty()) {
+                pathsNeedRemove.append(srcPath);
+            }
 
             ++nrDeleted;
         } catch (Exception &p_e) {
@@ -1726,6 +1728,8 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
 
         nodesNeedUpdate.insert(srcParentNode);
     }
+
+    HistoryMgr::getInst().remove(pathsNeedRemove, m_notebook.get());
 
     for (auto node : nodesNeedUpdate) {
         updateNode(node);
