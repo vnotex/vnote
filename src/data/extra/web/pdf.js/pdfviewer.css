@@ -1,0 +1,7 @@
+button#openFile, button#print, button#download, button#download + div.verticalToolbarSeparator {
+    display: none;
+}
+
+button#secondaryOpenFile, button#secondaryPrint, button#secondaryDownload, button#secondaryDownload + div.horizontalToolbarSeparator {
+    display: none;
+}

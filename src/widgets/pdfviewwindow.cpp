@@ -109,14 +109,13 @@ void PdfViewWindow::syncEditorFromBuffer()
 {
     auto buffer = getBuffer();
     if (buffer) {
-        m_viewer->setHtml(HtmlTemplateHelper::getPdfViewerTemplate(),
-                          PathUtils::pathToUrl(HtmlTemplateHelper::getPdfViewerTemplatePath()));
-
         const auto url = PathUtils::pathToUrl(buffer->getContentPath());
-        adapter()->setUrl(url.toString(QUrl::EncodeSpaces));
+        const auto urlStr = url.toString(QUrl::EncodeSpaces);
+        auto templateUrl = PathUtils::pathToUrl(HtmlTemplateHelper::getPdfViewerTemplatePath());
+        templateUrl.setQuery("file=" + urlStr);
+        m_viewer->setHtml(HtmlTemplateHelper::getPdfViewerTemplate(), templateUrl);
     } else {
         m_viewer->setHtml("");
-        adapter()->setUrl("");
     }
 }
 

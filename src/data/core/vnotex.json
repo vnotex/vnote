@@ -482,7 +482,7 @@
         "pdf_viewer" : {
             "override_viewer_resource" : true,
             "viewer_resource" : {
-                "template" : "web/pdf-viewer-template.html",
+                "template" : "web/pdf.js/web/pdf-viewer-template.html",
                 "resources" : [
                     {
                         "name" : "built_in",
@@ -492,25 +492,28 @@
                             "web/js/eventemitter.js",
                             "web/js/utils.js",
                             "web/js/vxcore.js",
-                            "web/js/pdfviewercore.js"
+                            "web/pdf.js/pdfviewercore.js"
                         ]
                     },
                     {
                         "name" : "pdf.js",
                         "enabled" : true,
                         "scripts" : [
-                            "web/js/pdf.js/pdf.min.js",
-                            "web/js/pdf.js/pdf_viewer.js"
+                            "web/pdf.js/build/pdf.js",
+                            "web/pdf.js/web/viewer.js"
                         ],
                         "styles" : [
-                            "web/js/pdf.js/pdf_viewer.css"
+                            "web/pdf.js/web/viewer.css"
                         ]
                     },
                     {
                         "name" : "pdf_viewer",
                         "enabled" : true,
                         "scripts" : [
-                            "web/js/pdfviewer.js"
+                            "web/pdf.js/pdfviewer.js"
+                        ],
+                        "styles" : [
+                            "web/pdf.js/pdfviewer.css"
                         ]
                     }
                 ]

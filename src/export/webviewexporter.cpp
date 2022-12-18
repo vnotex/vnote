@@ -7,7 +7,7 @@
 #include <QProcess>
 
 #include <widgets/editors/markdownviewer.h>
-#include <widgets/editors/editormarkdownvieweradapter.h>
+#include <widgets/editors/markdownvieweradapter.h>
 #include <core/editorconfig.h>
 #include <core/markdowneditorconfig.h>
 #include <core/configmgr.h>

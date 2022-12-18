@@ -9,6 +9,8 @@ PdfViewerAdapter::PdfViewerAdapter(QObject *p_parent)
 
 void PdfViewerAdapter::setUrl(const QString &p_url)
 {
+    // TODO: Not supported yet.
+    Q_ASSERT(false);
     if (m_viewerReady) {
         emit urlUpdated(p_url);
     } else {
