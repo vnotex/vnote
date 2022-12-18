@@ -16,6 +16,7 @@ QDateTime BufferProvider::getLastModifiedFromFile() const
 
 bool BufferProvider::checkFileChangedOutside() const
 {
+    // TODO: support non-local URLs.
     QFileInfo info(getContentPath());
     if (!info.exists() || m_lastModified != info.lastModified()) {
         return true;

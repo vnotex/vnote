@@ -1,25 +1,13 @@
 /*
-    The main object that will be provided to all scripts in VNoteX.
-    Maintain a list of workers for different tasks.
-
-    Main:
-        - initialized()
-        - ready()
-
-    Markdown scenario:
+    Markdown events:
         - markdownTextUpdated(p_text)
         - basicMarkdownRendered()
         - fullMarkdownRendered()
 */
-class VNoteX extends EventEmitter {
+class MarkdownViewerCore extends VXCore {
     constructor() {
         super();
 
-        this.kickedOff = false;
-
-        this.initialized = false;
-
-        // Registered workers.
         // name -> worker.
         this.workers = new Map();
 
@@ -33,58 +21,48 @@ class VNoteX extends EventEmitter {
 
         this.numOfMuteScroll = 0;
 
-        this.os = VNoteX.detectOS();
-
         this.turndown = null;
 
         this.sectionNumberBaseLevel = 2;
 
         // Dict mapping from {id, index} to callback for renderGraph().
         this.renderGraphCallbacks = {}
+    }
 
-        window.addEventListener('load', () => {
-            console.log('window load finished');
+    initOnLoad() {
+        // Init DOM nodes.
+        this.contentContainer = document.getElementById('vx-content');
+        this.inplacePreviewContainer = document.getElementById('vx-inplace-preview');
 
-            // Init DOM nodes.
-            this.contentContainer = document.getElementById('vx-content');
-            this.inplacePreviewContainer = document.getElementById('vx-inplace-preview');
+        this.nodeLineMapper = new NodeLineMapper(this, this.contentContainer);
 
-            this.nodeLineMapper = new NodeLineMapper(this, this.contentContainer);
+        this.graphPreviewer = new GraphPreviewer(this, this.inplacePreviewContainer);
 
-            this.graphPreviewer = new GraphPreviewer(this, this.inplacePreviewContainer);
+        this.crossCopyer = new CrossCopy(this);
 
-            this.crossCopyer = new CrossCopy(this);
+        this.searcher = new MarkJs(this, this.contentContainer);
 
-            this.searcher = new MarkJs(this, this.contentContainer);
+        this.sectionNumberBaseLevel = window.vxOptions.sectionNumberBaseLevel;
+        if (this.sectionNumberBaseLevel > 3) {
+            console.warn('only support section number base level less than 3', this.sectionNumberBaseLevel);
+            this.sectionNumberBaseLevel = 3;
+        }
 
-            this.sectionNumberBaseLevel = window.vxOptions.sectionNumberBaseLevel;
-            if (this.sectionNumberBaseLevel > 3) {
-                console.warn('only support section number base level less than 3', this.sectionNumberBaseLevel);
-                this.sectionNumberBaseLevel = 3;
-            }
+        this.setContentContainerOption('vx-constrain-image-width',
+                                       window.vxOptions.constrainImageWidthEnabled || !window.vxOptions.scrollable);
+        this.setContentContainerOption('vx-image-align-center',
+                                       window.vxOptions.imageAlignCenterEnabled);
+        this.setContentContainerOption('vx-indent-first-line',
+                                       window.vxOptions.indentFirstLineEnabled);
+        this.setContentContainerOption('line-numbers',
+                                       window.vxOptions.codeBlockLineNumberEnabled);
+        this.setBodyOption('vx-transparent-background',
+                           window.vxOptions.transparentBackgroundEnabled);
+        this.setContentContainerOption('vx-nonscrollable',
+                                       !window.vxOptions.scrollable);
 
-            this.setContentContainerOption('vx-constrain-image-width',
-                                           window.vxOptions.constrainImageWidthEnabled || !window.vxOptions.scrollable);
-            this.setContentContainerOption('vx-image-align-center',
-                                           window.vxOptions.imageAlignCenterEnabled);
-            this.setContentContainerOption('vx-indent-first-line',
-                                           window.vxOptions.indentFirstLineEnabled);
-            this.setContentContainerOption('line-numbers',
-                                           window.vxOptions.codeBlockLineNumberEnabled);
-            this.setBodyOption('vx-transparent-background',
-                               window.vxOptions.transparentBackgroundEnabled);
-            this.setContentContainerOption('vx-nonscrollable',
-                                           !window.vxOptions.scrollable);
-
-            this.setBodySize(window.vxOptions.bodyWidth, window.vxOptions.bodyHeight);
-            document.body.style.height = '800';
-
-            this.initialized = true;
-
-            // Signal out.
-            this.emit('initialized');
-            this.emit('ready');
-        });
+        this.setBodySize(window.vxOptions.bodyWidth, window.vxOptions.bodyHeight);
+        document.body.style.height = '800';
     }
 
     setContentContainerOption(p_class, p_enabled) {
@@ -369,20 +347,6 @@ class VNoteX extends EventEmitter {
             delete this.renderGraphCallbacks[key];
         }
     }
-
-    static detectOS() {
-        let osName="Unknown OS";
-        if (navigator.appVersion.indexOf("Win")!=-1) {
-            osName="Windows";
-        } else if (navigator.appVersion.indexOf("Mac")!=-1) {
-            osName="MacOS";
-        } else if (navigator.appVersion.indexOf("X11")!=-1) {
-            osName="UNIX";
-        } else if (navigator.appVersion.indexOf("Linux")!=-1) {
-            osName="Linux";
-        }
-        return osName
-    }
 }
 
-window.vnotex = new VNoteX();
+window.vxcore = new MarkdownViewerCore();

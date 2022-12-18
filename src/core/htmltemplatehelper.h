@@ -6,10 +6,11 @@
 namespace vnotex
 {
     class MarkdownEditorConfig;
+    class PdfViewerConfig;
     struct WebResource;
 
-    // Global options to be passed to Web side at the very beginning.
-    struct WebGlobalOptions
+    // Global options to be passed to Web side at the very beginning for Markdown.
+    struct MarkdownWebGlobalOptions
     {
         bool m_webPlantUml = true;
 
@@ -67,7 +68,7 @@ namespace vnotex
     class HtmlTemplateHelper
     {
     public:
-        struct Paras
+        struct MarkdownParas
         {
             QString m_webStyleSheetFile;
 
@@ -90,14 +91,16 @@ namespace vnotex
 
         HtmlTemplateHelper() = delete;
 
+        // For Markdown.
         static const QString &getMarkdownViewerTemplate();
         static void updateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config, bool p_force = false);
 
-        static QString generateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config, const Paras &p_paras);
+        static QString generateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config, const MarkdownParas &p_paras);
 
-        static QString generateExportTemplate(const MarkdownEditorConfig &p_config,
-                                              bool p_addOutlinePanel);
+        static QString generateMarkdownExportTemplate(const MarkdownEditorConfig &p_config,
+                                                      bool p_addOutlinePanel);
 
+        // For common HTML content manipulation.
         static void fillTitle(QString &p_template, const QString &p_title);
 
         static void fillStyleContent(QString &p_template, const QString &p_styles);
@@ -110,17 +113,27 @@ namespace vnotex
 
         static void fillOutlinePanel(QString &p_template, WebResource &p_exportResource, bool p_addOutlinePanel);
 
-    private:
-        static QString errorPage();
+        // For PdfViewer.
+        static const QString &getPdfViewerTemplate();
+        static void updatePdfViewerTemplate(const PdfViewerConfig &p_config, bool p_force = false);
 
+        static const QString &getPdfViewerTemplatePath();
+
+    private:
         struct Template
         {
             int m_revision = -1;
             QString m_template;
+            QString m_templatePath;
         };
 
-        // Template for MarkdownViewer.
+        static QString errorPage();
+
+        static void generatePdfViewerTemplate(const PdfViewerConfig &p_config, Template& p_template);
+
         static Template s_markdownViewerTemplate;
+
+        static Template s_pdfViewerTemplate;
     };
 }
 

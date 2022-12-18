@@ -88,6 +88,12 @@
                     "text",
                     "log"
                 ]
+            },
+            {
+                "name" : "PDF",
+                "suffixes" : [
+                    "pdf"
+                ]
             }
         ],
         "shortcut_leader_key" : "Ctrl+G",
@@ -268,12 +274,13 @@
                         "scripts" : [
                             "web/js/qwebchannel.js",
                             "web/js/eventemitter.js",
+                            "web/js/vxcore.js",
                             "web/js/utils.js",
                             "web/js/nodelinemapper.js",
                             "web/js/lrucache.js",
                             "web/js/graphcache.js",
                             "web/js/graphpreviewer.js",
-                            "web/js/vnotex.js",
+                            "web/js/markdownviewercore.js",
                             "web/js/vxworker.js",
                             "web/js/graphrenderer.js",
                             "web/js/svg-to-image.js",
@@ -471,6 +478,46 @@
             "//comment" : "view mode of edit mode: editonly/editpreview",
             "edit_view_mode" : "editonly",
             "rich_paste_by_default" : true
+        },
+        "pdf_viewer" : {
+            "override_viewer_resource" : true,
+            "viewer_resource" : {
+                "template" : "web/pdf.js/web/pdf-viewer-template.html",
+                "resources" : [
+                    {
+                        "name" : "built_in",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/qwebchannel.js",
+                            "web/js/eventemitter.js",
+                            "web/js/utils.js",
+                            "web/js/vxcore.js",
+                            "web/pdf.js/pdfviewercore.js"
+                        ]
+                    },
+                    {
+                        "name" : "pdf.js",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/pdf.js/build/pdf.js",
+                            "web/pdf.js/web/viewer.js"
+                        ],
+                        "styles" : [
+                            "web/pdf.js/web/viewer.css"
+                        ]
+                    },
+                    {
+                        "name" : "pdf_viewer",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/pdf.js/pdfviewer.js"
+                        ],
+                        "styles" : [
+                            "web/pdf.js/pdfviewer.css"
+                        ]
+                    }
+                ]
+            }
         },
         "image_host" : {
             "hosts" : [

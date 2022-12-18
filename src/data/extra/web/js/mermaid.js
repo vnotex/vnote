@@ -122,4 +122,4 @@ class Mermaid extends GraphRenderer {
     }
 }
 
-window.vnotex.registerWorker(new Mermaid());
+window.vxcore.registerWorker(new Mermaid());

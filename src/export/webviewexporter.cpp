@@ -7,7 +7,7 @@
 #include <QProcess>
 
 #include <widgets/editors/markdownviewer.h>
-#include <widgets/editors/editormarkdownvieweradapter.h>
+#include <widgets/editors/markdownvieweradapter.h>
 #include <core/editorconfig.h>
 #include <core/markdowneditorconfig.h>
 #include <core/configmgr.h>
@@ -285,7 +285,7 @@ void WebViewExporter::prepare(const ExportOption &p_option)
 
     qDebug() << "export page body size" << pageBodySize;
 
-    HtmlTemplateHelper::Paras paras;
+    HtmlTemplateHelper::MarkdownParas paras;
     paras.m_webStyleSheetFile = p_option.m_renderingStyleFile;
     paras.m_highlightStyleSheetFile = p_option.m_syntaxHighlightStyleFile;
     paras.m_transparentBackgroundEnabled = p_option.m_useTransparentBg;
@@ -300,7 +300,7 @@ void WebViewExporter::prepare(const ExportOption &p_option)
 
     {
         const bool addOutlinePanel = p_option.m_targetFormat == ExportFormat::HTML && p_option.m_htmlOption.m_addOutlinePanel;
-        m_exportHtmlTemplate = HtmlTemplateHelper::generateExportTemplate(config, addOutlinePanel);
+        m_exportHtmlTemplate = HtmlTemplateHelper::generateMarkdownExportTemplate(config, addOutlinePanel);
     }
 
     if (useWkhtmltopdf) {

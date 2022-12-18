@@ -24,6 +24,7 @@ SOURCES += \
     $$PWD/logger.cpp \
     $$PWD/mainconfig.cpp \
     $$PWD/markdowneditorconfig.cpp \
+    $$PWD/pdfviewerconfig.cpp \
     $$PWD/quickaccesshelper.cpp \
     $$PWD/singleinstanceguard.cpp \
     $$PWD/templatemgr.cpp \
@@ -54,6 +55,7 @@ HEADERS += \
     $$PWD/mainconfig.h \
     $$PWD/markdowneditorconfig.h \
     $$PWD/noncopyable.h \
+    $$PWD/pdfviewerconfig.h \
     $$PWD/quickaccesshelper.h \
     $$PWD/singleinstanceguard.h \
     $$PWD/iconfig.h \

@@ -21,12 +21,12 @@ class Graphviz extends GraphRenderer {
     }
 
     registerInternal() {
-        this.vnotex.on('basicMarkdownRendered', () => {
+        this.vxcore.on('basicMarkdownRendered', () => {
             this.reset();
             this.renderCodeNodes(window.vxOptions.transformSvgToPngEnabled ? 'png' : 'svg');
         });
 
-        this.vnotex.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
+        this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
         this.useWeb = window.vxOptions.webGraphviz;
         if (!this.useWeb) {
             this.extraScripts = [];
@@ -138,7 +138,7 @@ class Graphviz extends GraphRenderer {
         };
 
         let callback = func(this, p_node);
-        this.vnotex.renderGraph(this.id,
+        this.vxcore.renderGraph(this.id,
             this.nextLocalGraphIndex++,
             this.format,
             'dot',
@@ -174,4 +174,4 @@ class Graphviz extends GraphRenderer {
     }
 }
 
-window.vnotex.registerWorker(new Graphviz());
+window.vxcore.registerWorker(new Graphviz());

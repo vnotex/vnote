@@ -12,7 +12,7 @@ class EasyAccess {
         // The repeat token from user input.
         this.repeatToken =  0;
 
-        window.vnotex.on('ready', () => {
+        window.vxcore.on('ready', () => {
             this.setupMouseMove();
             this.setupViNavigation();
             this.setupZoomOnWheel();
@@ -22,7 +22,7 @@ class EasyAccess {
     setupMouseMove() {
         window.addEventListener('mousedown', (e) => {
             e = e || window.event;
-            let isCtrl = window.vnotex.os === 'Mac' ? e.metaKey : e.ctrlKey;
+            let isCtrl = window.vxcore.os === 'Mac' ? e.metaKey : e.ctrlKey;
             // Left button and Ctrl key.
             if (e.buttons == 1
                 && isCtrl
@@ -99,7 +99,7 @@ class EasyAccess {
             shift = !!e.shiftKey;
             ctrl = !!e.ctrlKey;
             meta = !!e.metaKey;
-            let isCtrl = window.vnotex.os === 'Mac' ? e.metaKey : e.ctrlKey;
+            let isCtrl = window.vxcore.os === 'Mac' ? e.metaKey : e.ctrlKey;
             switch (key) {
             // Skip Ctrl, Shift, Alt, Supper.
             case 16:
@@ -332,7 +332,7 @@ class EasyAccess {
             if (accepted) {
                 e.preventDefault();
             } else {
-                window.vnotex.setKeyPress(key, ctrl, shift, meta);
+                window.vxcore.setKeyPress(key, ctrl, shift, meta);
             }
         });
     }
@@ -342,12 +342,12 @@ class EasyAccess {
     //                 negative value for upper level;
     //                 positive value is ignored.
     jumpTitle(forward, relativeLevel, repeat) {
-        let headings = window.vnotex.nodeLineMapper.headingNodes;
+        let headings = window.vxcore.nodeLineMapper.headingNodes;
         if (headings.length == 0) {
             return;
         }
 
-        let currentHeadingIdx = window.vnotex.nodeLineMapper.currentHeadingIndex();
+        let currentHeadingIdx = window.vxcore.nodeLineMapper.currentHeadingIndex();
         if (currentHeadingIdx == -1) {
             // At the beginning, before any headings.
             if (relativeLevel < 0 || !forward) {
@@ -403,19 +403,19 @@ class EasyAccess {
             return;
         }
 
-        window.vnotex.nodeLineMapper.scrollToNode(headings[targetIdx], false, false);
+        window.vxcore.nodeLineMapper.scrollToNode(headings[targetIdx], false, false);
         window.setTimeout(function() {
-            window.vnotex.nodeLineMapper.updateCurrentHeading();
+            window.vxcore.nodeLineMapper.updateCurrentHeading();
         }, 1000);
     };
 
     setupZoomOnWheel() {
         window.addEventListener('wheel', (e) => {
             e = e || window.event;
-            let isCtrl = window.vnotex.os === 'Mac' ? e.metaKey : e.ctrlKey;
+            let isCtrl = window.vxcore.os === 'Mac' ? e.metaKey : e.ctrlKey;
             if (isCtrl) {
                 if (e.deltaY != 0) {
-                    window.vnotex.zoom(e.deltaY < 0);
+                    window.vxcore.zoom(e.deltaY < 0);
                 }
                 e.preventDefault();
             }
