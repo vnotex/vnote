@@ -94,6 +94,17 @@ const QVector<QSharedPointer<HistoryItemFull>> &HistoryMgr::getHistory() const
     return m_history;
 }
 
+void HistoryMgr::historyRefresh(HistoryItem item)
+{
+    for (int i = m_history.size() - 1; i >= 0; --i) {
+        if (m_history[i]->m_item.m_path == item.m_path) {
+            // Erase it.
+            m_history.remove(i);
+            break;
+        }
+    }
+}
+
 void HistoryMgr::add(const QString &p_path,
                      int p_lineNumber,
                      ViewWindowMode p_mode,
@@ -116,13 +127,7 @@ void HistoryMgr::add(const QString &p_path,
 
     // Maintain the combined queue.
     {
-        for (int i = m_history.size() - 1; i >= 0; --i) {
-            if (m_history[i]->m_item.m_path == item.m_path) {
-                // Erase it.
-                m_history.remove(i);
-                break;
-            }
-        }
+        historyRefresh(item);
 
         auto fullItem = QSharedPointer<HistoryItemFull>::create();
         fullItem->m_item = item;
@@ -158,9 +163,17 @@ void HistoryMgr::add(const QString &p_path,
 
 void HistoryMgr::remove(const QVector<QString>& p_paths, Notebook *p_notebook)
 {
-    for(auto p_path : p_paths) {
-        HistoryItem item(p_path, 0, QDateTime::currentDateTimeUtc());
-        p_notebook->history()->removeHistory(item);
+    for (int i = 0; i < p_paths.length(); ++i) {
+        HistoryItem item(p_paths[i], 0, QDateTime::currentDateTimeUtc());
+
+        if (p_notebook && !p_notebook->history()->getHistory().isEmpty()) {
+            p_notebook->history()->removeHistory(item);
+        } else {
+            auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+            sessionConfig.removeHistory(item);
+        }
+
+        historyRefresh(item);
     }
 
     emit historyUpdated();

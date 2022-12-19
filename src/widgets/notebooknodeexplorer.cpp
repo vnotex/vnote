@@ -1729,7 +1729,7 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
         nodesNeedUpdate.insert(srcParentNode);
     }
 
-    HistoryMgr::getInst().remove(pathsNeedRemove, m_notebook.get());
+    HistoryMgr::getInst().remove(pathsNeedRemove, m_notebook.data());
 
     for (auto node : nodesNeedUpdate) {
         updateNode(node);

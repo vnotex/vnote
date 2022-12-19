@@ -76,6 +76,8 @@ namespace vnotex
         // Sorted by last accessed time ascendingly.
         QVector<QSharedPointer<HistoryItemFull>> m_history;
 
+        void historyRefresh(HistoryItem item);
+
         QVector<LastClosedFile> m_lastClosedFiles;
 
         const bool m_perNotebookHistoryEnabled = false;
