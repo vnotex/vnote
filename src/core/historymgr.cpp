@@ -94,10 +94,10 @@ const QVector<QSharedPointer<HistoryItemFull>> &HistoryMgr::getHistory() const
     return m_history;
 }
 
-void HistoryMgr::historyRefresh(HistoryItem item)
+void HistoryMgr::historyRefresh(const QString &p_itemPath)
 {
     for (int i = m_history.size() - 1; i >= 0; --i) {
-        if (m_history[i]->m_item.m_path == item.m_path) {
+        if (m_history[i]->m_item.m_path == p_itemPath) {
             // Erase it.
             m_history.remove(i);
             break;
@@ -127,7 +127,7 @@ void HistoryMgr::add(const QString &p_path,
 
     // Maintain the combined queue.
     {
-        historyRefresh(item);
+        historyRefresh(item.m_path);
 
         auto fullItem = QSharedPointer<HistoryItemFull>::create();
         fullItem->m_item = item;
@@ -173,7 +173,7 @@ void HistoryMgr::remove(const QVector<QString>& p_paths, Notebook *p_notebook)
             sessionConfig.removeHistory(item);
         }
 
-        historyRefresh(item);
+        historyRefresh(item.m_path);
     }
 
     emit historyUpdated();
