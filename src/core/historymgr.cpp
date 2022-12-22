@@ -98,7 +98,6 @@ void HistoryMgr::historyRefresh(const QString &p_itemPath)
 {
     for (int i = m_history.size() - 1; i >= 0; --i) {
         if (m_history[i]->m_item.m_path == p_itemPath) {
-            // Erase it.
             m_history.remove(i);
             break;
         }
