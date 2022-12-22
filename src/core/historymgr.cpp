@@ -181,7 +181,6 @@ void HistoryMgr::removeHistoryItem(QVector<HistoryItem> &p_history, const QStrin
 {
     for (int i = p_history.size() - 1; i >= 0; --i) {
         if (p_history[i].m_path == p_itemPath) {
-            // Erase it.
             p_history.remove(i);
             break;
         }
