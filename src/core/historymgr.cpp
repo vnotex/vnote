@@ -161,28 +161,26 @@ void HistoryMgr::add(const QString &p_path,
     emit historyUpdated();
 }
 
-void HistoryMgr::remove(const QVector<QString>& p_paths, Notebook *p_notebook)
+void HistoryMgr::remove(const QVector<QString> &p_paths, Notebook *p_notebook)
 {
-    for (int i = 0; i < p_paths.length(); ++i) {
-        HistoryItem item(p_paths[i], 0, QDateTime::currentDateTimeUtc());
-
+    foreach(QString p_itemPath, p_paths) {
         if (p_notebook && !p_notebook->history()->getHistory().isEmpty()) {
-            p_notebook->history()->removeHistory(item);
+            p_notebook->history()->removeHistory(p_itemPath);
         } else {
             auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-            sessionConfig.removeHistory(item);
+            sessionConfig.removeHistory(p_itemPath);
         }
 
-        historyRefresh(item.m_path);
+        historyRefresh(p_itemPath);
     }
 
     emit historyUpdated();
 }
 
-void HistoryMgr::removeHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item)
+void HistoryMgr::removeHistoryItem(QVector<HistoryItem> &p_history, const QString &p_itemPath)
 {
     for (int i = p_history.size() - 1; i >= 0; --i) {
-        if (p_history[i].m_path == p_item.m_path) {
+        if (p_history[i].m_path == p_itemPath) {
             // Erase it.
             p_history.remove(i);
             break;
@@ -192,7 +190,7 @@ void HistoryMgr::removeHistoryItem(QVector<HistoryItem> &p_history, const Histor
 
 void HistoryMgr::insertHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item)
 {
-    removeHistoryItem(p_history, p_item);
+    removeHistoryItem(p_history, p_item.m_path);
     p_history.append(p_item);
 
     const int maxHistoryCount = ConfigMgr::getInst().getCoreConfig().getHistoryMaxCount();

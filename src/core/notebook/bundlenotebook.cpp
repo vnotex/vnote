@@ -108,11 +108,9 @@ const QVector<HistoryItem> &BundleNotebook::getHistory() const
     return m_history;
 }
 
-void BundleNotebook::removeHistory(const HistoryItem &p_item)
+void BundleNotebook::removeHistory(const QString &p_itemPath)
 {
-    HistoryItem item(p_item);
-    item.m_path = getBackend()->getRelativePath(item.m_path);
-    HistoryMgr::removeHistoryItem(m_history, item);
+    HistoryMgr::removeHistoryItem(m_history, p_itemPath);
 
     updateNotebookConfig();
 }

@@ -484,9 +484,9 @@ void SessionConfig::addHistory(const HistoryItem &p_item)
     update();
 }
 
-void SessionConfig::removeHistory(const HistoryItem &p_item)
+void SessionConfig::removeHistory(const QString &p_itemPath)
 {
-    HistoryMgr::removeHistoryItem(m_history, p_item);
+    HistoryMgr::removeHistoryItem(m_history, p_itemPath);
     update();
 }
 

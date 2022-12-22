@@ -61,7 +61,7 @@ namespace vnotex
 
         LastClosedFile popLastClosedFile();
 
-        static void removeHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item);
+        static void removeHistoryItem(QVector<HistoryItem> &p_history, const QString &p_itemPath);
 
         static void insertHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item);
 
