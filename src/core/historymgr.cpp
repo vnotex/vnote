@@ -162,7 +162,7 @@ void HistoryMgr::add(const QString &p_path,
 
 void HistoryMgr::remove(const QVector<QString> &p_paths, Notebook *p_notebook)
 {
-    foreach(QString p_itemPath, p_paths) {
+    for(const QString &p_itemPath : p_paths) {
         if (p_notebook && !p_notebook->history()->getHistory().isEmpty()) {
             p_notebook->history()->removeHistory(p_itemPath);
         } else {

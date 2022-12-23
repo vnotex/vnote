@@ -1714,9 +1714,7 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
                 m_notebook->moveNodeToRecycleBin(node);
             }
 
-            if (!srcPath.isEmpty()) {
-                pathsNeedRemove.append(srcPath);
-            }
+            pathsNeedRemove.append(srcPath);
 
             ++nrDeleted;
         } catch (Exception &p_e) {
