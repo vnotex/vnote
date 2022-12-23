@@ -76,7 +76,7 @@ namespace vnotex
         // Sorted by last accessed time ascendingly.
         QVector<QSharedPointer<HistoryItemFull>> m_history;
 
-        void historyRefresh(const QString &p_itemPath);
+        void removeFromHistory(const QString &p_itemPath);
 
         QVector<LastClosedFile> m_lastClosedFiles;
 
