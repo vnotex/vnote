@@ -146,6 +146,7 @@ namespace vnotex
 
         const QVector<HistoryItem> &getHistory() const;
         void addHistory(const HistoryItem &p_item);
+        void removeHistory(const QString &p_itemPath);
         void clearHistory();
 
     private:

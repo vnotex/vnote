@@ -55,9 +55,13 @@ namespace vnotex
                  bool p_readOnly,
                  Notebook *p_notebook);
 
+        void remove(const QVector<QString> &p_paths, Notebook *p_notebook);
+
         void clear();
 
         LastClosedFile popLastClosedFile();
+
+        static void removeHistoryItem(QVector<HistoryItem> &p_history, const QString &p_itemPath);
 
         static void insertHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item);
 
@@ -71,6 +75,8 @@ namespace vnotex
 
         // Sorted by last accessed time ascendingly.
         QVector<QSharedPointer<HistoryItemFull>> m_history;
+
+        void removeFromHistory(const QString &p_itemPath);
 
         QVector<LastClosedFile> m_lastClosedFiles;
 

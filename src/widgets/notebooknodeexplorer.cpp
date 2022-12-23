@@ -31,6 +31,7 @@
 #include "widgetsfactory.h"
 #include "navigationmodemgr.h"
 
+#include <core/historymgr.h>
 #include <core/fileopenparameters.h>
 #include <core/events.h>
 #include <core/configmgr.h>
@@ -1695,6 +1696,7 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
 
     int nrDeleted = 0;
     QSet<Node *> nodesNeedUpdate;
+    QVector<QString> pathsNeedRemove;
     for (auto node : p_nodes) {
         auto srcName = node->getName();
         auto srcPath = node->fetchAbsolutePath();
@@ -1712,6 +1714,8 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
                 m_notebook->moveNodeToRecycleBin(node);
             }
 
+            pathsNeedRemove.append(srcPath);
+
             ++nrDeleted;
         } catch (Exception &p_e) {
             MessageBoxHelper::notify(MessageBoxHelper::Critical,
@@ -1722,6 +1726,8 @@ void NotebookNodeExplorer::removeNodes(QVector<Node *> p_nodes, bool p_configOnl
 
         nodesNeedUpdate.insert(srcParentNode);
     }
+
+    HistoryMgr::getInst().remove(pathsNeedRemove, m_notebook.data());
 
     for (auto node : nodesNeedUpdate) {
         updateNode(node);

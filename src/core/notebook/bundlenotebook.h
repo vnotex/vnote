@@ -49,6 +49,8 @@ namespace vnotex
 
         const QVector<HistoryItem> &getHistory() const Q_DECL_OVERRIDE;
 
+        void removeHistory(const QString &p_itemPath) Q_DECL_OVERRIDE;
+
         void addHistory(const HistoryItem &p_item) Q_DECL_OVERRIDE;
 
         void clearHistory() Q_DECL_OVERRIDE;

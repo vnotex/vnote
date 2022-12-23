@@ -94,6 +94,16 @@ const QVector<QSharedPointer<HistoryItemFull>> &HistoryMgr::getHistory() const
     return m_history;
 }
 
+void HistoryMgr::removeFromHistory(const QString &p_itemPath)
+{
+    for (int i = m_history.size() - 1; i >= 0; --i) {
+        if (m_history[i]->m_item.m_path == p_itemPath) {
+            m_history.remove(i);
+            break;
+        }
+    }
+}
+
 void HistoryMgr::add(const QString &p_path,
                      int p_lineNumber,
                      ViewWindowMode p_mode,
@@ -116,13 +126,7 @@ void HistoryMgr::add(const QString &p_path,
 
     // Maintain the combined queue.
     {
-        for (int i = m_history.size() - 1; i >= 0; --i) {
-            if (m_history[i]->m_item.m_path == item.m_path) {
-                // Erase it.
-                m_history.remove(i);
-                break;
-            }
-        }
+        removeFromHistory(item.m_path);
 
         auto fullItem = QSharedPointer<HistoryItemFull>::create();
         fullItem->m_item = item;
@@ -156,16 +160,35 @@ void HistoryMgr::add(const QString &p_path,
     emit historyUpdated();
 }
 
-void HistoryMgr::insertHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item)
+void HistoryMgr::remove(const QVector<QString> &p_paths, Notebook *p_notebook)
+{
+    for(const QString &p_itemPath : p_paths) {
+        if (p_notebook && m_perNotebookHistoryEnabled && p_notebook->history()) {
+            p_notebook->history()->removeHistory(p_itemPath);
+        } else {
+            auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+            sessionConfig.removeHistory(p_itemPath);
+        }
+
+        removeFromHistory(p_itemPath);
+    }
+
+    emit historyUpdated();
+}
+
+void HistoryMgr::removeHistoryItem(QVector<HistoryItem> &p_history, const QString &p_itemPath)
 {
     for (int i = p_history.size() - 1; i >= 0; --i) {
-        if (p_history[i].m_path == p_item.m_path) {
-            // Erase it.
+        if (p_history[i].m_path == p_itemPath) {
             p_history.remove(i);
             break;
         }
     }
+}
 
+void HistoryMgr::insertHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item)
+{
+    removeHistoryItem(p_history, p_item.m_path);
     p_history.append(p_item);
 
     const int maxHistoryCount = ConfigMgr::getInst().getCoreConfig().getHistoryMaxCount();
