@@ -163,7 +163,7 @@ void HistoryMgr::add(const QString &p_path,
 void HistoryMgr::remove(const QVector<QString> &p_paths, Notebook *p_notebook)
 {
     for(const QString &p_itemPath : p_paths) {
-        if (p_notebook && !p_notebook->history()->getHistory().isEmpty()) {
+        if (p_notebook && m_perNotebookHistoryEnabled && p_notebook->history()) {
             p_notebook->history()->removeHistory(p_itemPath);
         } else {
             auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
