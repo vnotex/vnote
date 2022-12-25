@@ -5,12 +5,13 @@ SOURCES += \
     $$PWD/markdownbuffer.cpp \
     $$PWD/markdownbufferfactory.cpp \
     $$PWD/filetypehelper.cpp \
+    $$PWD/mindmapbuffer.cpp \
+    $$PWD/mindmapbufferfactory.cpp \
     $$PWD/nodebufferprovider.cpp \
     $$PWD/pdfbuffer.cpp \
     $$PWD/pdfbufferfactory.cpp \
     $$PWD/textbuffer.cpp \
-    $$PWD/textbufferfactory.cpp \
-    $$PWD/urlbasedbufferprovider.cpp
+    $$PWD/textbufferfactory.cpp
 
 HEADERS += \
     $$PWD/bufferprovider.h \
@@ -20,6 +21,8 @@ HEADERS += \
     $$PWD/markdownbuffer.h \
     $$PWD/markdownbufferfactory.h \
     $$PWD/filetypehelper.h \
+    $$PWD/mindmapbuffer.h \
+    $$PWD/mindmapbufferfactory.h \
     $$PWD/nodebufferprovider.h \
     $$PWD/pdfbuffer.h \
     $$PWD/pdfbufferfactory.h \

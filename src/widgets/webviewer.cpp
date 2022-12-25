@@ -2,6 +2,8 @@
 
 #include "webpage.h"
 
+#include <QWebEnginePage>
+
 #include <utils/utils.h>
 
 using namespace vnotex;
@@ -37,4 +39,21 @@ WebViewer::WebViewer(const QColor &p_background, QWidget *p_parent)
 
 WebViewer::~WebViewer()
 {
+}
+
+void WebViewer::findText(const QString &p_text, FindOptions p_options)
+{
+    if (p_options & FindOption::RegularExpression) {
+        return;
+    }
+
+    QWebEnginePage::FindFlags flags;
+    if (p_options & FindOption::FindBackward) {
+        flags |= QWebEnginePage::FindFlag::FindBackward;
+    }
+    if (p_options & FindOption::CaseSensitive) {
+        flags |= QWebEnginePage::FindFlag::FindCaseSensitively;
+    }
+
+    QWebEngineView::findText(p_text, flags);
 }

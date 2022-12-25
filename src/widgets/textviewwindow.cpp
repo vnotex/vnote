@@ -165,11 +165,6 @@ bool TextViewWindow::updateConfigRevision()
     return changed;
 }
 
-void TextViewWindow::setBufferRevisionAfterInvalidation(int p_bufferRevision)
-{
-    m_bufferRevision = p_bufferRevision;
-}
-
 void TextViewWindow::setMode(ViewWindowMode p_mode)
 {
     Q_UNUSED(p_mode);

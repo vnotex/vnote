@@ -11,7 +11,6 @@ namespace vnotex
 {
     class PdfViewer;
     class PdfViewerAdapter;
-    class EditorConfig;
 
     class PdfViewWindow : public ViewWindow
     {
@@ -56,6 +55,8 @@ namespace vnotex
 
     private:
         void setupUI();
+
+        void setupToolBar();
 
         void setupViewer();
 

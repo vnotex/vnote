@@ -4,6 +4,7 @@
 
 #include <core/markdowneditorconfig.h>
 #include <core/pdfviewerconfig.h>
+#include <core/mindmapeditorconfig.h>
 #include <core/configmgr.h>
 #include <utils/utils.h>
 #include <utils/fileutils.h>
@@ -18,6 +19,8 @@ using namespace vnotex;
 HtmlTemplateHelper::Template HtmlTemplateHelper::s_markdownViewerTemplate;
 
 HtmlTemplateHelper::Template HtmlTemplateHelper::s_pdfViewerTemplate;
+
+HtmlTemplateHelper::Template HtmlTemplateHelper::s_mindMapEditorTemplate;
 
 QString MarkdownWebGlobalOptions::toJavascriptObject() const
 {
@@ -339,7 +342,7 @@ const QString &HtmlTemplateHelper::getPdfViewerTemplatePath()
 
 void HtmlTemplateHelper::updatePdfViewerTemplate(const PdfViewerConfig &p_config, bool p_force)
 {
-    if (!p_force && p_config.revision() == s_markdownViewerTemplate.m_revision) {
+    if (!p_force && p_config.revision() == s_pdfViewerTemplate.m_revision) {
         return;
     }
 
@@ -360,4 +363,42 @@ void HtmlTemplateHelper::generatePdfViewerTemplate(const PdfViewerConfig &p_conf
     }
 
     fillResources(p_template.m_template, viewerResource);
+}
+
+const QString &HtmlTemplateHelper::getMindMapEditorTemplate()
+{
+    return s_mindMapEditorTemplate.m_template;
+}
+
+void HtmlTemplateHelper::updateMindMapEditorTemplate(const MindMapEditorConfig &p_config, bool p_force)
+{
+    if (!p_force && p_config.revision() == s_mindMapEditorTemplate.m_revision) {
+        return;
+    }
+
+    s_mindMapEditorTemplate.m_revision = p_config.revision();
+
+    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+    generateMindMapEditorTemplate(p_config,
+                                  themeMgr.getFile(Theme::File::WebStyleSheet),
+                                  s_mindMapEditorTemplate);
+}
+
+void HtmlTemplateHelper::generateMindMapEditorTemplate(const MindMapEditorConfig &p_config,
+                                                       const QString &p_webStyleSheetFile,
+                                                       Template& p_template)
+{
+    const auto &editorResource = p_config.getEditorResource();
+    p_template.m_templatePath = ConfigMgr::getInst().getUserOrAppFile(editorResource.m_template);
+    try {
+        p_template.m_template = FileUtils::readTextFile(p_template.m_templatePath);
+    } catch (Exception &p_e) {
+        qWarning() << "failed to read HTML template" << p_template.m_templatePath << p_e.what();
+        p_template.m_template = errorPage();
+        return;
+    }
+
+    fillThemeStyles(p_template.m_template, p_webStyleSheetFile, QString());
+
+    fillResources(p_template.m_template, editorResource);
 }

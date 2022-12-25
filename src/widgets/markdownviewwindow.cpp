@@ -140,7 +140,7 @@ void MarkdownViewWindow::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffe
                 setupViewer();
 
                 // Must show the viewer to let it init with the correct DPI.
-                // Will hide it when viewerReady().
+                // Will hide it when ready().
                 m_viewer->show();
             }
 
@@ -361,7 +361,7 @@ void MarkdownViewWindow::setupTextEditor()
     updateEditorFromConfig();
 
     // Connect viewer and editor.
-    connect(adapter(), &MarkdownViewerAdapter::viewerReady,
+    connect(adapter(), &MarkdownViewerAdapter::ready,
             m_editor->getHighlighter(), &vte::PegMarkdownHighlighter::updateHighlight);
     connect(m_editor, &MarkdownEditor::htmlToMarkdownRequested,
             adapter(), &MarkdownViewerAdapter::htmlToMarkdownRequested);
@@ -494,7 +494,7 @@ void MarkdownViewWindow::setupViewer()
             this, [this](const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex) {
                 this->showFindResult(p_texts, p_totalMatches, p_currentMatchIndex);
             });
-    connect(adapter, &MarkdownViewerAdapter::viewerReady,
+    connect(adapter, &MarkdownViewerAdapter::ready,
             this, [this]() {
                 m_viewerReady = true;
 

@@ -1,7 +1,8 @@
 #ifndef MARKDOWNVIEWERADAPTER_H
 #define MARKDOWNVIEWERADAPTER_H
 
-#include <QObject>
+#include "webviewadapter.h"
+
 #include <QString>
 #include <QJsonObject>
 #include <QScopedPointer>
@@ -9,12 +10,11 @@
 #include <QTextCharFormat>
 
 #include <core/global.h>
-#include <utils/callbackpool.h>
 
 namespace vnotex
 {
     // Adapter and interface between CPP and JS.
-    class MarkdownViewerAdapter : public QObject
+    class MarkdownViewerAdapter : public WebViewAdapter
     {
         Q_OBJECT
     public:
@@ -67,19 +67,6 @@ namespace vnotex
             QString m_anchor;
         };
 
-        struct FindOption
-        {
-            QJsonObject toJson() const;
-
-            bool m_findBackward = false;
-
-            bool m_caseSensitive = false;
-
-            bool m_wholeWordOnly = false;
-
-            bool m_regularExpression = false;
-        };
-
         struct CssRuleStyle
         {
             QTextCharFormat toTextCharFormat() const;
@@ -113,8 +100,6 @@ namespace vnotex
 
         int getTopLineNumber() const;
 
-        bool isViewerReady() const;
-
         const QVector<MarkdownViewerAdapter::Heading> &getHeadings() const;
         int getCurrentHeadingIndex() const;
 
@@ -125,8 +110,6 @@ namespace vnotex
         const QStringList &getCrossCopyTargets() const;
 
         QString getCrossCopyTargetDisplayName(const QString &p_target) const;
-
-        void findText(const QStringList &p_texts, FindOptions p_options, int p_currentMatchLine = -1);
 
         void saveContent();
 
@@ -141,8 +124,6 @@ namespace vnotex
 
         // Functions to be called from web side.
     public slots:
-        void setReady(bool p_ready);
-
         void setWorkFinished();
 
         // The line number at the top.
@@ -182,8 +163,6 @@ namespace vnotex
         void setCrossCopyTargets(const QJsonArray &p_targets);
 
         void setCrossCopyResult(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
-
-        void setFindText(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex);
 
         void setSavedContent(const QString &p_headContent, const QString &p_styleContent, const QString &p_content, const QString &p_bodyClassList);
 
@@ -227,8 +206,6 @@ namespace vnotex
                                 const QString &p_baseUrl,
                                 const QString &p_html);
 
-        void findTextRequested(const QStringList &p_texts, const QJsonObject &p_options, int p_currentMatchLine);
-
         // Request to get the whole HTML content.
         void contentRequested();
 
@@ -247,8 +224,6 @@ namespace vnotex
 
         void mathPreviewDataReady(const PreviewData &p_data);
 
-        void viewerReady();
-
         // All rendering work has finished.
         void workFinished();
 
@@ -264,8 +239,6 @@ namespace vnotex
 
         void crossCopyReady(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
 
-        void findTextReady(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex);
-
         void contentReady(const QString &p_headContent,
                           const QString &p_styleContent,
                           const QString &p_content,
@@ -280,12 +253,6 @@ namespace vnotex
 
         int m_revision = 0;
 
-        // Whether web side viewer is ready to handle text update.
-        bool m_viewerReady = false;
-
-        // Pending actions for the viewer once it is ready.
-        QVector<std::function<void()>> m_pendingActions;
-
         // Source line number of the top element node at web side.
         int m_topLineNumber = -1;
 
@@ -296,8 +263,6 @@ namespace vnotex
 
         // Targets supported by cross copy. Set by web.
         QStringList m_crossCopyTargets;
-
-        CallbackPool m_callbackPool;
     };
 }
 

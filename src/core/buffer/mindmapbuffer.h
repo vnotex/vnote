@@ -1,21 +1,21 @@
-#ifndef PDFBUFFER_H
-#define PDFBUFFER_H
+#ifndef MINDMAPBUFFER_H
+#define MINDMAPBUFFER_H
 
 #include "buffer.h"
 
 namespace vnotex
 {
-    class PdfBuffer : public Buffer
+    class MindMapBuffer : public Buffer
     {
         Q_OBJECT
     public:
-        PdfBuffer(const BufferParameters &p_parameters,
-                  QObject *p_parent = nullptr);
+        MindMapBuffer(const BufferParameters &p_parameters,
+                      QObject *p_parent = nullptr);
 
     protected:
         ViewWindow *createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras,
                                              QWidget *p_parent) Q_DECL_OVERRIDE;
     };
-} // ns vnotex
+}
 
-#endif // PDFBUFFER_H
+#endif // MINDMAPBUFFER_H

@@ -7,6 +7,7 @@ namespace vnotex
 {
     class MarkdownEditorConfig;
     class PdfViewerConfig;
+    class MindMapEditorConfig;
     struct WebResource;
 
     // Global options to be passed to Web side at the very beginning for Markdown.
@@ -91,7 +92,7 @@ namespace vnotex
 
         HtmlTemplateHelper() = delete;
 
-        // For Markdown.
+        // For MarkdownViewer.
         static const QString &getMarkdownViewerTemplate();
         static void updateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config, bool p_force = false);
 
@@ -119,6 +120,10 @@ namespace vnotex
 
         static const QString &getPdfViewerTemplatePath();
 
+        // For MindMapEditor.
+        static const QString &getMindMapEditorTemplate();
+        static void updateMindMapEditorTemplate(const MindMapEditorConfig &p_config, bool p_force = false);
+
     private:
         struct Template
         {
@@ -131,9 +136,15 @@ namespace vnotex
 
         static void generatePdfViewerTemplate(const PdfViewerConfig &p_config, Template& p_template);
 
+        static void generateMindMapEditorTemplate(const MindMapEditorConfig &p_config,
+                                                  const QString &p_webStyleSheetFile,
+                                                  Template& p_template);
+
         static Template s_markdownViewerTemplate;
 
         static Template s_pdfViewerTemplate;
+
+        static Template s_mindMapEditorTemplate;
     };
 }
 

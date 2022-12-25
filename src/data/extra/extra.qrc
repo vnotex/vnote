@@ -79,8 +79,6 @@
         <file>web/js/turndown.js</file>
         <file>web/js/mark.js/mark.min.js</file>
         <file>web/js/markjs.js</file>
-        <file>web/js/mind-elixir/MindElixir.min.js</file>
-        <file>web/js/mind-elixir/painter.js</file>
 
         <file>web/pdf.js/pdfviewer.js</file>
         <file>web/pdf.js/pdfviewer.css</file>
@@ -326,6 +324,11 @@
         <file>web/pdf.js/web/cmaps/UniKS-UTF8-V.bcmap</file>
         <file>web/pdf.js/web/cmaps/V.bcmap</file>
         <file>web/pdf.js/web/cmaps/WP-Symbol.bcmap</file>
+
+        <file>web/js/mind-elixir/MindElixir.js</file>
+        <file>web/mindmap-editor-template.html</file>
+        <file>web/js/mindmapeditorcore.js</file>
+        <file>web/js/mindmapeditor.js</file>
 
         <file>dicts/en_US.aff</file>
         <file>dicts/en_US.dic</file>

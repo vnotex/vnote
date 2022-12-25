@@ -84,7 +84,7 @@ void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper)
                                           TimeStamp p_timeStamp,
                                           const QString &p_lang,
                                           const QString &p_text) {
-                if (m_adapter->isViewerReady()) {
+                if (m_adapter->isReady()) {
                     m_adapter->graphPreviewRequested(p_id, p_timeStamp, p_lang, p_text);
                 } else {
                     p_previewHelper->handleGraphPreviewData(MarkdownViewerAdapter::PreviewData());
@@ -94,7 +94,7 @@ void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper)
             this, [this, p_previewHelper](quint64 p_id,
                                           TimeStamp p_timeStamp,
                                           const QString &p_text) {
-                if (m_adapter->isViewerReady()) {
+                if (m_adapter->isReady()) {
                     m_adapter->mathPreviewRequested(p_id, p_timeStamp, p_text);
                 } else {
                     p_previewHelper->handleMathPreviewData(MarkdownViewerAdapter::PreviewData());

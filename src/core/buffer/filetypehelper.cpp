@@ -93,6 +93,22 @@ void FileTypeHelper::setupBuiltInTypes()
 
     {
         FileType type;
+        type.m_type = FileType::MindMap;
+        type.m_typeName = QStringLiteral("MindMap");
+        type.m_displayName = Buffer::tr("Mind Map");
+
+        auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+        if (suffixes && !suffixes->isEmpty()) {
+            type.m_suffixes = *suffixes;
+        } else {
+            type.m_suffixes << QStringLiteral("emind");
+        }
+
+        m_fileTypes.push_back(type);
+    }
+
+    {
+        FileType type;
         type.m_type = FileType::Others;
         type.m_typeName = QStringLiteral("Others");
         type.m_displayName = Buffer::tr("Others");

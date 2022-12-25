@@ -8,6 +8,7 @@
 #include <buffer/markdownbufferfactory.h>
 #include <buffer/textbufferfactory.h>
 #include <buffer/pdfbufferfactory.h>
+#include <buffer/mindmapbufferfactory.h>
 #include <buffer/buffer.h>
 #include <buffer/nodebufferprovider.h>
 #include <buffer/filebufferprovider.h>
@@ -57,6 +58,10 @@ void BufferMgr::initBufferServer()
     // Pdf.
     auto pdfFactory = QSharedPointer<PdfBufferFactory>::create();
     m_bufferServer->registerItem(helper.getFileType(FileType::Pdf).m_typeName, pdfFactory);
+
+    // MindMap.
+    auto mindMapFactory = QSharedPointer<MindMapBufferFactory>::create();
+    m_bufferServer->registerItem(helper.getFileType(FileType::MindMap).m_typeName, mindMapFactory);
 }
 
 void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras)

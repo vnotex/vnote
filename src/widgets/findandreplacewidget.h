@@ -29,6 +29,8 @@ namespace vnotex
 
         FindOptions getOptions() const;
 
+        void setOptionsEnabled(FindOptions p_options, bool p_enabled);
+
     signals:
         void findTextChanged(const QString &p_text, FindOptions p_options);
 

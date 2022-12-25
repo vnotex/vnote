@@ -12,6 +12,10 @@ class MarkJs {
         this.adapter.on('basicMarkdownRendered', () => {
             this.clearCache();
         });
+
+        this.adapter.on('rendered', () => {
+            this.clearCache();
+        });
     }
 
     // @p_options: {

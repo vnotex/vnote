@@ -51,12 +51,15 @@ SOURCES += \
     $$PWD/editors/markdowntablehelper.cpp \
     $$PWD/editors/markdownviewer.cpp \
     $$PWD/editors/markdownvieweradapter.cpp \
+    $$PWD/editors/mindmapeditor.cpp \
+    $$PWD/editors/mindmapeditoradapter.cpp \
     $$PWD/editors/pdfviewer.cpp \
     $$PWD/editors/pdfvieweradapter.cpp \
     $$PWD/editors/plantumlhelper.cpp \
     $$PWD/editors/previewhelper.cpp \
     $$PWD/editors/statuswidget.cpp \
     $$PWD/editors/texteditor.cpp \
+    $$PWD/editors/webviewadapter.cpp \
     $$PWD/editreaddiscardaction.cpp \
     $$PWD/filesystemviewer.cpp \
     $$PWD/dialogs/folderfilesfilterwidget.cpp \
@@ -77,6 +80,7 @@ SOURCES += \
     $$PWD/locationlist.cpp \
     $$PWD/mainwindow.cpp \
     $$PWD/markdownviewwindow.cpp \
+    $$PWD/mindmapviewwindow.cpp \
     $$PWD/navigationmodemgr.cpp \
     $$PWD/notebookexplorersession.cpp \
     $$PWD/outlinepopup.cpp \
@@ -186,12 +190,15 @@ HEADERS += \
     $$PWD/editors/markdowntablehelper.h \
     $$PWD/editors/markdownviewer.h \
     $$PWD/editors/markdownvieweradapter.h \
+    $$PWD/editors/mindmapeditor.h \
+    $$PWD/editors/mindmapeditoradapter.h \
     $$PWD/editors/pdfviewer.h \
     $$PWD/editors/pdfvieweradapter.h \
     $$PWD/editors/plantumlhelper.h \
     $$PWD/editors/previewhelper.h \
     $$PWD/editors/statuswidget.h \
     $$PWD/editors/texteditor.h \
+    $$PWD/editors/webviewadapter.h \
     $$PWD/editreaddiscardaction.h \
     $$PWD/filesystemviewer.h \
     $$PWD/dialogs/folderfilesfilterwidget.h \
@@ -213,6 +220,7 @@ HEADERS += \
     $$PWD/locationlist.h \
     $$PWD/mainwindow.h \
     $$PWD/markdownviewwindow.h \
+    $$PWD/mindmapviewwindow.h \
     $$PWD/navigationmodemgr.h \
     $$PWD/navigationmodewrapper.h \
     $$PWD/notebookexplorersession.h \

@@ -94,6 +94,12 @@
                 "suffixes" : [
                     "pdf"
                 ]
+            },
+            {
+                "name" : "MindMap",
+                "suffixes" : [
+                    "emind"
+                ]
             }
         ],
         "shortcut_leader_key" : "Ctrl+G",
@@ -514,6 +520,39 @@
                         ],
                         "styles" : [
                             "web/pdf.js/pdfviewer.css"
+                        ]
+                    }
+                ]
+            }
+        },
+        "mindmap_editor" : {
+            "override_editor_resource" : true,
+            "editor_resource" : {
+                "template" : "web/mindmap-editor-template.html",
+                "resources" : [
+                    {
+                        "name" : "built_in",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/qwebchannel.js",
+                            "web/js/eventemitter.js",
+                            "web/js/utils.js",
+                            "web/js/vxcore.js",
+                            "web/js/mindmapeditorcore.js"
+                        ]
+                    },
+                    {
+                        "name" : "mind_elixir",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/mind-elixir/MindElixir.js"
+                        ]
+                    },
+                    {
+                        "name" : "mindmap_editor",
+                        "enabled" : true,
+                        "scripts" : [
+                            "web/js/mindmapeditor.js"
                         ]
                     }
                 ]

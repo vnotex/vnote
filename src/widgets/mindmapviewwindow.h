@@ -1,27 +1,22 @@
-#ifndef TEXTVIEWWINDOW_H
-#define TEXTVIEWWINDOW_H
+#ifndef MINDMAPVIEWWINDOW_H
+#define MINDMAPVIEWWINDOW_H
 
 #include "viewwindow.h"
 
-namespace vte
-{
-    class TextEditorConfig;
-    struct TextEditorParameters;
-}
+#include <QScopedPointer>
+
+class QWebEngineView;
 
 namespace vnotex
 {
-    class TextEditor;
-    class TextEditorConfig;
-    class EditorConfig;
+    class MindMapEditor;
+    class MindMapEditorAdapter;
 
-    class TextViewWindow : public ViewWindow
+    class MindMapViewWindow : public ViewWindow
     {
         Q_OBJECT
     public:
-        friend class TextViewWindowHelper;
-
-        explicit TextViewWindow(QWidget *p_parent = nullptr);
+        explicit MindMapViewWindow(QWidget *p_parent = nullptr);
 
         QString getLatestContent() const Q_DECL_OVERRIDE;
 
@@ -45,7 +40,9 @@ namespace vnotex
     protected slots:
         void setModified(bool p_modified) Q_DECL_OVERRIDE;
 
-        void handleBufferChangedInternal(const QSharedPointer<FileOpenParameters> &p_paras) Q_DECL_OVERRIDE;
+        void print() Q_DECL_OVERRIDE;
+
+        void toggleDebug() Q_DECL_OVERRIDE;
 
         void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
 
@@ -57,7 +54,7 @@ namespace vnotex
 
         void handleFindAndReplaceWidgetClosed() Q_DECL_OVERRIDE;
 
-        void print() Q_DECL_OVERRIDE;
+        void showFindAndReplaceWidget() Q_DECL_OVERRIDE;
 
     protected:
         void syncEditorFromBuffer() Q_DECL_OVERRIDE;
@@ -70,33 +67,27 @@ namespace vnotex
 
         void zoom(bool p_zoomIn) Q_DECL_OVERRIDE;
 
-        QPoint getFloatingWidgetPosition() Q_DECL_OVERRIDE;
-
-        void clearHighlights() Q_DECL_OVERRIDE;
-
     private:
         void setupUI();
 
         void setupToolBar();
 
-        void updateEditorFromConfig();
+        void setupEditor();
 
-        void handleFileOpenParameters(const QSharedPointer<FileOpenParameters> &p_paras);
+        MindMapEditorAdapter *adapter() const;
 
         bool updateConfigRevision();
 
-        static QSharedPointer<vte::TextEditorConfig> createTextEditorConfig(const EditorConfig &p_editorConfig, const TextEditorConfig &p_config);
-
-        static QSharedPointer<vte::TextEditorParameters> createTextEditorParameters(const EditorConfig &p_editorConfig, const TextEditorConfig &p_config);
+        void setupDebugViewer();
 
         // Managed by QObject.
-        TextEditor *m_editor = nullptr;
+        MindMapEditor *m_editor = nullptr;
 
-        // Whether propogate the state from editor to buffer.
-        bool m_propogateEditorToBuffer = false;
+        // Used to debug web view.
+        QWebEngineView *m_debugViewer = nullptr;
 
-        int m_textEditorConfigRevision = 0;
+        int m_editorConfigRevision = 0;
     };
 }
 
-#endif // TEXTVIEWWINDOW_H
+#endif // MINDMAPVIEWWINDOW_H

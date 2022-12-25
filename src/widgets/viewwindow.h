@@ -227,6 +227,11 @@ namespace vnotex
         // Sync buffer content changes to editor.
         virtual void syncEditorFromBufferContent() = 0;
 
+        // When we have new changes to the buffer content from our ViewWindow,
+        // we will invalidate the contents of the buffer and the buffer will
+        // call this function to tell us now the latest buffer revision.
+        void setBufferRevisionAfterInvalidation(int p_bufferRevision);
+
         // Whether we are in a mode that enable us to insert text.
         bool inModeCanInsert() const;
 
@@ -242,7 +247,7 @@ namespace vnotex
 
         void showZoomDelta(int p_delta);
 
-        void showFindAndReplaceWidget();
+        virtual void showFindAndReplaceWidget();
 
         void hideFindAndReplaceWidget();
 

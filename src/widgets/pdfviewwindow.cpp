@@ -24,6 +24,16 @@ void PdfViewWindow::setupUI()
 {
     setupViewer();
     setCentralWidget(m_viewer);
+
+    setupToolBar();
+}
+
+void PdfViewWindow::setupToolBar()
+{
+    auto toolBar = createToolBar(this);
+    addToolBar(toolBar);
+
+    addAction(toolBar, ViewWindowToolBarHelper::Tag);
 }
 
 void PdfViewWindow::setupViewer()
@@ -68,7 +78,6 @@ void PdfViewWindow::openTwice(const QSharedPointer<FileOpenParameters> &p_paras)
 ViewWindowSession PdfViewWindow::saveSession() const
 {
     auto session = ViewWindow::saveSession();
-    session.m_lineNumber = 1;
     return session;
 }
 

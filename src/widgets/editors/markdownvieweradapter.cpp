@@ -50,16 +50,6 @@ MarkdownViewerAdapter::Heading MarkdownViewerAdapter::Heading::fromJson(const QJ
                    p_obj.value(QStringLiteral("anchor")).toString());
 }
 
-QJsonObject MarkdownViewerAdapter::FindOption::toJson() const
-{
-    QJsonObject obj;
-    obj["findBackward"] = m_findBackward;
-    obj["caseSensitive"] = m_caseSensitive;
-    obj["wholeWordOnly"] = m_wholeWordOnly;
-    obj["regularExpression"] = m_regularExpression;
-    return obj;
-}
-
 MarkdownViewerAdapter::CssRuleStyle MarkdownViewerAdapter::CssRuleStyle::fromJson(const QJsonObject &p_obj)
 {
     CssRuleStyle style;
@@ -90,7 +80,7 @@ QTextCharFormat MarkdownViewerAdapter::CssRuleStyle::toTextCharFormat() const
 }
 
 MarkdownViewerAdapter::MarkdownViewerAdapter(QObject *p_parent)
-    : QObject(p_parent)
+    : WebViewAdapter(p_parent)
 {
 }
 
@@ -108,15 +98,16 @@ void MarkdownViewerAdapter::setText(int p_revision,
         return;
     }
 
-    m_revision = p_revision;
-    if (m_viewerReady) {
+    if (isReady()) {
+        m_revision = p_revision;
         emit textUpdated(p_text);
         scrollToPosition(Position(p_lineNumber, ""));
     } else {
-        m_pendingActions.append([this, p_text, p_lineNumber]() {
-            emit textUpdated(p_text);
-            scrollToPosition(Position(p_lineNumber, ""));
-        });
+        pendAction(std::bind(QOverload<int, const QString &, int>::of(&MarkdownViewerAdapter::setText),
+                             this,
+                             p_revision,
+                             p_text,
+                             p_lineNumber));
     }
 }
 
@@ -125,37 +116,18 @@ void MarkdownViewerAdapter::setText(const QString &p_text, int p_lineNumber)
     setText(0, p_text, p_lineNumber);
 }
 
-void MarkdownViewerAdapter::setReady(bool p_ready)
-{
-    if (m_viewerReady == p_ready) {
-        return;
-    }
-
-    m_viewerReady = p_ready;
-    if (m_viewerReady) {
-        for (auto &act : m_pendingActions) {
-            act();
-        }
-        m_pendingActions.clear();
-        emit viewerReady();
-    }
-}
-
 void MarkdownViewerAdapter::scrollToLine(int p_lineNumber)
 {
     if (p_lineNumber == -1) {
         return;
     }
 
-    if (!m_viewerReady) {
-        m_pendingActions.append([this, p_lineNumber]() {
-            scrollToPosition(Position(p_lineNumber, ""));
-        });
-        return;
+    if (isReady()) {
+        m_topLineNumber = p_lineNumber;
+        emit editLineNumberUpdated(p_lineNumber);
+    } else {
+        pendAction(std::bind(&MarkdownViewerAdapter::scrollToLine, this, p_lineNumber));
     }
-
-    m_topLineNumber = p_lineNumber;
-    emit editLineNumberUpdated(p_lineNumber);
 }
 
 void MarkdownViewerAdapter::setTopLineNumber(int p_lineNumber)
@@ -194,11 +166,6 @@ void MarkdownViewerAdapter::setGraphPreviewData(quint64 p_id,
         ba = QByteArray::fromBase64(ba);
     }
     emit graphPreviewDataReady(PreviewData(p_id, p_timeStamp, p_format, ba, p_needScale));
-}
-
-bool MarkdownViewerAdapter::isViewerReady() const
-{
-    return m_viewerReady;
 }
 
 void MarkdownViewerAdapter::setMathPreviewData(quint64 p_id,
@@ -272,7 +239,7 @@ void MarkdownViewerAdapter::scrollToAnchor(const QString &p_anchor)
     if (p_anchor.isEmpty()) {
         return;
     }
-    Q_ASSERT(m_viewerReady);
+    Q_ASSERT(isReady());
     m_currentHeadingIndex = -1;
     emit anchorScrollRequested(p_anchor);
 }
@@ -340,38 +307,6 @@ void MarkdownViewerAdapter::setCrossCopyResult(quint64 p_id, quint64 p_timeStamp
     emit crossCopyReady(p_id, p_timeStamp, p_html);
 }
 
-void MarkdownViewerAdapter::findText(const QStringList &p_texts, FindOptions p_options, int p_currentMatchLine)
-{
-    FindOption opts;
-    if (p_options & vnotex::FindOption::FindBackward) {
-        opts.m_findBackward = true;
-    }
-    if (p_options & vnotex::FindOption::CaseSensitive) {
-        opts.m_caseSensitive = true;
-    }
-    if (p_options & vnotex::FindOption::WholeWordOnly) {
-        opts.m_wholeWordOnly = true;
-    }
-    if (p_options & vnotex::FindOption::RegularExpression) {
-        opts.m_regularExpression = true;
-    }
-
-    if (m_viewerReady) {
-        emit findTextRequested(p_texts, opts.toJson(), p_currentMatchLine);
-    } else {
-        m_pendingActions.append([this, p_texts, opts, p_currentMatchLine]() {
-            // FIXME: highlights will be clear once the page is ready. Add a delay here.
-            Utils::sleepWait(1000);
-            emit findTextRequested(p_texts, opts.toJson(), p_currentMatchLine);
-        });
-    }
-}
-
-void MarkdownViewerAdapter::setFindText(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex)
-{
-    emit findTextReady(p_texts, p_totalMatches, p_currentMatchIndex);
-}
-
 void MarkdownViewerAdapter::setWorkFinished()
 {
     emit workFinished();
@@ -393,8 +328,7 @@ void MarkdownViewerAdapter::setSavedContent(const QString &p_headContent,
 void MarkdownViewerAdapter::reset()
 {
     m_revision = 0;
-    m_viewerReady = false;
-    m_pendingActions.clear();
+    setReady(false);
     m_topLineNumber = -1;
     m_headings.clear();
     m_currentHeadingIndex = -1;
@@ -437,12 +371,10 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id,
 
 void MarkdownViewerAdapter::highlightCodeBlock(int p_idx, quint64 p_timeStamp, const QString &p_text)
 {
-    if (m_viewerReady) {
+    if (isReady()) {
         emit highlightCodeBlockRequested(p_idx, p_timeStamp, p_text);
     } else {
-        m_pendingActions.append([this, p_idx, p_timeStamp, p_text]() {
-            emit highlightCodeBlockRequested(p_idx, p_timeStamp, p_text);
-        });
+        pendAction(std::bind(&MarkdownViewerAdapter::highlightCodeBlock, this, p_idx, p_timeStamp, p_text));
     }
 }
 
@@ -454,24 +386,23 @@ void MarkdownViewerAdapter::setStyleSheetStyles(quint64 p_id, const QJsonArray &
         ruleStyles.push_back(CssRuleStyle::fromJson(p_styles[i].toObject()));
     }
 
-    m_callbackPool.call(p_id, &ruleStyles);
+    invokeCallback(p_id, &ruleStyles);
 }
 
 void MarkdownViewerAdapter::fetchStylesFromStyleSheet(const QString &p_styleSheet,
                                                       const std::function<void(const QVector<CssRuleStyle> *)> &p_callback)
 {
     if (p_styleSheet.isEmpty()) {
+        p_callback(nullptr);
         return;
     }
 
-    const quint64 id = m_callbackPool.add([p_callback](void *data) {
-        p_callback(reinterpret_cast<const QVector<CssRuleStyle> *>(data));
-    });
-    if (m_viewerReady) {
+    if (isReady()) {
+        const quint64 id = addCallback([p_callback](void *data) {
+            p_callback(reinterpret_cast<const QVector<CssRuleStyle> *>(data));
+        });
         emit parseStyleSheetRequested(id, p_styleSheet);
     } else {
-        m_pendingActions.append([this, p_styleSheet, id]() {
-            emit parseStyleSheetRequested(id, p_styleSheet);
-        });
+        pendAction(std::bind(&MarkdownViewerAdapter::fetchStylesFromStyleSheet, this, p_styleSheet, p_callback));
     }
 }

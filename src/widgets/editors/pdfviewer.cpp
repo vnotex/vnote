@@ -3,7 +3,6 @@
 #include <QWebChannel>
 
 #include "pdfvieweradapter.h"
-#include "previewhelper.h"
 
 using namespace vnotex;
 

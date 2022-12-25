@@ -16,6 +16,7 @@ namespace vnotex
             Markdown = 0,
             Text,
             Pdf,
+            MindMap,
             Others
         };
 

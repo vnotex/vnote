@@ -325,3 +325,19 @@ FindOptions FindAndReplaceWidget::getOptions() const
 {
     return m_options;
 }
+
+void FindAndReplaceWidget::setOptionsEnabled(FindOptions p_options, bool p_enabled)
+{
+    if (p_options & FindOption::CaseSensitive) {
+        m_caseSensitiveCheckBox->setEnabled(p_enabled);
+    }
+    if (p_options & FindOption::WholeWordOnly) {
+        m_wholeWordOnlyCheckBox->setEnabled(p_enabled);
+    }
+    if (p_options & FindOption::RegularExpression) {
+        m_regularExpressionCheckBox->setEnabled(p_enabled);
+    }
+    if (p_options & FindOption::IncrementalSearch) {
+        m_incrementalSearchCheckBox->setEnabled(p_enabled);
+    }
+}

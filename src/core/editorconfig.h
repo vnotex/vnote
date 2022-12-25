@@ -20,6 +20,7 @@ namespace vnotex
     class TextEditorConfig;
     class MarkdownEditorConfig;
     class PdfViewerConfig;
+    class MindMapEditorConfig;
 
     class EditorConfig : public IConfig
     {
@@ -109,6 +110,9 @@ namespace vnotex
         PdfViewerConfig &getPdfViewerConfig();
         const PdfViewerConfig &getPdfViewerConfig() const;
 
+        MindMapEditorConfig &getMindMapEditorConfig();
+        const MindMapEditorConfig &getMindMapEditorConfig() const;
+
         void init(const QJsonObject &p_app, const QJsonObject &p_user) Q_DECL_OVERRIDE;
 
         QJsonObject toJson() const Q_DECL_OVERRIDE;
@@ -181,6 +185,8 @@ namespace vnotex
         QScopedPointer<MarkdownEditorConfig> m_markdownEditorConfig;
 
         QScopedPointer<PdfViewerConfig> m_pdfViewerConfig;
+
+        QScopedPointer<MindMapEditorConfig> m_mindMapEditorConfig;
 
         bool m_spellCheckAutoDetectLanguageEnabled = false;
 
