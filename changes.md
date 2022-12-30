@@ -1,4 +1,15 @@
 # Changes
+## v3.16.0
+* Support reading PDF format
+* Support Ming Map editor in suffix `*.emind`
+* Support "View By" for notebooks selector
+* ViewWindow: add shortcut Ctrl+G,V to alternate among view modes
+* Bug fixes
+
+## v3.15.1
+* Add two themes
+* Bug fixes
+
 ## v3.15.0
 * Editor supports Word Count
 * Add Open Windows panel
