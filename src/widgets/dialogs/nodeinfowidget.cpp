@@ -161,6 +161,9 @@ void NodeInfoWidget::setupFileTypeComboBox(QWidget *p_parent)
     m_fileTypeComboBox = WidgetsFactory::createComboBox(p_parent);
     const auto &fileTypes = FileTypeHelper::getInst().getAllFileTypes();
     for (const auto &ft : fileTypes) {
+        if (m_mode == Mode::Create && !ft.m_isNewable) {
+            continue;
+        }
         m_fileTypeComboBox->addItem(ft.m_displayName, ft.m_typeName);
     }
     connect(m_fileTypeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),

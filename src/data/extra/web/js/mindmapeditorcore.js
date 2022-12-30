@@ -6,7 +6,8 @@ class MindMapEditorCore extends VXCore {
     initOnLoad() {
         let options = {
           el: '#vx-mindmap',
-          direction: MindElixir.LEFT,
+          direction: MindElixir.SIDE,
+          allowUndo: true,
         }
 
         this.mind = new MindElixir(options);

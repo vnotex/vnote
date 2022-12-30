@@ -20,6 +20,10 @@ namespace vnotex
             Others
         };
 
+        QString preferredSuffix() const;
+
+        bool isMarkdown() const;
+
         // Type.
         int m_type = -1;
 
@@ -29,9 +33,8 @@ namespace vnotex
 
         QStringList m_suffixes;
 
-        QString preferredSuffix() const;
-
-        bool isMarkdown() const;
+        // Whether we can new this type of file.
+        bool m_isNewable = true;
     };
 
     // Only handle built-in editors.
