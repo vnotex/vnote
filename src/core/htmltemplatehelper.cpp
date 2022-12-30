@@ -378,9 +378,8 @@ void HtmlTemplateHelper::updateMindMapEditorTemplate(const MindMapEditorConfig &
 
     s_mindMapEditorTemplate.m_revision = p_config.revision();
 
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
     generateMindMapEditorTemplate(p_config,
-                                  themeMgr.getFile(Theme::File::WebStyleSheet),
+                                  QString() /* Use empty theme style for now */,
                                   s_mindMapEditorTemplate);
 }
 
