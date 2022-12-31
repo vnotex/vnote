@@ -762,6 +762,10 @@ const defaultOptions = {
   workerSrc: {
     value: "../build/pdf.worker.js",
     kind: OptionKind.WORKER
+  },
+  useWorkerFetch: {
+    value: false,
+    kind: OptionKind.API
   }
 };
 {
