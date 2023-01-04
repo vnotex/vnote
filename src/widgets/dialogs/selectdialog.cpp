@@ -2,6 +2,7 @@
 
 #include <QtWidgets>
 
+#include <widgets/listwidget.h>
 #include <utils/widgetutils.h>
 #include <utils/iconutils.h>
 #include <utils/utils.h>
@@ -39,11 +40,11 @@ void SelectDialog::setupUI(const QString &p_title, const QString &p_text)
         mainLayout->addWidget(m_label);
     }
 
-    m_list = new QListWidget(this);
+    m_list = new ListWidget(this);
     m_list->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_list->setSelectionMode(QAbstractItemView::SingleSelection);
     m_list->setAttribute(Qt::WA_MacShowFocusRect, false);
-    connect(m_list, &QListWidget::itemActivated,
+    connect(m_list, &ListWidget::itemActivated,
             this, &SelectDialog::selectionChosen);
 
     m_list->installEventFilter(this);
