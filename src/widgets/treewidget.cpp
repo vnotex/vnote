@@ -97,10 +97,9 @@ void TreeWidget::keyPressEvent(QKeyEvent *p_event)
     if (WidgetUtils::processKeyEventLikeVi(this, p_event)) {
         return;
     }
-
     // On Mac OS X, it is `Command+O` to activate an item, instead of Return.
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-    if (p_event->key() == Qt::Key_Return) {
+    if (p_event->key() == Qt::Key_Return || p_event->key() == Qt::Key_Enter) {
         if (auto item = currentItem()) {
             emit itemActivated(item, currentColumn());
         }
