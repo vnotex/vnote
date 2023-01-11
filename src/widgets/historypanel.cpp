@@ -9,6 +9,7 @@
 #include <utils/iconutils.h>
 #include <utils/utils.h>
 #include <core/vnotex.h>
+#include <core/coreconfig.h>
 #include <core/exception.h>
 #include <core/configmgr.h>
 #include <core/historymgr.h>
@@ -118,8 +119,11 @@ void HistoryPanel::openItem(const QListWidgetItem *p_item)
     if (!isValidItem(p_item)) {
         return;
     }
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+    auto paras = QSharedPointer<FileOpenParameters>::create();
+    paras->m_mode = coreConfig.getDefaultOpenMode();
 
-    emit VNoteX::getInst().openFileRequested(getPath(p_item), QSharedPointer<FileOpenParameters>::create());
+    emit VNoteX::getInst().openFileRequested(getPath(p_item), paras);
 }
 
 void HistoryPanel::clearHistory()
