@@ -60,7 +60,7 @@ class SvgToImage {
         let url = domUrl.createObjectURL(blob);
         this.loadImage(url, p_opt, function(err, img) {
             domUrl.revokeObjectURL(url);
-            if (err) {
+            if (err || SvgToImage.checkCanvasToDataURL(img) === null) {
                 // try again for Safari 8.0, using simple encodeURIComponent
                 // this will fail with DOM content but at least it works with SVG.
                 let url2 = 'data:image/svg+xml,' + encodeURIComponent(p_svg.join(''));
@@ -73,5 +73,20 @@ class SvgToImage {
 
     static getUrl() {
         return window.URL || window.webkitURL || window.mozURL || window.msURL;
+    }
+
+    static checkCanvasToDataURL(p_image) {
+        let canvas = document.createElement('canvas');
+        let ctx = canvas.getContext('2d');
+        canvas.height = p_image.height;
+        canvas.width = p_image.width;
+        ctx.drawImage(p_image, 0, 0);
+        let dataUrl = null;
+        try {
+            dataUrl = canvas.toDataURL();
+        } catch (err) {
+
+        }
+        return dataUrl
     }
 }
