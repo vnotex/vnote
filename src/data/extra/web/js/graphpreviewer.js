@@ -188,7 +188,7 @@ class GraphPreviewer {
 
         if (p_svgNode.getAttribute('width').indexOf('%') != -1) {
             // Try maxWidth.
-            if (p_svgNode.style.maxWidth && p_svgNode.style.maxWidth.endsWith('px')) {
+            if (p_svgNode.style.maxWidth && p_svgNode.style.maxWidth.endsWith('px') && p_svgNode.style.maxWidth != "0px") {
                 p_svgNode.setAttribute('width', p_svgNode.style.maxWidth);
             } else {
                 // Set as window width.
@@ -220,10 +220,12 @@ class GraphPreviewer {
             return;
         }
 
-        if (p_svgNode.getAttribute('width').indexOf('%') == -1) {
+        let width = p_svgNode.getAttribute('width')
+        if (width && width.indexOf('%') == -1) {
             p_svgNode.width.baseVal.valueInSpecifiedUnits *= scaleFactor;
         }
-        if (p_svgNode.getAttribute('height').indexOf('%') == -1) {
+        let height = p_svgNode.getAttribute('height')
+        if (height && height.indexOf('%') == -1) {
             p_svgNode.height.baseVal.valueInSpecifiedUnits *= scaleFactor;
         }
     }
