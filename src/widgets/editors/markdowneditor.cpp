@@ -529,6 +529,10 @@ void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p
         *p_handled = true;
         return;
     }
+    if (processMultipleMideData(p_source)) {
+        *p_handled = true;
+        return;
+    }
 }
 
 bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source)
@@ -566,7 +570,7 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source)
             }
         }
 
-        insertImageFromUrl(reg.cap(2));
+        insertImageFromUrl(reg.cap(2), false);
         return true;
     }
 
@@ -610,9 +614,13 @@ bool MarkdownEditor::processImageFromMimeData(const QMimeData *p_source)
 
 bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source)
 {
+    const auto urls = p_source->urls();
+    if (urls.size() > 1) {
+        return false;
+    }
+
     QUrl url;
     if (p_source->hasUrls()) {
-        const auto urls = p_source->urls();
         if (urls.size() == 1) {
             url = urls[0];
         }
@@ -677,7 +685,7 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source)
         case 0:
         {
             // Insert As Image.
-            insertImageFromUrl(PathUtils::urlToPath(url));
+            insertImageFromUrl(PathUtils::urlToPath(url), false);
             return true;
         }
 
@@ -781,6 +789,76 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source)
     return false;
 }
 
+bool MarkdownEditor::processMultipleMideData(const QMimeData *p_source) {
+    bool isProcess = false;
+    const auto urls = p_source->urls();
+    if (urls.size() <= 1) {
+        return isProcess;
+    }
+
+    // Judgment if all QMimeData are images.
+    bool isAllImage = false;
+    for (const QUrl &url : urls) {
+        bool isImage = PathUtils::isImageUrl(PathUtils::urlToPath(url));
+        if (isAllImage != isImage) {
+            isAllImage = isImage;
+        }
+    }
+
+    SelectDialog dialog(tr("Insert multiple files from the Clipboard"), this);
+    // It is temporarily assumed that 50 files will have a performance problem prompt.
+    if (urls.size() >= 50) {
+        dialog.setWindowTitle(tr("Inserting too many files can cause performance problems"));
+    }
+    if (isAllImage) {
+        dialog.addSelection(tr("Insert As Image"), 0);
+    }
+    if (m_buffer->isAttachmentSupported()) {
+        dialog.addSelection(tr("Attach And Insert Link"), 1);
+    }
+    dialog.setFixedWidth(400);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        switch (dialog.getSelection()) {
+        case 0:
+        {
+            // Insert As Image.
+            for (const QUrl &url : urls) {
+                insertImageFromUrl(PathUtils::urlToPath(url), true);
+                m_textEdit->insertPlainText("\n\n");
+            }
+            isProcess = true;
+            break;
+        }
+        case 1:
+        {
+            // Attach And Insert Link.
+            for (const QUrl &url : urls) {
+                QString localFile = url.toLocalFile();
+                QStringList fileList;
+                fileList << localFile;
+                fileList = m_buffer->addAttachment(QString(), fileList);
+                // Update localFile to point to the attachment file.
+                localFile = fileList[0];
+                enterInsertModeIfApplicable();
+                vte::MarkdownUtils::typeLink(
+                            m_textEdit, QFileInfo(localFile).fileName(),
+                            getRelativeLink(localFile));
+
+                m_textEdit->insertPlainText("\n\n");
+            }
+            isProcess = true;
+            break;
+        }
+        default:
+            isProcess = false;
+            break;
+        }
+    }
+
+    return isProcess;
+}
+
 void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source)
 {
     QImage image = qvariant_cast<QImage>(p_source->imageData());
@@ -799,24 +877,32 @@ void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source)
     }
 }
 
-void MarkdownEditor::insertImageFromUrl(const QString &p_url)
+void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_useDefaultName)
 {
     ImageInsertDialog dialog(tr("Insert Image From URL"), "", "", "", false, this);
     dialog.setImagePath(p_url);
-    if (dialog.exec() == QDialog::Accepted) {
-        enterInsertModeIfApplicable();
-        if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
-            insertImageToBufferFromLocalFile(dialog.getImageTitle(),
-                                             dialog.getImageAltText(),
-                                             dialog.getImagePath(),
-                                             dialog.getScaledWidth());
-        } else {
-            auto image = dialog.getImage();
-            if (!image.isNull()) {
-                insertImageToBufferFromData(dialog.getImageTitle(),
-                                            dialog.getImageAltText(),
-                                            image,
-                                            dialog.getScaledWidth());
+    if (p_useDefaultName) {
+        insertImageToBufferFromLocalFile(dialog.getImageTitle(),
+                                         dialog.getImageAltText(),
+                                         dialog.getImagePath(),
+                                         dialog.getScaledWidth());
+    } else {
+        if (dialog.exec() == QDialog::Accepted) {
+            enterInsertModeIfApplicable();
+            if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
+                insertImageToBufferFromLocalFile(dialog.getImageTitle(),
+                                                 dialog.getImageAltText(),
+                                                 dialog.getImagePath(),
+                                                 dialog.getScaledWidth());
+            } else {
+                auto image = dialog.getImage();
+                if (!image.isNull()) {
+                    qDebug() << "insertImageToBufferFromData";
+                    insertImageToBufferFromData(dialog.getImageTitle(),
+                                                dialog.getImageAltText(),
+                                                image,
+                                                dialog.getScaledWidth());
+                }
             }
         }
     }
