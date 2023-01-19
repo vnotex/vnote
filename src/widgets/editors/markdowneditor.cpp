@@ -529,6 +529,7 @@ void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p
         *p_handled = true;
         return;
     }
+
     if (processMultipleMideData(p_source)) {
         *p_handled = true;
         return;
