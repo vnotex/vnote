@@ -155,8 +155,8 @@ hr {
     text-align: left;
     margin: 1em 0;
     border: none;
-    height: 2px;
-    background-color: #999999;
+    height: 1px;
+    background-color: #cccccc;
 }
 
 table {
