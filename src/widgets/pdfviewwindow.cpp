@@ -119,7 +119,8 @@ void PdfViewWindow::syncEditorFromBuffer()
     auto buffer = getBuffer();
     if (buffer) {
         const auto url = PathUtils::pathToUrl(buffer->getContentPath());
-        const auto urlStr = url.toString(QUrl::EncodeSpaces);
+        // Solution to ASCII problems, like these file names with these symbols # + &.
+        const auto urlStr = QUrl::toPercentEncoding(url.toString(QUrl::FullyDecoded));
         auto templateUrl = PathUtils::pathToUrl(HtmlTemplateHelper::getPdfViewerTemplatePath());
         templateUrl.setQuery("file=" + urlStr);
         m_viewer->setHtml(HtmlTemplateHelper::getPdfViewerTemplate(), templateUrl);
