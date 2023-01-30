@@ -1350,53 +1350,53 @@
 <context>
     <name>vnotex::HistoryPanel</name>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="72"/>
+        <location filename="../../../widgets/historypanel.cpp" line="71"/>
         <source>Clear</source>
         <translation type="unfinished">クリア</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="89"/>
+        <location filename="../../../widgets/historypanel.cpp" line="88"/>
         <source>&amp;Open</source>
         <translation type="unfinished">開く(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="99"/>
+        <location filename="../../../widgets/historypanel.cpp" line="98"/>
         <source>&amp;Locate Node</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="132"/>
+        <location filename="../../../widgets/historypanel.cpp" line="128"/>
         <source>Clear all the history?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="175"/>
+        <location filename="../../../widgets/historypanel.cpp" line="171"/>
         <source>Older</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="200"/>
+        <location filename="../../../widgets/historypanel.cpp" line="196"/>
         <source>Today</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="202"/>
+        <location filename="../../../widgets/historypanel.cpp" line="198"/>
         <source>Yesterday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="204"/>
+        <location filename="../../../widgets/historypanel.cpp" line="200"/>
         <source>Last 7 Days</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="216"/>
+        <location filename="../../../widgets/historypanel.cpp" line="212"/>
         <source>%1
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="219"/>
+        <location filename="../../../widgets/historypanel.cpp" line="215"/>
         <source>[%1] %2
 %3</source>
         <translation type="unfinished"></translation>
@@ -2227,7 +2227,7 @@ Remove them from the configuration?</source>
     <name>vnotex::MarkdownEditor</name>
     <message>
         <location filename="../../../widgets/editors/markdowneditor.cpp" line="250"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="746"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="738"/>
         <source>Insert Link</source>
         <translation>リンクを挿入</translation>
     </message>
@@ -2247,182 +2247,170 @@ Remove them from the configuration?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="551"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="588"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="658"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="547"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="584"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="650"/>
         <source>Insert From Clipboard</source>
         <translation>クリップボードから挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="552"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="548"/>
         <source>Insert From URL</source>
         <translation>URLから挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="553"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="549"/>
         <source>Insert From Image Data</source>
         <translation>イメージデータから挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="554"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="591"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="661"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="550"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="587"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="653"/>
         <source>Insert As Image Link</source>
         <translation>イメージリンクとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="589"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="660"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="814"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="585"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="652"/>
         <source>Insert As Image</source>
         <translation>イメージとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="590"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="676"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="586"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="668"/>
         <source>Insert As Text</source>
         <translation>テキストとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="663"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="655"/>
         <source>Insert As Relative Image Link</source>
         <translation>相対イメージリンクとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="667"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="659"/>
         <source>Insert As Link</source>
         <translation>リンクとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="669"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="661"/>
         <source>Insert As Relative Link</source>
         <translation>相対リンクとして挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="672"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="817"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="664"/>
         <source>Attach And Insert Link</source>
         <translation>リンクを添付して挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="678"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="670"/>
         <source>Insert File Content</source>
         <translation>ファイルの内容を挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="808"/>
-        <source>Insert multiple files from the Clipboard</source>
-        <translation>クリップボードから複数のファイルを挿入</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="811"/>
-        <source>Inserting too many files can cause performance problems</source>
-        <translation>に警告!!!ファイルを挿入しすぎるとパフォーマンスに問題が!!!</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="869"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="791"/>
         <source>Insert Image From Clipboard</source>
         <translation>クリップボードからイメージを挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="882"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="804"/>
         <source>Insert Image From URL</source>
         <translation>URLからイメージを挿入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1082"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="996"/>
         <source>&amp;Read</source>
         <translation>読み取り(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1100"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1014"/>
         <source>Rich Paste</source>
         <translation>リッチ貼り付け</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1100"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1014"/>
         <source>Paste as Plain Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1109"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1023"/>
         <source>Parse to Markdown and Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1121"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1035"/>
         <source>Insert Snippet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1663"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1577"/>
         <source>View Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1672"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1586"/>
         <source>Copy Image URL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1682"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1596"/>
         <source>Copy Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1739"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1653"/>
         <source>Copy In-Place Preview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1784"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1698"/>
         <source>Open Link</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1793"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1707"/>
         <source>Copy Link</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1225"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1139"/>
         <source>Fetching images to local...</source>
         <translation>ローカルにイメージを取得しています...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1226"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1529"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1140"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1443"/>
         <source>Abort</source>
         <translation>中止</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1231"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1145"/>
         <source>Fetch Images To Local</source>
         <translation>イメージをローカルに取得</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1258"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1172"/>
         <source>Fetching image (%1)</source>
         <translation>イメージ (%1) を取得しています</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1496"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1534"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1410"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1448"/>
         <source>Upload Images To Image Host</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1500"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1414"/>
         <source>None</source>
         <translation type="unfinished">なし</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1528"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1442"/>
         <source>Uploading local images...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1556"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1470"/>
         <source>Upload image (%1)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4349,7 +4337,7 @@ Description: %3</source>
 <context>
     <name>vnotex::SelectDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/selectdialog.cpp" line="55"/>
+        <location filename="../../../widgets/dialogs/selectdialog.cpp" line="54"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>

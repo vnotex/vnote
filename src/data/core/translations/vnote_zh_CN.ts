@@ -1367,54 +1367,54 @@
 <context>
     <name>vnotex::HistoryPanel</name>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="72"/>
+        <location filename="../../../widgets/historypanel.cpp" line="71"/>
         <source>Clear</source>
         <translation>清空</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="89"/>
+        <location filename="../../../widgets/historypanel.cpp" line="88"/>
         <source>&amp;Open</source>
         <translation>打开(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="99"/>
+        <location filename="../../../widgets/historypanel.cpp" line="98"/>
         <source>&amp;Locate Node</source>
         <translation>定位节点(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="132"/>
+        <location filename="../../../widgets/historypanel.cpp" line="128"/>
         <source>Clear all the history?</source>
         <translation>清空所有历史？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="175"/>
+        <location filename="../../../widgets/historypanel.cpp" line="171"/>
         <source>Older</source>
         <translation>更早</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="200"/>
+        <location filename="../../../widgets/historypanel.cpp" line="196"/>
         <source>Today</source>
         <translation>今天</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="202"/>
+        <location filename="../../../widgets/historypanel.cpp" line="198"/>
         <source>Yesterday</source>
         <translation>昨天</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="204"/>
+        <location filename="../../../widgets/historypanel.cpp" line="200"/>
         <source>Last 7 Days</source>
         <translation>过去7天</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="216"/>
+        <location filename="../../../widgets/historypanel.cpp" line="212"/>
         <source>%1
 %2</source>
         <translation>%1
 %2</translation>
     </message>
     <message>
-        <location filename="../../../widgets/historypanel.cpp" line="219"/>
+        <location filename="../../../widgets/historypanel.cpp" line="215"/>
         <source>[%1] %2
 %3</source>
         <translation>[%1] %2
@@ -2251,7 +2251,7 @@ Remove them from the configuration?</source>
     <name>vnotex::MarkdownEditor</name>
     <message>
         <location filename="../../../widgets/editors/markdowneditor.cpp" line="250"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="746"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="738"/>
         <source>Insert Link</source>
         <translation>插入链接</translation>
     </message>
@@ -2271,182 +2271,170 @@ Remove them from the configuration?</source>
         <translation>更多高级粘贴，请尝试编辑器上下文菜单中的“多功能粘贴”和“解析为Markdown并粘贴”功能</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="551"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="588"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="658"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="547"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="584"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="650"/>
         <source>Insert From Clipboard</source>
         <translation>从剪切板插入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="552"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="548"/>
         <source>Insert From URL</source>
         <translation>从URL插入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="553"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="549"/>
         <source>Insert From Image Data</source>
         <translation>从图片数据插入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="554"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="591"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="661"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="550"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="587"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="653"/>
         <source>Insert As Image Link</source>
         <translation>插入为图片链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="589"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="660"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="814"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="585"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="652"/>
         <source>Insert As Image</source>
         <translation>插入为图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="590"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="676"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="586"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="668"/>
         <source>Insert As Text</source>
         <translation>插入为文本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="663"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="655"/>
         <source>Insert As Relative Image Link</source>
         <translation>插入为相对图片链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="667"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="659"/>
         <source>Insert As Link</source>
         <translation>插入为链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="669"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="661"/>
         <source>Insert As Relative Link</source>
         <translation>插入为相对链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="672"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="817"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="664"/>
         <source>Attach And Insert Link</source>
         <translation>添加为附件并插入链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="678"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="670"/>
         <source>Insert File Content</source>
         <translation>插入文件内容</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="808"/>
-        <source>Insert multiple files from the Clipboard</source>
-        <translation>从剪贴板插入多个文件</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="811"/>
-        <source>Inserting too many files can cause performance problems</source>
-        <translation>注意!!!插入太多文件会有性能问题!!!</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="869"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="791"/>
         <source>Insert Image From Clipboard</source>
         <translation>从剪切板插入图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="882"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="804"/>
         <source>Insert Image From URL</source>
         <translation>从URL插入图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1082"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="996"/>
         <source>&amp;Read</source>
         <translation>阅读(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1100"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1014"/>
         <source>Rich Paste</source>
         <translation>多功能粘贴</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1100"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1014"/>
         <source>Paste as Plain Text</source>
         <translation>粘贴为纯文本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1109"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1023"/>
         <source>Parse to Markdown and Paste</source>
         <translation>解析为Markodwn并粘贴</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1121"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1035"/>
         <source>Insert Snippet</source>
         <translation>插入片段</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1663"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1577"/>
         <source>View Image</source>
         <translation>查看图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1672"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1586"/>
         <source>Copy Image URL</source>
         <translation>复制图片地址</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1682"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1596"/>
         <source>Copy Image</source>
         <translation>复制图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1739"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1653"/>
         <source>Copy In-Place Preview</source>
         <translation>复制原地预览</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1784"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1698"/>
         <source>Open Link</source>
         <translation>打开链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1793"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1707"/>
         <source>Copy Link</source>
         <translation>复制链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1225"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1139"/>
         <source>Fetching images to local...</source>
         <translation>正在获取图片到本地...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1226"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1529"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1140"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1443"/>
         <source>Abort</source>
         <translation>终止</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1231"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1145"/>
         <source>Fetch Images To Local</source>
         <translation>获取图片到本地</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1258"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1172"/>
         <source>Fetching image (%1)</source>
         <translation>正在获取图片(%1)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1496"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1534"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1410"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1448"/>
         <source>Upload Images To Image Host</source>
         <translation>上传图片到图床</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1500"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1414"/>
         <source>None</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1528"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1442"/>
         <source>Uploading local images...</source>
         <translation>正在上传本地图片...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1556"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1470"/>
         <source>Upload image (%1)</source>
         <translation>上传图片(%1)</translation>
     </message>
@@ -4413,7 +4401,7 @@ Description: %3</source>
 <context>
     <name>vnotex::SelectDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/selectdialog.cpp" line="55"/>
+        <location filename="../../../widgets/dialogs/selectdialog.cpp" line="54"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
