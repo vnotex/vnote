@@ -166,11 +166,11 @@ namespace vnotex
         bool processUrlFromMimeData(const QMimeData *p_source);
 
         // Return true if it is processed.
-        bool processMultipleMideData(const QMimeData *p_source);
+        bool processMultipleMimeData(const QMimeData *p_source);
 
         void insertImageFromMimeData(const QMimeData *p_source);
 
-        void insertImageFromUrl(const QString &p_url, bool p_useDefaultName);
+        void insertImageFromUrl(const QString &p_url, bool p_quiet = false);
 
         QString getRelativeLink(const QString &p_path);
 
