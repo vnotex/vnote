@@ -166,7 +166,7 @@ namespace vnotex
         bool processUrlFromMimeData(const QMimeData *p_source);
 
         // Return true if it is processed.
-        bool processMultipleMimeData(const QMimeData *p_source);
+        bool processMultipleUrlsFromMimeData(const QMimeData *p_source);
 
         void insertImageFromMimeData(const QMimeData *p_source);
 

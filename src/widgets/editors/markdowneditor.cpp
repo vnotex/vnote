@@ -530,7 +530,7 @@ void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p
         return;
     }
 
-    if (processMultipleMimeData(p_source)) {
+    if (processMultipleUrlsFromMimeData(p_source)) {
         *p_handled = true;
         return;
     }
@@ -790,7 +790,7 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source)
     return false;
 }
 
-bool MarkdownEditor::processMultipleMimeData(const QMimeData *p_source) {
+bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) {
     const auto urls = p_source->urls();
     if (urls.size() <= 1) {
         return false;
