@@ -791,12 +791,12 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source)
 }
 
 bool MarkdownEditor::processMultipleMimeData(const QMimeData *p_source) {
-    bool isProcess = false;
     const auto urls = p_source->urls();
     if (urls.size() <= 1) {
-        return isProcess;
+        return false;
     }
 
+    bool isProcess = false;
     // Judgment if all QMimeData are images.
     bool isAllImage = true;
     for (const QUrl &url : urls) {
