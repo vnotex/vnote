@@ -796,7 +796,7 @@ bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) 
         return false;
     }
 
-    bool isProcess = false;
+    bool isProcessed = false;
     // Judgment if all QMimeData are images.
     bool isAllImage = true;
     for (const QUrl &url : urls) {
@@ -824,7 +824,7 @@ bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) 
                 insertImageFromUrl(PathUtils::urlToPath(url), true);
                 m_textEdit->insertPlainText("\n\n");
             }
-            isProcess = true;
+            isProcessed = true;
             break;
         }
         case 1:
@@ -835,24 +835,21 @@ bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) 
                 fileList << url.toLocalFile();
             }
             fileList = m_buffer->addAttachment(QString(), fileList);
+            enterInsertModeIfApplicable();
             for (int i = 0; i < fileList.length(); ++i) {
-                enterInsertModeIfApplicable();
                 vte::MarkdownUtils::typeLink(
                             m_textEdit, QFileInfo(fileList[i]).fileName(),
                             getRelativeLink(fileList[i]));
 
                 m_textEdit->insertPlainText("\n\n");
             }
-            isProcess = true;
+            isProcessed = true;
             break;
         }
-        default:
-            isProcess = false;
-            break;
         }
     }
 
-    return isProcess;
+    return isProcessed;
 }
 
 void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source)
@@ -875,11 +872,11 @@ void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source)
 
 void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet)
 {
-    ImageInsertDialog dialog(tr("Insert Image From URL"), "", "", "", false, this);
-    dialog.setImagePath(p_url);
     if (p_quiet) {
         insertImageToBufferFromLocalFile("", "", p_url, 0);
     } else {
+        ImageInsertDialog dialog(tr("Insert Image From URL"), "", "", "", false, this);
+        dialog.setImagePath(p_url);
         if (dialog.exec() == QDialog::Accepted) {
             enterInsertModeIfApplicable();
             if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
