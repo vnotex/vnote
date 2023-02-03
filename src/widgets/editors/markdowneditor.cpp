@@ -529,6 +529,11 @@ void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p
         *p_handled = true;
         return;
     }
+
+    if (processMultipleUrlsFromMimeData(p_source)) {
+        *p_handled = true;
+        return;
+    }
 }
 
 bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source)
@@ -610,9 +615,13 @@ bool MarkdownEditor::processImageFromMimeData(const QMimeData *p_source)
 
 bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source)
 {
+    const auto urls = p_source->urls();
+    if (urls.size() > 1) {
+        return false;
+    }
+
     QUrl url;
     if (p_source->hasUrls()) {
-        const auto urls = p_source->urls();
         if (urls.size() == 1) {
             url = urls[0];
         }
@@ -781,6 +790,68 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source)
     return false;
 }
 
+bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) {
+    const auto urls = p_source->urls();
+    if (urls.size() <= 1) {
+        return false;
+    }
+
+    bool isProcessed = false;
+    // Judgment if all QMimeData are images.
+    bool isAllImage = true;
+    for (const QUrl &url : urls) {
+        if (!PathUtils::isImageUrl(PathUtils::urlToPath(url))) {
+            isAllImage = false;
+            break;
+        }
+    }
+
+    SelectDialog dialog(tr("Insert From Clipboard (%n items)", "", urls.size()), this);
+    if (isAllImage) {
+        dialog.addSelection(tr("Insert As Image"), 0);
+    }
+    if (m_buffer->isAttachmentSupported()) {
+        dialog.addSelection(tr("Attach And Insert Link"), 1);
+    }
+    dialog.setMinimumWidth(400);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        switch (dialog.getSelection()) {
+        case 0:
+        {
+            // Insert As Image.
+            for (const QUrl &url : urls) {
+                insertImageFromUrl(PathUtils::urlToPath(url), true);
+                m_textEdit->insertPlainText("\n\n");
+            }
+            isProcessed = true;
+            break;
+        }
+        case 1:
+        {
+            // Attach And Insert Link.
+            QStringList fileList;
+            for (const QUrl &url : urls) {
+                fileList << url.toLocalFile();
+            }
+            fileList = m_buffer->addAttachment(QString(), fileList);
+            enterInsertModeIfApplicable();
+            for (int i = 0; i < fileList.length(); ++i) {
+                vte::MarkdownUtils::typeLink(
+                            m_textEdit, QFileInfo(fileList[i]).fileName(),
+                            getRelativeLink(fileList[i]));
+
+                m_textEdit->insertPlainText("\n\n");
+            }
+            isProcessed = true;
+            break;
+        }
+        }
+    }
+
+    return isProcessed;
+}
+
 void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source)
 {
     QImage image = qvariant_cast<QImage>(p_source->imageData());
@@ -799,24 +870,28 @@ void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source)
     }
 }
 
-void MarkdownEditor::insertImageFromUrl(const QString &p_url)
+void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet)
 {
-    ImageInsertDialog dialog(tr("Insert Image From URL"), "", "", "", false, this);
-    dialog.setImagePath(p_url);
-    if (dialog.exec() == QDialog::Accepted) {
-        enterInsertModeIfApplicable();
-        if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
-            insertImageToBufferFromLocalFile(dialog.getImageTitle(),
-                                             dialog.getImageAltText(),
-                                             dialog.getImagePath(),
-                                             dialog.getScaledWidth());
-        } else {
-            auto image = dialog.getImage();
-            if (!image.isNull()) {
-                insertImageToBufferFromData(dialog.getImageTitle(),
-                                            dialog.getImageAltText(),
-                                            image,
-                                            dialog.getScaledWidth());
+    if (p_quiet) {
+        insertImageToBufferFromLocalFile("", "", p_url, 0);
+    } else {
+        ImageInsertDialog dialog(tr("Insert Image From URL"), "", "", "", false, this);
+        dialog.setImagePath(p_url);
+        if (dialog.exec() == QDialog::Accepted) {
+            enterInsertModeIfApplicable();
+            if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
+                insertImageToBufferFromLocalFile(dialog.getImageTitle(),
+                                                 dialog.getImageAltText(),
+                                                 dialog.getImagePath(),
+                                                 dialog.getScaledWidth());
+            } else {
+                auto image = dialog.getImage();
+                if (!image.isNull()) {
+                    insertImageToBufferFromData(dialog.getImageTitle(),
+                                                dialog.getImageAltText(),
+                                                image,
+                                                dialog.getScaledWidth());
+                }
             }
         }
     }
