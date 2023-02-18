@@ -50,6 +50,7 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win)
         WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Global_WakeUp));
     }
 
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     {
         auto act = menu->addAction(MainWindow::tr("Minimize Main Window"),
                                    menu,
@@ -59,6 +60,7 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win)
 
         WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Global_Minimize));
     }
+#endif
 
     menu->addSeparator();
 
