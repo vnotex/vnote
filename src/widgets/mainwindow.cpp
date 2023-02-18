@@ -626,6 +626,11 @@ void MainWindow::setupShortcuts()
         auto qHotkey = new QHotkey(wakeUp, true, this);
         connect(qHotkey , &QHotkey::activated, this, &MainWindow::showMainWindow);
     }
+    QKeySequence minimize(coreConfig.getShortcut(CoreConfig::Global_Minimize));
+    if (!minimize.isEmpty()) {
+        auto qHotkey = new QHotkey(minimize, true, this);
+        connect(qHotkey , &QHotkey::activated, this, &MainWindow::minimizeMainWindow);
+    }
 }
 
 void MainWindow::setStayOnTop(bool p_enabled)
@@ -686,6 +691,11 @@ void MainWindow::showMainWindow()
     }
 
     activateWindow();
+}
+
+void MainWindow::minimizeMainWindow()
+{
+    showMinimized();
 }
 
 void MainWindow::quitApp()

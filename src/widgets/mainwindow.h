@@ -67,6 +67,8 @@ namespace vnotex
 
         void showMainWindow();
 
+        void minimizeMainWindow();
+
         void quitApp();
 
         void openFiles(const QStringList &p_files);

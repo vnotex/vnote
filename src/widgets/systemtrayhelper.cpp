@@ -50,6 +50,16 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win)
         WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Global_WakeUp));
     }
 
+    {
+        auto act = menu->addAction(MainWindow::tr("Minimize Main Window"),
+                                   menu,
+                                   [p_win]() {
+                                       p_win->showMinimized();
+                                   });
+
+        WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Global_Minimize));
+    }
+
     menu->addSeparator();
 
     menu->addAction(MainWindow::tr("Quit"),

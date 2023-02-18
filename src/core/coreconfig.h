@@ -78,6 +78,7 @@ namespace vnotex
             Cut,
             Properties,
             Global_WakeUp,
+            Global_Minimize,
             MaxShortcut
         };
         Q_ENUM(Shortcut)

@@ -69,7 +69,8 @@
             "Cut" : "Ctrl+X",
             "Paste" : "Ctrl+V",
             "Properties" : "F2",
-            "Global_WakeUp" : "Ctrl+Alt+U"
+            "Global_WakeUp" : "Ctrl+Alt+U",
+            "Global_Minimize" : "Ctrl+Alt+M"
         },
         "file_type_suffixes" : [
             {
