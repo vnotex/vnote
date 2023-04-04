@@ -8,6 +8,7 @@
 #include <QProgressDialog>
 
 #include "titlebar.h"
+#include "dialogs/selectdialog.h"
 #include "dialogs/newnotebookdialog.h"
 #include "dialogs/newnotebookfromfolderdialog.h"
 #include "dialogs/newfolderdialog.h"
@@ -32,6 +33,7 @@
 #include <core/events.h>
 #include <core/exception.h>
 #include <core/fileopenparameters.h>
+#include "core/buffer/filetypehelper.h"
 #include "navigationmodemgr.h"
 #include "widgetsfactory.h"
 
@@ -264,22 +266,57 @@ void NotebookExplorer::newFolder()
     }
 }
 
-void NotebookExplorer::newNote()
+void NotebookExplorer::newNote(const QVector<int> &p_type)
 {
-    auto node = checkNotebookAndGetCurrentExploredFolderNode();
-    if (!node) {
-        return;
-    }
+    qDebug() << "--> 4 notebook explorer new note" << p_type;
+    if (p_type.length() < 1) {
+        auto node = checkNotebookAndGetCurrentExploredFolderNode();
+        if (!node) {
+            return;
+        }
+        NewNoteDialog dialog(node, VNoteX::getInst().getMainWindow());
+        if (dialog.exec() == QDialog::Accepted) {
+            m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
 
-    NewNoteDialog dialog(node, VNoteX::getInst().getMainWindow());
-    if (dialog.exec() == QDialog::Accepted) {
-        m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
-
-        // Open it right now.
-        auto paras = QSharedPointer<FileOpenParameters>::create();
-        paras->m_mode = ViewWindowMode::Edit;
-        paras->m_newFile = true;
-        emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
+            // Open it right now.
+            auto paras = QSharedPointer<FileOpenParameters>::create();
+            paras->m_mode = ViewWindowMode::Edit;
+            paras->m_newFile = true;
+            emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
+        }
+    } else if (p_type.length() == 1)  {
+        // TODO Quickly create a note based on the current type.
+    } else {
+        SelectDialog dialog(tr("Quick create note"), this);
+        for (const int typ : p_type) {
+            switch (typ) {
+                case FileType::Markdown:
+                    dialog.addSelection("Markdown", 0);
+                    break;
+                case FileType::Text:
+                    dialog.addSelection("Text", 1);
+                    break;
+                case FileType::MindMap:
+                    dialog.addSelection("MindMap", 2);
+                    break;
+            }
+        }
+        if (dialog.exec() == QDialog::Accepted) {
+            switch (dialog.getSelection()) {
+                case FileType::Markdown:
+                    qDebug() << "md";
+                    // TODO Quickly create md
+                    break;
+                case FileType::Text:
+                    qDebug() << "text";
+                    // TODO Quickly create text
+                    break;
+                case FileType::MindMap:
+                    qDebug() << "mindmap";
+                    // TODO Quickly create mindmap
+                    break;
+            }
+        }
     }
 }
 

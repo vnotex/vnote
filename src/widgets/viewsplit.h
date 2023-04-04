@@ -92,6 +92,8 @@ namespace vnotex
 
         void distributeSplitsRequested();
 
+        void newNoteRequested(ViewSplit *p_split, const QVector<int> &p_type);
+
         void removeSplitRequested(ViewSplit *p_split);
 
         void removeSplitAndWorkspaceRequested(ViewSplit *p_split);
@@ -118,6 +120,8 @@ namespace vnotex
         void dropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
 
     private slots:
+        void newTab(int p_idx);
+
         void closeTab(int p_idx);
 
     private:

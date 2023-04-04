@@ -3,6 +3,7 @@
 
 #include "settingspage.h"
 
+class QCheckBox;
 class QGroupBox;
 class QPlainTextEdit;
 
@@ -30,9 +31,18 @@ namespace vnotex
 
         QGroupBox *setupQuickAccessGroup();
 
+        QGroupBox *setupQuickCreateNotePageGroup();
+
         LocationInputWithBrowseButton *m_flashPageInput = nullptr;
 
         QPlainTextEdit *m_quickAccessTextEdit = nullptr;
+
+        LocationInputWithBrowseButton *m_quickCreateNoteStorePath = nullptr;
+
+        QCheckBox *m_quickMarkdownCheckBox = nullptr;
+        QCheckBox *m_quickTextCheckBox = nullptr;
+//        QCheckBox *m_quickPdfCheckBox = nullptr;
+        QCheckBox *m_quickMindmapCheckBox = nullptr;
     };
 }
 

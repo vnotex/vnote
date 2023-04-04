@@ -49,7 +49,7 @@ namespace vnotex
 
         void newFolder();
 
-        void newNote();
+        void newNote(const QVector<int> &p_type);
 
         void importFile();
 

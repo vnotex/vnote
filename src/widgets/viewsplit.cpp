@@ -25,6 +25,7 @@
 #include <core/coreconfig.h>
 #include "propertydefs.h"
 #include "fileopenparameters.h"
+#include "sessionconfig.h"
 
 using namespace vnotex;
 
@@ -80,7 +81,10 @@ void ViewSplit::setupUI()
                 closeTab(p_idx);
             });
     connect(this, &QTabWidget::tabBarDoubleClicked,
-            this, &ViewSplit::closeTab);
+            this, [this](int p_idx) {
+                newTab(p_idx);
+                closeTab(p_idx);
+            });
     connect(this, &QTabWidget::tabBarClicked,
             this, [this](int p_idx) {
                 Q_UNUSED(p_idx);
@@ -708,6 +712,17 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
                 });
         WidgetUtils::addActionShortcutText(splitAct,
                                            coreConfig.getShortcut(CoreConfig::Shortcut::MoveOneSplitDown));
+    }
+}
+
+void ViewSplit::newTab(int p_idx)
+{
+    auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+
+    if (p_idx == -1) {
+        const auto &quickCreateNoteType = sessionConfig.getQuickCreateNoteType();
+        qDebug() << "--> 2 view split new tab" << quickCreateNoteType;
+        emit newNoteRequested(this, quickCreateNoteType);
     }
 }
 

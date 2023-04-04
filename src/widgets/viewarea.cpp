@@ -237,6 +237,13 @@ ViewSplit *ViewArea::createViewSplit(QWidget *p_parent, ID p_viewSplitId)
     }
 
     auto split = new ViewSplit(m_workspaces, workspace, p_viewSplitId, p_parent);
+    auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+    connect(split, &ViewSplit::newNoteRequested,
+            this, [&sessionConfig]() {
+                const auto &quickCreateNoteType = sessionConfig.getQuickCreateNoteType();
+                qDebug() << "--> 3 view area new note req" << quickCreateNoteType;
+                emit VNoteX::getInst().newNoteRequested(quickCreateNoteType);
+            });
     connect(split, &ViewSplit::viewWindowCloseRequested,
             this, [this](ViewWindow *p_win) {
                 closeViewWindow(p_win, false, true);

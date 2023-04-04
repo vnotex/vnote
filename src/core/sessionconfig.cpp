@@ -11,6 +11,8 @@
 #include "mainconfig.h"
 #include "historymgr.h"
 
+#include "core/buffer/filetypehelper.h"
+
 using namespace vnotex;
 
 bool SessionConfig::NotebookItem::operator==(const NotebookItem &p_other) const
@@ -136,6 +138,9 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
     if (m_externalMediaDefaultPath.isEmpty()) {
         m_externalMediaDefaultPath = QDir::homePath();
     }
+
+    m_quickCreateNoteStorePath = readString(coreObj, QStringLiteral("quick_create_note_store_path"));
+    m_quickCreateNoteType = stringListToFileType(readStringList(coreObj, QStringLiteral("quick_create_note_type")));
 }
 
 QJsonObject SessionConfig::saveCore() const
@@ -151,6 +156,8 @@ QJsonObject SessionConfig::saveCore() const
     coreObj[QStringLiteral("flash_page")] = m_flashPage;
     writeStringList(coreObj, QStringLiteral("quick_access"), m_quickAccessFiles);
     coreObj[QStringLiteral("external_media_default_path")] = m_externalMediaDefaultPath;
+    coreObj[QStringLiteral("quick_create_note_store_path")] = m_quickCreateNoteStorePath;
+    writeStringList(coreObj, QStringLiteral("quick_create_note_type"), fileTypeToStringList(m_quickCreateNoteType));
     return coreObj;
 }
 
@@ -540,4 +547,70 @@ QJsonObject SessionConfig::saveExportOption() const
     obj[QStringLiteral("custom_options")] = customArr;
 
     return obj;
+}
+
+const QString &SessionConfig::getQuickCreateNoteStorePath() const
+{
+    return m_quickCreateNoteStorePath;
+}
+
+void SessionConfig::setQuickCreateNoteStorePath(const QString &p_path)
+{
+    updateConfig(m_quickCreateNoteStorePath, p_path, this);
+}
+
+const QVector<int> &SessionConfig::getQuickCreateNoteType() const
+{
+    return m_quickCreateNoteType;
+}
+
+void SessionConfig::setQuickCreateNoteType(const QVector<int> &p_type)
+{
+    qDebug() << "--> 1 set note type" << p_type;
+    updateConfig(m_quickCreateNoteType, p_type, this);
+}
+
+QStringList SessionConfig::fileTypeToStringList(const QVector<int> &p_type) const
+{
+    QStringList list;
+    for (const int typ : p_type) {
+        switch (typ) {
+            case FileType::Markdown:
+                list << "Markdown";
+                break;
+            case FileType::Text:
+                list << "Text";
+                break;
+            // case FileType::Pdf:
+            //     list << "Pdf";
+            //     break;
+            case FileType::MindMap:
+                list << "MindMap";
+                break;
+            // case FileType::Others:
+            //     list << "Others";
+            //     break;
+            default:
+                break;
+        }
+    }
+    return list;
+}
+
+QVector<int> SessionConfig::stringListToFileType(const QStringList &strList) const
+{
+    QVector<int> vec;
+    for (const QString &str : strList) {
+        if (str == "Markdown" || str == "md")
+            vec.append(FileType::Markdown);
+        else if (str == "Text" || str == "txt")
+            vec.append(FileType::Text);
+        // else if (str == "Pdf")
+        //     vec.append(Pdf);
+        else if (str == "MindMap" || str == "mindmap")
+            vec.append(FileType::MindMap);
+        // else if (str == "Others")
+        //     vec.append(Others);
+    }
+    return vec;
 }
