@@ -269,7 +269,7 @@ void NotebookExplorer::newFolder()
 
 void NotebookExplorer::newNote(const QVector<int> &p_type, const QString &p_path)
 {
-    if (p_type.length() < 1) {
+    if (p_type.length() <= c_defaultCreateNote) {
         auto node = checkNotebookAndGetCurrentExploredFolderNode();
         if (!node) {
             return;
@@ -284,7 +284,7 @@ void NotebookExplorer::newNote(const QVector<int> &p_type, const QString &p_path
             paras->m_newFile = true;
             emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
         }
-    } else if (p_type.length() == 1)  {
+    } else if (p_type.length() == c_singleQuickNote)  {
         quickNote(p_type.first(), p_path);
     } else {
         SelectDialog dialog(tr("Quick Note"), this);

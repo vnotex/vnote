@@ -98,6 +98,10 @@ namespace vnotex
         NotebookExplorerSession m_session;
 
         bool m_sessionLoaded = false;
+
+        static const int c_defaultCreateNote = 0;
+
+        static const int c_singleQuickNote = 1;
     };
 } // ns vnotex
 
