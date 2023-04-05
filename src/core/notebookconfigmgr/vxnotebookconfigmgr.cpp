@@ -241,6 +241,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::newNode(Node *p_parent,
     Q_ASSERT(p_parent && p_parent->isContainer() && !p_name.isEmpty());
 
     QSharedPointer<Node> node;
+
     if (p_flags & Node::Flag::Content) {
         Q_ASSERT(!(p_flags & Node::Flag::Container));
         node = newFileNode(p_parent, p_name, p_content, true, NodeParameters());
