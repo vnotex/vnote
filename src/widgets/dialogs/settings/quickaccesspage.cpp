@@ -55,7 +55,7 @@ void QuickAccessPage::loadInternal()
     }
 
     {
-        m_quickNoteStorePath->setText(sessionConfig.getQuickNoteStorePath());
+        m_quickNoteStorePath->setText(sessionConfig.getQuickNoteStoragePath());
 
         for(int typ : sessionConfig.getQuickNoteType()) {
             if (FileType::Markdown == typ) {
@@ -87,7 +87,7 @@ bool QuickAccessPage::saveInternal()
     {
         auto storePath = m_quickNoteStorePath->text();
         if (!storePath.isEmpty()) {
-            sessionConfig.setQuickNoteStorePath(static_cast<QString>(storePath));
+            sessionConfig.setQuickNoteStoragePath(static_cast<QString>(storePath));
         }
 
         QVector<int> createModeList = QVector<int>();

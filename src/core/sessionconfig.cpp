@@ -139,7 +139,7 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
         m_externalMediaDefaultPath = QDir::homePath();
     }
 
-    m_quickNoteStorePath = readString(coreObj, QStringLiteral("quick_note_store_path"));
+    m_quickNoteStoragePath = readString(coreObj, QStringLiteral("quick_note_storage_path"));
     m_quickNoteType = stringListToFileType(readStringList(coreObj, QStringLiteral("quick_note_type")));
 }
 
@@ -156,8 +156,8 @@ QJsonObject SessionConfig::saveCore() const
     coreObj[QStringLiteral("flash_page")] = m_flashPage;
     writeStringList(coreObj, QStringLiteral("quick_access"), m_quickAccessFiles);
     coreObj[QStringLiteral("external_media_default_path")] = m_externalMediaDefaultPath;
-    coreObj[QStringLiteral("quick_create_note_store_path")] = m_quickNoteStorePath;
-    writeStringList(coreObj, QStringLiteral("quick_create_note_type"), fileTypeToStringList(m_quickNoteType));
+    coreObj[QStringLiteral("quick_note_storage_path")] = m_quickNoteStoragePath;
+    writeStringList(coreObj, QStringLiteral("quick_note_type"), fileTypeToStringList(m_quickNoteType));
     return coreObj;
 }
 
@@ -549,14 +549,14 @@ QJsonObject SessionConfig::saveExportOption() const
     return obj;
 }
 
-const QString &SessionConfig::getQuickNoteStorePath() const
+const QString &SessionConfig::getQuickNoteStoragePath() const
 {
-    return m_quickNoteStorePath;
+    return m_quickNoteStoragePath;
 }
 
-void SessionConfig::setQuickNoteStorePath(const QString &p_path)
+void SessionConfig::setQuickNoteStoragePath(const QString &p_path)
 {
-    updateConfig(m_quickNoteStorePath, p_path, this);
+    updateConfig(m_quickNoteStoragePath, p_path, this);
 }
 
 const QVector<int> &SessionConfig::getQuickNoteType() const

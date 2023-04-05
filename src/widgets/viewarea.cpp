@@ -241,7 +241,7 @@ ViewSplit *ViewArea::createViewSplit(QWidget *p_parent, ID p_viewSplitId)
     connect(split, &ViewSplit::newNoteRequested,
             this, [&sessionConfig]() {
                 QVector<int> p_type = sessionConfig.getQuickNoteType();
-                QString p_path = sessionConfig.getQuickNoteStorePath();
+                QString p_path = sessionConfig.getQuickNoteStoragePath();
                 emit VNoteX::getInst().newNoteRequested(p_type, p_path);
             });
     connect(split, &ViewSplit::viewWindowCloseRequested,

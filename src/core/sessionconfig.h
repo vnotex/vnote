@@ -149,8 +149,8 @@ namespace vnotex
         void removeHistory(const QString &p_itemPath);
         void clearHistory();
 
-        const QString &getQuickNoteStorePath() const;
-        void setQuickNoteStorePath(const QString &p_path);
+        const QString &getQuickNoteStoragePath() const;
+        void setQuickNoteStoragePath(const QString &p_path);
 
         const QVector<int> &getQuickNoteType() const;
         void setQuickNoteType(const QVector<int> &p_type);
@@ -223,7 +223,7 @@ namespace vnotex
         // Default folder path to open for external media like images and files.
         QString m_externalMediaDefaultPath;
 
-        QString m_quickNoteStorePath;
+        QString m_quickNoteStoragePath;
         QVector<int> m_quickNoteType;
 
         QStringList fileTypeToStringList(const QVector<int> &p_type) const;

@@ -720,7 +720,7 @@ void ViewSplit::newTab(int p_idx)
     if (p_idx == -1) {
         auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
         QVector<int> p_type = sessionConfig.getQuickNoteType();
-        QString p_path = sessionConfig.getQuickNoteStorePath();
+        QString p_path = sessionConfig.getQuickNoteStoragePath();
         emit newNoteRequested(this, p_type, p_path);
     }
 }
