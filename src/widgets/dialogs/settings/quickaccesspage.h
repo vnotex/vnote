@@ -37,7 +37,7 @@ namespace vnotex
 
         QPlainTextEdit *m_quickAccessTextEdit = nullptr;
 
-        LocationInputWithBrowseButton *m_quickNoteStorePath;
+        LocationInputWithBrowseButton *m_quickNoteStoragePath;
 
         QCheckBox *m_quickMarkdownCheckBox = nullptr;
         QCheckBox *m_quickTextCheckBox = nullptr;

@@ -34,8 +34,8 @@ void QuickAccessPage::setupUI()
     auto flashPageBox = setupFlashPageGroup();
     mainLayout->addWidget(flashPageBox);
 
-    auto quickCreateNoteBox = setupQuickNotePageGroup();
-    mainLayout->addWidget(quickCreateNoteBox);
+    auto quickNoteBox = setupQuickNotePageGroup();
+    mainLayout->addWidget(quickNoteBox);
 
     auto quickAccessBox = setupQuickAccessGroup();
     mainLayout->addWidget(quickAccessBox);
@@ -55,7 +55,7 @@ void QuickAccessPage::loadInternal()
     }
 
     {
-        m_quickNoteStorePath->setText(sessionConfig.getQuickNoteStoragePath());
+        m_quickNoteStoragePath->setText(sessionConfig.getQuickNoteStoragePath());
 
         for(int typ : sessionConfig.getQuickNoteType()) {
             if (FileType::Markdown == typ) {
@@ -85,22 +85,22 @@ bool QuickAccessPage::saveInternal()
     }
 
     {
-        auto storePath = m_quickNoteStorePath->text();
-        if (!storePath.isEmpty()) {
-            sessionConfig.setQuickNoteStoragePath(static_cast<QString>(storePath));
+        auto storagePath = m_quickNoteStoragePath->text();
+        if (!storagePath.isEmpty()) {
+            sessionConfig.setQuickNoteStoragePath(static_cast<QString>(storagePath));
         }
 
-        QVector<int> createModeList = QVector<int>();
+        QVector<int> quickNoteTypeList = QVector<int>();
         if (m_quickMarkdownCheckBox->isChecked()) {
-            createModeList.append(FileType::Markdown);
+            quickNoteTypeList.append(FileType::Markdown);
         }
         if (m_quickTextCheckBox->isChecked()) {
-            createModeList.append(FileType::Text);
+            quickNoteTypeList.append(FileType::Text);
         }
         if (m_quickMindmapCheckBox->isChecked()) {
-            createModeList.append(FileType::MindMap);
+            quickNoteTypeList.append(FileType::MindMap);
         }
-        sessionConfig.setQuickNoteType(createModeList);
+        sessionConfig.setQuickNoteType(quickNoteTypeList);
     }
 
     return true;
@@ -164,26 +164,26 @@ QGroupBox *QuickAccessPage::setupQuickNotePageGroup()
     auto layout = WidgetsFactory::createFormLayout(box);
 
     {
-        m_quickNoteStorePath = new LocationInputWithBrowseButton(box);
-        m_quickNoteStorePath->setToolTip(tr("Quick Note storage path (default path is current notebook root)"));
+        m_quickNoteStoragePath = new LocationInputWithBrowseButton(box);
+        m_quickNoteStoragePath->setToolTip(tr("Quick Note storage path (default path is current notebook root)"));
         // TODO default ?
-        if (m_quickNoteStorePath->text().isEmpty()) {
-            m_quickNoteStorePath->setText(VNoteX::getInst().getNotebookMgr().getCurrentNotebook()->getRootFolderAbsolutePath());
-        }
+        // if (m_quickNoteStoragePath->text().isEmpty()) {
+        //     m_quickNoteStoragePath->setText(VNoteX::getInst().getNotebookMgr().getCurrentNotebook()->getRootFolderAbsolutePath());
+        // }
 
         const QString storagePathLabel(tr("Storage path:"));
-        layout->addRow(storagePathLabel, m_quickNoteStorePath);
-        addSearchItem(storagePathLabel, m_quickNoteStorePath->toolTip(), m_quickNoteStorePath);
-        connect(m_quickNoteStorePath, &LocationInputWithBrowseButton::textChanged,
+        layout->addRow(storagePathLabel, m_quickNoteStoragePath);
+        addSearchItem(storagePathLabel, m_quickNoteStoragePath->toolTip(), m_quickNoteStoragePath);
+        connect(m_quickNoteStoragePath, &LocationInputWithBrowseButton::textChanged,
                 this, &QuickAccessPage::pageIsChanged);
-        connect(m_quickNoteStorePath, &LocationInputWithBrowseButton::clicked,
+        connect(m_quickNoteStoragePath, &LocationInputWithBrowseButton::clicked,
                 this, [this]() {
                     auto notebookRootPath = VNoteX::getInst().getNotebookMgr().getCurrentNotebook()->getRootFolderAbsolutePath();
                     auto filePath = QFileDialog::getExistingDirectory(this,
                                                                       tr("Select Quick Note storage path"),
                                                                       notebookRootPath);
                     if (!filePath.isEmpty()) {
-                        m_quickNoteStorePath->setText(filePath);
+                        m_quickNoteStoragePath->setText(filePath);
                     }
                 });
 

@@ -578,10 +578,10 @@ QStringList SessionConfig::fileTypeToStringList(const QVector<int> &p_type) cons
     return list;
 }
 
-QVector<int> SessionConfig::stringListToFileType(const QStringList &strList) const
+QVector<int> SessionConfig::stringListToFileType(const QStringList &p_strList) const
 {
     QVector<int> vec;
-    for (const QString &str : strList) {
+    for (const QString &str : p_strList) {
         vec.append(FileTypeHelper::getInst().getFileTypeByName(str).m_type);
     }
     return vec;
