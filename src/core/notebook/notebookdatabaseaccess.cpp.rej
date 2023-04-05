@@ -1,0 +1,8 @@
+@@ -151,7 +151,6 @@
+                 } else {
+                     auto relativePath = nodePath.join(QLatin1Char('/'));
+                     auto oldNode = m_notebook->loadNodeByPath(relativePath);
+-                    qDebug() << oldNode->fetchAbsolutePath() << p_node->fetchAbsolutePath();
+                     Q_ASSERT(oldNode != p_node);
+                     if (oldNode) {
+                         // The node with the same id still exists.

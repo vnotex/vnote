@@ -218,7 +218,6 @@ QSharedPointer<Node> Notebook::newNode(Node *p_parent,
                                        const QString &p_name,
                                        const QString &p_content)
 {
-    qDebug() << "==> 1 notebook new node" << p_name << p_parent << p_flags;
     return m_configMgr->newNode(p_parent, p_flags, p_name, p_content);
 }
 

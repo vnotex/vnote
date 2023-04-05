@@ -139,8 +139,8 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
         m_externalMediaDefaultPath = QDir::homePath();
     }
 
-    m_quickCreateNoteStorePath = readString(coreObj, QStringLiteral("quick_create_note_store_path"));
-    m_quickCreateNoteType = stringListToFileType(readStringList(coreObj, QStringLiteral("quick_create_note_type")));
+    m_quickNoteStorePath = readString(coreObj, QStringLiteral("quick_note_store_path"));
+    m_quickNoteType = stringListToFileType(readStringList(coreObj, QStringLiteral("quick_note_type")));
 }
 
 QJsonObject SessionConfig::saveCore() const
@@ -156,8 +156,8 @@ QJsonObject SessionConfig::saveCore() const
     coreObj[QStringLiteral("flash_page")] = m_flashPage;
     writeStringList(coreObj, QStringLiteral("quick_access"), m_quickAccessFiles);
     coreObj[QStringLiteral("external_media_default_path")] = m_externalMediaDefaultPath;
-    coreObj[QStringLiteral("quick_create_note_store_path")] = m_quickCreateNoteStorePath;
-    writeStringList(coreObj, QStringLiteral("quick_create_note_type"), fileTypeToStringList(m_quickCreateNoteType));
+    coreObj[QStringLiteral("quick_create_note_store_path")] = m_quickNoteStorePath;
+    writeStringList(coreObj, QStringLiteral("quick_create_note_type"), fileTypeToStringList(m_quickNoteType));
     return coreObj;
 }
 
@@ -549,50 +549,31 @@ QJsonObject SessionConfig::saveExportOption() const
     return obj;
 }
 
-const QString &SessionConfig::getQuickCreateNoteStorePath() const
+const QString &SessionConfig::getQuickNoteStorePath() const
 {
-    return m_quickCreateNoteStorePath;
+    return m_quickNoteStorePath;
 }
 
-void SessionConfig::setQuickCreateNoteStorePath(const QString &p_path)
+void SessionConfig::setQuickNoteStorePath(const QString &p_path)
 {
-    updateConfig(m_quickCreateNoteStorePath, p_path, this);
+    updateConfig(m_quickNoteStorePath, p_path, this);
 }
 
-const QVector<int> &SessionConfig::getQuickCreateNoteType() const
+const QVector<int> &SessionConfig::getQuickNoteType() const
 {
-    return m_quickCreateNoteType;
+    return m_quickNoteType;
 }
 
-void SessionConfig::setQuickCreateNoteType(const QVector<int> &p_type)
+void SessionConfig::setQuickNoteType(const QVector<int> &p_type)
 {
-    qDebug() << "--> 1 set note type" << p_type;
-    updateConfig(m_quickCreateNoteType, p_type, this);
+    updateConfig(m_quickNoteType, p_type, this);
 }
 
 QStringList SessionConfig::fileTypeToStringList(const QVector<int> &p_type) const
 {
     QStringList list;
     for (const int typ : p_type) {
-        switch (typ) {
-            case FileType::Markdown:
-                list << "Markdown";
-                break;
-            case FileType::Text:
-                list << "Text";
-                break;
-            // case FileType::Pdf:
-            //     list << "Pdf";
-            //     break;
-            case FileType::MindMap:
-                list << "MindMap";
-                break;
-            // case FileType::Others:
-            //     list << "Others";
-            //     break;
-            default:
-                break;
-        }
+        list << FileTypeHelper::getInst().getFileType(typ).m_typeName;
     }
     return list;
 }
@@ -601,16 +582,7 @@ QVector<int> SessionConfig::stringListToFileType(const QStringList &strList) con
 {
     QVector<int> vec;
     for (const QString &str : strList) {
-        if (str == "Markdown" || str == "md")
-            vec.append(FileType::Markdown);
-        else if (str == "Text" || str == "txt")
-            vec.append(FileType::Text);
-        // else if (str == "Pdf")
-        //     vec.append(Pdf);
-        else if (str == "MindMap" || str == "mindmap")
-            vec.append(FileType::MindMap);
-        // else if (str == "Others")
-        //     vec.append(Others);
+        vec.append(FileTypeHelper::getInst().getFileTypeByName(str).m_type);
     }
     return vec;
 }

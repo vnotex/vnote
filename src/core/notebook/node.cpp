@@ -288,6 +288,17 @@ void Node::setReadOnly(bool p_readOnly)
     }
 }
 
+
+QString Node::fetchAbsolutePath() const
+{
+     return m_manualAbsolutePath;
+}
+
+void Node::setManualAbsolutePath(const QString &p_path)
+{
+    m_manualAbsolutePath = p_path;
+}
+
 QString Node::fetchPath() const
 {
     if (!m_parent) {

@@ -49,7 +49,7 @@ namespace vnotex
 
         void newFolder();
 
-        void newNote(const QVector<int> &p_type);
+        void newNote(const QVector<int> &p_type, const QString &p_path);
 
         void importFile();
 
@@ -86,6 +86,8 @@ namespace vnotex
         void recoverSession();
 
         void rebuildDatabase();
+
+        void quickNote(const int &p_type, const QString &p_path);
 
         NotebookSelector *m_selector = nullptr;
 

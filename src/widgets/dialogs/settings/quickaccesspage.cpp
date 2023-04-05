@@ -9,6 +9,8 @@
 #include <QCheckBox>
 
 #include <widgets/widgetsfactory.h>
+#include "core/vnotex.h"
+#include <core/notebookmgr.h>
 #include <core/sessionconfig.h>
 #include <core/coreconfig.h>
 #include <core/configmgr.h>
@@ -32,7 +34,7 @@ void QuickAccessPage::setupUI()
     auto flashPageBox = setupFlashPageGroup();
     mainLayout->addWidget(flashPageBox);
 
-    auto quickCreateNoteBox = setupQuickCreateNotePageGroup();
+    auto quickCreateNoteBox = setupQuickNotePageGroup();
     mainLayout->addWidget(quickCreateNoteBox);
 
     auto quickAccessBox = setupQuickAccessGroup();
@@ -53,15 +55,16 @@ void QuickAccessPage::loadInternal()
     }
 
     {
-        m_quickCreateNoteStorePath->setText(sessionConfig.getQuickCreateNoteStorePath());
-        for(int mode : sessionConfig.getQuickCreateNoteType()) {
-            if (FileType::Markdown == mode) {
+        m_quickNoteStorePath->setText(sessionConfig.getQuickNoteStorePath());
+
+        for(int typ : sessionConfig.getQuickNoteType()) {
+            if (FileType::Markdown == typ) {
                 m_quickMarkdownCheckBox->setChecked(true);
             }
-            if (FileType::Text == mode) {
+            if (FileType::Text == typ) {
                 m_quickTextCheckBox->setChecked(true);
             }
-            if (FileType::MindMap == mode) {
+            if (FileType::MindMap == typ) {
                 m_quickMindmapCheckBox->setChecked(true);
             }
         }
@@ -82,11 +85,11 @@ bool QuickAccessPage::saveInternal()
     }
 
     {
-        auto storePath = m_quickCreateNoteStorePath->text();
+        auto storePath = m_quickNoteStorePath->text();
         if (!storePath.isEmpty()) {
-            sessionConfig.setQuickCreateNoteStorePath(static_cast<QString>(storePath));
+            sessionConfig.setQuickNoteStorePath(static_cast<QString>(storePath));
         }
-//        QVector<int> createModeList;
+
         QVector<int> createModeList = QVector<int>();
         if (m_quickMarkdownCheckBox->isChecked()) {
             createModeList.append(FileType::Markdown);
@@ -97,7 +100,7 @@ bool QuickAccessPage::saveInternal()
         if (m_quickMindmapCheckBox->isChecked()) {
             createModeList.append(FileType::MindMap);
         }
-        sessionConfig.setQuickCreateNoteType(createModeList);
+        sessionConfig.setQuickNoteType(createModeList);
     }
 
     return true;
@@ -155,22 +158,38 @@ QGroupBox *QuickAccessPage::setupQuickAccessGroup()
     return box;
 }
 
-QGroupBox *QuickAccessPage::setupQuickCreateNotePageGroup()
+QGroupBox *QuickAccessPage::setupQuickNotePageGroup()
 {
-    auto box = new QGroupBox(tr("Quick create note"), this);
+    auto box = new QGroupBox(tr("Quick Note"), this);
     auto layout = WidgetsFactory::createFormLayout(box);
 
     {
-        const QString storePathLabel(tr("Default store path"));
-        m_quickCreateNoteStorePath = new LocationInputWithBrowseButton(box);
-        m_quickCreateNoteStorePath->setToolTip(tr("Quick create note store path"));
-        layout->addRow(storePathLabel, m_quickCreateNoteStorePath);
-        connect(m_quickCreateNoteStorePath, &LocationInputWithBrowseButton::textChanged,
+        m_quickNoteStorePath = new LocationInputWithBrowseButton(box);
+        m_quickNoteStorePath->setToolTip(tr("Quick Note storage path (default path is current notebook root)"));
+        // TODO default ?
+        if (m_quickNoteStorePath->text().isEmpty()) {
+            m_quickNoteStorePath->setText(VNoteX::getInst().getNotebookMgr().getCurrentNotebook()->getRootFolderAbsolutePath());
+        }
+
+        const QString storagePathLabel(tr("Storage path:"));
+        layout->addRow(storagePathLabel, m_quickNoteStorePath);
+        addSearchItem(storagePathLabel, m_quickNoteStorePath->toolTip(), m_quickNoteStorePath);
+        connect(m_quickNoteStorePath, &LocationInputWithBrowseButton::textChanged,
                 this, &QuickAccessPage::pageIsChanged);
+        connect(m_quickNoteStorePath, &LocationInputWithBrowseButton::clicked,
+                this, [this]() {
+                    auto notebookRootPath = VNoteX::getInst().getNotebookMgr().getCurrentNotebook()->getRootFolderAbsolutePath();
+                    auto filePath = QFileDialog::getExistingDirectory(this,
+                                                                      tr("Select Quick Note storage path"),
+                                                                      notebookRootPath);
+                    if (!filePath.isEmpty()) {
+                        m_quickNoteStorePath->setText(filePath);
+                    }
+                });
 
         const QString mdLabel(tr("Markdown"));
         m_quickMarkdownCheckBox = WidgetsFactory::createCheckBox(mdLabel, box);
-        m_quickMarkdownCheckBox->setToolTip(tr("Suppet quick create note for Markdown."));
+        m_quickMarkdownCheckBox->setToolTip(tr("Suppet Quick Note for Markdown"));
         layout->addRow(m_quickMarkdownCheckBox);
         addSearchItem(mdLabel, m_quickMarkdownCheckBox->toolTip(), m_quickMarkdownCheckBox);
         connect(m_quickMarkdownCheckBox, &QCheckBox::stateChanged,
@@ -178,7 +197,7 @@ QGroupBox *QuickAccessPage::setupQuickCreateNotePageGroup()
 
         const QString txtlabel(tr("Text"));
         m_quickTextCheckBox = WidgetsFactory::createCheckBox(txtlabel, box);
-        m_quickTextCheckBox->setToolTip(tr("Suppet quick create note for Text."));
+        m_quickTextCheckBox->setToolTip(tr("Suppet Quick note for Text"));
         layout->addRow(m_quickTextCheckBox);
         addSearchItem(txtlabel, m_quickTextCheckBox->toolTip(), m_quickTextCheckBox);
         connect(m_quickTextCheckBox, &QCheckBox::stateChanged,
@@ -186,7 +205,7 @@ QGroupBox *QuickAccessPage::setupQuickCreateNotePageGroup()
 
         const QString mindmapLabel(tr("Mind Map"));
         m_quickMindmapCheckBox = WidgetsFactory::createCheckBox(mindmapLabel, box);
-        m_quickMindmapCheckBox->setToolTip(tr("Suppet quick create note for Mind Map."));
+        m_quickMindmapCheckBox->setToolTip(tr("Suppet Quick Note for Mind Map"));
         layout->addRow(m_quickMindmapCheckBox);
         addSearchItem(mindmapLabel, m_quickMindmapCheckBox->toolTip(), m_quickMindmapCheckBox);
         connect(m_quickMindmapCheckBox, &QCheckBox::stateChanged,

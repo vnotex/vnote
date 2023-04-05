@@ -92,7 +92,7 @@ namespace vnotex
 
         void distributeSplitsRequested();
 
-        void newNoteRequested(ViewSplit *p_split, const QVector<int> &p_type);
+        void newNoteRequested(ViewSplit *p_split, const QVector<int> &p_type, const QString &p_path);
 
         void removeSplitRequested(ViewSplit *p_split);
 

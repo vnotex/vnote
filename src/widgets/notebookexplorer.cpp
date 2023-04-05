@@ -36,6 +36,7 @@
 #include "core/buffer/filetypehelper.h"
 #include "navigationmodemgr.h"
 #include "widgetsfactory.h"
+#include "utils/fileutils.h"
 
 using namespace vnotex;
 
@@ -266,9 +267,8 @@ void NotebookExplorer::newFolder()
     }
 }
 
-void NotebookExplorer::newNote(const QVector<int> &p_type)
+void NotebookExplorer::newNote(const QVector<int> &p_type, const QString &p_path)
 {
-    qDebug() << "--> 4 notebook explorer new note" << p_type;
     if (p_type.length() < 1) {
         auto node = checkNotebookAndGetCurrentExploredFolderNode();
         if (!node) {
@@ -285,39 +285,50 @@ void NotebookExplorer::newNote(const QVector<int> &p_type)
             emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
         }
     } else if (p_type.length() == 1)  {
-        // TODO Quickly create a note based on the current type.
+        quickNote(p_type.first(), p_path);
     } else {
-        SelectDialog dialog(tr("Quick create note"), this);
+        SelectDialog dialog(tr("Quick Note"), this);
         for (const int typ : p_type) {
-            switch (typ) {
-                case FileType::Markdown:
-                    dialog.addSelection("Markdown", 0);
-                    break;
-                case FileType::Text:
-                    dialog.addSelection("Text", 1);
-                    break;
-                case FileType::MindMap:
-                    dialog.addSelection("MindMap", 2);
-                    break;
-            }
+            const auto &fileType = FileTypeHelper::getInst().getFileType(typ);
+            dialog.addSelection(fileType.m_typeName, fileType.m_type);
         }
         if (dialog.exec() == QDialog::Accepted) {
-            switch (dialog.getSelection()) {
-                case FileType::Markdown:
-                    qDebug() << "md";
-                    // TODO Quickly create md
-                    break;
-                case FileType::Text:
-                    qDebug() << "text";
-                    // TODO Quickly create text
-                    break;
-                case FileType::MindMap:
-                    qDebug() << "mindmap";
-                    // TODO Quickly create mindmap
-                    break;
-            }
+            quickNote(dialog.getSelection(), p_path);
         }
     }
+}
+
+void NotebookExplorer::quickNote(const int &p_type, const QString &p_path)
+{
+    QSharedPointer<Node> quickNode;
+    Node *parentNode = const_cast<Node *>(currentExploredNode()->getParent());
+    if (!p_path.isNull() && !p_path.isEmpty()) {
+        parentNode->setManualAbsolutePath(p_path);
+    }
+    const auto &quickNotefileType = FileTypeHelper::getInst().getFileType(p_type);
+    QString quickNoteName = FileUtils::generateFileNameWithSequence(parentNode->fetchAbsolutePath(),
+                                                                    tr("quicknote"),
+                                                                    quickNotefileType.preferredSuffix());
+
+    qDebug() << "--> quick note: " << parentNode->fetchPath();
+    // TODO 不知道如何设置 parentNode 以及合理修改 path
+    try {
+//        quickNode = m_currentNotebook->newNode(currentExploredNode()->getParent(),
+        quickNode = m_currentNotebook->newNode(parentNode,
+                                             Node::Flag::Content,
+                                             quickNoteName);
+    } catch (Exception &p_e) {
+        QString msg = tr("Failed to create note under (%1) in (%2) (%3).")
+                .arg(currentExploredNode()->getParent()->getName(),
+                     m_currentNotebook->getName(),
+                     p_e.what());
+        qCritical() << msg;
+    }
+    auto paras = QSharedPointer<FileOpenParameters>::create();
+    paras->m_mode = ViewWindowMode::Edit;
+    paras->m_newFile = true;
+    emit m_currentNotebook->nodeUpdated(quickNode.data());
+    emit VNoteX::getInst().openNodeRequested(quickNode.data(), paras);
 }
 
 Node *NotebookExplorer::currentExploredFolderNode() const

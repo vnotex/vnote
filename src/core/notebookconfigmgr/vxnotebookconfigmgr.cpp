@@ -241,10 +241,8 @@ QSharedPointer<Node> VXNotebookConfigMgr::newNode(Node *p_parent,
     Q_ASSERT(p_parent && p_parent->isContainer() && !p_name.isEmpty());
 
     QSharedPointer<Node> node;
-
     if (p_flags & Node::Flag::Content) {
         Q_ASSERT(!(p_flags & Node::Flag::Container));
-        qDebug() << "==> 2 conf mgr new note" << p_content;
         node = newFileNode(p_parent, p_name, p_content, true, NodeParameters());
     } else {
         node = newFolderNode(p_parent, p_name, true, NodeParameters());
@@ -304,7 +302,6 @@ QSharedPointer<Node> VXNotebookConfigMgr::newFileNode(Node *p_parent,
                                                p_paras,
                                                notebook,
                                                p_parent);
-    qDebug() << "==> 3 conf mgr new file node";
 
     // Write empty file.
     if (p_create) {
