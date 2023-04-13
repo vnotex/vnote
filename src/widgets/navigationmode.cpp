@@ -74,7 +74,7 @@ static QString generateNavigationLabelStyle(const QString &p_str, bool p_tiny)
         QFont font(fontFamily, fontPt);
         font.setBold(true);
         QFontMetrics fm(font);
-        pxWidth = fm.width(p_str);
+        pxWidth = fm.width(p_str) + 5;
         pxHeight = fm.capHeight() + 5;
         lastLen = p_str.size();
     }
