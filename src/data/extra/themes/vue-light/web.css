@@ -405,3 +405,21 @@ div.vx-plantuml-graph {
 .alert-dark:before{
     background-color: #484848;
 }
+
+/* 标题层级展示 CSS */
+.vx-header-anchor::after{background-color: #eee;padding: 0 5px;border-radius: 3px;}
+.vx-header-anchor{color: #999;display: inline-block;margin-left: 10px;}
+
+h1 .vx-header-anchor::after { content: 'H1';}
+h2 .vx-header-anchor::after { content: 'H2';}
+h3 .vx-header-anchor::after { content: 'H3';}
+h4 .vx-header-anchor::after { content: 'H4';}
+h5 .vx-header-anchor::after { content: 'H5';}
+h6 .vx-header-anchor::after { content: 'H6';}
+
+
+h1 .vx-header-anchor{margin-top: -5px;}
+h2 .vx-header-anchor{margin-top: -4px;}
+h3 .vx-header-anchor{margin-top: -3px;}
+h4 .vx-header-anchor{margin-top: -2px;}
+h5 .vx-header-anchor{margin-top: -1px;}
