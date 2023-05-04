@@ -45,6 +45,7 @@ void NewNoteDialog::setupUI(const Node *p_node)
 
     {
         auto templateLayout = new QHBoxLayout();
+
         templateLayout->setContentsMargins(0, 0, 0, 0);
         infoLayout->addRow(tr("Template:"), templateLayout);
 

@@ -120,7 +120,7 @@ namespace vnotex
         void dropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
 
     private slots:
-        void newTab(int p_idx);
+        void createQuickNote();
 
         void closeTab(int p_idx);
 

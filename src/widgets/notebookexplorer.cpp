@@ -300,22 +300,11 @@ void NotebookExplorer::newNote(const QVector<int> &p_type, const QString &p_path
 
 void NotebookExplorer::quickNote(const int &p_type, const QString &p_path)
 {
-    Node *parentNode = const_cast<Node *>(currentExploredNode()->getParent());
+    Node *parentNode;
     if (!p_path.isNull() && !p_path.isEmpty()) {
-        // TODO 不知道如何设置 parentNode 以及合理修改 path
-        qDebug() << m_currentNotebook->getRootFolderAbsolutePath();
-        qDebug() << p_path;
-        // QString commonPrefix = p_path;
-        // int prefixLength = 0;
-        // while (prefixLength < p_path.length() &&
-        //        prefixLength < m_currentNotebook->getRootFolderAbsolutePath().length() &&
-        //        p_path[prefixLength] == m_currentNotebook->getRootFolderAbsolutePath()[prefixLength]) {
-        //     prefixLength++;
-        // }
-        // commonPrefix.truncate(prefixLength); // 获取共同前缀
-        // QString diff = p_path.section(commonPrefix + "/", 1); // 获取 a 与共同前缀不同的部分
-        // qDebug() << diff;
-        // parentNode->setManualAbsolutePath(diff);
+        parentNode = m_currentNotebook->loadNodeByPath(p_path).get();
+    } else {
+        parentNode = const_cast<Node *>(currentExploredNode()->getParent());
     }
     const auto &quickNotefileType = FileTypeHelper::getInst().getFileType(p_type);
     QString quickNoteName = FileUtils::generateFileNameWithSequence(parentNode->fetchAbsolutePath(),

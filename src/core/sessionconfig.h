@@ -55,6 +55,15 @@ namespace vnotex
             QByteArray m_locationListState;
         };
 
+        struct QuickNoteScheme
+        {
+            // Where to create the quick note.
+            QString m_folderPath;
+            // Name of the quick note.
+            QString m_name;
+            QString m_templatePath;
+        };
+
         enum OpenGL
         {
             None,

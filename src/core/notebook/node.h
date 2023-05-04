@@ -69,8 +69,6 @@ namespace vnotex
         // This may not be the same as the actual file path. It depends on the config mgr.
         virtual QString fetchPath() const;
 
-        void setManualAbsolutePath(const QString &p_path);
-
         // Fetch absolute file path if available.
         virtual QString fetchAbsolutePath() const = 0;
 
@@ -209,8 +207,6 @@ namespace vnotex
         Node *m_parent = nullptr;
 
         QVector<QSharedPointer<Node>> m_children;
-
-        QString m_manualAbsolutePath;
     };
 
     Q_DECLARE_OPERATORS_FOR_FLAGS(Node::Flags)
