@@ -423,3 +423,9 @@ h2 .vx-header-anchor{margin-top: -4px;}
 h3 .vx-header-anchor{margin-top: -3px;}
 h4 .vx-header-anchor{margin-top: -2px;}
 h5 .vx-header-anchor{margin-top: -1px;}
+
+/* 优化嵌套代码块样式 */
+.vx-alert .code-toolbar pre[class*="language-"]{
+    background-color: #f3f3f3 !important;
+    border: 1px dashed #eee;
+}
