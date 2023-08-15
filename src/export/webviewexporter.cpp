@@ -19,6 +19,7 @@
 #include <utils/processutils.h>
 #include <utils/htmlutils.h>
 #include <core/file.h>
+#include <QRegExp>
 
 using namespace vnotex;
 
@@ -362,7 +363,7 @@ bool WebViewExporter::embedStyleResources(QString &p_html) const
 
     int pos = 0;
     while (pos < p_html.size()) {
-        int idx = p_html.indexOf(reg, pos);
+        int idx = reg.indexIn(p_html, pos);
         if (idx == -1) {
             break;
         }
@@ -393,7 +394,7 @@ bool WebViewExporter::embedBodyResources(const QUrl &p_baseUrl, QString &p_html)
 
     int pos = 0;
     while (pos < p_html.size()) {
-        int idx = p_html.indexOf(reg, pos);
+        int idx = reg.indexIn(p_html, pos);
         if (idx == -1) {
             break;
         }
@@ -440,7 +441,7 @@ bool WebViewExporter::fixBodyResources(const QUrl &p_baseUrl,
 
     int pos = 0;
     while (pos < p_html.size()) {
-        int idx = p_html.indexOf(reg, pos);
+        int idx = reg.indexIn(p_html, pos);
         if (idx == -1) {
             break;
         }

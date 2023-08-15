@@ -11,7 +11,7 @@ QSharedPointer<QPrinter> PrintUtils::promptForPrint(bool p_printSelectionEnabled
 
     QPrintDialog dialog(printer.data(), p_parent);
     if (p_printSelectionEnabled) {
-        dialog.addEnabledOption(QAbstractPrintDialog::PrintSelection);
+        dialog.setOption(QAbstractPrintDialog::PrintSelection);
     }
 
     if (dialog.exec() == QDialog::Accepted) {

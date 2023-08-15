@@ -110,7 +110,7 @@ void SortDialog::updateTreeWidget()
         item->setFlags(item->flags() & ~Qt::ItemIsDropEnabled);
     }
 
-    m_treeWidget->sortByColumn(-1);
+    m_treeWidget->sortByColumn(-1, Qt::AscendingOrder);
     m_treeWidget->setSortingEnabled(true);
 }
 
@@ -151,7 +151,7 @@ void SortDialog::handleMoveOperation(MoveOperation p_op)
     Q_ASSERT(first <= last && (last - first + 1) == selectedItems.size());
     QTreeWidgetItem *firstItem = nullptr;
 
-    m_treeWidget->sortByColumn(-1);
+    m_treeWidget->sortByColumn(-1, Qt::AscendingOrder);
 
     switch (p_op) {
     case MoveOperation::Top:

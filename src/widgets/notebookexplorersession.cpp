@@ -1,4 +1,5 @@
 #include "notebookexplorersession.h"
+#include <QIODevice>
 
 using namespace vnotex;
 

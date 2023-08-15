@@ -1,6 +1,7 @@
 #include "fullscreentoggleaction.h"
 
 #include <QEvent>
+#include <QWidget>
 
 using namespace vnotex;
 

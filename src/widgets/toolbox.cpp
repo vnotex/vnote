@@ -13,6 +13,7 @@
 #include <utils/iconutils.h>
 #include "thememgr.h"
 #include "vnotex.h"
+#include <QActionGroup>
 
 using namespace vnotex;
 

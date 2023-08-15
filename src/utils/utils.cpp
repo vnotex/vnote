@@ -42,7 +42,7 @@ void Utils::appendMsg(QString &p_msg, const QString &p_new)
 
 QString Utils::dateTimeString(const QDateTime &p_dateTime)
 {
-    return p_dateTime.date().toString(Qt::DefaultLocaleLongDate)
+    return p_dateTime.date().toString(Qt::ISODate)
            + " "
            + p_dateTime.time().toString(Qt::TextDate);
 }

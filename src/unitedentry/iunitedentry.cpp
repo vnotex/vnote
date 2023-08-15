@@ -41,19 +41,19 @@ void IUnitedEntry::process(const QString &p_args,
         initOnFirstProcess();
     }
 
-    m_askedToStop.store(0);
+    m_askedToStop.storeRelaxed(0);
 
     return processInternal(p_args, p_popupWidgetFunc);
 }
 
 void IUnitedEntry::stop()
 {
-    m_askedToStop.store(1);
+    m_askedToStop.storeRelaxed(1);
 }
 
 bool IUnitedEntry::isAskedToStop() const
 {
-    return m_askedToStop.load() == 1;
+    return m_askedToStop.loadAcquire() == 1;
 }
 
 void IUnitedEntry::setOngoing(bool p_ongoing)

@@ -31,7 +31,6 @@ using namespace vnotex;
 
 void loadTranslators(QApplication &p_app);
 
-void initWebEngineSettings();
 
 void showMessageOnCommandLineIfAvailable(const QString &p_msg);
 
@@ -79,7 +78,6 @@ int main(int argc, char *argv[])
 
     Application app(argc, argv);
 
-    initWebEngineSettings();
 
     QAccessible::installFactory(&FakeAccessible::accessibleFactory);
 
@@ -251,12 +249,6 @@ void loadTranslators(QApplication &p_app)
     if (vtexteditTranslator->load(locale, "vtextedit", "_", resourceTranslationFolder)) {
         p_app.installTranslator(vtexteditTranslator.take());
     }
-}
-
-void initWebEngineSettings()
-{
-    auto settings = QWebEngineSettings::defaultSettings();
-    settings->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 }
 
 void showMessageOnCommandLineIfAvailable(const QString &p_msg)

@@ -9,12 +9,12 @@ AsyncWorker::AsyncWorker(QObject *p_parent)
 
 void AsyncWorker::stop()
 {
-    m_askedToStop.store(1);
+    m_askedToStop.fetchAndStoreAcquire(1);
 }
 
 bool AsyncWorker::isAskedToStop() const
 {
-    return m_askedToStop.load() == 1;
+    return m_askedToStop.loadAcquire() == 1;
 }
 
 

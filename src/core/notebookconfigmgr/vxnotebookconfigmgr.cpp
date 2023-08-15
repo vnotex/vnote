@@ -465,7 +465,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::loadNodeByPath(const QSharedPointer<No
         return p_root;
     }
 
-    auto paths = p.split('/', QString::SkipEmptyParts);
+    auto paths = p.split('/', Qt::SkipEmptyParts);
     auto node = p_root;
     for (auto &pa : paths) {
         // Find child @pa in @node.

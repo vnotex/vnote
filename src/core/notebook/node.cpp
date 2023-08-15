@@ -8,6 +8,7 @@
 #include <core/exception.h>
 #include "notebook.h"
 #include "nodeparameters.h"
+#include <QRandomGenerator>
 
 using namespace vnotex;
 
@@ -483,7 +484,7 @@ QList<QSharedPointer<File>> Node::collectFiles()
 
 ID Node::generateSignature()
 {
-    return static_cast<ID>(QDateTime::currentDateTime().toSecsSinceEpoch() + (static_cast<qulonglong>(qrand()) << 32));
+    return static_cast<ID>(QDateTime::currentDateTime().toSecsSinceEpoch() + (static_cast<qulonglong>(QRandomGenerator::global()->generate()) << 32));
 }
 
 void Node::checkSignature()

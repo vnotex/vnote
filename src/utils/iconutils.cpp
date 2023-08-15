@@ -67,7 +67,7 @@ QString IconUtils::replaceForegroundOfIcon(const QString &p_iconContent, const Q
     }
 
     // Negative lookahead to avoid fill="none".
-    QRegExp styleRe(R"((\s|"|;)(fill|stroke)(:|(="))(?!none)[^;"]*)");
+    QRegularExpression styleRe(R"((\s|"|;)(fill|stroke)(:|(="))(?!none)[^;"]*)");
     if (p_iconContent.indexOf(styleRe) > -1) {
         auto newContent(p_iconContent);
         newContent.replace(styleRe, QString("\\1\\2\\3%1").arg(p_foreground));
@@ -85,7 +85,7 @@ bool IconUtils::isMonochrome(const QString &p_iconContent)
     QString lastColor = "";
     int pos = 0;
     while (pos < p_iconContent.size()) {
-        int idx = p_iconContent.indexOf(monoRe, pos);
+        int idx = monoRe.indexIn(p_iconContent, pos);
         if (idx == -1) {
             break;
         }

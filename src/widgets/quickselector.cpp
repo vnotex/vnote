@@ -194,7 +194,7 @@ void QuickSelector::searchAndFilter(const QString &p_text)
     }
 
     // Check name.
-    auto parts = text.split(QLatin1Char(' '), QString::SkipEmptyParts);
+    auto parts = text.split(QLatin1Char(' '), Qt::SkipEmptyParts);
     Q_ASSERT(!parts.isEmpty());
     QRegularExpression regExp;
     regExp.setPatternOptions(regExp.patternOptions() | QRegularExpression::CaseInsensitiveOption);

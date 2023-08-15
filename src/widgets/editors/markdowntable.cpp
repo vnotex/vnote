@@ -214,10 +214,10 @@ void MarkdownTable::initWidths(const QTextBlock &p_block, int p_borderPos)
     }
 
     QFontMetricsF fmf(font);
-    s_spaceWidth = fmf.width(' ');
-    s_minusWidth = fmf.width('-');
-    s_colonWidth = fmf.width(':');
-    s_defaultDelimiterWidth = fmf.width(c_defaultDelimiter);
+    s_spaceWidth = fmf.horizontalAdvance(' ');
+    s_minusWidth = fmf.horizontalAdvance('-');
+    s_colonWidth = fmf.horizontalAdvance(':');
+    s_defaultDelimiterWidth = fmf.horizontalAdvance(c_defaultDelimiter);
 
     qDebug() << "smart table widths" << font.family() << s_spaceWidth << s_minusWidth << s_colonWidth << s_defaultDelimiterWidth;
 }

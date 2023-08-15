@@ -99,9 +99,9 @@ void TitleBar::setupActionButtons(TitleBar::Actions p_actionFlags)
     }
 }
 
-void TitleBar::enterEvent(QEvent *p_event)
+void TitleBar::enterEvent(QEnterEvent *p_event)
 {
-    QWidget::enterEvent(p_event);
+    QFrame::enterEvent(p_event);
     setActionButtonsVisible(true);
 }
 

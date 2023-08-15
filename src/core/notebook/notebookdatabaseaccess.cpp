@@ -560,7 +560,12 @@ bool NotebookDatabaseAccess::updateNodeTags(Node *p_node)
     const auto &nodeTags = p_node->getTags();
 
     {
-        const auto tags = QSet<QString>::fromList(queryNodeTags(p_node->getId()));
+        QStringList list = queryNodeTags(p_node->getId());
+        QSet<QString> tags;
+        for (auto &s : list)
+        {
+            tags.insert(s);
+        }
         if (tags.isEmpty() && nodeTags.isEmpty()) {
             return true;
         }
@@ -691,7 +696,7 @@ QList<ID> NotebookDatabaseAccess::queryTagNodesRecursive(const QString &p_tag)
         }
     }
 
-    return allIds.toList();
+    return allIds.values();
 }
 
 QStringList NotebookDatabaseAccess::queryTagAndChildren(const QString &p_tag)
@@ -742,7 +747,7 @@ QStringList NotebookDatabaseAccess::getNodesOfTags(const QStringList &p_tags)
                 allIds.insert(id);
             }
         }
-        nodeIds = allIds.toList();
+        nodeIds = allIds.values();
     }
 
     for (const auto &id : nodeIds) {

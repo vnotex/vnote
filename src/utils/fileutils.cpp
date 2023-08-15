@@ -10,6 +10,7 @@
 #include <core/global.h>
 
 #include "pathutils.h"
+#include <QRandomGenerator>
 
 using namespace vnotex;
 
@@ -313,7 +314,7 @@ QString FileUtils::generateRandomFileName(const QString &p_hints, const QString 
 
     // Do not use toSecsSinceEpoch() here since we want a short name.
     const QString timeStamp(QDateTime::currentDateTime().toString(QStringLiteral("sszzzmmHHyyMMdd")));
-    const QString baseName(QString::number(timeStamp.toLongLong() + qrand()));
+    const QString baseName(QString::number(timeStamp.toLongLong() + QRandomGenerator::global()->generate()));
 
     QString suffix;
     if (!p_suffix.isEmpty()) {
