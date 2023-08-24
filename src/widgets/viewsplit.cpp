@@ -83,7 +83,7 @@ void ViewSplit::setupUI()
     connect(this, &QTabWidget::tabBarDoubleClicked,
             this, [this](int p_idx) {
                 if (p_idx == -1) {
-                    createQuickNote();
+                    emit VNoteX::getInst().newQuickNoteRequested();
                 } else {
                     closeTab(p_idx);
                 }
@@ -716,14 +716,6 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
         WidgetUtils::addActionShortcutText(splitAct,
                                            coreConfig.getShortcut(CoreConfig::Shortcut::MoveOneSplitDown));
     }
-}
-
-void ViewSplit::createQuickNote()
-{
-    const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-    QVector<int> p_type = sessionConfig.getQuickNoteType();
-    QString p_path = sessionConfig.getQuickNoteStoragePath();
-    emit newNoteRequested(this, p_type, p_path);
 }
 
 void ViewSplit::closeTab(int p_idx)

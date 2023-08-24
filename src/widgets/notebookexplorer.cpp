@@ -23,6 +23,7 @@
 #include <utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <utils/pathutils.h>
+#include <utils/fileutils.h>
 #include "notebookselector.h"
 #include "notebooknodeexplorer.h"
 #include "messageboxhelper.h"
@@ -33,10 +34,12 @@
 #include <core/events.h>
 #include <core/exception.h>
 #include <core/fileopenparameters.h>
-#include "core/buffer/filetypehelper.h"
+#include <core/notebookmgr.h>
+#include <core/templatemgr.h>
+#include <snippet/snippetmgr.h>
+
 #include "navigationmodemgr.h"
 #include "widgetsfactory.h"
-#include "utils/fileutils.h"
 
 using namespace vnotex;
 
@@ -267,69 +270,85 @@ void NotebookExplorer::newFolder()
     }
 }
 
-void NotebookExplorer::newNote(const QVector<int> &p_type, const QString &p_path)
+void NotebookExplorer::newNote()
 {
-    if (p_type.length() <= c_defaultCreateNote) {
-        auto node = checkNotebookAndGetCurrentExploredFolderNode();
-        if (!node) {
-            return;
-        }
-        NewNoteDialog dialog(node, VNoteX::getInst().getMainWindow());
-        if (dialog.exec() == QDialog::Accepted) {
-            m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
+    auto node = checkNotebookAndGetCurrentExploredFolderNode();
+    if (!node) {
+        return;
+	}
 
-            // Open it right now.
-            auto paras = QSharedPointer<FileOpenParameters>::create();
-            paras->m_mode = ViewWindowMode::Edit;
-            paras->m_newFile = true;
-            emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
-        }
-    } else if (p_type.length() == c_singleQuickNote)  {
-        quickNote(p_type.first(), p_path);
-    } else {
-        SelectDialog dialog(tr("Quick Note"), this);
-        for (const int typ : p_type) {
-            const auto &fileType = FileTypeHelper::getInst().getFileType(typ);
-            dialog.addSelection(fileType.m_typeName, fileType.m_type);
-        }
-        if (dialog.exec() == QDialog::Accepted) {
-            quickNote(dialog.getSelection(), p_path);
-        }
+	NewNoteDialog dialog(node, VNoteX::getInst().getMainWindow());
+    if (dialog.exec() == QDialog::Accepted) {
+        m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
+        // Open it right now.
+        auto paras = QSharedPointer<FileOpenParameters>::create();
+        paras->m_mode = ViewWindowMode::Edit;
+        paras->m_newFile = true;
+        emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
     }
 }
 
-void NotebookExplorer::quickNote(const int &p_type, const QString &p_path)
+void NotebookExplorer::newQuickNote()
 {
-    Node *parentNode;
-    if (!p_path.isNull() && !p_path.isEmpty()) {
-        parentNode = m_currentNotebook->loadNodeByPath(p_path).get();
-    } else {
-        parentNode = const_cast<Node *>(currentExploredNode()->getParent());
+    auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+    const auto& schemes = sessionConfig.getQuickNoteSchemes();
+    if (schemes.isEmpty()) {
+        MessageBoxHelper::notify(MessageBoxHelper::Information,
+                                 tr("Please set up quick note schemes in the Settings dialog first."),
+                                 VNoteX::getInst().getMainWindow());
+        return;
     }
-    const auto &quickNotefileType = FileTypeHelper::getInst().getFileType(p_type);
-    QString quickNoteName = FileUtils::generateFileNameWithSequence(parentNode->fetchAbsolutePath(),
-                                                                    tr("quicknote"),
-                                                                    quickNotefileType.preferredSuffix());
 
-    QSharedPointer<Node> quickNode;
-    try {
-        quickNode = m_currentNotebook->newNode(parentNode,
-                                             Node::Flag::Content,
-                                             quickNoteName);
-    } catch (Exception &p_e) {
-        QString msg = tr("Failed to create note under (%1) in (%2) (%3).")
-                .arg(currentExploredNode()->getParent()->getName(),
-                     m_currentNotebook->getName(),
-                     p_e.what());
-        qCritical() << msg;
+    SelectDialog dialog(tr("New Quick Note"), VNoteX::getInst().getMainWindow());
+    for (int i = 0; i < schemes.size(); ++i) {
+        dialog.addSelection(schemes[i].m_name, i);
     }
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    int selection = dialog.getSelection();
+    const auto &scheme = schemes[selection];
+
+    Notebook *notebook = m_currentNotebook.data();
+    Node *parentNode = currentExploredFolderNode();
+    if (!scheme.m_folderPath.isEmpty()) {
+        auto node = VNoteX::getInst().getNotebookMgr().loadNodeByPath(scheme.m_folderPath);
+        if (node) {
+            notebook = node->getNotebook();
+            parentNode = node.data();
+        }
+    }
+
+    if (!parentNode) {
+        MessageBoxHelper::notify(MessageBoxHelper::Information,
+                                 tr("The quick note should be created within a notebook."),
+                                 VNoteX::getInst().getMainWindow());
+        return;
+    }
+
+    QFileInfo finfo(SnippetMgr::getInst().applySnippetBySymbol(scheme.m_noteName));
+    QString newName = FileUtils::generateFileNameWithSequence(parentNode->fetchAbsolutePath(),
+            finfo.completeBaseName(), finfo.suffix());
+
+    QString errMsg;
+    auto newNode = NewNoteDialog::newNote(notebook, parentNode, newName,
+            TemplateMgr::getInst().getTemplateContent(scheme.m_template),
+            errMsg);
+    if (!newNode) {
+        MessageBoxHelper::notify(MessageBoxHelper::Information,
+                tr("Failed to create quick note from scheme (%1) (%2)").arg(scheme.m_name, errMsg),
+                VNoteX::getInst().getMainWindow());
+        return;
+    }
+
+    m_nodeExplorer->setCurrentNode(newNode.data());
+    // Open it right now.
     auto paras = QSharedPointer<FileOpenParameters>::create();
     paras->m_mode = ViewWindowMode::Edit;
     paras->m_newFile = true;
-    emit m_currentNotebook->nodeUpdated(quickNode.data());
-    emit VNoteX::getInst().openNodeRequested(quickNode.data(), paras);
-
-    m_nodeExplorer->setCurrentNode(quickNode.data());
+    emit VNoteX::getInst().openNodeRequested(newNode.data(), paras);
 }
 
 Node *NotebookExplorer::currentExploredFolderNode() const

@@ -461,6 +461,10 @@ void VXNotebookConfigMgr::addChildNode(Node *p_parent, const QSharedPointer<Node
 QSharedPointer<Node> VXNotebookConfigMgr::loadNodeByPath(const QSharedPointer<Node> &p_root, const QString &p_relativePath)
 {
     auto p = PathUtils::cleanPath(p_relativePath);
+    if (p == ".") {
+        return p_root;
+    }
+
     auto paths = p.split('/', QString::SkipEmptyParts);
     auto node = p_root;
     for (auto &pa : paths) {

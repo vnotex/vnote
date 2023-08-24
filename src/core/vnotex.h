@@ -77,7 +77,10 @@ namespace vnotex
 
         // Requested to new a note in current notebook.
         // The handler should determine in which folder this note belongs to.
-        void newNoteRequested(const QVector<int> &p_type = QVector<int>(), const QString &p_path = QString());
+        void newNoteRequested();
+
+        // Requested to new a quick note (maybe in current folder).
+        void newQuickNoteRequested();
 
         // Requested to new a folder in current notebook.
         void newFolderRequested();

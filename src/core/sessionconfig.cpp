@@ -11,8 +11,6 @@
 #include "mainconfig.h"
 #include "historymgr.h"
 
-#include "core/buffer/filetypehelper.h"
-
 using namespace vnotex;
 
 bool SessionConfig::NotebookItem::operator==(const NotebookItem &p_other) const
@@ -36,6 +34,34 @@ QJsonObject SessionConfig::NotebookItem::toJson() const
     jobj[QStringLiteral("type")] = m_type;
     jobj[QStringLiteral("root_folder")] = m_rootFolderPath;
     jobj[QStringLiteral("backend")] = m_backend;
+
+    return jobj;
+}
+
+bool SessionConfig::QuickNoteScheme::operator==(const QuickNoteScheme &p_other) const
+{
+    return m_name == p_other.m_name &&
+        m_folderPath == p_other.m_folderPath &&
+        m_noteName == p_other.m_noteName &&
+        m_template == p_other.m_template;
+}
+
+void SessionConfig::QuickNoteScheme::fromJson(const QJsonObject &p_jobj)
+{
+    m_name = p_jobj[QStringLiteral("name")].toString();
+    m_folderPath = p_jobj[QStringLiteral("folder_path")].toString();
+    m_noteName = p_jobj[QStringLiteral("note_name")].toString();
+    m_template = p_jobj[QStringLiteral("template")].toString();
+}
+
+QJsonObject SessionConfig::QuickNoteScheme::toJson() const
+{
+    QJsonObject jobj;
+
+    jobj[QStringLiteral("name")] = m_name;
+    jobj[QStringLiteral("folder_path")] = m_folderPath;
+    jobj[QStringLiteral("note_name")] = m_noteName;
+    jobj[QStringLiteral("template")] = m_template;
 
     return jobj;
 }
@@ -99,6 +125,8 @@ void SessionConfig::init()
 
     loadHistory(sessionJobj);
 
+    loadQuickNoteSchemes(sessionJobj);
+
     if (MainConfig::isVersionChanged()) {
         doVersionSpecificOverride();
     }
@@ -138,9 +166,6 @@ void SessionConfig::loadCore(const QJsonObject &p_session)
     if (m_externalMediaDefaultPath.isEmpty()) {
         m_externalMediaDefaultPath = QDir::homePath();
     }
-
-    m_quickNoteStoragePath = readString(coreObj, QStringLiteral("quick_note_storage_path"));
-    m_quickNoteType = stringListToFileType(readStringList(coreObj, QStringLiteral("quick_note_type")));
 }
 
 QJsonObject SessionConfig::saveCore() const
@@ -156,8 +181,6 @@ QJsonObject SessionConfig::saveCore() const
     coreObj[QStringLiteral("flash_page")] = m_flashPage;
     writeStringList(coreObj, QStringLiteral("quick_access"), m_quickAccessFiles);
     coreObj[QStringLiteral("external_media_default_path")] = m_externalMediaDefaultPath;
-    coreObj[QStringLiteral("quick_note_storage_path")] = m_quickNoteStoragePath;
-    writeStringList(coreObj, QStringLiteral("quick_note_type"), fileTypeToStringList(m_quickNoteType));
     return coreObj;
 }
 
@@ -242,6 +265,7 @@ QJsonObject SessionConfig::toJson() const
     writeByteArray(obj, QStringLiteral("notebook_explorer_session"), m_notebookExplorerSession);
     obj[QStringLiteral("external_programs")] = saveExternalPrograms();
     obj[QStringLiteral("history")] = saveHistory();
+    obj[QStringLiteral("quick_note_schemes")] = saveQuickNoteSchemes();
     return obj;
 }
 
@@ -465,6 +489,24 @@ QJsonArray SessionConfig::saveExternalPrograms() const
     return arr;
 }
 
+void SessionConfig::loadQuickNoteSchemes(const QJsonObject &p_session)
+{
+    const auto arr = p_session.value(QStringLiteral("quick_note_schemes")).toArray();
+    m_quickNoteSchemes.resize(arr.size());
+    for (int i = 0; i < arr.size(); ++i) {
+        m_quickNoteSchemes[i].fromJson(arr[i].toObject());
+    }
+}
+
+QJsonArray SessionConfig::saveQuickNoteSchemes() const
+{
+    QJsonArray arr;
+    for (const auto &scheme : m_quickNoteSchemes) {
+        arr.append(scheme.toJson());
+    }
+    return arr;
+}
+
 const QVector<SessionConfig::ExternalProgram> &SessionConfig::getExternalPrograms() const
 {
     return m_externalPrograms;
@@ -549,40 +591,12 @@ QJsonObject SessionConfig::saveExportOption() const
     return obj;
 }
 
-const QString &SessionConfig::getQuickNoteStoragePath() const
+const QVector<SessionConfig::QuickNoteScheme> &SessionConfig::getQuickNoteSchemes() const
 {
-    return m_quickNoteStoragePath;
+    return m_quickNoteSchemes;
 }
 
-void SessionConfig::setQuickNoteStoragePath(const QString &p_path)
+void SessionConfig::setQuickNoteSchemes(const QVector<QuickNoteScheme>& p_schemes)
 {
-    updateConfig(m_quickNoteStoragePath, p_path, this);
-}
-
-const QVector<int> &SessionConfig::getQuickNoteType() const
-{
-    return m_quickNoteType;
-}
-
-void SessionConfig::setQuickNoteType(const QVector<int> &p_type)
-{
-    updateConfig(m_quickNoteType, p_type, this);
-}
-
-QStringList SessionConfig::fileTypeToStringList(const QVector<int> &p_type) const
-{
-    QStringList list;
-    for (const int typ : p_type) {
-        list << FileTypeHelper::getInst().getFileType(typ).m_typeName;
-    }
-    return list;
-}
-
-QVector<int> SessionConfig::stringListToFileType(const QStringList &p_strList) const
-{
-    QVector<int> vec;
-    for (const QString &str : p_strList) {
-        vec.append(FileTypeHelper::getInst().getFileTypeByName(str).m_type);
-    }
-    return vec;
+    updateConfig(m_quickNoteSchemes, p_schemes, this);
 }

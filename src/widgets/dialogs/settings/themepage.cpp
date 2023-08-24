@@ -86,11 +86,7 @@ void ThemePage::setupUI()
         layout->addWidget(scrollArea, 0, 2, 5, 1);
     }
 
-    // Override.
-    {
-        auto box = new QGroupBox(tr("Style Override"), this);
-        mainLayout->addWidget(box);
-    }
+    mainLayout->addStretch();
 }
 
 void ThemePage::loadInternal()

@@ -42,6 +42,7 @@ SOURCES += \
     $$PWD/dialogs/tableinsertdialog.cpp \
     $$PWD/dialogs/updater.cpp \
     $$PWD/dialogs/viewtagsdialog.cpp \
+    $$PWD/dialogs/notetemplateselector.cpp \
     $$PWD/dockwidgethelper.cpp \
     $$PWD/dragdropareaindicator.cpp \
     $$PWD/editors/graphhelper.cpp \
@@ -181,6 +182,7 @@ HEADERS += \
     $$PWD/dialogs/tableinsertdialog.h \
     $$PWD/dialogs/updater.h \
     $$PWD/dialogs/viewtagsdialog.h \
+    $$PWD/dialogs/notetemplateselector.h \
     $$PWD/dockwidgethelper.h \
     $$PWD/dragdropareaindicator.h \
     $$PWD/editors/graphhelper.h \

@@ -73,7 +73,9 @@ void SettingsPage::pageIsChangedWithRestartNeeded()
 
 void SettingsPage::load()
 {
+    m_loading = true;
     loadInternal();
+    m_loading = false;
     m_changed = false;
     m_restartNeeded = false;
 }
@@ -114,4 +116,9 @@ void SettingsPage::setError(const QString &p_err)
 bool SettingsPage::isRestartNeeded() const
 {
     return m_restartNeeded;
+}
+
+bool SettingsPage::isLoading() const
+{
+    return m_loading;
 }

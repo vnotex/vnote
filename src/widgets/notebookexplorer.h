@@ -49,7 +49,9 @@ namespace vnotex
 
         void newFolder();
 
-        void newNote(const QVector<int> &p_type, const QString &p_path);
+        void newNote();
+
+        void newQuickNote();
 
         void importFile();
 
@@ -87,8 +89,6 @@ namespace vnotex
 
         void rebuildDatabase();
 
-        void quickNote(const int &p_type, const QString &p_path);
-
         NotebookSelector *m_selector = nullptr;
 
         NotebookNodeExplorer *m_nodeExplorer = nullptr;
@@ -98,10 +98,6 @@ namespace vnotex
         NotebookExplorerSession m_session;
 
         bool m_sessionLoaded = false;
-
-        static const int c_defaultCreateNote = 0;
-
-        static const int c_singleQuickNote = 1;
     };
 } // ns vnotex
 

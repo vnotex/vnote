@@ -46,6 +46,8 @@ namespace vnotex
 
         QGroupBox *setupGeneralBox(QWidget *p_parent);
 
+        void removeLastStretch();
+
         QVBoxLayout *m_mainLayout = nullptr;
 
         // [host] -> list of related fields.

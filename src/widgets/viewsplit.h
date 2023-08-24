@@ -92,7 +92,7 @@ namespace vnotex
 
         void distributeSplitsRequested();
 
-        void newNoteRequested(ViewSplit *p_split, const QVector<int> &p_type, const QString &p_path);
+        void newQuickNoteRequested();
 
         void removeSplitRequested(ViewSplit *p_split);
 
@@ -120,8 +120,6 @@ namespace vnotex
         void dropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
 
     private slots:
-        void createQuickNote();
-
         void closeTab(int p_idx);
 
     private:

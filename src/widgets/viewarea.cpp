@@ -14,9 +14,6 @@
 #include <QHash>
 #include <QTabBar>
 
-#include "viewwindow.h"
-#include "mainwindow.h"
-#include "propertydefs.h"
 #include <utils/widgetutils.h>
 #include <utils/docsutils.h>
 #include <utils/urldragdroputils.h>
@@ -34,6 +31,12 @@
 #include "editors/plantumlhelper.h"
 #include "editors/graphvizhelper.h"
 #include <core/historymgr.h>
+#include <widgets/dialogs/selectdialog.h>
+
+#include "viewwindow.h"
+#include "mainwindow.h"
+#include "propertydefs.h"
+#include "messageboxhelper.h"
 
 using namespace vnotex;
 
@@ -237,13 +240,6 @@ ViewSplit *ViewArea::createViewSplit(QWidget *p_parent, ID p_viewSplitId)
     }
 
     auto split = new ViewSplit(m_workspaces, workspace, p_viewSplitId, p_parent);
-    auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-    connect(split, &ViewSplit::newNoteRequested,
-            this, [&sessionConfig]() {
-                QVector<int> p_type = sessionConfig.getQuickNoteType();
-                QString p_path = sessionConfig.getQuickNoteStoragePath();
-                emit VNoteX::getInst().newNoteRequested(p_type, p_path);
-            });
     connect(split, &ViewSplit::viewWindowCloseRequested,
             this, [this](ViewWindow *p_win) {
                 closeViewWindow(p_win, false, true);
