@@ -44,3 +44,8 @@ void LocationInputWithBrowseButton::setToolTip(const QString &p_tip)
 {
     m_lineEdit->setToolTip(p_tip);
 }
+
+void LocationInputWithBrowseButton::setPlaceholderText(const QString &p_text)
+{
+    m_lineEdit->setPlaceholderText(p_text);
+}

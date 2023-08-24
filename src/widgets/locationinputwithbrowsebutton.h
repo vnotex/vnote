@@ -22,6 +22,8 @@ namespace vnotex
 
         void setToolTip(const QString &p_tip);
 
+        void setPlaceholderText(const QString &p_text);
+
     signals:
         void clicked();
 

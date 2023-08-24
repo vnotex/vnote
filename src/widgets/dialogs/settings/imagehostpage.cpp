@@ -46,6 +46,8 @@ void ImageHostPage::setupUI()
 
     auto box = setupGeneralBox(this);
     m_mainLayout->addWidget(box);
+
+    m_mainLayout->addStretch();
 }
 
 QGroupBox *ImageHostPage::setupGeneralBox(QWidget *p_parent)
@@ -54,9 +56,8 @@ QGroupBox *ImageHostPage::setupGeneralBox(QWidget *p_parent)
     auto layout = WidgetsFactory::createFormLayout(box);
 
     {
-        m_defaultImageHostComboBox = WidgetsFactory::createComboBox(box);
-
         // Add items in loadInternal().
+        m_defaultImageHostComboBox = WidgetsFactory::createComboBox(box);
 
         const QString label(tr("Default image host:"));
         layout->addRow(label, m_defaultImageHostComboBox);
@@ -121,11 +122,15 @@ void ImageHostPage::loadInternal()
         }
     }
 
+    removeLastStretch();
+
     // Setup boxes.
     for (const auto &host : hosts) {
         auto box = setupGroupBoxForImageHost(host, this);
         addWidgetToLayout(box);
     }
+
+    m_mainLayout->addStretch();
 }
 
 bool ImageHostPage::saveInternal()
@@ -185,8 +190,12 @@ void ImageHostPage::newImageHost()
 {
     NewImageHostDialog dialog(this);
     if (dialog.exec()) {
+        removeLastStretch();
+
         auto box = setupGroupBoxForImageHost(dialog.getNewImageHost(), this);
         addWidgetToLayout(box);
+
+        m_mainLayout->addStretch();
     }
 }
 
@@ -292,4 +301,13 @@ void ImageHostPage::testImageHost(const QString &p_hostName)
                              tr("Test %1.").arg(ret ? tr("succeeded") : tr("failed")),
                              QString(),
                              msg);
+}
+
+void ImageHostPage::removeLastStretch()
+{
+    auto item = m_mainLayout->itemAt(m_mainLayout->count() - 1);
+    if (item) {
+        m_mainLayout->removeItem(item);
+        delete item;
+    }
 }

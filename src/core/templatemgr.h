@@ -24,6 +24,8 @@ namespace vnotex
 
         QString getTemplateFilePath(const QString &p_name) const;
 
+        QString getTemplateContent(const QString &p_name) const;
+
     private:
         TemplateMgr() = default;
     };

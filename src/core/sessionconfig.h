@@ -55,6 +55,25 @@ namespace vnotex
             QByteArray m_locationListState;
         };
 
+        struct QuickNoteScheme
+        {
+            bool operator==(const QuickNoteScheme &p_other) const;
+
+            void fromJson(const QJsonObject &p_jobj);
+
+            QJsonObject toJson() const;
+
+            QString m_name;
+
+            // Where to create the quick note.
+            QString m_folderPath;
+
+            // Name of the quick note. Snippet is supported.
+            QString m_noteName;
+
+            QString m_template;
+        };
+
         enum OpenGL
         {
             None,
@@ -149,6 +168,9 @@ namespace vnotex
         void removeHistory(const QString &p_itemPath);
         void clearHistory();
 
+        const QVector<QuickNoteScheme> &getQuickNoteSchemes() const;
+        void setQuickNoteSchemes(const QVector<QuickNoteScheme>& p_schemes);
+
     private:
         void loadCore(const QJsonObject &p_session);
 
@@ -165,6 +187,10 @@ namespace vnotex
         void loadExternalPrograms(const QJsonObject &p_session);
 
         QJsonArray saveExternalPrograms() const;
+
+        void loadQuickNoteSchemes(const QJsonObject &p_session);
+
+        QJsonArray saveQuickNoteSchemes() const;
 
         void doVersionSpecificOverride();
 
@@ -215,7 +241,9 @@ namespace vnotex
         QVector<HistoryItem> m_history;
 
         // Default folder path to open for external media like images and files.
-        QString m_externalMediaDefaultPath;;
+        QString m_externalMediaDefaultPath;
+
+        QVector<QuickNoteScheme> m_quickNoteSchemes;
     };
 } // ns vnotex
 

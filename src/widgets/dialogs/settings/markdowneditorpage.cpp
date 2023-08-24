@@ -46,6 +46,8 @@ void MarkdownEditorPage::setupUI()
 
     auto editBox = setupEditGroup();
     mainLayout->addWidget(editBox);
+
+    mainLayout->addStretch();
 }
 
 void MarkdownEditorPage::loadInternal()

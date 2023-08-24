@@ -14,6 +14,7 @@
 #include <utils/fileutils.h>
 #include "exception.h"
 #include "nodeinfowidget.h"
+#include "notetemplateselector.h"
 #include <utils/widgetutils.h>
 #include <core/templatemgr.h>
 #include <core/configmgr.h>
@@ -43,27 +44,8 @@ void NewNoteDialog::setupUI(const Node *p_node)
 
     auto infoLayout = m_infoWidget->getMainLayout();
 
-    {
-        auto templateLayout = new QHBoxLayout();
-        templateLayout->setContentsMargins(0, 0, 0, 0);
-        infoLayout->addRow(tr("Template:"), templateLayout);
-
-        setupTemplateComboBox(m_infoWidget);
-        templateLayout->addWidget(m_templateComboBox);
-
-        templateLayout->addStretch();
-
-        auto manageBtn = new QPushButton(tr("Manage"), m_infoWidget);
-        templateLayout->addWidget(manageBtn);
-        connect(manageBtn, &QPushButton::clicked,
-                this, []() {
-                    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(TemplateMgr::getInst().getTemplateFolder()));
-                });
-
-        m_templateTextEdit = WidgetsFactory::createPlainTextConsole(m_infoWidget);
-        infoLayout->addRow("", m_templateTextEdit);
-        m_templateTextEdit->hide();
-    }
+    m_templateSelector = new NoteTemplateSelector(m_infoWidget);
+    infoLayout->addRow(tr("Template:"), m_templateSelector);
 
     setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 
@@ -106,41 +88,56 @@ bool NewNoteDialog::validateNameInput(QString &p_msg)
 
 void NewNoteDialog::acceptedButtonClicked()
 {
-    s_lastTemplate = m_templateComboBox->currentData().toString();
+    s_lastTemplate = m_templateSelector->getCurrentTemplate();
 
     {
         auto fileType = FileTypeHelper::getInst().getFileTypeByName(m_infoWidget->getFileType()).m_type;
         ConfigMgr::getInst().getWidgetConfig().setNewNoteDefaultFileType(static_cast<int>(fileType));
     }
 
-    if (validateInputs() && newNote()) {
+    if (validateInputs()) {
+        Notebook *notebook = const_cast<Notebook *>(m_infoWidget->getNotebook());
+        Node *parentNode = const_cast<Node *>(m_infoWidget->getParentNode());
+        QString errMsg;
+        m_newNode = newNote(notebook,
+                            parentNode,
+                            m_infoWidget->getName(),
+                            m_templateSelector->getTemplateContent(),
+                            errMsg);
+        if (!m_newNode) {
+            setInformationText(errMsg, ScrollDialog::InformationLevel::Error);
+            return;
+        }
         accept();
     }
 }
 
-bool NewNoteDialog::newNote()
+QSharedPointer<Node> NewNoteDialog::newNote(Notebook *p_notebook,
+                                            Node *p_parentNode,
+                                            const QString &p_name,
+                                            const QString &p_templateContent,
+                                            QString &p_errMsg)
 {
-    m_newNode.clear();
+    Q_ASSERT(p_notebook && p_parentNode);
 
-    Notebook *notebook = const_cast<Notebook *>(m_infoWidget->getNotebook());
-    Node *parentNode = const_cast<Node *>(m_infoWidget->getParentNode());
+    QSharedPointer<Node> newNode;
+    p_errMsg.clear();
+
     try {
-        m_newNode = notebook->newNode(parentNode,
+        newNode = p_notebook->newNode(p_parentNode,
                                       Node::Flag::Content,
-                                      m_infoWidget->getName(),
-                                      getTemplateContent());
+                                      p_name,
+                                      evaluateTemplateContent(p_templateContent, p_name));
     } catch (Exception &p_e) {
-        QString msg = tr("Failed to create note under (%1) in (%2) (%3).").arg(parentNode->getName(),
-                                                                               notebook->getName(),
-                                                                               p_e.what());
-        qCritical() << msg;
-        setInformationText(msg, ScrollDialog::InformationLevel::Error);
-        return false;
+        p_errMsg = tr("Failed to create note under (%1) in (%2) (%3).").arg(p_parentNode->getName(),
+                                                                            p_notebook->getName(),
+                                                                            p_e.what());
+        qCritical() << p_errMsg;
+        return nullptr;
     }
 
-    emit notebook->nodeUpdated(m_newNode.data());
-
-    return true;
+    emit p_notebook->nodeUpdated(newNode.data());
+    return newNode;
 }
 
 const QSharedPointer<Node> &NewNoteDialog::getNewNode() const
@@ -166,66 +163,17 @@ void NewNoteDialog::initDefaultValues(const Node *p_node)
 
     if (!s_lastTemplate.isEmpty()) {
         // Restore.
-        int idx = m_templateComboBox->findData(s_lastTemplate);
-        if (idx != -1) {
-            m_templateComboBox->setCurrentIndex(idx);
-        } else {
+        if (!m_templateSelector->setCurrentTemplate(s_lastTemplate)) {
             s_lastTemplate.clear();
         }
     }
 }
 
-void NewNoteDialog::setupTemplateComboBox(QWidget *p_parent)
-{
-    m_templateComboBox = WidgetsFactory::createComboBox(p_parent);
-
-    // None.
-    m_templateComboBox->addItem(tr("None"), "");
-
-    int idx = 1;
-    auto templates = TemplateMgr::getInst().getTemplates();
-    for (const auto &temp : templates) {
-        m_templateComboBox->addItem(temp, temp);
-        m_templateComboBox->setItemData(idx++, temp, Qt::ToolTipRole);
-    }
-
-    m_templateComboBox->setCurrentIndex(0);
-
-    connect(m_templateComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &NewNoteDialog::updateCurrentTemplate);
-}
-
-QString NewNoteDialog::getTemplateContent() const
+QString NewNoteDialog::evaluateTemplateContent(const QString &p_content, const QString &p_name)
 {
     int cursorOffset = 0;
-    return SnippetMgr::getInst().applySnippetBySymbol(m_templateContent,
+    return SnippetMgr::getInst().applySnippetBySymbol(p_content,
                                                       QString(),
                                                       cursorOffset,
-                                                      SnippetMgr::generateOverrides(m_infoWidget->getName()));
-}
-
-void NewNoteDialog::updateCurrentTemplate()
-{
-    m_templateContent.clear();
-    m_templateTextEdit->clear();
-
-    auto temp = m_templateComboBox->currentData().toString();
-    if (temp.isEmpty()) {
-        m_templateTextEdit->hide();
-        return;
-    }
-
-    const auto filePath = TemplateMgr::getInst().getTemplateFilePath(temp);
-    try {
-        m_templateContent = FileUtils::readTextFile(filePath);
-        m_templateTextEdit->setPlainText(m_templateContent);
-        m_templateTextEdit->show();
-    } catch (Exception &p_e) {
-        m_templateTextEdit->hide();
-
-        QString msg = tr("Failed to load template (%1) (%2).")
-            .arg(filePath, p_e.what());
-        qCritical() << msg;
-        setInformationText(msg, ScrollDialog::InformationLevel::Error);
-    }
+                                                      SnippetMgr::generateOverrides(p_name));
 }

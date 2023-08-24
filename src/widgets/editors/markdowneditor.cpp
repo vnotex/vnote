@@ -374,7 +374,7 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
             ba = FileUtils::readFile(p_srcImagePath);
         } catch (Exception &e) {
             MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                     QString("Failed to read local image file (%1) (%2).").arg(p_srcImagePath, e.what()),
+                                     tr("Failed to read local image file (%1) (%2).").arg(p_srcImagePath, e.what()),
                                      this);
             return false;
         }
@@ -387,7 +387,7 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
             destFilePath = m_buffer->insertImage(p_srcImagePath, destFileName);
         } catch (Exception &e) {
             MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                     QString("Failed to insert image from local file (%1) (%2).").arg(p_srcImagePath, e.what()),
+                                     tr("Failed to insert image from local file (%1) (%2).").arg(p_srcImagePath, e.what()),
                                      this);
             return false;
         }
@@ -430,7 +430,7 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title,
             destFilePath = m_buffer->insertImage(p_image, destFileName);
         } catch (Exception &e) {
             MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                     QString("Failed to insert image from data (%1).").arg(e.what()),
+                                     tr("Failed to insert image from data (%1).").arg(e.what()),
                                      this);
             return false;
         }
@@ -1470,7 +1470,7 @@ QString MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QSt
 
     if (targetUrl.isEmpty()) {
         MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                 QString("Failed to upload image to image host (%1) as (%2).").arg(m_imageHost->getName(), destPath),
+                                 tr("Failed to upload image to image host (%1) as (%2).").arg(m_imageHost->getName(), destPath),
                                  QString(),
                                  errMsg,
                                  this);
@@ -1551,7 +1551,7 @@ void MarkdownEditor::uploadImagesToImageHost()
             ba = FileUtils::readFile(link.m_path);
         } catch (Exception &e) {
             MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                     QString("Failed to read local image file (%1) (%2).").arg(link.m_path, e.what()),
+                                     tr("Failed to read local image file (%1) (%2).").arg(link.m_path, e.what()),
                                      this);
             continue;
         }
@@ -1569,7 +1569,7 @@ void MarkdownEditor::uploadImagesToImageHost()
 
         if (targetUrl.isEmpty()) {
             MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                     QString("Failed to upload image to image host (%1) as (%2).").arg(host->getName(), destPath),
+                                     tr("Failed to upload image to image host (%1) as (%2).").arg(host->getName(), destPath),
                                      QString(),
                                      errMsg,
                                      this);

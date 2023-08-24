@@ -332,6 +332,8 @@ void MainWindow::setupNotebookExplorer()
             m_notebookExplorer, &NotebookExplorer::newFolder);
     connect(&VNoteX::getInst(), &VNoteX::newNoteRequested,
             m_notebookExplorer, &NotebookExplorer::newNote);
+    connect(&VNoteX::getInst(), &VNoteX::newQuickNoteRequested,
+            m_notebookExplorer, &NotebookExplorer::newQuickNote);
     connect(&VNoteX::getInst(), &VNoteX::importFileRequested,
             m_notebookExplorer, &NotebookExplorer::importFile);
     connect(&VNoteX::getInst(), &VNoteX::importFolderRequested,

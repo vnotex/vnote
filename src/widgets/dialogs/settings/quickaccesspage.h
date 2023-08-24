@@ -3,12 +3,17 @@
 
 #include "settingspage.h"
 
+#include <core/sessionconfig.h>
+
 class QGroupBox;
 class QPlainTextEdit;
+class QComboBox;
 
 namespace vnotex
 {
     class LocationInputWithBrowseButton;
+    class LineEditWithSnippet;
+    class NoteTemplateSelector;
 
     class QuickAccessPage : public SettingsPage
     {
@@ -30,9 +35,41 @@ namespace vnotex
 
         QGroupBox *setupQuickAccessGroup();
 
+        QGroupBox *setupQuickNoteGroup();
+
+        void newQuickNoteScheme();
+
+        void removeQuickNoteScheme();
+
+        void saveCurrentQuickNote();
+
+        void loadCurrentQuickNote();
+
+        void loadQuickNoteSchemes();
+
+        void saveQuickNoteSchemes();
+
+        void setCurrentQuickNote(int idx);
+
+        static QString getDefaultQuickNoteFolderPath();
+
         LocationInputWithBrowseButton *m_flashPageInput = nullptr;
 
         QPlainTextEdit *m_quickAccessTextEdit = nullptr;
+
+        QComboBox *m_quickNoteSchemeComboBox = nullptr;
+
+        LocationInputWithBrowseButton *m_quickNoteFolderPathInput = nullptr;
+
+        LineEditWithSnippet *m_quickNoteNoteNameLineEdit = nullptr;
+
+        NoteTemplateSelector *m_quickNoteTemplateSelector = nullptr;
+
+        QGroupBox *m_quickNoteInfoGroupBox = nullptr;
+
+        QVector<SessionConfig::QuickNoteScheme> m_quickNoteSchemes;
+
+        int m_quickNoteCurrentIndex = -1;
     };
 }
 

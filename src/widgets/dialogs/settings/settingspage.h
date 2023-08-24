@@ -44,6 +44,8 @@ namespace vnotex
 
         void setError(const QString &p_err);
 
+        bool isLoading() const;
+
     protected slots:
         void pageIsChanged();
 
@@ -69,6 +71,8 @@ namespace vnotex
         bool m_changed = false;
 
         bool m_restartNeeded = false;
+
+        bool m_loading = false;
 
         QString m_error;
     };

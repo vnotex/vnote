@@ -14,9 +14,6 @@
 #include <QHash>
 #include <QTabBar>
 
-#include "viewwindow.h"
-#include "mainwindow.h"
-#include "propertydefs.h"
 #include <utils/widgetutils.h>
 #include <utils/docsutils.h>
 #include <utils/urldragdroputils.h>
@@ -34,6 +31,12 @@
 #include "editors/plantumlhelper.h"
 #include "editors/graphvizhelper.h"
 #include <core/historymgr.h>
+#include <widgets/dialogs/selectdialog.h>
+
+#include "viewwindow.h"
+#include "mainwindow.h"
+#include "propertydefs.h"
+#include "messageboxhelper.h"
 
 using namespace vnotex;
 

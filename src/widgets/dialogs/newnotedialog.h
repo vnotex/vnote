@@ -3,14 +3,12 @@
 
 #include "scrolldialog.h"
 
-class QComboBox;
-class QPlainTextEdit;
-
 namespace vnotex
 {
     class Notebook;
     class Node;
     class NodeInfoWidget;
+    class NoteTemplateSelector;
 
     class NewNoteDialog : public ScrollDialog
     {
@@ -21,6 +19,12 @@ namespace vnotex
 
         const QSharedPointer<Node> &getNewNode() const;
 
+        static QSharedPointer<Node> newNote(Notebook *p_notebook,
+                                            Node *p_parentNode,
+                                            const QString &p_name,
+                                            const QString &p_templateContent,
+                                            QString &p_errMsg);
+
     protected:
         void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
@@ -29,27 +33,17 @@ namespace vnotex
 
         void setupNodeInfoWidget(const Node *p_node, QWidget *p_parent);
 
-        void setupTemplateComboBox(QWidget *p_parent);
-
         bool validateInputs();
 
         bool validateNameInput(QString &p_msg);
 
-        bool newNote();
-
         void initDefaultValues(const Node *p_node);
 
-        QString getTemplateContent() const;
-
-        void updateCurrentTemplate();
+        static QString evaluateTemplateContent(const QString &p_content, const QString &p_name);
 
         NodeInfoWidget *m_infoWidget = nullptr;
 
-        QComboBox *m_templateComboBox = nullptr;
-
-        QPlainTextEdit *m_templateTextEdit = nullptr;
-
-        QString m_templateContent;
+        NoteTemplateSelector *m_templateSelector = nullptr;
 
         QSharedPointer<Node> m_newNode;
 

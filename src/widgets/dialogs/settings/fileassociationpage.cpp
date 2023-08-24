@@ -39,6 +39,8 @@ void FileAssociationPage::setupUI()
     m_externalProgramsBox = new QGroupBox(tr("External Programs"), this);
     WidgetsFactory::createFormLayout(m_externalProgramsBox);
     mainLayout->addWidget(m_externalProgramsBox);
+
+    mainLayout->addStretch();
 }
 
 void FileAssociationPage::loadInternal()

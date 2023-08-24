@@ -92,6 +92,8 @@ namespace vnotex
 
         void distributeSplitsRequested();
 
+        void newQuickNoteRequested();
+
         void removeSplitRequested(ViewSplit *p_split);
 
         void removeSplitAndWorkspaceRequested(ViewSplit *p_split);
