@@ -1,4 +1,10 @@
 # Changes
+## v3.17.0
+* Quick note: create note in given scheme (@feloxx)
+* MarkdownEditor: support inserting multiple images (@feloxx)
+* Mermaid: upgrade and fix preview issue (@ygcaicn)
+* Flowchart.js: upgrade
+
 ## v3.16.0
 * Support reading PDF format
 * Support Ming Map editor in suffix `*.emind`

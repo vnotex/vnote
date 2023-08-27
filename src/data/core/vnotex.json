@@ -3,7 +3,7 @@
     "metadata" : {
         "//comment": "When releasing new version, please go through the following configs to check if override is needed.",
         "//Comment": "markdown_editor#override_viewer_resource",
-        "version" : "3.16.0"
+        "version" : "3.17.0"
     },
     "core" : {
         "theme" : "pure",
@@ -14,6 +14,7 @@
             "ExpandContentArea" : "Ctrl+G, E",
             "Settings" : "Ctrl+Alt+P",
             "NewNote" : "Ctrl+Alt+N",
+            "NewQuickNote" : "Ctrl+Alt+Q",
             "NewFolder" : "Ctrl+Alt+S",
             "CloseTab" : "Ctrl+G, X",
             "CloseAllTabs": "",

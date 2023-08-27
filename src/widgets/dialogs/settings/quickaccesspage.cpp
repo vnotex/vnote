@@ -214,7 +214,7 @@ QGroupBox *QuickAccessPage::setupQuickNoteGroup()
     auto infoLayout = WidgetsFactory::createFormLayout(m_quickNoteInfoGroupBox);
 
     {
-        const QString label(tr("Folder path:"));
+        const QString label(tr("Folder:"));
         m_quickNoteFolderPathInput = new LocationInputWithBrowseButton(m_quickNoteInfoGroupBox);
         m_quickNoteFolderPathInput->setPlaceholderText(tr("Empty to use current explored folder dynamically"));
         infoLayout->addRow(label, m_quickNoteFolderPathInput);

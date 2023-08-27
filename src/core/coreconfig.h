@@ -22,6 +22,7 @@ namespace vnotex
             ExpandContentArea,
             Settings,
             NewNote,
+            NewQuickNote,
             NewFolder,
             CloseTab,
             CloseAllTabs,

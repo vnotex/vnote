@@ -343,7 +343,10 @@ void NotebookExplorer::newQuickNote()
         return;
     }
 
-    m_nodeExplorer->setCurrentNode(newNode.data());
+    if (notebook == m_currentNotebook.data()) {
+        m_nodeExplorer->setCurrentNode(newNode.data());
+    }
+
     // Open it right now.
     auto paras = QSharedPointer<FileOpenParameters>::create();
     paras->m_mode = ViewWindowMode::Edit;
