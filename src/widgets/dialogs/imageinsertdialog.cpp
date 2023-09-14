@@ -6,7 +6,7 @@
 #include <QRegularExpression>
 #include <QLabel>
 #include <QPushButton>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 #include <QSpinBox>
 #include <QSlider>
 #include <QScrollArea>
@@ -88,7 +88,7 @@ void ImageInsertDialog::setupUI(const QString &p_title,
 
     // Image Title.
     m_imageTitleEdit = WidgetsFactory::createLineEdit(p_imageTitle, mainWidget);
-    auto titleValidator = new QRegExpValidator(QRegExp(vte::MarkdownUtils::c_imageTitleRegExp), m_imageTitleEdit);
+    auto titleValidator = new QRegularExpressionValidator(QRegularExpression(vte::MarkdownUtils::c_imageTitleRegExp), m_imageTitleEdit);
     m_imageTitleEdit->setValidator(titleValidator);
     gridLayout->addWidget(new QLabel(tr("Title:"), mainWidget), 1, 0, 1, 1);
     gridLayout->addWidget(m_imageTitleEdit, 1, 1, 1, 3);
@@ -97,7 +97,7 @@ void ImageInsertDialog::setupUI(const QString &p_title,
 
     // Image Alt.
     m_imageAltEdit = WidgetsFactory::createLineEdit(p_imageAlt, mainWidget);
-    auto altValidator = new QRegExpValidator(QRegExp(vte::MarkdownUtils::c_imageAltRegExp), m_imageAltEdit);
+    auto altValidator = new QRegularExpressionValidator(QRegularExpression(vte::MarkdownUtils::c_imageAltRegExp), m_imageAltEdit);
     m_imageAltEdit->setValidator(altValidator);
     gridLayout->addWidget(new QLabel(tr("Alt text:"), mainWidget), 2, 0, 1, 1);
     gridLayout->addWidget(m_imageAltEdit, 2, 1, 1, 3);

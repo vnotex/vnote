@@ -12,7 +12,7 @@ class QStackedWidget;
 class QWebEngineView;
 class QActionGroup;
 class QTimer;
-
+class QPrinter;
 namespace vte
 {
     class MarkdownEditorConfig;
@@ -61,6 +61,7 @@ namespace vnotex
     public slots:
         void handleEditorConfigChange() Q_DECL_OVERRIDE;
 
+        void onPrintFinish(bool isSeccess);
     protected slots:
         void setModified(bool p_modified) Q_DECL_OVERRIDE;
 
@@ -237,6 +238,7 @@ namespace vnotex
         MarkdownEditorConfig::EditViewMode m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;
 
         QTimer *m_syncPreviewTimer = nullptr;
+        QSharedPointer<QPrinter> m_printer;
     };
 }
 

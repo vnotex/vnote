@@ -55,6 +55,7 @@
 #include <imagehost/imagehostutils.h>
 #include <imagehost/imagehost.h>
 #include <imagehost/imagehostmgr.h>
+#include <QRegExp>
 
 #include "previewhelper.h"
 #include "../outlineprovider.h"
@@ -1198,7 +1199,7 @@ void MarkdownEditor::handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStam
 
 static QString purifyImageTitle(QString p_title)
 {
-    return p_title.remove(QRegExp("[\\r\\n\\[\\]]"));
+    return p_title.remove(QRegularExpression("[\\r\\n\\[\\]]"));
 }
 
 void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)

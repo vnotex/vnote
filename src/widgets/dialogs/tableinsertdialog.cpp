@@ -63,7 +63,9 @@ void TableInsertDialog::setupUI(const QString &p_title)
         buttonGroup->addButton(rightBtn, static_cast<int>(Alignment::Right));
 
         noneBtn->setChecked(true);
-        connect(buttonGroup, static_cast<void(QButtonGroup::*)(int, bool)>(&QButtonGroup::buttonToggled),
+        connect(buttonGroup, (void(QButtonGroup::*)(int, bool))(&QButtonGroup::buttonToggled),
+
+
                 this, [this](int p_id, bool p_checked){
                     if (p_checked) {
                         m_alignment = static_cast<Alignment>(p_id);

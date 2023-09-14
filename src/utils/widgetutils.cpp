@@ -6,7 +6,6 @@
 #include <QStyle>
 #include <QAbstractScrollArea>
 #include <QScrollBar>
-#include <QDesktopWidget>
 #include <QApplication>
 #include <QDesktopServices>
 #include <QKeyEvent>
@@ -71,8 +70,7 @@ bool WidgetUtils::isScrollBarVisible(QAbstractScrollArea *p_widget, bool p_horiz
 
 QSize WidgetUtils::availableScreenSize(QWidget *p_widget)
 {
-    auto geo = QApplication::desktop()->availableGeometry(p_widget);
-    return geo.size();
+    return p_widget->screen()->availableGeometry().size();
 }
 
 void WidgetUtils::openUrlByDesktop(const QUrl &p_url)
@@ -374,7 +372,7 @@ QString WidgetUtils::getMonospaceFont()
         for (const auto &candidate : candidates) {
             QString family = candidate.trimmed().toLower();
             for (auto availFamily : availFamilies) {
-                availFamily.remove(QRegExp("\\[.*\\]"));
+                availFamily.remove(QRegularExpression("\\[.*\\]"));
                 if (family == availFamily.trimmed().toLower()) {
                     font = availFamily;
                     return font;

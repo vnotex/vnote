@@ -6,6 +6,7 @@
 #include <QJsonArray>
 #include <QBitArray>
 #include <QDataStream>
+#include <QIODevice>
 
 namespace vnotex
 {

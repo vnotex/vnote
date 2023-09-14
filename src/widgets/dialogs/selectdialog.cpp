@@ -73,7 +73,7 @@ void SelectDialog::addSelection(const QString &p_selectStr, int p_selectID)
     QChar shortcut;
     if (m_nextShortcut < c_cancelShortcut) {
         shortcut = m_nextShortcut;
-        m_nextShortcut = m_nextShortcut.toLatin1() + 1;
+        m_nextShortcut = QChar(m_nextShortcut.toLatin1() + 1);
     }
     const auto icon = IconUtils::drawTextIcon(shortcut, m_shortcutIconForeground, m_shortcutIconBorder);
     QListWidgetItem *item = new QListWidgetItem(icon, p_selectStr);

@@ -338,7 +338,7 @@ void PreviewHelper::updateEditorInplacePreviewCodeBlock()
     m_previousInplacePreviewCodeBlockSize = previewItems.size();
 
     if (!obsoleteBlocks.isEmpty()) {
-        emit potentialObsoletePreviewBlocksUpdated(obsoleteBlocks.toList());
+        emit potentialObsoletePreviewBlocksUpdated(obsoleteBlocks.values());
     }
 
     m_codeBlockCache.setCapacityHint(m_codeBlocksData.size());
@@ -434,7 +434,7 @@ void PreviewHelper::updateEditorInplacePreviewMathBlock()
     m_previousInplacePreviewMathBlockSize = previewItems.size();
 
     if (!obsoleteBlocks.isEmpty()) {
-        emit potentialObsoletePreviewBlocksUpdated(obsoleteBlocks.toList());
+        emit potentialObsoletePreviewBlocksUpdated(obsoleteBlocks.values());
     }
 
     m_mathBlockCache.setCapacityHint(m_mathBlocksData.size());

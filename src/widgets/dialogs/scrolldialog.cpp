@@ -4,7 +4,6 @@
 #include <QVBoxLayout>
 #include <QDebug>
 #include <QApplication>
-#include <QDesktopWidget>
 #include <QScrollBar>
 #include <QTimer>
 #include <QPlainTextEdit>

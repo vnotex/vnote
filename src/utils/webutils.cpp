@@ -58,7 +58,8 @@ QString WebUtils::toDataUri(const QUrl &p_url, bool p_keepTitle)
 
         if (!p_keepTitle) {
             // Remove <title>...</title>.
-            QRegExp reg("<title>.*</title>", Qt::CaseInsensitive);
+            QRegularExpression reg("<title>.*</title>");
+            reg.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
             uri.remove(reg);
         }
     } else {
