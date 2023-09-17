@@ -27,12 +27,6 @@ jobs:
             platform: x64,
             qt: 6.5.2
           }
-          - {
-            name: "Build On Win32 Qt 6.5",
-            arch: win32_msvc2019,
-            platform: x86,
-            qt: 6.5.2
-          }
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
@@ -60,9 +54,9 @@ jobs:
           version: ${{matrix.config.qt}}
           target: desktop
           arch: ${{matrix.config.arch}}
-          modules: qtwebengine
-          tools: tools_openssl_${{matrix.config.platform}},3.0.10,qt.tools.openssl.win_${{matrix.config.platform}}
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          modules: 'qtwebengine qt5compat'
+          tools: tools_opensslv3_${{matrix.config.platform}}
+          cache: 'true'
 
       - name: Create Build Dir
         shell: bash
