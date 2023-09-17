@@ -21,29 +21,17 @@ jobs:
     strategy:
       matrix:
         config:
-          #  - {
-          #    name: "Build On Win64 Qt 5.12",
-          #    arch: win64_msvc2017_64,
-          #    platform: x64,
-          #    qt: 5.12.11
-          #  }
-          #  - {
-          #    name: "Build On Win32 Qt 5.12",
-          #    arch: win32_msvc2017,
-          #    platform: x86,
-          #    qt: 5.12.11
-          #  }
           - {
-            name: "Build On Win64 Qt 5.15",
+            name: "Build On Win64 Qt 6.5",
             arch: win64_msvc2019_64,
             platform: x64,
-            qt: 5.15.2
+            qt: 6.5.2
           }
           - {
-            name: "Build On Win32 Qt 5.15",
+            name: "Build On Win32 Qt 6.5",
             arch: win32_msvc2019,
             platform: x86,
-            qt: 5.15.2
+            qt: 6.5.2
           }
 
     steps:
@@ -64,16 +52,16 @@ jobs:
         uses: actions/cache@v1  # not v2!
         with:
           path: ../Qt
-          key: ${{ runner.os }}-${{matrix.config.arch}}-QtCache-5.12-1
+          key: ${{ runner.os }}-${{matrix.config.arch}}-QtCache-6.5
 
       - name: Install Qt Official Build
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v3
         with:
           version: ${{matrix.config.qt}}
           target: desktop
           arch: ${{matrix.config.arch}}
           modules: qtwebengine
-          tools: tools_openssl_${{matrix.config.platform}},1.1.1-4,qt.tools.openssl.win_${{matrix.config.platform}}
+          tools: tools_openssl_${{matrix.config.platform}},3.0.10,qt.tools.openssl.win_${{matrix.config.platform}}
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
 
       - name: Create Build Dir
