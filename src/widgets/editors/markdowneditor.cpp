@@ -55,7 +55,6 @@
 #include <imagehost/imagehostutils.h>
 #include <imagehost/imagehost.h>
 #include <imagehost/imagehostmgr.h>
-#include <QRegExp>
 
 #include "previewhelper.h"
 #include "../outlineprovider.h"
@@ -546,8 +545,9 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source)
     const QString html(p_source->html());
 
     // Process <img>.
-    QRegExp reg("<img ([^>]*)src=\"([^\"]+)\"([^>]*)>");
-    if (reg.indexIn(html) != -1 && HtmlUtils::hasOnlyImgTag(html)) {
+    QRegularExpression reg("<img ([^>]*)src=\"([^\"]+)\"([^>]*)>");
+    QRegularExpressionMatch match;
+    if (html.indexOf(reg, 0, &match) != -1 && HtmlUtils::hasOnlyImgTag(html)) {
         if (p_source->hasImage()) {
             // Both image data and URL are embedded.
             SelectDialog dialog(tr("Insert From Clipboard"), this);
@@ -563,7 +563,7 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source)
                     return true;
                 } else if (selection == 2) {
                     // Insert as link.
-                    auto imageLink = vte::MarkdownUtils::generateImageLink("", reg.cap(2), "");
+                    auto imageLink = vte::MarkdownUtils::generateImageLink("", match.captured(2), "");
                     m_textEdit->insertPlainText(imageLink);
                     return true;
                 }
@@ -572,7 +572,7 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source)
             }
         }
 
-        insertImageFromUrl(reg.cap(2));
+        insertImageFromUrl(match.captured(2));
         return true;
     }
 
@@ -1220,9 +1220,9 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
     proDlg.setWindowModality(Qt::WindowModal);
     proDlg.setWindowTitle(tr("Fetch Images To Local"));
 
-    QRegExp zhihuRegExp("^https?://www\\.zhihu\\.com/equation\\?tex=(.+)$");
+    QRegularExpression zhihuRegExp("^https?://www\\.zhihu\\.com/equation\\?tex=(.+)$");
 
-    QRegExp regExp(vte::MarkdownUtils::c_imageLinkRegExp);
+    QRegularExpression regExp(vte::MarkdownUtils::c_imageLinkRegExp);
     for (int i = regs.size() - 1; i >= 0; --i) {
         proDlg.setValue(regs.size() - 1 - i);
         if (proDlg.wasCanceled()) {
@@ -1231,14 +1231,15 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
 
         const auto &reg = regs[i];
         QString linkText = p_text.mid(reg.m_startPos, reg.m_endPos - reg.m_startPos);
-        if (regExp.indexIn(linkText) == -1) {
+        QRegularExpressionMatch match;
+        if (linkText.indexOf(regExp, 0, &match) == -1) {
             continue;
         }
 
         qDebug() << "fetching image link" << linkText;
 
-        const QString imageTitle = purifyImageTitle(regExp.cap(1).trimmed());
-        QString imageUrl = regExp.cap(2).trimmed();
+        const QString imageTitle = purifyImageTitle(match.captured(1).trimmed());
+        QString imageUrl = match.captured(2).trimmed();
 
         const int maxUrlLength = 100;
         QString urlToDisplay(imageUrl);
@@ -1248,8 +1249,9 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
         proDlg.setLabelText(tr("Fetching image (%1)").arg(urlToDisplay));
 
         // Handle equation from zhihu.com like http://www.zhihu.com/equation?tex=P.
-        if (zhihuRegExp.indexIn(imageUrl) != -1) {
-            QString tex = zhihuRegExp.cap(1).trimmed();
+        QRegularExpressionMatch zhihuMatch;
+        if (imageUrl.indexOf(zhihuRegExp, 0, &zhihuMatch) != -1) {
+            QString tex = zhihuMatch.captured(1).trimmed();
 
             // Remove the +.
             tex.replace(QChar('+'), " ");
@@ -1322,7 +1324,7 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
 
         // Replace URL in link.
         QString newLink = QString("![%1](%2%3%4)")
-                                 .arg(imageTitle, urlInLink, regExp.cap(3), regExp.cap(6));
+                                 .arg(imageTitle, urlInLink, match.captured(3), match.captured(6));
         p_text.replace(reg.m_startPos,
                        reg.m_endPos - reg.m_startPos,
                        newLink);

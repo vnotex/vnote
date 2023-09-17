@@ -108,7 +108,7 @@ void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper)
 
 void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event)
 {
-    QScopedPointer<QMenu> menu(this->createStandardContextMenu());
+    QScopedPointer<QMenu> menu(createStandardContextMenu());
     const QList<QAction *> actions = menu->actions();
 
 #if defined(Q_OS_WIN)

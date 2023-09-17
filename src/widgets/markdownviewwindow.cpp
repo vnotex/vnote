@@ -13,7 +13,7 @@
 #include <QActionGroup>
 #include <QTimer>
 #include <QPrinter>
-  #include <QWebEngineSettings>
+#include <QWebEngineSettings>
 
 #include <core/fileopenparameters.h>
 #include <core/editorconfig.h>
@@ -395,7 +395,8 @@ void MarkdownViewWindow::setupTextEditor()
 
     connect(m_editor, &MarkdownEditor::applySnippetRequested,
             this, QOverload<>::of(&MarkdownViewWindow::applySnippet));
-    connect(m_viewer, &MarkdownViewer::printFinished, this, &MarkdownViewWindow::onPrintFinish);
+    connect(m_viewer, &MarkdownViewer::printFinished,
+            this, &MarkdownViewWindow::onPrintFinished);
 
 }
 
@@ -505,7 +506,8 @@ void MarkdownViewWindow::setupViewer()
                     setEditViewMode(m_editViewMode);
                 }
             });
-    m_viewer->settings()->resetAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls);
+
+    m_viewer->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 }
 
 void MarkdownViewWindow::syncTextEditorFromBuffer(bool p_syncPositionFromReadMode)
@@ -1403,30 +1405,19 @@ void MarkdownViewWindow::print()
     }
 
     m_printer = PrintUtils::promptForPrint(m_viewer->hasSelection(), this);
-
     if (m_printer)
     {
         m_printer->setOutputFormat(QPrinter::PdfFormat);
         m_viewer->print(m_printer.get());
     }
 }
-void MarkdownViewWindow::onPrintFinish(bool isSeccess)
+
+void MarkdownViewWindow::onPrintFinished(bool succeeded)
 {
     m_printer.reset();
-    QString message;
-    if (isSeccess) {
-         message = "print to pdf suceess.";
-    } else {
-         message = "print to pdf failed.";
-    }
-    showMessage(message);
-
-//    MessageBoxHelper::notify(MessageBoxHelper::Information,
-//                             message,
-//                             QString(),
-//                             QString(),
-//                             this);
+    showMessage(succeeded ? tr("Printed to PDF") : tr("Failed to print to PDF"));
 }
+
 void MarkdownViewWindow::handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp, const QString &p_text)
 {
     static bool stylesInitialized = false;

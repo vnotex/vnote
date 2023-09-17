@@ -560,9 +560,9 @@ bool NotebookDatabaseAccess::updateNodeTags(Node *p_node)
     const auto &nodeTags = p_node->getTags();
 
     {
-        QStringList list = queryNodeTags(p_node->getId());
+        QStringList tagsList = queryNodeTags(p_node->getId());
         QSet<QString> tags;
-        for (auto &s : list)
+        for (const auto &s : tagsList)
         {
             tags.insert(s);
         }

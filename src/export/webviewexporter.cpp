@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QTemporaryDir>
 #include <QProcess>
+#include <QRegularExpression>
 
 #include <widgets/editors/markdownviewer.h>
 #include <widgets/editors/markdownvieweradapter.h>
@@ -19,7 +20,6 @@
 #include <utils/processutils.h>
 #include <utils/htmlutils.h>
 #include <core/file.h>
-#include <QRegExp>
 
 using namespace vnotex;
 
@@ -359,22 +359,23 @@ void WebViewExporter::prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOp
 bool WebViewExporter::embedStyleResources(QString &p_html) const
 {
     bool altered = false;
-    QRegExp reg("\\burl\\(\"((file|qrc):[^\"\\)]+)\"\\);");
+    QRegularExpression reg("\\burl\\(\"((file|qrc):[^\"\\)]+)\"\\);");
 
     int pos = 0;
     while (pos < p_html.size()) {
-        int idx = reg.indexIn(p_html, pos);
+        QRegularExpressionMatch match;
+        int idx = p_html.indexOf(reg, pos, &match);
         if (idx == -1) {
             break;
         }
 
-        QString dataURI = WebUtils::toDataUri(QUrl(reg.cap(1)), false);
+        QString dataURI = WebUtils::toDataUri(QUrl(match.captured(1)), false);
         if (dataURI.isEmpty()) {
-            pos = idx + reg.matchedLength();
+            pos = idx + match.capturedLength();
         } else {
             // Replace the url string in html.
             QString newUrl = QString("url('%1');").arg(dataURI);
-            p_html.replace(idx, reg.matchedLength(), newUrl);
+            p_html.replace(idx, match.capturedLength(), newUrl);
             pos = idx + newUrl.size();
             altered = true;
         }
@@ -390,28 +391,29 @@ bool WebViewExporter::embedBodyResources(const QUrl &p_baseUrl, QString &p_html)
         return altered;
     }
 
-    QRegExp reg(c_imgRegExp);
+    QRegularExpression reg(c_imgRegExp);
 
     int pos = 0;
     while (pos < p_html.size()) {
-        int idx = reg.indexIn(p_html, pos);
+        QRegularExpressionMatch match;
+        int idx = p_html.indexOf(reg, pos, &match);
         if (idx == -1) {
             break;
         }
 
-        if (reg.cap(2).isEmpty()) {
-            pos = idx + reg.matchedLength();
+        if (match.captured(2).isEmpty()) {
+            pos = idx + match.capturedLength();
             continue;
         }
 
-        QUrl srcUrl(p_baseUrl.resolved(reg.cap(2)));
+        QUrl srcUrl(p_baseUrl.resolved(match.captured(2)));
         const auto dataURI = WebUtils::toDataUri(srcUrl, true);
         if (dataURI.isEmpty()) {
-            pos = idx + reg.matchedLength();
+            pos = idx + match.capturedLength();
         } else {
             // Replace the url string in html.
-            QString newUrl = QString("<img %1src='%2'%3>").arg(reg.cap(1), dataURI, reg.cap(3));
-            p_html.replace(idx, reg.matchedLength(), newUrl);
+            QString newUrl = QString("<img %1src='%2'%3>").arg(match.captured(1), dataURI, match.captured(3));
+            p_html.replace(idx, match.capturedLength(), newUrl);
             pos = idx + newUrl.size();
             altered = true;
         }
@@ -437,28 +439,29 @@ bool WebViewExporter::fixBodyResources(const QUrl &p_baseUrl,
         return altered;
     }
 
-    QRegExp reg(c_imgRegExp);
+    QRegularExpression reg(c_imgRegExp);
 
     int pos = 0;
     while (pos < p_html.size()) {
-        int idx = reg.indexIn(p_html, pos);
+        QRegularExpressionMatch match;
+        int idx = p_html.indexOf(reg, pos, &match);
         if (idx == -1) {
             break;
         }
 
-        if (reg.cap(2).isEmpty()) {
-            pos = idx + reg.matchedLength();
+        if (match.captured(2).isEmpty()) {
+            pos = idx + match.capturedLength();
             continue;
         }
 
-        QUrl srcUrl(p_baseUrl.resolved(reg.cap(2)));
+        QUrl srcUrl(p_baseUrl.resolved(match.captured(2)));
         QString targetFile = WebUtils::copyResource(srcUrl, p_folder);
         if (targetFile.isEmpty()) {
-            pos = idx + reg.matchedLength();
+            pos = idx + match.capturedLength();
         } else {
             // Replace the url string in html.
-            QString newUrl = QString("<img %1src=\"%2\"%3>").arg(reg.cap(1), getResourceRelativePath(targetFile), reg.cap(3));
-            p_html.replace(idx, reg.matchedLength(), newUrl);
+            QString newUrl = QString("<img %1src=\"%2\"%3>").arg(match.captured(1), getResourceRelativePath(targetFile), match.captured(3));
+            p_html.replace(idx, match.capturedLength(), newUrl);
             pos = idx + newUrl.size();
             altered = true;
         }

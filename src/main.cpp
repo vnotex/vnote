@@ -31,7 +31,6 @@ using namespace vnotex;
 
 void loadTranslators(QApplication &p_app);
 
-
 void showMessageOnCommandLineIfAvailable(const QString &p_msg);
 
 int main(int argc, char *argv[])
@@ -77,7 +76,6 @@ int main(int argc, char *argv[])
 #endif
 
     Application app(argc, argv);
-
 
     QAccessible::installFactory(&FakeAccessible::accessibleFactory);
 

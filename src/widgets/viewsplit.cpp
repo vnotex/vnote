@@ -10,6 +10,7 @@
 #include <QMimeData>
 #include <QFileInfo>
 #include <QShortcut>
+#include <QActionGroup>
 
 #include "viewwindow.h"
 #include "viewarea.h"
@@ -25,7 +26,6 @@
 #include <core/coreconfig.h>
 #include "propertydefs.h"
 #include "fileopenparameters.h"
-#include "sessionconfig.h"
 
 using namespace vnotex;
 

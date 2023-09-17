@@ -4,7 +4,9 @@
 #include <QObject>
 #include <QSharedPointer>
 #include <QVector>
+
 #include <limits.h>
+
 namespace vnotex
 {
     typedef QVector<int> SectionNumber;

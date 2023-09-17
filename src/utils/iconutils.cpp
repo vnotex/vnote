@@ -1,6 +1,6 @@
 #include "iconutils.h"
 
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QFileInfo>
 #include <QPixmap>
 #include <QPainter>
@@ -80,17 +80,18 @@ QString IconUtils::replaceForegroundOfIcon(const QString &p_iconContent, const Q
 bool IconUtils::isMonochrome(const QString &p_iconContent)
 {
     // Match color-hex codes.
-    QRegExp monoRe("#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})");
+    QRegularExpression monoRe("#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})");
 
     QString lastColor = "";
     int pos = 0;
     while (pos < p_iconContent.size()) {
-        int idx = monoRe.indexIn(p_iconContent, pos);
+        QRegularExpressionMatch match;
+        int idx = p_iconContent.indexOf(monoRe, pos, &match);
         if (idx == -1) {
             break;
         }
 
-        auto curColor = monoRe.cap(1).toLower();
+        auto curColor = match.captured(1).toLower();
         if (curColor.size() == 3) {
             for (int i = curColor.size() - 1; i >= 0; --i) {
                 curColor.insert(i, curColor[i]);
@@ -105,7 +106,7 @@ bool IconUtils::isMonochrome(const QString &p_iconContent)
             }
         }
 
-        pos += monoRe.matchedLength();
+        pos += match.capturedLength();
     }
 
     return true;

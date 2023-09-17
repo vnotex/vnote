@@ -6,13 +6,13 @@
 #include <QWidget>
 #include <QFontDatabase>
 #include <QRegularExpression>
-#include <QRegularExpressionMatch>
 #include <QSvgRenderer>
 #include <QPainter>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QDebug>
+#include <QLocale>
 
 #include <cmath>
 
@@ -42,7 +42,8 @@ void Utils::appendMsg(QString &p_msg, const QString &p_new)
 
 QString Utils::dateTimeString(const QDateTime &p_dateTime)
 {
-    return p_dateTime.date().toString(Qt::ISODate)
+    QLocale locale;
+    return locale.toString(p_dateTime.date())
            + " "
            + p_dateTime.time().toString(Qt::TextDate);
 }
@@ -69,15 +70,16 @@ QChar Utils::keyToChar(int p_key, bool p_lowerCase)
 
 QString Utils::pickAvailableFontFamily(const QStringList &p_families)
 {
-    auto availableFonts = QFontDatabase().families();
+    auto availableFonts = QFontDatabase::families();
     for (const auto& f : p_families) {
         auto family = f.trimmed();
         if (family.isEmpty()) {
             continue;
         }
 
+        QRegularExpression regExp("\\[.*\\]");
         for (auto availableFont : availableFonts) {
-            availableFont.remove(QRegularExpression("\\[.*\\]"));
+            availableFont.remove(regExp);
             availableFont = availableFont.trimmed();
             if (family == availableFont
                 || family.toLower() == availableFont.toLower()) {
