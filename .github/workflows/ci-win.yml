@@ -54,7 +54,7 @@ jobs:
           version: ${{matrix.config.qt}}
           target: desktop
           arch: ${{matrix.config.arch}}
-          modules: 'qtwebengine qt5compat'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat'
           tools: tools_opensslv3_${{matrix.config.platform}}
           cache: 'true'
 
