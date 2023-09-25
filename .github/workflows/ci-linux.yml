@@ -53,14 +53,13 @@ jobs:
           version: 6.5.2
           target: desktop
           modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat'
-          tools: tools_opensslv3_${{matrix.config.platform}}
           cache: 'true'
 
       - name: Create Build Dir
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
-      - name: Compile qt5ct
+      - name: Compile qt6ct
         run: |
           git clone https://github.com/trialuser02/qt6ct qt6ct.git
           cd qt6ct.git
@@ -71,9 +70,7 @@ jobs:
       - name: Configure Project
         run: |
           qmake -v
-          cp /usr/lib/x86_64-linux-gnu/qt6/plugins/platforminputcontexts/libfcitxplatforminputcontextplugin.so ./
-          sudo chmod +rwx ./libfcitxplatforminputcontextplugin.so
-          cp ./libfcitxplatforminputcontextplugin.so $Qt6_Dir/plugins/platforminputcontexts
+          # TODO: libfcitx5
           qmake CONFIG+=release -spec linux-g++-64 ${GITHUB_WORKSPACE}/vnote.pro
         working-directory: ${{runner.workspace}}/build
 
