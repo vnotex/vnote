@@ -71,6 +71,7 @@ jobs:
         run: |
           qmake -v
           # TODO: libfcitx5
+          tree /home/runner/work/vnote/Qt
           qmake CONFIG+=release -spec linux-g++-64 ${GITHUB_WORKSPACE}/vnote.pro
         working-directory: ${{runner.workspace}}/build
 
