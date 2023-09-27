@@ -53,7 +53,11 @@ namespace vnotex
         void setActionButtonsAlwaysShown(bool p_shown);
 
     protected:
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+        void enterEvent(QEvent *p_event) Q_DECL_OVERRIDE;
+#else
         void enterEvent(QEnterEvent *p_event) Q_DECL_OVERRIDE;
+#endif
 
         void leaveEvent(QEvent *p_event) Q_DECL_OVERRIDE;
 

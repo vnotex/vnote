@@ -1,4 +1,8 @@
-QT += widgets svg core5compat
+QT += widgets svg
+
+greaterThan(QT_MAJOR_VERSION, 5) {
+    QT += core5compat
+}
 
 SOURCES += \
     $$PWD/asyncworker.cpp \

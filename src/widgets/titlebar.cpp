@@ -99,7 +99,11 @@ void TitleBar::setupActionButtons(TitleBar::Actions p_actionFlags)
     }
 }
 
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+void TitleBar::enterEvent(QEvent *p_event)
+#else
 void TitleBar::enterEvent(QEnterEvent *p_event)
+#endif
 {
     QFrame::enterEvent(p_event);
     setActionButtonsVisible(true);

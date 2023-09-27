@@ -2,8 +2,12 @@ lessThan(QT_MAJOR_VERSION, 5): error("requires Qt 5 and above")
 
 equals(QT_MAJOR_VERSION, 5):lessThan(QT_MINOR_VERSION, 12): error("requires Qt 5.12 and above")
 
-QT += core gui widgets webenginewidgets webchannel network svg printsupport core5compat
+QT += core gui widgets webenginewidgets webchannel network svg printsupport
 QT += sql
+
+greaterThan(QT_MAJOR_VERSION, 5) {
+    QT += core5compat
+}
 
 CONFIG -= qtquickcompiler
 

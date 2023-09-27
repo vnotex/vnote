@@ -108,7 +108,12 @@ void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper)
 
 void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event)
 {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+    QScopedPointer<QMenu> menu(page()->createStandardContextMenu());
+#else
     QScopedPointer<QMenu> menu(createStandardContextMenu());
+#endif
+
     const QList<QAction *> actions = menu->actions();
 
 #if defined(Q_OS_WIN)

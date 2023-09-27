@@ -395,9 +395,11 @@ void MarkdownViewWindow::setupTextEditor()
 
     connect(m_editor, &MarkdownEditor::applySnippetRequested,
             this, QOverload<>::of(&MarkdownViewWindow::applySnippet));
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     connect(m_viewer, &MarkdownViewer::printFinished,
             this, &MarkdownViewWindow::onPrintFinished);
-
+#endif
 }
 
 QStackedWidget *MarkdownViewWindow::getMainStatusWidget() const
@@ -1407,8 +1409,12 @@ void MarkdownViewWindow::print()
     m_printer = PrintUtils::promptForPrint(m_viewer->hasSelection(), this);
     if (m_printer)
     {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+        m_viewer->page()->print(m_printer.data(), std::bind(&MarkdownViewWindow::onPrintFinished, this, std::placeholders::_1));
+#else
         m_printer->setOutputFormat(QPrinter::PdfFormat);
         m_viewer->print(m_printer.get());
+#endif
     }
 }
 
