@@ -71,7 +71,6 @@ jobs:
         run: |
           qmake -v
           # TODO: libfcitx5
-          tree /home/runner/work/vnote/Qt
           qmake CONFIG+=release -spec linux-g++-64 ${GITHUB_WORKSPACE}/vnote.pro
         working-directory: ${{runner.workspace}}/build
 
@@ -91,6 +90,7 @@ jobs:
           # Move the lib out to avoid duplication
           mv AppDir/usr/lib ./
           LD_LIBRARY_PATH=$PWD/lib:$LD_LIBRARY_PATH
+          Qt6_Dir=$QT_HOST_BINS/..
           # Copy translations
           mkdir -p AppDir/usr/translations
           cp $Qt6_Dir/translations/qt_zh_CN.qm AppDir/usr/translations
