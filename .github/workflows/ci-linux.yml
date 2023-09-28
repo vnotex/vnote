@@ -91,6 +91,8 @@ jobs:
           mv AppDir/usr/lib ./
           LD_LIBRARY_PATH=$PWD/lib:$LD_LIBRARY_PATH
           Qt6_Dir=$QT_HOST_BINS/..
+          tree $Qt6_Dir
+          tree $Qt6_Dir/../..
           # Copy translations
           mkdir -p AppDir/usr/translations
           cp $Qt6_Dir/translations/qt_zh_CN.qm AppDir/usr/translations
