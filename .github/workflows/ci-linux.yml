@@ -38,43 +38,39 @@ jobs:
       - name: Install dependencies
         run: |
           sudo DEBIAN_FRONTEND=noninteractive apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev tree
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx5-qt-dev tree
 
       - name: Cache Qt
         id: cache-qt
         uses: actions/cache@v1  # not v2!
         with:
           path: ../Qt
-          key: ${{ runner.os }}-QtCache-5.15
+          key: ${{ runner.os }}-QtCache-6.5
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v3
         with:
-          version: 5.15.2
+          version: 6.5.2
           target: desktop
-          modules: qtwebengine
-          tools: tools_openssl_x64,1.1.1-4,qt.tools.openssl.gcc_64
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat'
+          cache: 'true'
 
       - name: Create Build Dir
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
-      - name: Compile qt5ct
+      - name: Compile qt6ct
         run: |
-          wget --no-check-certificate -c https://versaweb.dl.sourceforge.net/project/qt5ct/qt5ct-1.1.tar.bz2
-          tar xf qt5ct-1.*.tar.bz2
-          cd qt5ct-1.*/
-          QT_SELECT=5 qmake
+          git clone https://github.com/trialuser02/qt6ct qt6ct.git
+          cd qt6ct.git
+          qmake
           make -j$(nproc) && sudo make install
         working-directory: ${{runner.workspace}}/build
 
       - name: Configure Project
         run: |
           qmake -v
-          cp /usr/lib/x86_64-linux-gnu/qt5/plugins/platforminputcontexts/libfcitxplatforminputcontextplugin.so ./
-          sudo chmod +rwx ./libfcitxplatforminputcontextplugin.so
-          cp ./libfcitxplatforminputcontextplugin.so $Qt5_Dir/plugins/platforminputcontexts
+          # TODO: libfcitx5
           qmake CONFIG+=release -spec linux-g++-64 ${GITHUB_WORKSPACE}/vnote.pro
         working-directory: ${{runner.workspace}}/build
 
@@ -94,18 +90,21 @@ jobs:
           # Move the lib out to avoid duplication
           mv AppDir/usr/lib ./
           LD_LIBRARY_PATH=$PWD/lib:$LD_LIBRARY_PATH
+          Qt6_Dir=$QT_HOST_BINS/..
+          tree $Qt6_Dir
+          tree $Qt6_Dir/../..
           # Copy translations
           mkdir -p AppDir/usr/translations
-          cp $Qt5_Dir/translations/qt_zh_CN.qm AppDir/usr/translations
+          cp $Qt6_Dir/translations/qt_zh_CN.qm AppDir/usr/translations
           # Package qt5ct (EXTRA_QT_PLUGINS seems not work)
           # EXTRA_QT_PLUGINS="platformthemes/libqt5ct.so;styles/libqt5ct-style.so"
           mkdir -p AppDir/usr/plugins/platformthemes
           mkdir -p AppDir/usr/plugins/styles
-          cp $Qt5_Dir/plugins/platformthemes/* AppDir/usr/plugins/platformthemes/
-          cp $Qt5_Dir/plugins/styles/* AppDir/usr/plugins/styles/
+          cp $Qt6_Dir/plugins/platformthemes/* AppDir/usr/plugins/platformthemes/
+          cp $Qt6_Dir/plugins/styles/* AppDir/usr/plugins/styles/
           # Package libssl.so and libcrypto.so
-          Qt5_Tools=$Qt5_Dir/../../Tools
-          linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage -l $Qt5_Tools/OpenSSL/binary/lib/libcrypto.so.1.1 -l $Qt5_Tools/OpenSSL/binary/lib/libssl.so.1.1
+          Qt_Tools=$Qt6_Dir/../../Tools
+          linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage -l $Qt_Tools/OpenSSL/binary/lib/libcrypto.so.* -l $Qt_Tools/OpenSSL/binary/lib/
           tree AppDir
         working-directory: ${{runner.workspace}}/build
 

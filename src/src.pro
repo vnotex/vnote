@@ -79,8 +79,8 @@ win32 {
     rcc_binary.commands = $$shell_path($$[QT_HOST_BINS]/rcc.exe) -name ${QMAKE_FILE_IN_BASE} -binary ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
     rcc_binary.depend_command = $$shell_path($$[QT_HOST_BINS]/rcc.exe) -list $$QMAKE_RESOURCE_FLAGS ${QMAKE_FILE_IN}
 } else {
-    rcc_binary.commands = $$[QT_HOST_BINS]/rcc -name ${QMAKE_FILE_IN_BASE} -binary ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
-    rcc_binary.depend_command = $$[QT_HOST_BINS]/rcc -list $$QMAKE_RESOURCE_FLAGS ${QMAKE_FILE_IN}
+    rcc_binary.commands = $$[QT_HOST_LIBEXECS]/rcc -name ${QMAKE_FILE_IN_BASE} -binary ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
+    rcc_binary.depend_command = $$[QT_HOST_LIBEXECS]/rcc -list $$QMAKE_RESOURCE_FLAGS ${QMAKE_FILE_IN}
 }
 rcc_binary.input = RCC_BINARY_SOURCES
 rcc_binary.output = $$SRC_DESTDIR/vnote_${QMAKE_FILE_IN_BASE}.rcc
