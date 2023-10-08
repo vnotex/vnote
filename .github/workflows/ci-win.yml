@@ -75,10 +75,21 @@ jobs:
 
       - name: Clone OpenSSL on 5.15
         shell: bash
-        if: startsWith(${{matrix.config.qt}}, '5.15')
+        if: ${{startsWith(matrix.config.qt, '5.15')}}
         run: |
           git clone https://github.com/tamlok/openssl-utils.git openssl-utils.git --depth=1
         working-directory: ${{runner.workspace}}/build
+
+      - name: Download JOM
+        uses: suisei-cn/actions-download-file@v1
+        with:
+          url:    http://download.qt.io/official_releases/jom/jom.zip
+          target: ${{runner.temp}}\
+
+      - name: Unzip JOM
+        run:  |
+              7z x jom.zip -ojom
+        working-directory: ${{runner.temp}}
 
       - name: Configure and Build Project
         shell: cmd
@@ -86,7 +97,7 @@ jobs:
           qmake --version
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.config.platform}}
           qmake -r -spec win32-msvc CONFIG-=debug CONFIG+=release %GITHUB_WORKSPACE%\vnote.pro
-          nmake
+          ${{runner.temp}}\jom\jom
         working-directory: ${{runner.workspace}}/build
 
       - name: Package Project 1
@@ -111,7 +122,7 @@ jobs:
 
       - name: "Package Project: Copy OpenSSL on 5.15"
         shell: cmd
-        if: startsWith(${{matrix.config.qt}}, '5.15')
+        if: ${{startsWith(matrix.config.qt, '5.15')}}
         run: |
           set openssl_dir=openssl-utils.git\1.1.1j\Win_${{matrix.config.platform}}
           copy %openssl_dir%\lib*.dll "%DISTRIB_PATH%\"
@@ -129,7 +140,7 @@ jobs:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
 
       - name: Package Installer
-        if: startsWith(${{matrix.config.qt}}, '6.')
+        if: ${{startsWith(matrix.config.qt, '6.')}}
         shell: cmd
         run: |
           copy "%GITHUB_WORKSPACE%\src\data\core\icons\vnote.ico" "%DISTRIB_PATH%\vnote.ico"
@@ -150,7 +161,7 @@ jobs:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
 
       - name: Archive Installer
-        if: startsWith(${{matrix.config.qt}}, '6.')
+        if: ${{startsWith(matrix.config.qt, '6.')}}
         uses: actions/upload-artifact@v2
         with:
           name: VNote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.msi
