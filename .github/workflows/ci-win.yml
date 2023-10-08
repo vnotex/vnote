@@ -22,10 +22,20 @@ jobs:
       matrix:
         config:
           - {
+            name: "Build On Win64 Qt 5.15",
+            arch: win64_msvc2019_64,
+            platform: x64,
+            qt: 5.15.2,
+            qt_modules: qtwebengine,
+            qt_tools: tools_opensslv3_x64
+          }
+          - {
             name: "Build On Win64 Qt 6.5",
             arch: win64_msvc2019_64,
             platform: x64,
-            qt: 6.5.2
+            qt: 6.5.2,
+            qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat",
+            qt_tools: tools_opensslv3_x64
           }
 
     steps:
@@ -46,7 +56,7 @@ jobs:
         uses: actions/cache@v1  # not v2!
         with:
           path: ../Qt
-          key: ${{ runner.os }}-${{matrix.config.arch}}-QtCache-6.5
+          key: ${{runner.os}}-${{matrix.config.arch}}-QtCache-${{matrix.config.qt}}
 
       - name: Install Qt Official Build
         uses: jurplel/install-qt-action@v3
@@ -54,14 +64,21 @@ jobs:
           version: ${{matrix.config.qt}}
           target: desktop
           arch: ${{matrix.config.arch}}
-          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat'
-          tools: tools_opensslv3_${{matrix.config.platform}}
+          modules: ${{matrix.config.qt_modules}}
+          tools: ${{matrix.config.qt_tools}}
           cache: 'true'
 
       - name: Create Build Dir
         shell: bash
         run: mkdir build
         working-directory: ${{runner.workspace}}
+
+      - name: Clone OpenSSL on 5.15
+        shell: bash
+        if: startsWith(${{matrix.config.qt}}, '5.15')
+        run: |
+          git clone https://github.com/tamlok/openssl-utils.git openssl-utils.git --depth=1
+        working-directory: ${{runner.workspace}}/build
 
       - name: Configure and Build Project
         shell: cmd
@@ -72,7 +89,7 @@ jobs:
           nmake
         working-directory: ${{runner.workspace}}/build
 
-      - name: Package Project
+      - name: Package Project 1
         shell: cmd
         run: |
           qmake --version
@@ -88,6 +105,23 @@ jobs:
           copy "%GITHUB_WORKSPACE%\COPYING.LESSER" "%DISTRIB_PATH%\COPYING.LESSER"
           echo %GITHUB_SHA% > "%DISTRIB_PATH%\commit"
           del /F /Q "%DISTRIB_PATH%\translations\qt_*.qm"
+        working-directory: ${{runner.workspace}}/build
+        env:
+          DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
+
+      - name: "Package Project: Copy OpenSSL on 5.15"
+        shell: cmd
+        if: startsWith(${{matrix.config.qt}}, '5.15')
+        run: |
+          set openssl_dir=openssl-utils.git\1.1.1j\Win_${{matrix.config.platform}}
+          copy %openssl_dir%\lib*.dll "%DISTRIB_PATH%\"
+        working-directory: ${{runner.workspace}}/build
+        env:
+          DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
+
+      - name: Package Project 2
+        shell: cmd
+        run: |
           7z a vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip "%DISTRIB_PATH%"
           copy vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.zip
         working-directory: ${{runner.workspace}}/build
@@ -95,6 +129,7 @@ jobs:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
 
       - name: Package Installer
+        if: startsWith(${{matrix.config.qt}}, '6.')
         shell: cmd
         run: |
           copy "%GITHUB_WORKSPACE%\src\data\core\icons\vnote.ico" "%DISTRIB_PATH%\vnote.ico"
@@ -115,6 +150,7 @@ jobs:
           DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
 
       - name: Archive Installer
+        if: startsWith(${{matrix.config.qt}}, '6.')
         uses: actions/upload-artifact@v2
         with:
           name: VNote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.msi
