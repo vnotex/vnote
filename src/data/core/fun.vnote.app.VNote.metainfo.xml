@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+   <id>fun.vnote.app.VNote</id>
+   <name>VNote</name>
+   <summary>A pleasant note-taking platform</summary>
+   <developer_name>Le Tan</developer_name>
+   <metadata_license>CC0-1.0</metadata_license>
+   <project_license>LGPL-3.0-only</project_license>
+   <description>
+      <p>Simple notes management</p>
+      <ul>
+         <li>All plain text, no database</li>
+         <li>Self-contained notebooks, infinite levels of folders, plain notes</li>
+         <li>Tags and attachments</li>
+         <li>Explore and edit external files</li>
+      </ul>
+      <p>Own your data</p>
+      <ul>
+         <li>All files on your local disk</li>
+         <li>One notebook is exactly one directory</li>
+         <li>Work from anywhere seamlessly via third-party service of your choice</li>
+      </ul>
+      <p>Concentration</p>
+      <ul>
+         <li>In-place preview or side-by-side live preview</li>
+         <li>Focus on your note in both read and edit mode</li>
+      </ul>
+      <p>Pleasant Markdown experience</p>
+      <ul>
+         <li>Minimized gap between read and write of Markdown</li>
+         <li>Syntax highlights and in-place preview</li>
+         <li>Effective images management</li>
+         <li>Interactive outline</li>
+         <li>UML diagrams, flowcharts, and math formulas</li>
+      </ul>
+      <p>Highly customizable</p>
+      <ul>
+         <li>Themes and styles</li>
+         <li>Shortcuts and behaviors</li>
+      </ul>
+      <p>By programmers, for programmers</p>
+      <ul>
+         <li>Vi mode and Vi-like navigation</li>
+         <li>Line number in editor</li>
+         <li>Multiple tabs</li>
+         <li>Window splits</li>
+         <li>Fuzzy search and jump</li>
+         <li>Versatile shortcuts</li>
+      </ul>
+   </description>
+   <launchable type="desktop-id">fun.vnote.app.VNote.desktop</launchable>
+   <screenshots>
+      <screenshot type="default">
+         <image>https://app.vnote.fun/en_us/vx_images/90420129296.png</image>
+      </screenshot>
+      <screenshot>
+         <image>https://app.vnote.fun/en_us/vx_images/4085821110870.png</image>
+      </screenshot>
+   </screenshots>
+   <content_rating type="oars-1.1" />
+   <releases>
+      <release version="3.17.0" date="2023-09-27" />
+   </releases>
+</component>
+
