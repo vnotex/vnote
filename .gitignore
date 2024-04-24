@@ -11,3 +11,5 @@ GRTAGS
 GTAGS
 aqtinstall.log
 tags
+CMakeLists.txt.user
+build
