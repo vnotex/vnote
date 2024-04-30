@@ -1351,7 +1351,7 @@
     <message>
         <location filename="../../../unitedentry/helpunitedentry.cpp" line="35"/>
         <source>Clear the input except the entry name</source>
-        <translation>清楚输入但保留入口名字</translation>
+        <translation>清除输入但保留入口名字</translation>
     </message>
     <message>
         <location filename="../../../unitedentry/helpunitedentry.cpp" line="36"/>
