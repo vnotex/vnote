@@ -28,8 +28,23 @@ set_source_files_properties(${VX_APP_ICON_MACOS} PROPERTIES
 # Translations
 set(VX_TS_FILES data/core/translations/vnote_zh_CN.ts
     data/core/translations/vnote_ja.ts)
-set_source_files_properties(${VX_TS_FILES} PROPERTIES OUTPUT_LOCATION "data/core/translations")
+if((QT_DEFAULT_MAJOR_VERSION GREATER 5))
+    qt_add_lupdate(vnote TS_FILES ${VX_TS_FILES})
+endif()
+# Generate .qm files from .ts files (lrelease)
 qt_add_translation(VX_QM_FILES ${VX_TS_FILES})
+add_custom_target(lrelease DEPENDS ${VX_QM_FILES})
+
+# TODO: VTextEdit translations
+list(APPEND VX_QM_FILES
+    data/core/translations/qdialogbuttonbox_zh_CN.qm
+    data/core/translations/qtbase_ja.qm
+    data/core/translations/qtbase_zh_CN.qm
+    data/core/translations/qtv_ja.qm
+    data/core/translations/qtv_zh_CN.qm
+    data/core/translations/qwebengine_zh_CN.qm
+)
+install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}/translations" OPTIONAL)
 
 # Resources
 set(VX_RESOURCE_FILES data/core/core.qrc)

@@ -95,15 +95,5 @@
         <file>logo/vnote.png</file>
         <file>logo/256x256/vnote.png</file>
         <file>logo/vnote_mono.png</file>
-        <file>translations/qdialogbuttonbox_zh_CN.qm</file>
-        <file>translations/qwebengine_zh_CN.qm</file>
-        <file>translations/qt_zh_CN.qm</file>
-        <file>translations/vnote_zh_CN.qm</file>
-        <file>translations/qtbase_zh_CN.qm</file>
-        <file>translations/vtextedit_zh_CN.qm</file>
-        <file>translations/qt_ja.qm</file>
-        <file>translations/vnote_ja.qm</file>
-        <file>translations/qtbase_ja.qm</file>
-	<file>translations/vtextedit_ja.qm</file>
     </qresource>
 </RCC>

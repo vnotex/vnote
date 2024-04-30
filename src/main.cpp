@@ -204,47 +204,42 @@ void loadTranslators(QApplication &p_app)
     QLocale locale;
     qInfo() << "locale:" << locale.name();
 
-    const QString resourceTranslationFolder(QStringLiteral(":/vnotex/data/core/translations"));
     const QString envTranslationFolder(QStringLiteral("translations"));
 
     // For QTextEdit/QTextBrowser and other basic widgets.
     QScopedPointer<QTranslator> qtbaseTranslator(new QTranslator(&p_app));
-    if (qtbaseTranslator->load(locale, "qtbase", "_", resourceTranslationFolder)) {
+    if (qtbaseTranslator->load(locale, "qtbase", "_", envTranslationFolder)) {
         p_app.installTranslator(qtbaseTranslator.take());
     }
 
     // qt_zh_CN.ts does not cover the real QDialogButtonBox which uses QPlatformTheme.
     QScopedPointer<QTranslator> dialogButtonBoxTranslator(new QTranslator(&p_app));
-    if (dialogButtonBoxTranslator->load(locale, "qdialogbuttonbox", "_", resourceTranslationFolder)) {
+    if (dialogButtonBoxTranslator->load(locale, "qdialogbuttonbox", "_", envTranslationFolder)) {
         p_app.installTranslator(dialogButtonBoxTranslator.take());
     }
 
     QScopedPointer<QTranslator> webengineTranslator(new QTranslator(&p_app));
-    if (webengineTranslator->load(locale, "qwebengine", "_", resourceTranslationFolder)) {
+    if (webengineTranslator->load(locale, "qwebengine", "_", envTranslationFolder)) {
         p_app.installTranslator(webengineTranslator.take());
     }
 
-    // Load translation for Qt from resource.
     QScopedPointer<QTranslator> qtTranslator(new QTranslator(&p_app));
-    if (qtTranslator->load(locale, "qt", "_", resourceTranslationFolder)) {
+    if (qtTranslator->load(locale, "qtv", "_", envTranslationFolder)) {
         p_app.installTranslator(qtTranslator.take());
     }
 
-    // Load translation for Qt from env.
     QScopedPointer<QTranslator> qtEnvTranslator(new QTranslator(&p_app));
     if (qtEnvTranslator->load(locale, "qt", "_", envTranslationFolder)) {
         p_app.installTranslator(qtEnvTranslator.take());
     }
 
-    // Load translation for vnote from resource.
     QScopedPointer<QTranslator> vnoteTranslator(new QTranslator(&p_app));
-    if (vnoteTranslator->load(locale, "vnote", "_", resourceTranslationFolder)) {
+    if (vnoteTranslator->load(locale, "vnote", "_", envTranslationFolder)) {
         p_app.installTranslator(vnoteTranslator.take());
     }
 
-    // Load translation for vtextedit from resource.
     QScopedPointer<QTranslator> vtexteditTranslator(new QTranslator(&p_app));
-    if (vtexteditTranslator->load(locale, "vtextedit", "_", resourceTranslationFolder)) {
+    if (vtexteditTranslator->load(locale, "vtextedit", "_", envTranslationFolder)) {
         p_app.installTranslator(vtexteditTranslator.take());
     }
 }
