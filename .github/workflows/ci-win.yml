@@ -8,6 +8,12 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled'
+        required: false
+        default: false
 
 env:
     VNOTE_VER: 3.17.0
@@ -19,6 +25,7 @@ jobs:
     timeout-minutes: 120
 
     strategy:
+      fail-fast: false
       matrix:
         config:
           - {
@@ -27,7 +34,8 @@ jobs:
             platform: x64,
             qt: 5.15.2,
             qt_modules: qtwebengine,
-            qt_tools: tools_opensslv3_x64
+            qt_tools: tools_opensslv3_x64,
+            qt_major: 5
           }
           - {
             name: "Build On Win64 Qt 6.5",
@@ -35,7 +43,8 @@ jobs:
             platform: x64,
             qt: 6.5.2,
             qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat",
-            qt_tools: tools_opensslv3_x64
+            qt_tools: tools_opensslv3_x64,
+            qt_major: 6
           }
 
     steps:
@@ -80,126 +89,20 @@ jobs:
           git clone https://github.com/tamlok/openssl-utils.git openssl-utils.git --depth=1
         working-directory: ${{runner.workspace}}/build
 
-      - name: Download JOM
-        uses: suisei-cn/actions-download-file@v1
-        with:
-          url:    http://download.qt.io/official_releases/jom/jom.zip
-          target: ${{runner.temp}}\
-
-      - name: Unzip JOM
-        run:  |
-              7z x jom.zip -ojom
-        working-directory: ${{runner.temp}}
+      # Enable tmate debugging of manually-triggered workflows if the input option was provided
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 
       - name: Configure and Build Project
         shell: cmd
         run: |
+          tree
           qmake --version
+          cmake --version
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.config.platform}}
-          qmake -r -spec win32-msvc CONFIG-=debug CONFIG+=release %GITHUB_WORKSPACE%\vnote.pro
-          ${{runner.temp}}\jom\jom
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} %GITHUB_WORKSPACE%
+          cmake --build .
+          cmake --build . --target=deploy
+          cmake --build . --target=pack
         working-directory: ${{runner.workspace}}/build
-
-      - name: Package Project 1
-        shell: cmd
-        run: |
-          qmake --version
-          mkdir "%DISTRIB_PATH%"
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.config.platform}}
-          windeployqt.exe --dir "%DISTRIB_PATH%" .\src\release\vnote.exe
-          copy .\src\release\vnote.exe "%DISTRIB_PATH%\vnote.exe"
-          copy .\src\release\vnote_extra.rcc "%DISTRIB_PATH%\vnote_extra.rcc"
-          copy .\libs\vtextedit\src\libs\syntax-highlighting\release\VSyntaxHighlighting.dll "%DISTRIB_PATH%\VSyntaxHighlighting.dll"
-          copy .\libs\vtextedit\src\editor\release\VTextEdit.dll "%DISTRIB_PATH%\VTextEdit.dll"
-          copy "%GITHUB_WORKSPACE%\package\qt.conf" "%DISTRIB_PATH%\qt.conf"
-          copy "%GITHUB_WORKSPACE%\README.md" "%DISTRIB_PATH%\README.md"
-          copy "%GITHUB_WORKSPACE%\COPYING.LESSER" "%DISTRIB_PATH%\COPYING.LESSER"
-          echo %GITHUB_SHA% > "%DISTRIB_PATH%\commit"
-          del /F /Q "%DISTRIB_PATH%\translations\qt_*.qm"
-        working-directory: ${{runner.workspace}}/build
-        env:
-          DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
-
-      - name: "Package Project: Copy OpenSSL on 5.15"
-        shell: cmd
-        if: ${{startsWith(matrix.config.qt, '5.15')}}
-        run: |
-          set openssl_dir=openssl-utils.git\1.1.1j\Win_${{matrix.config.platform}}
-          copy %openssl_dir%\lib*.dll "%DISTRIB_PATH%\"
-        working-directory: ${{runner.workspace}}/build
-        env:
-          DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
-
-      - name: Package Project 2
-        shell: cmd
-        run: |
-          7z a vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip "%DISTRIB_PATH%"
-          copy vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.zip
-        working-directory: ${{runner.workspace}}/build
-        env:
-          DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
-
-      - name: Package Installer
-        if: ${{startsWith(matrix.config.qt, '6.')}}
-        shell: cmd
-        run: |
-          copy "%GITHUB_WORKSPACE%\src\data\core\icons\vnote.ico" "%DISTRIB_PATH%\vnote.ico"
-          git clone https://github.com/vnotex/mkmsi.git mkmsi.git --depth=1
-          python .\mkmsi.git\mkmsi.py --auto-create qt --source-dir "%DISTRIB_PATH%" --wix-root "C:\Program Files (x86)\WiX Toolset v3.11" --merge-module "C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC140_CRT_${{matrix.config.platform}}.msm" --add-desktop-shortcut --project-version ${{env.VNOTE_VER}} --license %GITHUB_WORKSPACE%\package\lgpl-3.0.rtf --executable vnote.exe --wix-banner %GITHUB_WORKSPACE%\package\wix_banner.png --wix-dialog %GITHUB_WORKSPACE%\package\wix_dialog.png VNote
-          move VNote.msi .\distrib\VNote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.msi
-          del "%DISTRIB_PATH%\vnote.ico"
-        working-directory: ${{runner.workspace}}/build
-        env:
-          DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
-
-      - name: Archive Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}
-          path: ${{env.DISTRIB_PATH}}
-        env:
-          DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
-
-      - name: Archive Installer
-        if: ${{startsWith(matrix.config.qt, '6.')}}
-        uses: actions/upload-artifact@v2
-        with:
-          name: VNote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.msi
-          path: ${{runner.workspace}}/build/distrib/VNote*.msi
-        env:
-          DISTRIB_PATH: ${{runner.workspace}}/build/distrib/vnote
-
-      - name: Update Tag
-        if: github.ref == 'refs/heads/master'
-        shell: bash
-        run: |
-          git tag --force continuous-build ${GITHUB_SHA}
-          git push --force --tags
-
-      - name: Update Continuous Build Release
-        if: github.ref == 'refs/heads/master'
-        uses: johnwbyrd/update-release@v1.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}.zip
-          release: Continuous Build
-          tag: continuous-build
-
-      - name: Test
-        shell: cmd
-        run: |
-          dir .
-          dir .\distrib
-        working-directory: ${{runner.workspace}}/build
-
-      - name: Release
-        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
-        uses: ncipollo/release-action@v1.11.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # We need hard code here.
-          artifacts: "D:/a/vnote/build/vnote-win-${{matrix.config.platform}}-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.zip"
-          commit: master
-          tag: v${{env.VNOTE_VER}}
-          allowUpdates: true
-          draft: true
