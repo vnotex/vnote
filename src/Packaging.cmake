@@ -9,14 +9,12 @@ execute_process(COMMAND ${QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT
 set(QT_TOOLS_DIR "${QT_BIN_DIR}/../../../Tools")
 
 # To use the specific version of Qt
-set(WINDEPLOYQT_EXECUTABLE "${QT_BIN_DIR}/windeployqt")
+set(WINDEPLOYQT_EXECUTABLE "${QT_BIN_DIR}/windeployqt.exe")
 
 find_program(LINUXDEPLOY_EXECUTABLE linuxdeploy linuxdeploy-x86_64.AppImage HINTS "${QT_BIN_DIR}")
 find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${QT_BIN_DIR}")
 find_program(MACDEPLOYQTFIX_EXECUTABLE macdeployqtfix.py HINTS "${QT_BIN_DIR}")
 find_package(Python)
-
-mark_as_advanced(WINDEPLOYQT_EXECUTABLE LINUXDEPLOY_EXECUTABLE MACDEPLOYQT_EXECUTABLE)
 
 function(windeployqt target)
     # Bundle Library Files
@@ -29,6 +27,8 @@ function(windeployqt target)
             set(WINDEPLOYQT_ARGS --release)
         endif()
     endif()
+
+    message(INFO " debug: ${WINDEPLOYQT_EXECUTABLE}")
 
     add_custom_target(deploy
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/"
