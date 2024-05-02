@@ -103,20 +103,22 @@ jobs:
           cmake --build .
           cmake --build . --target=deploy
           cmake --build . --target=pack
+          7z x VNote*.zip -o*
+          dir
         working-directory: ${{runner.workspace}}/build
 
       - name: Rename on 5.15
         shell: bash
         if: ${{startsWith(matrix.config.qt, '5.15')}}
         run: |
-          mv VNote*.zip VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
+          mv VNote-${{env.VNOTE_VER}}-win64 VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
-          path: ${{runner.workspace}}/build/VNote*.zip
+          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
 
       - name: Archive Installer
         uses: actions/upload-artifact@v2
@@ -137,7 +139,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           # glob not supported
-          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
+          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
           release: Continuous Build
           tag: continuous-build
 
@@ -147,7 +149,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           # glob not supported
-          artifacts: "${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip"
+          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
