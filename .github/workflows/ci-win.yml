@@ -134,7 +134,7 @@ jobs:
           git push --force --tags
 
       - name: Update Continuous Build Release
-        if: github.ref == 'refs/heads/master' && ${{!startsWith(matrix.config.qt, '5.15')}}
+        if: github.ref == 'refs/heads/master'
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
