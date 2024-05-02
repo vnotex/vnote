@@ -22,10 +22,12 @@ function(windeployqt target)
     # Bundle Library Files
     string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
-    if(CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
-        set(WINDEPLOYQT_ARGS --debug)
-    else()
-        set(WINDEPLOYQT_ARGS --release)
+    if ((QT_DEFAULT_MAJOR_VERSION GREATER 5))
+        if(CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
+            set(WINDEPLOYQT_ARGS --debug)
+        else()
+            set(WINDEPLOYQT_ARGS --release)
+        endif()
     endif()
 
     add_custom_target(deploy

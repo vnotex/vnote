@@ -31,20 +31,20 @@ jobs:
           - {
             name: "Build On Win64 Qt 5.15",
             arch: win64_msvc2019_64,
-            platform: x64,
             qt: 5.15.2,
             qt_modules: qtwebengine,
             qt_tools: tools_opensslv3_x64,
-            qt_major: 5
+            qt_major: 5,
+            suffix: "-windows7"
           }
           - {
             name: "Build On Win64 Qt 6.5",
             arch: win64_msvc2019_64,
-            platform: x64,
             qt: 6.5.2,
             qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat",
             qt_tools: tools_opensslv3_x64,
-            qt_major: 6
+            qt_major: 6,
+            suffix: ""
           }
 
     steps:
@@ -97,12 +97,58 @@ jobs:
       - name: Configure and Build Project
         shell: cmd
         run: |
-          tree
-          qmake --version
           cmake --version
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{matrix.config.platform}}
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} %GITHUB_WORKSPACE%
           cmake --build .
           cmake --build . --target=deploy
           cmake --build . --target=pack
         working-directory: ${{runner.workspace}}/build
+
+      - name: Rename on 5.15
+        shell: bash
+        if: ${{startsWith(matrix.config.qt, '5.15')}}
+        run: |
+          mv VNote*.zip VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Archive Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
+          path: ${{runner.workspace}}/build/VNote*.zip
+
+      - name: Archive Installer
+        uses: actions/upload-artifact@v2
+        with:
+          name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.msi
+          path: ${{runner.workspace}}/build/VNote*.msi
+
+      - name: Update Tag
+        if: github.ref == 'refs/heads/master'
+        shell: bash
+        run: |
+          git tag --force continuous-build ${GITHUB_SHA}
+          git push --force --tags
+
+      - name: Update Continuous Build Release
+        if: github.ref == 'refs/heads/master' && ${{!startsWith(matrix.config.qt, '5.15')}}
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # glob not supported
+          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
+          release: Continuous Build
+          tag: continuous-build
+
+      - name: Release
+        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
+        uses: ncipollo/release-action@v1.11.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # glob not supported
+          artifacts: "${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip"
+          commit: master
+          tag: v${{env.VNOTE_VER}}
+          allowUpdates: true
+          draft: true
