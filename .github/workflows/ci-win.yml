@@ -99,7 +99,7 @@ jobs:
         run: |
           cmake --version
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} %GITHUB_WORKSPACE%
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} -DOPENSSL_EXTRA_LIB_DIR=.\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE%
           cmake --build .
           cmake --build . --target=deploy
           cmake --build . --target=pack
@@ -117,7 +117,7 @@ jobs:
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
+          name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
           path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
 
       - name: Archive Installer
