@@ -28,7 +28,7 @@ function(windeployqt target)
         endif()
     endif()
 
-    message(INFO " debug: ${WINDEPLOYQT_EXECUTABLE}")
+    message(INFO " debug: windeployqt:${WINDEPLOYQT_EXECUTABLE}")
 
     add_custom_target(deploy
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/"
@@ -58,9 +58,11 @@ function(windeployqt target)
     cmake_path(NORMAL_PATH OPENSSL_LIBS_FILES OUTPUT_VARIABLE OPENSSL_LIBS_FILES)
     install(FILES ${OPENSSL_LIBS_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
 
+    message(INFO " debug: OpenSSLExtraLIBDIR:${OPENSSL_EXTRA_LIB_DIR}")
     file(GLOB OPENSSL_EXTRA_LIB_FILES "${OPENSSL_EXTRA_LIB_DIR}/lib*.dll")
     cmake_path(NORMAL_PATH OPENSSL_EXTRA_LIB_FILES OUTPUT_VARIABLE OPENSSL_EXTRA_LIB_FILES)
-    install(FILES ${OPENSSL_EXTRA_LIB_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    message(INFO " debug: OpenSSLExtraLibFiles:${OPENSSL_EXTRA_LIB_FILES}")
+    install(FILES ${OPENSSL_EXTRA_LIB_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
 
     set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
     include(InstallRequiredSystemLibraries)
