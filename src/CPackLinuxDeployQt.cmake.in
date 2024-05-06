@@ -1,0 +1,5 @@
+execute_process(
+    COMMAND ${CMAKE_MAKE_PROGRAM} DESTDIR=${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage install
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+execute_process(COMMAND env QMAKE=${qmake_executable} "${LINUXDEPLOY_EXECUTABLE}" --plugin=qt --output=appimage --appdir=${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage -e ${CMAKE_BINARY_DIR}/${target} -d ${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage${CMAKE_INSTALL_PREFIX}/share/applications/example.desktop
+                WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY})

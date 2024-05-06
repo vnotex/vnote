@@ -8,6 +8,12 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled'
+        required: false
+        default: false
 
 env:
     VNOTE_VER: 3.17.0
@@ -15,7 +21,7 @@ env:
 jobs:
   build-linux:
     name: Build On Ubuntu
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 120
 
     steps:
@@ -30,12 +36,22 @@ jobs:
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
 
+      - name: Install a Fresh CMake
+        run: |
+          wget --no-verbose https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-Linux-x86_64.sh
+          chmod +x cmake-${CMAKE_VER}-Linux-x86_64.sh
+          mkdir ${{runner.workspace}}/cmake
+          sudo ./cmake-${CMAKE_VER}-Linux-x86_64.sh --skip-license --prefix=${{runner.workspace}}/cmake
+          sudo rm -f /usr/local/bin/cmake /usr/local/bin/cpack
+          sudo ln -s ${{runner.workspace}}/cmake/bin/cmake /usr/local/bin/cmake
+          sudo ln -s ${{runner.workspace}}/cmake/bin/cpack /usr/local/bin/cpack
+
       - name: Install linuxdeploy
         uses: miurahr/install-linuxdeploy-action@v1
         with:
           plugins: qt appimage
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
           sudo DEBIAN_FRONTEND=noninteractive apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx5-qt-dev tree
@@ -50,7 +66,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: 6.5.2
+          version: 6.5.3
           target: desktop
           modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat'
           cache: 'true'
@@ -70,60 +86,12 @@ jobs:
       - name: Configure Project
         run: |
           qmake -v
-          # TODO: libfcitx5
-          qmake CONFIG+=release -spec linux-g++-64 ${GITHUB_WORKSPACE}/vnote.pro
+          cmake --version
+          cmake ${GITHUB_WORKSPACE}
         working-directory: ${{runner.workspace}}/build
 
       - name: Build Project
-        run: make -j$(nproc)
-        working-directory: ${{runner.workspace}}/build
-
-      - name: Install Project
-        run: |
-          mkdir AppDir
-          make install INSTALL_ROOT=${{runner.workspace}}/build/AppDir
-          tree AppDir
-        working-directory: ${{runner.workspace}}/build
-
-      - name: Package Project
-        run: |
-          # Move the lib out to avoid duplication
-          mv AppDir/usr/lib ./
-          LD_LIBRARY_PATH=$PWD/lib:$LD_LIBRARY_PATH
-          Qt6_Dir=$QT_HOST_BINS/..
-          tree $Qt6_Dir
-          tree $Qt6_Dir/../..
-          # Copy translations
-          mkdir -p AppDir/usr/translations
-          cp $Qt6_Dir/translations/qt_zh_CN.qm AppDir/usr/translations
-          # Package qt5ct (EXTRA_QT_PLUGINS seems not work)
-          # EXTRA_QT_PLUGINS="platformthemes/libqt5ct.so;styles/libqt5ct-style.so"
-          mkdir -p AppDir/usr/plugins/platformthemes
-          mkdir -p AppDir/usr/plugins/styles
-          cp $Qt6_Dir/plugins/platformthemes/* AppDir/usr/plugins/platformthemes/
-          cp $Qt6_Dir/plugins/styles/* AppDir/usr/plugins/styles/
-          # Package libssl.so and libcrypto.so
-          Qt_Tools=$Qt6_Dir/../../Tools
-          linuxdeploy-x86_64.AppImage --appdir ./AppDir --plugin qt --output appimage -l $Qt_Tools/OpenSSL/binary/lib/libcrypto.so.* -l $Qt_Tools/OpenSSL/binary/lib/
-          tree AppDir
-        working-directory: ${{runner.workspace}}/build
-
-      - name: Fix Package
-        run: |
-          mkdir fixpackage
-          mv VNote*.AppImage ./fixpackage
-          pushd fixpackage
-          # Extract the AppImage
-          ./VNote*.AppImage --appimage-extract
-          # Remove libnss3.so and libnssutil3.so
-          rm ./squashfs-root/usr/lib/libnss*.so
-          # Re-package
-          rm VNote*.AppImage
-          linuxdeploy-plugin-appimage-x86_64.AppImage --appdir=./squashfs-root
-          mv VNote*.AppImage ../
-          popd
-          mv VNote*.AppImage vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
-          cp vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage vnote-linux-x64.AppImage
+        run: cmake --build . --target bundle
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
