@@ -1,5 +1,4 @@
 # from: https://github.com/miurahr/cmake-qt-packaging-example
-
 find_package(Qt${QT_DEFAULT_MAJOR_VERSION} REQUIRED COMPONENTS Core)
 
 get_target_property(QMAKE_EXECUTABLE Qt::qmake IMPORTED_LOCATION)
@@ -17,7 +16,14 @@ find_program(MACDEPLOYQTFIX_EXECUTABLE macdeployqtfix.py HINTS "${QT_BIN_DIR}")
 find_package(Python)
 
 function(linuxdeployqt dest_dir desktop_file)
-
+    add_custom_command(
+        TARGET pack PRE_BUILD
+        COMMAND "${CMAKE_MAKE_PROGRAM}" DESTDIR=${dest_dir} install
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    add_custom_command(
+        TARGET pack POST_BUILD
+        COMMAND env QMAKE=${qmake_executable} "${LINUXDEPLOY_EXECUTABLE}" --appdir=${dest_dir} --plugin=qt --output=appimage -e ${CMAKE_BINARY_DIR}/${target} -d ${destdir}/${CMAKE_INSTALL_PREFIX}/${desktopfile}
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endfunction()
 
 function(windeployqt target)
@@ -110,7 +116,7 @@ add_custom_target(pack
                   DEPENDS vnote)
 set(CPACK_GENERATOR)
 
-if (WIN32)
+if(WIN32)
     find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${QT_BIN_DIR}" DOC "Path to the windeployqt utility")
 
     list(APPEND CPACK_GENERATOR ZIP)
@@ -124,6 +130,17 @@ if (WIN32)
     endif()
 
     windeployqt(vnote)
+elseif(APPLE)
+else()
+    if(LINUXDEPLOY_EXECUTABLE)
+        message(STATUS "Package generation - Linux - AppImage")
+
+        set(CPACK_GENERATOR "External;${CPACK_GENERATOR}")
+        configure_file(${CMAKE_CURRENT_LIST_DIR}/CPackLinuxDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+        set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+    endif()
+
+    set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_LIST_DIR}/data/core/logo/64x64/vnote.png")
 endif()
 
 include(CPack)

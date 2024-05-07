@@ -124,7 +124,7 @@ if (WIN32)
         DESTINATION ${CMAKE_INSTALL_BINDIR})
 elseif(APPLE)
 
-elseif(UNIX)
+else()
     desktop.path = applications
     desktop.files = data/core/vnote.desktop
     icon16.path = icons/hicolor/16x16/apps
