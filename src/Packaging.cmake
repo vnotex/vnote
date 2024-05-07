@@ -16,6 +16,10 @@ find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${QT_BIN_DIR}")
 find_program(MACDEPLOYQTFIX_EXECUTABLE macdeployqtfix.py HINTS "${QT_BIN_DIR}")
 find_package(Python)
 
+function(linuxdeployqt dest_dir desktop_file)
+
+endfunction()
+
 function(windeployqt target)
     # Bundle Library Files
     string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)

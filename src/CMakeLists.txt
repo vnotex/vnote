@@ -106,7 +106,7 @@ if((QT_DEFAULT_MAJOR_VERSION GREATER 5))
 endif()
 
 # Copy the qt.conf on Windows
-if(MSVC)
+if(WIN32)
     add_custom_command(TARGET vnote POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${PROJECT_SOURCE_DIR}/package/qt.conf" $<TARGET_FILE_DIR:vnote>)
@@ -118,9 +118,34 @@ install(TARGETS vnote
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vnote_extra.rcc"
     DESTINATION ${CMAKE_INSTALL_BINDIR})
-if (MSVC)
+
+if (WIN32)
     install(FILES "${PROJECT_SOURCE_DIR}/package/qt.conf"
         DESTINATION ${CMAKE_INSTALL_BINDIR})
+elseif(APPLE)
+
+elseif(UNIX)
+    desktop.path = applications
+    desktop.files = data/core/vnote.desktop
+    icon16.path = icons/hicolor/16x16/apps
+    icon16.files = data/core/logo/16x16/vnote.png
+    icon32.path = icons/hicolor/32x32/apps
+    icon32.files = data/core/logo/32x32/vnote.png
+    icon48.path = icons/hicolor/48x48/apps
+    icon48.files = data/core/logo/48x48/vnote.png
+    icon64.path = icons/hicolor/64x64/apps
+    icon64.files = data/core/logo/64x64/vnote.png
+    icon128.path = icons/hicolor/128x128/apps
+    icon128.files = data/core/logo/128x128/vnote.png
+    icon256.path = icons/hicolor/256x256/apps
+    icon256.files = data/core/logo/256x256/vnote.png
+    iconsvg.path = icons/hicolor/scalable/apps
+    iconsvg.files = data/core/logo/vnote.svg
+    foreach(items IN ITEMS desktop icon16 icon32 icon48 icon64 icon128 icon256 iconsvg)
+        install(FILES ${CMAKE_CURRENT_LIST_DIR}/${${items}.files}
+                DESTINATION share/${${items}.path}
+                PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+    endforeach()
 endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/Packaging.cmake)
