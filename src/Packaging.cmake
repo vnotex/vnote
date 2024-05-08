@@ -15,17 +15,6 @@ find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${QT_BIN_DIR}")
 find_program(MACDEPLOYQTFIX_EXECUTABLE macdeployqtfix.py HINTS "${QT_BIN_DIR}")
 find_package(Python)
 
-function(linuxdeployqt dest_dir desktop_file)
-    add_custom_command(
-        TARGET pack PRE_BUILD
-        COMMAND "${CMAKE_MAKE_PROGRAM}" DESTDIR=${dest_dir} install
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-    add_custom_command(
-        TARGET pack POST_BUILD
-        COMMAND env QMAKE=${qmake_executable} "${LINUXDEPLOY_EXECUTABLE}" --appdir=${dest_dir} --plugin=qt --output=appimage -e ${CMAKE_BINARY_DIR}/${target} -d ${destdir}/${CMAKE_INSTALL_PREFIX}/${desktopfile}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-endfunction()
-
 function(windeployqt target)
     # Bundle Library Files
     string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
@@ -37,8 +26,6 @@ function(windeployqt target)
             set(WINDEPLOYQT_ARGS --release)
         endif()
     endif()
-
-    message(INFO " debug: windeployqt:${WINDEPLOYQT_EXECUTABLE}")
 
     add_custom_target(deploy
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/"
@@ -68,10 +55,10 @@ function(windeployqt target)
     cmake_path(NORMAL_PATH OPENSSL_LIBS_FILES OUTPUT_VARIABLE OPENSSL_LIBS_FILES)
     install(FILES ${OPENSSL_LIBS_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
 
-    message(INFO " debug: OpenSSLExtraLIBDIR:${OPENSSL_EXTRA_LIB_DIR}")
+    message(STATUS "OpenSSLExtraLIBDIR:${OPENSSL_EXTRA_LIB_DIR}")
     file(GLOB OPENSSL_EXTRA_LIB_FILES "${OPENSSL_EXTRA_LIB_DIR}/lib*.dll")
     cmake_path(NORMAL_PATH OPENSSL_EXTRA_LIB_FILES OUTPUT_VARIABLE OPENSSL_EXTRA_LIB_FILES)
-    message(INFO " debug: OpenSSLExtraLibFiles:${OPENSSL_EXTRA_LIB_FILES}")
+    message(STATUS "OpenSSLExtraLibFiles:${OPENSSL_EXTRA_LIB_FILES}")
     install(FILES ${OPENSSL_EXTRA_LIB_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
 
     set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
@@ -132,10 +119,13 @@ if(WIN32)
     windeployqt(vnote)
 elseif(APPLE)
 else()
+    message(STATUS "LinuxDeployExecutable: ${LINUXDEPLOY_EXECUTABLE}")
     if(LINUXDEPLOY_EXECUTABLE)
         message(STATUS "Package generation - Linux - AppImage")
 
         set(CPACK_GENERATOR "External;${CPACK_GENERATOR}")
+        set(VX_APPIMAGE_DEST_DIR "${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage")
+        set(VX_APPIMAGE_DESKTOP_FILE "${VX_APPIMAGE_DEST_DIR}${CMAKE_INSTALL_PREFIX}/share/applications/vnote.desktop")
         configure_file(${CMAKE_CURRENT_LIST_DIR}/CPackLinuxDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
         set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
     endif()

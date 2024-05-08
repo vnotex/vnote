@@ -1,8 +1,9 @@
-set(VX_DEST_DIR "${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage")
-set(VX_DESKTOP_FILE "${VX_DEST_DIR}${CMAKE_INSTALL_PREFIX}/share/applications/vnote.desktop")
+message(STATUS "VX_APPIMAGE_DEST_DIR ${VX_APPIMAGE_DEST_DIR}")
+message(STATUS "VX_APPIMAGE_DESKTOP_FILE ${VX_APPIMAGE_DESKTOP_FILE}")
+
 execute_process(
-    COMMAND ${CMAKE_MAKE_PROGRAM} DESTDIR="${VX_DEST_DIR}" install
+    COMMAND ${CMAKE_MAKE_PROGRAM} DESTDIR=${VX_APPIMAGE_DEST_DIR} install
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 execute_process(
-    COMMAND env QMAKE=${qmake_executable} "${LINUXDEPLOY_EXECUTABLE}" --plugin=qt --output=appimage --appdir="${VX_DEST_DIR}" -e ${CMAKE_BINARY_DIR}/${target} -d "${VX_DESKTOP_FILE}"
+    COMMAND env QMAKE=${qmake_executable} "${LINUXDEPLOY_EXECUTABLE}" --plugin=qt --output=appimage --appdir=${VX_APPIMAGE_DEST_DIR} -e ${CMAKE_CURRENT_BINARY_DIR}/vnote -d ${VX_APPIMAGE_DESKTOP_FILE}
     WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY})
