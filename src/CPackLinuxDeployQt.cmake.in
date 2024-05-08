@@ -5,5 +5,7 @@ execute_process(
     COMMAND ${CMAKE_MAKE_PROGRAM} DESTDIR=${VX_APPIMAGE_DEST_DIR} install
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 execute_process(
-    COMMAND env QMAKE=${qmake_executable} "${LINUXDEPLOY_EXECUTABLE}" --plugin=qt --output=appimage --appdir=${VX_APPIMAGE_DEST_DIR} -e ${CMAKE_CURRENT_BINARY_DIR}/vnote -d ${VX_APPIMAGE_DESKTOP_FILE}
+    COMMAND env QMAKE=${QMAKE_EXECUTABLE} "${LINUXDEPLOY_EXECUTABLE}" --plugin=qt --output=appimage
+        --appdir=${VX_APPIMAGE_DEST_DIR} -e ${CMAKE_CURRENT_BINARY_DIR}/vnote -d ${VX_APPIMAGE_DESKTOP_FILE}
+        -i ${CMAKE_CURRENT_LIST_DIR}/data/core/logo/64x64/vnote.png
     WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY})
