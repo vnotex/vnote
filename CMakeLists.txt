@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required (VERSION 3.20)
 project(VNote
     VERSION 3.17.0
     DESCRIPTION "A pleasant note-taking platform"

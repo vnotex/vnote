@@ -74,6 +74,13 @@ jobs:
           modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
           cache: 'true'
 
+      - name: Compile OpenSSLV3
+        run: |
+          cd ${Qt6_DIR}/../../Tools/OpenSSLV3
+          ./Configure
+          make -j2
+          make install
+
       - name: Create Build Dir
         run: mkdir build
         working-directory: ${{runner.workspace}}
@@ -106,14 +113,14 @@ jobs:
       - name: Build Project
         run: |
           cmake --build . --target pack
-          mv VNote*.AppImage vnote-${{env.VNOTE_VER}}-x64.AppImage
+          mv VNote*.AppImage vnote-${{env.VNOTE_VER}}-linux-x64.AppImage
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: VNote-${{env.VNOTE_VER}}-x64
-          path: ${{runner.workspace}}/build/vnote-${{env.VNOTE_VER}}-x64.AppImage
+          name: VNote-${{env.VNOTE_VER}}-linux-x64
+          path: ${{runner.workspace}}/build/vnote-${{env.VNOTE_VER}}-linux-x64.AppImage
 
       - name: Update Tag
         if: github.ref == 'refs/heads/master'
@@ -126,7 +133,7 @@ jobs:
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-x64
+          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-linux-x64
           release: Continuous Build
           tag: continuous-build
 
@@ -135,7 +142,7 @@ jobs:
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-x64
+          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-linux-x64
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
