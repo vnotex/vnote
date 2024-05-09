@@ -57,7 +57,7 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx5-qt-dev fcitx-libs-dev extra-cmake-modules libxkbcommon-dev
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y tree
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y fuse
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y fuse libxcb-cursor-dev
 
       - name: Cache Qt
         id: cache-qt
@@ -71,7 +71,7 @@ jobs:
         with:
           version: 6.5.3
           target: desktop
-          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
           cache: 'true'
 
       - name: Create Build Dir
