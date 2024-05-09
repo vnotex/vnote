@@ -17,6 +17,7 @@ on:
 
 env:
     VNOTE_VER: 3.17.0
+    CMAKE_VER: 3.24.3
 
 jobs:
   build-linux:
@@ -54,7 +55,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo DEBIAN_FRONTEND=noninteractive apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx5-qt-dev tree
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx5-qt-dev fcitx-libs-dev extra-cmake-modules libxkbcommon-dev tree
 
       - name: Cache Qt
         id: cache-qt
@@ -75,6 +76,16 @@ jobs:
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
+      - name: Compile fcitxqt5
+        run: |
+          git clone https://github.com/fcitx/fcitx-qt5
+          cd fcitx-qt5
+          mkdir build && cd build
+          cmake -DENABLE_QT5=OFF -DENABLE_QT6=ON ..
+          make -j2
+          make install
+        working-directory: ${{runner.workspace}}/build
+
       - name: Compile qt6ct
         run: |
           git clone https://github.com/trialuser02/qt6ct qt6ct.git
@@ -91,14 +102,16 @@ jobs:
         working-directory: ${{runner.workspace}}/build
 
       - name: Build Project
-        run: cmake --build . --target bundle
+        run: |
+          cmake --build . --target pack
+          mv VNote*.AppImage vnote-${{env.VNOTE_VER}}-x64.AppImage
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: vnote-linux-x64_v${{env.VNOTE_VER}}
-          path: ${{runner.workspace}}/build/vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
+          name: VNote-${{env.VNOTE_VER}}-x64
+          path: ${{runner.workspace}}/build/vnote-${{env.VNOTE_VER}}-x64.AppImage
 
       - name: Update Tag
         if: github.ref == 'refs/heads/master'
@@ -111,7 +124,7 @@ jobs:
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/vnote-linux-x64.AppImage
+          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-x64
           release: Continuous Build
           tag: continuous-build
 
@@ -120,7 +133,7 @@ jobs:
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: ${{runner.workspace}}/build/vnote-linux-x64_v${{env.VNOTE_VER}}.AppImage
+          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-x64
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
