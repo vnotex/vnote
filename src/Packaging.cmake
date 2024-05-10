@@ -50,6 +50,7 @@ function(windeployqt target)
     )
 
     add_dependencies(deploy lrelease)
+    add_dependencies(pack deploy)
 
     install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/winqt/" DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
 
@@ -104,6 +105,8 @@ add_custom_target(pack
                   COMMAND ${CMAKE_CPACK_COMMAND} "--config" "${CMAKE_BINARY_DIR}/BundleConfig.cmake"
                   COMMENT "Running CPACK. Please wait..."
                   DEPENDS vnote)
+add_dependencies(pack lrelease)
+
 set(CPACK_GENERATOR)
 
 if(WIN32)

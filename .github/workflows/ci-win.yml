@@ -97,9 +97,7 @@ jobs:
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} -DOPENSSL_EXTRA_LIB_DIR=${{runner.workspace}}\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE%
           cmake --build .
-          cmake --build . --target=deploy
           cmake --build . --target=pack
-          cmake --build . --target=install
           7z x VNote*.zip -o*
           dir
         working-directory: ${{runner.workspace}}/build

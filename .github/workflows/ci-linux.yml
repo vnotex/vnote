@@ -72,14 +72,15 @@ jobs:
           version: 6.5.3
           target: desktop
           modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
+          tools: 'tools_opensslv3_src'
           cache: 'true'
 
       - name: Compile OpenSSLV3
         run: |
-          cd ${Qt6_DIR}/../../Tools/OpenSSLV3
+          cd ${Qt6_DIR}/../../Tools/OpenSSLv3/src
           ./Configure
           make -j2
-          make install
+          sudo make install
 
       - name: Create Build Dir
         run: mkdir build
@@ -92,7 +93,7 @@ jobs:
           mkdir build && cd build
           cmake -DENABLE_QT5=OFF -DENABLE_QT6=ON ..
           make -j2
-          make install
+          sudo make install
         working-directory: ${{runner.workspace}}/build
 
       - name: Compile qt6ct
@@ -113,14 +114,30 @@ jobs:
       - name: Build Project
         run: |
           cmake --build . --target pack
-          mv VNote*.AppImage vnote-${{env.VNOTE_VER}}-linux-x64.AppImage
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Fix Package
+        run: |
+          mkdir fixpackage
+          mv VNote*.AppImage ./fixpackage
+          pushd fixpackage
+          # Extract the AppImage
+          ./VNote*.AppImage --appimage-extract
+          # Remove libnss3.so and libnssutil3.so
+          rm ./squashfs-root/usr/lib/libnss*.so
+          # Re-package
+          rm VNote*.AppImage
+          linuxdeploy-plugin-appimage-x86_64.AppImage --appdir=./squashfs-root
+          mv VNote*.AppImage ../
+          popd
+          mv VNote*.AppImage VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: VNote-${{env.VNOTE_VER}}-linux-x64
-          path: ${{runner.workspace}}/build/vnote-${{env.VNOTE_VER}}-linux-x64.AppImage
+          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
 
       - name: Update Tag
         if: github.ref == 'refs/heads/master'
