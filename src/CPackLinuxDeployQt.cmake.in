@@ -1,0 +1,16 @@
+message(STATUS "VX_APPIMAGE_DEST_DIR ${VX_APPIMAGE_DEST_DIR}")
+message(STATUS "VX_APPIMAGE_DESKTOP_FILE ${VX_APPIMAGE_DESKTOP_FILE}")
+
+execute_process(
+    COMMAND ${CMAKE_MAKE_PROGRAM} DESTDIR=${VX_APPIMAGE_DEST_DIR} install
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+execute_process(
+    COMMAND env QMAKE=${QMAKE_EXECUTABLE} LD_LIBRARY_PATH=/usr/local/lib64:$ENV{LD_LIBRARY_PATH} "${LINUXDEPLOY_EXECUTABLE}" --plugin=qt --output=appimage
+        --appdir=${VX_APPIMAGE_DEST_DIR} -e ${CMAKE_CURRENT_BINARY_DIR}/vnote -d ${VX_APPIMAGE_DESKTOP_FILE}
+        -i ${CMAKE_CURRENT_LIST_DIR}/data/core/logo/64x64/vnote.png
+        -l ${QT_PLUGINS_DIR}/platformthemes/libqgtk3.so
+        -l /usr/local/lib64/libcrypto.so.3
+        -l /usr/local/lib64/libssl.so.3
+        # --exclude-library option does not work as expected
+        # --exclude-library=libssl.so.1.1,libcrypto.so.1.1,libnss3.so,libnssutil3.so
+    WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY})

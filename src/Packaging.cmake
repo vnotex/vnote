@@ -1,5 +1,4 @@
 # from: https://github.com/miurahr/cmake-qt-packaging-example
-
 find_package(Qt${QT_DEFAULT_MAJOR_VERSION} REQUIRED COMPONENTS Core)
 
 get_target_property(QMAKE_EXECUTABLE Qt::qmake IMPORTED_LOCATION)
@@ -7,6 +6,10 @@ get_filename_component(QT_BIN_DIR "${QMAKE_EXECUTABLE}" DIRECTORY)
 execute_process(COMMAND ${QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION)
 
 set(QT_TOOLS_DIR "${QT_BIN_DIR}/../../../Tools")
+cmake_path(NORMAL_PATH QT_TOOLS_DIR OUTPUT_VARIABLE QT_TOOLS_DIR)
+
+set(QT_PLUGINS_DIR "${QT_BIN_DIR}/../plugins")
+cmake_path(NORMAL_PATH QT_PLUGINS_DIR OUTPUT_VARIABLE QT_PLUGINS_DIR)
 
 # To use the specific version of Qt
 set(WINDEPLOYQT_EXECUTABLE "${QT_BIN_DIR}/windeployqt.exe")
@@ -28,8 +31,6 @@ function(windeployqt target)
         endif()
     endif()
 
-    message(INFO " debug: windeployqt:${WINDEPLOYQT_EXECUTABLE}")
-
     add_custom_target(deploy
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/"
         COMMAND "${CMAKE_COMMAND}" -E
@@ -49,19 +50,19 @@ function(windeployqt target)
     )
 
     add_dependencies(deploy lrelease)
+    add_dependencies(pack deploy)
 
     install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/winqt/" DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
 
-    cmake_path(NORMAL_PATH QT_TOOLS_DIR OUTPUT_VARIABLE QT_TOOLS_DIR)
     set(OPENSSL_ROOT_DIR "${QT_TOOLS_DIR}/OpenSSL/Win_x64" CACHE STRING "OpenSSL dir")
     file(GLOB OPENSSL_LIBS_FILES "${OPENSSL_ROOT_DIR}/bin/lib*.dll")
     cmake_path(NORMAL_PATH OPENSSL_LIBS_FILES OUTPUT_VARIABLE OPENSSL_LIBS_FILES)
     install(FILES ${OPENSSL_LIBS_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
 
-    message(INFO " debug: OpenSSLExtraLIBDIR:${OPENSSL_EXTRA_LIB_DIR}")
+    message(STATUS "OpenSSLExtraLIBDIR:${OPENSSL_EXTRA_LIB_DIR}")
     file(GLOB OPENSSL_EXTRA_LIB_FILES "${OPENSSL_EXTRA_LIB_DIR}/lib*.dll")
     cmake_path(NORMAL_PATH OPENSSL_EXTRA_LIB_FILES OUTPUT_VARIABLE OPENSSL_EXTRA_LIB_FILES)
-    message(INFO " debug: OpenSSLExtraLibFiles:${OPENSSL_EXTRA_LIB_FILES}")
+    message(STATUS "OpenSSLExtraLibFiles:${OPENSSL_EXTRA_LIB_FILES}")
     install(FILES ${OPENSSL_EXTRA_LIB_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
 
     set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
@@ -104,9 +105,11 @@ add_custom_target(pack
                   COMMAND ${CMAKE_CPACK_COMMAND} "--config" "${CMAKE_BINARY_DIR}/BundleConfig.cmake"
                   COMMENT "Running CPACK. Please wait..."
                   DEPENDS vnote)
+add_dependencies(pack lrelease)
+
 set(CPACK_GENERATOR)
 
-if (WIN32)
+if(WIN32)
     find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${QT_BIN_DIR}" DOC "Path to the windeployqt utility")
 
     list(APPEND CPACK_GENERATOR ZIP)
@@ -120,6 +123,20 @@ if (WIN32)
     endif()
 
     windeployqt(vnote)
+elseif(APPLE)
+else()
+    message(STATUS "LinuxDeployExecutable: ${LINUXDEPLOY_EXECUTABLE}")
+    if(LINUXDEPLOY_EXECUTABLE)
+        message(STATUS "Package generation - Linux - AppImage")
+
+        set(CPACK_GENERATOR "External;${CPACK_GENERATOR}")
+        set(VX_APPIMAGE_DEST_DIR "${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage")
+        set(VX_APPIMAGE_DESKTOP_FILE "${VX_APPIMAGE_DEST_DIR}${CMAKE_INSTALL_PREFIX}/share/applications/vnote.desktop")
+        configure_file(${CMAKE_CURRENT_LIST_DIR}/CPackLinuxDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+        set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+    endif()
+
+    set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_LIST_DIR}/data/core/logo/64x64/vnote.png")
 endif()
 
 include(CPack)

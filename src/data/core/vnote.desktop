@@ -10,4 +10,4 @@ Icon=vnote
 Terminal=false
 Exec=vnote %F
 MimeType=text/markdown;
-Categories=Qt;Utility;TextEditor;Office;
+Categories=Utility

@@ -28,24 +28,20 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {
-            name: "Build On Win64 Qt 5.15",
-            arch: win64_msvc2019_64,
-            qt: 5.15.2,
-            qt_modules: qtwebengine,
-            qt_tools: tools_opensslv3_x64,
-            qt_major: 5,
+          - name: "Build On Win64 Qt 5.15"
+            arch: win64_msvc2019_64
+            qt: 5.15.2
+            qt_modules: qtwebengine
+            qt_tools: tools_opensslv3_x64
+            qt_major: 5
             suffix: "-windows7"
-          }
-          - {
-            name: "Build On Win64 Qt 6.5",
-            arch: win64_msvc2019_64,
-            qt: 6.5.2,
-            qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat",
-            qt_tools: tools_opensslv3_x64,
-            qt_major: 6,
+          - name: "Build On Win64 Qt 6.5"
+            arch: win64_msvc2019_64
+            qt: 6.5.3
+            qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat"
+            qt_tools: tools_opensslv3_x64
+            qt_major: 6
             suffix: ""
-          }
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
@@ -101,9 +97,7 @@ jobs:
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} -DOPENSSL_EXTRA_LIB_DIR=${{runner.workspace}}\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE%
           cmake --build .
-          cmake --build . --target=deploy
           cmake --build . --target=pack
-          cmake --build . --target=install
           7z x VNote*.zip -o*
           dir
         working-directory: ${{runner.workspace}}/build

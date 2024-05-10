@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -106,19 +106,46 @@ if((QT_DEFAULT_MAJOR_VERSION GREATER 5))
 endif()
 
 # Copy the qt.conf on Windows
-if(MSVC)
+if(WIN32)
     add_custom_command(TARGET vnote POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${PROJECT_SOURCE_DIR}/package/qt.conf" $<TARGET_FILE_DIR:vnote>)
 endif()
 
 # Installation
-if (MSVC)
-    install(TARGETS vnote
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS vnote
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vnote_extra.rcc"
+    DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+if (WIN32)
     install(FILES "${PROJECT_SOURCE_DIR}/package/qt.conf"
         DESTINATION ${CMAKE_INSTALL_BINDIR})
+elseif(APPLE)
+
+else()
+    set(desktop.path applications)
+    set(desktop.files data/core/vnote.desktop)
+    set(icon16.path icons/hicolor/16x16/apps)
+    set(icon16.files data/core/logo/16x16/vnote.png)
+    set(icon32.path icons/hicolor/32x32/apps)
+    set(icon32.files data/core/logo/32x32/vnote.png)
+    set(icon48.path icons/hicolor/48x48/apps)
+    set(icon48.files data/core/logo/48x48/vnote.png)
+    set(icon64.path icons/hicolor/64x64/apps)
+    set(icon64.files data/core/logo/64x64/vnote.png)
+    set(icon128.path icons/hicolor/128x128/apps)
+    set(icon128.files data/core/logo/128x128/vnote.png)
+    set(icon256.path icons/hicolor/256x256/apps)
+    set(icon256.files data/core/logo/256x256/vnote.png)
+    set(iconsvg.path icons/hicolor/scalable/apps)
+    set(iconsvg.files data/core/logo/vnote.svg)
+    foreach(items IN ITEMS desktop icon16 icon32 icon48 icon64 icon128 icon256 iconsvg)
+        install(FILES ${CMAKE_CURRENT_LIST_DIR}/${${items}.files}
+                DESTINATION share/${${items}.path}
+                PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+    endforeach()
 endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/Packaging.cmake)

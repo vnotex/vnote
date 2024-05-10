@@ -1,2 +1,2 @@
-add_subdirectory(QHotKey)
+add_subdirectory(QHotkey)
 add_subdirectory(vtextedit)
