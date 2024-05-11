@@ -107,6 +107,7 @@ jobs:
         if: ${{startsWith(matrix.config.qt, '5.15')}}
         run: |
           mv VNote-${{env.VNOTE_VER}}-win64 VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
+          mv VNote-${{env.VNOTE_VER}}-win64.zip VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
