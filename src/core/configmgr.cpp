@@ -143,6 +143,10 @@ void ConfigMgr::locateConfigFolder()
     qInfo() << "user config folder" << m_userConfigFolderPath;
 }
 
+static QString locateExtraRcc() {
+    return QStandardPaths::locate(QStandardPaths::AppDataLocation, "vnote_extra.rcc");
+}
+
 bool ConfigMgr::checkAppConfig()
 {
     bool needUpdate = false;
@@ -191,8 +195,7 @@ bool ConfigMgr::checkAppConfig()
 
     // Load extra data.
     splash->showMessage("Loading extra resource data");
-    const QString extraRcc(PathUtils::concatenateFilePath(QCoreApplication::applicationDirPath(),
-                                                          QStringLiteral("vnote_extra.rcc")));
+    const QString extraRcc(locateExtraRcc());
     bool ret = QResource::registerResource(extraRcc);
     if (!ret) {
         Exception::throwOne(Exception::Type::FailToReadFile,

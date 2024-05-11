@@ -22,6 +22,9 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
     const QCommandLineOption verboseOpt("verbose", MainWindow::tr("Print more logs."));
     parser.addOption(verboseOpt);
 
+    const QCommandLineOption logStderrOpt("log-stderr", MainWindow::tr("Log to stderr."));
+    parser.addOption(logStderrOpt);
+
     // WebEngine options.
     // No need to handle them. Just add them to the parser to avoid parse error.
     {
@@ -61,6 +64,10 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
 
     if (parser.isSet(verboseOpt)) {
         m_verbose = true;
+    }
+
+    if (parser.isSet(logStderrOpt)) {
+        m_logToStderr = true;
     }
 
     return ParseResult::Ok;
