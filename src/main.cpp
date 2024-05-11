@@ -11,7 +11,6 @@
 #include <QWebEngineSettings>
 #include <QWindow>
 #include <QAccessible>
-#include <QStandardPaths>
 #include <QDir>
 
 #include <core/configmgr.h>
@@ -80,6 +79,8 @@ int main(int argc, char *argv[])
 #endif
 
     Application app(argc, argv);
+
+    ConfigMgr::initAppPrefixPath();
 
     QAccessible::installFactory(&FakeAccessible::accessibleFactory);
 
@@ -208,54 +209,47 @@ void loadTranslators(QApplication &p_app)
     QLocale locale;
     qInfo() << "locale:" << locale.name();
 
-    QString translationsDir;
-    auto possible_dirs = QStandardPaths::locateAll(QStandardPaths::AppDataLocation,
-            "translations", QStandardPaths::LocateDirectory);
-    for (const auto& dir_path : possible_dirs) {
-        if (QDir(dir_path).exists("vnote_zh_CN.qm")) {
-            translationsDir = dir_path;
-            break;
-        }
-    }
-
-    if (translationsDir.isEmpty()) {
+    const auto translationsPath = QDir("app:translations").absolutePath();
+    qInfo() << "translations dir: " << translationsPath;
+    if (translationsPath.isEmpty()) {
         qWarning() << "failed to locate translations directory";
+        return;
     }
 
     // For QTextEdit/QTextBrowser and other basic widgets.
     QScopedPointer<QTranslator> qtbaseTranslator(new QTranslator(&p_app));
-    if (qtbaseTranslator->load(locale, "qtbase", "_", translationsDir)) {
+    if (qtbaseTranslator->load(locale, "qtbase", "_", translationsPath)) {
         p_app.installTranslator(qtbaseTranslator.take());
     }
 
     // qt_zh_CN.ts does not cover the real QDialogButtonBox which uses QPlatformTheme.
     QScopedPointer<QTranslator> dialogButtonBoxTranslator(new QTranslator(&p_app));
-    if (dialogButtonBoxTranslator->load(locale, "qdialogbuttonbox", "_", translationsDir)) {
+    if (dialogButtonBoxTranslator->load(locale, "qdialogbuttonbox", "_", translationsPath)) {
         p_app.installTranslator(dialogButtonBoxTranslator.take());
     }
 
     QScopedPointer<QTranslator> webengineTranslator(new QTranslator(&p_app));
-    if (webengineTranslator->load(locale, "qwebengine", "_", translationsDir)) {
+    if (webengineTranslator->load(locale, "qwebengine", "_", translationsPath)) {
         p_app.installTranslator(webengineTranslator.take());
     }
 
     QScopedPointer<QTranslator> qtTranslator(new QTranslator(&p_app));
-    if (qtTranslator->load(locale, "qtv", "_", translationsDir)) {
+    if (qtTranslator->load(locale, "qtv", "_", translationsPath)) {
         p_app.installTranslator(qtTranslator.take());
     }
 
     QScopedPointer<QTranslator> qtEnvTranslator(new QTranslator(&p_app));
-    if (qtEnvTranslator->load(locale, "qt", "_", translationsDir)) {
+    if (qtEnvTranslator->load(locale, "qt", "_", translationsPath)) {
         p_app.installTranslator(qtEnvTranslator.take());
     }
 
     QScopedPointer<QTranslator> vnoteTranslator(new QTranslator(&p_app));
-    if (vnoteTranslator->load(locale, "vnote", "_", translationsDir)) {
+    if (vnoteTranslator->load(locale, "vnote", "_", translationsPath)) {
         p_app.installTranslator(vnoteTranslator.take());
     }
 
     QScopedPointer<QTranslator> vtexteditTranslator(new QTranslator(&p_app));
-    if (vtexteditTranslator->load(locale, "vtextedit", "_", translationsDir)) {
+    if (vtexteditTranslator->load(locale, "vtextedit", "_", translationsPath)) {
         p_app.installTranslator(vtexteditTranslator.take());
     }
 }

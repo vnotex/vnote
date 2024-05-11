@@ -120,6 +120,8 @@ namespace vnotex
 
         static QString getApplicationVersion();
 
+        static void initAppPrefixPath();
+
         static void initForUnitTest();
 
         static const QString c_orgName;
