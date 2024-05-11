@@ -112,7 +112,7 @@ jobs:
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
+          name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
           path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
 
       - name: Archive Installer
@@ -135,7 +135,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           # glob not supported
-          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
+          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
           release: Continuous Build
           tag: continuous-build
 

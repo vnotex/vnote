@@ -11,6 +11,7 @@
 #include <QWebEngineSettings>
 #include <QWindow>
 #include <QAccessible>
+#include <QDir>
 
 #include <core/configmgr.h>
 #include <core/mainconfig.h>
@@ -40,10 +41,12 @@ int main(int argc, char *argv[])
         QTextCodec::setCodecForLocale(codec);
     }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
     // This only takes effect on Win, X11 and Android.
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 
     // Set OpenGL option on Windows.
     // Set environment QT_OPENGL to "angle/desktop/software".
@@ -76,6 +79,8 @@ int main(int argc, char *argv[])
 #endif
 
     Application app(argc, argv);
+
+    ConfigMgr::initAppPrefixPath();
 
     QAccessible::installFactory(&FakeAccessible::accessibleFactory);
 
@@ -135,7 +140,7 @@ int main(int argc, char *argv[])
     }
 
     // Init logger after app info is set.
-    Logger::init(cmdOptions.m_verbose);
+    Logger::init(cmdOptions.m_verbose, cmdOptions.m_logToStderr);
 
     qInfo() << QString("%1 (v%2) started at %3 (%4)").arg(ConfigMgr::c_appName,
                                                           app.applicationVersion(),
@@ -204,42 +209,47 @@ void loadTranslators(QApplication &p_app)
     QLocale locale;
     qInfo() << "locale:" << locale.name();
 
-    const QString envTranslationFolder(QStringLiteral("translations"));
+    const auto translationsPath = QDir("app:translations").absolutePath();
+    qInfo() << "translations dir: " << translationsPath;
+    if (translationsPath.isEmpty()) {
+        qWarning() << "failed to locate translations directory";
+        return;
+    }
 
     // For QTextEdit/QTextBrowser and other basic widgets.
     QScopedPointer<QTranslator> qtbaseTranslator(new QTranslator(&p_app));
-    if (qtbaseTranslator->load(locale, "qtbase", "_", envTranslationFolder)) {
+    if (qtbaseTranslator->load(locale, "qtbase", "_", translationsPath)) {
         p_app.installTranslator(qtbaseTranslator.take());
     }
 
     // qt_zh_CN.ts does not cover the real QDialogButtonBox which uses QPlatformTheme.
     QScopedPointer<QTranslator> dialogButtonBoxTranslator(new QTranslator(&p_app));
-    if (dialogButtonBoxTranslator->load(locale, "qdialogbuttonbox", "_", envTranslationFolder)) {
+    if (dialogButtonBoxTranslator->load(locale, "qdialogbuttonbox", "_", translationsPath)) {
         p_app.installTranslator(dialogButtonBoxTranslator.take());
     }
 
     QScopedPointer<QTranslator> webengineTranslator(new QTranslator(&p_app));
-    if (webengineTranslator->load(locale, "qwebengine", "_", envTranslationFolder)) {
+    if (webengineTranslator->load(locale, "qwebengine", "_", translationsPath)) {
         p_app.installTranslator(webengineTranslator.take());
     }
 
     QScopedPointer<QTranslator> qtTranslator(new QTranslator(&p_app));
-    if (qtTranslator->load(locale, "qtv", "_", envTranslationFolder)) {
+    if (qtTranslator->load(locale, "qtv", "_", translationsPath)) {
         p_app.installTranslator(qtTranslator.take());
     }
 
     QScopedPointer<QTranslator> qtEnvTranslator(new QTranslator(&p_app));
-    if (qtEnvTranslator->load(locale, "qt", "_", envTranslationFolder)) {
+    if (qtEnvTranslator->load(locale, "qt", "_", translationsPath)) {
         p_app.installTranslator(qtEnvTranslator.take());
     }
 
     QScopedPointer<QTranslator> vnoteTranslator(new QTranslator(&p_app));
-    if (vnoteTranslator->load(locale, "vnote", "_", envTranslationFolder)) {
+    if (vnoteTranslator->load(locale, "vnote", "_", translationsPath)) {
         p_app.installTranslator(vnoteTranslator.take());
     }
 
     QScopedPointer<QTranslator> vtexteditTranslator(new QTranslator(&p_app));
-    if (vtexteditTranslator->load(locale, "vtextedit", "_", envTranslationFolder)) {
+    if (vtexteditTranslator->load(locale, "vtextedit", "_", translationsPath)) {
         p_app.installTranslator(vtexteditTranslator.take());
     }
 }

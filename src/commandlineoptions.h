@@ -25,6 +25,8 @@ public:
     QStringList m_pathsToOpen;
 
     bool m_verbose = false;
+
+    bool m_logToStderr = false;
 };
 
 #endif // COMMANDLINEOPTIONS_H

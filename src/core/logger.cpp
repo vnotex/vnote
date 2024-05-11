@@ -8,19 +8,27 @@ using namespace vnotex;
 
 QFile Logger::s_file;
 
-bool Logger::s_debugLog = false;
+bool Logger::s_verbose = false;
 
-void Logger::init(bool p_debugLog)
+bool Logger::s_logToStderr = false;
+
+void Logger::init(bool p_verbose, bool p_logToStderr)
 {
-    s_debugLog = p_debugLog;
+    s_verbose = p_verbose;
+    s_logToStderr = p_logToStderr;
 
 #if defined(QT_NO_DEBUG)
-    s_file.setFileName(ConfigMgr::getInst().getLogFile());
-    if (s_file.size() >= 5 * 1024 * 1024) {
-        s_file.open(QIODevice::WriteOnly | QIODevice::Text);
-    } else {
-        s_file.open(QIODevice::Append | QIODevice::Text);
+    if (!s_logToStderr) {
+        s_file.setFileName(ConfigMgr::getInst().getLogFile());
+        if (s_file.size() >= 5 * 1024 * 1024) {
+            s_file.open(QIODevice::WriteOnly | QIODevice::Text);
+        } else {
+            s_file.open(QIODevice::Append | QIODevice::Text);
+        }
     }
+#else
+    // Always log to stderr in debug.
+    s_logToStderr = true;
 #endif
 
     qInstallMessageHandler(Logger::log);
@@ -44,7 +52,7 @@ static QString getFileName(const char *p_file)
 void Logger::log(QtMsgType p_type, const QMessageLogContext &p_context, const QString &p_msg)
 {
 #if defined(QT_NO_DEBUG)
-    if (!s_debugLog && p_type == QtDebugMsg) {
+    if (!s_verbose && p_type == QtDebugMsg) {
         return;
     }
 #endif
@@ -76,43 +84,43 @@ void Logger::log(QtMsgType p_type, const QMessageLogContext &p_context, const QS
 
     QString fileName = getFileName(p_context.file);
 
-#if defined(QT_NO_DEBUG)
-    QTextStream stream(&s_file);
-    stream << header << (QString("(%1:%2) ").arg(fileName).arg(p_context.line))
-           << localMsg << "\n";
+    if (!s_logToStderr) {
+        QTextStream stream(&s_file);
+        stream << header << (QString("(%1:%2) ").arg(fileName).arg(p_context.line))
+               << localMsg << "\n";
 
-    if (p_type == QtFatalMsg) {
-        s_file.close();
-        abort();
+        if (p_type == QtFatalMsg) {
+            s_file.close();
+            abort();
+        }
+    } else {
+        std::string fileStr = fileName.toStdString();
+        const char *file = fileStr.c_str();
+
+        switch (p_type) {
+        case QtDebugMsg:
+            fprintf(stderr, "%s(%s:%u) %s\n",
+                    header.toStdString().c_str(), file, p_context.line, localMsg.constData());
+            break;
+        case QtInfoMsg:
+            fprintf(stderr, "%s(%s:%u) %s\n",
+                    header.toStdString().c_str(), file, p_context.line, localMsg.constData());
+            break;
+        case QtWarningMsg:
+            fprintf(stderr, "%s(%s:%u) %s\n",
+                    header.toStdString().c_str(), file, p_context.line, localMsg.constData());
+            break;
+        case QtCriticalMsg:
+            fprintf(stderr, "%s(%s:%u) %s\n",
+                    header.toStdString().c_str(), file, p_context.line, localMsg.constData());
+            break;
+        case QtFatalMsg:
+            fprintf(stderr, "%s(%s:%u) %s\n",
+                    header.toStdString().c_str(), file, p_context.line, localMsg.constData());
+            abort();
+            break;
+        }
+
+        fflush(stderr);
     }
-#else
-    std::string fileStr = fileName.toStdString();
-    const char *file = fileStr.c_str();
-
-    switch (p_type) {
-    case QtDebugMsg:
-        fprintf(stderr, "%s(%s:%u) %s\n",
-                header.toStdString().c_str(), file, p_context.line, localMsg.constData());
-        break;
-    case QtInfoMsg:
-        fprintf(stderr, "%s(%s:%u) %s\n",
-                header.toStdString().c_str(), file, p_context.line, localMsg.constData());
-        break;
-    case QtWarningMsg:
-        fprintf(stderr, "%s(%s:%u) %s\n",
-                header.toStdString().c_str(), file, p_context.line, localMsg.constData());
-        break;
-    case QtCriticalMsg:
-        fprintf(stderr, "%s(%s:%u) %s\n",
-                header.toStdString().c_str(), file, p_context.line, localMsg.constData());
-        break;
-    case QtFatalMsg:
-        fprintf(stderr, "%s(%s:%u) %s\n",
-                header.toStdString().c_str(), file, p_context.line, localMsg.constData());
-        abort();
-        break;
-    }
-
-    fflush(stderr);
-#endif
 }

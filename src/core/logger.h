@@ -13,14 +13,16 @@ namespace vnotex
     public:
         Logger() = delete;
 
-        static void init(bool p_debugLog);
+        static void init(bool p_verbose, bool p_logToStderr);
 
     private:
         static void log(QtMsgType p_type, const QMessageLogContext &p_context, const QString &p_msg);
 
         static QFile s_file;
 
-        static bool s_debugLog;
+        static bool s_verbose;
+
+        static bool s_logToStderr;
     };
 }
 

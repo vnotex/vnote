@@ -191,8 +191,7 @@ bool ConfigMgr::checkAppConfig()
 
     // Load extra data.
     splash->showMessage("Loading extra resource data");
-    const QString extraRcc(PathUtils::concatenateFilePath(QCoreApplication::applicationDirPath(),
-                                                          QStringLiteral("vnote_extra.rcc")));
+    const QString extraRcc("app:vnote_extra.rcc");
     bool ret = QResource::registerResource(extraRcc);
     if (!ret) {
         Exception::throwOne(Exception::Type::FailToReadFile,
@@ -569,6 +568,26 @@ QString ConfigMgr::getApplicationVersion()
     }
 
     return appVersion;
+}
+
+void ConfigMgr::initAppPrefixPath()
+{
+    // Support QFile("app:abc.txt").
+    QStringList potential_dirs;
+    auto app_dir_path = QCoreApplication::applicationDirPath();
+    qInfo() << "executable dir: " << app_dir_path;
+    potential_dirs << app_dir_path;
+
+#if defined(Q_OS_LINUX)
+    QDir localBinDir(app_dir_path);
+    if (localBinDir.exists("../local/bin/vnote")) {
+        auto app_dir_path2 = localBinDir.cleanPath(localBinDir.filePath("../local/bin"));
+        qInfo() << "executable dir: " << app_dir_path2;
+        potential_dirs << app_dir_path2;
+    }
+#endif
+
+    QDir::setSearchPaths("app", potential_dirs);
 }
 
 QJsonValue ConfigMgr::parseAndReadConfig(const QString &p_exp) const

@@ -32,6 +32,8 @@ if((QT_DEFAULT_MAJOR_VERSION GREATER 5))
     qt_add_lupdate(vnote TS_FILES ${VX_TS_FILES})
 endif()
 # Generate .qm files from .ts files (lrelease)
+set_source_files_properties(${VX_TS_FILES} PROPERTIES
+    OUTPUT_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/translations")
 qt_add_translation(VX_QM_FILES ${VX_TS_FILES})
 add_custom_target(lrelease DEPENDS ${VX_QM_FILES})
 
