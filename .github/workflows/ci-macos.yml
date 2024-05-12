@@ -37,11 +37,11 @@ jobs:
 
       - name: Install a fresh CMake
         run: |
-          wget --no-verbose https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-Darwin-x86_64.tar.gz
-          tar xzf cmake-${CMAKE_VER}-Darwin-x86_64.tar.gz
+          wget --no-verbose https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-macos-universal.tar.gz
+          tar xzf cmake-${CMAKE_VER}-macos-universal.tar.gz
           sudo rm -f /usr/local/bin/cmake /usr/local/bin/cpack
-          sudo ln -s ${{runner.workspace}}/cmake-${CMAKE_VER}-Darwin-x86_64/CMake.app/Contents/bin/cmake /usr/local/bin/cmake
-          sudo ln -s ${{runner.workspace}}/cmake-${CMAKE_VER}-Darwin-x86_64/CMake.app/Contents/bin/cpack /usr/local/bin/cpack
+          sudo ln -s ${{runner.workspace}}/cmake-${CMAKE_VER}-macos-universal/CMake.app/Contents/bin/cmake /usr/local/bin/cmake
+          sudo ln -s ${{runner.workspace}}/cmake-${CMAKE_VER}-macos-universal/CMake.app/Contents/bin/cpack /usr/local/bin/cpack
         working-directory: ${{runner.workspace}}
 
       - name: Install macdeployqtfix
