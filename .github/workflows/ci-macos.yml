@@ -11,24 +11,13 @@ on:
 
 env:
     VNOTE_VER: 3.17.0
+    CMAKE_VER: 3.24.3
 
 jobs:
   build:
     name: Build On MacOS
     runs-on: macos-latest
     timeout-minutes: 120
-
-    strategy:
-      matrix:
-        config:
-          # - {
-          #   name: "Build Qt 5.12",
-          #   qt: 5.12.12
-          # }
-          - {
-            name: "Build Qt 5.15",
-            qt: 5.15.2
-          }
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
@@ -46,6 +35,15 @@ jobs:
         run: |
           brew install tree
 
+      - name: Install a fresh CMake
+        run: |
+          wget --no-verbose https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-Darwin-x86_64.tar.gz
+          tar xzf cmake-${CMAKE_VER}-Darwin-x86_64.tar.gz
+          sudo rm -f /usr/local/bin/cmake /usr/local/bin/cpack
+          sudo ln -s ${{runner.workspace}}/cmake-${CMAKE_VER}-Darwin-x86_64/CMake.app/Contents/bin/cmake /usr/local/bin/cmake
+          sudo ln -s ${{runner.workspace}}/cmake-${CMAKE_VER}-Darwin-x86_64/CMake.app/Contents/bin/cpack /usr/local/bin/cpack
+        working-directory: ${{runner.workspace}}
+
       - name: Install macdeployqtfix
         run: |
           git clone https://github.com/tamlok/macdeployqtfix.git macdeployqtfix --depth=1
@@ -56,17 +54,17 @@ jobs:
         uses: actions/cache@v1  # not v2!
         with:
           path: ../Qt
-          key: ${{ runner.os }}-QtCache-${{ matrix.config.qt }}
+          key: ${{ runner.os }}-QtCache-6.5
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: ${{ matrix.config.qt }}
+          version: 6.5.3
           target: desktop
-          modules: qtwebengine
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
+          tools: 'tools_opensslv3_src'
+          cache: 'true'
           setup-python: 'false'
-
 
       - name: Create Build Dir
         run: mkdir build
@@ -75,70 +73,13 @@ jobs:
       - name: Configure Project
         run: |
           qmake -v
-          qmake CONFIG+=release ${GITHUB_WORKSPACE}/vnote.pro
+          cmake --version
+          cmake -DMACDEPLOYQTFIX_EXECUTABLE=${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ${GITHUB_WORKSPACE}
         working-directory: ${{runner.workspace}}/build
 
       - name: Build Project
-        run: make -j4
-        working-directory: ${{runner.workspace}}/build
-
-      - name: Deploy VSyntaxHighlighting Framework
         run: |
-          my_lib_name=VSyntaxHighlighting
-          my_lib_framework=${my_lib_name}.framework
-          my_lib_dir=./libs/vtextedit/src/libs/syntax-highlighting
-          frameworks_dir=./src/vnote.app/Contents/Frameworks
-          mkdir -p ${frameworks_dir}
-          cp -R ${my_lib_dir}/${my_lib_framework} ${frameworks_dir}
-        working-directory: ${{runner.workspace}}/build
-
-      - name: Deploy VTextEdit Framework
-        run: |
-          my_lib_name=VTextEdit
-          my_lib_framework=${my_lib_name}.framework
-          my_lib_dir=./libs/vtextedit/src/editor
-          frameworks_dir=./src/vnote.app/Contents/Frameworks
-          mkdir -p ${frameworks_dir}
-          cp -R ${my_lib_dir}/${my_lib_framework} ${frameworks_dir}
-        working-directory: ${{runner.workspace}}/build
-
-      - name: Cleanup rpath
-        run: |
-          app_target=./src/vnote.app/Contents/MacOS/vnote
-          install_name_tool -delete_rpath ${PWD}/src/../libs/vtextedit/src/editor ${app_target}
-          install_name_tool -delete_rpath ${PWD}/src/../libs/vtextedit/src/libs/syntax-highlighting ${app_target}
-        working-directory: ${{runner.workspace}}/build
-
-      - name: Mac Deploy
-        run: |
-          pushd src
-          macdeployqt vnote.app
-
-          # Remove unused sql drivers
-          rm vnote.app/Contents/Plugins/sqldrivers/libqsqlodbc.dylib
-          rm vnote.app/Contents/Plugins/sqldrivers/libqsqlpsql.dylib
-
-          python ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py vnote.app/Contents/MacOS/vnote $Qt5_Dir
-          # Fix Helpers/QtWebEngineProcess.app
-          pushd vnote.app/Contents/Frameworks/QtWebEngineCore.framework/Versions/5/Helpers
-          python ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess $Qt5_Dir
-          popd
-
-          popd
-          tree ./
-        working-directory: ${{runner.workspace}}/build
-
-      - name: Package Project
-        run: |
-          mkdir -p distrib/vnote
-          pushd distrib/vnote
-          mv ../../src/vnote.app ./
-          ln -s /Applications ./Applications
-          popd
-          sleep 60
-          hdiutil create -srcfolder ./distrib/vnote -format UDBZ vnote-mac-x64_v${{env.VNOTE_VER}}.dmg
-          cp vnote-mac-x64_v${{env.VNOTE_VER}}.dmg vnote-mac-x64-qt${{matrix.config.qt}}.dmg
-          mv vnote-mac-x64_v${{env.VNOTE_VER}}.dmg vnote-mac-x64-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.dmg
+          cmake --build . --target pack
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts

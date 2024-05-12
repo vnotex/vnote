@@ -29,7 +29,7 @@
     <key>CFBundleIconFile</key>
     <string>vnote.icns</string>
     <key>CFBundleIdentifier</key>
-    <string>com.vnotex.vnote</string>
+    <string>fun.vnote.app</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSignature</key>

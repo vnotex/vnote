@@ -115,18 +115,33 @@ if(WIN32)
 endif()
 
 # Installation
-install(TARGETS vnote
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vnote_extra.rcc"
     DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 if (WIN32)
-    install(FILES "${PROJECT_SOURCE_DIR}/package/qt.conf"
-        DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS vnote RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(FILES "${PROJECT_SOURCE_DIR}/package/qt.conf" DESTINATION ${CMAKE_INSTALL_BINDIR})
 elseif(APPLE)
-
+    set(CMAKE_MACOSX_BUNDLE ON)
+    set(CMAKE_MACOSX_RPATH ON)
+    install(TARGETS vnote BUNDLE DESTINATION . RUNTIME DESTINATION .)
+    set_target_properties(vnote
+        PROPERTIES
+        MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
+        MACOSX_BUNDLE_INFO_STRING "${PROJECT_DESCRIPTION}"
+        MACOSX_BUNDLE_ICON_FILE "${VX_APP_ICON_MACOS}"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "fun.vnote.app"
+        MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_COPYRIGHT "Distributed under LGPL-3.0 license. Copyright (c) 2024 app.vnote.fun"
+    )
 else()
+    install(TARGETS vnote
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+
     set(desktop.path applications)
     set(desktop.files data/core/vnote.desktop)
     set(icon16.path icons/hicolor/16x16/apps)

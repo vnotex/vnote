@@ -109,6 +109,8 @@ add_dependencies(pack lrelease)
 
 set(CPACK_GENERATOR)
 
+set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_LIST_DIR}/data/core/logo/64x64/vnote.png")
+
 if(WIN32)
     find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${QT_BIN_DIR}" DOC "Path to the windeployqt utility")
 
@@ -124,19 +126,31 @@ if(WIN32)
 
     windeployqt(vnote)
 elseif(APPLE)
+    message(STATUS "MACDeployQtExecutable: ${MACDEPLOYQT_EXECUTABLE}")
+    if (MACDEPLOYQT_EXECUTABLE)
+        message(STATUS "Package generation - MacOS - DMG")
+
+        list(APPEND CPACK_GENERATOR External)
+        set(CPACK_BUNDLE_NAME "${PROJECT_NAME}" )
+        set(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_LIST_DIR}/data/core/Info.plist")
+        set(CPACK_BUNDLE_ICON "${CMAKE_CURRENT_LIST_DIR}/data/core/icons/vnote.icns")
+        set(CPACK_DMG_VOLUME_NAME "${PROJECT_NAME}")
+        set(CPACK_DMG_FORMAT "UDBZ")
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CPackMacDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+        set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+        include(InstallRequiredSystemLibraries)
+    endif()
 else()
     message(STATUS "LinuxDeployExecutable: ${LINUXDEPLOY_EXECUTABLE}")
     if(LINUXDEPLOY_EXECUTABLE)
         message(STATUS "Package generation - Linux - AppImage")
 
-        set(CPACK_GENERATOR "External;${CPACK_GENERATOR}")
+        list(APPEND CPACK_GENERATOR External)
         set(VX_APPIMAGE_DEST_DIR "${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage")
         set(VX_APPIMAGE_DESKTOP_FILE "${VX_APPIMAGE_DEST_DIR}${CMAKE_INSTALL_PREFIX}/share/applications/vnote.desktop")
         configure_file(${CMAKE_CURRENT_LIST_DIR}/CPackLinuxDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
         set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
     endif()
-
-    set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_LIST_DIR}/data/core/logo/64x64/vnote.png")
 endif()
 
 include(CPack)
