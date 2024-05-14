@@ -39,7 +39,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          brew install tree
+          brew install tree libiodbc
 
       - name: Install a fresh CMake
         run: |

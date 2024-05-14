@@ -131,7 +131,7 @@ elseif(APPLE)
         message(STATUS "Package generation - MacOS - DMG")
 
         list(APPEND CPACK_GENERATOR External)
-        set(CPACK_BUNDLE_NAME "vnote" )
+        set(CPACK_BUNDLE_NAME "${PROJECT_NAME}" )
         set(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_LIST_DIR}/data/core/Info.plist")
         set(CPACK_BUNDLE_ICON "${CMAKE_CURRENT_LIST_DIR}/data/core/icons/vnote.icns")
         set(CPACK_DMG_VOLUME_NAME "${PROJECT_NAME}")
