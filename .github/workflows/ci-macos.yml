@@ -63,8 +63,6 @@ jobs:
           target: desktop
           modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
           tools: 'tools_opensslv3_src'
-          cache: 'true'
-          setup-python: 'false'
 
       - name: Create Build Dir
         run: mkdir build
