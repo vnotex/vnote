@@ -8,6 +8,12 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled'
+        required: false
+        default: false
 
 env:
     VNOTE_VER: 3.17.0
@@ -79,6 +85,11 @@ jobs:
         run: |
           cmake --build . --target pack
         working-directory: ${{runner.workspace}}/build
+
+      # Enable tmate debugging of manually-triggered workflows if the input option was provided
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
