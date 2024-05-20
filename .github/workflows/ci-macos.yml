@@ -39,7 +39,10 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          brew install tree libiodbc
+          brew install tree libiodbc libpq
+          sudo ln -s /opt/homebrew/opt/libiodbc/lib/libiodbc.2.dylib /usr/local/opt/libiodbc/lib/libiodbc.2.dylib
+          mkdir -p /Applications/Postgres.app/Contents/Versions/14/lib
+          sudo ln -s /opt/homebrew/Cellar/libpq/16.3/lib/libpq.5.dylib /Applications/Postgres.app/Contents/Versions/14/lib/libpq.5.dylib
 
       - name: Install a fresh CMake
         run: |
