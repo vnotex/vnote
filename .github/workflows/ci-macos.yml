@@ -29,7 +29,7 @@ jobs:
       matrix:
         config:
           - name: "Build on x64"
-            os: macos-latest-large
+            os: macos-13
             arch: x64
           - name: "Build on Arm64"
             os: macos-latest
