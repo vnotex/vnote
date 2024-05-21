@@ -88,6 +88,7 @@ jobs:
       - name: Build Project
         run: |
           cmake --build . --target pack
+          mv src/vnote.dmg ../VNote-${{env.VNOTE_VER}}-mac.dmg
         working-directory: ${{runner.workspace}}/build
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
@@ -98,8 +99,8 @@ jobs:
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: vnote-mac-x64-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}
-          path: ${{runner.workspace}}/build/vnote-mac-x64-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.dmg
+          name: VNote-${{env.VNOTE_VER}}-mac
+          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac.dmg
 
       - name: Update Tag
         if: github.ref == 'refs/heads/master'
@@ -112,7 +113,7 @@ jobs:
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/vnote-mac-x64-qt${{matrix.config.qt}}.dmg
+          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac.dmg
           release: Continuous Build
           tag: continuous-build
 
@@ -121,7 +122,7 @@ jobs:
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: ${{runner.workspace}}/build/vnote-mac-x64-qt${{matrix.config.qt}}_v${{env.VNOTE_VER}}.dmg
+          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac.dmg
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
