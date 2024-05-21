@@ -52,6 +52,10 @@ jobs:
       - name: Install Dependencies
         run: |
           brew install tree libiodbc libpq
+
+      - name: Fix SQL
+        if: ${{matrix.config.arch == 'arm64'}}
+        run: |
           sudo mkdir -p /usr/local/opt/libiodbc/lib
           sudo ln -s /opt/homebrew/opt/libiodbc/lib/libiodbc.2.dylib /usr/local/opt/libiodbc/lib/libiodbc.2.dylib
           sudo mkdir -p /Applications/Postgres.app/Contents/Versions/14/lib
