@@ -88,7 +88,9 @@ jobs:
       - name: Build Project
         run: |
           cmake --build . --target pack
-          mv src/vnote.dmg ../VNote-${{env.VNOTE_VER}}-mac.dmg
+          ls -ls .
+          ls -ls src
+          mv src/vnote.dmg VNote-${{env.VNOTE_VER}}-mac.dmg
         working-directory: ${{runner.workspace}}/build
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
