@@ -22,8 +22,20 @@ env:
 jobs:
   build:
     name: Build On MacOS
-    runs-on: macos-latest
     timeout-minutes: 120
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: "Build on x64"
+            os: macos-latest-large
+            arch: x64
+          - name: "Build on Arm64"
+            os: macos-latest
+            arch: arm64
+
+    runs-on: ${{matrix.config.os}}
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
@@ -90,7 +102,7 @@ jobs:
           cmake --build . --target pack
           ls -ls .
           ls -ls src
-          mv src/vnote.dmg VNote-${{env.VNOTE_VER}}-mac.dmg
+          mv src/vnote.dmg VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
         working-directory: ${{runner.workspace}}/build
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
@@ -101,8 +113,8 @@ jobs:
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: VNote-${{env.VNOTE_VER}}-mac
-          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac.dmg
+          name: VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}
+          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
 
       - name: Update Tag
         if: github.ref == 'refs/heads/master'
@@ -115,7 +127,7 @@ jobs:
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac.dmg
+          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
           release: Continuous Build
           tag: continuous-build
 
@@ -124,7 +136,7 @@ jobs:
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac.dmg
+          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
