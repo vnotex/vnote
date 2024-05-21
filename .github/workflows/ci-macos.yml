@@ -28,12 +28,12 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - name: "Build on x64"
-            os: macos-13
-            arch: x64
+          # - name: "Build on X64"
+          #   os: macos-13
+          #   arch: x64
           - name: "Build on Arm64"
             os: macos-latest
-            arch: arm64
+            arch: universal
 
     runs-on: ${{matrix.config.os}}
 
@@ -54,7 +54,7 @@ jobs:
           brew install tree libiodbc libpq
 
       - name: Fix SQL
-        if: ${{matrix.config.arch == 'arm64'}}
+        if: ${{matrix.config.arch == 'universal'}}
         run: |
           sudo mkdir -p /usr/local/opt/libiodbc/lib
           sudo ln -s /opt/homebrew/opt/libiodbc/lib/libiodbc.2.dylib /usr/local/opt/libiodbc/lib/libiodbc.2.dylib
@@ -98,7 +98,7 @@ jobs:
         run: |
           qmake -v
           cmake --version
-          cmake -DMACDEPLOYQTFIX_EXECUTABLE=${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ${GITHUB_WORKSPACE}
+          cmake -DMACDEPLOYQTFIX_EXECUTABLE=${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"  ${GITHUB_WORKSPACE}
         working-directory: ${{runner.workspace}}/build
 
       - name: Build Project
