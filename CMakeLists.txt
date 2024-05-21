@@ -1,4 +1,7 @@
 cmake_minimum_required (VERSION 3.20)
+
+set(CMAKE_OSX_DEPLOYMENT_TARGET 13.6 FORCE)
+
 project(VNote
     VERSION 3.17.0
     DESCRIPTION "A pleasant note-taking platform"
