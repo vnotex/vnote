@@ -53,7 +53,7 @@ set(VX_RESOURCE_FILES data/core/core.qrc)
 qt_add_binary_resources(VX_EXTRA_RESOURCE data/extra/extra.qrc DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/vnote_extra.rcc
     OPTIONS -compress 9)
 
-add_executable(vnote WIN32 MACOSX_BUNDLE
+add_executable(vnote WIN32
     application.cpp application.h
     commandlineoptions.cpp commandlineoptions.h
     fakeaccessible.cpp fakeaccessible.h
@@ -122,19 +122,9 @@ if (WIN32)
     install(TARGETS vnote RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(FILES "${PROJECT_SOURCE_DIR}/package/qt.conf" DESTINATION ${CMAKE_INSTALL_BINDIR})
 elseif(APPLE)
-    set(CMAKE_MACOSX_BUNDLE ON)
+    set(CMAKE_MACOSX_BUNDLE OFF)
     set(CMAKE_MACOSX_RPATH ON)
     install(TARGETS vnote BUNDLE DESTINATION . RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-    set_target_properties(vnote
-        PROPERTIES
-        MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
-        MACOSX_BUNDLE_INFO_STRING "${PROJECT_DESCRIPTION}"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "fun.vnote.app"
-        MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_VERSION}"
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
-        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
-        MACOSX_BUNDLE_COPYRIGHT "Distributed under LGPL-3.0 license. Copyright (c) 2024 app.vnote.fun"
-    )
 else()
     install(TARGETS vnote
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
