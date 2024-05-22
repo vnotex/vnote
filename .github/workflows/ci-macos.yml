@@ -28,9 +28,6 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          # - name: "Build on X64"
-          #   os: macos-13
-          #   arch: x64
           - name: "Build on Arm64"
             os: macos-latest
             arch: universal
