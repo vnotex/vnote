@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.20)
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET 13.6 FORCE)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "13.6" CACHE STRING "Minimum OS X deployment version" FORCE)
 
 project(VNote
     VERSION 3.17.0
