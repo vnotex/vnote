@@ -18,26 +18,26 @@
             </array>
         </dict>
     </array>
+    <key>CFBundleName</key>
+    <string>VNote</string>
     <key>CFBundleExecutable</key>
     <string>vnote</string>
     <key>CFBundleShortVersionString</key>
-    <string>3.17.0</string>
+    <string>3.17</string>
     <key>CFBundleVersion</key>
-    <string>3.17.0.1</string>
+    <string>3.17.0</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Created by VNoteX</string>
+    <string>Distributed under LGPL-3.0 license. Copyright (c) 2024 app.vnote.fun</string>
     <key>CFBundleIconFile</key>
     <string>vnote.icns</string>
     <key>CFBundleIdentifier</key>
-    <string>com.vnotex.vnote</string>
+    <string>fun.vnote.app</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
-    <key>CFBundleSignature</key>
-    <string>????</string>
     <key>LSMinimumSystemVersion</key>
-    <string>10.12</string>
+    <string>12.1</string>
     <key>NOTE</key>
-    <string>Visit [GitHub VNote](https://github.com/vnotex/vnote) for details.</string>
+    <string>A pleasant note-taking platform</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
     <key>NSSupportsAutomaticGraphicsSwitching</key>

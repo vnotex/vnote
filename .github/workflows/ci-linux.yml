@@ -58,6 +58,7 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx5-qt-dev fcitx-libs-dev extra-cmake-modules libxkbcommon-dev
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y tree
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y fuse libxcb-cursor-dev
+          python3 -m pip config set global.break-system-packages true
 
       - name: Cache Qt
         id: cache-qt

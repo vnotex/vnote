@@ -46,10 +46,9 @@ function(windeployqt target)
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/styles/"
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/qmltooling/"
         COMMENT "Deploying Qt..."
-        DEPENDS vnote
+        DEPENDS vnote lrelease
     )
 
-    add_dependencies(deploy lrelease)
     add_dependencies(pack deploy)
 
     install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/winqt/" DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
@@ -102,12 +101,14 @@ set(CPACK_WIX_UI_DIALOG "${PROJECT_SOURCE_DIR}/package/wix_dialog.png")
 set(CPACK_OUTPUT_CONFIG_FILE "${CMAKE_BINARY_DIR}/BundleConfig.cmake")
 
 add_custom_target(pack
-                  COMMAND ${CMAKE_CPACK_COMMAND} "--config" "${CMAKE_BINARY_DIR}/BundleConfig.cmake"
+                  COMMAND ${CMAKE_CPACK_COMMAND} "--config" "${CMAKE_BINARY_DIR}/BundleConfig.cmake" "--verbose"
                   COMMENT "Running CPACK. Please wait..."
                   DEPENDS vnote)
 add_dependencies(pack lrelease)
 
 set(CPACK_GENERATOR)
+
+set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_LIST_DIR}/data/core/logo/64x64/vnote.png")
 
 if(WIN32)
     find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${QT_BIN_DIR}" DOC "Path to the windeployqt utility")
@@ -124,19 +125,41 @@ if(WIN32)
 
     windeployqt(vnote)
 elseif(APPLE)
+    # Manually copy resources.
+    set(VX_BUNDLE_CONTENTS_DIR $<TARGET_FILE_DIR:vnote>/..)
+    add_custom_target(deploy
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_LIST_DIR}/data/core/Info.plist" ${VX_BUNDLE_CONTENTS_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${VX_EXTRA_RESOURCE_FILES_RCC} ${VX_BUNDLE_CONTENTS_DIR}/Resources
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${VX_BUNDLE_CONTENTS_DIR}/Resources/translations
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${VX_QM_FILES} ${VX_BUNDLE_CONTENTS_DIR}/Resources/translations
+        COMMENT "Copying resources into bundle Contents ${VX_BUNDLE_CONTENTS_DIR}"
+        DEPENDS vnote lrelease
+    )
+    add_dependencies(pack deploy)
+
+    message(STATUS "MACDeployQtExecutable: ${MACDEPLOYQT_EXECUTABLE}")
+    if (MACDEPLOYQT_EXECUTABLE)
+        message(STATUS "Package generation - MacOS - DMG")
+
+        list(APPEND CPACK_GENERATOR External)
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CPackMacDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+        set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+        include(InstallRequiredSystemLibraries)
+    endif()
 else()
     message(STATUS "LinuxDeployExecutable: ${LINUXDEPLOY_EXECUTABLE}")
     if(LINUXDEPLOY_EXECUTABLE)
         message(STATUS "Package generation - Linux - AppImage")
 
-        set(CPACK_GENERATOR "External;${CPACK_GENERATOR}")
+        list(APPEND CPACK_GENERATOR External)
         set(VX_APPIMAGE_DEST_DIR "${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage")
         set(VX_APPIMAGE_DESKTOP_FILE "${VX_APPIMAGE_DEST_DIR}${CMAKE_INSTALL_PREFIX}/share/applications/vnote.desktop")
         configure_file(${CMAKE_CURRENT_LIST_DIR}/CPackLinuxDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
         set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
     endif()
-
-    set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_LIST_DIR}/data/core/logo/64x64/vnote.png")
 endif()
 
 include(CPack)
