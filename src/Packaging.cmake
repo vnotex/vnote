@@ -46,10 +46,9 @@ function(windeployqt target)
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/styles/"
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/qmltooling/"
         COMMENT "Deploying Qt..."
-        DEPENDS vnote
+        DEPENDS vnote lrelease
     )
 
-    add_dependencies(deploy lrelease)
     add_dependencies(pack deploy)
 
     install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/winqt/" DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
@@ -126,16 +125,26 @@ if(WIN32)
 
     windeployqt(vnote)
 elseif(APPLE)
+    # Manually copy resources.
+    set(VX_BUNDLE_CONTENTS_DIR $<TARGET_FILE_DIR:vnote>/..)
+    add_custom_target(deploy
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_LIST_DIR}/data/core/Info.plist" ${VX_BUNDLE_CONTENTS_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${VX_EXTRA_RESOURCE_FILES_RCC} ${VX_BUNDLE_CONTENTS_DIR}/Resources
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${VX_BUNDLE_CONTENTS_DIR}/Resources/translations
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${VX_QM_FILES} ${VX_BUNDLE_CONTENTS_DIR}/Resources/translations
+        COMMENT "Copying resources into bundle Contents ${VX_BUNDLE_CONTENTS_DIR}"
+        DEPENDS vnote lrelease
+    )
+    add_dependencies(pack deploy)
+
     message(STATUS "MACDeployQtExecutable: ${MACDEPLOYQT_EXECUTABLE}")
     if (MACDEPLOYQT_EXECUTABLE)
         message(STATUS "Package generation - MacOS - DMG")
 
         list(APPEND CPACK_GENERATOR External)
-        set(CPACK_BUNDLE_NAME "${PROJECT_NAME}" )
-        set(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_LIST_DIR}/data/core/Info.plist")
-        set(CPACK_BUNDLE_ICON "${CMAKE_CURRENT_LIST_DIR}/data/core/icons/vnote.icns")
-        set(CPACK_DMG_VOLUME_NAME "${PROJECT_NAME}")
-        set(CPACK_DMG_FORMAT "UDBZ")
         configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CPackMacDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
         set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
         include(InstallRequiredSystemLibraries)

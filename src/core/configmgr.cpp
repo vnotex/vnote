@@ -575,14 +575,21 @@ void ConfigMgr::initAppPrefixPath()
     // Support QFile("app:abc.txt").
     QStringList potential_dirs;
     auto app_dir_path = QCoreApplication::applicationDirPath();
-    qInfo() << "executable dir: " << app_dir_path;
+    qInfo() << "app prefix path: " << app_dir_path;
     potential_dirs << app_dir_path;
 
 #if defined(Q_OS_LINUX)
     QDir localBinDir(app_dir_path);
     if (localBinDir.exists("../local/bin/vnote")) {
         auto app_dir_path2 = localBinDir.cleanPath(localBinDir.filePath("../local/bin"));
-        qInfo() << "executable dir: " << app_dir_path2;
+        qInfo() << "app prefix path: " << app_dir_path2;
+        potential_dirs << app_dir_path2;
+    }
+#elif defined(Q_OS_MACOS)
+    QDir localBinDir(app_dir_path);
+    if (localBinDir.exists("../Resources")) {
+        auto app_dir_path2 = localBinDir.cleanPath(localBinDir.filePath("../Resources"));
+        qInfo() << "app prefix path: " << app_dir_path2;
         potential_dirs << app_dir_path2;
     }
 #endif

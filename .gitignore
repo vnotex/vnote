@@ -13,3 +13,4 @@ aqtinstall.log
 tags
 CMakeLists.txt.user
 build
+.DS_Store
