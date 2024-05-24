@@ -1,5 +1,5 @@
 # VNote
-![CI-Windows](https://github.com/vnotex/vnote/workflows/CI-Windows/badge.svg) ![CI-Linux](https://github.com/vnotex/vnote/workflows/CI-Linux/badge.svg) ![CI-MacOS](https://github.com/vnotex/vnote/workflows/CI-MacOS/badge.svg)
+![CI-Windows](https://github.com/vnotex/vnote/actions/workflows/ci-win.yml/badge.svg?branch=master) ![CI-Linux](https://github.com/vnotex/vnote/actions/workflows/ci-linux.yml/badge.svg?branch=master) ![CI-MacOS](https://github.com/vnotex/vnote/actions/workflows/ci-macos.yml/badge.svg?branch=master)
 
 [English](README.md)
 
@@ -31,27 +31,8 @@ VNote不是一个简单的Markdown编辑器。通过提供强大的笔记管理�
 ## 支持
 * [GitHub Issues](https://github.com/vnotex/vnote/issues)；
 * 邮件：`tamlokveer at gmail.com`；
-* [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)；
 * [Telegram](https://t.me/vnotex)；
 * 微信公众号：`vnotex`；
-
-## 捐赠
-有很多方式可以帮助VNote的开发：
-
-* 持续关注VNote并反馈问题以帮助改进。
-* 推荐VNote给朋友，口碑传播。
-* 参与VNote的开发，发起[拉取请求](https://github.com/vnotex/vnote/pulls)一起改进VNote。
-* 如果VNote真的好用，可以考虑捐赠。
-
-**PayPal**：[PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
-
-**支付宝**：`tamlokveer@gmail.com`
-
-<img src="pics/alipay.png" width="256px" height="256px" />
-
-**微信**
-
-<img src="pics/wechat_pay.png" width="256px" height="256px" />
 
 感谢这些[捐赠用户](https://github.com/vnotex/vnote/wiki/Donate-List)！
 
