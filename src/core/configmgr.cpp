@@ -581,9 +581,14 @@ void ConfigMgr::initAppPrefixPath()
 #if defined(Q_OS_LINUX)
     QDir localBinDir(app_dir_path);
     if (localBinDir.exists("../local/bin/vnote")) {
-        auto app_dir_path2 = localBinDir.cleanPath(localBinDir.filePath("../local/bin"));
+        auto app_dir_path2 = localBinDir.cleanPath(localBinDir.filePath("../local/share"));
         qInfo() << "app prefix path: " << app_dir_path2;
         potential_dirs << app_dir_path2;
+    }
+    if (localBinDir.exists("../share")) {
+        auto app_dir_path3 = localBinDir.cleanPath(localBinDir.filePath("../share"));
+        qInfo() << "app prefix path: " << app_dir_path3;
+        potential_dirs << app_dir_path3;
     }
 #elif defined(Q_OS_MACOS)
     QDir localBinDir(app_dir_path);

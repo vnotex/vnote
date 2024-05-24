@@ -144,9 +144,8 @@ else()
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
-    # TODO: move them to data dir
-    install(FILES ${VX_EXTRA_RESOURCE_FILES_RCC} DESTINATION ${CMAKE_INSTALL_BINDIR})
-    install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}/translations" OPTIONAL)
+    install(FILES ${VX_EXTRA_RESOURCE_FILES_RCC} DESTINATION ${CMAKE_INSTALL_DATADIR})
+    install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_DATADIR}/translations" OPTIONAL)
 
     set(desktop.path applications)
     set(desktop.files data/core/vnote.desktop)
@@ -166,8 +165,8 @@ else()
     set(iconsvg.files data/core/logo/vnote.svg)
     foreach(item IN ITEMS desktop icon16 icon32 icon48 icon64 icon128 icon256 iconsvg)
         install(FILES ${CMAKE_CURRENT_LIST_DIR}/${${item}.files}
-                DESTINATION share/${${item}.path}
-                PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/${${item}.path}
+            PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
     endforeach()
 endif()
 
