@@ -51,7 +51,6 @@ jobs:
           brew install tree libiodbc libpq
 
       - name: Fix SQL
-        if: ${{matrix.config.arch == 'universal'}}
         run: |
           sudo mkdir -p /usr/local/opt/libiodbc/lib
           sudo ln -s /opt/homebrew/opt/libiodbc/lib/libiodbc.2.dylib /usr/local/opt/libiodbc/lib/libiodbc.2.dylib
@@ -103,7 +102,7 @@ jobs:
           cmake --build . --target pack
           ls -ls .
           ls -ls src
-          mv src/vnote.dmg VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
+          mv src/VNote.dmg VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
         working-directory: ${{runner.workspace}}/build
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
