@@ -18,6 +18,8 @@
             </array>
         </dict>
     </array>
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
     <key>CFBundleName</key>
     <string>VNote</string>
     <key>CFBundleExecutable</key>

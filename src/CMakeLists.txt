@@ -131,6 +131,7 @@ elseif(APPLE)
     # The generated Info.plist will be overridden.
     set_target_properties(vnote
         PROPERTIES
+        OUTPUT_NAME "${PROJECT_NAME}"
         MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
         MACOSX_BUNDLE_INFO_STRING "${PROJECT_DESCRIPTION}"
         MACOSX_BUNDLE_GUI_IDENTIFIER "fun.vnote.app"
