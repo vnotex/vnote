@@ -1,6 +1,9 @@
 execute_process(COMMAND "codesign" --remove-signature ${CMAKE_CURRENT_BINARY_DIR}/VNote.app
     WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY}
 )
+execute_process(COMMAND "codesign" --force --deep -s - ${CMAKE_CURRENT_BINARY_DIR}/VNote.app
+    WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY}
+)
 execute_process(COMMAND "${MACDEPLOYQT_EXECUTABLE}" ${CMAKE_CURRENT_BINARY_DIR}/VNote.app -dmg
     -always-overwrite -verbose=1
     WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY}
