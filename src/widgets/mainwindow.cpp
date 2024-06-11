@@ -20,6 +20,7 @@
 #include <QTimer>
 #include <QProgressDialog>
 #include <QHotkey>
+#include <QWebEngineView>
 
 #include "notebookexplorer.h"
 #include "vnotex.h"
@@ -74,8 +75,6 @@ MainWindow::MainWindow(QWidget *p_parent)
 
     setupShortcuts();
 
-    loadStateAndGeometry();
-
     m_dockWidgetHelper.postSetup();
 
     // The signal is particularly useful if your application has to do some last-second cleanup.
@@ -97,8 +96,12 @@ MainWindow::~MainWindow()
 void MainWindow::kickOffOnStart(const QStringList &p_paths)
 {
     QTimer::singleShot(300, [this, p_paths]() {
-        // Need to load the state of dock widgets again after the main window is shown.
-        loadStateAndGeometry(true);
+        if (m_dummyWebView) {
+            delete m_dummyWebView;
+            m_dummyWebView = nullptr;
+        }
+
+        loadStateAndGeometry();
 
         {
             QProgressDialog proDlg(tr("Initializing core components..."),
@@ -174,6 +177,11 @@ void MainWindow::setupUI()
     setupSystemTray();
 
     m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
+
+#if defined(Q_OS_WIN)
+    m_dummyWebView = new QWebEngineView(this);
+    m_dummyWebView->setFixedSize(1, 1);
+#endif
 }
 
 void MainWindow::setupStatusBar()
@@ -452,12 +460,12 @@ void MainWindow::saveStateAndGeometry()
     sessionConfig.setMainWindowStateGeometry(sg);
 }
 
-void MainWindow::loadStateAndGeometry(bool p_stateOnly)
+void MainWindow::loadStateAndGeometry()
 {
     const auto& sessionConfig = ConfigMgr::getInst().getSessionConfig();
     const auto sg = sessionConfig.getMainWindowStateGeometry();
 
-    if (!p_stateOnly && !sg.m_mainGeometry.isEmpty()) {
+    if (!sg.m_mainGeometry.isEmpty()) {
         restoreGeometry(sg.m_mainGeometry);
     }
 
@@ -466,12 +474,10 @@ void MainWindow::loadStateAndGeometry(bool p_stateOnly)
         restoreState(sg.m_mainState);
     }
 
-    if (!p_stateOnly) {
-        m_visibleDocksBeforeExpand = sg.m_visibleDocksBeforeExpand;
-        if (m_visibleDocksBeforeExpand.isEmpty()) {
-            // Init (or init again if there is no visible dock).
-            m_visibleDocksBeforeExpand = m_dockWidgetHelper.getVisibleDocks();
-        }
+    m_visibleDocksBeforeExpand = sg.m_visibleDocksBeforeExpand;
+    if (m_visibleDocksBeforeExpand.isEmpty()) {
+        // Init (or init again if there is no visible dock).
+        m_visibleDocksBeforeExpand = m_dockWidgetHelper.getVisibleDocks();
     }
 
     if (!sg.m_tagExplorerState.isEmpty()) {

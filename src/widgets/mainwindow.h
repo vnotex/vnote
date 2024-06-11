@@ -14,6 +14,7 @@ class QSystemTrayIcon;
 class QTimer;
 class QLabel;
 class QTextEdit;
+class QWebEngineView;
 
 namespace vnotex
 {
@@ -137,7 +138,7 @@ namespace vnotex
 
         void saveStateAndGeometry();
 
-        void loadStateAndGeometry(bool p_stateOnly = false);
+        void loadStateAndGeometry();
 
         // Used to test widget in development.
         void demoWidget();
@@ -159,6 +160,9 @@ namespace vnotex
         void checkNotebooksFailedToLoad();
 
         void loadWidgetsData();
+
+        // WebView to handle OpenGL blinking on Windows.
+        QWebEngineView *m_dummyWebView = nullptr;
 
         DockWidgetHelper m_dockWidgetHelper;
 
