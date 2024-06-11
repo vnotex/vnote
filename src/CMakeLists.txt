@@ -31,8 +31,13 @@ set_source_files_properties(${VX_APP_ICON_MACOS} PROPERTIES
 # Translations
 set(VX_TS_FILES data/core/translations/vnote_zh_CN.ts
     data/core/translations/vnote_ja.ts)
-if((QT_DEFAULT_MAJOR_VERSION GREATER 5))
-    qt_add_lupdate(vnote TS_FILES ${VX_TS_FILES})
+if((QT_DEFAULT_MAJOR_VERSION EQUAL 6))
+    if((Qt6Widgets_VERSION VERSION_GREATER_EQUAL 6.7.0))
+        qt_add_lupdate(TS_FILES ${VX_TS_FILES}
+            SOURCE_TARGETS vnote)
+    else()
+        qt_add_lupdate(vnote TS_FILES ${VX_TS_FILES})
+    endif()
 endif()
 # Generate .qm files from .ts files (lrelease)
 set_source_files_properties(${VX_TS_FILES} PROPERTIES
