@@ -109,9 +109,9 @@ void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper)
 void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event)
 {
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    QScopedPointer<QMenu> menu(page()->createStandardContextMenu());
+    QMenu* menu(page()->createStandardContextMenu());
 #else
-    QScopedPointer<QMenu> menu(createStandardContextMenu());
+    QMenu* menu(createStandardContextMenu());
 #endif
 
     const QList<QAction *> actions = menu->actions();
@@ -133,7 +133,7 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event)
 
     if (!hasSelection() && m_viewWindow && m_viewWindow->getMode() == ViewWindowMode::Read) {
         auto firstAct = actions.isEmpty() ? nullptr : actions[0];
-        auto editAct = new QAction(tr("&Edit"), menu.data());
+        auto editAct = new QAction(tr("&Edit"), menu);
         WidgetUtils::addActionShortcutText(editAct,
                                            ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead));
         connect(editAct, &QAction::triggered,
@@ -151,7 +151,7 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event)
     {
         auto defaultCopyImageAct = pageAction(QWebEnginePage::CopyImageToClipboard);
         if (actions.contains(defaultCopyImageAct)) {
-            QAction *copyImageAct = new QAction(defaultCopyImageAct->text(), menu.data());
+            QAction *copyImageAct = new QAction(defaultCopyImageAct->text(), menu);
             copyImageAct->setToolTip(defaultCopyImageAct->toolTip());
             connect(copyImageAct, &QAction::triggered,
                     this, &MarkdownViewer::copyImage);
@@ -163,11 +163,11 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event)
     {
         auto copyAct = pageAction(QWebEnginePage::Copy);
         if (actions.contains(copyAct)) {
-            setupCrossCopyMenu(menu.data(), copyAct);
+            setupCrossCopyMenu(menu, copyAct);
         }
     }
 
-    hideUnusedActions(menu.data());
+    hideUnusedActions(menu);
 
     p_event->accept();
 
@@ -183,6 +183,11 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event)
     if (valid) {
         menu->exec(p_event->globalPos());
     }
+
+    // For Qt 6, the menu is set with WA_DeleteOnClose.
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+    delete menu;
+#endif
 }
 
 void MarkdownViewer::handleCopyImageUrlAction()
