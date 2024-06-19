@@ -1,44 +1,35 @@
 # [markdown-it](https://github.com/markdown-it/markdown-it)
-v11.0.0  
-Alex Kocharin  
-Vitaly Puzrin
+v14.1.0
 
 # [markdown-it-task-lists](https://github.com/revin/markdown-it-task-lists)
-v2.1.0  
-Revin Guillen
+v2.1.0
 
 # [markdown-it-footnote](https://github.com/markdown-it/markdown-it-footnote)
-v3.0.2  
-Vitaly Puzrin
+v3.0.2
 
 # [markdown-it-sub](https://github.com/markdown-it/markdown-it-sub)
-v1.0.0  
-Vitaly Puzrin
+v1.0.0
 
 # [markdown-it-sup](https://github.com/markdown-it/markdown-it-sup)
-v1.0.0  
-Vitaly Puzrin
+v1.0.0
 
 # [markddown-it-front-matter](https://github.com/craigdmckenna/markdown-it-front-matter)
-v0.2.1  
-Craig McKenna
+v0.2.1
 Wrapped by Le Tan
 
 # [markdown-it-imsize](https://github.com/tatsy/markdown-it-imsize)
-v2.0.1  
+v2.0.1
 Tatsuya Yatagawa
 
 # [markdown-it-emoji](https://github.com/markdown-it/markdown-it-emoji)
-v1.4.0  
-Vitaly Puzrin
+v1.4.0
 
 # [markdown-it-texmath](https://github.com/vnotex/markdown-it-texmath)
 b08ddd342f26ddcdc3afa2218f1b55410f44029b
-Stefan Goessner
 Le Tan
 
 # [markdown-it-container](https://github.com/markdown-it/markdown-it-container)
-v3.0.0  
+v3.0.0
 Vitaly Puzrin
 
 # [markdown-it-inject-linenumbers](https://github.com/digitalmoksha/markdown-it-inject-linenumbers)
