@@ -16,7 +16,7 @@ class Mermaid extends GraphRenderer {
 
     initialize(p_callback) {
         return super.initialize(() => {
-           mermaid.mermaidAPI.initialize({
+           mermaid.initialize({
                startOnLoad: false,
                theme: this.theme
            });
@@ -26,12 +26,12 @@ class Mermaid extends GraphRenderer {
 
     // Render @p_node as Mermaid graph.
     // Return true on success.
-    renderOne(p_node, p_idx) {
+    async renderOne(p_node, p_idx) {
         let graphSvg = null;
         try {
-            graphSvg = mermaid.mermaidAPI.render('vx-mermaid-graph-' + p_idx,
-                                                 p_node.textContent,
-                                                 function() {});
+            const { svg } = await mermaid.render('vx-mermaid-graph-' + p_idx,
+                                                 p_node.textContent);
+            graphSvg = svg;
         } catch (p_err) {
             console.error('failed to render Mermaid', p_err);
             // Clean the container element, or Mermaid won't render the graph with
@@ -72,12 +72,12 @@ class Mermaid extends GraphRenderer {
 
     // Render a graph from @p_text.
     // Will append a div to @p_container and return the div.
-    renderTextInternal(p_container, p_text, p_idx) {
+    async renderTextInternal(p_container, p_text, p_idx) {
         let graphSvg = null;
         try {
-            graphSvg = mermaid.mermaidAPI.render('vx-mermaid-graph-stand-alone-' + p_idx,
-                                                 p_text,
-                                                 function() {});
+            const { svg } = await mermaid.render('vx-mermaid-graph-stand-alone-' + p_idx,
+                                                 p_text);
+            graphSvg = svg;
         } catch (p_err) {
             console.error('failed to render Mermaid', p_err);
             // Clean the container element, or Mermaid won't render the graph with
@@ -104,20 +104,21 @@ class Mermaid extends GraphRenderer {
         }
 
         p_container.appendChild(graphDiv);
-
+        console.log(graphDiv);
         return graphDiv;
     }
 
     // p_callback(graphDiv).
-    renderText(p_container, p_text, p_idx, p_callback) {
-        if (!this.initialize(() => {
-                let graphDiv = this.renderTextInternal(p_container, p_text, p_idx);
+    async renderText(p_container, p_text, p_idx, p_callback) {
+        if (!this.initialize(async () => {
+                let graphDiv = await this.renderTextInternal(p_container, p_text, p_idx);
                 p_callback(graphDiv);
             })) {
             return;
         }
 
-        let graphDiv = this.renderTextInternal(p_container, p_text, p_idx);
+        let graphDiv = await this.renderTextInternal(p_container, p_text, p_idx);
+        console.log(graphDiv);
         p_callback(graphDiv);
     }
 }

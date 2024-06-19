@@ -73,7 +73,7 @@ class GraphRenderer extends VxWorker {
             }
         });
 
-        this.doRender(this.nodesToRender);
+        this.doRender();
     }
 
     // Interface 2.
