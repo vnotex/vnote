@@ -231,7 +231,7 @@ namespace vnotex
         bool m_fetchImagesInParseAndPaste = true;
 
         // Whether protect from Cross-Site Scripting.
-        bool m_protectFromXss = false;
+        bool m_protectFromXss = true;
 
         // Whether allow HTML tag in Markdown source.
         bool m_htmlTagEnabled = true;
