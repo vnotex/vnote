@@ -241,6 +241,8 @@ class MarkdownIt extends VxWorker {
         this.mdit.use(window.markdownitImplicitFigure, {
             figcaption: true
         });
+
+        this.mdit.use(window.markdownitMark);
     }
 
     registerInternal() {

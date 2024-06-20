@@ -47,3 +47,6 @@ v4.2.0
 
 # [markdown-it-implicit-figures](https://github.com/arve0/markdown-it-implicit-figures)
 v0.10.0
+
+# [markdown-it-mark](https://github.com/markdown-it/markdown-it-mark)
+v4.0.0

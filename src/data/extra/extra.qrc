@@ -49,6 +49,7 @@
         <file>web/js/markdown-it/markdown-it-sup.min.js</file>
         <file>web/js/markdown-it/markdown-it-task-lists.js</file>
         <file>web/js/markdown-it/markdown-it-texmath.js</file>
+        <file>web/js/markdown-it/markdown-it-mark.min.js</file>
         <file>web/js/markdown-it/markdown-it-inject-linenumbers.js</file>
         <file>web/js/markdown-it/markdown-it-xss.min.js</file>
         <file>web/js/markdown-it/markdown-it-implicit-figure.js</file>

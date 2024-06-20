@@ -325,6 +325,7 @@
                             "web/js/markdown-it/markdownItAnchor.umd.js",
                             "web/js/markdown-it/markdownItTocDoneRight.umd.js",
                             "web/js/markdown-it/markdown-it-implicit-figure.js",
+                            "web/js/markdown-it/markdown-it-mark.min.js",
                             "web/js/markdownit.js"
                         ],
                         "styles" : [

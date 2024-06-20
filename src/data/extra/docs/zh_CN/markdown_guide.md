@@ -213,6 +213,11 @@ This is the 1^st^ superscript.
 This is the H~2~O subscript.
 ```
 
+### 标记
+```md
+Let's mark the ==word==.
+```
+
 ### 警告
 ```md
 ::: alert-info
