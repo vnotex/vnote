@@ -36,9 +36,6 @@ Vitaly Puzrin
 v0.0.0
 Modified by Le Tan
 
-# [markdown-it-xss](https://github.com/yzyeengang/markdown-it-xss)
-v1.0.0
-
 # [markdonw-it-anchor](https://github.com/valeriangalliat/markdown-it-anchor)
 v6.0.1
 

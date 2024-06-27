@@ -208,9 +208,14 @@ class MarkdownIt extends VxWorker {
 
         if (window.vxOptions.protectFromXss) {
             let scriptFolderPath = Utils.parentFolder(document.currentScript.src);
-            Utils.loadScripts([scriptFolderPath + '/markdown-it/markdown-it-xss.min.js'],
+            Utils.loadScripts([scriptFolderPath + '/markdown-it/xss.min.js',
+                               scriptFolderPath + '/markdown-it/markdown-it-xss.js'],
                               () => {
-                                  this.mdit.use(window['markdown-it-xss']);
+                                  this.mdit.use(window.markdownItXSS, {
+                                      whiteList: {
+                                          input: ["class", "disabled", "type", "checked"],
+                                      }
+                                  });
                               });
         }
 
