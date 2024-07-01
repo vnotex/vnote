@@ -9,6 +9,11 @@ if len(sys.argv) < 2:
 newVersion = sys.argv[1]
 print("New version: {0}".format(newVersion))
 
+# CMakeList
+regExp = re.compile('(\\s+)VERSION \\S+')
+for line in fileinput.input(['CMakeLists.txt'], inplace = True):
+    print(regExp.sub('\\1VERSION ' + newVersion, line), end='')
+
 # vnotex.json
 regExp = re.compile('(\\s+)"version" : "\\S+"')
 for line in fileinput.input(['src/data/core/vnotex.json'], inplace = True):

@@ -1,4 +1,12 @@
 # Changes
+## v3.18.0
+* Upgrade to Qt6
+* Support MacOS universal build
+* Upgrade Mermaid, Flowchart.js, and markdown-it
+* Markdown-it
+    * Fix XSS protection and turn it on by default
+    * Support mark by `==xx==`
+
 ## v3.17.0
 * Quick note: create note in given scheme (@feloxx)
 * MarkdownEditor: support inserting multiple images (@feloxx)

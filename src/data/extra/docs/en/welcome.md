@@ -11,4 +11,4 @@ For more information, please visit [**VNote's Home Page**](https://vnotex.github
 * Feedbacks are appreciated! Please [post an issue](https://github.com/vnotex/vnote/issues) on GitHub if there is any.
 
 ### Windows Users
-* if VNote hangs frequently or behaves unexpectedly in interface, please check the **OpenGL** option. [Details here](https://github.com/vnotex/vnote/issues/853).
+* If VNote hangs frequently or behaves unexpectedly in interface, please check the **OpenGL** option. Check details [here](https://github.com/vnotex/vnote/issues/853).
