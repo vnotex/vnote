@@ -3,7 +3,7 @@
 
 ::: alert-success
 
-VNote 3.14.0 is released! Check out [what's new](https://github.com/vnotex/vnote/releases)!
+VNote 3.18.0 is released! Check out [what's new](https://github.com/vnotex/vnote/releases)!
 
 :::
 

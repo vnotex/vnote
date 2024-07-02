@@ -24,7 +24,16 @@ All the above 3 issues may be caused by the driver of the display card only on W
 
 1. Try to update the display card driver;
 2. Try to schedule VNote to run with integrated display card;
-3. If it does not works, try to set the `OpenGL`value one by one in the `Settings` dialog.  
+3. If it does not works, try to set the `OpenGL`value one by one in the `Settings` dialog;  
 ![](vx_images/2626403110753.png)
+4. Make sure the executable folder of VNote locates in C disk.
 
 Restart of VNote is needed after each step to check if it takes effect.
+
+## Failed to Run on MacOS
+Try to re-sign the APP:
+
+```bash
+xattr -cr '/Applications/VNote.app'
+codesign --force --deep --sign - '/Applications/VNote.app'
+```
