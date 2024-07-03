@@ -113,7 +113,7 @@ jobs:
       - name: Archive Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
+          name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
           path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
 
       - name: Archive Installer
