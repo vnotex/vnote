@@ -1,4 +1,9 @@
 # Changes
+## v3.18.1
+* Fix crash caused by Qt6 change
+* Fix XSS protection exemption
+* Check link before open
+
 ## v3.18.0
 * Upgrade to Qt6
 * Support MacOS universal build
