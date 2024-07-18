@@ -215,6 +215,11 @@ class MarkdownIt extends VxWorker {
                                       whiteList: {
                                           input: ["class", "disabled", "type", "checked"],
                                           mark: ["class"],
+                                          font: ["color", "class"],
+                                          sub: ["class"],
+                                          sup: ["class"],
+                                          details: ["class"],
+                                          summary: ["class"],
                                       }
                                   });
                               });
