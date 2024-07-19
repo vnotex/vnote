@@ -72,6 +72,13 @@ jobs:
           git clone https://github.com/tamlok/macdeployqtfix.git macdeployqtfix --depth=1
         working-directory: ${{runner.workspace}}
 
+      - name: Install optool
+        run: |
+          wget --no-verbose https://github.com/alexzielenski/optool/releases/download/0.1/optool.zip
+          unzip ./optool.zip
+          sudo ln -s ./optool /usr/local/bin/optool
+        working-directory: ${{runner.workspace}}
+
       - name: Cache Qt
         id: cache-qt
         uses: actions/cache@v1  # not v2!
