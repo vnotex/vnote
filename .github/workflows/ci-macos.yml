@@ -49,7 +49,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          brew install tree libiodbc libpq
+          brew install tree libiodbc libpq optool
 
       - name: Fix SQL
         run: |
