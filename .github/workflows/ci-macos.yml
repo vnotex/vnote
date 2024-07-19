@@ -49,7 +49,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          brew install tree libiodbc libpq optool
+          brew install tree libiodbc libpq
 
       - name: Fix SQL
         run: |
@@ -70,6 +70,13 @@ jobs:
       - name: Install macdeployqtfix
         run: |
           git clone https://github.com/tamlok/macdeployqtfix.git macdeployqtfix --depth=1
+        working-directory: ${{runner.workspace}}
+
+      - name: Install optool
+        run: |
+          wget --no-verbose https://github.com/alexzielenski/optool/releases/download/0.1/optool.zip
+          unzip ./optool.zip
+          sudo ln -s ./optool /usr/local/bin/optool
         working-directory: ${{runner.workspace}}
 
       - name: Cache Qt
