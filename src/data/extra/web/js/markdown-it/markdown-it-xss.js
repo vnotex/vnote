@@ -4,17 +4,24 @@
 module.exports = function protect_xss(md, opts = {}) {
   const proxy = (tokens, idx, options, env, self) => self.renderToken(tokens, idx, options);
   const defaultHtmlInlineRenderer = md.renderer.rules.html_inline || proxy;
+  const defaultHtmlBlockRenderer = md.renderer.rules.html_block || proxy;
+  opts.whiteList = {...window.filterXSS.getDefaultWhiteList(), ...opts.whiteList};
+  // Do not escape value when it is a tag and attr in the whitelist.
+  opts.safeAttrValue = (tag, name, value, cssFilter) => { return value; }
 
   function protectFromXSS(html) {
     return filterXSS(html, opts);
   }
 
-  function filterContent(tokens, idx, options, env, slf) {
+  function filterContent(tokens, idx, options, env, slf, fallback) {
     tokens[idx].content = protectFromXSS(tokens[idx].content);
-    return defaultHtmlInlineRenderer(tokens, idx, options, env, slf);
+    return fallback(tokens, idx, options, env, slf);
   }
 
-  md.renderer.rules.html_inline = filterContent;
+  md.renderer.rules.html_inline = (tokens, idx, options, env, slf) =>
+    filterContent(tokens, idx, options, env, slf, defaultHtmlInlineRenderer);
+  md.renderer.rules.html_block = (tokens, idx, options, env, slf) =>
+    filterContent(tokens, idx, options, env, slf, defaultHtmlBlockRenderer);
 };
 
 },{}]},{},[1])(1)
