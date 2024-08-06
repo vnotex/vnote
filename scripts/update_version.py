@@ -7,6 +7,7 @@ if len(sys.argv) < 2:
     exit
 
 newVersion = sys.argv[1]
+shortVersion = re.match('^(\\d+\\.\\d+).', newVersion).group(1)
 print("New version: {0}".format(newVersion))
 
 # CMakeList
@@ -25,6 +26,10 @@ for line in fileinput.input(['.github/workflows/ci-win.yml', '.github/workflows/
     print(regExp.sub('\\1VNOTE_VER: ' + newVersion, line), end='')
 
 # Info.plist
+regExp = re.compile('(\\s+)<string>(?!12\\.1)\\d+\\.\\d+</string>')
+for line in fileinput.input(['src/data/core/Info.plist'], inplace = True):
+    print(regExp.sub('\\1<string>' + shortVersion + '</string>', line), end='')
+
 regExp = re.compile('(\\s+)<string>\\d+\\.\\d+\\.\\d+</string>')
 for line in fileinput.input(['src/data/core/Info.plist'], inplace = True):
     print(regExp.sub('\\1<string>' + newVersion + '</string>', line), end='')
