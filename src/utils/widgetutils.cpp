@@ -79,21 +79,20 @@ QSize WidgetUtils::availableScreenSize(QWidget *p_widget)
 void WidgetUtils::openUrlByDesktop(const QUrl &p_url)
 {
     const auto scheme = p_url.scheme();
-    if (scheme == "http" || scheme == "https" ||
-        (p_url.isLocalFile() && QFileInfo(p_url.toLocalFile()).isDir())) {
-        QDesktopServices::openUrl(p_url);
-        return;
+    if (scheme != "http" && scheme != "https" &&
+        !(p_url.isLocalFile() && QFileInfo(p_url.toLocalFile()).isDir())) {
+        // Prompt for user.
+        int ret = MessageBoxHelper::questionYesNo(MessageBoxHelper::Warning,
+                                                  MainWindow::tr("Are you sure to open link (%1)?").arg(p_url.toString()),
+                                                  MainWindow::tr("Malicious link might do harm to your device."),
+                                                  QString(),
+                                                  nullptr);
+        if (ret == QMessageBox::No) {
+            return;
+        }
     }
 
-    // Prompt for user.
-    int ret = MessageBoxHelper::questionYesNo(MessageBoxHelper::Warning,
-                                              MainWindow::tr("Are you sure to open link (%1)?").arg(p_url.toString()),
-                                              MainWindow::tr("Malicious link might do harm to your device."),
-                                              QString(),
-                                              nullptr);
-    if (ret == QMessageBox::No) {
-        return;
-    }
+    QDesktopServices::openUrl(p_url);
 }
 
 bool WidgetUtils::processKeyEventLikeVi(QWidget *p_widget,
