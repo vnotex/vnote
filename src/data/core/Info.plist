@@ -37,7 +37,7 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>
-    <string>12.1</string>
+    <string>10.15</string>
     <key>NOTE</key>
     <string>A pleasant note-taking platform</string>
     <key>NSPrincipalClass</key>
