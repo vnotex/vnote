@@ -97,7 +97,7 @@ QPair<bool, QString> PlantUmlHelper::testPlantUml(const QString &p_plantUmlJarFi
                                      errData);
     ret.first = (state == ProcessUtils::Succeeded) && (exitCode == 0);
 
-    ret.second = QString("%1 %2\n\nExitcode: %3\n\nOutput: %4\n\nError: %5")
+    ret.second = QStringLiteral("%1 %2\n\nExitcode: %3\n\nOutput: %4\n\nError: %5")
                         .arg(program, args.join(' '), QString::number(exitCode), QString::fromLocal8Bit(outData), QString::fromLocal8Bit(errData));
 
     return ret;

@@ -70,7 +70,7 @@ QString IconUtils::replaceForegroundOfIcon(const QString &p_iconContent, const Q
     QRegularExpression styleRe(R"((\s|"|;)(fill|stroke)(:|(="))(?!none)[^;"]*)");
     if (p_iconContent.indexOf(styleRe) > -1) {
         auto newContent(p_iconContent);
-        newContent.replace(styleRe, QString("\\1\\2\\3%1").arg(p_foreground));
+        newContent.replace(styleRe, QStringLiteral("\\1\\2\\3%1").arg(p_foreground));
         return newContent;
     }
 

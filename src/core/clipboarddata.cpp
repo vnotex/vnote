@@ -63,14 +63,14 @@ void ClipboardData::fromJson(const QJsonObject &p_jobj)
         || !p_jobj.contains(c_action)
         || !p_jobj.contains(c_data)) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("fail to parse ClipboardData from json (%1)").arg(p_jobj.keys().join(',')));
+                            QStringLiteral("fail to parse ClipboardData from json (%1)").arg(p_jobj.keys().join(',')));
         return;
     }
 
     auto idRet = stringToID(p_jobj[c_instanceId].toString());
     if (!idRet.first) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("fail to parse ClipboardData from json (%1)").arg(p_jobj.keys().join(',')));
+                            QStringLiteral("fail to parse ClipboardData from json (%1)").arg(p_jobj.keys().join(',')));
         return;
     }
     m_instanceId = idRet.second;
@@ -79,7 +79,7 @@ void ClipboardData::fromJson(const QJsonObject &p_jobj)
     m_action = intToAction(act);
     if (m_action == Action::Invalid) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("fail to parse ClipboardData from json (%1)").arg(p_jobj.keys().join(',')));
+                            QStringLiteral("fail to parse ClipboardData from json (%1)").arg(p_jobj.keys().join(',')));
         return;
     }
 

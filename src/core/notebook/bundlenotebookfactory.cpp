@@ -40,7 +40,7 @@ static void checkRootFolderForNewNotebook(const NotebookParameters &p_paras)
         qCritical() << msg;
         throw Exception(Exception::Type::InvalidPath, msg);
     } else if (p_paras.m_ensureEmptyRootFolder && !PathUtils::isEmptyDir(p_paras.m_rootFolderPath)) {
-        QString msg = QString("local root folder must be empty: %1 (%2)")
+        QString msg = QStringLiteral("local root folder must be empty: %1 (%2)")
                              .arg(p_paras.m_rootFolderPath, PathUtils::absolutePath(p_paras.m_rootFolderPath));
         qCritical() << msg;
         throw Exception(Exception::Type::InvalidPath, msg);
@@ -88,7 +88,7 @@ void BundleNotebookFactory::checkParameters(const NotebookParameters &p_paras) c
     auto configMgr = dynamic_cast<BundleNotebookConfigMgr *>(p_paras.m_notebookConfigMgr.data());
     if (!configMgr) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("Invalid notebook configuration manager"));
+                            QStringLiteral("Invalid notebook configuration manager"));
     }
 }
 

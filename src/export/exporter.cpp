@@ -677,7 +677,7 @@ QString Exporter::evaluateCommand(const ExportOption &p_option,
 
 QString Exporter::getQuotedPath(const QString &p_path)
 {
-    return QString("\"%1\"").arg(QDir::toNativeSeparators(p_path));
+    return QStringLiteral("\"%1\"").arg(QDir::toNativeSeparators(p_path));
 }
 
 void Exporter::collectFiles(const QList<QSharedPointer<File>> &p_files, QStringList &p_inputFiles, QStringList &p_resourcePaths)

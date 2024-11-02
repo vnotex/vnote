@@ -41,7 +41,7 @@ void GitHubImageHost::setConfig(const QJsonObject &p_jobj)
     parseConfig(p_jobj, m_personalAccessToken, m_userName, m_repoName);
 
     // Do not assume the default branch.
-    m_imageUrlPrefix = QString("https://raw.githubusercontent.com/%1/%2/").arg(m_userName, m_repoName);
+    m_imageUrlPrefix = QStringLiteral("https://raw.githubusercontent.com/%1/%2/").arg(m_userName, m_repoName);
 }
 
 QPair<QByteArray, QByteArray> GitHubImageHost::authorizationHeader(const QString &p_token)
@@ -66,7 +66,7 @@ vte::NetworkAccess::RawHeaderPairs GitHubImageHost::prepareCommonHeaders(const Q
 vte::NetworkReply GitHubImageHost::getRepoInfo(const QString &p_token, const QString &p_userName, const QString &p_repoName) const
 {
     auto rawHeader = prepareCommonHeaders(p_token);
-    const auto urlStr = QString("%1/repos/%2/%3").arg(c_apiUrl, p_userName, p_repoName);
+    const auto urlStr = QStringLiteral("%1/repos/%2/%3").arg(c_apiUrl, p_userName, p_repoName);
     auto reply = vte::NetworkAccess::request(QUrl(urlStr), rawHeader);
     return reply;
 }
@@ -86,7 +86,7 @@ QString GitHubImageHost::create(const QByteArray &p_data, const QString &p_path,
     }
 
     auto rawHeader = prepareCommonHeaders(m_personalAccessToken);
-    const auto urlStr = QString("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, p_path);
+    const auto urlStr = QStringLiteral("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, p_path);
 
     // Check if @p_path already exists.
     auto reply = vte::NetworkAccess::request(QUrl(urlStr), rawHeader);
@@ -100,7 +100,7 @@ QString GitHubImageHost::create(const QByteArray &p_data, const QString &p_path,
 
     // Create the content.
     QJsonObject requestDataObj;
-    requestDataObj[QStringLiteral("message")] = QString("VX_ADD: %1").arg(p_path);
+    requestDataObj[QStringLiteral("message")] = QStringLiteral("VX_ADD: %1").arg(p_path);
     requestDataObj[QStringLiteral("content")] = QString::fromUtf8(p_data.toBase64());
     auto requestData = Utils::toJsonString(requestDataObj);
     reply = vte::NetworkAccess::put(QUrl(urlStr), rawHeader, requestData);
@@ -137,7 +137,7 @@ bool GitHubImageHost::remove(const QString &p_url, QString &p_msg)
     const auto resourcePath = fetchResourcePath(m_imageUrlPrefix, p_url);
 
     auto rawHeader = prepareCommonHeaders(m_personalAccessToken);
-    const auto urlStr = QString("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, resourcePath);
+    const auto urlStr = QStringLiteral("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, resourcePath);
 
     // Get the SHA of the resource.
     QString sha = "";
@@ -177,7 +177,7 @@ bool GitHubImageHost::remove(const QString &p_url, QString &p_msg)
 
     // Delete.
     QJsonObject requestDataObj;
-    requestDataObj[QStringLiteral("message")] = QString("VX_DEL: %1").arg(resourcePath);
+    requestDataObj[QStringLiteral("message")] = QStringLiteral("VX_DEL: %1").arg(resourcePath);
     requestDataObj[QStringLiteral("sha")] = sha;
     auto requestData = Utils::toJsonString(requestDataObj);
     reply = vte::NetworkAccess::deleteResource(QUrl(urlStr), rawHeader, requestData);

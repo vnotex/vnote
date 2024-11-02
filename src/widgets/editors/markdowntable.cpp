@@ -31,12 +31,12 @@ QString MarkdownTable::Row::toString() const
 {
     QString cells;
     for (auto & cell : m_cells) {
-        cells += QString(" (%1, %2 [%3])").arg(cell.m_offset)
+        cells += QStringLiteral(" (%1, %2 [%3])").arg(cell.m_offset)
                                          .arg(cell.m_length)
                                          .arg(cell.m_text);
     }
 
-    return QString("row %1 %2").arg(m_block.blockNumber()).arg(cells);
+    return QStringLiteral("row %1 %2").arg(m_block.blockNumber()).arg(cells);
 }
 
 qreal MarkdownTable::s_spaceWidth = -1;
@@ -585,7 +585,7 @@ QString MarkdownTable::generateFormattedText(const QString &p_core,
         rightSpaces = 0;
     }
 
-    return QString("%1 %2%3%4 ").arg(c_borderChar,
+    return QStringLiteral("%1 %2%3%4 ").arg(c_borderChar,
                                      QString(leftSpaces, ' '),
                                      p_core,
                                      QString(rightSpaces, ' '));

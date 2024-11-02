@@ -57,7 +57,7 @@ void ViewWindowToolBarHelper::addActionShortcut(QAction *p_action,
                      p_action, [p_action]() {
                          qWarning() << "ViewWindow shortcut activated ambiguously" << p_action->text();
                      });
-    p_action->setText(QString("%1\t%2").arg(p_action->text(), shortcut->key().toString(QKeySequence::NativeText)));
+    p_action->setText(QStringLiteral("%1\t%2").arg(p_action->text(), shortcut->key().toString(QKeySequence::NativeText)));
 }
 
 void ViewWindowToolBarHelper::addButtonShortcut(QToolButton *p_btn,
@@ -77,9 +77,9 @@ void ViewWindowToolBarHelper::addButtonShortcut(QToolButton *p_btn,
                      });
     auto act = p_btn->defaultAction();
     if (act) {
-        act->setText(QString("%1\t%2").arg(act->text(), shortcut->key().toString(QKeySequence::NativeText)));
+        act->setText(QStringLiteral("%1\t%2").arg(act->text(), shortcut->key().toString(QKeySequence::NativeText)));
     } else {
-        p_btn->setText(QString("%1\t%2").arg(p_btn->text(), shortcut->key().toString(QKeySequence::NativeText)));
+        p_btn->setText(QStringLiteral("%1\t%2").arg(p_btn->text(), shortcut->key().toString(QKeySequence::NativeText)));
     }
 }
 

@@ -11,7 +11,7 @@ void INotebookBackend::constrainPath(const QString &p_path) const
 {
     if (!PathUtils::pathContains(m_rootPath, p_path)) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("path (%1) does not locate in root folder (%2)")
+                            QStringLiteral("path (%1) does not locate in root folder (%2)")
                                    .arg(p_path, m_rootPath));
     }
 }

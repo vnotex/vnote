@@ -201,7 +201,7 @@ bool WebViewExporter::writeHtmlFile(const QString &p_file,
 
     auto htmlContent = m_exportHtmlTemplate;
 
-    const auto title = QString("%1").arg(baseName);
+    const auto title = QStringLiteral("%1").arg(baseName);
     HtmlTemplateHelper::fillTitle(htmlContent, title);
 
     if (!p_styleContent.isEmpty() && p_embedStyles) {
@@ -311,7 +311,7 @@ void WebViewExporter::prepare(const ExportOption &p_option)
 
 static QString marginToStrMM(qreal p_margin)
 {
-    return QString("%1mm").arg(p_margin);
+    return QStringLiteral("%1mm").arg(p_margin);
 }
 
 void WebViewExporter::prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOption)
@@ -374,7 +374,7 @@ bool WebViewExporter::embedStyleResources(QString &p_html) const
             pos = idx + match.capturedLength();
         } else {
             // Replace the url string in html.
-            QString newUrl = QString("url('%1');").arg(dataURI);
+            QString newUrl = QStringLiteral("url('%1');").arg(dataURI);
             p_html.replace(idx, match.capturedLength(), newUrl);
             pos = idx + newUrl.size();
             altered = true;
@@ -412,7 +412,7 @@ bool WebViewExporter::embedBodyResources(const QUrl &p_baseUrl, QString &p_html)
             pos = idx + match.capturedLength();
         } else {
             // Replace the url string in html.
-            QString newUrl = QString("<img %1src='%2'%3>").arg(match.captured(1), dataURI, match.captured(3));
+            QString newUrl = QStringLiteral("<img %1src='%2'%3>").arg(match.captured(1), dataURI, match.captured(3));
             p_html.replace(idx, match.capturedLength(), newUrl);
             pos = idx + newUrl.size();
             altered = true;
@@ -460,7 +460,7 @@ bool WebViewExporter::fixBodyResources(const QUrl &p_baseUrl,
             pos = idx + match.capturedLength();
         } else {
             // Replace the url string in html.
-            QString newUrl = QString("<img %1src=\"%2\"%3>").arg(match.captured(1), getResourceRelativePath(targetFile), match.captured(3));
+            QString newUrl = QStringLiteral("<img %1src=\"%2\"%3>").arg(match.captured(1), getResourceRelativePath(targetFile), match.captured(3));
             p_html.replace(idx, match.capturedLength(), newUrl);
             pos = idx + newUrl.size();
             altered = true;

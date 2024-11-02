@@ -195,7 +195,7 @@ bool ConfigMgr::checkAppConfig()
     bool ret = QResource::registerResource(extraRcc);
     if (!ret) {
         Exception::throwOne(Exception::Type::FailToReadFile,
-                            QString("failed to register resource file %1").arg(extraRcc));
+                            QStringLiteral("failed to register resource file %1").arg(extraRcc));
     }
     auto cleanup = qScopeGuard([extraRcc]() {
         QResource::unregisterResource(extraRcc);

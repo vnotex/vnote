@@ -330,7 +330,7 @@ void DockWidgetHelper::setupDockActivateShortcut(QDockWidget *p_dock, const QStr
 {
     auto shortcut = WidgetUtils::createShortcut(p_keys, m_mainWindow);
     if (shortcut) {
-        p_dock->setToolTip(QString("%1\t%2").arg(p_dock->windowTitle(),
+        p_dock->setToolTip(QStringLiteral("%1\t%2").arg(p_dock->windowTitle(),
                                                  QKeySequence(p_keys).toString(QKeySequence::NativeText)));
         connect(shortcut, &QShortcut::activated,
                 this, [this, p_dock]() {

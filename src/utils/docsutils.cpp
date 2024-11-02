@@ -29,9 +29,9 @@ QString DocsUtils::getDocFile(const QString &p_baseName)
 {
     const auto shortLocale = s_locale.split('_')[0];
 
-    const auto fullLocaleName = QString("%1/%2").arg(s_locale, p_baseName);
-    const auto shortLocaleName = QString("%1/%2").arg(shortLocale, p_baseName);
-    const auto defaultLocaleName = QString("%1/%2").arg(QStringLiteral("en"), p_baseName);
+    const auto fullLocaleName = QStringLiteral("%1/%2").arg(s_locale, p_baseName);
+    const auto shortLocaleName = QStringLiteral("%1/%2").arg(shortLocale, p_baseName);
+    const auto defaultLocaleName = QStringLiteral("%1/%2").arg(QStringLiteral("en"), p_baseName);
 
     for (const auto &pa : s_searchPaths) {
         QDir dir(pa);

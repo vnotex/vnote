@@ -29,7 +29,7 @@ void GeneralPage::setupUI()
         m_localeComboBox->addItem(tr("Default"), QString());
         for (const auto &loc : ConfigMgr::getInst().getCoreConfig().getAvailableLocales()) {
             QLocale locale(loc);
-            m_localeComboBox->addItem(QString("%1 (%2)").arg(locale.nativeLanguageName(), locale.nativeCountryName()),
+            m_localeComboBox->addItem(QStringLiteral("%1 (%2)").arg(locale.nativeLanguageName(), locale.nativeCountryName()),
                                       loc);
         }
 

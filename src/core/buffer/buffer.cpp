@@ -358,7 +358,7 @@ void Buffer::writeBackupFile()
 
 QString Buffer::generateBackupFileHead() const
 {
-    return QString("vnotex_backup_file %1|").arg(getContentPath());
+    return QStringLiteral("vnotex_backup_file %1|").arg(getContentPath());
 }
 
 void Buffer::checkBackupFileOfPreviousSession()
@@ -373,7 +373,7 @@ void Buffer::checkBackupFileOfPreviousSession()
     QDir backupDir(backupDirPath);
     QStringList backupFiles;
     {
-        const QString nameFilter = QString("%1*%2").arg(getName(), config.getBackupFileExtension());
+        const QString nameFilter = QStringLiteral("%1*%2").arg(getName(), config.getBackupFileExtension());
         backupFiles = backupDir.entryList(QStringList(nameFilter),
                                           QDir::Files | QDir::Hidden | QDir::NoSymLinks | QDir::NoDotAndDotDot);
     }

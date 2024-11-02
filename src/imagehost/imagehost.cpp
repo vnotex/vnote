@@ -28,6 +28,6 @@ QString ImageHost::typeString(ImageHost::Type p_type)
 
     default:
         Q_ASSERT(false);
-        return QString("Unknown");
+        return QStringLiteral("Unknown");
     }
 }

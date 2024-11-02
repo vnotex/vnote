@@ -22,7 +22,7 @@ using namespace vnotex;
 
 const QChar SnippetMgr::c_snippetSymbolGuard = QLatin1Char('%');
 
-const QString SnippetMgr::c_snippetSymbolRegExp = QString("%1([^%]+)%1").arg(c_snippetSymbolGuard);
+const QString SnippetMgr::c_snippetSymbolRegExp = QStringLiteral("%1([^%]+)%1").arg(c_snippetSymbolGuard);
 
 SnippetMgr::SnippetMgr()
 {

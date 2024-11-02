@@ -47,46 +47,46 @@ namespace vnotex
         {
             switch (p_type) {
             case Type::InvalidPath:
-                return QString("InvalidPath");
+                return QStringLiteral("InvalidPath");
 
             case Type::FailToCreateDir:
-                return QString("FailToCreateDir");
+                return QStringLiteral("FailToCreateDir");
 
             case Type::FailToWriteFile:
-                return QString("FailToWriteFile");
+                return QStringLiteral("FailToWriteFile");
 
             case Type::FailToReadFile:
-                return QString("FailToReadFile");
+                return QStringLiteral("FailToReadFile");
 
             case Type::FailToRenameFile:
-                return QString("FailToRenameFile");
+                return QStringLiteral("FailToRenameFile");
 
             case Type::FailToCopyFile:
-                return QString("FailToCopyFile");
+                return QStringLiteral("FailToCopyFile");
 
             case Type::FailToCopyDir:
-                return QString("FailToCopyDir");
+                return QStringLiteral("FailToCopyDir");
 
             case Type::FailToRemoveFile:
-                return QString("FailToRemoveFile");
+                return QStringLiteral("FailToRemoveFile");
 
             case Type::FailToRemoveDir:
-                return QString("FailToRemoveDir");
+                return QStringLiteral("FailToRemoveDir");
 
             case Type::FileMissingOnDisk:
-                return QString("FileMissingOnDisk");
+                return QStringLiteral("FileMissingOnDisk");
 
             case Type::EssentialFileMissing:
-                return QString("EssentialFileMissing");
+                return QStringLiteral("EssentialFileMissing");
 
             case Type::FileExistsOnCreate:
-                return QString("FileExistsOnCreate");
+                return QStringLiteral("FileExistsOnCreate");
 
             case Type::DirExistsOnCreate:
-                return QString("DirExistsOnCreate");
+                return QStringLiteral("DirExistsOnCreate");
 
             case Type::InvalidArgument:
-                return QString("InvalidArgument");
+                return QStringLiteral("InvalidArgument");
             }
 
             return QString::number(static_cast<int>(p_type));

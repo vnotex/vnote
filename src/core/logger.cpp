@@ -86,7 +86,7 @@ void Logger::log(QtMsgType p_type, const QMessageLogContext &p_context, const QS
 
     if (!s_logToStderr) {
         QTextStream stream(&s_file);
-        stream << header << (QString("(%1:%2) ").arg(fileName).arg(p_context.line))
+        stream << header << (QStringLiteral("(%1:%2) ").arg(fileName).arg(p_context.line))
                << localMsg << "\n";
 
         if (p_type == QtFatalMsg) {

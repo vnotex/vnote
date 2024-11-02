@@ -879,7 +879,7 @@ void ExportDialog::updatePageLayoutButtonLabel()
 {
     Q_ASSERT(m_pageLayout);
     m_pageLayoutBtn->setText(
-        QString("%1, %2").arg(m_pageLayout->pageSize().name(),
+        QStringLiteral("%1, %2").arg(m_pageLayout->pageSize().name(),
                               m_pageLayout->orientation() == QPageLayout::Portrait ? tr("Portrait") : tr("Landscape")));
 }
 

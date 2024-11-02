@@ -537,7 +537,7 @@ QString MainWindow::getViewAreaTitle() const
     if (win) {
         title = win->getName();
     }
-    return title.isEmpty() ? QString() : QString("%1 - %2").arg(title, ConfigMgr::c_appName);
+    return title.isEmpty() ? QString() : QStringLiteral("%1 - %2").arg(title, ConfigMgr::c_appName);
 }
 
 void MainWindow::setupOutlineViewer()

@@ -30,7 +30,7 @@ bool NotebookDatabaseAccess::open()
     auto db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), m_connectionName);
     db.setDatabaseName(m_databaseFile);
     if (!db.open()) {
-        qWarning() << QString("failed to open notebook database (%1) (%2)").arg(m_databaseFile, db.lastError().text());
+        qWarning() << QStringLiteral("failed to open notebook database (%1) (%2)").arg(m_databaseFile, db.lastError().text());
         return false;
     }
 
@@ -71,35 +71,35 @@ void NotebookDatabaseAccess::setupTables(QSqlDatabase &p_db, int p_configVersion
 
     if (m_fresh) {
         // Node.
-        bool ret = query.exec(QString("CREATE TABLE %1 (\n"
+        bool ret = query.exec(QStringLiteral("CREATE TABLE %1 (\n"
                                       "    id INTEGER PRIMARY KEY,\n"
                                       "    name TEXT NOT NULL,\n"
                                       "    signature INTEGER NOT NULL,\n"
                                       "    parent_id INTEGER NULL REFERENCES %1(id) ON DELETE CASCADE ON UPDATE CASCADE)\n").arg(c_nodeTableName));
         if (!ret) {
-            qWarning() << QString("failed to create database table (%1) (%2)").arg(c_nodeTableName, query.lastError().text());
+            qWarning() << QStringLiteral("failed to create database table (%1) (%2)").arg(c_nodeTableName, query.lastError().text());
             m_valid = false;
             return;
         }
 
         // Tag.
-        ret = query.exec(QString("CREATE TABLE %1 (\n"
+        ret = query.exec(QStringLiteral("CREATE TABLE %1 (\n"
                                  "    name TEXT PRIMARY KEY,\n"
                                  "    parent_name TEXT NULL REFERENCES %1(name) ON DELETE CASCADE ON UPDATE CASCADE) WITHOUT ROWID\n").arg(c_tagTableName));
         if (!ret) {
-            qWarning() << QString("failed to create database table (%1) (%2)").arg(c_tagTableName, query.lastError().text());
+            qWarning() << QStringLiteral("failed to create database table (%1) (%2)").arg(c_tagTableName, query.lastError().text());
             m_valid = false;
             return;
         }
 
         // Node_Tag.
-        ret = query.exec(QString("CREATE TABLE %1 (\n"
+        ret = query.exec(QStringLiteral("CREATE TABLE %1 (\n"
                                  "    node_id INTEGER REFERENCES %2(id) ON DELETE CASCADE ON UPDATE CASCADE,\n"
                                  "    tag_name TEXT REFERENCES %3(name) ON DELETE CASCADE ON UPDATE CASCADE)\n").arg(c_nodeTagTableName,
                                                                                                                      c_nodeTableName,
                                                                                                                      c_tagTableName));
         if (!ret) {
-            qWarning() << QString("failed to create database table (%1) (%2)").arg(c_nodeTagTableName, query.lastError().text());
+            qWarning() << QStringLiteral("failed to create database table (%1) (%2)").arg(c_nodeTagTableName, query.lastError().text());
             m_valid = false;
             return;
         }
@@ -130,7 +130,7 @@ bool NotebookDatabaseAccess::addNode(Node *p_node, bool p_ignoreId)
     auto db = getDatabase();
     QSqlQuery query(db);
     if (p_ignoreId) {
-        query.prepare(QString("INSERT INTO %1 (name, signature, parent_id)\n"
+        query.prepare(QStringLiteral("INSERT INTO %1 (name, signature, parent_id)\n"
                               "    VALUES (:name, :signature, :parent_id)").arg(c_nodeTableName));
         query.bindValue(":name", p_node->getName());
         query.bindValue(":signature", p_node->getSignature());
@@ -170,10 +170,10 @@ bool NotebookDatabaseAccess::addNode(Node *p_node, bool p_ignoreId)
         }
 
         if (useNewId) {
-            query.prepare(QString("INSERT INTO %1 (name, signature, parent_id)\n"
+            query.prepare(QStringLiteral("INSERT INTO %1 (name, signature, parent_id)\n"
                                   "    VALUES (:name, :signature, :parent_id)").arg(c_nodeTableName));
         } else {
-            query.prepare(QString("INSERT INTO %1 (id, name, signature, parent_id)\n"
+            query.prepare(QStringLiteral("INSERT INTO %1 (id, name, signature, parent_id)\n"
                                   "    VALUES (:id, :name, :signature, :parent_id)").arg(c_nodeTableName));
             query.bindValue(":id", p_node->getId());
         }
@@ -212,7 +212,7 @@ QSharedPointer<NotebookDatabaseAccess::NodeRecord> NotebookDatabaseAccess::query
 {
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("SELECT id, name, signature, parent_id FROM %1 WHERE id = :id").arg(c_nodeTableName));
+    query.prepare(QStringLiteral("SELECT id, name, signature, parent_id FROM %1 WHERE id = :id").arg(c_nodeTableName));
     query.bindValue(":id", p_id);
     if (!query.exec()) {
         qWarning() << "failed to query node" << query.executedQuery() << query.lastError().text();
@@ -264,7 +264,7 @@ QStringList NotebookDatabaseAccess::queryNodeParentPath(ID p_id)
 {
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("WITH RECURSIVE cte_parents(id, name, parent_id) AS (\n"
+    query.prepare(QStringLiteral("WITH RECURSIVE cte_parents(id, name, parent_id) AS (\n"
                           "    SELECT node.id, node.name, node.parent_id\n"
                           "    FROM %1 node\n"
                           "    WHERE node.id = :id\n"
@@ -315,7 +315,7 @@ bool NotebookDatabaseAccess::updateNode(const Node *p_node)
 
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("UPDATE %1\n"
+    query.prepare(QStringLiteral("UPDATE %1\n"
                           "SET name = :name,\n"
                           "    signature = :signature,\n"
                           "    parent_id = :parent_id\n"
@@ -367,7 +367,7 @@ bool NotebookDatabaseAccess::removeNode(ID p_id)
 {
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("DELETE FROM %1\n"
+    query.prepare(QStringLiteral("DELETE FROM %1\n"
                           "WHERE id = :id").arg(c_nodeTableName));
     query.bindValue(":id", p_id);
     if (!query.exec()) {
@@ -455,7 +455,7 @@ bool NotebookDatabaseAccess::addTag(const QString &p_name, const QString &p_pare
 
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("INSERT INTO %1 (name, parent_name)\n"
+    query.prepare(QStringLiteral("INSERT INTO %1 (name, parent_name)\n"
                           "    VALUES (:name, :parent_name)").arg(c_tagTableName));
     query.bindValue(":name", p_name);
     query.bindValue(":parent_name", p_parentName.isEmpty() ? QVariant() : p_parentName);
@@ -473,7 +473,7 @@ QSharedPointer<NotebookDatabaseAccess::TagRecord> NotebookDatabaseAccess::queryT
 {
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("SELECT name, parent_name FROM %1 WHERE name = :name").arg(c_tagTableName));
+    query.prepare(QStringLiteral("SELECT name, parent_name FROM %1 WHERE name = :name").arg(c_tagTableName));
     query.bindValue(":name", p_name);
     if (!query.exec()) {
         qWarning() << "failed to query tag" << query.executedQuery() << query.lastError().text();
@@ -494,7 +494,7 @@ bool NotebookDatabaseAccess::updateTagParent(const QString &p_name, const QStrin
 {
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("UPDATE %1\n"
+    query.prepare(QStringLiteral("UPDATE %1\n"
                           "SET parent_name = :parent_name\n"
                           "WHERE name = :name").arg(c_tagTableName));
     query.bindValue(":name", p_name);
@@ -518,7 +518,7 @@ bool NotebookDatabaseAccess::renameTag(const QString &p_name, const QString &p_n
 
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("UPDATE %1\n"
+    query.prepare(QStringLiteral("UPDATE %1\n"
                           "SET name = :new_name\n"
                           "WHERE name = :name").arg(c_tagTableName));
     query.bindValue(":name", p_name);
@@ -537,7 +537,7 @@ bool NotebookDatabaseAccess::removeTag(const QString &p_name)
 {
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("DELETE FROM %1\n"
+    query.prepare(QStringLiteral("DELETE FROM %1\n"
                           "WHERE name = :name").arg(c_tagTableName));
     query.bindValue(":name", p_name);
     if (!query.exec()) {
@@ -603,7 +603,7 @@ QStringList NotebookDatabaseAccess::queryNodeTags(ID p_id)
 {
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("SELECT tag_name FROM %1 WHERE node_id = :node_id").arg(c_nodeTagTableName));
+    query.prepare(QStringLiteral("SELECT tag_name FROM %1 WHERE node_id = :node_id").arg(c_nodeTagTableName));
     query.bindValue(":node_id", p_id);
     if (!query.exec()) {
         qWarning() << "failed to query node's tags" << query.executedQuery() << query.lastError().text();
@@ -621,7 +621,7 @@ bool NotebookDatabaseAccess::removeNodeTags(ID p_id)
 {
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("DELETE FROM %1\n"
+    query.prepare(QStringLiteral("DELETE FROM %1\n"
                           "WHERE node_id = :node_id").arg(c_nodeTagTableName));
     query.bindValue(":node_id", p_id);
     if (!query.exec()) {
@@ -641,7 +641,7 @@ bool NotebookDatabaseAccess::addNodeTags(ID p_id, const QStringList &p_tags)
 
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("INSERT INTO %1 (node_id, tag_name)\n"
+    query.prepare(QStringLiteral("INSERT INTO %1 (node_id, tag_name)\n"
                           "    VALUES (?, ?)").arg(c_nodeTagTableName));
 
     QVariantList ids;
@@ -668,7 +668,7 @@ QList<ID> NotebookDatabaseAccess::queryTagNodes(const QString &p_tag)
     QList<ID> nodes;
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("SELECT node_id FROM %1 WHERE tag_name = :tag_name").arg(c_nodeTagTableName));
+    query.prepare(QStringLiteral("SELECT node_id FROM %1 WHERE tag_name = :tag_name").arg(c_nodeTagTableName));
     query.bindValue(":tag_name", p_tag);
     if (!query.exec()) {
         qWarning() << "failed to query nodes of tag" << query.executedQuery() << query.lastError().text();
@@ -703,7 +703,7 @@ QStringList NotebookDatabaseAccess::queryTagAndChildren(const QString &p_tag)
 {
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("WITH RECURSIVE cte_children(name, parent_name) AS (\n"
+    query.prepare(QStringLiteral("WITH RECURSIVE cte_children(name, parent_name) AS (\n"
                           "    SELECT tag.name, tag.parent_name\n"
                           "    FROM %1 tag\n"
                           "    WHERE tag.name = :name\n"
@@ -768,7 +768,7 @@ QList<NotebookDatabaseAccess::TagRecord> NotebookDatabaseAccess::getAllTags()
 
     auto db = getDatabase();
     QSqlQuery query(db);
-    query.prepare(QString("SELECT name, parent_name FROM %1 ORDER BY parent_name, name").arg(c_tagTableName));
+    query.prepare(QStringLiteral("SELECT name, parent_name FROM %1 ORDER BY parent_name, name").arg(c_tagTableName));
     if (!query.exec()) {
         qWarning() << "failed to query tags" << query.executedQuery() << query.lastError().text();
         return ret;

@@ -93,7 +93,7 @@ void BundleNotebook::remove()
 
     // Remove notebook root folder if it is empty.
     if (!FileUtils::removeDirIfEmpty(getRootFolderAbsolutePath())) {
-        qInfo() << QString("root folder of notebook (%1) is not empty and needs manual clean up")
+        qInfo() << QStringLiteral("root folder of notebook (%1) is not empty and needs manual clean up")
                           .arg(getRootFolderAbsolutePath());
     }
 }

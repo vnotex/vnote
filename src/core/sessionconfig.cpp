@@ -87,7 +87,7 @@ QJsonObject SessionConfig::ExternalProgram::toJson() const
 QString SessionConfig::ExternalProgram::fetchCommand(const QString &p_file) const
 {
     auto command(m_command);
-    command.replace(QStringLiteral("%1"), QString("\"%1\"").arg(p_file));
+    command.replace(QStringLiteral("%1"), QStringLiteral("\"%1\"").arg(p_file));
     return command;
 }
 
