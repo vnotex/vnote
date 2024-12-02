@@ -111,14 +111,14 @@ jobs:
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
           path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
 
       - name: Archive Installer
         if: ${{!startsWith(matrix.config.qt, '5.15')}}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.msi
           path: ${{runner.workspace}}/build/VNote*.msi

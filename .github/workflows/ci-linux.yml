@@ -135,7 +135,7 @@ jobs:
         working-directory: ${{runner.workspace}}/build
 
       - name: Archive Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
           path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
