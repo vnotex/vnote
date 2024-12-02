@@ -60,11 +60,11 @@ void TestTask::TestTaskVariableMgr()
     {
         const auto env = QProcessEnvironment::systemEnvironment();
         result = mgr.evaluate(task.data(), "${env:PATH} ${env:QT_PATH} ${env:nonexist}");
-        QCOMPARE(result, QString("%1 %2 %3").arg(env.value("PATH"), env.value("QT_PATH"), env.value("nonexist")));
+        QCOMPARE(result, QStringLiteral("%1 %2 %3").arg(env.value("PATH"), env.value("QT_PATH"), env.value("nonexist")));
     }
 
     result = mgr.evaluate(task.data(), "${config:main.core.toolbar_icon_size} ${config:main.core.nonexists} ${config:session.core.system_title_bar}");
-    QCOMPARE(result, QString("%1  %2").arg(ConfigMgr::getInst().getCoreConfig().getToolBarIconSize())
+    QCOMPARE(result, QStringLiteral("%1  %2").arg(ConfigMgr::getInst().getCoreConfig().getToolBarIconSize())
                                       .arg(ConfigMgr::getInst().getSessionConfig().getSystemTitleBarEnabled()));
 }
 

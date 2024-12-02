@@ -25,27 +25,27 @@ HtmlTemplateHelper::Template HtmlTemplateHelper::s_mindMapEditorTemplate;
 QString MarkdownWebGlobalOptions::toJavascriptObject() const
 {
     return QStringLiteral("window.vxOptions = {\n")
-           + QString("webPlantUml: %1,\n").arg(Utils::boolToString(m_webPlantUml))
-           + QString("plantUmlWebService: '%1',\n").arg(m_plantUmlWebService)
-           + QString("webGraphviz: %1,\n").arg(Utils::boolToString(m_webGraphviz))
-           + QString("mathJaxScript: '%1',\n").arg(m_mathJaxScript)
-           + QString("constrainImageWidthEnabled: %1,\n").arg(Utils::boolToString(m_constrainImageWidthEnabled))
-           + QString("imageAlignCenterEnabled: %1,\n").arg(Utils::boolToString(m_imageAlignCenterEnabled))
-           + QString("protectFromXss: %1,\n").arg(Utils::boolToString(m_protectFromXss))
-           + QString("htmlTagEnabled: %1,\n").arg(Utils::boolToString(m_htmlTagEnabled))
-           + QString("autoBreakEnabled: %1,\n").arg(Utils::boolToString(m_autoBreakEnabled))
-           + QString("linkifyEnabled: %1,\n").arg(Utils::boolToString(m_linkifyEnabled))
-           + QString("indentFirstLineEnabled: %1,\n").arg(Utils::boolToString(m_indentFirstLineEnabled))
-           + QString("codeBlockLineNumberEnabled: %1,\n").arg(Utils::boolToString(m_codeBlockLineNumberEnabled))
-           + QString("sectionNumberEnabled: %1,\n").arg(Utils::boolToString(m_sectionNumberEnabled))
-           + QString("transparentBackgroundEnabled: %1,\n").arg(Utils::boolToString(m_transparentBackgroundEnabled))
-           + QString("scrollable: %1,\n").arg(Utils::boolToString(m_scrollable))
-           + QString("bodyWidth: %1,\n").arg(m_bodyWidth)
-           + QString("bodyHeight: %1,\n").arg(m_bodyHeight)
-           + QString("transformSvgToPngEnabled: %1,\n").arg(Utils::boolToString(m_transformSvgToPngEnabled))
-           + QString("mathJaxScale: %1,\n").arg(m_mathJaxScale)
-           + QString("removeCodeToolBarEnabled: %1,\n").arg(Utils::boolToString(m_removeCodeToolBarEnabled))
-           + QString("sectionNumberBaseLevel: %1\n").arg(m_sectionNumberBaseLevel)
+           + QStringLiteral("webPlantUml: %1,\n").arg(Utils::boolToString(m_webPlantUml))
+           + QStringLiteral("plantUmlWebService: '%1',\n").arg(m_plantUmlWebService)
+           + QStringLiteral("webGraphviz: %1,\n").arg(Utils::boolToString(m_webGraphviz))
+           + QStringLiteral("mathJaxScript: '%1',\n").arg(m_mathJaxScript)
+           + QStringLiteral("constrainImageWidthEnabled: %1,\n").arg(Utils::boolToString(m_constrainImageWidthEnabled))
+           + QStringLiteral("imageAlignCenterEnabled: %1,\n").arg(Utils::boolToString(m_imageAlignCenterEnabled))
+           + QStringLiteral("protectFromXss: %1,\n").arg(Utils::boolToString(m_protectFromXss))
+           + QStringLiteral("htmlTagEnabled: %1,\n").arg(Utils::boolToString(m_htmlTagEnabled))
+           + QStringLiteral("autoBreakEnabled: %1,\n").arg(Utils::boolToString(m_autoBreakEnabled))
+           + QStringLiteral("linkifyEnabled: %1,\n").arg(Utils::boolToString(m_linkifyEnabled))
+           + QStringLiteral("indentFirstLineEnabled: %1,\n").arg(Utils::boolToString(m_indentFirstLineEnabled))
+           + QStringLiteral("codeBlockLineNumberEnabled: %1,\n").arg(Utils::boolToString(m_codeBlockLineNumberEnabled))
+           + QStringLiteral("sectionNumberEnabled: %1,\n").arg(Utils::boolToString(m_sectionNumberEnabled))
+           + QStringLiteral("transparentBackgroundEnabled: %1,\n").arg(Utils::boolToString(m_transparentBackgroundEnabled))
+           + QStringLiteral("scrollable: %1,\n").arg(Utils::boolToString(m_scrollable))
+           + QStringLiteral("bodyWidth: %1,\n").arg(m_bodyWidth)
+           + QStringLiteral("bodyHeight: %1,\n").arg(m_bodyHeight)
+           + QStringLiteral("transformSvgToPngEnabled: %1,\n").arg(Utils::boolToString(m_transformSvgToPngEnabled))
+           + QStringLiteral("mathJaxScale: %1,\n").arg(m_mathJaxScale)
+           + QStringLiteral("removeCodeToolBarEnabled: %1,\n").arg(Utils::boolToString(m_removeCodeToolBarEnabled))
+           + QStringLiteral("sectionNumberBaseLevel: %1\n").arg(m_sectionNumberBaseLevel)
            + QStringLiteral("}");
 }
 
@@ -83,7 +83,7 @@ static QString fillStyleTag(const QString &p_styleFile)
         return "";
     }
     auto url = PathUtils::pathToUrl(p_styleFile);
-    return QString("<link rel=\"stylesheet\" type=\"text/css\" href=\"%1\">\n").arg(url.toString());
+    return QStringLiteral("<link rel=\"stylesheet\" type=\"text/css\" href=\"%1\">\n").arg(url.toString());
 }
 
 static QString fillScriptTag(const QString &p_scriptFile)
@@ -92,7 +92,7 @@ static QString fillScriptTag(const QString &p_scriptFile)
         return "";
     }
     auto url = PathUtils::pathToUrl(p_scriptFile);
-    return QString("<script type=\"text/javascript\" src=\"%1\"></script>\n").arg(url.toString());
+    return QStringLiteral("<script type=\"text/javascript\" src=\"%1\"></script>\n").arg(url.toString());
 }
 
 static void fillThemeStyles(QString &p_template, const QString &p_webStyleSheetFile, const QString &p_highlightStyleSheetFile)
@@ -300,7 +300,7 @@ void HtmlTemplateHelper::fillTitle(QString &p_template, const QString &p_title)
 {
     if (!p_title.isEmpty()) {
         p_template.replace("<!-- VX_TITLE_PLACEHOLDER -->",
-                           QString("<title>%1</title>").arg(HtmlUtils::escapeHtml(p_title)));
+                           QStringLiteral("<title>%1</title>").arg(HtmlUtils::escapeHtml(p_title)));
     }
 }
 

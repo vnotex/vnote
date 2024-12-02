@@ -215,7 +215,7 @@ void WidgetUtils::addActionShortcut(QAction *p_action,
 
     p_action->setShortcut(kseq);
     p_action->setShortcutContext(p_context);
-    p_action->setText(QString("%1\t%2").arg(p_action->text(), kseq.toString(QKeySequence::NativeText)));
+    p_action->setText(QStringLiteral("%1\t%2").arg(p_action->text(), kseq.toString(QKeySequence::NativeText)));
 }
 
 void WidgetUtils::addActionShortcutText(QAction *p_action, const QString &p_shortcut)
@@ -229,7 +229,7 @@ void WidgetUtils::addActionShortcutText(QAction *p_action, const QString &p_shor
         return;
     }
 
-    p_action->setText(QString("%1\t%2").arg(p_action->text(), kseq.toString(QKeySequence::NativeText)));
+    p_action->setText(QStringLiteral("%1\t%2").arg(p_action->text(), kseq.toString(QKeySequence::NativeText)));
 }
 
 void WidgetUtils::addButtonShortcutText(QPushButton *p_button, const QString &p_shortcut)
@@ -243,7 +243,7 @@ void WidgetUtils::addButtonShortcutText(QPushButton *p_button, const QString &p_
         return;
     }
 
-    p_button->setText(QString("%1 (%2)").arg(p_button->text(), kseq.toString(QKeySequence::NativeText)));
+    p_button->setText(QStringLiteral("%1 (%2)").arg(p_button->text(), kseq.toString(QKeySequence::NativeText)));
 }
 
 void WidgetUtils::updateSize(QWidget *p_widget)

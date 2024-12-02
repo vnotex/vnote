@@ -52,7 +52,7 @@ void LocalNotebookBackend::makePath(const QString &p_dirPath)
     QDir dir(getRootPath());
     if (!dir.mkpath(p_dirPath)) {
         Exception::throwOne(Exception::Type::FailToCreateDir,
-                            QString("fail to create directory: %1").arg(p_dirPath));
+                            QStringLiteral("fail to create directory: %1").arg(p_dirPath));
     }
 }
 

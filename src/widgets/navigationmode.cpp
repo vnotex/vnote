@@ -83,7 +83,7 @@ static QString generateNavigationLabelStyle(const QString &p_str, bool p_tiny)
     QColor bg(themeMgr.paletteColor(QStringLiteral("widgets#navigationlabel#bg")));
     bg.setAlpha(200);
 
-    QString style = QString("background-color: %1;"
+    QString style = QStringLiteral("background-color: %1;"
                             "color: %2;"
                             "font-size: %3pt;"
                             "font: bold;"
@@ -98,7 +98,7 @@ static QString generateNavigationLabelStyle(const QString &p_str, bool p_tiny)
                            .arg(pxWidth);
 
     if (p_tiny) {
-        style += QString("margin: 0px;"
+        style += QStringLiteral("margin: 0px;"
                          "padding: 0px;"
                          "min-height: %1px;"
                          "max-height: %1px;").arg(pxHeight);

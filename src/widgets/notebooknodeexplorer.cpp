@@ -1493,7 +1493,7 @@ static QSharedPointer<Node> getNodeFromClipboardDataItem(const NodeClipboardData
     auto notebook = VNoteX::getInst().getNotebookMgr().findNotebookById(p_item->m_notebookId);
     if (!notebook) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("failed to find notebook by ID (%1)").arg(p_item->m_notebookId));
+                            QStringLiteral("failed to find notebook by ID (%1)").arg(p_item->m_notebookId));
         return nullptr;
     }
 

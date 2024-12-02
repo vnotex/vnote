@@ -75,7 +75,7 @@ void BufferMgr::open(Node *p_node, const QSharedPointer<FileOpenParameters> &p_p
     }
 
     if (!p_node->checkExists()) {
-        auto msg = QString("Failed to open node that does not exist (%1)").arg(p_node->fetchAbsolutePath());
+        auto msg = QStringLiteral("Failed to open node that does not exist (%1)").arg(p_node->fetchAbsolutePath());
         qWarning() << msg;
         VNoteX::getInst().showStatusMessageShort(msg);
         return;
@@ -133,7 +133,7 @@ void BufferMgr::open(const QString &p_filePath, const QSharedPointer<FileOpenPar
 
     QFileInfo finfo(p_filePath);
     if (!finfo.exists()) {
-        auto msg = QString("Failed to open file that does not exist (%1)").arg(p_filePath);
+        auto msg = QStringLiteral("Failed to open file that does not exist (%1)").arg(p_filePath);
         qWarning() << msg;
         VNoteX::getInst().showStatusMessageShort(msg);
         WidgetUtils::openUrlByDesktop(QUrl::fromUserInput(p_filePath));

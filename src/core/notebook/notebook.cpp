@@ -254,7 +254,7 @@ QSharedPointer<Node> Notebook::copyNodeAsChildOf(const QSharedPointer<Node> &p_s
 
     if (Node::isAncestor(p_src.data(), p_dest)) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("source (%1) is the ancestor of destination (%2)")
+                            QStringLiteral("source (%1) is the ancestor of destination (%2)")
                                    .arg(p_src->fetchPath(), p_dest->fetchPath()));
         return nullptr;
     }

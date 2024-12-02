@@ -46,7 +46,7 @@ QString WebUtils::toDataUri(const QUrl &p_url, bool p_keepTitle)
     }
 
     if (suffix == "svg") {
-        uri = QString("data:image/svg+xml;utf8,%1").arg(QString::fromUtf8(data));
+        uri = QStringLiteral("data:image/svg+xml;utf8,%1").arg(QString::fromUtf8(data));
         uri.replace('\r', "").replace('\n', "");
 
         // Using unescaped '#' characters in a data URI body is deprecated and
@@ -63,7 +63,7 @@ QString WebUtils::toDataUri(const QUrl &p_url, bool p_keepTitle)
             uri.remove(reg);
         }
     } else {
-        uri = QString("data:image/%1;base64,%2").arg(suffix, QString::fromUtf8(data.toBase64()));
+        uri = QStringLiteral("data:image/%1;base64,%2").arg(suffix, QString::fromUtf8(data.toBase64()));
     }
 
     return uri;

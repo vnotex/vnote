@@ -56,7 +56,7 @@ void NotebookConfig::fromJson(const QJsonObject &p_jobj)
         || !p_jobj.contains(QStringLiteral("version_controller"))
         || !p_jobj.contains(QStringLiteral("config_mgr"))) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("failed to read notebook configuration from JSON (%1)").arg(QJsonObjectToString(p_jobj)));
+                            QStringLiteral("failed to read notebook configuration from JSON (%1)").arg(QJsonObjectToString(p_jobj)));
         return;
     }
 

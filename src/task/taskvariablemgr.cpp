@@ -279,13 +279,13 @@ void TaskVariableMgr::initInputVariables()
     addVariable("input", [this](Task *task, const QString &val) {
         if (val.isEmpty()) {
             Exception::throwOne(Exception::Type::InvalidArgument,
-                                QString("task (%1) with empty input id").arg(task->getLabel()));
+                                QStringLiteral("task (%1) with empty input id").arg(task->getLabel()));
         }
 
         auto input = task->findInput(val);
         if (!input) {
             Exception::throwOne(Exception::Type::InvalidArgument,
-                                QString("task (%1) with invalid input id (%2)").arg(task->getLabel(), val));
+                                QStringLiteral("task (%1) with invalid input id (%2)").arg(task->getLabel(), val));
         }
 
         if (input->type == "promptString") {
@@ -319,7 +319,7 @@ void TaskVariableMgr::initInputVariables()
             }
         } else {
             Exception::throwOne(Exception::Type::InvalidArgument,
-                                QString("task (%1) with invalid input type (%2)(%3)").arg(task->getLabel(), input->id, input->type));
+                                QStringLiteral("task (%1) with invalid input type (%2)(%3)").arg(task->getLabel(), input->id, input->type));
         }
 
         return QString();
@@ -337,7 +337,7 @@ void TaskVariableMgr::initShellVariables()
         const int timeout = 1000;
         if (!process.waitForStarted(timeout) || !process.waitForFinished(timeout)) {
             Exception::throwOne(Exception::Type::InvalidArgument,
-                                QString("task (%1) failed to fetch shell variable (%2)").arg(task->getLabel(), val));
+                                QStringLiteral("task (%1) failed to fetch shell variable (%2)").arg(task->getLabel(), val));
         }
         return Task::decodeText(process.readAllStandardOutput());
     });

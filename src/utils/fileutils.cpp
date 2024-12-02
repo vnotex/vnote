@@ -19,7 +19,7 @@ QByteArray FileUtils::readFile(const QString &p_filePath)
     QFile file(p_filePath);
     if (!file.open(QIODevice::ReadOnly)) {
         Exception::throwOne(Exception::Type::FailToReadFile,
-                            QString("failed to read file: %1").arg(p_filePath));
+                            QStringLiteral("failed to read file: %1").arg(p_filePath));
     }
 
     return file.readAll();
@@ -30,7 +30,7 @@ QString FileUtils::readTextFile(const QString &p_filePath)
     QFile file(p_filePath);
     if (!file.open(QIODevice::ReadOnly)) {
         Exception::throwOne(Exception::Type::FailToReadFile,
-                            QString("failed to read file: %1").arg(p_filePath));
+                            QStringLiteral("failed to read file: %1").arg(p_filePath));
     }
 
     // TODO: determine the encoding of the text.
@@ -49,7 +49,7 @@ void FileUtils::writeFile(const QString &p_filePath, const QByteArray &p_data)
     QFile file(p_filePath);
     if (!file.open(QIODevice::WriteOnly)) {
         Exception::throwOne(Exception::Type::FailToWriteFile,
-                            QString("failed to write to file: %1").arg(p_filePath));
+                            QStringLiteral("failed to write to file: %1").arg(p_filePath));
     }
 
     file.write(p_data);
@@ -61,7 +61,7 @@ void FileUtils::writeFile(const QString &p_filePath, const QString &p_text)
     QFile file(p_filePath);
     if (!file.open(QIODevice::WriteOnly)) {
         Exception::throwOne(Exception::Type::FailToWriteFile,
-                            QString("failed to write to file: %1").arg(p_filePath));
+                            QStringLiteral("failed to write to file: %1").arg(p_filePath));
     }
 
     QTextStream stream(&file);
@@ -81,7 +81,7 @@ void FileUtils::renameFile(const QString &p_path, const QString &p_name)
     QFile file(p_path);
     if (!file.exists() || !file.rename(newFilePath)) {
         Exception::throwOne(Exception::Type::FailToRenameFile,
-                            QString("failed to rename file: %1").arg(p_path));
+                            QStringLiteral("failed to rename file: %1").arg(p_path));
     }
 }
 
@@ -119,7 +119,7 @@ void FileUtils::copyFile(const QString &p_filePath,
     QDir dir;
     if (!dir.mkpath(PathUtils::parentDirPath(p_destPath))) {
         Exception::throwOne(Exception::Type::FailToCreateDir,
-                            QString("failed to create directory: %1").arg(PathUtils::parentDirPath(p_destPath)));
+                            QStringLiteral("failed to create directory: %1").arg(PathUtils::parentDirPath(p_destPath)));
     }
 
     bool failed = false;
@@ -136,7 +136,7 @@ void FileUtils::copyFile(const QString &p_filePath,
 
     if (failed) {
         Exception::throwOne(Exception::Type::FailToCopyFile,
-                            QString("failed to copy file: %1 %2").arg(p_filePath, p_destPath));
+                            QStringLiteral("failed to copy file: %1 %2").arg(p_filePath, p_destPath));
     }
 }
 
@@ -150,7 +150,7 @@ void FileUtils::copyDir(const QString &p_dirPath,
 
     if (QFileInfo::exists(p_destPath)) {
         Exception::throwOne(Exception::Type::FailToCopyDir,
-                            QString("target directory %1 already exists").arg(p_destPath));
+                            QStringLiteral("target directory %1 already exists").arg(p_destPath));
     }
 
     // QDir.rename() could not move directory across dirves.
@@ -159,7 +159,7 @@ void FileUtils::copyDir(const QString &p_dirPath,
     QDir destDir(p_destPath);
     if (!destDir.mkpath(p_destPath)) {
         Exception::throwOne(Exception::Type::FailToCreateDir,
-            QString("failed to create directory: %1").arg(p_destPath));
+            QStringLiteral("failed to create directory: %1").arg(p_destPath));
     }
 
     // Copy directory contents recursively.
@@ -182,7 +182,7 @@ void FileUtils::copyDir(const QString &p_dirPath,
     if (p_move) {
         if (!destDir.rmdir(p_dirPath)) {
             Exception::throwOne(Exception::Type::FailToRemoveDir,
-                QString("failed to remove source directory after move: %1").arg(p_dirPath));
+                QStringLiteral("failed to remove source directory after move: %1").arg(p_dirPath));
         }
     }
 }
@@ -196,7 +196,7 @@ QString FileUtils::renameIfExistsCaseInsensitive(const QString &p_path)
     auto name = fi.fileName();
     int idx = 1;
     while (childExistsCaseInsensitive(dirPath, name)) {
-        name = QString("%1_%2").arg(baseName, QString::number(idx));
+        name = QStringLiteral("%1_%2").arg(baseName, QString::number(idx));
         if (!suffix.isEmpty()) {
             name += QStringLiteral(".") + suffix;
         }
@@ -213,7 +213,7 @@ void FileUtils::removeFile(const QString &p_filePath)
     QFile file(p_filePath);
     if (!file.remove()) {
         Exception::throwOne(Exception::Type::FailToRemoveFile,
-                            QString("failed to remove file: %1").arg(p_filePath));
+                            QStringLiteral("failed to remove file: %1").arg(p_filePath));
     }
 }
 
@@ -226,7 +226,7 @@ bool FileUtils::removeDirIfEmpty(const QString &p_dirPath)
 
     if (!dir.rmdir(p_dirPath)) {
         Exception::throwOne(Exception::Type::FailToRemoveFile,
-                            QString("failed to remove directory: %1").arg(p_dirPath));
+                            QStringLiteral("failed to remove directory: %1").arg(p_dirPath));
         return false;
     }
 
@@ -238,7 +238,7 @@ void FileUtils::removeDir(const QString &p_dirPath)
     QDir dir(p_dirPath);
     if (!dir.removeRecursively()) {
         Exception::throwOne(Exception::Type::FailToRemoveFile,
-                            QString("failed to remove directory recursively: %1").arg(p_dirPath));
+                            QStringLiteral("failed to remove directory recursively: %1").arg(p_dirPath));
     }
 }
 
@@ -302,7 +302,7 @@ QString FileUtils::generateUniqueFileName(const QString &p_folderPath,
     auto suffix = suffixIdx == -1 ? QStringLiteral("") : fileName.mid(suffixIdx);
     int index = 1;
     while (childExistsCaseInsensitive(p_folderPath, fileName)) {
-        fileName = QString("%1_%2%3").arg(baseName, QString::number(index++), suffix);
+        fileName = QStringLiteral("%1_%2%3").arg(baseName, QString::number(index++), suffix);
     }
 
     return fileName;
@@ -338,7 +338,7 @@ QString FileUtils::generateFileNameWithSequence(const QString &p_folderPath,
     auto suffix = p_suffix.isEmpty() ? QString() : QStringLiteral(".") + p_suffix;
     int index = 1;
     while (childExistsCaseInsensitive(p_folderPath, fileName)) {
-        fileName = QString("%1_%2%3").arg(p_baseName, QString::number(index++), suffix);
+        fileName = QStringLiteral("%1_%2%3").arg(p_baseName, QString::number(index++), suffix);
     }
 
     return fileName;

@@ -40,7 +40,7 @@ void GiteeImageHost::setConfig(const QJsonObject &p_jobj)
     parseConfig(p_jobj, m_personalAccessToken, m_userName, m_repoName);
 
     // Do not assume the default branch.
-    m_imageUrlPrefix = QString("https://gitee.com/%1/%2/raw/").arg(m_userName, m_repoName);
+    m_imageUrlPrefix = QStringLiteral("https://gitee.com/%1/%2/raw/").arg(m_userName, m_repoName);
 }
 
 vte::NetworkAccess::RawHeaderPairs GiteeImageHost::prepareCommonHeaders()
@@ -53,9 +53,9 @@ vte::NetworkAccess::RawHeaderPairs GiteeImageHost::prepareCommonHeaders()
 QString GiteeImageHost::addAccessToken(const QString &p_token, QString p_url)
 {
     if (p_url.contains(QLatin1Char('?'))) {
-        p_url += QString("&access_token=%1").arg(p_token);
+        p_url += QStringLiteral("&access_token=%1").arg(p_token);
     } else {
-        p_url += QString("?access_token=%1").arg(p_token);
+        p_url += QStringLiteral("?access_token=%1").arg(p_token);
     }
     return p_url;
 }
@@ -63,7 +63,7 @@ QString GiteeImageHost::addAccessToken(const QString &p_token, QString p_url)
 vte::NetworkReply GiteeImageHost::getRepoInfo(const QString &p_token, const QString &p_userName, const QString &p_repoName) const
 {
     auto rawHeader = prepareCommonHeaders();
-    auto urlStr = QString("%1/repos/%2/%3").arg(c_apiUrl, p_userName, p_repoName);
+    auto urlStr = QStringLiteral("%1/repos/%2/%3").arg(c_apiUrl, p_userName, p_repoName);
     auto reply = vte::NetworkAccess::request(QUrl(addAccessToken(p_token, urlStr)), rawHeader);
     return reply;
 }
@@ -88,7 +88,7 @@ QString GiteeImageHost::create(const QByteArray &p_data, const QString &p_path, 
     }
 
     auto rawHeader = prepareCommonHeaders();
-    const auto urlStr = QString("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, p_path);
+    const auto urlStr = QStringLiteral("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, p_path);
 
     // Check if @p_path already exists.
     auto reply = vte::NetworkAccess::request(QUrl(addAccessToken(m_personalAccessToken, urlStr)), rawHeader);
@@ -105,7 +105,7 @@ QString GiteeImageHost::create(const QByteArray &p_data, const QString &p_path, 
     // Create the content.
     QJsonObject requestDataObj;
     requestDataObj[QStringLiteral("access_token")] = m_personalAccessToken;
-    requestDataObj[QStringLiteral("message")] = QString("VX_ADD: %1").arg(p_path);
+    requestDataObj[QStringLiteral("message")] = QStringLiteral("VX_ADD: %1").arg(p_path);
     requestDataObj[QStringLiteral("content")] = QString::fromUtf8(p_data.toBase64());
     auto requestData = Utils::toJsonString(requestDataObj);
     reply = vte::NetworkAccess::post(QUrl(urlStr), rawHeader, requestData);
@@ -143,7 +143,7 @@ bool GiteeImageHost::remove(const QString &p_url, QString &p_msg)
     const auto resourcePath = fetchResourcePath(m_imageUrlPrefix, p_url);
 
     auto rawHeader = prepareCommonHeaders();
-    const auto urlStr = QString("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, resourcePath);
+    const auto urlStr = QStringLiteral("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, resourcePath);
 
     // Get the SHA of the resource.
     auto reply = vte::NetworkAccess::request(QUrl(addAccessToken(m_personalAccessToken, urlStr)), rawHeader);
@@ -163,7 +163,7 @@ bool GiteeImageHost::remove(const QString &p_url, QString &p_msg)
     // Delete.
     QJsonObject requestDataObj;
     requestDataObj[QStringLiteral("access_token")] = m_personalAccessToken;
-    requestDataObj[QStringLiteral("message")] = QString("VX_DEL: %1").arg(resourcePath);
+    requestDataObj[QStringLiteral("message")] = QStringLiteral("VX_DEL: %1").arg(resourcePath);
     requestDataObj[QStringLiteral("sha")] = sha;
     auto requestData = Utils::toJsonString(requestDataObj);
     reply = vte::NetworkAccess::deleteResource(QUrl(urlStr), rawHeader, requestData);

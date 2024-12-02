@@ -1323,7 +1323,7 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text)
         }
 
         // Replace URL in link.
-        QString newLink = QString("![%1](%2%3%4)")
+        QString newLink = QStringLiteral("![%1](%2%3%4)")
                                  .arg(imageTitle, urlInLink, match.captured(3), match.captured(6));
         p_text.replace(reg.m_startPos,
                        reg.m_endPos - reg.m_startPos,

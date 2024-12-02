@@ -7,7 +7,7 @@
 
 using namespace vnotex;
 
-const QString PathUtils::c_fileNameRegularExpression = QString("\\A(?:[^\\\\/:\\*\\?\"<>\\|\\s]| )+\\z");
+const QString PathUtils::c_fileNameRegularExpression = QStringLiteral("\\A(?:[^\\\\/:\\*\\?\"<>\\|\\s]| )+\\z");
 
 QString PathUtils::parentDirPath(const QString &p_path)
 {

@@ -126,12 +126,12 @@ QSharedPointer<NodeConfig> VXNotebookConfigMgr::readNodeConfig(const QString &p_
     auto backend = getBackend();
     if (!backend->exists(p_path)) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("node path (%1) does not exist").arg(p_path));
+                            QStringLiteral("node path (%1) does not exist").arg(p_path));
     }
 
     if (backend->isFile(p_path)) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("node (%1) is a file node without config").arg(p_path));
+                            QStringLiteral("node (%1) is a file node without config").arg(p_path));
     } else {
         auto configPath = PathUtils::concatenateFilePath(p_path, c_nodeConfigName);
         auto data = backend->readFile(configPath);
@@ -309,7 +309,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::newFileNode(Node *p_parent,
         if (getBackend()->childExistsCaseInsensitive(p_parent->fetchPath(), p_name)) {
             // File already exists. Exception.
             Exception::throwOne(Exception::Type::FileExistsOnCreate,
-                                QString("file (%1) already exists when creating new node").arg(node->fetchPath()));
+                                QStringLiteral("file (%1) already exists when creating new node").arg(node->fetchPath()));
             return nullptr;
         }
 
@@ -345,7 +345,7 @@ QSharedPointer<Node> VXNotebookConfigMgr::newFolderNode(Node *p_parent,
         if (getBackend()->childExistsCaseInsensitive(p_parent->fetchPath(), p_name)) {
             // Dir already exists. Exception.
             Exception::throwOne(Exception::Type::DirExistsOnCreate,
-                                QString("dir (%1) already exists when creating new node").arg(node->fetchPath()));
+                                QStringLiteral("dir (%1) already exists when creating new node").arg(node->fetchPath()));
             return nullptr;
         }
 

@@ -107,7 +107,7 @@ void ContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content,
             // Rename happens.
             const auto oldFileName = PathUtils::fileName(oldDestFilePath);
             const auto newFileName = PathUtils::fileName(destFilePath);
-            qWarning() << QString("image name conflicts when copy, renamed from (%1) to (%2)").arg(oldFileName, newFileName);
+            qWarning() << QStringLiteral("image name conflicts when copy, renamed from (%1) to (%2)").arg(oldFileName, newFileName);
 
             // Update the text content.
             const auto encodedOldFileName = PathUtils::fileName(link.m_urlInLink);

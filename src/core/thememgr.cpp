@@ -56,7 +56,7 @@ void ThemeMgr::loadAvailableThemes()
 
     if (m_themes.isEmpty()) {
         Exception::throwOne(Exception::Type::EssentialFileMissing,
-                            QString("no available themes found in paths: %1").arg(s_searchPaths.join(QLatin1Char(';'))));
+                            QStringLiteral("no available themes found in paths: %1").arg(s_searchPaths.join(QLatin1Char(';'))));
     }
 }
 

@@ -108,7 +108,7 @@ QSharedPointer<INotebookBackend> NotebookMgr::createNotebookBackend(const QStrin
         return factory->createNotebookBackend(p_rootFolderPath);
     } else {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("failed to find notebook backend factory %1").arg(p_backendName));
+                            QStringLiteral("failed to find notebook backend factory %1").arg(p_backendName));
     }
 
     return nullptr;
@@ -121,7 +121,7 @@ QSharedPointer<IVersionController> NotebookMgr::createVersionController(const QS
         return factory->createVersionController();
     } else {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("failed to find version controller factory %1").arg(p_controllerName));
+                            QStringLiteral("failed to find version controller factory %1").arg(p_controllerName));
     }
 
     return nullptr;
@@ -135,7 +135,7 @@ QSharedPointer<INotebookConfigMgr> NotebookMgr::createNotebookConfigMgr(const QS
         return factory->createNotebookConfigMgr(p_backend);
     } else {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("failed to find notebook config manager factory %1").arg(p_mgrName));
+                            QStringLiteral("failed to find notebook config manager factory %1").arg(p_mgrName));
     }
 
     return nullptr;
@@ -171,7 +171,7 @@ QSharedPointer<Notebook> NotebookMgr::newNotebook(const QSharedPointer<NotebookP
     auto factory = m_notebookServer->getItem(p_parameters->m_type);
     if (!factory) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("failed to find notebook factory %1").arg(p_parameters->m_type));
+                            QStringLiteral("failed to find notebook factory %1").arg(p_parameters->m_type));
     }
 
     auto notebook = factory->newNotebook(*p_parameters);
@@ -246,7 +246,7 @@ QSharedPointer<Notebook> NotebookMgr::readNotebookFromConfig(const SessionConfig
     auto factory = m_notebookServer->getItem(p_item.m_type);
     if (!factory) {
         Exception::throwOne(Exception::Type::InvalidArgument,
-                            QString("failed to find notebook factory %1").arg(p_item.m_type));
+                            QStringLiteral("failed to find notebook factory %1").arg(p_item.m_type));
     }
 
     auto backend = createNotebookBackend(p_item.m_backend, p_item.m_rootFolderPath);
@@ -330,7 +330,7 @@ void NotebookMgr::closeNotebook(ID p_id)
     emit notebooksUpdated();
     setCurrentNotebookAfterUpdate();
 
-    qInfo() << QString("notebook %1 (%2) is closed").arg(notebookToClose->getName(),
+    qInfo() << QStringLiteral("notebook %1 (%2) is closed").arg(notebookToClose->getName(),
                                                          notebookToClose->getRootFolderPath());
 }
 
@@ -359,13 +359,13 @@ void NotebookMgr::removeNotebook(ID p_id)
     try {
         nbToRemove->remove();
     } catch (Exception &p_e) {
-        qWarning() << QString("failed to remove notebook %1 (%2) (%3)").arg(nbToRemove->getName(),
+        qWarning() << QStringLiteral("failed to remove notebook %1 (%2) (%3)").arg(nbToRemove->getName(),
                                                                           nbToRemove->getRootFolderPath(),
                                                                           p_e.what());
         throw;
     }
 
-    qInfo() << QString("notebook %1 (%2) is removed").arg(nbToRemove->getName(),
+    qInfo() << QStringLiteral("notebook %1 (%2) is removed").arg(nbToRemove->getName(),
                                                           nbToRemove->getRootFolderPath());
 }
 
