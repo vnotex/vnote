@@ -49,6 +49,11 @@
       </ul>
    </description>
    <launchable type="desktop-id">fun.vnote.app.VNote.desktop</launchable>
+   <url type="donation">https://github.com/vnotex/vnote#donate</url>
+   <url type="faq">https://app.vnote.fun/en_us/#!docs/Users/Frequently%20Asked%20Questions.md</url>
+   <url type="help">https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg</url>
+   <url type="homepage">https://app.vnote.fun/</url>
+   <url type="vcs-browser">https://github.com/vnotex/vnote</url>   
    <screenshots>
       <screenshot type="default">
          <image>https://app.vnote.fun/en_us/vx_images/90420129296.png</image>
@@ -59,6 +64,9 @@
    </screenshots>
    <content_rating type="oars-1.1" />
    <releases>
+      <release version="3.18.2" date="2024-08-06" />
+      <release version="3.18.1" date="2024-07-10" />
+      <release version="3.18.0" date="2024-07-01" />      
       <release version="3.17.0" date="2023-09-27" />
    </releases>
 </component>
