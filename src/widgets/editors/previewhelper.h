@@ -7,17 +7,13 @@
 #include <vtextedit/global.h>
 #include <vtextedit/lrucache.h>
 #include <vtextedit/pegmarkdownhighlighterdata.h>
+#include <vtextedit/previewmgr.h>
 
 #include <core/global.h>
 #include "markdownvieweradapter.h"
 
 class QTimer;
 class QTextDocument;
-
-namespace vte
-{
-    struct PreviewItem;
-}
 
 namespace vnotex
 {

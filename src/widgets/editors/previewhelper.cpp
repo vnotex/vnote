@@ -6,7 +6,6 @@
 #include <QTimer>
 
 #include <vtextedit/texteditorconfig.h>
-#include <vtextedit/previewmgr.h>
 #include <vtextedit/textutils.h>
 
 #include <utils/utils.h>

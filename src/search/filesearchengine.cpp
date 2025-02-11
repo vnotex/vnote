@@ -3,7 +3,6 @@
 #include <QFile>
 #include <QDebug>
 
-#include "searchresultitem.h"
 #include <utils/fileutils.h>
 
 using namespace vnotex;

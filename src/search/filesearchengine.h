@@ -12,11 +12,10 @@
 
 #include "searchtoken.h"
 #include "searchdata.h"
+#include "searchresultitem.h"
 
 namespace vnotex
 {
-    struct SearchResultItem;
-
     class FileSearchEngineWorker : public AsyncWorker
     {
         Q_OBJECT
