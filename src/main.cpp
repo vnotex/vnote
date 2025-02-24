@@ -140,146 +140,158 @@ int main(int argc, char *argv[]) {
   }
   qInfo() << "VxCore context created";
 
-  // Create ServiceLocator
-  ServiceLocator serviceLocator;
+  int ret = 0;
 
-  // Create and register services (non-owning pointers stored in ServiceLocator)
-  ConfigService configService(context);
-  NotebookService notebookService(context);
-  SearchService searchService(context);
-
-  serviceLocator.registerService<ConfigService>(&configService);
-  serviceLocator.registerService<NotebookService>(&notebookService);
-  serviceLocator.registerService<SearchService>(&searchService);
-  qInfo() << "Services registered";
-
-  // Create ConfigMgr2 with ConfigService
-  ConfigMgr2 configMgr(&configService);
-  configMgr.init();
-  serviceLocator.registerService<ConfigMgr2>(&configMgr);
-  qInfo() << "ConfigMgr2 registered";
-
-  setOpenGLOption(configMgr);
-
-  disableSandboxIfNeeded();
-
-  // Create Qt application
-  Application app(argc, argv);
-
-  configMgr.initAfterQtAppStarted();
-
-  // Create ThemeService after Qt app is started
-  ThemeService themeService({
-      configMgr.getCoreConfig().getTheme(),
-      configMgr.getCoreConfig().getLocaleToUse(),
-      configService.getDataPath(DataLocation::App)
-  });
-  serviceLocator.registerService<ThemeService>(&themeService);
-  app.setThemeService(&themeService);
-  qInfo() << "ThemeService registered";
-
-  QAccessible::installFactory(&FakeAccessible::accessibleFactory);
-
+  // Scoped block to ensure proper destruction order:
+  // All services and UI must be destroyed BEFORE vxcore_context_destroy()
   {
-    const QString iconPath = ":/vnotex/data/core/icons/vnote.ico";
-    // Make sense only on Windows.
-    app.setWindowIcon(QIcon(iconPath));
+    // Create ServiceLocator
+    ServiceLocator serviceLocator;
 
-    app.setApplicationName(ConfigMgr2::c_appName);
-    app.setOrganizationName(ConfigMgr2::c_orgName);
+    // Create and register services (non-owning pointers stored in ServiceLocator)
+    ConfigService configService(context);
+    NotebookService notebookService(context);
+    SearchService searchService(context);
 
-    app.setApplicationVersion(ConfigMgr2::getApplicationVersion());
-  }
+    serviceLocator.registerService<ConfigService>(&configService);
+    serviceLocator.registerService<NotebookService>(&notebookService);
+    serviceLocator.registerService<SearchService>(&searchService);
+    qInfo() << "Services registered";
 
-  CommandLineOptions cmdOptions;
-  switch (cmdOptions.parse(app.arguments())) {
-  case CommandLineOptions::Ok:
-    break;
+    // Create ConfigMgr2 with ConfigService
+    ConfigMgr2 configMgr(&configService);
+    configMgr.init();
+    serviceLocator.registerService<ConfigMgr2>(&configMgr);
+    qInfo() << "ConfigMgr2 registered";
 
-  case CommandLineOptions::Error:
-    fprintf(stderr, "%s\n", qPrintable(cmdOptions.m_errorMsg));
-    // Arguments to WebEngineView will be unknown ones. So just let it go.
-    break;
+    setOpenGLOption(configMgr);
 
-  case CommandLineOptions::VersionRequested: {
-    auto versionStr =
-        QStringLiteral("%1 %2").arg(app.applicationName(), app.applicationVersion());
-    qInfo() << versionStr;
-    return 0;
-  }
+    disableSandboxIfNeeded();
 
-  case CommandLineOptions::HelpRequested:
-    Q_FALLTHROUGH();
-  default:
-    qInfo() << cmdOptions.m_helpText;
-    return 0;
-  }
+    // Create Qt application
+    Application app(argc, argv);
 
-  // Guarding.
-  SingleInstanceGuard guard;
-  bool canRun = guard.tryRun();
-  if (!canRun) {
-    guard.requestOpenFiles(cmdOptions.m_pathsToOpen);
-    guard.requestShow();
-    return 0;
-  }
+    configMgr.initAfterQtAppStarted();
 
-  // Init logger after app info is set.
-  Logger::init(cmdOptions.m_verbose, cmdOptions.m_logToStderr);
+    // Create ThemeService after Qt app is started
+    ThemeService themeService({
+        configMgr.getCoreConfig().getTheme(),
+        configMgr.getCoreConfig().getLocaleToUse(),
+        configService.getDataPath(DataLocation::App)
+    });
+    serviceLocator.registerService<ThemeService>(&themeService);
+    app.setThemeService(&themeService);
+    qInfo() << "ThemeService registered";
 
-  qInfo() << QStringLiteral("%1 (v%2) started at %3 (%4)")
-                 .arg(ConfigMgr2::c_appName, app.applicationVersion(),
-                      QDateTime::currentDateTime().toString(), QSysInfo::productType());
+    QAccessible::installFactory(&FakeAccessible::accessibleFactory);
 
-  qInfo() << "OpenSSL build version:" << QSslSocket::sslLibraryBuildVersionString()
-          << "link version:" << QSslSocket::sslLibraryVersionString();
+    {
+      const QString iconPath = ":/vnotex/data/core/icons/vnote.ico";
+      // Make sense only on Windows.
+      app.setWindowIcon(QIcon(iconPath));
 
-  if (QSslSocket::sslLibraryBuildVersionNumber() != QSslSocket::sslLibraryVersionNumber()) {
-    qWarning() << "versions of the built and linked OpenSSL mismatch, network may not work";
-  }
+      app.setApplicationName(ConfigMgr2::c_appName);
+      app.setOrganizationName(ConfigMgr2::c_orgName);
 
-  loadTranslators(app, configMgr);
+      app.setApplicationVersion(ConfigMgr2::getApplicationVersion());
+    }
 
-  if (app.styleSheet().isEmpty()) {
-    auto style = themeService.fetchQtStyleSheet();
-    if (!style.isEmpty()) {
-      app.setStyleSheet(style);
-      // Set up hot-reload for the theme folder if enabled via command line
-      if (cmdOptions.m_watchThemes) {
-        const auto themeFolderPath = themeService.getCurrentTheme().getThemeFolder();
-        app.watchThemeFolder(themeFolderPath);
+    CommandLineOptions cmdOptions;
+    switch (cmdOptions.parse(app.arguments())) {
+    case CommandLineOptions::Ok:
+      break;
+
+    case CommandLineOptions::Error:
+      fprintf(stderr, "%s\n", qPrintable(cmdOptions.m_errorMsg));
+      // Arguments to WebEngineView will be unknown ones. So just let it go.
+      break;
+
+    case CommandLineOptions::VersionRequested: {
+      auto versionStr =
+          QStringLiteral("%1 %2").arg(app.applicationName(), app.applicationVersion());
+      qInfo() << versionStr;
+      vxcore_context_destroy(context);
+      return 0;
+    }
+
+    case CommandLineOptions::HelpRequested:
+      Q_FALLTHROUGH();
+    default:
+      qInfo() << cmdOptions.m_helpText;
+      vxcore_context_destroy(context);
+      return 0;
+    }
+
+    // Guarding.
+    SingleInstanceGuard guard;
+    bool canRun = guard.tryRun();
+    if (!canRun) {
+      guard.requestOpenFiles(cmdOptions.m_pathsToOpen);
+      guard.requestShow();
+      vxcore_context_destroy(context);
+      return 0;
+    }
+
+    // Init logger after app info is set.
+    Logger::init(cmdOptions.m_verbose, cmdOptions.m_logToStderr);
+
+    qInfo() << QStringLiteral("%1 (v%2) started at %3 (%4)")
+                   .arg(ConfigMgr2::c_appName, app.applicationVersion(),
+                        QDateTime::currentDateTime().toString(), QSysInfo::productType());
+
+    qInfo() << "OpenSSL build version:" << QSslSocket::sslLibraryBuildVersionString()
+            << "link version:" << QSslSocket::sslLibraryVersionString();
+
+    if (QSslSocket::sslLibraryBuildVersionNumber() != QSslSocket::sslLibraryVersionNumber()) {
+      qWarning() << "versions of the built and linked OpenSSL mismatch, network may not work";
+    }
+
+    loadTranslators(app, configMgr);
+
+    if (app.styleSheet().isEmpty()) {
+      auto style = themeService.fetchQtStyleSheet();
+      if (!style.isEmpty()) {
+        app.setStyleSheet(style);
+        // Set up hot-reload for the theme folder if enabled via command line
+        if (cmdOptions.m_watchThemes) {
+          const auto themeFolderPath = themeService.getCurrentTheme().getThemeFolder();
+          app.watchThemeFolder(themeFolderPath);
+        }
       }
     }
+
+    // Create MainWindow2 with ServiceLocator
+    MainWindow2 mainWindow(serviceLocator);
+    mainWindow.show();
+    qInfo() << "MainWindow2 shown";
+
+    // Let MainWindow show first to decide the screen on which app is running.
+    WidgetUtils::calculateScaleFactor(mainWindow.windowHandle()->screen());
+    themeService.setBaseBackground(mainWindow.palette().color(QPalette::Base));
+
+    mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen);
+
+    // Run event loop
+    ret = app.exec();
+    if (ret == kExitToRestart) {
+      // Asked to restart VNote.
+      guard.exit();
+      QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList());
+      // Services and configMgr will be destroyed when leaving this scope,
+      // then vxcore_context_destroy() will be called below.
+    }
+    // All services destroyed here before vxcore context
   }
 
-  // Create MainWindow2 with ServiceLocator
-  MainWindow2 mainWindow(serviceLocator);
-  mainWindow.show();
-  qInfo() << "MainWindow2 shown";
+  // Cleanup: destroy vxcore context (after all services are destroyed)
+  vxcore_context_destroy(context);
+  qInfo() << "VxCore context destroyed";
 
-  // Let MainWindow show first to decide the screen on which app is running.
-  WidgetUtils::calculateScaleFactor(mainWindow.windowHandle()->screen());
-  themeService.setBaseBackground(mainWindow.palette().color(QPalette::Base));
-
-  mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen);
-
-  // Run event loop
-  int ret = app.exec();
   if (ret == kExitToRestart) {
-    // Asked to restart VNote.
-    guard.exit();
-    QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList());
-    vxcore_context_destroy(context);
-    qInfo() << "VxCore context destroyed";
     // Must use exit() in Linux to quit the parent process in Qt 5.12.
     // Thanks to @ygcaicn.
     exit(0);
-    return 0;
   }
-
-  // Cleanup: destroy vxcore context
-  vxcore_context_destroy(context);
-  qInfo() << "VxCore context destroyed";
 
   return ret;
 }
