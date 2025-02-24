@@ -16,8 +16,7 @@ namespace vnotex {
 
 class Node;
 class Notebook;
-class NotebookMgr;
-class NotebookSelector;
+class NotebookSelector2;
 class TitleBar;
 class NotebookNodeModel;
 class NotebookNodeProxyModel;
@@ -56,9 +55,6 @@ public:
   // Mode switching
   void setExploreMode(ExploreMode p_mode);
   ExploreMode exploreMode() const;
-
-  // Initialize with NotebookMgr
-  void setNotebookMgr(NotebookMgr *p_notebookMgr);
 
   // Get current explored folder node (for newNote/newFolder operations)
   Node *currentExploredFolderNode() const;
@@ -105,7 +101,6 @@ signals:
   void closeFileRequested(const QString &p_filePath, const QSharedPointer<Event> &p_event);
 
 private slots:
-  void onNotebookChanged(int p_index);
   void onNodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
   void onContextMenuRequested(Node *p_node, const QPoint &p_globalPos);
 
@@ -157,13 +152,12 @@ private:
 
   // UI Components
   TitleBar *m_titleBar = nullptr;
-  NotebookSelector *m_notebookSelector = nullptr;
+  NotebookSelector2 *m_notebookSelector = nullptr;
   QStackedWidget *m_contentStack = nullptr;
   QSplitter *m_twoColumnsSplitter = nullptr;
 
   // State
   ExploreMode m_exploreMode = Combined;
-  NotebookMgr *m_notebookMgr = nullptr;
   QSharedPointer<Notebook> m_currentNotebook;
 };
 

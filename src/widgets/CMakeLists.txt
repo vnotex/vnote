@@ -20,6 +20,7 @@ target_sources(vnote PRIVATE
     dialogs/managenotebooksdialog.cpp dialogs/managenotebooksdialog.h
     dialogs/newfolderdialog.cpp dialogs/newfolderdialog.h
     dialogs/newnotebookdialog.cpp dialogs/newnotebookdialog.h
+    dialogs/newnotebookdialog2.cpp dialogs/newnotebookdialog2.h
     dialogs/newnotebookfromfolderdialog.cpp dialogs/newnotebookfromfolderdialog.h
     dialogs/newnotedialog.cpp dialogs/newnotedialog.h
     dialogs/newsnippetdialog.cpp dialogs/newsnippetdialog.h
@@ -102,6 +103,7 @@ target_sources(vnote PRIVATE
     notebookexplorersession.cpp notebookexplorersession.h
     notebooknodeexplorer.cpp notebooknodeexplorer.h
     notebookselector.cpp notebookselector.h
+    notebookselector2.cpp notebookselector2.h
     outlinepopup.cpp outlinepopup.h
     outlineprovider.cpp outlineprovider.h
     outlineviewer.cpp outlineviewer.h
