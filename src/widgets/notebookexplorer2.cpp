@@ -17,7 +17,6 @@
 #include <core/fileopenparameters.h>
 #include <core/global.h>
 #include <core/notebook/notebook.h>
-#include <core/notebookmgr.h>
 #include <core/servicelocator.h>
 #include <core/sessionconfig.h>
 #include <core/vnotex.h>
@@ -37,12 +36,13 @@
 // #include <widgets/dialogs/newnotebookdialog.h>
 // #include <widgets/dialogs/newnotebookfromfolderdialog.h>
 // #include <widgets/dialogs/newnotedialog.h>
+#include <widgets/dialogs/newnotebookdialog2.h>
 // #include <widgets/dialogs/selectdialog.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
 // TODO: Migrate NavigationModeMgr to use ServiceLocator DI pattern
 // #include <widgets/navigationmodemgr.h>
-#include <widgets/notebookselector.h>
+#include <widgets/notebookselector2.h>
 #include <widgets/titlebar.h>
 // TODO: Migrate TemplateMgr and SnippetMgr to use ServiceLocator DI pattern
 // #include <core/templatemgr.h>
@@ -66,7 +66,7 @@ void NotebookExplorer2::setupUI() {
   const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
 
   // Notebook selector
-  m_notebookSelector = new NotebookSelector(this);
+  m_notebookSelector = new NotebookSelector2(m_services, this);
   m_notebookSelector->setWhatsThis(tr("Select one of all the notebooks as current notebook.<br/>"
                                       "Move mouse on one item to check its details."));
   // TODO: Migrate NavigationModeMgr to use ServiceLocator DI pattern
@@ -97,7 +97,7 @@ void NotebookExplorer2::setupUI() {
             auto id = static_cast<ID>(m_notebookSelector->itemData(p_idx).toULongLong());
             emit notebookActivated(id);
           });
-  connect(m_notebookSelector, &NotebookSelector::newNotebookRequested, this,
+  connect(m_notebookSelector, &NotebookSelector2::newNotebookRequested, this,
           &NotebookExplorer2::newNotebook);
 
   updateFocusProxy();
@@ -199,7 +199,7 @@ void NotebookExplorer2::setupRecycleBinMenu() {
         tr("CAUTION! All the files under the recycle bin folder will be deleted and "
            "unrecoverable!"),
         tr("Recycle bin folder: %1").arg(m_currentNotebook->getRecycleBinFolderAbsolutePath()),
-        VNoteX::getInst().getMainWindow());
+        window());
     if (okRet == QMessageBox::Ok) {
       m_currentNotebook->emptyRecycleBin();
     }
@@ -314,7 +314,7 @@ void NotebookExplorer2::rebuildDatabase() {
         tr("This operation will rebuild the notebook database from configuration files. It may "
            "take time."),
         tr("A notebook may use a database for cache, such as IDs of nodes and tags."),
-        VNoteX::getInst().getMainWindow());
+        window());
     if (okRet != QMessageBox::Ok) {
       return;
     }
@@ -332,11 +332,11 @@ void NotebookExplorer2::rebuildDatabase() {
     if (ret) {
       MessageBoxHelper::notify(MessageBoxHelper::Type::Information,
                                tr("Notebook database has been rebuilt."),
-                               VNoteX::getInst().getMainWindow());
+                               window());
     } else {
       MessageBoxHelper::notify(MessageBoxHelper::Type::Warning,
                                tr("Failed to rebuild notebook database."),
-                               VNoteX::getInst().getMainWindow());
+                               window());
     }
   }
 }
@@ -461,11 +461,6 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   connectControllerSignals(m_fileController);
 }
 
-void NotebookExplorer2::setNotebookMgr(NotebookMgr *p_notebookMgr) {
-  m_notebookMgr = p_notebookMgr;
-  loadNotebooks();
-}
-
 void NotebookExplorer2::loadNotebooks() {
   if (!m_notebookSelector) {
     return;
@@ -584,18 +579,6 @@ void NotebookExplorer2::updateFocusProxy() {
   }
 }
 
-void NotebookExplorer2::onNotebookChanged(int p_index) {
-  if (!m_notebookSelector || !m_notebookMgr) {
-    return;
-  }
-
-  // Get the notebook ID from the selector's item data
-  auto id = static_cast<ID>(m_notebookSelector->itemData(p_index).toULongLong());
-  auto notebook = m_notebookMgr->findNotebookById(id);
-  if (notebook) {
-    setCurrentNotebook(notebook);
-  }
-}
 
 void NotebookExplorer2::onNodeActivated(Node *p_node,
                                         const QSharedPointer<FileOpenParameters> &p_paras) {
@@ -658,39 +641,37 @@ void NotebookExplorer2::onFolderSelectionChanged(const QList<Node *> &p_nodes) {
 // --- Public Slots Implementation ---
 
 void NotebookExplorer2::newNotebook() {
-  // TODO: Migrate NewNotebookDialog to use ServiceLocator DI pattern
-  // NewNotebookDialog dialog(VNoteX::getInst().getMainWindow());
-  // dialog.exec();
-  MessageBoxHelper::notify(MessageBoxHelper::Information,
-                           tr("New notebook dialog is being migrated to use dependency injection."),
-                           VNoteX::getInst().getMainWindow());
+  // Use window() to get top-level MainWindow2 for dialog centering.
+  // DEPRECATED: VNoteX::getInst().getMainWindow() - use window() instead.
+  NewNotebookDialog2 dialog(m_services, window());
+  if (dialog.exec() == QDialog::Accepted) {
+    // Reload notebooks to show the newly created one
+    loadNotebooks();
+  }
 }
 
 void NotebookExplorer2::newNotebookFromFolder() {
   // TODO: Migrate NewNotebookFromFolderDialog to use ServiceLocator DI pattern
-  // NewNotebookFromFolderDialog dialog(VNoteX::getInst().getMainWindow());
-  // dialog.exec();
+  // DEPRECATED: VNoteX::getInst().getMainWindow() - use window() instead.
   MessageBoxHelper::notify(MessageBoxHelper::Information,
                            tr("New notebook from folder dialog is being migrated to use dependency injection."),
-                           VNoteX::getInst().getMainWindow());
+                           window());
 }
 
 void NotebookExplorer2::importNotebook() {
   // TODO: Migrate ImportNotebookDialog to use ServiceLocator DI pattern
-  // ImportNotebookDialog dialog(VNoteX::getInst().getMainWindow());
-  // dialog.exec();
+  // DEPRECATED: VNoteX::getInst().getMainWindow() - use window() instead.
   MessageBoxHelper::notify(MessageBoxHelper::Information,
                            tr("Import notebook dialog is being migrated to use dependency injection."),
-                           VNoteX::getInst().getMainWindow());
+                           window());
 }
 
 void NotebookExplorer2::manageNotebooks() {
   // TODO: Migrate ManageNotebooksDialog to use ServiceLocator DI pattern
-  // ManageNotebooksDialog dialog(m_currentNotebook.data(), VNoteX::getInst().getMainWindow());
-  // dialog.exec();
+  // DEPRECATED: VNoteX::getInst().getMainWindow() - use window() instead.
   MessageBoxHelper::notify(MessageBoxHelper::Information,
                            tr("Manage notebooks dialog is being migrated to use dependency injection."),
-                           VNoteX::getInst().getMainWindow());
+                           window());
 }
 
 void NotebookExplorer2::reloadNotebook(const Notebook *p_notebook) {
@@ -712,7 +693,7 @@ void NotebookExplorer2::newFolder() {
   // }
   MessageBoxHelper::notify(MessageBoxHelper::Information,
                            tr("New folder dialog is being migrated to use dependency injection."),
-                           VNoteX::getInst().getMainWindow());
+                           window());
 }
 
 void NotebookExplorer2::newNote() {
@@ -733,7 +714,7 @@ void NotebookExplorer2::newNote() {
   // }
   MessageBoxHelper::notify(MessageBoxHelper::Information,
                            tr("New note dialog is being migrated to use dependency injection."),
-                           VNoteX::getInst().getMainWindow());
+                           window());
 }
 
 void NotebookExplorer2::newQuickNote() {
@@ -804,7 +785,7 @@ void NotebookExplorer2::newQuickNote() {
   // emit VNoteX::getInst().openNodeRequested(newNode.data(), paras);
   MessageBoxHelper::notify(MessageBoxHelper::Information,
                            tr("Quick note is being migrated to use dependency injection."),
-                           VNoteX::getInst().getMainWindow());
+                           window());
 }
 
 void NotebookExplorer2::importFile() {
@@ -814,7 +795,7 @@ void NotebookExplorer2::importFile() {
   }
 
   static QString lastFolderPath = QDir::homePath();
-  QStringList files = QFileDialog::getOpenFileNames(VNoteX::getInst().getMainWindow(),
+  QStringList files = QFileDialog::getOpenFileNames(window(),
                                                     tr("Select Files To Import"), lastFolderPath);
   if (files.isEmpty()) {
     return;
@@ -830,7 +811,7 @@ void NotebookExplorer2::importFile() {
   }
 
   if (!errMsg.isEmpty()) {
-    MessageBoxHelper::notify(MessageBoxHelper::Critical, errMsg, VNoteX::getInst().getMainWindow());
+    MessageBoxHelper::notify(MessageBoxHelper::Critical, errMsg, window());
   }
 
   emit m_currentNotebook->nodeUpdated(node);
@@ -850,7 +831,7 @@ void NotebookExplorer2::importFolder() {
   // }
   MessageBoxHelper::notify(MessageBoxHelper::Information,
                            tr("Import folder dialog is being migrated to use dependency injection."),
-                           VNoteX::getInst().getMainWindow());
+                           window());
 }
 
 void NotebookExplorer2::locateNode(Node *p_node) {
@@ -903,7 +884,7 @@ Node *NotebookExplorer2::checkNotebookAndGetCurrentExploredFolderNode() const {
   if (!m_currentNotebook) {
     MessageBoxHelper::notify(MessageBoxHelper::Information,
                              tr("Please first create a notebook to hold your data."),
-                             VNoteX::getInst().getMainWindow());
+                             window());
     return nullptr;
   }
 

@@ -11,6 +11,8 @@
 namespace vnotex {
 class Notebook;
 
+// DEPRECATED: Use NotebookSelector2 instead.
+// This class uses VNoteX::getInst().getNotebookMgr() singleton which is deprecated.
 class NotebookSelector : public ComboBox, public NavigationMode {
   Q_OBJECT
 public:

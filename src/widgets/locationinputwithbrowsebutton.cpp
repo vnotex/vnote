@@ -20,6 +20,9 @@ LocationInputWithBrowseButton::LocationInputWithBrowseButton(QWidget *p_parent)
   auto browseBtn = new QPushButton(tr("Browse"), this);
   layout->addWidget(browseBtn);
   connect(browseBtn, &QPushButton::clicked, this, &LocationInputWithBrowseButton::clicked);
+
+  // Fix vertical alignment in QFormLayout - prevent vertical expansion.
+  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 }
 
 QString LocationInputWithBrowseButton::text() const { return m_lineEdit->text(); }

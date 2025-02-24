@@ -23,6 +23,9 @@ class INotebookFactory;
 class NotebookParameters;
 class Node;
 
+// DEPRECATED: Use NotebookService instead.
+// This class is part of the legacy architecture using global singletons.
+// New code should use NotebookService via ServiceLocator DI pattern.
 class NotebookMgr : public QObject, private Noncopyable {
   Q_OBJECT
 public:
