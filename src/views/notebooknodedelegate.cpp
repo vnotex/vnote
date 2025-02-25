@@ -3,7 +3,6 @@
 #include <QApplication>
 #include <QPainter>
 
-#include <core/notebook/node.h>
 #include <core/vnotex.h>
 #include <models/notebooknodemodel.h>
 #include <utils/iconutils.h>
@@ -20,18 +19,17 @@ void NotebookNodeDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem
     return;
   }
 
-  // Get node from index
-  Node *node = static_cast<Node *>(p_index.data(NotebookNodeModel::NodeRole).value<void *>());
-  if (!node) {
+  NodeInfo nodeInfo = p_index.data(NotebookNodeModel::NodeInfoRole).value<NodeInfo>();
+  if (!nodeInfo.isValid()) {
     QStyledItemDelegate::paint(p_painter, p_option, p_index);
     return;
   }
 
-  paintNode(p_painter, p_option, node);
+  paintNode(p_painter, p_option, nodeInfo);
 }
 
 void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionViewItem &p_option,
-                                     Node *p_node) const {
+                                     const NodeInfo &p_nodeInfo) const {
   p_painter->save();
 
   // Initialize style option
@@ -43,7 +41,7 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
   QStyle *style = widget ? widget->style() : QApplication::style();
 
   // Draw background
-  QColor bgColor = getNodeBackgroundColor(p_node, opt);
+  QColor bgColor = getNodeBackgroundColor(p_nodeInfo, opt);
   if (bgColor.isValid()) {
     p_painter->fillRect(opt.rect, bgColor);
   }
@@ -65,7 +63,7 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
   textRect.setRight(opt.rect.right() - m_padding);
 
   // Draw icon
-  QIcon icon = getNodeIcon(p_node);
+  QIcon icon = getNodeIcon(p_nodeInfo);
   if (!icon.isNull()) {
     QIcon::Mode iconMode = QIcon::Normal;
     if (!(opt.state & QStyle::State_Enabled)) {
@@ -77,7 +75,7 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
   }
 
   // Draw text
-  QColor textColor = getNodeTextColor(p_node, opt);
+  QColor textColor = getNodeTextColor(p_nodeInfo, opt);
   if (textColor.isValid()) {
     p_painter->setPen(textColor);
   } else if (opt.state & QStyle::State_Selected) {
@@ -86,15 +84,15 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
     p_painter->setPen(opt.palette.text().color());
   }
 
-  QString text = p_node->getName();
+  QString text = p_nodeInfo.name;
   QFontMetrics fm(opt.font);
   QString elidedText = fm.elidedText(text, Qt::ElideRight, textRect.width());
   style->drawItemText(p_painter, textRect, Qt::AlignLeft | Qt::AlignVCenter, opt.palette, true,
                       elidedText);
 
   // Draw child count badge for containers
-  if (m_showChildCount && p_node->isContainer()) {
-    int count = p_node->getChildrenCount();
+  if (m_showChildCount && p_nodeInfo.isFolder) {
+    int count = p_nodeInfo.childCount;
     if (count > 0) {
       QString countText = QString("(%1)").arg(count);
       int countWidth = fm.horizontalAdvance(countText);
@@ -135,15 +133,15 @@ void NotebookNodeDelegate::setShowChildCount(bool p_show) { m_showChildCount = p
 
 bool NotebookNodeDelegate::showChildCount() const { return m_showChildCount; }
 
-QColor NotebookNodeDelegate::getNodeBackgroundColor(Node *p_node,
+QColor NotebookNodeDelegate::getNodeBackgroundColor(const NodeInfo &p_nodeInfo,
                                                     const QStyleOptionViewItem &p_option) const {
   Q_UNUSED(p_option);
 
-  if (!p_node) {
+  if (!p_nodeInfo.hasVisualStyle()) {
     return QColor();
   }
 
-  QString colorStr = p_node->getEffectiveBackgroundColor();
+  QString colorStr = p_nodeInfo.backgroundColor;
   if (!colorStr.isEmpty()) {
     return QColor(colorStr);
   }
@@ -151,15 +149,15 @@ QColor NotebookNodeDelegate::getNodeBackgroundColor(Node *p_node,
   return QColor();
 }
 
-QColor NotebookNodeDelegate::getNodeTextColor(Node *p_node,
+QColor NotebookNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
                                               const QStyleOptionViewItem &p_option) const {
   Q_UNUSED(p_option);
 
-  if (!p_node) {
+  if (!p_nodeInfo.hasVisualStyle()) {
     return QColor();
   }
 
-  QString colorStr = p_node->getNameColor();
+  QString colorStr = p_nodeInfo.textColor;
   if (!colorStr.isEmpty()) {
     return QColor(colorStr);
   }
@@ -167,18 +165,12 @@ QColor NotebookNodeDelegate::getNodeTextColor(Node *p_node,
   return QColor();
 }
 
-QIcon NotebookNodeDelegate::getNodeIcon(Node *p_node) const {
-  if (!p_node) {
-    return QIcon();
-  }
-
+QIcon NotebookNodeDelegate::getNodeIcon(const NodeInfo &p_nodeInfo) const {
   const auto &themeMgr = VNoteX::getInst().getThemeMgr();
   QString iconName;
 
-  if (p_node->isContainer()) {
+  if (p_nodeInfo.isFolder) {
     iconName = QStringLiteral("folder_node.svg");
-  } else if (p_node->hasContent()) {
-    iconName = QStringLiteral("file_node.svg");
   } else {
     iconName = QStringLiteral("file_node.svg");
   }

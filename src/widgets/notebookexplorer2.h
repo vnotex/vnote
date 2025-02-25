@@ -5,8 +5,8 @@
 #include <QSharedPointer>
 
 #include <core/global.h>
+#include <nodeinfo.h>
 #include <core/noncopyable.h>
-#include <core/nodeinfo.h>
 
 class QStackedWidget;
 class QSplitter;
@@ -15,8 +15,7 @@ class QActionGroup;
 
 namespace vnotex {
 
-class Node;
-class Notebook;
+
 class NotebookSelector2;
 class TitleBar;
 class NotebookNodeModel;
@@ -33,6 +32,9 @@ class ServiceLocator;
 // It supports two explore modes:
 // - Combined: Single tree view showing all nodes
 // - TwoColumns: Split view with folder tree on left, file list on right
+//
+// NOTE: This class uses NodeIdentifier/NodeInfo for all node references.
+// Legacy Node* pointers are being phased out.
 class NotebookExplorer2 : public QFrame, private Noncopyable {
   Q_OBJECT
 
@@ -45,23 +47,23 @@ public:
   explicit NotebookExplorer2(ServiceLocator &p_services, QWidget *p_parent = nullptr);
   ~NotebookExplorer2() override;
 
-  // Notebook management
-  void setCurrentNotebook(const QSharedPointer<Notebook> &p_notebook);
-  QSharedPointer<Notebook> currentNotebook() const;
+  // Notebook management - using notebook ID instead of Notebook pointer
+  void setCurrentNotebook(const QString &p_notebookId);
+  QString currentNotebookId() const;
 
-  // Navigation
-  void setCurrentNode(Node *p_node);
-  Node *currentNode() const;
+  // Navigation - using NodeIdentifier instead of Node*
+  void setCurrentNode(const NodeIdentifier &p_nodeId);
+  NodeIdentifier currentNodeId() const;
 
   // Mode switching
   void setExploreMode(ExploreMode p_mode);
   ExploreMode exploreMode() const;
 
   // Get current explored folder node (for newNote/newFolder operations)
-  Node *currentExploredFolderNode() const;
+  NodeIdentifier currentExploredFolderId() const;
 
   // Get current explored node
-  Node *currentExploredNode() const;
+  NodeIdentifier currentExploredNodeId() const;
 
   // State saving/restoring for session
   QByteArray saveState() const;
@@ -90,20 +92,22 @@ signals:
   // Emitted when user selects a notebook from the selector
   void notebookActivated(const QString &p_notebookGuid);
 
-  // --- New architecture signals (NodeInfo-based) ---
-  void nodeActivated(const NodeInfo &p_nodeInfo, const QSharedPointer<FileOpenParameters> &p_paras);
+  // --- New architecture signals (NodeIdentifier-based) ---
+  void nodeActivated(const NodeIdentifier &p_nodeId,
+                     const QSharedPointer<FileOpenParameters> &p_paras);
   void fileActivated(const QString &p_path, const QSharedPointer<FileOpenParameters> &p_paras);
-  void nodeAboutToMove(const NodeInfo &p_nodeInfo, const QSharedPointer<Event> &p_event);
-  void nodeAboutToRemove(const NodeInfo &p_nodeInfo, const QSharedPointer<Event> &p_event);
-  void nodeAboutToReload(const NodeInfo &p_nodeInfo, const QSharedPointer<Event> &p_event);
-  void closeFileRequested(const NodeInfo &p_nodeInfo, const QSharedPointer<Event> &p_event);
+  void nodeAboutToMove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
+  void nodeAboutToRemove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
+  void nodeAboutToReload(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
+  void closeFileRequested(const QString &p_filePath, const QSharedPointer<Event> &p_event);
 
 private slots:
-  void onNodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
-  void onContextMenuRequested(Node *p_node, const QPoint &p_globalPos);
+  void onNodeActivated(const NodeIdentifier &p_nodeId,
+                       const QSharedPointer<FileOpenParameters> &p_paras);
+  void onContextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos);
 
   // TwoColumns mode: when folder selection changes, update file list
-  void onFolderSelectionChanged(const QList<Node *> &p_nodes);
+  void onFolderSelectionChanged(const QList<NodeIdentifier> &p_nodeIds);
 
 private:
   void setupUI();
@@ -120,9 +124,6 @@ private:
 
   // Notebook database rebuild
   void rebuildDatabase();
-
-  // Helper: check notebook exists and get current explored folder
-  Node *checkNotebookAndGetCurrentExploredFolderNode() const;
 
   // Services
   ServiceLocator &m_services;
@@ -156,7 +157,7 @@ private:
 
   // State
   ExploreMode m_exploreMode = Combined;
-  QSharedPointer<Notebook> m_currentNotebook;
+  QString m_currentNotebookId;
 };
 
 } // namespace vnotex

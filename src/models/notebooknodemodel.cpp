@@ -1,62 +1,208 @@
 #include "notebooknodemodel.h"
 
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QMimeData>
+#include <QIODevice>
 
-#include <core/notebook/node.h>
-#include <core/notebook/notebook.h>
-#include <core/vnotex.h>
-#include <utils/iconutils.h>
-#include <widgets/widgetsfactory.h>
 #include <core/nodeinfo.h>
+#include <core/servicelocator.h>
+#include <core/services/notebookservice.h>
+#include <gui/services/themeservice.h>
+#include <utils/iconutils.h>
 
 using namespace vnotex;
 
 namespace {
-const QString c_nodeMimeType = QStringLiteral("application/x-vnotex-node");
+const QString c_nodeMimeType = QStringLiteral("application/x-vnotex-node-identifier");
 } // namespace
 
-NotebookNodeModel::NotebookNodeModel(QObject *p_parent) : QAbstractItemModel(p_parent) {}
+NotebookNodeModel::NotebookNodeModel(ServiceLocator &p_services, QObject *p_parent)
+    : QAbstractItemModel(p_parent), m_services(p_services) {}
 
 NotebookNodeModel::~NotebookNodeModel() {}
 
-void NotebookNodeModel::setNotebook(const QSharedPointer<Notebook> &p_notebook) {
+void NotebookNodeModel::setNotebookId(const QString &p_notebookId) {
   beginResetModel();
 
-  m_notebook = p_notebook;
+  m_notebookId = p_notebookId;
+  m_nodeCache.clear();
+  m_childrenCache.clear();
   m_fetchedNodes.clear();
+  m_indexIdCache.clear();
+  m_indexIdLookup.clear();
+  m_nextIndexId = 1;
 
   endResetModel();
 
   emit notebookChanged();
 }
 
-QSharedPointer<Notebook> NotebookNodeModel::getNotebook() const { return m_notebook; }
+QString NotebookNodeModel::getNotebookId() const { return m_notebookId; }
+
+void NotebookNodeModel::ensureRoot() const {
+  if (m_notebookId.isEmpty()) {
+    return;
+  }
+
+  NodeIdentifier rootId = rootNodeId();
+  if (!m_nodeCache.contains(rootId)) {
+    NodeInfo info;
+    info.id = rootId;
+    info.isFolder = true;
+    info.name = QStringLiteral("Root");
+    m_nodeCache.insert(rootId, info);
+  }
+}
+
+NodeIdentifier NotebookNodeModel::rootNodeId() const {
+  NodeIdentifier rootId;
+  rootId.notebookId = m_notebookId;
+  rootId.relativePath = QString();
+  return rootId;
+}
+
+bool NotebookNodeModel::isNodeFetched(const NodeIdentifier &p_nodeId) const {
+  return m_fetchedNodes.contains(p_nodeId);
+}
+
+void NotebookNodeModel::markNodeFetched(const NodeIdentifier &p_nodeId) {
+  if (p_nodeId.isValid()) {
+    m_fetchedNodes.insert(p_nodeId);
+  }
+}
+
+void NotebookNodeModel::removeNodeFromCaches(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  m_nodeCache.remove(p_nodeId);
+  m_childrenCache.remove(p_nodeId);
+  m_fetchedNodes.remove(p_nodeId);
+
+  auto indexIt = m_indexIdCache.find(p_nodeId);
+  if (indexIt != m_indexIdCache.end()) {
+    m_indexIdLookup.remove(indexIt.value());
+    m_indexIdCache.erase(indexIt);
+  }
+}
+
+int NotebookNodeModel::childRow(const NodeIdentifier &p_parentId,
+                                const NodeIdentifier &p_childId) const {
+  auto it = m_childrenCache.find(p_parentId);
+  if (it == m_childrenCache.end()) {
+    return -1;
+  }
+
+  const auto &children = it.value();
+  for (int i = 0; i < children.size(); ++i) {
+    if (children[i] == p_childId) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+quintptr NotebookNodeModel::indexIdForNode(const NodeIdentifier &p_nodeId) const {
+  if (!p_nodeId.isValid()) {
+    return 0;
+  }
+
+  auto it = m_indexIdCache.find(p_nodeId);
+  if (it != m_indexIdCache.end()) {
+    return it.value();
+  }
+
+  quintptr newId = m_nextIndexId++;
+  m_indexIdCache.insert(p_nodeId, newId);
+  m_indexIdLookup.insert(newId, p_nodeId);
+  return newId;
+}
+
+NodeIdentifier NotebookNodeModel::nodeIdForIndexId(quintptr p_indexId) const {
+  auto it = m_indexIdLookup.find(p_indexId);
+  if (it == m_indexIdLookup.end()) {
+    return NodeIdentifier();
+  }
+  return it.value();
+}
+
+QVector<NodeInfo> NotebookNodeModel::parseChildrenFromJson(
+    const QJsonObject &p_json, const NodeIdentifier &p_parentId) const {
+  QVector<NodeInfo> children;
+
+  QJsonArray folders = p_json.value(QStringLiteral("folders")).toArray();
+  for (const QJsonValue &folderVal : folders) {
+    NodeInfo info = parseNodeInfoFromJson(folderVal.toObject(), p_parentId);
+    info.isFolder = true;
+    children.append(info);
+  }
+
+  QJsonArray files = p_json.value(QStringLiteral("files")).toArray();
+  for (const QJsonValue &fileVal : files) {
+    NodeInfo info = parseNodeInfoFromJson(fileVal.toObject(), p_parentId);
+    info.isFolder = false;
+    children.append(info);
+  }
+
+  return children;
+}
+
+NodeInfo NotebookNodeModel::parseNodeInfoFromJson(const QJsonObject &p_json,
+                                                  const NodeIdentifier &p_parentId) const {
+  NodeInfo info;
+  info.id.notebookId = p_parentId.notebookId;
+
+  const QString name = p_json.value(QStringLiteral("name")).toString();
+  info.name = name;
+  if (p_parentId.relativePath.isEmpty()) {
+    info.id.relativePath = name;
+  } else {
+    info.id.relativePath = p_parentId.relativePath + QLatin1Char('/') + name;
+  }
+
+  const QJsonValue createdUtc = p_json.value(QStringLiteral("createdUtc"));
+  if (createdUtc.isDouble()) {
+    auto createdMs = static_cast<qint64>(createdUtc.toDouble());
+    info.createdTimeUtc = QDateTime::fromMSecsSinceEpoch(createdMs, Qt::UTC);
+  }
+
+  const QJsonValue modifiedUtc = p_json.value(QStringLiteral("modifiedUtc"));
+  if (modifiedUtc.isDouble()) {
+    auto modifiedMs = static_cast<qint64>(modifiedUtc.toDouble());
+    info.modifiedTimeUtc = QDateTime::fromMSecsSinceEpoch(modifiedMs, Qt::UTC);
+  }
+
+  QJsonArray tagsArray = p_json.value(QStringLiteral("tags")).toArray();
+  for (const QJsonValue &tagVal : tagsArray) {
+    info.tags.append(tagVal.toString());
+  }
+
+  QJsonObject metadata = p_json.value(QStringLiteral("metadata")).toObject();
+  if (!metadata.isEmpty()) {
+    info.backgroundColor = metadata.value(QStringLiteral("backgroundColor")).toString();
+    info.borderColor = metadata.value(QStringLiteral("borderColor")).toString();
+    info.textColor = metadata.value(QStringLiteral("textColor")).toString();
+  }
+
+  return info;
+}
 
 QModelIndex NotebookNodeModel::index(int p_row, int p_column, const QModelIndex &p_parent) const {
-  if (!m_notebook || p_row < 0 || p_column < 0) {
+  if (m_notebookId.isEmpty() || p_row < 0 || p_column < 0) {
     return QModelIndex();
   }
 
-  Node *parentNode = nodeFromIndex(p_parent);
-  if (!parentNode) {
-    // Root level - get from notebook root
-    auto rootNode = m_notebook->getRootNode().data();
-    if (!rootNode) {
-      return QModelIndex();
-    }
-    const auto &children = rootNode->getChildrenRef();
-    if (p_row >= children.size()) {
-      return QModelIndex();
-    }
-    return createIndex(p_row, p_column, children[p_row].data());
-  }
-
-  // Non-root level
-  const auto &children = parentNode->getChildrenRef();
-  if (p_row >= children.size()) {
+  NodeIdentifier parentId = p_parent.isValid() ? nodeIdFromIndex(p_parent) : rootNodeId();
+  auto childrenIt = m_childrenCache.find(parentId);
+  if (childrenIt == m_childrenCache.end() || p_row >= childrenIt->size()) {
     return QModelIndex();
   }
-  return createIndex(p_row, p_column, children[p_row].data());
+
+  const NodeIdentifier &childId = childrenIt->at(p_row);
+  return createIndex(p_row, p_column, indexIdForNode(childId));
 }
 
 QModelIndex NotebookNodeModel::parent(const QModelIndex &p_child) const {
@@ -64,35 +210,37 @@ QModelIndex NotebookNodeModel::parent(const QModelIndex &p_child) const {
     return QModelIndex();
   }
 
-  Node *childNode = nodeFromIndex(p_child);
-  if (!childNode) {
+  NodeIdentifier childId = nodeIdFromIndex(p_child);
+  if (!childId.isValid() || childId.isRoot()) {
     return QModelIndex();
   }
 
-  Node *parentNode = childNode->getParent();
-  if (!parentNode || parentNode->isRoot()) {
+  // Get parent path
+  QString parentPath = childId.parentPath();
+  NodeIdentifier parentId;
+  parentId.notebookId = m_notebookId;
+  parentId.relativePath = parentPath;
+  if (parentId.isRoot()) {
     // Parent is root, which is invisible
     return QModelIndex();
   }
 
-  // Find the row of parent within grandparent
-  Node *grandParent = parentNode->getParent();
-  if (!grandParent) {
+  // Find grandparent to determine row of parent
+  QString grandParentPath = parentId.parentPath();
+  NodeIdentifier grandParentId;
+  grandParentId.notebookId = m_notebookId;
+  grandParentId.relativePath = grandParentPath;
+
+  int row = childRow(grandParentId, parentId);
+  if (row < 0) {
     return QModelIndex();
   }
 
-  const auto &siblings = grandParent->getChildrenRef();
-  for (int i = 0; i < siblings.size(); ++i) {
-    if (siblings[i].data() == parentNode) {
-      return createIndex(i, 0, parentNode);
-    }
-  }
-
-  return QModelIndex();
+  return createIndex(row, 0, indexIdForNode(parentId));
 }
 
 int NotebookNodeModel::rowCount(const QModelIndex &p_parent) const {
-  if (!m_notebook) {
+  if (m_notebookId.isEmpty()) {
     return 0;
   }
 
@@ -100,30 +248,13 @@ int NotebookNodeModel::rowCount(const QModelIndex &p_parent) const {
     return 0;
   }
 
-  Node *parentNode = nodeFromIndex(p_parent);
-  if (!parentNode) {
-    // Root level
-    auto rootNode = m_notebook->getRootNode().data();
-    if (!rootNode) {
-      return 0;
-    }
-    // Only return count if fetched, for lazy loading
-    if (!isNodeFetched(rootNode)) {
-      return 0;
-    }
-    return rootNode->getChildrenCount();
-  }
-
-  if (!parentNode->isContainer()) {
+  ensureRoot();
+  NodeIdentifier parentId = p_parent.isValid() ? nodeIdFromIndex(p_parent) : rootNodeId();
+  if (!isNodeFetched(parentId)) {
     return 0;
   }
 
-  // Only return count if fetched
-  if (!isNodeFetched(parentNode)) {
-    return 0;
-  }
-
-  return parentNode->getChildrenCount();
+  return m_childrenCache.value(parentId).size();
 }
 
 int NotebookNodeModel::columnCount(const QModelIndex &p_parent) const {
@@ -136,53 +267,51 @@ QVariant NotebookNodeModel::data(const QModelIndex &p_index, int p_role) const {
     return QVariant();
   }
 
-  Node *node = nodeFromIndex(p_index);
-  if (!node) {
+  NodeIdentifier nodeId = nodeIdFromIndex(p_index);
+  auto nodeIt = m_nodeCache.find(nodeId);
+  if (nodeIt == m_nodeCache.end()) {
     return QVariant();
   }
+
+  const NodeInfo &info = nodeIt.value();
 
   switch (p_role) {
   case Qt::DisplayRole:
   case Qt::EditRole:
-    return node->getName();
+    return info.name;
 
   case Qt::DecorationRole:
-    return getNodeIcon(node);
+    return getNodeIcon(info);
 
   case Qt::ToolTipRole:
-    return node->fetchAbsolutePath();
+    return info.relativePath();
 
   case NodeInfoRole:
-    return QVariant::fromValue(nodeToNodeInfo(node));
+    return QVariant::fromValue(info);
 
   case IsFolderRole:
-    return node->isContainer();
+    return info.isFolder;
 
-  case NodeRole:
-    return QVariant::fromValue(static_cast<void *>(node));
-
-  case NodeTypeRole:
-    return static_cast<int>(node->getFlags());
-
-  case IsContainerRole:
-    return node->isContainer();
+  case NodeIdentifierRole:
+    return QVariant::fromValue(nodeId);
 
   case ChildCountRole:
-    return node->getChildrenCount();
+    return info.childCount;
 
   case PathRole:
-    return node->fetchAbsolutePath();
+    return info.relativePath();
 
   case ModifiedTimeRole:
-    return node->getModifiedTimeUtc();
+    return info.modifiedTimeUtc;
 
   case CreatedTimeRole:
-    return node->getCreatedTimeUtc();
+    return info.createdTimeUtc;
 
   default:
     return QVariant();
   }
 }
+
 Qt::ItemFlags NotebookNodeModel::flags(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
     return Qt::NoItemFlags;
@@ -190,99 +319,117 @@ Qt::ItemFlags NotebookNodeModel::flags(const QModelIndex &p_index) const {
 
   Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(p_index);
 
-  Node *node = nodeFromIndex(p_index);
-  if (node) {
-    // Enable drag
+  NodeIdentifier nodeId = nodeIdFromIndex(p_index);
+  auto nodeIt = m_nodeCache.find(nodeId);
+  if (nodeIt != m_nodeCache.end()) {
+    // Enable drag for all nodes
     defaultFlags |= Qt::ItemIsDragEnabled;
 
-    // Enable drop only on containers
-    if (node->isContainer()) {
+    // Enable drop only on folders
+    if (nodeIt.value().isFolder) {
       defaultFlags |= Qt::ItemIsDropEnabled;
     }
 
-    // Read-only nodes can't be edited
-    if (!node->isReadOnly()) {
-      defaultFlags |= Qt::ItemIsEditable;
-    }
+    // All nodes are editable (rename)
+    defaultFlags |= Qt::ItemIsEditable;
   }
 
   return defaultFlags;
 }
 
 bool NotebookNodeModel::hasChildren(const QModelIndex &p_parent) const {
-  if (!m_notebook) {
+  if (m_notebookId.isEmpty()) {
     return false;
   }
 
-  Node *parentNode = nodeFromIndex(p_parent);
-  if (!parentNode) {
-    // Root level - check notebook root
-    auto rootNode = m_notebook->getRootNode().data();
-    return rootNode && rootNode->getChildrenCount() > 0;
+  ensureRoot();
+  NodeIdentifier parentId = p_parent.isValid() ? nodeIdFromIndex(p_parent) : rootNodeId();
+  auto nodeIt = m_nodeCache.find(parentId);
+  if (nodeIt == m_nodeCache.end() || !nodeIt.value().isFolder) {
+    return !p_parent.isValid();
   }
 
-  if (!parentNode->isContainer()) {
+  if (!nodeIt.value().isFolder) {
     return false;
   }
 
-  return parentNode->getChildrenCount() > 0;
+  if (isNodeFetched(parentId)) {
+    return !m_childrenCache.value(parentId).isEmpty();
+  }
+
+  return true;
 }
 
 bool NotebookNodeModel::canFetchMore(const QModelIndex &p_parent) const {
-  if (!m_notebook) {
+  if (m_notebookId.isEmpty()) {
     return false;
   }
 
-  Node *parentNode = nodeFromIndex(p_parent);
-  if (!parentNode) {
-    // Root level
-    auto rootNode = m_notebook->getRootNode().data();
-    return rootNode && !isNodeFetched(rootNode) && rootNode->getChildrenCount() > 0;
+  ensureRoot();
+  NodeIdentifier parentId = p_parent.isValid() ? nodeIdFromIndex(p_parent) : rootNodeId();
+  auto nodeIt = m_nodeCache.find(parentId);
+  if (nodeIt == m_nodeCache.end()) {
+    return true;
   }
 
-  if (!parentNode->isContainer()) {
+  if (!nodeIt.value().isFolder) {
     return false;
   }
 
-  return !isNodeFetched(parentNode) && parentNode->getChildrenCount() > 0;
+  return !isNodeFetched(parentId);
 }
 
 void NotebookNodeModel::fetchMore(const QModelIndex &p_parent) {
-  if (!m_notebook) {
+  if (m_notebookId.isEmpty()) {
     return;
   }
 
-  Node *parentNode = nodeFromIndex(p_parent);
-  Node *targetNode = nullptr;
-
-  if (!parentNode) {
-    // Root level
-    targetNode = m_notebook->getRootNode().data();
-  } else {
-    targetNode = parentNode;
-  }
-
-  if (!targetNode || !targetNode->isContainer()) {
+  ensureRoot();
+  NodeIdentifier parentId = p_parent.isValid() ? nodeIdFromIndex(p_parent) : rootNodeId();
+  if (!parentId.isValid() || isNodeFetched(parentId)) {
     return;
   }
 
-  if (isNodeFetched(targetNode)) {
+  auto *notebookService = m_services.get<NotebookService>();
+  if (!notebookService) {
     return;
   }
 
-  // Load node if not loaded
-  if (!targetNode->isLoaded()) {
-    targetNode->load();
+  QJsonObject result =
+      notebookService->listFolderChildren(parentId.notebookId, parentId.relativePath);
+  QVector<NodeInfo> children = parseChildrenFromJson(result, parentId);
+
+  if (!children.isEmpty()) {
+    beginInsertRows(p_parent, 0, children.size() - 1);
   }
 
-  int childCount = targetNode->getChildrenCount();
-  if (childCount > 0) {
-    beginInsertRows(p_parent, 0, childCount - 1);
-    markNodeFetched(targetNode);
+  QVector<NodeIdentifier> childIds;
+  childIds.reserve(children.size());
+  for (const NodeInfo &info : children) {
+    m_nodeCache.insert(info.id, info);
+    childIds.append(info.id);
+  }
+
+  m_childrenCache.insert(parentId, childIds);
+  auto parentInfoIt = m_nodeCache.find(parentId);
+  if (parentInfoIt != m_nodeCache.end()) {
+    parentInfoIt.value().childCount = childIds.size();
+  }
+  markNodeFetched(parentId);
+
+  if (!children.isEmpty()) {
     endInsertRows();
-  } else {
-    markNodeFetched(targetNode);
   }
+}
+QIcon NotebookNodeModel::getNodeIcon(const NodeInfo &p_info) const {
+  auto *themeService = m_services.get<ThemeService>();
+  if (!themeService) {
+    return QIcon();
+  }
+
+  QString iconName = p_info.isFolder ? QStringLiteral("folder_node.svg")
+                                     : QStringLiteral("file_node.svg");
+  return IconUtils::fetchIcon(themeService->getIconFile(iconName));
 }
 
 Qt::DropActions NotebookNodeModel::supportedDropActions() const {
@@ -303,10 +450,10 @@ QMimeData *NotebookNodeModel::mimeData(const QModelIndexList &p_indexes) const {
 
   for (const QModelIndex &index : p_indexes) {
     if (index.isValid()) {
-      Node *node = nodeFromIndex(index);
-      if (node) {
-        // Store node pointer as quintptr
-        stream << reinterpret_cast<quintptr>(node);
+      NodeIdentifier nodeId = nodeIdFromIndex(index);
+      if (nodeId.isValid()) {
+        // Serialize NodeIdentifier: notebookId + relativePath
+        stream << nodeId.notebookId << nodeId.relativePath;
       }
     }
   }
@@ -329,27 +476,26 @@ bool NotebookNodeModel::dropMimeData(const QMimeData *p_data, Qt::DropAction p_a
     return false;
   }
 
-  Node *targetNode = nodeFromIndex(p_parent);
-  if (!targetNode) {
-    // Dropping on root
-    targetNode = m_notebook->getRootNode().data();
-  }
+  NodeIdentifier targetId = p_parent.isValid() ? nodeIdFromIndex(p_parent) : rootNodeId();
 
-  if (!targetNode || !targetNode->isContainer()) {
+  auto nodeIt = m_nodeCache.find(targetId);
+  if (nodeIt == m_nodeCache.end() || !nodeIt.value().isFolder) {
     return false;
   }
 
-  // Decode the dragged nodes
+  // Decode the dragged node identifiers
   QByteArray encodedData = p_data->data(c_nodeMimeType);
   QDataStream stream(&encodedData, QIODevice::ReadOnly);
 
-  QList<Node *> draggedNodes;
+  QList<NodeIdentifier> draggedNodes;
   while (!stream.atEnd()) {
-    quintptr nodePtr;
-    stream >> nodePtr;
-    Node *node = reinterpret_cast<Node *>(nodePtr);
-    if (node) {
-      draggedNodes.append(node);
+    QString notebookId, relativePath;
+    stream >> notebookId >> relativePath;
+    NodeIdentifier nodeId;
+    nodeId.notebookId = notebookId;
+    nodeId.relativePath = relativePath;
+    if (nodeId.isValid()) {
+      draggedNodes.append(nodeId);
     }
   }
 
@@ -361,72 +507,111 @@ bool NotebookNodeModel::dropMimeData(const QMimeData *p_data, Qt::DropAction p_a
   return false;
 }
 
-Node *NotebookNodeModel::nodeFromIndex(const QModelIndex &p_index) const {
+NodeIdentifier NotebookNodeModel::nodeIdFromIndex(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
-    return nullptr;
+    return NodeIdentifier();
   }
-  return static_cast<Node *>(p_index.internalPointer());
+
+  return nodeIdForIndexId(p_index.internalId());
 }
 
-QModelIndex NotebookNodeModel::indexFromNode(Node *p_node) const {
-  if (!p_node || !m_notebook) {
+QModelIndex NotebookNodeModel::indexFromNodeId(const NodeIdentifier &p_nodeId) const {
+  if (!p_nodeId.isValid() || m_notebookId.isEmpty()) {
     return QModelIndex();
   }
 
-  if (p_node->isRoot()) {
+  if (p_nodeId.isRoot()) {
     return QModelIndex();
   }
 
-  Node *parent = p_node->getParent();
-  if (!parent) {
+  // Get parent to find the row
+  QString parentPath = p_nodeId.parentPath();
+  NodeIdentifier parentId;
+  parentId.notebookId = m_notebookId;
+  parentId.relativePath = parentPath;
+
+  int row = childRow(parentId, p_nodeId);
+  if (row < 0) {
     return QModelIndex();
   }
 
-  const auto &siblings = parent->getChildrenRef();
-  for (int i = 0; i < siblings.size(); ++i) {
-    if (siblings[i].data() == p_node) {
-      return createIndex(i, 0, p_node);
-    }
+  return createIndex(row, 0, indexIdForNode(p_nodeId));
+}
+
+NodeInfo NotebookNodeModel::nodeInfoFromIndex(const QModelIndex &p_index) const {
+  if (!p_index.isValid()) {
+    return NodeInfo();
   }
 
-  return QModelIndex();
+  NodeIdentifier nodeId = nodeIdFromIndex(p_index);
+  auto nodeIt = m_nodeCache.find(nodeId);
+  if (nodeIt == m_nodeCache.end()) {
+    return NodeInfo();
+  }
+
+  return nodeIt.value();
 }
 
 void NotebookNodeModel::reload() {
   beginResetModel();
+  m_nodeCache.clear();
+  m_childrenCache.clear();
   m_fetchedNodes.clear();
-  if (m_notebook) {
-    m_notebook->reloadNodes();
-  }
+  m_indexIdCache.clear();
+  m_indexIdLookup.clear();
+  m_nextIndexId = 1;
   endResetModel();
 }
 
-void NotebookNodeModel::reloadNode(Node *p_node) {
-  if (!p_node) {
+void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     reload();
     return;
   }
 
-  QModelIndex nodeIndex = indexFromNode(p_node);
+  QModelIndex nodeIndex = indexFromNodeId(p_nodeId);
 
-  if (p_node->isContainer()) {
+  auto nodeIt = m_nodeCache.find(p_nodeId);
+  if (nodeIt != m_nodeCache.end() && nodeIt.value().isFolder) {
     // Remove existing children from model
-    int childCount = p_node->getChildrenCount();
-    if (childCount > 0 && isNodeFetched(p_node)) {
+    const auto children = m_childrenCache.value(p_nodeId);
+    int childCount = children.size();
+    if (childCount > 0 && isNodeFetched(p_nodeId)) {
       beginRemoveRows(nodeIndex, 0, childCount - 1);
-      m_fetchedNodes.remove(p_node);
+      // Remove children from cache
+      for (const NodeIdentifier &childId : children) {
+        removeNodeFromCaches(childId);
+      }
+      m_childrenCache.remove(p_nodeId);
+      m_fetchedNodes.remove(p_nodeId);
       endRemoveRows();
     }
 
-    // Reload from backend
-    p_node->load();
+    if (!m_notebookId.isEmpty()) {
+      auto *notebookService = m_services.get<NotebookService>();
+      if (notebookService) {
+        QJsonObject result =
+            notebookService->listFolderChildren(p_nodeId.notebookId, p_nodeId.relativePath);
+        QVector<NodeInfo> childrenInfo = parseChildrenFromJson(result, p_nodeId);
+        QVector<NodeIdentifier> childIds;
+        childIds.reserve(childrenInfo.size());
+        for (const NodeInfo &info : childrenInfo) {
+          m_nodeCache.insert(info.id, info);
+          childIds.append(info.id);
+        }
+        m_childrenCache.insert(p_nodeId, childIds);
+        nodeIt.value().childCount = childIds.size();
+      }
+    }
 
     // Re-add children
-    int newChildCount = p_node->getChildrenCount();
+    int newChildCount = m_childrenCache.value(p_nodeId).size();
     if (newChildCount > 0) {
       beginInsertRows(nodeIndex, 0, newChildCount - 1);
-      markNodeFetched(p_node);
+      markNodeFetched(p_nodeId);
       endInsertRows();
+    } else {
+      markNodeFetched(p_nodeId);
     }
   }
 
@@ -434,83 +619,13 @@ void NotebookNodeModel::reloadNode(Node *p_node) {
   emit dataChanged(nodeIndex, nodeIndex);
 }
 
-void NotebookNodeModel::nodeDataChanged(Node *p_node) {
-  if (!p_node) {
+void NotebookNodeModel::nodeDataChanged(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
-  QModelIndex nodeIndex = indexFromNode(p_node);
+  QModelIndex nodeIndex = indexFromNodeId(p_nodeId);
   if (nodeIndex.isValid()) {
     emit dataChanged(nodeIndex, nodeIndex);
   }
-}
-
-bool NotebookNodeModel::isNodeFetched(Node *p_node) const {
-  return m_fetchedNodes.contains(p_node);
-}
-
-void NotebookNodeModel::markNodeFetched(Node *p_node) { m_fetchedNodes.insert(p_node); }
-
-QVector<QSharedPointer<Node>> NotebookNodeModel::getNodeChildren(Node *p_node) const {
-  if (!p_node) {
-    return {};
-  }
-  return p_node->getChildren();
-}
-
-QIcon NotebookNodeModel::getNodeIcon(Node *p_node) const {
-  if (!p_node) {
-    return QIcon();
-  }
-
-  // Use the icon utility from the existing codebase
-  const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-  QString iconName;
-
-  if (p_node->isContainer()) {
-    iconName = QStringLiteral("folder_node.svg");
-  } else if (p_node->hasContent()) {
-    iconName = QStringLiteral("file_node.svg");
-  } else {
-    iconName = QStringLiteral("file_node.svg");
-  }
-
-  return IconUtils::fetchIcon(themeMgr.getIconFile(iconName));
-}
-
-NodeInfo NotebookNodeModel::nodeToNodeInfo(Node *p_node) const {
-  NodeInfo info;
-  if (!p_node) {
-    return info;
-  }
-
-  auto *notebook = p_node->getNotebook();
-  if (notebook) {
-    info.notebookId = QString::number(notebook->getId());
-  }
-
-  if (p_node->isRoot()) {
-    info.relativePath = QString();
-  } else {
-    // Get path relative to notebook root
-    QString absPath = p_node->fetchAbsolutePath();
-    QString rootPath = notebook ? notebook->getRootFolderAbsolutePath() : QString();
-    if (!rootPath.isEmpty() && absPath.startsWith(rootPath)) {
-      info.relativePath = absPath.mid(rootPath.length());
-      if (info.relativePath.startsWith(QLatin1Char('/'))) {
-        info.relativePath = info.relativePath.mid(1);
-      }
-    } else {
-      info.relativePath = p_node->getName();
-    }
-  }
-
-  info.isFolder = p_node->isContainer();
-  info.name = p_node->getName();
-  info.createdTimeUtc = p_node->getCreatedTimeUtc();
-  info.modifiedTimeUtc = p_node->getModifiedTimeUtc();
-  info.childCount = p_node->isContainer() ? p_node->getChildrenCount() : 0;
-  info.tags = p_node->getTags();
-
-  return info;
 }

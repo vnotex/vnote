@@ -5,9 +5,11 @@
 #include <QSharedPointer>
 #include <QTreeView>
 
+#include <nodeinfo.h>
+
 namespace vnotex {
 
-class Node;
+
 class NotebookNodeController;
 struct FileOpenParameters;
 
@@ -24,14 +26,14 @@ public:
   void setController(NotebookNodeController *p_controller);
   NotebookNodeController *controller() const;
 
-  // Selection helpers
-  Node *currentNode() const;
-  QList<Node *> selectedNodes() const;
+  // Selection helpers (using NodeIdentifier instead of Node*)
+  NodeIdentifier currentNodeId() const;
+  QList<NodeIdentifier> selectedNodeIds() const;
 
   // Select and navigate to a node
-  void selectNode(Node *p_node);
-  void expandToNode(Node *p_node);
-  void scrollToNode(Node *p_node);
+  void selectNode(const NodeIdentifier &p_nodeId);
+  void expandToNode(const NodeIdentifier &p_nodeId);
+  void scrollToNode(const NodeIdentifier &p_nodeId);
 
   // Expand/collapse helpers
   void expandAll();
@@ -39,13 +41,13 @@ public:
 
 signals:
   // Emitted when a node is activated (double-click or Enter)
-  void nodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
+  void nodeActivated(const NodeIdentifier &p_nodeId, const QSharedPointer<FileOpenParameters> &p_paras);
 
   // Emitted when selection changes
-  void nodeSelectionChanged(const QList<Node *> &p_nodes);
+  void nodeSelectionChanged(const QList<NodeIdentifier> &p_nodeIds);
 
   // Emitted when context menu is requested
-  void contextMenuRequested(Node *p_node, const QPoint &p_globalPos);
+  void contextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos);
 
 protected:
   // Event handlers
@@ -66,11 +68,14 @@ private slots:
   void onItemActivated(const QModelIndex &p_index);
 
 private:
-  // Get Node from model index
-  Node *nodeFromIndex(const QModelIndex &p_index) const;
+  // Get NodeIdentifier from model index
+  NodeIdentifier nodeIdFromIndex(const QModelIndex &p_index) const;
 
-  // Get model index from Node
-  QModelIndex indexFromNode(Node *p_node) const;
+  // Get NodeInfo from model index (for isFolder checks)
+  NodeInfo nodeInfoFromIndex(const QModelIndex &p_index) const;
+
+  // Get model index from NodeIdentifier
+  QModelIndex indexFromNodeId(const NodeIdentifier &p_nodeId) const;
 
   // Setup initial configuration
   void setupView();

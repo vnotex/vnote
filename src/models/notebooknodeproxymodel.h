@@ -3,9 +3,9 @@
 
 #include <QSortFilterProxyModel>
 
-namespace vnotex {
+#include <core/nodeinfo.h>
 
-class Node;
+namespace vnotex {
 
 // A QSortFilterProxyModel for sorting and filtering notebook nodes.
 // Supports filtering by node type (folder/note) and name pattern.
@@ -32,8 +32,11 @@ public:
   void setNameFilter(const QString &p_pattern);
   QString nameFilter() const;
 
-  // Helper to get Node from proxy index
-  Node *nodeFromIndex(const QModelIndex &p_index) const;
+  // Helper to get NodeIdentifier from proxy index
+  NodeIdentifier nodeIdFromIndex(const QModelIndex &p_index) const;
+
+  // Helper to get NodeInfo from proxy index
+  NodeInfo nodeInfoFromIndex(const QModelIndex &p_index) const;
 
 protected:
   bool filterAcceptsRow(int p_sourceRow, const QModelIndex &p_sourceParent) const override;

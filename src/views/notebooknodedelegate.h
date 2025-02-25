@@ -3,9 +3,9 @@
 
 #include <QStyledItemDelegate>
 
-namespace vnotex {
+#include <core/nodeinfo.h>
 
-class Node;
+namespace vnotex {
 
 // A QStyledItemDelegate for custom rendering of notebook nodes.
 // Handles visual styling including:
@@ -31,16 +31,19 @@ public:
 
 private:
   // Paint the node content
-  void paintNode(QPainter *p_painter, const QStyleOptionViewItem &p_option, Node *p_node) const;
+  void paintNode(QPainter *p_painter, const QStyleOptionViewItem &p_option,
+                 const NodeInfo &p_nodeInfo) const;
 
   // Get background color for a node (from NodeVisual)
-  QColor getNodeBackgroundColor(Node *p_node, const QStyleOptionViewItem &p_option) const;
+  QColor getNodeBackgroundColor(const NodeInfo &p_nodeInfo,
+                                const QStyleOptionViewItem &p_option) const;
 
   // Get text color for a node (from NodeVisual)
-  QColor getNodeTextColor(Node *p_node, const QStyleOptionViewItem &p_option) const;
+  QColor getNodeTextColor(const NodeInfo &p_nodeInfo,
+                          const QStyleOptionViewItem &p_option) const;
 
   // Get icon for node
-  QIcon getNodeIcon(Node *p_node) const;
+  QIcon getNodeIcon(const NodeInfo &p_nodeInfo) const;
 
   // Configuration
   bool m_showChildCount = true;

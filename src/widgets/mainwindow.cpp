@@ -641,6 +641,10 @@ void MainWindow::exportNotes() {
     return;
   }
 
+  // TODO: Migrate ExportDialog to use NodeIdentifier instead of Node*/Notebook*.
+  // NotebookExplorer2 now uses NodeIdentifier-based API.
+  // The following code is commented out until ExportDialog is migrated.
+  /*
   auto currentNotebook = m_notebookExplorer->currentNotebook().data();
   auto viewWindow = m_viewArea->getCurrentViewWindow();
   auto folderNode = m_notebookExplorer->currentExploredFolderNode();
@@ -661,6 +665,12 @@ void MainWindow::exportNotes() {
 
   // Let it be able to run at background.
   m_exportDialog->show();
+  */
+
+  // Temporary: Show message that export is being migrated
+  MessageBoxHelper::notify(MessageBoxHelper::Information,
+                           tr("Export functionality is being migrated to the new architecture."),
+                           this);
 }
 
 void MainWindow::showTips(const QString &p_message, int p_timeoutMilliseconds) {
