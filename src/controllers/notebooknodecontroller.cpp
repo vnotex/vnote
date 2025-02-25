@@ -6,24 +6,23 @@
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QInputDialog>
+#include <QJsonObject>
 #include <QMenu>
 #include <QMessageBox>
 #include <QUrl>
 
 #include <core/events.h>
 #include <core/fileopenparameters.h>
-#include <core/notebook/node.h>
-#include <core/notebook/notebook.h>
-#include <core/vnotex.h>
+#include <core/servicelocator.h>
+#include <core/services/notebookservice.h>
 #include <models/notebooknodemodel.h>
 #include <utils/pathutils.h>
 #include <views/notebooknodeview.h>
-#include <widgets/dialogs/nodeinfowidget.h>
-#include <widgets/messageboxhelper.h>
 
 using namespace vnotex;
 
-NotebookNodeController::NotebookNodeController(QObject *p_parent) : QObject(p_parent) {}
+NotebookNodeController::NotebookNodeController(ServiceLocator &p_services, QObject *p_parent)
+    : QObject(p_parent), m_services(p_services) {}
 
 NotebookNodeController::~NotebookNodeController() {}
 
@@ -35,121 +34,160 @@ void NotebookNodeController::setView(NotebookNodeView *p_view) { m_view = p_view
 
 NotebookNodeView *NotebookNodeController::view() const { return m_view; }
 
-QSharedPointer<Notebook> NotebookNodeController::currentNotebook() const {
+QString NotebookNodeController::currentNotebookId() const {
   if (m_model) {
-    return m_model->getNotebook();
+    return m_model->getNotebookId();
   }
-  return nullptr;
+  return QString();
 }
 
-QMenu *NotebookNodeController::createContextMenu(Node *p_node, QWidget *p_parent) {
+QString NotebookNodeController::buildAbsolutePath(const NodeIdentifier &p_nodeId) const {
+  if (!p_nodeId.isValid()) {
+    return QString();
+  }
+
+  // Get notebook root path from service
+  auto *notebookService = m_services.get<NotebookService>();
+  QJsonObject config = notebookService->getNotebookConfig(p_nodeId.notebookId);
+  QString rootPath = config.value(QStringLiteral("root_folder")).toString();
+
+  if (rootPath.isEmpty()) {
+    return QString();
+  }
+
+  if (p_nodeId.relativePath.isEmpty()) {
+    return rootPath;
+  }
+
+  return PathUtils::concatenateFilePath(rootPath, p_nodeId.relativePath);
+}
+
+NodeInfo NotebookNodeController::getNodeInfo(const NodeIdentifier &p_nodeId) const {
+  if (m_model && p_nodeId.isValid()) {
+    QModelIndex idx = m_model->indexFromNodeId(p_nodeId);
+    if (idx.isValid()) {
+      return m_model->nodeInfoFromIndex(idx);
+    }
+  }
+  return NodeInfo();
+}
+
+NodeIdentifier NotebookNodeController::getParentFolder(const NodeIdentifier &p_nodeId) const {
+  NodeIdentifier parentId;
+  parentId.notebookId = p_nodeId.notebookId;
+  parentId.relativePath = p_nodeId.parentPath();
+  return parentId;
+}
+
+QMenu *NotebookNodeController::createContextMenu(const NodeIdentifier &p_nodeId,
+                                                  QWidget *p_parent) {
   QMenu *menu = new QMenu(p_parent);
 
-  addNewActions(menu, p_node);
+  // Get node info to determine if it's a folder
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  bool isFolder = nodeInfo.isValid() ? nodeInfo.isFolder : true; // Default to folder for root
+
+  addNewActions(menu, p_nodeId, isFolder);
   menu->addSeparator();
-  addOpenActions(menu, p_node);
+  addOpenActions(menu, p_nodeId, isFolder);
   menu->addSeparator();
-  addEditActions(menu, p_node);
+  addEditActions(menu, p_nodeId, isFolder);
   menu->addSeparator();
-  addCopyMoveActions(menu, p_node);
+  addCopyMoveActions(menu, p_nodeId, isFolder);
   menu->addSeparator();
-  addImportExportActions(menu, p_node);
+  addImportExportActions(menu, p_nodeId, isFolder);
   menu->addSeparator();
-  addInfoActions(menu, p_node);
+  addInfoActions(menu, p_nodeId);
   menu->addSeparator();
-  addMiscActions(menu, p_node);
+  addMiscActions(menu, p_nodeId, isFolder);
 
   return menu;
 }
 
-void NotebookNodeController::addNewActions(QMenu *p_menu, Node *p_node) {
+void NotebookNodeController::addNewActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
+                                           bool p_isFolder) {
   // Determine target folder for new items
-  Node *targetFolder = p_node;
-  if (p_node && !p_node->isContainer()) {
-    targetFolder = p_node->getParent();
-  }
+  NodeIdentifier targetFolder = p_isFolder ? p_nodeId : getParentFolder(p_nodeId);
 
   auto *newNoteAction = p_menu->addAction(tr("New &Note"));
-  connect(newNoteAction, &QAction::triggered, this, [this, targetFolder]() {
-    newNote(targetFolder);
-  });
+  connect(newNoteAction, &QAction::triggered, this,
+          [this, targetFolder]() { newNote(targetFolder); });
 
   auto *newFolderAction = p_menu->addAction(tr("New &Folder"));
-  connect(newFolderAction, &QAction::triggered, this, [this, targetFolder]() {
-    newFolder(targetFolder);
-  });
+  connect(newFolderAction, &QAction::triggered, this,
+          [this, targetFolder]() { newFolder(targetFolder); });
 }
 
-void NotebookNodeController::addOpenActions(QMenu *p_menu, Node *p_node) {
-  if (!p_node) {
+void NotebookNodeController::addOpenActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
+                                            bool p_isFolder) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
   auto *openAction = p_menu->addAction(tr("&Open"));
-  connect(openAction, &QAction::triggered, this, [this, p_node]() { openNode(p_node); });
+  connect(openAction, &QAction::triggered, this, [this, p_nodeId]() { openNode(p_nodeId); });
 
-  if (p_node->hasContent()) {
+  if (!p_isFolder) {
     auto *openWithAction = p_menu->addAction(tr("Open With Default App"));
     connect(openWithAction, &QAction::triggered, this,
-            [this, p_node]() { openNodeWithDefaultApp(p_node); });
+            [this, p_nodeId]() { openNodeWithDefaultApp(p_nodeId); });
   }
 }
 
-void NotebookNodeController::addEditActions(QMenu *p_menu, Node *p_node) {
-  if (!p_node) {
+void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
+                                            bool p_isFolder) {
+  Q_UNUSED(p_isFolder);
+  if (!p_nodeId.isValid()) {
     return;
   }
 
-  if (!p_node->isReadOnly()) {
-    auto *renameAction = p_menu->addAction(tr("&Rename"));
-    connect(renameAction, &QAction::triggered, this, [this, p_node]() { renameNode(p_node); });
+  auto *renameAction = p_menu->addAction(tr("&Rename"));
+  connect(renameAction, &QAction::triggered, this, [this, p_nodeId]() { renameNode(p_nodeId); });
 
-    auto *deleteAction = p_menu->addAction(tr("&Delete"));
-    connect(deleteAction, &QAction::triggered, this, [this, p_node]() {
-      deleteNodes(QList<Node *>() << p_node);
-    });
+  auto *deleteAction = p_menu->addAction(tr("&Delete"));
+  connect(deleteAction, &QAction::triggered, this, [this, p_nodeId]() {
+    deleteNodes(QList<NodeIdentifier>() << p_nodeId);
+  });
 
-    auto *removeAction = p_menu->addAction(tr("Remove From Notebook"));
-    removeAction->setToolTip(tr("Remove from notebook but keep files on disk"));
-    connect(removeAction, &QAction::triggered, this, [this, p_node]() {
-      removeNodesFromNotebook(QList<Node *>() << p_node);
-    });
-  }
+  auto *removeAction = p_menu->addAction(tr("Remove From Notebook"));
+  removeAction->setToolTip(tr("Remove from notebook but keep files on disk"));
+  connect(removeAction, &QAction::triggered, this, [this, p_nodeId]() {
+    removeNodesFromNotebook(QList<NodeIdentifier>() << p_nodeId);
+  });
 }
 
-void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, Node *p_node) {
-  if (!p_node) {
+void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
+                                                bool p_isFolder) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
   auto *copyAction = p_menu->addAction(tr("&Copy"));
   connect(copyAction, &QAction::triggered, this,
-          [this, p_node]() { copyNodes(QList<Node *>() << p_node); });
+          [this, p_nodeId]() { copyNodes(QList<NodeIdentifier>() << p_nodeId); });
 
-  if (!p_node->isReadOnly()) {
-    auto *cutAction = p_menu->addAction(tr("Cu&t"));
-    connect(cutAction, &QAction::triggered, this,
-            [this, p_node]() { cutNodes(QList<Node *>() << p_node); });
-  }
+  auto *cutAction = p_menu->addAction(tr("Cu&t"));
+  connect(cutAction, &QAction::triggered, this,
+          [this, p_nodeId]() { cutNodes(QList<NodeIdentifier>() << p_nodeId); });
 
   // Paste only available on containers
-  if (p_node->isContainer() && canPaste()) {
+  if (p_isFolder && canPaste()) {
     auto *pasteAction = p_menu->addAction(tr("&Paste"));
-    connect(pasteAction, &QAction::triggered, this, [this, p_node]() { pasteNodes(p_node); });
+    connect(pasteAction, &QAction::triggered, this,
+            [this, p_nodeId]() { pasteNodes(p_nodeId); });
   }
 
   auto *duplicateAction = p_menu->addAction(tr("D&uplicate"));
-  connect(duplicateAction, &QAction::triggered, this, [this, p_node]() { duplicateNode(p_node); });
+  connect(duplicateAction, &QAction::triggered, this,
+          [this, p_nodeId]() { duplicateNode(p_nodeId); });
 }
 
-void NotebookNodeController::addImportExportActions(QMenu *p_menu, Node *p_node) {
+void NotebookNodeController::addImportExportActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
+                                                    bool p_isFolder) {
   // Import actions - only on containers
-  Node *targetFolder = p_node;
-  if (p_node && !p_node->isContainer()) {
-    targetFolder = p_node->getParent();
-  }
+  NodeIdentifier targetFolder = p_isFolder ? p_nodeId : getParentFolder(p_nodeId);
 
-  if (targetFolder) {
+  if (targetFolder.isValid()) {
     auto *importFilesAction = p_menu->addAction(tr("Import &Files"));
     connect(importFilesAction, &QAction::triggered, this,
             [this, targetFolder]() { importFiles(targetFolder); });
@@ -159,99 +197,100 @@ void NotebookNodeController::addImportExportActions(QMenu *p_menu, Node *p_node)
             [this, targetFolder]() { importFolder(targetFolder); });
   }
 
-  if (p_node) {
+  if (p_nodeId.isValid()) {
     auto *exportAction = p_menu->addAction(tr("&Export"));
-    connect(exportAction, &QAction::triggered, this, [this, p_node]() { exportNode(p_node); });
+    connect(exportAction, &QAction::triggered, this,
+            [this, p_nodeId]() { exportNode(p_nodeId); });
   }
 }
 
-void NotebookNodeController::addInfoActions(QMenu *p_menu, Node *p_node) {
-  if (!p_node) {
+void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
   auto *copyPathAction = p_menu->addAction(tr("Copy &Path"));
-  connect(copyPathAction, &QAction::triggered, this, [this, p_node]() { copyNodePath(p_node); });
+  connect(copyPathAction, &QAction::triggered, this,
+          [this, p_nodeId]() { copyNodePath(p_nodeId); });
 
   auto *locateAction = p_menu->addAction(tr("Open &Location"));
   connect(locateAction, &QAction::triggered, this,
-          [this, p_node]() { locateNodeInFileManager(p_node); });
+          [this, p_nodeId]() { locateNodeInFileManager(p_nodeId); });
 
   auto *propertiesAction = p_menu->addAction(tr("P&roperties"));
   connect(propertiesAction, &QAction::triggered, this,
-          [this, p_node]() { showNodeProperties(p_node); });
+          [this, p_nodeId]() { showNodeProperties(p_nodeId); });
 }
 
-void NotebookNodeController::addMiscActions(QMenu *p_menu, Node *p_node) {
-  if (p_node && p_node->isContainer()) {
+void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
+                                            bool p_isFolder) {
+  if (p_isFolder) {
     auto *sortAction = p_menu->addAction(tr("&Sort"));
-    connect(sortAction, &QAction::triggered, this, [this, p_node]() { sortNodes(p_node); });
+    connect(sortAction, &QAction::triggered, this,
+            [this, p_nodeId]() { sortNodes(p_nodeId); });
   }
 
   auto *reloadAction = p_menu->addAction(tr("Re&load"));
-  connect(reloadAction, &QAction::triggered, this, [this, p_node]() { reloadNode(p_node); });
+  connect(reloadAction, &QAction::triggered, this,
+          [this, p_nodeId]() { reloadNode(p_nodeId); });
 
-  if (p_node) {
+  if (p_nodeId.isValid()) {
     auto *pinAction = p_menu->addAction(tr("Pin to &Quick Access"));
     connect(pinAction, &QAction::triggered, this,
-            [this, p_node]() { pinNodeToQuickAccess(p_node); });
+            [this, p_nodeId]() { pinNodeToQuickAccess(p_nodeId); });
 
     auto *tagAction = p_menu->addAction(tr("Manage &Tags"));
-    connect(tagAction, &QAction::triggered, this, [this, p_node]() { manageNodeTags(p_node); });
+    connect(tagAction, &QAction::triggered, this,
+            [this, p_nodeId]() { manageNodeTags(p_nodeId); });
   }
 }
 
-void NotebookNodeController::newNote(Node *p_parentNode) {
-  auto notebook = currentNotebook();
-  if (!notebook) {
+void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {
+  QString notebookId = p_parentId.isValid() ? p_parentId.notebookId : currentNotebookId();
+  if (notebookId.isEmpty()) {
     return;
   }
 
-  Node *targetFolder = p_parentNode;
-  if (!targetFolder) {
-    targetFolder = notebook->getRootNode().data();
-  }
-
-  if (!targetFolder->isContainer()) {
-    targetFolder = targetFolder->getParent();
-  }
+  QString folderPath = p_parentId.relativePath;
 
   bool ok;
-  QString name = QInputDialog::getText(m_view, tr("New Note"), tr("Note name:"),
-                                       QLineEdit::Normal, tr("new_note.md"), &ok);
+  QString name = QInputDialog::getText(m_view, tr("New Note"), tr("Note name:"), QLineEdit::Normal,
+                                       tr("new_note.md"), &ok);
   if (!ok || name.isEmpty()) {
     return;
   }
 
   try {
-    auto newNode = notebook->newNode(targetFolder, Node::Flag::Content, name);
-    if (newNode && m_model) {
-      m_model->reloadNode(targetFolder);
+    auto *notebookService = m_services.get<NotebookService>();
+    QString newFilePath = notebookService->createFile(notebookId, folderPath, name);
+
+    if (!newFilePath.isEmpty() && m_model) {
+      m_model->reloadNode(p_parentId);
+
+      // Select the new note
+      NodeIdentifier newNodeId;
+      newNodeId.notebookId = notebookId;
+      newNodeId.relativePath = newFilePath;
+
       if (m_view) {
-        m_view->selectNode(newNode.data());
+        m_view->selectNode(newNodeId);
       }
+
       // Open the new note
-      openNode(newNode.data());
+      openNode(newNodeId);
     }
   } catch (const std::exception &e) {
     QMessageBox::critical(m_view, tr("Error"), tr("Failed to create note: %1").arg(e.what()));
   }
 }
 
-void NotebookNodeController::newFolder(Node *p_parentNode) {
-  auto notebook = currentNotebook();
-  if (!notebook) {
+void NotebookNodeController::newFolder(const NodeIdentifier &p_parentId) {
+  QString notebookId = p_parentId.isValid() ? p_parentId.notebookId : currentNotebookId();
+  if (notebookId.isEmpty()) {
     return;
   }
 
-  Node *targetFolder = p_parentNode;
-  if (!targetFolder) {
-    targetFolder = notebook->getRootNode().data();
-  }
-
-  if (!targetFolder->isContainer()) {
-    targetFolder = targetFolder->getParent();
-  }
+  QString parentPath = p_parentId.relativePath;
 
   bool ok;
   QString name = QInputDialog::getText(m_view, tr("New Folder"), tr("Folder name:"),
@@ -261,11 +300,19 @@ void NotebookNodeController::newFolder(Node *p_parentNode) {
   }
 
   try {
-    auto newNode = notebook->newNode(targetFolder, Node::Flag::Container, name);
-    if (newNode && m_model) {
-      m_model->reloadNode(targetFolder);
+    auto *notebookService = m_services.get<NotebookService>();
+    QString newFolderPath = notebookService->createFolder(notebookId, parentPath, name);
+
+    if (!newFolderPath.isEmpty() && m_model) {
+      m_model->reloadNode(p_parentId);
+
+      // Select the new folder
+      NodeIdentifier newNodeId;
+      newNodeId.notebookId = notebookId;
+      newNodeId.relativePath = newFolderPath;
+
       if (m_view) {
-        m_view->selectNode(newNode.data());
+        m_view->selectNode(newNodeId);
       }
     }
   } catch (const std::exception &e) {
@@ -273,42 +320,51 @@ void NotebookNodeController::newFolder(Node *p_parentNode) {
   }
 }
 
-void NotebookNodeController::openNode(Node *p_node) {
-  if (!p_node) {
+void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
   auto paras = QSharedPointer<FileOpenParameters>::create();
-  emit nodeActivated(p_node, paras);
+  emit nodeActivated(p_nodeId, paras);
 }
 
-void NotebookNodeController::openNodeWithDefaultApp(Node *p_node) {
-  if (!p_node || !p_node->hasContent()) {
+void NotebookNodeController::openNodeWithDefaultApp(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
-  QString path = p_node->fetchAbsolutePath();
-  QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  if (nodeInfo.isFolder) {
+    return;
+  }
+
+  QString path = buildAbsolutePath(p_nodeId);
+  if (!path.isEmpty()) {
+    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+  }
 }
 
-void NotebookNodeController::deleteNodes(const QList<Node *> &p_nodes) {
-  if (p_nodes.isEmpty()) {
+void NotebookNodeController::deleteNodes(const QList<NodeIdentifier> &p_nodeIds) {
+  if (p_nodeIds.isEmpty()) {
     return;
   }
 
-  if (!confirmDelete(p_nodes, false)) {
+  if (!confirmDelete(p_nodeIds, false)) {
     return;
   }
 
-  auto notebook = currentNotebook();
-  if (!notebook) {
-    return;
-  }
+  auto *notebookService = m_services.get<NotebookService>();
 
-  for (Node *node : p_nodes) {
-    notifyBeforeNodeOperation(node, QStringLiteral("delete"));
+  for (const NodeIdentifier &nodeId : p_nodeIds) {
+    notifyBeforeNodeOperation(nodeId, QStringLiteral("delete"));
     try {
-      notebook->moveNodeToRecycleBin(node);
+      NodeInfo nodeInfo = getNodeInfo(nodeId);
+      if (nodeInfo.isFolder) {
+        notebookService->deleteFolder(nodeId.notebookId, nodeId.relativePath);
+      } else {
+        notebookService->deleteFile(nodeId.notebookId, nodeId.relativePath);
+      }
     } catch (const std::exception &e) {
       QMessageBox::critical(m_view, tr("Error"), tr("Failed to delete: %1").arg(e.what()));
     }
@@ -319,69 +375,75 @@ void NotebookNodeController::deleteNodes(const QList<Node *> &p_nodes) {
   }
 }
 
-void NotebookNodeController::removeNodesFromNotebook(const QList<Node *> &p_nodes) {
-  if (p_nodes.isEmpty()) {
+void NotebookNodeController::removeNodesFromNotebook(const QList<NodeIdentifier> &p_nodeIds) {
+  if (p_nodeIds.isEmpty()) {
     return;
   }
 
   int ret = QMessageBox::question(
       m_view, tr("Remove from Notebook"),
-      tr("Remove %n node(s) from notebook? Files will be kept on disk.", "", p_nodes.size()),
+      tr("Remove %n node(s) from notebook? Files will be kept on disk.", "", p_nodeIds.size()),
       QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
   if (ret != QMessageBox::Yes) {
     return;
   }
 
-  auto notebook = currentNotebook();
-  if (!notebook) {
-    return;
-  }
-
-  for (Node *node : p_nodes) {
-    notifyBeforeNodeOperation(node, QStringLiteral("remove"));
-    try {
-      notebook->removeNode(node, false, true); // configOnly = true
-    } catch (const std::exception &e) {
-      QMessageBox::critical(m_view, tr("Error"), tr("Failed to remove: %1").arg(e.what()));
-    }
-  }
-
-  if (m_model) {
-    m_model->reload();
-  }
+  // TODO: Implement configOnly removal via NotebookService
+  // For now, just show not implemented
+  QMessageBox::information(m_view, tr("Remove"),
+                           tr("Remove from notebook (config only) not yet implemented."));
 }
 
-void NotebookNodeController::copyNodes(const QList<Node *> &p_nodes) {
-  m_clipboardNodes = p_nodes;
+void NotebookNodeController::copyNodes(const QList<NodeIdentifier> &p_nodeIds) {
+  m_clipboardNodes = p_nodeIds;
   m_isCut = false;
 }
 
-void NotebookNodeController::cutNodes(const QList<Node *> &p_nodes) {
-  m_clipboardNodes = p_nodes;
+void NotebookNodeController::cutNodes(const QList<NodeIdentifier> &p_nodeIds) {
+  m_clipboardNodes = p_nodeIds;
   m_isCut = true;
 }
 
-void NotebookNodeController::pasteNodes(Node *p_targetFolder) {
-  if (m_clipboardNodes.isEmpty() || !p_targetFolder || !p_targetFolder->isContainer()) {
+void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) {
+  if (m_clipboardNodes.isEmpty() || !p_targetFolderId.isValid()) {
     return;
   }
 
-  auto notebook = currentNotebook();
-  if (!notebook) {
+  NodeInfo targetInfo = getNodeInfo(p_targetFolderId);
+  if (!targetInfo.isFolder) {
     return;
   }
 
-  for (Node *node : m_clipboardNodes) {
+  auto *notebookService = m_services.get<NotebookService>();
+
+  for (const NodeIdentifier &nodeId : m_clipboardNodes) {
     if (m_isCut) {
-      notifyBeforeNodeOperation(node, QStringLiteral("move"));
+      notifyBeforeNodeOperation(nodeId, QStringLiteral("move"));
     }
     try {
-      auto srcNode = node->sharedFromThis();
-      notebook->copyNodeAsChildOf(srcNode, p_targetFolder, m_isCut);
+      NodeInfo nodeInfo = getNodeInfo(nodeId);
+      if (m_isCut) {
+        // Move operation
+        if (nodeInfo.isFolder) {
+          notebookService->moveFolder(nodeId.notebookId, nodeId.relativePath,
+                                     p_targetFolderId.relativePath);
+        } else {
+          notebookService->moveFile(nodeId.notebookId, nodeId.relativePath,
+                                   p_targetFolderId.relativePath);
+        }
+      } else {
+        // Copy operation
+        if (nodeInfo.isFolder) {
+          notebookService->copyFolder(nodeId.notebookId, nodeId.relativePath,
+                                     p_targetFolderId.relativePath, nodeInfo.name);
+        } else {
+          notebookService->copyFile(nodeId.notebookId, nodeId.relativePath,
+                                   p_targetFolderId.relativePath, nodeInfo.name);
+        }
+      }
     } catch (const std::exception &e) {
-      QMessageBox::critical(m_view, tr("Error"),
-                            tr("Failed to paste: %1").arg(e.what()));
+      QMessageBox::critical(m_view, tr("Error"), tr("Failed to paste: %1").arg(e.what()));
     }
   }
 
@@ -391,196 +453,169 @@ void NotebookNodeController::pasteNodes(Node *p_targetFolder) {
   }
 
   if (m_model) {
-    m_model->reloadNode(p_targetFolder);
+    m_model->reloadNode(p_targetFolderId);
   }
 }
 
-void NotebookNodeController::duplicateNode(Node *p_node) {
-  if (!p_node) {
+void NotebookNodeController::duplicateNode(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
-  auto notebook = currentNotebook();
-  if (!notebook) {
-    return;
-  }
-
-  Node *parent = p_node->getParent();
-  if (!parent) {
-    return;
-  }
-
-  try {
-    auto srcNode = p_node->sharedFromThis();
-    auto newNode = notebook->copyNodeAsChildOf(srcNode, parent, false);
-    if (newNode && m_model) {
-      m_model->reloadNode(parent);
-      if (m_view) {
-        m_view->selectNode(newNode.data());
-      }
-    }
-  } catch (const std::exception &e) {
-    QMessageBox::critical(m_view, tr("Error"), tr("Failed to duplicate: %1").arg(e.what()));
+  NodeIdentifier parentId = getParentFolder(p_nodeId);
+  if (!parentId.notebookId.isEmpty()) {
+    // Set clipboard and paste to same folder
+    copyNodes(QList<NodeIdentifier>() << p_nodeId);
+    pasteNodes(parentId);
+    m_clipboardNodes.clear();
   }
 }
 
-void NotebookNodeController::renameNode(Node *p_node) {
-  if (!p_node || p_node->isReadOnly()) {
+void NotebookNodeController::renameNode(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  if (!nodeInfo.isValid()) {
     return;
   }
 
   bool ok;
-  QString newName = QInputDialog::getText(m_view, tr("Rename"), tr("New name:"), QLineEdit::Normal,
-                                          p_node->getName(), &ok);
-  if (!ok || newName.isEmpty() || newName == p_node->getName()) {
+  QString newName =
+      QInputDialog::getText(m_view, tr("Rename"), tr("New name:"), QLineEdit::Normal,
+                            nodeInfo.name, &ok);
+  if (!ok || newName.isEmpty() || newName == nodeInfo.name) {
     return;
   }
 
-  if (!p_node->canRename(newName)) {
-    QMessageBox::warning(m_view, tr("Rename"),
-                         tr("Cannot rename to '%1'. Name may already exist or is invalid.")
-                             .arg(newName));
-    return;
-  }
-
-  notifyBeforeNodeOperation(p_node, QStringLiteral("rename"));
+  notifyBeforeNodeOperation(p_nodeId, QStringLiteral("rename"));
 
   try {
-    p_node->updateName(newName);
+    auto *notebookService = m_services.get<NotebookService>();
+    if (nodeInfo.isFolder) {
+      notebookService->renameFolder(p_nodeId.notebookId, p_nodeId.relativePath, newName);
+    } else {
+      notebookService->renameFile(p_nodeId.notebookId, p_nodeId.relativePath, newName);
+    }
+
     if (m_model) {
-      m_model->nodeDataChanged(p_node);
+      NodeIdentifier parentId = getParentFolder(p_nodeId);
+      m_model->reloadNode(parentId);
     }
   } catch (const std::exception &e) {
     QMessageBox::critical(m_view, tr("Error"), tr("Failed to rename: %1").arg(e.what()));
   }
 }
 
-void NotebookNodeController::moveNodes(const QList<Node *> &p_nodes, Node *p_targetFolder) {
-  cutNodes(p_nodes);
-  pasteNodes(p_targetFolder);
+void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &p_nodeIds,
+                                       const NodeIdentifier &p_targetFolderId) {
+  cutNodes(p_nodeIds);
+  pasteNodes(p_targetFolderId);
 }
 
-void NotebookNodeController::importFiles(Node *p_targetFolder) {
-  if (!p_targetFolder || !p_targetFolder->isContainer()) {
+void NotebookNodeController::importFiles(const NodeIdentifier &p_targetFolderId) {
+  if (!p_targetFolderId.isValid()) {
     return;
   }
 
-  QStringList files = QFileDialog::getOpenFileNames(m_view, tr("Import Files"),
-                                                    QString(), tr("All Files (*)"));
+  QStringList files =
+      QFileDialog::getOpenFileNames(m_view, tr("Import Files"), QString(), tr("All Files (*)"));
   if (files.isEmpty()) {
     return;
   }
 
-  auto notebook = currentNotebook();
-  if (!notebook) {
-    return;
-  }
-
-  for (const QString &file : files) {
-    try {
-      notebook->copyAsNode(p_targetFolder, Node::Flag::Content, file);
-    } catch (const std::exception &e) {
-      QMessageBox::critical(m_view, tr("Error"),
-                            tr("Failed to import '%1': %2").arg(file, e.what()));
-    }
-  }
-
-  if (m_model) {
-    m_model->reloadNode(p_targetFolder);
-  }
+  // TODO: Implement file import via NotebookService
+  QMessageBox::information(m_view, tr("Import"),
+                           tr("File import not yet implemented in new architecture."));
 }
 
-void NotebookNodeController::importFolder(Node *p_targetFolder) {
-  if (!p_targetFolder || !p_targetFolder->isContainer()) {
+void NotebookNodeController::importFolder(const NodeIdentifier &p_targetFolderId) {
+  if (!p_targetFolderId.isValid()) {
     return;
   }
 
-  QString folder =
-      QFileDialog::getExistingDirectory(m_view, tr("Import Folder"), QString());
+  QString folder = QFileDialog::getExistingDirectory(m_view, tr("Import Folder"), QString());
   if (folder.isEmpty()) {
     return;
   }
 
-  auto notebook = currentNotebook();
-  if (!notebook) {
-    return;
-  }
-
-  try {
-    notebook->copyAsNode(p_targetFolder, Node::Flag::Container, folder);
-    if (m_model) {
-      m_model->reloadNode(p_targetFolder);
-    }
-  } catch (const std::exception &e) {
-    QMessageBox::critical(m_view, tr("Error"), tr("Failed to import folder: %1").arg(e.what()));
-  }
+  // TODO: Implement folder import via NotebookService
+  QMessageBox::information(m_view, tr("Import"),
+                           tr("Folder import not yet implemented in new architecture."));
 }
 
-void NotebookNodeController::exportNode(Node *p_node) {
-  // TODO: Implement export functionality
-  // This would typically open an export dialog
-  Q_UNUSED(p_node);
+void NotebookNodeController::exportNode(const NodeIdentifier &p_nodeId) {
+  Q_UNUSED(p_nodeId);
   QMessageBox::information(m_view, tr("Export"), tr("Export functionality not yet implemented."));
 }
 
-void NotebookNodeController::showNodeProperties(Node *p_node) {
-  if (!p_node) {
+void NotebookNodeController::showNodeProperties(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
-  // Create a simple properties dialog
-  QString info;
-  info += tr("Name: %1\n").arg(p_node->getName());
-  info += tr("Path: %1\n").arg(p_node->fetchAbsolutePath());
-  info += tr("Type: %1\n").arg(p_node->isContainer() ? tr("Folder") : tr("Note"));
-  info += tr("Created: %1\n").arg(p_node->getCreatedTimeUtc().toLocalTime().toString());
-  info += tr("Modified: %1\n").arg(p_node->getModifiedTimeUtc().toLocalTime().toString());
-
-  if (p_node->isContainer()) {
-    info += tr("Children: %1\n").arg(p_node->getChildrenCount());
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  if (!nodeInfo.isValid()) {
+    return;
   }
 
-  QStringList tags = p_node->getTags();
-  if (!tags.isEmpty()) {
-    info += tr("Tags: %1\n").arg(tags.join(", "));
+  QString info;
+  info += tr("Name: %1\n").arg(nodeInfo.name);
+  info += tr("Path: %1\n").arg(buildAbsolutePath(p_nodeId));
+  info += tr("Type: %1\n").arg(nodeInfo.isFolder ? tr("Folder") : tr("Note"));
+  info += tr("Created: %1\n").arg(nodeInfo.createdTimeUtc.toLocalTime().toString());
+  info += tr("Modified: %1\n").arg(nodeInfo.modifiedTimeUtc.toLocalTime().toString());
+
+  if (nodeInfo.isFolder) {
+    info += tr("Children: %1\n").arg(nodeInfo.childCount);
+  }
+
+  if (!nodeInfo.tags.isEmpty()) {
+    info += tr("Tags: %1\n").arg(nodeInfo.tags.join(", "));
   }
 
   QMessageBox::information(m_view, tr("Properties"), info);
 }
 
-void NotebookNodeController::copyNodePath(Node *p_node) {
-  if (!p_node) {
+void NotebookNodeController::copyNodePath(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
-  QString path = p_node->fetchAbsolutePath();
-  QApplication::clipboard()->setText(path);
+  QString path = buildAbsolutePath(p_nodeId);
+  if (!path.isEmpty()) {
+    QApplication::clipboard()->setText(path);
+  }
 }
 
-void NotebookNodeController::locateNodeInFileManager(Node *p_node) {
-  if (!p_node) {
+void NotebookNodeController::locateNodeInFileManager(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
-  QString path = p_node->fetchAbsolutePath();
-  // Open the parent directory in file manager
-  QString dirPath = p_node->isContainer() ? path : PathUtils::parentDirPath(path);
+  QString path = buildAbsolutePath(p_nodeId);
+  if (path.isEmpty()) {
+    return;
+  }
+
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  QString dirPath = nodeInfo.isFolder ? path : PathUtils::parentDirPath(path);
   QDesktopServices::openUrl(QUrl::fromLocalFile(dirPath));
 }
 
-void NotebookNodeController::sortNodes(Node *p_parentNode) {
-  // TODO: Implement sort dialog
-  Q_UNUSED(p_parentNode);
+void NotebookNodeController::sortNodes(const NodeIdentifier &p_parentId) {
+  Q_UNUSED(p_parentId);
   QMessageBox::information(m_view, tr("Sort"), tr("Sort functionality not yet implemented."));
 }
 
-void NotebookNodeController::reloadNode(Node *p_node) {
-  if (p_node) {
+void NotebookNodeController::reloadNode(const NodeIdentifier &p_nodeId) {
+  if (p_nodeId.isValid()) {
     auto event = QSharedPointer<Event>::create();
-    emit nodeAboutToReload(p_node, event);
+    emit nodeAboutToReload(p_nodeId, event);
 
     if (m_model) {
-      m_model->reloadNode(p_node);
+      m_model->reloadNode(p_nodeId);
     }
   } else {
     reloadAll();
@@ -593,52 +628,53 @@ void NotebookNodeController::reloadAll() {
   }
 }
 
-void NotebookNodeController::pinNodeToQuickAccess(Node *p_node) {
-  // TODO: Implement quick access pinning
-  Q_UNUSED(p_node);
+void NotebookNodeController::pinNodeToQuickAccess(const NodeIdentifier &p_nodeId) {
+  Q_UNUSED(p_nodeId);
   QMessageBox::information(m_view, tr("Quick Access"),
                            tr("Quick Access functionality not yet implemented."));
 }
 
-void NotebookNodeController::manageNodeTags(Node *p_node) {
-  // TODO: Implement tag management dialog
-  Q_UNUSED(p_node);
+void NotebookNodeController::manageNodeTags(const NodeIdentifier &p_nodeId) {
+  Q_UNUSED(p_nodeId);
   QMessageBox::information(m_view, tr("Tags"), tr("Tag management not yet implemented."));
 }
 
 bool NotebookNodeController::canPaste() const { return !m_clipboardNodes.isEmpty(); }
 
-bool NotebookNodeController::confirmDelete(const QList<Node *> &p_nodes, bool p_permanent) {
+bool NotebookNodeController::confirmDelete(const QList<NodeIdentifier> &p_nodeIds,
+                                           bool p_permanent) {
   QString title = p_permanent ? tr("Delete Permanently") : tr("Delete");
   QString message;
 
   if (p_permanent) {
-    message = tr("Permanently delete %n node(s)? This cannot be undone.", "", p_nodes.size());
+    message = tr("Permanently delete %n node(s)? This cannot be undone.", "", p_nodeIds.size());
   } else {
-    message = tr("Move %n node(s) to recycle bin?", "", p_nodes.size());
+    message = tr("Move %n node(s) to recycle bin?", "", p_nodeIds.size());
   }
 
-  int ret =
-      QMessageBox::question(m_view, title, message, QMessageBox::Yes | QMessageBox::No,
-                            QMessageBox::No);
+  int ret = QMessageBox::question(m_view, title, message, QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No);
 
   return ret == QMessageBox::Yes;
 }
 
-void NotebookNodeController::notifyBeforeNodeOperation(Node *p_node, const QString &p_operation) {
-  if (!p_node) {
+void NotebookNodeController::notifyBeforeNodeOperation(const NodeIdentifier &p_nodeId,
+                                                       const QString &p_operation) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
   auto event = QSharedPointer<Event>::create();
 
   if (p_operation == QStringLiteral("delete") || p_operation == QStringLiteral("remove")) {
-    emit nodeAboutToRemove(p_node, event);
+    emit nodeAboutToRemove(p_nodeId, event);
   } else if (p_operation == QStringLiteral("move") || p_operation == QStringLiteral("rename")) {
-    emit nodeAboutToMove(p_node, event);
+    emit nodeAboutToMove(p_nodeId, event);
   }
 
   // Also request to close the file
-  QString path = p_node->fetchAbsolutePath();
-  emit closeFileRequested(path, event);
+  QString path = buildAbsolutePath(p_nodeId);
+  if (!path.isEmpty()) {
+    emit closeFileRequested(path, event);
+  }
 }

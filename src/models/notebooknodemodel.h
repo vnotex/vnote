@@ -2,19 +2,27 @@
 #define NOTEBOOKNODEMODEL_H
 
 #include <QAbstractItemModel>
+#include <QHash>
 #include <QIcon>
+#include <QMap>
 #include <QSet>
-#include <QSharedPointer>
+#include <QVector>
 
 #include <core/nodeinfo.h>
+#include <core/servicelocator.h>
 
 namespace vnotex {
 
-class Node;
-class Notebook;
+inline bool operator<(const NodeIdentifier &p_left, const NodeIdentifier &p_right) {
+  if (p_left.notebookId != p_right.notebookId) {
+    return p_left.notebookId < p_right.notebookId;
+  }
+  return p_left.relativePath < p_right.relativePath;
+}
 
-// A QAbstractItemModel implementation that exposes Notebook/Node hierarchy
-// to Qt's Model/View framework.
+// A QAbstractItemModel implementation that exposes notebook node hierarchy
+// to Qt's Model/View framework. Uses NodeIdentifier/NodeInfo instead of Node*.
+// Data is fetched from NotebookService via ServiceLocator.
 class NotebookNodeModel : public QAbstractItemModel {
   Q_OBJECT
 
@@ -23,19 +31,17 @@ public:
   enum Roles {
     // New architecture roles (preferred)
     NodeInfoRole = Qt::UserRole + 1, // NodeInfo struct
-    IsFolderRole,                     // bool - is folder
+    IsFolderRole,                    // bool - is folder
+    NodeIdentifierRole,              // NodeIdentifier struct
 
-    // Legacy roles (for backward compatibility during migration)
-    NodeRole,         // Node* pointer (DEPRECATED: use NodeInfoRole)
-    NodeTypeRole,     // Node::Flags
-    IsContainerRole,  // bool - is folder (DEPRECATED: use IsFolderRole)
-    ChildCountRole,   // int - number of children
-    PathRole,         // QString - node path
+    // Display roles
+    ChildCountRole, // int - number of children
+    PathRole,       // QString - relative node path
     ModifiedTimeRole, // QDateTime
     CreatedTimeRole   // QDateTime
   };
 
-  explicit NotebookNodeModel(QObject *p_parent = nullptr);
+  explicit NotebookNodeModel(ServiceLocator &p_services, QObject *p_parent = nullptr);
   ~NotebookNodeModel() override;
 
   // Core QAbstractItemModel interface
@@ -60,42 +66,46 @@ public:
                     const QModelIndex &p_parent) override;
 
   // Custom API
-  void setNotebook(const QSharedPointer<Notebook> &p_notebook);
-  QSharedPointer<Notebook> getNotebook() const;
+  void setNotebookId(const QString &p_notebookId);
+  QString getNotebookId() const;
 
-  // Node <-> Index conversion
-  Node *nodeFromIndex(const QModelIndex &p_index) const;
-  QModelIndex indexFromNode(Node *p_node) const;
+  // NodeIdentifier <-> Index conversion
+  NodeIdentifier nodeIdFromIndex(const QModelIndex &p_index) const;
+  NodeInfo nodeInfoFromIndex(const QModelIndex &p_index) const;
+  QModelIndex indexFromNodeId(const NodeIdentifier &p_nodeId) const;
 
   // Reload operations
   void reload();
-  void reloadNode(Node *p_node);
+  void reloadNode(const NodeIdentifier &p_nodeId);
 
   // Notify model about external changes to a node
-  void nodeDataChanged(Node *p_node);
+  void nodeDataChanged(const NodeIdentifier &p_nodeId);
 
-  // Convert Node* to NodeInfo struct
-  NodeInfo nodeToNodeInfo(Node *p_node) const;
 signals:
   void notebookChanged();
 
 private:
-  // Helper to get children from a node (handles root specially)
-  QVector<QSharedPointer<Node>> getNodeChildren(Node *p_node) const;
+  void ensureRoot() const;
+  NodeIdentifier rootNodeId() const;
+  bool isNodeFetched(const NodeIdentifier &p_nodeId) const;
+  void markNodeFetched(const NodeIdentifier &p_nodeId);
+  void removeNodeFromCaches(const NodeIdentifier &p_nodeId);
+  int childRow(const NodeIdentifier &p_parentId, const NodeIdentifier &p_childId) const;
+  quintptr indexIdForNode(const NodeIdentifier &p_nodeId) const;
+  NodeIdentifier nodeIdForIndexId(quintptr p_indexId) const;
+  QVector<NodeInfo> parseChildrenFromJson(const QJsonObject &p_json,
+                                          const NodeIdentifier &p_parentId) const;
+  NodeInfo parseNodeInfoFromJson(const QJsonObject &p_json, const NodeIdentifier &p_parentId) const;
+  QIcon getNodeIcon(const NodeInfo &p_info) const;
 
-  // Check if a node's children have been loaded into the model
-  bool isNodeFetched(Node *p_node) const;
-  void markNodeFetched(Node *p_node);
-
-  // Get icon for a node based on its type
-  QIcon getNodeIcon(Node *p_node) const;
-
-
-  // The current notebook
-  QSharedPointer<Notebook> m_notebook;
-
-  // Track which nodes have been fetched (for lazy loading)
-  mutable QSet<Node *> m_fetchedNodes;
+  ServiceLocator &m_services;
+  QString m_notebookId;
+  mutable QMap<NodeIdentifier, NodeInfo> m_nodeCache;
+  mutable QMap<NodeIdentifier, QVector<NodeIdentifier>> m_childrenCache;
+  mutable QSet<NodeIdentifier> m_fetchedNodes;
+  mutable QHash<NodeIdentifier, quintptr> m_indexIdCache;
+  mutable QHash<quintptr, NodeIdentifier> m_indexIdLookup;
+  mutable quintptr m_nextIndexId = 1;
 };
 
 } // namespace vnotex

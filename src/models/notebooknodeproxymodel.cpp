@@ -3,7 +3,6 @@
 #include <QRegularExpression>
 
 #include "notebooknodemodel.h"
-#include <core/notebook/node.h>
 
 using namespace vnotex;
 
@@ -34,18 +33,32 @@ void NotebookNodeProxyModel::setNameFilter(const QString &p_pattern) {
 
 QString NotebookNodeProxyModel::nameFilter() const { return m_nameFilter; }
 
-Node *NotebookNodeProxyModel::nodeFromIndex(const QModelIndex &p_index) const {
+NodeIdentifier NotebookNodeProxyModel::nodeIdFromIndex(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
-    return nullptr;
+    return NodeIdentifier();
   }
 
   QModelIndex sourceIndex = mapToSource(p_index);
   auto *model = qobject_cast<NotebookNodeModel *>(sourceModel());
   if (model) {
-    return model->nodeFromIndex(sourceIndex);
+    return model->nodeIdFromIndex(sourceIndex);
   }
 
-  return nullptr;
+  return NodeIdentifier();
+}
+
+NodeInfo NotebookNodeProxyModel::nodeInfoFromIndex(const QModelIndex &p_index) const {
+  if (!p_index.isValid()) {
+    return NodeInfo();
+  }
+
+  QModelIndex sourceIndex = mapToSource(p_index);
+  auto *model = qobject_cast<NotebookNodeModel *>(sourceModel());
+  if (model) {
+    return model->nodeInfoFromIndex(sourceIndex);
+  }
+
+  return NodeInfo();
 }
 
 bool NotebookNodeProxyModel::filterAcceptsRow(int p_sourceRow,
@@ -60,13 +73,13 @@ bool NotebookNodeProxyModel::filterAcceptsRow(int p_sourceRow,
     return true;
   }
 
-  Node *node = model->nodeFromIndex(index);
-  if (!node) {
+  NodeInfo nodeInfo = model->nodeInfoFromIndex(index);
+  if (!nodeInfo.id.isValid()) {
     return false;
   }
 
   // Filter by node type
-  if (node->isContainer()) {
+  if (nodeInfo.isFolder) {
     if (!(m_filterFlags & ShowFolders)) {
       // But still show if it has matching children (recursive filtering handles this)
       return false;
@@ -79,7 +92,7 @@ bool NotebookNodeProxyModel::filterAcceptsRow(int p_sourceRow,
 
   // Filter by name pattern
   if (!m_nameFilter.isEmpty()) {
-    QString name = node->getName();
+    QString name = nodeInfo.name;
     // Use wildcard matching
     QRegularExpression regex(QRegularExpression::wildcardToRegularExpression(m_nameFilter),
                              QRegularExpression::CaseInsensitiveOption);
@@ -97,21 +110,18 @@ bool NotebookNodeProxyModel::lessThan(const QModelIndex &p_left, const QModelInd
     return QSortFilterProxyModel::lessThan(p_left, p_right);
   }
 
-  Node *leftNode = model->nodeFromIndex(p_left);
-  Node *rightNode = model->nodeFromIndex(p_right);
+  NodeInfo leftInfo = model->nodeInfoFromIndex(p_left);
+  NodeInfo rightInfo = model->nodeInfoFromIndex(p_right);
 
-  if (!leftNode || !rightNode) {
+  if (!leftInfo.id.isValid() || !rightInfo.id.isValid()) {
     return QSortFilterProxyModel::lessThan(p_left, p_right);
   }
 
   // Folders always come before files
-  bool leftIsContainer = leftNode->isContainer();
-  bool rightIsContainer = rightNode->isContainer();
-
-  if (leftIsContainer != rightIsContainer) {
-    return leftIsContainer; // Folders first
+  if (leftInfo.isFolder != rightInfo.isFolder) {
+    return leftInfo.isFolder; // Folders first
   }
 
   // Same type - sort by name (case insensitive)
-  return QString::compare(leftNode->getName(), rightNode->getName(), Qt::CaseInsensitive) < 0;
+  return QString::compare(leftInfo.name, rightInfo.name, Qt::CaseInsensitive) < 0;
 }

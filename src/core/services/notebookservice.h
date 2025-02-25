@@ -52,6 +52,10 @@ public:
   QString copyFolder(const QString &p_notebookId, const QString &p_srcPath,
                      const QString &p_destParentPath, const QString &p_newName);
 
+  // List direct children of a folder (files and subfolders).
+  // Returns JSON with "files" and "folders" arrays.
+  QJsonObject listFolderChildren(const QString &p_notebookId, const QString &p_folderPath) const;
+
   // File operations (8 methods).
   QString createFile(const QString &p_notebookId, const QString &p_folderPath,
                      const QString &p_fileName);

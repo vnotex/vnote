@@ -10,7 +10,6 @@
 #include <QUrl>
 
 #include <core/fileopenparameters.h>
-#include <core/notebook/node.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
 
@@ -51,68 +50,78 @@ void NotebookNodeView::setController(NotebookNodeController *p_controller) {
 
 NotebookNodeController *NotebookNodeView::controller() const { return m_controller; }
 
-Node *NotebookNodeView::currentNode() const {
+NodeIdentifier NotebookNodeView::currentNodeId() const {
   QModelIndex currentIdx = currentIndex();
-  return nodeFromIndex(currentIdx);
+  return nodeIdFromIndex(currentIdx);
 }
 
-QList<Node *> NotebookNodeView::selectedNodes() const {
-  QList<Node *> nodes;
+QList<NodeIdentifier> NotebookNodeView::selectedNodeIds() const {
+  QList<NodeIdentifier> nodeIds;
   QModelIndexList selected = selectedIndexes();
 
   for (const QModelIndex &idx : selected) {
     if (idx.column() == 0) { // Only process first column
-      Node *node = nodeFromIndex(idx);
-      if (node) {
-        nodes.append(node);
+      NodeIdentifier nodeId = nodeIdFromIndex(idx);
+      if (nodeId.isValid()) {
+        nodeIds.append(nodeId);
       }
     }
   }
 
-  return nodes;
+  return nodeIds;
 }
 
-void NotebookNodeView::selectNode(Node *p_node) {
-  if (!p_node) {
+void NotebookNodeView::selectNode(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     clearSelection();
     return;
   }
 
-  QModelIndex idx = indexFromNode(p_node);
+  QModelIndex idx = indexFromNodeId(p_nodeId);
   if (idx.isValid()) {
     selectionModel()->select(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     setCurrentIndex(idx);
   }
 }
 
-void NotebookNodeView::expandToNode(Node *p_node) {
-  if (!p_node) {
+void NotebookNodeView::expandToNode(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
-  // Build path from root to node
-  QList<Node *> path;
-  Node *current = p_node->getParent();
-  while (current && !current->isRoot()) {
-    path.prepend(current);
-    current = current->getParent();
+  // Build path from root to node by parsing the relativePath
+  QString path = p_nodeId.relativePath;
+  if (path.isEmpty()) {
+    return; // Root node, nothing to expand
   }
 
-  // Expand each node in path
-  for (Node *node : path) {
-    QModelIndex idx = indexFromNode(node);
+  // Split path into components and expand each parent
+  QStringList components = path.split(QLatin1Char('/'), Qt::SkipEmptyParts);
+  QString currentPath;
+
+  for (int i = 0; i < components.size() - 1; ++i) {
+    if (!currentPath.isEmpty()) {
+      currentPath += QLatin1Char('/');
+    }
+    currentPath += components[i];
+
+    NodeIdentifier parentId;
+    parentId.notebookId = p_nodeId.notebookId;
+    parentId.relativePath = currentPath;
+
+    QModelIndex idx = indexFromNodeId(parentId);
     if (idx.isValid()) {
       expand(idx);
     }
   }
 }
 
-void NotebookNodeView::scrollToNode(Node *p_node) {
-  if (!p_node) {
+void NotebookNodeView::scrollToNode(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
     return;
   }
 
-  QModelIndex idx = indexFromNode(p_node);
+  QModelIndex idx = indexFromNodeId(p_nodeId);
   if (idx.isValid()) {
     scrollTo(idx, QAbstractItemView::EnsureVisible);
   }
@@ -122,9 +131,9 @@ void NotebookNodeView::expandAll() { QTreeView::expandAll(); }
 
 void NotebookNodeView::collapseAll() { QTreeView::collapseAll(); }
 
-Node *NotebookNodeView::nodeFromIndex(const QModelIndex &p_index) const {
+NodeIdentifier NotebookNodeView::nodeIdFromIndex(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
-    return nullptr;
+    return NodeIdentifier();
   }
 
   // Handle proxy model
@@ -134,16 +143,38 @@ Node *NotebookNodeView::nodeFromIndex(const QModelIndex &p_index) const {
     sourceIdx = proxyModel->mapToSource(p_index);
   }
 
-  auto *nodeModel = qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
+  auto *nodeModel =
+      qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
   if (nodeModel) {
-    return nodeModel->nodeFromIndex(sourceIdx);
+    return nodeModel->nodeIdFromIndex(sourceIdx);
   }
 
-  return nullptr;
+  return NodeIdentifier();
 }
 
-QModelIndex NotebookNodeView::indexFromNode(Node *p_node) const {
-  if (!p_node) {
+NodeInfo NotebookNodeView::nodeInfoFromIndex(const QModelIndex &p_index) const {
+  if (!p_index.isValid()) {
+    return NodeInfo();
+  }
+
+  // Handle proxy model
+  QModelIndex sourceIdx = p_index;
+  auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
+  if (proxyModel) {
+    sourceIdx = proxyModel->mapToSource(p_index);
+  }
+
+  auto *nodeModel =
+      qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
+  if (nodeModel) {
+    return nodeModel->nodeInfoFromIndex(sourceIdx);
+  }
+
+  return NodeInfo();
+}
+
+QModelIndex NotebookNodeView::indexFromNodeId(const NodeIdentifier &p_nodeId) const {
+  if (!p_nodeId.isValid()) {
     return QModelIndex();
   }
 
@@ -155,7 +186,7 @@ QModelIndex NotebookNodeView::indexFromNode(Node *p_node) const {
     return QModelIndex();
   }
 
-  QModelIndex sourceIdx = nodeModel->indexFromNode(p_node);
+  QModelIndex sourceIdx = nodeModel->indexFromNodeId(p_nodeId);
   if (proxyModel) {
     return proxyModel->mapFromSource(sourceIdx);
   }
@@ -170,13 +201,13 @@ void NotebookNodeView::mouseDoubleClickEvent(QMouseEvent *p_event) {
     return;
   }
 
-  Node *node = nodeFromIndex(idx);
-  if (node) {
+  NodeInfo nodeInfo = nodeInfoFromIndex(idx);
+  if (nodeInfo.isValid()) {
     // For containers, toggle expand/collapse (default behavior)
     // For content nodes, activate
-    if (!node->isContainer()) {
+    if (!nodeInfo.isFolder) {
       auto paras = QSharedPointer<FileOpenParameters>::create();
-      emit nodeActivated(node, paras);
+      emit nodeActivated(nodeInfo.id, paras);
       p_event->accept();
       return;
     }
@@ -189,10 +220,10 @@ void NotebookNodeView::keyPressEvent(QKeyEvent *p_event) {
   switch (p_event->key()) {
   case Qt::Key_Return:
   case Qt::Key_Enter: {
-    Node *node = currentNode();
-    if (node && !node->isContainer()) {
+    NodeInfo nodeInfo = nodeInfoFromIndex(currentIndex());
+    if (nodeInfo.isValid() && !nodeInfo.isFolder) {
       auto paras = QSharedPointer<FileOpenParameters>::create();
-      emit nodeActivated(node, paras);
+      emit nodeActivated(nodeInfo.id, paras);
       p_event->accept();
       return;
     }
@@ -204,8 +235,8 @@ void NotebookNodeView::keyPressEvent(QKeyEvent *p_event) {
   }
   case Qt::Key_F2: {
     // Rename - handled by controller
-    Node *node = currentNode();
-    if (node && m_controller) {
+    NodeIdentifier nodeId = currentNodeId();
+    if (nodeId.isValid() && m_controller) {
       // Controller will handle rename
     }
     break;
@@ -219,16 +250,16 @@ void NotebookNodeView::keyPressEvent(QKeyEvent *p_event) {
 
 void NotebookNodeView::contextMenuEvent(QContextMenuEvent *p_event) {
   QModelIndex idx = indexAt(p_event->pos());
-  Node *node = nodeFromIndex(idx);
+  NodeIdentifier nodeId = nodeIdFromIndex(idx);
 
-  emit contextMenuRequested(node, p_event->globalPos());
+  emit contextMenuRequested(nodeId, p_event->globalPos());
   p_event->accept();
 }
 
 void NotebookNodeView::dragEnterEvent(QDragEnterEvent *p_event) {
   const QMimeData *mimeData = p_event->mimeData();
 
-  if (mimeData->hasFormat("application/x-vnotex-node")) {
+  if (mimeData->hasFormat("application/x-vnotex-node-identifier")) {
     p_event->acceptProposedAction();
   } else if (mimeData->hasUrls()) {
     // External file drop
@@ -240,13 +271,13 @@ void NotebookNodeView::dragEnterEvent(QDragEnterEvent *p_event) {
 
 void NotebookNodeView::dragMoveEvent(QDragMoveEvent *p_event) {
   QModelIndex idx = indexAt(p_event->position().toPoint());
-  Node *targetNode = nodeFromIndex(idx);
+  NodeInfo targetInfo = nodeInfoFromIndex(idx);
 
   // Only accept drops on containers
-  if (targetNode && targetNode->isContainer()) {
+  if (targetInfo.isValid() && targetInfo.isFolder) {
     p_event->acceptProposedAction();
     setDropIndicatorShown(true);
-  } else if (!targetNode) {
+  } else if (!targetInfo.isValid()) {
     // Dropping on root (empty area)
     p_event->acceptProposedAction();
     setDropIndicatorShown(true);
@@ -260,9 +291,9 @@ void NotebookNodeView::dragMoveEvent(QDragMoveEvent *p_event) {
 void NotebookNodeView::dropEvent(QDropEvent *p_event) {
   const QMimeData *mimeData = p_event->mimeData();
   QModelIndex idx = indexAt(p_event->position().toPoint());
-  Node *targetNode = nodeFromIndex(idx);
+  NodeIdentifier targetId = nodeIdFromIndex(idx);
 
-  if (mimeData->hasFormat("application/x-vnotex-node")) {
+  if (mimeData->hasFormat("application/x-vnotex-node-identifier")) {
     // Internal node move - let model/controller handle it
     // The actual move is handled by the controller
     QTreeView::dropEvent(p_event);
@@ -281,14 +312,14 @@ void NotebookNodeView::selectionChanged(const QItemSelection &p_selected,
                                         const QItemSelection &p_deselected) {
   QTreeView::selectionChanged(p_selected, p_deselected);
 
-  QList<Node *> nodes = selectedNodes();
-  emit nodeSelectionChanged(nodes);
+  QList<NodeIdentifier> nodeIds = selectedNodeIds();
+  emit nodeSelectionChanged(nodeIds);
 }
 
 void NotebookNodeView::onItemActivated(const QModelIndex &p_index) {
-  Node *node = nodeFromIndex(p_index);
-  if (node && !node->isContainer()) {
+  NodeInfo nodeInfo = nodeInfoFromIndex(p_index);
+  if (nodeInfo.isValid() && !nodeInfo.isFolder) {
     auto paras = QSharedPointer<FileOpenParameters>::create();
-    emit nodeActivated(node, paras);
+    emit nodeActivated(nodeInfo.id, paras);
   }
 }

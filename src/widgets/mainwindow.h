@@ -1,6 +1,10 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+// DEPRECATED: This legacy MainWindow uses global singletons (VNoteX::getInst(), ConfigMgr::getInst()).
+// New code should use MainWindow2 which uses ServiceLocator for dependency injection.
+// This file is kept for reference during migration. Do not add new features here.
+
 #include "framelessmainwindow/framelessmainwindowimpl.h"
 
 #include <QBitArray>

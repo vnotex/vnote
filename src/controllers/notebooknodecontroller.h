@@ -5,24 +5,27 @@
 #include <QObject>
 #include <QSharedPointer>
 
+#include <nodeinfo.h>
+
 class QMenu;
 
 namespace vnotex {
 
-class Node;
-class Notebook;
+
 class NotebookNodeModel;
 class NotebookNodeView;
+class ServiceLocator;
 struct FileOpenParameters;
 class Event;
 
 // Controller class that handles all user actions on notebook nodes.
 // Acts as the bridge between View and Model, implementing business logic.
+// Uses NodeIdentifier for all node references - no more Node* pointers.
 class NotebookNodeController : public QObject {
   Q_OBJECT
 
 public:
-  explicit NotebookNodeController(QObject *p_parent = nullptr);
+  explicit NotebookNodeController(ServiceLocator &p_services, QObject *p_parent = nullptr);
   ~NotebookNodeController() override;
 
   // Set the model this controller operates on
@@ -34,77 +37,88 @@ public:
   NotebookNodeView *view() const;
 
   // Context menu creation
-  QMenu *createContextMenu(Node *p_node, QWidget *p_parent = nullptr);
+  QMenu *createContextMenu(const NodeIdentifier &p_nodeId, QWidget *p_parent = nullptr);
 
-  // Node operations
-  void newNote(Node *p_parentNode);
-  void newFolder(Node *p_parentNode);
-  void openNode(Node *p_node);
-  void openNodeWithDefaultApp(Node *p_node);
-  void deleteNodes(const QList<Node *> &p_nodes);
-  void removeNodesFromNotebook(const QList<Node *> &p_nodes);
-  void copyNodes(const QList<Node *> &p_nodes);
-  void cutNodes(const QList<Node *> &p_nodes);
-  void pasteNodes(Node *p_targetFolder);
-  void duplicateNode(Node *p_node);
-  void renameNode(Node *p_node);
-  void moveNodes(const QList<Node *> &p_nodes, Node *p_targetFolder);
+  // Node operations using NodeIdentifier
+  void newNote(const NodeIdentifier &p_parentId);
+  void newFolder(const NodeIdentifier &p_parentId);
+  void openNode(const NodeIdentifier &p_nodeId);
+  void openNodeWithDefaultApp(const NodeIdentifier &p_nodeId);
+  void deleteNodes(const QList<NodeIdentifier> &p_nodeIds);
+  void removeNodesFromNotebook(const QList<NodeIdentifier> &p_nodeIds);
+  void copyNodes(const QList<NodeIdentifier> &p_nodeIds);
+  void cutNodes(const QList<NodeIdentifier> &p_nodeIds);
+  void pasteNodes(const NodeIdentifier &p_targetFolderId);
+  void duplicateNode(const NodeIdentifier &p_nodeId);
+  void renameNode(const NodeIdentifier &p_nodeId);
+  void moveNodes(const QList<NodeIdentifier> &p_nodeIds, const NodeIdentifier &p_targetFolderId);
 
   // Import/Export
-  void importFiles(Node *p_targetFolder);
-  void importFolder(Node *p_targetFolder);
-  void exportNode(Node *p_node);
+  void importFiles(const NodeIdentifier &p_targetFolderId);
+  void importFolder(const NodeIdentifier &p_targetFolderId);
+  void exportNode(const NodeIdentifier &p_nodeId);
 
   // Properties and info
-  void showNodeProperties(Node *p_node);
-  void copyNodePath(Node *p_node);
-  void locateNodeInFileManager(Node *p_node);
+  void showNodeProperties(const NodeIdentifier &p_nodeId);
+  void copyNodePath(const NodeIdentifier &p_nodeId);
+  void locateNodeInFileManager(const NodeIdentifier &p_nodeId);
 
   // Sorting and reload
-  void sortNodes(Node *p_parentNode);
-  void reloadNode(Node *p_node);
+  void sortNodes(const NodeIdentifier &p_parentId);
+  void reloadNode(const NodeIdentifier &p_nodeId);
   void reloadAll();
 
   // Pin/Tag operations
-  void pinNodeToQuickAccess(Node *p_node);
-  void manageNodeTags(Node *p_node);
+  void pinNodeToQuickAccess(const NodeIdentifier &p_nodeId);
+  void manageNodeTags(const NodeIdentifier &p_nodeId);
 
   // Check if clipboard has nodes to paste
   bool canPaste() const;
 
 signals:
   // Signals to notify external components (e.g., BufferMgr)
-  void nodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
+  void nodeActivated(const NodeIdentifier &p_nodeId,
+                     const QSharedPointer<FileOpenParameters> &p_paras);
   void fileActivated(const QString &p_path, const QSharedPointer<FileOpenParameters> &p_paras);
-  void nodeAboutToMove(Node *p_node, const QSharedPointer<Event> &p_event);
-  void nodeAboutToRemove(Node *p_node, const QSharedPointer<Event> &p_event);
-  void nodeAboutToReload(Node *p_node, const QSharedPointer<Event> &p_event);
+  void nodeAboutToMove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
+  void nodeAboutToRemove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
+  void nodeAboutToReload(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
   void closeFileRequested(const QString &p_filePath, const QSharedPointer<Event> &p_event);
 
 private:
   // Add actions to context menu based on node type
-  void addNewActions(QMenu *p_menu, Node *p_node);
-  void addOpenActions(QMenu *p_menu, Node *p_node);
-  void addEditActions(QMenu *p_menu, Node *p_node);
-  void addCopyMoveActions(QMenu *p_menu, Node *p_node);
-  void addImportExportActions(QMenu *p_menu, Node *p_node);
-  void addInfoActions(QMenu *p_menu, Node *p_node);
-  void addMiscActions(QMenu *p_menu, Node *p_node);
+  void addNewActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
+  void addOpenActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
+  void addEditActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
+  void addCopyMoveActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
+  void addImportExportActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
+  void addInfoActions(QMenu *p_menu, const NodeIdentifier &p_nodeId);
+  void addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
 
   // Confirmation dialogs
-  bool confirmDelete(const QList<Node *> &p_nodes, bool p_permanent);
+  bool confirmDelete(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
 
   // Notify BufferMgr before node operations
-  void notifyBeforeNodeOperation(Node *p_node, const QString &p_operation);
+  void notifyBeforeNodeOperation(const NodeIdentifier &p_nodeId, const QString &p_operation);
 
-  // Get current notebook
-  QSharedPointer<Notebook> currentNotebook() const;
+  // Get current notebook ID from model
+  QString currentNotebookId() const;
 
+  // Build absolute path from NodeIdentifier
+  QString buildAbsolutePath(const NodeIdentifier &p_nodeId) const;
+
+  // Get NodeInfo for a node from model
+  NodeInfo getNodeInfo(const NodeIdentifier &p_nodeId) const;
+
+  // Get the parent folder path
+  NodeIdentifier getParentFolder(const NodeIdentifier &p_nodeId) const;
+
+  ServiceLocator &m_services;
   NotebookNodeModel *m_model = nullptr;
   NotebookNodeView *m_view = nullptr;
 
   // Clipboard state
-  QList<Node *> m_clipboardNodes;
+  QList<NodeIdentifier> m_clipboardNodes;
   bool m_isCut = false;
 };
 

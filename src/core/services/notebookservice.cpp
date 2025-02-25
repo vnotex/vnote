@@ -169,8 +169,8 @@ void NotebookService::deleteFolder(const QString &p_notebookId, const QString &p
     return;
   }
 
-  VxCoreError err = vxcore_folder_delete(m_context, p_notebookId.toUtf8().constData(),
-                                         p_folderPath.toUtf8().constData());
+  VxCoreError err = vxcore_node_delete(m_context, p_notebookId.toUtf8().constData(),
+                                       p_folderPath.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "deleteFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
   }
@@ -182,8 +182,8 @@ QJsonObject NotebookService::getFolderConfig(const QString &p_notebookId, const 
   }
 
   char *json = nullptr;
-  VxCoreError err = vxcore_folder_get_config(m_context, p_notebookId.toUtf8().constData(),
-                                             p_folderPath.toUtf8().constData(), &json);
+  VxCoreError err = vxcore_node_get_config(m_context, p_notebookId.toUtf8().constData(),
+                                           p_folderPath.toUtf8().constData(), &json);
   if (err != VXCORE_OK) {
     qWarning() << "getFolderConfig failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();
@@ -198,8 +198,8 @@ void NotebookService::updateFolderMetadata(const QString &p_notebookId, const QS
   }
 
   VxCoreError err =
-      vxcore_folder_update_metadata(m_context, p_notebookId.toUtf8().constData(),
-                                    p_folderPath.toUtf8().constData(), p_metadataJson.toUtf8().constData());
+      vxcore_node_update_metadata(m_context, p_notebookId.toUtf8().constData(),
+                                  p_folderPath.toUtf8().constData(), p_metadataJson.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "updateFolderMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
   }
@@ -212,8 +212,8 @@ QJsonObject NotebookService::getFolderMetadata(const QString &p_notebookId,
   }
 
   char *json = nullptr;
-  VxCoreError err = vxcore_folder_get_metadata(m_context, p_notebookId.toUtf8().constData(),
-                                               p_folderPath.toUtf8().constData(), &json);
+  VxCoreError err = vxcore_node_get_metadata(m_context, p_notebookId.toUtf8().constData(),
+                                             p_folderPath.toUtf8().constData(), &json);
   if (err != VXCORE_OK) {
     qWarning() << "getFolderMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();
@@ -227,8 +227,8 @@ void NotebookService::renameFolder(const QString &p_notebookId, const QString &p
     return;
   }
 
-  VxCoreError err = vxcore_folder_rename(m_context, p_notebookId.toUtf8().constData(),
-                                         p_folderPath.toUtf8().constData(), p_newName.toUtf8().constData());
+  VxCoreError err = vxcore_node_rename(m_context, p_notebookId.toUtf8().constData(),
+                                       p_folderPath.toUtf8().constData(), p_newName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "renameFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
   }
@@ -240,8 +240,8 @@ void NotebookService::moveFolder(const QString &p_notebookId, const QString &p_s
     return;
   }
 
-  VxCoreError err = vxcore_folder_move(m_context, p_notebookId.toUtf8().constData(),
-                                       p_srcPath.toUtf8().constData(), p_destParentPath.toUtf8().constData());
+  VxCoreError err = vxcore_node_move(m_context, p_notebookId.toUtf8().constData(),
+                                     p_srcPath.toUtf8().constData(), p_destParentPath.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "moveFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
   }
@@ -255,13 +255,30 @@ QString NotebookService::copyFolder(const QString &p_notebookId, const QString &
 
   char *folderId = nullptr;
   VxCoreError err =
-      vxcore_folder_copy(m_context, p_notebookId.toUtf8().constData(), p_srcPath.toUtf8().constData(),
-                         p_destParentPath.toUtf8().constData(), p_newName.toUtf8().constData(), &folderId);
+      vxcore_node_copy(m_context, p_notebookId.toUtf8().constData(), p_srcPath.toUtf8().constData(),
+                       p_destParentPath.toUtf8().constData(), p_newName.toUtf8().constData(), &folderId);
   if (err != VXCORE_OK) {
     qWarning() << "copyFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();
   }
   return cstrToQString(folderId);
+}
+
+QJsonObject NotebookService::listFolderChildren(const QString &p_notebookId,
+                                                const QString &p_folderPath) const {
+  if (!checkContext()) {
+    return QJsonObject();
+  }
+
+  char *json = nullptr;
+  VxCoreError err = vxcore_folder_list_children(
+      m_context, p_notebookId.toUtf8().constData(),
+      p_folderPath.isEmpty() ? "." : p_folderPath.toUtf8().constData(), &json);
+  if (err != VXCORE_OK) {
+    qWarning() << "listFolderChildren failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QJsonObject();
+  }
+  return parseJsonObjectFromCStr(json);
 }
 
 // File operations.
@@ -287,7 +304,7 @@ void NotebookService::deleteFile(const QString &p_notebookId, const QString &p_f
     return;
   }
 
-  VxCoreError err = vxcore_file_delete(m_context, p_notebookId.toUtf8().constData(),
+  VxCoreError err = vxcore_node_delete(m_context, p_notebookId.toUtf8().constData(),
                                        p_filePath.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "deleteFile failed:" << QString::fromUtf8(vxcore_error_message(err));
@@ -300,8 +317,8 @@ QJsonObject NotebookService::getFileInfo(const QString &p_notebookId, const QStr
   }
 
   char *json = nullptr;
-  VxCoreError err = vxcore_file_get_info(m_context, p_notebookId.toUtf8().constData(),
-                                         p_filePath.toUtf8().constData(), &json);
+  VxCoreError err = vxcore_node_get_config(m_context, p_notebookId.toUtf8().constData(),
+                                           p_filePath.toUtf8().constData(), &json);
   if (err != VXCORE_OK) {
     qWarning() << "getFileInfo failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();
@@ -315,7 +332,7 @@ QJsonObject NotebookService::getFileMetadata(const QString &p_notebookId, const 
   }
 
   char *json = nullptr;
-  VxCoreError err = vxcore_file_get_metadata(m_context, p_notebookId.toUtf8().constData(),
+  VxCoreError err = vxcore_node_get_metadata(m_context, p_notebookId.toUtf8().constData(),
                                              p_filePath.toUtf8().constData(), &json);
   if (err != VXCORE_OK) {
     qWarning() << "getFileMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
@@ -331,7 +348,7 @@ void NotebookService::updateFileMetadata(const QString &p_notebookId, const QStr
   }
 
   VxCoreError err =
-      vxcore_file_update_metadata(m_context, p_notebookId.toUtf8().constData(),
+      vxcore_node_update_metadata(m_context, p_notebookId.toUtf8().constData(),
                                   p_filePath.toUtf8().constData(), p_metadataJson.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "updateFileMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
@@ -344,7 +361,7 @@ void NotebookService::renameFile(const QString &p_notebookId, const QString &p_f
     return;
   }
 
-  VxCoreError err = vxcore_file_rename(m_context, p_notebookId.toUtf8().constData(),
+  VxCoreError err = vxcore_node_rename(m_context, p_notebookId.toUtf8().constData(),
                                        p_filePath.toUtf8().constData(), p_newName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "renameFile failed:" << QString::fromUtf8(vxcore_error_message(err));
@@ -357,7 +374,7 @@ void NotebookService::moveFile(const QString &p_notebookId, const QString &p_src
     return;
   }
 
-  VxCoreError err = vxcore_file_move(m_context, p_notebookId.toUtf8().constData(),
+  VxCoreError err = vxcore_node_move(m_context, p_notebookId.toUtf8().constData(),
                                      p_srcFilePath.toUtf8().constData(), p_destFolderPath.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "moveFile failed:" << QString::fromUtf8(vxcore_error_message(err));
@@ -372,7 +389,7 @@ QString NotebookService::copyFile(const QString &p_notebookId, const QString &p_
 
   char *fileId = nullptr;
   VxCoreError err =
-      vxcore_file_copy(m_context, p_notebookId.toUtf8().constData(), p_srcFilePath.toUtf8().constData(),
+      vxcore_node_copy(m_context, p_notebookId.toUtf8().constData(), p_srcFilePath.toUtf8().constData(),
                        p_destFolderPath.toUtf8().constData(), p_newName.toUtf8().constData(), &fileId);
   if (err != VXCORE_OK) {
     qWarning() << "copyFile failed:" << QString::fromUtf8(vxcore_error_message(err));
