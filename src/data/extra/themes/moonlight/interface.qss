@@ -1185,3 +1185,8 @@ vte--VTextEdit {
 vnotex--EntryPopup {
     border: 1px solid @widgets#unitedentry#popup#border;
 }
+
+/* FileListView - file panel in two-column explorer */
+vnotex--FileListView::item {
+    border-bottom: 1px solid @palette#bg1_3;
+}

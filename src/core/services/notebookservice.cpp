@@ -570,6 +570,27 @@ QString NotebookService::importFolder(const QString &p_notebookId, const QString
   return cstrToQString(folderId);
 }
 
+QString NotebookService::peekFile(const QString &p_notebookId, const QString &p_filePath,
+                                  int p_maxChars) const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *content = nullptr;
+  VxCoreError err = vxcore_file_peek(m_context, p_notebookId.toUtf8().constData(),
+                                     p_filePath.toUtf8().constData(),
+                                     static_cast<size_t>(p_maxChars), &content);
+  if (err != VXCORE_OK) {
+    // Not found is expected for some files, don't warn
+    if (err != VXCORE_ERR_NOT_FOUND) {
+      qWarning() << "peekFile failed:" << QString::fromUtf8(vxcore_error_message(err));
+    }
+    return QString();
+  }
+  return cstrToQString(content);
+}
+
+
 
 // Tag operations.
 bool NotebookService::updateFileTags(const QString &p_notebookId, const QString &p_filePath,

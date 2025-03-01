@@ -51,6 +51,7 @@ struct NodeInfo {
   QDateTime modifiedTimeUtc; // Last modification timestamp
   int childCount = 0;        // Number of direct children (folders only)
   QStringList tags;          // Associated tags (files only)
+  QString preview;           // Content preview (first N chars, files only)
 
   // --- Visual properties (from NodeVisual or node metadata) ---
   QString backgroundColor; // Background color (empty = default)

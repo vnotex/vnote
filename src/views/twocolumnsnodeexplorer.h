@@ -13,6 +13,8 @@ class NotebookNodeModel;
 class NotebookNodeProxyModel;
 class NotebookNodeView;
 class NotebookNodeDelegate;
+class FileNodeDelegate;
+class FileListView;
 class NotebookNodeController;
 class ServiceLocator;
 struct FileOpenParameters;
@@ -115,8 +117,8 @@ private:
   // File panel (right)
   NotebookNodeModel *m_fileModel = nullptr;
   NotebookNodeProxyModel *m_fileProxyModel = nullptr;
-  NotebookNodeView *m_fileView = nullptr;
-  NotebookNodeDelegate *m_fileDelegate = nullptr;
+  FileListView *m_fileView = nullptr;
+  FileNodeDelegate *m_fileDelegate = nullptr;
   NotebookNodeController *m_fileController = nullptr;
 
   // Layout
