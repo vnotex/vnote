@@ -12,6 +12,8 @@
 #include <models/notebooknodeproxymodel.h>
 #include <views/notebooknodeview.h>
 #include <views/notebooknodedelegate.h>
+#include <views/filenodedelegate.h>
+#include <views/filelistview.h>
 
 using namespace vnotex;
 
@@ -62,15 +64,15 @@ void TwoColumnsNodeExplorer::setupUI() {
   m_fileProxyModel->setViewOrder(viewOrder);
   m_fileProxyModel->sort(0);
 
-  m_fileView = new NotebookNodeView(this);
+  m_fileView = new FileListView(this);
   m_fileView->setModel(m_fileProxyModel);
 
-  m_fileDelegate = new NotebookNodeDelegate(m_services, this);
+  m_fileDelegate = new FileNodeDelegate(m_services, this);
   m_fileView->setItemDelegate(m_fileDelegate);
 
   m_fileController = new NotebookNodeController(m_services, this);
   m_fileController->setModel(m_fileModel);
-  m_fileController->setView(m_fileView);
+  // Note: FileListView is not a NotebookNodeView, so we don't call setView()
   m_fileView->setController(m_fileController);
 
   // Share clipboard between folder and file controllers
@@ -92,13 +94,13 @@ void TwoColumnsNodeExplorer::setupUI() {
   // Forward activation signals from both views
   connect(m_folderView, &NotebookNodeView::nodeActivated, this,
           &TwoColumnsNodeExplorer::nodeActivated);
-  connect(m_fileView, &NotebookNodeView::nodeActivated, this,
+  connect(m_fileView, &FileListView::nodeActivated, this,
           &TwoColumnsNodeExplorer::nodeActivated);
 
   // Context menu signals (differentiate source)
   connect(m_folderView, &NotebookNodeView::contextMenuRequested, this,
           &TwoColumnsNodeExplorer::onFolderContextMenu);
-  connect(m_fileView, &NotebookNodeView::contextMenuRequested, this,
+  connect(m_fileView, &FileListView::contextMenuRequested, this,
           &TwoColumnsNodeExplorer::onFileContextMenu);
 
   // Forward controller signals from both controllers

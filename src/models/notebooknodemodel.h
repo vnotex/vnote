@@ -35,10 +35,11 @@ public:
     NodeIdentifierRole,              // NodeIdentifier struct
 
     // Display roles
-    ChildCountRole, // int - number of children
-    PathRole,       // QString - relative node path
+    ChildCountRole,   // int - number of children
+    PathRole,         // QString - relative node path
     ModifiedTimeRole, // QDateTime
-    CreatedTimeRole   // QDateTime
+    CreatedTimeRole,  // QDateTime
+    PreviewRole       // QString - file content preview (lazy-loaded, files only)
   };
 
   explicit NotebookNodeModel(ServiceLocator &p_services, QObject *p_parent = nullptr);

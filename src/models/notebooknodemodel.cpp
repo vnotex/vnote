@@ -168,6 +168,7 @@ QVector<NodeInfo> NotebookNodeModel::parseChildrenFromJson(
   for (const QJsonValue &fileVal : files) {
     NodeInfo info = parseNodeInfoFromJson(fileVal.toObject(), p_parentId);
     info.isFolder = false;
+    // Preview is fetched lazily via PreviewRole when requested by view
     children.append(info);
   }
 
@@ -330,6 +331,24 @@ QVariant NotebookNodeModel::data(const QModelIndex &p_index, int p_role) const {
 
   case CreatedTimeRole:
     return info.createdTimeUtc;
+
+  case PreviewRole:
+    // Lazy-load preview for files only
+    if (!info.isFolder) {
+      // Check if preview already cached
+      if (info.preview.isEmpty()) {
+        // Fetch from service and cache in NodeInfo
+        auto *notebookService = m_services.get<NotebookService>();
+        if (notebookService) {
+          // Cast away const to update cache (mutable pattern)
+          NodeInfo &mutableInfo = const_cast<NodeInfo &>(nodeIt.value());
+          mutableInfo.preview = notebookService->peekFile(info.id.notebookId, info.id.relativePath);
+          return mutableInfo.preview;
+        }
+      }
+      return info.preview;
+    }
+    return QString();
 
   default:
     return QVariant();
