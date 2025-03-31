@@ -28,6 +28,7 @@
 #include <gui/services/themeservice.h>
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
+#include <core/services/snippetcoreservice.h>
 #include <core/services/templateservice.h>
 #include <core/services/htmltemplateservice.h>
 #include <gui/services/viewwindowfactory.h>
@@ -171,6 +172,7 @@ int main(int argc, char *argv[]) {
     BufferService bufferService(context, &hookManager);
     TagCoreService tagCoreService(context);
     TagService tagService(context, &hookManager);
+    SnippetCoreService snippetCoreService(context);
 
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<ConfigCoreService>(configService.coreService());
@@ -181,6 +183,7 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<HookManager>(&hookManager);
     serviceLocator.registerService<TagCoreService>(&tagCoreService);
     serviceLocator.registerService<TagService>(&tagService);
+    serviceLocator.registerService<SnippetCoreService>(&snippetCoreService);
     qInfo() << "Services registered (including HookManager)";
 
     // Wire HookManager to NotebookCoreService for firing node operation hooks.

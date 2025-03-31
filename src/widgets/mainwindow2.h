@@ -19,6 +19,7 @@ class ServiceLocator;
 class NotebookExplorer2;
 class OutlineViewer;
 class TagExplorer2;
+class SnippetPanel2;
 class ViewArea2;
 
 class ToolBarHelper2;
@@ -100,6 +101,9 @@ private:
   // Setup TagExplorer2 as dock widget.
   void setupTagExplorer();
 
+  // Setup SnippetPanel2 as dock widget.
+  void setupSnippetExplorer();
+
   // Setup ViewArea2 as central widget.
   void setupViewArea();
 
@@ -132,6 +136,9 @@ private:
 
   // TagExplorer2 dock widget.
   TagExplorer2 *m_tagExplorer = nullptr;
+
+  // SnippetPanel2 dock widget.
+  SnippetPanel2 *m_snippetPanel = nullptr;
 
   // ViewArea2 central widget.
   ViewArea2 *m_viewArea = nullptr;

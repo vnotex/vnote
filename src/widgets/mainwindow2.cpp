@@ -24,6 +24,7 @@
 #include <widgets/notebookexplorer2.h>
 #include <widgets/outlineviewer.h>
 #include <widgets/tagexplorer2.h>
+#include <widgets/snippetpanel2.h>
 #include <widgets/viewarea2.h>
 #include <widgets/viewwindow2.h>
 #include <widgets/messageboxhelper.h>
@@ -93,6 +94,9 @@ void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen) {
     emit layoutChanged();
 
     m_notebookExplorer->loadNotebooks();
+
+    // Initialize snippet panel (load snippets from config).
+    m_snippetPanel->initialize();
 
     // Fire after-start hook so components can restore session state.
     auto *hookMgr = m_serviceLocator.get<HookManager>();
@@ -278,12 +282,19 @@ void MainWindow2::setupTagExplorer() {
   m_tagExplorer->setObjectName("TagExplorer2.vnotex");
 }
 
+void MainWindow2::setupSnippetExplorer() {
+  m_snippetPanel = new SnippetPanel2(m_serviceLocator, this);
+  m_snippetPanel->setObjectName("SnippetPanel2.vnotex");
+}
+
 void MainWindow2::setupDocks() {
   setupNotebookExplorer();
 
   setupOutlineViewer();
 
   setupTagExplorer();
+
+  setupSnippetExplorer();
 
   m_dockWidgetHelper.setupDocks();
   m_dockWidgetHelper.postSetup();
@@ -311,6 +322,13 @@ void MainWindow2::setupDocks() {
               bufferSvc->openBuffer(p_nodeId);
             }
           });
+
+  // Wire snippet apply (stub — ViewWindow2 does not have applySnippet() yet).
+  connect(m_snippetPanel, &SnippetPanel2::applySnippetRequested,
+          this, [this](const QString &p_name) {
+            // TODO: Route to active editor once ViewWindow2 gains applySnippet().
+            qWarning() << "Snippet apply not yet supported in ViewWindow2:" << p_name;
+          });
 }
 
 QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const {
@@ -321,6 +339,8 @@ QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const
       return m_outlineViewer;
     case DockWidgetHelper::DockType::TagDock:
       return m_tagExplorer;
+    case DockWidgetHelper::DockType::SnippetDock:
+      return m_snippetPanel;
     default:
       return nullptr;
   }
