@@ -30,6 +30,7 @@ target_sources(vnote PRIVATE
     dialogs/newnotedialog.cpp dialogs/newnotedialog.h
     dialogs/newnotedialog2.cpp dialogs/newnotedialog2.h
     dialogs/newsnippetdialog.cpp dialogs/newsnippetdialog.h
+    dialogs/newsnippetdialog2.cpp dialogs/newsnippetdialog2.h
     dialogs/newtagdialog.cpp dialogs/newtagdialog.h
     dialogs/nodeinfowidget.cpp dialogs/nodeinfowidget.h
     dialogs/notebookinfowidget.cpp dialogs/notebookinfowidget.h
@@ -56,7 +57,9 @@ target_sources(vnote PRIVATE
     dialogs/settings/themepage.cpp dialogs/settings/themepage.h
     dialogs/settings/vipage.cpp dialogs/settings/vipage.h
     dialogs/snippetinfowidget.cpp dialogs/snippetinfowidget.h
+    dialogs/snippetinfowidget2.cpp dialogs/snippetinfowidget2.h
     dialogs/snippetpropertiesdialog.cpp dialogs/snippetpropertiesdialog.h
+    dialogs/snippetpropertiesdialog2.cpp dialogs/snippetpropertiesdialog2.h
     dialogs/sortdialog.cpp dialogs/sortdialog.h
     dialogs/tableinsertdialog.cpp dialogs/tableinsertdialog.h
     dialogs/updater.cpp dialogs/updater.h
@@ -126,6 +129,7 @@ target_sources(vnote PRIVATE
     searchpanel.cpp searchpanel.h
     simplesegmenthighlighter.cpp simplesegmenthighlighter.h
     snippetpanel.cpp snippetpanel.h
+    snippetpanel2.cpp snippetpanel2.h
     statusbarhelper.cpp statusbarhelper.h
     styleditemdelegate.cpp styleditemdelegate.h
     systemtrayhelper.cpp systemtrayhelper.h
