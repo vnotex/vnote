@@ -1,0 +1,9 @@
+add_qt_test(test_snippetcontroller
+  SOURCES
+    test_snippetcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/snippetcontroller.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)

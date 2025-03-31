@@ -11,6 +11,7 @@ target_sources(vnote PRIVATE
     recyclebincontroller.cpp recyclebincontroller.h
     importfoldercontroller.cpp importfoldercontroller.h
     tagcontroller.cpp tagcontroller.h
+    snippetcontroller.cpp snippetcontroller.h
     textviewwindowcontroller.cpp textviewwindowcontroller.h
     pdfviewwindowcontroller.cpp pdfviewwindowcontroller.h
     mindmapviewwindowcontroller.cpp mindmapviewwindowcontroller.h
