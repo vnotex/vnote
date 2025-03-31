@@ -18,3 +18,13 @@ add_qt_test(test_attachmentmodel
     Qt6::Widgets
   GUILESS
 )
+
+add_qt_test(test_snippetmodel
+  SOURCES
+    test_snippetmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/snippetlistmodel.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)

@@ -6,6 +6,7 @@ target_sources(vnote PRIVATE
     tagfilemodel.cpp tagfilemodel.h
     tagmodel.cpp tagmodel.h
     attachmentlistmodel.cpp attachmentlistmodel.h
+    snippetlistmodel.cpp snippetlistmodel.h
 )
 
 target_include_directories(vnote PRIVATE
