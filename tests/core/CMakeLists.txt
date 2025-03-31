@@ -127,6 +127,15 @@ add_qt_test(test_tagservice
   GUILESS
 )
 
+add_qt_test(test_snippetservice
+  SOURCES
+    test_snippetservice.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_tagviewer2
   SOURCES
     test_tagviewer2.cpp
