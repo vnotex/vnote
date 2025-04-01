@@ -31,6 +31,7 @@ jobs:
           - name: "Build on Win64 Qt 5.15"
             arch: win64_msvc2019_64
             vs_version: 2019
+            vs_cmd: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
             qt: 5.15.2
             qt_modules: qtwebengine
             qt_tools: tools_opensslv3_x64
@@ -39,6 +40,7 @@ jobs:
           - name: "Build on Win64 Qt 6"
             arch: win64_msvc2022_64
             vs_version: 2022
+            vs_cmd: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
             qt: 6.8.3
             qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat"
             qt_tools: tools_opensslv3_x64
@@ -96,7 +98,7 @@ jobs:
         shell: cmd
         run: |
           cmake --version
-          call "C:\Program Files (x86)\Microsoft Visual Studio\${{matrix.config.vs_version}}\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          call "${{matrix.config.vs_cmd}}"
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} -DOPENSSL_EXTRA_LIB_DIR=${{runner.workspace}}\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE%
           cmake --build .
           cmake --build . --target=pack
