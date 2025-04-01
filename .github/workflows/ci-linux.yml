@@ -62,10 +62,10 @@ jobs:
 
       - name: Cache Qt
         id: cache-qt
-        uses: actions/cache@v1  # not v2!
+        uses: actions/cache@v4
         with:
           path: ../Qt
-          key: ${{ runner.os }}-QtCache-6.5
+          key: ${{ runner.os }}-QtCache-6.8
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
