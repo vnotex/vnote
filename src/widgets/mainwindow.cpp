@@ -75,6 +75,8 @@ MainWindow::MainWindow(QWidget *p_parent)
 
     setupShortcuts();
 
+    loadStateAndGeometry();
+
     m_dockWidgetHelper.postSetup();
 
     // The signal is particularly useful if your application has to do some last-second cleanup.
