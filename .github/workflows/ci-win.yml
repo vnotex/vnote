@@ -37,7 +37,7 @@ jobs:
             suffix: "-windows7"
           - name: "Build on Win64 Qt 6.5"
             arch: win64_msvc2019_64
-            qt: 6.5.3
+            qt: 6.8.3
             qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat"
             qt_tools: tools_opensslv3_x64
             qt_major: 6

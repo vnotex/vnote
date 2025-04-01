@@ -70,7 +70,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: 6.5.3
+          version: 6.8.3
           target: desktop
           modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
           tools: 'tools_opensslv3_src'
