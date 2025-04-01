@@ -126,7 +126,7 @@ private:
   // Non-owning reference to ServiceLocator.
   ServiceLocator &m_serviceLocator;
 
-  DockWidgetHelper m_dockWidgetHelper{this};
+  DockWidgetHelper m_dockWidgetHelper{this, m_serviceLocator};
 
   // NotebookExplorer2 dock widget.
   NotebookExplorer2 *m_notebookExplorer = nullptr;

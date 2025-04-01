@@ -13,6 +13,7 @@ class QTabBar;
 
 namespace vnotex {
 class MainWindow2;
+class ServiceLocator;
 
 // Dock widget helper for MainWindow.
 class DockWidgetHelper : public QObject, public NavigationMode {
@@ -32,7 +33,7 @@ public:
   };
   Q_ENUM(DockType)
 
-  explicit DockWidgetHelper(MainWindow2 *p_mainWindow);
+  explicit DockWidgetHelper(MainWindow2 *p_mainWindow, ServiceLocator &p_services);
 
   void setupDocks();
 
@@ -105,6 +106,8 @@ private:
   static QString iconFileName(DockType p_dockType);
 
   MainWindow2 *m_mainWindow = nullptr;
+
+  ServiceLocator &m_services;
 
   QVector<IconInfo> m_dockIcons;
 

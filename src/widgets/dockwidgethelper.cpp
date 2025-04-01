@@ -44,9 +44,11 @@ DockWidgetHelper::NavigationItemInfo::NavigationItemInfo(QTabBar *p_tabBar, int 
 DockWidgetHelper::NavigationItemInfo::NavigationItemInfo(int p_dockType)
     : m_dockType(p_dockType) {}
 
-DockWidgetHelper::DockWidgetHelper(MainWindow2 *p_mainWindow)
-    : QObject(p_mainWindow), NavigationMode(NavigationMode::Type::DoubleKeys, p_mainWindow),
-      m_mainWindow(p_mainWindow) {}
+DockWidgetHelper::DockWidgetHelper(MainWindow2 *p_mainWindow, ServiceLocator &p_services)
+    : QObject(p_mainWindow),
+      NavigationMode(NavigationMode::Type::DoubleKeys, p_mainWindow, p_services.get<ThemeService>()),
+      m_mainWindow(p_mainWindow),
+      m_services(p_services) {}
 
 QString DockWidgetHelper::iconFileName(DockType p_dockType) {
   switch (p_dockType) {
