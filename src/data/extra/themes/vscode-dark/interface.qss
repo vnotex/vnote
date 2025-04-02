@@ -5,7 +5,6 @@
  * same specificity and the rule that appears last takes precedence.
  * VNote specific syntax:
  *  - @widgets#toolbox#title#border: reference to a color defined in palette.ini;
- *  - $2px: 2 will be scaled by multiplying current display scaled factor.
  */
 
 QWidget {
@@ -582,7 +581,7 @@ QTabBar::close-button:hover {
 }
 
 QTabBar::scroller {
-    width: $20px;
+    width: 20px;
 }
 
 QTabBar QToolButton {

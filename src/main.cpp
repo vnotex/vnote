@@ -157,6 +157,13 @@ int main(int argc, char *argv[])
     // Should set the correct locale before VNoteX::getInst().
     loadTranslators(app);
 
+    if (app.styleSheet().isEmpty()) {
+        auto style = VNoteX::getInst().getThemeMgr().fetchQtStyleSheet();
+        if (!style.isEmpty()) {
+            app.setStyleSheet(style);
+        }
+    }
+
     MainWindow window;
     window.show();
 
@@ -172,14 +179,6 @@ int main(int argc, char *argv[])
 
     // Let MainWindow show first to decide the screen on which app is running.
     WidgetUtils::calculateScaleFactor(window.windowHandle()->screen());
-
-    if (app.styleSheet().isEmpty()) {
-        auto style = VNoteX::getInst().getThemeMgr().fetchQtStyleSheet();
-        if (!style.isEmpty()) {
-            app.setStyleSheet(style);
-            WidgetUtils::updateStyle(&window);
-        }
-    }
 
     VNoteX::getInst().getThemeMgr().setBaseBackground(window.palette().color(QPalette::Base));
 

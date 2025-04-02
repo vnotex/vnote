@@ -258,7 +258,6 @@ QString Theme::fetchQtStyleSheet() const
     translateStyleByPalette(m_palette, style);
     translateUrlToAbsolute(m_themeFolderPath, style);
     translateFontFamilyList(style);
-    translateScaledSize(WidgetUtils::calculateScaleFactor(), style);
     return style;
 }
 
@@ -352,40 +351,6 @@ void Theme::translateFontFamilyList(QString &p_style)
         } else {
             pos = idx + match.capturedLength();
         }
-    }
-}
-
-void Theme::translateScaledSize(qreal p_factor, QString &p_style)
-{
-    QRegularExpression scaleRe("(\\s|:)\\$([+-]?)(\\d+)(?=\\D)");
-    const int prefixCapturedIdx = 1;
-    const int signCapturedIdx = 2;
-    const int numCapturedIdx = 3;
-
-    qDebug() << "translateScaledSize of Qt style sheet" << p_factor;
-
-    int pos = 0;
-    QRegularExpressionMatch match;
-    while (pos < p_style.size()) {
-        int idx = p_style.indexOf(scaleRe, pos, &match);
-        if (idx == -1) {
-            break;
-        }
-
-        auto numStr = match.captured(numCapturedIdx);
-        bool ok = false;
-        int val = numStr.toInt(&ok);
-        if (!ok) {
-            pos = idx + match.capturedLength();
-            continue;
-        }
-
-        val = val * p_factor + 0.5;
-        auto newStr = QStringLiteral("%1%2%3").arg(match.captured(prefixCapturedIdx),
-                                            match.captured(signCapturedIdx),
-                                            QString::number(val));
-        p_style.replace(idx, match.capturedLength(), newStr);
-        pos = idx + newStr.size();
     }
 }
 

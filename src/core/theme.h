@@ -113,8 +113,6 @@ namespace vnotex
         // Thus we need to choose one available font from the list.
         static void translateFontFamilyList(QString &p_style);
 
-        static void translateScaledSize(qreal p_factor, QString &p_style);
-
         static QJsonObject readJsonFile(const QString &p_filePath);
 
         static QJsonObject readPaletteFile(const QString &p_folder);
