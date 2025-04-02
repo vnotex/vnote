@@ -114,6 +114,8 @@ jobs:
 
       - name: Build Project
         run: |
+          # Remove the libqsqlmimer.so as libmimerapi.so is not deployed with Qt6
+          rm ${{runner.workspace}}/Qt/6.*/gcc_64/plugins/sqldrivers/libqsqlmimer.so
           cmake --build . --target pack
         working-directory: ${{runner.workspace}}/build
 
