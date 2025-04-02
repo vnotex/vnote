@@ -31,7 +31,7 @@ jobs:
           - name: "Build on Arm64"
             os: macos-latest
             arch: universal
-            qt: 6.5.3
+            qt: 6.8.3
 
     runs-on: ${{matrix.config.os}}
 
@@ -81,10 +81,10 @@ jobs:
 
       - name: Cache Qt
         id: cache-qt
-        uses: actions/cache@v1  # not v2!
+        uses: actions/cache@v4
         with:
           path: ../Qt
-          key: ${{ runner.os }}-QtCache-6.5
+          key: ${{ runner.os }}-QtCache-6.8
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3

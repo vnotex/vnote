@@ -62,15 +62,15 @@ jobs:
 
       - name: Cache Qt
         id: cache-qt
-        uses: actions/cache@v1  # not v2!
+        uses: actions/cache@v4
         with:
           path: ../Qt
-          key: ${{ runner.os }}-QtCache-6.5
+          key: ${{ runner.os }}-QtCache-6.8
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: 6.5.3
+          version: 6.8.3
           target: desktop
           modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
           tools: 'tools_opensslv3_src'
@@ -114,6 +114,8 @@ jobs:
 
       - name: Build Project
         run: |
+          # Remove the libqsqlmimer.so as libmimerapi.so is not deployed with Qt6
+          rm ${{runner.workspace}}/Qt/6.*/gcc_64/plugins/sqldrivers/libqsqlmimer.so
           cmake --build . --target pack
         working-directory: ${{runner.workspace}}/build
 
