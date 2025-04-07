@@ -1,5 +1,7 @@
 #include "webpage.h"
 
+#include <QDebug>
+
 #include <utils/widgetutils.h>
 #include <core/vnotex.h>
 #include <core/fileopenparameters.h>
@@ -34,4 +36,15 @@ bool WebPage::acceptNavigationRequest(const QUrl &p_url,
 
     WidgetUtils::openUrlByDesktop(p_url);
     return false;
+}
+
+void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level,
+                                       const QString &message,
+                                       int lineNumber,
+                                       const QString &sourceID)
+{
+    if (level == QWebEnginePage::InfoMessageLevel) {
+        qDebug() << "JS(" << sourceID << ":" << lineNumber << "):" << message;
+    }
+    QWebEnginePage::javaScriptConsoleMessage(level, message, lineNumber, sourceID);
 }

@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QMimeData>
 #include <QScopedPointer>
+#include <QWebEngineSettings>
 
 #include "markdownvieweradapter.h"
 #include "previewhelper.h"
@@ -70,6 +71,8 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter,
                 mimeData->setHtml(p_html);
                 ClipboardUtils::setMimeDataToClipboard(QApplication::clipboard(), mimeData.release());
             });
+
+    settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 }
 
 MarkdownViewerAdapter *MarkdownViewer::adapter() const

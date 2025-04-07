@@ -15,6 +15,11 @@ namespace vnotex
         bool acceptNavigationRequest(const QUrl &p_url,
                                      NavigationType p_type,
                                      bool p_isMainFrame) Q_DECL_OVERRIDE;
+
+        void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level,
+                                      const QString &message,
+                                      int lineNumber,
+                                      const QString &sourceID) override;
     };
 }
 

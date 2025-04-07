@@ -508,8 +508,6 @@ void MarkdownViewWindow::setupViewer()
                     setEditViewMode(m_editViewMode);
                 }
             });
-
-    m_viewer->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 }
 
 void MarkdownViewWindow::syncTextEditorFromBuffer(bool p_syncPositionFromReadMode)
