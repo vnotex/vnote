@@ -2,6 +2,7 @@
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QWidgetAction>
 
 #include <utils/widgetutils.h>
 #include <buffer/buffer.h>
@@ -30,9 +31,13 @@ TagPopup::TagPopup(QToolButton *p_btn, QWidget *p_parent)
 void TagPopup::setupUI()
 {
     m_tagViewer = new TagViewer(true, this);
-    setCentralWidget(m_tagViewer);
 
-    setMinimumSize(256, 320);
+    m_tagViewer->setMinimumSize(256, 320);
+
+    auto act = new QWidgetAction(this);
+    // @act will own @p_widget.
+    act->setDefaultWidget(m_tagViewer);
+    addAction(act);
 }
 
 void TagPopup::setBuffer(Buffer *p_buffer)

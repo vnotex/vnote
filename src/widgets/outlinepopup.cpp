@@ -2,6 +2,7 @@
 
 #include <QVBoxLayout>
 #include <QToolButton>
+#include <QWidgetAction>
 
 #include <core/global.h>
 #include <utils/widgetutils.h>
@@ -23,13 +24,15 @@ OutlinePopup::OutlinePopup(QToolButton *p_btn, QWidget *p_parent)
 
 void OutlinePopup::setupUI()
 {
-    auto mainLayout = new QVBoxLayout(this);
-    WidgetUtils::setContentsMargins(mainLayout);
-
     m_viewer = new OutlineViewer(tr("Outline"), this);
-    mainLayout->addWidget(m_viewer);
+    m_viewer->setMinimumSize(320, 384);
 
-    setMinimumSize(320, 384);
+    auto act = new QWidgetAction(this);
+    // @act will own @p_widget.
+    act->setDefaultWidget(m_viewer);
+    addAction(act);
+
+
 }
 
 void OutlinePopup::setOutlineProvider(const QSharedPointer<OutlineProvider> &p_provider)
