@@ -1,4 +1,7 @@
 # Changes
+## v3.19.0
+* Add VSCode-sytle editor shortcuts
+
 ## v3.18.1
 * Fix crash caused by Qt6 change
 * Fix XSS protection exemption

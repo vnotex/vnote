@@ -26,7 +26,7 @@ for line in fileinput.input(['.github/workflows/ci-win.yml', '.github/workflows/
     print(regExp.sub('\\1VNOTE_VER: ' + newVersion, line), end='')
 
 # Info.plist
-regExp = re.compile('(\\s+)<string>(?!12\\.1)\\d+\\.\\d+</string>')
+regExp = re.compile('(\\s+)<string>(?!10\\.15)\\d+\\.\\d+</string>')
 for line in fileinput.input(['src/data/core/Info.plist'], inplace = True):
     print(regExp.sub('\\1<string>' + shortVersion + '</string>', line), end='')
 

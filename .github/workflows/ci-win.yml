@@ -16,7 +16,7 @@ on:
         default: false
 
 env:
-    VNOTE_VER: 3.18.2
+    VNOTE_VER: 3.19.0
 
 jobs:
   build:
