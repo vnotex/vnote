@@ -59,6 +59,18 @@ Expand the selection to the beginning or end of current paragraph.
 Expand the selection to the beginning or end of current line.
 - `Ctrl+Shift+Home`, `Ctrl+Shift+End`  
 Expand the selection to the beginning or end of current note.
+- `Ctrl+Shift+G`  
+Go to line.
+- `Ctrl+C/X`
+Copy/Cut line if there is no selection.
+- `Ctrl+L`  
+Select line.
+- `Alt+Up/Down`  
+Move line up/down.
+- `Shift+Alt+Up/Down`
+Copy line up/down.
+- `Ctrl+Shift+K`  
+Delete line.
 
 ## Markdown Editor
 ### Read Mode

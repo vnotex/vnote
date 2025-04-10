@@ -59,6 +59,18 @@ VNote的很多部件均支持`Ctrl+J`和`Ctrl+K`导航。
 扩展选定到行首和行尾。
 - `Ctrl+Shift+Home`, `Ctrl+Shift+End`  
 扩展选定到笔记开始或结尾处。
+- `Ctrl+Shift+G`  
+跳转到指定行。
+- `Ctrl+C/X`  
+在没有选中文本时复制/剪切整行。
+- `Ctrl+L`  
+选择当前行。
+- `Alt+Up/Down`  
+向上/向下移动行。
+- `Shift+Alt+Up/Down`  
+向上/向下复制行。
+- `Ctrl+Shift+K`  
+删除行。
 
 ## Markdown 编辑器
 ### 阅读模式
