@@ -169,7 +169,7 @@ void TestSearchController::testBuildQueryJsonContentSearch() {
   QCOMPARE(obj.value(QStringLiteral("maxResults")).toInt(), 500);
 
   const QJsonObject scopeObj = obj.value(QStringLiteral("scope")).toObject();
-  const QJsonArray patterns = scopeObj.value(QStringLiteral("pathPatterns")).toArray();
+  const QJsonArray patterns = scopeObj.value(QStringLiteral("filePatterns")).toArray();
   QCOMPARE(patterns.size(), 1);
   QCOMPARE(patterns.first().toString(), QStringLiteral("*.md"));
 }
