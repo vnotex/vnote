@@ -3,9 +3,11 @@
 
 [English](README.md)
 
+[Gitee托管项目](https://gitee.com/vnotex/vnote)
+
 一个舒适的笔记平台！
 
-更多信息，请访问[VNote主页](https://vnotex.github.io/vnote)或者[由Gitee托管的主页](https://tamlok.gitee.io/vnote)。
+更多信息，请访问[VNote主页](https://vnotex.github.io/vnote)。
 
 ![VNote](pics/vnote.png)
 

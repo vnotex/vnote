@@ -3,9 +3,11 @@
 
 [简体中文](README_zh_CN.md)
 
+[Project on Gitee](https://gitee.com/vnotex/vnote)
+
 A pleasant note-taking platform.
 
-For more information, please visit [**VNote's Home Page**](https://vnotex.github.io/vnote) or [Home Page on Gitee](https://tamlok.gitee.io/vnote).
+For more information, please visit [**VNote's Home Page**](https://vnotex.github.io/vnote).
 
 ![VNote](pics/vnote.png)
 
