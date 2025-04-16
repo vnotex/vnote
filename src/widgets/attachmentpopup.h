@@ -1,16 +1,14 @@
 #ifndef ATTACHMENTPOPUP_H
 #define ATTACHMENTPOPUP_H
 
-#include <QMenu>
-
-class QToolButton;
+#include "buttonpopup.h"
 
 namespace vnotex
 {
     class FileSystemViewer;
     class Buffer;
 
-    class AttachmentPopup : public QMenu
+    class AttachmentPopup : public ButtonPopup
     {
         Q_OBJECT
     public:
@@ -43,9 +41,6 @@ namespace vnotex
         FileSystemViewer *m_viewer = nullptr;
 
         bool m_needUpdateAttachmentFolder = true;
-
-        // Button for this menu.
-        QToolButton *m_button = nullptr;
     };
 }
 

@@ -15,10 +15,7 @@ namespace vnotex
         ButtonPopup(QToolButton *p_btn, QWidget *p_parent = nullptr);
 
     protected:
-        void setCentralWidget(QWidget *p_widget);
-
-    private:
-        void setupUI();
+        void addWidget(QWidget *p_widget);
 
         // Button for this menu.
         QToolButton *m_button = nullptr;
