@@ -1,6 +1,6 @@
 #include "buttonpopup.h"
 
-#include <QVBoxLayout>
+#include <QWidgetAction>
 
 #include <utils/widgetutils.h>
 
@@ -10,8 +10,6 @@ ButtonPopup::ButtonPopup(QToolButton *p_btn, QWidget *p_parent)
     : QMenu(p_parent),
       m_button(p_btn)
 {
-    setupUI();
-
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     // Qt::Popup on macOS does not work well with input method.
     setWindowFlags(Qt::Tool | Qt::NoDropShadowWindowHint);
@@ -19,16 +17,10 @@ ButtonPopup::ButtonPopup(QToolButton *p_btn, QWidget *p_parent)
 #endif
 }
 
-void ButtonPopup::setupUI()
+void ButtonPopup::addWidget(QWidget *p_widget)
 {
-    auto mainLayout = new QVBoxLayout(this);
-    WidgetUtils::setContentsMargins(mainLayout);
-}
-
-void ButtonPopup::setCentralWidget(QWidget *p_widget)
-{
-    Q_ASSERT(p_widget);
-    auto mainLayout = layout();
-    Q_ASSERT(mainLayout->count() == 0);
-    mainLayout->addWidget(p_widget);
+    auto act = new QWidgetAction(this);
+    // @act will own @p_widget.
+    act->setDefaultWidget(p_widget);
+    addAction(act);
 }

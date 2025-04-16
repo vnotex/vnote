@@ -4,7 +4,6 @@
 #include <QLabel>
 #include <QGroupBox>
 #include <QPointer>
-#include <QWidgetAction>
 
 #include <utils/widgetutils.h>
 
@@ -72,10 +71,5 @@ void WordCountPopup::updateCount(const ViewWindow::WordCountInfo &p_info)
 void WordCountPopup::setupUI()
 {
     m_panel = new WordCountPanel(this);
-
-
-    auto act = new QWidgetAction(this);
-    // @act will own @p_widget.
-    act->setDefaultWidget(m_panel);
-    addAction(act);
+    addWidget(m_panel);
 }

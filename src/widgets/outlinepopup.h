@@ -1,7 +1,8 @@
 #ifndef OUTLINEPOPUP_H
 #define OUTLINEPOPUP_H
 
-#include <QMenu>
+#include "buttonpopup.h"
+
 #include <QSharedPointer>
 
 class QToolButton;
@@ -11,7 +12,7 @@ namespace vnotex
     class OutlineProvider;
     class OutlineViewer;
 
-    class OutlinePopup : public QMenu
+    class OutlinePopup : public ButtonPopup
     {
         Q_OBJECT
     public:
@@ -27,9 +28,6 @@ namespace vnotex
 
         // Managed by QObject.
         OutlineViewer *m_viewer = nullptr;
-
-        // Button with this menu.
-        QToolButton *m_button = nullptr;
     };
 }
 

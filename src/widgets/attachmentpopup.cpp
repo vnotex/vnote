@@ -29,8 +29,7 @@
 using namespace vnotex;
 
 AttachmentPopup::AttachmentPopup(QToolButton *p_btn, QWidget *p_parent)
-    : QMenu(p_parent),
-      m_button(p_btn)
+    : ButtonPopup(p_btn, p_parent)
 {
     setupUI();
 
@@ -68,7 +67,7 @@ void AttachmentPopup::setupUI()
                         const auto destFolderPath = getDestFolderPath();
 
                         auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-                        auto files = QFileDialog::getOpenFileNames(this,
+                        auto files = QFileDialog::getOpenFileNames(nullptr,
                                                                    tr("Select Files As Attachments"),
                                                                    sessionConfig.getExternalMediaDefaultPath());
                         if (files.isEmpty()) {
@@ -206,12 +205,7 @@ void AttachmentPopup::setupUI()
 
     widget->setMinimumSize(320, 384);
 
-
-    auto act = new QWidgetAction(this);
-    // @act will own @p_widget.
-    act->setDefaultWidget(widget);
-    addAction(act);
-
+    addWidget(widget);
 }
 
 QToolButton *AttachmentPopup::createButton()
