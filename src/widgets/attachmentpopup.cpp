@@ -8,6 +8,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QTimer>
+#include <QWidgetAction>
 
 #include "propertydefs.h"
 
@@ -46,7 +47,8 @@ AttachmentPopup::AttachmentPopup(QToolButton *p_btn, QWidget *p_parent)
 
 void AttachmentPopup::setupUI()
 {
-    auto mainLayout = new QVBoxLayout(this);
+    QWidget *widget = new QWidget{};
+    auto mainLayout = new QVBoxLayout(widget);
 
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
 
@@ -202,7 +204,14 @@ void AttachmentPopup::setupUI()
             });
     mainLayout->addWidget(m_viewer);
 
-    setMinimumSize(320, 384);
+    widget->setMinimumSize(320, 384);
+
+
+    auto act = new QWidgetAction(this);
+    // @act will own @p_widget.
+    act->setDefaultWidget(widget);
+    addAction(act);
+
 }
 
 QToolButton *AttachmentPopup::createButton()
