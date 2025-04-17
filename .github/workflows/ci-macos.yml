@@ -16,7 +16,7 @@ on:
         default: false
 
 env:
-    VNOTE_VER: 3.19.0
+    VNOTE_VER: 3.19.1
     CMAKE_VER: 3.24.3
 
 jobs:
