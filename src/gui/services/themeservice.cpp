@@ -174,14 +174,6 @@ void ThemeService::setBaseBackground(const QColor &p_bg) { m_baseBackground = p_
 
 const QVector<ThemeService::ThemeInfo> &ThemeService::getAllThemes() const { return m_themes; }
 
-QPixmap ThemeService::getThemePreview(const QString &p_name) const {
-  auto theme = findTheme(p_name);
-  if (theme) {
-    return ThemeUtils::getCover(theme->m_folderPath);
-  }
-  return QPixmap();
-}
-
 void ThemeService::refresh() {
   loadAvailableThemes();
   refreshCurrentTheme();

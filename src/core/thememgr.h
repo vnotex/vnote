@@ -53,7 +53,7 @@ public:
 
   const Theme &getCurrentTheme() const;
 
-  QPixmap getThemePreview(const QString &p_name) const;
+  // QPixmap getThemePreview(const QString &p_name) const; // Removed: cover.png no longer shipped
 
   const ThemeInfo *findTheme(const QString &p_name) const;
 

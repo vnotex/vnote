@@ -1,27 +1,9 @@
 #include "themeutils.h"
 
 #include <QApplication>
-#include <QDir>
 #include <QPalette>
 
 using namespace vnotex;
-
-QPixmap ThemeUtils::getCover(const QString &p_folder) {
-  auto coverPath = getCoverPath(p_folder);
-  if (!coverPath.isEmpty()) {
-    return QPixmap(coverPath);
-  }
-  return QPixmap();
-}
-
-QString ThemeUtils::getCoverPath(const QString &p_folder) {
-  QDir dir(p_folder);
-  const QString coverFileName = QStringLiteral("cover.png");
-  if (dir.exists(coverFileName)) {
-    return dir.filePath(coverFileName);
-  }
-  return QString();
-}
 
 QJsonObject ThemeUtils::backfillSystemPalette(QJsonObject p_obj) {
   const auto qpalette = QApplication::palette();

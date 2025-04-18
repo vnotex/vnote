@@ -226,6 +226,8 @@ QToolBar *ToolBarHelper2::setupSettingsToolBar(QToolBar *p_toolBar) {
 
   setupSettingsButton(tb);
 
+  setupThemeSwitcherButton(tb);
+
   return tb;
 }
 
@@ -339,6 +341,66 @@ void ToolBarHelper2::updateQuickAccessMenu(QMenu *p_menu) {
       sessionConfig.setQuickAccessItems(items);
     }
   });
+}
+
+void ToolBarHelper2::setupThemeSwitcherButton(QToolBar *p_toolBar) {
+  auto *btn = new QToolButton(p_toolBar);
+  btn->setPopupMode(QToolButton::InstantPopup);
+
+  // Hide the dropdown arrow indicator.
+  btn->setStyleSheet(QStringLiteral("QToolButton::menu-indicator { image: none; }"));
+
+  auto *act = new QAction(MainWindow2::tr("Switch Theme"), btn);
+  setActionIcon(act, QStringLiteral("theme_switcher.svg"));
+  btn->setDefaultAction(act);
+
+  auto *menu = WidgetsFactory::createMenu(p_toolBar);
+  btn->setMenu(menu);
+
+  MainWindow2::connect(menu, &QMenu::aboutToShow, menu, [this, menu]() {
+    menu->clear();
+
+    auto *themeService = m_services.get<ThemeService>();
+    if (!themeService) {
+      return;
+    }
+
+    const auto &themes = themeService->getAllThemes();
+    const auto currentName = themeService->getCurrentTheme().name();
+
+    for (const auto &info : themes) {
+      auto *themeAct = menu->addAction(info.m_displayName);
+      themeAct->setCheckable(true);
+      themeAct->setChecked(info.m_name == currentName);
+      themeAct->setData(info.m_name);
+    }
+  });
+
+  MainWindow2::connect(menu, &QMenu::triggered, menu, [this](QAction *p_act) {
+    if (!p_act || !p_act->data().isValid()) {
+      return;
+    }
+
+    const auto themeName = p_act->data().toString();
+
+    auto *themeService = m_services.get<ThemeService>();
+    if (!themeService) {
+      return;
+    }
+
+    // Skip if already the current theme.
+    if (themeName == themeService->getCurrentTheme().name()) {
+      return;
+    }
+
+    // Persist the choice.
+    m_services.get<ConfigMgr2>()->getCoreConfig().setTheme(themeName);
+
+    // Apply the theme.
+    themeService->switchTheme(themeName);
+  });
+
+  p_toolBar->addWidget(btn);
 }
 
 void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {

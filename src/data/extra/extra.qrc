@@ -341,7 +341,6 @@
         <file>themes/native/interface.qss</file>
         <file>themes/native/web.css</file>
         <file>themes/native/palette.json</file>
-        <file>themes/native/cover.png</file>
         <file>themes/moonlight/arrow_dropdown.svg</file>
         <file>themes/moonlight/arrow_dropdown_disabled.svg</file>
         <file>themes/moonlight/branch_closed.svg</file>
@@ -353,7 +352,6 @@
         <file>themes/moonlight/close.svg</file>
         <file>themes/moonlight/expand_toolbar.svg</file>
         <file>themes/moonlight/close_grey.svg</file>
-        <file>themes/moonlight/cover.png</file>
         <file>themes/moonlight/down.svg</file>
         <file>themes/moonlight/down_disabled.svg</file>
         <file>themes/moonlight/float.svg</file>
@@ -386,7 +384,6 @@
         <file>themes/everforest-dark/close.svg</file>
         <file>themes/everforest-dark/expand_toolbar.svg</file>
         <file>themes/everforest-dark/close_grey.svg</file>
-        <file>themes/everforest-dark/cover.png</file>
         <file>themes/everforest-dark/down.svg</file>
         <file>themes/everforest-dark/down_disabled.svg</file>
         <file>themes/everforest-dark/float.svg</file>
@@ -419,7 +416,6 @@
         <file>themes/pure/close.svg</file>
         <file>themes/pure/expand_toolbar.svg</file>
         <file>themes/pure/close_grey.svg</file>
-        <file>themes/pure/cover.png</file>
         <file>themes/pure/down.svg</file>
         <file>themes/pure/down_disabled.svg</file>
         <file>themes/pure/float.svg</file>
@@ -452,7 +448,6 @@
         <file>themes/solarized-dark/close.svg</file>
         <file>themes/solarized-dark/expand_toolbar.svg</file>
         <file>themes/solarized-dark/close_grey.svg</file>
-        <file>themes/solarized-dark/cover.png</file>
         <file>themes/solarized-dark/down.svg</file>
         <file>themes/solarized-dark/down_disabled.svg</file>
         <file>themes/solarized-dark/float.svg</file>
@@ -485,7 +480,6 @@
         <file>themes/solarized-light/close.svg</file>
         <file>themes/solarized-light/expand_toolbar.svg</file>
         <file>themes/solarized-light/close_grey.svg</file>
-        <file>themes/solarized-light/cover.png</file>
         <file>themes/solarized-light/down.svg</file>
         <file>themes/solarized-light/down_disabled.svg</file>
         <file>themes/solarized-light/float.svg</file>
@@ -845,7 +839,6 @@
         <file>themes/vscode-dark/close.svg</file>
         <file>themes/vscode-dark/expand_toolbar.svg</file>
         <file>themes/vscode-dark/close_grey.svg</file>
-        <file>themes/vscode-dark/cover.png</file>
         <file>themes/vscode-dark/down.svg</file>
         <file>themes/vscode-dark/down_disabled.svg</file>
         <file>themes/vscode-dark/float.svg</file>
@@ -879,7 +872,6 @@
         <file>themes/vue-light/close.svg</file>
         <file>themes/vue-light/expand_toolbar.svg</file>
         <file>themes/vue-light/close_grey.svg</file>
-        <file>themes/vue-light/cover.png</file>
         <file>themes/vue-light/down.svg</file>
         <file>themes/vue-light/down_disabled.svg</file>
         <file>themes/vue-light/float.svg</file>
@@ -912,7 +904,6 @@
         <file>themes/vue-dark/close.svg</file>
         <file>themes/vue-dark/expand_toolbar.svg</file>
         <file>themes/vue-dark/close_grey.svg</file>
-        <file>themes/vue-dark/cover.png</file>
         <file>themes/vue-dark/down.svg</file>
         <file>themes/vue-dark/down_disabled.svg</file>
         <file>themes/vue-dark/float.svg</file>
@@ -949,7 +940,6 @@
         <file>themes/vx-idea/close.svg</file>
         <file>themes/vx-idea/expand_toolbar.svg</file>
         <file>themes/vx-idea/close_grey.svg</file>
-        <file>themes/vx-idea/cover.png</file>
         <file>themes/vx-idea/down.svg</file>
         <file>themes/vx-idea/down_disabled.svg</file>
         <file>themes/vx-idea/float.svg</file>

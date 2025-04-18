@@ -473,8 +473,7 @@ themes/[theme-name]/
 ├── web.css             # Markdown preview styles
 ├── highlight.css       # Code syntax highlighting
 ├── text-editor.theme   # Editor colors
-├── *.svg               # Theme-specific icons
-└── cover.png           # Theme preview
+└── *.svg               # Theme-specific icons
 ```
 
 ---

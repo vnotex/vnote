@@ -38,7 +38,7 @@ highlight-one-light.css #light样式
 
 ## 2. 预览
 
-![主题效果图](cover.png)
+(Theme preview image removed)
 
 ## 3. 鸣谢
 

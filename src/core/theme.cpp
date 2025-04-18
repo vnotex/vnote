@@ -352,8 +352,6 @@ QString Theme::getFileName(File p_fileType) {
     return QStringLiteral("editor-highlight.theme");
   case File::MarkdownEditorHighlightStyle:
     return QStringLiteral("markdown-editor-highlight.theme");
-  case File::Cover:
-    return QStringLiteral("cover.png");
   case File::Icon:
     return QStringLiteral("icons");
   default:

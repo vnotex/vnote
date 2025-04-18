@@ -3,7 +3,6 @@
 
 #include <QColor>
 #include <QObject>
-#include <QPixmap>
 #include <QPair>
 #include <QScopedPointer>
 #include <QString>
@@ -29,7 +28,7 @@ struct ThemeServiceConfig {
 };
 
 // GUI-aware service for theme management.
-// Provides full Qt GUI API (QColor, QPixmap).
+// Provides full Qt GUI API (QColor, etc.).
 // Uses constructor DI instead of singletons.
 class ThemeService : public QObject, private Noncopyable {
   Q_OBJECT
@@ -79,9 +78,6 @@ public:
 
   // Get current theme.
   const Theme &getCurrentTheme() const;
-
-  // Get theme preview image (GUI type).
-  QPixmap getThemePreview(const QString &p_name) const;
 
   // Find theme info by name. Returns nullptr if not found.
   const ThemeInfo *findTheme(const QString &p_name) const;

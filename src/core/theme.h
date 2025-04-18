@@ -24,7 +24,6 @@ public:
     MarkdownEditorStyle,
     EditorHighlightStyle,
     MarkdownEditorHighlightStyle,
-    Cover,
     Icon,
     Max
   };

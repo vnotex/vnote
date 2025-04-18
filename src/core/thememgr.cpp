@@ -171,6 +171,7 @@ void ThemeMgr::setBaseBackground(const QColor &p_bg) { m_baseBackground = p_bg; 
 
 const QVector<ThemeMgr::ThemeInfo> &ThemeMgr::getAllThemes() const { return m_themes; }
 
+/* Removed: cover.png no longer shipped
 QPixmap ThemeMgr::getThemePreview(const QString &p_name) const {
   auto theme = findTheme(p_name);
   if (theme) {
@@ -178,6 +179,7 @@ QPixmap ThemeMgr::getThemePreview(const QString &p_name) const {
   }
   return QPixmap();
 }
+*/
 
 void ThemeMgr::refresh() {
   loadAvailableThemes();
