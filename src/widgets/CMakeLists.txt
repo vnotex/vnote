@@ -38,6 +38,7 @@ target_sources(vnote PRIVATE
     dialogs/notebookinfowidget.cpp dialogs/notebookinfowidget.h
     dialogs/notepropertiesdialog.cpp dialogs/notepropertiesdialog.h
     dialogs/notetemplateselector.cpp dialogs/notetemplateselector.h
+    dialogs/openvnote3notebookdialog2.cpp dialogs/openvnote3notebookdialog2.h
     dialogs/renametagdialog.cpp dialogs/renametagdialog.h
     dialogs/scrolldialog.cpp dialogs/scrolldialog.h
     dialogs/selectdialog.cpp dialogs/selectdialog.h
