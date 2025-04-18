@@ -74,6 +74,7 @@ public slots:
   void newNotebook();
   void newNotebookFromFolder();
   void importNotebook();
+  void openVNote3Notebook();
   void manageNotebooks();
 
   // Reload operations

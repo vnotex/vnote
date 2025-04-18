@@ -45,6 +45,7 @@
 #include <widgets/dialogs/newfolderdialog2.h>
 #include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/newnotedialog2.h>
+#include <widgets/dialogs/openvnote3notebookdialog2.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
@@ -144,6 +145,12 @@ void NotebookExplorer2::setupTitleBar() {
   {
     auto btn = m_titleBar->addActionButton("open_notebook.svg", tr("Open Notebook"));
     connect(btn, &QToolButton::clicked, this, &NotebookExplorer2::importNotebook);
+  }
+
+  // Open VNote3 Notebook button
+  {
+    auto btn = m_titleBar->addActionButton("open_legacy_notebook.svg", tr("Open VNote3 Notebook"));
+    connect(btn, &QToolButton::clicked, this, &NotebookExplorer2::openVNote3Notebook);
   }
 
   setupTitleBarMenu();
@@ -705,6 +712,14 @@ void NotebookExplorer2::importNotebook() {
   if (m_notebookSelector) {
     m_notebookSelector->loadNotebooks();
     setCurrentNotebook(result.notebookId);
+  }
+}
+
+void NotebookExplorer2::openVNote3Notebook() {
+  OpenVNote3NotebookDialog2 dialog(m_services, window());
+  if (dialog.exec() == QDialog::Accepted) {
+    loadNotebooks();
+    setCurrentNotebook(dialog.getOpenedNotebookId());
   }
 }
 
