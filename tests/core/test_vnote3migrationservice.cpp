@@ -121,11 +121,11 @@ QByteArray TestVNote3MigrationService::makeConfigJson(const QJsonObject &p_overr
   jobj[QStringLiteral("version")] = 3;
   jobj[QStringLiteral("name")] = QStringLiteral("My Notebook");
   jobj[QStringLiteral("description")] = QStringLiteral("A test notebook");
-  jobj[QStringLiteral("imageFolder")] = QStringLiteral("_v_images");
-  jobj[QStringLiteral("attachmentFolder")] = QStringLiteral("_v_attachments");
-  jobj[QStringLiteral("createdTime")] = QStringLiteral("2024-01-01T00:00:00Z");
-  jobj[QStringLiteral("versionController")] = QStringLiteral("dummy");
-  jobj[QStringLiteral("configMgr")] = QStringLiteral("vx.vnotex");
+  jobj[QStringLiteral("image_folder")] = QStringLiteral("_v_images");
+  jobj[QStringLiteral("attachment_folder")] = QStringLiteral("_v_attachments");
+  jobj[QStringLiteral("created_time")] = QStringLiteral("2024-01-01T00:00:00Z");
+  jobj[QStringLiteral("version_controller")] = QStringLiteral("dummy");
+  jobj[QStringLiteral("config_mgr")] = QStringLiteral("vx.vnotex");
 
   // Apply overrides (insert or replace keys).
   for (auto it = p_overrides.begin(); it != p_overrides.end(); ++it) {
@@ -187,7 +187,7 @@ void TestVNote3MigrationService::testInspectMissingVersion() {
   // Build JSON without "version" key.
   QJsonObject jobj;
   jobj[QStringLiteral("name")] = QStringLiteral("No Version");
-  jobj[QStringLiteral("configMgr")] = QStringLiteral("vx.vnotex");
+  jobj[QStringLiteral("config_mgr")] = QStringLiteral("vx.vnotex");
   writeNotebookConfig(dir.path(), QJsonDocument(jobj).toJson(QJsonDocument::Compact));
 
   auto result = m_service->inspectSourceNotebook(dir.path());
@@ -200,12 +200,12 @@ void TestVNote3MigrationService::testInspectWrongConfigMgr() {
   QVERIFY(dir.isValid());
 
   QJsonObject overrides;
-  overrides[QStringLiteral("configMgr")] = QStringLiteral("some.other.mgr");
+  overrides[QStringLiteral("config_mgr")] = QStringLiteral("some.other.mgr");
   writeNotebookConfig(dir.path(), makeConfigJson(overrides));
 
   auto result = m_service->inspectSourceNotebook(dir.path());
   QVERIFY(!result.valid);
-  QVERIFY(result.errorMessage.contains(QStringLiteral("configMgr")));
+  QVERIFY(result.errorMessage.contains(QStringLiteral("config_mgr")));
 }
 
 void TestVNote3MigrationService::testInspectAbsoluteImageFolder() {
@@ -214,15 +214,15 @@ void TestVNote3MigrationService::testInspectAbsoluteImageFolder() {
 
   QJsonObject overrides;
 #ifdef Q_OS_WIN
-  overrides[QStringLiteral("imageFolder")] = QStringLiteral("C:/absolute/images");
+  overrides[QStringLiteral("image_folder")] = QStringLiteral("C:/absolute/images");
 #else
-  overrides[QStringLiteral("imageFolder")] = QStringLiteral("/absolute/images");
+  overrides[QStringLiteral("image_folder")] = QStringLiteral("/absolute/images");
 #endif
   writeNotebookConfig(dir.path(), makeConfigJson(overrides));
 
   auto result = m_service->inspectSourceNotebook(dir.path());
   QVERIFY(!result.valid);
-  QVERIFY(result.errorMessage.contains(QStringLiteral("imageFolder")));
+  QVERIFY(result.errorMessage.contains(QStringLiteral("image_folder")));
 }
 
 void TestVNote3MigrationService::testInspectAbsoluteAttachmentFolder() {
@@ -231,15 +231,15 @@ void TestVNote3MigrationService::testInspectAbsoluteAttachmentFolder() {
 
   QJsonObject overrides;
 #ifdef Q_OS_WIN
-  overrides[QStringLiteral("attachmentFolder")] = QStringLiteral("D:/abs/attachments");
+  overrides[QStringLiteral("attachment_folder")] = QStringLiteral("D:/abs/attachments");
 #else
-  overrides[QStringLiteral("attachmentFolder")] = QStringLiteral("/abs/attachments");
+  overrides[QStringLiteral("attachment_folder")] = QStringLiteral("/abs/attachments");
 #endif
   writeNotebookConfig(dir.path(), makeConfigJson(overrides));
 
   auto result = m_service->inspectSourceNotebook(dir.path());
   QVERIFY(!result.valid);
-  QVERIFY(result.errorMessage.contains(QStringLiteral("attachmentFolder")));
+  QVERIFY(result.errorMessage.contains(QStringLiteral("attachment_folder")));
 }
 
 void TestVNote3MigrationService::testInspectValidNotebook() {
@@ -266,10 +266,10 @@ void TestVNote3MigrationService::testInspectValidNotebookMinimalFields() {
   TempDirFixture dir;
   QVERIFY(dir.isValid());
 
-  // Minimal valid config: version=3, configMgr="vx.vnotex", no image/attachment folders.
+  // Minimal valid config: version=3, config_mgr="vx.vnotex", no image/attachment folders.
   QJsonObject jobj;
   jobj[QStringLiteral("version")] = 3;
-  jobj[QStringLiteral("configMgr")] = QStringLiteral("vx.vnotex");
+  jobj[QStringLiteral("config_mgr")] = QStringLiteral("vx.vnotex");
   jobj[QStringLiteral("name")] = QStringLiteral("Minimal");
   writeNotebookConfig(dir.path(), QJsonDocument(jobj).toJson(QJsonDocument::Compact));
 

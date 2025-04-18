@@ -77,26 +77,26 @@ VNote3MigrationService::inspectSourceNotebook(const QString &p_sourcePath) const
     return result;
   }
 
-  // 4. Validate configMgr == "vx.vnotex".
-  const QString configMgr = jobj[QStringLiteral("configMgr")].toString();
+  // 4. Validate config_mgr == "vx.vnotex".
+  const QString configMgr = jobj[QStringLiteral("config_mgr")].toString();
   if (configMgr != c_requiredConfigMgr) {
-    result.errorMessage = QStringLiteral("Unsupported configMgr: '%1' (expected '%2')")
+    result.errorMessage = QStringLiteral("Unsupported config_mgr: '%1' (expected '%2')")
                               .arg(configMgr, c_requiredConfigMgr);
     return result;
   }
 
-  // 5. Reject absolute imageFolder or attachmentFolder.
-  const QString imageFolder = jobj[QStringLiteral("imageFolder")].toString();
+  // 5. Reject absolute image_folder or attachment_folder.
+  const QString imageFolder = jobj[QStringLiteral("image_folder")].toString();
   if (!imageFolder.isEmpty() && QDir::isAbsolutePath(imageFolder)) {
     result.errorMessage =
-        QStringLiteral("imageFolder must be a relative path, got: '%1'").arg(imageFolder);
+        QStringLiteral("image_folder must be a relative path, got: '%1'").arg(imageFolder);
     return result;
   }
 
-  const QString attachmentFolder = jobj[QStringLiteral("attachmentFolder")].toString();
+  const QString attachmentFolder = jobj[QStringLiteral("attachment_folder")].toString();
   if (!attachmentFolder.isEmpty() && QDir::isAbsolutePath(attachmentFolder)) {
-    result.errorMessage =
-        QStringLiteral("attachmentFolder must be a relative path, got: '%1'").arg(attachmentFolder);
+    result.errorMessage = QStringLiteral("attachment_folder must be a relative path, got: '%1'")
+                              .arg(attachmentFolder);
     return result;
   }
 
