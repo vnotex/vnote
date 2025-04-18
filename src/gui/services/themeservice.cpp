@@ -102,7 +102,7 @@ Theme *ThemeService::loadTheme(const QString &p_themeFolder) {
   }
 
   try {
-    return Theme::fromFolder(p_themeFolder);
+    return Theme::fromFolder(p_themeFolder, ThemeUtils::backfillSystemPalette);
   } catch (Exception &p_e) {
     qWarning("failed to load theme from folder %s (%s)", p_themeFolder.toStdString().c_str(),
              p_e.what());

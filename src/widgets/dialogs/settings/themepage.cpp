@@ -12,6 +12,7 @@
 #include <core/servicelocator.h>
 #include <core/theme.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/themeutils.h>
 #include <utils/widgetutils.h>
 #include <widgets/listwidget.h>
 #include <widgets/settingswidget.h>
@@ -190,7 +191,7 @@ void ThemePage::applyThemePreview(const QString &p_themeName) {
     return;
   }
 
-  QScopedPointer<Theme> theme(Theme::fromFolder(info->m_folderPath));
+  QScopedPointer<Theme> theme(Theme::fromFolder(info->m_folderPath, ThemeUtils::backfillSystemPalette));
   if (!theme) {
     return;
   }
