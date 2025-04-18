@@ -3,7 +3,8 @@
         "revision" : 3,
         "editor-highlight-theme" : "Default",
         "markdown-editor-highlight-theme" : "Markdown Default",
-        "display_name" : "Vue-light"
+        "display_name" : "Vue Light",
+        "display_name_zh_CN" : "Vue 浅色"
     },
     "palette" : {
         "bg3_0" : "#bbbbbb",

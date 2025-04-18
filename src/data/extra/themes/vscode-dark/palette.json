@@ -8,9 +8,9 @@
         "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "//comment" : "If empty, 'editor-highlight-theme' will be used.",
         "markdown-editor-highlight-theme" : "vscode-dark",
-        "display_name" : "VSCode-dark",
+        "display_name" : "VSCode Dark",
         "//comment" : "Display name for different locales",
-        "display_name_zh_CN" : "VSCode-深色"
+        "display_name_zh_CN" : "VSCode 深色"
     },
     "palette" : {
         "bg1_1" : "#07080d",

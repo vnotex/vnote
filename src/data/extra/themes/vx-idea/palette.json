@@ -8,9 +8,9 @@
         "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "//comment" : "If empty, 'editor-highlight-theme' will be used.",
         "markdown-editor-highlight-theme" : "Markdown Default",
-        "display_name" : "vx-idea",
+        "display_name" : "VX Idea",
         "//comment" : "Display name for different locales",
-        "display_name_zh_CN" : "vx-idea"
+        "display_name_zh_CN" : "VX Idea"
     },
     "palette" : {
         "bg3_0" : "#b4c0cf",

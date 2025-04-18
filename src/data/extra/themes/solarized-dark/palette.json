@@ -8,9 +8,9 @@
         "//comment_markdown_editor-highlight_2" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "//comment_markdown_editor-highlight_3" : "If empty, 'editor-highlight-theme' will be used.",
         "markdown-editor-highlight-theme" : "Solarized Dark",
-        "display_name" : "Solarized-dark",
+        "display_name" : "Solarized Dark",
         "//comment_display_name" : "Display name for different locales",
-        "display_name_zh_CN" : "Solarized-dark",
+        "display_name_zh_CN" : "Solarized 深色",
         "author": "nriver"
     },
     "palette" : {
