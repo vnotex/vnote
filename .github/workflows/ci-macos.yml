@@ -113,6 +113,18 @@ jobs:
           mv src/VNote.dmg VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
         working-directory: ${{runner.workspace}}/build
 
+      - name: Codesign and Notarization
+        uses: lando/code-sign-action@v3
+        with:
+          file: build/src/VNote.app
+          certificate-data: ${{ secrets.CLI_MACOS_CERTIFICATE }}
+          certificate-id: ${{ secrets.CLI_MACOS_TEAM_ID }}
+          certificate-password: ${{ secrets.CLI_MACOS_CERTIFICATE_PWD }}
+          apple-notary-user: ${{ secrets.CLI_MACOS_NOTARY_USER }}
+          apple-notary-password: ${{ secrets.CLI_MACOS_NOTARY_PWD }}
+          apple-product-id: fun.vnote.vnote
+          options: --options runtime --entitlements ../package/entitlements.xml
+
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
