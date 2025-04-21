@@ -126,7 +126,7 @@ jobs:
           apple-notary-user: ${{ secrets.CLI_MACOS_NOTARY_USER }}
           apple-notary-password: ${{ secrets.CLI_MACOS_NOTARY_PWD }}
           apple-product-id: fun.vnote.vnote
-          options: --options runtime --entitlements ${{runner.workspace}}/package/entitlements.xml
+          options: --options runtime --entitlements ${{runner.workspace}}/vnote/package/entitlements.xml
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
