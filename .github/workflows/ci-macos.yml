@@ -109,8 +109,10 @@ jobs:
       - name: Build Project
         run: |
           cmake --build . --target pack
+          pwd
           ls -ls .
           ls -ls src
+          ls -ls ${{runner.workspace}}/build/src/VNote.app
           mv src/VNote.dmg VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
         working-directory: ${{runner.workspace}}/build
 
