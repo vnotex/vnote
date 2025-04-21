@@ -119,7 +119,7 @@ jobs:
       - name: Codesign and Notarization
         uses: lando/code-sign-action@v3
         with:
-          file: ${{runner.workspace}}/build/src/VNote.app
+          file: ${{runner.workspace}}/build/src/VNote.app/Contents/MacOS/VNote
           certificate-data: ${{ secrets.CLI_MACOS_CERTIFICATE }}
           certificate-id: ${{ secrets.CLI_MACOS_TEAM_ID }}
           certificate-password: ${{ secrets.CLI_MACOS_CERTIFICATE_PWD }}
