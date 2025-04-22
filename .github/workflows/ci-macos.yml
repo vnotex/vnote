@@ -112,26 +112,23 @@ jobs:
           pwd
           ls -ls .
           ls -ls src
-          ls -ls ${{runner.workspace}}/build/src/VNote.app
-          mv src/VNote.dmg VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
+          # mv src/VNote.dmg VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
         working-directory: ${{runner.workspace}}/build
 
-      - name: Codesign app bundle
+      - name: Codesign Bundle
         # Extract the secrets we defined earlier as environment variables
         env:
           MACOS_CERTIFICATE: ${{ secrets.CLI_MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.CLI_MACOS_CERTIFICATE_PWD }}
-          MACOS_CERTIFICATE_NAME: "Developer ID Application: Le Tan (${{ secrets.CLI_MACOS_TEAM_ID }})"
+          MACOS_CERTIFICATE_NAME: ${{ secrets.CLI_MACOS_CERTIFICATE_NAME }}
           MACOS_CI_KEYCHAIN_PWD: ${{ secrets.CLI_MACOS_CERTIFICATE }}
         run: |
           # Turn our base64-encoded certificate back to a regular .p12 file
-
           echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
 
           # We need to create a new keychain, otherwise using the certificate will prompt
           # with a UI dialog asking for the certificate password, which we can't
           # use in a headless CI environment
-
           security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain
@@ -139,8 +136,16 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
 
           # We finally codesign our app bundle, specifying the Hardened runtime option
+          /usr/bin/codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --options runtime ${{runner.workspace}}/build/src/VNote.app -vvv
 
-          /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" --options runtime ${{runner.workspace}}/build/src/VNote.app -vvv
+      - name: Create DMG
+        run: |
+          cmake --build . --target pack
+          pwd
+          ls -ls .
+          ls -ls src
+          hdiutil create -volname "VNote" -srcfolder ./src/VNote.app -ov -format UDZO VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
+        working-directory: ${{runner.workspace}}/build
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
