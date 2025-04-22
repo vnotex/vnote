@@ -116,17 +116,31 @@ jobs:
           mv src/VNote.dmg VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
         working-directory: ${{runner.workspace}}/build
 
-      - name: Codesign and Notarization
-        uses: lando/code-sign-action@v3
-        with:
-          file: ${{runner.workspace}}/build/src/VNote.app/Contents/MacOS/VNote
-          certificate-data: ${{ secrets.CLI_MACOS_CERTIFICATE }}
-          certificate-id: ${{ secrets.CLI_MACOS_TEAM_ID }}
-          certificate-password: ${{ secrets.CLI_MACOS_CERTIFICATE_PWD }}
-          apple-notary-user: ${{ secrets.CLI_MACOS_NOTARY_USER }}
-          apple-notary-password: ${{ secrets.CLI_MACOS_NOTARY_PWD }}
-          apple-product-id: fun.vnote.vnote
-          options: --options runtime --entitlements ${{runner.workspace}}/vnote/package/entitlements.xml
+      - name: Codesign app bundle
+        # Extract the secrets we defined earlier as environment variables
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.CLI_MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.CLI_MACOS_CERTIFICATE_PWD }}
+          MACOS_CERTIFICATE_NAME: "Developer ID Application: Le Tan (${{ secrets.CLI_MACOS_TEAM_ID }})"
+          MACOS_CI_KEYCHAIN_PWD: ${{ secrets.CLI_MACOS_CERTIFICATE }}
+        run: |
+          # Turn our base64-encoded certificate back to a regular .p12 file
+
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+
+          # We need to create a new keychain, otherwise using the certificate will prompt
+          # with a UI dialog asking for the certificate password, which we can't
+          # use in a headless CI environment
+
+          security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain
+          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
+
+          # We finally codesign our app bundle, specifying the Hardened runtime option
+
+          /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" --options runtime ${{runner.workspace}}/build/src/VNote.app -v
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
