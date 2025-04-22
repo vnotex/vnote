@@ -30,7 +30,6 @@ private slots:
   void testCaseSensitive();
   void testRegex();
   void testFilePattern();
-  void testUnsupportedFlagsIgnored();
   void testDefaultValues();
 
   void testContextGetterSetter();
@@ -53,11 +52,6 @@ void TestFindUnitedEntry::setupParser(QCommandLineParser &p_parser) {
   objectOpt.setDefaultValues({QStringLiteral("name"), QStringLiteral("content")});
   p_parser.addOption(objectOpt);
 
-  QCommandLineOption targetOpt({QStringLiteral("t"), QStringLiteral("target")},
-                               QStringLiteral("Search targets."), QStringLiteral("search_targets"));
-  targetOpt.setDefaultValues({QStringLiteral("file"), QStringLiteral("folder")});
-  p_parser.addOption(targetOpt);
-
   p_parser.addOption(QCommandLineOption({QStringLiteral("p"), QStringLiteral("pattern")},
                                         QStringLiteral("Wildcard pattern of files to search."),
                                         QStringLiteral("file_pattern")));
@@ -65,10 +59,6 @@ void TestFindUnitedEntry::setupParser(QCommandLineParser &p_parser) {
                                         QStringLiteral("Search in case sensitive.")));
   p_parser.addOption(QCommandLineOption({QStringLiteral("r"), QStringLiteral("regular-expression")},
                                         QStringLiteral("Search by regular expression.")));
-  p_parser.addOption(QCommandLineOption({QStringLiteral("w"), QStringLiteral("whole-word-only")},
-                                        QStringLiteral("Search whole word only.")));
-  p_parser.addOption(QCommandLineOption({QStringLiteral("f"), QStringLiteral("fuzzy-search")},
-                                        QStringLiteral("Do a fuzzy search.")));
 }
 
 void TestFindUnitedEntry::testScopeBuffer() {
@@ -191,26 +181,6 @@ void TestFindUnitedEntry::testFilePattern() {
 
   const auto params = FindUnitedEntry::mapArgsToSearchParams(parser);
   QCOMPARE(params.filePattern, QStringLiteral("*.md"));
-}
-
-void TestFindUnitedEntry::testUnsupportedFlagsIgnored() {
-  QCommandLineParser parser;
-  setupParser(parser);
-
-  QTest::ignoreMessage(
-      QtDebugMsg, "FindUnitedEntry: -w is unsupported in SearchController and will be ignored ");
-  QTest::ignoreMessage(
-      QtDebugMsg, "FindUnitedEntry: -f is unsupported in SearchController and will be ignored ");
-  QTest::ignoreMessage(
-      QtDebugMsg, "FindUnitedEntry: -t is unsupported in SearchController and will be ignored ");
-
-  QVERIFY(parser.parse({QStringLiteral("find"), QStringLiteral("-w"), QStringLiteral("-f"),
-                        QStringLiteral("-t"), QStringLiteral("file"), QStringLiteral("myquery")}));
-
-  const auto params = FindUnitedEntry::mapArgsToSearchParams(parser);
-  QCOMPARE(params.keyword, QStringLiteral("myquery"));
-  QCOMPARE(params.scope, static_cast<int>(SearchController::CurrentNotebook));
-  QCOMPARE(params.searchMode, static_cast<int>(SearchController::ContentSearch));
 }
 
 void TestFindUnitedEntry::testDefaultValues() {

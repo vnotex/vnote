@@ -39,7 +39,7 @@ FindUnitedEntry::FindUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_m
 
 void FindUnitedEntry::initOnFirstProcess() {
   m_parser.setApplicationDescription(tr(
-      "Search for files in notebooks with advanced options for scope, object, target and so on."));
+      "Search for files in notebooks with advanced options for scope, object and so on."));
 
   m_parser.addPositionalArgument("keywords", tr("Keywords to search for."));
 
@@ -54,12 +54,6 @@ void FindUnitedEntry::initOnFirstProcess() {
   objectOpt.setDefaultValues({"name", "content"});
   m_parser.addOption(objectOpt);
 
-  QCommandLineOption targetOpt({"t", "target"},
-                               tr("Search targets. Possible values: file/folder/notebook."),
-                               tr("search_targets"));
-  targetOpt.setDefaultValues({"file", "folder"});
-  m_parser.addOption(targetOpt);
-
   QCommandLineOption patternOpt({"p", "pattern"}, tr("Wildcard pattern of files to search."),
                                 tr("file_pattern"));
   m_parser.addOption(patternOpt);
@@ -67,9 +61,6 @@ void FindUnitedEntry::initOnFirstProcess() {
   m_parser.addOption(QCommandLineOption({"c", "case-sensitive"}, tr("Search in case sensitive.")));
   m_parser.addOption(
       QCommandLineOption({"r", "regular-expression"}, tr("Search by regular expression.")));
-  m_parser.addOption(QCommandLineOption({"w", "whole-word-only"}, tr("Search whole word only.")));
-  m_parser.addOption(QCommandLineOption(
-      {"f", "fuzzy-search"}, tr("Do a fuzzy search (not applicable to content search).")));
 
   m_searchController = new SearchController(m_services, this);
   m_resultModel = new SearchResultModel(this);
@@ -133,18 +124,6 @@ FindUnitedEntry::mapArgsToSearchParams(const QCommandLineParser &p_parser) {
     params.searchMode = SearchController::FileNameSearch;
   } else if (hasTag) {
     params.searchMode = SearchController::TagSearch;
-  }
-
-  if (p_parser.isSet(QStringLiteral("w"))) {
-    qDebug() << "FindUnitedEntry: -w is unsupported in SearchController and will be ignored";
-  }
-
-  if (p_parser.isSet(QStringLiteral("f"))) {
-    qDebug() << "FindUnitedEntry: -f is unsupported in SearchController and will be ignored";
-  }
-
-  if (p_parser.isSet(QStringLiteral("t"))) {
-    qDebug() << "FindUnitedEntry: -t is unsupported in SearchController and will be ignored";
   }
 
   return params;

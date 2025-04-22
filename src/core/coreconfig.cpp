@@ -294,17 +294,8 @@ void CoreConfig::initDefaults() {
     return obj;
   };
   QJsonArray aliases;
-  aliases.append(makeAlias(QStringLiteral("q"), QStringLiteral("Search for folders/files by name in all notebooks"), QStringLiteral("find --scope all_notebook --object name --target file --target folder")));
-  aliases.append(makeAlias(QStringLiteral("a"), QStringLiteral("Search for files by content in all notebooks"), QStringLiteral("find --scope all_notebook --object content --target file")));
-  aliases.append(makeAlias(QStringLiteral("z"), QStringLiteral("Search for files by tag in all notebooks"), QStringLiteral("find --scope all_notebook --object tag --target file")));
-  aliases.append(makeAlias(QStringLiteral("w"), QStringLiteral("Search for notebooks by name in all notebooks"), QStringLiteral("find --scope all_notebook --object name --target notebook")));
-  aliases.append(makeAlias(QStringLiteral("e"), QStringLiteral("Search for folders/files by name in current notebook"), QStringLiteral("find --scope notebook --object name --target file --target folder")));
-  aliases.append(makeAlias(QStringLiteral("d"), QStringLiteral("Search for files by content in current notebook"), QStringLiteral("find --scope notebook --object content --target file")));
-  aliases.append(makeAlias(QStringLiteral("c"), QStringLiteral("Search for files by tag in current notebook"), QStringLiteral("find --scope notebook --object tag --target file")));
-  aliases.append(makeAlias(QStringLiteral("r"), QStringLiteral("Search for folders/files by name in current folder"), QStringLiteral("find --scope folder --object name --target file --target folder")));
-  aliases.append(makeAlias(QStringLiteral("f"), QStringLiteral("Search for files by content in current folder"), QStringLiteral("find --scope folder --object content --target file")));
-  aliases.append(makeAlias(QStringLiteral("v"), QStringLiteral("Search for files by tag in current folder"), QStringLiteral("find --scope folder --object tag --target file")));
-  aliases.append(makeAlias(QStringLiteral("t"), QStringLiteral("Search for files by name in buffers"), QStringLiteral("find --scope buffer --object name --target file")));
-  aliases.append(makeAlias(QStringLiteral("g"), QStringLiteral("Search for files by content in buffers"), QStringLiteral("find --scope buffer --object content --target file")));
+  aliases.append(makeAlias(QStringLiteral("n"), QStringLiteral("Search for files by name in current notebook"), QStringLiteral("find --scope notebook --object name")));
+  aliases.append(makeAlias(QStringLiteral("g"), QStringLiteral("Search for files by content in current notebook"), QStringLiteral("find --scope notebook --object content")));
+  aliases.append(makeAlias(QStringLiteral("b"), QStringLiteral("Search for files by content in open buffers"), QStringLiteral("find --scope buffer --object content")));
   m_unitedEntryAlias = aliases;
 }
