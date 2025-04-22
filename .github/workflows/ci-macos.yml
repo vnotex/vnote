@@ -140,10 +140,6 @@ jobs:
 
       - name: Create DMG
         run: |
-          cmake --build . --target pack
-          pwd
-          ls -ls .
-          ls -ls src
           hdiutil create -volname "VNote" -srcfolder ./src/VNote.app -ov -format UDZO VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
         working-directory: ${{runner.workspace}}/build
 
