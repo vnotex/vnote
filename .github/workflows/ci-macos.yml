@@ -140,7 +140,7 @@ jobs:
 
           # We finally codesign our app bundle, specifying the Hardened runtime option
 
-          /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" --options runtime ${{runner.workspace}}/build/src/VNote.app -v
+          /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" --options runtime ${{runner.workspace}}/build/src/VNote.app -vvv
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
