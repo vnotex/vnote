@@ -21,7 +21,7 @@
     <key>CFBundleName</key>
     <string>VNote</string>
     <key>CFBundleExecutable</key>
-    <string>vnote</string>
+    <string>VNote</string>
     <key>CFBundleShortVersionString</key>
     <string>3.19</string>
     <key>CFBundleVersion</key>
