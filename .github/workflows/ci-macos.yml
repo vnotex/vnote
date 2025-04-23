@@ -109,7 +109,7 @@ jobs:
       - name: Build Project
         run: |
           # Remove the libqsqlmimer.so as libmimerapi.so is not deployed with Qt6
-          rm ${{Qt6_DIR}}/plugins/sqldrivers/libqsqlmimer.dylib
+          rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlmimer.dylib
           cmake --build . --target pack
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
 
