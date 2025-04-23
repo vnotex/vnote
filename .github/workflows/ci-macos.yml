@@ -112,12 +112,6 @@ jobs:
           rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlmimer.dylib
           cmake --build . --target pack
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
-
-          # Verify Qt frameworks
-          echo "Verifying Qt frameworks and rpaths..."
-          otool -L ./src/VNote.app/Contents/Frameworks/QtSql.framework/Versions/A/QtSql
-          otool -l ./src/VNote.app/Contents/Frameworks/QtSql.framework/Versions/A/QtSql | grep -A4 LC_RPATH
-          python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
         working-directory: ${{runner.workspace}}/build
 
       - name: Codesign Bundle
