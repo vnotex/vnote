@@ -109,10 +109,13 @@ jobs:
       - name: Build Project
         run: |
           cmake --build . --target pack
-          pwd
-          ls -ls .
-          ls -ls src
-          # mv src/VNote.dmg VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
+          python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
+
+          # Verify Qt frameworks
+          echo "Verifying Qt frameworks and rpaths..."
+          otool -L ./src/VNote.app/Contents/Frameworks/QtSql.framework/Versions/A/QtSql
+          otool -l ./src/VNote.app/Contents/Frameworks/QtSql.framework/Versions/A/QtSql | grep -A4 LC_RPATH
+          python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
         working-directory: ${{runner.workspace}}/build
 
       - name: Codesign Bundle
