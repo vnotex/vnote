@@ -29,11 +29,3 @@ All the above 3 issues may be caused by the driver of the display card only on W
 4. Make sure the executable folder of VNote locates in C disk.
 
 Restart of VNote is needed after each step to check if it takes effect.
-
-## Failed to Run on MacOS
-Try to re-sign the APP:
-
-```bash
-xattr -cr '/Applications/VNote.app'
-codesign --force --deep --sign - '/Applications/VNote.app'
-```

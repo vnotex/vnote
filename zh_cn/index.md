@@ -3,7 +3,7 @@
 
 ::: alert-success
 
-VNote 3.18.0 已发布！ 看看都有[哪些更新](https://github.com/vnotex/vnote/releases) ！
+VNote 3.19.1 已发布！ 看看都有[哪些更新](https://github.com/vnotex/vnote/releases) ！
 
 观看[展示录屏](https://www.bilibili.com/video/av77455284) ！
 
