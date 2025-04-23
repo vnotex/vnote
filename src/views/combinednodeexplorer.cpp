@@ -99,6 +99,22 @@ void CombinedNodeExplorer::setupUI() {
   connect(m_controller, &NotebookNodeController::infoMessage, this,
           &CombinedNodeExplorer::infoMessage);
 
+  // Folder expand/collapse signals
+  connect(m_view, &QTreeView::expanded, this, [this](const QModelIndex &p_index) {
+    QModelIndex sourceIdx = m_proxyModel->mapToSource(p_index);
+    NodeInfo info = m_model->nodeInfoFromIndex(sourceIdx);
+    if (info.isValid() && info.isFolder) {
+      emit folderExpanded(info.id);
+    }
+  });
+  connect(m_view, &QTreeView::collapsed, this, [this](const QModelIndex &p_index) {
+    QModelIndex sourceIdx = m_proxyModel->mapToSource(p_index);
+    NodeInfo info = m_model->nodeInfoFromIndex(sourceIdx);
+    if (info.isValid() && info.isFolder) {
+      emit folderCollapsed(info.id);
+    }
+  });
+
   // Model error signals (for inline rename failures)
   connect(m_model, &NotebookNodeModel::errorOccurred, this, &CombinedNodeExplorer::errorOccurred);
 }

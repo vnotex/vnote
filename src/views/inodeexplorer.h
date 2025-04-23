@@ -128,6 +128,10 @@ signals:
   // === Status signals ===
   void errorOccurred(const QString &p_title, const QString &p_message);
   void infoMessage(const QString &p_title, const QString &p_message);
+
+  // === Folder expansion signals ===
+  void folderExpanded(const NodeIdentifier &p_folderId);
+  void folderCollapsed(const NodeIdentifier &p_folderId);
 };
 
 } // namespace vnotex

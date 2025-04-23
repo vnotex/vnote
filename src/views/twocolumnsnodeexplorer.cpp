@@ -104,6 +104,22 @@ void TwoColumnsNodeExplorer::setupUI() {
   connectControllerSignals(m_folderController);
   connectControllerSignals(m_fileController);
 
+  // Folder expand/collapse signals
+  connect(m_folderView, &QTreeView::expanded, this, [this](const QModelIndex &p_index) {
+    QModelIndex sourceIdx = m_folderProxyModel->mapToSource(p_index);
+    NodeInfo info = m_folderModel->nodeInfoFromIndex(sourceIdx);
+    if (info.isValid() && info.isFolder) {
+      emit folderExpanded(info.id);
+    }
+  });
+  connect(m_folderView, &QTreeView::collapsed, this, [this](const QModelIndex &p_index) {
+    QModelIndex sourceIdx = m_folderProxyModel->mapToSource(p_index);
+    NodeInfo info = m_folderModel->nodeInfoFromIndex(sourceIdx);
+    if (info.isValid() && info.isFolder) {
+      emit folderCollapsed(info.id);
+    }
+  });
+
   // Model error signals (for inline rename failures)
   connect(m_folderModel, &NotebookNodeModel::errorOccurred, this,
           &TwoColumnsNodeExplorer::errorOccurred);
