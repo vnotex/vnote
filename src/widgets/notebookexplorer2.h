@@ -10,9 +10,11 @@
 #include <nodeinfo.h>
 #include <views/inodeexplorer.h>
 
+class QFileSystemWatcher;
 class QSplitter;
 class QMenu;
 class QActionGroup;
+class QTimer;
 
 namespace vnotex {
 
@@ -140,6 +142,15 @@ private:
   // Apply view order to all node views
   void setNodeViewOrder(ViewOrder p_order);
 
+  // File system watcher methods
+  void setupFileWatcher();
+  void teardownFileWatcher();
+  void onFileSystemChanged(const QString &p_path);
+  void onFsReloadTimeout();
+  void addWatchPath(const QString &p_path);
+  void removeWatchPath(const QString &p_path);
+  void syncWatchedPaths();
+
   // Services
   ServiceLocator &m_services;
 
@@ -158,6 +169,11 @@ private:
   bool m_hasRestoredSessionStatePending = false;
   QAction *m_openRecycleBinAction = nullptr;
   QAction *m_emptyRecycleBinAction = nullptr;
+
+  // File system watcher for detecting external changes
+  QFileSystemWatcher *m_fsWatcher = nullptr;
+  QTimer *m_fsReloadTimer = nullptr;
+  QString m_lastChangedDir;
 };
 
 } // namespace vnotex

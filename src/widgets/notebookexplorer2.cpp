@@ -3,6 +3,7 @@
 #include <QActionGroup>
 #include <QCoreApplication>
 #include <QDataStream>
+#include <QFileSystemWatcher>
 #include <QJsonDocument>
 #include <QDir>
 #include <QFile>
@@ -13,6 +14,7 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QSplitter>
+#include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -88,6 +90,7 @@ NodeExplorerState mergeNodeExplorerStateForCache(const NodeExplorerState &p_capt
 NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services) {
   setupUI();
+  setupFileWatcher();
 
   // Subscribe to NotebookAfterClose to refresh the explorer.
   auto *hookMgr = m_services.get<HookManager>();
@@ -509,6 +512,24 @@ void NotebookExplorer2::setupCombinedMode() {
   connect(explorer, &CombinedNodeExplorer::manageTagsRequested, this,
           &NotebookExplorer2::onManageTagsRequested);
 
+  // File system watcher: track expand/collapse
+  connect(explorer, &INodeExplorer::folderExpanded, this,
+          [this](const NodeIdentifier &p_folderId) {
+            auto *nbService = m_services.get<NotebookCoreService>();
+            if (!nbService) return;
+            QString folderPath =
+                nbService->buildAbsolutePath(m_currentNotebookId, p_folderId.relativePath);
+            addWatchPath(folderPath);
+          });
+  connect(explorer, &INodeExplorer::folderCollapsed, this,
+          [this](const NodeIdentifier &p_folderId) {
+            auto *nbService = m_services.get<NotebookCoreService>();
+            if (!nbService) return;
+            QString folderPath =
+                nbService->buildAbsolutePath(m_currentNotebookId, p_folderId.relativePath);
+            removeWatchPath(folderPath);
+          });
+
   m_nodeExplorer = explorer;
 }
 
@@ -545,6 +566,24 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   connect(explorer, &TwoColumnsNodeExplorer::manageTagsRequested, this,
           &NotebookExplorer2::onManageTagsRequested);
 
+  // File system watcher: track expand/collapse
+  connect(explorer, &INodeExplorer::folderExpanded, this,
+          [this](const NodeIdentifier &p_folderId) {
+            auto *nbService = m_services.get<NotebookCoreService>();
+            if (!nbService) return;
+            QString folderPath =
+                nbService->buildAbsolutePath(m_currentNotebookId, p_folderId.relativePath);
+            addWatchPath(folderPath);
+          });
+  connect(explorer, &INodeExplorer::folderCollapsed, this,
+          [this](const NodeIdentifier &p_folderId) {
+            auto *nbService = m_services.get<NotebookCoreService>();
+            if (!nbService) return;
+            QString folderPath =
+                nbService->buildAbsolutePath(m_currentNotebookId, p_folderId.relativePath);
+            removeWatchPath(folderPath);
+          });
+
   m_nodeExplorer = explorer;
 }
 
@@ -579,6 +618,16 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
   }
 
   m_currentNotebookId = p_notebookId;
+
+  // Re-setup file watcher for the new notebook.
+  teardownFileWatcher();
+  if (!m_currentNotebookId.isEmpty()) {
+    auto *nbService = m_services.get<NotebookCoreService>();
+    if (nbService) {
+      QString rootPath = nbService->buildAbsolutePath(m_currentNotebookId, QString());
+      addWatchPath(rootPath);
+    }
+  }
 
   updateRecycleBinMenuState();
 
@@ -672,6 +721,7 @@ void NotebookExplorer2::updateExploreMode() {
   if (!m_currentNotebookId.isEmpty()) {
     m_nodeExplorer->setNotebookId(m_currentNotebookId);
     applyCachedExplorerState(m_currentNotebookId);
+    syncWatchedPaths();
   }
 
   updateFocusProxy();
@@ -1322,4 +1372,96 @@ void NotebookExplorer2::onNodeActivated(const NodeIdentifier &p_nodeId,
   bufferSvc->openBuffer(p_nodeId, p_settings);
 
   emit currentExploredFolderChanged(currentExploredFolderId());
+}
+
+// --- File system watcher implementation ---
+
+void NotebookExplorer2::setupFileWatcher() {
+  m_fsWatcher = new QFileSystemWatcher(this);
+  m_fsReloadTimer = new QTimer(this);
+  m_fsReloadTimer->setSingleShot(true);
+  m_fsReloadTimer->setInterval(500);
+  connect(m_fsWatcher, &QFileSystemWatcher::directoryChanged, this,
+          &NotebookExplorer2::onFileSystemChanged);
+  connect(m_fsReloadTimer, &QTimer::timeout, this, &NotebookExplorer2::onFsReloadTimeout);
+}
+
+void NotebookExplorer2::teardownFileWatcher() {
+  m_fsReloadTimer->stop();
+  auto dirs = m_fsWatcher->directories();
+  if (!dirs.isEmpty()) {
+    m_fsWatcher->removePaths(dirs);
+  }
+  m_lastChangedDir.clear();
+}
+
+void NotebookExplorer2::addWatchPath(const QString &p_path) {
+  if (p_path.isEmpty()) {
+    return;
+  }
+  if (!QDir(p_path).exists()) {
+    return;
+  }
+  if (p_path.contains(QStringLiteral("vx_recycle_bin"))) {
+    return;
+  }
+  m_fsWatcher->addPath(p_path);
+}
+
+void NotebookExplorer2::removeWatchPath(const QString &p_path) {
+  m_fsWatcher->removePath(p_path);
+}
+
+void NotebookExplorer2::syncWatchedPaths() {
+  teardownFileWatcher();
+  if (m_currentNotebookId.isEmpty() || !m_nodeExplorer) {
+    return;
+  }
+
+  auto *nbService = m_services.get<NotebookCoreService>();
+  if (!nbService) {
+    return;
+  }
+
+  QString rootPath = nbService->buildAbsolutePath(m_currentNotebookId, QString());
+  addWatchPath(rootPath);
+
+  auto state = m_nodeExplorer->captureState();
+  for (const auto &folderId : state.expandedFolders) {
+    QString folderPath = nbService->buildAbsolutePath(m_currentNotebookId, folderId.relativePath);
+    addWatchPath(folderPath);
+  }
+}
+
+void NotebookExplorer2::onFileSystemChanged(const QString &p_path) {
+  m_lastChangedDir = p_path;
+  m_fsReloadTimer->start();
+}
+
+void NotebookExplorer2::onFsReloadTimeout() {
+  if (m_lastChangedDir.isEmpty() || !m_nodeExplorer) {
+    return;
+  }
+
+  auto *nbService = m_services.get<NotebookCoreService>();
+  if (!nbService) {
+    m_lastChangedDir.clear();
+    return;
+  }
+
+  QString rootPath = nbService->buildAbsolutePath(m_currentNotebookId, QString());
+  QString relPath = QDir(rootPath).relativeFilePath(m_lastChangedDir);
+  if (relPath == QStringLiteral(".") || relPath.isEmpty()) {
+    relPath.clear();
+  }
+
+  NodeIdentifier nodeId;
+  nodeId.notebookId = m_currentNotebookId;
+  nodeId.relativePath = relPath;
+  m_nodeExplorer->reloadNode(nodeId);
+
+  // Qt may drop a watched path after it changes; re-add it.
+  addWatchPath(m_lastChangedDir);
+
+  m_lastChangedDir.clear();
 }
