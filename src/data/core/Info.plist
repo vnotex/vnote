@@ -18,22 +18,20 @@
             </array>
         </dict>
     </array>
-    <key>com.apple.security.cs.disable-library-validation</key>
-    <true/>
     <key>CFBundleName</key>
     <string>VNote</string>
     <key>CFBundleExecutable</key>
-    <string>vnote</string>
+    <string>VNote</string>
     <key>CFBundleShortVersionString</key>
     <string>3.19</string>
     <key>CFBundleVersion</key>
     <string>3.19.1</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Distributed under LGPL-3.0 license. Copyright (c) 2024 app.vnote.fun</string>
+    <string>Distributed under LGPL-3.0 license. Copyright (c) 2025 app.vnote.fun</string>
     <key>CFBundleIconFile</key>
     <string>vnote.icns</string>
     <key>CFBundleIdentifier</key>
-    <string>fun.vnote.app</string>
+    <string>fun.vnote.vnote</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>
