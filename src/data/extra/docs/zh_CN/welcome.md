@@ -1,7 +1,7 @@
 # 欢迎使用 VNote
 一个舒适的笔记平台。
 
-更多信息，请访问[VNote主页](https://vnotex.github.io/vnote)或者[由Gitee托管的主页](https://tamlok.gitee.io/vnote)。
+更多信息，请访问[VNote主页](https://vnotex.github.io/vnote)。
 
 ## 常见问题
 * 将鼠标悬停在按钮上可以获取详细信息。
