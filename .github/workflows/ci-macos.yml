@@ -135,8 +135,11 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
 
           # We finally codesign our app bundle, specifying the Hardened runtime option
-          /usr/bin/codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ${{runner.workspace}}/build/src/VNote.app -vvv
-          /usr/bin/codesign -v -vvv ${{runner.workspace}}/build/src/VNote.app
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/libiodbc.2.dylib
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app
+          codesign -v -vvv ./src/VNote.app
+        working-directory: ${{runner.workspace}}/build
 
       - name: "Notarize Bundle"
         # Extract the secrets we defined earlier as environment variables
