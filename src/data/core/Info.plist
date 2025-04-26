@@ -16,6 +16,8 @@
                 <string>public.plain-text</string>
                 <string>net.daringfireball.markdown</string>
             </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
         </dict>
     </array>
     <key>CFBundleName</key>
@@ -34,6 +36,8 @@
     <string>fun.vnote.vnote</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.productivity</string>
     <key>LSMinimumSystemVersion</key>
     <string>10.15</string>
     <key>NOTE</key>
