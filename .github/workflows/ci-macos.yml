@@ -135,8 +135,15 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
 
           # We finally codesign our app bundle, specifying the Hardened runtime option
-          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib
-          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/libiodbc.2.dylib
+          # First sign all frameworks
+          for framework in ./src/VNote.app/Contents/Frameworks/*; do
+            if [ -f "$framework" ] || [ -d "$framework" ]; then
+              echo "Codesigning $framework"
+              codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime "$framework"
+            fi
+          done
+
+          # Then sign the main app bundle
           codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app
           codesign -v -vvv ./src/VNote.app
         working-directory: ${{runner.workspace}}/build
