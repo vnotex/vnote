@@ -108,8 +108,10 @@ jobs:
 
       - name: Build Project
         run: |
-          # Remove the libqsqlmimer.so as libmimerapi.so is not deployed with Qt6
+          # Remove unnecessary sql drivers
           rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlmimer.dylib
+          rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlodbc.dylib
+          rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlpsql.dylib
           cmake --build . --target pack
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
         working-directory: ${{runner.workspace}}/build
@@ -135,17 +137,26 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
 
           # We finally codesign our app bundle, specifying the Hardened runtime option
-          # First sign all frameworks
+          # Sign all frameworks
           for framework in ./src/VNote.app/Contents/Frameworks/*; do
             if [ -f "$framework" ] || [ -d "$framework" ]; then
-              echo "Codesigning $framework"
+              echo "Codesigning framework: $framework"
               codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime "$framework"
             fi
           done
 
-          # Then sign the main app bundle
+          # Sign all dylib files in Plugins directory recursively
+          find ./src/VNote.app/Contents/Plugins -name "*.dylib" -type f | while read dylib; do
+            echo "Codesigning plugin dylib: $dylib"
+            codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime "$dylib"
+          done
+
+          # Finally sign the main app bundle
+          echo "Codesigning main app bundle"
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/MacOS/VNote
           codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app
           codesign -v -vvv ./src/VNote.app
+
         working-directory: ${{runner.workspace}}/build
 
       - name: "Notarize Bundle"
