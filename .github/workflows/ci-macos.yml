@@ -254,8 +254,8 @@ jobs:
           security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" package.keychain
           security default-keychain -s package.keychain
           security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" package.keychain
-          security import certificate.p12 -k package.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" package.keychain
+          security import certificate.p12 -k package.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign -T /usr/bin/productbuild
+          security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$MACOS_CI_KEYCHAIN_PWD" package.keychain
 
           # Build package
           productbuild --version "${{env.VNOTE_VER}}" --sign "$MACOS_CERTIFICATE_NAME" --component ./src/VNote.app /Applications VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.pkg
