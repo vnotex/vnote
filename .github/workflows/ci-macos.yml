@@ -136,6 +136,12 @@ jobs:
           security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
 
+          # Replace bundle id in all info.plist files
+          find ./src/VNote.app -name Info.plist -exec plutil -replace CFBundleIdentifier -string "fun.vnote.vnote" {};
+
+          # Remove old signature dirs
+          find ./src/VNote.app -name _CodeSignature -exec rm -fr {};
+
           # We finally codesign our app bundle, specifying the Hardened runtime option
           # Sign all frameworks
           for framework in ./src/VNote.app/Contents/Frameworks/*; do
@@ -146,7 +152,8 @@ jobs:
           done
 
           # Sign QtWebEngineProcess
-          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/Resources/QtWebEngineProcess.entitlements --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
+          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/QtWebEngineProcess.entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app
 
           # Sign all dylib files in Plugins directory recursively
           find ./src/VNote.app/Contents/Plugins -name "*.dylib" -type f | while read dylib; do
@@ -217,22 +224,26 @@ jobs:
           security import certificate.p12 -k distrib.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" distrib.keychain
 
+          # Remove old signature dirs
+          find ./src/VNote.app -name _CodeSignature -exec rm -fr {};
+
           # We finally codesign our app bundle, specifying the Hardened runtime option
           # Sign all frameworks
           for framework in ./src/VNote.app/Contents/Frameworks/*; do
             if [ -f "$framework" ] || [ -d "$framework" ]; then
               echo "Codesigning framework: $framework"
-              codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime "$framework"
+              codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime "$framework"
             fi
           done
 
           # Sign QtWebEngineProcess
-          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/Resources/QtWebEngineProcess.entitlements --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
+          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/QtWebEngineProcess.entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app
 
           # Sign all dylib files in Plugins directory recursively
           find ./src/VNote.app/Contents/Plugins -name "*.dylib" -type f | while read dylib; do
             echo "Codesigning plugin dylib: $dylib"
-            codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime "$dylib"
+            codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime "$dylib"
           done
 
           # Finally sign the main app bundle
