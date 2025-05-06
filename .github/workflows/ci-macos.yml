@@ -137,10 +137,10 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
 
           # Replace bundle id in all info.plist files
-          find ./src/VNote.app -name Info.plist -exec plutil -replace CFBundleIdentifier -string "fun.vnote.vnote" {};
+          find ./src/VNote.app -name Info.plist -exec plutil -replace CFBundleIdentifier -string "fun.vnote.vnote" {} \;
 
           # Remove old signature dirs
-          find ./src/VNote.app -name _CodeSignature -exec rm -fr {};
+          find ./src/VNote.app -name _CodeSignature -exec rm -fr {} \;
 
           # We finally codesign our app bundle, specifying the Hardened runtime option
           # Sign all frameworks
@@ -225,7 +225,7 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" distrib.keychain
 
           # Remove old signature dirs
-          find ./src/VNote.app -name _CodeSignature -exec rm -fr {};
+          find ./src/VNote.app -name _CodeSignature -exec rm -fr {} \;
 
           # We finally codesign our app bundle, specifying the Hardened runtime option
           # Sign all frameworks
