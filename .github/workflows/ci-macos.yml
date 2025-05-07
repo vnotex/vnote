@@ -224,6 +224,7 @@ jobs:
           security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" distrib.keychain
           security import certificate.p12 -k distrib.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" distrib.keychain
+
           # Clean old signatures before re-signing
           echo "Cleaning old signatures"
           xattr -cr ./src/VNote.app
@@ -233,12 +234,12 @@ jobs:
           for framework in ./src/VNote.app/Contents/Frameworks/*; do
             if [ -f "$framework" ] || [ -d "$framework" ]; then
               echo "Codesigning framework: $framework"
-              codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime "$framework"
+              codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime "$framework"
             fi
           done
 
           # Sign QtWebEngineProcess
-          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/QtWebEngineProcess.entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
           codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/QtWebEngineProcess.entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app
 
           # Sign all dylib files in Plugins directory recursively
