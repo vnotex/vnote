@@ -40,6 +40,7 @@
         <file>icons/scan_import.svg</file>
         <file>icons/search_location_list.svg</file>
         <file>icons/save_editor.svg</file>
+        <file>icons/apply_editor.svg</file>
         <file>icons/buffer.svg</file>
         <file>icons/attachment_editor.svg</file>
         <file>icons/tag_editor.svg</file>

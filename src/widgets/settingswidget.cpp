@@ -119,9 +119,9 @@ void SettingsWidget::setupToolBar(QToolBar *p_toolBar) {
 
   m_applyAction =
       p_toolBar->addAction(IconUtils::fetchIconWithDisabledState(
-                               themeService->getIconFile(QStringLiteral("save_editor.svg"))),
-                           tr("Apply"));
-  m_applyAction->setProperty("iconName", QStringLiteral("save_editor.svg"));
+                                themeService->getIconFile(QStringLiteral("apply_editor.svg"))),
+                            tr("Apply"));
+  m_applyAction->setProperty("iconName", QStringLiteral("apply_editor.svg"));
   m_applyAction->setEnabled(false);
   connect(m_applyAction, &QAction::triggered, this, [this]() {
     if (savePages()) {
