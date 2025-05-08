@@ -151,8 +151,8 @@ jobs:
 
           # Sign QtWebEngineProcess and its parent framework before other frameworks
           echo "Signing QtWebEngineProcess"
-          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/QtWebEngineProcess.entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
-          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/QtWebEngineProcess.entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
+          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app
 
           # Sign QtWebEngineCore framework with the same entitlements as QtWebEngineProcess
           echo "Signing QtWebEngineCore framework"
@@ -162,7 +162,11 @@ jobs:
           echo "Signing other frameworks"
           for framework in ./src/VNote.app/Contents/Frameworks/*; do
             if [ -f "$framework" ] || [ -d "$framework" ]; then
-              if [[ "$framework" != *"QtWebEngineCore.framework"* ]]; then
+              # Use sandbox entitlements for QtWebEngine components
+              if [[ "$framework" == *"QtWebEngineCore.framework"* ]]; then
+                echo "Codesigning QtWebEngine framework with sandbox entitlements"
+                codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime "$framework"
+              else
                 echo "Codesigning framework: $framework"
                 codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime "$framework"
               fi
