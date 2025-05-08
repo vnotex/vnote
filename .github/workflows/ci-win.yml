@@ -66,7 +66,6 @@ jobs:
         with:
           path: Qt
           key: ${{runner.os}}-${{matrix.config.arch}}-QtCache-${{matrix.config.qt}}
-        working-directory: ${{runner.workspace}}
 
       - name: Install Qt Official Build
         uses: jurplel/install-qt-action@v3
