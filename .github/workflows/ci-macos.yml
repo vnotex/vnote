@@ -153,7 +153,7 @@ jobs:
           done
 
           # Sign QtWebEngineProcess
-          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/QtWebEngineProcess.entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
           codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app
 
           # Sign all dylib files in Plugins directory recursively
