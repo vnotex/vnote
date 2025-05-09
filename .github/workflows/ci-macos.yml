@@ -136,13 +136,6 @@ jobs:
           security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
 
-          # Replace bundle id in all info.plist files
-          find ./src/VNote.app -name Info.plist -exec plutil -replace CFBundleIdentifier -string "fun.vnote.vnote" {} \;
-
-          # Clean old signatures before re-signing
-          echo "Cleaning old signatures"
-          xattr -cr ./src/VNote.app
-
           echo "Codesigning main app bundle"
           codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app
           codesign -v -vvv ./src/VNote.app
