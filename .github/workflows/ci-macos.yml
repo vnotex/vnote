@@ -151,8 +151,8 @@ jobs:
 
           # Sign QtWebEngineProcess and its parent framework before other frameworks
           echo "Signing QtWebEngineProcess"
-          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
-          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
+          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app
 
           # Sign QtWebEngineCore framework with the same entitlements as QtWebEngineProcess
           echo "Signing QtWebEngineCore framework"
@@ -162,14 +162,8 @@ jobs:
           echo "Signing other frameworks"
           for framework in ./src/VNote.app/Contents/Frameworks/*; do
             if [ -f "$framework" ] || [ -d "$framework" ]; then
-              # Use sandbox entitlements for QtWebEngine components
-              if [[ "$framework" == *"QtWebEngineCore.framework"* ]]; then
-                echo "Codesigning QtWebEngine framework with sandbox entitlements"
-                codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime "$framework"
-              else
-                echo "Codesigning framework: $framework"
-                codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime "$framework"
-              fi
+              echo "Codesigning framework: $framework"
+              codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime "$framework"
             fi
           done
 
@@ -222,82 +216,6 @@ jobs:
           hdiutil create -volname "VNote" -srcfolder ./src/VNote.app -ov -format UDZO VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
         working-directory: ${{runner.workspace}}/build
 
-      - name: Codesign Bundle for Store
-        # Extract the secrets we defined earlier as environment variables
-        env:
-          MACOS_CERTIFICATE: ${{ secrets.CLI_MACOS_DEVELOPER_CERTIFICATE }}
-          MACOS_CERTIFICATE_PWD: ${{ secrets.CLI_MACOS_CERTIFICATE_PWD }}
-          MACOS_CERTIFICATE_NAME: ${{ secrets.CLI_MACOS_DEVELOPER_CERTIFICATE_NAME }}
-          MACOS_CI_KEYCHAIN_PWD: ${{ secrets.CLI_MACOS_DEVELOPER_CERTIFICATE }}
-        run: |
-          # Turn our base64-encoded certificate back to a regular .p12 file
-          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-
-          # We need to create a new keychain, otherwise using the certificate will prompt
-          # with a UI dialog asking for the certificate password, which we can't
-          # use in a headless CI environment
-          security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" distrib.keychain
-          security default-keychain -s distrib.keychain
-          security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" distrib.keychain
-          security import certificate.p12 -k distrib.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" distrib.keychain
-
-          # Clean old signatures before re-signing
-          echo "Cleaning old signatures"
-          xattr -cr ./src/VNote.app
-
-          # We finally codesign our app bundle, specifying the Hardened runtime option
-          # Sign all frameworks
-          for framework in ./src/VNote.app/Contents/Frameworks/*; do
-            if [ -f "$framework" ] || [ -d "$framework" ]; then
-              echo "Codesigning framework: $framework"
-              codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime "$framework"
-            fi
-          done
-
-          # Sign QtWebEngineProcess
-          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/QtWebEngineProcess.entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
-          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/QtWebEngineProcess.entitlements.xml --options runtime ./src/VNote.app/Contents/Frameworks/QtWebEngineCore.framework/Helpers/QtWebEngineProcess.app
-
-          # Sign all dylib files in Plugins directory recursively
-          find ./src/VNote.app/Contents/Plugins -name "*.dylib" -type f | while read dylib; do
-            echo "Codesigning plugin dylib: $dylib"
-            codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime "$dylib"
-          done
-
-          # Finally sign the main app bundle
-          echo "Codesigning main app bundle"
-          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime ./src/VNote.app/Contents/MacOS/VNote
-          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements-sandbox.xml --options runtime ./src/VNote.app
-          codesign -v -vvv ./src/VNote.app
-
-        working-directory: ${{runner.workspace}}/build
-
-      - name: Build Package for Store
-        # Extract the secrets we defined earlier as environment variables
-        env:
-          MACOS_CERTIFICATE: ${{ secrets.CLI_MACOS_INSTALLER_CERTIFICATE }}
-          MACOS_CERTIFICATE_PWD: ${{ secrets.CLI_MACOS_CERTIFICATE_PWD }}
-          MACOS_CERTIFICATE_NAME: ${{ secrets.CLI_MACOS_INSTALLER_CERTIFICATE_NAME }}
-          MACOS_CI_KEYCHAIN_PWD: ${{ secrets.CLI_MACOS_INSTALLER_CERTIFICATE }}
-        run: |
-          # Turn our base64-encoded certificate back to a regular .p12 file
-          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-
-          # We need to create a new keychain, otherwise using the certificate will prompt
-          # with a UI dialog asking for the certificate password, which we can't
-          # use in a headless CI environment
-          security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" package.keychain
-          security default-keychain -s package.keychain
-          security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" package.keychain
-          security import certificate.p12 -k package.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign -T /usr/bin/productbuild
-          security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$MACOS_CI_KEYCHAIN_PWD" package.keychain
-
-          # Build package
-          productbuild --version "${{env.VNOTE_VER}}" --sign "$MACOS_CERTIFICATE_NAME" --component ./src/VNote.app /Applications VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.pkg
-
-        working-directory: ${{runner.workspace}}/build
-
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
@@ -308,12 +226,6 @@ jobs:
         with:
           name: VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}
           path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
-
-      - name: Archive Package
-        uses: actions/upload-artifact@v4
-        with:
-          name: VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}-pkg
-          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.pkg
 
       - name: Update Tag
         if: github.ref == 'refs/heads/master'
