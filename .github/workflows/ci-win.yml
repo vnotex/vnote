@@ -64,7 +64,7 @@ jobs:
         id: cache-qt
         uses: actions/cache@v4
         with:
-          path: ../Qt
+          path: ${{runner.workspace}}/Qt
           key: ${{runner.os}}-${{matrix.config.arch}}-QtCache-${{matrix.config.qt}}
 
       - name: Install Qt Official Build
