@@ -120,6 +120,7 @@ jobs:
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
 
           for rpath in $(otool -l ./src/VNote.app/Contents/MacOS/VNote | awk '/LC_RPATH/ {getline; getline; print $2}' | grep 'vtextedit'); do
+            echo $rpath
             install_name_tool -delete_rpath "$rpath" ./src/VNote.app/Contents/MacOS/VNote
           done
 
