@@ -119,8 +119,9 @@ jobs:
           # Fix Qt frameworks
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
 
-          # Fix QtSql framework paths
-          install_name_tool -add_rpath "@executable_path/../Frameworks" ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib
+          for rpath in $(otool -l ./src/VNote.app/Contents/MacOS/VNote | awk '/LC_RPATH/ {getline; getline; print $2}' | grep 'vtextedit'); do
+            install_name_tool -delete_rpath "$rpath" ./src/VNote.app/Contents/MacOS/VNote
+          done
 
           # Run macdeployqtfix again to ensure all dependencies are properly fixed
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
