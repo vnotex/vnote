@@ -160,6 +160,8 @@ private:
 
   void updateWebViewerConfig();
 
+  void updatePreviewHelperFromConfig(const MarkdownEditorConfig &p_config);
+
   void setModeInternal(ViewWindowMode p_mode, bool p_syncBuffer);
 
   void handleFileOpenParameters(const QSharedPointer<FileOpenParameters> &p_paras, bool p_twice);
