@@ -113,8 +113,6 @@ const QJsonArray &CoreConfig::getUnitedEntryAlias() const {
   return s;
 }
 
-void Utils::sleepWait(int) {}
-
 void TreeWidget::selectParentItem(QTreeWidget *) {}
 
 bool TreeWidget::isExpanded(const QTreeWidget *) { return false; }
