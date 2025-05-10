@@ -120,7 +120,7 @@ jobs:
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
 
           # Fix QtSql framework paths
-          install_name_tool -add_rpath "@executable_path/../Frameworks" ./src/VNote.app/Contents/MacOS/VNote
+          install_name_tool -add_rpath "@executable_path/../Frameworks" ./src/VNote.app/Frameworks/libVTextEdit.dylib
 
           # Ensure proper copying of QtSql framework
           mkdir -p ./src/VNote.app/Contents/Frameworks
