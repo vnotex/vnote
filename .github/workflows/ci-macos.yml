@@ -120,11 +120,20 @@ jobs:
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
 
           # Only delete rpaths that exist to avoid errors
-          for rpath in $(otool -l ./src/VNote.app/Contents/MacOS/VNote | awk '/LC_RPATH/ {getline; getline; print $2}' | grep 'vtextedit'); do
+          for rpath in $(otool -l ./src/VNote.app/Contents/MacOS/VNote | awk '/LC_RPATH/ {getline; getline; print $2}' | grep 'vnote'); do
             echo "Checking rpath: $rpath"
             if otool -l ./src/VNote.app/Contents/MacOS/VNote | grep -q "$rpath"; then
               echo "Deleting rpath: $rpath"
               install_name_tool -delete_rpath "$rpath" ./src/VNote.app/Contents/MacOS/VNote
+            else
+              echo "Rpath not found: $rpath"
+            fi
+          done
+          for rpath in $(otool -l ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib | awk '/LC_RPATH/ {getline; getline; print $2}' | grep 'vnote'); do
+            echo "Checking rpath: $rpath"
+            if otool -l ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib | grep -q "$rpath"; then
+              echo "Deleting rpath: $rpath"
+              install_name_tool -delete_rpath "$rpath" ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib
             else
               echo "Rpath not found: $rpath"
             fi
