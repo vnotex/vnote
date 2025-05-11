@@ -84,7 +84,7 @@ jobs:
         id: cache-qt
         uses: actions/cache@v4
         with:
-          path: ../Qt
+          path: ${{runner.workspace}}/Qt
           key: ${{ runner.os }}-QtCache-6.8
 
       - name: Install Qt
@@ -108,9 +108,38 @@ jobs:
 
       - name: Build Project
         run: |
-          # Remove the libqsqlmimer.so as libmimerapi.so is not deployed with Qt6
+          # Keep only required SQL drivers
           rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlmimer.dylib
+          rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlodbc.dylib
+          rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlpsql.dylib
+
+          # Build the project
           cmake --build . --target pack
+
+          # Fix Qt frameworks
+          python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
+
+          # Only delete rpaths that exist to avoid errors
+          for rpath in $(otool -l ./src/VNote.app/Contents/MacOS/VNote | awk '/LC_RPATH/ {getline; getline; print $2}' | grep 'vnote'); do
+            echo "Checking rpath: $rpath"
+            if otool -l ./src/VNote.app/Contents/MacOS/VNote | grep -q "$rpath"; then
+              echo "Deleting rpath: $rpath"
+              install_name_tool -delete_rpath "$rpath" ./src/VNote.app/Contents/MacOS/VNote
+            else
+              echo "Rpath not found: $rpath"
+            fi
+          done
+          for rpath in $(otool -l ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib | awk '/LC_RPATH/ {getline; getline; print $2}' | grep 'vnote'); do
+            echo "Checking rpath: $rpath"
+            if otool -l ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib | grep -q "$rpath"; then
+              echo "Deleting rpath: $rpath"
+              install_name_tool -delete_rpath "$rpath" ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib
+            else
+              echo "Rpath not found: $rpath"
+            fi
+          done
+
+          # Run macdeployqtfix again to ensure all dependencies are properly fixed
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
         working-directory: ${{runner.workspace}}/build
 
@@ -134,9 +163,15 @@ jobs:
           security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
 
-          # We finally codesign our app bundle, specifying the Hardened runtime option
-          /usr/bin/codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ${{runner.workspace}}/build/src/VNote.app -vvv
-          /usr/bin/codesign -v -vvv ${{runner.workspace}}/build/src/VNote.app
+          echo "Codesigning main app bundle"
+          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app
+          codesign -v -vvv ./src/VNote.app
+
+          hdiutil create -volname "VNote" -srcfolder ./src/VNote.app -ov -format UDZO VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
+          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
+          codesign -v -vvv ./VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
+
+        working-directory: ${{runner.workspace}}/build
 
       - name: "Notarize Bundle"
         # Extract the secrets we defined earlier as environment variables
@@ -150,35 +185,24 @@ jobs:
           echo "Create keychain profile"
           xcrun notarytool store-credentials "notarytool-profile" --apple-id "$PROD_MACOS_NOTARIZATION_APPLE_ID" --team-id "$PROD_MACOS_NOTARIZATION_TEAM_ID" --password "$PROD_MACOS_NOTARIZATION_PWD"
 
-          # We can't notarize an app bundle directly, but we need to compress it as an archive.
-          # Therefore, we create a zip file containing our app bundle, so that we can send it to the
-          # notarization service
-          echo "Creating temp notarization archive"
-          ditto -c -k --keepParent "${{runner.workspace}}/build/src/VNote.app" "notarization.zip"
-
           # Here we send the notarization request to the Apple's Notarization service, waiting for the result.
           # This typically takes a few seconds inside a CI environment, but it might take more depending on the App
           # characteristics. Visit the Notarization docs for more information and strategies on how to optimize it if
           # you're curious
           echo "Notarize app"
-          xcrun notarytool submit "notarization.zip" --keychain-profile "notarytool-profile" --wait
+          xcrun notarytool submit "${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg" --keychain-profile "notarytool-profile" --wait
 
           # Finally, we need to "attach the staple" to our executable, which will allow our app to be
           # validated by macOS even when an internet connection is not available.
           echo "Attach staple"
-          xcrun stapler staple "${{runner.workspace}}/build/src/VNote.app"
-
-      - name: Create DMG
-        run: |
-          hdiutil create -volname "VNote" -srcfolder ./src/VNote.app -ov -format UDZO VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
-        working-directory: ${{runner.workspace}}/build
+          xcrun stapler staple "${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg"
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 
-      - name: Archive Artifacts
+      - name: Archive DMG
         uses: actions/upload-artifact@v4
         with:
           name: VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}
