@@ -47,6 +47,8 @@ namespace vnotex
 
         QString name() const;
 
+        QString getThemeFolder() const;
+
         static bool isValidThemeFolder(const QString &p_folder);
 
         static Theme *fromFolder(const QString &p_folder);

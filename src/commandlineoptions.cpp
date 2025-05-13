@@ -25,6 +25,9 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
     const QCommandLineOption logStderrOpt("log-stderr", MainWindow::tr("Log to stderr."));
     parser.addOption(logStderrOpt);
 
+    const QCommandLineOption watchThemesOpt("watch-themes", MainWindow::tr("Watch theme folder for changes."));
+    parser.addOption(watchThemesOpt);
+
     // WebEngine options.
     // No need to handle them. Just add them to the parser to avoid parse error.
     {
@@ -68,6 +71,10 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
 
     if (parser.isSet(logStderrOpt)) {
         m_logToStderr = true;
+    }
+
+    if (parser.isSet(watchThemesOpt)) {
+        m_watchThemes = true;
     }
 
     return ParseResult::Ok;

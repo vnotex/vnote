@@ -24,6 +24,11 @@ Theme::Theme(const QString &p_themeFolderPath,
 {
 }
 
+QString vnotex::Theme::getThemeFolder() const
+{
+    return m_themeFolderPath;
+}
+
 bool Theme::isValidThemeFolder(const QString &p_folder)
 {
     QDir dir(p_folder);

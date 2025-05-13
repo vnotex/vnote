@@ -60,9 +60,10 @@ namespace vnotex
 
         const ThemeInfo *findTheme(const QString &p_name) const;
 
-        // Refresh the themes list.
-        // Won't affect current theme since we do not support changing theme real time for now.
+        // Refresh the themes list and reload current theme.
         void refresh();
+
+        void refreshCurrentTheme();
 
         // Return all web stylesheets available, including those from themes and web styles search paths.
         // <DisplayName, FilePath>.

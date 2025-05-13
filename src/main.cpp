@@ -161,6 +161,11 @@ int main(int argc, char *argv[])
         auto style = VNoteX::getInst().getThemeMgr().fetchQtStyleSheet();
         if (!style.isEmpty()) {
             app.setStyleSheet(style);
+            // Set up hot-reload for the theme folder if enabled via command line
+            if (cmdOptions.m_watchThemes) {
+                const auto themeFolderPath = VNoteX::getInst().getThemeMgr().getCurrentTheme().getThemeFolder();
+                app.watchThemeFolder(themeFolderPath);
+            }
         }
     }
 

@@ -27,6 +27,9 @@ public:
     bool m_verbose = false;
 
     bool m_logToStderr = false;
+
+    // Whether to watch theme folder for changes
+    bool m_watchThemes = false;
 };
 
 #endif // COMMANDLINEOPTIONS_H

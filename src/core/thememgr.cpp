@@ -24,8 +24,6 @@ ThemeMgr::ThemeMgr(const QString &p_currentThemeName, QObject *p_parent)
     loadAvailableThemes();
 
     loadCurrentTheme(p_currentThemeName);
-
-    IconUtils::setDefaultIconForeground(paletteColor("base#icon#fg"), paletteColor("base#icon#disabled#fg"));
 }
 
 QString ThemeMgr::getIconFile(const QString &p_icon) const
@@ -91,6 +89,7 @@ const Theme &ThemeMgr::getCurrentTheme() const
 
 void ThemeMgr::loadCurrentTheme(const QString &p_themeName)
 {
+    m_currentTheme.reset();
     auto themeFolder = findThemeFolder(p_themeName);
     if (themeFolder.isNull()) {
         qWarning() << "failed to locate theme" << p_themeName;
@@ -104,6 +103,8 @@ void ThemeMgr::loadCurrentTheme(const QString &p_themeName)
         qWarning() << "fall back to default theme" << defaultTheme;
         m_currentTheme.reset(loadTheme(findThemeFolder(defaultTheme)));
     }
+
+    IconUtils::setDefaultIconForeground(paletteColor("base#icon#fg"), paletteColor("base#icon#disabled#fg"));
 }
 
 Theme *ThemeMgr::loadTheme(const QString &p_themeFolder)
@@ -211,6 +212,14 @@ QPixmap ThemeMgr::getThemePreview(const QString &p_name) const
 void ThemeMgr::refresh()
 {
     loadAvailableThemes();
+    refreshCurrentTheme();
+}
+
+void vnotex::ThemeMgr::refreshCurrentTheme()
+{
+    if (m_currentTheme) {
+        loadCurrentTheme(m_currentTheme->name());
+    }
 }
 
 void ThemeMgr::addWebStylesSearchPath(const QString &p_path)
