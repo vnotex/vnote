@@ -148,13 +148,16 @@ QToolBar::separator {
 }
 
 QToolBarExtension#qt_toolbar_ext_button {
-    background-color: @widgets#qtoolbar#extension#bg;
-    margin: 30px;
+    qproperty-icon: url(expand_toolbar.svg);
+    background-color: @widgets#qtoolbutton#bg;
 }
 
 QToolBarExtension#qt_toolbar_ext_button:hover {
-    background-color: @widgets#qtoolbar#extension#hover#bg;
-    margin: 30px;
+    background-color: @widgets#qtoolbutton#hover#bg;
+}
+
+QToolBarExtension#qt_toolbar_ext_button:pressed {
+    background-color: @widgets#qtoolbutton#pressed#bg;
 }
 
 /* QToolButton */

@@ -349,6 +349,7 @@
         <file>themes/moonlight/checkbox_unchecked.svg</file>
         <file>themes/moonlight/checkbox_unchecked_disabled.svg</file>
         <file>themes/moonlight/close.svg</file>
+        <file>themes/moonlight/expand_toolbar.svg</file>
         <file>themes/moonlight/close_grey.svg</file>
         <file>themes/moonlight/cover.png</file>
         <file>themes/moonlight/down.svg</file>
@@ -381,6 +382,7 @@
         <file>themes/pure/checkbox_unchecked.svg</file>
         <file>themes/pure/checkbox_unchecked_disabled.svg</file>
         <file>themes/pure/close.svg</file>
+        <file>themes/pure/expand_toolbar.svg</file>
         <file>themes/pure/close_grey.svg</file>
         <file>themes/pure/cover.png</file>
         <file>themes/pure/down.svg</file>
@@ -413,6 +415,7 @@
         <file>themes/solarized-dark/checkbox_unchecked.svg</file>
         <file>themes/solarized-dark/checkbox_unchecked_disabled.svg</file>
         <file>themes/solarized-dark/close.svg</file>
+        <file>themes/solarized-dark/expand_toolbar.svg</file>
         <file>themes/solarized-dark/close_grey.svg</file>
         <file>themes/solarized-dark/cover.png</file>
         <file>themes/solarized-dark/down.svg</file>
@@ -445,6 +448,7 @@
         <file>themes/solarized-light/checkbox_unchecked.svg</file>
         <file>themes/solarized-light/checkbox_unchecked_disabled.svg</file>
         <file>themes/solarized-light/close.svg</file>
+        <file>themes/solarized-light/expand_toolbar.svg</file>
         <file>themes/solarized-light/close_grey.svg</file>
         <file>themes/solarized-light/cover.png</file>
         <file>themes/solarized-light/down.svg</file>
@@ -804,6 +808,7 @@
         <file>themes/vscode-dark/checkbox_unchecked.svg</file>
         <file>themes/vscode-dark/checkbox_unchecked_disabled.svg</file>
         <file>themes/vscode-dark/close.svg</file>
+        <file>themes/vscode-dark/expand_toolbar.svg</file>
         <file>themes/vscode-dark/close_grey.svg</file>
         <file>themes/vscode-dark/cover.png</file>
         <file>themes/vscode-dark/down.svg</file>
@@ -837,6 +842,7 @@
         <file>themes/vue-light/checkbox_unchecked.svg</file>
         <file>themes/vue-light/checkbox_unchecked_disabled.svg</file>
         <file>themes/vue-light/close.svg</file>
+        <file>themes/vue-light/expand_toolbar.svg</file>
         <file>themes/vue-light/close_grey.svg</file>
         <file>themes/vue-light/cover.png</file>
         <file>themes/vue-light/down.svg</file>
@@ -869,6 +875,7 @@
         <file>themes/vue-dark/checkbox_unchecked.svg</file>
         <file>themes/vue-dark/checkbox_unchecked_disabled.svg</file>
         <file>themes/vue-dark/close.svg</file>
+        <file>themes/vue-dark/expand_toolbar.svg</file>
         <file>themes/vue-dark/close_grey.svg</file>
         <file>themes/vue-dark/cover.png</file>
         <file>themes/vue-dark/down.svg</file>
@@ -905,6 +912,7 @@
         <file>themes/vx-idea/checkbox_unchecked.svg</file>
         <file>themes/vx-idea/checkbox_unchecked_disabled.svg</file>
         <file>themes/vx-idea/close.svg</file>
+        <file>themes/vx-idea/expand_toolbar.svg</file>
         <file>themes/vx-idea/close_grey.svg</file>
         <file>themes/vx-idea/cover.png</file>
         <file>themes/vx-idea/down.svg</file>
