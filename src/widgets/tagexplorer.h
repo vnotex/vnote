@@ -67,7 +67,7 @@ namespace vnotex
 
         QString itemNode(const QListWidgetItem *p_item) const;
 
-        void updateNodeList(const QString &p_tag);
+        void updateNodeList(const QStringList &p_tags);
 
         void openItem(const QListWidgetItem *p_item);
 

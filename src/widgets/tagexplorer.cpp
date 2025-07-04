@@ -105,9 +105,8 @@ void TagExplorer::setupTagTree(QWidget *p_parent)
     TreeWidget::setupSingleColumnHeaderlessTree(m_tagTree, true, false);
     TreeWidget::showHorizontalScrollbar(m_tagTree);
     m_tagTree->setDragDropMode(QAbstractItemView::InternalMove);
-    connect(m_tagTree, &QTreeWidget::currentItemChanged,
-            timer, QOverload<>::of(&QTimer::start));
-    connect(m_tagTree, &QTreeWidget::itemClicked,
+    m_tagTree->setSelectionMode(QAbstractItemView::MultiSelection);
+    connect(m_tagTree, &QTreeWidget::itemSelectionChanged,
             timer, QOverload<>::of(&QTimer::start));
     connect(m_tagTree, &QTreeWidget::customContextMenuRequested,
             this, &TagExplorer::handleTagTreeContextMenuRequested);
@@ -204,14 +203,18 @@ void TagExplorer::fillTagItem(const QSharedPointer<Tag> &p_tag, QTreeWidgetItem 
 void TagExplorer::activateTagItem()
 {
     auto items = m_tagTree->selectedItems();
-    if (items.size() != 1) {
+    if (items.isEmpty()) {
         m_lastTagName.clear();
         m_nodeList->clear();
         return;
     }
 
-    m_lastTagName = itemTag(items[0]);
-    updateNodeList(m_lastTagName);
+    QStringList tags;
+    for (const auto &item : items) {
+        tags.append(itemTag(item));
+    }
+
+    updateNodeList(tags);
 }
 
 QString TagExplorer::itemTag(const QTreeWidgetItem *p_item) const
@@ -224,18 +227,28 @@ QString TagExplorer::itemNode(const QListWidgetItem *p_item) const
     return p_item->data(Qt::UserRole).toString();
 }
 
-void TagExplorer::updateNodeList(const QString &p_tag)
+void TagExplorer::updateNodeList(const QStringList &p_tags)
 {
     m_nodeList->clear();
 
     Q_ASSERT(m_notebook);
     auto tagI = m_notebook->tag();
     Q_ASSERT(tagI);
-    const auto nodePaths = tagI->findNodesOfTag(p_tag);
+
+    QSet<QString> nodePaths;
+    for (const auto &tag : p_tags) {
+        const auto paths = tagI->findNodesOfTag(tag);
+        if (nodePaths.isEmpty()) {
+            nodePaths.unite(QSet<QString>(paths.begin(), paths.end()));
+        } else {
+            nodePaths.intersect(QSet<QString>(paths.begin(), paths.end()));
+        }
+    }
+
     for (const auto &pa : nodePaths) {
         auto node = m_notebook->loadNodeByPath(pa);
         if (!node) {
-            qWarning() << "node belongs to tag in DB but not exists" << p_tag << pa;
+            qWarning() << "node belongs to tag in DB but not exists" << p_tags.join(", ") << pa;
             continue;
         }
 
@@ -246,7 +259,7 @@ void TagExplorer::updateNodeList(const QString &p_tag)
         item->setData(Qt::UserRole, pa);
     }
 
-    VNoteX::getInst().showStatusMessageShort(tr("Search of tag succeeded: %1").arg(p_tag));
+    VNoteX::getInst().showStatusMessageShort(tr("Search of tags succeeded: %1").arg(p_tags.join(", ")));
 }
 
 void TagExplorer::handleNodeListContextMenuRequested(const QPoint &p_pos)
