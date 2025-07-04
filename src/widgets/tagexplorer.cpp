@@ -114,9 +114,15 @@ void TagExplorer::setupTagTree(QWidget *p_parent)
                 for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
                     m_tagTree->topLevelItem(i)->setDisabled(false);
                 }
-
+                // no-bold when no item selected
                 if (selectedItems.isEmpty()) {
                     timer->start();
+                    for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                        QTreeWidgetItem *item = m_tagTree->topLevelItem(i);
+                        QFont font = item->font(Column::Name);
+                        font.setBold(false);
+                        item->setFont(Column::Name, font);
+                    }
                     return;
                 }
 
@@ -144,6 +150,17 @@ void TagExplorer::setupTagTree(QWidget *p_parent)
                             item->setDisabled(true);
                         }
                     }
+                }
+
+                // Update font for all items
+                for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                    QTreeWidgetItem *item = m_tagTree->topLevelItem(i);
+                    QFont font = item->font(Column::Name);
+                    // set bold when item is selected or enabled
+                    bool shouldBold = !selectedItems.isEmpty() &&
+                                     (selectedItems.contains(item) || (item->flags() & Qt::ItemIsEnabled));
+                    font.setBold(shouldBold);
+                    item->setFont(Column::Name, font);
                 }
 
                 timer->start();
@@ -238,6 +255,10 @@ void TagExplorer::fillTagItem(const QSharedPointer<Tag> &p_tag, QTreeWidgetItem 
     p_item->setToolTip(Column::Name, p_tag->name());
     p_item->setIcon(Column::Name, m_tagIcon);
     p_item->setData(Column::Name, Qt::UserRole, p_tag->name());
+    // set no-bold when init
+    QFont font = p_item->font(Column::Name);
+    font.setBold(false);
+    p_item->setFont(Column::Name, font);
 }
 
 void TagExplorer::activateTagItem()
