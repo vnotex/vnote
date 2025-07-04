@@ -107,7 +107,47 @@ void TagExplorer::setupTagTree(QWidget *p_parent)
     m_tagTree->setDragDropMode(QAbstractItemView::InternalMove);
     m_tagTree->setSelectionMode(QAbstractItemView::MultiSelection);
     connect(m_tagTree, &QTreeWidget::itemSelectionChanged,
-            timer, QOverload<>::of(&QTimer::start));
+            this, [this, timer]() {
+                auto selectedItems = m_tagTree->selectedItems();
+
+                // Enable all items first
+                for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                    m_tagTree->topLevelItem(i)->setDisabled(false);
+                }
+
+                if (selectedItems.isEmpty()) {
+                    timer->start();
+                    return;
+                }
+
+                // Get common nodes for selected tags
+                QSet<QString> commonNodes;
+                auto tagI = m_notebook->tag();
+                for (const auto &item : selectedItems) {
+                    auto tag = itemTag(item);
+                    auto nodes = tagI->findNodesOfTag(tag);
+                    if (commonNodes.isEmpty()) {
+                        commonNodes = QSet<QString>(nodes.begin(), nodes.end());
+                    } else {
+                        commonNodes.intersect(QSet<QString>(nodes.begin(), nodes.end()));
+                    }
+                }
+
+                // Disable incompatible tags
+                for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                    auto item = m_tagTree->topLevelItem(i);
+                    if (!selectedItems.contains(item)) {
+                        auto tag = itemTag(item);
+                        auto nodes = tagI->findNodesOfTag(tag);
+                        QSet<QString> nodeSet(nodes.begin(), nodes.end());
+                        if (!nodeSet.intersects(commonNodes)) {
+                            item->setDisabled(true);
+                        }
+                    }
+                }
+
+                timer->start();
+            });
     connect(m_tagTree, &QTreeWidget::customContextMenuRequested,
             this, &TagExplorer::handleTagTreeContextMenuRequested);
     connect(m_tagTree, &TreeWidget::itemMoved,
