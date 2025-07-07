@@ -111,17 +111,28 @@ void TagExplorer::setupTagTree(QWidget *p_parent)
                 auto selectedItems = m_tagTree->selectedItems();
 
                 // Enable all items first
+                std::function<void(QTreeWidgetItem*)> enableAllItems = [&](QTreeWidgetItem *p_item) {
+                    p_item->setDisabled(false);
+                    for (int i = 0; i < p_item->childCount(); ++i) {
+                        enableAllItems(p_item->child(i));
+                    }
+                };
                 for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
-                    m_tagTree->topLevelItem(i)->setDisabled(false);
+                    enableAllItems(m_tagTree->topLevelItem(i));
                 }
                 // no-bold when no item selected
                 if (selectedItems.isEmpty()) {
                     timer->start();
-                    for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
-                        QTreeWidgetItem *item = m_tagTree->topLevelItem(i);
-                        QFont font = item->font(Column::Name);
+                    std::function<void(QTreeWidgetItem*)> unboldAllItems = [&](QTreeWidgetItem *p_item) {
+                        QFont font = p_item->font(Column::Name);
                         font.setBold(false);
-                        item->setFont(Column::Name, font);
+                        p_item->setFont(Column::Name, font);
+                        for (int i = 0; i < p_item->childCount(); ++i) {
+                            unboldAllItems(p_item->child(i));
+                        }
+                    };
+                    for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                        unboldAllItems(m_tagTree->topLevelItem(i));
                     }
                     return;
                 }
@@ -140,27 +151,37 @@ void TagExplorer::setupTagTree(QWidget *p_parent)
                 }
 
                 // Disable incompatible tags
-                for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
-                    auto item = m_tagTree->topLevelItem(i);
-                    if (!selectedItems.contains(item)) {
-                        auto tag = itemTag(item);
+                std::function<void(QTreeWidgetItem*)> disableIncompatibleItems = [&](QTreeWidgetItem *p_item) {
+                    if (!selectedItems.contains(p_item)) {
+                        auto tag = itemTag(p_item);
                         auto nodes = tagI->findNodesOfTag(tag);
                         QSet<QString> nodeSet(nodes.begin(), nodes.end());
                         if (!nodeSet.intersects(commonNodes)) {
-                            item->setDisabled(true);
+                            p_item->setDisabled(true);
                         }
                     }
+                    for (int i = 0; i < p_item->childCount(); ++i) {
+                        disableIncompatibleItems(p_item->child(i));
+                    }
+                };
+                for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                    disableIncompatibleItems(m_tagTree->topLevelItem(i));
                 }
 
                 // Update font for all items
-                for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
-                    QTreeWidgetItem *item = m_tagTree->topLevelItem(i);
-                    QFont font = item->font(Column::Name);
+                std::function<void(QTreeWidgetItem*)> updateItemFont = [&](QTreeWidgetItem *p_item) {
+                    QFont font = p_item->font(Column::Name);
                     // set bold when item is selected or enabled
-                    bool shouldBold = !selectedItems.isEmpty() &&
-                                     (selectedItems.contains(item) || (item->flags() & Qt::ItemIsEnabled));
+                    bool shouldBold = !selectedItems.isEmpty() && 
+                                     (selectedItems.contains(p_item) || (p_item->flags() & Qt::ItemIsEnabled));
                     font.setBold(shouldBold);
-                    item->setFont(Column::Name, font);
+                    p_item->setFont(Column::Name, font);
+                    for (int i = 0; i < p_item->childCount(); ++i) {
+                        updateItemFont(p_item->child(i));
+                    }
+                };
+                for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                    updateItemFont(m_tagTree->topLevelItem(i));
                 }
 
                 timer->start();
