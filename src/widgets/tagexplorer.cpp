@@ -140,6 +140,9 @@ void TagExplorer::setupTagTree(QWidget *p_parent)
                 // Get common nodes for selected tags
                 QSet<QString> commonNodes;
                 auto tagI = m_notebook->tag();
+                if (Q_UNLIKELY(!tagI)) {
+                    return; // Tag interface not initialized
+                }
                 for (const auto &item : selectedItems) {
                     auto tag = itemTag(item);
                     auto nodes = tagI->findNodesOfTag(tag);
@@ -151,15 +154,32 @@ void TagExplorer::setupTagTree(QWidget *p_parent)
                 }
 
                 // Disable incompatible tags
+                // *Since parent tags affect the disabled state of child tags,
+                // *keep the parent tag enabled (even if incompatible) when child tags are matched.
                 std::function<void(QTreeWidgetItem*)> disableIncompatibleItems = [&](QTreeWidgetItem *p_item) {
                     if (!selectedItems.contains(p_item)) {
-                        auto tag = itemTag(p_item);
-                        auto nodes = tagI->findNodesOfTag(tag);
-                        QSet<QString> nodeSet(nodes.begin(), nodes.end());
-                        if (!nodeSet.intersects(commonNodes)) {
-                            p_item->setDisabled(true);
+                        // Disable parent tag only if all child tags are incompatible.
+                        // Otherwise, keep it enabled.
+                        bool hasEnabledChild = false;
+                        for (int i = 0; i < p_item->childCount(); ++i) {
+                            auto child = p_item->child(i);
+                            disableIncompatibleItems(child);
+                            if (!child->isDisabled()) {
+                                hasEnabledChild = true;
+                            }
                         }
+
+                        if (!hasEnabledChild) {
+                            auto tag = itemTag(p_item);
+                            auto nodes = tagI->findNodesOfTag(tag);
+                            QSet<QString> nodeSet(nodes.begin(), nodes.end());
+                            if (!nodeSet.intersects(commonNodes)) {
+                                p_item->setDisabled(true);
+                            }
+                        }
+                        return;
                     }
+
                     for (int i = 0; i < p_item->childCount(); ++i) {
                         disableIncompatibleItems(p_item->child(i));
                     }
