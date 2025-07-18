@@ -239,7 +239,8 @@
         "locationlist" : {
             "node_icon" : {
                 "fg" : "@base#icon#fg"
-            }
+            },
+            "bg" : "@base#content#bg"
         },
         "viewsplit" : {
             "action_button" : {
