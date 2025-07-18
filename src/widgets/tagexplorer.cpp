@@ -105,10 +105,107 @@ void TagExplorer::setupTagTree(QWidget *p_parent)
     TreeWidget::setupSingleColumnHeaderlessTree(m_tagTree, true, false);
     TreeWidget::showHorizontalScrollbar(m_tagTree);
     m_tagTree->setDragDropMode(QAbstractItemView::InternalMove);
-    connect(m_tagTree, &QTreeWidget::currentItemChanged,
-            timer, QOverload<>::of(&QTimer::start));
-    connect(m_tagTree, &QTreeWidget::itemClicked,
-            timer, QOverload<>::of(&QTimer::start));
+    m_tagTree->setSelectionMode(QAbstractItemView::MultiSelection);
+    connect(m_tagTree, &QTreeWidget::itemSelectionChanged,
+            this, [this, timer]() {
+                auto selectedItems = m_tagTree->selectedItems();
+
+                // Enable all items first
+                std::function<void(QTreeWidgetItem*)> enableAllItems = [&](QTreeWidgetItem *p_item) {
+                    p_item->setDisabled(false);
+                    for (int i = 0; i < p_item->childCount(); ++i) {
+                        enableAllItems(p_item->child(i));
+                    }
+                };
+                for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                    enableAllItems(m_tagTree->topLevelItem(i));
+                }
+                // no-bold when no item selected
+                if (selectedItems.isEmpty()) {
+                    timer->start();
+                    std::function<void(QTreeWidgetItem*)> unboldAllItems = [&](QTreeWidgetItem *p_item) {
+                        QFont font = p_item->font(Column::Name);
+                        font.setBold(false);
+                        p_item->setFont(Column::Name, font);
+                        for (int i = 0; i < p_item->childCount(); ++i) {
+                            unboldAllItems(p_item->child(i));
+                        }
+                    };
+                    for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                        unboldAllItems(m_tagTree->topLevelItem(i));
+                    }
+                    return;
+                }
+
+                // Get common nodes for selected tags
+                QSet<QString> commonNodes;
+                auto tagI = m_notebook->tag();
+                if (Q_UNLIKELY(!tagI)) {
+                    return; // Tag interface not initialized
+                }
+                for (const auto &item : selectedItems) {
+                    auto tag = itemTag(item);
+                    auto nodes = tagI->findNodesOfTag(tag);
+                    if (commonNodes.isEmpty()) {
+                        commonNodes = QSet<QString>(nodes.begin(), nodes.end());
+                    } else {
+                        commonNodes.intersect(QSet<QString>(nodes.begin(), nodes.end()));
+                    }
+                }
+
+                // Disable incompatible tags
+                // *Since parent tags affect the disabled state of child tags,
+                // *keep the parent tag enabled (even if incompatible) when child tags are matched.
+                std::function<void(QTreeWidgetItem*)> disableIncompatibleItems = [&](QTreeWidgetItem *p_item) {
+                    if (!selectedItems.contains(p_item)) {
+                        // Disable parent tag only if all child tags are incompatible.
+                        // Otherwise, keep it enabled.
+                        bool hasEnabledChild = false;
+                        for (int i = 0; i < p_item->childCount(); ++i) {
+                            auto child = p_item->child(i);
+                            disableIncompatibleItems(child);
+                            if (!child->isDisabled()) {
+                                hasEnabledChild = true;
+                            }
+                        }
+
+                        if (!hasEnabledChild) {
+                            auto tag = itemTag(p_item);
+                            auto nodes = tagI->findNodesOfTag(tag);
+                            QSet<QString> nodeSet(nodes.begin(), nodes.end());
+                            if (!nodeSet.intersects(commonNodes)) {
+                                p_item->setDisabled(true);
+                            }
+                        }
+                        return;
+                    }
+
+                    for (int i = 0; i < p_item->childCount(); ++i) {
+                        disableIncompatibleItems(p_item->child(i));
+                    }
+                };
+                for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                    disableIncompatibleItems(m_tagTree->topLevelItem(i));
+                }
+
+                // Update font for all items
+                std::function<void(QTreeWidgetItem*)> updateItemFont = [&](QTreeWidgetItem *p_item) {
+                    QFont font = p_item->font(Column::Name);
+                    // set bold when item is selected or enabled
+                    bool shouldBold = !selectedItems.isEmpty() && 
+                                     (selectedItems.contains(p_item) || (p_item->flags() & Qt::ItemIsEnabled));
+                    font.setBold(shouldBold);
+                    p_item->setFont(Column::Name, font);
+                    for (int i = 0; i < p_item->childCount(); ++i) {
+                        updateItemFont(p_item->child(i));
+                    }
+                };
+                for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+                    updateItemFont(m_tagTree->topLevelItem(i));
+                }
+
+                timer->start();
+            });
     connect(m_tagTree, &QTreeWidget::customContextMenuRequested,
             this, &TagExplorer::handleTagTreeContextMenuRequested);
     connect(m_tagTree, &TreeWidget::itemMoved,
@@ -199,19 +296,27 @@ void TagExplorer::fillTagItem(const QSharedPointer<Tag> &p_tag, QTreeWidgetItem 
     p_item->setToolTip(Column::Name, p_tag->name());
     p_item->setIcon(Column::Name, m_tagIcon);
     p_item->setData(Column::Name, Qt::UserRole, p_tag->name());
+    // set no-bold when init
+    QFont font = p_item->font(Column::Name);
+    font.setBold(false);
+    p_item->setFont(Column::Name, font);
 }
 
 void TagExplorer::activateTagItem()
 {
     auto items = m_tagTree->selectedItems();
-    if (items.size() != 1) {
+    if (items.isEmpty()) {
         m_lastTagName.clear();
         m_nodeList->clear();
         return;
     }
 
-    m_lastTagName = itemTag(items[0]);
-    updateNodeList(m_lastTagName);
+    QStringList tags;
+    for (const auto &item : items) {
+        tags.append(itemTag(item));
+    }
+
+    updateNodeList(tags);
 }
 
 QString TagExplorer::itemTag(const QTreeWidgetItem *p_item) const
@@ -224,18 +329,28 @@ QString TagExplorer::itemNode(const QListWidgetItem *p_item) const
     return p_item->data(Qt::UserRole).toString();
 }
 
-void TagExplorer::updateNodeList(const QString &p_tag)
+void TagExplorer::updateNodeList(const QStringList &p_tags)
 {
     m_nodeList->clear();
 
     Q_ASSERT(m_notebook);
     auto tagI = m_notebook->tag();
     Q_ASSERT(tagI);
-    const auto nodePaths = tagI->findNodesOfTag(p_tag);
+
+    QSet<QString> nodePaths;
+    for (const auto &tag : p_tags) {
+        const auto paths = tagI->findNodesOfTag(tag);
+        if (nodePaths.isEmpty()) {
+            nodePaths.unite(QSet<QString>(paths.begin(), paths.end()));
+        } else {
+            nodePaths.intersect(QSet<QString>(paths.begin(), paths.end()));
+        }
+    }
+
     for (const auto &pa : nodePaths) {
         auto node = m_notebook->loadNodeByPath(pa);
         if (!node) {
-            qWarning() << "node belongs to tag in DB but not exists" << p_tag << pa;
+            qWarning() << "node belongs to tag in DB but not exists" << p_tags.join(", ") << pa;
             continue;
         }
 
@@ -246,7 +361,7 @@ void TagExplorer::updateNodeList(const QString &p_tag)
         item->setData(Qt::UserRole, pa);
     }
 
-    VNoteX::getInst().showStatusMessageShort(tr("Search of tag succeeded: %1").arg(p_tag));
+    VNoteX::getInst().showStatusMessageShort(tr("Search of tags succeeded: %1").arg(p_tags.join(", ")));
 }
 
 void TagExplorer::handleNodeListContextMenuRequested(const QPoint &p_pos)
