@@ -9,8 +9,11 @@
 #include <QDebug>
 #include <QTimer>
 #include <QAbstractItemModel>
+#include <QLineEdit>
+#include <QCompleter>
 
 #include "titlebar.h"
+#include "propertydefs.h"
 
 #include <utils/widgetutils.h>
 #include <utils/iconutils.h>
@@ -56,6 +59,18 @@ void TagExplorer::setupUI()
 
     setupTitleBar(this);
     mainLayout->addWidget(m_titleBar);
+
+    m_tagSearchEdit = WidgetsFactory::createComboBox(this);
+    m_tagSearchEdit->setEditable(true);
+    m_tagSearchEdit->setLineEdit(WidgetsFactory::createLineEdit(this));
+    m_tagSearchEdit->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
+    m_tagSearchEdit->lineEdit()->setPlaceholderText(tr(""));
+    m_tagSearchEdit->lineEdit()->setClearButtonEnabled(true);
+    m_tagSearchEdit->completer()->setCaseSensitivity(Qt::CaseSensitive);
+
+    connect(m_tagSearchEdit->lineEdit(), &QLineEdit::textChanged, this, &TagExplorer::filterTags);
+
+    mainLayout->addWidget(m_tagSearchEdit);
 
     m_splitter = new QSplitter(this);
     mainLayout->addWidget(m_splitter);
@@ -529,5 +544,25 @@ void TagExplorer::scrollToTag(const QString &p_name)
     if (item) {
         m_tagTree->setCurrentItem(item);
         m_tagTree->scrollToItem(item);
+    }
+}
+
+void TagExplorer::filterTags(const QString &p_text)
+{
+    std::function<void(QTreeWidgetItem*)> processItem = [&](QTreeWidgetItem *p_item) {
+        bool show = p_item->text(Column::Name).contains(p_text, Qt::CaseInsensitive);
+
+        for (int i = 0; i < p_item->childCount(); ++i) {
+            processItem(p_item->child(i));
+            if (!p_item->child(i)->isHidden()) {
+                show = true;
+            }
+        }
+
+        p_item->setHidden(!show);
+    };
+
+    for (int i = 0; i < m_tagTree->topLevelItemCount(); ++i) {
+        processItem(m_tagTree->topLevelItem(i));
     }
 }

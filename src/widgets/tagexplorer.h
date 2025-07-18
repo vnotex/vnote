@@ -4,6 +4,8 @@
 #include <QFrame>
 #include <QSharedPointer>
 #include <QScopedPointer>
+#include <QComboBox>
+
 
 #include "navigationmodewrapper.h"
 
@@ -39,6 +41,8 @@ namespace vnotex
         void handleTagTreeContextMenuRequested(const QPoint &p_pos);
 
         void handleTagMoved(QTreeWidgetItem *p_item);
+
+        void filterTags(const QString &p_text);
 
     private:
         enum Column { Name = 0 };
@@ -99,6 +103,8 @@ namespace vnotex
         QIcon m_tagIcon;
 
         QIcon m_nodeIcon;
+
+        QComboBox *m_tagSearchEdit = nullptr;
     };
 }
 
