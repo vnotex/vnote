@@ -136,21 +136,55 @@ void LocationList::setItemLocationLineAndText(QTreeWidgetItem *p_item, const Com
 
 void LocationList::addLocation(const ComplexLocation &p_location)
 {
+    // Check if this path already exists
+    QTreeWidgetItem *existingItem = nullptr;
+    for (int i = 0; i < m_tree->topLevelItemCount(); ++i) {
+        auto item = m_tree->topLevelItem(i);
+        if (item->data(Columns::PathColumn, Qt::UserRole).toString() == p_location.m_path) {
+            existingItem = item;
+            break;
+        }
+    }
+
+    // Filter out empty lines
+    QVector<ComplexLocation::Line> validLines;
+    for (const auto &line : p_location.m_lines) {
+        if (line.m_lineNumber != -1 && !line.m_text.isEmpty()) {
+            validLines.append(line);
+        }
+    }
+
+    if (validLines.isEmpty()) {
+        // No valid lines, only add if this is a new path
+        if (!existingItem) {
+            auto item = new QTreeWidgetItem(m_tree);
+            item->setText(Columns::PathColumn, p_location.m_displayPath);
+            item->setIcon(Columns::PathColumn, getItemIcon(p_location.m_type));
+            item->setData(Columns::PathColumn, Qt::UserRole, p_location.m_path);
+            item->setToolTip(Columns::PathColumn, p_location.m_path);
+        }
+        return;
+    }
+
+    if (existingItem) {
+        // Replace existing item with new valid lines
+        delete existingItem;
+    }
+
     auto item = new QTreeWidgetItem(m_tree);
     item->setText(Columns::PathColumn, p_location.m_displayPath);
     item->setIcon(Columns::PathColumn, getItemIcon(p_location.m_type));
     item->setData(Columns::PathColumn, Qt::UserRole, p_location.m_path);
     item->setToolTip(Columns::PathColumn, p_location.m_path);
 
-    if (p_location.m_lines.size() == 1) {
-        setItemLocationLineAndText(item, p_location.m_lines[0]);
-    } else if (p_location.m_lines.size() > 1) {
+    if (validLines.size() == 1) {
+        setItemLocationLineAndText(item, validLines[0]);
+    } else if (validLines.size() > 1) {
         // Add sub items.
-        for (const auto &line : p_location.m_lines) {
+        for (const auto &line : validLines) {
             auto subItem = new QTreeWidgetItem(item);
             setItemLocationLineAndText(subItem, line);
         }
-
         item->setExpanded(true);
     }
 
