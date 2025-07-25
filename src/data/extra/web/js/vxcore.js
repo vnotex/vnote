@@ -30,6 +30,11 @@ class VXCore extends EventEmitter {
         });
     }
 
+    // Base implementation of initOnLoad - can be overridden by subclasses
+    initOnLoad() {
+        // Base class does nothing - subclasses should override this method
+    }
+
     static detectOS() {
         let osName="Unknown OS";
         if (navigator.appVersion.indexOf("Win")!=-1) {

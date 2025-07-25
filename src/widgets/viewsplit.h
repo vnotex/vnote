@@ -88,6 +88,9 @@ namespace vnotex
 
         void horizontalSplitRequested(ViewSplit *p_split);
 
+        // 创建空的 split 的信号, 方便思维导图, 看板, 等其他前端与后端笔记联动
+        void emptySplitRequested(ViewSplit *p_split, Direction p_direction);
+
         void maximizeSplitRequested(ViewSplit *p_split);
 
         void distributeSplitsRequested();

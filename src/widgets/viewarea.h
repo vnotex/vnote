@@ -78,6 +78,9 @@ namespace vnotex
 
         void setCurrentViewWindow(ID p_splitId, int p_windowIndex);
 
+        // 调整设置当前 ViewSplit 为 public方法, 方便思维导图, 看板, 等其他前端与后端笔记联动
+        void setCurrentViewSplit(ViewSplit *p_split, bool p_focus = true);
+
     public slots:
         void openBuffer(Buffer *p_buffer, const QSharedPointer<FileOpenParameters> &p_paras);
 
@@ -179,7 +182,6 @@ namespace vnotex
         void setCurrentViewWindow(ViewWindow *p_win);
 
         ViewSplit *getCurrentViewSplit() const;
-        void setCurrentViewSplit(ViewSplit *p_split, bool p_focus);
 
         QSharedPointer<ViewWorkspace> createWorkspace();
 
