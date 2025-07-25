@@ -69,6 +69,7 @@ class LinkHandlerFeature {
                     nodeData = nodeDataMap.get(cleanNodeId);
                 }
 
+                // debug use
                 // if (nodeData) {
                 //     console.log('LinkHandlerFeature: Found node data:', {
                 //         id: nodeData.id,
@@ -120,6 +121,7 @@ class LinkHandlerFeature {
             return;
         }
 
+        // debug use
         // console.log('LinkHandlerFeature: Creating link tag for node:', {
         //     nodeId: nodeId,
         //     extension: extension,
@@ -952,6 +954,7 @@ class LinkHandlerFeature {
         const nodeData = data.nodeData || data;
         if (!nodeData) return;
 
+        // debug use
         // 添加当前节点到映射
         // console.log('LinkHandlerFeature: Adding node to map:', {
         //     id: nodeData.id,

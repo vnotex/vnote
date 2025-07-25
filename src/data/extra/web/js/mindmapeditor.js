@@ -135,30 +135,6 @@ class MindMapEditor extends VXCore {
      * @param {number} id - 数据ID
      */
     saveData(id) {
-        // 验证必要条件
-        // const checks = [
-        //     { condition: !this.mindMapCore, message: 'mindMapCore is null' },
-        //     { condition: !this.initialized, message: 'editor not initialized' },
-        //     { condition: !window.vxAdapter?.setSavedData, message: 'setSavedData function not available' },
-        //     { condition: typeof id !== 'number' || isNaN(id), message: 'invalid save ID' }
-        // ];
-
-        // for (const check of checks) {
-        //     if (check.condition) {
-        //         const error = 'Cannot save - ' + check.message;
-        //         console.error('MindMapEditor:', error);
-        //         this.mindMapCore.emitSaveResult(id, false, error);
-        //         return;
-        //     }
-        // }
-
-        // try {
-        //     this.mindMapCore.saveData(id);
-        // } catch (error) {
-        //     console.error('MindMapEditor: Error during save operation:', error);
-        //     this.mindMapCore.emitSaveResult(id, false, '保存时发生错误: ' + error.message);
-        // }
-
         if (this.mindMapCore) {
             this.mindMapCore.saveData(id);
         }
