@@ -255,6 +255,27 @@ ViewSplit *ViewArea::createViewSplit(QWidget *p_parent, ID p_viewSplitId)
                 splitViewSplit(p_split, SplitType::Horizontal);
                 emit windowsChanged();
             });
+    // 连接空split创建信号, 方便思维导图, 看板, 等其他前端与后端笔记联动
+    connect(split, &ViewSplit::emptySplitRequested,
+            this, [this](ViewSplit *p_split, Direction p_direction) {
+                // 根据方向确定split类型
+                SplitType splitType = (p_direction == Direction::Left || p_direction == Direction::Right) ? 
+                                     SplitType::Vertical : SplitType::Horizontal;
+                // 创建空的split（p_cloneViewWindow = false）
+                auto newSplit = splitViewSplit(p_split, splitType, false);
+                
+                // 如果是左边或上边，需要调整split位置
+                if (p_direction == Direction::Left || p_direction == Direction::Up) {
+                    auto splitter = tryGetParentSplitter(newSplit);
+                    if (splitter && splitter->indexOf(newSplit) == 1) {
+                        splitter->insertWidget(0, newSplit);
+                    }
+                }
+                
+                // 设置新split为当前split
+                setCurrentViewSplit(newSplit, true);
+                emit windowsChanged();
+            });
     connect(split, &ViewSplit::maximizeSplitRequested,
             this, &ViewArea::maximizeViewSplit);
     connect(split, &ViewSplit::distributeSplitsRequested,

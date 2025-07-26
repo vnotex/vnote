@@ -533,21 +533,30 @@
                 "template" : "web/mindmap-editor-template.html",
                 "resources" : [
                     {
+                        "name" : "global_styles",
+                        "enabled" : true,
+                        "styles" : [
+                            "web/css/globalstyles.css"
+                        ]
+                    },
+                    {
                         "name" : "built_in",
                         "enabled" : true,
                         "scripts" : [
                             "web/js/qwebchannel.js",
                             "web/js/eventemitter.js",
                             "web/js/utils.js",
-                            "web/js/vxcore.js",
-                            "web/js/mindmapeditorcore.js"
+                            "web/js/vxcore.js"
                         ]
                     },
                     {
-                        "name" : "mind_elixir",
+                        "name" : "mindmap_dependencies",
                         "enabled" : true,
                         "scripts" : [
-                            "web/js/mind-elixir/MindElixir.js"
+                            "web/js/mindmap/lib/mind-elixir/MindElixir.js",
+                            "web/js/mindmap/core/mindmap-core.js",
+                            "web/js/mindmap/features/outline/outline.js",
+                            "web/js/mindmap/features/link-handler/link-handler.js"
                         ]
                     },
                     {

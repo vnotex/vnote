@@ -4,6 +4,7 @@
 #include "viewwindow.h"
 
 #include <QScopedPointer>
+#include <QMap>
 
 class QWebEngineView;
 
@@ -11,6 +12,7 @@ namespace vnotex
 {
     class MindMapEditor;
     class MindMapEditorAdapter;
+    class ViewArea;
 
     class MindMapViewWindow : public ViewWindow
     {
@@ -80,6 +82,12 @@ namespace vnotex
 
         void setupDebugViewer();
 
+        void handleUrlClick(const QString &p_url);
+
+        void handleUrlClickWithDirection(const QString &p_url, const QString &p_direction);
+
+        void cleanupInvalidSplits(ViewArea *viewArea);
+
         // Managed by QObject.
         MindMapEditor *m_editor = nullptr;
 
@@ -87,6 +95,9 @@ namespace vnotex
         QWebEngineView *m_debugViewer = nullptr;
 
         int m_editorConfigRevision = 0;
+
+        // 记录每个方向对应的目标split，用于智能方向打开
+        QMap<QString, ViewSplit*> m_directionSplits;
     };
 }
 

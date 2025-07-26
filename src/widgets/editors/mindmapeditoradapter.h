@@ -29,6 +29,12 @@ namespace vnotex
 
         void notifyContentsChanged();
 
+        // 处理来自JavaScript的URL点击事件
+        void urlClicked(const QString &p_url);
+
+        // 处理来自JavaScript的带方向的URL点击事件
+        void urlClickedWithDirection(const QString &p_url, const QString &p_direction);
+
         // Signals to be connected at web side.
     signals:
         void dataUpdated(const QString& p_data);
@@ -37,6 +43,12 @@ namespace vnotex
 
     signals:
         void contentsChanged();
+
+        // 发出URL点击信号，供其他组件处理
+        void urlClickRequested(const QString &p_url);
+
+        // 发出带方向的URL点击信号
+        void urlClickWithDirectionRequested(const QString &p_url, const QString &p_direction);
 
     private:
     };
