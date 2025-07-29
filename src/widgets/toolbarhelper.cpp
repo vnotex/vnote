@@ -8,8 +8,11 @@
 #include <QDockWidget>
 #include <QApplication>
 #include <QDir>
+#include <QDirIterator>
 #include <QFileDialog>
 #include <QWidgetAction>
+#include <QJsonObject>
+#include <QJsonParseError>
 
 #include "mainwindow.h"
 #include <core/vnotex.h>
@@ -26,6 +29,7 @@
 #include <core/markdowneditorconfig.h>
 #include <core/fileopenparameters.h>
 #include <core/htmltemplatehelper.h>
+#include <core/notebookmgr.h>
 #include <core/exception.h>
 #include <task/taskmgr.h>
 #include <unitedentry/unitedentry.h>
@@ -493,7 +497,19 @@ void ToolBarHelper::updateQuickAccessMenu(QMenu *p_menu)
 
     for (const auto &file : quickAccess) {
         auto act = new QWidgetAction(p_menu);
-        auto widget = new LabelWithButtonsWidget(PathUtils::fileName(file), LabelWithButtonsWidget::Delete);
+        QString displayName = PathUtils::fileName(file);
+        QString displayFullName = file;
+
+        // check if file is "#signature:fileFullName"
+        if (file.startsWith('#')) {
+            int colonPos = file.indexOf(':');
+            if (colonPos != -1) {
+                displayFullName = file.mid(colonPos + 1);
+                displayName = PathUtils::fileName(displayFullName);   // get 'fileName'
+            }
+        }
+
+        auto widget = new LabelWithButtonsWidget(displayName, LabelWithButtonsWidget::Delete);
         p_menu->connect(widget, &LabelWithButtonsWidget::triggered,
                         p_menu, [p_menu, act]() {
                             const auto qaFile = act->data().toString();
@@ -506,7 +522,7 @@ void ToolBarHelper::updateQuickAccessMenu(QMenu *p_menu)
         // @act will own @widget.
         act->setDefaultWidget(widget);
         act->setData(file);
-        act->setToolTip(file);
+        act->setToolTip(displayFullName);
 
         // Must call after setDefaultWidget().
         p_menu->addAction(act);
@@ -777,9 +793,88 @@ void ToolBarHelper::setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar)
 
 void ToolBarHelper::activateQuickAccess(const QString &p_file)
 {
+    if (p_file.length() > 1 && p_file[0] == '#')
+    {
+        activateQuickAccessFromVxUrl(p_file);
+    }else
+    {
+        activateQuickAccessFilePath(p_file);
+    }
+}
+
+void ToolBarHelper::activateQuickAccessFilePath(const QString &p_file)
+{
     const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
     auto paras = QSharedPointer<FileOpenParameters>::create();
     paras->m_mode = coreConfig.getDefaultOpenMode();
 
     emit VNoteX::getInst().openFileRequested(p_file, paras);
+}
+
+void ToolBarHelper::activateQuickAccessFromVxUrl(const QString &p_vx_url)
+{
+    auto notebook = VNoteX::getInst().getNotebookMgr().getCurrentNotebook();
+    if (!notebook) {
+        return;
+    }
+
+    // get 'signature' from format '#signature:filename'
+    QString target_signature = p_vx_url;
+
+    if (target_signature.startsWith('#')) {
+        target_signature = target_signature.mid(1); // remove '#'
+        if (target_signature.contains(':')) {
+            target_signature = target_signature.split(':').first(); // get 'signature'
+        }
+    }
+
+    // find signature in all vx.json file
+    const QString rootPath = notebook->getRootFolderAbsolutePath();
+    QDirIterator it(rootPath, {"vx.json"}, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    QStringList matchedFiles;
+
+    while (it.hasNext()) {
+        const QString vxPath = it.next();
+        QFile vxFile(vxPath);
+        if (!vxFile.open(QIODevice::ReadOnly)) {
+            continue;
+        }
+
+        const QJsonObject json = QJsonDocument::fromJson(vxFile.readAll()).object();
+        // find signature in files array
+        QString signature;
+        QString fileName;
+        const auto filesArray = json.value("files").toArray();
+        for (const auto &fileItem : filesArray) {
+            const auto fileObj = fileItem.toObject();
+            if (fileObj["signature"].toString() == target_signature) {
+                fileName = fileObj["name"].toString();
+                signature = target_signature;
+                break;
+            }
+        }
+        // if not find in files array, use directory signature
+        if (signature.isEmpty()) {
+            signature = json.value("signature").toString();
+        }
+
+        if (!signature.isEmpty() && signature == target_signature) {
+            const QString fullPath = PathUtils::concatenateFilePath(QFileInfo(vxPath).absolutePath(), fileName);
+            matchedFiles.append(fullPath);
+        }
+    }
+
+    // open matched files
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+    auto paras = QSharedPointer<FileOpenParameters>::create();
+    paras->m_mode = coreConfig.getDefaultOpenMode();
+
+    if (matchedFiles.isEmpty()) {
+        return;
+    }
+
+    for (const auto &file : matchedFiles) {
+        emit VNoteX::getInst().openFileRequested(file, paras);
+    }
+
 }

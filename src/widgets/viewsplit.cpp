@@ -11,6 +11,8 @@
 #include <QFileInfo>
 #include <QShortcut>
 #include <QActionGroup>
+#include <QJsonObject>
+#include <QJsonParseError>
 
 #include "viewwindow.h"
 #include "viewarea.h"
@@ -662,8 +664,44 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
                       [this, p_tabIdx]() {
                           auto win = getViewWindow(p_tabIdx);
                           if (win) {
-                              const QStringList files(win->getBuffer()->getPath());
-                              emit VNoteX::getInst().pinToQuickAccessRequested(files);
+                              // get file'signature' from vx.json
+                              const QString filePath = win->getBuffer()->getPath();
+                              QString dirPath = PathUtils::parentDirPath(filePath);
+                              QString vxJsonPath = dirPath + "/vx.json";
+                              QString currentFileName;
+
+                              QFile vxFile(vxJsonPath);
+                              if (!vxFile.open(QIODevice::ReadOnly)) {
+                                  return;
+                              }
+                              QByteArray data = vxFile.readAll();
+                              vxFile.close();
+                              QJsonParseError parseError;
+                              QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+                              if (parseError.error != QJsonParseError::NoError) {
+                                  return;
+                              }
+
+                              QJsonObject obj = doc.object();
+                              QString signature;
+
+                              if (obj.contains("files") && obj["files"].isArray()) {
+                                  QJsonArray filesArray = obj["files"].toArray();
+                                  currentFileName = win->getBuffer()->getName();
+                                  for (const QJsonValue &fileVal : filesArray) {
+                                      QJsonObject fileObj = fileVal.toObject();
+                                      if (fileObj["name"].toString() == currentFileName) {
+                                          signature = fileObj["signature"].toString();
+                                          break;
+                                      }
+                                  }
+                              }
+
+                              if (!signature.isEmpty()) {
+                                  QString quickAccessItem = QString("#%1:%2").arg(signature, filePath);
+                                  const QStringList files(quickAccessItem);
+                                  emit VNoteX::getInst().pinToQuickAccessRequested(files);
+                              }
                           }
                       });
 
