@@ -18,6 +18,7 @@
 #include <core/thememgr.h>
 #include <utils/iconutils.h>
 #include <utils/pathutils.h>
+#include <utils/vxurlutils.h>
 #include "widgetsfactory.h"
 #include <utils/widgetutils.h>
 #include <utils/urldragdroputils.h>
@@ -662,8 +663,14 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx)
                       [this, p_tabIdx]() {
                           auto win = getViewWindow(p_tabIdx);
                           if (win) {
-                              const QStringList files(win->getBuffer()->getPath());
-                              emit VNoteX::getInst().pinToQuickAccessRequested(files);
+                              const QString filePath = win->getBuffer()->getPath();
+                              QString signature = VxUrlUtils::getSignatureFromFilePath(filePath);
+
+                              if (!signature.isEmpty()) {
+                                  QString quickAccessItem = VxUrlUtils::generateVxURL(signature, filePath);
+                                  const QStringList files(quickAccessItem);
+                                  emit VNoteX::getInst().pinToQuickAccessRequested(files);
+                              }
                           }
                       });
 

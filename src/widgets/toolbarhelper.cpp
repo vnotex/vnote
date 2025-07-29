@@ -18,6 +18,7 @@
 #include <utils/widgetutils.h>
 #include <utils/docsutils.h>
 #include <utils/pathutils.h>
+#include <utils/vxurlutils.h>
 #include "fullscreentoggleaction.h"
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
@@ -26,6 +27,7 @@
 #include <core/markdowneditorconfig.h>
 #include <core/fileopenparameters.h>
 #include <core/htmltemplatehelper.h>
+#include <core/notebookmgr.h>
 #include <core/exception.h>
 #include <task/taskmgr.h>
 #include <unitedentry/unitedentry.h>
@@ -493,7 +495,10 @@ void ToolBarHelper::updateQuickAccessMenu(QMenu *p_menu)
 
     for (const auto &file : quickAccess) {
         auto act = new QWidgetAction(p_menu);
-        auto widget = new LabelWithButtonsWidget(PathUtils::fileName(file), LabelWithButtonsWidget::Delete);
+        QString displayName = PathUtils::fileName(file);
+        QString displayFullName = VxUrlUtils::getFilePathFromVxURL(file);
+
+        auto widget = new LabelWithButtonsWidget(displayName, LabelWithButtonsWidget::Delete);
         p_menu->connect(widget, &LabelWithButtonsWidget::triggered,
                         p_menu, [p_menu, act]() {
                             const auto qaFile = act->data().toString();
@@ -506,7 +511,7 @@ void ToolBarHelper::updateQuickAccessMenu(QMenu *p_menu)
         // @act will own @widget.
         act->setDefaultWidget(widget);
         act->setData(file);
-        act->setToolTip(file);
+        act->setToolTip(displayFullName);
 
         // Must call after setDefaultWidget().
         p_menu->addAction(act);
@@ -777,9 +782,44 @@ void ToolBarHelper::setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar)
 
 void ToolBarHelper::activateQuickAccess(const QString &p_file)
 {
+    if (p_file.startsWith('#')) {
+        activateQuickAccessFromVxUrl(p_file);
+    } else
+    {
+        activateQuickAccessFilePath(p_file);
+    }
+}
+
+void ToolBarHelper::activateQuickAccessFilePath(const QString &p_file)
+{
     const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
     auto paras = QSharedPointer<FileOpenParameters>::create();
     paras->m_mode = coreConfig.getDefaultOpenMode();
 
     emit VNoteX::getInst().openFileRequested(p_file, paras);
+}
+
+void ToolBarHelper::activateQuickAccessFromVxUrl(const QString &p_vx_url)
+{
+    auto notebook = VNoteX::getInst().getNotebookMgr().getCurrentNotebook();
+    if (!notebook) {
+        return;
+    }
+
+    // get 'signature' from format '#signature:filename'
+    QString signature = VxUrlUtils::getSignatureFromVxURL(p_vx_url);
+
+    // get FilePath from Signature from currentNotebook
+    const QString rootPath = notebook->getRootFolderAbsolutePath();
+    const QString filePath = VxUrlUtils::getFilePathFromSignature(rootPath, signature);
+
+    const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+    auto paras = QSharedPointer<FileOpenParameters>::create();
+    paras->m_mode = coreConfig.getDefaultOpenMode();
+
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    emit VNoteX::getInst().openFileRequested(filePath, paras);
 }
