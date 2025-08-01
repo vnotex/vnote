@@ -44,6 +44,7 @@ target_sources(vnote PRIVATE
     notebook/inotebookfactory.h
     notebook/node.cpp notebook/node.h
     notebook/nodeparameters.cpp notebook/nodeparameters.h
+    notebook/nodevisual.cpp notebook/nodevisual.h
     notebook/notebook.cpp notebook/notebook.h
     notebook/notebookdatabaseaccess.cpp notebook/notebookdatabaseaccess.h
     notebook/notebookparameters.cpp notebook/notebookparameters.h

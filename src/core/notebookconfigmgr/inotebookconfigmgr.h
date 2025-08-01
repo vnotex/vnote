@@ -5,6 +5,7 @@
 #include <QSharedPointer>
 
 #include "notebook/node.h"
+#include "notebook/nodevisual.h"
 
 namespace vnotex
 {
@@ -83,6 +84,8 @@ namespace vnotex
         virtual bool checkNodeExists(Node *p_node) = 0;
 
         virtual QStringList scanAndImportExternalFiles(Node *p_node) = 0;
+
+        virtual void updateNodeVisual(Node *p_node, const NodeVisual &p_visual) = 0;
 
         // Version of the config processing code.
         virtual int getCodeVersion() const = 0;
