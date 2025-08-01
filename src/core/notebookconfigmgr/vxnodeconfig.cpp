@@ -217,16 +217,16 @@ void NodeConfig::fromJson(const QJsonObject &p_jobj)
     m_createdTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_createdTimeUtc].toString());
     m_modifiedTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_modifiedTimeUtc].toString());
 
-        auto filesJson = p_jobj[NodeConfig::c_files].toArray();
-        m_files.resize(filesJson.size());
-        for (int i = 0; i < filesJson.size(); ++i) {
-            m_files[i].fromJson(filesJson[i].toObject());
+    auto filesJson = p_jobj[NodeConfig::c_files].toArray();
+    m_files.resize(filesJson.size());
+    for (int i = 0; i < filesJson.size(); ++i) {
+        m_files[i].fromJson(filesJson[i].toObject());
     }
 
-        auto foldersJson = p_jobj[NodeConfig::c_folders].toArray();
-        m_folders.resize(foldersJson.size());
-        for (int i = 0; i < foldersJson.size(); ++i) {
-            m_folders[i].fromJson(foldersJson[i].toObject());
+    auto foldersJson = p_jobj[NodeConfig::c_folders].toArray();
+    m_folders.resize(foldersJson.size());
+    for (int i = 0; i < foldersJson.size(); ++i) {
+        m_folders[i].fromJson(foldersJson[i].toObject());
     }
 }
 

@@ -187,6 +187,7 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
         }
 
         if (seenNames.contains(folder.m_name)) {
+            qWarning() << "skipped loading node with duplicated name under" << p_node->fetchPath();
             continue;
         }
         seenNames.insert(folder.m_name);
@@ -207,6 +208,7 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
         }
 
         if (seenNames.contains(file.m_name)) {
+            qWarning() << "skipped loading node with duplicated name under" << p_node->fetchPath();
             continue;
         }
         seenNames.insert(file.m_name);
@@ -373,7 +375,7 @@ QSharedPointer<NodeConfig> VXNotebookConfigMgr::nodeToNodeConfig(const Node *p_n
                                                      p_node->getSignature(),
                                                      p_node->getCreatedTimeUtc(),
                                                      p_node->getModifiedTimeUtc());
-    
+
     for (const auto &child : p_node->getChildrenRef()) {
         if (child->hasContent()) {
             NodeFileConfig fileConfig;
