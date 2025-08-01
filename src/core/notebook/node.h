@@ -8,6 +8,7 @@
 #include <QEnableSharedFromThis>
 
 #include <global.h>
+#include "nodevisual.h"
 
 namespace vnotex
 {
@@ -140,6 +141,26 @@ namespace vnotex
 
         QString fetchAttachmentFolderPath();
 
+        // 视觉效果相关方法
+        const NodeVisual &getVisual() const;
+        void setVisual(const NodeVisual &p_visual);
+
+        // 视觉效果便捷访问方法
+        const QString &getBackgroundColor() const;
+        void setBackgroundColor(const QString &p_backgroundColor);
+
+        const QString &getBorderColor() const;
+        void setBorderColor(const QString &p_borderColor);
+
+        const QString &getNameColor() const;
+        void setNameColor(const QString &p_nameColor);
+
+        // 获取有效颜色（直接返回设置的颜色）
+        QString getEffectiveBackgroundColor() const;
+        QString getEffectiveBorderColor() const;
+
+        void updateNodeVisual(const NodeVisual &p_visual);
+
         virtual QStringList addAttachment(const QString &p_destFolderPath, const QStringList &p_files) = 0;
 
         virtual QString newAttachmentFile(const QString &p_destFolderPath, const QString &p_name) = 0;
@@ -203,6 +224,8 @@ namespace vnotex
         QStringList m_tags;
 
         QString m_attachmentFolder;
+
+        NodeVisual m_visual;
 
         Node *m_parent = nullptr;
 

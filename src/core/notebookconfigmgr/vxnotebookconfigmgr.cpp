@@ -187,7 +187,6 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
         }
 
         if (seenNames.contains(folder.m_name)) {
-            qWarning() << "skipped loading node with duplicated name under" << p_node->fetchPath();
             continue;
         }
         seenNames.insert(folder.m_name);
@@ -208,7 +207,6 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
         }
 
         if (seenNames.contains(file.m_name)) {
-            qWarning() << "skipped loading node with duplicated name under" << p_node->fetchPath();
             continue;
         }
         seenNames.insert(file.m_name);
@@ -375,7 +373,7 @@ QSharedPointer<NodeConfig> VXNotebookConfigMgr::nodeToNodeConfig(const Node *p_n
                                                      p_node->getSignature(),
                                                      p_node->getCreatedTimeUtc(),
                                                      p_node->getModifiedTimeUtc());
-
+    
     for (const auto &child : p_node->getChildrenRef()) {
         if (child->hasContent()) {
             NodeFileConfig fileConfig;
@@ -386,12 +384,22 @@ QSharedPointer<NodeConfig> VXNotebookConfigMgr::nodeToNodeConfig(const Node *p_n
             fileConfig.m_modifiedTimeUtc = child->getModifiedTimeUtc();
             fileConfig.m_attachmentFolder = child->getAttachmentFolder();
             fileConfig.m_tags = child->getTags();
+            
+            // Visual settings
+            fileConfig.m_backgroundColor = child->getBackgroundColor();
+            fileConfig.m_borderColor = child->getBorderColor();
+            fileConfig.m_nameColor = child->getNameColor();
 
             config->m_files.push_back(fileConfig);
         } else {
             Q_ASSERT(child->isContainer());
             NodeFolderConfig folderConfig;
             folderConfig.m_name = child->getName();
+            
+            // Visual settings
+            folderConfig.m_backgroundColor = child->getBackgroundColor();
+            folderConfig.m_borderColor = child->getBorderColor();
+            folderConfig.m_nameColor = child->getNameColor();
 
             config->m_folders.push_back(folderConfig);
         }
@@ -1111,4 +1119,17 @@ void VXNotebookConfigMgr::removeNodeFromDatabase(const Node *p_node)
 bool VXNotebookConfigMgr::sameNotebook(const Node *p_node) const
 {
     return p_node ? p_node->getNotebook() == getNotebook() : true;
+}
+
+void VXNotebookConfigMgr::updateNodeVisual(Node *p_node, const NodeVisual &p_visual)
+{
+    Q_ASSERT(sameNotebook(p_node));
+    
+    p_node->setVisual(p_visual);
+    
+    if (p_node->isRoot()) {
+        return;
+    }
+    
+    saveNode(p_node);
 }

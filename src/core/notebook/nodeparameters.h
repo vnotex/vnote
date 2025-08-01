@@ -7,6 +7,7 @@
 #include <core/global.h>
 
 #include "node.h"
+#include "nodevisual.h"
 
 namespace vnotex
 {
@@ -28,6 +29,8 @@ namespace vnotex
         QStringList m_tags;
 
         QString m_attachmentFolder;
+
+        NodeVisual m_visual;
     };
 }
 

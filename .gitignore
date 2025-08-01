@@ -18,3 +18,4 @@ build.*
 build*
 .DS_Store
 .vscode
+dev.sh

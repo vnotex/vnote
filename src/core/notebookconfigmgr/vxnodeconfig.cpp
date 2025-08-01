@@ -27,6 +27,12 @@ const QString NodeConfig::c_attachmentFolder = "attachment_folder";
 
 const QString NodeConfig::c_tags = "tags";
 
+const QString NodeConfig::c_backgroundColor = "background_color";
+
+const QString NodeConfig::c_borderColor = "border_color";
+
+const QString NodeConfig::c_nameColor = "name_color";
+
 static ID stringToNodeId(const QString &p_idStr)
 {
     auto ret = stringToID(p_idStr);
@@ -47,6 +53,17 @@ QJsonObject NodeFileConfig::toJson() const
     jobj[NodeConfig::c_modifiedTimeUtc] = Utils::dateTimeStringUniform(m_modifiedTimeUtc);
     jobj[NodeConfig::c_attachmentFolder] = m_attachmentFolder;
     jobj[NodeConfig::c_tags] = QJsonArray::fromStringList(m_tags);
+
+    // Visual settings
+    if (!m_backgroundColor.isEmpty()) {
+        jobj[NodeConfig::c_backgroundColor] = m_backgroundColor;
+    }
+    if (!m_borderColor.isEmpty()) {
+        jobj[NodeConfig::c_borderColor] = m_borderColor;
+    }
+    if (!m_nameColor.isEmpty()) {
+        jobj[NodeConfig::c_nameColor] = m_nameColor;
+    }
 
     return jobj;
 }
@@ -69,6 +86,17 @@ void NodeFileConfig::fromJson(const QJsonObject &p_jobj)
             m_tags << arr[i].toString();
         }
     }
+
+    // Visual settings (check if fields exist for backward compatibility)
+    if (p_jobj.contains(NodeConfig::c_backgroundColor)) {
+        m_backgroundColor = p_jobj[NodeConfig::c_backgroundColor].toString();
+    }
+    if (p_jobj.contains(NodeConfig::c_borderColor)) {
+        m_borderColor = p_jobj[NodeConfig::c_borderColor].toString();
+    }
+    if (p_jobj.contains(NodeConfig::c_nameColor)) {
+        m_nameColor = p_jobj[NodeConfig::c_nameColor].toString();
+    }
 }
 
 NodeParameters NodeFileConfig::toNodeParameters() const
@@ -80,6 +108,12 @@ NodeParameters NodeFileConfig::toNodeParameters() const
     paras.m_modifiedTimeUtc = m_modifiedTimeUtc;
     paras.m_tags = m_tags;
     paras.m_attachmentFolder = m_attachmentFolder;
+    
+    // Visual settings
+    paras.m_visual.setBackgroundColor(m_backgroundColor);
+    paras.m_visual.setBorderColor(m_borderColor);
+    paras.m_visual.setNameColor(m_nameColor);
+    
     return paras;
 }
 
@@ -89,12 +123,46 @@ QJsonObject NodeFolderConfig::toJson() const
 
     jobj[NodeConfig::c_name] = m_name;
 
+    // Visual settings
+    if (!m_backgroundColor.isEmpty()) {
+        jobj[NodeConfig::c_backgroundColor] = m_backgroundColor;
+    }
+    if (!m_borderColor.isEmpty()) {
+        jobj[NodeConfig::c_borderColor] = m_borderColor;
+    }
+    if (!m_nameColor.isEmpty()) {
+        jobj[NodeConfig::c_nameColor] = m_nameColor;
+    }
+
     return jobj;
 }
 
 void NodeFolderConfig::fromJson(const QJsonObject &p_jobj)
 {
     m_name = p_jobj[NodeConfig::c_name].toString();
+    
+    // Visual settings (check if fields exist for backward compatibility)
+    if (p_jobj.contains(NodeConfig::c_backgroundColor)) {
+        m_backgroundColor = p_jobj[NodeConfig::c_backgroundColor].toString();
+    }
+    if (p_jobj.contains(NodeConfig::c_borderColor)) {
+        m_borderColor = p_jobj[NodeConfig::c_borderColor].toString();
+    }
+    if (p_jobj.contains(NodeConfig::c_nameColor)) {
+        m_nameColor = p_jobj[NodeConfig::c_nameColor].toString();
+    }
+}
+
+NodeParameters NodeFolderConfig::toNodeParameters() const
+{
+    NodeParameters paras;
+    
+    // Visual settings
+    paras.m_visual.setBackgroundColor(m_backgroundColor);
+    paras.m_visual.setBorderColor(m_borderColor);
+    paras.m_visual.setNameColor(m_nameColor);
+    
+    return paras;
 }
 
 NodeConfig::NodeConfig()
@@ -149,16 +217,16 @@ void NodeConfig::fromJson(const QJsonObject &p_jobj)
     m_createdTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_createdTimeUtc].toString());
     m_modifiedTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_modifiedTimeUtc].toString());
 
-    auto filesJson = p_jobj[NodeConfig::c_files].toArray();
-    m_files.resize(filesJson.size());
-    for (int i = 0; i < filesJson.size(); ++i) {
-        m_files[i].fromJson(filesJson[i].toObject());
+        auto filesJson = p_jobj[NodeConfig::c_files].toArray();
+        m_files.resize(filesJson.size());
+        for (int i = 0; i < filesJson.size(); ++i) {
+            m_files[i].fromJson(filesJson[i].toObject());
     }
 
-    auto foldersJson = p_jobj[NodeConfig::c_folders].toArray();
-    m_folders.resize(foldersJson.size());
-    for (int i = 0; i < foldersJson.size(); ++i) {
-        m_folders[i].fromJson(foldersJson[i].toObject());
+        auto foldersJson = p_jobj[NodeConfig::c_folders].toArray();
+        m_folders.resize(foldersJson.size());
+        for (int i = 0; i < foldersJson.size(); ++i) {
+            m_folders[i].fromJson(foldersJson[i].toObject());
     }
 }
 

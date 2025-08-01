@@ -27,6 +27,7 @@ Node::Node(Flags p_flags,
       m_modifiedTimeUtc(p_paras.m_modifiedTimeUtc),
       m_tags(p_paras.m_tags),
       m_attachmentFolder(p_paras.m_attachmentFolder),
+      m_visual(p_paras.m_visual),
       m_parent(p_parent)
 {
     Q_ASSERT(m_notebook);
@@ -66,6 +67,8 @@ void Node::loadCompleteInfo(const NodeParameters &p_paras,
     m_modifiedTimeUtc = p_paras.m_modifiedTimeUtc;
     Q_ASSERT(p_paras.m_tags.isEmpty());
     Q_ASSERT(p_paras.m_attachmentFolder.isEmpty());
+    
+    m_visual = p_paras.m_visual;
 
     m_children = p_children;
     m_loaded = true;
@@ -492,4 +495,73 @@ void Node::checkSignature()
     if (m_signature == InvalidId) {
         m_signature = generateSignature();
     }
+}
+
+// 视觉效果相关方法
+const NodeVisual &Node::getVisual() const
+{
+    return m_visual;
+}
+
+void Node::setVisual(const NodeVisual &p_visual)
+{
+    m_visual = p_visual;
+}
+
+// 视觉效果便捷访问方法
+const QString &Node::getBackgroundColor() const
+{
+    return m_visual.getBackgroundColor();
+}
+
+void Node::setBackgroundColor(const QString &p_backgroundColor)
+{
+    m_visual.setBackgroundColor(p_backgroundColor);
+}
+
+const QString &Node::getBorderColor() const
+{
+    return m_visual.getBorderColor();
+}
+
+void Node::setBorderColor(const QString &p_borderColor)
+{
+    m_visual.setBorderColor(p_borderColor);
+}
+
+const QString &Node::getNameColor() const
+{
+    return m_visual.getNameColor();
+}
+
+void Node::setNameColor(const QString &p_nameColor)
+{
+    m_visual.setNameColor(p_nameColor);
+}
+
+QString Node::getEffectiveBackgroundColor() const
+{
+    return getBackgroundColor();
+}
+
+QString Node::getEffectiveBorderColor() const
+{
+    return getBorderColor();
+}
+
+void Node::updateNodeVisual(const NodeVisual &p_visual)
+{
+    if (m_visual.getBackgroundColor() == p_visual.getBackgroundColor() && 
+        m_visual.getBorderColor() == p_visual.getBorderColor() &&
+        m_visual.getNameColor() == p_visual.getNameColor()) {
+        return;
+    }
+
+    m_visual = p_visual;
+
+    // 持久化更新
+    getConfigMgr()->updateNodeVisual(this, p_visual);
+
+    // 界面更新
+    emit m_notebook->nodeUpdated(this);
 }
