@@ -6,6 +6,8 @@
 #include <QAction>
 #include <QSet>
 #include <QShortcut>
+#include <QJsonObject>
+#include <QJsonParseError>
 
 #include <notebook/notebook.h>
 #include <notebook/node.h>
@@ -1348,14 +1350,66 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                 this, [this, p_master]() {
                     auto nodes = p_master ? getMasterSelectedNodesAndExternalNodes() : getSlaveSelectedNodesAndExternalNodes();
                     QStringList files;
+                    QStringList quick_infos;
                     for (const auto &node : nodes.first) {
                         files.push_back(node->fetchAbsolutePath());
                     }
                     for (const auto &node : nodes.second) {
                         files.push_back(node->fetchAbsolutePath());
                     }
+                    // get file signature
+                    for (const auto &file : files) {
+                        QString vxJsonPath;
+                        QString currentFileName;
+
+                        QFileInfo fileInfo(file);
+                        if (fileInfo.isFile()) {
+                            QString dirPath = PathUtils::parentDirPath(file);
+                            vxJsonPath = dirPath + "/vx.json";
+                            currentFileName = PathUtils::fileName(file);
+                        } else if (fileInfo.isDir()) {
+                            vxJsonPath = file + "/vx.json";
+                            currentFileName = PathUtils::fileName(file);
+                        } else {
+                            continue;
+                        }
+
+                        QFile vxFile(vxJsonPath);
+                        if (!vxFile.open(QIODevice::ReadOnly)) {
+                           continue;
+                        }
+                        QByteArray data = vxFile.readAll();
+                        vxFile.close();
+                        QJsonParseError parseError;
+                        QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+                        if (parseError.error != QJsonParseError::NoError) {
+                            continue;
+                        }
+
+                        QJsonObject obj = doc.object();
+                        QString signature;
+
+                        if (obj.contains("files") && obj["files"].isArray()) {
+                            QJsonArray filesArray = obj["files"].toArray();
+                            for (const QJsonValue &fileVal : filesArray) {
+                                QJsonObject fileObj = fileVal.toObject();
+                                if (fileObj["name"].toString() == currentFileName) {
+                                    signature = fileObj["signature"].toString();
+                                    break;
+                                }
+                            }
+                        }
+                        if (signature.isEmpty() && obj.contains("signature")) {
+                            signature = obj["signature"].toString();
+                        }
+
+                        if (!signature.isEmpty()) {
+                            QString item = QString("#%1:%2").arg(signature, file);
+                            quick_infos.append(item);
+                        }
+                     }
                     if (!files.isEmpty()) {
-                        emit VNoteX::getInst().pinToQuickAccessRequested(files);
+                        emit VNoteX::getInst().pinToQuickAccessRequested(quick_infos);
                     }
                 });
         break;

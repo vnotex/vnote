@@ -49,6 +49,11 @@ namespace vnotex
         static void setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar);
 
         static void activateQuickAccess(const QString &p_file);
+
+        static void activateQuickAccessFilePath(const QString &p_file);
+
+        static void activateQuickAccessFromVxUrl(const QString &p_vx_url);
+
     };
 } // ns vnotex
 
