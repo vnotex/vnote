@@ -12,6 +12,7 @@
 #include <notebook/externalnode.h>
 #include <notebook/bundlenotebook.h>
 #include <notebook/notebookdatabaseaccess.h>
+#include <notebook/nodevisual.h>
 #include <utils/utils.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
@@ -193,6 +194,7 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
         seenNames.insert(folder.m_name);
 
         auto folderNode = QSharedPointer<VXNode>::create(folder.m_name,
+                                                         folder.toNodeParameters(),
                                                          getNotebook(),
                                                          p_node);
         inheritNodeFlags(p_node, folderNode.data());
@@ -375,6 +377,11 @@ QSharedPointer<NodeConfig> VXNotebookConfigMgr::nodeToNodeConfig(const Node *p_n
                                                      p_node->getSignature(),
                                                      p_node->getCreatedTimeUtc(),
                                                      p_node->getModifiedTimeUtc());
+
+    // Set visual settings for the container node itself
+    config->m_backgroundColor = p_node->getBackgroundColor();
+    config->m_borderColor = p_node->getBorderColor();
+    config->m_nameColor = p_node->getNameColor();
 
     for (const auto &child : p_node->getChildrenRef()) {
         if (child->hasContent()) {

@@ -75,10 +75,10 @@ void NodeFileConfig::fromJson(const QJsonObject &p_jobj)
     m_id = stringToNodeId(p_jobj[NodeConfig::c_id].toString());
     m_signature = stringToNodeId(p_jobj[NodeConfig::c_signature].toString());
 
-    m_createdTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_createdTimeUtc].toString());
-    m_modifiedTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_modifiedTimeUtc].toString());
+        m_createdTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_createdTimeUtc].toString());
+        m_modifiedTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_modifiedTimeUtc].toString());
 
-    m_attachmentFolder = p_jobj[NodeConfig::c_attachmentFolder].toString();
+        m_attachmentFolder = p_jobj[NodeConfig::c_attachmentFolder].toString();
 
     {
         auto arr = p_jobj[NodeConfig::c_tags].toArray();
@@ -204,6 +204,17 @@ QJsonObject NodeConfig::toJson() const
     }
     jobj[NodeConfig::c_folders] = folders;
 
+    // Visual settings for the container node itself
+    if (!m_backgroundColor.isEmpty()) {
+        jobj[NodeConfig::c_backgroundColor] = m_backgroundColor;
+    }
+    if (!m_borderColor.isEmpty()) {
+        jobj[NodeConfig::c_borderColor] = m_borderColor;
+    }
+    if (!m_nameColor.isEmpty()) {
+        jobj[NodeConfig::c_nameColor] = m_nameColor;
+    }
+
     return jobj;
 }
 
@@ -228,6 +239,17 @@ void NodeConfig::fromJson(const QJsonObject &p_jobj)
     for (int i = 0; i < foldersJson.size(); ++i) {
         m_folders[i].fromJson(foldersJson[i].toObject());
     }
+
+    // Visual settings for the container node itself (check if fields exist for backward compatibility)
+    if (p_jobj.contains(NodeConfig::c_backgroundColor)) {
+        m_backgroundColor = p_jobj[NodeConfig::c_backgroundColor].toString();
+    }
+    if (p_jobj.contains(NodeConfig::c_borderColor)) {
+        m_borderColor = p_jobj[NodeConfig::c_borderColor].toString();
+    }
+    if (p_jobj.contains(NodeConfig::c_nameColor)) {
+        m_nameColor = p_jobj[NodeConfig::c_nameColor].toString();
+    }
 }
 
 NodeParameters NodeConfig::toNodeParameters() const
@@ -237,5 +259,11 @@ NodeParameters NodeConfig::toNodeParameters() const
     paras.m_signature = m_signature;
     paras.m_createdTimeUtc = m_createdTimeUtc;
     paras.m_modifiedTimeUtc = m_modifiedTimeUtc;
+    
+    // Visual settings for the container node itself
+    paras.m_visual.setBackgroundColor(m_backgroundColor);
+    paras.m_visual.setBorderColor(m_borderColor);
+    paras.m_visual.setNameColor(m_nameColor);
+    
     return paras;
 }

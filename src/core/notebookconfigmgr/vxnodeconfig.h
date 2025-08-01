@@ -93,6 +93,11 @@ namespace vnotex
 
             QVector<NodeFolderConfig> m_folders;
 
+            // Visual settings for the container node itself
+            QString m_backgroundColor;
+            QString m_borderColor;
+            QString m_nameColor;
+
             static const QString c_version;
 
             static const QString c_id;
