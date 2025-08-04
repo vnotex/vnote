@@ -180,6 +180,7 @@ namespace vnotex
             SetNameColor,
             SetCascadeBackgroundColor,
             SetCascadeBorderColor,
+            ClearCascadeColors,
             ClearColors
         };
 

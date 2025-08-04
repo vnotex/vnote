@@ -75,10 +75,10 @@ void NodeFileConfig::fromJson(const QJsonObject &p_jobj)
     m_id = stringToNodeId(p_jobj[NodeConfig::c_id].toString());
     m_signature = stringToNodeId(p_jobj[NodeConfig::c_signature].toString());
 
-        m_createdTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_createdTimeUtc].toString());
-        m_modifiedTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_modifiedTimeUtc].toString());
+    m_createdTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_createdTimeUtc].toString());
+    m_modifiedTimeUtc = Utils::dateTimeFromStringUniform(p_jobj[NodeConfig::c_modifiedTimeUtc].toString());
 
-        m_attachmentFolder = p_jobj[NodeConfig::c_attachmentFolder].toString();
+    m_attachmentFolder = p_jobj[NodeConfig::c_attachmentFolder].toString();
 
     {
         auto arr = p_jobj[NodeConfig::c_tags].toArray();

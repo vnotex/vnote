@@ -194,11 +194,14 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
         seenNames.insert(folder.m_name);
 
         auto folderNode = QSharedPointer<VXNode>::create(folder.m_name,
-                                                         folder.toNodeParameters(),
                                                          getNotebook(),
                                                          p_node);
         inheritNodeFlags(p_node, folderNode.data());
         folderNode->setExists(getBackend()->existsDir(PathUtils::concatenateFilePath(basePath, folder.m_name)));
+        
+        // 设置视觉效果信息
+        NodeParameters visualParams = folder.toNodeParameters();
+        folderNode->setVisual(visualParams.m_visual);
         children.push_back(folderNode);
     }
 

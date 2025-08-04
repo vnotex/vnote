@@ -704,15 +704,9 @@ void NotebookNodeExplorer::setCascadeColorRecursively(Node *p_node, const QStrin
     // 设置当前节点的颜色
     NodeVisual visual = p_node->getVisual();
     
-    if (!p_backgroundColor.isEmpty()) {
-        visual.setBackgroundColor(p_backgroundColor);
-    }
-    if (!p_borderColor.isEmpty()) {
-        visual.setBorderColor(p_borderColor);
-    }
-    if (!p_nameColor.isEmpty()) {
-        visual.setNameColor(p_nameColor);
-    }
+    visual.setBackgroundColor(p_backgroundColor);
+    visual.setBorderColor(p_borderColor);
+    visual.setNameColor(p_nameColor);
     
     updateCurrentNodeVisualDirectly(p_node, visual);
     
@@ -1242,6 +1236,7 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
             auto cascadeMenu = WidgetsFactory::createMenu(tr("Cascade Color Settings"), visualMenu);
             createAndAddAction(Action::SetCascadeBackgroundColor, cascadeMenu, p_master);
             createAndAddAction(Action::SetCascadeBorderColor, cascadeMenu, p_master);
+            createAndAddAction(Action::ClearCascadeColors, cascadeMenu, p_master);
             visualMenu->addMenu(cascadeMenu);
         }
         
@@ -1729,6 +1724,24 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                     if (color.isValid()) {
                         setCascadeColorRecursively(node, QString(), color.name(), QString());
                     }
+                });
+        break;
+    
+    case Action::ClearCascadeColors:
+        act = new QAction(tr("Clear Cascade Colors"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this, p_master]() {
+                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+                    if (!node) {
+                        return;
+                    }
+                    
+                    if (checkInvalidNode(node)) {
+                        return;
+                    }
+                    
+                    // 递归清除子节点
+                    setCascadeColorRecursively(node, QString(), QString(), QString());
                 });
         break;
 
