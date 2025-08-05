@@ -36,6 +36,11 @@ namespace vnotex
             QString m_attachmentFolder;
 
             QStringList m_tags;
+
+            // Visual settings
+            QString m_backgroundColor;
+            QString m_borderColor;
+            QString m_nameColor;
         };
 
 
@@ -46,7 +51,14 @@ namespace vnotex
 
             void fromJson(const QJsonObject &p_jobj);
 
+            NodeParameters toNodeParameters() const;
+
             QString m_name;
+
+            // Visual settings
+            QString m_backgroundColor;
+            QString m_borderColor;
+            QString m_nameColor;
         };
 
 
@@ -81,6 +93,11 @@ namespace vnotex
 
             QVector<NodeFolderConfig> m_folders;
 
+            // Visual settings for the container node itself
+            QString m_backgroundColor;
+            QString m_borderColor;
+            QString m_nameColor;
+
             static const QString c_version;
 
             static const QString c_id;
@@ -100,6 +117,12 @@ namespace vnotex
             static const QString c_attachmentFolder;
 
             static const QString c_tags;
+
+            static const QString c_backgroundColor;
+
+            static const QString c_borderColor;
+
+            static const QString c_nameColor;
         };
     }
 }

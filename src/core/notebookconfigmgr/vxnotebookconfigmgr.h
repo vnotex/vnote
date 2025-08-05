@@ -83,6 +83,8 @@ namespace vnotex
 
         QStringList scanAndImportExternalFiles(Node *p_node) Q_DECL_OVERRIDE;
 
+        void updateNodeVisual(Node *p_node, const NodeVisual &p_visual) Q_DECL_OVERRIDE;
+
     private:
         void createEmptyRootNode();
 

@@ -6,14 +6,19 @@
 #include <QHash>
 #include <QScopedPointer>
 #include <QPair>
+#include <QStyledItemDelegate>
 
 #include "qtreewidgetstatecache.h"
 #include "clipboarddata.h"
 #include "navigationmodewrapper.h"
 #include "global.h"
+#include <notebook/nodevisual.h>
 
 class QSplitter;
 class QMenu;
+class QPainter;
+class QStyleOptionViewItem;
+class QModelIndex;
 
 namespace vnotex
 {
@@ -24,6 +29,21 @@ namespace vnotex
     struct FileOpenParameters;
     class Event;
     class ExternalNode;
+
+    /*
+     * 自定义委托类，用于绘制节点边框
+     * 支持节点名称，背景颜色，边框颜色，节点名称颜色
+     * 支持级联修改，包括背景颜色，边框颜色，节点名称颜色
+    */
+    class NodeColorDelegate : public QStyledItemDelegate
+    {
+        Q_OBJECT
+    public:
+        explicit NodeColorDelegate(QObject *parent = nullptr);
+        
+    protected:
+        void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    };
 
     class NotebookNodeExplorer : public QWidget
     {
@@ -153,7 +173,15 @@ namespace vnotex
             Read,
             ExpandAll,
             PinToQuickAccess,
-            Tag
+            Tag,
+            VisualSettings,
+            SetBackgroundColor,
+            SetBorderColor,
+            SetNameColor,
+            SetCascadeBackgroundColor,
+            SetCascadeBorderColor,
+            ClearCascadeColors,
+            ClearColors
         };
 
         struct CacheData
@@ -194,6 +222,18 @@ namespace vnotex
         void fillSlaveItem(QListWidgetItem *p_item, Node *p_node) const;
 
         void fillSlaveItem(QListWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const;
+
+        void applyNodeColors(QTreeWidgetItem *p_item, Node *p_node) const;
+
+        void applyNodeColors(QListWidgetItem *p_item, Node *p_node) const;
+
+        void updateCurrentNodeVisualDirectly(Node *p_node, const NodeVisual &p_visual);
+
+        void setCascadeColorRecursively(Node *p_node, const QString &p_backgroundColor, const QString &p_borderColor, const QString &p_nameColor);
+
+        QTreeWidgetItem *findCurrentTreeWidgetItem(Node *p_node) const;
+
+        QListWidgetItem *findCurrentListWidgetItem(Node *p_node) const;
 
         const QIcon &getIcon(const Node *p_node) const;
 

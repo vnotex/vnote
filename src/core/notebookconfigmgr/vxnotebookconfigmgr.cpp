@@ -12,6 +12,7 @@
 #include <notebook/externalnode.h>
 #include <notebook/bundlenotebook.h>
 #include <notebook/notebookdatabaseaccess.h>
+#include <notebook/nodevisual.h>
 #include <utils/utils.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
@@ -197,6 +198,10 @@ void VXNotebookConfigMgr::loadFolderNode(Node *p_node, const NodeConfig &p_confi
                                                          p_node);
         inheritNodeFlags(p_node, folderNode.data());
         folderNode->setExists(getBackend()->existsDir(PathUtils::concatenateFilePath(basePath, folder.m_name)));
+        
+        // 设置视觉效果信息
+        NodeParameters visualParams = folder.toNodeParameters();
+        folderNode->setVisual(visualParams.m_visual);
         children.push_back(folderNode);
     }
 
@@ -376,6 +381,11 @@ QSharedPointer<NodeConfig> VXNotebookConfigMgr::nodeToNodeConfig(const Node *p_n
                                                      p_node->getCreatedTimeUtc(),
                                                      p_node->getModifiedTimeUtc());
 
+    // Set visual settings for the container node itself
+    config->m_backgroundColor = p_node->getBackgroundColor();
+    config->m_borderColor = p_node->getBorderColor();
+    config->m_nameColor = p_node->getNameColor();
+
     for (const auto &child : p_node->getChildrenRef()) {
         if (child->hasContent()) {
             NodeFileConfig fileConfig;
@@ -386,12 +396,22 @@ QSharedPointer<NodeConfig> VXNotebookConfigMgr::nodeToNodeConfig(const Node *p_n
             fileConfig.m_modifiedTimeUtc = child->getModifiedTimeUtc();
             fileConfig.m_attachmentFolder = child->getAttachmentFolder();
             fileConfig.m_tags = child->getTags();
+            
+            // Visual settings
+            fileConfig.m_backgroundColor = child->getBackgroundColor();
+            fileConfig.m_borderColor = child->getBorderColor();
+            fileConfig.m_nameColor = child->getNameColor();
 
             config->m_files.push_back(fileConfig);
         } else {
             Q_ASSERT(child->isContainer());
             NodeFolderConfig folderConfig;
             folderConfig.m_name = child->getName();
+            
+            // Visual settings
+            folderConfig.m_backgroundColor = child->getBackgroundColor();
+            folderConfig.m_borderColor = child->getBorderColor();
+            folderConfig.m_nameColor = child->getNameColor();
 
             config->m_folders.push_back(folderConfig);
         }
@@ -1111,4 +1131,17 @@ void VXNotebookConfigMgr::removeNodeFromDatabase(const Node *p_node)
 bool VXNotebookConfigMgr::sameNotebook(const Node *p_node) const
 {
     return p_node ? p_node->getNotebook() == getNotebook() : true;
+}
+
+void VXNotebookConfigMgr::updateNodeVisual(Node *p_node, const NodeVisual &p_visual)
+{
+    Q_ASSERT(sameNotebook(p_node));
+    
+    p_node->setVisual(p_visual);
+    
+    if (p_node->isRoot()) {
+        return;
+    }
+    
+    saveNode(p_node);
 }

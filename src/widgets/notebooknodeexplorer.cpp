@@ -6,11 +6,17 @@
 #include <QAction>
 #include <QSet>
 #include <QShortcut>
+#include <QColorDialog>
+#include <QStyledItemDelegate>
+#include <QPainter>
+#include <QStyleOptionViewItem>
+#include <functional>
 
 #include <notebook/notebook.h>
 #include <notebook/node.h>
 #include <notebook/externalnode.h>
 #include <notebook/nodeparameters.h>
+#include <notebookconfigmgr/inotebookconfigmgr.h>
 #include <core/exception.h>
 #include "messageboxhelper.h"
 #include "vnotex.h"
@@ -44,6 +50,39 @@
 using namespace vnotex;
 
 QIcon NotebookNodeExplorer::s_nodeIcons[NodeIcon::MaxIcons];
+
+// 节点视觉委托类 避免修改颜色后整个树刷新
+NodeColorDelegate::NodeColorDelegate(QObject *parent)
+    : QStyledItemDelegate(parent)
+{
+}
+
+void NodeColorDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    // 先绘制默认内容
+    QStyledItemDelegate::paint(painter, option, index);
+    
+    // 获取节点数据
+    auto item = static_cast<QTreeWidgetItem*>(index.internalPointer());
+    if (!item) {
+        return;
+    }
+    
+    // 从 item 的 UserRole 中获取颜色信息
+    QVariant borderColorVar = item->data(0, Qt::UserRole + 1000); // 使用特殊的角色存储边框颜色
+    if (borderColorVar.isValid() && !borderColorVar.toString().isEmpty()) {
+        QString borderColor = borderColorVar.toString();
+        QColor color(borderColor);
+        
+        if (color.isValid()) {
+            painter->save();
+            QPen pen(color, 2, Qt::SolidLine);
+            painter->setPen(pen);
+            painter->drawRect(option.rect.adjusted(1, 1, -1, -1));
+            painter->restore();
+        }
+    }
+}
 
 NotebookNodeExplorer::NodeData::NodeData()
 {
@@ -285,6 +324,9 @@ void NotebookNodeExplorer::setupMasterExplorer(QWidget *p_parent)
                 auto data = getItemNodeData(p_item);
                 activateItemNode(data);
             });
+
+    // 设置自定义委托以支持边框绘制
+    m_masterExplorer->setItemDelegate(new NodeColorDelegate(this));
 }
 
 void NotebookNodeExplorer::activateItemNode(const NodeData &p_data)
@@ -543,6 +585,7 @@ void NotebookNodeExplorer::fillMasterItem(QTreeWidgetItem *p_item, Node *p_node,
     p_item->setText(Column::Name, p_node->getName());
     p_item->setIcon(Column::Name, getIcon(p_node));
     p_item->setToolTip(Column::Name, generateToolTip(p_node));
+    applyNodeColors(p_item, p_node);
 }
 
 void NotebookNodeExplorer::fillMasterItem(QTreeWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const
@@ -559,6 +602,7 @@ void NotebookNodeExplorer::fillSlaveItem(QListWidgetItem *p_item, Node *p_node) 
     p_item->setText(p_node->getName());
     p_item->setIcon(getIcon(p_node));
     p_item->setToolTip(generateToolTip(p_node));
+    applyNodeColors(p_item, p_node);
 }
 
 void NotebookNodeExplorer::fillSlaveItem(QListWidgetItem *p_item, const QSharedPointer<ExternalNode> &p_node) const
@@ -567,6 +611,175 @@ void NotebookNodeExplorer::fillSlaveItem(QListWidgetItem *p_item, const QSharedP
     p_item->setText(p_node->getName());
     p_item->setIcon(getIcon(p_node.data()));
     p_item->setToolTip(tr("[External] %1").arg(p_node->getName()));
+}
+
+void NotebookNodeExplorer::applyNodeColors(QTreeWidgetItem *p_item, Node *p_node) const
+{
+    if (!p_item || !p_node) {
+        return;
+    }
+    
+    QString backgroundColor = p_node->getEffectiveBackgroundColor();
+    QString borderColor = p_node->getEffectiveBorderColor();
+    QString nameColor = p_node->getNameColor();
+    
+    // 设置背景色
+    if (!backgroundColor.isEmpty()) {
+        p_item->setBackground(Column::Name, QBrush(QColor(backgroundColor)));
+    } else {
+        p_item->setBackground(Column::Name, QBrush());
+    }
+    
+    // 设置节点名称颜色
+    if (!nameColor.isEmpty()) {
+        p_item->setForeground(Column::Name, QBrush(QColor(nameColor)));
+    } else {
+        p_item->setForeground(Column::Name, QBrush());
+    }
+    
+    // 设置边框色（通过 UserRole 存储，由自定义委托绘制）
+    if (!borderColor.isEmpty()) {
+        p_item->setData(Column::Name, Qt::UserRole + 1000, borderColor);
+    } else {
+        p_item->setData(Column::Name, Qt::UserRole + 1000, QVariant());
+    }
+}
+
+void NotebookNodeExplorer::applyNodeColors(QListWidgetItem *p_item, Node *p_node) const
+{
+    if (!p_item || !p_node) {
+        return;
+    }
+    
+    QString backgroundColor = p_node->getEffectiveBackgroundColor();
+    QString nameColor = p_node->getNameColor();
+    
+    // 设置背景色
+    if (!backgroundColor.isEmpty()) {
+        p_item->setBackground(QBrush(QColor(backgroundColor)));
+    } else {
+        p_item->setBackground(QBrush());
+    }
+    
+    // 设置节点名称颜色
+    if (!nameColor.isEmpty()) {
+        p_item->setForeground(QBrush(QColor(nameColor)));
+    } else {
+        p_item->setForeground(QBrush());
+    }
+    
+    // 对于 ListWidget，边框效果暂时不实现
+    // TODO: 如果需要，也可以为 ListWidget 创建自定义委托
+}
+
+void NotebookNodeExplorer::updateCurrentNodeVisualDirectly(Node *p_node, const NodeVisual &p_visual)
+{
+    if (!p_node) {
+        return;
+    }
+    
+    // 直接更新 Node 对象的视觉信息，但不发送刷新信号
+    p_node->setVisual(p_visual);
+    
+    // 更新数据库
+    p_node->getConfigMgr()->updateNodeVisual(p_node, p_visual);
+    
+    // 直接更新当前显示的 item，避免整个树刷新
+    auto treeItem = findCurrentTreeWidgetItem(p_node);
+    if (treeItem) {
+        applyNodeColors(treeItem, p_node);
+    }
+    
+    auto listItem = findCurrentListWidgetItem(p_node);
+    if (listItem) {
+        applyNodeColors(listItem, p_node);
+    }
+}
+
+void NotebookNodeExplorer::setCascadeColorRecursively(Node *p_node, const QString &p_backgroundColor, const QString &p_borderColor, const QString &p_nameColor)
+{
+    if (!p_node) {
+        return;
+    }
+    
+    // 设置当前节点的颜色
+    NodeVisual visual = p_node->getVisual();
+    
+    visual.setBackgroundColor(p_backgroundColor);
+    visual.setBorderColor(p_borderColor);
+    visual.setNameColor(p_nameColor);
+    
+    updateCurrentNodeVisualDirectly(p_node, visual);
+    
+    // 如果是容器节点，递归设置所有子节点
+    if (p_node->isContainer() && p_node->isLoaded()) {
+        for (const auto &child : p_node->getChildrenRef()) {
+            setCascadeColorRecursively(child.data(), p_backgroundColor, p_borderColor, p_nameColor);
+        }
+    }
+}
+
+QTreeWidgetItem *NotebookNodeExplorer::findCurrentTreeWidgetItem(Node *p_node) const
+{
+    if (!p_node || !m_masterExplorer) {
+        return nullptr;
+    }
+    
+    // 遍历所有可见的 TreeWidgetItem 查找匹配的节点
+    std::function<QTreeWidgetItem*(QTreeWidgetItem*)> findInTree = [&](QTreeWidgetItem *parent) -> QTreeWidgetItem* {
+        if (!parent) {
+            // 搜索顶级项目
+            for (int i = 0; i < m_masterExplorer->topLevelItemCount(); ++i) {
+                auto item = m_masterExplorer->topLevelItem(i);
+                auto data = getItemNodeData(item);
+                if (data.isNode() && data.getNode() == p_node) {
+                    return item;
+                }
+                
+                // 递归搜索子项目
+                auto result = findInTree(item);
+                if (result) {
+                    return result;
+                }
+            }
+        } else {
+            // 搜索子项目
+            for (int i = 0; i < parent->childCount(); ++i) {
+                auto item = parent->child(i);
+                auto data = getItemNodeData(item);
+                if (data.isNode() && data.getNode() == p_node) {
+                    return item;
+                }
+                
+                // 递归搜索子项目
+                auto result = findInTree(item);
+                if (result) {
+                    return result;
+                }
+            }
+        }
+        return nullptr;
+    };
+    
+    return findInTree(nullptr);
+}
+
+QListWidgetItem *NotebookNodeExplorer::findCurrentListWidgetItem(Node *p_node) const
+{
+    if (!p_node || !m_slaveExplorer) {
+        return nullptr;
+    }
+    
+    // 遍历所有 ListWidgetItem 查找匹配的节点
+    for (int i = 0; i < m_slaveExplorer->count(); ++i) {
+        auto item = m_slaveExplorer->item(i);
+        auto data = getItemNodeData(item);
+        if (data.isNode() && data.getNode() == p_node) {
+            return item;
+        }
+    }
+    
+    return nullptr;
 }
 
 const QIcon &NotebookNodeExplorer::getIcon(const Node *p_node) const
@@ -1012,6 +1225,26 @@ void NotebookNodeExplorer::createContextMenuOnNode(QMenu *p_menu, const Node *p_
 
         createAndAddAction(Action::OpenLocation, p_menu, p_master);
 
+        // 添加视觉设置子菜单
+        auto visualMenu = WidgetsFactory::createMenu(tr("Visual Settings"), p_menu);
+        createAndAddAction(Action::SetBackgroundColor, visualMenu, p_master);
+        createAndAddAction(Action::SetBorderColor, visualMenu, p_master);
+        createAndAddAction(Action::SetNameColor, visualMenu, p_master);
+        
+        // 只有文件夹节点才能设置级联色
+        if (p_node->isContainer()) {
+            visualMenu->addSeparator();
+            auto cascadeMenu = WidgetsFactory::createMenu(tr("Cascade Color Settings"), visualMenu);
+            createAndAddAction(Action::SetCascadeBackgroundColor, cascadeMenu, p_master);
+            createAndAddAction(Action::SetCascadeBorderColor, cascadeMenu, p_master);
+            createAndAddAction(Action::ClearCascadeColors, cascadeMenu, p_master);
+            visualMenu->addMenu(cascadeMenu);
+        }
+        
+        visualMenu->addSeparator();
+        createAndAddAction(Action::ClearColors, visualMenu, p_master);
+        p_menu->addMenu(visualMenu);
+
         createAndAddAction(Action::Properties, p_menu, p_master);
     }
 }
@@ -1384,6 +1617,162 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                     }
                     ViewTagsDialog dialog(node, VNoteX::getInst().getMainWindow());
                     dialog.exec();
+                });
+        break;
+
+    case Action::SetBackgroundColor:
+        act = new QAction(tr("Set Background Color"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this, p_master]() {
+                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+                    if (!node) {
+                        return;
+                    }
+                    
+                    if (checkInvalidNode(node)) {
+                        return;
+                    }
+                    
+                    QColor defaultColor = node->getBackgroundColor().isEmpty() ? QColor(Qt::white) : QColor(node->getBackgroundColor());
+                    auto color = QColorDialog::getColor(defaultColor, this, tr("Select Background Color"));
+                    if (color.isValid()) {
+                        NodeVisual visual = node->getVisual();
+                        visual.setBackgroundColor(color.name());
+                        updateCurrentNodeVisualDirectly(node, visual);
+                    }
+                });
+        break;
+
+    case Action::SetBorderColor:
+        act = new QAction(tr("Set Border Color"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this, p_master]() {
+                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+                    if (!node) {
+                        return;
+                    }
+                    
+                    if (checkInvalidNode(node)) {
+                        return;
+                    }
+                    
+                    QColor defaultColor = node->getBorderColor().isEmpty() ? QColor(Qt::black) : QColor(node->getBorderColor());
+                    auto color = QColorDialog::getColor(defaultColor, this, tr("Select Border Color"));
+                    if (color.isValid()) {
+                        NodeVisual visual = node->getVisual();
+                        visual.setBorderColor(color.name());
+                        updateCurrentNodeVisualDirectly(node, visual);
+                    }
+                });
+        break;
+
+    case Action::SetNameColor:
+        act = new QAction(tr("Set Name Color"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this, p_master]() {
+                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+                    if (!node) {
+                        return;
+                    }
+                    
+                    if (checkInvalidNode(node)) {
+                        return;
+                    }
+                    
+                    QColor defaultColor = node->getNameColor().isEmpty() ? QColor(Qt::black) : QColor(node->getNameColor());
+                    auto color = QColorDialog::getColor(defaultColor, this, tr("Select Name Color"));
+                    if (color.isValid()) {
+                        NodeVisual visual = node->getVisual();
+                        visual.setNameColor(color.name());
+                        updateCurrentNodeVisualDirectly(node, visual);
+                    }
+                });
+        break;
+
+    case Action::SetCascadeBackgroundColor:
+        act = new QAction(tr("Set Cascade Background Color"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this, p_master]() {
+                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+                    if (!node) {
+                        return;
+                    }
+                    
+                    if (checkInvalidNode(node)) {
+                        return;
+                    }
+                    
+                    if (!node->isContainer()) {
+                        return; // 只有文件夹才能设置级联色
+                    }
+                    
+                    QColor defaultColor = node->getBackgroundColor().isEmpty() ? QColor("#e6f3ff") : QColor(node->getBackgroundColor());
+                    auto color = QColorDialog::getColor(defaultColor, this, tr("Select Cascade Background Color"));
+                    if (color.isValid()) {
+                        setCascadeColorRecursively(node, color.name(), QString(), QString());
+                    }
+                });
+        break;
+
+    case Action::SetCascadeBorderColor:
+        act = new QAction(tr("Set Cascade Border Color"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this, p_master]() {
+                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+                    if (!node) {
+                        return;
+                    }
+                    
+                    if (checkInvalidNode(node)) {
+                        return;
+                    }
+                    
+                    if (!node->isContainer()) {
+                        return; // 只有文件夹才能设置级联色
+                    }
+                    
+                    QColor defaultColor = node->getBorderColor().isEmpty() ? QColor("#3A75F2") : QColor(node->getBorderColor());
+                    auto color = QColorDialog::getColor(defaultColor, this, tr("Select Cascade Border Color"));
+                    if (color.isValid()) {
+                        setCascadeColorRecursively(node, QString(), color.name(), QString());
+                    }
+                });
+        break;
+    
+    case Action::ClearCascadeColors:
+        act = new QAction(tr("Clear Cascade Colors"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this, p_master]() {
+                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+                    if (!node) {
+                        return;
+                    }
+                    
+                    if (checkInvalidNode(node)) {
+                        return;
+                    }
+                    
+                    // 递归清除子节点
+                    setCascadeColorRecursively(node, QString(), QString(), QString());
+                });
+        break;
+
+    case Action::ClearColors:
+        act = new QAction(tr("Clear Colors"), p_parent);
+        connect(act, &QAction::triggered,
+                this, [this, p_master]() {
+                    auto node = p_master ? getCurrentMasterNode() : getCurrentSlaveNode();
+                    if (!node) {
+                        return;
+                    }
+                    
+                    if (checkInvalidNode(node)) {
+                        return;
+                    }
+                    
+                    NodeVisual visual;
+                    visual.clearAllColors();
+                    updateCurrentNodeVisualDirectly(node, visual);
                 });
         break;
 
