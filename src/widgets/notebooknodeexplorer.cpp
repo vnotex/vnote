@@ -26,6 +26,7 @@
 #include "dialogs/viewtagsdialog.h"
 #include <utils/widgetutils.h>
 #include <utils/pathutils.h>
+#include <utils/vxurlutils.h>
 #include <utils/clipboardutils.h>
 #include "notebookmgr.h"
 #include "widgetsfactory.h"
@@ -1348,14 +1349,25 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
                 this, [this, p_master]() {
                     auto nodes = p_master ? getMasterSelectedNodesAndExternalNodes() : getSlaveSelectedNodesAndExternalNodes();
                     QStringList files;
+                    QStringList vxUrls;
                     for (const auto &node : nodes.first) {
                         files.push_back(node->fetchAbsolutePath());
                     }
                     for (const auto &node : nodes.second) {
                         files.push_back(node->fetchAbsolutePath());
                     }
+                    // find file signature and pinToQuickAccess as VxUrl.
+                    for (const auto &file : files) {
+                        QFileInfo fileInfo(file);
+                        QString signature = VxUrlUtils::getSignatureFromFilePath(file);
+
+                        if (!signature.isEmpty()) {
+                            QString item = VxUrlUtils::generateVxURL(signature, file);
+                            vxUrls.append(item);
+                        }
+                     }
                     if (!files.isEmpty()) {
-                        emit VNoteX::getInst().pinToQuickAccessRequested(files);
+                        emit VNoteX::getInst().pinToQuickAccessRequested(vxUrls);
                     }
                 });
         break;
