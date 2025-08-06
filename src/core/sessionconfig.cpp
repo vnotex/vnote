@@ -5,7 +5,12 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 
+#include <core/vnotex.h>
+#include <core/notebookmgr.h>
+
 #include <utils/fileutils.h>
+#include <utils/pathutils.h>
+#include <utils/vxurlutils.h>
 
 #include "configmgr.h"
 #include "mainconfig.h"
@@ -462,13 +467,91 @@ void SessionConfig::setQuickAccessFiles(const QStringList &p_files)
         }
     }
     updateConfig(m_quickAccessFiles, files, this);
+    if(tryCorrectQuickAccessFiles())
+    {
+        update();
+    }
 }
 
 void SessionConfig::removeQuickAccessFile(const QString &p_file)
 {
     if (m_quickAccessFiles.removeOne(p_file)) {
+        tryCorrectQuickAccessFiles();
         update();
     }
+}
+
+bool SessionConfig::tryCorrectQuickAccessFiles(void)
+{
+    auto notebook = VNoteX::getInst().getNotebookMgr().getCurrentNotebook();
+    if (!notebook) {
+        return false;
+    }
+
+    QStringList oldResult = m_quickAccessFiles;
+    QStringList newResult;
+    for (const auto &file : m_quickAccessFiles) {
+        auto fi = file.trimmed();
+        if (fi.isEmpty()) {
+            continue;
+        }
+        // check absolute path
+        if (!file.startsWith("#")) {
+            if (QFileInfo(file).exists()) {
+                newResult << file;
+            }
+            continue;
+        }
+
+        // update VxURL if file path is changed
+        const QString rootPath = notebook->getRootFolderAbsolutePath();
+        QString signature = VxUrlUtils::getSignatureFromVxURL(file);
+        QString oldFilePath = VxUrlUtils::getFilePathFromVxURL(file);
+
+        // Start searching for the file from oldFilePath until reaching rootPath
+        QString newFilePath;
+        QString currentDir = PathUtils::parentDirPath(oldFilePath);
+        while (true) {
+            // make sure currentDir is under rootPath
+            if (!currentDir.startsWith(rootPath)) {
+                break;
+            }
+
+            newFilePath = VxUrlUtils::getFilePathFromSignature(currentDir, signature);
+            if (!newFilePath.isEmpty()) {
+                break;
+            }
+            // invalid path
+            if (currentDir.isEmpty() || QDir(currentDir).isRoot()) {
+                break;
+            }
+
+            currentDir = PathUtils::parentDirPath(currentDir);
+        }
+
+        // file deleted
+        if (newFilePath.isEmpty()) {
+            continue;
+        }
+        // file path not changed
+        if (oldFilePath == newFilePath) {
+            newResult << file;
+            continue;
+        }
+        // file path changed, but not exists
+        if (!QFileInfo(newFilePath).exists()) {
+            continue;
+        }
+        QString newVxURL = VxUrlUtils::generateVxURL(signature, newFilePath);
+        newResult << newVxURL;
+    }
+    newResult.removeDuplicates();
+    m_quickAccessFiles = newResult;
+
+    if (oldResult != newResult) {
+        return true;
+    }
+    return false;
 }
 
 void SessionConfig::loadExternalPrograms(const QJsonObject &p_session)
