@@ -16,6 +16,13 @@ class OutlineFeature {
         this.lastSize = null; // 记录最后的大小
         this.COLLAPSE_THRESHOLD = 750; // 思维导图尺寸小于这个值时自动折叠
         this.titleBarHeight = 45; // 标题栏高度
+        
+        // 添加防抖和监听器管理
+        this.updateTimer = null;
+        this.mutationObserver = null;
+        this.isUpdating = false;
+        this.lastUpdateTime = 0;
+        this.UPDATE_DEBOUNCE_DELAY = 300; // 防抖延迟300ms
     }
 
     /**
@@ -34,6 +41,9 @@ class OutlineFeature {
      */
     init() {
         console.log('OutlineFeature: init called');
+        // 先清理之前的实例（如果有的话）
+        this.cleanupObservers();
+        
         // 先检查并删除已存在的大纲窗口
         const existingWindow = document.getElementById('vx-outline-window');
         if (existingWindow) {
@@ -581,13 +591,44 @@ class OutlineFeature {
     }
 
     /**
-     * 更新大纲窗口内容
+     * 更新大纲窗口内容（带防抖）
      * 步骤：
      * 1. 清空现有内容
      * 2. 获取根节点数据
      * 3. 递归渲染节点结构
      */
     updateOutlineWindow() {
+        // 防抖处理 - 清除之前的定时器
+        if (this.updateTimer) {
+            clearTimeout(this.updateTimer);
+        }
+
+        // 如果正在更新，直接返回
+        if (this.isUpdating) {
+            return;
+        }
+
+        // 检查更新频率限制
+        const now = Date.now();
+        const timeSinceLastUpdate = now - this.lastUpdateTime;
+        
+        if (timeSinceLastUpdate < 500) { // 500ms内不重复更新
+            this.updateTimer = setTimeout(() => {
+                this.doUpdateOutlineWindow();
+            }, this.UPDATE_DEBOUNCE_DELAY);
+            return;
+        }
+
+        // 设置延迟更新
+        this.updateTimer = setTimeout(() => {
+            this.doUpdateOutlineWindow();
+        }, 50); // 短延迟确保DOM更新完成
+    }
+
+    /**
+     * 实际执行大纲窗口更新
+     */
+    doUpdateOutlineWindow() {
         if (!this.outlineWindow) {
             console.warn('OutlineFeature: outlineWindow not found');
             return;
@@ -600,6 +641,9 @@ class OutlineFeature {
         }
 
         try {
+            this.isUpdating = true;
+            this.lastUpdateTime = Date.now();
+
             // 获取MindElixir数据
             const allData = this.core.mindElixir && this.core.mindElixir.getAllData();
             
@@ -614,6 +658,13 @@ class OutlineFeature {
         } catch (error) {
             console.error('OutlineFeature: Error updating outline window:', error);
             content.innerHTML = '<div style="color: #e74c3c; text-align: center; padding: 20px;">数据加载失败</div>';
+        } finally {
+            this.isUpdating = false;
+            // 清除定时器
+            if (this.updateTimer) {
+                clearTimeout(this.updateTimer);
+                this.updateTimer = null;
+            }
         }
     }
 
@@ -948,15 +999,95 @@ class OutlineFeature {
      * 监听思维导图变化并更新大纲
      */
     setupDOMObserver() {
-        const observer = new MutationObserver(() => {
-            this.updateOutlineWindow();
+        // 清理之前的监听器
+        this.cleanupObservers();
+
+        // 监听 MindElixir 的 operation 事件
+        this.core.mindElixir.bus.addListener('operation', (operation) => {
+            console.log('OutlineFeature: Operation detected:', operation.name);
+            
+            // 根据操作类型决定是否需要更新大纲
+            const outlineUpdateOperations = [
+                'addChild',      // 添加子节点
+                'removeNode',    // 删除节点
+                'moveNode',      // 移动节点
+                'finishEdit'     // 完成编辑（文本内容变化）
+            ];
+
+            const immediateUpdateOperations = [
+                'addChild',
+                'removeNode', 
+                'moveNode'
+            ];
+
+            const delayedUpdateOperations = [
+                'finishEdit'     // 编辑完成时再更新，避免输入过程中频繁更新
+            ];
+
+            if (immediateUpdateOperations.includes(operation.name)) {
+                // 立即更新（有50ms防抖）
+                this.updateOutlineWindow();
+            } else if (delayedUpdateOperations.includes(operation.name)) {
+                // 延迟更新，给更多时间让用户完成编辑
+                if (this.updateTimer) {
+                    clearTimeout(this.updateTimer);
+                }
+                this.updateTimer = setTimeout(() => {
+                    this.doUpdateOutlineWindow();
+                }, this.UPDATE_DEBOUNCE_DELAY);
+            }
+
+            // 不再监听 editStyle, editTags, editIcons 等，这些不影响大纲结构
         });
 
-        observer.observe(document.getElementById('vx-mindmap'), {
-            childList: true,
-            subtree: true,
-            characterData: true
-        });
+        // 创建单一的 MutationObserver 作为备用监听器
+        // 只监听结构性变化，不监听文本内容变化
+        const mindmapElement = document.getElementById('vx-mindmap');
+        if (mindmapElement) {
+            this.mutationObserver = new MutationObserver((mutations) => {
+                let needsUpdate = false;
+                
+                mutations.forEach((mutation) => {
+                    // 只关注子节点的添加/删除，忽略文本内容变化
+                    if (mutation.type === 'childList' && 
+                        (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) {
+                        needsUpdate = true;
+                    }
+                });
+
+                if (needsUpdate) {
+                    console.log('OutlineFeature: DOM structure change detected via MutationObserver');
+                    this.updateOutlineWindow();
+                }
+            });
+
+            // 只监听子节点变化，不监听characterData
+            this.mutationObserver.observe(mindmapElement, {
+                childList: true,
+                subtree: true
+                // 不包含 characterData: true，避免文本编辑时的频繁触发
+            });
+        }
+    }
+
+    /**
+     * 清理所有观察器和监听器
+     */
+    cleanupObservers() {
+        // 清理定时器
+        if (this.updateTimer) {
+            clearTimeout(this.updateTimer);
+            this.updateTimer = null;
+        }
+
+        // 清理 MutationObserver
+        if (this.mutationObserver) {
+            this.mutationObserver.disconnect();
+            this.mutationObserver = null;
+        }
+
+        // 重置状态
+        this.isUpdating = false;
     }
 
     /**
@@ -998,5 +1129,30 @@ class OutlineFeature {
                 this.buildNodeDataMapRecursive(child, map);
             });
         }
+    }
+
+    /**
+     * 销毁大纲功能，清理所有资源
+     */
+    destroy() {
+        console.log('OutlineFeature: destroy called');
+        
+        // 清理所有观察器和监听器
+        this.cleanupObservers();
+        
+        // 移除大纲窗口
+        if (this.outlineWindow && this.outlineWindow.parentNode) {
+            this.outlineWindow.parentNode.removeChild(this.outlineWindow);
+        }
+        
+        // 清理所有引用
+        this.outlineWindow = null;
+        this.core = null;
+        this.nodeDataMap.clear();
+        this.collapsedNodes = null;
+        this.lastPosition = null;
+        this.lastSize = null;
+        
+        console.log('OutlineFeature: destroyed successfully');
     }
 } 
