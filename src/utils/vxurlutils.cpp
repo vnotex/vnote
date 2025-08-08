@@ -7,6 +7,8 @@
 
 #include <core/exception.h>
 #include <core/global.h>
+#include <core/vnotex.h>
+#include <core/notebookmgr.h>
 
 #include "pathutils.h"
 #include <QJsonArray>
@@ -43,11 +45,16 @@ QString VxUrlUtils::getFilePathFromVxURL(const QString &p_vxUrl) {
         int colonPos = p_vxUrl.indexOf(':');
         if (colonPos != -1) {
             filePath = p_vxUrl.mid(colonPos + 1);
-            filePath = PathUtils::fileName(filePath);   // get 'filePath'
             return filePath;
         }
     } // if not 'filePath', return original 'vxUrl'
     return p_vxUrl;
+}
+
+QString VxUrlUtils::getFileNameFromVxURL(const QString &p_vxUrl) {
+    QString filePath = VxUrlUtils::getFilePathFromVxURL(p_vxUrl);
+
+    return PathUtils::fileName(filePath);
 }
 
 QString VxUrlUtils::getSignatureFromFilePath(const QString &p_filePath)
@@ -107,8 +114,17 @@ QString VxUrlUtils::getFilePathFromSignature(const QString &p_startPath, const Q
     // Find the file with the specified signature in all vx.json files under the specified directory
     QDirIterator it(p_startPath, {"vx.json"}, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
 
+    const QString rootPath = VNoteX::getInst().getNotebookMgr().getCurrentNotebook()->getRootFolderAbsolutePath();
+    const QString recycleBinPath = PathUtils::concatenateFilePath(rootPath, "vx_recycle_bin");
+
     while (it.hasNext()) {
         const QString vxPath = it.next();
+
+        // skip vx.json in recycle bin
+        if (vxPath.endsWith("vx_recycle_bin/vx.json") || vxPath.startsWith(recycleBinPath)) {
+            continue;
+        }
+
         QFile vxFile(vxPath);
         if (!vxFile.open(QIODevice::ReadOnly)) {
             continue;

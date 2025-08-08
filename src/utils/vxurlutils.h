@@ -21,6 +21,9 @@ namespace vnotex
         // Get signature from vxUrl.
         static QString getSignatureFromVxURL(const QString &p_vxUrl);
 
+        // Get file name from vxUrl.
+        static QString getFileNameFromVxURL(const QString &p_vxUrl);
+
         // Get file path from vxUrl.
         static QString getFilePathFromVxURL(const QString &p_vxUrl);
 
