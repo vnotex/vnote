@@ -486,7 +486,10 @@ void ToolBarHelper::addSpacer(QToolBar *p_toolBar)
 void ToolBarHelper::updateQuickAccessMenu(QMenu *p_menu)
 {
     p_menu->clear();
-    const auto &quickAccess = ConfigMgr::getInst().getSessionConfig().getQuickAccessFiles();
+    auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+    sessionConfig.tryCorrectQuickAccessFiles();
+
+    const auto &quickAccess = sessionConfig.getQuickAccessFiles();
     if (quickAccess.isEmpty()) {
         auto act = p_menu->addAction(MainWindow::tr("Quick Access Not Set"));
         act->setEnabled(false);
