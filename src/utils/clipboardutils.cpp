@@ -11,6 +11,7 @@
 
 #include "utils.h"
 #include "pathutils.h"
+#include "fileutils.h"
 
 using namespace vnotex;
 
@@ -186,6 +187,7 @@ void ClipboardUtils::setImageToClipboard(QClipboard *p_clipboard,
 #endif
 }
 
+
 void ClipboardUtils::setImageLoop(QClipboard *p_clipboard,
                                   const QImage &p_image,
                                   QClipboard::Mode p_mode)
@@ -219,4 +221,17 @@ std::unique_ptr<QMimeData> ClipboardUtils::linkMimeData(const QString &p_link)
 
     data->setText(text);
     return data;
+}
+
+void ClipboardUtils::setLocalFileToClipboard(QClipboard *p_clipboard,
+                                            const QString &p_filePath,
+                                            QClipboard::Mode p_mode)
+{
+    // Check if the file exists
+    if (!FileUtils::existsCaseInsensitive(p_filePath)) {
+        qWarning() << "ClipboardUtils::setLocalFileToClipboard: file does not exist:" << p_filePath;
+        return;
+    }
+
+    setMimeDataToClipboard(p_clipboard, linkMimeData(p_filePath).release(), p_mode);
 }

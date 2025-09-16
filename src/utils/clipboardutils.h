@@ -31,6 +31,11 @@ namespace vnotex
                                         const QImage &p_image,
                                         QClipboard::Mode p_mode = QClipboard::Clipboard);
 
+        // Set a local file to clipboard.
+        static void setLocalFileToClipboard(QClipboard *p_clipboard,
+                                            const QString &p_filePath,
+                                            QClipboard::Mode p_mode = QClipboard::Clipboard);
+
     private:
         static bool mimeDataEquals(const QMimeData *p_a, const QMimeData *p_b);
 
