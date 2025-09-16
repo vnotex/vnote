@@ -1677,6 +1677,12 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
                     auto clipboard = QApplication::clipboard();
                     clipboard->clear();
 
+                    // Copy local GIF to clipboard to ensure no frame loss
+                    if (imgPath.endsWith(QStringLiteral(".gif"), Qt::CaseInsensitive) && FileUtils::existsCaseInsensitive(imgPath)) {
+                        ClipboardUtils::setLocalFileToClipboard(clipboard, imgPath, QClipboard::Clipboard);
+                        return ;
+                    }
+
                     auto img = FileUtils::imageFromFile(imgPath);
                     if (!img.isNull()) {
                         ClipboardUtils::setImageToClipboard(clipboard, img);
