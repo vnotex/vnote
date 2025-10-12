@@ -28,15 +28,6 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - name: "Build on Win64 Qt 5.15"
-            arch: win64_msvc2019_64
-            vs_version: 2019
-            vs_cmd: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
-            qt: 5.15.2
-            qt_modules: qtwebengine
-            qt_tools: tools_opensslv3_x64
-            qt_major: 5
-            suffix: "-windows7"
           - name: "Build on Win64 Qt 6"
             arch: win64_msvc2022_64
             vs_version: 2022
@@ -82,13 +73,6 @@ jobs:
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
-      - name: Clone OpenSSL on 5.15
-        shell: bash
-        if: ${{startsWith(matrix.config.qt, '5.15')}}
-        run: |
-          git clone https://github.com/tamlok/openssl-utils.git openssl-utils.git --depth=1
-        working-directory: ${{runner.workspace}}/build
-
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
@@ -106,14 +90,6 @@ jobs:
           dir
         working-directory: ${{runner.workspace}}/build
 
-      - name: Rename on 5.15
-        shell: bash
-        if: ${{startsWith(matrix.config.qt, '5.15')}}
-        run: |
-          mv VNote-${{env.VNOTE_VER}}-win64 VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
-          mv VNote-${{env.VNOTE_VER}}-win64.zip VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
-        working-directory: ${{runner.workspace}}/build
-
       - name: Archive Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -121,7 +97,6 @@ jobs:
           path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
 
       - name: Archive Installer
-        if: ${{!startsWith(matrix.config.qt, '5.15')}}
         uses: actions/upload-artifact@v4
         with:
           name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.msi
