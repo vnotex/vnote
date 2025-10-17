@@ -150,6 +150,9 @@ void AttachmentPopup::setupUI()
 
     mainLayout->addLayout(buttonsLayout);
 
+    // In popup context, disable coordinate fixing as Qt provides correct coordinates
+    m_viewer->setFixContextMenuPos(false);
+    
     m_viewer = new FileSystemViewer(this);
     connect(m_viewer, &FileSystemViewer::renameFile,
             this, [this](const QString &p_path, const QString &p_name) {

@@ -212,13 +212,33 @@ void FileSystemViewer::scrollToAndSelect(const QStringList &p_paths)
     }
 }
 
+void FileSystemViewer::setFixContextMenuPos(bool p_fix)
+{
+    m_fixContextMenuPos = p_fix;
+}
+
 void FileSystemViewer::handleContextMenuRequested(const QPoint &p_pos)
 {
-    // @p_pos is the position in the coordinate of parent widget if parent is a popup.
+    // For context menu requests, p_pos should be in m_viewer's coordinate system
     auto pos = p_pos;
-    if (m_fixContextMenuPos) {
-        pos = mapFromParent(p_pos);
-        pos = m_viewer->mapFromParent(pos);
+    
+    // Check if we're in a popup context by checking the parent chain
+    bool inPopup = false;
+    QWidget *parent = parentWidget();
+    while (parent) {
+        if (qobject_cast<QMenu*>(parent)) {
+            inPopup = true;
+            break;
+        }
+        parent = parent->parentWidget();
+    }
+    
+    // If we're in a popup and m_fixContextMenuPos is enabled, 
+    // the position needs different handling
+    if (m_fixContextMenuPos && inPopup) {
+        // In popup context, p_pos might be relative to the popup widget
+        // Convert it to m_viewer's coordinate system
+        pos = m_viewer->mapFromParent(mapFromParent(p_pos));
     }
 
     QScopedPointer<QMenu> menu(WidgetsFactory::createMenu());

@@ -26,6 +26,9 @@ namespace vnotex
 
         void scrollToAndSelect(const QStringList &p_paths);
 
+        // Set whether to fix context menu position for popup usage
+        void setFixContextMenuPos(bool p_fix);
+
     signals:
         void renameFile(const QString &p_path, const QString &p_name);
 
