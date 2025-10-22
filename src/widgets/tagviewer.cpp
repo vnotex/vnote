@@ -48,8 +48,6 @@ void TagViewer::setupUI()
     m_searchLineEdit->setToolTip(tr("[Shift+Enter] to add current selected tag in the list"));
     connect(m_searchLineEdit, &QLineEdit::textChanged,
             this, &TagViewer::searchAndFilter);
-    connect(m_searchLineEdit, &QLineEdit::returnPressed,
-            this, &TagViewer::handleSearchLineEditReturnPressed);
     mainLayout->addWidget(m_searchLineEdit);
 
     auto tagNameValidator = new QRegularExpressionValidator(QRegularExpression("[^>]*"), m_searchLineEdit);
@@ -90,6 +88,13 @@ bool TagViewer::eventFilter(QObject *p_obj, QEvent *p_event)
                 m_searchLineEdit->setFocus();
             }
             return true;
+        } else if (key == Qt::Key_Return || key == Qt::Key_Enter) {
+            if (p_obj == m_searchLineEdit) {
+                // Pressing twice will make the popup hide if we use the signal returnPressed,
+                // so we handle it here earlier.
+                handleSearchLineEditReturnPressed();
+                return true;
+            }
         }
     }
 

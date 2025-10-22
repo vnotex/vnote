@@ -34,6 +34,8 @@ namespace vnotex
 
         void openFiles(const QStringList &p_paths);
 
+        void selectionChanged();
+
     private slots:
         // Resize the first column.
         void resizeTreeToContents();
@@ -62,7 +64,7 @@ namespace vnotex
         // Managed by QObject.
         QTreeView *m_viewer = nullptr;
 
-        bool m_fixContextMenuPos = true;
+        bool m_contextMenuEnabled = false;
     };
 }
 

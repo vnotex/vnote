@@ -16,6 +16,9 @@ namespace vnotex
 
         void setBuffer(Buffer *p_buffer);
 
+    private slots:
+        void updateButtonsState();
+
     private:
         void setupUI();
 
@@ -39,6 +42,11 @@ namespace vnotex
 
         // Managed by QObject.
         FileSystemViewer *m_viewer = nullptr;
+
+        QToolButton *m_openBtn = nullptr;
+        QToolButton *m_deleteBtn = nullptr;
+        QToolButton *m_copyPathBtn = nullptr;
+        QToolButton *m_propertiesBtn = nullptr;
 
         bool m_needUpdateAttachmentFolder = true;
     };

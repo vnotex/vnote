@@ -15,6 +15,7 @@
 #include <utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <utils/pathutils.h>
+#include <utils/clipboardutils.h>
 #include <core/vnotex.h>
 #include <core/thememgr.h>
 #include <buffer/buffer.h>
@@ -25,6 +26,7 @@
 #include <core/exception.h>
 #include <core/sessionconfig.h>
 #include <core/configmgr.h>
+#include "dialogs/filepropertiesdialog.h"
 
 using namespace vnotex;
 
@@ -148,59 +150,123 @@ void AttachmentPopup::setupUI()
 
     buttonsLayout->addStretch();
 
-    mainLayout->addLayout(buttonsLayout);
+    {
+        // Open files.
+        m_openBtn = createButton();
+        auto act = new QAction(IconUtils::fetchIconWithDisabledState(themeMgr.getIconFile(QStringLiteral("open_file.svg"))),
+                               tr("Open"),
+                               m_openBtn);
+        connect(act, &QAction::triggered,
+                this, [this]() {
+                    hide();
+                    const auto paths = m_viewer->getSelectedPaths();
+                    for (const auto &file : paths) {
+                        auto paras = QSharedPointer<FileOpenParameters>::create();
+                        paras->m_nodeAttachedTo = m_buffer->getNode();
+                        Q_ASSERT(paras->m_nodeAttachedTo);
+                        emit VNoteX::getInst().openFileRequested(file, paras);
+                    }
+                });
+        m_openBtn->setDefaultAction(act);
+        buttonsLayout->addWidget(m_openBtn);
+    }
 
-    m_viewer = new FileSystemViewer(this);
-    connect(m_viewer, &FileSystemViewer::renameFile,
-            this, [this](const QString &p_path, const QString &p_name) {
-                try {
-                    m_buffer->renameAttachment(p_path, p_name);
-                    showPopupLater(QStringList() << PathUtils::concatenateFilePath(PathUtils::parentDirPath(p_path), p_name));
-                } catch (Exception &p_e) {
-                    MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                                             tr("Failed to rename attachment (%1) to (%2).").arg(p_path, p_name),
-                                             tr("Please try another name again."),
-                                             p_e.what(),
-                                             this);
-                }
-            });
-    connect(m_viewer, &FileSystemViewer::removeFiles,
-            this, [this](QStringList p_paths) {
-                if (p_paths.isEmpty()) {
-                    return;
-                }
+    {
+        // Delete files.
+        m_deleteBtn = createButton();
+        auto act = new QAction(IconUtils::fetchIconWithDisabledState(themeMgr.getIconFile(QStringLiteral("delete.svg"))),
+                               tr("Delete"),
+                               m_deleteBtn);
+        connect(act, &QAction::triggered,
+                this, [this]() {
+                    auto selectedPaths = m_viewer->getSelectedPaths();
+                    if (selectedPaths.isEmpty()) {
+                        return;
+                    }
+                    // Filter out children paths.
+                    QStringList paths;
+                    std::sort(selectedPaths.begin(), selectedPaths.end());
+                    for (int i = selectedPaths.size() - 1; i >= 0; --i) {
+                        bool skip = false;
+                        for (int j = i - 1; j >= 0; --j) {
+                            // Check if [j] is parent of [i].
+                            if (selectedPaths[j].size() < selectedPaths[i].size()
+                                && selectedPaths[i].startsWith(selectedPaths[j]) && selectedPaths[i].at(selectedPaths[j].size()) == '/') {
+                                skip = true;
+                                break;
+                            }
+                        }
 
-                // Filter out children paths.
-                QStringList paths;
-                std::sort(p_paths.begin(), p_paths.end());
-                for (int i = p_paths.size() - 1; i >= 0; --i) {
-                    bool skip = false;
-                    for (int j = i - 1; j >= 0; --j) {
-                        // Check if [j] is parent of [i].
-                        if (p_paths[j].size() < p_paths[i].size()
-                            && p_paths[i].startsWith(p_paths[j]) && p_paths[i].at(p_paths[j].size()) == '/') {
-                            skip = true;
-                            break;
+                        if (!skip) {
+                            paths << selectedPaths[i];
                         }
                     }
 
-                    if (!skip) {
-                        paths << p_paths[i];
-                    }
-                }
+                    m_buffer->removeAttachment(paths);
+                });
+        m_deleteBtn->setDefaultAction(act);
+        buttonsLayout->addWidget(m_deleteBtn);
+    }
 
-                m_buffer->removeAttachment(paths);
-            });
-    connect(m_viewer, &FileSystemViewer::openFiles,
-            this, [this](const QStringList &p_paths) {
-                hide();
-                for (const auto &file : p_paths) {
-                    auto paras = QSharedPointer<FileOpenParameters>::create();
-                    paras->m_nodeAttachedTo = m_buffer->getNode();
-                    Q_ASSERT(paras->m_nodeAttachedTo);
-                    emit VNoteX::getInst().openFileRequested(file, paras);
-                }
-            });
+    {
+        // Copy path.
+        m_copyPathBtn = createButton();
+        auto act = new QAction(IconUtils::fetchIconWithDisabledState(themeMgr.getIconFile(QStringLiteral("copy_path.svg"))),
+                               tr("Copy Path"),
+                               m_copyPathBtn);
+        connect(act, &QAction::triggered,
+                this, [this]() {
+                    hide();
+                    const auto paths = m_viewer->getSelectedPaths();
+                    ClipboardUtils::setTextToClipboard(paths.join('\n'));
+                });
+        m_copyPathBtn->setDefaultAction(act);
+        buttonsLayout->addWidget(m_copyPathBtn);
+    }
+
+    {
+        // Properties.
+        m_propertiesBtn = createButton();
+        auto act = new QAction(IconUtils::fetchIconWithDisabledState(themeMgr.getIconFile(QStringLiteral("properties.svg"))),
+                               tr("Properties"),
+                               m_propertiesBtn);
+        connect(act, &QAction::triggered,
+                this, [this]() {
+                    hide();
+                    const auto paths = m_viewer->getSelectedPaths();
+                    Q_ASSERT(paths.size() == 1);
+                    const auto path = paths[0];
+                    FilePropertiesDialog dialog(path, this);
+                    int ret = dialog.exec();
+                    if (ret) {
+                        auto newName = dialog.getFileName();
+                        if (newName != PathUtils::fileName(path)) {
+                            // Rename.
+                            try {
+                                m_buffer->renameAttachment(path, newName);
+                                showPopupLater(QStringList() << PathUtils::concatenateFilePath(PathUtils::parentDirPath(path), newName));
+                            } catch (Exception &p_e) {
+                                MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                                                        tr("Failed to rename attachment (%1) to (%2).").arg(path, newName),
+                                                        tr("Please try another name again."),
+                                                        p_e.what(),
+                                                        this);
+                            }
+                        }
+                    }
+                });
+        m_propertiesBtn->setDefaultAction(act);
+        buttonsLayout->addWidget(m_propertiesBtn);
+    }
+
+    mainLayout->addLayout(buttonsLayout);
+
+    m_viewer = new FileSystemViewer(this);
+    connect(m_viewer, &FileSystemViewer::selectionChanged,
+            this, &AttachmentPopup::updateButtonsState);
+
+    updateButtonsState();
+
     mainLayout->addWidget(m_viewer);
 
     widget->setMinimumSize(320, 384);
@@ -280,4 +346,13 @@ void AttachmentPopup::showPopupLater(const QStringList &p_pathsToSelect)
         m_viewer->scrollToAndSelect(p_pathsToSelect);
         m_button->showMenu();
     });
+}
+
+void AttachmentPopup::updateButtonsState()
+{
+    const int selectedCount = m_viewer->selectedCount();
+    m_openBtn->setEnabled(selectedCount > 0);
+    m_deleteBtn->setEnabled(selectedCount > 0);
+    m_copyPathBtn->setEnabled(selectedCount > 0);
+    m_propertiesBtn->setEnabled(selectedCount == 1);
 }

@@ -34,15 +34,18 @@ void FileSystemViewer::setupUI()
     m_viewer = new TreeView(this);
     m_viewer->setModel(fileModel);
     m_viewer->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    m_viewer->setContextMenuPolicy(Qt::CustomContextMenu);
     m_viewer->setHeaderHidden(true);
     // Show only the Name column.
     for (int i = 1; i < fileModel->columnCount(); ++i) {
         m_viewer->hideColumn(i);
     }
 
-    connect(m_viewer, &QTreeView::customContextMenuRequested,
-            this, &FileSystemViewer::handleContextMenuRequested);
+    if (m_contextMenuEnabled) {
+        m_viewer->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(m_viewer, &QTreeView::customContextMenuRequested,
+                this, &FileSystemViewer::handleContextMenuRequested);
+    }
+
     connect(m_viewer, &QTreeView::activated,
             this, [this](const QModelIndex &p_index) {
                 if (!this->fileModel()->isDir(p_index)) {
@@ -51,6 +54,8 @@ void FileSystemViewer::setupUI()
                     emit openFiles(files);
                 }
             });
+    connect(m_viewer->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &FileSystemViewer::selectionChanged);
 
     auto index = fileModel->setRootPath(QDir::homePath());
     m_viewer->setRootIndex(index);
@@ -214,16 +219,9 @@ void FileSystemViewer::scrollToAndSelect(const QStringList &p_paths)
 
 void FileSystemViewer::handleContextMenuRequested(const QPoint &p_pos)
 {
-    // @p_pos is the position in the coordinate of parent widget if parent is a popup.
-    auto pos = p_pos;
-    if (m_fixContextMenuPos) {
-        pos = mapFromParent(p_pos);
-        pos = m_viewer->mapFromParent(pos);
-    }
-
     QScopedPointer<QMenu> menu(WidgetsFactory::createMenu());
 
-    auto index = m_viewer->indexAt(pos);
+    auto index = m_viewer->indexAt(p_pos);
     if (index.isValid()) {
         auto selectionModel = m_viewer->selectionModel();
         if (!selectionModel->isSelected(index)) {
@@ -239,6 +237,6 @@ void FileSystemViewer::handleContextMenuRequested(const QPoint &p_pos)
     m_viewer->update();
 
     if (!menu->isEmpty()) {
-        menu->exec(m_viewer->mapToGlobal(pos));
+        menu->exec(m_viewer->mapToGlobal(p_pos));
     }
 }
