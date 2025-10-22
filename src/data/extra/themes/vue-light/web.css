@@ -115,8 +115,9 @@ code {
     background-color: #f8f8f8;
     word-break: break-word;
 }
-:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) code {
-    font-size: 0.9rem;
+
+:is(h1, h2, h3, h4, h5, h6) code {
+  font-size: inherit;
 }
 
 pre code {
