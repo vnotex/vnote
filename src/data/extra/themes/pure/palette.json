@@ -1,6 +1,6 @@
 {
     "metadata" : {
-        "revision" : 1,
+        "revision" : 2,
         "//comment" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
         "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "editor-highlight-theme" : "Default",
@@ -19,6 +19,8 @@
         "bg3_3" : "#d2d2d2",
         "bg3_4" : "#dadada",
         "bg3_41" : "#e0e0e0",
+        "bg3_43" : "#eaeaea",
+        "bg3_45" : "#eeeeee",
         "bg3_5" : "#f5f5f5",
         "bg3_6" : "#ffffff",
         "fg3_5" : "#222222",
@@ -38,11 +40,7 @@
         "fg15_3" : "#b0b0b0",
         "fg15_4" : "#7a7a7a",
         "fg15_5" : "#222222",
-        "bg11" : "#1976d2",
-        "layer1" : "#354259",
-        "layer2" : "#1b2430",
-        "layer3" : "#6b778d",
-        "layer4" : "#eeeeee"
+        "bg11" : "#1976d2"
     },
     "base" : {
         "normal" : {
@@ -636,11 +634,11 @@
         },
         "mainwindow" : {
             "side_bar" : {
-                "fg" : "@palette#bg3_5",
-                "bg" : "@palette#layer1",
+                "fg" : "@base#normal#fg",
+                "bg" : "@palette#bg3_43",
                 "selected" : {
-                    "fg" : "@palette#bg2_7",
-                    "bg" : "@palette#layer2"
+                    "fg" : "@base#selected#fg",
+                    "bg" : "@base#selected#bg"
                 },
                 "icon" : {
                     "fg" : "@widgets#mainwindow#side_bar#fg",
@@ -649,11 +647,11 @@
                     }
                 },
                 "hover" : {
-                    "fg" : "@widgets#mainwindow#side_bar#fg",
-                    "bg" : "@palette#layer3"
+                    "fg" : "@base#hover#fg",
+                    "bg" : "@base#hover#bg"
                 },
                 "widget" : {
-                    "bg" : "@palette#layer4"
+                    "bg" : "@palette#bg3_45"
                 }
             },
             "dockwidget_tabbar" : {
