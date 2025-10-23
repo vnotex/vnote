@@ -100,6 +100,10 @@ namespace vnotex
                 editorConfig->m_inputMode = vte::InputMode::ViMode;
                 break;
 
+            case TextEditorConfig::InputMode::VscodeMode:
+                editorConfig->m_inputMode = vte::InputMode::VscodeMode;
+                break;
+
             default:
                 editorConfig->m_inputMode = vte::InputMode::NormalMode;
                 break;

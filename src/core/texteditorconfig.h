@@ -20,7 +20,8 @@ namespace vnotex
         enum class InputMode
         {
             NormalMode,
-            ViMode
+            ViMode,
+            VscodeMode
         };
 
         enum class CenterCursor

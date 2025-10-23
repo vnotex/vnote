@@ -56,6 +56,7 @@ void TextEditorPage::setupUI()
 
         m_inputModeComboBox->addItem(tr("Normal"), (int)TextEditorConfig::InputMode::NormalMode);
         m_inputModeComboBox->addItem(tr("Vi"), (int)TextEditorConfig::InputMode::ViMode);
+        m_inputModeComboBox->addItem(tr("VSCode"), (int)TextEditorConfig::InputMode::VscodeMode);
 
         const QString label(tr("Input mode:"));
         mainLayout->addRow(label, m_inputModeComboBox);

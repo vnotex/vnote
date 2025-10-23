@@ -99,6 +99,9 @@ QString TextEditorConfig::inputModeToString(InputMode p_mode) const
     case InputMode::ViMode:
         return QStringLiteral("vi");
 
+    case InputMode::VscodeMode:
+        return QStringLiteral("vscode");
+
     default:
         return QStringLiteral("normal");
     }
@@ -109,6 +112,8 @@ TextEditorConfig::InputMode TextEditorConfig::stringToInputMode(const QString &p
     auto inputMode = p_str.toLower();
     if (inputMode == QStringLiteral("vi")) {
         return InputMode::ViMode;
+    } else if (inputMode == QStringLiteral("vscode")) {
+        return InputMode::VscodeMode;
     } else {
         return InputMode::NormalMode;
     }
