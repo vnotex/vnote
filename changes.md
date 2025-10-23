@@ -1,4 +1,14 @@
 # Changes
+## v3.20.0
+* MindMap: add outline and linking support
+* Refine themes
+* Support searching tags
+* Enhanced QuickAccess with unique id
+* NoteExplorer: support customizing node's color/background/outline
+* MarkdownEditor: support copying local GIF
+* Fix attachment and tag popup
+* InputMode: add VSCode input mode and keep the default Normal input mode simple
+
 ## v3.19.2
 * Codesign MacOS Bundle
 * Fix toolbar expansion button style

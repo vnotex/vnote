@@ -25,9 +25,9 @@
     <key>CFBundleExecutable</key>
     <string>VNote</string>
     <key>CFBundleShortVersionString</key>
-    <string>3.19</string>
+    <string>3.20</string>
     <key>CFBundleVersion</key>
-    <string>3.19.2</string>
+    <string>3.20.0</string>
     <key>NSHumanReadableCopyright</key>
     <string>Distributed under LGPL-3.0 license. Copyright (c) 2025 app.vnote.fun</string>
     <key>CFBundleIconFile</key>
