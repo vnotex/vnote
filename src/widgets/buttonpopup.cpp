@@ -1,6 +1,7 @@
 #include "buttonpopup.h"
 
 #include <QWidgetAction>
+#include <QKeyEvent>
 
 #include <utils/widgetutils.h>
 
@@ -15,6 +16,17 @@ ButtonPopup::ButtonPopup(QToolButton *p_btn, QWidget *p_parent)
     setWindowFlags(Qt::Tool | Qt::NoDropShadowWindowHint);
     setWindowModality(Qt::ApplicationModal);
 #endif
+}
+
+void ButtonPopup::keyPressEvent(QKeyEvent *p_event)
+{
+    const int key = p_event->key();
+    if (key == Qt::Key_Return || key == Qt::Key_Enter) {
+        // Swallow Enter/Return key here to avoid hiding the popup.
+        p_event->accept();
+        return;
+    }
+    QMenu::keyPressEvent(p_event);
 }
 
 void ButtonPopup::addWidget(QWidget *p_widget)

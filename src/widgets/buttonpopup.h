@@ -15,6 +15,8 @@ namespace vnotex
         ButtonPopup(QToolButton *p_btn, QWidget *p_parent = nullptr);
 
     protected:
+        void keyPressEvent(QKeyEvent *p_event) override;
+
         void addWidget(QWidget *p_widget);
 
         // Button for this menu.
