@@ -3,40 +3,38 @@
 
 #include "scrolldialog.h"
 
-namespace vnotex
-{
-    class TagI;
-    class Tag;
-    class LevelLabelWithUpButton;
-    class LineEditWithSnippet;
+namespace vnotex {
+class TagI;
+class Tag;
+class LevelLabelWithUpButton;
+class LineEditWithSnippet;
 
-    class NewTagDialog : public ScrollDialog
-    {
-        Q_OBJECT
-    public:
-        // New a tag under @p_tag.
-        NewTagDialog(TagI *p_tagI, Tag *p_tag, QWidget *p_parent = nullptr);
+class NewTagDialog : public ScrollDialog {
+  Q_OBJECT
+public:
+  // New a tag under @p_tag.
+  NewTagDialog(TagI *p_tagI, Tag *p_tag, QWidget *p_parent = nullptr);
 
-    protected:
-        void acceptedButtonClicked() Q_DECL_OVERRIDE;
+protected:
+  void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        bool validateInputs();
+  bool validateInputs();
 
-        bool newTag();
+  bool newTag();
 
-        QString getTagName() const;
+  QString getTagName() const;
 
-        TagI *m_tagI = nullptr;
+  TagI *m_tagI = nullptr;
 
-        Tag *m_parentTag = nullptr;
+  Tag *m_parentTag = nullptr;
 
-        LevelLabelWithUpButton *m_parentTagLabel = nullptr;
+  LevelLabelWithUpButton *m_parentTagLabel = nullptr;
 
-        LineEditWithSnippet *m_nameLineEdit = nullptr;
-    };
-}
+  LineEditWithSnippet *m_nameLineEdit = nullptr;
+};
+} // namespace vnotex
 
 #endif // NEWTAGDIALOG_H

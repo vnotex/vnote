@@ -6,28 +6,19 @@ using namespace vnotex;
 
 #include "dummyversioncontroller.h"
 
-DummyVersionControllerFactory::DummyVersionControllerFactory()
-{
+DummyVersionControllerFactory::DummyVersionControllerFactory() {}
+
+QString DummyVersionControllerFactory::getName() const { return QStringLiteral("dummy.vnotex"); }
+
+QString DummyVersionControllerFactory::getDisplayName() const {
+  return QObject::tr("No Version Control");
 }
 
-QString DummyVersionControllerFactory::getName() const
-{
-    return QStringLiteral("dummy.vnotex");
+QString DummyVersionControllerFactory::getDescription() const {
+  return QObject::tr("Disable version control");
 }
 
-QString DummyVersionControllerFactory::getDisplayName() const
-{
-    return QObject::tr("No Version Control");
-}
-
-QString DummyVersionControllerFactory::getDescription() const
-{
-    return QObject::tr("Disable version control");
-}
-
-QSharedPointer<IVersionController> DummyVersionControllerFactory::createVersionController()
-{
-    return QSharedPointer<DummyVersionController>::create(getName(),
-                                                          getDisplayName(),
-                                                          getDescription());
+QSharedPointer<IVersionController> DummyVersionControllerFactory::createVersionController() {
+  return QSharedPointer<DummyVersionController>::create(getName(), getDisplayName(),
+                                                        getDescription());
 }

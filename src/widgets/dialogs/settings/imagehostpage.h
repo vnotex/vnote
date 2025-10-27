@@ -3,8 +3,8 @@
 
 #include "settingspage.h"
 
-#include <QVector>
 #include <QMap>
+#include <QVector>
 
 class QGroupBox;
 class QLineEdit;
@@ -12,51 +12,49 @@ class QVBoxLayout;
 class QComboBox;
 class QCheckBox;
 
-namespace vnotex
-{
-    class ImageHost;
+namespace vnotex {
+class ImageHost;
 
-    class ImageHostPage : public SettingsPage
-    {
-        Q_OBJECT
-    public:
-        explicit ImageHostPage(QWidget *p_parent = nullptr);
+class ImageHostPage : public SettingsPage {
+  Q_OBJECT
+public:
+  explicit ImageHostPage(QWidget *p_parent = nullptr);
 
-        QString title() const Q_DECL_OVERRIDE;
+  QString title() const Q_DECL_OVERRIDE;
 
-    protected:
-        void loadInternal() Q_DECL_OVERRIDE;
+protected:
+  void loadInternal() Q_DECL_OVERRIDE;
 
-        bool saveInternal() Q_DECL_OVERRIDE;
+  bool saveInternal() Q_DECL_OVERRIDE;
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void newImageHost();
+  void newImageHost();
 
-        QGroupBox *setupGroupBoxForImageHost(ImageHost *p_host, QWidget *p_parent);
+  QGroupBox *setupGroupBoxForImageHost(ImageHost *p_host, QWidget *p_parent);
 
-        void removeImageHost(const QString &p_hostName);
+  void removeImageHost(const QString &p_hostName);
 
-        void addWidgetToLayout(QWidget *p_widget);
+  void addWidgetToLayout(QWidget *p_widget);
 
-        QJsonObject fieldsToConfig(const QVector<QLineEdit *> &p_fields) const;
+  QJsonObject fieldsToConfig(const QVector<QLineEdit *> &p_fields) const;
 
-        void testImageHost(const QString &p_hostName);
+  void testImageHost(const QString &p_hostName);
 
-        QGroupBox *setupGeneralBox(QWidget *p_parent);
+  QGroupBox *setupGeneralBox(QWidget *p_parent);
 
-        void removeLastStretch();
+  void removeLastStretch();
 
-        QVBoxLayout *m_mainLayout = nullptr;
+  QVBoxLayout *m_mainLayout = nullptr;
 
-        // [host] -> list of related fields.
-        QMap<ImageHost *, QVector<QLineEdit *>> m_hostToFields;
+  // [host] -> list of related fields.
+  QMap<ImageHost *, QVector<QLineEdit *>> m_hostToFields;
 
-        QComboBox *m_defaultImageHostComboBox = nullptr;
+  QComboBox *m_defaultImageHostComboBox = nullptr;
 
-        QCheckBox *m_clearObsoleteImageCheckBox = nullptr;
-    };
-}
+  QCheckBox *m_clearObsoleteImageCheckBox = nullptr;
+};
+} // namespace vnotex
 
 #endif // IMAGEHOSTPAGE_H

@@ -7,37 +7,26 @@
 
 class QIcon;
 
-namespace vnotex
-{
-    class UnitedEntryHelper
-    {
-    public:
-        struct UserEntry
-        {
-            QString m_name;
+namespace vnotex {
+class UnitedEntryHelper {
+public:
+  struct UserEntry {
+    QString m_name;
 
-            QString m_args;
-        };
+    QString m_args;
+  };
 
-        enum ItemType
-        {
-            Buffer,
-            File,
-            Folder,
-            Notebook,
-            Other,
-            MaxItemType
-        };
+  enum ItemType { Buffer, File, Folder, Notebook, Other, MaxItemType };
 
-        UnitedEntryHelper() = delete;
+  UnitedEntryHelper() = delete;
 
-        static UserEntry parseUserEntry(const QString &p_text);
+  static UserEntry parseUserEntry(const QString &p_text);
 
-        static const QIcon &itemIcon(ItemType p_type);
+  static const QIcon &itemIcon(ItemType p_type);
 
-        static ItemType locationTypeToItemType(LocationType p_type);
-    };
+  static ItemType locationTypeToItemType(LocationType p_type);
+};
 
-}
+} // namespace vnotex
 
 #endif // UNITEDENTRYHELPER_H

@@ -2,35 +2,20 @@
 
 #include <QFormLayout>
 
-#include <widgets/widgetsfactory.h>
+#include <core/configmgr.h>
 #include <core/coreconfig.h>
 #include <core/sessionconfig.h>
-#include <core/configmgr.h>
 #include <utils/widgetutils.h>
+#include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
 
-MiscPage::MiscPage(QWidget *p_parent)
-    : SettingsPage(p_parent)
-{
-    setupUI();
-}
+MiscPage::MiscPage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
 
-void MiscPage::setupUI()
-{
-}
+void MiscPage::setupUI() {}
 
-void MiscPage::loadInternal()
-{
+void MiscPage::loadInternal() {}
 
-}
+bool MiscPage::saveInternal() { return true; }
 
-bool MiscPage::saveInternal()
-{
-    return true;
-}
-
-QString MiscPage::title() const
-{
-    return tr("Misc");
-}
+QString MiscPage::title() const { return tr("Misc"); }

@@ -5,84 +5,77 @@
 
 #include <QClipboard>
 
-namespace vnotex
-{
-    class MarkdownViewerAdapter;
-    class PreviewHelper;
-    class ViewWindow;
+namespace vnotex {
+class MarkdownViewerAdapter;
+class PreviewHelper;
+class ViewWindow;
 
-    class MarkdownViewer : public WebViewer
-    {
-        Q_OBJECT
-    public:
-        // @p_adapter will be managed by MarkdownViewer.
-        MarkdownViewer(MarkdownViewerAdapter *p_adapter,
-                       const QColor &p_background,
-                       qreal p_zoomFactor,
-                       QWidget *p_parent = nullptr);
+class MarkdownViewer : public WebViewer {
+  Q_OBJECT
+public:
+  // @p_adapter will be managed by MarkdownViewer.
+  MarkdownViewer(MarkdownViewerAdapter *p_adapter, const QColor &p_background, qreal p_zoomFactor,
+                 QWidget *p_parent = nullptr);
 
-        MarkdownViewer(MarkdownViewerAdapter *p_adapter,
-                       const ViewWindow *p_viewWindow,
-                       const QColor &p_background,
-                       qreal p_zoomFactor,
-                       QWidget *p_parent = nullptr);
+  MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindow *p_viewWindow,
+                 const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent = nullptr);
 
-        MarkdownViewerAdapter *adapter() const;
+  MarkdownViewerAdapter *adapter() const;
 
-        void setPreviewHelper(PreviewHelper *p_previewHelper);
+  void setPreviewHelper(PreviewHelper *p_previewHelper);
 
-        void saveContent(const std::function<void(const QString &p_content)> &p_callback);
+  void saveContent(const std::function<void(const QString &p_content)> &p_callback);
 
-    signals:
-        void zoomFactorChanged(qreal p_factor);
+signals:
+  void zoomFactorChanged(qreal p_factor);
 
-        void editRequested();
+  void editRequested();
 
-    protected:
-        void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
 
-    private slots:
-        void handleClipboardChanged(QClipboard::Mode p_mode);
+private slots:
+  void handleClipboardChanged(QClipboard::Mode p_mode);
 
-        void handleWebKeyPress(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
+  void handleWebKeyPress(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
 
-    private:
-        void handleCopyImageUrlAction();
+private:
+  void handleCopyImageUrlAction();
 
-        // Copy the clicked image.
-        // Used to replace the default CopyImageToClipboard action.
-        void copyImage();
+  // Copy the clicked image.
+  // Used to replace the default CopyImageToClipboard action.
+  void copyImage();
 
-        void removeHtmlFromImageData(QClipboard *p_clipboard, const QMimeData *p_mimeData);
+  void removeHtmlFromImageData(QClipboard *p_clipboard, const QMimeData *p_mimeData);
 
-        void hideUnusedActions(QMenu *p_menu);
+  void hideUnusedActions(QMenu *p_menu);
 
-        void zoomOut();
+  void zoomOut();
 
-        void zoomIn();
+  void zoomIn();
 
-        void restoreZoom();
+  void restoreZoom();
 
-        void setupCrossCopyMenu(QMenu *p_menu, QAction *p_copyAct);
+  void setupCrossCopyMenu(QMenu *p_menu, QAction *p_copyAct);
 
-        // @p_baseUrl: if it is a folder, please end it with '/'. It is not used now in web side.
-        void crossCopy(const QString &p_target, const QString &p_baseUrl, const QString &p_html);
+  // @p_baseUrl: if it is a folder, please end it with '/'. It is not used now in web side.
+  void crossCopy(const QString &p_target, const QString &p_baseUrl, const QString &p_html);
 
-        // Managed by QObject.
-        MarkdownViewerAdapter *m_adapter = nullptr;
+  // Managed by QObject.
+  MarkdownViewerAdapter *m_adapter = nullptr;
 
-        // Nullable.
-        const ViewWindow *m_viewWindow = nullptr;
+  // Nullable.
+  const ViewWindow *m_viewWindow = nullptr;
 
-        // Whether this view has hooked the Copy Image Url action.
-        bool m_copyImageUrlActionHooked = false;
+  // Whether this view has hooked the Copy Image Url action.
+  bool m_copyImageUrlActionHooked = false;
 
-        // Whether CopyImage action has been triggered.
-        bool m_copyImageTriggered = false;
+  // Whether CopyImage action has been triggered.
+  bool m_copyImageTriggered = false;
 
-        // Target name of cross copy going to execute.
-        QString m_crossCopyTarget;
-    };
-}
+  // Target name of cross copy going to execute.
+  QString m_crossCopyTarget;
+};
+} // namespace vnotex
 
 #endif // MARKDOWNVIEWER_H

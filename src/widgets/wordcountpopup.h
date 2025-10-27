@@ -8,38 +8,35 @@
 class QToolButton;
 class QLabel;
 
-namespace vnotex
-{
-    class WordCountPanel : public QWidget
-    {
-        Q_OBJECT
-    public:
-        explicit WordCountPanel(QWidget *p_parent = nullptr);
+namespace vnotex {
+class WordCountPanel : public QWidget {
+  Q_OBJECT
+public:
+  explicit WordCountPanel(QWidget *p_parent = nullptr);
 
-        void updateCount(bool p_isSelection, int p_words, int p_charsWithoutSpace, int p_charsWithSpace);
+  void updateCount(bool p_isSelection, int p_words, int p_charsWithoutSpace, int p_charsWithSpace);
 
-    private:
-        QLabel *m_selectionLabel = nullptr;
-        QLabel *m_wordLabel = nullptr;
-        QLabel *m_charWithoutSpaceLabel = nullptr;
-        QLabel *m_charWithSpaceLabel = nullptr;
-    };
+private:
+  QLabel *m_selectionLabel = nullptr;
+  QLabel *m_wordLabel = nullptr;
+  QLabel *m_charWithoutSpaceLabel = nullptr;
+  QLabel *m_charWithSpaceLabel = nullptr;
+};
 
-    class WordCountPopup : public ButtonPopup
-    {
-        Q_OBJECT
-    public:
-        WordCountPopup(QToolButton *p_btn, const ViewWindow *p_viewWindow, QWidget *p_parent = nullptr);
+class WordCountPopup : public ButtonPopup {
+  Q_OBJECT
+public:
+  WordCountPopup(QToolButton *p_btn, const ViewWindow *p_viewWindow, QWidget *p_parent = nullptr);
 
-        void updateCount(const ViewWindow::WordCountInfo &p_info);
+  void updateCount(const ViewWindow::WordCountInfo &p_info);
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        WordCountPanel *m_panel = nullptr;
+  WordCountPanel *m_panel = nullptr;
 
-        const ViewWindow *m_viewWindow = nullptr;
-    };
-}
+  const ViewWindow *m_viewWindow = nullptr;
+};
+} // namespace vnotex
 
 #endif // WORDCOUNTPOPUP_H

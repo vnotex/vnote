@@ -5,22 +5,20 @@
 
 #include <core/global.h>
 
-namespace vnotex
-{
-    struct ViewWindowSession
-    {
-        QString m_bufferPath;
+namespace vnotex {
+struct ViewWindowSession {
+  QString m_bufferPath;
 
-        bool m_readOnly = false;
+  bool m_readOnly = false;
 
-        ViewWindowMode m_viewWindowMode = ViewWindowMode::Read;
+  ViewWindowMode m_viewWindowMode = ViewWindowMode::Read;
 
-        // 0-based.
-        int m_lineNumber = -1;
-    };
+  // 0-based.
+  int m_lineNumber = -1;
+};
 
-    extern QDataStream &operator<<(QDataStream &p_ds, const ViewWindowSession &p_session);
-    extern QDataStream &operator>>(QDataStream &p_ds, ViewWindowSession &p_session);
-}
+extern QDataStream &operator<<(QDataStream &p_ds, const ViewWindowSession &p_session);
+extern QDataStream &operator>>(QDataStream &p_ds, ViewWindowSession &p_session);
+} // namespace vnotex
 
 #endif // VIEWWINDOWSESSION_H

@@ -7,29 +7,27 @@
 
 class QSpinBox;
 
-namespace vnotex
-{
-    class TableInsertDialog : public ScrollDialog
-    {
-        Q_OBJECT
-    public:
-        TableInsertDialog(const QString &p_title, QWidget *p_parent = nullptr);
+namespace vnotex {
+class TableInsertDialog : public ScrollDialog {
+  Q_OBJECT
+public:
+  TableInsertDialog(const QString &p_title, QWidget *p_parent = nullptr);
 
-        int getRowCount() const;
+  int getRowCount() const;
 
-        int getColumnCount() const;
+  int getColumnCount() const;
 
-        Alignment getAlignment() const;
+  Alignment getAlignment() const;
 
-    private:
-        void setupUI(const QString &p_title);
+private:
+  void setupUI(const QString &p_title);
 
-        QSpinBox *m_rowCountSpinBox = nullptr;
+  QSpinBox *m_rowCountSpinBox = nullptr;
 
-        QSpinBox *m_colCountSpinBox = nullptr;
+  QSpinBox *m_colCountSpinBox = nullptr;
 
-        Alignment m_alignment = Alignment::None;
-    };
-}
+  Alignment m_alignment = Alignment::None;
+};
+} // namespace vnotex
 
 #endif // TABLEINSERTDIALOG_H

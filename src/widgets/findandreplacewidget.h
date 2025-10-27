@@ -11,80 +11,79 @@ class QLineEdit;
 class QCheckBox;
 class QTimer;
 
-namespace vnotex
-{
-    class FindAndReplaceWidget : public QWidget
-    {
-        Q_OBJECT
-    public:
-        explicit FindAndReplaceWidget(QWidget *p_parent = nullptr);
+namespace vnotex {
+class FindAndReplaceWidget : public QWidget {
+  Q_OBJECT
+public:
+  explicit FindAndReplaceWidget(QWidget *p_parent = nullptr);
 
-        void setReplaceEnabled(bool p_enabled);
+  void setReplaceEnabled(bool p_enabled);
 
-        void open(const QString &p_text);
+  void open(const QString &p_text);
 
-        void close();
+  void close();
 
-        QString getFindText() const;
+  QString getFindText() const;
 
-        FindOptions getOptions() const;
+  FindOptions getOptions() const;
 
-        void setOptionsEnabled(FindOptions p_options, bool p_enabled);
+  void setOptionsEnabled(FindOptions p_options, bool p_enabled);
 
-    signals:
-        void findTextChanged(const QString &p_text, FindOptions p_options);
+signals:
+  void findTextChanged(const QString &p_text, FindOptions p_options);
 
-        void findNextRequested(const QString &p_text, FindOptions p_options);
+  void findNextRequested(const QString &p_text, FindOptions p_options);
 
-        void replaceRequested(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
+  void replaceRequested(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
 
-        void replaceAllRequested(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
+  void replaceAllRequested(const QString &p_text, FindOptions p_options,
+                           const QString &p_replaceText);
 
-        void closed();
+  void closed();
 
-        void opened();
+  void opened();
 
-    protected:
-        void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
-    private slots:
-        void findNext();
+private slots:
+  void findNext();
 
-        void findPrevious();
+  void findPrevious();
 
-        void updateFindOptions();
+  void updateFindOptions();
 
-        void replace();
+  void replace();
 
-        void replaceAndFind();
+  void replaceAndFind();
 
-        void replaceAll();
+  void replaceAll();
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void setFindOptions(FindOptions p_options);
+  void setFindOptions(FindOptions p_options);
 
-        QLineEdit *m_findLineEdit = nullptr;
+  QLineEdit *m_findLineEdit = nullptr;
 
-        QLineEdit *m_replaceLineEdit = nullptr;
+  QLineEdit *m_replaceLineEdit = nullptr;
 
-        QVector<QWidget *> m_replaceRelatedWidgets;
+  QVector<QWidget *> m_replaceRelatedWidgets;
 
-        QCheckBox *m_caseSensitiveCheckBox = nullptr;
+  QCheckBox *m_caseSensitiveCheckBox = nullptr;
 
-        QCheckBox *m_wholeWordOnlyCheckBox = nullptr;
+  QCheckBox *m_wholeWordOnlyCheckBox = nullptr;
 
-        QCheckBox *m_regularExpressionCheckBox = nullptr;
+  QCheckBox *m_regularExpressionCheckBox = nullptr;
 
-        QCheckBox *m_incrementalSearchCheckBox = nullptr;
+  QCheckBox *m_incrementalSearchCheckBox = nullptr;
 
-        FindOptions m_options = FindOption::FindNone;
+  FindOptions m_options = FindOption::FindNone;
 
-        QTimer *m_findTextTimer = nullptr;
+  QTimer *m_findTextTimer = nullptr;
 
-        bool m_optionCheckBoxMuted = false;
-    };
-}
+  bool m_optionCheckBoxMuted = false;
+};
+} // namespace vnotex
 
 #endif // FINDANDREPLACEWIDGET_H

@@ -3,17 +3,15 @@
 
 #include <QImage>
 
-namespace vnotex
-{
-    class ImageUtils
-    {
-    public:
-        ImageUtils() = delete;
+namespace vnotex {
+class ImageUtils {
+public:
+  ImageUtils() = delete;
 
-        static QImage::Format guessImageFormat(const QByteArray &p_data);
+  static QImage::Format guessImageFormat(const QByteArray &p_data);
 
-        static QString guessImageSuffix(const QByteArray &p_data);
-    };
-}
+  static QString guessImageSuffix(const QByteArray &p_data);
+};
+} // namespace vnotex
 
 #endif // IMAGEUTILS_H

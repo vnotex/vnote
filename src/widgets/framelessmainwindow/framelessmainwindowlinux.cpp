@@ -2,97 +2,88 @@
 
 #ifndef Q_OS_WIN
 
-#include <QEvent>
-#include <QMouseEvent>
 #include <QDebug>
-#include <QHoverEvent>
+#include <QEvent>
 #include <QGuiApplication>
+#include <QHoverEvent>
+#include <QMouseEvent>
 
 using namespace vnotex;
 
 FramelessMainWindowLinux::FramelessMainWindowLinux(bool p_frameless, QWidget *p_parent)
-    : FramelessMainWindow(p_frameless, p_parent)
-{
-    if (m_frameless) {
-        // installEventFilter(this);
-    }
+    : FramelessMainWindow(p_frameless, p_parent) {
+  if (m_frameless) {
+    // installEventFilter(this);
+  }
 }
 
-bool FramelessMainWindowLinux::eventFilter(QObject *p_obj, QEvent *p_event)
-{
-    if (!m_frameless) {
-        return FramelessMainWindow::eventFilter(p_obj, p_event);
-    }
-
-    if (p_obj == m_titleBar) {
-        const auto type = p_event->type();
-        if (type == QEvent::MouseButtonDblClick
-            || type == QEvent::NonClientAreaMouseButtonDblClick) {
-            if (!(m_windowStates & Qt::WindowFullScreen)) {
-                if (m_windowStates & Qt::WindowMaximized) {
-                    showNormal();
-                } else {
-                    showMaximized();
-                }
-            }
-        }
-    } else if (p_obj == this) {
-        doResize(p_event);
-    }
-
+bool FramelessMainWindowLinux::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (!m_frameless) {
     return FramelessMainWindow::eventFilter(p_obj, p_event);
-}
+  }
 
-void FramelessMainWindowLinux::setTitleBar(QWidget *p_titleBar)
-{
-    FramelessMainWindow::setTitleBar(p_titleBar);
-
-    m_titleBar->installEventFilter(this);
-}
-
-void FramelessMainWindowLinux::mousePressEvent(QMouseEvent *p_event)
-{
-    FramelessMainWindow::mousePressEvent(p_event);
-
-    if (m_frameless) {
-        recordMousePress(p_event->pos());
-    }
-}
-
-void FramelessMainWindowLinux::recordMousePress(const QPoint &p_pos)
-{
-    m_mousePressed = true;
-    m_mousePressPoint = p_pos;
-    m_rectOnMousePress = geometry();
-    m_mousePressArea = hitArea(m_mousePressPoint);
-}
-
-void FramelessMainWindowLinux::mouseReleaseEvent(QMouseEvent *p_event)
-{
-    FramelessMainWindow::mouseReleaseEvent(p_event);
-
-    if (m_frameless) {
-        // setCursor(Qt::ArrowCursor);
-        m_mousePressed = false;
-    }
-}
-
-void FramelessMainWindowLinux::mouseMoveEvent(QMouseEvent *p_event)
-{
-    FramelessMainWindow::mouseMoveEvent(p_event);
-
-    if (m_frameless) {
-        Q_ASSERT(m_mousePressed);
-        if (m_movable && m_mousePressArea == Area::Caption) {
-            const auto delta = p_event->pos() - m_mousePressPoint;
-            move(pos() + delta);
+  if (p_obj == m_titleBar) {
+    const auto type = p_event->type();
+    if (type == QEvent::MouseButtonDblClick || type == QEvent::NonClientAreaMouseButtonDblClick) {
+      if (!(m_windowStates & Qt::WindowFullScreen)) {
+        if (m_windowStates & Qt::WindowMaximized) {
+          showNormal();
+        } else {
+          showMaximized();
         }
+      }
     }
+  } else if (p_obj == this) {
+    doResize(p_event);
+  }
+
+  return FramelessMainWindow::eventFilter(p_obj, p_event);
 }
 
-void FramelessMainWindowLinux::doResize(QEvent *p_event)
-{
-    Q_UNUSED(p_event);
+void FramelessMainWindowLinux::setTitleBar(QWidget *p_titleBar) {
+  FramelessMainWindow::setTitleBar(p_titleBar);
+
+  m_titleBar->installEventFilter(this);
+}
+
+void FramelessMainWindowLinux::mousePressEvent(QMouseEvent *p_event) {
+  FramelessMainWindow::mousePressEvent(p_event);
+
+  if (m_frameless) {
+    recordMousePress(p_event->pos());
+  }
+}
+
+void FramelessMainWindowLinux::recordMousePress(const QPoint &p_pos) {
+  m_mousePressed = true;
+  m_mousePressPoint = p_pos;
+  m_rectOnMousePress = geometry();
+  m_mousePressArea = hitArea(m_mousePressPoint);
+}
+
+void FramelessMainWindowLinux::mouseReleaseEvent(QMouseEvent *p_event) {
+  FramelessMainWindow::mouseReleaseEvent(p_event);
+
+  if (m_frameless) {
+    // setCursor(Qt::ArrowCursor);
+    m_mousePressed = false;
+  }
+}
+
+void FramelessMainWindowLinux::mouseMoveEvent(QMouseEvent *p_event) {
+  FramelessMainWindow::mouseMoveEvent(p_event);
+
+  if (m_frameless) {
+    Q_ASSERT(m_mousePressed);
+    if (m_movable && m_mousePressArea == Area::Caption) {
+      const auto delta = p_event->pos() - m_mousePressPoint;
+      move(pos() + delta);
+    }
+  }
+}
+
+void FramelessMainWindowLinux::doResize(QEvent *p_event) {
+  Q_UNUSED(p_event);
 #if 0
     static bool needResetCursor = false;
 
@@ -181,53 +172,51 @@ void FramelessMainWindowLinux::doResize(QEvent *p_event)
 #endif
 }
 
-FramelessMainWindowLinux::Area FramelessMainWindowLinux::hitArea(const QPoint &p_pos) const
-{
-    const int x = p_pos.x();
-    const int y = p_pos.y();
-    Area area = Area::None;
-    if (x < m_resizeAreaWidth) {
-        // Left.
-        if (y < m_resizeAreaWidth) {
-            // Top.
-            area = Area::TopLeft;
-        } else if (y > height() - m_resizeAreaWidth) {
-            // Bottom.
-            area = Area::BottomLeft;
-        } else {
-            area = Area::Left;
-        }
-    } else if (x > width() - m_resizeAreaWidth) {
-        // Right.
-        if (y < m_resizeAreaWidth) {
-            // Top.
-            area = Area::TopRight;
-        } else if (y > height() - m_resizeAreaWidth) {
-            // Bottom.
-            area = Area::BottomRight;
-        } else {
-            area = Area::Right;
-        }
-    } else if (y < m_resizeAreaWidth) {
-        // Top.
-        area = Area::Top;
+FramelessMainWindowLinux::Area FramelessMainWindowLinux::hitArea(const QPoint &p_pos) const {
+  const int x = p_pos.x();
+  const int y = p_pos.y();
+  Area area = Area::None;
+  if (x < m_resizeAreaWidth) {
+    // Left.
+    if (y < m_resizeAreaWidth) {
+      // Top.
+      area = Area::TopLeft;
     } else if (y > height() - m_resizeAreaWidth) {
-        // Bottom.
-        area = Area::Bottom;
-    } else if (y < m_titleBarHeight) {
-        area = Area::Caption;
+      // Bottom.
+      area = Area::BottomLeft;
+    } else {
+      area = Area::Left;
     }
+  } else if (x > width() - m_resizeAreaWidth) {
+    // Right.
+    if (y < m_resizeAreaWidth) {
+      // Top.
+      area = Area::TopRight;
+    } else if (y > height() - m_resizeAreaWidth) {
+      // Bottom.
+      area = Area::BottomRight;
+    } else {
+      area = Area::Right;
+    }
+  } else if (y < m_resizeAreaWidth) {
+    // Top.
+    area = Area::Top;
+  } else if (y > height() - m_resizeAreaWidth) {
+    // Bottom.
+    area = Area::Bottom;
+  } else if (y < m_titleBarHeight) {
+    area = Area::Caption;
+  }
 
-    return area;
+  return area;
 }
 
-void FramelessMainWindowLinux::showEvent(QShowEvent *p_event)
-{
-    FramelessMainWindow::showEvent(p_event);
+void FramelessMainWindowLinux::showEvent(QShowEvent *p_event) {
+  FramelessMainWindow::showEvent(p_event);
 
-    if (m_frameless && m_titleBarHeight == 0 && m_titleBar) {
-        m_titleBarHeight = m_titleBar->height();
-    }
+  if (m_frameless && m_titleBarHeight == 0 && m_titleBar) {
+    m_titleBarHeight = m_titleBar->height();
+  }
 }
 
 #endif

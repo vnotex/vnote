@@ -1,8 +1,8 @@
 #ifndef HISTORYPANEL_H
 #define HISTORYPANEL_H
 
-#include <QFrame>
 #include <QDateTime>
+#include <QFrame>
 #include <QIcon>
 #include <QScopedPointer>
 
@@ -11,60 +11,57 @@
 class QListWidget;
 class QListWidgetItem;
 
-namespace vnotex
-{
-    class TitleBar;
-    struct HistoryItemFull;
+namespace vnotex {
+class TitleBar;
+struct HistoryItemFull;
 
-    class HistoryPanel : public QFrame
-    {
-        Q_OBJECT
-    public:
-        explicit HistoryPanel(QWidget *p_parent = nullptr);
+class HistoryPanel : public QFrame {
+  Q_OBJECT
+public:
+  explicit HistoryPanel(QWidget *p_parent = nullptr);
 
-        void initialize();
+  void initialize();
 
-    private slots:
-        void handleContextMenuRequested(const QPoint &p_pos);
+private slots:
+  void handleContextMenuRequested(const QPoint &p_pos);
 
-        void openItem(const QListWidgetItem *p_item);
+  void openItem(const QListWidgetItem *p_item);
 
-        void clearHistory();
+  void clearHistory();
 
-    private:
-        struct SeparatorData
-        {
-            QString m_text;
+private:
+  struct SeparatorData {
+    QString m_text;
 
-            QDateTime m_dateUtc;
-        };
+    QDateTime m_dateUtc;
+  };
 
-        void initIcons();
+  void initIcons();
 
-        void setupUI();
+  void setupUI();
 
-        void setupTitleBar(const QString &p_title, QWidget *p_parent = nullptr);
+  void setupTitleBar(const QString &p_title, QWidget *p_parent = nullptr);
 
-        void updateHistoryList();
+  void updateHistoryList();
 
-        void updateSeparators();
+  void updateSeparators();
 
-        void addItem(const HistoryItemFull &p_hisItem);
+  void addItem(const HistoryItemFull &p_hisItem);
 
-        QString getPath(const QListWidgetItem *p_item) const;
+  QString getPath(const QListWidgetItem *p_item) const;
 
-        bool isValidItem(const QListWidgetItem *p_item) const;
+  bool isValidItem(const QListWidgetItem *p_item) const;
 
-        TitleBar *m_titleBar = nullptr;
+  TitleBar *m_titleBar = nullptr;
 
-        QListWidget *m_historyList = nullptr;
+  QListWidget *m_historyList = nullptr;
 
-        QScopedPointer<NavigationModeWrapper<QListWidget, QListWidgetItem>> m_navigationWrapper;
+  QScopedPointer<NavigationModeWrapper<QListWidget, QListWidgetItem>> m_navigationWrapper;
 
-        QVector<SeparatorData> m_separators;
+  QVector<SeparatorData> m_separators;
 
-        QIcon m_fileIcon;
-    };
-}
+  QIcon m_fileIcon;
+};
+} // namespace vnotex
 
 #endif // HISTORYPANEL_H

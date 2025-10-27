@@ -3,38 +3,36 @@
 
 #include "scrolldialog.h"
 
-namespace vnotex
-{
-    class NotebookInfoWidget;
+namespace vnotex {
+class NotebookInfoWidget;
 
-    class NewNotebookDialog : public ScrollDialog
-    {
-        Q_OBJECT
-    public:
-        explicit NewNotebookDialog(QWidget *p_parent = nullptr);
+class NewNotebookDialog : public ScrollDialog {
+  Q_OBJECT
+public:
+  explicit NewNotebookDialog(QWidget *p_parent = nullptr);
 
-    protected:
-        void acceptedButtonClicked() Q_DECL_OVERRIDE;
+protected:
+  void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
-        virtual bool validateRootFolderInput(QString &p_msg);
+  virtual bool validateRootFolderInput(QString &p_msg);
 
-        virtual void handleRootFolderPathChanged();
+  virtual void handleRootFolderPathChanged();
 
-        NotebookInfoWidget *m_infoWidget = nullptr;
+  NotebookInfoWidget *m_infoWidget = nullptr;
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void setupNotebookInfoWidget(QWidget *p_parent = nullptr);
+  void setupNotebookInfoWidget(QWidget *p_parent = nullptr);
 
-        bool validateInputs();
+  bool validateInputs();
 
-        bool validateNameInput(QString &p_msg);
+  bool validateNameInput(QString &p_msg);
 
-        // Create a new notebook.
-        // Return true if succeeded.
-        bool newNotebook();
-    };
-} // ns vnotex
+  // Create a new notebook.
+  // Return true if succeeded.
+  bool newNotebook();
+};
+} // namespace vnotex
 
 #endif // NEWNOTEBOOKDIALOG_H

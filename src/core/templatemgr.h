@@ -6,29 +6,26 @@
 
 #include "noncopyable.h"
 
-namespace vnotex
-{
-    class TemplateMgr : public QObject, private Noncopyable
-    {
-        Q_OBJECT
-    public:
-        static TemplateMgr &getInst()
-        {
-            static TemplateMgr inst;
-            return inst;
-        }
+namespace vnotex {
+class TemplateMgr : public QObject, private Noncopyable {
+  Q_OBJECT
+public:
+  static TemplateMgr &getInst() {
+    static TemplateMgr inst;
+    return inst;
+  }
 
-        QString getTemplateFolder() const;
+  QString getTemplateFolder() const;
 
-        QStringList getTemplates() const;
+  QStringList getTemplates() const;
 
-        QString getTemplateFilePath(const QString &p_name) const;
+  QString getTemplateFilePath(const QString &p_name) const;
 
-        QString getTemplateContent(const QString &p_name) const;
+  QString getTemplateContent(const QString &p_name) const;
 
-    private:
-        TemplateMgr() = default;
-    };
-}
+private:
+  TemplateMgr() = default;
+};
+} // namespace vnotex
 
 #endif // TEMPLATEMGR_H

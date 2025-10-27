@@ -2,42 +2,40 @@
 #define WINDOWSPANEL_H
 
 #include <QFrame>
-#include <QSharedPointer>
 #include <QScopedPointer>
+#include <QSharedPointer>
 
 #include "navigationmodewrapper.h"
 #include "windowsprovider.h"
 
 class QListWidgetItem;
 
-namespace vnotex
-{
-    class ListWidget;
+namespace vnotex {
+class ListWidget;
 
-    class WindowsPanel : public QFrame
-    {
-        Q_OBJECT
-    public:
-        WindowsPanel(const QSharedPointer<WindowsProvider> &p_provider, QWidget *p_parent = nullptr);
+class WindowsPanel : public QFrame {
+  Q_OBJECT
+public:
+  WindowsPanel(const QSharedPointer<WindowsProvider> &p_provider, QWidget *p_parent = nullptr);
 
-    protected:
-    void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void updateWindowsList();
+  void updateWindowsList();
 
-        void addItem(ID p_viewSplitId, const WindowsProvider::WindowData &p_data);
+  void addItem(ID p_viewSplitId, const WindowsProvider::WindowData &p_data);
 
-        void activateItem(QListWidgetItem *p_item);
+  void activateItem(QListWidgetItem *p_item);
 
-        QSharedPointer<WindowsProvider> m_provider;
+  QSharedPointer<WindowsProvider> m_provider;
 
-        ListWidget *m_windows = nullptr;
+  ListWidget *m_windows = nullptr;
 
-        QScopedPointer<NavigationModeWrapper<QListWidget, QListWidgetItem>> m_navigationWrapper;
-    };
-}
+  QScopedPointer<NavigationModeWrapper<QListWidget, QListWidgetItem>> m_navigationWrapper;
+};
+} // namespace vnotex
 
 #endif // WINDOWSPANEL_H

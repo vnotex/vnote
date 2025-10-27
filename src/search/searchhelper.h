@@ -6,23 +6,21 @@
 #include "searchdata.h"
 #include "searcher.h"
 
-namespace vnotex
-{
-    class ISearchInfoProvider;
+namespace vnotex {
+class ISearchInfoProvider;
 
-    class SearchHelper
-    {
-    public:
-        SearchHelper() = delete;
+class SearchHelper {
+public:
+  SearchHelper() = delete;
 
-        static SearchState searchOnProvider(Searcher *p_searcher,
-                                            const QSharedPointer<SearchOption> &p_option,
-                                            const QSharedPointer<ISearchInfoProvider> &p_provider,
-                                            QString &p_msg);
+  static SearchState searchOnProvider(Searcher *p_searcher,
+                                      const QSharedPointer<SearchOption> &p_option,
+                                      const QSharedPointer<ISearchInfoProvider> &p_provider,
+                                      QString &p_msg);
 
-    private:
-        static bool isSearchOptionValid(const SearchOption &p_option, QString &p_msg);
-    };
-}
+private:
+  static bool isSearchOptionValid(const SearchOption &p_option, QString &p_msg);
+};
+} // namespace vnotex
 
 #endif // SEARCHHELPER_H

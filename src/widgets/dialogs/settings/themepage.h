@@ -6,36 +6,34 @@
 class QListWidget;
 class QLabel;
 
-namespace vnotex
-{
-    class ThemePage : public SettingsPage
-    {
-        Q_OBJECT
-    public:
-        explicit ThemePage(QWidget *p_parent = nullptr);
+namespace vnotex {
+class ThemePage : public SettingsPage {
+  Q_OBJECT
+public:
+  explicit ThemePage(QWidget *p_parent = nullptr);
 
-        QString title() const Q_DECL_OVERRIDE;
+  QString title() const Q_DECL_OVERRIDE;
 
-    protected:
-        void loadInternal() Q_DECL_OVERRIDE;
+protected:
+  void loadInternal() Q_DECL_OVERRIDE;
 
-        bool saveInternal() Q_DECL_OVERRIDE;
+  bool saveInternal() Q_DECL_OVERRIDE;
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void loadThemes();
+  void loadThemes();
 
-        void loadThemePreview(const QString &p_name);
+  void loadThemePreview(const QString &p_name);
 
-        QString currentTheme() const;
+  QString currentTheme() const;
 
-        QListWidget *m_themeListWidget = nullptr;
+  QListWidget *m_themeListWidget = nullptr;
 
-        QLabel *m_previewLabel = nullptr;
+  QLabel *m_previewLabel = nullptr;
 
-        QString m_noPreviewText;
-    };
-}
+  QString m_noPreviewText;
+};
+} // namespace vnotex
 
 #endif // THEMEPAGE_H

@@ -38,5 +38,26 @@ Latest stable builds could be found at the [latest release](https://github.com/v
 
 Thank [users who donated to VNote](https://github.com/vnotex/vnote/wiki/Donate-List)!
 
+## Development
+
+After cloning the repository, run the initialization script to set up your development environment:
+
+**Linux/macOS:**
+```bash
+bash scripts/init.sh
+```
+
+**Windows:**
+```cmd
+scripts\init.cmd
+```
+
+This script will:
+* Initialize and update all git submodules
+* Install pre-commit hooks for automatic code formatting with clang-format
+* Set up the vtextedit submodule pre-commit hook
+
+For more development guidelines, see [AGENTS.md](AGENTS.md).
+
 ## License
 VNote is licensed under [GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0). Code base of VNote could be used freely by VNoteX.

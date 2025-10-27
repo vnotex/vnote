@@ -1,183 +1,172 @@
 #ifndef CONFIGMGR_H
 #define CONFIGMGR_H
 
-#include <QObject>
-#include <QSharedPointer>
 #include <QJsonObject>
+#include <QObject>
 #include <QScopedPointer>
+#include <QSharedPointer>
 
 #include "noncopyable.h"
 
 class QTemporaryDir;
 
-namespace vnotex
-{
-    class MainConfig;
-    class SessionConfig;
-    class CoreConfig;
-    class EditorConfig;
-    class WidgetConfig;
+namespace vnotex {
+class MainConfig;
+class SessionConfig;
+class CoreConfig;
+class EditorConfig;
+class WidgetConfig;
 
-    class ConfigMgr : public QObject, private Noncopyable
-    {
-        Q_OBJECT
-    public:
-        enum class Source
-        {
-            Default,
-            App,
-            User,
-            Session
-        };
+class ConfigMgr : public QObject, private Noncopyable {
+  Q_OBJECT
+public:
+  enum class Source { Default, App, User, Session };
 
-        class Settings
-        {
-        public:
-            Settings() = default;
+  class Settings {
+  public:
+    Settings() = default;
 
-            Settings(const QJsonObject &p_jobj)
-                : m_jobj(p_jobj)
-            {
-            }
+    Settings(const QJsonObject &p_jobj) : m_jobj(p_jobj) {}
 
-            const QJsonObject &getJson() const;
+    const QJsonObject &getJson() const;
 
-            void writeToFile(const QString &p_jsonFilePath) const;
+    void writeToFile(const QString &p_jsonFilePath) const;
 
-            static QSharedPointer<Settings> fromFile(const QString &p_jsonFilePath);
+    static QSharedPointer<Settings> fromFile(const QString &p_jsonFilePath);
 
-        private:
-            QJsonObject m_jobj;
-        };
+  private:
+    QJsonObject m_jobj;
+  };
 
-        ~ConfigMgr();
+  ~ConfigMgr();
 
-        static ConfigMgr &getInst(bool p_isUnitTest = false);
+  static ConfigMgr &getInst(bool p_isUnitTest = false);
 
-        MainConfig &getConfig();
+  MainConfig &getConfig();
 
-        SessionConfig &getSessionConfig();
+  SessionConfig &getSessionConfig();
 
-        CoreConfig &getCoreConfig();
+  CoreConfig &getCoreConfig();
 
-        EditorConfig &getEditorConfig();
+  EditorConfig &getEditorConfig();
 
-        WidgetConfig &getWidgetConfig();
+  WidgetConfig &getWidgetConfig();
 
-        QString getAppFolder() const;
+  QString getAppFolder() const;
 
-        QString getUserFolder() const;
+  QString getUserFolder() const;
 
-        QString getLogFile() const;
+  QString getLogFile() const;
 
-        QString getAppThemeFolder() const;
+  QString getAppThemeFolder() const;
 
-        QString getUserThemeFolder() const;
+  QString getUserThemeFolder() const;
 
-        QString getAppTaskFolder() const;
+  QString getAppTaskFolder() const;
 
-        QString getUserTaskFolder() const;
+  QString getUserTaskFolder() const;
 
-        QString getAppWebStylesFolder() const;
+  QString getAppWebStylesFolder() const;
 
-        QString getUserWebStylesFolder() const;
+  QString getUserWebStylesFolder() const;
 
-        QString getAppDocsFolder() const;
+  QString getAppDocsFolder() const;
 
-        QString getUserDocsFolder() const;
+  QString getUserDocsFolder() const;
 
-        QString getAppSyntaxHighlightingFolder() const;
+  QString getAppSyntaxHighlightingFolder() const;
 
-        QString getUserSyntaxHighlightingFolder() const;
+  QString getUserSyntaxHighlightingFolder() const;
 
-        QString getAppDictsFolder() const;
-        QString getUserDictsFolder() const;
+  QString getAppDictsFolder() const;
+  QString getUserDictsFolder() const;
 
-        QString getUserTemplateFolder() const;
+  QString getUserTemplateFolder() const;
 
-        QString getUserSnippetFolder() const;
+  QString getUserSnippetFolder() const;
 
-        // web/css/user.css.
-        QString getUserMarkdownUserStyleFile() const;
+  // web/css/user.css.
+  QString getUserMarkdownUserStyleFile() const;
 
-        // If @p_filePath is absolute, just return it.
-        // Otherwise, first try to find it in user folder, then in app folder.
-        QString getUserOrAppFile(const QString &p_filePath) const;
+  // If @p_filePath is absolute, just return it.
+  // Otherwise, first try to find it in user folder, then in app folder.
+  QString getUserOrAppFile(const QString &p_filePath) const;
 
-        QString getConfigFilePath(Source p_src) const;
+  QString getConfigFilePath(Source p_src) const;
 
-        // Parse exp like "[main|session].core.shortcuts.FullScreen" and return the config value.
-        QJsonValue parseAndReadConfig(const QString &p_exp) const;
+  // Parse exp like "[main|session].core.shortcuts.FullScreen" and return the config value.
+  QJsonValue parseAndReadConfig(const QString &p_exp) const;
 
-        // Called at boostrap without QApplication instance.
-        static QString locateSessionConfigFilePathAtBootstrap();
+  // Called at boostrap without QApplication instance.
+  static QString locateSessionConfigFilePathAtBootstrap();
 
-        static QString getApplicationFilePath();
+  static QString getApplicationFilePath();
 
-        static QString getApplicationDirPath();
+  static QString getApplicationDirPath();
 
-        static QString getDocumentOrHomePath();
+  static QString getDocumentOrHomePath();
 
-        static QString getApplicationVersion();
+  static QString getApplicationVersion();
 
-        static void initAppPrefixPath();
+  static void initAppPrefixPath();
 
-        static void initForUnitTest();
+  static void initForUnitTest();
 
-        static const QString c_orgName;
+  static const QString c_orgName;
 
-        static const QString c_appName;
+  static const QString c_appName;
 
-    public:
-        // Used by IConfig.
-        QSharedPointer<Settings> getSettings(Source p_src) const;
+public:
+  // Used by IConfig.
+  QSharedPointer<Settings> getSettings(Source p_src) const;
 
-        void writeUserSettings(const QJsonObject &p_jobj);
+  void writeUserSettings(const QJsonObject &p_jobj);
 
-        void writeSessionSettings(const QJsonObject &p_jobj);
+  void writeSessionSettings(const QJsonObject &p_jobj);
 
-    signals:
-        void editorConfigChanged();
+signals:
+  void editorConfigChanged();
 
-    private:
-        ConfigMgr(bool p_isUnitTest, QObject *p_parent = nullptr);
+private:
+  ConfigMgr(bool p_isUnitTest, QObject *p_parent = nullptr);
 
-        // Locate the folder path where the config file exists.
-        void locateConfigFolder();
+  // Locate the folder path where the config file exists.
+  void locateConfigFolder();
 
-        // Check if app config exists and is updated.
-        // Update it if in need.
-        // Return true if there is update.
-        bool checkAppConfig();
+  // Check if app config exists and is updated.
+  // Update it if in need.
+  // Return true if there is update.
+  bool checkAppConfig();
 
-        void checkUserConfig();
+  void checkUserConfig();
 
-        static QString getDefaultConfigFilePath();
+  static QString getDefaultConfigFilePath();
 
-        QScopedPointer<MainConfig> m_config;;
+  QScopedPointer<MainConfig> m_config;
+  ;
 
-        // Session config.
-        QScopedPointer<SessionConfig> m_sessionConfig;
+  // Session config.
+  QScopedPointer<SessionConfig> m_sessionConfig;
 
-        // Absolute path of the app config folder.
-        QString m_appConfigFolderPath;
+  // Absolute path of the app config folder.
+  QString m_appConfigFolderPath;
 
-        // Absolute path of the user config folder.
-        QString m_userConfigFolderPath;
+  // Absolute path of the user config folder.
+  QString m_userConfigFolderPath;
 
-        // In UnitTest, we use a temp dir to hold the user files and app files.
-        QScopedPointer<QTemporaryDir> m_dirForUnitTest;
+  // In UnitTest, we use a temp dir to hold the user files and app files.
+  QScopedPointer<QTemporaryDir> m_dirForUnitTest;
 
-        // Name of the core config file.
-        static const QString c_configFileName;
+  // Name of the core config file.
+  static const QString c_configFileName;
 
-        // Name of the session config file.
-        static const QString c_sessionFileName;
+  // Name of the session config file.
+  static const QString c_sessionFileName;
 
-        static const QString c_userFilesFolder;
+  static const QString c_userFilesFolder;
 
-        static const QString c_appFilesFolder;
-    };
-} // ns vnotex
+  static const QString c_appFilesFolder;
+};
+} // namespace vnotex
 
 #endif // CONFIGMGR_H

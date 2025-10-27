@@ -3,23 +3,21 @@
 
 #include "lineedit.h"
 
-namespace vnotex
-{
-    // A line edit with snippet support.
-    class LineEditWithSnippet : public LineEdit
-    {
-        Q_OBJECT
-    public:
-        explicit LineEditWithSnippet(QWidget *p_parent = nullptr);
+namespace vnotex {
+// A line edit with snippet support.
+class LineEditWithSnippet : public LineEdit {
+  Q_OBJECT
+public:
+  explicit LineEditWithSnippet(QWidget *p_parent = nullptr);
 
-        LineEditWithSnippet(const QString &p_contents, QWidget *p_parent = nullptr);
+  LineEditWithSnippet(const QString &p_contents, QWidget *p_parent = nullptr);
 
-        // Get text with snippets evaluated.
-        QString evaluatedText() const;
+  // Get text with snippets evaluated.
+  QString evaluatedText() const;
 
-    private:
-        void setTips();
-    };
-}
+private:
+  void setTips();
+};
+} // namespace vnotex
 
 #endif // LINEEDITWITHSNIPPET_H

@@ -3,32 +3,30 @@
 
 #include "scrolldialog.h"
 
-namespace vnotex
-{
-    class SnippetInfoWidget;
+namespace vnotex {
+class SnippetInfoWidget;
 
-    class NewSnippetDialog : public ScrollDialog
-    {
-        Q_OBJECT
-    public:
-        explicit NewSnippetDialog(QWidget *p_parent = nullptr);
+class NewSnippetDialog : public ScrollDialog {
+  Q_OBJECT
+public:
+  explicit NewSnippetDialog(QWidget *p_parent = nullptr);
 
-    protected:
-        void acceptedButtonClicked() Q_DECL_OVERRIDE;
+protected:
+  void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void setupSnippetInfoWidget(QWidget *p_parent);
+  void setupSnippetInfoWidget(QWidget *p_parent);
 
-        bool newSnippet();
+  bool newSnippet();
 
-        bool validateNameInput(QString &p_msg);
+  bool validateNameInput(QString &p_msg);
 
-        bool validateInputs();
+  bool validateInputs();
 
-        SnippetInfoWidget *m_infoWidget = nullptr;
-    };
-}
+  SnippetInfoWidget *m_infoWidget = nullptr;
+};
+} // namespace vnotex
 
 #endif // NEWSNIPPETDIALOG_H

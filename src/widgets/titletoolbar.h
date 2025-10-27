@@ -1,39 +1,35 @@
 #ifndef TITLETOOLBAR_H
 #define TITLETOOLBAR_H
 
-#include <QToolBar>
 #include <QIcon>
+#include <QToolBar>
 
-namespace vnotex
-{
-    class TitleToolBar : public QToolBar
-    {
-        Q_OBJECT
-    public:
-        explicit TitleToolBar(QWidget *p_parent = nullptr);
+namespace vnotex {
+class TitleToolBar : public QToolBar {
+  Q_OBJECT
+public:
+  explicit TitleToolBar(QWidget *p_parent = nullptr);
 
-        TitleToolBar(const QString &p_title, QWidget *p_parent = nullptr);
+  TitleToolBar(const QString &p_title, QWidget *p_parent = nullptr);
 
-        void addTitleBarIcons(const QIcon &p_minimizeIcon,
-                              const QIcon &p_maximizeIcon,
-                              const QIcon &p_restoreIcon,
-                              const QIcon &p_closeIcon);
+  void addTitleBarIcons(const QIcon &p_minimizeIcon, const QIcon &p_maximizeIcon,
+                        const QIcon &p_restoreIcon, const QIcon &p_closeIcon);
 
-        void updateMaximizeAct();
+  void updateMaximizeAct();
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void maximizeRestoreWindow();
+  void maximizeRestoreWindow();
 
-        QWidget *m_window = nullptr;
+  QWidget *m_window = nullptr;
 
-        QAction *m_maximizeAct = nullptr;
+  QAction *m_maximizeAct = nullptr;
 
-        QIcon m_maximizeIcon;
+  QIcon m_maximizeIcon;
 
-        QIcon m_restoreIcon;
-    };
-}
+  QIcon m_restoreIcon;
+};
+} // namespace vnotex
 
 #endif // VTOOLBAR_H

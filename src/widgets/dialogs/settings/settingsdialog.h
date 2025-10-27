@@ -11,64 +11,62 @@ class QTreeWidgetItem;
 class QScrollArea;
 class QTimer;
 
-namespace vnotex
-{
-    class TreeWidget;
-    class SettingsPage;
+namespace vnotex {
+class TreeWidget;
+class SettingsPage;
 
-    class SettingsDialog : public Dialog
-    {
-        Q_OBJECT
-    public:
-        explicit SettingsDialog(QWidget *p_parent = nullptr);
+class SettingsDialog : public Dialog {
+  Q_OBJECT
+public:
+  explicit SettingsDialog(QWidget *p_parent = nullptr);
 
-    protected:
-        void acceptedButtonClicked() Q_DECL_OVERRIDE;
+protected:
+  void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
-        void resetButtonClicked() Q_DECL_OVERRIDE;
+  void resetButtonClicked() Q_DECL_OVERRIDE;
 
-        void appliedButtonClicked() Q_DECL_OVERRIDE;
+  void appliedButtonClicked() Q_DECL_OVERRIDE;
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent);
+  void setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent);
 
-        void setupPages();
+  void setupPages();
 
-        void setupPage(QTreeWidgetItem *p_item, SettingsPage *p_page);
+  void setupPage(QTreeWidgetItem *p_item, SettingsPage *p_page);
 
-        SettingsPage *itemPage(QTreeWidgetItem *p_item) const;
+  SettingsPage *itemPage(QTreeWidgetItem *p_item) const;
 
-        void setChangesUnsaved(bool p_unsaved);
+  void setChangesUnsaved(bool p_unsaved);
 
-        bool savePages();
+  bool savePages();
 
-        // @p_func: return true to continue the iteration.
-        void forEachPage(const std::function<bool(SettingsPage *)> &p_func);
+  // @p_func: return true to continue the iteration.
+  void forEachPage(const std::function<bool(SettingsPage *)> &p_func);
 
-        QTreeWidgetItem *addPage(SettingsPage *p_page);
+  QTreeWidgetItem *addPage(SettingsPage *p_page);
 
-        QTreeWidgetItem *addSubPage(SettingsPage *p_page, QTreeWidgetItem *p_parentItem);
+  QTreeWidgetItem *addSubPage(SettingsPage *p_page, QTreeWidgetItem *p_parentItem);
 
-        void search();
+  void search();
 
-        void checkOnFinish();
+  void checkOnFinish();
 
-        QLineEdit *m_searchEdit = nullptr;
+  QLineEdit *m_searchEdit = nullptr;
 
-        TreeWidget *m_pageExplorer = nullptr;
+  TreeWidget *m_pageExplorer = nullptr;
 
-        QScrollArea *m_scrollArea = nullptr;
+  QScrollArea *m_scrollArea = nullptr;
 
-        QStackedLayout *m_pageLayout = nullptr;
+  QStackedLayout *m_pageLayout = nullptr;
 
-        bool m_changesUnsaved = false;
+  bool m_changesUnsaved = false;
 
-        bool m_ready = false;
+  bool m_ready = false;
 
-        QTimer *m_searchTimer = nullptr;
-    };
-}
+  QTimer *m_searchTimer = nullptr;
+};
+} // namespace vnotex
 
 #endif // SETTINGSDIALOG_H

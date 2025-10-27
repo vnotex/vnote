@@ -3,90 +3,86 @@
 
 #include "isearchengine.h"
 
-#include <QThread>
-#include <QRegularExpression>
 #include <QAtomicInt>
+#include <QRegularExpression>
+#include <QThread>
 #include <QVector>
 
 #include <utils/asyncworker.h>
 
-#include "searchtoken.h"
 #include "searchdata.h"
 #include "searchresultitem.h"
+#include "searchtoken.h"
 
-namespace vnotex
-{
-    class FileSearchEngineWorker : public AsyncWorker
-    {
-        Q_OBJECT
-        friend class FileSearchEngine;
-    public:
-        explicit FileSearchEngineWorker(QObject *p_parent = nullptr);
+namespace vnotex {
+class FileSearchEngineWorker : public AsyncWorker {
+  Q_OBJECT
+  friend class FileSearchEngine;
 
-        ~FileSearchEngineWorker() = default;
+public:
+  explicit FileSearchEngineWorker(QObject *p_parent = nullptr);
 
-        void setData(const QVector<SearchSecondPhaseItem> &p_items,
-                     const QSharedPointer<SearchOption> &p_option,
-                     const SearchToken &p_token);
+  ~FileSearchEngineWorker() = default;
 
-    signals:
-        void resultItemsReady(const QVector<QSharedPointer<SearchResultItem>> &p_items);
+  void setData(const QVector<SearchSecondPhaseItem> &p_items,
+               const QSharedPointer<SearchOption> &p_option, const SearchToken &p_token);
 
-    protected:
-        void run() Q_DECL_OVERRIDE;
+signals:
+  void resultItemsReady(const QVector<QSharedPointer<SearchResultItem>> &p_items);
 
-    private:
-        void appendError(const QString &p_err);
+protected:
+  void run() Q_DECL_OVERRIDE;
 
-        void searchFile(const QString &p_filePath, const QString &p_displayPath);
+private:
+  void appendError(const QString &p_err);
 
-        void processBatchResults();
+  void searchFile(const QString &p_filePath, const QString &p_displayPath);
 
-        QVector<SearchSecondPhaseItem> m_items;
+  void processBatchResults();
 
-        SearchToken m_token;
+  QVector<SearchSecondPhaseItem> m_items;
 
-        QSharedPointer<SearchOption> m_option;
+  SearchToken m_token;
 
-        SearchState m_state = SearchState::Idle;
+  QSharedPointer<SearchOption> m_option;
 
-        QStringList m_errors;
+  SearchState m_state = SearchState::Idle;
 
-        QVector<QSharedPointer<SearchResultItem>> m_results;
-    };
+  QStringList m_errors;
 
-    class FileSearchEngine : public ISearchEngine
-    {
-        Q_OBJECT
-    public:
-        FileSearchEngine();
+  QVector<QSharedPointer<SearchResultItem>> m_results;
+};
 
-        ~FileSearchEngine();
+class FileSearchEngine : public ISearchEngine {
+  Q_OBJECT
+public:
+  FileSearchEngine();
 
-        void search(const QSharedPointer<SearchOption> &p_option,
-                    const SearchToken &p_token,
-                    const QVector<SearchSecondPhaseItem> &p_items) Q_DECL_OVERRIDE;
+  ~FileSearchEngine();
 
-        void stop() Q_DECL_OVERRIDE;
+  void search(const QSharedPointer<SearchOption> &p_option, const SearchToken &p_token,
+              const QVector<SearchSecondPhaseItem> &p_items) Q_DECL_OVERRIDE;
 
-        void clear() Q_DECL_OVERRIDE;
+  void stop() Q_DECL_OVERRIDE;
 
-    private slots:
-        void handleWorkerFinished();
+  void clear() Q_DECL_OVERRIDE;
 
-    private:
-        void clearWorkers();
+private slots:
+  void handleWorkerFinished();
 
-        // Need non-virtual version of this.
-        void stopInternal();
+private:
+  void clearWorkers();
 
-        // Need non-virtual version of this.
-        void clearInternal();
+  // Need non-virtual version of this.
+  void stopInternal();
 
-        int m_numOfFinishedWorkers = 0;
+  // Need non-virtual version of this.
+  void clearInternal();
 
-        QVector<QSharedPointer<FileSearchEngineWorker>> m_workers;
-    };
-}
+  int m_numOfFinishedWorkers = 0;
+
+  QVector<QSharedPointer<FileSearchEngineWorker>> m_workers;
+};
+} // namespace vnotex
 
 #endif // SEARCHENGINE_H

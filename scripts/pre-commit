@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Pre-commit hook to format C++ files with clang-format
+# Excludes third-party library folders
+
+# Folders to exclude (third-party sources)
+EXCLUDE_DIRS="libs"
+
+# Get list of staged C++ files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|h|c|cc|cxx|hpp)$')
+
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+# Check if clang-format is available
+if ! command -v clang-format >/dev/null 2>&1; then
+  echo "Warning: clang-format not found. Skipping formatting."
+  echo "Install clang-format to enable automatic formatting."
+  exit 0
+fi
+
+# Format each file that is not in excluded directories
+for FILE in $STAGED_FILES; do
+  # Check if file is in excluded directory
+  EXCLUDED=0
+  for EXCLUDE_DIR in $EXCLUDE_DIRS; do
+    case "$FILE" in
+      $EXCLUDE_DIR/*)
+        EXCLUDED=1
+        break
+        ;;
+    esac
+  done
+
+  if [ $EXCLUDED -eq 0 ]; then
+    echo "Formatting: $FILE"
+    clang-format -i "$FILE"
+    git add "$FILE"
+  else
+    echo "Skipping (third-party): $FILE"
+  fi
+done
+
+exit 0

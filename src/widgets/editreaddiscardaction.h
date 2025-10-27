@@ -5,39 +5,28 @@
 
 #include <QScopedPointer>
 
-namespace vnotex
-{
-    class EditReadDiscardAction : public BiAction
-    {
-        Q_OBJECT
-    public:
-        enum Action
-        {
-            Edit,
-            Read,
-            Discard
-        };
+namespace vnotex {
+class EditReadDiscardAction : public BiAction {
+  Q_OBJECT
+public:
+  enum Action { Edit, Read, Discard };
 
-        EditReadDiscardAction(const QIcon &p_editIcon,
-                              const QString &p_editText,
-                              const QIcon &p_readIcon,
-                              const QString &p_readText,
-                              const QIcon &p_discardIcon,
-                              const QString &p_discardText,
-                              QObject *p_parent = nullptr);
+  EditReadDiscardAction(const QIcon &p_editIcon, const QString &p_editText, const QIcon &p_readIcon,
+                        const QString &p_readText, const QIcon &p_discardIcon,
+                        const QString &p_discardText, QObject *p_parent = nullptr);
 
-        ~EditReadDiscardAction();
+  ~EditReadDiscardAction();
 
-        QAction *getDiscardAction() const;
+  QAction *getDiscardAction() const;
 
-    signals:
-        void triggered(Action p_act);
+signals:
+  void triggered(Action p_act);
 
-    private:
-        QScopedPointer<QMenu> m_readMenu;
+private:
+  QScopedPointer<QMenu> m_readMenu;
 
-        QAction *m_discardAct = nullptr;
-    };
-}
+  QAction *m_discardAct = nullptr;
+};
+} // namespace vnotex
 
 #endif // EDITREADDISCARDACTION_H

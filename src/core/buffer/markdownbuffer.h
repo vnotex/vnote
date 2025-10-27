@@ -3,46 +3,45 @@
 
 #include "buffer.h"
 
-#include <QVector>
 #include <QHash>
+#include <QVector>
 
 #include <vtextedit/markdownutils.h>
 
-namespace vnotex
-{
-    class MarkdownBuffer : public Buffer
-    {
-        Q_OBJECT
-    public:
-        MarkdownBuffer(const BufferParameters &p_parameters,
-                       QObject *p_parent = nullptr);
+namespace vnotex {
+class MarkdownBuffer : public Buffer {
+  Q_OBJECT
+public:
+  MarkdownBuffer(const BufferParameters &p_parameters, QObject *p_parent = nullptr);
 
-        QString insertImage(const QString &p_srcImagePath, const QString &p_imageFileName) Q_DECL_OVERRIDE;
+  QString insertImage(const QString &p_srcImagePath,
+                      const QString &p_imageFileName) Q_DECL_OVERRIDE;
 
-        QString insertImage(const QImage &p_image, const QString &p_imageFileName) Q_DECL_OVERRIDE;
+  QString insertImage(const QImage &p_image, const QString &p_imageFileName) Q_DECL_OVERRIDE;
 
-        void removeImage(const QString &p_imagePath) Q_DECL_OVERRIDE;
+  void removeImage(const QString &p_imagePath) Q_DECL_OVERRIDE;
 
-        void addInsertedImage(const QString &p_imagePath, const QString &p_urlInLink);
+  void addInsertedImage(const QString &p_imagePath, const QString &p_urlInLink);
 
-        // Clear obsolete images.
-        // Won't delete images, just return a list of obsolete images path.
-        // Will re-init m_initialImages and clear m_insertedImages.
-        // Return [ImagePath] -> IsRemote.
-        QHash<QString, bool> clearObsoleteImages();
+  // Clear obsolete images.
+  // Won't delete images, just return a list of obsolete images path.
+  // Will re-init m_initialImages and clear m_insertedImages.
+  // Return [ImagePath] -> IsRemote.
+  QHash<QString, bool> clearObsoleteImages();
 
-    protected:
-        ViewWindow *createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras, QWidget *p_parent) Q_DECL_OVERRIDE;
+protected:
+  ViewWindow *createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras,
+                                       QWidget *p_parent) Q_DECL_OVERRIDE;
 
-    private:
-        void fetchInitialImages();
+private:
+  void fetchInitialImages();
 
-        // Images referenced in the file before opening this buffer.
-        QVector<vte::MarkdownLink> m_initialImages;
+  // Images referenced in the file before opening this buffer.
+  QVector<vte::MarkdownLink> m_initialImages;
 
-        // Images newly inserted during this buffer's lifetime.
-        QVector<vte::MarkdownLink> m_insertedImages;
-    };
-} // ns vnotex
+  // Images newly inserted during this buffer's lifetime.
+  QVector<vte::MarkdownLink> m_insertedImages;
+};
+} // namespace vnotex
 
 #endif // MARKDOWNBUFFER_H

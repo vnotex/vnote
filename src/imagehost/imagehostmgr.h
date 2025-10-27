@@ -8,54 +8,51 @@
 
 #include "imagehost.h"
 
-namespace vnotex
-{
-    class ImageHostMgr : public QObject, private Noncopyable
-    {
-        Q_OBJECT
-    public:
-        static ImageHostMgr &getInst()
-        {
-            static ImageHostMgr inst;
-            return inst;
-        }
+namespace vnotex {
+class ImageHostMgr : public QObject, private Noncopyable {
+  Q_OBJECT
+public:
+  static ImageHostMgr &getInst() {
+    static ImageHostMgr inst;
+    return inst;
+  }
 
-        ImageHost *find(const QString &p_name) const;
+  ImageHost *find(const QString &p_name) const;
 
-        ImageHost *findByImageUrl(const QString &p_url) const;
+  ImageHost *findByImageUrl(const QString &p_url) const;
 
-        ImageHost *newImageHost(ImageHost::Type p_type, const QString &p_name);
+  ImageHost *newImageHost(ImageHost::Type p_type, const QString &p_name);
 
-        const QVector<ImageHost *> &getImageHosts() const;
+  const QVector<ImageHost *> &getImageHosts() const;
 
-        void removeImageHost(ImageHost *p_host);
+  void removeImageHost(ImageHost *p_host);
 
-        bool renameImageHost(ImageHost *p_host, const QString &p_newName);
+  bool renameImageHost(ImageHost *p_host, const QString &p_newName);
 
-        void saveImageHosts();
+  void saveImageHosts();
 
-        ImageHost *getDefaultImageHost() const;
+  ImageHost *getDefaultImageHost() const;
 
-        void setDefaultImageHost(const QString &p_name);
+  void setDefaultImageHost(const QString &p_name);
 
-    signals:
-        void imageHostChanged();
+signals:
+  void imageHostChanged();
 
-    private:
-        ImageHostMgr();
+private:
+  ImageHostMgr();
 
-        void loadImageHosts();
+  void loadImageHosts();
 
-        void add(ImageHost *p_host);
+  void add(ImageHost *p_host);
 
-        void saveDefaultImageHost();
+  void saveDefaultImageHost();
 
-        static ImageHost *createImageHost(ImageHost::Type p_type, QObject *p_parent);
+  static ImageHost *createImageHost(ImageHost::Type p_type, QObject *p_parent);
 
-        QVector<ImageHost *> m_hosts;
+  QVector<ImageHost *> m_hosts;
 
-        ImageHost *m_defaultHost = nullptr;
-    };
-}
+  ImageHost *m_defaultHost = nullptr;
+};
+} // namespace vnotex
 
 #endif // IMAGEHOSTMGR_H

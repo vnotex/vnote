@@ -1,32 +1,28 @@
 #ifndef HISTORYITEM_H
 #define HISTORYITEM_H
 
-#include <QString>
-#include <QJsonObject>
 #include <QDateTime>
+#include <QJsonObject>
+#include <QString>
 
-namespace vnotex
-{
-    struct HistoryItem
-    {
-        HistoryItem() = default;
+namespace vnotex {
+struct HistoryItem {
+  HistoryItem() = default;
 
-        HistoryItem(const QString &p_path,
-                    int p_lineNumber,
-                    const QDateTime &p_lastAccessedTimeUtc);
+  HistoryItem(const QString &p_path, int p_lineNumber, const QDateTime &p_lastAccessedTimeUtc);
 
-        QJsonObject toJson() const;
+  QJsonObject toJson() const;
 
-        void fromJson(const QJsonObject &p_jobj);
+  void fromJson(const QJsonObject &p_jobj);
 
-        // Relative path if it is a node within a notebook.
-        QString m_path;
+  // Relative path if it is a node within a notebook.
+  QString m_path;
 
-        // 0-based.
-        int m_lineNumber = -1;
+  // 0-based.
+  int m_lineNumber = -1;
 
-        QDateTime m_lastAccessedTimeUtc;
-    };
-}
+  QDateTime m_lastAccessedTimeUtc;
+};
+} // namespace vnotex
 
 #endif // HISTORYITEM_H

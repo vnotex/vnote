@@ -3,46 +3,33 @@
 
 #include <QString>
 
-namespace vnotex
-{
-    class Node;
+namespace vnotex {
+class Node;
 
-    // A unique locator for both internal Node and external file.
-    class FileLocator
-    {
-    public:
-        FileLocator(Node *p_node)
-            : m_node(p_node)
-        {
-        }
+// A unique locator for both internal Node and external file.
+class FileLocator {
+public:
+  FileLocator(Node *p_node) : m_node(p_node) {}
 
-        FileLocator(const QString &p_filePath)
-            : m_filePath(p_filePath)
-        {
-        }
+  FileLocator(const QString &p_filePath) : m_filePath(p_filePath) {}
 
-        bool isNode() const
-        {
-            return m_node;
-        }
+  bool isNode() const { return m_node; }
 
-        Node *node() const
-        {
-            Q_ASSERT(isNode());
-            return m_node;
-        }
+  Node *node() const {
+    Q_ASSERT(isNode());
+    return m_node;
+  }
 
-        const QString &filePath() const
-        {
-            Q_ASSERT(!isNode());
-            return m_filePath;
-        }
+  const QString &filePath() const {
+    Q_ASSERT(!isNode());
+    return m_filePath;
+  }
 
-    private:
-        Node *m_node = nullptr;
+private:
+  Node *m_node = nullptr;
 
-        QString m_filePath;
-    };
-}
+  QString m_filePath;
+};
+} // namespace vnotex
 
 #endif // FILELOCATOR_H

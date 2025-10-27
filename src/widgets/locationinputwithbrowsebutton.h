@@ -6,32 +6,30 @@
 class QLineEdit;
 class QPushButton;
 
-namespace vnotex
-{
-    class LocationInputWithBrowseButton : public QWidget
-    {
-        Q_OBJECT
-    public:
-        explicit LocationInputWithBrowseButton(QWidget *p_parent = nullptr);
+namespace vnotex {
+class LocationInputWithBrowseButton : public QWidget {
+  Q_OBJECT
+public:
+  explicit LocationInputWithBrowseButton(QWidget *p_parent = nullptr);
 
-        QString text() const;
+  QString text() const;
 
-        void setText(const QString &p_text);
+  void setText(const QString &p_text);
 
-        QString toolTip() const;
+  QString toolTip() const;
 
-        void setToolTip(const QString &p_tip);
+  void setToolTip(const QString &p_tip);
 
-        void setPlaceholderText(const QString &p_text);
+  void setPlaceholderText(const QString &p_text);
 
-    signals:
-        void clicked();
+signals:
+  void clicked();
 
-        void textChanged(const QString &p_text);
+  void textChanged(const QString &p_text);
 
-    private:
-        QLineEdit *m_lineEdit = nullptr;
-    };
-}
+private:
+  QLineEdit *m_lineEdit = nullptr;
+};
+} // namespace vnotex
 
 #endif // LOCATIONINPUTWITHBROWSEBUTTON_H

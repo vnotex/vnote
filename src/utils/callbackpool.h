@@ -5,25 +5,23 @@
 
 #include <QMap>
 
-namespace vnotex
-{
-    // Manage callbacks with id.
-    class CallbackPool
-    {
-    public:
-        typedef std::function<void(void *)> Callback;
+namespace vnotex {
+// Manage callbacks with id.
+class CallbackPool {
+public:
+  typedef std::function<void(void *)> Callback;
 
-        CallbackPool() = default;
+  CallbackPool() = default;
 
-        quint64 add(const Callback &p_callback);
+  quint64 add(const Callback &p_callback);
 
-        void call(quint64 p_id, void *p_data);
+  void call(quint64 p_id, void *p_data);
 
-        void clear();
+  void clear();
 
-    private:
-        QMap<quint64, Callback> m_pool;
-    };
-}
+private:
+  QMap<quint64, Callback> m_pool;
+};
+} // namespace vnotex
 
 #endif // CALLBACKPOOL_H

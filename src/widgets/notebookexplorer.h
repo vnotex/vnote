@@ -10,95 +10,93 @@
 
 class QMenu;
 
-namespace vnotex
-{
-    class Notebook;
-    class TitleBar;
-    class NotebookSelector;
-    class NotebookNodeExplorer;
-    class Node;
+namespace vnotex {
+class Notebook;
+class TitleBar;
+class NotebookSelector;
+class NotebookNodeExplorer;
+class Node;
 
-    class NotebookExplorer : public QFrame
-    {
-        Q_OBJECT
-    public:
-        explicit NotebookExplorer(QWidget *p_parent = nullptr);
+class NotebookExplorer : public QFrame {
+  Q_OBJECT
+public:
+  explicit NotebookExplorer(QWidget *p_parent = nullptr);
 
-        const QSharedPointer<Notebook> &currentNotebook() const;
+  const QSharedPointer<Notebook> &currentNotebook() const;
 
-        Node *currentExploredFolderNode() const;
+  Node *currentExploredFolderNode() const;
 
-        Node *currentExploredNode() const;
+  Node *currentExploredNode() const;
 
-        QByteArray saveState() const;
+  QByteArray saveState() const;
 
-        void restoreState(const QByteArray &p_data);
+  void restoreState(const QByteArray &p_data);
 
-    public slots:
-        void newNotebook();
+public slots:
+  void newNotebook();
 
-        void newNotebookFromFolder();
+  void newNotebookFromFolder();
 
-        void importNotebook();
+  void importNotebook();
 
-        void loadNotebooks();
+  void loadNotebooks();
 
-        void reloadNotebook(const Notebook *p_notebook);
+  void reloadNotebook(const Notebook *p_notebook);
 
-        void setCurrentNotebook(const QSharedPointer<Notebook> &p_notebook);
+  void setCurrentNotebook(const QSharedPointer<Notebook> &p_notebook);
 
-        void newFolder();
+  void newFolder();
 
-        void newNote();
+  void newNote();
 
-        void newQuickNote();
+  void newQuickNote();
 
-        void importFile();
+  void importFile();
 
-        void importFolder();
+  void importFolder();
 
-        void importLegacyNotebook();
+  void importLegacyNotebook();
 
-        void locateNode(Node *p_node);
+  void locateNode(Node *p_node);
 
-        void manageNotebooks();
+  void manageNotebooks();
 
-    signals:
-        void notebookActivated(ID p_notebookId);
+signals:
+  void notebookActivated(ID p_notebookId);
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        TitleBar *setupTitleBar(QWidget *p_parent = nullptr);
+  TitleBar *setupTitleBar(QWidget *p_parent = nullptr);
 
-        Node *checkNotebookAndGetCurrentExploredFolderNode() const;
+  Node *checkNotebookAndGetCurrentExploredFolderNode() const;
 
-        void setupViewMenu(QMenu *p_menu, bool p_isNotebookView);
+  void setupViewMenu(QMenu *p_menu, bool p_isNotebookView);
 
-        void setupRecycleBinMenu(QMenu *p_menu);
+  void setupRecycleBinMenu(QMenu *p_menu);
 
-        void setupExploreModeMenu(TitleBar *p_titleBar);
+  void setupExploreModeMenu(TitleBar *p_titleBar);
 
-        void saveSession();
+  void saveSession();
 
-        void loadSession();
+  void loadSession();
 
-        void updateSession();
+  void updateSession();
 
-        void recoverSession();
+  void recoverSession();
 
-        void rebuildDatabase();
+  void rebuildDatabase();
 
-        NotebookSelector *m_selector = nullptr;
+  NotebookSelector *m_selector = nullptr;
 
-        NotebookNodeExplorer *m_nodeExplorer = nullptr;
+  NotebookNodeExplorer *m_nodeExplorer = nullptr;
 
-        QSharedPointer<Notebook> m_currentNotebook;
+  QSharedPointer<Notebook> m_currentNotebook;
 
-        NotebookExplorerSession m_session;
+  NotebookExplorerSession m_session;
 
-        bool m_sessionLoaded = false;
-    };
-} // ns vnotex
+  bool m_sessionLoaded = false;
+};
+} // namespace vnotex
 
 #endif // NOTEBOOKEXPLORER_H

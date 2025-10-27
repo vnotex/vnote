@@ -3,15 +3,13 @@
 
 #include <QStringList>
 
-namespace vnotex
-{
-    class QuickAccessHelper
-    {
-    public:
-        QuickAccessHelper() = delete;
+namespace vnotex {
+class QuickAccessHelper {
+public:
+  QuickAccessHelper() = delete;
 
-        static void pinToQuickAccess(const QStringList &p_files);
-    };
-}
+  static void pinToQuickAccess(const QStringList &p_files);
+};
+} // namespace vnotex
 
 #endif // QUICKACCESSHELPER_H
