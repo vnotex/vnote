@@ -7,17 +7,15 @@ class QTreeWidget;
 class QLabel;
 class QString;
 
-namespace vnotex
-{
-    class EntryWidgetFactory
-    {
-    public:
-        EntryWidgetFactory() = delete;
+namespace vnotex {
+class EntryWidgetFactory {
+public:
+  EntryWidgetFactory() = delete;
 
-        static QSharedPointer<QTreeWidget> createTreeWidget(int p_columnCount);
+  static QSharedPointer<QTreeWidget> createTreeWidget(int p_columnCount);
 
-        static QSharedPointer<QLabel> createLabel(const QString &p_info);
-    };
-}
+  static QSharedPointer<QLabel> createLabel(const QString &p_info);
+};
+} // namespace vnotex
 
 #endif // ENTRYWIDGETFACTORY_H

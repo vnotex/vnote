@@ -1,16 +1,15 @@
 #ifndef FRAMELESSMAINWINDOWIMPL_H
 #define FRAMELESSMAINWINDOWIMPL_H
 
-#include "framelessmainwindowwin.h"
 #include "framelessmainwindowlinux.h"
+#include "framelessmainwindowwin.h"
 
-namespace vnotex
-{
+namespace vnotex {
 #ifdef Q_OS_WIN
-    typedef FramelessMainWindowWin FramelessMainWindowImpl;
+typedef FramelessMainWindowWin FramelessMainWindowImpl;
 #else
-    typedef FramelessMainWindowLinux FramelessMainWindowImpl;
+typedef FramelessMainWindowLinux FramelessMainWindowImpl;
 #endif
-}
+} // namespace vnotex
 
 #endif // FRAMELESSMAINWINDOWIMPL_H

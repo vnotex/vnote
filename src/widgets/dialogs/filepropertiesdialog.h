@@ -5,25 +5,23 @@
 
 class QLineEdit;
 
-namespace vnotex
-{
-    class FilePropertiesDialog : public ScrollDialog
-    {
-        Q_OBJECT
-    public:
-        FilePropertiesDialog(const QString &p_path, QWidget *p_parent = nullptr);
+namespace vnotex {
+class FilePropertiesDialog : public ScrollDialog {
+  Q_OBJECT
+public:
+  FilePropertiesDialog(const QString &p_path, QWidget *p_parent = nullptr);
 
-        QString getFileName() const;
+  QString getFileName() const;
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void setupNameLineEdit(QWidget *p_parent);
+  void setupNameLineEdit(QWidget *p_parent);
 
-        QString m_path;
+  QString m_path;
 
-        QLineEdit *m_nameLineEdit = nullptr;
-    };
-}
+  QLineEdit *m_nameLineEdit = nullptr;
+};
+} // namespace vnotex
 
 #endif // FILEPROPERTIESDIALOG_H

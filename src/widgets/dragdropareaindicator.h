@@ -3,40 +3,36 @@
 
 #include <QFrame>
 
-namespace vnotex
-{
-    class DragDropAreaIndicatorInterface
-    {
-    public:
-        virtual ~DragDropAreaIndicatorInterface() {}
+namespace vnotex {
+class DragDropAreaIndicatorInterface {
+public:
+  virtual ~DragDropAreaIndicatorInterface() {}
 
-        virtual bool handleDragEnterEvent(QDragEnterEvent *p_event) = 0;
+  virtual bool handleDragEnterEvent(QDragEnterEvent *p_event) = 0;
 
-        virtual bool handleDropEvent(QDropEvent *p_event) = 0;
-    };
+  virtual bool handleDropEvent(QDropEvent *p_event) = 0;
+};
 
-    class DragDropAreaIndicator : public QFrame
-    {
-        Q_OBJECT
-    public:
-        DragDropAreaIndicator(DragDropAreaIndicatorInterface *p_interface,
-                              const QString &p_text,
-                              QWidget *p_parent = nullptr);
+class DragDropAreaIndicator : public QFrame {
+  Q_OBJECT
+public:
+  DragDropAreaIndicator(DragDropAreaIndicatorInterface *p_interface, const QString &p_text,
+                        QWidget *p_parent = nullptr);
 
-    protected:
-        // To accept specific drop.
-        void dragEnterEvent(QDragEnterEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  // To accept specific drop.
+  void dragEnterEvent(QDragEnterEvent *p_event) Q_DECL_OVERRIDE;
 
-        // Drop the data.
-        void dropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
+  // Drop the data.
+  void dropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
 
-        void mouseReleaseEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
+  void mouseReleaseEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
 
-    private:
-        void setupUI(const QString &p_text);
+private:
+  void setupUI(const QString &p_text);
 
-        DragDropAreaIndicatorInterface *m_interface = nullptr;
-    };
-}
+  DragDropAreaIndicatorInterface *m_interface = nullptr;
+};
+} // namespace vnotex
 
 #endif // DRAGDROPAREAINDICATOR_H

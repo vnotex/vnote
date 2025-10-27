@@ -5,39 +5,32 @@
 
 class QLineEdit;
 
-namespace vnotex
-{
-    class LinkInsertDialog : public ScrollDialog
-    {
-        Q_OBJECT
-    public:
-        LinkInsertDialog(const QString &p_title,
-                         const QString &p_linkText,
-                         const QString &p_linkUrl,
-                         bool p_linkTextOptional,
-                         QWidget *p_parent = nullptr);
+namespace vnotex {
+class LinkInsertDialog : public ScrollDialog {
+  Q_OBJECT
+public:
+  LinkInsertDialog(const QString &p_title, const QString &p_linkText, const QString &p_linkUrl,
+                   bool p_linkTextOptional, QWidget *p_parent = nullptr);
 
-        QString getLinkText() const;
+  QString getLinkText() const;
 
-        QString getLinkUrl() const;
+  QString getLinkUrl() const;
 
-    protected:
-        void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
-    private slots:
-        void checkInput(bool p_autoCompleteText = true);
+private slots:
+  void checkInput(bool p_autoCompleteText = true);
 
-    private:
-        void setupUI(const QString &p_title,
-                     const QString &p_linkText,
-                     const QString &p_linkUrl);
+private:
+  void setupUI(const QString &p_title, const QString &p_linkText, const QString &p_linkUrl);
 
-        bool m_linkTextOptional = false;
+  bool m_linkTextOptional = false;
 
-        QLineEdit *m_linkTextEdit = nullptr;
+  QLineEdit *m_linkTextEdit = nullptr;
 
-        QLineEdit *m_linkUrlEdit = nullptr;
-    };
-}
+  QLineEdit *m_linkUrlEdit = nullptr;
+};
+} // namespace vnotex
 
 #endif // LINKINSERTDIALOG_H

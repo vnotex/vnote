@@ -6,35 +6,33 @@
 class QComboBox;
 class QPlainTextEdit;
 
-namespace vnotex
-{
-    class NoteTemplateSelector : public QWidget
-    {
-        Q_OBJECT
-    public:
-        explicit NoteTemplateSelector(QWidget *p_parent = nullptr);
+namespace vnotex {
+class NoteTemplateSelector : public QWidget {
+  Q_OBJECT
+public:
+  explicit NoteTemplateSelector(QWidget *p_parent = nullptr);
 
-        QString getCurrentTemplate() const;
-        bool setCurrentTemplate(const QString &p_template);
+  QString getCurrentTemplate() const;
+  bool setCurrentTemplate(const QString &p_template);
 
-        const QString& getTemplateContent() const;
+  const QString &getTemplateContent() const;
 
-    signals:
-        void templateChanged();
+signals:
+  void templateChanged();
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void setupTemplateComboBox(QWidget *p_parent);
+  void setupTemplateComboBox(QWidget *p_parent);
 
-        void updateCurrentTemplate();
+  void updateCurrentTemplate();
 
-        QComboBox *m_templateComboBox = nullptr;
+  QComboBox *m_templateComboBox = nullptr;
 
-        QPlainTextEdit *m_templateTextEdit = nullptr;
+  QPlainTextEdit *m_templateTextEdit = nullptr;
 
-        QString m_templateContent;
-    };
-}
+  QString m_templateContent;
+};
+} // namespace vnotex
 
 #endif // NOTETEMPLATESELECTOR_H

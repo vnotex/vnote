@@ -3,195 +3,183 @@
 
 #include <QObject>
 
-#include <QVector>
 #include <QMap>
 #include <QSharedPointer>
+#include <QVector>
 
 class QAction;
 class QProcess;
 class QJsonObject;
 
-namespace tests
-{
-    class TestTask;
+namespace tests {
+class TestTask;
 }
 
-namespace vnotex
-{
-    struct ButtonDTO
-    {
-        QString text;
-    };
+namespace vnotex {
+struct ButtonDTO {
+  QString text;
+};
 
-    struct InputDTO
-    {
-        QString id;
+struct InputDTO {
+  QString id;
 
-        QString type;
+  QString type;
 
-        QString description;
+  QString description;
 
-        QString default_;
+  QString default_;
 
-        bool password;
+  bool password;
 
-        QStringList options;
-    };
+  QStringList options;
+};
 
-    struct MessageDTO
-    {
-        QString id;
+struct MessageDTO {
+  QString id;
 
-        QString type;
+  QString type;
 
-        QString title;
+  QString title;
 
-        QString text;
+  QString text;
 
-        QString detailedText;
+  QString detailedText;
 
-        QVector<ButtonDTO> buttons;
-    };
+  QVector<ButtonDTO> buttons;
+};
 
-    struct ShellOptionsDTO
-    {
-        QString executable;
+struct ShellOptionsDTO {
+  QString executable;
 
-        QStringList args;
-    };
+  QStringList args;
+};
 
-    struct TaskOptionsDTO
-    {
-        QString cwd;
+struct TaskOptionsDTO {
+  QString cwd;
 
-        QMap<QString, QString> env;
+  QMap<QString, QString> env;
 
-        ShellOptionsDTO shell;
-    };
+  ShellOptionsDTO shell;
+};
 
-    struct TaskDTO
-    {
-        QString version;
+struct TaskDTO {
+  QString version;
 
-        QString type;
+  QString type;
 
-        QString command;
+  QString command;
 
-        QStringList args;
+  QStringList args;
 
-        QString label;
+  QString label;
 
-        QString icon;
+  QString icon;
 
-        QString shortcut;
+  QString shortcut;
 
-        QVector<InputDTO> inputs;
+  QVector<InputDTO> inputs;
 
-        QVector<MessageDTO> messages;
+  QVector<MessageDTO> messages;
 
-        TaskOptionsDTO options;
+  TaskOptionsDTO options;
 
-        QString _scope;
+  QString _scope;
 
-        QString _source;
-    };
+  QString _source;
+};
 
-    class TaskMgr;
-    class TaskVariableMgr;
+class TaskMgr;
+class TaskVariableMgr;
 
-    class Task : public QObject
-    {
-        Q_OBJECT
-    public:
-        friend class tests::TestTask;
+class Task : public QObject {
+  Q_OBJECT
+public:
+  friend class tests::TestTask;
 
-        // For top level Task, use QSharedPointer instead of QObject to manage ownership.
-        static QSharedPointer<Task> fromFile(const QString &p_file, const QString &p_locale, TaskMgr *p_taskMgr);
+  // For top level Task, use QSharedPointer instead of QObject to manage ownership.
+  static QSharedPointer<Task> fromFile(const QString &p_file, const QString &p_locale,
+                                       TaskMgr *p_taskMgr);
 
-        void run();
+  void run();
 
-        const TaskDTO &getDTO() const;
+  const TaskDTO &getDTO() const;
 
-        const QString &getVersion() const;
+  const QString &getVersion() const;
 
-        const QString &getType() const;
+  const QString &getType() const;
 
-        QString getCommand();
+  QString getCommand();
 
-        QStringList getArgs();
+  QStringList getArgs();
 
-        const QString &getLabel() const;
+  const QString &getLabel() const;
 
-        const QString &getIcon() const;
+  const QString &getIcon() const;
 
-        const QString &getShortcut() const;
+  const QString &getShortcut() const;
 
-        QString getOptionsCwd();
+  QString getOptionsCwd();
 
-        const QMap<QString, QString> &getOptionsEnv() const;
+  const QMap<QString, QString> &getOptionsEnv() const;
 
-        const QString &getOptionsShellExecutable() const;
+  const QString &getOptionsShellExecutable() const;
 
-        QStringList getOptionsShellArgs();
+  QStringList getOptionsShellArgs();
 
-        const QVector<Task *> &getChildren() const;
+  const QVector<Task *> &getChildren() const;
 
-        const QVector<InputDTO> &getInputs() const;
+  const QVector<InputDTO> &getInputs() const;
 
-        const InputDTO *findInput(const QString &p_id) const;
+  const InputDTO *findInput(const QString &p_id) const;
 
-        const MessageDTO *findMessage(const QString &p_id) const;
+  const MessageDTO *findMessage(const QString &p_id) const;
 
-        const QString &getFile() const;
+  const QString &getFile() const;
 
-        bool isCancelled() const;
+  bool isCancelled() const;
 
-        void setCancelled(bool p_cancelled);
+  void setCancelled(bool p_cancelled);
 
-        static QString s_latestVersion;
+  static QString s_latestVersion;
 
-        static QString getLocaleString(const QJsonValue &p_value,
-                                       const QString &p_locale);
+  static QString getLocaleString(const QJsonValue &p_value, const QString &p_locale);
 
-        static QStringList getLocaleStringList(const QJsonValue &p_value,
-                                               const QString &p_locale);
+  static QStringList getLocaleStringList(const QJsonValue &p_value, const QString &p_locale);
 
-        static QStringList getStringList(const QJsonValue &p_value);
+  static QStringList getStringList(const QJsonValue &p_value);
 
-        static QString decodeText(const QByteArray &p_text);
+  static QString decodeText(const QByteArray &p_text);
 
-    signals:
-        void outputRequested(const QString &p_text) const;
+signals:
+  void outputRequested(const QString &p_text) const;
 
-    private:
-        Task(const QString &p_locale,
-             const QString &p_file,
-             TaskMgr *p_taskMgr,
-             QObject *p_parent = nullptr);
+private:
+  Task(const QString &p_locale, const QString &p_file, TaskMgr *p_taskMgr,
+       QObject *p_parent = nullptr);
 
-        // Must call start() or delete the returned QProcess.
-        QProcess *setupProcess();
+  // Must call start() or delete the returned QProcess.
+  QProcess *setupProcess();
 
-        const TaskVariableMgr &variableMgr() const;
+  const TaskVariableMgr &variableMgr() const;
 
-        static bool fromJson(Task *p_task, const QJsonObject &p_obj);
+  static bool fromJson(Task *p_task, const QJsonObject &p_obj);
 
-        static bool fromJsonV0(Task *p_task, const QJsonObject &p_obj, bool p_mergeTasks = false);
+  static bool fromJsonV0(Task *p_task, const QJsonObject &p_obj, bool p_mergeTasks = false);
 
-        static QString decodeText(const QByteArray &p_text, const QByteArray &p_name);
+  static QString decodeText(const QByteArray &p_text, const QByteArray &p_name);
 
-        Task *m_parent = nullptr;
+  Task *m_parent = nullptr;
 
-        QVector<Task *> m_children;
+  QVector<Task *> m_children;
 
-        TaskMgr *m_taskMgr = nullptr;
+  TaskMgr *m_taskMgr = nullptr;
 
-        TaskDTO m_dto;
+  TaskDTO m_dto;
 
-        QString m_locale;
+  QString m_locale;
 
-        bool m_cancelled = false;
-    };
-} // ns vnotex
+  bool m_cancelled = false;
+};
+} // namespace vnotex
 
 #endif // TASK_H

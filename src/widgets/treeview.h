@@ -4,17 +4,15 @@
 #include <QTreeView>
 #include <QVariant>
 
-namespace vnotex
-{
-    class TreeView : public QTreeView
-    {
-        Q_OBJECT
-    public:
-        explicit TreeView(QWidget *p_parent = nullptr);
+namespace vnotex {
+class TreeView : public QTreeView {
+  Q_OBJECT
+public:
+  explicit TreeView(QWidget *p_parent = nullptr);
 
-    protected:
-        void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
-    };
-}
+protected:
+  void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+};
+} // namespace vnotex
 
 #endif // TREEVIEW_H

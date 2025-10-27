@@ -3,28 +3,21 @@
 
 #include <QObject>
 
-namespace vnotex
-{
-    // Abstract class for version control.
-    class IVersionController : public QObject
-    {
-        Q_OBJECT
-    public:
-        explicit IVersionController(QObject *p_parent = nullptr)
-            : QObject(p_parent)
-        {
-        }
+namespace vnotex {
+// Abstract class for version control.
+class IVersionController : public QObject {
+  Q_OBJECT
+public:
+  explicit IVersionController(QObject *p_parent = nullptr) : QObject(p_parent) {}
 
-        virtual ~IVersionController()
-        {
-        }
+  virtual ~IVersionController() {}
 
-        virtual QString getName() const = 0;
+  virtual QString getName() const = 0;
 
-        virtual QString getDisplayName() const = 0;
+  virtual QString getDisplayName() const = 0;
 
-        virtual QString getDescription() const = 0;
-    };
-} // ns vnotex
+  virtual QString getDescription() const = 0;
+};
+} // namespace vnotex
 
 #endif // IVERSIONCONTROLLER_H

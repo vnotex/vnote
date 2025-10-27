@@ -10,48 +10,40 @@ QStringList DocsUtils::s_searchPaths;
 
 QString DocsUtils::s_locale = "en_US";
 
-void DocsUtils::addSearchPath(const QString &p_path)
-{
-    s_searchPaths.append(p_path);
+void DocsUtils::addSearchPath(const QString &p_path) { s_searchPaths.append(p_path); }
+
+QString DocsUtils::getDocText(const QString &p_baseName) {
+  auto filePath = getDocFile(p_baseName);
+  if (!filePath.isEmpty()) {
+    return FileUtils::readTextFile(filePath);
+  }
+
+  return "";
 }
 
-QString DocsUtils::getDocText(const QString &p_baseName)
-{
-    auto filePath = getDocFile(p_baseName);
-    if (!filePath.isEmpty()) {
-        return FileUtils::readTextFile(filePath);
+QString DocsUtils::getDocFile(const QString &p_baseName) {
+  const auto shortLocale = s_locale.split('_')[0];
+
+  const auto fullLocaleName = QStringLiteral("%1/%2").arg(s_locale, p_baseName);
+  const auto shortLocaleName = QStringLiteral("%1/%2").arg(shortLocale, p_baseName);
+  const auto defaultLocaleName = QStringLiteral("%1/%2").arg(QStringLiteral("en"), p_baseName);
+
+  for (const auto &pa : s_searchPaths) {
+    QDir dir(pa);
+    if (!dir.exists()) {
+      continue;
     }
 
-    return "";
-}
-
-QString DocsUtils::getDocFile(const QString &p_baseName)
-{
-    const auto shortLocale = s_locale.split('_')[0];
-
-    const auto fullLocaleName = QStringLiteral("%1/%2").arg(s_locale, p_baseName);
-    const auto shortLocaleName = QStringLiteral("%1/%2").arg(shortLocale, p_baseName);
-    const auto defaultLocaleName = QStringLiteral("%1/%2").arg(QStringLiteral("en"), p_baseName);
-
-    for (const auto &pa : s_searchPaths) {
-        QDir dir(pa);
-        if (!dir.exists()) {
-            continue;
-        }
-
-        if (dir.exists(fullLocaleName)) {
-            return dir.filePath(fullLocaleName);
-        } else if (dir.exists(shortLocaleName)) {
-            return dir.filePath(shortLocaleName);
-        } else if (dir.exists(defaultLocaleName)) {
-            return dir.filePath(defaultLocaleName);
-        }
+    if (dir.exists(fullLocaleName)) {
+      return dir.filePath(fullLocaleName);
+    } else if (dir.exists(shortLocaleName)) {
+      return dir.filePath(shortLocaleName);
+    } else if (dir.exists(defaultLocaleName)) {
+      return dir.filePath(defaultLocaleName);
     }
+  }
 
-    return "";
+  return "";
 }
 
-void DocsUtils::setLocale(const QString &p_locale)
-{
-    s_locale = p_locale;
-}
+void DocsUtils::setLocale(const QString &p_locale) { s_locale = p_locale; }

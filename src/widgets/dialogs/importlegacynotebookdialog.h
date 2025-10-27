@@ -3,22 +3,20 @@
 
 #include "newnotebookdialog.h"
 
-namespace vnotex
-{
-    class ImportLegacyNotebookDialog : public NewNotebookDialog
-    {
-        Q_OBJECT
-    public:
-        explicit ImportLegacyNotebookDialog(QWidget *p_parent = nullptr);
+namespace vnotex {
+class ImportLegacyNotebookDialog : public NewNotebookDialog {
+  Q_OBJECT
+public:
+  explicit ImportLegacyNotebookDialog(QWidget *p_parent = nullptr);
 
-    protected:
-        void acceptedButtonClicked() Q_DECL_OVERRIDE;
+protected:
+  void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
-        bool validateRootFolderInput(QString &p_msg) Q_DECL_OVERRIDE;
+  bool validateRootFolderInput(QString &p_msg) Q_DECL_OVERRIDE;
 
-    private:
-        bool importLegacyNotebook();
-    };
-}
+private:
+  bool importLegacyNotebook();
+};
+} // namespace vnotex
 
 #endif // IMPORTLEGACYNOTEBOOKDIALOG_H

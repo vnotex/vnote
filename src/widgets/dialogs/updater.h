@@ -7,28 +7,28 @@
 
 class QLabel;
 
-namespace vnotex
-{
-    class Updater : public Dialog
-    {
-        Q_OBJECT
-    public:
-        explicit Updater(QWidget *p_parent = nullptr);
+namespace vnotex {
+class Updater : public Dialog {
+  Q_OBJECT
+public:
+  explicit Updater(QWidget *p_parent = nullptr);
 
-        // Callback(hasUpdate, VersionOnSuccess, errMsg).
-        static void checkForUpdates(QObject *p_receiver, const std::function<void(bool, const QString &, const QString &)> &p_callback);
+  // Callback(hasUpdate, VersionOnSuccess, errMsg).
+  static void
+  checkForUpdates(QObject *p_receiver,
+                  const std::function<void(bool, const QString &, const QString &)> &p_callback);
 
-    protected:
-        void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
-    private slots:
-        void start();
+private slots:
+  void start();
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        QLabel *m_latestVersionLabel = nullptr;
-    };
-}
+  QLabel *m_latestVersionLabel = nullptr;
+};
+} // namespace vnotex
 
 #endif // UPDATER_H

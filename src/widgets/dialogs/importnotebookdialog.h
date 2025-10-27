@@ -6,38 +6,36 @@
 class QGroupBox;
 class QComboBox;
 
-namespace vnotex
-{
-    class NotebookInfoWidget;
-    class Notebook;
+namespace vnotex {
+class NotebookInfoWidget;
+class Notebook;
 
-    class ImportNotebookDialog : public ScrollDialog
-    {
-        Q_OBJECT
-    public:
-        explicit ImportNotebookDialog(QWidget *p_parent = nullptr);
+class ImportNotebookDialog : public ScrollDialog {
+  Q_OBJECT
+public:
+  explicit ImportNotebookDialog(QWidget *p_parent = nullptr);
 
-    protected:
-        void acceptedButtonClicked() Q_DECL_OVERRIDE;
+protected:
+  void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
-    private slots:
-        void validateInputs();
+private slots:
+  void validateInputs();
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void setupNotebookInfoWidget(QWidget *p_parent = nullptr);
+  void setupNotebookInfoWidget(QWidget *p_parent = nullptr);
 
-        bool validateRootFolderInput(QString &p_msg);
+  bool validateRootFolderInput(QString &p_msg);
 
-        bool createNotebookToImport(QString &p_msg);
+  bool createNotebookToImport(QString &p_msg);
 
-        bool importNotebook();
+  bool importNotebook();
 
-        NotebookInfoWidget *m_infoWidget = nullptr;
+  NotebookInfoWidget *m_infoWidget = nullptr;
 
-        QSharedPointer<Notebook> m_notebookToImport;
-    };
-} // ns vnotex
+  QSharedPointer<Notebook> m_notebookToImport;
+};
+} // namespace vnotex
 
 #endif // IMPORTNOTEBOOKDIALOG_H

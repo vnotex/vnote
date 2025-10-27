@@ -5,26 +5,22 @@
 
 #include <global.h>
 
-namespace vnotex
-{
-    class DummyVersionController : public IVersionController
-    {
-        Q_OBJECT
-    public:
-        explicit DummyVersionController(const QString &p_name,
-                                        const QString &p_displayName,
-                                        const QString &p_description,
-                                        QObject *p_parent = nullptr);
+namespace vnotex {
+class DummyVersionController : public IVersionController {
+  Q_OBJECT
+public:
+  explicit DummyVersionController(const QString &p_name, const QString &p_displayName,
+                                  const QString &p_description, QObject *p_parent = nullptr);
 
-        QString getName() const Q_DECL_OVERRIDE;
+  QString getName() const Q_DECL_OVERRIDE;
 
-        QString getDisplayName() const Q_DECL_OVERRIDE;
+  QString getDisplayName() const Q_DECL_OVERRIDE;
 
-        QString getDescription() const Q_DECL_OVERRIDE;
+  QString getDescription() const Q_DECL_OVERRIDE;
 
-    private:
-        Info m_info;
-    };
-} // ns vnotex
+private:
+  Info m_info;
+};
+} // namespace vnotex
 
 #endif // DUMMYVERSIONCONTROLLER_H

@@ -3,9 +3,9 @@
 
 #include "framelessmainwindow/framelessmainwindowimpl.h"
 
-#include <QSharedPointer>
 #include <QBitArray>
 #include <QSet>
+#include <QSharedPointer>
 
 #include "dockwidgethelper.h"
 
@@ -16,198 +16,196 @@ class QLabel;
 class QTextEdit;
 class QWebEngineView;
 
-namespace vnotex
-{
-    class NotebookExplorer;
-    class TagExplorer;
-    class ViewArea;
-    class Event;
-    class OutlineViewer;
-    class LocationList;
-    class SearchPanel;
-    class SnippetPanel;
-    class HistoryPanel;
-    class WindowsPanel;
-    class ExportDialog;
-    class ConsoleViewer;
+namespace vnotex {
+class NotebookExplorer;
+class TagExplorer;
+class ViewArea;
+class Event;
+class OutlineViewer;
+class LocationList;
+class SearchPanel;
+class SnippetPanel;
+class HistoryPanel;
+class WindowsPanel;
+class ExportDialog;
+class ConsoleViewer;
 
-    enum { RESTART_EXIT_CODE = 1000 };
+enum { RESTART_EXIT_CODE = 1000 };
 
-    class MainWindow : public FramelessMainWindowImpl
-    {
-        Q_OBJECT
-    public:
-        friend class DockWidgetHelper;
+class MainWindow : public FramelessMainWindowImpl {
+  Q_OBJECT
+public:
+  friend class DockWidgetHelper;
 
-        explicit MainWindow(QWidget *p_parent = nullptr);
+  explicit MainWindow(QWidget *p_parent = nullptr);
 
-        ~MainWindow();
+  ~MainWindow();
 
-        MainWindow(const MainWindow &) = delete;
-        void operator=(const MainWindow &) = delete;
+  MainWindow(const MainWindow &) = delete;
+  void operator=(const MainWindow &) = delete;
 
-        void kickOffOnStart(const QStringList &p_paths);
+  void kickOffOnStart(const QStringList &p_paths);
 
-        void resetStateAndGeometry();
+  void resetStateAndGeometry();
 
-        const QVector<QDockWidget *> &getDocks() const;
+  const QVector<QDockWidget *> &getDocks() const;
 
-        ViewArea *getViewArea() const;
+  ViewArea *getViewArea() const;
 
-        NotebookExplorer *getNotebookExplorer() const;
+  NotebookExplorer *getNotebookExplorer() const;
 
-        void setContentAreaExpanded(bool p_expanded);
-        // Should be called after MainWindow is shown.
-        bool isContentAreaExpanded() const;
+  void setContentAreaExpanded(bool p_expanded);
+  // Should be called after MainWindow is shown.
+  bool isContentAreaExpanded() const;
 
-        void focusViewArea();
+  void focusViewArea();
 
-        void setStayOnTop(bool p_enabled);
+  void setStayOnTop(bool p_enabled);
 
-        void restart();
+  void restart();
 
-        void showMainWindow();
+  void showMainWindow();
 
-        void quitApp();
+  void quitApp();
 
-        void openFiles(const QStringList &p_files);
+  void openFiles(const QStringList &p_files);
 
-        LocationList *getLocationList() const;
+  LocationList *getLocationList() const;
 
-        void setLocationListVisible(bool p_visible);
+  void setLocationListVisible(bool p_visible);
 
-        void toggleLocationListVisible();
+  void toggleLocationListVisible();
 
-        void updateDockWidgetTabBar();
+  void updateDockWidgetTabBar();
 
-    signals:
-        void mainWindowStarted();
+signals:
+  void mainWindowStarted();
 
-        // @m_response of @p_event: true to continue the close, false to stop the close.
-        void mainWindowClosed(const QSharedPointer<Event> &p_event);
+  // @m_response of @p_event: true to continue the close, false to stop the close.
+  void mainWindowClosed(const QSharedPointer<Event> &p_event);
 
-        void minimizedToSystemTray();
+  void minimizedToSystemTray();
 
-        // No user interaction is available.
-        void mainWindowClosedOnQuit();
+  // No user interaction is available.
+  void mainWindowClosedOnQuit();
 
-        void layoutChanged();
+  void layoutChanged();
 
-    protected:
-        void closeEvent(QCloseEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  void closeEvent(QCloseEvent *p_event) Q_DECL_OVERRIDE;
 
-        void changeEvent(QEvent *p_event) Q_DECL_OVERRIDE;
+  void changeEvent(QEvent *p_event) Q_DECL_OVERRIDE;
 
-    private slots:
-        void closeOnQuit();
+private slots:
+  void closeOnQuit();
 
-        void exportNotes();
+  void exportNotes();
 
-        void showTips(const QString &p_message, int p_timeoutMilliseconds);
+  void showTips(const QString &p_message, int p_timeoutMilliseconds);
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void setupCentralWidget();
+  void setupCentralWidget();
 
-        void setupOutlineViewer();
+  void setupOutlineViewer();
 
-        void setupConsoleViewer();
+  void setupConsoleViewer();
 
-        void setupSearchPanel();
+  void setupSearchPanel();
 
-        void setupLocationList();
+  void setupLocationList();
 
-        void setupSnippetPanel();
+  void setupSnippetPanel();
 
-        void setupHistoryPanel();
+  void setupHistoryPanel();
 
-        void setupWindowsPanel();
+  void setupWindowsPanel();
 
-        void setupNotebookExplorer();
+  void setupNotebookExplorer();
 
-        void setupTagExplorer();
+  void setupTagExplorer();
 
-        void setupDocks();
+  void setupDocks();
 
-        void setupStatusBar();
+  void setupStatusBar();
 
-        void setupTipsArea();
+  void setupTipsArea();
 
-        void createTipsArea();
+  void createTipsArea();
 
-        void saveStateAndGeometry();
+  void saveStateAndGeometry();
 
-        void loadStateAndGeometry();
+  void loadStateAndGeometry();
 
-        // Used to test widget in development.
-        void demoWidget();
+  // Used to test widget in development.
+  void demoWidget();
 
-        QString getViewAreaTitle() const;
+  QString getViewAreaTitle() const;
 
-        void setupToolBar();
+  void setupToolBar();
 
-        void setupShortcuts();
+  void setupShortcuts();
 
-        void setupSystemTray();
+  void setupSystemTray();
 
-        void setTipsAreaVisible(bool p_visible);
+  void setTipsAreaVisible(bool p_visible);
 
-        void setupSpellCheck();
+  void setupSpellCheck();
 
-        void checkForUpdates();
+  void checkForUpdates();
 
-        void checkNotebooksFailedToLoad();
+  void checkNotebooksFailedToLoad();
 
-        void loadWidgetsData();
+  void loadWidgetsData();
 
-        // WebView to handle OpenGL blinking on Windows.
-        QWebEngineView *m_dummyWebView = nullptr;
+  // WebView to handle OpenGL blinking on Windows.
+  QWebEngineView *m_dummyWebView = nullptr;
 
-        DockWidgetHelper m_dockWidgetHelper;
+  DockWidgetHelper m_dockWidgetHelper;
 
-        NotebookExplorer *m_notebookExplorer = nullptr;
+  NotebookExplorer *m_notebookExplorer = nullptr;
 
-        TagExplorer *m_tagExplorer = nullptr;
+  TagExplorer *m_tagExplorer = nullptr;
 
-        ViewArea *m_viewArea = nullptr;
+  ViewArea *m_viewArea = nullptr;
 
-        QWidget *m_viewAreaStatusWidget = nullptr;
+  QWidget *m_viewAreaStatusWidget = nullptr;
 
-        OutlineViewer *m_outlineViewer = nullptr;
+  OutlineViewer *m_outlineViewer = nullptr;
 
-        ConsoleViewer *m_consoleViewer = nullptr;
+  ConsoleViewer *m_consoleViewer = nullptr;
 
-        LocationList *m_locationList = nullptr;
+  LocationList *m_locationList = nullptr;
 
-        SearchPanel *m_searchPanel = nullptr;
+  SearchPanel *m_searchPanel = nullptr;
 
-        SnippetPanel *m_snippetPanel = nullptr;
+  SnippetPanel *m_snippetPanel = nullptr;
 
-        HistoryPanel *m_historyPanel = nullptr;
+  HistoryPanel *m_historyPanel = nullptr;
 
-        WindowsPanel *m_windowsPanel = nullptr;
+  WindowsPanel *m_windowsPanel = nullptr;
 
-        ExportDialog *m_exportDialog = nullptr;
+  ExportDialog *m_exportDialog = nullptr;
 
-        QSystemTrayIcon *m_trayIcon = nullptr;
+  QSystemTrayIcon *m_trayIcon = nullptr;
 
-        QLabel *m_tipsLabel = nullptr;
+  QLabel *m_tipsLabel = nullptr;
 
-        QTimer *m_tipsTimer = nullptr;
+  QTimer *m_tipsTimer = nullptr;
 
-        bool m_layoutReset = false;
+  bool m_layoutReset = false;
 
-        // -1: do not request to quit;
-        // 0 and above: exit code.
-        int m_requestQuit = -1;
+  // -1: do not request to quit;
+  // 0 and above: exit code.
+  int m_requestQuit = -1;
 
-        Qt::WindowStates m_windowOldState = Qt::WindowMinimized;
+  Qt::WindowStates m_windowOldState = Qt::WindowMinimized;
 
-        QStringList m_visibleDocksBeforeExpand;
+  QStringList m_visibleDocksBeforeExpand;
 
-        bool m_contentAreaExpanded = false;
-    };
-} // ns vnotex
+  bool m_contentAreaExpanded = false;
+};
+} // namespace vnotex
 
 #endif // MAINWINDOW_H

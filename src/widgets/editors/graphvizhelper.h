@@ -3,26 +3,23 @@
 
 #include "graphhelper.h"
 
-namespace vnotex
-{
-    class GraphvizHelper : public GraphHelper
-    {
-    public:
-        void update(const QString &p_graphvizFile);
+namespace vnotex {
+class GraphvizHelper : public GraphHelper {
+public:
+  void update(const QString &p_graphvizFile);
 
-        static GraphvizHelper &getInst();
+  static GraphvizHelper &getInst();
 
-        static QPair<bool, QString> testGraphviz(const QString &p_graphvizFile);
+  static QPair<bool, QString> testGraphviz(const QString &p_graphvizFile);
 
-    private:
-        GraphvizHelper() = default;
+private:
+  GraphvizHelper() = default;
 
-        QStringList getFormatArgs(const QString &p_format) Q_DECL_OVERRIDE;
+  QStringList getFormatArgs(const QString &p_format) Q_DECL_OVERRIDE;
 
-        static void prepareProgramAndArgs(const QString &p_graphvizFile,
-                                          QString &p_program,
-                                          QStringList &p_args);
-    };
-}
+  static void prepareProgramAndArgs(const QString &p_graphvizFile, QString &p_program,
+                                    QStringList &p_args);
+};
+} // namespace vnotex
 
 #endif // GRAPHVIZHELPER_H

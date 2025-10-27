@@ -8,62 +8,56 @@
 
 class QKeyEvent;
 
-namespace vnotex
-{
-    class NavigationMode;
+namespace vnotex {
+class NavigationMode;
 
-    class NavigationModeMgr : public QObject
-    {
-        Q_OBJECT
-    public:
-        ~NavigationModeMgr();
+class NavigationModeMgr : public QObject {
+  Q_OBJECT
+public:
+  ~NavigationModeMgr();
 
-        // Maybe we need a unregisterNavigationTarget()?
-        void registerNavigationTarget(NavigationMode *p_target);
+  // Maybe we need a unregisterNavigationTarget()?
+  void registerNavigationTarget(NavigationMode *p_target);
 
-        static NavigationModeMgr &getInst();
+  static NavigationModeMgr &getInst();
 
-        static void init(QWidget *p_widget);
+  static void init(QWidget *p_widget);
 
-    protected:
-        bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
-    private slots:
-        void triggerNavigationMode();
+private slots:
+  void triggerNavigationMode();
 
-    private:
-        struct Target
-        {
-            Target() = default;
+private:
+  struct Target {
+    Target() = default;
 
-            Target(NavigationMode *p_target, bool p_available)
-                : m_target(p_target),
-                  m_available(p_available)
-            {
-            }
+    Target(NavigationMode *p_target, bool p_available)
+        : m_target(p_target), m_available(p_available) {}
 
-            NavigationMode *m_target = nullptr;
+    NavigationMode *m_target = nullptr;
 
-            bool m_available = false;
-        };
+    bool m_available = false;
+  };
 
-        NavigationModeMgr();
+  NavigationModeMgr();
 
-        QChar getNextMajorKey();
+  QChar getNextMajorKey();
 
-        void exitNavigationMode();
+  void exitNavigationMode();
 
-        // Return true if the event is consumed.
-        bool handleKeyPress(QKeyEvent *p_event);
+  // Return true if the event is consumed.
+  bool handleKeyPress(QKeyEvent *p_event);
 
-        QChar m_nextMajorKey = 'a';
+  QChar m_nextMajorKey = 'a';
 
-        QVector<Target> m_targets;
+  QVector<Target> m_targets;
 
-        bool m_activated = false;
+  bool m_activated = false;
 
-        static QWidget *s_widget;
-    };
-}
+  static QWidget *s_widget;
+};
+} // namespace vnotex
 
 #endif // NAVIGATIONMODEMGR_H

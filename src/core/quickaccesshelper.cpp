@@ -5,16 +5,15 @@
 
 using namespace vnotex;
 
-void QuickAccessHelper::pinToQuickAccess(const QStringList &p_files)
-{
-    if (p_files.isEmpty()) {
-        return;
-    }
+void QuickAccessHelper::pinToQuickAccess(const QStringList &p_files) {
+  if (p_files.isEmpty()) {
+    return;
+  }
 
-    auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-    sessionConfig.tryCorrectQuickAccessFiles();
-    auto qaFiles = sessionConfig.getQuickAccessFiles();
-    qaFiles.append(p_files);
-    qaFiles.removeDuplicates();
-    sessionConfig.setQuickAccessFiles(qaFiles);
+  auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+  sessionConfig.tryCorrectQuickAccessFiles();
+  auto qaFiles = sessionConfig.getQuickAccessFiles();
+  qaFiles.append(p_files);
+  qaFiles.removeDuplicates();
+  sessionConfig.setQuickAccessFiles(qaFiles);
 }

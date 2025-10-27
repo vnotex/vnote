@@ -3,40 +3,34 @@
 
 #include <QString>
 
-namespace vnotex
-{
-    class Node;
+namespace vnotex {
+class Node;
 
-    // External node not managed by VNote.
-    class ExternalNode
-    {
-    public:
-        enum class Type
-        {
-            File,
-            Folder
-        };
+// External node not managed by VNote.
+class ExternalNode {
+public:
+  enum class Type { File, Folder };
 
-        ExternalNode(Node *p_parent, const QString &p_name, Type p_type);
+  ExternalNode(Node *p_parent, const QString &p_name, Type p_type);
 
-        // Get parent node.
-        Node *getNode() const;
+  // Get parent node.
+  Node *getNode() const;
 
-        const QString &getName() const;
+  const QString &getName() const;
 
-        bool isFolder() const;
+  bool isFolder() const;
 
-        QString fetchAbsolutePath() const;
+  QString fetchAbsolutePath() const;
 
-    private:
-        // Parent node.
-        // We support only one level further the external folder.
-        Node *m_parentNode = nullptr;
+private:
+  // Parent node.
+  // We support only one level further the external folder.
+  Node *m_parentNode = nullptr;
 
-        QString m_name;
+  QString m_name;
 
-        Type m_type = Type::File;
-    };
-}
+  Type m_type = Type::File;
+};
+} // namespace vnotex
 
 #endif // EXTERNALNODE_H

@@ -11,239 +11,220 @@
 class QWidget;
 class QTimer;
 
-namespace vnotex
-{
-    class Node;
-    class Buffer;
-    class ViewWindow;
-    struct FileOpenParameters;
-    class BufferProvider;
-    class File;
-
-    struct BufferParameters
-    {
-        QSharedPointer<BufferProvider> m_provider;
-    };
-
-    class Buffer : public QObject
-    {
-        Q_OBJECT
-    public:
-        enum class ProviderType
-        {
-            Internal,
-            External
-        };
+namespace vnotex {
+class Node;
+class Buffer;
+class ViewWindow;
+struct FileOpenParameters;
+class BufferProvider;
+class File;
 
-        enum class OperationCode
-        {
-            Success,
-            FileMissingOnDisk,
-            FileChangedOutside,
-            Failed
-        };
+struct BufferParameters {
+  QSharedPointer<BufferProvider> m_provider;
+};
 
-        enum StateFlag
-        {
-            Normal = 0,
-            FileMissingOnDisk = 0x1,
-            FileChangedOutside = 0x2,
-            Discarded = 0x4
-        };
-        Q_DECLARE_FLAGS(StateFlags, StateFlag);
+class Buffer : public QObject {
+  Q_OBJECT
+public:
+  enum class ProviderType { Internal, External };
 
-        Buffer(const BufferParameters &p_parameters,
-               QObject *p_parent = nullptr);
+  enum class OperationCode { Success, FileMissingOnDisk, FileChangedOutside, Failed };
 
-        virtual ~Buffer();
+  enum StateFlag { Normal = 0, FileMissingOnDisk = 0x1, FileChangedOutside = 0x2, Discarded = 0x4 };
+  Q_DECLARE_FLAGS(StateFlags, StateFlag);
 
-        int getAttachViewWindowCount() const;
+  Buffer(const BufferParameters &p_parameters, QObject *p_parent = nullptr);
 
-        void attachViewWindow(ViewWindow *p_win);
-        void detachViewWindow(ViewWindow *p_win);
+  virtual ~Buffer();
 
-        // Create a view window to show the content of this buffer.
-        // Attach the created view window to this buffer.
-        ViewWindow *createViewWindow(const QSharedPointer<FileOpenParameters> &p_paras, QWidget *p_parent);
+  int getAttachViewWindowCount() const;
 
-        // Whether this buffer matches @p_node.
-        bool match(const Node *p_node) const;
+  void attachViewWindow(ViewWindow *p_win);
+  void detachViewWindow(ViewWindow *p_win);
 
-        // Whether this buffer matches @p_filePath.
-        bool match(const QString &p_filePath) const;
+  // Create a view window to show the content of this buffer.
+  // Attach the created view window to this buffer.
+  ViewWindow *createViewWindow(const QSharedPointer<FileOpenParameters> &p_paras,
+                               QWidget *p_parent);
 
-        // Buffer name.
-        QString getName() const;
+  // Whether this buffer matches @p_node.
+  bool match(const Node *p_node) const;
 
-        QString getPath() const;
+  // Whether this buffer matches @p_filePath.
+  bool match(const QString &p_filePath) const;
 
-        // In some cases, getPath() may point to a container containting all the stuffs.
-        // getContentPath() will return the real path to the file providing the content.
-        QString getContentPath() const;
+  // Buffer name.
+  QString getName() const;
 
-        // Get the base path to resolve resources.
-        QString getResourcePath() const;
+  QString getPath() const;
 
-        // Return nullptr if not available.
-        QSharedPointer<File> getFile() const;
+  // In some cases, getPath() may point to a container containting all the stuffs.
+  // getContentPath() will return the real path to the file providing the content.
+  QString getContentPath() const;
 
-        ID getId() const;
+  // Get the base path to resolve resources.
+  QString getResourcePath() const;
 
-        // Get buffer content.
-        // It may differ from the content on disk.
-        // For performance, we need to sync the content with ViewWindow before returning
-        // the latest content.
-        const QString &getContent() const;
+  // Return nullptr if not available.
+  QSharedPointer<File> getFile() const;
 
-        // @p_revision will be set before contentsChanged is emitted.
-        void setContent(const QString &p_content, int &p_revision);
+  ID getId() const;
 
-        // Invalidate the content of buffer.
-        // Need to sync with @p_win to get the latest content.
-        // @p_setRevision will be called to set revision before contentsChanged is emitted.
-        void invalidateContent(const ViewWindow *p_win,
-                               const std::function<void(int)> &p_setRevision);
+  // Get buffer content.
+  // It may differ from the content on disk.
+  // For performance, we need to sync the content with ViewWindow before returning
+  // the latest content.
+  const QString &getContent() const;
 
-        // Sync content with @p_win if @p_win is the window needed to sync.
-        void syncContent(const ViewWindow *p_win);
+  // @p_revision will be set before contentsChanged is emitted.
+  void setContent(const QString &p_content, int &p_revision);
 
-        int getRevision() const;
+  // Invalidate the content of buffer.
+  // Need to sync with @p_win to get the latest content.
+  // @p_setRevision will be called to set revision before contentsChanged is emitted.
+  void invalidateContent(const ViewWindow *p_win, const std::function<void(int)> &p_setRevision);
 
-        bool isModified() const;
-        void setModified(bool p_modified);
+  // Sync content with @p_win if @p_win is the window needed to sync.
+  void syncContent(const ViewWindow *p_win);
 
-        bool isReadOnly() const;
+  int getRevision() const;
 
-        // Save buffer content to file.
-        OperationCode save(bool p_force);
+  bool isModified() const;
+  void setModified(bool p_modified);
 
-        // Discard changes and reload file.
-        OperationCode reload();
+  bool isReadOnly() const;
 
-        // Discard the buffer which will invalidate the buffer.
-        void discard();
+  // Save buffer content to file.
+  OperationCode save(bool p_force);
 
-        // Buffer is about to be deleted.
-        void close();
+  // Discard changes and reload file.
+  OperationCode reload();
 
-        // Insert image from @p_srcImagePath.
-        // Return inserted image file path.
-        virtual QString insertImage(const QString &p_srcImagePath, const QString &p_imageFileName);
+  // Discard the buffer which will invalidate the buffer.
+  void discard();
 
-        virtual QString insertImage(const QImage &p_image, const QString &p_imageFileName);
+  // Buffer is about to be deleted.
+  void close();
 
-        virtual void removeImage(const QString &p_imagePath);
+  // Insert image from @p_srcImagePath.
+  // Return inserted image file path.
+  virtual QString insertImage(const QString &p_srcImagePath, const QString &p_imageFileName);
 
-        const QString &getBackupFileOfPreviousSession() const;
+  virtual QString insertImage(const QImage &p_image, const QString &p_imageFileName);
 
-        void discardBackupFileOfPreviousSession();
+  virtual void removeImage(const QString &p_imagePath);
 
-        void recoverFromBackupFileOfPreviousSession();
+  const QString &getBackupFileOfPreviousSession() const;
 
-        // Whether this buffer's provider is a child of @p_node or an attachment of @p_node.
-        bool isChildOf(const Node *p_node) const;
+  void discardBackupFileOfPreviousSession();
 
-        Node *getNode() const;
+  void recoverFromBackupFileOfPreviousSession();
 
-        bool isAttachmentSupported() const;
+  // Whether this buffer's provider is a child of @p_node or an attachment of @p_node.
+  bool isChildOf(const Node *p_node) const;
 
-        bool hasAttachment() const;
+  Node *getNode() const;
 
-        QString getAttachmentFolderPath() const;
+  bool isAttachmentSupported() const;
 
-        // @p_destFolderPath: folder path locating in attachment folder. Use the root folder if empty.
-        QStringList addAttachment(const QString &p_destFolderPath, const QStringList &p_files);
+  bool hasAttachment() const;
 
-        QString newAttachmentFile(const QString &p_destFolderPath, const QString &p_name);
+  QString getAttachmentFolderPath() const;
 
-        QString newAttachmentFolder(const QString &p_destFolderPath, const QString &p_name);
+  // @p_destFolderPath: folder path locating in attachment folder. Use the root folder if empty.
+  QStringList addAttachment(const QString &p_destFolderPath, const QStringList &p_files);
 
-        QString renameAttachment(const QString &p_path, const QString &p_name);
+  QString newAttachmentFile(const QString &p_destFolderPath, const QString &p_name);
 
-        void removeAttachment(const QStringList &p_paths);
+  QString newAttachmentFolder(const QString &p_destFolderPath, const QString &p_name);
 
-        // Judge whether file @p_path is attachment.
-        bool isAttachment(const QString &p_path) const;
+  QString renameAttachment(const QString &p_path, const QString &p_name);
 
-        bool isTagSupported() const;
+  void removeAttachment(const QStringList &p_paths);
 
-        ProviderType getProviderType() const;
+  // Judge whether file @p_path is attachment.
+  bool isAttachment(const QString &p_path) const;
 
-        bool checkFileExistsOnDisk();
+  bool isTagSupported() const;
 
-        bool checkFileChangedOutside();
+  ProviderType getProviderType() const;
 
-        StateFlags state() const;
+  bool checkFileExistsOnDisk();
 
-        static QString readBackupFile(const QString &p_filePath);
+  bool checkFileChangedOutside();
 
-    signals:
-        void attachedViewWindowEmpty();
+  StateFlags state() const;
 
-        void modified(bool p_modified);
+  static QString readBackupFile(const QString &p_filePath);
 
-        void contentsChanged();
+signals:
+  void attachedViewWindowEmpty();
 
-        void nameChanged();
+  void modified(bool p_modified);
 
-        void attachmentChanged();
+  void contentsChanged();
 
-        // This buffer is AutoSavePolicy::AutoSave.
-        void autoSaved();
+  void nameChanged();
 
-    protected:
-        virtual ViewWindow *createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras, QWidget *p_parent) = 0;
+  void attachmentChanged();
 
-        QSharedPointer<BufferProvider> m_provider;
+  // This buffer is AutoSavePolicy::AutoSave.
+  void autoSaved();
 
-    private slots:
-        void autoSave();
+protected:
+  virtual ViewWindow *createViewWindowInternal(const QSharedPointer<FileOpenParameters> &p_paras,
+                                               QWidget *p_parent) = 0;
 
-    private:
-        void syncContent();
+  QSharedPointer<BufferProvider> m_provider;
 
-        void readContent();
+private slots:
+  void autoSave();
 
-        // Get the path of the image folder.
-        QString getImageFolderPath() const;
+private:
+  void syncContent();
 
-        void writeBackupFile();
+  void readContent();
 
-        // Generate backup file head.
-        QString generateBackupFileHead() const;
+  // Get the path of the image folder.
+  QString getImageFolderPath() const;
 
-        void checkBackupFileOfPreviousSession();
+  void writeBackupFile();
 
-        bool isBackupFileOfBuffer(const QString &p_file) const;
+  // Generate backup file head.
+  QString generateBackupFileHead() const;
 
-        // Will be assigned uniquely once created.
-        const ID m_id = 0;
+  void checkBackupFileOfPreviousSession();
 
-        // Revision of contents.
-        int m_revision = 0;
+  bool isBackupFileOfBuffer(const QString &p_file) const;
 
-        // If the buffer is modified, m_content reflect the latest changes instead
-        // of the file content.
-        QString m_content;
+  // Will be assigned uniquely once created.
+  const ID m_id = 0;
 
-        bool m_readOnly = false;
+  // Revision of contents.
+  int m_revision = 0;
 
-        bool m_modified = false;
+  // If the buffer is modified, m_content reflect the latest changes instead
+  // of the file content.
+  QString m_content;
 
-        int m_attachedViewWindowCount = 0;
+  bool m_readOnly = false;
 
-        const ViewWindow *m_viewWindowToSync = nullptr;
+  bool m_modified = false;
 
-        // Managed by QObject.
-        QTimer *m_autoSaveTimer = nullptr;
+  int m_attachedViewWindowCount = 0;
 
-        QString m_backupFilePath;
+  const ViewWindow *m_viewWindowToSync = nullptr;
 
-        QString m_backupFilePathOfPreviousSession;
+  // Managed by QObject.
+  QTimer *m_autoSaveTimer = nullptr;
 
-        StateFlags m_state = StateFlag::Normal;
-    };
-} // ns vnotex
+  QString m_backupFilePath;
+
+  QString m_backupFilePathOfPreviousSession;
+
+  StateFlags m_state = StateFlag::Normal;
+};
+} // namespace vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::Buffer::StateFlags)
 

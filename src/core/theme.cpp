@@ -1,11 +1,11 @@
 #include "theme.h"
 
+#include <QApplication>
 #include <QDir>
-#include <QRegularExpression>
-#include <QSettings>
 #include <QFileInfo>
 #include <QJsonDocument>
-#include <QApplication>
+#include <QRegularExpression>
+#include <QSettings>
 
 #include "exception.h"
 #include <utils/fileutils.h>
@@ -15,476 +15,433 @@
 
 using namespace vnotex;
 
-Theme::Theme(const QString &p_themeFolderPath,
-             const Metadata &p_metadata,
-             const Palette &p_palette)
-    : m_themeFolderPath(p_themeFolderPath),
-      m_metadata(p_metadata),
-      m_palette(p_palette)
-{
+Theme::Theme(const QString &p_themeFolderPath, const Metadata &p_metadata, const Palette &p_palette)
+    : m_themeFolderPath(p_themeFolderPath), m_metadata(p_metadata), m_palette(p_palette) {}
+
+QString vnotex::Theme::getThemeFolder() const { return m_themeFolderPath; }
+
+bool Theme::isValidThemeFolder(const QString &p_folder) {
+  QDir dir(p_folder);
+  if (!dir.exists()) {
+    qWarning() << "theme folder does not exist" << p_folder;
+    return false;
+  }
+
+  // The Palette file must exist.
+  auto file = getFileName(File::Palette);
+  if (!dir.exists(file)) {
+    qWarning() << "Not a valid theme folder" << p_folder;
+    return false;
+  }
+
+  return true;
 }
 
-QString vnotex::Theme::getThemeFolder() const
-{
-    return m_themeFolderPath;
-}
+QString Theme::getDisplayName(const QString &p_folder, const QString &p_locale) {
+  auto obj = readPaletteFile(p_folder);
+  const auto metaObj = obj[QStringLiteral("metadata")].toObject();
+  QString prefix("display_name");
 
-bool Theme::isValidThemeFolder(const QString &p_folder)
-{
-    QDir dir(p_folder);
-    if (!dir.exists()) {
-        qWarning() << "theme folder does not exist" << p_folder;
-        return false;
+  if (!p_locale.isEmpty()) {
+    // Check full locale.
+    auto fullLocale = QStringLiteral("%1_%2").arg(prefix, p_locale);
+    if (metaObj.contains(fullLocale)) {
+      return metaObj.value(fullLocale).toString();
     }
 
-    // The Palette file must exist.
-    auto file = getFileName(File::Palette);
-    if (!dir.exists(file)) {
-        qWarning() << "Not a valid theme folder" << p_folder;
-        return false;
+    auto shortLocale = QStringLiteral("%1_%2").arg(prefix, p_locale.split('_')[0]);
+    if (metaObj.contains(shortLocale)) {
+      return metaObj.value(shortLocale).toString();
     }
+  }
 
-    return true;
+  if (metaObj.contains(prefix)) {
+    return metaObj.value(prefix).toString();
+  }
+  return PathUtils::dirName(p_folder);
 }
 
-QString Theme::getDisplayName(const QString &p_folder, const QString &p_locale)
-{
-    auto obj = readPaletteFile(p_folder);
-    const auto metaObj = obj[QStringLiteral("metadata")].toObject();
-    QString prefix("display_name");
+Theme *Theme::fromFolder(const QString &p_folder) {
+  Q_ASSERT(!p_folder.isEmpty());
+  auto obj = readPaletteFile(p_folder);
+  auto metadata = readMetadata(obj);
+  auto paletteObj = translatePalette(obj, metadata.m_backfillSystemPalette);
+  return new Theme(p_folder, metadata, paletteObj);
+}
 
-    if (!p_locale.isEmpty()) {
-        // Check full locale.
-        auto fullLocale = QStringLiteral("%1_%2").arg(prefix, p_locale);
-        if (metaObj.contains(fullLocale)) {
-            return metaObj.value(fullLocale).toString();
+Theme::Metadata Theme::readMetadata(const Palette &p_obj) {
+  Metadata data;
+
+  const auto metaObj = p_obj[QStringLiteral("metadata")].toObject();
+
+  data.m_revision = metaObj[QStringLiteral("revision")].toInt();
+  data.m_editorHighlightTheme = metaObj[QStringLiteral("editor-highlight-theme")].toString();
+  data.m_markdownEditorHighlightTheme =
+      metaObj[QStringLiteral("markdown-editor-highlight-theme")].toString();
+  data.m_backfillSystemPalette = metaObj[QStringLiteral("backfill-system-palette")].toBool(false);
+
+  return data;
+}
+
+QJsonObject Theme::backfillSystemPalette(QJsonObject p_obj) {
+  const auto qpalette = QApplication::palette();
+  // Active.
+  {
+    QJsonObject obj;
+    obj["window"] = qpalette.color(QPalette::Active, QPalette::Window).name();
+    obj["window_text"] = qpalette.color(QPalette::Active, QPalette::WindowText).name();
+    obj["base"] = qpalette.color(QPalette::Active, QPalette::Base).name();
+    obj["alternate_base"] = qpalette.color(QPalette::Active, QPalette::AlternateBase).name();
+    obj["text"] = qpalette.color(QPalette::Active, QPalette::Text).name();
+    obj["button"] = qpalette.color(QPalette::Active, QPalette::Button).name();
+    obj["button_text"] = qpalette.color(QPalette::Active, QPalette::ButtonText).name();
+    obj["bright_text"] = qpalette.color(QPalette::Active, QPalette::BrightText).name();
+    obj["light"] = qpalette.color(QPalette::Active, QPalette::Light).name();
+    obj["midlight"] = qpalette.color(QPalette::Active, QPalette::Midlight).name();
+    obj["dark"] = qpalette.color(QPalette::Active, QPalette::Dark).name();
+    obj["highlight"] = qpalette.color(QPalette::Active, QPalette::Highlight).name();
+    obj["highlighted_text"] = qpalette.color(QPalette::Active, QPalette::HighlightedText).name();
+    obj["link"] = qpalette.color(QPalette::Active, QPalette::Link).name();
+    obj["link_visited"] = qpalette.color(QPalette::Active, QPalette::LinkVisited).name();
+
+    p_obj["active"] = obj;
+  }
+
+  // Inactive.
+  {
+    QJsonObject obj;
+    p_obj["inactive"] = obj;
+  }
+
+  // Disabled.
+  {
+    QJsonObject obj;
+    obj["window"] = qpalette.color(QPalette::Disabled, QPalette::Window).name();
+    obj["window_text"] = qpalette.color(QPalette::Disabled, QPalette::WindowText).name();
+    obj["base"] = qpalette.color(QPalette::Disabled, QPalette::Base).name();
+    obj["alternate_base"] = qpalette.color(QPalette::Disabled, QPalette::AlternateBase).name();
+    obj["text"] = qpalette.color(QPalette::Disabled, QPalette::Text).name();
+    obj["button"] = qpalette.color(QPalette::Disabled, QPalette::Button).name();
+    obj["button_text"] = qpalette.color(QPalette::Disabled, QPalette::ButtonText).name();
+    obj["bright_text"] = qpalette.color(QPalette::Disabled, QPalette::BrightText).name();
+    obj["light"] = qpalette.color(QPalette::Disabled, QPalette::Light).name();
+    obj["midlight"] = qpalette.color(QPalette::Disabled, QPalette::Midlight).name();
+    obj["dark"] = qpalette.color(QPalette::Disabled, QPalette::Dark).name();
+    obj["highlight"] = qpalette.color(QPalette::Disabled, QPalette::Highlight).name();
+    obj["highlighted_text"] = qpalette.color(QPalette::Disabled, QPalette::HighlightedText).name();
+    obj["link"] = qpalette.color(QPalette::Disabled, QPalette::Link).name();
+    obj["link_visited"] = qpalette.color(QPalette::Disabled, QPalette::LinkVisited).name();
+
+    p_obj["disabled"] = obj;
+  }
+
+  return p_obj;
+}
+
+Theme::Palette Theme::translatePalette(const QJsonObject &p_obj, bool p_backfillSystemPalette) {
+  const QString paletteSection("palette");
+  const QString baseSection("base");
+  const QString widgetsSection("widgets");
+
+  // @p_palette may contain referenced definitons: derived=@base#sub#sub2.
+  Palette palette;
+
+  if (p_backfillSystemPalette) {
+    palette[paletteSection] = backfillSystemPalette(p_obj[paletteSection].toObject());
+  } else {
+    palette[paletteSection] = p_obj[paletteSection];
+  }
+
+  palette[baseSection] = p_obj[baseSection];
+  palette[widgetsSection] = p_obj[widgetsSection];
+
+  // Skip paletteSection since it will not contain any reference.
+
+  translatePaletteObject(palette, palette, baseSection);
+
+  translatePaletteObject(palette, palette, widgetsSection);
+
+  return palette;
+}
+
+void Theme::translatePaletteObject(const Palette &p_palette, QJsonObject &p_obj,
+                                   const QString &p_key) {
+  int lastUnresolvedRefs = 0;
+  while (true) {
+    auto ret = translatePaletteObjectOnce(p_palette, p_obj, p_key);
+    if (!ret.first) {
+      break;
+    }
+
+    if (ret.second > 0 && ret.second == lastUnresolvedRefs) {
+      qWarning() << "found cyclic references in palette definitions" << p_obj[p_key];
+      break;
+    }
+    lastUnresolvedRefs = ret.second;
+  }
+}
+
+QPair<bool, int> Theme::translatePaletteObjectOnce(const Palette &p_palette, QJsonObject &p_obj,
+                                                   const QString &p_key) {
+  bool changed = false;
+  int unresolvedRefs = 0;
+
+  // May contain referenced definitions: derived=@base#sub#sub2.
+  QRegularExpression refRe("\\A@(\\w+(?:#\\w+)*)\\z");
+  const int baseCapturedIdx = 1;
+
+  auto obj = p_obj[p_key].toObject();
+  for (auto it = obj.begin(); it != obj.end(); ++it) {
+    auto val = it.value();
+    if (val.isString()) {
+      // Check if it references to another key.
+      auto match = refRe.match(val.toString());
+      if (match.hasMatch()) {
+        auto refVal = findValueByKeyPath(p_palette, match.captured(baseCapturedIdx));
+        if (refVal.isUndefined()) {
+          ++unresolvedRefs;
+          qWarning() << "failed to find palette key" << match.captured(baseCapturedIdx);
+          break;
+        } else if (val.toString() == refVal.toString()) {
+          ++unresolvedRefs;
+          qWarning() << "found cyclic references in palette definitions" << it.key()
+                     << val.toString();
+          break;
         }
 
-        auto shortLocale = QStringLiteral("%1_%2").arg(prefix, p_locale.split('_')[0]);
-        if (metaObj.contains(shortLocale)) {
-            return metaObj.value(shortLocale).toString();
+        Q_ASSERT_X(refVal.isString(), "translatePaletteObjectOnce",
+                   val.toString().toStdString().c_str());
+        const auto refValStr = refVal.toString();
+        it.value() = refValStr;
+        if (isRef(refValStr)) {
+          // It is another ref again.
+          ++unresolvedRefs;
         }
-    }
-
-    if (metaObj.contains(prefix)) {
-        return metaObj.value(prefix).toString();
-    }
-    return PathUtils::dirName(p_folder);
-}
-
-Theme *Theme::fromFolder(const QString &p_folder)
-{
-    Q_ASSERT(!p_folder.isEmpty());
-    auto obj = readPaletteFile(p_folder);
-    auto metadata = readMetadata(obj);
-    auto paletteObj = translatePalette(obj, metadata.m_backfillSystemPalette);
-    return new Theme(p_folder,
-                     metadata,
-                     paletteObj);
-}
-
-Theme::Metadata Theme::readMetadata(const Palette &p_obj)
-{
-    Metadata data;
-
-    const auto metaObj = p_obj[QStringLiteral("metadata")].toObject();
-
-    data.m_revision = metaObj[QStringLiteral("revision")].toInt();
-    data.m_editorHighlightTheme = metaObj[QStringLiteral("editor-highlight-theme")].toString();
-    data.m_markdownEditorHighlightTheme = metaObj[QStringLiteral("markdown-editor-highlight-theme")].toString();
-    data.m_backfillSystemPalette = metaObj[QStringLiteral("backfill-system-palette")].toBool(false);
-
-    return data;
-}
-
-QJsonObject Theme::backfillSystemPalette(QJsonObject p_obj)
-{
-    const auto qpalette = QApplication::palette();
-    // Active.
-    {
-        QJsonObject obj;
-        obj["window"] = qpalette.color(QPalette::Active, QPalette::Window).name();
-        obj["window_text"] = qpalette.color(QPalette::Active, QPalette::WindowText).name();
-        obj["base"] = qpalette.color(QPalette::Active, QPalette::Base).name();
-        obj["alternate_base"] = qpalette.color(QPalette::Active, QPalette::AlternateBase).name();
-        obj["text"] = qpalette.color(QPalette::Active, QPalette::Text).name();
-        obj["button"] = qpalette.color(QPalette::Active, QPalette::Button).name();
-        obj["button_text"] = qpalette.color(QPalette::Active, QPalette::ButtonText).name();
-        obj["bright_text"] = qpalette.color(QPalette::Active, QPalette::BrightText).name();
-        obj["light"] = qpalette.color(QPalette::Active, QPalette::Light).name();
-        obj["midlight"] = qpalette.color(QPalette::Active, QPalette::Midlight).name();
-        obj["dark"] = qpalette.color(QPalette::Active, QPalette::Dark).name();
-        obj["highlight"] = qpalette.color(QPalette::Active, QPalette::Highlight).name();
-        obj["highlighted_text"] = qpalette.color(QPalette::Active, QPalette::HighlightedText).name();
-        obj["link"] = qpalette.color(QPalette::Active, QPalette::Link).name();
-        obj["link_visited"] = qpalette.color(QPalette::Active, QPalette::LinkVisited).name();
-
-        p_obj["active"] = obj;
-    }
-
-    // Inactive.
-    {
-        QJsonObject obj;
-        p_obj["inactive"] = obj;
-    }
-
-    // Disabled.
-    {
-        QJsonObject obj;
-        obj["window"] = qpalette.color(QPalette::Disabled, QPalette::Window).name();
-        obj["window_text"] = qpalette.color(QPalette::Disabled, QPalette::WindowText).name();
-        obj["base"] = qpalette.color(QPalette::Disabled, QPalette::Base).name();
-        obj["alternate_base"] = qpalette.color(QPalette::Disabled, QPalette::AlternateBase).name();
-        obj["text"] = qpalette.color(QPalette::Disabled, QPalette::Text).name();
-        obj["button"] = qpalette.color(QPalette::Disabled, QPalette::Button).name();
-        obj["button_text"] = qpalette.color(QPalette::Disabled, QPalette::ButtonText).name();
-        obj["bright_text"] = qpalette.color(QPalette::Disabled, QPalette::BrightText).name();
-        obj["light"] = qpalette.color(QPalette::Disabled, QPalette::Light).name();
-        obj["midlight"] = qpalette.color(QPalette::Disabled, QPalette::Midlight).name();
-        obj["dark"] = qpalette.color(QPalette::Disabled, QPalette::Dark).name();
-        obj["highlight"] = qpalette.color(QPalette::Disabled, QPalette::Highlight).name();
-        obj["highlighted_text"] = qpalette.color(QPalette::Disabled, QPalette::HighlightedText).name();
-        obj["link"] = qpalette.color(QPalette::Disabled, QPalette::Link).name();
-        obj["link_visited"] = qpalette.color(QPalette::Disabled, QPalette::LinkVisited).name();
-
-        p_obj["disabled"] = obj;
-    }
-
-    return p_obj;
-}
-
-Theme::Palette Theme::translatePalette(const QJsonObject &p_obj, bool p_backfillSystemPalette)
-{
-    const QString paletteSection("palette");
-    const QString baseSection("base");
-    const QString widgetsSection("widgets");
-
-    // @p_palette may contain referenced definitons: derived=@base#sub#sub2.
-    Palette palette;
-
-    if (p_backfillSystemPalette) {
-        palette[paletteSection] = backfillSystemPalette(p_obj[paletteSection].toObject());
+        changed = true;
+      }
+    } else if (val.isObject()) {
+      auto ret = translatePaletteObjectOnce(p_palette, obj, it.key());
+      changed = changed || ret.first;
+      unresolvedRefs += ret.second;
     } else {
-        palette[paletteSection] = p_obj[paletteSection];
+      Q_ASSERT(false);
     }
+  }
 
-    palette[baseSection] = p_obj[baseSection];
-    palette[widgetsSection] = p_obj[widgetsSection];
-
-    // Skip paletteSection since it will not contain any reference.
-
-    translatePaletteObject(palette, palette, baseSection);
-
-    translatePaletteObject(palette, palette, widgetsSection);
-
-    return palette;
+  if (changed) {
+    p_obj[p_key] = obj;
+  }
+  return qMakePair(changed, unresolvedRefs);
 }
 
-void Theme::translatePaletteObject(const Palette &p_palette,
-                                   QJsonObject &p_obj,
-                                   const QString &p_key)
-{
-    int lastUnresolvedRefs = 0;
-    while (true)
-    {
-        auto ret = translatePaletteObjectOnce(p_palette, p_obj, p_key);
-        if (!ret.first) {
-            break;
-        }
-
-        if (ret.second > 0 && ret.second == lastUnresolvedRefs) {
-            qWarning() << "found cyclic references in palette definitions" << p_obj[p_key];
-            break;
-        }
-        lastUnresolvedRefs = ret.second;
-    }
-}
-
-QPair<bool, int> Theme::translatePaletteObjectOnce(const Palette &p_palette,
-                                                   QJsonObject &p_obj,
-                                                   const QString &p_key)
-{
-    bool changed = false;
-    int unresolvedRefs = 0;
-
-    // May contain referenced definitions: derived=@base#sub#sub2.
-    QRegularExpression refRe("\\A@(\\w+(?:#\\w+)*)\\z");
-    const int baseCapturedIdx = 1;
-
-    auto obj = p_obj[p_key].toObject();
-    for (auto it = obj.begin(); it != obj.end(); ++it) {
-        auto val = it.value();
-        if (val.isString()) {
-            // Check if it references to another key.
-            auto match = refRe.match(val.toString());
-            if (match.hasMatch()) {
-                auto refVal = findValueByKeyPath(p_palette, match.captured(baseCapturedIdx));
-                if (refVal.isUndefined()) {
-                    ++unresolvedRefs;
-                    qWarning() << "failed to find palette key" << match.captured(baseCapturedIdx);
-                    break;
-                } else if (val.toString() == refVal.toString()) {
-                    ++unresolvedRefs;
-                    qWarning() << "found cyclic references in palette definitions" << it.key() << val.toString();
-                    break;
-                }
-
-                Q_ASSERT_X(refVal.isString(), "translatePaletteObjectOnce", val.toString().toStdString().c_str());
-                const auto refValStr = refVal.toString();
-                it.value() = refValStr;
-                if (isRef(refValStr)) {
-                    // It is another ref again.
-                    ++unresolvedRefs;
-                }
-                changed = true;
-            }
-        } else if (val.isObject()) {
-            auto ret = translatePaletteObjectOnce(p_palette, obj, it.key());
-            changed = changed || ret.first;
-            unresolvedRefs += ret.second;
-        } else {
-            Q_ASSERT(false);
-        }
-    }
-
-    if (changed) {
-        p_obj[p_key] = obj;
-    }
-    return qMakePair(changed, unresolvedRefs);
-}
-
-QString Theme::fetchQtStyleSheet() const
-{
-    const auto qtStyleFile = getFile(File::QtStyleSheet);
-    if (qtStyleFile.isEmpty()) {
-        return "";
-    }
-    auto style = FileUtils::readTextFile(qtStyleFile);
-    translateStyleByPalette(m_palette, style);
-    translateUrlToAbsolute(m_themeFolderPath, style);
-    translateFontFamilyList(style);
-    return style;
-}
-
-void Theme::translateStyleByPalette(const Palette &p_palette, QString &p_style)
-{
-    QRegularExpression refRe("(\\s|:)@(\\w+(?:#\\w+)*)");
-    const int prefixCapturedIdx = 1;
-    const int refCapturedIdx = 2;
-
-    int pos = 0;
-    QRegularExpressionMatch match;
-    while (pos < p_style.size()) {
-        int idx = p_style.indexOf(refRe, pos, &match);
-        if (idx == -1) {
-            break;
-        }
-
-        auto name = match.captured(refCapturedIdx);
-        auto val = findValueByKeyPath(p_palette, name).toString();
-        if (val.isEmpty() || isRef(val)) {
-            qWarning() << "failed to translate style" << name << val;
-            pos = idx + match.capturedLength();
-        } else {
-            pos = idx + match.capturedLength() + val.size() - (name.size() + 1);
-            p_style.replace(idx + match.captured(prefixCapturedIdx).size(),
-                            name.size() + 1,
-                            val);
-        }
-    }
-}
-
-void Theme::translateUrlToAbsolute(const QString &p_basePath, QString &p_style)
-{
-    QRegularExpression urlRe("(\\s|:)url\\(([^\\(\\)]+)\\)");
-    const int prefixCapturedIdx = 1;
-    const int urlCapturedIdx = 2;
-
-    QDir dir(p_basePath);
-    const int literalSize = QStringLiteral("url(").size();
-    int pos = 0;
-    QRegularExpressionMatch match;
-    while (pos < p_style.size()) {
-        int idx = p_style.indexOf(urlRe, pos, &match);
-        if (idx == -1) {
-            break;
-        }
-
-        auto url = match.captured(urlCapturedIdx);
-        if (QFileInfo(url).isRelative()) {
-            auto absoluteUrl = dir.filePath(url);
-            pos = idx + match.capturedLength() + absoluteUrl.size() - url.size();
-            p_style.replace(idx + match.captured(prefixCapturedIdx).size() + literalSize,
-                            url.size(),
-                            absoluteUrl);
-        } else {
-            pos = idx + match.capturedLength();
-        }
-    }
-}
-
-void Theme::translateFontFamilyList(QString &p_style)
-{
-    QRegularExpression fontRe("(\\s|^)font-family:([^;]+);");
-    const int prefixCapturedIdx = 1;
-    const int fontCapturedIdx = 2;
-
-    int pos = 0;
-    QRegularExpressionMatch match;
-    while (pos < p_style.size()) {
-        int idx = p_style.indexOf(fontRe, pos, &match);
-        if (idx == -1) {
-            break;
-        }
-
-        auto familyList = match.captured(fontCapturedIdx).trimmed();
-        familyList.remove('"');
-        auto family = Utils::pickAvailableFontFamily(familyList.split(','));
-        if (family.isEmpty()) {
-            // Could not find available font. Remove it.
-            auto newStr = match.captured(prefixCapturedIdx);
-            p_style.replace(idx, match.capturedLength(), newStr);
-            pos = idx + newStr.size();
-        } else if (family != familyList) {
-            if (family.contains(' ')) {
-                family = "\"" + family + "\"";
-            }
-
-            auto newStr = QStringLiteral("%1font-family: %2;").arg(match.captured(prefixCapturedIdx), family);
-            p_style.replace(idx, match.capturedLength(), newStr);
-            pos = idx + newStr.size();
-        } else {
-            pos = idx + match.capturedLength();
-        }
-    }
-}
-
-QString Theme::paletteColor(const QString &p_name) const
-{
-    auto val = findValueByKeyPath(m_palette, p_name).toString();
-    if (!val.isEmpty() && !isRef(val)) {
-        return val;
-    }
-    qWarning() << "undefined or invalid palette color" << p_name;
-    return QString();
-}
-
-QJsonObject Theme::readJsonFile(const QString &p_filePath)
-{
-    auto bytes = FileUtils::readFile(p_filePath);
-    return QJsonDocument::fromJson(bytes).object();
-}
-
-QJsonObject Theme::readPaletteFile(const QString &p_folder)
-{
-    auto obj = readJsonFile(QDir(p_folder).filePath(getFileName(File::Palette)));
-    return obj;
-}
-
-QJsonValue Theme::findValueByKeyPath(const Palette &p_palette, const QString &p_keyPath)
-{
-    auto keys = p_keyPath.split('#');
-    Q_ASSERT(!keys.isEmpty());
-    if (keys.size() == 1) {
-        return p_palette[keys.first()];
-    }
-
-    auto obj = p_palette;
-    for (int i = 0; i < keys.size() - 1; ++i) {
-        obj = obj[keys[i]].toObject();
-    }
-
-    return obj[keys.last()];
-}
-
-bool Theme::isRef(const QString &p_str)
-{
-    return p_str.startsWith('@');
-}
-
-QString Theme::getFile(File p_fileType) const
-{
-    return getFile(m_themeFolderPath, p_fileType);
-}
-
-QString Theme::getFile(const QString &p_themeFolder, File p_fileType)
-{
-    QDir dir(p_themeFolder);
-    if (dir.exists(getFileName(p_fileType))) {
-        return dir.filePath(getFileName(p_fileType));
-    } else if (p_fileType == File::MarkdownEditorStyle) {
-        // Fallback to text editor style.
-        if (dir.exists(getFileName(File::TextEditorStyle))) {
-            return dir.filePath(getFileName(File::TextEditorStyle));
-        }
-    }
+QString Theme::fetchQtStyleSheet() const {
+  const auto qtStyleFile = getFile(File::QtStyleSheet);
+  if (qtStyleFile.isEmpty()) {
     return "";
+  }
+  auto style = FileUtils::readTextFile(qtStyleFile);
+  translateStyleByPalette(m_palette, style);
+  translateUrlToAbsolute(m_themeFolderPath, style);
+  translateFontFamilyList(style);
+  return style;
 }
 
-QString Theme::getFileName(File p_fileType)
-{
-    switch (p_fileType) {
-    case File::Palette:
-        return QStringLiteral("palette.json");
-    case File::QtStyleSheet:
-        return QStringLiteral("interface.qss");
-    case File::WebStyleSheet:
-        return QStringLiteral("web.css");
-    case File::HighlightStyleSheet:
-        return QStringLiteral("highlight.css");
-    case File::TextEditorStyle:
-        return QStringLiteral("text-editor.theme");
-    case File::MarkdownEditorStyle:
-        return QStringLiteral("markdown-text-editor.theme");
-    case File::EditorHighlightStyle:
-        return QStringLiteral("editor-highlight.theme");
-    case File::MarkdownEditorHighlightStyle:
-        return QStringLiteral("markdown-editor-highlight.theme");
-    case File::Cover:
-        return QStringLiteral("cover.png");
-    case File::Icon:
-        return QStringLiteral("icons");
-    default:
-        Q_ASSERT(false);
-        return "";
+void Theme::translateStyleByPalette(const Palette &p_palette, QString &p_style) {
+  QRegularExpression refRe("(\\s|:)@(\\w+(?:#\\w+)*)");
+  const int prefixCapturedIdx = 1;
+  const int refCapturedIdx = 2;
+
+  int pos = 0;
+  QRegularExpressionMatch match;
+  while (pos < p_style.size()) {
+    int idx = p_style.indexOf(refRe, pos, &match);
+    if (idx == -1) {
+      break;
     }
-}
 
-QString Theme::getEditorHighlightTheme() const
-{
-    auto file = getFile(File::EditorHighlightStyle);
-    if (file.isEmpty()) {
-        return m_metadata.m_editorHighlightTheme;
+    auto name = match.captured(refCapturedIdx);
+    auto val = findValueByKeyPath(p_palette, name).toString();
+    if (val.isEmpty() || isRef(val)) {
+      qWarning() << "failed to translate style" << name << val;
+      pos = idx + match.capturedLength();
     } else {
-        return file;
+      pos = idx + match.capturedLength() + val.size() - (name.size() + 1);
+      p_style.replace(idx + match.captured(prefixCapturedIdx).size(), name.size() + 1, val);
     }
+  }
 }
 
-QString Theme::getMarkdownEditorHighlightTheme() const
-{
-    auto file = getFile(File::MarkdownEditorHighlightStyle);
-    if (!file.isEmpty()) {
-        return file;
+void Theme::translateUrlToAbsolute(const QString &p_basePath, QString &p_style) {
+  QRegularExpression urlRe("(\\s|:)url\\(([^\\(\\)]+)\\)");
+  const int prefixCapturedIdx = 1;
+  const int urlCapturedIdx = 2;
+
+  QDir dir(p_basePath);
+  const int literalSize = QStringLiteral("url(").size();
+  int pos = 0;
+  QRegularExpressionMatch match;
+  while (pos < p_style.size()) {
+    int idx = p_style.indexOf(urlRe, pos, &match);
+    if (idx == -1) {
+      break;
     }
 
-    if (!m_metadata.m_markdownEditorHighlightTheme.isEmpty()) {
-        return m_metadata.m_markdownEditorHighlightTheme;
+    auto url = match.captured(urlCapturedIdx);
+    if (QFileInfo(url).isRelative()) {
+      auto absoluteUrl = dir.filePath(url);
+      pos = idx + match.capturedLength() + absoluteUrl.size() - url.size();
+      p_style.replace(idx + match.captured(prefixCapturedIdx).size() + literalSize, url.size(),
+                      absoluteUrl);
+    } else {
+      pos = idx + match.capturedLength();
     }
-
-    return getEditorHighlightTheme();
+  }
 }
 
-QString Theme::name() const
-{
-    return PathUtils::dirName(m_themeFolderPath);
+void Theme::translateFontFamilyList(QString &p_style) {
+  QRegularExpression fontRe("(\\s|^)font-family:([^;]+);");
+  const int prefixCapturedIdx = 1;
+  const int fontCapturedIdx = 2;
+
+  int pos = 0;
+  QRegularExpressionMatch match;
+  while (pos < p_style.size()) {
+    int idx = p_style.indexOf(fontRe, pos, &match);
+    if (idx == -1) {
+      break;
+    }
+
+    auto familyList = match.captured(fontCapturedIdx).trimmed();
+    familyList.remove('"');
+    auto family = Utils::pickAvailableFontFamily(familyList.split(','));
+    if (family.isEmpty()) {
+      // Could not find available font. Remove it.
+      auto newStr = match.captured(prefixCapturedIdx);
+      p_style.replace(idx, match.capturedLength(), newStr);
+      pos = idx + newStr.size();
+    } else if (family != familyList) {
+      if (family.contains(' ')) {
+        family = "\"" + family + "\"";
+      }
+
+      auto newStr =
+          QStringLiteral("%1font-family: %2;").arg(match.captured(prefixCapturedIdx), family);
+      p_style.replace(idx, match.capturedLength(), newStr);
+      pos = idx + newStr.size();
+    } else {
+      pos = idx + match.capturedLength();
+    }
+  }
 }
 
-QPixmap Theme::getCover(const QString &p_folder)
-{
-    QDir dir(p_folder);
-    if (dir.exists(getFileName(File::Cover))) {
-        const auto coverFile = dir.filePath(getFileName(File::Cover));
-        return QPixmap(coverFile);
+QString Theme::paletteColor(const QString &p_name) const {
+  auto val = findValueByKeyPath(m_palette, p_name).toString();
+  if (!val.isEmpty() && !isRef(val)) {
+    return val;
+  }
+  qWarning() << "undefined or invalid palette color" << p_name;
+  return QString();
+}
+
+QJsonObject Theme::readJsonFile(const QString &p_filePath) {
+  auto bytes = FileUtils::readFile(p_filePath);
+  return QJsonDocument::fromJson(bytes).object();
+}
+
+QJsonObject Theme::readPaletteFile(const QString &p_folder) {
+  auto obj = readJsonFile(QDir(p_folder).filePath(getFileName(File::Palette)));
+  return obj;
+}
+
+QJsonValue Theme::findValueByKeyPath(const Palette &p_palette, const QString &p_keyPath) {
+  auto keys = p_keyPath.split('#');
+  Q_ASSERT(!keys.isEmpty());
+  if (keys.size() == 1) {
+    return p_palette[keys.first()];
+  }
+
+  auto obj = p_palette;
+  for (int i = 0; i < keys.size() - 1; ++i) {
+    obj = obj[keys[i]].toObject();
+  }
+
+  return obj[keys.last()];
+}
+
+bool Theme::isRef(const QString &p_str) { return p_str.startsWith('@'); }
+
+QString Theme::getFile(File p_fileType) const { return getFile(m_themeFolderPath, p_fileType); }
+
+QString Theme::getFile(const QString &p_themeFolder, File p_fileType) {
+  QDir dir(p_themeFolder);
+  if (dir.exists(getFileName(p_fileType))) {
+    return dir.filePath(getFileName(p_fileType));
+  } else if (p_fileType == File::MarkdownEditorStyle) {
+    // Fallback to text editor style.
+    if (dir.exists(getFileName(File::TextEditorStyle))) {
+      return dir.filePath(getFileName(File::TextEditorStyle));
     }
-    return QPixmap();
+  }
+  return "";
+}
+
+QString Theme::getFileName(File p_fileType) {
+  switch (p_fileType) {
+  case File::Palette:
+    return QStringLiteral("palette.json");
+  case File::QtStyleSheet:
+    return QStringLiteral("interface.qss");
+  case File::WebStyleSheet:
+    return QStringLiteral("web.css");
+  case File::HighlightStyleSheet:
+    return QStringLiteral("highlight.css");
+  case File::TextEditorStyle:
+    return QStringLiteral("text-editor.theme");
+  case File::MarkdownEditorStyle:
+    return QStringLiteral("markdown-text-editor.theme");
+  case File::EditorHighlightStyle:
+    return QStringLiteral("editor-highlight.theme");
+  case File::MarkdownEditorHighlightStyle:
+    return QStringLiteral("markdown-editor-highlight.theme");
+  case File::Cover:
+    return QStringLiteral("cover.png");
+  case File::Icon:
+    return QStringLiteral("icons");
+  default:
+    Q_ASSERT(false);
+    return "";
+  }
+}
+
+QString Theme::getEditorHighlightTheme() const {
+  auto file = getFile(File::EditorHighlightStyle);
+  if (file.isEmpty()) {
+    return m_metadata.m_editorHighlightTheme;
+  } else {
+    return file;
+  }
+}
+
+QString Theme::getMarkdownEditorHighlightTheme() const {
+  auto file = getFile(File::MarkdownEditorHighlightStyle);
+  if (!file.isEmpty()) {
+    return file;
+  }
+
+  if (!m_metadata.m_markdownEditorHighlightTheme.isEmpty()) {
+    return m_metadata.m_markdownEditorHighlightTheme;
+  }
+
+  return getEditorHighlightTheme();
+}
+
+QString Theme::name() const { return PathUtils::dirName(m_themeFolderPath); }
+
+QPixmap Theme::getCover(const QString &p_folder) {
+  QDir dir(p_folder);
+  if (dir.exists(getFileName(File::Cover))) {
+    const auto coverFile = dir.filePath(getFileName(File::Cover));
+    return QPixmap(coverFile);
+  }
+  return QPixmap();
 }

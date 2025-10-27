@@ -3,8 +3,8 @@
 
 #include <QScopedPointer>
 
-#include <vtextedit/vmarkdowneditor.h>
 #include <vtextedit/pegmarkdownhighlighter.h>
+#include <vtextedit/vmarkdowneditor.h>
 
 #include <core/global.h>
 
@@ -12,229 +12,218 @@ class QMimeData;
 class QMenu;
 class QTimer;
 
-namespace vte
-{
-    class MarkdownEditorConfig;
+namespace vte {
+class MarkdownEditorConfig;
 }
 
-namespace vnotex
-{
-    class PreviewHelper;
-    class Buffer;
-    class MarkdownEditorConfig;
-    class MarkdownTableHelper;
-    class ImageHost;
+namespace vnotex {
+class PreviewHelper;
+class Buffer;
+class MarkdownEditorConfig;
+class MarkdownTableHelper;
+class ImageHost;
 
-    class MarkdownEditor : public vte::VMarkdownEditor
-    {
-        Q_OBJECT
-    public:
-        struct Heading
-        {
-            Heading() = default;
+class MarkdownEditor : public vte::VMarkdownEditor {
+  Q_OBJECT
+public:
+  struct Heading {
+    Heading() = default;
 
-            Heading(const QString &p_name,
-                    int p_level,
-                    const QString &p_sectionNumber = QString(),
-                    int p_blockNumber = -1);
+    Heading(const QString &p_name, int p_level, const QString &p_sectionNumber = QString(),
+            int p_blockNumber = -1);
 
-            QString m_name;
+    QString m_name;
 
-            int m_level = -1;
+    int m_level = -1;
 
-            // 1.2. .
-            QString m_sectionNumber;
+    // 1.2. .
+    QString m_sectionNumber;
 
-            int m_blockNumber = -1;
-        };
+    int m_blockNumber = -1;
+  };
 
-        MarkdownEditor(const MarkdownEditorConfig &p_config,
-                       const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
-                       const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
-                       QWidget *p_parent = nullptr);
+  MarkdownEditor(const MarkdownEditorConfig &p_config,
+                 const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
+                 const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
+                 QWidget *p_parent = nullptr);
 
-        virtual ~MarkdownEditor();
+  virtual ~MarkdownEditor();
 
-        void setPreviewHelper(PreviewHelper *p_helper);
+  void setPreviewHelper(PreviewHelper *p_helper);
 
-        void setBuffer(Buffer *p_buffer);
+  void setBuffer(Buffer *p_buffer);
 
-        // @p_level: [0, 6], 0 for none.
-        void typeHeading(int p_level);
+  // @p_level: [0, 6], 0 for none.
+  void typeHeading(int p_level);
 
-        void typeBold();
+  void typeBold();
 
-        void typeItalic();
+  void typeItalic();
 
-        void typeStrikethrough();
+  void typeStrikethrough();
 
-        void typeMark();
+  void typeMark();
 
-        void typeUnorderedList();
+  void typeUnorderedList();
 
-        void typeOrderedList();
+  void typeOrderedList();
 
-        void typeTodoList(bool p_checked);
+  void typeTodoList(bool p_checked);
 
-        void typeCode();
+  void typeCode();
 
-        void typeCodeBlock();
+  void typeCodeBlock();
 
-        void typeMath();
+  void typeMath();
 
-        void typeMathBlock();
+  void typeMathBlock();
 
-        void typeQuote();
+  void typeQuote();
 
-        void typeLink();
+  void typeLink();
 
-        void typeImage();
+  void typeImage();
 
-        void typeTable();
+  void typeTable();
 
-        const QVector<MarkdownEditor::Heading> &getHeadings() const;
-        int getCurrentHeadingIndex() const;
+  const QVector<MarkdownEditor::Heading> &getHeadings() const;
+  int getCurrentHeadingIndex() const;
 
-        void scrollToHeading(int p_idx);
+  void scrollToHeading(int p_idx);
 
-        void overrideSectionNumber(OverrideState p_state);
+  void overrideSectionNumber(OverrideState p_state);
 
-        void updateFromConfig(bool p_initialized = true);
+  void updateFromConfig(bool p_initialized = true);
 
-        QRgb getPreviewBackground() const;
+  QRgb getPreviewBackground() const;
 
-        void setImageHost(ImageHost *p_host);
+  void setImageHost(ImageHost *p_host);
 
-    public slots:
-        void handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text);
+public slots:
+  void handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text);
 
-    signals:
-        void headingsChanged();
+signals:
+  void headingsChanged();
 
-        void currentHeadingChanged();
+  void currentHeadingChanged();
 
-        void htmlToMarkdownRequested(quint64 p_id, TimeStamp p_timeStamp, const QString &p_html);
+  void htmlToMarkdownRequested(quint64 p_id, TimeStamp p_timeStamp, const QString &p_html);
 
-        void readRequested();
+  void readRequested();
 
-        void applySnippetRequested();
+  void applySnippetRequested();
 
-    private slots:
-        void handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled, bool *p_allowed);
+private slots:
+  void handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled, bool *p_allowed);
 
-        void handleInsertFromMimeData(const QMimeData *p_source, bool *p_handled);
+  void handleInsertFromMimeData(const QMimeData *p_source, bool *p_handled);
 
-        void handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_handled, QScopedPointer<QMenu> *p_menu);
+  void handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_handled,
+                              QScopedPointer<QMenu> *p_menu);
 
-        void altPaste();
+  void altPaste();
 
-        void parseToMarkdownAndPaste();
+  void parseToMarkdownAndPaste();
 
-    private:
-        // @p_scaledWidth: 0 for not overridden.
-        // @p_insertText: whether insert text into the buffer after inserting image file.
-        // @p_urlInLink: store the url in link if not null.
-        bool insertImageToBufferFromLocalFile(const QString &p_title,
-                                              const QString &p_altText,
-                                              const QString &p_srcImagePath,
-                                              int p_scaledWidth = 0,
-                                              int p_scaledHeight = 0,
-                                              bool p_insertText = true,
-                                              QString *p_urlInLink = nullptr);
+private:
+  // @p_scaledWidth: 0 for not overridden.
+  // @p_insertText: whether insert text into the buffer after inserting image file.
+  // @p_urlInLink: store the url in link if not null.
+  bool insertImageToBufferFromLocalFile(const QString &p_title, const QString &p_altText,
+                                        const QString &p_srcImagePath, int p_scaledWidth = 0,
+                                        int p_scaledHeight = 0, bool p_insertText = true,
+                                        QString *p_urlInLink = nullptr);
 
-        bool insertImageToBufferFromData(const QString &p_title,
-                                         const QString &p_altText,
-                                         const QImage &p_image,
-                                         int p_scaledWidth = 0,
-                                         int p_scaledHeight = 0);
+  bool insertImageToBufferFromData(const QString &p_title, const QString &p_altText,
+                                   const QImage &p_image, int p_scaledWidth = 0,
+                                   int p_scaledHeight = 0);
 
-        void insertImageLink(const QString &p_title,
-                             const QString &p_altText,
-                             const QString &p_destImagePath,
-                             int p_scaledWidth,
-                             int p_scaledHeight,
-                             bool p_insertText = true,
-                             QString *p_urlInLink = nullptr);
+  void insertImageLink(const QString &p_title, const QString &p_altText,
+                       const QString &p_destImagePath, int p_scaledWidth, int p_scaledHeight,
+                       bool p_insertText = true, QString *p_urlInLink = nullptr);
 
-        // Return true if it is processed.
-        bool processHtmlFromMimeData(const QMimeData *p_source);
+  // Return true if it is processed.
+  bool processHtmlFromMimeData(const QMimeData *p_source);
 
-        // Return true if it is processed.
-        bool processImageFromMimeData(const QMimeData *p_source);
+  // Return true if it is processed.
+  bool processImageFromMimeData(const QMimeData *p_source);
 
-        // Return true if it is processed.
-        bool processUrlFromMimeData(const QMimeData *p_source);
+  // Return true if it is processed.
+  bool processUrlFromMimeData(const QMimeData *p_source);
 
-        // Return true if it is processed.
-        bool processMultipleUrlsFromMimeData(const QMimeData *p_source);
+  // Return true if it is processed.
+  bool processMultipleUrlsFromMimeData(const QMimeData *p_source);
 
-        void insertImageFromMimeData(const QMimeData *p_source);
+  void insertImageFromMimeData(const QMimeData *p_source);
 
-        void insertImageFromUrl(const QString &p_url, bool p_quiet = false);
+  void insertImageFromUrl(const QString &p_url, bool p_quiet = false);
 
-        QString getRelativeLink(const QString &p_path);
+  QString getRelativeLink(const QString &p_path);
 
-        // Update section number.
-        // Update headings outline.
-        void updateHeadings(const QVector<vte::peg::ElementRegion> &p_headerRegions);
+  // Update section number.
+  // Update headings outline.
+  void updateHeadings(const QVector<vte::peg::ElementRegion> &p_headerRegions);
 
-        int getHeadingIndexByBlockNumber(int p_blockNumber) const;
+  int getHeadingIndexByBlockNumber(int p_blockNumber) const;
 
-        void setupShortcuts();
+  void setupShortcuts();
 
-        void fetchImagesToLocalAndReplace(QString &p_text);
+  void fetchImagesToLocalAndReplace(QString &p_text);
 
-        // Return true if there is change.
-        bool updateSectionNumber(const QVector<Heading> &p_headings);
+  // Return true if there is change.
+  bool updateSectionNumber(const QVector<Heading> &p_headings);
 
-        void setupTableHelper();
+  void setupTableHelper();
 
-        // Return the dest file path of the image on success.
-        QString saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName);
+  // Return the dest file path of the image on success.
+  QString saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName);
 
-        void appendImageHostMenu(QMenu *p_menu);
+  void appendImageHostMenu(QMenu *p_menu);
 
-        void uploadImagesToImageHost();
+  void uploadImagesToImageHost();
 
-        void prependContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos);
+  void prependContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos);
 
-        bool prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos, const QTextBlock &p_block);
+  bool prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
+                        const QTextBlock &p_block);
 
-        bool prependInPlacePreviewMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos, const QTextBlock &p_block);
+  bool prependInPlacePreviewMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
+                                 const QTextBlock &p_block);
 
-        bool prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos, const QTextBlock &p_block);
+  bool prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
+                       const QTextBlock &p_block);
 
-        static QString generateImageFileNameToInsertAs(const QString &p_title, const QString &p_suffix);
+  static QString generateImageFileNameToInsertAs(const QString &p_title, const QString &p_suffix);
 
-        const MarkdownEditorConfig &m_config;
+  const MarkdownEditorConfig &m_config;
 
-        Buffer *m_buffer = nullptr;
+  Buffer *m_buffer = nullptr;
 
-        QVector<Heading> m_headings;
+  QVector<Heading> m_headings;
 
-        // TimeStamp used as sequence number to interact with Web side.
-        TimeStamp m_timeStamp = 0;
+  // TimeStamp used as sequence number to interact with Web side.
+  TimeStamp m_timeStamp = 0;
 
-        QTimer *m_headingTimer = nullptr;
+  QTimer *m_headingTimer = nullptr;
 
-        QTimer *m_sectionNumberTimer = nullptr;
+  QTimer *m_sectionNumberTimer = nullptr;
 
-        // Used to detect the config change and do a clean up.
-        bool m_sectionNumberEnabled = false;
+  // Used to detect the config change and do a clean up.
+  bool m_sectionNumberEnabled = false;
 
-        OverrideState m_overriddenSectionNumber = OverrideState::NoOverride;
+  OverrideState m_overriddenSectionNumber = OverrideState::NoOverride;
 
-        // Managed by QObject.
-        MarkdownTableHelper *m_tableHelper = nullptr;
+  // Managed by QObject.
+  MarkdownTableHelper *m_tableHelper = nullptr;
 
-        ImageHost *m_imageHost = nullptr;
+  ImageHost *m_imageHost = nullptr;
 
-        bool m_shouldTriggerRichPaste = false;
+  bool m_shouldTriggerRichPaste = false;
 
-        bool m_richPasteAsked = false;
+  bool m_richPasteAsked = false;
 
-        bool m_plainTextPasteAsked = false;
-    };
-}
+  bool m_plainTextPasteAsked = false;
+};
+} // namespace vnotex
 
 #endif // MARKDOWNEDITOR_H

@@ -3,26 +3,24 @@
 
 #include <QStringList>
 
-namespace vnotex
-{
-    class DocsUtils
-    {
-    public:
-        DocsUtils() = delete;
+namespace vnotex {
+class DocsUtils {
+public:
+  DocsUtils() = delete;
 
-        static QString getDocText(const QString &p_baseName);
+  static QString getDocText(const QString &p_baseName);
 
-        static QString getDocFile(const QString &p_baseName);
+  static QString getDocFile(const QString &p_baseName);
 
-        static void addSearchPath(const QString &p_path);
+  static void addSearchPath(const QString &p_path);
 
-        static void setLocale(const QString &p_locale);
+  static void setLocale(const QString &p_locale);
 
-    private:
-        static QStringList s_searchPaths;
+private:
+  static QStringList s_searchPaths;
 
-        static QString s_locale;
-    };
-}
+  static QString s_locale;
+};
+} // namespace vnotex
 
 #endif // DOCSUTILS_H

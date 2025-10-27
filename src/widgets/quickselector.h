@@ -9,67 +9,60 @@
 class QListWidget;
 class QListWidgetItem;
 
-namespace vnotex
-{
-    class LineEdit;
+namespace vnotex {
+class LineEdit;
 
-    struct QuickSelectorItem
-    {
-        QuickSelectorItem() = default;
+struct QuickSelectorItem {
+  QuickSelectorItem() = default;
 
-        QuickSelectorItem(const QVariant &p_key,
-                          const QString &p_name,
-                          const QString &p_tip,
-                          const QString &p_shortcut);
+  QuickSelectorItem(const QVariant &p_key, const QString &p_name, const QString &p_tip,
+                    const QString &p_shortcut);
 
-        QVariant m_key;
+  QVariant m_key;
 
-        QString m_name;
+  QString m_name;
 
-        QString m_tip;
+  QString m_tip;
 
-        // Empty or size < 3.
-        QString m_shortcut;
-    };
+  // Empty or size < 3.
+  QString m_shortcut;
+};
 
-    class QuickSelector : public FloatingWidget
-    {
-        Q_OBJECT
-    public:
-        QuickSelector(const QString &p_title,
-                      const QVector<QuickSelectorItem> &p_items,
-                      bool p_sortByShortcut,
-                      QWidget *p_parent = nullptr);
+class QuickSelector : public FloatingWidget {
+  Q_OBJECT
+public:
+  QuickSelector(const QString &p_title, const QVector<QuickSelectorItem> &p_items,
+                bool p_sortByShortcut, QWidget *p_parent = nullptr);
 
-        QVariant result() const Q_DECL_OVERRIDE;
+  QVariant result() const Q_DECL_OVERRIDE;
 
-    protected:
-        bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
-    private:
-        void setupUI(const QString &p_title);
+private:
+  void setupUI(const QString &p_title);
 
-        void updateItemList();
+  void updateItemList();
 
-        void activateItem(const QListWidgetItem *p_item);
+  void activateItem(const QListWidgetItem *p_item);
 
-        void activate(const QuickSelectorItem *p_item);
+  void activate(const QuickSelectorItem *p_item);
 
-        void searchAndFilter(const QString &p_text);
+  void searchAndFilter(const QString &p_text);
 
-        // Return the number of items that hit @p_judge.
-        int filterItems(const std::function<bool(const QuickSelectorItem &)> &p_judge);
+  // Return the number of items that hit @p_judge.
+  int filterItems(const std::function<bool(const QuickSelectorItem &)> &p_judge);
 
-        QuickSelectorItem &getSelectorItem(const QListWidgetItem *p_item);
+  QuickSelectorItem &getSelectorItem(const QListWidgetItem *p_item);
 
-        QVector<QuickSelectorItem> m_items;
+  QVector<QuickSelectorItem> m_items;
 
-        LineEdit *m_searchLineEdit = nullptr;
+  LineEdit *m_searchLineEdit = nullptr;
 
-        QListWidget *m_itemList = nullptr;
+  QListWidget *m_itemList = nullptr;
 
-        QVariant m_selectedKey;
-    };
-}
+  QVariant m_selectedKey;
+};
+} // namespace vnotex
 
 #endif // QUICKSELECTOR_H

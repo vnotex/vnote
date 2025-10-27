@@ -2,86 +2,77 @@
 #define SINGLEINSTANCEGUARD_H
 
 #include <QObject>
-#include <QString>
 #include <QSharedPointer>
+#include <QString>
 
 class QLocalServer;
 class QLocalSocket;
 
-namespace vnotex
-{
-    class SingleInstanceGuard : public QObject
-    {
-        Q_OBJECT
-    public:
-        SingleInstanceGuard() = default;
+namespace vnotex {
+class SingleInstanceGuard : public QObject {
+  Q_OBJECT
+public:
+  SingleInstanceGuard() = default;
 
-        ~SingleInstanceGuard();
+  ~SingleInstanceGuard();
 
-        // Try to run. Return true on success.
-        bool tryRun();
+  // Try to run. Return true on success.
+  bool tryRun();
 
-        // Server API.
-    public:
-        // A running instance requests to exit.
-        void exit();
+  // Server API.
+public:
+  // A running instance requests to exit.
+  void exit();
 
-        // Clients API.
-    public:
-        void requestOpenFiles(const QStringList &p_files);
+  // Clients API.
+public:
+  void requestOpenFiles(const QStringList &p_files);
 
-        void requestShow();
+  void requestShow();
 
-    signals:
-        void openFilesRequested(const QStringList &p_files);
+signals:
+  void openFilesRequested(const QStringList &p_files);
 
-        void showRequested();
+  void showRequested();
 
-    private:
-        enum OpCode
-        {
-            Null = 0,
-            Show,
-            OpenFiles
-        };
+private:
+  enum OpCode { Null = 0, Show, OpenFiles };
 
-        struct Command
-        {
-            void clear()
-            {
-                m_opCode = OpCode::Null;
-                m_size = 0;
-            }
+  struct Command {
+    void clear() {
+      m_opCode = OpCode::Null;
+      m_size = 0;
+    }
 
-            OpCode m_opCode = OpCode::Null;
-            int m_size = 0;
-        };
+    OpCode m_opCode = OpCode::Null;
+    int m_size = 0;
+  };
 
-        QSharedPointer<QLocalSocket> tryConnect();
+  QSharedPointer<QLocalSocket> tryConnect();
 
-        QSharedPointer<QLocalServer> tryListen();
+  QSharedPointer<QLocalServer> tryListen();
 
-        void setupServer();
+  void setupServer();
 
-        void receiveCommand(QLocalSocket *p_socket);
+  void receiveCommand(QLocalSocket *p_socket);
 
-        void sendRequest(QLocalSocket *p_socket, OpCode p_code, const QString &p_payload);
+  void sendRequest(QLocalSocket *p_socket, OpCode p_code, const QString &p_payload);
 
-        // Whether succeeded to run.
-        bool m_online = false;
+  // Whether succeeded to run.
+  bool m_online = false;
 
-        QSharedPointer<QLocalSocket> m_client;
+  QSharedPointer<QLocalSocket> m_client;
 
-        QSharedPointer<QLocalServer> m_server;
+  QSharedPointer<QLocalServer> m_server;
 
-        bool m_ongoingConnect = false;
+  bool m_ongoingConnect = false;
 
-        Command m_command;
+  Command m_command;
 
-        static const QString c_serverName;
+  static const QString c_serverName;
 
-        static const QChar c_stringListSeparator;
-    };
-} // ns vnotex
+  static const QChar c_stringListSeparator;
+};
+} // namespace vnotex
 
 #endif // SINGLEINSTANCEGUARD_H

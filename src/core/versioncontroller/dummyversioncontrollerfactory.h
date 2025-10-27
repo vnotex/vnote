@@ -3,22 +3,19 @@
 
 #include "iversioncontrollerfactory.h"
 
+namespace vnotex {
+class DummyVersionControllerFactory : public IVersionControllerFactory {
+public:
+  DummyVersionControllerFactory();
 
-namespace vnotex
-{
-    class DummyVersionControllerFactory : public IVersionControllerFactory
-    {
-    public:
-        DummyVersionControllerFactory();
+  QString getName() const Q_DECL_OVERRIDE;
 
-        QString getName() const Q_DECL_OVERRIDE;
+  QString getDisplayName() const Q_DECL_OVERRIDE;
 
-        QString getDisplayName() const Q_DECL_OVERRIDE;
+  QString getDescription() const Q_DECL_OVERRIDE;
 
-        QString getDescription()const Q_DECL_OVERRIDE;
-
-        QSharedPointer<IVersionController> createVersionController() Q_DECL_OVERRIDE;
-    };
-} // ns vnotex
+  QSharedPointer<IVersionController> createVersionController() Q_DECL_OVERRIDE;
+};
+} // namespace vnotex
 
 #endif // DUMMYVERSIONCONTROLLERFACTORY_H

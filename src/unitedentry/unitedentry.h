@@ -10,90 +10,88 @@ class QTreeWidget;
 class QLabel;
 class QMainWindow;
 
-namespace vnotex
-{
-    class LineEditWithSnippet;
-    class EntryPopup;
-    class IUnitedEntry;
+namespace vnotex {
+class LineEditWithSnippet;
+class EntryPopup;
+class IUnitedEntry;
 
-    class UnitedEntry : public QFrame
-    {
-        Q_OBJECT
-    public:
-        explicit UnitedEntry(QMainWindow *p_mainWindow);
+class UnitedEntry : public QFrame {
+  Q_OBJECT
+public:
+  explicit UnitedEntry(QMainWindow *p_mainWindow);
 
-        ~UnitedEntry();
+  ~UnitedEntry();
 
-        bool eventFilter(QObject *p_watched, QEvent *p_event) Q_DECL_OVERRIDE;
+  bool eventFilter(QObject *p_watched, QEvent *p_event) Q_DECL_OVERRIDE;
 
-        QAction *getTriggerAction();
+  QAction *getTriggerAction();
 
-        QString getTriggerActionText() const;
+  QString getTriggerActionText() const;
 
-    protected:
-        void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void setupActions();
+  void setupActions();
 
-        void activateUnitedEntry();
+  void activateUnitedEntry();
 
-        void deactivateUnitedEntry();
+  void deactivateUnitedEntry();
 
-        void clear();
+  void clear();
 
-        void processInput();
+  void processInput();
 
-        void handleFocusChanged(QWidget *p_old, QWidget *p_now);
+  void handleFocusChanged(QWidget *p_old, QWidget *p_now);
 
-        const QSharedPointer<QTreeWidget> &getEntryListWidget();
+  const QSharedPointer<QTreeWidget> &getEntryListWidget();
 
-        QSharedPointer<QLabel> getInfoWidget(const QString &p_info);
+  QSharedPointer<QLabel> getInfoWidget(const QString &p_info);
 
-        void popupWidget(const QSharedPointer<QWidget> &p_widget);
+  void popupWidget(const QSharedPointer<QWidget> &p_widget);
 
-        // Return true if there is any entry visible.
-        bool filterEntryListWidgetEntries(const QString &p_name);
+  // Return true if there is any entry visible.
+  bool filterEntryListWidgetEntries(const QString &p_name);
 
-        void handleEntryFinished(IUnitedEntry *p_entry);
+  void handleEntryFinished(IUnitedEntry *p_entry);
 
-        void handleEntryItemActivated(IUnitedEntry *p_entry, bool p_quit, bool p_restoreFocus);
+  void handleEntryItemActivated(IUnitedEntry *p_entry, bool p_quit, bool p_restoreFocus);
 
-        void setBusy(bool p_busy);
+  void setBusy(bool p_busy);
 
-        void exitUnitedEntry();
+  void exitUnitedEntry();
 
-        void updateGeometryToContents();
+  void updateGeometryToContents();
 
-        QSize preferredSize() const;
+  QSize preferredSize() const;
 
-        // Return true if want to stop the propogation.
-        bool handleLineEditKeyPress(QKeyEvent *p_event);
+  // Return true if want to stop the propogation.
+  bool handleLineEditKeyPress(QKeyEvent *p_event);
 
-        QMainWindow *m_mainWindow = nullptr;
+  QMainWindow *m_mainWindow = nullptr;
 
-        LineEditWithSnippet *m_lineEdit = nullptr;
+  LineEditWithSnippet *m_lineEdit = nullptr;
 
-        EntryPopup *m_popup = nullptr;
+  EntryPopup *m_popup = nullptr;
 
-        QAction *m_menuIconAction = nullptr;
+  QAction *m_menuIconAction = nullptr;
 
-        QAction *m_busyIconAction = nullptr;
+  QAction *m_busyIconAction = nullptr;
 
-        bool m_activated = false;
+  bool m_activated = false;
 
-        QWidget *m_previousFocusWidget = nullptr;
+  QWidget *m_previousFocusWidget = nullptr;
 
-        QTimer *m_processTimer = nullptr;
+  QTimer *m_processTimer = nullptr;
 
-        QSharedPointer<QTreeWidget> m_entryListWidget = nullptr;
+  QSharedPointer<QTreeWidget> m_entryListWidget = nullptr;
 
-        QSharedPointer<IUnitedEntry> m_lastEntry;
+  QSharedPointer<IUnitedEntry> m_lastEntry;
 
-        bool m_hasPending = false;
-    };
-}
+  bool m_hasPending = false;
+};
+} // namespace vnotex
 
 #endif // UNITEDENTRY_H

@@ -5,27 +5,25 @@
 
 class QToolButton;
 
-namespace vnotex
-{
-    class Buffer;
-    class TagViewer;
+namespace vnotex {
+class Buffer;
+class TagViewer;
 
-    class TagPopup : public ButtonPopup
-    {
-        Q_OBJECT
-    public:
-        TagPopup(QToolButton *p_btn, QWidget *p_parent = nullptr);
+class TagPopup : public ButtonPopup {
+  Q_OBJECT
+public:
+  TagPopup(QToolButton *p_btn, QWidget *p_parent = nullptr);
 
-        void setBuffer(Buffer *p_buffer);
+  void setBuffer(Buffer *p_buffer);
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        Buffer *m_buffer = nullptr;
+  Buffer *m_buffer = nullptr;
 
-        // Managed by QObject.
-        TagViewer *m_tagViewer = nullptr;
-    };
-}
+  // Managed by QObject.
+  TagViewer *m_tagViewer = nullptr;
+};
+} // namespace vnotex
 
 #endif // TAGPOPUP_H

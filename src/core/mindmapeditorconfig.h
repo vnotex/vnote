@@ -5,27 +5,25 @@
 
 #include "webresource.h"
 
-namespace vnotex
-{
-    class MindMapEditorConfig : public IConfig
-    {
-    public:
-        MindMapEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
+namespace vnotex {
+class MindMapEditorConfig : public IConfig {
+public:
+  MindMapEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
 
-        void init(const QJsonObject &p_app, const QJsonObject &p_user) Q_DECL_OVERRIDE;
+  void init(const QJsonObject &p_app, const QJsonObject &p_user) Q_DECL_OVERRIDE;
 
-        QJsonObject toJson() const Q_DECL_OVERRIDE;
+  QJsonObject toJson() const Q_DECL_OVERRIDE;
 
-        const WebResource &getEditorResource() const;
+  const WebResource &getEditorResource() const;
 
-    private:
-        friend class MainConfig;
+private:
+  friend class MainConfig;
 
-        void loadEditorResource(const QJsonObject &p_app, const QJsonObject &p_user);
-        QJsonObject saveEditorResource() const;
+  void loadEditorResource(const QJsonObject &p_app, const QJsonObject &p_user);
+  QJsonObject saveEditorResource() const;
 
-        WebResource m_editorResource;
-    };
-}
+  WebResource m_editorResource;
+};
+} // namespace vnotex
 
 #endif // MINDMAPEDITORCONFIG_H

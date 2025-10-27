@@ -6,49 +6,47 @@
 class QListWidget;
 class QListWidgetItem;
 
-namespace vnotex
-{
-    class TitleBar;
+namespace vnotex {
+class TitleBar;
 
-    class SnippetPanel : public QFrame
-    {
-        Q_OBJECT
-    public:
-        explicit SnippetPanel(QWidget *p_parent = nullptr);
+class SnippetPanel : public QFrame {
+  Q_OBJECT
+public:
+  explicit SnippetPanel(QWidget *p_parent = nullptr);
 
-        void initialize();
+  void initialize();
 
-    signals:
-        void applySnippetRequested(const QString &p_name);
+signals:
+  void applySnippetRequested(const QString &p_name);
 
-    private slots:
-        void newSnippet();
+private slots:
+  void newSnippet();
 
-        void handleContextMenuRequested(const QPoint &p_pos);
+  void handleContextMenuRequested(const QPoint &p_pos);
 
-        void removeSelectedSnippets();
+  void removeSelectedSnippets();
 
-        void applySnippet(const QListWidgetItem *p_item);
+  void applySnippet(const QListWidgetItem *p_item);
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        void setupTitleBar(const QString &p_title, QWidget *p_parent = nullptr);
+  void setupTitleBar(const QString &p_title, QWidget *p_parent = nullptr);
 
-        void updateItemsCountLabel();
+  void updateItemsCountLabel();
 
-        void updateSnippetList();
+  void updateSnippetList();
 
-        QString getSnippetName(const QListWidgetItem *p_item);
+  QString getSnippetName(const QListWidgetItem *p_item);
 
-        void setBuiltInSnippetsVisible(bool p_visible);
+  void setBuiltInSnippetsVisible(bool p_visible);
 
-        TitleBar *m_titleBar = nullptr;
+  TitleBar *m_titleBar = nullptr;
 
-        QListWidget *m_snippetList = nullptr;
+  QListWidget *m_snippetList = nullptr;
 
-        bool m_builtInSnippetsVisible = true;
-    };
-}
+  bool m_builtInSnippetsVisible = true;
+};
+} // namespace vnotex
 
 #endif // SNIPPETPANEL_H

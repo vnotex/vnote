@@ -7,40 +7,36 @@
 
 #include <core/global.h>
 
-namespace vnotex
-{
-    class ViewArea;
+namespace vnotex {
+class ViewArea;
 
-    class WindowsProvider : public QObject
-    {
-        Q_OBJECT
-    public:
-        struct WindowData
-        {
-            int m_index = -1;
+class WindowsProvider : public QObject {
+  Q_OBJECT
+public:
+  struct WindowData {
+    int m_index = -1;
 
-            QString m_name;
-        };
+    QString m_name;
+  };
 
-        struct ViewSplitWindows
-        {
-            ID m_viewSplitId = 0;
+  struct ViewSplitWindows {
+    ID m_viewSplitId = 0;
 
-            QVector<WindowData> m_viewWindows;
-        };
+    QVector<WindowData> m_viewWindows;
+  };
 
-        explicit WindowsProvider(ViewArea *p_viewArea);
+  explicit WindowsProvider(ViewArea *p_viewArea);
 
-        QVector<ViewSplitWindows> getWindows() const;
+  QVector<ViewSplitWindows> getWindows() const;
 
-        void setCurrentWindow(ID p_viewSplitId, int p_windowIndex);
+  void setCurrentWindow(ID p_viewSplitId, int p_windowIndex);
 
-    signals:
-        void windowsChanged();
+signals:
+  void windowsChanged();
 
-    private:
-        ViewArea *m_viewArea = nullptr;
-    };
-}
+private:
+  ViewArea *m_viewArea = nullptr;
+};
+} // namespace vnotex
 
 #endif // WINDOWSPROVIDER_H

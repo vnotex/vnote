@@ -3,31 +3,25 @@
 
 #include <QSharedPointer>
 
-namespace vnotex
-{
-    class INotebookConfigMgr;
-    class INotebookBackend;
+namespace vnotex {
+class INotebookConfigMgr;
+class INotebookBackend;
 
-    class INotebookConfigMgrFactory
-    {
-    public:
-        INotebookConfigMgrFactory()
-        {
-        }
+class INotebookConfigMgrFactory {
+public:
+  INotebookConfigMgrFactory() {}
 
-        virtual ~INotebookConfigMgrFactory()
-        {
-        }
+  virtual ~INotebookConfigMgrFactory() {}
 
-        virtual QString getName() const = 0;
+  virtual QString getName() const = 0;
 
-        virtual QString getDisplayName() const = 0;
+  virtual QString getDisplayName() const = 0;
 
-        virtual QString getDescription() const = 0;
+  virtual QString getDescription() const = 0;
 
-        virtual QSharedPointer<INotebookConfigMgr> createNotebookConfigMgr(
-            const QSharedPointer<INotebookBackend> &p_backend) = 0;
-    };
-} // ns vnotex
+  virtual QSharedPointer<INotebookConfigMgr>
+  createNotebookConfigMgr(const QSharedPointer<INotebookBackend> &p_backend) = 0;
+};
+} // namespace vnotex
 
 #endif // INOTEBOOKCONFIGMGRFACTORY_H

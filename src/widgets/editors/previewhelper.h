@@ -9,240 +9,221 @@
 #include <vtextedit/pegmarkdownhighlighterdata.h>
 #include <vtextedit/previewmgr.h>
 
-#include <core/global.h>
 #include "markdownvieweradapter.h"
+#include <core/global.h>
 
 class QTimer;
 class QTextDocument;
 
-namespace vnotex
-{
-    class MarkdownEditor;
+namespace vnotex {
+class MarkdownEditor;
 
-    // Helper to manage in-place preview and focus preview.
-    class PreviewHelper : public QObject
-    {
-        Q_OBJECT
-    public:
-        enum SourceFlag
-        {
-            FlowChart = 0x1,
-            Mermaid = 0x2,
-            WaveDrom = 0x4,
-            PlantUml = 0x8,
-            Graphviz = 0x10,
-            Math = 0x20
-        };
-        Q_DECLARE_FLAGS(SourceFlags, SourceFlag);
+// Helper to manage in-place preview and focus preview.
+class PreviewHelper : public QObject {
+  Q_OBJECT
+public:
+  enum SourceFlag {
+    FlowChart = 0x1,
+    Mermaid = 0x2,
+    WaveDrom = 0x4,
+    PlantUml = 0x8,
+    Graphviz = 0x10,
+    Math = 0x20
+  };
+  Q_DECLARE_FLAGS(SourceFlags, SourceFlag);
 
-        PreviewHelper(MarkdownEditor *p_editor, QObject *p_parent = nullptr);
+  PreviewHelper(MarkdownEditor *p_editor, QObject *p_parent = nullptr);
 
-        void setMarkdownEditor(MarkdownEditor *p_editor);
+  void setMarkdownEditor(MarkdownEditor *p_editor);
 
-        void setWebPlantUmlEnabled(bool p_enabled);
+  void setWebPlantUmlEnabled(bool p_enabled);
 
-        void setWebGraphvizEnabled(bool p_enabled);
+  void setWebGraphvizEnabled(bool p_enabled);
 
-        void setInplacePreviewSources(SourceFlags p_srcs);
+  void setInplacePreviewSources(SourceFlags p_srcs);
 
-        void setInplacePreviewCodeBlocksEnabled(bool p_enabled);
+  void setInplacePreviewCodeBlocksEnabled(bool p_enabled);
 
-        void setInplacePreviewMathBlocksEnabled(bool p_enabled);
+  void setInplacePreviewMathBlocksEnabled(bool p_enabled);
 
-    public slots:
-        void codeBlocksUpdated(vte::TimeStamp p_timeStamp,
-                               const QVector<vte::peg::FencedCodeBlock> &p_codeBlocks);
+public slots:
+  void codeBlocksUpdated(vte::TimeStamp p_timeStamp,
+                         const QVector<vte::peg::FencedCodeBlock> &p_codeBlocks);
 
-        void mathBlocksUpdated(const QVector<vte::peg::MathBlock> &p_mathBlocks);
+  void mathBlocksUpdated(const QVector<vte::peg::MathBlock> &p_mathBlocks);
 
-        void handleGraphPreviewData(const MarkdownViewerAdapter::PreviewData &p_data);
+  void handleGraphPreviewData(const MarkdownViewerAdapter::PreviewData &p_data);
 
-        void handleMathPreviewData(const MarkdownViewerAdapter::PreviewData &p_data);
+  void handleMathPreviewData(const MarkdownViewerAdapter::PreviewData &p_data);
 
-    signals:
-        // Request to preview graph.
-        // There must be a corresponding call to handleGraphPreviewData().
-        void graphPreviewRequested(quint64 p_id,
-                                   TimeStamp p_timeStamp,
-                                   const QString &p_lang,
-                                   const QString &p_text);
+signals:
+  // Request to preview graph.
+  // There must be a corresponding call to handleGraphPreviewData().
+  void graphPreviewRequested(quint64 p_id, TimeStamp p_timeStamp, const QString &p_lang,
+                             const QString &p_text);
 
-        // Request to preview math.
-        // There must be a corresponding call to handleMathPreviewData().
-        void mathPreviewRequested(quint64 p_id,
-                                  TimeStamp p_timeStamp,
-                                  const QString &p_text);
+  // Request to preview math.
+  // There must be a corresponding call to handleMathPreviewData().
+  void mathPreviewRequested(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text);
 
-        // Request to do in-place preview for @p_previewItems.
-        void inplacePreviewCodeBlockUpdated(const QVector<QSharedPointer<vte::PreviewItem>> &p_previewItems);
+  // Request to do in-place preview for @p_previewItems.
+  void
+  inplacePreviewCodeBlockUpdated(const QVector<QSharedPointer<vte::PreviewItem>> &p_previewItems);
 
-        // Request to do in-place preview for @p_previewItems.
-        void inplacePreviewMathBlockUpdated(const QVector<QSharedPointer<vte::PreviewItem>> &p_previewItems);
+  // Request to do in-place preview for @p_previewItems.
+  void
+  inplacePreviewMathBlockUpdated(const QVector<QSharedPointer<vte::PreviewItem>> &p_previewItems);
 
-        void potentialObsoletePreviewBlocksUpdated(const QList<int> &p_blocks);
+  void potentialObsoletePreviewBlocksUpdated(const QList<int> &p_blocks);
 
-    private:
-        // Preview data of each related code block.
-        struct CodeBlockPreviewData
-        {
-            CodeBlockPreviewData() = default;
+private:
+  // Preview data of each related code block.
+  struct CodeBlockPreviewData {
+    CodeBlockPreviewData() = default;
 
-            CodeBlockPreviewData(const vte::peg::FencedCodeBlock &p_codeBlock);
+    CodeBlockPreviewData(const vte::peg::FencedCodeBlock &p_codeBlock);
 
-            void updateInplacePreview(QTextDocument *p_doc,
-                                      const QPixmap &p_image,
-                                      const QString &p_imageName,
-                                      QRgb p_background,
-                                      int p_tabStopWidth);
+    void updateInplacePreview(QTextDocument *p_doc, const QPixmap &p_image,
+                              const QString &p_imageName, QRgb p_background, int p_tabStopWidth);
 
-            // Start and end block of the fenced code block.
-            int m_startBlock = 0;
-            int m_endBlock = 0;
+    // Start and end block of the fenced code block.
+    int m_startBlock = 0;
+    int m_endBlock = 0;
 
-            QString m_lang;
+    QString m_lang;
 
-            // Including the fence text.
-            // Will be filled only when preview is needed.
-            QString m_text;
+    // Including the fence text.
+    // Will be filled only when preview is needed.
+    QString m_text;
 
-            QSharedPointer<vte::PreviewItem> m_inplacePreview;
-        };
+    QSharedPointer<vte::PreviewItem> m_inplacePreview;
+  };
 
-        struct MathBlockPreviewData
-        {
-            MathBlockPreviewData() = default;
+  struct MathBlockPreviewData {
+    MathBlockPreviewData() = default;
 
-            MathBlockPreviewData(const vte::peg::MathBlock &p_mathBlock);
+    MathBlockPreviewData(const vte::peg::MathBlock &p_mathBlock);
 
-            void updateInplacePreview(QTextDocument *p_doc,
-                                      const QPixmap &p_image,
-                                      const QString &p_imageName,
-                                      int p_tabStopWidth);
+    void updateInplacePreview(QTextDocument *p_doc, const QPixmap &p_image,
+                              const QString &p_imageName, int p_tabStopWidth);
 
-            // Block number for in-place preview.
-            int m_blockNumber = -1;
+    // Block number for in-place preview.
+    int m_blockNumber = -1;
 
-            // Whether it should be previewed as block or not.
-            bool m_previewedAsBlock = false;
+    // Whether it should be previewed as block or not.
+    bool m_previewedAsBlock = false;
 
-            // Start index wihtin block with number m_blockNumber, including the start mark.
-            int m_index = -1;
+    // Start index wihtin block with number m_blockNumber, including the start mark.
+    int m_index = -1;
 
-            // Length of this math in block with number m_blockNumber, including the end mark.
-            int m_length = -1;
+    // Length of this math in block with number m_blockNumber, including the end mark.
+    int m_length = -1;
 
-            // Including the guarding marks.
-            // Will be filled only when preview is needed.
-            QString m_text;
+    // Including the guarding marks.
+    // Will be filled only when preview is needed.
+    QString m_text;
 
-            QSharedPointer<vte::PreviewItem> m_inplacePreview;
-        };
+    QSharedPointer<vte::PreviewItem> m_inplacePreview;
+  };
 
-        // Data of the preview result.
-        struct GraphPreviewData
-        {
-            GraphPreviewData() = default;
+  // Data of the preview result.
+  struct GraphPreviewData {
+    GraphPreviewData() = default;
 
-            GraphPreviewData(TimeStamp p_timeStamp,
-                             const QString &p_format,
-                             const QByteArray &p_data,
-                             QRgb p_background = 0x0,
-                             qreal p_scaleFactor = 1);
+    GraphPreviewData(TimeStamp p_timeStamp, const QString &p_format, const QByteArray &p_data,
+                     QRgb p_background = 0x0, qreal p_scaleFactor = 1);
 
-            bool isNull() const;
+    bool isNull() const;
 
-            TimeStamp m_timeStamp = 0;
+    TimeStamp m_timeStamp = 0;
 
-            QPixmap m_image;
+    QPixmap m_image;
 
-            // Name of the image for identification in resource manager.
-            QString m_name;
+    // Name of the image for identification in resource manager.
+    QString m_name;
 
-            // Background color to override.
-            // 0x0 indicates it is not specified.
-            QRgb m_background = 0x0;
+    // Background color to override.
+    // 0x0 indicates it is not specified.
+    QRgb m_background = 0x0;
 
-            // An increasing index to used as the image name.
-            static int s_imageIndex;
-        };
+    // An increasing index to used as the image name.
+    static int s_imageIndex;
+  };
 
-        // Return <InplacePreview, FocusPreview>.
-        QPair<bool, bool> isLangNeedPreview(const QString &p_lang) const;
+  // Return <InplacePreview, FocusPreview>.
+  QPair<bool, bool> isLangNeedPreview(const QString &p_lang) const;
 
-        bool isInplacePreviewSourceEnabled(SourceFlag p_flag) const;
+  bool isInplacePreviewSourceEnabled(SourceFlag p_flag) const;
 
-        bool checkPreviewSourceLang(SourceFlag p_flag, const QString &p_lang) const;
+  bool checkPreviewSourceLang(SourceFlag p_flag, const QString &p_lang) const;
 
-        // Inplace preview code block m_codeBlocksData[@p_blockPreviewIdx].
-        void inplacePreviewCodeBlock(int p_blockPreviewIdx);
+  // Inplace preview code block m_codeBlocksData[@p_blockPreviewIdx].
+  void inplacePreviewCodeBlock(int p_blockPreviewIdx);
 
-        void inplacePreviewMathBlock(int p_blockPreviewIdx);
+  void inplacePreviewMathBlock(int p_blockPreviewIdx);
 
-        void updateEditorInplacePreviewCodeBlock();
+  void updateEditorInplacePreviewCodeBlock();
 
-        void updateEditorInplacePreviewMathBlock();
+  void updateEditorInplacePreviewMathBlock();
 
-        void handleLocalData(quint64 p_id,
-                             TimeStamp p_timeStamp,
-                             const QString &p_format,
-                             const QString &p_data,
-                             bool p_forcedBackground);
+  void handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format,
+                       const QString &p_data, bool p_forcedBackground);
 
-        qreal getEditorScaleFactor() const;
+  qreal getEditorScaleFactor() const;
 
-        bool needForcedBackground(const QString &p_lang) const;
+  bool needForcedBackground(const QString &p_lang) const;
 
-        void handleCodeBlocksUpdate();
+  void handleCodeBlocksUpdate();
 
-        void handleMathBlocksUpdate();
+  void handleMathBlocksUpdate();
 
-        MarkdownEditor *m_editor = nullptr;
+  MarkdownEditor *m_editor = nullptr;
 
-        QTextDocument *m_document = nullptr;
+  QTextDocument *m_document = nullptr;
 
-        // Need to init it in the constructor.
-        SourceFlags m_inplacePreviewSources;
+  // Need to init it in the constructor.
+  SourceFlags m_inplacePreviewSources;
 
-        bool m_inplacePreviewCodeBlocksEnabled = true;
+  bool m_inplacePreviewCodeBlocksEnabled = true;
 
-        bool m_inplacePreviewMathBlocksEnabled = true;
+  bool m_inplacePreviewMathBlocksEnabled = true;
 
-        TimeStamp m_codeBlockTimeStamp = 0;
+  TimeStamp m_codeBlockTimeStamp = 0;
 
-        TimeStamp m_mathBlockTimeStamp = 0;
+  TimeStamp m_mathBlockTimeStamp = 0;
 
-        // Sorted by startBlock in ascending order.
-        QVector<CodeBlockPreviewData> m_codeBlocksData;
+  // Sorted by startBlock in ascending order.
+  QVector<CodeBlockPreviewData> m_codeBlocksData;
 
-        QVector<MathBlockPreviewData> m_mathBlocksData;
+  QVector<MathBlockPreviewData> m_mathBlocksData;
 
-        // Tab stop width of the editor, used for block margin calculation.
-        int m_tabStopWidth = 4;
+  // Tab stop width of the editor, used for block margin calculation.
+  int m_tabStopWidth = 4;
 
-        // To record the size of previous inplace preview of code block.
-        int m_previousInplacePreviewCodeBlockSize = 0;
+  // To record the size of previous inplace preview of code block.
+  int m_previousInplacePreviewCodeBlockSize = 0;
 
-        // To record the size of previous inplace preview of math block.
-        int m_previousInplacePreviewMathBlockSize = 0;
+  // To record the size of previous inplace preview of math block.
+  int m_previousInplacePreviewMathBlockSize = 0;
 
-        // {text} -> GraphPreviewData.
-        vte::LruCache<QString, QSharedPointer<GraphPreviewData>> m_codeBlockCache;
+  // {text} -> GraphPreviewData.
+  vte::LruCache<QString, QSharedPointer<GraphPreviewData>> m_codeBlockCache;
 
-        vte::LruCache<QString, QSharedPointer<GraphPreviewData>> m_mathBlockCache;
+  vte::LruCache<QString, QSharedPointer<GraphPreviewData>> m_mathBlockCache;
 
-        bool m_webPlantUmlEnabled = true;
+  bool m_webPlantUmlEnabled = true;
 
-        bool m_webGraphvizEnabled = true;
+  bool m_webGraphvizEnabled = true;
 
-        QVector<vte::peg::FencedCodeBlock> m_pendingCodeBlocks;
+  QVector<vte::peg::FencedCodeBlock> m_pendingCodeBlocks;
 
-        QTimer *m_codeBlockTimer = nullptr;
+  QTimer *m_codeBlockTimer = nullptr;
 
-        QVector<vte::peg::MathBlock> m_pendingMathBlocks;
+  QVector<vte::peg::MathBlock> m_pendingMathBlocks;
 
-        QTimer *m_mathBlockTimer = nullptr;
-    };
-}
+  QTimer *m_mathBlockTimer = nullptr;
+};
+} // namespace vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::PreviewHelper::SourceFlags)
 

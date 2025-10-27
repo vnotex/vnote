@@ -6,68 +6,64 @@
 #include <QRect>
 #include <QVector>
 
-namespace vnotex
-{
+namespace vnotex {
 #ifndef Q_OS_WIN
-    class FramelessMainWindowLinux : public FramelessMainWindow
-    {
-        Q_OBJECT
-    public:
-        FramelessMainWindowLinux(bool p_frameless, QWidget *p_parent = nullptr);
+class FramelessMainWindowLinux : public FramelessMainWindow {
+  Q_OBJECT
+public:
+  FramelessMainWindowLinux(bool p_frameless, QWidget *p_parent = nullptr);
 
-        void setTitleBar(QWidget *p_titleBar) Q_DECL_OVERRIDE;
+  void setTitleBar(QWidget *p_titleBar) Q_DECL_OVERRIDE;
 
-    protected:
-        bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
+protected:
+  bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
-        void mousePressEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
+  void mousePressEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
 
-        void mouseReleaseEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
+  void mouseReleaseEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
 
-        void mouseMoveEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
+  void mouseMoveEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
 
-        void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+  void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
-    private:
-        enum Area
-        {
-            Left = 0,
-            TopLeft,
-            Top,
-            TopRight,
-            Right,
-            BottomRight,
-            Bottom,
-            BottomLeft,
-            Caption,
-            None
-        };
+private:
+  enum Area {
+    Left = 0,
+    TopLeft,
+    Top,
+    TopRight,
+    Right,
+    BottomRight,
+    Bottom,
+    BottomLeft,
+    Caption,
+    None
+  };
 
-        Area hitArea(const QPoint &p_pos) const;
+  Area hitArea(const QPoint &p_pos) const;
 
-        void doResize(QEvent *p_event);
+  void doResize(QEvent *p_event);
 
-        void recordMousePress(const QPoint &p_pos);
+  void recordMousePress(const QPoint &p_pos);
 
-        const int m_resizeAreaWidth = 6;
+  const int m_resizeAreaWidth = 6;
 
-        int m_titleBarHeight = 0;
+  int m_titleBarHeight = 0;
 
-        Area m_mousePressArea = Area::None;
+  Area m_mousePressArea = Area::None;
 
-        QPoint m_mousePressPoint;
+  QPoint m_mousePressPoint;
 
-        bool m_mousePressed = false;
+  bool m_mousePressed = false;
 
-        QRect m_rectOnMousePress;
-    };
+  QRect m_rectOnMousePress;
+};
 #else
-    class FramelessMainWindowLinuxDummy
-    {
-    public:
-        FramelessMainWindowLinuxDummy() = default;
-    };
+class FramelessMainWindowLinuxDummy {
+public:
+  FramelessMainWindowLinuxDummy() = default;
+};
 #endif
-}
+} // namespace vnotex
 
 #endif // FRAMELESSMAINWINDOWLINUX_H

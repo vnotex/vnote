@@ -9,68 +9,66 @@ class QGroupBox;
 class QPlainTextEdit;
 class QComboBox;
 
-namespace vnotex
-{
-    class LocationInputWithBrowseButton;
-    class LineEditWithSnippet;
-    class NoteTemplateSelector;
+namespace vnotex {
+class LocationInputWithBrowseButton;
+class LineEditWithSnippet;
+class NoteTemplateSelector;
 
-    class QuickAccessPage : public SettingsPage
-    {
-        Q_OBJECT
-    public:
-        explicit QuickAccessPage(QWidget *p_parent = nullptr);
+class QuickAccessPage : public SettingsPage {
+  Q_OBJECT
+public:
+  explicit QuickAccessPage(QWidget *p_parent = nullptr);
 
-        QString title() const Q_DECL_OVERRIDE;
+  QString title() const Q_DECL_OVERRIDE;
 
-    protected:
-        void loadInternal() Q_DECL_OVERRIDE;
+protected:
+  void loadInternal() Q_DECL_OVERRIDE;
 
-        bool saveInternal() Q_DECL_OVERRIDE;
+  bool saveInternal() Q_DECL_OVERRIDE;
 
-    private:
-        void setupUI();
+private:
+  void setupUI();
 
-        QGroupBox *setupFlashPageGroup();
+  QGroupBox *setupFlashPageGroup();
 
-        QGroupBox *setupQuickAccessGroup();
+  QGroupBox *setupQuickAccessGroup();
 
-        QGroupBox *setupQuickNoteGroup();
+  QGroupBox *setupQuickNoteGroup();
 
-        void newQuickNoteScheme();
+  void newQuickNoteScheme();
 
-        void removeQuickNoteScheme();
+  void removeQuickNoteScheme();
 
-        void saveCurrentQuickNote();
+  void saveCurrentQuickNote();
 
-        void loadCurrentQuickNote();
+  void loadCurrentQuickNote();
 
-        void loadQuickNoteSchemes();
+  void loadQuickNoteSchemes();
 
-        void saveQuickNoteSchemes();
+  void saveQuickNoteSchemes();
 
-        void setCurrentQuickNote(int idx);
+  void setCurrentQuickNote(int idx);
 
-        static QString getDefaultQuickNoteFolderPath();
+  static QString getDefaultQuickNoteFolderPath();
 
-        LocationInputWithBrowseButton *m_flashPageInput = nullptr;
+  LocationInputWithBrowseButton *m_flashPageInput = nullptr;
 
-        QPlainTextEdit *m_quickAccessTextEdit = nullptr;
+  QPlainTextEdit *m_quickAccessTextEdit = nullptr;
 
-        QComboBox *m_quickNoteSchemeComboBox = nullptr;
+  QComboBox *m_quickNoteSchemeComboBox = nullptr;
 
-        LocationInputWithBrowseButton *m_quickNoteFolderPathInput = nullptr;
+  LocationInputWithBrowseButton *m_quickNoteFolderPathInput = nullptr;
 
-        LineEditWithSnippet *m_quickNoteNoteNameLineEdit = nullptr;
+  LineEditWithSnippet *m_quickNoteNoteNameLineEdit = nullptr;
 
-        NoteTemplateSelector *m_quickNoteTemplateSelector = nullptr;
+  NoteTemplateSelector *m_quickNoteTemplateSelector = nullptr;
 
-        QGroupBox *m_quickNoteInfoGroupBox = nullptr;
+  QGroupBox *m_quickNoteInfoGroupBox = nullptr;
 
-        QVector<SessionConfig::QuickNoteScheme> m_quickNoteSchemes;
+  QVector<SessionConfig::QuickNoteScheme> m_quickNoteSchemes;
 
-        int m_quickNoteCurrentIndex = -1;
-    };
-}
+  int m_quickNoteCurrentIndex = -1;
+};
+} // namespace vnotex
 
 #endif // QUICKACCESSPAGE_H

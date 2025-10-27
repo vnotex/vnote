@@ -13,27 +13,27 @@
 using namespace vnotex;
 
 TextEditor::TextEditor(const QSharedPointer<vte::TextEditorConfig> &p_config,
-                       const QSharedPointer<vte::TextEditorParameters> &p_paras,
-                       QWidget *p_parent)
-    : vte::VTextEditor(p_config, p_paras, p_parent)
-{
-    connect(m_textEdit, &vte::VTextEdit::contextMenuEventRequested,
-            this, &TextEditor::handleContextMenuEvent);
+                       const QSharedPointer<vte::TextEditorParameters> &p_paras, QWidget *p_parent)
+    : vte::VTextEditor(p_config, p_paras, p_parent) {
+  connect(m_textEdit, &vte::VTextEdit::contextMenuEventRequested, this,
+          &TextEditor::handleContextMenuEvent);
 }
 
-void TextEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_handled, QScopedPointer<QMenu> *p_menu)
-{
-    *p_handled = true;
-    p_menu->reset(m_textEdit->createStandardContextMenu(p_event->pos()));
-    auto menu = p_menu->data();
+void TextEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_handled,
+                                        QScopedPointer<QMenu> *p_menu) {
+  *p_handled = true;
+  p_menu->reset(m_textEdit->createStandardContextMenu(p_event->pos()));
+  auto menu = p_menu->data();
 
-    {
-        menu->addSeparator();
+  {
+    menu->addSeparator();
 
-        auto snippetAct = menu->addAction(tr("Insert Snippet"), this, &TextEditor::applySnippetRequested);
-        WidgetUtils::addActionShortcutText(snippetAct,
-                                           ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::ApplySnippet));
-    }
+    auto snippetAct =
+        menu->addAction(tr("Insert Snippet"), this, &TextEditor::applySnippetRequested);
+    WidgetUtils::addActionShortcutText(
+        snippetAct,
+        ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::ApplySnippet));
+  }
 
-    appendSpellCheckMenu(p_event, menu);
+  appendSpellCheckMenu(p_event, menu);
 }
