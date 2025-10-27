@@ -28,6 +28,8 @@ namespace vnotex
 
         QAction *getTriggerAction();
 
+        QString getTriggerActionText() const;
+
     protected:
         void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 

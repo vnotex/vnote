@@ -90,13 +90,18 @@ void UnitedEntry::setupUI()
     hide();
 }
 
+QString UnitedEntry::getTriggerActionText() const
+{
+    return tr("United Entry");
+}
+
 QAction *UnitedEntry::getTriggerAction()
 {
     const auto &themeMgr = VNoteX::getInst().getThemeMgr();
     const auto fg = themeMgr.paletteColor("widgets#unitedentry#icon#fg");
 
     const auto icon = IconUtils::fetchIcon(themeMgr.getIconFile("united_entry.svg"), fg);
-    auto act = new QAction(icon, tr("United Entry"), this);
+    auto act = new QAction(icon, getTriggerActionText(), this);
     connect(act, &QAction::triggered,
             this, &UnitedEntry::activateUnitedEntry);
 
