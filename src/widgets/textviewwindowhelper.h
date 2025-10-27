@@ -13,10 +13,10 @@
 #include <snippet/snippetmgr.h>
 #include <utils/widgetutils.h>
 #include <vtextedit/texteditorconfig.h>
+#include <vtextedit/vtextedit.h>
 
 #include "quickselector.h"
 #include "viewwindow.h"
-#include <vtextedit/vtextedit.h>
 
 namespace vte {
 class ViConfig;
