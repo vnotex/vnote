@@ -38,5 +38,26 @@ VNote不是一个简单的Markdown编辑器。通过提供强大的笔记管理�
 
 感谢这些[捐赠用户](https://github.com/vnotex/vnote/wiki/Donate-List)！
 
+## 开发
+
+克隆仓库后，运行初始化脚本来设置开发环境：
+
+**Linux/macOS:**
+```bash
+bash scripts/init.sh
+```
+
+**Windows:**
+```cmd
+scripts\init.cmd
+```
+
+此脚本将会：
+* 初始化并更新所有 git 子模块
+* 安装用于自动代码格式化的 pre-commit 钩子（需要 clang-format）
+* 设置 vtextedit 子模块的 pre-commit 钩子
+
+更多开发指南，请参考 [AGENTS.md](AGENTS.md)。
+
 ## 许可
 VNote遵循[GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0)许可。VNote项目的代码可以自由给VNoteX项目使用。
