@@ -15,6 +15,8 @@
 #include <vtextedit/texteditorconfig.h>
 
 #include "quickselector.h"
+#include "viewwindow.h"
+#include <vtextedit/vtextedit.h>
 
 namespace vte {
 class ViConfig;
