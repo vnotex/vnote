@@ -22,11 +22,6 @@ public:
   // @p_node has already been added.
   static void importFolderContents(Notebook *p_notebook, Node *p_node,
                                    const QStringList &p_suffixes, QString &p_errMsg);
-
-  // Process folder @p_node by legacy notebook config.
-  // @p_node has already been added.
-  static void importFolderContentsByLegacyConfig(Notebook *p_notebook, Node *p_node,
-                                                 QString &p_errMsg);
 };
 } // namespace vnotex
 

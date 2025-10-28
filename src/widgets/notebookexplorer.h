@@ -55,8 +55,6 @@ public slots:
 
   void importFolder();
 
-  void importLegacyNotebook();
-
   void locateNode(Node *p_node);
 
   void manageNotebooks();

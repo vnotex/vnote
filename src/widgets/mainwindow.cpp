@@ -310,8 +310,6 @@ void MainWindow::setupNotebookExplorer() {
           &NotebookExplorer::importFile);
   connect(&VNoteX::getInst(), &VNoteX::importFolderRequested, m_notebookExplorer,
           &NotebookExplorer::importFolder);
-  connect(&VNoteX::getInst(), &VNoteX::importLegacyNotebookRequested, m_notebookExplorer,
-          &NotebookExplorer::importLegacyNotebook);
   connect(&VNoteX::getInst(), &VNoteX::manageNotebooksRequested, m_notebookExplorer,
           &NotebookExplorer::manageNotebooks);
   connect(&VNoteX::getInst(), &VNoteX::locateNodeRequested, this, [this](Node *p_node) {

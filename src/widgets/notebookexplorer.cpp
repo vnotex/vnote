@@ -8,7 +8,6 @@
 #include <QVBoxLayout>
 
 #include "dialogs/importfolderdialog.h"
-#include "dialogs/importlegacynotebookdialog.h"
 #include "dialogs/importnotebookdialog.h"
 #include "dialogs/managenotebooksdialog.h"
 #include "dialogs/newfolderdialog.h"
@@ -393,11 +392,6 @@ void NotebookExplorer::importFolder() {
   if (dialog.exec() == QDialog::Accepted) {
     m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
   }
-}
-
-void NotebookExplorer::importLegacyNotebook() {
-  ImportLegacyNotebookDialog dialog(VNoteX::getInst().getMainWindow());
-  dialog.exec();
 }
 
 void NotebookExplorer::manageNotebooks() {

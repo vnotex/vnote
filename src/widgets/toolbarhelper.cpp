@@ -77,12 +77,8 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
     btnMenu->addSeparator();
 
     // Import notebook.
-    btnMenu->addAction(MainWindow::tr("Open Other Notebooks"), btnMenu,
+    btnMenu->addAction(MainWindow::tr("Open Notebook"), btnMenu,
                        []() { emit VNoteX::getInst().importNotebookRequested(); });
-
-    // Import notebook of VNote 2.
-    btnMenu->addAction(MainWindow::tr("Open Legacy Notebooks Of VNote 2"), btnMenu,
-                       []() { emit VNoteX::getInst().importLegacyNotebookRequested(); });
 
     btnMenu->addSeparator();
 
