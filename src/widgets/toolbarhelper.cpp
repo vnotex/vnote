@@ -122,6 +122,16 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
 
     newMenu->addSeparator();
 
+    // Import file.
+    newMenu->addAction(generateIcon("import_menu.svg"), MainWindow::tr("Import File"), newMenu,
+                       []() { emit VNoteX::getInst().importFileRequested(); });
+
+    // Import folder.
+    newMenu->addAction(MainWindow::tr("Import Folder"), newMenu,
+                       []() { emit VNoteX::getInst().importFolderRequested(); });
+
+    newMenu->addSeparator();
+
     // Open file.
     newMenu->addAction(MainWindow::tr("Open File"), newMenu, [p_win]() {
       static QString lastDirPath = QDir::homePath();
@@ -141,32 +151,15 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
     tb->addWidget(newBtn);
   }
 
-  // Import/Export.
+  // Export.
   {
-    auto act = tb->addAction(generateIcon("import_menu.svg"), MainWindow::tr("Import/Export"));
-
+    auto act =
+        tb->addAction(generateIcon("export_menu.svg"), MainWindow::tr("Export (Convert Format)"),
+                      []() { emit VNoteX::getInst().exportRequested(); });
     auto btn = dynamic_cast<QToolButton *>(tb->widgetForAction(act));
     btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    btn->setPopupMode(QToolButton::InstantPopup);
-    btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
-
-    auto newMenu = WidgetsFactory::createMenu(tb);
-    btn->setMenu(newMenu);
-
-    // Import file.
-    newMenu->addAction(MainWindow::tr("Import File"), newMenu,
-                       []() { emit VNoteX::getInst().importFileRequested(); });
-
-    // Import folder.
-    newMenu->addAction(MainWindow::tr("Import Folder"), newMenu,
-                       []() { emit VNoteX::getInst().importFolderRequested(); });
-
-    newMenu->addSeparator();
-
-    auto exportAct = newMenu->addAction(generateIcon("export_menu.svg"),
-                                        MainWindow::tr("Export (Convert Format)"),
-                                        []() { emit VNoteX::getInst().exportRequested(); });
-    WidgetUtils::addActionShortcut(exportAct, coreConfig.getShortcut(CoreConfig::Shortcut::Export));
+    WidgetUtils::addActionShortcut(act, coreConfig.getShortcut(CoreConfig::Shortcut::Export));
+    btn->setText(MainWindow::tr("Export"));
   }
 
   return tb;
