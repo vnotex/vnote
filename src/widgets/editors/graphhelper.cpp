@@ -119,7 +119,7 @@ void GraphHelper::finishOneTask(QProcess *p_process, int p_exitCode,
       const auto outBa = p_process->readAllStandardOutput();
       QString data;
       if (task.m_format == QStringLiteral("svg")) {
-        data = QString::fromLocal8Bit(outBa);
+        data = QString::fromUtf8(outBa);
         callbackOneTask(task, id, timeStamp, task.m_format, data);
       } else {
         data = QString::fromLocal8Bit(outBa.toBase64());
@@ -137,7 +137,7 @@ void GraphHelper::finishOneTask(QProcess *p_process, int p_exitCode,
 
   const QByteArray errBa = p_process->readAllStandardError();
   if (!errBa.isEmpty()) {
-    QString errStr(QString::fromLocal8Bit(errBa));
+    QString errStr(QString::fromUtf8(errBa));
     if (failed) {
       qWarning() << "Graph task" << id << "stderr:" << errStr;
     } else {
