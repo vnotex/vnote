@@ -302,6 +302,10 @@ ViewSplit *ViewArea::createViewSplit(QWidget *p_parent, ID p_viewSplitId) {
 void ViewArea::showSceneWidget() {
   Q_ASSERT(!m_sceneWidget);
   Q_ASSERT(m_splits.isEmpty());
+  if (m_sceneWidget || !m_splits.isEmpty()) {
+    // Double check.
+    return;
+  }
   auto text = DocsUtils::getDocText(QStringLiteral("get_started.txt"));
   // TODO: a more informative widget, such as adding workspace list and LRU files.
   m_sceneWidget = new QLabel(text, this);
@@ -310,6 +314,10 @@ void ViewArea::showSceneWidget() {
 
 void ViewArea::hideSceneWidget() {
   Q_ASSERT(m_sceneWidget);
+  if (!m_sceneWidget) {
+    // Double check.
+    return;
+  }
   m_mainLayout->removeWidget(m_sceneWidget);
   delete m_sceneWidget;
   m_sceneWidget = nullptr;
