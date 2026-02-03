@@ -26,7 +26,6 @@
 #include "searchpanel.h"
 #include "snippetpanel.h"
 #include "tagexplorer.h"
-#include "windowspanel.h"
 
 using namespace vnotex;
 
@@ -62,8 +61,6 @@ QString DockWidgetHelper::iconFileName(DockIndex p_dockIndex) {
     return "outline_dock.svg";
   case DockIndex::HistoryDock:
     return "history_dock.svg";
-  case DockIndex::WindowsDock:
-    return "windows_dock.svg";
   case DockIndex::TagDock:
     return "tag_dock.svg";
   case DockIndex::SearchDock:
@@ -108,8 +105,6 @@ void DockWidgetHelper::setupDocks() {
 
   setupOutlineDock();
 
-  setupWindowsDock();
-
   setupConsoleDock();
 
   setupLocationListDock();
@@ -144,16 +139,6 @@ void DockWidgetHelper::setupOutlineDock() {
   dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
   addWidgetToDock(dock, m_mainWindow->m_outlineViewer);
-  m_mainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
-}
-
-void DockWidgetHelper::setupWindowsDock() {
-  auto dock = createDockWidget(DockIndex::WindowsDock, tr("Open Windows"), m_mainWindow);
-
-  dock->setObjectName(QStringLiteral("WindowsDock.vnotex"));
-  dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-
-  addWidgetToDock(dock, m_mainWindow->m_windowsPanel);
   m_mainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
 }
 
@@ -294,9 +279,6 @@ void DockWidgetHelper::setupShortcuts() {
 
   setupDockActivateShortcut(m_docks[DockIndex::SnippetDock],
                             coreConfig.getShortcut(CoreConfig::Shortcut::SnippetDock));
-
-  setupDockActivateShortcut(m_docks[DockIndex::WindowsDock],
-                            coreConfig.getShortcut(CoreConfig::Shortcut::WindowsDock));
 }
 
 void DockWidgetHelper::setupDockActivateShortcut(QDockWidget *p_dock, const QString &p_keys) {

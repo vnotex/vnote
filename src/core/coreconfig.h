@@ -32,7 +32,6 @@ public:
     SnippetDock,
     LocationListDock,
     HistoryDock,
-    WindowsDock,
     TagDock,
     Search,
     NavigationMode,

@@ -26,7 +26,6 @@ public:
     SearchDock,
     SnippetDock,
     OutlineDock,
-    WindowsDock,
     ConsoleDock,
     LocationListDock,
     MaxDock
@@ -92,8 +91,6 @@ private:
   void setupNavigationDock();
 
   void setupOutlineDock();
-
-  void setupWindowsDock();
 
   void setupConsoleDock();
 

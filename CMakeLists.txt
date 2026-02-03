@@ -17,6 +17,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(QHOTKEY_INSTALL OFF CACHE BOOL "Disable installing QHotKey" FORCE)
 add_subdirectory(libs)
 
