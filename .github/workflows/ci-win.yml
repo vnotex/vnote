@@ -35,7 +35,6 @@ jobs:
             qt: 6.8.3
             qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat"
             qt_tools: tools_opensslv3_x64
-            qt_major: 6
             suffix: ""
 
     steps:
@@ -83,7 +82,7 @@ jobs:
         run: |
           cmake --version
           call "${{matrix.config.vs_cmd}}"
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} -DOPENSSL_EXTRA_LIB_DIR=${{runner.workspace}}\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE%
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DOPENSSL_EXTRA_LIB_DIR=${{runner.workspace}}\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE%
           cmake --build .
           cmake --build . --target=pack
           7z x VNote*.zip -o*

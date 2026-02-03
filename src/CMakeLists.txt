@@ -4,17 +4,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_INSTALL_BINDIR "." CACHE STRING "Binary dir for install")
 
-set(QT_DEFAULT_MAJOR_VERSION 6 CACHE STRING "Qt version to use (5 or 6), defaults to 6")
-find_package(Qt${QT_DEFAULT_MAJOR_VERSION} REQUIRED COMPONENTS Core Gui Network PrintSupport Sql Svg Widgets WebChannel WebEngineWidgets LinguistTools)
-find_package(Qt${QT_DEFAULT_MAJOR_VERSION} OPTIONAL_COMPONENTS Core5Compat)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Network PrintSupport Sql Svg Widgets WebChannel WebEngineWidgets LinguistTools)
+find_package(Qt6 OPTIONAL_COMPONENTS Core5Compat)
 
-if ((QT_DEFAULT_MAJOR_VERSION GREATER 5))
-    qt_standard_project_setup()
-else()
-    set(CMAKE_AUTOMOC ON)
-    set(CMAKE_AUTORCC ON)
-    set(CMAKE_AUTOUIC ON)
-endif()
+qt_standard_project_setup()
 
 # Application icon on Windows
 set(VX_APP_ICON_RC_WIN data/core/icons/vnote.rc)
@@ -61,13 +54,11 @@ add_executable(vnote WIN32 MACOSX_BUNDLE
 )
 
 # Translations
-if((QT_DEFAULT_MAJOR_VERSION EQUAL 6))
-    if((Qt6Widgets_VERSION VERSION_GREATER_EQUAL 6.7.0))
-        qt_add_lupdate(TS_FILES ${VX_TS_FILES}
-            SOURCE_TARGETS vnote)
-    else()
-        qt_add_lupdate(vnote TS_FILES ${VX_TS_FILES})
-    endif()
+if((Qt6Widgets_VERSION VERSION_GREATER_EQUAL 6.7.0))
+    qt_add_lupdate(TS_FILES ${VX_TS_FILES}
+        SOURCE_TARGETS vnote)
+else()
+    qt_add_lupdate(vnote TS_FILES ${VX_TS_FILES})
 endif()
 
 add_dependencies(vnote VX_EXTRA_RESOURCE)
@@ -106,15 +97,10 @@ target_link_libraries(vnote PRIVATE
     Qt::WebChannel
     Qt::WebEngineWidgets
     Qt::Widgets
+    Qt::Core5Compat
     VTextEdit
     qhotkey
 )
-
-if((QT_DEFAULT_MAJOR_VERSION GREATER 5))
-    target_link_libraries(vnote PRIVATE
-        Qt::Core5Compat
-    )
-endif()
 
 # Copy the qt.conf on Windows
 if(WIN32)

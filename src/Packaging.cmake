@@ -1,5 +1,5 @@
 # from: https://github.com/miurahr/cmake-qt-packaging-example
-find_package(Qt${QT_DEFAULT_MAJOR_VERSION} REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
 get_target_property(QMAKE_EXECUTABLE Qt::qmake IMPORTED_LOCATION)
 get_filename_component(QT_BIN_DIR "${QMAKE_EXECUTABLE}" DIRECTORY)
@@ -23,12 +23,10 @@ function(windeployqt target)
     # Bundle Library Files
     string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
-    if ((QT_DEFAULT_MAJOR_VERSION GREATER 5))
-        if(CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
-            set(WINDEPLOYQT_ARGS --debug)
-        else()
-            set(WINDEPLOYQT_ARGS --release)
-        endif()
+    if(CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
+        set(WINDEPLOYQT_ARGS --debug)
+    else()
+        set(WINDEPLOYQT_ARGS --release)
     endif()
 
     add_custom_target(deploy
