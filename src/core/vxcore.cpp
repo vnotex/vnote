@@ -3,9 +3,14 @@
 #include <QDebug>
 #include <QJsonDocument>
 
+#include <core/configmgr.h>
+
 using namespace vnotex;
 
-VxCore::VxCore(QObject *p_parent) : QObject(p_parent) {}
+VxCore::VxCore(QObject *p_parent) : QObject(p_parent) {
+  vxcore_set_app_info(ConfigMgr::c_orgName.toUtf8().constData(),
+                      ConfigMgr::c_appName.toUtf8().constData());
+}
 
 VxCore::~VxCore() {
   if (m_context) {

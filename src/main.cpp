@@ -13,8 +13,6 @@
 #include <QWebEngineSettings>
 #include <QWindow>
 
-#include <vxcore/vxcore.h>
-
 #include "application.h"
 #include "commandlineoptions.h"
 #include "fakeaccessible.h"
@@ -135,9 +133,6 @@ int main(int argc, char *argv[]) {
   if (codec) {
     QTextCodec::setCodecForLocale(codec);
   }
-
-  vxcore_set_app_info(ConfigMgr::c_orgName.toUtf8().constData(),
-                      ConfigMgr::c_appName.toUtf8().constData());
 
   setOpenGLOption();
 
