@@ -100,6 +100,7 @@ target_link_libraries(vnote PRIVATE
     Qt::Core5Compat
     VTextEdit
     qhotkey
+    vxcore
 )
 
 # Copy the qt.conf on Windows

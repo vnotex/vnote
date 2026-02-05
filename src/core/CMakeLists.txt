@@ -79,6 +79,7 @@ target_sources(vnote PRIVATE
     versioncontroller/iversioncontrollerfactory.h
     versioncontroller/versioncontrollerserver.cpp versioncontroller/versioncontrollerserver.h
     vnotex.cpp vnotex.h
+    vxcore.cpp vxcore.h
     webresource.h
     widgetconfig.cpp widgetconfig.h
 )

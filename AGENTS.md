@@ -42,7 +42,7 @@ cmake --build . --config Debug
 ```powershell
 New-Item -ItemType Directory -Force -Path build
 Set-Location build
-cmake ..
+cmake .. -GNinja
 cmake --build . --config Release
 ```
 

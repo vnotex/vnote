@@ -4,3 +4,6 @@
 [submodule "libs/QHotkey"]
 	path = libs/QHotkey
 	url = https://github.com/vnotex/QHotkey.git
+[submodule "libs/vxcore"]
+	path = libs/vxcore
+	url = https://github.com/vnotex/vxcore.git
