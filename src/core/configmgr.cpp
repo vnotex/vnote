@@ -77,8 +77,61 @@ ConfigMgr::ConfigMgr(QObject *p_parent)
     checkUserConfig();
   }
 
-  m_config->init();
-  m_sessionConfig->init();
+  // Load and initialize main config
+  {
+    QString defaultConfigPath = getDefaultConfigFilePath();
+    QString appConfigPath = getConfigFilePath(Source::App);
+    
+    // Read default config from Qt resources
+    QByteArray defaultBytes = FileUtils::readFile(defaultConfigPath);
+    QString defaultJson = QString::fromUtf8(defaultBytes);
+    
+    // Load and merge with app config using vxcore
+    char *mergedJson = nullptr;
+    VxCoreError err = vxcore_json_load_with_defaults(
+        m_vxcoreContext,
+        appConfigPath.toUtf8().constData(),
+        defaultJson.toUtf8().constData(),
+        &mergedJson);
+    
+    if (err == VXCORE_OK && mergedJson) {
+      QJsonDocument doc = QJsonDocument::fromJson(QByteArray(mergedJson));
+      m_config->fromJson(doc.object());
+      vxcore_string_free(mergedJson);
+    } else {
+      qCritical() << "Failed to load main config:" << vxcore_error_message(err);
+      // Fallback to default config
+      QJsonDocument doc = QJsonDocument::fromJson(defaultBytes);
+      m_config->fromJson(doc.object());
+    }
+  }
+
+  // Load and initialize session config
+  {
+    QString sessionConfigPath = getConfigFilePath(Source::Session);
+    
+    // Session config has minimal defaults (empty object)
+    QString defaultSessionJson = QStringLiteral("{}");
+    
+    // Load session config using vxcore
+    char *mergedJson = nullptr;
+    VxCoreError err = vxcore_json_load_with_defaults(
+        m_vxcoreContext,
+        sessionConfigPath.toUtf8().constData(),
+        defaultSessionJson.toUtf8().constData(),
+        &mergedJson);
+    
+    if (err == VXCORE_OK && mergedJson) {
+      QJsonDocument doc = QJsonDocument::fromJson(QByteArray(mergedJson));
+      m_sessionConfig->fromJson(doc.object());
+      vxcore_string_free(mergedJson);
+    } else {
+      // Session config may not exist on first run - that's fine
+      qDebug() << "No existing session config, using defaults";
+      QJsonDocument doc = QJsonDocument::fromJson(defaultSessionJson.toUtf8());
+      m_sessionConfig->fromJson(doc.object());
+    }
+  }
 }
 
 ConfigMgr::~ConfigMgr() {

@@ -88,31 +88,28 @@ SessionConfig::SessionConfig(ConfigMgr *p_mgr) : IConfig(p_mgr, nullptr) {}
 
 SessionConfig::~SessionConfig() {}
 
-void SessionConfig::init() {
-  auto mgr = getMgr();
-  auto sessionSettings = mgr->getSettings(ConfigMgr::Source::Session);
-  const auto &sessionJobj = sessionSettings->getJson();
+void SessionConfig::fromJson(const QJsonObject &p_jobj) {
+  // p_jobj is already merged (defaults + user overrides)
+  loadCore(p_jobj);
 
-  loadCore(sessionJobj);
+  loadStateAndGeometry(p_jobj);
 
-  loadStateAndGeometry(sessionJobj);
+  loadExportOption(p_jobj);
 
-  loadExportOption(sessionJobj);
+  m_searchOption.fromJson(p_jobj[QStringLiteral("search_option")].toObject());
 
-  m_searchOption.fromJson(sessionJobj[QStringLiteral("search_option")].toObject());
-
-  m_viewAreaSession = readByteArray(sessionJobj, QStringLiteral("viewarea_session"));
+  m_viewAreaSession = readByteArray(p_jobj, QStringLiteral("viewarea_session"));
 
   m_notebookExplorerSession =
-      readByteArray(sessionJobj, QStringLiteral("notebook_explorer_session"));
+      readByteArray(p_jobj, QStringLiteral("notebook_explorer_session"));
 
-  loadExternalPrograms(sessionJobj);
+  loadExternalPrograms(p_jobj);
 
-  loadNotebooks(sessionJobj);
+  loadNotebooks(p_jobj);
 
-  loadHistory(sessionJobj);
+  loadHistory(p_jobj);
 
-  loadQuickNoteSchemes(sessionJobj);
+  loadQuickNoteSchemes(p_jobj);
 
   if (MainConfig::isVersionChanged()) {
     doVersionSpecificOverride();

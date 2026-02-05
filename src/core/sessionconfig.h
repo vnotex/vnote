@@ -88,7 +88,7 @@ public:
 
   ~SessionConfig();
 
-  void init() Q_DECL_OVERRIDE;
+  void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 
   const QString &getNewNotebookDefaultRootFolderPath() const;
   void setNewNotebookDefaultRootFolderPath(const QString &p_path);
