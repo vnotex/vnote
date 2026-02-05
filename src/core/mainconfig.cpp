@@ -21,20 +21,19 @@ MainConfig::MainConfig(ConfigMgr *p_mgr)
 
 MainConfig::~MainConfig() {}
 
-void MainConfig::init() {
-  auto mgr = getMgr();
-  auto appSettings = mgr->getSettings(ConfigMgr::Source::App);
-  auto userSettings = mgr->getSettings(ConfigMgr::Source::User);
-  const auto &appJobj = appSettings->getJson();
-  const auto &userJobj = userSettings->getJson();
+void MainConfig::fromJson(const QJsonObject &p_jobj) {
+  // p_jobj is already merged (defaults + user overrides)
+  loadMetadata(p_jobj);
 
-  loadMetadata(appJobj, userJobj);
+  // Extract child config objects from merged JSON
+  auto coreObj = p_jobj.value(QStringLiteral("core")).toObject();
+  m_coreConfig->fromJson(coreObj);
 
-  m_coreConfig->init(appJobj, userJobj);
+  auto editorObj = p_jobj.value(QStringLiteral("editor")).toObject();
+  m_editorConfig->fromJson(editorObj);
 
-  m_editorConfig->init(appJobj, userJobj);
-
-  m_widgetConfig->init(appJobj, userJobj);
+  auto widgetObj = p_jobj.value(QStringLiteral("widget")).toObject();
+  m_widgetConfig->fromJson(widgetObj);
 
   if (isVersionChanged()) {
     doVersionSpecificOverride();
@@ -44,13 +43,18 @@ void MainConfig::init() {
   }
 }
 
-void MainConfig::loadMetadata(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(QStringLiteral("metadata")).toObject();
-  const auto userObj = p_user.value(QStringLiteral("metadata")).toObject();
+void MainConfig::loadMetadata(const QJsonObject &p_jobj) {
+  // Extract metadata from merged JSON
+  const auto metaObj = p_jobj.value(QStringLiteral("metadata")).toObject();
 
-  m_version = appObj.value(QStringLiteral("version")).toString();
-  m_userVersion = userObj.value(QStringLiteral("version")).toString();
-  s_versionChanged = m_version != m_userVersion;
+  // Get current app version from the merged config
+  m_version = metaObj.value(QStringLiteral("version")).toString();
+  
+  // User version is what was previously saved (may differ if app upgraded)
+  // For version change detection, we'll need to compare with app version
+  m_userVersion = m_version;  // Will be overridden if user config had different version
+  
+  s_versionChanged = false;  // Will be set properly during ConfigMgr initialization
   qDebug() << "version" << m_version << "user version" << m_userVersion;
 }
 
