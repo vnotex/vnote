@@ -11,7 +11,9 @@
 #include <QScopedPointer>
 #include <QSplashScreen>
 #include <QStandardPaths>
-#include <QTemporaryDir>
+#include <QTimer>
+
+#include <vxcore/vxcore.h>
 
 #include "exception.h"
 #include <utils/fileutils.h>
@@ -28,51 +30,45 @@ using namespace vnotex;
 // #define VX_DEBUG_WEB
 #endif
 
-const QString ConfigMgr::c_orgName = "VNote";
+const QString ConfigMgr::c_orgName = QStringLiteral("VNoteX");
 
-const QString ConfigMgr::c_appName = "VNote";
+const QString ConfigMgr::c_appName = QStringLiteral("VNote");
 
-const QString ConfigMgr::c_configFileName = "vnotex.json";
+static constexpr char c_configFileName[] = "vnotex.json";
 
-const QString ConfigMgr::c_sessionFileName = "session.json";
+static constexpr char c_sessionFileName[] = "session.json";
 
-const QString ConfigMgr::c_userFilesFolder = "user_files";
+static constexpr char c_appFilesFolder[] = "vnotex_files";
 
-const QString ConfigMgr::c_appFilesFolder = "vnotex_files";
+static constexpr char c_userFilesFolder[] = "vnotex_user";
 
-const QJsonObject &ConfigMgr::Settings::getJson() const { return m_jobj; }
+ConfigMgr::ConfigMgr(QObject *p_parent)
+    : QObject(p_parent),
+      m_config(new MainConfig(this)),
+      m_sessionConfig(new SessionConfig(this)),
+      m_vxcoreContext(nullptr),
+      m_mainConfigWriteTimer(nullptr),
+      m_sessionConfigWriteTimer(nullptr) {
 
-QSharedPointer<ConfigMgr::Settings> ConfigMgr::Settings::fromFile(const QString &p_jsonFilePath) {
-  if (!QFileInfo::exists(p_jsonFilePath)) {
-    qWarning() << "return empty Settings from non-exist config file" << p_jsonFilePath;
-    return QSharedPointer<Settings>::create();
+  // Initialize vxcore context early
+  VxCoreError err = vxcore_context_create(nullptr, &m_vxcoreContext);
+  if (err != VXCORE_OK) {
+    qCritical() << "Failed to create vxcore context:" << vxcore_error_message(err);
+  } else {
+    // Set VNote's app info so vxcore uses VNote's config paths
+    vxcore_set_app_info(c_orgName.toUtf8().constData(), c_appName.toUtf8().constData());
   }
 
-  auto bytes = FileUtils::readFile(p_jsonFilePath);
-  return QSharedPointer<Settings>::create(QJsonDocument::fromJson(bytes).object());
-}
+  // Create debounced write timers
+  m_mainConfigWriteTimer = new QTimer(this);
+  m_mainConfigWriteTimer->setSingleShot(true);
+  m_mainConfigWriteTimer->setInterval(500);
+  connect(m_mainConfigWriteTimer, &QTimer::timeout, this, &ConfigMgr::doWriteMainConfig);
 
-void ConfigMgr::Settings::writeToFile(const QString &p_jsonFilePath) const {
-  FileUtils::writeFile(p_jsonFilePath, QJsonDocument(this->m_jobj).toJson());
-}
-
-ConfigMgr::ConfigMgr(bool p_isUnitTest, QObject *p_parent)
-    : QObject(p_parent), m_config(new MainConfig(this)), m_sessionConfig(new SessionConfig(this)) {
-  if (p_isUnitTest) {
-    m_dirForUnitTest.reset(new QTemporaryDir());
-    if (!m_dirForUnitTest->isValid()) {
-      qWarning() << "failed to init ConfigMgr for UnitTest";
-      return;
-    }
-
-    QDir dir(m_dirForUnitTest->path());
-    dir.mkdir(c_appFilesFolder);
-    dir.mkdir(c_userFilesFolder);
-
-    m_appConfigFolderPath = m_dirForUnitTest->filePath(c_appFilesFolder);
-    m_userConfigFolderPath = m_dirForUnitTest->filePath(c_userFilesFolder);
-    return;
-  }
+  m_sessionConfigWriteTimer = new QTimer(this);
+  m_sessionConfigWriteTimer->setSingleShot(true);
+  m_sessionConfigWriteTimer->setInterval(500);
+  connect(m_sessionConfigWriteTimer, &QTimer::timeout, this, &ConfigMgr::doWriteSessionConfig);
 
   locateConfigFolder();
 
@@ -85,14 +81,28 @@ ConfigMgr::ConfigMgr(bool p_isUnitTest, QObject *p_parent)
   m_sessionConfig->init();
 }
 
-ConfigMgr::~ConfigMgr() {}
+ConfigMgr::~ConfigMgr() {
+  // Flush any pending writes before destruction
+  if (m_mainConfigWriteTimer && m_mainConfigWriteTimer->isActive()) {
+    m_mainConfigWriteTimer->stop();
+    doWriteMainConfig();
+  }
+  if (m_sessionConfigWriteTimer && m_sessionConfigWriteTimer->isActive()) {
+    m_sessionConfigWriteTimer->stop();
+    doWriteSessionConfig();
+  }
 
-ConfigMgr &ConfigMgr::getInst(bool p_isUnitTest) {
-  static ConfigMgr inst(p_isUnitTest);
-  return inst;
+  // Clean up vxcore context
+  if (m_vxcoreContext) {
+    vxcore_context_destroy(m_vxcoreContext);
+    m_vxcoreContext = nullptr;
+  }
 }
 
-void ConfigMgr::initForUnitTest() { getInst(true); }
+ConfigMgr &ConfigMgr::getInst() {
+  static ConfigMgr inst;
+  return inst;
+}
 
 void ConfigMgr::locateConfigFolder() {
   const auto appDirPath = getApplicationDirPath();
@@ -138,14 +148,36 @@ bool ConfigMgr::checkAppConfig() {
     if (!appConfigDir.exists(c_configFileName)) {
       needUpdate = true;
     } else {
-      // Check version of config file.
-      auto defaultSettings = getSettings(Source::Default);
-      auto appSettings = getSettings(Source::App);
-      auto defaultVersion = MainConfig::getVersion(defaultSettings->getJson());
-      auto appVersion = MainConfig::getVersion(appSettings->getJson());
-      if (defaultVersion != appVersion) {
-        qInfo() << "new version" << appVersion << defaultVersion;
-        needUpdate = true;
+      // Check version of config file using vxcore JSON utilities
+      if (m_vxcoreContext) {
+        QString defaultPath = getConfigFilePath(Source::App);
+        QString defaultConfigPath = getDefaultConfigFilePath();
+
+        // Read version from default config
+        char *defaultVersionStr = nullptr;
+        VxCoreError err =
+            vxcore_json_read_value(defaultConfigPath.toStdString().c_str(),
+                                   "metadata.version", &defaultVersionStr);
+        QString defaultVersion;
+        if (err == VXCORE_OK && defaultVersionStr) {
+          defaultVersion = QString::fromUtf8(defaultVersionStr);
+          vxcore_string_free(defaultVersionStr);
+        }
+
+        // Read version from app config
+        char *appVersionStr = nullptr;
+        err = vxcore_json_read_value(defaultPath.toStdString().c_str(), "metadata.version",
+                                     &appVersionStr);
+        QString appVersion;
+        if (err == VXCORE_OK && appVersionStr) {
+          appVersion = QString::fromUtf8(appVersionStr);
+          vxcore_string_free(appVersionStr);
+        }
+
+        if (!defaultVersion.isEmpty() && defaultVersion != appVersion) {
+          qInfo() << "new version" << appVersion << defaultVersion;
+          needUpdate = true;
+        }
       }
     }
 
@@ -199,7 +231,7 @@ bool ConfigMgr::checkAppConfig() {
     // Wait for the OS delete the folder.
     Utils::sleepWait(1000);
 
-    FileUtils::copyFile(getConfigFilePath(Source::Default), mainConfigFilePath);
+    FileUtils::copyFile(getDefaultConfigFilePath(), mainConfigFilePath);
     FileUtils::copyDir(extraDataRoot + QStringLiteral("/web"),
                        appConfigDir.filePath(QStringLiteral("web")));
     return false;
@@ -245,21 +277,13 @@ bool ConfigMgr::checkAppConfig() {
                      appConfigDir.filePath(QStringLiteral("dicts")));
 
   // Main config file.
-  FileUtils::copyFile(getConfigFilePath(Source::Default), appConfigDir.filePath(c_configFileName));
+  FileUtils::copyFile(getDefaultConfigFilePath(), appConfigDir.filePath(c_configFileName));
 
   return needUpdate;
 }
 
 void ConfigMgr::checkUserConfig() {
-  // Mainly check if the user config and session config is read-only.
-  const auto userFile = getConfigFilePath(Source::User);
-  if (QFileInfo::exists(userFile)) {
-    if (!(QFile::permissions(userFile) & QFile::WriteUser)) {
-      qDebug() << "make user config file writable" << userFile;
-      QFile::setPermissions(userFile, QFile::WriteUser);
-    }
-  }
-
+  // Mainly check if the session config is read-only.
   const auto sessionFile = getConfigFilePath(Source::Session);
   if (QFileInfo::exists(sessionFile)) {
     if (!(QFile::permissions(sessionFile) & QFile::WriteUser)) {
@@ -272,23 +296,13 @@ void ConfigMgr::checkUserConfig() {
 QString ConfigMgr::getConfigFilePath(Source p_src) const {
   QString configPath;
   switch (p_src) {
-  case Source::Default:
-    configPath = getDefaultConfigFilePath();
-    break;
-
   case Source::App:
     configPath = m_appConfigFolderPath + QLatin1Char('/') + c_configFileName;
     break;
 
-  case Source::User: {
-    configPath = m_userConfigFolderPath + QLatin1Char('/') + c_configFileName;
-    break;
-  }
-
-  case Source::Session: {
+  case Source::Session:
     configPath = m_userConfigFolderPath + QLatin1Char('/') + c_sessionFileName;
     break;
-  }
 
   default:
     Q_ASSERT(false);
@@ -301,18 +315,66 @@ QString ConfigMgr::getDefaultConfigFilePath() {
   return QStringLiteral(":/vnotex/data/core/") + c_configFileName;
 }
 
-QSharedPointer<ConfigMgr::Settings> ConfigMgr::getSettings(Source p_src) const {
-  return ConfigMgr::Settings::fromFile(getConfigFilePath(p_src));
-}
-
 void ConfigMgr::writeUserSettings(const QJsonObject &p_jobj) {
-  Settings settings(p_jobj);
-  settings.writeToFile(getConfigFilePath(Source::User));
+  m_pendingMainConfig = p_jobj;
+  scheduleMainConfigWrite();
 }
 
 void ConfigMgr::writeSessionSettings(const QJsonObject &p_jobj) {
-  Settings settings(p_jobj);
-  settings.writeToFile(getConfigFilePath(Source::Session));
+  m_pendingSessionConfig = p_jobj;
+  scheduleSessionConfigWrite();
+}
+
+void ConfigMgr::scheduleMainConfigWrite() {
+  if (m_mainConfigWriteTimer) {
+    m_mainConfigWriteTimer->start(); // Restarts if already running
+  }
+}
+
+void ConfigMgr::scheduleSessionConfigWrite() {
+  if (m_sessionConfigWriteTimer) {
+    m_sessionConfigWriteTimer->start(); // Restarts if already running
+  }
+}
+
+void ConfigMgr::doWriteMainConfig() {
+  if (m_pendingMainConfig.isEmpty() || !m_vxcoreContext) {
+    return;
+  }
+
+  QString configPath = getConfigFilePath(Source::App);
+  QJsonDocument doc(m_pendingMainConfig);
+  QString jsonString = QString::fromUtf8(doc.toJson());
+
+  VxCoreError err = vxcore_json_save(m_vxcoreContext, configPath.toStdString().c_str(),
+                                     jsonString.toStdString().c_str());
+  if (err != VXCORE_OK) {
+    qWarning() << "Failed to save main config:" << vxcore_error_message(err);
+  } else {
+    qDebug() << "Main config saved:" << configPath;
+  }
+
+  m_pendingMainConfig = QJsonObject();
+}
+
+void ConfigMgr::doWriteSessionConfig() {
+  if (m_pendingSessionConfig.isEmpty() || !m_vxcoreContext) {
+    return;
+  }
+
+  QString configPath = getConfigFilePath(Source::Session);
+  QJsonDocument doc(m_pendingSessionConfig);
+  QString jsonString = QString::fromUtf8(doc.toJson());
+
+  VxCoreError err = vxcore_json_save(m_vxcoreContext, configPath.toStdString().c_str(),
+                                     jsonString.toStdString().c_str());
+  if (err != VXCORE_OK) {
+    qWarning() << "Failed to save session config:" << vxcore_error_message(err);
+  } else {
+    qDebug() << "Session config saved:" << configPath;
+  }
+
+  m_pendingSessionConfig = QJsonObject();
 }
 
 MainConfig &ConfigMgr::getConfig() { return *m_config; }
@@ -494,11 +556,14 @@ QString ConfigMgr::getApplicationVersion() {
   static QString appVersion;
 
   if (appVersion.isEmpty()) {
-    auto defaultSettings = ConfigMgr::Settings::fromFile(getDefaultConfigFilePath());
-    const auto &defaultObj = defaultSettings->getJson();
-
-    auto metaDataObj = defaultObj.value(QStringLiteral("metadata")).toObject();
-    appVersion = metaDataObj.value(QStringLiteral("version")).toString();
+    QString defaultConfigPath = getDefaultConfigFilePath();
+    char *versionStr = nullptr;
+    VxCoreError err = vxcore_json_read_value(defaultConfigPath.toStdString().c_str(),
+                                             "metadata.version", &versionStr);
+    if (err == VXCORE_OK && versionStr) {
+      appVersion = QString::fromUtf8(versionStr);
+      vxcore_string_free(versionStr);
+    }
   }
 
   return appVersion;

@@ -4,11 +4,12 @@
 #include <QJsonObject>
 #include <QObject>
 #include <QScopedPointer>
-#include <QSharedPointer>
 
 #include "noncopyable.h"
 
-class QTemporaryDir;
+class QTimer;
+
+typedef struct VxCoreContext *VxCoreContextHandle;
 
 namespace vnotex {
 class MainConfig;
@@ -20,27 +21,11 @@ class WidgetConfig;
 class ConfigMgr : public QObject, private Noncopyable {
   Q_OBJECT
 public:
-  enum class Source { Default, App, User, Session };
-
-  class Settings {
-  public:
-    Settings() = default;
-
-    Settings(const QJsonObject &p_jobj) : m_jobj(p_jobj) {}
-
-    const QJsonObject &getJson() const;
-
-    void writeToFile(const QString &p_jsonFilePath) const;
-
-    static QSharedPointer<Settings> fromFile(const QString &p_jsonFilePath);
-
-  private:
-    QJsonObject m_jobj;
-  };
+  enum class Source { App, Session };
 
   ~ConfigMgr();
 
-  static ConfigMgr &getInst(bool p_isUnitTest = false);
+  static ConfigMgr &getInst();
 
   MainConfig &getConfig();
 
@@ -110,16 +95,12 @@ public:
 
   static void initAppPrefixPath();
 
-  static void initForUnitTest();
-
   static const QString c_orgName;
 
   static const QString c_appName;
 
 public:
   // Used by IConfig.
-  QSharedPointer<Settings> getSettings(Source p_src) const;
-
   void writeUserSettings(const QJsonObject &p_jobj);
 
   void writeSessionSettings(const QJsonObject &p_jobj);
@@ -128,7 +109,7 @@ signals:
   void editorConfigChanged();
 
 private:
-  ConfigMgr(bool p_isUnitTest, QObject *p_parent = nullptr);
+  ConfigMgr(QObject *p_parent = nullptr);
 
   // Locate the folder path where the config file exists.
   void locateConfigFolder();
@@ -142,30 +123,35 @@ private:
 
   static QString getDefaultConfigFilePath();
 
+  // Schedule debounced writes
+  void scheduleMainConfigWrite();
+  void scheduleSessionConfigWrite();
+
+private slots:
+  // Actual write handlers (called after timer expires)
+  void doWriteMainConfig();
+  void doWriteSessionConfig();
+
+private:
   QScopedPointer<MainConfig> m_config;
-  ;
 
   // Session config.
   QScopedPointer<SessionConfig> m_sessionConfig;
 
-  // Absolute path of the app config folder.
-  QString m_appConfigFolderPath;
+  // vxcore context for JSON I/O
+  VxCoreContextHandle m_vxcoreContext;
 
-  // Absolute path of the user config folder.
+  // Debounced write timers (500ms)
+  QTimer *m_mainConfigWriteTimer;
+  QTimer *m_sessionConfigWriteTimer;
+
+  // Config folder paths
+  QString m_appConfigFolderPath;
   QString m_userConfigFolderPath;
 
-  // In UnitTest, we use a temp dir to hold the user files and app files.
-  QScopedPointer<QTemporaryDir> m_dirForUnitTest;
-
-  // Name of the core config file.
-  static const QString c_configFileName;
-
-  // Name of the session config file.
-  static const QString c_sessionFileName;
-
-  static const QString c_userFilesFolder;
-
-  static const QString c_appFilesFolder;
+  // Pending writes
+  QJsonObject m_pendingMainConfig;
+  QJsonObject m_pendingSessionConfig;
 };
 } // namespace vnotex
 
