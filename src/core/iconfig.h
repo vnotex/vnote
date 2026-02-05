@@ -19,15 +19,8 @@ public:
 
   virtual ~IConfig() {}
 
-  // Called to init top level config.
-  virtual void init() { Q_ASSERT(false); }
-
   // Init from QJsonObject.
-  virtual void init(const QJsonObject &p_default, const QJsonObject &p_user) {
-    Q_UNUSED(p_default);
-    Q_UNUSED(p_user);
-    Q_ASSERT(false);
-  }
+  virtual void fromJson(const QJsonObject &p_jobj) = 0;
 
   virtual void writeToSettings() const {
     Q_ASSERT(m_topConfig);
@@ -47,33 +40,6 @@ public:
 
 protected:
   ConfigMgr *getMgr() const { return m_mgr; }
-
-  // First read user config, then the default config.
-  static QJsonValue read(const QJsonObject &p_default, const QJsonObject &p_user,
-                         const QString &p_key) {
-    auto it = p_user.find(p_key);
-    if (it != p_user.end()) {
-      return it.value();
-    } else {
-      return p_default.value(p_key);
-    }
-  }
-
-  static QString readString(const QJsonObject &p_default, const QJsonObject &p_user,
-                            const QString &p_key) {
-    return read(p_default, p_user, p_key).toString();
-  }
-
-  static QStringList readStringList(const QJsonObject &p_default, const QJsonObject &p_user,
-                                    const QString &p_key) {
-    auto arr = read(p_default, p_user, p_key).toArray();
-    QStringList res;
-    res.reserve(arr.size());
-    for (int i = 0; i < arr.size(); ++i) {
-      res.push_back(arr[i].toString());
-    }
-    return res;
-  }
 
   static QStringList readStringList(const QJsonObject &p_obj, const QString &p_key) {
     auto arr = p_obj.value(p_key).toArray();
@@ -129,28 +95,8 @@ protected:
     writeByteArray(p_obj, p_key, bytes);
   }
 
-  static bool readBool(const QJsonObject &p_default, const QJsonObject &p_user,
-                       const QString &p_key) {
-    return read(p_default, p_user, p_key).toBool();
-  }
-
   static bool readBool(const QJsonObject &p_obj, const QString &p_key) {
     return p_obj.value(p_key).toBool();
-  }
-
-  static int readInt(const QJsonObject &p_default, const QJsonObject &p_user,
-                     const QString &p_key) {
-    return read(p_default, p_user, p_key).toInt();
-  }
-
-  static qreal readReal(const QJsonObject &p_default, const QJsonObject &p_user,
-                        const QString &p_key) {
-    return read(p_default, p_user, p_key).toDouble();
-  }
-
-  static bool isUndefinedKey(const QJsonObject &p_default, const QJsonObject &p_user,
-                             const QString &p_key) {
-    return !p_default.contains(p_key) && !p_user.contains(p_key);
   }
 
   static bool isUndefinedKey(const QJsonObject &p_obj, const QString &p_key) {
