@@ -2,17 +2,15 @@
 
 using namespace vnotex;
 
-#define READINT(key) readInt(appObj, userObj, (key))
-#define READBOOL(key) readBool(appObj, userObj, (key))
-#define READSTRLIST(key) readStringList(appObj, userObj, (key))
+#define READINT(key) readInt(p_jobj, (key))
+#define READBOOL(key) readBool(p_jobj, (key))
+#define READSTRLIST(key) readStringList(p_jobj, (key))
 
 WidgetConfig::WidgetConfig(ConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
   m_sessionName = QStringLiteral("widget");
 }
 
-void WidgetConfig::init(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(m_sessionName).toObject();
-  const auto userObj = p_user.value(m_sessionName).toObject();
+void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
 
   {
     m_outlineAutoExpandedLevel = READINT(QStringLiteral("outline_auto_expanded_level"));

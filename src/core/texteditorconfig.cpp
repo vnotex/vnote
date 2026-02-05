@@ -2,18 +2,16 @@
 
 using namespace vnotex;
 
-#define READSTR(key) readString(appObj, userObj, (key))
-#define READBOOL(key) readBool(appObj, userObj, (key))
-#define READINT(key) readInt(appObj, userObj, (key))
+#define READSTR(key) readString(p_jobj, (key))
+#define READBOOL(key) readBool(p_jobj, (key))
+#define READINT(key) readInt(p_jobj, (key))
 
 TextEditorConfig::TextEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig) {
   m_sessionName = QStringLiteral("text_editor");
 }
 
-void TextEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(m_sessionName).toObject();
-  const auto userObj = p_user.value(m_sessionName).toObject();
+void TextEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
   {
     auto lineNumber = READSTR(QStringLiteral("line_number"));

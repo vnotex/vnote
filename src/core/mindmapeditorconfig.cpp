@@ -13,11 +13,8 @@ MindMapEditorConfig::MindMapEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
   m_sessionName = QStringLiteral("mindmap_editor");
 }
 
-void MindMapEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(m_sessionName).toObject();
-  const auto userObj = p_user.value(m_sessionName).toObject();
-
-  loadEditorResource(appObj, userObj);
+void MindMapEditorConfig::fromJson(const QJsonObject &p_jobj) {
+  loadEditorResource(p_jobj);
 }
 
 QJsonObject MindMapEditorConfig::toJson() const {
@@ -26,23 +23,19 @@ QJsonObject MindMapEditorConfig::toJson() const {
   return obj;
 }
 
-void MindMapEditorConfig::loadEditorResource(const QJsonObject &p_app, const QJsonObject &p_user) {
+void MindMapEditorConfig::loadEditorResource(const QJsonObject &p_jobj) {
   const QString name(QStringLiteral("editor_resource"));
 
   if (MainConfig::isVersionChanged()) {
-    bool needOverride = p_app[QStringLiteral("override_editor_resource")].toBool();
+    bool needOverride = p_jobj.value(QStringLiteral("override_editor_resource")).toBool();
     if (needOverride) {
       qInfo() << "override \"editor_resource\" in user configuration due to version change";
-      m_editorResource.init(p_app[name].toObject());
+      m_editorResource.init(p_jobj.value(name).toObject());
       return;
     }
   }
 
-  if (p_user.contains(name)) {
-    m_editorResource.init(p_user[name].toObject());
-  } else {
-    m_editorResource.init(p_app[name].toObject());
-  }
+  m_editorResource.init(p_jobj.value(name).toObject());
 }
 
 QJsonObject MindMapEditorConfig::saveEditorResource() const { return m_editorResource.toJson(); }

@@ -12,9 +12,9 @@
 
 using namespace vnotex;
 
-#define READINT(key) readInt(appObj, userObj, (key))
-#define READSTR(key) readString(appObj, userObj, (key))
-#define READBOOL(key) readBool(appObj, userObj, (key))
+#define READINT(key) readInt(p_jobj, (key))
+#define READSTR(key) readString(p_jobj, (key))
+#define READBOOL(key) readBool(p_jobj, (key))
 
 bool EditorConfig::ImageHostItem::operator==(const ImageHostItem &p_other) const {
   return m_type == p_other.m_type && m_name == p_other.m_name && m_config == p_other.m_config;
@@ -44,27 +44,21 @@ EditorConfig::EditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
 
 EditorConfig::~EditorConfig() {}
 
-void EditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(m_sessionName).toObject();
-  const auto userObj = p_user.value(m_sessionName).toObject();
+void EditorConfig::fromJson(const QJsonObject &p_jobj) {
+  loadCore(p_jobj.value(QStringLiteral("core")).toObject());
 
-  loadCore(appObj, userObj);
-
-  loadImageHost(appObj, userObj);
+  loadImageHost(p_jobj.value(QStringLiteral("image_host")).toObject());
 
   m_viConfig = QSharedPointer<vte::ViConfig>::create();
-  m_viConfig->fromJson(read(appObj, userObj, QStringLiteral("vi")).toObject());
+  m_viConfig->fromJson(p_jobj.value(QStringLiteral("vi")).toObject());
 
-  m_textEditorConfig->init(appObj, userObj);
-  m_markdownEditorConfig->init(appObj, userObj);
-  m_pdfViewerConfig->init(appObj, userObj);
-  m_mindMapEditorConfig->init(appObj, userObj);
+  m_textEditorConfig->fromJson(p_jobj);
+  m_markdownEditorConfig->fromJson(p_jobj);
+  m_pdfViewerConfig->fromJson(p_jobj);
+  m_mindMapEditorConfig->fromJson(p_jobj);
 }
 
-void EditorConfig::loadCore(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(QStringLiteral("core")).toObject();
-  const auto userObj = p_user.value(QStringLiteral("core")).toObject();
-
+void EditorConfig::loadCore(const QJsonObject &p_jobj) {
   {
     m_toolBarIconSize = READINT(QStringLiteral("toolbar_icon_size"));
     if (m_toolBarIconSize <= 0) {
@@ -81,7 +75,7 @@ void EditorConfig::loadCore(const QJsonObject &p_app, const QJsonObject &p_user)
 
   m_backupFileExtension = READSTR(QStringLiteral("backup_file_extension"));
 
-  loadShortcuts(appObj, userObj);
+  loadShortcuts(p_jobj.value(QStringLiteral("shortcuts")).toObject());
 
   m_spellCheckAutoDetectLanguageEnabled =
       READBOOL(QStringLiteral("spell_check_auto_detect_language"));
@@ -109,17 +103,14 @@ QJsonObject EditorConfig::saveCore() const {
   return obj;
 }
 
-void EditorConfig::loadShortcuts(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(QStringLiteral("shortcuts")).toObject();
-  const auto userObj = p_user.value(QStringLiteral("shortcuts")).toObject();
-
+void EditorConfig::loadShortcuts(const QJsonObject &p_jobj) {
   static const auto indexOfShortcutEnum =
       EditorConfig::staticMetaObject.indexOfEnumerator("Shortcut");
   Q_ASSERT(indexOfShortcutEnum >= 0);
   const auto metaEnum = EditorConfig::staticMetaObject.enumerator(indexOfShortcutEnum);
   // Skip the Max flag.
   for (int i = 0; i < metaEnum.keyCount() - 1; ++i) {
-    m_shortcuts[i] = READSTR(metaEnum.key(i));
+    m_shortcuts[i] = readString(p_jobj, metaEnum.key(i));
   }
 }
 
@@ -236,20 +227,17 @@ void EditorConfig::setSpellCheckDefaultDictionary(const QString &p_dict) {
   updateConfig(m_spellCheckDefaultDictionary, p_dict, this);
 }
 
-void EditorConfig::loadImageHost(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(QStringLiteral("image_host")).toObject();
-  const auto userObj = p_user.value(QStringLiteral("image_host")).toObject();
-
+void EditorConfig::loadImageHost(const QJsonObject &p_jobj) {
   {
-    auto arr = read(appObj, userObj, QStringLiteral("hosts")).toArray();
+    auto arr = p_jobj.value(QStringLiteral("hosts")).toArray();
     m_imageHosts.resize(arr.size());
     for (int i = 0; i < arr.size(); ++i) {
       m_imageHosts[i].fromJson(arr[i].toObject());
     }
   }
 
-  m_defaultImageHost = READSTR(QStringLiteral("default_image_host"));
-  m_clearObsoleteImageAtImageHost = READBOOL(QStringLiteral("clear_obsolete_image"));
+  m_defaultImageHost = readString(p_jobj, QStringLiteral("default_image_host"));
+  m_clearObsoleteImageAtImageHost = readBool(p_jobj, QStringLiteral("clear_obsolete_image"));
 }
 
 QJsonObject EditorConfig::saveImageHost() const {

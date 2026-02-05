@@ -99,6 +99,18 @@ protected:
     return p_obj.value(p_key).toBool();
   }
 
+  static int readInt(const QJsonObject &p_obj, const QString &p_key) {
+    return p_obj.value(p_key).toInt();
+  }
+
+  static qreal readReal(const QJsonObject &p_obj, const QString &p_key) {
+    return p_obj.value(p_key).toDouble();
+  }
+
+  static QJsonValue read(const QJsonObject &p_obj, const QString &p_key) {
+    return p_obj.value(p_key);
+  }
+
   static bool isUndefinedKey(const QJsonObject &p_obj, const QString &p_key) {
     return !p_obj.contains(p_key);
   }

@@ -18,7 +18,7 @@ public:
 
   TextEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
 
-  void init(const QJsonObject &p_app, const QJsonObject &p_user) Q_DECL_OVERRIDE;
+  void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 
   QJsonObject toJson() const Q_DECL_OVERRIDE;
 

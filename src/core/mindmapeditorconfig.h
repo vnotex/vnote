@@ -10,7 +10,7 @@ class MindMapEditorConfig : public IConfig {
 public:
   MindMapEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
 
-  void init(const QJsonObject &p_app, const QJsonObject &p_user) Q_DECL_OVERRIDE;
+  void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 
   QJsonObject toJson() const Q_DECL_OVERRIDE;
 
@@ -19,7 +19,7 @@ public:
 private:
   friend class MainConfig;
 
-  void loadEditorResource(const QJsonObject &p_app, const QJsonObject &p_user);
+  void loadEditorResource(const QJsonObject &p_jobj);
   QJsonObject saveEditorResource() const;
 
   WebResource m_editorResource;

@@ -30,7 +30,7 @@ public:
   MarkdownEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig,
                        const QSharedPointer<TextEditorConfig> &p_textEditorConfig);
 
-  void init(const QJsonObject &p_app, const QJsonObject &p_user) Q_DECL_OVERRIDE;
+  void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 
   QJsonObject toJson() const Q_DECL_OVERRIDE;
 
@@ -141,10 +141,10 @@ private:
   QString sectionNumberStyleToString(SectionNumberStyle p_style) const;
   SectionNumberStyle stringToSectionNumberStyle(const QString &p_str) const;
 
-  void loadViewerResource(const QJsonObject &p_app, const QJsonObject &p_user);
+  void loadViewerResource(const QJsonObject &p_jobj);
   QJsonObject saveViewerResource() const;
 
-  void loadExportResource(const QJsonObject &p_app, const QJsonObject &p_user);
+  void loadExportResource(const QJsonObject &p_jobj);
   QJsonObject saveExportResource() const;
 
   QString inplacePreviewSourceToString(InplacePreviewSource p_src) const;

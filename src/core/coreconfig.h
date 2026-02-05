@@ -93,7 +93,7 @@ public:
 
   CoreConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
 
-  void init(const QJsonObject &p_app, const QJsonObject &p_user) Q_DECL_OVERRIDE;
+  void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 
   QJsonObject toJson() const Q_DECL_OVERRIDE;
 
@@ -148,17 +148,17 @@ public:
 private:
   friend class MainConfig;
 
-  void loadShortcuts(const QJsonObject &p_app, const QJsonObject &p_user);
+  void loadShortcuts(const QJsonObject &p_jobj);
 
-  void loadNoteManagement(const QJsonObject &p_app, const QJsonObject &p_user);
+  void loadNoteManagement(const QJsonObject &p_jobj);
 
   QJsonObject saveShortcuts() const;
 
-  void loadFileTypeSuffixes(const QJsonObject &p_app, const QJsonObject &p_user);
+  void loadFileTypeSuffixes(const QJsonObject &p_jobj);
 
   QJsonArray saveFileTypeSuffixes() const;
 
-  void loadUnitedEntry(const QJsonObject &p_app, const QJsonObject &p_user);
+  void loadUnitedEntry(const QJsonObject &p_jobj);
 
   QJsonObject saveUnitedEntry() const;
 

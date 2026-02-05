@@ -7,10 +7,10 @@
 
 using namespace vnotex;
 
-#define READSTR(key) readString(appObj, userObj, (key))
-#define READBOOL(key) readBool(appObj, userObj, (key))
-#define READREAL(key) readReal(appObj, userObj, (key))
-#define READINT(key) readInt(appObj, userObj, (key))
+#define READSTR(key) readString(p_jobj, (key))
+#define READBOOL(key) readBool(p_jobj, (key))
+#define READREAL(key) readReal(p_jobj, (key))
+#define READINT(key) readInt(p_jobj, (key))
 
 MarkdownEditorConfig::MarkdownEditorConfig(
     ConfigMgr *p_mgr, IConfig *p_topConfig,
@@ -19,12 +19,9 @@ MarkdownEditorConfig::MarkdownEditorConfig(
   m_sessionName = QStringLiteral("markdown_editor");
 }
 
-void MarkdownEditorConfig::init(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(m_sessionName).toObject();
-  const auto userObj = p_user.value(m_sessionName).toObject();
-
-  loadViewerResource(appObj, userObj);
-  loadExportResource(appObj, userObj);
+void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
+  loadViewerResource(p_jobj);
+  loadExportResource(p_jobj);
 
   m_webPlantUml = READBOOL(QStringLiteral("web_plantuml"));
 
@@ -148,44 +145,36 @@ const TextEditorConfig &MarkdownEditorConfig::getTextEditorConfig() const {
 
 int MarkdownEditorConfig::revision() const { return m_revision + m_textEditorConfig->revision(); }
 
-void MarkdownEditorConfig::loadViewerResource(const QJsonObject &p_app, const QJsonObject &p_user) {
+void MarkdownEditorConfig::loadViewerResource(const QJsonObject &p_jobj) {
   const QString name(QStringLiteral("viewer_resource"));
 
   if (MainConfig::isVersionChanged()) {
-    bool needOverride = p_app[QStringLiteral("override_viewer_resource")].toBool();
+    bool needOverride = p_jobj.value(QStringLiteral("override_viewer_resource")).toBool();
     if (needOverride) {
       qInfo() << "override \"viewer_resource\" in user configuration due to version change";
-      m_viewerResource.init(p_app[name].toObject());
+      m_viewerResource.init(p_jobj.value(name).toObject());
       return;
     }
   }
 
-  if (p_user.contains(name)) {
-    m_viewerResource.init(p_user[name].toObject());
-  } else {
-    m_viewerResource.init(p_app[name].toObject());
-  }
+  m_viewerResource.init(p_jobj.value(name).toObject());
 }
 
 QJsonObject MarkdownEditorConfig::saveViewerResource() const { return m_viewerResource.toJson(); }
 
-void MarkdownEditorConfig::loadExportResource(const QJsonObject &p_app, const QJsonObject &p_user) {
+void MarkdownEditorConfig::loadExportResource(const QJsonObject &p_jobj) {
   const QString name(QStringLiteral("export_resource"));
 
   if (MainConfig::isVersionChanged()) {
-    bool needOverride = p_app[QStringLiteral("override_viewer_resource")].toBool();
+    bool needOverride = p_jobj.value(QStringLiteral("override_viewer_resource")).toBool();
     if (needOverride) {
       qInfo() << "override \"viewer_resource\" in user configuration due to version change";
-      m_exportResource.init(p_app[name].toObject());
+      m_exportResource.init(p_jobj.value(name).toObject());
       return;
     }
   }
 
-  if (p_user.contains(name)) {
-    m_exportResource.init(p_user[name].toObject());
-  } else {
-    m_exportResource.init(p_app[name].toObject());
-  }
+  m_exportResource.init(p_jobj.value(name).toObject());
 }
 
 QJsonObject MarkdownEditorConfig::saveExportResource() const { return m_exportResource.toJson(); }

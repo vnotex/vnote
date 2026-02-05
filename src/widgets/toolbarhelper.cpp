@@ -547,7 +547,7 @@ void ToolBarHelper::setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar) {
     menu->addSeparator();
 
     menu->addAction(MainWindow::tr("Edit User Configuration File"), menu, []() {
-      auto file = ConfigMgr::getInst().getConfigFilePath(ConfigMgr::Source::User);
+      auto file = ConfigMgr::getInst().getConfigFilePath(ConfigMgr::Source::App);
       auto paras = QSharedPointer<FileOpenParameters>::create();
       paras->m_sessionEnabled = false;
       emit VNoteX::getInst().openFileRequested(file, paras);

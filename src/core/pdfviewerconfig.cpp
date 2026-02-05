@@ -13,11 +13,8 @@ PdfViewerConfig::PdfViewerConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
   m_sessionName = QStringLiteral("pdf_viewer");
 }
 
-void PdfViewerConfig::init(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(m_sessionName).toObject();
-  const auto userObj = p_user.value(m_sessionName).toObject();
-
-  loadViewerResource(appObj, userObj);
+void PdfViewerConfig::fromJson(const QJsonObject &p_jobj) {
+  loadViewerResource(p_jobj);
 }
 
 QJsonObject PdfViewerConfig::toJson() const {
@@ -26,23 +23,19 @@ QJsonObject PdfViewerConfig::toJson() const {
   return obj;
 }
 
-void PdfViewerConfig::loadViewerResource(const QJsonObject &p_app, const QJsonObject &p_user) {
+void PdfViewerConfig::loadViewerResource(const QJsonObject &p_jobj) {
   const QString name(QStringLiteral("viewer_resource"));
 
   if (MainConfig::isVersionChanged()) {
-    bool needOverride = p_app[QStringLiteral("override_viewer_resource")].toBool();
+    bool needOverride = p_jobj.value(QStringLiteral("override_viewer_resource")).toBool();
     if (needOverride) {
       qInfo() << "override \"viewer_resource\" in user configuration due to version change";
-      m_viewerResource.init(p_app[name].toObject());
+      m_viewerResource.init(p_jobj.value(name).toObject());
       return;
     }
   }
 
-  if (p_user.contains(name)) {
-    m_viewerResource.init(p_user[name].toObject());
-  } else {
-    m_viewerResource.init(p_app[name].toObject());
-  }
+  m_viewerResource.init(p_jobj.value(name).toObject());
 }
 
 QJsonObject PdfViewerConfig::saveViewerResource() const { return m_viewerResource.toJson(); }

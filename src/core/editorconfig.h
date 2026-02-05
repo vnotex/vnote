@@ -103,7 +103,7 @@ public:
   MindMapEditorConfig &getMindMapEditorConfig();
   const MindMapEditorConfig &getMindMapEditorConfig() const;
 
-  void init(const QJsonObject &p_app, const QJsonObject &p_user) Q_DECL_OVERRIDE;
+  void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 
   QJsonObject toJson() const Q_DECL_OVERRIDE;
 
@@ -141,18 +141,18 @@ public:
 private:
   friend class MainConfig;
 
-  void loadCore(const QJsonObject &p_app, const QJsonObject &p_user);
+  void loadCore(const QJsonObject &p_jobj);
 
   QJsonObject saveCore() const;
 
-  void loadShortcuts(const QJsonObject &p_app, const QJsonObject &p_user);
+  void loadShortcuts(const QJsonObject &p_jobj);
 
   QJsonObject saveShortcuts() const;
 
   QString autoSavePolicyToString(AutoSavePolicy p_policy) const;
   AutoSavePolicy stringToAutoSavePolicy(const QString &p_str) const;
 
-  void loadImageHost(const QJsonObject &p_app, const QJsonObject &p_user);
+  void loadImageHost(const QJsonObject &p_jobj);
 
   QJsonObject saveImageHost() const;
 

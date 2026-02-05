@@ -8,10 +8,10 @@
 
 using namespace vnotex;
 
-#define READSTR(key) readString(appObj, userObj, (key))
-#define READINT(key) readInt(appObj, userObj, (key))
-#define READBOOL(key) readBool(appObj, userObj, (key))
-#define READSTRLIST(key) readStringList(appObj, userObj, (key))
+#define READSTR(key) readString(p_jobj, (key))
+#define READINT(key) readInt(p_jobj, (key))
+#define READBOOL(key) readBool(p_jobj, (key))
+#define READSTRLIST(key) readStringList(p_jobj, (key))
 
 CoreConfig::FileTypeSuffix::FileTypeSuffix(const QString &p_name, const QStringList &p_suffixes)
     : m_name(p_name), m_suffixes(p_suffixes) {}
@@ -30,9 +30,7 @@ const QString &CoreConfig::getTheme() const { return m_theme; }
 
 void CoreConfig::setTheme(const QString &p_name) { updateConfig(m_theme, p_name, this); }
 
-void CoreConfig::init(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(m_sessionName).toObject();
-  const auto userObj = p_user.value(m_sessionName).toObject();
+void CoreConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_theme = READSTR(QStringLiteral("theme"));
 
@@ -41,7 +39,7 @@ void CoreConfig::init(const QJsonObject &p_app, const QJsonObject &p_user) {
     m_locale = QStringLiteral("en_US");
   }
 
-  loadShortcuts(appObj, userObj);
+  loadShortcuts(p_jobj.value(QStringLiteral("shortcuts")).toObject());
 
   m_shortcutLeaderKey = READSTR(QStringLiteral("shortcut_leader_key"));
 
@@ -55,7 +53,7 @@ void CoreConfig::init(const QJsonObject &p_app, const QJsonObject &p_user) {
     m_docksTabBarIconSize = 18;
   }
 
-  loadNoteManagement(appObj, userObj);
+  loadNoteManagement(p_jobj.value(QStringLiteral("note_management")).toObject());
 
   m_recoverLastSessionOnStartEnabled = READBOOL(QStringLiteral("recover_last_session_on_start"));
 
@@ -78,9 +76,9 @@ void CoreConfig::init(const QJsonObject &p_app, const QJsonObject &p_user) {
     m_defaultOpenMode = stringToViewWindowMode(mode);
   }
 
-  loadFileTypeSuffixes(appObj, userObj);
+  loadFileTypeSuffixes(p_jobj);
 
-  loadUnitedEntry(appObj, userObj);
+  loadUnitedEntry(p_jobj);
 }
 
 QJsonObject CoreConfig::toJson() const {
@@ -118,31 +116,21 @@ const QStringList &CoreConfig::getAvailableLocales() {
   return s_availableLocales;
 }
 
-void CoreConfig::loadShortcuts(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto appObj = p_app.value(QStringLiteral("shortcuts")).toObject();
-  const auto userObj = p_user.value(QStringLiteral("shortcuts")).toObject();
-
+void CoreConfig::loadShortcuts(const QJsonObject &p_jobj) {
   static const auto indexOfShortcutEnum =
       CoreConfig::staticMetaObject.indexOfEnumerator("Shortcut");
   Q_ASSERT(indexOfShortcutEnum >= 0);
   const auto metaEnum = CoreConfig::staticMetaObject.enumerator(indexOfShortcutEnum);
   // Skip the Max flag.
   for (int i = 0; i < metaEnum.keyCount() - 1; ++i) {
-    m_shortcuts[i] = READSTR(metaEnum.key(i));
+    m_shortcuts[i] = readString(p_jobj, metaEnum.key(i));
   }
 }
 
-void CoreConfig::loadNoteManagement(const QJsonObject &p_app, const QJsonObject &p_user) {
-  const auto topAppObj = p_app.value(QStringLiteral("note_management")).toObject();
-  const auto topUserObj = p_user.value(QStringLiteral("note_management")).toObject();
-
+void CoreConfig::loadNoteManagement(const QJsonObject &p_jobj) {
   // External node.
-  {
-    const auto appObj = topAppObj.value(QStringLiteral("external_node")).toObject();
-    const auto userObj = topUserObj.value(QStringLiteral("external_node")).toObject();
-
-    m_externalNodeExcludePatterns = READSTRLIST(QStringLiteral("exclude_patterns"));
-  }
+  const auto externalNodeObj = p_jobj.value(QStringLiteral("external_node")).toObject();
+  m_externalNodeExcludePatterns = readStringList(externalNodeObj, QStringLiteral("exclude_patterns"));
 }
 
 QJsonObject CoreConfig::saveShortcuts() const {
@@ -211,15 +199,10 @@ void CoreConfig::setLineEndingPolicy(LineEndingPolicy p_ending) {
   updateConfig(m_lineEnding, p_ending, this);
 }
 
-void CoreConfig::loadFileTypeSuffixes(const QJsonObject &p_app, const QJsonObject &p_user) {
+void CoreConfig::loadFileTypeSuffixes(const QJsonObject &p_jobj) {
   m_fileTypeSuffixes.clear();
 
-  QJsonArray arr;
-  if (p_user.contains(QStringLiteral("file_type_suffixes"))) {
-    arr = p_user[QStringLiteral("file_type_suffixes")].toArray();
-  } else {
-    arr = p_app[QStringLiteral("file_type_suffixes")].toArray();
-  }
+  QJsonArray arr = p_jobj.value(QStringLiteral("file_type_suffixes")).toArray();
 
   m_fileTypeSuffixes.reserve(arr.size());
 
@@ -257,15 +240,9 @@ QJsonArray CoreConfig::saveFileTypeSuffixes() const {
   return arr;
 }
 
-void CoreConfig::loadUnitedEntry(const QJsonObject &p_app, const QJsonObject &p_user) {
-  QJsonObject unitedObj;
-  if (p_user.contains(QStringLiteral("united_entry"))) {
-    unitedObj = p_user[QStringLiteral("united_entry")].toObject();
-  } else {
-    unitedObj = p_app[QStringLiteral("united_entry")].toObject();
-  }
-
-  m_unitedEntryAlias = unitedObj[QStringLiteral("alias")].toArray();
+void CoreConfig::loadUnitedEntry(const QJsonObject &p_jobj) {
+  const auto unitedObj = p_jobj.value(QStringLiteral("united_entry")).toObject();
+  m_unitedEntryAlias = unitedObj.value(QStringLiteral("alias")).toArray();
 }
 
 QJsonObject CoreConfig::saveUnitedEntry() const {
