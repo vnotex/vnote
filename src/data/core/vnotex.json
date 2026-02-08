@@ -1,10 +1,4 @@
 {
-    "//comment" : "This is the default configuration file of VNoteX. User should modify the one in user configuration folder instead of this.",
-    "metadata" : {
-        "//comment": "When releasing new version, please go through the following configs to check if override is needed.",
-        "//Comment": "markdown_editor#override_viewer_resource",
-        "version" : "3.20.1"
-    },
     "core" : {
         "theme" : "pure",
         "locale" : "",

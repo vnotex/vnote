@@ -65,7 +65,7 @@ static void fillGlobalStyles(QString &p_template, const WebResource &p_resource,
       if (ele.m_enabled) {
         for (const auto &style : ele.m_styles) {
           // Read the style file content.
-          auto styleFile = ConfigMgr::getInst().getUserOrAppFile(style);
+          auto styleFile = ConfigMgr::getInst().getFileFromConfigFolder(style);
           try {
             styles += FileUtils::readTextFile(styleFile);
           } catch (Exception &p_e) {
@@ -127,13 +127,13 @@ static void fillResources(QString &p_template, const WebResource &p_resource) {
     if (ele.m_enabled && !ele.isGlobal()) {
       // Styles.
       for (const auto &style : ele.m_styles) {
-        auto styleFile = ConfigMgr::getInst().getUserOrAppFile(style);
+        auto styleFile = ConfigMgr::getInst().getFileFromConfigFolder(style);
         styles += fillStyleTag(styleFile);
       }
 
       // Scripts.
       for (const auto &script : ele.m_scripts) {
-        auto scriptFile = ConfigMgr::getInst().getUserOrAppFile(script);
+        auto scriptFile = ConfigMgr::getInst().getFileFromConfigFolder(script);
         scripts += fillScriptTag(scriptFile);
       }
     }
@@ -157,13 +157,13 @@ static void fillResourcesByContent(QString &p_template, const WebResource &p_res
       try {
         // Styles.
         for (const auto &style : ele.m_styles) {
-          auto styleFile = ConfigMgr::getInst().getUserOrAppFile(style);
+          auto styleFile = ConfigMgr::getInst().getFileFromConfigFolder(style);
           styles += FileUtils::readTextFile(styleFile);
         }
 
         // Scripts.
         for (const auto &script : ele.m_scripts) {
-          auto scriptFile = ConfigMgr::getInst().getUserOrAppFile(script);
+          auto scriptFile = ConfigMgr::getInst().getFileFromConfigFolder(script);
           scripts += FileUtils::readTextFile(scriptFile);
         }
       } catch (Exception &p_e) {
@@ -204,7 +204,7 @@ void HtmlTemplateHelper::updateMarkdownViewerTemplate(const MarkdownEditorConfig
 QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config,
                                                            const MarkdownParas &p_paras) {
   const auto &viewerResource = p_config.getViewerResource();
-  const auto templateFile = ConfigMgr::getInst().getUserOrAppFile(viewerResource.m_template);
+  const auto templateFile = ConfigMgr::getInst().getFileFromConfigFolder(viewerResource.m_template);
   QString htmlTemplate;
   try {
     htmlTemplate = FileUtils::readTextFile(templateFile);
@@ -252,7 +252,7 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
 QString HtmlTemplateHelper::generateMarkdownExportTemplate(const MarkdownEditorConfig &p_config,
                                                            bool p_addOutlinePanel) {
   auto exportResource = p_config.getExportResource();
-  const auto templateFile = ConfigMgr::getInst().getUserOrAppFile(exportResource.m_template);
+  const auto templateFile = ConfigMgr::getInst().getFileFromConfigFolder(exportResource.m_template);
   QString htmlTemplate;
   try {
     htmlTemplate = FileUtils::readTextFile(templateFile);
@@ -341,7 +341,7 @@ void HtmlTemplateHelper::updatePdfViewerTemplate(const PdfViewerConfig &p_config
 void HtmlTemplateHelper::generatePdfViewerTemplate(const PdfViewerConfig &p_config,
                                                    Template &p_template) {
   const auto &viewerResource = p_config.getViewerResource();
-  p_template.m_templatePath = ConfigMgr::getInst().getUserOrAppFile(viewerResource.m_template);
+  p_template.m_templatePath = ConfigMgr::getInst().getFileFromConfigFolder(viewerResource.m_template);
   try {
     p_template.m_template = FileUtils::readTextFile(p_template.m_templatePath);
   } catch (Exception &p_e) {
@@ -373,7 +373,7 @@ void HtmlTemplateHelper::generateMindMapEditorTemplate(const MindMapEditorConfig
                                                        const QString &p_webStyleSheetFile,
                                                        Template &p_template) {
   const auto &editorResource = p_config.getEditorResource();
-  p_template.m_templatePath = ConfigMgr::getInst().getUserOrAppFile(editorResource.m_template);
+  p_template.m_templatePath = ConfigMgr::getInst().getFileFromConfigFolder(editorResource.m_template);
   try {
     p_template.m_template = FileUtils::readTextFile(p_template.m_templatePath);
   } catch (Exception &p_e) {

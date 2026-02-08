@@ -7,7 +7,7 @@ using namespace vnotex;
 #define READSTRLIST(key) readStringList(p_jobj, (key))
 
 WidgetConfig::WidgetConfig(ConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
-  m_sessionName = QStringLiteral("widget");
+  m_sectionName = QStringLiteral("widget");
 }
 
 void WidgetConfig::fromJson(const QJsonObject &p_jobj) {

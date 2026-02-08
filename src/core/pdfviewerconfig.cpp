@@ -10,7 +10,7 @@ using namespace vnotex;
 
 PdfViewerConfig::PdfViewerConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig) {
-  m_sessionName = QStringLiteral("pdf_viewer");
+  m_sectionName = QStringLiteral("pdf_viewer");
 }
 
 void PdfViewerConfig::fromJson(const QJsonObject &p_jobj) {
@@ -25,16 +25,6 @@ QJsonObject PdfViewerConfig::toJson() const {
 
 void PdfViewerConfig::loadViewerResource(const QJsonObject &p_jobj) {
   const QString name(QStringLiteral("viewer_resource"));
-
-  if (MainConfig::isVersionChanged()) {
-    bool needOverride = p_jobj.value(QStringLiteral("override_viewer_resource")).toBool();
-    if (needOverride) {
-      qInfo() << "override \"viewer_resource\" in user configuration due to version change";
-      m_viewerResource.init(p_jobj.value(name).toObject());
-      return;
-    }
-  }
-
   m_viewerResource.init(p_jobj.value(name).toObject());
 }
 

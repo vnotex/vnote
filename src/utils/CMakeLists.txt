@@ -5,6 +5,7 @@ target_sources(vnote PRIVATE
     contentmediautils.cpp contentmediautils.h
     docsutils.cpp docsutils.h
     fileutils.cpp fileutils.h
+    fileutils2.cpp fileutils2.h
     htmlutils.cpp htmlutils.h
     iconutils.cpp iconutils.h
     imageutils.cpp imageutils.h

@@ -53,78 +53,102 @@ rm -rf build && mkdir build && cd build && cmake .. && cmake --build .
 
 ## Testing
 
+### Test Structure
+
+```
+tests/
+├── CMakeLists.txt          # Root test config with add_qt_test() helper
+├── helpers/
+│   ├── CMakeLists.txt
+│   ├── test_helper.h       # Common includes
+│   └── temp_dir_fixture.h  # QTemporaryDir wrapper
+├── core/
+│   ├── CMakeLists.txt
+│   ├── test_error.cpp      # Error class tests
+│   └── test_exception.cpp  # Exception class tests
+└── utils/
+    ├── CMakeLists.txt
+    ├── test_pathutils.cpp  # PathUtils tests
+    └── test_htmlutils.cpp  # HtmlUtils tests
+```
+
 ### Enable Tests
 Uncomment in root `CMakeLists.txt`:
 ```cmake
 add_subdirectory(tests)
 ```
 
-### Run Tests
+### Build Tests
 ```bash
-cd build
-ctest                    # Run all tests
-ctest -R test_task       # Run single test (pattern match)
-ctest -V                 # Verbose output
+cmake --build build --config Release --target test_error test_exception test_pathutils test_htmlutils
+```
+
+### Run Tests
+
+**Windows (Qt DLLs must be in PATH):**
+```powershell
+$env:PATH = "C:/Qt/6.9.3/msvc2022_64/bin;" + $env:PATH
+./build/tests/core/test_error.exe
+./build/tests/core/test_exception.exe
+./build/tests/utils/test_pathutils.exe
+./build/tests/utils/test_htmlutils.exe
+```
+
+**Using CTest (requires Qt in system PATH):**
+```bash
+ctest --test-dir build                    # Run all tests
+ctest --test-dir build -R test_error      # Run single test (pattern match)
+ctest --test-dir build --output-on-failure  # Show output on failure
+```
+
+### Adding New Tests
+
+Use the `add_qt_test()` helper function in CMakeLists.txt:
+
+```cmake
+# tests/module/CMakeLists.txt
+add_qt_test(test_myclass
+  SOURCES
+    test_myclass.cpp
+    ${CMAKE_SOURCE_DIR}/src/module/myclass.cpp
+  LINKS
+    Qt6::Gui  # Optional: extra Qt modules
+  GUILESS     # Optional: use QCoreApplication instead of QApplication
+)
 ```
 
 ### Writing Tests
 
-Tests use Qt Test framework. Structure:
+Tests use Qt Test framework with single-file structure (no separate header):
 
 ```cpp
-// tests/test_example/test_example.h
-#ifndef TESTS_EXAMPLE_TEST_EXAMPLE_H
-#define TESTS_EXAMPLE_TEST_EXAMPLE_H
-
+// tests/module/test_myclass.cpp
 #include <QtTest>
 
-namespace tests {
-class TestExample : public QObject {
-  Q_OBJECT
-public:
-  explicit TestExample(QObject *p_parent = nullptr);
+#include <module/myclass.h>
 
-private slots:
-  void initTestCase();      // Called once before all tests
-  void cleanupTestCase();   // Called once after all tests
-  void init();              // Called before each test
-  void cleanup();           // Called after each test
-
-  // Test methods (one per slot)
-  void testFeatureA();
-  void testFeatureB();
-
-  // Data-driven test pair
-  void testFeatureC_data();
-  void testFeatureC();
-};
-}
-
-#endif
-```
-
-```cpp
-// tests/test_example/test_example.cpp
-#include "test_example.h"
-
-#include <core/configmgr.h>
-
-using namespace tests;
 using namespace vnotex;
 
-TestExample::TestExample(QObject *p_parent) : QObject(p_parent) {}
+namespace tests {
 
-void TestExample::initTestCase() {
-  ConfigMgr::initForUnitTest();  // Initialize config for tests
-}
+class TestMyClass : public QObject {
+  Q_OBJECT
 
-void TestExample::testFeatureA() {
+private slots:
+  // Basic test
+  void testBasicFeature();
+
+  // Data-driven test pair
+  void testWithData_data();
+  void testWithData();
+};
+
+void TestMyClass::testBasicFeature() {
   QVERIFY(true);
   QCOMPARE(1 + 1, 2);
 }
 
-// Data-driven test
-void TestExample::testFeatureC_data() {
+void TestMyClass::testWithData_data() {
   QTest::addColumn<QString>("input");
   QTest::addColumn<QString>("expected");
 
@@ -132,26 +156,48 @@ void TestExample::testFeatureC_data() {
   QTest::newRow("case2") << "world" << "WORLD";
 }
 
-void TestExample::testFeatureC() {
+void TestMyClass::testWithData() {
   QFETCH(QString, input);
   QFETCH(QString, expected);
   QCOMPARE(input.toUpper(), expected);
 }
 
-QTEST_MAIN(tests::TestExample)
+} // namespace tests
+
+QTEST_GUILESS_MAIN(tests::TestMyClass)
+#include "test_myclass.moc"
 ```
 
-**Key Qt Test Macros:**
+**Key points:**
+- Use `QTEST_GUILESS_MAIN` for non-GUI tests (faster)
+- Include `#include "test_myclass.moc"` at end of file
+- All test classes in `tests` namespace
+- Data-driven tests use `_data()` suffix pattern
+
+### Qt Test Macros
+
 | Macro | Purpose |
 |-------|---------|
-| `QTEST_MAIN(Class)` | Creates main(), runs tests |
-| `QTEST_GUILESS_MAIN(Class)` | Headless test runner |
+| `QTEST_MAIN(Class)` | Creates main(), runs tests with QApplication |
+| `QTEST_GUILESS_MAIN(Class)` | Headless test runner (preferred) |
 | `QVERIFY(condition)` | Assert condition is true |
 | `QCOMPARE(actual, expected)` | Assert equality |
 | `QFETCH(type, name)` | Fetch data-driven test value |
 | `QTest::addColumn<T>("name")` | Declare data column |
 | `QTest::newRow("name")` | Add data row |
 | `QSKIP("reason")` | Skip test |
+| `QTest::ignoreMessage(type, msg)` | Suppress expected qDebug/qWarning/qCritical |
+
+### Current Test Coverage
+
+| Test | Class | Test Cases |
+|------|-------|------------|
+| test_error | `Error`, `ErrorCode` | 23 |
+| test_exception | `Exception` | 20 |
+| test_pathutils | `PathUtils` | 68 |
+| test_htmlutils | `HtmlUtils` | 31 |
+| test_fileutils2 | `FileUtils2` | 15 |
+| **Total** | | **157** |
 
 ## Project Structure
 

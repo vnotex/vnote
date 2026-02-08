@@ -297,12 +297,6 @@ void ToolBarHelper::setupTaskMenu(QMenu *p_menu) {
 }
 
 void ToolBarHelper::setupTaskActionMenu(QMenu *p_menu) {
-  p_menu->addAction(MainWindow::tr("Add Task"), p_menu, []() {
-    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(ConfigMgr::getInst().getUserTaskFolder()));
-  });
-
-  p_menu->addAction(MainWindow::tr("Reload"), p_menu,
-                    []() { VNoteX::getInst().getTaskMgr().reload(); });
 }
 
 void ToolBarHelper::addTaskMenu(QMenu *p_menu, Task *p_task) {
@@ -546,20 +540,8 @@ void ToolBarHelper::setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar) {
 
     menu->addSeparator();
 
-    menu->addAction(MainWindow::tr("Edit User Configuration File"), menu, []() {
-      auto file = ConfigMgr::getInst().getConfigFilePath(ConfigMgr::Source::App);
-      auto paras = QSharedPointer<FileOpenParameters>::create();
-      paras->m_sessionEnabled = false;
-      emit VNoteX::getInst().openFileRequested(file, paras);
-    });
-
-    menu->addAction(MainWindow::tr("Open User Configuration Folder"), menu, []() {
-      auto folderPath = ConfigMgr::getInst().getUserFolder();
-      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(folderPath));
-    });
-
-    menu->addAction(MainWindow::tr("Open Default Configuration Folder"), menu, []() {
-      auto folderPath = ConfigMgr::getInst().getAppFolder();
+    menu->addAction(MainWindow::tr("Open Configuration Folder"), menu, []() {
+      auto folderPath = ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Main);
       WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(folderPath));
     });
 
@@ -567,7 +549,7 @@ void ToolBarHelper::setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar) {
 
     {
       auto act = menu->addAction(MainWindow::tr("Edit Markdown User Styles"), menu, []() {
-        const auto file = ConfigMgr::getInst().getUserMarkdownUserStyleFile();
+        const auto file = ConfigMgr::getInst().getMarkdownUserStyleFile();
         auto paras = QSharedPointer<FileOpenParameters>::create();
         paras->m_sessionEnabled = false;
         paras->m_hooks[FileOpenParameters::PostSave] = []() {

@@ -8,7 +8,7 @@ using namespace vnotex;
 
 TextEditorConfig::TextEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig) {
-  m_sessionName = QStringLiteral("text_editor");
+  m_sectionName = QStringLiteral("text_editor");
 }
 
 void TextEditorConfig::fromJson(const QJsonObject &p_jobj) {

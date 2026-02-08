@@ -34,8 +34,6 @@ public:
 
   QJsonObject toJson() const Q_DECL_OVERRIDE;
 
-  int revision() const Q_DECL_OVERRIDE;
-
   TextEditorConfig &getTextEditorConfig();
   const TextEditorConfig &getTextEditorConfig() const;
 

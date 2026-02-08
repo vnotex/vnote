@@ -182,23 +182,11 @@ void TaskVariableMgr::initTaskVariables() {
   addVariable("notebookTaskFolder", [this](Task *, const QString &) {
     return PathUtils::cleanPath(m_taskMgr->getNotebookTaskFolder());
   });
-  addVariable("userTaskFolder", [](Task *, const QString &) {
-    return PathUtils::cleanPath(ConfigMgr::getInst().getUserTaskFolder());
+  addVariable("taskFolder", [](Task *, const QString &) {
+    return PathUtils::cleanPath(ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Tasks));
   });
-  addVariable("appTaskFolder", [](Task *, const QString &) {
-    return PathUtils::cleanPath(ConfigMgr::getInst().getAppTaskFolder());
-  });
-  addVariable("userThemeFolder", [](Task *, const QString &) {
-    return PathUtils::cleanPath(ConfigMgr::getInst().getUserThemeFolder());
-  });
-  addVariable("appThemeFolder", [](Task *, const QString &) {
-    return PathUtils::cleanPath(ConfigMgr::getInst().getAppThemeFolder());
-  });
-  addVariable("userDocsFolder", [](Task *, const QString &) {
-    return PathUtils::cleanPath(ConfigMgr::getInst().getUserDocsFolder());
-  });
-  addVariable("appDocsFolder", [](Task *, const QString &) {
-    return PathUtils::cleanPath(ConfigMgr::getInst().getAppDocsFolder());
+  addVariable("themeFolder", [](Task *, const QString &) {
+    return PathUtils::cleanPath(ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Themes));
   });
 }
 

@@ -14,28 +14,25 @@ class ConfigMgr;
 // Interface for Config.
 class IConfig {
 public:
-  IConfig(ConfigMgr *p_mgr, IConfig *p_topConfig = nullptr)
-      : m_topConfig(p_topConfig), m_mgr(p_mgr) {}
+  IConfig(ConfigMgr *p_mgr, IConfig *p_parentConfig = nullptr)
+      : m_parentConfig(p_parentConfig), m_mgr(p_mgr) {}
 
   virtual ~IConfig() {}
 
   // Init from QJsonObject.
   virtual void fromJson(const QJsonObject &p_jobj) = 0;
 
-  virtual void writeToSettings() const {
-    Q_ASSERT(m_topConfig);
-    m_topConfig->writeToSettings();
-  }
-
   virtual QJsonObject toJson() const = 0;
 
-  const QString &getSessionName() const { return m_sessionName; }
+  int revision() const { return m_revision; }
 
-  virtual int revision() const { return m_revision; }
+  const QString &getSectionName() const { return m_sectionName; }
 
-  void update() {
+  virtual void update() {
     ++m_revision;
-    writeToSettings();
+    if (m_parentConfig) {
+      m_parentConfig->update();
+    }
   }
 
 protected:
@@ -120,23 +117,20 @@ protected:
       return;
     }
 
-    ++p_config->m_revision;
     p_cur = p_new;
-    p_config->writeToSettings();
+    p_config->update();
   }
 
   template <typename T>
   static void updateConfigWithoutCheck(T &p_cur, const T &p_new, IConfig *p_config) {
-    ++p_config->m_revision;
     p_cur = p_new;
-    p_config->writeToSettings();
+    p_config->update();
   }
 
-  IConfig *m_topConfig = nullptr;
+  IConfig *m_parentConfig = nullptr;
 
-  QString m_sessionName;
+  QString m_sectionName;
 
-  // Used to indicate whether there is change after last read.
   int m_revision = 0;
 
 private:

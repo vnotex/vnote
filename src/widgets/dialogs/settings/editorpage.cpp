@@ -85,7 +85,7 @@ void EditorPage::setupUI() {
 
     auto addBtn = new QPushButton(tr("Add Dictionary"), this);
     connect(addBtn, &QPushButton::clicked, this, [this]() {
-      const auto dictsFolder = ConfigMgr::getInst().getUserDictsFolder();
+      const auto dictsFolder = ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Dicts);
       MessageBoxHelper::notify(
           MessageBoxHelper::Information,
           tr("VNote uses [Hunspell](http://hunspell.github.io/) for spell check."),

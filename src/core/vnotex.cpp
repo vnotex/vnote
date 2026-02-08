@@ -43,13 +43,10 @@ void VNoteX::initLoad() {
 void VNoteX::initThemeMgr() {
   Q_ASSERT(!m_themeMgr);
   auto &configMgr = ConfigMgr::getInst();
-  ThemeMgr::addSearchPath(configMgr.getAppThemeFolder());
-  ThemeMgr::addSearchPath(configMgr.getUserThemeFolder());
+  ThemeMgr::addSearchPath(configMgr.getConfigDataFolder(ConfigMgr::ConfigDataType::Themes));
   ThemeMgr::addSyntaxHighlightingSearchPaths(QStringList()
-                                             << configMgr.getUserSyntaxHighlightingFolder()
-                                             << configMgr.getAppSyntaxHighlightingFolder());
-  ThemeMgr::addWebStylesSearchPath(configMgr.getAppWebStylesFolder());
-  ThemeMgr::addWebStylesSearchPath(configMgr.getUserWebStylesFolder());
+                                             << configMgr.getConfigDataFolder(ConfigMgr::ConfigDataType::SyntaxHighlighting));
+  ThemeMgr::addWebStylesSearchPath(configMgr.getConfigDataFolder(ConfigMgr::ConfigDataType::WebStyles));
   m_themeMgr = new ThemeMgr(configMgr.getCoreConfig().getTheme(), this);
 }
 
@@ -114,10 +111,7 @@ ID VNoteX::getInstanceId() const { return m_instanceId; }
 
 void VNoteX::initDocsUtils() {
   auto &configMgr = ConfigMgr::getInst();
-  // If we got a match in user folder, stop the search.
-  DocsUtils::addSearchPath(configMgr.getUserDocsFolder());
-  DocsUtils::addSearchPath(configMgr.getAppDocsFolder());
-
+  // TODO: use a built-in notebook for docs and examples
   DocsUtils::setLocale(configMgr.getCoreConfig().getLocaleToUse());
 }
 

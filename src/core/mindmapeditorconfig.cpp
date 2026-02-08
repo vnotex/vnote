@@ -10,7 +10,7 @@ using namespace vnotex;
 
 MindMapEditorConfig::MindMapEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig) {
-  m_sessionName = QStringLiteral("mindmap_editor");
+  m_sectionName = QStringLiteral("mindmap_editor");
 }
 
 void MindMapEditorConfig::fromJson(const QJsonObject &p_jobj) {
@@ -25,16 +25,6 @@ QJsonObject MindMapEditorConfig::toJson() const {
 
 void MindMapEditorConfig::loadEditorResource(const QJsonObject &p_jobj) {
   const QString name(QStringLiteral("editor_resource"));
-
-  if (MainConfig::isVersionChanged()) {
-    bool needOverride = p_jobj.value(QStringLiteral("override_editor_resource")).toBool();
-    if (needOverride) {
-      qInfo() << "override \"editor_resource\" in user configuration due to version change";
-      m_editorResource.init(p_jobj.value(name).toObject());
-      return;
-    }
-  }
-
   m_editorResource.init(p_jobj.value(name).toObject());
 }
 

@@ -20,3 +20,4 @@ build*
 .vscode
 dev.sh
 nul
+.sisyphus

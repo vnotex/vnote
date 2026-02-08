@@ -102,7 +102,7 @@ public:
   const QVector<SessionConfig::NotebookItem> &getNotebooks() const;
   void setNotebooks(const QVector<SessionConfig::NotebookItem> &p_notebooks);
 
-  void writeToSettings() const Q_DECL_OVERRIDE;
+  void update() Q_DECL_OVERRIDE;
 
   QJsonObject toJson() const Q_DECL_OVERRIDE;
 
@@ -114,8 +114,6 @@ public:
 
   bool getSystemTitleBarEnabled() const;
   void setSystemTitleBarEnabled(bool p_enabled);
-
-  static OpenGL getOpenGLAtBootstrap();
 
   static QString openGLToString(OpenGL p_option);
   static OpenGL stringToOpenGL(const QString &p_str);

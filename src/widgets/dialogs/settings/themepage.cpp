@@ -52,7 +52,7 @@ void ThemePage::setupUI() {
     layout->addWidget(addBtn, 3, 1, 1, 1);
     // TODO: open an editor to edit the theme list.
     connect(addBtn, &QPushButton::clicked, this, []() {
-      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(ConfigMgr::getInst().getUserThemeFolder()));
+      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Themes)));
     });
 
     auto updateBtn = new QPushButton(tr("Update"), this);

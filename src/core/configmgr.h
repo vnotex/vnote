@@ -9,8 +9,6 @@
 
 class QTimer;
 
-typedef struct VxCoreContext *VxCoreContextHandle;
-
 namespace vnotex {
 class MainConfig;
 class SessionConfig;
@@ -21,11 +19,14 @@ class WidgetConfig;
 class ConfigMgr : public QObject, private Noncopyable {
   Q_OBJECT
 public:
-  enum class Source { App, Session };
+  enum ConfigDataType { Main, Themes, Tasks, WebStyles, SyntaxHighlighting, Dicts,
+    Templates, Snippets, Web };
 
   ~ConfigMgr();
 
   static ConfigMgr &getInst();
+
+  void initAfterQtAppStarted();
 
   MainConfig &getConfig();
 
@@ -37,63 +38,24 @@ public:
 
   WidgetConfig &getWidgetConfig();
 
-  QString getAppFolder() const;
-
-  QString getUserFolder() const;
+  QString getConfigDataFolder(ConfigDataType p_type) const;
 
   QString getLogFile() const;
 
-  QString getAppThemeFolder() const;
-
-  QString getUserThemeFolder() const;
-
-  QString getAppTaskFolder() const;
-
-  QString getUserTaskFolder() const;
-
-  QString getAppWebStylesFolder() const;
-
-  QString getUserWebStylesFolder() const;
-
-  QString getAppDocsFolder() const;
-
-  QString getUserDocsFolder() const;
-
-  QString getAppSyntaxHighlightingFolder() const;
-
-  QString getUserSyntaxHighlightingFolder() const;
-
-  QString getAppDictsFolder() const;
-  QString getUserDictsFolder() const;
-
-  QString getUserTemplateFolder() const;
-
-  QString getUserSnippetFolder() const;
-
   // web/css/user.css.
-  QString getUserMarkdownUserStyleFile() const;
+  QString getMarkdownUserStyleFile() const;
 
   // If @p_filePath is absolute, just return it.
-  // Otherwise, first try to find it in user folder, then in app folder.
-  QString getUserOrAppFile(const QString &p_filePath) const;
-
-  QString getConfigFilePath(Source p_src) const;
+  QString getFileFromConfigFolder(const QString &p_filePath) const;
 
   // Parse exp like "[main|session].core.shortcuts.FullScreen" and return the config value.
   QJsonValue parseAndReadConfig(const QString &p_exp) const;
 
-  // Called at boostrap without QApplication instance.
-  static QString locateSessionConfigFilePathAtBootstrap();
-
   static QString getApplicationFilePath();
-
-  static QString getApplicationDirPath();
 
   static QString getDocumentOrHomePath();
 
   static QString getApplicationVersion();
-
-  static void initAppPrefixPath();
 
   static const QString c_orgName;
 
@@ -101,9 +63,9 @@ public:
 
 public:
   // Used by IConfig.
-  void writeUserSettings(const QJsonObject &p_jobj);
+  void updateMainConfig(const QJsonObject &p_jobj);
 
-  void writeSessionSettings(const QJsonObject &p_jobj);
+  void updateSessionConfig(const QJsonObject &p_jobj);
 
 signals:
   void editorConfigChanged();
@@ -111,21 +73,15 @@ signals:
 private:
   ConfigMgr(QObject *p_parent = nullptr);
 
-  // Locate the folder path where the config file exists.
-  void locateConfigFolder();
-
-  // Check if app config exists and is updated.
-  // Update it if in need.
-  // Return true if there is update.
-  bool checkAppConfig();
-
-  void checkUserConfig();
-
-  static QString getDefaultConfigFilePath();
+  void upgradeMainConfigOnVersionChange();
 
   // Schedule debounced writes
   void scheduleMainConfigWrite();
   void scheduleSessionConfigWrite();
+
+  QJsonObject loadDefaultMainConfig() const;
+
+  static void initAppPrefixPath();
 
 private slots:
   // Actual write handlers (called after timer expires)
@@ -133,25 +89,21 @@ private slots:
   void doWriteSessionConfig();
 
 private:
-  QScopedPointer<MainConfig> m_config;
+  QScopedPointer<MainConfig> m_mainConfig;
 
-  // Session config.
   QScopedPointer<SessionConfig> m_sessionConfig;
 
-  // vxcore context for JSON I/O
-  VxCoreContextHandle m_vxcoreContext;
+  bool m_version_changed = false;
 
   // Debounced write timers (500ms)
-  QTimer *m_mainConfigWriteTimer;
-  QTimer *m_sessionConfigWriteTimer;
-
-  // Config folder paths
-  QString m_appConfigFolderPath;
-  QString m_userConfigFolderPath;
+  QTimer *m_mainConfigWriteTimer = nullptr;
+  QTimer *m_sessionConfigWriteTimer = nullptr;
 
   // Pending writes
   QJsonObject m_pendingMainConfig;
   QJsonObject m_pendingSessionConfig;
+
+  QString m_configFolderPath;
 };
 } // namespace vnotex
 

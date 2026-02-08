@@ -27,7 +27,7 @@ const QString SnippetMgr::c_snippetSymbolRegExp =
 
 SnippetMgr::SnippetMgr() { loadSnippets(); }
 
-QString SnippetMgr::getSnippetFolder() const { return ConfigMgr::getInst().getUserSnippetFolder(); }
+QString SnippetMgr::getSnippetFolder() const { return ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Snippets); }
 
 const QVector<QSharedPointer<Snippet>> &SnippetMgr::getSnippets() const { return m_snippets; }
 

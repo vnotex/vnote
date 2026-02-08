@@ -99,7 +99,7 @@ void setOpenGLOption() {
   // Set environment QT_OPENGL to "angle/desktop/software".
 #if defined(Q_OS_WIN)
   {
-    auto option = SessionConfig::getOpenGLAtBootstrap();
+    auto option = ConfigMgr::getInst().getSessionConfig().getOpenGL();
     qDebug() << "OpenGL option" << SessionConfig::openGLToString(option);
     switch (option) {
     case SessionConfig::OpenGL::Desktop:
@@ -134,13 +134,15 @@ int main(int argc, char *argv[]) {
     QTextCodec::setCodecForLocale(codec);
   }
 
+  VxCore::getInst().init();
+
   setOpenGLOption();
 
   disableSandboxIfNeeded();
 
   Application app(argc, argv);
 
-  ConfigMgr::initAppPrefixPath();
+  ConfigMgr::getInst().initAfterQtAppStarted();
 
   QAccessible::installFactory(&FakeAccessible::accessibleFactory);
 
@@ -198,9 +200,6 @@ int main(int argc, char *argv[]) {
         e.what());
     return -1;
   }
-
-  // Initialize VxCore singleton after ConfigMgr is available.
-  VxCore::getInst().init();
 
   // Init logger after app info is set.
   Logger::init(cmdOptions.m_verbose, cmdOptions.m_logToStderr);

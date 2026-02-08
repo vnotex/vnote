@@ -39,7 +39,7 @@ EditorConfig::EditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
       m_markdownEditorConfig(new MarkdownEditorConfig(p_mgr, p_topConfig, m_textEditorConfig)),
       m_pdfViewerConfig(new PdfViewerConfig(p_mgr, p_topConfig)),
       m_mindMapEditorConfig(new MindMapEditorConfig(p_mgr, p_topConfig)) {
-  m_sessionName = QStringLiteral("editor");
+  m_sectionName = QStringLiteral("editor");
 }
 
 EditorConfig::~EditorConfig() {}
@@ -129,10 +129,10 @@ QJsonObject EditorConfig::saveShortcuts() const {
 
 QJsonObject EditorConfig::toJson() const {
   QJsonObject obj;
-  obj[m_textEditorConfig->getSessionName()] = m_textEditorConfig->toJson();
-  obj[m_markdownEditorConfig->getSessionName()] = m_markdownEditorConfig->toJson();
-  obj[m_pdfViewerConfig->getSessionName()] = m_pdfViewerConfig->toJson();
-  obj[m_mindMapEditorConfig->getSessionName()] = m_mindMapEditorConfig->toJson();
+  obj[m_textEditorConfig->getSectionName()] = m_textEditorConfig->toJson();
+  obj[m_markdownEditorConfig->getSectionName()] = m_markdownEditorConfig->toJson();
+  obj[m_pdfViewerConfig->getSectionName()] = m_pdfViewerConfig->toJson();
+  obj[m_mindMapEditorConfig->getSectionName()] = m_mindMapEditorConfig->toJson();
   obj[QStringLiteral("core")] = saveCore();
   obj[QStringLiteral("image_host")] = saveImageHost();
 

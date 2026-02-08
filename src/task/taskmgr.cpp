@@ -58,8 +58,7 @@ void TaskMgr::loadAllTasks() {
 void TaskMgr::loadNotebookTasks() { loadTasksFromFolder(m_notebookTasks, getNotebookTaskFolder()); }
 
 void TaskMgr::loadGlobalTasks() {
-  loadTasksFromFolder(m_appTasks, ConfigMgr::getInst().getAppTaskFolder());
-  loadTasksFromFolder(m_userTasks, ConfigMgr::getInst().getUserTaskFolder());
+  loadTasksFromFolder(m_appTasks, ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Tasks));
 }
 
 void TaskMgr::loadTasksFromFolder(QVector<QSharedPointer<Task>> &p_tasks, const QString &p_folder) {

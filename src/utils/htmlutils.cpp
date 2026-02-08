@@ -11,7 +11,8 @@ bool HtmlUtils::hasOnlyImgTag(const QString &p_html) {
 }
 
 QString HtmlUtils::escapeHtml(QString p_text) {
-  p_text.replace(">", "&gt;").replace("<", "&lt;").replace("&", "&amp;");
+  // IMPORTANT: Replace & first to avoid double-escaping &lt; and &gt;
+  p_text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
   return p_text;
 }
 

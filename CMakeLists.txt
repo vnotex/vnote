@@ -25,4 +25,5 @@ add_subdirectory(libs)
 add_subdirectory(src)
 
 # TODO: find a better way to organize tests
-# add_subdirectory(tests)
+enable_testing()
+add_subdirectory(tests)

@@ -55,6 +55,41 @@ QJsonObject VxCore::getVersion() {
   return obj;
 }
 
+QString VxCore::getExecutionFilePath() const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *path = nullptr;
+  vxcore_get_execution_file_path(&path);
+  return cstrToQString(path);
+}
+
+QString VxCore::getExecutionFolderPath() const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *path = nullptr;
+  vxcore_get_execution_folder_path(&path);
+  return cstrToQString(path);
+}
+
+QString VxCore::getDataPath(DataLocation location) const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *path = nullptr;
+  VxCoreError err = vxcore_context_get_data_path(
+      m_context, static_cast<VxCoreDataLocation>(location), &path);
+  if (err != VXCORE_OK) {
+    handleError(err, QStringLiteral("getDataPath"));
+    return QString();
+  }
+  return cstrToQString(path);
+}
+
 QString VxCore::getConfigPath() const {
   if (!checkContext()) {
     return QString();
@@ -122,6 +157,26 @@ QJsonObject VxCore::getConfigByName(DataLocation p_location, const QString &p_ba
       &json);
   if (err != VXCORE_OK) {
     handleError(err, QStringLiteral("getConfigByName"));
+    return QJsonObject();
+  }
+  return parseJsonObject(cstrToQString(json));
+}
+
+QJsonObject VxCore::getConfigByNameWithDefaults(DataLocation p_location,
+                                                const QString &p_baseName,
+                                                const QJsonObject &p_defaults) const {
+  if (!checkContext()) {
+    return p_defaults;
+  }
+
+  char *json = nullptr;
+  VxCoreError err = vxcore_context_get_config_by_name_with_defaults(
+    m_context, static_cast<VxCoreDataLocation>(p_location),
+    p_baseName.toUtf8().constData(),
+    QJsonDocument(p_defaults).toJson(QJsonDocument::Compact).constData(),
+    &json);
+  if (err != VXCORE_OK) {
+    handleError(err, QStringLiteral("getConfigByNameWithDefaults"));
     return QJsonObject();
   }
   return parseJsonObject(cstrToQString(json));

@@ -5,6 +5,7 @@
 
 #include <QString>
 #include <QtGlobal>
+#include <QVersionNumber>
 
 class QJsonObject;
 
@@ -21,7 +22,8 @@ public:
 
   void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 
-  const QString &getVersion() const;
+  const QString &getVersion() const { return m_version; }
+  void setVersion(const QString &p_version) { m_version = p_version; }
 
   CoreConfig &getCoreConfig();
 
@@ -29,13 +31,11 @@ public:
 
   WidgetConfig &getWidgetConfig();
 
-  void writeToSettings() const Q_DECL_OVERRIDE;
+  void update() Q_DECL_OVERRIDE;
 
   QJsonObject toJson() const Q_DECL_OVERRIDE;
 
-  static QString getVersion(const QJsonObject &p_jobj);
-
-  static bool isVersionChanged();
+  static QString peekVersion(const QJsonObject &p_jboj);
 
 private:
   void loadMetadata(const QJsonObject &p_jobj);
@@ -44,19 +44,16 @@ private:
 
   void doVersionSpecificOverride();
 
-  // Version of VNoteX.
   QString m_version;
 
-  // Version of user's configuration.
-  QString m_userVersion;
+  enum ChildConfigIndex {
+    CoreConfigIndex = 0,
+    EditorConfigIndex,
+    WidgetConfigIndex,
+    ChildConfigCount
+  };
 
-  QScopedPointer<CoreConfig> m_coreConfig;
-
-  QScopedPointer<EditorConfig> m_editorConfig;
-
-  QScopedPointer<WidgetConfig> m_widgetConfig;
-
-  static bool s_versionChanged;
+  QVector<QSharedPointer<IConfig>> m_childConfigs;
 };
 } // namespace vnotex
 

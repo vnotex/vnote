@@ -9,7 +9,7 @@
 using namespace vnotex;
 
 QString TemplateMgr::getTemplateFolder() const {
-  return ConfigMgr::getInst().getUserTemplateFolder();
+  return ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Templates);
 }
 
 QStringList TemplateMgr::getTemplates() const {

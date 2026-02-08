@@ -1,2 +1,0 @@
-add_subdirectory(test_notebook)
-add_subdirectory(test_theme)

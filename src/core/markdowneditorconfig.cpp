@@ -16,7 +16,7 @@ MarkdownEditorConfig::MarkdownEditorConfig(
     ConfigMgr *p_mgr, IConfig *p_topConfig,
     const QSharedPointer<TextEditorConfig> &p_textEditorConfig)
     : IConfig(p_mgr, p_topConfig), m_textEditorConfig(p_textEditorConfig) {
-  m_sessionName = QStringLiteral("markdown_editor");
+  m_sectionName = QStringLiteral("markdown_editor");
 }
 
 void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
@@ -143,20 +143,8 @@ const TextEditorConfig &MarkdownEditorConfig::getTextEditorConfig() const {
   return *m_textEditorConfig;
 }
 
-int MarkdownEditorConfig::revision() const { return m_revision + m_textEditorConfig->revision(); }
-
 void MarkdownEditorConfig::loadViewerResource(const QJsonObject &p_jobj) {
   const QString name(QStringLiteral("viewer_resource"));
-
-  if (MainConfig::isVersionChanged()) {
-    bool needOverride = p_jobj.value(QStringLiteral("override_viewer_resource")).toBool();
-    if (needOverride) {
-      qInfo() << "override \"viewer_resource\" in user configuration due to version change";
-      m_viewerResource.init(p_jobj.value(name).toObject());
-      return;
-    }
-  }
-
   m_viewerResource.init(p_jobj.value(name).toObject());
 }
 
@@ -164,16 +152,6 @@ QJsonObject MarkdownEditorConfig::saveViewerResource() const { return m_viewerRe
 
 void MarkdownEditorConfig::loadExportResource(const QJsonObject &p_jobj) {
   const QString name(QStringLiteral("export_resource"));
-
-  if (MainConfig::isVersionChanged()) {
-    bool needOverride = p_jobj.value(QStringLiteral("override_viewer_resource")).toBool();
-    if (needOverride) {
-      qInfo() << "override \"viewer_resource\" in user configuration due to version change";
-      m_exportResource.init(p_jobj.value(name).toObject());
-      return;
-    }
-  }
-
   m_exportResource.init(p_jobj.value(name).toObject());
 }
 

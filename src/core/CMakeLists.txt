@@ -19,6 +19,7 @@ target_sources(vnote PRIVATE
     configmgr.cpp configmgr.h
     coreconfig.cpp coreconfig.h
     editorconfig.cpp editorconfig.h
+    error.cpp error.h
     events.h
     exception.h
     externalfile.cpp externalfile.h

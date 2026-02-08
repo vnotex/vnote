@@ -110,10 +110,6 @@ void SessionConfig::fromJson(const QJsonObject &p_jobj) {
   loadHistory(p_jobj);
 
   loadQuickNoteSchemes(p_jobj);
-
-  if (MainConfig::isVersionChanged()) {
-    doVersionSpecificOverride();
-  }
 }
 
 void SessionConfig::loadCore(const QJsonObject &p_session) {
@@ -216,7 +212,7 @@ void SessionConfig::setCurrentNotebookRootFolderPath(const QString &p_path) {
   updateConfig(m_currentNotebookRootFolderPath, p_path, this);
 }
 
-void SessionConfig::writeToSettings() const { getMgr()->writeSessionSettings(toJson()); }
+void SessionConfig::update() { getMgr()->updateSessionConfig(toJson()); }
 
 QJsonObject SessionConfig::toJson() const {
   QJsonObject obj;
@@ -256,19 +252,6 @@ SessionConfig::MainWindowStateGeometry SessionConfig::getMainWindowStateGeometry
 void SessionConfig::setMainWindowStateGeometry(
     const SessionConfig::MainWindowStateGeometry &p_state) {
   updateConfig(m_mainWindowStateGeometry, p_state, this);
-}
-
-SessionConfig::OpenGL SessionConfig::getOpenGLAtBootstrap() {
-  auto userConfigFile = ConfigMgr::locateSessionConfigFilePathAtBootstrap();
-  if (!userConfigFile.isEmpty()) {
-    auto bytes = FileUtils::readFile(userConfigFile);
-    auto obj = QJsonDocument::fromJson(bytes).object();
-    auto coreObj = obj.value(QStringLiteral("core")).toObject();
-    auto str = coreObj.value(QStringLiteral("opengl")).toString();
-    return stringToOpenGL(str);
-  }
-
-  return OpenGL::None;
 }
 
 SessionConfig::OpenGL SessionConfig::getOpenGL() const { return m_openGL; }

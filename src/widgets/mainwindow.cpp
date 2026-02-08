@@ -122,27 +122,6 @@ void MainWindow::kickOffOnStart(const QStringList &p_paths) {
 
     openFiles(p_paths);
 
-    if (MainConfig::isVersionChanged()) {
-      QString tips;
-      try {
-        tips = DocsUtils::getDocText("features_tips.txt");
-      } catch (Exception &p_e) {
-        // Just ignore it.
-        Q_UNUSED(p_e);
-      }
-      if (!tips.isEmpty()) {
-        MessageBoxHelper::notify(MessageBoxHelper::Information, tips, this);
-      }
-
-      const auto file = DocsUtils::getDocFile(QStringLiteral("welcome.md"));
-      if (!file.isEmpty()) {
-        auto paras = QSharedPointer<FileOpenParameters>::create();
-        paras->m_readOnly = true;
-        paras->m_sessionEnabled = false;
-        emit VNoteX::getInst().openFileRequested(file, paras);
-      }
-    }
-
     if (ConfigMgr::getInst().getCoreConfig().isCheckForUpdatesOnStartEnabled()) {
       QTimer::singleShot(5 * 60 * 1000, this, &MainWindow::checkForUpdates);
     }
@@ -712,8 +691,7 @@ void MainWindow::toggleLocationListVisible() {
 
 void MainWindow::setupSpellCheck() {
   const auto &configMgr = ConfigMgr::getInst();
-  vte::SpellChecker::addDictionaryCustomSearchPaths(QStringList() << configMgr.getUserDictsFolder()
-                                                                  << configMgr.getAppDictsFolder());
+  vte::SpellChecker::addDictionaryCustomSearchPaths(QStringList() << configMgr.getConfigDataFolder(ConfigMgr::Dicts));
 }
 
 void MainWindow::checkForUpdates() {

@@ -39,12 +39,17 @@ public:
   static QString getVersionString();
   static QJsonObject getVersion();
 
+  QString getExecutionFilePath() const;
+  QString getExecutionFolderPath() const;
+
   // Configuration access.
+  QString getDataPath(DataLocation location) const;
   QString getConfigPath() const;
   QString getSessionConfigPath() const;
   QJsonObject getConfig() const;
   QJsonObject getSessionConfig() const;
   QJsonObject getConfigByName(DataLocation p_location, const QString &p_baseName) const;
+  QJsonObject getConfigByNameWithDefaults(DataLocation p_location, const QString &p_baseName, const QJsonObject &p_defaults) const;
   void updateConfigByName(DataLocation p_location, const QString &p_baseName,
                           const QString &p_json);
 
