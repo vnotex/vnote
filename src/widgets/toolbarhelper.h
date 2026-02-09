@@ -30,21 +30,13 @@ public:
 private:
   static QToolBar *setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar);
 
-  static QToolBar *setupQuickAccessToolBar(MainWindow *p_win, QToolBar *p_toolBar);
-
-  static void setupTaskMenu(QMenu *p_menu);
-
-  static void setupTaskActionMenu(QMenu *p_menu);
-
-  static void addTaskMenu(QMenu *p_menu, Task *p_task);
-
   static QToolBar *setupSettingsToolBar(MainWindow *p_win, QToolBar *p_toolBar);
 
   static void updateQuickAccessMenu(QMenu *p_menu);
 
   static void setupExpandButton(MainWindow *p_win, QToolBar *p_toolBar);
 
-  static void setupMenuButton(MainWindow *p_win, QToolBar *p_toolBar);
+  static void setupSettingsButton(MainWindow *p_win, QToolBar *p_toolBar);
 
   static void activateQuickAccess(const QString &p_file);
 
