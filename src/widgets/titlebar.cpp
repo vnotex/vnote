@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QToolBar>
 #include <QToolButton>
 
 #include "thememgr.h"
@@ -45,11 +46,11 @@ void TitleBar::setupUI(const QString &p_title, bool p_hasInfoLabel,
   mainLayout->addStretch();
 
   {
-    m_buttonWidget = new QWidget(this);
-    mainLayout->addWidget(m_buttonWidget);
-
-    auto btnLayout = new QHBoxLayout(m_buttonWidget);
-    btnLayout->setContentsMargins(0, 0, 0, 0);
+    m_buttonToolBar = new QToolBar(this);
+    m_buttonToolBar->setMovable(false);
+    m_buttonToolBar->setFloatable(false);
+    m_buttonToolBar->setContentsMargins(0, 0, 0, 0);
+    mainLayout->addWidget(m_buttonToolBar);
 
     setupActionButtons(p_actionFlags);
 
@@ -110,7 +111,7 @@ void TitleBar::leaveEvent(QEvent *p_event) {
   setActionButtonsVisible(m_actionButtonsForcedShown || m_actionButtonsAlwaysShown);
 }
 
-void TitleBar::setActionButtonsVisible(bool p_visible) { m_buttonWidget->setVisible(p_visible); }
+void TitleBar::setActionButtonsVisible(bool p_visible) { m_buttonToolBar->setVisible(p_visible); }
 
 QIcon TitleBar::generateMenuActionIcon(const QString &p_iconName) {
   const auto &themeMgr = VNoteX::getInst().getThemeMgr();
@@ -138,18 +139,28 @@ void TitleBar::addMenuSeparator() {
 }
 
 QToolButton *TitleBar::addActionButton(const QString &p_iconName, const QString &p_text) {
-  auto btn = newActionButton(p_iconName, p_text, this);
-  auto layout = actionButtonLayout();
+  auto btn = newActionButton(p_iconName, p_text, m_buttonToolBar);
   if (!m_menu) {
     m_actionButtons.push_back(btn);
-    layout->addWidget(btn);
+    m_buttonToolBar->addWidget(btn);
   } else {
+    // Insert before the menu button (last button in m_actionButtons)
     int idx = m_actionButtons.size() - 1;
     if (idx < 0) {
       idx = 0;
     }
     m_actionButtons.insert(idx, btn);
-    layout->insertWidget(idx, btn);
+
+    // Find the menu button's action to insert before it
+    auto menuBtn = m_actionButtons.last();
+    QAction *beforeAction = nullptr;
+    for (auto *action : m_buttonToolBar->actions()) {
+      if (m_buttonToolBar->widgetForAction(action) == menuBtn) {
+        beforeAction = action;
+        break;
+      }
+    }
+    m_buttonToolBar->insertWidget(beforeAction, btn);
   }
   return btn;
 }
@@ -170,10 +181,6 @@ QToolButton *TitleBar::addActionButton(const QString &p_iconName, const QString 
     setActionButtonsVisible(m_actionButtonsAlwaysShown);
   });
   return btn;
-}
-
-QHBoxLayout *TitleBar::actionButtonLayout() const {
-  return static_cast<QHBoxLayout *>(m_buttonWidget->layout());
 }
 
 void TitleBar::setInfoLabel(const QString &p_info) {

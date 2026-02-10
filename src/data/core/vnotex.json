@@ -1,6 +1,6 @@
 {
     "core" : {
-        "theme" : "native",
+        "theme" : "pure",
         "locale" : "",
         "shortcuts" : {
             "FullScreen" : "F11",

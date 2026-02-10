@@ -1,6 +1,6 @@
 /* Qt Style Sheets file
  * Please refer to https://doc.qt.io/qt-5.12/stylesheet-reference.html
- * for detailed inforamtion.
+ * for detailed information.
  * **Notice** that selectors using base class and child class are considered to have the
  * same specificity and the rule that appears last takes precedence.
  * VNote specific syntax:
@@ -75,60 +75,166 @@ vnotex--TitleBar QLabel[TitleBarTitle="true"] {
     margin: 0px;
 }
 
+vnotex--TitleBar QToolBar {
+    qproperty-iconSize: 16px 16px;
+}
+
 /* QDockWidget */
-QDockWidget[MainWindowSideBar="true"] QWidget {
-    background-color: @widgets#mainwindow#side_bar#widget#bg;
-}
-
-QDockWidget[MainWindowSideBar="true"] QToolButton:checked {
-    color: @widgets#qtoolbutton#checked#fg;
-    background-color: @widgets#qtoolbutton#checked#bg;
-}
-
-QDockWidget[MainWindowSideBar="true"] QToolButton:hover {
-    color: @widgets#qtoolbutton#hover#fg;
-    background-color: @widgets#qtoolbutton#hover#bg;
-}
-
-QDockWidget[MainWindowSideBar="true"] QToolButton:pressed {
-    color: @widgets#qtoolbutton#pressed#fg;
-    background-color: @widgets#qtoolbutton#pressed#bg;
-}
-
 QDockWidget {
     color: @widgets#qdockwidget#fg;
     background-color: @widgets#qdockwidget#bg;
     titlebar-close-icon: url(close.svg);
     titlebar-normal-icon: url(float.svg);
 }
-
-QDockWidget::Title {
+QDockWidget::title {
     background-color: @widgets#qdockwidget#title#bg;
     text-align: center left;
 }
-
 QDockWidget::close-button, QDockWidget::float-button {
     border: none;
     icon-size: 16px;
     width: 16px;
 }
-
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
     background-color: @widgets#qdockwidget#title#button#hover#bg;
 }
-
 QDockWidget::close-button {
     subcontrol-position: top right;
     subcontrol-origin: margin;
     position: absolute;
     top: 0px; right: 0px; bottom: 0px;
 }
-
 QDockWidget::float-button {
     subcontrol-position: top right;
     subcontrol-origin: margin;
     position: absolute;
     top: 0px; right: 18px; bottom: 0px;
+}
+/* Side bar dock widgets */
+QDockWidget[MainWindowSideBar="true"] QWidget {
+    background-color: @widgets#mainwindow#side_bar#widget#bg;
+}
+/* Generic tab bar */
+QTabBar {
+    border: none;
+}
+QTabBar::tab {
+    color: @widgets#qtabbar#tab#fg;
+    background-color: @widgets#qtabbar#tab#bg;
+    border: none;
+}
+QTabBar::tab:top, QTabBar::tab:bottom {
+    border-top: 2px solid transparent;
+    border-right: 1px solid @widgets#qtabbar#tab#border;
+    padding: 2px 2px 2px 2px;
+    height: 20px;
+}
+QTabBar::tab:right {
+    border-right: 3px solid transparent;
+    border-bottom: 1px solid @widgets#qtabbar#tab#border;
+    padding: 5px 2px 5px 2px;
+    min-width: 20px;
+}
+QTabBar::tab:left {
+    border-left: 3px solid transparent;
+    border-bottom: 1px solid @widgets#qtabbar#tab#border;
+    padding: 5px 2px 5px 2px;
+    min-width: 20px;
+}
+QTabBar::tab:hover {
+    color: @widgets#qtabbar#tab#hover#fg;
+    background-color: @widgets#qtabbar#tab#hover#bg;
+}
+QTabBar::tab:selected {
+    color: @widgets#qtabbar#tab#selected#fg;
+    background-color: @widgets#qtabbar#tab#selected#bg;
+}
+QTabBar::tab:top:selected, QTabBar::tab:bottom:selected {
+    border-top: 2px solid @widgets#qtabbar#tab#selected#border;
+}
+QTabBar::tab:right:selected {
+    border-right: 3px solid @widgets#qtabbar#tab#selected#border;
+}
+QTabBar::tab:left:selected {
+    border-left: 3px solid @widgets#qtabbar#tab#selected#border;
+}
+QTabBar::close-button {
+    image: url(close_grey.svg);
+}
+QTabBar::close-button:focus {
+    image: url(close.svg);
+}
+QTabBar::close-button:hover {
+    image: url(close.svg);
+}
+QTabBar::scroller {
+    width: 20px;
+}
+QTabBar QToolButton {
+    border: none;
+}
+QTabBar QToolButton::right-arrow:enabled {
+    image: url(right.svg);
+}
+QTabBar QToolButton::left-arrow:enabled {
+    image: url(left.svg);
+}
+QTabBar QToolButton::right-arrow:disabled {
+    image: url(right_disabled.svg);
+}
+QTabBar QToolButton::left-arrow:disabled {
+    image: url(left_disabled.svg);
+}
+/* Side bar tab bar (tabified dock widgets on West side) */
+QTabBar[MainWindowSideBar="true"] {
+    background-color: @widgets#mainwindow#side_bar#bg;
+}
+
+/* Base style for side bar tabs - icon only, no text */
+QTabBar[MainWindowSideBar="true"]::tab:left,
+QTabBar[MainWindowSideBar="true"]::tab:right {
+    color: transparent;
+    background-color: @widgets#qtoolbutton#bg;
+    border-bottom: none;
+    margin: 0px;
+    padding: 8px;
+    width: 20px;
+    height: 20px;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab:left {
+    border-left: 3px solid transparent;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab:right {
+    border-right: 3px solid transparent;
+}
+
+/* Hover state */
+QTabBar[MainWindowSideBar="true"]::tab:left:hover,
+QTabBar[MainWindowSideBar="true"]::tab:right:hover {
+    color: transparent;
+    background-color: @widgets#mainwindow#side_bar#hover#bg;
+}
+
+/* Selected state */
+QTabBar[MainWindowSideBar="true"]::tab:left:selected {
+    color: transparent;
+    background-color: @widgets#mainwindow#side_bar#selected#bg;
+    border-left: 3px solid @widgets#qtabbar#tab#selected#border;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab:right:selected {
+    color: transparent;
+    background-color: @widgets#mainwindow#side_bar#selected#bg;
+    border-right: 3px solid @widgets#qtabbar#tab#selected#border;
+}
+
+/* Pressed state */
+QTabBar[MainWindowSideBar="true"]::tab:left:pressed,
+QTabBar[MainWindowSideBar="true"]::tab:right:pressed {
+    color: transparent;
+    background-color: @widgets#qtoolbutton#pressed#bg;
 }
 
 QToolTip
@@ -179,26 +285,6 @@ QToolBarExtension#qt_toolbar_ext_button:pressed {
 }
 
 /* QToolButton */
-/* Only for MenuButtonPopup */
-QToolButton[popupMode="1"] {
-    /* Make way for the popup button */
-    padding-right: 16px; /* make way for the popup button */
-}
-
-/* Must put after popupMode related styles */
-QToolButton[ActionToolButton="true"] {
-    border: none;
-}
-
-QToolButton[ActionToolButton="true"]::menu-indicator {
-    image: none;
-}
-
-QToolButton[NoMenuIndicator="true"]::menu-indicator {
-    image: none;
-}
-
-/* QPushButton, QToolButton */
 QToolButton {
     border: none;
     color: @widgets#qtoolbutton#fg;
@@ -213,7 +299,7 @@ QToolButton:checked {
 }
 
 QToolButton:hover {
-    border:none;
+    border: none;
     color: @widgets#qtoolbutton#hover#fg;
     background-color: @widgets#qtoolbutton#hover#bg;
 }
@@ -233,6 +319,23 @@ QToolButton::menu-arrow {
     image: url(arrow_dropdown.svg);
     width: 16px;
     height: 16px;
+}
+
+/* Only for MenuButtonPopup */
+QToolButton[popupMode="1"] {
+    padding-right: 16px;
+}
+
+QToolButton[ActionToolButton="true"] {
+    border: none;
+}
+
+QToolButton[ActionToolButton="true"]::menu-indicator {
+    image: none;
+}
+
+QToolButton[NoMenuIndicator="true"]::menu-indicator {
+    image: none;
 }
 
 QPushButton[DangerButton="true"]:hover, QToolButton[DangerButton="true"]:hover {
@@ -366,7 +469,7 @@ vnotex--LabelWithButtonsWidget QLabel:hover {
 
 QDialog {
     color: @widgets#qdialog#fg;
-    background-color: @widgets#qdialog#bg
+    background-color: @widgets#qdialog#bg;
 }
 
 /* DrapDropAreaIndicator */
@@ -462,24 +565,6 @@ vnotex--MainWindow QLabel#MainWindowTipsLabel {
 }
 
 /* QLineEdit */
-QLineEdit[EmbeddedLineEdit="true"] {
-    border: none;
-    padding: 0px;
-    margin: 0px;
-    color: @widgets#qlineedit#fg;
-    background-color: transparent;
-}
-
-QLineEdit[EmbeddedLineEdit="true"]:focus {
-    border: none;
-    background-color: @widgets#qlineedit#focus#bg;
-}
-
-QLineEdit[EmbeddedLineEdit="true"]:hover {
-    border: none;
-    background-color: @widgets#qlineedit#hover#bg;
-}
-
 QLineEdit {
     border: 1px solid @widgets#qlineedit#border;
     padding: 3px;
@@ -503,6 +588,24 @@ QLineEdit:disabled {
     color: @widgets#qlineedit#disabled#fg;
 }
 
+QLineEdit[EmbeddedLineEdit="true"] {
+    border: none;
+    padding: 0px;
+    margin: 0px;
+    color: @widgets#qlineedit#fg;
+    background-color: transparent;
+}
+
+QLineEdit[EmbeddedLineEdit="true"]:focus {
+    border: none;
+    background-color: @widgets#qlineedit#focus#bg;
+}
+
+QLineEdit[EmbeddedLineEdit="true"]:hover {
+    border: none;
+    background-color: @widgets#qlineedit#hover#bg;
+}
+
 /* QPlainTextEdit and QTextEdit */
 QPlainTextEdit, QTextEdit {
     color: @widgets#qlineedit#fg;
@@ -522,131 +625,6 @@ QTabWidget::pane {
 
 QTabWidget::tab-bar {
     alignment: left;
-}
-
-/* QTabBar */
-QTabBar[MainWindowSideBar="true"] {
-    background-color: @widgets#mainwindow#side_bar#bg;
-}
-
-QTabBar[MainWindowSideBar="true"]::tab {
-    color: @widgets#mainwindow#side_bar#fg;
-    background-color: @widgets#mainwindow#side_bar#bg;
-    border: none;
-}
-
-QMainWindow > QTabBar::tab:right {
-    border-right: 3px solid transparent;
-    border-bottom: none;
-    margin: 0px;
-    padding: 8px 8px -8px 8px;
-}
-
-QMainWindow > QTabBar::tab:left {
-    border-left: 3px solid transparent;
-    border-bottom: none;
-    margin: 0px;
-    padding: -8px 8px 8px 8px;
-}
-
-/* Only the left one is the mainwindow side bar */
-QMainWindow > QTabBar::tab:left:hover {
-    color: @widgets#mainwindow#side_bar#hover#fg;
-    background-color: @widgets#mainwindow#side_bar#hover#bg;
-}
-
-QMainWindow > QTabBar::tab:left:selected {
-    color: @widgets#mainwindow#side_bar#selected#fg;
-    background-color: @widgets#mainwindow#side_bar#selected#bg;
-}
-
-QTabBar {
-    border: none;
-}
-
-QTabBar::tab {
-    color: @widgets#qtabbar#tab#fg;
-    background-color: @widgets#qtabbar#tab#bg;
-    border: none;
-}
-
-QTabBar::tab:top, QTabBar::tab:bottom {
-    border-top: 2px solid transparent;
-    border-right: 1px solid @widgets#qtabbar#tab#border;
-    padding: 2px 2px 2px 2px;
-    height: 20px;
-}
-
-QTabBar::tab:right {
-    border-right: 3px solid transparent;
-    border-bottom: 1px solid @widgets#qtabbar#tab#border;
-    padding: 5px 2px 5px 2px;
-    min-width: 20px;
-}
-
-QTabBar::tab:left {
-    border-left: 3px solid transparent;
-    border-bottom: 1px solid @widgets#qtabbar#tab#border;
-    padding: 5px 2px 5px 2px;
-    min-width: 20px;
-}
-
-QTabBar::tab:hover {
-    color: @widgets#qtabbar#tab#hover#fg;
-    background-color: @widgets#qtabbar#tab#hover#bg;
-}
-
-QTabBar::tab:selected {
-    color: @widgets#qtabbar#tab#selected#fg;
-    background-color: @widgets#qtabbar#tab#selected#bg;
-}
-
-QTabBar::tab:top:selected, QTabBar::tab:bottom:selected {
-    border-top: 2px solid @widgets#qtabbar#tab#selected#border;
-}
-
-QTabBar::tab:right:selected {
-    border-right: 3px solid @widgets#qtabbar#tab#selected#border;
-}
-
-QTabBar::tab:left:selected {
-    border-left: 3px solid @widgets#qtabbar#tab#selected#border;
-}
-
-QTabBar::close-button {
-    image: url(close_grey.svg);
-}
-
-QTabBar::close-button:focus {
-    image: url(close.svg);
-}
-
-QTabBar::close-button:hover {
-    image: url(close.svg);
-}
-
-QTabBar::scroller {
-    width: 20px;
-}
-
-QTabBar QToolButton {
-    border: none;
-}
-
-QTabBar QToolButton::right-arrow:enabled {
-    image: url(right.svg);
-}
-
-QTabBar QToolButton::left-arrow:enabled {
-    image: url(left.svg);
-}
-
-QTabBar QToolButton::right-arrow:disabled {
-    image: url(right_disabled.svg);
-}
-
-QTabBar QToolButton::left-arrow:disabled {
-    image: url(left_disabled.svg);
 }
 
 /* QTreeView */

@@ -1,11 +1,12 @@
 #include "dockwidgethelper.h"
 
+#include <QApplication>
 #include <QBitArray>
 #include <QDockWidget>
 #include <QHelpEvent>
 #include <QShortcut>
+#include <QStyleOptionTab>
 #include <QTabBar>
-#include <QTextEdit>
 #include <QToolTip>
 
 #include <core/configmgr.h>
@@ -29,6 +30,19 @@
 
 using namespace vnotex;
 
+namespace {
+int dockRotationAngle(Qt::DockWidgetArea p_area) {
+  switch (p_area) {
+  case Qt::LeftDockWidgetArea:
+    return 90;
+  case Qt::RightDockWidgetArea:
+    return 270;
+  default:
+    return -1;
+  }
+}
+} // namespace
+
 DockWidgetHelper::NavigationItemInfo::NavigationItemInfo(QTabBar *p_tabBar, int p_tabIndex,
                                                          int p_dockIndex)
     : m_tabBar(p_tabBar), m_tabIndex(p_tabIndex), m_dockIndex(p_dockIndex) {}
@@ -39,19 +53,6 @@ DockWidgetHelper::NavigationItemInfo::NavigationItemInfo(int p_dockIndex)
 DockWidgetHelper::DockWidgetHelper(MainWindow *p_mainWindow)
     : QObject(p_mainWindow), NavigationMode(NavigationMode::Type::DoubleKeys, p_mainWindow),
       m_mainWindow(p_mainWindow) {}
-
-static int rotationAngle(Qt::DockWidgetArea p_area) {
-  switch (p_area) {
-  case Qt::LeftDockWidgetArea:
-    return 90;
-
-  case Qt::RightDockWidgetArea:
-    return 270;
-
-  default:
-    return -1;
-  }
-}
 
 QString DockWidgetHelper::iconFileName(DockIndex p_dockIndex) {
   switch (p_dockIndex) {
@@ -123,10 +124,10 @@ static void addWidgetToDock(QDockWidget *p_dock, QWidget *p_widget) {
 }
 
 void DockWidgetHelper::setupNavigationDock() {
-  auto dock = createDockWidget(DockIndex::NavigationDock, tr("Navigation"), m_mainWindow);
+  auto dock = createDockWidget(DockIndex::NavigationDock, tr("Notebooks"), m_mainWindow);
 
   dock->setObjectName(QStringLiteral("NavigationDock.vnotex"));
-  dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+  dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 
   addWidgetToDock(dock, m_mainWindow->m_notebookExplorer);
   m_mainWindow->addDockWidget(Qt::LeftDockWidgetArea, dock);
@@ -307,6 +308,10 @@ void DockWidgetHelper::updateDockWidgetTabBar() {
     if (!m_tabBarsMonitored.contains(tabBar)) {
       m_tabBarsMonitored.insert(tabBar);
       tabBar->installEventFilter(this);
+      // Clean up when tab bar is destroyed to avoid dangling pointers.
+      connect(tabBar, &QObject::destroyed, this, [this, tabBar]() {
+        m_tabBarsMonitored.remove(tabBar);
+      });
     }
 
     tabBar->setDrawBase(false);
@@ -335,23 +340,10 @@ void DockWidgetHelper::updateDockWidgetTabBar() {
       }
       int dockIdx = dock->property(PropertyDefs::c_dockWidgetIndex).toInt();
       tabifiedDocks.setBit(dockIdx);
-      if (iconOnly) {
-        dock->setWindowTitle(QString());
-      } else if (dock->windowTitle().isEmpty()) {
-        dock->setWindowTitle(dock->property(PropertyDefs::c_dockWidgetTitle).toString());
-      }
       tabBar->setTabIcon(i, getDockIcon(static_cast<DockIndex>(dockIdx), isSideBar));
-
       if (dock->property(PropertyDefs::c_mainWindowSideBar).toBool() != isSideBar) {
         WidgetUtils::setPropertyDynamically(dock, PropertyDefs::c_mainWindowSideBar, isSideBar);
       }
-    }
-  }
-
-  // Non-tabified docks.
-  for (int i = 0; i < m_docks.size(); ++i) {
-    if (!tabifiedDocks[i] && m_docks[i]->windowTitle().isEmpty()) {
-      m_docks[i]->setWindowTitle(m_docks[i]->property(PropertyDefs::c_dockWidgetTitle).toString());
     }
   }
 
@@ -359,11 +351,16 @@ void DockWidgetHelper::updateDockWidgetTabBar() {
 }
 
 bool DockWidgetHelper::eventFilter(QObject *p_obj, QEvent *p_event) {
+  // Handle ToolTip on QTabBar.
+  auto tabBar = qobject_cast<QTabBar *>(p_obj);
+  if (!tabBar) {
+    return QObject::eventFilter(p_obj, p_event);
+  }
+
   if (p_event->type() == QEvent::ToolTip) {
     // The QTabBar of the tabified dock widgets does not show tooltip due to Qt's internal
     // implementation.
     auto helpEve = static_cast<QHelpEvent *>(p_event);
-    auto tabBar = static_cast<QTabBar *>(p_obj);
     int idx = tabBar->tabAt(helpEve->pos());
     bool done = false;
     if (idx > -1) {
@@ -495,7 +492,7 @@ const QIcon &DockWidgetHelper::getDockIcon(DockIndex p_dockIndex, bool p_isSideB
   }
 
   const auto area = m_mainWindow->dockWidgetArea(m_docks[p_dockIndex]);
-  const int newAngle = rotationAngle(area);
+  const int newAngle = dockRotationAngle(area);
   if ((m_dockIcons[p_dockIndex].m_rotationAngle != newAngle ||
        m_dockIcons[p_dockIndex].m_isSideBar != p_isSideBar) &&
       area != Qt::NoDockWidgetArea) {

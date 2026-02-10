@@ -6,7 +6,7 @@
 #include <QVector>
 
 class QToolButton;
-class QHBoxLayout;
+class QToolBar;
 class QLabel;
 
 namespace vnotex {
@@ -61,8 +61,6 @@ private:
 
   void setActionButtonsVisible(bool p_visible);
 
-  QHBoxLayout *actionButtonLayout() const;
-
   static QToolButton *newActionButton(const QString &p_iconName, const QString &p_text,
                                       QWidget *p_parent);
 
@@ -72,7 +70,7 @@ private:
 
   QVector<QToolButton *> m_actionButtons;
 
-  QWidget *m_buttonWidget = nullptr;
+  QToolBar *m_buttonToolBar = nullptr;
 
   bool m_actionButtonsAlwaysShown = false;
 

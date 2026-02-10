@@ -218,7 +218,6 @@ int main(int argc, char *argv[]) {
   // Should set the correct locale before VNoteX::getInst().
   loadTranslators(app);
 
-  /*
   if (app.styleSheet().isEmpty()) {
     auto style = VNoteX::getInst().getThemeMgr().fetchQtStyleSheet();
     if (!style.isEmpty()) {
@@ -231,7 +230,6 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  */
 
   MainWindow window;
   window.show();

@@ -25,7 +25,7 @@
 using namespace vnotex;
 
 #ifndef QT_NO_DEBUG
-// #define VX_DEBUG_REFRESH
+#define VX_DEBUG_REFRESH
 #endif
 
 const QVersionNumber kVersion {4, 0, 0};
