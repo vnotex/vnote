@@ -330,6 +330,9 @@
                 "button" : {
                     "hover" : {
                         "bg" : "@base#hover#bg"
+                    },
+                    "pressed" : {
+                        "bg" : "@base#pressed#bg"
                     }
                 }
             }
@@ -604,7 +607,10 @@
             },
             "handle" : {
                 "border" : "@base#content#border",
-                "bg" : "@base#master#bg"
+                "bg" : "@base#master#bg",
+                "hover" : {
+                    "bg" : "@base#master#alt"
+                }
             },
             "subpage" : {
                 "border" : "@widgets#qslider#handle#border",

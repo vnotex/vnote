@@ -89,14 +89,20 @@ QDockWidget {
 QDockWidget::title {
     background-color: @widgets#qdockwidget#title#bg;
     text-align: center left;
+    border-radius: 6px;
+    padding: 4px;
 }
 QDockWidget::close-button, QDockWidget::float-button {
     border: none;
+    border-radius: 4px;
     icon-size: 16px;
     width: 16px;
 }
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
     background-color: @widgets#qdockwidget#title#button#hover#bg;
+}
+QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+    background-color: @widgets#qdockwidget#title#button#pressed#bg;
 }
 QDockWidget::close-button {
     subcontrol-position: top right;
@@ -126,19 +132,19 @@ QTabBar::tab {
 QTabBar::tab:top, QTabBar::tab:bottom {
     border-top: 2px solid transparent;
     border-right: 1px solid @widgets#qtabbar#tab#border;
-    padding: 2px 2px 2px 2px;
+    padding: 6px 16px;
     height: 20px;
 }
 QTabBar::tab:right {
     border-right: 3px solid transparent;
     border-bottom: 1px solid @widgets#qtabbar#tab#border;
-    padding: 5px 2px 5px 2px;
+    padding: 8px 6px;
     min-width: 20px;
 }
 QTabBar::tab:left {
     border-left: 3px solid transparent;
     border-bottom: 1px solid @widgets#qtabbar#tab#border;
-    padding: 5px 2px 5px 2px;
+    padding: 8px 6px;
     min-width: 20px;
 }
 QTabBar::tab:hover {
@@ -240,6 +246,8 @@ QTabBar[MainWindowSideBar="true"]::tab:right:pressed {
 QToolTip
 {
     border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
     color: @widgets#qtooltip#fg;
     background-color: @widgets#qtooltip#bg;
 }
@@ -287,10 +295,11 @@ QToolBarExtension#qt_toolbar_ext_button:pressed {
 /* QToolButton */
 QToolButton {
     border: none;
+    border-radius: 4px;
     color: @widgets#qtoolbutton#fg;
     background-color: @widgets#qtoolbutton#bg;
-    margin: 1px 3px 1px 3px;
-    padding: 0px;
+    margin: 2px;
+    padding: 4px;
 }
 
 QToolButton:checked {
@@ -342,6 +351,7 @@ QPushButton[DangerButton="true"]:hover, QToolButton[DangerButton="true"]:hover {
     color: @widgets#qwidget#danger#fg;
     background-color: @widgets#qwidget#danger#bg;
     border: none;
+    border-radius: 4px;
 }
 
 /* QPushButton */
@@ -349,8 +359,9 @@ QPushButton {
     color: @widgets#qpushbutton#fg;
     background-color: @widgets#qpushbutton#bg;
     border: 1px solid @widgets#qpushbutton#border;
-    padding: 3px;
-    min-width: 80px;
+    border-radius: 4px;
+    padding: 6px 12px;
+    min-width: 64px;
 }
 
 QPushButton:default {
@@ -360,6 +371,7 @@ QPushButton:default {
 QPushButton:focus {
     color: @widgets#qpushbutton#focus#fg;
     background-color: @widgets#qpushbutton#focus#bg;
+    border: 1px solid @widgets#qpushbutton#default#border;
 }
 
 QPushButton:checked {
@@ -396,16 +408,20 @@ QPushButton::menu-indicator {
 QMenu {
     color: @widgets#qmenu#fg;
     background-color: @widgets#qmenu#bg;
-    border: 2px solid @widgets#qmenu#border;
+    border: 1px solid @widgets#qmenu#border;
+    border-radius: 6px;
+    padding: 4px 0;
 }
 
 QMenu::icon {
-    margin: 5px;
+    margin: 4px 4px 4px 8px;
 }
 
 QMenu::item {
-    padding: 5px 22px 5px 22px;
-    border: 1px solid transparent;
+    padding: 6px 16px 6px 8px;
+    border: none;
+    margin: 0 4px;
+    border-radius: 4px;
 }
 
 QMenu::item:selected {
@@ -424,13 +440,13 @@ QMenu::icon:checked { /* appearance of a 'checked' icon */
 QMenu::separator {
     height: 1px;
     background-color: @widgets#qmenu#separator#bg;
-    margin-left: 10px;
-    margin-right: 5px;
+    margin: 4px 12px;
 }
 
 QMenu::indicator {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
+    margin-left: 6px;
 }
 
 QMenu::indicator:non-exclusive:unchecked {
@@ -481,10 +497,12 @@ vnotex--DragDropAreaIndicator {
 
 /* QComboBox */
 QComboBox {
-    padding: 3px;
+    padding: 4px 8px;
+    min-height: 24px;
     color: @widgets#qcombobox#fg;
     background-color: @widgets#qcombobox#bg;
     border: 1px solid @widgets#qcombobox#border;
+    border-radius: 4px;
 }
 
 QComboBox:focus, QComboBox:on {
@@ -522,8 +540,9 @@ QComboBox::down-arrow:disabled {
 }
 
 QComboBox QAbstractItemView {
-    padding: 2px;
+    padding: 4px 0;
     border: 1px solid @widgets#qcombobox#view#border;
+    border-radius: 4px;
     background-color: @widgets#qcombobox#view#bg;
     selection-color: @widgets#qcombobox#view#selection#fg;
     selection-background-color: @widgets#qcombobox#view#selection#bg;
@@ -531,7 +550,7 @@ QComboBox QAbstractItemView {
 
 QComboBox QAbstractItemView::item {
     background-color: transparent;
-    padding: 3px;
+    padding: 4px 8px;
 }
 
 QComboBox QAbstractItemView::item:hover {
@@ -567,7 +586,9 @@ vnotex--MainWindow QLabel#MainWindowTipsLabel {
 /* QLineEdit */
 QLineEdit {
     border: 1px solid @widgets#qlineedit#border;
-    padding: 3px;
+    border-radius: 4px;
+    padding: 4px 8px;
+    min-height: 24px;
     color: @widgets#qlineedit#fg;
     background-color: @widgets#qlineedit#bg;
     selection-color: @widgets#qlineedit#selection#fg;
@@ -638,8 +659,7 @@ QTreeView {
 }
 
 QTreeView::item {
-    padding-top: 2px;
-    padding-bottom: 2px;
+    padding: 4px 8px;
 }
 
 QTreeView::item:hover {
@@ -697,8 +717,7 @@ QListView {
 }
 
 QListView::item {
-    padding-top: 2px;
-    padding-bottom: 2px;
+    padding: 4px 8px;
 }
 
 QListView::item:hover {
@@ -757,22 +776,23 @@ QStatusBar::item {
     border: none;
 }
 
-/* QScrollBar */
+/* QScrollBar - Modern slim style (VS Code-like) */
 QScrollBar::add-page, QScrollBar::sub-page {
-    background-color: @widgets#qscrollbar#addpage#bg;
+    background-color: transparent;
 }
 
 QScrollBar:vertical {
     background-color: @widgets#qscrollbar#bg;
-    width: 16px;
-    margin: 16px 0px 16px 0px;
-    padding: 0px 2px 0px 2px;
+    width: 10px;
+    margin: 0;
+    padding: 2px;
     border: none;
 }
 
 QScrollBar::handle:vertical {
     background-color: @widgets#qscrollbar#handle#bg;
-    min-height: 16px;
+    border-radius: 4px;
+    min-height: 30px;
 }
 
 QScrollBar::handle:vertical:hover {
@@ -783,63 +803,34 @@ QScrollBar::handle:vertical:pressed {
     background-color: @widgets#qscrollbar#handle#pressed#bg;
 }
 
-QScrollBar::add-line:vertical {
-    border: none;
-    background-color: @widgets#qscrollbar#bg;
-    width: 16px;
-    height: 16px;
-    subcontrol-position: bottom;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::add-line:vertical:hover {
-    background-color: @widgets#qscrollbar#handle#hover#bg;
-}
-
-QScrollBar::add-line:vertical:pressed {
-    background-color: @widgets#qscrollbar#handle#pressed#bg;
-}
-
+/* Hide arrow buttons for slim modern look */
+QScrollBar::add-line:vertical,
 QScrollBar::sub-line:vertical {
+    height: 0;
+    width: 0;
+    background: none;
     border: none;
-    background-color: @widgets#qscrollbar#bg;
-    width: 16px;
-    height: 16px;
-    subcontrol-position: top;
-    subcontrol-origin: margin;
 }
 
-QScrollBar::sub-line:vertical:hover {
-    background-color: @widgets#qscrollbar#handle#hover#bg;
-}
-
-QScrollBar::sub-line:vertical:pressed {
-    background-color: @widgets#qscrollbar#handle#pressed#bg;
-}
-
+QScrollBar::up-arrow:vertical,
 QScrollBar::down-arrow:vertical {
-    image: url(down.svg);
-    width: 16px;
-    height: 16px;
-}
-
-QScrollBar::up-arrow:vertical {
-    image: url(up.svg);
-    width: 16px;
-    height: 16px;
+    image: none;
+    width: 0;
+    height: 0;
 }
 
 QScrollBar:horizontal {
     background-color: @widgets#qscrollbar#bg;
-    height: 16px;
-    margin: 0px 16px 0px 16px;
-    padding: 2px 0px 2px 0px;
+    height: 10px;
+    margin: 0;
+    padding: 2px;
     border: none;
 }
 
 QScrollBar::handle:horizontal {
     background-color: @widgets#qscrollbar#handle#bg;
-    min-width: 16px;
+    border-radius: 4px;
+    min-width: 30px;
 }
 
 QScrollBar::handle:horizontal:hover {
@@ -850,50 +841,20 @@ QScrollBar::handle:horizontal:pressed {
     background-color: @widgets#qscrollbar#handle#pressed#bg;
 }
 
-QScrollBar::add-line:horizontal {
-    border: none;
-    background-color: @widgets#qscrollbar#bg;
-    width: 16px;
-    height: 16px;
-    subcontrol-position: right;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::add-line:horizontal:hover {
-    background-color: @widgets#qscrollbar#handle#hover#bg;
-}
-
-QScrollBar::add-line:horizontal:pressed {
-    background-color: @widgets#qscrollbar#handle#pressed#bg;
-}
-
+/* Hide arrow buttons for slim modern look */
+QScrollBar::add-line:horizontal,
 QScrollBar::sub-line:horizontal {
+    height: 0;
+    width: 0;
+    background: none;
     border: none;
-    background-color: @widgets#qscrollbar#bg;
-    width: 16px;
-    height: 16px;
-    subcontrol-position: left;
-    subcontrol-origin: margin;
 }
 
-QScrollBar::sub-line:horizontal:hover {
-    background-color: @widgets#qscrollbar#handle#hover#bg;
-}
-
-QScrollBar::sub-line:horizontal:pressed {
-    background-color: @widgets#qscrollbar#handle#pressed#bg;
-}
-
+QScrollBar::left-arrow:horizontal,
 QScrollBar::right-arrow:horizontal {
-    image: url(right.svg);
-    width: 16px;
-    height: 16px;
-}
-
-QScrollBar::left-arrow:horizontal {
-    image: url(left.svg);
-    width: 16px;
-    height: 16px;
+    image: none;
+    width: 0;
+    height: 0;
 }
 
 /* QCheckBox */
@@ -982,10 +943,11 @@ QRadioButton::indicator:pressed {
 
 QAbstractSpinBox {
     border: 1px solid @widgets#qspinbox#border;
+    border-radius: 4px;
     color: @widgets#qspinbox#fg;
     background-color: @widgets#qspinbox#bg;
-    padding-right: 25px;
-    min-height: 25px;
+    padding: 4px 28px 4px 8px;
+    min-height: 24px;
     selection-color: @widgets#qspinbox#selection#fg;
     selection-background-color: @widgets#qspinbox#selection#bg;
 }
@@ -1092,19 +1054,24 @@ QHeaderView::up-arrow {
 QProgressBar {
     background-color: @widgets#qprogressbar#bg;
     border: 1px solid @widgets#qprogressbar#border;
+    border-radius: 4px;
     text-align: center;
+    min-height: 6px;
+    max-height: 12px;
 }
 
 QProgressBar::chunk {
     background-color: @widgets#qprogressbar#chunk#bg;
-    width: 20px;
+    border-radius: 3px;
+    margin: 1px;
 }
 
 /* QGroupBox */
 QGroupBox {
-    border: 2px solid @widgets#qgroupbox#border;
-    border-radius: 5px;
+    border: 1px solid @widgets#qgroupbox#border;
+    border-radius: 6px;
     margin-top: 2ex;
+    padding-top: 8px;
 }
 
 QGroupBox::title {
@@ -1120,17 +1087,24 @@ QGroupBox::title {
 
 /* QSlider */
 QSlider::groove:horizontal {
-    border: 1px solid @widgets#qslider#groove#border;
-    height: 8px;
+    border: none;
+    height: 4px;
     background-color: @widgets#qslider#groove#bg;
+    border-radius: 2px;
     margin: 2px 0;
 }
 
 QSlider::handle:horizontal {
-    border: 1px solid @widgets#qslider#handle#border;
+    border: none;
     background-color: @widgets#qslider#handle#bg;
-    width: 18px;
-    margin: -2px 0;
+    width: 14px;
+    height: 14px;
+    margin: -5px 0;
+    border-radius: 7px;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: @widgets#qslider#handle#hover#bg;
 }
 
 QSlider::add-page:horizontal {
@@ -1138,23 +1112,31 @@ QSlider::add-page:horizontal {
 }
 
 QSlider::sub-page:horizontal {
-    border: 1px solid @widgets#qslider#subpage#border;
+    border: none;
     background-color: @widgets#qslider#subpage#bg;
+    border-radius: 2px;
     margin: 2px 0;
 }
 
 QSlider::groove:vertical {
-    border: 1px solid @widgets#qslider#groove#border;
-    width: 8px;
+    border: none;
+    width: 4px;
     background-color: @widgets#qslider#groove#bg;
+    border-radius: 2px;
     margin: 0 2px;
 }
 
 QSlider::handle:vertical {
-    border: 1px solid @widgets#qslider#handle#border;
+    border: none;
     background-color: @widgets#qslider#handle#bg;
-    height: 18px;
-    margin: 0 -2px;
+    width: 14px;
+    height: 14px;
+    margin: 0 -5px;
+    border-radius: 7px;
+}
+
+QSlider::handle:vertical:hover {
+    background-color: @widgets#qslider#handle#hover#bg;
 }
 
 QSlider::add-page:vertical {
@@ -1162,8 +1144,9 @@ QSlider::add-page:vertical {
 }
 
 QSlider::sub-page:vertical {
-    border: 1px solid @widgets#qslider#subpage#border;
+    border: none;
     background-color: @widgets#qslider#subpage#bg;
+    border-radius: 2px;
     margin: 0 2px;
 }
 
