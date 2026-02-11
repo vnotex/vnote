@@ -465,6 +465,12 @@ QMenu::indicator:exclusive:checked {
     image: url(menu_radiobutton.svg);
 }
 
+QMenu::right-arrow {
+    image: url(right.svg);
+    width: 16px;
+    height: 16px;
+}
+
 /* QWidgetAction item */
 vnotex--LabelWithButtonsWidget {
     background-color: @widgets#qmenu#bg;
