@@ -17,7 +17,7 @@ class QTextEdit;
 class QWebEngineView;
 
 namespace vnotex {
-class NotebookExplorer;
+class NotebookExplorer2;
 class TagExplorer;
 class ViewArea;
 class Event;
@@ -51,7 +51,7 @@ public:
 
   ViewArea *getViewArea() const;
 
-  NotebookExplorer *getNotebookExplorer() const;
+  NotebookExplorer2 *getNotebookExplorer() const;
 
   void setContentAreaExpanded(bool p_expanded);
   // Should be called after MainWindow is shown.
@@ -161,7 +161,7 @@ private:
 
   DockWidgetHelper m_dockWidgetHelper;
 
-  NotebookExplorer *m_notebookExplorer = nullptr;
+  NotebookExplorer2 *m_notebookExplorer = nullptr;
 
   TagExplorer *m_tagExplorer = nullptr;
 

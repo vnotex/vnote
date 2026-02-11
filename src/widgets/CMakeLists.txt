@@ -97,6 +97,7 @@ target_sources(vnote PRIVATE
     navigationmodemgr.cpp navigationmodemgr.h
     navigationmodewrapper.h
     notebookexplorer.cpp notebookexplorer.h
+    notebookexplorer2.cpp notebookexplorer2.h
     notebookexplorersession.cpp notebookexplorersession.h
     notebooknodeexplorer.cpp notebooknodeexplorer.h
     notebookselector.cpp notebookselector.h

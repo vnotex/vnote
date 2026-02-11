@@ -87,6 +87,11 @@ add_subdirectory(unitedentry)
 add_subdirectory(utils)
 add_subdirectory(widgets)
 
+# MVC components for NotebookExplorer2
+add_subdirectory(models)
+add_subdirectory(views)
+add_subdirectory(controllers)
+
 target_link_libraries(vnote PRIVATE
     Qt::Core
     Qt::Gui

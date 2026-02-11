@@ -21,7 +21,7 @@
 #include "historypanel.h"
 #include "locationlist.h"
 #include "mainwindow.h"
-#include "notebookexplorer.h"
+#include "notebookexplorer2.h"
 #include "outlineviewer.h"
 #include "propertydefs.h"
 #include "searchpanel.h"

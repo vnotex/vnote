@@ -28,7 +28,7 @@
 #include "locationlist.h"
 #include "messageboxhelper.h"
 #include "navigationmodemgr.h"
-#include "notebookexplorer.h"
+#include "notebookexplorer2.h"
 #include "notebookmgr.h"
 #include "outlineviewer.h"
 #include "searchinfoprovider.h"
@@ -263,39 +263,59 @@ void MainWindow::setupLocationList() {
 }
 
 void MainWindow::setupNotebookExplorer() {
-  m_notebookExplorer = new NotebookExplorer(this);
+  m_notebookExplorer = new NotebookExplorer2(this);
+
+  // Set up NotebookMgr
+  auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
+  m_notebookExplorer->setNotebookMgr(&notebookMgr);
+
+  // Connect VNoteX signals to NotebookExplorer2 slots
   connect(&VNoteX::getInst(), &VNoteX::newNotebookRequested, m_notebookExplorer,
-          &NotebookExplorer::newNotebook);
+          &NotebookExplorer2::newNotebook);
   connect(&VNoteX::getInst(), &VNoteX::newNotebookFromFolderRequested, m_notebookExplorer,
-          &NotebookExplorer::newNotebookFromFolder);
+          &NotebookExplorer2::newNotebookFromFolder);
   connect(&VNoteX::getInst(), &VNoteX::importNotebookRequested, m_notebookExplorer,
-          &NotebookExplorer::importNotebook);
+          &NotebookExplorer2::importNotebook);
   connect(&VNoteX::getInst(), &VNoteX::newFolderRequested, m_notebookExplorer,
-          &NotebookExplorer::newFolder);
+          &NotebookExplorer2::newFolder);
   connect(&VNoteX::getInst(), &VNoteX::newNoteRequested, m_notebookExplorer,
-          &NotebookExplorer::newNote);
+          &NotebookExplorer2::newNote);
   connect(&VNoteX::getInst(), &VNoteX::newQuickNoteRequested, m_notebookExplorer,
-          &NotebookExplorer::newQuickNote);
+          &NotebookExplorer2::newQuickNote);
   connect(&VNoteX::getInst(), &VNoteX::importFileRequested, m_notebookExplorer,
-          &NotebookExplorer::importFile);
+          &NotebookExplorer2::importFile);
   connect(&VNoteX::getInst(), &VNoteX::importFolderRequested, m_notebookExplorer,
-          &NotebookExplorer::importFolder);
+          &NotebookExplorer2::importFolder);
   connect(&VNoteX::getInst(), &VNoteX::manageNotebooksRequested, m_notebookExplorer,
-          &NotebookExplorer::manageNotebooks);
+          &NotebookExplorer2::manageNotebooks);
   connect(&VNoteX::getInst(), &VNoteX::locateNodeRequested, this, [this](Node *p_node) {
     m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
     m_notebookExplorer->locateNode(p_node);
   });
 
-  auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
+  // Connect NotebookMgr signals
   connect(&notebookMgr, &NotebookMgr::notebooksUpdated, m_notebookExplorer,
-          &NotebookExplorer::loadNotebooks);
+          &NotebookExplorer2::loadNotebooks);
   connect(&notebookMgr, &NotebookMgr::notebookUpdated, m_notebookExplorer,
-          &NotebookExplorer::reloadNotebook);
+          &NotebookExplorer2::reloadNotebook);
   connect(&notebookMgr, &NotebookMgr::currentNotebookChanged, m_notebookExplorer,
-          &NotebookExplorer::setCurrentNotebook);
-  connect(m_notebookExplorer, &NotebookExplorer::notebookActivated, &notebookMgr,
+          &NotebookExplorer2::setCurrentNotebook);
+  connect(m_notebookExplorer, &NotebookExplorer2::notebookActivated, &notebookMgr,
           &NotebookMgr::setCurrentNotebook);
+
+  // Connect node signals to VNoteX
+  connect(m_notebookExplorer, &NotebookExplorer2::nodeActivated, &VNoteX::getInst(),
+          &VNoteX::openNodeRequested);
+  connect(m_notebookExplorer, &NotebookExplorer2::fileActivated, &VNoteX::getInst(),
+          &VNoteX::openFileRequested);
+  connect(m_notebookExplorer, &NotebookExplorer2::nodeAboutToMove, &VNoteX::getInst(),
+          &VNoteX::nodeAboutToMove);
+  connect(m_notebookExplorer, &NotebookExplorer2::nodeAboutToRemove, &VNoteX::getInst(),
+          &VNoteX::nodeAboutToRemove);
+  connect(m_notebookExplorer, &NotebookExplorer2::nodeAboutToReload, &VNoteX::getInst(),
+          &VNoteX::nodeAboutToReload);
+  connect(m_notebookExplorer, &NotebookExplorer2::closeFileRequested, &VNoteX::getInst(),
+          &VNoteX::closeFileRequested);
 }
 
 void MainWindow::closeEvent(QCloseEvent *p_event) {
@@ -494,7 +514,7 @@ ViewArea *MainWindow::getViewArea() const { return m_viewArea; }
 
 void MainWindow::focusViewArea() { m_viewArea->focus(); }
 
-NotebookExplorer *MainWindow::getNotebookExplorer() const {
+NotebookExplorer2 *MainWindow::getNotebookExplorer() const {
   Q_ASSERT(m_notebookExplorer);
   return m_notebookExplorer;
 }

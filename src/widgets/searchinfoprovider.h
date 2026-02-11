@@ -7,13 +7,13 @@
 
 namespace vnotex {
 class ViewArea;
-class NotebookExplorer;
+class NotebookExplorer2;
 class NotebookMgr;
 class MainWindow;
 
 class SearchInfoProvider : public ISearchInfoProvider {
 public:
-  SearchInfoProvider(const ViewArea *p_viewArea, const NotebookExplorer *p_notebookExplorer,
+  SearchInfoProvider(const ViewArea *p_viewArea, const NotebookExplorer2 *p_notebookExplorer,
                      const NotebookMgr *p_notebookMgr);
 
   QList<Buffer *> getBuffers() const Q_DECL_OVERRIDE;
@@ -29,7 +29,7 @@ public:
 private:
   const ViewArea *m_viewArea = nullptr;
 
-  const NotebookExplorer *m_notebookExplorer = nullptr;
+  const NotebookExplorer2 *m_notebookExplorer = nullptr;
 
   const NotebookMgr *m_notebookMgr = nullptr;
 };

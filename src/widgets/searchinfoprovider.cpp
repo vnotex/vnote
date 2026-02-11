@@ -1,7 +1,7 @@
 #include "searchinfoprovider.h"
 
 #include "mainwindow.h"
-#include "notebookexplorer.h"
+#include "notebookexplorer2.h"
 #include "notebookmgr.h"
 #include "viewarea.h"
 #include <core/vnotex.h>
@@ -9,7 +9,7 @@
 using namespace vnotex;
 
 SearchInfoProvider::SearchInfoProvider(const ViewArea *p_viewArea,
-                                       const NotebookExplorer *p_notebookExplorer,
+                                       const NotebookExplorer2 *p_notebookExplorer,
                                        const NotebookMgr *p_notebookMgr)
     : m_viewArea(p_viewArea), m_notebookExplorer(p_notebookExplorer), m_notebookMgr(p_notebookMgr) {
 }
