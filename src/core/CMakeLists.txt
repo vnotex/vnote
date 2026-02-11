@@ -88,3 +88,6 @@ target_sources(vnote PRIVATE
 target_include_directories(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+# Add services subdirectory as a separate library
+add_subdirectory(services)

@@ -18,3 +18,29 @@ add_qt_test(test_servicelocator
     ${CMAKE_SOURCE_DIR}/src/core/servicelocator.cpp
   GUILESS
 )
+
+add_qt_test(test_searchservice
+  SOURCES
+    test_searchservice.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
+add_qt_test(test_configservice
+  SOURCES
+    test_configservice.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+
+add_qt_test(test_notebookservice
+  SOURCES
+    test_notebookservice.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
