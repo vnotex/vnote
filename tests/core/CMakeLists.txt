@@ -11,3 +11,10 @@ add_qt_test(test_exception
     test_exception.cpp
   GUILESS
 )
+
+add_qt_test(test_servicelocator
+  SOURCES
+    test_servicelocator.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/servicelocator.cpp
+  GUILESS
+)
