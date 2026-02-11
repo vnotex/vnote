@@ -67,11 +67,13 @@ private:
 
   TitleBar *setupTitleBar(QWidget *p_parent = nullptr);
 
+  void setupTitleBarMenu(TitleBar *p_titleBar);
+
   Node *checkNotebookAndGetCurrentExploredFolderNode() const;
 
   void setupViewMenu(QMenu *p_menu, bool p_isNotebookView);
 
-  void setupRecycleBinMenu(QMenu *p_menu);
+  void setupRecycleBinMenu(TitleBar *p_titleBar);
 
   void setupExploreModeMenu(TitleBar *p_titleBar);
 

@@ -106,90 +106,69 @@ void NotebookExplorer::setupUI() {
 TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent) {
   const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
 
-  auto titleBar = new TitleBar(tr("Notebook"), false, TitleBar::Action::Menu, p_parent);
+  auto titleBar = new TitleBar(QString(), false, TitleBar::Action::Menu, p_parent);
   titleBar->setWhatsThis(
       tr("This title bar contains buttons and menu to manage notebooks and notes."));
   titleBar->setActionButtonsAlwaysShown(true);
 
   {
-    auto viewMenu = WidgetsFactory::createMenu(titleBar);
-
-    auto notebookMenu = viewMenu->addMenu(tr("Notebooks"));
-    setupViewMenu(notebookMenu, true);
-    auto nodeMenu = viewMenu->addMenu(tr("Notes"));
-    setupViewMenu(nodeMenu, false);
-
-    titleBar->addActionButton(QStringLiteral("view.svg"), tr("View By"), viewMenu);
+    auto btn = titleBar->addActionButton("add.svg", tr("New Notebook"));
   }
 
   {
-    auto recycleBinMenu = WidgetsFactory::createMenu(titleBar);
-    setupRecycleBinMenu(recycleBinMenu);
-    titleBar->addActionButton(QStringLiteral("recycle_bin.svg"), tr("Recycle Bin"), recycleBinMenu);
+    auto btn = titleBar->addActionButton("open_notebook.svg", tr("Open Notebook"));
   }
 
-  {
-    auto btn = titleBar->addActionButton(QStringLiteral("scan_import.svg"), tr("Scan and Import"));
-    connect(btn, &QToolButton::clicked, this, [this]() {
-      if (!m_currentNotebook) {
-        MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Please select one notebook first."),
-                                 VNoteX::getInst().getMainWindow());
-        return;
-      }
-      int ret = MessageBoxHelper::questionOkCancel(
-          MessageBoxHelper::Warning,
-          tr("Scan the whole notebook (%1) and import external files automatically?")
-              .arg(m_currentNotebook->getName()),
-          tr("This operation helps importing external files that are added outside from VNote. "
-             "It may import unexpected files."),
-          tr("It is recommended to always manage files within VNote."),
-          VNoteX::getInst().getMainWindow());
-      if (ret != QMessageBox::Ok) {
-        return;
-      }
+  setupTitleBarMenu(titleBar);
 
-      auto importedFiles = m_currentNotebook->scanAndImportExternalFiles();
-      MessageBoxHelper::notify(MessageBoxHelper::Information,
-                               tr("Imported %n file(s).", "", importedFiles.size()), QString(),
-                               importedFiles.join('\n'), VNoteX::getInst().getMainWindow());
-      if (!importedFiles.isEmpty()) {
-        m_nodeExplorer->reload();
-      }
-    });
-  }
+  return titleBar;
+}
 
-  {
-    auto btn =
-        titleBar->addActionButton(QStringLiteral("manage_notebooks.svg"), tr("Manage Notebooks"));
-    connect(btn, &QToolButton::clicked, this, &NotebookExplorer::manageNotebooks);
-  }
+void NotebookExplorer::setupTitleBarMenu(TitleBar *p_titleBar) {
+  const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
 
-  titleBar->addMenuAction(tr("Rebuild Notebook Database"), titleBar,
+  p_titleBar->addMenuAction(tr("Manage Notebooks"), p_titleBar,
+                          [this]() { manageNotebooks(); });
+
+  p_titleBar->addMenuAction(tr("Rebuild Database"), p_titleBar,
                           [this]() { rebuildDatabase(); });
 
-  // External Files menu.
+  setupRecycleBinMenu(p_titleBar);
+
   {
-    auto subMenu = titleBar->addMenuSubMenu(tr("External Files"));
-    auto showAct = titleBar->addMenuAction(
-        subMenu, tr("Show External Files"), titleBar, [this](bool p_checked) {
-          ConfigMgr::getInst().getWidgetConfig().setNodeExplorerExternalFilesVisible(p_checked);
-          m_nodeExplorer->setExternalFilesVisible(p_checked);
-        });
+    p_titleBar->addMenuSeparator();
+    auto notebookMenu = p_titleBar->addMenuSubMenu(tr("Notebooks View Order"));
+    setupViewMenu(notebookMenu, true);
+
+    auto nodeMenu = p_titleBar->addMenuSubMenu(tr("Notes View Order"));
+    setupViewMenu(nodeMenu, false);
+  }
+
+  // External files.
+  {
+    p_titleBar->addMenuSeparator();
+    auto showAct = p_titleBar->addMenuAction(tr("Show External Files"), p_titleBar,
+                                           [this](bool p_checked) {
+                                              ConfigMgr::getInst().getWidgetConfig().setNodeExplorerExternalFilesVisible(p_checked);
+                                              m_nodeExplorer->setExternalFilesVisible(p_checked);
+                                           });
     showAct->setCheckable(true);
     showAct->setChecked(widgetConfig.isNodeExplorerExternalFilesVisible());
 
-    auto importAct = titleBar->addMenuAction(
-        subMenu, tr("Import External Files when Activated"), titleBar, [](bool p_checked) {
-          ConfigMgr::getInst().getWidgetConfig().setNodeExplorerAutoImportExternalFilesEnabled(
-              p_checked);
-        });
+    auto importAct = p_titleBar->addMenuAction(tr("Import External Files when Activated"),
+                                             p_titleBar,
+                                             [](bool p_checked) {
+                                                ConfigMgr::getInst().getWidgetConfig().setNodeExplorerAutoImportExternalFilesEnabled(
+                                             p_checked);
+                                             });
     importAct->setCheckable(true);
     importAct->setChecked(widgetConfig.getNodeExplorerAutoImportExternalFilesEnabled());
   }
 
   {
-    auto act = titleBar->addMenuAction(
-        tr("Close File Before Open with External Program"), titleBar, [](bool p_checked) {
+    p_titleBar->addMenuSeparator();
+    auto act = p_titleBar->addMenuAction(
+        tr("Close File Before Opening Externally"), p_titleBar, [](bool p_checked) {
           ConfigMgr::getInst().getWidgetConfig().setNodeExplorerCloseBeforeOpenWithEnabled(
               p_checked);
         });
@@ -197,9 +176,7 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent) {
     act->setChecked(widgetConfig.getNodeExplorerCloseBeforeOpenWithEnabled());
   }
 
-  setupExploreModeMenu(titleBar);
-
-  return titleBar;
+  setupExploreModeMenu(p_titleBar);
 }
 
 void NotebookExplorer::loadNotebooks() { m_selector->loadNotebooks(); }
@@ -475,15 +452,17 @@ void NotebookExplorer::setupViewMenu(QMenu *p_menu, bool p_isNotebookView) {
   });
 }
 
-void NotebookExplorer::setupRecycleBinMenu(QMenu *p_menu) {
-  p_menu->addAction(tr("Open Recycle Bin"), this, [this]() {
+void NotebookExplorer::setupRecycleBinMenu(TitleBar *p_titleBar) {
+  p_titleBar->addMenuSeparator();
+
+  p_titleBar->addMenuAction(tr("Open Recycle Bin"), this, [this]() {
     if (m_currentNotebook) {
       WidgetUtils::openUrlByDesktop(
           QUrl::fromLocalFile(m_currentNotebook->getRecycleBinFolderAbsolutePath()));
     }
   });
 
-  p_menu->addAction(tr("Empty Recycle Bin"), this, [this]() {
+  p_titleBar->addMenuAction(tr("Empty Recycle Bin"), this, [this]() {
     if (!m_currentNotebook) {
       return;
     }
@@ -501,27 +480,27 @@ void NotebookExplorer::setupRecycleBinMenu(QMenu *p_menu) {
 }
 
 void NotebookExplorer::setupExploreModeMenu(TitleBar *p_titleBar) {
-  auto menu = p_titleBar->addMenuSubMenu(tr("Explore Mode"));
+  p_titleBar->addMenuSeparator();
 
-  auto ag = new QActionGroup(menu);
+  auto ag = new QActionGroup(p_titleBar);
 
-  auto act = ag->addAction(tr("Combined"));
+  auto act = ag->addAction(tr("Combined View"));
   act->setCheckable(true);
   act->setChecked(true);
   act->setData(NotebookNodeExplorer::ExploreMode::Combined);
-  menu->addAction(act);
+  p_titleBar->addMenuAction(act);
 
-  act = ag->addAction(tr("Separate, Single Column"));
+  act = ag->addAction(tr("Separate View, Single Column"));
   act->setCheckable(true);
   act->setChecked(true);
   act->setData(NotebookNodeExplorer::ExploreMode::SeparateSingle);
-  menu->addAction(act);
+  p_titleBar->addMenuAction(act);
 
-  act = ag->addAction(tr("Separate, Double Columns"));
+  act = ag->addAction(tr("Separate View, Double Columns"));
   act->setCheckable(true);
   act->setChecked(true);
   act->setData(NotebookNodeExplorer::ExploreMode::SeparateDouble);
-  menu->addAction(act);
+  p_titleBar->addMenuAction(act);
 
   int mode = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerExploreMode();
   for (const auto &act : ag->actions()) {

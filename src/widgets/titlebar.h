@@ -26,6 +26,8 @@ public:
   // Add action to the menu.
   QAction *addMenuAction(const QString &p_iconName, const QString &p_text);
 
+  void addMenuAction(QAction *p_action);
+
   template <typename Functor>
   QAction *addMenuAction(const QString &p_iconName, const QString &p_text, const QObject *p_context,
                          Functor p_functor);
