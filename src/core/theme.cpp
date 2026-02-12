@@ -7,7 +7,6 @@
 #include <QSettings>
 
 #include "exception.h"
-#include <gui/utils/themeutils.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 #include <utils/utils.h>
@@ -62,10 +61,14 @@ QString Theme::getDisplayName(const QString &p_folder, const QString &p_locale) 
 }
 
 Theme *Theme::fromFolder(const QString &p_folder) {
+  return fromFolder(p_folder, nullptr);
+}
+
+Theme *Theme::fromFolder(const QString &p_folder, PalettePreprocessor p_preprocessor) {
   Q_ASSERT(!p_folder.isEmpty());
   auto obj = readPaletteFile(p_folder);
   auto metadata = readMetadata(obj);
-  auto paletteObj = translatePalette(obj, metadata.m_backfillSystemPalette);
+  auto paletteObj = translatePalette(obj, metadata.m_backfillSystemPalette, p_preprocessor);
   return new Theme(p_folder, metadata, paletteObj);
 }
 
@@ -83,7 +86,8 @@ Theme::Metadata Theme::readMetadata(const Palette &p_obj) {
   return data;
 }
 
-Theme::Palette Theme::translatePalette(const QJsonObject &p_obj, bool p_backfillSystemPalette) {
+Theme::Palette Theme::translatePalette(const QJsonObject &p_obj, bool p_backfillSystemPalette,
+                                       PalettePreprocessor p_preprocessor) {
   const QString paletteSection("palette");
   const QString baseSection("base");
   const QString widgetsSection("widgets");
@@ -91,8 +95,8 @@ Theme::Palette Theme::translatePalette(const QJsonObject &p_obj, bool p_backfill
   // @p_palette may contain referenced definitons: derived=@base#sub#sub2.
   Palette palette;
 
-  if (p_backfillSystemPalette) {
-    palette[paletteSection] = ThemeUtils::backfillSystemPalette(p_obj[paletteSection].toObject());
+  if (p_backfillSystemPalette && p_preprocessor) {
+    palette[paletteSection] = p_preprocessor(p_obj[paletteSection].toObject());
   } else {
     palette[paletteSection] = p_obj[paletteSection];
   }

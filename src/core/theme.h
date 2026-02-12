@@ -6,6 +6,8 @@
 #include <QPair>
 #include <QString>
 
+#include <functional>
+
 namespace tests {
 class TestTheme;
 }
@@ -46,7 +48,14 @@ public:
 
   static bool isValidThemeFolder(const QString &p_folder);
 
+  // Callback type for preprocessing the palette JSON (e.g., backfilling system palette).
+  // Takes a QJsonObject and returns a processed QJsonObject.
+  using PalettePreprocessor = std::function<QJsonObject(QJsonObject)>;
+
   static Theme *fromFolder(const QString &p_folder);
+
+  // Overload that accepts a palette preprocessor for GUI-specific transformations.
+  static Theme *fromFolder(const QString &p_folder, PalettePreprocessor p_preprocessor);
 
   static QString getDisplayName(const QString &p_folder, const QString &p_locale);
 
@@ -81,7 +90,8 @@ private:
 
   static Metadata readMetadata(const QJsonObject &p_obj);
 
-  static Theme::Palette translatePalette(const QJsonObject &p_obj, bool p_backfillSystemPalette);
+  static Theme::Palette translatePalette(const QJsonObject &p_obj, bool p_backfillSystemPalette,
+                                         PalettePreprocessor p_preprocessor);
 
   static void translatePaletteObject(const Palette &p_palette, QJsonObject &p_obj,
                                      const QString &p_key);
