@@ -9,12 +9,12 @@
 #include <QSharedPointer>
 
 namespace vnotex {
-class ConfigMgr;
+class IConfigMgr;
 
 // Interface for Config.
 class IConfig {
 public:
-  IConfig(ConfigMgr *p_mgr, IConfig *p_parentConfig = nullptr)
+  IConfig(IConfigMgr *p_mgr, IConfig *p_parentConfig = nullptr)
       : m_parentConfig(p_parentConfig), m_mgr(p_mgr) {}
 
   virtual ~IConfig() {}
@@ -36,7 +36,7 @@ public:
   }
 
 protected:
-  ConfigMgr *getMgr() const { return m_mgr; }
+  IConfigMgr *getMgr() const { return m_mgr; }
 
   static QStringList readStringList(const QJsonObject &p_obj, const QString &p_key) {
     auto arr = p_obj.value(p_key).toArray();
@@ -134,7 +134,7 @@ protected:
   int m_revision = 0;
 
 private:
-  ConfigMgr *m_mgr = nullptr;
+  IConfigMgr *m_mgr = nullptr;
 };
 } // namespace vnotex
 

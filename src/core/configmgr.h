@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QScopedPointer>
 
+#include "iconfigmgr.h"
 #include "noncopyable.h"
 
 class QTimer;
@@ -16,7 +17,7 @@ class CoreConfig;
 class EditorConfig;
 class WidgetConfig;
 
-class ConfigMgr : public QObject, private Noncopyable {
+class ConfigMgr : public QObject, public IConfigMgr, private Noncopyable {
   Q_OBJECT
 public:
   enum ConfigDataType { Main, Themes, Tasks, WebStyles, SyntaxHighlighting, Dicts,
@@ -61,14 +62,14 @@ public:
 
   static const QString c_appName;
 
-public:
-  // Used by IConfig.
-  void updateMainConfig(const QJsonObject &p_jobj);
-
-  void updateSessionConfig(const QJsonObject &p_jobj);
-
 signals:
   void editorConfigChanged();
+
+public:
+  // IConfigMgr interface implementation
+  // Used by IConfig.
+  void updateMainConfig(const QJsonObject &p_jobj) override;
+  void updateSessionConfig(const QJsonObject &p_jobj) override;
 
 private:
   ConfigMgr(QObject *p_parent = nullptr);

@@ -5,6 +5,7 @@
 
 namespace vnotex {
 class MainConfig;
+class IConfigMgr;
 
 class TextEditorConfig : public IConfig {
 public:
@@ -16,7 +17,7 @@ public:
 
   enum class WrapMode { NoWrap, WordWrap, WrapAnywhere, WordWrapOrAnywhere };
 
-  TextEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
+  TextEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig);
 
   void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 

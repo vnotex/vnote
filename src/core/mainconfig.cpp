@@ -3,15 +3,15 @@
 #include <QDebug>
 #include <QJsonObject>
 
-#include "configmgr.h"
 #include "coreconfig.h"
 #include "editorconfig.h"
+#include "iconfigmgr.h"
 #include "texteditorconfig.h"
 #include "widgetconfig.h"
 
 using namespace vnotex;
 
-MainConfig::MainConfig(ConfigMgr *p_mgr) : IConfig(p_mgr, nullptr) {
+MainConfig::MainConfig(IConfigMgr *p_mgr) : IConfig(p_mgr, nullptr) {
   m_childConfigs.resize(ChildConfigIndex::ChildConfigCount);
   m_childConfigs[ChildConfigIndex::CoreConfigIndex].reset(new CoreConfig(p_mgr, this));
   m_childConfigs[ChildConfigIndex::EditorConfigIndex].reset(new EditorConfig(p_mgr, this));

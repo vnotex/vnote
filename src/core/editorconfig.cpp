@@ -34,7 +34,7 @@ QJsonObject EditorConfig::ImageHostItem::toJson() const {
   return obj;
 }
 
-EditorConfig::EditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
+EditorConfig::EditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig), m_textEditorConfig(new TextEditorConfig(p_mgr, p_topConfig)),
       m_markdownEditorConfig(new MarkdownEditorConfig(p_mgr, p_topConfig, m_textEditorConfig)),
       m_pdfViewerConfig(new PdfViewerConfig(p_mgr, p_topConfig)),

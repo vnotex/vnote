@@ -13,7 +13,7 @@ using namespace vnotex;
 #define READINT(key) readInt(p_jobj, (key))
 
 MarkdownEditorConfig::MarkdownEditorConfig(
-    ConfigMgr *p_mgr, IConfig *p_topConfig,
+    IConfigMgr *p_mgr, IConfig *p_topConfig,
     const QSharedPointer<TextEditorConfig> &p_textEditorConfig)
     : IConfig(p_mgr, p_topConfig), m_textEditorConfig(p_textEditorConfig) {
   m_sectionName = QStringLiteral("markdown_editor");

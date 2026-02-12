@@ -8,9 +8,11 @@
 #include <QString>
 
 namespace vnotex {
+class IConfigMgr;
+
 class WidgetConfig : public IConfig {
 public:
-  WidgetConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
+  WidgetConfig(IConfigMgr *p_mgr, IConfig *p_topConfig);
 
   void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 

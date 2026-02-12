@@ -8,7 +8,7 @@
 
 using namespace vnotex;
 
-PdfViewerConfig::PdfViewerConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
+PdfViewerConfig::PdfViewerConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig) {
   m_sectionName = QStringLiteral("pdf_viewer");
 }

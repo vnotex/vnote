@@ -6,7 +6,7 @@ using namespace vnotex;
 #define READBOOL(key) readBool(p_jobj, (key))
 #define READSTRLIST(key) readStringList(p_jobj, (key))
 
-WidgetConfig::WidgetConfig(ConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
+WidgetConfig::WidgetConfig(IConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
   m_sectionName = QStringLiteral("widget");
 }
 

@@ -6,7 +6,7 @@ using namespace vnotex;
 #define READBOOL(key) readBool(p_jobj, (key))
 #define READINT(key) readInt(p_jobj, (key))
 
-TextEditorConfig::TextEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
+TextEditorConfig::TextEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig) {
   m_sectionName = QStringLiteral("text_editor");
 }

@@ -12,8 +12,8 @@
 #include <utils/pathutils.h>
 #include <utils/vxurlutils.h>
 
-#include "configmgr.h"
 #include "historymgr.h"
+#include "iconfigmgr.h"
 #include "mainconfig.h"
 
 using namespace vnotex;
@@ -84,7 +84,7 @@ QString SessionConfig::ExternalProgram::fetchCommand(const QString &p_file) cons
   return command;
 }
 
-SessionConfig::SessionConfig(ConfigMgr *p_mgr) : IConfig(p_mgr, nullptr) {}
+SessionConfig::SessionConfig(IConfigMgr *p_mgr) : IConfig(p_mgr, nullptr) {}
 
 SessionConfig::~SessionConfig() {}
 

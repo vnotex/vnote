@@ -6,9 +6,11 @@
 #include "webresource.h"
 
 namespace vnotex {
+class IConfigMgr;
+
 class PdfViewerConfig : public IConfig {
 public:
-  PdfViewerConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
+  PdfViewerConfig(IConfigMgr *p_mgr, IConfig *p_topConfig);
 
   void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 

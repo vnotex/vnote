@@ -17,6 +17,7 @@ target_sources(vnote PRIVATE
     buffermgr.cpp buffermgr.h
     clipboarddata.cpp clipboarddata.h
     configmgr.cpp configmgr.h
+    configmgr2.cpp configmgr2.h
     coreconfig.cpp coreconfig.h
     editorconfig.cpp editorconfig.h
     error.cpp error.h
@@ -31,6 +32,7 @@ target_sources(vnote PRIVATE
     historymgr.cpp historymgr.h
     htmltemplatehelper.cpp htmltemplatehelper.h
     iconfig.h
+    iconfigmgr.h
     location.h
     logger.cpp logger.h
     mainconfig.cpp mainconfig.h

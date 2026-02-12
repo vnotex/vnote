@@ -8,7 +8,7 @@
 
 using namespace vnotex;
 
-MindMapEditorConfig::MindMapEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig)
+MindMapEditorConfig::MindMapEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig) {
   m_sectionName = QStringLiteral("mindmap_editor");
 }

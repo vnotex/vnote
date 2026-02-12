@@ -10,6 +10,8 @@
 #include "global.h"
 
 namespace vnotex {
+class IConfigMgr;
+
 class CoreConfig : public IConfig {
   Q_GADGET
 public:
@@ -91,7 +93,7 @@ public:
     QStringList m_suffixes;
   };
 
-  CoreConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
+  CoreConfig(IConfigMgr *p_mgr, IConfig *p_topConfig);
 
   void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 

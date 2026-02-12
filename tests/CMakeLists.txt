@@ -24,7 +24,8 @@ function(add_qt_test NAME)
 
   target_include_directories(${NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../helpers
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/tests/helpers
     ${CMAKE_SOURCE_DIR}/libs/vxcore/include
   )
 

@@ -19,6 +19,7 @@ class TextEditorConfig;
 class MarkdownEditorConfig;
 class PdfViewerConfig;
 class MindMapEditorConfig;
+class IConfigMgr;
 
 class EditorConfig : public IConfig {
   Q_GADGET
@@ -87,7 +88,7 @@ public:
     QJsonObject m_config;
   };
 
-  EditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
+  EditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig);
 
   ~EditorConfig();
 

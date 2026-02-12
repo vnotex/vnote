@@ -10,6 +10,7 @@
 
 namespace vnotex {
 class TextEditorConfig;
+class IConfigMgr;
 
 class MarkdownEditorConfig : public IConfig {
 public:
@@ -27,7 +28,7 @@ public:
 
   enum EditViewMode { EditOnly, EditPreview };
 
-  MarkdownEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig,
+  MarkdownEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig,
                        const QSharedPointer<TextEditorConfig> &p_textEditorConfig);
 
   void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;

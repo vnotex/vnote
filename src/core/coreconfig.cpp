@@ -22,7 +22,7 @@ bool CoreConfig::FileTypeSuffix::operator==(const FileTypeSuffix &p_other) const
 
 QStringList CoreConfig::s_availableLocales;
 
-CoreConfig::CoreConfig(ConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
+CoreConfig::CoreConfig(IConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
   m_sectionName = QStringLiteral("core");
 }
 

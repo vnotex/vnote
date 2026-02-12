@@ -49,7 +49,7 @@ add_executable(vnote WIN32 MACOSX_BUNDLE
     application.cpp application.h
     commandlineoptions.cpp commandlineoptions.h
     fakeaccessible.cpp fakeaccessible.h
-    main.cpp
+    main2.cpp
     ${VX_APP_ICON_RC_WIN} ${VX_APP_ICON_MACOS} ${VX_RESOURCE_FILES}
 )
 
@@ -92,6 +92,9 @@ add_subdirectory(models)
 add_subdirectory(views)
 add_subdirectory(controllers)
 
+# UI layer for clean architecture
+add_subdirectory(ui)
+
 target_link_libraries(vnote PRIVATE
     Qt::Core
     Qt::Gui
@@ -103,6 +106,8 @@ target_link_libraries(vnote PRIVATE
     Qt::WebEngineWidgets
     Qt::Widgets
     Qt::Core5Compat
+    core_services
+    ui2
     VTextEdit
     qhotkey
     vxcore

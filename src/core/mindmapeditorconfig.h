@@ -6,9 +6,11 @@
 #include "webresource.h"
 
 namespace vnotex {
+class IConfigMgr;
+
 class MindMapEditorConfig : public IConfig {
 public:
-  MindMapEditorConfig(ConfigMgr *p_mgr, IConfig *p_topConfig);
+  MindMapEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig);
 
   void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 

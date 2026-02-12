@@ -13,10 +13,11 @@ namespace vnotex {
 class CoreConfig;
 class EditorConfig;
 class WidgetConfig;
+class IConfigMgr;
 
 class MainConfig : public IConfig {
 public:
-  explicit MainConfig(ConfigMgr *p_mgr);
+  explicit MainConfig(IConfigMgr *p_mgr);
 
   ~MainConfig();
 

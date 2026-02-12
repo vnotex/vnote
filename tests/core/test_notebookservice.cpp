@@ -65,6 +65,9 @@ private:
 void TestNotebookService::initTestCase() {
   QVERIFY(m_tempDir.isValid());
 
+  // Enable test mode to use isolated temp directories instead of real AppData.
+  vxcore_set_test_mode(1);
+
   // Initialize VxCore context.
   QString configJson = "{}";
   VxCoreError err = vxcore_context_create(configJson.toUtf8().constData(), &m_context);

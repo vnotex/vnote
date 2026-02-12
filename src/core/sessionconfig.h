@@ -11,6 +11,8 @@
 #include <search/searchdata.h>
 
 namespace vnotex {
+class IConfigMgr;
+
 class SessionConfig : public IConfig {
 public:
   struct NotebookItem {
@@ -84,7 +86,7 @@ public:
     QString m_shortcut;
   };
 
-  explicit SessionConfig(ConfigMgr *p_mgr);
+  explicit SessionConfig(IConfigMgr *p_mgr);
 
   ~SessionConfig();
 

@@ -51,6 +51,225 @@ cmake --build . --config Release
 rm -rf build && mkdir build && cd build && cmake .. && cmake --build .
 ```
 
+---
+
+## Architecture Overview
+
+VNote uses a **clean architecture** with dependency injection for testability and future plugin support.
+
+### Layer Diagram
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        main2.cpp                            │
+│  (Entry point: creates context, wires dependencies)         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     ServiceLocator                          │
+│  (DI container - NOT a singleton, passed by reference)      │
+│                                                             │
+│  ┌─────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │ConfigService│  │ NotebookService │  │  SearchService  │  │
+│  └─────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         vxcore                              │
+│  (C library: notebook/config/search backend in libs/vxcore) │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| ServiceLocator is NOT a singleton | Enables testing with mock services; explicit dependencies |
+| Services wrap vxcore C API | Qt-friendly interface; encapsulates C interop |
+| Widgets receive `ServiceLocator&` | Constructor injection; no global state |
+| New files use `2` suffix | Coexist with legacy code during migration |
+
+### Directory Structure (New Architecture)
+
+```
+src/
+├── main2.cpp              # New entry point with DI wiring
+├── core/
+│   ├── servicelocator.h   # DI container
+│   ├── configservice.h    # Config operations (wraps vxcore)
+│   ├── notebookservice.h  # Notebook/folder/file ops (wraps vxcore)
+│   ├── searchservice.h    # Search operations (wraps vxcore)
+│   ├── configmgr2.h       # High-level config manager using DI
+│   └── iconfigmgr.h       # Interface for config managers
+├── ui/
+│   ├── mainwindow2.h      # Main window shell (receives ServiceLocator&)
+│   └── mainwindow2.cpp
+└── ... (legacy code remains for reference)
+```
+
+---
+
+## ServiceLocator Pattern
+
+### Registration (in main2.cpp)
+
+```cpp
+#include <core/servicelocator.h>
+#include <core/configservice.h>
+#include <core/notebookservice.h>
+
+int main(int argc, char *argv[]) {
+  QApplication app(argc, argv);
+
+  // Create vxcore context
+  vxcore_context *ctx = vxcore_context_create();
+
+  // Create and populate ServiceLocator
+  vnotex::ServiceLocator services;
+  services.registerService<vnotex::ConfigService>(
+      std::make_unique<vnotex::ConfigService>(ctx));
+  services.registerService<vnotex::NotebookService>(
+      std::make_unique<vnotex::NotebookService>(ctx));
+
+  // Pass to UI
+  vnotex::MainWindow2 mainWindow(services);
+  mainWindow.show();
+
+  int result = app.exec();
+  vxcore_context_destroy(ctx);
+  return result;
+}
+```
+
+### Usage in Widgets
+
+```cpp
+// src/ui/mywidget.h
+class MyWidget : public QWidget {
+  Q_OBJECT
+public:
+  explicit MyWidget(ServiceLocator &p_services, QWidget *p_parent = nullptr);
+
+private:
+  ServiceLocator &m_services;
+};
+
+// src/ui/mywidget.cpp
+MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
+    : QWidget(p_parent), m_services(p_services) {
+  // Access services when needed
+  auto &config = m_services.get<ConfigService>();
+  auto theme = config.getTheme();
+}
+```
+
+### Available Services
+
+| Service | Purpose | Key Methods |
+|---------|---------|-------------|
+| `ConfigService` | App configuration | `getTheme()`, `setTheme()`, `getLocale()`, etc. |
+| `NotebookService` | Notebook management | `createNotebook()`, `openNotebook()`, `createFile()`, etc. |
+| `SearchService` | Content search | `searchContent()`, `searchFiles()` |
+
+---
+
+## Migration Guide
+
+### Migrating a Widget to New Architecture
+
+**Before (legacy):**
+```cpp
+// Uses global singletons
+class OldWidget : public QWidget {
+  void doSomething() {
+    auto &config = ConfigMgr::getInst();
+    auto &notebooks = VNoteX::getInst().getNotebookMgr();
+  }
+};
+```
+
+**After (new architecture):**
+```cpp
+// Receives dependencies via constructor
+class NewWidget : public QWidget {
+  Q_OBJECT
+public:
+  explicit NewWidget(ServiceLocator &p_services, QWidget *p_parent = nullptr);
+
+private:
+  ServiceLocator &m_services;
+
+  void doSomething() {
+    auto &config = m_services.get<ConfigService>();
+    auto &notebooks = m_services.get<NotebookService>();
+  }
+};
+```
+
+### Migration Checklist
+
+- [ ] Create new file with `2` suffix (e.g., `mywidget2.h`)
+- [ ] Add `ServiceLocator &p_services` to constructor
+- [ ] Store reference: `ServiceLocator &m_services`
+- [ ] Replace `ConfigMgr::getInst()` → `m_services.get<ConfigService>()`
+- [ ] Replace `VNoteX::getInst().getNotebookMgr()` → `m_services.get<NotebookService>()`
+- [ ] Update parent widget to pass `ServiceLocator&`
+- [ ] Add to CMakeLists.txt
+- [ ] Write unit test with mock services
+
+### Adding a New Service
+
+1. **Create service class** in `src/core/`:
+```cpp
+// src/core/myservice.h
+#ifndef MYSERVICE_H
+#define MYSERVICE_H
+
+#include <QObject>
+
+struct vxcore_context;
+
+namespace vnotex {
+
+class MyService : public QObject {
+  Q_OBJECT
+public:
+  explicit MyService(vxcore_context *p_ctx, QObject *p_parent = nullptr);
+
+  // Service methods
+  QString doSomething() const;
+
+signals:
+  void somethingHappened();
+
+private:
+  vxcore_context *m_ctx;
+};
+
+} // namespace vnotex
+
+#endif // MYSERVICE_H
+```
+
+2. **Register in main2.cpp**:
+```cpp
+services.registerService<vnotex::MyService>(
+    std::make_unique<vnotex::MyService>(ctx));
+```
+
+3. **Add to CMakeLists.txt**:
+```cmake
+# src/core/CMakeLists.txt
+target_sources(core2 PRIVATE
+  myservice.h
+  myservice.cpp
+)
+```
+
+---
+
 ## Testing
 
 ### Test Structure
@@ -64,12 +283,79 @@ tests/
 │   └── temp_dir_fixture.h  # QTemporaryDir wrapper
 ├── core/
 │   ├── CMakeLists.txt
-│   ├── test_error.cpp      # Error class tests
-│   └── test_exception.cpp  # Exception class tests
+│   ├── test_error.cpp
+│   ├── test_exception.cpp
+│   ├── test_configservice.cpp
+│   └── test_notebookservice.cpp
 └── utils/
     ├── CMakeLists.txt
-    ├── test_pathutils.cpp  # PathUtils tests
-    └── test_htmlutils.cpp  # HtmlUtils tests
+    ├── test_pathutils.cpp
+    └── test_htmlutils.cpp
+```
+
+### CRITICAL: Test Mode for vxcore
+
+**Always enable test mode BEFORE creating vxcore context in tests:**
+
+```cpp
+void TestMyService::initTestCase() {
+  // CRITICAL: Must call BEFORE vxcore_context_create()
+  // Prevents tests from corrupting real user data
+  vxcore_set_test_mode(1);
+
+  m_ctx = vxcore_context_create();
+  // ...
+}
+```
+
+**Why this matters:**
+- Without test mode, vxcore uses real `AppData/Local` paths
+- Tests will corrupt actual user configuration
+- Test mode redirects to isolated temp directories
+
+### Writing Service Tests
+
+```cpp
+// tests/core/test_myservice.cpp
+#include <QtTest>
+
+#include <vxcore/vxcore.h>
+
+#include <core/myservice.h>
+
+namespace tests {
+
+class TestMyService : public QObject {
+  Q_OBJECT
+
+private slots:
+  void initTestCase();
+  void cleanupTestCase();
+  void testBasicOperation();
+
+private:
+  vxcore_context *m_ctx = nullptr;
+};
+
+void TestMyService::initTestCase() {
+  vxcore_set_test_mode(1);  // CRITICAL!
+  m_ctx = vxcore_context_create();
+}
+
+void TestMyService::cleanupTestCase() {
+  vxcore_context_destroy(m_ctx);
+  m_ctx = nullptr;
+}
+
+void TestMyService::testBasicOperation() {
+  vnotex::MyService service(m_ctx);
+  QVERIFY(!service.doSomething().isEmpty());
+}
+
+} // namespace tests
+
+QTEST_GUILESS_MAIN(tests::TestMyService)
+#include "test_myservice.moc"
 ```
 
 ### Enable Tests
@@ -89,9 +375,8 @@ cmake --build build --config Release --target test_error test_exception test_pat
 ```powershell
 $env:PATH = "C:/Qt/6.9.3/msvc2022_64/bin;" + $env:PATH
 ./build/tests/core/test_error.exe
-./build/tests/core/test_exception.exe
-./build/tests/utils/test_pathutils.exe
-./build/tests/utils/test_htmlutils.exe
+./build/tests/core/test_configservice.exe
+./build/tests/core/test_notebookservice.exe
 ```
 
 **Using CTest (requires Qt in system PATH):**
@@ -117,63 +402,6 @@ add_qt_test(test_myclass
 )
 ```
 
-### Writing Tests
-
-Tests use Qt Test framework with single-file structure (no separate header):
-
-```cpp
-// tests/module/test_myclass.cpp
-#include <QtTest>
-
-#include <module/myclass.h>
-
-using namespace vnotex;
-
-namespace tests {
-
-class TestMyClass : public QObject {
-  Q_OBJECT
-
-private slots:
-  // Basic test
-  void testBasicFeature();
-
-  // Data-driven test pair
-  void testWithData_data();
-  void testWithData();
-};
-
-void TestMyClass::testBasicFeature() {
-  QVERIFY(true);
-  QCOMPARE(1 + 1, 2);
-}
-
-void TestMyClass::testWithData_data() {
-  QTest::addColumn<QString>("input");
-  QTest::addColumn<QString>("expected");
-
-  QTest::newRow("case1") << "hello" << "HELLO";
-  QTest::newRow("case2") << "world" << "WORLD";
-}
-
-void TestMyClass::testWithData() {
-  QFETCH(QString, input);
-  QFETCH(QString, expected);
-  QCOMPARE(input.toUpper(), expected);
-}
-
-} // namespace tests
-
-QTEST_GUILESS_MAIN(tests::TestMyClass)
-#include "test_myclass.moc"
-```
-
-**Key points:**
-- Use `QTEST_GUILESS_MAIN` for non-GUI tests (faster)
-- Include `#include "test_myclass.moc"` at end of file
-- All test classes in `tests` namespace
-- Data-driven tests use `_data()` suffix pattern
-
 ### Qt Test Macros
 
 | Macro | Purpose |
@@ -197,28 +425,11 @@ QTEST_GUILESS_MAIN(tests::TestMyClass)
 | test_pathutils | `PathUtils` | 68 |
 | test_htmlutils | `HtmlUtils` | 31 |
 | test_fileutils2 | `FileUtils2` | 15 |
-| **Total** | | **157** |
+| test_configservice | `ConfigService` | 10 |
+| test_notebookservice | `NotebookService` | 33 |
+| **Total** | | **200+** |
 
-## Project Structure
-
-```
-vnote/
-├── src/
-│   ├── core/           # Core logic (VNoteX, ConfigMgr, Buffer, etc.)
-│   ├── widgets/        # UI components (MainWindow, dialogs, editors)
-│   ├── utils/          # Utility classes (Utils, FileUtils, PathUtils)
-│   ├── task/           # Task system (Task, TaskMgr)
-│   ├── search/         # Search functionality
-│   ├── snippet/        # Snippet management
-│   ├── export/         # Export functionality
-│   ├── imagehost/      # Image hosting
-│   └── unitedentry/    # United entry system
-├── libs/               # Third-party libraries (DO NOT format)
-│   ├── vtextedit/      # Text editor component
-│   └── QHotkey/        # Global hotkey support
-├── tests/              # Unit tests
-└── scripts/            # Build and dev scripts
-```
+---
 
 ## Code Style Guidelines
 
@@ -271,34 +482,9 @@ using namespace vnotex;     // Namespace declaration in .cpp
 - `using namespace vnotex;` in `.cpp` files only, never in headers
 - Forward declarations preferred in headers
 
+---
+
 ## Common Patterns
-
-### Singleton Pattern
-```cpp
-// src/core/vnotex.h
-class VNoteX : public QObject, private Noncopyable {
-  Q_OBJECT
-public:
-  static VNoteX &getInst() {
-    static VNoteX inst;
-    return inst;
-  }
-
-  ThemeMgr &getThemeMgr() const;
-  TaskMgr &getTaskMgr() const;
-  NotebookMgr &getNotebookMgr() const;
-  BufferMgr &getBufferMgr() const;
-
-private:
-  explicit VNoteX(QObject *p_parent = nullptr);
-  ThemeMgr *m_themeMgr = nullptr;
-  TaskMgr *m_taskMgr = nullptr;
-  // ...
-};
-
-// Usage
-auto &themeMgr = VNoteX::getInst().getThemeMgr();
-```
 
 ### Noncopyable Pattern
 ```cpp
@@ -358,48 +544,31 @@ QSharedPointer<Task> task;
 m_themeMgr = new ThemeMgr(this);  // 'this' takes ownership
 ```
 
-## Configuration System
+---
 
-Access via `ConfigMgr::getInst()`:
+## Legacy Architecture (Reference Only)
 
-| Config Type | Access Method | Purpose |
-|-------------|---------------|---------|
-| MainConfig | `getConfig()` | Main application config |
-| SessionConfig | `getSessionConfig()` | Session-specific settings |
-| CoreConfig | `getCoreConfig()` | Core behavior settings |
-| EditorConfig | `getEditorConfig()` | Editor settings |
-| WidgetConfig | `getWidgetConfig()` | UI widget settings |
+The following patterns exist in legacy code. **Do NOT use for new code.**
 
+### Legacy Singleton Pattern
 ```cpp
-// Usage
+// LEGACY - Do not use in new code
+class VNoteX : public QObject {
+public:
+  static VNoteX &getInst();  // Global singleton
+};
+
+// LEGACY usage
+auto &themeMgr = VNoteX::getInst().getThemeMgr();
+```
+
+### Legacy ConfigMgr
+```cpp
+// LEGACY - Use ConfigService via ServiceLocator instead
 auto &config = ConfigMgr::getInst();
-auto theme = config.getCoreConfig().getTheme();
-auto iconSize = config.getCoreConfig().getToolBarIconSize();
 ```
 
-## Architecture Notes
-
-### Core Singleton (VNoteX)
-- Central coordinator for all managers
-- Manages: ThemeMgr, TaskMgr, NotebookMgr, BufferMgr
-- Access: `VNoteX::getInst()`
-
-### Manager Hierarchy
-```
-VNoteX (singleton)
-├── ThemeMgr       # Theme and styling
-├── TaskMgr        # External task execution
-├── NotebookMgr    # Notebook management
-└── BufferMgr      # File buffer management
-```
-
-### Key Directories
-| Directory | Purpose |
-|-----------|---------|
-| `src/core/` | Core logic, singletons, base classes |
-| `src/widgets/` | Qt widgets, dialogs, UI components |
-| `src/utils/` | Utility functions (file, path, image) |
-| `src/task/` | Task system for external commands |
+---
 
 ## Logging
 
