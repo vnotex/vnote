@@ -139,5 +139,3 @@ target_sources(vnote PRIVATE
     widgetsfactory.cpp widgetsfactory.h
     wordcountpopup.cpp wordcountpopup.h
 )
-
-add_subdirectory(utils)

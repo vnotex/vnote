@@ -8,6 +8,7 @@
 #include "coreconfig.h"
 #include "exception.h"
 #include "theme.h"
+#include <gui/utils/themeutils.h>
 #include <utils/iconutils.h>
 #include <utils/pathutils.h>
 #include <vtextedit/vtexteditor.h>
@@ -173,7 +174,7 @@ const QVector<ThemeMgr::ThemeInfo> &ThemeMgr::getAllThemes() const { return m_th
 QPixmap ThemeMgr::getThemePreview(const QString &p_name) const {
   auto theme = findTheme(p_name);
   if (theme) {
-    return Theme::getCover(theme->m_folderPath);
+    return ThemeUtils::getCover(theme->m_folderPath);
   }
   return QPixmap();
 }
