@@ -8,7 +8,7 @@
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/textutils.h>
 
-#include <utils/utils.h>
+#include <widgets/utils/imageutils.h>
 
 #include "graphvizhelper.h"
 #include "markdowneditor.h"
@@ -82,7 +82,7 @@ PreviewHelper::GraphPreviewData::GraphPreviewData(TimeStamp p_timeStamp, const Q
   bool needScale = p_scaleFactor > 1.01;
   if (needScale) {
     if (p_format == QStringLiteral("svg")) {
-      m_image = Utils::svgToPixmap(p_data, p_background, p_scaleFactor);
+      m_image = ImageUtils::svgToPixmap(p_data, p_background, p_scaleFactor);
     } else {
       QPixmap tmpImg;
       tmpImg.loadFromData(p_data, p_format.toLocal8Bit().data());

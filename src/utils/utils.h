@@ -3,7 +3,6 @@
 
 #include <QCoreApplication>
 #include <QDateTime>
-#include <QPixmap>
 #include <QString>
 
 #if !defined(V_ASSERT)
@@ -42,8 +41,6 @@ public:
 
   static QString pickAvailableFontFamily(const QStringList &p_families);
 
-  static QPixmap svgToPixmap(const QByteArray &p_content, QRgb p_background, qreal p_scaleFactor);
-
   static bool fuzzyEqual(qreal p_a, qreal p_b);
 
   static QString boolToString(bool p_val);
@@ -57,8 +54,6 @@ public:
   // Parse @p_exp into tokens and read the target value from @p_obj.
   // Format: obj1.obj2.arr[2].obj3.
   static QJsonValue parseAndReadJson(const QJsonObject &p_obj, const QString &p_exp);
-
-  static QColor toColor(const QString &p_color);
 
   static QStringList toLower(const QStringList &p_list);
 };

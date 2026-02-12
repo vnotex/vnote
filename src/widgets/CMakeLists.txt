@@ -90,6 +90,7 @@ target_sources(vnote PRIVATE
     locationinputwithbrowsebutton.cpp locationinputwithbrowsebutton.h
     locationlist.cpp locationlist.h
     mainwindow.cpp mainwindow.h
+    mainwindow2.cpp mainwindow2.h
     markdownviewwindow.cpp markdownviewwindow.h
     messageboxhelper.cpp messageboxhelper.h
     mindmapviewwindow.cpp mindmapviewwindow.h
@@ -138,3 +139,5 @@ target_sources(vnote PRIVATE
     widgetsfactory.cpp widgetsfactory.h
     wordcountpopup.cpp wordcountpopup.h
 )
+
+add_subdirectory(utils)

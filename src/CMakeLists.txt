@@ -92,9 +92,6 @@ add_subdirectory(models)
 add_subdirectory(views)
 add_subdirectory(controllers)
 
-# UI layer for clean architecture
-add_subdirectory(ui)
-
 target_link_libraries(vnote PRIVATE
     Qt::Core
     Qt::Gui
@@ -107,7 +104,6 @@ target_link_libraries(vnote PRIVATE
     Qt::Widgets
     Qt::Core5Compat
     core_services
-    ui2
     VTextEdit
     qhotkey
     vxcore

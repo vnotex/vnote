@@ -5,7 +5,7 @@
 #include "../outlineprovider.h"
 #include "graphvizhelper.h"
 #include "plantumlhelper.h"
-#include <utils/utils.h>
+#include <widgets/utils/guiutils.h>
 
 using namespace vnotex;
 
@@ -48,7 +48,7 @@ MarkdownViewerAdapter::CssRuleStyle::fromJson(const QJsonObject &p_obj) {
 QTextCharFormat MarkdownViewerAdapter::CssRuleStyle::toTextCharFormat() const {
   QTextCharFormat fmt;
   if (!m_color.isEmpty()) {
-    fmt.setForeground(Utils::toColor(m_color));
+    fmt.setForeground(GuiUtils::toColor(m_color));
   }
   if (!m_backgroundColor.isEmpty()) {
     fmt.setBackground(QColor(m_color));

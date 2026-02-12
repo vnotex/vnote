@@ -308,33 +308,6 @@ bool FileUtils2::isImage(const QString &p_filePath) {
   return false;
 }
 
-QImage FileUtils2::imageFromFile(const QString &p_filePath) {
-  QImage img(p_filePath);
-  if (!img.isNull()) {
-    return img;
-  }
-
-  // @p_filePath may has a wrong suffix which indicates a wrong image format.
-  QByteArray data;
-  if (readFile(p_filePath, &data)) {
-    // Error reading file, return null image.
-    return QImage();
-  }
-  img.loadFromData(data);
-  return img;
-}
-
-QPixmap FileUtils2::pixmapFromFile(const QString &p_filePath) {
-  QPixmap pixmap;
-  QByteArray data;
-  if (readFile(p_filePath, &data)) {
-    // Error reading file, return null pixmap.
-    return pixmap;
-  }
-  pixmap.loadFromData(data);
-  return pixmap;
-}
-
 QString FileUtils2::generateUniqueFileName(const QString &p_folderPath, const QString &p_hints,
                                            const QString &p_suffix) {
   auto fileName = generateRandomFileName(p_hints, p_suffix);

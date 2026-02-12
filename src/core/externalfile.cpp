@@ -1,6 +1,9 @@
 #include "externalfile.h"
 
+#include <QImage>
+
 #include <utils/fileutils.h>
+#include <widgets/utils/imageutils.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;

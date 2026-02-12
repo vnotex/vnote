@@ -239,7 +239,6 @@ void ToolBarHelper::addSpacer(QToolBar *p_toolBar) {
 void ToolBarHelper::updateQuickAccessMenu(QMenu *p_menu) {
   p_menu->clear();
   auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-  sessionConfig.tryCorrectQuickAccessFiles();
 
   const auto &quickAccess = sessionConfig.getQuickAccessFiles();
   if (quickAccess.isEmpty()) {
@@ -256,7 +255,8 @@ void ToolBarHelper::updateQuickAccessMenu(QMenu *p_menu) {
     auto widget = new LabelWithButtonsWidget(displayName, LabelWithButtonsWidget::Delete);
     p_menu->connect(widget, &LabelWithButtonsWidget::triggered, p_menu, [p_menu, act]() {
       const auto qaFile = act->data().toString();
-      ConfigMgr::getInst().getSessionConfig().removeQuickAccessFile(qaFile);
+      auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+      sessionConfig.removeQuickAccessFile(qaFile);
       p_menu->removeAction(act);
       if (p_menu->isEmpty()) {
         p_menu->hide();

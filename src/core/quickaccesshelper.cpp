@@ -11,7 +11,6 @@ void QuickAccessHelper::pinToQuickAccess(const QStringList &p_files) {
   }
 
   auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-  sessionConfig.tryCorrectQuickAccessFiles();
   auto qaFiles = sessionConfig.getQuickAccessFiles();
   qaFiles.append(p_files);
   qaFiles.removeDuplicates();

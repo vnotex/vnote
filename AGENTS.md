@@ -103,9 +103,11 @@ src/
 │   ├── searchservice.h    # Search operations (wraps vxcore)
 │   ├── configmgr2.h       # High-level config manager using DI
 │   └── iconfigmgr.h       # Interface for config managers
-├── ui/
-│   ├── mainwindow2.h      # Main window shell (receives ServiceLocator&)
-│   └── mainwindow2.cpp
+├── widgets/
+│   ├── mainwindow.h       # Legacy main window
+│   ├── mainwindow2.h      # New main window shell (receives ServiceLocator&)
+│   ├── mainwindow2.cpp
+│   └── utils/             # GUI utilities (e.g., imageutils)
 └── ... (legacy code remains for reference)
 ```
 
