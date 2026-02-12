@@ -5,7 +5,7 @@
 #include "../outlineprovider.h"
 #include "graphvizhelper.h"
 #include "plantumlhelper.h"
-#include <widgets/utils/guiutils.h>
+#include <gui/utils/guiutils.h>
 
 using namespace vnotex;
 

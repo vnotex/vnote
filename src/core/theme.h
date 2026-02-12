@@ -4,7 +4,6 @@
 #include <QHash>
 #include <QJsonObject>
 #include <QPair>
-#include <QPixmap>
 #include <QString>
 
 namespace tests {
@@ -51,8 +50,6 @@ public:
 
   static QString getDisplayName(const QString &p_folder, const QString &p_locale);
 
-  static QPixmap getCover(const QString &p_folder);
-
   static QString getFile(const QString &p_themeFolder, File p_fileType);
 
 private:
@@ -85,8 +82,6 @@ private:
   static Metadata readMetadata(const QJsonObject &p_obj);
 
   static Theme::Palette translatePalette(const QJsonObject &p_obj, bool p_backfillSystemPalette);
-
-  static QJsonObject backfillSystemPalette(QJsonObject p_obj);
 
   static void translatePaletteObject(const Palette &p_palette, QJsonObject &p_obj,
                                      const QString &p_key);

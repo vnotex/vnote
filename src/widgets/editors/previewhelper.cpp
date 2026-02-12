@@ -8,7 +8,7 @@
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/textutils.h>
 
-#include <widgets/utils/imageutils.h>
+#include <gui/utils/imageutils.h>
 
 #include "graphvizhelper.h"
 #include "markdowneditor.h"

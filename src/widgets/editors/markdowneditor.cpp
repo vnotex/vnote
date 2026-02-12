@@ -49,7 +49,7 @@
 #include <utils/clipboardutils.h>
 #include <utils/fileutils.h>
 #include <utils/htmlutils.h>
-#include <widgets/utils/imageutils.h>
+#include <gui/utils/imageutils.h>
 #include <utils/pathutils.h>
 #include <utils/webutils.h>
 #include <utils/widgetutils.h>
