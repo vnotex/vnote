@@ -16,6 +16,7 @@
 #include <core/services/configservice.h>
 #include <core/services/notebookservice.h>
 #include <core/services/searchservice.h>
+#include <gui/services/themeservice.h>
 #include <core/sessionconfig.h>
 #include <core/singleinstanceguard.h>
 #include <vxcore/vxcore.h>
@@ -149,6 +150,23 @@ int main(int argc, char *argv[]) {
   ConfigMgr2 configMgr(&configService);
   configMgr.init();
 
+  // Create and register ThemeService (needs config values from ConfigMgr2)
+  ThemeServiceConfig themeConfig;
+  themeConfig.themeName = configMgr.getCoreConfig().getTheme();
+  themeConfig.locale = configMgr.getCoreConfig().getLocaleToUse();
+  
+  // Add theme search paths (same as legacy ThemeMgr setup)
+  auto appDataPath = configService.getDataPath(DataLocation::App);
+  auto localDataPath = configService.getDataPath(DataLocation::Local);
+  themeConfig.themeSearchPaths << localDataPath + "/themes"
+                                << appDataPath + "/themes";
+  themeConfig.webStylesSearchPaths << localDataPath + "/web_styles"
+                                    << appDataPath + "/web_styles";
+  
+  ThemeService themeService(themeConfig);
+  serviceLocator.registerService<ThemeService>(&themeService);
+  qInfo() << "ThemeService registered";
+
   setOpenGLOption(configMgr);
 
   disableSandboxIfNeeded();
@@ -183,7 +201,7 @@ int main(int argc, char *argv[]) {
 
   case CommandLineOptions::VersionRequested: {
     auto versionStr =
-        QStringLiteral("%1 %2").arg(app.applicationName()).arg(app.applicationVersion());
+        QStringLiteral("%1 %2").arg(app.applicationName(), app.applicationVersion());
     qInfo() << versionStr;
     return 0;
   }

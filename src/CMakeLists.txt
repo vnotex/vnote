@@ -78,6 +78,7 @@ target_compile_definitions(vnote PRIVATE
 )
 
 add_subdirectory(core)
+add_subdirectory(gui)
 add_subdirectory(export)
 add_subdirectory(imagehost)
 add_subdirectory(search)
