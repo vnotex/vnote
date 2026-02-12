@@ -9,10 +9,7 @@
 #include <QJsonObject>
 #include <QKeySequence>
 #include <QLocale>
-#include <QPainter>
 #include <QRegularExpression>
-#include <QSvgRenderer>
-#include <QWidget>
 
 #include <cmath>
 
@@ -86,26 +83,6 @@ QString Utils::pickAvailableFontFamily(const QStringList &p_families) {
   return QString();
 }
 
-QPixmap Utils::svgToPixmap(const QByteArray &p_content, QRgb p_background, qreal p_scaleFactor) {
-  QSvgRenderer renderer(p_content);
-  QSize deSz = renderer.defaultSize();
-  if (p_scaleFactor > 0) {
-    deSz *= p_scaleFactor;
-  }
-
-  QPixmap pm(deSz);
-  if (p_background == 0x0) {
-    // Fill a transparent background to avoid glitchy preview.
-    pm.fill(QColor(255, 255, 255, 0));
-  } else {
-    pm.fill(p_background);
-  }
-
-  QPainter painter(&pm);
-  renderer.render(&painter);
-  return pm;
-}
-
 bool Utils::fuzzyEqual(qreal p_a, qreal p_b) { return std::abs(p_a - p_b) < std::pow(10, -6); }
 
 QString Utils::boolToString(bool p_val) {
@@ -177,18 +154,6 @@ QJsonValue Utils::parseAndReadJson(const QJsonObject &p_obj, const QString &p_ex
   }
 
   return val;
-}
-
-QColor Utils::toColor(const QString &p_color) {
-  // rgb(123, 123, 123).
-  QRegularExpression rgbTripleRegExp(R"(^rgb\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\)$)",
-                                     QRegularExpression::CaseInsensitiveOption);
-  auto match = rgbTripleRegExp.match(p_color);
-  if (match.hasMatch()) {
-    return QColor(match.captured(1).toInt(), match.captured(2).toInt(), match.captured(3).toInt());
-  }
-
-  return QColor(p_color);
 }
 
 QStringList Utils::toLower(const QStringList &p_list) {

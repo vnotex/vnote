@@ -3,9 +3,7 @@
 
 #include <QByteArray>
 #include <QDir>
-#include <QImage>
 #include <QJsonObject>
-#include <QPixmap>
 #include <QString>
 
 #include <core/error.h>
@@ -69,10 +67,6 @@ public:
   static bool isText(const QString &p_filePath);
 
   static bool isImage(const QString &p_filePath);
-
-  static QImage imageFromFile(const QString &p_filePath);
-
-  static QPixmap pixmapFromFile(const QString &p_filePath);
 
   static QString generateUniqueFileName(const QString &p_folderPath, const QString &p_hints,
                                         const QString &p_suffix);

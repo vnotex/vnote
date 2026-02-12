@@ -143,9 +143,7 @@ public:
 
   const QStringList &getQuickAccessFiles() const;
   void setQuickAccessFiles(const QStringList &p_files);
-
   void removeQuickAccessFile(const QString &p_file);
-  bool tryCorrectQuickAccessFiles(void);
 
   const QVector<ExternalProgram> &getExternalPrograms() const;
   const ExternalProgram *findExternalProgram(const QString &p_name) const;

@@ -3,7 +3,9 @@
 
 #include <QJsonObject>
 #include <QObject>
+#include <QScopedPointer>
 #include <QString>
+#include <QVersionNumber>
 
 #include "iconfigmgr.h"
 #include "noncopyable.h"
@@ -12,11 +14,16 @@ class QTimer;
 
 namespace vnotex {
 class ConfigService;
+class MainConfig;
+class SessionConfig;
+class CoreConfig;
+class EditorConfig;
+class WidgetConfig;
 
 // Thin DI-ready configuration manager wrapper over ConfigService.
 // Receives ConfigService via constructor for dependency injection.
 // Provides path accessors and config persistence with debouncing.
-// Does NOT manage MainConfig/SessionConfig - those can be added later when needed.
+// Owns MainConfig and SessionConfig instances.
 class ConfigMgr2 : public QObject, public IConfigMgr, private Noncopyable {
   Q_OBJECT
 
@@ -39,8 +46,26 @@ public:
 
   ~ConfigMgr2();
 
-  // Initialize configuration system
+  // Initialize configuration system.
+  // Loads MainConfig and SessionConfig from disk.
+  // Must be called after construction and before using configs.
   void init();
+
+  void initAfterQtAppStarted();
+
+  // Get main configuration.
+  MainConfig &getConfig();
+  const MainConfig &getConfig() const;
+
+  // Get session configuration.
+  SessionConfig &getSessionConfig();
+  const SessionConfig &getSessionConfig() const;
+
+  // Convenience accessors for child configs within MainConfig.
+  CoreConfig &getCoreConfig();
+  const CoreConfig &getCoreConfig() const;
+  EditorConfig &getEditorConfig();
+  WidgetConfig &getWidgetConfig();
 
   // Get path to specific config data folder
   QString getConfigDataFolder(ConfigDataType p_type) const;
@@ -61,6 +86,24 @@ public:
   // Otherwise, resolve relative to config folder.
   QString getFileFromConfigFolder(const QString &p_filePath) const;
 
+  // Parse exp like "[main|session].core.shortcuts.FullScreen" and return the config value.
+  QJsonValue parseAndReadConfig(const QString &p_exp) const;
+
+  // Get application version string.
+  static QString getApplicationVersion();
+
+  // Get application file path.
+  static QString getApplicationFilePath();
+
+  // Get document or home path.
+  static QString getDocumentOrHomePath();
+
+  // Organization name.
+  static const QString c_orgName;
+
+  // Application name.
+  static const QString c_appName;
+
 signals:
   void editorConfigChanged();
 
@@ -80,8 +123,24 @@ private:
   void scheduleMainConfigWrite();
   void scheduleSessionConfigWrite();
 
+  // Load default main config from embedded resources.
+  QJsonObject loadDefaultMainConfig() const;
+
+  // Perform version upgrade (copy themes, tasks, etc.).
+  void upgradeMainConfigOnVersionChange();
+
+  // Initialize app prefix search paths.
+  void initAppPrefixPath();
+
   // Non-owning pointer to ConfigService (managed by caller)
   ConfigService *m_configService = nullptr;
+
+  // Owned config instances
+  QScopedPointer<MainConfig> m_mainConfig;
+  QScopedPointer<SessionConfig> m_sessionConfig;
+
+  // Whether version changed since last run
+  bool m_versionChanged = false;
 
   // Debounced write timers (500ms)
   QTimer *m_mainConfigWriteTimer = nullptr;
@@ -93,7 +152,10 @@ private:
 
   // Cached paths
   QString m_appDataPath;
-  QString m_userConfigPath;
+  QString m_localDataPath;
+
+  // Application version
+  static const QVersionNumber c_version;
 };
 
 } // namespace vnotex
