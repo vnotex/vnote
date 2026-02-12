@@ -44,3 +44,13 @@ add_qt_test(test_notebookservice
     vxcore
   GUILESS
 )
+
+add_qt_test(test_configmgr2
+  SOURCES
+    test_configmgr2.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/configmgr2.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
