@@ -23,11 +23,7 @@ struct ThemeServiceConfig {
   // Locale for display names (e.g., "en_US").
   QString locale;
 
-  // Paths to search for themes.
-  QStringList themeSearchPaths;
-
-  // Paths to search for web/CSS styles.
-  QStringList webStylesSearchPaths;
+  QString appDataPath;
 };
 
 // GUI-aware service for theme management.

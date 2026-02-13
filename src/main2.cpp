@@ -150,20 +150,11 @@ int main(int argc, char *argv[]) {
   ConfigMgr2 configMgr(&configService);
   configMgr.init();
 
-  // Create and register ThemeService (needs config values from ConfigMgr2)
-  ThemeServiceConfig themeConfig;
-  themeConfig.themeName = configMgr.getCoreConfig().getTheme();
-  themeConfig.locale = configMgr.getCoreConfig().getLocaleToUse();
-  
-  // Add theme search paths (same as legacy ThemeMgr setup)
-  auto appDataPath = configService.getDataPath(DataLocation::App);
-  auto localDataPath = configService.getDataPath(DataLocation::Local);
-  themeConfig.themeSearchPaths << localDataPath + "/themes"
-                                << appDataPath + "/themes";
-  themeConfig.webStylesSearchPaths << localDataPath + "/web_styles"
-                                    << appDataPath + "/web_styles";
-  
-  ThemeService themeService(themeConfig);
+  ThemeService themeService({
+      configMgr.getCoreConfig().getTheme(),
+      configMgr.getCoreConfig().getLocaleToUse(),
+      configService.getDataPath(DataLocation::App)
+  });
   serviceLocator.registerService<ThemeService>(&themeService);
   qInfo() << "ThemeService registered";
 
@@ -237,6 +228,18 @@ int main(int argc, char *argv[]) {
   }
 
   loadTranslators(app, configMgr);
+
+  if (app.styleSheet().isEmpty()) {
+    auto style = themeService.fetchQtStyleSheet();
+    if (!style.isEmpty()) {
+      app.setStyleSheet(style);
+      // Set up hot-reload for the theme folder if enabled via command line
+      if (cmdOptions.m_watchThemes) {
+        const auto themeFolderPath = themeService.getCurrentTheme().getThemeFolder();
+        app.watchThemeFolder(themeFolderPath);
+      }
+    }
+  }
 
   // Create MainWindow2 with ServiceLocator
   MainWindow2 mainWindow(serviceLocator);

@@ -15,8 +15,8 @@ using namespace vnotex;
 ThemeService::ThemeService(const ThemeServiceConfig &p_config, QObject *p_parent)
     : QObject(p_parent),
       m_locale(p_config.locale),
-      m_themeSearchPaths(p_config.themeSearchPaths),
-      m_webStylesSearchPaths(p_config.webStylesSearchPaths) {
+      m_themeSearchPaths(PathUtils::concatenateFilePath(p_config.appDataPath, "themes")),
+      m_webStylesSearchPaths(PathUtils::concatenateFilePath(p_config.appDataPath, "web_styles")) {
   loadAvailableThemes();
   loadCurrentTheme(p_config.themeName);
 }
