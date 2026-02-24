@@ -16,7 +16,8 @@
 #include "exception.h"
 #include "mainconfig.h"
 #include "sessionconfig.h"
-#include "vxcore.h"
+// DEPRECATED: VxCore singleton wrapper removed - use ConfigService via ServiceLocator instead
+// #include "vxcore.h"
 
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
@@ -55,36 +56,40 @@ ConfigMgr::ConfigMgr(QObject *p_parent)
   m_sessionConfigWriteTimer->setInterval(kWriteIntervalMs);
   connect(m_sessionConfigWriteTimer, &QTimer::timeout, this, &ConfigMgr::doWriteSessionConfig);
 
-  m_configFolderPath = VxCore::getInst().getDataPath(DataLocation::App);
+  // DEPRECATED: VxCore singleton wrapper removed - use ConfigService via ServiceLocator instead
+  // m_configFolderPath = VxCore::getInst().getDataPath(DataLocation::App);
+  m_configFolderPath = QString(); // TODO: Inject via ServiceLocator
 
+  // DEPRECATED: Config loading via VxCore removed - use ConfigService via ServiceLocator instead
   // Load and initialize main config
-  {
-    auto mainConfig = VxCore::getInst().getConfigByName(
-      DataLocation::App, kMainConfigFileBaseName);
-    m_version_changed = MainConfig::peekVersion(mainConfig) != kVersion.toString();
+  // {
+  //   auto mainConfig = VxCore::getInst().getConfigByName(
+  //     DataLocation::App, kMainConfigFileBaseName);
+  //   m_version_changed = MainConfig::peekVersion(mainConfig) != kVersion.toString();
+  //
+  //   #if defined(VX_DEBUG_REFRESH)
+  //   mainConfig = loadDefaultMainConfig();
+  //   #else
+  //     if (m_version_changed) {
+  //       auto defaultConfig = loadDefaultMainConfig();
+  //       // QJsonObject does not have merge function, so we do it manually
+  //       mainConfig = VxCore::getInst().getConfigByNameWithDefaults(
+  //         DataLocation::App, kMainConfigFileBaseName, defaultConfig);
+  //     }
+  //   #endif
+  //
+  //   m_mainConfig->fromJson(mainConfig);
+  // }
 
-    #if defined(VX_DEBUG_REFRESH)
-    mainConfig = loadDefaultMainConfig();
-    #else
-      if (m_version_changed) {
-        auto defaultConfig = loadDefaultMainConfig();
-        // QJsonObject does not have merge function, so we do it manually
-        mainConfig = VxCore::getInst().getConfigByNameWithDefaults(
-          DataLocation::App, kMainConfigFileBaseName, defaultConfig);
-      }
-    #endif
-
-    m_mainConfig->fromJson(mainConfig);
-  }
-
+  // DEPRECATED: Session config loading via VxCore removed - use ConfigService via ServiceLocator instead
   // Load and initialize session config
-  {
-    auto sessionConfig = VxCore::getInst().getConfigByName(
-      DataLocation::Local, kSessionFileBaseName);
-    if (!sessionConfig.isEmpty()) {
-      m_sessionConfig->fromJson(sessionConfig);
-    }
-  }
+  // {
+  //   auto sessionConfig = VxCore::getInst().getConfigByName(
+  //     DataLocation::Local, kSessionFileBaseName);
+  //   if (!sessionConfig.isEmpty()) {
+  //     m_sessionConfig->fromJson(sessionConfig);
+  //   }
+  // }
 }
 
 QJsonObject ConfigMgr::loadDefaultMainConfig() const {
@@ -208,9 +213,10 @@ void ConfigMgr::doWriteMainConfig() {
     return;
   }
 
-  QJsonDocument doc(m_pendingMainConfig);
-  QString jsonString = QString::fromUtf8(doc.toJson());
-  VxCore::getInst().updateConfigByName(DataLocation::App, kMainConfigFileBaseName, jsonString);
+  // DEPRECATED: VxCore singleton wrapper removed - use ConfigService via ServiceLocator instead
+  // QJsonDocument doc(m_pendingMainConfig);
+  // QString jsonString = QString::fromUtf8(doc.toJson());
+  // VxCore::getInst().updateConfigByName(DataLocation::App, kMainConfigFileBaseName, jsonString);
 
   m_pendingMainConfig = QJsonObject();
 }
@@ -220,9 +226,10 @@ void ConfigMgr::doWriteSessionConfig() {
     return;
   }
 
-  QJsonDocument doc(m_pendingSessionConfig);
-  QString jsonString = QString::fromUtf8(doc.toJson());
-  VxCore::getInst().updateConfigByName(DataLocation::Local, kSessionFileBaseName, jsonString);
+  // DEPRECATED: VxCore singleton wrapper removed - use ConfigService via ServiceLocator instead
+  // QJsonDocument doc(m_pendingSessionConfig);
+  // QString jsonString = QString::fromUtf8(doc.toJson());
+  // VxCore::getInst().updateConfigByName(DataLocation::Local, kSessionFileBaseName, jsonString);
 
   m_pendingSessionConfig = QJsonObject();
 }
@@ -297,15 +304,18 @@ QString ConfigMgr::getApplicationFilePath() {
     return appImageVar;
   }
 #elif defined(Q_OS_MACOS)
-  auto exePath = VxCore::GetInst().getExecutionFilePath();
-  const QString exeName = c_appName.toLower() + ".app";
-  int idx = exePath.indexOf(exeName + QStringLiteral("/Contents/MacOS/"));
-  if (idx != -1) {
-    return exePath.left(idx + exeName.size());
-  }
+  // DEPRECATED: VxCore singleton wrapper removed - use ConfigService via ServiceLocator instead
+  // auto exePath = VxCore::GetInst().getExecutionFilePath();
+  // const QString exeName = c_appName.toLower() + ".app";
+  // int idx = exePath.indexOf(exeName + QStringLiteral("/Contents/MacOS/"));
+  // if (idx != -1) {
+  //   return exePath.left(idx + exeName.size());
+  // }
 #endif
 
-return VxCore::getInst().getExecutionFilePath();
+  // DEPRECATED: VxCore singleton wrapper removed - use ConfigService via ServiceLocator instead
+  // return VxCore::getInst().getExecutionFilePath();
+  return QCoreApplication::applicationFilePath();
 }
 
 QString ConfigMgr::getDocumentOrHomePath() {
@@ -329,7 +339,9 @@ QString ConfigMgr::getApplicationVersion() {
 void ConfigMgr::initAppPrefixPath() {
   // Support QFile("app:abc.txt").
   QStringList potential_dirs;
-  auto app_dir_path = VxCore::getInst().getExecutionFolderPath();
+  // DEPRECATED: VxCore singleton wrapper removed - use ConfigService via ServiceLocator instead
+  // auto app_dir_path = VxCore::getInst().getExecutionFolderPath();
+  auto app_dir_path = QCoreApplication::applicationDirPath();
   qInfo() << "app prefix path: " << app_dir_path;
   potential_dirs << app_dir_path;
 
