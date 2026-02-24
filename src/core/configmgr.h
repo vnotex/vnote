@@ -17,7 +17,12 @@ class CoreConfig;
 class EditorConfig;
 class WidgetConfig;
 
-class ConfigMgr : public QObject, public IConfigMgr, private Noncopyable {
+// DEPRECATED: Use ConfigMgr2 with ServiceLocator pattern instead.
+// This class is kept for reference during migration but its functionality is disabled.
+class [[deprecated("Use ConfigMgr2 with ServiceLocator pattern instead")]] ConfigMgr
+    : public QObject,
+      public IConfigMgr,
+      private Noncopyable {
   Q_OBJECT
 public:
   enum ConfigDataType { Main, Themes, Tasks, WebStyles, SyntaxHighlighting, Dicts,
