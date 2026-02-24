@@ -7,13 +7,10 @@
 #include "combobox.h"
 #include "core/global.h"
 #include "navigationmode.h"
-#include "notebooknodeexplorer.h"
 
 namespace vnotex {
 
 class ServiceLocator;
-class Notebook;
-
 // NotebookSelector2 - Migrated version using ServiceLocator DI pattern.
 // Replaces deprecated NotebookSelector which uses VNoteX::getInst().getNotebookMgr().
 class NotebookSelector2 : public ComboBox, public NavigationMode {
@@ -24,9 +21,7 @@ public:
 
   void loadNotebooks();
 
-  void reloadNotebook(const Notebook *p_notebook);
-
-  void setCurrentNotebook(ID p_id);
+  void setCurrentNotebook(const QString &p_guid);
 
   void setViewOrder(int p_order);
 
@@ -59,15 +54,17 @@ private:
   QString getItemToolTip(int p_idx) const;
   void setItemToolTip(int p_idx, const QString &p_tooltip);
 
-  int findNotebook(ID p_id) const;
+  int findNotebook(const QString &p_guid) const;
 
   void sortNotebooks(QJsonArray &p_notebooks) const;
+
+  // Save/restore current notebook selection to session config.
+  void saveCurrentNotebook();
+  void restoreCurrentNotebook();
 
   static void fetchIconColor(const QString &p_name, QString &p_fg, QString &p_bg);
 
   ServiceLocator &m_services;
-
-  bool m_notebooksInitialized = false;
 
   QVector<QModelIndex> m_navigationIndexes;
 

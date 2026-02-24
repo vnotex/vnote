@@ -94,8 +94,8 @@ void NotebookExplorer2::setupUI() {
   // Connect notebook selector - use activated for user interaction
   connect(m_notebookSelector, QOverload<int>::of(&QComboBox::activated), this,
           [this](int p_idx) {
-            auto id = static_cast<ID>(m_notebookSelector->itemData(p_idx).toULongLong());
-            emit notebookActivated(id);
+            QString guid = m_notebookSelector->itemData(p_idx, NotebookGuidRole).toString();
+            emit notebookActivated(guid);
           });
   connect(m_notebookSelector, &NotebookSelector2::newNotebookRequested, this,
           &NotebookExplorer2::newNotebook);
@@ -673,13 +673,6 @@ void NotebookExplorer2::manageNotebooks() {
                            tr("Manage notebooks dialog is being migrated to use dependency injection."),
                            window());
 }
-
-void NotebookExplorer2::reloadNotebook(const Notebook *p_notebook) {
-  if (m_notebookSelector) {
-    m_notebookSelector->reloadNotebook(p_notebook);
-  }
-}
-
 void NotebookExplorer2::newFolder() {
   // TODO: Migrate NewFolderDialog to use ServiceLocator DI pattern
   // auto node = checkNotebookAndGetCurrentExploredFolderNode();
@@ -834,31 +827,6 @@ void NotebookExplorer2::importFolder() {
                            window());
 }
 
-void NotebookExplorer2::locateNode(Node *p_node) {
-  Q_ASSERT(p_node);
-  auto nb = p_node->getNotebook();
-  if (nb != m_currentNotebook) {
-    emit notebookActivated(nb->getId());
-  }
-  setCurrentNode(p_node);
-
-  // Set focus to the appropriate view
-  if (m_exploreMode == Combined) {
-    if (m_combinedView) {
-      m_combinedView->setFocus();
-    }
-  } else {
-    if (p_node->isContainer()) {
-      if (m_folderView) {
-        m_folderView->setFocus();
-      }
-    } else {
-      if (m_fileView) {
-        m_fileView->setFocus();
-      }
-    }
-  }
-}
 
 Node *NotebookExplorer2::currentExploredFolderNode() const {
   Node *node = currentNode();

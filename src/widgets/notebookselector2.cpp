@@ -10,9 +10,10 @@
 
 #include <core/servicelocator.h>
 #include <core/services/notebookservice.h>
-#include <notebook/notebook.h>
 #include <utils/iconutils.h>
 #include <utils/widgetutils.h>
+#include <core/configmgr2.h>
+#include <core/sessionconfig.h>
 
 using namespace vnotex;
 
@@ -26,6 +27,10 @@ NotebookSelector2::NotebookSelector2(ServiceLocator &p_services, QWidget *p_pare
   view()->installEventFilter(this);
 
   setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+
+  // Save current notebook selection when user activates a notebook.
+  connect(this, QOverload<int>::of(&QComboBox::activated), this,
+          &NotebookSelector2::saveCurrentNotebook);
 }
 
 void NotebookSelector2::loadNotebooks() {
@@ -34,7 +39,6 @@ void NotebookSelector2::loadNotebooks() {
   auto *notebookService = m_services.get<NotebookService>();
   if (!notebookService) {
     qWarning() << "NotebookSelector2: NotebookService not available";
-    m_notebooksInitialized = true;
     return;
   }
 
@@ -47,7 +51,8 @@ void NotebookSelector2::loadNotebooks() {
 
   updateGeometry();
 
-  m_notebooksInitialized = true;
+  // Restore previously selected notebook.
+  restoreCurrentNotebook();
 }
 
 void NotebookSelector2::sortNotebooks(QJsonArray &p_notebooks) const {
@@ -102,28 +107,12 @@ void NotebookSelector2::sortNotebooks(QJsonArray &p_notebooks) const {
   }
 }
 
-void NotebookSelector2::reloadNotebook(const Notebook *p_notebook) {
-  Q_ASSERT(p_notebook);
-  int idx = findNotebook(p_notebook->getId());
-  Q_ASSERT(idx != -1);
-
-  setItemIcon(idx, generateItemIcon(p_notebook->getName(), p_notebook->getIcon()));
-  setItemText(idx, p_notebook->getName());
-  setItemToolTip(idx, generateItemToolTip(p_notebook->getName(),
-                                          p_notebook->getRootFolderAbsolutePath(),
-                                          p_notebook->getDescription()));
-
-  int curIdx = currentIndex();
-  if (curIdx == idx) {
-    setToolTip(getItemToolTip(idx));
-  }
-}
 
 void NotebookSelector2::addNotebookItem(const QJsonObject &p_notebookJson) {
   QString name = p_notebookJson.value("name").toString();
   QString rootPath = p_notebookJson.value("rootFolder").toString();
   QString description = p_notebookJson.value("description").toString();
-  ID id = p_notebookJson.value("id").toVariant().toULongLong();
+  QString guid = p_notebookJson.value("id").toString();
 
   // Icon from JSON if available, otherwise generate.
   QIcon icon;
@@ -133,8 +122,10 @@ void NotebookSelector2::addNotebookItem(const QJsonObject &p_notebookJson) {
   }
 
   int idx = count();
-  addItem(generateItemIcon(name, icon), name, id);
+  addItem(generateItemIcon(name, icon), name);
   setItemToolTip(idx, generateItemToolTip(name, rootPath, description));
+  // Store GUID string for identification and save/restore.
+  setItemData(idx, guid, NotebookGuidRole);
 }
 
 void NotebookSelector2::fetchIconColor(const QString &p_name, QString &p_fg, QString &p_bg) {
@@ -180,13 +171,22 @@ void NotebookSelector2::setItemToolTip(int p_idx, const QString &p_tooltip) {
   setItemData(p_idx, p_tooltip, Qt::ToolTipRole);
 }
 
-void NotebookSelector2::setCurrentNotebook(ID p_id) {
-  int idx = findNotebook(p_id);
-  setCurrentIndex(idx);
-  setToolTip(getItemToolTip(idx));
+void NotebookSelector2::setCurrentNotebook(const QString &p_guid) {
+  int idx = findNotebook(p_guid);
+  if (idx >= 0) {
+    setCurrentIndex(idx);
+    setToolTip(getItemToolTip(idx));
+  }
 }
 
-int NotebookSelector2::findNotebook(ID p_id) const { return findData(p_id); }
+int NotebookSelector2::findNotebook(const QString &p_guid) const {
+  for (int i = 0; i < count(); ++i) {
+    if (itemData(i, NotebookGuidRole).toString() == p_guid) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 QVector<void *> NotebookSelector2::getVisibleNavigationItems() {
   QVector<void *> items;
@@ -254,7 +254,7 @@ void NotebookSelector2::clearNavigation() {
 
 void NotebookSelector2::mousePressEvent(QMouseEvent *p_event) {
   // Only when notebooks are loaded and there is no notebook, we could prompt for new notebook.
-  if (m_notebooksInitialized && count() == 0) {
+  if (count() == 0) {
     emit newNotebookRequested();
     return;
   }
@@ -272,3 +272,38 @@ void NotebookSelector2::setViewOrder(int p_order) {
     loadNotebooks();
   }
 }
+
+void NotebookSelector2::saveCurrentNotebook() {
+  int idx = currentIndex();
+  if (idx < 0) {
+    return;
+  }
+
+  // Get GUID from item data.
+  QString guid = itemData(idx, NotebookGuidRole).toString();
+  if (!guid.isEmpty()) {
+    auto *configMgr = m_services.get<ConfigMgr2>();
+    if (configMgr) {
+      configMgr->getSessionConfig().setCurrentNotebook(guid);
+    }
+  }
+}
+
+void NotebookSelector2::restoreCurrentNotebook() {
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
+  }
+
+  const QString &guid = configMgr->getSessionConfig().getCurrentNotebook();
+  if (guid.isEmpty()) {
+    return;
+  }
+
+  int idx = findNotebook(guid);
+  if (idx >= 0) {
+    setCurrentIndex(idx);
+    setToolTip(getItemToolTip(idx));
+  }
+}
+

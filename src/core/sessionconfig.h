@@ -127,6 +127,9 @@ public:
   const QVector<QuickNoteScheme> &getQuickNoteSchemes() const;
   void setQuickNoteSchemes(const QVector<QuickNoteScheme> &p_schemes);
 
+  const QString &getCurrentNotebook() const;
+  void setCurrentNotebook(const QString &p_guid);
+
 private:
   void loadCore(const QJsonObject &p_session);
 
@@ -191,6 +194,9 @@ private:
   QString m_externalMediaDefaultPath;
 
   QVector<QuickNoteScheme> m_quickNoteSchemes;
+
+  // GUID of the currently active notebook.
+  QString m_currentNotebook;
 };
 } // namespace vnotex
 

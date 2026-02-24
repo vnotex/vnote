@@ -47,7 +47,7 @@ public:
 
   void resetStateAndGeometry();
 
-  const QVector<QDockWidget *> &getDocks() const { return QVector<QDockWidget *>(); }
+  QVector<QDockWidget *> getDocks() const { return QVector<QDockWidget *>(); }
 
   ViewArea *getViewArea() const;
 

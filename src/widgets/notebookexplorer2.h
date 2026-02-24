@@ -75,7 +75,6 @@ public slots:
 
   // Reload operations
   void loadNotebooks();
-  void reloadNotebook(const Notebook *p_notebook);
 
   // Node creation - use current explored folder as parent
   void newFolder();
@@ -86,12 +85,9 @@ public slots:
   void importFile();
   void importFolder();
 
-  // Navigation
-  void locateNode(Node *p_node);
-
 signals:
   // Emitted when user selects a notebook from the selector
-  void notebookActivated(ID p_notebookId);
+  void notebookActivated(const QString &p_notebookGuid);
   // Forwarded from controller - same signatures as NotebookExplorer
   void nodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
   void fileActivated(const QString &p_path, const QSharedPointer<FileOpenParameters> &p_paras);

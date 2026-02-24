@@ -136,7 +136,9 @@ enum Role {
   UserRole2 = 0x0101,
   HighlightsRole = 0x0102,
   // Used for comparison.
-  ComparisonRole = 0x0103
+  ComparisonRole = 0x0103,
+  // GUID string for notebooks.
+  NotebookGuidRole = 0x0104
 };
 
 enum ViewOrder {
