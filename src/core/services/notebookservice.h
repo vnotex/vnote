@@ -108,11 +108,11 @@ private:
   // Convert QString to C string for vxcore (immediate use only).
   static const char *qstringToCStr(const QString &p_str);
 
-  // Parse JSON string to QJsonObject.
-  static QJsonObject parseJsonObject(const QString &p_json);
+  // Parse JSON string to QJsonObject from C string (takes ownership, frees p_str).
+  static QJsonObject parseJsonObjectFromCStr(char *p_str);
 
-  // Parse JSON string to QJsonArray.
-  static QJsonArray parseJsonArray(const QString &p_json);
+  // Parse JSON string to QJsonArray from C string (takes ownership, frees p_str).
+  static QJsonArray parseJsonArrayFromCStr(char *p_str);
 
   VxCoreContextHandle m_context = nullptr;
 };

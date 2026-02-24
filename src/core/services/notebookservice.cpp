@@ -90,7 +90,7 @@ QJsonArray NotebookService::listNotebooks() const {
     qWarning() << "listNotebooks failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonArray();
   }
-  return parseJsonArray(cstrToQString(json));
+  return parseJsonArrayFromCStr(json);
 }
 
 QJsonObject NotebookService::getNotebookConfig(const QString &p_notebookId) const {
@@ -105,7 +105,7 @@ QJsonObject NotebookService::getNotebookConfig(const QString &p_notebookId) cons
     qWarning() << "getNotebookConfig failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();
   }
-  return parseJsonObject(cstrToQString(json));
+  return parseJsonObjectFromCStr(json);
 }
 
 void NotebookService::updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson) {
@@ -188,7 +188,7 @@ QJsonObject NotebookService::getFolderConfig(const QString &p_notebookId, const 
     qWarning() << "getFolderConfig failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();
   }
-  return parseJsonObject(cstrToQString(json));
+  return parseJsonObjectFromCStr(json);
 }
 
 void NotebookService::updateFolderMetadata(const QString &p_notebookId, const QString &p_folderPath,
@@ -218,7 +218,7 @@ QJsonObject NotebookService::getFolderMetadata(const QString &p_notebookId,
     qWarning() << "getFolderMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();
   }
-  return parseJsonObject(cstrToQString(json));
+  return parseJsonObjectFromCStr(json);
 }
 
 void NotebookService::renameFolder(const QString &p_notebookId, const QString &p_folderPath,
@@ -306,7 +306,7 @@ QJsonObject NotebookService::getFileInfo(const QString &p_notebookId, const QStr
     qWarning() << "getFileInfo failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();
   }
-  return parseJsonObject(cstrToQString(json));
+  return parseJsonObjectFromCStr(json);
 }
 
 QJsonObject NotebookService::getFileMetadata(const QString &p_notebookId, const QString &p_filePath) const {
@@ -321,7 +321,7 @@ QJsonObject NotebookService::getFileMetadata(const QString &p_notebookId, const 
     qWarning() << "getFileMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();
   }
-  return parseJsonObject(cstrToQString(json));
+  return parseJsonObjectFromCStr(json);
 }
 
 void NotebookService::updateFileMetadata(const QString &p_notebookId, const QString &p_filePath,
@@ -469,7 +469,7 @@ QJsonArray NotebookService::listTags(const QString &p_notebookId) const {
     qWarning() << "listTags failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonArray();
   }
-  return parseJsonArray(cstrToQString(json));
+  return parseJsonArrayFromCStr(json);
 }
 
 void NotebookService::moveTag(const QString &p_notebookId, const QString &p_tagName,
@@ -553,12 +553,13 @@ const char *NotebookService::qstringToCStr(const QString &p_str) {
   return p_str.toUtf8().constData();
 }
 
-QJsonObject NotebookService::parseJsonObject(const QString &p_json) {
-  if (p_json.isEmpty()) {
+QJsonObject NotebookService::parseJsonObjectFromCStr(char *p_str) {
+  if (!p_str) {
     return QJsonObject();
   }
   QJsonParseError error;
-  QJsonDocument doc = QJsonDocument::fromJson(p_json.toUtf8(), &error);
+  QJsonDocument doc = QJsonDocument::fromJson(QByteArray(p_str), &error);
+  vxcore_string_free(p_str);
   if (error.error != QJsonParseError::NoError) {
     qWarning() << "Failed to parse JSON object:" << error.errorString();
     return QJsonObject();
@@ -566,12 +567,13 @@ QJsonObject NotebookService::parseJsonObject(const QString &p_json) {
   return doc.object();
 }
 
-QJsonArray NotebookService::parseJsonArray(const QString &p_json) {
-  if (p_json.isEmpty()) {
+QJsonArray NotebookService::parseJsonArrayFromCStr(char *p_str) {
+  if (!p_str) {
     return QJsonArray();
   }
   QJsonParseError error;
-  QJsonDocument doc = QJsonDocument::fromJson(p_json.toUtf8(), &error);
+  QJsonDocument doc = QJsonDocument::fromJson(QByteArray(p_str), &error);
+  vxcore_string_free(p_str);
   if (error.error != QJsonParseError::NoError) {
     qWarning() << "Failed to parse JSON array:" << error.errorString();
     return QJsonArray();

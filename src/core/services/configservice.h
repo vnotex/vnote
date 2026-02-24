@@ -62,8 +62,8 @@ private:
   // Convert C string to QString and free the C string using vxcore_string_free.
   static QString cstrToQString(char *p_str);
 
-  // Parse JSON string to QJsonObject.
-  static QJsonObject parseJsonObject(const QString &p_json);
+  // Parse JSON string to QJsonObject from C string (takes ownership, frees p_str).
+  static QJsonObject parseJsonObjectFromCStr(char *p_str);
 
   // Check if context is valid.
   bool checkContext() const;
