@@ -17,6 +17,8 @@
 #include <core/fileopenparameters.h>
 #include <core/global.h>
 #include <core/notebook/notebook.h>
+#include <core/nodeinfo.h>
+#include <core/notebook/node.h>
 #include <core/servicelocator.h>
 #include <core/sessionconfig.h>
 #include <core/vnotex.h>
@@ -368,19 +370,49 @@ void NotebookExplorer2::setupCombinedMode() {
   connect(m_combinedView, &NotebookNodeView::contextMenuRequested, this,
           &NotebookExplorer2::onContextMenuRequested);
 
-  // Forward controller signals
+  // Forward controller signals - convert Node* to NodeInfo
   connect(m_combinedController, &NotebookNodeController::nodeActivated, this,
-          &NotebookExplorer2::nodeActivated);
+          [this](Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras) {
+            if (p_node && m_combinedModel) {
+              emit nodeActivated(m_combinedModel->nodeToNodeInfo(p_node), p_paras);
+            }
+          });
   connect(m_combinedController, &NotebookNodeController::fileActivated, this,
           &NotebookExplorer2::fileActivated);
   connect(m_combinedController, &NotebookNodeController::nodeAboutToMove, this,
-          &NotebookExplorer2::nodeAboutToMove);
+          [this](Node *p_node, const QSharedPointer<Event> &p_event) {
+            if (p_node && m_combinedModel) {
+              emit nodeAboutToMove(m_combinedModel->nodeToNodeInfo(p_node), p_event);
+            }
+          });
   connect(m_combinedController, &NotebookNodeController::nodeAboutToRemove, this,
-          &NotebookExplorer2::nodeAboutToRemove);
+          [this](Node *p_node, const QSharedPointer<Event> &p_event) {
+            if (p_node && m_combinedModel) {
+              emit nodeAboutToRemove(m_combinedModel->nodeToNodeInfo(p_node), p_event);
+            }
+          });
   connect(m_combinedController, &NotebookNodeController::nodeAboutToReload, this,
-          &NotebookExplorer2::nodeAboutToReload);
+          [this](Node *p_node, const QSharedPointer<Event> &p_event) {
+            if (p_node && m_combinedModel) {
+              emit nodeAboutToReload(m_combinedModel->nodeToNodeInfo(p_node), p_event);
+            }
+          });
   connect(m_combinedController, &NotebookNodeController::closeFileRequested, this,
-          &NotebookExplorer2::closeFileRequested);
+          [this](const QString &p_filePath, const QSharedPointer<Event> &p_event) {
+            // closeFileRequested uses file path, convert to NodeInfo with just the path
+            NodeInfo info;
+            if (m_currentNotebook) {
+              info.notebookId = QString::number(m_currentNotebook->getId());
+              QString rootPath = m_currentNotebook->getRootFolderAbsolutePath();
+              if (p_filePath.startsWith(rootPath)) {
+                info.relativePath = p_filePath.mid(rootPath.length());
+                if (info.relativePath.startsWith(QLatin1Char('/'))) {
+                  info.relativePath = info.relativePath.mid(1);
+                }
+              }
+            }
+            emit closeFileRequested(info, p_event);
+          });
 }
 
 void NotebookExplorer2::setupTwoColumnsMode() {
@@ -441,24 +473,53 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   connect(m_fileView, &NotebookNodeView::contextMenuRequested, this,
           &NotebookExplorer2::onContextMenuRequested);
 
-  // Forward controller signals from both controllers
-  auto connectControllerSignals = [this](NotebookNodeController *controller) {
+  // Forward controller signals from both controllers - convert Node* to NodeInfo
+  auto connectControllerSignals = [this](NotebookNodeController *controller, NotebookNodeModel *model) {
     connect(controller, &NotebookNodeController::nodeActivated, this,
-            &NotebookExplorer2::nodeActivated);
+            [this, model](Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras) {
+              if (p_node && model) {
+                emit nodeActivated(model->nodeToNodeInfo(p_node), p_paras);
+              }
+            });
     connect(controller, &NotebookNodeController::fileActivated, this,
             &NotebookExplorer2::fileActivated);
     connect(controller, &NotebookNodeController::nodeAboutToMove, this,
-            &NotebookExplorer2::nodeAboutToMove);
+            [this, model](Node *p_node, const QSharedPointer<Event> &p_event) {
+              if (p_node && model) {
+                emit nodeAboutToMove(model->nodeToNodeInfo(p_node), p_event);
+              }
+            });
     connect(controller, &NotebookNodeController::nodeAboutToRemove, this,
-            &NotebookExplorer2::nodeAboutToRemove);
+            [this, model](Node *p_node, const QSharedPointer<Event> &p_event) {
+              if (p_node && model) {
+                emit nodeAboutToRemove(model->nodeToNodeInfo(p_node), p_event);
+              }
+            });
     connect(controller, &NotebookNodeController::nodeAboutToReload, this,
-            &NotebookExplorer2::nodeAboutToReload);
+            [this, model](Node *p_node, const QSharedPointer<Event> &p_event) {
+              if (p_node && model) {
+                emit nodeAboutToReload(model->nodeToNodeInfo(p_node), p_event);
+              }
+            });
     connect(controller, &NotebookNodeController::closeFileRequested, this,
-            &NotebookExplorer2::closeFileRequested);
+            [this](const QString &p_filePath, const QSharedPointer<Event> &p_event) {
+              NodeInfo info;
+              if (m_currentNotebook) {
+                info.notebookId = QString::number(m_currentNotebook->getId());
+                QString rootPath = m_currentNotebook->getRootFolderAbsolutePath();
+                if (p_filePath.startsWith(rootPath)) {
+                  info.relativePath = p_filePath.mid(rootPath.length());
+                  if (info.relativePath.startsWith(QLatin1Char('/'))) {
+                    info.relativePath = info.relativePath.mid(1);
+                  }
+                }
+              }
+              emit closeFileRequested(info, p_event);
+            });
   };
 
-  connectControllerSignals(m_folderController);
-  connectControllerSignals(m_fileController);
+  connectControllerSignals(m_folderController, m_folderModel);
+  connectControllerSignals(m_fileController, m_fileModel);
 }
 
 void NotebookExplorer2::loadNotebooks() {
@@ -582,7 +643,22 @@ void NotebookExplorer2::updateFocusProxy() {
 
 void NotebookExplorer2::onNodeActivated(Node *p_node,
                                         const QSharedPointer<FileOpenParameters> &p_paras) {
-  emit nodeActivated(p_node, p_paras);
+  if (!p_node) {
+    return;
+  }
+
+  // Convert Node* to NodeInfo using the appropriate model
+  NotebookNodeModel *model = nullptr;
+  if (m_exploreMode == Combined) {
+    model = m_combinedModel;
+  } else {
+    // In TwoColumns mode, files are activated from file view
+    model = m_fileModel;
+  }
+
+  if (model) {
+    emit nodeActivated(model->nodeToNodeInfo(p_node), p_paras);
+  }
 }
 
 void NotebookExplorer2::onContextMenuRequested(Node *p_node, const QPoint &p_globalPos) {
