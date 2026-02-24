@@ -6,11 +6,16 @@
 #include <QFileSystemWatcher>
 #include <QStyle>
 #include <QTimer>
-#include <core/vnotex.h>
+
+#include <gui/services/themeservice.h>
 
 using namespace vnotex;
 
 Application::Application(int &p_argc, char **p_argv) : QApplication(p_argc, p_argv) {}
+
+void Application::setThemeService(ThemeService *p_themeService) {
+  m_themeService = p_themeService;
+}
 
 void Application::watchThemeFolder(const QString &p_themeFolderPath) {
   if (p_themeFolderPath.isEmpty()) {
@@ -46,9 +51,14 @@ void Application::watchThemeFolder(const QString &p_themeFolderPath) {
 }
 
 void Application::reloadThemeResources() {
-  VNoteX::getInst().getThemeMgr().refreshCurrentTheme();
+  if (!m_themeService) {
+    qWarning() << "ThemeService not set, cannot reload theme resources";
+    return;
+  }
 
-  auto stylesheet = VNoteX::getInst().getThemeMgr().fetchQtStyleSheet();
+  m_themeService->refreshCurrentTheme();
+
+  auto stylesheet = m_themeService->fetchQtStyleSheet();
   if (!stylesheet.isEmpty()) {
     setStyleSheet(stylesheet);
     style()->unpolish(this);

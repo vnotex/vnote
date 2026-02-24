@@ -33,7 +33,9 @@ void SnippetPanel::setupUI() {
 
   {
     setupTitleBar(QString(), this);
-    mainLayout->addWidget(m_titleBar);
+    if (m_titleBar) {
+      mainLayout->addWidget(m_titleBar);
+    }
   }
 
   m_snippetList = new ListWidget(this);
@@ -50,6 +52,7 @@ void SnippetPanel::setupUI() {
 void SnippetPanel::initialize() { updateSnippetList(); }
 
 void SnippetPanel::setupTitleBar(const QString &p_title, QWidget *p_parent) {
+#if 0 // TODO: Migrate to use ThemeService DI
   m_titleBar = new TitleBar(p_title, true, TitleBar::Action::Menu, p_parent);
   m_titleBar->setActionButtonsAlwaysShown(true);
 
@@ -73,6 +76,11 @@ void SnippetPanel::setupTitleBar(const QString &p_title, QWidget *p_parent) {
       });
   showAct->setCheckable(true);
   showAct->setChecked(m_builtInSnippetsVisible);
+#else
+  Q_UNUSED(p_title);
+  Q_UNUSED(p_parent);
+  m_titleBar = nullptr;
+#endif
 }
 
 void SnippetPanel::newSnippet() {
@@ -83,6 +91,9 @@ void SnippetPanel::newSnippet() {
 }
 
 void SnippetPanel::updateItemsCountLabel() {
+  if (!m_titleBar) {
+    return;
+  }
   const auto cnt = m_snippetList->count();
   if (cnt == 0) {
     m_titleBar->setInfoLabel("");

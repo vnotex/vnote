@@ -88,6 +88,7 @@ const QIcon &LocationList::getItemIcon(LocationType p_type) {
 }
 
 void LocationList::setupTitleBar(const QString &p_title, QWidget *p_parent) {
+#if 0 // TODO: Migrate to use ThemeService DI
   m_titleBar = new TitleBar(p_title, true, TitleBar::Action::None, p_parent);
   m_titleBar->setActionButtonsAlwaysShown(true);
 
@@ -95,6 +96,11 @@ void LocationList::setupTitleBar(const QString &p_title, QWidget *p_parent) {
     auto clearBtn = m_titleBar->addActionButton(QStringLiteral("clear.svg"), tr("Clear"));
     connect(clearBtn, &QToolButton::triggered, this, &LocationList::clear);
   }
+#else
+  Q_UNUSED(p_title);
+  Q_UNUSED(p_parent);
+  m_titleBar = nullptr;
+#endif
 }
 
 void LocationList::clear() {

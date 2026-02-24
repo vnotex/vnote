@@ -5,6 +5,7 @@
 #include <QSharedPointer>
 
 #include <core/global.h>
+#include <core/noncopyable.h>
 
 class QStackedWidget;
 class QSplitter;
@@ -25,13 +26,14 @@ class NotebookNodeDelegate;
 class NotebookNodeController;
 struct FileOpenParameters;
 class Event;
+class ServiceLocator;
 
 // NotebookExplorer2 is a container widget that displays notebook nodes
 // using proper MVC architecture.
 // It supports two explore modes:
 // - Combined: Single tree view showing all nodes
 // - TwoColumns: Split view with folder tree on left, file list on right
-class NotebookExplorer2 : public QFrame {
+class NotebookExplorer2 : public QFrame, private Noncopyable {
   Q_OBJECT
 
 public:
@@ -40,7 +42,7 @@ public:
     TwoColumns  // Left: folders only, Right: files in selected folder
   };
 
-  explicit NotebookExplorer2(QWidget *p_parent = nullptr);
+  explicit NotebookExplorer2(ServiceLocator &p_services, QWidget *p_parent = nullptr);
   ~NotebookExplorer2() override;
 
   // Notebook management
@@ -128,6 +130,9 @@ private:
 
   // Helper: check notebook exists and get current explored folder
   Node *checkNotebookAndGetCurrentExploredFolderNode() const;
+
+  // Services
+  ServiceLocator &m_services;
 
   // MVC Components - Combined mode
   NotebookNodeModel *m_combinedModel = nullptr;

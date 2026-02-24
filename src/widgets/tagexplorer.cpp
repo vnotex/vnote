@@ -54,7 +54,9 @@ void TagExplorer::setupUI() {
   WidgetUtils::setContentsMargins(mainLayout);
 
   setupTitleBar(this);
-  mainLayout->addWidget(m_titleBar);
+  if (m_titleBar) {
+    mainLayout->addWidget(m_titleBar);
+  }
 
   m_tagSearchEdit = WidgetsFactory::createComboBox(this);
   m_tagSearchEdit->setEditable(true);
@@ -83,6 +85,7 @@ void TagExplorer::setupUI() {
 }
 
 void TagExplorer::setupTitleBar(QWidget *p_parent) {
+#if 0 // TODO: Migrate to use ThemeService DI
   m_titleBar = new TitleBar(QString(), false, TitleBar::Action::Menu, p_parent);
   m_titleBar->setActionButtonsAlwaysShown(true);
 
@@ -94,6 +97,10 @@ void TagExplorer::setupTitleBar(QWidget *p_parent) {
   twoColumnsAct->setCheckable(true);
   twoColumnsAct->setChecked(
       ConfigMgr::getInst().getWidgetConfig().getTagExplorerTwoColumnsEnabled());
+#else
+  Q_UNUSED(p_parent);
+  m_titleBar = nullptr;
+#endif
 }
 
 void TagExplorer::setTwoColumnsEnabled(bool p_enabled) {

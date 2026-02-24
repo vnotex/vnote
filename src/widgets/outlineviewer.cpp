@@ -52,7 +52,9 @@ void OutlineViewer::setupUI(const QString &p_title) {
 
   {
     auto titleBar = setupTitleBar(p_title, this);
-    mainLayout->addWidget(titleBar);
+    if (titleBar) {
+      mainLayout->addWidget(titleBar);
+    }
   }
 
   m_tree = new TreeWidget(TreeWidget::Flag::None, this);
@@ -82,6 +84,7 @@ NavigationModeWrapper<QTreeWidget, QTreeWidgetItem> *OutlineViewer::getNavigatio
 }
 
 TitleBar *OutlineViewer::setupTitleBar(const QString &p_title, QWidget *p_parent) {
+#if 0 // TODO: Migrate to use ThemeService DI
   auto titleBar = new TitleBar(p_title, false, TitleBar::Action::Menu, p_parent);
   titleBar->setActionButtonsAlwaysShown(true);
 
@@ -125,6 +128,11 @@ TitleBar *OutlineViewer::setupTitleBar(const QString &p_title, QWidget *p_parent
   }
 
   return titleBar;
+#else
+  Q_UNUSED(p_title);
+  Q_UNUSED(p_parent);
+  return nullptr;
+#endif
 }
 
 void OutlineViewer::setOutlineProvider(const QSharedPointer<OutlineProvider> &p_provider) {

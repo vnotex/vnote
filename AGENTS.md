@@ -61,7 +61,7 @@ VNote uses a **clean architecture** with dependency injection for testability an
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        main2.cpp                            │
+│                        main.cpp                            │
 │  (Entry point: creates context, wires dependencies)         │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -95,7 +95,7 @@ VNote uses a **clean architecture** with dependency injection for testability an
 
 ```
 src/
-├── main2.cpp              # New entry point with DI wiring
+├── main.cpp              # New entry point with DI wiring
 ├── core/
 │   ├── servicelocator.h   # DI container
 │   ├── configservice.h    # Config operations (wraps vxcore)
@@ -115,7 +115,7 @@ src/
 
 ## ServiceLocator Pattern
 
-### Registration (in main2.cpp)
+### Registration (in main.cpp)
 
 ```cpp
 #include <core/servicelocator.h>
@@ -255,7 +255,7 @@ private:
 #endif // MYSERVICE_H
 ```
 
-2. **Register in main2.cpp**:
+2. **Register in main.cpp**:
 ```cpp
 services.registerService<vnotex::MyService>(
     std::make_unique<vnotex::MyService>(ctx));

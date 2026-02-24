@@ -1,9 +1,11 @@
 #include "filetypehelper.h"
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QFileInfo>
 
-#include "buffer.h"
+// MIGRATION: Buffer removed - use QCoreApplication::translate for translations
+// #include "buffer.h"
 #include <core/configmgr.h>
 #include <core/coreconfig.h>
 #include <utils/fileutils.h>
@@ -35,7 +37,7 @@ void FileTypeHelper::setupBuiltInTypes() {
     FileType type;
     type.m_type = FileType::Markdown;
     type.m_typeName = QStringLiteral("Markdown");
-    type.m_displayName = Buffer::tr("Markdown");
+    type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Markdown");
 
     auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
     if (suffixes && !suffixes->isEmpty()) {
@@ -52,7 +54,7 @@ void FileTypeHelper::setupBuiltInTypes() {
     FileType type;
     type.m_type = FileType::Text;
     type.m_typeName = QStringLiteral("Text");
-    type.m_displayName = Buffer::tr("Text");
+    type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Text");
 
     auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
     if (suffixes && !suffixes->isEmpty()) {
@@ -68,7 +70,7 @@ void FileTypeHelper::setupBuiltInTypes() {
     FileType type;
     type.m_type = FileType::Pdf;
     type.m_typeName = QStringLiteral("PDF");
-    type.m_displayName = Buffer::tr("Portable Document Format");
+    type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Portable Document Format");
     type.m_isNewable = false;
 
     auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
@@ -85,7 +87,7 @@ void FileTypeHelper::setupBuiltInTypes() {
     FileType type;
     type.m_type = FileType::MindMap;
     type.m_typeName = QStringLiteral("MindMap");
-    type.m_displayName = Buffer::tr("Mind Map");
+    type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Mind Map");
 
     auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
     if (suffixes && !suffixes->isEmpty()) {
@@ -101,7 +103,7 @@ void FileTypeHelper::setupBuiltInTypes() {
     FileType type;
     type.m_type = FileType::Others;
     type.m_typeName = QStringLiteral("Others");
-    type.m_displayName = Buffer::tr("Others");
+    type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Others");
     m_fileTypes.push_back(type);
   }
 }

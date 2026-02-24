@@ -49,7 +49,7 @@ add_executable(vnote WIN32 MACOSX_BUNDLE
     application.cpp application.h
     commandlineoptions.cpp commandlineoptions.h
     fakeaccessible.cpp fakeaccessible.h
-    main2.cpp
+    main.cpp
     ${VX_APP_ICON_RC_WIN} ${VX_APP_ICON_MACOS} ${VX_RESOURCE_FILES}
 )
 

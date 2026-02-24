@@ -15,5 +15,4 @@ target_sources(vnote PRIVATE
     utils.cpp utils.h
     vxurlutils.cpp vxurlutils.h
     webutils.cpp webutils.h
-    widgetutils.cpp widgetutils.h
 )
