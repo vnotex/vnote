@@ -4,10 +4,14 @@
 #include <QMainWindow>
 
 #include <core/noncopyable.h>
+#include <widgets/dockwidgethelper.h>
+
+class QDockWidget;
 
 namespace vnotex {
 
 class ServiceLocator;
+class NotebookExplorer2;
 
 // MainWindow2 is a minimal QMainWindow shell for the new clean architecture.
 // Receives ServiceLocator via constructor for dependency injection.
@@ -25,14 +29,33 @@ public:
   ~MainWindow2();
 
   // Access to ServiceLocator for child widgets that need services.
-  ServiceLocator &getServiceLocator() const;
+  ServiceLocator &getServiceLocator();
+
+  // Access NotebookExplorer2.
+  NotebookExplorer2 *getNotebookExplorer() const;
+
+  QWidget *getDockWidget(DockWidgetHelper::DockType p_dockType) const;
+
+signals:
+    void layoutChanged();
 
 private:
   // Setup basic window properties (title, size, central widget).
   void setupUI();
 
+  // Setup NotebookExplorer2 as dock widget.
+  void setupNotebookExplorer();
+
+  // Setup dock widgets.
+  void setupDocks();
+
   // Non-owning reference to ServiceLocator.
   ServiceLocator &m_serviceLocator;
+
+  DockWidgetHelper m_dockWidgetHelper{this};
+
+  // NotebookExplorer2 dock widget.
+  NotebookExplorer2 *m_notebookExplorer = nullptr;
 };
 
 } // namespace vnotex

@@ -62,8 +62,8 @@ using namespace vnotex;
 
 MainWindow::MainWindow(QWidget *p_parent)
     : FramelessMainWindowImpl(!ConfigMgr::getInst().getSessionConfig().getSystemTitleBarEnabled(),
-                              p_parent),
-      m_dockWidgetHelper(this) {
+                              p_parent) {
+      // m_dockWidgetHelper(this) {
   VNoteX::getInst().setMainWindow(this);
 
   NavigationModeMgr::init(this);
@@ -74,7 +74,7 @@ MainWindow::MainWindow(QWidget *p_parent)
 
   loadStateAndGeometry();
 
-  m_dockWidgetHelper.postSetup();
+  // m_dockWidgetHelper.postSetup();
 
   // The signal is particularly useful if your application has to do some last-second cleanup.
   // Note that no user interaction is possible in this state.
@@ -142,7 +142,7 @@ void MainWindow::setupUI() {
   setupTipsArea();
   setupSystemTray();
 
-  m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
+  // m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
 
 #if defined(Q_OS_WIN)
   m_dummyWebView = new QWebEngineView(this);
@@ -226,9 +226,9 @@ void MainWindow::setupDocks() {
 
   setupLocationList();
 
-  m_dockWidgetHelper.setupDocks();
+  // m_dockWidgetHelper.setupDocks();
 
-  NavigationModeMgr::getInst().registerNavigationTarget(&m_dockWidgetHelper);
+  // NavigationModeMgr::getInst().registerNavigationTarget(&m_dockWidgetHelper);
 }
 
 void MainWindow::setupSearchPanel() {
@@ -263,59 +263,61 @@ void MainWindow::setupLocationList() {
 }
 
 void MainWindow::setupNotebookExplorer() {
-  m_notebookExplorer = new NotebookExplorer2(this);
+  // TODO: Legacy MainWindow - NotebookExplorer2 now requires ServiceLocator via DI.
+  // This function is disabled during migration. Use MainWindow2 instead.
+  // m_notebookExplorer = new NotebookExplorer2(this);
 
   // Set up NotebookMgr
-  auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
-  m_notebookExplorer->setNotebookMgr(&notebookMgr);
+  // auto &notebookMgr = VNoteX::getInst().getNotebookMgr();
+  // m_notebookExplorer->setNotebookMgr(&notebookMgr);
 
   // Connect VNoteX signals to NotebookExplorer2 slots
-  connect(&VNoteX::getInst(), &VNoteX::newNotebookRequested, m_notebookExplorer,
-          &NotebookExplorer2::newNotebook);
-  connect(&VNoteX::getInst(), &VNoteX::newNotebookFromFolderRequested, m_notebookExplorer,
-          &NotebookExplorer2::newNotebookFromFolder);
-  connect(&VNoteX::getInst(), &VNoteX::importNotebookRequested, m_notebookExplorer,
-          &NotebookExplorer2::importNotebook);
-  connect(&VNoteX::getInst(), &VNoteX::newFolderRequested, m_notebookExplorer,
-          &NotebookExplorer2::newFolder);
-  connect(&VNoteX::getInst(), &VNoteX::newNoteRequested, m_notebookExplorer,
-          &NotebookExplorer2::newNote);
-  connect(&VNoteX::getInst(), &VNoteX::newQuickNoteRequested, m_notebookExplorer,
-          &NotebookExplorer2::newQuickNote);
-  connect(&VNoteX::getInst(), &VNoteX::importFileRequested, m_notebookExplorer,
-          &NotebookExplorer2::importFile);
-  connect(&VNoteX::getInst(), &VNoteX::importFolderRequested, m_notebookExplorer,
-          &NotebookExplorer2::importFolder);
-  connect(&VNoteX::getInst(), &VNoteX::manageNotebooksRequested, m_notebookExplorer,
-          &NotebookExplorer2::manageNotebooks);
-  connect(&VNoteX::getInst(), &VNoteX::locateNodeRequested, this, [this](Node *p_node) {
-    m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
-    m_notebookExplorer->locateNode(p_node);
-  });
+  // connect(&VNoteX::getInst(), &VNoteX::newNotebookRequested, m_notebookExplorer,
+  //         &NotebookExplorer2::newNotebook);
+  // connect(&VNoteX::getInst(), &VNoteX::newNotebookFromFolderRequested, m_notebookExplorer,
+  //         &NotebookExplorer2::newNotebookFromFolder);
+  // connect(&VNoteX::getInst(), &VNoteX::importNotebookRequested, m_notebookExplorer,
+  //         &NotebookExplorer2::importNotebook);
+  // connect(&VNoteX::getInst(), &VNoteX::newFolderRequested, m_notebookExplorer,
+  //         &NotebookExplorer2::newFolder);
+  // connect(&VNoteX::getInst(), &VNoteX::newNoteRequested, m_notebookExplorer,
+  //         &NotebookExplorer2::newNote);
+  // connect(&VNoteX::getInst(), &VNoteX::newQuickNoteRequested, m_notebookExplorer,
+  //         &NotebookExplorer2::newQuickNote);
+  // connect(&VNoteX::getInst(), &VNoteX::importFileRequested, m_notebookExplorer,
+  //         &NotebookExplorer2::importFile);
+  // connect(&VNoteX::getInst(), &VNoteX::importFolderRequested, m_notebookExplorer,
+  //         &NotebookExplorer2::importFolder);
+  // connect(&VNoteX::getInst(), &VNoteX::manageNotebooksRequested, m_notebookExplorer,
+  //         &NotebookExplorer2::manageNotebooks);
+  // connect(&VNoteX::getInst(), &VNoteX::locateNodeRequested, this, [this](Node *p_node) {
+  //   m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
+  //   m_notebookExplorer->locateNode(p_node);
+  // });
 
   // Connect NotebookMgr signals
-  connect(&notebookMgr, &NotebookMgr::notebooksUpdated, m_notebookExplorer,
-          &NotebookExplorer2::loadNotebooks);
-  connect(&notebookMgr, &NotebookMgr::notebookUpdated, m_notebookExplorer,
-          &NotebookExplorer2::reloadNotebook);
-  connect(&notebookMgr, &NotebookMgr::currentNotebookChanged, m_notebookExplorer,
-          &NotebookExplorer2::setCurrentNotebook);
-  connect(m_notebookExplorer, &NotebookExplorer2::notebookActivated, &notebookMgr,
-          &NotebookMgr::setCurrentNotebook);
+  // connect(&notebookMgr, &NotebookMgr::notebooksUpdated, m_notebookExplorer,
+  //         &NotebookExplorer2::loadNotebooks);
+  // connect(&notebookMgr, &NotebookMgr::notebookUpdated, m_notebookExplorer,
+  //         &NotebookExplorer2::reloadNotebook);
+  // connect(&notebookMgr, &NotebookMgr::currentNotebookChanged, m_notebookExplorer,
+  //         &NotebookExplorer2::setCurrentNotebook);
+  // connect(m_notebookExplorer, &NotebookExplorer2::notebookActivated, &notebookMgr,
+  //         &NotebookMgr::setCurrentNotebook);
 
   // Connect node signals to VNoteX
-  connect(m_notebookExplorer, &NotebookExplorer2::nodeActivated, &VNoteX::getInst(),
-          &VNoteX::openNodeRequested);
-  connect(m_notebookExplorer, &NotebookExplorer2::fileActivated, &VNoteX::getInst(),
-          &VNoteX::openFileRequested);
-  connect(m_notebookExplorer, &NotebookExplorer2::nodeAboutToMove, &VNoteX::getInst(),
-          &VNoteX::nodeAboutToMove);
-  connect(m_notebookExplorer, &NotebookExplorer2::nodeAboutToRemove, &VNoteX::getInst(),
-          &VNoteX::nodeAboutToRemove);
-  connect(m_notebookExplorer, &NotebookExplorer2::nodeAboutToReload, &VNoteX::getInst(),
-          &VNoteX::nodeAboutToReload);
-  connect(m_notebookExplorer, &NotebookExplorer2::closeFileRequested, &VNoteX::getInst(),
-          &VNoteX::closeFileRequested);
+  // connect(m_notebookExplorer, &NotebookExplorer2::nodeActivated, &VNoteX::getInst(),
+  //         &VNoteX::openNodeRequested);
+  // connect(m_notebookExplorer, &NotebookExplorer2::fileActivated, &VNoteX::getInst(),
+  //         &VNoteX::openFileRequested);
+  // connect(m_notebookExplorer, &NotebookExplorer2::nodeAboutToMove, &VNoteX::getInst(),
+  //         &VNoteX::nodeAboutToMove);
+  // connect(m_notebookExplorer, &NotebookExplorer2::nodeAboutToRemove, &VNoteX::getInst(),
+  //         &VNoteX::nodeAboutToRemove);
+  // connect(m_notebookExplorer, &NotebookExplorer2::nodeAboutToReload, &VNoteX::getInst(),
+  //         &VNoteX::nodeAboutToReload);
+  // connect(m_notebookExplorer, &NotebookExplorer2::closeFileRequested, &VNoteX::getInst(),
+  //         &VNoteX::closeFileRequested);
 }
 
 void MainWindow::closeEvent(QCloseEvent *p_event) {
@@ -426,7 +428,7 @@ void MainWindow::loadStateAndGeometry() {
   m_visibleDocksBeforeExpand = sg.m_visibleDocksBeforeExpand;
   if (m_visibleDocksBeforeExpand.isEmpty()) {
     // Init (or init again if there is no visible dock).
-    m_visibleDocksBeforeExpand = m_dockWidgetHelper.getVisibleDocks();
+    // m_visibleDocksBeforeExpand = m_dockWidgetHelper.getVisibleDocks();
   }
 
   if (!sg.m_tagExplorerState.isEmpty()) {
@@ -461,10 +463,10 @@ void MainWindow::setContentAreaExpanded(bool p_expanded) {
   m_contentAreaExpanded = p_expanded;
   if (p_expanded) {
     // Store the state and hide.
-    m_visibleDocksBeforeExpand = m_dockWidgetHelper.hideDocks();
+    // m_visibleDocksBeforeExpand = m_dockWidgetHelper.hideDocks();
   } else {
     // Restore the state.
-    m_dockWidgetHelper.restoreDocks(m_visibleDocksBeforeExpand);
+    // m_dockWidgetHelper.restoreDocks(m_visibleDocksBeforeExpand);
   }
 }
 
@@ -504,11 +506,13 @@ void MainWindow::setupConsoleViewer() {
 
   connect(&VNoteX::getInst(), &VNoteX::showOutputRequested, this, [this](const QString &p_text) {
     m_consoleViewer->append(p_text);
-    m_dockWidgetHelper.activateDock(DockWidgetHelper::ConsoleDock);
+    // m_dockWidgetHelper.activateDock(DockWidgetHelper::ConsoleDock);
   });
 }
 
+/*
 const QVector<QDockWidget *> &MainWindow::getDocks() const { return m_dockWidgetHelper.getDocks(); }
+*/
 
 ViewArea *MainWindow::getViewArea() const { return m_viewArea; }
 
@@ -621,7 +625,7 @@ void MainWindow::quitApp() {
   close();
 }
 
-void MainWindow::updateDockWidgetTabBar() { m_dockWidgetHelper.updateDockWidgetTabBar(); }
+void MainWindow::updateDockWidgetTabBar() { /* m_dockWidgetHelper.updateDockWidgetTabBar(); */ }
 
 void MainWindow::exportNotes() {
   if (m_exportDialog) {
@@ -697,16 +701,20 @@ void MainWindow::setTipsAreaVisible(bool p_visible) {
 LocationList *MainWindow::getLocationList() const { return m_locationList; }
 
 void MainWindow::setLocationListVisible(bool p_visible) {
+  /*
   if (p_visible) {
     m_dockWidgetHelper.activateDock(DockWidgetHelper::LocationListDock);
   } else {
     m_dockWidgetHelper.getDock(DockWidgetHelper::LocationListDock)->hide();
   }
+    */
 }
 
 void MainWindow::toggleLocationListVisible() {
+  /*
   bool visible = m_dockWidgetHelper.getDock(DockWidgetHelper::LocationListDock)->isVisible();
   setLocationListVisible(!visible);
+  */
 }
 
 void MainWindow::setupSpellCheck() {

@@ -31,6 +31,7 @@ void ConsoleViewer::setupUI() {
 }
 
 void ConsoleViewer::setupTitleBar(const QString &p_title, QWidget *p_parent) {
+#if 0 // TODO: Migrate to use ThemeService DI
   m_titleBar = new TitleBar(p_title, true, TitleBar::Action::None, p_parent);
   m_titleBar->setActionButtonsAlwaysShown(true);
 
@@ -38,6 +39,11 @@ void ConsoleViewer::setupTitleBar(const QString &p_title, QWidget *p_parent) {
     auto clearBtn = m_titleBar->addActionButton(QStringLiteral("clear.svg"), tr("Clear"));
     connect(clearBtn, &QToolButton::triggered, this, &ConsoleViewer::clear);
   }
+#else
+  Q_UNUSED(p_title);
+  Q_UNUSED(p_parent);
+  m_titleBar = nullptr;
+#endif
 }
 
 void ConsoleViewer::append(const QString &p_text) {

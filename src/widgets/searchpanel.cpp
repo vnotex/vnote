@@ -59,7 +59,9 @@ void SearchPanel::setupUI() {
   // Title.
   {
     auto titleBar = setupTitleBar(QString(), this);
-    layout->addWidget(titleBar);
+    if (titleBar) {
+      layout->addWidget(titleBar);
+    }
   }
 
   // Body.
@@ -133,6 +135,7 @@ void SearchPanel::setupUI() {
 }
 
 TitleBar *SearchPanel::setupTitleBar(const QString &p_title, QWidget *p_parent) {
+#if 0 // TODO: Migrate to use ThemeService DI
   auto titleBar = new TitleBar(p_title, false, TitleBar::Action::None, p_parent);
   titleBar->setActionButtonsAlwaysShown(true);
 
@@ -156,6 +159,11 @@ TitleBar *SearchPanel::setupTitleBar(const QString &p_title, QWidget *p_parent) 
   }
 
   return titleBar;
+#else
+  Q_UNUSED(p_title);
+  Q_UNUSED(p_parent);
+  return nullptr;
+#endif
 }
 
 void SearchPanel::setupSearchObject(QFormLayout *p_layout, QWidget *p_parent) {

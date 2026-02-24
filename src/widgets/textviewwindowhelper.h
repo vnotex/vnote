@@ -11,7 +11,7 @@
 #include <core/texteditorconfig.h>
 #include <search/searchtoken.h>
 #include <snippet/snippetmgr.h>
-#include <utils/widgetutils.h>
+#include <gui/utils/widgetutils.h>
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/vtextedit.h>
 

@@ -5,43 +5,46 @@
 #include <QCoreApplication>
 #include <QDebug>
 
-#include <widgets/mainwindow.h>
+// MIGRATION: Use QCoreApplication::translate instead of MainWindow::tr
+// #include <widgets/mainwindow.h>
+// using vnotex::MainWindow;
 
-using vnotex::MainWindow;
+// Translation context for command line options
+static const char *c_context = "vnotex::MainWindow";
 
 CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_arguments) {
   QCommandLineParser parser;
-  parser.setApplicationDescription(MainWindow::tr("A pleasant note-taking platform."));
+  parser.setApplicationDescription(QCoreApplication::translate(c_context, "A pleasant note-taking platform."));
   const auto helpOpt = parser.addHelpOption();
   const auto versionOpt = parser.addVersionOption();
 
   // Positional arguments.
-  parser.addPositionalArgument("paths", MainWindow::tr("Files or folders to open."));
+  parser.addPositionalArgument("paths", QCoreApplication::translate(c_context, "Files or folders to open."));
 
-  const QCommandLineOption verboseOpt("verbose", MainWindow::tr("Print more logs."));
+  const QCommandLineOption verboseOpt("verbose", QCoreApplication::translate(c_context, "Print more logs."));
   parser.addOption(verboseOpt);
 
-  const QCommandLineOption logStderrOpt("log-stderr", MainWindow::tr("Log to stderr."));
+  const QCommandLineOption logStderrOpt("log-stderr", QCoreApplication::translate(c_context, "Log to stderr."));
   parser.addOption(logStderrOpt);
 
   const QCommandLineOption watchThemesOpt("watch-themes",
-                                          MainWindow::tr("Watch theme folder for changes."));
+                                          QCoreApplication::translate(c_context, "Watch theme folder for changes."));
   parser.addOption(watchThemesOpt);
 
   // WebEngine options.
   // No need to handle them. Just add them to the parser to avoid parse error.
   {
     QCommandLineOption webRemoteDebuggingPortOpt("remote-debugging-port",
-                                                 MainWindow::tr("WebEngine remote debugging port."),
-                                                 MainWindow::tr("port_number"));
+                                                 QCoreApplication::translate(c_context, "WebEngine remote debugging port."),
+                                                 QCoreApplication::translate(c_context, "port_number"));
     webRemoteDebuggingPortOpt.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webRemoteDebuggingPortOpt);
 
-    QCommandLineOption webNoSandboxOpt("no-sandbox", MainWindow::tr("WebEngine without sandbox."));
+    QCommandLineOption webNoSandboxOpt("no-sandbox", QCoreApplication::translate(c_context, "WebEngine without sandbox."));
     webNoSandboxOpt.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webNoSandboxOpt);
 
-    QCommandLineOption webDisableGpu("disable-gpu", MainWindow::tr("WebEngine with GPU disabled."));
+    QCommandLineOption webDisableGpu("disable-gpu", QCoreApplication::translate(c_context, "WebEngine with GPU disabled."));
     webDisableGpu.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webDisableGpu);
   }

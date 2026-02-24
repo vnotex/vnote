@@ -64,7 +64,9 @@ void NotebookExplorer::setupUI() {
 
   // Title bar.
   auto titleBar = setupTitleBar(this);
-  mainLayout->addWidget(titleBar);
+  if (titleBar) {
+    mainLayout->addWidget(titleBar);
+  }
 
   const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
 
@@ -104,6 +106,7 @@ void NotebookExplorer::setupUI() {
 }
 
 TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent) {
+#if 0 // TODO: Migrate to use ThemeService DI
   const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
 
   auto titleBar = new TitleBar(QString(), false, TitleBar::Action::Menu, p_parent);
@@ -122,9 +125,14 @@ TitleBar *NotebookExplorer::setupTitleBar(QWidget *p_parent) {
   setupTitleBarMenu(titleBar);
 
   return titleBar;
+#else
+  Q_UNUSED(p_parent);
+  return nullptr;
+#endif
 }
 
 void NotebookExplorer::setupTitleBarMenu(TitleBar *p_titleBar) {
+#if 0 // TODO: Migrate to use ThemeService DI
   const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
 
   p_titleBar->addMenuAction(tr("Manage Notebooks"), p_titleBar,
@@ -177,6 +185,9 @@ void NotebookExplorer::setupTitleBarMenu(TitleBar *p_titleBar) {
   }
 
   setupExploreModeMenu(p_titleBar);
+#else
+  Q_UNUSED(p_titleBar);
+#endif
 }
 
 void NotebookExplorer::loadNotebooks() { m_selector->loadNotebooks(); }
@@ -453,6 +464,7 @@ void NotebookExplorer::setupViewMenu(QMenu *p_menu, bool p_isNotebookView) {
 }
 
 void NotebookExplorer::setupRecycleBinMenu(TitleBar *p_titleBar) {
+#if 0 // TODO: Migrate to use ThemeService DI
   p_titleBar->addMenuSeparator();
 
   p_titleBar->addMenuAction(tr("Open Recycle Bin"), this, [this]() {
@@ -477,9 +489,13 @@ void NotebookExplorer::setupRecycleBinMenu(TitleBar *p_titleBar) {
       m_currentNotebook->emptyRecycleBin();
     }
   });
+#else
+  Q_UNUSED(p_titleBar);
+#endif
 }
 
 void NotebookExplorer::setupExploreModeMenu(TitleBar *p_titleBar) {
+#if 0 // TODO: Migrate to use ThemeService DI
   p_titleBar->addMenuSeparator();
 
   auto ag = new QActionGroup(p_titleBar);
@@ -514,6 +530,9 @@ void NotebookExplorer::setupExploreModeMenu(TitleBar *p_titleBar) {
     ConfigMgr::getInst().getWidgetConfig().setNodeExplorerExploreMode(mode);
     m_nodeExplorer->setExploreMode(mode);
   });
+#else
+  Q_UNUSED(p_titleBar);
+#endif
 }
 
 void NotebookExplorer::saveSession() {

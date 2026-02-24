@@ -12,40 +12,45 @@
 #include <QVBoxLayout>
 
 #include <controllers/notebooknodecontroller.h>
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/exception.h>
 #include <core/fileopenparameters.h>
 #include <core/global.h>
 #include <core/notebook/notebook.h>
 #include <core/notebookmgr.h>
+#include <core/servicelocator.h>
 #include <core/sessionconfig.h>
-#include <core/templatemgr.h>
 #include <core/vnotex.h>
 #include <core/widgetconfig.h>
+#include <gui/services/themeservice.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
-#include <snippet/snippetmgr.h>
 #include <utils/fileutils.h>
 #include <utils/widgetutils.h>
 #include <views/notebooknodedelegate.h>
 #include <views/notebooknodeview.h>
-#include <widgets/dialogs/importfolderdialog.h>
-#include <widgets/dialogs/importnotebookdialog.h>
-#include <widgets/dialogs/managenotebooksdialog.h>
-#include <widgets/dialogs/newfolderdialog.h>
-#include <widgets/dialogs/newnotebookdialog.h>
-#include <widgets/dialogs/newnotebookfromfolderdialog.h>
-#include <widgets/dialogs/newnotedialog.h>
-#include <widgets/dialogs/selectdialog.h>
+// TODO: Migrate dialogs to use ServiceLocator DI pattern
+// #include <widgets/dialogs/importfolderdialog.h>
+// #include <widgets/dialogs/importnotebookdialog.h>
+// #include <widgets/dialogs/managenotebooksdialog.h>
+// #include <widgets/dialogs/newfolderdialog.h>
+// #include <widgets/dialogs/newnotebookdialog.h>
+// #include <widgets/dialogs/newnotebookfromfolderdialog.h>
+// #include <widgets/dialogs/newnotedialog.h>
+// #include <widgets/dialogs/selectdialog.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
-#include <widgets/navigationmodemgr.h>
+// TODO: Migrate NavigationModeMgr to use ServiceLocator DI pattern
+// #include <widgets/navigationmodemgr.h>
 #include <widgets/notebookselector.h>
 #include <widgets/titlebar.h>
+// TODO: Migrate TemplateMgr and SnippetMgr to use ServiceLocator DI pattern
+// #include <core/templatemgr.h>
+// #include <snippet/snippetmgr.h>
 
 using namespace vnotex;
 
-NotebookExplorer2::NotebookExplorer2(QWidget *p_parent) : QFrame(p_parent) { setupUI(); }
+NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_parent) : QFrame(p_parent), m_services(p_services) { setupUI(); }
 
 NotebookExplorer2::~NotebookExplorer2() {}
 
@@ -58,13 +63,14 @@ void NotebookExplorer2::setupUI() {
   setupTitleBar();
   mainLayout->addWidget(m_titleBar);
 
-  const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
+  const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
 
   // Notebook selector
   m_notebookSelector = new NotebookSelector(this);
   m_notebookSelector->setWhatsThis(tr("Select one of all the notebooks as current notebook.<br/>"
                                       "Move mouse on one item to check its details."));
-  NavigationModeMgr::getInst().registerNavigationTarget(m_notebookSelector);
+  // TODO: Migrate NavigationModeMgr to use ServiceLocator DI pattern
+  // NavigationModeMgr::getInst().registerNavigationTarget(m_notebookSelector);
   m_notebookSelector->setViewOrder(widgetConfig.getNotebookSelectorViewOrder());
   mainLayout->addWidget(m_notebookSelector);
 
@@ -73,7 +79,7 @@ void NotebookExplorer2::setupUI() {
   mainLayout->addWidget(m_contentStack, 1);
 
   // Get initial explore mode from config
-  int mode = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerExploreMode();
+  int mode = m_services.get<ConfigMgr2>()->getWidgetConfig().getNodeExplorerExploreMode();
   // Map old NotebookNodeExplorer modes (0=Combined, 1=SeparateSingle, 2=SeparateDouble)
   // to new modes (0=Combined, 1=TwoColumns)
   m_exploreMode = (mode >= 1) ? TwoColumns : Combined;
@@ -98,7 +104,8 @@ void NotebookExplorer2::setupUI() {
 }
 
 void NotebookExplorer2::setupTitleBar() {
-  m_titleBar = new TitleBar(QString(), false, TitleBar::Action::Menu, this);
+  m_titleBar =
+      new TitleBar(m_services.get<ThemeService>(), QString(), false, TitleBar::Action::Menu, this);
   m_titleBar->setWhatsThis(
       tr("This title bar contains buttons and menu to manage notebooks and notes."));
   m_titleBar->setActionButtonsAlwaysShown(true);
@@ -119,7 +126,7 @@ void NotebookExplorer2::setupTitleBar() {
 }
 
 void NotebookExplorer2::setupTitleBarMenu() {
-  const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
+  const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
 
   m_titleBar->addMenuAction(tr("Manage Notebooks"), m_titleBar,
                             [this]() { manageNotebooks(); });
@@ -143,8 +150,8 @@ void NotebookExplorer2::setupTitleBarMenu() {
   {
     m_titleBar->addMenuSeparator();
     auto showAct = m_titleBar->addMenuAction(tr("Show External Files"), m_titleBar,
-                                             [](bool p_checked) {
-                                               ConfigMgr::getInst().getWidgetConfig().setNodeExplorerExternalFilesVisible(p_checked);
+                                             [this](bool p_checked) {
+                                               m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerExternalFilesVisible(p_checked);
                                                // TODO: Apply to views when external file support is added
                                              });
     showAct->setCheckable(true);
@@ -152,8 +159,8 @@ void NotebookExplorer2::setupTitleBarMenu() {
 
     auto importAct = m_titleBar->addMenuAction(tr("Import External Files when Activated"),
                                                m_titleBar,
-                                               [](bool p_checked) {
-                                                 ConfigMgr::getInst().getWidgetConfig().setNodeExplorerAutoImportExternalFilesEnabled(p_checked);
+                                               [this](bool p_checked) {
+                                                 m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerAutoImportExternalFilesEnabled(p_checked);
                                                });
     importAct->setCheckable(true);
     importAct->setChecked(widgetConfig.getNodeExplorerAutoImportExternalFilesEnabled());
@@ -162,8 +169,8 @@ void NotebookExplorer2::setupTitleBarMenu() {
   {
     m_titleBar->addMenuSeparator();
     auto act = m_titleBar->addMenuAction(
-        tr("Close File Before Opening Externally"), m_titleBar, [](bool p_checked) {
-          ConfigMgr::getInst().getWidgetConfig().setNodeExplorerCloseBeforeOpenWithEnabled(p_checked);
+        tr("Close File Before Opening Externally"), m_titleBar, [this](bool p_checked) {
+          m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerCloseBeforeOpenWithEnabled(p_checked);
         });
     act->setCheckable(true);
     act->setChecked(widgetConfig.getNodeExplorerCloseBeforeOpenWithEnabled());
@@ -214,7 +221,7 @@ void NotebookExplorer2::setupExploreModeMenu() {
   act->setData(static_cast<int>(ExploreMode::TwoColumns));
   m_titleBar->addMenuAction(act);
 
-  int mode = ConfigMgr::getInst().getWidgetConfig().getNodeExplorerExploreMode();
+  int mode = m_services.get<ConfigMgr2>()->getWidgetConfig().getNodeExplorerExploreMode();
   // Map old NotebookNodeExplorer modes to new modes
   // Combined = 0, SeparateSingle = 1, SeparateDouble = 2
   // Our modes: Combined = 0, TwoColumns = 1
@@ -232,7 +239,7 @@ void NotebookExplorer2::setupExploreModeMenu() {
   connect(ag, &QActionGroup::triggered, this, [this](QAction *action) {
     int mode = action->data().toInt();
     // Store as compatible value for old config
-    ConfigMgr::getInst().getWidgetConfig().setNodeExplorerExploreMode(mode == 0 ? 0 : 2);
+    m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerExploreMode(mode == 0 ? 0 : 2);
     setExploreMode(static_cast<ExploreMode>(mode));
   });
 }
@@ -278,7 +285,7 @@ void NotebookExplorer2::setupViewMenu(QMenu *p_menu, bool p_isNotebookView) {
     p_menu->addAction(act);
   }
 
-  const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
+  const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
   int viewOrder = p_isNotebookView ? widgetConfig.getNotebookSelectorViewOrder()
                                    : widgetConfig.getNodeExplorerViewOrder();
   for (const auto &action : ag->actions()) {
@@ -290,10 +297,10 @@ void NotebookExplorer2::setupViewMenu(QMenu *p_menu, bool p_isNotebookView) {
   connect(ag, &QActionGroup::triggered, this, [this, p_isNotebookView](QAction *p_action) {
     const int order = p_action->data().toInt();
     if (p_isNotebookView) {
-      ConfigMgr::getInst().getWidgetConfig().setNotebookSelectorViewOrder(order);
+      m_services.get<ConfigMgr2>()->getWidgetConfig().setNotebookSelectorViewOrder(order);
       m_notebookSelector->setViewOrder(order);
     } else {
-      ConfigMgr::getInst().getWidgetConfig().setNodeExplorerViewOrder(order);
+      m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerViewOrder(order);
       // TODO: Apply view order to MVC views when sorting is implemented
     }
   });
@@ -651,23 +658,39 @@ void NotebookExplorer2::onFolderSelectionChanged(const QList<Node *> &p_nodes) {
 // --- Public Slots Implementation ---
 
 void NotebookExplorer2::newNotebook() {
-  NewNotebookDialog dialog(VNoteX::getInst().getMainWindow());
-  dialog.exec();
+  // TODO: Migrate NewNotebookDialog to use ServiceLocator DI pattern
+  // NewNotebookDialog dialog(VNoteX::getInst().getMainWindow());
+  // dialog.exec();
+  MessageBoxHelper::notify(MessageBoxHelper::Information,
+                           tr("New notebook dialog is being migrated to use dependency injection."),
+                           VNoteX::getInst().getMainWindow());
 }
 
 void NotebookExplorer2::newNotebookFromFolder() {
-  NewNotebookFromFolderDialog dialog(VNoteX::getInst().getMainWindow());
-  dialog.exec();
+  // TODO: Migrate NewNotebookFromFolderDialog to use ServiceLocator DI pattern
+  // NewNotebookFromFolderDialog dialog(VNoteX::getInst().getMainWindow());
+  // dialog.exec();
+  MessageBoxHelper::notify(MessageBoxHelper::Information,
+                           tr("New notebook from folder dialog is being migrated to use dependency injection."),
+                           VNoteX::getInst().getMainWindow());
 }
 
 void NotebookExplorer2::importNotebook() {
-  ImportNotebookDialog dialog(VNoteX::getInst().getMainWindow());
-  dialog.exec();
+  // TODO: Migrate ImportNotebookDialog to use ServiceLocator DI pattern
+  // ImportNotebookDialog dialog(VNoteX::getInst().getMainWindow());
+  // dialog.exec();
+  MessageBoxHelper::notify(MessageBoxHelper::Information,
+                           tr("Import notebook dialog is being migrated to use dependency injection."),
+                           VNoteX::getInst().getMainWindow());
 }
 
 void NotebookExplorer2::manageNotebooks() {
-  ManageNotebooksDialog dialog(m_currentNotebook.data(), VNoteX::getInst().getMainWindow());
-  dialog.exec();
+  // TODO: Migrate ManageNotebooksDialog to use ServiceLocator DI pattern
+  // ManageNotebooksDialog dialog(m_currentNotebook.data(), VNoteX::getInst().getMainWindow());
+  // dialog.exec();
+  MessageBoxHelper::notify(MessageBoxHelper::Information,
+                           tr("Manage notebooks dialog is being migrated to use dependency injection."),
+                           VNoteX::getInst().getMainWindow());
 }
 
 void NotebookExplorer2::reloadNotebook(const Notebook *p_notebook) {
@@ -677,98 +700,111 @@ void NotebookExplorer2::reloadNotebook(const Notebook *p_notebook) {
 }
 
 void NotebookExplorer2::newFolder() {
-  auto node = checkNotebookAndGetCurrentExploredFolderNode();
-  if (!node) {
-    return;
-  }
-
-  NewFolderDialog dialog(node, VNoteX::getInst().getMainWindow());
-  if (dialog.exec() == QDialog::Accepted) {
-    setCurrentNode(dialog.getNewNode().data());
-  }
+  // TODO: Migrate NewFolderDialog to use ServiceLocator DI pattern
+  // auto node = checkNotebookAndGetCurrentExploredFolderNode();
+  // if (!node) {
+  //   return;
+  // }
+  //
+  // NewFolderDialog dialog(node, VNoteX::getInst().getMainWindow());
+  // if (dialog.exec() == QDialog::Accepted) {
+  //   setCurrentNode(dialog.getNewNode().data());
+  // }
+  MessageBoxHelper::notify(MessageBoxHelper::Information,
+                           tr("New folder dialog is being migrated to use dependency injection."),
+                           VNoteX::getInst().getMainWindow());
 }
 
 void NotebookExplorer2::newNote() {
-  auto node = checkNotebookAndGetCurrentExploredFolderNode();
-  if (!node) {
-    return;
-  }
-
-  NewNoteDialog dialog(node, VNoteX::getInst().getMainWindow());
-  if (dialog.exec() == QDialog::Accepted) {
-    setCurrentNode(dialog.getNewNode().data());
-    // Open it right now.
-    auto paras = QSharedPointer<FileOpenParameters>::create();
-    paras->m_mode = ViewWindowMode::Edit;
-    paras->m_newFile = true;
-    emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
-  }
+  // TODO: Migrate NewNoteDialog to use ServiceLocator DI pattern
+  // auto node = checkNotebookAndGetCurrentExploredFolderNode();
+  // if (!node) {
+  //   return;
+  // }
+  //
+  // NewNoteDialog dialog(node, VNoteX::getInst().getMainWindow());
+  // if (dialog.exec() == QDialog::Accepted) {
+  //   setCurrentNode(dialog.getNewNode().data());
+  //   // Open it right now.
+  //   auto paras = QSharedPointer<FileOpenParameters>::create();
+  //   paras->m_mode = ViewWindowMode::Edit;
+  //   paras->m_newFile = true;
+  //   emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
+  // }
+  MessageBoxHelper::notify(MessageBoxHelper::Information,
+                           tr("New note dialog is being migrated to use dependency injection."),
+                           VNoteX::getInst().getMainWindow());
 }
 
 void NotebookExplorer2::newQuickNote() {
-  auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-  const auto &schemes = sessionConfig.getQuickNoteSchemes();
-  if (schemes.isEmpty()) {
-    MessageBoxHelper::notify(MessageBoxHelper::Information,
-                             tr("Please set up quick note schemes in the Settings dialog first."),
-                             VNoteX::getInst().getMainWindow());
-    return;
-  }
-
-  SelectDialog dialog(tr("New Quick Note"), VNoteX::getInst().getMainWindow());
-  for (int i = 0; i < schemes.size(); ++i) {
-    dialog.addSelection(schemes[i].m_name, i);
-  }
-
-  if (dialog.exec() != QDialog::Accepted) {
-    return;
-  }
-
-  int selection = dialog.getSelection();
-  const auto &scheme = schemes[selection];
-
-  Notebook *notebook = m_currentNotebook.data();
-  Node *parentNode = currentExploredFolderNode();
-  if (!scheme.m_folderPath.isEmpty()) {
-    auto node = VNoteX::getInst().getNotebookMgr().loadNodeByPath(scheme.m_folderPath);
-    if (node) {
-      notebook = node->getNotebook();
-      parentNode = node.data();
-    }
-  }
-
-  if (!parentNode) {
-    MessageBoxHelper::notify(MessageBoxHelper::Information,
-                             tr("The quick note should be created within a notebook."),
-                             VNoteX::getInst().getMainWindow());
-    return;
-  }
-
-  QFileInfo finfo(SnippetMgr::getInst().applySnippetBySymbol(scheme.m_noteName));
-  QString newName = FileUtils::generateFileNameWithSequence(
-      parentNode->fetchAbsolutePath(), finfo.completeBaseName(), finfo.suffix());
-
-  QString errMsg;
-  auto newNode =
-      NewNoteDialog::newNote(notebook, parentNode, newName,
-                             TemplateMgr::getInst().getTemplateContent(scheme.m_template), errMsg);
-  if (!newNode) {
-    MessageBoxHelper::notify(
-        MessageBoxHelper::Information,
-        tr("Failed to create quick note from scheme (%1) (%2)").arg(scheme.m_name, errMsg),
-        VNoteX::getInst().getMainWindow());
-    return;
-  }
-
-  if (notebook == m_currentNotebook.data()) {
-    setCurrentNode(newNode.data());
-  }
-
-  // Open it right now.
-  auto paras = QSharedPointer<FileOpenParameters>::create();
-  paras->m_mode = ViewWindowMode::Edit;
-  paras->m_newFile = true;
-  emit VNoteX::getInst().openNodeRequested(newNode.data(), paras);
+  // TODO: Migrate newQuickNote to use ServiceLocator DI pattern
+  // Requires: ConfigMgr2 (done), SelectDialog, SnippetMgr, TemplateMgr, NewNoteDialog
+  // auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
+  // const auto &schemes = sessionConfig.getQuickNoteSchemes();
+  // if (schemes.isEmpty()) {
+  //   MessageBoxHelper::notify(MessageBoxHelper::Information,
+  //                            tr("Please set up quick note schemes in the Settings dialog first."),
+  //                            VNoteX::getInst().getMainWindow());
+  //   return;
+  // }
+  //
+  // SelectDialog dialog(tr("New Quick Note"), VNoteX::getInst().getMainWindow());
+  // for (int i = 0; i < schemes.size(); ++i) {
+  //   dialog.addSelection(schemes[i].m_name, i);
+  // }
+  //
+  // if (dialog.exec() != QDialog::Accepted) {
+  //   return;
+  // }
+  //
+  // int selection = dialog.getSelection();
+  // const auto &scheme = schemes[selection];
+  //
+  // Notebook *notebook = m_currentNotebook.data();
+  // Node *parentNode = currentExploredFolderNode();
+  // if (!scheme.m_folderPath.isEmpty()) {
+  //   auto node = VNoteX::getInst().getNotebookMgr().loadNodeByPath(scheme.m_folderPath);
+  //   if (node) {
+  //     notebook = node->getNotebook();
+  //     parentNode = node.data();
+  //   }
+  // }
+  //
+  // if (!parentNode) {
+  //   MessageBoxHelper::notify(MessageBoxHelper::Information,
+  //                            tr("The quick note should be created within a notebook."),
+  //                            VNoteX::getInst().getMainWindow());
+  //   return;
+  // }
+  //
+  // QFileInfo finfo(SnippetMgr::getInst().applySnippetBySymbol(scheme.m_noteName));
+  // QString newName = FileUtils::generateFileNameWithSequence(
+  //     parentNode->fetchAbsolutePath(), finfo.completeBaseName(), finfo.suffix());
+  //
+  // QString errMsg;
+  // auto newNode =
+  //     NewNoteDialog::newNote(notebook, parentNode, newName,
+  //                            TemplateMgr::getInst().getTemplateContent(scheme.m_template), errMsg);
+  // if (!newNode) {
+  //   MessageBoxHelper::notify(
+  //       MessageBoxHelper::Information,
+  //       tr("Failed to create quick note from scheme (%1) (%2)").arg(scheme.m_name, errMsg),
+  //       VNoteX::getInst().getMainWindow());
+  //   return;
+  // }
+  //
+  // if (notebook == m_currentNotebook.data()) {
+  //   setCurrentNode(newNode.data());
+  // }
+  //
+  // // Open it right now.
+  // auto paras = QSharedPointer<FileOpenParameters>::create();
+  // paras->m_mode = ViewWindowMode::Edit;
+  // paras->m_newFile = true;
+  // emit VNoteX::getInst().openNodeRequested(newNode.data(), paras);
+  MessageBoxHelper::notify(MessageBoxHelper::Information,
+                           tr("Quick note is being migrated to use dependency injection."),
+                           VNoteX::getInst().getMainWindow());
 }
 
 void NotebookExplorer2::importFile() {
@@ -802,15 +838,19 @@ void NotebookExplorer2::importFile() {
 }
 
 void NotebookExplorer2::importFolder() {
-  auto node = checkNotebookAndGetCurrentExploredFolderNode();
-  if (!node) {
-    return;
-  }
-
-  ImportFolderDialog dialog(node, VNoteX::getInst().getMainWindow());
-  if (dialog.exec() == QDialog::Accepted) {
-    setCurrentNode(dialog.getNewNode().data());
-  }
+  // TODO: Migrate ImportFolderDialog to use ServiceLocator DI pattern
+  // auto node = checkNotebookAndGetCurrentExploredFolderNode();
+  // if (!node) {
+  //   return;
+  // }
+  //
+  // ImportFolderDialog dialog(node, VNoteX::getInst().getMainWindow());
+  // if (dialog.exec() == QDialog::Accepted) {
+  //   setCurrentNode(dialog.getNewNode().data());
+  // }
+  MessageBoxHelper::notify(MessageBoxHelper::Information,
+                           tr("Import folder dialog is being migrated to use dependency injection."),
+                           VNoteX::getInst().getMainWindow());
 }
 
 void NotebookExplorer2::locateNode(Node *p_node) {

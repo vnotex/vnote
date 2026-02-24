@@ -1,38 +1,40 @@
-#include <QAccessible>
-#include <QDateTime>
+// main2.cpp - New entry point for VNote clean architecture
+// Uses ServiceLocator for dependency injection instead of singletons.
+
+#include <QApplication>
 #include <QDebug>
-#include <QDir>
-#include <QLocale>
-#include <QOpenGLContext>
-#include <QProcess>
-#include <QScopedPointer>
+#include <QIcon>
 #include <QSslSocket>
-#include <QSysInfo>
 #include <QTextCodec>
+#include <QDir>
 #include <QTranslator>
-#include <QWebEngineSettings>
-#include <QWindow>
+#include <QProcess>
+
+#include <core/configmgr2.h>
+#include <core/constants.h>
+#include <core/logger.h>
+#include <core/coreconfig.h>
+#include <core/servicelocator.h>
+#include <core/services/configservice.h>
+#include <core/services/notebookservice.h>
+#include <core/services/searchservice.h>
+#include <gui/services/themeservice.h>
+#include <gui/utils/widgetutils.h>
+#include <core/sessionconfig.h>
+#include <core/singleinstanceguard.h>
+#include <qwindow.h>
+#include <vxcore/vxcore.h>
+#include <widgets/mainwindow2.h>
+#include <widgets/messageboxhelper.h>
 
 #include "application.h"
 #include "commandlineoptions.h"
 #include "fakeaccessible.h"
-#include <core/configmgr.h>
-#include <core/coreconfig.h>
-#include <core/exception.h>
-#include <core/logger.h>
-#include <core/mainconfig.h>
-#include <core/sessionconfig.h>
-#include <core/singleinstanceguard.h>
-#include <core/vnotex.h>
-#include <core/vxcore.h>
-#include <utils/widgetutils.h>
-#include <widgets/mainwindow.h>
-#include <widgets/messageboxhelper.h>
 
 using namespace vnotex;
 
-void loadTranslators(QApplication &p_app) {
-  auto localeName = ConfigMgr::getInst().getCoreConfig().getLocale();
+void loadTranslators(QApplication &p_app, const ConfigMgr2 &configMgr) {
+  auto localeName = configMgr.getCoreConfig().getLocale();
   if (!localeName.isEmpty()) {
     QLocale::setDefault(QLocale(localeName));
   }
@@ -48,58 +50,49 @@ void loadTranslators(QApplication &p_app) {
   }
 
   // For QTextEdit/QTextBrowser and other basic widgets.
-  QScopedPointer<QTranslator> qtbaseTranslator(new QTranslator(&p_app));
+  std::unique_ptr<QTranslator> qtbaseTranslator(new QTranslator(&p_app));
   if (qtbaseTranslator->load(locale, "qtbase", "_", translationsPath)) {
-    p_app.installTranslator(qtbaseTranslator.take());
+    p_app.installTranslator(qtbaseTranslator.release());
   }
 
   // qt_zh_CN.ts does not cover the real QDialogButtonBox which uses QPlatformTheme.
-  QScopedPointer<QTranslator> dialogButtonBoxTranslator(new QTranslator(&p_app));
+  std::unique_ptr<QTranslator> dialogButtonBoxTranslator(new QTranslator(&p_app));
   if (dialogButtonBoxTranslator->load(locale, "qdialogbuttonbox", "_", translationsPath)) {
-    p_app.installTranslator(dialogButtonBoxTranslator.take());
+    p_app.installTranslator(dialogButtonBoxTranslator.release());
   }
 
-  QScopedPointer<QTranslator> webengineTranslator(new QTranslator(&p_app));
+  std::unique_ptr<QTranslator> webengineTranslator(new QTranslator(&p_app));
   if (webengineTranslator->load(locale, "qwebengine", "_", translationsPath)) {
-    p_app.installTranslator(webengineTranslator.take());
+    p_app.installTranslator(webengineTranslator.release());
   }
 
-  QScopedPointer<QTranslator> qtTranslator(new QTranslator(&p_app));
+  std::unique_ptr<QTranslator> qtTranslator(new QTranslator(&p_app));
   if (qtTranslator->load(locale, "qtv", "_", translationsPath)) {
-    p_app.installTranslator(qtTranslator.take());
+    p_app.installTranslator(qtTranslator.release());
   }
 
-  QScopedPointer<QTranslator> qtEnvTranslator(new QTranslator(&p_app));
+  std::unique_ptr<QTranslator> qtEnvTranslator(new QTranslator(&p_app));
   if (qtEnvTranslator->load(locale, "qt", "_", translationsPath)) {
-    p_app.installTranslator(qtEnvTranslator.take());
+    p_app.installTranslator(qtEnvTranslator.release());
   }
 
-  QScopedPointer<QTranslator> vnoteTranslator(new QTranslator(&p_app));
+  std::unique_ptr<QTranslator> vnoteTranslator(new QTranslator(&p_app));
   if (vnoteTranslator->load(locale, "vnote", "_", translationsPath)) {
-    p_app.installTranslator(vnoteTranslator.take());
+    p_app.installTranslator(vnoteTranslator.release());
   }
 
-  QScopedPointer<QTranslator> vtexteditTranslator(new QTranslator(&p_app));
+  std::unique_ptr<QTranslator> vtexteditTranslator(new QTranslator(&p_app));
   if (vtexteditTranslator->load(locale, "vtextedit", "_", translationsPath)) {
-    p_app.installTranslator(vtexteditTranslator.take());
+    p_app.installTranslator(vtexteditTranslator.release());
   }
 }
 
-void showMessageOnCommandLineIfAvailable(const QString &p_msg) {
-#if defined(Q_OS_WIN)
-  MessageBoxHelper::notify(MessageBoxHelper::Information,
-                           QStringLiteral("<pre>%1</pre>").arg(p_msg));
-#else
-  fprintf(stderr, "%s\n", qPrintable(p_msg));
-#endif
-}
-
-void setOpenGLOption() {
+void setOpenGLOption(const ConfigMgr2 &configMgr) {
   // Set OpenGL option on Windows.
   // Set environment QT_OPENGL to "angle/desktop/software".
 #if defined(Q_OS_WIN)
   {
-    auto option = ConfigMgr::getInst().getSessionConfig().getOpenGL();
+    auto option = configMgr.getSessionConfig().getOpenGL();
     qDebug() << "OpenGL option" << SessionConfig::openGLToString(option);
     switch (option) {
     case SessionConfig::OpenGL::Desktop:
@@ -129,32 +122,73 @@ void disableSandboxIfNeeded() {
 }
 
 int main(int argc, char *argv[]) {
+  // Set UTF-8 codec for locale
   QTextCodec *codec = QTextCodec::codecForName("UTF8");
   if (codec) {
     QTextCodec::setCodecForLocale(codec);
   }
 
-  VxCore::getInst().init();
+  vxcore_set_app_info(ConfigMgr2::c_orgName.toUtf8().constData(),
+                      ConfigMgr2::c_appName.toUtf8().constData());
 
-  setOpenGLOption();
+  // Initialize vxcore context
+  VxCoreContextHandle context = nullptr;
+  VxCoreError err = vxcore_context_create(nullptr, &context);
+  if (err != VXCORE_OK || !context) {
+    qCritical() << "Failed to create vxcore context:" << vxcore_error_message(err);
+    return -1;
+  }
+  qInfo() << "VxCore context created";
+
+  // Create ServiceLocator
+  ServiceLocator serviceLocator;
+
+  // Create and register services (non-owning pointers stored in ServiceLocator)
+  ConfigService configService(context);
+  NotebookService notebookService(context);
+  SearchService searchService(context);
+
+  serviceLocator.registerService<ConfigService>(&configService);
+  serviceLocator.registerService<NotebookService>(&notebookService);
+  serviceLocator.registerService<SearchService>(&searchService);
+  qInfo() << "Services registered";
+
+  // Create ConfigMgr2 with ConfigService
+  ConfigMgr2 configMgr(&configService);
+  configMgr.init();
+  serviceLocator.registerService<ConfigMgr2>(&configMgr);
+  qInfo() << "ConfigMgr2 registered";
+
+  setOpenGLOption(configMgr);
 
   disableSandboxIfNeeded();
 
+  // Create Qt application
   Application app(argc, argv);
 
-  ConfigMgr::getInst().initAfterQtAppStarted();
+  configMgr.initAfterQtAppStarted();
+
+  // Create ThemeService after Qt app is started
+  ThemeService themeService({
+      configMgr.getCoreConfig().getTheme(),
+      configMgr.getCoreConfig().getLocaleToUse(),
+      configService.getDataPath(DataLocation::App)
+  });
+  serviceLocator.registerService<ThemeService>(&themeService);
+  app.setThemeService(&themeService);
+  qInfo() << "ThemeService registered";
 
   QAccessible::installFactory(&FakeAccessible::accessibleFactory);
 
-{
+  {
     const QString iconPath = ":/vnotex/data/core/icons/vnote.ico";
     // Make sense only on Windows.
     app.setWindowIcon(QIcon(iconPath));
 
-    app.setApplicationName(ConfigMgr::c_appName);
-    app.setOrganizationName(ConfigMgr::c_orgName);
+    app.setApplicationName(ConfigMgr2::c_appName);
+    app.setOrganizationName(ConfigMgr2::c_orgName);
 
-    app.setApplicationVersion(ConfigMgr::getApplicationVersion());
+    app.setApplicationVersion(ConfigMgr2::getApplicationVersion());
   }
 
   CommandLineOptions cmdOptions;
@@ -169,15 +203,15 @@ int main(int argc, char *argv[]) {
 
   case CommandLineOptions::VersionRequested: {
     auto versionStr =
-        QStringLiteral("%1 %2").arg(app.applicationName()).arg(app.applicationVersion());
-    showMessageOnCommandLineIfAvailable(versionStr);
+        QStringLiteral("%1 %2").arg(app.applicationName(), app.applicationVersion());
+    qInfo() << versionStr;
     return 0;
   }
 
   case CommandLineOptions::HelpRequested:
     Q_FALLTHROUGH();
   default:
-    showMessageOnCommandLineIfAvailable(cmdOptions.m_helpText);
+    qInfo() << cmdOptions.m_helpText;
     return 0;
   }
 
@@ -190,22 +224,11 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  try {
-    ConfigMgr::getInst();
-  } catch (Exception &e) {
-    MessageBoxHelper::notify(
-        MessageBoxHelper::Critical, MainWindow::tr("%1 failed to start.").arg(ConfigMgr::c_appName),
-        MainWindow::tr("Failed to initialize configuration manager. "
-                       "Please check if all the files are intact or reinstall the application."),
-        e.what());
-    return -1;
-  }
-
   // Init logger after app info is set.
   Logger::init(cmdOptions.m_verbose, cmdOptions.m_logToStderr);
 
   qInfo() << QStringLiteral("%1 (v%2) started at %3 (%4)")
-                 .arg(ConfigMgr::c_appName, app.applicationVersion(),
+                 .arg(ConfigMgr2::c_appName, app.applicationVersion(),
                       QDateTime::currentDateTime().toString(), QSysInfo::productType());
 
   qInfo() << "OpenSSL build version:" << QSslSocket::sslLibraryBuildVersionString()
@@ -215,51 +238,46 @@ int main(int argc, char *argv[]) {
     qWarning() << "versions of the built and linked OpenSSL mismatch, network may not work";
   }
 
-  // Should set the correct locale before VNoteX::getInst().
-  loadTranslators(app);
+  loadTranslators(app, configMgr);
 
   if (app.styleSheet().isEmpty()) {
-    auto style = VNoteX::getInst().getThemeMgr().fetchQtStyleSheet();
+    auto style = themeService.fetchQtStyleSheet();
     if (!style.isEmpty()) {
       app.setStyleSheet(style);
       // Set up hot-reload for the theme folder if enabled via command line
       if (cmdOptions.m_watchThemes) {
-        const auto themeFolderPath =
-            VNoteX::getInst().getThemeMgr().getCurrentTheme().getThemeFolder();
+        const auto themeFolderPath = themeService.getCurrentTheme().getThemeFolder();
         app.watchThemeFolder(themeFolderPath);
       }
     }
   }
 
-  MainWindow window;
-  window.show();
-
-  QObject::connect(&guard, &SingleInstanceGuard::showRequested, &window,
-                   &MainWindow::showMainWindow);
-  QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested, &window,
-                   &MainWindow::openFiles);
-
-  QObject::connect(
-      &app, &Application::openFileRequested, &window,
-      [&window](const QString &p_filePath) { window.openFiles(QStringList() << p_filePath); });
+  // Create MainWindow2 with ServiceLocator
+  MainWindow2 mainWindow(serviceLocator);
+  mainWindow.show();
+  qInfo() << "MainWindow2 shown";
 
   // Let MainWindow show first to decide the screen on which app is running.
-  WidgetUtils::calculateScaleFactor(window.windowHandle()->screen());
+  WidgetUtils::calculateScaleFactor(mainWindow.windowHandle()->screen());
+  themeService.setBaseBackground(mainWindow.palette().color(QPalette::Base));
 
-  VNoteX::getInst().getThemeMgr().setBaseBackground(window.palette().color(QPalette::Base));
-
-  window.kickOffOnStart(cmdOptions.m_pathsToOpen);
-
+  // Run event loop
   int ret = app.exec();
-  if (ret == RESTART_EXIT_CODE) {
+  if (ret == kExitToRestart) {
     // Asked to restart VNote.
     guard.exit();
     QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList());
+    vxcore_context_destroy(context);
+    qInfo() << "VxCore context destroyed";
     // Must use exit() in Linux to quit the parent process in Qt 5.12.
     // Thanks to @ygcaicn.
     exit(0);
     return 0;
   }
+
+  // Cleanup: destroy vxcore context
+  vxcore_context_destroy(context);
+  qInfo() << "VxCore context destroyed";
 
   return ret;
 }

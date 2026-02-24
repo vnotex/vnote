@@ -10,14 +10,17 @@ class QToolBar;
 class QLabel;
 
 namespace vnotex {
+
+class ThemeService;
+
 class TitleBar : public QFrame {
   Q_OBJECT
 public:
   enum Action { None = 0, Settings = 0x1, Menu = 0x2 };
   Q_DECLARE_FLAGS(Actions, Action)
 
-  TitleBar(const QString &p_title, bool p_hasInfoLabel, TitleBar::Actions p_actionFlags,
-           QWidget *p_parent = nullptr);
+  TitleBar(ThemeService *p_themeService, const QString &p_title, bool p_hasInfoLabel,
+           TitleBar::Actions p_actionFlags, QWidget *p_parent = nullptr);
 
   QToolButton *addActionButton(const QString &p_iconName, const QString &p_text);
 
@@ -63,10 +66,10 @@ private:
 
   void setActionButtonsVisible(bool p_visible);
 
-  static QToolButton *newActionButton(const QString &p_iconName, const QString &p_text,
+  QToolButton *newActionButton(const QString &p_iconName, const QString &p_text,
                                       QWidget *p_parent);
 
-  static QIcon generateMenuActionIcon(const QString &p_iconName);
+  QIcon generateMenuActionIcon(const QString &p_iconName);
 
   QLabel *m_infoLabel = nullptr;
 
@@ -79,6 +82,8 @@ private:
   bool m_actionButtonsForcedShown = false;
 
   QMenu *m_menu = nullptr;
+
+  ThemeService *m_themeService = nullptr;
 
   static const char *c_titleProp;
 

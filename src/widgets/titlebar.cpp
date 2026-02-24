@@ -6,8 +6,8 @@
 #include <QToolBar>
 #include <QToolButton>
 
-#include "thememgr.h"
-#include "vnotex.h"
+#include <gui/services/themeservice.h>
+
 #include "widgetsfactory.h"
 #include <utils/iconutils.h>
 
@@ -23,9 +23,9 @@ const QString TitleBar::c_menuIconForegroundName = "widgets#titlebar#menu_icon#f
 
 const QString TitleBar::c_menuIconDisabledForegroundName = "widgets#titlebar#menu_icon#disabled#fg";
 
-TitleBar::TitleBar(const QString &p_title, bool p_hasInfoLabel, TitleBar::Actions p_actionFlags,
-                   QWidget *p_parent)
-    : QFrame(p_parent) {
+TitleBar::TitleBar(ThemeService *p_themeService, const QString &p_title, bool p_hasInfoLabel,
+                   TitleBar::Actions p_actionFlags, QWidget *p_parent)
+    : QFrame(p_parent), m_themeService(p_themeService) {
   setupUI(p_title, p_hasInfoLabel, p_actionFlags);
 }
 
@@ -72,9 +72,8 @@ QToolButton *TitleBar::newActionButton(const QString &p_iconName, const QString 
   auto btn = new QToolButton(p_parent);
   btn->setProperty(PropertyDefs::c_actionToolButton, true);
 
-  const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-  auto iconFile = themeMgr.getIconFile(p_iconName);
-  const auto fg = themeMgr.paletteColor(c_actionButtonForegroundName);
+  auto iconFile = m_themeService->getIconFile(p_iconName);
+  const auto fg = m_themeService->paletteColor(c_actionButtonForegroundName);
   auto icon = IconUtils::fetchIcon(iconFile, fg);
 
   auto act = new QAction(icon, p_text, btn);
@@ -114,15 +113,14 @@ void TitleBar::leaveEvent(QEvent *p_event) {
 void TitleBar::setActionButtonsVisible(bool p_visible) { m_buttonToolBar->setVisible(p_visible); }
 
 QIcon TitleBar::generateMenuActionIcon(const QString &p_iconName) {
-  const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-  const auto fg = themeMgr.paletteColor(c_menuIconForegroundName);
-  const auto disabledFg = themeMgr.paletteColor(c_menuIconDisabledForegroundName);
+  const auto fg = m_themeService->paletteColor(c_menuIconForegroundName);
+  const auto disabledFg = m_themeService->paletteColor(c_menuIconDisabledForegroundName);
 
   QVector<IconUtils::OverriddenColor> colors;
   colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
   colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
 
-  auto iconFile = themeMgr.getIconFile(p_iconName);
+  auto iconFile = m_themeService->getIconFile(p_iconName);
   return IconUtils::fetchIcon(iconFile, colors);
 }
 

@@ -7,7 +7,7 @@
 #include <QSet>
 #include <QSharedPointer>
 
-#include "dockwidgethelper.h"
+// #include "dockwidgethelper.h"
 
 class QDockWidget;
 class QSystemTrayIcon;
@@ -34,7 +34,7 @@ enum { RESTART_EXIT_CODE = 1000 };
 class MainWindow : public FramelessMainWindowImpl {
   Q_OBJECT
 public:
-  friend class DockWidgetHelper;
+  // friend class DockWidgetHelper;
 
   explicit MainWindow(QWidget *p_parent = nullptr);
 
@@ -47,7 +47,7 @@ public:
 
   void resetStateAndGeometry();
 
-  const QVector<QDockWidget *> &getDocks() const;
+  const QVector<QDockWidget *> &getDocks() const { return QVector<QDockWidget *>(); }
 
   ViewArea *getViewArea() const;
 
@@ -159,7 +159,7 @@ private:
   // WebView to handle OpenGL blinking on Windows.
   QWebEngineView *m_dummyWebView = nullptr;
 
-  DockWidgetHelper m_dockWidgetHelper;
+  // DockWidgetHelper m_dockWidgetHelper;
 
   NotebookExplorer2 *m_notebookExplorer = nullptr;
 
