@@ -6,6 +6,8 @@
 #include <QSet>
 #include <QSharedPointer>
 
+#include <core/nodeinfo.h>
+
 namespace vnotex {
 
 class Node;
@@ -19,13 +21,18 @@ class NotebookNodeModel : public QAbstractItemModel {
 public:
   // Custom data roles for node information
   enum Roles {
-    NodeRole = Qt::UserRole + 1, // Node* pointer
-    NodeTypeRole,                // Node::Flags
-    IsContainerRole,             // bool - is folder
-    ChildCountRole,              // int - number of children
-    PathRole,                    // QString - node path
-    ModifiedTimeRole,            // QDateTime
-    CreatedTimeRole              // QDateTime
+    // New architecture roles (preferred)
+    NodeInfoRole = Qt::UserRole + 1, // NodeInfo struct
+    IsFolderRole,                     // bool - is folder
+
+    // Legacy roles (for backward compatibility during migration)
+    NodeRole,         // Node* pointer (DEPRECATED: use NodeInfoRole)
+    NodeTypeRole,     // Node::Flags
+    IsContainerRole,  // bool - is folder (DEPRECATED: use IsFolderRole)
+    ChildCountRole,   // int - number of children
+    PathRole,         // QString - node path
+    ModifiedTimeRole, // QDateTime
+    CreatedTimeRole   // QDateTime
   };
 
   explicit NotebookNodeModel(QObject *p_parent = nullptr);
@@ -67,6 +74,8 @@ public:
   // Notify model about external changes to a node
   void nodeDataChanged(Node *p_node);
 
+  // Convert Node* to NodeInfo struct
+  NodeInfo nodeToNodeInfo(Node *p_node) const;
 signals:
   void notebookChanged();
 
@@ -80,6 +89,7 @@ private:
 
   // Get icon for a node based on its type
   QIcon getNodeIcon(Node *p_node) const;
+
 
   // The current notebook
   QSharedPointer<Notebook> m_notebook;

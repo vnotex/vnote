@@ -34,6 +34,7 @@ target_sources(vnote PRIVATE
     iconfig.h
     iconfigmgr.h
     location.h
+    nodeinfo.h
     logger.cpp logger.h
     mainconfig.cpp mainconfig.h
     markdowneditorconfig.cpp markdowneditorconfig.h

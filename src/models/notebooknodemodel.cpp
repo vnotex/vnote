@@ -7,6 +7,7 @@
 #include <core/vnotex.h>
 #include <utils/iconutils.h>
 #include <widgets/widgetsfactory.h>
+#include <core/nodeinfo.h>
 
 using namespace vnotex;
 
@@ -151,6 +152,12 @@ QVariant NotebookNodeModel::data(const QModelIndex &p_index, int p_role) const {
   case Qt::ToolTipRole:
     return node->fetchAbsolutePath();
 
+  case NodeInfoRole:
+    return QVariant::fromValue(nodeToNodeInfo(node));
+
+  case IsFolderRole:
+    return node->isContainer();
+
   case NodeRole:
     return QVariant::fromValue(static_cast<void *>(node));
 
@@ -176,7 +183,6 @@ QVariant NotebookNodeModel::data(const QModelIndex &p_index, int p_role) const {
     return QVariant();
   }
 }
-
 Qt::ItemFlags NotebookNodeModel::flags(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
     return Qt::NoItemFlags;
@@ -470,4 +476,41 @@ QIcon NotebookNodeModel::getNodeIcon(Node *p_node) const {
   }
 
   return IconUtils::fetchIcon(themeMgr.getIconFile(iconName));
+}
+
+NodeInfo NotebookNodeModel::nodeToNodeInfo(Node *p_node) const {
+  NodeInfo info;
+  if (!p_node) {
+    return info;
+  }
+
+  auto *notebook = p_node->getNotebook();
+  if (notebook) {
+    info.notebookId = QString::number(notebook->getId());
+  }
+
+  if (p_node->isRoot()) {
+    info.relativePath = QString();
+  } else {
+    // Get path relative to notebook root
+    QString absPath = p_node->fetchAbsolutePath();
+    QString rootPath = notebook ? notebook->getRootFolderAbsolutePath() : QString();
+    if (!rootPath.isEmpty() && absPath.startsWith(rootPath)) {
+      info.relativePath = absPath.mid(rootPath.length());
+      if (info.relativePath.startsWith(QLatin1Char('/'))) {
+        info.relativePath = info.relativePath.mid(1);
+      }
+    } else {
+      info.relativePath = p_node->getName();
+    }
+  }
+
+  info.isFolder = p_node->isContainer();
+  info.name = p_node->getName();
+  info.createdTimeUtc = p_node->getCreatedTimeUtc();
+  info.modifiedTimeUtc = p_node->getModifiedTimeUtc();
+  info.childCount = p_node->isContainer() ? p_node->getChildrenCount() : 0;
+  info.tags = p_node->getTags();
+
+  return info;
 }

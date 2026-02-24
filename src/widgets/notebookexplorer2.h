@@ -6,6 +6,7 @@
 
 #include <core/global.h>
 #include <core/noncopyable.h>
+#include <core/nodeinfo.h>
 
 class QStackedWidget;
 class QSplitter;
@@ -88,13 +89,14 @@ public slots:
 signals:
   // Emitted when user selects a notebook from the selector
   void notebookActivated(const QString &p_notebookGuid);
-  // Forwarded from controller - same signatures as NotebookExplorer
-  void nodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
+
+  // --- New architecture signals (NodeInfo-based) ---
+  void nodeActivated(const NodeInfo &p_nodeInfo, const QSharedPointer<FileOpenParameters> &p_paras);
   void fileActivated(const QString &p_path, const QSharedPointer<FileOpenParameters> &p_paras);
-  void nodeAboutToMove(Node *p_node, const QSharedPointer<Event> &p_event);
-  void nodeAboutToRemove(Node *p_node, const QSharedPointer<Event> &p_event);
-  void nodeAboutToReload(Node *p_node, const QSharedPointer<Event> &p_event);
-  void closeFileRequested(const QString &p_filePath, const QSharedPointer<Event> &p_event);
+  void nodeAboutToMove(const NodeInfo &p_nodeInfo, const QSharedPointer<Event> &p_event);
+  void nodeAboutToRemove(const NodeInfo &p_nodeInfo, const QSharedPointer<Event> &p_event);
+  void nodeAboutToReload(const NodeInfo &p_nodeInfo, const QSharedPointer<Event> &p_event);
+  void closeFileRequested(const NodeInfo &p_nodeInfo, const QSharedPointer<Event> &p_event);
 
 private slots:
   void onNodeActivated(Node *p_node, const QSharedPointer<FileOpenParameters> &p_paras);
