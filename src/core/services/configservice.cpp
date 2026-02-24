@@ -80,7 +80,7 @@ QJsonObject ConfigService::getConfig() const {
   if (err != VXCORE_OK) {
     return QJsonObject();
   }
-  return parseJsonObject(cstrToQString(json));
+  return parseJsonObjectFromCStr(json);
 }
 
 QJsonObject ConfigService::getSessionConfig() const {
@@ -93,7 +93,7 @@ QJsonObject ConfigService::getSessionConfig() const {
   if (err != VXCORE_OK) {
     return QJsonObject();
   }
-  return parseJsonObject(cstrToQString(json));
+  return parseJsonObjectFromCStr(json);
 }
 
 QJsonObject ConfigService::getConfigByName(DataLocation p_location,
@@ -109,7 +109,7 @@ QJsonObject ConfigService::getConfigByName(DataLocation p_location,
   if (err != VXCORE_OK) {
     return QJsonObject();
   }
-  return parseJsonObject(cstrToQString(json));
+  return parseJsonObjectFromCStr(json);
 }
 
 QJsonObject ConfigService::getConfigByNameWithDefaults(DataLocation p_location,
@@ -127,7 +127,7 @@ QJsonObject ConfigService::getConfigByNameWithDefaults(DataLocation p_location,
   if (err != VXCORE_OK) {
     return QJsonObject();
   }
-  return parseJsonObject(cstrToQString(json));
+  return parseJsonObjectFromCStr(json);
 }
 
 Error ConfigService::updateConfigByName(DataLocation p_location, const QString &p_baseName,
@@ -156,17 +156,16 @@ QString ConfigService::cstrToQString(char *p_str) {
   return result;
 }
 
-QJsonObject ConfigService::parseJsonObject(const QString &p_json) {
-  if (p_json.isEmpty()) {
+QJsonObject ConfigService::parseJsonObjectFromCStr(char *p_str) {
+  if (!p_str) {
     return QJsonObject();
   }
-
   QJsonParseError parseError;
-  QJsonDocument doc = QJsonDocument::fromJson(p_json.toUtf8(), &parseError);
+  QJsonDocument doc = QJsonDocument::fromJson(QByteArray(p_str), &parseError);
+  vxcore_string_free(p_str);
   if (parseError.error != QJsonParseError::NoError) {
     return QJsonObject();
   }
-
   return doc.object();
 }
 
