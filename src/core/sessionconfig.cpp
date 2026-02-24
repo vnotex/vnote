@@ -117,6 +117,8 @@ void SessionConfig::loadCore(const QJsonObject &p_session) {
   if (m_externalMediaDefaultPath.isEmpty()) {
     m_externalMediaDefaultPath = QDir::homePath();
   }
+
+  m_currentNotebook = readString(coreObj, QStringLiteral("currentNotebook"));
 }
 
 QJsonObject SessionConfig::saveCore() const {
@@ -131,6 +133,7 @@ QJsonObject SessionConfig::saveCore() const {
   coreObj[QStringLiteral("flashPage")] = m_flashPage;
   writeStringList(coreObj, QStringLiteral("quickAccess"), m_quickAccessFiles);
   coreObj[QStringLiteral("externalMediaDefaultPath")] = m_externalMediaDefaultPath;
+  coreObj[QStringLiteral("currentNotebook")] = m_currentNotebook;
   return coreObj;
 }
 
@@ -148,6 +151,12 @@ const QString &SessionConfig::getExternalMediaDefaultPath() const {
 
 void SessionConfig::setExternalMediaDefaultPath(const QString &p_path) {
   updateConfig(m_externalMediaDefaultPath, p_path, this);
+}
+
+const QString &SessionConfig::getCurrentNotebook() const { return m_currentNotebook; }
+
+void SessionConfig::setCurrentNotebook(const QString &p_guid) {
+  updateConfig(m_currentNotebook, p_guid, this);
 }
 
 void SessionConfig::update() { getMgr()->updateSessionConfig(toJson()); }
