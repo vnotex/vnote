@@ -110,7 +110,7 @@ private:
 
   void loadCurrentNotebookId();
 
-  QSharedPointer<Notebook> readNotebookFromConfig(const SessionConfig::NotebookItem &p_item);
+  // QSharedPointer<Notebook> readNotebookFromConfig(const SessionConfig::NotebookItem &p_item);
 
   void setCurrentNotebookAfterUpdate();
 

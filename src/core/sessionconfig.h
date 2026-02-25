@@ -15,27 +15,10 @@ class IConfigMgr;
 
 class SessionConfig : public IConfig {
 public:
-  struct NotebookItem {
-    NotebookItem() = default;
-
-    bool operator==(const NotebookItem &p_other) const;
-
-    void fromJson(const QJsonObject &p_jobj);
-
-    QJsonObject toJson() const;
-
-    QString m_type;
-    QString m_rootFolderPath;
-    QString m_backend;
-  };
-
   struct MainWindowStateGeometry {
     bool operator==(const MainWindowStateGeometry &p_other) const {
       return m_mainState == p_other.m_mainState && m_mainGeometry == p_other.m_mainGeometry &&
-             m_visibleDocksBeforeExpand == p_other.m_visibleDocksBeforeExpand &&
-             m_tagExplorerState == p_other.m_tagExplorerState &&
-             m_notebookExplorerState == p_other.m_notebookExplorerState &&
-             m_locationListState == p_other.m_locationListState;
+             m_visibleDocksBeforeExpand == p_other.m_visibleDocksBeforeExpand;
     }
 
     QByteArray m_mainState;
@@ -43,12 +26,6 @@ public:
     QByteArray m_mainGeometry;
 
     QStringList m_visibleDocksBeforeExpand;
-
-    QByteArray m_tagExplorerState;
-
-    QByteArray m_notebookExplorerState;
-
-    QByteArray m_locationListState;
   };
 
   struct QuickNoteScheme {
@@ -98,12 +75,6 @@ public:
   const QString &getExternalMediaDefaultPath() const;
   void setExternalMediaDefaultPath(const QString &p_path);
 
-  const QString &getCurrentNotebookRootFolderPath() const;
-  void setCurrentNotebookRootFolderPath(const QString &p_path);
-
-  const QVector<SessionConfig::NotebookItem> &getNotebooks() const;
-  void setNotebooks(const QVector<SessionConfig::NotebookItem> &p_notebooks);
-
   void update() Q_DECL_OVERRIDE;
 
   QJsonObject toJson() const Q_DECL_OVERRIDE;
@@ -135,7 +106,7 @@ public:
   QByteArray getViewAreaSessionAndClear();
   void setViewAreaSession(const QByteArray &p_bytes);
 
-  QByteArray getNotebookExplorerSessionAndClear();
+  QByteArray getNotebookExplorerSession() const;
   void setNotebookExplorerSession(const QByteArray &p_bytes);
 
   const QString &getFlashPage() const;
@@ -161,10 +132,6 @@ private:
 
   QJsonObject saveCore() const;
 
-  void loadNotebooks(const QJsonObject &p_session);
-
-  QJsonArray saveNotebooks() const;
-
   void loadStateAndGeometry(const QJsonObject &p_session);
 
   QJsonObject saveStateAndGeometry() const;
@@ -188,11 +155,6 @@ private:
   QJsonObject saveExportOption() const;
 
   QString m_newNotebookDefaultRootFolderPath;
-
-  // Use root folder to identify a notebook uniquely.
-  QString m_currentNotebookRootFolderPath;
-
-  QVector<SessionConfig::NotebookItem> m_notebooks;
 
   MainWindowStateGeometry m_mainWindowStateGeometry;
 

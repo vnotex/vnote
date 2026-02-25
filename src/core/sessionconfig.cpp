@@ -15,27 +15,6 @@
 
 using namespace vnotex;
 
-bool SessionConfig::NotebookItem::operator==(const NotebookItem &p_other) const {
-  return m_type == p_other.m_type && m_rootFolderPath == p_other.m_rootFolderPath &&
-         m_backend == p_other.m_backend;
-}
-
-void SessionConfig::NotebookItem::fromJson(const QJsonObject &p_jobj) {
-  m_type = p_jobj[QStringLiteral("type")].toString();
-  m_rootFolderPath = p_jobj[QStringLiteral("root_folder")].toString();
-  m_backend = p_jobj[QStringLiteral("backend")].toString();
-}
-
-QJsonObject SessionConfig::NotebookItem::toJson() const {
-  QJsonObject jobj;
-
-  jobj[QStringLiteral("type")] = m_type;
-  jobj[QStringLiteral("root_folder")] = m_rootFolderPath;
-  jobj[QStringLiteral("backend")] = m_backend;
-
-  return jobj;
-}
-
 bool SessionConfig::QuickNoteScheme::operator==(const QuickNoteScheme &p_other) const {
   return m_name == p_other.m_name && m_folderPath == p_other.m_folderPath &&
          m_noteName == p_other.m_noteName && m_template == p_other.m_template;
@@ -102,8 +81,6 @@ void SessionConfig::fromJson(const QJsonObject &p_jobj) {
 
   loadExternalPrograms(p_jobj);
 
-  loadNotebooks(p_jobj);
-
   loadHistory(p_jobj);
 
   loadQuickNoteSchemes(p_jobj);
@@ -116,9 +93,6 @@ void SessionConfig::loadCore(const QJsonObject &p_session) {
   if (m_newNotebookDefaultRootFolderPath.isEmpty()) {
     m_newNotebookDefaultRootFolderPath = QDir::homePath();
   }
-
-  m_currentNotebookRootFolderPath =
-      readString(coreObj, QStringLiteral("current_notebook_root_folder_path"));
 
   {
     auto option = readString(coreObj, QStringLiteral("opengl"));
@@ -149,7 +123,6 @@ QJsonObject SessionConfig::saveCore() const {
   QJsonObject coreObj;
   coreObj[QStringLiteral("new_notebook_default_root_folder_path")] =
       m_newNotebookDefaultRootFolderPath;
-  coreObj[QStringLiteral("current_notebook_root_folder_path")] = m_currentNotebookRootFolderPath;
   coreObj[QStringLiteral("opengl")] = openGLToString(m_openGL);
   coreObj[QStringLiteral("system_title_bar")] = m_systemTitleBarEnabled;
   if (m_minimizeToSystemTray != -1) {
@@ -177,44 +150,11 @@ void SessionConfig::setExternalMediaDefaultPath(const QString &p_path) {
   updateConfig(m_externalMediaDefaultPath, p_path, this);
 }
 
-const QVector<SessionConfig::NotebookItem> &SessionConfig::getNotebooks() const {
-  return m_notebooks;
-}
-
-void SessionConfig::setNotebooks(const QVector<SessionConfig::NotebookItem> &p_notebooks) {
-  updateConfig(m_notebooks, p_notebooks, this);
-}
-
-void SessionConfig::loadNotebooks(const QJsonObject &p_session) {
-  const auto notebooksJson = p_session.value(QStringLiteral("notebooks")).toArray();
-  m_notebooks.resize(notebooksJson.size());
-  for (int i = 0; i < notebooksJson.size(); ++i) {
-    m_notebooks[i].fromJson(notebooksJson[i].toObject());
-  }
-}
-
-QJsonArray SessionConfig::saveNotebooks() const {
-  QJsonArray nbArray;
-  for (const auto &nb : m_notebooks) {
-    nbArray.append(nb.toJson());
-  }
-  return nbArray;
-}
-
-const QString &SessionConfig::getCurrentNotebookRootFolderPath() const {
-  return m_currentNotebookRootFolderPath;
-}
-
-void SessionConfig::setCurrentNotebookRootFolderPath(const QString &p_path) {
-  updateConfig(m_currentNotebookRootFolderPath, p_path, this);
-}
-
 void SessionConfig::update() { getMgr()->updateSessionConfig(toJson()); }
 
 QJsonObject SessionConfig::toJson() const {
   QJsonObject obj;
   obj[QStringLiteral("core")] = saveCore();
-  obj[QStringLiteral("notebooks")] = saveNotebooks();
   obj[QStringLiteral("state_geometry")] = saveStateAndGeometry();
   obj[QStringLiteral("export")] = saveExportOption();
   obj[QStringLiteral("search_option")] = m_searchOption.toJson();
@@ -233,12 +173,6 @@ QJsonObject SessionConfig::saveStateAndGeometry() const {
                  m_mainWindowStateGeometry.m_mainGeometry);
   writeStringList(obj, QStringLiteral("visible_docks_before_expand"),
                   m_mainWindowStateGeometry.m_visibleDocksBeforeExpand);
-  writeByteArray(obj, QStringLiteral("tag_explorer_state"),
-                 m_mainWindowStateGeometry.m_tagExplorerState);
-  writeByteArray(obj, QStringLiteral("notebook_explorer_state"),
-                 m_mainWindowStateGeometry.m_notebookExplorerState);
-  writeByteArray(obj, QStringLiteral("location_list_state"),
-                 m_mainWindowStateGeometry.m_locationListState);
   return obj;
 }
 
@@ -328,12 +262,6 @@ void SessionConfig::loadStateAndGeometry(const QJsonObject &p_session) {
       readByteArray(obj, QStringLiteral("main_window_geometry"));
   m_mainWindowStateGeometry.m_visibleDocksBeforeExpand =
       readStringList(obj, QStringLiteral("visible_docks_before_expand"));
-  m_mainWindowStateGeometry.m_tagExplorerState =
-      readByteArray(obj, QStringLiteral("tag_explorer_state"));
-  m_mainWindowStateGeometry.m_notebookExplorerState =
-      readByteArray(obj, QStringLiteral("notebook_explorer_state"));
-  m_mainWindowStateGeometry.m_locationListState =
-      readByteArray(obj, QStringLiteral("location_list_state"));
 }
 
 QByteArray SessionConfig::getViewAreaSessionAndClear() {
@@ -346,10 +274,8 @@ void SessionConfig::setViewAreaSession(const QByteArray &p_bytes) {
   updateConfigWithoutCheck(m_viewAreaSession, p_bytes, this);
 }
 
-QByteArray SessionConfig::getNotebookExplorerSessionAndClear() {
-  QByteArray bytes;
-  m_notebookExplorerSession.swap(bytes);
-  return bytes;
+QByteArray SessionConfig::getNotebookExplorerSession() const {
+  return m_notebookExplorerSession;
 }
 
 void SessionConfig::setNotebookExplorerSession(const QByteArray &p_bytes) {

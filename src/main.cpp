@@ -261,6 +261,8 @@ int main(int argc, char *argv[]) {
   WidgetUtils::calculateScaleFactor(mainWindow.windowHandle()->screen());
   themeService.setBaseBackground(mainWindow.palette().color(QPalette::Base));
 
+  mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen);
+
   // Run event loop
   int ret = app.exec();
   if (ret == kExitToRestart) {

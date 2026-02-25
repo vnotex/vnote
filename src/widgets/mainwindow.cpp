@@ -404,9 +404,11 @@ void MainWindow::saveStateAndGeometry() {
   sg.m_mainState = saveState();
   sg.m_mainGeometry = saveGeometry();
   sg.m_visibleDocksBeforeExpand = m_visibleDocksBeforeExpand;
-  sg.m_tagExplorerState = m_tagExplorer->saveState();
-  sg.m_notebookExplorerState = m_notebookExplorer->saveState();
-  sg.m_locationListState = m_locationList->saveState();
+  // DEPRECATED: These members have been removed from MainWindowStateGeometry.
+  // The new architecture uses separate session APIs.
+  // sg.m_tagExplorerState = m_tagExplorer->saveState();
+  // sg.m_notebookExplorerState = m_notebookExplorer->saveState();
+  // sg.m_locationListState = m_locationList->saveState();
 
   auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
   sessionConfig.setMainWindowStateGeometry(sg);
@@ -431,17 +433,19 @@ void MainWindow::loadStateAndGeometry() {
     // m_visibleDocksBeforeExpand = m_dockWidgetHelper.getVisibleDocks();
   }
 
-  if (!sg.m_tagExplorerState.isEmpty()) {
-    m_tagExplorer->restoreState(sg.m_tagExplorerState);
-  }
-
-  if (!sg.m_notebookExplorerState.isEmpty()) {
-    m_notebookExplorer->restoreState(sg.m_notebookExplorerState);
-  }
-
-  if (!sg.m_locationListState.isEmpty()) {
-    m_locationList->restoreState(sg.m_locationListState);
-  }
+  // DEPRECATED: These members have been removed from MainWindowStateGeometry.
+  // The new architecture uses separate session APIs.
+  // if (!sg.m_tagExplorerState.isEmpty()) {
+  //   m_tagExplorer->restoreState(sg.m_tagExplorerState);
+  // }
+  //
+  // if (!sg.m_notebookExplorerState.isEmpty()) {
+  //   m_notebookExplorer->restoreState(sg.m_notebookExplorerState);
+  // }
+  //
+  // if (!sg.m_locationListState.isEmpty()) {
+  //   m_locationList->restoreState(sg.m_locationListState);
+  // }
 }
 
 void MainWindow::resetStateAndGeometry() {

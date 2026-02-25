@@ -536,20 +536,24 @@ void NotebookExplorer::setupExploreModeMenu(TitleBar *p_titleBar) {
 }
 
 void NotebookExplorer::saveSession() {
-  updateSession();
-
-  auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-  sessionConfig.setNotebookExplorerSession(m_session.serialize());
+  // DEPRECATED: NotebookExplorerSession APIs have been removed from SessionConfig.
+  // The new architecture (NotebookExplorer2) uses different session management.
+  // updateSession();
+  //
+  // auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+  // sessionConfig.setNotebookExplorerSession(m_session.serialize());
 }
 
 void NotebookExplorer::loadSession() {
-  auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-  m_session =
-      NotebookExplorerSession::deserialize(sessionConfig.getNotebookExplorerSessionAndClear());
-
-  m_sessionLoaded = true;
-
-  recoverSession();
+  // DEPRECATED: NotebookExplorerSession APIs have been removed from SessionConfig.
+  // The new architecture (NotebookExplorer2) uses different session management.
+  // auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+  // m_session =
+  //     NotebookExplorerSession::deserialize(sessionConfig.getNotebookExplorerSessionAndClear());
+  //
+  // m_sessionLoaded = true;
+  //
+  // recoverSession();
 }
 
 void NotebookExplorer::updateSession() {

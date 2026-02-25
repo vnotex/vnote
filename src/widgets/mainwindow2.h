@@ -6,7 +6,9 @@
 #include <core/noncopyable.h>
 #include <widgets/dockwidgethelper.h>
 
+class QCloseEvent;
 class QDockWidget;
+class QWebEngineView;
 
 namespace vnotex {
 
@@ -36,8 +38,13 @@ public:
 
   QWidget *getDockWidget(DockWidgetHelper::DockType p_dockType) const;
 
+  void kickOffPostInit(const QStringList &p_pathsToOpen);
+
 signals:
     void layoutChanged();
+
+protected:
+  void closeEvent(QCloseEvent *p_event) override;
 
 private:
   // Setup basic window properties (title, size, central widget).
@@ -49,6 +56,9 @@ private:
   // Setup dock widgets.
   void setupDocks();
 
+  void loadStateAndGeometry();
+  void saveStateAndGeometry();
+
   // Non-owning reference to ServiceLocator.
   ServiceLocator &m_serviceLocator;
 
@@ -56,6 +66,10 @@ private:
 
   // NotebookExplorer2 dock widget.
   NotebookExplorer2 *m_notebookExplorer = nullptr;
+
+#if defined(Q_OS_WIN)
+  QWebEngineView *m_dummyWebView = nullptr;
+#endif
 };
 
 } // namespace vnotex

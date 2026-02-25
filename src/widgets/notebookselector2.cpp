@@ -121,7 +121,7 @@ void NotebookSelector2::reloadNotebook(const Notebook *p_notebook) {
 
 void NotebookSelector2::addNotebookItem(const QJsonObject &p_notebookJson) {
   QString name = p_notebookJson.value("name").toString();
-  QString rootPath = p_notebookJson.value("root_path").toString();
+  QString rootPath = p_notebookJson.value("rootFolder").toString();
   QString description = p_notebookJson.value("description").toString();
   ID id = p_notebookJson.value("id").toVariant().toULongLong();
 
