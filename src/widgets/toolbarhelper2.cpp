@@ -92,7 +92,7 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
     newMenu->addSeparator();
 
     // Import file.
-    newMenu->addAction(MainWindow2::tr("Import File"), newMenu,
+    newMenu->addAction(MainWindow2::tr("Import Files"), newMenu,
                        [this]() { emit m_mainWindow->importFileRequested(); });
 
     // Import folder.

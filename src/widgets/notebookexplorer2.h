@@ -115,8 +115,6 @@ private slots:
   void onRenameRequested(const NodeIdentifier &p_nodeId, const QString &p_currentName);
   void onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
   void onRemoveFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
-  void onImportFilesRequested(const NodeIdentifier &p_targetFolderId);
-  void onImportFolderRequested(const NodeIdentifier &p_targetFolderId);
   void onPropertiesRequested(const NodeIdentifier &p_nodeId);
   void onErrorOccurred(const QString &p_title, const QString &p_message);
   void onInfoMessage(const QString &p_title, const QString &p_message);
@@ -137,6 +135,9 @@ private:
   // Notebook database rebuild
   void rebuildDatabase();
 
+  // Import file/folder helpers (called from toolbar actions)
+  void onImportFilesRequested(const NodeIdentifier &p_targetFolderId);
+  void onImportFolderRequested(const NodeIdentifier &p_targetFolderId);
   void setCurrentNotebookInternal(const QString &p_notebookId);
   // Apply view order to all node views
   void setNodeViewOrder(ViewOrder p_order);

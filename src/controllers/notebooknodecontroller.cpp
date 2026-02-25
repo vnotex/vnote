@@ -181,18 +181,8 @@ void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentif
 
 void NotebookNodeController::addImportExportActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
                                                     bool p_isFolder) {
-  // Import actions - only on containers
-  NodeIdentifier targetFolder = p_isFolder ? p_nodeId : getParentFolder(p_nodeId);
-
-  if (targetFolder.isValid()) {
-    auto *importFilesAction = p_menu->addAction(tr("Import &Files"));
-    connect(importFilesAction, &QAction::triggered, this,
-            [this, targetFolder]() { importFiles(targetFolder); });
-
-    auto *importFolderAction = p_menu->addAction(tr("Import F&older"));
-    connect(importFolderAction, &QAction::triggered, this,
-            [this, targetFolder]() { importFolder(targetFolder); });
-  }
+  Q_UNUSED(p_isFolder);
+  // Import actions removed from context menu - available via toolbar only
 
   if (p_nodeId.isValid()) {
     auto *exportAction = p_menu->addAction(tr("&Export"));
@@ -403,21 +393,6 @@ void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &p_nodeIds,
   pasteNodes(p_targetFolderId);
 }
 
-void NotebookNodeController::importFiles(const NodeIdentifier &p_targetFolderId) {
-  if (!p_targetFolderId.isValid()) {
-    return;
-  }
-
-  emit importFilesRequested(p_targetFolderId);
-}
-
-void NotebookNodeController::importFolder(const NodeIdentifier &p_targetFolderId) {
-  if (!p_targetFolderId.isValid()) {
-    return;
-  }
-
-  emit importFolderRequested(p_targetFolderId);
-}
 
 void NotebookNodeController::exportNode(const NodeIdentifier &p_nodeId) {
   Q_UNUSED(p_nodeId);
@@ -651,8 +626,37 @@ void NotebookNodeController::handleImportFiles(const NodeIdentifier &p_targetFol
     return;
   }
 
-  // TODO: Implement file import via NotebookService when available
-  emit infoMessage(tr("Import"), tr("File import not yet implemented in new architecture."));
+  auto *notebookService = m_services.get<NotebookService>();
+  if (!notebookService) {
+    emit errorOccurred(tr("Import"), tr("NotebookService not available."));
+    return;
+  }
+
+  int successCount = 0;
+  int failCount = 0;
+
+  for (const QString &filePath : p_files) {
+    QString fileId = notebookService->importFile(
+        p_targetFolderId.notebookId, p_targetFolderId.relativePath, filePath);
+    if (fileId.isEmpty()) {
+      ++failCount;
+    } else {
+      ++successCount;
+    }
+  }
+
+  // Reload the target folder to show imported files
+  if (m_model && successCount > 0) {
+    m_model->reloadNode(p_targetFolderId);
+  }
+
+  // Report results
+  if (failCount > 0) {
+    emit infoMessage(tr("Import"),
+                    tr("Imported %1 file(s), %2 failed.").arg(successCount).arg(failCount));
+  } else if (successCount > 0) {
+    emit infoMessage(tr("Import"), tr("Successfully imported %1 file(s).").arg(successCount));
+  }
 }
 
 void NotebookNodeController::handleImportFolder(const NodeIdentifier &p_targetFolderId,
