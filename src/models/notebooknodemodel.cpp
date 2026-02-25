@@ -627,6 +627,7 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
     // Remove existing children from model
     const auto children = m_childrenCache.value(p_nodeId);
     int childCount = children.size();
+
     if (isNodeFetched(p_nodeId)) {
       if (childCount > 0) {
         beginRemoveRows(nodeIndex, 0, childCount - 1);

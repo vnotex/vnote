@@ -83,13 +83,21 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
     return result;
   }
 
-  // Create file via service.
-  QString newFilePath =
+  // Create file via service (returns file ID, not path).
+  QString fileId =
       notebookService->createFile(p_input.notebookId, p_input.parentFolderPath, p_input.name);
 
-  if (newFilePath.isEmpty()) {
+  if (fileId.isEmpty()) {
     result.success = false;
     result.errorMessage = tr("Failed to create note (%1).").arg(p_input.name);
+    return result;
+  }
+
+  // Get the relative path from the file ID.
+  QString filePath = notebookService->getNodePathById(p_input.notebookId, fileId);
+  if (filePath.isEmpty()) {
+    result.success = false;
+    result.errorMessage = tr("Failed to get path for created note.");
     return result;
   }
 
@@ -99,14 +107,14 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
 
     // Get the full path and write content.
     QJsonObject notebookConfig = notebookService->getNotebookConfig(p_input.notebookId);
-    QString rootPath = notebookConfig.value("root_folder").toString();
-    QString fullPath = PathUtils::concatenateFilePath(rootPath, newFilePath);
+    QString rootPath = notebookConfig.value("rootFolder").toString();
+    QString fullPath = PathUtils::concatenateFilePath(rootPath, filePath);
     FileUtils::writeFile(fullPath, evaluatedContent);
   }
 
   result.success = true;
   result.nodeId.notebookId = p_input.notebookId;
-  result.nodeId.relativePath = newFilePath;
+  result.nodeId.relativePath = filePath;
   return result;
 }
 
