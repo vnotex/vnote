@@ -1,6 +1,8 @@
 target_sources(vnote PRIVATE
     notebooknodedelegate.cpp notebooknodedelegate.h
     notebooknodeview.cpp notebooknodeview.h
+    inodeexplorer.h
+    combinednodeexplorer.cpp combinednodeexplorer.h
     twocolumnsnodeexplorer.cpp twocolumnsnodeexplorer.h
 )
 
