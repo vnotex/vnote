@@ -627,15 +627,18 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
     // Remove existing children from model
     const auto children = m_childrenCache.value(p_nodeId);
     int childCount = children.size();
-    if (childCount > 0 && isNodeFetched(p_nodeId)) {
-      beginRemoveRows(nodeIndex, 0, childCount - 1);
-      // Remove children from cache
-      for (const NodeIdentifier &childId : children) {
-        removeNodeFromCaches(childId);
+    if (isNodeFetched(p_nodeId)) {
+      if (childCount > 0) {
+        beginRemoveRows(nodeIndex, 0, childCount - 1);
+        // Remove children from cache
+        for (const NodeIdentifier &childId : children) {
+          removeNodeFromCaches(childId);
+        }
+        endRemoveRows();
       }
+      // Always clear children cache and fetched state when reloading
       m_childrenCache.remove(p_nodeId);
       m_fetchedNodes.remove(p_nodeId);
-      endRemoveRows();
     }
 
     if (!m_notebookId.isEmpty()) {
