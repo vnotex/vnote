@@ -137,18 +137,19 @@ void NotebookMgr::loadNotebooks() {
   loadCurrentNotebookId();
 }
 
-static SessionConfig &getSessionConfig() { return ConfigMgr::getInst().getSessionConfig(); }
+// static SessionConfig &getSessionConfig() { return ConfigMgr::getInst().getSessionConfig(); }
 
 void NotebookMgr::loadCurrentNotebookId() {
-  auto &rootFolderPath = getSessionConfig().getCurrentNotebookRootFolderPath();
-  auto notebook = findNotebookByRootFolderPath(rootFolderPath);
-  if (notebook) {
-    m_currentNotebookId = notebook->getId();
-  } else {
-    m_currentNotebookId = Notebook::InvalidId;
-  }
+  // auto &rootFolderPath = getSessionConfig().getCurrentNotebookRootFolderPath();
+  // auto notebook = findNotebookByRootFolderPath(rootFolderPath);
+  // if (notebook) {
+  //   m_currentNotebookId = notebook->getId();
+  // } else {
+  //   m_currentNotebookId = Notebook::InvalidId;
+  // }
+  m_currentNotebookId = Notebook::InvalidId;
 
-  emit currentNotebookChanged(notebook);
+  // emit currentNotebookChanged(notebook);
 }
 
 QSharedPointer<Notebook>
@@ -187,55 +188,55 @@ void NotebookMgr::importNotebook(const QSharedPointer<Notebook> &p_notebook) {
   setCurrentNotebook(p_notebook->getId());
 }
 
-static SessionConfig::NotebookItem
-notebookToSessionConfig(const QSharedPointer<const Notebook> &p_notebook) {
-  SessionConfig::NotebookItem item;
-  item.m_type = p_notebook->getType();
-  item.m_rootFolderPath = p_notebook->getRootFolderPath();
-  item.m_backend = p_notebook->getBackend()->getName();
-  return item;
-}
+// static SessionConfig::NotebookItem
+// notebookToSessionConfig(const QSharedPointer<const Notebook> &p_notebook) {
+  //   SessionConfig::NotebookItem item;
+  //   item.m_type = p_notebook->getType();
+  //   item.m_rootFolderPath = p_notebook->getRootFolderPath();
+  //   item.m_backend = p_notebook->getBackend()->getName();
+  //   return item;
+// }
 
 void NotebookMgr::saveNotebooksToConfig() const {
-  QVector<SessionConfig::NotebookItem> items;
-  items.reserve(m_notebooks.size());
-  for (auto &nb : m_notebooks) {
-    items.push_back(notebookToSessionConfig(nb));
-  }
-
-  getSessionConfig().setNotebooks(items);
+  // QVector<SessionConfig::NotebookItem> items;
+  // items.reserve(m_notebooks.size());
+  // for (auto &nb : m_notebooks) {
+  //   items.push_back(notebookToSessionConfig(nb));
+  // }
+  //
+  // getSessionConfig().setNotebooks(items);
 }
 
 void NotebookMgr::readNotebooksFromConfig() {
-  Q_ASSERT(m_notebooks.isEmpty());
-  auto items = getSessionConfig().getNotebooks();
-  for (auto &item : items) {
-    try {
-      auto nb = readNotebookFromConfig(item);
-      addNotebook(nb);
-    } catch (Exception &p_e) {
-      qCritical("failed to read notebook (%s) from config (%s)",
-                item.m_rootFolderPath.toStdString().c_str(), p_e.what());
-      m_notebooksFailedToLoad.push_back(item.m_rootFolderPath);
-    }
-  }
-
-  emit notebooksUpdated();
+  // Q_ASSERT(m_notebooks.isEmpty());
+  // auto items = getSessionConfig().getNotebooks();
+  // for (auto &item : items) {
+  //   try {
+  //     auto nb = readNotebookFromConfig(item);
+  //     addNotebook(nb);
+  //   } catch (Exception &p_e) {
+  //     qCritical("failed to read notebook (%s) from config (%s)",
+  //               item.m_rootFolderPath.toStdString().c_str(), p_e.what());
+  //     m_notebooksFailedToLoad.push_back(item.m_rootFolderPath);
+  //   }
+  // }
+  //
+  // emit notebooksUpdated();
 }
 
-QSharedPointer<Notebook>
-NotebookMgr::readNotebookFromConfig(const SessionConfig::NotebookItem &p_item) {
-  auto factory = m_notebookServer->getItem(p_item.m_type);
-  if (!factory) {
-    Exception::throwOne(Exception::Type::InvalidArgument,
-                        QStringLiteral("failed to find notebook factory %1").arg(p_item.m_type));
-  }
-
-  auto backend = createNotebookBackend(p_item.m_backend, p_item.m_rootFolderPath);
-
-  auto notebook = factory->createNotebook(*this, p_item.m_rootFolderPath, backend);
-  return notebook;
-}
+// QSharedPointer<Notebook>
+// NotebookMgr::readNotebookFromConfig(const SessionConfig::NotebookItem &p_item) {
+  //   auto factory = m_notebookServer->getItem(p_item.m_type);
+  //   if (!factory) {
+    //     Exception::throwOne(Exception::Type::InvalidArgument,
+                        //                         QStringLiteral("failed to find notebook factory %1").arg(p_item.m_type));
+  //   }
+//
+  //   auto backend = createNotebookBackend(p_item.m_backend, p_item.m_rootFolderPath);
+//
+  //   auto notebook = factory->createNotebook(*this, p_item.m_rootFolderPath, backend);
+  //   return notebook;
+// }
 
 const QVector<QSharedPointer<Notebook>> &NotebookMgr::getNotebooks() const { return m_notebooks; }
 
@@ -257,7 +258,7 @@ void NotebookMgr::setCurrentNotebook(ID p_notebookId) {
     emit currentNotebookChanged(nb);
   }
 
-  getSessionConfig().setCurrentNotebookRootFolderPath(nb ? nb->getRootFolderPath() : "");
+  // getSessionConfig().setCurrentNotebookRootFolderPath(nb ? nb->getRootFolderPath() : "");
 }
 
 QSharedPointer<Notebook>

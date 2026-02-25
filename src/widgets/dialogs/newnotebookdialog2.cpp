@@ -3,13 +3,16 @@
 #include <QComboBox>
 #include <QDir>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QFormLayout>
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QVBoxLayout>
 
 #include <controllers/newnotebookcontroller.h>
+#include <core/configmgr2.h>
 #include <core/servicelocator.h>
+#include <core/sessionconfig.h>
 #include <utils/pathutils.h>
 
 #include "../locationinputwithbrowsebutton.h"
@@ -85,7 +88,12 @@ void NewNotebookDialog2::handleRootFolderPathChanged() {
 void NewNotebookDialog2::browseRootFolder() {
   QString startPath = m_rootFolderInput->text().trimmed();
   if (startPath.isEmpty()) {
-    startPath = QDir::homePath();
+    // Use last used path from session config, fallback to home.
+    auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
+    startPath = sessionConfig.getNewNotebookDefaultRootFolderPath();
+    if (startPath.isEmpty()) {
+      startPath = QDir::homePath();
+    }
   }
 
   QString dir = QFileDialog::getExistingDirectory(
@@ -109,6 +117,12 @@ void NewNotebookDialog2::acceptedButtonClicked() {
   NewNotebookResult result = m_controller->createNotebook(input);
 
   if (result.success) {
+    // Save the parent directory as the default for next time.
+    QFileInfo fi(input.rootFolderPath);
+    QString parentDir = fi.absolutePath();
+    auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
+    sessionConfig.setNewNotebookDefaultRootFolderPath(parentDir);
+
     m_newNotebookId = result.notebookId;
     accept();
   } else {
