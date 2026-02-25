@@ -457,6 +457,24 @@ QString NotebookService::copyFile(const QString &p_notebookId, const QString &p_
   return cstrToQString(fileId);
 }
 
+QString NotebookService::importFile(const QString &p_notebookId, const QString &p_folderPath,
+                                    const QString &p_externalFilePath) {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *fileId = nullptr;
+  VxCoreError err =
+      vxcore_file_import(m_context, p_notebookId.toUtf8().constData(),
+                         p_folderPath.toUtf8().constData(),
+                         p_externalFilePath.toUtf8().constData(), &fileId);
+  if (err != VXCORE_OK) {
+    qWarning() << "importFile failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+  return cstrToQString(fileId);
+}
+
 // Tag operations.
 void NotebookService::updateFileTags(const QString &p_notebookId, const QString &p_filePath,
                                      const QString &p_tagsJson) {

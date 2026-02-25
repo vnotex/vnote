@@ -77,6 +77,10 @@ public:
                 const QString &p_destFolderPath);
   QString copyFile(const QString &p_notebookId, const QString &p_srcFilePath,
                    const QString &p_destFolderPath, const QString &p_newName);
+  // Import external file into notebook folder (copies file and adds to index).
+  // Returns file ID on success, empty string on failure.
+  QString importFile(const QString &p_notebookId, const QString &p_folderPath,
+                     const QString &p_externalFilePath);
 
   // Tag operations (8 methods).
   void updateFileTags(const QString &p_notebookId, const QString &p_filePath,

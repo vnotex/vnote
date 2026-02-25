@@ -54,8 +54,6 @@ public:
   void moveNodes(const QList<NodeIdentifier> &p_nodeIds, const NodeIdentifier &p_targetFolderId);
 
   // Import/Export
-  void importFiles(const NodeIdentifier &p_targetFolderId);
-  void importFolder(const NodeIdentifier &p_targetFolderId);
   void exportNode(const NodeIdentifier &p_nodeId);
 
   // Properties and info
@@ -100,8 +98,6 @@ signals:
   void renameRequested(const NodeIdentifier &p_nodeId, const QString &p_currentName);
   void deleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
   void removeFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
-  void importFilesRequested(const NodeIdentifier &p_targetFolderId);
-  void importFolderRequested(const NodeIdentifier &p_targetFolderId);
   void propertiesRequested(const NodeIdentifier &p_nodeId);
   void errorOccurred(const QString &p_title, const QString &p_message);
   void infoMessage(const QString &p_title, const QString &p_message);

@@ -467,10 +467,6 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onDeleteRequested);
   connect(m_combinedController, &NotebookNodeController::removeFromNotebookRequested, this,
           &NotebookExplorer2::onRemoveFromNotebookRequested);
-  connect(m_combinedController, &NotebookNodeController::importFilesRequested, this,
-          &NotebookExplorer2::onImportFilesRequested);
-  connect(m_combinedController, &NotebookNodeController::importFolderRequested, this,
-          &NotebookExplorer2::onImportFolderRequested);
   connect(m_combinedController, &NotebookNodeController::propertiesRequested, this,
           &NotebookExplorer2::onPropertiesRequested);
   connect(m_combinedController, &NotebookNodeController::errorOccurred, this,
@@ -572,10 +568,6 @@ void NotebookExplorer2::setupTwoColumnsMode() {
             &NotebookExplorer2::onDeleteRequested);
     connect(controller, &NotebookNodeController::removeFromNotebookRequested, this,
             &NotebookExplorer2::onRemoveFromNotebookRequested);
-    connect(controller, &NotebookNodeController::importFilesRequested, this,
-            &NotebookExplorer2::onImportFilesRequested);
-    connect(controller, &NotebookNodeController::importFolderRequested, this,
-            &NotebookExplorer2::onImportFolderRequested);
     connect(controller, &NotebookNodeController::propertiesRequested, this,
             &NotebookExplorer2::onPropertiesRequested);
     connect(controller, &NotebookNodeController::errorOccurred, this,
@@ -997,8 +989,6 @@ void NotebookExplorer2::newQuickNote() {
 }
 
 void NotebookExplorer2::importFile() {
-  // TODO: Migrate importFile to NotebookService
-  // Methods needed: importFile()
   NodeIdentifier folderId = currentExploredFolderId();
   if (!folderId.isValid()) {
     MessageBoxHelper::notify(MessageBoxHelper::Information,
@@ -1006,15 +996,18 @@ void NotebookExplorer2::importFile() {
     return;
   }
 
-  MessageBoxHelper::notify(MessageBoxHelper::Information,
-                           tr("Import file functionality is being migrated."), window());
+  onImportFilesRequested(folderId);
 }
 
 void NotebookExplorer2::importFolder() {
-  // TODO: Migrate ImportFolderDialog to use ServiceLocator DI pattern
-  MessageBoxHelper::notify(
-      MessageBoxHelper::Information,
-      tr("Import folder dialog is being migrated to use dependency injection."), window());
+  NodeIdentifier folderId = currentExploredFolderId();
+  if (!folderId.isValid()) {
+    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                             tr("Please first create a notebook to hold your data."), window());
+    return;
+  }
+
+  onImportFolderRequested(folderId);
 }
 
 NodeIdentifier NotebookExplorer2::currentExploredFolderId() const {
