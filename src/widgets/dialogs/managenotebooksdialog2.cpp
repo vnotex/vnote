@@ -11,8 +11,8 @@
 #include <QPushButton>
 #include <QUrl>
 
+#include <controllers/managenotebookscontroller.h>
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
 
 #include "../listwidget.h"
 #include "../messageboxhelper.h"
@@ -26,6 +26,7 @@ ManageNotebooksDialog2::ManageNotebooksDialog2(ServiceLocator &p_services,
                                                const QString &p_currentNotebookId,
                                                QWidget *p_parent)
     : Dialog(p_parent), m_services(p_services), m_initialNotebookId(p_currentNotebookId) {
+  m_controller = new ManageNotebooksController(m_services, this);
   setupUI();
   loadNotebooks();
 }
@@ -116,8 +117,7 @@ void ManageNotebooksDialog2::loadNotebooks() {
   setChangesUnsaved(false);
   m_notebookList->clear();
 
-  auto *notebookService = m_services.get<NotebookService>();
-  QJsonArray notebooks = notebookService->listNotebooks();
+  QJsonArray notebooks = m_controller->listNotebooks();
 
   bool hasSelection = false;
   for (const QJsonValue &val : notebooks) {
@@ -175,22 +175,12 @@ void ManageNotebooksDialog2::selectNotebook(const QString &p_notebookId) {
     m_typeLabel->clear();
     m_closeBtn->setEnabled(false);
   } else {
-    auto *notebookService = m_services.get<NotebookService>();
-    QJsonObject config = notebookService->getNotebookConfig(p_notebookId);
+    NotebookInfo info = m_controller->getNotebookInfo(p_notebookId);
 
-    m_nameEdit->setText(config["name"].toString());
-    m_descriptionEdit->setPlainText(config["description"].toString());
-    m_rootFolderEdit->setText(config["rootFolder"].toString());
-
-    // Display user-friendly type name.
-    QString type = config["type"].toString();
-    if (type == QStringLiteral("bundled")) {
-      m_typeLabel->setText(tr("Bundled Notebook"));
-    } else if (type == QStringLiteral("raw")) {
-      m_typeLabel->setText(tr("Raw Notebook"));
-    } else {
-      m_typeLabel->setText(type);
-    }
+    m_nameEdit->setText(info.name);
+    m_descriptionEdit->setPlainText(info.description);
+    m_rootFolderEdit->setText(info.rootFolder);
+    m_typeLabel->setText(info.typeDisplayName);
 
     m_closeBtn->setEnabled(true);
   }
@@ -207,35 +197,22 @@ void ManageNotebooksDialog2::setChangesUnsaved(bool p_unsaved) {
   setButtonEnabled(QDialogButtonBox::Reset, m_changesUnsaved);
 }
 
-bool ManageNotebooksDialog2::validateInputs() {
-  if (m_nameEdit->text().trimmed().isEmpty()) {
-    setInformationText(tr("Please specify a name for the notebook."),
-                       Dialog::InformationLevel::Error);
-    return false;
-  }
-  return true;
-}
-
 bool ManageNotebooksDialog2::saveChangesToNotebook() {
   if (!m_changesUnsaved || m_currentNotebookId.isEmpty()) {
     return true;
   }
 
-  if (!validateInputs()) {
+  NotebookUpdateInput input;
+  input.notebookId = m_currentNotebookId;
+  input.name = m_nameEdit->text();
+  input.description = m_descriptionEdit->toPlainText();
+
+  NotebookOperationResult result = m_controller->updateNotebook(input);
+
+  if (!result.success) {
+    setInformationText(result.errorMessage, Dialog::InformationLevel::Error);
     return false;
   }
-
-  auto *notebookService = m_services.get<NotebookService>();
-
-  // Read existing config, update only name and description, then write back.
-  // vxcore does NOT support partial updates - missing fields get default values.
-  // Note: rootFolder and type in the JSON are ignored by vxcore (not part of NotebookConfig).
-  QJsonObject config = notebookService->getNotebookConfig(m_currentNotebookId);
-  config["name"] = m_nameEdit->text().trimmed();
-  config["description"] = m_descriptionEdit->toPlainText();
-
-  QString configJson = QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact));
-  notebookService->updateNotebookConfig(m_currentNotebookId, configJson);
 
   setChangesUnsaved(false);
   return true;
@@ -259,21 +236,23 @@ void ManageNotebooksDialog2::closeSelectedNotebook() {
     return;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
-  QJsonObject config = notebookService->getNotebookConfig(m_currentNotebookId);
-  QString name = config["name"].toString();
-  QString rootFolder = config["rootFolder"].toString();
+  NotebookInfo info = m_controller->getNotebookInfo(m_currentNotebookId);
 
   int ret = MessageBoxHelper::questionOkCancel(
-      MessageBoxHelper::Question, tr("Close notebook (%1)?").arg(name),
+      MessageBoxHelper::Question, tr("Close notebook (%1)?").arg(info.name),
       tr("The notebook could be opened by VNote again later."),
-      tr("Notebook location: %1").arg(rootFolder), this);
+      tr("Notebook location: %1").arg(info.rootFolder), this);
 
   if (ret != QMessageBox::Ok) {
     return;
   }
 
-  notebookService->closeNotebook(m_currentNotebookId);
+  NotebookOperationResult result = m_controller->closeNotebook(m_currentNotebookId);
+
+  if (!result.success) {
+    setInformationText(result.errorMessage, Dialog::InformationLevel::Error);
+    return;
+  }
 
   // Reload list.
   m_initialNotebookId.clear();

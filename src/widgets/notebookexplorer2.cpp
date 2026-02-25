@@ -1,10 +1,12 @@
 #include "notebookexplorer2.h"
 
 #include <QActionGroup>
+#include <QCoreApplication>
 #include <QDataStream>
 #include <QDir>
 #include <QFileDialog>
 #include <QMenu>
+#include <QMessageBox>
 #include <QProgressDialog>
 #include <QSplitter>
 #include <QStackedWidget>
@@ -12,6 +14,8 @@
 #include <QVBoxLayout>
 
 #include <controllers/notebooknodecontroller.h>
+#include <controllers/opennotebookcontroller.h>
+#include <controllers/recyclebincontroller.h>
 #include <core/configmgr2.h>
 #include <core/exception.h>
 #include <core/fileopenparameters.h>
@@ -95,9 +99,11 @@ void NotebookExplorer2::setupUI() {
     setupTwoColumnsMode();
   }
 
-  // Connect notebook selector - use activated for user interaction
+  // Connect notebook selector - activated fires on user interaction only
+  // Note: We don't use currentIndexChanged because it fires during addItem() before item data is set
   connect(m_notebookSelector, QOverload<int>::of(&QComboBox::activated), this, [this](int p_idx) {
     QString guid = m_notebookSelector->itemData(p_idx, NotebookGuidRole).toString();
+    setCurrentNotebookInternal(guid);
     emit notebookActivated(guid);
   });
   connect(m_notebookSelector, &NotebookSelector2::newNotebookRequested, this,
@@ -186,20 +192,62 @@ void NotebookExplorer2::setupTitleBarMenu() {
 }
 
 void NotebookExplorer2::setupRecycleBinMenu() {
-  // TODO: Migrate recycle bin operations to NotebookService
-  // Methods needed: getRecycleBinPath(), getNotebookName(), emptyRecycleBin()
   m_titleBar->addMenuSeparator();
 
   auto openAction = m_titleBar->addMenuAction(tr("Open Recycle Bin"), this, [this]() {
-    // TODO: Implement when NotebookService.getRecycleBinPath() is available
-    MessageBoxHelper::notify(MessageBoxHelper::Information,
-                             tr("Recycle bin functionality is being migrated."), window());
+    if (m_currentNotebookId.isEmpty()) {
+      return;
+    }
+
+    RecycleBinController controller(m_services);
+    RecycleBinResult result = controller.prepareRecycleBinPath(m_currentNotebookId);
+    if (result.success) {
+      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(result.path));
+    } else {
+      MessageBoxHelper::notify(MessageBoxHelper::Information, result.errorMessage, window());
+    }
   });
 
   auto emptyAction = m_titleBar->addMenuAction(tr("Empty Recycle Bin"), this, [this]() {
-    // TODO: Implement when NotebookService.emptyRecycleBin() is available
-    MessageBoxHelper::notify(MessageBoxHelper::Information,
-                             tr("Recycle bin functionality is being migrated."), window());
+    if (m_currentNotebookId.isEmpty()) {
+      return;
+    }
+
+    RecycleBinController controller(m_services);
+
+    // Check if recycle bin is supported.
+    QString recycleBinPath = controller.getRecycleBinPath(m_currentNotebookId);
+    if (recycleBinPath.isEmpty()) {
+      MessageBoxHelper::notify(MessageBoxHelper::Information,
+                               tr("Recycle bin is not supported for this notebook type."),
+                               window());
+      return;
+    }
+
+    // Confirmation dialog.
+    QString notebookName = controller.getNotebookName(m_currentNotebookId);
+    if (notebookName.isEmpty()) {
+      notebookName = tr("current notebook");
+    }
+
+    int ret = MessageBoxHelper::questionOkCancel(
+        MessageBoxHelper::Question,
+        tr("Are you sure you want to empty the recycle bin of notebook \"%1\"?\n\n"
+           "This action is irreversible.")
+            .arg(notebookName),
+        QString(), QString(), window());
+
+    if (ret != QMessageBox::Ok) {
+      return;
+    }
+
+    RecycleBinResult result = controller.emptyRecycleBin(m_currentNotebookId);
+    if (result.success) {
+      MessageBoxHelper::notify(MessageBoxHelper::Information,
+                               tr("Recycle bin emptied successfully."), window());
+    } else {
+      MessageBoxHelper::notify(MessageBoxHelper::Warning, result.errorMessage, window());
+    }
   });
 }
 
@@ -304,14 +352,58 @@ void NotebookExplorer2::setupViewMenu(QMenu *p_menu, bool p_isNotebookView) {
 }
 
 void NotebookExplorer2::rebuildDatabase() {
-  // TODO: Migrate rebuildDatabase to NotebookService
-  // Methods needed: getNotebookName(), rebuildDatabase()
   if (m_currentNotebookId.isEmpty()) {
     return;
   }
 
+  auto &notebookService = *m_services.get<NotebookService>();
+
+  // Get notebook name for the dialog.
+  QJsonObject config = notebookService.getNotebookConfig(m_currentNotebookId);
+  QString notebookName = config.value("name").toString();
+  if (notebookName.isEmpty()) {
+    notebookName = tr("current notebook");
+  }
+
+  // Confirmation dialog.
+  int ret = MessageBoxHelper::questionOkCancel(
+      MessageBoxHelper::Question,
+      tr("Are you sure you want to rebuild the database for notebook \"%1\"?\n\n"
+         "This will re-scan all files and rebuild the metadata cache from the filesystem.")
+          .arg(notebookName),
+      QString(),
+      QString(),
+      window());
+  if (ret != QMessageBox::Ok) {
+    return;
+  }
+
+  // Show progress dialog (indeterminate for sync operation).
+  QProgressDialog progress(tr("Rebuilding database for \"%1\"...").arg(notebookName),
+                           QString(),  // No cancel button for sync operation
+                           0, 0,       // Indeterminate progress
+                           window());
+  progress.setWindowModality(Qt::WindowModal);
+  progress.setMinimumDuration(0);  // Show immediately
+  progress.show();
+  QCoreApplication::processEvents();  // Ensure dialog is displayed
+
+  // Perform the rebuild (synchronous).
+  notebookService.rebuildNotebookCache(m_currentNotebookId);
+
+  progress.close();
+
+  // Reload the current notebook to reflect changes.
+  if (m_combinedModel) {
+    m_combinedModel->setNotebookId(m_currentNotebookId);
+  }
+  if (m_folderModel) {
+    m_folderModel->setNotebookId(m_currentNotebookId);
+  }
+
   MessageBoxHelper::notify(MessageBoxHelper::Information,
-                           tr("Rebuild database functionality is being migrated."), window());
+                           tr("Database rebuilt successfully for \"%1\".").arg(notebookName),
+                           window());
 }
 
 void NotebookExplorer2::setupCombinedMode() {
@@ -440,6 +532,14 @@ void NotebookExplorer2::loadNotebooks() {
   }
 
   m_notebookSelector->loadNotebooks();
+
+  // Sync m_currentNotebookId with the selector's restored selection.
+  // This must happen AFTER loadNotebooks() completes because item data
+  // is only available after all items are added.
+  QString selectedId = m_notebookSelector->currentNotebookId();
+  if (!selectedId.isEmpty()) {
+    setCurrentNotebookInternal(selectedId);
+  }
 }
 
 void NotebookExplorer2::setCurrentNotebook(const QString &p_notebookId) {
@@ -447,6 +547,11 @@ void NotebookExplorer2::setCurrentNotebook(const QString &p_notebookId) {
     return;
   }
 
+  m_notebookSelector->setCurrentNotebook(p_notebookId);
+  setCurrentNotebookInternal(p_notebookId);
+}
+
+void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) {
   m_currentNotebookId = p_notebookId;
 
   // Update all models that exist (views are created on-demand)
@@ -643,10 +748,38 @@ void NotebookExplorer2::newNotebookFromFolder() {
 }
 
 void NotebookExplorer2::importNotebook() {
-  // TODO: Migrate ImportNotebookDialog to use ServiceLocator DI pattern
-  MessageBoxHelper::notify(
-      MessageBoxHelper::Information,
-      tr("Import notebook dialog is being migrated to use dependency injection."), window());
+  QString rootFolder = QFileDialog::getExistingDirectory(
+      window(), tr("Select Notebook Root Folder"), QDir::homePath(),
+      QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+  if (rootFolder.isEmpty()) {
+    return;
+  }
+
+  OpenNotebookController controller(m_services);
+
+  // Validate the selected folder.
+  auto validation = controller.validateRootFolder(rootFolder);
+  if (!validation.valid) {
+    MessageBoxHelper::notify(MessageBoxHelper::Warning, validation.message, window());
+    return;
+  }
+
+  // Open the notebook.
+  OpenNotebookInput input;
+  input.rootFolderPath = rootFolder;
+
+  OpenNotebookResult result = controller.openNotebook(input);
+  if (!result.success) {
+    MessageBoxHelper::notify(MessageBoxHelper::Critical, result.errorMessage, window());
+    return;
+  }
+
+  // Reload notebooks and select the newly-opened one.
+  if (m_notebookSelector) {
+    m_notebookSelector->loadNotebooks();
+    setCurrentNotebook(result.notebookId);
+  }
 }
 
 void NotebookExplorer2::manageNotebooks() {

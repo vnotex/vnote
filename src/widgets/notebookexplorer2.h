@@ -125,6 +125,8 @@ private:
   // Notebook database rebuild
   void rebuildDatabase();
 
+  void setCurrentNotebookInternal(const QString &p_notebookId);
+
   // Services
   ServiceLocator &m_services;
 

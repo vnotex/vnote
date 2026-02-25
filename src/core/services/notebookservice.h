@@ -36,6 +36,9 @@ public:
   void updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson);
   void rebuildNotebookCache(const QString &p_notebookId);
 
+  // Recycle bin operations (bundled notebooks only).
+  QString getRecycleBinPath(const QString &p_notebookId) const;
+  void emptyRecycleBin(const QString &p_notebookId);
   // Folder operations (10 methods).
   QString createFolder(const QString &p_notebookId, const QString &p_parentPath,
                        const QString &p_folderName);
