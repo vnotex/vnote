@@ -41,6 +41,14 @@ public:
   // Returns empty object if path is not within any open notebook.
   QJsonObject resolvePathToNotebook(const QString &p_absolutePath) const;
 
+  // Get relative path of a node (file or folder) by its ID.
+  // Returns empty string if node is not found.
+  QString getNodePathById(const QString &p_notebookId, const QString &p_nodeId) const;
+
+  // Remove a node (file or folder) from the notebook index.
+  // Files remain on disk - only metadata is removed.
+  void unindexNode(const QString &p_notebookId, const QString &p_nodePath);
+
   // Recycle bin operations (bundled notebooks only).
   QString getRecycleBinPath(const QString &p_notebookId) const;
   void emptyRecycleBin(const QString &p_notebookId);
@@ -81,6 +89,12 @@ public:
   // Returns file ID on success, empty string on failure.
   QString importFile(const QString &p_notebookId, const QString &p_folderPath,
                      const QString &p_externalFilePath);
+
+  // Import external folder into notebook folder (copies folder recursively and adds to index).
+  // p_suffixAllowlist: semicolon-separated list of file extensions (e.g., "md;txt"), or empty to import all.
+  // Returns folder ID on success, empty string on failure.
+  QString importFolder(const QString &p_notebookId, const QString &p_destFolderPath,
+                       const QString &p_externalFolderPath, const QString &p_suffixAllowlist = QString());
 
   // Tag operations (8 methods).
   void updateFileTags(const QString &p_notebookId, const QString &p_filePath,

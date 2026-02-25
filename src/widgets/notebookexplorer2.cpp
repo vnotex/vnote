@@ -1186,8 +1186,8 @@ void NotebookExplorer2::onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds
     message = tr("Move %n node(s) to recycle bin?", "", p_nodeIds.size());
   }
 
-  int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question, message, title, QString(),
-                                               window());
+  int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question, title, message,
+                                               QString(), window());
   if (ret != QMessageBox::Ok) {
     return;
   }
@@ -1212,10 +1212,10 @@ void NotebookExplorer2::onRemoveFromNotebookRequested(const QList<NodeIdentifier
   }
 
   QString message =
-      tr("Remove %n node(s) from notebook? Files will remain on disk.", "", p_nodeIds.size());
+      tr("Remove %n node(s) from notebook index? Files will remain on disk.", "", p_nodeIds.size());
 
-  int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question, message,
-                                               tr("Remove From Notebook"), QString(), window());
+  int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question,
+                                               tr("Remove From Notebook"), message, QString(), window());
   if (ret != QMessageBox::Ok) {
     return;
   }

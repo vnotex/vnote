@@ -7,7 +7,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-#include "dialogs/importfolderdialog.h"
+// #include "dialogs/importfolderdialog.h"  // Legacy: migrated to ImportFolderDialog2
 #include "dialogs/importnotebookdialog.h"
 #include "dialogs/managenotebooksdialog.h"
 #include "dialogs/newfolderdialog.h"
@@ -387,10 +387,13 @@ void NotebookExplorer::importFolder() {
     return;
   }
 
-  ImportFolderDialog dialog(node, VNoteX::getInst().getMainWindow());
-  if (dialog.exec() == QDialog::Accepted) {
-    m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
-  }
+  // Legacy: ImportFolderDialog migrated to ImportFolderDialog2 with MVC/DI pattern
+  // ImportFolderDialog dialog(node, VNoteX::getInst().getMainWindow());
+  // if (dialog.exec() == QDialog::Accepted) {
+  //   m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
+  // }
+  Q_UNUSED(node);
+  qWarning() << "NotebookExplorer::importFolderToNode: Legacy function. Use NotebookExplorer2 instead.";
 }
 
 void NotebookExplorer::manageNotebooks() {

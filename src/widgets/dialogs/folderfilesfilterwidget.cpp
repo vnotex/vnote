@@ -24,7 +24,7 @@ using namespace vnotex;
 FolderFilesFilterWidget::FolderFilesFilterWidget(QWidget *p_parent) : QWidget(p_parent) {
   m_scanTimer = new QTimer(this);
   m_scanTimer->setSingleShot(true);
-  m_scanTimer->setInterval(2000);
+  m_scanTimer->setInterval(1000);
   connect(m_scanTimer, &QTimer::timeout, this, &FolderFilesFilterWidget::scanSuffixes);
 
   setupUI();

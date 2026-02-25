@@ -13,6 +13,7 @@ target_sources(vnote PRIVATE
     dialogs/folderpropertiesdialog.cpp dialogs/folderpropertiesdialog.h
     dialogs/imageinsertdialog.cpp dialogs/imageinsertdialog.h
     dialogs/importfolderdialog.cpp dialogs/importfolderdialog.h
+    dialogs/importfolderdialog2.cpp dialogs/importfolderdialog2.h
     dialogs/importfolderutils.cpp dialogs/importfolderutils.h
     dialogs/importnotebookdialog.cpp dialogs/importnotebookdialog.h
     dialogs/levellabelwithupbutton.cpp dialogs/levellabelwithupbutton.h
