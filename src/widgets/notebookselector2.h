@@ -25,6 +25,11 @@ public:
 
   void setViewOrder(int p_order);
 
+  // Get the GUID of the currently selected notebook.
+  // Returns empty string if no notebook is selected.
+  QString currentNotebookId() const;
+
+
 signals:
   void newNotebookRequested();
 

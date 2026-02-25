@@ -37,6 +37,7 @@
 // #include <widgets/dialogs/newnotebookfromfolderdialog.h>
 // #include <widgets/dialogs/newnotedialog.h>
 #include <widgets/dialogs/newnotebookdialog2.h>
+#include <widgets/dialogs/managenotebooksdialog2.h>
 // #include <widgets/dialogs/selectdialog.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
@@ -160,7 +161,7 @@ void NotebookExplorer2::setupTitleBarMenu() {
     showAct->setChecked(widgetConfig.isNodeExplorerExternalFilesVisible());
 
     auto importAct =
-        m_titleBar->addMenuAction(tr("Import External Files when Activated"), m_titleBar,
+        m_titleBar->addMenuAction(tr("Import External Files on Open"), m_titleBar,
                                   [this](bool p_checked) {
                                     m_services.get<ConfigMgr2>()
                                         ->getWidgetConfig()
@@ -173,7 +174,7 @@ void NotebookExplorer2::setupTitleBarMenu() {
   {
     m_titleBar->addMenuSeparator();
     auto act = m_titleBar->addMenuAction(
-        tr("Close File Before Opening Externally"), m_titleBar, [this](bool p_checked) {
+        tr("Close File Before External Open"), m_titleBar, [this](bool p_checked) {
           m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerCloseBeforeOpenWithEnabled(
               p_checked);
         });
@@ -649,10 +650,18 @@ void NotebookExplorer2::importNotebook() {
 }
 
 void NotebookExplorer2::manageNotebooks() {
-  // TODO: Migrate ManageNotebooksDialog to use ServiceLocator DI pattern
-  MessageBoxHelper::notify(
-      MessageBoxHelper::Information,
-      tr("Manage notebooks dialog is being migrated to use dependency injection."), window());
+  QString currentNotebookId;
+  if (m_notebookSelector) {
+    currentNotebookId = m_notebookSelector->currentNotebookId();
+  }
+
+  ManageNotebooksDialog2 dialog(m_services, currentNotebookId, window());
+  dialog.exec();
+
+  // Reload notebooks after dialog closes (changes may have occurred).
+  if (m_notebookSelector) {
+    m_notebookSelector->loadNotebooks();
+  }
 }
 
 void NotebookExplorer2::newFolder() {

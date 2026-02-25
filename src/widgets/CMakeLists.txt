@@ -18,6 +18,7 @@ target_sources(vnote PRIVATE
     dialogs/levellabelwithupbutton.cpp dialogs/levellabelwithupbutton.h
     dialogs/linkinsertdialog.cpp dialogs/linkinsertdialog.h
     dialogs/managenotebooksdialog.cpp dialogs/managenotebooksdialog.h
+    dialogs/managenotebooksdialog2.cpp dialogs/managenotebooksdialog2.h
     dialogs/newfolderdialog.cpp dialogs/newfolderdialog.h
     dialogs/newnotebookdialog.cpp dialogs/newnotebookdialog.h
     dialogs/newnotebookdialog2.cpp dialogs/newnotebookdialog2.h

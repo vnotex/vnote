@@ -179,6 +179,14 @@ void NotebookSelector2::setCurrentNotebook(const QString &p_guid) {
   }
 }
 
+QString NotebookSelector2::currentNotebookId() const {
+  int idx = currentIndex();
+  if (idx >= 0) {
+    return itemData(idx, NotebookGuidRole).toString();
+  }
+  return QString();
+}
+
 int NotebookSelector2::findNotebook(const QString &p_guid) const {
   for (int i = 0; i < count(); ++i) {
     if (itemData(i, NotebookGuidRole).toString() == p_guid) {
