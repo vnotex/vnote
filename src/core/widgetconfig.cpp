@@ -13,72 +13,72 @@ WidgetConfig::WidgetConfig(IConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_
 void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
 
   {
-    m_outlineAutoExpandedLevel = READINT(QStringLiteral("outline_auto_expanded_level"));
+    m_outlineAutoExpandedLevel = READINT(QStringLiteral("outlineAutoExpandedLevel"));
     if (m_outlineAutoExpandedLevel < 0 || m_outlineAutoExpandedLevel > 6) {
       m_outlineAutoExpandedLevel = 6;
     }
 
-    m_outlineSectionNumberEnabled = READBOOL(QStringLiteral("outline_section_number_enabled"));
+    m_outlineSectionNumberEnabled = READBOOL(QStringLiteral("outlineSectionNumberEnabled"));
   }
 
   m_findAndReplaceOptions =
-      static_cast<FindOptions>(READINT(QStringLiteral("find_and_replace_options")));
+      static_cast<FindOptions>(READINT(QStringLiteral("findAndReplaceOptions")));
 
-  m_notebookSelectorViewOrder = READINT(QStringLiteral("notebook_selector_view_order"));
+  m_notebookSelectorViewOrder = READINT(QStringLiteral("notebookSelectorViewOrder"));
 
   {
-    m_nodeExplorerViewOrder = READINT(QStringLiteral("node_explorer_view_order"));
-    m_nodeExplorerExploreMode = READINT(QStringLiteral("node_explorer_explore_mode"));
+    m_nodeExplorerViewOrder = READINT(QStringLiteral("nodeExplorerViewOrder"));
+    m_nodeExplorerExploreMode = READINT(QStringLiteral("nodeExplorerExploreMode"));
     m_nodeExplorerExternalFilesVisible =
-        READBOOL(QStringLiteral("node_explorer_external_files_visible"));
+        READBOOL(QStringLiteral("nodeExplorerExternalFilesVisible"));
     m_nodeExplorerAutoImportExternalFilesEnabled =
-        READBOOL(QStringLiteral("node_explorer_auto_import_external_files_enabled"));
+        READBOOL(QStringLiteral("nodeExplorerAutoImportExternalFilesEnabled"));
     m_nodeExplorerCloseBeforeOpenWithEnabled =
-        READBOOL(QStringLiteral("node_explorer_close_before_open_with_enabled"));
+        READBOOL(QStringLiteral("nodeExplorerCloseBeforeOpenWithEnabled"));
   }
 
   m_searchPanelAdvancedSettingsVisible =
-      READBOOL(QStringLiteral("search_panel_advanced_settings_visible"));
+      READBOOL(QStringLiteral("searchPanelAdvancedSettingsVisible"));
 
   m_mainWindowKeepDocksExpandingContentArea =
-      READSTRLIST(QStringLiteral("main_window_keep_docks_expanding_content_area"));
+      READSTRLIST(QStringLiteral("mainWindowKeepDocksExpandingContentArea"));
 
   m_snippetPanelBuiltInSnippetsVisible =
-      READBOOL(QStringLiteral("snippet_panel_builtin_snippets_visible"));
+      READBOOL(QStringLiteral("snippetPanelBuiltInSnippetsVisible"));
 
-  m_tagExplorerTwoColumnsEnabled = READBOOL(QStringLiteral("tag_explorer_two_columns_enabled"));
+  m_tagExplorerTwoColumnsEnabled = READBOOL(QStringLiteral("tagExplorerTwoColumnsEnabled"));
 
-  m_newNoteDefaultFileType = READINT(QStringLiteral("new_note_default_file_type"));
+  m_newNoteDefaultFileType = READINT(QStringLiteral("newNoteDefaultFileType"));
 
-  m_unitedEntryExpandAllEnabled = READBOOL(QStringLiteral("united_entry_expand_all"));
+  m_unitedEntryExpandAllEnabled = READBOOL(QStringLiteral("unitedEntryExpandAll"));
 }
 
 QJsonObject WidgetConfig::toJson() const {
   QJsonObject obj;
-  obj[QStringLiteral("outline_auto_expanded_level")] = m_outlineAutoExpandedLevel;
-  obj[QStringLiteral("outline_section_number_enabled")] = m_outlineSectionNumberEnabled;
+  obj[QStringLiteral("outlineAutoExpandedLevel")] = m_outlineAutoExpandedLevel;
+  obj[QStringLiteral("outlineSectionNumberEnabled")] = m_outlineSectionNumberEnabled;
 
-  obj[QStringLiteral("find_and_replace_options")] = static_cast<int>(m_findAndReplaceOptions);
+  obj[QStringLiteral("findAndReplaceOptions")] = static_cast<int>(m_findAndReplaceOptions);
 
-  obj[QStringLiteral("notebook_selector_view_order")] = m_notebookSelectorViewOrder;
+  obj[QStringLiteral("notebookSelectorViewOrder")] = m_notebookSelectorViewOrder;
 
-  obj[QStringLiteral("node_explorer_view_order")] = m_nodeExplorerViewOrder;
-  obj[QStringLiteral("node_explorer_explore_mode")] = m_nodeExplorerExploreMode;
-  obj[QStringLiteral("node_explorer_external_files_visible")] = m_nodeExplorerExternalFilesVisible;
-  obj[QStringLiteral("node_explorer_auto_import_external_files_enabled")] =
+  obj[QStringLiteral("nodeExplorerViewOrder")] = m_nodeExplorerViewOrder;
+  obj[QStringLiteral("nodeExplorerExploreMode")] = m_nodeExplorerExploreMode;
+  obj[QStringLiteral("nodeExplorerExternalFilesVisible")] = m_nodeExplorerExternalFilesVisible;
+  obj[QStringLiteral("nodeExplorerAutoImportExternalFilesEnabled")] =
       m_nodeExplorerAutoImportExternalFilesEnabled;
-  obj[QStringLiteral("node_explorer_close_before_open_with_enabled")] =
+  obj[QStringLiteral("nodeExplorerCloseBeforeOpenWithEnabled")] =
       m_nodeExplorerCloseBeforeOpenWithEnabled;
 
-  obj[QStringLiteral("search_panel_advanced_settings_visible")] =
+  obj[QStringLiteral("searchPanelAdvancedSettingsVisible")] =
       m_searchPanelAdvancedSettingsVisible;
-  obj[QStringLiteral("snippet_panel_builtin_snippets_visible")] =
+  obj[QStringLiteral("snippetPanelBuiltInSnippetsVisible")] =
       m_snippetPanelBuiltInSnippetsVisible;
-  obj[QStringLiteral("tag_explorer_two_columns_enabled")] = m_tagExplorerTwoColumnsEnabled;
-  writeStringList(obj, QStringLiteral("main_window_keep_docks_expanding_content_area"),
+  obj[QStringLiteral("tagExplorerTwoColumnsEnabled")] = m_tagExplorerTwoColumnsEnabled;
+  writeStringList(obj, QStringLiteral("mainWindowKeepDocksExpandingContentArea"),
                   m_mainWindowKeepDocksExpandingContentArea);
-  obj[QStringLiteral("new_note_default_file_type")] = m_newNoteDefaultFileType;
-  obj[QStringLiteral("united_entry_expand_all")] = m_unitedEntryExpandAllEnabled;
+  obj[QStringLiteral("newNoteDefaultFileType")] = m_newNoteDefaultFileType;
+  obj[QStringLiteral("unitedEntryExpandAll")] = m_unitedEntryExpandAllEnabled;
   return obj;
 }
 

@@ -22,9 +22,9 @@ ImageHost::Type GitHubImageHost::getType() const { return Type::GitHub; }
 
 QJsonObject GitHubImageHost::getConfig() const {
   QJsonObject obj;
-  obj[QStringLiteral("personal_access_token")] = m_personalAccessToken;
-  obj[QStringLiteral("user_name")] = m_userName;
-  obj[QStringLiteral("repository_name")] = m_repoName;
+  obj[QStringLiteral("personalAccessToken")] = m_personalAccessToken;
+  obj[QStringLiteral("userName")] = m_userName;
+  obj[QStringLiteral("repositoryName")] = m_repoName;
   return obj;
 }
 

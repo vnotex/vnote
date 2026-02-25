@@ -10,12 +10,12 @@ SearchOption::SearchOption()
 
 QJsonObject SearchOption::toJson() const {
   QJsonObject obj;
-  obj["file_pattern"] = m_filePattern;
+  obj["filePattern"] = m_filePattern;
   obj["scope"] = static_cast<int>(m_scope);
   obj["objects"] = static_cast<int>(m_objects);
   obj["targets"] = static_cast<int>(m_targets);
   obj["engine"] = static_cast<int>(m_engine);
-  obj["find_options"] = static_cast<int>(m_findOptions);
+  obj["findOptions"] = static_cast<int>(m_findOptions);
   return obj;
 }
 
@@ -24,12 +24,12 @@ void SearchOption::fromJson(const QJsonObject &p_obj) {
     return;
   }
 
-  m_filePattern = p_obj["file_pattern"].toString();
+  m_filePattern = p_obj["filePattern"].toString();
   m_scope = static_cast<SearchScope>(p_obj["scope"].toInt());
   m_objects = static_cast<SearchObjects>(p_obj["objects"].toInt());
   m_targets = static_cast<SearchTargets>(p_obj["targets"].toInt());
   m_engine = static_cast<SearchEngine>(p_obj["engine"].toInt());
-  m_findOptions = static_cast<FindOptions>(p_obj["find_options"].toInt());
+  m_findOptions = static_cast<FindOptions>(p_obj["findOptions"].toInt());
 }
 
 bool SearchOption::operator==(const SearchOption &p_other) const {

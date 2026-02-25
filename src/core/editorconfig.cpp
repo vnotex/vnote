@@ -47,7 +47,7 @@ EditorConfig::~EditorConfig() {}
 void EditorConfig::fromJson(const QJsonObject &p_jobj) {
   loadCore(p_jobj.value(QStringLiteral("core")).toObject());
 
-  loadImageHost(p_jobj.value(QStringLiteral("image_host")).toObject());
+  loadImageHost(p_jobj.value(QStringLiteral("imageHost")).toObject());
 
   m_viConfig = QSharedPointer<vte::ViConfig>::create();
   m_viConfig->fromJson(p_jobj.value(QStringLiteral("vi")).toObject());
@@ -60,46 +60,46 @@ void EditorConfig::fromJson(const QJsonObject &p_jobj) {
 
 void EditorConfig::loadCore(const QJsonObject &p_jobj) {
   {
-    m_toolBarIconSize = READINT(QStringLiteral("toolbar_icon_size"));
+    m_toolBarIconSize = READINT(QStringLiteral("toolbarIconSize"));
     if (m_toolBarIconSize <= 0) {
       m_toolBarIconSize = 14;
     }
   }
 
   {
-    auto autoSavePolicy = READSTR(QStringLiteral("auto_save_policy"));
+    auto autoSavePolicy = READSTR(QStringLiteral("autoSavePolicy"));
     m_autoSavePolicy = stringToAutoSavePolicy(autoSavePolicy);
   }
 
-  m_backupFileDirectory = READSTR(QStringLiteral("backup_file_directory"));
+  m_backupFileDirectory = READSTR(QStringLiteral("backupFileDirectory"));
 
-  m_backupFileExtension = READSTR(QStringLiteral("backup_file_extension"));
+  m_backupFileExtension = READSTR(QStringLiteral("backupFileExtension"));
 
   loadShortcuts(p_jobj.value(QStringLiteral("shortcuts")).toObject());
 
   m_spellCheckAutoDetectLanguageEnabled =
-      READBOOL(QStringLiteral("spell_check_auto_detect_language"));
-  m_spellCheckDefaultDictionary = READSTR(QStringLiteral("spell_check_default_dictionary"));
+      READBOOL(QStringLiteral("spellCheckAutoDetectLanguage"));
+  m_spellCheckDefaultDictionary = READSTR(QStringLiteral("spellCheckDefaultDictionary"));
   if (m_spellCheckDefaultDictionary.isEmpty()) {
     m_spellCheckDefaultDictionary = QStringLiteral("en_US");
   }
 
   {
-    auto lineEnding = READSTR(QStringLiteral("line_ending"));
+    auto lineEnding = READSTR(QStringLiteral("lineEnding"));
     m_lineEnding = stringToLineEndingPolicy(lineEnding);
   }
 }
 
 QJsonObject EditorConfig::saveCore() const {
   QJsonObject obj;
-  obj[QStringLiteral("toolbar_icon_size")] = m_toolBarIconSize;
-  obj[QStringLiteral("auto_save_policy")] = autoSavePolicyToString(m_autoSavePolicy);
-  obj[QStringLiteral("backup_file_directory")] = m_backupFileDirectory;
-  obj[QStringLiteral("backup_file_extension")] = m_backupFileExtension;
+  obj[QStringLiteral("toolbarIconSize")] = m_toolBarIconSize;
+  obj[QStringLiteral("autoSavePolicy")] = autoSavePolicyToString(m_autoSavePolicy);
+  obj[QStringLiteral("backupFileDirectory")] = m_backupFileDirectory;
+  obj[QStringLiteral("backupFileExtension")] = m_backupFileExtension;
   obj[QStringLiteral("shortcuts")] = saveShortcuts();
-  obj[QStringLiteral("spell_check_auto_detect_language")] = m_spellCheckAutoDetectLanguageEnabled;
-  obj[QStringLiteral("spell_check_default_dictionary")] = m_spellCheckDefaultDictionary;
-  obj[QStringLiteral("line_ending")] = lineEndingPolicyToString(m_lineEnding);
+  obj[QStringLiteral("spellCheckAutoDetectLanguage")] = m_spellCheckAutoDetectLanguageEnabled;
+  obj[QStringLiteral("spellCheckDefaultDictionary")] = m_spellCheckDefaultDictionary;
+  obj[QStringLiteral("lineEnding")] = lineEndingPolicyToString(m_lineEnding);
   return obj;
 }
 
@@ -134,7 +134,7 @@ QJsonObject EditorConfig::toJson() const {
   obj[m_pdfViewerConfig->getSectionName()] = m_pdfViewerConfig->toJson();
   obj[m_mindMapEditorConfig->getSectionName()] = m_mindMapEditorConfig->toJson();
   obj[QStringLiteral("core")] = saveCore();
-  obj[QStringLiteral("image_host")] = saveImageHost();
+  obj[QStringLiteral("imageHost")] = saveImageHost();
 
   // In UT, it may be nullptr.
   if (m_viConfig) {
@@ -236,8 +236,8 @@ void EditorConfig::loadImageHost(const QJsonObject &p_jobj) {
     }
   }
 
-  m_defaultImageHost = readString(p_jobj, QStringLiteral("default_image_host"));
-  m_clearObsoleteImageAtImageHost = readBool(p_jobj, QStringLiteral("clear_obsolete_image"));
+  m_defaultImageHost = readString(p_jobj, QStringLiteral("defaultImageHost"));
+  m_clearObsoleteImageAtImageHost = readBool(p_jobj, QStringLiteral("clearObsoleteImage"));
 }
 
 QJsonObject EditorConfig::saveImageHost() const {
@@ -251,8 +251,8 @@ QJsonObject EditorConfig::saveImageHost() const {
     obj[QStringLiteral("hosts")] = arr;
   }
 
-  obj[QStringLiteral("default_image_host")] = m_defaultImageHost;
-  obj[QStringLiteral("clear_obsolete_image")] = m_clearObsoleteImageAtImageHost;
+  obj[QStringLiteral("defaultImageHost")] = m_defaultImageHost;
+  obj[QStringLiteral("clearObsoleteImage")] = m_clearObsoleteImageAtImageHost;
 
   return obj;
 }

@@ -19,12 +19,12 @@ void MindMapEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
 QJsonObject MindMapEditorConfig::toJson() const {
   QJsonObject obj;
-  obj[QStringLiteral("editor_resource")] = saveEditorResource();
+  obj[QStringLiteral("editorResource")] = saveEditorResource();
   return obj;
 }
 
 void MindMapEditorConfig::loadEditorResource(const QJsonObject &p_jobj) {
-  const QString name(QStringLiteral("editor_resource"));
+  const QString name(QStringLiteral("editorResource"));
   m_editorResource.init(p_jobj.value(name).toObject());
 }
 
