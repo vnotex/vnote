@@ -12,11 +12,12 @@ class QPushButton;
 
 namespace vnotex {
 
+class ManageNotebooksController;
 class ServiceLocator;
 
 // ManageNotebooksDialog2 - Dialog for managing notebooks using DI architecture.
 // Allows viewing, editing (name/description), closing, and deleting notebooks.
-// Uses NotebookService via ServiceLocator instead of legacy singletons.
+// Uses ManageNotebooksController for business logic.
 class ManageNotebooksDialog2 : public Dialog {
   Q_OBJECT
 
@@ -50,8 +51,6 @@ private:
 
   bool saveChangesToNotebook();
 
-  bool validateInputs();
-
   bool checkUnsavedChanges();
 
   void closeSelectedNotebook();
@@ -60,6 +59,8 @@ private:
   QString getNotebookIdFromItem(const QListWidgetItem *p_item) const;
 
   ServiceLocator &m_services;
+
+  ManageNotebooksController *m_controller = nullptr;
 
   // ID of notebook to select on load.
   QString m_initialNotebookId;

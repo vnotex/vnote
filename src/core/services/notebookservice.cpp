@@ -131,6 +131,38 @@ void NotebookService::rebuildNotebookCache(const QString &p_notebookId) {
   }
 }
 
+QString NotebookService::getRecycleBinPath(const QString &p_notebookId) const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *path = nullptr;
+  VxCoreError err =
+      vxcore_notebook_get_recycle_bin_path(m_context, p_notebookId.toUtf8().constData(), &path);
+  if (err != VXCORE_OK) {
+    // VXCORE_ERR_UNSUPPORTED is expected for raw notebooks.
+    if (err != VXCORE_ERR_UNSUPPORTED) {
+      qWarning() << "getRecycleBinPath failed:" << QString::fromUtf8(vxcore_error_message(err));
+    }
+    return QString();
+  }
+  return cstrToQString(path);
+}
+
+void NotebookService::emptyRecycleBin(const QString &p_notebookId) {
+  if (!checkContext()) {
+    return;
+  }
+
+  VxCoreError err = vxcore_notebook_empty_recycle_bin(m_context, p_notebookId.toUtf8().constData());
+  if (err != VXCORE_OK) {
+    // VXCORE_ERR_UNSUPPORTED is expected for raw notebooks.
+    if (err != VXCORE_ERR_UNSUPPORTED) {
+      qWarning() << "emptyRecycleBin failed:" << QString::fromUtf8(vxcore_error_message(err));
+    }
+  }
+}
+
 // Folder operations.
 QString NotebookService::createFolder(const QString &p_notebookId, const QString &p_parentPath,
                                       const QString &p_folderName) {
