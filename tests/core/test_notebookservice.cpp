@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <QFile>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 
@@ -38,6 +39,7 @@ private slots:
   void testDeleteFile();
   void testRenameFileAndMove();
   void testCopyFile();
+  void testImportFile();
   void testGetFileInfo();
 
   // Tag operations tests.
@@ -321,6 +323,41 @@ void TestNotebookService::testCopyFile() {
   QJsonObject copiedInfo = m_service->getFileInfo(nbId, "DestFolder/copied.md");
   QVERIFY(!copiedInfo.isEmpty());
 }
+
+void TestNotebookService::testImportFile() {
+  QString nbPath = m_tempDir.filePath("import_file_notebook");
+  QString nbId = createTestNotebook(nbPath);
+  QVERIFY(!nbId.isEmpty());
+
+  // Create an external file to import.
+  QString externalFilePath = m_tempDir.filePath("external_file.md");
+  QFile externalFile(externalFilePath);
+  QVERIFY(externalFile.open(QIODevice::WriteOnly));
+  externalFile.write("# External File Content\n\nThis is test content.");
+  externalFile.close();
+
+  // Create a destination folder.
+  m_service->createFolder(nbId, "", "ImportDest");
+
+  // Import the external file.
+  QString importedId = m_service->importFile(nbId, "ImportDest", externalFilePath);
+  QVERIFY(!importedId.isEmpty());
+
+  // Verify imported file exists.
+  QJsonObject fileInfo = m_service->getFileInfo(nbId, "ImportDest/external_file.md");
+  QVERIFY(!fileInfo.isEmpty());
+
+  // Verify file content was copied.
+  QJsonObject nbConfig = m_service->getNotebookConfig(nbId);
+  QString rootFolder = nbConfig["rootFolder"].toString();
+  QString importedFilePath = rootFolder + "/ImportDest/external_file.md";
+  QFile importedFile(importedFilePath);
+  QVERIFY(importedFile.open(QIODevice::ReadOnly));
+  QString content = QString::fromUtf8(importedFile.readAll());
+  importedFile.close();
+  QVERIFY(content.contains("External File Content"));
+}
+
 
 void TestNotebookService::testGetFileInfo() {
   QString nbPath = m_tempDir.filePath("fileinfo_notebook");

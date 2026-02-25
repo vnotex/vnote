@@ -158,6 +158,35 @@ QJsonObject NotebookService::resolvePathToNotebook(const QString &p_absolutePath
   return result;
 }
 
+QString NotebookService::getNodePathById(const QString &p_notebookId, const QString &p_nodeId) const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *path = nullptr;
+  VxCoreError err = vxcore_node_get_path_by_id(m_context, p_notebookId.toUtf8().constData(),
+                                               p_nodeId.toUtf8().constData(), &path);
+  if (err != VXCORE_OK) {
+    qWarning() << "getNodePathById failed:" << QString::fromUtf8(vxcore_error_message(err))
+               << "notebookId:" << p_notebookId << "nodeId:" << p_nodeId;
+    return QString();
+  }
+  return cstrToQString(path);
+}
+
+void NotebookService::unindexNode(const QString &p_notebookId, const QString &p_nodePath) {
+  if (!checkContext()) {
+    return;
+  }
+
+  VxCoreError err = vxcore_node_unindex(m_context, p_notebookId.toUtf8().constData(),
+                                        p_nodePath.toUtf8().constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "unindexNode failed:" << QString::fromUtf8(vxcore_error_message(err))
+               << "notebookId:" << p_notebookId << "nodePath:" << p_nodePath;
+  }
+}
+
 QString NotebookService::getRecycleBinPath(const QString &p_notebookId) const {
   if (!checkContext()) {
     return QString();
@@ -244,7 +273,7 @@ QJsonObject NotebookService::getFolderConfig(const QString &p_notebookId, const 
   VxCoreError err = vxcore_node_get_config(m_context, p_notebookId.toUtf8().constData(),
                                            p_folderPath.toUtf8().constData(), &json);
   if (err != VXCORE_OK) {
-    qWarning() << "getFolderConfig failed:" << QString::fromUtf8(vxcore_error_message(err));
+    qWarning() << "getFolderConfig failed:" << QString::fromUtf8(vxcore_error_message(err)) << "notebookId:" << p_notebookId << "folderPath:" << p_folderPath;
     return QJsonObject();
   }
   return parseJsonObjectFromCStr(json);
@@ -474,6 +503,27 @@ QString NotebookService::importFile(const QString &p_notebookId, const QString &
   }
   return cstrToQString(fileId);
 }
+QString NotebookService::importFolder(const QString &p_notebookId, const QString &p_destFolderPath,
+                                      const QString &p_externalFolderPath,
+                                      const QString &p_suffixAllowlist) {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *folderId = nullptr;
+  VxCoreError err =
+      vxcore_folder_import(m_context, p_notebookId.toUtf8().constData(),
+                           p_destFolderPath.toUtf8().constData(),
+                           p_externalFolderPath.toUtf8().constData(),
+                           p_suffixAllowlist.isEmpty() ? nullptr : p_suffixAllowlist.toUtf8().constData(),
+                           &folderId);
+  if (err != VXCORE_OK) {
+    qWarning() << "importFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+  return cstrToQString(folderId);
+}
+
 
 // Tag operations.
 void NotebookService::updateFileTags(const QString &p_notebookId, const QString &p_filePath,

@@ -46,7 +46,7 @@ QString NotebookNodeController::buildAbsolutePath(const NodeIdentifier &p_nodeId
   // Get notebook root path from service
   auto *notebookService = m_services.get<NotebookService>();
   QJsonObject config = notebookService->getNotebookConfig(p_nodeId.notebookId);
-  QString rootPath = config.value(QStringLiteral("root_folder")).toString();
+  QString rootPath = config.value(QStringLiteral("rootFolder")).toString();
 
   if (rootPath.isEmpty()) {
     return QString();
@@ -207,6 +207,10 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
   auto *propertiesAction = p_menu->addAction(tr("P&roperties"));
   connect(propertiesAction, &QAction::triggered, this,
           [this, p_nodeId]() { showNodeProperties(p_nodeId); });
+
+  auto *tagAction = p_menu->addAction(tr("Manage &Tags"));
+  connect(tagAction, &QAction::triggered, this,
+          [this, p_nodeId]() { manageNodeTags(p_nodeId); });
 }
 
 void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
@@ -219,10 +223,6 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
     auto *pinAction = p_menu->addAction(tr("Pin to &Quick Access"));
     connect(pinAction, &QAction::triggered, this,
             [this, p_nodeId]() { pinNodeToQuickAccess(p_nodeId); });
-
-    auto *tagAction = p_menu->addAction(tr("Manage &Tags"));
-    connect(tagAction, &QAction::triggered, this,
-            [this, p_nodeId]() { manageNodeTags(p_nodeId); });
   }
 }
 
@@ -594,19 +594,10 @@ void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &
     notifyBeforeNodeOperation(nodeId, QStringLiteral("remove"));
 
     try {
-      NodeInfo nodeInfo = getNodeInfo(nodeId);
       NodeIdentifier parentId = getParentFolder(nodeId);
       parentsToReload.insert(parentId);
-
-      if (nodeInfo.isFolder) {
-        // TODO: NotebookService doesn't have removeFolderFromNotebook yet
-        // For now, use deleteFolder which moves to recycle bin for bundled notebooks
-        notebookService->deleteFolder(nodeId.notebookId, nodeId.relativePath);
-      } else {
-        // TODO: NotebookService doesn't have removeFileFromNotebook yet
-        // For now, use deleteFile which moves to recycle bin for bundled notebooks
-        notebookService->deleteFile(nodeId.notebookId, nodeId.relativePath);
-      }
+      // Use unindexNode to remove from metadata without deleting files on disk
+      notebookService->unindexNode(nodeId.notebookId, nodeId.relativePath);
     } catch (const std::exception &e) {
       emit errorOccurred(tr("Error"), tr("Failed to remove from notebook: %1").arg(e.what()));
     }

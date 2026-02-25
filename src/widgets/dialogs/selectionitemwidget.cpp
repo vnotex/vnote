@@ -23,10 +23,14 @@ SelectionItemWidget::SelectionItemWidget(const QString &p_text, QWidget *p_paren
 }
 
 void SelectionItemWidget::setupUI(const QString &p_text) {
+  // Make widget transparent so it blends with list item background.
+  setAttribute(Qt::WA_TranslucentBackground);
+
   QHBoxLayout *mainLayout = new QHBoxLayout(this);
   mainLayout->setContentsMargins(CONTENTS_MARGIN, 0, 0, 0);
 
   m_checkBox = new QCheckBox(this);
+  m_checkBox->setStyleSheet(QStringLiteral("QCheckBox { background: transparent; }"));
   mainLayout->addWidget(m_checkBox);
   connect(m_checkBox, &QCheckBox::stateChanged, this, &SelectionItemWidget::checkStateChanged);
 

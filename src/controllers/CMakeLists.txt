@@ -6,6 +6,7 @@ target_sources(vnote PRIVATE
     opennotebookcontroller.cpp opennotebookcontroller.h
     managenotebookscontroller.cpp managenotebookscontroller.h
     recyclebincontroller.cpp recyclebincontroller.h
+    importfoldercontroller.cpp importfoldercontroller.h
 )
 
 target_include_directories(vnote PRIVATE
