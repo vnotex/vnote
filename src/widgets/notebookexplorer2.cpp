@@ -36,7 +36,7 @@
 #include <views/notebooknodedelegate.h>
 #include <views/notebooknodeview.h>
 // TODO: Migrate dialogs to use ServiceLocator DI pattern
-// #include <widgets/dialogs/importfolderdialog.h>
+#include <widgets/dialogs/importfolderdialog2.h>
 // #include <widgets/dialogs/importnotebookdialog.h>
 // #include <widgets/dialogs/managenotebooksdialog.h>
 // #include <widgets/dialogs/newfolderdialog.h>
@@ -1254,21 +1254,18 @@ void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFol
 }
 
 void NotebookExplorer2::onImportFolderRequested(const NodeIdentifier &p_targetFolderId) {
-  QString folder = QFileDialog::getExistingDirectory(window(), tr("Import Folder"), QString());
-  if (folder.isEmpty()) {
-    return;
-  }
-
-  // Call back to the appropriate controller
-  NotebookNodeController *controller = nullptr;
-  if (m_exploreMode == Combined) {
-    controller = m_combinedController;
-  } else {
-    controller = m_folderController;
-  }
-
-  if (controller) {
-    controller->handleImportFolder(p_targetFolderId, folder);
+  ImportFolderDialog2 dialog(m_services, p_targetFolderId, window());
+  if (dialog.exec() == QDialog::Accepted) {
+    NodeIdentifier newNodeId = dialog.getNewNodeId();
+    if (newNodeId.isValid()) {
+      // Reload the parent folder to show the new imported folder
+      if (m_exploreMode == Combined && m_combinedModel) {
+        m_combinedModel->reloadNode(p_targetFolderId);
+      } else if (m_folderModel) {
+        m_folderModel->reloadNode(p_targetFolderId);
+      }
+      setCurrentNode(newNodeId);
+    }
   }
 }
 
@@ -1296,7 +1293,7 @@ void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
   QString absolutePath;
   auto *notebookService = m_services.get<NotebookService>();
   QJsonObject config = notebookService->getNotebookConfig(p_nodeId.notebookId);
-  QString rootPath = config.value(QStringLiteral("root_folder")).toString();
+  QString rootPath = config.value(QStringLiteral("rootFolder")).toString();
   if (!rootPath.isEmpty()) {
     absolutePath =
         p_nodeId.relativePath.isEmpty() ? rootPath : rootPath + "/" + p_nodeId.relativePath;

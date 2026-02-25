@@ -93,18 +93,26 @@ NewFolderResult NewFolderController::createFolder(const NewFolderInput &p_input)
     return result;
   }
 
-  // Create folder via service.
-  QString newFolderPath =
+  // Create folder via service (returns folder ID, not path).
+  QString folderId =
       notebookService->createFolder(p_input.notebookId, p_input.parentFolderPath, p_input.name);
 
-  if (newFolderPath.isEmpty()) {
+  if (folderId.isEmpty()) {
     result.success = false;
     result.errorMessage = tr("Failed to create folder (%1).").arg(p_input.name);
     return result;
   }
 
+  // Get the relative path from the folder ID.
+  QString folderPath = notebookService->getNodePathById(p_input.notebookId, folderId);
+  if (folderPath.isEmpty()) {
+    result.success = false;
+    result.errorMessage = tr("Failed to get path for created folder.");
+    return result;
+  }
+
   result.success = true;
   result.nodeId.notebookId = p_input.notebookId;
-  result.nodeId.relativePath = newFolderPath;
+  result.nodeId.relativePath = folderPath;
   return result;
 }
