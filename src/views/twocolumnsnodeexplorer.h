@@ -1,14 +1,11 @@
 #ifndef TWOCOLUMNSNODEEXPLORER_H
 #define TWOCOLUMNSNODEEXPLORER_H
 
-#include <QList>
-#include <QSharedPointer>
-#include <QWidget>
+#include "inodeexplorer.h"
 
-#include <core/global.h>
-#include <nodeinfo.h>
 
 class QSplitter;
+class QMenu;
 
 namespace vnotex {
 
@@ -19,6 +16,7 @@ class NotebookNodeDelegate;
 class NotebookNodeController;
 class ServiceLocator;
 struct FileOpenParameters;
+class Event;
 
 // TwoColumnsNodeExplorer encapsulates a two-panel view:
 // - Left panel: folder tree (shows only folders)
@@ -26,7 +24,7 @@ struct FileOpenParameters;
 //
 // It provides a unified interface similar to NotebookNodeView for easy
 // integration with NotebookExplorer2.
-class TwoColumnsNodeExplorer : public QWidget {
+class TwoColumnsNodeExplorer : public INodeExplorer {
   Q_OBJECT
 
 public:
@@ -34,47 +32,63 @@ public:
   ~TwoColumnsNodeExplorer() override;
 
   // Set the notebook to display
-  void setNotebookId(const QString &p_notebookId);
-  QString getNotebookId() const;
+  void setNotebookId(const QString &p_notebookId) override;
+  QString getNotebookId() const override;
 
   // Selection helpers (unified interface)
-  NodeIdentifier currentNodeId() const;
-  QList<NodeIdentifier> selectedNodeIds() const;
+  NodeIdentifier currentNodeId() const override;
+  QList<NodeIdentifier> selectedNodeIds() const override;
 
   // Navigation (unified interface)
-  void selectNode(const NodeIdentifier &p_nodeId);
-  void expandToNode(const NodeIdentifier &p_nodeId);
-  void scrollToNode(const NodeIdentifier &p_nodeId);
+  void selectNode(const NodeIdentifier &p_nodeId) override;
+  void expandToNode(const NodeIdentifier &p_nodeId) override;
+  void scrollToNode(const NodeIdentifier &p_nodeId) override;
 
   // Expand/collapse helpers
-  void expandAll();
-  void collapseAll();
+  void expandAll() override;
+  void collapseAll() override;
 
   // Get the currently selected folder (for new note/folder operations)
-  NodeIdentifier currentFolderId() const;
+  NodeIdentifier currentFolderId() const override;
 
   // View order
-  void setViewOrder(ViewOrder p_order);
+  void setViewOrder(ViewOrder p_order) override;
 
-  // Access to controllers for signal connections
-  NotebookNodeController *folderController() const;
-  NotebookNodeController *fileController() const;
+  // Context menu creation - unified for both panels
+  // INodeExplorer interface - base version delegates to two-param version
+  QMenu *createContextMenu(const NodeIdentifier &p_nodeId,
+                           QWidget *p_parent = nullptr) override;
+  // Extended version for two-column mode that specifies which panel triggered the menu
+  QMenu *createContextMenu(const NodeIdentifier &p_nodeId, bool p_isFromFileView,
+                           QWidget *p_parent = nullptr) override;
+
+  // Node info lookup - checks both models
+  NodeInfo getNodeInfo(const NodeIdentifier &p_nodeId) const override;
+
+  // Operation handlers - delegates to appropriate controller
+  void handleRenameResult(const NodeIdentifier &p_nodeId, const QString &p_newName) override;
+  void handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent) override;
+  void handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds) override;
 
   // Reload a node in the appropriate model
+  // INodeExplorer interface - auto-detects folder vs file
+  void reloadNode(const NodeIdentifier &p_nodeId) override;
+  // Extended version for explicit folder/file specification
   void reloadNode(const NodeIdentifier &p_nodeId, bool p_isFolder);
 
   // Splitter state for session save/restore
   QByteArray saveSplitterState() const;
   void restoreSplitterState(const QByteArray &p_data);
 
-signals:
-  // Emitted when a node is activated (double-click or Enter)
-  void nodeActivated(const NodeIdentifier &p_nodeId,
-                     const QSharedPointer<FileOpenParameters> &p_paras);
-
-  // Emitted when context menu is requested
-  void contextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos,
-                            bool p_isFromFileView);
+  // Note: INodeExplorer signals are inherited:
+  // - nodeActivated, contextMenuRequested, fileActivated, nodeAboutToMove, nodeAboutToRemove,
+  //   nodeAboutToReload, closeFileRequested, newNoteRequested, newFolderRequested,
+  //   renameRequested, deleteRequested, removeFromNotebookRequested, propertiesRequested,
+  //   errorOccurred, infoMessage
+  //
+  // This class uses contextMenuRequested with bool parameter to indicate which panel.
+  // The INodeExplorer::contextMenuRequested(nodeId, globalPos) is NOT emitted directly;
+  // callers should connect to the 3-param version.
 
 private slots:
   void onFolderSelectionChanged(const QList<NodeIdentifier> &p_nodeIds);
@@ -83,6 +97,10 @@ private slots:
 
 private:
   void setupUI();
+  void connectControllerSignals(NotebookNodeController *p_controller);
+
+  // Helper to determine which controller to use for a node
+  NotebookNodeController *controllerForNode(const NodeIdentifier &p_nodeId) const;
 
   ServiceLocator &m_services;
   QString m_notebookId;

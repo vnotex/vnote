@@ -1,5 +1,6 @@
 #include "twocolumnsnodeexplorer.h"
 
+#include <QMenu>
 #include <QSplitter>
 #include <QVBoxLayout>
 
@@ -15,7 +16,7 @@
 using namespace vnotex;
 
 TwoColumnsNodeExplorer::TwoColumnsNodeExplorer(ServiceLocator &p_services, QWidget *p_parent)
-    : QWidget(p_parent), m_services(p_services) {
+    : INodeExplorer(p_parent), m_services(p_services) {
   setupUI();
 }
 
@@ -96,6 +97,48 @@ void TwoColumnsNodeExplorer::setupUI() {
           &TwoColumnsNodeExplorer::onFolderContextMenu);
   connect(m_fileView, &NotebookNodeView::contextMenuRequested, this,
           &TwoColumnsNodeExplorer::onFileContextMenu);
+
+  // Forward controller signals from both controllers
+  connectControllerSignals(m_folderController);
+  connectControllerSignals(m_fileController);
+}
+
+void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_controller) {
+  if (!p_controller) {
+    return;
+  }
+
+  // Node lifecycle signals
+  connect(p_controller, &NotebookNodeController::fileActivated, this,
+          &TwoColumnsNodeExplorer::fileActivated);
+  connect(p_controller, &NotebookNodeController::nodeAboutToMove, this,
+          &TwoColumnsNodeExplorer::nodeAboutToMove);
+  connect(p_controller, &NotebookNodeController::nodeAboutToRemove, this,
+          &TwoColumnsNodeExplorer::nodeAboutToRemove);
+  connect(p_controller, &NotebookNodeController::nodeAboutToReload, this,
+          &TwoColumnsNodeExplorer::nodeAboutToReload);
+  connect(p_controller, &NotebookNodeController::closeFileRequested, this,
+          &TwoColumnsNodeExplorer::closeFileRequested);
+
+  // GUI request signals
+  connect(p_controller, &NotebookNodeController::newNoteRequested, this,
+          &TwoColumnsNodeExplorer::newNoteRequested);
+  connect(p_controller, &NotebookNodeController::newFolderRequested, this,
+          &TwoColumnsNodeExplorer::newFolderRequested);
+  connect(p_controller, &NotebookNodeController::renameRequested, this,
+          &TwoColumnsNodeExplorer::renameRequested);
+  connect(p_controller, &NotebookNodeController::deleteRequested, this,
+          &TwoColumnsNodeExplorer::deleteRequested);
+  connect(p_controller, &NotebookNodeController::removeFromNotebookRequested, this,
+          &TwoColumnsNodeExplorer::removeFromNotebookRequested);
+  connect(p_controller, &NotebookNodeController::propertiesRequested, this,
+          &TwoColumnsNodeExplorer::propertiesRequested);
+
+  // Status signals
+  connect(p_controller, &NotebookNodeController::errorOccurred, this,
+          &TwoColumnsNodeExplorer::errorOccurred);
+  connect(p_controller, &NotebookNodeController::infoMessage, this,
+          &TwoColumnsNodeExplorer::infoMessage);
 }
 
 void TwoColumnsNodeExplorer::setNotebookId(const QString &p_notebookId) {
@@ -149,13 +192,7 @@ void TwoColumnsNodeExplorer::selectNode(const NodeIdentifier &p_nodeId) {
   }
 
   // Get node info to check if it's a folder
-  NodeInfo info;
-  if (m_folderModel) {
-    QModelIndex idx = m_folderModel->indexFromNodeId(p_nodeId);
-    if (idx.isValid()) {
-      info = m_folderModel->nodeInfoFromIndex(idx);
-    }
-  }
+  NodeInfo info = getNodeInfo(p_nodeId);
 
   if (info.isFolder) {
     m_folderView->selectNode(p_nodeId);
@@ -179,13 +216,7 @@ void TwoColumnsNodeExplorer::expandToNode(const NodeIdentifier &p_nodeId) {
   }
 
   // Expand in folder view (folders only)
-  NodeInfo info;
-  if (m_folderModel) {
-    QModelIndex idx = m_folderModel->indexFromNodeId(p_nodeId);
-    if (idx.isValid()) {
-      info = m_folderModel->nodeInfoFromIndex(idx);
-    }
-  }
+  NodeInfo info = getNodeInfo(p_nodeId);
 
   if (info.isFolder) {
     m_folderView->expandToNode(p_nodeId);
@@ -205,13 +236,7 @@ void TwoColumnsNodeExplorer::scrollToNode(const NodeIdentifier &p_nodeId) {
     return;
   }
 
-  NodeInfo info;
-  if (m_folderModel) {
-    QModelIndex idx = m_folderModel->indexFromNodeId(p_nodeId);
-    if (idx.isValid()) {
-      info = m_folderModel->nodeInfoFromIndex(idx);
-    }
-  }
+  NodeInfo info = getNodeInfo(p_nodeId);
 
   if (info.isFolder) {
     m_folderView->scrollToNode(p_nodeId);
@@ -251,12 +276,99 @@ void TwoColumnsNodeExplorer::setViewOrder(ViewOrder p_order) {
   }
 }
 
-NotebookNodeController *TwoColumnsNodeExplorer::folderController() const {
-  return m_folderController;
+QMenu *TwoColumnsNodeExplorer::createContextMenu(const NodeIdentifier &p_nodeId,
+                                                  QWidget *p_parent) {
+  // Delegate to the 3-param version; use folder controller by default
+  // (determines from node info whether it's a folder or file)
+  NodeInfo info = getNodeInfo(p_nodeId);
+  return createContextMenu(p_nodeId, !info.isFolder, p_parent);
 }
 
-NotebookNodeController *TwoColumnsNodeExplorer::fileController() const {
-  return m_fileController;
+QMenu *TwoColumnsNodeExplorer::createContextMenu(const NodeIdentifier &p_nodeId,
+                                                  bool p_isFromFileView,
+                                                  QWidget *p_parent) {
+  NotebookNodeController *controller = p_isFromFileView ? m_fileController : m_folderController;
+  if (!controller) {
+    return nullptr;
+  }
+
+  // If no specific node was clicked in file view, use the current display root
+  NodeIdentifier effectiveNodeId = p_nodeId;
+  if (!effectiveNodeId.isValid() && p_isFromFileView && m_fileModel) {
+    effectiveNodeId = m_fileModel->getDisplayRoot();
+  }
+
+  return controller->createContextMenu(effectiveNodeId, p_parent);
+}
+
+NodeInfo TwoColumnsNodeExplorer::getNodeInfo(const NodeIdentifier &p_nodeId) const {
+  NodeInfo info;
+
+  // Try folder model first
+  if (m_folderModel) {
+    QModelIndex idx = m_folderModel->indexFromNodeId(p_nodeId);
+    if (idx.isValid()) {
+      info = m_folderModel->nodeInfoFromIndex(idx);
+      if (info.isValid()) {
+        return info;
+      }
+    }
+  }
+
+  // Try file model
+  if (m_fileModel) {
+    QModelIndex idx = m_fileModel->indexFromNodeId(p_nodeId);
+    if (idx.isValid()) {
+      info = m_fileModel->nodeInfoFromIndex(idx);
+    }
+  }
+
+  return info;
+}
+
+NotebookNodeController *TwoColumnsNodeExplorer::controllerForNode(
+    const NodeIdentifier &p_nodeId) const {
+  NodeInfo info = getNodeInfo(p_nodeId);
+  return info.isFolder ? m_folderController : m_fileController;
+}
+
+void TwoColumnsNodeExplorer::handleRenameResult(const NodeIdentifier &p_nodeId,
+                                                 const QString &p_newName) {
+  NotebookNodeController *controller = controllerForNode(p_nodeId);
+  if (controller) {
+    controller->handleRenameResult(p_nodeId, p_newName);
+  }
+}
+
+void TwoColumnsNodeExplorer::handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds,
+                                                    bool p_permanent) {
+  if (p_nodeIds.isEmpty()) {
+    return;
+  }
+
+  // Determine controller from first node
+  NotebookNodeController *controller = controllerForNode(p_nodeIds.first());
+  if (controller) {
+    controller->handleDeleteConfirmed(p_nodeIds, p_permanent);
+  }
+}
+
+void TwoColumnsNodeExplorer::handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds) {
+  if (p_nodeIds.isEmpty()) {
+    return;
+  }
+
+  // Determine controller from first node
+  NotebookNodeController *controller = controllerForNode(p_nodeIds.first());
+  if (controller) {
+    controller->handleRemoveConfirmed(p_nodeIds);
+  }
+}
+
+void TwoColumnsNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId) {
+  // Auto-detect folder vs file based on node info
+  NodeInfo info = getNodeInfo(p_nodeId);
+  reloadNode(p_nodeId, info.isFolder);
 }
 
 void TwoColumnsNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId, bool p_isFolder) {

@@ -487,48 +487,45 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   m_twoColumnsExplorer = new TwoColumnsNodeExplorer(m_services, this);
   m_contentStack->addWidget(m_twoColumnsExplorer);
 
-  // Connect unified signals
+  // Connect unified signals from TwoColumnsNodeExplorer
   connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeActivated, this,
           &NotebookExplorer2::onNodeActivated);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::contextMenuRequested, this,
-          &NotebookExplorer2::onTwoColumnsContextMenu);
+  connect(m_twoColumnsExplorer,
+          QOverload<const NodeIdentifier &, const QPoint &, bool>::of(
+              &TwoColumnsNodeExplorer::contextMenuRequested),
+          this, &NotebookExplorer2::onTwoColumnsContextMenu);
 
-  // Forward controller signals from both controllers
-  auto connectControllerSignals = [this](NotebookNodeController *controller) {
-    connect(controller, &NotebookNodeController::nodeActivated, this,
-            &NotebookExplorer2::nodeActivated);
-    connect(controller, &NotebookNodeController::fileActivated, this,
-            &NotebookExplorer2::fileActivated);
-    connect(controller, &NotebookNodeController::nodeAboutToMove, this,
-            &NotebookExplorer2::nodeAboutToMove);
-    connect(controller, &NotebookNodeController::nodeAboutToRemove, this,
-            &NotebookExplorer2::nodeAboutToRemove);
-    connect(controller, &NotebookNodeController::nodeAboutToReload, this,
-            &NotebookExplorer2::nodeAboutToReload);
-    connect(controller, &NotebookNodeController::closeFileRequested, this,
-            &NotebookExplorer2::closeFileRequested);
+  // Forward controller signals (unified from both folder and file controllers)
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeActivated, this,
+          &NotebookExplorer2::nodeActivated);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::fileActivated, this,
+          &NotebookExplorer2::fileActivated);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeAboutToMove, this,
+          &NotebookExplorer2::nodeAboutToMove);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeAboutToRemove, this,
+          &NotebookExplorer2::nodeAboutToRemove);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeAboutToReload, this,
+          &NotebookExplorer2::nodeAboutToReload);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::closeFileRequested, this,
+          &NotebookExplorer2::closeFileRequested);
 
-    // Connect GUI request signals from controller
-    connect(controller, &NotebookNodeController::newNoteRequested, this,
-            &NotebookExplorer2::onNewNoteRequested);
-    connect(controller, &NotebookNodeController::newFolderRequested, this,
-            &NotebookExplorer2::onNewFolderRequested);
-    connect(controller, &NotebookNodeController::renameRequested, this,
-            &NotebookExplorer2::onRenameRequested);
-    connect(controller, &NotebookNodeController::deleteRequested, this,
-            &NotebookExplorer2::onDeleteRequested);
-    connect(controller, &NotebookNodeController::removeFromNotebookRequested, this,
-            &NotebookExplorer2::onRemoveFromNotebookRequested);
-    connect(controller, &NotebookNodeController::propertiesRequested, this,
-            &NotebookExplorer2::onPropertiesRequested);
-    connect(controller, &NotebookNodeController::errorOccurred, this,
-            &NotebookExplorer2::onErrorOccurred);
-    connect(controller, &NotebookNodeController::infoMessage, this,
-            &NotebookExplorer2::onInfoMessage);
-  };
-
-  connectControllerSignals(m_twoColumnsExplorer->folderController());
-  connectControllerSignals(m_twoColumnsExplorer->fileController());
+  // Connect GUI request signals
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::newNoteRequested, this,
+          &NotebookExplorer2::onNewNoteRequested);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::newFolderRequested, this,
+          &NotebookExplorer2::onNewFolderRequested);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::renameRequested, this,
+          &NotebookExplorer2::onRenameRequested);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::deleteRequested, this,
+          &NotebookExplorer2::onDeleteRequested);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::removeFromNotebookRequested, this,
+          &NotebookExplorer2::onRemoveFromNotebookRequested);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::propertiesRequested, this,
+          &NotebookExplorer2::onPropertiesRequested);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::errorOccurred, this,
+          &NotebookExplorer2::onErrorOccurred);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::infoMessage, this,
+          &NotebookExplorer2::onInfoMessage);
 }
 
 void NotebookExplorer2::loadNotebooks() {
@@ -585,35 +582,11 @@ void NotebookExplorer2::setCurrentNode(const NodeIdentifier &p_nodeId) {
       m_combinedView->scrollToNode(p_nodeId);
     }
   } else {
-    // TwoColumns mode
-    if (!m_twoColumnsExplorer) {
-      return;
-    }
-
-    // Get node info to check if it's a folder
-    NodeInfo info;
-    auto *folderModel = m_twoColumnsExplorer->folderController()->model();
-    if (folderModel) {
-      auto *model = qobject_cast<NotebookNodeModel *>(folderModel);
-      if (model) {
-        info = model->nodeInfoFromIndex(model->indexFromNodeId(p_nodeId));
-      }
-    }
-
-    if (info.isFolder) {
+    // TwoColumns mode - use unified interface
+    if (m_twoColumnsExplorer) {
       m_twoColumnsExplorer->expandToNode(p_nodeId);
       m_twoColumnsExplorer->selectNode(p_nodeId);
-    } else {
-      // Select parent folder in folder view
-      NodeIdentifier parentId = p_nodeId;
-      parentId.relativePath = p_nodeId.parentPath();
-
-      if (parentId.isValid()) {
-        m_twoColumnsExplorer->expandToNode(parentId);
-        m_twoColumnsExplorer->selectNode(parentId);
-      }
-      // Select file in file view
-      m_twoColumnsExplorer->selectNode(p_nodeId);
+      m_twoColumnsExplorer->scrollToNode(p_nodeId);
     }
   }
 }
@@ -685,24 +658,14 @@ void NotebookExplorer2::onNodeActivated(const NodeIdentifier &p_nodeId,
 
 void NotebookExplorer2::onContextMenuRequested(const NodeIdentifier &p_nodeId,
                                                const QPoint &p_globalPos) {
-  NotebookNodeController *controller = nullptr;
-
-  // Determine which controller to use based on explore mode
-  if (m_exploreMode == Combined) {
-    controller = m_combinedController;
-  } else {
-    // In TwoColumns mode, this is called from folder view
-    controller = m_twoColumnsExplorer ? m_twoColumnsExplorer->folderController() : nullptr;
-  }
-
-  if (!controller) {
-    return;
-  }
-
-  QMenu *menu = controller->createContextMenu(p_nodeId, this);
-  if (menu) {
-    menu->exec(p_globalPos);
-    delete menu;
+  // Use unified interface - this is called from combined mode only
+  // (TwoColumns mode uses onTwoColumnsContextMenu with 3-param signal)
+  if (m_exploreMode == Combined && m_combinedController) {
+    QMenu *menu = m_combinedController->createContextMenu(p_nodeId, this);
+    if (menu) {
+      menu->exec(p_globalPos);
+      delete menu;
+    }
   }
 }
 
@@ -713,21 +676,8 @@ void NotebookExplorer2::onTwoColumnsContextMenu(const NodeIdentifier &p_nodeId,
     return;
   }
 
-  NotebookNodeController *controller = p_isFromFileView
-      ? m_twoColumnsExplorer->fileController()
-      : m_twoColumnsExplorer->folderController();
-
-  if (!controller) {
-    return;
-  }
-
-  // If no specific node was clicked, use the current folder (display root)
-  NodeIdentifier effectiveNodeId = p_nodeId;
-  if (!effectiveNodeId.isValid() && p_isFromFileView) {
-    effectiveNodeId = m_twoColumnsExplorer->currentFolderId();
-  }
-
-  QMenu *menu = controller->createContextMenu(effectiveNodeId, this);
+  // Use unified createContextMenu method
+  QMenu *menu = m_twoColumnsExplorer->createContextMenu(p_nodeId, p_isFromFileView, this);
   if (menu) {
     menu->exec(p_globalPos);
     delete menu;
@@ -980,13 +930,7 @@ NodeIdentifier NotebookExplorer2::currentExploredFolderId() const {
   if (m_exploreMode == Combined && m_combinedModel) {
     info = m_combinedModel->nodeInfoFromIndex(m_combinedModel->indexFromNodeId(nodeId));
   } else if (m_twoColumnsExplorer) {
-    auto *folderController = m_twoColumnsExplorer->folderController();
-    if (folderController) {
-      auto *model = qobject_cast<NotebookNodeModel *>(folderController->model());
-      if (model) {
-        info = model->nodeInfoFromIndex(model->indexFromNodeId(nodeId));
-      }
-    }
+    info = m_twoColumnsExplorer->getNodeInfo(nodeId);
   }
 
   if (info.isFolder) {
@@ -1109,27 +1053,15 @@ void NotebookExplorer2::onRenameRequested(const NodeIdentifier &p_nodeId,
     return;
   }
 
-  // Call back to the appropriate controller to perform the rename
-  NotebookNodeController *controller = nullptr;
+  // Use unified interface to perform the rename
   if (m_exploreMode == Combined) {
-    controller = m_combinedController;
-  } else {
-    // Determine which controller based on the node
-    if (m_twoColumnsExplorer) {
-      auto *folderController = m_twoColumnsExplorer->folderController();
-      auto *fileController = m_twoColumnsExplorer->fileController();
-      if (folderController) {
-        auto *model = qobject_cast<NotebookNodeModel *>(folderController->model());
-        if (model) {
-          NodeInfo info = model->nodeInfoFromIndex(model->indexFromNodeId(p_nodeId));
-          controller = info.isFolder ? folderController : fileController;
-        }
-      }
+    if (m_combinedController) {
+      m_combinedController->handleRenameResult(p_nodeId, newName);
     }
-  }
-
-  if (controller) {
-    controller->handleRenameResult(p_nodeId, newName);
+  } else {
+    if (m_twoColumnsExplorer) {
+      m_twoColumnsExplorer->handleRenameResult(p_nodeId, newName);
+    }
   }
 }
 
@@ -1153,17 +1085,15 @@ void NotebookExplorer2::onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds
     return;
   }
 
-  // Call back to the appropriate controller to perform the delete
-  NotebookNodeController *controller = nullptr;
+  // Use unified interface to perform the delete
   if (m_exploreMode == Combined) {
-    controller = m_combinedController;
+    if (m_combinedController) {
+      m_combinedController->handleDeleteConfirmed(p_nodeIds, p_permanent);
+    }
   } else {
-    // Use folder controller for delete operations (it can handle both)
-    controller = m_twoColumnsExplorer ? m_twoColumnsExplorer->folderController() : nullptr;
-  }
-
-  if (controller) {
-    controller->handleDeleteConfirmed(p_nodeIds, p_permanent);
+    if (m_twoColumnsExplorer) {
+      m_twoColumnsExplorer->handleDeleteConfirmed(p_nodeIds, p_permanent);
+    }
   }
 }
 
@@ -1181,16 +1111,15 @@ void NotebookExplorer2::onRemoveFromNotebookRequested(const QList<NodeIdentifier
     return;
   }
 
-  // Call back to the appropriate controller to perform the removal
-  NotebookNodeController *controller = nullptr;
+  // Use unified interface to perform the removal
   if (m_exploreMode == Combined) {
-    controller = m_combinedController;
+    if (m_combinedController) {
+      m_combinedController->handleRemoveConfirmed(p_nodeIds);
+    }
   } else {
-    controller = m_twoColumnsExplorer ? m_twoColumnsExplorer->folderController() : nullptr;
-  }
-
-  if (controller) {
-    controller->handleRemoveConfirmed(p_nodeIds);
+    if (m_twoColumnsExplorer) {
+      m_twoColumnsExplorer->handleRemoveConfirmed(p_nodeIds);
+    }
   }
 }
 
@@ -1201,16 +1130,23 @@ void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFol
     return;
   }
 
-  // Call back to the appropriate controller
-  NotebookNodeController *controller = nullptr;
-  if (m_exploreMode == Combined) {
-    controller = m_combinedController;
-  } else {
-    controller = m_twoColumnsExplorer ? m_twoColumnsExplorer->folderController() : nullptr;
-  }
-
-  if (controller) {
-    controller->handleImportFiles(p_targetFolderId, files);
+  // Use controller to perform the import
+  if (m_exploreMode == Combined && m_combinedController) {
+    m_combinedController->handleImportFiles(p_targetFolderId, files);
+  } else if (m_twoColumnsExplorer) {
+    // For two-column mode, we still need a controller to handle import
+    // Since TwoColumnsNodeExplorer doesn't expose handleImportFiles,
+    // we need to handle this differently - use NotebookService directly
+    auto &notebookService = *m_services.get<NotebookService>();
+    for (const QString &filePath : files) {
+      QFileInfo fileInfo(filePath);
+      QString destPath = p_targetFolderId.relativePath.isEmpty()
+                             ? fileInfo.fileName()
+                             : p_targetFolderId.relativePath + "/" + fileInfo.fileName();
+      notebookService.importFile(p_targetFolderId.notebookId, filePath, destPath);
+    }
+    // Reload the folder to show imported files
+    m_twoColumnsExplorer->reloadNode(p_targetFolderId);
   }
 }
 
@@ -1235,26 +1171,14 @@ void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
     return;
   }
 
-  // Get node info to display properties
+  // Get node info using unified interface
   NodeInfo nodeInfo;
   if (m_exploreMode == Combined && m_combinedModel) {
     nodeInfo = m_combinedModel->nodeInfoFromIndex(m_combinedModel->indexFromNodeId(p_nodeId));
   } else if (m_twoColumnsExplorer) {
-    auto *folderController = m_twoColumnsExplorer->folderController();
-    auto *fileController = m_twoColumnsExplorer->fileController();
-    if (folderController) {
-      auto *model = qobject_cast<NotebookNodeModel *>(folderController->model());
-      if (model) {
-        nodeInfo = model->nodeInfoFromIndex(model->indexFromNodeId(p_nodeId));
-      }
-    }
-    if (!nodeInfo.isValid() && fileController) {
-      auto *model = qobject_cast<NotebookNodeModel *>(fileController->model());
-      if (model) {
-        nodeInfo = model->nodeInfoFromIndex(model->indexFromNodeId(p_nodeId));
-      }
-    }
+    nodeInfo = m_twoColumnsExplorer->getNodeInfo(p_nodeId);
   }
+
 
   if (!nodeInfo.isValid()) {
     return;
