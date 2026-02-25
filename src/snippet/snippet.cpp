@@ -26,9 +26,9 @@ QJsonObject Snippet::toJson() const {
   obj[QStringLiteral("description")] = m_description;
   obj[QStringLiteral("content")] = m_content;
   obj[QStringLiteral("shortcut")] = m_shortcut;
-  obj[QStringLiteral("indent_as_first_line")] = m_indentAsFirstLine;
-  obj[QStringLiteral("cursor_mark")] = m_cursorMark;
-  obj[QStringLiteral("selection_mark")] = m_selectionMark;
+  obj[QStringLiteral("indentAsFirstLine")] = m_indentAsFirstLine;
+  obj[QStringLiteral("cursorMark")] = m_cursorMark;
+  obj[QStringLiteral("selectionMark")] = m_selectionMark;
 
   return obj;
 }
@@ -38,9 +38,9 @@ void Snippet::fromJson(const QJsonObject &p_jobj) {
   m_description = p_jobj[QStringLiteral("description")].toString();
   m_content = p_jobj[QStringLiteral("content")].toString();
   m_shortcut = p_jobj[QStringLiteral("shortcut")].toInt();
-  m_indentAsFirstLine = p_jobj[QStringLiteral("indent_as_first_line")].toBool();
-  m_cursorMark = p_jobj[QStringLiteral("cursor_mark")].toString();
-  m_selectionMark = p_jobj[QStringLiteral("selection_mark")].toString();
+  m_indentAsFirstLine = p_jobj[QStringLiteral("indentAsFirstLine")].toBool();
+  m_cursorMark = p_jobj[QStringLiteral("cursorMark")].toString();
+  m_selectionMark = p_jobj[QStringLiteral("selectionMark")].toString();
 }
 
 bool Snippet::isValid() const { return !m_name.isEmpty() && m_type != Type::Invalid; }

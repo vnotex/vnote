@@ -40,9 +40,9 @@ bool RepoImageHost::testConfig(const QJsonObject &p_jobj, QString &p_msg) {
 
 void RepoImageHost::parseConfig(const QJsonObject &p_jobj, QString &p_token, QString &p_userName,
                                 QString &p_repoName) {
-  p_token = p_jobj[QStringLiteral("personal_access_token")].toString();
-  p_userName = p_jobj[QStringLiteral("user_name")].toString();
-  p_repoName = p_jobj[QStringLiteral("repository_name")].toString();
+  p_token = p_jobj[QStringLiteral("personalAccessToken")].toString();
+  p_userName = p_jobj[QStringLiteral("userName")].toString();
+  p_repoName = p_jobj[QStringLiteral("repositoryName")].toString();
 }
 
 QString RepoImageHost::fetchResourcePath(const QString &p_prefix, const QString &p_url) {

@@ -23,98 +23,98 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
   loadViewerResource(p_jobj);
   loadExportResource(p_jobj);
 
-  m_webPlantUml = READBOOL(QStringLiteral("web_plantuml"));
+  m_webPlantUml = READBOOL(QStringLiteral("webPlantUml"));
 
-  m_plantUmlJar = READSTR(QStringLiteral("plantuml_jar"));
+  m_plantUmlJar = READSTR(QStringLiteral("plantUmlJar"));
 
-  m_plantUmlCommand = READSTR(QStringLiteral("plantuml_command"));
+  m_plantUmlCommand = READSTR(QStringLiteral("plantUmlCommand"));
 
-  m_plantUmlWebService = READSTR(QStringLiteral("plantuml_web_service"));
+  m_plantUmlWebService = READSTR(QStringLiteral("plantUmlWebService"));
 
-  m_webGraphviz = READBOOL(QStringLiteral("web_graphviz"));
+  m_webGraphviz = READBOOL(QStringLiteral("webGraphviz"));
 
-  m_graphvizExe = READSTR(QStringLiteral("graphviz_exe"));
+  m_graphvizExe = READSTR(QStringLiteral("graphvizExe"));
 
-  m_mathJaxScript = READSTR(QStringLiteral("mathjax_script"));
+  m_mathJaxScript = READSTR(QStringLiteral("mathJaxScript"));
 
-  m_prependDotInRelativeLink = READBOOL(QStringLiteral("prepend_dot_in_relative_link"));
+  m_prependDotInRelativeLink = READBOOL(QStringLiteral("prependDotInRelativeLink"));
   m_confirmBeforeClearObsoleteImages =
-      READBOOL(QStringLiteral("confirm_before_clear_obsolete_images"));
-  m_insertFileNameAsTitle = READBOOL(QStringLiteral("insert_file_name_as_title"));
+      READBOOL(QStringLiteral("confirmBeforeClearObsoleteImages"));
+  m_insertFileNameAsTitle = READBOOL(QStringLiteral("insertFileNameAsTitle"));
 
-  m_sectionNumberMode = stringToSectionNumberMode(READSTR(QStringLiteral("section_number")));
-  m_sectionNumberBaseLevel = READINT(QStringLiteral("section_number_base_level"));
+  m_sectionNumberMode = stringToSectionNumberMode(READSTR(QStringLiteral("sectionNumber")));
+  m_sectionNumberBaseLevel = READINT(QStringLiteral("sectionNumberBaseLevel"));
   m_sectionNumberStyle =
-      stringToSectionNumberStyle(READSTR(QStringLiteral("section_number_style")));
+      stringToSectionNumberStyle(READSTR(QStringLiteral("sectionNumberStyle")));
 
-  m_constrainImageWidthEnabled = READBOOL(QStringLiteral("constrain_image_width"));
-  m_imageAlignCenterEnabled = READBOOL(QStringLiteral("image_align_center"));
+  m_constrainImageWidthEnabled = READBOOL(QStringLiteral("constrainImageWidth"));
+  m_imageAlignCenterEnabled = READBOOL(QStringLiteral("imageAlignCenter"));
   m_constrainInplacePreviewWidthEnabled =
-      READBOOL(QStringLiteral("constrain_inplace_preview_width"));
-  m_zoomFactorInReadMode = READREAL(QStringLiteral("zoom_factor_in_read_mode"));
-  m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetch_images_in_parse_and_paste"));
+      READBOOL(QStringLiteral("constrainInplacePreviewWidth"));
+  m_zoomFactorInReadMode = READREAL(QStringLiteral("zoomFactorInReadMode"));
+  m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetchImagesInParseAndPaste"));
 
-  m_protectFromXss = READBOOL(QStringLiteral("protect_from_xss"));
-  m_htmlTagEnabled = READBOOL(QStringLiteral("html_tag"));
-  m_autoBreakEnabled = READBOOL(QStringLiteral("auto_break"));
+  m_protectFromXss = READBOOL(QStringLiteral("protectFromXss"));
+  m_htmlTagEnabled = READBOOL(QStringLiteral("htmlTag"));
+  m_autoBreakEnabled = READBOOL(QStringLiteral("autoBreak"));
   m_linkifyEnabled = READBOOL(QStringLiteral("linkify"));
-  m_indentFirstLineEnabled = READBOOL(QStringLiteral("indent_first_line"));
-  m_codeBlockLineNumberEnabled = READBOOL(QStringLiteral("code_block_line_number"));
+  m_indentFirstLineEnabled = READBOOL(QStringLiteral("indentFirstLine"));
+  m_codeBlockLineNumberEnabled = READBOOL(QStringLiteral("codeBlockLineNumber"));
 
-  m_smartTableEnabled = READBOOL(QStringLiteral("smart_table"));
-  m_smartTableInterval = READINT(QStringLiteral("smart_table_interval"));
+  m_smartTableEnabled = READBOOL(QStringLiteral("smartTable"));
+  m_smartTableInterval = READINT(QStringLiteral("smartTableInterval"));
 
-  m_spellCheckEnabled = READBOOL(QStringLiteral("spell_check"));
+  m_spellCheckEnabled = READBOOL(QStringLiteral("spellCheck"));
 
-  m_editorOverriddenFontFamily = READSTR(QStringLiteral("editor_overridden_font_family"));
+  m_editorOverriddenFontFamily = READSTR(QStringLiteral("editorOverriddenFontFamily"));
 
   {
     m_inplacePreviewSources = InplacePreviewSource::NoInplacePreview;
-    auto srcs = READSTR(QStringLiteral("inplace_preview_sources")).split(QLatin1Char(';'));
+    auto srcs = READSTR(QStringLiteral("inplacePreviewSources")).split(QLatin1Char(';'));
     for (const auto &src : srcs) {
       m_inplacePreviewSources |= stringToInplacePreviewSource(src);
     }
   }
 
-  m_editViewMode = stringToEditViewMode(READSTR(QStringLiteral("edit_view_mode")));
+  m_editViewMode = stringToEditViewMode(READSTR(QStringLiteral("editViewMode")));
 
-  m_richPasteByDefaultEnabled = READBOOL(QStringLiteral("rich_paste_by_default"));
+  m_richPasteByDefaultEnabled = READBOOL(QStringLiteral("richPasteByDefault"));
 }
 
 QJsonObject MarkdownEditorConfig::toJson() const {
   QJsonObject obj;
-  obj[QStringLiteral("viewer_resource")] = saveViewerResource();
-  obj[QStringLiteral("export_resource")] = saveExportResource();
-  obj[QStringLiteral("web_plantuml")] = m_webPlantUml;
-  obj[QStringLiteral("plantuml_jar")] = m_plantUmlJar;
-  obj[QStringLiteral("plantuml_command")] = m_plantUmlCommand;
-  obj[QStringLiteral("plantuml_web_service")] = m_plantUmlWebService;
-  obj[QStringLiteral("web_graphviz")] = m_webGraphviz;
-  obj[QStringLiteral("graphviz_exe")] = m_graphvizExe;
-  obj[QStringLiteral("mathjax_script")] = m_mathJaxScript;
-  obj[QStringLiteral("prepend_dot_in_relative_link")] = m_prependDotInRelativeLink;
-  obj[QStringLiteral("confirm_before_clear_obsolete_images")] = m_confirmBeforeClearObsoleteImages;
-  obj[QStringLiteral("insert_file_name_as_title")] = m_insertFileNameAsTitle;
+  obj[QStringLiteral("viewerResource")] = saveViewerResource();
+  obj[QStringLiteral("exportResource")] = saveExportResource();
+  obj[QStringLiteral("webPlantUml")] = m_webPlantUml;
+  obj[QStringLiteral("plantUmlJar")] = m_plantUmlJar;
+  obj[QStringLiteral("plantUmlCommand")] = m_plantUmlCommand;
+  obj[QStringLiteral("plantUmlWebService")] = m_plantUmlWebService;
+  obj[QStringLiteral("webGraphviz")] = m_webGraphviz;
+  obj[QStringLiteral("graphvizExe")] = m_graphvizExe;
+  obj[QStringLiteral("mathJaxScript")] = m_mathJaxScript;
+  obj[QStringLiteral("prependDotInRelativeLink")] = m_prependDotInRelativeLink;
+  obj[QStringLiteral("confirmBeforeClearObsoleteImages")] = m_confirmBeforeClearObsoleteImages;
+  obj[QStringLiteral("insertFileNameAsTitle")] = m_insertFileNameAsTitle;
 
-  obj[QStringLiteral("section_number")] = sectionNumberModeToString(m_sectionNumberMode);
-  obj[QStringLiteral("section_number_base_level")] = m_sectionNumberBaseLevel;
-  obj[QStringLiteral("section_number_style")] = sectionNumberStyleToString(m_sectionNumberStyle);
+  obj[QStringLiteral("sectionNumber")] = sectionNumberModeToString(m_sectionNumberMode);
+  obj[QStringLiteral("sectionNumberBaseLevel")] = m_sectionNumberBaseLevel;
+  obj[QStringLiteral("sectionNumberStyle")] = sectionNumberStyleToString(m_sectionNumberStyle);
 
-  obj[QStringLiteral("constrain_image_width")] = m_constrainImageWidthEnabled;
-  obj[QStringLiteral("image_align_center")] = m_imageAlignCenterEnabled;
-  obj[QStringLiteral("constrain_inplace_preview_width")] = m_constrainInplacePreviewWidthEnabled;
-  obj[QStringLiteral("zoom_factor_in_read_mode")] = m_zoomFactorInReadMode;
-  obj[QStringLiteral("fetch_images_in_parse_and_paste")] = m_fetchImagesInParseAndPaste;
-  obj[QStringLiteral("protect_from_xss")] = m_protectFromXss;
-  obj[QStringLiteral("html_tag")] = m_htmlTagEnabled;
-  obj[QStringLiteral("auto_break")] = m_autoBreakEnabled;
+  obj[QStringLiteral("constrainImageWidth")] = m_constrainImageWidthEnabled;
+  obj[QStringLiteral("imageAlignCenter")] = m_imageAlignCenterEnabled;
+  obj[QStringLiteral("constrainInplacePreviewWidth")] = m_constrainInplacePreviewWidthEnabled;
+  obj[QStringLiteral("zoomFactorInReadMode")] = m_zoomFactorInReadMode;
+  obj[QStringLiteral("fetchImagesInParseAndPaste")] = m_fetchImagesInParseAndPaste;
+  obj[QStringLiteral("protectFromXss")] = m_protectFromXss;
+  obj[QStringLiteral("htmlTag")] = m_htmlTagEnabled;
+  obj[QStringLiteral("autoBreak")] = m_autoBreakEnabled;
   obj[QStringLiteral("linkify")] = m_linkifyEnabled;
-  obj[QStringLiteral("indent_first_line")] = m_indentFirstLineEnabled;
-  obj[QStringLiteral("code_block_line_number")] = m_codeBlockLineNumberEnabled;
-  obj[QStringLiteral("smart_table")] = m_smartTableEnabled;
-  obj[QStringLiteral("smart_table_interval")] = m_smartTableInterval;
-  obj[QStringLiteral("spell_check")] = m_spellCheckEnabled;
-  obj[QStringLiteral("editor_overridden_font_family")] = m_editorOverriddenFontFamily;
+  obj[QStringLiteral("indentFirstLine")] = m_indentFirstLineEnabled;
+  obj[QStringLiteral("codeBlockLineNumber")] = m_codeBlockLineNumberEnabled;
+  obj[QStringLiteral("smartTable")] = m_smartTableEnabled;
+  obj[QStringLiteral("smartTableInterval")] = m_smartTableInterval;
+  obj[QStringLiteral("spellCheck")] = m_spellCheckEnabled;
+  obj[QStringLiteral("editorOverriddenFontFamily")] = m_editorOverriddenFontFamily;
 
   {
     QStringList srcs;
@@ -127,12 +127,12 @@ QJsonObject MarkdownEditorConfig::toJson() const {
     if (m_inplacePreviewSources & InplacePreviewSource::Math) {
       srcs << inplacePreviewSourceToString(InplacePreviewSource::Math);
     }
-    obj[QStringLiteral("inplace_preview_sources")] = srcs.join(QLatin1Char(';'));
+    obj[QStringLiteral("inplacePreviewSources")] = srcs.join(QLatin1Char(';'));
   }
 
-  obj[QStringLiteral("edit_view_mode")] = editViewModeToString(m_editViewMode);
+  obj[QStringLiteral("editViewMode")] = editViewModeToString(m_editViewMode);
 
-  obj[QStringLiteral("rich_paste_by_default")] = m_richPasteByDefaultEnabled;
+  obj[QStringLiteral("richPasteByDefault")] = m_richPasteByDefaultEnabled;
 
   return obj;
 }
@@ -144,14 +144,14 @@ const TextEditorConfig &MarkdownEditorConfig::getTextEditorConfig() const {
 }
 
 void MarkdownEditorConfig::loadViewerResource(const QJsonObject &p_jobj) {
-  const QString name(QStringLiteral("viewer_resource"));
+  const QString name(QStringLiteral("viewerResource"));
   m_viewerResource.init(p_jobj.value(name).toObject());
 }
 
 QJsonObject MarkdownEditorConfig::saveViewerResource() const { return m_viewerResource.toJson(); }
 
 void MarkdownEditorConfig::loadExportResource(const QJsonObject &p_jobj) {
-  const QString name(QStringLiteral("export_resource"));
+  const QString name(QStringLiteral("exportResource"));
   m_exportResource.init(p_jobj.value(name).toObject());
 }
 

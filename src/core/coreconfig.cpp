@@ -41,38 +41,38 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
 
   loadShortcuts(p_jobj.value(QStringLiteral("shortcuts")).toObject());
 
-  m_shortcutLeaderKey = READSTR(QStringLiteral("shortcut_leader_key"));
+  m_shortcutLeaderKey = READSTR(QStringLiteral("shortcutLeaderKey"));
 
-  m_toolBarIconSize = READINT(QStringLiteral("toolbar_icon_size"));
+  m_toolBarIconSize = READINT(QStringLiteral("toolbarIconSize"));
   if (m_toolBarIconSize <= 0) {
     m_toolBarIconSize = 18;
   }
 
-  m_docksTabBarIconSize = READINT(QStringLiteral("docks_tabbar_icon_size"));
+  m_docksTabBarIconSize = READINT(QStringLiteral("docksTabbarIconSize"));
   if (m_docksTabBarIconSize <= 0) {
     m_docksTabBarIconSize = 18;
   }
 
-  loadNoteManagement(p_jobj.value(QStringLiteral("note_management")).toObject());
+  loadNoteManagement(p_jobj.value(QStringLiteral("noteManagement")).toObject());
 
-  m_recoverLastSessionOnStartEnabled = READBOOL(QStringLiteral("recover_last_session_on_start"));
+  m_recoverLastSessionOnStartEnabled = READBOOL(QStringLiteral("recoverLastSessionOnStart"));
 
-  m_checkForUpdatesOnStartEnabled = READBOOL(QStringLiteral("check_for_updates_on_start"));
+  m_checkForUpdatesOnStartEnabled = READBOOL(QStringLiteral("checkForUpdatesOnStart"));
 
-  m_historyMaxCount = READINT(QStringLiteral("history_max_count"));
+  m_historyMaxCount = READINT(QStringLiteral("historyMaxCount"));
   if (m_historyMaxCount < 0) {
     m_historyMaxCount = 100;
   }
 
-  m_perNotebookHistoryEnabled = READBOOL(QStringLiteral("per_notebook_history"));
+  m_perNotebookHistoryEnabled = READBOOL(QStringLiteral("perNotebookHistory"));
 
   {
-    auto lineEnding = READSTR(QStringLiteral("line_ending"));
+    auto lineEnding = READSTR(QStringLiteral("lineEnding"));
     m_lineEnding = stringToLineEndingPolicy(lineEnding);
   }
 
   {
-    auto mode = READSTR(QStringLiteral("default_open_mode"));
+    auto mode = READSTR(QStringLiteral("defaultOpenMode"));
     m_defaultOpenMode = stringToViewWindowMode(mode);
   }
 
@@ -86,17 +86,17 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("theme")] = m_theme;
   obj[QStringLiteral("locale")] = m_locale;
   obj[QStringLiteral("shortcuts")] = saveShortcuts();
-  obj[QStringLiteral("shortcut_leader_key")] = m_shortcutLeaderKey;
-  obj[QStringLiteral("toolbar_icon_size")] = m_toolBarIconSize;
-  obj[QStringLiteral("docks_tabbar_icon_size")] = m_docksTabBarIconSize;
-  obj[QStringLiteral("recover_last_session_on_start")] = m_recoverLastSessionOnStartEnabled;
-  obj[QStringLiteral("check_for_updates_on_start")] = m_checkForUpdatesOnStartEnabled;
-  obj[QStringLiteral("history_max_count")] = m_historyMaxCount;
-  obj[QStringLiteral("per_notebook_history")] = m_perNotebookHistoryEnabled;
-  obj[QStringLiteral("line_ending")] = lineEndingPolicyToString(m_lineEnding);
-  obj[QStringLiteral("file_type_suffixes")] = saveFileTypeSuffixes();
-  obj[QStringLiteral("united_entry")] = saveUnitedEntry();
-  obj[QStringLiteral("default_open_mode")] = viewWindowModeToString(m_defaultOpenMode);
+  obj[QStringLiteral("shortcutLeaderKey")] = m_shortcutLeaderKey;
+  obj[QStringLiteral("toolbarIconSize")] = m_toolBarIconSize;
+  obj[QStringLiteral("docksTabbarIconSize")] = m_docksTabBarIconSize;
+  obj[QStringLiteral("recoverLastSessionOnStart")] = m_recoverLastSessionOnStartEnabled;
+  obj[QStringLiteral("checkForUpdatesOnStart")] = m_checkForUpdatesOnStartEnabled;
+  obj[QStringLiteral("historyMaxCount")] = m_historyMaxCount;
+  obj[QStringLiteral("perNotebookHistory")] = m_perNotebookHistoryEnabled;
+  obj[QStringLiteral("lineEnding")] = lineEndingPolicyToString(m_lineEnding);
+  obj[QStringLiteral("fileTypeSuffixes")] = saveFileTypeSuffixes();
+  obj[QStringLiteral("unitedEntry")] = saveUnitedEntry();
+  obj[QStringLiteral("defaultOpenMode")] = viewWindowModeToString(m_defaultOpenMode);
   return obj;
 }
 
@@ -129,8 +129,8 @@ void CoreConfig::loadShortcuts(const QJsonObject &p_jobj) {
 
 void CoreConfig::loadNoteManagement(const QJsonObject &p_jobj) {
   // External node.
-  const auto externalNodeObj = p_jobj.value(QStringLiteral("external_node")).toObject();
-  m_externalNodeExcludePatterns = readStringList(externalNodeObj, QStringLiteral("exclude_patterns"));
+  const auto externalNodeObj = p_jobj.value(QStringLiteral("externalNode")).toObject();
+  m_externalNodeExcludePatterns = readStringList(externalNodeObj, QStringLiteral("excludePatterns"));
 }
 
 QJsonObject CoreConfig::saveShortcuts() const {
@@ -202,7 +202,7 @@ void CoreConfig::setLineEndingPolicy(LineEndingPolicy p_ending) {
 void CoreConfig::loadFileTypeSuffixes(const QJsonObject &p_jobj) {
   m_fileTypeSuffixes.clear();
 
-  QJsonArray arr = p_jobj.value(QStringLiteral("file_type_suffixes")).toArray();
+  QJsonArray arr = p_jobj.value(QStringLiteral("fileTypeSuffixes")).toArray();
 
   m_fileTypeSuffixes.reserve(arr.size());
 
@@ -241,7 +241,7 @@ QJsonArray CoreConfig::saveFileTypeSuffixes() const {
 }
 
 void CoreConfig::loadUnitedEntry(const QJsonObject &p_jobj) {
-  const auto unitedObj = p_jobj.value(QStringLiteral("united_entry")).toObject();
+  const auto unitedObj = p_jobj.value(QStringLiteral("unitedEntry")).toObject();
   m_unitedEntryAlias = unitedObj.value(QStringLiteral("alias")).toArray();
 }
 

@@ -8,11 +8,11 @@ using namespace vnotex;
 
 QJsonObject ExportHtmlOption::toJson() const {
   QJsonObject obj;
-  obj["embed_styles"] = m_embedStyles;
-  obj["complete_page"] = m_completePage;
-  obj["embed_images"] = m_embedImages;
-  obj["use_mime_html_format"] = m_useMimeHtmlFormat;
-  obj["add_outline_panel"] = m_addOutlinePanel;
+  obj["embedStyles"] = m_embedStyles;
+  obj["completePage"] = m_completePage;
+  obj["embedImages"] = m_embedImages;
+  obj["useMimeHtmlFormat"] = m_useMimeHtmlFormat;
+  obj["addOutlinePanel"] = m_addOutlinePanel;
   obj["scrollable"] = m_scrollable;
   return obj;
 }
@@ -22,11 +22,11 @@ void ExportHtmlOption::fromJson(const QJsonObject &p_obj) {
     return;
   }
 
-  m_embedStyles = p_obj["embed_styles"].toBool();
-  m_completePage = p_obj["complete_page"].toBool();
-  m_embedImages = p_obj["embed_images"].toBool();
-  m_useMimeHtmlFormat = p_obj["use_mime_html_format"].toBool();
-  m_addOutlinePanel = p_obj["add_outline_panel"].toBool();
+  m_embedStyles = p_obj["embedStyles"].toBool();
+  m_completePage = p_obj["completePage"].toBool();
+  m_embedImages = p_obj["embedImages"].toBool();
+  m_useMimeHtmlFormat = p_obj["useMimeHtmlFormat"].toBool();
+  m_addOutlinePanel = p_obj["addOutlinePanel"].toBool();
   m_scrollable = p_obj["scrollable"].toBool(true);
 }
 
@@ -39,7 +39,7 @@ bool ExportHtmlOption::operator==(const ExportHtmlOption &p_other) const {
 
 static QJsonObject pageLayoutToJsonObject(const QPageLayout &p_layout) {
   QJsonObject obj;
-  obj["page_size"] = static_cast<int>(p_layout.pageSize().id());
+  obj["pageSize"] = static_cast<int>(p_layout.pageSize().id());
   obj["orientation"] = static_cast<int>(p_layout.orientation());
   obj["units"] = static_cast<int>(p_layout.units());
   {
@@ -55,7 +55,7 @@ static QJsonObject pageLayoutToJsonObject(const QPageLayout &p_layout) {
 }
 
 static void jsonObjectToPageLayout(const QJsonObject &p_obj, QPageLayout &p_layout) {
-  const int pageSize = p_obj["page_size"].toInt(static_cast<int>(QPageSize::A4));
+  const int pageSize = p_obj["pageSize"].toInt(static_cast<int>(QPageSize::A4));
   p_layout.setPageSize(QPageSize(static_cast<QPageSize::PageSizeId>(pageSize)));
 
   const int orientation = p_obj["orientation"].toInt(static_cast<int>(QPageLayout::Portrait));
@@ -77,11 +77,11 @@ ExportPdfOption::ExportPdfOption()
 
 QJsonObject ExportPdfOption::toJson() const {
   QJsonObject obj;
-  obj["add_table_of_contents"] = m_addTableOfContents;
-  obj["use_wkhtmltopdf"] = m_useWkhtmltopdf;
-  obj["all_in_one"] = m_allInOne;
-  obj["wkhtmltopdf_exe_path"] = m_wkhtmltopdfExePath;
-  obj["wkhtmltopdf_args"] = m_wkhtmltopdfArgs;
+  obj["addTableOfContents"] = m_addTableOfContents;
+  obj["useWkhtmltopdf"] = m_useWkhtmltopdf;
+  obj["allInOne"] = m_allInOne;
+  obj["wkhtmltopdfExePath"] = m_wkhtmltopdfExePath;
+  obj["wkhtmltopdfArgs"] = m_wkhtmltopdfArgs;
   obj["layout"] = pageLayoutToJsonObject(*m_layout);
   return obj;
 }
@@ -91,11 +91,11 @@ void ExportPdfOption::fromJson(const QJsonObject &p_obj) {
     return;
   }
 
-  m_addTableOfContents = p_obj["add_table_of_contents"].toBool();
-  m_useWkhtmltopdf = p_obj["use_wkhtmltopdf"].toBool();
-  m_allInOne = p_obj["all_in_one"].toBool();
-  m_wkhtmltopdfExePath = p_obj["wkhtmltopdf_exe_path"].toString();
-  m_wkhtmltopdfArgs = p_obj["wkhtmltopdf_args"].toString();
+  m_addTableOfContents = p_obj["addTableOfContents"].toBool();
+  m_useWkhtmltopdf = p_obj["useWkhtmltopdf"].toBool();
+  m_allInOne = p_obj["allInOne"].toBool();
+  m_wkhtmltopdfExePath = p_obj["wkhtmltopdfExePath"].toString();
+  m_wkhtmltopdfArgs = p_obj["wkhtmltopdfArgs"].toString();
   jsonObjectToPageLayout(p_obj["layout"].toObject(), *m_layout);
 }
 
@@ -109,12 +109,12 @@ bool ExportPdfOption::operator==(const ExportPdfOption &p_other) const {
 QJsonObject ExportCustomOption::toJson() const {
   QJsonObject obj;
   obj["name"] = m_name;
-  obj["target_suffix"] = m_targetSuffix;
+  obj["targetSuffix"] = m_targetSuffix;
   obj["command"] = m_command;
-  obj["use_html_input"] = m_useHtmlInput;
-  obj["all_in_one"] = m_allInOne;
-  obj["target_page_scrollable"] = m_targetPageScrollable;
-  obj["resource_path_separator"] = m_resourcePathSeparator;
+  obj["useHtmlInput"] = m_useHtmlInput;
+  obj["allInOne"] = m_allInOne;
+  obj["targetPageScrollable"] = m_targetPageScrollable;
+  obj["resourcePathSeparator"] = m_resourcePathSeparator;
   return obj;
 }
 
@@ -124,12 +124,12 @@ void ExportCustomOption::fromJson(const QJsonObject &p_obj) {
   }
 
   m_name = p_obj["name"].toString();
-  m_targetSuffix = p_obj["target_suffix"].toString();
+  m_targetSuffix = p_obj["targetSuffix"].toString();
   m_command = p_obj["command"].toString();
-  m_useHtmlInput = p_obj["use_html_input"].toBool();
-  m_allInOne = p_obj["all_in_one"].toBool();
-  m_targetPageScrollable = p_obj["target_page_scrollable"].toBool();
-  m_resourcePathSeparator = p_obj["resource_path_separator"].toString();
+  m_useHtmlInput = p_obj["useHtmlInput"].toBool();
+  m_allInOne = p_obj["allInOne"].toBool();
+  m_targetPageScrollable = p_obj["targetPageScrollable"].toBool();
+  m_resourcePathSeparator = p_obj["resourcePathSeparator"].toString();
 }
 
 bool ExportCustomOption::operator==(const ExportCustomOption &p_other) const {
@@ -142,14 +142,14 @@ bool ExportCustomOption::operator==(const ExportCustomOption &p_other) const {
 
 QJsonObject ExportOption::toJson() const {
   QJsonObject obj;
-  obj["target_format"] = static_cast<int>(m_targetFormat);
-  obj["use_transparent_bg"] = m_useTransparentBg;
-  obj["output_dir"] = m_outputDir;
+  obj["targetFormat"] = static_cast<int>(m_targetFormat);
+  obj["useTransparentBg"] = m_useTransparentBg;
+  obj["outputDir"] = m_outputDir;
   obj["recursive"] = m_recursive;
-  obj["export_attachments"] = m_exportAttachments;
-  obj["html_option"] = m_htmlOption.toJson();
-  obj["pdf_option"] = m_pdfOption.toJson();
-  obj["custom_export"] = m_customExport;
+  obj["exportAttachments"] = m_exportAttachments;
+  obj["htmlOption"] = m_htmlOption.toJson();
+  obj["pdfOption"] = m_pdfOption.toJson();
+  obj["customExport"] = m_customExport;
   return obj;
 }
 
@@ -159,7 +159,7 @@ void ExportOption::fromJson(const QJsonObject &p_obj) {
   }
 
   {
-    int fmt = p_obj["target_format"].toInt();
+    int fmt = p_obj["targetFormat"].toInt();
     switch (fmt) {
     case static_cast<int>(ExportFormat::Markdown):
       m_targetFormat = ExportFormat::Markdown;
@@ -181,13 +181,13 @@ void ExportOption::fromJson(const QJsonObject &p_obj) {
     }
   }
 
-  m_useTransparentBg = p_obj["use_transparent_bg"].toBool();
-  m_outputDir = p_obj["output_dir"].toString();
+  m_useTransparentBg = p_obj["useTransparentBg"].toBool();
+  m_outputDir = p_obj["outputDir"].toString();
   m_recursive = p_obj["recursive"].toBool();
-  m_exportAttachments = p_obj["export_attachments"].toBool();
-  m_htmlOption.fromJson(p_obj["html_option"].toObject());
-  m_pdfOption.fromJson(p_obj["pdf_option"].toObject());
-  m_customExport = p_obj["custom_export"].toString();
+  m_exportAttachments = p_obj["exportAttachments"].toBool();
+  m_htmlOption.fromJson(p_obj["htmlOption"].toObject());
+  m_pdfOption.fromJson(p_obj["pdfOption"].toObject());
+  m_customExport = p_obj["customExport"].toString();
 }
 
 bool ExportOption::operator==(const ExportOption &p_other) const {

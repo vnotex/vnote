@@ -19,12 +19,12 @@ void PdfViewerConfig::fromJson(const QJsonObject &p_jobj) {
 
 QJsonObject PdfViewerConfig::toJson() const {
   QJsonObject obj;
-  obj[QStringLiteral("viewer_resource")] = saveViewerResource();
+  obj[QStringLiteral("viewerResource")] = saveViewerResource();
   return obj;
 }
 
 void PdfViewerConfig::loadViewerResource(const QJsonObject &p_jobj) {
-  const QString name(QStringLiteral("viewer_resource"));
+  const QString name(QStringLiteral("viewerResource"));
   m_viewerResource.init(p_jobj.value(name).toObject());
 }
 

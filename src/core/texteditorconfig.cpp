@@ -14,50 +14,50 @@ TextEditorConfig::TextEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
 void TextEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
   {
-    auto lineNumber = READSTR(QStringLiteral("line_number"));
+    auto lineNumber = READSTR(QStringLiteral("lineNumber"));
     m_lineNumberType = stringToLineNumberType(lineNumber);
   }
 
-  m_textFoldingEnabled = READBOOL(QStringLiteral("text_folding"));
+  m_textFoldingEnabled = READBOOL(QStringLiteral("textFolding"));
 
   {
-    auto inputMode = READSTR(QStringLiteral("input_mode"));
+    auto inputMode = READSTR(QStringLiteral("inputMode"));
     m_inputMode = stringToInputMode(inputMode);
   }
 
   {
-    auto centerCursor = READSTR(QStringLiteral("center_cursor"));
+    auto centerCursor = READSTR(QStringLiteral("centerCursor"));
     m_centerCursor = stringToCenterCursor(centerCursor);
   }
 
   {
-    auto wrapMode = READSTR(QStringLiteral("wrap_mode"));
+    auto wrapMode = READSTR(QStringLiteral("wrapMode"));
     m_wrapMode = stringToWrapMode(wrapMode);
   }
 
-  m_expandTab = READBOOL(QStringLiteral("expand_tab"));
+  m_expandTab = READBOOL(QStringLiteral("expandTab"));
 
-  m_tabStopWidth = READINT(QStringLiteral("tab_stop_width"));
+  m_tabStopWidth = READINT(QStringLiteral("tabStopWidth"));
 
-  m_highlightWhitespace = READBOOL(QStringLiteral("highlight_whitespace"));
+  m_highlightWhitespace = READBOOL(QStringLiteral("highlightWhitespace"));
 
-  m_zoomDelta = READINT(QStringLiteral("zoom_delta"));
+  m_zoomDelta = READINT(QStringLiteral("zoomDelta"));
 
-  m_spellCheckEnabled = READBOOL(QStringLiteral("spell_check"));
+  m_spellCheckEnabled = READBOOL(QStringLiteral("spellCheck"));
 }
 
 QJsonObject TextEditorConfig::toJson() const {
   QJsonObject obj;
-  obj[QStringLiteral("line_number")] = lineNumberTypeToString(m_lineNumberType);
-  obj[QStringLiteral("text_folding")] = m_textFoldingEnabled;
-  obj[QStringLiteral("input_mode")] = inputModeToString(m_inputMode);
-  obj[QStringLiteral("center_cursor")] = centerCursorToString(m_centerCursor);
-  obj[QStringLiteral("wrap_mode")] = wrapModeToString(m_wrapMode);
-  obj[QStringLiteral("expand_tab")] = m_expandTab;
-  obj[QStringLiteral("tab_stop_width")] = m_tabStopWidth;
-  obj[QStringLiteral("highlight_whitespace")] = m_highlightWhitespace;
-  obj[QStringLiteral("zoom_delta")] = m_zoomDelta;
-  obj[QStringLiteral("spell_check")] = m_spellCheckEnabled;
+  obj[QStringLiteral("lineNumber")] = lineNumberTypeToString(m_lineNumberType);
+  obj[QStringLiteral("textFolding")] = m_textFoldingEnabled;
+  obj[QStringLiteral("inputMode")] = inputModeToString(m_inputMode);
+  obj[QStringLiteral("centerCursor")] = centerCursorToString(m_centerCursor);
+  obj[QStringLiteral("wrapMode")] = wrapModeToString(m_wrapMode);
+  obj[QStringLiteral("expandTab")] = m_expandTab;
+  obj[QStringLiteral("tabStopWidth")] = m_tabStopWidth;
+  obj[QStringLiteral("highlightWhitespace")] = m_highlightWhitespace;
+  obj[QStringLiteral("zoomDelta")] = m_zoomDelta;
+  obj[QStringLiteral("spellCheck")] = m_spellCheckEnabled;
   return obj;
 }
 
