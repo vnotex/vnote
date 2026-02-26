@@ -20,6 +20,7 @@ target_sources(vnote PRIVATE
     dialogs/managenotebooksdialog.cpp dialogs/managenotebooksdialog.h
     dialogs/managenotebooksdialog2.cpp dialogs/managenotebooksdialog2.h
     dialogs/newfolderdialog.cpp dialogs/newfolderdialog.h
+    dialogs/newfolderdialog2.cpp dialogs/newfolderdialog2.h
     dialogs/newnotebookdialog.cpp dialogs/newnotebookdialog.h
     dialogs/newnotebookdialog2.cpp dialogs/newnotebookdialog2.h
     dialogs/newnotebookfromfolderdialog.cpp dialogs/newnotebookfromfolderdialog.h

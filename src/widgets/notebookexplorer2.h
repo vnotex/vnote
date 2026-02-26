@@ -109,6 +109,18 @@ private slots:
   // TwoColumns mode: when folder selection changes, update file list
   void onFolderSelectionChanged(const QList<NodeIdentifier> &p_nodeIds);
 
+  // GUI request handlers from controller signals
+  void onNewNoteRequested(const NodeIdentifier &p_parentId);
+  void onNewFolderRequested(const NodeIdentifier &p_parentId);
+  void onRenameRequested(const NodeIdentifier &p_nodeId, const QString &p_currentName);
+  void onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
+  void onRemoveFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
+  void onImportFilesRequested(const NodeIdentifier &p_targetFolderId);
+  void onImportFolderRequested(const NodeIdentifier &p_targetFolderId);
+  void onPropertiesRequested(const NodeIdentifier &p_nodeId);
+  void onErrorOccurred(const QString &p_title, const QString &p_message);
+  void onInfoMessage(const QString &p_title, const QString &p_message);
+
 private:
   void setupUI();
   void setupTitleBar();

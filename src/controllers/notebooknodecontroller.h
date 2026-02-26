@@ -75,6 +75,15 @@ public:
   // Check if clipboard has nodes to paste
   bool canPaste() const;
 
+  // Slots for handling dialog results from View
+  void handleNewNoteResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
+  void handleNewFolderResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
+  void handleRenameResult(const NodeIdentifier &p_nodeId, const QString &p_newName);
+  void handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
+  void handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds);
+  void handleImportFiles(const NodeIdentifier &p_targetFolderId, const QStringList &p_files);
+  void handleImportFolder(const NodeIdentifier &p_targetFolderId, const QString &p_folderPath);
+
 signals:
   // Signals to notify external components (e.g., BufferMgr)
   void nodeActivated(const NodeIdentifier &p_nodeId,
@@ -85,6 +94,18 @@ signals:
   void nodeAboutToReload(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
   void closeFileRequested(const QString &p_filePath, const QSharedPointer<Event> &p_event);
 
+  // GUI request signals (View should connect to these and handle GUI)
+  void newNoteRequested(const NodeIdentifier &p_parentId);
+  void newFolderRequested(const NodeIdentifier &p_parentId);
+  void renameRequested(const NodeIdentifier &p_nodeId, const QString &p_currentName);
+  void deleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
+  void removeFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
+  void importFilesRequested(const NodeIdentifier &p_targetFolderId);
+  void importFolderRequested(const NodeIdentifier &p_targetFolderId);
+  void propertiesRequested(const NodeIdentifier &p_nodeId);
+  void errorOccurred(const QString &p_title, const QString &p_message);
+  void infoMessage(const QString &p_title, const QString &p_message);
+
 private:
   // Add actions to context menu based on node type
   void addNewActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
@@ -94,9 +115,6 @@ private:
   void addImportExportActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
   void addInfoActions(QMenu *p_menu, const NodeIdentifier &p_nodeId);
   void addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
-
-  // Confirmation dialogs
-  bool confirmDelete(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
 
   // Notify BufferMgr before node operations
   void notifyBeforeNodeOperation(const NodeIdentifier &p_nodeId, const QString &p_operation);
