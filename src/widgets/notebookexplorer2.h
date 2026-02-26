@@ -126,6 +126,9 @@ private:
   void rebuildDatabase();
 
   void setCurrentNotebookInternal(const QString &p_notebookId);
+  // Apply view order to all node views
+  void setNodeViewOrder(ViewOrder p_order);
+
 
   // Services
   ServiceLocator &m_services;

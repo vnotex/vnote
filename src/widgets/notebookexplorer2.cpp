@@ -346,7 +346,7 @@ void NotebookExplorer2::setupViewMenu(QMenu *p_menu, bool p_isNotebookView) {
       m_notebookSelector->setViewOrder(order);
     } else {
       m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerViewOrder(order);
-      // TODO: Apply view order to MVC views when sorting is implemented
+      setNodeViewOrder(static_cast<ViewOrder>(order));
     }
   });
 }
@@ -413,6 +413,11 @@ void NotebookExplorer2::setupCombinedMode() {
   m_combinedProxyModel->setSourceModel(m_combinedModel);
   m_combinedProxyModel->setFilterFlags(NotebookNodeProxyModel::ShowAll);
 
+  // Apply initial view order from config
+  const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
+  m_combinedProxyModel->setViewOrder(static_cast<ViewOrder>(widgetConfig.getNodeExplorerViewOrder()));
+  m_combinedProxyModel->sort(0); // Enable sorting
+
   m_combinedView = new NotebookNodeView(this);
   m_combinedView->setModel(m_combinedProxyModel);
 
@@ -458,6 +463,12 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   m_folderProxyModel->setSourceModel(m_folderModel);
   m_folderProxyModel->setFilterFlags(NotebookNodeProxyModel::ShowFolders);
 
+  // Apply initial view order from config
+  const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
+  ViewOrder viewOrder = static_cast<ViewOrder>(widgetConfig.getNodeExplorerViewOrder());
+  m_folderProxyModel->setViewOrder(viewOrder);
+  m_folderProxyModel->sort(0); // Enable sorting
+
   m_folderView = new NotebookNodeView(this);
   m_folderView->setModel(m_folderProxyModel);
 
@@ -476,6 +487,9 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   m_fileProxyModel = new NotebookNodeProxyModel(this);
   m_fileProxyModel->setSourceModel(m_fileModel);
   m_fileProxyModel->setFilterFlags(NotebookNodeProxyModel::ShowNotes);
+
+  m_fileProxyModel->setViewOrder(viewOrder);
+  m_fileProxyModel->sort(0); // Enable sorting
 
   m_fileView = new NotebookNodeView(this);
   m_fileView->setModel(m_fileProxyModel);
@@ -924,5 +938,23 @@ void NotebookExplorer2::restoreState(const QByteArray &p_data) {
   stream >> splitterState;
   if (!splitterState.isEmpty() && m_twoColumnsSplitter) {
     m_twoColumnsSplitter->restoreState(splitterState);
+  }
+}
+
+void NotebookExplorer2::setNodeViewOrder(ViewOrder p_order) {
+  // Apply to combined mode proxy model if it exists
+  if (m_combinedProxyModel) {
+    m_combinedProxyModel->setViewOrder(p_order);
+    m_combinedProxyModel->sort(0); // Trigger re-sort
+  }
+
+  // Apply to two-columns mode proxy models if they exist
+  if (m_folderProxyModel) {
+    m_folderProxyModel->setViewOrder(p_order);
+    m_folderProxyModel->sort(0); // Trigger re-sort
+  }
+  if (m_fileProxyModel) {
+    m_fileProxyModel->setViewOrder(p_order);
+    m_fileProxyModel->sort(0); // Trigger re-sort
   }
 }

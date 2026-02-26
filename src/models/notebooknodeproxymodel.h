@@ -3,6 +3,7 @@
 
 #include <QSortFilterProxyModel>
 
+#include <core/global.h>
 #include <core/nodeinfo.h>
 
 namespace vnotex {
@@ -32,6 +33,10 @@ public:
   void setNameFilter(const QString &p_pattern);
   QString nameFilter() const;
 
+  // Set view order for sorting
+  void setViewOrder(ViewOrder p_order);
+  ViewOrder viewOrder() const;
+
   // Helper to get NodeIdentifier from proxy index
   NodeIdentifier nodeIdFromIndex(const QModelIndex &p_index) const;
 
@@ -45,6 +50,7 @@ protected:
 private:
   FilterFlags m_filterFlags = ShowAll;
   QString m_nameFilter;
+  ViewOrder m_viewOrder = ViewOrder::OrderedByConfiguration;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(NotebookNodeProxyModel::FilterFlags)
