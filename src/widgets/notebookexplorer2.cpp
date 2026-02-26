@@ -4,7 +4,9 @@
 #include <QCoreApplication>
 #include <QDataStream>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -42,16 +44,15 @@
 // #include <widgets/dialogs/newnotedialog.h>
 #include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/managenotebooksdialog2.h>
-// #include <widgets/dialogs/selectdialog.h>
+#include <widgets/dialogs/selectdialog.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
 // TODO: Migrate NavigationModeMgr to use ServiceLocator DI pattern
 // #include <widgets/navigationmodemgr.h>
 #include <widgets/notebookselector2.h>
 #include <widgets/titlebar.h>
-// TODO: Migrate TemplateMgr and SnippetMgr to use ServiceLocator DI pattern
-// #include <core/templatemgr.h>
-// #include <snippet/snippetmgr.h>
+#include <core/services/templateservice.h>
+#include <snippet/snippetmgr.h>
 
 using namespace vnotex;
 
@@ -841,11 +842,116 @@ void NotebookExplorer2::newNote() {
 }
 
 void NotebookExplorer2::newQuickNote() {
-  // TODO: Migrate newQuickNote to use ServiceLocator DI pattern
-  // Requires: ConfigMgr2 (done), SelectDialog, SnippetMgr, TemplateMgr, NewNoteDialog
-  MessageBoxHelper::notify(MessageBoxHelper::Information,
-                           tr("Quick note is being migrated to use dependency injection."),
-                           window());
+  // Get quick note schemes from session config.
+  auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
+  const auto &schemes = sessionConfig.getQuickNoteSchemes();
+  if (schemes.isEmpty()) {
+    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                             tr("Please set up quick note schemes in the Settings dialog first."),
+                             window());
+    return;
+  }
+
+  // Show selection dialog.
+  SelectDialog dialog(tr("New Quick Note"), window());
+  for (int i = 0; i < schemes.size(); ++i) {
+    dialog.addSelection(schemes[i].m_name, i);
+  }
+
+  if (dialog.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  int selection = dialog.getSelection();
+  const auto &scheme = schemes[selection];
+
+  // Resolve target folder.
+  QString notebookId = m_currentNotebookId;
+  QString folderPath;
+
+  if (!scheme.m_folderPath.isEmpty()) {
+    // Try to resolve the scheme folder path to a notebook.
+    auto &notebookService = *m_services.get<NotebookService>();
+    QJsonObject resolved = notebookService.resolvePathToNotebook(scheme.m_folderPath);
+    if (!resolved.isEmpty()) {
+      notebookId = resolved[QStringLiteral("notebookId")].toString();
+      folderPath = resolved[QStringLiteral("relativePath")].toString();
+    } else {
+      // Path not found in any notebook - use scheme.m_folderPath as-is if current notebook is valid.
+      if (notebookId.isEmpty()) {
+        MessageBoxHelper::notify(
+            MessageBoxHelper::Information,
+            tr("The quick note folder path (%1) is not within any open notebook.").arg(scheme.m_folderPath),
+            window());
+        return;
+      }
+      // Assume relative path within current notebook.
+      folderPath = scheme.m_folderPath;
+    }
+  } else {
+    // Use current explored folder.
+    NodeIdentifier parentId = currentExploredFolderId();
+    if (parentId.isValid()) {
+      notebookId = parentId.notebookId;
+      folderPath = parentId.relativePath;
+    }
+  }
+
+  if (notebookId.isEmpty()) {
+    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                             tr("The quick note should be created within a notebook."),
+                             window());
+    return;
+  }
+
+  // Generate filename using snippet expansion.
+  QString expandedName = SnippetMgr::getInst().applySnippetBySymbol(scheme.m_noteName);
+  QFileInfo finfo(expandedName);
+
+  // Get notebook root path to generate unique filename.
+  auto &notebookService = *m_services.get<NotebookService>();
+  QJsonObject notebookConfig = notebookService.getNotebookConfig(notebookId);
+  QString rootFolder = notebookConfig[QStringLiteral("rootFolder")].toString();
+  QString parentAbsPath = folderPath.isEmpty()
+                             ? rootFolder
+                             : QDir(rootFolder).filePath(folderPath);
+
+  QString newFileName = FileUtils::generateFileNameWithSequence(
+      parentAbsPath, finfo.completeBaseName(), finfo.suffix());
+
+  // Get template content if specified.
+  QString templateContent;
+  if (!scheme.m_template.isEmpty()) {
+    auto &templateService = *m_services.get<TemplateService>();
+    templateContent = templateService.getTemplateContent(scheme.m_template);
+  }
+
+  // Create the file via NotebookService.
+  QString fileId = notebookService.createFile(notebookId, folderPath, newFileName);
+  if (fileId.isEmpty()) {
+    MessageBoxHelper::notify(
+        MessageBoxHelper::Information,
+        tr("Failed to create quick note from scheme (%1).").arg(scheme.m_name),
+        window());
+    return;
+  }
+
+  // Write template content if present.
+  if (!templateContent.isEmpty()) {
+    QString filePath = QDir(parentAbsPath).filePath(newFileName);
+    QFile file(filePath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+      file.write(templateContent.toUtf8());
+      file.close();
+    }
+  }
+
+  // Open the file in edit mode.
+  QString filePath = QDir(parentAbsPath).filePath(newFileName);
+  auto paras = QSharedPointer<FileOpenParameters>::create();
+  paras->m_mode = ViewWindowMode::Edit;
+  paras->m_newFile = true;
+  emit fileActivated(filePath, paras);
 }
 
 void NotebookExplorer2::importFile() {

@@ -36,6 +36,11 @@ public:
   void updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson);
   void rebuildNotebookCache(const QString &p_notebookId);
 
+  // Resolve an absolute path to its containing notebook.
+  // Returns JSON with "notebookId" and "relativePath" keys.
+  // Returns empty object if path is not within any open notebook.
+  QJsonObject resolvePathToNotebook(const QString &p_absolutePath) const;
+
   // Recycle bin operations (bundled notebooks only).
   QString getRecycleBinPath(const QString &p_notebookId) const;
   void emptyRecycleBin(const QString &p_notebookId);

@@ -19,6 +19,7 @@ class Notebook;
 struct ComplexLocation;
 class TaskMgr;
 
+// DEPRECATED: Use ServiceLocator pattern to access services instead.
 class VNoteX : public QObject, private Noncopyable {
   Q_OBJECT
 public:

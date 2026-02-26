@@ -7,6 +7,7 @@
 #include "noncopyable.h"
 
 namespace vnotex {
+// DEPRECATED: Use TemplateService with ServiceLocator pattern instead.
 class TemplateMgr : public QObject, private Noncopyable {
   Q_OBJECT
 public:
