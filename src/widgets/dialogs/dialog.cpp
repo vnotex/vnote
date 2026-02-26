@@ -146,8 +146,3 @@ void Dialog::completeButStay() {
 }
 
 bool Dialog::isCompleted() const { return m_completed; }
-
-QSize Dialog::sizeHint() const {
-  auto sz = QDialog::sizeHint();
-  return sz * 1.2;
-}
