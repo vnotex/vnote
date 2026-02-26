@@ -35,7 +35,7 @@
 #include "searchpanel.h"
 #include "snippetpanel.h"
 #include "statusbarhelper.h"
-#include "systemtrayhelper.h"
+// #include "systemtrayhelper.h"
 #include "tagexplorer.h"
 #include "titletoolbar.h"
 #include "toolbarhelper.h"
@@ -140,7 +140,7 @@ void MainWindow::setupUI() {
   setupToolBar();
   setupStatusBar();
   setupTipsArea();
-  setupSystemTray();
+  // setupSystemTray();
 
   // m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
 
@@ -588,8 +588,10 @@ void MainWindow::setStayOnTop(bool p_enabled) {
 }
 
 void MainWindow::setupSystemTray() {
+  /*
   m_trayIcon = SystemTrayHelper::setupSystemTray(this);
   m_trayIcon->show();
+  */
 }
 
 void MainWindow::restart() {
