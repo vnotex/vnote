@@ -7,7 +7,7 @@ namespace vnotex {
 class Notebook;
 class Node;
 class NodeInfoWidget;
-class NoteTemplateSelector;
+// LEGACY: class NoteTemplateSelector; // Requires ServiceLocator migration
 
 class NewNoteDialog : public ScrollDialog {
   Q_OBJECT
@@ -39,7 +39,7 @@ private:
 
   NodeInfoWidget *m_infoWidget = nullptr;
 
-  NoteTemplateSelector *m_templateSelector = nullptr;
+  // LEGACY: NoteTemplateSelector *m_templateSelector = nullptr; // Requires ServiceLocator migration
 
   QSharedPointer<Node> m_newNode;
 

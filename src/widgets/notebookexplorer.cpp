@@ -237,15 +237,19 @@ void NotebookExplorer::newNote() {
     return;
   }
 
-  NewNoteDialog dialog(node, VNoteX::getInst().getMainWindow());
-  if (dialog.exec() == QDialog::Accepted) {
-    m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
-    // Open it right now.
-    auto paras = QSharedPointer<FileOpenParameters>::create();
-    paras->m_mode = ViewWindowMode::Edit;
-    paras->m_newFile = true;
-    emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
-  }
+  // TODO: Migrate to NewNoteDialog2 with DI pattern
+  // Legacy code commented out during migration to new architecture.
+  // NewNoteDialog dialog(node, VNoteX::getInst().getMainWindow());
+  // if (dialog.exec() == QDialog::Accepted) {
+  //   m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
+  //   // Open it right now.
+  //   auto paras = QSharedPointer<FileOpenParameters>::create();
+  //   paras->m_mode = ViewWindowMode::Edit;
+  //   paras->m_newFile = true;
+  //   emit VNoteX::getInst().openNodeRequested(dialog.getNewNode().data(), paras);
+  // }
+  Q_UNUSED(node);
+  qWarning() << "NotebookExplorer::newNote() is disabled during migration to new architecture.";
 }
 
 void NotebookExplorer::newQuickNote() {
@@ -292,9 +296,16 @@ void NotebookExplorer::newQuickNote() {
       parentNode->fetchAbsolutePath(), finfo.completeBaseName(), finfo.suffix());
 
   QString errMsg;
-  auto newNode =
-      NewNoteDialog::newNote(notebook, parentNode, newName,
-                             TemplateMgr::getInst().getTemplateContent(scheme.m_template), errMsg);
+  // TODO: Migrate to NewNoteController with DI pattern
+  // Legacy code commented out during migration to new architecture.
+  // auto newNode =
+  //     NewNoteDialog::newNote(notebook, parentNode, newName,
+  //                            TemplateMgr::getInst().getTemplateContent(scheme.m_template), errMsg);
+  QSharedPointer<Node> newNode; // Placeholder - returns null during migration
+  Q_UNUSED(notebook);
+  Q_UNUSED(parentNode);
+  Q_UNUSED(newName);
+  qWarning() << "NotebookExplorer::newQuickNote() is disabled during migration to new architecture.";
   if (!newNode) {
     MessageBoxHelper::notify(
         MessageBoxHelper::Information,

@@ -1,0 +1,178 @@
+#include "newnotedialog2.h"
+
+#include <QComboBox>
+#include <QFormLayout>
+#include <QLineEdit>
+#include <QVBoxLayout>
+
+#include <controllers/newnotecontroller.h>
+#include <core/services/filetypeservice.h>
+#include <core/configmgr2.h>
+#include <core/widgetconfig.h>
+#include <core/servicelocator.h>
+#include <core/services/notebookservice.h>
+#include <utils/fileutils.h>
+#include <utils/pathutils.h>
+#include <utils/widgetutils.h>
+
+#include "../widgetsfactory.h"
+#include "notetemplateselector.h"
+
+using namespace vnotex;
+
+QString NewNoteDialog2::s_lastTemplate;
+
+NewNoteDialog2::NewNoteDialog2(ServiceLocator &p_services, const NodeIdentifier &p_parentId,
+                               QWidget *p_parent)
+    : ScrollDialog(p_parent), m_services(p_services), m_parentId(p_parentId) {
+  // Create controller.
+  m_controller = new NewNoteController(m_services, this);
+
+  setupUI();
+
+  initDefaultValues();
+
+  m_nameEdit->setFocus();
+}
+
+NewNoteDialog2::~NewNoteDialog2() = default;
+
+void NewNoteDialog2::setupUI() {
+  auto *mainWidget = new QWidget(this);
+  auto *layout = new QFormLayout(mainWidget);
+
+  // File type combo.
+  m_fileTypeCombo = WidgetsFactory::createComboBox(mainWidget);
+  auto *fileTypeService = m_services.get<FileTypeService>();
+  const auto &fileTypes = fileTypeService->getAllFileTypes();
+  for (const auto &ft : fileTypes) {
+    if (ft.m_isNewable) {
+      m_fileTypeCombo->addItem(ft.m_displayName, ft.m_type);
+    }
+  }
+  connect(m_fileTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [this](int) { updateNameForFileType(); });
+  layout->addRow(tr("Type:"), m_fileTypeCombo);
+
+  // Name input.
+  m_nameEdit = WidgetsFactory::createLineEdit(mainWidget);
+  m_nameEdit->setPlaceholderText(tr("Note name"));
+  layout->addRow(tr("Name:"), m_nameEdit);
+
+  // Template selector.
+  m_templateSelector = new NoteTemplateSelector(m_services, mainWidget);
+  layout->addRow(tr("Template:"), m_templateSelector);
+
+  setCentralWidget(mainWidget);
+
+  setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+
+  setWindowTitle(tr("New Note"));
+}
+
+void NewNoteDialog2::initDefaultValues() {
+  // Restore last file type from config.
+  int defaultType = m_services.get<ConfigMgr2>()->getWidgetConfig().getNewNoteDefaultFileType();
+  int index = m_fileTypeCombo->findData(defaultType);
+  if (index >= 0) {
+    // Block signals to avoid triggering updateNameForFileType() during init.
+    m_fileTypeCombo->blockSignals(true);
+    m_fileTypeCombo->setCurrentIndex(index);
+    m_fileTypeCombo->blockSignals(false);
+  }
+
+  // Generate default name based on file type.
+  updateNameForFileType();
+
+  // Restore last template.
+  if (!s_lastTemplate.isEmpty()) {
+    if (!m_templateSelector->setCurrentTemplate(s_lastTemplate)) {
+      s_lastTemplate.clear();
+    }
+  }
+                        }
+
+void NewNoteDialog2::updateNameForFileType() {
+  auto *fileTypeService = m_services.get<FileTypeService>();
+  const auto &fileType = fileTypeService->getFileType(
+      m_fileTypeCombo->currentData().toInt());
+
+  // Get current name and extract base name (without extension).
+  QString currentName = m_nameEdit->text().trimmed();
+  QString baseName;
+  if (!currentName.isEmpty()) {
+    int dotPos = currentName.lastIndexOf('.');
+    baseName = (dotPos > 0) ? currentName.left(dotPos) : currentName;
+  } else {
+    baseName = tr("note");
+  }
+
+  // Build new name with new suffix.
+  QString newName(baseName);
+  if (!fileType.preferredSuffix().isEmpty()) {
+    newName += "." + fileType.preferredSuffix();
+  }
+  m_nameEdit->setText(newName);
+  WidgetUtils::selectBaseName(m_nameEdit);
+}
+
+bool NewNoteDialog2::validateInputs() {
+  NoteValidationResult result =
+      m_controller->validateName(m_parentId.notebookId, m_parentId.relativePath,
+                                 m_nameEdit->text().trimmed());
+
+  if (!result.valid) {
+    setInformationText(result.message, ScrollDialog::InformationLevel::Error);
+    return false;
+  }
+
+  setInformationText(QString(), ScrollDialog::InformationLevel::Info);
+  return true;
+}
+
+QString NewNoteDialog2::getFileTypeName() const {
+  int typeIndex = m_fileTypeCombo->currentData().toInt();
+  auto *fileTypeService = m_services.get<FileTypeService>();
+  const auto &fileType = fileTypeService->getFileType(typeIndex);
+  return fileType.m_typeName;
+}
+
+QString NewNoteDialog2::getPreferredSuffix() const {
+  int typeIndex = m_fileTypeCombo->currentData().toInt();
+  auto *fileTypeService = m_services.get<FileTypeService>();
+  const auto &fileType = fileTypeService->getFileType(typeIndex);
+  return fileType.preferredSuffix();
+}
+
+void NewNoteDialog2::acceptedButtonClicked() {
+  // Save last template.
+  s_lastTemplate = m_templateSelector->getCurrentTemplate();
+
+  // Save default file type.
+  int fileType = m_fileTypeCombo->currentData().toInt();
+  m_services.get<ConfigMgr2>()->getWidgetConfig().setNewNoteDefaultFileType(fileType);
+
+  if (!validateInputs()) {
+    return;
+  }
+
+  // Collect input.
+  NewNoteInput input;
+  input.notebookId = m_parentId.notebookId;
+  input.parentFolderPath = m_parentId.relativePath;
+  input.name = m_nameEdit->text().trimmed();
+  input.templateContent = m_templateSelector->getTemplateContent();
+  input.fileType = fileType;
+
+  // Delegate to controller.
+  NewNoteResult result = m_controller->createNote(input);
+
+  if (result.success) {
+    m_newNodeId = result.nodeId;
+    accept();
+  } else {
+    setInformationText(result.errorMessage, ScrollDialog::InformationLevel::Error);
+  }
+}
+
+NodeIdentifier NewNoteDialog2::getNewNodeId() const { return m_newNodeId; }

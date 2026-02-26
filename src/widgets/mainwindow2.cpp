@@ -200,6 +200,17 @@ void MainWindow2::setupNotebookExplorer() {
 void MainWindow2::setupDocks() {
   setupNotebookExplorer();
 
+  // Connect MainWindow2 signals to NotebookExplorer2 slots
+  connect(this, &MainWindow2::newNoteRequested, m_notebookExplorer, &NotebookExplorer2::newNote);
+  connect(this, &MainWindow2::newQuickNoteRequested, m_notebookExplorer,
+          &NotebookExplorer2::newQuickNote);
+  connect(this, &MainWindow2::newFolderRequested, m_notebookExplorer,
+          &NotebookExplorer2::newFolder);
+  connect(this, &MainWindow2::importFileRequested, m_notebookExplorer,
+          &NotebookExplorer2::importFile);
+  connect(this, &MainWindow2::importFolderRequested, m_notebookExplorer,
+          &NotebookExplorer2::importFolder);
+
   m_dockWidgetHelper.setupDocks();
 }
 

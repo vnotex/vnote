@@ -6,11 +6,14 @@
 class QComboBox;
 class QPlainTextEdit;
 
+
 namespace vnotex {
+
+class ServiceLocator;
 class NoteTemplateSelector : public QWidget {
   Q_OBJECT
 public:
-  explicit NoteTemplateSelector(QWidget *p_parent = nullptr);
+  explicit NoteTemplateSelector(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString getCurrentTemplate() const;
   bool setCurrentTemplate(const QString &p_template);
@@ -32,6 +35,8 @@ private:
   QPlainTextEdit *m_templateTextEdit = nullptr;
 
   QString m_templateContent;
+
+  ServiceLocator &m_services;
 };
 } // namespace vnotex
 

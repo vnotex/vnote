@@ -4,6 +4,7 @@
 #include <QStyledItemDelegate>
 
 #include <core/nodeinfo.h>
+#include <core/servicelocator.h>
 
 namespace vnotex {
 
@@ -17,7 +18,7 @@ class NotebookNodeDelegate : public QStyledItemDelegate {
   Q_OBJECT
 
 public:
-  explicit NotebookNodeDelegate(QObject *p_parent = nullptr);
+  explicit NotebookNodeDelegate(ServiceLocator &p_services, QObject *p_parent = nullptr);
   ~NotebookNodeDelegate() override;
 
   void paint(QPainter *p_painter, const QStyleOptionViewItem &p_option,
@@ -46,6 +47,7 @@ private:
   QIcon getNodeIcon(const NodeInfo &p_nodeInfo) const;
 
   // Configuration
+  ServiceLocator &m_services;
   bool m_showChildCount = true;
   int m_padding = 4;
   int m_iconSize = 16;

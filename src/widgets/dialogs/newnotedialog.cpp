@@ -12,7 +12,7 @@
 #include "nodeinfowidget.h"
 #include "notebook/node.h"
 #include "notebook/notebook.h"
-#include "notetemplateselector.h"
+// LEGACY: NoteTemplateSelector now requires ServiceLocator - disabled until migration
 #include <buffer/filetypehelper.h>
 #include <core/configmgr.h>
 #include <core/templatemgr.h>
@@ -41,8 +41,9 @@ void NewNoteDialog::setupUI(const Node *p_node) {
 
   auto infoLayout = m_infoWidget->getMainLayout();
 
-  m_templateSelector = new NoteTemplateSelector(m_infoWidget);
-  infoLayout->addRow(tr("Template:"), m_templateSelector);
+  // LEGACY: NoteTemplateSelector now requires ServiceLocator
+  // m_templateSelector = new NoteTemplateSelector(m_infoWidget);
+  // infoLayout->addRow(tr("Template:"), m_templateSelector);
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 
@@ -81,7 +82,8 @@ bool NewNoteDialog::validateNameInput(QString &p_msg) {
 }
 
 void NewNoteDialog::acceptedButtonClicked() {
-  s_lastTemplate = m_templateSelector->getCurrentTemplate();
+  // LEGACY: NoteTemplateSelector disabled - requires ServiceLocator migration
+  // s_lastTemplate = m_templateSelector->getCurrentTemplate();
 
   {
     auto fileType = FileTypeHelper::getInst().getFileTypeByName(m_infoWidget->getFileType()).m_type;
@@ -92,8 +94,8 @@ void NewNoteDialog::acceptedButtonClicked() {
     Notebook *notebook = const_cast<Notebook *>(m_infoWidget->getNotebook());
     Node *parentNode = const_cast<Node *>(m_infoWidget->getParentNode());
     QString errMsg;
-    m_newNode = newNote(notebook, parentNode, m_infoWidget->getName(),
-                        m_templateSelector->getTemplateContent(), errMsg);
+    // LEGACY: Pass empty template content - template functionality requires migration
+    m_newNode = newNote(notebook, parentNode, m_infoWidget->getName(), QString(), errMsg);
     if (!m_newNode) {
       setInformationText(errMsg, ScrollDialog::InformationLevel::Error);
       return;
@@ -140,14 +142,14 @@ void NewNoteDialog::initDefaultValues(const Node *p_node) {
     WidgetUtils::selectBaseName(lineEdit);
   }
 
-  if (!s_lastTemplate.isEmpty()) {
-    // Restore.
-    if (!m_templateSelector->setCurrentTemplate(s_lastTemplate)) {
-      s_lastTemplate.clear();
-    }
-  }
+  // LEGACY: NoteTemplateSelector disabled - requires ServiceLocator migration
+  // if (!s_lastTemplate.isEmpty()) {
+  //   // Restore.
+  //   if (!m_templateSelector->setCurrentTemplate(s_lastTemplate)) {
+  //     s_lastTemplate.clear();
+  //   }
+  // }
 }
-
 QString NewNoteDialog::evaluateTemplateContent(const QString &p_content, const QString &p_name) {
   int cursorOffset = 0;
   return SnippetMgr::getInst().applySnippetBySymbol(p_content, QString(), cursorOffset,

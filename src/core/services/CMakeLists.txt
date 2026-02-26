@@ -3,6 +3,8 @@ set(SERVICES_SOURCES
   configservice.cpp
   searchservice.cpp
   notebookservice.cpp
+  filetypeservice.cpp
+  templateservice.cpp
   ${CMAKE_SOURCE_DIR}/src/core/error.cpp
 )
 
@@ -10,6 +12,8 @@ set(SERVICES_HEADERS
   configservice.h
   searchservice.h
   notebookservice.h
+  filetypeservice.h
+  templateservice.h
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})
@@ -17,6 +21,7 @@ add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})
 target_link_libraries(core_services
   PUBLIC
     Qt6::Core
+    Qt6::Gui
     vxcore
 )
 

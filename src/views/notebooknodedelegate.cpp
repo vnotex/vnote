@@ -3,13 +3,15 @@
 #include <QApplication>
 #include <QPainter>
 
-#include <core/vnotex.h>
+#include <core/servicelocator.h>
+#include <gui/services/themeservice.h>
 #include <models/notebooknodemodel.h>
 #include <utils/iconutils.h>
 
 using namespace vnotex;
 
-NotebookNodeDelegate::NotebookNodeDelegate(QObject *p_parent) : QStyledItemDelegate(p_parent) {}
+NotebookNodeDelegate::NotebookNodeDelegate(ServiceLocator &p_services, QObject *p_parent)
+    : QStyledItemDelegate(p_parent), m_services(p_services) {}
 
 NotebookNodeDelegate::~NotebookNodeDelegate() {}
 
@@ -166,7 +168,7 @@ QColor NotebookNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
 }
 
 QIcon NotebookNodeDelegate::getNodeIcon(const NodeInfo &p_nodeInfo) const {
-  const auto &themeMgr = VNoteX::getInst().getThemeMgr();
+  auto *themeService = m_services.get<ThemeService>();
   QString iconName;
 
   if (p_nodeInfo.isFolder) {
@@ -175,5 +177,5 @@ QIcon NotebookNodeDelegate::getNodeIcon(const NodeInfo &p_nodeInfo) const {
     iconName = QStringLiteral("file_node.svg");
   }
 
-  return IconUtils::fetchIcon(themeMgr.getIconFile(iconName));
+  return IconUtils::fetchIcon(themeService->getIconFile(iconName));
 }
