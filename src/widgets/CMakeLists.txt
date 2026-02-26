@@ -127,6 +127,7 @@ target_sources(vnote PRIVATE
     titlebar.cpp titlebar.h
     titletoolbar.cpp titletoolbar.h
     toolbarhelper.cpp toolbarhelper.h
+    toolbarhelper2.cpp toolbarhelper2.h
     toolbox.cpp toolbox.h
     treeview.cpp treeview.h
     treewidget.cpp treewidget.h
