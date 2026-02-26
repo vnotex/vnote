@@ -131,6 +131,33 @@ void NotebookService::rebuildNotebookCache(const QString &p_notebookId) {
   }
 }
 
+QJsonObject NotebookService::resolvePathToNotebook(const QString &p_absolutePath) const {
+  if (!checkContext()) {
+    return QJsonObject();
+  }
+
+  char *notebookId = nullptr;
+  char *relativePath = nullptr;
+  VxCoreError err = vxcore_path_resolve(m_context, p_absolutePath.toUtf8().constData(),
+                                        &notebookId, &relativePath);
+  if (err != VXCORE_OK) {
+    // Not finding the path is not necessarily an error - just return empty.
+    if (err != VXCORE_ERR_NOT_FOUND) {
+      qWarning() << "resolvePathToNotebook failed:" << QString::fromUtf8(vxcore_error_message(err));
+    }
+    return QJsonObject();
+  }
+
+  QJsonObject result;
+  result["notebookId"] = QString::fromUtf8(notebookId);
+  result["relativePath"] = QString::fromUtf8(relativePath);
+
+  vxcore_string_free(notebookId);
+  vxcore_string_free(relativePath);
+
+  return result;
+}
+
 QString NotebookService::getRecycleBinPath(const QString &p_notebookId) const {
   if (!checkContext()) {
     return QString();

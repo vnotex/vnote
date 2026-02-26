@@ -225,12 +225,6 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
 
 void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
                                             bool p_isFolder) {
-  if (p_isFolder) {
-    auto *sortAction = p_menu->addAction(tr("&Sort"));
-    connect(sortAction, &QAction::triggered, this,
-            [this, p_nodeId]() { sortNodes(p_nodeId); });
-  }
-
   auto *reloadAction = p_menu->addAction(tr("Re&load"));
   connect(reloadAction, &QAction::triggered, this,
           [this, p_nodeId]() { reloadNode(p_nodeId); });
