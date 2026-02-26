@@ -33,6 +33,15 @@ void NotebookNodeProxyModel::setNameFilter(const QString &p_pattern) {
 
 QString NotebookNodeProxyModel::nameFilter() const { return m_nameFilter; }
 
+void NotebookNodeProxyModel::setViewOrder(ViewOrder p_order) {
+  if (m_viewOrder != p_order) {
+    m_viewOrder = p_order;
+    invalidate(); // Re-sort with new order
+  }
+}
+
+ViewOrder NotebookNodeProxyModel::viewOrder() const { return m_viewOrder; }
+
 NodeIdentifier NotebookNodeProxyModel::nodeIdFromIndex(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
     return NodeIdentifier();
@@ -121,7 +130,29 @@ bool NotebookNodeProxyModel::lessThan(const QModelIndex &p_left, const QModelInd
   if (leftInfo.isFolder != rightInfo.isFolder) {
     return leftInfo.isFolder; // Folders first
   }
+  // Same type - sort based on view order
+  switch (m_viewOrder) {
+  case ViewOrder::OrderedByName:
+    return QString::compare(leftInfo.name, rightInfo.name, Qt::CaseInsensitive) < 0;
 
-  // Same type - sort by name (case insensitive)
-  return QString::compare(leftInfo.name, rightInfo.name, Qt::CaseInsensitive) < 0;
+  case ViewOrder::OrderedByNameReversed:
+    return QString::compare(leftInfo.name, rightInfo.name, Qt::CaseInsensitive) > 0;
+
+  case ViewOrder::OrderedByCreatedTime:
+    return leftInfo.createdTimeUtc < rightInfo.createdTimeUtc;
+
+  case ViewOrder::OrderedByCreatedTimeReversed:
+    return leftInfo.createdTimeUtc > rightInfo.createdTimeUtc;
+
+  case ViewOrder::OrderedByModifiedTime:
+    return leftInfo.modifiedTimeUtc < rightInfo.modifiedTimeUtc;
+
+  case ViewOrder::OrderedByModifiedTimeReversed:
+    return leftInfo.modifiedTimeUtc > rightInfo.modifiedTimeUtc;
+
+  case ViewOrder::OrderedByConfiguration:
+  default:
+    // Default: sort by name (case insensitive)
+    return QString::compare(leftInfo.name, rightInfo.name, Qt::CaseInsensitive) < 0;
+  }
 }
