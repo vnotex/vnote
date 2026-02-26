@@ -5,15 +5,15 @@
 #include <QMenu>
 #include <QSystemTrayIcon>
 
-#include "mainwindow.h"
+#include "mainwindow2.h"
 #include "widgetsfactory.h"
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
 
-QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win) {
+QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow2 *p_win, const ConfigMgr2 *p_configMgr) {
 #if defined(Q_OS_MACOS)
   QIcon icon(":/vnotex/data/core/logo/vnote_mono.png");
   icon.setIsMask(true);
@@ -24,7 +24,7 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win) {
   auto trayIcon = new QSystemTrayIcon(icon, p_win);
   trayIcon->setToolTip(qApp->applicationName());
 
-  MainWindow::connect(trayIcon, &QSystemTrayIcon::activated, p_win,
+  MainWindow2::connect(trayIcon, &QSystemTrayIcon::activated, p_win,
                       [p_win](QSystemTrayIcon::ActivationReason p_reason) {
                         Q_UNUSED(p_reason);
 #if !defined(Q_OS_MACOS)
@@ -37,10 +37,10 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win) {
   auto menu = WidgetsFactory::createMenu(p_win);
   trayIcon->setContextMenu(menu);
 
-  const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+  const auto &coreConfig = p_configMgr->getCoreConfig();
 
   {
-    auto act = menu->addAction(MainWindow::tr("Show Main Window"), menu,
+    auto act = menu->addAction(MainWindow2::tr("Show Main Window"), menu,
                                [p_win]() { p_win->showMainWindow(); });
 
     WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::Global_WakeUp));
@@ -48,7 +48,7 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow *p_win) {
 
   menu->addSeparator();
 
-  menu->addAction(MainWindow::tr("Quit"), menu, [p_win]() { p_win->quitApp(); });
+  menu->addAction(MainWindow2::tr("Quit"), menu, [p_win]() { p_win->quitApp(); });
 
   return trayIcon;
 }
