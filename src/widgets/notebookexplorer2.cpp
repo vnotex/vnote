@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -44,6 +45,8 @@
 // #include <widgets/dialogs/newnotedialog.h>
 #include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/managenotebooksdialog2.h>
+#include <widgets/dialogs/newfolderdialog2.h>
+#include <widgets/dialogs/newnotedialog2.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
@@ -452,6 +455,28 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::nodeAboutToReload);
   connect(m_combinedController, &NotebookNodeController::closeFileRequested, this,
           &NotebookExplorer2::closeFileRequested);
+
+  // Connect GUI request signals from controller
+  connect(m_combinedController, &NotebookNodeController::newNoteRequested, this,
+          &NotebookExplorer2::onNewNoteRequested);
+  connect(m_combinedController, &NotebookNodeController::newFolderRequested, this,
+          &NotebookExplorer2::onNewFolderRequested);
+  connect(m_combinedController, &NotebookNodeController::renameRequested, this,
+          &NotebookExplorer2::onRenameRequested);
+  connect(m_combinedController, &NotebookNodeController::deleteRequested, this,
+          &NotebookExplorer2::onDeleteRequested);
+  connect(m_combinedController, &NotebookNodeController::removeFromNotebookRequested, this,
+          &NotebookExplorer2::onRemoveFromNotebookRequested);
+  connect(m_combinedController, &NotebookNodeController::importFilesRequested, this,
+          &NotebookExplorer2::onImportFilesRequested);
+  connect(m_combinedController, &NotebookNodeController::importFolderRequested, this,
+          &NotebookExplorer2::onImportFolderRequested);
+  connect(m_combinedController, &NotebookNodeController::propertiesRequested, this,
+          &NotebookExplorer2::onPropertiesRequested);
+  connect(m_combinedController, &NotebookNodeController::errorOccurred, this,
+          &NotebookExplorer2::onErrorOccurred);
+  connect(m_combinedController, &NotebookNodeController::infoMessage, this,
+          &NotebookExplorer2::onInfoMessage);
 }
 
 void NotebookExplorer2::setupTwoColumnsMode() {
@@ -535,6 +560,28 @@ void NotebookExplorer2::setupTwoColumnsMode() {
             &NotebookExplorer2::nodeAboutToReload);
     connect(controller, &NotebookNodeController::closeFileRequested, this,
             &NotebookExplorer2::closeFileRequested);
+
+    // Connect GUI request signals from controller
+    connect(controller, &NotebookNodeController::newNoteRequested, this,
+            &NotebookExplorer2::onNewNoteRequested);
+    connect(controller, &NotebookNodeController::newFolderRequested, this,
+            &NotebookExplorer2::onNewFolderRequested);
+    connect(controller, &NotebookNodeController::renameRequested, this,
+            &NotebookExplorer2::onRenameRequested);
+    connect(controller, &NotebookNodeController::deleteRequested, this,
+            &NotebookExplorer2::onDeleteRequested);
+    connect(controller, &NotebookNodeController::removeFromNotebookRequested, this,
+            &NotebookExplorer2::onRemoveFromNotebookRequested);
+    connect(controller, &NotebookNodeController::importFilesRequested, this,
+            &NotebookExplorer2::onImportFilesRequested);
+    connect(controller, &NotebookNodeController::importFolderRequested, this,
+            &NotebookExplorer2::onImportFolderRequested);
+    connect(controller, &NotebookNodeController::propertiesRequested, this,
+            &NotebookExplorer2::onPropertiesRequested);
+    connect(controller, &NotebookNodeController::errorOccurred, this,
+            &NotebookExplorer2::onErrorOccurred);
+    connect(controller, &NotebookNodeController::infoMessage, this,
+            &NotebookExplorer2::onInfoMessage);
   };
 
   connectControllerSignals(m_folderController);
@@ -813,10 +860,15 @@ void NotebookExplorer2::manageNotebooks() {
 }
 
 void NotebookExplorer2::newFolder() {
-  // TODO: Migrate NewFolderDialog to use ServiceLocator DI pattern
-  MessageBoxHelper::notify(
-      MessageBoxHelper::Information,
-      tr("New folder dialog is being migrated to use dependency injection."), window());
+  NodeIdentifier parentId = currentExploredFolderId();
+  if (!parentId.isValid()) {
+    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                             tr("Please first create a notebook to hold your data."), window());
+    return;
+  }
+
+  // Delegate to the shared handler
+  onNewFolderRequested(parentId);
 }
 
 void NotebookExplorer2::newNote() {
@@ -827,18 +879,8 @@ void NotebookExplorer2::newNote() {
     return;
   }
 
-  // Delegate to the appropriate controller based on explore mode
-  NotebookNodeController *controller = nullptr;
-  if (m_exploreMode == Combined) {
-    controller = m_combinedController;
-  } else {
-    // In TwoColumns mode, use folder controller for new note in selected folder
-    controller = m_folderController;
-  }
-
-  if (controller) {
-    controller->newNote(parentId);
-  }
+  // Delegate to the shared handler
+  onNewNoteRequested(parentId);
 }
 
 void NotebookExplorer2::newQuickNote() {
@@ -1063,4 +1105,232 @@ void NotebookExplorer2::setNodeViewOrder(ViewOrder p_order) {
     m_fileProxyModel->setViewOrder(p_order);
     m_fileProxyModel->sort(0); // Trigger re-sort
   }
+}
+
+// --- GUI request handlers from controller signals ---
+
+void NotebookExplorer2::onNewNoteRequested(const NodeIdentifier &p_parentId) {
+  NewNoteDialog2 dialog(m_services, p_parentId, window());
+  if (dialog.exec() == QDialog::Accepted) {
+    NodeIdentifier newNodeId = dialog.getNewNodeId();
+    if (newNodeId.isValid()) {
+      // Reload parent node in the appropriate model
+      if (m_exploreMode == Combined) {
+        if (m_combinedModel) {
+          m_combinedModel->reloadNode(p_parentId);
+        }
+      } else {
+        // TwoColumns mode - reload file model (notes are files)
+        if (m_fileModel) {
+          m_fileModel->reloadNode(p_parentId);
+        }
+      }
+      // Select the new note
+      setCurrentNode(newNodeId);
+    }
+  }
+}
+
+void NotebookExplorer2::onNewFolderRequested(const NodeIdentifier &p_parentId) {
+  NewFolderDialog2 dialog(m_services, p_parentId, window());
+  if (dialog.exec() == QDialog::Accepted) {
+    NodeIdentifier newNodeId = dialog.getNewNodeId();
+    if (newNodeId.isValid()) {
+      // Reload parent node in the appropriate model
+      if (m_exploreMode == Combined) {
+        if (m_combinedModel) {
+          m_combinedModel->reloadNode(p_parentId);
+        }
+      } else {
+        // TwoColumns mode - reload folder model
+        if (m_folderModel) {
+          m_folderModel->reloadNode(p_parentId);
+        }
+      }
+      // Select the new folder
+      setCurrentNode(newNodeId);
+    }
+  }
+}
+
+void NotebookExplorer2::onRenameRequested(const NodeIdentifier &p_nodeId,
+                                          const QString &p_currentName) {
+  bool ok;
+  QString newName = QInputDialog::getText(window(), tr("Rename"), tr("New name:"),
+                                          QLineEdit::Normal, p_currentName, &ok);
+  if (!ok || newName.isEmpty() || newName == p_currentName) {
+    return;
+  }
+
+  // Call back to the appropriate controller to perform the rename
+  NotebookNodeController *controller = nullptr;
+  if (m_exploreMode == Combined) {
+    controller = m_combinedController;
+  } else {
+    // Determine which controller based on the node
+    if (m_folderModel) {
+      NodeInfo info = m_folderModel->nodeInfoFromIndex(m_folderModel->indexFromNodeId(p_nodeId));
+      controller = info.isFolder ? m_folderController : m_fileController;
+    }
+  }
+
+  if (controller) {
+    controller->handleRenameResult(p_nodeId, newName);
+  }
+}
+
+void NotebookExplorer2::onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent) {
+  if (p_nodeIds.isEmpty()) {
+    return;
+  }
+
+  QString title = p_permanent ? tr("Delete Permanently") : tr("Delete");
+  QString message;
+
+  if (p_permanent) {
+    message = tr("Permanently delete %n node(s)? This cannot be undone.", "", p_nodeIds.size());
+  } else {
+    message = tr("Move %n node(s) to recycle bin?", "", p_nodeIds.size());
+  }
+
+  int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question, message, title, QString(),
+                                               window());
+  if (ret != QMessageBox::Ok) {
+    return;
+  }
+
+  // Call back to the appropriate controller to perform the delete
+  NotebookNodeController *controller = nullptr;
+  if (m_exploreMode == Combined) {
+    controller = m_combinedController;
+  } else {
+    // Use folder controller for delete operations (it can handle both)
+    controller = m_folderController;
+  }
+
+  if (controller) {
+    controller->handleDeleteConfirmed(p_nodeIds, p_permanent);
+  }
+}
+
+void NotebookExplorer2::onRemoveFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds) {
+  if (p_nodeIds.isEmpty()) {
+    return;
+  }
+
+  QString message =
+      tr("Remove %n node(s) from notebook? Files will remain on disk.", "", p_nodeIds.size());
+
+  int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question, message,
+                                               tr("Remove From Notebook"), QString(), window());
+  if (ret != QMessageBox::Ok) {
+    return;
+  }
+
+  // Call back to the appropriate controller to perform the removal
+  NotebookNodeController *controller = nullptr;
+  if (m_exploreMode == Combined) {
+    controller = m_combinedController;
+  } else {
+    controller = m_folderController;
+  }
+
+  if (controller) {
+    controller->handleRemoveConfirmed(p_nodeIds);
+  }
+}
+
+void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFolderId) {
+  QStringList files = QFileDialog::getOpenFileNames(window(), tr("Import Files"), QString(),
+                                                    tr("All Files (*)"));
+  if (files.isEmpty()) {
+    return;
+  }
+
+  // Call back to the appropriate controller
+  NotebookNodeController *controller = nullptr;
+  if (m_exploreMode == Combined) {
+    controller = m_combinedController;
+  } else {
+    controller = m_folderController;
+  }
+
+  if (controller) {
+    controller->handleImportFiles(p_targetFolderId, files);
+  }
+}
+
+void NotebookExplorer2::onImportFolderRequested(const NodeIdentifier &p_targetFolderId) {
+  QString folder = QFileDialog::getExistingDirectory(window(), tr("Import Folder"), QString());
+  if (folder.isEmpty()) {
+    return;
+  }
+
+  // Call back to the appropriate controller
+  NotebookNodeController *controller = nullptr;
+  if (m_exploreMode == Combined) {
+    controller = m_combinedController;
+  } else {
+    controller = m_folderController;
+  }
+
+  if (controller) {
+    controller->handleImportFolder(p_targetFolderId, folder);
+  }
+}
+
+void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  // Get node info to display properties
+  NodeInfo nodeInfo;
+  if (m_exploreMode == Combined && m_combinedModel) {
+    nodeInfo = m_combinedModel->nodeInfoFromIndex(m_combinedModel->indexFromNodeId(p_nodeId));
+  } else if (m_folderModel) {
+    nodeInfo = m_folderModel->nodeInfoFromIndex(m_folderModel->indexFromNodeId(p_nodeId));
+    if (!nodeInfo.isValid() && m_fileModel) {
+      nodeInfo = m_fileModel->nodeInfoFromIndex(m_fileModel->indexFromNodeId(p_nodeId));
+    }
+  }
+
+  if (!nodeInfo.isValid()) {
+    return;
+  }
+
+  // Build absolute path
+  QString absolutePath;
+  auto *notebookService = m_services.get<NotebookService>();
+  QJsonObject config = notebookService->getNotebookConfig(p_nodeId.notebookId);
+  QString rootPath = config.value(QStringLiteral("root_folder")).toString();
+  if (!rootPath.isEmpty()) {
+    absolutePath =
+        p_nodeId.relativePath.isEmpty() ? rootPath : rootPath + "/" + p_nodeId.relativePath;
+  }
+
+  QString info;
+  info += tr("Name: %1\n").arg(nodeInfo.name);
+  info += tr("Path: %1\n").arg(absolutePath);
+  info += tr("Type: %1\n").arg(nodeInfo.isFolder ? tr("Folder") : tr("Note"));
+  info += tr("Created: %1\n").arg(nodeInfo.createdTimeUtc.toLocalTime().toString());
+  info += tr("Modified: %1\n").arg(nodeInfo.modifiedTimeUtc.toLocalTime().toString());
+
+  if (nodeInfo.isFolder) {
+    info += tr("Children: %1\n").arg(nodeInfo.childCount);
+  }
+
+  if (!nodeInfo.tags.isEmpty()) {
+    info += tr("Tags: %1\n").arg(nodeInfo.tags.join(", "));
+  }
+
+  MessageBoxHelper::notify(MessageBoxHelper::Information, info, window());
+}
+
+void NotebookExplorer2::onErrorOccurred(const QString &p_title, const QString &p_message) {
+  MessageBoxHelper::notify(MessageBoxHelper::Critical, p_title + ": " + p_message, window());
+}
+
+void NotebookExplorer2::onInfoMessage(const QString &p_title, const QString &p_message) {
+  MessageBoxHelper::notify(MessageBoxHelper::Information, p_title + ": " + p_message, window());
 }

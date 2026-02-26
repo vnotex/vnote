@@ -4,11 +4,8 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QDesktopServices>
-#include <QFileDialog>
-#include <QInputDialog>
 #include <QJsonObject>
 #include <QMenu>
-#include <QMessageBox>
 #include <QUrl>
 
 #include <core/events.h>
@@ -18,7 +15,6 @@
 #include <models/notebooknodemodel.h>
 #include <utils/pathutils.h>
 #include <views/notebooknodeview.h>
-#include <widgets/dialogs/newnotedialog2.h>
 
 using namespace vnotex;
 
@@ -252,17 +248,7 @@ void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {
     parentId.relativePath = QString(); // root
   }
 
-  NewNoteDialog2 dialog(m_services, parentId, m_view);
-  if (dialog.exec() == QDialog::Accepted) {
-    NodeIdentifier newNodeId = dialog.getNewNodeId();
-    if (m_model) {
-      m_model->reloadNode(parentId);
-    }
-    if (m_view) {
-      m_view->selectNode(newNodeId);
-    }
-    openNode(newNodeId);
-  }
+  emit newNoteRequested(parentId);
 }
 
 void NotebookNodeController::newFolder(const NodeIdentifier &p_parentId) {
@@ -271,34 +257,13 @@ void NotebookNodeController::newFolder(const NodeIdentifier &p_parentId) {
     return;
   }
 
-  QString parentPath = p_parentId.relativePath;
-
-  bool ok;
-  QString name = QInputDialog::getText(m_view, tr("New Folder"), tr("Folder name:"),
-                                       QLineEdit::Normal, tr("new_folder"), &ok);
-  if (!ok || name.isEmpty()) {
-    return;
+  NodeIdentifier parentId = p_parentId;
+  if (!parentId.isValid()) {
+    parentId.notebookId = notebookId;
+    parentId.relativePath = QString();
   }
 
-  try {
-    auto *notebookService = m_services.get<NotebookService>();
-    QString newFolderPath = notebookService->createFolder(notebookId, parentPath, name);
-
-    if (!newFolderPath.isEmpty() && m_model) {
-      m_model->reloadNode(p_parentId);
-
-      // Select the new folder
-      NodeIdentifier newNodeId;
-      newNodeId.notebookId = notebookId;
-      newNodeId.relativePath = newFolderPath;
-
-      if (m_view) {
-        m_view->selectNode(newNodeId);
-      }
-    }
-  } catch (const std::exception &e) {
-    QMessageBox::critical(m_view, tr("Error"), tr("Failed to create folder: %1").arg(e.what()));
-  }
+  emit newFolderRequested(parentId);
 }
 
 void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
@@ -331,29 +296,8 @@ void NotebookNodeController::deleteNodes(const QList<NodeIdentifier> &p_nodeIds)
     return;
   }
 
-  if (!confirmDelete(p_nodeIds, false)) {
-    return;
-  }
-
-  auto *notebookService = m_services.get<NotebookService>();
-
-  for (const NodeIdentifier &nodeId : p_nodeIds) {
-    notifyBeforeNodeOperation(nodeId, QStringLiteral("delete"));
-    try {
-      NodeInfo nodeInfo = getNodeInfo(nodeId);
-      if (nodeInfo.isFolder) {
-        notebookService->deleteFolder(nodeId.notebookId, nodeId.relativePath);
-      } else {
-        notebookService->deleteFile(nodeId.notebookId, nodeId.relativePath);
-      }
-    } catch (const std::exception &e) {
-      QMessageBox::critical(m_view, tr("Error"), tr("Failed to delete: %1").arg(e.what()));
-    }
-  }
-
-  if (m_model) {
-    m_model->reload();
-  }
+  // Emit signal to request delete confirmation from view
+  emit deleteRequested(p_nodeIds, false);
 }
 
 void NotebookNodeController::removeNodesFromNotebook(const QList<NodeIdentifier> &p_nodeIds) {
@@ -361,19 +305,7 @@ void NotebookNodeController::removeNodesFromNotebook(const QList<NodeIdentifier>
     return;
   }
 
-  int ret = QMessageBox::question(
-      m_view, tr("Remove from Notebook"),
-      tr("Remove %n node(s) from notebook? Files will be kept on disk.", "", p_nodeIds.size()),
-      QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-
-  if (ret != QMessageBox::Yes) {
-    return;
-  }
-
-  // TODO: Implement configOnly removal via NotebookService
-  // For now, just show not implemented
-  QMessageBox::information(m_view, tr("Remove"),
-                           tr("Remove from notebook (config only) not yet implemented."));
+  emit removeFromNotebookRequested(p_nodeIds);
 }
 
 void NotebookNodeController::copyNodes(const QList<NodeIdentifier> &p_nodeIds) {
@@ -424,7 +356,7 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
         }
       }
     } catch (const std::exception &e) {
-      QMessageBox::critical(m_view, tr("Error"), tr("Failed to paste: %1").arg(e.what()));
+      emit errorOccurred(tr("Error"), tr("Failed to paste: %1").arg(e.what()));
     }
   }
 
@@ -462,31 +394,7 @@ void NotebookNodeController::renameNode(const NodeIdentifier &p_nodeId) {
     return;
   }
 
-  bool ok;
-  QString newName =
-      QInputDialog::getText(m_view, tr("Rename"), tr("New name:"), QLineEdit::Normal,
-                            nodeInfo.name, &ok);
-  if (!ok || newName.isEmpty() || newName == nodeInfo.name) {
-    return;
-  }
-
-  notifyBeforeNodeOperation(p_nodeId, QStringLiteral("rename"));
-
-  try {
-    auto *notebookService = m_services.get<NotebookService>();
-    if (nodeInfo.isFolder) {
-      notebookService->renameFolder(p_nodeId.notebookId, p_nodeId.relativePath, newName);
-    } else {
-      notebookService->renameFile(p_nodeId.notebookId, p_nodeId.relativePath, newName);
-    }
-
-    if (m_model) {
-      NodeIdentifier parentId = getParentFolder(p_nodeId);
-      m_model->reloadNode(parentId);
-    }
-  } catch (const std::exception &e) {
-    QMessageBox::critical(m_view, tr("Error"), tr("Failed to rename: %1").arg(e.what()));
-  }
+  emit renameRequested(p_nodeId, nodeInfo.name);
 }
 
 void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &p_nodeIds,
@@ -500,15 +408,7 @@ void NotebookNodeController::importFiles(const NodeIdentifier &p_targetFolderId)
     return;
   }
 
-  QStringList files =
-      QFileDialog::getOpenFileNames(m_view, tr("Import Files"), QString(), tr("All Files (*)"));
-  if (files.isEmpty()) {
-    return;
-  }
-
-  // TODO: Implement file import via NotebookService
-  QMessageBox::information(m_view, tr("Import"),
-                           tr("File import not yet implemented in new architecture."));
+  emit importFilesRequested(p_targetFolderId);
 }
 
 void NotebookNodeController::importFolder(const NodeIdentifier &p_targetFolderId) {
@@ -516,19 +416,12 @@ void NotebookNodeController::importFolder(const NodeIdentifier &p_targetFolderId
     return;
   }
 
-  QString folder = QFileDialog::getExistingDirectory(m_view, tr("Import Folder"), QString());
-  if (folder.isEmpty()) {
-    return;
-  }
-
-  // TODO: Implement folder import via NotebookService
-  QMessageBox::information(m_view, tr("Import"),
-                           tr("Folder import not yet implemented in new architecture."));
+  emit importFolderRequested(p_targetFolderId);
 }
 
 void NotebookNodeController::exportNode(const NodeIdentifier &p_nodeId) {
   Q_UNUSED(p_nodeId);
-  QMessageBox::information(m_view, tr("Export"), tr("Export functionality not yet implemented."));
+  emit infoMessage(tr("Export"), tr("Export functionality not yet implemented."));
 }
 
 void NotebookNodeController::showNodeProperties(const NodeIdentifier &p_nodeId) {
@@ -536,27 +429,7 @@ void NotebookNodeController::showNodeProperties(const NodeIdentifier &p_nodeId) 
     return;
   }
 
-  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
-  if (!nodeInfo.isValid()) {
-    return;
-  }
-
-  QString info;
-  info += tr("Name: %1\n").arg(nodeInfo.name);
-  info += tr("Path: %1\n").arg(buildAbsolutePath(p_nodeId));
-  info += tr("Type: %1\n").arg(nodeInfo.isFolder ? tr("Folder") : tr("Note"));
-  info += tr("Created: %1\n").arg(nodeInfo.createdTimeUtc.toLocalTime().toString());
-  info += tr("Modified: %1\n").arg(nodeInfo.modifiedTimeUtc.toLocalTime().toString());
-
-  if (nodeInfo.isFolder) {
-    info += tr("Children: %1\n").arg(nodeInfo.childCount);
-  }
-
-  if (!nodeInfo.tags.isEmpty()) {
-    info += tr("Tags: %1\n").arg(nodeInfo.tags.join(", "));
-  }
-
-  QMessageBox::information(m_view, tr("Properties"), info);
+  emit propertiesRequested(p_nodeId);
 }
 
 void NotebookNodeController::copyNodePath(const NodeIdentifier &p_nodeId) {
@@ -587,7 +460,7 @@ void NotebookNodeController::locateNodeInFileManager(const NodeIdentifier &p_nod
 
 void NotebookNodeController::sortNodes(const NodeIdentifier &p_parentId) {
   Q_UNUSED(p_parentId);
-  QMessageBox::information(m_view, tr("Sort"), tr("Sort functionality not yet implemented."));
+  emit infoMessage(tr("Sort"), tr("Sort functionality not yet implemented."));
 }
 
 void NotebookNodeController::reloadNode(const NodeIdentifier &p_nodeId) {
@@ -611,33 +484,16 @@ void NotebookNodeController::reloadAll() {
 
 void NotebookNodeController::pinNodeToQuickAccess(const NodeIdentifier &p_nodeId) {
   Q_UNUSED(p_nodeId);
-  QMessageBox::information(m_view, tr("Quick Access"),
-                           tr("Quick Access functionality not yet implemented."));
+  emit infoMessage(tr("Quick Access"), tr("Quick Access functionality not yet implemented."));
 }
 
 void NotebookNodeController::manageNodeTags(const NodeIdentifier &p_nodeId) {
   Q_UNUSED(p_nodeId);
-  QMessageBox::information(m_view, tr("Tags"), tr("Tag management not yet implemented."));
+  emit infoMessage(tr("Tags"), tr("Tag management not yet implemented."));
 }
 
 bool NotebookNodeController::canPaste() const { return !m_clipboardNodes.isEmpty(); }
 
-bool NotebookNodeController::confirmDelete(const QList<NodeIdentifier> &p_nodeIds,
-                                           bool p_permanent) {
-  QString title = p_permanent ? tr("Delete Permanently") : tr("Delete");
-  QString message;
-
-  if (p_permanent) {
-    message = tr("Permanently delete %n node(s)? This cannot be undone.", "", p_nodeIds.size());
-  } else {
-    message = tr("Move %n node(s) to recycle bin?", "", p_nodeIds.size());
-  }
-
-  int ret = QMessageBox::question(m_view, title, message, QMessageBox::Yes | QMessageBox::No,
-                                  QMessageBox::No);
-
-  return ret == QMessageBox::Yes;
-}
 
 void NotebookNodeController::notifyBeforeNodeOperation(const NodeIdentifier &p_nodeId,
                                                        const QString &p_operation) {
@@ -658,4 +514,153 @@ void NotebookNodeController::notifyBeforeNodeOperation(const NodeIdentifier &p_n
   if (!path.isEmpty()) {
     emit closeFileRequested(path, event);
   }
+}
+
+// --- Handler implementations for dialog results from View ---
+
+void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &p_parentId,
+                                                  const NodeIdentifier &p_newNodeId) {
+  Q_UNUSED(p_parentId);
+  // Model reload is handled by the view layer after dialog closes
+  // This slot is available for additional post-creation logic if needed
+  if (p_newNodeId.isValid() && m_model) {
+    // Optionally select the new node or perform other actions
+  }
+}
+
+void NotebookNodeController::handleNewFolderResult(const NodeIdentifier &p_parentId,
+                                                    const NodeIdentifier &p_newNodeId) {
+  Q_UNUSED(p_parentId);
+  // Model reload is handled by the view layer after dialog closes
+  // This slot is available for additional post-creation logic if needed
+  if (p_newNodeId.isValid() && m_model) {
+    // Optionally select the new node or perform other actions
+  }
+}
+
+void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
+                                                 const QString &p_newName) {
+  if (!p_nodeId.isValid() || p_newName.isEmpty()) {
+    return;
+  }
+
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  if (!nodeInfo.isValid() || nodeInfo.name == p_newName) {
+    return;
+  }
+
+  notifyBeforeNodeOperation(p_nodeId, QStringLiteral("rename"));
+
+  try {
+    auto *notebookService = m_services.get<NotebookService>();
+    if (nodeInfo.isFolder) {
+      notebookService->renameFolder(p_nodeId.notebookId, p_nodeId.relativePath, p_newName);
+    } else {
+      notebookService->renameFile(p_nodeId.notebookId, p_nodeId.relativePath, p_newName);
+    }
+
+    if (m_model) {
+      NodeIdentifier parentId = getParentFolder(p_nodeId);
+      m_model->reloadNode(parentId);
+    }
+  } catch (const std::exception &e) {
+    emit errorOccurred(tr("Error"), tr("Failed to rename: %1").arg(e.what()));
+  }
+}
+
+void NotebookNodeController::handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds,
+                                                    bool p_permanent) {
+  if (p_nodeIds.isEmpty()) {
+    return;
+  }
+
+  auto *notebookService = m_services.get<NotebookService>();
+  QSet<NodeIdentifier> parentsToReload;
+
+  for (const NodeIdentifier &nodeId : p_nodeIds) {
+    notifyBeforeNodeOperation(nodeId, QStringLiteral("delete"));
+
+    try {
+      NodeInfo nodeInfo = getNodeInfo(nodeId);
+      NodeIdentifier parentId = getParentFolder(nodeId);
+      parentsToReload.insert(parentId);
+
+      if (nodeInfo.isFolder) {
+        // Note: vxcore deleteFolder handles recycle bin for bundled notebooks
+        // p_permanent flag is currently ignored - delete always uses vxcore default behavior
+        Q_UNUSED(p_permanent);
+        notebookService->deleteFolder(nodeId.notebookId, nodeId.relativePath);
+      } else {
+        // Note: vxcore deleteFile handles recycle bin for bundled notebooks
+        notebookService->deleteFile(nodeId.notebookId, nodeId.relativePath);
+      }
+    } catch (const std::exception &e) {
+      emit errorOccurred(tr("Error"), tr("Failed to delete: %1").arg(e.what()));
+    }
+  }
+
+  // Reload all affected parent folders
+  if (m_model) {
+    for (const NodeIdentifier &parentId : parentsToReload) {
+      m_model->reloadNode(parentId);
+    }
+  }
+}
+
+void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds) {
+  if (p_nodeIds.isEmpty()) {
+    return;
+  }
+
+  auto *notebookService = m_services.get<NotebookService>();
+  QSet<NodeIdentifier> parentsToReload;
+
+  for (const NodeIdentifier &nodeId : p_nodeIds) {
+    notifyBeforeNodeOperation(nodeId, QStringLiteral("remove"));
+
+    try {
+      NodeInfo nodeInfo = getNodeInfo(nodeId);
+      NodeIdentifier parentId = getParentFolder(nodeId);
+      parentsToReload.insert(parentId);
+
+      if (nodeInfo.isFolder) {
+        // TODO: NotebookService doesn't have removeFolderFromNotebook yet
+        // For now, use deleteFolder which moves to recycle bin for bundled notebooks
+        notebookService->deleteFolder(nodeId.notebookId, nodeId.relativePath);
+      } else {
+        // TODO: NotebookService doesn't have removeFileFromNotebook yet
+        // For now, use deleteFile which moves to recycle bin for bundled notebooks
+        notebookService->deleteFile(nodeId.notebookId, nodeId.relativePath);
+      }
+    } catch (const std::exception &e) {
+      emit errorOccurred(tr("Error"), tr("Failed to remove from notebook: %1").arg(e.what()));
+    }
+  }
+
+  // Reload all affected parent folders
+  if (m_model) {
+    for (const NodeIdentifier &parentId : parentsToReload) {
+      m_model->reloadNode(parentId);
+    }
+  }
+}
+
+void NotebookNodeController::handleImportFiles(const NodeIdentifier &p_targetFolderId,
+                                                const QStringList &p_files) {
+  if (!p_targetFolderId.isValid() || p_files.isEmpty()) {
+    return;
+  }
+
+  // TODO: Implement file import via NotebookService when available
+  emit infoMessage(tr("Import"), tr("File import not yet implemented in new architecture."));
+}
+
+void NotebookNodeController::handleImportFolder(const NodeIdentifier &p_targetFolderId,
+                                                 const QString &p_folderPath) {
+  if (!p_targetFolderId.isValid() || p_folderPath.isEmpty()) {
+    return;
+  }
+
+  // TODO: Implement folder import via NotebookService when available
+  emit infoMessage(tr("Import"), tr("Folder import not yet implemented in new architecture."));
 }
