@@ -18,6 +18,7 @@
 #include <models/notebooknodemodel.h>
 #include <utils/pathutils.h>
 #include <views/notebooknodeview.h>
+#include <widgets/dialogs/newnotedialog2.h>
 
 using namespace vnotex;
 
@@ -251,36 +252,22 @@ void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {
     return;
   }
 
-  QString folderPath = p_parentId.relativePath;
-
-  bool ok;
-  QString name = QInputDialog::getText(m_view, tr("New Note"), tr("Note name:"), QLineEdit::Normal,
-                                       tr("new_note.md"), &ok);
-  if (!ok || name.isEmpty()) {
-    return;
+  NodeIdentifier parentId = p_parentId;
+  if (!parentId.isValid()) {
+    parentId.notebookId = notebookId;
+    parentId.relativePath = QString(); // root
   }
 
-  try {
-    auto *notebookService = m_services.get<NotebookService>();
-    QString newFilePath = notebookService->createFile(notebookId, folderPath, name);
-
-    if (!newFilePath.isEmpty() && m_model) {
-      m_model->reloadNode(p_parentId);
-
-      // Select the new note
-      NodeIdentifier newNodeId;
-      newNodeId.notebookId = notebookId;
-      newNodeId.relativePath = newFilePath;
-
-      if (m_view) {
-        m_view->selectNode(newNodeId);
-      }
-
-      // Open the new note
-      openNode(newNodeId);
+  NewNoteDialog2 dialog(m_services, parentId, m_view);
+  if (dialog.exec() == QDialog::Accepted) {
+    NodeIdentifier newNodeId = dialog.getNewNodeId();
+    if (m_model) {
+      m_model->reloadNode(parentId);
     }
-  } catch (const std::exception &e) {
-    QMessageBox::critical(m_view, tr("Error"), tr("Failed to create note: %1").arg(e.what()));
+    if (m_view) {
+      m_view->selectNode(newNodeId);
+    }
+    openNode(newNodeId);
   }
 }
 

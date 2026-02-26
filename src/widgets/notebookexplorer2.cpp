@@ -416,7 +416,7 @@ void NotebookExplorer2::setupCombinedMode() {
   m_combinedView = new NotebookNodeView(this);
   m_combinedView->setModel(m_combinedProxyModel);
 
-  m_combinedDelegate = new NotebookNodeDelegate(this);
+  m_combinedDelegate = new NotebookNodeDelegate(m_services, this);
   m_combinedView->setItemDelegate(m_combinedDelegate);
 
   m_combinedController = new NotebookNodeController(m_services, this);
@@ -461,7 +461,7 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   m_folderView = new NotebookNodeView(this);
   m_folderView->setModel(m_folderProxyModel);
 
-  m_folderDelegate = new NotebookNodeDelegate(this);
+  m_folderDelegate = new NotebookNodeDelegate(m_services, this);
   m_folderView->setItemDelegate(m_folderDelegate);
 
   m_folderController = new NotebookNodeController(m_services, this);
@@ -480,7 +480,7 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   m_fileView = new NotebookNodeView(this);
   m_fileView->setModel(m_fileProxyModel);
 
-  m_fileDelegate = new NotebookNodeDelegate(this);
+  m_fileDelegate = new NotebookNodeDelegate(m_services, this);
   m_fileDelegate->setShowChildCount(false); // Files don't have children
   m_fileView->setItemDelegate(m_fileDelegate);
 
@@ -805,10 +805,25 @@ void NotebookExplorer2::newFolder() {
 }
 
 void NotebookExplorer2::newNote() {
-  // TODO: Migrate NewNoteDialog to use ServiceLocator DI pattern
-  MessageBoxHelper::notify(MessageBoxHelper::Information,
-                           tr("New note dialog is being migrated to use dependency injection."),
-                           window());
+  NodeIdentifier parentId = currentExploredFolderId();
+  if (!parentId.isValid()) {
+    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                             tr("Please first create a notebook to hold your data."), window());
+    return;
+  }
+
+  // Delegate to the appropriate controller based on explore mode
+  NotebookNodeController *controller = nullptr;
+  if (m_exploreMode == Combined) {
+    controller = m_combinedController;
+  } else {
+    // In TwoColumns mode, use folder controller for new note in selected folder
+    controller = m_folderController;
+  }
+
+  if (controller) {
+    controller->newNote(parentId);
+  }
 }
 
 void NotebookExplorer2::newQuickNote() {

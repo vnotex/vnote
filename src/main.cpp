@@ -18,7 +18,9 @@
 #include <core/services/configservice.h>
 #include <core/services/notebookservice.h>
 #include <core/services/searchservice.h>
+#include <core/services/filetypeservice.h>
 #include <gui/services/themeservice.h>
+#include <core/services/templateservice.h>
 #include <gui/utils/widgetutils.h>
 #include <core/sessionconfig.h>
 #include <core/singleinstanceguard.h>
@@ -163,6 +165,16 @@ int main(int argc, char *argv[]) {
     configMgr.init();
     serviceLocator.registerService<ConfigMgr2>(&configMgr);
     qInfo() << "ConfigMgr2 registered";
+
+    // Create FileTypeService with ConfigMgr2
+    FileTypeService fileTypeService(&configMgr);
+    serviceLocator.registerService<FileTypeService>(&fileTypeService);
+    qInfo() << "FileTypeService registered";
+
+    // Create TemplateService with ConfigMgr2
+    TemplateService templateService(&configMgr);
+    serviceLocator.registerService<TemplateService>(&templateService);
+    qInfo() << "TemplateService registered";
 
     setOpenGLOption(configMgr);
 

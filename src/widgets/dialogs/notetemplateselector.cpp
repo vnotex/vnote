@@ -7,16 +7,18 @@
 #include <QVBoxLayout>
 
 #include <core/exception.h>
-#include <core/templatemgr.h>
+#include <core/servicelocator.h>
+#include <core/services/templateservice.h>
 #include <utils/fileutils.h>
 #include <utils/widgetutils.h>
 
 #include <widgets/widgetsfactory.h>
-
 using namespace vnotex;
 
-NoteTemplateSelector::NoteTemplateSelector(QWidget *p_parent) : QWidget(p_parent) { setupUI(); }
-
+NoteTemplateSelector::NoteTemplateSelector(ServiceLocator &p_services, QWidget *p_parent)
+    : QWidget(p_parent), m_services(p_services) {
+  setupUI();
+}
 void NoteTemplateSelector::setupUI() {
   auto mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -29,8 +31,10 @@ void NoteTemplateSelector::setupUI() {
 
   auto manageBtn = new QPushButton(tr("Manage"), this);
   selectorLayout->addWidget(manageBtn);
-  connect(manageBtn, &QPushButton::clicked, this, []() {
-    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(TemplateMgr::getInst().getTemplateFolder()));
+  connect(manageBtn, &QPushButton::clicked, this, [this]() {
+    auto templateService = m_services.get<TemplateService>();
+    templateService->ensureTemplateFolder();
+    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(templateService->getTemplateFolder()));
   });
 
   m_templateTextEdit = WidgetsFactory::createPlainTextConsole(this);
@@ -45,7 +49,7 @@ void NoteTemplateSelector::setupTemplateComboBox(QWidget *p_parent) {
   m_templateComboBox->addItem(tr("None"), "");
 
   int idx = 1;
-  auto templates = TemplateMgr::getInst().getTemplates();
+  auto templates = m_services.get<TemplateService>()->getTemplates();
   for (const auto &temp : templates) {
     m_templateComboBox->addItem(temp, temp);
     m_templateComboBox->setItemData(idx++, temp, Qt::ToolTipRole);
@@ -68,7 +72,7 @@ void NoteTemplateSelector::updateCurrentTemplate() {
     return;
   }
 
-  const auto filePath = TemplateMgr::getInst().getTemplateFilePath(templateName);
+  const auto filePath = m_services.get<TemplateService>()->getTemplateFilePath(templateName);
   try {
     m_templateContent = FileUtils::readTextFile(filePath);
     m_templateTextEdit->setPlainText(m_templateContent);
