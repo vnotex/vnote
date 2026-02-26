@@ -42,6 +42,9 @@ void NotebookNodeView::setupView() {
 
   // Connect activated signal
   connect(this, &QTreeView::activated, this, &NotebookNodeView::onItemActivated);
+
+  // Connect expanded signal to prefetch grandchildren
+  connect(this, &QTreeView::expanded, this, &NotebookNodeView::onItemExpanded);
 }
 
 void NotebookNodeView::setController(NotebookNodeController *p_controller) {
@@ -321,5 +324,24 @@ void NotebookNodeView::onItemActivated(const QModelIndex &p_index) {
   if (nodeInfo.isValid() && !nodeInfo.isFolder) {
     auto paras = QSharedPointer<FileOpenParameters>::create();
     emit nodeActivated(nodeInfo.id, paras);
+  }
+}
+
+void NotebookNodeView::onItemExpanded(const QModelIndex &p_index) {
+  if (!p_index.isValid()) {
+    return;
+  }
+
+  // Map to source index if using proxy model
+  QModelIndex sourceIdx = p_index;
+  auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
+  if (proxyModel) {
+    sourceIdx = proxyModel->mapToSource(p_index);
+  }
+
+  auto *nodeModel =
+      qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
+  if (nodeModel) {
+    nodeModel->prefetchChildrenOfChildren(sourceIdx);
   }
 }

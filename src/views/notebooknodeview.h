@@ -66,6 +66,7 @@ protected:
 
 private slots:
   void onItemActivated(const QModelIndex &p_index);
+  void onItemExpanded(const QModelIndex &p_index);
 
 private:
   // Get NodeIdentifier from model index

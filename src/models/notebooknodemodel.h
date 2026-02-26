@@ -77,6 +77,7 @@ public:
   // Reload operations
   void reload();
   void reloadNode(const NodeIdentifier &p_nodeId);
+  void prefetchChildrenOfChildren(const QModelIndex &p_parent);
 
   // Notify model about external changes to a node
   void nodeDataChanged(const NodeIdentifier &p_nodeId);

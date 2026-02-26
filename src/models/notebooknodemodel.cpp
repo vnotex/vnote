@@ -420,6 +420,57 @@ void NotebookNodeModel::fetchMore(const QModelIndex &p_parent) {
   if (!children.isEmpty()) {
     endInsertRows();
   }
+
+  // Prefetch grandchildren so child folders show correct child count
+  prefetchChildrenOfChildren(p_parent);
+}
+
+void NotebookNodeModel::prefetchChildrenOfChildren(const QModelIndex &p_parent) {
+  if (m_notebookId.isEmpty()) {
+    return;
+  }
+
+  NodeIdentifier parentId = p_parent.isValid() ? nodeIdFromIndex(p_parent) : rootNodeId();
+  if (!parentId.isValid() || !isNodeFetched(parentId)) {
+    return;
+  }
+
+  auto *notebookService = m_services.get<NotebookService>();
+  if (!notebookService) {
+    return;
+  }
+
+  const QVector<NodeIdentifier> &children = m_childrenCache.value(parentId);
+  for (const NodeIdentifier &childId : children) {
+    auto childIt = m_nodeCache.find(childId);
+    if (childIt == m_nodeCache.end() || !childIt.value().isFolder) {
+      continue;
+    }
+
+    if (isNodeFetched(childId)) {
+      continue;
+    }
+
+    QJsonObject result =
+        notebookService->listFolderChildren(childId.notebookId, childId.relativePath);
+    QVector<NodeInfo> grandchildren = parseChildrenFromJson(result, childId);
+
+    QVector<NodeIdentifier> grandchildIds;
+    grandchildIds.reserve(grandchildren.size());
+    for (const NodeInfo &info : grandchildren) {
+      m_nodeCache.insert(info.id, info);
+      grandchildIds.append(info.id);
+    }
+
+    m_childrenCache.insert(childId, grandchildIds);
+    childIt.value().childCount = grandchildIds.size();
+    markNodeFetched(childId);
+
+    QModelIndex childIndex = indexFromNodeId(childId);
+    if (childIndex.isValid()) {
+      emit dataChanged(childIndex, childIndex);
+    }
+  }
 }
 QIcon NotebookNodeModel::getNodeIcon(const NodeInfo &p_info) const {
   auto *themeService = m_services.get<ThemeService>();
@@ -617,6 +668,9 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
 
   // Notify data change for the node itself
   emit dataChanged(nodeIndex, nodeIndex);
+
+  // Prefetch grandchildren so child folders show correct child count
+  prefetchChildrenOfChildren(nodeIndex);
 }
 
 void NotebookNodeModel::nodeDataChanged(const NodeIdentifier &p_nodeId) {
