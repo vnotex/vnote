@@ -54,8 +54,8 @@ QDockWidget::Title {
     text-align: center left;
 }
 
-/* NotebookSelector */
-vnotex--NotebookSelector {
+/* NotebookSelector2 */
+vnotex--NotebookSelector2 {
     icon-size: 20px;
 }
 

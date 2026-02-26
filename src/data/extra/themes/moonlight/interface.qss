@@ -417,8 +417,8 @@ QComboBox QAbstractItemView::item:hover {
     background-color: @widgets#qcombobox#item#hover#bg;
 }
 
-/* NotebookSelector */
-vnotex--NotebookSelector {
+/* NotebookSelector2 */
+vnotex--NotebookSelector2 {
     icon-size: 20px;
 }
 
@@ -615,7 +615,7 @@ QTabBar QToolButton::left-arrow:disabled {
 QTreeView {
     color: @widgets#qtreeview#fg;
     background-color: @widgets#qtreeview#bg;
-    show-decoration-selected: 0;
+    show-decoration-selected: 1;
     border: none;
     selection-background-color: transparent;
     outline: none;
@@ -646,6 +646,11 @@ QTreeView::item:selected:!active {
     background-color: @widgets#qtreeview#item#selected#inactive#bg;
 }
 
+/* Set branch background to match tree view */
+QTreeView::branch {
+    background-color: @widgets#qtreeview#bg;
+}
+
 QTreeView::branch:has-siblings:!adjoins-item {
     border-image: none;
 }
@@ -669,6 +674,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     border-image: none;
     image: url(branch_open.svg);
 }
+
 
 /* QListView */
 QListView {
