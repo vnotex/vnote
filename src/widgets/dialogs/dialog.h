@@ -34,8 +34,6 @@ public:
 
   bool isCompleted() const;
 
-  QSize sizeHint() const Q_DECL_OVERRIDE;
-
 protected:
   virtual void acceptedButtonClicked();
 
