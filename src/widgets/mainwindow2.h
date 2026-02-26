@@ -2,24 +2,30 @@
 #define MAINWINDOW2_H
 
 #include <QMainWindow>
+#include <QSharedPointer>
 
 #include <core/noncopyable.h>
 #include <widgets/dockwidgethelper.h>
+#include <core/fileopenparameters.h>
+#include "framelessmainwindow/framelessmainwindowimpl.h"
 
 class QCloseEvent;
 class QDockWidget;
+class QToolBar;
 class QWebEngineView;
+class QSystemTrayIcon;
 
 namespace vnotex {
 
 class ServiceLocator;
 class NotebookExplorer2;
 
+class ToolBarHelper2;
 // MainWindow2 is a minimal QMainWindow shell for the new clean architecture.
 // Receives ServiceLocator via constructor for dependency injection.
 // Framework only - NO toolbar, dock widgets, menu bar, or status bar.
 // Widgets will be added incrementally during migration.
-class MainWindow2 : public QMainWindow, private Noncopyable {
+class MainWindow2 : public FramelessMainWindowImpl, private Noncopyable {
   Q_OBJECT
 
 public:
@@ -40,11 +46,43 @@ public:
 
   void kickOffPostInit(const QStringList &p_pathsToOpen);
 
+  // Content area expansion.
+  bool isContentAreaExpanded() const;
+  void setContentAreaExpanded(bool p_expanded);
+
+  // Window state.
+  void setStayOnTop(bool p_enabled);
+
+  // Access dock widgets.
+  const QVector<QDockWidget *> &getDocks() const;
+
+  // Reset window state and geometry.
+  void resetStateAndGeometry();
+
+  void restart();
+
+  void showMainWindow();
+
+  void quitApp();
+
 signals:
-    void layoutChanged();
+  void layoutChanged();
+
+  void minimizedToSystemTray();
+
+  // File operations.
+  void newNoteRequested();
+  void newQuickNoteRequested();
+  void newFolderRequested();
+  void importFileRequested();
+  void importFolderRequested();
+  void exportRequested();
+  void openFileRequested(const QString &p_path, const QSharedPointer<FileOpenParameters> &p_paras);
 
 protected:
   void closeEvent(QCloseEvent *p_event) override;
+
+  void changeEvent(QEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
   // Setup basic window properties (title, size, central widget).
@@ -56,6 +94,11 @@ private:
   // Setup dock widgets.
   void setupDocks();
 
+  // Setup tool bar.
+  void setupToolBar();
+
+  void setupSystemTray();
+
   void loadStateAndGeometry();
   void saveStateAndGeometry();
 
@@ -66,6 +109,22 @@ private:
 
   // NotebookExplorer2 dock widget.
   NotebookExplorer2 *m_notebookExplorer = nullptr;
+
+  // Toolbar helper.
+  ToolBarHelper2 *m_toolBarHelper = nullptr;
+
+  QSystemTrayIcon *m_trayIcon = nullptr;
+
+  // Content area expanded state.
+  bool m_contentAreaExpanded = false;
+
+  bool m_layoutReset = false;
+
+  // -1: do not request to quit;
+  // 0 and above: exit code.
+  int m_requestQuit = -1;
+
+  Qt::WindowStates m_windowOldState = Qt::WindowMinimized;
 
 #if defined(Q_OS_WIN)
   QWebEngineView *m_dummyWebView = nullptr;

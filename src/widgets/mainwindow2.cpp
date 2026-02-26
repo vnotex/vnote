@@ -2,19 +2,30 @@
 
 #include <QCloseEvent>
 #include <QDockWidget>
+#include <QToolBar>
 #include <QTimer>
 #include <QWidget>
+#include <QSystemTrayIcon>
 
+#include "constants.h"
+#include "titletoolbar.h"
+#include "systemtrayhelper.h"
+#include "toolbarhelper2.h"
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/servicelocator.h>
 #include <core/sessionconfig.h>
 #include <qwebengineview.h>
 #include <widgets/notebookexplorer2.h>
+#include <widgets/messageboxhelper.h>
 
 using namespace vnotex;
 
 MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
-    : QMainWindow(p_parent), m_serviceLocator(p_serviceLocator) {
+    : FramelessMainWindowImpl(
+          !p_serviceLocator.get<ConfigMgr2>()->getSessionConfig().getSystemTitleBarEnabled(),
+          p_parent),
+      m_serviceLocator(p_serviceLocator) {
   setupUI();
 
   loadStateAndGeometry();
@@ -37,8 +48,13 @@ void MainWindow2::setupUI() {
   auto *centralWidget = new QWidget(this);
   setCentralWidget(centralWidget);
 
-  // Setup dock widgets
+  // Setup tool bar.
+  setupToolBar();
+
+  // Setup dock widgets.
   setupDocks();
+
+  setupSystemTray();
 
 #if defined(Q_OS_WIN)
   m_dummyWebView = new QWebEngineView(this);
@@ -86,14 +102,86 @@ void MainWindow2::loadStateAndGeometry() {
 }
 
 void MainWindow2::closeEvent(QCloseEvent *p_event) {
+  auto &sessionConfig = m_serviceLocator.get<ConfigMgr2>()->getSessionConfig();
+  const int toTray = sessionConfig.getMinimizeToSystemTray();
+  bool isExit = m_requestQuit > -1 || toTray == 0;
+  const int exitCode = m_requestQuit;
+  m_requestQuit = -1;
+
+#if defined(Q_OS_MACOS)
+  // Do not support minimized to tray on macOS.
+  isExit = true;
+#endif
+
+  bool needShowMessage = false;
+  if (!isExit && toTray == -1) {
+    int ret = MessageBoxHelper::questionYesNo(MessageBoxHelper::Question,
+                                              tr("Do you want to minimize %1 to system tray "
+                                                 "instead of quitting when closed?")
+                                                  .arg(qApp->applicationName()),
+                                              tr("You could change the option in Settings later."),
+                                              QString(), this);
+    if (ret == QMessageBox::Yes) {
+      sessionConfig.setMinimizeToSystemTray(true);
+      needShowMessage = true;
+    } else if (ret == QMessageBox::No) {
+      sessionConfig.setMinimizeToSystemTray(false);
+      isExit = true;
+    } else {
+      p_event->ignore();
+      return;
+    }
+  }
+
   if (isVisible()) {
+    // Avoid geometry corruption caused by fullscreen or minimized window.
+    const auto state = windowState();
+    if (state & (Qt::WindowMinimized | Qt::WindowFullScreen)) {
+      if (m_windowOldState & Qt::WindowMaximized) {
+        showMaximized();
+      } else {
+        showNormal();
+      }
+    }
+
+    // Do not expand the content area.
+    setContentAreaExpanded(false);
+
     saveStateAndGeometry();
   }
 
-  QMainWindow::closeEvent(p_event);
+  if (isExit || !m_trayIcon->isVisible()) {
+    // Signal out the close event.
+    // auto event = QSharedPointer<Event>::create();
+    // event->m_response = true;
+    // emit mainWindowClosed(event);
+    // if (!event->m_response.toBool()) {
+      // Stop the close.
+    //   p_event->ignore();
+    //   return;
+    // }
+
+    m_trayIcon->hide();
+
+    FramelessMainWindowImpl::closeEvent(p_event);
+    qApp->exit(exitCode > -1 ? exitCode : 0);
+  } else {
+    emit minimizedToSystemTray();
+
+    hide();
+    p_event->ignore();
+    if (needShowMessage) {
+      m_trayIcon->showMessage(ConfigMgr2::c_appName,
+                              tr("%1 is still running here.").arg(ConfigMgr2::c_appName));
+    }
+  }
 }
 
 void MainWindow2::saveStateAndGeometry() {
+  if (m_layoutReset) {
+    return;
+  }
+
   SessionConfig::MainWindowStateGeometry sg;
   sg.m_mainState = saveState();
   sg.m_mainGeometry = saveGeometry();
@@ -123,3 +211,139 @@ QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const
       return nullptr;
   }
 }
+
+void MainWindow2::setupToolBar() {
+  const auto &coreConfig = m_serviceLocator.get<ConfigMgr2>()->getCoreConfig();
+  const int sz = coreConfig.getToolBarIconSize();
+
+  m_toolBarHelper = new ToolBarHelper2(m_serviceLocator, this);
+
+  if (isFrameless()) {
+    auto toolBar = new TitleToolBar(tr("Global"), this);
+    toolBar->setIconSize(QSize(sz + 4, sz + 4));
+    m_toolBarHelper->setupToolBars(toolBar);
+    toolBar->addTitleBarIcons(
+        m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
+        m_toolBarHelper->generateIcon(QStringLiteral("maximize.svg")),
+        m_toolBarHelper->generateIcon(QStringLiteral("maximize_restore.svg")),
+        m_toolBarHelper->generateDangerousIcon(QStringLiteral("close.svg")));
+    setTitleBar(toolBar);
+    connect(this, &FramelessMainWindowImpl::windowStateChanged, toolBar,
+            &TitleToolBar::updateMaximizeAct);
+  } else {
+    auto toolBar = new QToolBar(tr("Global"), this);
+    toolBar->setIconSize(QSize(sz, sz));
+    m_toolBarHelper->setupToolBars(toolBar);
+  }
+
+  // Disable the context menu above tool bar.
+  setContextMenuPolicy(Qt::NoContextMenu);
+}
+
+bool MainWindow2::isContentAreaExpanded() const { return m_contentAreaExpanded; }
+
+void MainWindow2::setContentAreaExpanded(bool p_expanded) {
+  if (m_contentAreaExpanded == p_expanded) {
+    return;
+  }
+
+  m_contentAreaExpanded = p_expanded;
+
+  if (m_contentAreaExpanded) {
+    // Hide all dock widgets.
+    for (auto dock : m_dockWidgetHelper.getDocks()) {
+      if (dock && dock->isVisible()) {
+        dock->hide();
+      }
+    }
+  } else {
+    // Restore dock widgets visibility.
+    // For now, just show the navigation dock.
+    auto *navDock = m_dockWidgetHelper.getDock(DockWidgetHelper::DockType::NavigationDock);
+    if (navDock) {
+      navDock->show();
+    }
+  }
+
+  emit layoutChanged();
+}
+
+void MainWindow2::setStayOnTop(bool p_enabled) {
+  bool visible = isVisible();
+  Qt::WindowFlags flags = windowFlags();
+
+  if (p_enabled) {
+    setWindowFlags(flags | Qt::WindowStaysOnTopHint);
+  } else {
+    setWindowFlags(flags & ~Qt::WindowStaysOnTopHint);
+  }
+
+  if (visible) {
+    show();
+  }
+}
+
+const QVector<QDockWidget *> &MainWindow2::getDocks() const {
+  return m_dockWidgetHelper.getDocks();
+}
+
+void MainWindow2::resetStateAndGeometry() {
+  if (m_layoutReset) {
+    return;
+  }
+
+  m_layoutReset = true;
+
+  // Clear saved state.
+  auto &sessionConfig = m_serviceLocator.get<ConfigMgr2>()->getSessionConfig();
+  SessionConfig::MainWindowStateGeometry sg;
+  sessionConfig.setMainWindowStateGeometry(sg);
+
+  // Reset to default size.
+  resize(1200, 800);
+
+  emit layoutChanged();
+}
+
+void MainWindow2::restart() {
+  m_requestQuit = kExitToRestart;
+  close();
+}
+
+void MainWindow2::changeEvent(QEvent *p_event) {
+  if (p_event->type() == QEvent::WindowStateChange) {
+    QWindowStateChangeEvent *eve = static_cast<QWindowStateChangeEvent *>(p_event);
+    m_windowOldState = eve->oldState();
+  }
+
+  FramelessMainWindowImpl::changeEvent(p_event);
+}
+
+void MainWindow2::showMainWindow() {
+  if (isMinimized()) {
+    if (m_windowOldState & Qt::WindowMaximized) {
+      showMaximized();
+    } else if (m_windowOldState & Qt::WindowFullScreen) {
+      showFullScreen();
+    } else {
+      showNormal();
+    }
+  } else {
+    show();
+    // Need to call raise() in macOS.
+    raise();
+  }
+
+  activateWindow();
+}
+
+void MainWindow2::setupSystemTray() {
+  m_trayIcon = SystemTrayHelper::setupSystemTray(this, m_serviceLocator.get<ConfigMgr2>());
+  m_trayIcon->show();
+}
+
+void MainWindow2::quitApp() {
+  m_requestQuit = 0;
+  close();
+}
+

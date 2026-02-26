@@ -78,7 +78,16 @@ void DockWidgetHelper::setupDocks() {
   m_mainWindow->setTabPosition(Qt::BottomDockWidgetArea, QTabWidget::North);
   m_mainWindow->setDockNestingEnabled(true);
 
+  m_dockIcons.clear();
   m_dockIcons.resize(DockType::MaxDock);
+
+  for (auto *dock : m_docks) {
+    if (dock) {
+      m_mainWindow->removeDockWidget(dock);
+      dock->deleteLater();
+    }
+  }
+  m_docks.clear();
   m_docks.resize(DockType::MaxDock);
 
   // The order of m_docks should be identical with enum DockType.
