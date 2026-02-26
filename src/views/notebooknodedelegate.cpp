@@ -34,63 +34,89 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
                                      const NodeInfo &p_nodeInfo) const {
   p_painter->save();
 
-  // Initialize style option
-  QStyleOptionViewItem opt = p_option;
-  initStyleOption(&opt, QModelIndex());
-
   // Get the widget style
-  const QWidget *widget = opt.widget;
+  const QWidget *widget = p_option.widget;
   QStyle *style = widget ? widget->style() : QApplication::style();
 
-  // Draw background
-  QColor bgColor = getNodeBackgroundColor(p_nodeInfo, opt);
+  // Draw custom node background if specified (before selection)
+  QColor bgColor = getNodeBackgroundColor(p_nodeInfo, p_option);
   if (bgColor.isValid()) {
-    p_painter->fillRect(opt.rect, bgColor);
+    p_painter->fillRect(p_option.rect, bgColor);
   }
 
-  // Draw selection highlight (on top of custom background)
-  if (opt.state & QStyle::State_Selected) {
-    p_painter->fillRect(opt.rect, opt.palette.highlight());
-  }
+  // Draw selection/hover background on FULL row (respects QSS)
+  // PE_PanelItemViewItem only draws background, not text
+  style->drawPrimitive(QStyle::PE_PanelItemViewItem, &p_option, p_painter, widget);
 
-  // Calculate positions
-  QRect iconRect = opt.rect;
+  // Calculate icon rect
+  QRect iconRect = p_option.rect;
   iconRect.setWidth(m_iconSize);
   iconRect.setLeft(iconRect.left() + m_padding);
-  iconRect.setTop(iconRect.top() + (opt.rect.height() - m_iconSize) / 2);
+  iconRect.setTop(iconRect.top() + (p_option.rect.height() - m_iconSize) / 2);
   iconRect.setHeight(m_iconSize);
 
-  QRect textRect = opt.rect;
+  // Calculate text rect - leave room for icon on left
+  QRect textRect = p_option.rect;
   textRect.setLeft(iconRect.right() + m_padding);
-  textRect.setRight(opt.rect.right() - m_padding);
+  textRect.setRight(p_option.rect.right() - m_padding);
 
   // Draw icon
   QIcon icon = getNodeIcon(p_nodeInfo);
   if (!icon.isNull()) {
     QIcon::Mode iconMode = QIcon::Normal;
-    if (!(opt.state & QStyle::State_Enabled)) {
+    if (!(p_option.state & QStyle::State_Enabled)) {
       iconMode = QIcon::Disabled;
-    } else if (opt.state & QStyle::State_Selected) {
+    } else if (p_option.state & QStyle::State_Selected) {
       iconMode = QIcon::Selected;
     }
     icon.paint(p_painter, iconRect, Qt::AlignCenter, iconMode);
   }
 
-  // Draw text
-  QColor textColor = getNodeTextColor(p_nodeInfo, opt);
-  if (textColor.isValid()) {
-    p_painter->setPen(textColor);
-  } else if (opt.state & QStyle::State_Selected) {
-    p_painter->setPen(opt.palette.highlightedText().color());
-  } else {
-    p_painter->setPen(opt.palette.text().color());
+  // Prepare text for drawing
+  QString text = p_nodeInfo.name;
+  QFontMetrics fm(p_option.font);
+  QString elidedText = fm.elidedText(text, Qt::ElideRight, textRect.width());
+
+  // Determine text color:
+  // 1. Custom color from node visual settings takes priority
+  // 2. Otherwise, get color from theme based on selection state
+  QColor textColor = getNodeTextColor(p_nodeInfo, p_option);
+  if (!textColor.isValid()) {
+    // Get text color from theme service based on selection state
+    auto *themeService = m_services.get<ThemeService>();
+    if (p_option.state & QStyle::State_Selected) {
+      // Check active vs inactive window state
+      if (p_option.state & QStyle::State_Active) {
+        textColor = QColor(themeService->paletteColor(
+            QStringLiteral("widgets#qtreeview#item#selected#active#fg")));
+      } else {
+        textColor = QColor(themeService->paletteColor(
+            QStringLiteral("widgets#qtreeview#item#selected#inactive#fg")));
+      }
+      // Fallback to general selected color if specific one not found
+      if (!textColor.isValid()) {
+        textColor = QColor(themeService->paletteColor(
+            QStringLiteral("widgets#qtreeview#item#selected#fg")));
+      }
+    } else if (p_option.state & QStyle::State_MouseOver) {
+      textColor = QColor(themeService->paletteColor(
+          QStringLiteral("widgets#qtreeview#item#hover#fg")));
+    }
+    // Fallback to normal text color
+    if (!textColor.isValid()) {
+      textColor = QColor(
+          themeService->paletteColor(QStringLiteral("widgets#qtreeview#fg")));
+    }
+    // Final fallback to palette
+    if (!textColor.isValid()) {
+      textColor = p_option.palette.text().color();
+    }
   }
 
-  QString text = p_nodeInfo.name;
-  QFontMetrics fm(opt.font);
-  QString elidedText = fm.elidedText(text, Qt::ElideRight, textRect.width());
-  style->drawItemText(p_painter, textRect, Qt::AlignLeft | Qt::AlignVCenter, opt.palette, true,
-                      elidedText);
+  // Draw text
+  p_painter->setPen(textColor);
+  p_painter->setFont(p_option.font);
+  p_painter->drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, elidedText);
 
   // Draw child count badge for containers
   if (m_showChildCount && p_nodeInfo.isFolder) {
@@ -102,7 +128,8 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
       QRect countRect = textRect;
       countRect.setLeft(countRect.right() - countWidth - m_padding);
 
-      QColor countColor = opt.palette.text().color();
+      // Use same text color with reduced alpha for badge
+      QColor countColor = textColor;
       countColor.setAlpha(150);
       p_painter->setPen(countColor);
       p_painter->drawText(countRect, Qt::AlignRight | Qt::AlignVCenter, countText);
@@ -110,10 +137,10 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
   }
 
   // Draw focus rect if focused
-  if (opt.state & QStyle::State_HasFocus) {
+  if (p_option.state & QStyle::State_HasFocus) {
     QStyleOptionFocusRect focusOpt;
-    focusOpt.QStyleOption::operator=(opt);
-    focusOpt.rect = opt.rect;
+    focusOpt.QStyleOption::operator=(p_option);
+    focusOpt.rect = p_option.rect;
     focusOpt.state |= QStyle::State_KeyboardFocusChange;
     style->drawPrimitive(QStyle::PE_FrameFocusRect, &focusOpt, p_painter, widget);
   }
