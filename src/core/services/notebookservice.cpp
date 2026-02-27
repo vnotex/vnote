@@ -68,15 +68,17 @@ QString NotebookService::openNotebook(const QString &p_path) {
   return cstrToQString(notebookId);
 }
 
-void NotebookService::closeNotebook(const QString &p_notebookId) {
+bool NotebookService::closeNotebook(const QString &p_notebookId) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_notebook_close(m_context, p_notebookId.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "closeNotebook failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
 QJsonArray NotebookService::listNotebooks() const {
@@ -108,27 +110,31 @@ QJsonObject NotebookService::getNotebookConfig(const QString &p_notebookId) cons
   return parseJsonObjectFromCStr(json);
 }
 
-void NotebookService::updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson) {
+bool NotebookService::updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_notebook_update_config(
       m_context, p_notebookId.toUtf8().constData(), p_configJson.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "updateNotebookConfig failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
-void NotebookService::rebuildNotebookCache(const QString &p_notebookId) {
+bool NotebookService::rebuildNotebookCache(const QString &p_notebookId) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_notebook_rebuild_cache(m_context, p_notebookId.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "rebuildNotebookCache failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
 QJsonObject NotebookService::resolvePathToNotebook(const QString &p_absolutePath) const {
@@ -174,9 +180,9 @@ QString NotebookService::getNodePathById(const QString &p_notebookId, const QStr
   return cstrToQString(path);
 }
 
-void NotebookService::unindexNode(const QString &p_notebookId, const QString &p_nodePath) {
+bool NotebookService::unindexNode(const QString &p_notebookId, const QString &p_nodePath) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_node_unindex(m_context, p_notebookId.toUtf8().constData(),
@@ -184,7 +190,9 @@ void NotebookService::unindexNode(const QString &p_notebookId, const QString &p_
   if (err != VXCORE_OK) {
     qWarning() << "unindexNode failed:" << QString::fromUtf8(vxcore_error_message(err))
                << "notebookId:" << p_notebookId << "nodePath:" << p_nodePath;
+    return false;
   }
+  return true;
 }
 
 QString NotebookService::getRecycleBinPath(const QString &p_notebookId) const {
@@ -205,9 +213,9 @@ QString NotebookService::getRecycleBinPath(const QString &p_notebookId) const {
   return cstrToQString(path);
 }
 
-void NotebookService::emptyRecycleBin(const QString &p_notebookId) {
+bool NotebookService::emptyRecycleBin(const QString &p_notebookId) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_notebook_empty_recycle_bin(m_context, p_notebookId.toUtf8().constData());
@@ -216,7 +224,9 @@ void NotebookService::emptyRecycleBin(const QString &p_notebookId) {
     if (err != VXCORE_ERR_UNSUPPORTED) {
       qWarning() << "emptyRecycleBin failed:" << QString::fromUtf8(vxcore_error_message(err));
     }
+    return false;
   }
+  return true;
 }
 
 // Folder operations.
@@ -252,16 +262,18 @@ QString NotebookService::createFolderPath(const QString &p_notebookId, const QSt
   return cstrToQString(folderId);
 }
 
-void NotebookService::deleteFolder(const QString &p_notebookId, const QString &p_folderPath) {
+bool NotebookService::deleteFolder(const QString &p_notebookId, const QString &p_folderPath) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_node_delete(m_context, p_notebookId.toUtf8().constData(),
                                        p_folderPath.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "deleteFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
 QJsonObject NotebookService::getFolderConfig(const QString &p_notebookId, const QString &p_folderPath) const {
@@ -279,10 +291,10 @@ QJsonObject NotebookService::getFolderConfig(const QString &p_notebookId, const 
   return parseJsonObjectFromCStr(json);
 }
 
-void NotebookService::updateFolderMetadata(const QString &p_notebookId, const QString &p_folderPath,
+bool NotebookService::updateFolderMetadata(const QString &p_notebookId, const QString &p_folderPath,
                                            const QString &p_metadataJson) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err =
@@ -290,7 +302,9 @@ void NotebookService::updateFolderMetadata(const QString &p_notebookId, const QS
                                   p_folderPath.toUtf8().constData(), p_metadataJson.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "updateFolderMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
 QJsonObject NotebookService::getFolderMetadata(const QString &p_notebookId,
@@ -309,30 +323,34 @@ QJsonObject NotebookService::getFolderMetadata(const QString &p_notebookId,
   return parseJsonObjectFromCStr(json);
 }
 
-void NotebookService::renameFolder(const QString &p_notebookId, const QString &p_folderPath,
+bool NotebookService::renameFolder(const QString &p_notebookId, const QString &p_folderPath,
                                    const QString &p_newName) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_node_rename(m_context, p_notebookId.toUtf8().constData(),
                                        p_folderPath.toUtf8().constData(), p_newName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "renameFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
-void NotebookService::moveFolder(const QString &p_notebookId, const QString &p_srcPath,
+bool NotebookService::moveFolder(const QString &p_notebookId, const QString &p_srcPath,
                                  const QString &p_destParentPath) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_node_move(m_context, p_notebookId.toUtf8().constData(),
                                      p_srcPath.toUtf8().constData(), p_destParentPath.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "moveFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
 QString NotebookService::copyFolder(const QString &p_notebookId, const QString &p_srcPath,
@@ -387,16 +405,18 @@ QString NotebookService::createFile(const QString &p_notebookId, const QString &
   return cstrToQString(fileId);
 }
 
-void NotebookService::deleteFile(const QString &p_notebookId, const QString &p_filePath) {
+bool NotebookService::deleteFile(const QString &p_notebookId, const QString &p_filePath) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_node_delete(m_context, p_notebookId.toUtf8().constData(),
                                        p_filePath.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "deleteFile failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
 QJsonObject NotebookService::getFileInfo(const QString &p_notebookId, const QString &p_filePath) const {
@@ -429,10 +449,10 @@ QJsonObject NotebookService::getFileMetadata(const QString &p_notebookId, const 
   return parseJsonObjectFromCStr(json);
 }
 
-void NotebookService::updateFileMetadata(const QString &p_notebookId, const QString &p_filePath,
+bool NotebookService::updateFileMetadata(const QString &p_notebookId, const QString &p_filePath,
                                          const QString &p_metadataJson) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err =
@@ -440,33 +460,39 @@ void NotebookService::updateFileMetadata(const QString &p_notebookId, const QStr
                                   p_filePath.toUtf8().constData(), p_metadataJson.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "updateFileMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
-void NotebookService::renameFile(const QString &p_notebookId, const QString &p_filePath,
+bool NotebookService::renameFile(const QString &p_notebookId, const QString &p_filePath,
                                  const QString &p_newName) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_node_rename(m_context, p_notebookId.toUtf8().constData(),
                                        p_filePath.toUtf8().constData(), p_newName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "renameFile failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
-void NotebookService::moveFile(const QString &p_notebookId, const QString &p_srcFilePath,
+bool NotebookService::moveFile(const QString &p_notebookId, const QString &p_srcFilePath,
                                const QString &p_destFolderPath) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_node_move(m_context, p_notebookId.toUtf8().constData(),
                                      p_srcFilePath.toUtf8().constData(), p_destFolderPath.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "moveFile failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
 QString NotebookService::copyFile(const QString &p_notebookId, const QString &p_srcFilePath,
@@ -526,10 +552,10 @@ QString NotebookService::importFolder(const QString &p_notebookId, const QString
 
 
 // Tag operations.
-void NotebookService::updateFileTags(const QString &p_notebookId, const QString &p_filePath,
+bool NotebookService::updateFileTags(const QString &p_notebookId, const QString &p_filePath,
                                      const QString &p_tagsJson) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err =
@@ -537,69 +563,81 @@ void NotebookService::updateFileTags(const QString &p_notebookId, const QString 
                               p_filePath.toUtf8().constData(), p_tagsJson.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "updateFileTags failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
-void NotebookService::tagFile(const QString &p_notebookId, const QString &p_filePath,
+bool NotebookService::tagFile(const QString &p_notebookId, const QString &p_filePath,
                               const QString &p_tagName) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_file_tag(m_context, p_notebookId.toUtf8().constData(),
                                     p_filePath.toUtf8().constData(), p_tagName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "tagFile failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
-void NotebookService::untagFile(const QString &p_notebookId, const QString &p_filePath,
+bool NotebookService::untagFile(const QString &p_notebookId, const QString &p_filePath,
                                 const QString &p_tagName) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_file_untag(m_context, p_notebookId.toUtf8().constData(),
                                       p_filePath.toUtf8().constData(), p_tagName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "untagFile failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
-void NotebookService::createTag(const QString &p_notebookId, const QString &p_tagName) {
+bool NotebookService::createTag(const QString &p_notebookId, const QString &p_tagName) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_tag_create(m_context, p_notebookId.toUtf8().constData(),
                                       p_tagName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "createTag failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
-void NotebookService::createTagPath(const QString &p_notebookId, const QString &p_tagPath) {
+bool NotebookService::createTagPath(const QString &p_notebookId, const QString &p_tagPath) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_tag_create_path(m_context, p_notebookId.toUtf8().constData(),
                                            p_tagPath.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "createTagPath failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
-void NotebookService::deleteTag(const QString &p_notebookId, const QString &p_tagName) {
+bool NotebookService::deleteTag(const QString &p_notebookId, const QString &p_tagName) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_tag_delete(m_context, p_notebookId.toUtf8().constData(),
                                       p_tagName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "deleteTag failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
 QJsonArray NotebookService::listTags(const QString &p_notebookId) const {
@@ -616,17 +654,19 @@ QJsonArray NotebookService::listTags(const QString &p_notebookId) const {
   return parseJsonArrayFromCStr(json);
 }
 
-void NotebookService::moveTag(const QString &p_notebookId, const QString &p_tagName,
+bool NotebookService::moveTag(const QString &p_notebookId, const QString &p_tagName,
                               const QString &p_parentTag) {
   if (!checkContext()) {
-    return;
+    return false;
   }
 
   VxCoreError err = vxcore_tag_move(m_context, p_notebookId.toUtf8().constData(),
                                     p_tagName.toUtf8().constData(), p_parentTag.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "moveTag failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
   }
+  return true;
 }
 
 // Private methods.

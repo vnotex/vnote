@@ -86,7 +86,11 @@ NotebookOperationResult ManageNotebooksController::updateNotebook(
   config["description"] = p_input.description;
 
   QString configJson = QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact));
-  notebookService->updateNotebookConfig(p_input.notebookId, configJson);
+  if (!notebookService->updateNotebookConfig(p_input.notebookId, configJson)) {
+    result.success = false;
+    result.errorMessage = tr("Failed to update notebook configuration.");
+    return result;
+  }
 
   result.success = true;
   return result;
@@ -102,7 +106,11 @@ NotebookOperationResult ManageNotebooksController::closeNotebook(const QString &
   }
 
   auto *notebookService = m_services.get<NotebookService>();
-  notebookService->closeNotebook(p_notebookId);
+  if (!notebookService->closeNotebook(p_notebookId)) {
+    result.success = false;
+    result.errorMessage = tr("Failed to close notebook.");
+    return result;
+  }
 
   result.success = true;
   return result;

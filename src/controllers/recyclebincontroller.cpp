@@ -79,7 +79,12 @@ RecycleBinResult RecycleBinController::emptyRecycleBin(const QString &p_notebook
     return result;
   }
 
-  notebookService->emptyRecycleBin(p_notebookId);
+  if (!notebookService->emptyRecycleBin(p_notebookId)) {
+    result.success = false;
+    result.errorMessage = tr("Failed to empty recycle bin.");
+    return result;
+  }
+
   result.success = true;
   return result;
 }
