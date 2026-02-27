@@ -30,11 +30,11 @@ public:
   // Notebook operations (7 methods).
   QString createNotebook(const QString &p_path, const QString &p_configJson, NotebookType p_type);
   QString openNotebook(const QString &p_path);
-  void closeNotebook(const QString &p_notebookId);
+  bool closeNotebook(const QString &p_notebookId);
   QJsonArray listNotebooks() const;
   QJsonObject getNotebookConfig(const QString &p_notebookId) const;
-  void updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson);
-  void rebuildNotebookCache(const QString &p_notebookId);
+  bool updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson);
+  bool rebuildNotebookCache(const QString &p_notebookId);
 
   // Resolve an absolute path to its containing notebook.
   // Returns JSON with "notebookId" and "relativePath" keys.
@@ -47,23 +47,23 @@ public:
 
   // Remove a node (file or folder) from the notebook index.
   // Files remain on disk - only metadata is removed.
-  void unindexNode(const QString &p_notebookId, const QString &p_nodePath);
+  bool unindexNode(const QString &p_notebookId, const QString &p_nodePath);
 
   // Recycle bin operations (bundled notebooks only).
   QString getRecycleBinPath(const QString &p_notebookId) const;
-  void emptyRecycleBin(const QString &p_notebookId);
+  bool emptyRecycleBin(const QString &p_notebookId);
   // Folder operations (10 methods).
   QString createFolder(const QString &p_notebookId, const QString &p_parentPath,
                        const QString &p_folderName);
   QString createFolderPath(const QString &p_notebookId, const QString &p_folderPath);
-  void deleteFolder(const QString &p_notebookId, const QString &p_folderPath);
+  bool deleteFolder(const QString &p_notebookId, const QString &p_folderPath);
   QJsonObject getFolderConfig(const QString &p_notebookId, const QString &p_folderPath) const;
-  void updateFolderMetadata(const QString &p_notebookId, const QString &p_folderPath,
+  bool updateFolderMetadata(const QString &p_notebookId, const QString &p_folderPath,
                             const QString &p_metadataJson);
   QJsonObject getFolderMetadata(const QString &p_notebookId, const QString &p_folderPath) const;
-  void renameFolder(const QString &p_notebookId, const QString &p_folderPath,
+  bool renameFolder(const QString &p_notebookId, const QString &p_folderPath,
                     const QString &p_newName);
-  void moveFolder(const QString &p_notebookId, const QString &p_srcPath,
+  bool moveFolder(const QString &p_notebookId, const QString &p_srcPath,
                   const QString &p_destParentPath);
   QString copyFolder(const QString &p_notebookId, const QString &p_srcPath,
                      const QString &p_destParentPath, const QString &p_newName);
@@ -75,13 +75,13 @@ public:
   // File operations (8 methods).
   QString createFile(const QString &p_notebookId, const QString &p_folderPath,
                      const QString &p_fileName);
-  void deleteFile(const QString &p_notebookId, const QString &p_filePath);
+  bool deleteFile(const QString &p_notebookId, const QString &p_filePath);
   QJsonObject getFileInfo(const QString &p_notebookId, const QString &p_filePath) const;
   QJsonObject getFileMetadata(const QString &p_notebookId, const QString &p_filePath) const;
-  void updateFileMetadata(const QString &p_notebookId, const QString &p_filePath,
+  bool updateFileMetadata(const QString &p_notebookId, const QString &p_filePath,
                           const QString &p_metadataJson);
-  void renameFile(const QString &p_notebookId, const QString &p_filePath, const QString &p_newName);
-  void moveFile(const QString &p_notebookId, const QString &p_srcFilePath,
+  bool renameFile(const QString &p_notebookId, const QString &p_filePath, const QString &p_newName);
+  bool moveFile(const QString &p_notebookId, const QString &p_srcFilePath,
                 const QString &p_destFolderPath);
   QString copyFile(const QString &p_notebookId, const QString &p_srcFilePath,
                    const QString &p_destFolderPath, const QString &p_newName);
@@ -97,15 +97,15 @@ public:
                        const QString &p_externalFolderPath, const QString &p_suffixAllowlist = QString());
 
   // Tag operations (8 methods).
-  void updateFileTags(const QString &p_notebookId, const QString &p_filePath,
+  bool updateFileTags(const QString &p_notebookId, const QString &p_filePath,
                       const QString &p_tagsJson);
-  void tagFile(const QString &p_notebookId, const QString &p_filePath, const QString &p_tagName);
-  void untagFile(const QString &p_notebookId, const QString &p_filePath, const QString &p_tagName);
-  void createTag(const QString &p_notebookId, const QString &p_tagName);
-  void createTagPath(const QString &p_notebookId, const QString &p_tagPath);
-  void deleteTag(const QString &p_notebookId, const QString &p_tagName);
+  bool tagFile(const QString &p_notebookId, const QString &p_filePath, const QString &p_tagName);
+  bool untagFile(const QString &p_notebookId, const QString &p_filePath, const QString &p_tagName);
+  bool createTag(const QString &p_notebookId, const QString &p_tagName);
+  bool createTagPath(const QString &p_notebookId, const QString &p_tagPath);
+  bool deleteTag(const QString &p_notebookId, const QString &p_tagName);
   QJsonArray listTags(const QString &p_notebookId) const;
-  void moveTag(const QString &p_notebookId, const QString &p_tagName, const QString &p_parentTag);
+  bool moveTag(const QString &p_notebookId, const QString &p_tagName, const QString &p_parentTag);
 
 signals:
   // Domain-specific signals for notebook events (8 signals).

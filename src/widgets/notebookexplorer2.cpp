@@ -393,7 +393,7 @@ void NotebookExplorer2::rebuildDatabase() {
   QCoreApplication::processEvents();  // Ensure dialog is displayed
 
   // Perform the rebuild (synchronous).
-  notebookService.rebuildNotebookCache(m_currentNotebookId);
+  bool success = notebookService.rebuildNotebookCache(m_currentNotebookId);
 
   progress.close();
 
@@ -405,9 +405,15 @@ void NotebookExplorer2::rebuildDatabase() {
     m_folderModel->setNotebookId(m_currentNotebookId);
   }
 
-  MessageBoxHelper::notify(MessageBoxHelper::Information,
-                           tr("Database rebuilt successfully for \"%1\".").arg(notebookName),
-                           window());
+  if (success) {
+    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                             tr("Database rebuilt successfully for \"%1\".").arg(notebookName),
+                             window());
+  } else {
+    MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                             tr("Failed to rebuild database for \"%1\".").arg(notebookName),
+                             window());
+  }
 }
 
 void NotebookExplorer2::setupCombinedMode() {

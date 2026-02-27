@@ -6,6 +6,7 @@
 #include <QDesktopServices>
 #include <QJsonObject>
 #include <QMenu>
+#include <QSet>
 #include <QUrl>
 
 #include <core/events.h>
@@ -320,43 +321,83 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
 
   auto *notebookService = m_services.get<NotebookService>();
 
+  // Collect source parent folders for cut operations (need to refresh after move)
+  QSet<QString> sourceParentPaths;
+
+  // Track first successfully pasted node for selection
+  NodeIdentifier firstPastedNode;
+
   for (const NodeIdentifier &nodeId : m_clipboardNodes) {
     if (m_isCut) {
       notifyBeforeNodeOperation(nodeId, QStringLiteral("move"));
+      // Remember source parent for later refresh
+      sourceParentPaths.insert(nodeId.parentPath());
     }
-    try {
-      NodeInfo nodeInfo = getNodeInfo(nodeId);
-      if (m_isCut) {
-        // Move operation
-        if (nodeInfo.isFolder) {
-          notebookService->moveFolder(nodeId.notebookId, nodeId.relativePath,
-                                     p_targetFolderId.relativePath);
-        } else {
-          notebookService->moveFile(nodeId.notebookId, nodeId.relativePath,
-                                   p_targetFolderId.relativePath);
+    NodeInfo nodeInfo = getNodeInfo(nodeId);
+    bool success = false;
+    if (m_isCut) {
+      // Move operation
+      if (nodeInfo.isFolder) {
+        success = notebookService->moveFolder(nodeId.notebookId, nodeId.relativePath,
+                                              p_targetFolderId.relativePath);
+      } else {
+        success = notebookService->moveFile(nodeId.notebookId, nodeId.relativePath,
+                                            p_targetFolderId.relativePath);
+      }
+      if (!success) {
+        emit errorOccurred(tr("Error"), tr("Failed to move %1.").arg(nodeInfo.name));
+      }
+    } else {
+      // Copy operation
+      QString result;
+      if (nodeInfo.isFolder) {
+        result = notebookService->copyFolder(nodeId.notebookId, nodeId.relativePath,
+                                             p_targetFolderId.relativePath, nodeInfo.name);
+        if (result.isEmpty()) {
+          emit errorOccurred(tr("Error"), tr("Failed to copy folder."));
         }
       } else {
-        // Copy operation
-        if (nodeInfo.isFolder) {
-          notebookService->copyFolder(nodeId.notebookId, nodeId.relativePath,
-                                     p_targetFolderId.relativePath, nodeInfo.name);
-        } else {
-          notebookService->copyFile(nodeId.notebookId, nodeId.relativePath,
-                                   p_targetFolderId.relativePath, nodeInfo.name);
+        result = notebookService->copyFile(nodeId.notebookId, nodeId.relativePath,
+                                           p_targetFolderId.relativePath, nodeInfo.name);
+        if (result.isEmpty()) {
+          emit errorOccurred(tr("Error"), tr("Failed to copy file."));
         }
       }
-    } catch (const std::exception &e) {
-      emit errorOccurred(tr("Error"), tr("Failed to paste: %1").arg(e.what()));
+      success = !result.isEmpty();
+    }
+
+    // Remember first successfully pasted node
+    if (success && !firstPastedNode.isValid()) {
+      firstPastedNode.notebookId = p_targetFolderId.notebookId;
+      if (p_targetFolderId.relativePath.isEmpty()) {
+        firstPastedNode.relativePath = nodeInfo.name;
+      } else {
+        firstPastedNode.relativePath = p_targetFolderId.relativePath + QStringLiteral("/") + nodeInfo.name;
+      }
     }
   }
 
-  if (m_isCut) {
+  // For cut operations, refresh source parent folders
+  if (m_isCut && m_model) {
+    for (const QString &parentPath : sourceParentPaths) {
+      NodeIdentifier parentId;
+      parentId.notebookId = p_targetFolderId.notebookId;
+      parentId.relativePath = parentPath;
+      m_model->reloadNode(parentId);
+    }
     m_clipboardNodes.clear();
     m_isCut = false;
   }
 
+  // Refresh target folder
   if (m_model) {
     m_model->reloadNode(p_targetFolderId);
+  }
+
+  // Select and expand to first pasted node
+  if (firstPastedNode.isValid() && m_view) {
+    m_view->expandToNode(firstPastedNode);
+    m_view->selectNode(firstPastedNode);
   }
 }
 
@@ -526,20 +567,20 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
 
   notifyBeforeNodeOperation(p_nodeId, QStringLiteral("rename"));
 
-  try {
-    auto *notebookService = m_services.get<NotebookService>();
-    if (nodeInfo.isFolder) {
-      notebookService->renameFolder(p_nodeId.notebookId, p_nodeId.relativePath, p_newName);
-    } else {
-      notebookService->renameFile(p_nodeId.notebookId, p_nodeId.relativePath, p_newName);
-    }
+  auto *notebookService = m_services.get<NotebookService>();
+  bool success;
+  if (nodeInfo.isFolder) {
+    success = notebookService->renameFolder(p_nodeId.notebookId, p_nodeId.relativePath, p_newName);
+  } else {
+    success = notebookService->renameFile(p_nodeId.notebookId, p_nodeId.relativePath, p_newName);
+  }
+  if (!success) {
+    emit errorOccurred(tr("Error"), tr("Failed to rename %1.").arg(nodeInfo.name));
+  }
 
-    if (m_model) {
-      NodeIdentifier parentId = getParentFolder(p_nodeId);
-      m_model->reloadNode(parentId);
-    }
-  } catch (const std::exception &e) {
-    emit errorOccurred(tr("Error"), tr("Failed to rename: %1").arg(e.what()));
+  if (m_model) {
+    NodeIdentifier parentId = getParentFolder(p_nodeId);
+    m_model->reloadNode(parentId);
   }
 }
 
@@ -555,25 +596,24 @@ void NotebookNodeController::handleDeleteConfirmed(const QList<NodeIdentifier> &
   for (const NodeIdentifier &nodeId : p_nodeIds) {
     notifyBeforeNodeOperation(nodeId, QStringLiteral("delete"));
 
-    try {
-      NodeInfo nodeInfo = getNodeInfo(nodeId);
-      NodeIdentifier parentId = getParentFolder(nodeId);
-      parentsToReload.insert(parentId);
+    NodeInfo nodeInfo = getNodeInfo(nodeId);
+    NodeIdentifier parentId = getParentFolder(nodeId);
+    parentsToReload.insert(parentId);
 
-      if (nodeInfo.isFolder) {
-        // Note: vxcore deleteFolder handles recycle bin for bundled notebooks
-        // p_permanent flag is currently ignored - delete always uses vxcore default behavior
-        Q_UNUSED(p_permanent);
-        notebookService->deleteFolder(nodeId.notebookId, nodeId.relativePath);
-      } else {
-        // Note: vxcore deleteFile handles recycle bin for bundled notebooks
-        notebookService->deleteFile(nodeId.notebookId, nodeId.relativePath);
-      }
-    } catch (const std::exception &e) {
-      emit errorOccurred(tr("Error"), tr("Failed to delete: %1").arg(e.what()));
+    bool success;
+    if (nodeInfo.isFolder) {
+      // Note: vxcore deleteFolder handles recycle bin for bundled notebooks
+      // p_permanent flag is currently ignored - delete always uses vxcore default behavior
+      Q_UNUSED(p_permanent);
+      success = notebookService->deleteFolder(nodeId.notebookId, nodeId.relativePath);
+    } else {
+      // Note: vxcore deleteFile handles recycle bin for bundled notebooks
+      success = notebookService->deleteFile(nodeId.notebookId, nodeId.relativePath);
+    }
+    if (!success) {
+      emit errorOccurred(tr("Error"), tr("Failed to delete %1.").arg(nodeInfo.name));
     }
   }
-
   // Reload all affected parent folders
   if (m_model) {
     for (const NodeIdentifier &parentId : parentsToReload) {
@@ -593,16 +633,13 @@ void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &
   for (const NodeIdentifier &nodeId : p_nodeIds) {
     notifyBeforeNodeOperation(nodeId, QStringLiteral("remove"));
 
-    try {
-      NodeIdentifier parentId = getParentFolder(nodeId);
-      parentsToReload.insert(parentId);
-      // Use unindexNode to remove from metadata without deleting files on disk
-      notebookService->unindexNode(nodeId.notebookId, nodeId.relativePath);
-    } catch (const std::exception &e) {
-      emit errorOccurred(tr("Error"), tr("Failed to remove from notebook: %1").arg(e.what()));
+    NodeIdentifier parentId = getParentFolder(nodeId);
+    parentsToReload.insert(parentId);
+    // Use unindexNode to remove from metadata without deleting files on disk
+    if (!notebookService->unindexNode(nodeId.notebookId, nodeId.relativePath)) {
+      emit errorOccurred(tr("Error"), tr("Failed to remove from notebook."));
     }
   }
-
   // Reload all affected parent folders
   if (m_model) {
     for (const NodeIdentifier &parentId : parentsToReload) {
