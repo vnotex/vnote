@@ -180,6 +180,26 @@ QString NotebookService::getNodePathById(const QString &p_notebookId, const QStr
   return cstrToQString(path);
 }
 
+QJsonObject NotebookService::getNodeConfig(const QString &p_notebookId,
+                                           const QString &p_nodePath) const {
+  if (!checkContext()) {
+    return QJsonObject();
+  }
+
+  char *json = nullptr;
+  VxCoreError err = vxcore_node_get_config(m_context, p_notebookId.toUtf8().constData(),
+                                           p_nodePath.toUtf8().constData(), &json);
+  if (err != VXCORE_OK) {
+    // Not found is common for clipboard operations - don't warn
+    if (err != VXCORE_ERR_NOT_FOUND) {
+      qWarning() << "getNodeConfig failed:" << QString::fromUtf8(vxcore_error_message(err))
+                 << "notebookId:" << p_notebookId << "nodePath:" << p_nodePath;
+    }
+    return QJsonObject();
+  }
+  return parseJsonObjectFromCStr(json);
+}
+
 bool NotebookService::unindexNode(const QString &p_notebookId, const QString &p_nodePath) {
   if (!checkContext()) {
     return false;
