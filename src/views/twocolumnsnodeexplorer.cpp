@@ -73,6 +73,9 @@ void TwoColumnsNodeExplorer::setupUI() {
   m_fileController->setView(m_fileView);
   m_fileView->setController(m_fileController);
 
+  // Share clipboard between folder and file controllers
+  m_folderController->shareClipboardWith(m_fileController);
+
   m_splitter->addWidget(m_fileView);
 
   // Set initial splitter sizes
@@ -139,6 +142,19 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
           &TwoColumnsNodeExplorer::errorOccurred);
   connect(p_controller, &NotebookNodeController::infoMessage, this,
           &TwoColumnsNodeExplorer::infoMessage);
+
+  // Cross-panel refresh for paste operations
+  connect(p_controller, &NotebookNodeController::nodesPasted, this,
+          [this](const NodeIdentifier &p_targetFolderId) {
+            // Refresh file model if the target folder is currently displayed
+            if (m_fileModel && m_fileModel->getDisplayRoot() == p_targetFolderId) {
+              m_fileModel->reloadNode(p_targetFolderId);
+            }
+            // Also reload folder model to show any new subfolders
+            if (m_folderModel) {
+              m_folderModel->reloadNode(p_targetFolderId);
+            }
+          });
 }
 
 void TwoColumnsNodeExplorer::setNotebookId(const QString &p_notebookId) {

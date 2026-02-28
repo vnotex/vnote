@@ -73,6 +73,9 @@ public:
   // Check if clipboard has nodes to paste
   bool canPaste() const;
 
+  // Share clipboard with another controller (for two-column view)
+  void shareClipboardWith(NotebookNodeController *p_other);
+
   // Slots for handling dialog results from View
   void handleNewNoteResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
   void handleNewFolderResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
@@ -102,6 +105,8 @@ signals:
   void errorOccurred(const QString &p_title, const QString &p_message);
   void infoMessage(const QString &p_title, const QString &p_message);
 
+  // Signal emitted when nodes are pasted (for cross-panel refresh in two-column view)
+  void nodesPasted(const NodeIdentifier &p_targetFolderId);
 private:
   // Add actions to context menu based on node type
   void addNewActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
@@ -131,9 +136,12 @@ private:
   NotebookNodeModel *m_model = nullptr;
   NotebookNodeView *m_view = nullptr;
 
-  // Clipboard state
-  QList<NodeIdentifier> m_clipboardNodes;
-  bool m_isCut = false;
+  // Clipboard state (shared between controllers via shared pointer)
+  struct ClipboardState {
+    QList<NodeIdentifier> nodes;
+    bool isCut = false;
+  };
+  QSharedPointer<ClipboardState> m_clipboard;
 };
 
 } // namespace vnotex

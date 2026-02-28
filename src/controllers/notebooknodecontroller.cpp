@@ -20,7 +20,9 @@
 using namespace vnotex;
 
 NotebookNodeController::NotebookNodeController(ServiceLocator &p_services, QObject *p_parent)
-    : QObject(p_parent), m_services(p_services) {}
+    : QObject(p_parent), m_services(p_services),
+      m_clipboard(new ClipboardState()) {
+}
 
 NotebookNodeController::~NotebookNodeController() {}
 
@@ -300,19 +302,20 @@ void NotebookNodeController::removeNodesFromNotebook(const QList<NodeIdentifier>
 }
 
 void NotebookNodeController::copyNodes(const QList<NodeIdentifier> &p_nodeIds) {
-  m_clipboardNodes = p_nodeIds;
-  m_isCut = false;
+  m_clipboard->nodes = p_nodeIds;
+  m_clipboard->isCut = false;
 }
 
 void NotebookNodeController::cutNodes(const QList<NodeIdentifier> &p_nodeIds) {
-  m_clipboardNodes = p_nodeIds;
-  m_isCut = true;
+  m_clipboard->nodes = p_nodeIds;
+  m_clipboard->isCut = true;
 }
 
 void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) {
-  if (m_clipboardNodes.isEmpty() || !p_targetFolderId.isValid()) {
+  if (m_clipboard->nodes.isEmpty() || !p_targetFolderId.isValid()) {
     return;
   }
+  auto *notebookService = m_services.get<NotebookService>();
 
   NodeInfo targetInfo = getNodeInfo(p_targetFolderId);
   // For root folder (empty relativePath), getNodeInfo returns invalid NodeInfo
@@ -322,25 +325,35 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
     return;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
-
   // Collect source parent folders for cut operations (need to refresh after move)
   QSet<QString> sourceParentPaths;
 
   // Track first successfully pasted node for selection
   NodeIdentifier firstPastedNode;
 
-  for (const NodeIdentifier &nodeId : m_clipboardNodes) {
-    if (m_isCut) {
+  for (const NodeIdentifier &nodeId : m_clipboard->nodes) {
+    if (m_clipboard->isCut) {
       notifyBeforeNodeOperation(nodeId, QStringLiteral("move"));
       // Remember source parent for later refresh
       sourceParentPaths.insert(nodeId.parentPath());
     }
     NodeInfo nodeInfo = getNodeInfo(nodeId);
+    // If model cache doesn't have the node, query service directly
+    bool isFolder = nodeInfo.isFolder;
+    QString nodeName = nodeInfo.name;
+    if (!nodeInfo.isValid()) {
+      QJsonObject nodeConfig = notebookService->getNodeConfig(nodeId.notebookId, nodeId.relativePath);
+      if (nodeConfig.isEmpty()) {
+        emit errorOccurred(tr("Error"), tr("Node not found: %1").arg(nodeId.relativePath));
+        continue;
+      }
+      isFolder = nodeConfig.value(QStringLiteral("type")).toString() == QStringLiteral("folder");
+      nodeName = nodeConfig.value(QStringLiteral("name")).toString();
+    }
     bool success = false;
-    if (m_isCut) {
+    if (m_clipboard->isCut) {
       // Move operation
-      if (nodeInfo.isFolder) {
+      if (isFolder) {
         success = notebookService->moveFolder(nodeId.notebookId, nodeId.relativePath,
                                               p_targetFolderId.relativePath);
       } else {
@@ -348,26 +361,26 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
                                             p_targetFolderId.relativePath);
       }
       if (!success) {
-        emit errorOccurred(tr("Error"), tr("Failed to move %1.").arg(nodeInfo.name));
+        emit errorOccurred(tr("Error"), tr("Failed to move %1.").arg(nodeName));
       } else if (!firstPastedNode.isValid()) {
         // Remember first successfully pasted node
         firstPastedNode.notebookId = p_targetFolderId.notebookId;
         if (p_targetFolderId.relativePath.isEmpty()) {
-          firstPastedNode.relativePath = nodeInfo.name;
+          firstPastedNode.relativePath = nodeName;
         } else {
-          firstPastedNode.relativePath = p_targetFolderId.relativePath + QStringLiteral("/") + nodeInfo.name;
+          firstPastedNode.relativePath = p_targetFolderId.relativePath + QStringLiteral("/") + nodeName;
         }
       }
     } else {
       // Copy operation - get available name first to avoid conflicts
       QString targetName = notebookService->getAvailableName(
-          nodeId.notebookId, p_targetFolderId.relativePath, nodeInfo.name);
+          nodeId.notebookId, p_targetFolderId.relativePath, nodeName);
       if (targetName.isEmpty()) {
-        emit errorOccurred(tr("Error"), tr("Failed to get available name for %1.").arg(nodeInfo.name));
+        emit errorOccurred(tr("Error"), tr("Failed to get available name for %1.").arg(nodeName));
         continue;
       }
       QString result;
-      if (nodeInfo.isFolder) {
+      if (isFolder) {
         result = notebookService->copyFolder(nodeId.notebookId, nodeId.relativePath,
                                              p_targetFolderId.relativePath, targetName);
         if (result.isEmpty()) {
@@ -394,22 +407,26 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
     }
   }
 
+
   // For cut operations, refresh source parent folders
-  if (m_isCut && m_model) {
+  if (m_clipboard->isCut && m_model) {
     for (const QString &parentPath : sourceParentPaths) {
       NodeIdentifier parentId;
       parentId.notebookId = p_targetFolderId.notebookId;
       parentId.relativePath = parentPath;
       m_model->reloadNode(parentId);
     }
-    m_clipboardNodes.clear();
-    m_isCut = false;
+    m_clipboard->nodes.clear();
+    m_clipboard->isCut = false;
   }
 
   // Refresh target folder
   if (m_model) {
     m_model->reloadNode(p_targetFolderId);
   }
+
+  // Notify that paste completed (for cross-panel refresh)
+  emit nodesPasted(p_targetFolderId);
 
   // Select and expand to first pasted node
   if (firstPastedNode.isValid() && m_view) {
@@ -428,7 +445,7 @@ void NotebookNodeController::duplicateNode(const NodeIdentifier &p_nodeId) {
     // Set clipboard and paste to same folder
     copyNodes(QList<NodeIdentifier>() << p_nodeId);
     pasteNodes(parentId);
-    m_clipboardNodes.clear();
+    m_clipboard->nodes.clear();
   }
 }
 
@@ -525,7 +542,14 @@ void NotebookNodeController::manageNodeTags(const NodeIdentifier &p_nodeId) {
   emit infoMessage(tr("Tags"), tr("Tag management not yet implemented."));
 }
 
-bool NotebookNodeController::canPaste() const { return !m_clipboardNodes.isEmpty(); }
+bool NotebookNodeController::canPaste() const { return !m_clipboard->nodes.isEmpty(); }
+
+void NotebookNodeController::shareClipboardWith(NotebookNodeController *p_other) {
+  if (p_other && p_other != this) {
+    // Share our clipboard with the other controller
+    p_other->m_clipboard = m_clipboard;
+  }
+}
 
 
 void NotebookNodeController::notifyBeforeNodeOperation(const NodeIdentifier &p_nodeId,
