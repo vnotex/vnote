@@ -362,7 +362,8 @@ QString NotebookService::copyFolder(const QString &p_notebookId, const QString &
   char *folderId = nullptr;
   VxCoreError err =
       vxcore_node_copy(m_context, p_notebookId.toUtf8().constData(), p_srcPath.toUtf8().constData(),
-                       p_destParentPath.toUtf8().constData(), p_newName.toUtf8().constData(), &folderId);
+                       p_destParentPath.isEmpty() ? "." : p_destParentPath.toUtf8().constData(),
+                       p_newName.toUtf8().constData(), &folderId);
   if (err != VXCORE_OK) {
     qWarning() << "copyFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();
@@ -385,6 +386,24 @@ QJsonObject NotebookService::listFolderChildren(const QString &p_notebookId,
     return QJsonObject();
   }
   return parseJsonObjectFromCStr(json);
+}
+
+QString NotebookService::getAvailableName(const QString &p_notebookId, const QString &p_folderPath,
+                                          const QString &p_desiredName) const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *availableName = nullptr;
+  VxCoreError err = vxcore_folder_get_available_name(
+      m_context, p_notebookId.toUtf8().constData(),
+      p_folderPath.isEmpty() ? "." : p_folderPath.toUtf8().constData(),
+      p_desiredName.toUtf8().constData(), &availableName);
+  if (err != VXCORE_OK) {
+    qWarning() << "getAvailableName failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+  return cstrToQString(availableName);
 }
 
 // File operations.
@@ -504,7 +523,8 @@ QString NotebookService::copyFile(const QString &p_notebookId, const QString &p_
   char *fileId = nullptr;
   VxCoreError err =
       vxcore_node_copy(m_context, p_notebookId.toUtf8().constData(), p_srcFilePath.toUtf8().constData(),
-                       p_destFolderPath.toUtf8().constData(), p_newName.toUtf8().constData(), &fileId);
+                       p_destFolderPath.isEmpty() ? "." : p_destFolderPath.toUtf8().constData(),
+                       p_newName.toUtf8().constData(), &fileId);
   if (err != VXCORE_OK) {
     qWarning() << "copyFile failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();

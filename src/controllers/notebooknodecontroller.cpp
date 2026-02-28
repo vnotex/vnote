@@ -315,7 +315,10 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
   }
 
   NodeInfo targetInfo = getNodeInfo(p_targetFolderId);
-  if (!targetInfo.isFolder) {
+  // For root folder (empty relativePath), getNodeInfo returns invalid NodeInfo
+  // because the model doesn't have an index for the root. We know it's a folder.
+  bool isTargetFolder = p_targetFolderId.relativePath.isEmpty() || targetInfo.isFolder;
+  if (!isTargetFolder) {
     return;
   }
 
@@ -346,33 +349,47 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
       }
       if (!success) {
         emit errorOccurred(tr("Error"), tr("Failed to move %1.").arg(nodeInfo.name));
+      } else if (!firstPastedNode.isValid()) {
+        // Remember first successfully pasted node
+        firstPastedNode.notebookId = p_targetFolderId.notebookId;
+        if (p_targetFolderId.relativePath.isEmpty()) {
+          firstPastedNode.relativePath = nodeInfo.name;
+        } else {
+          firstPastedNode.relativePath = p_targetFolderId.relativePath + QStringLiteral("/") + nodeInfo.name;
+        }
       }
     } else {
-      // Copy operation
+      // Copy operation - get available name first to avoid conflicts
+      QString targetName = notebookService->getAvailableName(
+          nodeId.notebookId, p_targetFolderId.relativePath, nodeInfo.name);
+      if (targetName.isEmpty()) {
+        emit errorOccurred(tr("Error"), tr("Failed to get available name for %1.").arg(nodeInfo.name));
+        continue;
+      }
       QString result;
       if (nodeInfo.isFolder) {
         result = notebookService->copyFolder(nodeId.notebookId, nodeId.relativePath,
-                                             p_targetFolderId.relativePath, nodeInfo.name);
+                                             p_targetFolderId.relativePath, targetName);
         if (result.isEmpty()) {
           emit errorOccurred(tr("Error"), tr("Failed to copy folder."));
         }
       } else {
         result = notebookService->copyFile(nodeId.notebookId, nodeId.relativePath,
-                                           p_targetFolderId.relativePath, nodeInfo.name);
+                                           p_targetFolderId.relativePath, targetName);
         if (result.isEmpty()) {
           emit errorOccurred(tr("Error"), tr("Failed to copy file."));
         }
       }
       success = !result.isEmpty();
-    }
 
-    // Remember first successfully pasted node
-    if (success && !firstPastedNode.isValid()) {
-      firstPastedNode.notebookId = p_targetFolderId.notebookId;
-      if (p_targetFolderId.relativePath.isEmpty()) {
-        firstPastedNode.relativePath = nodeInfo.name;
-      } else {
-        firstPastedNode.relativePath = p_targetFolderId.relativePath + QStringLiteral("/") + nodeInfo.name;
+      // Remember first successfully pasted node
+      if (success && !firstPastedNode.isValid()) {
+        firstPastedNode.notebookId = p_targetFolderId.notebookId;
+        if (p_targetFolderId.relativePath.isEmpty()) {
+          firstPastedNode.relativePath = targetName;
+        } else {
+          firstPastedNode.relativePath = p_targetFolderId.relativePath + QStringLiteral("/") + targetName;
+        }
       }
     }
   }
