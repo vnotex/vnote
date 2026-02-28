@@ -69,6 +69,11 @@ public:
   void setNotebookId(const QString &p_notebookId);
   QString getNotebookId() const;
 
+  // Set display root for flat view modes (e.g., file list showing one folder's contents)
+  // When set, this folder's children appear at the model's root level
+  void setDisplayRoot(const NodeIdentifier &p_folderId);
+  NodeIdentifier getDisplayRoot() const;
+
   // NodeIdentifier <-> Index conversion
   NodeIdentifier nodeIdFromIndex(const QModelIndex &p_index) const;
   NodeInfo nodeInfoFromIndex(const QModelIndex &p_index) const;
@@ -101,6 +106,7 @@ private:
 
   ServiceLocator &m_services;
   QString m_notebookId;
+  NodeIdentifier m_displayRoot; // Virtual root for flat view modes
   mutable QMap<NodeIdentifier, NodeInfo> m_nodeCache;
   mutable QMap<NodeIdentifier, QVector<NodeIdentifier>> m_childrenCache;
   mutable QSet<NodeIdentifier> m_fetchedNodes;

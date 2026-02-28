@@ -515,7 +515,7 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   m_fileProxyModel = new NotebookNodeProxyModel(this);
   m_fileProxyModel->setSourceModel(m_fileModel);
   m_fileProxyModel->setFilterFlags(NotebookNodeProxyModel::ShowNotes);
-
+  m_fileProxyModel->setRecursiveFilteringEnabled(false); // Only show direct children
   m_fileProxyModel->setViewOrder(viewOrder);
   m_fileProxyModel->sort(0); // Enable sorting
 
@@ -621,7 +621,18 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
 
   if (m_folderModel) {
     m_folderModel->setNotebookId(p_notebookId);
-    // File model will be updated when folder is selected
+  }
+
+  // Initialize file model with root folder content for TwoColumns mode
+  if (m_fileModel) {
+    m_fileModel->setNotebookId(p_notebookId);
+    // Show root folder's files initially (when no folder is selected)
+    if (!p_notebookId.isEmpty()) {
+      NodeIdentifier rootId;
+      rootId.notebookId = p_notebookId;
+      rootId.relativePath = QString();
+      m_fileModel->setDisplayRoot(rootId);
+    }
   }
 }
 
@@ -769,23 +780,31 @@ void NotebookExplorer2::onContextMenuRequested(const NodeIdentifier &p_nodeId,
 }
 
 void NotebookExplorer2::onFolderSelectionChanged(const QList<NodeIdentifier> &p_nodeIds) {
+  if (!m_fileModel || m_currentNotebookId.isEmpty()) {
+    return;
+  }
+
+  // Determine which folder to show
+  NodeIdentifier folderId;
   if (p_nodeIds.isEmpty()) {
-    return;
+    // No folder selected - show root folder content
+    folderId.notebookId = m_currentNotebookId;
+    folderId.relativePath = QString();
+  } else {
+    // Get the first selected folder
+    folderId = p_nodeIds.first();
+    if (!folderId.isValid()) {
+      return;
+    }
   }
 
-  // Get the first selected folder
-  const NodeIdentifier &folderId = p_nodeIds.first();
-  if (!folderId.isValid()) {
-    return;
-  }
-
-  // Update file model to show contents of selected folder
-  // Set the same notebook and let the model handle folder filtering
-  if (m_fileModel && !m_currentNotebookId.isEmpty()) {
+  // Check if file model needs notebook set (first time or different notebook)
+  if (m_fileModel->getNotebookId() != m_currentNotebookId) {
     m_fileModel->setNotebookId(m_currentNotebookId);
-    // Reload the model to show children of selected folder
-    m_fileModel->reloadNode(folderId);
   }
+
+  // Set the display root to show this folder's children as root-level items
+  m_fileModel->setDisplayRoot(folderId);
 }
 
 // --- Public Slots Implementation ---
