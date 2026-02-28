@@ -72,6 +72,12 @@ public:
   // Returns JSON with "files" and "folders" arrays.
   QJsonObject listFolderChildren(const QString &p_notebookId, const QString &p_folderPath) const;
 
+  // Get an available (non-conflicting) name for a new node in the given folder.
+  // Returns p_desiredName if available, or a modified version (e.g., 'name_1') if not.
+  // Returns empty string on error.
+  QString getAvailableName(const QString &p_notebookId, const QString &p_folderPath,
+                           const QString &p_desiredName) const;
+
   // File operations (8 methods).
   QString createFile(const QString &p_notebookId, const QString &p_folderPath,
                      const QString &p_fileName);
