@@ -40,6 +40,26 @@ void NotebookNodeModel::setNotebookId(const QString &p_notebookId) {
 
 QString NotebookNodeModel::getNotebookId() const { return m_notebookId; }
 
+void NotebookNodeModel::setDisplayRoot(const NodeIdentifier &p_folderId) {
+  if (m_displayRoot == p_folderId) {
+    return;
+  }
+
+  beginResetModel();
+  m_displayRoot = p_folderId;
+  m_nodeCache.clear();
+  m_childrenCache.clear();
+  m_fetchedNodes.clear();
+  m_indexIdCache.clear();
+  m_indexIdLookup.clear();
+  m_nextIndexId = 1;
+  endResetModel();
+}
+
+NodeIdentifier NotebookNodeModel::getDisplayRoot() const {
+  return m_displayRoot;
+}
+
 void NotebookNodeModel::ensureRoot() const {
   if (m_notebookId.isEmpty()) {
     return;
@@ -56,6 +76,10 @@ void NotebookNodeModel::ensureRoot() const {
 }
 
 NodeIdentifier NotebookNodeModel::rootNodeId() const {
+  // If display root is set, use it as the virtual root
+  if (m_displayRoot.isValid()) {
+    return m_displayRoot;
+  }
   NodeIdentifier rootId;
   rootId.notebookId = m_notebookId;
   rootId.relativePath = QString();
@@ -622,7 +646,20 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
 
   QModelIndex nodeIndex = indexFromNodeId(p_nodeId);
 
+  // Ensure the node is in cache (may be loading a folder not yet fetched)
   auto nodeIt = m_nodeCache.find(p_nodeId);
+  if (nodeIt == m_nodeCache.end()) {
+    // Node not in cache - add it as a folder placeholder so we can load its children
+    NodeInfo info;
+    info.id = p_nodeId;
+    info.isFolder = true;
+    info.name = p_nodeId.relativePath.isEmpty() 
+        ? QStringLiteral("Root") 
+        : p_nodeId.relativePath.section(QLatin1Char('/'), -1);
+    m_nodeCache.insert(p_nodeId, info);
+    nodeIt = m_nodeCache.find(p_nodeId);
+  }
+
   if (nodeIt != m_nodeCache.end() && nodeIt.value().isFolder) {
     // Remove existing children from model
     const auto children = m_childrenCache.value(p_nodeId);
