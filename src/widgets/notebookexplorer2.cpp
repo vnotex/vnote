@@ -35,6 +35,8 @@
 #include <utils/widgetutils.h>
 #include <views/notebooknodedelegate.h>
 #include <views/notebooknodeview.h>
+#include <views/twocolumnsnodeexplorer.h>
+#include <views/notebooknodeview.h>
 // TODO: Migrate dialogs to use ServiceLocator DI pattern
 #include <widgets/dialogs/importfolderdialog2.h>
 // #include <widgets/dialogs/importnotebookdialog.h>
@@ -401,8 +403,8 @@ void NotebookExplorer2::rebuildDatabase() {
   if (m_combinedModel) {
     m_combinedModel->setNotebookId(m_currentNotebookId);
   }
-  if (m_folderModel) {
-    m_folderModel->setNotebookId(m_currentNotebookId);
+  if (m_twoColumnsExplorer) {
+    m_twoColumnsExplorer->setNotebookId(m_currentNotebookId);
   }
 
   if (success) {
@@ -482,73 +484,16 @@ void NotebookExplorer2::setupCombinedMode() {
 }
 
 void NotebookExplorer2::setupTwoColumnsMode() {
-  // Create splitter for two columns
-  m_twoColumnsSplitter = new QSplitter(Qt::Horizontal, this);
+  m_twoColumnsExplorer = new TwoColumnsNodeExplorer(m_services, this);
+  m_contentStack->addWidget(m_twoColumnsExplorer);
 
-  // Folder view (left) - shows only folders
-  m_folderModel = new NotebookNodeModel(m_services, this);
-  m_folderProxyModel = new NotebookNodeProxyModel(this);
-  m_folderProxyModel->setSourceModel(m_folderModel);
-  m_folderProxyModel->setFilterFlags(NotebookNodeProxyModel::ShowFolders);
+  // Connect unified signals
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeActivated, this,
+          &NotebookExplorer2::onNodeActivated);
+  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::contextMenuRequested, this,
+          &NotebookExplorer2::onTwoColumnsContextMenu);
 
-  // Apply initial view order from config
-  const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
-  ViewOrder viewOrder = static_cast<ViewOrder>(widgetConfig.getNodeExplorerViewOrder());
-  m_folderProxyModel->setViewOrder(viewOrder);
-  m_folderProxyModel->sort(0); // Enable sorting
-
-  m_folderView = new NotebookNodeView(this);
-  m_folderView->setModel(m_folderProxyModel);
-
-  m_folderDelegate = new NotebookNodeDelegate(m_services, this);
-  m_folderView->setItemDelegate(m_folderDelegate);
-
-  m_folderController = new NotebookNodeController(m_services, this);
-  m_folderController->setModel(m_folderModel);
-  m_folderController->setView(m_folderView);
-  m_folderView->setController(m_folderController);
-
-  m_twoColumnsSplitter->addWidget(m_folderView);
-
-  // File view (right) - shows files in selected folder
-  m_fileModel = new NotebookNodeModel(m_services, this);
-  m_fileProxyModel = new NotebookNodeProxyModel(this);
-  m_fileProxyModel->setSourceModel(m_fileModel);
-  m_fileProxyModel->setFilterFlags(NotebookNodeProxyModel::ShowNotes);
-  m_fileProxyModel->setRecursiveFilteringEnabled(false); // Only show direct children
-  m_fileProxyModel->setViewOrder(viewOrder);
-  m_fileProxyModel->sort(0); // Enable sorting
-
-  m_fileView = new NotebookNodeView(this);
-  m_fileView->setModel(m_fileProxyModel);
-
-  m_fileDelegate = new NotebookNodeDelegate(m_services, this);
-  m_fileDelegate->setShowChildCount(false); // Files don't have children
-  m_fileView->setItemDelegate(m_fileDelegate);
-
-  m_fileController = new NotebookNodeController(m_services, this);
-  m_fileController->setModel(m_fileModel);
-  m_fileController->setView(m_fileView);
-  m_fileView->setController(m_fileController);
-
-  m_twoColumnsSplitter->addWidget(m_fileView);
-
-  // Set initial splitter sizes
-  m_twoColumnsSplitter->setSizes(QList<int>() << 200 << 300);
-
-  // Add to content stack
-  m_contentStack->addWidget(m_twoColumnsSplitter);
-
-  // Connect folder selection to update file view
-  connect(m_folderView, &NotebookNodeView::nodeSelectionChanged, this,
-          &NotebookExplorer2::onFolderSelectionChanged);
-
-  // Connect file view signals
-  connect(m_fileView, &NotebookNodeView::nodeActivated, this, &NotebookExplorer2::onNodeActivated);
-  connect(m_fileView, &NotebookNodeView::contextMenuRequested, this,
-          &NotebookExplorer2::onContextMenuRequested);
-
-  // Forward controller signals from both controllers (already using NodeIdentifier)
+  // Forward controller signals from both controllers
   auto connectControllerSignals = [this](NotebookNodeController *controller) {
     connect(controller, &NotebookNodeController::nodeActivated, this,
             &NotebookExplorer2::nodeActivated);
@@ -582,8 +527,8 @@ void NotebookExplorer2::setupTwoColumnsMode() {
             &NotebookExplorer2::onInfoMessage);
   };
 
-  connectControllerSignals(m_folderController);
-  connectControllerSignals(m_fileController);
+  connectControllerSignals(m_twoColumnsExplorer->folderController());
+  connectControllerSignals(m_twoColumnsExplorer->fileController());
 }
 
 void NotebookExplorer2::loadNotebooks() {
@@ -619,20 +564,8 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
     m_combinedModel->setNotebookId(p_notebookId);
   }
 
-  if (m_folderModel) {
-    m_folderModel->setNotebookId(p_notebookId);
-  }
-
-  // Initialize file model with root folder content for TwoColumns mode
-  if (m_fileModel) {
-    m_fileModel->setNotebookId(p_notebookId);
-    // Show root folder's files initially (when no folder is selected)
-    if (!p_notebookId.isEmpty()) {
-      NodeIdentifier rootId;
-      rootId.notebookId = p_notebookId;
-      rootId.relativePath = QString();
-      m_fileModel->setDisplayRoot(rootId);
-    }
+  if (m_twoColumnsExplorer) {
+    m_twoColumnsExplorer->setNotebookId(p_notebookId);
   }
 }
 
@@ -653,30 +586,34 @@ void NotebookExplorer2::setCurrentNode(const NodeIdentifier &p_nodeId) {
     }
   } else {
     // TwoColumns mode
-    if (!m_folderView || !m_fileView) {
+    if (!m_twoColumnsExplorer) {
       return;
     }
 
     // Get node info to check if it's a folder
     NodeInfo info;
-    if (m_folderModel) {
-      info = m_folderModel->nodeInfoFromIndex(m_folderModel->indexFromNodeId(p_nodeId));
+    auto *folderModel = m_twoColumnsExplorer->folderController()->model();
+    if (folderModel) {
+      auto *model = qobject_cast<NotebookNodeModel *>(folderModel);
+      if (model) {
+        info = model->nodeInfoFromIndex(model->indexFromNodeId(p_nodeId));
+      }
     }
 
     if (info.isFolder) {
-      m_folderView->expandToNode(p_nodeId);
-      m_folderView->selectNode(p_nodeId);
+      m_twoColumnsExplorer->expandToNode(p_nodeId);
+      m_twoColumnsExplorer->selectNode(p_nodeId);
     } else {
       // Select parent folder in folder view
       NodeIdentifier parentId = p_nodeId;
       parentId.relativePath = p_nodeId.parentPath();
 
       if (parentId.isValid()) {
-        m_folderView->expandToNode(parentId);
-        m_folderView->selectNode(parentId);
+        m_twoColumnsExplorer->expandToNode(parentId);
+        m_twoColumnsExplorer->selectNode(parentId);
       }
       // Select file in file view
-      m_fileView->selectNode(p_nodeId);
+      m_twoColumnsExplorer->selectNode(p_nodeId);
     }
   }
 }
@@ -686,13 +623,7 @@ NodeIdentifier NotebookExplorer2::currentNodeId() const {
     return m_combinedView ? m_combinedView->currentNodeId() : NodeIdentifier();
   } else {
     // In two columns mode, prefer file selection over folder
-    if (m_fileView) {
-      NodeIdentifier fileNodeId = m_fileView->currentNodeId();
-      if (fileNodeId.isValid()) {
-        return fileNodeId;
-      }
-    }
-    return m_folderView ? m_folderView->currentNodeId() : NodeIdentifier();
+    return m_twoColumnsExplorer ? m_twoColumnsExplorer->currentNodeId() : NodeIdentifier();
   }
 }
 
@@ -722,13 +653,13 @@ void NotebookExplorer2::updateExploreMode() {
     }
   } else {
     // Ensure two columns mode is set up (lazy creation)
-    if (!m_twoColumnsSplitter) {
+    if (!m_twoColumnsExplorer) {
       setupTwoColumnsMode();
     }
-    m_contentStack->setCurrentWidget(m_twoColumnsSplitter);
-    // Sync notebook to the folder view if needed
-    if (!m_currentNotebookId.isEmpty() && m_folderModel) {
-      m_folderModel->setNotebookId(m_currentNotebookId);
+    m_contentStack->setCurrentWidget(m_twoColumnsExplorer);
+    // Sync notebook to the explorer if needed
+    if (!m_currentNotebookId.isEmpty() && m_twoColumnsExplorer) {
+      m_twoColumnsExplorer->setNotebookId(m_currentNotebookId);
     }
   }
   updateFocusProxy();
@@ -737,8 +668,8 @@ void NotebookExplorer2::updateExploreMode() {
 void NotebookExplorer2::updateFocusProxy() {
   if (m_exploreMode == Combined && m_combinedView) {
     setFocusProxy(m_combinedView);
-  } else if (m_exploreMode == TwoColumns && m_folderView) {
-    setFocusProxy(m_folderView);
+  } else if (m_exploreMode == TwoColumns && m_twoColumnsExplorer) {
+    setFocusProxy(m_twoColumnsExplorer);
   }
 }
 
@@ -756,16 +687,12 @@ void NotebookExplorer2::onContextMenuRequested(const NodeIdentifier &p_nodeId,
                                                const QPoint &p_globalPos) {
   NotebookNodeController *controller = nullptr;
 
-  // Determine which controller to use based on which view triggered the event
+  // Determine which controller to use based on explore mode
   if (m_exploreMode == Combined) {
     controller = m_combinedController;
   } else {
-    // Check which view has focus
-    if (m_fileView && m_fileView->hasFocus()) {
-      controller = m_fileController;
-    } else {
-      controller = m_folderController;
-    }
+    // In TwoColumns mode, this is called from folder view
+    controller = m_twoColumnsExplorer ? m_twoColumnsExplorer->folderController() : nullptr;
   }
 
   if (!controller) {
@@ -779,32 +706,32 @@ void NotebookExplorer2::onContextMenuRequested(const NodeIdentifier &p_nodeId,
   }
 }
 
-void NotebookExplorer2::onFolderSelectionChanged(const QList<NodeIdentifier> &p_nodeIds) {
-  if (!m_fileModel || m_currentNotebookId.isEmpty()) {
+void NotebookExplorer2::onTwoColumnsContextMenu(const NodeIdentifier &p_nodeId,
+                                                 const QPoint &p_globalPos,
+                                                 bool p_isFromFileView) {
+  if (!m_twoColumnsExplorer) {
     return;
   }
 
-  // Determine which folder to show
-  NodeIdentifier folderId;
-  if (p_nodeIds.isEmpty()) {
-    // No folder selected - show root folder content
-    folderId.notebookId = m_currentNotebookId;
-    folderId.relativePath = QString();
-  } else {
-    // Get the first selected folder
-    folderId = p_nodeIds.first();
-    if (!folderId.isValid()) {
-      return;
-    }
+  NotebookNodeController *controller = p_isFromFileView
+      ? m_twoColumnsExplorer->fileController()
+      : m_twoColumnsExplorer->folderController();
+
+  if (!controller) {
+    return;
   }
 
-  // Check if file model needs notebook set (first time or different notebook)
-  if (m_fileModel->getNotebookId() != m_currentNotebookId) {
-    m_fileModel->setNotebookId(m_currentNotebookId);
+  // If no specific node was clicked, use the current folder (display root)
+  NodeIdentifier effectiveNodeId = p_nodeId;
+  if (!effectiveNodeId.isValid() && p_isFromFileView) {
+    effectiveNodeId = m_twoColumnsExplorer->currentFolderId();
   }
 
-  // Set the display root to show this folder's children as root-level items
-  m_fileModel->setDisplayRoot(folderId);
+  QMenu *menu = controller->createContextMenu(effectiveNodeId, this);
+  if (menu) {
+    menu->exec(p_globalPos);
+    delete menu;
+  }
 }
 
 // --- Public Slots Implementation ---
@@ -1052,8 +979,14 @@ NodeIdentifier NotebookExplorer2::currentExploredFolderId() const {
   NodeInfo info;
   if (m_exploreMode == Combined && m_combinedModel) {
     info = m_combinedModel->nodeInfoFromIndex(m_combinedModel->indexFromNodeId(nodeId));
-  } else if (m_folderModel) {
-    info = m_folderModel->nodeInfoFromIndex(m_folderModel->indexFromNodeId(nodeId));
+  } else if (m_twoColumnsExplorer) {
+    auto *folderController = m_twoColumnsExplorer->folderController();
+    if (folderController) {
+      auto *model = qobject_cast<NotebookNodeModel *>(folderController->model());
+      if (model) {
+        info = model->nodeInfoFromIndex(model->indexFromNodeId(nodeId));
+      }
+    }
   }
 
   if (info.isFolder) {
@@ -1080,8 +1013,8 @@ QByteArray NotebookExplorer2::saveState() const {
   stream << static_cast<int>(m_exploreMode);
 
   // Save splitter sizes if in TwoColumns mode
-  if (m_twoColumnsSplitter) {
-    stream << m_twoColumnsSplitter->saveState();
+  if (m_twoColumnsExplorer) {
+    stream << m_twoColumnsExplorer->saveSplitterState();
   } else {
     stream << QByteArray();
   }
@@ -1102,8 +1035,8 @@ void NotebookExplorer2::restoreState(const QByteArray &p_data) {
 
   QByteArray splitterState;
   stream >> splitterState;
-  if (!splitterState.isEmpty() && m_twoColumnsSplitter) {
-    m_twoColumnsSplitter->restoreState(splitterState);
+  if (!splitterState.isEmpty() && m_twoColumnsExplorer) {
+    m_twoColumnsExplorer->restoreSplitterState(splitterState);
   }
 }
 
@@ -1115,13 +1048,9 @@ void NotebookExplorer2::setNodeViewOrder(ViewOrder p_order) {
   }
 
   // Apply to two-columns mode proxy models if they exist
-  if (m_folderProxyModel) {
-    m_folderProxyModel->setViewOrder(p_order);
-    m_folderProxyModel->sort(0); // Trigger re-sort
-  }
-  if (m_fileProxyModel) {
-    m_fileProxyModel->setViewOrder(p_order);
-    m_fileProxyModel->sort(0); // Trigger re-sort
+  // Apply to two-columns mode explorer if it exists
+  if (m_twoColumnsExplorer) {
+    m_twoColumnsExplorer->setViewOrder(p_order);
   }
 }
 
@@ -1139,8 +1068,8 @@ void NotebookExplorer2::onNewNoteRequested(const NodeIdentifier &p_parentId) {
         }
       } else {
         // TwoColumns mode - reload file model (notes are files)
-        if (m_fileModel) {
-          m_fileModel->reloadNode(p_parentId);
+        if (m_twoColumnsExplorer) {
+          m_twoColumnsExplorer->reloadNode(p_parentId, false);
         }
       }
       // Select the new note
@@ -1161,8 +1090,8 @@ void NotebookExplorer2::onNewFolderRequested(const NodeIdentifier &p_parentId) {
         }
       } else {
         // TwoColumns mode - reload folder model
-        if (m_folderModel) {
-          m_folderModel->reloadNode(p_parentId);
+        if (m_twoColumnsExplorer) {
+          m_twoColumnsExplorer->reloadNode(p_parentId, true);
         }
       }
       // Select the new folder
@@ -1186,9 +1115,16 @@ void NotebookExplorer2::onRenameRequested(const NodeIdentifier &p_nodeId,
     controller = m_combinedController;
   } else {
     // Determine which controller based on the node
-    if (m_folderModel) {
-      NodeInfo info = m_folderModel->nodeInfoFromIndex(m_folderModel->indexFromNodeId(p_nodeId));
-      controller = info.isFolder ? m_folderController : m_fileController;
+    if (m_twoColumnsExplorer) {
+      auto *folderController = m_twoColumnsExplorer->folderController();
+      auto *fileController = m_twoColumnsExplorer->fileController();
+      if (folderController) {
+        auto *model = qobject_cast<NotebookNodeModel *>(folderController->model());
+        if (model) {
+          NodeInfo info = model->nodeInfoFromIndex(model->indexFromNodeId(p_nodeId));
+          controller = info.isFolder ? folderController : fileController;
+        }
+      }
     }
   }
 
@@ -1223,7 +1159,7 @@ void NotebookExplorer2::onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds
     controller = m_combinedController;
   } else {
     // Use folder controller for delete operations (it can handle both)
-    controller = m_folderController;
+    controller = m_twoColumnsExplorer ? m_twoColumnsExplorer->folderController() : nullptr;
   }
 
   if (controller) {
@@ -1250,7 +1186,7 @@ void NotebookExplorer2::onRemoveFromNotebookRequested(const QList<NodeIdentifier
   if (m_exploreMode == Combined) {
     controller = m_combinedController;
   } else {
-    controller = m_folderController;
+    controller = m_twoColumnsExplorer ? m_twoColumnsExplorer->folderController() : nullptr;
   }
 
   if (controller) {
@@ -1270,7 +1206,7 @@ void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFol
   if (m_exploreMode == Combined) {
     controller = m_combinedController;
   } else {
-    controller = m_folderController;
+    controller = m_twoColumnsExplorer ? m_twoColumnsExplorer->folderController() : nullptr;
   }
 
   if (controller) {
@@ -1286,8 +1222,8 @@ void NotebookExplorer2::onImportFolderRequested(const NodeIdentifier &p_targetFo
       // Reload the parent folder to show the new imported folder
       if (m_exploreMode == Combined && m_combinedModel) {
         m_combinedModel->reloadNode(p_targetFolderId);
-      } else if (m_folderModel) {
-        m_folderModel->reloadNode(p_targetFolderId);
+      } else if (m_twoColumnsExplorer) {
+        m_twoColumnsExplorer->reloadNode(p_targetFolderId, true);
       }
       setCurrentNode(newNodeId);
     }
@@ -1303,10 +1239,20 @@ void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
   NodeInfo nodeInfo;
   if (m_exploreMode == Combined && m_combinedModel) {
     nodeInfo = m_combinedModel->nodeInfoFromIndex(m_combinedModel->indexFromNodeId(p_nodeId));
-  } else if (m_folderModel) {
-    nodeInfo = m_folderModel->nodeInfoFromIndex(m_folderModel->indexFromNodeId(p_nodeId));
-    if (!nodeInfo.isValid() && m_fileModel) {
-      nodeInfo = m_fileModel->nodeInfoFromIndex(m_fileModel->indexFromNodeId(p_nodeId));
+  } else if (m_twoColumnsExplorer) {
+    auto *folderController = m_twoColumnsExplorer->folderController();
+    auto *fileController = m_twoColumnsExplorer->fileController();
+    if (folderController) {
+      auto *model = qobject_cast<NotebookNodeModel *>(folderController->model());
+      if (model) {
+        nodeInfo = model->nodeInfoFromIndex(model->indexFromNodeId(p_nodeId));
+      }
+    }
+    if (!nodeInfo.isValid() && fileController) {
+      auto *model = qobject_cast<NotebookNodeModel *>(fileController->model());
+      if (model) {
+        nodeInfo = model->nodeInfoFromIndex(model->indexFromNodeId(p_nodeId));
+      }
     }
   }
 

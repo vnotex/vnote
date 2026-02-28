@@ -23,6 +23,7 @@ class NotebookNodeProxyModel;
 class NotebookNodeView;
 class NotebookNodeDelegate;
 class NotebookNodeController;
+class TwoColumnsNodeExplorer;
 struct FileOpenParameters;
 class Event;
 class ServiceLocator;
@@ -106,8 +107,9 @@ private slots:
                        const QSharedPointer<FileOpenParameters> &p_paras);
   void onContextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos);
 
-  // TwoColumns mode: when folder selection changes, update file list
-  void onFolderSelectionChanged(const QList<NodeIdentifier> &p_nodeIds);
+  // TwoColumns mode: context menu handler
+  void onTwoColumnsContextMenu(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos,
+                               bool p_isFromFileView);
 
   // GUI request handlers from controller signals
   void onNewNoteRequested(const NodeIdentifier &p_parentId);
@@ -153,25 +155,15 @@ private:
   NotebookNodeDelegate *m_combinedDelegate = nullptr;
   NotebookNodeController *m_combinedController = nullptr;
 
-  // MVC Components - TwoColumns mode (folder view)
-  NotebookNodeModel *m_folderModel = nullptr;
-  NotebookNodeProxyModel *m_folderProxyModel = nullptr;
-  NotebookNodeView *m_folderView = nullptr;
-  NotebookNodeDelegate *m_folderDelegate = nullptr;
-  NotebookNodeController *m_folderController = nullptr;
-
-  // MVC Components - TwoColumns mode (file view)
-  NotebookNodeModel *m_fileModel = nullptr;
-  NotebookNodeProxyModel *m_fileProxyModel = nullptr;
-  NotebookNodeView *m_fileView = nullptr;
-  NotebookNodeDelegate *m_fileDelegate = nullptr;
-  NotebookNodeController *m_fileController = nullptr;
+  // UI Components
 
   // UI Components
   TitleBar *m_titleBar = nullptr;
   NotebookSelector2 *m_notebookSelector = nullptr;
   QStackedWidget *m_contentStack = nullptr;
-  QSplitter *m_twoColumnsSplitter = nullptr;
+
+  // TwoColumns mode encapsulated widget
+  TwoColumnsNodeExplorer *m_twoColumnsExplorer = nullptr;
 
   // State
   ExploreMode m_exploreMode = Combined;
