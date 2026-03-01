@@ -56,6 +56,9 @@ public:
   // View order
   void setViewOrder(ViewOrder p_order) override;
 
+  // External nodes visibility
+  void setExternalNodesVisible(bool p_visible);
+
   // Context menu creation - unified for both panels
   // INodeExplorer interface - base version delegates to two-param version
   QMenu *createContextMenu(const NodeIdentifier &p_nodeId,

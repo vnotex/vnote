@@ -92,6 +92,9 @@ void FileNodeDelegate::paintFileNode(QPainter *p_painter, const QStyleOptionView
     QIcon::Mode iconMode = QIcon::Normal;
     if (!(p_option.state & QStyle::State_Enabled)) {
       iconMode = QIcon::Disabled;
+    } else if (p_nodeInfo.isExternal) {
+      // External nodes use disabled icon mode for faded appearance
+      iconMode = QIcon::Disabled;
     } else if (p_option.state & QStyle::State_Selected) {
       iconMode = QIcon::Selected;
     }
@@ -336,6 +339,20 @@ QColor FileNodeDelegate::getNodeBackgroundColor(const NodeInfo &p_nodeInfo,
 
 QColor FileNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
                                           const QStyleOptionViewItem &p_option) const {
+  // External nodes get a faded/semi-transparent appearance
+  if (p_nodeInfo.isExternal) {
+    auto *themeService = m_services.get<ThemeService>();
+    if (themeService) {
+      QString externalFg = themeService->paletteColor(
+          QStringLiteral("widgets#notebookexplorer#external_node_text#fg"));
+      if (!externalFg.isEmpty()) {
+        return QColor(externalFg);
+      }
+    }
+    // Fallback: semi-transparent gray
+    return QColor(128, 128, 128, 160);
+  }
+
   // Check for custom node visual color first
   if (p_nodeInfo.hasVisualStyle() && !p_nodeInfo.textColor.isEmpty()) {
     return QColor(p_nodeInfo.textColor);

@@ -1,5 +1,7 @@
 #include "notebooknodemodel.h"
 
+#include <QBrush>
+#include <QDebug>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMimeData>
@@ -175,6 +177,63 @@ QVector<NodeInfo> NotebookNodeModel::parseChildrenFromJson(
   return children;
 }
 
+QVector<NodeInfo> NotebookNodeModel::parseExternalNodesFromJson(
+    const QJsonObject &p_json, const NodeIdentifier &p_parentId) const {
+  QVector<NodeInfo> externals;
+
+  // External folders first (sorted alphabetically)
+  QJsonArray folders = p_json.value(QStringLiteral("folders")).toArray();
+  QVector<QString> folderNames;
+  for (const QJsonValue &folderVal : folders) {
+    folderNames.append(folderVal.toObject().value(QStringLiteral("name")).toString());
+  }
+  std::sort(folderNames.begin(), folderNames.end(), [](const QString &a, const QString &b) {
+    return a.compare(b, Qt::CaseInsensitive) < 0;
+  });
+
+  for (const QString &name : folderNames) {
+    NodeInfo info;
+    info.id.notebookId = p_parentId.notebookId;
+    info.isExternal = true;
+    info.name = name;
+    if (p_parentId.relativePath.isEmpty()) {
+      info.id.relativePath = name;
+    } else {
+      info.id.relativePath = p_parentId.relativePath + QLatin1Char('/') + name;
+    }
+    info.isFolder = true;
+    // External folders have no child count (opaque until indexed)
+    info.childCount = 0;
+    externals.append(info);
+  }
+
+  // External files second (sorted alphabetically)
+  QJsonArray files = p_json.value(QStringLiteral("files")).toArray();
+  QVector<QString> fileNames;
+  for (const QJsonValue &fileVal : files) {
+    fileNames.append(fileVal.toObject().value(QStringLiteral("name")).toString());
+  }
+  std::sort(fileNames.begin(), fileNames.end(), [](const QString &a, const QString &b) {
+    return a.compare(b, Qt::CaseInsensitive) < 0;
+  });
+
+  for (const QString &name : fileNames) {
+    NodeInfo info;
+    info.id.notebookId = p_parentId.notebookId;
+    info.isExternal = true;
+    info.name = name;
+    if (p_parentId.relativePath.isEmpty()) {
+      info.id.relativePath = name;
+    } else {
+      info.id.relativePath = p_parentId.relativePath + QLatin1Char('/') + name;
+    }
+    info.isFolder = false;
+    externals.append(info);
+  }
+
+  return externals;
+}
+
 NodeInfo NotebookNodeModel::parseNodeInfoFromJson(const QJsonObject &p_json,
                                                   const NodeIdentifier &p_parentId) const {
   NodeInfo info;
@@ -309,7 +368,27 @@ QVariant NotebookNodeModel::data(const QModelIndex &p_index, int p_role) const {
     return getNodeIcon(info);
 
   case Qt::ToolTipRole:
+    if (info.isExternal) {
+      return QStringLiteral("[External] ") + info.relativePath();
+    }
     return info.relativePath();
+
+  case Qt::ForegroundRole:
+    // External nodes have semi-transparent text to visually differentiate them
+    // Note: This is mainly for views that don't use custom delegates
+    if (info.isExternal) {
+      auto *themeService = m_services.get<ThemeService>();
+      if (themeService) {
+        QString externalFg = themeService->paletteColor(
+            QStringLiteral("widgets#notebookexplorer#external_node_text#fg"));
+        if (!externalFg.isEmpty()) {
+          return QBrush(QColor(externalFg));
+        }
+      }
+      // Fallback: use a semi-transparent gray if no theme color defined
+      return QBrush(QColor(128, 128, 128, 160));
+    }
+    return QVariant();
 
   case NodeInfoRole:
     return QVariant::fromValue(info);
@@ -319,6 +398,9 @@ QVariant NotebookNodeModel::data(const QModelIndex &p_index, int p_role) const {
 
   case NodeIdentifierRole:
     return QVariant::fromValue(nodeId);
+
+  case IsExternalRole:
+    return info.isExternal;
 
   case ChildCountRole:
     return info.childCount;
@@ -449,15 +531,22 @@ Qt::ItemFlags NotebookNodeModel::flags(const QModelIndex &p_index) const {
   NodeIdentifier nodeId = nodeIdFromIndex(p_index);
   auto nodeIt = m_nodeCache.find(nodeId);
   if (nodeIt != m_nodeCache.end()) {
-    // Enable drag for all nodes
+    const NodeInfo &nodeInfo = nodeIt.value();
+    // External nodes have limited flags (no drag/drop/edit)
+    if (nodeInfo.isExternal) {
+      // External nodes can only be selected
+      return defaultFlags;
+    }
+
+    // Enable drag for indexed nodes
     defaultFlags |= Qt::ItemIsDragEnabled;
 
     // Enable drop only on folders
-    if (nodeIt.value().isFolder) {
+    if (nodeInfo.isFolder) {
       defaultFlags |= Qt::ItemIsDropEnabled;
     }
 
-    // All nodes are editable (rename)
+    // All indexed nodes are editable (rename)
     defaultFlags |= Qt::ItemIsEditable;
   }
 
@@ -476,7 +565,13 @@ bool NotebookNodeModel::hasChildren(const QModelIndex &p_parent) const {
     return !p_parent.isValid();
   }
 
-  if (!nodeIt.value().isFolder) {
+  const NodeInfo &parentInfo = nodeIt.value();
+  if (!parentInfo.isFolder) {
+    return false;
+  }
+
+  // External folders are NOT expandable (opaque until indexed)
+  if (parentInfo.isExternal) {
     return false;
   }
 
@@ -499,7 +594,13 @@ bool NotebookNodeModel::canFetchMore(const QModelIndex &p_parent) const {
     return true;
   }
 
-  if (!nodeIt.value().isFolder) {
+  const NodeInfo &parentInfo = nodeIt.value();
+  if (!parentInfo.isFolder) {
+    return false;
+  }
+
+  // External folders cannot be expanded
+  if (parentInfo.isExternal) {
     return false;
   }
 
@@ -517,22 +618,45 @@ void NotebookNodeModel::fetchMore(const QModelIndex &p_parent) {
     return;
   }
 
+  // External nodes are only shown at the indexed parent level (not inside external folders)
+  // So only fetch external nodes if parent is NOT external
+  // Root node is never external; for other nodes, check the cache
+  bool parentIsExternal = false;
+  if (p_parent.isValid()) {
+    auto nodeIt = m_nodeCache.find(parentId);
+    if (nodeIt != m_nodeCache.end()) {
+      parentIsExternal = nodeIt.value().isExternal;
+    }
+  }
+  bool fetchExternal = m_externalNodesVisible && !parentIsExternal;
+
   auto *notebookService = m_services.get<NotebookService>();
   if (!notebookService) {
     return;
   }
 
+  // Fetch external nodes first (shown before indexed nodes)
+  QVector<NodeInfo> allNodes;
+  if (fetchExternal) {
+    QJsonObject externalResult =
+        notebookService->listFolderExternal(parentId.notebookId, parentId.relativePath);
+    QVector<NodeInfo> externalNodes = parseExternalNodesFromJson(externalResult, parentId);
+    allNodes.append(externalNodes);
+  }
+
+  // Fetch indexed nodes
   QJsonObject result =
       notebookService->listFolderChildren(parentId.notebookId, parentId.relativePath);
   QVector<NodeInfo> children = parseChildrenFromJson(result, parentId);
+  allNodes.append(children);
 
-  if (!children.isEmpty()) {
-    beginInsertRows(p_parent, 0, children.size() - 1);
+  if (!allNodes.isEmpty()) {
+    beginInsertRows(p_parent, 0, allNodes.size() - 1);
   }
 
   QVector<NodeIdentifier> childIds;
-  childIds.reserve(children.size());
-  for (const NodeInfo &info : children) {
+  childIds.reserve(allNodes.size());
+  for (const NodeInfo &info : allNodes) {
     m_nodeCache.insert(info.id, info);
     childIds.append(info.id);
   }
@@ -544,7 +668,7 @@ void NotebookNodeModel::fetchMore(const QModelIndex &p_parent) {
   }
   markNodeFetched(parentId);
 
-  if (!children.isEmpty()) {
+  if (!allNodes.isEmpty()) {
     endInsertRows();
   }
 
@@ -574,17 +698,33 @@ void NotebookNodeModel::prefetchChildrenOfChildren(const QModelIndex &p_parent) 
       continue;
     }
 
+    // Skip external folders - they are not indexed and have no children in the database
+    if (childIt.value().isExternal) {
+      continue;
+    }
+
     if (isNodeFetched(childId)) {
       continue;
     }
 
+    // Fetch external nodes first if enabled (just like fetchMore does)
+    QVector<NodeInfo> allGrandchildren;
+    if (m_externalNodesVisible) {
+      QJsonObject externalResult =
+          notebookService->listFolderExternal(childId.notebookId, childId.relativePath);
+      QVector<NodeInfo> externalNodes = parseExternalNodesFromJson(externalResult, childId);
+      allGrandchildren.append(externalNodes);
+    }
+
+    // Then fetch indexed children
     QJsonObject result =
         notebookService->listFolderChildren(childId.notebookId, childId.relativePath);
-    QVector<NodeInfo> grandchildren = parseChildrenFromJson(result, childId);
+    QVector<NodeInfo> indexedChildren = parseChildrenFromJson(result, childId);
+    allGrandchildren.append(indexedChildren);
 
     QVector<NodeIdentifier> grandchildIds;
-    grandchildIds.reserve(grandchildren.size());
-    for (const NodeInfo &info : grandchildren) {
+    grandchildIds.reserve(allGrandchildren.size());
+    for (const NodeInfo &info : allGrandchildren) {
       m_nodeCache.insert(info.id, info);
       grandchildIds.append(info.id);
     }
@@ -607,7 +747,18 @@ QIcon NotebookNodeModel::getNodeIcon(const NodeInfo &p_info) const {
 
   QString iconName = p_info.isFolder ? QStringLiteral("folder_node.svg")
                                      : QStringLiteral("file_node.svg");
-  return IconUtils::fetchIcon(themeService->getIconFile(iconName));
+  QString iconFile = themeService->getIconFile(iconName);
+
+  // External nodes use a different icon color from theme
+  if (p_info.isExternal) {
+    QString externalFg =
+        themeService->paletteColor(QStringLiteral("widgets#notebookexplorer#external_node_icon#fg"));
+    if (!externalFg.isEmpty()) {
+      return IconUtils::fetchIcon(iconFile, externalFg);
+    }
+  }
+
+  return IconUtils::fetchIcon(iconFile);
 }
 
 Qt::DropActions NotebookNodeModel::supportedDropActions() const {
@@ -827,3 +978,15 @@ void NotebookNodeModel::nodeDataChanged(const NodeIdentifier &p_nodeId) {
     emit dataChanged(nodeIndex, nodeIndex);
   }
 }
+
+void NotebookNodeModel::setExternalNodesVisible(bool p_visible) {
+  if (m_externalNodesVisible == p_visible) {
+    return;
+  }
+
+  m_externalNodesVisible = p_visible;
+  // Reload to show/hide external nodes
+  reload();
+}
+
+bool NotebookNodeModel::isExternalNodesVisible() const { return m_externalNodesVisible; }

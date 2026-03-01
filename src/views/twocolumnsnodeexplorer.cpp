@@ -36,11 +36,12 @@ void TwoColumnsNodeExplorer::setupUI() {
   m_folderProxyModel->setSourceModel(m_folderModel);
   m_folderProxyModel->setFilterFlags(NotebookNodeProxyModel::ShowFolders);
 
-  // Apply view order from config
+  // Apply view order and external files visibility from config
   const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
   ViewOrder viewOrder = static_cast<ViewOrder>(widgetConfig.getNodeExplorerViewOrder());
   m_folderProxyModel->setViewOrder(viewOrder);
   m_folderProxyModel->sort(0);
+  m_folderModel->setExternalNodesVisible(widgetConfig.isNodeExplorerExternalFilesVisible());
 
   m_folderView = new NotebookNodeView(this);
   m_folderView->setModel(m_folderProxyModel);
@@ -63,6 +64,7 @@ void TwoColumnsNodeExplorer::setupUI() {
   m_fileProxyModel->setRecursiveFilteringEnabled(false); // Only show direct children
   m_fileProxyModel->setViewOrder(viewOrder);
   m_fileProxyModel->sort(0);
+  m_fileModel->setExternalNodesVisible(widgetConfig.isNodeExplorerExternalFilesVisible());
 
   m_fileView = new FileListView(this);
   m_fileView->setModel(m_fileProxyModel);
@@ -298,6 +300,15 @@ void TwoColumnsNodeExplorer::setViewOrder(ViewOrder p_order) {
   if (m_fileProxyModel) {
     m_fileProxyModel->setViewOrder(p_order);
     m_fileProxyModel->sort(0);
+  }
+}
+
+void TwoColumnsNodeExplorer::setExternalNodesVisible(bool p_visible) {
+  if (m_folderModel) {
+    m_folderModel->setExternalNodesVisible(p_visible);
+  }
+  if (m_fileModel) {
+    m_fileModel->setExternalNodesVisible(p_visible);
   }
 }
 

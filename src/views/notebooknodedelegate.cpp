@@ -68,6 +68,9 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
     QIcon::Mode iconMode = QIcon::Normal;
     if (!(p_option.state & QStyle::State_Enabled)) {
       iconMode = QIcon::Disabled;
+    } else if (p_nodeInfo.isExternal) {
+      // External nodes use disabled icon mode for faded appearance
+      iconMode = QIcon::Disabled;
     } else if (p_option.state & QStyle::State_Selected) {
       iconMode = QIcon::Selected;
     }
@@ -209,8 +212,22 @@ QColor NotebookNodeDelegate::getNodeBackgroundColor(const NodeInfo &p_nodeInfo,
 }
 
 QColor NotebookNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
-                                              const QStyleOptionViewItem &p_option) const {
+                                               const QStyleOptionViewItem &p_option) const {
   Q_UNUSED(p_option);
+
+  // External nodes get a faded/semi-transparent appearance
+  if (p_nodeInfo.isExternal) {
+    auto *themeService = m_services.get<ThemeService>();
+    if (themeService) {
+      QString externalFg = themeService->paletteColor(
+          QStringLiteral("widgets#notebookexplorer#external_node_text#fg"));
+      if (!externalFg.isEmpty()) {
+        return QColor(externalFg);
+      }
+    }
+    // Fallback: semi-transparent gray
+    return QColor(128, 128, 128, 160);
+  }
 
   if (!p_nodeInfo.hasVisualStyle()) {
     return QColor();

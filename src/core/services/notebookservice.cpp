@@ -388,6 +388,38 @@ QJsonObject NotebookService::listFolderChildren(const QString &p_notebookId,
   return parseJsonObjectFromCStr(json);
 }
 
+QJsonObject NotebookService::listFolderExternal(const QString &p_notebookId,
+                                                const QString &p_folderPath) const {
+  if (!checkContext()) {
+    return QJsonObject();
+  }
+
+  char *json = nullptr;
+  VxCoreError err = vxcore_folder_list_external(
+      m_context, p_notebookId.toUtf8().constData(),
+      p_folderPath.isEmpty() ? "." : p_folderPath.toUtf8().constData(), &json);
+  if (err != VXCORE_OK) {
+    qWarning() << "listFolderExternal failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QJsonObject();
+  }
+  return parseJsonObjectFromCStr(json);
+}
+
+bool NotebookService::indexNode(const QString &p_notebookId, const QString &p_nodePath) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  VxCoreError err = vxcore_node_index(m_context, p_notebookId.toUtf8().constData(),
+                                      p_nodePath.toUtf8().constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "indexNode failed:" << QString::fromUtf8(vxcore_error_message(err))
+               << "notebookId:" << p_notebookId << "nodePath:" << p_nodePath;
+    return false;
+  }
+  return true;
+}
+
 QString NotebookService::getAvailableName(const QString &p_notebookId, const QString &p_folderPath,
                                           const QString &p_desiredName) const {
   if (!checkContext()) {

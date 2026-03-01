@@ -126,11 +126,18 @@ bool NotebookNodeProxyModel::lessThan(const QModelIndex &p_left, const QModelInd
     return QSortFilterProxyModel::lessThan(p_left, p_right);
   }
 
-  // Folders always come before files
+  // Sort order: external folders -> external files -> indexed folders -> indexed files
+  // First, external nodes come before indexed nodes
+  if (leftInfo.isExternal != rightInfo.isExternal) {
+    return leftInfo.isExternal; // External first
+  }
+
+  // Within same external status: folders come before files
   if (leftInfo.isFolder != rightInfo.isFolder) {
     return leftInfo.isFolder; // Folders first
   }
-  // Same type - sort based on view order
+
+  // Same type and same external status - sort based on view order
   switch (m_viewOrder) {
   case ViewOrder::OrderedByName:
     return QString::compare(leftInfo.name, rightInfo.name, Qt::CaseInsensitive) < 0;

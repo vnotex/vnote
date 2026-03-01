@@ -41,6 +41,9 @@ public:
   // Context menu creation
   QMenu *createContextMenu(const NodeIdentifier &p_nodeId, QWidget *p_parent = nullptr);
 
+  // Context menu for external (unindexed) nodes
+  QMenu *createExternalNodeContextMenu(const NodeIdentifier &p_nodeId, QWidget *p_parent = nullptr);
+
   // Node operations using NodeIdentifier
   void newNote(const NodeIdentifier &p_parentId);
   void newFolder(const NodeIdentifier &p_parentId);
@@ -57,6 +60,9 @@ public:
 
   // Import/Export
   void exportNode(const NodeIdentifier &p_nodeId);
+
+  // Import external (unindexed) node into notebook index
+  void importExternalNode(const NodeIdentifier &p_nodeId);
 
   // Properties and info
   void showNodeProperties(const NodeIdentifier &p_nodeId);
