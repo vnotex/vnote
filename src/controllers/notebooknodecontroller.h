@@ -116,6 +116,11 @@ signals:
 
   // Signal emitted when nodes are pasted (for cross-panel refresh in two-column view)
   void nodesPasted(const NodeIdentifier &p_targetFolderId);
+
+public:
+  // Get the parent folder path for a node
+  NodeIdentifier getParentFolder(const NodeIdentifier &p_nodeId) const;
+
 private:
   // Add actions to context menu based on node type
   void addNewActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
@@ -137,9 +142,6 @@ private:
 
   // Get NodeInfo for a node from model
   NodeInfo getNodeInfo(const NodeIdentifier &p_nodeId) const;
-
-  // Get the parent folder path
-  NodeIdentifier getParentFolder(const NodeIdentifier &p_nodeId) const;
 
   ServiceLocator &m_services;
   NotebookNodeModel *m_model = nullptr;

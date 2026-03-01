@@ -1,6 +1,7 @@
 #include "notebooknodeview.h"
 
 #include <QContextMenuEvent>
+#include <QDataStream>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QKeyEvent>
@@ -16,6 +17,56 @@
 #include <controllers/notebooknodecontroller.h>
 
 using namespace vnotex;
+
+namespace {
+
+// Internal MIME type for node identifiers
+const QString c_nodeMimeType = QStringLiteral("application/x-vnotex-node-identifier");
+
+// Decode NodeIdentifier list from MIME data
+QList<NodeIdentifier> decodeNodeMimeData(const QMimeData *p_mimeData) {
+  QList<NodeIdentifier> nodes;
+  if (!p_mimeData || !p_mimeData->hasFormat(c_nodeMimeType)) {
+    return nodes;
+  }
+
+  QByteArray encodedData = p_mimeData->data(c_nodeMimeType);
+  QDataStream stream(&encodedData, QIODevice::ReadOnly);
+
+  while (!stream.atEnd()) {
+    QString notebookId, relativePath;
+    stream >> notebookId >> relativePath;
+    NodeIdentifier nodeId;
+    nodeId.notebookId = notebookId;
+    nodeId.relativePath = relativePath;
+    if (nodeId.isValid()) {
+      nodes.append(nodeId);
+    }
+  }
+  return nodes;
+}
+
+// Check if target is same as or descendant of any source node (circular drop prevention)
+bool isDropOnSelfOrDescendant(const QList<NodeIdentifier> &p_sources,
+                               const NodeIdentifier &p_target) {
+  for (const NodeIdentifier &source : p_sources) {
+    if (source.notebookId != p_target.notebookId) {
+      continue;
+    }
+    // Check if target is the same as source
+    if (source.relativePath == p_target.relativePath) {
+      return true;
+    }
+    // Check if target is a descendant of source
+    if (!source.relativePath.isEmpty() &&
+        p_target.relativePath.startsWith(source.relativePath + QLatin1Char('/'))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+} // anonymous namespace
 
 NotebookNodeView::NotebookNodeView(QWidget *p_parent) : QTreeView(p_parent) {
   setupView();
@@ -322,19 +373,80 @@ void NotebookNodeView::dropEvent(QDropEvent *p_event) {
   QModelIndex idx = indexAt(p_event->position().toPoint());
   NodeIdentifier targetId = nodeIdFromIndex(idx);
 
-  if (mimeData->hasFormat("application/x-vnotex-node-identifier")) {
-    // Internal node move - let model/controller handle it
-    // The actual move is handled by the controller
-    QTreeView::dropEvent(p_event);
-  } else if (mimeData->hasUrls()) {
-    // External file import
-    QList<QUrl> urls = mimeData->urls();
-    if (!urls.isEmpty() && m_controller) {
-      // Controller will handle import
-      // For now, just accept the drop
-      p_event->acceptProposedAction();
+  // If dropping on empty area or invalid index, target is notebook root
+  if (!targetId.isValid()) {
+    auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
+    auto *nodeModel =
+        qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
+    if (nodeModel) {
+      targetId.notebookId = nodeModel->getNotebookId();
+      targetId.relativePath = QString(); // root
     }
   }
+
+  // If target is a file (not folder), use its parent folder as target
+  NodeInfo targetInfo = nodeInfoFromIndex(idx);
+  if (targetId.isValid() && !targetId.relativePath.isEmpty() && !targetInfo.isFolder) {
+    if (m_controller) {
+      targetId = m_controller->getParentFolder(targetId);
+    }
+    if (!targetId.isValid()) {
+      p_event->ignore();
+      return;
+    }
+  }
+
+  if (mimeData->hasFormat(c_nodeMimeType)) {
+    // Decode dragged nodes
+    QList<NodeIdentifier> draggedNodes = decodeNodeMimeData(mimeData);
+
+    if (draggedNodes.isEmpty() || !m_controller) {
+      p_event->ignore();
+      return;
+    }
+
+    // Prevent dropping folder into itself or descendant
+    if (isDropOnSelfOrDescendant(draggedNodes, targetId)) {
+      p_event->ignore();
+      return;
+    }
+
+    // Determine action: Ctrl = Copy, otherwise Move
+    Qt::DropAction action = Qt::MoveAction;
+    if (p_event->modifiers() & Qt::ControlModifier) {
+      action = Qt::CopyAction;
+    }
+
+    // Perform operation via controller
+    if (action == Qt::CopyAction) {
+      m_controller->copyNodes(draggedNodes);
+      m_controller->pasteNodes(targetId);
+    } else {
+      m_controller->moveNodes(draggedNodes, targetId);
+    }
+
+    p_event->setDropAction(action);
+    p_event->accept();
+    return;
+  }
+
+  if (mimeData->hasUrls()) {
+    // External file import
+    QStringList filePaths;
+    for (const QUrl &url : mimeData->urls()) {
+      if (url.isLocalFile()) {
+        filePaths.append(url.toLocalFile());
+      }
+    }
+
+    if (!filePaths.isEmpty() && m_controller) {
+      m_controller->handleImportFiles(targetId, filePaths);
+      p_event->acceptProposedAction();
+      return;
+    }
+  }
+
+  p_event->ignore();
 }
 
 void NotebookNodeView::selectionChanged(const QItemSelection &p_selected,
