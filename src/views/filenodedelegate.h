@@ -25,6 +25,9 @@ public:
   QSize sizeHint(const QStyleOptionViewItem &p_option,
                  const QModelIndex &p_index) const override;
 
+  // Override to select only base name (without extension) when editing starts
+  void setEditorData(QWidget *p_editor, const QModelIndex &p_index) const override;
+
 private:
   // Paint the two-line file node content
   void paintFileNode(QPainter *p_painter, const QStyleOptionViewItem &p_option,

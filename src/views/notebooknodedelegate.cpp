@@ -1,7 +1,9 @@
 #include "notebooknodedelegate.h"
 
 #include <QApplication>
+#include <QLineEdit>
 #include <QPainter>
+#include <QTimer>
 
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
@@ -156,6 +158,34 @@ QSize NotebookNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option,
   int height = qMax(fm.height(), m_iconSize) + m_padding * 2;
 
   return QSize(200, height); // Width will be determined by view
+}
+
+void NotebookNodeDelegate::setEditorData(QWidget *p_editor, const QModelIndex &p_index) const {
+  // Let the base class set the data first
+  QStyledItemDelegate::setEditorData(p_editor, p_index);
+
+  // Select only the base name (without extension) for files
+  auto *lineEdit = qobject_cast<QLineEdit *>(p_editor);
+  if (!lineEdit) {
+    return;
+  }
+
+  // Check if this is a folder - if so, keep default selectAll behavior
+  NodeInfo nodeInfo = p_index.data(NotebookNodeModel::NodeInfoRole).value<NodeInfo>();
+  if (nodeInfo.isFolder) {
+    return;
+  }
+
+  // For files, select only the base name (before the last dot)
+  // Use QTimer::singleShot to defer selection until after the view's own
+  // selectAll() call that happens after setEditorData returns
+  QString text = lineEdit->text();
+  int lastDot = text.lastIndexOf(QLatin1Char('.'));
+  if (lastDot > 0) {
+    QTimer::singleShot(0, lineEdit, [lineEdit, lastDot]() {
+      lineEdit->setSelection(0, lastDot);
+    });
+  }
 }
 
 void NotebookNodeDelegate::setShowChildCount(bool p_show) { m_showChildCount = p_show; }
