@@ -936,12 +936,26 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
     if (!m_notebookId.isEmpty()) {
       auto *notebookService = m_services.get<NotebookService>();
       if (notebookService) {
+        QVector<NodeInfo> allNodes;
+
+        // Fetch external nodes first if visible (and parent is not external)
+        bool parentIsExternal = nodeIt.value().isExternal;
+        if (m_externalNodesVisible && !parentIsExternal) {
+          QJsonObject externalResult =
+              notebookService->listFolderExternal(p_nodeId.notebookId, p_nodeId.relativePath);
+          QVector<NodeInfo> externalNodes = parseExternalNodesFromJson(externalResult, p_nodeId);
+          allNodes.append(externalNodes);
+        }
+
+        // Fetch indexed nodes
         QJsonObject result =
             notebookService->listFolderChildren(p_nodeId.notebookId, p_nodeId.relativePath);
         QVector<NodeInfo> childrenInfo = parseChildrenFromJson(result, p_nodeId);
+        allNodes.append(childrenInfo);
+
         QVector<NodeIdentifier> childIds;
-        childIds.reserve(childrenInfo.size());
-        for (const NodeInfo &info : childrenInfo) {
+        childIds.reserve(allNodes.size());
+        for (const NodeInfo &info : allNodes) {
           m_nodeCache.insert(info.id, info);
           childIds.append(info.id);
         }

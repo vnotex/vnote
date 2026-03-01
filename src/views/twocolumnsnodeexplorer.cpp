@@ -94,11 +94,19 @@ void TwoColumnsNodeExplorer::setupUI() {
   connect(m_folderView, &NotebookNodeView::nodeSelectionChanged, this,
           &TwoColumnsNodeExplorer::onFolderSelectionChanged);
 
-  // Forward activation signals from both views
+  // Route activation signals through controllers (for auto-import handling)
   connect(m_folderView, &NotebookNodeView::nodeActivated, this,
-          &TwoColumnsNodeExplorer::nodeActivated);
+          [this](const NodeIdentifier &p_nodeId, const QSharedPointer<FileOpenParameters> &) {
+            if (m_folderController) {
+              m_folderController->openNode(p_nodeId);
+            }
+          });
   connect(m_fileView, &FileListView::nodeActivated, this,
-          &TwoColumnsNodeExplorer::nodeActivated);
+          [this](const NodeIdentifier &p_nodeId, const QSharedPointer<FileOpenParameters> &) {
+            if (m_fileController) {
+              m_fileController->openNode(p_nodeId);
+            }
+          });
 
   // Context menu signals (differentiate source)
   connect(m_folderView, &NotebookNodeView::contextMenuRequested, this,
@@ -121,6 +129,10 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
   if (!p_controller) {
     return;
   }
+
+  // Node activation signal (for opening nodes)
+  connect(p_controller, &NotebookNodeController::nodeActivated, this,
+          &TwoColumnsNodeExplorer::nodeActivated);
 
   // Node lifecycle signals
   connect(p_controller, &NotebookNodeController::fileActivated, this,
@@ -493,6 +505,19 @@ void TwoColumnsNodeExplorer::onFolderSelectionChanged(const QList<NodeIdentifier
     folderId = p_nodeIds.first();
     if (!folderId.isValid()) {
       return;
+    }
+
+    // Check if selected folder is external (unindexed)
+    // External folders cannot be listed - clear file view instead
+    QModelIndex sourceIdx = m_folderModel->indexFromNodeId(folderId);
+    if (sourceIdx.isValid()) {
+      bool isExternal =
+          m_folderModel->data(sourceIdx, NotebookNodeModel::IsExternalRole).toBool();
+      if (isExternal) {
+        // Clear file view by setting invalid display root
+        m_fileModel->setDisplayRoot(NodeIdentifier());
+        return;
+      }
     }
   }
 

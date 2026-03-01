@@ -342,6 +342,41 @@ void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
     return;
   }
 
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+
+  // Handle external nodes
+  if (nodeInfo.isValid() && nodeInfo.isExternal && !nodeInfo.isFolder) {
+    auto *configMgr = m_services.get<ConfigMgr2>();
+    bool autoImport =
+        configMgr && configMgr->getWidgetConfig().getNodeExplorerAutoImportExternalFilesEnabled();
+
+    if (autoImport) {
+      // Import the external node first, then open
+      auto *notebookService = m_services.get<NotebookService>();
+      if (notebookService &&
+          notebookService->indexNode(p_nodeId.notebookId, p_nodeId.relativePath)) {
+        // Reload parent to update view
+        if (m_model) {
+          NodeIdentifier parentId = getParentFolder(p_nodeId);
+          m_model->reloadNode(parentId);
+        }
+        // Node is now indexed, open it
+        auto paras = QSharedPointer<FileOpenParameters>::create();
+        emit nodeActivated(p_nodeId, paras);
+        return;
+      }
+      // Import failed, fall through to open as external file
+    }
+
+    // Open external file without importing
+    QString path = buildAbsolutePath(p_nodeId);
+    if (!path.isEmpty()) {
+      auto paras = QSharedPointer<FileOpenParameters>::create();
+      emit fileActivated(path, paras);
+    }
+    return;
+  }
+
   auto paras = QSharedPointer<FileOpenParameters>::create();
   emit nodeActivated(p_nodeId, paras);
 }
