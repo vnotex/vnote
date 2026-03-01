@@ -232,6 +232,9 @@
             },
             "external_node_icon" : {
                 "fg" : "@base#icon#inactive#fg"
+            },
+            "external_node_text" : {
+                "fg" : "#80808080"
             }
         },
         "locationlist" : {

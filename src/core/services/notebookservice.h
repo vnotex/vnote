@@ -72,6 +72,16 @@ public:
   // Returns JSON with "files" and "folders" arrays.
   QJsonObject listFolderChildren(const QString &p_notebookId, const QString &p_folderPath) const;
 
+  // List external (unindexed) nodes in a folder.
+  // External nodes exist on filesystem but are not tracked in metadata.
+  // Returns JSON with "files" and "folders" arrays (each entry has "name" and "type" only).
+  QJsonObject listFolderExternal(const QString &p_notebookId, const QString &p_folderPath) const;
+
+  // Index an external node (file or folder) into the notebook metadata.
+  // The node must exist on filesystem but not be tracked in metadata.
+  // Returns true on success, false if node doesn't exist or is already indexed.
+  bool indexNode(const QString &p_notebookId, const QString &p_nodePath);
+
   // Get an available (non-conflicting) name for a new node in the given folder.
   // Returns p_desiredName if available, or a modified version (e.g., 'name_1') if not.
   // Returns empty string on error.

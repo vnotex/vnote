@@ -158,8 +158,7 @@ void NotebookExplorer2::setupTitleBarMenu() {
     setupViewMenu(nodeMenu, false);
   }
 
-  // External files options - Note: NotebookExplorer2 doesn't have external file support yet
-  // These are kept for future implementation
+  // External files options
   {
     m_titleBar->addMenuSeparator();
     auto showAct = m_titleBar->addMenuAction(tr("Show External Files"), m_titleBar,
@@ -167,7 +166,13 @@ void NotebookExplorer2::setupTitleBarMenu() {
                                                m_services.get<ConfigMgr2>()
                                                    ->getWidgetConfig()
                                                    .setNodeExplorerExternalFilesVisible(p_checked);
-                                               // TODO: Apply to views when external file support is added
+                                               // Apply to model(s)
+                                               if (m_combinedModel) {
+                                                 m_combinedModel->setExternalNodesVisible(p_checked);
+                                               }
+                                               if (m_twoColumnsExplorer) {
+                                                 m_twoColumnsExplorer->setExternalNodesVisible(p_checked);
+                                               }
                                              });
     showAct->setCheckable(true);
     showAct->setChecked(widgetConfig.isNodeExplorerExternalFilesVisible());
@@ -436,10 +441,11 @@ void NotebookExplorer2::setupCombinedMode() {
   m_combinedProxyModel->setSourceModel(m_combinedModel);
   m_combinedProxyModel->setFilterFlags(NotebookNodeProxyModel::ShowAll);
 
-  // Apply initial view order from config
+  // Apply initial view order and external files visibility from config
   const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
   m_combinedProxyModel->setViewOrder(static_cast<ViewOrder>(widgetConfig.getNodeExplorerViewOrder()));
   m_combinedProxyModel->sort(0); // Enable sorting
+  m_combinedModel->setExternalNodesVisible(widgetConfig.isNodeExplorerExternalFilesVisible());
 
   m_combinedView = new NotebookNodeView(this);
   m_combinedView->setModel(m_combinedProxyModel);

@@ -12,8 +12,8 @@ namespace vnotex {
 // Maps directly to vxcore unified node API: vxcore_node_*(context, notebook_id, node_path, ...).
 // Use this when you only need to identify a node, not display it.
 struct NodeIdentifier {
-  QString notebookId;   // Notebook GUID
-  QString relativePath; // Path relative to notebook root ("" for root, "folder/note.md")
+  QString notebookId;        // Notebook GUID
+  QString relativePath;      // Path relative to notebook root ("" for root, "folder/note.md")
 
   // --- Convenience methods ---
   bool isRoot() const { return relativePath.isEmpty(); }
@@ -44,6 +44,7 @@ struct NodeInfo {
   // --- Identity (required for all operations) ---
   NodeIdentifier id;     // Unique identifier (notebookId + relativePath)
   bool isFolder = false; // True for folders, false for files
+  bool isExternal = false; // True if node is not indexed (exists on filesystem only)
 
   // --- Cached metadata (for display, avoid repeated service calls) ---
   QString name;              // Display name (last path component or notebook name for root)

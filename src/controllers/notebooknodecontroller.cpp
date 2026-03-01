@@ -95,10 +95,16 @@ void NotebookNodeController::setSelectedNodesCallback(SelectedNodesCallback p_ca
 
 QMenu *NotebookNodeController::createContextMenu(const NodeIdentifier &p_nodeId,
                                                   QWidget *p_parent) {
+  // Get node info to determine if it's a folder or external
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+
+  // External nodes have a different context menu
+  if (nodeInfo.isValid() && nodeInfo.isExternal) {
+    return createExternalNodeContextMenu(p_nodeId, p_parent);
+  }
+
   QMenu *menu = new QMenu(p_parent);
 
-  // Get node info to determine if it's a folder
-  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
   bool isFolder = nodeInfo.isValid() ? nodeInfo.isFolder : true; // Default to folder for root
 
   addNewActions(menu, p_nodeId, isFolder);
@@ -114,6 +120,42 @@ QMenu *NotebookNodeController::createContextMenu(const NodeIdentifier &p_nodeId,
   addInfoActions(menu, p_nodeId);
   menu->addSeparator();
   addMiscActions(menu, p_nodeId, isFolder);
+
+  return menu;
+}
+
+QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifier &p_nodeId,
+                                                              QWidget *p_parent) {
+  QMenu *menu = new QMenu(p_parent);
+
+  // Get node info to determine if it's a folder
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  bool isFolder = nodeInfo.isValid() ? nodeInfo.isFolder : true;
+
+  // Open actions - only for files (external folders cannot be expanded)
+  if (!isFolder) {
+    auto *openAction = menu->addAction(tr("&Open"));
+    connect(openAction, &QAction::triggered, this, [this, p_nodeId]() { openNode(p_nodeId); });
+
+    auto *openWithAction = menu->addAction(tr("Open With Default App"));
+    connect(openWithAction, &QAction::triggered, this,
+            [this, p_nodeId]() { openNodeWithDefaultApp(p_nodeId); });
+
+    menu->addSeparator();
+  }
+
+  // Import to Index action
+  auto *importAction = menu->addAction(tr("&Import to Index"));
+  importAction->setToolTip(tr("Add this external item to the notebook index"));
+  connect(importAction, &QAction::triggered, this,
+          [this, p_nodeId]() { importExternalNode(p_nodeId); });
+
+  menu->addSeparator();
+
+  // Open Location action
+  auto *locateAction = menu->addAction(tr("Open &Location"));
+  connect(locateAction, &QAction::triggered, this,
+          [this, p_nodeId]() { locateNodeInFileManager(p_nodeId); });
 
   return menu;
 }
@@ -525,6 +567,36 @@ void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &p_nodeIds,
 void NotebookNodeController::exportNode(const NodeIdentifier &p_nodeId) {
   Q_UNUSED(p_nodeId);
   emit infoMessage(tr("Export"), tr("Export functionality not yet implemented."));
+}
+
+void NotebookNodeController::importExternalNode(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  // Verify this is an external node
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  if (!nodeInfo.isValid() || !nodeInfo.isExternal) {
+    return;
+  }
+
+  auto *notebookService = m_services.get<NotebookService>();
+  if (!notebookService) {
+    emit errorOccurred(tr("Error"), tr("NotebookService not available."));
+    return;
+  }
+
+  bool success = notebookService->indexNode(p_nodeId.notebookId, p_nodeId.relativePath);
+  if (!success) {
+    emit errorOccurred(tr("Error"), tr("Failed to import external node to index."));
+    return;
+  }
+
+  // Reload parent folder to update the view
+  if (m_model) {
+    NodeIdentifier parentId = getParentFolder(p_nodeId);
+    m_model->reloadNode(parentId);
+  }
 }
 
 void NotebookNodeController::showNodeProperties(const NodeIdentifier &p_nodeId) {

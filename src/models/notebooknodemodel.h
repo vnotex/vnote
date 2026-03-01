@@ -33,6 +33,7 @@ public:
     NodeInfoRole = Qt::UserRole + 1, // NodeInfo struct
     IsFolderRole,                    // bool - is folder
     NodeIdentifierRole,              // NodeIdentifier struct
+    IsExternalRole,                  // bool - is external (unindexed) node
 
     // Display roles
     ChildCountRole,   // int - number of children
@@ -90,6 +91,10 @@ public:
   // Notify model about external changes to a node
   void nodeDataChanged(const NodeIdentifier &p_nodeId);
 
+  // External nodes visibility
+  void setExternalNodesVisible(bool p_visible);
+  bool isExternalNodesVisible() const;
+
 signals:
   void notebookChanged();
   void errorOccurred(const QString &p_title, const QString &p_message);
@@ -105,6 +110,8 @@ private:
   NodeIdentifier nodeIdForIndexId(quintptr p_indexId) const;
   QVector<NodeInfo> parseChildrenFromJson(const QJsonObject &p_json,
                                           const NodeIdentifier &p_parentId) const;
+  QVector<NodeInfo> parseExternalNodesFromJson(const QJsonObject &p_json,
+                                               const NodeIdentifier &p_parentId) const;
   NodeInfo parseNodeInfoFromJson(const QJsonObject &p_json, const NodeIdentifier &p_parentId) const;
   QIcon getNodeIcon(const NodeInfo &p_info) const;
 
@@ -117,6 +124,7 @@ private:
   mutable QHash<NodeIdentifier, quintptr> m_indexIdCache;
   mutable QHash<quintptr, NodeIdentifier> m_indexIdLookup;
   mutable quintptr m_nextIndexId = 1;
+  bool m_externalNodesVisible = false;
 };
 
 } // namespace vnotex
