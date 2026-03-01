@@ -5,6 +5,8 @@
 #include <QObject>
 #include <QSharedPointer>
 
+#include <functional>
+
 #include <nodeinfo.h>
 
 class QMenu;
@@ -79,6 +81,10 @@ public:
   // Check if single-click activation is enabled from config
   bool isSingleClickActivationEnabled() const;
 
+  // Set callback to get selected nodes (for views that don't inherit NotebookNodeView)
+  using SelectedNodesCallback = std::function<QList<NodeIdentifier>()>;
+  void setSelectedNodesCallback(SelectedNodesCallback p_callback);
+
   // Slots for handling dialog results from View
   void handleNewNoteResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
   void handleNewFolderResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
@@ -138,6 +144,7 @@ private:
   ServiceLocator &m_services;
   NotebookNodeModel *m_model = nullptr;
   NotebookNodeView *m_view = nullptr;
+  SelectedNodesCallback m_selectedNodesCallback;
 
   // Clipboard state (shared between controllers via shared pointer)
   struct ClipboardState {

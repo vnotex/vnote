@@ -72,7 +72,8 @@ void TwoColumnsNodeExplorer::setupUI() {
 
   m_fileController = new NotebookNodeController(m_services, this);
   m_fileController->setModel(m_fileModel);
-  // Note: FileListView is not a NotebookNodeView, so we don't call setView()
+  // Note: FileListView is not a NotebookNodeView, so we use a callback instead of setView()
+  m_fileController->setSelectedNodesCallback([this]() { return m_fileView->selectedNodeIds(); });
   m_fileView->setController(m_fileController);
 
   // Share clipboard between folder and file controllers
