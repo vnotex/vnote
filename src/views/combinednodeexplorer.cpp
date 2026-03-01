@@ -94,6 +94,10 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::errorOccurred);
   connect(m_controller, &NotebookNodeController::infoMessage, this,
           &CombinedNodeExplorer::infoMessage);
+
+  // Model error signals (for inline rename failures)
+  connect(m_model, &NotebookNodeModel::errorOccurred, this,
+          &CombinedNodeExplorer::errorOccurred);
 }
 
 void CombinedNodeExplorer::setNotebookId(const QString &p_notebookId) {

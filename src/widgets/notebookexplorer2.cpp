@@ -492,6 +492,10 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onErrorOccurred);
   connect(m_combinedController, &NotebookNodeController::infoMessage, this,
           &NotebookExplorer2::onInfoMessage);
+
+  // Model error signals (for inline rename failures)
+  connect(m_combinedModel, &NotebookNodeModel::errorOccurred, this,
+          &NotebookExplorer2::onErrorOccurred);
 }
 
 void NotebookExplorer2::setupTwoColumnsMode() {
