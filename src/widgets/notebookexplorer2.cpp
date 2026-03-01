@@ -508,15 +508,15 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   m_twoColumnsExplorer = new TwoColumnsNodeExplorer(m_services, this);
   m_contentStack->addWidget(m_twoColumnsExplorer);
 
-  // Connect unified signals from TwoColumnsNodeExplorer
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeActivated, this,
-          &NotebookExplorer2::onNodeActivated);
+  // Connect context menu signal
   connect(m_twoColumnsExplorer,
           QOverload<const NodeIdentifier &, const QPoint &, bool>::of(
               &TwoColumnsNodeExplorer::contextMenuRequested),
           this, &NotebookExplorer2::onTwoColumnsContextMenu);
 
   // Forward controller signals (unified from both folder and file controllers)
+  // Note: nodeActivated already routes through TwoColumnsNodeExplorer's controllers
+  // which handle auto-import for external nodes
   connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeActivated, this,
           &NotebookExplorer2::nodeActivated);
   connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::fileActivated, this,
@@ -669,12 +669,15 @@ void NotebookExplorer2::updateFocusProxy() {
 
 void NotebookExplorer2::onNodeActivated(const NodeIdentifier &p_nodeId,
                                         const QSharedPointer<FileOpenParameters> &p_paras) {
+  Q_UNUSED(p_paras);
   if (!p_nodeId.isValid()) {
     return;
   }
 
-  // Forward the signal (already using NodeIdentifier)
-  emit nodeActivated(p_nodeId, p_paras);
+  // Route through controller to handle auto-import for external nodes
+  if (m_combinedController) {
+    m_combinedController->openNode(p_nodeId);
+  }
 }
 
 void NotebookExplorer2::onContextMenuRequested(const NodeIdentifier &p_nodeId,
