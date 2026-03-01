@@ -63,6 +63,9 @@ public:
   bool getUnitedEntryExpandAllEnabled() const;
   void setUnitedEntryExpandAllEnabled(bool p_enabled);
 
+  bool isNodeExplorerSingleClickActivation() const;
+  void setNodeExplorerSingleClickActivation(bool p_enabled);
+
 private:
   int m_outlineAutoExpandedLevel = 6;
 
@@ -95,6 +98,9 @@ private:
   int m_newNoteDefaultFileType = 0;
 
   bool m_unitedEntryExpandAllEnabled = false;
+
+  // Whether single click activates items in node explorer.
+  bool m_nodeExplorerSingleClickActivation = false;
 };
 } // namespace vnotex
 

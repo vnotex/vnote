@@ -71,6 +71,9 @@ public:
   // === Reload ===
   virtual void reloadNode(const NodeIdentifier &p_nodeId) = 0;
 
+  // === Inline rename ===
+  // Start inline editing for a node (triggers edit mode on the view)
+  virtual void startInlineRename(const NodeIdentifier &p_nodeId) = 0;
 signals:
   // === Activation signals ===
   void nodeActivated(const NodeIdentifier &p_nodeId,

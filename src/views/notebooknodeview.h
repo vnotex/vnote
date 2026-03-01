@@ -5,7 +5,9 @@
 #include <QSharedPointer>
 #include <QTreeView>
 
+
 #include <nodeinfo.h>
+
 
 namespace vnotex {
 
@@ -55,6 +57,9 @@ protected:
   void keyPressEvent(QKeyEvent *p_event) override;
   void contextMenuEvent(QContextMenuEvent *p_event) override;
 
+  // Mouse press event for single-click activation
+  void mousePressEvent(QMouseEvent *p_event) override;
+
   // Drag and drop
   void dragEnterEvent(QDragEnterEvent *p_event) override;
   void dragMoveEvent(QDragMoveEvent *p_event) override;
@@ -67,6 +72,11 @@ protected:
 private slots:
   void onItemActivated(const QModelIndex &p_index);
   void onItemExpanded(const QModelIndex &p_index);
+
+
+
+  // Check if single-click activation is enabled in config
+  bool isSingleClickActivationEnabled() const;
 
 private:
   // Get NodeIdentifier from model index
@@ -82,6 +92,8 @@ private:
   void setupView();
 
   NotebookNodeController *m_controller = nullptr;
+
+
 };
 
 } // namespace vnotex

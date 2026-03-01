@@ -1,11 +1,13 @@
 #ifndef FILELISTVIEW_H
 #define FILELISTVIEW_H
 
+
 #include <QList>
 #include <QListView>
 #include <QSharedPointer>
 
 #include <nodeinfo.h>
+
 
 namespace vnotex {
 
@@ -46,6 +48,7 @@ signals:
 
 protected:
   // Event handlers
+  void mousePressEvent(QMouseEvent *p_event) override;
   void mouseDoubleClickEvent(QMouseEvent *p_event) override;
   void keyPressEvent(QKeyEvent *p_event) override;
   void contextMenuEvent(QContextMenuEvent *p_event) override;
@@ -75,7 +78,12 @@ private:
   // Setup initial configuration
   void setupView();
 
+  // Check if single-click activation is enabled from config
+  bool isSingleClickActivationEnabled() const;
+
   NotebookNodeController *m_controller = nullptr;
+
+
 };
 
 } // namespace vnotex

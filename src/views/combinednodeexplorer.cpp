@@ -221,3 +221,25 @@ void CombinedNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId) {
     m_model->reloadNode(p_nodeId);
   }
 }
+
+void CombinedNodeExplorer::startInlineRename(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid() || !m_view || !m_model) {
+    return;
+  }
+
+  QModelIndex sourceIdx = m_model->indexFromNodeId(p_nodeId);
+  if (!sourceIdx.isValid()) {
+    return;
+  }
+
+  // Map to proxy index if using proxy model
+  QModelIndex viewIdx = sourceIdx;
+  if (m_proxyModel) {
+    viewIdx = m_proxyModel->mapFromSource(sourceIdx);
+  }
+
+  if (viewIdx.isValid()) {
+    m_view->setCurrentIndex(viewIdx);
+    m_view->edit(viewIdx);
+  }
+}

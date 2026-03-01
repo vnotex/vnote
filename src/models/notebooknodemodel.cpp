@@ -354,6 +354,88 @@ QVariant NotebookNodeModel::data(const QModelIndex &p_index, int p_role) const {
     return QVariant();
   }
 }
+bool NotebookNodeModel::setData(const QModelIndex &p_index, const QVariant &p_value, int p_role) {
+  if (!p_index.isValid() || p_role != Qt::EditRole) {
+    return false;
+  }
+
+  QString newName = p_value.toString().trimmed();
+  if (newName.isEmpty()) {
+    return false;
+  }
+
+  NodeIdentifier nodeId = nodeIdFromIndex(p_index);
+  auto nodeIt = m_nodeCache.find(nodeId);
+  if (nodeIt == m_nodeCache.end()) {
+    return false;
+  }
+
+  const NodeInfo &info = nodeIt.value();
+
+  // Skip if name unchanged
+  if (info.name == newName) {
+    return false;
+  }
+
+  auto *notebookService = m_services.get<NotebookService>();
+  if (!notebookService) {
+    return false;
+  }
+
+  bool success = false;
+  if (info.isFolder) {
+    success = notebookService->renameFolder(nodeId.notebookId, nodeId.relativePath, newName);
+  } else {
+    success = notebookService->renameFile(nodeId.notebookId, nodeId.relativePath, newName);
+  }
+
+  if (success) {
+    // Update cache with new name and path
+    NodeInfo &mutableInfo = nodeIt.value();
+    mutableInfo.name = newName;
+
+    // Update the relativePath in the node identifier
+    QString parentPath = nodeId.parentPath();
+    QString newRelativePath = parentPath.isEmpty() ? newName : parentPath + QLatin1Char('/') + newName;
+    
+    // Remove old cache entries
+    NodeIdentifier newNodeId;
+    newNodeId.notebookId = nodeId.notebookId;
+    newNodeId.relativePath = newRelativePath;
+
+    // Move cache entry to new key
+    NodeInfo updatedInfo = mutableInfo;
+    updatedInfo.id = newNodeId;
+    m_nodeCache.remove(nodeId);
+    m_nodeCache.insert(newNodeId, updatedInfo);
+
+    // Update index ID caches
+    quintptr indexId = m_indexIdCache.value(nodeId);
+    m_indexIdCache.remove(nodeId);
+    m_indexIdCache.insert(newNodeId, indexId);
+    m_indexIdLookup.insert(indexId, newNodeId);
+
+    // Update parent's children cache
+    NodeIdentifier parentId;
+    parentId.notebookId = nodeId.notebookId;
+    parentId.relativePath = parentPath;
+    auto childrenIt = m_childrenCache.find(parentId);
+    if (childrenIt != m_childrenCache.end()) {
+      for (int i = 0; i < childrenIt->size(); ++i) {
+        if (childrenIt->at(i) == nodeId) {
+          (*childrenIt)[i] = newNodeId;
+          break;
+        }
+      }
+    }
+
+    emit dataChanged(p_index, p_index, {Qt::DisplayRole, Qt::EditRole});
+    return true;
+  }
+
+  return false;
+}
+
 
 Qt::ItemFlags NotebookNodeModel::flags(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {

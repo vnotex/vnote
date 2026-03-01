@@ -9,13 +9,18 @@
 #include <QSortFilterProxyModel>
 #include <QUrl>
 
+
 #include <core/fileopenparameters.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
+#include <controllers/notebooknodecontroller.h>
 
 using namespace vnotex;
 
-NotebookNodeView::NotebookNodeView(QWidget *p_parent) : QTreeView(p_parent) { setupView(); }
+NotebookNodeView::NotebookNodeView(QWidget *p_parent) : QTreeView(p_parent) {
+  setupView();
+}
+
 
 NotebookNodeView::~NotebookNodeView() {}
 
@@ -39,6 +44,9 @@ void NotebookNodeView::setupView() {
 
   // Enable lazy loading
   setAutoExpandDelay(500);
+
+  // Disable default edit triggers - we control editing explicitly via edit() calls
+  setEditTriggers(QAbstractItemView::NoEditTriggers);
 
   // Connect activated signal
   connect(this, &QTreeView::activated, this, &NotebookNodeView::onItemActivated);
@@ -197,6 +205,22 @@ QModelIndex NotebookNodeView::indexFromNodeId(const NodeIdentifier &p_nodeId) co
   return sourceIdx;
 }
 
+void NotebookNodeView::mousePressEvent(QMouseEvent *p_event) {
+  QTreeView::mousePressEvent(p_event);
+
+  // Handle single-click activation if enabled
+  if (p_event->button() == Qt::LeftButton && isSingleClickActivationEnabled()) {
+    QModelIndex idx = indexAt(p_event->pos());
+    if (idx.isValid()) {
+      NodeInfo nodeInfo = nodeInfoFromIndex(idx);
+      if (nodeInfo.isValid() && !nodeInfo.isFolder) {
+        auto paras = QSharedPointer<FileOpenParameters>::create();
+        emit nodeActivated(nodeInfo.id, paras);
+      }
+    }
+  }
+}
+
 void NotebookNodeView::mouseDoubleClickEvent(QMouseEvent *p_event) {
   QModelIndex idx = indexAt(p_event->pos());
   if (!idx.isValid()) {
@@ -237,10 +261,12 @@ void NotebookNodeView::keyPressEvent(QKeyEvent *p_event) {
     break;
   }
   case Qt::Key_F2: {
-    // Rename - handled by controller
-    NodeIdentifier nodeId = currentNodeId();
-    if (nodeId.isValid() && m_controller) {
-      // Controller will handle rename
+    // Rename - trigger inline edit
+    QModelIndex idx = currentIndex();
+    if (idx.isValid()) {
+      edit(idx);
+      p_event->accept();
+      return;
     }
     break;
   }
@@ -344,4 +370,13 @@ void NotebookNodeView::onItemExpanded(const QModelIndex &p_index) {
   if (nodeModel) {
     nodeModel->prefetchChildrenOfChildren(sourceIdx);
   }
+}
+
+
+
+bool NotebookNodeView::isSingleClickActivationEnabled() const {
+  if (m_controller) {
+    return m_controller->isSingleClickActivationEnabled();
+  }
+  return false;
 }
