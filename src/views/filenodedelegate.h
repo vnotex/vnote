@@ -51,12 +51,12 @@ private:
 
   // Configuration
   ServiceLocator &m_services;
-  int m_hPadding = 6;   // Horizontal padding (left/right margins)
-  int m_vPadding = 10;  // Vertical padding (top/bottom margins)
-  int m_iconSize = 16;
-  int m_lineSpacing = 2;
-  int m_maxVisibleTags = 3;
-  int m_maxTagWidth = 60;
+  const int m_hPadding = 8;   // Horizontal padding (left/right margins)
+  const int m_vPadding = 10;  // Vertical padding (top/bottom margins)
+  const int m_iconSize = 16;
+  const int m_lineSpacing = 2;
+  const int m_maxVisibleTags = 3;
+  const int m_maxTagWidth = 60;
 };
 
 } // namespace vnotex

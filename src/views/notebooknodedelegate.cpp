@@ -52,15 +52,15 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
 
   // Calculate icon rect
   QRect iconRect = p_option.rect;
+  iconRect.setLeft(iconRect.left() + m_hPadding);
   iconRect.setWidth(m_iconSize);
-  iconRect.setLeft(iconRect.left() + m_padding);
   iconRect.setTop(iconRect.top() + (p_option.rect.height() - m_iconSize) / 2);
   iconRect.setHeight(m_iconSize);
 
   // Calculate text rect - leave room for icon on left
   QRect textRect = p_option.rect;
-  textRect.setLeft(iconRect.right() + m_padding);
-  textRect.setRight(p_option.rect.right() - m_padding);
+  textRect.setLeft(iconRect.right() + m_hPadding);
+  textRect.setRight(p_option.rect.right() - m_hPadding);
 
   // Draw icon
   QIcon icon = getNodeIcon(p_nodeInfo);
@@ -128,7 +128,7 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
       int countWidth = fm.horizontalAdvance(countText);
 
       QRect countRect = textRect;
-      countRect.setLeft(countRect.right() - countWidth - m_padding);
+      countRect.setLeft(countRect.right() - countWidth - m_hPadding);
 
       // Use same text color with reduced alpha for badge
       QColor countColor = textColor;
@@ -155,7 +155,7 @@ QSize NotebookNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option,
   Q_UNUSED(p_index);
 
   QFontMetrics fm(p_option.font);
-  int height = qMax(fm.height(), m_iconSize) + m_padding * 2;
+  int height = qMax(fm.height(), m_iconSize) + m_vPadding * 2;
 
   return QSize(200, height); // Width will be determined by view
 }

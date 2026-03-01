@@ -52,8 +52,9 @@ private:
   // Configuration
   ServiceLocator &m_services;
   bool m_showChildCount = true;
-  int m_padding = 4;
-  int m_iconSize = 16;
+  const int m_hPadding = 8;  // Horizontal padding
+  const int m_vPadding = 4;  // Vertical padding
+  const int m_iconSize = 16;
 };
 
 } // namespace vnotex
