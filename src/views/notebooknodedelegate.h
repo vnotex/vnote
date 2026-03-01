@@ -26,6 +26,9 @@ public:
 
   QSize sizeHint(const QStyleOptionViewItem &p_option, const QModelIndex &p_index) const override;
 
+  // Override to select only base name (without extension) when editing starts
+  void setEditorData(QWidget *p_editor, const QModelIndex &p_index) const override;
+
   // Enable/disable showing node count badge on folders
   void setShowChildCount(bool p_show);
   bool showChildCount() const;

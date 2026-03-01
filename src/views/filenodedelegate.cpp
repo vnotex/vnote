@@ -1,8 +1,10 @@
 #include "filenodedelegate.h"
 
 #include <QApplication>
+#include <QLineEdit>
 #include <QPainter>
 #include <QRegularExpression>
+#include <QTimer>
 
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
@@ -381,4 +383,28 @@ QIcon FileNodeDelegate::getNodeIcon(const NodeInfo &p_nodeInfo) const {
   QString iconName = QStringLiteral("file_node.svg");
 
   return IconUtils::fetchIcon(themeService->getIconFile(iconName));
+}
+
+void FileNodeDelegate::setEditorData(QWidget *p_editor, const QModelIndex &p_index) const {
+  Q_UNUSED(p_index);
+
+  // Let the base class set the data first
+  QStyledItemDelegate::setEditorData(p_editor, p_index);
+
+  // Select only the base name (without extension)
+  auto *lineEdit = qobject_cast<QLineEdit *>(p_editor);
+  if (!lineEdit) {
+    return;
+  }
+
+  // FileNodeDelegate is only used for files, so always try to select base name
+  // Use QTimer::singleShot to defer selection until after the view's own
+  // selectAll() call that happens after setEditorData returns
+  QString text = lineEdit->text();
+  int lastDot = text.lastIndexOf(QLatin1Char('.'));
+  if (lastDot > 0) {
+    QTimer::singleShot(0, lineEdit, [lineEdit, lastDot]() {
+      lineEdit->setSelection(0, lastDot);
+    });
+  }
 }
