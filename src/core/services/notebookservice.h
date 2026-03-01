@@ -45,11 +45,6 @@ public:
   // Returns empty string if node is not found.
   QString getNodePathById(const QString &p_notebookId, const QString &p_nodeId) const;
 
-  // Get node config (file or folder) with type information.
-  // Returns JSON with "type" field ("file" or "folder") plus config details.
-  // Returns empty object if node is not found.
-  QJsonObject getNodeConfig(const QString &p_notebookId, const QString &p_nodePath) const;
-
   // Remove a node (file or folder) from the notebook index.
   // Files remain on disk - only metadata is removed.
   bool unindexNode(const QString &p_notebookId, const QString &p_nodePath);
