@@ -318,9 +318,17 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
   auto *notebookService = m_services.get<NotebookService>();
 
   NodeInfo targetInfo = getNodeInfo(p_targetFolderId);
-  // For root folder (empty relativePath), getNodeInfo returns invalid NodeInfo
-  // because the model doesn't have an index for the root. We know it's a folder.
+  // Check if target is a folder:
+  // 1. Root folder (empty relativePath) is always a folder
+  // 2. Valid nodeInfo with isFolder=true
+  // 3. For invalid nodeInfo (cross-panel paste), query service to verify it's a folder
   bool isTargetFolder = p_targetFolderId.relativePath.isEmpty() || targetInfo.isFolder;
+  if (!isTargetFolder && !targetInfo.isValid()) {
+    // Target not in model - check if it's a folder via service
+    QJsonObject folderConfig = notebookService->getFolderConfig(
+        p_targetFolderId.notebookId, p_targetFolderId.relativePath);
+    isTargetFolder = !folderConfig.isEmpty();
+  }
   if (!isTargetFolder) {
     return;
   }
@@ -338,17 +346,26 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
       sourceParentPaths.insert(nodeId.parentPath());
     }
     NodeInfo nodeInfo = getNodeInfo(nodeId);
-    // If model cache doesn't have the node, query service directly
+    // If source node not in our model cache (cross-panel paste), query service
     bool isFolder = nodeInfo.isFolder;
     QString nodeName = nodeInfo.name;
     if (!nodeInfo.isValid()) {
-      QJsonObject nodeConfig = notebookService->getNodeConfig(nodeId.notebookId, nodeId.relativePath);
-      if (nodeConfig.isEmpty()) {
-        emit errorOccurred(tr("Error"), tr("Node not found: %1").arg(nodeId.relativePath));
-        continue;
+      // Cross-panel paste: node not in our model cache, query service
+      // Try folder config first, then file info
+      QJsonObject folderConfig = notebookService->getFolderConfig(nodeId.notebookId, nodeId.relativePath);
+      if (!folderConfig.isEmpty()) {
+        isFolder = true;
+        nodeName = folderConfig.value(QStringLiteral("name")).toString();
+      } else {
+        QJsonObject fileInfo = notebookService->getFileInfo(nodeId.notebookId, nodeId.relativePath);
+        if (!fileInfo.isEmpty()) {
+          isFolder = false;
+          nodeName = fileInfo.value(QStringLiteral("name")).toString();
+        } else {
+          emit errorOccurred(tr("Error"), tr("Node not found: %1").arg(nodeId.relativePath));
+          continue;
+        }
       }
-      isFolder = nodeConfig.value(QStringLiteral("type")).toString() == QStringLiteral("folder");
-      nodeName = nodeConfig.value(QStringLiteral("name")).toString();
     }
     bool success = false;
     if (m_clipboard->isCut) {
