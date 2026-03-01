@@ -92,6 +92,7 @@ public:
 
 signals:
   void notebookChanged();
+  void errorOccurred(const QString &p_title, const QString &p_message);
 
 private:
   void ensureRoot() const;

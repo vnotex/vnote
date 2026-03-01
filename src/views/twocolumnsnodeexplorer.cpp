@@ -107,6 +107,12 @@ void TwoColumnsNodeExplorer::setupUI() {
   // Forward controller signals from both controllers
   connectControllerSignals(m_folderController);
   connectControllerSignals(m_fileController);
+
+  // Model error signals (for inline rename failures)
+  connect(m_folderModel, &NotebookNodeModel::errorOccurred, this,
+          &TwoColumnsNodeExplorer::errorOccurred);
+  connect(m_fileModel, &NotebookNodeModel::errorOccurred, this,
+          &TwoColumnsNodeExplorer::errorOccurred);
 }
 
 void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_controller) {

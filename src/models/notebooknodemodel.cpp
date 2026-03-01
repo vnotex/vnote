@@ -433,6 +433,8 @@ bool NotebookNodeModel::setData(const QModelIndex &p_index, const QVariant &p_va
     return true;
   }
 
+  // Emit error signal for UI notification
+  emit errorOccurred(tr("Error"), tr("Failed to rename \"%1\".").arg(info.name));
   return false;
 }
 
