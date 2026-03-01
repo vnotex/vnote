@@ -76,6 +76,9 @@ public:
   // Share clipboard with another controller (for two-column view)
   void shareClipboardWith(NotebookNodeController *p_other);
 
+  // Check if single-click activation is enabled from config
+  bool isSingleClickActivationEnabled() const;
+
   // Slots for handling dialog results from View
   void handleNewNoteResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
   void handleNewFolderResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);

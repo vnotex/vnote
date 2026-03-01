@@ -194,6 +194,17 @@ void NotebookExplorer2::setupTitleBarMenu() {
     act->setChecked(widgetConfig.getNodeExplorerCloseBeforeOpenWithEnabled());
   }
 
+  {
+    m_titleBar->addMenuSeparator();
+    auto act = m_titleBar->addMenuAction(
+        tr("Single Click Activation"), m_titleBar, [this](bool p_checked) {
+          m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerSingleClickActivation(
+              p_checked);
+        });
+    act->setCheckable(true);
+    act->setChecked(widgetConfig.isNodeExplorerSingleClickActivation());
+  }
+
   setupExploreModeMenu();
 }
 
@@ -1046,21 +1057,23 @@ void NotebookExplorer2::onNewFolderRequested(const NodeIdentifier &p_parentId) {
 
 void NotebookExplorer2::onRenameRequested(const NodeIdentifier &p_nodeId,
                                           const QString &p_currentName) {
-  bool ok;
-  QString newName = QInputDialog::getText(window(), tr("Rename"), tr("New name:"),
-                                          QLineEdit::Normal, p_currentName, &ok);
-  if (!ok || newName.isEmpty() || newName == p_currentName) {
-    return;
-  }
+  Q_UNUSED(p_currentName);
 
-  // Use unified interface to perform the rename
+  // Trigger inline editing instead of dialog
   if (m_exploreMode == Combined) {
-    if (m_combinedController) {
-      m_combinedController->handleRenameResult(p_nodeId, newName);
+    if (m_combinedView && m_combinedModel && m_combinedProxyModel) {
+      QModelIndex sourceIdx = m_combinedModel->indexFromNodeId(p_nodeId);
+      if (sourceIdx.isValid()) {
+        QModelIndex viewIdx = m_combinedProxyModel->mapFromSource(sourceIdx);
+        if (viewIdx.isValid()) {
+          m_combinedView->setCurrentIndex(viewIdx);
+          m_combinedView->edit(viewIdx);
+        }
+      }
     }
   } else {
     if (m_twoColumnsExplorer) {
-      m_twoColumnsExplorer->handleRenameResult(p_nodeId, newName);
+      m_twoColumnsExplorer->startInlineRename(p_nodeId);
     }
   }
 }

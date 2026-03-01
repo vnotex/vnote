@@ -50,6 +50,7 @@ public:
   void handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds) override;
 
   void reloadNode(const NodeIdentifier &p_nodeId) override;
+  void startInlineRename(const NodeIdentifier &p_nodeId) override;
 
 private:
   void setupUI();

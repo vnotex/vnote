@@ -1,20 +1,26 @@
 #include "filelistview.h"
 
+
 #include <QContextMenuEvent>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QKeyEvent>
 #include <QMimeData>
 #include <QMouseEvent>
+
 #include <QUrl>
 
+#include <controllers/notebooknodecontroller.h>
 #include <core/fileopenparameters.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
 
 using namespace vnotex;
 
-FileListView::FileListView(QWidget *p_parent) : QListView(p_parent) { setupView(); }
+FileListView::FileListView(QWidget *p_parent) : QListView(p_parent) {
+  setupView();
+}
+
 
 FileListView::~FileListView() {}
 
@@ -39,6 +45,9 @@ void FileListView::setupView() {
 
   // Set object name for QSS styling
   setObjectName(QStringLiteral("FileListView"));
+
+  // Disable default edit triggers - we control editing explicitly via edit() calls
+  setEditTriggers(QAbstractItemView::NoEditTriggers);
 
   // Connect activated signal
   connect(this, &QListView::activated, this, &FileListView::onItemActivated);
@@ -159,6 +168,22 @@ QModelIndex FileListView::indexFromNodeId(const NodeIdentifier &p_nodeId) const 
   return sourceIdx;
 }
 
+void FileListView::mousePressEvent(QMouseEvent *p_event) {
+  QListView::mousePressEvent(p_event);
+
+  // Handle single-click activation if enabled
+  if (p_event->button() == Qt::LeftButton && isSingleClickActivationEnabled()) {
+    QModelIndex idx = indexAt(p_event->pos());
+    if (idx.isValid()) {
+      NodeInfo nodeInfo = nodeInfoFromIndex(idx);
+      if (nodeInfo.isValid() && !nodeInfo.isFolder) {
+        auto paras = QSharedPointer<FileOpenParameters>::create();
+        emit nodeActivated(nodeInfo.id, paras);
+      }
+    }
+  }
+}
+
 void FileListView::mouseDoubleClickEvent(QMouseEvent *p_event) {
   QModelIndex idx = indexAt(p_event->pos());
   if (!idx.isValid()) {
@@ -198,10 +223,12 @@ void FileListView::keyPressEvent(QKeyEvent *p_event) {
     break;
   }
   case Qt::Key_F2: {
-    // Rename - handled by controller
-    NodeIdentifier nodeId = currentNodeId();
-    if (nodeId.isValid() && m_controller) {
-      // Controller will handle rename
+    // Rename - trigger inline edit
+    QModelIndex idx = currentIndex();
+    if (idx.isValid()) {
+      edit(idx);
+      p_event->accept();
+      return;
     }
     break;
   }
@@ -271,4 +298,13 @@ void FileListView::onItemActivated(const QModelIndex &p_index) {
     auto paras = QSharedPointer<FileOpenParameters>::create();
     emit nodeActivated(nodeInfo.id, paras);
   }
+}
+
+
+
+bool FileListView::isSingleClickActivationEnabled() const {
+  if (m_controller) {
+    return m_controller->isSingleClickActivationEnabled();
+  }
+  return false;
 }

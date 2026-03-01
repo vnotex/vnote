@@ -411,6 +411,56 @@ void TwoColumnsNodeExplorer::restoreSplitterState(const QByteArray &p_data) {
   }
 }
 
+void TwoColumnsNodeExplorer::startInlineRename(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  NodeInfo info = getNodeInfo(p_nodeId);
+
+  if (info.isFolder) {
+    // Folder - use folder view
+    if (!m_folderView || !m_folderModel) {
+      return;
+    }
+
+    QModelIndex sourceIdx = m_folderModel->indexFromNodeId(p_nodeId);
+    if (!sourceIdx.isValid()) {
+      return;
+    }
+
+    QModelIndex viewIdx = sourceIdx;
+    if (m_folderProxyModel) {
+      viewIdx = m_folderProxyModel->mapFromSource(sourceIdx);
+    }
+
+    if (viewIdx.isValid()) {
+      m_folderView->setCurrentIndex(viewIdx);
+      m_folderView->edit(viewIdx);
+    }
+  } else {
+    // File - use file view
+    if (!m_fileView || !m_fileModel) {
+      return;
+    }
+
+    QModelIndex sourceIdx = m_fileModel->indexFromNodeId(p_nodeId);
+    if (!sourceIdx.isValid()) {
+      return;
+    }
+
+    QModelIndex viewIdx = sourceIdx;
+    if (m_fileProxyModel) {
+      viewIdx = m_fileProxyModel->mapFromSource(sourceIdx);
+    }
+
+    if (viewIdx.isValid()) {
+      m_fileView->setCurrentIndex(viewIdx);
+      m_fileView->edit(viewIdx);
+    }
+  }
+}
+
 void TwoColumnsNodeExplorer::onFolderSelectionChanged(const QList<NodeIdentifier> &p_nodeIds) {
   if (!m_fileModel || m_notebookId.isEmpty()) {
     return;

@@ -53,6 +53,8 @@ public:
   int columnCount(const QModelIndex &p_parent = QModelIndex()) const override;
   QVariant data(const QModelIndex &p_index, int p_role = Qt::DisplayRole) const override;
   Qt::ItemFlags flags(const QModelIndex &p_index) const override;
+  bool setData(const QModelIndex &p_index, const QVariant &p_value,
+               int p_role = Qt::EditRole) override;
 
   // Lazy loading support
   bool hasChildren(const QModelIndex &p_parent = QModelIndex()) const override;

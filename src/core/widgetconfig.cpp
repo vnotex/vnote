@@ -36,6 +36,8 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
     m_nodeExplorerCloseBeforeOpenWithEnabled =
         READBOOL(QStringLiteral("nodeExplorerCloseBeforeOpenWithEnabled"));
   }
+    m_nodeExplorerSingleClickActivation =
+        READBOOL(QStringLiteral("nodeExplorerSingleClickActivation"));
 
   m_searchPanelAdvancedSettingsVisible =
       READBOOL(QStringLiteral("searchPanelAdvancedSettingsVisible"));
@@ -69,6 +71,8 @@ QJsonObject WidgetConfig::toJson() const {
       m_nodeExplorerAutoImportExternalFilesEnabled;
   obj[QStringLiteral("nodeExplorerCloseBeforeOpenWithEnabled")] =
       m_nodeExplorerCloseBeforeOpenWithEnabled;
+  obj[QStringLiteral("nodeExplorerSingleClickActivation")] =
+      m_nodeExplorerSingleClickActivation;
 
   obj[QStringLiteral("searchPanelAdvancedSettingsVisible")] =
       m_searchPanelAdvancedSettingsVisible;
@@ -184,4 +188,12 @@ bool WidgetConfig::getUnitedEntryExpandAllEnabled() const { return m_unitedEntry
 
 void WidgetConfig::setUnitedEntryExpandAllEnabled(bool p_enabled) {
   updateConfig(m_unitedEntryExpandAllEnabled, p_enabled, this);
+}
+
+bool WidgetConfig::isNodeExplorerSingleClickActivation() const {
+  return m_nodeExplorerSingleClickActivation;
+}
+
+void WidgetConfig::setNodeExplorerSingleClickActivation(bool p_enabled) {
+  updateConfig(m_nodeExplorerSingleClickActivation, p_enabled, this);
 }

@@ -12,6 +12,8 @@
 #include <core/events.h>
 #include <core/fileopenparameters.h>
 #include <core/servicelocator.h>
+#include <core/configmgr2.h>
+#include <core/widgetconfig.h>
 #include <core/services/notebookservice.h>
 #include <models/notebooknodemodel.h>
 #include <utils/pathutils.h>
@@ -77,6 +79,14 @@ NodeIdentifier NotebookNodeController::getParentFolder(const NodeIdentifier &p_n
   parentId.notebookId = p_nodeId.notebookId;
   parentId.relativePath = p_nodeId.parentPath();
   return parentId;
+}
+
+bool NotebookNodeController::isSingleClickActivationEnabled() const {
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (configMgr) {
+    return configMgr->getWidgetConfig().isNodeExplorerSingleClickActivation();
+  }
+  return false;
 }
 
 QMenu *NotebookNodeController::createContextMenu(const NodeIdentifier &p_nodeId,

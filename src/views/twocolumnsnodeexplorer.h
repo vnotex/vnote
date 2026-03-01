@@ -75,6 +75,7 @@ public:
   // Reload a node in the appropriate model
   // INodeExplorer interface - auto-detects folder vs file
   void reloadNode(const NodeIdentifier &p_nodeId) override;
+  void startInlineRename(const NodeIdentifier &p_nodeId) override;
   // Extended version for explicit folder/file specification
   void reloadNode(const NodeIdentifier &p_nodeId, bool p_isFolder);
 
