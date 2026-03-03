@@ -11,9 +11,11 @@
 
 #include <core/events.h>
 #include <core/fileopenparameters.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/configmgr2.h>
 #include <core/widgetconfig.h>
+#include <core/services/hookmanager.h>
 #include <core/services/notebookservice.h>
 #include <models/notebooknodemodel.h>
 #include <utils/pathutils.h>
@@ -319,6 +321,18 @@ void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {
     parentId.relativePath = QString(); // root
   }
 
+  // Fire hook before creating note (WRAP pattern)
+  auto *hookMgr = m_services.get<HookManager>();
+  if (hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = parentId.notebookId;
+    args[QStringLiteral("parentPath")] = parentId.relativePath;
+    args[QStringLiteral("type")] = QStringLiteral("note");
+    if (hookMgr->doAction(HookNames::NodeBeforeCreate, args)) {
+      return; // Cancelled by plugin
+    }
+  }
+
   emit newNoteRequested(parentId);
 }
 
@@ -332,6 +346,18 @@ void NotebookNodeController::newFolder(const NodeIdentifier &p_parentId) {
   if (!parentId.isValid()) {
     parentId.notebookId = notebookId;
     parentId.relativePath = QString();
+  }
+
+  // Fire hook before creating folder (WRAP pattern)
+  auto *hookMgr = m_services.get<HookManager>();
+  if (hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = parentId.notebookId;
+    args[QStringLiteral("parentPath")] = parentId.relativePath;
+    args[QStringLiteral("type")] = QStringLiteral("folder");
+    if (hookMgr->doAction(HookNames::NodeBeforeCreate, args)) {
+      return; // Cancelled by plugin
+    }
   }
 
   emit newFolderRequested(parentId);
@@ -360,7 +386,18 @@ void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
           NodeIdentifier parentId = getParentFolder(p_nodeId);
           m_model->reloadNode(parentId);
         }
-        // Node is now indexed, open it
+        // Node is now indexed, open it - fire hook first (WRAP pattern)
+        auto *hookMgr = m_services.get<HookManager>();
+        if (hookMgr) {
+          QVariantMap args;
+          args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
+          args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
+          args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
+          args[QStringLiteral("name")] = nodeInfo.name;
+          if (hookMgr->doAction(HookNames::NodeBeforeActivate, args)) {
+            return; // Cancelled by plugin
+          }
+        }
         auto paras = QSharedPointer<FileOpenParameters>::create();
         emit nodeActivated(p_nodeId, paras);
         return;
@@ -368,15 +405,36 @@ void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
       // Import failed, fall through to open as external file
     }
 
-    // Open external file without importing
+    // Open external file without importing - fire hook first (WRAP pattern)
     QString path = buildAbsolutePath(p_nodeId);
     if (!path.isEmpty()) {
+      auto *hookMgr = m_services.get<HookManager>();
+      if (hookMgr) {
+        QVariantMap args;
+        args[QStringLiteral("path")] = path;
+        args[QStringLiteral("isExternal")] = true;
+        if (hookMgr->doAction(HookNames::FileBeforeOpen, args)) {
+          return; // Cancelled by plugin
+        }
+      }
       auto paras = QSharedPointer<FileOpenParameters>::create();
       emit fileActivated(path, paras);
     }
     return;
   }
 
+  // Fire hook before activating node (WRAP pattern)
+  auto *hookMgr = m_services.get<HookManager>();
+  if (hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
+    args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
+    args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
+    args[QStringLiteral("name")] = nodeInfo.name;
+    if (hookMgr->doAction(HookNames::NodeBeforeActivate, args)) {
+      return; // Cancelled by plugin
+    }
+  }
   auto paras = QSharedPointer<FileOpenParameters>::create();
   emit nodeActivated(p_nodeId, paras);
 }
@@ -718,17 +776,48 @@ void NotebookNodeController::notifyBeforeNodeOperation(const NodeIdentifier &p_n
     return;
   }
 
+  // Fire hooks first (WRAP pattern)
+  auto *hookMgr = m_services.get<HookManager>();
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+
   auto event = QSharedPointer<Event>::create();
 
   if (p_operation == QStringLiteral("delete") || p_operation == QStringLiteral("remove")) {
+    // Fire hook for delete/remove operation
+    if (hookMgr) {
+      QVariantMap args;
+      args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
+      args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
+      args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
+      args[QStringLiteral("name")] = nodeInfo.name;
+      args[QStringLiteral("operation")] = p_operation;
+      hookMgr->doAction(HookNames::NodeBeforeDelete, args);
+    }
     emit nodeAboutToRemove(p_nodeId, event);
   } else if (p_operation == QStringLiteral("move") || p_operation == QStringLiteral("rename")) {
+    // Fire hook for move/rename operation
+    if (hookMgr) {
+      QVariantMap args;
+      args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
+      args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
+      args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
+      args[QStringLiteral("name")] = nodeInfo.name;
+      args[QStringLiteral("operation")] = p_operation;
+      hookMgr->doAction(HookNames::NodeBeforeMove, args);
+    }
     emit nodeAboutToMove(p_nodeId, event);
   }
 
   // Also request to close the file
   QString path = buildAbsolutePath(p_nodeId);
   if (!path.isEmpty()) {
+    // Fire hook for file close
+    if (hookMgr) {
+      QVariantMap args;
+      args[QStringLiteral("path")] = path;
+      args[QStringLiteral("reason")] = p_operation;
+      hookMgr->doAction(HookNames::FileBeforeClose, args);
+    }
     emit closeFileRequested(path, event);
   }
 }
@@ -766,6 +855,20 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
     return;
   }
 
+  // Fire specific rename hook with old and new name (WRAP pattern)
+  auto *hookMgr = m_services.get<HookManager>();
+  if (hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
+    args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
+    args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
+    args[QStringLiteral("oldName")] = nodeInfo.name;
+    args[QStringLiteral("newName")] = p_newName;
+    if (hookMgr->doAction(HookNames::NodeBeforeRename, args)) {
+      return; // Cancelled by plugin
+    }
+  }
+
   notifyBeforeNodeOperation(p_nodeId, QStringLiteral("rename"));
 
   auto *notebookService = m_services.get<NotebookService>();
@@ -777,6 +880,18 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
   }
   if (!success) {
     emit errorOccurred(tr("Error"), tr("Failed to rename %1.").arg(nodeInfo.name));
+    return;
+  }
+
+  // Fire after-rename hook
+  if (hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
+    args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
+    args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
+    args[QStringLiteral("oldName")] = nodeInfo.name;
+    args[QStringLiteral("newName")] = p_newName;
+    hookMgr->doAction(HookNames::NodeAfterRename, args);
   }
 
   if (m_model) {

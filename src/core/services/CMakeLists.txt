@@ -5,6 +5,7 @@ set(SERVICES_SOURCES
   notebookservice.cpp
   filetypeservice.cpp
   templateservice.cpp
+  hookmanager.cpp
   ${CMAKE_SOURCE_DIR}/src/core/error.cpp
 )
 
@@ -14,6 +15,7 @@ set(SERVICES_HEADERS
   notebookservice.h
   filetypeservice.h
   templateservice.h
+  hookmanager.h
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})

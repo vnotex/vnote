@@ -45,6 +45,23 @@ add_qt_test(test_notebookservice
   GUILESS
 )
 
+add_qt_test(test_hookmanager
+  SOURCES
+    test_hookmanager.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+
+add_qt_test(test_hookintegration
+  SOURCES
+    test_hookintegration.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/exampleplugin.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+
 # TODO: test_configmgr2 requires many dependencies (MainConfig, SessionConfig,
 # CoreConfig, EditorConfig, WidgetConfig, FileUtils2, Utils) that have deep
 # cascading dependencies throughout the codebase. This test should be re-enabled
