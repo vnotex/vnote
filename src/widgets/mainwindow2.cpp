@@ -13,7 +13,9 @@
 #include "toolbarhelper2.h"
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
+#include <core/services/hookmanager.h>
 #include <core/sessionconfig.h>
 #include <qwebengineview.h>
 #include <widgets/notebookexplorer2.h>
@@ -331,6 +333,15 @@ void MainWindow2::changeEvent(QEvent *p_event) {
 }
 
 void MainWindow2::showMainWindow() {
+  // Fire hook before showing main window (WordPress-style plugin architecture)
+  auto *hookMgr = m_serviceLocator.get<HookManager>();
+  if (hookMgr) {
+    QVariantMap args;
+    if (hookMgr->doAction(HookNames::MainWindowBeforeShow, args)) {
+      return; // Cancelled by plugin
+    }
+  }
+
   if (isMinimized()) {
     if (m_windowOldState & Qt::WindowMaximized) {
       showMaximized();
@@ -346,6 +357,12 @@ void MainWindow2::showMainWindow() {
   }
 
   activateWindow();
+
+  // Fire hook after showing main window
+  if (hookMgr) {
+    QVariantMap args;
+    hookMgr->doAction(HookNames::MainWindowAfterShow, args);
+  }
 }
 
 void MainWindow2::setupSystemTray() {

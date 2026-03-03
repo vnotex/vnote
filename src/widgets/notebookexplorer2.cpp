@@ -23,8 +23,10 @@
 #include <core/exception.h>
 #include <core/fileopenparameters.h>
 #include <core/global.h>
+#include <core/hooknames.h>
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
+#include <core/services/hookmanager.h>
 #include <core/services/notebookservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
@@ -110,6 +112,16 @@ void NotebookExplorer2::setupUI() {
   connect(m_notebookSelector, QOverload<int>::of(&QComboBox::activated), this, [this](int p_idx) {
     QString guid = m_notebookSelector->itemData(p_idx, NotebookGuidRole).toString();
     setCurrentNotebookInternal(guid);
+
+    // Fire hook before emitting Qt signal (WordPress-style plugin architecture)
+    auto *hookMgr = m_services.get<HookManager>();
+    if (hookMgr) {
+      QVariantMap args;
+      args[QStringLiteral("notebookId")] = guid;
+      if (hookMgr->doAction(HookNames::NotebookBeforeOpen, args)) {
+        return; // Cancelled by plugin
+      }
+    }
     emit notebookActivated(guid);
   });
   connect(m_notebookSelector, &NotebookSelector2::newNotebookRequested, this,

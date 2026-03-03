@@ -23,6 +23,7 @@ target_sources(vnote PRIVATE
     error.cpp error.h
     events.h
     exception.h
+    exampleplugin.cpp exampleplugin.h
     externalfile.cpp externalfile.h
     file.cpp file.h
     filelocator.h
@@ -31,6 +32,8 @@ target_sources(vnote PRIVATE
     historyitem.cpp historyitem.h
     historymgr.cpp historymgr.h
     htmltemplatehelper.cpp htmltemplatehelper.h
+    hookcontext.h
+    hooknames.h
     iconfig.h
     iconfigmgr.h
     location.h

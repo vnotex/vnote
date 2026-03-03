@@ -16,6 +16,7 @@
 #include <core/coreconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/configservice.h>
+#include <core/services/hookmanager.h>
 #include <core/services/notebookservice.h>
 #include <core/services/searchservice.h>
 #include <core/services/filetypeservice.h>
@@ -154,11 +155,13 @@ int main(int argc, char *argv[]) {
     ConfigService configService(context);
     NotebookService notebookService(context);
     SearchService searchService(context);
+    HookManager hookManager;
 
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<NotebookService>(&notebookService);
     serviceLocator.registerService<SearchService>(&searchService);
-    qInfo() << "Services registered";
+    serviceLocator.registerService<HookManager>(&hookManager);
+    qInfo() << "Services registered (including HookManager)";
 
     // Create ConfigMgr2 with ConfigService
     ConfigMgr2 configMgr(&configService);

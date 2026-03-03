@@ -174,6 +174,171 @@ MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
 | `ConfigService` | App configuration | `getTheme()`, `setTheme()`, `getLocale()`, etc. |
 | `NotebookService` | Notebook management | `createNotebook()`, `openNotebook()`, `createFile()`, etc. |
 | `SearchService` | Content search | `searchContent()`, `searchFiles()` |
+| `HookManager` | Plugin hook system | `addAction()`, `doAction()`, `addFilter()`, `applyFilters()` |
+
+---
+
+## Plugin Hook System (WordPress-style)
+
+VNote implements a WordPress-inspired hook system for plugin extensibility. This enables plugins to:
+- **Intercept events** (e.g., notebook opening, node activation) and optionally cancel them
+- **Transform data** (e.g., modify display names, filter content before save)
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     HookManager                             │
+│  (Registered in ServiceLocator, single-threaded)            │
+│                                                             │
+│  ┌─────────────────────┐  ┌─────────────────────────────┐  │
+│  │  Actions (Events)   │  │  Filters (Data Transform)   │  │
+│  │  - Cancellable      │  │  - Chain execution          │  │
+│  │  - Priority-ordered │  │  - Return modified value    │  │
+│  └─────────────────────┘  └─────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Hook Types
+
+| Type | Purpose | Return Value |
+|------|---------|--------------|
+| **Action** | Event notification, can cancel downstream processing | `void` (via `HookContext`) |
+| **Filter** | Transform data through a chain of handlers | Modified `QVariant` |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/core/hookcontext.h` | Context passed to callbacks (cancellation, metadata) |
+| `src/core/hooknames.h` | Hook name constants (`vnote.notebook.before_open`, etc.) |
+| `src/core/services/hookmanager.h` | Main hook manager API |
+| `src/core/exampleplugin.h` | Example plugin demonstrating hook usage |
+| `tests/core/test_hookmanager.cpp` | Unit tests (24 test cases) |
+| `tests/core/test_hookintegration.cpp` | Integration tests (10 test cases) |
+
+### Registering Hooks
+
+```cpp
+#include <core/hooknames.h>
+#include <core/services/hookmanager.h>
+
+// Get HookManager from ServiceLocator
+auto *hookMgr = m_services.get<HookManager>();
+
+// Register an action (event handler)
+int actionId = hookMgr->addAction(
+    HookNames::NotebookBeforeOpen,
+    [](HookContext &p_ctx, const QVariantMap &p_args) {
+      QString notebookId = p_args.value("notebookId").toString();
+      qDebug() << "Opening notebook:" << notebookId;
+
+      // Optional: Cancel the action
+      // p_ctx.cancel();
+    },
+    10); // Priority: lower = earlier execution
+
+// Register a filter (data transformer)
+int filterId = hookMgr->addFilter(
+    HookNames::FilterNodeDisplayName,
+    [](const QVariant &p_value, const QVariantMap &p_context) -> QVariant {
+      QString name = p_value.toString();
+      // Transform and return
+      return "[Modified] " + name;
+    },
+    10);
+```
+
+### Firing Hooks (WRAP pattern)
+
+When migrating Qt signals to hooks, use the WRAP pattern:
+
+```cpp
+void MyClass::doSomething() {
+  // 1. Fire hook before the action
+  auto *hookMgr = m_services.get<HookManager>();
+  if (hookMgr) {
+    QVariantMap args;
+    args["key"] = value;
+    if (hookMgr->doAction(HookNames::SomeBeforeHook, args)) {
+      return; // Cancelled by plugin
+    }
+  }
+
+  // 2. Original Qt signal (preserved for backward compatibility)
+  emit originalSignal();
+
+  // 3. Optional: Fire after hook
+  if (hookMgr) {
+    hookMgr->doAction(HookNames::SomeAfterHook, args);
+  }
+}
+```
+
+### Available Hook Names
+
+**Notebook Events:**
+- `vnote.notebook.before_open` / `after_open`
+- `vnote.notebook.before_close` / `after_close`
+
+**Node Events:**
+- `vnote.node.before_activate` / `after_activate`
+- `vnote.node.before_create` / `after_create`
+- `vnote.node.before_rename` / `after_rename`
+- `vnote.node.before_delete` / `after_delete`
+- `vnote.node.before_move` / `after_move`
+
+**File Events:**
+- `vnote.file.before_open` / `after_open`
+- `vnote.file.before_save` / `after_save`
+- `vnote.file.before_close` / `after_close`
+
+**UI Events:**
+- `vnote.ui.mainwindow.before_show` / `after_show`
+- `vnote.ui.contextmenu.before_show`
+
+**Filters:**
+- `vnote.filter.node_display_name`
+- `vnote.filter.file_content_before_save`
+- `vnote.filter.file_content_after_load`
+- `vnote.filter.context_menu_items`
+
+### Unregistering Hooks
+
+```cpp
+// Store the ID when registering
+int actionId = hookMgr->addAction(...);
+
+// Later, remove by ID
+hookMgr->removeAction(actionId);
+hookMgr->removeFilter(filterId);
+```
+
+### Error Handling
+
+The hook system isolates errors to prevent app crashes:
+- Exceptions in callbacks are caught and logged
+- Errors emit `actionError` / `filterError` signals
+- Other callbacks continue executing
+
+### Testing Hooks
+
+```cpp
+void TestMyPlugin::testHookFires() {
+  vnotex::HookManager hookMgr;
+  bool hookFired = false;
+
+  hookMgr.addAction(
+      vnotex::HookNames::SomeHook,
+      [&](vnotex::HookContext &, const QVariantMap &) {
+        hookFired = true;
+      },
+      10);
+
+  hookMgr.doAction(vnotex::HookNames::SomeHook, {});
+  QVERIFY(hookFired);
+}
+```
 
 ---
 
