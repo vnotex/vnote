@@ -40,9 +40,6 @@ public:
 
   void setViewOrder(ViewOrder p_order) override;
 
-  QMenu *createContextMenu(const NodeIdentifier &p_nodeId,
-                           QWidget *p_parent = nullptr) override;
-
   NodeInfo getNodeInfo(const NodeIdentifier &p_nodeId) const override;
 
   void handleRenameResult(const NodeIdentifier &p_nodeId, const QString &p_newName) override;
@@ -51,6 +48,12 @@ public:
 
   void reloadNode(const NodeIdentifier &p_nodeId) override;
   void startInlineRename(const NodeIdentifier &p_nodeId) override;
+
+  // === External files visibility ===
+  void setExternalNodesVisible(bool p_visible) override;
+
+private slots:
+  void onContextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos);
 
 private:
   void setupUI();

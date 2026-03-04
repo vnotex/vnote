@@ -228,8 +228,7 @@ void FileListView::mousePressEvent(QMouseEvent *p_event) {
     if (idx.isValid()) {
       NodeInfo nodeInfo = nodeInfoFromIndex(idx);
       if (nodeInfo.isValid() && !nodeInfo.isFolder) {
-        auto paras = QSharedPointer<FileOpenParameters>::create();
-        emit nodeActivated(nodeInfo.id, paras);
+        m_controller->openNode(nodeInfo.id);
       }
     }
   }
@@ -246,8 +245,7 @@ void FileListView::mouseDoubleClickEvent(QMouseEvent *p_event) {
   if (nodeInfo.isValid()) {
     // For files, activate (open)
     if (!nodeInfo.isFolder) {
-      auto paras = QSharedPointer<FileOpenParameters>::create();
-      emit nodeActivated(nodeInfo.id, paras);
+      m_controller->openNode(nodeInfo.id);
       p_event->accept();
       return;
     }
@@ -262,8 +260,7 @@ void FileListView::keyPressEvent(QKeyEvent *p_event) {
   case Qt::Key_Enter: {
     NodeInfo nodeInfo = nodeInfoFromIndex(currentIndex());
     if (nodeInfo.isValid() && !nodeInfo.isFolder) {
-      auto paras = QSharedPointer<FileOpenParameters>::create();
-      emit nodeActivated(nodeInfo.id, paras);
+      m_controller->openNode(nodeInfo.id);
       p_event->accept();
       return;
     }
@@ -405,12 +402,9 @@ void FileListView::selectionChanged(const QItemSelection &p_selected,
 void FileListView::onItemActivated(const QModelIndex &p_index) {
   NodeInfo nodeInfo = nodeInfoFromIndex(p_index);
   if (nodeInfo.isValid() && !nodeInfo.isFolder) {
-    auto paras = QSharedPointer<FileOpenParameters>::create();
-    emit nodeActivated(nodeInfo.id, paras);
+    m_controller->openNode(nodeInfo.id);
   }
 }
-
-
 
 bool FileListView::isSingleClickActivationEnabled() const {
   if (m_controller) {

@@ -94,20 +94,6 @@ void TwoColumnsNodeExplorer::setupUI() {
   connect(m_folderView, &NotebookNodeView::nodeSelectionChanged, this,
           &TwoColumnsNodeExplorer::onFolderSelectionChanged);
 
-  // Route activation signals through controllers (for auto-import handling)
-  connect(m_folderView, &NotebookNodeView::nodeActivated, this,
-          [this](const NodeIdentifier &p_nodeId, const QSharedPointer<FileOpenParameters> &) {
-            if (m_folderController) {
-              m_folderController->openNode(p_nodeId);
-            }
-          });
-  connect(m_fileView, &FileListView::nodeActivated, this,
-          [this](const NodeIdentifier &p_nodeId, const QSharedPointer<FileOpenParameters> &) {
-            if (m_fileController) {
-              m_fileController->openNode(p_nodeId);
-            }
-          });
-
   // Context menu signals (differentiate source)
   connect(m_folderView, &NotebookNodeView::contextMenuRequested, this,
           &TwoColumnsNodeExplorer::onFolderContextMenu);
@@ -135,8 +121,6 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
           &TwoColumnsNodeExplorer::nodeActivated);
 
   // Node lifecycle signals
-  connect(p_controller, &NotebookNodeController::fileActivated, this,
-          &TwoColumnsNodeExplorer::fileActivated);
   connect(p_controller, &NotebookNodeController::nodeAboutToMove, this,
           &TwoColumnsNodeExplorer::nodeAboutToMove);
   connect(p_controller, &NotebookNodeController::nodeAboutToRemove, this,
@@ -324,31 +308,6 @@ void TwoColumnsNodeExplorer::setExternalNodesVisible(bool p_visible) {
   }
 }
 
-QMenu *TwoColumnsNodeExplorer::createContextMenu(const NodeIdentifier &p_nodeId,
-                                                  QWidget *p_parent) {
-  // Delegate to the 3-param version; use folder controller by default
-  // (determines from node info whether it's a folder or file)
-  NodeInfo info = getNodeInfo(p_nodeId);
-  return createContextMenu(p_nodeId, !info.isFolder, p_parent);
-}
-
-QMenu *TwoColumnsNodeExplorer::createContextMenu(const NodeIdentifier &p_nodeId,
-                                                  bool p_isFromFileView,
-                                                  QWidget *p_parent) {
-  NotebookNodeController *controller = p_isFromFileView ? m_fileController : m_folderController;
-  if (!controller) {
-    return nullptr;
-  }
-
-  // If no specific node was clicked in file view, use the current display root
-  NodeIdentifier effectiveNodeId = p_nodeId;
-  if (!effectiveNodeId.isValid() && p_isFromFileView && m_fileModel) {
-    effectiveNodeId = m_fileModel->getDisplayRoot();
-  }
-
-  return controller->createContextMenu(effectiveNodeId, p_parent);
-}
-
 NodeInfo TwoColumnsNodeExplorer::getNodeInfo(const NodeIdentifier &p_nodeId) const {
   NodeInfo info;
 
@@ -530,9 +489,12 @@ void TwoColumnsNodeExplorer::onFolderSelectionChanged(const QList<NodeIdentifier
   m_fileModel->setDisplayRoot(folderId);
 }
 
-void TwoColumnsNodeExplorer::onFolderContextMenu(const NodeIdentifier &p_nodeId,
-                                                  const QPoint &p_globalPos) {
-  emit contextMenuRequested(p_nodeId, p_globalPos, false);
+void TwoColumnsNodeExplorer::onFolderContextMenu(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos) {
+  QMenu *menu = m_folderController->createContextMenu(p_nodeId, this);
+  if (menu) {
+    menu->exec(p_globalPos);
+    menu->deleteLater();
+  }
 }
 
 void TwoColumnsNodeExplorer::onFileContextMenu(const NodeIdentifier &p_nodeId,
@@ -543,5 +505,9 @@ void TwoColumnsNodeExplorer::onFileContextMenu(const NodeIdentifier &p_nodeId,
     effectiveNodeId = m_fileModel->getDisplayRoot();
   }
 
-  emit contextMenuRequested(effectiveNodeId, p_globalPos, true);
+  QMenu *menu = m_fileController->createContextMenu(effectiveNodeId, this);
+  if (menu) {
+    menu->exec(p_globalPos);
+    menu->deleteLater();
+  }
 }

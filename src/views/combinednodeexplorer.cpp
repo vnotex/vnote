@@ -50,22 +50,12 @@ void CombinedNodeExplorer::setupUI() {
 
   layout->addWidget(m_view);
 
-  // === Connect signals ===
-
-  // Forward activation signals
-  connect(m_view, &NotebookNodeView::nodeActivated, this,
-          &CombinedNodeExplorer::nodeActivated);
-
-  // Context menu signal
   connect(m_view, &NotebookNodeView::contextMenuRequested, this,
-          QOverload<const NodeIdentifier &, const QPoint &>::of(
-              &CombinedNodeExplorer::contextMenuRequested));
+          &CombinedNodeExplorer::onContextMenuRequested);
 
   // Forward controller signals
   connect(m_controller, &NotebookNodeController::nodeActivated, this,
           &CombinedNodeExplorer::nodeActivated);
-  connect(m_controller, &NotebookNodeController::fileActivated, this,
-          &CombinedNodeExplorer::fileActivated);
   connect(m_controller, &NotebookNodeController::nodeAboutToMove, this,
           &CombinedNodeExplorer::nodeAboutToMove);
   connect(m_controller, &NotebookNodeController::nodeAboutToRemove, this,
@@ -182,14 +172,6 @@ void CombinedNodeExplorer::setViewOrder(ViewOrder p_order) {
   }
 }
 
-QMenu *CombinedNodeExplorer::createContextMenu(const NodeIdentifier &p_nodeId,
-                                                QWidget *p_parent) {
-  if (!m_controller) {
-    return nullptr;
-  }
-  return m_controller->createContextMenu(p_nodeId, p_parent);
-}
-
 NodeInfo CombinedNodeExplorer::getNodeInfo(const NodeIdentifier &p_nodeId) const {
   if (m_model) {
     QModelIndex idx = m_model->indexFromNodeId(p_nodeId);
@@ -245,5 +227,20 @@ void CombinedNodeExplorer::startInlineRename(const NodeIdentifier &p_nodeId) {
   if (viewIdx.isValid()) {
     m_view->setCurrentIndex(viewIdx);
     m_view->edit(viewIdx);
+  }
+}
+
+void CombinedNodeExplorer::onContextMenuRequested(const NodeIdentifier &p_nodeId,
+                                                  const QPoint &p_globalPos) {
+  QMenu *menu = m_controller->createContextMenu(p_nodeId, this);
+  if (menu) {
+    menu->exec(p_globalPos);
+    menu->deleteLater();
+  }
+}
+
+void CombinedNodeExplorer::setExternalNodesVisible(bool p_visible) {
+  if (m_model) {
+    m_model->setExternalNodesVisible(p_visible);
   }
 }

@@ -55,17 +55,39 @@ rm -rf build && mkdir build && cd build && cmake .. && cmake --build .
 
 ## Architecture Overview
 
-VNote uses a **clean architecture** with dependency injection for testability and future plugin support.
+VNote uses a **clean architecture** with **Model-View-Controller (MVC)** pattern and dependency injection for testability and future plugin support.
 
-### Layer Diagram
+### Core Principles
+
+1. **MVC Separation** — Models hold data, Views display it, Controllers handle logic
+2. **Dependency Injection** — No singletons; dependencies passed via ServiceLocator
+3. **Service Layer** — Business logic encapsulated in services, accessed via ServiceLocator
+4. **Hook System** — WordPress-style extensibility for plugins
+
+### MVC Architecture (CRITICAL)
+
+VNote strictly follows the MVC pattern. **All new code MUST adhere to this structure.**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        main.cpp                            │
-│  (Entry point: creates context, wires dependencies)         │
+│                     Controllers                             │
+│  (src/controllers/ - Handle user actions, business logic)   │
+│                                                             │
+│  NotebookNodeController, NewNoteController, etc.            │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+        │                                       │
+        │ Manipulates                          │ Emits signals to
+        ▼                                       ▼
+┌───────────────────────┐       ┌──────────────────────────────┐
+│        Models         │       │           Views              │
+│  (src/models/)        │◄──────│  (src/views/)                │
+│                       │       │                              │
+│  NotebookNodeModel    │ Data  │  NotebookNodeView            │
+│  (QAbstractItemModel) │ flows │  (QTreeView subclass)        │
+└───────────────────────┘       └──────────────────────────────┘
+        │                                       │
+        │ Fetches data from                    │ Receives from
+        ▼                                       ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                     ServiceLocator                          │
 │  (DI container - NOT a singleton, passed by reference)      │
@@ -82,12 +104,55 @@ VNote uses a **clean architecture** with dependency injection for testability an
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### MVC Responsibilities
+
+| Layer | Location | Responsibility | Example |
+|-------|----------|----------------|---------|
+| **Model** | `src/models/` | Data representation, Qt Model/View integration | `NotebookNodeModel` exposes node hierarchy via `QAbstractItemModel` |
+| **View** | `src/views/` | Display data, capture user input, emit signals | `NotebookNodeView` renders tree, emits `nodeActivated` signal |
+| **Controller** | `src/controllers/` | Handle actions, orchestrate Model/View, business logic | `NotebookNodeController` handles new/delete/rename operations |
+| **Service** | `src/core/services/` | Domain operations, data access via vxcore | `NotebookService` wraps vxcore C API for notebook CRUD |
+
+### MVC Example: Notebook Node Operations
+
+```cpp
+// Controller handles user action
+void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {
+  // 1. Emit signal to View to show dialog
+  emit newNoteRequested(p_parentId);
+}
+
+// View shows dialog, then calls back to Controller
+void NotebookExplorer2::onNewNoteResult(const NodeIdentifier &p_parentId,
+                                        const NodeIdentifier &p_newNodeId) {
+  m_controller->handleNewNoteResult(p_parentId, p_newNodeId);
+}
+
+// Controller updates Model
+void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &p_parentId,
+                                                  const NodeIdentifier &p_newNodeId) {
+  // Model reloads from NotebookService
+  m_model->reloadNode(p_parentId);
+}
+```
+
+### MVC Rules (MUST FOLLOW)
+
+| Rule | Rationale |
+|------|-----------|
+| **Models MUST NOT** contain UI logic | Models are reusable across different views |
+| **Views MUST NOT** modify data directly | Views only display and emit signals |
+| **Controllers MUST NOT** inherit from QWidget | Controllers are testable without GUI |
+| **All layers receive `ServiceLocator&`** | Enables dependency injection and testing |
+| **Use signals/slots between layers** | Loose coupling between M, V, C |
+
 ### Key Design Decisions
 
 | Decision | Rationale |
 |----------|-----------|
 | ServiceLocator is NOT a singleton | Enables testing with mock services; explicit dependencies |
 | Services wrap vxcore C API | Qt-friendly interface; encapsulates C interop |
+| Controllers are QObject, not QWidget | Testable business logic without GUI dependencies |
 | Widgets receive `ServiceLocator&` | Constructor injection; no global state |
 | New files use `2` suffix | Coexist with legacy code during migration |
 
@@ -95,19 +160,51 @@ VNote uses a **clean architecture** with dependency injection for testability an
 
 ```
 src/
-├── main.cpp              # New entry point with DI wiring
+├── main.cpp                # Entry point with DI wiring
 ├── core/
-│   ├── servicelocator.h   # DI container
-│   ├── configservice.h    # Config operations (wraps vxcore)
-│   ├── notebookservice.h  # Notebook/folder/file ops (wraps vxcore)
-│   ├── searchservice.h    # Search operations (wraps vxcore)
-│   ├── configmgr2.h       # High-level config manager using DI
-│   └── iconfigmgr.h       # Interface for config managers
-├── widgets/
-│   ├── mainwindow.h       # Legacy main window
-│   ├── mainwindow2.h      # New main window shell (receives ServiceLocator&)
-│   ├── mainwindow2.cpp
-│   └── utils/             # GUI utilities (e.g., imageutils)
+│   ├── servicelocator.h    # DI container
+│   ├── services/           # Service layer (wraps vxcore)
+│   │   ├── configservice.h/.cpp
+│   │   ├── notebookservice.h/.cpp
+│   │   ├── searchservice.h/.cpp
+│   │   ├── filetypeservice.h/.cpp
+│   │   ├── templateservice.h/.cpp
+│   │   └── hookmanager.h/.cpp
+│   ├── hookcontext.h       # Hook callback context
+│   ├── hooknames.h         # Hook name constants
+│   ├── configmgr2.h/.cpp   # High-level config manager using DI
+│   └── iconfigmgr.h        # Interface for config managers
+├── models/                 # Qt Model/View models
+│   ├── notebooknodemodel.h/.cpp       # QAbstractItemModel for node hierarchy
+│   └── notebooknodeproxymodel.h/.cpp  # Proxy model for sorting/filtering
+├── views/                  # Qt views and delegates
+│   ├── notebooknodeview.h/.cpp        # QTreeView for nodes
+│   ├── notebooknodedelegate.h/.cpp    # Item delegate for node rendering
+│   ├── combinednodeexplorer.h/.cpp    # Composite MVC wiring widget
+│   └── filenodedelegate.h/.cpp        # Item delegate for file list
+├── controllers/            # Controllers (business logic mediators)
+│   ├── notebooknodecontroller.h/.cpp  # Node operations controller
+│   ├── newnotecontroller.h/.cpp       # New note dialog controller
+│   ├── newfoldercontroller.h/.cpp     # New folder dialog controller
+│   ├── newnotebookcontroller.h/.cpp   # New notebook dialog controller
+│   ├── opennotebookcontroller.h/.cpp  # Open notebook flow controller
+│   ├── managenotebookscontroller.h/.cpp
+│   ├── importfoldercontroller.h/.cpp
+│   └── recyclebincontroller.h/.cpp
+├── widgets/                # UI widgets (views receiving ServiceLocator&)
+│   ├── mainwindow.h        # Legacy main window
+│   ├── mainwindow2.h/.cpp  # New main window shell
+│   ├── notebookexplorer2.h/.cpp
+│   ├── notebookselector2.h/.cpp
+│   ├── toolbarhelper2.h/.cpp
+│   └── dialogs/            # Dialog widgets (new architecture)
+│       ├── newnotedialog2.h/.cpp
+│       ├── newfolderdialog2.h/.cpp
+│       ├── newnotebookdialog2.h/.cpp
+│       ├── managenotebooksdialog2.h/.cpp
+│       └── importfolderdialog2.h/.cpp
+├── utils/
+│   └── fileutils2.h/.cpp   # File utilities (new architecture)
 └── ... (legacy code remains for reference)
 ```
 
@@ -148,7 +245,7 @@ int main(int argc, char *argv[]) {
 ### Usage in Widgets
 
 ```cpp
-// src/ui/mywidget.h
+// src/widgets/mywidget.h
 class MyWidget : public QWidget {
   Q_OBJECT
 public:
@@ -158,12 +255,12 @@ private:
   ServiceLocator &m_services;
 };
 
-// src/ui/mywidget.cpp
+// src/widgets/mywidget.cpp
 MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
     : QWidget(p_parent), m_services(p_services) {
   // Access services when needed
-  auto &config = m_services.get<ConfigService>();
-  auto theme = config.getTheme();
+  auto *config = m_services.get<ConfigService>();
+  auto configJson = config->getConfig();
 }
 ```
 
@@ -171,9 +268,11 @@ MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
 
 | Service | Purpose | Key Methods |
 |---------|---------|-------------|
-| `ConfigService` | App configuration | `getTheme()`, `setTheme()`, `getLocale()`, etc. |
-| `NotebookService` | Notebook management | `createNotebook()`, `openNotebook()`, `createFile()`, etc. |
-| `SearchService` | Content search | `searchContent()`, `searchFiles()` |
+| `ConfigService` | App configuration via vxcore | `getConfig()`, `getSessionConfig()`, `getDataPath()`, `updateConfigByName()` |
+| `NotebookService` | Notebook/folder/file operations | `createNotebook()`, `openNotebook()`, `createFile()`, `listFolderChildren()` |
+| `SearchService` | Content and file search | `searchFiles()`, `searchContent()`, `searchByTags()` |
+| `FileTypeService` | File type detection | `getFileType()`, `getFileTypeBySuffix()`, `getAllFileTypes()` |
+| `TemplateService` | Note template management | `getTemplates()`, `getTemplateContent()`, `getTemplateFilePath()` |
 | `HookManager` | Plugin hook system | `addAction()`, `doAction()`, `addFilter()`, `applyFilters()` |
 
 ---
@@ -594,7 +693,12 @@ add_qt_test(test_myclass
 | test_fileutils2 | `FileUtils2` | 15 |
 | test_configservice | `ConfigService` | 10 |
 | test_notebookservice | `NotebookService` | 33 |
-| **Total** | | **200+** |
+| test_searchservice | `SearchService` | - |
+| test_servicelocator | `ServiceLocator` | - |
+| test_configmgr2 | `ConfigMgr2` | - |
+| test_hookmanager | `HookManager` | 24 |
+| test_hookintegration | Hook integration | 10 |
+| **Total** | | **230+** |
 
 ---
 
