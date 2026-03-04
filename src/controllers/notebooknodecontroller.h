@@ -104,7 +104,6 @@ signals:
   // Signals to notify external components (e.g., BufferMgr)
   void nodeActivated(const NodeIdentifier &p_nodeId,
                      const QSharedPointer<FileOpenParameters> &p_paras);
-  void fileActivated(const QString &p_path, const QSharedPointer<FileOpenParameters> &p_paras);
   void nodeAboutToMove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
   void nodeAboutToRemove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
   void nodeAboutToReload(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);

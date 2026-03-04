@@ -36,10 +36,6 @@ public:
   void scrollToNode(const NodeIdentifier &p_nodeId);
 
 signals:
-  // Emitted when a node is activated (double-click or Enter)
-  void nodeActivated(const NodeIdentifier &p_nodeId,
-                     const QSharedPointer<FileOpenParameters> &p_paras);
-
   // Emitted when selection changes
   void nodeSelectionChanged(const QList<NodeIdentifier> &p_nodeIds);
 

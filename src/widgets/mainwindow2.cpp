@@ -197,10 +197,6 @@ void MainWindow2::saveStateAndGeometry() {
 void MainWindow2::setupNotebookExplorer() {
   m_notebookExplorer = new NotebookExplorer2(m_serviceLocator, this);
   m_notebookExplorer->setObjectName("NotebookExplorer2.vnotex");
-}
-
-void MainWindow2::setupDocks() {
-  setupNotebookExplorer();
 
   // Connect MainWindow2 signals to NotebookExplorer2 slots
   connect(this, &MainWindow2::newNoteRequested, m_notebookExplorer, &NotebookExplorer2::newNote);
@@ -212,6 +208,10 @@ void MainWindow2::setupDocks() {
           &NotebookExplorer2::importFile);
   connect(this, &MainWindow2::importFolderRequested, m_notebookExplorer,
           &NotebookExplorer2::importFolder);
+}
+
+void MainWindow2::setupDocks() {
+  setupNotebookExplorer();
 
   m_dockWidgetHelper.setupDocks();
 }

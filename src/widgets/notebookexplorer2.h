@@ -3,12 +3,12 @@
 
 #include <QFrame>
 #include <QSharedPointer>
+#include <QVBoxLayout>
 
 #include <core/global.h>
 #include <nodeinfo.h>
 #include <core/noncopyable.h>
 
-class QStackedWidget;
 class QSplitter;
 class QMenu;
 class QActionGroup;
@@ -18,14 +18,9 @@ namespace vnotex {
 
 class NotebookSelector2;
 class TitleBar;
-class NotebookNodeModel;
-class NotebookNodeProxyModel;
-class NotebookNodeView;
-class NotebookNodeDelegate;
-class NotebookNodeController;
+class INodeExplorer;
 class TwoColumnsNodeExplorer;
 struct FileOpenParameters;
-class Event;
 class ServiceLocator;
 
 // NotebookExplorer2 is a container widget that displays notebook nodes
@@ -89,28 +84,7 @@ public slots:
   void importFile();
   void importFolder();
 
-signals:
-  // Emitted when user selects a notebook from the selector
-  void notebookActivated(const QString &p_notebookGuid);
-
-  // --- New architecture signals (NodeIdentifier-based) ---
-  void nodeActivated(const NodeIdentifier &p_nodeId,
-                     const QSharedPointer<FileOpenParameters> &p_paras);
-  void fileActivated(const QString &p_path, const QSharedPointer<FileOpenParameters> &p_paras);
-  void nodeAboutToMove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
-  void nodeAboutToRemove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
-  void nodeAboutToReload(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
-  void closeFileRequested(const QString &p_filePath, const QSharedPointer<Event> &p_event);
-
 private slots:
-  void onNodeActivated(const NodeIdentifier &p_nodeId,
-                       const QSharedPointer<FileOpenParameters> &p_paras);
-  void onContextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos);
-
-  // TwoColumns mode: context menu handler
-  void onTwoColumnsContextMenu(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos,
-                               bool p_isFromFileView);
-
   // GUI request handlers from controller signals
   void onNewNoteRequested(const NodeIdentifier &p_parentId);
   void onNewFolderRequested(const NodeIdentifier &p_parentId);
@@ -148,22 +122,13 @@ private:
   // Services
   ServiceLocator &m_services;
 
-  // MVC Components - Combined mode
-  NotebookNodeModel *m_combinedModel = nullptr;
-  NotebookNodeProxyModel *m_combinedProxyModel = nullptr;
-  NotebookNodeView *m_combinedView = nullptr;
-  NotebookNodeDelegate *m_combinedDelegate = nullptr;
-  NotebookNodeController *m_combinedController = nullptr;
-
-  // UI Components
+  // Node explorer - polymorphic, recreated when mode changes
+  INodeExplorer *m_nodeExplorer = nullptr;
 
   // UI Components
   TitleBar *m_titleBar = nullptr;
   NotebookSelector2 *m_notebookSelector = nullptr;
-  QStackedWidget *m_contentStack = nullptr;
-
-  // TwoColumns mode encapsulated widget
-  TwoColumnsNodeExplorer *m_twoColumnsExplorer = nullptr;
+  QVBoxLayout *m_mainLayout = nullptr;
 
   // State
   ExploreMode m_exploreMode = Combined;

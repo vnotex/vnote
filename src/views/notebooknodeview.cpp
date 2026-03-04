@@ -15,6 +15,7 @@
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
 #include <controllers/notebooknodecontroller.h>
+#include <qmenu.h>
 
 using namespace vnotex;
 
@@ -265,8 +266,7 @@ void NotebookNodeView::mousePressEvent(QMouseEvent *p_event) {
     if (idx.isValid()) {
       NodeInfo nodeInfo = nodeInfoFromIndex(idx);
       if (nodeInfo.isValid() && !nodeInfo.isFolder) {
-        auto paras = QSharedPointer<FileOpenParameters>::create();
-        emit nodeActivated(nodeInfo.id, paras);
+        m_controller->openNode(nodeInfo.id);
       }
     }
   }
@@ -284,8 +284,7 @@ void NotebookNodeView::mouseDoubleClickEvent(QMouseEvent *p_event) {
     // For containers, toggle expand/collapse (default behavior)
     // For content nodes, activate
     if (!nodeInfo.isFolder) {
-      auto paras = QSharedPointer<FileOpenParameters>::create();
-      emit nodeActivated(nodeInfo.id, paras);
+      m_controller->openNode(nodeInfo.id);
       p_event->accept();
       return;
     }
@@ -300,8 +299,7 @@ void NotebookNodeView::keyPressEvent(QKeyEvent *p_event) {
   case Qt::Key_Enter: {
     NodeInfo nodeInfo = nodeInfoFromIndex(currentIndex());
     if (nodeInfo.isValid() && !nodeInfo.isFolder) {
-      auto paras = QSharedPointer<FileOpenParameters>::create();
-      emit nodeActivated(nodeInfo.id, paras);
+      m_controller->openNode(nodeInfo.id);
       p_event->accept();
       return;
     }
@@ -333,6 +331,7 @@ void NotebookNodeView::contextMenuEvent(QContextMenuEvent *p_event) {
   NodeIdentifier nodeId = nodeIdFromIndex(idx);
 
   emit contextMenuRequested(nodeId, p_event->globalPos());
+
   p_event->accept();
 }
 
@@ -460,8 +459,7 @@ void NotebookNodeView::selectionChanged(const QItemSelection &p_selected,
 void NotebookNodeView::onItemActivated(const QModelIndex &p_index) {
   NodeInfo nodeInfo = nodeInfoFromIndex(p_index);
   if (nodeInfo.isValid() && !nodeInfo.isFolder) {
-    auto paras = QSharedPointer<FileOpenParameters>::create();
-    emit nodeActivated(nodeInfo.id, paras);
+    m_controller->openNode(nodeInfo.id);
   }
 }
 

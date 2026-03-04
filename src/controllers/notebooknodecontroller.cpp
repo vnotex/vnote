@@ -182,10 +182,10 @@ void NotebookNodeController::addOpenActions(QMenu *p_menu, const NodeIdentifier 
     return;
   }
 
-  auto *openAction = p_menu->addAction(tr("&Open"));
-  connect(openAction, &QAction::triggered, this, [this, p_nodeId]() { openNode(p_nodeId); });
-
   if (!p_isFolder) {
+    auto *openAction = p_menu->addAction(tr("&Open"));
+    connect(openAction, &QAction::triggered, this, [this, p_nodeId]() { openNode(p_nodeId); });
+
     auto *openWithAction = p_menu->addAction(tr("Open With Default App"));
     connect(openWithAction, &QAction::triggered, this,
             [this, p_nodeId]() { openNodeWithDefaultApp(p_nodeId); });
@@ -321,18 +321,6 @@ void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {
     parentId.relativePath = QString(); // root
   }
 
-  // Fire hook before creating note (WRAP pattern)
-  auto *hookMgr = m_services.get<HookManager>();
-  if (hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = parentId.notebookId;
-    args[QStringLiteral("parentPath")] = parentId.relativePath;
-    args[QStringLiteral("type")] = QStringLiteral("note");
-    if (hookMgr->doAction(HookNames::NodeBeforeCreate, args)) {
-      return; // Cancelled by plugin
-    }
-  }
-
   emit newNoteRequested(parentId);
 }
 
@@ -346,18 +334,6 @@ void NotebookNodeController::newFolder(const NodeIdentifier &p_parentId) {
   if (!parentId.isValid()) {
     parentId.notebookId = notebookId;
     parentId.relativePath = QString();
-  }
-
-  // Fire hook before creating folder (WRAP pattern)
-  auto *hookMgr = m_services.get<HookManager>();
-  if (hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = parentId.notebookId;
-    args[QStringLiteral("parentPath")] = parentId.relativePath;
-    args[QStringLiteral("type")] = QStringLiteral("folder");
-    if (hookMgr->doAction(HookNames::NodeBeforeCreate, args)) {
-      return; // Cancelled by plugin
-    }
   }
 
   emit newFolderRequested(parentId);
@@ -386,55 +362,11 @@ void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
           NodeIdentifier parentId = getParentFolder(p_nodeId);
           m_model->reloadNode(parentId);
         }
-        // Node is now indexed, open it - fire hook first (WRAP pattern)
-        auto *hookMgr = m_services.get<HookManager>();
-        if (hookMgr) {
-          QVariantMap args;
-          args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
-          args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
-          args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
-          args[QStringLiteral("name")] = nodeInfo.name;
-          if (hookMgr->doAction(HookNames::NodeBeforeActivate, args)) {
-            return; // Cancelled by plugin
-          }
-        }
-        auto paras = QSharedPointer<FileOpenParameters>::create();
-        emit nodeActivated(p_nodeId, paras);
-        return;
       }
       // Import failed, fall through to open as external file
     }
-
-    // Open external file without importing - fire hook first (WRAP pattern)
-    QString path = buildAbsolutePath(p_nodeId);
-    if (!path.isEmpty()) {
-      auto *hookMgr = m_services.get<HookManager>();
-      if (hookMgr) {
-        QVariantMap args;
-        args[QStringLiteral("path")] = path;
-        args[QStringLiteral("isExternal")] = true;
-        if (hookMgr->doAction(HookNames::FileBeforeOpen, args)) {
-          return; // Cancelled by plugin
-        }
-      }
-      auto paras = QSharedPointer<FileOpenParameters>::create();
-      emit fileActivated(path, paras);
-    }
-    return;
   }
 
-  // Fire hook before activating node (WRAP pattern)
-  auto *hookMgr = m_services.get<HookManager>();
-  if (hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
-    args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
-    args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
-    args[QStringLiteral("name")] = nodeInfo.name;
-    if (hookMgr->doAction(HookNames::NodeBeforeActivate, args)) {
-      return; // Cancelled by plugin
-    }
-  }
   auto paras = QSharedPointer<FileOpenParameters>::create();
   emit nodeActivated(p_nodeId, paras);
 }

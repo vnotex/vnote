@@ -12,7 +12,6 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QSplitter>
-#include <QStackedWidget>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -26,27 +25,17 @@
 #include <core/hooknames.h>
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
-#include <core/services/hookmanager.h>
 #include <core/services/notebookservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
-#include <models/notebooknodemodel.h>
-#include <models/notebooknodeproxymodel.h>
 #include <utils/fileutils.h>
 #include <utils/widgetutils.h>
-#include <views/notebooknodedelegate.h>
-#include <views/notebooknodeview.h>
+#include <views/combinednodeexplorer.h>
+#include <views/inodeexplorer.h>
 #include <views/twocolumnsnodeexplorer.h>
-#include <views/notebooknodeview.h>
 // TODO: Migrate dialogs to use ServiceLocator DI pattern
 #include <widgets/dialogs/importfolderdialog2.h>
-// #include <widgets/dialogs/importnotebookdialog.h>
-// #include <widgets/dialogs/managenotebooksdialog.h>
-// #include <widgets/dialogs/newfolderdialog.h>
-// #include <widgets/dialogs/newnotebookdialog.h>
-// #include <widgets/dialogs/newnotebookfromfolderdialog.h>
-// #include <widgets/dialogs/newnotedialog.h>
 #include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/managenotebooksdialog2.h>
 #include <widgets/dialogs/newfolderdialog2.h>
@@ -71,13 +60,13 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
 NotebookExplorer2::~NotebookExplorer2() {}
 
 void NotebookExplorer2::setupUI() {
-  auto *mainLayout = new QVBoxLayout(this);
-  mainLayout->setContentsMargins(0, 0, 0, 0);
-  mainLayout->setSpacing(0);
+  m_mainLayout = new QVBoxLayout(this);
+  m_mainLayout->setContentsMargins(0, 0, 0, 0);
+  m_mainLayout->setSpacing(0);
 
   // Title bar with actions and menu
   setupTitleBar();
-  mainLayout->addWidget(m_titleBar);
+  m_mainLayout->addWidget(m_titleBar);
 
   const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
 
@@ -88,11 +77,7 @@ void NotebookExplorer2::setupUI() {
   // TODO: Migrate NavigationModeMgr to use ServiceLocator DI pattern
   // NavigationModeMgr::getInst().registerNavigationTarget(m_notebookSelector);
   m_notebookSelector->setViewOrder(widgetConfig.getNotebookSelectorViewOrder());
-  mainLayout->addWidget(m_notebookSelector);
-
-  // Content stack for different modes
-  m_contentStack = new QStackedWidget(this);
-  mainLayout->addWidget(m_contentStack, 1);
+  m_mainLayout->addWidget(m_notebookSelector);
 
   // Get initial explore mode from config
   int mode = m_services.get<ConfigMgr2>()->getWidgetConfig().getNodeExplorerExploreMode();
@@ -100,7 +85,7 @@ void NotebookExplorer2::setupUI() {
   // to new modes (0=Combined, 1=TwoColumns)
   m_exploreMode = (mode >= 1) ? TwoColumns : Combined;
 
-  // Create only the initial mode's view (lazy initialization)
+  // Create the initial explorer
   if (m_exploreMode == Combined) {
     setupCombinedMode();
   } else {
@@ -112,17 +97,6 @@ void NotebookExplorer2::setupUI() {
   connect(m_notebookSelector, QOverload<int>::of(&QComboBox::activated), this, [this](int p_idx) {
     QString guid = m_notebookSelector->itemData(p_idx, NotebookGuidRole).toString();
     setCurrentNotebookInternal(guid);
-
-    // Fire hook before emitting Qt signal (WordPress-style plugin architecture)
-    auto *hookMgr = m_services.get<HookManager>();
-    if (hookMgr) {
-      QVariantMap args;
-      args[QStringLiteral("notebookId")] = guid;
-      if (hookMgr->doAction(HookNames::NotebookBeforeOpen, args)) {
-        return; // Cancelled by plugin
-      }
-    }
-    emit notebookActivated(guid);
   });
   connect(m_notebookSelector, &NotebookSelector2::newNotebookRequested, this,
           &NotebookExplorer2::newNotebook);
@@ -178,12 +152,9 @@ void NotebookExplorer2::setupTitleBarMenu() {
                                                m_services.get<ConfigMgr2>()
                                                    ->getWidgetConfig()
                                                    .setNodeExplorerExternalFilesVisible(p_checked);
-                                               // Apply to model(s)
-                                               if (m_combinedModel) {
-                                                 m_combinedModel->setExternalNodesVisible(p_checked);
-                                               }
-                                               if (m_twoColumnsExplorer) {
-                                                 m_twoColumnsExplorer->setExternalNodesVisible(p_checked);
+                                               // Apply to current explorer
+                                               if (m_nodeExplorer) {
+                                                 m_nodeExplorer->setExternalNodesVisible(p_checked);
                                                }
                                              });
     showAct->setCheckable(true);
@@ -428,11 +399,8 @@ void NotebookExplorer2::rebuildDatabase() {
   progress.close();
 
   // Reload the current notebook to reflect changes.
-  if (m_combinedModel) {
-    m_combinedModel->setNotebookId(m_currentNotebookId);
-  }
-  if (m_twoColumnsExplorer) {
-    m_twoColumnsExplorer->setNotebookId(m_currentNotebookId);
+  if (m_nodeExplorer) {
+    m_nodeExplorer->setNotebookId(m_currentNotebookId);
   }
 
   if (success) {
@@ -447,118 +415,62 @@ void NotebookExplorer2::rebuildDatabase() {
 }
 
 void NotebookExplorer2::setupCombinedMode() {
-  // Create MVC components for combined mode
-  m_combinedModel = new NotebookNodeModel(m_services, this);
-  m_combinedProxyModel = new NotebookNodeProxyModel(this);
-  m_combinedProxyModel->setSourceModel(m_combinedModel);
-  m_combinedProxyModel->setFilterFlags(NotebookNodeProxyModel::ShowAll);
+  // Create encapsulated MVC widget for combined mode
+  auto *explorer = new CombinedNodeExplorer(m_services, this);
 
-  // Apply initial view order and external files visibility from config
+  // Apply initial external files visibility from config
   const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
-  m_combinedProxyModel->setViewOrder(static_cast<ViewOrder>(widgetConfig.getNodeExplorerViewOrder()));
-  m_combinedProxyModel->sort(0); // Enable sorting
-  m_combinedModel->setExternalNodesVisible(widgetConfig.isNodeExplorerExternalFilesVisible());
+  explorer->setExternalNodesVisible(widgetConfig.isNodeExplorerExternalFilesVisible());
 
-  m_combinedView = new NotebookNodeView(this);
-  m_combinedView->setModel(m_combinedProxyModel);
+  // Add to layout
+  m_mainLayout->addWidget(explorer, 1);
 
-  m_combinedDelegate = new NotebookNodeDelegate(m_services, this);
-  m_combinedView->setItemDelegate(m_combinedDelegate);
-
-  m_combinedController = new NotebookNodeController(m_services, this);
-  m_combinedController->setModel(m_combinedModel);
-  m_combinedController->setView(m_combinedView);
-  m_combinedView->setController(m_combinedController);
-
-  // Add to content stack
-  m_contentStack->addWidget(m_combinedView);
-
-  // Connect signals from view
-  connect(m_combinedView, &NotebookNodeView::nodeActivated, this,
-          &NotebookExplorer2::onNodeActivated);
-  connect(m_combinedView, &NotebookNodeView::contextMenuRequested, this,
-          &NotebookExplorer2::onContextMenuRequested);
-
-  // Forward controller signals (already using NodeIdentifier)
-  connect(m_combinedController, &NotebookNodeController::nodeActivated, this,
-          &NotebookExplorer2::nodeActivated);
-  connect(m_combinedController, &NotebookNodeController::fileActivated, this,
-          &NotebookExplorer2::fileActivated);
-  connect(m_combinedController, &NotebookNodeController::nodeAboutToMove, this,
-          &NotebookExplorer2::nodeAboutToMove);
-  connect(m_combinedController, &NotebookNodeController::nodeAboutToRemove, this,
-          &NotebookExplorer2::nodeAboutToRemove);
-  connect(m_combinedController, &NotebookNodeController::nodeAboutToReload, this,
-          &NotebookExplorer2::nodeAboutToReload);
-  connect(m_combinedController, &NotebookNodeController::closeFileRequested, this,
-          &NotebookExplorer2::closeFileRequested);
-
-  // Connect GUI request signals from controller
-  connect(m_combinedController, &NotebookNodeController::newNoteRequested, this,
+  // Connect GUI request signals from CombinedNodeExplorer
+  connect(explorer, &CombinedNodeExplorer::newNoteRequested, this,
           &NotebookExplorer2::onNewNoteRequested);
-  connect(m_combinedController, &NotebookNodeController::newFolderRequested, this,
+  connect(explorer, &CombinedNodeExplorer::newFolderRequested, this,
           &NotebookExplorer2::onNewFolderRequested);
-  connect(m_combinedController, &NotebookNodeController::renameRequested, this,
+  connect(explorer, &CombinedNodeExplorer::renameRequested, this,
           &NotebookExplorer2::onRenameRequested);
-  connect(m_combinedController, &NotebookNodeController::deleteRequested, this,
+  connect(explorer, &CombinedNodeExplorer::deleteRequested, this,
           &NotebookExplorer2::onDeleteRequested);
-  connect(m_combinedController, &NotebookNodeController::removeFromNotebookRequested, this,
+  connect(explorer, &CombinedNodeExplorer::removeFromNotebookRequested, this,
           &NotebookExplorer2::onRemoveFromNotebookRequested);
-  connect(m_combinedController, &NotebookNodeController::propertiesRequested, this,
+  connect(explorer, &CombinedNodeExplorer::propertiesRequested, this,
           &NotebookExplorer2::onPropertiesRequested);
-  connect(m_combinedController, &NotebookNodeController::errorOccurred, this,
+  connect(explorer, &CombinedNodeExplorer::errorOccurred, this,
           &NotebookExplorer2::onErrorOccurred);
-  connect(m_combinedController, &NotebookNodeController::infoMessage, this,
+  connect(explorer, &CombinedNodeExplorer::infoMessage, this,
           &NotebookExplorer2::onInfoMessage);
 
-  // Model error signals (for inline rename failures)
-  connect(m_combinedModel, &NotebookNodeModel::errorOccurred, this,
-          &NotebookExplorer2::onErrorOccurred);
+  m_nodeExplorer = explorer;
 }
 
 void NotebookExplorer2::setupTwoColumnsMode() {
-  m_twoColumnsExplorer = new TwoColumnsNodeExplorer(m_services, this);
-  m_contentStack->addWidget(m_twoColumnsExplorer);
+  auto *explorer = new TwoColumnsNodeExplorer(m_services, this);
 
-  // Connect context menu signal
-  connect(m_twoColumnsExplorer,
-          QOverload<const NodeIdentifier &, const QPoint &, bool>::of(
-              &TwoColumnsNodeExplorer::contextMenuRequested),
-          this, &NotebookExplorer2::onTwoColumnsContextMenu);
-
-  // Forward controller signals (unified from both folder and file controllers)
-  // Note: nodeActivated already routes through TwoColumnsNodeExplorer's controllers
-  // which handle auto-import for external nodes
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeActivated, this,
-          &NotebookExplorer2::nodeActivated);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::fileActivated, this,
-          &NotebookExplorer2::fileActivated);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeAboutToMove, this,
-          &NotebookExplorer2::nodeAboutToMove);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeAboutToRemove, this,
-          &NotebookExplorer2::nodeAboutToRemove);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::nodeAboutToReload, this,
-          &NotebookExplorer2::nodeAboutToReload);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::closeFileRequested, this,
-          &NotebookExplorer2::closeFileRequested);
+  // Add to layout
+  m_mainLayout->addWidget(explorer, 1);
 
   // Connect GUI request signals
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::newNoteRequested, this,
+  connect(explorer, &TwoColumnsNodeExplorer::newNoteRequested, this,
           &NotebookExplorer2::onNewNoteRequested);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::newFolderRequested, this,
+  connect(explorer, &TwoColumnsNodeExplorer::newFolderRequested, this,
           &NotebookExplorer2::onNewFolderRequested);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::renameRequested, this,
+  connect(explorer, &TwoColumnsNodeExplorer::renameRequested, this,
           &NotebookExplorer2::onRenameRequested);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::deleteRequested, this,
+  connect(explorer, &TwoColumnsNodeExplorer::deleteRequested, this,
           &NotebookExplorer2::onDeleteRequested);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::removeFromNotebookRequested, this,
+  connect(explorer, &TwoColumnsNodeExplorer::removeFromNotebookRequested, this,
           &NotebookExplorer2::onRemoveFromNotebookRequested);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::propertiesRequested, this,
+  connect(explorer, &TwoColumnsNodeExplorer::propertiesRequested, this,
           &NotebookExplorer2::onPropertiesRequested);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::errorOccurred, this,
+  connect(explorer, &TwoColumnsNodeExplorer::errorOccurred, this,
           &NotebookExplorer2::onErrorOccurred);
-  connect(m_twoColumnsExplorer, &TwoColumnsNodeExplorer::infoMessage, this,
+  connect(explorer, &TwoColumnsNodeExplorer::infoMessage, this,
           &NotebookExplorer2::onInfoMessage);
+
+  m_nodeExplorer = explorer;
 }
 
 void NotebookExplorer2::loadNotebooks() {
@@ -589,13 +501,9 @@ void NotebookExplorer2::setCurrentNotebook(const QString &p_notebookId) {
 void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) {
   m_currentNotebookId = p_notebookId;
 
-  // Update all models that exist (views are created on-demand)
-  if (m_combinedModel) {
-    m_combinedModel->setNotebookId(p_notebookId);
-  }
-
-  if (m_twoColumnsExplorer) {
-    m_twoColumnsExplorer->setNotebookId(p_notebookId);
+  // Update current explorer
+  if (m_nodeExplorer) {
+    m_nodeExplorer->setNotebookId(p_notebookId);
   }
 }
 
@@ -604,33 +512,17 @@ QString NotebookExplorer2::currentNotebookId() const {
 }
 
 void NotebookExplorer2::setCurrentNode(const NodeIdentifier &p_nodeId) {
-  if (!p_nodeId.isValid()) {
+  if (!p_nodeId.isValid() || !m_nodeExplorer) {
     return;
   }
 
-  if (m_exploreMode == Combined) {
-    if (m_combinedView) {
-      m_combinedView->expandToNode(p_nodeId);
-      m_combinedView->selectNode(p_nodeId);
-      m_combinedView->scrollToNode(p_nodeId);
-    }
-  } else {
-    // TwoColumns mode - use unified interface
-    if (m_twoColumnsExplorer) {
-      m_twoColumnsExplorer->expandToNode(p_nodeId);
-      m_twoColumnsExplorer->selectNode(p_nodeId);
-      m_twoColumnsExplorer->scrollToNode(p_nodeId);
-    }
-  }
+  m_nodeExplorer->expandToNode(p_nodeId);
+  m_nodeExplorer->selectNode(p_nodeId);
+  m_nodeExplorer->scrollToNode(p_nodeId);
 }
 
 NodeIdentifier NotebookExplorer2::currentNodeId() const {
-  if (m_exploreMode == Combined) {
-    return m_combinedView ? m_combinedView->currentNodeId() : NodeIdentifier();
-  } else {
-    // In two columns mode, prefer file selection over folder
-    return m_twoColumnsExplorer ? m_twoColumnsExplorer->currentNodeId() : NodeIdentifier();
-  }
+  return m_nodeExplorer ? m_nodeExplorer->currentNodeId() : NodeIdentifier();
 }
 
 void NotebookExplorer2::setExploreMode(ExploreMode p_mode) {
@@ -647,77 +539,26 @@ NotebookExplorer2::ExploreMode NotebookExplorer2::exploreMode() const {
 }
 
 void NotebookExplorer2::updateExploreMode() {
+  // Delete old explorer and create new one for the current mode
+  m_mainLayout->removeWidget(m_nodeExplorer);
+  delete m_nodeExplorer;
+
   if (m_exploreMode == Combined) {
-    // Ensure combined mode is set up (lazy creation)
-    if (!m_combinedView) {
-      setupCombinedMode();
-    }
-    m_contentStack->setCurrentWidget(m_combinedView);
-    // Sync notebook to the view if needed
-    if (!m_currentNotebookId.isEmpty() && m_combinedModel) {
-      m_combinedModel->setNotebookId(m_currentNotebookId);
-    }
+    setupCombinedMode();
   } else {
-    // Ensure two columns mode is set up (lazy creation)
-    if (!m_twoColumnsExplorer) {
-      setupTwoColumnsMode();
-    }
-    m_contentStack->setCurrentWidget(m_twoColumnsExplorer);
-    // Sync notebook to the explorer if needed
-    if (!m_currentNotebookId.isEmpty() && m_twoColumnsExplorer) {
-      m_twoColumnsExplorer->setNotebookId(m_currentNotebookId);
-    }
+    setupTwoColumnsMode();
   }
+
+  // Sync notebook to the explorer
+  if (!m_currentNotebookId.isEmpty()) {
+    m_nodeExplorer->setNotebookId(m_currentNotebookId);
+  }
+
   updateFocusProxy();
 }
 
 void NotebookExplorer2::updateFocusProxy() {
-  if (m_exploreMode == Combined && m_combinedView) {
-    setFocusProxy(m_combinedView);
-  } else if (m_exploreMode == TwoColumns && m_twoColumnsExplorer) {
-    setFocusProxy(m_twoColumnsExplorer);
-  }
-}
-
-void NotebookExplorer2::onNodeActivated(const NodeIdentifier &p_nodeId,
-                                        const QSharedPointer<FileOpenParameters> &p_paras) {
-  Q_UNUSED(p_paras);
-  if (!p_nodeId.isValid()) {
-    return;
-  }
-
-  // Route through controller to handle auto-import for external nodes
-  if (m_combinedController) {
-    m_combinedController->openNode(p_nodeId);
-  }
-}
-
-void NotebookExplorer2::onContextMenuRequested(const NodeIdentifier &p_nodeId,
-                                               const QPoint &p_globalPos) {
-  // Use unified interface - this is called from combined mode only
-  // (TwoColumns mode uses onTwoColumnsContextMenu with 3-param signal)
-  if (m_exploreMode == Combined && m_combinedController) {
-    QMenu *menu = m_combinedController->createContextMenu(p_nodeId, this);
-    if (menu) {
-      menu->exec(p_globalPos);
-      delete menu;
-    }
-  }
-}
-
-void NotebookExplorer2::onTwoColumnsContextMenu(const NodeIdentifier &p_nodeId,
-                                                 const QPoint &p_globalPos,
-                                                 bool p_isFromFileView) {
-  if (!m_twoColumnsExplorer) {
-    return;
-  }
-
-  // Use unified createContextMenu method
-  QMenu *menu = m_twoColumnsExplorer->createContextMenu(p_nodeId, p_isFromFileView, this);
-  if (menu) {
-    menu->exec(p_globalPos);
-    delete menu;
-  }
+  setFocusProxy(m_nodeExplorer);
 }
 
 // --- Public Slots Implementation ---
@@ -918,12 +759,7 @@ void NotebookExplorer2::newQuickNote() {
     }
   }
 
-  // Open the file in edit mode.
-  QString filePath = QDir(parentAbsPath).filePath(newFileName);
-  auto paras = QSharedPointer<FileOpenParameters>::create();
-  paras->m_mode = ViewWindowMode::Edit;
-  paras->m_newFile = true;
-  emit fileActivated(filePath, paras);
+  // TODO: Open the file in edit mode.
 }
 
 void NotebookExplorer2::importFile() {
@@ -963,10 +799,8 @@ NodeIdentifier NotebookExplorer2::currentExploredFolderId() const {
 
   // Check if it's a folder
   NodeInfo info;
-  if (m_exploreMode == Combined && m_combinedModel) {
-    info = m_combinedModel->nodeInfoFromIndex(m_combinedModel->indexFromNodeId(nodeId));
-  } else if (m_twoColumnsExplorer) {
-    info = m_twoColumnsExplorer->getNodeInfo(nodeId);
+  if (m_nodeExplorer) {
+    info = m_nodeExplorer->getNodeInfo(nodeId);
   }
 
   if (info.isFolder) {
@@ -993,8 +827,9 @@ QByteArray NotebookExplorer2::saveState() const {
   stream << static_cast<int>(m_exploreMode);
 
   // Save splitter sizes if in TwoColumns mode
-  if (m_twoColumnsExplorer) {
-    stream << m_twoColumnsExplorer->saveSplitterState();
+  auto *twoColumns = qobject_cast<TwoColumnsNodeExplorer *>(m_nodeExplorer);
+  if (twoColumns) {
+    stream << twoColumns->saveSplitterState();
   } else {
     stream << QByteArray();
   }
@@ -1015,23 +850,16 @@ void NotebookExplorer2::restoreState(const QByteArray &p_data) {
 
   QByteArray splitterState;
   stream >> splitterState;
-  if (!splitterState.isEmpty() && m_twoColumnsExplorer) {
-    m_twoColumnsExplorer->restoreSplitterState(splitterState);
+  if (!splitterState.isEmpty()) {
+    auto *twoCol = qobject_cast<TwoColumnsNodeExplorer *>(m_nodeExplorer);
+    if (twoCol) {
+      twoCol->restoreSplitterState(splitterState);
+    }
   }
 }
 
 void NotebookExplorer2::setNodeViewOrder(ViewOrder p_order) {
-  // Apply to combined mode proxy model if it exists
-  if (m_combinedProxyModel) {
-    m_combinedProxyModel->setViewOrder(p_order);
-    m_combinedProxyModel->sort(0); // Trigger re-sort
-  }
-
-  // Apply to two-columns mode proxy models if they exist
-  // Apply to two-columns mode explorer if it exists
-  if (m_twoColumnsExplorer) {
-    m_twoColumnsExplorer->setViewOrder(p_order);
-  }
+  m_nodeExplorer->setViewOrder(p_order);
 }
 
 // --- GUI request handlers from controller signals ---
@@ -1041,18 +869,7 @@ void NotebookExplorer2::onNewNoteRequested(const NodeIdentifier &p_parentId) {
   if (dialog.exec() == QDialog::Accepted) {
     NodeIdentifier newNodeId = dialog.getNewNodeId();
     if (newNodeId.isValid()) {
-      // Reload parent node in the appropriate model
-      if (m_exploreMode == Combined) {
-        if (m_combinedModel) {
-          m_combinedModel->reloadNode(p_parentId);
-        }
-      } else {
-        // TwoColumns mode - reload file model (notes are files)
-        if (m_twoColumnsExplorer) {
-          m_twoColumnsExplorer->reloadNode(p_parentId, false);
-        }
-      }
-      // Select the new note
+      m_nodeExplorer->reloadNode(p_parentId);
       setCurrentNode(newNodeId);
     }
   }
@@ -1063,18 +880,7 @@ void NotebookExplorer2::onNewFolderRequested(const NodeIdentifier &p_parentId) {
   if (dialog.exec() == QDialog::Accepted) {
     NodeIdentifier newNodeId = dialog.getNewNodeId();
     if (newNodeId.isValid()) {
-      // Reload parent node in the appropriate model
-      if (m_exploreMode == Combined) {
-        if (m_combinedModel) {
-          m_combinedModel->reloadNode(p_parentId);
-        }
-      } else {
-        // TwoColumns mode - reload folder model
-        if (m_twoColumnsExplorer) {
-          m_twoColumnsExplorer->reloadNode(p_parentId, true);
-        }
-      }
-      // Select the new folder
+      m_nodeExplorer->reloadNode(p_parentId);
       setCurrentNode(newNodeId);
     }
   }
@@ -1083,24 +889,7 @@ void NotebookExplorer2::onNewFolderRequested(const NodeIdentifier &p_parentId) {
 void NotebookExplorer2::onRenameRequested(const NodeIdentifier &p_nodeId,
                                           const QString &p_currentName) {
   Q_UNUSED(p_currentName);
-
-  // Trigger inline editing instead of dialog
-  if (m_exploreMode == Combined) {
-    if (m_combinedView && m_combinedModel && m_combinedProxyModel) {
-      QModelIndex sourceIdx = m_combinedModel->indexFromNodeId(p_nodeId);
-      if (sourceIdx.isValid()) {
-        QModelIndex viewIdx = m_combinedProxyModel->mapFromSource(sourceIdx);
-        if (viewIdx.isValid()) {
-          m_combinedView->setCurrentIndex(viewIdx);
-          m_combinedView->edit(viewIdx);
-        }
-      }
-    }
-  } else {
-    if (m_twoColumnsExplorer) {
-      m_twoColumnsExplorer->startInlineRename(p_nodeId);
-    }
-  }
+  m_nodeExplorer->startInlineRename(p_nodeId);
 }
 
 void NotebookExplorer2::onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent) {
@@ -1124,15 +913,7 @@ void NotebookExplorer2::onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds
   }
 
   // Use unified interface to perform the delete
-  if (m_exploreMode == Combined) {
-    if (m_combinedController) {
-      m_combinedController->handleDeleteConfirmed(p_nodeIds, p_permanent);
-    }
-  } else {
-    if (m_twoColumnsExplorer) {
-      m_twoColumnsExplorer->handleDeleteConfirmed(p_nodeIds, p_permanent);
-    }
-  }
+  m_nodeExplorer->handleDeleteConfirmed(p_nodeIds, p_permanent);
 }
 
 void NotebookExplorer2::onRemoveFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds) {
@@ -1150,15 +931,7 @@ void NotebookExplorer2::onRemoveFromNotebookRequested(const QList<NodeIdentifier
   }
 
   // Use unified interface to perform the removal
-  if (m_exploreMode == Combined) {
-    if (m_combinedController) {
-      m_combinedController->handleRemoveConfirmed(p_nodeIds);
-    }
-  } else {
-    if (m_twoColumnsExplorer) {
-      m_twoColumnsExplorer->handleRemoveConfirmed(p_nodeIds);
-    }
-  }
+  m_nodeExplorer->handleRemoveConfirmed(p_nodeIds);
 }
 
 void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFolderId) {
@@ -1168,24 +941,17 @@ void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFol
     return;
   }
 
-  // Use controller to perform the import
-  if (m_exploreMode == Combined && m_combinedController) {
-    m_combinedController->handleImportFiles(p_targetFolderId, files);
-  } else if (m_twoColumnsExplorer) {
-    // For two-column mode, we still need a controller to handle import
-    // Since TwoColumnsNodeExplorer doesn't expose handleImportFiles,
-    // we need to handle this differently - use NotebookService directly
-    auto &notebookService = *m_services.get<NotebookService>();
-    for (const QString &filePath : files) {
-      QFileInfo fileInfo(filePath);
-      QString destPath = p_targetFolderId.relativePath.isEmpty()
-                             ? fileInfo.fileName()
-                             : p_targetFolderId.relativePath + "/" + fileInfo.fileName();
-      notebookService.importFile(p_targetFolderId.notebookId, filePath, destPath);
-    }
-    // Reload the folder to show imported files
-    m_twoColumnsExplorer->reloadNode(p_targetFolderId);
+  // Use NotebookService to perform the import, then reload
+  auto &notebookService = *m_services.get<NotebookService>();
+  for (const QString &filePath : files) {
+    QFileInfo fileInfo(filePath);
+    QString destPath = p_targetFolderId.relativePath.isEmpty()
+                           ? fileInfo.fileName()
+                           : p_targetFolderId.relativePath + "/" + fileInfo.fileName();
+    notebookService.importFile(p_targetFolderId.notebookId, filePath, destPath);
   }
+  // Reload the folder to show imported files
+  m_nodeExplorer->reloadNode(p_targetFolderId);
 }
 
 void NotebookExplorer2::onImportFolderRequested(const NodeIdentifier &p_targetFolderId) {
@@ -1193,12 +959,7 @@ void NotebookExplorer2::onImportFolderRequested(const NodeIdentifier &p_targetFo
   if (dialog.exec() == QDialog::Accepted) {
     NodeIdentifier newNodeId = dialog.getNewNodeId();
     if (newNodeId.isValid()) {
-      // Reload the parent folder to show the new imported folder
-      if (m_exploreMode == Combined && m_combinedModel) {
-        m_combinedModel->reloadNode(p_targetFolderId);
-      } else if (m_twoColumnsExplorer) {
-        m_twoColumnsExplorer->reloadNode(p_targetFolderId, true);
-      }
+      m_nodeExplorer->reloadNode(p_targetFolderId);
       setCurrentNode(newNodeId);
     }
   }
@@ -1210,12 +971,7 @@ void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
   }
 
   // Get node info using unified interface
-  NodeInfo nodeInfo;
-  if (m_exploreMode == Combined && m_combinedModel) {
-    nodeInfo = m_combinedModel->nodeInfoFromIndex(m_combinedModel->indexFromNodeId(p_nodeId));
-  } else if (m_twoColumnsExplorer) {
-    nodeInfo = m_twoColumnsExplorer->getNodeInfo(p_nodeId);
-  }
+  NodeInfo nodeInfo = m_nodeExplorer->getNodeInfo(p_nodeId);
 
 
   if (!nodeInfo.isValid()) {

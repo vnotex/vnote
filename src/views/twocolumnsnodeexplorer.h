@@ -57,15 +57,7 @@ public:
   void setViewOrder(ViewOrder p_order) override;
 
   // External nodes visibility
-  void setExternalNodesVisible(bool p_visible);
-
-  // Context menu creation - unified for both panels
-  // INodeExplorer interface - base version delegates to two-param version
-  QMenu *createContextMenu(const NodeIdentifier &p_nodeId,
-                           QWidget *p_parent = nullptr) override;
-  // Extended version for two-column mode that specifies which panel triggered the menu
-  QMenu *createContextMenu(const NodeIdentifier &p_nodeId, bool p_isFromFileView,
-                           QWidget *p_parent = nullptr) override;
+  void setExternalNodesVisible(bool p_visible) override;
 
   // Node info lookup - checks both models
   NodeInfo getNodeInfo(const NodeIdentifier &p_nodeId) const override;

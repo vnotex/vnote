@@ -49,17 +49,6 @@ public:
   // === View order ===
   virtual void setViewOrder(ViewOrder p_order) = 0;
 
-  // === Context menu ===
-  virtual QMenu *createContextMenu(const NodeIdentifier &p_nodeId,
-                                   QWidget *p_parent = nullptr) = 0;
-  // Overload for two-column mode that specifies which panel triggered the menu
-  virtual QMenu *createContextMenu(const NodeIdentifier &p_nodeId,
-                                   bool p_isFromFileView,
-                                   QWidget *p_parent = nullptr) {
-    Q_UNUSED(p_isFromFileView);
-    return createContextMenu(p_nodeId, p_parent);
-  }
-
   // === Node info ===
   virtual NodeInfo getNodeInfo(const NodeIdentifier &p_nodeId) const = 0;
 
@@ -74,17 +63,16 @@ public:
   // === Inline rename ===
   // Start inline editing for a node (triggers edit mode on the view)
   virtual void startInlineRename(const NodeIdentifier &p_nodeId) = 0;
+
+  // === External files visibility ===
+  virtual void setExternalNodesVisible(bool p_visible) = 0;
+
 signals:
   // === Activation signals ===
   void nodeActivated(const NodeIdentifier &p_nodeId,
                      const QSharedPointer<FileOpenParameters> &p_paras);
-  void contextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos);
-  // Two-column mode: indicates which panel triggered the context menu
-  void contextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos,
-                            bool p_isFromFileView);
 
   // === Node lifecycle signals ===
-  void fileActivated(const QString &p_path, const QSharedPointer<FileOpenParameters> &p_paras);
   void nodeAboutToMove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
   void nodeAboutToRemove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
   void nodeAboutToReload(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
