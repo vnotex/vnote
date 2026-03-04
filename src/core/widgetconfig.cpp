@@ -50,7 +50,10 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_tagExplorerTwoColumnsEnabled = READBOOL(QStringLiteral("tagExplorerTwoColumnsEnabled"));
 
-  m_newNoteDefaultFileType = READINT(QStringLiteral("newNoteDefaultFileType"));
+  m_newNoteDefaultFileTypeName = readString(p_jobj, QStringLiteral("newNoteDefaultFileTypeName"));
+  if (m_newNoteDefaultFileTypeName.isEmpty()) {
+    m_newNoteDefaultFileTypeName = QStringLiteral("Markdown");
+  }
 
   m_unitedEntryExpandAllEnabled = READBOOL(QStringLiteral("unitedEntryExpandAll"));
 }
@@ -81,7 +84,7 @@ QJsonObject WidgetConfig::toJson() const {
   obj[QStringLiteral("tagExplorerTwoColumnsEnabled")] = m_tagExplorerTwoColumnsEnabled;
   writeStringList(obj, QStringLiteral("mainWindowKeepDocksExpandingContentArea"),
                   m_mainWindowKeepDocksExpandingContentArea);
-  obj[QStringLiteral("newNoteDefaultFileType")] = m_newNoteDefaultFileType;
+  obj[QStringLiteral("newNoteDefaultFileTypeName")] = m_newNoteDefaultFileTypeName;
   obj[QStringLiteral("unitedEntryExpandAll")] = m_unitedEntryExpandAllEnabled;
   return obj;
 }
@@ -178,10 +181,53 @@ void WidgetConfig::setTagExplorerTwoColumnsEnabled(bool p_enabled) {
   updateConfig(m_tagExplorerTwoColumnsEnabled, p_enabled, this);
 }
 
-int WidgetConfig::getNewNoteDefaultFileType() const { return m_newNoteDefaultFileType; }
+const QString &WidgetConfig::getNewNoteDefaultFileTypeName() const {
+  return m_newNoteDefaultFileTypeName;
+}
+
+void WidgetConfig::setNewNoteDefaultFileTypeName(const QString &p_typeName) {
+  updateConfig(m_newNoteDefaultFileTypeName, p_typeName, this);
+}
+
+// Legacy methods for backward compatibility with old NewNoteDialog.
+// Maps between integer type index and type name string.
+int WidgetConfig::getNewNoteDefaultFileType() const {
+  // Map type name to legacy integer index.
+  // 0=Markdown, 1=Text, 2=PDF, 3=MindMap, 4=Others
+  if (m_newNoteDefaultFileTypeName == QStringLiteral("Markdown")) {
+    return 0;
+  } else if (m_newNoteDefaultFileTypeName == QStringLiteral("Text")) {
+    return 1;
+  } else if (m_newNoteDefaultFileTypeName == QStringLiteral("PDF")) {
+    return 2;
+  } else if (m_newNoteDefaultFileTypeName == QStringLiteral("MindMap")) {
+    return 3;
+  } else {
+    return 4; // Others
+  }
+}
 
 void WidgetConfig::setNewNoteDefaultFileType(int p_type) {
-  updateConfig(m_newNoteDefaultFileType, p_type, this);
+  // Map legacy integer index to type name.
+  QString typeName;
+  switch (p_type) {
+  case 0:
+    typeName = QStringLiteral("Markdown");
+    break;
+  case 1:
+    typeName = QStringLiteral("Text");
+    break;
+  case 2:
+    typeName = QStringLiteral("PDF");
+    break;
+  case 3:
+    typeName = QStringLiteral("MindMap");
+    break;
+  default:
+    typeName = QStringLiteral("Others");
+    break;
+  }
+  updateConfig(m_newNoteDefaultFileTypeName, typeName, this);
 }
 
 bool WidgetConfig::getUnitedEntryExpandAllEnabled() const { return m_unitedEntryExpandAllEnabled; }

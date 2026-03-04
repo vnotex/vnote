@@ -16,7 +16,7 @@ struct NewNoteInput {
   QString parentFolderPath; // Relative path within notebook
   QString name;             // File name with extension
   QString templateContent;  // Optional template content
-  int fileType = 0;         // FileTypeHelper type index
+  QString fileTypeName;     // File type name (e.g., "Markdown", "Text")
 };
 
 // Result structure for note creation.

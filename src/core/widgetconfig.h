@@ -57,8 +57,14 @@ public:
   bool getTagExplorerTwoColumnsEnabled() const;
   void setTagExplorerTwoColumnsEnabled(bool p_enabled);
 
+  // Legacy: Get/set file type by integer index (for old NewNoteDialog).
+  // Deprecated: Use getNewNoteDefaultFileTypeName/setNewNoteDefaultFileTypeName instead.
   int getNewNoteDefaultFileType() const;
   void setNewNoteDefaultFileType(int p_type);
+
+  // Get/set file type by name string (preferred for new code).
+  const QString &getNewNoteDefaultFileTypeName() const;
+  void setNewNoteDefaultFileTypeName(const QString &p_typeName);
 
   bool getUnitedEntryExpandAllEnabled() const;
   void setUnitedEntryExpandAllEnabled(bool p_enabled);
@@ -95,7 +101,7 @@ private:
   // Whether enable two columns for tag explorer.
   bool m_tagExplorerTwoColumnsEnabled = false;
 
-  int m_newNoteDefaultFileType = 0;
+  QString m_newNoteDefaultFileTypeName = QStringLiteral("Markdown");
 
   bool m_unitedEntryExpandAllEnabled = false;
 

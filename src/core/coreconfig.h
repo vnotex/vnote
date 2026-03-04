@@ -81,18 +81,6 @@ public:
   };
   Q_ENUM(Shortcut)
 
-  struct FileTypeSuffix {
-    FileTypeSuffix() = default;
-
-    FileTypeSuffix(const QString &p_name, const QStringList &p_suffixes);
-
-    bool operator==(const FileTypeSuffix &p_other) const;
-
-    QString m_name;
-
-    QStringList m_suffixes;
-  };
-
   CoreConfig(IConfigMgr *p_mgr, IConfig *p_topConfig);
 
   void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
@@ -136,11 +124,6 @@ public:
   LineEndingPolicy getLineEndingPolicy() const;
   void setLineEndingPolicy(LineEndingPolicy p_ending);
 
-  const QVector<FileTypeSuffix> &getFileTypeSuffixes() const;
-  void setFileTypeSuffixes(const QVector<FileTypeSuffix> &p_fileTypeSuffixes);
-
-  const QStringList *findFileTypeSuffix(const QString &p_name) const;
-
   const QJsonArray &getUnitedEntryAlias() const;
   void setUnitedEntryAlias(const QJsonArray &p_alias);
 
@@ -155,10 +138,6 @@ private:
   void loadNoteManagement(const QJsonObject &p_jobj);
 
   QJsonObject saveShortcuts() const;
-
-  void loadFileTypeSuffixes(const QJsonObject &p_jobj);
-
-  QJsonArray saveFileTypeSuffixes() const;
 
   void loadUnitedEntry(const QJsonObject &p_jobj);
 
@@ -199,8 +178,6 @@ private:
   bool m_perNotebookHistoryEnabled = false;
 
   LineEndingPolicy m_lineEnding = LineEndingPolicy::LF;
-
-  QVector<FileTypeSuffix> m_fileTypeSuffixes;
 
   QJsonArray m_unitedEntryAlias;
 

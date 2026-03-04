@@ -44,10 +44,10 @@ void NewNoteDialog2::setupUI() {
   // File type combo.
   m_fileTypeCombo = WidgetsFactory::createComboBox(mainWidget);
   auto *fileTypeService = m_services.get<FileTypeService>();
-  const auto &fileTypes = fileTypeService->getAllFileTypes();
+  const auto fileTypes = fileTypeService->getAllFileTypes();
   for (const auto &ft : fileTypes) {
     if (ft.m_isNewable) {
-      m_fileTypeCombo->addItem(ft.m_displayName, ft.m_type);
+      m_fileTypeCombo->addItem(ft.m_displayName, ft.m_typeName);
     }
   }
   connect(m_fileTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
@@ -71,9 +71,10 @@ void NewNoteDialog2::setupUI() {
 }
 
 void NewNoteDialog2::initDefaultValues() {
-  // Restore last file type from config.
-  int defaultType = m_services.get<ConfigMgr2>()->getWidgetConfig().getNewNoteDefaultFileType();
-  int index = m_fileTypeCombo->findData(defaultType);
+  // Restore last file type from config (stored as type name string).
+  QString defaultTypeName =
+      m_services.get<ConfigMgr2>()->getWidgetConfig().getNewNoteDefaultFileTypeName();
+  int index = m_fileTypeCombo->findData(defaultTypeName);
   if (index >= 0) {
     // Block signals to avoid triggering updateNameForFileType() during init.
     m_fileTypeCombo->blockSignals(true);
@@ -94,8 +95,7 @@ void NewNoteDialog2::initDefaultValues() {
 
 void NewNoteDialog2::updateNameForFileType() {
   auto *fileTypeService = m_services.get<FileTypeService>();
-  const auto &fileType = fileTypeService->getFileType(
-      m_fileTypeCombo->currentData().toInt());
+  const auto fileType = fileTypeService->getFileTypeByName(m_fileTypeCombo->currentData().toString());
 
   // Get current name and extract base name (without extension).
   QString currentName = m_nameEdit->text().trimmed();
@@ -131,16 +131,13 @@ bool NewNoteDialog2::validateInputs() {
 }
 
 QString NewNoteDialog2::getFileTypeName() const {
-  int typeIndex = m_fileTypeCombo->currentData().toInt();
-  auto *fileTypeService = m_services.get<FileTypeService>();
-  const auto &fileType = fileTypeService->getFileType(typeIndex);
-  return fileType.m_typeName;
+  return m_fileTypeCombo->currentData().toString();
 }
 
 QString NewNoteDialog2::getPreferredSuffix() const {
-  int typeIndex = m_fileTypeCombo->currentData().toInt();
+  QString typeName = m_fileTypeCombo->currentData().toString();
   auto *fileTypeService = m_services.get<FileTypeService>();
-  const auto &fileType = fileTypeService->getFileType(typeIndex);
+  const auto fileType = fileTypeService->getFileTypeByName(typeName);
   return fileType.preferredSuffix();
 }
 
@@ -148,9 +145,9 @@ void NewNoteDialog2::acceptedButtonClicked() {
   // Save last template.
   s_lastTemplate = m_templateSelector->getCurrentTemplate();
 
-  // Save default file type.
-  int fileType = m_fileTypeCombo->currentData().toInt();
-  m_services.get<ConfigMgr2>()->getWidgetConfig().setNewNoteDefaultFileType(fileType);
+  // Save default file type (as type name string).
+  QString fileTypeName = m_fileTypeCombo->currentData().toString();
+  m_services.get<ConfigMgr2>()->getWidgetConfig().setNewNoteDefaultFileTypeName(fileTypeName);
 
   if (!validateInputs()) {
     return;
@@ -162,7 +159,7 @@ void NewNoteDialog2::acceptedButtonClicked() {
   input.parentFolderPath = m_parentId.relativePath;
   input.name = m_nameEdit->text().trimmed();
   input.templateContent = m_templateSelector->getTemplateContent();
-  input.fileType = fileType;
+  input.fileTypeName = fileTypeName;
 
   // Delegate to controller.
   NewNoteResult result = m_controller->createNote(input);

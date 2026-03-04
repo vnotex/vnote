@@ -45,27 +45,30 @@ void FileAssociationPage::loadInternal() {
 }
 
 bool FileAssociationPage::saveInternal() {
-  auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
-
-  QVector<CoreConfig::FileTypeSuffix> fileTypeSuffixes;
-
-  auto lineEdits = m_builtInFileTypesBox->findChildren<QLineEdit *>(QString());
-  lineEdits << m_externalProgramsBox->findChildren<QLineEdit *>(QString());
-  fileTypeSuffixes.reserve(lineEdits.size());
-  for (const auto lineEdit : lineEdits) {
-    auto name = lineEdit->property(c_nameProperty).toString();
-    if (name.isEmpty()) {
-      continue;
-    }
-    auto suffixes = lineEdit->text().split(c_suffixSeparator, Qt::SkipEmptyParts);
-    fileTypeSuffixes.push_back(CoreConfig::FileTypeSuffix(name, Utils::toLower(suffixes)));
-  }
-
-  coreConfig.setFileTypeSuffixes(fileTypeSuffixes);
+  // LEGACY: File type suffixes now managed by vxcore, not CoreConfig
+  // Settings changes disabled - users should modify vxcore.json directly
+  // auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+  //
+  // QVector<CoreConfig::FileTypeSuffix> fileTypeSuffixes;
+  //
+  // auto lineEdits = m_builtInFileTypesBox->findChildren<QLineEdit *>(QString());
+  // lineEdits << m_externalProgramsBox->findChildren<QLineEdit *>(QString());
+  // fileTypeSuffixes.reserve(lineEdits.size());
+  // for (const auto lineEdit : lineEdits) {
+  //   auto name = lineEdit->property(c_nameProperty).toString();
+  //   if (name.isEmpty()) {
+  //     continue;
+  //   }
+  //   auto suffixes = lineEdit->text().split(c_suffixSeparator, Qt::SkipEmptyParts);
+  //   fileTypeSuffixes.push_back(CoreConfig::FileTypeSuffix(name, Utils::toLower(suffixes)));
+  // }
+  //
+  // coreConfig.setFileTypeSuffixes(fileTypeSuffixes);
 
   FileTypeHelper::getInst().reload();
 
-  BufferMgr::updateSuffixToFileType(coreConfig.getFileTypeSuffixes());
+  // LEGACY: BufferMgr::updateSuffixToFileType removed
+  // BufferMgr::updateSuffixToFileType(coreConfig.getFileTypeSuffixes());
 
   return true;
 }
@@ -98,7 +101,8 @@ void FileAssociationPage::loadExternalProgramsGroup(QGroupBox *p_box) {
   auto layout = static_cast<QFormLayout *>(p_box->layout());
   WidgetUtils::clearLayout(layout);
 
-  const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+  // LEGACY: File type suffixes now managed by vxcore, not CoreConfig
+  // const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
   const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
 
   QStringList names;
@@ -118,9 +122,10 @@ void FileAssociationPage::loadExternalProgramsGroup(QGroupBox *p_box) {
         tr("List of suffixes to open with external program (or system default program)"));
     lineEdit->setProperty(c_nameProperty, name);
 
-    auto suffixes = coreConfig.findFileTypeSuffix(name);
-    if (suffixes) {
-      lineEdit->setText(suffixes->join(c_suffixSeparator));
-    }
+    // LEGACY: Suffix lookup from CoreConfig removed - use vxcore.json
+    // auto suffixes = coreConfig.findFileTypeSuffix(name);
+    // if (suffixes) {
+    //   lineEdit->setText(suffixes->join(c_suffixSeparator));
+    // }
   }
 }

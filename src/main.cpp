@@ -169,8 +169,8 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<ConfigMgr2>(&configMgr);
     qInfo() << "ConfigMgr2 registered";
 
-    // Create FileTypeService with VxCoreContextHandle and ConfigMgr2
-    FileTypeService fileTypeService(context, &configMgr);
+    // Create FileTypeService with VxCoreContextHandle and locale
+    FileTypeService fileTypeService(context, configMgr.getCoreConfig().getLocaleToUse());
     serviceLocator.registerService<FileTypeService>(&fileTypeService);
     qInfo() << "FileTypeService registered";
 
