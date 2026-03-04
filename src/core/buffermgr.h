@@ -30,7 +30,8 @@ public slots:
 
   void open(const QString &p_filePath, const QSharedPointer<FileOpenParameters> &p_paras);
 
-  static void updateSuffixToFileType(const QVector<CoreConfig::FileTypeSuffix> &p_fileTypeSuffixes);
+  // REMOVED: updateSuffixToFileType - file types now managed by vxcore
+  // static void updateSuffixToFileType(const QVector<CoreConfig::FileTypeSuffix> &p_fileTypeSuffixes);
 
 signals:
   void bufferRequested(Buffer *p_buffer, const QSharedPointer<FileOpenParameters> &p_paras);

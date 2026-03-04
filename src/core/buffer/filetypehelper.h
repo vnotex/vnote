@@ -9,6 +9,7 @@ namespace vnotex {
 class FileType {
 public:
   // There may be other types after Others.
+  // Deprecated.
   enum Type { Markdown = 0, Text, Pdf, MindMap, Others };
 
   QString preferredSuffix() const;
@@ -16,6 +17,7 @@ public:
   bool isMarkdown() const;
 
   // Type.
+  // Deprecated.
   int m_type = -1;
 
   QString m_typeName;

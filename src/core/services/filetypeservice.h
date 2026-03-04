@@ -1,7 +1,7 @@
 #ifndef FILETYPESERVICE_H
 #define FILETYPESERVICE_H
 
-#include <QMap>
+#include <QJsonObject>
 #include <QObject>
 #include <QString>
 #include <QVector>
@@ -13,61 +13,46 @@
 
 namespace vnotex {
 
-class ConfigMgr2;
-
 // Service for file type detection and management.
 // Replaces legacy FileTypeHelper singleton with DI-compatible service.
-// Depends on ConfigMgr2 for user-configured suffix mappings.
+// Reads file types from vxcore configuration (user modifies vxcore.json to customize).
+// No caching - queries vxcore on each request for simplicity.
 class FileTypeService : public QObject, private Noncopyable {
   Q_OBJECT
 
 public:
-  // Constructor receives VxCoreContextHandle and ConfigMgr2 via dependency injection.
-  explicit FileTypeService(VxCoreContextHandle p_context, ConfigMgr2 *p_configMgr,
+  // Constructor receives VxCoreContextHandle and locale via dependency injection.
+  // @p_locale: Locale string (e.g., "zh_CN", "en_US") for display name lookup.
+  explicit FileTypeService(VxCoreContextHandle p_context, const QString &p_locale,
                            QObject *p_parent = nullptr);
 
   // Get file type by file path (uses suffix detection).
-  const FileType &getFileType(const QString &p_filePath) const;
+  FileType getFileType(const QString &p_filePath) const;
 
-  // Get file type by enum type value.
-  const FileType &getFileType(int p_type) const;
+  // Get file type by internal type name (calls vxcore_filetype_get_by_name).
+  FileType getFileTypeByName(const QString &p_typeName) const;
 
-  // Get file type by internal type name.
-  const FileType &getFileTypeByName(const QString &p_typeName) const;
+  // Get file type by file suffix (calls vxcore_filetype_get_by_suffix).
+  FileType getFileTypeBySuffix(const QString &p_suffix) const;
 
-  // Get file type by file suffix.
-  const FileType &getFileTypeBySuffix(const QString &p_suffix) const;
-
-  // Get all registered file types.
-  const QVector<FileType> &getAllFileTypes() const;
-
-  // Check if file path matches specified type.
-  bool checkFileType(const QString &p_filePath, int p_type) const;
-
-  // Reload file types from configuration.
-  void reload();
-
-  // System default program identifier.
-  static QString s_systemDefaultProgram;
+  // Get all registered file types (calls vxcore_filetype_list).
+  QVector<FileType> getAllFileTypes() const;
 
 private:
-  // Setup built-in file types with configured suffixes.
-  void setupBuiltInTypes();
+  // Parse a single file type from JSON object.
+  FileType parseFileType(const QJsonObject &p_obj) const;
 
-  // Build suffix-to-type lookup map.
-  void setupSuffixTypeMap();
+  // Parse a single file type from JSON string.
+  FileType parseFileTypeFromJson(const char *p_json) const;
+
+  // Parse multiple file types from JSON string (array).
+  QVector<FileType> parseFileTypesFromJson(const char *p_json) const;
 
   // Non-owning handle to vxcore context.
   VxCoreContextHandle m_context = nullptr;
 
-  // Non-owning pointer to ConfigMgr2.
-  ConfigMgr2 *m_configMgr = nullptr;
-
-  // Built-in file types indexed by Type enum.
-  QVector<FileType> m_fileTypes;
-
-  // Suffix to file type index mapping.
-  QMap<QString, int> m_suffixTypeMap;
+  // Locale string for display name lookup (e.g., "zh_CN", "en_US").
+  QString m_locale;
 };
 
 } // namespace vnotex

@@ -31,7 +31,8 @@ void FileTypeHelper::reload() {
 void FileTypeHelper::setupBuiltInTypes() {
   m_fileTypes.clear();
 
-  const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+  // LEGACY: File type suffixes now managed by vxcore, not CoreConfig
+  // const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
 
   {
     FileType type;
@@ -39,13 +40,14 @@ void FileTypeHelper::setupBuiltInTypes() {
     type.m_typeName = QStringLiteral("Markdown");
     type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Markdown");
 
-    auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
-    if (suffixes && !suffixes->isEmpty()) {
-      type.m_suffixes = *suffixes;
-    } else {
-      type.m_suffixes << QStringLiteral("md") << QStringLiteral("mkd") << QStringLiteral("rmd")
-                      << QStringLiteral("markdown");
-    }
+    // LEGACY: Suffix override from CoreConfig removed - use vxcore.json
+    // auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+    // if (suffixes && !suffixes->isEmpty()) {
+    //   type.m_suffixes = *suffixes;
+    // } else {
+    type.m_suffixes << QStringLiteral("md") << QStringLiteral("mkd") << QStringLiteral("rmd")
+                    << QStringLiteral("markdown");
+    // }
 
     m_fileTypes.push_back(type);
   }
@@ -56,12 +58,13 @@ void FileTypeHelper::setupBuiltInTypes() {
     type.m_typeName = QStringLiteral("Text");
     type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Text");
 
-    auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
-    if (suffixes && !suffixes->isEmpty()) {
-      type.m_suffixes = *suffixes;
-    } else {
-      type.m_suffixes << QStringLiteral("txt") << QStringLiteral("text") << QStringLiteral("log");
-    }
+    // LEGACY: Suffix override from CoreConfig removed - use vxcore.json
+    // auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+    // if (suffixes && !suffixes->isEmpty()) {
+    //   type.m_suffixes = *suffixes;
+    // } else {
+    type.m_suffixes << QStringLiteral("txt") << QStringLiteral("text") << QStringLiteral("log");
+    // }
 
     m_fileTypes.push_back(type);
   }
@@ -73,12 +76,13 @@ void FileTypeHelper::setupBuiltInTypes() {
     type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Portable Document Format");
     type.m_isNewable = false;
 
-    auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
-    if (suffixes && !suffixes->isEmpty()) {
-      type.m_suffixes = *suffixes;
-    } else {
-      type.m_suffixes << QStringLiteral("pdf");
-    }
+    // LEGACY: Suffix override from CoreConfig removed - use vxcore.json
+    // auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+    // if (suffixes && !suffixes->isEmpty()) {
+    //   type.m_suffixes = *suffixes;
+    // } else {
+    type.m_suffixes << QStringLiteral("pdf");
+    // }
 
     m_fileTypes.push_back(type);
   }
@@ -89,12 +93,13 @@ void FileTypeHelper::setupBuiltInTypes() {
     type.m_typeName = QStringLiteral("MindMap");
     type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Mind Map");
 
-    auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
-    if (suffixes && !suffixes->isEmpty()) {
-      type.m_suffixes = *suffixes;
-    } else {
-      type.m_suffixes << QStringLiteral("emind");
-    }
+    // LEGACY: Suffix override from CoreConfig removed - use vxcore.json
+    // auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+    // if (suffixes && !suffixes->isEmpty()) {
+    //   type.m_suffixes = *suffixes;
+    // } else {
+    type.m_suffixes << QStringLiteral("emind");
+    // }
 
     m_fileTypes.push_back(type);
   }

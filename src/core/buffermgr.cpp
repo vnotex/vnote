@@ -254,22 +254,23 @@ bool BufferMgr::isSameTypeBuffer(const Buffer *p_buffer, const QString &p_typeNa
   return true;
 }
 
-void BufferMgr::updateSuffixToFileType(
-    const QVector<CoreConfig::FileTypeSuffix> &p_fileTypeSuffixes) {
-  s_suffixToFileType.clear();
-
-  for (const auto &fts : p_fileTypeSuffixes) {
-    for (const auto &suf : fts.m_suffixes) {
-      auto it = s_suffixToFileType.find(suf);
-      if (it != s_suffixToFileType.end()) {
-        qWarning() << "suffix conflicts for file types" << fts.m_name << it.value();
-        it.value() = fts.m_name;
-      } else {
-        s_suffixToFileType.insert(suf, fts.m_name);
-      }
-    }
-  }
-}
+// REMOVED: updateSuffixToFileType - file types now managed by vxcore
+// void BufferMgr::updateSuffixToFileType(
+//     const QVector<CoreConfig::FileTypeSuffix> &p_fileTypeSuffixes) {
+//   s_suffixToFileType.clear();
+//
+//   for (const auto &fts : p_fileTypeSuffixes) {
+//     for (const auto &suf : fts.m_suffixes) {
+//       auto it = s_suffixToFileType.find(suf);
+//       if (it != s_suffixToFileType.end()) {
+//         qWarning() << "suffix conflicts for file types" << fts.m_name << it.value();
+//         it.value() = fts.m_name;
+//       } else {
+//         s_suffixToFileType.insert(suf, fts.m_name);
+//       }
+//     }
+//   }
+// }
 
 QString BufferMgr::findFileTypeByFile(const QString &p_filePath) {
   QFileInfo fi(p_filePath);
