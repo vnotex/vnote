@@ -169,8 +169,8 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<ConfigMgr2>(&configMgr);
     qInfo() << "ConfigMgr2 registered";
 
-    // Create FileTypeService with ConfigMgr2
-    FileTypeService fileTypeService(&configMgr);
+    // Create FileTypeService with VxCoreContextHandle and ConfigMgr2
+    FileTypeService fileTypeService(context, &configMgr);
     serviceLocator.registerService<FileTypeService>(&fileTypeService);
     qInfo() << "FileTypeService registered";
 

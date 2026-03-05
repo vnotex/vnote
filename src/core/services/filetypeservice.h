@@ -6,6 +6,8 @@
 #include <QString>
 #include <QVector>
 
+#include <vxcore/vxcore.h>
+
 #include <core/buffer/filetypehelper.h>
 #include <core/noncopyable.h>
 
@@ -20,8 +22,9 @@ class FileTypeService : public QObject, private Noncopyable {
   Q_OBJECT
 
 public:
-  // Constructor receives ConfigMgr2 via dependency injection.
-  explicit FileTypeService(ConfigMgr2 *p_configMgr, QObject *p_parent = nullptr);
+  // Constructor receives VxCoreContextHandle and ConfigMgr2 via dependency injection.
+  explicit FileTypeService(VxCoreContextHandle p_context, ConfigMgr2 *p_configMgr,
+                           QObject *p_parent = nullptr);
 
   // Get file type by file path (uses suffix detection).
   const FileType &getFileType(const QString &p_filePath) const;
@@ -53,6 +56,9 @@ private:
 
   // Build suffix-to-type lookup map.
   void setupSuffixTypeMap();
+
+  // Non-owning handle to vxcore context.
+  VxCoreContextHandle m_context = nullptr;
 
   // Non-owning pointer to ConfigMgr2.
   ConfigMgr2 *m_configMgr = nullptr;
