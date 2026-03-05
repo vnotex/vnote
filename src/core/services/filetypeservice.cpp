@@ -3,6 +3,11 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+
+#include <vxcore/vxcore.h>
 
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
@@ -11,8 +16,9 @@
 using namespace vnotex;
 QString FileTypeService::s_systemDefaultProgram = QStringLiteral("System");
 
-FileTypeService::FileTypeService(ConfigMgr2 *p_configMgr, QObject *p_parent)
-    : QObject(p_parent), m_configMgr(p_configMgr) {
+FileTypeService::FileTypeService(VxCoreContextHandle p_context, ConfigMgr2 *p_configMgr,
+                                 QObject *p_parent)
+    : QObject(p_parent), m_context(p_context), m_configMgr(p_configMgr) {
   reload();
 }
 
@@ -23,80 +29,133 @@ void FileTypeService::reload() {
 
 void FileTypeService::setupBuiltInTypes() {
   m_fileTypes.clear();
-
   const auto &coreConfig = m_configMgr->getCoreConfig();
 
-  {
-    FileType type;
-    type.m_type = FileType::Markdown;
-    type.m_typeName = QStringLiteral("Markdown");
-    type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Markdown");
+  // Call vxcore API to get 5 default types
+  char *json_str = nullptr;
+  VxCoreError err = vxcore_filetype_list(m_context, &json_str);
 
-    auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
-    if (suffixes && !suffixes->isEmpty()) {
-      type.m_suffixes = *suffixes;
-    } else {
-      type.m_suffixes << QStringLiteral("md") << QStringLiteral("mkd") << QStringLiteral("rmd")
-                      << QStringLiteral("markdown");
+  if (err != VXCORE_OK || !json_str) {
+    qWarning() << "vxcore_filetype_list failed:" << QString::fromUtf8(vxcore_error_message(err));
+    // FALLBACK: Use hardcoded defaults
+    {
+      FileType type;
+      type.m_type = FileType::Markdown;
+      type.m_typeName = QStringLiteral("Markdown");
+      type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Markdown");
+
+      auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+      if (suffixes && !suffixes->isEmpty()) {
+        type.m_suffixes = *suffixes;
+      } else {
+        type.m_suffixes << QStringLiteral("md") << QStringLiteral("mkd") << QStringLiteral("rmd")
+                        << QStringLiteral("markdown");
+      }
+
+      m_fileTypes.push_back(type);
     }
 
-    m_fileTypes.push_back(type);
-  }
+    {
+      FileType type;
+      type.m_type = FileType::Text;
+      type.m_typeName = QStringLiteral("Text");
+      type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Text");
 
-  {
-    FileType type;
-    type.m_type = FileType::Text;
-    type.m_typeName = QStringLiteral("Text");
-    type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Text");
+      auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+      if (suffixes && !suffixes->isEmpty()) {
+        type.m_suffixes = *suffixes;
+      } else {
+        type.m_suffixes << QStringLiteral("txt") << QStringLiteral("text") << QStringLiteral("log");
+      }
 
-    auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
-    if (suffixes && !suffixes->isEmpty()) {
-      type.m_suffixes = *suffixes;
-    } else {
-      type.m_suffixes << QStringLiteral("txt") << QStringLiteral("text") << QStringLiteral("log");
+      m_fileTypes.push_back(type);
     }
 
-    m_fileTypes.push_back(type);
-  }
+    {
+      FileType type;
+      type.m_type = FileType::Pdf;
+      type.m_typeName = QStringLiteral("PDF");
+      type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Portable Document Format");
+      type.m_isNewable = false;
 
-  {
-    FileType type;
-    type.m_type = FileType::Pdf;
-    type.m_typeName = QStringLiteral("PDF");
-    type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Portable Document Format");
-    type.m_isNewable = false;
+      auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+      if (suffixes && !suffixes->isEmpty()) {
+        type.m_suffixes = *suffixes;
+      } else {
+        type.m_suffixes << QStringLiteral("pdf");
+      }
 
-    auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
-    if (suffixes && !suffixes->isEmpty()) {
-      type.m_suffixes = *suffixes;
-    } else {
-      type.m_suffixes << QStringLiteral("pdf");
+      m_fileTypes.push_back(type);
     }
 
-    m_fileTypes.push_back(type);
-  }
+    {
+      FileType type;
+      type.m_type = FileType::MindMap;
+      type.m_typeName = QStringLiteral("MindMap");
+      type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Mind Map");
 
-  {
-    FileType type;
-    type.m_type = FileType::MindMap;
-    type.m_typeName = QStringLiteral("MindMap");
-    type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Mind Map");
+      auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+      if (suffixes && !suffixes->isEmpty()) {
+        type.m_suffixes = *suffixes;
+      } else {
+        type.m_suffixes << QStringLiteral("emind");
+      }
 
-    auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
-    if (suffixes && !suffixes->isEmpty()) {
-      type.m_suffixes = *suffixes;
-    } else {
-      type.m_suffixes << QStringLiteral("emind");
+      m_fileTypes.push_back(type);
     }
 
-    m_fileTypes.push_back(type);
+    {
+      FileType type;
+      type.m_type = FileType::Others;
+      type.m_typeName = QStringLiteral("Others");
+      type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Others");
+      m_fileTypes.push_back(type);
+    }
+    return;
   }
 
-  {
+  // Parse JSON response
+  QJsonDocument doc = QJsonDocument::fromJson(QByteArray(json_str));
+  vxcore_string_free(json_str);
+
+  if (!doc.isArray()) {
+    qWarning() << "Invalid JSON from vxcore_filetype_list";
+    return;
+  }
+
+  // Populate m_fileTypes from JSON
+  QJsonArray typesArray = doc.array();
+  for (const auto &typeVal : typesArray) {
+    QJsonObject typeObj = typeVal.toObject();
+
     FileType type;
-    type.m_type = FileType::Others;
-    type.m_typeName = QStringLiteral("Others");
-    type.m_displayName = QCoreApplication::translate("vnotex::Buffer", "Others");
+
+    // Map vxcore typeId to Qt enum (0=Markdown, 1=Text, 2=Pdf, 3=MindMap, 4=Others)
+    int typeId = typeObj["typeId"].toInt();
+    type.m_type = static_cast<FileType::Type>(typeId);
+
+    type.m_typeName = typeObj["name"].toString();
+    type.m_isNewable = typeObj["isNewable"].toBool();
+
+    // KEEP Qt translation (do NOT use vxcore displayName)
+    type.m_displayName =
+        QCoreApplication::translate("vnotex::Buffer", type.m_typeName.toUtf8().constData());
+
+    // Get default suffixes from vxcore
+    QJsonArray suffixesArray = typeObj["suffixes"].toArray();
+    QStringList defaultSuffixes;
+    for (const auto &suffix : suffixesArray) {
+      defaultSuffixes << suffix.toString();
+    }
+
+    // KEEP user config override logic
+    auto suffixes = coreConfig.findFileTypeSuffix(type.m_typeName);
+    if (suffixes && !suffixes->isEmpty()) {
+      type.m_suffixes = *suffixes; // User override wins
+    } else {
+      type.m_suffixes = defaultSuffixes; // Use vxcore defaults
+    }
+
     m_fileTypes.push_back(type);
   }
 }
