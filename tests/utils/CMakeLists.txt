@@ -25,3 +25,10 @@ add_qt_test(test_fileutils2
     Qt6::Gui
   GUILESS
 )
+
+add_qt_test(test_stringutils
+  SOURCES
+    test_stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+  GUILESS
+)

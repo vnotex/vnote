@@ -3,10 +3,12 @@
 #include <QRegularExpression>
 
 #include "notebooknodemodel.h"
+#include <utils/stringutils.h>
 
 using namespace vnotex;
 
-NotebookNodeProxyModel::NotebookNodeProxyModel(QObject *p_parent) : QSortFilterProxyModel(p_parent) {
+NotebookNodeProxyModel::NotebookNodeProxyModel(QObject *p_parent)
+    : QSortFilterProxyModel(p_parent) {
   setRecursiveFilteringEnabled(true);
   setSortCaseSensitivity(Qt::CaseInsensitive);
 }
@@ -140,10 +142,10 @@ bool NotebookNodeProxyModel::lessThan(const QModelIndex &p_left, const QModelInd
   // Same type and same external status - sort based on view order
   switch (m_viewOrder) {
   case ViewOrder::OrderedByName:
-    return QString::compare(leftInfo.name, rightInfo.name, Qt::CaseInsensitive) < 0;
+    return naturalCompare(leftInfo.name, rightInfo.name);
 
   case ViewOrder::OrderedByNameReversed:
-    return QString::compare(leftInfo.name, rightInfo.name, Qt::CaseInsensitive) > 0;
+    return naturalCompare(rightInfo.name, leftInfo.name);
 
   case ViewOrder::OrderedByCreatedTime:
     return leftInfo.createdTimeUtc < rightInfo.createdTimeUtc;
@@ -159,7 +161,7 @@ bool NotebookNodeProxyModel::lessThan(const QModelIndex &p_left, const QModelInd
 
   case ViewOrder::OrderedByConfiguration:
   default:
-    // Default: sort by name (case insensitive)
-    return QString::compare(leftInfo.name, rightInfo.name, Qt::CaseInsensitive) < 0;
+    // Sort by name using natural order (e.g. Note 2 before Note 10)
+    return naturalCompare(leftInfo.name, rightInfo.name);
   }
 }
