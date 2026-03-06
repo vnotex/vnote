@@ -115,6 +115,15 @@ if(WIN32)
     add_custom_command(TARGET vnote POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${PROJECT_SOURCE_DIR}/package/qt.conf" $<TARGET_FILE_DIR:vnote>)
+elseif(APPLE)
+    # Copy vnote_extra.rcc into app bundle to prevent crash on Mac
+    # complaining about a missing theme directory.
+    add_custom_command(TARGET vnote POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:vnote>/../Resources
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VX_EXTRA_RESOURCE_FILES_RCC}" $<TARGET_FILE_DIR:vnote>/../Resources
+        COMMENT "Copying vnote_extra.rcc into app bundle Resources"
+    )
 endif()
 
 # Installation
