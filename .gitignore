@@ -21,3 +21,8 @@ build*
 dev.sh
 nul
 .sisyphus
+
+# GitHub Spec Kit related files.
+.claude
+.specify
+specs
