@@ -6,6 +6,17 @@
 #include <QPair>
 #include <QString>
 
+// Portable deprecation macro (requires C++14).
+// Place before the declaration keyword:
+//   VNOTEX_DEPRECATED("Use Foo instead") void oldFunc();
+// Or between class/struct keyword and name:
+//   struct VNOTEX_DEPRECATED("Use Foo instead") Bar { ... };
+#if __cplusplus >= 201402L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)
+#define VNOTEX_DEPRECATED(msg) [[deprecated(msg)]]
+#else
+#define VNOTEX_DEPRECATED(msg)
+#endif
+
 namespace vnotex {
 typedef quint64 ID;
 

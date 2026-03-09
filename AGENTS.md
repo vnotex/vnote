@@ -846,6 +846,34 @@ class MyClass : public QObject, private Noncopyable {
 };
 ```
 
+### Deprecation Macro
+
+Use `VNOTEX_DEPRECATED(msg)` from `src/core/global.h` to mark legacy classes, structs, and functions. It expands to `[[deprecated(msg)]]` on C++14+ (MSVC and GCC/Clang), or is a no-op on older compilers.
+
+```cpp
+#include <core/global.h>
+
+// Deprecate a class — place between 'class' keyword and class name
+class VNOTEX_DEPRECATED("Use MainWindow2 with ServiceLocator pattern instead") MainWindow
+    : public QMainWindow {
+  // ...
+};
+
+// Deprecate a struct
+struct VNOTEX_DEPRECATED("Use FileOpenSettings instead") FileOpenParameters {
+  // ...
+};
+
+// Deprecate a function
+VNOTEX_DEPRECATED("Use newMethod() instead")
+void oldMethod();
+```
+
+**Rules:**
+- Always include a migration message explaining what to use instead
+- For type deprecation, place the macro **between** the `class`/`struct` keyword and the type name
+- Requires `#include <core/global.h>`
+
 ### Exception Handling
 ```cpp
 // src/core/exception.h

@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QScopedPointer>
 
+#include "global.h"
 #include "iconfigmgr.h"
 #include "noncopyable.h"
 
@@ -19,7 +20,7 @@ class WidgetConfig;
 
 // DEPRECATED: Use ConfigMgr2 with ServiceLocator pattern instead.
 // This class is kept for reference during migration but its functionality is disabled.
-class [[deprecated("Use ConfigMgr2 with ServiceLocator pattern instead")]] ConfigMgr
+class VNOTEX_DEPRECATED("Use ConfigMgr2 with ServiceLocator pattern instead") ConfigMgr
     : public QObject,
       public IConfigMgr,
       private Noncopyable {

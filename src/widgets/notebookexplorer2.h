@@ -2,7 +2,6 @@
 #define NOTEBOOKEXPLORER2_H
 
 #include <QFrame>
-#include <QSharedPointer>
 #include <QVBoxLayout>
 
 #include <core/global.h>
@@ -20,8 +19,8 @@ class NotebookSelector2;
 class TitleBar;
 class INodeExplorer;
 class TwoColumnsNodeExplorer;
-struct FileOpenParameters;
 class ServiceLocator;
+struct FileOpenSettings;
 
 // NotebookExplorer2 is a container widget that displays notebook nodes
 // using proper MVC architecture.
@@ -85,6 +84,10 @@ public slots:
   void importFolder();
 
 private slots:
+  // Node activation — opens the file via BufferService
+  void onNodeActivated(const NodeIdentifier &p_nodeId,
+                       const FileOpenSettings &p_settings);
+
   // GUI request handlers from controller signals
   void onNewNoteRequested(const NodeIdentifier &p_parentId);
   void onNewFolderRequested(const NodeIdentifier &p_parentId);

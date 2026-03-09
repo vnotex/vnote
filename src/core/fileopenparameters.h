@@ -11,7 +11,10 @@ namespace vnotex {
 class Node;
 class SearchToken;
 
-struct FileOpenParameters {
+// DEPRECATED: Use FileOpenSettings (src/core/fileopensettings.h) for service-layer code.
+// FileOpenParameters contains UI-specific fields (Node*, SearchToken, std::function hooks)
+// and should only be used in legacy widget code during migration.
+struct VNOTEX_DEPRECATED("Use FileOpenSettings instead") FileOpenParameters {
   enum Hook { PostSave, MaxHook };
 
   ViewWindowMode m_mode = ViewWindowMode::Read;

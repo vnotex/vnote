@@ -17,7 +17,8 @@ class NotebookSelector;
 class NotebookNodeExplorer;
 class Node;
 
-class NotebookExplorer : public QFrame {
+class VNOTEX_DEPRECATED("Use NotebookExplorer2 with ServiceLocator pattern instead")
+    NotebookExplorer : public QFrame {
   Q_OBJECT
 public:
   explicit NotebookExplorer(QWidget *p_parent = nullptr);

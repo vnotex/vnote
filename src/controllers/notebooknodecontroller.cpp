@@ -10,7 +10,7 @@
 #include <QUrl>
 
 #include <core/events.h>
-#include <core/fileopenparameters.h>
+#include <core/fileopensettings.h>
 #include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/configmgr2.h>
@@ -367,8 +367,8 @@ void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
     }
   }
 
-  auto paras = QSharedPointer<FileOpenParameters>::create();
-  emit nodeActivated(p_nodeId, paras);
+  FileOpenSettings settings;
+  emit nodeActivated(p_nodeId, settings);
 }
 
 void NotebookNodeController::openNodeWithDefaultApp(const NodeIdentifier &p_nodeId) {

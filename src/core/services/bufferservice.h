@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QString>
 
+#include <core/fileopensettings.h>
 #include <core/services/buffer2.h>
 #include <core/services/buffercoreservice.h>
 
@@ -28,8 +29,10 @@ public:
 
   // Open a file as a buffer.
   // Fires FileBeforeOpen (cancellable) and FileAfterOpen.
+  // @p_settings controls how the file should be opened (mode, readOnly, lineNumber, etc.).
   // Returns a Buffer2 handle for per-buffer operations, or an invalid Buffer2 on failure/cancel.
-  Buffer2 openBuffer(const NodeIdentifier &p_nodeId);
+  Buffer2 openBuffer(const NodeIdentifier &p_nodeId,
+                     const FileOpenSettings &p_settings = FileOpenSettings());
 
   // Close a buffer by ID.
   // Fires FileBeforeClose (cancellable) and FileAfterClose.

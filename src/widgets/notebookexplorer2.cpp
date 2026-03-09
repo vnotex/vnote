@@ -20,11 +20,12 @@
 #include <controllers/recyclebincontroller.h>
 #include <core/configmgr2.h>
 #include <core/exception.h>
-#include <core/fileopenparameters.h>
+#include <core/fileopensettings.h>
 #include <core/global.h>
 #include <core/hooknames.h>
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
@@ -442,6 +443,8 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onErrorOccurred);
   connect(explorer, &CombinedNodeExplorer::infoMessage, this,
           &NotebookExplorer2::onInfoMessage);
+  connect(explorer, &CombinedNodeExplorer::nodeActivated, this,
+          &NotebookExplorer2::onNodeActivated);
 
   m_nodeExplorer = explorer;
 }
@@ -469,6 +472,8 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::onErrorOccurred);
   connect(explorer, &TwoColumnsNodeExplorer::infoMessage, this,
           &NotebookExplorer2::onInfoMessage);
+  connect(explorer, &TwoColumnsNodeExplorer::nodeActivated, this,
+          &NotebookExplorer2::onNodeActivated);
 
   m_nodeExplorer = explorer;
 }
@@ -1012,4 +1017,14 @@ void NotebookExplorer2::onErrorOccurred(const QString &p_title, const QString &p
 
 void NotebookExplorer2::onInfoMessage(const QString &p_title, const QString &p_message) {
   MessageBoxHelper::notify(MessageBoxHelper::Information, p_title + ": " + p_message, window());
+}
+
+void NotebookExplorer2::onNodeActivated(const NodeIdentifier &p_nodeId,
+                                        const FileOpenSettings &p_settings) {
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (!bufferSvc) {
+    return;
+  }
+
+  bufferSvc->openBuffer(p_nodeId, p_settings);
 }

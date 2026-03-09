@@ -7,6 +7,7 @@
 
 #include <functional>
 
+#include <core/fileopensettings.h>
 #include <nodeinfo.h>
 
 class QMenu;
@@ -17,7 +18,6 @@ namespace vnotex {
 class NotebookNodeModel;
 class NotebookNodeView;
 class ServiceLocator;
-struct FileOpenParameters;
 class Event;
 
 // Controller class that handles all user actions on notebook nodes.
@@ -103,7 +103,7 @@ public:
 signals:
   // Signals to notify external components (e.g., BufferMgr)
   void nodeActivated(const NodeIdentifier &p_nodeId,
-                     const QSharedPointer<FileOpenParameters> &p_paras);
+                     const FileOpenSettings &p_settings);
   void nodeAboutToMove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
   void nodeAboutToRemove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
   void nodeAboutToReload(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);

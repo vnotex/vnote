@@ -1,7 +1,9 @@
 #include "bufferservice.h"
 
+#include <QDebug>
 #include <QtGlobal>
 
+#include <core/fileopensettings.h>
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
 
@@ -18,23 +20,33 @@ BufferService::~BufferService() {
 
 // ============ Buffer Lifecycle (with hooks) ============
 
-Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId) {
-  QVariantMap args;
+Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
+                                  const FileOpenSettings &p_settings) {
+  qDebug() << "BufferService::openBuffer notebook:" << p_nodeId.notebookId
+           << "path:" << p_nodeId.relativePath
+           << "mode:" << static_cast<int>(p_settings.m_mode)
+           << "readOnly:" << p_settings.m_readOnly
+           << "lineNumber:" << p_settings.m_lineNumber;
+
+  QVariantMap args = p_settings.toVariantMap();
   args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
   args[QStringLiteral("filePath")] = p_nodeId.relativePath;
   if (m_hookMgr->doAction(HookNames::FileBeforeOpen, args)) {
+    qDebug() << "BufferService::openBuffer cancelled by hook";
     return Buffer2(); // Cancelled by plugin.
   }
 
   QString bufferId = BufferCoreService::openBuffer(p_nodeId.notebookId, p_nodeId.relativePath);
 
   if (bufferId.isEmpty()) {
+    qWarning() << "BufferService::openBuffer failed for" << p_nodeId.relativePath;
     return Buffer2(); // Failed to open.
   }
 
   args[QStringLiteral("bufferId")] = bufferId;
   m_hookMgr->doAction(HookNames::FileAfterOpen, args);
 
+  qDebug() << "BufferService::openBuffer succeeded bufferId:" << bufferId;
   return Buffer2(coreService(), m_hookMgr, bufferId, p_nodeId);
 }
 

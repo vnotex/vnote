@@ -11,6 +11,8 @@
 #include <QSet>
 #include <QSharedPointer>
 
+#include <core/global.h>
+
 // #include "dockwidgethelper.h"
 
 class QDockWidget;
@@ -35,7 +37,8 @@ class ConsoleViewer;
 
 enum { RESTART_EXIT_CODE = 1000 };
 
-class MainWindow : public FramelessMainWindowImpl {
+class VNOTEX_DEPRECATED("Use MainWindow2 with ServiceLocator pattern instead") MainWindow
+    : public FramelessMainWindowImpl {
   Q_OBJECT
 public:
   // friend class DockWidgetHelper;

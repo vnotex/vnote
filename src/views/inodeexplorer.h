@@ -5,6 +5,7 @@
 #include <QSharedPointer>
 #include <QWidget>
 
+#include <core/fileopensettings.h>
 #include <core/global.h>
 #include <nodeinfo.h>
 
@@ -12,7 +13,6 @@ class QMenu;
 
 namespace vnotex {
 
-struct FileOpenParameters;
 class Event;
 
 // INodeExplorer is the abstract base class for node explorer widgets.
@@ -70,7 +70,7 @@ public:
 signals:
   // === Activation signals ===
   void nodeActivated(const NodeIdentifier &p_nodeId,
-                     const QSharedPointer<FileOpenParameters> &p_paras);
+                     const FileOpenSettings &p_settings);
 
   // === Node lifecycle signals ===
   void nodeAboutToMove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);

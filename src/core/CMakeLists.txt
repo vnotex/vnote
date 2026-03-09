@@ -28,6 +28,7 @@ target_sources(vnote PRIVATE
     file.cpp file.h
     filelocator.h
     fileopenparameters.h
+    fileopensettings.h
     global.cpp global.h
     historyitem.cpp historyitem.h
     historymgr.cpp historymgr.h

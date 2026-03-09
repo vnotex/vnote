@@ -44,7 +44,8 @@ protected:
              const QModelIndex &index) const override;
 };
 
-class NotebookNodeExplorer : public QWidget {
+class VNOTEX_DEPRECATED("Use CombinedNodeExplorer/TwoColumnsNodeExplorer instead")
+    NotebookNodeExplorer : public QWidget {
   Q_OBJECT
 public:
   // Used for a QTreeWidgetItem to hold the info of a node.
