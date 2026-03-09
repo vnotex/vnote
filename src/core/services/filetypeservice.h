@@ -11,7 +11,7 @@
 #include <core/buffer/filetypehelper.h>
 #include <core/noncopyable.h>
 
-namespace vnotex {
+namespace vnotex::core {
 
 // Service for file type detection and management.
 // Replaces legacy FileTypeHelper singleton with DI-compatible service.
@@ -55,6 +55,6 @@ private:
   QString m_locale;
 };
 
-} // namespace vnotex
+} // namespace vnotex::core
 
 #endif // FILETYPESERVICE_H

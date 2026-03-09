@@ -11,7 +11,7 @@
 
 #include <vxcore/vxcore_types.h>
 
-namespace vnotex {
+namespace vnotex::core {
 
 // SearchService provides search operations wrapping vxcore C API.
 // Uses dependency injection for VxCoreContextHandle (non-owning).
@@ -68,6 +68,6 @@ private:
   static const char *qstringToCStr(const QString &p_str);
 };
 
-} // namespace vnotex
+} // namespace vnotex::core
 
 #endif // SEARCHSERVICE_H

@@ -10,7 +10,7 @@
 
 #include <vxcore/vxcore_types.h>
 
-namespace vnotex {
+namespace vnotex::core {
 
 // Qt wrapper for data locations matching VxCoreDataLocation.
 enum class DataLocation { App = VXCORE_DATA_APP, Local = VXCORE_DATA_LOCAL };
@@ -71,6 +71,6 @@ private:
   VxCoreContextHandle m_context = nullptr;
 };
 
-} // namespace vnotex
+} // namespace vnotex::core
 
 #endif // CONFIGSERVICE_H

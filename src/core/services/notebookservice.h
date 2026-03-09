@@ -12,7 +12,7 @@
 #include <vxcore/vxcore_events.h>
 #include <vxcore/vxcore_types.h>
 
-namespace vnotex {
+namespace vnotex::core {
 
 // Qt wrapper for notebook types matching VxCoreNotebookType.
 enum class NotebookType { Bundled = VXCORE_NOTEBOOK_BUNDLED, Raw = VXCORE_NOTEBOOK_RAW };
@@ -168,6 +168,6 @@ private:
   VxCoreContextHandle m_context = nullptr;
 };
 
-} // namespace vnotex
+} // namespace vnotex::core
 
 #endif // NOTEBOOKSERVICE_H

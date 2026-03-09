@@ -6,6 +6,7 @@
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
+using namespace vnotex::core;
 
 ConfigService::ConfigService(VxCoreContextHandle p_context, QObject *p_parent)
     : QObject(p_parent), m_context(p_context) {}

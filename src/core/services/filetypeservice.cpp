@@ -11,6 +11,7 @@
 #include <utils/fileutils.h>
 
 using namespace vnotex;
+using namespace vnotex::core;
 
 FileTypeService::FileTypeService(VxCoreContextHandle p_context, const QString &p_locale,
                                  QObject *p_parent)
