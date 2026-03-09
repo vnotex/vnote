@@ -1,5 +1,7 @@
 #include "bufferservice.h"
 
+#include <QtGlobal>
+
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
 
@@ -8,6 +10,7 @@ using namespace vnotex;
 BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
                              QObject *p_parent)
     : BufferCoreService(p_context, p_parent), m_hookMgr(p_hookMgr) {
+  Q_ASSERT(m_hookMgr);
 }
 
 BufferService::~BufferService() {
@@ -16,13 +19,11 @@ BufferService::~BufferService() {
 // ============ Buffer Lifecycle (with hooks) ============
 
 Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId) {
-  if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
-    args[QStringLiteral("filePath")] = p_nodeId.relativePath;
-    if (m_hookMgr->doAction(HookNames::FileBeforeOpen, args)) {
-      return Buffer2(); // Cancelled by plugin.
-    }
+  QVariantMap args;
+  args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
+  args[QStringLiteral("filePath")] = p_nodeId.relativePath;
+  if (m_hookMgr->doAction(HookNames::FileBeforeOpen, args)) {
+    return Buffer2(); // Cancelled by plugin.
   }
 
   QString bufferId = BufferCoreService::openBuffer(p_nodeId.notebookId, p_nodeId.relativePath);
@@ -31,31 +32,22 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId) {
     return Buffer2(); // Failed to open.
   }
 
-  if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
-    args[QStringLiteral("filePath")] = p_nodeId.relativePath;
-    args[QStringLiteral("bufferId")] = bufferId;
-    m_hookMgr->doAction(HookNames::FileAfterOpen, args);
-  }
+  args[QStringLiteral("bufferId")] = bufferId;
+  m_hookMgr->doAction(HookNames::FileAfterOpen, args);
 
   return Buffer2(coreService(), m_hookMgr, bufferId, p_nodeId);
 }
 
 bool BufferService::closeBuffer(const QString &p_bufferId) {
-  if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("bufferId")] = p_bufferId;
-    if (m_hookMgr->doAction(HookNames::FileBeforeClose, args)) {
-      return false; // Cancelled by plugin.
-    }
+  QVariantMap args;
+  args[QStringLiteral("bufferId")] = p_bufferId;
+  if (m_hookMgr->doAction(HookNames::FileBeforeClose, args)) {
+    return false; // Cancelled by plugin.
   }
 
   bool ok = BufferCoreService::closeBuffer(p_bufferId);
 
-  if (ok && m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("bufferId")] = p_bufferId;
+  if (ok) {
     m_hookMgr->doAction(HookNames::FileAfterClose, args);
   }
 

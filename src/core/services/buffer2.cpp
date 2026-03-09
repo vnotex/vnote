@@ -1,5 +1,7 @@
 #include "buffer2.h"
 
+#include <QtGlobal>
+
 #include <core/hooknames.h>
 #include <core/services/buffercoreservice.h>
 #include <core/services/hookmanager.h>
@@ -16,6 +18,8 @@ Buffer2::Buffer2(BufferCoreService *p_bufferCoreService, HookManager *p_hookMgr,
       m_hookMgr(p_hookMgr),
       m_bufferId(p_bufferId),
       m_nodeId(p_nodeId) {
+  Q_ASSERT(m_bufferCoreService);
+  Q_ASSERT(m_hookMgr);
 }
 
 bool Buffer2::isValid() const {
@@ -37,19 +41,15 @@ bool Buffer2::save() {
     return false;
   }
 
-  if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("bufferId")] = m_bufferId;
-    if (m_hookMgr->doAction(HookNames::FileBeforeSave, args)) {
-      return false; // Cancelled by plugin.
-    }
+  QVariantMap args;
+  args[QStringLiteral("bufferId")] = m_bufferId;
+  if (m_hookMgr->doAction(HookNames::FileBeforeSave, args)) {
+    return false; // Cancelled by plugin.
   }
 
   bool ok = m_bufferCoreService->saveBuffer(m_bufferId);
 
-  if (ok && m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("bufferId")] = m_bufferId;
+  if (ok) {
     m_hookMgr->doAction(HookNames::FileAfterSave, args);
   }
 
