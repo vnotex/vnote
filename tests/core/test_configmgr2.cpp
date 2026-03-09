@@ -12,6 +12,8 @@
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
+using vnotex::core::ConfigService;
+using vnotex::core::DataLocation;
 
 namespace tests {
 

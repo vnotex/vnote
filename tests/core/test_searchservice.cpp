@@ -6,6 +6,7 @@
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
+using vnotex::core::SearchService;
 
 namespace tests {
 

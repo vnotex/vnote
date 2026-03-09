@@ -9,6 +9,8 @@
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
+using vnotex::core::NotebookService;
+using vnotex::core::NotebookType;
 
 namespace tests {
 
