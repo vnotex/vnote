@@ -486,10 +486,6 @@ void TwoColumnsNodeExplorer::onFolderSelectionChanged(const QList<NodeIdentifier
 
   // Set display root to show this folder's children
   m_fileModel->setDisplayRoot(folderId);
-
-  if (m_fileProxyModel) {
-    m_fileProxyModel->sort(0);
-  }
 }
 
 void TwoColumnsNodeExplorer::onFolderContextMenu(const NodeIdentifier &p_nodeId,
