@@ -155,6 +155,9 @@ void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &p_parentI
 | Controllers are QObject, not QWidget | Testable business logic without GUI dependencies |
 | Widgets receive `ServiceLocator&` | Constructor injection; no global state |
 | New files use `2` suffix | Coexist with legacy code during migration |
+| `Buffer2` is a lightweight copyable handle (like `QModelIndex`) | Returned by `BufferService::openBuffer()`, delegates to `BufferCoreService`; NOT a `QObject`, not heap-allocated |
+| `BufferService` privately inherits `BufferCoreService` | Hook-aware wrapper that fires `vnote.file.*` hooks around core operations |
+| `NodeIdentifier` is a standalone value type | Identifies a node by `notebookId` + `relativePath`; used by `Buffer2`, controllers, and views |
 
 ### Directory Structure (New Architecture)
 
@@ -163,13 +166,15 @@ src/
 ├── main.cpp                # Entry point with DI wiring
 ├── core/
 │   ├── servicelocator.h    # DI container
+│   ├── nodeidentifier.h    # Lightweight node ID (notebookId + relativePath)
 │   ├── services/           # Service layer (wraps vxcore)
 │   │   ├── configcoreservice.h/.cpp
 │   │   ├── notebookcoreservice.h/.cpp
 │   │   ├── searchcoreservice.h/.cpp
 │   │   ├── filetypecoreservice.h/.cpp
 │   │   ├── buffercoreservice.h/.cpp
-│   │   ├── bufferservice.h/.cpp    # Hook-aware wrapper
+│   │   ├── bufferservice.h/.cpp    # Hook-aware wrapper, returns Buffer2
+│   │   ├── buffer2.h/.cpp          # Lightweight buffer handle (like QModelIndex)
 │   │   ├── templateservice.h/.cpp
 │   │   └── hookmanager.h/.cpp
 │   ├── hookcontext.h       # Hook callback context
@@ -272,11 +277,63 @@ MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
 |---------|---------|-------------|
 | `ConfigCoreService` | App configuration via vxcore | `getConfig()`, `getSessionConfig()`, `getDataPath()`, `updateConfigByName()` |
 | `NotebookCoreService` | Notebook/folder/file operations | `createNotebook()`, `openNotebook()`, `createFile()`, `listFolderChildren()` |
-| `BufferService` | Open file buffer management (hook-aware wrapper) | `openBuffer()`, `closeBuffer()`, `saveBuffer()`, `getContentRaw()`, `insertAsset()`, `listAttachments()` |
+| `BufferCoreService` | Low-level buffer operations via vxcore | `openBuffer()`, `closeBuffer()`, `saveBuffer()`, `getContentRaw()`, `setContentRaw()`, `getState()`, `insertAsset()`, `listAttachments()` |
+| `BufferService` | Hook-aware buffer wrapper; returns `Buffer2` handles | `openBuffer(NodeIdentifier)` → `Buffer2`, `closeBuffer()`, `listBuffers()`, `autoSaveTick()` |
 | `SearchCoreService` | Content and file search | `searchFiles()`, `searchContent()`, `searchByTags()` |
 | `FileTypeCoreService` | File type detection | `getFileType()`, `getFileTypeBySuffix()`, `getAllFileTypes()` |
 | `TemplateService` | Note template management | `getTemplates()`, `getTemplateContent()`, `getTemplateFilePath()` |
 | `HookManager` | Plugin hook system | `addAction()`, `doAction()`, `addFilter()`, `applyFilters()` |
+
+### Buffer2 Handle Pattern
+
+`Buffer2` is a **lightweight copyable value type** (like `QModelIndex`) that represents an open file buffer. It is NOT a `QObject` and is NOT heap-allocated. Obtain a `Buffer2` from `BufferService::openBuffer()`.
+
+#### Opening a Buffer
+
+```cpp
+auto *bufferSvc = m_services.get<BufferService>();
+
+// Identify the file to open
+NodeIdentifier nodeId;
+nodeId.notebookId = "my-notebook-guid";
+nodeId.relativePath = "notes/hello.md";
+
+// Open returns a lightweight handle (fires vnote.file.before_open / after_open hooks)
+Buffer2 buf = bufferSvc->openBuffer(nodeId);
+if (!buf.isValid()) {
+  // Open failed or was cancelled by a hook
+  return;
+}
+```
+
+#### Per-Buffer Operations via Handle
+
+```cpp
+// Read/write content
+QByteArray content = buf.getContentRaw();
+buf.setContentRaw("# Updated content\n");
+
+// Save (fires vnote.file.before_save / after_save hooks)
+buf.save();
+
+// Check state
+if (buf.isModified()) { /* unsaved changes */ }
+
+// Assets and attachments
+buf.insertAssetRaw("image.png", pngData);
+buf.insertAttachment("/path/to/file.pdf");
+QJsonArray attachments = buf.listAttachments();
+
+// Access node identity
+NodeIdentifier id = buf.nodeId();  // notebookId + relativePath
+```
+
+#### Closing a Buffer
+
+```cpp
+// Close via BufferService (fires vnote.file.before_close / after_close hooks)
+bufferSvc->closeBuffer(buf.id());
+```
 
 ---
 
@@ -555,7 +612,9 @@ tests/
 │   ├── test_error.cpp
 │   ├── test_exception.cpp
 │   ├── test_configservice.cpp
-│   └── test_notebookservice.cpp
+│   ├── test_notebookservice.cpp
+│   ├── test_bufferservice.cpp   # BufferCoreService tests
+│   └── test_buffer.cpp          # Buffer2 + BufferService integration tests (29 cases)
 └── utils/
     ├── CMakeLists.txt
     ├── test_pathutils.cpp
@@ -696,12 +755,14 @@ add_qt_test(test_myclass
 | test_fileutils2 | `FileUtils2` | 15 |
 | test_configservice | `ConfigCoreService` | 10 |
 | test_notebookservice | `NotebookCoreService` | 33 |
+| test_bufferservice | `BufferCoreService` | - |
+| test_buffer | `Buffer2` + `BufferService` | 29 |
 | test_searchservice | `SearchCoreService` | - |
 | test_servicelocator | `ServiceLocator` | - |
 | test_configmgr2 | `ConfigMgr2` | - |
 | test_hookmanager | `HookManager` | 24 |
 | test_hookintegration | Hook integration | 10 |
-| **Total** | | **230+** |
+| **Total** | | **260+** |
 
 ---
 
