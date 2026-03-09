@@ -270,6 +270,7 @@ MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
 |---------|---------|-------------|
 | `ConfigService` | App configuration via vxcore | `getConfig()`, `getSessionConfig()`, `getDataPath()`, `updateConfigByName()` |
 | `NotebookService` | Notebook/folder/file operations | `createNotebook()`, `openNotebook()`, `createFile()`, `listFolderChildren()` |
+| `BufferService` | Open file buffer management | `openBuffer()`, `closeBuffer()`, `saveBuffer()`, `getContentRaw()`, `insertAsset()`, `listAttachments()` |
 | `SearchService` | Content and file search | `searchFiles()`, `searchContent()`, `searchByTags()` |
 | `FileTypeService` | File type detection | `getFileType()`, `getFileTypeBySuffix()`, `getAllFileTypes()` |
 | `TemplateService` | Note template management | `getTemplates()`, `getTemplateContent()`, `getTemplateFilePath()` |
@@ -749,8 +750,20 @@ using namespace vnotex;     // Namespace declaration in .cpp
 ```
 
 ### Namespaces
-- Use `vnotex` namespace for all core classes
+
+VNote uses a two-level namespace convention to distinguish vxcore-wrapping services from pure-Qt services:
+
+| Namespace | Purpose | Examples |
+|-----------|---------|----------|
+| `vnotex::core` | Services that wrap the vxcore C library (hold `VxCoreContextHandle`) | `ConfigService`, `NotebookService`, `BufferService`, `SearchService`, `FileTypeService` |
+| `vnotex` | Everything else: UI, controllers, models, non-vxcore services | `HookManager`, `TemplateService`, `ThemeService`, `ConfigMgr2`, controllers, widgets |
+
+**Rules:**
 - `using namespace vnotex;` in `.cpp` files only, never in headers
+- vxcore service `.cpp` files use dual `using namespace`: `using namespace vnotex;` + `using namespace vnotex::core;`
+- Consumer `.cpp` files use explicit `using vnotex::core::ServiceName;` declarations
+- Headers that need vxcore service types use `using core::ServiceName;` inside `namespace vnotex {}`
+- Headers that only forward-declare use `namespace core { class ServiceName; }` inside `namespace vnotex {}`
 - Forward declarations preferred in headers
 
 ---
