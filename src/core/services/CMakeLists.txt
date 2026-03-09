@@ -1,5 +1,6 @@
 # Core services library
 set(SERVICES_SOURCES
+  buffer2.cpp
   buffercoreservice.cpp
   bufferservice.cpp
   configcoreservice.cpp
@@ -14,6 +15,7 @@ set(SERVICES_SOURCES
 )
 
 set(SERVICES_HEADERS
+  buffer2.h
   buffercoreservice.h
   bufferservice.h
   configcoreservice.h

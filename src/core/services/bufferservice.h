@@ -1,11 +1,11 @@
 #ifndef BUFFERSERVICE_H
 #define BUFFERSERVICE_H
 
-#include <QByteArray>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
 
+#include <core/services/buffer2.h>
 #include <core/services/buffercoreservice.h>
 
 namespace vnotex {
@@ -13,14 +13,12 @@ namespace vnotex {
 class HookManager;
 
 // Hook-aware wrapper around BufferCoreService.
-// Privately inherits BufferCoreService and fires vnote.file.* hooks
-// before/after lifecycle operations (open, close, save).
-// Read-only and query methods are passed through without hooks.
+// Manages buffer lifecycle (open, close) with vnote.file.* hooks.
+// Per-buffer operations are accessed via the Buffer handle returned by openBuffer().
 class BufferService : private BufferCoreService {
   Q_OBJECT
 
 public:
-
   // Constructor receives VxCore context handle and HookManager for hook integration.
   explicit BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
                          QObject *p_parent = nullptr);
@@ -30,48 +28,20 @@ public:
 
   // Open a file as a buffer.
   // Fires FileBeforeOpen (cancellable) and FileAfterOpen.
-  QString openBuffer(const QString &p_notebookId, const QString &p_filePath);
+  // Returns a Buffer2 handle for per-buffer operations, or an invalid Buffer2 on failure/cancel.
+  Buffer2 openBuffer(const NodeIdentifier &p_nodeId);
 
   // Close a buffer by ID.
   // Fires FileBeforeClose (cancellable) and FileAfterClose.
   bool closeBuffer(const QString &p_bufferId);
 
-  // Save buffer content to disk.
-  // Fires FileBeforeSave (cancellable) and FileAfterSave.
-  bool saveBuffer(const QString &p_bufferId);
-
-  // ============ Buffer Lifecycle (pass-through) ============
-
-  // Reload buffer content from disk.
-  bool reloadBuffer(const QString &p_bufferId);
+  // ============ Buffer Queries (pass-through) ============
 
   // Get buffer configuration as JSON.
   QJsonObject getBuffer(const QString &p_bufferId) const;
 
   // List all open buffers as JSON array.
   QJsonArray listBuffers() const;
-
-  // ============ Buffer Content (pass-through) ============
-
-  // Get buffer content as JSON (hex-encoded).
-  QJsonObject getContent(const QString &p_bufferId) const;
-
-  // Set buffer content from JSON (hex-encoded).
-  bool setContent(const QString &p_bufferId, const QString &p_contentJson);
-
-  // Get buffer content as raw bytes.
-  QByteArray getContentRaw(const QString &p_bufferId) const;
-
-  // Set buffer content from raw bytes.
-  bool setContentRaw(const QString &p_bufferId, const QByteArray &p_data);
-
-  // ============ Buffer State (pass-through) ============
-
-  // Get buffer state.
-  BufferState getState(const QString &p_bufferId) const;
-
-  // Check if buffer has unsaved modifications.
-  bool isModified(const QString &p_bufferId) const;
 
   // ============ Auto-Save (pass-through) ============
 
@@ -81,40 +51,14 @@ public:
   // Set auto-save interval in milliseconds.
   bool setAutoSaveInterval(qint64 p_intervalMs);
 
-  // ============ Asset Operations (pass-through) ============
-
-  // Insert binary data as an asset file.
-  QString insertAssetRaw(const QString &p_bufferId, const QString &p_assetName,
-                         const QByteArray &p_data);
-
-  // Copy a file to assets folder.
-  QString insertAsset(const QString &p_bufferId, const QString &p_sourcePath);
-
-  // Delete an asset file.
-  bool deleteAsset(const QString &p_bufferId, const QString &p_relativePath);
-
-  // Get absolute path to the buffer's assets folder.
-  QString getAssetsFolder(const QString &p_bufferId) const;
-
-  // ============ Attachment Operations (pass-through) ============
-
-  // Copy a file to attachments folder and add to attachment list.
-  QString insertAttachment(const QString &p_bufferId, const QString &p_sourcePath);
-
-  // Delete an attachment file and remove from attachment list.
-  bool deleteAttachment(const QString &p_bufferId, const QString &p_filename);
-
-  // Rename an attachment file and update attachment list.
-  QString renameAttachment(const QString &p_bufferId, const QString &p_oldFilename,
-                           const QString &p_newFilename);
-
-  // List all attachments as JSON array of filenames.
-  QJsonArray listAttachments(const QString &p_bufferId) const;
-
-  // Get absolute path to the buffer's attachments folder.
-  QString getAttachmentsFolder(const QString &p_bufferId) const;
-
 private:
+  // Allow Buffer2 to access BufferCoreService base for delegated operations.
+  friend class Buffer2;
+
+  // Get a pointer to the underlying BufferCoreService.
+  BufferCoreService *coreService();
+  const BufferCoreService *coreService() const;
+
   HookManager *m_hookMgr = nullptr;
 };
 
