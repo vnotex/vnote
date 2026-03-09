@@ -35,7 +35,6 @@
 #include <utils/docsutils.h>
 #include <utils/iconutils.h>
 #include <utils/pathutils.h>
-#include <utils/stringutils.h>
 #include <utils/vxurlutils.h>
 #include <utils/widgetutils.h>
 
@@ -2140,9 +2139,9 @@ void NotebookNodeExplorer::sortNodes(QVector<QSharedPointer<Node>> &p_nodes, int
     std::sort(p_nodes.begin() + p_start, p_nodes.begin() + p_end,
               [reversed](const QSharedPointer<Node> &p_a, const QSharedPointer<Node> &p_b) {
                 if (reversed) {
-                  return naturalCompare(p_b->getName(), p_a->getName());
+                  return p_b->getName().toLower() < p_a->getName().toLower();
                 } else {
-                  return naturalCompare(p_a->getName(), p_b->getName());
+                  return p_a->getName().toLower() < p_b->getName().toLower();
                 }
               });
     break;
