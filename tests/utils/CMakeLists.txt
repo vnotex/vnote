@@ -30,5 +30,6 @@ add_qt_test(test_stringutils
   SOURCES
     test_stringutils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
   GUILESS
 )

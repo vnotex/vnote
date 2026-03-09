@@ -79,6 +79,22 @@ void TestStringUtils::testNaturalCompare_data() {
   QTest::newRow("alpha==ALPHA") << "alpha" << "ALPHA" << false;
   QTest::newRow("ALPHA==Alpha") << "ALPHA" << "Alpha" << false;
   QTest::newRow("alpha==Alpha") << "alpha" << "Alpha" << false;
+
+  // Negative numbers
+  // -1 is before 0 because '-' is sorted first.
+  QTest::newRow("-1<0") << "-1" << "0" << true;
+  QTest::newRow("-100<-200") << "-100" << "-200" << true;
+
+  // Big integers should not cause overflow errors.
+  QTest::newRow("Big numbers") << "100000000000000000000"
+                               << "1000000000000000000000000000000" << true;
+
+  // Multiple digit groups.
+  // Decimal numbers like this are sorted as if they were section labels in a
+  // book.
+  QTest::newRow("1.0<2.0") << "1.0" << "2.0" << true;
+  QTest::newRow("1.1<1.2") << "1.1" << "1.2" << true;
+  QTest::newRow("1.2<1.15") << "1.2" << "1.15" << true;
 }
 
 void TestStringUtils::testNaturalCompare() {

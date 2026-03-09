@@ -10,6 +10,7 @@ target_sources(vnote PRIVATE
     iconutils.cpp iconutils.h
     pathutils.cpp pathutils.h
     stringutils.cpp stringutils.h
+    strnatcmp.c strnatcmp.h
     printutils.cpp printutils.h
     processutils.cpp processutils.h
     urldragdroputils.cpp urldragdroputils.h
