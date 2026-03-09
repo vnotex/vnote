@@ -7,6 +7,8 @@
 #include <core/services/notebookservice.h>
 
 namespace vnotex {
+using core::NotebookService;
+using core::NotebookType;
 
 class ServiceLocator;
 

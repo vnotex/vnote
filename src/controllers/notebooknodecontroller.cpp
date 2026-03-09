@@ -22,6 +22,7 @@
 #include <views/notebooknodeview.h>
 
 using namespace vnotex;
+using vnotex::core::NotebookService;
 
 NotebookNodeController::NotebookNodeController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services),

@@ -11,6 +11,8 @@
 #include <utils/pathutils.h>
 
 using namespace vnotex;
+using vnotex::core::NotebookService;
+using vnotex::core::NotebookType;
 
 NewNotebookController::NewNotebookController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}

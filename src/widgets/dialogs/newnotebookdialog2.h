@@ -10,6 +10,7 @@ class QLineEdit;
 class QPlainTextEdit;
 
 namespace vnotex {
+using core::NotebookType;
 
 class LocationInputWithBrowseButton;
 class NewNotebookController;

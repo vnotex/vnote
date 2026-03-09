@@ -19,6 +19,8 @@
 #include "notetemplateselector.h"
 
 using namespace vnotex;
+using vnotex::core::FileTypeService;
+using vnotex::core::NotebookService;
 
 QString NewNoteDialog2::s_lastTemplate;
 

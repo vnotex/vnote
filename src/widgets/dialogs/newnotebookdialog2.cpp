@@ -19,6 +19,7 @@
 #include "../widgetsfactory.h"
 
 using namespace vnotex;
+using vnotex::core::NotebookType;
 
 NewNotebookDialog2::NewNotebookDialog2(ServiceLocator &p_services, QWidget *p_parent)
     : ScrollDialog(p_parent), m_services(p_services) {

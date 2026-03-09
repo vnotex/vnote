@@ -6,6 +6,7 @@
 #include <core/services/notebookservice.h>
 
 using namespace vnotex;
+using vnotex::core::NotebookService;
 
 ManageNotebooksController::ManageNotebooksController(ServiceLocator &p_services,
                                                      QObject *p_parent)

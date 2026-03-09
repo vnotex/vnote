@@ -14,6 +14,7 @@
 #include <utils/iconutils.h>
 
 using namespace vnotex;
+using vnotex::core::NotebookService;
 
 namespace {
 const QString c_nodeMimeType = QStringLiteral("application/x-vnotex-node-identifier");

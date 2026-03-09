@@ -10,7 +10,7 @@
 namespace vnotex {
 
 class ServiceLocator;
-class NotebookService;
+namespace core { class NotebookService; }
 
 // Input data structure for importing a folder.
 struct ImportFolderInput {

@@ -13,7 +13,8 @@
 class QTimer;
 
 namespace vnotex {
-class ConfigService;
+namespace core { class ConfigService; }
+using core::ConfigService;
 class MainConfig;
 class SessionConfig;
 class CoreConfig;

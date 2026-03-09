@@ -13,6 +13,7 @@
 #include "folderfilesfilterwidget.h"
 
 using namespace vnotex;
+using vnotex::core::NotebookService;
 
 ImportFolderDialog2::ImportFolderDialog2(ServiceLocator &p_services, const NodeIdentifier &p_parentId,
                                          QWidget *p_parent)

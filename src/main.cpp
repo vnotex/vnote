@@ -17,6 +17,7 @@
 #include <core/servicelocator.h>
 #include <core/services/configservice.h>
 #include <core/services/hookmanager.h>
+#include <core/services/bufferservice.h>
 #include <core/services/notebookservice.h>
 #include <core/services/searchservice.h>
 #include <core/services/filetypeservice.h>
@@ -35,6 +36,12 @@
 #include "fakeaccessible.h"
 
 using namespace vnotex;
+using vnotex::core::BufferService;
+using vnotex::core::ConfigService;
+using vnotex::core::DataLocation;
+using vnotex::core::FileTypeService;
+using vnotex::core::NotebookService;
+using vnotex::core::SearchService;
 
 void loadTranslators(QApplication &p_app, const ConfigMgr2 &configMgr) {
   auto localeName = configMgr.getCoreConfig().getLocale();
@@ -154,11 +161,13 @@ int main(int argc, char *argv[]) {
     // Create and register services (non-owning pointers stored in ServiceLocator)
     ConfigService configService(context);
     NotebookService notebookService(context);
+    BufferService bufferService(context);
     SearchService searchService(context);
     HookManager hookManager;
 
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<NotebookService>(&notebookService);
+    serviceLocator.registerService<BufferService>(&bufferService);
     serviceLocator.registerService<SearchService>(&searchService);
     serviceLocator.registerService<HookManager>(&hookManager);
     qInfo() << "Services registered (including HookManager)";

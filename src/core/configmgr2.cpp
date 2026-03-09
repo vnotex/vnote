@@ -21,6 +21,8 @@
 #include <utils/utils.h>
 
 using namespace vnotex;
+using vnotex::core::ConfigService;
+using vnotex::core::DataLocation;
 
 #ifndef QT_NO_DEBUG
 // #define VX_DEBUG_REFRESH

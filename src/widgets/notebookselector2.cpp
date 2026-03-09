@@ -16,6 +16,7 @@
 #include <core/sessionconfig.h>
 
 using namespace vnotex;
+using vnotex::core::NotebookService;
 
 NotebookSelector2::NotebookSelector2(ServiceLocator &p_services, QWidget *p_parent)
     : ComboBox(p_parent),

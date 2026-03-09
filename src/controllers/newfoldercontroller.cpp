@@ -8,6 +8,7 @@
 #include <utils/pathutils.h>
 
 using namespace vnotex;
+using vnotex::core::NotebookService;
 
 NewFolderController::NewFolderController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}

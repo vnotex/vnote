@@ -51,6 +51,7 @@
 #include <snippet/snippetmgr.h>
 
 using namespace vnotex;
+using vnotex::core::NotebookService;
 
 NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services) {
