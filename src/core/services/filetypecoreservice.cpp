@@ -1,4 +1,4 @@
-#include "filetypeservice.h"
+#include "filetypecoreservice.h"
 
 #include <QDebug>
 #include <QFileInfo>
@@ -11,13 +11,12 @@
 #include <utils/fileutils.h>
 
 using namespace vnotex;
-using namespace vnotex::core;
 
-FileTypeService::FileTypeService(VxCoreContextHandle p_context, const QString &p_locale,
+FileTypeCoreService::FileTypeCoreService(VxCoreContextHandle p_context, const QString &p_locale,
                                  QObject *p_parent)
     : QObject(p_parent), m_context(p_context), m_locale(p_locale) {}
 
-FileType FileTypeService::parseFileType(const QJsonObject &p_obj) const {
+FileType FileTypeCoreService::parseFileType(const QJsonObject &p_obj) const {
   FileType type;
 
   type.m_typeName = p_obj["name"].toString();
@@ -48,7 +47,7 @@ FileType FileTypeService::parseFileType(const QJsonObject &p_obj) const {
   return type;
 }
 
-FileType FileTypeService::parseFileTypeFromJson(const char *p_json) const {
+FileType FileTypeCoreService::parseFileTypeFromJson(const char *p_json) const {
   if (!p_json) {
     return FileType();
   }
@@ -62,7 +61,7 @@ FileType FileTypeService::parseFileTypeFromJson(const char *p_json) const {
   return parseFileType(doc.object());
 }
 
-QVector<FileType> FileTypeService::parseFileTypesFromJson(const char *p_json) const {
+QVector<FileType> FileTypeCoreService::parseFileTypesFromJson(const char *p_json) const {
   QVector<FileType> fileTypes;
 
   if (!p_json) {
@@ -85,7 +84,7 @@ QVector<FileType> FileTypeService::parseFileTypesFromJson(const char *p_json) co
   return fileTypes;
 }
 
-FileType FileTypeService::getFileType(const QString &p_filePath) const {
+FileType FileTypeCoreService::getFileType(const QString &p_filePath) const {
   Q_ASSERT(!p_filePath.isEmpty());
 
   QFileInfo fi(p_filePath);
@@ -102,7 +101,7 @@ FileType FileTypeService::getFileType(const QString &p_filePath) const {
   return type;
 }
 
-FileType FileTypeService::getFileTypeBySuffix(const QString &p_suffix) const {
+FileType FileTypeCoreService::getFileTypeBySuffix(const QString &p_suffix) const {
   char *json_str = nullptr;
   VxCoreError err =
       vxcore_filetype_get_by_suffix(m_context, p_suffix.toUtf8().constData(), &json_str);
@@ -118,7 +117,7 @@ FileType FileTypeService::getFileTypeBySuffix(const QString &p_suffix) const {
   return type;
 }
 
-QVector<FileType> FileTypeService::getAllFileTypes() const {
+QVector<FileType> FileTypeCoreService::getAllFileTypes() const {
   char *json_str = nullptr;
   VxCoreError err = vxcore_filetype_list(m_context, &json_str);
 
@@ -132,7 +131,7 @@ QVector<FileType> FileTypeService::getAllFileTypes() const {
   return types;
 }
 
-FileType FileTypeService::getFileTypeByName(const QString &p_typeName) const {
+FileType FileTypeCoreService::getFileTypeByName(const QString &p_typeName) const {
   char *json_str = nullptr;
   VxCoreError err =
       vxcore_filetype_get_by_name(m_context, p_typeName.toUtf8().constData(), &json_str);

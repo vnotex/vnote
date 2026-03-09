@@ -7,13 +7,12 @@
 
 #include <controllers/importfoldercontroller.h>
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <utils/pathutils.h>
 
 #include "folderfilesfilterwidget.h"
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 ImportFolderDialog2::ImportFolderDialog2(ServiceLocator &p_services, const NodeIdentifier &p_parentId,
                                          QWidget *p_parent)
@@ -33,7 +32,7 @@ void ImportFolderDialog2::setupUI() {
   auto *layout = new QVBoxLayout(mainWidget);
 
   // Show parent folder path for context.
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   QString parentPath;
   if (notebookService) {
     QJsonObject notebookConfig = notebookService->getNotebookConfig(m_parentId.notebookId);

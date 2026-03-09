@@ -1,49 +1,47 @@
-#ifndef BUFFERSERVICE_H
-#define BUFFERSERVICE_H
+#ifndef BUFFERCORESERVICE_H
+#define BUFFERCORESERVICE_H
 
 #include <QByteArray>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QObject>
 #include <QString>
 
-#include <core/services/buffercoreservice.h>
+#include <core/noncopyable.h>
+
+#include <vxcore/vxcore.h>
+#include <vxcore/vxcore_types.h>
 
 namespace vnotex {
 
-class HookManager;
+// Qt wrapper for VxCoreBufferState.
+enum class BufferState {
+  Normal = VXCORE_BUFFER_NORMAL,
+  FileMissing = VXCORE_BUFFER_FILE_MISSING,
+  FileChanged = VXCORE_BUFFER_FILE_CHANGED,
+  SaveFailed = VXCORE_BUFFER_SAVE_FAILED
+};
 
-// Hook-aware wrapper around BufferCoreService.
-// Privately inherits BufferCoreService and fires vnote.file.* hooks
-// before/after lifecycle operations (open, close, save).
-// Read-only and query methods are passed through without hooks.
-class BufferService : private BufferCoreService {
+// Service layer for buffer operations. Wraps VxCore buffer C API and provides Qt-friendly interface.
+// BufferCoreService manages open file buffers - opening, closing, reading/writing content, and assets.
+class BufferCoreService : public QObject, private Noncopyable {
   Q_OBJECT
 
 public:
+  // Constructor receives VxCore context handle via dependency injection.
+  explicit BufferCoreService(VxCoreContextHandle p_context, QObject *p_parent = nullptr);
+  ~BufferCoreService();
 
-  // Constructor receives VxCore context handle and HookManager for hook integration.
-  explicit BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
-                         QObject *p_parent = nullptr);
-  ~BufferService() override;
-
-  // ============ Buffer Lifecycle (with hooks) ============
+  // ============ Buffer Lifecycle ============
 
   // Open a file as a buffer.
-  // Fires FileBeforeOpen (cancellable) and FileAfterOpen.
+  // p_notebookId: ID of the notebook (empty for external files).
+  // p_filePath: Relative path (notebook) or absolute path (external).
+  // Returns buffer ID, or empty string on failure.
   QString openBuffer(const QString &p_notebookId, const QString &p_filePath);
 
   // Close a buffer by ID.
-  // Fires FileBeforeClose (cancellable) and FileAfterClose.
   bool closeBuffer(const QString &p_bufferId);
-
-  // Save buffer content to disk.
-  // Fires FileBeforeSave (cancellable) and FileAfterSave.
-  bool saveBuffer(const QString &p_bufferId);
-
-  // ============ Buffer Lifecycle (pass-through) ============
-
-  // Reload buffer content from disk.
-  bool reloadBuffer(const QString &p_bufferId);
 
   // Get buffer configuration as JSON.
   QJsonObject getBuffer(const QString &p_bufferId) const;
@@ -51,7 +49,13 @@ public:
   // List all open buffers as JSON array.
   QJsonArray listBuffers() const;
 
-  // ============ Buffer Content (pass-through) ============
+  // ============ Buffer Content ============
+
+  // Save buffer content to disk.
+  bool saveBuffer(const QString &p_bufferId);
+
+  // Reload buffer content from disk.
+  bool reloadBuffer(const QString &p_bufferId);
 
   // Get buffer content as JSON (hex-encoded).
   QJsonObject getContent(const QString &p_bufferId) const;
@@ -65,7 +69,7 @@ public:
   // Set buffer content from raw bytes.
   bool setContentRaw(const QString &p_bufferId, const QByteArray &p_data);
 
-  // ============ Buffer State (pass-through) ============
+  // ============ Buffer State ============
 
   // Get buffer state.
   BufferState getState(const QString &p_bufferId) const;
@@ -73,7 +77,7 @@ public:
   // Check if buffer has unsaved modifications.
   bool isModified(const QString &p_bufferId) const;
 
-  // ============ Auto-Save (pass-through) ============
+  // ============ Auto-Save ============
 
   // Trigger auto-save for modified buffers.
   bool autoSaveTick();
@@ -81,13 +85,15 @@ public:
   // Set auto-save interval in milliseconds.
   bool setAutoSaveInterval(qint64 p_intervalMs);
 
-  // ============ Asset Operations (pass-through) ============
+  // ============ Asset Operations (Filesystem Only) ============
 
   // Insert binary data as an asset file.
+  // Returns relative path for embedding, or empty string on failure.
   QString insertAssetRaw(const QString &p_bufferId, const QString &p_assetName,
                          const QByteArray &p_data);
 
   // Copy a file to assets folder.
+  // Returns relative path for embedding, or empty string on failure.
   QString insertAsset(const QString &p_bufferId, const QString &p_sourcePath);
 
   // Delete an asset file.
@@ -96,15 +102,17 @@ public:
   // Get absolute path to the buffer's assets folder.
   QString getAssetsFolder(const QString &p_bufferId) const;
 
-  // ============ Attachment Operations (pass-through) ============
+  // ============ Attachment Operations (Filesystem + Metadata) ============
 
   // Copy a file to attachments folder and add to attachment list.
+  // Returns the filename (not full path), or empty string on failure.
   QString insertAttachment(const QString &p_bufferId, const QString &p_sourcePath);
 
   // Delete an attachment file and remove from attachment list.
   bool deleteAttachment(const QString &p_bufferId, const QString &p_filename);
 
   // Rename an attachment file and update attachment list.
+  // Returns the actual new filename (may differ on collision), or empty string on failure.
   QString renameAttachment(const QString &p_bufferId, const QString &p_oldFilename,
                            const QString &p_newFilename);
 
@@ -115,9 +123,21 @@ public:
   QString getAttachmentsFolder(const QString &p_bufferId) const;
 
 private:
-  HookManager *m_hookMgr = nullptr;
+  // Check context validity before operations.
+  bool checkContext() const;
+
+  // Convert C string from vxcore and free it.
+  static QString cstrToQString(char *p_str);
+
+  // Parse JSON string to QJsonObject from C string (takes ownership, frees p_str).
+  static QJsonObject parseJsonObjectFromCStr(char *p_str);
+
+  // Parse JSON string to QJsonArray from C string (takes ownership, frees p_str).
+  static QJsonArray parseJsonArrayFromCStr(char *p_str);
+
+  VxCoreContextHandle m_context = nullptr;
 };
 
 } // namespace vnotex
 
-#endif // BUFFERSERVICE_H
+#endif // BUFFERCORESERVICE_H

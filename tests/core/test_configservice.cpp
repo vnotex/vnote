@@ -1,12 +1,10 @@
 // test_configservice.cpp - Unit tests for ConfigService
 #include <QtTest>
 
-#include <core/services/configservice.h>
+#include <core/services/configcoreservice.h>
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
-using vnotex::core::ConfigService;
-using vnotex::core::DataLocation;
 
 namespace tests {
 
@@ -45,7 +43,7 @@ private slots:
 
 private:
   VxCoreContextHandle m_context = nullptr;
-  ConfigService *m_service = nullptr;
+  ConfigCoreService *m_service = nullptr;
 };
 
 TestConfigService::TestConfigService() {}
@@ -62,7 +60,7 @@ void TestConfigService::initTestCase() {
   QVERIFY(m_context != nullptr);
 
   // Create service with context
-  m_service = new ConfigService(m_context, this);
+  m_service = new ConfigCoreService(m_context, this);
   QVERIFY(m_service != nullptr);
 }
 
@@ -77,7 +75,7 @@ void TestConfigService::cleanupTestCase() {
 }
 
 void TestConfigService::testConstructorWithNullContext() {
-  ConfigService service(nullptr);
+  ConfigCoreService service(nullptr);
   // Methods should return empty values with null context
   QVERIFY(service.getExecutionFilePath().isEmpty());
   QVERIFY(service.getExecutionFolderPath().isEmpty());
@@ -177,7 +175,7 @@ void TestConfigService::testUpdateConfigByName() {
 
 void TestConfigService::testUpdateConfigReturnsError() {
   // Create service with null context
-  ConfigService nullService(nullptr);
+  ConfigCoreService nullService(nullptr);
 
   QJsonObject config;
   config["key"] = "value";

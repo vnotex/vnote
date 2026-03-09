@@ -1,15 +1,14 @@
-#include "searchservice.h"
+#include "searchcoreservice.h"
 
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
-using namespace vnotex::core;
 
-SearchService::SearchService(VxCoreContextHandle p_context, QObject *p_parent)
+SearchCoreService::SearchCoreService(VxCoreContextHandle p_context, QObject *p_parent)
   : QObject(p_parent), m_context(p_context) {
 }
 
-Error SearchService::searchFiles(const QString &p_notebookId,
+Error SearchCoreService::searchFiles(const QString &p_notebookId,
                                  const QString &p_queryJson,
                                  const QString &p_inputFilesJson,
                                  QJsonArray *p_results) const {
@@ -52,7 +51,7 @@ Error SearchService::searchFiles(const QString &p_notebookId,
   return Error::ok();
 }
 
-Error SearchService::searchContent(const QString &p_notebookId,
+Error SearchCoreService::searchContent(const QString &p_notebookId,
                                    const QString &p_queryJson,
                                    const QString &p_inputFilesJson,
                                    QJsonArray *p_results) const {
@@ -95,7 +94,7 @@ Error SearchService::searchContent(const QString &p_notebookId,
   return Error::ok();
 }
 
-Error SearchService::searchByTags(const QString &p_notebookId,
+Error SearchCoreService::searchByTags(const QString &p_notebookId,
                                   const QString &p_queryJson,
                                   const QString &p_inputFilesJson,
                                   QJsonArray *p_results) const {
@@ -138,7 +137,7 @@ Error SearchService::searchByTags(const QString &p_notebookId,
   return Error::ok();
 }
 
-Error SearchService::vxcoreErrorToError(VxCoreError p_error, const QString &p_operation) const {
+Error SearchCoreService::vxcoreErrorToError(VxCoreError p_error, const QString &p_operation) const {
   ErrorCode code;
   switch (p_error) {
   case VXCORE_OK:
@@ -179,6 +178,6 @@ Error SearchService::vxcoreErrorToError(VxCoreError p_error, const QString &p_op
   return Error::error(code, QStringLiteral("%1 failed: %2").arg(p_operation, msg));
 }
 
-const char *SearchService::qstringToCStr(const QString &p_str) {
+const char *SearchCoreService::qstringToCStr(const QString &p_str) {
   return p_str.isEmpty() ? nullptr : p_str.toUtf8().constData();
 }

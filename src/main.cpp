@@ -15,12 +15,12 @@
 #include <core/logger.h>
 #include <core/coreconfig.h>
 #include <core/servicelocator.h>
-#include <core/services/configservice.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/bufferservice.h>
-#include <core/services/notebookservice.h>
-#include <core/services/searchservice.h>
-#include <core/services/filetypeservice.h>
+#include <core/services/notebookcoreservice.h>
+#include <core/services/searchcoreservice.h>
+#include <core/services/filetypecoreservice.h>
 #include <gui/services/themeservice.h>
 #include <core/services/templateservice.h>
 #include <gui/utils/widgetutils.h>
@@ -36,12 +36,6 @@
 #include "fakeaccessible.h"
 
 using namespace vnotex;
-using vnotex::core::BufferService;
-using vnotex::core::ConfigService;
-using vnotex::core::DataLocation;
-using vnotex::core::FileTypeService;
-using vnotex::core::NotebookService;
-using vnotex::core::SearchService;
 
 void loadTranslators(QApplication &p_app, const ConfigMgr2 &configMgr) {
   auto localeName = configMgr.getCoreConfig().getLocale();
@@ -159,16 +153,16 @@ int main(int argc, char *argv[]) {
     ServiceLocator serviceLocator;
 
     // Create and register services (non-owning pointers stored in ServiceLocator)
-    ConfigService configService(context);
-    NotebookService notebookService(context);
-    BufferService bufferService(context);
-    SearchService searchService(context);
+    ConfigCoreService configService(context);
+    NotebookCoreService notebookService(context);
+    SearchCoreService searchService(context);
     HookManager hookManager;
+    BufferService bufferService(context, &hookManager);
 
-    serviceLocator.registerService<ConfigService>(&configService);
-    serviceLocator.registerService<NotebookService>(&notebookService);
+    serviceLocator.registerService<ConfigCoreService>(&configService);
+    serviceLocator.registerService<NotebookCoreService>(&notebookService);
     serviceLocator.registerService<BufferService>(&bufferService);
-    serviceLocator.registerService<SearchService>(&searchService);
+    serviceLocator.registerService<SearchCoreService>(&searchService);
     serviceLocator.registerService<HookManager>(&hookManager);
     qInfo() << "Services registered (including HookManager)";
 
@@ -179,8 +173,8 @@ int main(int argc, char *argv[]) {
     qInfo() << "ConfigMgr2 registered";
 
     // Create FileTypeService with VxCoreContextHandle and locale
-    FileTypeService fileTypeService(context, configMgr.getCoreConfig().getLocaleToUse());
-    serviceLocator.registerService<FileTypeService>(&fileTypeService);
+    FileTypeCoreService fileTypeService(context, configMgr.getCoreConfig().getLocaleToUse());
+    serviceLocator.registerService<FileTypeCoreService>(&fileTypeService);
     qInfo() << "FileTypeService registered";
 
     // Create TemplateService with ConfigMgr2

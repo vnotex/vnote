@@ -1,5 +1,5 @@
-#ifndef NOTEBOOKSERVICE_H
-#define NOTEBOOKSERVICE_H
+#ifndef NOTEBOOKCORESERVICE_H
+#define NOTEBOOKCORESERVICE_H
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -12,20 +12,20 @@
 #include <vxcore/vxcore_events.h>
 #include <vxcore/vxcore_types.h>
 
-namespace vnotex::core {
+namespace vnotex {
 
 // Qt wrapper for notebook types matching VxCoreNotebookType.
 enum class NotebookType { Bundled = VXCORE_NOTEBOOK_BUNDLED, Raw = VXCORE_NOTEBOOK_RAW };
 
 // Service layer for notebook operations. Wraps VxCore C API and provides Qt signals.
-// NotebookService IS the new notebook layer - replaces legacy NotebookMgr.
-class NotebookService : public QObject, private Noncopyable {
+// NotebookCoreService IS the new notebook layer - replaces legacy NotebookMgr.
+class NotebookCoreService : public QObject, private Noncopyable {
   Q_OBJECT
 
 public:
   // Constructor receives VxCore context handle via dependency injection.
-  explicit NotebookService(VxCoreContextHandle p_context, QObject *p_parent = nullptr);
-  ~NotebookService();
+  explicit NotebookCoreService(VxCoreContextHandle p_context, QObject *p_parent = nullptr);
+  ~NotebookCoreService();
 
   // Notebook operations (7 methods).
   QString createNotebook(const QString &p_path, const QString &p_configJson, NotebookType p_type);
@@ -168,6 +168,6 @@ private:
   VxCoreContextHandle m_context = nullptr;
 };
 
-} // namespace vnotex::core
+} // namespace vnotex
 
-#endif // NOTEBOOKSERVICE_H
+#endif // NOTEBOOKCORESERVICE_H

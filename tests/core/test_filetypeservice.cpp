@@ -1,10 +1,9 @@
 #include <QtTest>
 
-#include <core/services/filetypeservice.h>
+#include <core/services/filetypecoreservice.h>
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
-using vnotex::core::FileTypeService;
 
 namespace tests {
 
@@ -29,7 +28,7 @@ private slots:
 
 private:
   VxCoreContextHandle m_context = nullptr;
-  FileTypeService *m_service = nullptr;
+  FileTypeCoreService *m_service = nullptr;
 };
 
 void TestFileTypeService::initTestCase() {
@@ -39,7 +38,7 @@ void TestFileTypeService::initTestCase() {
   QVERIFY2(err == VXCORE_OK, "Failed to create vxcore context");
   QVERIFY(m_context != nullptr);
 
-  m_service = new FileTypeService(m_context, QStringLiteral("en_US"), this);
+  m_service = new FileTypeCoreService(m_context, QStringLiteral("en_US"), this);
   QVERIFY(m_service != nullptr);
 }
 
@@ -54,7 +53,7 @@ void TestFileTypeService::cleanupTestCase() {
 }
 
 void TestFileTypeService::testConstructorWithNullContext() {
-  FileTypeService service(nullptr, QStringLiteral("en_US"));
+  FileTypeCoreService service(nullptr, QStringLiteral("en_US"));
 
   QCOMPARE(service.getAllFileTypes().size(), 0);
   QVERIFY(service.getFileTypeBySuffix(QStringLiteral("md")).m_typeName.isEmpty());

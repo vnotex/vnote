@@ -1,5 +1,5 @@
-#ifndef FILETYPESERVICE_H
-#define FILETYPESERVICE_H
+#ifndef FILETYPECORESERVICE_H
+#define FILETYPECORESERVICE_H
 
 #include <QJsonObject>
 #include <QObject>
@@ -11,19 +11,19 @@
 #include <core/buffer/filetypehelper.h>
 #include <core/noncopyable.h>
 
-namespace vnotex::core {
+namespace vnotex {
 
 // Service for file type detection and management.
 // Replaces legacy FileTypeHelper singleton with DI-compatible service.
 // Reads file types from vxcore configuration (user modifies vxcore.json to customize).
 // No caching - queries vxcore on each request for simplicity.
-class FileTypeService : public QObject, private Noncopyable {
+class FileTypeCoreService : public QObject, private Noncopyable {
   Q_OBJECT
 
 public:
   // Constructor receives VxCoreContextHandle and locale via dependency injection.
   // @p_locale: Locale string (e.g., "zh_CN", "en_US") for display name lookup.
-  explicit FileTypeService(VxCoreContextHandle p_context, const QString &p_locale,
+  explicit FileTypeCoreService(VxCoreContextHandle p_context, const QString &p_locale,
                            QObject *p_parent = nullptr);
 
   // Get file type by file path (uses suffix detection).
@@ -55,6 +55,6 @@ private:
   QString m_locale;
 };
 
-} // namespace vnotex::core
+} // namespace vnotex
 
-#endif // FILETYPESERVICE_H
+#endif // FILETYPECORESERVICE_H

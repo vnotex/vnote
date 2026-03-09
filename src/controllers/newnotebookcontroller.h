@@ -4,11 +4,9 @@
 #include <QObject>
 #include <QString>
 
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 
 namespace vnotex {
-using core::NotebookService;
-using core::NotebookType;
 
 class ServiceLocator;
 

@@ -3,14 +3,13 @@
 
 #include "scrolldialog.h"
 
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 
 class QComboBox;
 class QLineEdit;
 class QPlainTextEdit;
 
 namespace vnotex {
-using core::NotebookType;
 
 class LocationInputWithBrowseButton;
 class NewNotebookController;

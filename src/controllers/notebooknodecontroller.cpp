@@ -16,13 +16,12 @@
 #include <core/configmgr2.h>
 #include <core/widgetconfig.h>
 #include <core/services/hookmanager.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <models/notebooknodemodel.h>
 #include <utils/pathutils.h>
 #include <views/notebooknodeview.h>
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 NotebookNodeController::NotebookNodeController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services),
@@ -52,7 +51,7 @@ QString NotebookNodeController::buildAbsolutePath(const NodeIdentifier &p_nodeId
   }
 
   // Get notebook root path from service
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   QJsonObject config = notebookService->getNotebookConfig(p_nodeId.notebookId);
   QString rootPath = config.value(QStringLiteral("rootFolder")).toString();
 
@@ -355,7 +354,7 @@ void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
 
     if (autoImport) {
       // Import the external node first, then open
-      auto *notebookService = m_services.get<NotebookService>();
+      auto *notebookService = m_services.get<NotebookCoreService>();
       if (notebookService &&
           notebookService->indexNode(p_nodeId.notebookId, p_nodeId.relativePath)) {
         // Reload parent to update view
@@ -419,7 +418,7 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
   if (m_clipboard->nodes.isEmpty() || !p_targetFolderId.isValid()) {
     return;
   }
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
 
   NodeInfo targetInfo = getNodeInfo(p_targetFolderId);
   // Check if target is a folder:
@@ -606,7 +605,7 @@ void NotebookNodeController::importExternalNode(const NodeIdentifier &p_nodeId) 
     return;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     emit errorOccurred(tr("Error"), tr("NotebookService not available."));
     return;
@@ -804,7 +803,7 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
 
   notifyBeforeNodeOperation(p_nodeId, QStringLiteral("rename"));
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   bool success;
   if (nodeInfo.isFolder) {
     success = notebookService->renameFolder(p_nodeId.notebookId, p_nodeId.relativePath, p_newName);
@@ -839,7 +838,7 @@ void NotebookNodeController::handleDeleteConfirmed(const QList<NodeIdentifier> &
     return;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   QSet<NodeIdentifier> parentsToReload;
 
   for (const NodeIdentifier &nodeId : p_nodeIds) {
@@ -876,7 +875,7 @@ void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &
     return;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   QSet<NodeIdentifier> parentsToReload;
 
   for (const NodeIdentifier &nodeId : p_nodeIds) {
@@ -903,7 +902,7 @@ void NotebookNodeController::handleImportFiles(const NodeIdentifier &p_targetFol
     return;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     emit errorOccurred(tr("Import"), tr("NotebookService not available."));
     return;

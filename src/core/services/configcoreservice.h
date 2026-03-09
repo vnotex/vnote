@@ -1,5 +1,5 @@
-#ifndef CONFIGSERVICE_H
-#define CONFIGSERVICE_H
+#ifndef CONFIGCORESERVICE_H
+#define CONFIGCORESERVICE_H
 
 #include <QJsonObject>
 #include <QObject>
@@ -10,7 +10,7 @@
 
 #include <vxcore/vxcore_types.h>
 
-namespace vnotex::core {
+namespace vnotex {
 
 // Qt wrapper for data locations matching VxCoreDataLocation.
 enum class DataLocation { App = VXCORE_DATA_APP, Local = VXCORE_DATA_LOCAL };
@@ -18,13 +18,13 @@ enum class DataLocation { App = VXCORE_DATA_APP, Local = VXCORE_DATA_LOCAL };
 // Service wrapper for vxcore configuration API.
 // Provides Qt-friendly interface with Error return codes for write operations.
 // Receives VxCoreContextHandle via constructor for dependency injection.
-class ConfigService : public QObject, private Noncopyable {
+class ConfigCoreService : public QObject, private Noncopyable {
   Q_OBJECT
 
 public:
   // Constructor receives VxCoreContextHandle via DI.
   // The context handle must remain valid for the lifetime of this service.
-  explicit ConfigService(VxCoreContextHandle p_context, QObject *p_parent = nullptr);
+  explicit ConfigCoreService(VxCoreContextHandle p_context, QObject *p_parent = nullptr);
 
   // Get path to executable file.
   QString getExecutionFilePath() const;
@@ -71,6 +71,6 @@ private:
   VxCoreContextHandle m_context = nullptr;
 };
 
-} // namespace vnotex::core
+} // namespace vnotex
 
-#endif // CONFIGSERVICE_H
+#endif // CONFIGCORESERVICE_H

@@ -14,15 +14,13 @@
 #include "editorconfig.h"
 #include "mainconfig.h"
 #include "sessionconfig.h"
-#include "services/configservice.h"
+#include "services/configcoreservice.h"
 #include "widgetconfig.h"
 
 #include <utils/fileutils2.h>
 #include <utils/utils.h>
 
 using namespace vnotex;
-using vnotex::core::ConfigService;
-using vnotex::core::DataLocation;
 
 #ifndef QT_NO_DEBUG
 // #define VX_DEBUG_REFRESH
@@ -39,7 +37,7 @@ const QString ConfigMgr2::c_orgName = QStringLiteral("VNoteX");
 
 const QString ConfigMgr2::c_appName = QStringLiteral("VNote");
 
-ConfigMgr2::ConfigMgr2(ConfigService *p_configService, QObject *p_parent)
+ConfigMgr2::ConfigMgr2(ConfigCoreService *p_configService, QObject *p_parent)
     : QObject(p_parent),
       m_configService(p_configService),
       m_mainConfig(new MainConfig(this)),

@@ -1,10 +1,11 @@
 # Core services library
 set(SERVICES_SOURCES
+  buffercoreservice.cpp
   bufferservice.cpp
-  configservice.cpp
-  searchservice.cpp
-  notebookservice.cpp
-  filetypeservice.cpp
+  configcoreservice.cpp
+  searchcoreservice.cpp
+  notebookcoreservice.cpp
+  filetypecoreservice.cpp
   templateservice.cpp
   hookmanager.cpp
   ${CMAKE_SOURCE_DIR}/src/core/error.cpp
@@ -13,11 +14,12 @@ set(SERVICES_SOURCES
 )
 
 set(SERVICES_HEADERS
+  buffercoreservice.h
   bufferservice.h
-  configservice.h
-  searchservice.h
-  notebookservice.h
-  filetypeservice.h
+  configcoreservice.h
+  searchcoreservice.h
+  notebookcoreservice.h
+  filetypecoreservice.h
   templateservice.h
   hookmanager.h
 )

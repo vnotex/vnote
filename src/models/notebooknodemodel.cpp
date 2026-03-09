@@ -9,12 +9,11 @@
 
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <gui/services/themeservice.h>
 #include <utils/iconutils.h>
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 namespace {
 const QString c_nodeMimeType = QStringLiteral("application/x-vnotex-node-identifier");
@@ -421,7 +420,7 @@ QVariant NotebookNodeModel::data(const QModelIndex &p_index, int p_role) const {
       // Check if preview already cached
       if (info.preview.isEmpty()) {
         // Fetch from service and cache in NodeInfo
-        auto *notebookService = m_services.get<NotebookService>();
+        auto *notebookService = m_services.get<NotebookCoreService>();
         if (notebookService) {
           // Cast away const to update cache (mutable pattern)
           NodeInfo &mutableInfo = const_cast<NodeInfo &>(nodeIt.value());
@@ -460,7 +459,7 @@ bool NotebookNodeModel::setData(const QModelIndex &p_index, const QVariant &p_va
     return false;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     return false;
   }
@@ -631,7 +630,7 @@ void NotebookNodeModel::fetchMore(const QModelIndex &p_parent) {
   }
   bool fetchExternal = m_externalNodesVisible && !parentIsExternal;
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     return;
   }
@@ -687,7 +686,7 @@ void NotebookNodeModel::prefetchChildrenOfChildren(const QModelIndex &p_parent) 
     return;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     return;
   }
@@ -935,7 +934,7 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
     }
 
     if (!m_notebookId.isEmpty()) {
-      auto *notebookService = m_services.get<NotebookService>();
+      auto *notebookService = m_services.get<NotebookCoreService>();
       if (notebookService) {
         QVector<NodeInfo> allNodes;
 

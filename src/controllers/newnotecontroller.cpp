@@ -3,13 +3,12 @@
 #include <QJsonObject>
 
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <snippet/snippetmgr.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 NewNoteController::NewNoteController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
@@ -34,7 +33,7 @@ NoteValidationResult NewNoteController::validateName(const QString &p_notebookId
   }
 
   // Check for conflicts with existing files in the parent folder.
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (notebookService) {
     QJsonObject children = notebookService->listFolderChildren(p_notebookId, p_parentPath);
     QJsonArray files = children.value("files").toArray();
@@ -77,7 +76,7 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
   }
 
   // Get NotebookService.
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     result.success = false;
     result.errorMessage = tr("NotebookService not available.");

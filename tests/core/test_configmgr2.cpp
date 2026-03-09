@@ -7,13 +7,11 @@
 
 #include <core/configmgr2.h>
 #include <core/error.h>
-#include <core/services/configservice.h>
+#include <core/services/configcoreservice.h>
 
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
-using vnotex::core::ConfigService;
-using vnotex::core::DataLocation;
 
 namespace tests {
 
@@ -34,7 +32,7 @@ private slots:
 
 private:
   VxCoreContextHandle m_context = nullptr;
-  ConfigService *m_configService = nullptr;
+  ConfigCoreService *m_configService = nullptr;
   ConfigMgr2 *m_configMgr = nullptr;
 };
 
@@ -45,7 +43,7 @@ void TestConfigMgr2::initTestCase() {
   QCOMPARE(err, VXCORE_OK);
   QVERIFY(m_context != nullptr);
 
-  m_configService = new ConfigService(m_context);
+  m_configService = new ConfigCoreService(m_context);
 
   m_configMgr = new ConfigMgr2(m_configService);
 }

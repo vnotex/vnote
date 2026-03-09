@@ -1,4 +1,4 @@
-#include "configservice.h"
+#include "configcoreservice.h"
 
 #include <QJsonDocument>
 #include <QJsonParseError>
@@ -6,12 +6,11 @@
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
-using namespace vnotex::core;
 
-ConfigService::ConfigService(VxCoreContextHandle p_context, QObject *p_parent)
+ConfigCoreService::ConfigCoreService(VxCoreContextHandle p_context, QObject *p_parent)
     : QObject(p_parent), m_context(p_context) {}
 
-QString ConfigService::getExecutionFilePath() const {
+QString ConfigCoreService::getExecutionFilePath() const {
   if (!checkContext()) {
     return QString();
   }
@@ -21,7 +20,7 @@ QString ConfigService::getExecutionFilePath() const {
   return cstrToQString(path);
 }
 
-QString ConfigService::getExecutionFolderPath() const {
+QString ConfigCoreService::getExecutionFolderPath() const {
   if (!checkContext()) {
     return QString();
   }
@@ -31,7 +30,7 @@ QString ConfigService::getExecutionFolderPath() const {
   return cstrToQString(path);
 }
 
-QString ConfigService::getDataPath(DataLocation p_location) const {
+QString ConfigCoreService::getDataPath(DataLocation p_location) const {
   if (!checkContext()) {
     return QString();
   }
@@ -45,7 +44,7 @@ QString ConfigService::getDataPath(DataLocation p_location) const {
   return cstrToQString(path);
 }
 
-QString ConfigService::getConfigPath() const {
+QString ConfigCoreService::getConfigPath() const {
   if (!checkContext()) {
     return QString();
   }
@@ -58,7 +57,7 @@ QString ConfigService::getConfigPath() const {
   return cstrToQString(path);
 }
 
-QString ConfigService::getSessionConfigPath() const {
+QString ConfigCoreService::getSessionConfigPath() const {
   if (!checkContext()) {
     return QString();
   }
@@ -71,7 +70,7 @@ QString ConfigService::getSessionConfigPath() const {
   return cstrToQString(path);
 }
 
-QJsonObject ConfigService::getConfig() const {
+QJsonObject ConfigCoreService::getConfig() const {
   if (!checkContext()) {
     return QJsonObject();
   }
@@ -84,7 +83,7 @@ QJsonObject ConfigService::getConfig() const {
   return parseJsonObjectFromCStr(json);
 }
 
-QJsonObject ConfigService::getSessionConfig() const {
+QJsonObject ConfigCoreService::getSessionConfig() const {
   if (!checkContext()) {
     return QJsonObject();
   }
@@ -97,7 +96,7 @@ QJsonObject ConfigService::getSessionConfig() const {
   return parseJsonObjectFromCStr(json);
 }
 
-QJsonObject ConfigService::getConfigByName(DataLocation p_location,
+QJsonObject ConfigCoreService::getConfigByName(DataLocation p_location,
                                            const QString &p_baseName) const {
   if (!checkContext()) {
     return QJsonObject();
@@ -113,7 +112,7 @@ QJsonObject ConfigService::getConfigByName(DataLocation p_location,
   return parseJsonObjectFromCStr(json);
 }
 
-QJsonObject ConfigService::getConfigByNameWithDefaults(DataLocation p_location,
+QJsonObject ConfigCoreService::getConfigByNameWithDefaults(DataLocation p_location,
                                                        const QString &p_baseName,
                                                        const QJsonObject &p_defaults) const {
   if (!checkContext()) {
@@ -131,7 +130,7 @@ QJsonObject ConfigService::getConfigByNameWithDefaults(DataLocation p_location,
   return parseJsonObjectFromCStr(json);
 }
 
-Error ConfigService::updateConfigByName(DataLocation p_location, const QString &p_baseName,
+Error ConfigCoreService::updateConfigByName(DataLocation p_location, const QString &p_baseName,
                                         const QJsonObject &p_json) {
   if (!checkContext()) {
     return Error::error(ErrorCode::InvalidArgument, "Context is null");
@@ -148,7 +147,7 @@ Error ConfigService::updateConfigByName(DataLocation p_location, const QString &
   return Error::ok();
 }
 
-QString ConfigService::cstrToQString(char *p_str) {
+QString ConfigCoreService::cstrToQString(char *p_str) {
   if (!p_str) {
     return QString();
   }
@@ -157,7 +156,7 @@ QString ConfigService::cstrToQString(char *p_str) {
   return result;
 }
 
-QJsonObject ConfigService::parseJsonObjectFromCStr(char *p_str) {
+QJsonObject ConfigCoreService::parseJsonObjectFromCStr(char *p_str) {
   if (!p_str) {
     return QJsonObject();
   }
@@ -170,4 +169,4 @@ QJsonObject ConfigService::parseJsonObjectFromCStr(char *p_str) {
   return doc.object();
 }
 
-bool ConfigService::checkContext() const { return m_context != nullptr; }
+bool ConfigCoreService::checkContext() const { return m_context != nullptr; }

@@ -3,10 +3,9 @@
 #include <QJsonDocument>
 
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 ManageNotebooksController::ManageNotebooksController(ServiceLocator &p_services,
                                                      QObject *p_parent)
@@ -14,7 +13,7 @@ ManageNotebooksController::ManageNotebooksController(ServiceLocator &p_services,
 }
 
 QJsonArray ManageNotebooksController::listNotebooks() const {
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   return notebookService->listNotebooks();
 }
 
@@ -25,7 +24,7 @@ NotebookInfo ManageNotebooksController::getNotebookInfo(const QString &p_noteboo
     return info;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   QJsonObject config = notebookService->getNotebookConfig(p_notebookId);
 
   info.id = p_notebookId;
@@ -77,7 +76,7 @@ NotebookOperationResult ManageNotebooksController::updateNotebook(
     return result;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
 
   // Read existing config, update only name and description, then write back.
   // vxcore does NOT support partial updates - missing fields get default values.
@@ -106,7 +105,7 @@ NotebookOperationResult ManageNotebooksController::closeNotebook(const QString &
     return result;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService->closeNotebook(p_notebookId)) {
     result.success = false;
     result.errorMessage = tr("Failed to close notebook.");

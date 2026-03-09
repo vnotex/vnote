@@ -4,11 +4,10 @@
 #include <QJsonObject>
 
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 ImportFolderController::ImportFolderController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
@@ -48,7 +47,7 @@ ImportFolderValidationResult ImportFolderController::validateSourceFolder(
   }
 
   // Check for recursive import (avoid importing into self).
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (notebookService) {
     QJsonObject notebookConfig = notebookService->getNotebookConfig(p_notebookId);
     QString rootPath = notebookConfig.value("rootFolder").toString();
@@ -91,7 +90,7 @@ ImportFolderResult ImportFolderController::importFolder(const ImportFolderInput 
   }
 
   // Get NotebookService.
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     result.success = false;
     result.errorMessage = tr("NotebookService not available.");

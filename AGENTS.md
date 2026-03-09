@@ -92,9 +92,9 @@ VNote strictly follows the MVC pattern. **All new code MUST adhere to this struc
 │                     ServiceLocator                          │
 │  (DI container - NOT a singleton, passed by reference)      │
 │                                                             │
-│  ┌─────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
-│  │ConfigService│  │ NotebookService │  │  SearchService  │  │
-│  └─────────────┘  └─────────────────┘  └─────────────────┘  │
+│  ┌─────────────────┐  ┌─────────────────────┐  ┌───────────────────┐  │
+│  │ConfigCoreService│  │ NotebookCoreService │  │SearchCoreService  │  │
+│  └─────────────────┘  └─────────────────────┘  └───────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -111,7 +111,7 @@ VNote strictly follows the MVC pattern. **All new code MUST adhere to this struc
 | **Model** | `src/models/` | Data representation, Qt Model/View integration | `NotebookNodeModel` exposes node hierarchy via `QAbstractItemModel` |
 | **View** | `src/views/` | Display data, capture user input, emit signals | `NotebookNodeView` renders tree, emits `nodeActivated` signal |
 | **Controller** | `src/controllers/` | Handle actions, orchestrate Model/View, business logic | `NotebookNodeController` handles new/delete/rename operations |
-| **Service** | `src/core/services/` | Domain operations, data access via vxcore | `NotebookService` wraps vxcore C API for notebook CRUD |
+| **Service** | `src/core/services/` | Domain operations, data access via vxcore | `NotebookCoreService` wraps vxcore C API for notebook CRUD |
 
 ### MVC Example: Notebook Node Operations
 
@@ -131,7 +131,7 @@ void NotebookExplorer2::onNewNoteResult(const NodeIdentifier &p_parentId,
 // Controller updates Model
 void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &p_parentId,
                                                   const NodeIdentifier &p_newNodeId) {
-  // Model reloads from NotebookService
+  // Model reloads from NotebookCoreService
   m_model->reloadNode(p_parentId);
 }
 ```
@@ -164,10 +164,12 @@ src/
 ├── core/
 │   ├── servicelocator.h    # DI container
 │   ├── services/           # Service layer (wraps vxcore)
-│   │   ├── configservice.h/.cpp
-│   │   ├── notebookservice.h/.cpp
-│   │   ├── searchservice.h/.cpp
-│   │   ├── filetypeservice.h/.cpp
+│   │   ├── configcoreservice.h/.cpp
+│   │   ├── notebookcoreservice.h/.cpp
+│   │   ├── searchcoreservice.h/.cpp
+│   │   ├── filetypecoreservice.h/.cpp
+│   │   ├── buffercoreservice.h/.cpp
+│   │   ├── bufferservice.h/.cpp    # Hook-aware wrapper
 │   │   ├── templateservice.h/.cpp
 │   │   └── hookmanager.h/.cpp
 │   ├── hookcontext.h       # Hook callback context
@@ -216,8 +218,8 @@ src/
 
 ```cpp
 #include <core/servicelocator.h>
-#include <core/configservice.h>
-#include <core/notebookservice.h>
+#include <core/configcoreservice.h>
+#include <core/notebookcoreservice.h>
 
 int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
@@ -227,10 +229,10 @@ int main(int argc, char *argv[]) {
 
   // Create and populate ServiceLocator
   vnotex::ServiceLocator services;
-  services.registerService<vnotex::ConfigService>(
-      std::make_unique<vnotex::ConfigService>(ctx));
-  services.registerService<vnotex::NotebookService>(
-      std::make_unique<vnotex::NotebookService>(ctx));
+  services.registerService<vnotex::ConfigCoreService>(
+      std::make_unique<vnotex::ConfigCoreService>(ctx));
+  services.registerService<vnotex::NotebookCoreService>(
+      std::make_unique<vnotex::NotebookCoreService>(ctx));
 
   // Pass to UI
   vnotex::MainWindow2 mainWindow(services);
@@ -259,7 +261,7 @@ private:
 MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
     : QWidget(p_parent), m_services(p_services) {
   // Access services when needed
-  auto *config = m_services.get<ConfigService>();
+  auto *config = m_services.get<ConfigCoreService>();
   auto configJson = config->getConfig();
 }
 ```
@@ -268,11 +270,11 @@ MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
 
 | Service | Purpose | Key Methods |
 |---------|---------|-------------|
-| `ConfigService` | App configuration via vxcore | `getConfig()`, `getSessionConfig()`, `getDataPath()`, `updateConfigByName()` |
-| `NotebookService` | Notebook/folder/file operations | `createNotebook()`, `openNotebook()`, `createFile()`, `listFolderChildren()` |
-| `BufferService` | Open file buffer management | `openBuffer()`, `closeBuffer()`, `saveBuffer()`, `getContentRaw()`, `insertAsset()`, `listAttachments()` |
-| `SearchService` | Content and file search | `searchFiles()`, `searchContent()`, `searchByTags()` |
-| `FileTypeService` | File type detection | `getFileType()`, `getFileTypeBySuffix()`, `getAllFileTypes()` |
+| `ConfigCoreService` | App configuration via vxcore | `getConfig()`, `getSessionConfig()`, `getDataPath()`, `updateConfigByName()` |
+| `NotebookCoreService` | Notebook/folder/file operations | `createNotebook()`, `openNotebook()`, `createFile()`, `listFolderChildren()` |
+| `BufferService` | Open file buffer management (hook-aware wrapper) | `openBuffer()`, `closeBuffer()`, `saveBuffer()`, `getContentRaw()`, `insertAsset()`, `listAttachments()` |
+| `SearchCoreService` | Content and file search | `searchFiles()`, `searchContent()`, `searchByTags()` |
+| `FileTypeCoreService` | File type detection | `getFileType()`, `getFileTypeBySuffix()`, `getAllFileTypes()` |
 | `TemplateService` | Note template management | `getTemplates()`, `getTemplateContent()`, `getTemplateFilePath()` |
 | `HookManager` | Plugin hook system | `addAction()`, `doAction()`, `addFilter()`, `applyFilters()` |
 
@@ -469,8 +471,8 @@ private:
   ServiceLocator &m_services;
 
   void doSomething() {
-    auto &config = m_services.get<ConfigService>();
-    auto &notebooks = m_services.get<NotebookService>();
+    auto &config = m_services.get<ConfigCoreService>();
+    auto &notebooks = m_services.get<NotebookCoreService>();
   }
 };
 ```
@@ -480,8 +482,8 @@ private:
 - [ ] Create new file with `2` suffix (e.g., `mywidget2.h`)
 - [ ] Add `ServiceLocator &p_services` to constructor
 - [ ] Store reference: `ServiceLocator &m_services`
-- [ ] Replace `ConfigMgr::getInst()` → `m_services.get<ConfigService>()`
-- [ ] Replace `VNoteX::getInst().getNotebookMgr()` → `m_services.get<NotebookService>()`
+- [ ] Replace `ConfigMgr::getInst()` → `m_services.get<ConfigCoreService>()`
+- [ ] Replace `VNoteX::getInst().getNotebookMgr()` → `m_services.get<NotebookCoreService>()`
 - [ ] Update parent widget to pass `ServiceLocator&`
 - [ ] Add to CMakeLists.txt
 - [ ] Write unit test with mock services
@@ -692,9 +694,9 @@ add_qt_test(test_myclass
 | test_pathutils | `PathUtils` | 68 |
 | test_htmlutils | `HtmlUtils` | 31 |
 | test_fileutils2 | `FileUtils2` | 15 |
-| test_configservice | `ConfigService` | 10 |
-| test_notebookservice | `NotebookService` | 33 |
-| test_searchservice | `SearchService` | - |
+| test_configservice | `ConfigCoreService` | 10 |
+| test_notebookservice | `NotebookCoreService` | 33 |
+| test_searchservice | `SearchCoreService` | - |
 | test_servicelocator | `ServiceLocator` | - |
 | test_configmgr2 | `ConfigMgr2` | - |
 | test_hookmanager | `HookManager` | 24 |
@@ -751,19 +753,15 @@ using namespace vnotex;     // Namespace declaration in .cpp
 
 ### Namespaces
 
-VNote uses a two-level namespace convention to distinguish vxcore-wrapping services from pure-Qt services:
+VNote uses a single `vnotex` namespace. Services that wrap the vxcore C library use the `CoreService` suffix to distinguish them from higher-level wrapper services:
 
-| Namespace | Purpose | Examples |
-|-----------|---------|----------|
-| `vnotex::core` | Services that wrap the vxcore C library (hold `VxCoreContextHandle`) | `ConfigService`, `NotebookService`, `BufferService`, `SearchService`, `FileTypeService` |
-| `vnotex` | Everything else: UI, controllers, models, non-vxcore services | `HookManager`, `TemplateService`, `ThemeService`, `ConfigMgr2`, controllers, widgets |
+| Class Pattern | Purpose | Examples |
+|---------------|---------|----------|
+| `XXXCoreService` | Low-level services that wrap the vxcore C library (hold `VxCoreContextHandle`) | `ConfigCoreService`, `NotebookCoreService`, `BufferCoreService`, `SearchCoreService`, `FileTypeCoreService` |
+| Other classes | Everything else: UI, controllers, models, hook-aware wrapper services | `BufferService` (hook wrapper), `HookManager`, `TemplateService`, `ConfigMgr2`, controllers, widgets |
 
 **Rules:**
 - `using namespace vnotex;` in `.cpp` files only, never in headers
-- vxcore service `.cpp` files use dual `using namespace`: `using namespace vnotex;` + `using namespace vnotex::core;`
-- Consumer `.cpp` files use explicit `using vnotex::core::ServiceName;` declarations
-- Headers that need vxcore service types use `using core::ServiceName;` inside `namespace vnotex {}`
-- Headers that only forward-declare use `namespace core { class ServiceName; }` inside `namespace vnotex {}`
 - Forward declarations preferred in headers
 
 ---
@@ -848,7 +846,7 @@ auto &themeMgr = VNoteX::getInst().getThemeMgr();
 
 ### Legacy ConfigMgr
 ```cpp
-// LEGACY - Use ConfigService via ServiceLocator instead
+// LEGACY - Use ConfigCoreService via ServiceLocator instead
 auto &config = ConfigMgr::getInst();
 ```
 

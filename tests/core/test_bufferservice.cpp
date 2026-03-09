@@ -2,16 +2,12 @@
 #include <QFile>
 #include <QTemporaryDir>
 
-#include <core/services/bufferservice.h>
-#include <core/services/notebookservice.h>
+#include <core/services/buffercoreservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
-using vnotex::core::BufferService;
-using vnotex::core::BufferState;
-using vnotex::core::NotebookService;
-using vnotex::core::NotebookType;
 
 namespace tests {
 
@@ -50,8 +46,8 @@ private slots:
 
 private:
   VxCoreContextHandle m_context = nullptr;
-  BufferService *m_bufferService = nullptr;
-  NotebookService *m_notebookService = nullptr;
+  BufferCoreService *m_bufferService = nullptr;
+  NotebookCoreService *m_notebookService = nullptr;
   TempDirFixture m_tempDir;
   QString m_notebookId;
 };
@@ -64,8 +60,8 @@ void TestBufferService::initTestCase() {
   QCOMPARE(err, VXCORE_OK);
   QVERIFY(m_context != nullptr);
 
-  m_notebookService = new NotebookService(m_context, this);
-  m_bufferService = new BufferService(m_context, this);
+  m_notebookService = new NotebookCoreService(m_context, this);
+  m_bufferService = new BufferCoreService(m_context, this);
   QVERIFY(m_notebookService != nullptr);
   QVERIFY(m_bufferService != nullptr);
 

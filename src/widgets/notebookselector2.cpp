@@ -9,14 +9,13 @@
 #include <QStyledItemDelegate>
 
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <core/configmgr2.h>
 #include <core/sessionconfig.h>
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 NotebookSelector2::NotebookSelector2(ServiceLocator &p_services, QWidget *p_parent)
     : ComboBox(p_parent),
@@ -37,7 +36,7 @@ NotebookSelector2::NotebookSelector2(ServiceLocator &p_services, QWidget *p_pare
 void NotebookSelector2::loadNotebooks() {
   clear();
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     qWarning() << "NotebookSelector2: NotebookService not available";
     return;
@@ -315,4 +314,3 @@ void NotebookSelector2::restoreCurrentNotebook() {
     setToolTip(getItemToolTip(idx));
   }
 }
-

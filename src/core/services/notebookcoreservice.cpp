@@ -1,4 +1,4 @@
-#include "notebookservice.h"
+#include "notebookcoreservice.h"
 
 #include <QJsonDocument>
 #include <QJsonParseError>
@@ -6,9 +6,8 @@
 #include <vxcore/vxcore_events.h>
 
 using namespace vnotex;
-using namespace vnotex::core;
 
-NotebookService::NotebookService(VxCoreContextHandle p_context, QObject *p_parent)
+NotebookCoreService::NotebookCoreService(VxCoreContextHandle p_context, QObject *p_parent)
     : QObject(p_parent), m_context(p_context) {
   // Subscribe to vxcore events - wire C callbacks to Qt signals.
   if (m_context) {
@@ -23,7 +22,7 @@ NotebookService::NotebookService(VxCoreContextHandle p_context, QObject *p_paren
   }
 }
 
-NotebookService::~NotebookService() {
+NotebookCoreService::~NotebookCoreService() {
   // Unsubscribe from all events if context still valid.
   if (m_context) {
     vxcore_event_unsubscribe(m_context, VXCORE_EVENT_NOTE_CREATED, eventCallback);
@@ -38,7 +37,7 @@ NotebookService::~NotebookService() {
 }
 
 // Notebook operations.
-QString NotebookService::createNotebook(const QString &p_path, const QString &p_configJson,
+QString NotebookCoreService::createNotebook(const QString &p_path, const QString &p_configJson,
                                         NotebookType p_type) {
   if (!checkContext()) {
     return QString();
@@ -55,7 +54,7 @@ QString NotebookService::createNotebook(const QString &p_path, const QString &p_
   return cstrToQString(notebookId);
 }
 
-QString NotebookService::openNotebook(const QString &p_path) {
+QString NotebookCoreService::openNotebook(const QString &p_path) {
   if (!checkContext()) {
     return QString();
   }
@@ -69,7 +68,7 @@ QString NotebookService::openNotebook(const QString &p_path) {
   return cstrToQString(notebookId);
 }
 
-bool NotebookService::closeNotebook(const QString &p_notebookId) {
+bool NotebookCoreService::closeNotebook(const QString &p_notebookId) {
   if (!checkContext()) {
     return false;
   }
@@ -82,7 +81,7 @@ bool NotebookService::closeNotebook(const QString &p_notebookId) {
   return true;
 }
 
-QJsonArray NotebookService::listNotebooks() const {
+QJsonArray NotebookCoreService::listNotebooks() const {
   if (!checkContext()) {
     return QJsonArray();
   }
@@ -96,7 +95,7 @@ QJsonArray NotebookService::listNotebooks() const {
   return parseJsonArrayFromCStr(json);
 }
 
-QJsonObject NotebookService::getNotebookConfig(const QString &p_notebookId) const {
+QJsonObject NotebookCoreService::getNotebookConfig(const QString &p_notebookId) const {
   if (!checkContext()) {
     return QJsonObject();
   }
@@ -111,7 +110,7 @@ QJsonObject NotebookService::getNotebookConfig(const QString &p_notebookId) cons
   return parseJsonObjectFromCStr(json);
 }
 
-bool NotebookService::updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson) {
+bool NotebookCoreService::updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson) {
   if (!checkContext()) {
     return false;
   }
@@ -125,7 +124,7 @@ bool NotebookService::updateNotebookConfig(const QString &p_notebookId, const QS
   return true;
 }
 
-bool NotebookService::rebuildNotebookCache(const QString &p_notebookId) {
+bool NotebookCoreService::rebuildNotebookCache(const QString &p_notebookId) {
   if (!checkContext()) {
     return false;
   }
@@ -138,7 +137,7 @@ bool NotebookService::rebuildNotebookCache(const QString &p_notebookId) {
   return true;
 }
 
-QJsonObject NotebookService::resolvePathToNotebook(const QString &p_absolutePath) const {
+QJsonObject NotebookCoreService::resolvePathToNotebook(const QString &p_absolutePath) const {
   if (!checkContext()) {
     return QJsonObject();
   }
@@ -165,7 +164,7 @@ QJsonObject NotebookService::resolvePathToNotebook(const QString &p_absolutePath
   return result;
 }
 
-QString NotebookService::getNodePathById(const QString &p_notebookId, const QString &p_nodeId) const {
+QString NotebookCoreService::getNodePathById(const QString &p_notebookId, const QString &p_nodeId) const {
   if (!checkContext()) {
     return QString();
   }
@@ -181,7 +180,7 @@ QString NotebookService::getNodePathById(const QString &p_notebookId, const QStr
   return cstrToQString(path);
 }
 
-bool NotebookService::unindexNode(const QString &p_notebookId, const QString &p_nodePath) {
+bool NotebookCoreService::unindexNode(const QString &p_notebookId, const QString &p_nodePath) {
   if (!checkContext()) {
     return false;
   }
@@ -196,7 +195,7 @@ bool NotebookService::unindexNode(const QString &p_notebookId, const QString &p_
   return true;
 }
 
-QString NotebookService::getRecycleBinPath(const QString &p_notebookId) const {
+QString NotebookCoreService::getRecycleBinPath(const QString &p_notebookId) const {
   if (!checkContext()) {
     return QString();
   }
@@ -214,7 +213,7 @@ QString NotebookService::getRecycleBinPath(const QString &p_notebookId) const {
   return cstrToQString(path);
 }
 
-bool NotebookService::emptyRecycleBin(const QString &p_notebookId) {
+bool NotebookCoreService::emptyRecycleBin(const QString &p_notebookId) {
   if (!checkContext()) {
     return false;
   }
@@ -231,7 +230,7 @@ bool NotebookService::emptyRecycleBin(const QString &p_notebookId) {
 }
 
 // Folder operations.
-QString NotebookService::createFolder(const QString &p_notebookId, const QString &p_parentPath,
+QString NotebookCoreService::createFolder(const QString &p_notebookId, const QString &p_parentPath,
                                       const QString &p_folderName) {
   if (!checkContext()) {
     return QString();
@@ -248,7 +247,7 @@ QString NotebookService::createFolder(const QString &p_notebookId, const QString
   return cstrToQString(folderId);
 }
 
-QString NotebookService::createFolderPath(const QString &p_notebookId, const QString &p_folderPath) {
+QString NotebookCoreService::createFolderPath(const QString &p_notebookId, const QString &p_folderPath) {
   if (!checkContext()) {
     return QString();
   }
@@ -263,7 +262,7 @@ QString NotebookService::createFolderPath(const QString &p_notebookId, const QSt
   return cstrToQString(folderId);
 }
 
-bool NotebookService::deleteFolder(const QString &p_notebookId, const QString &p_folderPath) {
+bool NotebookCoreService::deleteFolder(const QString &p_notebookId, const QString &p_folderPath) {
   if (!checkContext()) {
     return false;
   }
@@ -277,7 +276,7 @@ bool NotebookService::deleteFolder(const QString &p_notebookId, const QString &p
   return true;
 }
 
-QJsonObject NotebookService::getFolderConfig(const QString &p_notebookId, const QString &p_folderPath) const {
+QJsonObject NotebookCoreService::getFolderConfig(const QString &p_notebookId, const QString &p_folderPath) const {
   if (!checkContext()) {
     return QJsonObject();
   }
@@ -292,7 +291,7 @@ QJsonObject NotebookService::getFolderConfig(const QString &p_notebookId, const 
   return parseJsonObjectFromCStr(json);
 }
 
-bool NotebookService::updateFolderMetadata(const QString &p_notebookId, const QString &p_folderPath,
+bool NotebookCoreService::updateFolderMetadata(const QString &p_notebookId, const QString &p_folderPath,
                                            const QString &p_metadataJson) {
   if (!checkContext()) {
     return false;
@@ -308,7 +307,7 @@ bool NotebookService::updateFolderMetadata(const QString &p_notebookId, const QS
   return true;
 }
 
-QJsonObject NotebookService::getFolderMetadata(const QString &p_notebookId,
+QJsonObject NotebookCoreService::getFolderMetadata(const QString &p_notebookId,
                                                const QString &p_folderPath) const {
   if (!checkContext()) {
     return QJsonObject();
@@ -324,7 +323,7 @@ QJsonObject NotebookService::getFolderMetadata(const QString &p_notebookId,
   return parseJsonObjectFromCStr(json);
 }
 
-bool NotebookService::renameFolder(const QString &p_notebookId, const QString &p_folderPath,
+bool NotebookCoreService::renameFolder(const QString &p_notebookId, const QString &p_folderPath,
                                    const QString &p_newName) {
   if (!checkContext()) {
     return false;
@@ -339,7 +338,7 @@ bool NotebookService::renameFolder(const QString &p_notebookId, const QString &p
   return true;
 }
 
-bool NotebookService::moveFolder(const QString &p_notebookId, const QString &p_srcPath,
+bool NotebookCoreService::moveFolder(const QString &p_notebookId, const QString &p_srcPath,
                                  const QString &p_destParentPath) {
   if (!checkContext()) {
     return false;
@@ -354,7 +353,7 @@ bool NotebookService::moveFolder(const QString &p_notebookId, const QString &p_s
   return true;
 }
 
-QString NotebookService::copyFolder(const QString &p_notebookId, const QString &p_srcPath,
+QString NotebookCoreService::copyFolder(const QString &p_notebookId, const QString &p_srcPath,
                                     const QString &p_destParentPath, const QString &p_newName) {
   if (!checkContext()) {
     return QString();
@@ -372,7 +371,7 @@ QString NotebookService::copyFolder(const QString &p_notebookId, const QString &
   return cstrToQString(folderId);
 }
 
-QJsonObject NotebookService::listFolderChildren(const QString &p_notebookId,
+QJsonObject NotebookCoreService::listFolderChildren(const QString &p_notebookId,
                                                 const QString &p_folderPath) const {
   if (!checkContext()) {
     return QJsonObject();
@@ -389,7 +388,7 @@ QJsonObject NotebookService::listFolderChildren(const QString &p_notebookId,
   return parseJsonObjectFromCStr(json);
 }
 
-QJsonObject NotebookService::listFolderExternal(const QString &p_notebookId,
+QJsonObject NotebookCoreService::listFolderExternal(const QString &p_notebookId,
                                                 const QString &p_folderPath) const {
   if (!checkContext()) {
     return QJsonObject();
@@ -406,7 +405,7 @@ QJsonObject NotebookService::listFolderExternal(const QString &p_notebookId,
   return parseJsonObjectFromCStr(json);
 }
 
-bool NotebookService::indexNode(const QString &p_notebookId, const QString &p_nodePath) {
+bool NotebookCoreService::indexNode(const QString &p_notebookId, const QString &p_nodePath) {
   if (!checkContext()) {
     return false;
   }
@@ -421,7 +420,7 @@ bool NotebookService::indexNode(const QString &p_notebookId, const QString &p_no
   return true;
 }
 
-QString NotebookService::getAvailableName(const QString &p_notebookId, const QString &p_folderPath,
+QString NotebookCoreService::getAvailableName(const QString &p_notebookId, const QString &p_folderPath,
                                           const QString &p_desiredName) const {
   if (!checkContext()) {
     return QString();
@@ -440,7 +439,7 @@ QString NotebookService::getAvailableName(const QString &p_notebookId, const QSt
 }
 
 // File operations.
-QString NotebookService::createFile(const QString &p_notebookId, const QString &p_folderPath,
+QString NotebookCoreService::createFile(const QString &p_notebookId, const QString &p_folderPath,
                                     const QString &p_fileName) {
   if (!checkContext()) {
     return QString();
@@ -457,7 +456,7 @@ QString NotebookService::createFile(const QString &p_notebookId, const QString &
   return cstrToQString(fileId);
 }
 
-bool NotebookService::deleteFile(const QString &p_notebookId, const QString &p_filePath) {
+bool NotebookCoreService::deleteFile(const QString &p_notebookId, const QString &p_filePath) {
   if (!checkContext()) {
     return false;
   }
@@ -471,7 +470,7 @@ bool NotebookService::deleteFile(const QString &p_notebookId, const QString &p_f
   return true;
 }
 
-QJsonObject NotebookService::getFileInfo(const QString &p_notebookId, const QString &p_filePath) const {
+QJsonObject NotebookCoreService::getFileInfo(const QString &p_notebookId, const QString &p_filePath) const {
   if (!checkContext()) {
     return QJsonObject();
   }
@@ -486,7 +485,7 @@ QJsonObject NotebookService::getFileInfo(const QString &p_notebookId, const QStr
   return parseJsonObjectFromCStr(json);
 }
 
-QJsonObject NotebookService::getFileMetadata(const QString &p_notebookId, const QString &p_filePath) const {
+QJsonObject NotebookCoreService::getFileMetadata(const QString &p_notebookId, const QString &p_filePath) const {
   if (!checkContext()) {
     return QJsonObject();
   }
@@ -501,7 +500,7 @@ QJsonObject NotebookService::getFileMetadata(const QString &p_notebookId, const 
   return parseJsonObjectFromCStr(json);
 }
 
-bool NotebookService::updateFileMetadata(const QString &p_notebookId, const QString &p_filePath,
+bool NotebookCoreService::updateFileMetadata(const QString &p_notebookId, const QString &p_filePath,
                                          const QString &p_metadataJson) {
   if (!checkContext()) {
     return false;
@@ -517,7 +516,7 @@ bool NotebookService::updateFileMetadata(const QString &p_notebookId, const QStr
   return true;
 }
 
-bool NotebookService::renameFile(const QString &p_notebookId, const QString &p_filePath,
+bool NotebookCoreService::renameFile(const QString &p_notebookId, const QString &p_filePath,
                                  const QString &p_newName) {
   if (!checkContext()) {
     return false;
@@ -532,7 +531,7 @@ bool NotebookService::renameFile(const QString &p_notebookId, const QString &p_f
   return true;
 }
 
-bool NotebookService::moveFile(const QString &p_notebookId, const QString &p_srcFilePath,
+bool NotebookCoreService::moveFile(const QString &p_notebookId, const QString &p_srcFilePath,
                                const QString &p_destFolderPath) {
   if (!checkContext()) {
     return false;
@@ -547,7 +546,7 @@ bool NotebookService::moveFile(const QString &p_notebookId, const QString &p_src
   return true;
 }
 
-QString NotebookService::copyFile(const QString &p_notebookId, const QString &p_srcFilePath,
+QString NotebookCoreService::copyFile(const QString &p_notebookId, const QString &p_srcFilePath,
                                   const QString &p_destFolderPath, const QString &p_newName) {
   if (!checkContext()) {
     return QString();
@@ -565,7 +564,7 @@ QString NotebookService::copyFile(const QString &p_notebookId, const QString &p_
   return cstrToQString(fileId);
 }
 
-QString NotebookService::importFile(const QString &p_notebookId, const QString &p_folderPath,
+QString NotebookCoreService::importFile(const QString &p_notebookId, const QString &p_folderPath,
                                     const QString &p_externalFilePath) {
   if (!checkContext()) {
     return QString();
@@ -582,7 +581,7 @@ QString NotebookService::importFile(const QString &p_notebookId, const QString &
   }
   return cstrToQString(fileId);
 }
-QString NotebookService::importFolder(const QString &p_notebookId, const QString &p_destFolderPath,
+QString NotebookCoreService::importFolder(const QString &p_notebookId, const QString &p_destFolderPath,
                                       const QString &p_externalFolderPath,
                                       const QString &p_suffixAllowlist) {
   if (!checkContext()) {
@@ -603,7 +602,7 @@ QString NotebookService::importFolder(const QString &p_notebookId, const QString
   return cstrToQString(folderId);
 }
 
-QString NotebookService::peekFile(const QString &p_notebookId, const QString &p_filePath,
+QString NotebookCoreService::peekFile(const QString &p_notebookId, const QString &p_filePath,
                                   int p_maxChars) const {
   if (!checkContext()) {
     return QString();
@@ -626,7 +625,7 @@ QString NotebookService::peekFile(const QString &p_notebookId, const QString &p_
 
 
 // Tag operations.
-bool NotebookService::updateFileTags(const QString &p_notebookId, const QString &p_filePath,
+bool NotebookCoreService::updateFileTags(const QString &p_notebookId, const QString &p_filePath,
                                      const QString &p_tagsJson) {
   if (!checkContext()) {
     return false;
@@ -642,7 +641,7 @@ bool NotebookService::updateFileTags(const QString &p_notebookId, const QString 
   return true;
 }
 
-bool NotebookService::tagFile(const QString &p_notebookId, const QString &p_filePath,
+bool NotebookCoreService::tagFile(const QString &p_notebookId, const QString &p_filePath,
                               const QString &p_tagName) {
   if (!checkContext()) {
     return false;
@@ -657,7 +656,7 @@ bool NotebookService::tagFile(const QString &p_notebookId, const QString &p_file
   return true;
 }
 
-bool NotebookService::untagFile(const QString &p_notebookId, const QString &p_filePath,
+bool NotebookCoreService::untagFile(const QString &p_notebookId, const QString &p_filePath,
                                 const QString &p_tagName) {
   if (!checkContext()) {
     return false;
@@ -672,7 +671,7 @@ bool NotebookService::untagFile(const QString &p_notebookId, const QString &p_fi
   return true;
 }
 
-bool NotebookService::createTag(const QString &p_notebookId, const QString &p_tagName) {
+bool NotebookCoreService::createTag(const QString &p_notebookId, const QString &p_tagName) {
   if (!checkContext()) {
     return false;
   }
@@ -686,7 +685,7 @@ bool NotebookService::createTag(const QString &p_notebookId, const QString &p_ta
   return true;
 }
 
-bool NotebookService::createTagPath(const QString &p_notebookId, const QString &p_tagPath) {
+bool NotebookCoreService::createTagPath(const QString &p_notebookId, const QString &p_tagPath) {
   if (!checkContext()) {
     return false;
   }
@@ -700,7 +699,7 @@ bool NotebookService::createTagPath(const QString &p_notebookId, const QString &
   return true;
 }
 
-bool NotebookService::deleteTag(const QString &p_notebookId, const QString &p_tagName) {
+bool NotebookCoreService::deleteTag(const QString &p_notebookId, const QString &p_tagName) {
   if (!checkContext()) {
     return false;
   }
@@ -714,7 +713,7 @@ bool NotebookService::deleteTag(const QString &p_notebookId, const QString &p_ta
   return true;
 }
 
-QJsonArray NotebookService::listTags(const QString &p_notebookId) const {
+QJsonArray NotebookCoreService::listTags(const QString &p_notebookId) const {
   if (!checkContext()) {
     return QJsonArray();
   }
@@ -728,7 +727,7 @@ QJsonArray NotebookService::listTags(const QString &p_notebookId) const {
   return parseJsonArrayFromCStr(json);
 }
 
-bool NotebookService::moveTag(const QString &p_notebookId, const QString &p_tagName,
+bool NotebookCoreService::moveTag(const QString &p_notebookId, const QString &p_tagName,
                               const QString &p_parentTag) {
   if (!checkContext()) {
     return false;
@@ -744,24 +743,24 @@ bool NotebookService::moveTag(const QString &p_notebookId, const QString &p_tagN
 }
 
 // Private methods.
-bool NotebookService::checkContext() const {
+bool NotebookCoreService::checkContext() const {
   if (!m_context) {
-    qWarning() << "NotebookService: VxCore context not initialized";
+    qWarning() << "NotebookCoreService: VxCore context not initialized";
     return false;
   }
   return true;
 }
 
-void NotebookService::eventCallback(const VxCoreEvent *p_event, void *p_userData) {
+void NotebookCoreService::eventCallback(const VxCoreEvent *p_event, void *p_userData) {
   // Static C callback - route to instance method.
-  auto *service = static_cast<NotebookService *>(p_userData);
+  auto *service = static_cast<NotebookCoreService *>(p_userData);
   if (service && p_event) {
     service->handleEvent(p_event->type, QString::fromUtf8(p_event->payload_json),
                          p_event->timestamp_ms);
   }
 }
 
-void NotebookService::handleEvent(VxCoreEventType p_eventType, const QString &p_payloadJson,
+void NotebookCoreService::handleEvent(VxCoreEventType p_eventType, const QString &p_payloadJson,
                                   quint64 p_timestampMs) {
   // Re-emit vxcore events as Qt signals.
   switch (p_eventType) {
@@ -794,7 +793,7 @@ void NotebookService::handleEvent(VxCoreEventType p_eventType, const QString &p_
   }
 }
 
-QString NotebookService::cstrToQString(char *p_str) {
+QString NotebookCoreService::cstrToQString(char *p_str) {
   if (!p_str) {
     return QString();
   }
@@ -803,7 +802,7 @@ QString NotebookService::cstrToQString(char *p_str) {
   return result;
 }
 
-const char *NotebookService::qstringToCStr(const QString &p_str) {
+const char *NotebookCoreService::qstringToCStr(const QString &p_str) {
   if (p_str.isEmpty()) {
     return nullptr;
   }
@@ -811,7 +810,7 @@ const char *NotebookService::qstringToCStr(const QString &p_str) {
   return p_str.toUtf8().constData();
 }
 
-QJsonObject NotebookService::parseJsonObjectFromCStr(char *p_str) {
+QJsonObject NotebookCoreService::parseJsonObjectFromCStr(char *p_str) {
   if (!p_str) {
     return QJsonObject();
   }
@@ -825,7 +824,7 @@ QJsonObject NotebookService::parseJsonObjectFromCStr(char *p_str) {
   return doc.object();
 }
 
-QJsonArray NotebookService::parseJsonArrayFromCStr(char *p_str) {
+QJsonArray NotebookCoreService::parseJsonArrayFromCStr(char *p_str) {
   if (!p_str) {
     return QJsonArray();
   }

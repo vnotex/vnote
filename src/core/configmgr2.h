@@ -13,16 +13,15 @@
 class QTimer;
 
 namespace vnotex {
-namespace core { class ConfigService; }
-using core::ConfigService;
+class ConfigCoreService;
 class MainConfig;
 class SessionConfig;
 class CoreConfig;
 class EditorConfig;
 class WidgetConfig;
 
-// Thin DI-ready configuration manager wrapper over ConfigService.
-// Receives ConfigService via constructor for dependency injection.
+// Thin DI-ready configuration manager wrapper over ConfigCoreService.
+// Receives ConfigCoreService via constructor for dependency injection.
 // Provides path accessors and config persistence with debouncing.
 // Owns MainConfig and SessionConfig instances.
 class ConfigMgr2 : public QObject, public IConfigMgr, private Noncopyable {
@@ -41,9 +40,9 @@ public:
     Web
   };
 
-  // Constructor receives ConfigService via DI (non-owning pointer).
-  // ConfigService must remain valid for the lifetime of this manager.
-  explicit ConfigMgr2(ConfigService *p_configService, QObject *p_parent = nullptr);
+  // Constructor receives ConfigCoreService via DI (non-owning pointer).
+  // ConfigCoreService must remain valid for the lifetime of this manager.
+  explicit ConfigMgr2(ConfigCoreService *p_configService, QObject *p_parent = nullptr);
 
   ~ConfigMgr2();
 
@@ -133,8 +132,8 @@ private:
   // Initialize app prefix search paths.
   void initAppPrefixPath();
 
-  // Non-owning pointer to ConfigService (managed by caller)
-  ConfigService *m_configService = nullptr;
+  // Non-owning pointer to ConfigCoreService (managed by caller)
+  ConfigCoreService *m_configService = nullptr;
 
   // Owned config instances
   QScopedPointer<MainConfig> m_mainConfig;

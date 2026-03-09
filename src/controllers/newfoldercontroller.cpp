@@ -4,11 +4,10 @@
 #include <QJsonObject>
 
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 NewFolderController::NewFolderController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
@@ -33,7 +32,7 @@ FolderValidationResult NewFolderController::validateName(const QString &p_notebo
   }
 
   // Check for conflicts with existing folders in the parent folder.
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (notebookService) {
     QJsonObject children = notebookService->listFolderChildren(p_notebookId, p_parentPath);
     QJsonArray folders = children.value("folders").toArray();
@@ -87,7 +86,7 @@ NewFolderResult NewFolderController::createFolder(const NewFolderInput &p_input)
   }
 
   // Get NotebookService.
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     result.success = false;
     result.errorMessage = tr("NotebookService not available.");

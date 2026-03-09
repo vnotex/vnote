@@ -6,11 +6,11 @@
 #include <QVBoxLayout>
 
 #include <controllers/newnotecontroller.h>
-#include <core/services/filetypeservice.h>
+#include <core/services/filetypecoreservice.h>
 #include <core/configmgr2.h>
 #include <core/widgetconfig.h>
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 #include <utils/widgetutils.h>
@@ -19,8 +19,6 @@
 #include "notetemplateselector.h"
 
 using namespace vnotex;
-using vnotex::core::FileTypeService;
-using vnotex::core::NotebookService;
 
 QString NewNoteDialog2::s_lastTemplate;
 
@@ -45,7 +43,7 @@ void NewNoteDialog2::setupUI() {
 
   // File type combo.
   m_fileTypeCombo = WidgetsFactory::createComboBox(mainWidget);
-  auto *fileTypeService = m_services.get<FileTypeService>();
+  auto *fileTypeService = m_services.get<FileTypeCoreService>();
   const auto fileTypes = fileTypeService->getAllFileTypes();
   for (const auto &ft : fileTypes) {
     if (ft.m_isNewable) {
@@ -96,7 +94,7 @@ void NewNoteDialog2::initDefaultValues() {
                         }
 
 void NewNoteDialog2::updateNameForFileType() {
-  auto *fileTypeService = m_services.get<FileTypeService>();
+  auto *fileTypeService = m_services.get<FileTypeCoreService>();
   const auto fileType = fileTypeService->getFileTypeByName(m_fileTypeCombo->currentData().toString());
 
   // Get current name and extract base name (without extension).
@@ -138,7 +136,7 @@ QString NewNoteDialog2::getFileTypeName() const {
 
 QString NewNoteDialog2::getPreferredSuffix() const {
   QString typeName = m_fileTypeCombo->currentData().toString();
-  auto *fileTypeService = m_services.get<FileTypeService>();
+  auto *fileTypeService = m_services.get<FileTypeCoreService>();
   const auto fileType = fileTypeService->getFileTypeByName(typeName);
   return fileType.preferredSuffix();
 }

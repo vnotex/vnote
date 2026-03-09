@@ -1,12 +1,11 @@
 // test_searchservice.cpp - Tests for vnotex::SearchService
 #include <QtTest>
 
-#include <core/services/searchservice.h>
+#include <core/services/searchcoreservice.h>
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
-using vnotex::core::SearchService;
 
 namespace tests {
 
@@ -82,7 +81,7 @@ void TestSearchService::cleanupTestCase() {
 }
 
 void TestSearchService::testNullContext() {
-  SearchService service(nullptr);
+  SearchCoreService service(nullptr);
   QJsonArray results;
 
   Error err = service.searchFiles(m_notebookId, "{}", QString(), &results);
@@ -91,7 +90,7 @@ void TestSearchService::testNullContext() {
 }
 
 void TestSearchService::testNullResultsParameter() {
-  SearchService service(m_context);
+  SearchCoreService service(m_context);
 
   Error err = service.searchFiles(m_notebookId, "{}", QString(), nullptr);
   QVERIFY(!err.isOk());
@@ -99,7 +98,7 @@ void TestSearchService::testNullResultsParameter() {
 }
 
 void TestSearchService::testSearchFilesEmptyNotebook() {
-  SearchService service(m_context);
+  SearchCoreService service(m_context);
   QJsonArray results;
 
   // Search with empty pattern should return empty results
@@ -111,7 +110,7 @@ void TestSearchService::testSearchFilesEmptyNotebook() {
 }
 
 void TestSearchService::testSearchContentEmptyNotebook() {
-  SearchService service(m_context);
+  SearchCoreService service(m_context);
   QJsonArray results;
 
   Error err = service.searchContent(m_notebookId,
@@ -122,7 +121,7 @@ void TestSearchService::testSearchContentEmptyNotebook() {
 }
 
 void TestSearchService::testSearchByTagsEmptyNotebook() {
-  SearchService service(m_context);
+  SearchCoreService service(m_context);
   QJsonArray results;
 
   Error err = service.searchByTags(m_notebookId,
@@ -144,7 +143,7 @@ void TestSearchService::testSearchFilesWithFiles() {
   QVERIFY(fileId != nullptr);
   vxcore_string_free(fileId);
 
-  SearchService service(m_context);
+  SearchCoreService service(m_context);
   QJsonArray results;
 
   // Search for markdown files
@@ -161,7 +160,7 @@ void TestSearchService::testSearchFilesWithFiles() {
 }
 
 void TestSearchService::testSearchContentWithContent() {
-  SearchService service(m_context);
+  SearchCoreService service(m_context);
   QJsonArray results;
 
   // Search for content (may be empty if no indexing)
@@ -197,7 +196,7 @@ void TestSearchService::testSearchByTagsWithTags() {
                           "test-tag");
   QCOMPARE(vxerr, VXCORE_OK);
 
-  SearchService service(m_context);
+  SearchCoreService service(m_context);
   QJsonArray results;
 
   // Search by tag

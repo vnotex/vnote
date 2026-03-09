@@ -1,5 +1,5 @@
-#ifndef SEARCHSERVICE_H
-#define SEARCHSERVICE_H
+#ifndef SEARCHCORESERVICE_H
+#define SEARCHCORESERVICE_H
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -11,18 +11,18 @@
 
 #include <vxcore/vxcore_types.h>
 
-namespace vnotex::core {
+namespace vnotex {
 
-// SearchService provides search operations wrapping vxcore C API.
+// SearchCoreService provides search operations wrapping vxcore C API.
 // Uses dependency injection for VxCoreContextHandle (non-owning).
-class SearchService : public QObject, private Noncopyable {
+class SearchCoreService : public QObject, private Noncopyable {
   Q_OBJECT
 
 public:
   // Constructor with injected VxCoreContextHandle.
-  // @p_context: Non-owning pointer to vxcore context. Must outlive SearchService.
+  // @p_context: Non-owning pointer to vxcore context. Must outlive SearchCoreService.
   // @p_parent: Optional QObject parent.
-  explicit SearchService(VxCoreContextHandle p_context, QObject *p_parent = nullptr);
+  explicit SearchCoreService(VxCoreContextHandle p_context, QObject *p_parent = nullptr);
 
   // Search files by name pattern.
   // @p_notebookId: Target notebook ID.
@@ -68,6 +68,6 @@ private:
   static const char *qstringToCStr(const QString &p_str);
 };
 
-} // namespace vnotex::core
+} // namespace vnotex
 
-#endif // SEARCHSERVICE_H
+#endif // SEARCHCORESERVICE_H

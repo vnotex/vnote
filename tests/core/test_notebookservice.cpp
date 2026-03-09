@@ -3,14 +3,12 @@
 #include <QSignalSpy>
 #include <QTemporaryDir>
 
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <temp_dir_fixture.h>
 
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
-using vnotex::core::NotebookType;
 
 namespace tests {
 
@@ -62,7 +60,7 @@ private:
   QString createTestNotebook(const QString &p_path);
 
   VxCoreContextHandle m_context = nullptr;
-  NotebookService *m_service = nullptr;
+  NotebookCoreService *m_service = nullptr;
   TempDirFixture m_tempDir;
 };
 
@@ -79,7 +77,7 @@ void TestNotebookService::initTestCase() {
   QVERIFY(m_context != nullptr);
 
   // Create NotebookService with context.
-  m_service = new NotebookService(m_context, this);
+  m_service = new NotebookCoreService(m_context, this);
   QVERIFY(m_service != nullptr);
 }
 
@@ -456,7 +454,7 @@ void TestNotebookService::testNoteCreatedSignal() {
   QString nbId = createTestNotebook(nbPath);
   QVERIFY(!nbId.isEmpty());
 
-  QSignalSpy spy(m_service, &NotebookService::noteCreated);
+  QSignalSpy spy(m_service, &NotebookCoreService::noteCreated);
 
   m_service->createFile(nbId, "", "signal_test.md");
 
@@ -479,7 +477,7 @@ void TestNotebookService::testNoteUpdatedSignal() {
 
   m_service->createFile(nbId, "", "update_test.md");
 
-  QSignalSpy spy(m_service, &NotebookService::noteUpdated);
+  QSignalSpy spy(m_service, &NotebookCoreService::noteUpdated);
 
   QString metadataJson = R"({"updated": "true"})";
   m_service->updateFileMetadata(nbId, "update_test.md", metadataJson);
@@ -495,7 +493,7 @@ void TestNotebookService::testNoteDeletedSignal() {
 
   m_service->createFile(nbId, "", "delete_test.md");
 
-  QSignalSpy spy(m_service, &NotebookService::noteDeleted);
+  QSignalSpy spy(m_service, &NotebookCoreService::noteDeleted);
 
   m_service->deleteFile(nbId, "delete_test.md");
 
@@ -511,7 +509,7 @@ void TestNotebookService::testTagAddedSignal() {
   m_service->createFile(nbId, "", "tag_signal_test.md");
   m_service->createTag(nbId, "SignalTag");
 
-  QSignalSpy spy(m_service, &NotebookService::tagAdded);
+  QSignalSpy spy(m_service, &NotebookCoreService::tagAdded);
 
   m_service->tagFile(nbId, "tag_signal_test.md", "SignalTag");
 
@@ -522,14 +520,14 @@ void TestNotebookService::testTagAddedSignal() {
 void TestNotebookService::testNotebookOpenedClosedSignals() {
   QString nbPath = m_tempDir.filePath("signal_openclose_notebook");
 
-  QSignalSpy openSpy(m_service, &NotebookService::notebookOpened);
+  QSignalSpy openSpy(m_service, &NotebookCoreService::notebookOpened);
   QString nbId = createTestNotebook(nbPath);
   QVERIFY(!nbId.isEmpty());
 
   QVERIFY(openSpy.wait(1000));
   QCOMPARE(openSpy.count(), 1);
 
-  QSignalSpy closeSpy(m_service, &NotebookService::notebookClosed);
+  QSignalSpy closeSpy(m_service, &NotebookCoreService::notebookClosed);
   m_service->closeNotebook(nbId);
 
   QVERIFY(closeSpy.wait(1000));

@@ -25,7 +25,7 @@
 #include <core/hooknames.h>
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
@@ -51,7 +51,6 @@
 #include <snippet/snippetmgr.h>
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services) {
@@ -362,7 +361,7 @@ void NotebookExplorer2::rebuildDatabase() {
     return;
   }
 
-  auto &notebookService = *m_services.get<NotebookService>();
+  auto &notebookService = *m_services.get<NotebookCoreService>();
 
   // Get notebook name for the dialog.
   QJsonObject config = notebookService.getNotebookConfig(m_currentNotebookId);
@@ -685,7 +684,7 @@ void NotebookExplorer2::newQuickNote() {
 
   if (!scheme.m_folderPath.isEmpty()) {
     // Try to resolve the scheme folder path to a notebook.
-    auto &notebookService = *m_services.get<NotebookService>();
+    auto &notebookService = *m_services.get<NotebookCoreService>();
     QJsonObject resolved = notebookService.resolvePathToNotebook(scheme.m_folderPath);
     if (!resolved.isEmpty()) {
       notebookId = resolved[QStringLiteral("notebookId")].toString();
@@ -723,7 +722,7 @@ void NotebookExplorer2::newQuickNote() {
   QFileInfo finfo(expandedName);
 
   // Get notebook root path to generate unique filename.
-  auto &notebookService = *m_services.get<NotebookService>();
+  auto &notebookService = *m_services.get<NotebookCoreService>();
   QJsonObject notebookConfig = notebookService.getNotebookConfig(notebookId);
   QString rootFolder = notebookConfig[QStringLiteral("rootFolder")].toString();
   QString parentAbsPath = folderPath.isEmpty()
@@ -943,7 +942,7 @@ void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFol
   }
 
   // Use NotebookService to perform the import, then reload
-  auto &notebookService = *m_services.get<NotebookService>();
+  auto &notebookService = *m_services.get<NotebookCoreService>();
   for (const QString &filePath : files) {
     QFileInfo fileInfo(filePath);
     QString destPath = p_targetFolderId.relativePath.isEmpty()
@@ -981,7 +980,7 @@ void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
 
   // Build absolute path
   QString absolutePath;
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   QJsonObject config = notebookService->getNotebookConfig(p_nodeId.notebookId);
   QString rootPath = config.value(QStringLiteral("rootFolder")).toString();
   if (!rootPath.isEmpty()) {

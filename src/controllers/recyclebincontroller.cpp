@@ -4,9 +4,8 @@
 #include <QJsonObject>
 
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 RecycleBinController::RecycleBinController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
@@ -16,7 +15,7 @@ QString RecycleBinController::getRecycleBinPath(const QString &p_notebookId) con
     return QString();
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     return QString();
   }
@@ -29,7 +28,7 @@ QString RecycleBinController::getNotebookName(const QString &p_notebookId) const
     return QString();
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     return QString();
   }
@@ -73,7 +72,7 @@ RecycleBinResult RecycleBinController::emptyRecycleBin(const QString &p_notebook
     return result;
   }
 
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     result.success = false;
     result.errorMessage = tr("NotebookService not available.");

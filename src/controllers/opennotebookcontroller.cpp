@@ -6,11 +6,10 @@
 #include <QJsonObject>
 
 #include <core/servicelocator.h>
-#include <core/services/notebookservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;
-using vnotex::core::NotebookService;
 
 OpenNotebookController::OpenNotebookController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
@@ -48,7 +47,7 @@ OpenNotebookValidationResult OpenNotebookController::validateRootFolder(const QS
   }
 
   // Check for duplicate notebook with same root folder via NotebookService.
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (notebookService) {
     QJsonArray notebooks = notebookService->listNotebooks();
     for (const auto &nb : notebooks) {
@@ -78,7 +77,7 @@ OpenNotebookResult OpenNotebookController::openNotebook(const OpenNotebookInput 
   }
 
   // Get NotebookService.
-  auto *notebookService = m_services.get<NotebookService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService) {
     result.success = false;
     result.errorMessage = tr("NotebookService not available.");
