@@ -38,7 +38,7 @@ public:
   QString id() const;
 
   // Get the node identifier (notebook + relative path) for this buffer.
-  NodeIdentifier nodeId() const;
+  const NodeIdentifier &nodeId() const;
 
   // ============ Buffer Content ============
 

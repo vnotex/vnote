@@ -30,7 +30,7 @@ QString Buffer2::id() const {
   return m_bufferId;
 }
 
-NodeIdentifier Buffer2::nodeId() const {
+const NodeIdentifier &Buffer2::nodeId() const {
   return m_nodeId;
 }
 
