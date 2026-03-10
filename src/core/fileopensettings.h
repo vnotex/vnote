@@ -45,6 +45,34 @@ struct FileOpenSettings {
     map[QStringLiteral("alwaysNewWindow")] = m_alwaysNewWindow;
     return map;
   }
+
+  // Deserialize from a QVariantMap (e.g. from hook arguments).
+  // Missing keys fall back to default values.
+  static FileOpenSettings fromVariantMap(const QVariantMap &p_map) {
+    FileOpenSettings s;
+    if (p_map.contains(QStringLiteral("mode"))) {
+      s.m_mode = static_cast<ViewWindowMode>(p_map.value(QStringLiteral("mode")).toInt());
+    }
+    if (p_map.contains(QStringLiteral("forceMode"))) {
+      s.m_forceMode = p_map.value(QStringLiteral("forceMode")).toBool();
+    }
+    if (p_map.contains(QStringLiteral("focus"))) {
+      s.m_focus = p_map.value(QStringLiteral("focus")).toBool();
+    }
+    if (p_map.contains(QStringLiteral("newFile"))) {
+      s.m_newFile = p_map.value(QStringLiteral("newFile")).toBool();
+    }
+    if (p_map.contains(QStringLiteral("readOnly"))) {
+      s.m_readOnly = p_map.value(QStringLiteral("readOnly")).toBool();
+    }
+    if (p_map.contains(QStringLiteral("lineNumber"))) {
+      s.m_lineNumber = p_map.value(QStringLiteral("lineNumber")).toInt();
+    }
+    if (p_map.contains(QStringLiteral("alwaysNewWindow"))) {
+      s.m_alwaysNewWindow = p_map.value(QStringLiteral("alwaysNewWindow")).toBool();
+    }
+    return s;
+  }
 };
 
 } // namespace vnotex
