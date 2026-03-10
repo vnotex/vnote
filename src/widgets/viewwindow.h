@@ -28,7 +28,7 @@ class FindAndReplaceWidget;
 class StatusWidget;
 class FloatingWidget;
 
-class ViewWindow : public QFrame {
+class VNOTEX_DEPRECATED("Use ViewWindow2 with ServiceLocator pattern instead") ViewWindow : public QFrame {
   Q_OBJECT
 public:
   enum WindowFlag { None = 0, AutoReload = 0x1 };

@@ -17,8 +17,10 @@
 #include <core/servicelocator.h>
 #include <core/services/hookmanager.h>
 #include <core/sessionconfig.h>
+
 #include <qwebengineview.h>
 #include <widgets/notebookexplorer2.h>
+#include <widgets/viewarea2.h>
 #include <widgets/messageboxhelper.h>
 
 using namespace vnotex;
@@ -39,6 +41,8 @@ ServiceLocator &MainWindow2::getServiceLocator() { return m_serviceLocator; }
 
 NotebookExplorer2 *MainWindow2::getNotebookExplorer() const { return m_notebookExplorer; }
 
+ViewArea2 *MainWindow2::getViewArea() const { return m_viewArea; }
+
 void MainWindow2::setupUI() {
   // Window title
   setWindowTitle(tr("VNote"));
@@ -46,9 +50,8 @@ void MainWindow2::setupUI() {
   // Minimum size: 800x600
   setMinimumSize(800, 600);
 
-  // Empty central widget placeholder
-  auto *centralWidget = new QWidget(this);
-  setCentralWidget(centralWidget);
+  // Setup ViewArea2 as central widget.
+  setupViewArea();
 
   // Setup tool bar.
   setupToolBar();
@@ -100,6 +103,12 @@ void MainWindow2::loadStateAndGeometry() {
   QByteArray explorerState = sessionConfig.getNotebookExplorerSession();
   if (!explorerState.isEmpty()) {
     m_notebookExplorer->restoreState(explorerState);
+  }
+
+  // Load view area layout (new architecture).
+  if (m_viewArea) {
+    QJsonObject layout = sessionConfig.getViewAreaLayout();
+    m_viewArea->loadLayout(layout);
   }
 }
 
@@ -192,6 +201,11 @@ void MainWindow2::saveStateAndGeometry() {
   sessionConfig.setMainWindowStateGeometry(sg);
 
   sessionConfig.setNotebookExplorerSession(m_notebookExplorer->saveState());
+
+  // Save view area layout (new architecture).
+  if (m_viewArea) {
+    sessionConfig.setViewAreaLayout(m_viewArea->saveLayout());
+  }
 }
 
 void MainWindow2::setupNotebookExplorer() {
@@ -208,6 +222,11 @@ void MainWindow2::setupNotebookExplorer() {
           &NotebookExplorer2::importFile);
   connect(this, &MainWindow2::importFolderRequested, m_notebookExplorer,
           &NotebookExplorer2::importFolder);
+}
+
+void MainWindow2::setupViewArea() {
+  m_viewArea = new ViewArea2(m_serviceLocator, this);
+  setCentralWidget(m_viewArea);
 }
 
 void MainWindow2::setupDocks() {

@@ -50,7 +50,7 @@ struct ViewWorkspace {
 // ViewArea -- ViewSplit -- ViewWindow.
 // ViewSplit may be put within a splitter.
 // There may be multiple ViewWindow for the same buffer.
-class ViewArea : public QWidget, public NavigationMode {
+class VNOTEX_DEPRECATED("Use ViewArea2 with ServiceLocator pattern instead") ViewArea : public QWidget, public NavigationMode {
   Q_OBJECT
 public:
   explicit ViewArea(QWidget *p_parent = nullptr);

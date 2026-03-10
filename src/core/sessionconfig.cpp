@@ -76,6 +76,8 @@ void SessionConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_viewAreaSession = readByteArray(p_jobj, QStringLiteral("viewareaSession"));
 
+  m_viewAreaLayout = p_jobj[QStringLiteral("viewAreaLayout")].toObject();
+
   m_notebookExplorerSession =
       readByteArray(p_jobj, QStringLiteral("notebookExplorerSession"));
 
@@ -168,6 +170,9 @@ QJsonObject SessionConfig::toJson() const {
   obj[QStringLiteral("export")] = saveExportOption();
   obj[QStringLiteral("searchOption")] = m_searchOption.toJson();
   writeByteArray(obj, QStringLiteral("viewareaSession"), m_viewAreaSession);
+  if (!m_viewAreaLayout.isEmpty()) {
+    obj[QStringLiteral("viewAreaLayout")] = m_viewAreaLayout;
+  }
   writeByteArray(obj, QStringLiteral("notebookExplorerSession"), m_notebookExplorerSession);
   obj[QStringLiteral("externalPrograms")] = saveExternalPrograms();
   obj[QStringLiteral("history")] = saveHistory();
@@ -289,6 +294,12 @@ QByteArray SessionConfig::getNotebookExplorerSession() const {
 
 void SessionConfig::setNotebookExplorerSession(const QByteArray &p_bytes) {
   updateConfigWithoutCheck(m_notebookExplorerSession, p_bytes, this);
+}
+
+QJsonObject SessionConfig::getViewAreaLayout() const { return m_viewAreaLayout; }
+
+void SessionConfig::setViewAreaLayout(const QJsonObject &p_layout) {
+  updateConfigWithoutCheck(m_viewAreaLayout, p_layout, this);
 }
 
 const QString &SessionConfig::getFlashPage() const { return m_flashPage; }

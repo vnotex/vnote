@@ -154,7 +154,7 @@ QIcon NotebookSelector2::generateItemIcon(const QString &p_name, const QIcon &p_
 
   QString fg, bg;
   fetchIconColor(p_name, fg, bg);
-  return IconUtils::drawTextRectIcon(p_name.at(0).toUpper(), fg, bg, "", 50, 58);
+  return IconUtils::drawTextRectIcon(p_name.at(0).toUpper(), fg, bg, "", 50, 60, 8);
 }
 
 QString NotebookSelector2::generateItemToolTip(const QString &p_name, const QString &p_rootPath,

@@ -66,6 +66,16 @@ bool BufferService::closeBuffer(const QString &p_bufferId) {
   return ok;
 }
 
+// ============ Buffer Handle ============
+
+Buffer2 BufferService::getBufferHandle(const QString &p_bufferId,
+                                       const NodeIdentifier &p_nodeId) {
+  if (p_bufferId.isEmpty()) {
+    return Buffer2();
+  }
+  return Buffer2(coreService(), m_hookMgr, p_bufferId, p_nodeId);
+}
+
 // ============ Pass-through methods ============
 
 QJsonObject BufferService::getBuffer(const QString &p_bufferId) const {

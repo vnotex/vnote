@@ -38,6 +38,13 @@ public:
   // Fires FileBeforeClose (cancellable) and FileAfterClose.
   bool closeBuffer(const QString &p_bufferId);
 
+  // ============ Buffer Handle ============
+
+  // Get a Buffer2 handle for an already-open buffer by ID.
+  // Useful when you have a buffer ID (e.g., from a hook) and need a handle.
+  // Returns an invalid Buffer2 if the buffer ID is not valid.
+  Buffer2 getBufferHandle(const QString &p_bufferId, const NodeIdentifier &p_nodeId);
+
   // ============ Buffer Queries (pass-through) ============
 
   // Get buffer configuration as JSON.

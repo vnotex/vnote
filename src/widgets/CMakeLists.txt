@@ -136,9 +136,12 @@ target_sources(vnote PRIVATE
     treewidget.cpp treewidget.h
     treewidgetitem.cpp treewidgetitem.h
     viewarea.cpp viewarea.h
+    viewarea2.cpp viewarea2.h
     viewareasession.cpp viewareasession.h
     viewsplit.cpp viewsplit.h
+    viewsplit2.cpp viewsplit2.h
     viewwindow.cpp viewwindow.h
+    viewwindow2.cpp viewwindow2.h
     viewwindowsession.cpp viewwindowsession.h
     viewwindowtoolbarhelper.cpp viewwindowtoolbarhelper.h
     webpage.cpp webpage.h

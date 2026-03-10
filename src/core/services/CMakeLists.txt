@@ -9,6 +9,7 @@ set(SERVICES_SOURCES
   filetypecoreservice.cpp
   templateservice.cpp
   hookmanager.cpp
+  workspacecoreservice.cpp
   ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/fileutils.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
@@ -24,6 +25,7 @@ set(SERVICES_HEADERS
   filetypecoreservice.h
   templateservice.h
   hookmanager.h
+  workspacecoreservice.h
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})

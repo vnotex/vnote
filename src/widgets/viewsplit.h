@@ -16,7 +16,7 @@ namespace vnotex {
 class ViewWindow;
 struct ViewWorkspace;
 
-class ViewSplit : public QTabWidget {
+class VNOTEX_DEPRECATED("Use ViewSplit2 with ServiceLocator pattern instead") ViewSplit : public QTabWidget {
   Q_OBJECT
 public:
   typedef std::function<bool(ViewWindow *)> ViewWindowSelector;

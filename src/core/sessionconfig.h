@@ -106,6 +106,10 @@ public:
   QByteArray getViewAreaSessionAndClear();
   void setViewAreaSession(const QByteArray &p_bytes);
 
+  // Get the view area layout (new architecture, JSON-based).
+  QJsonObject getViewAreaLayout() const;
+  void setViewAreaLayout(const QJsonObject &p_layout);
+
   QByteArray getNotebookExplorerSession() const;
   void setNotebookExplorerSession(const QByteArray &p_bytes);
 
@@ -179,6 +183,9 @@ private:
   SearchOption m_searchOption;
 
   QByteArray m_viewAreaSession;
+
+  // New architecture: JSON-based view area layout (splitter tree + workspace mapping).
+  QJsonObject m_viewAreaLayout;
 
   QByteArray m_notebookExplorerSession;
 

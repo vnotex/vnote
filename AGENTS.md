@@ -159,6 +159,19 @@ void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &p_parentI
 | `BufferService` privately inherits `BufferCoreService` | Hook-aware wrapper that fires `vnote.file.*` hooks around core operations |
 | `NodeIdentifier` is a standalone value type | Identifies a node by `notebookId` + `relativePath`; used by `Buffer2`, controllers, and views |
 
+### Key Design Decisions (ViewArea2 Framework)
+
+| Decision | Rationale |
+|----------|-----------|
+| `ViewAreaController` is the orchestrator | Handles open/close/split/move logic, fires hooks, uses WorkspaceCoreService |
+| `ViewArea2` is a pure view | Owns QSplitter tree + ViewSplit2 instances, no business logic |
+| `ViewSplit2` maps 1:1 to vxcore workspace | Each tab widget pane corresponds to one `WorkspaceCoreService` workspace |
+| `ViewWindow2` receives `Buffer2` in constructor | Not attach/detach pattern; one window = one buffer for its lifetime |
+| `ViewWindowFactory` maps file types to creators | Registry pattern; plugins register creators for new file types |
+| Splitter orientation follows Vim convention | Left/Right split → `Qt::Horizontal`, Up/Down split → `Qt::Vertical` |
+| Session layout stored as JSON in `SessionConfig` | Recursive splitter tree + workspace IDs for full layout persistence |
+| Framework only — no concrete ViewWindow implementations | `MarkdownViewWindow2`, etc. will be added separately |
+
 ### Directory Structure (New Architecture)
 
 ```
@@ -176,7 +189,9 @@ src/
 │   │   ├── bufferservice.h/.cpp    # Hook-aware wrapper, returns Buffer2
 │   │   ├── buffer2.h/.cpp          # Lightweight buffer handle (like QModelIndex)
 │   │   ├── templateservice.h/.cpp
+│   │   ├── workspacecoreservice.h/.cpp  # Workspace operations (split pane ↔ vxcore workspace)
 │   │   └── hookmanager.h/.cpp
+│   ├── viewwindowfactory.h/.cpp  # Registry mapping file types to ViewWindow2 creators
 │   ├── hookcontext.h       # Hook callback context
 │   ├── hooknames.h         # Hook name constants
 │   ├── configmgr2.h/.cpp   # High-level config manager using DI
@@ -197,13 +212,17 @@ src/
 │   ├── opennotebookcontroller.h/.cpp  # Open notebook flow controller
 │   ├── managenotebookscontroller.h/.cpp
 │   ├── importfoldercontroller.h/.cpp
-│   └── recyclebincontroller.h/.cpp
+│   ├── recyclebincontroller.h/.cpp
+│   └── viewareacontroller.h/.cpp      # View area orchestrator (open/close/split/move)
 ├── widgets/                # UI widgets (views receiving ServiceLocator&)
 │   ├── mainwindow.h        # Legacy main window
 │   ├── mainwindow2.h/.cpp  # New main window shell
 │   ├── notebookexplorer2.h/.cpp
 │   ├── notebookselector2.h/.cpp
 │   ├── toolbarhelper2.h/.cpp
+│   ├── viewwindow2.h/.cpp  # Abstract base for file viewer windows
+│   ├── viewsplit2.h/.cpp   # QTabWidget-based split pane (one vxcore workspace)
+│   ├── viewarea2.h/.cpp    # Splitter tree view (manages ViewSplit2 layout)
 │   └── dialogs/            # Dialog widgets (new architecture)
 │       ├── newnotedialog2.h/.cpp
 │       ├── newfolderdialog2.h/.cpp
@@ -282,6 +301,7 @@ MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
 | `SearchCoreService` | Content and file search | `searchFiles()`, `searchContent()`, `searchByTags()` |
 | `FileTypeCoreService` | File type detection | `getFileType()`, `getFileTypeBySuffix()`, `getAllFileTypes()` |
 | `TemplateService` | Note template management | `getTemplates()`, `getTemplateContent()`, `getTemplateFilePath()` |
+| `WorkspaceCoreService` | Workspace (split pane) operations via vxcore | `createWorkspace()`, `deleteWorkspace()`, `listWorkspaces()`, `addBuffer()`, `removeBuffer()` |
 | `HookManager` | Plugin hook system | `addAction()`, `doAction()`, `addFilter()`, `applyFilters()` |
 
 ### Buffer2 Handle Pattern
@@ -455,6 +475,15 @@ void MyClass::doSomething() {
 **UI Events:**
 - `vnote.ui.mainwindow.before_show` / `after_show`
 - `vnote.ui.contextmenu.before_show`
+
+**ViewSplit Events:**
+- `vnote.viewsplit.before_create` / `after_create`
+- `vnote.viewsplit.before_remove` / `after_remove`
+
+**ViewWindow Events:**
+- `vnote.viewwindow.before_open` / `after_open`
+- `vnote.viewwindow.before_close` / `after_close`
+- `vnote.viewwindow.before_move` / `after_move`
 
 **Filters:**
 - `vnote.filter.node_display_name`

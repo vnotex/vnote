@@ -19,6 +19,7 @@ namespace vnotex {
 
 class ServiceLocator;
 class NotebookExplorer2;
+class ViewArea2;
 
 class ToolBarHelper2;
 // MainWindow2 is a minimal QMainWindow shell for the new clean architecture.
@@ -41,6 +42,9 @@ public:
 
   // Access NotebookExplorer2.
   NotebookExplorer2 *getNotebookExplorer() const;
+
+  // Access ViewArea2.
+  ViewArea2 *getViewArea() const;
 
   QWidget *getDockWidget(DockWidgetHelper::DockType p_dockType) const;
 
@@ -91,6 +95,9 @@ private:
   // Setup NotebookExplorer2 as dock widget.
   void setupNotebookExplorer();
 
+  // Setup ViewArea2 as central widget.
+  void setupViewArea();
+
   // Setup dock widgets.
   void setupDocks();
 
@@ -109,6 +116,9 @@ private:
 
   // NotebookExplorer2 dock widget.
   NotebookExplorer2 *m_notebookExplorer = nullptr;
+
+  // ViewArea2 central widget.
+  ViewArea2 *m_viewArea = nullptr;
 
   // Toolbar helper.
   ToolBarHelper2 *m_toolBarHelper = nullptr;

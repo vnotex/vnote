@@ -113,6 +113,60 @@ inline const QLatin1String MainWindowAfterShow("vnote.ui.mainwindow.after_show")
 // Before the context menu is shown
 inline const QLatin1String ContextMenuBeforeShow("vnote.ui.contextmenu.before_show");
 
+// ===== ViewArea Events =====
+// Triggered for view area split/layout operations
+
+// Before a view split is created
+inline const QLatin1String ViewSplitBeforeCreate("vnote.viewarea.split.before_create");
+
+// After a view split is created
+inline const QLatin1String ViewSplitAfterCreate("vnote.viewarea.split.after_create");
+
+// Before a view split is removed
+inline const QLatin1String ViewSplitBeforeRemove("vnote.viewarea.split.before_remove");
+
+// After a view split is removed
+inline const QLatin1String ViewSplitAfterRemove("vnote.viewarea.split.after_remove");
+
+// Before the active view split changes
+inline const QLatin1String ViewSplitBeforeActivate("vnote.viewarea.split.before_activate");
+
+// After the active view split changes
+inline const QLatin1String ViewSplitAfterActivate("vnote.viewarea.split.after_activate");
+
+// ===== ViewWindow Events =====
+// Triggered for view window (tab) operations
+
+// Before a view window is opened in a split
+inline const QLatin1String ViewWindowBeforeOpen("vnote.viewarea.window.before_open");
+
+// After a view window is opened in a split
+inline const QLatin1String ViewWindowAfterOpen("vnote.viewarea.window.after_open");
+
+// Before a view window is closed
+inline const QLatin1String ViewWindowBeforeClose("vnote.viewarea.window.before_close");
+
+// After a view window is closed
+inline const QLatin1String ViewWindowAfterClose("vnote.viewarea.window.after_close");
+
+// Before a view window is moved between splits
+inline const QLatin1String ViewWindowBeforeMove("vnote.viewarea.window.before_move");
+
+// After a view window is moved between splits
+inline const QLatin1String ViewWindowAfterMove("vnote.viewarea.window.after_move");
+
+// Before the active view window changes within a split
+inline const QLatin1String ViewWindowBeforeActivate("vnote.viewarea.window.before_activate");
+
+// After the active view window changes within a split
+inline const QLatin1String ViewWindowAfterActivate("vnote.viewarea.window.after_activate");
+
+// Before view window mode changes (read/edit)
+inline const QLatin1String ViewWindowBeforeModeChange("vnote.viewarea.window.before_mode_change");
+
+// After view window mode changes (read/edit)
+inline const QLatin1String ViewWindowAfterModeChange("vnote.viewarea.window.after_mode_change");
+
 // ===== Filter Hooks =====
 // Filters transform data and return modified values
 
