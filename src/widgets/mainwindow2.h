@@ -106,7 +106,12 @@ private:
 
   void setupSystemTray();
 
+  // Restore only window geometry and dock state (safe to call before event loop).
+  void restoreWindowGeometry();
+
+  // Restore explorer state and view area layout (must be called after show()).
   void loadStateAndGeometry();
+
   void saveStateAndGeometry();
 
   // Non-owning reference to ServiceLocator.

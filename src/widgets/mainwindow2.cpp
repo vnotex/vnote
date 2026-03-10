@@ -32,7 +32,10 @@ MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
       m_serviceLocator(p_serviceLocator) {
   setupUI();
 
-  loadStateAndGeometry();
+  // Restore window geometry/state early so the window appears at the right
+  // size and position.  View-area layout is deferred to kickOffPostInit()
+  // to avoid creating splits before the event loop is running.
+  restoreWindowGeometry();
 }
 
 MainWindow2::~MainWindow2() {}
@@ -87,7 +90,7 @@ void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen) {
   });
 }
 
-void MainWindow2::loadStateAndGeometry() {
+void MainWindow2::restoreWindowGeometry() {
   const auto &sessionConfig = m_serviceLocator.get<ConfigMgr2>()->getSessionConfig();
   const auto sg = sessionConfig.getMainWindowStateGeometry();
 
@@ -99,6 +102,10 @@ void MainWindow2::loadStateAndGeometry() {
     // Will also restore the state of dock widgets.
     restoreState(sg.m_mainState);
   }
+}
+
+void MainWindow2::loadStateAndGeometry() {
+  const auto &sessionConfig = m_serviceLocator.get<ConfigMgr2>()->getSessionConfig();
 
   QByteArray explorerState = sessionConfig.getNotebookExplorerSession();
   if (!explorerState.isEmpty()) {
