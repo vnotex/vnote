@@ -42,8 +42,9 @@ public:
 
   // Get a Buffer2 handle for an already-open buffer by ID.
   // Useful when you have a buffer ID (e.g., from a hook) and need a handle.
+  // Constructs NodeIdentifier internally from vxcore buffer info.
   // Returns an invalid Buffer2 if the buffer ID is not valid.
-  Buffer2 getBufferHandle(const QString &p_bufferId, const NodeIdentifier &p_nodeId);
+  Buffer2 getBufferHandle(const QString &p_bufferId);
 
   // ============ Buffer Queries (pass-through) ============
 

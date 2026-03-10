@@ -68,12 +68,23 @@ bool BufferService::closeBuffer(const QString &p_bufferId) {
 
 // ============ Buffer Handle ============
 
-Buffer2 BufferService::getBufferHandle(const QString &p_bufferId,
-                                       const NodeIdentifier &p_nodeId) {
+Buffer2 BufferService::getBufferHandle(const QString &p_bufferId) {
   if (p_bufferId.isEmpty()) {
     return Buffer2();
   }
-  return Buffer2(coreService(), m_hookMgr, p_bufferId, p_nodeId);
+
+  // Query vxcore for the buffer info to construct NodeIdentifier.
+  QJsonObject bufJson = BufferCoreService::getBuffer(p_bufferId);
+  if (bufJson.isEmpty()) {
+    qWarning() << "BufferService::getBufferHandle: buffer not found for" << p_bufferId;
+    return Buffer2();
+  }
+
+  NodeIdentifier nodeId;
+  nodeId.notebookId = bufJson.value(QStringLiteral("notebookId")).toString();
+  nodeId.relativePath = bufJson.value(QStringLiteral("filePath")).toString();
+
+  return Buffer2(coreService(), m_hookMgr, p_bufferId, nodeId);
 }
 
 // ============ Pass-through methods ============
