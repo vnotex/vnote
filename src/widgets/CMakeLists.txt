@@ -126,6 +126,7 @@ target_sources(vnote PRIVATE
     tagpopup.cpp tagpopup.h
     tagviewer.cpp tagviewer.h
     textviewwindow.cpp textviewwindow.h
+    textviewwindow2.cpp textviewwindow2.h
     textviewwindowhelper.h
     titlebar.cpp titlebar.h
     titletoolbar.cpp titletoolbar.h
