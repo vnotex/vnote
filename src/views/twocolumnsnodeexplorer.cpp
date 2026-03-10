@@ -4,16 +4,16 @@
 #include <QSplitter>
 #include <QVBoxLayout>
 
+#include <controllers/notebooknodecontroller.h>
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/widgetconfig.h>
-#include <controllers/notebooknodecontroller.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
-#include <views/notebooknodeview.h>
-#include <views/notebooknodedelegate.h>
-#include <views/filenodedelegate.h>
 #include <views/filelistview.h>
+#include <views/filenodedelegate.h>
+#include <views/notebooknodedelegate.h>
+#include <views/notebooknodeview.h>
 
 using namespace vnotex;
 
@@ -333,14 +333,14 @@ NodeInfo TwoColumnsNodeExplorer::getNodeInfo(const NodeIdentifier &p_nodeId) con
   return info;
 }
 
-NotebookNodeController *TwoColumnsNodeExplorer::controllerForNode(
-    const NodeIdentifier &p_nodeId) const {
+NotebookNodeController *
+TwoColumnsNodeExplorer::controllerForNode(const NodeIdentifier &p_nodeId) const {
   NodeInfo info = getNodeInfo(p_nodeId);
   return info.isFolder ? m_folderController : m_fileController;
 }
 
 void TwoColumnsNodeExplorer::handleRenameResult(const NodeIdentifier &p_nodeId,
-                                                 const QString &p_newName) {
+                                                const QString &p_newName) {
   NotebookNodeController *controller = controllerForNode(p_nodeId);
   if (controller) {
     controller->handleRenameResult(p_nodeId, p_newName);
@@ -348,7 +348,7 @@ void TwoColumnsNodeExplorer::handleRenameResult(const NodeIdentifier &p_nodeId,
 }
 
 void TwoColumnsNodeExplorer::handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds,
-                                                    bool p_permanent) {
+                                                   bool p_permanent) {
   if (p_nodeIds.isEmpty()) {
     return;
   }
@@ -470,8 +470,7 @@ void TwoColumnsNodeExplorer::onFolderSelectionChanged(const QList<NodeIdentifier
     // External folders cannot be listed - clear file view instead
     QModelIndex sourceIdx = m_folderModel->indexFromNodeId(folderId);
     if (sourceIdx.isValid()) {
-      bool isExternal =
-          m_folderModel->data(sourceIdx, NotebookNodeModel::IsExternalRole).toBool();
+      bool isExternal = m_folderModel->data(sourceIdx, NotebookNodeModel::IsExternalRole).toBool();
       if (isExternal) {
         // Clear file view by setting invalid display root
         m_fileModel->setDisplayRoot(NodeIdentifier());
@@ -489,7 +488,8 @@ void TwoColumnsNodeExplorer::onFolderSelectionChanged(const QList<NodeIdentifier
   m_fileModel->setDisplayRoot(folderId);
 }
 
-void TwoColumnsNodeExplorer::onFolderContextMenu(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos) {
+void TwoColumnsNodeExplorer::onFolderContextMenu(const NodeIdentifier &p_nodeId,
+                                                 const QPoint &p_globalPos) {
   QMenu *menu = m_folderController->createContextMenu(p_nodeId, this);
   if (menu) {
     menu->exec(p_globalPos);
@@ -498,7 +498,7 @@ void TwoColumnsNodeExplorer::onFolderContextMenu(const NodeIdentifier &p_nodeId,
 }
 
 void TwoColumnsNodeExplorer::onFileContextMenu(const NodeIdentifier &p_nodeId,
-                                                const QPoint &p_globalPos) {
+                                               const QPoint &p_globalPos) {
   // If no specific node was clicked, use the current display root
   NodeIdentifier effectiveNodeId = p_nodeId;
   if (!effectiveNodeId.isValid() && m_fileModel) {
