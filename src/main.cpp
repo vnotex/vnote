@@ -20,6 +20,7 @@
 #include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/searchcoreservice.h>
+#include <core/services/workspacecoreservice.h>
 #include <core/services/filetypecoreservice.h>
 #include <gui/services/themeservice.h>
 #include <core/services/templateservice.h>
@@ -156,6 +157,7 @@ int main(int argc, char *argv[]) {
     ConfigCoreService configService(context);
     NotebookCoreService notebookService(context);
     SearchCoreService searchService(context);
+    WorkspaceCoreService workspaceService(context);
     HookManager hookManager;
     BufferService bufferService(context, &hookManager);
 
@@ -163,6 +165,7 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<NotebookCoreService>(&notebookService);
     serviceLocator.registerService<BufferService>(&bufferService);
     serviceLocator.registerService<SearchCoreService>(&searchService);
+    serviceLocator.registerService<WorkspaceCoreService>(&workspaceService);
     serviceLocator.registerService<HookManager>(&hookManager);
     qInfo() << "Services registered (including HookManager)";
 
