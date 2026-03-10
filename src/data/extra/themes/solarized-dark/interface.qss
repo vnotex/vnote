@@ -1186,3 +1186,8 @@ vnotex--EntryPopup {
 vnotex--FileListView::item {
     border-bottom: 1px solid @palette#bg1_3;
 }
+
+/* ViewArea2 */
+vnotex--ViewArea2 {
+    border-top: 1px solid @widgets#qmainwindow#separator#bg;
+}
