@@ -26,6 +26,10 @@ const Buffer2 &ViewWindow2::getBuffer() const {
   return m_buffer;
 }
 
+Buffer2 &ViewWindow2::getBuffer() {
+  return m_buffer;
+}
+
 const NodeIdentifier &ViewWindow2::getNodeId() const {
   return m_buffer.nodeId();
 }

@@ -2,6 +2,8 @@
 
 #include <QDebug>
 
+#include <widgets/textviewwindow2.h>
+
 using namespace vnotex;
 
 ViewWindowFactory::ViewWindowFactory(QObject *p_parent)
@@ -9,6 +11,14 @@ ViewWindowFactory::ViewWindowFactory(QObject *p_parent)
 }
 
 ViewWindowFactory::~ViewWindowFactory() {
+}
+
+void ViewWindowFactory::registerBuiltInCreators() {
+  registerCreator("text",
+                  [](ServiceLocator &p_services, const Buffer2 &p_buffer,
+                     QWidget *p_parent) -> ViewWindow2 * {
+                    return new TextViewWindow2(p_services, p_buffer, p_parent);
+                  });
 }
 
 void ViewWindowFactory::registerCreator(const QString &p_fileType, CreatorFunc p_creator) {

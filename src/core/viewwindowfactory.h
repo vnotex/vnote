@@ -28,6 +28,10 @@ public:
   explicit ViewWindowFactory(QObject *p_parent = nullptr);
   ~ViewWindowFactory() override;
 
+  // Register all built-in file type creators (text, markdown, etc.).
+  // Called once during startup to populate the factory.
+  void registerBuiltInCreators();
+
   // Register a creator for a file type (e.g., "markdown", "text", "pdf").
   // Overwrites any existing creator for that type.
   void registerCreator(const QString &p_fileType, CreatorFunc p_creator);

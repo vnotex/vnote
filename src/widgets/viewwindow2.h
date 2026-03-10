@@ -48,6 +48,9 @@ public:
   // Get the buffer handle associated with this window.
   const Buffer2 &getBuffer() const;
 
+  // Get the mutable buffer handle (for content writes, save, etc.).
+  Buffer2 &getBuffer();
+
   // Get the node identifier (notebook + relative path) for this window's file.
   const NodeIdentifier &getNodeId() const;
 
