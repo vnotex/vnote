@@ -10,6 +10,7 @@
 #include <core/global.h>
 
 class QSplitter;
+class QStackedLayout;
 class QVBoxLayout;
 
 namespace vnotex {
@@ -18,6 +19,7 @@ class ServiceLocator;
 class ViewSplit2;
 class ViewWindow2;
 class ViewAreaController;
+class ViewAreaHomeWidget;
 class Buffer2;
 class ViewWindowFactory;
 
@@ -103,8 +105,24 @@ private:
   static QJsonObject serializeWidget(const QWidget *p_widget);
   void deserializeSplitterNode(const QJsonObject &p_node, QSplitter *p_splitter);
 
+  // Screen switching: show Home when no windows, Contents when >= 1.
+  void showHomeScreen();
+  void showContentsScreen();
+  void updateScreenVisibility();
+
+  // Stack page indices.
+  enum StackPage { HomeScreen = 0, ContentsScreen = 1 };
+
   ServiceLocator &m_services;
-  QVBoxLayout *m_mainLayout = nullptr;
+  QStackedLayout *m_stackedLayout = nullptr;
+
+  // Page 0: placeholder home widget.
+  ViewAreaHomeWidget *m_homeWidget = nullptr;
+
+  // Page 1: container for the splitter tree / single ViewSplit2.
+  QWidget *m_contentsWidget = nullptr;
+  QVBoxLayout *m_contentsLayout = nullptr;
+
   QWidget *m_topWidget = nullptr;
   ViewAreaController *m_controller = nullptr;
 

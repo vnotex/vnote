@@ -3,6 +3,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QSplitter>
+#include <QStackedLayout>
 #include <QVBoxLayout>
 
 #include <controllers/viewareacontroller.h>
@@ -11,6 +12,7 @@
 #include <core/services/workspacecoreservice.h>
 #include <core/viewwindowfactory.h>
 
+#include "viewareahomewidget.h"
 #include "viewsplit2.h"
 #include "viewwindow2.h"
 
@@ -19,8 +21,24 @@ using namespace vnotex;
 ViewArea2::ViewArea2(ServiceLocator &p_services, QWidget *p_parent)
     : QWidget(p_parent), m_services(p_services) {
   setContentsMargins(0, 0, 0, 0);
-  m_mainLayout = new QVBoxLayout(this);
-  m_mainLayout->setContentsMargins(0, 0, 0, 0);
+
+  m_stackedLayout = new QStackedLayout(this);
+  m_stackedLayout->setContentsMargins(0, 0, 0, 0);
+
+  // Page 0: Home screen.
+  m_homeWidget = new ViewAreaHomeWidget(this);
+  m_stackedLayout->addWidget(m_homeWidget);
+
+  // Page 1: Contents screen (container for the splitter tree).
+  m_contentsWidget = new QWidget(this);
+  m_contentsWidget->setContentsMargins(0, 0, 0, 0);
+  m_contentsLayout = new QVBoxLayout(m_contentsWidget);
+  m_contentsLayout->setContentsMargins(0, 0, 0, 0);
+  m_stackedLayout->addWidget(m_contentsWidget);
+
+  // Start on the Home screen.
+  m_stackedLayout->setCurrentIndex(HomeScreen);
+
   setupController();
 }
 
@@ -95,7 +113,7 @@ ViewSplit2 *ViewArea2::splitAt(ViewSplit2 *p_split, Direction p_direction,
 
   if (!parentSplitter) {
     auto *splitter = createSplitter(orient);
-    m_mainLayout->removeWidget(p_split);
+    m_contentsLayout->removeWidget(p_split);
     if (insertBefore) {
       splitter->addWidget(newSplit);
       splitter->addWidget(p_split);
@@ -127,7 +145,7 @@ ViewSplit2 *ViewArea2::splitAt(ViewSplit2 *p_split, Direction p_direction,
 void ViewArea2::removeViewSplit(ViewSplit2 *p_split) {
   auto *parentSplitter = findParentSplitter(p_split);
   if (!parentSplitter) {
-    m_mainLayout->removeWidget(p_split);
+    m_contentsLayout->removeWidget(p_split);
     p_split->setParent(nullptr);
     m_topWidget = nullptr;
     return;
@@ -206,9 +224,9 @@ int ViewArea2::getViewSplitCount() const { return getAllViewSplits().size(); }
 QWidget *ViewArea2::getTopWidget() const { return m_topWidget; }
 
 void ViewArea2::setTopWidget(QWidget *p_widget) {
-  if (m_topWidget) { m_mainLayout->removeWidget(m_topWidget); }
+  if (m_topWidget) { m_contentsLayout->removeWidget(m_topWidget); }
   m_topWidget = p_widget;
-  if (m_topWidget) { m_mainLayout->addWidget(m_topWidget); }
+  if (m_topWidget) { m_contentsLayout->addWidget(m_topWidget); }
 }
 
 QJsonObject ViewArea2::saveLayout() const {
@@ -279,6 +297,7 @@ void ViewArea2::onAddFirstViewSplitRequested(const QString &p_workspaceId) {
   auto *split = addFirstViewSplit(p_workspaceId);
   wireSplitSignals(split);
   m_controller->setCurrentViewSplit(p_workspaceId, true);
+  updateScreenVisibility();
 }
 
 void ViewArea2::onSplitRequested(const QString &p_workspaceId, Direction p_direction,
@@ -332,6 +351,7 @@ void ViewArea2::onOpenBufferRequested(const Buffer2 &p_buffer, const QString &p_
   m_windows[id] = win;
   split->addViewWindow(win);
   m_controller->onViewWindowOpened(id, p_buffer, p_settings);
+  updateScreenVisibility();
 }
 
 void ViewArea2::onCloseViewWindowRequested(ID p_windowId, bool p_force) {
@@ -361,6 +381,7 @@ void ViewArea2::onCloseViewWindowRequested(ID p_windowId, bool p_force) {
   delete win;
 
   m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId);
+  updateScreenVisibility();
 }
 
 void ViewArea2::onSetCurrentViewSplitRequested(const QString &p_workspaceId, bool p_focus) {
@@ -443,6 +464,7 @@ void ViewArea2::onLoadLayoutRequested(const QJsonObject &p_layout) {
     auto *split = splitForWorkspace(currentWsId);
     if (split) { m_controller->setCurrentViewSplit(currentWsId, true); }
   }
+  updateScreenVisibility();
 }
 
 QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) {
@@ -542,7 +564,7 @@ void ViewArea2::unwrapSingleChildSplitter(QSplitter *p_splitter) {
   QWidget *child = p_splitter->widget(0);
   auto *grandParent = findParentSplitter(p_splitter);
   if (!grandParent) {
-    m_mainLayout->removeWidget(p_splitter);
+    m_contentsLayout->removeWidget(p_splitter);
     child->setParent(nullptr);
     p_splitter->setParent(nullptr);
     setTopWidget(child);
@@ -571,4 +593,21 @@ ViewSplit2 *ViewArea2::findLastViewSplit(QWidget *p_widget) {
     return findLastViewSplit(splitter->widget(splitter->count() - 1));
   }
   return nullptr;
+}
+
+// ============ Screen switching ============
+
+void ViewArea2::showHomeScreen() {
+  m_stackedLayout->setCurrentIndex(HomeScreen);
+}
+
+void ViewArea2::showContentsScreen() {
+  m_stackedLayout->setCurrentIndex(ContentsScreen);
+}
+
+void ViewArea2::updateScreenVisibility() {
+  const int targetPage = m_windows.isEmpty() ? HomeScreen : ContentsScreen;
+  if (m_stackedLayout->currentIndex() != targetPage) {
+    m_stackedLayout->setCurrentIndex(targetPage);
+  }
 }
