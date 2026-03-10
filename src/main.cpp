@@ -24,6 +24,7 @@
 #include <core/services/filetypecoreservice.h>
 #include <gui/services/themeservice.h>
 #include <core/services/templateservice.h>
+#include <core/viewwindowfactory.h>
 #include <gui/utils/widgetutils.h>
 #include <core/sessionconfig.h>
 #include <core/singleinstanceguard.h>
@@ -31,6 +32,7 @@
 #include <vxcore/vxcore.h>
 #include <widgets/mainwindow2.h>
 #include <widgets/messageboxhelper.h>
+#include <vtextedit/vtexteditor.h>
 
 #include "application.h"
 #include "commandlineoptions.h"
@@ -185,6 +187,12 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<TemplateService>(&templateService);
     qInfo() << "TemplateService registered";
 
+    // Create ViewWindowFactory and register built-in file type creators
+    ViewWindowFactory viewWindowFactory;
+    viewWindowFactory.registerBuiltInCreators();
+    serviceLocator.registerService<ViewWindowFactory>(&viewWindowFactory);
+    qInfo() << "ViewWindowFactory registered";
+
     setOpenGLOption(configMgr);
 
     disableSandboxIfNeeded();
@@ -203,6 +211,11 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<ThemeService>(&themeService);
     app.setThemeService(&themeService);
     qInfo() << "ThemeService registered";
+
+    // Initialize syntax highlighting repository (must happen before any TextEditor is created).
+    // Legacy equivalent: VNoteX::initThemeMgr() -> ThemeMgr::addSyntaxHighlightingSearchPaths().
+    vte::VTextEditor::addSyntaxCustomSearchPaths(
+        QStringList() << configMgr.getConfigDataFolder(ConfigMgr2::SyntaxHighlighting));
 
     QAccessible::installFactory(&FakeAccessible::accessibleFactory);
 
