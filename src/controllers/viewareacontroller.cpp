@@ -1,5 +1,7 @@
 #include "viewareacontroller.h"
 
+#include <QRegularExpression>
+#include <QSet>
 #include <QVariantMap>
 
 #include <core/fileopensettings.h>
@@ -46,7 +48,7 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer,
   if (m_currentWorkspaceId.isEmpty()) {
     QString wsId;
     if (wsSvc) {
-      wsId = wsSvc->createWorkspace(QStringLiteral("default"));
+      wsId = wsSvc->createWorkspace(generateWorkspaceName());
     }
     emit addFirstViewSplitRequested(wsId);
   }
@@ -130,7 +132,7 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
   if (hookMgr && hookMgr->doAction(HookNames::ViewSplitBeforeCreate, args)) { return; }
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   QString newWsId;
-  if (wsSvc) { newWsId = wsSvc->createWorkspace(QStringLiteral("split")); }
+  if (wsSvc) { newWsId = wsSvc->createWorkspace(generateWorkspaceName()); }
   emit splitRequested(p_workspaceId, p_direction, newWsId);
   if (hookMgr) {
     args[QStringLiteral("newWorkspaceId")] = newWsId;
@@ -219,6 +221,73 @@ void ViewAreaController::focus() {
   }
 }
 
+void ViewAreaController::newWorkspace(const QString &p_currentWorkspaceId) {
+  if (p_currentWorkspaceId.isEmpty()) {
+    return;
+  }
+
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (!wsSvc) {
+    return;
+  }
+
+  QString newWsId = wsSvc->createWorkspace(generateWorkspaceName());
+  if (newWsId.isEmpty()) {
+    return;
+  }
+
+  emit switchWorkspaceRequested(p_currentWorkspaceId, newWsId);
+}
+
+void ViewAreaController::removeWorkspace(const QString &p_workspaceId) {
+  if (p_workspaceId.isEmpty()) {
+    return;
+  }
+
+  // Cannot remove the last workspace — use removeViewSplit for that.
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (!wsSvc) {
+    return;
+  }
+
+  auto workspaces = wsSvc->listWorkspaces();
+  if (workspaces.size() <= 1) {
+    return;
+  }
+
+  // Find another workspace to switch to.
+  QString targetWsId;
+  for (int i = 0; i < workspaces.size(); ++i) {
+    auto wsObj = workspaces[i].toObject();
+    auto wsId = wsObj.value(QStringLiteral("id")).toString();
+    if (wsId != p_workspaceId) {
+      targetWsId = wsId;
+      break;
+    }
+  }
+
+  if (targetWsId.isEmpty()) {
+    return;
+  }
+
+  // Switch to the target workspace first, then delete the old one.
+  emit switchWorkspaceRequested(p_workspaceId, targetWsId);
+  wsSvc->deleteWorkspace(p_workspaceId);
+}
+
+void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
+                                          const QString &p_targetWorkspaceId) {
+  if (p_currentWorkspaceId.isEmpty() || p_targetWorkspaceId.isEmpty()) {
+    return;
+  }
+  if (p_currentWorkspaceId == p_targetWorkspaceId) {
+    return;
+  }
+
+  emit switchWorkspaceRequested(p_currentWorkspaceId, p_targetWorkspaceId);
+  setCurrentViewSplit(p_targetWorkspaceId, true);
+}
+
 QJsonObject ViewAreaController::saveLayout(const QJsonObject &p_widgetTree) const {
   QJsonObject layout;
   layout[QStringLiteral("splitterTree")] = p_widgetTree;
@@ -267,4 +336,28 @@ void ViewAreaController::onFileAfterOpen(const QVariantMap &p_args) {
   }
   FileOpenSettings settings = FileOpenSettings::fromVariantMap(p_args);
   openBuffer(buf, settings);
+}
+
+QString ViewAreaController::generateWorkspaceName() const {
+  QSet<int> usedNumbers;
+  static const QRegularExpression re(QStringLiteral("^Workspace (\\d+)$"));
+
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (wsSvc) {
+    QJsonArray workspaces = wsSvc->listWorkspaces();
+    for (int i = 0; i < workspaces.size(); ++i) {
+      QJsonObject wsObj = workspaces[i].toObject();
+      QString name = wsObj.value(QStringLiteral("name")).toString();
+      QRegularExpressionMatch match = re.match(name);
+      if (match.hasMatch()) {
+        usedNumbers.insert(match.captured(1).toInt());
+      }
+    }
+  }
+
+  int n = 1;
+  while (usedNumbers.contains(n)) {
+    ++n;
+  }
+  return QStringLiteral("Workspace %1").arg(n);
 }

@@ -86,7 +86,6 @@ target_sources(vnote PRIVATE
     versioncontroller/iversioncontroller.h
     versioncontroller/iversioncontrollerfactory.h
     versioncontroller/versioncontrollerserver.cpp versioncontroller/versioncontrollerserver.h
-    viewwindowfactory.cpp viewwindowfactory.h
     vnotex.cpp vnotex.h
     # DEPRECATED: VxCore singleton wrapper removed - use services via ServiceLocator instead
     # vxcore.cpp vxcore.h

@@ -24,7 +24,7 @@
 #include <core/services/filetypecoreservice.h>
 #include <gui/services/themeservice.h>
 #include <core/services/templateservice.h>
-#include <core/viewwindowfactory.h>
+#include <gui/services/viewwindowfactory.h>
 #include <gui/utils/widgetutils.h>
 #include <core/sessionconfig.h>
 #include <core/singleinstanceguard.h>

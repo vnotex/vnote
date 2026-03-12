@@ -191,11 +191,19 @@ src/
 │   │   ├── templateservice.h/.cpp
 │   │   ├── workspacecoreservice.h/.cpp  # Workspace operations (split pane ↔ vxcore workspace)
 │   │   └── hookmanager.h/.cpp
-│   ├── viewwindowfactory.h/.cpp  # Registry mapping file types to ViewWindow2 creators
 │   ├── hookcontext.h       # Hook callback context
 │   ├── hooknames.h         # Hook name constants
 │   ├── configmgr2.h/.cpp   # High-level config manager using DI
 │   └── iconfigmgr.h        # Interface for config managers
+├── gui/                    # GUI-aware services and utilities
+│   ├── services/
+│   │   ├── themeservice.h/.cpp         # GUI-aware theme management service
+│   │   └── viewwindowfactory.h/.cpp    # Registry mapping file types to ViewWindow2 creators
+│   └── utils/
+│       ├── widgetutils.h/.cpp          # Widget utility helpers
+│       ├── themeutils.h/.cpp           # Theme utility helpers
+│       ├── imageutils.h/.cpp           # Image utility helpers
+│       └── guiutils.h/.cpp             # General GUI utilities
 ├── models/                 # Qt Model/View models
 │   ├── notebooknodemodel.h/.cpp       # QAbstractItemModel for node hierarchy
 │   └── notebooknodeproxymodel.h/.cpp  # Proxy model for sorting/filtering

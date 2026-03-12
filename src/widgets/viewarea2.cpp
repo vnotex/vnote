@@ -10,7 +10,7 @@
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/workspacecoreservice.h>
-#include <core/viewwindowfactory.h>
+#include <gui/services/viewwindowfactory.h>
 
 #include "viewareahomewidget.h"
 #include "viewsplit2.h"
@@ -70,6 +70,8 @@ void ViewArea2::setupController() {
           this, &ViewArea2::onMoveViewWindowToSplitRequested);
   connect(m_controller, &ViewAreaController::loadLayoutRequested,
           this, &ViewArea2::onLoadLayoutRequested);
+  connect(m_controller, &ViewAreaController::switchWorkspaceRequested,
+          this, &ViewArea2::onSwitchWorkspaceRequested);
 
   m_controller->subscribeToHooks();
 }
@@ -289,6 +291,20 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
           &ViewArea2::onRemoveSplitRequested);
   connect(p_split, &ViewSplit2::moveViewWindowOneSplitRequested, this,
           &ViewArea2::onMoveViewWindowOneSplitRequested);
+
+  // Workspace signals.
+  connect(p_split, &ViewSplit2::newWorkspaceRequested, this,
+          [this](ViewSplit2 *s) {
+            m_controller->newWorkspace(s->getWorkspaceId());
+          });
+  connect(p_split, &ViewSplit2::removeWorkspaceRequested, this,
+          [this](ViewSplit2 *s) {
+            m_controller->removeWorkspace(s->getWorkspaceId());
+          });
+  connect(p_split, &ViewSplit2::switchWorkspaceRequested, this,
+          [this](ViewSplit2 *s, const QString &wsId) {
+            m_controller->switchWorkspace(s->getWorkspaceId(), wsId);
+          });
 }
 
 // ============ Controller signal handlers ============
@@ -465,6 +481,27 @@ void ViewArea2::onLoadLayoutRequested(const QJsonObject &p_layout) {
     if (split) { m_controller->setCurrentViewSplit(currentWsId, true); }
   }
   updateScreenVisibility();
+}
+
+void ViewArea2::onSwitchWorkspaceRequested(const QString &p_currentWorkspaceId,
+                                            const QString &p_newWorkspaceId) {
+  auto *split = splitForWorkspace(p_currentWorkspaceId);
+  if (!split) {
+    qWarning() << "ViewArea2::onSwitchWorkspaceRequested: workspace not found:"
+               << p_currentWorkspaceId;
+    return;
+  }
+
+  // Update the ID mapping: remove old key, add new key.
+  m_splits.remove(p_currentWorkspaceId);
+  m_splits.insert(p_newWorkspaceId, split);
+
+  // Update the split's workspace identity.
+  split->setWorkspaceId(p_newWorkspaceId);
+
+  // Re-wire signals since wireSplitSignals captures workspace ID by value.
+  disconnect(split, nullptr, this, nullptr);
+  wireSplitSignals(split);
 }
 
 QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) {

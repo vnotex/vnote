@@ -97,6 +97,15 @@ public:
   void moveViewWindowOneSplit(const QString &p_srcWorkspaceId, ID p_windowId,
                               Direction p_direction, const QString &p_dstWorkspaceId);
 
+  // Create a new workspace for the given split and switch to it.
+  void newWorkspace(const QString &p_currentWorkspaceId);
+
+  // Remove the workspace for the given split.
+  void removeWorkspace(const QString &p_workspaceId);
+
+  // Switch the given split to a different workspace.
+  void switchWorkspace(const QString &p_currentWorkspaceId, const QString &p_targetWorkspaceId);
+
   // ============ Current State ============
 
   // Get the ID of the current active window (InvalidViewWindowId if none).
@@ -168,6 +177,11 @@ signals:
   // Request to focus the split for the given workspace.
   void focusViewSplitRequested(const QString &p_workspaceId);
 
+  // Request to switch the split from one workspace to another.
+  // The view should save current tab state, clear tabs, load new workspace tabs.
+  void switchWorkspaceRequested(const QString &p_currentWorkspaceId,
+                                const QString &p_newWorkspaceId);
+
   // Emitted when the current view window changes.
   void currentViewWindowChanged();
 
@@ -186,6 +200,10 @@ private:
 
   // Handle FileAfterOpen hook: open a ViewWindow2 for the newly opened buffer.
   void onFileAfterOpen(const QVariantMap &p_args);
+
+  // Generate a workspace name like "Workspace 1", "Workspace 2", etc.
+  // Finds the next available number by scanning existing workspace names.
+  QString generateWorkspaceName() const;
 
   ServiceLocator &m_services;
   ID m_currentWindowId = InvalidViewWindowId;

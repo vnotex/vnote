@@ -82,6 +82,8 @@ private slots:
                                         const QString &p_srcWorkspaceId,
                                         const QString &p_dstWorkspaceId);
   void onLoadLayoutRequested(const QJsonObject &p_layout);
+  void onSwitchWorkspaceRequested(const QString &p_currentWorkspaceId,
+                                  const QString &p_newWorkspaceId);
 
   // ViewSplit2 signal handlers
   void onMoveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindow2 *p_win,

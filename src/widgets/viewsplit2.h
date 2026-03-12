@@ -1,12 +1,14 @@
 #ifndef VIEWSPLIT2_H
 #define VIEWSPLIT2_H
 
+#include <QIcon>
 #include <QTabWidget>
 #include <QString>
 #include <QVector>
 
 #include <core/global.h>
 
+class QActionGroup;
 class QToolButton;
 class QMenu;
 
@@ -70,10 +72,13 @@ public:
   // Get the vxcore workspace ID this split is mapped to.
   const QString &getWorkspaceId() const;
 
+  // Set the vxcore workspace ID this split is mapped to.
+  // Used when switching workspaces on an existing split.
+  void setWorkspaceId(const QString &p_workspaceId);
+
   // ============ State ============
 
   // Set visual active state (highlighted corner icons etc.).
-  // For now, just stores the flag. Corner widgets will be added later.
   void setActive(bool p_active);
 
   // Whether this split is visually active.
@@ -109,6 +114,15 @@ signals:
   void moveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindow2 *p_win,
                                        Direction p_direction);
 
+  // Request to create a new workspace for this split.
+  void newWorkspaceRequested(ViewSplit2 *p_split);
+
+  // Request to remove the workspace of this split.
+  void removeWorkspaceRequested(ViewSplit2 *p_split);
+
+  // Request to switch to a different workspace.
+  void switchWorkspaceRequested(ViewSplit2 *p_split, const QString &p_workspaceId);
+
 protected:
   void mousePressEvent(QMouseEvent *p_event) override;
 
@@ -120,6 +134,12 @@ private slots:
 private:
   void setupUI();
   void setupTabBar();
+  void setupCornerWidget();
+
+  void initIcons();
+
+  void updateWindowList(QMenu *p_menu);
+  void updateMenu(QMenu *p_menu);
 
   ViewWindow2 *getViewWindow(int p_idx) const;
 
@@ -134,6 +154,22 @@ private:
   // Used for alternate tab tracking.
   ViewWindow2 *m_currentViewWindow = nullptr;
   ViewWindow2 *m_lastViewWindow = nullptr;
+
+  // Corner widget buttons.
+  QToolButton *m_windowListButton = nullptr;
+  QToolButton *m_menuButton = nullptr;
+
+  // Action groups for menu items (lazy-initialized).
+  QActionGroup *m_windowListActionGroup = nullptr;
+
+  // Icons (static, shared across all ViewSplit2 instances).
+  static QIcon s_windowListIcon;
+  static QIcon s_windowListActiveIcon;
+  static QIcon s_menuIcon;
+  static QIcon s_menuActiveIcon;
+
+  static const QString c_actionButtonForegroundName;
+  static const QString c_activeActionButtonForegroundName;
 };
 
 } // namespace vnotex
