@@ -4,6 +4,7 @@
 #include <QJsonObject>
 #include <QString>
 #include <QStringList>
+#include <QVector>
 
 #include <core/fileopensettings.h>
 #include <core/global.h>
@@ -45,6 +46,15 @@ public:
   // Workspace switching
   virtual void switchWorkspace(const QString &p_currentWorkspaceId,
                                const QString &p_newWorkspaceId) = 0;
+
+  // Reparenting primitives for workspace switch (controller orchestrates these)
+  virtual QVector<QObject *> takeViewWindowsFromSplit(
+      const QString &p_workspaceId, int *p_outCurrentIndex) = 0;
+  virtual void placeViewWindowsInSplit(const QString &p_workspaceId,
+                                       const QVector<QObject *> &p_windows,
+                                       int p_currentIndex) = 0;
+  virtual void updateSplitWorkspaceId(const QString &p_oldWorkspaceId,
+                                       const QString &p_newWorkspaceId) = 0;
 
   // Session
   virtual void loadLayout(const QJsonObject &p_layout) = 0;

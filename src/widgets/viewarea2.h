@@ -90,6 +90,13 @@ public:
                              const QString &p_dstWorkspaceId) override;
   void switchWorkspace(const QString &p_currentWorkspaceId,
                        const QString &p_newWorkspaceId) override;
+  QVector<QObject *> takeViewWindowsFromSplit(
+      const QString &p_workspaceId, int *p_outCurrentIndex) override;
+  void placeViewWindowsInSplit(const QString &p_workspaceId,
+                               const QVector<QObject *> &p_windows,
+                               int p_currentIndex) override;
+  void updateSplitWorkspaceId(const QString &p_oldWorkspaceId,
+                               const QString &p_newWorkspaceId) override;
   void loadLayout(const QJsonObject &p_layout) override;
   void setCurrentBuffer(const QString &p_workspaceId, const QString &p_bufferId,
                         bool p_focus) override;

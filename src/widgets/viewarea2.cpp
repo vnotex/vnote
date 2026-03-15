@@ -249,6 +249,8 @@ void ViewArea2::saveSession() {
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (wsSvc) {
     // Sync tab order from each visible ViewSplit2 to vxcore workspace buffer order.
+    // Note: hidden workspaces' buffer orders are already correct in vxcore —
+    // they were synced when takeViewWindowsFromSplit was called during workspace switch.
     for (auto it = m_splits.constBegin(); it != m_splits.constEnd(); ++it) {
       QStringList bufferIds;
       auto windows = it.value()->getAllViewWindows();
@@ -553,6 +555,12 @@ void ViewArea2::loadLayout(const QJsonObject &p_layout) {
 
 void ViewArea2::switchWorkspace(const QString &p_currentWorkspaceId,
                                 const QString &p_newWorkspaceId) {
+  // This method is now only used during session restore for stale workspace
+  // replacement. Normal workspace switching is orchestrated by the controller
+  // via the 3 reparenting primitives (takeViewWindowsFromSplit,
+  // updateSplitWorkspaceId, placeViewWindowsInSplit).
+  //
+  // For restore, the split has no windows to reparent — just update identity.
   auto *split = splitForWorkspace(p_currentWorkspaceId);
   if (!split) {
     qWarning() << "ViewArea2::switchWorkspace: workspace not found:"
@@ -560,23 +568,7 @@ void ViewArea2::switchWorkspace(const QString &p_currentWorkspaceId,
     return;
   }
 
-  // Sync current tab order to vxcore before switching away
-  // (only during normal operation, not during restore/shutdown).
-  if (m_controller->shouldPropagateToCore() && split->getViewWindowCount() > 0) {
-    auto *wsSvc = m_services.get<WorkspaceCoreService>();
-    if (wsSvc) {
-      QStringList bufferIds;
-      auto windows = split->getAllViewWindows();
-      for (auto *win : windows) {
-        bufferIds.append(win->getBuffer().id());
-      }
-      wsSvc->setBufferOrder(p_currentWorkspaceId, bufferIds);
-    }
-  }
-
-  // Detach and delete all view windows from the current workspace.
-  // The underlying vxcore buffers remain open (invisible workspace).
-  // ViewWindow2s will be recreated when the user switches back.
+  // Remove any existing windows (shouldn't have any during restore, but be safe).
   auto windows = split->getAllViewWindows();
   for (auto *win : windows) {
     split->takeViewWindow(win);
@@ -587,18 +579,83 @@ void ViewArea2::switchWorkspace(const QString &p_currentWorkspaceId,
     delete win;
   }
 
-  // Update the ID mapping: remove old key, add new key.
+  // Update split identity.
   m_splits.remove(p_currentWorkspaceId);
   m_splits.insert(p_newWorkspaceId, split);
-
-  // Update the split's workspace identity.
   split->setWorkspaceId(p_newWorkspaceId);
 
-  // Re-wire signals since wireSplitSignals captures workspace ID by value.
   disconnect(split, nullptr, this, nullptr);
   wireSplitSignals(split);
 
   updateScreenVisibility();
+}
+
+QVector<QObject *> ViewArea2::takeViewWindowsFromSplit(const QString &p_workspaceId,
+                                                       int *p_outCurrentIndex) {
+  auto *split = splitForWorkspace(p_workspaceId);
+  if (!split) { return {}; }
+
+  // Sync tab order to vxcore before hiding (existing pattern).
+  if (m_controller->shouldPropagateToCore() && split->getViewWindowCount() > 0) {
+    auto *wsSvc = m_services.get<WorkspaceCoreService>();
+    if (wsSvc) {
+      QStringList bufferIds;
+      for (auto *win : split->getAllViewWindows()) {
+        bufferIds.append(win->getBuffer().id());
+      }
+      wsSvc->setBufferOrder(p_workspaceId, bufferIds);
+    }
+  }
+
+  if (p_outCurrentIndex) {
+    *p_outCurrentIndex = split->currentIndex();
+  }
+
+  QVector<QObject *> result;
+  auto viewWindows = split->getAllViewWindows();
+  for (auto *win : viewWindows) {
+    split->takeViewWindow(win);  // removeTab + disconnect + setVisible(false) + setParent(nullptr)
+    result.append(win);
+  }
+  // NOTE: m_windows map entries are KEPT — the ViewWindow2 still exists, just hidden.
+  return result;
+}
+
+void ViewArea2::placeViewWindowsInSplit(const QString &p_workspaceId,
+                                        const QVector<QObject *> &p_windows,
+                                        int p_currentIndex) {
+  auto *split = splitForWorkspace(p_workspaceId);
+  if (!split) { return; }
+
+  for (auto *obj : p_windows) {
+    auto *win = qobject_cast<ViewWindow2 *>(obj);
+    if (win) {
+      split->addViewWindow(win);  // addTab + connect signals + setVisible(true)
+    }
+  }
+
+  if (p_currentIndex >= 0 && p_currentIndex < p_windows.size()) {
+    split->setCurrentViewWindow(p_currentIndex);
+  }
+
+  updateScreenVisibility();
+}
+
+void ViewArea2::updateSplitWorkspaceId(const QString &p_oldWorkspaceId,
+                                        const QString &p_newWorkspaceId) {
+  auto *split = splitForWorkspace(p_oldWorkspaceId);
+  if (!split) { return; }
+
+  m_splits.remove(p_oldWorkspaceId);
+  m_splits.insert(p_newWorkspaceId, split);
+  split->setWorkspaceId(p_newWorkspaceId);
+
+  // IMPORTANT: Must disconnect+reconnect because wireSplitSignals captures
+  // the workspace ID by value in several lambdas (focused, splitRequested,
+  // maximizeSplitRequested). Without rewiring, those lambdas would carry
+  // the old workspace ID.
+  disconnect(split, nullptr, this, nullptr);
+  wireSplitSignals(split);
 }
 
 void ViewArea2::setCurrentBuffer(const QString &p_workspaceId,

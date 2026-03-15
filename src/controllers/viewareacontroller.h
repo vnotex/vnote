@@ -2,6 +2,7 @@
 #define VIEWAREACONTROLLER_H
 
 #include <QJsonObject>
+#include <QMap>
 #include <QObject>
 #include <QString>
 #include <QVariantMap>
@@ -16,6 +17,7 @@ namespace vnotex {
 class ServiceLocator;
 class Buffer2;
 class BufferService;
+class WorkspaceWrapper;
 
 // Controller for the view area. Handles business logic and service interactions.
 // Does NOT know about ViewArea2 or any widget type -- communicates with the view
@@ -199,6 +201,10 @@ private:
   // false during session restore (rebuilding UI from vxcore state).
   // true during normal operation (user actions update vxcore).
   bool m_shouldPropagateToCore = true;
+
+  // Owns all WorkspaceWrapper instances. Each workspace known to the controller
+  // has an entry here. Hidden workspaces cache their ViewWindows in the wrapper.
+  QMap<QString, WorkspaceWrapper *> m_workspaces;
 };
 
 } // namespace vnotex
