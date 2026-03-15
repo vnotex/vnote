@@ -216,50 +216,57 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
 
 void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
                                                 bool p_isFolder) {
-  if (!p_nodeId.isValid()) {
-    return;
+  if (p_nodeId.isValid()) {
+    auto *copyAction = p_menu->addAction(tr("&Copy"));
+    connect(copyAction, &QAction::triggered, this, [this, p_nodeId]() {
+      // Use all selected nodes: try view first, then callback, finally fall back to context menu node
+      QList<NodeIdentifier> nodeIds;
+      if (m_view) {
+        nodeIds = m_view->selectedNodeIds();
+      } else if (m_selectedNodesCallback) {
+        nodeIds = m_selectedNodesCallback();
+      }
+      if (nodeIds.isEmpty()) {
+        nodeIds << p_nodeId;
+      }
+      copyNodes(nodeIds);
+    });
+
+    auto *cutAction = p_menu->addAction(tr("Cu&t"));
+    connect(cutAction, &QAction::triggered, this, [this, p_nodeId]() {
+      // Use all selected nodes: try view first, then callback, finally fall back to context menu node
+      QList<NodeIdentifier> nodeIds;
+      if (m_view) {
+        nodeIds = m_view->selectedNodeIds();
+      } else if (m_selectedNodesCallback) {
+        nodeIds = m_selectedNodesCallback();
+      }
+      if (nodeIds.isEmpty()) {
+        nodeIds << p_nodeId;
+      }
+      cutNodes(nodeIds);
+    });
   }
 
-  auto *copyAction = p_menu->addAction(tr("&Copy"));
-  connect(copyAction, &QAction::triggered, this, [this, p_nodeId]() {
-    // Use all selected nodes: try view first, then callback, finally fall back to context menu node
-    QList<NodeIdentifier> nodeIds;
-    if (m_view) {
-      nodeIds = m_view->selectedNodeIds();
-    } else if (m_selectedNodesCallback) {
-      nodeIds = m_selectedNodesCallback();
-    }
-    if (nodeIds.isEmpty()) {
-      nodeIds << p_nodeId;
-    }
-    copyNodes(nodeIds);
-  });
-
-  auto *cutAction = p_menu->addAction(tr("Cu&t"));
-  connect(cutAction, &QAction::triggered, this, [this, p_nodeId]() {
-    // Use all selected nodes: try view first, then callback, finally fall back to context menu node
-    QList<NodeIdentifier> nodeIds;
-    if (m_view) {
-      nodeIds = m_view->selectedNodeIds();
-    } else if (m_selectedNodesCallback) {
-      nodeIds = m_selectedNodesCallback();
-    }
-    if (nodeIds.isEmpty()) {
-      nodeIds << p_nodeId;
-    }
-    cutNodes(nodeIds);
-  });
-
-  // Paste only available on containers
+  // Paste is available on any folder target, including root (invalid nodeId).
   if (p_isFolder && canPaste()) {
-    auto *pasteAction = p_menu->addAction(tr("&Paste"));
-    connect(pasteAction, &QAction::triggered, this,
-            [this, p_nodeId]() { pasteNodes(p_nodeId); });
+    NodeIdentifier targetFolder = p_nodeId;
+    if (!targetFolder.isValid()) {
+      targetFolder.notebookId = currentNotebookId();
+      targetFolder.relativePath = QString(); // root
+    }
+    if (!targetFolder.notebookId.isEmpty()) {
+      auto *pasteAction = p_menu->addAction(tr("&Paste"));
+      connect(pasteAction, &QAction::triggered, this,
+              [this, targetFolder]() { pasteNodes(targetFolder); });
+    }
   }
 
-  auto *duplicateAction = p_menu->addAction(tr("D&uplicate"));
-  connect(duplicateAction, &QAction::triggered, this,
-          [this, p_nodeId]() { duplicateNode(p_nodeId); });
+  if (p_nodeId.isValid()) {
+    auto *duplicateAction = p_menu->addAction(tr("D&uplicate"));
+    connect(duplicateAction, &QAction::triggered, this,
+            [this, p_nodeId]() { duplicateNode(p_nodeId); });
+  }
 }
 
 void NotebookNodeController::addImportExportActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
