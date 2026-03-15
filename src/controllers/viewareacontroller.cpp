@@ -70,11 +70,13 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer,
     if (wsSvc) {
       wsId = wsSvc->createWorkspace(generateWorkspaceName());
     }
-    if (!wsId.isEmpty()) {
-      auto *wrapper = new WorkspaceWrapper(wsId, this);
-      wrapper->setVisible(true);
-      m_workspaces.insert(wsId, wrapper);
+    if (wsId.isEmpty()) {
+      qWarning() << "ViewAreaController::openBuffer: failed to create workspace";
+      return;
     }
+    auto *wrapper = new WorkspaceWrapper(wsId, this);
+    wrapper->setVisible(true);
+    m_workspaces.insert(wsId, wrapper);
     if (!m_view) { return; }
     m_view->addFirstViewSplit(wsId);
   }
@@ -285,11 +287,13 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   QString newWsId;
   if (wsSvc) { newWsId = wsSvc->createWorkspace(generateWorkspaceName()); }
-  if (!newWsId.isEmpty()) {
-    auto *wrapper = new WorkspaceWrapper(newWsId, this);
-    wrapper->setVisible(true);
-    m_workspaces.insert(newWsId, wrapper);
+  if (newWsId.isEmpty()) {
+    qWarning() << "ViewAreaController::splitViewSplit: failed to create workspace";
+    return;
   }
+  auto *wrapper = new WorkspaceWrapper(newWsId, this);
+  wrapper->setVisible(true);
+  m_workspaces.insert(newWsId, wrapper);
   if (m_view) { m_view->split(p_workspaceId, p_direction, newWsId); }
 
   // Open the current buffer of the source workspace in the new split.
@@ -408,6 +412,23 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
                                                 const QString &p_bufferId) {
   if (p_srcWorkspaceId.isEmpty() || p_windowId == InvalidViewWindowId
       || p_dstWorkspaceId.isEmpty()) { return; }
+
+  // Cannot move to the same workspace.
+  if (p_srcWorkspaceId == p_dstWorkspaceId) { return; }
+
+  // Check if the buffer is already open in the destination workspace.
+  // If so, just activate the existing tab instead of creating a duplicate.
+  if (m_view && !p_bufferId.isEmpty()) {
+    ID existingId = m_view->findWindowIdByBufferId(p_dstWorkspaceId, p_bufferId);
+    if (existingId != InvalidViewWindowId) {
+      qInfo() << "ViewAreaController::moveViewWindowOneSplit: buffer already in destination,"
+              << "activating existing window:" << existingId;
+      setCurrentViewSplit(p_dstWorkspaceId, true);
+      setCurrentViewWindow(existingId, p_bufferId);
+      return;
+    }
+  }
+
   auto *hookMgr = m_services.get<HookManager>();
   QVariantMap args;
   args[QStringLiteral("windowId")] = p_windowId;
