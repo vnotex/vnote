@@ -766,6 +766,16 @@ ID ViewArea2::findWindowIdByBufferId(const QString &p_workspaceId,
   return ViewAreaController::InvalidViewWindowId;
 }
 
+QString ViewArea2::getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const {
+  auto *split = splitForWorkspace(p_workspaceId);
+  if (!split) { return QString(); }
+
+  auto *win = split->getCurrentViewWindow();
+  if (!win) { return QString(); }
+
+  return win->getBuffer().id();
+}
+
 QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) {
   QJsonObject node;
   auto *splitter = qobject_cast<const QSplitter *>(p_widget);

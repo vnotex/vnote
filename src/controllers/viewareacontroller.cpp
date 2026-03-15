@@ -275,6 +275,13 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
   args[QStringLiteral("workspaceId")] = p_workspaceId;
   args[QStringLiteral("direction")] = static_cast<int>(p_direction);
   if (hookMgr && hookMgr->doAction(HookNames::ViewSplitBeforeCreate, args)) { return; }
+
+  // Get the actual current buffer from the view (ground truth, not vxcore which may be stale).
+  QString currentBufferId;
+  if (m_view) {
+    currentBufferId = m_view->getCurrentBufferIdForWorkspace(p_workspaceId);
+  }
+
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   QString newWsId;
   if (wsSvc) { newWsId = wsSvc->createWorkspace(generateWorkspaceName()); }
@@ -284,6 +291,25 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
     m_workspaces.insert(newWsId, wrapper);
   }
   if (m_view) { m_view->split(p_workspaceId, p_direction, newWsId); }
+
+  // Open the current buffer of the source workspace in the new split.
+  // Set the new workspace as current — the new split becomes active (natural UX).
+  if (!currentBufferId.isEmpty() && !newWsId.isEmpty()) {
+    auto *bufferSvc = m_services.get<BufferService>();
+    if (bufferSvc) {
+      Buffer2 buf = bufferSvc->getBufferHandle(currentBufferId);
+      if (buf.isValid()) {
+        m_currentWorkspaceId = newWsId;
+        FileOpenSettings settings;
+        settings.m_focus = true;
+        openBuffer(buf, settings);
+      }
+    }
+  }
+
+  // Distribute all splits evenly so the new split gets fair space.
+  if (m_view) { m_view->distributeViewSplits(); }
+
   if (hookMgr) {
     args[QStringLiteral("newWorkspaceId")] = newWsId;
     hookMgr->doAction(HookNames::ViewSplitAfterCreate, args);
@@ -621,6 +647,15 @@ void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
   if (!currentWrapper || !targetWrapper) {
     qWarning() << "ViewAreaController::switchWorkspace: missing wrapper for"
                << p_currentWorkspaceId << "or" << p_targetWorkspaceId;
+    return;
+  }
+
+  // Guard: current workspace must be visible (displayed in a split).
+  // This can happen if a stale signal triggers a switch after the workspace
+  // was already hidden by a previous switch.
+  if (!currentWrapper->isVisible()) {
+    qWarning() << "ViewAreaController::switchWorkspace: current workspace"
+               << p_currentWorkspaceId << "is not visible, ignoring";
     return;
   }
 

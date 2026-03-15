@@ -75,6 +75,10 @@ public:
   // Returns InvalidViewWindowId if the buffer is not open in that workspace.
   virtual ID findWindowIdByBufferId(const QString &p_workspaceId,
                                     const QString &p_bufferId) const = 0;
+
+  // Get the buffer ID of the current (active) tab in the given workspace.
+  // Returns empty string if the workspace has no tabs.
+  virtual QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const = 0;
 };
 
 } // namespace vnotex

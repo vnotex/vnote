@@ -104,6 +104,7 @@ public:
   QVector<ID> getViewWindowIdsForWorkspace(const QString &p_workspaceId) const override;
   ID findWindowIdByBufferId(const QString &p_workspaceId,
                             const QString &p_bufferId) const override;
+  QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const override;
 
 private slots:
   // ViewSplit2 signal handlers

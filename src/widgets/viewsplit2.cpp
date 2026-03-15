@@ -247,6 +247,12 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
   {
     p_menu->addSection(tr("Split"));
 
+    // Determine if multi-split actions should be enabled.
+    bool multiSplit = false;
+    if (m_visibleWorkspaceIdsFunc) {
+      multiSplit = m_visibleWorkspaceIdsFunc().size() > 1;
+    }
+
     p_menu->addAction(tr("Vertical Split"), [this]() {
       emit splitRequested(this, Direction::Right);
     });
@@ -255,20 +261,27 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
       emit splitRequested(this, Direction::Down);
     });
 
-    p_menu->addAction(tr("Maximize Split"), [this]() {
+    auto *maximizeAct = p_menu->addAction(tr("Maximize Split"), [this]() {
       emit maximizeSplitRequested(this);
     });
+    maximizeAct->setEnabled(multiSplit);
 
-    p_menu->addAction(tr("Distribute Splits"), [this]() {
+    auto *distributeAct = p_menu->addAction(tr("Distribute Splits"), [this]() {
       emit distributeSplitsRequested();
     });
+    distributeAct->setEnabled(multiSplit);
 
-    // TODO(context-menu): Add context menu entries for "Close Split" (hide-only)
-    // and "Close Split and Workspace" (full removal). See legacy ViewSplit for reference.
-    // Currently only "Remove Split" (hide-only) is exposed.
-    p_menu->addAction(tr("Remove Split"), [this]() {
+    p_menu->addSeparator();
+
+    auto *removeSplitAct = p_menu->addAction(tr("Remove Split"), [this]() {
       emit removeSplitRequested(this);
     });
+    removeSplitAct->setEnabled(multiSplit);
+
+    auto *removeSplitAndWsAct = p_menu->addAction(tr("Remove Split and Workspace"), [this]() {
+      emit removeSplitAndWorkspaceRequested(this);
+    });
+    removeSplitAndWsAct->setEnabled(multiSplit);
   }
 }
 
