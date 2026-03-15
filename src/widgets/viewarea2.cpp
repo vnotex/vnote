@@ -343,6 +343,8 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
   // Signals handled by ViewArea2 (need pointer context).
   connect(p_split, &ViewSplit2::removeSplitRequested, this,
           &ViewArea2::onRemoveSplitRequested);
+  connect(p_split, &ViewSplit2::removeSplitAndWorkspaceRequested, this,
+          &ViewArea2::onRemoveSplitAndWorkspaceRequested);
   connect(p_split, &ViewSplit2::moveViewWindowOneSplitRequested, this,
           &ViewArea2::onMoveViewWindowOneSplitRequested);
 
@@ -356,7 +358,7 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
             // Copy the workspace ID since the split's ID may change during removeWorkspace
             // (switchWorkspace modifies the split's workspace identity).
             QString wsId = s->getWorkspaceId();
-            m_controller->removeWorkspace(wsId);
+            m_controller->removeWorkspace(wsId, false);
           });
   connect(p_split, &ViewSplit2::switchWorkspaceRequested, this,
           [this](ViewSplit2 *s, const QString &wsId) {
@@ -451,11 +453,11 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   updateScreenVisibility();
 }
 
-void ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
+bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
   auto *win = windowForId(p_windowId);
-  if (!win) { return; }
+  if (!win) { return false; }
 
-  if (!win->aboutToClose(p_force)) { return; }
+  if (!win->aboutToClose(p_force)) { return false; }
 
   // Find the owning split.
   ViewSplit2 *ownerSplit = nullptr;
@@ -479,6 +481,7 @@ void ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
 
   m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId);
   updateScreenVisibility();
+  return true;
 }
 
 void ViewArea2::setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) {
@@ -525,7 +528,13 @@ void ViewArea2::onMoveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindo
 }
 
 void ViewArea2::onRemoveSplitRequested(ViewSplit2 *p_split) {
-  m_controller->removeViewSplit(p_split->getWorkspaceId(), false);
+  // Hide-only mode: workspace becomes hidden, split is removed.
+  m_controller->removeViewSplit(p_split->getWorkspaceId(), true, false);
+}
+
+void ViewArea2::onRemoveSplitAndWorkspaceRequested(ViewSplit2 *p_split) {
+  // Full removal mode: workspace is closed (with abort-on-cancel), then split is removed.
+  m_controller->removeViewSplit(p_split->getWorkspaceId(), false, false);
 }
 
 // ============ Layout serialization/deserialization ============
@@ -683,6 +692,21 @@ void ViewArea2::setCurrentBuffer(const QString &p_workspaceId,
 
 QStringList ViewArea2::getVisibleWorkspaceIds() const {
   return m_splits.keys();
+}
+
+QVector<ID> ViewArea2::getViewWindowIdsForWorkspace(const QString &p_workspaceId) const {
+  QVector<ID> ids;
+  auto *split = splitForWorkspace(p_workspaceId);
+  if (!split) { return ids; }
+
+  auto windows = split->getAllViewWindows();
+  for (auto *win : windows) {
+    ID winId = idForWindow(win);
+    if (winId != ViewAreaController::InvalidViewWindowId) {
+      ids.append(winId);
+    }
+  }
+  return ids;
 }
 
 QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) {

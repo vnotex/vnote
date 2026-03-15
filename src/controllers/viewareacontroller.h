@@ -85,9 +85,12 @@ public:
   void splitViewSplit(const QString &p_workspaceId, Direction p_direction);
 
   // Remove the split for p_workspaceId.
+  // @p_keepWorkspace: if true, hide-only mode (workspace becomes hidden, split removed).
+  //                   if false, full removal (workspace removed, then split removed).
+  // @p_force: skip unsaved-changes check.
   // Closes all windows in it first; fires hooks; calls m_view->removeViewSplit().
   // Returns true if removed.
-  bool removeViewSplit(const QString &p_workspaceId, bool p_force);
+  bool removeViewSplit(const QString &p_workspaceId, bool p_keepWorkspace, bool p_force);
 
   // Maximize the split for p_workspaceId.
   void maximizeViewSplit(const QString &p_workspaceId);
@@ -109,11 +112,13 @@ public:
   void newWorkspace(const QString &p_currentWorkspaceId);
 
   // Remove the workspace for the given split.
-  // Closes its buffers (if not in other workspaces), deletes the workspace,
+  // Closes its buffers one-by-one (if not in other workspaces), deletes the workspace,
   // then switches to a hidden workspace. If none available, removes the split.
+  // @p_force: skip unsaved-changes check.
+  // Returns true if workspace was removed, false if user cancelled.
   // Note: p_workspaceId is passed by value because switchWorkspace may modify
   // the split's workspace ID during this call.
-  void removeWorkspace(QString p_workspaceId);
+  bool removeWorkspace(QString p_workspaceId, bool p_force);
 
   // Switch the given split to a different workspace.
   void switchWorkspace(const QString &p_currentWorkspaceId, const QString &p_targetWorkspaceId);
@@ -201,6 +206,11 @@ private:
   // false during session restore (rebuilding UI from vxcore state).
   // true during normal operation (user actions update vxcore).
   bool m_shouldPropagateToCore = true;
+
+  // When true, onViewWindowClosed() will not auto-remove empty workspaces.
+  // Set during bulk close operations (removeWorkspace, closeAll) where
+  // the caller manages workspace lifecycle explicitly.
+  bool m_suppressAutoRemove = false;
 
   // Owns all WorkspaceWrapper instances. Each workspace known to the controller
   // has an entry here. Hidden workspaces cache their ViewWindows in the wrapper.

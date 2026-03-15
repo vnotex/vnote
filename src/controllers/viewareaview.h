@@ -32,7 +32,9 @@ public:
   virtual void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
                           const QString &p_workspaceId,
                           const FileOpenSettings &p_settings) = 0;
-  virtual void closeViewWindow(ID p_windowId, bool p_force) = 0;
+  // Close the view window. Returns true if closed, false if cancelled by user
+  // (e.g., unsaved changes dialog). Callers must handle false for abort semantics.
+  virtual bool closeViewWindow(ID p_windowId, bool p_force) = 0;
 
   // Focus/navigation
   virtual void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) = 0;
@@ -64,6 +66,10 @@ public:
   // Query methods (controller needs widget-layer state)
   virtual int getViewSplitCount() const = 0;
   virtual QStringList getVisibleWorkspaceIds() const = 0;
+
+  // Get all tracked view window IDs for a given workspace.
+  // Returns IDs in tab order. Used by controller for iterative close.
+  virtual QVector<ID> getViewWindowIdsForWorkspace(const QString &p_workspaceId) const = 0;
 };
 
 } // namespace vnotex

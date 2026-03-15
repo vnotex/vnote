@@ -250,6 +250,9 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
       emit distributeSplitsRequested();
     });
 
+    // TODO(context-menu): Add context menu entries for "Close Split" (hide-only)
+    // and "Close Split and Workspace" (full removal). See legacy ViewSplit for reference.
+    // Currently only "Remove Split" (hide-only) is exposed.
     p_menu->addAction(tr("Remove Split"), [this]() {
       emit removeSplitRequested(this);
     });

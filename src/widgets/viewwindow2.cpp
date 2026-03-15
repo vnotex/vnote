@@ -66,6 +66,11 @@ bool ViewWindow2::isModified() const {
 
 bool ViewWindow2::aboutToClose(bool p_force) {
   Q_UNUSED(p_force);
+  // TODO(save-prompts): Implement unsaved-changes dialog here.
+  // When implemented:
+  //   - p_force=true: skip dialog, discard changes
+  //   - p_force=false: show save/discard/cancel dialog
+  //   - Return false if user cancels (caller must abort the operation)
   return true;
 }
 

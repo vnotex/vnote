@@ -82,7 +82,7 @@ public:
   void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
                   const QString &p_workspaceId,
                   const FileOpenSettings &p_settings) override;
-  void closeViewWindow(ID p_windowId, bool p_force) override;
+  bool closeViewWindow(ID p_windowId, bool p_force) override;
   void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) override;
   void focusViewSplit(const QString &p_workspaceId) override;
   void moveViewWindowToSplit(ID p_windowId,
@@ -101,12 +101,14 @@ public:
   void setCurrentBuffer(const QString &p_workspaceId, const QString &p_bufferId,
                         bool p_focus) override;
   QStringList getVisibleWorkspaceIds() const override;
+  QVector<ID> getViewWindowIdsForWorkspace(const QString &p_workspaceId) const override;
 
 private slots:
   // ViewSplit2 signal handlers
   void onMoveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindow2 *p_win,
                                          Direction p_direction);
   void onRemoveSplitRequested(ViewSplit2 *p_split);
+  void onRemoveSplitAndWorkspaceRequested(ViewSplit2 *p_split);
 
 private:
   void setupController();

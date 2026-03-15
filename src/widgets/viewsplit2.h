@@ -104,6 +104,9 @@ signals:
   // Request to remove this split.
   void removeSplitRequested(ViewSplit2 *p_split);
 
+  // Request to remove this split AND destroy its workspace.
+  void removeSplitAndWorkspaceRequested(ViewSplit2 *p_split);
+
   // Request to maximize this split.
   void maximizeSplitRequested(ViewSplit2 *p_split);
 

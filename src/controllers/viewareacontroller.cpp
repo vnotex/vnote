@@ -135,8 +135,10 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
   checkCurrentViewWindowChange(p_workspaceId);
 
   // If workspace is now empty and there are other splits, remove it.
+  // Suppressed during bulk close operations (removeWorkspace, closeAll).
   int totalSplitCount = m_view ? m_view->getViewSplitCount() : 0;
-  if (m_shouldPropagateToCore && !p_workspaceId.isEmpty() && totalSplitCount > 1) {
+  if (!m_suppressAutoRemove && m_shouldPropagateToCore
+      && !p_workspaceId.isEmpty() && totalSplitCount > 1) {
     auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc) {
       QJsonObject wsConfig = wsSvc->getWorkspace(p_workspaceId);
@@ -144,7 +146,7 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
       if (bufferIds.isEmpty()) {
         qInfo() << "ViewAreaController: workspace" << p_workspaceId
                 << "is empty, removing split";
-        removeViewSplit(p_workspaceId, true);
+        removeViewSplit(p_workspaceId, false, true);
       }
     }
   }
@@ -160,14 +162,31 @@ bool ViewAreaController::closeViewWindow(ID p_windowId, bool p_force) {
     return false;
   }
   if (!m_view) { return false; }
-  m_view->closeViewWindow(p_windowId, p_force);
-  return true;
+  return m_view->closeViewWindow(p_windowId, p_force);
 }
 
 bool ViewAreaController::closeAll(const QVector<QString> &p_workspaceIds, bool p_force) {
-  // Close all view windows in the given workspaces.
-  // TODO: Implement proper close-all with unsaved-changes handling.
-  Q_UNUSED(p_workspaceIds) Q_UNUSED(p_force)
+  // TODO(save-prompts): Same as removeWorkspace — abort path depends on
+  // ViewWindow2::aboutToClose() implementing save prompts.
+  if (!m_view) { return true; }
+
+  m_suppressAutoRemove = true;
+
+  for (const auto &wsId : p_workspaceIds) {
+    QVector<ID> windowIds = m_view->getViewWindowIdsForWorkspace(wsId);
+    for (ID winId : windowIds) {
+      qInfo() << "ViewAreaController::closeAll: closing window:" << winId
+              << "in workspace:" << wsId;
+      if (!closeViewWindow(winId, p_force)) {
+        // Close was cancelled. Abort entire closeAll.
+        qInfo() << "ViewAreaController::closeAll: close cancelled, aborting";
+        m_suppressAutoRemove = false;
+        return false;
+      }
+    }
+  }
+
+  m_suppressAutoRemove = false;
   return true;
 }
 
@@ -194,42 +213,73 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
   emit viewSplitsCountChanged();
 }
 
-bool ViewAreaController::removeViewSplit(const QString &p_workspaceId, bool p_force) {
-  Q_UNUSED(p_force)
+bool ViewAreaController::removeViewSplit(const QString &p_workspaceId,
+                                         bool p_keepWorkspace, bool p_force) {
   int totalSplitCount = m_view ? m_view->getViewSplitCount() : 0;
   if (p_workspaceId.isEmpty() || totalSplitCount <= 1) { return false; }
+
   auto *hookMgr = m_services.get<HookManager>();
   QVariantMap args;
   args[QStringLiteral("workspaceId")] = p_workspaceId;
+  args[QStringLiteral("keepWorkspace")] = p_keepWorkspace;
   if (hookMgr && hookMgr->doAction(HookNames::ViewSplitBeforeRemove, args)) { return false; }
-  if (m_shouldPropagateToCore) {
+
+  if (p_keepWorkspace) {
+    // Hide-only mode: transfer ViewWindows to WorkspaceWrapper, remove split widget.
+    // Workspace becomes hidden but remains in vxcore.
+    auto *wrapper = m_workspaces.value(p_workspaceId, nullptr);
+    if (wrapper && wrapper->isVisible() && m_view) {
+      int currentIndex = 0;
+      QVector<QObject *> windows = m_view->takeViewWindowsFromSplit(
+          p_workspaceId, &currentIndex);
+      wrapper->receiveViewWindows(windows, currentIndex);
+      wrapper->setVisible(false);
+    }
+  } else {
+    // Full removal mode: close all windows, delete workspace, then remove split.
+    // Close windows one-by-one with abort-on-cancel.
+    if (m_view) {
+      m_suppressAutoRemove = true;
+
+      QVector<ID> windowIds = m_view->getViewWindowIdsForWorkspace(p_workspaceId);
+      for (ID winId : windowIds) {
+        qInfo() << "ViewAreaController::removeViewSplit: closing window:" << winId
+                << "in workspace:" << p_workspaceId;
+        if (!closeViewWindow(winId, p_force)) {
+          qInfo() << "ViewAreaController::removeViewSplit: close cancelled, aborting";
+          m_suppressAutoRemove = false;
+          return false;
+        }
+      }
+
+      m_suppressAutoRemove = false;
+    }
+
+    // Remove remaining buffers and delete workspace in vxcore.
     auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc) {
-      // Close buffers that belong to this workspace before deleting it.
       QJsonObject wsConfig = wsSvc->getWorkspace(p_workspaceId);
-      QJsonArray bufferIds = wsConfig.value(QStringLiteral("bufferIds")).toArray();
-      auto *bufferSvc = m_services.get<BufferService>();
-      if (bufferSvc) {
-        for (int i = 0; i < bufferIds.size(); ++i) {
-          QString bufferId = bufferIds[i].toString();
-          if (!bufferId.isEmpty()) {
-            bufferSvc->closeBuffer(bufferId);
-          }
+      QJsonArray remainingBuffers = wsConfig.value(QStringLiteral("bufferIds")).toArray();
+      for (int i = 0; i < remainingBuffers.size(); ++i) {
+        QString bufferId = remainingBuffers[i].toString();
+        if (!bufferId.isEmpty()) {
+          wsSvc->removeBuffer(p_workspaceId, bufferId);
         }
       }
       wsSvc->deleteWorkspace(p_workspaceId);
     }
-  }
-  // Destroy the WorkspaceWrapper for this split's workspace.
-  if (m_workspaces.contains(p_workspaceId)) {
-    auto *wrapper = m_workspaces.take(p_workspaceId);
-    // Windows should already be closed/removed at this point.
-    auto leftover = wrapper->takeAllViewWindows();
-    for (auto *obj : leftover) {
-      delete qobject_cast<QWidget *>(obj);
+
+    // Destroy the WorkspaceWrapper.
+    if (m_workspaces.contains(p_workspaceId)) {
+      auto *wrapper = m_workspaces.take(p_workspaceId);
+      auto leftover = wrapper->takeAllViewWindows();
+      for (auto *obj : leftover) {
+        delete qobject_cast<QWidget *>(obj);
+      }
+      delete wrapper;
     }
-    delete wrapper;
   }
+
   if (m_currentWorkspaceId == p_workspaceId) {
     m_currentWorkspaceId.clear();
     m_currentWindowId = InvalidViewWindowId;
@@ -354,99 +404,118 @@ void ViewAreaController::newWorkspace(const QString &p_currentWorkspaceId) {
   switchWorkspace(p_currentWorkspaceId, newWsId);
 }
 
-void ViewAreaController::removeWorkspace(QString p_workspaceId) {
+bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
   if (p_workspaceId.isEmpty()) {
-    return;
+    return false;
   }
 
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (!wsSvc) {
-    return;
+    return false;
   }
 
-  // Collect buffer IDs of the workspace being removed.
+  // Step 1: Get workspace's buffer list from vxcore.
   QJsonObject wsConfig = wsSvc->getWorkspace(p_workspaceId);
   QJsonArray bufferIds = wsConfig.value(QStringLiteral("bufferIds")).toArray();
 
-  // Build a set of buffer IDs that exist in OTHER workspaces (to avoid closing shared buffers).
-  QSet<QString> sharedBufferIds;
-  QJsonArray allWorkspaces = wsSvc->listWorkspaces();
-  for (int i = 0; i < allWorkspaces.size(); ++i) {
-    QJsonObject otherWs = allWorkspaces[i].toObject();
-    QString otherWsId = otherWs.value(QStringLiteral("id")).toString();
-    if (otherWsId == p_workspaceId) {
-      continue;
+  // Step 2: Close each ViewWindow one-by-one with abort-on-cancel.
+  // Suppress auto-remove-empty-workspace during the close loop since we manage
+  // the workspace lifecycle explicitly.
+  // TODO(save-prompts): When ViewWindow2::aboutToClose() implements save prompts,
+  // this loop will properly abort on cancel. Currently aboutToClose() always returns
+  // true, so the abort path is untested with real user interaction.
+  if (!bufferIds.isEmpty() && m_view) {
+    m_suppressAutoRemove = true;
+
+    QVector<ID> windowIds = m_view->getViewWindowIdsForWorkspace(p_workspaceId);
+    for (ID winId : windowIds) {
+      qInfo() << "ViewAreaController::removeWorkspace: closing window:" << winId
+              << "in workspace:" << p_workspaceId;
+      if (!closeViewWindow(winId, p_force)) {
+        // Close was cancelled (hook or aboutToClose returned false). Abort.
+        qInfo() << "ViewAreaController::removeWorkspace: close cancelled, aborting";
+        m_suppressAutoRemove = false;
+        return false;
+      }
     }
-    QJsonArray otherBufferIds = otherWs.value(QStringLiteral("bufferIds")).toArray();
-    for (int j = 0; j < otherBufferIds.size(); ++j) {
-      sharedBufferIds.insert(otherBufferIds[j].toString());
+
+    m_suppressAutoRemove = false;
+  }
+
+  // Step 3: Remove remaining buffers from vxcore workspace.
+  // onViewWindowClosed already called wsSvc->removeBuffer() for each closed window,
+  // but there may be buffers without ViewWindows (e.g., hidden workspace case).
+  QJsonObject updatedConfig = wsSvc->getWorkspace(p_workspaceId);
+  QJsonArray remainingBuffers = updatedConfig.value(QStringLiteral("bufferIds")).toArray();
+  for (int i = 0; i < remainingBuffers.size(); ++i) {
+    QString bufferId = remainingBuffers[i].toString();
+    if (!bufferId.isEmpty()) {
+      qInfo() << "ViewAreaController::removeWorkspace: removing orphan buffer:" << bufferId;
+      wsSvc->removeBuffer(p_workspaceId, bufferId);
     }
   }
 
-  // Close buffers that are exclusive to this workspace.
-  auto *bufferSvc = m_services.get<BufferService>();
-  if (bufferSvc) {
-    for (int i = 0; i < bufferIds.size(); ++i) {
-      QString bufferId = bufferIds[i].toString();
-      if (!bufferId.isEmpty() && !sharedBufferIds.contains(bufferId)) {
-        qInfo() << "ViewAreaController::removeWorkspace: closing exclusive buffer:" << bufferId;
-        bufferSvc->closeBuffer(bufferId);
+  // Step 4: Post-removal — find a replacement for the split.
+  QStringList visibleWorkspaceIds = m_view ? m_view->getVisibleWorkspaceIds() : QStringList();
+  int totalSplitCount = m_view ? m_view->getViewSplitCount() : 0;
+  bool splitStillShowsWorkspace = visibleWorkspaceIds.contains(p_workspaceId);
+
+  if (splitStillShowsWorkspace) {
+    // The split is still showing this workspace's identity. Find a replacement.
+    QJsonArray allWorkspaces = wsSvc->listWorkspaces();
+    QString targetWsId;
+    for (int i = 0; i < allWorkspaces.size(); ++i) {
+      QJsonObject ws = allWorkspaces[i].toObject();
+      QString wsId = ws.value(QStringLiteral("id")).toString();
+      if (wsId != p_workspaceId && !visibleWorkspaceIds.contains(wsId)) {
+        targetWsId = wsId;
+        break;
+      }
+    }
+
+    if (!targetWsId.isEmpty()) {
+      // Switch to a hidden workspace.
+      qInfo() << "ViewAreaController::removeWorkspace: switching to hidden workspace:"
+              << targetWsId;
+      switchWorkspace(p_workspaceId, targetWsId);
+    } else if (totalSplitCount > 1) {
+      // No hidden workspace. Remove the split entirely.
+      // Clear current tracking first so removeViewSplit doesn't try to re-enter
+      // removeWorkspace (we're already handling the workspace deletion below).
+      if (m_currentWorkspaceId == p_workspaceId) {
+        m_currentWorkspaceId.clear();
+        m_currentWindowId = InvalidViewWindowId;
+      }
+      qInfo() << "ViewAreaController::removeWorkspace: no hidden workspace, removing split";
+      if (m_view) { m_view->removeViewSplit(p_workspaceId); }
+      emit viewSplitsCountChanged();
+    } else {
+      // Last split. Create a new empty workspace.
+      qInfo() << "ViewAreaController::removeWorkspace: last split, creating new workspace";
+      QString newWsId = wsSvc->createWorkspace(generateWorkspaceName());
+      if (!newWsId.isEmpty()) {
+        auto *newWrapper = new WorkspaceWrapper(newWsId, this);
+        m_workspaces.insert(newWsId, newWrapper);
+        switchWorkspace(p_workspaceId, newWsId);
       }
     }
   }
 
-  // Find a hidden workspace to switch to (one not visible in any split).
-  QStringList visibleWorkspaceIds = m_view ? m_view->getVisibleWorkspaceIds() : QStringList();
-  int totalSplitCount = m_view ? m_view->getViewSplitCount() : 0;
-  QString targetWsId;
-  for (int i = 0; i < allWorkspaces.size(); ++i) {
-    QJsonObject ws = allWorkspaces[i].toObject();
-    QString wsId = ws.value(QStringLiteral("id")).toString();
-    if (wsId != p_workspaceId && !visibleWorkspaceIds.contains(wsId)) {
-      targetWsId = wsId;
-      break;
-    }
-  }
-
-  if (!targetWsId.isEmpty()) {
-    // Switch to the hidden workspace, then delete the old one.
-    qInfo() << "ViewAreaController::removeWorkspace: switching to hidden workspace:" << targetWsId;
-    switchWorkspace(p_workspaceId, targetWsId);
-  } else if (totalSplitCount > 1) {
-    // No hidden workspace available. Remove the split entirely.
-    qInfo() << "ViewAreaController::removeWorkspace: no hidden workspace, removing split";
-    removeViewSplit(p_workspaceId, true);
-    // deleteWorkspace is already called by removeViewSplit.
-    return;
-  } else {
-    // Last split, no hidden workspace. Just clear the tabs (switchWorkspace
-    // to nothing is not possible). The workspace stays but is now empty.
-    qInfo() << "ViewAreaController::removeWorkspace: last split, clearing workspace";
-    // The view windows are still shown — switch to
-    // a new empty workspace to clear them.
-    QString newWsId = wsSvc->createWorkspace(generateWorkspaceName());
-    if (!newWsId.isEmpty()) {
-      auto *newWrapper = new WorkspaceWrapper(newWsId, this);
-      m_workspaces.insert(newWsId, newWrapper);
-      switchWorkspace(p_workspaceId, newWsId);
-    }
-  }
-
-  // Delete the removed workspace from vxcore.
+  // Step 5: Delete the workspace in vxcore.
   qInfo() << "ViewAreaController::removeWorkspace: deleting workspace:" << p_workspaceId;
   wsSvc->deleteWorkspace(p_workspaceId);
 
-  // Destroy the WorkspaceWrapper.
+  // Step 6: Destroy the WorkspaceWrapper.
   if (m_workspaces.contains(p_workspaceId)) {
     auto *wrapper = m_workspaces.take(p_workspaceId);
-    // Windows should already be closed at this point (exclusive buffers closed above,
-    // shared buffers still open in other workspaces).
     auto leftover = wrapper->takeAllViewWindows();
     for (auto *obj : leftover) {
       delete qobject_cast<QWidget *>(obj);
     }
     delete wrapper;
   }
+
+  return true;
 }
 
 void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
