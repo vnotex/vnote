@@ -192,6 +192,10 @@ void ViewSplit2::updateWindowList(QMenu *p_menu) {
   }
 }
 
+void ViewSplit2::setVisibleWorkspaceIdsFunc(const VisibleWorkspaceIdsFunc &p_func) {
+  m_visibleWorkspaceIdsFunc = p_func;
+}
+
 void ViewSplit2::updateMenu(QMenu *p_menu) {
   p_menu->clear();
 
@@ -203,6 +207,12 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
     if (wsSvc) {
       auto workspaces = wsSvc->listWorkspaces();
       auto currentWsId = m_workspaceId;
+
+      // Get workspaces visible in other splits to disable them.
+      QStringList visibleIds;
+      if (m_visibleWorkspaceIdsFunc) {
+        visibleIds = m_visibleWorkspaceIdsFunc();
+      }
 
       for (int i = 0; i < workspaces.size(); ++i) {
         auto wsObj = workspaces[i].toObject();
@@ -216,6 +226,9 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
         act->setCheckable(true);
         if (wsId == currentWsId) {
           act->setChecked(true);
+        } else if (visibleIds.contains(wsId)) {
+          // Workspace is shown in another split — disable to prevent duplication.
+          act->setEnabled(false);
         }
         connect(act, &QAction::triggered, this, [this, wsId]() {
           emit switchWorkspaceRequested(this, wsId);

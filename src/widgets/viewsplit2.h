@@ -4,7 +4,9 @@
 #include <QIcon>
 #include <QTabWidget>
 #include <QString>
+#include <QStringList>
 #include <QVector>
+#include <functional>
 
 #include <core/global.h>
 
@@ -87,6 +89,11 @@ public:
   // Focus the current view window, or focus self if no tabs.
   void focus();
 
+  // Callback to query which workspace IDs are currently visible in splits.
+  // Used by the menu to disable workspaces already shown in other splits.
+  using VisibleWorkspaceIdsFunc = std::function<QStringList()>;
+  void setVisibleWorkspaceIdsFunc(const VisibleWorkspaceIdsFunc &p_func);
+
 signals:
   // Emitted when a tab close button is clicked.
   void viewWindowCloseRequested(ViewWindow2 *p_win);
@@ -167,6 +174,9 @@ private:
 
   // Action groups for menu items (lazy-initialized).
   QActionGroup *m_windowListActionGroup = nullptr;
+
+  // Callback to query visible workspace IDs (set by ViewArea2).
+  VisibleWorkspaceIdsFunc m_visibleWorkspaceIdsFunc;
 
   // Icons (static, shared across all ViewSplit2 instances).
   static QIcon s_windowListIcon;

@@ -70,6 +70,11 @@ public:
   // Get all tracked view window IDs for a given workspace.
   // Returns IDs in tab order. Used by controller for iterative close.
   virtual QVector<ID> getViewWindowIdsForWorkspace(const QString &p_workspaceId) const = 0;
+
+  // Find the view window ID for a buffer in the given workspace.
+  // Returns InvalidViewWindowId if the buffer is not open in that workspace.
+  virtual ID findWindowIdByBufferId(const QString &p_workspaceId,
+                                    const QString &p_bufferId) const = 0;
 };
 
 } // namespace vnotex

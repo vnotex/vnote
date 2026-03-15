@@ -84,6 +84,19 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer,
     return;
   }
   if (!m_view) { return; }
+
+  // Check if the buffer is already open in the current workspace.
+  // If so, just activate the existing tab instead of creating a duplicate.
+  ID existingWindowId = m_view->findWindowIdByBufferId(
+      m_currentWorkspaceId, p_buffer.id());
+  if (existingWindowId != InvalidViewWindowId) {
+    qInfo() << "ViewAreaController::openBuffer: buffer already open in workspace,"
+            << "activating existing window:" << existingWindowId;
+    m_view->setCurrentBuffer(m_currentWorkspaceId, p_buffer.id(), true);
+    setCurrentViewWindow(existingWindowId, p_buffer.id());
+    return;
+  }
+
   m_view->openBuffer(p_buffer, fileType, m_currentWorkspaceId, p_settings);
 }
 
@@ -135,18 +148,83 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
   checkCurrentViewWindowChange(p_workspaceId);
 
   // If workspace is now empty and there are other splits, remove it.
+  // If single split, try to switch to a hidden workspace instead.
   // Suppressed during bulk close operations (removeWorkspace, closeAll).
   int totalSplitCount = m_view ? m_view->getViewSplitCount() : 0;
   if (!m_suppressAutoRemove && m_shouldPropagateToCore
-      && !p_workspaceId.isEmpty() && totalSplitCount > 1) {
+      && !p_workspaceId.isEmpty()) {
     auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc) {
       QJsonObject wsConfig = wsSvc->getWorkspace(p_workspaceId);
       QJsonArray bufferIds = wsConfig.value(QStringLiteral("bufferIds")).toArray();
       if (bufferIds.isEmpty()) {
-        qInfo() << "ViewAreaController: workspace" << p_workspaceId
-                << "is empty, removing split";
-        removeViewSplit(p_workspaceId, false, true);
+        if (totalSplitCount > 1) {
+          // Multiple splits: remove the empty workspace and its split.
+          qInfo() << "ViewAreaController: workspace" << p_workspaceId
+                  << "is empty, removing split";
+          removeViewSplit(p_workspaceId, false, true);
+        } else {
+          // Single split: try to switch to a hidden workspace.
+          QStringList visibleIds = m_view ? m_view->getVisibleWorkspaceIds() : QStringList();
+          QJsonArray allWs = wsSvc->listWorkspaces();
+          QString hiddenWsId;
+          for (int i = 0; i < allWs.size(); ++i) {
+            QString wsId = allWs[i].toObject()
+                               .value(QStringLiteral("id")).toString();
+            if (!visibleIds.contains(wsId) && wsId != p_workspaceId) {
+              hiddenWsId = wsId;
+              break;
+            }
+          }
+          if (!hiddenWsId.isEmpty()) {
+            qInfo() << "ViewAreaController: workspace" << p_workspaceId
+                    << "is empty (last split), switching to hidden workspace:"
+                    << hiddenWsId;
+            // Update the split identity to point to the hidden workspace.
+            // No windows to take/place since the workspace is empty.
+            if (m_view) {
+              m_view->updateSplitWorkspaceId(p_workspaceId, hiddenWsId);
+            }
+            // Show the hidden workspace's cached windows (if any).
+            auto *targetWrapper = m_workspaces.value(hiddenWsId, nullptr);
+            if (targetWrapper && targetWrapper->viewWindowCount() > 0) {
+              int idx = targetWrapper->currentIndex();
+              QVector<QObject *> wins = targetWrapper->takeAllViewWindows();
+              if (m_view) {
+                m_view->placeViewWindowsInSplit(hiddenWsId, wins, idx);
+              }
+              targetWrapper->setVisible(true);
+            } else if (targetWrapper) {
+              // Fresh hidden workspace — open its buffers from vxcore.
+              targetWrapper->setVisible(true);
+              auto *bufferSvc = m_services.get<BufferService>();
+              QJsonObject wsConf = wsSvc->getWorkspace(hiddenWsId);
+              QJsonArray hiddenBufIds = wsConf.value(
+                  QStringLiteral("bufferIds")).toArray();
+              QString curBuf = wsConf.value(
+                  QStringLiteral("currentBufferId")).toString();
+              m_currentWorkspaceId = hiddenWsId;
+              for (int j = 0; j < hiddenBufIds.size(); ++j) {
+                QString bid = hiddenBufIds[j].toString();
+                if (!bid.isEmpty() && bufferSvc) {
+                  openRestoredBuffer(bufferSvc, hiddenWsId, bid, false);
+                }
+              }
+              if (!curBuf.isEmpty() && m_view) {
+                m_view->setCurrentBuffer(hiddenWsId, curBuf, true);
+              }
+            }
+            // Delete the empty workspace from vxcore and its wrapper.
+            wsSvc->deleteWorkspace(p_workspaceId);
+            if (m_workspaces.contains(p_workspaceId)) {
+              auto *wrapper = m_workspaces.take(p_workspaceId);
+              delete wrapper;
+            }
+            setCurrentViewSplit(hiddenWsId, true);
+          }
+          // Else: no hidden workspaces, single split with empty workspace.
+          // This is the "home screen" state — nothing more to do.
+        }
       }
     }
   }
@@ -527,6 +605,17 @@ void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
     return;
   }
 
+  // A workspace can only be shown in one ViewSplit at a time.
+  // Reject switching to a workspace that is already visible in another split.
+  if (m_view) {
+    QStringList visibleIds = m_view->getVisibleWorkspaceIds();
+    if (visibleIds.contains(p_targetWorkspaceId)) {
+      qWarning() << "ViewAreaController::switchWorkspace: target workspace"
+                 << p_targetWorkspaceId << "is already visible in another split";
+      return;
+    }
+  }
+
   auto *currentWrapper = m_workspaces.value(p_currentWorkspaceId, nullptr);
   auto *targetWrapper = m_workspaces.value(p_targetWorkspaceId, nullptr);
   if (!currentWrapper || !targetWrapper) {
@@ -534,6 +623,13 @@ void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
                << p_currentWorkspaceId << "or" << p_targetWorkspaceId;
     return;
   }
+
+  qInfo() << "ViewAreaController::switchWorkspace:"
+          << p_currentWorkspaceId << "->" << p_targetWorkspaceId
+          << "currentWrapper visible:" << currentWrapper->isVisible()
+          << "windowCount:" << currentWrapper->viewWindowCount()
+          << "targetWrapper visible:" << targetWrapper->isVisible()
+          << "windowCount:" << targetWrapper->viewWindowCount();
 
   // Suppress vxcore propagation during reparenting to prevent
   // currentChanged signals from corrupting workspace state.
@@ -577,6 +673,10 @@ void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
       QJsonObject wsConfig = wsSvc->getWorkspace(p_targetWorkspaceId);
       QJsonArray bufferIds = wsConfig.value(QStringLiteral("bufferIds")).toArray();
       QString currentBufferId = wsConfig.value(QStringLiteral("currentBufferId")).toString();
+
+      qInfo() << "ViewAreaController::switchWorkspace: fresh workspace"
+              << p_targetWorkspaceId << "buffers:" << bufferIds
+              << "currentBufferId:" << currentBufferId;
 
       m_currentWorkspaceId = p_targetWorkspaceId;
       for (int i = 0; i < bufferIds.size(); ++i) {
@@ -637,6 +737,18 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
   if (p_layoutWorkspaceIds.isEmpty()) {
     qInfo() << "ViewAreaController::restoreSession: no workspaces in layout";
     return;
+  }
+
+  // Log full vxcore workspace state at entry for debugging.
+  QJsonArray allWsAtEntry = wsSvc->listWorkspaces();
+  qInfo() << "ViewAreaController::restoreSession: vxcore has"
+          << allWsAtEntry.size() << "workspaces, layout has"
+          << p_layoutWorkspaceIds.size();
+  for (int i = 0; i < allWsAtEntry.size(); ++i) {
+    QJsonObject wsObj = allWsAtEntry[i].toObject();
+    qInfo() << "  vxcore workspace:" << wsObj.value(QStringLiteral("id")).toString()
+            << "name:" << wsObj.value(QStringLiteral("name")).toString()
+            << "buffers:" << wsObj.value(QStringLiteral("bufferIds")).toArray();
   }
 
   // Determine the current workspace. If the saved current workspace is not in the
