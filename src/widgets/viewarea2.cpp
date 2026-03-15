@@ -434,7 +434,11 @@ void ViewArea2::removeViewSplit(const QString &p_workspaceId) {
 
   m_splits.remove(p_workspaceId);
   removeViewSplitWidget(split);
-  delete split;
+  // Use deleteLater instead of delete because this may be called from within
+  // a signal handler chain originating from this split (e.g., tab close →
+  // onViewWindowClosed → auto-remove → removeViewSplit). Deleting the split
+  // synchronously would cause a use-after-free when Qt returns to the caller.
+  split->deleteLater();
   updateScreenVisibility();
 }
 

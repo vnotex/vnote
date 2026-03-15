@@ -438,6 +438,10 @@ bool ViewSplit2::eventFilter(QObject *p_object, QEvent *p_event) {
         int idx = tabBar()->tabAt(mouseEve->pos());
         if (idx != -1) {
           closeTab(idx);
+          // closeTab may trigger a chain that removes this split (via auto-remove
+          // of empty workspace). Return true to stop event processing and avoid
+          // accessing potentially invalidated state.
+          return true;
         }
       }
     }
