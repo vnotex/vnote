@@ -7,6 +7,7 @@
 #include <QVariantMap>
 #include <QVector>
 
+#include <controllers/viewareaview.h>
 #include <core/fileopensettings.h>
 #include <core/global.h>
 
@@ -18,7 +19,7 @@ class BufferService;
 
 // Controller for the view area. Handles business logic and service interactions.
 // Does NOT know about ViewArea2 or any widget type -- communicates with the view
-// layer purely via signals carrying IDs.
+// layer via the ViewAreaView interface (direct method calls carrying IDs).
 //
 // IDs used:
 //   WorkspaceId -- QString, mirrors WorkspaceCoreService IDs (vxcore workspace GUIDs).
@@ -27,9 +28,9 @@ class BufferService;
 //
 // Ownership: Created and owned by ViewArea2 (composite widget pattern).
 //
-// Signal flow:
-//   User action  ->  ViewArea2  ->  ViewAreaController slot (carries IDs, not pointers)
-//   Controller decision  ->  signal (carries IDs)  ->  ViewArea2 (resolves to pointer, updates GUI)
+// Communication flow:
+//   User action  ->  ViewArea2  ->  ViewAreaController method (carries IDs, not pointers)
+//   Controller decision  ->  m_view->method() (carries IDs)  ->  ViewArea2 (resolves to pointer, updates GUI)
 class ViewAreaController : public QObject {
   Q_OBJECT
 
@@ -39,17 +40,20 @@ public:
   explicit ViewAreaController(ServiceLocator &p_services, QObject *p_parent = nullptr);
   ~ViewAreaController() override;
 
+  // Set the view interface. Called once by ViewArea2 during setup.
+  void setView(ViewAreaView *p_view);
+
   // ============ Open/Close ============
 
   // Open a buffer in the current workspace (split).
   // Resolves file type via FileTypeCoreService, fires before-hook,
-  // ensures a current workspace exists, then emits openBufferRequested
+  // ensures a current workspace exists, then calls m_view->openBuffer()
   // for the view to create the ViewWindow2 via factory.
   void openBuffer(const Buffer2 &p_buffer,
                   const FileOpenSettings &p_settings = FileOpenSettings());
 
   // Called by the view after it has successfully created a ViewWindow2
-  // in response to openBufferRequested.
+  // in response to m_view->openBuffer().
   // @p_windowId: the ID the view assigned to the new window.
   // Fires the after-open hook and updates current window/workspace tracking.
   void onViewWindowOpened(ID p_windowId, const Buffer2 &p_buffer,
@@ -57,13 +61,12 @@ public:
 
   // Called by the view after a window was successfully destroyed.
   // Updates tracking state and emits windowsChanged.
-  // @p_totalSplitCount: current number of splits (used to auto-remove empty workspaces).
   void onViewWindowClosed(ID p_windowId, const QString &p_bufferId,
-                          const QString &p_workspaceId, int p_totalSplitCount);
+                          const QString &p_workspaceId);
 
   // Request to close the view window identified by p_windowId.
-  // Fires the before-close hook (cancellable). On success, emits
-  // closeViewWindowRequested so the view can call aboutToClose and destroy it.
+  // Fires the before-close hook (cancellable). On success, calls
+  // m_view->closeViewWindow() so the view can call aboutToClose and destroy it.
   // @p_force: skip unsaved-changes check.
   // Returns false if a hook cancelled the close.
   bool closeViewWindow(ID p_windowId, bool p_force);
@@ -76,14 +79,13 @@ public:
 
   // Split the workspace p_workspaceId in the given direction.
   // Fires hooks, allocates a new workspace via WorkspaceCoreService,
-  // then emits splitRequested for the view to create the new split widget.
+  // then calls m_view->split() for the view to create the new split widget.
   void splitViewSplit(const QString &p_workspaceId, Direction p_direction);
 
   // Remove the split for p_workspaceId.
-  // Closes all windows in it first; fires hooks; emits removeViewSplitRequested.
-  // @p_totalSplitCount: current number of splits (cannot remove last one).
+  // Closes all windows in it first; fires hooks; calls m_view->removeViewSplit().
   // Returns true if removed.
-  bool removeViewSplit(const QString &p_workspaceId, bool p_force, int p_totalSplitCount);
+  bool removeViewSplit(const QString &p_workspaceId, bool p_force);
 
   // Maximize the split for p_workspaceId.
   void maximizeViewSplit(const QString &p_workspaceId);
@@ -107,12 +109,9 @@ public:
   // Remove the workspace for the given split.
   // Closes its buffers (if not in other workspaces), deletes the workspace,
   // then switches to a hidden workspace. If none available, removes the split.
-  // @p_visibleWorkspaceIds: workspace IDs currently shown in splits.
-  // @p_totalSplitCount: current number of splits.
   // Note: p_workspaceId is passed by value because switchWorkspace may modify
   // the split's workspace ID during this call.
-  void removeWorkspace(QString p_workspaceId,
-                       const QStringList &p_visibleWorkspaceIds, int p_totalSplitCount);
+  void removeWorkspace(QString p_workspaceId);
 
   // Switch the given split to a different workspace.
   void switchWorkspace(const QString &p_currentWorkspaceId, const QString &p_targetWorkspaceId);
@@ -157,57 +156,14 @@ public:
   // Note: currentWorkspaceId is persisted by vxcore, not here.
   QJsonObject saveLayout(const QJsonObject &p_widgetTree) const;
 
-  // Load layout: emits loadLayoutRequested for the view to reconstruct widgets.
+  // Load layout: calls m_view->loadLayout() for the view to reconstruct widgets.
   void loadLayout(const QJsonObject &p_layout);
 
   // Subscribe to file-open hooks. Called once during initialization.
   void subscribeToHooks();
 
 signals:
-  // ============ Signals to View (ViewArea2 connects to these) ============
-
-  // Request to add the first view split (when area is empty).
-  void addFirstViewSplitRequested(const QString &p_workspaceId);
-
-  // Request to split an existing workspace.
-  // @p_workspaceId:    the workspace to split adjacent to.
-  // @p_direction:      direction of the new split.
-  // @p_newWorkspaceId: workspace ID for the new split.
-  void splitRequested(const QString &p_workspaceId, Direction p_direction,
-                      const QString &p_newWorkspaceId);
-
-  // Request to remove the split for the given workspace from the layout.
-  void removeViewSplitRequested(const QString &p_workspaceId);
-
-  // Request to maximize the split for the given workspace.
-  void maximizeViewSplitRequested(const QString &p_workspaceId);
-
-  // Request to distribute all splits evenly.
-  void distributeViewSplitsRequested();
-
-  // Request to open a buffer -- the view should create a ViewWindow2 via factory.
-  // On success, the view calls onViewWindowOpened() with the assigned window ID.
-  void openBufferRequested(const Buffer2 &p_buffer, const QString &p_fileType,
-                           const QString &p_workspaceId, const FileOpenSettings &p_settings);
-
-  // Request to close the view window p_windowId.
-  // View calls aboutToClose, destroys it, then calls onViewWindowClosed.
-  void closeViewWindowRequested(ID p_windowId, bool p_force);
-
-  // Request to set the current active workspace.
-  void setCurrentViewSplitRequested(const QString &p_workspaceId, bool p_focus);
-
-  // Request to move a view window from one workspace to another.
-  void moveViewWindowToSplitRequested(ID p_windowId, const QString &p_srcWorkspaceId,
-                                      const QString &p_dstWorkspaceId);
-
-  // Request to focus the split for the given workspace.
-  void focusViewSplitRequested(const QString &p_workspaceId);
-
-  // Request to switch the split from one workspace to another.
-  // The view should save current tab state, clear tabs, load new workspace tabs.
-  void switchWorkspaceRequested(const QString &p_currentWorkspaceId,
-                                const QString &p_newWorkspaceId);
+  // ============ Notification Signals (external consumers) ============
 
   // Emitted when the current view window changes.
   void currentViewWindowChanged();
@@ -218,13 +174,6 @@ signals:
   // Emitted when the count of splits changes.
   void viewSplitsCountChanged();
 
-  // Request to load a full layout tree from JSON.
-  void loadLayoutRequested(const QJsonObject &p_layout);
-
-  // Request to set the current buffer (tab) in a workspace during session restore.
-  void setCurrentBufferRequested(const QString &p_workspaceId, const QString &p_bufferId,
-                                 bool p_focus);
-
 private:
   // Emit currentViewWindowChanged if the active window has changed.
   void checkCurrentViewWindowChange(const QString &p_workspaceId);
@@ -233,7 +182,7 @@ private:
   void onFileAfterOpen(const QVariantMap &p_args);
 
   // Open a single buffer during session restore.
-  // Resolves file type and emits openBufferRequested for the view to create the ViewWindow2.
+  // Resolves file type and calls m_view->openBuffer() for the view to create the ViewWindow2.
   void openRestoredBuffer(BufferService *p_bufferSvc, const QString &p_workspaceId,
                           const QString &p_bufferId, bool p_focus);
 
@@ -242,6 +191,7 @@ private:
   QString generateWorkspaceName() const;
 
   ServiceLocator &m_services;
+  ViewAreaView *m_view = nullptr;
   ID m_currentWindowId = InvalidViewWindowId;
   QString m_currentWorkspaceId;
 

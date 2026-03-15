@@ -125,7 +125,7 @@ void MainWindow2::loadStateAndGeometry() {
     QJsonObject layout = sessionConfig.getViewAreaLayout();
     qInfo() << "MainWindow2::loadStateAndGeometry: loading view area layout"
             << QJsonDocument(layout).toJson(QJsonDocument::Compact);
-    m_viewArea->loadLayout(layout);
+    m_viewArea->loadLayoutFromSession(layout);
   }
 }
 

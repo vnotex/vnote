@@ -52,33 +52,7 @@ ViewArea2::~ViewArea2() {
 
 void ViewArea2::setupController() {
   m_controller = new ViewAreaController(m_services, this);
-
-  connect(m_controller, &ViewAreaController::addFirstViewSplitRequested,
-          this, &ViewArea2::onAddFirstViewSplitRequested);
-  connect(m_controller, &ViewAreaController::splitRequested,
-          this, &ViewArea2::onSplitRequested);
-  connect(m_controller, &ViewAreaController::removeViewSplitRequested,
-          this, &ViewArea2::onRemoveViewSplitRequested);
-  connect(m_controller, &ViewAreaController::maximizeViewSplitRequested,
-          this, &ViewArea2::onMaximizeViewSplitRequested);
-  connect(m_controller, &ViewAreaController::distributeViewSplitsRequested,
-          this, &ViewArea2::onDistributeViewSplitsRequested);
-  connect(m_controller, &ViewAreaController::openBufferRequested,
-          this, &ViewArea2::onOpenBufferRequested);
-  connect(m_controller, &ViewAreaController::closeViewWindowRequested,
-          this, &ViewArea2::onCloseViewWindowRequested);
-  connect(m_controller, &ViewAreaController::setCurrentViewSplitRequested,
-          this, &ViewArea2::onSetCurrentViewSplitRequested);
-  connect(m_controller, &ViewAreaController::focusViewSplitRequested,
-          this, &ViewArea2::onFocusViewSplitRequested);
-  connect(m_controller, &ViewAreaController::moveViewWindowToSplitRequested,
-          this, &ViewArea2::onMoveViewWindowToSplitRequested);
-  connect(m_controller, &ViewAreaController::loadLayoutRequested,
-          this, &ViewArea2::onLoadLayoutRequested);
-  connect(m_controller, &ViewAreaController::switchWorkspaceRequested,
-          this, &ViewArea2::onSwitchWorkspaceRequested);
-  connect(m_controller, &ViewAreaController::setCurrentBufferRequested,
-          this, &ViewArea2::onSetCurrentBufferRequested);
+  m_controller->setView(this);
 
   m_controller->subscribeToHooks();
 
@@ -122,7 +96,7 @@ QSplitter *ViewArea2::createSplitter(Qt::Orientation p_orientation) {
 
 // ============ Layout Management ============
 
-ViewSplit2 *ViewArea2::addFirstViewSplit(const QString &p_workspaceId) {
+ViewSplit2 *ViewArea2::addFirstViewSplitWidget(const QString &p_workspaceId) {
   Q_ASSERT(!m_topWidget);
   auto *split = createViewSplit(p_workspaceId);
   m_splits[p_workspaceId] = split;
@@ -172,7 +146,7 @@ ViewSplit2 *ViewArea2::splitAt(ViewSplit2 *p_split, Direction p_direction,
   return newSplit;
 }
 
-void ViewArea2::removeViewSplit(ViewSplit2 *p_split) {
+void ViewArea2::removeViewSplitWidget(ViewSplit2 *p_split) {
   auto *parentSplitter = findParentSplitter(p_split);
   if (!parentSplitter) {
     m_contentsLayout->removeWidget(p_split);
@@ -186,7 +160,7 @@ void ViewArea2::removeViewSplit(ViewSplit2 *p_split) {
   }
 }
 
-void ViewArea2::maximizeViewSplit(ViewSplit2 *p_split) {
+void ViewArea2::maximizeViewSplitWidget(ViewSplit2 *p_split) {
   QWidget *target = p_split;
   auto *splitter = findParentSplitter(target);
   while (splitter) {
@@ -204,7 +178,7 @@ void ViewArea2::maximizeViewSplit(ViewSplit2 *p_split) {
   }
 }
 
-void ViewArea2::distributeViewSplits() {
+void ViewArea2::distributeViewSplitWidgets() {
   auto *splitter = qobject_cast<QSplitter *>(m_topWidget);
   if (splitter) { distributeSplitter(splitter); }
 }
@@ -265,7 +239,7 @@ QJsonObject ViewArea2::saveLayout() const {
   return m_controller->saveLayout(widgetTree);
 }
 
-void ViewArea2::loadLayout(const QJsonObject &p_layout) {
+void ViewArea2::loadLayoutFromSession(const QJsonObject &p_layout) {
   if (!p_layout.isEmpty()) { m_controller->loadLayout(p_layout); }
 }
 
@@ -380,8 +354,7 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
             // Copy the workspace ID since the split's ID may change during removeWorkspace
             // (switchWorkspace modifies the split's workspace identity).
             QString wsId = s->getWorkspaceId();
-            m_controller->removeWorkspace(wsId,
-                                          m_splits.keys(), getViewSplitCount());
+            m_controller->removeWorkspace(wsId);
           });
   connect(p_split, &ViewSplit2::switchWorkspaceRequested, this,
           [this](ViewSplit2 *s, const QString &wsId) {
@@ -393,20 +366,20 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
           });
 }
 
-// ============ Controller signal handlers ============
+// ============ ViewAreaView Interface Implementations ============
 
-void ViewArea2::onAddFirstViewSplitRequested(const QString &p_workspaceId) {
-  auto *split = addFirstViewSplit(p_workspaceId);
+void ViewArea2::addFirstViewSplit(const QString &p_workspaceId) {
+  auto *split = addFirstViewSplitWidget(p_workspaceId);
   wireSplitSignals(split);
   m_controller->setCurrentViewSplit(p_workspaceId, true);
   updateScreenVisibility();
 }
 
-void ViewArea2::onSplitRequested(const QString &p_workspaceId, Direction p_direction,
-                                  const QString &p_newWorkspaceId) {
+void ViewArea2::split(const QString &p_workspaceId, Direction p_direction,
+                      const QString &p_newWorkspaceId) {
   auto *existingSplit = splitForWorkspace(p_workspaceId);
   if (!existingSplit) {
-    qWarning() << "ViewArea2::onSplitRequested: workspace not found:" << p_workspaceId;
+    qWarning() << "ViewArea2::split: workspace not found:" << p_workspaceId;
     return;
   }
   auto *newSplit = splitAt(existingSplit, p_direction, p_newWorkspaceId);
@@ -414,7 +387,7 @@ void ViewArea2::onSplitRequested(const QString &p_workspaceId, Direction p_direc
   m_controller->setCurrentViewSplit(p_newWorkspaceId, true);
 }
 
-void ViewArea2::onRemoveViewSplitRequested(const QString &p_workspaceId) {
+void ViewArea2::removeViewSplit(const QString &p_workspaceId) {
   auto *split = splitForWorkspace(p_workspaceId);
   if (!split) { return; }
 
@@ -429,26 +402,26 @@ void ViewArea2::onRemoveViewSplitRequested(const QString &p_workspaceId) {
   }
 
   m_splits.remove(p_workspaceId);
-  removeViewSplit(split);
+  removeViewSplitWidget(split);
   delete split;
   updateScreenVisibility();
 }
 
-void ViewArea2::onMaximizeViewSplitRequested(const QString &p_workspaceId) {
+void ViewArea2::maximizeViewSplit(const QString &p_workspaceId) {
   auto *split = splitForWorkspace(p_workspaceId);
-  if (split) { maximizeViewSplit(split); }
+  if (split) { maximizeViewSplitWidget(split); }
 }
 
-void ViewArea2::onDistributeViewSplitsRequested() {
-  distributeViewSplits();
+void ViewArea2::distributeViewSplits() {
+  distributeViewSplitWidgets();
 }
 
-void ViewArea2::onOpenBufferRequested(const Buffer2 &p_buffer, const QString &p_fileType,
-                                       const QString &p_workspaceId,
-                                       const FileOpenSettings &p_settings) {
+void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
+                           const QString &p_workspaceId,
+                           const FileOpenSettings &p_settings) {
   auto *split = splitForWorkspace(p_workspaceId);
   if (!split) {
-    qWarning() << "ViewArea2::onOpenBufferRequested: workspace not found:" << p_workspaceId;
+    qWarning() << "ViewArea2::openBuffer: workspace not found:" << p_workspaceId;
     return;
   }
   auto *factory = m_services.get<ViewWindowFactory>();
@@ -476,7 +449,7 @@ void ViewArea2::onOpenBufferRequested(const Buffer2 &p_buffer, const QString &p_
   updateScreenVisibility();
 }
 
-void ViewArea2::onCloseViewWindowRequested(ID p_windowId, bool p_force) {
+void ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
   auto *win = windowForId(p_windowId);
   if (!win) { return; }
 
@@ -502,11 +475,11 @@ void ViewArea2::onCloseViewWindowRequested(ID p_windowId, bool p_force) {
   m_windows.remove(p_windowId);
   delete win;
 
-  m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId, getViewSplitCount());
+  m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId);
   updateScreenVisibility();
 }
 
-void ViewArea2::onSetCurrentViewSplitRequested(const QString &p_workspaceId, bool p_focus) {
+void ViewArea2::setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) {
   for (auto *split : getAllViewSplits()) { split->setActive(false); }
   auto *split = splitForWorkspace(p_workspaceId);
   if (split) {
@@ -515,14 +488,14 @@ void ViewArea2::onSetCurrentViewSplitRequested(const QString &p_workspaceId, boo
   }
 }
 
-void ViewArea2::onFocusViewSplitRequested(const QString &p_workspaceId) {
+void ViewArea2::focusViewSplit(const QString &p_workspaceId) {
   auto *split = splitForWorkspace(p_workspaceId);
   if (split) { split->focus(); }
 }
 
-void ViewArea2::onMoveViewWindowToSplitRequested(ID p_windowId,
-                                                  const QString &p_srcWorkspaceId,
-                                                  const QString &p_dstWorkspaceId) {
+void ViewArea2::moveViewWindowToSplit(ID p_windowId,
+                                      const QString &p_srcWorkspaceId,
+                                      const QString &p_dstWorkspaceId) {
   auto *win = windowForId(p_windowId);
   auto *srcSplit = splitForWorkspace(p_srcWorkspaceId);
   auto *dstSplit = splitForWorkspace(p_dstWorkspaceId);
@@ -550,19 +523,19 @@ void ViewArea2::onMoveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindo
 }
 
 void ViewArea2::onRemoveSplitRequested(ViewSplit2 *p_split) {
-  m_controller->removeViewSplit(p_split->getWorkspaceId(), false, getViewSplitCount());
+  m_controller->removeViewSplit(p_split->getWorkspaceId(), false);
 }
 
 // ============ Layout serialization/deserialization ============
 
-void ViewArea2::onLoadLayoutRequested(const QJsonObject &p_layout) {
+void ViewArea2::loadLayout(const QJsonObject &p_layout) {
   const QJsonObject tree = p_layout.value(QStringLiteral("splitterTree")).toObject();
   if (tree.isEmpty()) { return; }
 
   const QString type = tree.value(QStringLiteral("type")).toString();
   if (type == QStringLiteral("workspace")) {
     QString wsId = tree.value(QStringLiteral("workspaceId")).toString();
-    auto *split = addFirstViewSplit(wsId);
+    auto *split = addFirstViewSplitWidget(wsId);
     wireSplitSignals(split);
   } else if (type == QStringLiteral("splitter")) {
     Qt::Orientation orient =
@@ -578,11 +551,11 @@ void ViewArea2::onLoadLayoutRequested(const QJsonObject &p_layout) {
   updateScreenVisibility();
 }
 
-void ViewArea2::onSwitchWorkspaceRequested(const QString &p_currentWorkspaceId,
-                                            const QString &p_newWorkspaceId) {
+void ViewArea2::switchWorkspace(const QString &p_currentWorkspaceId,
+                                const QString &p_newWorkspaceId) {
   auto *split = splitForWorkspace(p_currentWorkspaceId);
   if (!split) {
-    qWarning() << "ViewArea2::onSwitchWorkspaceRequested: workspace not found:"
+    qWarning() << "ViewArea2::switchWorkspace: workspace not found:"
                << p_currentWorkspaceId;
     return;
   }
@@ -628,8 +601,8 @@ void ViewArea2::onSwitchWorkspaceRequested(const QString &p_currentWorkspaceId,
   updateScreenVisibility();
 }
 
-void ViewArea2::onSetCurrentBufferRequested(const QString &p_workspaceId,
-                                            const QString &p_bufferId, bool p_focus) {
+void ViewArea2::setCurrentBuffer(const QString &p_workspaceId,
+                                 const QString &p_bufferId, bool p_focus) {
   auto *split = splitForWorkspace(p_workspaceId);
   if (!split) {
     return;
@@ -647,8 +620,12 @@ void ViewArea2::onSetCurrentBufferRequested(const QString &p_workspaceId,
     }
   }
 
-  qWarning() << "ViewArea2::onSetCurrentBufferRequested: buffer not found:"
+  qWarning() << "ViewArea2::setCurrentBuffer: buffer not found:"
              << p_bufferId << "in workspace:" << p_workspaceId;
+}
+
+QStringList ViewArea2::getVisibleWorkspaceIds() const {
+  return m_splits.keys();
 }
 
 QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) {

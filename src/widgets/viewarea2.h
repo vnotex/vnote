@@ -8,6 +8,7 @@
 
 #include <core/fileopensettings.h>
 #include <core/global.h>
+#include <controllers/viewareaview.h>
 
 class QSplitter;
 class QStackedLayout;
@@ -25,13 +26,12 @@ class ViewWindowFactory;
 
 // ViewArea2: composite widget owning the GUI (splitter tree + ViewSplit2s) and
 // ViewAreaController.  The controller knows nothing about ViewArea2.
+// Implements ViewAreaView so the controller can call view commands directly.
 //
 // ID maps (sole source of truth):
 //   m_splits  : workspaceId  (QString) -> ViewSplit2*
 //   m_windows : windowId     (ID)      -> ViewWindow2*
-//
-// All controller signals carry IDs; ViewArea2 resolves them to pointers.
-class ViewArea2 : public QWidget {
+class ViewArea2 : public QWidget, public ViewAreaView {
   Q_OBJECT
 public:
   explicit ViewArea2(ServiceLocator &p_services, QWidget *p_parent = nullptr);
@@ -43,26 +43,26 @@ public:
   ViewSplit2 *createViewSplit(const QString &p_workspaceId);
   QSplitter *createSplitter(Qt::Orientation p_orientation);
 
-  // ============ Layout Management ============
-  ViewSplit2 *addFirstViewSplit(const QString &p_workspaceId);
+  // ============ Layout Management (widget-level) ============
+  ViewSplit2 *addFirstViewSplitWidget(const QString &p_workspaceId);
   ViewSplit2 *splitAt(ViewSplit2 *p_split, Direction p_direction,
                       const QString &p_workspaceId);
-  void removeViewSplit(ViewSplit2 *p_split);
-  void maximizeViewSplit(ViewSplit2 *p_split);
-  void distributeViewSplits();
+  void removeViewSplitWidget(ViewSplit2 *p_split);
+  void maximizeViewSplitWidget(ViewSplit2 *p_split);
+  void distributeViewSplitWidgets();
   ViewSplit2 *findSplitByDirection(ViewSplit2 *p_split, Direction p_direction) const;
 
   // ============ State ============
   QVector<ViewSplit2 *> getAllViewSplits() const;
   ViewSplit2 *getCurrentViewSplit() const;
-  int getViewSplitCount() const;
+  int getViewSplitCount() const override;
 
   // ============ Top Widget ============
   QWidget *getTopWidget() const;
   void setTopWidget(QWidget *p_widget);
 
   QJsonObject saveLayout() const;
-  void loadLayout(const QJsonObject &p_layout);
+  void loadLayoutFromSession(const QJsonObject &p_layout);
 
   // Save workspace/buffer session state to vxcore and call vxcore_shutdown().
   // Called before closing buffers on exit.
@@ -72,29 +72,30 @@ public:
   // Called after loadLayout() has created the splitter tree.
   void restoreSession();
 
-private slots:
-  // Controller signal handlers
-  void onAddFirstViewSplitRequested(const QString &p_workspaceId);
-  void onSplitRequested(const QString &p_workspaceId, Direction p_direction,
-                        const QString &p_newWorkspaceId);
-  void onRemoveViewSplitRequested(const QString &p_workspaceId);
-  void onMaximizeViewSplitRequested(const QString &p_workspaceId);
-  void onDistributeViewSplitsRequested();
-  void onOpenBufferRequested(const Buffer2 &p_buffer, const QString &p_fileType,
-                             const QString &p_workspaceId,
-                             const FileOpenSettings &p_settings);
-  void onCloseViewWindowRequested(ID p_windowId, bool p_force);
-  void onSetCurrentViewSplitRequested(const QString &p_workspaceId, bool p_focus);
-  void onFocusViewSplitRequested(const QString &p_workspaceId);
-  void onMoveViewWindowToSplitRequested(ID p_windowId,
-                                        const QString &p_srcWorkspaceId,
-                                        const QString &p_dstWorkspaceId);
-  void onLoadLayoutRequested(const QJsonObject &p_layout);
-  void onSwitchWorkspaceRequested(const QString &p_currentWorkspaceId,
-                                  const QString &p_newWorkspaceId);
-  void onSetCurrentBufferRequested(const QString &p_workspaceId, const QString &p_bufferId,
-                                   bool p_focus);
+  // ============ ViewAreaView Interface (overrides) ============
+  void addFirstViewSplit(const QString &p_workspaceId) override;
+  void split(const QString &p_workspaceId, Direction p_direction,
+             const QString &p_newWorkspaceId) override;
+  void removeViewSplit(const QString &p_workspaceId) override;
+  void maximizeViewSplit(const QString &p_workspaceId) override;
+  void distributeViewSplits() override;
+  void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
+                  const QString &p_workspaceId,
+                  const FileOpenSettings &p_settings) override;
+  void closeViewWindow(ID p_windowId, bool p_force) override;
+  void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) override;
+  void focusViewSplit(const QString &p_workspaceId) override;
+  void moveViewWindowToSplit(ID p_windowId,
+                             const QString &p_srcWorkspaceId,
+                             const QString &p_dstWorkspaceId) override;
+  void switchWorkspace(const QString &p_currentWorkspaceId,
+                       const QString &p_newWorkspaceId) override;
+  void loadLayout(const QJsonObject &p_layout) override;
+  void setCurrentBuffer(const QString &p_workspaceId, const QString &p_bufferId,
+                        bool p_focus) override;
+  QStringList getVisibleWorkspaceIds() const override;
 
+private slots:
   // ViewSplit2 signal handlers
   void onMoveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindow2 *p_win,
                                          Direction p_direction);

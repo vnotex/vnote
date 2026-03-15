@@ -1,5 +1,6 @@
 target_sources(vnote PRIVATE
     viewareacontroller.cpp viewareacontroller.h
+    viewareaview.h
     notebooknodecontroller.cpp notebooknodecontroller.h
     newnotebookcontroller.cpp newnotebookcontroller.h
     newnotecontroller.cpp newnotecontroller.h
