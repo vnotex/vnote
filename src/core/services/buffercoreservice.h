@@ -2,6 +2,7 @@
 #define BUFFERCORESERVICE_H
 
 #include <QByteArray>
+#include <QByteArrayView>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QObject>
@@ -65,6 +66,11 @@ public:
 
   // Get buffer content as raw bytes.
   QByteArray getContentRaw(const QString &p_bufferId) const;
+
+  // Return a non-owning view over the buffer's raw content held by vxcore.
+  // The view is only valid until the next buffer-mutating operation
+  // (setContent, setContentRaw, save, reload, close, autoSaveTick).
+  QByteArrayView peekContentRaw(const QString &p_bufferId) const;
 
   // Set buffer content from raw bytes.
   bool setContentRaw(const QString &p_bufferId, const QByteArray &p_data);

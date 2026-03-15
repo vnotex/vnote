@@ -84,6 +84,13 @@ QByteArray Buffer2::getContentRaw() const {
   return m_bufferCoreService->getContentRaw(m_bufferId);
 }
 
+QByteArrayView Buffer2::peekContentRaw() const {
+  if (!isValid()) {
+    return QByteArrayView{};
+  }
+  return m_bufferCoreService->peekContentRaw(m_bufferId);
+}
+
 bool Buffer2::setContentRaw(const QByteArray &p_data) {
   if (!isValid()) {
     return false;

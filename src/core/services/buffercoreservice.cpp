@@ -142,6 +142,23 @@ QByteArray BufferCoreService::getContentRaw(const QString &p_bufferId) const {
   return QByteArray(static_cast<const char *>(data), static_cast<int>(size));
 }
 
+QByteArrayView BufferCoreService::peekContentRaw(const QString &p_bufferId) const {
+  if (!checkContext()) {
+    return QByteArrayView{};
+  }
+
+  const void *data = nullptr;
+  size_t size = 0;
+  VxCoreError err =
+      vxcore_buffer_get_content_raw(m_context, p_bufferId.toUtf8().constData(), &data, &size);
+  if (err != VXCORE_OK) {
+    qWarning() << "peekContentRaw failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QByteArrayView{};
+  }
+  // Return a non-owning view. Valid only until the next buffer-mutating operation.
+  return QByteArrayView(static_cast<const char *>(data), static_cast<qsizetype>(size));
+}
+
 bool BufferCoreService::setContentRaw(const QString &p_bufferId, const QByteArray &p_data) {
   if (!checkContext()) {
     return false;

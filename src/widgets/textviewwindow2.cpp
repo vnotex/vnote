@@ -74,7 +74,7 @@ void TextViewWindow2::syncEditorFromBuffer() {
     QString suffix = QFileInfo(nodeId.relativePath).suffix();
     m_editor->setSyntax(suffix);
     m_editor->setReadOnly(false);
-    m_editor->setText(QString::fromUtf8(buffer.getContentRaw()));
+    m_editor->setText(QString::fromUtf8(buffer.peekContentRaw()));
     m_editor->setModified(buffer.isModified());
   } else {
     m_editor->setSyntax(QString());
