@@ -1,5 +1,6 @@
 #include "configcoreservice.h"
 
+#include <QDebug>
 #include <QJsonDocument>
 #include <QJsonParseError>
 
@@ -170,3 +171,19 @@ QJsonObject ConfigCoreService::parseJsonObjectFromCStr(char *p_str) {
 }
 
 bool ConfigCoreService::checkContext() const { return m_context != nullptr; }
+
+bool ConfigCoreService::shutdown() {
+  if (!checkContext()) {
+    qWarning() << "ConfigCoreService::shutdown: context is null";
+    return false;
+  }
+  qInfo() << "ConfigCoreService::shutdown: persisting session state...";
+  VxCoreError err = vxcore_shutdown(m_context);
+  if (err != VXCORE_OK) {
+    qWarning() << "ConfigCoreService::shutdown: vxcore_shutdown failed:"
+               << vxcore_error_message(err);
+    return false;
+  }
+  qInfo() << "ConfigCoreService::shutdown: done";
+  return true;
+}

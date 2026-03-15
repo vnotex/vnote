@@ -14,6 +14,7 @@ namespace vnotex {
 
 class ServiceLocator;
 class Buffer2;
+class BufferService;
 
 // Controller for the view area. Handles business logic and service interactions.
 // Does NOT know about ViewArea2 or any widget type -- communicates with the view
@@ -56,8 +57,9 @@ public:
 
   // Called by the view after a window was successfully destroyed.
   // Updates tracking state and emits windowsChanged.
+  // @p_totalSplitCount: current number of splits (used to auto-remove empty workspaces).
   void onViewWindowClosed(ID p_windowId, const QString &p_bufferId,
-                          const QString &p_workspaceId);
+                          const QString &p_workspaceId, int p_totalSplitCount);
 
   // Request to close the view window identified by p_windowId.
   // Fires the before-close hook (cancellable). On success, emits
@@ -94,17 +96,29 @@ public:
   // @p_windowId:       window to move.
   // @p_direction:      direction of movement.
   // @p_dstWorkspaceId: resolved destination workspace.
+  // @p_bufferId:       buffer ID of the window being moved.
   void moveViewWindowOneSplit(const QString &p_srcWorkspaceId, ID p_windowId,
-                              Direction p_direction, const QString &p_dstWorkspaceId);
+                              Direction p_direction, const QString &p_dstWorkspaceId,
+                              const QString &p_bufferId);
 
   // Create a new workspace for the given split and switch to it.
   void newWorkspace(const QString &p_currentWorkspaceId);
 
   // Remove the workspace for the given split.
-  void removeWorkspace(const QString &p_workspaceId);
+  // Closes its buffers (if not in other workspaces), deletes the workspace,
+  // then switches to a hidden workspace. If none available, removes the split.
+  // @p_visibleWorkspaceIds: workspace IDs currently shown in splits.
+  // @p_totalSplitCount: current number of splits.
+  // Note: p_workspaceId is passed by value because switchWorkspace may modify
+  // the split's workspace ID during this call.
+  void removeWorkspace(QString p_workspaceId,
+                       const QStringList &p_visibleWorkspaceIds, int p_totalSplitCount);
 
   // Switch the given split to a different workspace.
   void switchWorkspace(const QString &p_currentWorkspaceId, const QString &p_targetWorkspaceId);
+
+  // Update the buffer order in a workspace (e.g., after tab drag-to-reorder).
+  void setBufferOrder(const QString &p_workspaceId, const QStringList &p_bufferIds);
 
   // ============ Current State ============
 
@@ -118,16 +132,29 @@ public:
   void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus);
 
   // Called by the view when the active tab changes within a split.
-  void setCurrentViewWindow(ID p_windowId);
+  // @p_bufferId: buffer ID of the newly active window (to update vxcore current buffer).
+  void setCurrentViewWindow(ID p_windowId, const QString &p_bufferId = QString());
 
   // Focus the current split.
   void focus();
 
   // ============ Session ============
 
+  // Whether view area operations should propagate state changes to vxcore.
+  // Set to false during session restore and shutdown.
+  void setShouldPropagateToCore(bool p_enabled);
+  bool shouldPropagateToCore() const;
+
+  // Restore buffers from vxcore workspace state.
+  // Call after loadLayout() has created the splitter tree.
+  // @p_layoutWorkspaceIds: workspace IDs present in the splitter layout.
+  //   Only workspaces in this set will have their buffers restored.
+  void restoreSession(const QStringList &p_layoutWorkspaceIds);
+
   // Save layout.
   // @p_widgetTree: pre-serialized splitter/workspace tree from ViewArea2.
-  // Returns combined JSON (adds currentWorkspaceId from WorkspaceCoreService).
+  // Returns JSON containing the splitter tree geometry only.
+  // Note: currentWorkspaceId is persisted by vxcore, not here.
   QJsonObject saveLayout(const QJsonObject &p_widgetTree) const;
 
   // Load layout: emits loadLayoutRequested for the view to reconstruct widgets.
@@ -194,12 +221,21 @@ signals:
   // Request to load a full layout tree from JSON.
   void loadLayoutRequested(const QJsonObject &p_layout);
 
+  // Request to set the current buffer (tab) in a workspace during session restore.
+  void setCurrentBufferRequested(const QString &p_workspaceId, const QString &p_bufferId,
+                                 bool p_focus);
+
 private:
   // Emit currentViewWindowChanged if the active window has changed.
   void checkCurrentViewWindowChange(const QString &p_workspaceId);
 
   // Handle FileAfterOpen hook: open a ViewWindow2 for the newly opened buffer.
   void onFileAfterOpen(const QVariantMap &p_args);
+
+  // Open a single buffer during session restore.
+  // Resolves file type and emits openBufferRequested for the view to create the ViewWindow2.
+  void openRestoredBuffer(BufferService *p_bufferSvc, const QString &p_workspaceId,
+                          const QString &p_bufferId, bool p_focus);
 
   // Generate a workspace name like "Workspace 1", "Workspace 2", etc.
   // Finds the next available number by scanning existing workspace names.
@@ -208,6 +244,11 @@ private:
   ServiceLocator &m_services;
   ID m_currentWindowId = InvalidViewWindowId;
   QString m_currentWorkspaceId;
+
+  // Whether view area operations should propagate state changes to vxcore.
+  // false during session restore (rebuilding UI from vxcore state).
+  // true during normal operation (user actions update vxcore).
+  bool m_shouldPropagateToCore = true;
 };
 
 } // namespace vnotex

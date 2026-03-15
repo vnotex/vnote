@@ -2,6 +2,7 @@
 
 #include <QCloseEvent>
 #include <QDockWidget>
+#include <QJsonDocument>
 #include <QToolBar>
 #include <QTimer>
 #include <QWidget>
@@ -87,6 +88,13 @@ void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen) {
     emit layoutChanged();
 
     m_notebookExplorer->loadNotebooks();
+
+    // Fire after-start hook so components can restore session state.
+    auto *hookMgr = m_serviceLocator.get<HookManager>();
+    if (hookMgr) {
+      QVariantMap args;
+      hookMgr->doAction(HookNames::MainWindowAfterStart, args);
+    }
   });
 }
 
@@ -115,6 +123,8 @@ void MainWindow2::loadStateAndGeometry() {
   // Load view area layout (new architecture).
   if (m_viewArea) {
     QJsonObject layout = sessionConfig.getViewAreaLayout();
+    qInfo() << "MainWindow2::loadStateAndGeometry: loading view area layout"
+            << QJsonDocument(layout).toJson(QJsonDocument::Compact);
     m_viewArea->loadLayout(layout);
   }
 }
@@ -169,15 +179,12 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
   }
 
   if (isExit || !m_trayIcon->isVisible()) {
-    // Signal out the close event.
-    // auto event = QSharedPointer<Event>::create();
-    // event->m_response = true;
-    // emit mainWindowClosed(event);
-    // if (!event->m_response.toBool()) {
-      // Stop the close.
-    //   p_event->ignore();
-    //   return;
-    // }
+    // Fire before-close hook so components can save session state.
+    auto *hookMgr = m_serviceLocator.get<HookManager>();
+    if (hookMgr) {
+      QVariantMap args;
+      hookMgr->doAction(HookNames::MainWindowBeforeClose, args);
+    }
 
     m_trayIcon->hide();
 
@@ -211,7 +218,10 @@ void MainWindow2::saveStateAndGeometry() {
 
   // Save view area layout (new architecture).
   if (m_viewArea) {
-    sessionConfig.setViewAreaLayout(m_viewArea->saveLayout());
+    QJsonObject layout = m_viewArea->saveLayout();
+    qInfo() << "MainWindow2::saveStateAndGeometry: saving view area layout"
+            << QJsonDocument(layout).toJson(QJsonDocument::Compact);
+    sessionConfig.setViewAreaLayout(layout);
   }
 }
 

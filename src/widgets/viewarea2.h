@@ -64,6 +64,14 @@ public:
   QJsonObject saveLayout() const;
   void loadLayout(const QJsonObject &p_layout);
 
+  // Save workspace/buffer session state to vxcore and call vxcore_shutdown().
+  // Called before closing buffers on exit.
+  void saveSession();
+
+  // Restore workspace/buffer session state from vxcore.
+  // Called after loadLayout() has created the splitter tree.
+  void restoreSession();
+
 private slots:
   // Controller signal handlers
   void onAddFirstViewSplitRequested(const QString &p_workspaceId);
@@ -84,6 +92,8 @@ private slots:
   void onLoadLayoutRequested(const QJsonObject &p_layout);
   void onSwitchWorkspaceRequested(const QString &p_currentWorkspaceId,
                                   const QString &p_newWorkspaceId);
+  void onSetCurrentBufferRequested(const QString &p_workspaceId, const QString &p_bufferId,
+                                   bool p_focus);
 
   // ViewSplit2 signal handlers
   void onMoveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindow2 *p_win,

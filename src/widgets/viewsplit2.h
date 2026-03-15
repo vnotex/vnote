@@ -123,6 +123,9 @@ signals:
   // Request to switch to a different workspace.
   void switchWorkspaceRequested(ViewSplit2 *p_split, const QString &p_workspaceId);
 
+  // Emitted when tabs are reordered via drag. Carries the new buffer ID order.
+  void bufferOrderChanged(ViewSplit2 *p_split, const QStringList &p_bufferIds);
+
 protected:
   void mousePressEvent(QMouseEvent *p_event) override;
 

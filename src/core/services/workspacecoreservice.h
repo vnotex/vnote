@@ -60,6 +60,10 @@ public:
   // Set the current buffer in a workspace.
   bool setCurrentBuffer(const QString &p_workspaceId, const QString &p_bufferId);
 
+  // Set the buffer order in a workspace.
+  // @p_bufferIds: ordered list of buffer IDs. Only IDs already in the workspace are kept.
+  bool setBufferOrder(const QString &p_workspaceId, const QStringList &p_bufferIds);
+
 private:
   // Check context validity before operations.
   bool checkContext() const;

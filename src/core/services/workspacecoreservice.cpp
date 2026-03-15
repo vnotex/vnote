@@ -153,6 +153,27 @@ bool WorkspaceCoreService::setCurrentBuffer(const QString &p_workspaceId, const 
   return true;
 }
 
+bool WorkspaceCoreService::setBufferOrder(const QString &p_workspaceId,
+                                          const QStringList &p_bufferIds) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  QJsonArray arr;
+  for (const auto &id : p_bufferIds) {
+    arr.append(id);
+  }
+  QByteArray json = QJsonDocument(arr).toJson(QJsonDocument::Compact);
+
+  VxCoreError err = vxcore_workspace_set_buffer_order(
+      m_context, p_workspaceId.toUtf8().constData(), json.constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "setBufferOrder failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
+  }
+  return true;
+}
+
 // Private methods.
 bool WorkspaceCoreService::checkContext() const {
   if (!m_context) {

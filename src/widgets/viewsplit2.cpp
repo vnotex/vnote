@@ -64,6 +64,19 @@ void ViewSplit2::setupUI() {
     focusCurrentViewWindow();
     emit currentViewWindowChanged(getCurrentViewWindow());
   });
+
+  connect(tabBar(), &QTabBar::tabMoved, this, [this](int p_from, int p_to) {
+    QStringList ids;
+    for (int i = 0; i < count(); ++i) {
+      auto *win = getViewWindow(i);
+      if (win) {
+        ids.append(win->getBuffer().id());
+      }
+    }
+    qInfo() << "ViewSplit2::tabMoved: from:" << p_from << "to:" << p_to
+            << "new order:" << ids;
+    emit bufferOrderChanged(this, ids);
+  });
 }
 
 void ViewSplit2::setupTabBar() {

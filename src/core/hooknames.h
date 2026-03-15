@@ -110,6 +110,14 @@ inline const QLatin1String MainWindowBeforeShow("vnote.ui.mainwindow.before_show
 // After the main window is shown
 inline const QLatin1String MainWindowAfterShow("vnote.ui.mainwindow.after_show");
 
+// After the main window has started (post-init complete, ready for heavy work).
+// Subscribers should restore session state, load data, etc.
+inline const QLatin1String MainWindowAfterStart("vnote.ui.mainwindow.after_start");
+
+// Before the main window is closed (cancellable).
+// Subscribers should save session state, persist data, etc.
+inline const QLatin1String MainWindowBeforeClose("vnote.ui.mainwindow.before_close");
+
 // Before the context menu is shown
 inline const QLatin1String ContextMenuBeforeShow("vnote.ui.contextmenu.before_show");
 

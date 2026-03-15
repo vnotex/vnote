@@ -4,11 +4,16 @@
 #include <QJsonObject>
 #include <QSplitter>
 #include <QStackedLayout>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include <controllers/viewareacontroller.h>
+#include <core/hookcontext.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
+#include <core/services/configcoreservice.h>
+#include <core/services/hookmanager.h>
 #include <core/services/workspacecoreservice.h>
 #include <gui/services/viewwindowfactory.h>
 
@@ -72,8 +77,31 @@ void ViewArea2::setupController() {
           this, &ViewArea2::onLoadLayoutRequested);
   connect(m_controller, &ViewAreaController::switchWorkspaceRequested,
           this, &ViewArea2::onSwitchWorkspaceRequested);
+  connect(m_controller, &ViewAreaController::setCurrentBufferRequested,
+          this, &ViewArea2::onSetCurrentBufferRequested);
 
   m_controller->subscribeToHooks();
+
+  // Subscribe to application lifecycle hooks.
+  auto *hookMgr = m_services.get<HookManager>();
+  if (hookMgr) {
+    hookMgr->addAction(HookNames::MainWindowAfterStart,
+        [this](HookContext &p_ctx, const QVariantMap &p_args) {
+          Q_UNUSED(p_ctx) Q_UNUSED(p_args)
+          restoreSession();
+          // Re-enable propagation after pending signals (e.g., deferred
+          // currentChanged from addTab) have been processed.
+          QTimer::singleShot(0, this, [this]() {
+            m_controller->setShouldPropagateToCore(true);
+            qInfo() << "ViewArea2: propagation to core re-enabled";
+          });
+        }, 10);
+    hookMgr->addAction(HookNames::MainWindowBeforeClose,
+        [this](HookContext &p_ctx, const QVariantMap &p_args) {
+          Q_UNUSED(p_ctx) Q_UNUSED(p_args)
+          saveSession();
+        }, 10);
+  }
 }
 
 ViewAreaController *ViewArea2::getController() const {
@@ -241,6 +269,52 @@ void ViewArea2::loadLayout(const QJsonObject &p_layout) {
   if (!p_layout.isEmpty()) { m_controller->loadLayout(p_layout); }
 }
 
+void ViewArea2::saveSession() {
+  qInfo() << "ViewArea2::saveSession: syncing buffer order and persisting session";
+
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (wsSvc) {
+    // Sync tab order from each visible ViewSplit2 to vxcore workspace buffer order.
+    for (auto it = m_splits.constBegin(); it != m_splits.constEnd(); ++it) {
+      QStringList bufferIds;
+      auto windows = it.value()->getAllViewWindows();
+      for (auto *win : windows) {
+        bufferIds.append(win->getBuffer().id());
+      }
+      wsSvc->setBufferOrder(it.key(), bufferIds);
+      qInfo() << "  Synced workspace" << it.key() << "buffer order:" << bufferIds;
+    }
+
+    // Remove empty workspaces (no buffers) from vxcore.
+    QJsonArray allWorkspaces = wsSvc->listWorkspaces();
+    for (int i = 0; i < allWorkspaces.size(); ++i) {
+      QJsonObject wsObj = allWorkspaces[i].toObject();
+      QString wsId = wsObj.value(QStringLiteral("id")).toString();
+      QJsonArray bufferIds = wsObj.value(QStringLiteral("bufferIds")).toArray();
+      if (bufferIds.isEmpty()) {
+        qInfo() << "  Removing empty workspace:" << wsId;
+        wsSvc->deleteWorkspace(wsId);
+      }
+    }
+  }
+
+  // Persist vxcore session state atomically.
+  auto *configSvc = m_services.get<ConfigCoreService>();
+  if (configSvc) {
+    configSvc->shutdown();
+  }
+
+  // Disable propagation so buffer closes during teardown don't touch vxcore.
+  m_controller->setShouldPropagateToCore(false);
+
+  qInfo() << "ViewArea2::saveSession: done";
+}
+
+void ViewArea2::restoreSession() {
+  QStringList layoutWorkspaceIds = m_splits.keys();
+  m_controller->restoreSession(layoutWorkspaceIds);
+}
+
 // ============ ID resolution helpers ============
 
 ViewSplit2 *ViewArea2::splitForWorkspace(const QString &p_workspaceId) const {
@@ -271,7 +345,11 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
           });
   connect(p_split, &ViewSplit2::currentViewWindowChanged, this,
           [this](ViewWindow2 *w) {
-            m_controller->setCurrentViewWindow(idForWindow(w));
+            QString bufferId;
+            if (w) {
+              bufferId = w->getBuffer().id();
+            }
+            m_controller->setCurrentViewWindow(idForWindow(w), bufferId);
           });
   connect(p_split, &ViewSplit2::splitRequested, this,
           [this, wsId](ViewSplit2 *, Direction d) {
@@ -299,11 +377,19 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
           });
   connect(p_split, &ViewSplit2::removeWorkspaceRequested, this,
           [this](ViewSplit2 *s) {
-            m_controller->removeWorkspace(s->getWorkspaceId());
+            // Copy the workspace ID since the split's ID may change during removeWorkspace
+            // (switchWorkspace modifies the split's workspace identity).
+            QString wsId = s->getWorkspaceId();
+            m_controller->removeWorkspace(wsId,
+                                          m_splits.keys(), getViewSplitCount());
           });
   connect(p_split, &ViewSplit2::switchWorkspaceRequested, this,
           [this](ViewSplit2 *s, const QString &wsId) {
             m_controller->switchWorkspace(s->getWorkspaceId(), wsId);
+          });
+  connect(p_split, &ViewSplit2::bufferOrderChanged, this,
+          [this](ViewSplit2 *s, const QStringList &ids) {
+            m_controller->setBufferOrder(s->getWorkspaceId(), ids);
           });
 }
 
@@ -331,9 +417,21 @@ void ViewArea2::onSplitRequested(const QString &p_workspaceId, Direction p_direc
 void ViewArea2::onRemoveViewSplitRequested(const QString &p_workspaceId) {
   auto *split = splitForWorkspace(p_workspaceId);
   if (!split) { return; }
+
+  // Remove all view windows from m_windows before deleting the split
+  // (Qt parent-child ownership will delete the ViewWindow2s).
+  auto windows = split->getAllViewWindows();
+  for (auto *win : windows) {
+    ID winId = idForWindow(win);
+    if (winId != ViewAreaController::InvalidViewWindowId) {
+      m_windows.remove(winId);
+    }
+  }
+
   m_splits.remove(p_workspaceId);
   removeViewSplit(split);
   delete split;
+  updateScreenVisibility();
 }
 
 void ViewArea2::onMaximizeViewSplitRequested(const QString &p_workspaceId) {
@@ -367,6 +465,14 @@ void ViewArea2::onOpenBufferRequested(const Buffer2 &p_buffer, const QString &p_
   m_windows[id] = win;
   split->addViewWindow(win);
   m_controller->onViewWindowOpened(id, p_buffer, p_settings);
+
+  // QTabWidget::addTab does not make the new tab current (except the first).
+  // When focus is requested (e.g., restoring the current buffer), explicitly
+  // select the new tab.
+  if (p_settings.m_focus) {
+    split->setCurrentViewWindow(win);
+  }
+
   updateScreenVisibility();
 }
 
@@ -396,7 +502,7 @@ void ViewArea2::onCloseViewWindowRequested(ID p_windowId, bool p_force) {
   m_windows.remove(p_windowId);
   delete win;
 
-  m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId);
+  m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId, getViewSplitCount());
   updateScreenVisibility();
 }
 
@@ -422,14 +528,6 @@ void ViewArea2::onMoveViewWindowToSplitRequested(ID p_windowId,
   auto *dstSplit = splitForWorkspace(p_dstWorkspaceId);
   if (!win || !srcSplit || !dstSplit) { return; }
 
-  // Transfer buffer registration between workspaces.
-  Buffer2 buf = win->getBuffer();
-  auto *wsSvc = m_services.get<WorkspaceCoreService>();
-  if (wsSvc) {
-    wsSvc->removeBuffer(p_srcWorkspaceId, buf.id());
-    wsSvc->addBuffer(p_dstWorkspaceId, buf.id());
-  }
-
   srcSplit->takeViewWindow(win);
   dstSplit->addViewWindow(win);
   dstSplit->setCurrentViewWindow(win);
@@ -447,7 +545,8 @@ void ViewArea2::onMoveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindo
   }
   m_controller->moveViewWindowOneSplit(p_split->getWorkspaceId(),
                                         idForWindow(p_win), p_direction,
-                                        target->getWorkspaceId());
+                                        target->getWorkspaceId(),
+                                        p_win->getBuffer().id());
 }
 
 void ViewArea2::onRemoveSplitRequested(ViewSplit2 *p_split) {
@@ -474,12 +573,8 @@ void ViewArea2::onLoadLayoutRequested(const QJsonObject &p_layout) {
     setTopWidget(splitter);
   }
 
-  // Restore current workspace.
-  const QString currentWsId = p_layout.value(QStringLiteral("currentWorkspaceId")).toString();
-  if (!currentWsId.isEmpty()) {
-    auto *split = splitForWorkspace(currentWsId);
-    if (split) { m_controller->setCurrentViewSplit(currentWsId, true); }
-  }
+  // Note: currentWorkspaceId is NOT restored here. It is restored by
+  // ViewAreaController::restoreSession() from vxcore state.
   updateScreenVisibility();
 }
 
@@ -492,6 +587,33 @@ void ViewArea2::onSwitchWorkspaceRequested(const QString &p_currentWorkspaceId,
     return;
   }
 
+  // Sync current tab order to vxcore before switching away
+  // (only during normal operation, not during restore/shutdown).
+  if (m_controller->shouldPropagateToCore() && split->getViewWindowCount() > 0) {
+    auto *wsSvc = m_services.get<WorkspaceCoreService>();
+    if (wsSvc) {
+      QStringList bufferIds;
+      auto windows = split->getAllViewWindows();
+      for (auto *win : windows) {
+        bufferIds.append(win->getBuffer().id());
+      }
+      wsSvc->setBufferOrder(p_currentWorkspaceId, bufferIds);
+    }
+  }
+
+  // Detach and delete all view windows from the current workspace.
+  // The underlying vxcore buffers remain open (invisible workspace).
+  // ViewWindow2s will be recreated when the user switches back.
+  auto windows = split->getAllViewWindows();
+  for (auto *win : windows) {
+    split->takeViewWindow(win);
+    ID winId = idForWindow(win);
+    if (winId != ViewAreaController::InvalidViewWindowId) {
+      m_windows.remove(winId);
+    }
+    delete win;
+  }
+
   // Update the ID mapping: remove old key, add new key.
   m_splits.remove(p_currentWorkspaceId);
   m_splits.insert(p_newWorkspaceId, split);
@@ -502,6 +624,31 @@ void ViewArea2::onSwitchWorkspaceRequested(const QString &p_currentWorkspaceId,
   // Re-wire signals since wireSplitSignals captures workspace ID by value.
   disconnect(split, nullptr, this, nullptr);
   wireSplitSignals(split);
+
+  updateScreenVisibility();
+}
+
+void ViewArea2::onSetCurrentBufferRequested(const QString &p_workspaceId,
+                                            const QString &p_bufferId, bool p_focus) {
+  auto *split = splitForWorkspace(p_workspaceId);
+  if (!split) {
+    return;
+  }
+
+  // Find the ViewWindow2 with the matching buffer ID.
+  auto windows = split->getAllViewWindows();
+  for (auto *win : windows) {
+    if (win->getBuffer().id() == p_bufferId) {
+      split->setCurrentViewWindow(win);
+      if (p_focus) {
+        split->focus();
+      }
+      return;
+    }
+  }
+
+  qWarning() << "ViewArea2::onSetCurrentBufferRequested: buffer not found:"
+             << p_bufferId << "in workspace:" << p_workspaceId;
 }
 
 QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) {

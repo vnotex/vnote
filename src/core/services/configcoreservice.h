@@ -58,6 +58,12 @@ public:
   Error updateConfigByName(DataLocation p_location, const QString &p_baseName,
                            const QJsonObject &p_json);
 
+  // Persist all in-memory state (buffers, workspaces) to session config on disk.
+  // Call before destroying the context for a clean shutdown.
+  // After calling this, vxcore destructors will skip their own save to avoid
+  // overwriting the snapshot with partial state.
+  bool shutdown();
+
 private:
   // Convert C string to QString and free the C string using vxcore_string_free.
   static QString cstrToQString(char *p_str);
