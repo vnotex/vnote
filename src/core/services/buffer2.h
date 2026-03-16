@@ -75,6 +75,9 @@ public:
   // Check if buffer has unsaved modifications.
   bool isModified() const;
 
+  // Get buffer content revision number.
+  int getRevision() const;
+
   // ============ Buffer Info ============
 
   // Get buffer configuration as JSON.

@@ -1,9 +1,12 @@
 #include "viewwindow2.h"
 
+#include <QApplication>
+#include <QDebug>
 #include <QVBoxLayout>
 
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 
 using namespace vnotex;
 
@@ -11,6 +14,21 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                          QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services), m_buffer(p_buffer) {
   setupUI();
+
+  // Initialize revision from buffer.
+  m_lastKnownRevision = m_buffer.getRevision();
+
+  // Track focus changes for auto-save integration.
+  // Uses the same global pattern as the legacy ViewWindow.
+  connect(qApp, &QApplication::focusChanged, this, [this](QWidget *p_old, QWidget *p_now) {
+    bool hasFocusNow = p_now && (p_now == this || isAncestorOf(p_now));
+    bool hadFocusBefore = p_old && (p_old == this || isAncestorOf(p_old));
+    if (hasFocusNow && !hadFocusBefore) {
+      onFocusGained();
+    } else if (!hasFocusNow && hadFocusBefore) {
+      onFocusLost();
+    }
+  });
 }
 
 ViewWindow2::~ViewWindow2() {
@@ -66,6 +84,24 @@ bool ViewWindow2::isModified() const {
 
 bool ViewWindow2::aboutToClose(bool p_force) {
   Q_UNUSED(p_force);
+
+  // Sync pending changes before close.
+  if (m_editorDirty && m_buffer.isValid()) {
+    auto *bufferService = m_services.get<BufferService>();
+    if (bufferService) {
+      bufferService->syncNow(m_buffer.id());
+      m_editorDirty = false;
+    }
+  }
+
+  // Unregister as active writer to prevent dangling pointer in BufferService.
+  if (m_buffer.isValid()) {
+    auto *bufferService = m_services.get<BufferService>();
+    if (bufferService) {
+      bufferService->unregisterActiveWriter(m_buffer.id(), reinterpret_cast<quintptr>(this));
+    }
+  }
+
   // TODO(save-prompts): Implement unsaved-changes dialog here.
   // When implemented:
   //   - p_force=true: skip dialog, discard changes
@@ -87,4 +123,62 @@ void ViewWindow2::setCentralWidget(QWidget *p_widget) {
 
 ServiceLocator &ViewWindow2::getServices() const {
   return m_services;
+}
+
+// ============ Auto-Save Integration ============
+
+void ViewWindow2::onEditorContentsChanged() {
+  // Guard: invalid buffers should not be marked dirty.
+  if (!m_buffer.isValid()) {
+    return;
+  }
+
+  m_editorDirty = true;
+
+  auto *bufferService = m_services.get<BufferService>();
+  if (bufferService) {
+    bufferService->markDirty(m_buffer.id());
+  }
+}
+
+void ViewWindow2::onFocusGained() {
+  if (!m_buffer.isValid()) {
+    return;
+  }
+
+  // Register as active writer for this buffer.
+  // Capture `this` in a lambda for the content fetch callback.
+  auto *bufferService = m_services.get<BufferService>();
+  if (bufferService) {
+    bufferService->registerActiveWriter(
+        m_buffer.id(), reinterpret_cast<quintptr>(this),
+        [this]() { return getLatestContent(); });
+  }
+
+  // Check for external changes (from other ViewWindows or disk reload).
+  int currentRev = m_buffer.getRevision();
+  if (currentRev != m_lastKnownRevision) {
+    syncEditorFromBuffer();
+    m_lastKnownRevision = currentRev;
+    m_editorDirty = false; // Content just loaded fresh.
+  }
+
+  emit focused(this);
+}
+
+void ViewWindow2::onFocusLost() {
+  if (!m_buffer.isValid()) {
+    return;
+  }
+
+  // Immediately sync dirty content to buffer on focus loss.
+  // This ensures consistency when switching ViewWindows or leaving VNote.
+  if (m_editorDirty) {
+    auto *bufferService = m_services.get<BufferService>();
+    if (bufferService) {
+      bufferService->syncNow(m_buffer.id());
+      m_lastKnownRevision = m_buffer.getRevision();
+      m_editorDirty = false;
+    }
+  }
 }

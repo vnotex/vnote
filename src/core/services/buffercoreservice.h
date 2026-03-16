@@ -83,6 +83,15 @@ public:
   // Check if buffer has unsaved modifications.
   bool isModified(const QString &p_bufferId) const;
 
+  // Get buffer content revision number.
+  // Lightweight — avoids full JSON parsing from getBuffer().
+  int getRevision(const QString &p_bufferId) const;
+
+  // ============ Buffer Backup ============
+
+  // Write buffer's in-memory content to a backup file (.vswp).
+  bool writeBackup(const QString &p_bufferId);
+
   // ============ Asset Operations (Filesystem Only) ============
 
   // Insert binary data as an asset file.

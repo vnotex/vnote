@@ -89,7 +89,7 @@ public:
   // Called before the window is closed.
   // Return true if it is OK to proceed (e.g., unsaved changes have been handled).
   // @p_force: if true, close without prompting user.
-  // Default implementation returns true (no unsaved changes handling).
+  // Default implementation syncs dirty content and unregisters from BufferService.
   virtual bool aboutToClose(bool p_force);
 
 signals:
@@ -138,11 +138,26 @@ protected:
   // Pure virtual: must be implemented by subclasses.
   virtual void zoom(bool p_zoomIn) = 0;
 
+  // Called by subclasses when their editor widget's content changes.
+  // Sets dirty flag and notifies BufferService.
+  // Subclasses should connect their editor's contentsChanged/textChanged signal to this.
+  void onEditorContentsChanged();
+
   // Current view mode (Read or Edit).
   ViewWindowMode m_mode = ViewWindowMode::Read;
 
+  // Whether editor content has changed since last sync to buffer.
+  bool m_editorDirty = false;
+
+  // Last known buffer revision (for detecting external changes on focus gain).
+  int m_lastKnownRevision = 0;
+
 private:
   void setupUI();
+
+  // Focus event handlers for auto-save integration.
+  void onFocusGained();
+  void onFocusLost();
 
   ServiceLocator &m_services;
 

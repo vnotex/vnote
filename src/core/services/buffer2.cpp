@@ -114,6 +114,13 @@ bool Buffer2::isModified() const {
   return m_bufferCoreService->isModified(m_bufferId);
 }
 
+int Buffer2::getRevision() const {
+  if (!isValid()) {
+    return 0;
+  }
+  return m_bufferCoreService->getRevision(m_bufferId);
+}
+
 // ============ Buffer Info ============
 
 QJsonObject Buffer2::getBuffer() const {

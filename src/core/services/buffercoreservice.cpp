@@ -204,6 +204,34 @@ bool BufferCoreService::isModified(const QString &p_bufferId) const {
   return modified != 0;
 }
 
+int BufferCoreService::getRevision(const QString &p_bufferId) const {
+  if (!checkContext()) {
+    return 0;
+  }
+
+  int revision = 0;
+  VxCoreError err =
+      vxcore_buffer_get_revision(m_context, p_bufferId.toUtf8().constData(), &revision);
+  if (err != VXCORE_OK) {
+    qWarning() << "getRevision failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return 0;
+  }
+  return revision;
+}
+
+bool BufferCoreService::writeBackup(const QString &p_bufferId) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  VxCoreError err = vxcore_buffer_write_backup(m_context, p_bufferId.toUtf8().constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "writeBackup failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
+  }
+  return true;
+}
+
 // Asset operations.
 QString BufferCoreService::insertAssetRaw(const QString &p_bufferId, const QString &p_assetName,
                                       const QByteArray &p_data) {

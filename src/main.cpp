@@ -14,6 +14,7 @@
 #include <core/constants.h>
 #include <core/logger.h>
 #include <core/coreconfig.h>
+#include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
@@ -176,6 +177,18 @@ int main(int argc, char *argv[]) {
     configMgr.init();
     serviceLocator.registerService<ConfigMgr2>(&configMgr);
     qInfo() << "ConfigMgr2 registered";
+
+    // Wire BufferService to EditorConfig's auto-save policy.
+    {
+      auto policy = configMgr.getEditorConfig().getAutoSavePolicy();
+      AutoSavePolicy svcPolicy = AutoSavePolicy::AutoSave;
+      if (policy == EditorConfig::AutoSavePolicy::None) {
+        svcPolicy = AutoSavePolicy::None;
+      } else if (policy == EditorConfig::AutoSavePolicy::BackupFile) {
+        svcPolicy = AutoSavePolicy::BackupFile;
+      }
+      bufferService.setAutoSavePolicy(svcPolicy);
+    }
 
     // Create FileTypeService with VxCoreContextHandle and locale
     FileTypeCoreService fileTypeService(context, configMgr.getCoreConfig().getLocaleToUse());
