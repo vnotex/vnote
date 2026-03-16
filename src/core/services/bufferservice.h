@@ -44,6 +44,11 @@ public:
                          QObject *p_parent = nullptr);
   ~BufferService() override;
 
+  // Expose QObject base for signal connections from outside.
+  // Needed because BufferService privately inherits QObject (via BufferCoreService),
+  // so external code cannot use connect() with BufferService* directly.
+  QObject *asQObject();
+
   // Set the auto-save policy. Called from main() after EditorConfig is loaded.
   void setAutoSavePolicy(AutoSavePolicy p_policy);
 

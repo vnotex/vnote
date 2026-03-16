@@ -25,6 +25,10 @@ BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookM
 BufferService::~BufferService() {
 }
 
+QObject *BufferService::asQObject() {
+  return this;
+}
+
 void BufferService::setAutoSavePolicy(AutoSavePolicy p_policy) {
   m_autoSavePolicy = p_policy;
 }

@@ -34,6 +34,15 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
       onFocusLost();
     }
   });
+
+  // Clear dirty/modified state when auto-save completes for our buffer.
+  // Note: BufferService privately inherits QObject (via BufferCoreService),
+  // so we use asQObject() + SIGNAL/SLOT string-based connect.
+  auto *bufferService = m_services.get<BufferService>();
+  if (bufferService) {
+    connect(bufferService->asQObject(), SIGNAL(bufferAutoSaved(QString)), this,
+            SLOT(onBufferAutoSaved(QString)));
+  }
 }
 
 ViewWindow2::~ViewWindow2() {
@@ -274,4 +283,14 @@ void ViewWindow2::onFocusLost() {
       m_editorDirty = false;
     }
   }
+}
+
+void ViewWindow2::onBufferAutoSaved(const QString &p_bufferId) {
+  if (p_bufferId != m_buffer.id()) {
+    return;
+  }
+  m_editorDirty = false;
+  m_lastKnownRevision = m_buffer.getRevision();
+  setModified(false);
+  emit statusChanged();
 }

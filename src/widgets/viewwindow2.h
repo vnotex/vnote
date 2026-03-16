@@ -182,6 +182,11 @@ protected:
   // Last known buffer revision (for detecting external changes on focus gain).
   int m_lastKnownRevision = 0;
 
+private slots:
+  // Called when BufferService emits bufferAutoSaved for any buffer.
+  // Clears dirty/modified state if the buffer ID matches ours.
+  void onBufferAutoSaved(const QString &p_bufferId);
+
 private:
   void setupUI();
 
