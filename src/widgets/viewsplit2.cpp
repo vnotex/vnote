@@ -309,7 +309,7 @@ void ViewSplit2::closeTab(int p_idx) {
 }
 
 void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
-  int idx = addTab(p_win, p_win->getIcon(), p_win->getName());
+  int idx = addTab(p_win, p_win->getIcon(), p_win->getTitle());
   setTabToolTip(idx, p_win->getTitle());
 
   p_win->setVisible(true);
@@ -324,6 +324,8 @@ void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
     int idx = indexOf(win);
     if (idx != -1) {
       setTabIcon(idx, win->getIcon());
+      setTabText(idx, win->getTitle());
+      setTabToolTip(idx, win->getTitle());
     }
   });
 

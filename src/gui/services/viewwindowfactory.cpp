@@ -14,7 +14,12 @@ ViewWindowFactory::~ViewWindowFactory() {
 }
 
 void ViewWindowFactory::registerBuiltInCreators() {
-  registerCreator("text",
+  registerCreator("Text",
+                  [](ServiceLocator &p_services, const Buffer2 &p_buffer,
+                     QWidget *p_parent) -> ViewWindow2 * {
+                    return new TextViewWindow2(p_services, p_buffer, p_parent);
+                  });
+  registerCreator("Others",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer,
                      QWidget *p_parent) -> ViewWindow2 * {
                     return new TextViewWindow2(p_services, p_buffer, p_parent);

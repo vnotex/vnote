@@ -49,6 +49,8 @@ protected:
 private:
   void setupUI();
 
+  void setupToolBar();
+
   void connectEditorSignals();
 
   void updateEditorFromConfig();
@@ -71,6 +73,9 @@ private:
   int m_editorConfigRevision = 0;
 
   int m_textEditorConfigRevision = 0;
+
+  // Save action for enabling/disabling based on modification state.
+  QAction *m_saveAction = nullptr;
 };
 } // namespace vnotex
 

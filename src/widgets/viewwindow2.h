@@ -3,6 +3,7 @@
 
 #include <QFrame>
 #include <QIcon>
+#include <QSharedPointer>
 #include <QString>
 
 #include <core/global.h>
@@ -14,17 +15,18 @@ class QToolBar;
 namespace vnotex {
 
 class ServiceLocator;
+class StatusWidget;
 
 // Abstract base class for all view windows in the new architecture.
 // A view window displays a single file (Buffer2) in a specific mode (Read/Edit).
 // Subclasses implement concrete views for different file types (Markdown, Plain Text, PDF, etc.).
 //
-// Responsibilities:
-// - Manage a file buffer (obtained via Buffer2 handle)
-// - Provide UI for viewing/editing based on file type
-// - Handle mode switching (Read <-> Edit)
-// - Sync content between editor widget and buffer
-// - Report modification state
+// Provides layout slots for subclasses:
+//   [toolbar]          ← addToolBar()
+//   [top widgets]      ← addTopWidget()
+//   [central widget]   ← setCentralWidget() (stretch=1)
+//   [bottom widgets]   ← addBottomWidget()
+//   [status widget]    ← setStatusWidget()
 //
 // Usage:
 //   class MarkdownViewWindow2 : public ViewWindow2 {
@@ -106,10 +108,33 @@ signals:
   void nameChanged();
 
 protected:
-  // Set the central editor widget. Takes ownership via layout.
+  // ============ Layout Slots (for subclasses) ============
+
+  // Add a toolbar at the top. Call once in subclass setupUI().
+  // Takes ownership via QObject parent. Must be called before addTopWidget().
+  void addToolBar(QToolBar *p_bar);
+
+  // Add a widget above the central widget (below toolbar).
+  void addTopWidget(QWidget *p_widget);
+
+  // Set the central editor widget (stretch=1). Takes ownership via layout.
   // Call this in subclass constructors to provide the main editing widget.
   // @p_widget: The editor widget to display. nullptr is allowed (clears existing widget).
   void setCentralWidget(QWidget *p_widget);
+
+  // Add a widget below the central widget (above status widget).
+  void addBottomWidget(QWidget *p_widget);
+
+  // Set the status widget at the bottom. Takes shared ownership.
+  void setStatusWidget(const QSharedPointer<StatusWidget> &p_widget);
+
+  // Show a transient message in the status widget (or fallback).
+  void showMessage(const QString &p_msg);
+
+  // Create a standard toolbar with the configured icon size.
+  static QToolBar *createToolBar(QWidget *p_parent = nullptr);
+
+  // ============ Editor Integration ============
 
   // Access the ServiceLocator to retrieve application services.
   ServiceLocator &getServices() const;
@@ -143,6 +168,11 @@ protected:
   // Subclasses should connect their editor's contentsChanged/textChanged signal to this.
   void onEditorContentsChanged();
 
+  // Trigger a manual save of the buffer content to disk.
+  // Syncs editor content to vxcore buffer, then saves to disk.
+  // Returns true on success.
+  bool save();
+
   // Current view mode (Read or Edit).
   ViewWindowMode m_mode = ViewWindowMode::Read;
 
@@ -163,11 +193,26 @@ private:
 
   Buffer2 m_buffer;
 
-  // Managed by QObject (deleted automatically on this->deleteLater()).
+  // Main vertical layout: [topLayout] [centralWidget (stretch)] [bottomLayout]
+  // Managed by QObject.
   QVBoxLayout *m_mainLayout = nullptr;
 
-  // Managed by QObject (deleted automatically on this->deleteLater()).
+  // Top layout: toolbar + top widgets.
+  // Managed by QObject.
+  QVBoxLayout *m_topLayout = nullptr;
+
+  // Bottom layout: bottom widgets + status widget.
+  // Managed by QObject.
+  QVBoxLayout *m_bottomLayout = nullptr;
+
+  // Managed by QObject.
   QWidget *m_centralWidget = nullptr;
+
+  // Managed by QObject.
+  QToolBar *m_toolBar = nullptr;
+
+  // Shared ownership — StatusWidget may be reparented to global status bar.
+  QSharedPointer<StatusWidget> m_statusWidget;
 };
 
 } // namespace vnotex

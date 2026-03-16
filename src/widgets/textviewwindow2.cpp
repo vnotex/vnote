@@ -1,8 +1,12 @@
 #include "textviewwindow2.h"
 
+#include <QAction>
 #include <QFileInfo>
 #include <QScrollBar>
+#include <QToolBar>
 
+#include <vtextedit/texteditorconfig.h>
+#include <vtextedit/theme.h>
 #include <vtextedit/vtextedit.h>
 
 #include <core/configmgr2.h>
@@ -11,9 +15,11 @@
 #include <core/servicelocator.h>
 #include <core/texteditorconfig.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/widgetutils.h>
 
+#include "editors/statuswidget.h"
 #include "editors/texteditor.h"
-#include "textviewwindowhelper.h"
+#include "viewwindowtoolbarhelper2.h"
 
 using namespace vnotex;
 
@@ -31,7 +37,7 @@ void TextViewWindow2::setupUI() {
 
   updateConfigRevision();
 
-  // Central widget.
+  // Central widget: text editor.
   {
     m_editor =
         new TextEditor(createTextEditorConfig(editorConfig, textEditorConfig, getServices()),
@@ -43,10 +49,50 @@ void TextViewWindow2::setupUI() {
 
   connectEditorSignals();
 
+  // Status widget.
+  {
+    auto statusWidget = QSharedPointer<StatusWidget>::create();
+    statusWidget->setEditorStatusWidget(m_editor->statusWidget());
+    setStatusWidget(statusWidget);
+  }
+
+  // Toolbar.
+  setupToolBar();
+
   // Initial sync from buffer.
   m_propagateEditorToBuffer = false;
   syncEditorFromBuffer();
   m_propagateEditorToBuffer = true;
+}
+
+void TextViewWindow2::setupToolBar() {
+  auto *toolBar = createToolBar(this);
+  addToolBar(toolBar);
+
+  // Save action.
+  m_saveAction = ViewWindowToolBarHelper2::addAction(
+      toolBar, ViewWindowToolBarHelper2::Save, getServices(), this);
+  m_saveAction->setEnabled(false);
+  connect(m_saveAction, &QAction::triggered, this, [this]() {
+    save();
+  });
+  connect(this, &ViewWindow2::statusChanged, this, [this]() {
+    m_saveAction->setEnabled(getBuffer().isValid() && isModified());
+  });
+
+  // Word count action (placeholder — no popup yet in new arch).
+  ViewWindowToolBarHelper2::addAction(
+      toolBar, ViewWindowToolBarHelper2::WordCount, getServices(), this);
+
+  ViewWindowToolBarHelper2::addSpacer(toolBar);
+
+  // Find and Replace action (placeholder — no widget yet in new arch).
+  ViewWindowToolBarHelper2::addAction(
+      toolBar, ViewWindowToolBarHelper2::FindAndReplace, getServices(), this);
+
+  // Print action (placeholder — no handler yet in new arch).
+  ViewWindowToolBarHelper2::addAction(
+      toolBar, ViewWindowToolBarHelper2::Print, getServices(), this);
 }
 
 void TextViewWindow2::connectEditorSignals() {
@@ -54,12 +100,12 @@ void TextViewWindow2::connectEditorSignals() {
   connect(m_editor, &vte::VTextEditor::focusIn, this,
           [this]() { emit focused(this); });
 
-  // Content change: propagate editor state to buffer.
+  // Content change: use the new auto-save dirty flag approach.
+  // Instead of writing content to buffer on every keystroke,
+  // just mark dirty and let BufferService timer handle the sync.
   connect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, this, [this]() {
     if (m_propagateEditorToBuffer) {
-      auto content = m_editor->getText().toUtf8();
-      getBuffer().setContentRaw(content);
-      emit statusChanged();
+      onEditorContentsChanged();
     }
   });
 }
@@ -83,6 +129,7 @@ void TextViewWindow2::syncEditorFromBuffer() {
     m_editor->setModified(false);
   }
 
+  m_lastKnownRevision = buffer.isValid() ? buffer.getRevision() : 0;
   m_propagateEditorToBuffer = old;
 }
 
@@ -163,6 +210,10 @@ void TextViewWindow2::zoom(bool p_zoomIn) {
   auto *configMgr = getServices().get<ConfigMgr2>();
   auto &textEditorConfig = configMgr->getEditorConfig().getTextEditorConfig();
   textEditorConfig.setZoomDelta(m_editor->zoomDelta());
+
+  showMessage(tr("Zoomed: %1%2")
+                  .arg(m_editor->zoomDelta() > 0 ? "+" : "")
+                  .arg(m_editor->zoomDelta()));
 }
 
 QSharedPointer<vte::TextEditorConfig>
@@ -170,10 +221,97 @@ TextViewWindow2::createTextEditorConfig(const EditorConfig &p_editorConfig,
                                         const TextEditorConfig &p_config,
                                         ServiceLocator &p_services) {
   auto *themeService = p_services.get<ThemeService>();
-  auto config = TextViewWindowHelper::createTextEditorConfig(
-      p_config, p_editorConfig.getViConfig(), themeService->getFile(Theme::File::TextEditorStyle),
-      themeService->getEditorHighlightTheme(), p_editorConfig.getLineEndingPolicy());
-  return config;
+  auto editorConfig = QSharedPointer<vte::TextEditorConfig>::create();
+
+  editorConfig->m_viConfig = p_editorConfig.getViConfig();
+
+  {
+    auto themeFile = themeService->getFile(Theme::File::TextEditorStyle);
+    if (!themeFile.isEmpty()) {
+      editorConfig->m_theme = vte::Theme::createThemeFromFile(themeFile);
+    }
+  }
+
+  editorConfig->m_syntaxTheme = themeService->getEditorHighlightTheme();
+
+  switch (p_config.getLineNumberType()) {
+  case TextEditorConfig::LineNumberType::Absolute:
+    editorConfig->m_lineNumberType = vte::VTextEditor::LineNumberType::Absolute;
+    break;
+  case TextEditorConfig::LineNumberType::Relative:
+    editorConfig->m_lineNumberType = vte::VTextEditor::LineNumberType::Relative;
+    break;
+  case TextEditorConfig::LineNumberType::None:
+    editorConfig->m_lineNumberType = vte::VTextEditor::LineNumberType::None;
+    break;
+  }
+
+  editorConfig->m_textFoldingEnabled = p_config.getTextFoldingEnabled();
+
+  switch (p_config.getInputMode()) {
+  case TextEditorConfig::InputMode::ViMode:
+    editorConfig->m_inputMode = vte::InputMode::ViMode;
+    break;
+  case TextEditorConfig::InputMode::VscodeMode:
+    editorConfig->m_inputMode = vte::InputMode::VscodeMode;
+    break;
+  default:
+    editorConfig->m_inputMode = vte::InputMode::NormalMode;
+    break;
+  }
+
+  editorConfig->m_scaleFactor = WidgetUtils::calculateScaleFactor();
+
+  switch (p_config.getCenterCursor()) {
+  case TextEditorConfig::CenterCursor::NeverCenter:
+    editorConfig->m_centerCursor = vte::CenterCursor::NeverCenter;
+    break;
+  case TextEditorConfig::CenterCursor::AlwaysCenter:
+    editorConfig->m_centerCursor = vte::CenterCursor::AlwaysCenter;
+    break;
+  case TextEditorConfig::CenterCursor::CenterOnBottom:
+    editorConfig->m_centerCursor = vte::CenterCursor::CenterOnBottom;
+    break;
+  }
+
+  switch (p_config.getWrapMode()) {
+  case TextEditorConfig::WrapMode::NoWrap:
+    editorConfig->m_wrapMode = vte::WrapMode::NoWrap;
+    break;
+  case TextEditorConfig::WrapMode::WordWrap:
+    editorConfig->m_wrapMode = vte::WrapMode::WordWrap;
+    break;
+  case TextEditorConfig::WrapMode::WrapAnywhere:
+    editorConfig->m_wrapMode = vte::WrapMode::WrapAnywhere;
+    break;
+  case TextEditorConfig::WrapMode::WordWrapOrAnywhere:
+    editorConfig->m_wrapMode = vte::WrapMode::WordWrapOrAnywhere;
+    break;
+  }
+
+  editorConfig->m_expandTab = p_config.getExpandTabEnabled();
+  editorConfig->m_tabStopWidth = p_config.getTabStopWidth();
+  editorConfig->m_highlightWhitespace = p_config.getHighlightWhitespaceEnabled();
+
+  switch (p_editorConfig.getLineEndingPolicy()) {
+  case LineEndingPolicy::Platform:
+    editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::Platform;
+    break;
+  case LineEndingPolicy::File:
+    editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::File;
+    break;
+  case LineEndingPolicy::LF:
+    editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::LF;
+    break;
+  case LineEndingPolicy::CRLF:
+    editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::CRLF;
+    break;
+  case LineEndingPolicy::CR:
+    editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::CR;
+    break;
+  }
+
+  return editorConfig;
 }
 
 QSharedPointer<vte::TextEditorParameters>

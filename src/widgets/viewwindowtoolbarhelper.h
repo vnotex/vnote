@@ -7,9 +7,14 @@ class QWidget;
 class QString;
 class QToolButton;
 
+#include <core/global.h>
+
 namespace vnotex {
 // Help to setup common buttons of ViewWindow tool bar.
-class ViewWindowToolBarHelper {
+// DEPRECATED: Use ViewWindowToolBarHelper2 with ServiceLocator pattern instead.
+// This class depends on legacy singletons (ConfigMgr, ThemeMgr via ToolBarHelper).
+class VNOTEX_DEPRECATED("Use ViewWindowToolBarHelper2 with ServiceLocator pattern instead")
+    ViewWindowToolBarHelper {
 public:
   enum Action {
     Save,

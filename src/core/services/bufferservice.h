@@ -129,7 +129,7 @@ private:
     ContentFetchCallback callback;
   };
 
-  static const int c_autoSaveIntervalMs = 1000;
+  static const int c_autoSaveIntervalMs = 3000;
   static const int c_maxSaveFailures = 3;
 
   HookManager *m_hookMgr = nullptr;

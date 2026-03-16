@@ -146,6 +146,7 @@ target_sources(vnote PRIVATE
     viewwindow2.cpp viewwindow2.h
     viewwindowsession.cpp viewwindowsession.h
     viewwindowtoolbarhelper.cpp viewwindowtoolbarhelper.h
+    viewwindowtoolbarhelper2.cpp viewwindowtoolbarhelper2.h
     webpage.cpp webpage.h
     webviewer.cpp webviewer.h
     widgetsfactory.cpp widgetsfactory.h
