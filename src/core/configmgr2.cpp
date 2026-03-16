@@ -82,18 +82,26 @@ void ConfigMgr2::init() {
         m_configService->getConfigByName(DataLocation::App, kMainConfigFileBaseName);
     m_versionChanged = MainConfig::peekVersion(mainConfigJson) != c_version.toString();
 
+    if (mainConfigJson.isEmpty()) {
+      // Fresh start: no config file on disk. Keep the default-constructed config
+      // objects as-is (their C++ member initializers provide correct defaults).
+      // The embedded vnotex.json uses snake_case keys while fromJson() expects
+      // camelCase, so loading it would overwrite good defaults with empty values.
+      qInfo() << "Fresh start detected, using default-constructed config";
+    } else {
 #if defined(VX_DEBUG_REFRESH)
-    mainConfig = loadDefaultMainConfig();
+      mainConfigJson = loadDefaultMainConfig();
 #else
-    if (m_versionChanged) {
-      auto defaultConfig = loadDefaultMainConfig();
-      // Merge defaults with user config
-      mainConfigJson = m_configService->getConfigByNameWithDefaults(
-          DataLocation::App, kMainConfigFileBaseName, defaultConfig);
-    }
+      if (m_versionChanged) {
+        auto defaultConfig = loadDefaultMainConfig();
+        // Merge defaults with user config
+        mainConfigJson = m_configService->getConfigByNameWithDefaults(
+            DataLocation::App, kMainConfigFileBaseName, defaultConfig);
+      }
 #endif
 
-    m_mainConfig->fromJson(mainConfigJson);
+      m_mainConfig->fromJson(mainConfigJson);
+    }
   }
 
   // Load and initialize session config

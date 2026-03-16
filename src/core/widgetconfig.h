@@ -83,7 +83,7 @@ private:
 
   int m_nodeExplorerViewOrder = 0;
 
-  int m_nodeExplorerExploreMode = 1;
+  int m_nodeExplorerExploreMode = 0;
 
   bool m_nodeExplorerExternalFilesVisible = true;
 
