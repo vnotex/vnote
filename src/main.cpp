@@ -33,6 +33,7 @@
 #include <vxcore/vxcore.h>
 #include <widgets/mainwindow2.h>
 #include <widgets/messageboxhelper.h>
+#include <vtextedit/spellchecker.h>
 #include <vtextedit/vtexteditor.h>
 
 #include "application.h"
@@ -229,6 +230,11 @@ int main(int argc, char *argv[]) {
     // Legacy equivalent: VNoteX::initThemeMgr() -> ThemeMgr::addSyntaxHighlightingSearchPaths().
     vte::VTextEditor::addSyntaxCustomSearchPaths(
         QStringList() << configMgr.getConfigDataFolder(ConfigMgr2::SyntaxHighlighting));
+
+    // Initialize spell check dictionary search paths.
+    // Legacy equivalent: MainWindow::setupSpellCheck().
+    vte::SpellChecker::addDictionaryCustomSearchPaths(
+        QStringList() << configMgr.getConfigDataFolder(ConfigMgr2::Dicts));
 
     QAccessible::installFactory(&FakeAccessible::accessibleFactory);
 
