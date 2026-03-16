@@ -187,3 +187,23 @@ bool ConfigCoreService::shutdown() {
   qInfo() << "ConfigCoreService::shutdown: done";
   return true;
 }
+
+bool ConfigCoreService::setSkipSyncToSession(bool p_skip) {
+  if (!checkContext()) {
+    return false;
+  }
+  VxCoreError err = vxcore_session_set_skip_sync(m_context, p_skip ? 1 : 0);
+  return err == VXCORE_OK;
+}
+
+bool ConfigCoreService::skipSyncToSession() const {
+  if (!checkContext()) {
+    return false;
+  }
+  int out = 0;
+  VxCoreError err = vxcore_session_get_skip_sync(m_context, &out);
+  if (err != VXCORE_OK) {
+    return false;
+  }
+  return out != 0;
+}

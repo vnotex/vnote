@@ -64,6 +64,13 @@ public:
   // overwriting the snapshot with partial state.
   bool shutdown();
 
+  // Set whether session sync should be skipped after each mutation.
+  // Used during shutdown to avoid N disk writes when closing N buffers.
+  bool setSkipSyncToSession(bool p_skip);
+
+  // Get current skip_sync_to_session state.
+  bool skipSyncToSession() const;
+
 private:
   // Convert C string to QString and free the C string using vxcore_string_free.
   static QString cstrToQString(char *p_str);
