@@ -2,20 +2,27 @@
 
 #include <QAction>
 #include <QActionGroup>
+#include <QApplication>
+#include <QClipboard>
+#include <QDesktopServices>
 #include <QHBoxLayout>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QResizeEvent>
 #include <QTabBar>
 #include <QToolButton>
+#include <QUrl>
 
 #include "propertydefs.h"
 #include "viewwindow2.h"
 #include "widgetsfactory.h"
 #include <core/servicelocator.h>
+#include <core/services/notebookcoreservice.h>
 #include <core/services/workspacecoreservice.h>
 #include <gui/services/themeservice.h>
+#include <utils/clipboardutils.h>
 #include <utils/iconutils.h>
+#include <utils/pathutils.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
@@ -82,6 +89,15 @@ void ViewSplit2::setupUI() {
 void ViewSplit2::setupTabBar() {
   auto bar = tabBar();
   bar->setDrawBase(false);
+
+  // Right-click context menu on tabs.
+  bar->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(bar, &QTabBar::customContextMenuRequested, this, [this](const QPoint &p_pos) {
+    int idx = tabBar()->tabAt(p_pos);
+    if (idx != -1) {
+      createTabContextMenu(idx, tabBar()->mapToGlobal(p_pos));
+    }
+  });
 
   // Middle click to close tab.
   bar->installEventFilter(this);
@@ -448,4 +464,95 @@ bool ViewSplit2::eventFilter(QObject *p_object, QEvent *p_event) {
   }
 
   return QTabWidget::eventFilter(p_object, p_event);
+}
+
+void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos) {
+  auto *win = getViewWindow(p_tabIndex);
+  if (!win) {
+    return;
+  }
+
+  QMenu menu(this);
+
+  // ---- Close Actions ----
+  menu.addAction(tr("Close Tab"), [this, p_tabIndex]() {
+    closeTab(p_tabIndex);
+  });
+
+  menu.addAction(tr("Close All Tabs"), [this, p_tabIndex]() {
+    emit closeTabsRequested(this, p_tabIndex, CloseTabMode::All);
+  });
+
+  menu.addAction(tr("Close Other Tabs"), [this, p_tabIndex]() {
+    emit closeTabsRequested(this, p_tabIndex, CloseTabMode::Others);
+  });
+
+  auto *closeLeftAct = menu.addAction(tr("Close Tabs To The Left"), [this, p_tabIndex]() {
+    emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheLeft);
+  });
+  closeLeftAct->setEnabled(p_tabIndex > 0);
+
+  auto *closeRightAct = menu.addAction(tr("Close Tabs To The Right"), [this, p_tabIndex]() {
+    emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheRight);
+  });
+  closeRightAct->setEnabled(p_tabIndex < count() - 1);
+
+  menu.addSeparator();
+
+  // ---- File Actions ----
+  // Resolve the absolute path from notebook root + relative path.
+  const auto &nodeId = win->getNodeId();
+  QString absPath;
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (notebookService && nodeId.isValid()) {
+    QJsonObject config = notebookService->getNotebookConfig(nodeId.notebookId);
+    QString rootPath = config.value(QStringLiteral("rootFolder")).toString();
+    if (!rootPath.isEmpty()) {
+      absPath = nodeId.relativePath.isEmpty()
+          ? rootPath
+          : PathUtils::concatenateFilePath(rootPath, nodeId.relativePath);
+    }
+  }
+
+  auto *copyPathAct = menu.addAction(tr("Copy Path"), [absPath]() {
+    if (!absPath.isEmpty()) {
+      ClipboardUtils::setTextToClipboard(absPath);
+    }
+  });
+  copyPathAct->setEnabled(!absPath.isEmpty());
+
+  auto *openLocAct = menu.addAction(tr("Open Location"), [absPath]() {
+    if (!absPath.isEmpty()) {
+      QString dirPath = PathUtils::parentDirPath(absPath);
+      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(dirPath));
+    }
+  });
+  openLocAct->setEnabled(!absPath.isEmpty());
+
+  if (nodeId.isValid()) {
+    menu.addAction(tr("Locate Node"), [this, nodeId]() {
+      emit locateNodeRequested(nodeId);
+    });
+  }
+
+  menu.addSeparator();
+
+  // ---- Move Actions ----
+  menu.addAction(tr("Move One Split Left"), [this, win]() {
+    emit moveViewWindowOneSplitRequested(this, win, Direction::Left);
+  });
+
+  menu.addAction(tr("Move One Split Right"), [this, win]() {
+    emit moveViewWindowOneSplitRequested(this, win, Direction::Right);
+  });
+
+  menu.addAction(tr("Move One Split Up"), [this, win]() {
+    emit moveViewWindowOneSplitRequested(this, win, Direction::Up);
+  });
+
+  menu.addAction(tr("Move One Split Down"), [this, win]() {
+    emit moveViewWindowOneSplitRequested(this, win, Direction::Down);
+  });
+
+  menu.exec(p_globalPos);
 }

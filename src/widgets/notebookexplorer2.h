@@ -83,6 +83,9 @@ public slots:
   void importFile();
   void importFolder();
 
+  // Locate a node in the explorer (switch notebook if needed, expand, select, scroll).
+  void locateNode(const NodeIdentifier &p_nodeId);
+
 private slots:
   // Node activation — opens the file via BufferService
   void onNodeActivated(const NodeIdentifier &p_nodeId,

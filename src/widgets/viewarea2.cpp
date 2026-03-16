@@ -395,6 +395,16 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
           [this](ViewSplit2 *s, const QStringList &ids) {
             m_controller->setBufferOrder(s->getWorkspaceId(), ids);
           });
+
+  // Tab context menu: close multiple tabs.
+  connect(p_split, &ViewSplit2::closeTabsRequested, this,
+          [this](ViewSplit2 *s, int p_tabIndex, CloseTabMode p_mode) {
+            m_controller->closeTabs(s->getWorkspaceId(), p_tabIndex, p_mode);
+          });
+
+  // Tab context menu: locate node in notebook explorer.
+  connect(p_split, &ViewSplit2::locateNodeRequested,
+          m_controller, &ViewAreaController::locateNodeRequested);
 }
 
 // ============ ViewAreaView Interface Implementations ============

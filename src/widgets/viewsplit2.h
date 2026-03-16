@@ -9,6 +9,7 @@
 #include <functional>
 
 #include <core/global.h>
+#include <core/nodeidentifier.h>
 
 class QActionGroup;
 class QToolButton;
@@ -136,6 +137,12 @@ signals:
   // Emitted when tabs are reordered via drag. Carries the new buffer ID order.
   void bufferOrderChanged(ViewSplit2 *p_split, const QStringList &p_bufferIds);
 
+  // Tab context menu: close multiple tabs relative to a reference tab.
+  void closeTabsRequested(ViewSplit2 *p_split, int p_tabIndex, CloseTabMode p_mode);
+
+  // Tab context menu: locate node in notebook explorer.
+  void locateNodeRequested(const NodeIdentifier &p_nodeId);
+
 protected:
   void mousePressEvent(QMouseEvent *p_event) override;
 
@@ -157,6 +164,9 @@ private:
   ViewWindow2 *getViewWindow(int p_idx) const;
 
   void focusCurrentViewWindow();
+
+  // Build and show the tab context menu at the given position.
+  void createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos);
 
   ServiceLocator &m_services;
 

@@ -270,6 +270,62 @@ bool ViewAreaController::closeAll(const QVector<QString> &p_workspaceIds, bool p
   return true;
 }
 
+void ViewAreaController::closeTabs(const QString &p_workspaceId, int p_referenceTabIndex,
+                                   CloseTabMode p_mode) {
+  if (!m_view || p_workspaceId.isEmpty()) {
+    return;
+  }
+
+  QVector<ID> allWindowIds = m_view->getViewWindowIdsForWorkspace(p_workspaceId);
+  if (allWindowIds.isEmpty()) {
+    return;
+  }
+
+  if (p_referenceTabIndex < 0 || p_referenceTabIndex >= allWindowIds.size()) {
+    if (p_mode != CloseTabMode::All) {
+      return;
+    }
+  }
+
+  // Determine which windows to close.
+  QVector<ID> toClose;
+  switch (p_mode) {
+  case CloseTabMode::All:
+    toClose = allWindowIds;
+    break;
+  case CloseTabMode::Others:
+    for (int i = 0; i < allWindowIds.size(); ++i) {
+      if (i != p_referenceTabIndex) {
+        toClose.append(allWindowIds[i]);
+      }
+    }
+    break;
+  case CloseTabMode::ToTheLeft:
+    for (int i = 0; i < p_referenceTabIndex; ++i) {
+      toClose.append(allWindowIds[i]);
+    }
+    break;
+  case CloseTabMode::ToTheRight:
+    for (int i = p_referenceTabIndex + 1; i < allWindowIds.size(); ++i) {
+      toClose.append(allWindowIds[i]);
+    }
+    break;
+  }
+
+  if (toClose.isEmpty()) {
+    return;
+  }
+
+  // Close in reverse order to preserve indices.
+  m_suppressAutoRemove = true;
+  for (int i = toClose.size() - 1; i >= 0; --i) {
+    if (!closeViewWindow(toClose[i], false)) {
+      break; // Cancelled.
+    }
+  }
+  m_suppressAutoRemove = false;
+}
+
 void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction p_direction) {
   if (p_workspaceId.isEmpty()) { return; }
   auto *hookMgr = m_services.get<HookManager>();

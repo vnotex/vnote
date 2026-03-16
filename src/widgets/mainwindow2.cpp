@@ -23,6 +23,7 @@
 #include <widgets/notebookexplorer2.h>
 #include <widgets/viewarea2.h>
 #include <widgets/messageboxhelper.h>
+#include <controllers/viewareacontroller.h>
 
 using namespace vnotex;
 
@@ -250,6 +251,10 @@ void MainWindow2::setupDocks() {
   setupNotebookExplorer();
 
   m_dockWidgetHelper.setupDocks();
+
+  // Wire ViewAreaController's locateNodeRequested to NotebookExplorer2.
+  connect(m_viewArea->getController(), &ViewAreaController::locateNodeRequested,
+          m_notebookExplorer, &NotebookExplorer2::locateNode);
 }
 
 QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const {

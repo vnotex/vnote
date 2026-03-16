@@ -11,6 +11,7 @@
 #include <controllers/viewareaview.h>
 #include <core/fileopensettings.h>
 #include <core/global.h>
+#include <core/nodeidentifier.h>
 
 namespace vnotex {
 
@@ -76,6 +77,12 @@ public:
   // Close all view windows in the given workspaces.
   // Returns true if all closed (false means user cancelled).
   bool closeAll(const QVector<QString> &p_workspaceIds, bool p_force);
+
+  // Close multiple tabs in a workspace based on mode, relative to a reference tab index.
+  // @p_workspaceId: workspace containing the tabs.
+  // @p_referenceTabIndex: the right-clicked tab index (for Others/Left/Right reference).
+  // @p_mode: which tabs to close (All, Others, ToTheLeft, ToTheRight).
+  void closeTabs(const QString &p_workspaceId, int p_referenceTabIndex, CloseTabMode p_mode);
 
   // ============ Split Operations ============
 
@@ -180,6 +187,9 @@ signals:
 
   // Emitted when the count of splits changes.
   void viewSplitsCountChanged();
+
+  // Emitted when a tab context menu requests to locate a node in the notebook explorer.
+  void locateNodeRequested(const NodeIdentifier &p_nodeId);
 
 private:
   // Emit currentViewWindowChanged if the active window has changed.

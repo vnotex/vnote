@@ -526,6 +526,19 @@ void NotebookExplorer2::setCurrentNode(const NodeIdentifier &p_nodeId) {
   m_nodeExplorer->scrollToNode(p_nodeId);
 }
 
+void NotebookExplorer2::locateNode(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  // Switch to the node's notebook if not already showing it.
+  if (m_currentNotebookId != p_nodeId.notebookId) {
+    setCurrentNotebook(p_nodeId.notebookId);
+  }
+
+  setCurrentNode(p_nodeId);
+}
+
 NodeIdentifier NotebookExplorer2::currentNodeId() const {
   return m_nodeExplorer ? m_nodeExplorer->currentNodeId() : NodeIdentifier();
 }

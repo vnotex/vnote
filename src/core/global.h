@@ -85,6 +85,8 @@ enum { InvalidViewSplitId = 0 };
 
 enum class Direction { Left, Down, Up, Right };
 
+enum class CloseTabMode { All, Others, ToTheLeft, ToTheRight };
+
 struct Segment {
   Segment() = default;
 
