@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QScrollBar>
 #include <QToolBar>
+#include <QToolButton>
 
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/theme.h>
@@ -20,6 +21,8 @@
 #include "editors/statuswidget.h"
 #include "editors/texteditor.h"
 #include "viewwindowtoolbarhelper2.h"
+#include "wordcountpopup.h"
+#include "wordcountpopup2.h"
 
 using namespace vnotex;
 
@@ -80,9 +83,51 @@ void TextViewWindow2::setupToolBar() {
     m_saveAction->setEnabled(getBuffer().isValid() && isModified());
   });
 
-  // Word count action (placeholder — no popup yet in new arch).
-  ViewWindowToolBarHelper2::addAction(
-      toolBar, ViewWindowToolBarHelper2::WordCount, getServices(), this);
+  // Word count popup.
+  {
+    auto *wcAction = ViewWindowToolBarHelper2::addAction(
+        toolBar, ViewWindowToolBarHelper2::WordCount, getServices(), this);
+    auto *toolBtn = dynamic_cast<QToolButton *>(toolBar->widgetForAction(wcAction));
+    Q_ASSERT(toolBtn);
+    auto *popup = new WordCountPopup2(
+        toolBtn,
+        [this](WordCountPanel *p_panel) {
+          auto text = m_editor->getTextEdit()->selectedText();
+          bool isSelection = !text.isEmpty();
+          if (!isSelection) {
+            text = getLatestContent();
+          }
+
+          // Word count algorithm matching legacy TextViewWindowHelper::calculateWordCountInfo().
+          int cns = 0;
+          int wc = 0;
+          int cc = text.size();
+          // 0 - not in word; 1 - in English word; 2 - in non-English word.
+          int state = 0;
+          for (int i = 0; i < cc; ++i) {
+            QChar ch = text[i];
+            if (ch.isSpace()) {
+              if (state) {
+                state = 0;
+              }
+              continue;
+            } else if (ch.unicode() < 128) {
+              if (state != 1) {
+                state = 1;
+                ++wc;
+              }
+            } else {
+              state = 2;
+              ++wc;
+            }
+            ++cns;
+          }
+
+          p_panel->updateCount(isSelection, wc, cns, cc);
+        },
+        toolBar);
+    toolBtn->setMenu(popup);
+  }
 
   ViewWindowToolBarHelper2::addSpacer(toolBar);
 

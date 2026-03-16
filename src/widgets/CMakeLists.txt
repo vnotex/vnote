@@ -151,4 +151,5 @@ target_sources(vnote PRIVATE
     webviewer.cpp webviewer.h
     widgetsfactory.cpp widgetsfactory.h
     wordcountpopup.cpp wordcountpopup.h
+    wordcountpopup2.cpp wordcountpopup2.h
 )

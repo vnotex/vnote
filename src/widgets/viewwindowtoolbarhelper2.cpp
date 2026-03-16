@@ -14,6 +14,8 @@
 #include <gui/utils/widgetutils.h>
 #include <utils/iconutils.h>
 
+#include "propertydefs.h"
+
 using namespace vnotex;
 
 typedef EditorConfig::Shortcut Shortcut;
@@ -123,11 +125,16 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::Print), p_shortcutWidget);
     break;
 
-  case Action::WordCount:
+  case Action::WordCount: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("word_count_editor.svg")),
                           QObject::tr("Word Count"));
-    addActionShortcut(act, editorConfig.getShortcut(Shortcut::WordCount), p_shortcutWidget);
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
+    Q_ASSERT(toolBtn);
+    toolBtn->setPopupMode(QToolButton::InstantPopup);
+    toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+    addButtonShortcut(toolBtn, editorConfig.getShortcut(Shortcut::WordCount), p_shortcutWidget);
     break;
+  }
 
   default:
     Q_ASSERT(false);
