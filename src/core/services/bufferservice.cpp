@@ -97,14 +97,6 @@ QJsonArray BufferService::listBuffers() const {
   return BufferCoreService::listBuffers();
 }
 
-bool BufferService::autoSaveTick() {
-  return BufferCoreService::autoSaveTick();
-}
-
-bool BufferService::setAutoSaveInterval(qint64 p_intervalMs) {
-  return BufferCoreService::setAutoSaveInterval(p_intervalMs);
-}
-
 // ============ Core service access ============
 
 BufferCoreService *BufferService::coreService() {

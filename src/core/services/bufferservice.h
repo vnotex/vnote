@@ -54,14 +54,6 @@ public:
   // List all open buffers as JSON array.
   QJsonArray listBuffers() const;
 
-  // ============ Auto-Save (pass-through) ============
-
-  // Trigger auto-save for modified buffers.
-  bool autoSaveTick();
-
-  // Set auto-save interval in milliseconds.
-  bool setAutoSaveInterval(qint64 p_intervalMs);
-
 private:
   // Allow Buffer2 to access BufferCoreService base for delegated operations.
   friend class Buffer2;

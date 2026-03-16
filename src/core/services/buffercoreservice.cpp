@@ -204,33 +204,6 @@ bool BufferCoreService::isModified(const QString &p_bufferId) const {
   return modified != 0;
 }
 
-// Auto-save.
-bool BufferCoreService::autoSaveTick() {
-  if (!checkContext()) {
-    return false;
-  }
-
-  VxCoreError err = vxcore_buffer_auto_save_tick(m_context);
-  if (err != VXCORE_OK) {
-    qWarning() << "autoSaveTick failed:" << QString::fromUtf8(vxcore_error_message(err));
-    return false;
-  }
-  return true;
-}
-
-bool BufferCoreService::setAutoSaveInterval(qint64 p_intervalMs) {
-  if (!checkContext()) {
-    return false;
-  }
-
-  VxCoreError err = vxcore_buffer_set_auto_save_interval(m_context, static_cast<int64_t>(p_intervalMs));
-  if (err != VXCORE_OK) {
-    qWarning() << "setAutoSaveInterval failed:" << QString::fromUtf8(vxcore_error_message(err));
-    return false;
-  }
-  return true;
-}
-
 // Asset operations.
 QString BufferCoreService::insertAssetRaw(const QString &p_bufferId, const QString &p_assetName,
                                       const QByteArray &p_data) {

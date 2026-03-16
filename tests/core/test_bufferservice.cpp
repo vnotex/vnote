@@ -41,8 +41,6 @@ private slots:
   void testDeleteAttachment();
   void testRenameAttachment();
   void testGetAttachmentsFolder();
-  void testAutoSaveTick();
-  void testSetAutoSaveInterval();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -350,14 +348,6 @@ void TestBufferService::testGetAttachmentsFolder() {
 
   QString folder = m_bufferService->getAttachmentsFolder(bufferId);
   QVERIFY(!folder.isEmpty());
-}
-
-void TestBufferService::testAutoSaveTick() {
-  QVERIFY(m_bufferService->autoSaveTick());
-}
-
-void TestBufferService::testSetAutoSaveInterval() {
-  QVERIFY(m_bufferService->setAutoSaveInterval(5000));
 }
 
 } // namespace tests

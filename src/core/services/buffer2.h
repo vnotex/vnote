@@ -61,7 +61,7 @@ public:
 
   // Return a non-owning view over the buffer's raw content held by vxcore.
   // The view is only valid until the next buffer-mutating operation
-  // (setContent, setContentRaw, save, reload, close, autoSaveTick).
+  // (setContent, setContentRaw, save, reload, close).
   QByteArrayView peekContentRaw() const;
 
   // Set buffer content from raw bytes.

@@ -69,7 +69,7 @@ public:
 
   // Return a non-owning view over the buffer's raw content held by vxcore.
   // The view is only valid until the next buffer-mutating operation
-  // (setContent, setContentRaw, save, reload, close, autoSaveTick).
+  // (setContent, setContentRaw, save, reload, close).
   QByteArrayView peekContentRaw(const QString &p_bufferId) const;
 
   // Set buffer content from raw bytes.
@@ -82,14 +82,6 @@ public:
 
   // Check if buffer has unsaved modifications.
   bool isModified(const QString &p_bufferId) const;
-
-  // ============ Auto-Save ============
-
-  // Trigger auto-save for modified buffers.
-  bool autoSaveTick();
-
-  // Set auto-save interval in milliseconds.
-  bool setAutoSaveInterval(qint64 p_intervalMs);
 
   // ============ Asset Operations (Filesystem Only) ============
 
