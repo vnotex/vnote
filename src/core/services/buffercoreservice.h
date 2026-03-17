@@ -92,6 +92,10 @@ public:
   // Write buffer's in-memory content to a backup file (.vswp).
   bool writeBackup(const QString &p_bufferId);
 
+  // Get the backup file path for a buffer.
+  // Returns empty string on failure.
+  QString getBackupPath(const QString &p_bufferId) const;
+
   // ============ Asset Operations (Filesystem Only) ============
 
   // Insert binary data as an asset file.

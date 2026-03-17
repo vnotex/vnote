@@ -10,7 +10,7 @@ namespace vnotex {
 class NoteManagementPage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit NoteManagementPage(QWidget *p_parent = nullptr);
+  explicit NoteManagementPage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 

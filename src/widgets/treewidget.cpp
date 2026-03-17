@@ -6,6 +6,8 @@
 #include <QMouseEvent>
 
 #include "styleditemdelegate.h"
+#include <core/servicelocator.h>
+#include <gui/services/themeservice.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
@@ -16,7 +18,25 @@ TreeWidget::TreeWidget(TreeWidget::Flags p_flags, QWidget *p_parent)
     : QTreeWidget(p_parent), m_flags(p_flags) {
   if (m_flags & Flag::EnhancedStyle) {
     auto interface = QSharedPointer<StyledItemDelegateTreeWidget>::create(this);
-    auto delegate = new StyledItemDelegate(interface, StyledItemDelegate::Highlights, this);
+    auto delegate = new StyledItemDelegate(interface, StyledItemDelegate::Highlights,
+                                           QBrush(), QBrush(), this);
+    setItemDelegate(delegate);
+  }
+}
+
+TreeWidget::TreeWidget(ServiceLocator &p_services, TreeWidget::Flags p_flags, QWidget *p_parent)
+    : QTreeWidget(p_parent), m_flags(p_flags) {
+  if (m_flags & Flag::EnhancedStyle) {
+    auto *themeService = p_services.get<ThemeService>();
+    if (themeService) {
+      m_highlightFg = QColor(
+          themeService->paletteColor(QStringLiteral("widgets#styleditemdelegate#highlight#fg")));
+      m_highlightBg = QColor(
+          themeService->paletteColor(QStringLiteral("widgets#styleditemdelegate#highlight#bg")));
+    }
+    auto interface = QSharedPointer<StyledItemDelegateTreeWidget>::create(this);
+    auto delegate = new StyledItemDelegate(interface, StyledItemDelegate::Highlights,
+                                           m_highlightFg, m_highlightBg, this);
     setItemDelegate(delegate);
   }
 }
@@ -240,8 +260,8 @@ bool TreeWidget::forEachItem(QTreeWidgetItem *p_item,
 }
 
 void TreeWidget::mark(QTreeWidgetItem *p_item, int p_column) {
-  p_item->setData(p_column, Qt::ForegroundRole, StyledItemDelegate::s_highlightForeground);
-  p_item->setData(p_column, Qt::BackgroundRole, StyledItemDelegate::s_highlightBackground);
+  p_item->setData(p_column, Qt::ForegroundRole, m_highlightFg);
+  p_item->setData(p_column, Qt::BackgroundRole, m_highlightBg);
 }
 
 void TreeWidget::unmark(QTreeWidgetItem *p_item, int p_column) {

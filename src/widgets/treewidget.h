@@ -1,10 +1,13 @@
 #ifndef TREEWIDGET_H
 #define TREEWIDGET_H
 
+#include <QBrush>
 #include <QTreeWidget>
 #include <QVariant>
 
 namespace vnotex {
+class ServiceLocator;
+
 class TreeWidget : public QTreeWidget {
   Q_OBJECT
 public:
@@ -14,6 +17,10 @@ public:
   explicit TreeWidget(QWidget *p_parent = nullptr);
 
   TreeWidget(TreeWidget::Flags p_flags, QWidget *p_parent = nullptr);
+
+  // DI constructor for callers that need EnhancedStyle (theme colors).
+  TreeWidget(ServiceLocator &p_services, TreeWidget::Flags p_flags,
+             QWidget *p_parent = nullptr);
 
   void mark(QTreeWidgetItem *p_item, int p_column);
 
@@ -69,6 +76,10 @@ private:
                           const std::function<bool(QTreeWidgetItem *p_item)> &p_func);
 
   Flags m_flags = Flag::None;
+
+  // Highlight colors for mark/unmark (populated by DI constructor).
+  QBrush m_highlightFg;
+  QBrush m_highlightBg;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(TreeWidget::Flags)

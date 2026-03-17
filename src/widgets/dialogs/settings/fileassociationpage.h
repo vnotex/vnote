@@ -9,7 +9,7 @@ namespace vnotex {
 class FileAssociationPage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit FileAssociationPage(QWidget *p_parent = nullptr);
+  explicit FileAssociationPage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 

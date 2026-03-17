@@ -12,17 +12,20 @@
 
 #include <QListWidgetItem>
 #include <QPushButton>
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/coreconfig.h>
-#include <core/thememgr.h>
-#include <core/vnotex.h>
+#include <core/servicelocator.h>
+#include <gui/services/themeservice.h>
 #include <utils/widgetutils.h>
 #include <widgets/listwidget.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
 
-ThemePage::ThemePage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
+ThemePage::ThemePage(ServiceLocator &p_services, QWidget *p_parent)
+    : SettingsPage(p_services, p_parent) {
+  setupUI();
+}
 
 void ThemePage::setupUI() {
   auto mainLayout = new QVBoxLayout(this);
@@ -44,15 +47,22 @@ void ThemePage::setupUI() {
     auto refreshBtn = new QPushButton(tr("Refresh"), this);
     layout->addWidget(refreshBtn, 3, 0, 1, 1);
     connect(refreshBtn, &QPushButton::clicked, this, [this]() {
-      VNoteX::getInst().getThemeMgr().refresh();
-      loadThemes();
+      auto *themeService = m_services.get<ThemeService>();
+      if (themeService) {
+        themeService->refresh();
+        loadThemes();
+      }
     });
 
     auto addBtn = new QPushButton(tr("Add/Delete"), this);
     layout->addWidget(addBtn, 3, 1, 1, 1);
     // TODO: open an editor to edit the theme list.
-    connect(addBtn, &QPushButton::clicked, this, []() {
-      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Themes)));
+    connect(addBtn, &QPushButton::clicked, this, [this]() {
+      auto *configMgr = m_services.get<ConfigMgr2>();
+      if (configMgr) {
+        WidgetUtils::openUrlByDesktop(
+            QUrl::fromLocalFile(configMgr->getConfigDataFolder(ConfigMgr2::ConfigDataType::Themes)));
+      }
     });
 
     auto updateBtn = new QPushButton(tr("Update"), this);
@@ -61,9 +71,12 @@ void ThemePage::setupUI() {
     auto openLocationBtn = new QPushButton(tr("Open Location"), this);
     layout->addWidget(openLocationBtn, 4, 1, 1, 1);
     connect(openLocationBtn, &QPushButton::clicked, this, [this]() {
-      auto theme = VNoteX::getInst().getThemeMgr().findTheme(currentTheme());
-      if (theme) {
-        WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(theme->m_folderPath));
+      auto *themeService = m_services.get<ThemeService>();
+      if (themeService) {
+        auto theme = themeService->findTheme(currentTheme());
+        if (theme) {
+          WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(theme->m_folderPath));
+        }
       }
     });
 
@@ -86,7 +99,7 @@ void ThemePage::loadInternal() { loadThemes(); }
 bool ThemePage::saveInternal() {
   auto theme = currentTheme();
   if (!theme.isEmpty()) {
-    ConfigMgr::getInst().getCoreConfig().setTheme(theme);
+    m_services.get<ConfigMgr2>()->getCoreConfig().setTheme(theme);
   }
 
   return true;
@@ -95,8 +108,12 @@ bool ThemePage::saveInternal() {
 QString ThemePage::title() const { return tr("Theme"); }
 
 void ThemePage::loadThemes() {
-  const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-  const auto &themes = themeMgr.getAllThemes();
+  auto *themeService = m_services.get<ThemeService>();
+  if (!themeService) {
+    return;
+  }
+
+  const auto &themes = themeService->getAllThemes();
 
   m_themeListWidget->clear();
   for (const auto &info : themes) {
@@ -107,7 +124,7 @@ void ThemePage::loadThemes() {
 
   // Set current theme.
   bool found = false;
-  const auto curThemeName = themeMgr.getCurrentTheme().name();
+  const auto curThemeName = themeService->getCurrentTheme().name();
   for (int i = 0; i < m_themeListWidget->count(); ++i) {
     if (m_themeListWidget->item(i)->data(Qt::UserRole).toString() == curThemeName) {
       m_themeListWidget->setCurrentRow(i);
@@ -126,7 +143,13 @@ void ThemePage::loadThemePreview(const QString &p_name) {
     m_previewLabel->setText(m_noPreviewText);
   }
 
-  auto pixmap = VNoteX::getInst().getThemeMgr().getThemePreview(p_name);
+  auto *themeService = m_services.get<ThemeService>();
+  if (!themeService) {
+    m_previewLabel->setText(m_noPreviewText);
+    return;
+  }
+
+  auto pixmap = themeService->getThemePreview(p_name);
   if (pixmap.isNull()) {
     m_previewLabel->setText(m_noPreviewText);
   } else {

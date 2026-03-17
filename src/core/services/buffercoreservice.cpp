@@ -232,6 +232,21 @@ bool BufferCoreService::writeBackup(const QString &p_bufferId) {
   return true;
 }
 
+QString BufferCoreService::getBackupPath(const QString &p_bufferId) const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *path = nullptr;
+  VxCoreError err =
+      vxcore_buffer_get_backup_path(m_context, p_bufferId.toUtf8().constData(), &path);
+  if (err != VXCORE_OK) {
+    qWarning() << "getBackupPath failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+  return cstrToQString(path);
+}
+
 // Asset operations.
 QString BufferCoreService::insertAssetRaw(const QString &p_bufferId, const QString &p_assetName,
                                       const QByteArray &p_data) {

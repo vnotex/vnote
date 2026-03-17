@@ -4,10 +4,12 @@
 #include <QWidget>
 
 namespace vnotex {
+class ServiceLocator;
+
 class SettingsPage : public QWidget {
   Q_OBJECT
 public:
-  explicit SettingsPage(QWidget *p_parent = nullptr);
+  explicit SettingsPage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   virtual ~SettingsPage();
 
@@ -43,6 +45,8 @@ protected:
   void setError(const QString &p_err);
 
   bool isLoading() const;
+
+  ServiceLocator &m_services;
 
 protected slots:
   void pageIsChanged();

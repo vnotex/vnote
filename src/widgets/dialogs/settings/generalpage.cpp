@@ -4,15 +4,19 @@
 #include <QComboBox>
 #include <QFormLayout>
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/coreconfig.h>
+#include <core/servicelocator.h>
 #include <core/sessionconfig.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
 
-GeneralPage::GeneralPage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
+GeneralPage::GeneralPage(ServiceLocator &p_services, QWidget *p_parent)
+    : SettingsPage(p_services, p_parent) {
+  setupUI();
+}
 
 void GeneralPage::setupUI() {
   auto mainLayout = WidgetsFactory::createFormLayout(this);
@@ -22,7 +26,7 @@ void GeneralPage::setupUI() {
     m_localeComboBox->setToolTip(tr("Interface language"));
 
     m_localeComboBox->addItem(tr("Default"), QString());
-    for (const auto &loc : ConfigMgr::getInst().getCoreConfig().getAvailableLocales()) {
+    for (const auto &loc : m_services.get<ConfigMgr2>()->getCoreConfig().getAvailableLocales()) {
       QLocale locale(loc);
       m_localeComboBox->addItem(
           QStringLiteral("%1 (%2)").arg(locale.nativeLanguageName(), locale.nativeCountryName()),
@@ -87,8 +91,8 @@ void GeneralPage::setupUI() {
 }
 
 void GeneralPage::loadInternal() {
-  const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
-  const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+  const auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
+  const auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
 
   {
     int idx = m_localeComboBox->findData(coreConfig.getLocale());
@@ -113,8 +117,8 @@ void GeneralPage::loadInternal() {
 }
 
 bool GeneralPage::saveInternal() {
-  auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
-  auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+  auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
+  auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
 
   {
     auto locale = m_localeComboBox->currentData().toString();

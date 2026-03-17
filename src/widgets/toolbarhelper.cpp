@@ -354,8 +354,10 @@ void ToolBarHelper::setupSettingsButton(MainWindow *p_win, QToolBar *p_toolBar) 
   auto settingsAct = new QAction(generateIcon("settings.svg"), defaultText, btn);
   QAction::connect(settingsAct, &QAction::triggered,
                    [p_win]() {
-                      SettingsDialog dialog(p_win);
-                      dialog.exec();
+                      // LEGACY: SettingsDialog now requires ServiceLocator.
+                      // Use MainWindow2 code path for settings dialog.
+                      Q_UNUSED(p_win);
+                      qDebug() << "Settings dialog not available in legacy code path";
                    });
   WidgetUtils::addActionShortcut(settingsAct,
                                  coreConfig.getShortcut(CoreConfig::Shortcut::Settings));

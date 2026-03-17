@@ -5,8 +5,8 @@
 #include <QTimer>
 
 #include "styleditemdelegate.h"
-#include <core/thememgr.h>
-#include <core/vnotex.h>
+#include <core/servicelocator.h>
+#include <gui/services/themeservice.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
@@ -39,7 +39,49 @@ ListWidget::ListWidget(bool p_enhancedStyle, QWidget *p_parent) : QListWidget(p_
 
   if (p_enhancedStyle) {
     auto delegate = new StyledItemDelegate(
-        QSharedPointer<StyledItemDelegateListWidget>::create(this), StyledItemDelegate::None, this);
+        QSharedPointer<StyledItemDelegateListWidget>::create(this), StyledItemDelegate::None,
+        QBrush(), QBrush(), this);
+    setItemDelegate(delegate);
+  }
+}
+
+ListWidget::ListWidget(ServiceLocator &p_services, bool p_enhancedStyle, QWidget *p_parent)
+    : QListWidget(p_parent) {
+  m_clickTimer = new QTimer(this);
+  m_clickTimer->setSingleShot(true);
+  connect(m_clickTimer, &QTimer::timeout, this, &ListWidget::handleItemClick);
+
+  connect(this, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
+    if (m_isDoubleClick && m_clickedItem == item) {
+      // There will be a single click right after double click.
+      m_clickTimer->stop();
+      handleItemClick();
+      return;
+    }
+
+    m_isDoubleClick = false;
+    m_clickedItem = item;
+    m_clickTimer->start(QApplication::doubleClickInterval());
+  });
+
+  connect(this, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem *item) {
+    m_clickTimer->stop();
+    m_isDoubleClick = true;
+    m_clickedItem = item;
+  });
+
+  if (p_enhancedStyle) {
+    QBrush highlightFg, highlightBg;
+    auto *themeService = p_services.get<ThemeService>();
+    if (themeService) {
+      highlightFg = QColor(
+          themeService->paletteColor(QStringLiteral("widgets#styleditemdelegate#highlight#fg")));
+      highlightBg = QColor(
+          themeService->paletteColor(QStringLiteral("widgets#styleditemdelegate#highlight#bg")));
+    }
+    auto delegate = new StyledItemDelegate(
+        QSharedPointer<StyledItemDelegateListWidget>::create(this), StyledItemDelegate::None,
+        highlightFg, highlightBg, this);
     setItemDelegate(delegate);
   }
 }
@@ -94,28 +136,11 @@ QVector<QListWidgetItem *> ListWidget::getVisibleItems(const QListWidget *p_widg
   return items;
 }
 
-static const QBrush &separatorForeground() {
-  static QBrush fg;
-  if (fg == QBrush()) {
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    fg = QColor(themeMgr.paletteColor(QStringLiteral("widgets#styleditemdelegate#separator#fg")));
-  }
-  return fg;
-}
-
-static const QBrush &separatorBackground() {
-  static QBrush bg;
-  if (bg == QBrush()) {
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    bg = QColor(themeMgr.paletteColor(QStringLiteral("widgets#styleditemdelegate#separator#bg")));
-  }
-  return bg;
-}
-
+// LEGACY: Separator colors previously came from ThemeService::inst() singleton.
+// Now returns items without themed colors. Will be fully removed when
+// HistoryPanel is migrated to DI.
 QListWidgetItem *ListWidget::createSeparatorItem(const QString &p_text) {
   QListWidgetItem *item = new QListWidgetItem(p_text, nullptr, ItemTypeSeparator);
-  item->setData(Qt::ForegroundRole, separatorForeground());
-  item->setData(Qt::BackgroundRole, separatorBackground());
   item->setFlags(Qt::NoItemFlags);
   return item;
 }

@@ -11,7 +11,7 @@ namespace vnotex {
 class TextEditorPage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit TextEditorPage(QWidget *p_parent = nullptr);
+  explicit TextEditorPage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 

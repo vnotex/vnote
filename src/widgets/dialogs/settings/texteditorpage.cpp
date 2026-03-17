@@ -5,8 +5,9 @@
 #include <QFormLayout>
 #include <QSpinBox>
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/servicelocator.h>
 #include <core/texteditorconfig.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
@@ -15,7 +16,10 @@
 
 using namespace vnotex;
 
-TextEditorPage::TextEditorPage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
+TextEditorPage::TextEditorPage(ServiceLocator &p_services, QWidget *p_parent)
+    : SettingsPage(p_services, p_parent) {
+  setupUI();
+}
 
 void TextEditorPage::setupUI() {
   auto mainLayout = WidgetsFactory::createFormLayout(this);
@@ -151,7 +155,7 @@ void TextEditorPage::setupUI() {
 }
 
 void TextEditorPage::loadInternal() {
-  const auto &textConfig = ConfigMgr::getInst().getEditorConfig().getTextEditorConfig();
+  const auto &textConfig = m_services.get<ConfigMgr2>()->getEditorConfig().getTextEditorConfig();
 
   {
     int idx = m_lineNumberComboBox->findData(static_cast<int>(textConfig.getLineNumberType()));
@@ -191,7 +195,7 @@ void TextEditorPage::loadInternal() {
 }
 
 bool TextEditorPage::saveInternal() {
-  auto &textConfig = ConfigMgr::getInst().getEditorConfig().getTextEditorConfig();
+  auto &textConfig = m_services.get<ConfigMgr2>()->getEditorConfig().getTextEditorConfig();
 
   {
     auto lineNumber = m_lineNumberComboBox->currentData().toInt();
@@ -225,7 +229,7 @@ bool TextEditorPage::saveInternal() {
 
   textConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
 
-  EditorPage::notifyEditorConfigChange();
+  EditorPage::notifyEditorConfigChange(m_services.get<ConfigMgr2>());
 
   return true;
 }

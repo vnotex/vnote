@@ -13,9 +13,10 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/markdowneditorconfig.h>
+#include <core/servicelocator.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
 
@@ -28,7 +29,10 @@
 
 using namespace vnotex;
 
-MarkdownEditorPage::MarkdownEditorPage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
+MarkdownEditorPage::MarkdownEditorPage(ServiceLocator &p_services, QWidget *p_parent)
+    : SettingsPage(p_services, p_parent) {
+  setupUI();
+}
 
 void MarkdownEditorPage::setupUI() {
   auto mainLayout = new QVBoxLayout(this);
@@ -46,7 +50,7 @@ void MarkdownEditorPage::setupUI() {
 }
 
 void MarkdownEditorPage::loadInternal() {
-  const auto &markdownConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
+  const auto &markdownConfig = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
 
   m_insertFileNameAsTitleCheckBox->setChecked(markdownConfig.getInsertFileNameAsTitle());
 
@@ -131,7 +135,7 @@ void MarkdownEditorPage::loadInternal() {
 }
 
 bool MarkdownEditorPage::saveInternal() {
-  auto &markdownConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
+  auto &markdownConfig = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
 
   markdownConfig.setInsertFileNameAsTitle(m_insertFileNameAsTitleCheckBox->isChecked());
 
@@ -211,7 +215,7 @@ bool MarkdownEditorPage::saveInternal() {
 
   markdownConfig.setRichPasteByDefaultEnabled(m_richPasteByDefaultCheckBox->isChecked());
 
-  EditorPage::notifyEditorConfigChange();
+  EditorPage::notifyEditorConfigChange(m_services.get<ConfigMgr2>());
 
   return true;
 }

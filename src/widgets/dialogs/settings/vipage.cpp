@@ -5,8 +5,9 @@
 
 #include <vtextedit/viconfig.h>
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/servicelocator.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
 
@@ -14,7 +15,10 @@
 
 using namespace vnotex;
 
-ViPage::ViPage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
+ViPage::ViPage(ServiceLocator &p_services, QWidget *p_parent)
+    : SettingsPage(p_services, p_parent) {
+  setupUI();
+}
 
 void ViPage::setupUI() {
   auto mainLayout = WidgetsFactory::createFormLayout(this);
@@ -30,20 +34,20 @@ void ViPage::setupUI() {
 }
 
 void ViPage::loadInternal() {
-  const auto &viConfig = ConfigMgr::getInst().getEditorConfig().getViConfig();
+  const auto &viConfig = m_services.get<ConfigMgr2>()->getEditorConfig().getViConfig();
 
   m_controlCToCopyCheckBox->setChecked(viConfig->m_controlCToCopy);
 }
 
 bool ViPage::saveInternal() {
-  auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+  auto &editorConfig = m_services.get<ConfigMgr2>()->getEditorConfig();
   auto &viConfig = editorConfig.getViConfig();
 
   viConfig->m_controlCToCopy = m_controlCToCopyCheckBox->isChecked();
 
   editorConfig.update();
 
-  EditorPage::notifyEditorConfigChange();
+  EditorPage::notifyEditorConfigChange(m_services.get<ConfigMgr2>());
 
   return true;
 }

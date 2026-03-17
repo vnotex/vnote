@@ -12,11 +12,10 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/coreconfig.h>
-#include <core/notebookmgr.h>
+#include <core/servicelocator.h>
 #include <core/sessionconfig.h>
-#include <core/vnotex.h>
 #include <utils/widgetutils.h>
 #include <widgets/lineeditwithsnippet.h>
 #include <widgets/locationinputwithbrowsebutton.h>
@@ -24,10 +23,14 @@
 #include <widgets/widgetsfactory.h>
 
 // LEGACY: NoteTemplateSelector now requires ServiceLocator - disabled until migration
+// LEGACY: NotebookMgr not yet in ServiceLocator - getCurrentNotebook disabled
 
 using namespace vnotex;
 
-QuickAccessPage::QuickAccessPage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
+QuickAccessPage::QuickAccessPage(ServiceLocator &p_services, QWidget *p_parent)
+    : SettingsPage(p_services, p_parent) {
+  setupUI();
+}
 
 void QuickAccessPage::setupUI() {
   auto mainLayout = new QVBoxLayout(this);
@@ -45,7 +48,7 @@ void QuickAccessPage::setupUI() {
 }
 
 void QuickAccessPage::loadInternal() {
-  const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+  const auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
 
   m_flashPageInput->setText(sessionConfig.getFlashPage());
 
@@ -60,7 +63,7 @@ void QuickAccessPage::loadInternal() {
 }
 
 void QuickAccessPage::loadQuickNoteSchemes() {
-  const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+  const auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
 
   m_quickNoteSchemes = sessionConfig.getQuickNoteSchemes();
   m_quickNoteCurrentIndex = -1;
@@ -77,7 +80,7 @@ void QuickAccessPage::loadQuickNoteSchemes() {
 }
 
 bool QuickAccessPage::saveInternal() {
-  auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+  auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
 
   sessionConfig.setFlashPage(m_flashPageInput->text());
 
@@ -97,7 +100,7 @@ void QuickAccessPage::saveQuickNoteSchemes() {
   // Save current quick note scheme from inputs.
   saveCurrentQuickNote();
 
-  auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+  auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
   sessionConfig.setQuickNoteSchemes(m_quickNoteSchemes);
 }
 
@@ -150,12 +153,8 @@ QGroupBox *QuickAccessPage::setupQuickAccessGroup() {
 }
 
 QString QuickAccessPage::getDefaultQuickNoteFolderPath() {
-  auto defaultPath = QDir::homePath();
-  auto currentNotebook = VNoteX::getInst().getNotebookMgr().getCurrentNotebook();
-  if (currentNotebook) {
-    defaultPath = currentNotebook->getRootFolderAbsolutePath();
-  }
-  return defaultPath;
+  // LEGACY: NotebookMgr not yet in ServiceLocator - cannot get current notebook path
+  return QDir::homePath();
 }
 
 QGroupBox *QuickAccessPage::setupQuickNoteGroup() {

@@ -6,19 +6,23 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/coreconfig.h>
+#include <core/servicelocator.h>
 #include <core/sessionconfig.h>
-#include <core/vnotex.h>
 #include <core/widgetconfig.h>
 #include <utils/widgetutils.h>
-#include <widgets/mainwindow.h>
+#include <widgets/mainwindow2.h>
 #include <widgets/propertydefs.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
 
-AppearancePage::AppearancePage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
+AppearancePage::AppearancePage(ServiceLocator &p_services, MainWindow2 *p_mainWindow,
+                               QWidget *p_parent)
+    : SettingsPage(p_services, p_parent), m_mainWindow(p_mainWindow) {
+  setupUI();
+}
 
 void AppearancePage::setupUI() {
   auto mainLayout = WidgetsFactory::createFormLayout(this);
@@ -48,31 +52,35 @@ void AppearancePage::setupUI() {
   }
 
   {
-    const auto &docks = VNoteX::getInst().getMainWindow()->getDocks();
-    Q_ASSERT(!docks.isEmpty());
-    m_keepDocksExpandingContentArea.resize(docks.size());
+    Q_ASSERT(m_mainWindow);
+    const auto &docks = m_mainWindow->getDocks();
 
     auto layout = new QVBoxLayout();
 
     for (int i = 0; i < docks.size(); ++i) {
-      m_keepDocksExpandingContentArea[i].first = WidgetsFactory::createCheckBox(
+      if (!docks[i]) {
+        continue;
+      }
+      auto cb = WidgetsFactory::createCheckBox(
           docks[i]->property(PropertyDefs::c_dockWidgetTitle).toString(), this);
-      m_keepDocksExpandingContentArea[i].second = docks[i]->objectName();
-      layout->addWidget(m_keepDocksExpandingContentArea[i].first);
-      connect(m_keepDocksExpandingContentArea[i].first, &QCheckBox::stateChanged, this,
-              &AppearancePage::pageIsChanged);
+      m_keepDocksExpandingContentArea.append(qMakePair(cb, docks[i]->objectName()));
+      layout->addWidget(cb);
+      connect(cb, &QCheckBox::stateChanged, this, &AppearancePage::pageIsChanged);
     }
 
     const QString label(tr("Dock widgets kept when expanding content area:"));
     mainLayout->addRow(label, layout);
-    addSearchItem(label, label, m_keepDocksExpandingContentArea.first().first);
+    if (!m_keepDocksExpandingContentArea.isEmpty()) {
+      addSearchItem(label, label, m_keepDocksExpandingContentArea.first().first);
+    }
   }
 }
 
 void AppearancePage::loadInternal() {
-  const auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-  const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
-  const auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  const auto &sessionConfig = configMgr->getSessionConfig();
+  const auto &coreConfig = configMgr->getCoreConfig();
+  const auto &widgetConfig = configMgr->getWidgetConfig();
 
   if (m_systemTitleBarCheckBox) {
     m_systemTitleBarCheckBox->setChecked(sessionConfig.getSystemTitleBarEnabled());
@@ -91,9 +99,10 @@ void AppearancePage::loadInternal() {
 }
 
 bool AppearancePage::saveInternal() {
-  auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-  auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
-  auto &widgetConfig = ConfigMgr::getInst().getWidgetConfig();
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  auto &sessionConfig = configMgr->getSessionConfig();
+  auto &coreConfig = configMgr->getCoreConfig();
+  auto &widgetConfig = configMgr->getWidgetConfig();
 
   if (m_systemTitleBarCheckBox) {
     sessionConfig.setSystemTitleBarEnabled(m_systemTitleBarCheckBox->isChecked());

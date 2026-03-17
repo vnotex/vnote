@@ -10,6 +10,8 @@
 class QTimer;
 
 namespace vnotex {
+class ServiceLocator;
+
 class ListWidget : public QListWidget {
   Q_OBJECT
 public:
@@ -18,6 +20,10 @@ public:
   explicit ListWidget(QWidget *p_parent = nullptr);
 
   ListWidget(bool p_enhancedStyle, QWidget *p_parent = nullptr);
+
+  // DI constructor for callers that need enhanced style (theme colors).
+  ListWidget(ServiceLocator &p_services, bool p_enhancedStyle,
+             QWidget *p_parent = nullptr);
 
   static QVector<QListWidgetItem *> getVisibleItems(const QListWidget *p_widget);
 

@@ -12,13 +12,16 @@ class QScrollArea;
 class QTimer;
 
 namespace vnotex {
+class ServiceLocator;
+class MainWindow2;
 class TreeWidget;
 class SettingsPage;
 
 class SettingsDialog : public Dialog {
   Q_OBJECT
 public:
-  explicit SettingsDialog(QWidget *p_parent = nullptr);
+  SettingsDialog(ServiceLocator &p_services, MainWindow2 *p_mainWindow,
+                 QWidget *p_parent = nullptr);
 
 protected:
   void acceptedButtonClicked() Q_DECL_OVERRIDE;
@@ -52,6 +55,10 @@ private:
   void search();
 
   void checkOnFinish();
+
+  ServiceLocator &m_services;
+
+  MainWindow2 *m_mainWindow = nullptr;
 
   QLineEdit *m_searchEdit = nullptr;
 

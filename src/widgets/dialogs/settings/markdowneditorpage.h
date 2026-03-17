@@ -17,7 +17,7 @@ class LocationInputWithBrowseButton;
 class MarkdownEditorPage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit MarkdownEditorPage(QWidget *p_parent = nullptr);
+  explicit MarkdownEditorPage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 

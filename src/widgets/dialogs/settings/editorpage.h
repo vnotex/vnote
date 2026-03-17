@@ -7,15 +7,17 @@ class QComboBox;
 class QSpinBox;
 
 namespace vnotex {
+class ConfigMgr2;
+
 class EditorPage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit EditorPage(QWidget *p_parent = nullptr);
+  explicit EditorPage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 
   // Should be called by all editors setting page when saved.
-  static void notifyEditorConfigChange();
+  static void notifyEditorConfigChange(ConfigMgr2 *p_configMgr);
 
 protected:
   void loadInternal() Q_DECL_OVERRIDE;

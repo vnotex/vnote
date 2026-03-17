@@ -12,6 +12,7 @@
 #include <QWhatsThis>
 #include <QWidgetAction>
 
+#include "dialogs/settings/settingsdialog.h"
 #include "fullscreentoggleaction.h"
 #include "labelwithbuttonswidget.h"
 #include "mainwindow2.h"
@@ -25,7 +26,6 @@
 #include <core/servicelocator.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
-#include <utils/docsutils.h>
 #include <utils/iconutils.h>
 #include <utils/pathutils.h>
 #include <utils/vxurlutils.h>
@@ -342,9 +342,8 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   auto defaultText = MainWindow2::tr("Settings");
   auto settingsAct = new QAction(generateIcon("settings.svg"), defaultText, btn);
   QAction::connect(settingsAct, &QAction::triggered, [this]() {
-    // TODO: SettingsDialog not yet migrated to DI architecture.
-    // Stub for now - will be implemented when SettingsDialog is migrated.
-    qDebug() << "Settings dialog requested (stub)";
+    SettingsDialog dialog(m_services, m_mainWindow, m_mainWindow);
+    dialog.exec();
   });
   WidgetUtils::addActionShortcut(settingsAct,
                                  coreConfig.getShortcut(CoreConfig::Shortcut::Settings));
@@ -379,7 +378,7 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   menu->addAction(MainWindow2::tr("About"), menu, [this]() {
     auto info = MainWindow2::tr("<h3>%1</h3>\n<span>%2</span>\n")
                     .arg(qApp->applicationDisplayName(), qApp->applicationVersion());
-    const auto text = DocsUtils::getDocText(QStringLiteral("about_vnotex.txt"));
+    const auto text = MainWindow2::tr("VNote is a pleasant note-taking platform, focusing on native experience, open source since 2016.");
     QMessageBox::about(m_mainWindow, MainWindow2::tr("About"), info + text);
   });
 

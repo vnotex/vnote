@@ -2,15 +2,15 @@
 
 #include <QFormLayout>
 
-#include <core/configmgr.h>
-#include <core/coreconfig.h>
-#include <core/sessionconfig.h>
-#include <utils/widgetutils.h>
+#include <core/servicelocator.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
 
-MiscPage::MiscPage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
+MiscPage::MiscPage(ServiceLocator &p_services, QWidget *p_parent)
+    : SettingsPage(p_services, p_parent) {
+  setupUI();
+}
 
 void MiscPage::setupUI() {}
 

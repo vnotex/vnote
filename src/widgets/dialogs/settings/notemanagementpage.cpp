@@ -4,15 +4,18 @@
 #include <QComboBox>
 #include <QFormLayout>
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/coreconfig.h>
-#include <core/vnotex.h>
+#include <core/servicelocator.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
 
-NoteManagementPage::NoteManagementPage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
+NoteManagementPage::NoteManagementPage(ServiceLocator &p_services, QWidget *p_parent)
+    : SettingsPage(p_services, p_parent) {
+  setupUI();
+}
 
 void NoteManagementPage::setupUI() {
   auto mainLayout = WidgetsFactory::createFormLayout(this);
@@ -59,7 +62,7 @@ void NoteManagementPage::setupUI() {
 }
 
 void NoteManagementPage::loadInternal() {
-  const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+  const auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
 
   m_perNotebookHistoryCheckBox->setChecked(coreConfig.isPerNotebookHistoryEnabled());
 
@@ -82,7 +85,7 @@ void NoteManagementPage::loadInternal() {
 }
 
 bool NoteManagementPage::saveInternal() {
-  auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+  auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
 
   coreConfig.setPerNotebookHistoryEnabled(m_perNotebookHistoryCheckBox->isChecked());
 

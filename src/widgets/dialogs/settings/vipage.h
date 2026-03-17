@@ -9,7 +9,7 @@ namespace vnotex {
 class ViPage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit ViPage(QWidget *p_parent = nullptr);
+  explicit ViPage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 

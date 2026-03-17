@@ -240,6 +240,8 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     // Use vxcore's built-in backup mechanism via BufferCoreService.
     bool backupOk = BufferCoreService::writeBackup(p_bufferId);
     if (backupOk) {
+      qDebug() << "BufferService: backup written for buffer" << p_bufferId
+               << "at" << BufferCoreService::getBackupPath(p_bufferId);
       m_saveFailureCounts.remove(p_bufferId);
       emit bufferAutoSaved(p_bufferId);
     } else {

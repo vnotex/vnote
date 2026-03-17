@@ -7,7 +7,7 @@ namespace vnotex {
 class MiscPage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit MiscPage(QWidget *p_parent = nullptr);
+  explicit MiscPage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 

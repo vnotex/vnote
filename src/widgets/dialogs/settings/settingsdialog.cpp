@@ -9,10 +9,11 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include <core/vnotex.h>
+#include <core/configmgr2.h>
+#include <core/servicelocator.h>
 #include <utils/widgetutils.h>
 #include <widgets/lineedit.h>
-#include <widgets/mainwindow.h>
+#include <widgets/mainwindow2.h>
 #include <widgets/messageboxhelper.h>
 #include <widgets/propertydefs.h>
 #include <widgets/treewidget.h>
@@ -33,7 +34,9 @@
 
 using namespace vnotex;
 
-SettingsDialog::SettingsDialog(QWidget *p_parent) : Dialog(p_parent) {
+SettingsDialog::SettingsDialog(ServiceLocator &p_services, MainWindow2 *p_mainWindow,
+                               QWidget *p_parent)
+    : Dialog(p_parent), m_services(p_services), m_mainWindow(p_mainWindow) {
   setupUI();
 
   setupPages();
@@ -80,7 +83,7 @@ void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent) 
   layout->addWidget(m_searchEdit);
   connect(m_searchEdit, &QLineEdit::textChanged, m_searchTimer, QOverload<>::of(&QTimer::start));
 
-  m_pageExplorer = new TreeWidget(TreeWidget::EnhancedStyle, p_parent);
+  m_pageExplorer = new TreeWidget(m_services, TreeWidget::EnhancedStyle, p_parent);
   TreeWidget::setupSingleColumnHeaderlessTree(m_pageExplorer, false, false);
   TreeWidget::showHorizontalScrollbar(m_pageExplorer);
   m_pageExplorer->setMinimumWidth(128);
@@ -103,60 +106,60 @@ void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent) 
 void SettingsDialog::setupPages() {
   // General.
   {
-    auto page = new GeneralPage(this);
+    auto page = new GeneralPage(m_services, this);
     addPage(page);
   }
 
   // Note Management.
   {
-    auto page = new NoteManagementPage(this);
+    auto page = new NoteManagementPage(m_services, this);
     addPage(page);
   }
 
   // Appearance.
   {
-    auto page = new AppearancePage(this);
+    auto page = new AppearancePage(m_services, m_mainWindow, this);
     auto item = addPage(page);
 
     // Theme.
     {
-      auto subPage = new ThemePage(this);
+      auto subPage = new ThemePage(m_services, this);
       addSubPage(subPage, item);
     }
   }
 
   // Quick Access.
   {
-    auto page = new QuickAccessPage(this);
+    auto page = new QuickAccessPage(m_services, this);
     addPage(page);
   }
 
   // Editor.
   {
-    auto page = new EditorPage(this);
+    auto page = new EditorPage(m_services, this);
     auto item = addPage(page);
 
     // Image Host.
     {
-      auto subPage = new ImageHostPage(this);
+      auto subPage = new ImageHostPage(m_services, this);
       addSubPage(subPage, item);
     }
 
     // Vi.
     {
-      auto subPage = new ViPage(this);
+      auto subPage = new ViPage(m_services, this);
       addSubPage(subPage, item);
     }
 
     // Text Editor.
     {
-      auto subPage = new TextEditorPage(this);
+      auto subPage = new TextEditorPage(m_services, this);
       addSubPage(subPage, item);
     }
 
     // Markdown Editor.
     {
-      auto subPage = new MarkdownEditorPage(this);
+      auto subPage = new MarkdownEditorPage(m_services, this);
       addSubPage(subPage, item);
     }
   }
@@ -164,14 +167,14 @@ void SettingsDialog::setupPages() {
   // Misc.
   {
     /*
-    auto page = new MiscPage(this);
+    auto page = new MiscPage(m_services, this);
     addPage(page);
     */
   }
 
   // File Association.
   {
-    auto page = new FileAssociationPage(this);
+    auto page = new FileAssociationPage(m_services, this);
     addPage(page);
   }
 
@@ -310,8 +313,9 @@ void SettingsDialog::checkOnFinish() {
           tr("A restart of VNote may be needed to make changes take effect. Restart VNote now?"),
           QString(), QString(), this);
       if (ret == QMessageBox::Yes) {
-        QMetaObject::invokeMethod(VNoteX::getInst().getMainWindow(), &MainWindow::restart,
-                                  Qt::QueuedConnection);
+        if (m_mainWindow) {
+          QMetaObject::invokeMethod(m_mainWindow, &MainWindow2::restart, Qt::QueuedConnection);
+        }
       }
       return false;
     }

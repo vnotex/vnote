@@ -10,7 +10,7 @@ namespace vnotex {
 class GeneralPage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit GeneralPage(QWidget *p_parent = nullptr);
+  explicit GeneralPage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 

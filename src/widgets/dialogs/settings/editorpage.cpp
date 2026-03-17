@@ -8,8 +8,9 @@
 #include <QTimer>
 #include <QUrl>
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/servicelocator.h>
 #include <utils/widgetutils.h>
 #include <vtextedit/spellchecker.h>
 #include <widgets/messageboxhelper.h>
@@ -17,7 +18,10 @@
 
 using namespace vnotex;
 
-EditorPage::EditorPage(QWidget *p_parent) : SettingsPage(p_parent) { setupUI(); }
+EditorPage::EditorPage(ServiceLocator &p_services, QWidget *p_parent)
+    : SettingsPage(p_services, p_parent) {
+  setupUI();
+}
 
 void EditorPage::setupUI() {
   auto mainLayout = WidgetsFactory::createFormLayout(this);
@@ -85,7 +89,8 @@ void EditorPage::setupUI() {
 
     auto addBtn = new QPushButton(tr("Add Dictionary"), this);
     connect(addBtn, &QPushButton::clicked, this, [this]() {
-      const auto dictsFolder = ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Dicts);
+      auto *configMgr = m_services.get<ConfigMgr2>();
+      const auto dictsFolder = configMgr->getConfigDataFolder(ConfigMgr2::ConfigDataType::Dicts);
       MessageBoxHelper::notify(
           MessageBoxHelper::Information,
           tr("VNote uses [Hunspell](http://hunspell.github.io/) for spell check."),
@@ -107,7 +112,7 @@ void EditorPage::setupUI() {
 }
 
 void EditorPage::loadInternal() {
-  const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+  const auto &editorConfig = m_services.get<ConfigMgr2>()->getEditorConfig();
 
   {
     int idx =
@@ -131,7 +136,7 @@ void EditorPage::loadInternal() {
 }
 
 bool EditorPage::saveInternal() {
-  auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+  auto &editorConfig = m_services.get<ConfigMgr2>()->getEditorConfig();
 
   {
     auto policy = m_autoSavePolicyComboBox->currentData().toInt();
@@ -149,21 +154,22 @@ bool EditorPage::saveInternal() {
     editorConfig.setSpellCheckDefaultDictionary(m_spellCheckDictComboBox->currentData().toString());
   }
 
-  notifyEditorConfigChange();
+  notifyEditorConfigChange(m_services.get<ConfigMgr2>());
 
   return true;
 }
 
 QString EditorPage::title() const { return tr("Editor"); }
 
-void EditorPage::notifyEditorConfigChange() {
+void EditorPage::notifyEditorConfigChange(ConfigMgr2 *p_configMgr) {
   static QTimer *timer = nullptr;
   if (!timer) {
     timer = new QTimer();
     timer->setSingleShot(true);
     timer->setInterval(1000);
-    auto &configMgr = ConfigMgr::getInst();
-    connect(timer, &QTimer::timeout, &configMgr, &ConfigMgr::editorConfigChanged);
+    if (p_configMgr) {
+      QObject::connect(timer, &QTimer::timeout, p_configMgr, &ConfigMgr2::editorConfigChanged);
+    }
   }
 
   timer->start();

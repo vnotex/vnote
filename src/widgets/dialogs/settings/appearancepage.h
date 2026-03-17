@@ -10,10 +10,13 @@ class QCheckBox;
 class QSpinBox;
 
 namespace vnotex {
+class MainWindow2;
+
 class AppearancePage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit AppearancePage(QWidget *p_parent = nullptr);
+  AppearancePage(ServiceLocator &p_services, MainWindow2 *p_mainWindow,
+                 QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 
@@ -24,6 +27,8 @@ protected:
 
 private:
   void setupUI();
+
+  MainWindow2 *m_mainWindow = nullptr;
 
   QCheckBox *m_systemTitleBarCheckBox = nullptr;
 

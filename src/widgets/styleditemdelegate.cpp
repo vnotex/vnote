@@ -10,8 +10,6 @@
 #include "listwidget.h"
 #include "simplesegmenthighlighter.h"
 #include "treewidget.h"
-#include <core/thememgr.h>
-#include <core/vnotex.h>
 
 using namespace vnotex;
 
@@ -23,33 +21,18 @@ StyledItemDelegateTreeWidget::StyledItemDelegateTreeWidget(const TreeWidget *p_t
   Q_UNUSED(p_treeWidget);
 }
 
-QBrush StyledItemDelegate::s_highlightForeground;
-
-QBrush StyledItemDelegate::s_highlightBackground;
-
 StyledItemDelegate::StyledItemDelegate(
     const QSharedPointer<StyledItemDelegateInterface> &p_interface, DelegateFlags p_flags,
-    QObject *p_parent)
-    : QStyledItemDelegate(p_parent), m_interface(p_interface), m_flags(p_flags) {
-  initialize();
-
+    const QBrush &p_highlightFg, const QBrush &p_highlightBg, QObject *p_parent)
+    : QStyledItemDelegate(p_parent),
+      m_interface(p_interface),
+      m_flags(p_flags),
+      m_highlightForeground(p_highlightFg),
+      m_highlightBackground(p_highlightBg) {
   if (m_flags & DelegateFlag::Highlights) {
     m_document = new QTextDocument(this);
     m_highlighter = new SimpleSegmentHighlighter(m_document);
-    m_highlighter->setHighlightFormat(s_highlightForeground, s_highlightBackground);
-  }
-}
-
-void StyledItemDelegate::initialize() {
-  static bool initialized = false;
-  if (!initialized) {
-    initialized = true;
-
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    s_highlightForeground =
-        QColor(themeMgr.paletteColor(QStringLiteral("widgets#styleditemdelegate#highlight#fg")));
-    s_highlightBackground =
-        QColor(themeMgr.paletteColor(QStringLiteral("widgets#styleditemdelegate#highlight#bg")));
+    m_highlighter->setHighlightFormat(m_highlightForeground, m_highlightBackground);
   }
 }
 

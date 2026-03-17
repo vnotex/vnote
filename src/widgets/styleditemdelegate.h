@@ -38,7 +38,8 @@ public:
   Q_DECLARE_FLAGS(DelegateFlags, DelegateFlag);
 
   StyledItemDelegate(const QSharedPointer<StyledItemDelegateInterface> &p_interface,
-                     DelegateFlags p_flags = DelegateFlag::None, QObject *p_parent = nullptr);
+                     DelegateFlags p_flags, const QBrush &p_highlightFg,
+                     const QBrush &p_highlightBg, QObject *p_parent = nullptr);
 
   void paint(QPainter *p_painter, const QStyleOptionViewItem &p_option,
              const QModelIndex &p_index) const Q_DECL_OVERRIDE;
@@ -46,19 +47,17 @@ public:
   QSize sizeHint(const QStyleOptionViewItem &p_option,
                  const QModelIndex &p_index) const Q_DECL_OVERRIDE;
 
-  static QBrush s_highlightForeground;
-
-  static QBrush s_highlightBackground;
-
 private:
-  void initialize();
-
   void paintWithHighlights(QPainter *p_painter, const QStyleOptionViewItem &p_option,
                            const QModelIndex &p_index, const QList<Segment> &p_segments) const;
 
   QSharedPointer<StyledItemDelegateInterface> m_interface;
 
   DelegateFlags m_flags = DelegateFlag::None;
+
+  QBrush m_highlightForeground;
+
+  QBrush m_highlightBackground;
 
   QTextDocument *m_document = nullptr;
 

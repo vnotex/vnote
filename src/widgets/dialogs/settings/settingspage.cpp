@@ -5,7 +5,8 @@
 
 using namespace vnotex;
 
-SettingsPage::SettingsPage(QWidget *p_parent) : QWidget(p_parent) {}
+SettingsPage::SettingsPage(ServiceLocator &p_services, QWidget *p_parent)
+    : QWidget(p_parent), m_services(p_services) {}
 
 SettingsPage::~SettingsPage() {}
 

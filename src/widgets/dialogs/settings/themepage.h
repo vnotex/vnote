@@ -10,7 +10,7 @@ namespace vnotex {
 class ThemePage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit ThemePage(QWidget *p_parent = nullptr);
+  explicit ThemePage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 
