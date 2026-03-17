@@ -108,9 +108,6 @@ public:
 
   static const QStringList &getAvailableLocales();
 
-  bool isRecoverLastSessionOnStartEnabled() const;
-  void setRecoverLastSessionOnStartEnabled(bool p_enabled);
-
   bool isCheckForUpdatesOnStartEnabled() const;
   void setCheckForUpdatesOnStartEnabled(bool p_enabled);
 
@@ -167,9 +164,6 @@ private:
   int m_docksTabBarIconSize = 20;
 
   QStringList m_externalNodeExcludePatterns;
-
-  // Whether recover last session on start.
-  bool m_recoverLastSessionOnStartEnabled = true;
 
   bool m_checkForUpdatesOnStartEnabled = true;
 

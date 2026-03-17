@@ -172,6 +172,24 @@ QJsonObject ConfigCoreService::parseJsonObjectFromCStr(char *p_str) {
 
 bool ConfigCoreService::checkContext() const { return m_context != nullptr; }
 
+bool ConfigCoreService::isRecoverLastSessionEnabled() const {
+  QJsonObject config = getConfig();
+  return config.value(QStringLiteral("recoverLastSession")).toBool(true);
+}
+
+bool ConfigCoreService::setRecoverLastSessionEnabled(bool p_enabled) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  QJsonObject update;
+  update[QStringLiteral("recoverLastSession")] = p_enabled;
+  QString jsonStr = QJsonDocument(update).toJson(QJsonDocument::Compact);
+
+  VxCoreError err = vxcore_context_update_config(m_context, jsonStr.toUtf8().constData());
+  return err == VXCORE_OK;
+}
+
 bool ConfigCoreService::shutdown() {
   if (!checkContext()) {
     qWarning() << "ConfigCoreService::shutdown: context is null";

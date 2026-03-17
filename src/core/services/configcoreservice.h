@@ -58,6 +58,12 @@ public:
   Error updateConfigByName(DataLocation p_location, const QString &p_baseName,
                            const QJsonObject &p_json);
 
+  // Get recoverLastSession setting from vxcore config.
+  bool isRecoverLastSessionEnabled() const;
+
+  // Set recoverLastSession setting in vxcore config and persist.
+  bool setRecoverLastSessionEnabled(bool p_enabled);
+
   // Persist all in-memory state (buffers, workspaces) to session config on disk.
   // Call before destroying the context for a clean shutdown.
   // After calling this, vxcore destructors will skip their own save to avoid

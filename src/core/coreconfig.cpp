@@ -50,8 +50,6 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
 
   loadNoteManagement(p_jobj.value(QStringLiteral("noteManagement")).toObject());
 
-  m_recoverLastSessionOnStartEnabled = READBOOL(QStringLiteral("recoverLastSessionOnStart"));
-
   m_checkForUpdatesOnStartEnabled = READBOOL(QStringLiteral("checkForUpdatesOnStart"));
 
   m_historyMaxCount = READINT(QStringLiteral("historyMaxCount"));
@@ -82,7 +80,6 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("shortcutLeaderKey")] = m_shortcutLeaderKey;
   obj[QStringLiteral("toolbarIconSize")] = m_toolBarIconSize;
   obj[QStringLiteral("docksTabbarIconSize")] = m_docksTabBarIconSize;
-  obj[QStringLiteral("recoverLastSessionOnStart")] = m_recoverLastSessionOnStartEnabled;
   obj[QStringLiteral("checkForUpdatesOnStart")] = m_checkForUpdatesOnStartEnabled;
   obj[QStringLiteral("historyMaxCount")] = m_historyMaxCount;
   obj[QStringLiteral("perNotebookHistory")] = m_perNotebookHistoryEnabled;
@@ -159,14 +156,6 @@ void CoreConfig::setDocksTabBarIconSize(int p_size) {
 
 const QStringList &CoreConfig::getExternalNodeExcludePatterns() const {
   return m_externalNodeExcludePatterns;
-}
-
-bool CoreConfig::isRecoverLastSessionOnStartEnabled() const {
-  return m_recoverLastSessionOnStartEnabled;
-}
-
-void CoreConfig::setRecoverLastSessionOnStartEnabled(bool p_enabled) {
-  updateConfig(m_recoverLastSessionOnStartEnabled, p_enabled, this);
 }
 
 bool CoreConfig::isCheckForUpdatesOnStartEnabled() const { return m_checkForUpdatesOnStartEnabled; }

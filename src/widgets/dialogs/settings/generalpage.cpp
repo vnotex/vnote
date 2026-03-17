@@ -7,6 +7,7 @@
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
 #include <core/sessionconfig.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
@@ -111,7 +112,8 @@ void GeneralPage::loadInternal() {
     m_systemTrayCheckBox->setChecked(toTray > 0);
   }
 
-  m_recoverLastSessionCheckBox->setChecked(coreConfig.isRecoverLastSessionOnStartEnabled());
+  m_recoverLastSessionCheckBox->setChecked(
+      m_services.get<ConfigCoreService>()->isRecoverLastSessionEnabled());
 
   m_checkForUpdatesCheckBox->setChecked(coreConfig.isCheckForUpdatesOnStartEnabled());
 }
@@ -135,7 +137,11 @@ bool GeneralPage::saveInternal() {
     sessionConfig.setMinimizeToSystemTray(m_systemTrayCheckBox->isChecked());
   }
 
-  coreConfig.setRecoverLastSessionOnStartEnabled(m_recoverLastSessionCheckBox->isChecked());
+  if (!m_services.get<ConfigCoreService>()->setRecoverLastSessionEnabled(
+          m_recoverLastSessionCheckBox->isChecked())) {
+    setError(tr("Failed to save recover session setting."));
+    return false;
+  }
 
   coreConfig.setCheckForUpdatesOnStartEnabled(m_checkForUpdatesCheckBox->isChecked());
 

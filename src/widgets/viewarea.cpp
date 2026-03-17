@@ -57,9 +57,9 @@ ViewArea::ViewArea(QWidget *p_parent)
               return;
             }
 
-            if (ConfigMgr::getInst().getCoreConfig().isRecoverLastSessionOnStartEnabled()) {
-              saveSession();
-            }
+            // Always save session — vxcore checks recover_last_session
+            // internally when loading, so saving is always safe.
+            saveSession();
 
             bool ret = close(false);
             if (!ret) {
@@ -68,10 +68,9 @@ ViewArea::ViewArea(QWidget *p_parent)
             }
           });
   connect(mainWindow, &MainWindow::minimizedToSystemTray, this, [this]() {
-    if (ConfigMgr::getInst().getCoreConfig().isRecoverLastSessionOnStartEnabled()) {
-      // Save it here, too. Avoid losing session when VNote is closed unexpectedly.
-      saveSession();
-    }
+    // Always save session — vxcore checks recover_last_session
+    // internally when loading, so saving is always safe.
+    saveSession();
   });
 
   connect(mainWindow, &MainWindow::mainWindowClosedOnQuit, this, [this]() { close(true); });
@@ -1147,13 +1146,7 @@ QList<Buffer *> ViewArea::getAllBuffersInViewSplits() const {
 
 void ViewArea::loadSession() {
   auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
-  // Clear it if recover is disabled.
   auto sessionData = sessionConfig.getViewAreaSessionAndClear();
-
-  if (!ConfigMgr::getInst().getCoreConfig().isRecoverLastSessionOnStartEnabled()) {
-    showSceneWidget();
-    return;
-  }
 
   auto session = ViewAreaSession::deserialize(sessionData);
 
