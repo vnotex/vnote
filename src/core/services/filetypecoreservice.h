@@ -38,6 +38,10 @@ public:
   // Get all registered file types (calls vxcore_filetype_list).
   QVector<FileType> getAllFileTypes() const;
 
+  // Set all file types (replaces entire configuration).
+  // Returns true on success, false on validation/save failure.
+  bool setAllFileTypes(const QVector<FileType> &p_types);
+
 private:
   // Parse a single file type from JSON object.
   FileType parseFileType(const QJsonObject &p_obj) const;

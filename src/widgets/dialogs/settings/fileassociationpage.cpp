@@ -5,10 +5,9 @@
 #include <QMap>
 #include <QVBoxLayout>
 
-#include <buffer/filetypehelper.h>
 #include <core/configmgr2.h>
-#include <core/coreconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/filetypecoreservice.h>
 #include <core/sessionconfig.h>
 #include <utils/utils.h>
 #include <utils/widgetutils.h>
@@ -47,10 +46,42 @@ void FileAssociationPage::loadInternal() {
 }
 
 bool FileAssociationPage::saveInternal() {
-  // LEGACY: File type suffixes now managed by vxcore, not CoreConfig
-  // Settings changes disabled - users should modify vxcore.json directly
+  auto *ftService = m_services.get<FileTypeCoreService>();
+  Q_ASSERT(ftService);
+  auto types = ftService->getAllFileTypes();
 
-  FileTypeHelper::getInst().reload();
+  // Update suffixes from UI line edits.
+  auto layout = static_cast<QFormLayout *>(m_builtInFileTypesBox->layout());
+  for (int i = 0; i < layout->rowCount(); ++i) {
+    auto *item = layout->itemAt(i, QFormLayout::FieldRole);
+    if (!item) {
+      continue;
+    }
+    auto *lineEdit = qobject_cast<QLineEdit *>(item->widget());
+    if (!lineEdit) {
+      continue;
+    }
+
+    QString name = lineEdit->property(c_nameProperty).toString();
+    QStringList suffixes =
+        lineEdit->text().split(c_suffixSeparator, Qt::SkipEmptyParts);
+    for (auto &s : suffixes) {
+      s = s.trimmed().toLower();
+    }
+    suffixes.removeAll(QString());
+
+    for (auto &ft : types) {
+      if (ft.m_typeName == name) {
+        ft.m_suffixes = suffixes;
+        break;
+      }
+    }
+  }
+
+  if (!ftService->setAllFileTypes(types)) {
+    setError(tr("Failed to save file type associations."));
+    return false;
+  }
 
   return true;
 }
@@ -61,10 +92,12 @@ void FileAssociationPage::loadBuiltInTypesGroup(QGroupBox *p_box) {
   auto layout = static_cast<QFormLayout *>(p_box->layout());
   WidgetUtils::clearLayout(layout);
 
-  const auto &types = FileTypeHelper::getInst().getAllFileTypes();
+  auto *ftService = m_services.get<FileTypeCoreService>();
+  Q_ASSERT(ftService);
+  const auto types = ftService->getAllFileTypes();
 
   for (const auto &ft : types) {
-    if (ft.m_type == FileType::Others) {
+    if (ft.m_typeName == "Others") {
       continue;
     }
 
@@ -83,7 +116,6 @@ void FileAssociationPage::loadExternalProgramsGroup(QGroupBox *p_box) {
   auto layout = static_cast<QFormLayout *>(p_box->layout());
   WidgetUtils::clearLayout(layout);
 
-  // LEGACY: File type suffixes now managed by vxcore, not CoreConfig
   const auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
 
   QStringList names;
@@ -91,7 +123,9 @@ void FileAssociationPage::loadExternalProgramsGroup(QGroupBox *p_box) {
     names.push_back(pro.m_name);
   }
 
-  names << FileTypeHelper::s_systemDefaultProgram;
+  // "System Default Program" label.
+  static const QString c_systemDefaultProgram = tr("System Default Program");
+  names << c_systemDefaultProgram;
 
   for (const auto &name : names) {
     auto lineEdit = WidgetsFactory::createLineEdit(p_box);
@@ -103,6 +137,7 @@ void FileAssociationPage::loadExternalProgramsGroup(QGroupBox *p_box) {
         tr("List of suffixes to open with external program (or system default program)"));
     lineEdit->setProperty(c_nameProperty, name);
 
-    // LEGACY: Suffix lookup from CoreConfig removed - use vxcore.json
+    // TODO: External program suffix associations are not yet managed by vxcore.
+    // Suffix editing is shown but not persisted until session config migration.
   }
 }

@@ -1,6 +1,7 @@
 #ifndef FILETYPEHELPER_H
 #define FILETYPEHELPER_H
 
+#include <QJsonObject>
 #include <QMap>
 #include <QString>
 #include <QVector>
@@ -24,10 +25,16 @@ public:
 
   QString m_displayName;
 
+  // Original (non-locale-resolved) display name for serialization round-trip.
+  QString m_defaultDisplayName;
+
   QStringList m_suffixes;
 
   // Whether we can new this type of file.
   bool m_isNewable = true;
+
+  // Opaque metadata from vxcore (preserved on round-trip).
+  QJsonObject m_metadata;
 };
 
 // Only handle built-in editors.

@@ -24,6 +24,7 @@ FileType FileTypeCoreService::parseFileType(const QJsonObject &p_obj) const {
 
   // Get default displayName from vxcore
   QString defaultDisplayName = p_obj["displayName"].toString();
+  type.m_defaultDisplayName = defaultDisplayName;
 
   // Check for locale-specific displayName in metadata (e.g., displayName_zh_CN)
   if (!m_locale.isEmpty() && p_obj.contains("metadata") && p_obj["metadata"].isObject()) {
@@ -42,6 +43,11 @@ FileType FileTypeCoreService::parseFileType(const QJsonObject &p_obj) const {
   QJsonArray suffixesArray = p_obj["suffixes"].toArray();
   for (const auto &suffix : suffixesArray) {
     type.m_suffixes << suffix.toString();
+  }
+
+  // Preserve metadata for round-trip (save back to vxcore without loss).
+  if (p_obj.contains("metadata") && p_obj["metadata"].isObject()) {
+    type.m_metadata = p_obj["metadata"].toObject();
   }
 
   return type;
@@ -148,4 +154,39 @@ FileType FileTypeCoreService::getFileTypeByName(const QString &p_typeName) const
   FileType type = parseFileTypeFromJson(json_str);
   vxcore_string_free(json_str);
   return type;
+}
+
+bool FileTypeCoreService::setAllFileTypes(const QVector<FileType> &p_types) {
+  QJsonArray typesArray;
+  for (const auto &ft : p_types) {
+    QJsonObject obj;
+    obj["name"] = ft.m_typeName;
+    obj["isNewable"] = ft.m_isNewable;
+    obj["displayName"] =
+        ft.m_defaultDisplayName.isEmpty() ? ft.m_displayName : ft.m_defaultDisplayName;
+
+    QJsonArray suffixesArray;
+    for (const auto &s : ft.m_suffixes) {
+      suffixesArray.append(s);
+    }
+    obj["suffixes"] = suffixesArray;
+
+    if (!ft.m_metadata.isEmpty()) {
+      obj["metadata"] = ft.m_metadata;
+    }
+
+    typesArray.append(obj);
+  }
+
+  QJsonDocument doc(typesArray);
+  QByteArray jsonBytes = doc.toJson(QJsonDocument::Compact);
+
+  VxCoreError err = vxcore_filetype_set(m_context, jsonBytes.constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "vxcore_filetype_set failed:"
+               << QString::fromUtf8(vxcore_error_message(err));
+    return false;
+  }
+
+  return true;
 }
