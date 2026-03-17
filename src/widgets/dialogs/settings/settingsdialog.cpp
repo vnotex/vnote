@@ -1,7 +1,6 @@
 #include "settingsdialog.h"
 
 #include <QColor>
-#include <QDebug>
 #include <QHBoxLayout>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -67,6 +66,8 @@ void SettingsDialog::setupUI() {
                      QDialogButtonBox::Cancel);
 
   setWindowTitle(tr("Settings"));
+
+  resize(800, 600);
 }
 
 void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent) {
@@ -94,6 +95,29 @@ void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent) 
             Q_UNUSED(p_previous);
             auto page = itemPage(p_item);
             m_pageLayout->setCurrentWidget(page);
+
+            // QStackedLayout::sizeHint() returns the maximum across ALL children,
+            // which makes the scroll area show a scrollbar for the tallest page
+            // even when viewing a short page.  Fix: set the current page's
+            // vertical size policy to Preferred so it contributes its real height,
+            // and set every other page to Ignored so the stacked layout only
+            // considers the current page.
+            for (int i = 0; i < m_pageLayout->count(); ++i) {
+              auto *w = m_pageLayout->widget(i);
+              auto sp = w->sizePolicy();
+              if (w == page) {
+                sp.setVerticalPolicy(QSizePolicy::Preferred);
+              } else {
+                sp.setVerticalPolicy(QSizePolicy::Ignored);
+              }
+              w->setSizePolicy(sp);
+            }
+
+            auto *scrollWidget = m_scrollArea->widget();
+            if (scrollWidget) {
+              scrollWidget->adjustSize();
+            }
+
             auto vsb = m_scrollArea->verticalScrollBar();
             if (vsb) {
               vsb->setValue(0);
