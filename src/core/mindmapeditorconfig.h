@@ -24,6 +24,9 @@ private:
   void loadEditorResource(const QJsonObject &p_jobj);
   QJsonObject saveEditorResource() const;
 
+  void initDefaults();
+  static WebResource defaultEditorResource();
+
   WebResource m_editorResource;
 };
 } // namespace vnotex

@@ -40,6 +40,7 @@ EditorConfig::EditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
       m_pdfViewerConfig(new PdfViewerConfig(p_mgr, p_topConfig)),
       m_mindMapEditorConfig(new MindMapEditorConfig(p_mgr, p_topConfig)) {
   m_sectionName = QStringLiteral("editor");
+  initDefaults();
 }
 
 EditorConfig::~EditorConfig() {}
@@ -280,3 +281,51 @@ void EditorConfig::setClearObsoleteImageAtImageHostEnabled(bool p_enabled) {
 }
 
 const QSharedPointer<vte::ViConfig> &EditorConfig::getViConfig() const { return m_viConfig; }
+
+void EditorConfig::initDefaults() {
+  m_backupFileExtension = QStringLiteral("vswp");
+  m_backupFileDirectory = QStringLiteral(".");
+  m_spellCheckDefaultDictionary = QStringLiteral("en_US");
+  m_viConfig = QSharedPointer<vte::ViConfig>::create();
+
+  m_shortcuts[Shortcut::Save] = QStringLiteral("Ctrl+S");
+  m_shortcuts[Shortcut::EditRead] = QStringLiteral("Ctrl+T");
+  m_shortcuts[Shortcut::Discard] = QStringLiteral("Ctrl+G, Q");
+  m_shortcuts[Shortcut::TypeHeading1] = QStringLiteral("Ctrl+1");
+  m_shortcuts[Shortcut::TypeHeading2] = QStringLiteral("Ctrl+2");
+  m_shortcuts[Shortcut::TypeHeading3] = QStringLiteral("Ctrl+3");
+  m_shortcuts[Shortcut::TypeHeading4] = QStringLiteral("Ctrl+4");
+  m_shortcuts[Shortcut::TypeHeading5] = QStringLiteral("Ctrl+5");
+  m_shortcuts[Shortcut::TypeHeading6] = QStringLiteral("Ctrl+6");
+  m_shortcuts[Shortcut::TypeHeadingNone] = QStringLiteral("Ctrl+7");
+  m_shortcuts[Shortcut::TypeBold] = QStringLiteral("Ctrl+B");
+  m_shortcuts[Shortcut::TypeItalic] = QStringLiteral("Ctrl+I");
+  m_shortcuts[Shortcut::TypeStrikethrough] = QStringLiteral("");
+  m_shortcuts[Shortcut::TypeUnorderedList] = QStringLiteral("Ctrl+8");
+  m_shortcuts[Shortcut::TypeOrderedList] = QStringLiteral("Ctrl+9");
+  m_shortcuts[Shortcut::TypeTodoList] = QStringLiteral("");
+  m_shortcuts[Shortcut::TypeCheckedTodoList] = QStringLiteral("");
+  m_shortcuts[Shortcut::TypeCode] = QStringLiteral("Ctrl+;");
+  m_shortcuts[Shortcut::TypeCodeBlock] = QStringLiteral("Ctrl+'");
+  m_shortcuts[Shortcut::TypeMath] = QStringLiteral("Ctrl+.");
+  m_shortcuts[Shortcut::TypeMathBlock] = QStringLiteral("Ctrl+G, .");
+  m_shortcuts[Shortcut::TypeQuote] = QStringLiteral("");
+  m_shortcuts[Shortcut::TypeLink] = QStringLiteral("Ctrl+,");
+  m_shortcuts[Shortcut::TypeImage] = QStringLiteral("");
+  m_shortcuts[Shortcut::TypeTable] = QStringLiteral("Ctrl+/");
+  m_shortcuts[Shortcut::TypeMark] = QStringLiteral("Ctrl+G, M");
+  m_shortcuts[Shortcut::Outline] = QStringLiteral("Ctrl+G, O");
+  m_shortcuts[Shortcut::AltPaste] = QStringLiteral("Ctrl+Shift+V");
+  m_shortcuts[Shortcut::FindAndReplace] = QStringLiteral("Ctrl+F");
+  m_shortcuts[Shortcut::FindNext] = QStringLiteral("F3");
+  m_shortcuts[Shortcut::FindPrevious] = QStringLiteral("Shift+F3");
+  m_shortcuts[Shortcut::ApplySnippet] = QStringLiteral("Ctrl+G, I");
+  m_shortcuts[Shortcut::Tag] = QStringLiteral("Ctrl+G, B");
+  m_shortcuts[Shortcut::Attachment] = QStringLiteral("");
+  m_shortcuts[Shortcut::AlternateViewMode] = QStringLiteral("Ctrl+G, V");
+  m_shortcuts[Shortcut::WordCount] = QStringLiteral("");
+  m_shortcuts[Shortcut::Debug] = QStringLiteral("F12");
+  m_shortcuts[Shortcut::Print] = QStringLiteral("");
+  m_shortcuts[Shortcut::ClearHighlights] = QStringLiteral("Ctrl+G, Space");
+  m_shortcuts[Shortcut::ParseToMarkdownAndPaste] = QStringLiteral("Ctrl+G, Ctrl+P");
+}

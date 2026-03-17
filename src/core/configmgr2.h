@@ -123,9 +123,6 @@ private:
   void scheduleMainConfigWrite();
   void scheduleSessionConfigWrite();
 
-  // Load default main config from embedded resources.
-  QJsonObject loadDefaultMainConfig() const;
-
   // Perform version upgrade (copy themes, tasks, etc.).
   void upgradeMainConfigOnVersionChange();
 

@@ -1,5 +1,7 @@
 #include "coreconfig.h"
 
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QLocale>
 #include <QMetaEnum>
 
@@ -16,6 +18,7 @@ QStringList CoreConfig::s_availableLocales;
 
 CoreConfig::CoreConfig(IConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
   m_sectionName = QStringLiteral("core");
+  initDefaults();
 }
 
 const QString &CoreConfig::getTheme() const { return m_theme; }
@@ -227,4 +230,93 @@ QString CoreConfig::viewWindowModeToString(ViewWindowMode p_mode) {
   default:
     return "read";
   }
+}
+
+void CoreConfig::initDefaults() {
+  m_shortcutLeaderKey = QStringLiteral("Ctrl+G");
+  m_externalNodeExcludePatterns = {QStringLiteral(".gitignore"), QStringLiteral(".git")};
+
+  m_shortcuts[Shortcut::FullScreen] = QStringLiteral("F11");
+  m_shortcuts[Shortcut::StayOnTop] = QStringLiteral("F10");
+  m_shortcuts[Shortcut::ExpandContentArea] = QStringLiteral("Ctrl+G, E");
+  m_shortcuts[Shortcut::Settings] = QStringLiteral("Ctrl+Alt+P");
+  m_shortcuts[Shortcut::NewNote] = QStringLiteral("Ctrl+Alt+N");
+  m_shortcuts[Shortcut::NewQuickNote] = QStringLiteral("Ctrl+Alt+Q");
+  m_shortcuts[Shortcut::NewFolder] = QStringLiteral("Ctrl+Alt+S");
+  m_shortcuts[Shortcut::CloseTab] = QStringLiteral("Ctrl+G, X");
+  m_shortcuts[Shortcut::CloseAllTabs] = QStringLiteral("");
+  m_shortcuts[Shortcut::CloseOtherTabs] = QStringLiteral("");
+  m_shortcuts[Shortcut::CloseTabsToTheLeft] = QStringLiteral("");
+  m_shortcuts[Shortcut::CloseTabsToTheRight] = QStringLiteral("");
+  m_shortcuts[Shortcut::NavigationDock] = QStringLiteral("Ctrl+G, A");
+  m_shortcuts[Shortcut::OutlineDock] = QStringLiteral("Ctrl+G, U");
+  m_shortcuts[Shortcut::SearchDock] = QStringLiteral("");
+  m_shortcuts[Shortcut::SnippetDock] = QStringLiteral("Ctrl+G, S");
+  m_shortcuts[Shortcut::LocationListDock] = QStringLiteral("Ctrl+G, C");
+  m_shortcuts[Shortcut::HistoryDock] = QStringLiteral("");
+  m_shortcuts[Shortcut::TagDock] = QStringLiteral("");
+  m_shortcuts[Shortcut::Search] = QStringLiteral("Ctrl+Alt+F");
+  m_shortcuts[Shortcut::NavigationMode] = QStringLiteral("Ctrl+G, W");
+  m_shortcuts[Shortcut::LocateNode] = QStringLiteral("Ctrl+G, D");
+  m_shortcuts[Shortcut::VerticalSplit] = QStringLiteral("Ctrl+G, \\");
+  m_shortcuts[Shortcut::HorizontalSplit] = QStringLiteral("Ctrl+G, -");
+  m_shortcuts[Shortcut::MaximizeSplit] = QStringLiteral("Ctrl+G, Shift+\\");
+  m_shortcuts[Shortcut::DistributeSplits] = QStringLiteral("Ctrl+G, =");
+  m_shortcuts[Shortcut::RemoveSplitAndWorkspace] = QStringLiteral("Ctrl+G, R");
+  m_shortcuts[Shortcut::NewWorkspace] = QStringLiteral("");
+  m_shortcuts[Shortcut::Export] = QStringLiteral("Ctrl+G, T");
+  m_shortcuts[Shortcut::Quit] = QStringLiteral("Ctrl+Q");
+  m_shortcuts[Shortcut::FlashPage] = QStringLiteral("Ctrl+Alt+L");
+  m_shortcuts[Shortcut::QuickAccess] = QStringLiteral("Ctrl+Alt+I");
+  m_shortcuts[Shortcut::ActivateTab1] = QStringLiteral("Ctrl+G, 1");
+  m_shortcuts[Shortcut::ActivateTab2] = QStringLiteral("Ctrl+G, 2");
+  m_shortcuts[Shortcut::ActivateTab3] = QStringLiteral("Ctrl+G, 3");
+  m_shortcuts[Shortcut::ActivateTab4] = QStringLiteral("Ctrl+G, 4");
+  m_shortcuts[Shortcut::ActivateTab5] = QStringLiteral("Ctrl+G, 5");
+  m_shortcuts[Shortcut::ActivateTab6] = QStringLiteral("Ctrl+G, 6");
+  m_shortcuts[Shortcut::ActivateTab7] = QStringLiteral("Ctrl+G, 7");
+  m_shortcuts[Shortcut::ActivateTab8] = QStringLiteral("Ctrl+G, 8");
+  m_shortcuts[Shortcut::ActivateTab9] = QStringLiteral("Ctrl+G, 9");
+  m_shortcuts[Shortcut::AlternateTab] = QStringLiteral("Ctrl+G, 0");
+  m_shortcuts[Shortcut::ActivateNextTab] = QStringLiteral("Ctrl+G, N");
+  m_shortcuts[Shortcut::ActivatePreviousTab] = QStringLiteral("Ctrl+G, P");
+  m_shortcuts[Shortcut::FocusContentArea] = QStringLiteral("Ctrl+G, Y");
+  m_shortcuts[Shortcut::OpenWithDefaultProgram] = QStringLiteral("F9");
+  m_shortcuts[Shortcut::OneSplitLeft] = QStringLiteral("Ctrl+G, H");
+  m_shortcuts[Shortcut::OneSplitDown] = QStringLiteral("Ctrl+G, J");
+  m_shortcuts[Shortcut::OneSplitUp] = QStringLiteral("Ctrl+G, K");
+  m_shortcuts[Shortcut::OneSplitRight] = QStringLiteral("Ctrl+G, L");
+  m_shortcuts[Shortcut::MoveOneSplitLeft] = QStringLiteral("Ctrl+G, Shift+H");
+  m_shortcuts[Shortcut::MoveOneSplitDown] = QStringLiteral("Ctrl+G, Shift+J");
+  m_shortcuts[Shortcut::MoveOneSplitUp] = QStringLiteral("Ctrl+G, Shift+K");
+  m_shortcuts[Shortcut::MoveOneSplitRight] = QStringLiteral("Ctrl+G, Shift+L");
+  m_shortcuts[Shortcut::OpenLastClosedFile] = QStringLiteral("Ctrl+Shift+T");
+  m_shortcuts[Shortcut::UnitedEntry] = QStringLiteral("Ctrl+G, G");
+  m_shortcuts[Shortcut::Copy] = QStringLiteral("Ctrl+C");
+  m_shortcuts[Shortcut::Cut] = QStringLiteral("Ctrl+X");
+  m_shortcuts[Shortcut::Paste] = QStringLiteral("Ctrl+V");
+  m_shortcuts[Shortcut::Properties] = QStringLiteral("F2");
+  m_shortcuts[Shortcut::Global_WakeUp] = QStringLiteral("Ctrl+Alt+U");
+
+  auto makeAlias = [](const QString &p_name, const QString &p_desc, const QString &p_value) {
+    QJsonObject obj;
+    obj[QStringLiteral("name")] = p_name;
+    obj[QStringLiteral("description")] = p_desc;
+    obj[QStringLiteral("value")] = p_value;
+    return obj;
+  };
+  QJsonArray aliases;
+  aliases.append(makeAlias(QStringLiteral("q"), QStringLiteral("Search for folders/files by name in all notebooks"), QStringLiteral("find --scope all_notebook --object name --target file --target folder")));
+  aliases.append(makeAlias(QStringLiteral("a"), QStringLiteral("Search for files by content in all notebooks"), QStringLiteral("find --scope all_notebook --object content --target file")));
+  aliases.append(makeAlias(QStringLiteral("z"), QStringLiteral("Search for files by tag in all notebooks"), QStringLiteral("find --scope all_notebook --object tag --target file")));
+  aliases.append(makeAlias(QStringLiteral("w"), QStringLiteral("Search for notebooks by name in all notebooks"), QStringLiteral("find --scope all_notebook --object name --target notebook")));
+  aliases.append(makeAlias(QStringLiteral("e"), QStringLiteral("Search for folders/files by name in current notebook"), QStringLiteral("find --scope notebook --object name --target file --target folder")));
+  aliases.append(makeAlias(QStringLiteral("d"), QStringLiteral("Search for files by content in current notebook"), QStringLiteral("find --scope notebook --object content --target file")));
+  aliases.append(makeAlias(QStringLiteral("c"), QStringLiteral("Search for files by tag in current notebook"), QStringLiteral("find --scope notebook --object tag --target file")));
+  aliases.append(makeAlias(QStringLiteral("r"), QStringLiteral("Search for folders/files by name in current folder"), QStringLiteral("find --scope folder --object name --target file --target folder")));
+  aliases.append(makeAlias(QStringLiteral("f"), QStringLiteral("Search for files by content in current folder"), QStringLiteral("find --scope folder --object content --target file")));
+  aliases.append(makeAlias(QStringLiteral("v"), QStringLiteral("Search for files by tag in current folder"), QStringLiteral("find --scope folder --object tag --target file")));
+  aliases.append(makeAlias(QStringLiteral("t"), QStringLiteral("Search for files by name in buffers"), QStringLiteral("find --scope buffer --object name --target file")));
+  aliases.append(makeAlias(QStringLiteral("g"), QStringLiteral("Search for files by content in buffers"), QStringLiteral("find --scope buffer --object content --target file")));
+  m_unitedEntryAlias = aliases;
 }

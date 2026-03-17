@@ -77,7 +77,7 @@ private:
 
   bool m_outlineSectionNumberEnabled = false;
 
-  FindOptions m_findAndReplaceOptions = FindOption::FindNone;
+  FindOptions m_findAndReplaceOptions = FindOption::IncrementalSearch;
 
   int m_notebookSelectorViewOrder = 0;
 
@@ -107,6 +107,8 @@ private:
 
   // Whether single click activates items in node explorer.
   bool m_nodeExplorerSingleClickActivation = false;
+
+  void initDefaults();
 };
 } // namespace vnotex
 

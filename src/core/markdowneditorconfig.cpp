@@ -17,6 +17,7 @@ MarkdownEditorConfig::MarkdownEditorConfig(
     const QSharedPointer<TextEditorConfig> &p_textEditorConfig)
     : IConfig(p_mgr, p_topConfig), m_textEditorConfig(p_textEditorConfig) {
   m_sectionName = QStringLiteral("markdown_editor");
+  initDefaults();
 }
 
 void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
@@ -448,4 +449,209 @@ bool MarkdownEditorConfig::getRichPasteByDefaultEnabled() const {
 
 void MarkdownEditorConfig::setRichPasteByDefaultEnabled(bool p_enabled) {
   updateConfig(m_richPasteByDefaultEnabled, p_enabled, this);
+}
+
+void MarkdownEditorConfig::initDefaults() {
+  m_viewerResource = defaultViewerResource();
+  m_exportResource = defaultExportResource();
+}
+
+WebResource MarkdownEditorConfig::defaultViewerResource() {
+  WebResource res;
+  res.m_template = QStringLiteral("web/markdown-viewer-template.html");
+
+  // global_styles
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("global_styles");
+    r.m_enabled = true;
+    r.m_styles = {QStringLiteral("web/css/user.css"), QStringLiteral("web/css/globalstyles.css")};
+    res.m_resources.append(r);
+  }
+
+  // built_in
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("built_in");
+    r.m_enabled = true;
+    r.m_scripts = {
+      QStringLiteral("web/js/qwebchannel.js"),
+      QStringLiteral("web/js/eventemitter.js"),
+      QStringLiteral("web/js/vxcore.js"),
+      QStringLiteral("web/js/utils.js"),
+      QStringLiteral("web/js/nodelinemapper.js"),
+      QStringLiteral("web/js/lrucache.js"),
+      QStringLiteral("web/js/graphcache.js"),
+      QStringLiteral("web/js/graphpreviewer.js"),
+      QStringLiteral("web/js/markdownviewercore.js"),
+      QStringLiteral("web/js/vxworker.js"),
+      QStringLiteral("web/js/graphrenderer.js"),
+      QStringLiteral("web/js/svg-to-image.js"),
+      QStringLiteral("web/js/computed-style-to-inline-style.js"),
+      QStringLiteral("web/js/imageviewer.js"),
+      QStringLiteral("web/js/easyaccess.js"),
+      QStringLiteral("web/js/crosscopy.js")
+    };
+    r.m_styles = {QStringLiteral("web/css/imageviewer.css")};
+    res.m_resources.append(r);
+  }
+
+  // markdown_viewer
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("markdown_viewer");
+    r.m_enabled = true;
+    r.m_scripts = {QStringLiteral("web/js/markdownviewer.js")};
+    res.m_resources.append(r);
+  }
+
+  // markdown_it
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("markdown_it");
+    r.m_enabled = true;
+    r.m_scripts = {
+      QStringLiteral("web/js/markdown-it/markdown-it.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-container.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-emoji.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-footnote.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-front-matter.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-imsize.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-sub.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-sup.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-task-lists.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-texmath.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-inject-linenumbers.js"),
+      QStringLiteral("web/js/markdown-it/markdownItAnchor.umd.js"),
+      QStringLiteral("web/js/markdown-it/markdownItTocDoneRight.umd.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-implicit-figure.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-mark.min.js"),
+      QStringLiteral("web/js/markdownit.js")
+    };
+    r.m_styles = {QStringLiteral("web/css/markdownit.css")};
+    res.m_resources.append(r);
+  }
+
+  // prism
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("prism");
+    r.m_enabled = true;
+    r.m_scripts = {
+      QStringLiteral("web/js/prism/clipboard.min.js"),
+      QStringLiteral("web/js/prism.js")
+    };
+    res.m_resources.append(r);
+  }
+
+  // mermaid
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("mermaid");
+    r.m_enabled = true;
+    r.m_scripts = {QStringLiteral("web/js/mermaid.js")};
+    res.m_resources.append(r);
+  }
+
+  // flowchart.js
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("flowchart.js");
+    r.m_enabled = true;
+    r.m_scripts = {
+      QStringLiteral("web/js/flowchart.js/raphael.min.js"),
+      QStringLiteral("web/js/flowchart.js/flowchart.min.js"),
+      QStringLiteral("web/js/flowchartjs.js")
+    };
+    res.m_resources.append(r);
+  }
+
+  // wavedrom
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("wavedrom");
+    r.m_enabled = true;
+    r.m_scripts = {QStringLiteral("web/js/wavedrom.js")};
+    res.m_resources.append(r);
+  }
+
+  // mathjax
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("mathjax");
+    r.m_enabled = true;
+    r.m_scripts = {QStringLiteral("web/js/mathjax.js")};
+    res.m_resources.append(r);
+  }
+
+  // plantuml
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("plantuml");
+    r.m_enabled = true;
+    r.m_scripts = {QStringLiteral("web/js/plantuml.js")};
+    res.m_resources.append(r);
+  }
+
+  // graphviz
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("graphviz");
+    r.m_enabled = true;
+    r.m_scripts = {QStringLiteral("web/js/graphviz.js")};
+    res.m_resources.append(r);
+  }
+
+  // turndown
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("turndown");
+    r.m_enabled = true;
+    r.m_scripts = {
+      QStringLiteral("web/js/turndown/turndown.js"),
+      QStringLiteral("web/js/turndown/turndown-plugin-gfm.js"),
+      QStringLiteral("web/js/turndown.js")
+    };
+    res.m_resources.append(r);
+  }
+
+  // mark.js
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("mark.js");
+    r.m_enabled = true;
+    r.m_scripts = {
+      QStringLiteral("web/js/mark.js/mark.min.js"),
+      QStringLiteral("web/js/markjs.js")
+    };
+    res.m_resources.append(r);
+  }
+
+  return res;
+}
+
+WebResource MarkdownEditorConfig::defaultExportResource() {
+  WebResource res;
+  res.m_template = QStringLiteral("web/markdown-export-template.html");
+
+  // global_styles
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("global_styles");
+    r.m_enabled = true;
+    r.m_styles = {QStringLiteral("web/css/exportglobalstyles.css")};
+    res.m_resources.append(r);
+  }
+
+  // outline
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("outline");
+    r.m_enabled = true;
+    r.m_styles = {QStringLiteral("web/css/outline.css")};
+    r.m_scripts = {QStringLiteral("web/js/outline.js")};
+    res.m_resources.append(r);
+  }
+
+  return res;
 }

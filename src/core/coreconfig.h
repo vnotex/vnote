@@ -146,6 +146,8 @@ private:
   static ViewWindowMode stringToViewWindowMode(const QString &p_mode);
   static QString viewWindowModeToString(ViewWindowMode p_mode);
 
+  void initDefaults();
+
   // Theme name.
   QString m_theme {"pure"};
 

@@ -8,6 +8,7 @@ using namespace vnotex;
 
 WidgetConfig::WidgetConfig(IConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
   m_sectionName = QStringLiteral("widget");
+  initDefaults();
 }
 
 void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
@@ -242,4 +243,8 @@ bool WidgetConfig::isNodeExplorerSingleClickActivation() const {
 
 void WidgetConfig::setNodeExplorerSingleClickActivation(bool p_enabled) {
   updateConfig(m_nodeExplorerSingleClickActivation, p_enabled, this);
+}
+
+void WidgetConfig::initDefaults() {
+  m_mainWindowKeepDocksExpandingContentArea = {QStringLiteral("OutlineDock.vnotex"), QStringLiteral("WindowsDock.vnotex")};
 }

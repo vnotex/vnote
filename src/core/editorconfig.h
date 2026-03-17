@@ -157,6 +157,8 @@ private:
 
   QJsonObject saveImageHost() const;
 
+  void initDefaults();
+
   // Icon size of editor tool bar.
   int m_toolBarIconSize = 16;
 

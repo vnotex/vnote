@@ -24,6 +24,9 @@ private:
   void loadViewerResource(const QJsonObject &p_jobj);
   QJsonObject saveViewerResource() const;
 
+  void initDefaults();
+  static WebResource defaultViewerResource();
+
   WebResource m_viewerResource;
 };
 } // namespace vnotex

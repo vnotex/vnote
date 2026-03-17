@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/vnotex/data/core">
-        <file>vnotex.json</file>
         <file>icons/vnote.icns</file>
         <file>icons/vnote.ico</file>
         <file>icons/new_note.svg</file>

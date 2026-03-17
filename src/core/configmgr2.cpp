@@ -84,22 +84,9 @@ void ConfigMgr2::init() {
 
     if (mainConfigJson.isEmpty()) {
       // Fresh start: no config file on disk. Keep the default-constructed config
-      // objects as-is (their C++ member initializers provide correct defaults).
-      // The embedded vnotex.json uses snake_case keys while fromJson() expects
-      // camelCase, so loading it would overwrite good defaults with empty values.
+      // objects as-is (their C++ initDefaults() provide correct defaults).
       qInfo() << "Fresh start detected, using default-constructed config";
     } else {
-#if defined(VX_DEBUG_REFRESH)
-      mainConfigJson = loadDefaultMainConfig();
-#else
-      if (m_versionChanged) {
-        auto defaultConfig = loadDefaultMainConfig();
-        // Merge defaults with user config
-        mainConfigJson = m_configService->getConfigByNameWithDefaults(
-            DataLocation::App, kMainConfigFileBaseName, defaultConfig);
-      }
-#endif
-
       m_mainConfig->fromJson(mainConfigJson);
     }
   }
@@ -330,17 +317,6 @@ void ConfigMgr2::doWriteSessionConfig() {
   }
 
   m_pendingSessionConfig = QJsonObject();
-}
-
-QJsonObject ConfigMgr2::loadDefaultMainConfig() const {
-  auto filePath = QStringLiteral(":/vnotex/data/core/") + kMainConfigFileBaseName + ".json";
-  QJsonObject jobj;
-  auto err = FileUtils2::readJsonFile(filePath, &jobj);
-  if (!err.isOk()) {
-    qWarning() << "Failed to read default main config from" << filePath << ":" << err.what();
-    return QJsonObject();
-  }
-  return jobj;
 }
 
 void ConfigMgr2::upgradeMainConfigOnVersionChange() {

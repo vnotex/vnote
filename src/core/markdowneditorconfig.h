@@ -152,6 +152,10 @@ private:
   QString editViewModeToString(EditViewMode p_mode) const;
   EditViewMode stringToEditViewMode(const QString &p_str) const;
 
+  void initDefaults();
+  static WebResource defaultViewerResource();
+  static WebResource defaultExportResource();
+
   QSharedPointer<TextEditorConfig> m_textEditorConfig;
 
   WebResource m_viewerResource;
@@ -189,7 +193,7 @@ private:
   bool m_insertFileNameAsTitle = true;
 
   // Whether enable section numbering.
-  SectionNumberMode m_sectionNumberMode = SectionNumberMode::Read;
+  SectionNumberMode m_sectionNumberMode = SectionNumberMode::None;
 
   // 1 based.
   int m_sectionNumberBaseLevel = 2;
@@ -217,7 +221,7 @@ private:
   bool m_htmlTagEnabled = true;
 
   // Whether auto break a line with `\n`.
-  bool m_autoBreakEnabled = false;
+  bool m_autoBreakEnabled = true;
 
   // Whether convert URL-like text to links.
   bool m_linkifyEnabled = true;
@@ -231,15 +235,15 @@ private:
   bool m_smartTableEnabled = true;
 
   // Interval time to do smart table format.
-  int m_smartTableInterval = 2000;
+  int m_smartTableInterval = 1000;
 
   // Override the config in TextEditorConfig.
-  bool m_spellCheckEnabled = true;
+  bool m_spellCheckEnabled = false;
 
   // Font family to override the editor's theme.
   QString m_editorOverriddenFontFamily;
 
-  InplacePreviewSources m_inplacePreviewSources = InplacePreviewSource::NoInplacePreview;
+  InplacePreviewSources m_inplacePreviewSources = InplacePreviewSources(InplacePreviewSource::ImageLink | InplacePreviewSource::CodeBlock | InplacePreviewSource::Math);
 
   // View mode in edit mode.
   EditViewMode m_editViewMode = EditViewMode::EditOnly;
