@@ -147,7 +147,7 @@ private:
   static QString viewWindowModeToString(ViewWindowMode p_mode);
 
   // Theme name.
-  QString m_theme;
+  QString m_theme {"pure"};
 
   // User-specified locale, such as zh_CN, en_US.
   // Empty if not specified.

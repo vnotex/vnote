@@ -93,7 +93,7 @@ QString ViewWindow2::getName() const {
 QString ViewWindow2::getTitle() const {
   QString name = getName();
   if (isModified()) {
-    name.prepend(QLatin1Char('*'));
+    name.append(QStringLiteral(" \u25CF"));
   }
   return name;
 }
