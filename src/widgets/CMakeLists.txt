@@ -79,6 +79,7 @@ target_sources(vnote PRIVATE
     editreaddiscardaction.cpp editreaddiscardaction.h
     filesystemviewer.cpp filesystemviewer.h
     findandreplacewidget.cpp findandreplacewidget.h
+    findandreplacewidget2.cpp findandreplacewidget2.h
     floatingwidget.cpp floatingwidget.h
     framelessmainwindow/framelessmainwindow.cpp framelessmainwindow/framelessmainwindow.h
     framelessmainwindow/framelessmainwindowimpl.h

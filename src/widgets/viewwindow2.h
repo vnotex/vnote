@@ -5,6 +5,7 @@
 #include <QIcon>
 #include <QSharedPointer>
 #include <QString>
+#include <QStringList>
 
 #include <core/global.h>
 #include <core/services/buffer2.h>
@@ -16,6 +17,7 @@ namespace vnotex {
 
 class ServiceLocator;
 class StatusWidget;
+class FindAndReplaceWidget2;
 
 // Abstract base class for all view windows in the new architecture.
 // A view window displays a single file (Buffer2) in a specific mode (Read/Edit).
@@ -100,6 +102,13 @@ public:
   // Default implementation syncs dirty content and unregisters from BufferService.
   virtual bool aboutToClose(bool p_force);
 
+public slots:
+  void findNext(const QString &p_text, FindOptions p_options);
+
+  void replace(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
+
+  void replaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
+
 signals:
   // Emitted when this window gains keyboard focus.
   void focused(ViewWindow2 *p_win);
@@ -112,6 +121,21 @@ signals:
 
   // Emitted when the display name changes.
   void nameChanged();
+
+protected slots:
+  virtual void handleFindTextChanged(const QString &p_text, FindOptions p_options);
+
+  virtual void handleFindNext(const QStringList &p_texts, FindOptions p_options);
+
+  virtual void handleReplace(const QString &p_text, FindOptions p_options,
+                             const QString &p_replaceText);
+
+  virtual void handleReplaceAll(const QString &p_text, FindOptions p_options,
+                                const QString &p_replaceText);
+
+  virtual void handleFindAndReplaceWidgetClosed();
+
+  virtual void handleFindAndReplaceWidgetOpened();
 
 protected:
   // ============ Layout Slots (for subclasses) ============
@@ -139,6 +163,25 @@ protected:
 
   // Create a standard toolbar with the configured icon size.
   static QToolBar *createToolBar(QWidget *p_parent = nullptr);
+
+  // ============ Find and Replace ============
+
+  virtual void showFindAndReplaceWidget();
+
+  void hideFindAndReplaceWidget();
+
+  bool findAndReplaceWidgetVisible() const;
+
+  // @p_currentMatchIndex: 0-based.
+  void showFindResult(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex);
+
+  void showReplaceResult(const QString &p_text, int p_totalReplaces);
+
+  virtual QString selectedText() const;
+
+  void findNextOnLastFind(bool p_forward = true);
+
+  void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
   // ============ Editor Integration ============
 
@@ -194,6 +237,11 @@ private slots:
   void onBufferAutoSaved(const QString &p_bufferId);
 
 private:
+  struct FindInfo {
+    QStringList m_texts;
+    FindOptions m_options;
+  };
+
   void setupUI();
 
   // Focus event handlers for auto-save integration.
@@ -224,6 +272,12 @@ private:
 
   // Shared ownership — StatusWidget may be reparented to global status bar.
   QSharedPointer<StatusWidget> m_statusWidget;
+
+  // Find and replace widget. Managed by QObject.
+  FindAndReplaceWidget2 *m_findAndReplace = nullptr;
+
+  // Last find info for findNextOnLastFind().
+  FindInfo m_findInfo;
 };
 
 } // namespace vnotex

@@ -20,6 +20,8 @@
 
 #include "editors/statuswidget.h"
 #include "editors/texteditor.h"
+#include "findandreplacewidget2.h"
+#include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpopup.h"
 #include "wordcountpopup2.h"
@@ -131,9 +133,18 @@ void TextViewWindow2::setupToolBar() {
 
   ViewWindowToolBarHelper2::addSpacer(toolBar);
 
-  // Find and Replace action (placeholder — no widget yet in new arch).
-  ViewWindowToolBarHelper2::addAction(
-      toolBar, ViewWindowToolBarHelper2::FindAndReplace, getServices(), this);
+  // Find and Replace action.
+  {
+    auto *findAction = ViewWindowToolBarHelper2::addAction(
+        toolBar, ViewWindowToolBarHelper2::FindAndReplace, getServices(), this);
+    connect(findAction, &QAction::triggered, this, [this]() {
+      if (findAndReplaceWidgetVisible()) {
+        hideFindAndReplaceWidget();
+      } else {
+        showFindAndReplaceWidget();
+      }
+    });
+  }
 
   // Print action (placeholder — no handler yet in new arch).
   ViewWindowToolBarHelper2::addAction(
@@ -367,4 +378,35 @@ TextViewWindow2::createTextEditorParameters(const EditorConfig &p_editorConfig,
   paras->m_autoDetectLanguageEnabled = p_editorConfig.isSpellCheckAutoDetectLanguageEnabled();
   paras->m_defaultSpellCheckLanguage = p_editorConfig.getSpellCheckDefaultDictionary();
   return paras;
+}
+
+// ============ Find and Replace ============
+
+void TextViewWindow2::handleFindTextChanged(const QString &p_text, FindOptions p_options) {
+  TextViewWindowHelper::handleFindTextChanged(this, p_text, p_options);
+}
+
+void TextViewWindow2::handleFindNext(const QStringList &p_texts, FindOptions p_options) {
+  TextViewWindowHelper::handleFindNext(this, p_texts, p_options);
+}
+
+void TextViewWindow2::handleReplace(const QString &p_text, FindOptions p_options,
+                                    const QString &p_replaceText) {
+  TextViewWindowHelper::handleReplace(this, p_text, p_options, p_replaceText);
+}
+
+void TextViewWindow2::handleReplaceAll(const QString &p_text, FindOptions p_options,
+                                       const QString &p_replaceText) {
+  TextViewWindowHelper::handleReplaceAll(this, p_text, p_options, p_replaceText);
+}
+
+void TextViewWindow2::handleFindAndReplaceWidgetClosed() {
+  TextViewWindowHelper::clearSearchHighlights(this);
+}
+
+QString TextViewWindow2::selectedText() const {
+  if (m_editor) {
+    return m_editor->getTextEdit()->selectedText();
+  }
+  return QString();
 }

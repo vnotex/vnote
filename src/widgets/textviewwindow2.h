@@ -37,6 +37,18 @@ public slots:
 protected slots:
   void setModified(bool p_modified) Q_DECL_OVERRIDE;
 
+  void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
+
+  void handleFindNext(const QStringList &p_texts, FindOptions p_options) Q_DECL_OVERRIDE;
+
+  void handleReplace(const QString &p_text, FindOptions p_options,
+                     const QString &p_replaceText) Q_DECL_OVERRIDE;
+
+  void handleReplaceAll(const QString &p_text, FindOptions p_options,
+                        const QString &p_replaceText) Q_DECL_OVERRIDE;
+
+  void handleFindAndReplaceWidgetClosed() Q_DECL_OVERRIDE;
+
 protected:
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 
@@ -45,6 +57,8 @@ protected:
   void scrollDown() Q_DECL_OVERRIDE;
 
   void zoom(bool p_zoomIn) Q_DECL_OVERRIDE;
+
+  QString selectedText() const Q_DECL_OVERRIDE;
 
 private:
   void setupUI();
