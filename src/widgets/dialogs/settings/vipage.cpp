@@ -8,6 +8,7 @@
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/hookmanager.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
 
@@ -47,7 +48,7 @@ bool ViPage::saveInternal() {
 
   editorConfig.update();
 
-  EditorPage::notifyEditorConfigChange(m_services.get<ConfigMgr2>());
+  EditorPage::notifyEditorConfigChange(m_services.get<HookManager>());
 
   return true;
 }

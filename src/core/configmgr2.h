@@ -104,9 +104,6 @@ public:
   // Application name.
   static const QString c_appName;
 
-signals:
-  void editorConfigChanged();
-
 public:
   // IConfigMgr interface implementation
   // Used by IConfig to trigger config persistence

@@ -194,6 +194,14 @@ inline const QLatin1String FilterFileContentAfterLoad("vnote.filter.file_content
 // Filter for context menu items
 inline const QLatin1String FilterContextMenuItems("vnote.filter.context_menu_items");
 
+// ===== Config Events =====
+// Triggered when configuration changes occur
+
+// After editor configuration is changed and saved.
+// Consumers should re-read EditorConfig (and sub-configs) from ConfigMgr2.
+// No typed event — simple notification with empty args.
+inline const QLatin1String ConfigEditorChanged("vnote.config.editor_changed");
+
 } // namespace HookNames
 
 } // namespace vnotex

@@ -15,6 +15,7 @@
 #include <core/logger.h>
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/configservice.h>
@@ -188,15 +189,27 @@ int main(int argc, char *argv[]) {
     qInfo() << "ConfigMgr2 registered";
 
     // Wire BufferService to EditorConfig's auto-save policy.
+    // Uses hook so runtime Settings changes propagate immediately.
     {
-      auto policy = configMgr.getEditorConfig().getAutoSavePolicy();
-      AutoSavePolicy svcPolicy = AutoSavePolicy::AutoSave;
-      if (policy == EditorConfig::AutoSavePolicy::None) {
-        svcPolicy = AutoSavePolicy::None;
-      } else if (policy == EditorConfig::AutoSavePolicy::BackupFile) {
-        svcPolicy = AutoSavePolicy::BackupFile;
-      }
-      bufferService.setAutoSavePolicy(svcPolicy);
+      auto syncAutoSavePolicy = [&configMgr, &bufferService]() {
+        auto policy = configMgr.getEditorConfig().getAutoSavePolicy();
+        AutoSavePolicy svcPolicy = AutoSavePolicy::AutoSave;
+        if (policy == EditorConfig::AutoSavePolicy::None) {
+          svcPolicy = AutoSavePolicy::None;
+        } else if (policy == EditorConfig::AutoSavePolicy::BackupFile) {
+          svcPolicy = AutoSavePolicy::BackupFile;
+        }
+        bufferService.setAutoSavePolicy(svcPolicy);
+      };
+
+      // Set initial policy from config.
+      syncAutoSavePolicy();
+
+      // Re-sync whenever editor config changes at runtime.
+      hookManager.addAction(HookNames::ConfigEditorChanged,
+                            [syncAutoSavePolicy](HookContext &, const QVariantMap &) {
+                              syncAutoSavePolicy();
+                            });
     }
 
     // Create FileTypeService with VxCoreContextHandle and locale

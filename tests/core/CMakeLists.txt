@@ -109,6 +109,15 @@ add_qt_test(test_buffer
   GUILESS
 )
 
+add_qt_test(test_config_hook
+  SOURCES
+    test_config_hook.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 # TODO: test_configmgr2 requires many dependencies (MainConfig, SessionConfig,
 # CoreConfig, EditorConfig, WidgetConfig, FileUtils2, Utils) that have deep
 # cascading dependencies throughout the codebase. This test should be re-enabled

@@ -8,6 +8,7 @@
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/hookmanager.h>
 #include <core/texteditorconfig.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
@@ -229,7 +230,7 @@ bool TextEditorPage::saveInternal() {
 
   textConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
 
-  EditorPage::notifyEditorConfigChange(m_services.get<ConfigMgr2>());
+  EditorPage::notifyEditorConfigChange(m_services.get<HookManager>());
 
   return true;
 }

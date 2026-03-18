@@ -17,6 +17,7 @@
 #include <core/editorconfig.h>
 #include <core/markdowneditorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/hookmanager.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
 
@@ -215,7 +216,7 @@ bool MarkdownEditorPage::saveInternal() {
 
   markdownConfig.setRichPasteByDefaultEnabled(m_richPasteByDefaultCheckBox->isChecked());
 
-  EditorPage::notifyEditorConfigChange(m_services.get<ConfigMgr2>());
+  EditorPage::notifyEditorConfigChange(m_services.get<HookManager>());
 
   return true;
 }

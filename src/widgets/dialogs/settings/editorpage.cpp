@@ -10,7 +10,9 @@
 
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
+#include <core/services/hookmanager.h>
 #include <utils/widgetutils.h>
 #include <vtextedit/spellchecker.h>
 #include <widgets/messageboxhelper.h>
@@ -154,21 +156,23 @@ bool EditorPage::saveInternal() {
     editorConfig.setSpellCheckDefaultDictionary(m_spellCheckDictComboBox->currentData().toString());
   }
 
-  notifyEditorConfigChange(m_services.get<ConfigMgr2>());
+  notifyEditorConfigChange(m_services.get<HookManager>());
 
   return true;
 }
 
 QString EditorPage::title() const { return tr("Editor"); }
 
-void EditorPage::notifyEditorConfigChange(ConfigMgr2 *p_configMgr) {
+void EditorPage::notifyEditorConfigChange(HookManager *p_hookMgr) {
   static QTimer *timer = nullptr;
   if (!timer) {
     timer = new QTimer();
     timer->setSingleShot(true);
     timer->setInterval(1000);
-    if (p_configMgr) {
-      QObject::connect(timer, &QTimer::timeout, p_configMgr, &ConfigMgr2::editorConfigChanged);
+    if (p_hookMgr) {
+      QObject::connect(timer, &QTimer::timeout, [p_hookMgr]() {
+        p_hookMgr->doAction(HookNames::ConfigEditorChanged);
+      });
     }
   }
 
