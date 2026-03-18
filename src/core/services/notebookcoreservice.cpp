@@ -4,6 +4,7 @@
 #include <QJsonParseError>
 #include <QVariantMap>
 
+#include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
 
@@ -253,13 +254,13 @@ bool NotebookCoreService::deleteFolder(const QString &p_notebookId, const QStrin
 
   // Fire NodeBeforeDelete hook (cancellable).
   if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("relativePath")] = p_folderPath;
-    args[QStringLiteral("isFolder")] = true;
-    args[QStringLiteral("name")] = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
-    args[QStringLiteral("operation")] = QStringLiteral("delete");
-    if (m_hookMgr->doAction(HookNames::NodeBeforeDelete, args)) {
+    NodeOperationEvent event;
+    event.notebookId = p_notebookId;
+    event.relativePath = p_folderPath;
+    event.isFolder = true;
+    event.name = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
+    event.operation = QStringLiteral("delete");
+    if (m_hookMgr->doAction(HookNames::NodeBeforeDelete, event)) {
       return false;
     }
   }
@@ -328,13 +329,13 @@ bool NotebookCoreService::renameFolder(const QString &p_notebookId, const QStrin
 
   // Fire NodeBeforeRename hook (cancellable).
   if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("relativePath")] = p_folderPath;
-    args[QStringLiteral("isFolder")] = true;
-    args[QStringLiteral("oldName")] = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
-    args[QStringLiteral("newName")] = p_newName;
-    if (m_hookMgr->doAction(HookNames::NodeBeforeRename, args)) {
+    NodeRenameEvent event;
+    event.notebookId = p_notebookId;
+    event.relativePath = p_folderPath;
+    event.isFolder = true;
+    event.oldName = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
+    event.newName = p_newName;
+    if (m_hookMgr->doAction(HookNames::NodeBeforeRename, event)) {
       return false;
     }
   }
@@ -348,13 +349,13 @@ bool NotebookCoreService::renameFolder(const QString &p_notebookId, const QStrin
 
   // Fire NodeAfterRename hook so other modules can react.
   if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("relativePath")] = p_folderPath;
-    args[QStringLiteral("isFolder")] = true;
-    args[QStringLiteral("oldName")] = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
-    args[QStringLiteral("newName")] = p_newName;
-    m_hookMgr->doAction(HookNames::NodeAfterRename, args);
+    NodeRenameEvent event;
+    event.notebookId = p_notebookId;
+    event.relativePath = p_folderPath;
+    event.isFolder = true;
+    event.oldName = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
+    event.newName = p_newName;
+    m_hookMgr->doAction(HookNames::NodeAfterRename, event);
   }
 
   return true;
@@ -368,13 +369,13 @@ bool NotebookCoreService::moveFolder(const QString &p_notebookId, const QString 
 
   // Fire NodeBeforeMove hook (cancellable).
   if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("relativePath")] = p_srcPath;
-    args[QStringLiteral("isFolder")] = true;
-    args[QStringLiteral("name")] = p_srcPath.mid(p_srcPath.lastIndexOf(QLatin1Char('/')) + 1);
-    args[QStringLiteral("operation")] = QStringLiteral("move");
-    if (m_hookMgr->doAction(HookNames::NodeBeforeMove, args)) {
+    NodeOperationEvent event;
+    event.notebookId = p_notebookId;
+    event.relativePath = p_srcPath;
+    event.isFolder = true;
+    event.name = p_srcPath.mid(p_srcPath.lastIndexOf(QLatin1Char('/')) + 1);
+    event.operation = QStringLiteral("move");
+    if (m_hookMgr->doAction(HookNames::NodeBeforeMove, event)) {
       return false;
     }
   }
@@ -498,13 +499,13 @@ bool NotebookCoreService::deleteFile(const QString &p_notebookId, const QString 
 
   // Fire NodeBeforeDelete hook (cancellable).
   if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("relativePath")] = p_filePath;
-    args[QStringLiteral("isFolder")] = false;
-    args[QStringLiteral("name")] = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
-    args[QStringLiteral("operation")] = QStringLiteral("delete");
-    if (m_hookMgr->doAction(HookNames::NodeBeforeDelete, args)) {
+    NodeOperationEvent event;
+    event.notebookId = p_notebookId;
+    event.relativePath = p_filePath;
+    event.isFolder = false;
+    event.name = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
+    event.operation = QStringLiteral("delete");
+    if (m_hookMgr->doAction(HookNames::NodeBeforeDelete, event)) {
       return false;
     }
   }
@@ -572,13 +573,13 @@ bool NotebookCoreService::renameFile(const QString &p_notebookId, const QString 
 
   // Fire NodeBeforeRename hook (cancellable).
   if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("relativePath")] = p_filePath;
-    args[QStringLiteral("isFolder")] = false;
-    args[QStringLiteral("oldName")] = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
-    args[QStringLiteral("newName")] = p_newName;
-    if (m_hookMgr->doAction(HookNames::NodeBeforeRename, args)) {
+    NodeRenameEvent event;
+    event.notebookId = p_notebookId;
+    event.relativePath = p_filePath;
+    event.isFolder = false;
+    event.oldName = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
+    event.newName = p_newName;
+    if (m_hookMgr->doAction(HookNames::NodeBeforeRename, event)) {
       return false;
     }
   }
@@ -592,13 +593,13 @@ bool NotebookCoreService::renameFile(const QString &p_notebookId, const QString 
 
   // Fire NodeAfterRename hook so other modules can react.
   if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("relativePath")] = p_filePath;
-    args[QStringLiteral("isFolder")] = false;
-    args[QStringLiteral("oldName")] = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
-    args[QStringLiteral("newName")] = p_newName;
-    m_hookMgr->doAction(HookNames::NodeAfterRename, args);
+    NodeRenameEvent event;
+    event.notebookId = p_notebookId;
+    event.relativePath = p_filePath;
+    event.isFolder = false;
+    event.oldName = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
+    event.newName = p_newName;
+    m_hookMgr->doAction(HookNames::NodeAfterRename, event);
   }
 
   return true;
@@ -612,13 +613,13 @@ bool NotebookCoreService::moveFile(const QString &p_notebookId, const QString &p
 
   // Fire NodeBeforeMove hook (cancellable).
   if (m_hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("relativePath")] = p_srcFilePath;
-    args[QStringLiteral("isFolder")] = false;
-    args[QStringLiteral("name")] = p_srcFilePath.mid(p_srcFilePath.lastIndexOf(QLatin1Char('/')) + 1);
-    args[QStringLiteral("operation")] = QStringLiteral("move");
-    if (m_hookMgr->doAction(HookNames::NodeBeforeMove, args)) {
+    NodeOperationEvent event;
+    event.notebookId = p_notebookId;
+    event.relativePath = p_srcFilePath;
+    event.isFolder = false;
+    event.name = p_srcFilePath.mid(p_srcFilePath.lastIndexOf(QLatin1Char('/')) + 1);
+    event.operation = QStringLiteral("move");
+    if (m_hookMgr->doAction(HookNames::NodeBeforeMove, event)) {
       return false;
     }
   }

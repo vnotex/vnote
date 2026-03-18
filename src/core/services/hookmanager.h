@@ -12,6 +12,7 @@
 #include <functional>
 
 #include "core/hookcontext.h"
+#include "core/hookevents.h"
 #include "core/noncopyable.h"
 
 namespace vnotex {
@@ -45,10 +46,45 @@ public:
   // Returns true if action was found and removed.
   bool removeAction(int p_id);
 
-  // Execute all actions registered for a hook.
+  // Execute all actions registered for a hook (no arguments).
   // Returns true if any callback cancelled the action (ctx.cancel() was called).
   // If cancelled, downstream processing should be skipped.
-  bool doAction(const QString &p_hook, const QVariantMap &p_args = QVariantMap());
+  bool doAction(const QString &p_hook);
+
+  // Execute all actions registered for a hook with raw QVariantMap arguments.
+  // Returns true if any callback cancelled the action (ctx.cancel() was called).
+  // If cancelled, downstream processing should be skipped.
+  bool doAction(const QString &p_hook, const QVariantMap &p_args);
+
+  // ===== Typed Actions (emission) =====
+  // Overloads that accept typed event structs. Each calls toVariantMap() then
+  // delegates to the raw QVariantMap doAction.
+
+  bool doAction(const QString &p_hook, const NodeOperationEvent &p_event);
+  bool doAction(const QString &p_hook, const NodeRenameEvent &p_event);
+  bool doAction(const QString &p_hook, const FileOpenEvent &p_event);
+  bool doAction(const QString &p_hook, const BufferEvent &p_event);
+  bool doAction(const QString &p_hook, const ViewWindowOpenEvent &p_event);
+  bool doAction(const QString &p_hook, const ViewWindowCloseEvent &p_event);
+  bool doAction(const QString &p_hook, const ViewWindowMoveEvent &p_event);
+  bool doAction(const QString &p_hook, const ViewSplitCreateEvent &p_event);
+  bool doAction(const QString &p_hook, const ViewSplitRemoveEvent &p_event);
+  bool doAction(const QString &p_hook, const ViewSplitActivateEvent &p_event);
+
+  // ===== Typed Actions (subscription) =====
+  // Template adapter: wraps a typed callback into the raw QVariantMap callback.
+  // The adapter deserializes QVariantMap -> EventT before calling the user's callback.
+  template <typename EventT>
+  int addAction(const QString &p_hookName,
+                std::function<void(HookContext &, const EventT &)> p_callback,
+                int p_priority = 10) {
+    return addAction(
+        p_hookName,
+        [cb = std::move(p_callback)](HookContext &p_ctx, const QVariantMap &p_args) {
+          cb(p_ctx, EventT::fromVariantMap(p_args));
+        },
+        p_priority);
+  }
 
   // ===== Filters =====
 

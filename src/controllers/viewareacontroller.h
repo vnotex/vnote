@@ -11,6 +11,7 @@
 #include <controllers/viewareaview.h>
 #include <core/fileopensettings.h>
 #include <core/global.h>
+#include <core/hookevents.h>
 #include <core/nodeidentifier.h>
 
 namespace vnotex {
@@ -204,10 +205,10 @@ private:
   void checkCurrentViewWindowChange(const QString &p_workspaceId);
 
   // Handle FileAfterOpen hook: open a ViewWindow2 for the newly opened buffer.
-  void onFileAfterOpen(const QVariantMap &p_args);
+  void onFileAfterOpen(const FileOpenEvent &p_event);
 
   // Handle NodeAfterRename hook: update buffer paths and tab titles.
-  void onNodeAfterRename(const QVariantMap &p_args);
+  void onNodeAfterRename(const NodeRenameEvent &p_event);
 
   // Open a single buffer during session restore.
   // Resolves file type and calls m_view->openBuffer() for the view to create the ViewWindow2.

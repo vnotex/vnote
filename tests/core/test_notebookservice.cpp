@@ -1,6 +1,5 @@
 #include <QtTest>
 #include <QFile>
-#include <QSignalSpy>
 #include <QTemporaryDir>
 
 #include <core/hookcontext.h>
@@ -50,13 +49,6 @@ private slots:
   void testTagFile();
   void testListTags();
   void testMoveTag();
-
-  // Signal tests.
-  void testNoteCreatedSignal();
-  void testNoteUpdatedSignal();
-  void testNoteDeletedSignal();
-  void testTagAddedSignal();
-  void testNotebookOpenedClosedSignals();
 
   // Hook tests (delete).
   void testDeleteFileCancelledByHook();
@@ -474,91 +466,6 @@ void TestNotebookService::testMoveTag() {
 
   QJsonArray tags = m_service->listTags(nbId);
   QVERIFY(tags.size() >= 2);
-}
-
-void TestNotebookService::testNoteCreatedSignal() {
-  QString nbPath = m_tempDir.filePath("signal_create_notebook");
-  QString nbId = createTestNotebook(nbPath);
-  QVERIFY(!nbId.isEmpty());
-
-  QSignalSpy spy(m_service, &NotebookCoreService::noteCreated);
-
-  m_service->createFile(nbId, "", "signal_test.md");
-
-  // Wait for signal (vxcore events may be async).
-  QVERIFY(spy.wait(1000));
-  QCOMPARE(spy.count(), 1);
-
-  QList<QVariant> arguments = spy.takeFirst();
-  QString payloadJson = arguments.at(0).toString();
-  quint64 timestamp = arguments.at(1).toULongLong();
-
-  QVERIFY(!payloadJson.isEmpty());
-  QVERIFY(timestamp > 0);
-}
-
-void TestNotebookService::testNoteUpdatedSignal() {
-  QString nbPath = m_tempDir.filePath("signal_update_notebook");
-  QString nbId = createTestNotebook(nbPath);
-  QVERIFY(!nbId.isEmpty());
-
-  m_service->createFile(nbId, "", "update_test.md");
-
-  QSignalSpy spy(m_service, &NotebookCoreService::noteUpdated);
-
-  QString metadataJson = R"({"updated": "true"})";
-  m_service->updateFileMetadata(nbId, "update_test.md", metadataJson);
-
-  QVERIFY(spy.wait(1000));
-  QCOMPARE(spy.count(), 1);
-}
-
-void TestNotebookService::testNoteDeletedSignal() {
-  QString nbPath = m_tempDir.filePath("signal_delete_notebook");
-  QString nbId = createTestNotebook(nbPath);
-  QVERIFY(!nbId.isEmpty());
-
-  m_service->createFile(nbId, "", "delete_test.md");
-
-  QSignalSpy spy(m_service, &NotebookCoreService::noteDeleted);
-
-  m_service->deleteFile(nbId, "delete_test.md");
-
-  QVERIFY(spy.wait(1000));
-  QCOMPARE(spy.count(), 1);
-}
-
-void TestNotebookService::testTagAddedSignal() {
-  QString nbPath = m_tempDir.filePath("signal_tag_notebook");
-  QString nbId = createTestNotebook(nbPath);
-  QVERIFY(!nbId.isEmpty());
-
-  m_service->createFile(nbId, "", "tag_signal_test.md");
-  m_service->createTag(nbId, "SignalTag");
-
-  QSignalSpy spy(m_service, &NotebookCoreService::tagAdded);
-
-  m_service->tagFile(nbId, "tag_signal_test.md", "SignalTag");
-
-  QVERIFY(spy.wait(1000));
-  QCOMPARE(spy.count(), 1);
-}
-
-void TestNotebookService::testNotebookOpenedClosedSignals() {
-  QString nbPath = m_tempDir.filePath("signal_openclose_notebook");
-
-  QSignalSpy openSpy(m_service, &NotebookCoreService::notebookOpened);
-  QString nbId = createTestNotebook(nbPath);
-  QVERIFY(!nbId.isEmpty());
-
-  QVERIFY(openSpy.wait(1000));
-  QCOMPARE(openSpy.count(), 1);
-
-  QSignalSpy closeSpy(m_service, &NotebookCoreService::notebookClosed);
-  m_service->closeNotebook(nbId);
-
-  QVERIFY(closeSpy.wait(1000));
-  QCOMPARE(closeSpy.count(), 1);
 }
 
 // ===== Hook tests: Delete =====

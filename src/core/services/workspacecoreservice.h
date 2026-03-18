@@ -5,8 +5,8 @@
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
-#include <QVariantMap>
 
+#include <core/hookevents.h>
 #include <core/noncopyable.h>
 
 #include <vxcore/vxcore.h>
@@ -77,40 +77,40 @@ public:
   // Controllers call these instead of firing hooks directly.
 
   // Fire ViewWindowBeforeOpen. Returns true if cancelled.
-  bool fireViewWindowBeforeOpen(const QVariantMap &p_args);
+  bool fireViewWindowBeforeOpen(const ViewWindowOpenEvent &p_event);
 
   // Fire ViewWindowAfterOpen.
-  void fireViewWindowAfterOpen(const QVariantMap &p_args);
+  void fireViewWindowAfterOpen(const ViewWindowOpenEvent &p_event);
 
   // Fire ViewWindowBeforeClose. Returns true if cancelled.
-  bool fireViewWindowBeforeClose(const QVariantMap &p_args);
+  bool fireViewWindowBeforeClose(const ViewWindowCloseEvent &p_event);
 
   // Fire ViewWindowAfterClose.
-  void fireViewWindowAfterClose(const QVariantMap &p_args);
+  void fireViewWindowAfterClose(const ViewWindowCloseEvent &p_event);
 
   // Fire ViewWindowBeforeMove. Returns true if cancelled.
-  bool fireViewWindowBeforeMove(const QVariantMap &p_args);
+  bool fireViewWindowBeforeMove(const ViewWindowMoveEvent &p_event);
 
   // Fire ViewWindowAfterMove.
-  void fireViewWindowAfterMove(const QVariantMap &p_args);
+  void fireViewWindowAfterMove(const ViewWindowMoveEvent &p_event);
 
   // Fire ViewSplitBeforeCreate. Returns true if cancelled.
-  bool fireViewSplitBeforeCreate(const QVariantMap &p_args);
+  bool fireViewSplitBeforeCreate(const ViewSplitCreateEvent &p_event);
 
   // Fire ViewSplitAfterCreate.
-  void fireViewSplitAfterCreate(const QVariantMap &p_args);
+  void fireViewSplitAfterCreate(const ViewSplitCreateEvent &p_event);
 
   // Fire ViewSplitBeforeRemove. Returns true if cancelled.
-  bool fireViewSplitBeforeRemove(const QVariantMap &p_args);
+  bool fireViewSplitBeforeRemove(const ViewSplitRemoveEvent &p_event);
 
   // Fire ViewSplitAfterRemove.
-  void fireViewSplitAfterRemove(const QVariantMap &p_args);
+  void fireViewSplitAfterRemove(const ViewSplitRemoveEvent &p_event);
 
   // Fire ViewSplitBeforeActivate. Returns true if cancelled.
-  bool fireViewSplitBeforeActivate(const QVariantMap &p_args);
+  bool fireViewSplitBeforeActivate(const ViewSplitActivateEvent &p_event);
 
   // Fire ViewSplitAfterActivate.
-  void fireViewSplitAfterActivate(const QVariantMap &p_args);
+  void fireViewSplitAfterActivate(const ViewSplitActivateEvent &p_event);
 
 private:
   // Check context validity before operations.

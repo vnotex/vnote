@@ -8,6 +8,7 @@
 #include <controllers/workspacewrapper.h>
 #include <core/fileopensettings.h>
 #include <core/hookcontext.h>
+#include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
@@ -56,12 +57,12 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer,
     fileType = QStringLiteral("Text");
   }
 
-  QVariantMap args;
-  args[QStringLiteral("fileType")] = fileType;
-  args[QStringLiteral("bufferId")] = p_buffer.id();
-  args[QStringLiteral("nodeId")] = p_buffer.nodeId().relativePath;
+  ViewWindowOpenEvent event;
+  event.fileType = fileType;
+  event.bufferId = p_buffer.id();
+  event.nodeId = p_buffer.nodeId().relativePath;
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
-  if (wsSvc && wsSvc->fireViewWindowBeforeOpen(args)) {
+  if (wsSvc && wsSvc->fireViewWindowBeforeOpen(event)) {
     return;
   }
   if (m_currentWorkspaceId.isEmpty()) {
@@ -114,9 +115,9 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
   m_currentWindowId = p_windowId;
 
   if (wsSvc) {
-    QVariantMap ha;
-    ha[QStringLiteral("bufferId")] = p_buffer.id();
-    ha[QStringLiteral("nodeId")] = p_buffer.nodeId().relativePath;
+    ViewWindowOpenEvent ha;
+    ha.bufferId = p_buffer.id();
+    ha.nodeId = p_buffer.nodeId().relativePath;
     wsSvc->fireViewWindowAfterOpen(ha);
   }
 
@@ -139,8 +140,8 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
     m_currentWindowId = InvalidViewWindowId;
   }
   if (wsSvc) {
-    QVariantMap ha;
-    ha[QStringLiteral("bufferId")] = p_bufferId;
+    ViewWindowCloseEvent ha;
+    ha.bufferId = p_bufferId;
     wsSvc->fireViewWindowAfterClose(ha);
   }
   emit windowsChanged();
@@ -231,10 +232,10 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
 bool ViewAreaController::closeViewWindow(ID p_windowId, bool p_force) {
   if (p_windowId == InvalidViewWindowId) { return false; }
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
-  QVariantMap args;
-  args[QStringLiteral("windowId")] = p_windowId;
-  args[QStringLiteral("force")] = p_force;
-  if (wsSvc && wsSvc->fireViewWindowBeforeClose(args)) {
+  ViewWindowCloseEvent event;
+  event.windowId = p_windowId;
+  event.force = p_force;
+  if (wsSvc && wsSvc->fireViewWindowBeforeClose(event)) {
     return false;
   }
   if (!m_view) { return false; }
@@ -356,10 +357,10 @@ void ViewAreaController::closeTabs(const QString &p_workspaceId, int p_reference
 void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction p_direction) {
   if (p_workspaceId.isEmpty()) { return; }
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
-  QVariantMap args;
-  args[QStringLiteral("workspaceId")] = p_workspaceId;
-  args[QStringLiteral("direction")] = static_cast<int>(p_direction);
-  if (wsSvc && wsSvc->fireViewSplitBeforeCreate(args)) { return; }
+  ViewSplitCreateEvent event;
+  event.workspaceId = p_workspaceId;
+  event.direction = static_cast<int>(p_direction);
+  if (wsSvc && wsSvc->fireViewSplitBeforeCreate(event)) { return; }
 
   // Get the actual current buffer from the view (ground truth, not vxcore which may be stale).
   QString currentBufferId;
@@ -397,8 +398,8 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
   if (m_view) { m_view->distributeViewSplits(); }
 
   if (wsSvc) {
-    args[QStringLiteral("newWorkspaceId")] = newWsId;
-    wsSvc->fireViewSplitAfterCreate(args);
+    event.newWorkspaceId = newWsId;
+    wsSvc->fireViewSplitAfterCreate(event);
   }
   emit viewSplitsCountChanged();
 }
@@ -409,10 +410,10 @@ bool ViewAreaController::removeViewSplit(const QString &p_workspaceId,
   if (p_workspaceId.isEmpty() || totalSplitCount <= 1) { return false; }
 
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
-  QVariantMap args;
-  args[QStringLiteral("workspaceId")] = p_workspaceId;
-  args[QStringLiteral("keepWorkspace")] = p_keepWorkspace;
-  if (wsSvc && wsSvc->fireViewSplitBeforeRemove(args)) { return false; }
+  ViewSplitRemoveEvent event;
+  event.workspaceId = p_workspaceId;
+  event.keepWorkspace = p_keepWorkspace;
+  if (wsSvc && wsSvc->fireViewSplitBeforeRemove(event)) { return false; }
 
   if (p_keepWorkspace) {
     // Hide-only mode: transfer ViewWindows to WorkspaceWrapper, remove split widget.
@@ -474,7 +475,7 @@ bool ViewAreaController::removeViewSplit(const QString &p_workspaceId,
     m_currentWindowId = InvalidViewWindowId;
   }
   if (m_view) { m_view->removeViewSplit(p_workspaceId); }
-  if (wsSvc) { wsSvc->fireViewSplitAfterRemove(args); }
+  if (wsSvc) { wsSvc->fireViewSplitAfterRemove(event); }
   emit viewSplitsCountChanged();
   return true;
 }
@@ -511,13 +512,13 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
   }
 
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
-  QVariantMap args;
-  args[QStringLiteral("windowId")] = p_windowId;
-  args[QStringLiteral("srcWorkspaceId")] = p_srcWorkspaceId;
-  args[QStringLiteral("dstWorkspaceId")] = p_dstWorkspaceId;
-  args[QStringLiteral("direction")] = static_cast<int>(p_direction);
-  args[QStringLiteral("bufferId")] = p_bufferId;
-  if (wsSvc && wsSvc->fireViewWindowBeforeMove(args)) { return; }
+  ViewWindowMoveEvent event;
+  event.windowId = p_windowId;
+  event.srcWorkspaceId = p_srcWorkspaceId;
+  event.dstWorkspaceId = p_dstWorkspaceId;
+  event.direction = static_cast<int>(p_direction);
+  event.bufferId = p_bufferId;
+  if (wsSvc && wsSvc->fireViewWindowBeforeMove(event)) { return; }
 
   // Transfer buffer registration between workspaces in vxcore.
   if (m_shouldPropagateToCore && !p_bufferId.isEmpty()) {
@@ -529,7 +530,7 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
 
   if (m_view) { m_view->moveViewWindowToSplit(p_windowId, p_srcWorkspaceId, p_dstWorkspaceId); }
   setCurrentViewSplit(p_dstWorkspaceId, true);
-  if (wsSvc) { wsSvc->fireViewWindowAfterMove(args); }
+  if (wsSvc) { wsSvc->fireViewWindowAfterMove(event); }
   emit windowsChanged();
 }
 
@@ -543,16 +544,16 @@ void ViewAreaController::setCurrentViewSplit(const QString &p_workspaceId, bool 
     return;
   }
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
-  QVariantMap args;
-  args[QStringLiteral("workspaceId")] = p_workspaceId;
-  if (wsSvc && wsSvc->fireViewSplitBeforeActivate(args)) { return; }
+  ViewSplitActivateEvent event;
+  event.workspaceId = p_workspaceId;
+  if (wsSvc && wsSvc->fireViewSplitBeforeActivate(event)) { return; }
   m_currentWorkspaceId = p_workspaceId;
   if (m_shouldPropagateToCore) {
     if (wsSvc && !p_workspaceId.isEmpty()) { wsSvc->setCurrentWorkspace(p_workspaceId); }
   }
   if (m_view) { m_view->setCurrentViewSplit(p_workspaceId, p_focus); }
   if (p_focus && m_view) { m_view->focusViewSplit(p_workspaceId); }
-  if (wsSvc) { wsSvc->fireViewSplitAfterActivate(args); }
+  if (wsSvc) { wsSvc->fireViewSplitAfterActivate(event); }
 }
 
 void ViewAreaController::setCurrentViewWindow(ID p_windowId, const QString &p_bufferId) {
@@ -1049,20 +1050,20 @@ void ViewAreaController::subscribeToHooks() {
     qWarning() << "ViewAreaController::subscribeToHooks: HookManager not available";
     return;
   }
-  hookMgr->addAction(HookNames::FileAfterOpen,
-      [this](HookContext &p_ctx, const QVariantMap &p_args) {
+  hookMgr->addAction<FileOpenEvent>(HookNames::FileAfterOpen,
+      [this](HookContext &p_ctx, const FileOpenEvent &p_event) {
         Q_UNUSED(p_ctx)
-        onFileAfterOpen(p_args);
+        onFileAfterOpen(p_event);
       }, 10);
-  hookMgr->addAction(HookNames::NodeAfterRename,
-      [this](HookContext &p_ctx, const QVariantMap &p_args) {
+  hookMgr->addAction<NodeRenameEvent>(HookNames::NodeAfterRename,
+      [this](HookContext &p_ctx, const NodeRenameEvent &p_event) {
         Q_UNUSED(p_ctx)
-        onNodeAfterRename(p_args);
+        onNodeAfterRename(p_event);
       }, 10);
 }
 
-void ViewAreaController::onFileAfterOpen(const QVariantMap &p_args) {
-  const QString bufferId = p_args.value(QStringLiteral("bufferId")).toString();
+void ViewAreaController::onFileAfterOpen(const FileOpenEvent &p_event) {
+  const QString bufferId = p_event.bufferId;
   if (bufferId.isEmpty()) {
     qWarning() << "ViewAreaController::onFileAfterOpen: empty bufferId";
     return;
@@ -1077,15 +1078,22 @@ void ViewAreaController::onFileAfterOpen(const QVariantMap &p_args) {
     qWarning() << "ViewAreaController::onFileAfterOpen: invalid buffer" << bufferId;
     return;
   }
-  FileOpenSettings settings = FileOpenSettings::fromVariantMap(p_args);
+  FileOpenSettings settings;
+  settings.m_mode = static_cast<ViewWindowMode>(p_event.mode);
+  settings.m_forceMode = p_event.forceMode;
+  settings.m_focus = p_event.focus;
+  settings.m_newFile = p_event.newFile;
+  settings.m_readOnly = p_event.readOnly;
+  settings.m_lineNumber = p_event.lineNumber;
+  settings.m_alwaysNewWindow = p_event.alwaysNewWindow;
   openBuffer(buf, settings);
 }
 
-void ViewAreaController::onNodeAfterRename(const QVariantMap &p_args) {
-  const QString notebookId = p_args.value(QStringLiteral("notebookId")).toString();
-  const QString relativePath = p_args.value(QStringLiteral("relativePath")).toString();
-  const QString newName = p_args.value(QStringLiteral("newName")).toString();
-  const bool isFolder = p_args.value(QStringLiteral("isFolder")).toBool();
+void ViewAreaController::onNodeAfterRename(const NodeRenameEvent &p_event) {
+  const QString notebookId = p_event.notebookId;
+  const QString relativePath = p_event.relativePath;
+  const QString newName = p_event.newName;
+  const bool isFolder = p_event.isFolder;
 
   if (notebookId.isEmpty() || relativePath.isEmpty() || newName.isEmpty()) {
     return;

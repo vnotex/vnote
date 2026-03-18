@@ -5,6 +5,7 @@
 #include <QtGlobal>
 
 #include <core/fileopensettings.h>
+#include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
 
@@ -43,10 +44,17 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
            << "readOnly:" << p_settings.m_readOnly
            << "lineNumber:" << p_settings.m_lineNumber;
 
-  QVariantMap args = p_settings.toVariantMap();
-  args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
-  args[QStringLiteral("filePath")] = p_nodeId.relativePath;
-  if (m_hookMgr->doAction(HookNames::FileBeforeOpen, args)) {
+  FileOpenEvent event;
+  event.notebookId = p_nodeId.notebookId;
+  event.filePath = p_nodeId.relativePath;
+  event.mode = static_cast<int>(p_settings.m_mode);
+  event.forceMode = p_settings.m_forceMode;
+  event.focus = p_settings.m_focus;
+  event.newFile = p_settings.m_newFile;
+  event.readOnly = p_settings.m_readOnly;
+  event.lineNumber = p_settings.m_lineNumber;
+  event.alwaysNewWindow = p_settings.m_alwaysNewWindow;
+  if (m_hookMgr->doAction(HookNames::FileBeforeOpen, event)) {
     qDebug() << "BufferService::openBuffer cancelled by hook";
     return Buffer2(); // Cancelled by plugin.
   }
@@ -58,17 +66,17 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
     return Buffer2(); // Failed to open.
   }
 
-  args[QStringLiteral("bufferId")] = bufferId;
-  m_hookMgr->doAction(HookNames::FileAfterOpen, args);
+  event.bufferId = bufferId;
+  m_hookMgr->doAction(HookNames::FileAfterOpen, event);
 
   qDebug() << "BufferService::openBuffer succeeded bufferId:" << bufferId;
   return Buffer2(coreService(), m_hookMgr, bufferId, p_nodeId);
 }
 
 bool BufferService::closeBuffer(const QString &p_bufferId) {
-  QVariantMap args;
-  args[QStringLiteral("bufferId")] = p_bufferId;
-  if (m_hookMgr->doAction(HookNames::FileBeforeClose, args)) {
+  BufferEvent event;
+  event.bufferId = p_bufferId;
+  if (m_hookMgr->doAction(HookNames::FileBeforeClose, event)) {
     return false; // Cancelled by plugin.
   }
 
@@ -83,7 +91,7 @@ bool BufferService::closeBuffer(const QString &p_bufferId) {
   bool ok = BufferCoreService::closeBuffer(p_bufferId);
 
   if (ok) {
-    m_hookMgr->doAction(HookNames::FileAfterClose, args);
+    m_hookMgr->doAction(HookNames::FileAfterClose, event);
   }
 
   return ok;

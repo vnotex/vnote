@@ -182,63 +182,63 @@ bool WorkspaceCoreService::setBufferOrder(const QString &p_workspaceId,
 }
 
 // Hook-firing methods for ViewArea events.
-bool WorkspaceCoreService::fireViewWindowBeforeOpen(const QVariantMap &p_args) {
-  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeOpen, p_args);
+bool WorkspaceCoreService::fireViewWindowBeforeOpen(const ViewWindowOpenEvent &p_event) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeOpen, p_event);
 }
 
-void WorkspaceCoreService::fireViewWindowAfterOpen(const QVariantMap &p_args) {
+void WorkspaceCoreService::fireViewWindowAfterOpen(const ViewWindowOpenEvent &p_event) {
   if (m_hookMgr) {
-    m_hookMgr->doAction(HookNames::ViewWindowAfterOpen, p_args);
+    m_hookMgr->doAction(HookNames::ViewWindowAfterOpen, p_event);
   }
 }
 
-bool WorkspaceCoreService::fireViewWindowBeforeClose(const QVariantMap &p_args) {
-  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeClose, p_args);
+bool WorkspaceCoreService::fireViewWindowBeforeClose(const ViewWindowCloseEvent &p_event) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeClose, p_event);
 }
 
-void WorkspaceCoreService::fireViewWindowAfterClose(const QVariantMap &p_args) {
+void WorkspaceCoreService::fireViewWindowAfterClose(const ViewWindowCloseEvent &p_event) {
   if (m_hookMgr) {
-    m_hookMgr->doAction(HookNames::ViewWindowAfterClose, p_args);
+    m_hookMgr->doAction(HookNames::ViewWindowAfterClose, p_event);
   }
 }
 
-bool WorkspaceCoreService::fireViewWindowBeforeMove(const QVariantMap &p_args) {
-  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeMove, p_args);
+bool WorkspaceCoreService::fireViewWindowBeforeMove(const ViewWindowMoveEvent &p_event) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeMove, p_event);
 }
 
-void WorkspaceCoreService::fireViewWindowAfterMove(const QVariantMap &p_args) {
+void WorkspaceCoreService::fireViewWindowAfterMove(const ViewWindowMoveEvent &p_event) {
   if (m_hookMgr) {
-    m_hookMgr->doAction(HookNames::ViewWindowAfterMove, p_args);
+    m_hookMgr->doAction(HookNames::ViewWindowAfterMove, p_event);
   }
 }
 
-bool WorkspaceCoreService::fireViewSplitBeforeCreate(const QVariantMap &p_args) {
-  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewSplitBeforeCreate, p_args);
+bool WorkspaceCoreService::fireViewSplitBeforeCreate(const ViewSplitCreateEvent &p_event) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewSplitBeforeCreate, p_event);
 }
 
-void WorkspaceCoreService::fireViewSplitAfterCreate(const QVariantMap &p_args) {
+void WorkspaceCoreService::fireViewSplitAfterCreate(const ViewSplitCreateEvent &p_event) {
   if (m_hookMgr) {
-    m_hookMgr->doAction(HookNames::ViewSplitAfterCreate, p_args);
+    m_hookMgr->doAction(HookNames::ViewSplitAfterCreate, p_event);
   }
 }
 
-bool WorkspaceCoreService::fireViewSplitBeforeRemove(const QVariantMap &p_args) {
-  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewSplitBeforeRemove, p_args);
+bool WorkspaceCoreService::fireViewSplitBeforeRemove(const ViewSplitRemoveEvent &p_event) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewSplitBeforeRemove, p_event);
 }
 
-void WorkspaceCoreService::fireViewSplitAfterRemove(const QVariantMap &p_args) {
+void WorkspaceCoreService::fireViewSplitAfterRemove(const ViewSplitRemoveEvent &p_event) {
   if (m_hookMgr) {
-    m_hookMgr->doAction(HookNames::ViewSplitAfterRemove, p_args);
+    m_hookMgr->doAction(HookNames::ViewSplitAfterRemove, p_event);
   }
 }
 
-bool WorkspaceCoreService::fireViewSplitBeforeActivate(const QVariantMap &p_args) {
-  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewSplitBeforeActivate, p_args);
+bool WorkspaceCoreService::fireViewSplitBeforeActivate(const ViewSplitActivateEvent &p_event) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewSplitBeforeActivate, p_event);
 }
 
-void WorkspaceCoreService::fireViewSplitAfterActivate(const QVariantMap &p_args) {
+void WorkspaceCoreService::fireViewSplitAfterActivate(const ViewSplitActivateEvent &p_event) {
   if (m_hookMgr) {
-    m_hookMgr->doAction(HookNames::ViewSplitAfterActivate, p_args);
+    m_hookMgr->doAction(HookNames::ViewSplitAfterActivate, p_event);
   }
 }
 

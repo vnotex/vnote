@@ -161,11 +161,11 @@ void TestHookIntegration::testMainWindowShowHookFires() {
       },
       10);
 
-  m_hookMgr->doAction(vnotex::HookNames::MainWindowBeforeShow, {});
+  m_hookMgr->doAction(vnotex::HookNames::MainWindowBeforeShow, QVariantMap());
   QVERIFY(beforeFired);
   QVERIFY(!afterFired);
 
-  m_hookMgr->doAction(vnotex::HookNames::MainWindowAfterShow, {});
+  m_hookMgr->doAction(vnotex::HookNames::MainWindowAfterShow, QVariantMap());
   QVERIFY(afterFired);
 }
 
@@ -210,7 +210,7 @@ void TestHookIntegration::testActionCancellationPropagates() {
       },
       10);
 
-  bool cancelled = m_hookMgr->doAction(vnotex::HookNames::NotebookBeforeOpen, {});
+  bool cancelled = m_hookMgr->doAction(vnotex::HookNames::NotebookBeforeOpen, QVariantMap());
 
   QVERIFY(firstHandlerCalled);
   QVERIFY(secondHandlerCalled); // Second handler still runs
@@ -247,7 +247,7 @@ void TestHookIntegration::testMultipleHandlersExecuteInOrder() {
       },
       10);
 
-  m_hookMgr->doAction(vnotex::HookNames::NodeBeforeCreate, {});
+  m_hookMgr->doAction(vnotex::HookNames::NodeBeforeCreate, QVariantMap());
 
   // Should execute in priority order: 5, 10, 20
   QCOMPARE(executionOrder.size(), 3);

@@ -2,6 +2,7 @@
 
 #include <QtGlobal>
 
+#include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/services/buffercoreservice.h>
 #include <core/services/hookmanager.h>
@@ -41,16 +42,16 @@ bool Buffer2::save() {
     return false;
   }
 
-  QVariantMap args;
-  args[QStringLiteral("bufferId")] = m_bufferId;
-  if (m_hookMgr->doAction(HookNames::FileBeforeSave, args)) {
+  BufferEvent event;
+  event.bufferId = m_bufferId;
+  if (m_hookMgr->doAction(HookNames::FileBeforeSave, event)) {
     return false; // Cancelled by plugin.
   }
 
   bool ok = m_bufferCoreService->saveBuffer(m_bufferId);
 
   if (ok) {
-    m_hookMgr->doAction(HookNames::FileAfterSave, args);
+    m_hookMgr->doAction(HookNames::FileAfterSave, event);
   }
 
   return ok;

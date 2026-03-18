@@ -44,6 +44,10 @@ bool HookManager::removeAction(int p_id) {
   return false;
 }
 
+bool HookManager::doAction(const QString &p_hook) {
+  return doAction(p_hook, QVariantMap());
+}
+
 bool HookManager::doAction(const QString &p_hook, const QVariantMap &p_args) {
   // Recursion guard.
   if (m_recursionDepth >= c_maxRecursionDepth) {
@@ -82,6 +86,48 @@ bool HookManager::doAction(const QString &p_hook, const QVariantMap &p_args) {
 
   --m_recursionDepth;
   return ctx.isCancelled();
+}
+
+// ===== Typed Actions (emission) =====
+
+bool HookManager::doAction(const QString &p_hook, const NodeOperationEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const NodeRenameEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const FileOpenEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const BufferEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const ViewWindowOpenEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const ViewWindowCloseEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const ViewWindowMoveEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const ViewSplitCreateEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const ViewSplitRemoveEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const ViewSplitActivateEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
 }
 
 // ===== Filters =====

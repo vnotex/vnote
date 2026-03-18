@@ -502,6 +502,63 @@ void MyController::doSomething() {
 | `WorkspaceCoreService` | `ViewWindowBefore/AfterOpen/Close/Move`, `ViewSplitBefore/AfterCreate/Remove/Activate` |
 | `MainWindow2` (exception) | `MainWindowBefore/AfterShow`, `MainWindowAfterStart`, `MainWindowBeforeClose` |
 
+### Typed Hook API
+
+VNote uses a type-safe hook event system. Each hook has a corresponding C++ struct defined in `src/core/hookevents.h`. **Always use the typed API in C++ code.** The raw `QVariantMap` API exists only for plugin compatibility.
+
+**Event structs:** Each struct has `toVariantMap()` and `static fromVariantMap()` for bridging to the raw API.
+
+| Struct | Used by hooks |
+|--------|--------------|
+| `NodeOperationEvent` | `NodeBeforeDelete`, `NodeBeforeMove` |
+| `NodeRenameEvent` | `NodeBeforeRename`, `NodeAfterRename` |
+| `FileOpenEvent` | `FileBeforeOpen`, `FileAfterOpen` |
+| `BufferEvent` | `FileBeforeSave`, `FileAfterSave`, `FileBeforeClose`, `FileAfterClose` |
+| `ViewWindowOpenEvent` | `ViewWindowBeforeOpen`, `ViewWindowAfterOpen` |
+| `ViewWindowCloseEvent` | `ViewWindowBeforeClose`, `ViewWindowAfterClose` |
+| `ViewWindowMoveEvent` | `ViewWindowBeforeMove`, `ViewWindowAfterMove` |
+| `ViewSplitCreateEvent` | `ViewSplitBeforeCreate`, `ViewSplitAfterCreate` |
+| `ViewSplitRemoveEvent` | `ViewSplitBeforeRemove`, `ViewSplitAfterRemove` |
+| `ViewSplitActivateEvent` | `ViewSplitBeforeActivate`, `ViewSplitAfterActivate` |
+
+**Emitting hooks (services):**
+```cpp
+// CORRECT: use typed event
+NodeOperationEvent event;
+event.notebookId = p_notebookId;
+event.relativePath = p_filePath;
+event.isFolder = false;
+event.name = extractName(p_filePath);
+event.operation = QStringLiteral("delete");
+if (m_hookMgr->doAction(HookNames::NodeBeforeDelete, event)) { return false; }
+
+// WRONG: manual QVariantMap construction
+QVariantMap args;
+args["notebookId"] = p_notebookId;  // fragile string keys, no compile-time checking
+```
+
+**Subscribing to hooks (C++ code):**
+```cpp
+// CORRECT: typed subscription
+hookMgr->addAction<NodeRenameEvent>(HookNames::NodeAfterRename,
+    [this](HookContext &ctx, const NodeRenameEvent &event) {
+      qDebug() << event.oldName << "->" << event.newName;  // type-safe access
+    }, 10);
+
+// WRONG: raw QVariantMap subscription in C++ code
+hookMgr->addAction(HookNames::NodeAfterRename,
+    [](HookContext &ctx, const QVariantMap &args) {
+      QString oldName = args["oldName"].toString();  // fragile
+    }, 10);
+```
+
+**Adding a new hook:**
+1. Add hook name constant to `src/core/hooknames.h`
+2. Add (or reuse) event struct in `src/core/hookevents.h` with `toVariantMap()` / `fromVariantMap()`
+3. Add typed `doAction()` overload to `HookManager` if new struct type
+4. Emit from the appropriate service using the typed API
+5. Add round-trip test in `tests/core/test_hookevents.cpp`
+
 ### Available Hook Names
 
 **Notebook Events:**

@@ -62,6 +62,14 @@ add_qt_test(test_hookintegration
   GUILESS
 )
 
+add_qt_test(test_hookevents
+  SOURCES
+    test_hookevents.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+
 add_qt_test(test_hookcontext
   SOURCES
     test_hookcontext.cpp
