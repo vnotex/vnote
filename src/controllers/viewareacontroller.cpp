@@ -15,6 +15,7 @@
 #include <core/services/filetypecoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/workspacecoreservice.h>
+#include <widgets/viewwindow2.h>
 
 using namespace vnotex;
 
@@ -246,8 +247,6 @@ bool ViewAreaController::closeViewWindow(ID p_windowId, bool p_force) {
 }
 
 bool ViewAreaController::closeAll(const QVector<QString> &p_workspaceIds, bool p_force) {
-  // TODO(save-prompts): Same as removeWorkspace — abort path depends on
-  // ViewWindow2::aboutToClose() implementing save prompts.
   if (!m_view) { return true; }
 
   m_suppressAutoRemove = true;
@@ -267,6 +266,39 @@ bool ViewAreaController::closeAll(const QVector<QString> &p_workspaceIds, bool p
   }
 
   m_suppressAutoRemove = false;
+  return true;
+}
+
+bool ViewAreaController::closeAllBuffersForQuit() {
+  // Phase 1: Close all visible workspace windows with save prompts.
+  QStringList visibleIds = m_view ? m_view->getVisibleWorkspaceIds() : QStringList();
+  QVector<QString> visibleIdsVec;
+  for (const auto &id : visibleIds) {
+    visibleIdsVec.append(id);
+  }
+  if (!closeAll(visibleIdsVec, false)) {
+    return false;
+  }
+
+  // Phase 2: Close hidden workspace windows.
+  // Note: If user cancels during this phase, visible windows from Phase 1
+  // are already closed (non-transactional). This is acceptable per spec.
+  for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+    auto *wrapper = it.value();
+    if (wrapper->isVisible()) {
+      continue;
+    }
+    const auto &windows = wrapper->viewWindows();
+    for (auto *obj : windows) {
+      auto *win = qobject_cast<ViewWindow2 *>(obj);
+      if (win && !win->aboutToClose(false)) {
+        qInfo() << "ViewAreaController::closeAllBuffersForQuit:"
+                << "hidden window cancel, aborting quit";
+        return false;
+      }
+    }
+  }
+
   return true;
 }
 
@@ -602,9 +634,6 @@ bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
   // Step 2: Close each ViewWindow one-by-one with abort-on-cancel.
   // Suppress auto-remove-empty-workspace during the close loop since we manage
   // the workspace lifecycle explicitly.
-  // TODO(save-prompts): When ViewWindow2::aboutToClose() implements save prompts,
-  // this loop will properly abort on cancel. Currently aboutToClose() always returns
-  // true, so the abort path is untested with real user interaction.
   if (!bufferIds.isEmpty() && m_view) {
     m_suppressAutoRemove = true;
 

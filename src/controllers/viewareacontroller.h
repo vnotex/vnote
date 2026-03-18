@@ -78,6 +78,14 @@ public:
   // Returns true if all closed (false means user cancelled).
   bool closeAll(const QVector<QString> &p_workspaceIds, bool p_force);
 
+  // Close all buffers (visible and hidden) for app quit.
+  // Phase 1: Close all visible workspace windows via closeAll().
+  // Phase 2: Close hidden workspace windows via aboutToClose().
+  // Returns false if user cancelled any save prompt.
+  // Note: Non-transactional — if cancel happens in Phase 2, visible windows
+  // from Phase 1 are already closed. This is acceptable per spec.
+  bool closeAllBuffersForQuit();
+
   // Close multiple tabs in a workspace based on mode, relative to a reference tab index.
   // @p_workspaceId: workspace containing the tabs.
   // @p_referenceTabIndex: the right-clicked tab index (for Others/Left/Right reference).

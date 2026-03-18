@@ -180,6 +180,12 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
   }
 
   if (isExit || !m_trayIcon->isVisible()) {
+    // Close all buffers with save prompts before exiting.
+    if (!closeAllBuffers()) {
+      p_event->ignore();
+      return;
+    }
+
     // Fire before-close hook so components can save session state.
     auto *hookMgr = m_serviceLocator.get<HookManager>();
     if (hookMgr) {
@@ -224,6 +230,13 @@ void MainWindow2::saveStateAndGeometry() {
             << QJsonDocument(layout).toJson(QJsonDocument::Compact);
     sessionConfig.setViewAreaLayout(layout);
   }
+}
+
+bool MainWindow2::closeAllBuffers() {
+  if (!m_viewArea) {
+    return true;
+  }
+  return m_viewArea->getController()->closeAllBuffersForQuit();
 }
 
 void MainWindow2::setupNotebookExplorer() {

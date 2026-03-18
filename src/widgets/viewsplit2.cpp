@@ -334,7 +334,7 @@ void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
     if (!win) return;
     int idx = indexOf(win);
     if (idx != -1) {
-      setTabText(idx, win->getName());
+      setTabText(idx, win->getTitle());
       setTabToolTip(idx, win->getTitle());
     }
   });

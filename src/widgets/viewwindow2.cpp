@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QMessageBox>
 #include <QToolBar>
 #include <QVBoxLayout>
 
@@ -12,6 +13,7 @@
 #include <core/services/bufferservice.h>
 
 #include "editors/statuswidget.h"
+#include "messageboxhelper.h"
 
 using namespace vnotex;
 
@@ -123,7 +125,67 @@ bool ViewWindow2::isModified() const {
 // ============ Lifecycle ============
 
 bool ViewWindow2::aboutToClose(bool p_force) {
-  Q_UNUSED(p_force);
+  if (!p_force && isModified()) {
+    // Show Save/Discard/Cancel dialog for unsaved changes.
+    int ret = MessageBoxHelper::questionSaveDiscardCancel(
+        MessageBoxHelper::Question,
+        tr("Do you want to save changes to \"%1\"?").arg(getName()),
+        tr("Your changes will be lost if you don't save them."),
+        QString(),
+        this);
+
+    if (ret == QMessageBox::Cancel) {
+      return false;
+    }
+
+    if (ret == QMessageBox::Save) {
+      // Attempt to save. On failure, offer Retry/Discard/Cancel (max 3 retries).
+      static const int c_maxRetries = 3;
+      for (int attempt = 0; attempt < c_maxRetries; ++attempt) {
+        if (save()) {
+          break;
+        }
+
+        // Save failed. Show retry dialog with proper buttons.
+        QMessageBox::StandardButtons buttons =
+            (attempt < c_maxRetries - 1)
+                ? (QMessageBox::Retry | QMessageBox::Discard | QMessageBox::Cancel)
+                : (QMessageBox::Discard | QMessageBox::Cancel);
+        QMessageBox msgBox(QMessageBox::Warning,
+                           tr("Save Changes"),
+                           tr("Failed to save \"%1\".").arg(getName()),
+                           buttons,
+                           this);
+        msgBox.setInformativeText(
+            (attempt < c_maxRetries - 1)
+                ? tr("Would you like to retry, discard changes, or cancel?")
+                : tr("Maximum retries reached. Discard changes or cancel?"));
+        msgBox.setDefaultButton(
+            (attempt < c_maxRetries - 1) ? QMessageBox::Retry : QMessageBox::Cancel);
+        int failRet = msgBox.exec();
+
+        if (failRet == QMessageBox::Cancel) {
+          return false;
+        }
+        if (failRet == QMessageBox::Discard) {
+          break;
+        }
+        // QMessageBox::Retry => loop continues.
+      }
+    }
+
+    // Save path completed (or Discard chosen). Unregister and close.
+    if (m_buffer.isValid()) {
+      auto *bufferService = m_services.get<BufferService>();
+      if (bufferService) {
+        bufferService->unregisterActiveWriter(m_buffer.id(),
+                                              reinterpret_cast<quintptr>(this));
+      }
+    }
+    return true;
+  }
+
+  // Force close or not modified: existing behavior.
 
   // Sync pending changes before close.
   if (m_editorDirty && m_buffer.isValid()) {
@@ -138,11 +200,11 @@ bool ViewWindow2::aboutToClose(bool p_force) {
   if (m_buffer.isValid()) {
     auto *bufferService = m_services.get<BufferService>();
     if (bufferService) {
-      bufferService->unregisterActiveWriter(m_buffer.id(), reinterpret_cast<quintptr>(this));
+      bufferService->unregisterActiveWriter(m_buffer.id(),
+                                            reinterpret_cast<quintptr>(this));
     }
   }
 
-  // TODO(save-prompts): Implement unsaved-changes dialog here.
   return true;
 }
 

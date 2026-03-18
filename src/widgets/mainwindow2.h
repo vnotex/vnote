@@ -114,6 +114,10 @@ private:
 
   void saveStateAndGeometry();
 
+  // Close all buffers (visible and hidden) with save prompts.
+  // Returns false if user cancelled.
+  bool closeAllBuffers();
+
   // Non-owning reference to ServiceLocator.
   ServiceLocator &m_serviceLocator;
 
