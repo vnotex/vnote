@@ -17,6 +17,7 @@
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
+#include <core/services/configservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
@@ -158,14 +159,15 @@ int main(int argc, char *argv[]) {
     ServiceLocator serviceLocator;
 
     // Create and register services (non-owning pointers stored in ServiceLocator)
-    ConfigCoreService configService(context);
+    HookManager hookManager;
+    ConfigService configService(context, &hookManager);
     NotebookCoreService notebookService(context);
     SearchCoreService searchService(context);
     WorkspaceCoreService workspaceService(context);
-    HookManager hookManager;
     BufferService bufferService(context, &hookManager);
 
-    serviceLocator.registerService<ConfigCoreService>(&configService);
+    serviceLocator.registerService<ConfigService>(&configService);
+    serviceLocator.registerService<ConfigCoreService>(configService.coreService());
     serviceLocator.registerService<NotebookCoreService>(&notebookService);
     serviceLocator.registerService<BufferService>(&bufferService);
     serviceLocator.registerService<SearchCoreService>(&searchService);
@@ -179,8 +181,8 @@ int main(int argc, char *argv[]) {
     // Wire HookManager to WorkspaceCoreService for firing view area hooks.
     workspaceService.setHookManager(&hookManager);
 
-    // Create ConfigMgr2 with ConfigService
-    ConfigMgr2 configMgr(&configService);
+    // Create ConfigMgr2 with ConfigCoreService (from ConfigService wrapper)
+    ConfigMgr2 configMgr(configService.coreService());
     configMgr.init();
     serviceLocator.registerService<ConfigMgr2>(&configMgr);
     qInfo() << "ConfigMgr2 registered";

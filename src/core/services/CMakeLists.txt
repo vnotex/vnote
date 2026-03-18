@@ -4,6 +4,7 @@ set(SERVICES_SOURCES
   buffercoreservice.cpp
   bufferservice.cpp
   configcoreservice.cpp
+  configservice.cpp
   searchcoreservice.cpp
   notebookcoreservice.cpp
   filetypecoreservice.cpp
@@ -21,6 +22,7 @@ set(SERVICES_HEADERS
   buffercoreservice.h
   bufferservice.h
   configcoreservice.h
+  configservice.h
   searchcoreservice.h
   notebookcoreservice.h
   filetypecoreservice.h

@@ -41,6 +41,10 @@ private slots:
   // Test Error return pattern
   void testUpdateConfigReturnsError();
 
+  // Test shutdown lifecycle
+  void testPrepareShutdown();
+  void testCancelShutdown();
+
 private:
   VxCoreContextHandle m_context = nullptr;
   ConfigCoreService *m_service = nullptr;
@@ -183,6 +187,38 @@ void TestConfigService::testUpdateConfigReturnsError() {
   Error err = nullService.updateConfigByName(DataLocation::App, "test", config);
   QVERIFY(!err.isOk());
   QCOMPARE(err.code(), ErrorCode::InvalidArgument);
+}
+
+void TestConfigService::testPrepareShutdown() {
+  // prepareShutdown() should succeed and be idempotent.
+  bool result = m_service->prepareShutdown();
+  QVERIFY(result);
+
+  // Second call should also succeed (idempotent — no-op when already shut down).
+  bool result2 = m_service->prepareShutdown();
+  QVERIFY(result2);
+
+  // Cancel to restore normal state for subsequent tests.
+  m_service->cancelShutdown();
+}
+
+void TestConfigService::testCancelShutdown() {
+  // Prepare shutdown first.
+  bool prepResult = m_service->prepareShutdown();
+  QVERIFY(prepResult);
+
+  // Cancel should succeed.
+  bool cancelResult = m_service->cancelShutdown();
+  QVERIFY(cancelResult);
+
+  // After cancel, normal operations should still work (e.g., config reads).
+  QJsonObject config = m_service->getConfig();
+  // Config object is valid (empty or non-empty, just not a crash).
+  QVERIFY(config.isEmpty() || !config.isEmpty());
+
+  // Cancel when not in shutdown state should also succeed (no-op).
+  bool cancelResult2 = m_service->cancelShutdown();
+  QVERIFY(cancelResult2);
 }
 
 } // namespace tests

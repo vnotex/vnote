@@ -190,38 +190,33 @@ bool ConfigCoreService::setRecoverLastSessionEnabled(bool p_enabled) {
   return err == VXCORE_OK;
 }
 
-bool ConfigCoreService::shutdown() {
+bool ConfigCoreService::prepareShutdown() {
   if (!checkContext()) {
-    qWarning() << "ConfigCoreService::shutdown: context is null";
+    qWarning() << "ConfigCoreService::prepareShutdown: context is null";
     return false;
   }
-  qInfo() << "ConfigCoreService::shutdown: persisting session state...";
-  VxCoreError err = vxcore_shutdown(m_context);
+  qInfo() << "ConfigCoreService::prepareShutdown: persisting session state...";
+  VxCoreError err = vxcore_prepare_shutdown(m_context);
   if (err != VXCORE_OK) {
-    qWarning() << "ConfigCoreService::shutdown: vxcore_shutdown failed:"
+    qWarning() << "ConfigCoreService::prepareShutdown: vxcore_prepare_shutdown failed:"
                << vxcore_error_message(err);
     return false;
   }
-  qInfo() << "ConfigCoreService::shutdown: done";
+  qInfo() << "ConfigCoreService::prepareShutdown: done";
   return true;
 }
 
-bool ConfigCoreService::setSkipSyncToSession(bool p_skip) {
+bool ConfigCoreService::cancelShutdown() {
   if (!checkContext()) {
+    qWarning() << "ConfigCoreService::cancelShutdown: context is null";
     return false;
   }
-  VxCoreError err = vxcore_session_set_skip_sync(m_context, p_skip ? 1 : 0);
-  return err == VXCORE_OK;
-}
-
-bool ConfigCoreService::skipSyncToSession() const {
-  if (!checkContext()) {
-    return false;
-  }
-  int out = 0;
-  VxCoreError err = vxcore_session_get_skip_sync(m_context, &out);
+  VxCoreError err = vxcore_cancel_shutdown(m_context);
   if (err != VXCORE_OK) {
+    qWarning() << "ConfigCoreService::cancelShutdown: vxcore_cancel_shutdown failed:"
+               << vxcore_error_message(err);
     return false;
   }
-  return out != 0;
+  qInfo() << "ConfigCoreService::cancelShutdown: shutdown cancelled, normal operation resumed";
+  return true;
 }

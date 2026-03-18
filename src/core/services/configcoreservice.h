@@ -64,18 +64,12 @@ public:
   // Set recoverLastSession setting in vxcore config and persist.
   bool setRecoverLastSessionEnabled(bool p_enabled);
 
-  // Persist all in-memory state (buffers, workspaces) to session config on disk.
-  // Call before destroying the context for a clean shutdown.
-  // After calling this, vxcore destructors will skip their own save to avoid
-  // overwriting the snapshot with partial state.
-  bool shutdown();
+  // Snapshot current session state to disk. Sets shutdown flag to prevent
+  // destructor double-save. Idempotent.
+  bool prepareShutdown();
 
-  // Set whether session sync should be skipped after each mutation.
-  // Used during shutdown to avoid N disk writes when closing N buffers.
-  bool setSkipSyncToSession(bool p_skip);
-
-  // Get current skip_sync_to_session state.
-  bool skipSyncToSession() const;
+  // Reset the shutdown flag so normal mutations resume. Safe to call in any state.
+  bool cancelShutdown();
 
 private:
   // Convert C string to QString and free the C string using vxcore_string_free.

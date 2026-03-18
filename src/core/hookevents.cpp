@@ -197,3 +197,4 @@ ViewSplitActivateEvent ViewSplitActivateEvent::fromVariantMap(const QVariantMap 
   e.workspaceId = p_args.value(QStringLiteral("workspaceId")).toString();
   return e;
 }
+

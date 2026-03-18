@@ -12,7 +12,6 @@
 #include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
-#include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/workspacecoreservice.h>
 #include <gui/services/viewwindowfactory.h>
@@ -72,8 +71,19 @@ void ViewArea2::setupController() {
         }, 10);
     hookMgr->addAction(HookNames::MainWindowBeforeClose,
         [this](HookContext &p_ctx, const QVariantMap &p_args) {
-          Q_UNUSED(p_ctx) Q_UNUSED(p_args)
+          Q_UNUSED(p_args)
           saveSession();
+          // Close all buffers with save prompts.
+          if (!m_controller->closeAllBuffersForQuit()) {
+            // User cancelled — cancel the hook so MainWindow2 aborts close.
+            p_ctx.cancel();
+          }
+        }, 10);
+    hookMgr->addAction(HookNames::MainWindowShutdownCancelled,
+        [this](HookContext &p_ctx, const QVariantMap &p_args) {
+          Q_UNUSED(p_ctx) Q_UNUSED(p_args)
+          qInfo() << "ViewArea2: shutdown cancelled, re-enabling propagation";
+          m_controller->setShouldPropagateToCore(true);
         }, 10);
   }
 }
@@ -299,12 +309,6 @@ void ViewArea2::saveSession() {
         wsSvc->deleteWorkspace(wsId);
       }
     }
-  }
-
-  // Persist vxcore session state atomically.
-  auto *configSvc = m_services.get<ConfigCoreService>();
-  if (configSvc) {
-    configSvc->shutdown();
   }
 
   // Disable propagation so buffer closes during teardown don't touch vxcore.

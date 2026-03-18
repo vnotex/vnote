@@ -180,17 +180,18 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
   }
 
   if (isExit || !m_trayIcon->isVisible()) {
-    // Close all buffers with save prompts before exiting.
-    if (!closeAllBuffers()) {
-      p_event->ignore();
-      return;
-    }
-
-    // Fire before-close hook so components can save session state.
+    // Fire before-close hook. Subscribers (ViewArea2, ConfigService) handle:
+    // - Tab order sync and buffer close with save prompts (ViewArea2, priority 10)
+    // - Session snapshot to disk (ConfigService, priority 100)
+    // Hook is cancelled if user cancels save prompts.
     auto *hookMgr = m_serviceLocator.get<HookManager>();
     if (hookMgr) {
-      QVariantMap args;
-      hookMgr->doAction(HookNames::MainWindowBeforeClose, args);
+      if (hookMgr->doAction(HookNames::MainWindowBeforeClose)) {
+        // User cancelled — undo shutdown preparation.
+        hookMgr->doAction(HookNames::MainWindowShutdownCancelled);
+        p_event->ignore();
+        return;
+      }
     }
 
     m_trayIcon->hide();
@@ -230,13 +231,6 @@ void MainWindow2::saveStateAndGeometry() {
             << QJsonDocument(layout).toJson(QJsonDocument::Compact);
     sessionConfig.setViewAreaLayout(layout);
   }
-}
-
-bool MainWindow2::closeAllBuffers() {
-  if (!m_viewArea) {
-    return true;
-  }
-  return m_viewArea->getController()->closeAllBuffersForQuit();
 }
 
 void MainWindow2::setupNotebookExplorer() {

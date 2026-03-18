@@ -118,6 +118,10 @@ inline const QLatin1String MainWindowAfterStart("vnote.ui.mainwindow.after_start
 // Subscribers should save session state, persist data, etc.
 inline const QLatin1String MainWindowBeforeClose("vnote.ui.mainwindow.before_close");
 
+// Fired when the close operation is cancelled after MainWindowBeforeClose.
+// Subscribers should undo any shutdown preparation (e.g., cancel vxcore shutdown).
+inline const QLatin1String MainWindowShutdownCancelled("vnote.ui.mainwindow.shutdown_cancelled");
+
 // Before the context menu is shown
 inline const QLatin1String ContextMenuBeforeShow("vnote.ui.contextmenu.before_show");
 
