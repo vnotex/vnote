@@ -2,6 +2,7 @@
 
 #include <QAction>
 #include <QFileInfo>
+#include <QPrinter>
 #include <QScrollBar>
 #include <QToolBar>
 #include <QToolButton>
@@ -25,6 +26,8 @@
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpopup.h"
 #include "wordcountpopup2.h"
+
+#include <gui/utils/printutils.h>
 
 using namespace vnotex;
 
@@ -146,9 +149,18 @@ void TextViewWindow2::setupToolBar() {
     });
   }
 
-  // Print action (placeholder — no handler yet in new arch).
-  ViewWindowToolBarHelper2::addAction(
-      toolBar, ViewWindowToolBarHelper2::Print, getServices(), this);
+  // Print action.
+  {
+    auto *printAction = ViewWindowToolBarHelper2::addAction(
+        toolBar, ViewWindowToolBarHelper2::Print, getServices(), this);
+    connect(printAction, &QAction::triggered, this, [this]() {
+      auto printer = PrintUtils::promptForPrint(
+          m_editor->getTextEdit()->hasSelection(), this);
+      if (printer) {
+        m_editor->getTextEdit()->print(printer.data());
+      }
+    });
+  }
 }
 
 void TextViewWindow2::connectEditorSignals() {

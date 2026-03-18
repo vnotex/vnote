@@ -10,6 +10,8 @@ target_sources(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/themeutils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/widgetutils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/widgetutils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/printutils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/printutils.h
 )
 
 target_include_directories(vnote PRIVATE

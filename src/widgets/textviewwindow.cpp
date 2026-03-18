@@ -17,7 +17,7 @@
 #include <core/fileopenparameters.h>
 #include <core/thememgr.h>
 #include <core/vnotex.h>
-#include <utils/printutils.h>
+#include <gui/utils/printutils.h>
 
 using namespace vnotex;
 

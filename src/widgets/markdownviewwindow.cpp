@@ -40,7 +40,7 @@
 #include <imagehost/imagehostmgr.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
-#include <utils/printutils.h>
+#include <gui/utils/printutils.h>
 #include <utils/widgetutils.h>
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/pegmarkdownhighlighter.h>
