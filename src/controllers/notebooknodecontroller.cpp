@@ -13,12 +13,10 @@
 
 #include <core/events.h>
 #include <core/fileopensettings.h>
-#include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/configmgr2.h>
 #include <core/widgetconfig.h>
 #include <core/services/bufferservice.h>
-#include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <models/notebooknodemodel.h>
 #include <utils/pathutils.h>
@@ -719,48 +717,21 @@ void NotebookNodeController::notifyBeforeNodeOperation(const NodeIdentifier &p_n
     return;
   }
 
-  // Fire hooks first (WRAP pattern)
-  auto *hookMgr = m_services.get<HookManager>();
-  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  // Hooks (NodeBeforeDelete, NodeBeforeMove, FileBeforeClose) are now fired
+  // by the service layer (NotebookCoreService) — not by the controller.
+  // The controller only emits Qt signals for UI coordination.
 
   auto event = QSharedPointer<Event>::create();
 
   if (p_operation == QStringLiteral("delete") || p_operation == QStringLiteral("remove")) {
-    // Fire hook for delete/remove operation
-    if (hookMgr) {
-      QVariantMap args;
-      args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
-      args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
-      args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
-      args[QStringLiteral("name")] = nodeInfo.name;
-      args[QStringLiteral("operation")] = p_operation;
-      hookMgr->doAction(HookNames::NodeBeforeDelete, args);
-    }
     emit nodeAboutToRemove(p_nodeId, event);
   } else if (p_operation == QStringLiteral("move") || p_operation == QStringLiteral("rename")) {
-    // Fire hook for move/rename operation
-    if (hookMgr) {
-      QVariantMap args;
-      args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
-      args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
-      args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
-      args[QStringLiteral("name")] = nodeInfo.name;
-      args[QStringLiteral("operation")] = p_operation;
-      hookMgr->doAction(HookNames::NodeBeforeMove, args);
-    }
     emit nodeAboutToMove(p_nodeId, event);
   }
 
-  // Also request to close the file
+  // Also request to close the file (Qt signal for UI coordination).
   QString path = buildAbsolutePath(p_nodeId);
   if (!path.isEmpty()) {
-    // Fire hook for file close
-    if (hookMgr) {
-      QVariantMap args;
-      args[QStringLiteral("path")] = path;
-      args[QStringLiteral("reason")] = p_operation;
-      hookMgr->doAction(HookNames::FileBeforeClose, args);
-    }
     emit closeFileRequested(path, event);
   }
 }
@@ -798,19 +769,8 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
     return;
   }
 
-  // Fire specific rename hook with old and new name (WRAP pattern)
-  auto *hookMgr = m_services.get<HookManager>();
-  if (hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
-    args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
-    args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
-    args[QStringLiteral("oldName")] = nodeInfo.name;
-    args[QStringLiteral("newName")] = p_newName;
-    if (hookMgr->doAction(HookNames::NodeBeforeRename, args)) {
-      return; // Cancelled by plugin
-    }
-  }
+  // NodeBeforeRename hook is now fired by NotebookCoreService::renameFile/renameFolder.
+  // The service returns false if cancelled by a plugin.
 
   // Check if the buffer is open and dirty. Prompt user before proceeding.
   auto *bufferSvc = m_services.get<BufferService>();

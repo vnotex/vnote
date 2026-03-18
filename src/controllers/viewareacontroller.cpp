@@ -56,16 +56,14 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer,
     fileType = QStringLiteral("Text");
   }
 
-  auto *hookMgr = m_services.get<HookManager>();
   QVariantMap args;
   args[QStringLiteral("fileType")] = fileType;
   args[QStringLiteral("bufferId")] = p_buffer.id();
   args[QStringLiteral("nodeId")] = p_buffer.nodeId().relativePath;
-  if (hookMgr && hookMgr->doAction(HookNames::ViewWindowBeforeOpen, args)) {
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (wsSvc && wsSvc->fireViewWindowBeforeOpen(args)) {
     return;
   }
-
-  auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (m_currentWorkspaceId.isEmpty()) {
     QString wsId;
     if (wsSvc) {
@@ -107,20 +105,19 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
                                             const FileOpenSettings &p_settings) {
   if (p_windowId == InvalidViewWindowId) { return; }
 
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (m_shouldPropagateToCore) {
-    auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc && !m_currentWorkspaceId.isEmpty()) {
       wsSvc->addBuffer(m_currentWorkspaceId, p_buffer.id());
     }
   }
   m_currentWindowId = p_windowId;
 
-  auto *hookMgr = m_services.get<HookManager>();
-  if (hookMgr) {
+  if (wsSvc) {
     QVariantMap ha;
     ha[QStringLiteral("bufferId")] = p_buffer.id();
     ha[QStringLiteral("nodeId")] = p_buffer.nodeId().relativePath;
-    hookMgr->doAction(HookNames::ViewWindowAfterOpen, ha);
+    wsSvc->fireViewWindowAfterOpen(ha);
   }
 
   if (p_settings.m_focus) {
@@ -132,8 +129,8 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
 
 void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_bufferId,
                                             const QString &p_workspaceId) {
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (m_shouldPropagateToCore) {
-    auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc && !p_workspaceId.isEmpty() && !p_bufferId.isEmpty()) {
       wsSvc->removeBuffer(p_workspaceId, p_bufferId);
     }
@@ -141,11 +138,10 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
   if (m_currentWindowId == p_windowId) {
     m_currentWindowId = InvalidViewWindowId;
   }
-  auto *hookMgr = m_services.get<HookManager>();
-  if (hookMgr) {
+  if (wsSvc) {
     QVariantMap ha;
     ha[QStringLiteral("bufferId")] = p_bufferId;
-    hookMgr->doAction(HookNames::ViewWindowAfterClose, ha);
+    wsSvc->fireViewWindowAfterClose(ha);
   }
   emit windowsChanged();
   checkCurrentViewWindowChange(p_workspaceId);
@@ -156,7 +152,6 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
   int totalSplitCount = m_view ? m_view->getViewSplitCount() : 0;
   if (!m_suppressAutoRemove && m_shouldPropagateToCore
       && !p_workspaceId.isEmpty()) {
-    auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc) {
       QJsonObject wsConfig = wsSvc->getWorkspace(p_workspaceId);
       QJsonArray bufferIds = wsConfig.value(QStringLiteral("bufferIds")).toArray();
@@ -235,11 +230,11 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
 
 bool ViewAreaController::closeViewWindow(ID p_windowId, bool p_force) {
   if (p_windowId == InvalidViewWindowId) { return false; }
-  auto *hookMgr = m_services.get<HookManager>();
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
   QVariantMap args;
   args[QStringLiteral("windowId")] = p_windowId;
   args[QStringLiteral("force")] = p_force;
-  if (hookMgr && hookMgr->doAction(HookNames::ViewWindowBeforeClose, args)) {
+  if (wsSvc && wsSvc->fireViewWindowBeforeClose(args)) {
     return false;
   }
   if (!m_view) { return false; }
@@ -360,11 +355,11 @@ void ViewAreaController::closeTabs(const QString &p_workspaceId, int p_reference
 
 void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction p_direction) {
   if (p_workspaceId.isEmpty()) { return; }
-  auto *hookMgr = m_services.get<HookManager>();
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
   QVariantMap args;
   args[QStringLiteral("workspaceId")] = p_workspaceId;
   args[QStringLiteral("direction")] = static_cast<int>(p_direction);
-  if (hookMgr && hookMgr->doAction(HookNames::ViewSplitBeforeCreate, args)) { return; }
+  if (wsSvc && wsSvc->fireViewSplitBeforeCreate(args)) { return; }
 
   // Get the actual current buffer from the view (ground truth, not vxcore which may be stale).
   QString currentBufferId;
@@ -372,7 +367,6 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
     currentBufferId = m_view->getCurrentBufferIdForWorkspace(p_workspaceId);
   }
 
-  auto *wsSvc = m_services.get<WorkspaceCoreService>();
   QString newWsId;
   if (wsSvc) { newWsId = wsSvc->createWorkspace(generateWorkspaceName()); }
   if (newWsId.isEmpty()) {
@@ -402,9 +396,9 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
   // Distribute all splits evenly so the new split gets fair space.
   if (m_view) { m_view->distributeViewSplits(); }
 
-  if (hookMgr) {
+  if (wsSvc) {
     args[QStringLiteral("newWorkspaceId")] = newWsId;
-    hookMgr->doAction(HookNames::ViewSplitAfterCreate, args);
+    wsSvc->fireViewSplitAfterCreate(args);
   }
   emit viewSplitsCountChanged();
 }
@@ -414,11 +408,11 @@ bool ViewAreaController::removeViewSplit(const QString &p_workspaceId,
   int totalSplitCount = m_view ? m_view->getViewSplitCount() : 0;
   if (p_workspaceId.isEmpty() || totalSplitCount <= 1) { return false; }
 
-  auto *hookMgr = m_services.get<HookManager>();
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
   QVariantMap args;
   args[QStringLiteral("workspaceId")] = p_workspaceId;
   args[QStringLiteral("keepWorkspace")] = p_keepWorkspace;
-  if (hookMgr && hookMgr->doAction(HookNames::ViewSplitBeforeRemove, args)) { return false; }
+  if (wsSvc && wsSvc->fireViewSplitBeforeRemove(args)) { return false; }
 
   if (p_keepWorkspace) {
     // Hide-only mode: transfer ViewWindows to WorkspaceWrapper, remove split widget.
@@ -452,7 +446,6 @@ bool ViewAreaController::removeViewSplit(const QString &p_workspaceId,
     }
 
     // Remove remaining buffers and delete workspace in vxcore.
-    auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc) {
       QJsonObject wsConfig = wsSvc->getWorkspace(p_workspaceId);
       QJsonArray remainingBuffers = wsConfig.value(QStringLiteral("bufferIds")).toArray();
@@ -481,7 +474,7 @@ bool ViewAreaController::removeViewSplit(const QString &p_workspaceId,
     m_currentWindowId = InvalidViewWindowId;
   }
   if (m_view) { m_view->removeViewSplit(p_workspaceId); }
-  if (hookMgr) { hookMgr->doAction(HookNames::ViewSplitAfterRemove, args); }
+  if (wsSvc) { wsSvc->fireViewSplitAfterRemove(args); }
   emit viewSplitsCountChanged();
   return true;
 }
@@ -517,18 +510,17 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
     }
   }
 
-  auto *hookMgr = m_services.get<HookManager>();
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
   QVariantMap args;
   args[QStringLiteral("windowId")] = p_windowId;
   args[QStringLiteral("srcWorkspaceId")] = p_srcWorkspaceId;
   args[QStringLiteral("dstWorkspaceId")] = p_dstWorkspaceId;
   args[QStringLiteral("direction")] = static_cast<int>(p_direction);
   args[QStringLiteral("bufferId")] = p_bufferId;
-  if (hookMgr && hookMgr->doAction(HookNames::ViewWindowBeforeMove, args)) { return; }
+  if (wsSvc && wsSvc->fireViewWindowBeforeMove(args)) { return; }
 
   // Transfer buffer registration between workspaces in vxcore.
   if (m_shouldPropagateToCore && !p_bufferId.isEmpty()) {
-    auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc) {
       wsSvc->removeBuffer(p_srcWorkspaceId, p_bufferId);
       wsSvc->addBuffer(p_dstWorkspaceId, p_bufferId);
@@ -537,7 +529,7 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
 
   if (m_view) { m_view->moveViewWindowToSplit(p_windowId, p_srcWorkspaceId, p_dstWorkspaceId); }
   setCurrentViewSplit(p_dstWorkspaceId, true);
-  if (hookMgr) { hookMgr->doAction(HookNames::ViewWindowAfterMove, args); }
+  if (wsSvc) { wsSvc->fireViewWindowAfterMove(args); }
   emit windowsChanged();
 }
 
@@ -550,18 +542,17 @@ void ViewAreaController::setCurrentViewSplit(const QString &p_workspaceId, bool 
     if (p_focus && m_view) { m_view->focusViewSplit(p_workspaceId); }
     return;
   }
-  auto *hookMgr = m_services.get<HookManager>();
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
   QVariantMap args;
   args[QStringLiteral("workspaceId")] = p_workspaceId;
-  if (hookMgr && hookMgr->doAction(HookNames::ViewSplitBeforeActivate, args)) { return; }
+  if (wsSvc && wsSvc->fireViewSplitBeforeActivate(args)) { return; }
   m_currentWorkspaceId = p_workspaceId;
   if (m_shouldPropagateToCore) {
-    auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc && !p_workspaceId.isEmpty()) { wsSvc->setCurrentWorkspace(p_workspaceId); }
   }
   if (m_view) { m_view->setCurrentViewSplit(p_workspaceId, p_focus); }
   if (p_focus && m_view) { m_view->focusViewSplit(p_workspaceId); }
-  if (hookMgr) { hookMgr->doAction(HookNames::ViewSplitAfterActivate, args); }
+  if (wsSvc) { wsSvc->fireViewSplitAfterActivate(args); }
 }
 
 void ViewAreaController::setCurrentViewWindow(ID p_windowId, const QString &p_bufferId) {

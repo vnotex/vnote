@@ -6,23 +6,11 @@
 
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
-#include <vxcore/vxcore_events.h>
 
 using namespace vnotex;
 
 NotebookCoreService::NotebookCoreService(VxCoreContextHandle p_context, QObject *p_parent)
     : QObject(p_parent), m_context(p_context) {
-  // Subscribe to vxcore events - wire C callbacks to Qt signals.
-  if (m_context) {
-    vxcore_event_subscribe(m_context, VXCORE_EVENT_NOTE_CREATED, eventCallback, this);
-    vxcore_event_subscribe(m_context, VXCORE_EVENT_NOTE_UPDATED, eventCallback, this);
-    vxcore_event_subscribe(m_context, VXCORE_EVENT_NOTE_DELETED, eventCallback, this);
-    vxcore_event_subscribe(m_context, VXCORE_EVENT_NOTE_MOVED, eventCallback, this);
-    vxcore_event_subscribe(m_context, VXCORE_EVENT_TAG_ADDED, eventCallback, this);
-    vxcore_event_subscribe(m_context, VXCORE_EVENT_TAG_REMOVED, eventCallback, this);
-    vxcore_event_subscribe(m_context, VXCORE_EVENT_NOTEBOOK_OPENED, eventCallback, this);
-    vxcore_event_subscribe(m_context, VXCORE_EVENT_NOTEBOOK_CLOSED, eventCallback, this);
-  }
 }
 
 void NotebookCoreService::setHookManager(HookManager *p_hookMgr) {
@@ -30,17 +18,6 @@ void NotebookCoreService::setHookManager(HookManager *p_hookMgr) {
 }
 
 NotebookCoreService::~NotebookCoreService() {
-  // Unsubscribe from all events if context still valid.
-  if (m_context) {
-    vxcore_event_unsubscribe(m_context, VXCORE_EVENT_NOTE_CREATED, eventCallback);
-    vxcore_event_unsubscribe(m_context, VXCORE_EVENT_NOTE_UPDATED, eventCallback);
-    vxcore_event_unsubscribe(m_context, VXCORE_EVENT_NOTE_DELETED, eventCallback);
-    vxcore_event_unsubscribe(m_context, VXCORE_EVENT_NOTE_MOVED, eventCallback);
-    vxcore_event_unsubscribe(m_context, VXCORE_EVENT_TAG_ADDED, eventCallback);
-    vxcore_event_unsubscribe(m_context, VXCORE_EVENT_TAG_REMOVED, eventCallback);
-    vxcore_event_unsubscribe(m_context, VXCORE_EVENT_NOTEBOOK_OPENED, eventCallback);
-    vxcore_event_unsubscribe(m_context, VXCORE_EVENT_NOTEBOOK_CLOSED, eventCallback);
-  }
 }
 
 // Notebook operations.
@@ -274,6 +251,19 @@ bool NotebookCoreService::deleteFolder(const QString &p_notebookId, const QStrin
     return false;
   }
 
+  // Fire NodeBeforeDelete hook (cancellable).
+  if (m_hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("relativePath")] = p_folderPath;
+    args[QStringLiteral("isFolder")] = true;
+    args[QStringLiteral("name")] = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
+    args[QStringLiteral("operation")] = QStringLiteral("delete");
+    if (m_hookMgr->doAction(HookNames::NodeBeforeDelete, args)) {
+      return false;
+    }
+  }
+
   VxCoreError err = vxcore_node_delete(m_context, p_notebookId.toUtf8().constData(),
                                        p_folderPath.toUtf8().constData());
   if (err != VXCORE_OK) {
@@ -336,6 +326,19 @@ bool NotebookCoreService::renameFolder(const QString &p_notebookId, const QStrin
     return false;
   }
 
+  // Fire NodeBeforeRename hook (cancellable).
+  if (m_hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("relativePath")] = p_folderPath;
+    args[QStringLiteral("isFolder")] = true;
+    args[QStringLiteral("oldName")] = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
+    args[QStringLiteral("newName")] = p_newName;
+    if (m_hookMgr->doAction(HookNames::NodeBeforeRename, args)) {
+      return false;
+    }
+  }
+
   VxCoreError err = vxcore_node_rename(m_context, p_notebookId.toUtf8().constData(),
                                        p_folderPath.toUtf8().constData(), p_newName.toUtf8().constData());
   if (err != VXCORE_OK) {
@@ -361,6 +364,19 @@ bool NotebookCoreService::moveFolder(const QString &p_notebookId, const QString 
                                  const QString &p_destParentPath) {
   if (!checkContext()) {
     return false;
+  }
+
+  // Fire NodeBeforeMove hook (cancellable).
+  if (m_hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("relativePath")] = p_srcPath;
+    args[QStringLiteral("isFolder")] = true;
+    args[QStringLiteral("name")] = p_srcPath.mid(p_srcPath.lastIndexOf(QLatin1Char('/')) + 1);
+    args[QStringLiteral("operation")] = QStringLiteral("move");
+    if (m_hookMgr->doAction(HookNames::NodeBeforeMove, args)) {
+      return false;
+    }
   }
 
   VxCoreError err = vxcore_node_move(m_context, p_notebookId.toUtf8().constData(),
@@ -480,6 +496,19 @@ bool NotebookCoreService::deleteFile(const QString &p_notebookId, const QString 
     return false;
   }
 
+  // Fire NodeBeforeDelete hook (cancellable).
+  if (m_hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("relativePath")] = p_filePath;
+    args[QStringLiteral("isFolder")] = false;
+    args[QStringLiteral("name")] = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
+    args[QStringLiteral("operation")] = QStringLiteral("delete");
+    if (m_hookMgr->doAction(HookNames::NodeBeforeDelete, args)) {
+      return false;
+    }
+  }
+
   VxCoreError err = vxcore_node_delete(m_context, p_notebookId.toUtf8().constData(),
                                        p_filePath.toUtf8().constData());
   if (err != VXCORE_OK) {
@@ -541,6 +570,19 @@ bool NotebookCoreService::renameFile(const QString &p_notebookId, const QString 
     return false;
   }
 
+  // Fire NodeBeforeRename hook (cancellable).
+  if (m_hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("relativePath")] = p_filePath;
+    args[QStringLiteral("isFolder")] = false;
+    args[QStringLiteral("oldName")] = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
+    args[QStringLiteral("newName")] = p_newName;
+    if (m_hookMgr->doAction(HookNames::NodeBeforeRename, args)) {
+      return false;
+    }
+  }
+
   VxCoreError err = vxcore_node_rename(m_context, p_notebookId.toUtf8().constData(),
                                        p_filePath.toUtf8().constData(), p_newName.toUtf8().constData());
   if (err != VXCORE_OK) {
@@ -566,6 +608,19 @@ bool NotebookCoreService::moveFile(const QString &p_notebookId, const QString &p
                                const QString &p_destFolderPath) {
   if (!checkContext()) {
     return false;
+  }
+
+  // Fire NodeBeforeMove hook (cancellable).
+  if (m_hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("relativePath")] = p_srcFilePath;
+    args[QStringLiteral("isFolder")] = false;
+    args[QStringLiteral("name")] = p_srcFilePath.mid(p_srcFilePath.lastIndexOf(QLatin1Char('/')) + 1);
+    args[QStringLiteral("operation")] = QStringLiteral("move");
+    if (m_hookMgr->doAction(HookNames::NodeBeforeMove, args)) {
+      return false;
+    }
   }
 
   VxCoreError err = vxcore_node_move(m_context, p_notebookId.toUtf8().constData(),
@@ -782,48 +837,7 @@ bool NotebookCoreService::checkContext() const {
   return true;
 }
 
-void NotebookCoreService::eventCallback(const VxCoreEvent *p_event, void *p_userData) {
-  // Static C callback - route to instance method.
-  auto *service = static_cast<NotebookCoreService *>(p_userData);
-  if (service && p_event) {
-    service->handleEvent(p_event->type, QString::fromUtf8(p_event->payload_json),
-                         p_event->timestamp_ms);
-  }
-}
-
-void NotebookCoreService::handleEvent(VxCoreEventType p_eventType, const QString &p_payloadJson,
-                                  quint64 p_timestampMs) {
-  // Re-emit vxcore events as Qt signals.
-  switch (p_eventType) {
-  case VXCORE_EVENT_NOTE_CREATED:
-    emit noteCreated(p_payloadJson, p_timestampMs);
-    break;
-  case VXCORE_EVENT_NOTE_UPDATED:
-    emit noteUpdated(p_payloadJson, p_timestampMs);
-    break;
-  case VXCORE_EVENT_NOTE_DELETED:
-    emit noteDeleted(p_payloadJson, p_timestampMs);
-    break;
-  case VXCORE_EVENT_NOTE_MOVED:
-    emit noteMoved(p_payloadJson, p_timestampMs);
-    break;
-  case VXCORE_EVENT_TAG_ADDED:
-    emit tagAdded(p_payloadJson, p_timestampMs);
-    break;
-  case VXCORE_EVENT_TAG_REMOVED:
-    emit tagRemoved(p_payloadJson, p_timestampMs);
-    break;
-  case VXCORE_EVENT_NOTEBOOK_OPENED:
-    emit notebookOpened(p_payloadJson, p_timestampMs);
-    break;
-  case VXCORE_EVENT_NOTEBOOK_CLOSED:
-    emit notebookClosed(p_payloadJson, p_timestampMs);
-    break;
-  default:
-    break;
-  }
-}
-
+// Private helper methods.
 QString NotebookCoreService::cstrToQString(char *p_str) {
   if (!p_str) {
     return QString();

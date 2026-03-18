@@ -176,6 +176,9 @@ int main(int argc, char *argv[]) {
     // Wire HookManager to NotebookCoreService for firing node operation hooks.
     notebookService.setHookManager(&hookManager);
 
+    // Wire HookManager to WorkspaceCoreService for firing view area hooks.
+    workspaceService.setHookManager(&hookManager);
+
     // Create ConfigMgr2 with ConfigService
     ConfigMgr2 configMgr(&configService);
     configMgr.init();

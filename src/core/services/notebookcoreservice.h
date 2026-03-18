@@ -9,7 +9,6 @@
 #include <core/noncopyable.h>
 
 #include <vxcore/vxcore.h>
-#include <vxcore/vxcore_events.h>
 #include <vxcore/vxcore_types.h>
 
 namespace vnotex {
@@ -62,13 +61,20 @@ public:
   QString createFolder(const QString &p_notebookId, const QString &p_parentPath,
                        const QString &p_folderName);
   QString createFolderPath(const QString &p_notebookId, const QString &p_folderPath);
+  // Delete a folder. Fires NodeBeforeDelete hook (cancellable) before deletion.
+  // Returns false if cancelled by hook or if deletion fails.
   bool deleteFolder(const QString &p_notebookId, const QString &p_folderPath);
   QJsonObject getFolderConfig(const QString &p_notebookId, const QString &p_folderPath) const;
   bool updateFolderMetadata(const QString &p_notebookId, const QString &p_folderPath,
                             const QString &p_metadataJson);
   QJsonObject getFolderMetadata(const QString &p_notebookId, const QString &p_folderPath) const;
+  // Rename a folder. Fires NodeBeforeRename hook (cancellable) before rename,
+  // and NodeAfterRename hook after success. Returns false if cancelled or failed.
   bool renameFolder(const QString &p_notebookId, const QString &p_folderPath,
                     const QString &p_newName);
+
+  // Move a folder. Fires NodeBeforeMove hook (cancellable) before move.
+  // Returns false if cancelled or failed.
   bool moveFolder(const QString &p_notebookId, const QString &p_srcPath,
                   const QString &p_destParentPath);
   QString copyFolder(const QString &p_notebookId, const QString &p_srcPath,
@@ -97,12 +103,19 @@ public:
   // File operations (8 methods).
   QString createFile(const QString &p_notebookId, const QString &p_folderPath,
                      const QString &p_fileName);
+  // Delete a file. Fires NodeBeforeDelete hook (cancellable) before deletion.
+  // Returns false if cancelled by hook or if deletion fails.
   bool deleteFile(const QString &p_notebookId, const QString &p_filePath);
   QJsonObject getFileInfo(const QString &p_notebookId, const QString &p_filePath) const;
   QJsonObject getFileMetadata(const QString &p_notebookId, const QString &p_filePath) const;
   bool updateFileMetadata(const QString &p_notebookId, const QString &p_filePath,
                           const QString &p_metadataJson);
+  // Rename a file. Fires NodeBeforeRename hook (cancellable) before rename,
+  // and NodeAfterRename hook after success. Returns false if cancelled or failed.
   bool renameFile(const QString &p_notebookId, const QString &p_filePath, const QString &p_newName);
+
+  // Move a file. Fires NodeBeforeMove hook (cancellable) before move.
+  // Returns false if cancelled or failed.
   bool moveFile(const QString &p_notebookId, const QString &p_srcFilePath,
                 const QString &p_destFolderPath);
   QString copyFile(const QString &p_notebookId, const QString &p_srcFilePath,
@@ -134,30 +147,9 @@ public:
   QJsonArray listTags(const QString &p_notebookId) const;
   bool moveTag(const QString &p_notebookId, const QString &p_tagName, const QString &p_parentTag);
 
-signals:
-  // Domain-specific signals for notebook events (8 signals).
-  // Per task spec: noteCreated, noteUpdated, noteDeleted, noteMoved, tagAdded, tagRemoved,
-  // notebookOpened, notebookClosed.
-  // Attachment signals and indexUpdated are deferred as per MUST NOT DO.
-  void noteCreated(const QString &p_payloadJson, quint64 p_timestampMs);
-  void noteUpdated(const QString &p_payloadJson, quint64 p_timestampMs);
-  void noteDeleted(const QString &p_payloadJson, quint64 p_timestampMs);
-  void noteMoved(const QString &p_payloadJson, quint64 p_timestampMs);
-  void tagAdded(const QString &p_payloadJson, quint64 p_timestampMs);
-  void tagRemoved(const QString &p_payloadJson, quint64 p_timestampMs);
-  void notebookOpened(const QString &p_payloadJson, quint64 p_timestampMs);
-  void notebookClosed(const QString &p_payloadJson, quint64 p_timestampMs);
-
 private:
   // Check context validity before operations.
   bool checkContext() const;
-
-  // Static callback for vxcore events - routes to instance method.
-  static void eventCallback(const VxCoreEvent *p_event, void *p_userData);
-
-  // Instance method to handle events and emit Qt signals.
-  void handleEvent(VxCoreEventType p_eventType, const QString &p_payloadJson,
-                   quint64 p_timestampMs);
 
   // Convert C string from vxcore and free it.
   static QString cstrToQString(char *p_str);

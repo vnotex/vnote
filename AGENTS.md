@@ -436,31 +436,71 @@ int filterId = hookMgr->addFilter(
     10);
 ```
 
-### Firing Hooks (WRAP pattern)
+### Hook Emission Rule (CRITICAL)
 
-When migrating Qt signals to hooks, use the WRAP pattern:
+**Hooks MUST be emitted inside services, NOT in controllers or widgets.**
 
+The service layer owns the hook contract. Any caller that invokes a service operation automatically gets the correct before/after hooks fired. Controllers translate user actions into service calls and service results into UI feedback — they do not orchestrate hooks.
+
+**Why:**
+1. **Enforced contract** — Every caller gets hooks automatically; no caller can accidentally skip them
+2. **No duplication** — A second controller or CLI command doesn't need to re-implement hook logic
+3. **Clean separation** — Controllers handle user intent → service calls → UI feedback; services handle operation + hooks
+4. **Testability** — Testing a service tests its hooks; testing a controller doesn't need hook setup
+
+**Correct (hooks inside service):**
 ```cpp
-void MyClass::doSomething() {
-  // 1. Fire hook before the action
-  auto *hookMgr = m_services.get<HookManager>();
-  if (hookMgr) {
+// In BufferService::save() — service fires hooks around the operation
+OperationResult BufferService::save(const Buffer2 &p_buffer) {
     QVariantMap args;
-    args["key"] = value;
-    if (hookMgr->doAction(HookNames::SomeBeforeHook, args)) {
-      return; // Cancelled by plugin
+    args["bufferId"] = p_buffer.id();
+    if (m_hookMgr->doAction(HookNames::FileBeforeSave, args)) {
+        return OperationResult::Cancelled;
     }
-  }
 
-  // 2. Original Qt signal (preserved for backward compatibility)
-  emit originalSignal();
+    bool ok = m_coreService.saveBuffer(p_buffer.id());
 
-  // 3. Optional: Fire after hook
-  if (hookMgr) {
-    hookMgr->doAction(HookNames::SomeAfterHook, args);
-  }
+    if (ok) {
+        m_hookMgr->doAction(HookNames::FileAfterSave, args);
+    }
+    return ok ? OperationResult::Success : OperationResult::Failed;
+}
+
+// In Controller — just calls service, checks result
+void MyController::onSaveRequested(const Buffer2 &p_buffer) {
+    auto result = m_bufferService->save(p_buffer);
+    if (result == OperationResult::Cancelled) {
+        emit statusMessage(tr("Save blocked by plugin"));
+    }
 }
 ```
+
+**Wrong (hooks in controller/widget):**
+```cpp
+// DON'T DO THIS — controller firing hooks directly
+void MyController::doSomething() {
+    auto *hookMgr = m_services.get<HookManager>();
+    if (hookMgr && hookMgr->doAction(HookNames::SomeBeforeHook, args)) {
+        return; // Cancelled
+    }
+    m_someService->doOperation();  // Hook contract bypassed if called elsewhere
+    if (hookMgr) {
+        hookMgr->doAction(HookNames::SomeAfterHook, args);
+    }
+}
+```
+
+**Exception — UI lifecycle hooks:** `MainWindowBeforeShow`, `MainWindowAfterShow`, `MainWindowAfterStart`, `MainWindowBeforeClose` are inherently tied to the widget lifecycle (QWidget::show, QCloseEvent). These may remain in `MainWindow2` until a dedicated `AppLifecycleService` is introduced.
+
+#### Hook Ownership Map
+
+| Service | Hook(s) Owned |
+|---------|---------------|
+| `BufferService` | `FileBeforeOpen`/`AfterOpen`, `FileBeforeClose`/`AfterClose` |
+| `Buffer2` (handle) | `FileBeforeSave`/`AfterSave` |
+| `NotebookCoreService` | `NodeBeforeDelete`, `NodeBeforeMove`, `NodeBeforeRename`/`AfterRename` |
+| `WorkspaceCoreService` | `ViewWindowBefore/AfterOpen/Close/Move`, `ViewSplitBefore/AfterCreate/Remove/Activate` |
+| `MainWindow2` (exception) | `MainWindowBefore/AfterShow`, `MainWindowAfterStart`, `MainWindowBeforeClose` |
 
 ### Available Hook Names
 

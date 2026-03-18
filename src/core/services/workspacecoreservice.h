@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
+#include <QVariantMap>
 
 #include <core/noncopyable.h>
 
@@ -13,8 +14,11 @@
 
 namespace vnotex {
 
+class HookManager;
+
 // Service layer for workspace operations. Wraps VxCore workspace C API and provides Qt-friendly interface.
 // WorkspaceCoreService manages workspaces - creating, deleting, retrieving, and managing buffer associations.
+// Also owns the hook contract for ViewArea/ViewWindow/ViewSplit events.
 class WorkspaceCoreService : public QObject, private Noncopyable {
   Q_OBJECT
 
@@ -22,6 +26,10 @@ public:
   // Constructor receives VxCore context handle via dependency injection.
   explicit WorkspaceCoreService(VxCoreContextHandle p_context, QObject *p_parent = nullptr);
   ~WorkspaceCoreService();
+
+  // Set HookManager for firing workspace/view operation hooks.
+  // Called from main() after both services are constructed.
+  void setHookManager(HookManager *p_hookMgr);
 
   // ============ Workspace Lifecycle ============
 
@@ -64,6 +72,46 @@ public:
   // @p_bufferIds: ordered list of buffer IDs. Only IDs already in the workspace are kept.
   bool setBufferOrder(const QString &p_workspaceId, const QStringList &p_bufferIds);
 
+  // ============ Hook Firing (ViewArea events) ============
+  // These methods own the hook contract for view area operations.
+  // Controllers call these instead of firing hooks directly.
+
+  // Fire ViewWindowBeforeOpen. Returns true if cancelled.
+  bool fireViewWindowBeforeOpen(const QVariantMap &p_args);
+
+  // Fire ViewWindowAfterOpen.
+  void fireViewWindowAfterOpen(const QVariantMap &p_args);
+
+  // Fire ViewWindowBeforeClose. Returns true if cancelled.
+  bool fireViewWindowBeforeClose(const QVariantMap &p_args);
+
+  // Fire ViewWindowAfterClose.
+  void fireViewWindowAfterClose(const QVariantMap &p_args);
+
+  // Fire ViewWindowBeforeMove. Returns true if cancelled.
+  bool fireViewWindowBeforeMove(const QVariantMap &p_args);
+
+  // Fire ViewWindowAfterMove.
+  void fireViewWindowAfterMove(const QVariantMap &p_args);
+
+  // Fire ViewSplitBeforeCreate. Returns true if cancelled.
+  bool fireViewSplitBeforeCreate(const QVariantMap &p_args);
+
+  // Fire ViewSplitAfterCreate.
+  void fireViewSplitAfterCreate(const QVariantMap &p_args);
+
+  // Fire ViewSplitBeforeRemove. Returns true if cancelled.
+  bool fireViewSplitBeforeRemove(const QVariantMap &p_args);
+
+  // Fire ViewSplitAfterRemove.
+  void fireViewSplitAfterRemove(const QVariantMap &p_args);
+
+  // Fire ViewSplitBeforeActivate. Returns true if cancelled.
+  bool fireViewSplitBeforeActivate(const QVariantMap &p_args);
+
+  // Fire ViewSplitAfterActivate.
+  void fireViewSplitAfterActivate(const QVariantMap &p_args);
+
 private:
   // Check context validity before operations.
   bool checkContext() const;
@@ -78,6 +126,7 @@ private:
   static QJsonArray parseJsonArrayFromCStr(char *p_str);
 
   VxCoreContextHandle m_context = nullptr;
+  HookManager *m_hookMgr = nullptr;
 };
 
 } // namespace vnotex

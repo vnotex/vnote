@@ -4,6 +4,9 @@
 #include <QJsonDocument>
 #include <QJsonParseError>
 
+#include <core/hooknames.h>
+#include <core/services/hookmanager.h>
+
 using namespace vnotex;
 
 WorkspaceCoreService::WorkspaceCoreService(VxCoreContextHandle p_context, QObject *p_parent)
@@ -11,6 +14,10 @@ WorkspaceCoreService::WorkspaceCoreService(VxCoreContextHandle p_context, QObjec
 }
 
 WorkspaceCoreService::~WorkspaceCoreService() {
+}
+
+void WorkspaceCoreService::setHookManager(HookManager *p_hookMgr) {
+  m_hookMgr = p_hookMgr;
 }
 
 // Workspace lifecycle.
@@ -172,6 +179,67 @@ bool WorkspaceCoreService::setBufferOrder(const QString &p_workspaceId,
     return false;
   }
   return true;
+}
+
+// Hook-firing methods for ViewArea events.
+bool WorkspaceCoreService::fireViewWindowBeforeOpen(const QVariantMap &p_args) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeOpen, p_args);
+}
+
+void WorkspaceCoreService::fireViewWindowAfterOpen(const QVariantMap &p_args) {
+  if (m_hookMgr) {
+    m_hookMgr->doAction(HookNames::ViewWindowAfterOpen, p_args);
+  }
+}
+
+bool WorkspaceCoreService::fireViewWindowBeforeClose(const QVariantMap &p_args) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeClose, p_args);
+}
+
+void WorkspaceCoreService::fireViewWindowAfterClose(const QVariantMap &p_args) {
+  if (m_hookMgr) {
+    m_hookMgr->doAction(HookNames::ViewWindowAfterClose, p_args);
+  }
+}
+
+bool WorkspaceCoreService::fireViewWindowBeforeMove(const QVariantMap &p_args) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeMove, p_args);
+}
+
+void WorkspaceCoreService::fireViewWindowAfterMove(const QVariantMap &p_args) {
+  if (m_hookMgr) {
+    m_hookMgr->doAction(HookNames::ViewWindowAfterMove, p_args);
+  }
+}
+
+bool WorkspaceCoreService::fireViewSplitBeforeCreate(const QVariantMap &p_args) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewSplitBeforeCreate, p_args);
+}
+
+void WorkspaceCoreService::fireViewSplitAfterCreate(const QVariantMap &p_args) {
+  if (m_hookMgr) {
+    m_hookMgr->doAction(HookNames::ViewSplitAfterCreate, p_args);
+  }
+}
+
+bool WorkspaceCoreService::fireViewSplitBeforeRemove(const QVariantMap &p_args) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewSplitBeforeRemove, p_args);
+}
+
+void WorkspaceCoreService::fireViewSplitAfterRemove(const QVariantMap &p_args) {
+  if (m_hookMgr) {
+    m_hookMgr->doAction(HookNames::ViewSplitAfterRemove, p_args);
+  }
+}
+
+bool WorkspaceCoreService::fireViewSplitBeforeActivate(const QVariantMap &p_args) {
+  return m_hookMgr && m_hookMgr->doAction(HookNames::ViewSplitBeforeActivate, p_args);
+}
+
+void WorkspaceCoreService::fireViewSplitAfterActivate(const QVariantMap &p_args) {
+  if (m_hookMgr) {
+    m_hookMgr->doAction(HookNames::ViewSplitAfterActivate, p_args);
+  }
 }
 
 // Private methods.
