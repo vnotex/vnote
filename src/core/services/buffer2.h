@@ -119,6 +119,12 @@ public:
   QString getAttachmentsFolder() const;
 
 private:
+  friend class BufferService;
+  friend class ViewWindow2;
+
+  // Update the node identifier after a rename operation.
+  void setNodeId(const NodeIdentifier &p_nodeId) { m_nodeId = p_nodeId; }
+
   BufferCoreService *m_bufferCoreService = nullptr;
   HookManager *m_hookMgr = nullptr;
   QString m_bufferId;

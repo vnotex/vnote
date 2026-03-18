@@ -56,6 +56,12 @@ public:
   // Get the node identifier (notebook + relative path) for this window's file.
   const NodeIdentifier &getNodeId() const;
 
+  // ============ Rename Support ============
+
+  // Called when the underlying file has been renamed on disk.
+  // Updates the buffer's NodeIdentifier and emits nameChanged() to refresh tab title.
+  void onNodeRenamed(const NodeIdentifier &p_newNodeId);
+
   // ============ Window Identity ============
 
   // Get the display icon for the tab (e.g., file type icon).

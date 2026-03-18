@@ -8,6 +8,7 @@
 
 #include <core/fileopensettings.h>
 #include <core/global.h>
+#include <core/nodeidentifier.h>
 
 namespace vnotex {
 
@@ -79,6 +80,11 @@ public:
   // Get the buffer ID of the current (active) tab in the given workspace.
   // Returns empty string if the workspace has no tabs.
   virtual QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const = 0;
+
+  // Notify all visible view windows whose node matches p_oldNodeId that
+  // the file has been renamed. The view iterates its windows internally.
+  virtual void onNodeRenamed(const NodeIdentifier &p_oldNodeId,
+                             const NodeIdentifier &p_newNodeId) = 0;
 };
 
 } // namespace vnotex

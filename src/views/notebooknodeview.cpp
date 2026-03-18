@@ -297,6 +297,11 @@ void NotebookNodeView::keyPressEvent(QKeyEvent *p_event) {
   switch (p_event->key()) {
   case Qt::Key_Return:
   case Qt::Key_Enter: {
+    // Don't activate while inline editing (e.g., rename).
+    // The Enter commits the edit; let QTreeView handle it.
+    if (state() == QAbstractItemView::EditingState) {
+      break;
+    }
     NodeInfo nodeInfo = nodeInfoFromIndex(currentIndex());
     if (nodeInfo.isValid() && !nodeInfo.isFolder) {
       m_controller->openNode(nodeInfo.id);

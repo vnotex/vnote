@@ -105,6 +105,8 @@ public:
   ID findWindowIdByBufferId(const QString &p_workspaceId,
                             const QString &p_bufferId) const override;
   QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const override;
+  void onNodeRenamed(const NodeIdentifier &p_oldNodeId,
+                     const NodeIdentifier &p_newNodeId) override;
 
 private slots:
   // ViewSplit2 signal handlers

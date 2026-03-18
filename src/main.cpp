@@ -173,6 +173,9 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<HookManager>(&hookManager);
     qInfo() << "Services registered (including HookManager)";
 
+    // Wire HookManager to NotebookCoreService for firing node operation hooks.
+    notebookService.setHookManager(&hookManager);
+
     // Create ConfigMgr2 with ConfigService
     ConfigMgr2 configMgr(&configService);
     configMgr.init();

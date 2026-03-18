@@ -790,6 +790,16 @@ QString ViewArea2::getCurrentBufferIdForWorkspace(const QString &p_workspaceId) 
   return win->getBuffer().id();
 }
 
+void ViewArea2::onNodeRenamed(const NodeIdentifier &p_oldNodeId,
+                              const NodeIdentifier &p_newNodeId) {
+  for (auto it = m_windows.constBegin(); it != m_windows.constEnd(); ++it) {
+    ViewWindow2 *win = it.value();
+    if (win->getNodeId() == p_oldNodeId) {
+      win->onNodeRenamed(p_newNodeId);
+    }
+  }
+}
+
 QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) {
   QJsonObject node;
   auto *splitter = qobject_cast<const QSplitter *>(p_widget);

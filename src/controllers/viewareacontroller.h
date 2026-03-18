@@ -206,6 +206,9 @@ private:
   // Handle FileAfterOpen hook: open a ViewWindow2 for the newly opened buffer.
   void onFileAfterOpen(const QVariantMap &p_args);
 
+  // Handle NodeAfterRename hook: update buffer paths and tab titles.
+  void onNodeAfterRename(const QVariantMap &p_args);
+
   // Open a single buffer during session restore.
   // Resolves file type and calls m_view->openBuffer() for the view to create the ViewWindow2.
   void openRestoredBuffer(BufferService *p_bufferSvc, const QString &p_workspaceId,

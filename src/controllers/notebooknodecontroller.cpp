@@ -4,8 +4,10 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QMenu>
+#include <QMessageBox>
 #include <QSet>
 #include <QUrl>
 
@@ -15,11 +17,13 @@
 #include <core/servicelocator.h>
 #include <core/configmgr2.h>
 #include <core/widgetconfig.h>
+#include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <models/notebooknodemodel.h>
 #include <utils/pathutils.h>
 #include <views/notebooknodeview.h>
+#include <widgets/messageboxhelper.h>
 
 using namespace vnotex;
 
@@ -808,6 +812,37 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
     }
   }
 
+  // Check if the buffer is open and dirty. Prompt user before proceeding.
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (bufferSvc) {
+    QJsonArray buffers = bufferSvc->listBuffers();
+    for (int i = 0; i < buffers.size(); ++i) {
+      QJsonObject bufObj = buffers[i].toObject();
+      QString nbId = bufObj.value(QStringLiteral("notebookId")).toString();
+      QString filePath = bufObj.value(QStringLiteral("filePath")).toString();
+      if (nbId == p_nodeId.notebookId && filePath == p_nodeId.relativePath) {
+        QString bufferId = bufObj.value(QStringLiteral("id")).toString();
+        Buffer2 buf = bufferSvc->getBufferHandle(bufferId);
+        if (buf.isValid() && buf.isModified()) {
+          int ret = MessageBoxHelper::questionSaveDiscardCancel(
+              MessageBoxHelper::Question,
+              tr("The file \"%1\" has unsaved changes.").arg(nodeInfo.name),
+              tr("Save before renaming, discard changes, or cancel?"),
+              QString(),
+              nullptr);
+          if (ret == QMessageBox::Cancel) {
+            return; // Abort rename.
+          }
+          if (ret == QMessageBox::Save) {
+            buf.save();
+          }
+          // Discard: proceed without saving — on-disk content gets renamed as-is.
+        }
+        break;
+      }
+    }
+  }
+
   notifyBeforeNodeOperation(p_nodeId, QStringLiteral("rename"));
 
   auto *notebookService = m_services.get<NotebookCoreService>();
@@ -822,16 +857,7 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
     return;
   }
 
-  // Fire after-rename hook
-  if (hookMgr) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_nodeId.notebookId;
-    args[QStringLiteral("relativePath")] = p_nodeId.relativePath;
-    args[QStringLiteral("isFolder")] = nodeInfo.isFolder;
-    args[QStringLiteral("oldName")] = nodeInfo.name;
-    args[QStringLiteral("newName")] = p_newName;
-    hookMgr->doAction(HookNames::NodeAfterRename, args);
-  }
+  // NodeAfterRename hook is fired by NotebookCoreService::renameFile/renameFolder.
 
   if (m_model) {
     NodeIdentifier parentId = getParentFolder(p_nodeId);

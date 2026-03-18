@@ -17,6 +17,8 @@ namespace vnotex {
 // Qt wrapper for notebook types matching VxCoreNotebookType.
 enum class NotebookType { Bundled = VXCORE_NOTEBOOK_BUNDLED, Raw = VXCORE_NOTEBOOK_RAW };
 
+class HookManager;
+
 // Service layer for notebook operations. Wraps VxCore C API and provides Qt signals.
 // NotebookCoreService IS the new notebook layer - replaces legacy NotebookMgr.
 class NotebookCoreService : public QObject, private Noncopyable {
@@ -26,6 +28,10 @@ public:
   // Constructor receives VxCore context handle via dependency injection.
   explicit NotebookCoreService(VxCoreContextHandle p_context, QObject *p_parent = nullptr);
   ~NotebookCoreService();
+
+  // Set HookManager for firing node operation hooks.
+  // Called from main() after both services are constructed.
+  void setHookManager(HookManager *p_hookMgr);
 
   // Notebook operations (7 methods).
   QString createNotebook(const QString &p_path, const QString &p_configJson, NotebookType p_type);
@@ -166,6 +172,7 @@ private:
   static QJsonArray parseJsonArrayFromCStr(char *p_str);
 
   VxCoreContextHandle m_context = nullptr;
+  HookManager *m_hookMgr = nullptr;
 };
 
 } // namespace vnotex

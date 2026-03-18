@@ -512,6 +512,9 @@ bool NotebookNodeModel::setData(const QModelIndex &p_index, const QVariant &p_va
     }
 
     emit dataChanged(p_index, p_index, {Qt::DisplayRole, Qt::EditRole});
+
+    // NodeAfterRename hook is fired by NotebookCoreService::renameFile/renameFolder.
+
     return true;
   }
 

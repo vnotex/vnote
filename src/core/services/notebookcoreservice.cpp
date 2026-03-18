@@ -2,7 +2,10 @@
 
 #include <QJsonDocument>
 #include <QJsonParseError>
+#include <QVariantMap>
 
+#include <core/hooknames.h>
+#include <core/services/hookmanager.h>
 #include <vxcore/vxcore_events.h>
 
 using namespace vnotex;
@@ -20,6 +23,10 @@ NotebookCoreService::NotebookCoreService(VxCoreContextHandle p_context, QObject 
     vxcore_event_subscribe(m_context, VXCORE_EVENT_NOTEBOOK_OPENED, eventCallback, this);
     vxcore_event_subscribe(m_context, VXCORE_EVENT_NOTEBOOK_CLOSED, eventCallback, this);
   }
+}
+
+void NotebookCoreService::setHookManager(HookManager *p_hookMgr) {
+  m_hookMgr = p_hookMgr;
 }
 
 NotebookCoreService::~NotebookCoreService() {
@@ -335,6 +342,18 @@ bool NotebookCoreService::renameFolder(const QString &p_notebookId, const QStrin
     qWarning() << "renameFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
   }
+
+  // Fire NodeAfterRename hook so other modules can react.
+  if (m_hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("relativePath")] = p_folderPath;
+    args[QStringLiteral("isFolder")] = true;
+    args[QStringLiteral("oldName")] = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
+    args[QStringLiteral("newName")] = p_newName;
+    m_hookMgr->doAction(HookNames::NodeAfterRename, args);
+  }
+
   return true;
 }
 
@@ -528,6 +547,18 @@ bool NotebookCoreService::renameFile(const QString &p_notebookId, const QString 
     qWarning() << "renameFile failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
   }
+
+  // Fire NodeAfterRename hook so other modules can react.
+  if (m_hookMgr) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("relativePath")] = p_filePath;
+    args[QStringLiteral("isFolder")] = false;
+    args[QStringLiteral("oldName")] = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
+    args[QStringLiteral("newName")] = p_newName;
+    m_hookMgr->doAction(HookNames::NodeAfterRename, args);
+  }
+
   return true;
 }
 

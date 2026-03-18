@@ -85,6 +85,13 @@ const NodeIdentifier &ViewWindow2::getNodeId() const {
   return m_buffer.nodeId();
 }
 
+// ============ Rename Support ============
+
+void ViewWindow2::onNodeRenamed(const NodeIdentifier &p_newNodeId) {
+  m_buffer.setNodeId(p_newNodeId);
+  emit nameChanged();
+}
+
 // ============ Window Identity ============
 
 QIcon ViewWindow2::getIcon() const {

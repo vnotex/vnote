@@ -1054,13 +1054,20 @@ void ViewAreaController::checkCurrentViewWindowChange(const QString &p_workspace
 
 void ViewAreaController::subscribeToHooks() {
   auto *hookMgr = m_services.get<HookManager>();
-  if (hookMgr) {
-    hookMgr->addAction(HookNames::FileAfterOpen,
-        [this](HookContext &p_ctx, const QVariantMap &p_args) {
-          Q_UNUSED(p_ctx)
-          onFileAfterOpen(p_args);
-        }, 10);
+  if (!hookMgr) {
+    qWarning() << "ViewAreaController::subscribeToHooks: HookManager not available";
+    return;
   }
+  hookMgr->addAction(HookNames::FileAfterOpen,
+      [this](HookContext &p_ctx, const QVariantMap &p_args) {
+        Q_UNUSED(p_ctx)
+        onFileAfterOpen(p_args);
+      }, 10);
+  hookMgr->addAction(HookNames::NodeAfterRename,
+      [this](HookContext &p_ctx, const QVariantMap &p_args) {
+        Q_UNUSED(p_ctx)
+        onNodeAfterRename(p_args);
+      }, 10);
 }
 
 void ViewAreaController::onFileAfterOpen(const QVariantMap &p_args) {
@@ -1081,6 +1088,117 @@ void ViewAreaController::onFileAfterOpen(const QVariantMap &p_args) {
   }
   FileOpenSettings settings = FileOpenSettings::fromVariantMap(p_args);
   openBuffer(buf, settings);
+}
+
+void ViewAreaController::onNodeAfterRename(const QVariantMap &p_args) {
+  const QString notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  const QString relativePath = p_args.value(QStringLiteral("relativePath")).toString();
+  const QString newName = p_args.value(QStringLiteral("newName")).toString();
+  const bool isFolder = p_args.value(QStringLiteral("isFolder")).toBool();
+
+  if (notebookId.isEmpty() || relativePath.isEmpty() || newName.isEmpty()) {
+    return;
+  }
+
+  // Derive new path: replace the last component of the old path with newName.
+  QString newPath = relativePath;
+  int lastSlash = newPath.lastIndexOf(QLatin1Char('/'));
+  if (lastSlash >= 0) {
+    newPath = newPath.left(lastSlash + 1) + newName;
+  } else {
+    newPath = newName;
+  }
+
+  // vxcore has already updated buffer paths internally during the rename.
+  // We only need to update the cached NodeIdentifier on ViewWindow2 instances.
+
+  if (!isFolder) {
+    // File rename: single buffer affected.
+    NodeIdentifier oldNodeId;
+    oldNodeId.notebookId = notebookId;
+    oldNodeId.relativePath = relativePath;
+
+    NodeIdentifier newNodeId;
+    newNodeId.notebookId = notebookId;
+    newNodeId.relativePath = newPath;
+
+    // Update visible windows via the view interface.
+    if (m_view) {
+      m_view->onNodeRenamed(oldNodeId, newNodeId);
+    }
+
+    // Update hidden workspace windows.
+    for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+      auto *wrapper = it.value();
+      if (wrapper->isVisible()) {
+        continue;
+      }
+      const auto &windows = wrapper->viewWindows();
+      for (auto *obj : windows) {
+        auto *win = qobject_cast<ViewWindow2 *>(obj);
+        if (win && win->getNodeId() == oldNodeId) {
+          win->onNodeRenamed(newNodeId);
+        }
+      }
+    }
+  } else {
+    // Folder rename: update all windows whose paths are under the old folder.
+    QString oldPrefix = relativePath + QLatin1Char('/');
+    QString newPrefix = newPath + QLatin1Char('/');
+
+    // Collect old->new pairs for all affected windows.
+    QVector<QPair<NodeIdentifier, NodeIdentifier>> renames;
+
+    auto collectRenames = [&](const NodeIdentifier &nodeId) {
+      if (nodeId.notebookId != notebookId) {
+        return;
+      }
+      if (nodeId.relativePath.startsWith(oldPrefix)) {
+        NodeIdentifier oldId = nodeId;
+        NodeIdentifier newId;
+        newId.notebookId = notebookId;
+        newId.relativePath = newPrefix + nodeId.relativePath.mid(oldPrefix.size());
+        renames.append({oldId, newId});
+      }
+    };
+
+    // Scan visible windows.
+    if (m_view) {
+      // We'll iterate hidden workspaces' windows and visible workspace windows
+      // by first collecting all renames, then applying them.
+      for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+        auto *wrapper = it.value();
+        const auto &windows = wrapper->viewWindows();
+        for (auto *obj : windows) {
+          auto *win = qobject_cast<ViewWindow2 *>(obj);
+          if (win) {
+            collectRenames(win->getNodeId());
+          }
+        }
+      }
+    }
+
+    // Apply renames.
+    for (const auto &pair : renames) {
+      if (m_view) {
+        m_view->onNodeRenamed(pair.first, pair.second);
+      }
+      // Update hidden workspace windows.
+      for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+        auto *wrapper = it.value();
+        if (wrapper->isVisible()) {
+          continue;
+        }
+        const auto &windows = wrapper->viewWindows();
+        for (auto *obj : windows) {
+          auto *win = qobject_cast<ViewWindow2 *>(obj);
+          if (win && win->getNodeId() == pair.first) {
+            win->onNodeRenamed(pair.second);
+          }
+        }
+      }
+    }
+  }
 }
 
 QString ViewAreaController::generateWorkspaceName() const {
