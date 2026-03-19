@@ -53,10 +53,14 @@ void EditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_viConfig = QSharedPointer<vte::ViConfig>::create();
   m_viConfig->fromJson(p_jobj.value(QStringLiteral("vi")).toObject());
 
-  m_textEditorConfig->fromJson(p_jobj);
-  m_markdownEditorConfig->fromJson(p_jobj);
-  m_pdfViewerConfig->fromJson(p_jobj);
-  m_mindMapEditorConfig->fromJson(p_jobj);
+  m_textEditorConfig->fromJson(
+      p_jobj.value(m_textEditorConfig->getSectionName()).toObject());
+  m_markdownEditorConfig->fromJson(
+      p_jobj.value(m_markdownEditorConfig->getSectionName()).toObject());
+  m_pdfViewerConfig->fromJson(
+      p_jobj.value(m_pdfViewerConfig->getSectionName()).toObject());
+  m_mindMapEditorConfig->fromJson(
+      p_jobj.value(m_mindMapEditorConfig->getSectionName()).toObject());
 }
 
 void EditorConfig::loadCore(const QJsonObject &p_jobj) {
