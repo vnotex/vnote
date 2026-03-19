@@ -9,6 +9,7 @@ set(SERVICES_SOURCES
   notebookcoreservice.cpp
   filetypecoreservice.cpp
   templateservice.cpp
+  htmltemplateservice.cpp
   hookmanager.cpp
   workspacecoreservice.cpp
   ${CMAKE_SOURCE_DIR}/src/core/hookevents.cpp
@@ -27,6 +28,7 @@ set(SERVICES_HEADERS
   notebookcoreservice.h
   filetypecoreservice.h
   templateservice.h
+  htmltemplateservice.h
   hookmanager.h
   workspacecoreservice.h
 )

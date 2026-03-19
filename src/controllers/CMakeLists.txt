@@ -11,6 +11,7 @@ target_sources(vnote PRIVATE
     recyclebincontroller.cpp recyclebincontroller.h
     importfoldercontroller.cpp importfoldercontroller.h
     textviewwindowcontroller.cpp textviewwindowcontroller.h
+    pdfviewwindowcontroller.cpp pdfviewwindowcontroller.h
 )
 
 target_include_directories(vnote PRIVATE

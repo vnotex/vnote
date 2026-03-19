@@ -27,6 +27,7 @@
 #include <core/services/filetypecoreservice.h>
 #include <gui/services/themeservice.h>
 #include <core/services/templateservice.h>
+#include <core/services/htmltemplateservice.h>
 #include <gui/services/viewwindowfactory.h>
 #include <gui/utils/widgetutils.h>
 #include <core/sessionconfig.h>
@@ -201,6 +202,11 @@ int main(int argc, char *argv[]) {
     TemplateService templateService(&configMgr);
     serviceLocator.registerService<TemplateService>(&templateService);
     qInfo() << "TemplateService registered";
+
+    // Create HtmlTemplateService with ConfigMgr2
+    HtmlTemplateService htmlTemplateService(&configMgr);
+    serviceLocator.registerService<HtmlTemplateService>(&htmlTemplateService);
+    qInfo() << "HtmlTemplateService registered";
 
     // Create ViewWindowFactory and register built-in file type creators
     ViewWindowFactory viewWindowFactory;

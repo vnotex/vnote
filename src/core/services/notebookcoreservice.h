@@ -46,6 +46,10 @@ public:
   // Returns empty object if path is not within any open notebook.
   QJsonObject resolvePathToNotebook(const QString &p_absolutePath) const;
 
+  // Build an absolute path from a notebook ID and a relative path.
+  // Returns empty string if the notebook is not open.
+  QString buildAbsolutePath(const QString &p_notebookId, const QString &p_relativePath) const;
+
   // Get relative path of a node (file or folder) by its ID.
   // Returns empty string if node is not found.
   QString getNodePathById(const QString &p_notebookId, const QString &p_nodeId) const;

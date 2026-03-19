@@ -149,6 +149,25 @@ QJsonObject NotebookCoreService::resolvePathToNotebook(const QString &p_absolute
   return result;
 }
 
+QString NotebookCoreService::buildAbsolutePath(const QString &p_notebookId,
+                                               const QString &p_relativePath) const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *absPath = nullptr;
+  VxCoreError err = vxcore_path_build_absolute(m_context, p_notebookId.toUtf8().constData(),
+                                               p_relativePath.toUtf8().constData(), &absPath);
+  if (err != VXCORE_OK) {
+    qWarning() << "buildAbsolutePath failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+
+  QString result = QString::fromUtf8(absPath);
+  vxcore_string_free(absPath);
+  return result;
+}
+
 QString NotebookCoreService::getNodePathById(const QString &p_notebookId, const QString &p_nodeId) const {
   if (!checkContext()) {
     return QString();

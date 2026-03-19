@@ -113,6 +113,7 @@ target_sources(vnote PRIVATE
     outlineprovider.cpp outlineprovider.h
     outlineviewer.cpp outlineviewer.h
     pdfviewwindow.cpp pdfviewwindow.h
+    pdfviewwindow2.cpp pdfviewwindow2.h
     propertydefs.cpp propertydefs.h
     qtreewidgetstatecache.h
     quickselector.cpp quickselector.h
