@@ -1,18 +1,15 @@
 #include "textviewwindow2.h"
 
 #include <QAction>
-#include <QFileInfo>
 #include <QPrinter>
 #include <QScrollBar>
 #include <QToolBar>
 #include <QToolButton>
 
-#include <vtextedit/texteditorconfig.h>
-#include <vtextedit/theme.h>
 #include <vtextedit/vtextedit.h>
 
+#include <controllers/textviewwindowcontroller.h>
 #include <core/configmgr2.h>
-#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/texteditorconfig.h>
@@ -34,6 +31,7 @@ using namespace vnotex;
 TextViewWindow2::TextViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                                  QWidget *p_parent)
     : ViewWindow2(p_services, p_buffer, p_parent) {
+  m_controller = new TextViewWindowController(p_services, this);
   m_mode = ViewWindowMode::Edit;
   setupUI();
 }
@@ -43,13 +41,20 @@ void TextViewWindow2::setupUI() {
   const auto &editorConfig = configMgr->getEditorConfig();
   const auto &textEditorConfig = editorConfig.getTextEditorConfig();
 
-  updateConfigRevision();
+  m_controller->checkAndUpdateConfigRevision();
+
+  auto *themeService = getServices().get<ThemeService>();
+  auto themeFile = themeService->getFile(Theme::File::TextEditorStyle);
+  auto syntaxTheme = themeService->getEditorHighlightTheme();
+  qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
   // Central widget: text editor.
   {
-    m_editor =
-        new TextEditor(createTextEditorConfig(editorConfig, textEditorConfig, getServices()),
-                       createTextEditorParameters(editorConfig, textEditorConfig), this);
+    m_editor = new TextEditor(
+        TextViewWindowController::buildTextEditorConfig(
+            editorConfig, textEditorConfig, themeFile, syntaxTheme, scaleFactor),
+        TextViewWindowController::buildTextEditorParameters(editorConfig, textEditorConfig),
+        this);
     setCentralWidget(m_editor);
 
     updateEditorFromConfig();
@@ -159,14 +164,12 @@ void TextViewWindow2::syncEditorFromBuffer() {
   const bool old = m_propagateEditorToBuffer;
   m_propagateEditorToBuffer = false;
 
-  const auto &buffer = getBuffer();
-  if (buffer.isValid()) {
-    const auto &nodeId = buffer.nodeId();
-    QString suffix = QFileInfo(nodeId.relativePath).suffix();
-    m_editor->setSyntax(suffix);
-    m_editor->setReadOnly(false);
-    m_editor->setText(QString::fromUtf8(buffer.peekContentRaw()));
-    m_editor->setModified(buffer.isModified());
+  auto state = TextViewWindowController::prepareBufferState(getBuffer());
+  if (state.valid) {
+    m_editor->setSyntax(state.syntaxSuffix);
+    m_editor->setReadOnly(state.readOnly);
+    m_editor->setText(state.content);
+    m_editor->setModified(state.modified);
   } else {
     m_editor->setSyntax(QString());
     m_editor->setReadOnly(true);
@@ -174,7 +177,7 @@ void TextViewWindow2::syncEditorFromBuffer() {
     m_editor->setModified(false);
   }
 
-  m_lastKnownRevision = buffer.isValid() ? buffer.getRevision() : 0;
+  m_lastKnownRevision = state.revision;
   m_propagateEditorToBuffer = old;
 }
 
@@ -188,49 +191,33 @@ void TextViewWindow2::setMode(ViewWindowMode p_mode) {
 }
 
 void TextViewWindow2::handleEditorConfigChange() {
-  if (updateConfigRevision()) {
+  if (m_controller->checkAndUpdateConfigRevision()) {
     auto *configMgr = getServices().get<ConfigMgr2>();
     const auto &editorConfig = configMgr->getEditorConfig();
     const auto &textEditorConfig = editorConfig.getTextEditorConfig();
 
-    auto config = createTextEditorConfig(editorConfig, textEditorConfig, getServices());
+    auto *themeService = getServices().get<ThemeService>();
+    auto themeFile = themeService->getFile(Theme::File::TextEditorStyle);
+    auto syntaxTheme = themeService->getEditorHighlightTheme();
+    qreal scaleFactor = WidgetUtils::calculateScaleFactor();
+
+    auto config = TextViewWindowController::buildTextEditorConfig(
+        editorConfig, textEditorConfig, themeFile, syntaxTheme, scaleFactor);
     m_editor->setConfig(config);
 
     updateEditorFromConfig();
   }
 }
 
-bool TextViewWindow2::updateConfigRevision() {
-  bool changed = false;
-
-  auto *configMgr = getServices().get<ConfigMgr2>();
-  const auto &editorConfig = configMgr->getEditorConfig();
-
-  if (m_editorConfigRevision != editorConfig.revision()) {
-    changed = true;
-    m_editorConfigRevision = editorConfig.revision();
-  }
-
-  if (m_textEditorConfigRevision != editorConfig.getTextEditorConfig().revision()) {
-    changed = true;
-    m_textEditorConfigRevision = editorConfig.getTextEditorConfig().revision();
-  }
-
-  return changed;
-}
-
 void TextViewWindow2::updateEditorFromConfig() {
-  auto *configMgr = getServices().get<ConfigMgr2>();
-  const auto &coreConfig = configMgr->getCoreConfig();
-  const auto &editorConfig = configMgr->getEditorConfig();
-  const auto &textEditorConfig = editorConfig.getTextEditorConfig();
+  auto snapshot = m_controller->currentEditorConfig();
 
-  if (textEditorConfig.getZoomDelta() != 0) {
-    m_editor->zoom(textEditorConfig.getZoomDelta());
+  if (snapshot.zoomDelta != 0) {
+    m_editor->zoom(snapshot.zoomDelta);
   }
 
   {
-    vte::Key leaderKey(coreConfig.getShortcutLeaderKey());
+    vte::Key leaderKey(snapshot.shortcutLeaderKey);
     m_editor->setLeaderKeyToSkip(leaderKey.m_key, leaderKey.m_modifiers);
   }
 }
@@ -251,120 +238,8 @@ void TextViewWindow2::scrollDown() {
 
 void TextViewWindow2::zoom(bool p_zoomIn) {
   m_editor->zoom(m_editor->zoomDelta() + (p_zoomIn ? 1 : -1));
-
-  auto *configMgr = getServices().get<ConfigMgr2>();
-  auto &textEditorConfig = configMgr->getEditorConfig().getTextEditorConfig();
-  textEditorConfig.setZoomDelta(m_editor->zoomDelta());
-
-  showZoomDelta(m_editor->zoomDelta());
-}
-
-QSharedPointer<vte::TextEditorConfig>
-TextViewWindow2::createTextEditorConfig(const EditorConfig &p_editorConfig,
-                                        const TextEditorConfig &p_config,
-                                        ServiceLocator &p_services) {
-  auto *themeService = p_services.get<ThemeService>();
-  auto editorConfig = QSharedPointer<vte::TextEditorConfig>::create();
-
-  editorConfig->m_viConfig = p_editorConfig.getViConfig();
-
-  {
-    auto themeFile = themeService->getFile(Theme::File::TextEditorStyle);
-    if (!themeFile.isEmpty()) {
-      editorConfig->m_theme = vte::Theme::createThemeFromFile(themeFile);
-    }
-  }
-
-  editorConfig->m_syntaxTheme = themeService->getEditorHighlightTheme();
-
-  switch (p_config.getLineNumberType()) {
-  case TextEditorConfig::LineNumberType::Absolute:
-    editorConfig->m_lineNumberType = vte::VTextEditor::LineNumberType::Absolute;
-    break;
-  case TextEditorConfig::LineNumberType::Relative:
-    editorConfig->m_lineNumberType = vte::VTextEditor::LineNumberType::Relative;
-    break;
-  case TextEditorConfig::LineNumberType::None:
-    editorConfig->m_lineNumberType = vte::VTextEditor::LineNumberType::None;
-    break;
-  }
-
-  editorConfig->m_textFoldingEnabled = p_config.getTextFoldingEnabled();
-
-  switch (p_config.getInputMode()) {
-  case TextEditorConfig::InputMode::ViMode:
-    editorConfig->m_inputMode = vte::InputMode::ViMode;
-    break;
-  case TextEditorConfig::InputMode::VscodeMode:
-    editorConfig->m_inputMode = vte::InputMode::VscodeMode;
-    break;
-  default:
-    editorConfig->m_inputMode = vte::InputMode::NormalMode;
-    break;
-  }
-
-  editorConfig->m_scaleFactor = WidgetUtils::calculateScaleFactor();
-
-  switch (p_config.getCenterCursor()) {
-  case TextEditorConfig::CenterCursor::NeverCenter:
-    editorConfig->m_centerCursor = vte::CenterCursor::NeverCenter;
-    break;
-  case TextEditorConfig::CenterCursor::AlwaysCenter:
-    editorConfig->m_centerCursor = vte::CenterCursor::AlwaysCenter;
-    break;
-  case TextEditorConfig::CenterCursor::CenterOnBottom:
-    editorConfig->m_centerCursor = vte::CenterCursor::CenterOnBottom;
-    break;
-  }
-
-  switch (p_config.getWrapMode()) {
-  case TextEditorConfig::WrapMode::NoWrap:
-    editorConfig->m_wrapMode = vte::WrapMode::NoWrap;
-    break;
-  case TextEditorConfig::WrapMode::WordWrap:
-    editorConfig->m_wrapMode = vte::WrapMode::WordWrap;
-    break;
-  case TextEditorConfig::WrapMode::WrapAnywhere:
-    editorConfig->m_wrapMode = vte::WrapMode::WrapAnywhere;
-    break;
-  case TextEditorConfig::WrapMode::WordWrapOrAnywhere:
-    editorConfig->m_wrapMode = vte::WrapMode::WordWrapOrAnywhere;
-    break;
-  }
-
-  editorConfig->m_expandTab = p_config.getExpandTabEnabled();
-  editorConfig->m_tabStopWidth = p_config.getTabStopWidth();
-  editorConfig->m_highlightWhitespace = p_config.getHighlightWhitespaceEnabled();
-
-  switch (p_editorConfig.getLineEndingPolicy()) {
-  case LineEndingPolicy::Platform:
-    editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::Platform;
-    break;
-  case LineEndingPolicy::File:
-    editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::File;
-    break;
-  case LineEndingPolicy::LF:
-    editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::LF;
-    break;
-  case LineEndingPolicy::CRLF:
-    editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::CRLF;
-    break;
-  case LineEndingPolicy::CR:
-    editorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::CR;
-    break;
-  }
-
-  return editorConfig;
-}
-
-QSharedPointer<vte::TextEditorParameters>
-TextViewWindow2::createTextEditorParameters(const EditorConfig &p_editorConfig,
-                                            const TextEditorConfig &p_config) {
-  auto paras = QSharedPointer<vte::TextEditorParameters>::create();
-  paras->m_spellCheckEnabled = p_config.isSpellCheckEnabled();
-  paras->m_autoDetectLanguageEnabled = p_editorConfig.isSpellCheckAutoDetectLanguageEnabled();
-  paras->m_defaultSpellCheckLanguage = p_editorConfig.getSpellCheckDefaultDictionary();
-  return paras;
+  int delta = m_controller->persistZoomDelta(m_editor->zoomDelta());
+  showZoomDelta(delta);
 }
 
 // ============ Find and Replace ============

@@ -118,6 +118,30 @@ add_qt_test(test_config_hook
   GUILESS
 )
 
+add_qt_test(test_textviewwindowcontroller
+  SOURCES
+    test_textviewwindowcontroller.cpp
+    stubs_textviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/textviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/pdfviewerconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+  GUILESS
+)
+
+# Copy VTextEdit DLL next to test executable so CTest can find it at runtime.
+add_custom_command(TARGET test_textviewwindowcontroller POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_textviewwindowcontroller>
+)
+
 # TODO: test_configmgr2 requires many dependencies (MainConfig, SessionConfig,
 # CoreConfig, EditorConfig, WidgetConfig, FileUtils2, Utils) that have deep
 # cascading dependencies throughout the codebase. This test should be re-enabled

@@ -3,15 +3,9 @@
 
 #include "viewwindow2.h"
 
-namespace vte {
-class TextEditorConfig;
-struct TextEditorParameters;
-} // namespace vte
-
 namespace vnotex {
 class TextEditor;
-class TextEditorConfig;
-class EditorConfig;
+class TextViewWindowController;
 
 // Concrete ViewWindow2 subclass for plain text files.
 // Provides a text editor (TextEditor) for viewing/editing text files
@@ -69,24 +63,14 @@ private:
 
   void updateEditorFromConfig();
 
-  bool updateConfigRevision();
-
-  static QSharedPointer<vte::TextEditorConfig>
-  createTextEditorConfig(const EditorConfig &p_editorConfig, const TextEditorConfig &p_config,
-                         ServiceLocator &p_services);
-
-  static QSharedPointer<vte::TextEditorParameters>
-  createTextEditorParameters(const EditorConfig &p_editorConfig, const TextEditorConfig &p_config);
+  // Managed by QObject parent (this).
+  TextViewWindowController *m_controller = nullptr;
 
   // Managed by QObject.
   TextEditor *m_editor = nullptr;
 
   // Whether to propagate editor state changes to the buffer.
   bool m_propagateEditorToBuffer = false;
-
-  int m_editorConfigRevision = 0;
-
-  int m_textEditorConfigRevision = 0;
 
   // Save action for enabling/disabling based on modification state.
   QAction *m_saveAction = nullptr;
