@@ -11,6 +11,7 @@
 
 #include "viewwindowsession.h"
 #include "viewwindowtoolbarhelper.h"
+#include "wordcountpanel.h"
 
 class QVBoxLayout;
 class QTimer;
@@ -34,12 +35,8 @@ public:
   enum WindowFlag { None = 0, AutoReload = 0x1 };
   Q_DECLARE_FLAGS(WindowFlags, WindowFlag);
 
-  struct WordCountInfo {
-    bool m_isSelection = false;
-    int m_wordCount = 0;
-    int m_charWithoutSpaceCount = 0;
-    int m_charWithSpaceCount = 0;
-  };
+  // Alias for standalone WordCountInfo (defined in wordcountpanel.h).
+  using WordCountInfo = vnotex::WordCountInfo;
 
   explicit ViewWindow(QWidget *p_parent = nullptr);
 

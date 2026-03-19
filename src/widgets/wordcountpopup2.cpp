@@ -1,6 +1,6 @@
 #include "wordcountpopup2.h"
 
-#include "wordcountpopup.h" // For WordCountPanel.
+#include "wordcountpanel.h"
 
 using namespace vnotex;
 

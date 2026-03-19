@@ -24,7 +24,7 @@
 #include "findandreplacewidget2.h"
 #include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
-#include "wordcountpopup.h"
+#include "wordcountpanel.h"
 #include "wordcountpopup2.h"
 
 #include <gui/utils/printutils.h>
@@ -103,32 +103,9 @@ void TextViewWindow2::setupToolBar() {
             text = getLatestContent();
           }
 
-          // Word count algorithm matching legacy TextViewWindowHelper::calculateWordCountInfo().
-          int cns = 0;
-          int wc = 0;
-          int cc = text.size();
-          // 0 - not in word; 1 - in English word; 2 - in non-English word.
-          int state = 0;
-          for (int i = 0; i < cc; ++i) {
-            QChar ch = text[i];
-            if (ch.isSpace()) {
-              if (state) {
-                state = 0;
-              }
-              continue;
-            } else if (ch.unicode() < 128) {
-              if (state != 1) {
-                state = 1;
-                ++wc;
-              }
-            } else {
-              state = 2;
-              ++wc;
-            }
-            ++cns;
-          }
-
-          p_panel->updateCount(isSelection, wc, cns, cc);
+          auto info = WordCountPanel::calculateWordCount(text);
+          p_panel->updateCount(
+              isSelection, info.m_wordCount, info.m_charWithoutSpaceCount, info.m_charWithSpaceCount);
         },
         toolBar);
     toolBtn->setMenu(popup);
