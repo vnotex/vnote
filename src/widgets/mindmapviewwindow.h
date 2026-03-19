@@ -13,7 +13,7 @@ class MindMapEditor;
 class MindMapEditorAdapter;
 class ViewArea;
 
-class MindMapViewWindow : public ViewWindow {
+class VNOTEX_DEPRECATED("Use MindMapViewWindow2 with ServiceLocator pattern instead") MindMapViewWindow : public ViewWindow {
   Q_OBJECT
 public:
   explicit MindMapViewWindow(QWidget *p_parent = nullptr);

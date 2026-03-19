@@ -13,7 +13,7 @@ class TextEditor;
 class TextEditorConfig;
 class EditorConfig;
 
-class TextViewWindow : public ViewWindow {
+class VNOTEX_DEPRECATED("Use TextViewWindow2 with ServiceLocator pattern instead") TextViewWindow : public ViewWindow {
   Q_OBJECT
 public:
   friend class TextViewWindowHelper;

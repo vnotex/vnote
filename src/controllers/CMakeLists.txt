@@ -12,6 +12,7 @@ target_sources(vnote PRIVATE
     importfoldercontroller.cpp importfoldercontroller.h
     textviewwindowcontroller.cpp textviewwindowcontroller.h
     pdfviewwindowcontroller.cpp pdfviewwindowcontroller.h
+    mindmapviewwindowcontroller.cpp mindmapviewwindowcontroller.h
 )
 
 target_include_directories(vnote PRIVATE

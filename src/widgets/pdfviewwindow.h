@@ -11,7 +11,7 @@ namespace vnotex {
 class PdfViewer;
 class PdfViewerAdapter;
 
-class PdfViewWindow : public ViewWindow {
+class VNOTEX_DEPRECATED("Use PdfViewWindow2 with ServiceLocator pattern instead") PdfViewWindow : public ViewWindow {
   Q_OBJECT
 public:
   explicit PdfViewWindow(QWidget *p_parent = nullptr);

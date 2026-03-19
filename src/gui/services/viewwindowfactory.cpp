@@ -4,6 +4,7 @@
 
 #include <widgets/textviewwindow2.h>
 #include <widgets/pdfviewwindow2.h>
+#include <widgets/mindmapviewwindow2.h>
 
 using namespace vnotex;
 
@@ -29,6 +30,11 @@ void ViewWindowFactory::registerBuiltInCreators() {
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer,
                      QWidget *p_parent) -> ViewWindow2 * {
                     return new PdfViewWindow2(p_services, p_buffer, p_parent);
+                  });
+  registerCreator("MindMap",
+                  [](ServiceLocator &p_services, const Buffer2 &p_buffer,
+                     QWidget *p_parent) -> ViewWindow2 * {
+                    return new MindMapViewWindow2(p_services, p_buffer, p_parent);
                   });
 }
 
