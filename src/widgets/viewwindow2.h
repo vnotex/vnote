@@ -110,6 +110,11 @@ public slots:
 
   void replaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
 
+  // Called when editor configuration changes at runtime.
+  // Subclasses should override to reload config and update their editor widget.
+  // Default implementation does nothing.
+  virtual void handleEditorConfigChange();
+
 signals:
   // Emitted when this window gains keyboard focus.
   void focused(ViewWindow2 *p_win);

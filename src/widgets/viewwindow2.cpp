@@ -530,3 +530,7 @@ void ViewWindow2::showZoomFactor(qreal p_factor) {
 void ViewWindow2::showZoomDelta(int p_delta) {
   showMessage(tr("Zoomed: %1%2").arg(p_delta > 0 ? "+" : "").arg(p_delta));
 }
+
+void ViewWindow2::handleEditorConfigChange() {
+  // Default: no-op. Subclasses override to handle config changes.
+}

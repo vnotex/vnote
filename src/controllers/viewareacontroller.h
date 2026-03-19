@@ -210,6 +210,9 @@ private:
   // Handle NodeAfterRename hook: update buffer paths and tab titles.
   void onNodeAfterRename(const NodeRenameEvent &p_event);
 
+  // Handle ConfigEditorChanged hook: notify all windows.
+  void onEditorConfigChanged();
+
   // Open a single buffer during session restore.
   // Resolves file type and calls m_view->openBuffer() for the view to create the ViewWindow2.
   void openRestoredBuffer(BufferService *p_bufferSvc, const QString &p_workspaceId,

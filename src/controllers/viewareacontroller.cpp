@@ -1060,6 +1060,11 @@ void ViewAreaController::subscribeToHooks() {
         Q_UNUSED(p_ctx)
         onNodeAfterRename(p_event);
       }, 10);
+  hookMgr->addAction(HookNames::ConfigEditorChanged,
+      [this](HookContext &p_ctx, const QVariantMap &) {
+        Q_UNUSED(p_ctx)
+        onEditorConfigChanged();
+      }, 10);
 }
 
 void ViewAreaController::onFileAfterOpen(const FileOpenEvent &p_event) {
@@ -1197,6 +1202,12 @@ void ViewAreaController::onNodeAfterRename(const NodeRenameEvent &p_event) {
         }
       }
     }
+  }
+}
+
+void ViewAreaController::onEditorConfigChanged() {
+  if (m_view) {
+    m_view->notifyEditorConfigChanged();
   }
 }
 

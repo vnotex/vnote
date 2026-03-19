@@ -804,6 +804,12 @@ void ViewArea2::onNodeRenamed(const NodeIdentifier &p_oldNodeId,
   }
 }
 
+void ViewArea2::notifyEditorConfigChanged() {
+  for (auto it = m_windows.constBegin(); it != m_windows.constEnd(); ++it) {
+    it.value()->handleEditorConfigChange();
+  }
+}
+
 QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) {
   QJsonObject node;
   auto *splitter = qobject_cast<const QSplitter *>(p_widget);

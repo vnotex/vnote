@@ -107,6 +107,7 @@ public:
   QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const override;
   void onNodeRenamed(const NodeIdentifier &p_oldNodeId,
                      const NodeIdentifier &p_newNodeId) override;
+  void notifyEditorConfigChanged() override;
 
 private slots:
   // ViewSplit2 signal handlers

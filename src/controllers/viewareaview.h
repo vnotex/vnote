@@ -85,6 +85,10 @@ public:
   // the file has been renamed. The view iterates its windows internally.
   virtual void onNodeRenamed(const NodeIdentifier &p_oldNodeId,
                              const NodeIdentifier &p_newNodeId) = 0;
+
+  // Notify all view windows that editor configuration has changed.
+  // The view iterates all windows and calls handleEditorConfigChange().
+  virtual void notifyEditorConfigChanged() = 0;
 };
 
 } // namespace vnotex

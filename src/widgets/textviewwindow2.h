@@ -26,7 +26,7 @@ public:
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
 public slots:
-  void handleEditorConfigChange();
+  void handleEditorConfigChange() Q_DECL_OVERRIDE;
 
 protected slots:
   void setModified(bool p_modified) Q_DECL_OVERRIDE;
