@@ -34,7 +34,7 @@ void TestConfigHook::initTestCase() {
   QVERIFY(m_context != nullptr);
 
   m_hookMgr = new HookManager(this);
-  m_bufferService = new BufferService(m_context, m_hookMgr, this);
+  m_bufferService = new BufferService(m_context, m_hookMgr, AutoSavePolicy::AutoSave, this);
 }
 
 void TestConfigHook::cleanupTestCase() {

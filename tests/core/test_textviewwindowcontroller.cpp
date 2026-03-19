@@ -477,7 +477,7 @@ void TestTextViewWindowController::initTestCase() {
 
   m_notebookService = new NotebookCoreService(m_context, this);
   m_hookMgr = new HookManager(this);
-  m_bufferService = new BufferService(m_context, m_hookMgr, this);
+  m_bufferService = new BufferService(m_context, m_hookMgr, AutoSavePolicy::AutoSave, this);
 
   QString nbPath = m_tempDir.filePath(QStringLiteral("ctrl_test"));
   QString configJson =

@@ -12,8 +12,9 @@
 using namespace vnotex;
 
 BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
-                             QObject *p_parent)
-    : BufferCoreService(p_context, p_parent), m_hookMgr(p_hookMgr) {
+                             AutoSavePolicy p_autoSavePolicy, QObject *p_parent)
+    : BufferCoreService(p_context, p_parent), m_hookMgr(p_hookMgr),
+      m_autoSavePolicy(p_autoSavePolicy) {
   Q_ASSERT(m_hookMgr);
 
   m_autoSaveTimer = new QTimer(this);
@@ -32,6 +33,18 @@ QObject *BufferService::asQObject() {
 
 void BufferService::setAutoSavePolicy(AutoSavePolicy p_policy) {
   m_autoSavePolicy = p_policy;
+}
+
+void BufferService::syncAutoSavePolicy(int p_configPolicy) {
+  // Map EditorConfig::AutoSavePolicy (0=None, 1=AutoSave, 2=BackupFile)
+  // to BufferService::AutoSavePolicy.
+  AutoSavePolicy policy = AutoSavePolicy::AutoSave;
+  if (p_configPolicy == 0) {
+    policy = AutoSavePolicy::None;
+  } else if (p_configPolicy == 2) {
+    policy = AutoSavePolicy::BackupFile;
+  }
+  setAutoSavePolicy(policy);
 }
 
 // ============ Buffer Lifecycle (with hooks) ============

@@ -6,6 +6,8 @@
 #include <QWidget>
 
 #include <controllers/workspacewrapper.h>
+#include <core/configmgr2.h>
+#include <core/editorconfig.h>
 #include <core/fileopensettings.h>
 #include <core/hookcontext.h>
 #include <core/hookevents.h>
@@ -1206,6 +1208,15 @@ void ViewAreaController::onNodeAfterRename(const NodeRenameEvent &p_event) {
 }
 
 void ViewAreaController::onEditorConfigChanged() {
+  // Sync auto-save policy from config.
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  auto *bufferService = m_services.get<BufferService>();
+  if (configMgr && bufferService) {
+    bufferService->syncAutoSavePolicy(
+        static_cast<int>(configMgr->getEditorConfig().getAutoSavePolicy()));
+  }
+
+  // Notify all view windows to reload their editor config.
   if (m_view) {
     m_view->notifyEditorConfigChanged();
   }

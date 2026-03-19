@@ -39,8 +39,9 @@ class BufferService : private BufferCoreService {
   Q_OBJECT
 
 public:
-  // Constructor receives VxCore context handle and HookManager for hook integration.
+  // Constructor receives VxCore context handle, HookManager, and initial auto-save policy.
   explicit BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
+                         AutoSavePolicy p_autoSavePolicy = AutoSavePolicy::AutoSave,
                          QObject *p_parent = nullptr);
   ~BufferService() override;
 
@@ -49,8 +50,12 @@ public:
   // so external code cannot use connect() with BufferService* directly.
   QObject *asQObject();
 
-  // Set the auto-save policy. Called from main() after EditorConfig is loaded.
+  // Set the auto-save policy directly.
   void setAutoSavePolicy(AutoSavePolicy p_policy);
+
+  // Map an EditorConfig auto-save policy value and apply it.
+  // @p_configPolicy: 0=None, 1=AutoSave, 2=BackupFile (matches EditorConfig::AutoSavePolicy).
+  void syncAutoSavePolicy(int p_configPolicy);
 
   // ============ Buffer Lifecycle (with hooks) ============
 
