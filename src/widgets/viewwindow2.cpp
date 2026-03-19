@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QKeyEvent>
+#include <QWheelEvent>
 #include <QMessageBox>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -418,6 +419,18 @@ void ViewWindow2::keyPressEvent(QKeyEvent *p_event) {
   QFrame::keyPressEvent(p_event);
 }
 
+void ViewWindow2::wheelEvent(QWheelEvent *p_event) {
+  if (p_event->modifiers() & Qt::ControlModifier) {
+    QPoint angle = p_event->angleDelta();
+    if (!angle.isNull() && (angle.y() != 0)) {
+      zoom(angle.y() > 0);
+    }
+    p_event->accept();
+    return;
+  }
+  QFrame::wheelEvent(p_event);
+}
+
 void ViewWindow2::handleFindTextChanged(const QString &p_text, FindOptions p_options) {
   Q_UNUSED(p_text);
   Q_UNUSED(p_options);
@@ -509,3 +522,11 @@ void ViewWindow2::showReplaceResult(const QString &p_text, int p_totalReplaces) 
 }
 
 QString ViewWindow2::selectedText() const { return QString(); }
+
+void ViewWindow2::showZoomFactor(qreal p_factor) {
+  showMessage(tr("Zoomed: %1%").arg(p_factor * 100));
+}
+
+void ViewWindow2::showZoomDelta(int p_delta) {
+  showMessage(tr("Zoomed: %1%2").arg(p_delta > 0 ? "+" : "").arg(p_delta));
+}

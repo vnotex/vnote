@@ -279,9 +279,7 @@ void TextViewWindow2::zoom(bool p_zoomIn) {
   auto &textEditorConfig = configMgr->getEditorConfig().getTextEditorConfig();
   textEditorConfig.setZoomDelta(m_editor->zoomDelta());
 
-  showMessage(tr("Zoomed: %1%2")
-                  .arg(m_editor->zoomDelta() > 0 ? "+" : "")
-                  .arg(m_editor->zoomDelta()));
+  showZoomDelta(m_editor->zoomDelta());
 }
 
 QSharedPointer<vte::TextEditorConfig>

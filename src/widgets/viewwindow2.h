@@ -12,6 +12,7 @@
 
 class QVBoxLayout;
 class QToolBar;
+class QWheelEvent;
 
 namespace vnotex {
 
@@ -183,6 +184,8 @@ protected:
 
   void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
+  void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
+
   // ============ Editor Integration ============
 
   // Access the ServiceLocator to retrieve application services.
@@ -211,6 +214,14 @@ protected:
   // @p_zoomIn: true to zoom in, false to zoom out.
   // Pure virtual: must be implemented by subclasses.
   virtual void zoom(bool p_zoomIn) = 0;
+
+  // Display a zoom factor message (e.g., "Zoomed: 125%").
+  // Convenience for subclasses that track zoom as a factor (web views).
+  void showZoomFactor(qreal p_factor);
+
+  // Display a zoom delta message (e.g., "Zoomed: +2").
+  // Convenience for subclasses that track zoom as a delta (text editors).
+  void showZoomDelta(int p_delta);
 
   // Called by subclasses when their editor widget's content changes.
   // Sets dirty flag and notifies BufferService.
