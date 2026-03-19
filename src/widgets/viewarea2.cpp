@@ -246,6 +246,14 @@ void ViewArea2::setTopWidget(QWidget *p_widget) {
 }
 
 QJsonObject ViewArea2::saveLayout() const {
+  // If no buffers are open, save an empty layout so that on next startup
+  // loadLayout() sees an empty splitterTree and shows the home screen.
+  // This avoids persisting workspace IDs that saveSession() will later delete.
+  if (m_windows.isEmpty()) {
+    qInfo() << "ViewArea2::saveLayout: no open buffers, saving empty layout";
+    return QJsonObject();
+  }
+
   QJsonObject widgetTree;
   if (m_topWidget) { widgetTree = serializeWidget(m_topWidget); }
   return m_controller->saveLayout(widgetTree);
