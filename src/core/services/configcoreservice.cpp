@@ -137,7 +137,7 @@ Error ConfigCoreService::updateConfigByName(DataLocation p_location, const QStri
     return Error::error(ErrorCode::InvalidArgument, "Context is null");
   }
 
-  QString jsonStr = QJsonDocument(p_json).toJson(QJsonDocument::Compact);
+  QString jsonStr = QJsonDocument(p_json).toJson(QJsonDocument::Indented);
   VxCoreError err = vxcore_context_update_config_by_name(
       m_context, static_cast<VxCoreDataLocation>(p_location),
       p_baseName.toUtf8().constData(), jsonStr.toUtf8().constData());
