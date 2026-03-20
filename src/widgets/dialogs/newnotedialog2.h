@@ -41,6 +41,9 @@ private:
   // Update filename when file type changes.
   void updateNameForFileType();
 
+  // Update file type combobox when name suffix changes.
+  void updateFileTypeForName();
+
   // Validate inputs and show error message if invalid.
   bool validateInputs();
 
@@ -58,6 +61,9 @@ private:
   QLineEdit *m_nameEdit = nullptr;
   QComboBox *m_fileTypeCombo = nullptr;
   NoteTemplateSelector *m_templateSelector = nullptr;
+
+  // Guard flag to prevent feedback loops between name↔type sync.
+  bool m_fileTypeComboMuted = false;
 
   // Result.
   NodeIdentifier m_newNodeId;

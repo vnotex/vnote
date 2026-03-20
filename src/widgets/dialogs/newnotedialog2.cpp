@@ -51,12 +51,18 @@ void NewNoteDialog2::setupUI() {
     }
   }
   connect(m_fileTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this](int) { updateNameForFileType(); });
+          [this](int) {
+            if (!m_fileTypeComboMuted) {
+              updateNameForFileType();
+            }
+          });
   layout->addRow(tr("Type:"), m_fileTypeCombo);
 
   // Name input.
   m_nameEdit = WidgetsFactory::createLineEdit(mainWidget);
   m_nameEdit->setPlaceholderText(tr("Note name"));
+  connect(m_nameEdit, &QLineEdit::textEdited, this,
+          [this]() { updateFileTypeForName(); });
   layout->addRow(tr("Name:"), m_nameEdit);
 
   // Template selector.
@@ -76,10 +82,9 @@ void NewNoteDialog2::initDefaultValues() {
       m_services.get<ConfigMgr2>()->getWidgetConfig().getNewNoteDefaultFileTypeName();
   int index = m_fileTypeCombo->findData(defaultTypeName);
   if (index >= 0) {
-    // Block signals to avoid triggering updateNameForFileType() during init.
-    m_fileTypeCombo->blockSignals(true);
+    m_fileTypeComboMuted = true;
     m_fileTypeCombo->setCurrentIndex(index);
-    m_fileTypeCombo->blockSignals(false);
+    m_fileTypeComboMuted = false;
   }
 
   // Generate default name based on file type.
@@ -91,7 +96,7 @@ void NewNoteDialog2::initDefaultValues() {
       s_lastTemplate.clear();
     }
   }
-                        }
+}
 
 void NewNoteDialog2::updateNameForFileType() {
   auto *fileTypeService = m_services.get<FileTypeCoreService>();
@@ -114,6 +119,27 @@ void NewNoteDialog2::updateNameForFileType() {
   }
   m_nameEdit->setText(newName);
   WidgetUtils::selectBaseName(m_nameEdit);
+}
+
+void NewNoteDialog2::updateFileTypeForName() {
+  auto *fileTypeService = m_services.get<FileTypeCoreService>();
+  auto inputName = m_nameEdit->text();
+  QString typeName;
+  int dotIdx = inputName.lastIndexOf(QLatin1Char('.'));
+  if (dotIdx != -1) {
+    auto suffix = inputName.mid(dotIdx + 1);
+    const auto fileType = fileTypeService->getFileTypeBySuffix(suffix);
+    typeName = fileType.m_typeName;
+  } else {
+    typeName = QStringLiteral("Others");
+  }
+
+  int idx = m_fileTypeCombo->findData(typeName);
+  if (idx != -1) {
+    m_fileTypeComboMuted = true;
+    m_fileTypeCombo->setCurrentIndex(idx);
+    m_fileTypeComboMuted = false;
+  }
 }
 
 bool NewNoteDialog2::validateInputs() {
