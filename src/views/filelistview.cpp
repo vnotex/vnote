@@ -111,6 +111,9 @@ void FileListView::setController(NotebookNodeController *p_controller) {
 NotebookNodeController *FileListView::controller() const { return m_controller; }
 
 NodeIdentifier FileListView::currentNodeId() const {
+  if (!selectionModel() || !selectionModel()->hasSelection()) {
+    return NodeIdentifier();
+  }
   QModelIndex currentIdx = currentIndex();
   return nodeIdFromIndex(currentIdx);
 }

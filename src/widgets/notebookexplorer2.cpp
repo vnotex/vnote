@@ -821,7 +821,7 @@ NodeIdentifier NotebookExplorer2::currentExploredFolderId() const {
     info = m_nodeExplorer->getNodeInfo(nodeId);
   }
 
-  if (info.isFolder) {
+  if (info.isFolder && !info.isExternal) {
     return nodeId;
   }
 

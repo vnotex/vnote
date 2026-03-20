@@ -114,6 +114,9 @@ void NotebookNodeView::setController(NotebookNodeController *p_controller) {
 NotebookNodeController *NotebookNodeView::controller() const { return m_controller; }
 
 NodeIdentifier NotebookNodeView::currentNodeId() const {
+  if (!selectionModel() || !selectionModel()->hasSelection()) {
+    return NodeIdentifier();
+  }
   QModelIndex currentIdx = currentIndex();
   return nodeIdFromIndex(currentIdx);
 }
