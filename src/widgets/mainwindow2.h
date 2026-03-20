@@ -2,11 +2,9 @@
 #define MAINWINDOW2_H
 
 #include <QMainWindow>
-#include <QSharedPointer>
 
 #include <core/noncopyable.h>
 #include <widgets/dockwidgethelper.h>
-#include <core/fileopenparameters.h>
 #include "framelessmainwindow/framelessmainwindowimpl.h"
 
 class QCloseEvent;
@@ -81,7 +79,6 @@ signals:
   void importFileRequested();
   void importFolderRequested();
   void exportRequested();
-  void openFileRequested(const QString &p_path, const QSharedPointer<FileOpenParameters> &p_paras);
 
 protected:
   void closeEvent(QCloseEvent *p_event) override;

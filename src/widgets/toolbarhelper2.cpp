@@ -17,13 +17,14 @@
 #include "labelwithbuttonswidget.h"
 #include "mainwindow2.h"
 #include "messageboxhelper.h"
-#include "propertydefs.h"
 #include "widgetsfactory.h"
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/exception.h>
-#include <core/fileopenparameters.h>
+#include <core/fileopensettings.h>
+#include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
 #include <utils/iconutils.h>
@@ -116,8 +117,13 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
 
       lastDirPath = QFileInfo(files[0]).path();
 
-      for (const auto &file : files) {
-        emit m_mainWindow->openFileRequested(file, QSharedPointer<FileOpenParameters>::create());
+      auto *bufferSvc = m_services.get<BufferService>();
+      if (bufferSvc) {
+        for (const auto &file : files) {
+          NodeIdentifier nodeId;
+          nodeId.relativePath = file;
+          bufferSvc->openBuffer(nodeId);
+        }
       }
     });
 
@@ -366,19 +372,26 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   menu->addAction(MainWindow2::tr("View Logs"), menu, [this]() {
     const auto file = m_services.get<ConfigMgr2>()->getLogFile();
     if (QFileInfo::exists(file)) {
-      auto paras = QSharedPointer<FileOpenParameters>::create();
-      paras->m_readOnly = true;
-      paras->m_sessionEnabled = false;
-      emit m_mainWindow->openFileRequested(file, paras);
+      auto *bufferSvc = m_services.get<BufferService>();
+      if (bufferSvc) {
+        NodeIdentifier nodeId;
+        nodeId.relativePath = file;
+        FileOpenSettings settings;
+        settings.m_readOnly = true;
+        bufferSvc->openBuffer(nodeId, settings);
+      }
+    } else {
+      MessageBoxHelper::notify(MessageBoxHelper::Type::Information,
+                               MainWindow2::tr("No log file found."), m_mainWindow);
     }
   });
 
   menu->addSeparator();
 
   menu->addAction(MainWindow2::tr("About"), menu, [this]() {
-    auto info = MainWindow2::tr("<h3>%1</h3>\n<span>%2</span>\n")
+    auto info = MainWindow2::tr("<h3>%1</h3><h4>%2</h4>")
                     .arg(qApp->applicationDisplayName(), qApp->applicationVersion());
-    const auto text = MainWindow2::tr("VNote is a pleasant note-taking platform, focusing on native experience, open source since 2016.");
+    const auto text = MainWindow2::tr("A pleasant note-taking platform, focusing on native experience, open source since 2016.");
     QMessageBox::about(m_mainWindow, MainWindow2::tr("About"), info + text);
   });
 
@@ -408,11 +421,16 @@ void ToolBarHelper2::activateQuickAccess(const QString &p_file) {
 }
 
 void ToolBarHelper2::activateQuickAccessFilePath(const QString &p_file) {
-  const auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
-  auto paras = QSharedPointer<FileOpenParameters>::create();
-  paras->m_mode = coreConfig.getDefaultOpenMode();
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (!bufferSvc) {
+    return;
+  }
 
-  emit m_mainWindow->openFileRequested(p_file, paras);
+  NodeIdentifier nodeId;
+  nodeId.relativePath = p_file;
+  FileOpenSettings settings;
+  settings.m_mode = m_services.get<ConfigMgr2>()->getCoreConfig().getDefaultOpenMode();
+  bufferSvc->openBuffer(nodeId, settings);
 }
 
 void ToolBarHelper2::activateQuickAccessFromVxUrl(const QString &p_vxUrl) {
