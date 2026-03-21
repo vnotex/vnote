@@ -13,6 +13,8 @@ target_sources(vnote PRIVATE
     textviewwindowcontroller.cpp textviewwindowcontroller.h
     pdfviewwindowcontroller.cpp pdfviewwindowcontroller.h
     mindmapviewwindowcontroller.cpp mindmapviewwindowcontroller.h
+    markdowneditorcontroller.cpp markdowneditorcontroller.h
+    markdownviewwindowcontroller.cpp markdownviewwindowcontroller.h
 )
 
 target_include_directories(vnote PRIVATE
