@@ -7,6 +7,7 @@
 #include <vtextedit/vmarkdowneditor.h>
 
 #include <core/global.h>
+#include <core/editorconfig.h>
 
 class QMimeData;
 class QMenu;
@@ -22,6 +23,7 @@ class Buffer;
 class MarkdownEditorConfig;
 class MarkdownTableHelper;
 class ImageHost;
+class ServiceLocator;
 
 class MarkdownEditor : public vte::VMarkdownEditor {
   Q_OBJECT
@@ -47,11 +49,23 @@ public:
                  const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
                  QWidget *p_parent = nullptr);
 
+  // ServiceLocator-aware constructor for new architecture.
+  // Does not require Buffer; use setContentPath() instead.
+  MarkdownEditor(ServiceLocator &p_services,
+                 const MarkdownEditorConfig &p_config,
+                 const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
+                 const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
+                 QWidget *p_parent = nullptr);
+
   virtual ~MarkdownEditor();
 
   void setPreviewHelper(PreviewHelper *p_helper);
 
   void setBuffer(Buffer *p_buffer);
+
+  // Set content path for relative link resolution (new architecture).
+  // Replaces m_buffer->getContentPath() in the ServiceLocator path.
+  void setContentPath(const QString &p_contentPath);
 
   // @p_level: [0, 6], 0 for none.
   void typeHeading(int p_level);
@@ -113,6 +127,14 @@ signals:
 
   void applySnippetRequested();
 
+  // Emitted when the editor wants to display a short status message.
+  // Caller connects to status bar or equivalent.
+  void statusMessageRequested(const QString &p_message);
+
+  // Emitted when the editor wants to open a file/URL.
+  // Caller connects to file-open handling.
+  void openFileRequested(const QString &p_filePath);
+
 private slots:
   void handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled, bool *p_allowed);
 
@@ -168,6 +190,12 @@ private:
 
   void setupShortcuts();
 
+  // Common constructor initialization. Called by both constructors.
+  void init();
+
+  // Route EditorConfig access to ConfigMgr2 or legacy ConfigMgr.
+  EditorConfig &getEditorConfig() const;
+
   void fetchImagesToLocalAndReplace(QString &p_text);
 
   // Return true if there is change.
@@ -217,6 +245,10 @@ private:
   MarkdownTableHelper *m_tableHelper = nullptr;
 
   ImageHost *m_imageHost = nullptr;
+
+  ServiceLocator *m_services = nullptr;  // Non-owning; null for legacy constructor
+  bool m_useServices = false;            // True when constructed with ServiceLocator
+  QString m_contentPath;                 // Replaces m_buffer->getContentPath() in new path
 
   bool m_shouldTriggerRichPaste = false;
 

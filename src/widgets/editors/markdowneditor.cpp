@@ -37,10 +37,12 @@
 #include <buffer/buffer.h>
 #include <buffer/markdownbuffer.h>
 #include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/exception.h>
 #include <core/fileopenparameters.h>
 #include <core/markdowneditorconfig.h>
+#include <core/servicelocator.h>
 #include <core/texteditorconfig.h>
 #include <core/vnotex.h>
 #include <imagehost/imagehost.h>
@@ -70,6 +72,22 @@ MarkdownEditor::MarkdownEditor(const MarkdownEditorConfig &p_config,
                                const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
                                QWidget *p_parent)
     : vte::VMarkdownEditor(p_editorConfig, p_editorParas, p_parent), m_config(p_config) {
+  init();
+}
+
+MarkdownEditor::MarkdownEditor(ServiceLocator &p_services,
+                               const MarkdownEditorConfig &p_config,
+                               const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
+                               const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
+                               QWidget *p_parent)
+    : vte::VMarkdownEditor(p_editorConfig, p_editorParas, p_parent),
+      m_config(p_config),
+      m_services(&p_services),
+      m_useServices(true) {
+  init();
+}
+
+void MarkdownEditor::init() {
   setupShortcuts();
 
   connect(m_textEdit, &vte::VTextEdit::canInsertFromMimeDataRequested, this,
@@ -315,6 +333,17 @@ void MarkdownEditor::typeTable() {
 
 void MarkdownEditor::setBuffer(Buffer *p_buffer) { m_buffer = p_buffer; }
 
+void MarkdownEditor::setContentPath(const QString &p_contentPath) {
+  m_contentPath = p_contentPath;
+}
+
+EditorConfig &MarkdownEditor::getEditorConfig() const {
+  if (m_useServices) {
+    return m_services->get<ConfigMgr2>()->getEditorConfig();
+  }
+  return ConfigMgr::getInst().getEditorConfig();
+}
+
 bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
                                                       const QString &p_altText,
                                                       const QString &p_srcImagePath,
@@ -340,6 +369,12 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
       return false;
     }
   } else {
+    if (!m_buffer) {
+      MessageBoxHelper::notify(
+          MessageBoxHelper::Warning,
+          tr("Image insertion from local file is not supported without a buffer."), this);
+      return false;
+    }
     try {
       destFilePath = m_buffer->insertImage(p_srcImagePath, destFileName);
     } catch (Exception &e) {
@@ -382,6 +417,12 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const Q
       return false;
     }
   } else {
+    if (!m_buffer) {
+      MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                               tr("Image insertion from data is not supported without a buffer."),
+                               this);
+      return false;
+    }
     try {
       destFilePath = m_buffer->insertImage(p_image, destFileName);
     } catch (Exception &e) {
@@ -402,7 +443,9 @@ void MarkdownEditor::insertImageLink(const QString &p_title, const QString &p_al
   if (p_urlInLink) {
     *p_urlInLink = urlInLink;
   }
-  static_cast<MarkdownBuffer *>(m_buffer)->addInsertedImage(p_destImagePath, urlInLink);
+  if (m_buffer) {
+    static_cast<MarkdownBuffer *>(m_buffer)->addInsertedImage(p_destImagePath, urlInLink);
+  }
   if (p_insertText) {
     const auto imageLink = vte::MarkdownUtils::generateImageLink(p_title, urlInLink, p_altText,
                                                                  p_scaledWidth, p_scaledHeight);
@@ -412,8 +455,7 @@ void MarkdownEditor::insertImageLink(const QString &p_title, const QString &p_al
 
 void MarkdownEditor::handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled,
                                                  bool *p_allowed) {
-  m_shouldTriggerRichPaste = ConfigMgr::getInst()
-                                 .getEditorConfig()
+  m_shouldTriggerRichPaste = getEditorConfig()
                                  .getMarkdownEditorConfig()
                                  .getRichPasteByDefaultEnabled();
 
@@ -457,9 +499,15 @@ void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p
   if (!m_shouldTriggerRichPaste) {
     // Default paste.
     // Give tips about the Rich Paste and Parse to Markdown And Paste features.
-    VNoteX::getInst().showStatusMessageShort(
-        tr("For advanced paste, try the \"Rich Paste\" and \"Parse to Markdown and Paste\" on the "
-           "editor's context menu"));
+    if (m_useServices) {
+      emit statusMessageRequested(
+          tr("For advanced paste, try the \"Rich Paste\" and \"Parse to Markdown and Paste\" on the "
+             "editor's context menu"));
+    } else {
+      VNoteX::getInst().showStatusMessageShort(
+          tr("For advanced paste, try the \"Rich Paste\" and \"Parse to Markdown and Paste\" on the "
+             "editor's context menu"));
+    }
     return;
   }
 
@@ -617,7 +665,7 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
   if (!localFile.isEmpty()) {
     dialog.addSelection(tr("Insert As Relative Link"), 3);
 
-    if (m_buffer->isAttachmentSupported() && !m_buffer->isAttachment(localFile) &&
+    if (m_buffer && m_buffer->isAttachmentSupported() && !m_buffer->isAttachment(localFile) &&
         !PathUtils::isDir(localFile)) {
       dialog.addSelection(tr("Attach And Insert Link"), 6);
     }
@@ -753,7 +801,7 @@ bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) 
   if (isAllImage) {
     dialog.addSelection(tr("Insert As Image"), 0);
   }
-  if (m_buffer->isAttachmentSupported()) {
+  if (m_buffer && m_buffer->isAttachmentSupported()) {
     dialog.addSelection(tr("Attach And Insert Link"), 1);
   }
   dialog.setMinimumWidth(400);
@@ -831,8 +879,9 @@ void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet) {
 
 QString MarkdownEditor::getRelativeLink(const QString &p_path) {
   if (PathUtils::isLocalFile(p_path)) {
+    const auto &contentPath = m_useServices ? m_contentPath : m_buffer->getContentPath();
     auto relativePath =
-        PathUtils::relativePath(PathUtils::parentDirPath(m_buffer->getContentPath()), p_path);
+        PathUtils::relativePath(PathUtils::parentDirPath(contentPath), p_path);
     auto link = PathUtils::encodeSpacesInPath(QDir::fromNativeSeparators(relativePath));
     if (m_config.getPrependDotInRelativeLink()) {
       PathUtils::prependDotIfRelative(link);
@@ -978,7 +1027,7 @@ void MarkdownEditor::scrollToHeading(int p_idx) {
 
 void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_handled,
                                             QScopedPointer<QMenu> *p_menu) {
-  const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+  const auto &editorConfig = getEditorConfig();
 
   *p_handled = true;
   p_menu->reset(m_textEdit->createStandardContextMenu(p_event->pos()));
@@ -1045,8 +1094,7 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
 }
 
 void MarkdownEditor::altPaste() {
-  const bool richPasteByDefault = ConfigMgr::getInst()
-                                      .getEditorConfig()
+  const bool richPasteByDefault = getEditorConfig()
                                       .getMarkdownEditorConfig()
                                       .getRichPasteByDefaultEnabled();
 
@@ -1070,7 +1118,7 @@ void MarkdownEditor::altPaste() {
 }
 
 void MarkdownEditor::setupShortcuts() {
-  const auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
+  const auto &editorConfig = getEditorConfig();
 
   // Alt paste.
   {
@@ -1110,7 +1158,7 @@ void MarkdownEditor::handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStam
   if (m_timeStamp == p_timeStamp && !p_text.isEmpty()) {
     QString text(p_text);
 
-    const auto &editorConfig = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
+    const auto &editorConfig = getEditorConfig().getMarkdownEditorConfig();
     if (editorConfig.getFetchImagesInParseAndPaste()) {
       fetchImagesToLocalAndReplace(text);
     }
@@ -1383,6 +1431,14 @@ void MarkdownEditor::appendImageHostMenu(QMenu *p_menu) {
   p_menu->addSeparator();
   auto subMenu = p_menu->addMenu(tr("Upload Images To Image Host"));
 
+  if (m_useServices) {
+    // ImageHost integration deferred in new architecture.
+    // Show empty submenu with "None" entry.
+    auto act = subMenu->addAction(tr("None"));
+    act->setEnabled(false);
+    return;
+  }
+
   const auto &hosts = ImageHostMgr::getInst().getImageHosts();
   if (hosts.isEmpty()) {
     auto act = subMenu->addAction(tr("None"));
@@ -1397,6 +1453,11 @@ void MarkdownEditor::appendImageHostMenu(QMenu *p_menu) {
 }
 
 void MarkdownEditor::uploadImagesToImageHost() {
+  if (m_useServices) {
+    // ImageHost integration deferred in new architecture.
+    return;
+  }
+
   auto act = static_cast<QAction *>(sender());
   auto host = ImageHostMgr::getInst().find(act->data().toString());
   Q_ASSERT(host);
@@ -1664,10 +1725,16 @@ bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cur
 
   {
     auto act = new QAction(tr("Open Link"), p_menu);
-    connect(act, &QAction::triggered, p_menu, [linkUrl]() {
-      emit VNoteX::getInst().openFileRequested(linkUrl,
-                                               QSharedPointer<FileOpenParameters>::create());
-    });
+    if (m_useServices) {
+      connect(act, &QAction::triggered, p_menu, [this, linkUrl]() {
+        emit openFileRequested(linkUrl);
+      });
+    } else {
+      connect(act, &QAction::triggered, p_menu, [linkUrl]() {
+        emit VNoteX::getInst().openFileRequested(linkUrl,
+                                                 QSharedPointer<FileOpenParameters>::create());
+      });
+    }
     p_menu->insertAction(p_before, act);
   }
 
