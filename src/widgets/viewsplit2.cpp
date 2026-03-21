@@ -17,7 +17,6 @@
 #include "viewwindow2.h"
 #include "widgetsfactory.h"
 #include <core/servicelocator.h>
-#include <core/services/notebookcoreservice.h>
 #include <core/services/workspacecoreservice.h>
 #include <gui/services/themeservice.h>
 #include <utils/clipboardutils.h>
@@ -310,7 +309,8 @@ void ViewSplit2::closeTab(int p_idx) {
 
 void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
   int idx = addTab(p_win, p_win->getIcon(), p_win->getTitle());
-  setTabToolTip(idx, p_win->getTitle());
+  QString tooltip = p_win->getBuffer().resolvedPath();
+  setTabToolTip(idx, tooltip.isEmpty() ? p_win->getTitle() : tooltip);
 
   p_win->setVisible(true);
 
@@ -325,7 +325,8 @@ void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
     if (idx != -1) {
       setTabIcon(idx, win->getIcon());
       setTabText(idx, win->getTitle());
-      setTabToolTip(idx, win->getTitle());
+      QString tooltip = win->getBuffer().resolvedPath();
+      setTabToolTip(idx, tooltip.isEmpty() ? win->getTitle() : tooltip);
     }
   });
 
@@ -335,7 +336,8 @@ void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
     int idx = indexOf(win);
     if (idx != -1) {
       setTabText(idx, win->getTitle());
-      setTabToolTip(idx, win->getTitle());
+      QString tooltip = win->getBuffer().resolvedPath();
+      setTabToolTip(idx, tooltip.isEmpty() ? win->getTitle() : tooltip);
     }
   });
 }
@@ -502,19 +504,9 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   menu.addSeparator();
 
   // ---- File Actions ----
-  // Resolve the absolute path from notebook root + relative path.
+  // Resolve the absolute path (notebook file or external file).
   const auto &nodeId = win->getNodeId();
-  QString absPath;
-  auto *notebookService = m_services.get<NotebookCoreService>();
-  if (notebookService && nodeId.isValid()) {
-    QJsonObject config = notebookService->getNotebookConfig(nodeId.notebookId);
-    QString rootPath = config.value(QStringLiteral("rootFolder")).toString();
-    if (!rootPath.isEmpty()) {
-      absPath = nodeId.relativePath.isEmpty()
-          ? rootPath
-          : PathUtils::concatenateFilePath(rootPath, nodeId.relativePath);
-    }
-  }
+  QString absPath = win->getBuffer().resolvedPath();
 
   auto *copyPathAct = menu.addAction(tr("Copy Path"), [absPath]() {
     if (!absPath.isEmpty()) {

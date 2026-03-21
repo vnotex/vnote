@@ -96,6 +96,14 @@ public:
   // Returns empty string on failure.
   QString getBackupPath(const QString &p_bufferId) const;
 
+  // ============ Path Resolution ============
+
+  // Resolve the absolute path for a notebook file or external file.
+  // If p_notebookId is empty, p_filePath is already absolute — returned as-is.
+  // Otherwise, calls vxcore_path_build_absolute to combine notebook root + relative path.
+  // Returns empty string on failure.
+  QString getResolvedPath(const QString &p_notebookId, const QString &p_filePath) const;
+
   // ============ Asset Operations (Filesystem Only) ============
 
   // Insert binary data as an asset file.

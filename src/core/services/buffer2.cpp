@@ -35,6 +35,15 @@ const NodeIdentifier &Buffer2::nodeId() const {
   return m_nodeId;
 }
 
+// ============ Path Resolution ============
+
+QString Buffer2::resolvedPath() const {
+  if (!isValid()) {
+    return QString();
+  }
+  return m_bufferCoreService->getResolvedPath(m_nodeId.notebookId, m_nodeId.relativePath);
+}
+
 // ============ Buffer Content ============
 
 bool Buffer2::save() {

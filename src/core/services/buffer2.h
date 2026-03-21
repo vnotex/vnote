@@ -41,6 +41,13 @@ public:
   // Get the node identifier (notebook + relative path) for this buffer.
   const NodeIdentifier &nodeId() const;
 
+  // ============ Path Resolution ============
+
+  // Get the resolved absolute path for this buffer's file.
+  // Delegates to BufferCoreService::getResolvedPath().
+  // Returns empty string if the buffer is invalid or resolution fails.
+  QString resolvedPath() const;
+
   // ============ Buffer Content ============
 
   // Save buffer content to disk.

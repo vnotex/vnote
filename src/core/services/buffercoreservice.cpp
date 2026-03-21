@@ -247,6 +247,28 @@ QString BufferCoreService::getBackupPath(const QString &p_bufferId) const {
   return cstrToQString(path);
 }
 
+// Path resolution.
+QString BufferCoreService::getResolvedPath(const QString &p_notebookId,
+                                           const QString &p_filePath) const {
+  // External file: p_filePath is already absolute.
+  if (p_notebookId.isEmpty()) {
+    return p_filePath;
+  }
+
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *absPath = nullptr;
+  VxCoreError err = vxcore_path_build_absolute(m_context, p_notebookId.toUtf8().constData(),
+                                               p_filePath.toUtf8().constData(), &absPath);
+  if (err != VXCORE_OK) {
+    qWarning() << "getResolvedPath failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+  return cstrToQString(absPath);
+}
+
 // Asset operations.
 QString BufferCoreService::insertAssetRaw(const QString &p_bufferId, const QString &p_assetName,
                                       const QByteArray &p_data) {
