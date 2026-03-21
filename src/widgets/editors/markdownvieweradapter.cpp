@@ -5,6 +5,7 @@
 #include "../outlineprovider.h"
 #include "graphvizhelper.h"
 #include "plantumlhelper.h"
+#include <core/servicelocator.h>
 #include <gui/utils/guiutils.h>
 
 using namespace vnotex;
@@ -63,6 +64,9 @@ QTextCharFormat MarkdownViewerAdapter::CssRuleStyle::toTextCharFormat() const {
 }
 
 MarkdownViewerAdapter::MarkdownViewerAdapter(QObject *p_parent) : WebViewAdapter(p_parent) {}
+
+MarkdownViewerAdapter::MarkdownViewerAdapter(ServiceLocator &p_services, QObject *p_parent)
+    : WebViewAdapter(p_parent), m_services(&p_services), m_useServices(true) {}
 
 MarkdownViewerAdapter::~MarkdownViewerAdapter() {}
 
@@ -270,6 +274,9 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QSt
     return;
   }
 
+  // TODO(deferred): PlantUmlHelper/GraphvizHelper singletons will be replaced
+  // by services passed through PreviewHelper pipeline in a future migration.
+  // For now, both legacy and new-architecture paths use the singleton directly.
   if (p_lang == QStringLiteral("puml")) {
     PlantUmlHelper::getInst().process(
         p_id, p_index, p_format, p_text, this,

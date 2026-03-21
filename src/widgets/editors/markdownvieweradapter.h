@@ -12,6 +12,8 @@
 #include <core/global.h>
 
 namespace vnotex {
+class ServiceLocator;
+
 // Adapter and interface between CPP and JS.
 class MarkdownViewerAdapter : public WebViewAdapter {
   Q_OBJECT
@@ -76,6 +78,9 @@ public:
   };
 
   explicit MarkdownViewerAdapter(QObject *p_parent = nullptr);
+
+  // ServiceLocator-aware constructor for new architecture.
+  explicit MarkdownViewerAdapter(ServiceLocator &p_services, QObject *p_parent = nullptr);
 
   virtual ~MarkdownViewerAdapter();
 
@@ -232,6 +237,9 @@ private:
 
   // Targets supported by cross copy. Set by web.
   QStringList m_crossCopyTargets;
+
+  ServiceLocator *m_services = nullptr;  // Non-owning; null for legacy constructor
+  bool m_useServices = false;            // True when constructed with ServiceLocator
 };
 } // namespace vnotex
 

@@ -5,10 +5,14 @@
 
 #include <QClipboard>
 
+#include <core/editorconfig.h>
+
 namespace vnotex {
 class MarkdownViewerAdapter;
 class PreviewHelper;
+class ServiceLocator;
 class ViewWindow;
+class ViewWindow2;
 
 class MarkdownViewer : public WebViewer {
   Q_OBJECT
@@ -19,6 +23,14 @@ public:
 
   MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindow *p_viewWindow,
                  const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent = nullptr);
+
+  // ServiceLocator-aware constructors for new architecture.
+  MarkdownViewer(MarkdownViewerAdapter *p_adapter, ServiceLocator &p_services,
+                 const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent = nullptr);
+
+  MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindow2 *p_viewWindow2,
+                 ServiceLocator &p_services, const QColor &p_background, qreal p_zoomFactor,
+                 QWidget *p_parent = nullptr);
 
   MarkdownViewerAdapter *adapter() const;
 
@@ -64,8 +76,17 @@ private:
   // Managed by QObject.
   MarkdownViewerAdapter *m_adapter = nullptr;
 
-  // Nullable.
+  // Nullable. Legacy path only.
   const ViewWindow *m_viewWindow = nullptr;
+
+  // Nullable. New architecture path only.
+  const ViewWindow2 *m_viewWindow2 = nullptr;
+
+  ServiceLocator *m_services = nullptr;  // Non-owning; null for legacy constructor
+  bool m_useServices = false;            // True when constructed with ServiceLocator
+
+  // Route EditorConfig access to ConfigMgr2 or legacy ConfigMgr.
+  EditorConfig &getEditorConfig() const;
 
   // Whether this view has hooked the Copy Image Url action.
   bool m_copyImageUrlActionHooked = false;

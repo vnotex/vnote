@@ -9,11 +9,14 @@
 #include <QWebEngineSettings>
 
 #include "../viewwindow.h"
+#include "../viewwindow2.h"
 #include "../widgetsfactory.h"
 #include "markdownvieweradapter.h"
 #include "previewhelper.h"
 #include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/servicelocator.h>
 #include <utils/clipboardutils.h>
 #include <utils/fileutils.h>
 #include <utils/utils.h>
@@ -36,6 +39,43 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
                                const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent)
     : WebViewer(p_background, p_zoomFactor, p_parent), m_adapter(p_adapter),
       m_viewWindow(p_viewWindow) {
+  m_adapter->setParent(this);
+
+  auto channel = new QWebChannel(this);
+  channel->registerObject(QStringLiteral("vxAdapter"), m_adapter);
+
+  page()->setWebChannel(channel);
+
+  connect(QApplication::clipboard(), &QClipboard::changed, this,
+          &MarkdownViewer::handleClipboardChanged);
+
+  connect(m_adapter, &MarkdownViewerAdapter::keyPressed, this, &MarkdownViewer::handleWebKeyPress);
+
+  connect(m_adapter, &MarkdownViewerAdapter::zoomed, this,
+          [this](bool p_zoomIn) { p_zoomIn ? zoomIn() : zoomOut(); });
+
+  connect(m_adapter, &MarkdownViewerAdapter::crossCopyReady, this,
+          [](quint64 p_id, quint64 p_timeStamp, const QString &p_html) {
+            Q_UNUSED(p_id);
+            Q_UNUSED(p_timeStamp);
+            std::unique_ptr<QMimeData> mimeData(new QMimeData());
+            mimeData->setHtml(p_html);
+            ClipboardUtils::setMimeDataToClipboard(QApplication::clipboard(), mimeData.release());
+          });
+
+  settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+}
+
+MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, ServiceLocator &p_services,
+                               const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent)
+    : MarkdownViewer(p_adapter, static_cast<const ViewWindow2 *>(nullptr), p_services, p_background,
+                     p_zoomFactor, p_parent) {}
+
+MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindow2 *p_viewWindow2,
+                               ServiceLocator &p_services, const QColor &p_background,
+                               qreal p_zoomFactor, QWidget *p_parent)
+    : WebViewer(p_background, p_zoomFactor, p_parent), m_adapter(p_adapter),
+      m_viewWindow2(p_viewWindow2), m_services(&p_services), m_useServices(true) {
   m_adapter->setParent(this);
 
   auto channel = new QWebChannel(this);
@@ -113,15 +153,23 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
   }
 #endif
 
-  if (!hasSelection() && m_viewWindow && m_viewWindow->getMode() == ViewWindowMode::Read) {
-    auto firstAct = actions.isEmpty() ? nullptr : actions[0];
-    auto editAct = new QAction(tr("&Edit"), menu);
-    WidgetUtils::addActionShortcutText(editAct, ConfigMgr::getInst().getEditorConfig().getShortcut(
-                                                    EditorConfig::Shortcut::EditRead));
-    connect(editAct, &QAction::triggered, this, &MarkdownViewer::editRequested);
-    menu->insertAction(firstAct, editAct);
-    if (firstAct) {
-      menu->insertSeparator(firstAct);
+  if (!hasSelection()) {
+    bool inReadMode = false;
+    if (m_viewWindow) {
+      inReadMode = m_viewWindow->getMode() == ViewWindowMode::Read;
+    } else if (m_viewWindow2) {
+      inReadMode = m_viewWindow2->getMode() == ViewWindowMode::Read;
+    }
+    if (inReadMode) {
+      auto firstAct = actions.isEmpty() ? nullptr : actions[0];
+      auto editAct = new QAction(tr("&Edit"), menu);
+      WidgetUtils::addActionShortcutText(
+          editAct, getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead));
+      connect(editAct, &QAction::triggered, this, &MarkdownViewer::editRequested);
+      menu->insertAction(firstAct, editAct);
+      if (firstAct) {
+        menu->insertSeparator(firstAct);
+      }
     }
   }
 
@@ -412,4 +460,11 @@ void MarkdownViewer::crossCopy(const QString &p_target, const QString &p_baseUrl
 void MarkdownViewer::saveContent(const std::function<void(const QString &p_content)> &p_callback) {
   page()->runJavaScript("document.getElementById('vx-content').textContent",
                         [p_callback](const QVariant &v) { p_callback(v.toString()); });
+}
+
+EditorConfig &MarkdownViewer::getEditorConfig() const {
+  if (m_useServices) {
+    return m_services->get<ConfigMgr2>()->getEditorConfig();
+  }
+  return ConfigMgr::getInst().getEditorConfig();
 }
