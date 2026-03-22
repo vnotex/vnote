@@ -98,6 +98,7 @@ target_sources(vnote PRIVATE
     mainwindow.cpp mainwindow.h
     mainwindow2.cpp mainwindow2.h
     markdownviewwindow.cpp markdownviewwindow.h
+    markdownviewwindow2.cpp markdownviewwindow2.h
     messageboxhelper.cpp messageboxhelper.h
     mindmapviewwindow.cpp mindmapviewwindow.h
     mindmapviewwindow2.cpp mindmapviewwindow2.h

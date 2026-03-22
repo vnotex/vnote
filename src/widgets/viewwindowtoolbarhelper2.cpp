@@ -136,6 +136,13 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
   }
 
+  case Action::EditRead:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("edit_editor.svg")),
+                          QObject::tr("Edit"));
+    act->setCheckable(true);
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::EditRead), p_shortcutWidget);
+    break;
+
   default:
     Q_ASSERT(false);
     break;

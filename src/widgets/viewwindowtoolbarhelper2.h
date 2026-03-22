@@ -27,8 +27,8 @@ public:
     Save,
     FindAndReplace,
     Print,
-    WordCount
-    // TODO: TypeBold, Attachment, Tag, etc. — add when migrating MarkdownViewWindow2.
+    WordCount,
+    EditRead
   };
 
   ViewWindowToolBarHelper2() = delete;
