@@ -103,6 +103,33 @@ private:
 
   void setEditViewMode(MarkdownEditorConfig::EditViewMode p_mode);
 
+  // Type action IDs for formatting toolbar buttons.
+  enum TypeAction {
+    TypeHeadingNone = 0,
+    TypeHeading1 = 1,
+    TypeHeading2 = 2,
+    TypeHeading3 = 3,
+    TypeHeading4 = 4,
+    TypeHeading5 = 5,
+    TypeHeading6 = 6,
+    TypeBold = 10,
+    TypeItalic,
+    TypeStrikethrough,
+    TypeMark,
+    TypeUnorderedList,
+    TypeOrderedList,
+    TypeTodoList,
+    TypeCheckedTodoList,
+    TypeCode,
+    TypeCodeBlock,
+    TypeMath,
+    TypeMathBlock,
+    TypeQuote,
+    TypeLink,
+    TypeImage,
+    TypeTable
+  };
+
   void handleTypeAction(int p_action);
 
   MarkdownViewerAdapter *adapter() const;

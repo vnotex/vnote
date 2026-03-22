@@ -164,7 +164,7 @@ void MarkdownViewWindow2::setupToolBar() {
   {
     auto *headingBtn = new QToolButton(toolBar);
     headingBtn->setIcon(
-        ViewWindowToolBarHelper2::generateIcon(getServices(), QStringLiteral("type_heading.svg")));
+        ViewWindowToolBarHelper2::generateIcon(getServices(), QStringLiteral("type_heading_editor.svg")));
     headingBtn->setToolTip(tr("Heading"));
     headingBtn->setPopupMode(QToolButton::InstantPopup);
     headingBtn->setEnabled(false);
@@ -186,7 +186,7 @@ void MarkdownViewWindow2::setupToolBar() {
       if (!shortcutKey.isEmpty()) {
         ViewWindowToolBarHelper2::addActionShortcut(noneAct, shortcutKey, this);
       }
-      connect(noneAct, &QAction::triggered, this, [this]() { handleTypeAction(0); });
+      connect(noneAct, &QAction::triggered, this, [this]() { handleTypeAction(TypeHeadingNone); });
     }
     headingBtn->setMenu(headingMenu);
     toolBar->addWidget(headingBtn);
@@ -196,38 +196,38 @@ void MarkdownViewWindow2::setupToolBar() {
     });
   }
 
-  addTypeAction(QStringLiteral("type_bold.svg"), tr("Bold"),
-                editorConfig.getShortcut(Shortcut::TypeBold), 10);
-  addTypeAction(QStringLiteral("type_italic.svg"), tr("Italic"),
-                editorConfig.getShortcut(Shortcut::TypeItalic), 11);
-  addTypeAction(QStringLiteral("type_strikethrough.svg"), tr("Strikethrough"),
-                editorConfig.getShortcut(Shortcut::TypeStrikethrough), 12);
-  addTypeAction(QStringLiteral("type_mark.svg"), tr("Mark"),
-                editorConfig.getShortcut(Shortcut::TypeMark), 13);
-  addTypeAction(QStringLiteral("type_unordered_list.svg"), tr("Unordered List"),
-                editorConfig.getShortcut(Shortcut::TypeUnorderedList), 14);
-  addTypeAction(QStringLiteral("type_ordered_list.svg"), tr("Ordered List"),
-                editorConfig.getShortcut(Shortcut::TypeOrderedList), 15);
-  addTypeAction(QStringLiteral("type_todo_list.svg"), tr("Todo List"),
-                editorConfig.getShortcut(Shortcut::TypeTodoList), 16);
-  addTypeAction(QStringLiteral("type_checked_todo_list.svg"), tr("Checked Todo List"),
-                editorConfig.getShortcut(Shortcut::TypeCheckedTodoList), 17);
-  addTypeAction(QStringLiteral("type_code.svg"), tr("Code"),
-                editorConfig.getShortcut(Shortcut::TypeCode), 18);
-  addTypeAction(QStringLiteral("type_code_block.svg"), tr("Code Block"),
-                editorConfig.getShortcut(Shortcut::TypeCodeBlock), 19);
-  addTypeAction(QStringLiteral("type_math.svg"), tr("Math"),
-                editorConfig.getShortcut(Shortcut::TypeMath), 20);
-  addTypeAction(QStringLiteral("type_math_block.svg"), tr("Math Block"),
-                editorConfig.getShortcut(Shortcut::TypeMathBlock), 21);
-  addTypeAction(QStringLiteral("type_quote.svg"), tr("Quote"),
-                editorConfig.getShortcut(Shortcut::TypeQuote), 22);
-  addTypeAction(QStringLiteral("type_link.svg"), tr("Link"),
-                editorConfig.getShortcut(Shortcut::TypeLink), 23);
-  addTypeAction(QStringLiteral("type_image.svg"), tr("Image"),
-                editorConfig.getShortcut(Shortcut::TypeImage), 24);
-  addTypeAction(QStringLiteral("type_table.svg"), tr("Table"),
-                editorConfig.getShortcut(Shortcut::TypeTable), 25);
+  addTypeAction(QStringLiteral("type_bold_editor.svg"), tr("Bold"),
+                editorConfig.getShortcut(Shortcut::TypeBold), TypeBold);
+  addTypeAction(QStringLiteral("type_italic_editor.svg"), tr("Italic"),
+                editorConfig.getShortcut(Shortcut::TypeItalic), TypeItalic);
+  addTypeAction(QStringLiteral("type_strikethrough_editor.svg"), tr("Strikethrough"),
+                editorConfig.getShortcut(Shortcut::TypeStrikethrough), TypeStrikethrough);
+  addTypeAction(QStringLiteral("type_mark_editor.svg"), tr("Mark"),
+                editorConfig.getShortcut(Shortcut::TypeMark), TypeMark);
+  addTypeAction(QStringLiteral("type_unordered_list_editor.svg"), tr("Unordered List"),
+                editorConfig.getShortcut(Shortcut::TypeUnorderedList), TypeUnorderedList);
+  addTypeAction(QStringLiteral("type_ordered_list_editor.svg"), tr("Ordered List"),
+                editorConfig.getShortcut(Shortcut::TypeOrderedList), TypeOrderedList);
+  addTypeAction(QStringLiteral("type_todo_list_editor.svg"), tr("Todo List"),
+                editorConfig.getShortcut(Shortcut::TypeTodoList), TypeTodoList);
+  addTypeAction(QStringLiteral("type_checked_todo_list_editor.svg"), tr("Checked Todo List"),
+                editorConfig.getShortcut(Shortcut::TypeCheckedTodoList), TypeCheckedTodoList);
+  addTypeAction(QStringLiteral("type_code_editor.svg"), tr("Code"),
+                editorConfig.getShortcut(Shortcut::TypeCode), TypeCode);
+  addTypeAction(QStringLiteral("type_code_block_editor.svg"), tr("Code Block"),
+                editorConfig.getShortcut(Shortcut::TypeCodeBlock), TypeCodeBlock);
+  addTypeAction(QStringLiteral("type_math_editor.svg"), tr("Math"),
+                editorConfig.getShortcut(Shortcut::TypeMath), TypeMath);
+  addTypeAction(QStringLiteral("type_math_block_editor.svg"), tr("Math Block"),
+                editorConfig.getShortcut(Shortcut::TypeMathBlock), TypeMathBlock);
+  addTypeAction(QStringLiteral("type_quote_editor.svg"), tr("Quote"),
+                editorConfig.getShortcut(Shortcut::TypeQuote), TypeQuote);
+  addTypeAction(QStringLiteral("type_link_editor.svg"), tr("Link"),
+                editorConfig.getShortcut(Shortcut::TypeLink), TypeLink);
+  addTypeAction(QStringLiteral("type_image_editor.svg"), tr("Image"),
+                editorConfig.getShortcut(Shortcut::TypeImage), TypeImage);
+  addTypeAction(QStringLiteral("type_table_editor.svg"), tr("Table"),
+                editorConfig.getShortcut(Shortcut::TypeTable), TypeTable);
 
   ViewWindowToolBarHelper2::addSpacer(toolBar);
 
@@ -870,29 +870,29 @@ void MarkdownViewWindow2::handleTypeAction(int p_action) {
     return;
   }
   switch (p_action) {
-  case 0: m_editor->typeHeading(0); break;  // HeadingNone
-  case 1: m_editor->typeHeading(1); break;  // H1
-  case 2: m_editor->typeHeading(2); break;  // H2
-  case 3: m_editor->typeHeading(3); break;  // H3
-  case 4: m_editor->typeHeading(4); break;  // H4
-  case 5: m_editor->typeHeading(5); break;  // H5
-  case 6: m_editor->typeHeading(6); break;  // H6
-  case 10: m_editor->typeBold(); break;
-  case 11: m_editor->typeItalic(); break;
-  case 12: m_editor->typeStrikethrough(); break;
-  case 13: m_editor->typeMark(); break;
-  case 14: m_editor->typeUnorderedList(); break;
-  case 15: m_editor->typeOrderedList(); break;
-  case 16: m_editor->typeTodoList(false); break;
-  case 17: m_editor->typeTodoList(true); break;
-  case 18: m_editor->typeCode(); break;
-  case 19: m_editor->typeCodeBlock(); break;
-  case 20: m_editor->typeMath(); break;
-  case 21: m_editor->typeMathBlock(); break;
-  case 22: m_editor->typeQuote(); break;
-  case 23: m_editor->typeLink(); break;
-  case 24: m_editor->typeImage(); break;
-  case 25: m_editor->typeTable(); break;
+  case TypeHeadingNone: m_editor->typeHeading(0); break;
+  case TypeHeading1: m_editor->typeHeading(1); break;
+  case TypeHeading2: m_editor->typeHeading(2); break;
+  case TypeHeading3: m_editor->typeHeading(3); break;
+  case TypeHeading4: m_editor->typeHeading(4); break;
+  case TypeHeading5: m_editor->typeHeading(5); break;
+  case TypeHeading6: m_editor->typeHeading(6); break;
+  case TypeBold: m_editor->typeBold(); break;
+  case TypeItalic: m_editor->typeItalic(); break;
+  case TypeStrikethrough: m_editor->typeStrikethrough(); break;
+  case TypeMark: m_editor->typeMark(); break;
+  case TypeUnorderedList: m_editor->typeUnorderedList(); break;
+  case TypeOrderedList: m_editor->typeOrderedList(); break;
+  case TypeTodoList: m_editor->typeTodoList(false); break;
+  case TypeCheckedTodoList: m_editor->typeTodoList(true); break;
+  case TypeCode: m_editor->typeCode(); break;
+  case TypeCodeBlock: m_editor->typeCodeBlock(); break;
+  case TypeMath: m_editor->typeMath(); break;
+  case TypeMathBlock: m_editor->typeMathBlock(); break;
+  case TypeQuote: m_editor->typeQuote(); break;
+  case TypeLink: m_editor->typeLink(); break;
+  case TypeImage: m_editor->typeImage(); break;
+  case TypeTable: m_editor->typeTable(); break;
   default: qWarning() << "Unknown type action" << p_action; break;
   }
 }
