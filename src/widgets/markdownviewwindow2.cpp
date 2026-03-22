@@ -24,6 +24,7 @@
 #include <core/exception.h>
 #include <core/markdowneditorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <core/services/htmltemplateservice.h>
 #include <core/theme.h>
 #include <gui/services/themeservice.h>
@@ -531,6 +532,15 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     return;
   }
   m_switchingMode = true;
+
+  // When leaving Edit mode, sync editor content to buffer immediately
+  // so the buffer has the latest content for the viewer to read.
+  if (m_mode == ViewWindowMode::Edit && m_editor && p_syncBuffer) {
+    auto *bufferService = getServices().get<BufferService>();
+    if (bufferService) {
+      bufferService->syncNow(getBuffer().id());
+    }
+  }
 
   m_previousMode = m_mode;
   m_mode = p_mode;
