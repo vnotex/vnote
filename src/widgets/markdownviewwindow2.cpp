@@ -2,6 +2,7 @@
 
 #include <QAction>
 #include <QCoreApplication>
+#include <QEvent>
 #include <QFileInfo>
 #include <QLabel>
 #include <QMenu>
@@ -20,6 +21,7 @@
 #include <controllers/markdownviewwindowcontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/exception.h>
 #include <core/markdowneditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/htmltemplateservice.h>
@@ -27,6 +29,7 @@
 #include <gui/services/themeservice.h>
 #include <gui/utils/printutils.h>
 #include <gui/utils/widgetutils.h>
+#include <utils/fileutils.h>
 #include <utils/pathutils.h>
 
 #include "editors/markdowneditor.h"
@@ -48,20 +51,52 @@ typedef EditorConfig::Shortcut Shortcut;
 MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                                          QWidget *p_parent)
     : ViewWindow2(p_services, p_buffer, p_parent) {
+  // Start at Invalid so the first setMode() triggers full initialization.
+  m_mode = ViewWindowMode::Invalid;
+  qDebug() << "MarkdownViewWindow2::ctor: creating window for buffer"
+           << p_buffer.id() << "path:" << p_buffer.resolvedPath()
+           << "valid:" << p_buffer.isValid()
+           << "initial m_mode:" << static_cast<int>(m_mode);
   m_editorController = new MarkdownEditorController(p_services, this);
   m_windowController = new MarkdownViewWindowController(p_services, this);
 
   setupUI();
   setupPreviewHelper();
+
+  // Trigger initial mode setup (creates viewer, loads content).
+  setModeInternal(ViewWindowMode::Read, true);
+  qDebug() << "MarkdownViewWindow2::ctor: construction complete, m_mode:"
+           << static_cast<int>(m_mode) << "m_viewer:" << m_viewer
+           << "m_editor:" << m_editor;
+}
+
+// ============ Destructor ============
+
+MarkdownViewWindow2::~MarkdownViewWindow2() {
+  // Remove status widgets from QStackedWidget and reparent to nullptr
+  // to prevent double-free with QSharedPointer.
+  if (m_textEditorStatusWidget) {
+    m_mainStatusWidget->removeWidget(m_textEditorStatusWidget.get());
+    m_textEditorStatusWidget->setParent(nullptr);
+  }
+  if (m_viewerStatusWidget) {
+    m_mainStatusWidget->removeWidget(m_viewerStatusWidget.get());
+    m_viewerStatusWidget->setParent(nullptr);
+  }
+  m_mainStatusWidget->setParent(nullptr);
 }
 
 // ============ setupUI ============
 
 void MarkdownViewWindow2::setupUI() {
+  qDebug() << "MarkdownViewWindow2::setupUI: begin";
   // Central widget: splitter to hold editor (index 0) and viewer (index 1).
   m_splitter = new QSplitter(this);
   m_splitter->setContentsMargins(0, 0, 0, 0);
   setCentralWidget(m_splitter);
+  // Get the focus event from splitter.
+  m_splitter->installEventFilter(this);
+  qDebug() << "MarkdownViewWindow2::setupUI: splitter created and set as central widget";
 
   // Status widget: QStackedWidget to switch between editor/viewer status.
   {
@@ -71,13 +106,16 @@ void MarkdownViewWindow2::setupUI() {
     statusWidget->setEditorStatusWidget(m_mainStatusWidget.staticCast<QWidget>());
     setStatusWidget(statusWidget);
   }
+  qDebug() << "MarkdownViewWindow2::setupUI: status widget created";
 
   setupToolBar();
+  qDebug() << "MarkdownViewWindow2::setupUI: complete";
 }
 
 // ============ setupToolBar ============
 
 void MarkdownViewWindow2::setupToolBar() {
+  qDebug() << "MarkdownViewWindow2::setupToolBar: begin";
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
 
@@ -90,7 +128,11 @@ void MarkdownViewWindow2::setupToolBar() {
       toolBar, ViewWindowToolBarHelper2::EditRead, getServices(), this);
   // Checked = Edit mode, Unchecked = Read mode.
   m_editReadAction->setChecked(m_mode == ViewWindowMode::Edit);
+  qDebug() << "MarkdownViewWindow2::setupToolBar: EditRead action initial checked:"
+           << m_editReadAction->isChecked() << "m_mode:" << static_cast<int>(m_mode);
   connect(m_editReadAction, &QAction::toggled, this, [this](bool p_checked) {
+    qDebug() << "MarkdownViewWindow2::setupToolBar: EditRead toggled to" << p_checked
+             << "(current m_mode:" << static_cast<int>(m_mode) << ")";
     setMode(p_checked ? ViewWindowMode::Edit : ViewWindowMode::Read);
   });
   connect(this, &ViewWindow2::modeChanged, this, [this]() {
@@ -264,6 +306,8 @@ void MarkdownViewWindow2::setupToolBar() {
 // ============ setupTextEditor (lazy init) ============
 
 void MarkdownViewWindow2::setupTextEditor() {
+  qDebug() << "MarkdownViewWindow2::setupTextEditor: begin, m_editor:" << m_editor
+           << "m_viewer:" << m_viewer;
   Q_ASSERT(!m_editor);
   Q_ASSERT(m_viewer);  // Viewer must exist before editor (for preview pipeline).
 
@@ -286,12 +330,15 @@ void MarkdownViewWindow2::setupTextEditor() {
           editorConfig, mdConfig, themeFile, syntaxTheme, scaleFactor),
       MarkdownEditorController::buildMarkdownEditorParameters(editorConfig, mdConfig),
       this);
+  qDebug() << "MarkdownViewWindow2::setupTextEditor: editor created:" << m_editor;
 
   // Insert at index 0 in splitter (editor always first).
   m_splitter->insertWidget(0, m_editor);
+  qDebug() << "MarkdownViewWindow2::setupTextEditor: editor inserted into splitter at index 0";
 
   // Connect editor signals.
   connectEditorSignals();
+  qDebug() << "MarkdownViewWindow2::setupTextEditor: editor signals connected";
 
   // Status widget for editor.
   m_textEditorStatusWidget = m_editor->statusWidget();
@@ -304,6 +351,7 @@ void MarkdownViewWindow2::setupTextEditor() {
 
   // Set content path from Buffer2 (replaces m_editor->setBuffer(buffer)).
   auto resolved = getBuffer().resolvedPath();
+  qDebug() << "MarkdownViewWindow2::setupTextEditor: buffer resolvedPath:" << resolved;
   if (!resolved.isEmpty()) {
     m_editor->setContentPath(QFileInfo(resolved).path());
   }
@@ -318,11 +366,23 @@ void MarkdownViewWindow2::setupTextEditor() {
           &MarkdownViewerAdapter::htmlToMarkdownRequested);
   connect(adapter(), &MarkdownViewerAdapter::htmlToMarkdownReady, m_editor,
           &MarkdownEditor::handleHtmlToMarkdownData);
+
+  // External code block highlighting pipeline.
+  connect(m_editor, &MarkdownEditor::externalCodeBlockHighlightRequested,
+          this, &MarkdownViewWindow2::handleExternalCodeBlockHighlightRequest);
+  connect(adapter(), &MarkdownViewerAdapter::highlightCodeBlockReady,
+          m_editor, &MarkdownEditor::handleExternalCodeBlockHighlightData);
+
+  // Switch to read mode when editor requests it.
+  connect(m_editor, &MarkdownEditor::readRequested, this, [this]() {
+    setMode(ViewWindowMode::Read);
+  });
+
+  qDebug() << "MarkdownViewWindow2::setupTextEditor: complete";
 }
 
-// ============ setupViewer (lazy init) ============
-
 void MarkdownViewWindow2::setupViewer() {
+  qDebug() << "MarkdownViewWindow2::setupViewer: begin, m_viewer:" << m_viewer;
   Q_ASSERT(!m_viewer);
 
   auto *configMgr = getServices().get<ConfigMgr2>();
@@ -334,19 +394,33 @@ void MarkdownViewWindow2::setupViewer() {
   // Update HTML template via HtmlTemplateService.
   auto *htmlTemplateService = getServices().get<HtmlTemplateService>();
   auto *themeService = getServices().get<ThemeService>();
+  qDebug() << "MarkdownViewWindow2::setupViewer: htmlTemplateService:" << htmlTemplateService
+           << "themeService:" << themeService;
   htmlTemplateService->updateMarkdownViewerTemplate(
       mdConfig,
       themeService->getFile(Theme::File::WebStyleSheet),
       themeService->getFile(Theme::File::HighlightStyleSheet));
+  qDebug() << "MarkdownViewWindow2::setupViewer: HTML template updated";
 
   // Create adapter and viewer.
   auto *adapterObj = new MarkdownViewerAdapter(getServices(), this);
+  qDebug() << "MarkdownViewWindow2::setupViewer: adapter created:" << adapterObj;
+
+  auto bgColor = themeService->getBaseBackground();
+  auto zoomFactor = mdConfig.getZoomFactorInReadMode();
+  qDebug() << "MarkdownViewWindow2::setupViewer: background:" << bgColor.name()
+           << "zoomFactor:" << zoomFactor;
+
   m_viewer = new MarkdownViewer(
       adapterObj, getServices(),
-      themeService->getBaseBackground(),
-      mdConfig.getZoomFactorInReadMode(),
+      bgColor,
+      zoomFactor,
       this);
+  qDebug() << "MarkdownViewWindow2::setupViewer: viewer created:" << m_viewer;
+
   m_splitter->addWidget(m_viewer);
+  qDebug() << "MarkdownViewWindow2::setupViewer: viewer added to splitter, splitter count:"
+           << m_splitter->count();
 
   // Viewer status widget.
   {
@@ -358,6 +432,7 @@ void MarkdownViewWindow2::setupViewer() {
   }
 
   m_viewer->setPreviewHelper(m_previewHelper);
+  qDebug() << "MarkdownViewWindow2::setupViewer: preview helper set on viewer";
 
   // Zoom persistence.
   connect(m_viewer, &MarkdownViewer::zoomFactorChanged, this, [this](qreal p_factor) {
@@ -382,27 +457,39 @@ void MarkdownViewWindow2::setupViewer() {
 
   // Viewer ready signal.
   connect(adapterObj, &MarkdownViewerAdapter::ready, this, [this]() {
+    qDebug() << "MarkdownViewWindow2::setupViewer: VIEWER READY signal received!"
+             << "m_mode:" << static_cast<int>(m_mode)
+             << "m_viewerReady (before):" << m_viewerReady;
     m_viewerReady = true;
     if (m_mode == ViewWindowMode::Edit) {
       setEditViewMode(m_editViewMode);
     }
   });
+
+  // Print finished cleanup.
+  connect(m_viewer, &MarkdownViewer::printFinished, this, &MarkdownViewWindow2::onPrintFinished);
+
+  qDebug() << "MarkdownViewWindow2::setupViewer: complete, viewer:" << m_viewer
+           << "adapter:" << adapterObj << "adapterReady:" << adapterObj->isReady();
 }
 
 // ============ setupPreviewHelper ============
 
 void MarkdownViewWindow2::setupPreviewHelper() {
+  qDebug() << "MarkdownViewWindow2::setupPreviewHelper: begin";
   Q_ASSERT(!m_previewHelper);
   m_previewHelper = new PreviewHelper(nullptr, this);
 
   auto *configMgr = getServices().get<ConfigMgr2>();
   const auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
   updatePreviewHelperFromConfig(mdConfig);
+  qDebug() << "MarkdownViewWindow2::setupPreviewHelper: complete";
 }
 
 // ============ connectEditorSignals ============
 
 void MarkdownViewWindow2::connectEditorSignals() {
+  qDebug() << "MarkdownViewWindow2::connectEditorSignals: connecting editor signals";
   // Focus forwarding.
   connect(m_editor, &vte::VTextEditor::focusIn, this,
           [this]() { emit focused(this); });
@@ -418,17 +505,27 @@ void MarkdownViewWindow2::connectEditorSignals() {
 // ============ setMode / setModeInternal ============
 
 void MarkdownViewWindow2::setMode(ViewWindowMode p_mode) {
+  qDebug() << "MarkdownViewWindow2::setMode: requested mode:" << static_cast<int>(p_mode)
+           << "current m_mode:" << static_cast<int>(m_mode);
   setModeInternal(p_mode, true);
 }
 
 void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffer) {
+  qDebug() << "MarkdownViewWindow2::setModeInternal: target:" << static_cast<int>(p_mode)
+           << "current:" << static_cast<int>(m_mode)
+           << "syncBuffer:" << p_syncBuffer
+           << "m_switchingMode:" << m_switchingMode;
+
   if (p_mode == m_mode) {
+    qDebug() << "MarkdownViewWindow2::setModeInternal: SKIPPING - target == current ("
+             << static_cast<int>(p_mode) << ") -- THIS MAY BE THE BUG if viewer was never set up";
     return;
   }
 
   // Reentrancy guard: processEvents() below can trigger signals that
   // re-enter this method. Skip if already switching.
   if (m_switchingMode) {
+    qDebug() << "MarkdownViewWindow2::setModeInternal: SKIPPING - reentrancy guard active";
     return;
   }
   m_switchingMode = true;
@@ -436,23 +533,39 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   m_previousMode = m_mode;
   m_mode = p_mode;
 
+  // Disable propagation during mode switch to avoid false dirty marking.
+  m_propagateEditorToBuffer = false;
+  qDebug() << "MarkdownViewWindow2::setModeInternal: transitioning"
+           << static_cast<int>(m_previousMode) << "->" << static_cast<int>(m_mode);
+
   auto transition = MarkdownViewWindowController::computeModeTransition(
       static_cast<int>(m_previousMode),
       static_cast<int>(m_mode),
       m_editor != nullptr,
       m_viewer != nullptr,
       p_syncBuffer);
+  qDebug() << "MarkdownViewWindow2::setModeInternal: transition:"
+           << "needSetupViewer:" << transition.needSetupViewer
+           << "needSetupEditor:" << transition.needSetupEditor
+           << "syncViewerFromBuffer:" << transition.syncViewerFromBuffer
+           << "syncEditorFromBuffer:" << transition.syncEditorFromBuffer
+           << "syncPositionFromPrevMode:" << transition.syncPositionFromPrevMode
+           << "syncBufferToActiveView:" << transition.syncBufferToActiveView
+           << "restoreEditViewMode:" << transition.restoreEditViewMode;
 
   // Lazy init: create viewer if needed.
   if (transition.needSetupViewer) {
+    qDebug() << "MarkdownViewWindow2::setModeInternal: calling setupViewer()";
     setupViewer();
   }
 
   // Lazy init: create editor if needed.
   if (transition.needSetupEditor) {
+    qDebug() << "MarkdownViewWindow2::setModeInternal: calling setupTextEditor()";
     // In Edit mode, we need the viewer for preview pipeline.
     // Must show viewer briefly to let it init with correct DPI.
     if (m_viewer && !m_viewer->isVisible()) {
+      qDebug() << "MarkdownViewWindow2::setModeInternal: showing viewer for DPI init";
       m_viewer->show();
     }
     setupTextEditor();
@@ -460,15 +573,19 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
 
   // Sync content from buffer to the target view.
   if (transition.syncEditorFromBuffer) {
+    qDebug() << "MarkdownViewWindow2::setModeInternal: syncing editor from buffer";
     syncTextEditorFromBuffer(transition.syncPositionFromPrevMode);
   }
   if (transition.syncViewerFromBuffer) {
+    qDebug() << "MarkdownViewWindow2::setModeInternal: syncing viewer from buffer";
     syncViewerFromBuffer(transition.syncPositionFromPrevMode);
   }
 
   // Show/hide widgets and set focus.
   switch (m_mode) {
   case ViewWindowMode::Read:
+    qDebug() << "MarkdownViewWindow2::setModeInternal: entering Read mode"
+             << "viewer:" << m_viewer << "editor:" << m_editor;
     m_viewer->show();
     m_viewer->setFocus();
     if (m_editor) {
@@ -478,6 +595,9 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     break;
 
   case ViewWindowMode::Edit:
+    qDebug() << "MarkdownViewWindow2::setModeInternal: entering Edit mode"
+             << "viewer:" << m_viewer << "editor:" << m_editor
+             << "restoreEditViewMode:" << transition.restoreEditViewMode;
     m_editor->show();
     m_editor->setFocus();
     if (transition.restoreEditViewMode) {
@@ -499,14 +619,36 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   // Let widgets show before scrolling (processEvents needed for geometry).
   QCoreApplication::processEvents();
 
-  // Post-switch: sync buffer content to active view for position sync.
+  // Post-switch: sync buffer content to active view (content-only, no template reload).
+  // Uses revision check to skip if already synced during initial setup.
   if (transition.syncBufferToActiveView) {
+    auto bufferRevision = getBuffer().isValid() ? getBuffer().getRevision() : 0;
+    qDebug() << "MarkdownViewWindow2::setModeInternal: post-switch syncBufferToActiveView for mode"
+             << static_cast<int>(m_mode)
+             << "bufferRevision:" << bufferRevision;
     switch (m_mode) {
     case ViewWindowMode::Read:
-      syncViewerFromBuffer(transition.syncPositionFromPrevMode);
+      if (m_viewer && m_viewerBufferRevision != bufferRevision) {
+        auto state = MarkdownEditorController::prepareBufferState(getBuffer());
+        if (state.valid) {
+          int lineNumber = transition.syncPositionFromPrevMode ? getEditLineNumber() : -1;
+          qDebug() << "MarkdownViewWindow2::setModeInternal: content-only viewer sync"
+                   << "revision:" << state.revision << "lineNumber:" << lineNumber;
+          adapter()->setText(state.revision, state.content, lineNumber);
+          m_viewerBufferRevision = state.revision;
+        }
+      } else if (m_viewer && transition.syncPositionFromPrevMode) {
+        // Already synced content, but still need to sync scroll position.
+        adapter()->scrollToPosition(
+            MarkdownViewerAdapter::Position(getEditLineNumber(), QString()));
+      }
       break;
     case ViewWindowMode::Edit:
-      syncTextEditorFromBuffer(transition.syncPositionFromPrevMode);
+      if (m_editor && m_textEditorBufferRevision != bufferRevision) {
+        syncTextEditorFromBuffer(transition.syncPositionFromPrevMode);
+      } else if (m_editor && transition.syncPositionFromPrevMode) {
+        m_editor->scrollToLine(getReadLineNumber(), false);
+      }
       break;
     default:
       break;
@@ -515,14 +657,32 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
 
   m_switchingMode = false;
 
+  // Enable editor-to-buffer propagation now that initial sync is done.
+  // This must happen after all sync calls to avoid marking the buffer dirty
+  // from the initial content load.
+  if (m_mode == ViewWindowMode::Edit && m_editor) {
+    m_propagateEditorToBuffer = true;
+  }
+
+  qDebug() << "MarkdownViewWindow2::setModeInternal: complete, now in mode"
+           << static_cast<int>(m_mode) << "viewer:" << m_viewer << "editor:" << m_editor
+           << "viewerReady:" << m_viewerReady;
   emit modeChanged();
+
+  // Update find-and-replace replace-enabled state on mode switch.
+  if (findAndReplaceWidgetVisible()) {
+    setFindAndReplaceReplaceEnabled(!isReadMode());
+  }
 }
 
 // ============ Sync Paths ============
 
 // Path 1: Buffer -> Editor.
 void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMode) {
+  qDebug() << "MarkdownViewWindow2::syncTextEditorFromBuffer: m_editor:" << m_editor
+           << "syncPosition:" << p_syncPositionFromReadMode;
   if (!m_editor) {
+    qDebug() << "MarkdownViewWindow2::syncTextEditorFromBuffer: no editor, returning";
     return;
   }
 
@@ -530,6 +690,11 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
   m_propagateEditorToBuffer = false;
 
   auto state = MarkdownEditorController::prepareBufferState(getBuffer());
+  qDebug() << "MarkdownViewWindow2::syncTextEditorFromBuffer: state.valid:" << state.valid
+           << "revision:" << state.revision
+           << "contentLength:" << state.content.length()
+           << "readOnly:" << state.readOnly
+           << "modified:" << state.modified;
   if (state.valid) {
     m_editor->setReadOnly(state.readOnly);
     m_editor->setContentPath(state.basePath);
@@ -554,11 +719,17 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
 
 // Path 2: Buffer -> Viewer.
 void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) {
+  qDebug() << "MarkdownViewWindow2::syncViewerFromBuffer: m_viewer:" << m_viewer
+           << "syncPosition:" << p_syncPositionFromEditMode;
   if (!m_viewer) {
+    qDebug() << "MarkdownViewWindow2::syncViewerFromBuffer: no viewer, returning";
     return;
   }
 
   auto state = MarkdownEditorController::prepareBufferState(getBuffer());
+  qDebug() << "MarkdownViewWindow2::syncViewerFromBuffer: state.valid:" << state.valid
+           << "revision:" << state.revision
+           << "contentLength:" << state.content.length();
   if (state.valid) {
     int lineNumber = -1;
     if (p_syncPositionFromEditMode) {
@@ -566,22 +737,39 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
     }
 
     auto *htmlTemplateService = getServices().get<HtmlTemplateService>();
+    auto tmpl = htmlTemplateService->getMarkdownViewerTemplate();
+    auto baseUrl = PathUtils::pathToUrl(getBuffer().resolvedPath());
+    qDebug() << "MarkdownViewWindow2::syncViewerFromBuffer: template length:" << tmpl.length()
+             << "baseUrl:" << baseUrl
+             << "adapterReady (before reset):" << adapter()->isReady();
+
     adapter()->reset();
-    m_viewer->setHtml(htmlTemplateService->getMarkdownViewerTemplate(),
-                      PathUtils::pathToUrl(getBuffer().resolvedPath()));
+    qDebug() << "MarkdownViewWindow2::syncViewerFromBuffer: adapter reset, calling setHtml";
+    m_viewer->setHtml(tmpl, baseUrl);
+    qDebug() << "MarkdownViewWindow2::syncViewerFromBuffer: setHtml done, calling adapter->setText"
+             << "revision:" << state.revision << "contentLength:" << state.content.length()
+             << "lineNumber:" << lineNumber;
     adapter()->setText(state.revision, state.content, lineNumber);
   } else {
+    qDebug() << "MarkdownViewWindow2::syncViewerFromBuffer: state invalid, setting empty HTML";
     adapter()->reset();
     m_viewer->setHtml(QString());
     adapter()->setText(0, QString(), -1);
   }
   m_viewerBufferRevision = state.revision;
+  qDebug() << "MarkdownViewWindow2::syncViewerFromBuffer: complete, viewerBufferRevision:"
+           << m_viewerBufferRevision;
 }
 
 // Path 4: Editor -> Viewer (debounced preview).
 void MarkdownViewWindow2::syncEditorContentsToPreview() {
+  qDebug() << "MarkdownViewWindow2::syncEditorContentsToPreview:"
+           << "viewerReady:" << m_viewerReady
+           << "isReadMode:" << isReadMode()
+           << "editViewMode:" << static_cast<int>(m_editViewMode);
   if (!m_viewerReady || isReadMode() ||
       m_editViewMode == MarkdownEditorConfig::EditViewMode::EditOnly) {
+    qDebug() << "MarkdownViewWindow2::syncEditorContentsToPreview: skipping (conditions not met)";
     return;
   }
   // NOTE: Do NOT update m_viewerBufferRevision here.
@@ -600,6 +788,7 @@ void MarkdownViewWindow2::syncEditorPositionToPreview() {
 
 // ViewWindow2 pure virtual override.
 void MarkdownViewWindow2::syncEditorFromBuffer() {
+  qDebug() << "MarkdownViewWindow2::syncEditorFromBuffer: called (both editor and viewer sync)";
   syncTextEditorFromBuffer(false);
   syncViewerFromBuffer(false);
 }
@@ -841,7 +1030,7 @@ void MarkdownViewWindow2::handleFindAndReplaceWidgetClosed() {
 
 void MarkdownViewWindow2::handleFindAndReplaceWidgetOpened() {
   // Disable replace in Read mode.
-  // The base class manages the widget; we just set replace enabled state.
+  setFindAndReplaceReplaceEnabled(!isReadMode());
 }
 
 // ============ Focus ============
@@ -898,6 +1087,73 @@ void MarkdownViewWindow2::handleTypeAction(int p_action) {
 }
 
 // ============ Helpers ============
+
+bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (p_obj == m_splitter) {
+    if (p_event->type() == QEvent::FocusIn) {
+      focusEditor();
+    }
+  }
+
+  return ViewWindow2::eventFilter(p_obj, p_event);
+}
+
+void MarkdownViewWindow2::handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp,
+                                                                   const QString &p_text) {
+  static bool stylesInitialized = false;
+  if (!stylesInitialized) {
+    stylesInitialized = true;
+    auto *themeService = getServices().get<ThemeService>();
+    const auto file = themeService->getFile(Theme::File::HighlightStyleSheet);
+    if (file.isEmpty()) {
+      qWarning() << "no highlight style sheet specified for external code block highlight";
+    } else {
+      QString content;
+      try {
+        content = FileUtils::readTextFile(file);
+      } catch (Exception &e) {
+        qWarning() << "failed to read highlight style sheet for external code block highlight"
+                   << file << e.what();
+      }
+      adapter()->fetchStylesFromStyleSheet(
+          content, [this](const QVector<MarkdownViewerAdapter::CssRuleStyle> *rules) {
+            MarkdownEditor::ExternalCodeBlockHighlightStyles styles;
+
+            const QString prefix(".token.");
+            for (const auto &rule : *rules) {
+              bool isFirst = true;
+              QTextCharFormat fmt;
+
+              // Just fetch `.token.attr` styles.
+              auto selects = rule.m_selector.split(QLatin1Char(','));
+              for (const auto &sel : selects) {
+                const auto ts = sel.trimmed();
+                if (!ts.startsWith(prefix)) {
+                  continue;
+                }
+                auto classList = ts.mid(prefix.size()).split(QLatin1Char('.'));
+                for (const auto &cla : classList) {
+                  if (isFirst) {
+                    fmt = rule.toTextCharFormat();
+                    isFirst = false;
+                  }
+                  styles.insert(cla, fmt);
+                }
+              }
+            }
+
+            MarkdownEditor::setExternalCodeBlockHighlihgtStyles(styles);
+          });
+    }
+  }
+
+  adapter()->highlightCodeBlock(p_idx, p_timeStamp, p_text);
+}
+
+void MarkdownViewWindow2::onPrintFinished(bool p_succeeded) {
+  m_printer.reset();
+  showMessage(p_succeeded ? tr("Printed to PDF") : tr("Failed to print to PDF"));
+}
 
 MarkdownViewerAdapter *MarkdownViewWindow2::adapter() const {
   if (m_viewer) {

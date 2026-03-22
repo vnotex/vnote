@@ -178,6 +178,10 @@ protected:
 
   bool findAndReplaceWidgetVisible() const;
 
+  // Set the replace-enabled state on the find-and-replace widget.
+  // Useful for subclasses to disable replace in read-only modes.
+  void setFindAndReplaceReplaceEnabled(bool p_enabled);
+
   // @p_currentMatchIndex: 0-based.
   void showFindResult(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex);
 

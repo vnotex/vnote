@@ -35,6 +35,8 @@ public:
   explicit MarkdownViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                                QWidget *p_parent = nullptr);
 
+  ~MarkdownViewWindow2();
+
   QString getLatestContent() const Q_DECL_OVERRIDE;
 
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
@@ -61,6 +63,8 @@ protected slots:
 
 protected:
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
+
+  bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
   void scrollUp() Q_DECL_OVERRIDE;
 
@@ -133,6 +137,11 @@ private:
   void handleTypeAction(int p_action);
 
   MarkdownViewerAdapter *adapter() const;
+
+  void handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp,
+                                               const QString &p_text);
+
+  void onPrintFinished(bool p_succeeded);
 
   int getEditLineNumber() const;
 

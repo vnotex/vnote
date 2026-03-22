@@ -404,6 +404,12 @@ bool ViewWindow2::findAndReplaceWidgetVisible() const {
   return m_findAndReplace && m_findAndReplace->isVisible();
 }
 
+void ViewWindow2::setFindAndReplaceReplaceEnabled(bool p_enabled) {
+  if (m_findAndReplace) {
+    m_findAndReplace->setReplaceEnabled(p_enabled);
+  }
+}
+
 void ViewWindow2::keyPressEvent(QKeyEvent *p_event) {
   switch (p_event->key()) {
   case Qt::Key_Escape:
