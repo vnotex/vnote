@@ -2,6 +2,7 @@
 
 #include <QDebug>
 
+#include <widgets/markdownviewwindow2.h>
 #include <widgets/textviewwindow2.h>
 #include <widgets/pdfviewwindow2.h>
 #include <widgets/mindmapviewwindow2.h>
@@ -16,6 +17,11 @@ ViewWindowFactory::~ViewWindowFactory() {
 }
 
 void ViewWindowFactory::registerBuiltInCreators() {
+  registerCreator("Markdown",
+                  [](ServiceLocator &p_services, const Buffer2 &p_buffer,
+                     QWidget *p_parent) -> ViewWindow2 * {
+                    return new MarkdownViewWindow2(p_services, p_buffer, p_parent);
+                  });
   registerCreator("Text",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer,
                      QWidget *p_parent) -> ViewWindow2 * {
