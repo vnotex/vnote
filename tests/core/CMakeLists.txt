@@ -165,6 +165,52 @@ add_custom_command(TARGET test_pdfviewwindowcontroller POST_BUILD
     $<TARGET_FILE_DIR:test_pdfviewwindowcontroller>
 )
 
+add_qt_test(test_markdownviewwindowcontroller
+  SOURCES
+    test_markdownviewwindowcontroller.cpp
+    stubs_textviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/markdownviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/pdfviewerconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+  GUILESS
+)
+
+add_custom_command(TARGET test_markdownviewwindowcontroller POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_markdownviewwindowcontroller>
+)
+
+add_qt_test(test_markdowneditorcontroller
+  SOURCES
+    test_markdowneditorcontroller.cpp
+    stubs_textviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/pdfviewerconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+  GUILESS
+)
+
+add_custom_command(TARGET test_markdowneditorcontroller POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_markdowneditorcontroller>
+)
+
 # TODO: test_configmgr2 requires many dependencies (MainConfig, SessionConfig,
 # CoreConfig, EditorConfig, WidgetConfig, FileUtils2, Utils) that have deep
 # cascading dependencies throughout the codebase. This test should be re-enabled
