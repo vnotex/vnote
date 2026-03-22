@@ -45,8 +45,6 @@
 
 using namespace vnotex;
 
-typedef EditorConfig::Shortcut Shortcut;
-
 // ============ Constructor ============
 
 MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
@@ -108,10 +106,6 @@ void MarkdownViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
 
-  auto *configMgr = getServices().get<ConfigMgr2>();
-  Q_ASSERT(configMgr);
-  const auto &editorConfig = configMgr->getEditorConfig();
-
   // 1. EditRead toggle.
   m_editReadAction = ViewWindowToolBarHelper2::addAction(
       toolBar, ViewWindowToolBarHelper2::EditRead, getServices(), this);
@@ -168,93 +162,60 @@ void MarkdownViewWindow2::setupToolBar() {
     toolBtn->setMenu(popup);
   }
 
-  toolBar->addSeparator();
+  auto *typeSeparator = toolBar->addSeparator();
+  typeSeparator->setVisible(false);
+  connect(this, &ViewWindow2::modeChanged, this, [typeSeparator, this]() {
+    typeSeparator->setVisible(m_mode == ViewWindowMode::Edit);
+  });
 
-  // 4. Type* formatting actions.
-  // Helper lambda to create a formatting action.
-  auto addTypeAction = [&](const QString &p_iconName, const QString &p_text,
-                           const QString &p_shortcut, int p_actionId) -> QAction * {
-    auto *act = toolBar->addAction(
-        ViewWindowToolBarHelper2::generateIcon(getServices(), p_iconName), p_text);
-    act->setEnabled(false);
-    if (!p_shortcut.isEmpty()) {
-      ViewWindowToolBarHelper2::addActionShortcut(act, p_shortcut, this);
-    }
-    connect(act, &QAction::triggered, this, [this, p_actionId]() { handleTypeAction(p_actionId); });
+  // 4. Type* formatting actions (via ViewWindowToolBarHelper2).
+  // Helper lambda to add a formatting action via the helper, wire visibility
+  // toggling (hidden in read mode) and connect to handleTypeAction().
+  auto addTypeAction = [&](ViewWindowToolBarHelper2::Action p_helperAction,
+                           int p_typeActionId) -> QAction * {
+    auto *act = ViewWindowToolBarHelper2::addAction(
+        toolBar, p_helperAction, getServices(), this);
+    act->setVisible(false);
+    connect(act, &QAction::triggered, this,
+            [this, p_typeActionId]() { handleTypeAction(p_typeActionId); });
     connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
-      act->setEnabled(m_mode == ViewWindowMode::Edit);
+      act->setVisible(m_mode == ViewWindowMode::Edit);
     });
     return act;
   };
 
   // Heading submenu with H1-H6 + HeadingNone.
   {
-    auto *headingBtn = new QToolButton(toolBar);
-    headingBtn->setIcon(
-        ViewWindowToolBarHelper2::generateIcon(getServices(), QStringLiteral("type_heading_editor.svg")));
-    headingBtn->setToolTip(tr("Heading"));
-    headingBtn->setPopupMode(QToolButton::InstantPopup);
-    headingBtn->setEnabled(false);
+    auto *headingAct = ViewWindowToolBarHelper2::addAction(
+        toolBar, ViewWindowToolBarHelper2::TypeHeading, getServices(), this);
+    headingAct->setVisible(false);
+    connect(this, &ViewWindow2::modeChanged, this, [headingAct, this]() {
+      headingAct->setVisible(m_mode == ViewWindowMode::Edit);
+    });
 
-    auto *headingMenu = new QMenu(headingBtn);
-    for (int level = 1; level <= 6; ++level) {
-      auto *act = headingMenu->addAction(tr("Heading %1").arg(level));
-      auto shortcutKey = editorConfig.getShortcut(
-          static_cast<Shortcut>(Shortcut::TypeHeading1 + level - 1));
-      if (!shortcutKey.isEmpty()) {
-        ViewWindowToolBarHelper2::addActionShortcut(act, shortcutKey, this);
-      }
-      connect(act, &QAction::triggered, this, [this, level]() { handleTypeAction(level); });
-    }
-    headingMenu->addSeparator();
-    {
-      auto *noneAct = headingMenu->addAction(tr("Clear"));
-      auto shortcutKey = editorConfig.getShortcut(Shortcut::TypeHeadingNone);
-      if (!shortcutKey.isEmpty()) {
-        ViewWindowToolBarHelper2::addActionShortcut(noneAct, shortcutKey, this);
-      }
-      connect(noneAct, &QAction::triggered, this, [this]() { handleTypeAction(TypeHeadingNone); });
-    }
-    headingBtn->setMenu(headingMenu);
-    toolBar->addWidget(headingBtn);
-
-    connect(this, &ViewWindow2::modeChanged, this, [headingBtn, this]() {
-      headingBtn->setEnabled(m_mode == ViewWindowMode::Edit);
+    auto *toolBtn = dynamic_cast<QToolButton *>(toolBar->widgetForAction(headingAct));
+    Q_ASSERT(toolBtn);
+    connect(toolBtn->menu(), &QMenu::triggered, this, [this](QAction *p_act) {
+      handleTypeAction(p_act->data().toInt());
     });
   }
 
-  addTypeAction(QStringLiteral("type_bold_editor.svg"), tr("Bold"),
-                editorConfig.getShortcut(Shortcut::TypeBold), TypeBold);
-  addTypeAction(QStringLiteral("type_italic_editor.svg"), tr("Italic"),
-                editorConfig.getShortcut(Shortcut::TypeItalic), TypeItalic);
-  addTypeAction(QStringLiteral("type_strikethrough_editor.svg"), tr("Strikethrough"),
-                editorConfig.getShortcut(Shortcut::TypeStrikethrough), TypeStrikethrough);
-  addTypeAction(QStringLiteral("type_mark_editor.svg"), tr("Mark"),
-                editorConfig.getShortcut(Shortcut::TypeMark), TypeMark);
-  addTypeAction(QStringLiteral("type_unordered_list_editor.svg"), tr("Unordered List"),
-                editorConfig.getShortcut(Shortcut::TypeUnorderedList), TypeUnorderedList);
-  addTypeAction(QStringLiteral("type_ordered_list_editor.svg"), tr("Ordered List"),
-                editorConfig.getShortcut(Shortcut::TypeOrderedList), TypeOrderedList);
-  addTypeAction(QStringLiteral("type_todo_list_editor.svg"), tr("Todo List"),
-                editorConfig.getShortcut(Shortcut::TypeTodoList), TypeTodoList);
-  addTypeAction(QStringLiteral("type_checked_todo_list_editor.svg"), tr("Checked Todo List"),
-                editorConfig.getShortcut(Shortcut::TypeCheckedTodoList), TypeCheckedTodoList);
-  addTypeAction(QStringLiteral("type_code_editor.svg"), tr("Code"),
-                editorConfig.getShortcut(Shortcut::TypeCode), TypeCode);
-  addTypeAction(QStringLiteral("type_code_block_editor.svg"), tr("Code Block"),
-                editorConfig.getShortcut(Shortcut::TypeCodeBlock), TypeCodeBlock);
-  addTypeAction(QStringLiteral("type_math_editor.svg"), tr("Math"),
-                editorConfig.getShortcut(Shortcut::TypeMath), TypeMath);
-  addTypeAction(QStringLiteral("type_math_block_editor.svg"), tr("Math Block"),
-                editorConfig.getShortcut(Shortcut::TypeMathBlock), TypeMathBlock);
-  addTypeAction(QStringLiteral("type_quote_editor.svg"), tr("Quote"),
-                editorConfig.getShortcut(Shortcut::TypeQuote), TypeQuote);
-  addTypeAction(QStringLiteral("type_link_editor.svg"), tr("Link"),
-                editorConfig.getShortcut(Shortcut::TypeLink), TypeLink);
-  addTypeAction(QStringLiteral("type_image_editor.svg"), tr("Image"),
-                editorConfig.getShortcut(Shortcut::TypeImage), TypeImage);
-  addTypeAction(QStringLiteral("type_table_editor.svg"), tr("Table"),
-                editorConfig.getShortcut(Shortcut::TypeTable), TypeTable);
+  addTypeAction(ViewWindowToolBarHelper2::TypeBold, TypeBold);
+  addTypeAction(ViewWindowToolBarHelper2::TypeItalic, TypeItalic);
+  addTypeAction(ViewWindowToolBarHelper2::TypeStrikethrough, TypeStrikethrough);
+  addTypeAction(ViewWindowToolBarHelper2::TypeMark, TypeMark);
+  addTypeAction(ViewWindowToolBarHelper2::TypeUnorderedList, TypeUnorderedList);
+  addTypeAction(ViewWindowToolBarHelper2::TypeOrderedList, TypeOrderedList);
+  addTypeAction(ViewWindowToolBarHelper2::TypeTodoList, TypeTodoList);
+  addTypeAction(ViewWindowToolBarHelper2::TypeCheckedTodoList, TypeCheckedTodoList);
+  addTypeAction(ViewWindowToolBarHelper2::TypeCode, TypeCode);
+  addTypeAction(ViewWindowToolBarHelper2::TypeCodeBlock, TypeCodeBlock);
+  addTypeAction(ViewWindowToolBarHelper2::TypeMath, TypeMath);
+  addTypeAction(ViewWindowToolBarHelper2::TypeMathBlock, TypeMathBlock);
+  addTypeAction(ViewWindowToolBarHelper2::TypeQuote, TypeQuote);
+  addTypeAction(ViewWindowToolBarHelper2::TypeLink, TypeLink);
+  addTypeAction(ViewWindowToolBarHelper2::TypeImage, TypeImage);
+  addTypeAction(ViewWindowToolBarHelper2::TypeTable, TypeTable);
 
   ViewWindowToolBarHelper2::addSpacer(toolBar);
 

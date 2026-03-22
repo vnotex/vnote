@@ -2,6 +2,7 @@
 
 #include <QAction>
 #include <QDebug>
+#include <QMenu>
 #include <QShortcut>
 #include <QToolBar>
 #include <QToolButton>
@@ -141,6 +142,144 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
                           QObject::tr("Edit"));
     act->setCheckable(true);
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::EditRead), p_shortcutWidget);
+    break;
+
+  case Action::TypeHeading: {
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_heading_editor.svg")),
+                          QObject::tr("Heading"));
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
+    Q_ASSERT(toolBtn);
+    toolBtn->setPopupMode(QToolButton::InstantPopup);
+    toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+
+    auto *menu = new QMenu(toolBtn);
+    menu->setToolTipsVisible(true);
+
+    for (int level = 1; level <= 6; ++level) {
+      auto *headingAct = menu->addAction(QObject::tr("Heading %1").arg(level));
+      headingAct->setData(level);
+      addActionShortcut(headingAct,
+                        editorConfig.getShortcut(
+                            static_cast<Shortcut>(Shortcut::TypeHeading1 + level - 1)),
+                        p_shortcutWidget, act);
+    }
+    menu->addSeparator();
+    {
+      auto *noneAct = menu->addAction(QObject::tr("Clear"));
+      noneAct->setData(0);
+      addActionShortcut(noneAct, editorConfig.getShortcut(Shortcut::TypeHeadingNone),
+                        p_shortcutWidget, act);
+    }
+
+    toolBtn->setMenu(menu);
+    break;
+  }
+
+  case Action::TypeBold:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_bold_editor.svg")),
+                          QObject::tr("Bold"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeBold), p_shortcutWidget);
+    break;
+
+  case Action::TypeItalic:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_italic_editor.svg")),
+                          QObject::tr("Italic"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeItalic), p_shortcutWidget);
+    break;
+
+  case Action::TypeStrikethrough:
+    act = p_tb->addAction(
+        generateIcon(p_services, QStringLiteral("type_strikethrough_editor.svg")),
+        QObject::tr("Strikethrough"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeStrikethrough),
+                      p_shortcutWidget);
+    break;
+
+  case Action::TypeMark:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_mark_editor.svg")),
+                          QObject::tr("Mark"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeMark), p_shortcutWidget);
+    break;
+
+  case Action::TypeUnorderedList:
+    act = p_tb->addAction(
+        generateIcon(p_services, QStringLiteral("type_unordered_list_editor.svg")),
+        QObject::tr("Unordered List"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeUnorderedList),
+                      p_shortcutWidget);
+    break;
+
+  case Action::TypeOrderedList:
+    act = p_tb->addAction(
+        generateIcon(p_services, QStringLiteral("type_ordered_list_editor.svg")),
+        QObject::tr("Ordered List"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeOrderedList),
+                      p_shortcutWidget);
+    break;
+
+  case Action::TypeTodoList:
+    act = p_tb->addAction(
+        generateIcon(p_services, QStringLiteral("type_todo_list_editor.svg")),
+        QObject::tr("Todo List"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTodoList), p_shortcutWidget);
+    break;
+
+  case Action::TypeCheckedTodoList:
+    act = p_tb->addAction(
+        generateIcon(p_services, QStringLiteral("type_checked_todo_list_editor.svg")),
+        QObject::tr("Checked Todo List"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeCheckedTodoList),
+                      p_shortcutWidget);
+    break;
+
+  case Action::TypeCode:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_code_editor.svg")),
+                          QObject::tr("Code"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeCode), p_shortcutWidget);
+    break;
+
+  case Action::TypeCodeBlock:
+    act = p_tb->addAction(
+        generateIcon(p_services, QStringLiteral("type_code_block_editor.svg")),
+        QObject::tr("Code Block"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeCodeBlock), p_shortcutWidget);
+    break;
+
+  case Action::TypeMath:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_math_editor.svg")),
+                          QObject::tr("Math"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeMath), p_shortcutWidget);
+    break;
+
+  case Action::TypeMathBlock:
+    act = p_tb->addAction(
+        generateIcon(p_services, QStringLiteral("type_math_block_editor.svg")),
+        QObject::tr("Math Block"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeMathBlock), p_shortcutWidget);
+    break;
+
+  case Action::TypeQuote:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_quote_editor.svg")),
+                          QObject::tr("Quote"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeQuote), p_shortcutWidget);
+    break;
+
+  case Action::TypeLink:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_link_editor.svg")),
+                          QObject::tr("Link"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeLink), p_shortcutWidget);
+    break;
+
+  case Action::TypeImage:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_image_editor.svg")),
+                          QObject::tr("Image"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeImage), p_shortcutWidget);
+    break;
+
+  case Action::TypeTable:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_table_editor.svg")),
+                          QObject::tr("Table"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTable), p_shortcutWidget);
     break;
 
   default:

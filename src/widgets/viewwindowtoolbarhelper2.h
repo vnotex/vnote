@@ -11,9 +11,7 @@ class QString;
 
 namespace vnotex {
 
-class EditorConfig;
 class ServiceLocator;
-class ThemeService;
 
 // New-architecture toolbar helper for ViewWindow2.
 // Uses DI (ServiceLocator) instead of legacy singletons.
@@ -28,7 +26,27 @@ public:
     FindAndReplace,
     Print,
     WordCount,
-    EditRead
+    EditRead,
+
+    // Formatting actions for Markdown.
+    // TypeHeading includes H1-H6 + HeadingNone submenu.
+    TypeHeading,
+    TypeBold,
+    TypeItalic,
+    TypeStrikethrough,
+    TypeMark,
+    TypeUnorderedList,
+    TypeOrderedList,
+    TypeTodoList,
+    TypeCheckedTodoList,
+    TypeCode,
+    TypeCodeBlock,
+    TypeMath,
+    TypeMathBlock,
+    TypeQuote,
+    TypeLink,
+    TypeImage,
+    TypeTable
   };
 
   ViewWindowToolBarHelper2() = delete;
