@@ -3,15 +3,17 @@
 
 #include <QFrame>
 #include <QIcon>
-#include <QPair>
 #include <QSharedPointer>
 #include <QString>
 #include <QStringList>
+
+#include <functional>
 
 #include <core/global.h>
 #include <core/services/buffer2.h>
 
 #include "viewwindowtoolbarhelper2.h"
+#include "wordcountpanel.h"
 
 class QHBoxLayout;
 class QVBoxLayout;
@@ -203,11 +205,12 @@ protected:
   // Default: no-op. Override in subclasses that support formatting.
   virtual void handleTypeAction(int p_action);
 
-  // Get text for word count display.
-  // Returns (text, isSelection).
-  // Default returns (getLatestContent(), false).
-  // Subclasses override to provide editor-specific selection awareness.
-  virtual QPair<QString, bool> getWordCountText() const;
+  // Fetch word count info asynchronously.
+  // Subclasses override to provide mode-specific word counting (e.g., async JS
+  // extraction in read mode). The callback receives a WordCountInfo struct.
+  // Default: calculates from getLatestContent() synchronously.
+  virtual void fetchWordCountInfo(
+      const std::function<void(const WordCountInfo &)> &p_callback) const;
 
   // ============ Layout Slots (for subclasses) ============
 

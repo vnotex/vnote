@@ -345,11 +345,11 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
     auto *popup = new WordCountPopup2(
         toolBtn,
         [this](WordCountPanel *p_panel) {
-          auto result = getWordCountText();
-          auto info = WordCountPanel::calculateWordCount(result.first);
-          p_panel->updateCount(result.second, info.m_wordCount,
-                               info.m_charWithoutSpaceCount,
-                               info.m_charWithSpaceCount);
+          fetchWordCountInfo([p_panel](const WordCountInfo &p_info) {
+            p_panel->updateCount(p_info.m_isSelection, p_info.m_wordCount,
+                                 p_info.m_charWithoutSpaceCount,
+                                 p_info.m_charWithSpaceCount);
+          });
         },
         p_toolBar);
     toolBtn->setMenu(popup);
@@ -431,8 +431,10 @@ void ViewWindow2::handleTypeAction(int p_action) {
   Q_UNUSED(p_action);
 }
 
-QPair<QString, bool> ViewWindow2::getWordCountText() const {
-  return qMakePair(getLatestContent(), false);
+void ViewWindow2::fetchWordCountInfo(
+    const std::function<void(const WordCountInfo &)> &p_callback) const {
+  auto info = WordCountPanel::calculateWordCount(getLatestContent());
+  p_callback(info);
 }
 
 ServiceLocator &ViewWindow2::getServices() const {

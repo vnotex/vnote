@@ -829,16 +829,36 @@ void MarkdownViewWindow2::focusEditor() {
 
 // ============ Word Count ============
 
-QPair<QString, bool> MarkdownViewWindow2::getWordCountText() const {
-  if (m_editor && !isReadMode()) {
-    QString text = m_editor->getTextEdit()->selectedText();
-    if (!text.isEmpty()) {
-      return qMakePair(text, true);
-    }
-    return qMakePair(getLatestContent(), false);
+void MarkdownViewWindow2::fetchWordCountInfo(
+    const std::function<void(const WordCountInfo &)> &p_callback) const {
+  auto text = selectedText();
+  if (!text.isEmpty()) {
+    auto info = WordCountPanel::calculateWordCount(text);
+    info.m_isSelection = true;
+    p_callback(info);
+    return;
   }
-  // Read mode: no content to count (viewer doesn't expose plain text).
-  return qMakePair(QString(), false);
+
+  switch (m_mode) {
+  case ViewWindowMode::Read: {
+    Q_ASSERT(m_viewer);
+    m_viewer->saveContent([p_callback](const QString &p_content) {
+      auto info = WordCountPanel::calculateWordCount(p_content);
+      p_callback(info);
+    });
+    break;
+  }
+
+  case ViewWindowMode::Edit: {
+    auto info = WordCountPanel::calculateWordCount(getLatestContent());
+    p_callback(info);
+    break;
+  }
+
+  default:
+    p_callback(WordCountInfo());
+    break;
+  }
 }
 
 // ============ Type Actions ============

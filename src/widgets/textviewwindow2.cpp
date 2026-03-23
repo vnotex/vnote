@@ -229,12 +229,16 @@ QString TextViewWindow2::selectedText() const {
   return QString();
 }
 
-QPair<QString, bool> TextViewWindow2::getWordCountText() const {
-  if (m_editor) {
-    QString text = m_editor->getTextEdit()->selectedText();
-    if (!text.isEmpty()) {
-      return qMakePair(text, true);
-    }
+void TextViewWindow2::fetchWordCountInfo(
+    const std::function<void(const WordCountInfo &)> &p_callback) const {
+  auto text = selectedText();
+  if (!text.isEmpty()) {
+    auto info = WordCountPanel::calculateWordCount(text);
+    info.m_isSelection = true;
+    p_callback(info);
+    return;
   }
-  return qMakePair(getLatestContent(), false);
+
+  auto info = WordCountPanel::calculateWordCount(getLatestContent());
+  p_callback(info);
 }
