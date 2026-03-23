@@ -269,6 +269,21 @@ QString BufferCoreService::getResolvedPath(const QString &p_notebookId,
   return cstrToQString(absPath);
 }
 
+QString BufferCoreService::getResourceBasePath(const QString &p_bufferId) const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *path = nullptr;
+  VxCoreError err =
+      vxcore_buffer_get_resource_base_path(m_context, p_bufferId.toUtf8().constData(), &path);
+  if (err != VXCORE_OK) {
+    qWarning() << "getResourceBasePath failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+  return cstrToQString(path);
+}
+
 // Asset operations.
 QString BufferCoreService::insertAssetRaw(const QString &p_bufferId, const QString &p_assetName,
                                       const QByteArray &p_data) {

@@ -11,7 +11,7 @@
 
 namespace vnotex {
 
-class BufferCoreService;
+class BufferService;
 class HookManager;
 enum class BufferState;
 
@@ -21,7 +21,7 @@ enum class BufferState;
 //
 // Obtain a Buffer2 from BufferService::openBuffer().
 // All per-buffer operations (save, content read/write, assets, attachments)
-// are methods on this handle, delegating to BufferCoreService or firing
+// are methods on this handle, delegating to BufferService or firing
 // hooks via HookManager as appropriate.
 class Buffer2 {
 public:
@@ -29,7 +29,7 @@ public:
   Buffer2();
 
   // Construct a valid buffer handle. Called by BufferService::openBuffer().
-  Buffer2(BufferCoreService *p_bufferCoreService, HookManager *p_hookMgr,
+  Buffer2(BufferService *p_bufferService, HookManager *p_hookMgr,
           const QString &p_bufferId, const NodeIdentifier &p_nodeId);
 
   // Check whether this handle refers to a valid open buffer.
@@ -44,9 +44,14 @@ public:
   // ============ Path Resolution ============
 
   // Get the resolved absolute path for this buffer's file.
-  // Delegates to BufferCoreService::getResolvedPath().
+  // Delegates to BufferService::getResolvedPath().
   // Returns empty string if the buffer is invalid or resolution fails.
   QString resolvedPath() const;
+
+  // Get the resource base path for resolving relative URLs.
+  // Delegates to BufferService::getResourceBasePath().
+  // Returns empty string if the buffer is invalid or resolution fails.
+  QString getResourceBasePath() const;
 
   // ============ Buffer Content ============
 
@@ -108,6 +113,11 @@ public:
 
   // ============ Attachment Operations (Filesystem + Metadata) ============
 
+  // Check if this buffer supports attachment operations.
+  // Both indexed notebook files and external files support attachments.
+  // Returns false only if the buffer handle is invalid.
+  bool isAttachmentSupported() const;
+
   // Copy a file to attachments folder and add to attachment list.
   // Returns the filename (not full path), or empty string on failure.
   QString insertAttachment(const QString &p_sourcePath);
@@ -132,7 +142,7 @@ private:
   // Update the node identifier after a rename operation.
   void setNodeId(const NodeIdentifier &p_nodeId) { m_nodeId = p_nodeId; }
 
-  BufferCoreService *m_bufferCoreService = nullptr;
+  BufferService *m_bufferService = nullptr;
   HookManager *m_hookMgr = nullptr;
   QString m_bufferId;
   NodeIdentifier m_nodeId;

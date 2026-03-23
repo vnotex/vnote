@@ -104,6 +104,10 @@ public:
   // Returns empty string on failure.
   QString getResolvedPath(const QString &p_notebookId, const QString &p_filePath) const;
 
+  // Get the resource base path for resolving relative URLs in buffer content.
+  // Returns empty string on failure.
+  QString getResourceBasePath(const QString &p_bufferId) const;
+
   // ============ Asset Operations (Filesystem Only) ============
 
   // Insert binary data as an asset file.

@@ -222,6 +222,11 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
            p_option.m_targetFormat == ExportFormat::HTML);
 
   {
+    // TODO: Legacy export path - MarkdownViewer now requires ServiceLocator.
+    // This needs migration to use ServiceLocator for export.
+    Q_ASSERT_X(false, "WebViewExporter::prepare",
+               "Legacy WebViewExporter needs migration to ServiceLocator");
+#if 0
     // Adapter will be managed by MarkdownViewer.
     auto adapter = new MarkdownViewerAdapter(this);
     m_viewer = new MarkdownViewer(adapter, QColor(), 1, static_cast<QWidget *>(parent()));
@@ -230,6 +235,8 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
             [this]() { m_webViewStates |= WebViewState::LoadFinished; });
     connect(adapter, &MarkdownViewerAdapter::workFinished, this,
             [this]() { m_webViewStates |= WebViewState::WorkFinished; });
+#endif
+    return;
   }
 
   bool scrollable = true;

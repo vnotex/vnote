@@ -86,6 +86,31 @@ public:
   // List all open buffers as JSON array.
   QJsonArray listBuffers() const;
 
+  // ============ BufferCoreService pass-through (for Buffer2) ============
+  // Expose selected methods from privately-inherited BufferCoreService.
+  // Buffer2 delegates to these; external code should use Buffer2 methods instead.
+  using BufferCoreService::saveBuffer;
+  using BufferCoreService::reloadBuffer;
+  using BufferCoreService::getContent;
+  using BufferCoreService::setContent;
+  using BufferCoreService::getContentRaw;
+  using BufferCoreService::peekContentRaw;
+  using BufferCoreService::setContentRaw;
+  using BufferCoreService::getState;
+  using BufferCoreService::isModified;
+  using BufferCoreService::getRevision;
+  using BufferCoreService::getResolvedPath;
+  using BufferCoreService::getResourceBasePath;
+  using BufferCoreService::insertAssetRaw;
+  using BufferCoreService::insertAsset;
+  using BufferCoreService::deleteAsset;
+  using BufferCoreService::getAssetsFolder;
+  using BufferCoreService::insertAttachment;
+  using BufferCoreService::deleteAttachment;
+  using BufferCoreService::renameAttachment;
+  using BufferCoreService::listAttachments;
+  using BufferCoreService::getAttachmentsFolder;
+
   // ============ Auto-Save & Dirty Tracking ============
 
   // Mark a buffer as having pending editor changes.
@@ -121,13 +146,6 @@ signals:
   void bufferAutoSaveAborted(const QString &p_bufferId);
 
 private:
-  // Allow Buffer2 to access BufferCoreService base for delegated operations.
-  friend class Buffer2;
-
-  // Get a pointer to the underlying BufferCoreService.
-  BufferCoreService *coreService();
-  const BufferCoreService *coreService() const;
-
   // Timer tick handler — syncs all dirty buffers and executes auto-save policy.
   void onAutoSaveTimerTick();
 

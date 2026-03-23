@@ -19,7 +19,7 @@ class MarkdownEditorConfig;
 
 namespace vnotex {
 class PreviewHelper;
-class Buffer;
+class Buffer2;
 class MarkdownEditorConfig;
 class MarkdownTableHelper;
 class ImageHost;
@@ -44,13 +44,6 @@ public:
     int m_blockNumber = -1;
   };
 
-  MarkdownEditor(const MarkdownEditorConfig &p_config,
-                 const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
-                 const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
-                 QWidget *p_parent = nullptr);
-
-  // ServiceLocator-aware constructor for new architecture.
-  // Does not require Buffer; use setContentPath() instead.
   MarkdownEditor(ServiceLocator &p_services,
                  const MarkdownEditorConfig &p_config,
                  const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
@@ -61,10 +54,11 @@ public:
 
   void setPreviewHelper(PreviewHelper *p_helper);
 
-  void setBuffer(Buffer *p_buffer);
+  // Set Buffer2 handle for asset/attachment operations (new architecture).
+  void setBuffer2(Buffer2 *p_buffer);
 
-  // Set content path for relative link resolution (new architecture).
-  // Replaces m_buffer->getContentPath() in the ServiceLocator path.
+  // Set content path for relative link resolution.
+  // Used instead of Buffer's getContentPath().
   void setContentPath(const QString &p_contentPath);
 
   // @p_level: [0, 6], 0 for none.
@@ -135,6 +129,10 @@ signals:
   // Caller connects to file-open handling.
   void openFileRequested(const QString &p_filePath);
 
+  // Emitted when an image is inserted into the buffer (new architecture).
+  // Allows view windows to track inserted images for cleanup.
+  void imageInserted(const QString &p_imagePath, const QString &p_urlInLink);
+
 private slots:
   void handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled, bool *p_allowed);
 
@@ -190,10 +188,10 @@ private:
 
   void setupShortcuts();
 
-  // Common constructor initialization. Called by both constructors.
+  // Common constructor initialization.
   void init();
 
-  // Route EditorConfig access to ConfigMgr2 or legacy ConfigMgr.
+  // Route EditorConfig access to ConfigMgr2 via ServiceLocator.
   EditorConfig &getEditorConfig() const;
 
   void fetchImagesToLocalAndReplace(QString &p_text);
@@ -225,7 +223,7 @@ private:
 
   const MarkdownEditorConfig &m_config;
 
-  Buffer *m_buffer = nullptr;
+  Buffer2 *m_buffer2 = nullptr;
 
   QVector<Heading> m_headings;
 
@@ -246,9 +244,8 @@ private:
 
   ImageHost *m_imageHost = nullptr;
 
-  ServiceLocator *m_services = nullptr;  // Non-owning; null for legacy constructor
-  bool m_useServices = false;            // True when constructed with ServiceLocator
-  QString m_contentPath;                 // Replaces m_buffer->getContentPath() in new path
+  ServiceLocator &m_services;
+  QString m_contentPath;
 
   bool m_shouldTriggerRichPaste = false;
 

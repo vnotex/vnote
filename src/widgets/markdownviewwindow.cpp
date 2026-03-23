@@ -318,9 +318,18 @@ void MarkdownViewWindow::setupTextEditor() {
 
   updateConfigRevision();
 
+  // TODO: Legacy MarkdownViewWindow - MarkdownEditor now requires ServiceLocator.
+  // This class needs full migration to new architecture or removal.
+  Q_ASSERT_X(false, "MarkdownViewWindow::setupTextEditor",
+             "Legacy MarkdownViewWindow is no longer supported. Use MarkdownViewWindow2.");
+  Q_UNUSED(markdownEditorConfig);
+  Q_UNUSED(editorConfig);
+#if 0
   m_editor = new MarkdownEditor(
       markdownEditorConfig, createMarkdownEditorConfig(editorConfig, markdownEditorConfig),
       createMarkdownEditorParameters(editorConfig, markdownEditorConfig), this);
+#endif
+  return;
   // Always editor comes first.
   m_splitter->insertWidget(0, m_editor);
 
@@ -412,6 +421,11 @@ void MarkdownViewWindow::setupViewer() {
 
   HtmlTemplateHelper::updateMarkdownViewerTemplate(markdownEditorConfig);
 
+  // TODO: Legacy MarkdownViewWindow - MarkdownViewer now requires ServiceLocator.
+  // This class needs full migration to new architecture or removal.
+  Q_ASSERT_X(false, "MarkdownViewWindow::setupViewer",
+             "Legacy MarkdownViewWindow is no longer supported. Use MarkdownViewWindow2.");
+#if 0
   auto adapter = new MarkdownViewerAdapter(this);
   m_viewer = new MarkdownViewer(adapter, this, VNoteX::getInst().getThemeMgr().getBaseBackground(),
                                 markdownEditorConfig.getZoomFactorInReadMode(), this);
@@ -463,6 +477,7 @@ void MarkdownViewWindow::setupViewer() {
       setEditViewMode(m_editViewMode);
     }
   });
+#endif
 }
 
 void MarkdownViewWindow::syncTextEditorFromBuffer(bool p_syncPositionFromReadMode) {
@@ -474,7 +489,7 @@ void MarkdownViewWindow::syncTextEditorFromBuffer(bool p_syncPositionFromReadMod
   m_propogateEditorToBuffer = false;
 
   auto buffer = getBuffer();
-  m_editor->setBuffer(buffer);
+  // Legacy: m_editor->setBuffer(buffer) removed — MarkdownEditor no longer has setBuffer().
   if (buffer) {
     m_editor->setReadOnly(buffer->isReadOnly());
     m_editor->setBasePath(buffer->getResourcePath());

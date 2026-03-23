@@ -238,8 +238,7 @@ private:
   // Targets supported by cross copy. Set by web.
   QStringList m_crossCopyTargets;
 
-  ServiceLocator *m_services = nullptr;  // Non-owning; null for legacy constructor
-  bool m_useServices = false;            // True when constructed with ServiceLocator
+  ServiceLocator *m_services = nullptr;  // Non-owning; set by ServiceLocator-aware constructor
 };
 } // namespace vnotex
 

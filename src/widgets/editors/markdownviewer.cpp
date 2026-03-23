@@ -8,12 +8,10 @@
 #include <QWebChannel>
 #include <QWebEngineSettings>
 
-#include "../viewwindow.h"
 #include "../viewwindow2.h"
 #include "../widgetsfactory.h"
 #include "markdownvieweradapter.h"
 #include "previewhelper.h"
-#include <core/configmgr.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
@@ -31,41 +29,6 @@ static const char *c_propertyImageUrlAltered = "CopiedImageUrlAltered";
 // Indicate whether this clipboard change is triggered by cross copy.
 static const char *c_propertyCrossCopy = "CrossCopy";
 
-MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const QColor &p_background,
-                               qreal p_zoomFactor, QWidget *p_parent)
-    : MarkdownViewer(p_adapter, nullptr, p_background, p_zoomFactor, p_parent) {}
-
-MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindow *p_viewWindow,
-                               const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent)
-    : WebViewer(p_background, p_zoomFactor, p_parent), m_adapter(p_adapter),
-      m_viewWindow(p_viewWindow) {
-  m_adapter->setParent(this);
-
-  auto channel = new QWebChannel(this);
-  channel->registerObject(QStringLiteral("vxAdapter"), m_adapter);
-
-  page()->setWebChannel(channel);
-
-  connect(QApplication::clipboard(), &QClipboard::changed, this,
-          &MarkdownViewer::handleClipboardChanged);
-
-  connect(m_adapter, &MarkdownViewerAdapter::keyPressed, this, &MarkdownViewer::handleWebKeyPress);
-
-  connect(m_adapter, &MarkdownViewerAdapter::zoomed, this,
-          [this](bool p_zoomIn) { p_zoomIn ? zoomIn() : zoomOut(); });
-
-  connect(m_adapter, &MarkdownViewerAdapter::crossCopyReady, this,
-          [](quint64 p_id, quint64 p_timeStamp, const QString &p_html) {
-            Q_UNUSED(p_id);
-            Q_UNUSED(p_timeStamp);
-            std::unique_ptr<QMimeData> mimeData(new QMimeData());
-            mimeData->setHtml(p_html);
-            ClipboardUtils::setMimeDataToClipboard(QApplication::clipboard(), mimeData.release());
-          });
-
-  settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
-}
-
 MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, ServiceLocator &p_services,
                                const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent)
     : MarkdownViewer(p_adapter, static_cast<const ViewWindow2 *>(nullptr), p_services, p_background,
@@ -75,7 +38,7 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
                                ServiceLocator &p_services, const QColor &p_background,
                                qreal p_zoomFactor, QWidget *p_parent)
     : WebViewer(p_background, p_zoomFactor, p_parent), m_adapter(p_adapter),
-      m_viewWindow2(p_viewWindow2), m_services(&p_services), m_useServices(true) {
+      m_viewWindow2(p_viewWindow2), m_services(p_services) {
   m_adapter->setParent(this);
 
   auto channel = new QWebChannel(this);
@@ -155,9 +118,7 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
 
   if (!hasSelection()) {
     bool inReadMode = false;
-    if (m_viewWindow) {
-      inReadMode = m_viewWindow->getMode() == ViewWindowMode::Read;
-    } else if (m_viewWindow2) {
+    if (m_viewWindow2) {
       inReadMode = m_viewWindow2->getMode() == ViewWindowMode::Read;
     }
     if (inReadMode) {
@@ -463,8 +424,5 @@ void MarkdownViewer::saveContent(const std::function<void(const QString &p_conte
 }
 
 EditorConfig &MarkdownViewer::getEditorConfig() const {
-  if (m_useServices) {
-    return m_services->get<ConfigMgr2>()->getEditorConfig();
-  }
-  return ConfigMgr::getInst().getEditorConfig();
+  return m_services.get<ConfigMgr2>()->getEditorConfig();
 }

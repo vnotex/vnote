@@ -83,7 +83,7 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
   m_hookMgr->doAction(HookNames::FileAfterOpen, event);
 
   qDebug() << "BufferService::openBuffer succeeded bufferId:" << bufferId;
-  return Buffer2(coreService(), m_hookMgr, bufferId, p_nodeId);
+  return Buffer2(this, m_hookMgr, bufferId, p_nodeId);
 }
 
 bool BufferService::closeBuffer(const QString &p_bufferId) {
@@ -128,7 +128,7 @@ Buffer2 BufferService::getBufferHandle(const QString &p_bufferId) {
   nodeId.notebookId = bufJson.value(QStringLiteral("notebookId")).toString();
   nodeId.relativePath = bufJson.value(QStringLiteral("filePath")).toString();
 
-  return Buffer2(coreService(), m_hookMgr, p_bufferId, nodeId);
+  return Buffer2(this, m_hookMgr, p_bufferId, nodeId);
 }
 
 // ============ Pass-through methods ============
@@ -286,14 +286,4 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     break;
   }
   }
-}
-
-// ============ Core service access ============
-
-BufferCoreService *BufferService::coreService() {
-  return static_cast<BufferCoreService *>(this);
-}
-
-const BufferCoreService *BufferService::coreService() const {
-  return static_cast<const BufferCoreService *>(this);
 }

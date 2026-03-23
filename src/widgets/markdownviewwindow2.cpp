@@ -197,6 +197,9 @@ void MarkdownViewWindow2::setupTextEditor() {
     m_editor->setContentPath(QFileInfo(resolved).path());
   }
 
+  // Provide Buffer2 handle for asset/attachment operations.
+  m_editor->setBuffer2(&getBuffer());
+
   // Apply config.
   updateEditorFromConfig();
 

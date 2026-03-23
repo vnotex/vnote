@@ -6,7 +6,6 @@
 #include <QClipboard>
 #include <QDir>
 #include <QFileInfo>
-#include <QHash>
 #include <QMenu>
 #include <QMimeData>
 #include <QMimeDatabase>
@@ -34,20 +33,14 @@
 
 #include <widgets/dialogs/selectdialog.h>
 
-#include <buffer/buffer.h>
-#include <buffer/markdownbuffer.h>
-#include <core/configmgr.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/exception.h>
-#include <core/fileopenparameters.h>
 #include <core/markdowneditorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/buffer2.h>
 #include <core/texteditorconfig.h>
-#include <core/vnotex.h>
 #include <imagehost/imagehost.h>
-#include <imagehost/imagehostmgr.h>
-#include <imagehost/imagehostutils.h>
 #include <utils/clipboardutils.h>
 #include <utils/fileutils.h>
 #include <utils/htmlutils.h>
@@ -67,14 +60,6 @@ MarkdownEditor::Heading::Heading(const QString &p_name, int p_level, const QStri
     : m_name(p_name), m_level(p_level), m_sectionNumber(p_sectionNumber),
       m_blockNumber(p_blockNumber) {}
 
-MarkdownEditor::MarkdownEditor(const MarkdownEditorConfig &p_config,
-                               const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
-                               const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
-                               QWidget *p_parent)
-    : vte::VMarkdownEditor(p_editorConfig, p_editorParas, p_parent), m_config(p_config) {
-  init();
-}
-
 MarkdownEditor::MarkdownEditor(ServiceLocator &p_services,
                                const MarkdownEditorConfig &p_config,
                                const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
@@ -82,8 +67,7 @@ MarkdownEditor::MarkdownEditor(ServiceLocator &p_services,
                                QWidget *p_parent)
     : vte::VMarkdownEditor(p_editorConfig, p_editorParas, p_parent),
       m_config(p_config),
-      m_services(&p_services),
-      m_useServices(true) {
+      m_services(p_services) {
   init();
 }
 
@@ -245,7 +229,6 @@ void MarkdownEditor::typeLink() {
 }
 
 void MarkdownEditor::typeImage() {
-  Q_ASSERT(m_buffer);
   ImageInsertDialog dialog(tr("Insert Image"), "", "", "", true, this);
 
   // Try fetch image from clipboard.
@@ -331,17 +314,14 @@ void MarkdownEditor::typeTable() {
   m_tableHelper->insertTable(dialog.getRowCount(), dialog.getColumnCount(), dialog.getAlignment());
 }
 
-void MarkdownEditor::setBuffer(Buffer *p_buffer) { m_buffer = p_buffer; }
+void MarkdownEditor::setBuffer2(Buffer2 *p_buffer) { m_buffer2 = p_buffer; }
 
 void MarkdownEditor::setContentPath(const QString &p_contentPath) {
   m_contentPath = p_contentPath;
 }
 
 EditorConfig &MarkdownEditor::getEditorConfig() const {
-  if (m_useServices) {
-    return m_services->get<ConfigMgr2>()->getEditorConfig();
-  }
-  return ConfigMgr::getInst().getEditorConfig();
+  return m_services.get<ConfigMgr2>()->getEditorConfig();
 }
 
 bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
@@ -369,19 +349,17 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
       return false;
     }
   } else {
-    if (!m_buffer) {
+    if (!m_buffer2 || !m_buffer2->isValid()) {
       MessageBoxHelper::notify(
           MessageBoxHelper::Warning,
           tr("Image insertion from local file is not supported without a buffer."), this);
       return false;
     }
-    try {
-      destFilePath = m_buffer->insertImage(p_srcImagePath, destFileName);
-    } catch (Exception &e) {
+    destFilePath = m_buffer2->insertAsset(p_srcImagePath);
+    if (destFilePath.isEmpty()) {
       MessageBoxHelper::notify(
           MessageBoxHelper::Warning,
-          tr("Failed to insert image from local file (%1) (%2).").arg(p_srcImagePath, e.what()),
-          this);
+          tr("Failed to insert image from local file (%1).").arg(p_srcImagePath), this);
       return false;
     }
   }
@@ -417,17 +395,21 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const Q
       return false;
     }
   } else {
-    if (!m_buffer) {
+    if (!m_buffer2 || !m_buffer2->isValid()) {
       MessageBoxHelper::notify(MessageBoxHelper::Warning,
                                tr("Image insertion from data is not supported without a buffer."),
                                this);
       return false;
     }
-    try {
-      destFilePath = m_buffer->insertImage(p_image, destFileName);
-    } catch (Exception &e) {
+    // Serialize QImage to PNG bytes.
+    QByteArray ba;
+    QBuffer buffer(&ba);
+    buffer.open(QIODevice::WriteOnly);
+    p_image.save(&buffer, format.toStdString().c_str());
+    destFilePath = m_buffer2->insertAssetRaw(destFileName, ba);
+    if (destFilePath.isEmpty()) {
       MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                               tr("Failed to insert image from data (%1).").arg(e.what()), this);
+                               tr("Failed to insert image from data."), this);
       return false;
     }
   }
@@ -443,9 +425,7 @@ void MarkdownEditor::insertImageLink(const QString &p_title, const QString &p_al
   if (p_urlInLink) {
     *p_urlInLink = urlInLink;
   }
-  if (m_buffer) {
-    static_cast<MarkdownBuffer *>(m_buffer)->addInsertedImage(p_destImagePath, urlInLink);
-  }
+  emit imageInserted(p_destImagePath, urlInLink);
   if (p_insertText) {
     const auto imageLink = vte::MarkdownUtils::generateImageLink(p_title, urlInLink, p_altText,
                                                                  p_scaledWidth, p_scaledHeight);
@@ -499,15 +479,9 @@ void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p
   if (!m_shouldTriggerRichPaste) {
     // Default paste.
     // Give tips about the Rich Paste and Parse to Markdown And Paste features.
-    if (m_useServices) {
-      emit statusMessageRequested(
-          tr("For advanced paste, try the \"Rich Paste\" and \"Parse to Markdown and Paste\" on the "
-             "editor's context menu"));
-    } else {
-      VNoteX::getInst().showStatusMessageShort(
-          tr("For advanced paste, try the \"Rich Paste\" and \"Parse to Markdown and Paste\" on the "
-             "editor's context menu"));
-    }
+    emit statusMessageRequested(
+        tr("For advanced paste, try the \"Rich Paste\" and \"Parse to Markdown and Paste\" on the "
+           "editor's context menu"));
     return;
   }
 
@@ -665,7 +639,8 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
   if (!localFile.isEmpty()) {
     dialog.addSelection(tr("Insert As Relative Link"), 3);
 
-    if (m_buffer && m_buffer->isAttachmentSupported() && !m_buffer->isAttachment(localFile) &&
+    if (m_buffer2 && m_buffer2->isAttachmentSupported() &&
+        !PathUtils::pathContains(m_buffer2->getAttachmentsFolder(), localFile) &&
         !PathUtils::isDir(localFile)) {
       dialog.addSelection(tr("Attach And Insert Link"), 6);
     }
@@ -708,12 +683,10 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
 
     case 6: {
       // Attach And Insert Link.
-      QStringList fileList;
-      fileList << localFile;
-      fileList = m_buffer->addAttachment(QString(), fileList);
-
-      // Update localFile to point to the attachment file.
-      localFile = fileList[0];
+      QString filename = m_buffer2->insertAttachment(localFile);
+      if (!filename.isEmpty()) {
+        localFile = QDir(m_buffer2->getAttachmentsFolder()).filePath(filename);
+      }
       Q_FALLTHROUGH();
     }
 
@@ -801,7 +774,8 @@ bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) 
   if (isAllImage) {
     dialog.addSelection(tr("Insert As Image"), 0);
   }
-  if (m_buffer && m_buffer->isAttachmentSupported()) {
+  bool attachmentSupported = m_buffer2 && m_buffer2->isAttachmentSupported();
+  if (attachmentSupported) {
     dialog.addSelection(tr("Attach And Insert Link"), 1);
   }
   dialog.setMinimumWidth(400);
@@ -819,16 +793,17 @@ bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) 
     }
     case 1: {
       // Attach And Insert Link.
-      QStringList fileList;
+      QStringList resultFiles;
       for (const QUrl &url : urls) {
-        fileList << url.toLocalFile();
+        QString filename = m_buffer2->insertAttachment(url.toLocalFile());
+        if (!filename.isEmpty()) {
+          resultFiles << QDir(m_buffer2->getAttachmentsFolder()).filePath(filename);
+        }
       }
-      fileList = m_buffer->addAttachment(QString(), fileList);
       enterInsertModeIfApplicable();
-      for (int i = 0; i < fileList.length(); ++i) {
-        vte::MarkdownUtils::typeLink(m_textEdit, QFileInfo(fileList[i]).fileName(),
-                                     getRelativeLink(fileList[i]));
-
+      for (int i = 0; i < resultFiles.length(); ++i) {
+        vte::MarkdownUtils::typeLink(m_textEdit, QFileInfo(resultFiles[i]).fileName(),
+                                     getRelativeLink(resultFiles[i]));
         m_textEdit->insertPlainText("\n\n");
       }
       isProcessed = true;
@@ -879,9 +854,8 @@ void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet) {
 
 QString MarkdownEditor::getRelativeLink(const QString &p_path) {
   if (PathUtils::isLocalFile(p_path)) {
-    const auto &contentPath = m_useServices ? m_contentPath : m_buffer->getContentPath();
     auto relativePath =
-        PathUtils::relativePath(PathUtils::parentDirPath(contentPath), p_path);
+        PathUtils::relativePath(PathUtils::parentDirPath(m_contentPath), p_path);
     auto link = PathUtils::encodeSpacesInPath(QDir::fromNativeSeparators(relativePath));
     if (m_config.getPrependDotInRelativeLink()) {
       PathUtils::prependDotIfRelative(link);
@@ -1395,153 +1369,26 @@ void MarkdownEditor::setImageHost(ImageHost *p_host) {
   m_imageHost = p_host;
 }
 
-static QString generateImageHostFileName(const Buffer *p_buffer, const QString &p_destFileName) {
-  auto destPath = ImageHostUtils::generateRelativePath(p_buffer);
-  if (destPath.isEmpty()) {
-    destPath = p_destFileName;
-  } else {
-    destPath += "/" + p_destFileName;
-  }
-  return destPath;
-}
-
 QString MarkdownEditor::saveToImageHost(const QByteArray &p_imageData,
                                         const QString &p_destFileName) {
-  Q_ASSERT(m_imageHost);
-
-  const auto destPath = generateImageHostFileName(m_buffer, p_destFileName);
-
-  QString errMsg;
-
-  QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-  auto targetUrl = m_imageHost->create(p_imageData, destPath, errMsg);
-  QApplication::restoreOverrideCursor();
-
-  if (targetUrl.isEmpty()) {
-    MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                             tr("Failed to upload image to image host (%1) as (%2).")
-                                 .arg(m_imageHost->getName(), destPath),
-                             QString(), errMsg, this);
-  }
-
-  return targetUrl;
+  Q_UNUSED(p_imageData);
+  Q_UNUSED(p_destFileName);
+  qWarning() << "Image host integration is not available in the new architecture";
+  return QString();
 }
 
 void MarkdownEditor::appendImageHostMenu(QMenu *p_menu) {
   p_menu->addSeparator();
   auto subMenu = p_menu->addMenu(tr("Upload Images To Image Host"));
 
-  if (m_useServices) {
-    // ImageHost integration deferred in new architecture.
-    // Show empty submenu with "None" entry.
-    auto act = subMenu->addAction(tr("None"));
-    act->setEnabled(false);
-    return;
-  }
-
-  const auto &hosts = ImageHostMgr::getInst().getImageHosts();
-  if (hosts.isEmpty()) {
-    auto act = subMenu->addAction(tr("None"));
-    act->setEnabled(false);
-    return;
-  }
-
-  for (const auto &host : hosts) {
-    auto act = subMenu->addAction(host->getName(), this, &MarkdownEditor::uploadImagesToImageHost);
-    act->setData(host->getName());
-  }
+  // ImageHost integration deferred in new architecture.
+  // Show empty submenu with "None" entry.
+  auto act = subMenu->addAction(tr("None"));
+  act->setEnabled(false);
 }
 
 void MarkdownEditor::uploadImagesToImageHost() {
-  if (m_useServices) {
-    // ImageHost integration deferred in new architecture.
-    return;
-  }
-
-  auto act = static_cast<QAction *>(sender());
-  auto host = ImageHostMgr::getInst().find(act->data().toString());
-  Q_ASSERT(host);
-
-  // Only LocalRelativeInternal images.
-  // Descending order of the link position.
-  auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(
-      m_buffer->getContent(), m_buffer->getResourcePath(),
-      vte::MarkdownLink::TypeFlag::LocalRelativeInternal);
-  if (images.isEmpty()) {
-    return;
-  }
-
-  QProgressDialog proDlg(tr("Uploading local images..."), tr("Abort"), 0, images.size(), this);
-  proDlg.setWindowModality(Qt::WindowModal);
-  proDlg.setWindowTitle(tr("Upload Images To Image Host"));
-
-  QHash<QString, QString> uploadedImages;
-
-  int cnt = 0;
-  auto cursor = m_textEdit->textCursor();
-  cursor.beginEditBlock();
-  for (int i = 0; i < images.size(); ++i) {
-    const auto &link = images[i];
-
-    auto it = uploadedImages.find(link.m_path);
-    if (it != uploadedImages.end()) {
-      cursor.setPosition(link.m_urlInLinkPos);
-      cursor.setPosition(link.m_urlInLinkPos + link.m_urlInLink.size(), QTextCursor::KeepAnchor);
-      cursor.insertText(it.value());
-      continue;
-    }
-
-    proDlg.setValue(i + 1);
-    if (proDlg.wasCanceled()) {
-      break;
-    }
-    proDlg.setLabelText(tr("Upload image (%1)").arg(link.m_path));
-
-    Q_ASSERT(i == 0 || link.m_urlInLinkPos < images[i - 1].m_urlInLinkPos);
-
-    QByteArray ba;
-    try {
-      ba = FileUtils::readFile(link.m_path);
-    } catch (Exception &e) {
-      MessageBoxHelper::notify(
-          MessageBoxHelper::Warning,
-          tr("Failed to read local image file (%1) (%2).").arg(link.m_path, e.what()), this);
-      continue;
-    }
-
-    if (ba.isEmpty()) {
-      qWarning() << "Skipped uploading empty image" << link.m_path;
-      continue;
-    }
-
-    const auto destPath = generateImageHostFileName(m_buffer, PathUtils::fileName(link.m_path));
-    QString errMsg;
-    QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-    const auto targetUrl = host->create(ba, destPath, errMsg);
-    QApplication::restoreOverrideCursor();
-
-    if (targetUrl.isEmpty()) {
-      MessageBoxHelper::notify(
-          MessageBoxHelper::Warning,
-          tr("Failed to upload image to image host (%1) as (%2).").arg(host->getName(), destPath),
-          QString(), errMsg, this);
-      continue;
-    }
-
-    // Update the link URL.
-    cursor.setPosition(link.m_urlInLinkPos);
-    cursor.setPosition(link.m_urlInLinkPos + link.m_urlInLink.size(), QTextCursor::KeepAnchor);
-    cursor.insertText(targetUrl);
-    uploadedImages.insert(link.m_path, targetUrl);
-    ++cnt;
-  }
-  cursor.endEditBlock();
-
-  proDlg.setValue(images.size());
-
-  if (cnt > 0) {
-    m_textEdit->setTextCursor(cursor);
-  }
+  // ImageHost integration deferred in new architecture.
 }
 
 void MarkdownEditor::prependContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos) {
@@ -1725,16 +1572,9 @@ bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cur
 
   {
     auto act = new QAction(tr("Open Link"), p_menu);
-    if (m_useServices) {
-      connect(act, &QAction::triggered, p_menu, [this, linkUrl]() {
-        emit openFileRequested(linkUrl);
-      });
-    } else {
-      connect(act, &QAction::triggered, p_menu, [linkUrl]() {
-        emit VNoteX::getInst().openFileRequested(linkUrl,
-                                                 QSharedPointer<FileOpenParameters>::create());
-      });
-    }
+    connect(act, &QAction::triggered, p_menu, [this, linkUrl]() {
+      emit openFileRequested(linkUrl);
+    });
     p_menu->insertAction(p_before, act);
   }
 

@@ -66,7 +66,7 @@ QTextCharFormat MarkdownViewerAdapter::CssRuleStyle::toTextCharFormat() const {
 MarkdownViewerAdapter::MarkdownViewerAdapter(QObject *p_parent) : WebViewAdapter(p_parent) {}
 
 MarkdownViewerAdapter::MarkdownViewerAdapter(ServiceLocator &p_services, QObject *p_parent)
-    : WebViewAdapter(p_parent), m_services(&p_services), m_useServices(true) {}
+    : WebViewAdapter(p_parent), m_services(&p_services) {}
 
 MarkdownViewerAdapter::~MarkdownViewerAdapter() {}
 
