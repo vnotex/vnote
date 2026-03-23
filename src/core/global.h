@@ -81,6 +81,8 @@ enum class Alignment { None, Left, Center, Right };
 
 enum class ViewWindowMode { Read, Edit, Invalid };
 
+enum class ViewWindowLayoutMode { FullWidth, ReadableWidth };
+
 enum { InvalidViewSplitId = 0 };
 
 enum class Direction { Left, Down, Up, Right };

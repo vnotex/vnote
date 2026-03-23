@@ -57,6 +57,13 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
   }
 
   m_unitedEntryExpandAllEnabled = READBOOL(QStringLiteral("unitedEntryExpandAll"));
+
+  m_viewWindowLayoutMode = static_cast<ViewWindowLayoutMode>(
+      READINT(QStringLiteral("viewWindowLayoutMode")));
+  m_readableWidthMaxPx = READINT(QStringLiteral("readableWidthMaxPx"));
+  if (m_readableWidthMaxPx <= 0) {
+    m_readableWidthMaxPx = 720;
+  }
 }
 
 QJsonObject WidgetConfig::toJson() const {
@@ -87,6 +94,9 @@ QJsonObject WidgetConfig::toJson() const {
                   m_mainWindowKeepDocksExpandingContentArea);
   obj[QStringLiteral("newNoteDefaultFileTypeName")] = m_newNoteDefaultFileTypeName;
   obj[QStringLiteral("unitedEntryExpandAll")] = m_unitedEntryExpandAllEnabled;
+  obj[QStringLiteral("viewWindowLayoutMode")] =
+      static_cast<int>(m_viewWindowLayoutMode);
+  obj[QStringLiteral("readableWidthMaxPx")] = m_readableWidthMaxPx;
   return obj;
 }
 
@@ -243,6 +253,20 @@ bool WidgetConfig::isNodeExplorerSingleClickActivation() const {
 
 void WidgetConfig::setNodeExplorerSingleClickActivation(bool p_enabled) {
   updateConfig(m_nodeExplorerSingleClickActivation, p_enabled, this);
+}
+
+ViewWindowLayoutMode WidgetConfig::getViewWindowLayoutMode() const {
+  return m_viewWindowLayoutMode;
+}
+
+void WidgetConfig::setViewWindowLayoutMode(ViewWindowLayoutMode p_mode) {
+  updateConfig(m_viewWindowLayoutMode, p_mode, this);
+}
+
+int WidgetConfig::getReadableWidthMaxPx() const { return m_readableWidthMaxPx; }
+
+void WidgetConfig::setReadableWidthMaxPx(int p_px) {
+  updateConfig(m_readableWidthMaxPx, p_px, this);
 }
 
 void WidgetConfig::initDefaults() {

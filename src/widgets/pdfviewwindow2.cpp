@@ -37,7 +37,8 @@ void PdfViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
 
-  // Tag action deferred — not yet in ViewWindowToolBarHelper2.
+  // Common right-side actions: spacer + layout toggle + find-and-replace.
+  addCommonToolBarActions(toolBar);
 }
 
 void PdfViewWindow2::setupViewer() {
@@ -67,6 +68,9 @@ void PdfViewWindow2::setMode(ViewWindowMode p_mode) {
 }
 
 void PdfViewWindow2::handleEditorConfigChange() {
+  // Always update layout mode (WidgetConfig changes don't affect editor config revision).
+  ViewWindow2::handleEditorConfigChange();
+
   if (m_controller->checkAndUpdateConfigRevision()) {
     auto *configMgr = getServices().get<ConfigMgr2>();
     const auto &editorConfig = configMgr->getEditorConfig();

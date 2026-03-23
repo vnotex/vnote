@@ -1,6 +1,5 @@
 #include "mindmapviewwindow2.h"
 
-#include <QAction>
 #include <QToolBar>
 
 #include <controllers/mindmapviewwindowcontroller.h>
@@ -71,31 +70,10 @@ void MindMapViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
 
-  // Save action.
-  m_saveAction = ViewWindowToolBarHelper2::addAction(
-      toolBar, ViewWindowToolBarHelper2::Save, getServices(), this);
-  m_saveAction->setEnabled(false);
-  connect(m_saveAction, &QAction::triggered, this, [this]() {
-    save();
-  });
-  connect(this, &ViewWindow2::statusChanged, this, [this]() {
-    m_saveAction->setEnabled(getBuffer().isValid() && isModified());
-  });
+  addAction(toolBar, ViewWindowToolBarHelper2::Save);
 
-  ViewWindowToolBarHelper2::addSpacer(toolBar);
-
-  // Find and Replace action.
-  {
-    auto *findAction = ViewWindowToolBarHelper2::addAction(
-        toolBar, ViewWindowToolBarHelper2::FindAndReplace, getServices(), this);
-    connect(findAction, &QAction::triggered, this, [this]() {
-      if (findAndReplaceWidgetVisible()) {
-        hideFindAndReplaceWidget();
-      } else {
-        showFindAndReplaceWidget();
-      }
-    });
-  }
+  // Common right-side actions: spacer + layout toggle + find-and-replace.
+  addCommonToolBarActions(toolBar);
 }
 
 void MindMapViewWindow2::syncEditorFromBuffer() {
@@ -146,6 +124,9 @@ void MindMapViewWindow2::setMode(ViewWindowMode p_mode) {
 }
 
 void MindMapViewWindow2::handleEditorConfigChange() {
+  // Always update layout mode (WidgetConfig changes don't affect editor config revision).
+  ViewWindow2::handleEditorConfigChange();
+
   if (m_controller->checkAndUpdateConfigRevision()) {
     auto *configMgr = getServices().get<ConfigMgr2>();
     const auto &editorConfig = configMgr->getEditorConfig();

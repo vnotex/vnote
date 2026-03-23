@@ -46,7 +46,10 @@ public:
     TypeQuote,
     TypeLink,
     TypeImage,
-    TypeTable
+    TypeTable,
+
+    // Layout mode toggle.
+    ToggleLayoutMode
   };
 
   ViewWindowToolBarHelper2() = delete;

@@ -72,6 +72,12 @@ public:
   bool isNodeExplorerSingleClickActivation() const;
   void setNodeExplorerSingleClickActivation(bool p_enabled);
 
+  ViewWindowLayoutMode getViewWindowLayoutMode() const;
+  void setViewWindowLayoutMode(ViewWindowLayoutMode p_mode);
+
+  int getReadableWidthMaxPx() const;
+  void setReadableWidthMaxPx(int p_px);
+
 private:
   int m_outlineAutoExpandedLevel = 6;
 
@@ -107,6 +113,12 @@ private:
 
   // Whether single click activates items in node explorer.
   bool m_nodeExplorerSingleClickActivation = false;
+
+  // Default layout mode for view windows.
+  ViewWindowLayoutMode m_viewWindowLayoutMode = ViewWindowLayoutMode::FullWidth;
+
+  // Maximum content width in pixels for Readable Width mode.
+  int m_readableWidthMaxPx = 720;
 
   void initDefaults();
 };

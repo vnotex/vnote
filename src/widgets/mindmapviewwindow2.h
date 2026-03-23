@@ -3,8 +3,6 @@
 
 #include "viewwindow2.h"
 
-class QAction;
-
 namespace vnotex {
 
 class MindMapEditor;
@@ -80,9 +78,6 @@ private:
 
   // Managed by QObject.
   MindMapEditor *m_editor = nullptr;
-
-  // Save action for enabling/disabling based on modification state.
-  QAction *m_saveAction = nullptr;
 
   // Whether the find widget has been configured (replace disabled, options limited).
   bool m_findConfigured = false;

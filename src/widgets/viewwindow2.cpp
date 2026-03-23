@@ -1,22 +1,31 @@
 #include "viewwindow2.h"
 
 #include <QApplication>
+#include <QAction>
 #include <QDebug>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QWheelEvent>
 #include <QMessageBox>
 #include <QToolBar>
+#include <QToolButton>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QResizeEvent>
 
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <core/widgetconfig.h>
 
 #include "editors/statuswidget.h"
 #include "findandreplacewidget2.h"
 #include "messageboxhelper.h"
+#include "viewwindowtoolbarhelper2.h"
+#include "wordcountpanel.h"
+#include "wordcountpopup2.h"
 
 using namespace vnotex;
 
@@ -66,7 +75,11 @@ void ViewWindow2::setupUI() {
   m_topLayout->setSpacing(0);
   m_mainLayout->addLayout(m_topLayout, 0);
 
-  // Central widget will be inserted at index 1 (between top and bottom).
+  // Content layout wraps the central widget for readable-width margin support.
+  m_contentLayout = new QHBoxLayout();
+  m_contentLayout->setContentsMargins(0, 0, 0, 0);
+  m_contentLayout->setSpacing(0);
+  m_mainLayout->addLayout(m_contentLayout, 1);
 
   m_bottomLayout = new QVBoxLayout();
   m_bottomLayout->setContentsMargins(0, 0, 0, 0);
@@ -232,15 +245,15 @@ void ViewWindow2::addTopWidget(QWidget *p_widget) {
 
 void ViewWindow2::setCentralWidget(QWidget *p_widget) {
   if (m_centralWidget) {
-    m_mainLayout->removeWidget(m_centralWidget);
+    m_contentLayout->removeWidget(m_centralWidget);
     m_centralWidget->deleteLater();
   }
   m_centralWidget = p_widget;
   if (m_centralWidget) {
-    // Insert after top layout (index 1), with stretch=1.
-    m_mainLayout->insertWidget(1, m_centralWidget, 1);
+    m_contentLayout->addWidget(m_centralWidget, 1);
     setFocusProxy(m_centralWidget);
     m_centralWidget->show();
+    updateContentMargins();
   }
 }
 
@@ -268,6 +281,158 @@ QToolBar *ViewWindow2::createToolBar(QWidget *p_parent) {
   toolBar->setIconSize(QSize(iconSize, iconSize));
 
   return toolBar;
+}
+
+void ViewWindow2::addCommonToolBarActions(QToolBar *p_toolBar) {
+  ViewWindowToolBarHelper2::addSpacer(p_toolBar);
+  addAction(p_toolBar, ViewWindowToolBarHelper2::ToggleLayoutMode);
+  addAction(p_toolBar, ViewWindowToolBarHelper2::FindAndReplace);
+}
+
+// Convert a ViewWindowToolBarHelper2::Action (TypeBold..TypeTable) to the
+// corresponding TypeAction ID used by handleTypeAction().
+// Helper TypeBold=6 -> TypeAction TypeBold=10, offset = 4.
+static int helperActionToTypeActionId(ViewWindowToolBarHelper2::Action p_action) {
+  return 4 + static_cast<int>(p_action);
+}
+
+QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
+                                ViewWindowToolBarHelper2::Action p_action) {
+  auto *act = ViewWindowToolBarHelper2::addAction(
+      p_toolBar, p_action, getServices(), this);
+
+  switch (p_action) {
+  case ViewWindowToolBarHelper2::Save:
+    m_saveAction = act;
+    act->setEnabled(false);
+    connect(act, &QAction::triggered, this, [this]() { save(); });
+    connect(this, &ViewWindow2::statusChanged, this, [this]() {
+      m_saveAction->setEnabled(getBuffer().isValid() && isModified());
+    });
+    break;
+
+  case ViewWindowToolBarHelper2::EditRead:
+    m_editReadAction = act;
+    act->setChecked(m_mode == ViewWindowMode::Edit);
+    connect(act, &QAction::toggled, this, [this](bool p_checked) {
+      setMode(p_checked ? ViewWindowMode::Edit : ViewWindowMode::Read);
+    });
+    connect(this, &ViewWindow2::modeChanged, this, [this]() {
+      QSignalBlocker blocker(m_editReadAction);
+      m_editReadAction->setChecked(m_mode == ViewWindowMode::Edit);
+      // Update icon and text based on mode.
+      // Use replacement to preserve any shortcut suffix (e.g., "Edit\tCtrl+T").
+      if (m_mode == ViewWindowMode::Edit) {
+        m_editReadAction->setIcon(
+            ViewWindowToolBarHelper2::generateIcon(
+                getServices(), QStringLiteral("read_editor.svg")));
+        m_editReadAction->setText(
+            m_editReadAction->text().replace(tr("Edit"), tr("Read")));
+      } else {
+        m_editReadAction->setIcon(
+            ViewWindowToolBarHelper2::generateIcon(
+                getServices(), QStringLiteral("edit_editor.svg")));
+        m_editReadAction->setText(
+            m_editReadAction->text().replace(tr("Read"), tr("Edit")));
+      }
+    });
+    break;
+
+  case ViewWindowToolBarHelper2::WordCount: {
+    auto *toolBtn =
+        dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+    Q_ASSERT(toolBtn);
+    auto *popup = new WordCountPopup2(
+        toolBtn,
+        [this](WordCountPanel *p_panel) {
+          auto result = getWordCountText();
+          auto info = WordCountPanel::calculateWordCount(result.first);
+          p_panel->updateCount(result.second, info.m_wordCount,
+                               info.m_charWithoutSpaceCount,
+                               info.m_charWithSpaceCount);
+        },
+        p_toolBar);
+    toolBtn->setMenu(popup);
+    break;
+  }
+
+  case ViewWindowToolBarHelper2::TypeHeading: {
+    act->setVisible(false);
+    connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
+      act->setVisible(m_mode == ViewWindowMode::Edit);
+    });
+    auto *toolBtn =
+        dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+    Q_ASSERT(toolBtn);
+    connect(toolBtn->menu(), &QMenu::triggered, this, [this](QAction *p_act) {
+      handleTypeAction(p_act->data().toInt());
+    });
+    break;
+  }
+
+  case ViewWindowToolBarHelper2::TypeBold:
+  case ViewWindowToolBarHelper2::TypeItalic:
+  case ViewWindowToolBarHelper2::TypeStrikethrough:
+  case ViewWindowToolBarHelper2::TypeMark:
+  case ViewWindowToolBarHelper2::TypeUnorderedList:
+  case ViewWindowToolBarHelper2::TypeOrderedList:
+  case ViewWindowToolBarHelper2::TypeTodoList:
+  case ViewWindowToolBarHelper2::TypeCheckedTodoList:
+  case ViewWindowToolBarHelper2::TypeCode:
+  case ViewWindowToolBarHelper2::TypeCodeBlock:
+  case ViewWindowToolBarHelper2::TypeMath:
+  case ViewWindowToolBarHelper2::TypeMathBlock:
+  case ViewWindowToolBarHelper2::TypeQuote:
+  case ViewWindowToolBarHelper2::TypeLink:
+  case ViewWindowToolBarHelper2::TypeImage:
+  case ViewWindowToolBarHelper2::TypeTable: {
+    int typeActionId = helperActionToTypeActionId(p_action);
+    act->setVisible(false);
+    connect(act, &QAction::triggered, this,
+            [this, typeActionId]() { handleTypeAction(typeActionId); });
+    connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
+      act->setVisible(m_mode == ViewWindowMode::Edit);
+    });
+    break;
+  }
+
+  case ViewWindowToolBarHelper2::Print:
+    // Print is subclass-specific. Base class creates the action;
+    // subclasses connect additional triggered logic.
+    break;
+
+  case ViewWindowToolBarHelper2::FindAndReplace:
+    connect(act, &QAction::triggered, this, [this]() {
+      if (findAndReplaceWidgetVisible()) {
+        hideFindAndReplaceWidget();
+      } else {
+        showFindAndReplaceWidget();
+      }
+    });
+    break;
+
+  case ViewWindowToolBarHelper2::ToggleLayoutMode:
+    m_layoutModeAction = act;
+    act->setChecked(getLayoutMode() == ViewWindowLayoutMode::ReadableWidth);
+    connect(act, &QAction::toggled, this, [this](bool p_checked) {
+      setLayoutMode(p_checked ? ViewWindowLayoutMode::ReadableWidth
+                              : ViewWindowLayoutMode::FullWidth);
+    });
+    break;
+
+  default:
+    break;
+  }
+
+  return act;
+}
+
+void ViewWindow2::handleTypeAction(int p_action) {
+  Q_UNUSED(p_action);
+}
+
+QPair<QString, bool> ViewWindow2::getWordCountText() const {
+  return qMakePair(getLatestContent(), false);
 }
 
 ServiceLocator &ViewWindow2::getServices() const {
@@ -538,5 +703,70 @@ void ViewWindow2::showZoomDelta(int p_delta) {
 }
 
 void ViewWindow2::handleEditorConfigChange() {
-  // Default: no-op. Subclasses override to handle config changes.
+  // Re-apply content margins when no local override is active.
+  if (m_layoutModeOverride < 0) {
+    updateContentMargins();
+  }
+
+  // Sync layout mode toggle to reflect current effective mode.
+  if (m_layoutModeAction) {
+    QSignalBlocker blocker(m_layoutModeAction);
+    m_layoutModeAction->setChecked(
+        getLayoutMode() == ViewWindowLayoutMode::ReadableWidth);
+  }
+}
+
+// ============ Layout Mode ============
+
+ViewWindowLayoutMode ViewWindow2::getLayoutMode() const {
+  if (m_layoutModeOverride >= 0) {
+    return static_cast<ViewWindowLayoutMode>(m_layoutModeOverride);
+  }
+  // Read global default from config.
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (configMgr) {
+    return configMgr->getWidgetConfig().getViewWindowLayoutMode();
+  }
+  return ViewWindowLayoutMode::FullWidth;
+}
+
+void ViewWindow2::setLayoutMode(ViewWindowLayoutMode p_mode) {
+  m_layoutModeOverride = static_cast<int>(p_mode);
+  updateContentMargins();
+}
+
+void ViewWindow2::toggleLayoutMode() {
+  auto current = getLayoutMode();
+  setLayoutMode(current == ViewWindowLayoutMode::FullWidth
+                    ? ViewWindowLayoutMode::ReadableWidth
+                    : ViewWindowLayoutMode::FullWidth);
+}
+
+void ViewWindow2::updateContentMargins() {
+  if (!m_contentLayout) {
+    return;
+  }
+
+  if (getLayoutMode() == ViewWindowLayoutMode::ReadableWidth) {
+    auto *configMgr = m_services.get<ConfigMgr2>();
+    int maxWidth = 720;
+    if (configMgr) {
+      maxWidth = configMgr->getWidgetConfig().getReadableWidthMaxPx();
+    }
+
+    int availableWidth = width();
+    if (availableWidth > maxWidth) {
+      int margin = (availableWidth - maxWidth) / 2;
+      m_contentLayout->setContentsMargins(margin, 0, margin, 0);
+    } else {
+      m_contentLayout->setContentsMargins(0, 0, 0, 0);
+    }
+  } else {
+    m_contentLayout->setContentsMargins(0, 0, 0, 0);
+  }
+}
+
+void ViewWindow2::resizeEvent(QResizeEvent *p_event) {
+  QFrame::resizeEvent(p_event);
+  updateContentMargins();
 }

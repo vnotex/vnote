@@ -107,34 +107,9 @@ private:
 
   void setEditViewMode(MarkdownEditorConfig::EditViewMode p_mode);
 
-  // Type action IDs for formatting toolbar buttons.
-  enum TypeAction {
-    TypeHeadingNone = 0,
-    TypeHeading1 = 1,
-    TypeHeading2 = 2,
-    TypeHeading3 = 3,
-    TypeHeading4 = 4,
-    TypeHeading5 = 5,
-    TypeHeading6 = 6,
-    TypeBold = 10,
-    TypeItalic,
-    TypeStrikethrough,
-    TypeMark,
-    TypeUnorderedList,
-    TypeOrderedList,
-    TypeTodoList,
-    TypeCheckedTodoList,
-    TypeCode,
-    TypeCodeBlock,
-    TypeMath,
-    TypeMathBlock,
-    TypeQuote,
-    TypeLink,
-    TypeImage,
-    TypeTable
-  };
+  void handleTypeAction(int p_action) Q_DECL_OVERRIDE;
 
-  void handleTypeAction(int p_action);
+  QPair<QString, bool> getWordCountText() const Q_DECL_OVERRIDE;
 
   MarkdownViewerAdapter *adapter() const;
 
@@ -175,8 +150,6 @@ private:
       MarkdownEditorConfig::EditViewMode::EditOnly;
 
   QTimer *m_syncPreviewTimer = nullptr;
-  QAction *m_saveAction = nullptr;
-  QAction *m_editReadAction = nullptr;      // Checkable toggle.
   QSharedPointer<QPrinter> m_printer;
 };
 

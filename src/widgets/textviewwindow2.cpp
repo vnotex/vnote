@@ -4,7 +4,6 @@
 #include <QPrinter>
 #include <QScrollBar>
 #include <QToolBar>
-#include <QToolButton>
 
 #include <vtextedit/vtextedit.h>
 
@@ -21,8 +20,6 @@
 #include "findandreplacewidget2.h"
 #include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
-#include "wordcountpanel.h"
-#include "wordcountpopup2.h"
 
 #include <gui/utils/printutils.h>
 
@@ -82,59 +79,15 @@ void TextViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
 
-  // Save action.
-  m_saveAction = ViewWindowToolBarHelper2::addAction(
-      toolBar, ViewWindowToolBarHelper2::Save, getServices(), this);
-  m_saveAction->setEnabled(false);
-  connect(m_saveAction, &QAction::triggered, this, [this]() {
-    save();
-  });
-  connect(this, &ViewWindow2::statusChanged, this, [this]() {
-    m_saveAction->setEnabled(getBuffer().isValid() && isModified());
-  });
+  addAction(toolBar, ViewWindowToolBarHelper2::Save);
+  addAction(toolBar, ViewWindowToolBarHelper2::WordCount);
 
-  // Word count popup.
-  {
-    auto *wcAction = ViewWindowToolBarHelper2::addAction(
-        toolBar, ViewWindowToolBarHelper2::WordCount, getServices(), this);
-    auto *toolBtn = dynamic_cast<QToolButton *>(toolBar->widgetForAction(wcAction));
-    Q_ASSERT(toolBtn);
-    auto *popup = new WordCountPopup2(
-        toolBtn,
-        [this](WordCountPanel *p_panel) {
-          auto text = m_editor->getTextEdit()->selectedText();
-          bool isSelection = !text.isEmpty();
-          if (!isSelection) {
-            text = getLatestContent();
-          }
-
-          auto info = WordCountPanel::calculateWordCount(text);
-          p_panel->updateCount(
-              isSelection, info.m_wordCount, info.m_charWithoutSpaceCount, info.m_charWithSpaceCount);
-        },
-        toolBar);
-    toolBtn->setMenu(popup);
-  }
-
-  ViewWindowToolBarHelper2::addSpacer(toolBar);
-
-  // Find and Replace action.
-  {
-    auto *findAction = ViewWindowToolBarHelper2::addAction(
-        toolBar, ViewWindowToolBarHelper2::FindAndReplace, getServices(), this);
-    connect(findAction, &QAction::triggered, this, [this]() {
-      if (findAndReplaceWidgetVisible()) {
-        hideFindAndReplaceWidget();
-      } else {
-        showFindAndReplaceWidget();
-      }
-    });
-  }
+  // Common right-side actions: spacer + layout toggle + find-and-replace.
+  addCommonToolBarActions(toolBar);
 
   // Print action.
   {
-    auto *printAction = ViewWindowToolBarHelper2::addAction(
-        toolBar, ViewWindowToolBarHelper2::Print, getServices(), this);
+    auto *printAction = addAction(toolBar, ViewWindowToolBarHelper2::Print);
     connect(printAction, &QAction::triggered, this, [this]() {
       auto printer = PrintUtils::promptForPrint(
           m_editor->getTextEdit()->hasSelection(), this);
@@ -191,6 +144,9 @@ void TextViewWindow2::setMode(ViewWindowMode p_mode) {
 }
 
 void TextViewWindow2::handleEditorConfigChange() {
+  // Always update layout mode (WidgetConfig changes don't affect editor config revision).
+  ViewWindow2::handleEditorConfigChange();
+
   if (m_controller->checkAndUpdateConfigRevision()) {
     auto *configMgr = getServices().get<ConfigMgr2>();
     const auto &editorConfig = configMgr->getEditorConfig();
@@ -271,4 +227,14 @@ QString TextViewWindow2::selectedText() const {
     return m_editor->getTextEdit()->selectedText();
   }
   return QString();
+}
+
+QPair<QString, bool> TextViewWindow2::getWordCountText() const {
+  if (m_editor) {
+    QString text = m_editor->getTextEdit()->selectedText();
+    if (!text.isEmpty()) {
+      return qMakePair(text, true);
+    }
+  }
+  return qMakePair(getLatestContent(), false);
 }

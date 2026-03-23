@@ -282,6 +282,19 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTable), p_shortcutWidget);
     break;
 
+  case Action::ToggleLayoutMode:
+    act = p_tb->addAction(
+        generateIcon(p_services, QStringLiteral("readable_width_editor.svg")),
+        QObject::tr("Readable Width"));
+    act->setCheckable(true);
+    {
+      const auto &shortcut = editorConfig.getShortcut(Shortcut::ToggleLayoutMode);
+      if (!shortcut.isEmpty()) {
+        addActionShortcut(act, shortcut, p_shortcutWidget);
+      }
+    }
+    break;
+
   default:
     Q_ASSERT(false);
     break;

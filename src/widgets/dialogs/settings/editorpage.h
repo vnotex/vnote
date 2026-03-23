@@ -34,6 +34,10 @@ private:
   QComboBox *m_spellCheckDictComboBox = nullptr;
 
   QComboBox *m_lineEndingComboBox = nullptr;
+
+  QComboBox *m_layoutModeComboBox = nullptr;
+
+  QSpinBox *m_readableWidthSpinBox = nullptr;
 };
 } // namespace vnotex
 

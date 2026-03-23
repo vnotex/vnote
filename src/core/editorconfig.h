@@ -65,6 +65,7 @@ public:
     Attachment,
     AlternateViewMode,
     ParseToMarkdownAndPaste,
+    ToggleLayoutMode,
     MaxShortcut
   };
   Q_ENUM(Shortcut)

@@ -5,14 +5,12 @@
 #include <QEvent>
 #include <QFileInfo>
 #include <QLabel>
-#include <QMenu>
 #include <QPrinter>
 #include <QScrollBar>
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QTimer>
 #include <QToolBar>
-#include <QToolButton>
 
 #include <vtextedit/pegmarkdownhighlighter.h>
 #include <vtextedit/vtextedit.h>
@@ -40,8 +38,6 @@
 #include "editors/statuswidget.h"
 #include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
-#include "wordcountpanel.h"
-#include "wordcountpopup2.h"
 
 using namespace vnotex;
 
@@ -106,136 +102,41 @@ void MarkdownViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
 
-  // 1. EditRead toggle.
-  m_editReadAction = ViewWindowToolBarHelper2::addAction(
-      toolBar, ViewWindowToolBarHelper2::EditRead, getServices(), this);
-  // Checked = Edit mode, Unchecked = Read mode.
-  m_editReadAction->setChecked(m_mode == ViewWindowMode::Edit);
-  connect(m_editReadAction, &QAction::toggled, this, [this](bool p_checked) {
-    setMode(p_checked ? ViewWindowMode::Edit : ViewWindowMode::Read);
-  });
-  connect(this, &ViewWindow2::modeChanged, this, [this]() {
-    QSignalBlocker blocker(m_editReadAction);
-    m_editReadAction->setChecked(m_mode == ViewWindowMode::Edit);
-    // Update icon based on mode.
-    if (m_mode == ViewWindowMode::Edit) {
-      m_editReadAction->setIcon(
-          ViewWindowToolBarHelper2::generateIcon(getServices(), QStringLiteral("read_editor.svg")));
-    } else {
-      m_editReadAction->setIcon(
-          ViewWindowToolBarHelper2::generateIcon(getServices(), QStringLiteral("edit_editor.svg")));
-    }
-  });
+  addAction(toolBar, ViewWindowToolBarHelper2::EditRead);
+  addAction(toolBar, ViewWindowToolBarHelper2::Save);
+  addAction(toolBar, ViewWindowToolBarHelper2::WordCount);
 
-  // 2. Save.
-  m_saveAction = ViewWindowToolBarHelper2::addAction(
-      toolBar, ViewWindowToolBarHelper2::Save, getServices(), this);
-  m_saveAction->setEnabled(false);
-  connect(m_saveAction, &QAction::triggered, this, [this]() { save(); });
-  connect(this, &ViewWindow2::statusChanged, this, [this]() {
-    m_saveAction->setEnabled(getBuffer().isValid() && isModified());
-  });
-
-  // 3. Word count popup.
-  {
-    auto *wcAction = ViewWindowToolBarHelper2::addAction(
-        toolBar, ViewWindowToolBarHelper2::WordCount, getServices(), this);
-    auto *toolBtn = dynamic_cast<QToolButton *>(toolBar->widgetForAction(wcAction));
-    Q_ASSERT(toolBtn);
-    auto *popup = new WordCountPopup2(
-        toolBtn,
-        [this](WordCountPanel *p_panel) {
-          QString text;
-          bool isSelection = false;
-          if (m_editor && !isReadMode()) {
-            text = m_editor->getTextEdit()->selectedText();
-            isSelection = !text.isEmpty();
-          }
-          if (!isSelection) {
-            text = isReadMode() ? QString() : getLatestContent();
-          }
-          auto info = WordCountPanel::calculateWordCount(text);
-          p_panel->updateCount(isSelection, info.m_wordCount,
-                               info.m_charWithoutSpaceCount, info.m_charWithSpaceCount);
-        },
-        toolBar);
-    toolBtn->setMenu(popup);
-  }
-
+  // Separator between word count and formatting actions (visible only in edit mode).
   auto *typeSeparator = toolBar->addSeparator();
   typeSeparator->setVisible(false);
   connect(this, &ViewWindow2::modeChanged, this, [typeSeparator, this]() {
     typeSeparator->setVisible(m_mode == ViewWindowMode::Edit);
   });
 
-  // 4. Type* formatting actions (via ViewWindowToolBarHelper2).
-  // Helper lambda to add a formatting action via the helper, wire visibility
-  // toggling (hidden in read mode) and connect to handleTypeAction().
-  auto addTypeAction = [&](ViewWindowToolBarHelper2::Action p_helperAction,
-                           int p_typeActionId) -> QAction * {
-    auto *act = ViewWindowToolBarHelper2::addAction(
-        toolBar, p_helperAction, getServices(), this);
-    act->setVisible(false);
-    connect(act, &QAction::triggered, this,
-            [this, p_typeActionId]() { handleTypeAction(p_typeActionId); });
-    connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
-      act->setVisible(m_mode == ViewWindowMode::Edit);
-    });
-    return act;
-  };
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeHeading);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeBold);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeItalic);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeStrikethrough);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeMark);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeUnorderedList);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeOrderedList);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeTodoList);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeCheckedTodoList);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeCode);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeCodeBlock);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeMath);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeMathBlock);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeQuote);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeLink);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeImage);
+  addAction(toolBar, ViewWindowToolBarHelper2::TypeTable);
 
-  // Heading submenu with H1-H6 + HeadingNone.
+  // Common right-side actions: spacer + layout toggle + find-and-replace.
+  addCommonToolBarActions(toolBar);
+
+  // Print (Markdown-specific: uses viewer for PDF rendering).
   {
-    auto *headingAct = ViewWindowToolBarHelper2::addAction(
-        toolBar, ViewWindowToolBarHelper2::TypeHeading, getServices(), this);
-    headingAct->setVisible(false);
-    connect(this, &ViewWindow2::modeChanged, this, [headingAct, this]() {
-      headingAct->setVisible(m_mode == ViewWindowMode::Edit);
-    });
-
-    auto *toolBtn = dynamic_cast<QToolButton *>(toolBar->widgetForAction(headingAct));
-    Q_ASSERT(toolBtn);
-    connect(toolBtn->menu(), &QMenu::triggered, this, [this](QAction *p_act) {
-      handleTypeAction(p_act->data().toInt());
-    });
-  }
-
-  addTypeAction(ViewWindowToolBarHelper2::TypeBold, TypeBold);
-  addTypeAction(ViewWindowToolBarHelper2::TypeItalic, TypeItalic);
-  addTypeAction(ViewWindowToolBarHelper2::TypeStrikethrough, TypeStrikethrough);
-  addTypeAction(ViewWindowToolBarHelper2::TypeMark, TypeMark);
-  addTypeAction(ViewWindowToolBarHelper2::TypeUnorderedList, TypeUnorderedList);
-  addTypeAction(ViewWindowToolBarHelper2::TypeOrderedList, TypeOrderedList);
-  addTypeAction(ViewWindowToolBarHelper2::TypeTodoList, TypeTodoList);
-  addTypeAction(ViewWindowToolBarHelper2::TypeCheckedTodoList, TypeCheckedTodoList);
-  addTypeAction(ViewWindowToolBarHelper2::TypeCode, TypeCode);
-  addTypeAction(ViewWindowToolBarHelper2::TypeCodeBlock, TypeCodeBlock);
-  addTypeAction(ViewWindowToolBarHelper2::TypeMath, TypeMath);
-  addTypeAction(ViewWindowToolBarHelper2::TypeMathBlock, TypeMathBlock);
-  addTypeAction(ViewWindowToolBarHelper2::TypeQuote, TypeQuote);
-  addTypeAction(ViewWindowToolBarHelper2::TypeLink, TypeLink);
-  addTypeAction(ViewWindowToolBarHelper2::TypeImage, TypeImage);
-  addTypeAction(ViewWindowToolBarHelper2::TypeTable, TypeTable);
-
-  ViewWindowToolBarHelper2::addSpacer(toolBar);
-
-  // 5. FindAndReplace.
-  {
-    auto *findAction = ViewWindowToolBarHelper2::addAction(
-        toolBar, ViewWindowToolBarHelper2::FindAndReplace, getServices(), this);
-    connect(findAction, &QAction::triggered, this, [this]() {
-      if (findAndReplaceWidgetVisible()) {
-        hideFindAndReplaceWidget();
-      } else {
-        showFindAndReplaceWidget();
-      }
-    });
-  }
-
-  // 6. Print.
-  {
-    auto *printAction = ViewWindowToolBarHelper2::addAction(
-        toolBar, ViewWindowToolBarHelper2::Print, getServices(), this);
+    auto *printAction = addAction(toolBar, ViewWindowToolBarHelper2::Print);
     connect(printAction, &QAction::triggered, this, [this]() {
       if (!m_viewer || !m_viewerReady) {
         return;
@@ -492,6 +393,8 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     m_viewer->setFocus();
     if (m_editor) {
       m_editor->hide();
+      // Hide splitter handle to avoid visible border in readable-width mode.
+      m_splitter->handle(1)->setVisible(false);
     }
     m_mainStatusWidget->setCurrentWidget(m_viewerStatusWidget.get());
     break;
@@ -733,6 +636,9 @@ QString MarkdownViewWindow2::selectedText() const {
 // ============ Editor Config Change ============
 
 void MarkdownViewWindow2::handleEditorConfigChange() {
+  // Always update layout mode (WidgetConfig changes don't affect editor config revision).
+  ViewWindow2::handleEditorConfigChange();
+
   if (!m_editorController->checkAndUpdateConfigRevision()) {
     return;
   }
@@ -804,6 +710,10 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
 
   switch (p_mode) {
   case MarkdownEditorConfig::EditViewMode::EditOnly:
+    // Hide splitter handle to avoid visible border in readable-width mode.
+    if (m_splitter->count() > 1) {
+      m_splitter->handle(1)->setVisible(false);
+    }
     if (m_viewerReady) {
       m_viewer->hide();
     }
@@ -818,6 +728,10 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
     break;
 
   case MarkdownEditorConfig::EditViewMode::EditPreview:
+    // Restore splitter handle for draggable split.
+    if (m_splitter->count() > 1) {
+      m_splitter->handle(1)->setVisible(true);
+    }
     m_viewer->show();
     WidgetUtils::distributeWidgetsOfSplitter(m_splitter);
     if (modeChanged) {
@@ -911,6 +825,20 @@ void MarkdownViewWindow2::focusEditor() {
   default:
     break;
   }
+}
+
+// ============ Word Count ============
+
+QPair<QString, bool> MarkdownViewWindow2::getWordCountText() const {
+  if (m_editor && !isReadMode()) {
+    QString text = m_editor->getTextEdit()->selectedText();
+    if (!text.isEmpty()) {
+      return qMakePair(text, true);
+    }
+    return qMakePair(getLatestContent(), false);
+  }
+  // Read mode: no content to count (viewer doesn't expose plain text).
+  return qMakePair(QString(), false);
 }
 
 // ============ Type Actions ============

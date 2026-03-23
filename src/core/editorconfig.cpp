@@ -332,4 +332,5 @@ void EditorConfig::initDefaults() {
   m_shortcuts[Shortcut::Print] = QStringLiteral("");
   m_shortcuts[Shortcut::ClearHighlights] = QStringLiteral("Ctrl+G, Space");
   m_shortcuts[Shortcut::ParseToMarkdownAndPaste] = QStringLiteral("Ctrl+G, Ctrl+P");
+  m_shortcuts[Shortcut::ToggleLayoutMode] = QStringLiteral("");
 }

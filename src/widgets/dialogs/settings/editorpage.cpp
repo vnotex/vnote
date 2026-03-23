@@ -18,6 +18,8 @@
 #include <widgets/messageboxhelper.h>
 #include <widgets/widgetsfactory.h>
 
+#include <core/widgetconfig.h>
+
 using namespace vnotex;
 
 EditorPage::EditorPage(ServiceLocator &p_services, QWidget *p_parent)
@@ -111,6 +113,38 @@ void EditorPage::setupUI() {
     connect(m_spellCheckDictComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &EditorPage::pageIsChanged);
   }
+
+  {
+    m_layoutModeComboBox = WidgetsFactory::createComboBox(this);
+    m_layoutModeComboBox->setToolTip(
+        tr("Default content layout mode for editor windows"));
+
+    m_layoutModeComboBox->addItem(
+        tr("Full Width"), static_cast<int>(ViewWindowLayoutMode::FullWidth));
+    m_layoutModeComboBox->addItem(
+        tr("Readable Width"), static_cast<int>(ViewWindowLayoutMode::ReadableWidth));
+
+    const QString label(tr("Content layout:"));
+    mainLayout->addRow(label, m_layoutModeComboBox);
+    addSearchItem(label, m_layoutModeComboBox->toolTip(), m_layoutModeComboBox);
+    connect(m_layoutModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &EditorPage::pageIsChanged);
+  }
+
+  {
+    m_readableWidthSpinBox = WidgetsFactory::createSpinBox(this);
+    m_readableWidthSpinBox->setToolTip(
+        tr("Maximum content width in pixels for Readable Width mode"));
+    m_readableWidthSpinBox->setRange(400, 2000);
+    m_readableWidthSpinBox->setSingleStep(20);
+    m_readableWidthSpinBox->setSuffix(QStringLiteral(" px"));
+
+    const QString label(tr("Readable width:"));
+    mainLayout->addRow(label, m_readableWidthSpinBox);
+    addSearchItem(label, m_readableWidthSpinBox->toolTip(), m_readableWidthSpinBox);
+    connect(m_readableWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, &EditorPage::pageIsChanged);
+  }
 }
 
 void EditorPage::loadInternal() {
@@ -135,6 +169,14 @@ void EditorPage::loadInternal() {
     int idx = m_spellCheckDictComboBox->findData(editorConfig.getSpellCheckDefaultDictionary());
     m_spellCheckDictComboBox->setCurrentIndex(idx == -1 ? 0 : idx);
   }
+
+  {
+    const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
+    int idx = m_layoutModeComboBox->findData(
+        static_cast<int>(widgetConfig.getViewWindowLayoutMode()));
+    m_layoutModeComboBox->setCurrentIndex(idx != -1 ? idx : 0);
+    m_readableWidthSpinBox->setValue(widgetConfig.getReadableWidthMaxPx());
+  }
 }
 
 bool EditorPage::saveInternal() {
@@ -154,6 +196,14 @@ bool EditorPage::saveInternal() {
 
   {
     editorConfig.setSpellCheckDefaultDictionary(m_spellCheckDictComboBox->currentData().toString());
+  }
+
+  {
+    auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
+    auto mode = static_cast<ViewWindowLayoutMode>(
+        m_layoutModeComboBox->currentData().toInt());
+    widgetConfig.setViewWindowLayoutMode(mode);
+    widgetConfig.setReadableWidthMaxPx(m_readableWidthSpinBox->value());
   }
 
   notifyEditorConfigChange(m_services.get<HookManager>());

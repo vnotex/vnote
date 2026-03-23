@@ -3,6 +3,7 @@
 
 #include <QFrame>
 #include <QIcon>
+#include <QPair>
 #include <QSharedPointer>
 #include <QString>
 #include <QStringList>
@@ -10,8 +11,13 @@
 #include <core/global.h>
 #include <core/services/buffer2.h>
 
+#include "viewwindowtoolbarhelper2.h"
+
+class QHBoxLayout;
 class QVBoxLayout;
+class QAction;
 class QToolBar;
+class QResizeEvent;
 class QWheelEvent;
 
 namespace vnotex {
@@ -85,6 +91,17 @@ public:
   // Pure virtual: must be implemented by subclasses.
   virtual void setMode(ViewWindowMode p_mode) = 0;
 
+  // ============ Layout Mode ============
+
+  // Get the effective layout mode (local override > global default).
+  ViewWindowLayoutMode getLayoutMode() const;
+
+  // Set a local (per-tab) layout mode override. Does not persist to config.
+  void setLayoutMode(ViewWindowLayoutMode p_mode);
+
+  // Toggle between FullWidth and ReadableWidth.
+  void toggleLayoutMode();
+
   // ============ Content ============
 
   // Get the latest content from the editor widget (not from buffer).
@@ -112,7 +129,7 @@ public slots:
 
   // Called when editor configuration changes at runtime.
   // Subclasses should override to reload config and update their editor widget.
-  // Default implementation does nothing.
+  // Default implementation re-applies content margins for readable-width mode.
   virtual void handleEditorConfigChange();
 
 signals:
@@ -144,6 +161,54 @@ protected slots:
   virtual void handleFindAndReplaceWidgetOpened();
 
 protected:
+  // ============ Type Action IDs ============
+
+  // Type action IDs for formatting toolbar buttons.
+  // Used by handleTypeAction(). Shared across all ViewWindow2 subclasses.
+  enum TypeAction {
+    TypeHeadingNone = 0,
+    TypeHeading1 = 1,
+    TypeHeading2 = 2,
+    TypeHeading3 = 3,
+    TypeHeading4 = 4,
+    TypeHeading5 = 5,
+    TypeHeading6 = 6,
+    TypeBold = 10,
+    TypeItalic,
+    TypeStrikethrough,
+    TypeMark,
+    TypeUnorderedList,
+    TypeOrderedList,
+    TypeTodoList,
+    TypeCheckedTodoList,
+    TypeCode,
+    TypeCodeBlock,
+    TypeMath,
+    TypeMathBlock,
+    TypeQuote,
+    TypeLink,
+    TypeImage,
+    TypeTable
+  };
+
+  // ============ Toolbar Action Factory ============
+
+  // Create a toolbar action and wire its standard signals.
+  // Subclasses call this in setupToolBar() instead of wiring manually.
+  // Returns the created action (caller may connect additional signals).
+  QAction *addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::Action p_action);
+
+  // Handle a formatting type action by type action ID.
+  // @p_action: a TypeAction value (e.g., TypeBold, TypeHeading1).
+  // Default: no-op. Override in subclasses that support formatting.
+  virtual void handleTypeAction(int p_action);
+
+  // Get text for word count display.
+  // Returns (text, isSelection).
+  // Default returns (getLatestContent(), false).
+  // Subclasses override to provide editor-specific selection awareness.
+  virtual QPair<QString, bool> getWordCountText() const;
+
   // ============ Layout Slots (for subclasses) ============
 
   // Add a toolbar at the top. Call once in subclass setupUI().
@@ -170,6 +235,11 @@ protected:
   // Create a standard toolbar with the configured icon size.
   static QToolBar *createToolBar(QWidget *p_parent = nullptr);
 
+  // Add common right-side toolbar actions: spacer + layout mode toggle + find-and-replace.
+  // Call at the end of subclass setupToolBar() after adding subclass-specific actions.
+  // @p_toolBar: The toolbar to add actions to.
+  void addCommonToolBarActions(QToolBar *p_toolBar);
+
   // ============ Find and Replace ============
 
   virtual void showFindAndReplaceWidget();
@@ -194,6 +264,8 @@ protected:
   void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
   void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
+
+  void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 
   // ============ Editor Integration ============
 
@@ -268,6 +340,9 @@ private:
   void onFocusGained();
   void onFocusLost();
 
+  // Recalculate content margins for readable-width mode.
+  void updateContentMargins();
+
   ServiceLocator &m_services;
 
   Buffer2 m_buffer;
@@ -284,6 +359,13 @@ private:
   // Managed by QObject.
   QVBoxLayout *m_bottomLayout = nullptr;
 
+  // Content layout wrapping central widget for readable-width margin support.
+  // Managed by QObject.
+  QHBoxLayout *m_contentLayout = nullptr;
+
+  // Per-tab layout mode override. -1 = use global default from WidgetConfig.
+  int m_layoutModeOverride = -1;
+
   // Managed by QObject.
   QWidget *m_centralWidget = nullptr;
 
@@ -295,6 +377,15 @@ private:
 
   // Find and replace widget. Managed by QObject.
   FindAndReplaceWidget2 *m_findAndReplace = nullptr;
+
+  // Layout mode toggle action. Managed by QObject.
+  QAction *m_layoutModeAction = nullptr;
+
+  // Save action. Managed by QObject.
+  QAction *m_saveAction = nullptr;
+
+  // Edit/Read toggle action. Managed by QObject.
+  QAction *m_editReadAction = nullptr;
 
   // Last find info for findNextOnLastFind().
   FindInfo m_findInfo;

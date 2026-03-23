@@ -54,6 +54,8 @@ protected:
 
   QString selectedText() const Q_DECL_OVERRIDE;
 
+  QPair<QString, bool> getWordCountText() const Q_DECL_OVERRIDE;
+
 private:
   void setupUI();
 
@@ -71,9 +73,6 @@ private:
 
   // Whether to propagate editor state changes to the buffer.
   bool m_propagateEditorToBuffer = false;
-
-  // Save action for enabling/disabling based on modification state.
-  QAction *m_saveAction = nullptr;
 };
 } // namespace vnotex
 
