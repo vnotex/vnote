@@ -131,6 +131,9 @@ signals:
   // Request to remove the workspace of this split.
   void removeWorkspaceRequested(ViewSplit2 *p_split);
 
+  // Request to rename the workspace of this split.
+  void renameWorkspaceRequested(ViewSplit2 *p_split);
+
   // Request to switch to a different workspace.
   void switchWorkspaceRequested(ViewSplit2 *p_split, const QString &p_workspaceId);
 

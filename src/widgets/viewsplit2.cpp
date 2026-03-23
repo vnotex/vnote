@@ -255,6 +255,9 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
 
     p_menu->addAction(tr("New Workspace"), [this]() { emit newWorkspaceRequested(this); });
 
+    p_menu->addAction(tr("Rename Workspace"),
+                      [this]() { emit renameWorkspaceRequested(this); });
+
     p_menu->addAction(tr("Remove Workspace"), [this]() { emit removeWorkspaceRequested(this); });
   }
 

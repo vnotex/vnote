@@ -589,7 +589,8 @@ bool ViewAreaController::shouldPropagateToCore() const {
   return m_shouldPropagateToCore;
 }
 
-void ViewAreaController::newWorkspace(const QString &p_currentWorkspaceId) {
+void ViewAreaController::newWorkspace(const QString &p_currentWorkspaceId,
+                                      const QString &p_name) {
   if (p_currentWorkspaceId.isEmpty()) {
     return;
   }
@@ -599,7 +600,7 @@ void ViewAreaController::newWorkspace(const QString &p_currentWorkspaceId) {
     return;
   }
 
-  QString newWsId = wsSvc->createWorkspace(generateWorkspaceName());
+  QString newWsId = wsSvc->createWorkspace(p_name);
   if (newWsId.isEmpty()) {
     return;
   }
@@ -609,6 +610,30 @@ void ViewAreaController::newWorkspace(const QString &p_currentWorkspaceId) {
   m_workspaces.insert(newWsId, wrapper);
 
   switchWorkspace(p_currentWorkspaceId, newWsId);
+}
+
+void ViewAreaController::renameWorkspace(const QString &p_workspaceId,
+                                         const QString &p_newName) {
+  if (p_workspaceId.isEmpty() || p_newName.isEmpty()) {
+    return;
+  }
+
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (!wsSvc) {
+    return;
+  }
+
+  wsSvc->renameWorkspace(p_workspaceId, p_newName);
+}
+
+QString ViewAreaController::getWorkspaceName(const QString &p_workspaceId) const {
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (!wsSvc) {
+    return QString();
+  }
+
+  QJsonObject wsConfig = wsSvc->getWorkspace(p_workspaceId);
+  return wsConfig.value(QStringLiteral("name")).toString();
 }
 
 bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {

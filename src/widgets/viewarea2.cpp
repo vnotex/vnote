@@ -1,5 +1,6 @@
 #include "viewarea2.h"
 
+#include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QSplitter>
@@ -390,7 +391,22 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
   // Workspace signals.
   connect(p_split, &ViewSplit2::newWorkspaceRequested, this,
           [this](ViewSplit2 *s) {
-            m_controller->newWorkspace(s->getWorkspaceId());
+            QString defaultName = m_controller->generateWorkspaceName();
+            bool ok = false;
+            QString name = QInputDialog::getText(this,
+                                                 tr("New Workspace"),
+                                                 tr("Workspace name:"),
+                                                 QLineEdit::Normal,
+                                                 defaultName,
+                                                 &ok);
+            if (!ok) {
+              return;
+            }
+            name = name.trimmed();
+            if (name.isEmpty()) {
+              name = defaultName;
+            }
+            m_controller->newWorkspace(s->getWorkspaceId(), name);
           });
   connect(p_split, &ViewSplit2::removeWorkspaceRequested, this,
           [this](ViewSplit2 *s) {
@@ -398,6 +414,26 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
             // (switchWorkspace modifies the split's workspace identity).
             QString wsId = s->getWorkspaceId();
             m_controller->removeWorkspace(wsId, false);
+          });
+  connect(p_split, &ViewSplit2::renameWorkspaceRequested, this,
+          [this](ViewSplit2 *s) {
+            QString wsId = s->getWorkspaceId();
+            QString currentName = m_controller->getWorkspaceName(wsId);
+            bool ok = false;
+            QString newName = QInputDialog::getText(this,
+                                                    tr("Rename Workspace"),
+                                                    tr("Workspace name:"),
+                                                    QLineEdit::Normal,
+                                                    currentName,
+                                                    &ok);
+            if (!ok) {
+              return;
+            }
+            newName = newName.trimmed();
+            if (newName.isEmpty() || newName == currentName) {
+              return;
+            }
+            m_controller->renameWorkspace(wsId, newName);
           });
   connect(p_split, &ViewSplit2::switchWorkspaceRequested, this,
           [this](ViewSplit2 *s, const QString &wsId) {

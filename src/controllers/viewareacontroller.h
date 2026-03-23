@@ -124,8 +124,18 @@ public:
                               Direction p_direction, const QString &p_dstWorkspaceId,
                               const QString &p_bufferId);
 
-  // Create a new workspace for the given split and switch to it.
-  void newWorkspace(const QString &p_currentWorkspaceId);
+  // Create a new workspace with the given name and switch to it.
+  void newWorkspace(const QString &p_currentWorkspaceId, const QString &p_name);
+
+  // Rename the workspace to p_newName.
+  void renameWorkspace(const QString &p_workspaceId, const QString &p_newName);
+
+  // Generate a default workspace name like "Workspace 1", "Workspace 2", etc.
+  // Finds the next available number by scanning existing workspace names.
+  QString generateWorkspaceName() const;
+
+  // Get the display name of a workspace by ID. Returns empty string if not found.
+  QString getWorkspaceName(const QString &p_workspaceId) const;
 
   // Remove the workspace for the given split.
   // Closes its buffers one-by-one (if not in other workspaces), deletes the workspace,
@@ -217,10 +227,6 @@ private:
   // Resolves file type and calls m_view->openBuffer() for the view to create the ViewWindow2.
   void openRestoredBuffer(BufferService *p_bufferSvc, const QString &p_workspaceId,
                           const QString &p_bufferId, bool p_focus);
-
-  // Generate a workspace name like "Workspace 1", "Workspace 2", etc.
-  // Finds the next available number by scanning existing workspace names.
-  QString generateWorkspaceName() const;
 
   ServiceLocator &m_services;
   ViewAreaView *m_view = nullptr;
