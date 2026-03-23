@@ -464,6 +464,16 @@ bool ViewSplit2::eventFilter(QObject *p_object, QEvent *p_event) {
           return true;
         }
       }
+    } else if (p_event->type() == QEvent::MouseButtonDblClick) {
+      auto mouseEve = static_cast<QMouseEvent *>(p_event);
+      if (mouseEve->button() == Qt::LeftButton) {
+        int idx = tabBar()->tabAt(mouseEve->pos());
+        if (idx != -1) {
+          closeTab(idx);
+          // closeTab may trigger removal of this split. Return immediately.
+          return true;
+        }
+      }
     }
   }
 
