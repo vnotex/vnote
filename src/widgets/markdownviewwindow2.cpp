@@ -191,10 +191,14 @@ void MarkdownViewWindow2::setupTextEditor() {
   m_previewHelper->setMarkdownEditor(m_editor);
   m_editor->setPreviewHelper(m_previewHelper);
 
-  // Set content path from Buffer2 (replaces m_editor->setBuffer(buffer)).
+  // Set content path and base path from Buffer2.
+  // contentPath: used by MarkdownEditor::getRelativeLink() for generating relative links.
+  // basePath: used by vtextedit's PreviewMgr for resolving relative URLs to absolute paths.
   auto resolved = getBuffer().resolvedPath();
   if (!resolved.isEmpty()) {
-    m_editor->setContentPath(QFileInfo(resolved).path());
+    const auto parentDir = QFileInfo(resolved).path();
+    m_editor->setContentPath(parentDir);
+    m_editor->setBasePath(parentDir);
   }
 
   // Provide Buffer2 handle for asset/attachment operations.
@@ -487,6 +491,7 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
   if (state.valid) {
     m_editor->setReadOnly(state.readOnly);
     m_editor->setContentPath(state.basePath);
+    m_editor->setBasePath(state.basePath);
     m_editor->setText(state.content);
     m_editor->setModified(state.modified);
 
@@ -498,6 +503,7 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
   } else {
     m_editor->setReadOnly(true);
     m_editor->setContentPath(QString());
+    m_editor->setBasePath(QString());
     m_editor->setText(QString());
     m_editor->setModified(false);
   }
