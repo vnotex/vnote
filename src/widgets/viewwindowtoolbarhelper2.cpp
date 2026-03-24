@@ -160,16 +160,18 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
 
   case Action::TypeHeading: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_heading_editor.svg")),
-                          QObject::tr("Heading"));
+                          QObject::tr("Heading 1"));
+    act->setData(1);
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeHeading1), p_shortcutWidget);
+
     auto *toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
     Q_ASSERT(toolBtn);
-    toolBtn->setPopupMode(QToolButton::InstantPopup);
-    toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+    toolBtn->setPopupMode(QToolButton::MenuButtonPopup);
 
     auto *menu = new QMenu(toolBtn);
     menu->setToolTipsVisible(true);
 
-    for (int level = 1; level <= 6; ++level) {
+    for (int level = 2; level <= 6; ++level) {
       auto *headingAct = menu->addAction(QObject::tr("Heading %1").arg(level));
       headingAct->setData(level);
       addActionShortcut(headingAct,

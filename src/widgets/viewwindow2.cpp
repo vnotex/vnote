@@ -370,6 +370,11 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
     connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
       act->setVisible(m_mode == ViewWindowMode::Edit);
     });
+    // Default button click triggers Heading 1.
+    connect(act, &QAction::triggered, this, [this]() {
+      handleTypeAction(TypeHeading1);
+    });
+    // Menu items (H2-H6, Clear) trigger via data().
     auto *toolBtn =
         dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
     Q_ASSERT(toolBtn);
