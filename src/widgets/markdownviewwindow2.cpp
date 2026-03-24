@@ -227,8 +227,9 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Switch to read mode when editor requests it.
   // Save first to avoid losing unsaved changes (legacy: read(true) calls save).
   connect(m_editor, &MarkdownEditor::readRequested, this, [this]() {
-    save();
-    setMode(ViewWindowMode::Read);
+    if (save()) {
+      setMode(ViewWindowMode::Read);
+    }
   });
 }
 

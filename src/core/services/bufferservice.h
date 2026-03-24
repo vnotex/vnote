@@ -86,11 +86,12 @@ public:
   // List all open buffers as JSON array.
   QJsonArray listBuffers() const;
 
-  // ============ BufferCoreService pass-through (for Buffer2) ============
-  // Expose selected methods from privately-inherited BufferCoreService.
+  // ============ BufferCoreService wrappers (for Buffer2) ============
+  // Wrap selected methods from privately-inherited BufferCoreService.
   // Buffer2 delegates to these; external code should use Buffer2 methods instead.
-  using BufferCoreService::saveBuffer;
-  using BufferCoreService::reloadBuffer;
+  // saveBuffer and reloadBuffer emit bufferModifiedChanged after the operation.
+  bool saveBuffer(const QString &p_bufferId);
+  bool reloadBuffer(const QString &p_bufferId);
   using BufferCoreService::getContent;
   using BufferCoreService::setContent;
   using BufferCoreService::getContentRaw;
@@ -135,6 +136,11 @@ public:
 signals:
   // Emitted after buffer content is synced from editor to vxcore buffer.
   void bufferContentSynced(const QString &p_bufferId);
+
+  // Emitted when the buffer's modified state may have changed.
+  // Fired after save, reload, or auto-save — any operation that clears/sets the
+  // vxcore modified flag. Listeners should re-query isModified() for current state.
+  void bufferModifiedChanged(const QString &p_bufferId);
 
   // Emitted after auto-save completes (save to disk or backup written).
   void bufferAutoSaved(const QString &p_bufferId);

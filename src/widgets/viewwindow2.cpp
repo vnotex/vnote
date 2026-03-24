@@ -20,6 +20,7 @@
 #include <core/services/bufferservice.h>
 #include <core/widgetconfig.h>
 
+#include "editreaddiscardaction.h"
 #include "editors/statuswidget.h"
 #include "findandreplacewidget2.h"
 #include "messageboxhelper.h"
@@ -56,6 +57,8 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
   if (bufferService) {
     connect(bufferService->asQObject(), SIGNAL(bufferAutoSaved(QString)), this,
             SLOT(onBufferAutoSaved(QString)));
+    connect(bufferService->asQObject(), SIGNAL(bufferModifiedChanged(QString)), this,
+            SLOT(onBufferModifiedChanged(QString)));
   }
 }
 
@@ -319,32 +322,30 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
     });
     break;
 
-  case ViewWindowToolBarHelper2::EditRead:
-    m_editReadAction = act;
-    act->setChecked(m_mode == ViewWindowMode::Edit);
-    connect(act, &QAction::toggled, this, [this](bool p_checked) {
-      setMode(p_checked ? ViewWindowMode::Edit : ViewWindowMode::Read);
-    });
-    connect(this, &ViewWindow2::modeChanged, this, [this]() {
-      QSignalBlocker blocker(m_editReadAction);
-      m_editReadAction->setChecked(m_mode == ViewWindowMode::Edit);
-      // Update icon and text based on mode.
-      // Use replacement to preserve any shortcut suffix (e.g., "Edit\tCtrl+T").
-      if (m_mode == ViewWindowMode::Edit) {
-        m_editReadAction->setIcon(
-            ViewWindowToolBarHelper2::generateIcon(
-                getServices(), QStringLiteral("read_editor.svg")));
-        m_editReadAction->setText(
-            m_editReadAction->text().replace(tr("Edit"), tr("Read")));
-      } else {
-        m_editReadAction->setIcon(
-            ViewWindowToolBarHelper2::generateIcon(
-                getServices(), QStringLiteral("edit_editor.svg")));
-        m_editReadAction->setText(
-            m_editReadAction->text().replace(tr("Read"), tr("Edit")));
-      }
-    });
+  case ViewWindowToolBarHelper2::EditRead: {
+    m_editReadAction = dynamic_cast<EditReadDiscardAction *>(act);
+    Q_ASSERT(m_editReadAction);
+    connect(this, &ViewWindow2::modeChanged, this,
+            &ViewWindow2::updateEditReadDiscardActionState);
+    connect(m_editReadAction,
+            QOverload<EditReadDiscardAction::Action>::of(&EditReadDiscardAction::triggered), this,
+            [this](EditReadDiscardAction::Action p_act) {
+              switch (p_act) {
+              case EditReadDiscardAction::Action::Edit:
+                setMode(ViewWindowMode::Edit);
+                break;
+              case EditReadDiscardAction::Action::Read:
+                if (save()) {
+                  setMode(ViewWindowMode::Read);
+                }
+                break;
+              case EditReadDiscardAction::Action::Discard:
+                discardChangesAndRead();
+                break;
+              }
+            });
     break;
+  }
 
   case ViewWindowToolBarHelper2::WordCount: {
     auto *toolBtn =
@@ -477,15 +478,21 @@ bool ViewWindow2::save() {
     bufferService->syncNow(m_buffer.id());
   }
 
+  // Clear local dirty state BEFORE save so that when BufferService emits
+  // bufferModifiedChanged (inside m_buffer.save()), isModified() returns false.
+  m_editorDirty = false;
+  setModified(false);
+
   // Save to disk via Buffer2 (fires hooks).
   bool ok = m_buffer.save();
 
   if (ok) {
-    m_editorDirty = false;
     m_lastKnownRevision = m_buffer.getRevision();
-    setModified(false);
-    emit statusChanged();
+    // statusChanged() is emitted by onBufferModifiedChanged() via BufferService signal.
   } else {
+    // Save failed — restore dirty state.
+    m_editorDirty = true;
+    emit statusChanged();
     showMessage(tr("Failed to save note (%1).").arg(getName()));
   }
 
@@ -539,6 +546,13 @@ void ViewWindow2::onBufferAutoSaved(const QString &p_bufferId) {
   m_editorDirty = false;
   m_lastKnownRevision = m_buffer.getRevision();
   setModified(false);
+  // statusChanged() is emitted by onBufferModifiedChanged() via BufferService signal.
+}
+
+void ViewWindow2::onBufferModifiedChanged(const QString &p_bufferId) {
+  if (p_bufferId != m_buffer.id()) {
+    return;
+  }
   emit statusChanged();
 }
 
@@ -750,6 +764,69 @@ void ViewWindow2::toggleLayoutMode() {
   setLayoutMode(current == ViewWindowLayoutMode::FullWidth
                     ? ViewWindowLayoutMode::ReadableWidth
                     : ViewWindowLayoutMode::FullWidth);
+}
+
+void ViewWindow2::updateEditReadDiscardActionState() {
+  if (!m_editReadAction) {
+    return;
+  }
+  switch (m_mode) {
+  case ViewWindowMode::Read:
+    m_editReadAction->setState(BiAction::State::Default);
+    break;
+  default:
+    m_editReadAction->setState(BiAction::State::Alternative);
+    break;
+  }
+}
+
+void ViewWindow2::discardChangesAndRead() {
+  // Sync editor content to buffer first so isModified() is accurate.
+  auto *bufferService = m_services.get<BufferService>();
+  if (bufferService && m_editorDirty && m_buffer.isValid()) {
+    bufferService->syncNow(m_buffer.id());
+  }
+
+  if (isModified()) {
+    // Ask to save changes.
+    int ret = MessageBoxHelper::questionSaveDiscardCancel(
+        MessageBoxHelper::Question,
+        tr("Discard changes to note (%1)?").arg(getName()),
+        tr("Note path (%1).").arg(m_buffer.resolvedPath()),
+        QString(),
+        this);
+    switch (ret) {
+    case QMessageBox::Save:
+      // Save and read.
+      if (!save()) {
+        return;
+      }
+      break;
+
+    case QMessageBox::Discard:
+      // Clear local dirty state BEFORE reload so that when BufferService emits
+      // bufferModifiedChanged (inside m_buffer.reload()), isModified() returns false.
+      m_editorDirty = false;
+      setModified(false);
+
+      // Reload buffer from disk, discarding unsaved changes.
+      if (!m_buffer.reload()) {
+        return;
+      }
+      m_lastKnownRevision = m_buffer.getRevision();
+      // statusChanged() is emitted by onBufferModifiedChanged() via BufferService signal.
+      break;
+
+    case QMessageBox::Cancel:
+      Q_FALLTHROUGH();
+    default:
+      // Recover the action state since we're not changing mode.
+      updateEditReadDiscardActionState();
+      return;
+    }
+  }
+
+  setMode(ViewWindowMode::Read);
 }
 
 void ViewWindow2::updateContentMargins() {

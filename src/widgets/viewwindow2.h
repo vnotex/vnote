@@ -24,6 +24,7 @@ class QWheelEvent;
 
 namespace vnotex {
 
+class EditReadDiscardAction;
 class ServiceLocator;
 class StatusWidget;
 class FindAndReplaceWidget2;
@@ -341,6 +342,10 @@ private slots:
   // Clears dirty/modified state if the buffer ID matches ours.
   void onBufferAutoSaved(const QString &p_bufferId);
 
+  // Called when BufferService emits bufferModifiedChanged for any buffer.
+  // Emits statusChanged() if the buffer ID matches ours.
+  void onBufferModifiedChanged(const QString &p_bufferId);
+
 private:
   struct FindInfo {
     QStringList m_texts;
@@ -355,6 +360,13 @@ private:
 
   // Recalculate content margins for readable-width mode.
   void updateContentMargins();
+
+  // Update EditReadDiscardAction state based on current view mode.
+  void updateEditReadDiscardActionState();
+
+  // Discard unsaved changes and switch to Read mode.
+  // Shows Save/Discard/Cancel dialog if buffer is modified.
+  void discardChangesAndRead();
 
   ServiceLocator &m_services;
 
@@ -397,8 +409,8 @@ private:
   // Save action. Managed by QObject.
   QAction *m_saveAction = nullptr;
 
-  // Edit/Read toggle action. Managed by QObject.
-  QAction *m_editReadAction = nullptr;
+  // Edit/Read/Discard action. Managed by QObject.
+  EditReadDiscardAction *m_editReadAction = nullptr;
 
   // Last find info for findNextOnLastFind().
   FindInfo m_findInfo;

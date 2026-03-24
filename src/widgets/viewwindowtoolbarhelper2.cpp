@@ -15,6 +15,7 @@
 #include <gui/utils/widgetutils.h>
 #include <utils/iconutils.h>
 
+#include "editreaddiscardaction.h"
 #include "propertydefs.h"
 
 using namespace vnotex;
@@ -137,12 +138,25 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
   }
 
-  case Action::EditRead:
-    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("edit_editor.svg")),
-                          QObject::tr("Edit"));
-    act->setCheckable(true);
-    addActionShortcut(act, editorConfig.getShortcut(Shortcut::EditRead), p_shortcutWidget);
+  case Action::EditRead: {
+    auto *erdAct = new EditReadDiscardAction(
+        generateIcon(p_services, QStringLiteral("edit_editor.svg")), QObject::tr("Edit"),
+        generateIcon(p_services, QStringLiteral("read_editor.svg")), QObject::tr("Read"),
+        generateIcon(p_services, QStringLiteral("discard_editor.svg")), QObject::tr("Discard"),
+        p_tb);
+    act = erdAct;
+    addActionShortcut(erdAct, editorConfig.getShortcut(Shortcut::EditRead), p_shortcutWidget);
+
+    auto *discardAct = erdAct->getDiscardAction();
+    addActionShortcut(discardAct, editorConfig.getShortcut(Shortcut::Discard), p_shortcutWidget);
+
+    p_tb->addAction(erdAct);
+
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(erdAct));
+    Q_ASSERT(toolBtn);
+    erdAct->setToolButtonForAction(toolBtn);
     break;
+  }
 
   case Action::TypeHeading: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_heading_editor.svg")),

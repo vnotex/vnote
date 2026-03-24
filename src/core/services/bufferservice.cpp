@@ -141,6 +141,20 @@ QJsonArray BufferService::listBuffers() const {
   return BufferCoreService::listBuffers();
 }
 
+// ============ BufferCoreService wrappers ============
+
+bool BufferService::saveBuffer(const QString &p_bufferId) {
+  bool ok = BufferCoreService::saveBuffer(p_bufferId);
+  emit bufferModifiedChanged(p_bufferId);
+  return ok;
+}
+
+bool BufferService::reloadBuffer(const QString &p_bufferId) {
+  bool ok = BufferCoreService::reloadBuffer(p_bufferId);
+  emit bufferModifiedChanged(p_bufferId);
+  return ok;
+}
+
 // ============ Auto-Save & Dirty Tracking ============
 
 void BufferService::markDirty(const QString &p_bufferId) {
@@ -231,6 +245,7 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
   }
 
   emit bufferContentSynced(p_bufferId);
+  emit bufferModifiedChanged(p_bufferId);
 
   // Execute auto-save policy.
   switch (m_autoSavePolicy) {
@@ -243,6 +258,7 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     if (saveOk) {
       m_saveFailureCounts.remove(p_bufferId);
       emit bufferAutoSaved(p_bufferId);
+      emit bufferModifiedChanged(p_bufferId);
     } else {
       int failCount = m_saveFailureCounts.value(p_bufferId, 0) + 1;
       m_saveFailureCounts[p_bufferId] = failCount;
@@ -269,6 +285,7 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
                << "at" << BufferCoreService::getBackupPath(p_bufferId);
       m_saveFailureCounts.remove(p_bufferId);
       emit bufferAutoSaved(p_bufferId);
+      emit bufferModifiedChanged(p_bufferId);
     } else {
       int failCount = m_saveFailureCounts.value(p_bufferId, 0) + 1;
       m_saveFailureCounts[p_bufferId] = failCount;
