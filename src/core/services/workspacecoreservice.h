@@ -72,6 +72,9 @@ public:
   // @p_bufferIds: ordered list of buffer IDs. Only IDs already in the workspace are kept.
   bool setBufferOrder(const QString &p_workspaceId, const QStringList &p_bufferIds);
 
+  // Set workspace metadata (arbitrary JSON object).
+  bool setWorkspaceMetadata(const QString &p_workspaceId, const QJsonObject &p_metadata);
+
   // ============ Hook Firing (ViewArea events) ============
   // These methods own the hook contract for view area operations.
   // Controllers call these instead of firing hooks directly.

@@ -283,9 +283,15 @@ void ViewArea2::saveSession() {
     // synced when takeViewWindowsFromSplit was called during workspace switch.
     for (auto it = m_splits.constBegin(); it != m_splits.constEnd(); ++it) {
       QStringList bufferIds;
+      QJsonObject bufferModes;
       auto windows = it.value()->getAllViewWindows();
       for (auto *win : windows) {
         bufferIds.append(win->getBuffer().id());
+        // Persist the current view mode (Read/Edit) for each buffer.
+        ViewWindowMode mode = win->getMode();
+        bufferModes[win->getBuffer().id()] =
+            (mode == ViewWindowMode::Edit) ? QStringLiteral("Edit")
+                                           : QStringLiteral("Read");
       }
       wsSvc->setBufferOrder(it.key(), bufferIds);
 
@@ -294,8 +300,15 @@ void ViewArea2::saveSession() {
         wsSvc->setCurrentBuffer(it.key(), currentWin->getBuffer().id());
       }
 
+      // Save buffer modes into workspace metadata.
+      QJsonObject wsConfig = wsSvc->getWorkspace(it.key());
+      QJsonObject metadata = wsConfig.value(QStringLiteral("metadata")).toObject();
+      metadata[QStringLiteral("bufferModes")] = bufferModes;
+      wsSvc->setWorkspaceMetadata(it.key(), metadata);
+
       qInfo() << "  Synced workspace" << it.key() << "buffer order:" << bufferIds
-              << "currentBuffer:" << (currentWin ? currentWin->getBuffer().id() : QStringLiteral("(none)"));
+              << "currentBuffer:" << (currentWin ? currentWin->getBuffer().id() : QStringLiteral("(none)"))
+              << "bufferModes:" << bufferModes.keys();
     }
 
     // Log full workspace state AFTER sync.

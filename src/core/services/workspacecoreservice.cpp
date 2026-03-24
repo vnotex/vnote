@@ -181,6 +181,23 @@ bool WorkspaceCoreService::setBufferOrder(const QString &p_workspaceId,
   return true;
 }
 
+bool WorkspaceCoreService::setWorkspaceMetadata(const QString &p_workspaceId,
+                                                const QJsonObject &p_metadata) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  QByteArray json = QJsonDocument(p_metadata).toJson(QJsonDocument::Compact);
+
+  VxCoreError err = vxcore_workspace_set_metadata(
+      m_context, p_workspaceId.toUtf8().constData(), json.constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "setWorkspaceMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
+  }
+  return true;
+}
+
 // Hook-firing methods for ViewArea events.
 bool WorkspaceCoreService::fireViewWindowBeforeOpen(const ViewWindowOpenEvent &p_event) {
   return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeOpen, p_event);

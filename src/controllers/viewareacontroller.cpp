@@ -960,10 +960,15 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
     QJsonArray bufferIds = wsConfig.value(QStringLiteral("bufferIds")).toArray();
     QString currentBufferId = wsConfig.value(QStringLiteral("currentBufferId")).toString();
 
+    // Read buffer view modes from workspace metadata.
+    QJsonObject metadata = wsConfig.value(QStringLiteral("metadata")).toObject();
+    QJsonObject bufferModes = metadata.value(QStringLiteral("bufferModes")).toObject();
+
     qInfo() << "  Workspace" << wsId
             << "name:" << wsConfig.value(QStringLiteral("name")).toString()
             << "buffers:" << bufferIds
-            << "currentBuffer:" << currentBufferId;
+            << "currentBuffer:" << currentBufferId
+            << "bufferModes:" << bufferModes.keys();
 
     if (bufferIds.isEmpty()) {
       qInfo() << "    (no buffers, skipping)";
@@ -979,9 +984,16 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
       if (bufferId.isEmpty()) {
         continue;
       }
+      // Resolve saved view mode for this buffer.
+      ViewWindowMode mode = ViewWindowMode::Read;
+      QString modeStr = bufferModes.value(bufferId).toString();
+      if (modeStr == QStringLiteral("Edit")) {
+        mode = ViewWindowMode::Edit;
+      }
       qInfo() << "    Opening buffer" << bufferId
-              << (bufferId == currentBufferId ? "(current)" : "(non-current)");
-      openRestoredBuffer(bufferSvc, wsId, bufferId, false);
+              << (bufferId == currentBufferId ? "(current)" : "(non-current)")
+              << "mode:" << modeStr;
+      openRestoredBuffer(bufferSvc, wsId, bufferId, false, mode);
     }
 
     // After all buffers are opened in order, set the current buffer's tab as active.
@@ -1037,7 +1049,8 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
 
 void ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
                                             const QString &p_workspaceId,
-                                            const QString &p_bufferId, bool p_focus) {
+                                            const QString &p_bufferId, bool p_focus,
+                                            ViewWindowMode p_mode) {
   Buffer2 buf = p_bufferSvc->getBufferHandle(p_bufferId);
   if (!buf.isValid()) {
     qWarning() << "    Failed to get buffer handle:" << p_bufferId;
@@ -1058,10 +1071,11 @@ void ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
   qInfo() << "    Opening restored buffer: buffer:" << p_bufferId
           << "path:" << buf.nodeId().relativePath
           << "type:" << fileType << "workspace:" << p_workspaceId
-          << "focus:" << p_focus;
+          << "focus:" << p_focus << "mode:" << static_cast<int>(p_mode);
 
   FileOpenSettings settings;
   settings.m_focus = p_focus;
+  settings.m_mode = p_mode;
 
   if (m_view) { m_view->openBuffer(buf, fileType, p_workspaceId, settings); }
 }
