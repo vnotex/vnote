@@ -522,7 +522,7 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
     qWarning() << "ViewArea2: no creator for file type" << p_fileType;
     return;
   }
-  auto *win = factory->create(p_fileType, m_services, p_buffer, split);
+  auto *win = factory->create(p_fileType, m_services, p_buffer, split, p_settings.m_mode);
   if (!win) {
     qWarning() << "ViewArea2: failed creating view window for type" << p_fileType;
     return;

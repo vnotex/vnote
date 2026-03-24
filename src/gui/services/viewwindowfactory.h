@@ -6,6 +6,7 @@
 #include <QHash>
 #include <functional>
 
+#include <core/global.h>
 #include <core/noncopyable.h>
 
 class QWidget;
@@ -21,9 +22,10 @@ class ViewWindowFactory : public QObject, private Noncopyable {
 
 public:
   // Creator function type.
-  // Takes ServiceLocator, Buffer2 handle, and parent widget.
+  // Takes ServiceLocator, Buffer2 handle, parent widget, and initial view mode.
   // Returns a heap-allocated ViewWindow2 subclass (caller takes ownership).
-  using CreatorFunc = std::function<ViewWindow2 *(ServiceLocator &, const Buffer2 &, QWidget *)>;
+  using CreatorFunc = std::function<ViewWindow2 *(ServiceLocator &, const Buffer2 &, QWidget *,
+                                                  ViewWindowMode)>;
 
   explicit ViewWindowFactory(QObject *p_parent = nullptr);
   ~ViewWindowFactory() override;
@@ -43,9 +45,11 @@ public:
   bool hasCreator(const QString &p_fileType) const;
 
   // Create a ViewWindow2 for the given file type.
+  // @p_mode: initial view mode for the window (e.g., Read or Edit).
   // Returns nullptr if no creator is registered for the type.
   ViewWindow2 *create(const QString &p_fileType, ServiceLocator &p_services,
-                      const Buffer2 &p_buffer, QWidget *p_parent = nullptr) const;
+                      const Buffer2 &p_buffer, QWidget *p_parent = nullptr,
+                      ViewWindowMode p_mode = ViewWindowMode::Read) const;
 
 private:
   QHash<QString, CreatorFunc> m_creators;

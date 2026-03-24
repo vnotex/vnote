@@ -39,6 +39,12 @@ MarkdownViewWindowController::computeModeTransition(int p_currentMode,
     if (!p_hasEditor) {
       if (!p_hasViewer) {
         result.needSetupViewer = true;
+        // Also sync viewer from buffer so its HTML template is loaded.
+        // Without this, switching to Read mode later would show a blank
+        // viewer because the WebEngine was never given the template.
+        if (p_syncBuffer) {
+          result.syncViewerFromBuffer = true;
+        }
       }
       result.needSetupEditor = true;
       if (p_syncBuffer) {

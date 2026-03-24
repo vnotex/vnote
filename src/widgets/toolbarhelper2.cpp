@@ -119,10 +119,12 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
 
       auto *bufferSvc = m_services.get<BufferService>();
       if (bufferSvc) {
+        FileOpenSettings settings;
+        settings.m_mode = m_services.get<ConfigMgr2>()->getCoreConfig().getDefaultOpenMode();
         for (const auto &file : files) {
           NodeIdentifier nodeId;
           nodeId.relativePath = file;
-          bufferSvc->openBuffer(nodeId);
+          bufferSvc->openBuffer(nodeId, settings);
         }
       }
     });

@@ -15,6 +15,7 @@
 #include <core/fileopensettings.h>
 #include <core/servicelocator.h>
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/widgetconfig.h>
 #include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
@@ -377,6 +378,7 @@ void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
   }
 
   FileOpenSettings settings;
+  settings.m_mode = m_services.get<ConfigMgr2>()->getCoreConfig().getDefaultOpenMode();
   emit nodeActivated(p_nodeId, settings);
 }
 

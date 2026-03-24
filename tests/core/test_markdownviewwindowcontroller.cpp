@@ -134,7 +134,8 @@ void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditor
   // No previous valid mode.
   QCOMPARE(t.syncPositionFromPrevMode, false);
   QCOMPARE(t.restoreEditViewMode, false);
-  QCOMPARE(t.syncViewerFromBuffer, false);
+  // Viewer is newly created -> sync its template so Read mode works later.
+  QCOMPARE(t.syncViewerFromBuffer, true);
 }
 
 void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditorHasViewer() {
@@ -184,6 +185,8 @@ void TestMarkdownViewWindowController::testModeTransition_readToEdit_noEditor_no
   // Coming from Read -> sync position.
   QCOMPARE(t.syncPositionFromPrevMode, true);
   QCOMPARE(t.restoreEditViewMode, false);
+  // Viewer is newly created -> sync its template so Read mode works later.
+  QCOMPARE(t.syncViewerFromBuffer, true);
 }
 
 void TestMarkdownViewWindowController::testModeTransition_readToEdit_noEditor_hasViewer() {

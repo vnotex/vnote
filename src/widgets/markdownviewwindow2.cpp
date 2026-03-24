@@ -44,7 +44,8 @@ using namespace vnotex;
 // ============ Constructor ============
 
 MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
-                                         QWidget *p_parent)
+                                         QWidget *p_parent,
+                                         ViewWindowMode p_initialMode)
     : ViewWindow2(p_services, p_buffer, p_parent) {
   // Start at Invalid so the first setMode() triggers full initialization.
   m_mode = ViewWindowMode::Invalid;
@@ -54,8 +55,10 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
   setupUI();
   setupPreviewHelper();
 
-  // Trigger initial mode setup (creates viewer, loads content).
-  setModeInternal(ViewWindowMode::Read, true);
+  // Trigger initial mode setup directly to the requested mode.
+  // Going straight to Edit (Invalid -> Edit) avoids a visible Read -> Edit
+  // transition (flash of blank viewer in QSplitter).
+  setModeInternal(p_initialMode, true);
 }
 
 // ============ Destructor ============
@@ -259,6 +262,10 @@ void MarkdownViewWindow2::setupViewer() {
       this);
 
   m_splitter->addWidget(m_viewer);
+  // Start hidden. The viewer will be shown explicitly when entering
+  // Read mode or EditPreview mode. This avoids a visible blank pane
+  // in the QSplitter while WebEngine loads the HTML template.
+  m_viewer->hide();
 
   // Viewer status widget.
   {
@@ -373,15 +380,23 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   // Lazy init: create viewer if needed.
   if (transition.needSetupViewer) {
     setupViewer();
+
+    if (transition.needSetupEditor) {
+      // Going to Edit mode: briefly show the viewer so WebEngine can
+      // initialize with the correct DPI and rendering context. Without
+      // this, WebEngine loads very slowly in the background and the
+      // ready signal fires much later, causing a disruptive
+      // ensureCursorVisible() scroll when the deferred updateHighlight
+      // completes.  The viewer will be hidden by setEditViewMode()
+      // or explicitly below once the editor is shown.
+      // (Matches legacy MarkdownViewWindow behavior.)
+      m_viewer->show();
+    }
   }
 
   // Lazy init: create editor if needed.
   if (transition.needSetupEditor) {
     // In Edit mode, we need the viewer for preview pipeline.
-    // Must show viewer briefly to let it init with correct DPI.
-    if (m_viewer && !m_viewer->isVisible()) {
-      m_viewer->show();
-    }
     setupTextEditor();
   }
 
@@ -723,9 +738,10 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
     if (m_splitter->count() > 1) {
       m_splitter->handle(1)->setVisible(false);
     }
-    if (m_viewerReady) {
-      m_viewer->hide();
-    }
+    // Always hide viewer in EditOnly mode. Even if the viewer is still
+    // loading (m_viewerReady == false), hide it immediately to avoid a
+    // visible blank pane in the QSplitter while the WebEngine initializes.
+    m_viewer->hide();
     if (modeChanged) {
       if (m_syncPreviewTimer) {
         disconnect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged,

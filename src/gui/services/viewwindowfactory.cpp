@@ -19,27 +19,27 @@ ViewWindowFactory::~ViewWindowFactory() {
 void ViewWindowFactory::registerBuiltInCreators() {
   registerCreator("Markdown",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer,
-                     QWidget *p_parent) -> ViewWindow2 * {
-                    return new MarkdownViewWindow2(p_services, p_buffer, p_parent);
+                     QWidget *p_parent, ViewWindowMode p_mode) -> ViewWindow2 * {
+                    return new MarkdownViewWindow2(p_services, p_buffer, p_parent, p_mode);
                   });
   registerCreator("Text",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer,
-                     QWidget *p_parent) -> ViewWindow2 * {
+                     QWidget *p_parent, ViewWindowMode) -> ViewWindow2 * {
                     return new TextViewWindow2(p_services, p_buffer, p_parent);
                   });
   registerCreator("Others",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer,
-                     QWidget *p_parent) -> ViewWindow2 * {
+                     QWidget *p_parent, ViewWindowMode) -> ViewWindow2 * {
                     return new TextViewWindow2(p_services, p_buffer, p_parent);
                   });
   registerCreator("Pdf",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer,
-                     QWidget *p_parent) -> ViewWindow2 * {
+                     QWidget *p_parent, ViewWindowMode) -> ViewWindow2 * {
                     return new PdfViewWindow2(p_services, p_buffer, p_parent);
                   });
   registerCreator("MindMap",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer,
-                     QWidget *p_parent) -> ViewWindow2 * {
+                     QWidget *p_parent, ViewWindowMode) -> ViewWindow2 * {
                     return new MindMapViewWindow2(p_services, p_buffer, p_parent);
                   });
 }
@@ -57,11 +57,12 @@ bool ViewWindowFactory::hasCreator(const QString &p_fileType) const {
 }
 
 ViewWindow2 *ViewWindowFactory::create(const QString &p_fileType, ServiceLocator &p_services,
-                                       const Buffer2 &p_buffer, QWidget *p_parent) const {
+                                       const Buffer2 &p_buffer, QWidget *p_parent,
+                                       ViewWindowMode p_mode) const {
   auto it = m_creators.find(p_fileType.toLower());
   if (it == m_creators.end()) {
     qWarning() << "ViewWindowFactory: no creator for file type" << p_fileType;
     return nullptr;
   }
-  return it.value()(p_services, p_buffer, p_parent);
+  return it.value()(p_services, p_buffer, p_parent, p_mode);
 }

@@ -33,7 +33,8 @@ public:
   friend class TextViewWindowHelper;
 
   explicit MarkdownViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
-                               QWidget *p_parent = nullptr);
+                               QWidget *p_parent = nullptr,
+                               ViewWindowMode p_initialMode = ViewWindowMode::Read);
 
   ~MarkdownViewWindow2();
 
