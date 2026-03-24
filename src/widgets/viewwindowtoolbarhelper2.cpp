@@ -311,6 +311,19 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     }
     break;
 
+  case Action::ToggleLivePreview:
+    act = p_tb->addAction(
+        generateIcon(p_services, QStringLiteral("view_mode_editor.svg")),
+        QObject::tr("Live Preview"));
+    act->setCheckable(true);
+    {
+      const auto &shortcut = editorConfig.getShortcut(Shortcut::AlternateViewMode);
+      if (!shortcut.isEmpty()) {
+        addActionShortcut(act, shortcut, p_shortcutWidget);
+      }
+    }
+    break;
+
   default:
     Q_ASSERT(false);
     break;

@@ -49,7 +49,10 @@ public:
     TypeTable,
 
     // Layout mode toggle.
-    ToggleLayoutMode
+    ToggleLayoutMode,
+
+    // Live preview toggle (Edit mode only).
+    ToggleLivePreview
   };
 
   ViewWindowToolBarHelper2() = delete;

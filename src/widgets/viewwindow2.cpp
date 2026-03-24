@@ -434,6 +434,14 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
     });
     break;
 
+  case ViewWindowToolBarHelper2::ToggleLivePreview:
+    // Visible only in Edit mode. Subclass wires the toggled signal.
+    act->setVisible(false);
+    connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
+      act->setVisible(m_mode == ViewWindowMode::Edit);
+    });
+    break;
+
   default:
     break;
   }

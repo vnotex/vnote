@@ -134,8 +134,27 @@ void MarkdownViewWindow2::setupToolBar() {
   addAction(toolBar, ViewWindowToolBarHelper2::TypeImage);
   addAction(toolBar, ViewWindowToolBarHelper2::TypeTable);
 
-  // Common right-side actions: spacer + layout toggle + find-and-replace.
-  addCommonToolBarActions(toolBar);
+  // Right-side actions: spacer + live preview + layout toggle + find-and-replace.
+  ViewWindowToolBarHelper2::addSpacer(toolBar);
+
+  // Live preview toggle (visible only in Edit mode).
+  {
+    auto *livePreviewAction = addAction(toolBar, ViewWindowToolBarHelper2::ToggleLivePreview);
+    livePreviewAction->setChecked(
+        m_editViewMode == MarkdownEditorConfig::EditViewMode::EditPreview);
+    connect(livePreviewAction, &QAction::toggled, this, [this](bool p_checked) {
+      if (m_mode != ViewWindowMode::Edit) {
+        return;
+      }
+      auto mode = p_checked ? MarkdownEditorConfig::EditViewMode::EditPreview
+                            : MarkdownEditorConfig::EditViewMode::EditOnly;
+      setEditViewMode(mode);
+    });
+  }
+
+  addAction(toolBar, ViewWindowToolBarHelper2::ToggleLayoutMode);
+
+  addAction(toolBar, ViewWindowToolBarHelper2::FindAndReplace);
 
   // Print (Markdown-specific: uses viewer for PDF rendering).
   {
