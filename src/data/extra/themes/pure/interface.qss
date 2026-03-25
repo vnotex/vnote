@@ -89,6 +89,8 @@ QDockWidget {
 QDockWidget::title {
     background-color: @widgets#qdockwidget#title#bg;
     text-align: center left;
+    border-left: 1px solid @widgets#separator#bg;
+    border-right: 1px solid @widgets#separator#bg;
     border-radius: 6px;
     padding: 4px;
 }

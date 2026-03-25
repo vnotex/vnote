@@ -102,15 +102,21 @@ QDockWidget {
     titlebar-normal-icon: url(float.svg);
 }
 
-QDockWidget::Title {
+QDockWidget::title {
     background-color: @widgets#qdockwidget#title#bg;
     text-align: center left;
+    border-left: 1px solid @widgets#separator#bg;
+    border-right: 1px solid @widgets#separator#bg;
+    border-radius: 6px;
+    padding: 4px;
 }
 
 QDockWidget::close-button, QDockWidget::float-button {
     border: none;
+    border-radius: 4px;
     icon-size: 16px;
     width: 16px;
+    padding: 2px;
 }
 
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
@@ -130,7 +136,6 @@ QDockWidget::float-button {
     position: absolute;
     top: 0px; right: 18px; bottom: 0px;
 }
-
 
 QToolTip
 {
