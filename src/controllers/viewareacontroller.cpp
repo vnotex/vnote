@@ -114,7 +114,14 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
       wsSvc->addBuffer(m_currentWorkspaceId, p_buffer.id());
     }
   }
-  m_currentWindowId = p_windowId;
+  // Only track the current window during normal operation, not during session
+  // restore. During restore, every opened buffer would overwrite m_currentWindowId,
+  // leaving it pointing to the last-opened buffer instead of the intended current
+  // one. The singleShot(0) in ViewArea2 re-syncs from ground-truth UI state after
+  // all deferred Qt signals have settled.
+  if (m_shouldPropagateToCore) {
+    m_currentWindowId = p_windowId;
+  }
 
   if (wsSvc) {
     ViewWindowOpenEvent ha;
@@ -1086,6 +1093,12 @@ void ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
 
 void ViewAreaController::checkCurrentViewWindowChange(const QString &p_workspaceId) {
   Q_UNUSED(p_workspaceId)
+  emit currentViewWindowChanged();
+}
+
+void ViewAreaController::notifyCurrentViewWindowChanged() {
+  qInfo() << "ViewAreaController::notifyCurrentViewWindowChanged: currentWindowId:"
+          << m_currentWindowId << "currentWorkspaceId:" << m_currentWorkspaceId;
   emit currentViewWindowChanged();
 }
 

@@ -63,11 +63,29 @@ void ViewArea2::setupController() {
         [this](HookContext &p_ctx, const QVariantMap &p_args) {
           Q_UNUSED(p_ctx) Q_UNUSED(p_args)
           restoreSession();
-          // Re-enable propagation after pending signals (e.g., deferred
-          // currentChanged from addTab) have been processed.
           QTimer::singleShot(0, this, [this]() {
+            // Re-enable propagation now that all deferred Qt signals (e.g.,
+            // currentChanged posted by addTab during restore) have settled.
             m_controller->setShouldPropagateToCore(true);
             qInfo() << "ViewArea2: propagation to core re-enabled";
+            // Re-sync current window from ground-truth UI state.
+            // During restore, onViewWindowOpened() did NOT update m_currentWindowId
+            // (propagation was disabled), so m_currentWindowId is still
+            // InvalidViewWindowId — setCurrentViewWindow's early-return won't fire,
+            // and the correct provider is propagated to the outline viewer.
+            ViewWindow2 *currentWin = nullptr;
+            auto *currentSplit = getCurrentViewSplit();
+            if (!currentSplit && !m_splits.isEmpty()) {
+              currentSplit = m_splits.first();
+            }
+            if (currentSplit) {
+              currentWin = currentSplit->getCurrentViewWindow();
+            }
+            qInfo() << "ViewArea2: singleShot sync: currentSplit=" << currentSplit
+                    << "currentWin=" << currentWin;
+            ID winId = currentWin ? idForWindow(currentWin) : ViewAreaController::InvalidViewWindowId;
+            QString bufferId = currentWin ? currentWin->getBuffer().id() : QString();
+            m_controller->setCurrentViewWindow(winId, bufferId);
           });
         }, 10);
     hookMgr->addAction(HookNames::MainWindowBeforeClose,
@@ -91,6 +109,10 @@ void ViewArea2::setupController() {
 
 ViewAreaController *ViewArea2::getController() const {
   return m_controller;
+}
+
+ViewWindow2 *ViewArea2::getCurrentViewWindow() const {
+  return windowForId(m_controller->getCurrentWindowId());
 }
 
 // ============ Split Factory ============
@@ -376,6 +398,8 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
             if (w) {
               bufferId = w->getBuffer().id();
             }
+            qInfo() << "ViewArea2: split currentViewWindowChanged, win:" << w
+                    << "bufferId:" << bufferId;
             m_controller->setCurrentViewWindow(idForWindow(w), bufferId);
           });
   connect(p_split, &ViewSplit2::splitRequested, this,
@@ -787,14 +811,23 @@ void ViewArea2::setCurrentBuffer(const QString &p_workspaceId,
                                  const QString &p_bufferId, bool p_focus) {
   auto *split = splitForWorkspace(p_workspaceId);
   if (!split) {
+    qWarning() << "ViewArea2::setCurrentBuffer: no split for workspace:" << p_workspaceId;
     return;
   }
+
+  qInfo() << "ViewArea2::setCurrentBuffer: workspace:" << p_workspaceId
+          << "buffer:" << p_bufferId << "focus:" << p_focus
+          << "currentWidget:" << split->currentWidget();
 
   // Find the ViewWindow2 with the matching buffer ID.
   auto windows = split->getAllViewWindows();
   for (auto *win : windows) {
     if (win->getBuffer().id() == p_bufferId) {
+      qInfo() << "ViewArea2::setCurrentBuffer: found win:" << win
+              << "calling setCurrentViewWindow";
       split->setCurrentViewWindow(win);
+      qInfo() << "ViewArea2::setCurrentBuffer: after setCurrentViewWindow, currentWidget:"
+              << split->currentWidget();
       if (p_focus) {
         split->focus();
       }

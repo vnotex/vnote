@@ -195,6 +195,9 @@ public:
   // Subscribe to file-open hooks. Called once during initialization.
   void subscribeToHooks();
 
+  // Force-emit currentViewWindowChanged (e.g. after session restore settles).
+  void notifyCurrentViewWindowChanged();
+
 signals:
   // ============ Notification Signals (external consumers) ============
 
