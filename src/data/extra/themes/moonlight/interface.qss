@@ -575,6 +575,48 @@ QTabBar::tab:left:selected {
     border-left: 3px solid @widgets#qtabbar#tab#selected#border;
 }
 
+/* Side bar tab bar (tabified dock widgets) - icon only, no text */
+QTabBar[MainWindowSideBar="true"] {
+    background-color: @widgets#qtabbar#tab#bg;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab:left,
+QTabBar[MainWindowSideBar="true"]::tab:right {
+    color: transparent;
+    background-color: @widgets#qtabbar#tab#bg;
+    border-bottom: none;
+    margin: 0px;
+    padding: 8px;
+    width: 20px;
+    height: 20px;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab:left {
+    border-left: 3px solid transparent;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab:right {
+    border-right: 3px solid transparent;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab:left:hover,
+QTabBar[MainWindowSideBar="true"]::tab:right:hover {
+    color: transparent;
+    background-color: @base#hover#bg;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab:left:selected {
+    color: transparent;
+    background-color: @base#selected#bg;
+    border-left: 3px solid @widgets#qtabbar#tab#selected#border;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab:right:selected {
+    color: transparent;
+    background-color: @base#selected#bg;
+    border-right: 3px solid @widgets#qtabbar#tab#selected#border;
+}
+
 QTabBar::close-button {
     image: url(close_grey.svg);
 }

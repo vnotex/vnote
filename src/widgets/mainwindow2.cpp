@@ -274,6 +274,7 @@ void MainWindow2::setupDocks() {
   setupTagExplorer();
 
   m_dockWidgetHelper.setupDocks();
+  m_dockWidgetHelper.postSetup();
 
   // Wire ViewAreaController's locateNodeRequested to NotebookExplorer2.
   connect(m_viewArea->getController(), &ViewAreaController::locateNodeRequested,
