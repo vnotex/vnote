@@ -2,6 +2,7 @@ target_sources(vnote PRIVATE
     notebooknodemodel.cpp notebooknodemodel.h
     notebooknodeproxymodel.cpp notebooknodeproxymodel.h
     outlinemodel.cpp outlinemodel.h
+    tagmodel.cpp tagmodel.h
 )
 
 target_include_directories(vnote PRIVATE
