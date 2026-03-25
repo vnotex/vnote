@@ -8,6 +8,7 @@ set(SERVICES_SOURCES
   searchcoreservice.cpp
   notebookcoreservice.cpp
   tagcoreservice.cpp
+  tagservice.cpp
   filetypecoreservice.cpp
   templateservice.cpp
   htmltemplateservice.cpp
@@ -28,6 +29,7 @@ set(SERVICES_HEADERS
   searchcoreservice.h
   notebookcoreservice.h
   tagcoreservice.h
+  tagservice.h
   filetypecoreservice.h
   templateservice.h
   htmltemplateservice.h
