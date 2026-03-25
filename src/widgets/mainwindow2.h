@@ -18,6 +18,7 @@ namespace vnotex {
 class ServiceLocator;
 class NotebookExplorer2;
 class OutlineViewer;
+class TagExplorer2;
 class ViewArea2;
 
 class ToolBarHelper2;
@@ -96,6 +97,9 @@ private:
   // Setup OutlineViewer as dock widget.
   void setupOutlineViewer();
 
+  // Setup TagExplorer2 as dock widget.
+  void setupTagExplorer();
+
   // Setup ViewArea2 as central widget.
   void setupViewArea();
 
@@ -125,6 +129,9 @@ private:
 
   // OutlineViewer dock widget.
   OutlineViewer *m_outlineViewer = nullptr;
+
+  // TagExplorer2 dock widget.
+  TagExplorer2 *m_tagExplorer = nullptr;
 
   // ViewArea2 central widget.
   ViewArea2 *m_viewArea = nullptr;

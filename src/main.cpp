@@ -26,6 +26,8 @@
 #include <core/services/workspacecoreservice.h>
 #include <core/services/filetypecoreservice.h>
 #include <gui/services/themeservice.h>
+#include <core/services/tagcoreservice.h>
+#include <core/services/tagservice.h>
 #include <core/services/templateservice.h>
 #include <core/services/htmltemplateservice.h>
 #include <gui/services/viewwindowfactory.h>
@@ -167,6 +169,8 @@ int main(int argc, char *argv[]) {
     SearchCoreService searchService(context);
     WorkspaceCoreService workspaceService(context);
     BufferService bufferService(context, &hookManager);
+    TagCoreService tagCoreService(context);
+    TagService tagService(context, &hookManager);
 
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<ConfigCoreService>(configService.coreService());
@@ -175,6 +179,8 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<SearchCoreService>(&searchService);
     serviceLocator.registerService<WorkspaceCoreService>(&workspaceService);
     serviceLocator.registerService<HookManager>(&hookManager);
+    serviceLocator.registerService<TagCoreService>(&tagCoreService);
+    serviceLocator.registerService<TagService>(&tagService);
     qInfo() << "Services registered (including HookManager)";
 
     // Wire HookManager to NotebookCoreService for firing node operation hooks.

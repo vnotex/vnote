@@ -22,6 +22,7 @@
 #include <qwebengineview.h>
 #include <widgets/notebookexplorer2.h>
 #include <widgets/outlineviewer.h>
+#include <widgets/tagexplorer2.h>
 #include <widgets/viewarea2.h>
 #include <widgets/viewwindow2.h>
 #include <widgets/messageboxhelper.h>
@@ -260,10 +261,17 @@ void MainWindow2::setupOutlineViewer() {
   m_outlineViewer = new OutlineViewer(m_serviceLocator, QString(), this);
 }
 
+void MainWindow2::setupTagExplorer() {
+  m_tagExplorer = new TagExplorer2(m_serviceLocator, this);
+  m_tagExplorer->setObjectName("TagExplorer2.vnotex");
+}
+
 void MainWindow2::setupDocks() {
   setupNotebookExplorer();
 
   setupOutlineViewer();
+
+  setupTagExplorer();
 
   m_dockWidgetHelper.setupDocks();
 
@@ -285,6 +293,8 @@ QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const
       return m_notebookExplorer;
     case DockWidgetHelper::DockType::OutlineDock:
       return m_outlineViewer;
+    case DockWidgetHelper::DockType::TagDock:
+      return m_tagExplorer;
     default:
       return nullptr;
   }
