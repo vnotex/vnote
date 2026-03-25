@@ -231,74 +231,39 @@ div.vx-plantuml-graph {
 } */
 
 ::-webkit-scrollbar {
-    background-color: #eaeaea;
     width: 10px;
     height: 10px;
-    border: none;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-corner {
-    background-color: #eaeaea;
-}
-
-::-webkit-scrollbar-button {
-    /* This selector affects the styling of both the up & down and left & right buttons of a scrollbar */
-    height: 10px;
-    width: 10px;
-    background-color: #eaeaea;
-}
-
-::-webkit-scrollbar-button:hover {
-    background-color: #ced6e0;
-}
-
-::-webkit-scrollbar-button:active {
-    background-color: #b4c0cf;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-track {
-    /* This selector affects the styling of the area in the scrollbar between the two buttons */
-    background-color: #eaeaea;
-    border-radius: 10px;
+    background: transparent;
+    margin: 2px;
 }
 
 ::-webkit-scrollbar-thumb {
-    /* This selector affects the styling of draggable element of the scollbar */
-    border: none;
-    background-color: #b4c0cf;
-    border-radius: 10px;
+    background: rgba(128, 128, 128, 0.3);
+    border-radius: 4px;
+    min-height: 40px;
+    min-width: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: #ced6e0;
+    background: rgba(128, 128, 128, 0.5);
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background-color: #b4c0cf;
+    background: rgba(128, 128, 128, 0.7);
 }
 
-::-webkit-scrollbar-button:horizontal:increment {
-    background-image: url(right.svg);
-    background-repeat: no-repeat;
-    background-size: contain;
-}
-
-::-webkit-scrollbar-button:horizontal:decrement {
-    background-image: url(left.svg);
-    background-repeat: no-repeat;
-    background-size: contain;
-}
-
-::-webkit-scrollbar-button:vertical:increment {
-    background-image: url(down.svg);
-    background-repeat: no-repeat;
-    background-size: contain;
-}
-
-::-webkit-scrollbar-button:vertical:decrement {
-    background-image: url(up.svg);
-    background-repeat: no-repeat;
-    background-size: contain;
+::-webkit-scrollbar-button {
+    width: 0;
+    height: 0;
+    display: none;
 }
 
 #vx-content span.vx-search-match {

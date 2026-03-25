@@ -204,6 +204,42 @@ div.vx-plantuml-graph {
   color: #ffffff;
 }
 
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background: transparent;
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 2px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.3);
+    border-radius: 4px;
+    min-height: 40px;
+    min-width: 40px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.5);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: rgba(128, 128, 128, 0.7);
+}
+
+::-webkit-scrollbar-button {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
 #vx-content span.vx-search-match {
     color: #222222;
     background-color: #4db6ac;
