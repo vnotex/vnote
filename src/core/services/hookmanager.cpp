@@ -130,6 +130,14 @@ bool HookManager::doAction(const QString &p_hook, const ViewSplitActivateEvent &
   return doAction(p_hook, p_event.toVariantMap());
 }
 
+bool HookManager::doAction(const QString &p_hook, const TagOperationEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const FileTagEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
 // ===== Filters =====
 
 int HookManager::addFilter(const QString &p_hook, FilterCallback p_callback, int p_priority) {

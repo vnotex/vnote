@@ -70,6 +70,8 @@ public:
   bool doAction(const QString &p_hook, const ViewSplitCreateEvent &p_event);
   bool doAction(const QString &p_hook, const ViewSplitRemoveEvent &p_event);
   bool doAction(const QString &p_hook, const ViewSplitActivateEvent &p_event);
+  bool doAction(const QString &p_hook, const TagOperationEvent &p_event);
+  bool doAction(const QString &p_hook, const FileTagEvent &p_event);
 
   // ===== Typed Actions (subscription) =====
   // Template adapter: wraps a typed callback into the raw QVariantMap callback.

@@ -86,6 +86,39 @@ inline const QLatin1String FileBeforeClose("vnote.file.before_close");
 // After a file is closed
 inline const QLatin1String FileAfterClose("vnote.file.after_close");
 
+// Before a tag is applied to a file
+inline const QLatin1String FileBeforeTag("vnote.file.before_tag");
+
+// After a tag is applied to a file
+inline const QLatin1String FileAfterTag("vnote.file.after_tag");
+
+// Before a tag is removed from a file
+inline const QLatin1String FileBeforeUntag("vnote.file.before_untag");
+
+// After a tag is removed from a file
+inline const QLatin1String FileAfterUntag("vnote.file.after_untag");
+
+// ===== Tag Events =====
+// Triggered when tag operations occur
+
+// Before a tag is created
+inline const QLatin1String TagBeforeCreate("vnote.tag.before_create");
+
+// After a tag is created
+inline const QLatin1String TagAfterCreate("vnote.tag.after_create");
+
+// Before a tag is deleted
+inline const QLatin1String TagBeforeDelete("vnote.tag.before_delete");
+
+// After a tag is deleted
+inline const QLatin1String TagAfterDelete("vnote.tag.after_delete");
+
+// Before a tag is moved (reparented)
+inline const QLatin1String TagBeforeMove("vnote.tag.before_move");
+
+// After a tag is moved (reparented)
+inline const QLatin1String TagAfterMove("vnote.tag.after_move");
+
 // ===== Folder Events =====
 // Triggered for folder-specific operations
 

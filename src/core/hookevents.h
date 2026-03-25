@@ -115,6 +115,30 @@ struct ViewSplitActivateEvent {
   static ViewSplitActivateEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for TagBeforeCreate, TagAfterCreate, TagBeforeDelete, TagAfterDelete,
+// TagBeforeMove, TagAfterMove.
+struct TagOperationEvent {
+  QString notebookId;
+  QString tagName;
+  QString parentTag;  // parent tag (for move operations, empty for root-level)
+  QString operation;  // "create", "delete", or "move"
+
+  QVariantMap toVariantMap() const;
+  static TagOperationEvent fromVariantMap(const QVariantMap &p_args);
+};
+
+// Typed event struct for FileBeforeTag, FileAfterTag, FileBeforeUntag, FileAfterUntag.
+struct FileTagEvent {
+  QString notebookId;
+  QString filePath;
+  QString tagName;   // the tag being applied/removed (single tag operations)
+  QString tagsJson;  // JSON array string of all tags (for updateFileTags)
+  QString operation; // "tag", "untag", or "update_tags"
+
+  QVariantMap toVariantMap() const;
+  static FileTagEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 } // namespace vnotex
 
 #endif // HOOKEVENTS_H

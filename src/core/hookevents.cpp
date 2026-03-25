@@ -198,3 +198,45 @@ ViewSplitActivateEvent ViewSplitActivateEvent::fromVariantMap(const QVariantMap 
   return e;
 }
 
+// ===== TagOperationEvent =====
+
+QVariantMap TagOperationEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("notebookId")] = notebookId;
+  m[QStringLiteral("tagName")] = tagName;
+  m[QStringLiteral("parentTag")] = parentTag;
+  m[QStringLiteral("operation")] = operation;
+  return m;
+}
+
+TagOperationEvent TagOperationEvent::fromVariantMap(const QVariantMap &p_args) {
+  TagOperationEvent e;
+  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.tagName = p_args.value(QStringLiteral("tagName")).toString();
+  e.parentTag = p_args.value(QStringLiteral("parentTag")).toString();
+  e.operation = p_args.value(QStringLiteral("operation")).toString();
+  return e;
+}
+
+// ===== FileTagEvent =====
+
+QVariantMap FileTagEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("notebookId")] = notebookId;
+  m[QStringLiteral("filePath")] = filePath;
+  m[QStringLiteral("tagName")] = tagName;
+  m[QStringLiteral("tagsJson")] = tagsJson;
+  m[QStringLiteral("operation")] = operation;
+  return m;
+}
+
+FileTagEvent FileTagEvent::fromVariantMap(const QVariantMap &p_args) {
+  FileTagEvent e;
+  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.filePath = p_args.value(QStringLiteral("filePath")).toString();
+  e.tagName = p_args.value(QStringLiteral("tagName")).toString();
+  e.tagsJson = p_args.value(QStringLiteral("tagsJson")).toString();
+  e.operation = p_args.value(QStringLiteral("operation")).toString();
+  return e;
+}
+

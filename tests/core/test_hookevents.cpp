@@ -27,6 +27,8 @@ private slots:
   void testViewSplitCreateEventRoundTrip();
   void testViewSplitRemoveEventRoundTrip();
   void testViewSplitActivateEventRoundTrip();
+  void testTagOperationEventRoundTrip();
+  void testFileTagEventRoundTrip();
 
   // Typed doAction emission tests.
   void testTypedDoActionNodeOperationEvent();
@@ -446,6 +448,42 @@ void TestHookEvents::testTypedCancellation() {
   QVERIFY(cancelled);
 
   m_hookMgr->removeAction(hookId);
+}
+
+// ===== Tag event round-trip tests =====
+
+void TestHookEvents::testTagOperationEventRoundTrip() {
+  TagOperationEvent orig;
+  orig.notebookId = QStringLiteral("nb-tag-1");
+  orig.tagName = QStringLiteral("programming");
+  orig.parentTag = QStringLiteral("topics");
+  orig.operation = QStringLiteral("create");
+
+  QVariantMap map = orig.toVariantMap();
+  TagOperationEvent restored = TagOperationEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.notebookId, orig.notebookId);
+  QCOMPARE(restored.tagName, orig.tagName);
+  QCOMPARE(restored.parentTag, orig.parentTag);
+  QCOMPARE(restored.operation, orig.operation);
+}
+
+void TestHookEvents::testFileTagEventRoundTrip() {
+  FileTagEvent orig;
+  orig.notebookId = QStringLiteral("nb-ftag-1");
+  orig.filePath = QStringLiteral("notes/hello.md");
+  orig.tagName = QStringLiteral("important");
+  orig.tagsJson = QStringLiteral("[\"important\",\"todo\"]");
+  orig.operation = QStringLiteral("tag");
+
+  QVariantMap map = orig.toVariantMap();
+  FileTagEvent restored = FileTagEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.notebookId, orig.notebookId);
+  QCOMPARE(restored.filePath, orig.filePath);
+  QCOMPARE(restored.tagName, orig.tagName);
+  QCOMPARE(restored.tagsJson, orig.tagsJson);
+  QCOMPARE(restored.operation, orig.operation);
 }
 
 } // namespace tests
