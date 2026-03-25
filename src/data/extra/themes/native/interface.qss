@@ -113,12 +113,12 @@ vnotex--DragDropAreaIndicator QLabel {
     font-weight: bold;
 }
 
-vnotex--MainWindow QLabel#MainWindowTipsLabel {
+vnotex--MainWindow2 QLabel#MainWindowTipsLabel {
     font-size: 20pt;
     font-weight: bold;
 }
 
-vnotex--ViewSplit QTabBar[ViewSplitFlash="true"]::tab:selected {
+vnotex--ViewSplit2 QTabBar[ViewSplitFlash="true"]::tab:selected {
     background-color: @widgets#viewsplit#flash#bg;
 }
 

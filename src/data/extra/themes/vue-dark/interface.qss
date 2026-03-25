@@ -436,7 +436,7 @@ vnotex--DragDropAreaIndicator QLabel {
     font-weight: bold;
 }
 
-vnotex--MainWindow QLabel#MainWindowTipsLabel {
+vnotex--MainWindow2 QLabel#MainWindowTipsLabel {
     font-size: 20pt;
     font-weight: bold;
     color: @widgets#mainwindow#tips_label#fg;
@@ -1164,18 +1164,18 @@ QSizeGrip {
     height: 16px;
 }
 
-/* ViewWindow */
-vnotex--ViewWindow QToolBar[ViewWindowToolBar="true"] {
+/* ViewWindow2 */
+vnotex--ViewWindow2 QToolBar[ViewWindowToolBar="true"] {
     background-color: @widgets#viewwindow#toolbar#bg;
 }
 
-/* ViewSplit */
-vnotex--ViewSplit QTabBar::tab:selected {
+/* ViewSplit2 */
+vnotex--ViewSplit2 QTabBar::tab:selected {
     color: @widgets#viewsplit#tabbar#tab#selected#fg;
     background-color: @widgets#viewsplit#tabbar#tab#selected#bg;
 }
 
-vnotex--ViewSplit QTabBar[ViewSplitFlash="true"]::tab:selected {
+vnotex--ViewSplit2 QTabBar[ViewSplitFlash="true"]::tab:selected {
     background-color: @widgets#viewsplit#flash#bg;
 }
 
