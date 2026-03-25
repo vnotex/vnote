@@ -44,12 +44,6 @@ private slots:
   void testImportFile();
   void testGetFileInfo();
 
-  // Tag operations tests.
-  void testCreateAndDeleteTag();
-  void testTagFile();
-  void testListTags();
-  void testMoveTag();
-
   // Hook tests (delete).
   void testDeleteFileCancelledByHook();
   void testDeleteFolderCancelledByHook();
@@ -393,79 +387,6 @@ void TestNotebookService::testGetFileInfo() {
 
   QJsonObject metadata = m_service->getFileMetadata(nbId, "info.md");
   QVERIFY(!metadata.isEmpty());
-}
-
-void TestNotebookService::testCreateAndDeleteTag() {
-  QString nbPath = m_tempDir.filePath("tag_test_notebook");
-  QString nbId = createTestNotebook(nbPath);
-  QVERIFY(!nbId.isEmpty());
-
-  m_service->createTag(nbId, "TestTag");
-
-  QJsonArray tags = m_service->listTags(nbId);
-  QVERIFY(tags.size() > 0);
-
-  bool found = false;
-  for (const auto &tagVal : tags) {
-    if (tagVal.toObject()["name"].toString() == "TestTag") {
-      found = true;
-      break;
-    }
-  }
-  QVERIFY(found);
-
-  m_service->deleteTag(nbId, "TestTag");
-  tags = m_service->listTags(nbId);
-
-  found = false;
-  for (const auto &tagVal : tags) {
-    if (tagVal.toObject()["name"].toString() == "TestTag") {
-      found = true;
-      break;
-    }
-  }
-  QVERIFY(!found);
-}
-
-void TestNotebookService::testTagFile() {
-  QString nbPath = m_tempDir.filePath("tagfile_notebook");
-  QString nbId = createTestNotebook(nbPath);
-  QVERIFY(!nbId.isEmpty());
-
-  m_service->createFile(nbId, "", "tagged.md");
-  m_service->createTag(nbId, "FileTag");
-  m_service->tagFile(nbId, "tagged.md", "FileTag");
-
-  // Verify file is tagged.
-  QJsonObject fileInfo = m_service->getFileInfo(nbId, "tagged.md");
-  QVERIFY(!fileInfo.isEmpty());
-
-  m_service->untagFile(nbId, "tagged.md", "FileTag");
-}
-
-void TestNotebookService::testListTags() {
-  QString nbPath = m_tempDir.filePath("listtags_notebook");
-  QString nbId = createTestNotebook(nbPath);
-  QVERIFY(!nbId.isEmpty());
-
-  m_service->createTag(nbId, "Tag1");
-  m_service->createTag(nbId, "Tag2");
-
-  QJsonArray tags = m_service->listTags(nbId);
-  QVERIFY(tags.size() >= 2);
-}
-
-void TestNotebookService::testMoveTag() {
-  QString nbPath = m_tempDir.filePath("movetag_notebook");
-  QString nbId = createTestNotebook(nbPath);
-  QVERIFY(!nbId.isEmpty());
-
-  m_service->createTag(nbId, "ParentTag");
-  m_service->createTag(nbId, "ChildTag");
-  m_service->moveTag(nbId, "ChildTag", "ParentTag");
-
-  QJsonArray tags = m_service->listTags(nbId);
-  QVERIFY(tags.size() >= 2);
 }
 
 // ===== Hook tests: Delete =====

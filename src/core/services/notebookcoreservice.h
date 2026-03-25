@@ -140,17 +140,6 @@ public:
   // Returns empty string if file doesn't exist or on error.
   QString peekFile(const QString &p_notebookId, const QString &p_filePath, int p_maxChars = 256) const;
 
-  // Tag operations (8 methods).
-  bool updateFileTags(const QString &p_notebookId, const QString &p_filePath,
-                      const QString &p_tagsJson);
-  bool tagFile(const QString &p_notebookId, const QString &p_filePath, const QString &p_tagName);
-  bool untagFile(const QString &p_notebookId, const QString &p_filePath, const QString &p_tagName);
-  bool createTag(const QString &p_notebookId, const QString &p_tagName);
-  bool createTagPath(const QString &p_notebookId, const QString &p_tagPath);
-  bool deleteTag(const QString &p_notebookId, const QString &p_tagName);
-  QJsonArray listTags(const QString &p_notebookId) const;
-  bool moveTag(const QString &p_notebookId, const QString &p_tagName, const QString &p_parentTag);
-
 private:
   // Check context validity before operations.
   bool checkContext() const;
