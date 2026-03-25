@@ -118,6 +118,15 @@ add_qt_test(test_config_hook
   GUILESS
 )
 
+add_qt_test(test_tagservice
+  SOURCES
+    test_tagservice.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_textviewwindowcontroller
   SOURCES
     test_textviewwindowcontroller.cpp
