@@ -2,10 +2,11 @@
 
 #include <QCheckBox>
 #include <QComboBox>
-#include <QFormLayout>
+#include <QVBoxLayout>
 
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
+#include "settingspagehelper.h"
 #include <core/servicelocator.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
@@ -18,13 +19,17 @@ NoteManagementPage::NoteManagementPage(ServiceLocator &p_services, QWidget *p_pa
 }
 
 void NoteManagementPage::setupUI() {
-  auto mainLayout = WidgetsFactory::createFormLayout(this);
+  auto *mainLayout = new QVBoxLayout(this);
+
+  auto *cardLayout =
+      SettingsPageHelper::addSection(mainLayout, tr("Note Management"), QString(), this);
 
   {
     const QString label(tr("Per-Notebook access history"));
     m_perNotebookHistoryCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_perNotebookHistoryCheckBox->setToolTip(tr("Store note access history in its notebook"));
-    mainLayout->addRow(m_perNotebookHistoryCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_perNotebookHistoryCheckBox, m_perNotebookHistoryCheckBox->toolTip(), this));
     addSearchItem(label, m_perNotebookHistoryCheckBox->toolTip(), m_perNotebookHistoryCheckBox);
     connect(m_perNotebookHistoryCheckBox, &QCheckBox::stateChanged, this,
             &NoteManagementPage::pageIsChanged);
@@ -40,7 +45,9 @@ void NoteManagementPage::setupUI() {
     m_lineEndingComboBox->addItem(tr("CR"), (int)LineEndingPolicy::CR);
 
     const QString label(tr("Line ending:"));
-    mainLayout->addRow(label, m_lineEndingComboBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_lineEndingComboBox->toolTip(), m_lineEndingComboBox, this));
     addSearchItem(label, m_lineEndingComboBox->toolTip(), m_lineEndingComboBox);
     connect(m_lineEndingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &NoteManagementPage::pageIsChanged);
@@ -54,11 +61,15 @@ void NoteManagementPage::setupUI() {
     m_defaultOpenModeComboBox->addItem(tr("Edit"), (int)ViewWindowMode::Edit);
 
     const QString label(tr("Default open mode:"));
-    mainLayout->addRow(label, m_defaultOpenModeComboBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_defaultOpenModeComboBox->toolTip(), m_defaultOpenModeComboBox, this));
     addSearchItem(label, m_defaultOpenModeComboBox->toolTip(), m_defaultOpenModeComboBox);
     connect(m_defaultOpenModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &NoteManagementPage::pageIsChanged);
   }
+
+  mainLayout->addStretch();
 }
 
 void NoteManagementPage::loadInternal() {

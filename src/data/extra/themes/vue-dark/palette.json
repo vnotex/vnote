@@ -655,6 +655,19 @@
             "popup" : {
                 "border" : "@base#normal#border"
             }
+        },
+        "settingscard" : {
+            "bg" : "@base#content#bg",
+            "border" : "@base#normal#border",
+            "title" : {
+                "fg" : "@base#content#fg"
+            },
+            "description" : {
+                "fg" : "@palette#fg1_1"
+            },
+            "separator" : {
+                "bg" : "@base#normal#border"
+            }
         }
     }
 }

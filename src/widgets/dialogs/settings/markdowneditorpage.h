@@ -4,7 +4,6 @@
 #include "settingspage.h"
 
 class QCheckBox;
-class QGroupBox;
 class QDoubleSpinBox;
 class QSpinBox;
 class QComboBox;
@@ -29,11 +28,11 @@ protected:
 private:
   void setupUI();
 
-  QGroupBox *setupGeneralGroup();
+  void setupGeneralGroup();
 
-  QGroupBox *setupReadGroup();
+  void setupReadGroup();
 
-  QGroupBox *setupEditGroup();
+  void setupEditGroup();
 
   QCheckBox *m_insertFileNameAsTitleCheckBox = nullptr;
 

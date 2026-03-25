@@ -18,6 +18,7 @@
 #include <widgets/widgetsfactory.h>
 
 #include "editorpage.h"
+#include "settingspagehelper.h"
 
 // LEGACY: ImageHostMgr not yet in ServiceLocator - image host management disabled
 // #include <imagehost/imagehostmgr.h>
@@ -33,19 +34,33 @@ ImageHostPage::ImageHostPage(ServiceLocator &p_services, QWidget *p_parent)
 void ImageHostPage::setupUI() {
   m_mainLayout = new QVBoxLayout(this);
 
-  // LEGACY: ImageHostMgr not yet in ServiceLocator - New Image Host button disabled
-  // {
-  //   auto layout = new QHBoxLayout();
-  //   m_mainLayout->addLayout(layout);
-  //
-  //   auto newBtn = new QPushButton(tr("New Image Host"), this);
-  //   connect(newBtn, &QPushButton::clicked, this, &ImageHostPage::newImageHost);
-  //   layout->addWidget(newBtn);
-  //   layout->addStretch();
-  // }
+  auto *cardLayout = SettingsPageHelper::addSection(m_mainLayout, tr("General"), QString(), this);
 
-  auto box = setupGeneralBox(this);
-  m_mainLayout->addWidget(box);
+  {
+    // Add items in loadInternal().
+    m_defaultImageHostComboBox = WidgetsFactory::createComboBox(this);
+
+    const QString label(tr("Default image host:"));
+    cardLayout->addWidget(
+        SettingsPageHelper::createSettingRow(label, QString(), m_defaultImageHostComboBox, this));
+    addSearchItem(label, m_defaultImageHostComboBox);
+    connect(m_defaultImageHostComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &ImageHostPage::pageIsChanged);
+  }
+
+  {
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+
+    const QString label(tr("Clear obsolete images"));
+    m_clearObsoleteImageCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_clearObsoleteImageCheckBox->setToolTip(
+        tr("Clear unused images at image host (based on current file only)"));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_clearObsoleteImageCheckBox, m_clearObsoleteImageCheckBox->toolTip(), this));
+    addSearchItem(label, m_clearObsoleteImageCheckBox->toolTip(), m_clearObsoleteImageCheckBox);
+    connect(m_clearObsoleteImageCheckBox, &QCheckBox::stateChanged, this,
+            &ImageHostPage::pageIsChanged);
+  }
 
   {
     auto *label = new QLabel(

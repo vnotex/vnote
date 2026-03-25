@@ -8,6 +8,74 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+// A host widget for QStackedLayout inside a QScrollArea.
+// Overrides sizeHint()/minimumSizeHint()/heightForWidth() to reflect only the
+// *current* child, so the scroll area shows a scrollbar only when the current
+// page is actually taller than the viewport.
+//
+// Why a widget subclass instead of a layout subclass:
+//   QScrollArea queries the child *widget's* sizeHint(), which goes through
+//   QWidget -> layout->totalSizeHint() plus height-for-width logic.  Overriding
+//   only QStackedLayout::sizeHint() is insufficient because QWidget::sizeHint()
+//   still consults cached geometry and heightForWidth from hidden children.
+class StackedScrollWidget : public QWidget {
+public:
+  explicit StackedScrollWidget(QWidget *p_parent = nullptr)
+      : QWidget(p_parent), m_layout(new QStackedLayout(this)) {
+    m_layout->setContentsMargins(0, 0, 0, 0);
+    // Use SetDefaultConstraint so that sizing is governed entirely by
+    // StackedScrollWidget::sizeHint() (current-widget-only).
+    // SetMinAndMaxSize would call setMinimumSize/setMaximumSize using the
+    // layout's totalSizeHint() which is the MAX of all children — defeating
+    // the purpose of our per-current-widget sizeHint override.
+    m_layout->setSizeConstraint(QLayout::SetDefaultConstraint);
+
+    connect(m_layout, &QStackedLayout::currentChanged, this, [this](int p_idx) {
+      Q_UNUSED(p_idx);
+      if (auto *w = m_layout->currentWidget()) {
+        QSizePolicy sp = w->sizePolicy();
+        sp.setHeightForWidth(w->hasHeightForWidth());
+        setSizePolicy(sp);
+      }
+      m_layout->invalidate();
+      updateGeometry();
+    });
+  }
+
+  QStackedLayout *stackedLayout() const { return m_layout; }
+
+  QSize sizeHint() const override {
+    if (auto *w = m_layout->currentWidget()) {
+      return w->sizeHint();
+    }
+    return QWidget::sizeHint();
+  }
+
+  QSize minimumSizeHint() const override {
+    if (auto *w = m_layout->currentWidget()) {
+      return w->minimumSizeHint();
+    }
+    return QWidget::minimumSizeHint();
+  }
+
+  bool hasHeightForWidth() const override {
+    if (auto *w = m_layout->currentWidget()) {
+      return w->hasHeightForWidth();
+    }
+    return QWidget::hasHeightForWidth();
+  }
+
+  int heightForWidth(int p_width) const override {
+    if (auto *w = m_layout->currentWidget()) {
+      return w->hasHeightForWidth() ? w->heightForWidth(p_width) : w->sizeHint().height();
+    }
+    return QWidget::heightForWidth(p_width);
+  }
+
+private:
+  QStackedLayout *m_layout = nullptr;
+};
+
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <utils/widgetutils.h>
@@ -56,10 +124,10 @@ void SettingsDialog::setupUI() {
     m_scrollArea->setWidgetResizable(true);
     mainLayout->addWidget(m_scrollArea, 6);
 
-    auto scrollWidget = new QWidget(m_scrollArea);
+    auto scrollWidget = new StackedScrollWidget(m_scrollArea);
     m_scrollArea->setWidget(scrollWidget);
 
-    m_pageLayout = new QStackedLayout(scrollWidget);
+    m_pageLayout = scrollWidget->stackedLayout();
   }
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Apply | QDialogButtonBox::Reset |
@@ -96,28 +164,8 @@ void SettingsDialog::setupPageExplorer(QBoxLayout *p_layout, QWidget *p_parent) 
             auto page = itemPage(p_item);
             m_pageLayout->setCurrentWidget(page);
 
-            // QStackedLayout::sizeHint() returns the maximum across ALL children,
-            // which makes the scroll area show a scrollbar for the tallest page
-            // even when viewing a short page.  Fix: set the current page's
-            // vertical size policy to Preferred so it contributes its real height,
-            // and set every other page to Ignored so the stacked layout only
-            // considers the current page.
-            for (int i = 0; i < m_pageLayout->count(); ++i) {
-              auto *w = m_pageLayout->widget(i);
-              auto sp = w->sizePolicy();
-              if (w == page) {
-                sp.setVerticalPolicy(QSizePolicy::Preferred);
-              } else {
-                sp.setVerticalPolicy(QSizePolicy::Ignored);
-              }
-              w->setSizePolicy(sp);
-            }
-
-            auto *scrollWidget = m_scrollArea->widget();
-            if (scrollWidget) {
-              scrollWidget->adjustSize();
-            }
-
+            // StackedScrollWidget handles sizeHint/updateGeometry automatically
+            // via its currentChanged connection.  Just reset the scroll position.
             auto vsb = m_scrollArea->verticalScrollBar();
             if (vsb) {
               vsb->setValue(0);

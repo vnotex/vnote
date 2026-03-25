@@ -2,7 +2,7 @@
 
 #include <QCheckBox>
 #include <QDockWidget>
-#include <QFormLayout>
+#include <QLabel>
 #include <QSpinBox>
 #include <QVBoxLayout>
 
@@ -16,6 +16,8 @@
 #include <widgets/propertydefs.h>
 #include <widgets/widgetsfactory.h>
 
+#include "settingspagehelper.h"
+
 using namespace vnotex;
 
 AppearancePage::AppearancePage(ServiceLocator &p_services, MainWindow2 *p_mainWindow,
@@ -25,13 +27,17 @@ AppearancePage::AppearancePage(ServiceLocator &p_services, MainWindow2 *p_mainWi
 }
 
 void AppearancePage::setupUI() {
-  auto mainLayout = WidgetsFactory::createFormLayout(this);
+  auto *mainLayout = new QVBoxLayout(this);
+
+  auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Appearance"), QString(), this);
 
   {
     const QString label(tr("System title bar"));
     m_systemTitleBarCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_systemTitleBarCheckBox->setToolTip(tr("Use system title bar"));
-    mainLayout->addRow(m_systemTitleBarCheckBox);
+    cardLayout->addWidget(
+        SettingsPageHelper::createCheckBoxRow(m_systemTitleBarCheckBox,
+                                              m_systemTitleBarCheckBox->toolTip(), this));
     addSearchItem(label, m_systemTitleBarCheckBox->toolTip(), m_systemTitleBarCheckBox);
     connect(m_systemTitleBarCheckBox, &QCheckBox::stateChanged, this,
             &AppearancePage::pageIsChangedWithRestartNeeded);
@@ -45,7 +51,10 @@ void AppearancePage::setupUI() {
     m_toolBarIconSizeSpinBox->setSingleStep(1);
 
     const QString label(tr("Main tool bar icon size:"));
-    mainLayout->addRow(label, m_toolBarIconSizeSpinBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(
+        SettingsPageHelper::createSettingRow(label, m_toolBarIconSizeSpinBox->toolTip(),
+                                             m_toolBarIconSizeSpinBox, this));
     addSearchItem(label, m_toolBarIconSizeSpinBox->toolTip(), m_toolBarIconSizeSpinBox);
     connect(m_toolBarIconSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &AppearancePage::pageIsChangedWithRestartNeeded);
@@ -55,7 +64,16 @@ void AppearancePage::setupUI() {
     Q_ASSERT(m_mainWindow);
     const auto &docks = m_mainWindow->getDocks();
 
-    auto layout = new QVBoxLayout();
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+
+    auto *dockRow = new QWidget(this);
+    dockRow->setProperty(PropertyDefs::c_settingsRow, true);
+    auto *dockRowLayout = new QVBoxLayout(dockRow);
+    dockRowLayout->setContentsMargins(16, 6, 16, 6);
+    dockRowLayout->setSpacing(4);
+
+    auto *dockLabel = new QLabel(tr("Dock widgets kept when expanding content area:"), dockRow);
+    dockRowLayout->addWidget(dockLabel);
 
     for (int i = 0; i < docks.size(); ++i) {
       if (!docks[i]) {
@@ -64,16 +82,19 @@ void AppearancePage::setupUI() {
       auto cb = WidgetsFactory::createCheckBox(
           docks[i]->property(PropertyDefs::c_dockWidgetTitle).toString(), this);
       m_keepDocksExpandingContentArea.append(qMakePair(cb, docks[i]->objectName()));
-      layout->addWidget(cb);
+      dockRowLayout->addWidget(cb);
       connect(cb, &QCheckBox::stateChanged, this, &AppearancePage::pageIsChanged);
     }
 
+    cardLayout->addWidget(dockRow);
+
     const QString label(tr("Dock widgets kept when expanding content area:"));
-    mainLayout->addRow(label, layout);
     if (!m_keepDocksExpandingContentArea.isEmpty()) {
       addSearchItem(label, label, m_keepDocksExpandingContentArea.first().first);
     }
   }
+
+  mainLayout->addStretch();
 }
 
 void AppearancePage::loadInternal() {

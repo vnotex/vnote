@@ -29,3 +29,13 @@ const char *PropertyDefs::c_dockWidgetTitle = "DockTitle";
 const char *PropertyDefs::c_hitSettingWidget = "HitSettingWidget";
 
 const char *PropertyDefs::c_mainWindowSideBar = "MainWindowSideBar";
+
+const char *PropertyDefs::c_settingsCard = "SettingsCard";
+
+const char *PropertyDefs::c_settingsCardTitle = "SettingsCardTitle";
+
+const char *PropertyDefs::c_settingsDescription = "SettingsDescription";
+
+const char *PropertyDefs::c_settingsRow = "SettingsRow";
+
+const char *PropertyDefs::c_settingsSeparator = "SettingsSeparator";

@@ -889,6 +889,7 @@ QScrollBar::left-arrow:horizontal {
 /* QCheckBox */
 QCheckBox {
     spacing: 5px;
+    background-color: transparent;
 }
 
 QCheckBox:disabled {
@@ -1189,4 +1190,39 @@ vnotex--EntryPopup {
 /* FileListView - file panel in two-column explorer */
 vnotex--FileListView::item {
     border-bottom: 1px solid @palette#bg1_3;
+}
+
+/* SettingsPage - card-based layout */
+QFrame[SettingsCard="true"] {
+    background-color: @widgets#settingscard#bg;
+    border: 1px solid @widgets#settingscard#border;
+    border-radius: 8px;
+    padding: 0px;
+    margin: 4px 0px;
+}
+
+QLabel[SettingsCardTitle="true"] {
+    font-size: 10pt;
+    font-weight: bold;
+    color: @widgets#settingscard#title#fg;
+    background-color: transparent;
+    border: none;
+}
+
+QLabel[SettingsDescription="true"] {
+    font-size: 8pt;
+    color: @widgets#settingscard#description#fg;
+    background-color: transparent;
+    border: none;
+}
+
+QFrame[SettingsSeparator="true"] {
+    background-color: @widgets#settingscard#separator#bg;
+    border: none;
+    max-height: 1px;
+}
+
+QWidget[SettingsRow="true"] {
+    background-color: transparent;
+    border: none;
 }

@@ -1,12 +1,13 @@
 #include "vipage.h"
 
 #include <QCheckBox>
-#include <QFormLayout>
+#include <QVBoxLayout>
 
 #include <vtextedit/viconfig.h>
 
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include "settingspagehelper.h"
 #include <core/servicelocator.h>
 #include <core/services/hookmanager.h>
 #include <utils/widgetutils.h>
@@ -22,16 +23,22 @@ ViPage::ViPage(ServiceLocator &p_services, QWidget *p_parent)
 }
 
 void ViPage::setupUI() {
-  auto mainLayout = WidgetsFactory::createFormLayout(this);
+  auto *mainLayout = new QVBoxLayout(this);
+
+  auto *cardLayout =
+      SettingsPageHelper::addSection(mainLayout, tr("Vi Input Mode"), QString(), this);
 
   {
     const QString label(tr("Ctrl+C/X to copy/cut"));
     m_controlCToCopyCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_controlCToCopyCheckBox->setToolTip(tr("Use Ctrl+C/X to copy/cut text"));
-    mainLayout->addRow(m_controlCToCopyCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_controlCToCopyCheckBox, m_controlCToCopyCheckBox->toolTip(), this));
     addSearchItem(label, m_controlCToCopyCheckBox->toolTip(), m_controlCToCopyCheckBox);
     connect(m_controlCToCopyCheckBox, &QCheckBox::stateChanged, this, &ViPage::pageIsChanged);
   }
+
+  mainLayout->addStretch();
 }
 
 void ViPage::loadInternal() {

@@ -2,10 +2,11 @@
 
 #include <QCheckBox>
 #include <QComboBox>
-#include <QFormLayout>
+#include <QVBoxLayout>
 
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
+#include "settingspagehelper.h"
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
 #include <core/sessionconfig.h>
@@ -20,7 +21,9 @@ GeneralPage::GeneralPage(ServiceLocator &p_services, QWidget *p_parent)
 }
 
 void GeneralPage::setupUI() {
-  auto mainLayout = WidgetsFactory::createFormLayout(this);
+  auto *mainLayout = new QVBoxLayout(this);
+
+  auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("General"), QString(), this);
 
   {
     m_localeComboBox = WidgetsFactory::createComboBox(this);
@@ -35,7 +38,8 @@ void GeneralPage::setupUI() {
     }
 
     const QString label(tr("Language:"));
-    mainLayout->addRow(label, m_localeComboBox);
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_localeComboBox->toolTip(), m_localeComboBox, this));
     addSearchItem(label, m_localeComboBox->toolTip(), m_localeComboBox);
     connect(m_localeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &GeneralPage::pageIsChangedWithRestartNeeded);
@@ -52,7 +56,9 @@ void GeneralPage::setupUI() {
     m_openGLComboBox->addItem(tr("Software"), SessionConfig::OpenGL::Software);
 
     const QString label(tr("OpenGL:"));
-    mainLayout->addRow(label, m_openGLComboBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_openGLComboBox->toolTip(), m_openGLComboBox, this));
     addSearchItem(label, m_openGLComboBox->toolTip(), m_openGLComboBox);
     connect(m_openGLComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &GeneralPage::pageIsChangedWithRestartNeeded);
@@ -64,7 +70,9 @@ void GeneralPage::setupUI() {
     const QString label(tr("Minimize to system tray"));
     m_systemTrayCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_systemTrayCheckBox->setToolTip(tr("Minimize to system tray when closed"));
-    mainLayout->addRow(m_systemTrayCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_systemTrayCheckBox, m_systemTrayCheckBox->toolTip(), this));
     addSearchItem(label, m_systemTrayCheckBox->toolTip(), m_systemTrayCheckBox);
     connect(m_systemTrayCheckBox, &QCheckBox::stateChanged, this, &GeneralPage::pageIsChanged);
   }
@@ -75,7 +83,9 @@ void GeneralPage::setupUI() {
     m_recoverLastSessionCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_recoverLastSessionCheckBox->setToolTip(
         tr("Recover last session (like buffers) on start of VNote"));
-    mainLayout->addRow(m_recoverLastSessionCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_recoverLastSessionCheckBox, m_recoverLastSessionCheckBox->toolTip(), this));
     addSearchItem(label, m_recoverLastSessionCheckBox->toolTip(), m_recoverLastSessionCheckBox);
     connect(m_recoverLastSessionCheckBox, &QCheckBox::stateChanged, this,
             &GeneralPage::pageIsChanged);
@@ -85,10 +95,14 @@ void GeneralPage::setupUI() {
     const QString label(tr("Check for updates on start"));
     m_checkForUpdatesCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_checkForUpdatesCheckBox->setToolTip(tr("Check for updates on start of VNote"));
-    mainLayout->addRow(m_checkForUpdatesCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_checkForUpdatesCheckBox, m_checkForUpdatesCheckBox->toolTip(), this));
     addSearchItem(label, m_checkForUpdatesCheckBox->toolTip(), m_checkForUpdatesCheckBox);
     connect(m_checkForUpdatesCheckBox, &QCheckBox::stateChanged, this, &GeneralPage::pageIsChanged);
   }
+
+  mainLayout->addStretch();
 }
 
 void GeneralPage::loadInternal() {

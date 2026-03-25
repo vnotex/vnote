@@ -6,9 +6,8 @@
 #include <QFileDialog>
 #include <QFont>
 #include <QFontComboBox>
-#include <QFormLayout>
-#include <QGroupBox>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QVBoxLayout>
@@ -22,11 +21,13 @@
 #include <widgets/widgetsfactory.h>
 
 #include "editorpage.h"
+#include "settingspagehelper.h"
 #include <widgets/editors/graphvizhelper.h>
 #include <widgets/editors/plantumlhelper.h>
 #include <widgets/lineedit.h>
 #include <widgets/locationinputwithbrowsebutton.h>
 #include <widgets/messageboxhelper.h>
+#include <widgets/propertydefs.h>
 
 using namespace vnotex;
 
@@ -36,16 +37,11 @@ MarkdownEditorPage::MarkdownEditorPage(ServiceLocator &p_services, QWidget *p_pa
 }
 
 void MarkdownEditorPage::setupUI() {
-  auto mainLayout = new QVBoxLayout(this);
+  auto *mainLayout = new QVBoxLayout(this);
 
-  auto generalBox = setupGeneralGroup();
-  mainLayout->addWidget(generalBox);
-
-  auto readBox = setupReadGroup();
-  mainLayout->addWidget(readBox);
-
-  auto editBox = setupEditGroup();
-  mainLayout->addWidget(editBox);
+  setupGeneralGroup();
+  setupReadGroup();
+  setupEditGroup();
 
   mainLayout->addStretch();
 }
@@ -223,15 +219,16 @@ bool MarkdownEditorPage::saveInternal() {
 
 QString MarkdownEditorPage::title() const { return tr("Markdown Editor"); }
 
-QGroupBox *MarkdownEditorPage::setupReadGroup() {
-  auto box = new QGroupBox(tr("Read"), this);
-  auto layout = WidgetsFactory::createFormLayout(box);
+void MarkdownEditorPage::setupReadGroup() {
+  auto *mainLayout = qobject_cast<QVBoxLayout *>(layout());
+  auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Read"), QString(), this);
 
   {
     const QString label(tr("Constrain image width"));
-    m_constrainImageWidthCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_constrainImageWidthCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_constrainImageWidthCheckBox->setToolTip(tr("Constrain image width to the window"));
-    layout->addRow(m_constrainImageWidthCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_constrainImageWidthCheckBox, m_constrainImageWidthCheckBox->toolTip(), this));
     addSearchItem(label, m_constrainImageWidthCheckBox->toolTip(), m_constrainImageWidthCheckBox);
     connect(m_constrainImageWidthCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
@@ -239,23 +236,27 @@ QGroupBox *MarkdownEditorPage::setupReadGroup() {
 
   {
     const QString label(tr("Center image"));
-    m_imageAlignCenterCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_imageAlignCenterCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_imageAlignCenterCheckBox->setToolTip(tr("Center images"));
-    layout->addRow(m_imageAlignCenterCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_imageAlignCenterCheckBox, m_imageAlignCenterCheckBox->toolTip(), this));
     addSearchItem(label, m_imageAlignCenterCheckBox->toolTip(), m_imageAlignCenterCheckBox);
     connect(m_imageAlignCenterCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
 
   {
-    m_zoomFactorSpinBox = WidgetsFactory::createDoubleSpinBox(box);
+    m_zoomFactorSpinBox = WidgetsFactory::createDoubleSpinBox(this);
     m_zoomFactorSpinBox->setToolTip(tr("Zoom factor in read mode"));
 
     m_zoomFactorSpinBox->setRange(0.1, 10);
     m_zoomFactorSpinBox->setSingleStep(0.1);
 
     const QString label(tr("Zoom factor:"));
-    layout->addRow(label, m_zoomFactorSpinBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_zoomFactorSpinBox->toolTip(), m_zoomFactorSpinBox, this));
     addSearchItem(label, m_zoomFactorSpinBox->toolTip(), m_zoomFactorSpinBox);
     connect(m_zoomFactorSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
             &MarkdownEditorPage::pageIsChanged);
@@ -263,18 +264,22 @@ QGroupBox *MarkdownEditorPage::setupReadGroup() {
 
   {
     const QString label(tr("HTML tag"));
-    m_htmlTagCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_htmlTagCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_htmlTagCheckBox->setToolTip(tr("Allow HTML tags in source"));
-    layout->addRow(m_htmlTagCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_htmlTagCheckBox, m_htmlTagCheckBox->toolTip(), this));
     addSearchItem(label, m_htmlTagCheckBox->toolTip(), m_htmlTagCheckBox);
     connect(m_htmlTagCheckBox, &QCheckBox::stateChanged, this, &MarkdownEditorPage::pageIsChanged);
   }
 
   {
     const QString label(tr("Auto break"));
-    m_autoBreakCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_autoBreakCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_autoBreakCheckBox->setToolTip(tr("Automatically break a line with '\\n'"));
-    layout->addRow(m_autoBreakCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_autoBreakCheckBox, m_autoBreakCheckBox->toolTip(), this));
     addSearchItem(label, m_autoBreakCheckBox->toolTip(), m_autoBreakCheckBox);
     connect(m_autoBreakCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
@@ -282,18 +287,22 @@ QGroupBox *MarkdownEditorPage::setupReadGroup() {
 
   {
     const QString label(tr("Linkify"));
-    m_linkifyCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_linkifyCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_linkifyCheckBox->setToolTip(tr("Convert URL-like text to links"));
-    layout->addRow(m_linkifyCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_linkifyCheckBox, m_linkifyCheckBox->toolTip(), this));
     addSearchItem(label, m_linkifyCheckBox->toolTip(), m_linkifyCheckBox);
     connect(m_linkifyCheckBox, &QCheckBox::stateChanged, this, &MarkdownEditorPage::pageIsChanged);
   }
 
   {
     const QString label(tr("Indent first line"));
-    m_indentFirstLineCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_indentFirstLineCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_indentFirstLineCheckBox->setToolTip(tr("Indent the first line of each paragraph"));
-    layout->addRow(m_indentFirstLineCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_indentFirstLineCheckBox, m_indentFirstLineCheckBox->toolTip(), this));
     addSearchItem(label, m_indentFirstLineCheckBox->toolTip(), m_indentFirstLineCheckBox);
     connect(m_indentFirstLineCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
@@ -301,26 +310,27 @@ QGroupBox *MarkdownEditorPage::setupReadGroup() {
 
   {
     const QString label(tr("Code block line number"));
-    m_codeBlockLineNumberCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_codeBlockLineNumberCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_codeBlockLineNumberCheckBox->setToolTip(tr("Add line number to code block"));
-    layout->addRow(m_codeBlockLineNumberCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_codeBlockLineNumberCheckBox, m_codeBlockLineNumberCheckBox->toolTip(), this));
     addSearchItem(label, m_codeBlockLineNumberCheckBox->toolTip(), m_codeBlockLineNumberCheckBox);
     connect(m_codeBlockLineNumberCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
-
-  return box;
 }
 
-QGroupBox *MarkdownEditorPage::setupEditGroup() {
-  auto box = new QGroupBox(tr("Edit"), this);
-  auto layout = WidgetsFactory::createFormLayout(box);
+void MarkdownEditorPage::setupEditGroup() {
+  auto *mainLayout = qobject_cast<QVBoxLayout *>(layout());
+  auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Edit"), QString(), this);
 
   {
     const QString label(tr("Insert file name as title"));
-    m_insertFileNameAsTitleCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_insertFileNameAsTitleCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_insertFileNameAsTitleCheckBox->setToolTip(tr("Insert file name as title when creating note"));
-    layout->addRow(m_insertFileNameAsTitleCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_insertFileNameAsTitleCheckBox, m_insertFileNameAsTitleCheckBox->toolTip(), this));
     addSearchItem(label, m_insertFileNameAsTitleCheckBox->toolTip(),
                   m_insertFileNameAsTitleCheckBox);
     connect(m_insertFileNameAsTitleCheckBox, &QCheckBox::stateChanged, this,
@@ -329,10 +339,13 @@ QGroupBox *MarkdownEditorPage::setupEditGroup() {
 
   {
     const QString label(tr("Constrain in-place preview width"));
-    m_constrainInplacePreviewWidthCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_constrainInplacePreviewWidthCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_constrainInplacePreviewWidthCheckBox->setToolTip(
         tr("Constrain in-place preview width to the window"));
-    layout->addRow(m_constrainInplacePreviewWidthCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_constrainInplacePreviewWidthCheckBox,
+        m_constrainInplacePreviewWidthCheckBox->toolTip(), this));
     addSearchItem(label, m_constrainInplacePreviewWidthCheckBox->toolTip(),
                   m_constrainInplacePreviewWidthCheckBox);
     connect(m_constrainInplacePreviewWidthCheckBox, &QCheckBox::stateChanged, this,
@@ -340,31 +353,41 @@ QGroupBox *MarkdownEditorPage::setupEditGroup() {
   }
 
   {
-    auto srcLayout = new QVBoxLayout();
-    layout->addRow(tr("In-place preview sources:"), srcLayout);
+    auto *srcRow = new QWidget(this);
+    srcRow->setProperty(PropertyDefs::c_settingsRow, true);
+    auto *srcRowLayout = new QVBoxLayout(srcRow);
+    srcRowLayout->setContentsMargins(16, 6, 16, 6);
+    srcRowLayout->setSpacing(4);
+    auto *srcLabel = new QLabel(tr("In-place preview sources:"), srcRow);
+    srcRowLayout->addWidget(srcLabel);
 
-    m_inplacePreviewSourceImageLinkCheckBox = WidgetsFactory::createCheckBox(tr("Image link"), box);
-    srcLayout->addWidget(m_inplacePreviewSourceImageLinkCheckBox);
+    m_inplacePreviewSourceImageLinkCheckBox = WidgetsFactory::createCheckBox(tr("Image link"), this);
+    srcRowLayout->addWidget(m_inplacePreviewSourceImageLinkCheckBox);
     connect(m_inplacePreviewSourceImageLinkCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
 
-    m_inplacePreviewSourceCodeBlockCheckBox = WidgetsFactory::createCheckBox(tr("Code block"), box);
-    srcLayout->addWidget(m_inplacePreviewSourceCodeBlockCheckBox);
+    m_inplacePreviewSourceCodeBlockCheckBox = WidgetsFactory::createCheckBox(tr("Code block"), this);
+    srcRowLayout->addWidget(m_inplacePreviewSourceCodeBlockCheckBox);
     connect(m_inplacePreviewSourceCodeBlockCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
 
-    m_inplacePreviewSourceMathCheckBox = WidgetsFactory::createCheckBox(tr("Math"), box);
-    srcLayout->addWidget(m_inplacePreviewSourceMathCheckBox);
+    m_inplacePreviewSourceMathCheckBox = WidgetsFactory::createCheckBox(tr("Math"), this);
+    srcRowLayout->addWidget(m_inplacePreviewSourceMathCheckBox);
     connect(m_inplacePreviewSourceMathCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
+
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(srcRow);
   }
 
   {
     const QString label(tr("Fetch images to local in Parse And Paste"));
-    m_fetchImagesToLocalCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_fetchImagesToLocalCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_fetchImagesToLocalCheckBox->setToolTip(
         tr("Fetch images to local in Parse To Markdown And Paste"));
-    layout->addRow(m_fetchImagesToLocalCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_fetchImagesToLocalCheckBox, m_fetchImagesToLocalCheckBox->toolTip(), this));
     addSearchItem(label, m_fetchImagesToLocalCheckBox->toolTip(), m_fetchImagesToLocalCheckBox);
     connect(m_fetchImagesToLocalCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
@@ -372,9 +395,11 @@ QGroupBox *MarkdownEditorPage::setupEditGroup() {
 
   {
     const QString label(tr("Smart table"));
-    m_smartTableCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_smartTableCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_smartTableCheckBox->setToolTip(tr("Smart table formation"));
-    layout->addRow(m_smartTableCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_smartTableCheckBox, m_smartTableCheckBox->toolTip(), this));
     addSearchItem(label, m_smartTableCheckBox->toolTip(), m_smartTableCheckBox);
     connect(m_smartTableCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
@@ -382,33 +407,35 @@ QGroupBox *MarkdownEditorPage::setupEditGroup() {
 
   {
     const QString label(tr("Spell check"));
-    m_spellCheckCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_spellCheckCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_spellCheckCheckBox->setToolTip(tr("Spell check"));
-    layout->addRow(m_spellCheckCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_spellCheckCheckBox, m_spellCheckCheckBox->toolTip(), this));
     addSearchItem(label, m_spellCheckCheckBox->toolTip(), m_spellCheckCheckBox);
     connect(m_spellCheckCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
 
   {
-    auto fontLayout = new QHBoxLayout();
+    auto *fontWidget = new QWidget(this);
+    fontWidget->setStyleSheet("background-color: transparent;");
+    auto *fontLayout = new QHBoxLayout(fontWidget);
     fontLayout->setContentsMargins(0, 0, 0, 0);
 
     const QString label(tr("Override font"));
-    m_editorOverriddenFontFamilyCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_editorOverriddenFontFamilyCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_editorOverriddenFontFamilyCheckBox->setToolTip(tr("Override editor font family of theme"));
     fontLayout->addWidget(m_editorOverriddenFontFamilyCheckBox);
     addSearchItem(label, m_editorOverriddenFontFamilyCheckBox->toolTip(),
                   m_editorOverriddenFontFamilyCheckBox);
 
-    m_editorOverriddenFontFamilyComboBox = new QFontComboBox(box);
+    m_editorOverriddenFontFamilyComboBox = new QFontComboBox(this);
     m_editorOverriddenFontFamilyComboBox->setEnabled(false);
-    fontLayout->addWidget(m_editorOverriddenFontFamilyComboBox);
+    fontLayout->addWidget(m_editorOverriddenFontFamilyComboBox, 1);
     connect(m_editorOverriddenFontFamilyComboBox,
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &MarkdownEditorPage::pageIsChanged);
-
-    fontLayout->addStretch();
 
     connect(m_editorOverriddenFontFamilyCheckBox, &QCheckBox::stateChanged, this,
             [this](int state) {
@@ -416,31 +443,39 @@ QGroupBox *MarkdownEditorPage::setupEditGroup() {
               emit pageIsChanged();
             });
 
-    layout->addRow(fontLayout);
+    auto *fontRow = new QWidget(this);
+    fontRow->setProperty(PropertyDefs::c_settingsRow, true);
+    auto *fontRowLayout = new QVBoxLayout(fontRow);
+    fontRowLayout->setContentsMargins(16, 6, 16, 6);
+    fontRowLayout->addWidget(fontWidget);
+
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(fontRow);
   }
 
   {
     const QString label(tr("Use Rich Paste by default"));
-    m_richPasteByDefaultCheckBox = WidgetsFactory::createCheckBox(label, box);
+    m_richPasteByDefaultCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_richPasteByDefaultCheckBox->setToolTip(tr("Use Rich Paste by default when pasting text"));
-    layout->addRow(m_richPasteByDefaultCheckBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_richPasteByDefaultCheckBox, m_richPasteByDefaultCheckBox->toolTip(), this));
     addSearchItem(label, m_richPasteByDefaultCheckBox->toolTip(), m_richPasteByDefaultCheckBox);
     connect(m_richPasteByDefaultCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
-
-  return box;
 }
 
-QGroupBox *MarkdownEditorPage::setupGeneralGroup() {
-  auto box = new QGroupBox(tr("General"), this);
-  auto layout = WidgetsFactory::createFormLayout(box);
+void MarkdownEditorPage::setupGeneralGroup() {
+  auto *mainLayout = qobject_cast<QVBoxLayout *>(layout());
+  auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("General"), QString(), this);
 
   {
-    auto sectionLayout = new QHBoxLayout();
+    auto *sectionWidget = new QWidget(this);
+    auto *sectionLayout = new QHBoxLayout(sectionWidget);
     sectionLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_sectionNumberComboBox = WidgetsFactory::createComboBox(box);
+    m_sectionNumberComboBox = WidgetsFactory::createComboBox(this);
     m_sectionNumberComboBox->setToolTip(tr("Section number mode"));
     m_sectionNumberComboBox->addItem(tr("None"),
                                      (int)MarkdownEditorConfig::SectionNumberMode::None);
@@ -452,7 +487,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup() {
     connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &MarkdownEditorPage::pageIsChanged);
 
-    m_sectionNumberBaseLevelSpinBox = WidgetsFactory::createSpinBox(box);
+    m_sectionNumberBaseLevelSpinBox = WidgetsFactory::createSpinBox(this);
     m_sectionNumberBaseLevelSpinBox->setToolTip(
         tr("Base level to start section numbering in edit mode"));
     m_sectionNumberBaseLevelSpinBox->setRange(1, 6);
@@ -462,7 +497,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup() {
     connect(m_sectionNumberBaseLevelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &MarkdownEditorPage::pageIsChanged);
 
-    m_sectionNumberStyleComboBox = WidgetsFactory::createComboBox(box);
+    m_sectionNumberStyleComboBox = WidgetsFactory::createComboBox(this);
     m_sectionNumberStyleComboBox->setToolTip(tr("Section number style"));
     m_sectionNumberStyleComboBox->addItem(
         tr("1.1."), (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot);
@@ -482,12 +517,13 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup() {
             });
 
     const QString label(tr("Section number:"));
-    layout->addRow(label, sectionLayout);
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_sectionNumberComboBox->toolTip(), sectionWidget, this));
     addSearchItem(label, m_sectionNumberComboBox->toolTip(), m_sectionNumberComboBox);
   }
 
   {
-    m_plantUmlModeComboBox = WidgetsFactory::createComboBox(box);
+    m_plantUmlModeComboBox = WidgetsFactory::createComboBox(this);
     m_plantUmlModeComboBox->setToolTip(
         tr("Use Web service or local JAR file to render PlantUml graphs"));
 
@@ -495,17 +531,20 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup() {
     m_plantUmlModeComboBox->addItem(tr("Local JAR"), 1);
 
     const QString label(tr("PlantUml:"));
-    layout->addRow(label, m_plantUmlModeComboBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_plantUmlModeComboBox->toolTip(), m_plantUmlModeComboBox, this));
     addSearchItem(label, m_plantUmlModeComboBox->toolTip(), m_plantUmlModeComboBox);
     connect(m_plantUmlModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &MarkdownEditorPage::pageIsChanged);
   }
 
   {
-    auto jarLayout = new QHBoxLayout();
+    auto *jarWidget = new QWidget(this);
+    auto *jarLayout = new QHBoxLayout(jarWidget);
     jarLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_plantUmlJarFileInput = new LocationInputWithBrowseButton(box);
+    m_plantUmlJarFileInput = new LocationInputWithBrowseButton(this);
     m_plantUmlJarFileInput->setToolTip(tr("Local JAR file to render PlantUml graphs"));
     connect(m_plantUmlJarFileInput, &LocationInputWithBrowseButton::clicked, this, [this]() {
       auto filePath = QFileDialog::getOpenFileName(this, tr("Select PlantUml JAR File"),
@@ -516,7 +555,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup() {
     });
     jarLayout->addWidget(m_plantUmlJarFileInput, 1);
 
-    auto testBtn = new QPushButton(tr("Test"), box);
+    auto *testBtn = new QPushButton(tr("Test"), this);
     testBtn->setToolTip(tr("Test PlantUml JAR and Java Runtime Environment"));
     connect(testBtn, &QPushButton::clicked, this, [this]() {
       const auto jar = m_plantUmlJarFileInput->text();
@@ -534,27 +573,31 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup() {
     jarLayout->addWidget(testBtn);
 
     const QString label(tr("PlantUml JAR file:"));
-    layout->addRow(label, jarLayout);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_plantUmlJarFileInput->toolTip(), jarWidget, this));
     addSearchItem(label, m_plantUmlJarFileInput->toolTip(), m_plantUmlJarFileInput);
     connect(m_plantUmlJarFileInput, &LocationInputWithBrowseButton::textChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
 
   {
-    m_plantUmlWebServiceLineEdit = WidgetsFactory::createLineEdit(box);
+    m_plantUmlWebServiceLineEdit = WidgetsFactory::createLineEdit(this);
     m_plantUmlWebServiceLineEdit->setToolTip(
         tr("Override the Web service used to render PlantUml graphs"));
     m_plantUmlWebServiceLineEdit->setPlaceholderText(tr("Empty to use default one"));
 
     const QString label(tr("Override PlantUml Web service:"));
-    layout->addRow(label, m_plantUmlWebServiceLineEdit);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_plantUmlWebServiceLineEdit->toolTip(), m_plantUmlWebServiceLineEdit, this));
     addSearchItem(label, m_plantUmlWebServiceLineEdit->toolTip(), m_plantUmlWebServiceLineEdit);
     connect(m_plantUmlWebServiceLineEdit, &QLineEdit::textChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
 
   {
-    m_graphvizModeComboBox = WidgetsFactory::createComboBox(box);
+    m_graphvizModeComboBox = WidgetsFactory::createComboBox(this);
     m_graphvizModeComboBox->setToolTip(
         tr("Use Web service or local executable file to render Graphviz graphs"));
 
@@ -562,17 +605,20 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup() {
     m_graphvizModeComboBox->addItem(tr("Local Executable"), 1);
 
     const QString label(tr("Graphviz:"));
-    layout->addRow(label, m_graphvizModeComboBox);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_graphvizModeComboBox->toolTip(), m_graphvizModeComboBox, this));
     addSearchItem(label, m_graphvizModeComboBox->toolTip(), m_graphvizModeComboBox);
     connect(m_graphvizModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &MarkdownEditorPage::pageIsChanged);
   }
 
   {
-    auto fileLayout = new QHBoxLayout();
+    auto *fileWidget = new QWidget(this);
+    auto *fileLayout = new QHBoxLayout(fileWidget);
     fileLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_graphvizFileInput = new LocationInputWithBrowseButton(box);
+    m_graphvizFileInput = new LocationInputWithBrowseButton(this);
     m_graphvizFileInput->setToolTip(tr("Local executable file to render Graphviz graphs"));
     connect(m_graphvizFileInput, &LocationInputWithBrowseButton::clicked, this, [this]() {
       auto filePath = QFileDialog::getOpenFileName(this, tr("Select Graphviz Executable File"),
@@ -583,7 +629,7 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup() {
     });
     fileLayout->addWidget(m_graphvizFileInput, 1);
 
-    auto testBtn = new QPushButton(tr("Test"), box);
+    auto *testBtn = new QPushButton(tr("Test"), this);
     testBtn->setToolTip(tr("Test Graphviz executable file"));
     connect(testBtn, &QPushButton::clicked, this, [this]() {
       const auto exe = m_graphvizFileInput->text();
@@ -602,24 +648,26 @@ QGroupBox *MarkdownEditorPage::setupGeneralGroup() {
     fileLayout->addWidget(testBtn);
 
     const QString label(tr("Graphviz executable file:"));
-    layout->addRow(label, fileLayout);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_graphvizFileInput->toolTip(), fileWidget, this));
     addSearchItem(label, m_graphvizFileInput->toolTip(), m_graphvizFileInput);
     connect(m_graphvizFileInput, &LocationInputWithBrowseButton::textChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
 
   {
-    m_mathJaxScriptLineEdit = WidgetsFactory::createLineEdit(box);
+    m_mathJaxScriptLineEdit = WidgetsFactory::createLineEdit(this);
     m_mathJaxScriptLineEdit->setToolTip(
         tr("Override the MathJax script used to render math formulas"));
     m_mathJaxScriptLineEdit->setPlaceholderText(tr("Empty to use default one"));
 
     const QString label(tr("Override MathJax script:"));
-    layout->addRow(label, m_mathJaxScriptLineEdit);
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_mathJaxScriptLineEdit->toolTip(), m_mathJaxScriptLineEdit, this));
     addSearchItem(label, m_mathJaxScriptLineEdit->toolTip(), m_mathJaxScriptLineEdit);
     connect(m_mathJaxScriptLineEdit, &QLineEdit::textChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
-
-  return box;
 }

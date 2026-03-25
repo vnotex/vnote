@@ -35,6 +35,16 @@ public:
   static const char *c_hitSettingWidget;
 
   static const char *c_mainWindowSideBar;
+
+  static const char *c_settingsCard;
+
+  static const char *c_settingsCardTitle;
+
+  static const char *c_settingsDescription;
+
+  static const char *c_settingsRow;
+
+  static const char *c_settingsSeparator;
 };
 } // namespace vnotex
 

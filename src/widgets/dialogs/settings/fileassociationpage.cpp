@@ -14,6 +14,8 @@
 #include <widgets/lineedit.h>
 #include <widgets/widgetsfactory.h>
 
+#include "settingspagehelper.h"
+
 using namespace vnotex;
 
 const char *FileAssociationPage::c_nameProperty = "name";
@@ -26,15 +28,35 @@ FileAssociationPage::FileAssociationPage(ServiceLocator &p_services, QWidget *p_
 }
 
 void FileAssociationPage::setupUI() {
-  auto mainLayout = new QVBoxLayout(this);
+  auto *mainLayout = new QVBoxLayout(this);
 
-  m_builtInFileTypesBox = new QGroupBox(tr("Built-In File Types"), this);
-  WidgetsFactory::createFormLayout(m_builtInFileTypesBox);
-  mainLayout->addWidget(m_builtInFileTypesBox);
+  // Built-In File Types card.
+  {
+    auto *cardLayout =
+        SettingsPageHelper::addSection(mainLayout, tr("Built-In File Types"), QString(), this);
 
-  m_externalProgramsBox = new QGroupBox(tr("External Programs"), this);
-  WidgetsFactory::createFormLayout(m_externalProgramsBox);
-  mainLayout->addWidget(m_externalProgramsBox);
+    m_builtInFileTypesBox = new QGroupBox(this);
+    m_builtInFileTypesBox->setFlat(true);
+    m_builtInFileTypesBox->setStyleSheet(
+        QStringLiteral("QGroupBox { border: none; margin: 0; padding: 0; }"));
+    m_builtInFileTypesBox->setContentsMargins(8, 0, 8, 8);
+    WidgetsFactory::createFormLayout(m_builtInFileTypesBox);
+    cardLayout->addWidget(m_builtInFileTypesBox);
+  }
+
+  // External Programs card.
+  {
+    auto *cardLayout =
+        SettingsPageHelper::addSection(mainLayout, tr("External Programs"), QString(), this);
+
+    m_externalProgramsBox = new QGroupBox(this);
+    m_externalProgramsBox->setFlat(true);
+    m_externalProgramsBox->setStyleSheet(
+        QStringLiteral("QGroupBox { border: none; margin: 0; padding: 0; }"));
+    m_externalProgramsBox->setContentsMargins(8, 0, 8, 8);
+    WidgetsFactory::createFormLayout(m_externalProgramsBox);
+    cardLayout->addWidget(m_externalProgramsBox);
+  }
 
   mainLayout->addStretch();
 }

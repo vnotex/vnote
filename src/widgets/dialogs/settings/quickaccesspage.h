@@ -29,12 +29,6 @@ protected:
 private:
   void setupUI();
 
-  QGroupBox *setupFlashPageGroup();
-
-  QGroupBox *setupQuickAccessGroup();
-
-  QGroupBox *setupQuickNoteGroup();
-
   void newQuickNoteScheme();
 
   void removeQuickNoteScheme();

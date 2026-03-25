@@ -178,6 +178,19 @@
             "popup" : {
                 "border" : "@base#normal#border"
             }
+        },
+        "settingscard" : {
+            "bg" : "@palette#active#window",
+            "border" : "@palette#active#dark",
+            "title" : {
+                "fg" : "@palette#active#window_text"
+            },
+            "description" : {
+                "fg" : "@palette#disabled#window_text"
+            },
+            "separator" : {
+                "bg" : "@palette#active#dark"
+            }
         }
     }
 }

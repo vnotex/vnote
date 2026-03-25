@@ -20,6 +20,8 @@
 #include <widgets/listwidget.h>
 #include <widgets/widgetsfactory.h>
 
+#include "settingspagehelper.h"
+
 using namespace vnotex;
 
 ThemePage::ThemePage(ServiceLocator &p_services, QWidget *p_parent)
@@ -28,12 +30,14 @@ ThemePage::ThemePage(ServiceLocator &p_services, QWidget *p_parent)
 }
 
 void ThemePage::setupUI() {
-  auto mainLayout = new QVBoxLayout(this);
+  auto *mainLayout = new QVBoxLayout(this);
 
-  // Theme.
+  auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Theme"), QString(), this);
+
+  // Theme content inside card.
   {
-    auto layout = new QGridLayout();
-    mainLayout->addLayout(layout);
+    auto *contentWidget = new QWidget(this);
+    auto *layout = new QGridLayout(contentWidget);
 
     m_themeListWidget = new ListWidget(this);
     layout->addWidget(m_themeListWidget, 0, 0, 3, 2);
@@ -56,7 +60,6 @@ void ThemePage::setupUI() {
 
     auto addBtn = new QPushButton(tr("Add/Delete"), this);
     layout->addWidget(addBtn, 3, 1, 1, 1);
-    // TODO: open an editor to edit the theme list.
     connect(addBtn, &QPushButton::clicked, this, [this]() {
       auto *configMgr = m_services.get<ConfigMgr2>();
       if (configMgr) {
@@ -89,6 +92,10 @@ void ThemePage::setupUI() {
     scrollArea->setWidget(m_previewLabel);
     scrollArea->setMinimumSize(256, 256);
     layout->addWidget(scrollArea, 0, 2, 5, 1);
+
+    // Add content widget with padding.
+    contentWidget->setContentsMargins(8, 0, 8, 8);
+    cardLayout->addWidget(contentWidget);
   }
 
   mainLayout->addStretch();
