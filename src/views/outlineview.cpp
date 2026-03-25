@@ -17,6 +17,9 @@ void OutlineView::setupView() {
   // Single selection mode.
   setSelectionMode(QAbstractItemView::SingleSelection);
 
+  // Animate expand/collapse transitions.
+  setAnimated(true);
+
   // Show horizontal scrollbar when content overflows.
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
