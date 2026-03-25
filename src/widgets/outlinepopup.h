@@ -8,13 +8,16 @@
 class QToolButton;
 
 namespace vnotex {
+
 class OutlineProvider;
 class OutlineViewer;
+class ServiceLocator;
 
 class OutlinePopup : public ButtonPopup {
   Q_OBJECT
 public:
-  OutlinePopup(QToolButton *p_btn, QWidget *p_parent = nullptr);
+  OutlinePopup(ServiceLocator &p_services, QToolButton *p_btn,
+               QWidget *p_parent = nullptr);
 
   void setOutlineProvider(const QSharedPointer<OutlineProvider> &p_provider);
 
@@ -23,6 +26,8 @@ protected:
 
 private:
   void setupUI();
+
+  ServiceLocator &m_services;
 
   // Managed by QObject.
   OutlineViewer *m_viewer = nullptr;

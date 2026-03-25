@@ -7,6 +7,8 @@
 
 #include <core/markdowneditorconfig.h>
 
+#include "outlineprovider.h"
+
 class QSplitter;
 class QStackedWidget;
 class QTimer;
@@ -17,6 +19,7 @@ namespace vnotex {
 class MarkdownEditor;
 class MarkdownViewer;
 class MarkdownViewerAdapter;
+class OutlineProvider;
 class PreviewHelper;
 class MarkdownEditorController;
 class MarkdownViewWindowController;
@@ -45,6 +48,8 @@ public:
   int getCursorPosition() const Q_DECL_OVERRIDE;
 
   int getScrollPosition() const Q_DECL_OVERRIDE;
+
+  QSharedPointer<OutlineProvider> getOutlineProvider() const Q_DECL_OVERRIDE;
 
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
@@ -90,7 +95,12 @@ private:
 
   void setupPreviewHelper();
 
+  void setupOutlineProvider();
+
   void connectEditorSignals();
+
+  template <class T>
+  QSharedPointer<Outline> headingsToOutline(const QVector<T> &p_headings);
 
   void focusEditor();
 
@@ -157,6 +167,9 @@ private:
 
   QTimer *m_syncPreviewTimer = nullptr;
   QSharedPointer<QPrinter> m_printer;
+
+  // Outline provider: bridges heading changes from editor/viewer to OutlinePopup.
+  QSharedPointer<OutlineProvider> m_outlineProvider;
 };
 
 } // namespace vnotex

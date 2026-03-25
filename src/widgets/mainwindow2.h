@@ -17,6 +17,7 @@ namespace vnotex {
 
 class ServiceLocator;
 class NotebookExplorer2;
+class OutlineViewer;
 class ViewArea2;
 
 class ToolBarHelper2;
@@ -92,6 +93,9 @@ private:
   // Setup NotebookExplorer2 as dock widget.
   void setupNotebookExplorer();
 
+  // Setup OutlineViewer as dock widget.
+  void setupOutlineViewer();
+
   // Setup ViewArea2 as central widget.
   void setupViewArea();
 
@@ -119,6 +123,9 @@ private:
   // NotebookExplorer2 dock widget.
   NotebookExplorer2 *m_notebookExplorer = nullptr;
 
+  // OutlineViewer dock widget.
+  OutlineViewer *m_outlineViewer = nullptr;
+
   // ViewArea2 central widget.
   ViewArea2 *m_viewArea = nullptr;
 
@@ -129,6 +136,9 @@ private:
 
   // Content area expanded state.
   bool m_contentAreaExpanded = false;
+
+  // Dock visibility saved before content area expansion, for restoring later.
+  QStringList m_visibleDocksBeforeExpand;
 
   bool m_layoutReset = false;
 

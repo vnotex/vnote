@@ -64,6 +64,9 @@ public:
   QJsonObject saveLayout() const;
   void loadLayoutFromSession(const QJsonObject &p_layout);
 
+  // Get the currently active ViewWindow2 (nullptr if none).
+  ViewWindow2 *getCurrentViewWindow() const;
+
   // Save workspace/buffer session state to vxcore and call vxcore_shutdown().
   // Called before closing buffers on exit.
   void saveSession();

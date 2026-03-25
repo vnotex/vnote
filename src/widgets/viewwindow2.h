@@ -25,6 +25,7 @@ class QWheelEvent;
 namespace vnotex {
 
 class EditReadDiscardAction;
+class OutlineProvider;
 class ServiceLocator;
 class StatusWidget;
 class FindAndReplaceWidget2;
@@ -84,6 +85,10 @@ public:
 
   // Get the window title (display name + optional modification indicator).
   QString getTitle() const;
+
+  // Get the outline provider for this window (nullptr if not supported).
+  // Subclasses that support outlines (e.g., MarkdownViewWindow2) override this.
+  virtual QSharedPointer<OutlineProvider> getOutlineProvider() const;
 
   // ============ Mode ============
 

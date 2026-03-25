@@ -25,7 +25,6 @@
 #include "findandreplacewidget.h"
 #include "floatingwidget.h"
 #include "messageboxhelper.h"
-#include "outlinepopup.h"
 #include "propertydefs.h"
 #include "tagpopup.h"
 #include "toolbarhelper.h"
@@ -435,9 +434,8 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
 
   case ViewWindowToolBarHelper::Outline: {
     act = ViewWindowToolBarHelper::addAction(p_toolBar, p_action);
-    auto popup = static_cast<OutlinePopup *>(
-        static_cast<QToolButton *>(p_toolBar->widgetForAction(act))->menu());
-    popup->setOutlineProvider(getOutlineProvider());
+    // OutlinePopup now requires ServiceLocator; the legacy helper no longer
+    // creates it. Skip wiring in the deprecated ViewWindow path.
     break;
   }
 

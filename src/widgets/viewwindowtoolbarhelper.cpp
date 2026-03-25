@@ -12,7 +12,6 @@
 
 #include "attachmentpopup.h"
 #include "editreaddiscardaction.h"
-#include "outlinepopup.h"
 #include "propertydefs.h"
 #include "tagpopup.h"
 #include "toolbarhelper.h"
@@ -309,8 +308,9 @@ QAction *ViewWindowToolBarHelper::addAction(QToolBar *p_tb, Action p_action) {
 
     addButtonShortcut(toolBtn, editorConfig.getShortcut(Shortcut::Outline), viewWindow);
 
-    auto menu = new OutlinePopup(toolBtn, p_tb);
-    toolBtn->setMenu(menu);
+    // OutlinePopup requires ServiceLocator (DI), which is unavailable here.
+    // The caller (ViewWindow::addAction) is responsible for creating and
+    // attaching the OutlinePopup when ServiceLocator is available.
     break;
   }
 

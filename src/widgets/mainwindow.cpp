@@ -488,20 +488,10 @@ QString MainWindow::getViewAreaTitle() const {
 }
 
 void MainWindow::setupOutlineViewer() {
-  // Do not provide title here since there is one in the dock title.
-  m_outlineViewer = new OutlineViewer(QString(), this);
-  m_outlineViewer->setObjectName("OutlineViewer.vnotex");
-
-  // There are OutlineViewers in each ViewWindow. We only need to register navigation mode for the
-  // outline panel.
-  NavigationModeMgr::getInst().registerNavigationTarget(
-      m_outlineViewer->getNavigationModeWrapper());
-
-  connect(m_viewArea, &ViewArea::currentViewWindowChanged, this, [this]() {
-    auto win = m_viewArea->getCurrentViewWindow();
-    m_outlineViewer->setOutlineProvider(win ? win->getOutlineProvider() : nullptr);
-  });
-  connect(m_outlineViewer, &OutlineViewer::focusViewArea, this, &MainWindow::focusViewArea);
+  // DEPRECATED: MainWindow is never instantiated (MainWindow2 is used instead).
+  // OutlineViewer now requires ServiceLocator (DI) and no longer exposes
+  // getNavigationModeWrapper(). This stub prevents link errors only.
+  m_outlineViewer = nullptr;
 }
 
 void MainWindow::setupConsoleViewer() {

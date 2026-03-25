@@ -24,6 +24,7 @@
 #include "editors/statuswidget.h"
 #include "findandreplacewidget2.h"
 #include "messageboxhelper.h"
+#include "outlineprovider.h"
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpanel.h"
 #include "wordcountpopup2.h"
@@ -125,6 +126,10 @@ QString ViewWindow2::getName() const {
     return path.mid(lastSlash + 1);
   }
   return path;
+}
+
+QSharedPointer<OutlineProvider> ViewWindow2::getOutlineProvider() const {
+  return nullptr;
 }
 
 QString ViewWindow2::getTitle() const {

@@ -325,6 +325,9 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
     // Windows.
     auto subMenu = menu->addMenu(MainWindow2::tr("Windows"));
     for (auto dock : m_mainWindow->getDocks()) {
+      if (!dock) {
+        continue;
+      }
       // @act is owned by the QDockWidget.
       auto act = dock->toggleViewAction();
       auto actWrapper = subMenu->addAction(act->text());

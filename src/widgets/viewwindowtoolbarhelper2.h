@@ -52,7 +52,10 @@ public:
     ToggleLayoutMode,
 
     // Live preview toggle (Edit mode only).
-    ToggleLivePreview
+    ToggleLivePreview,
+
+    // Outline popup button.
+    Outline
   };
 
   ViewWindowToolBarHelper2() = delete;

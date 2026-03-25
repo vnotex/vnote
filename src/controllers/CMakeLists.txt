@@ -15,6 +15,7 @@ target_sources(vnote PRIVATE
     mindmapviewwindowcontroller.cpp mindmapviewwindowcontroller.h
     markdowneditorcontroller.cpp markdowneditorcontroller.h
     markdownviewwindowcontroller.cpp markdownviewwindowcontroller.h
+    outlinecontroller.cpp outlinecontroller.h
 )
 
 target_include_directories(vnote PRIVATE

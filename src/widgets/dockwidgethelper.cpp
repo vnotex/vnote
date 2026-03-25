@@ -120,7 +120,7 @@ void DockWidgetHelper::setupDocks() {
   }
 
   setupDock(DockType::OutlineDock, tr("Outline"), QStringLiteral("OutlineDock.vnotex"),
-            Qt::RightDockWidgetArea, Qt::AllDockWidgetAreas, false);
+            Qt::RightDockWidgetArea, Qt::AllDockWidgetAreas, true);
 
   setupDock(DockType::ConsoleDock, tr("Console"), QStringLiteral("ConsoleDock.vnotex"),
             Qt::BottomDockWidgetArea, Qt::AllDockWidgetAreas, false);
@@ -210,15 +210,37 @@ QDockWidget *DockWidgetHelper::getDock(DockType p_dockType) const {
 void DockWidgetHelper::setupShortcuts() {
   const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
 
-  CoreConfig::Shortcut shortcuts[] = {CoreConfig::Shortcut::NavigationDock, CoreConfig::Shortcut::OutlineDock,
-                                  CoreConfig::Shortcut::HistoryDock, CoreConfig::Shortcut::TagDock,
-                                  CoreConfig::Shortcut::SearchDock, CoreConfig::Shortcut::LocationListDock,
-                                  CoreConfig::Shortcut::SnippetDock};
+  // Map each DockType to its CoreConfig::Shortcut.  ConsoleDock has no shortcut.
+  auto shortcutForDock = [](DockType p_type) -> int {
+    switch (p_type) {
+    case DockType::NavigationDock:
+      return CoreConfig::Shortcut::NavigationDock;
+    case DockType::HistoryDock:
+      return CoreConfig::Shortcut::HistoryDock;
+    case DockType::TagDock:
+      return CoreConfig::Shortcut::TagDock;
+    case DockType::SearchDock:
+      return CoreConfig::Shortcut::SearchDock;
+    case DockType::SnippetDock:
+      return CoreConfig::Shortcut::SnippetDock;
+    case DockType::OutlineDock:
+      return CoreConfig::Shortcut::OutlineDock;
+    case DockType::LocationListDock:
+      return CoreConfig::Shortcut::LocationListDock;
+    default:
+      return -1; // No shortcut defined (e.g. ConsoleDock).
+    }
+  };
+
   for (int i = 0; i < DockType::MaxDock; ++i) {
     if (!m_docks[i]) {
       continue;
     }
-    auto keys = coreConfig.getShortcut(shortcuts[i]);
+    int sc = shortcutForDock(static_cast<DockType>(i));
+    if (sc < 0) {
+      continue;
+    }
+    auto keys = coreConfig.getShortcut(static_cast<CoreConfig::Shortcut>(sc));
     if (!keys.isEmpty()) {
       setupDockActivateShortcut(m_docks[i], keys);
     }

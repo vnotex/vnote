@@ -21,7 +21,9 @@
 
 #include <qwebengineview.h>
 #include <widgets/notebookexplorer2.h>
+#include <widgets/outlineviewer.h>
 #include <widgets/viewarea2.h>
+#include <widgets/viewwindow2.h>
 #include <widgets/messageboxhelper.h>
 #include <controllers/viewareacontroller.h>
 
@@ -58,11 +60,11 @@ void MainWindow2::setupUI() {
   // Setup ViewArea2 as central widget.
   setupViewArea();
 
+  // Setup dock widgets (before toolbar, so the Windows submenu can enumerate them).
+  setupDocks();
+
   // Setup tool bar.
   setupToolBar();
-
-  // Setup dock widgets.
-  setupDocks();
 
   setupSystemTray();
 
@@ -254,20 +256,35 @@ void MainWindow2::setupViewArea() {
   setCentralWidget(m_viewArea);
 }
 
+void MainWindow2::setupOutlineViewer() {
+  m_outlineViewer = new OutlineViewer(m_serviceLocator, QString(), this);
+}
+
 void MainWindow2::setupDocks() {
   setupNotebookExplorer();
+
+  setupOutlineViewer();
 
   m_dockWidgetHelper.setupDocks();
 
   // Wire ViewAreaController's locateNodeRequested to NotebookExplorer2.
   connect(m_viewArea->getController(), &ViewAreaController::locateNodeRequested,
           m_notebookExplorer, &NotebookExplorer2::locateNode);
+
+  // Wire current-window changes to the outline viewer.
+  connect(m_viewArea->getController(), &ViewAreaController::currentViewWindowChanged,
+          this, [this]() {
+            auto *win = m_viewArea->getCurrentViewWindow();
+            m_outlineViewer->setOutlineProvider(win ? win->getOutlineProvider() : nullptr);
+          });
 }
 
 QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const {
   switch (p_dockType) {
     case DockWidgetHelper::DockType::NavigationDock:
       return m_notebookExplorer;
+    case DockWidgetHelper::DockType::OutlineDock:
+      return m_outlineViewer;
     default:
       return nullptr;
   }
@@ -311,19 +328,12 @@ void MainWindow2::setContentAreaExpanded(bool p_expanded) {
   m_contentAreaExpanded = p_expanded;
 
   if (m_contentAreaExpanded) {
-    // Hide all dock widgets.
-    for (auto dock : m_dockWidgetHelper.getDocks()) {
-      if (dock && dock->isVisible()) {
-        dock->hide();
-      }
-    }
+    // Save visible docks and hide non-floating/non-keep docks.
+    m_visibleDocksBeforeExpand = m_dockWidgetHelper.hideDocks();
   } else {
-    // Restore dock widgets visibility.
-    // For now, just show the navigation dock.
-    auto *navDock = m_dockWidgetHelper.getDock(DockWidgetHelper::DockType::NavigationDock);
-    if (navDock) {
-      navDock->show();
-    }
+    // Restore dock widgets to their previous visibility.
+    m_dockWidgetHelper.restoreDocks(m_visibleDocksBeforeExpand);
+    m_visibleDocksBeforeExpand.clear();
   }
 
   emit layoutChanged();

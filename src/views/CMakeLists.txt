@@ -3,6 +3,7 @@ target_sources(vnote PRIVATE
     filenodedelegate.cpp filenodedelegate.h
     filelistview.cpp filelistview.h
     notebooknodeview.cpp notebooknodeview.h
+    outlineview.cpp outlineview.h
     inodeexplorer.h
     combinednodeexplorer.cpp combinednodeexplorer.h
     twocolumnsnodeexplorer.cpp twocolumnsnodeexplorer.h

@@ -11,6 +11,7 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QToolBar>
+#include <QToolButton>
 
 #include <vtextedit/pegmarkdownhighlighter.h>
 #include <vtextedit/vtextedit.h>
@@ -36,6 +37,8 @@
 #include "editors/markdownvieweradapter.h"
 #include "editors/previewhelper.h"
 #include "editors/statuswidget.h"
+#include "outlinepopup.h"
+#include "outlineprovider.h"
 #include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
 
@@ -52,6 +55,7 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
   m_editorController = new MarkdownEditorController(p_services, this);
   m_windowController = new MarkdownViewWindowController(p_services, this);
 
+  setupOutlineProvider();
   setupUI();
   setupPreviewHelper();
 
@@ -134,8 +138,20 @@ void MarkdownViewWindow2::setupToolBar() {
   addAction(toolBar, ViewWindowToolBarHelper2::TypeImage);
   addAction(toolBar, ViewWindowToolBarHelper2::TypeTable);
 
-  // Right-side actions: spacer + live preview + layout toggle + find-and-replace.
+  // Right-side actions: spacer + outline + live preview + layout toggle + find-and-replace.
   ViewWindowToolBarHelper2::addSpacer(toolBar);
+
+  // Outline popup button (right corner, first): wire it to this window's outline provider.
+  {
+    auto *outlineAct = addAction(toolBar, ViewWindowToolBarHelper2::Outline);
+    auto *toolBtn = dynamic_cast<QToolButton *>(toolBar->widgetForAction(outlineAct));
+    if (toolBtn) {
+      auto *outlinePopup = dynamic_cast<OutlinePopup *>(toolBtn->menu());
+      if (outlinePopup) {
+        outlinePopup->setOutlineProvider(m_outlineProvider);
+      }
+    }
+  }
 
   // Live preview toggle (visible only in Edit mode).
   {
@@ -329,6 +345,19 @@ void MarkdownViewWindow2::setupViewer() {
 
   // Print finished cleanup.
   connect(m_viewer, &MarkdownViewer::printFinished, this, &MarkdownViewWindow2::onPrintFinished);
+
+  // Outline pipeline: viewer headings -> OutlineProvider.
+  connect(adapterObj, &MarkdownViewerAdapter::headingsChanged, this, [this]() {
+    if (isReadMode()) {
+      auto outline = headingsToOutline(adapter()->getHeadings());
+      m_outlineProvider->setOutline(outline);
+    }
+  });
+  connect(adapterObj, &MarkdownViewerAdapter::currentHeadingChanged, this, [this]() {
+    if (isReadMode()) {
+      m_outlineProvider->setCurrentHeadingIndex(adapter()->getCurrentHeadingIndex());
+    }
+  });
 }
 
 // ============ setupPreviewHelper ============
@@ -342,6 +371,57 @@ void MarkdownViewWindow2::setupPreviewHelper() {
   updatePreviewHelperFromConfig(mdConfig);
 }
 
+// ============ setupOutlineProvider ============
+
+void MarkdownViewWindow2::setupOutlineProvider() {
+  m_outlineProvider.reset(new OutlineProvider(nullptr));
+
+  // When the outline heading is clicked, scroll the active view to that heading.
+  connect(m_outlineProvider.data(), &OutlineProvider::headingClicked, this, [this](int p_idx) {
+    switch (m_mode) {
+    case ViewWindowMode::Read:
+      if (adapter()) {
+        adapter()->scrollToHeading(p_idx);
+      }
+      break;
+    case ViewWindowMode::Edit:
+      if (m_editor) {
+        m_editor->scrollToHeading(p_idx);
+      }
+      break;
+    default:
+      break;
+    }
+  });
+}
+
+QSharedPointer<OutlineProvider> MarkdownViewWindow2::getOutlineProvider() const {
+  return m_outlineProvider;
+}
+
+template <class T>
+QSharedPointer<Outline> MarkdownViewWindow2::headingsToOutline(const QVector<T> &p_headings) {
+  auto outline = QSharedPointer<Outline>::create();
+  if (!p_headings.isEmpty()) {
+    outline->m_headings.reserve(p_headings.size());
+    for (const auto &heading : p_headings) {
+      outline->m_headings.push_back(Outline::Heading(heading.m_name, heading.m_level));
+    }
+  }
+
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  const auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
+  if (mdConfig.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Edit) {
+    outline->m_sectionNumberBaseLevel = -1;
+  } else {
+    outline->m_sectionNumberBaseLevel = mdConfig.getSectionNumberBaseLevel();
+    outline->m_sectionNumberEndingDot = mdConfig.getSectionNumberStyle() ==
+                                        MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot;
+  }
+
+  return outline;
+}
+
 // ============ connectEditorSignals ============
 
 void MarkdownViewWindow2::connectEditorSignals() {
@@ -353,6 +433,19 @@ void MarkdownViewWindow2::connectEditorSignals() {
   connect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, this, [this]() {
     if (m_propagateEditorToBuffer) {
       onEditorContentsChanged();
+    }
+  });
+
+  // Outline pipeline: editor headings -> OutlineProvider.
+  connect(m_editor, &MarkdownEditor::headingsChanged, this, [this]() {
+    if (!isReadMode()) {
+      auto outline = headingsToOutline(m_editor->getHeadings());
+      m_outlineProvider->setOutline(outline);
+    }
+  });
+  connect(m_editor, &MarkdownEditor::currentHeadingChanged, this, [this]() {
+    if (!isReadMode()) {
+      m_outlineProvider->setCurrentHeadingIndex(m_editor->getCurrentHeadingIndex());
     }
   });
 }
