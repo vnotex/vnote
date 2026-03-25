@@ -128,6 +128,7 @@ target_sources(vnote PRIVATE
     styleditemdelegate.cpp styleditemdelegate.h
     systemtrayhelper.cpp systemtrayhelper.h
     tagexplorer.cpp tagexplorer.h
+    tagexplorer2.cpp tagexplorer2.h
     tagpopup.cpp tagpopup.h
     tagviewer.cpp tagviewer.h
     textviewwindow.cpp textviewwindow.h
