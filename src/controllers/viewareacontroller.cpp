@@ -960,15 +960,14 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
     QJsonArray bufferIds = wsConfig.value(QStringLiteral("bufferIds")).toArray();
     QString currentBufferId = wsConfig.value(QStringLiteral("currentBufferId")).toString();
 
-    // Read buffer view modes from workspace metadata.
-    QJsonObject metadata = wsConfig.value(QStringLiteral("metadata")).toObject();
-    QJsonObject bufferModes = metadata.value(QStringLiteral("bufferModes")).toObject();
+    // Per-buffer metadata is now stored in "bufferMetadata" (native vxcore field).
+    QJsonObject bufferMetadata = wsConfig.value(QStringLiteral("bufferMetadata")).toObject();
 
     qInfo() << "  Workspace" << wsId
             << "name:" << wsConfig.value(QStringLiteral("name")).toString()
             << "buffers:" << bufferIds
             << "currentBuffer:" << currentBufferId
-            << "bufferModes:" << bufferModes.keys();
+            << "bufferMetadata keys:" << bufferMetadata.keys();
 
     if (bufferIds.isEmpty()) {
       qInfo() << "    (no buffers, skipping)";
@@ -984,16 +983,19 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
       if (bufferId.isEmpty()) {
         continue;
       }
-      // Resolve saved view mode for this buffer.
+      // Resolve saved view mode and cursor position from per-buffer metadata.
       ViewWindowMode mode = ViewWindowMode::Read;
-      QString modeStr = bufferModes.value(bufferId).toString();
+      int lineNumber = -1;
+      QJsonObject bufMeta = bufferMetadata.value(bufferId).toObject();
+      QString modeStr = bufMeta.value(QStringLiteral("mode")).toString();
       if (modeStr == QStringLiteral("Edit")) {
         mode = ViewWindowMode::Edit;
       }
+      lineNumber = bufMeta.value(QStringLiteral("cursorPosition")).toInt(-1);
       qInfo() << "    Opening buffer" << bufferId
               << (bufferId == currentBufferId ? "(current)" : "(non-current)")
-              << "mode:" << modeStr;
-      openRestoredBuffer(bufferSvc, wsId, bufferId, false, mode);
+              << "mode:" << modeStr << "cursor:" << lineNumber;
+      openRestoredBuffer(bufferSvc, wsId, bufferId, false, mode, lineNumber);
     }
 
     // After all buffers are opened in order, set the current buffer's tab as active.
@@ -1050,7 +1052,7 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
 void ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
                                             const QString &p_workspaceId,
                                             const QString &p_bufferId, bool p_focus,
-                                            ViewWindowMode p_mode) {
+                                            ViewWindowMode p_mode, int p_lineNumber) {
   Buffer2 buf = p_bufferSvc->getBufferHandle(p_bufferId);
   if (!buf.isValid()) {
     qWarning() << "    Failed to get buffer handle:" << p_bufferId;
@@ -1071,11 +1073,13 @@ void ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
   qInfo() << "    Opening restored buffer: buffer:" << p_bufferId
           << "path:" << buf.nodeId().relativePath
           << "type:" << fileType << "workspace:" << p_workspaceId
-          << "focus:" << p_focus << "mode:" << static_cast<int>(p_mode);
+          << "focus:" << p_focus << "mode:" << static_cast<int>(p_mode)
+          << "lineNumber:" << p_lineNumber;
 
   FileOpenSettings settings;
   settings.m_focus = p_focus;
   settings.m_mode = p_mode;
+  settings.m_lineNumber = p_lineNumber;
 
   if (m_view) { m_view->openBuffer(buf, fileType, p_workspaceId, settings); }
 }

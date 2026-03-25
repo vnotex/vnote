@@ -143,6 +143,20 @@ void TextViewWindow2::setMode(ViewWindowMode p_mode) {
   Q_ASSERT(false);
 }
 
+int TextViewWindow2::getCursorPosition() const {
+  if (m_editor) {
+    return m_editor->getTextEdit()->textCursor().blockNumber();
+  }
+  return -1;
+}
+
+int TextViewWindow2::getScrollPosition() const {
+  if (m_editor) {
+    return m_editor->getTextEdit()->verticalScrollBar()->value();
+  }
+  return -1;
+}
+
 void TextViewWindow2::handleEditorConfigChange() {
   // Always update layout mode (WidgetConfig changes don't affect editor config revision).
   ViewWindow2::handleEditorConfigChange();

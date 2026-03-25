@@ -198,6 +198,42 @@ bool WorkspaceCoreService::setWorkspaceMetadata(const QString &p_workspaceId,
   return true;
 }
 
+QJsonObject WorkspaceCoreService::getBufferMetadata(const QString &p_workspaceId,
+                                                     const QString &p_bufferId) const {
+  if (!checkContext()) {
+    return QJsonObject();
+  }
+
+  char *json = nullptr;
+  VxCoreError err = vxcore_workspace_get_buffer_metadata(
+      m_context, p_workspaceId.toUtf8().constData(),
+      p_bufferId.toUtf8().constData(), &json);
+  if (err != VXCORE_OK) {
+    qWarning() << "getBufferMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QJsonObject();
+  }
+  return parseJsonObjectFromCStr(json);
+}
+
+bool WorkspaceCoreService::setBufferMetadata(const QString &p_workspaceId,
+                                              const QString &p_bufferId,
+                                              const QJsonObject &p_metadata) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  QByteArray json = QJsonDocument(p_metadata).toJson(QJsonDocument::Compact);
+
+  VxCoreError err = vxcore_workspace_set_buffer_metadata(
+      m_context, p_workspaceId.toUtf8().constData(),
+      p_bufferId.toUtf8().constData(), json.constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "setBufferMetadata failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
+  }
+  return true;
+}
+
 // Hook-firing methods for ViewArea events.
 bool WorkspaceCoreService::fireViewWindowBeforeOpen(const ViewWindowOpenEvent &p_event) {
   return m_hookMgr && m_hookMgr->doAction(HookNames::ViewWindowBeforeOpen, p_event);

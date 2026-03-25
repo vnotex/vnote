@@ -75,6 +75,14 @@ public:
   // Set workspace metadata (arbitrary JSON object).
   bool setWorkspaceMetadata(const QString &p_workspaceId, const QJsonObject &p_metadata);
 
+  // Get per-buffer metadata within a workspace.
+  // Returns JSON object with buffer-specific metadata, or empty object if not found.
+  QJsonObject getBufferMetadata(const QString &p_workspaceId, const QString &p_bufferId) const;
+
+  // Set per-buffer metadata within a workspace.
+  bool setBufferMetadata(const QString &p_workspaceId, const QString &p_bufferId,
+                         const QJsonObject &p_metadata);
+
   // ============ Hook Firing (ViewArea events) ============
   // These methods own the hook contract for view area operations.
   // Controllers call these instead of firing hooks directly.

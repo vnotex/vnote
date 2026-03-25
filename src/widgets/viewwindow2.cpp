@@ -138,6 +138,14 @@ ViewWindowMode ViewWindow2::getMode() const {
   return m_mode;
 }
 
+int ViewWindow2::getCursorPosition() const {
+  return -1;
+}
+
+int ViewWindow2::getScrollPosition() const {
+  return -1;
+}
+
 bool ViewWindow2::isModified() const {
   // Use local dirty flag OR vxcore modified flag.
   // m_editorDirty is set immediately on keystroke;

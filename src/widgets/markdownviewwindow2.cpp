@@ -1013,3 +1013,17 @@ int MarkdownViewWindow2::getReadLineNumber() const {
 bool MarkdownViewWindow2::isReadMode() const {
   return m_mode == ViewWindowMode::Read;
 }
+
+int MarkdownViewWindow2::getCursorPosition() const {
+  if (m_mode == ViewWindowMode::Edit && m_editor) {
+    return m_editor->getTextEdit()->textCursor().blockNumber();
+  }
+  return -1;
+}
+
+int MarkdownViewWindow2::getScrollPosition() const {
+  if (m_mode == ViewWindowMode::Edit && m_editor) {
+    return m_editor->getTextEdit()->verticalScrollBar()->value();
+  }
+  return -1;
+}

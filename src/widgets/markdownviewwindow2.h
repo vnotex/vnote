@@ -42,6 +42,10 @@ public:
 
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
+  int getCursorPosition() const Q_DECL_OVERRIDE;
+
+  int getScrollPosition() const Q_DECL_OVERRIDE;
+
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
 

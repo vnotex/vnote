@@ -89,6 +89,16 @@ public:
   // Get the current view mode (Read or Edit).
   ViewWindowMode getMode() const;
 
+  // Get cursor position for session persistence.
+  // Returns the cursor's block (line) number, or -1 if unavailable.
+  // Subclasses override to provide actual position from their editor widget.
+  virtual int getCursorPosition() const;
+
+  // Get scroll position for session persistence.
+  // Returns the vertical scrollbar value, or -1 if unavailable.
+  // Subclasses override to provide actual position from their editor widget.
+  virtual int getScrollPosition() const;
+
   // Set view mode (Read/Edit). Subclasses implement mode switching and UI updates.
   // Pure virtual: must be implemented by subclasses.
   virtual void setMode(ViewWindowMode p_mode) = 0;
