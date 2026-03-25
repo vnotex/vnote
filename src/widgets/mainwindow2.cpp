@@ -285,6 +285,10 @@ void MainWindow2::setupDocks() {
             auto *win = m_viewArea->getCurrentViewWindow();
             m_outlineViewer->setOutlineProvider(win ? win->getOutlineProvider() : nullptr);
           });
+
+  // Wire notebook changes to TagExplorer2.
+  connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged,
+          m_tagExplorer, &TagExplorer2::setNotebookId);
 }
 
 QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const {

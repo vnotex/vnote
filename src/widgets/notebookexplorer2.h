@@ -101,6 +101,9 @@ private slots:
   void onErrorOccurred(const QString &p_title, const QString &p_message);
   void onInfoMessage(const QString &p_title, const QString &p_message);
 
+signals:
+  void currentNotebookChanged(const QString &p_notebookId);
+
 private:
   void setupUI();
   void setupTitleBar();

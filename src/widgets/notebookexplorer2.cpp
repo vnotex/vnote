@@ -510,6 +510,8 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
   if (m_nodeExplorer) {
     m_nodeExplorer->setNotebookId(p_notebookId);
   }
+
+  emit currentNotebookChanged(p_notebookId);
 }
 
 QString NotebookExplorer2::currentNotebookId() const {

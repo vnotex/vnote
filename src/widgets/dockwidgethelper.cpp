@@ -96,27 +96,27 @@ void DockWidgetHelper::setupDocks() {
   if (setupDock(DockType::NavigationDock, tr("Notebooks"), QStringLiteral("NavigationDock.vnotex"),
                     Qt::LeftDockWidgetArea, Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea,
                     true)) {
-    tabifiedDockIndex.append(m_docks.size() - 1);
+    tabifiedDockIndex.append(DockType::NavigationDock);
   }
 
   if (setupDock(DockType::HistoryDock, tr("History"), QStringLiteral("HistoryDock.vnotex"),
                     Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, false)) {
-    tabifiedDockIndex.append(m_docks.size() - 1);
+    tabifiedDockIndex.append(DockType::HistoryDock);
   }
 
   if (setupDock(DockType::TagDock, tr("Tags"), QStringLiteral("TagDock.vnotex"), Qt::LeftDockWidgetArea,
                     Qt::AllDockWidgetAreas, false)) {
-    tabifiedDockIndex.append(m_docks.size() - 1);
+    tabifiedDockIndex.append(DockType::TagDock);
   }
 
   if (setupDock(DockType::SearchDock, tr("Search"), QStringLiteral("SearchDock.vnotex"),
                     Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, false)) {
-    tabifiedDockIndex.append(m_docks.size() - 1);
+    tabifiedDockIndex.append(DockType::SearchDock);
   }
 
   if (setupDock(DockType::SnippetDock, tr("Snippets"), QStringLiteral("SnippetDock.vnotex"),
                     Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, false)) {
-    tabifiedDockIndex.append(m_docks.size() - 1);
+    tabifiedDockIndex.append(DockType::SnippetDock);
   }
 
   setupDock(DockType::OutlineDock, tr("Outline"), QStringLiteral("OutlineDock.vnotex"),
