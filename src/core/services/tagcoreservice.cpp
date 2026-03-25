@@ -139,7 +139,9 @@ QJsonArray TagCoreService::searchByTags(const QString &p_notebookId, const QStri
     tagsArray.append(tag);
   }
 
-  const QByteArray queryJson = QJsonDocument(tagsArray).toJson(QJsonDocument::Compact);
+  QJsonObject queryObj;
+  queryObj["tags"] = tagsArray;
+  const QByteArray queryJson = QJsonDocument(queryObj).toJson(QJsonDocument::Compact);
 
   char *resultsJson = nullptr;
   VxCoreError err = vxcore_search_by_tags(m_context,
@@ -152,7 +154,10 @@ QJsonArray TagCoreService::searchByTags(const QString &p_notebookId, const QStri
     return QJsonArray();
   }
 
-  return parseJsonArrayFromCStr(resultsJson);
+  // vxcore returns {"matchCount": N, "matches": [...], "truncated": bool}.
+  // Extract the "matches" array from the result object.
+  QJsonObject resultObj = parseJsonObjectFromCStr(resultsJson);
+  return resultObj.value("matches").toArray();
 }
 
 // Private methods.
