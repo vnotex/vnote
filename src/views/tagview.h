@@ -21,6 +21,9 @@ public:
   // Get all currently selected tag names
   QStringList selectedTagNames() const;
 
+  // Expand ancestors, select, and scroll to a tag by name.
+  void selectAndScrollToTag(const QString &p_tagName);
+
 signals:
   // Emitted on double-click or Enter
   void tagActivated(const QString &p_tagName);

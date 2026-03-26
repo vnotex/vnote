@@ -34,6 +34,12 @@ public:
   bool untagFile(const QString &p_notebookId, const QString &p_filePath, const QString &p_tagName);
   QJsonArray searchByTags(const QString &p_notebookId, const QStringList &p_tags);
 
+  // Find files by tags using efficient database lookup (via vxcore_tag_find_files).
+  // p_op: "AND" to match files with ALL tags, "OR" to match files with ANY tag.
+  // Returns a QJsonArray of match objects: [{"filePath":"...","fileName":"...","tags":[...]}, ...]
+  QJsonArray findFilesByTags(const QString &p_notebookId, const QStringList &p_tags,
+                             const QString &p_op = QString(QLatin1String("AND")));
+
 private:
   // Check context validity before operations.
   bool checkContext() const;

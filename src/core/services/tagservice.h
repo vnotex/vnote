@@ -69,6 +69,11 @@ public:
   // Search files by tags. No hooks.
   QJsonArray searchByTags(const QString &p_notebookId, const QStringList &p_tags);
 
+  // Find files by tags using efficient database lookup. No hooks.
+  // p_op: "AND" to match files with ALL tags, "OR" to match files with ANY tag.
+  QJsonArray findFilesByTags(const QString &p_notebookId, const QStringList &p_tags,
+                             const QString &p_op = QString(QLatin1String("AND")));
+
 private:
   HookManager *m_hookMgr = nullptr;
 };

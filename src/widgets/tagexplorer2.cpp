@@ -3,8 +3,10 @@
 #include <QDataStream>
 #include <QIODevice>
 #include <QInputDialog>
+#include <QMenu>
 #include <QMessageBox>
 #include <QSplitter>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 #include <controllers/tagcontroller.h>
@@ -72,12 +74,20 @@ void TagExplorer2::setupUI() {
   connect(m_tagController, &TagController::tagOperationCompleted,
           m_tagModel, &TagModel::reload);
 
-  // 6. Tag compatibility changed (store for future use)
+  // 6. After tag creation, locate the new tag in the tree.
+  connect(m_tagController, &TagController::tagCreated,
+          m_tagView, &TagView::selectAndScrollToTag);
+
+  // 7. Tag compatibility changed (store for future use)
   connect(m_tagController, &TagController::tagCompatibilityChanged,
           this, [](const QStringList &p_incompatibleTags) {
             Q_UNUSED(p_incompatibleTags);
             // TODO: Grey out incompatible tags in TagView
           });
+
+  // 8. Context menu on tag tree
+  connect(m_tagView, &TagView::contextMenuRequested,
+          this, &TagExplorer2::onContextMenuRequested);
 
   setFocusProxy(m_tagView);
 }
@@ -87,15 +97,17 @@ void TagExplorer2::setupTitleBar() {
       new TitleBar(m_services.get<ThemeService>(), QString(), false, TitleBar::Action::Menu, this);
   m_titleBar->setActionButtonsAlwaysShown(true);
 
+  // + button for New Tag
+  auto *newTagBtn =
+      m_titleBar->addActionButton(QStringLiteral("add.svg"), tr("New Tag"));
+  connect(newTagBtn, &QToolButton::clicked, this, [this]() {
+    m_tagController->onNewTagAction(m_notebookId);
+  });
+
   setupTitleBarMenu();
 }
 
 void TagExplorer2::setupTitleBarMenu() {
-  // New Tag action
-  m_titleBar->addMenuAction(tr("New Tag"), this, [this]() {
-    m_tagController->onNewTagAction(m_notebookId);
-  });
-
   // Two Columns toggle
   auto *twoColumnsAct = m_titleBar->addMenuAction(tr("Two Columns"), this, [this](bool p_checked) {
     m_splitter->setOrientation(p_checked ? Qt::Horizontal : Qt::Vertical);
@@ -137,17 +149,30 @@ void TagExplorer2::restoreState(const QByteArray &p_data) {
 }
 
 void TagExplorer2::onNewTagRequested(const QString &p_notebookId) {
+  // Use selected tag as parent if available.
+  const QStringList selected = m_tagView->selectedTagNames();
+  const QString parentTag = selected.isEmpty() ? QString() : selected.first();
+  const QString parentPath = parentTag.isEmpty() ? QString() : m_tagModel->fullTagPath(parentTag);
+
+  const QString label = parentPath.isEmpty()
+      ? tr("Tag path (e.g. tag1/tag2/tag3):")
+      : tr("Tag path under \"%1\" (e.g. child1/child2):").arg(parentPath);
+
   bool ok = false;
-  QString tagName = QInputDialog::getText(window(), tr("New Tag"), tr("Tag name:"),
+  QString tagPath = QInputDialog::getText(window(), tr("New Tag"), label,
                                           QLineEdit::Normal, QString(), &ok);
-  if (ok && !tagName.isEmpty()) {
-    m_tagController->handleNewTagResult(p_notebookId, tagName.trimmed());
+  if (ok && !tagPath.isEmpty()) {
+    QString fullPath = tagPath.trimmed();
+    if (!parentPath.isEmpty()) {
+      fullPath = parentPath + QLatin1Char('/') + fullPath;
+    }
+    m_tagController->handleNewTagResult(p_notebookId, fullPath);
   }
 }
 
 void TagExplorer2::onDeleteTagRequested(const QString &p_notebookId, const QString &p_tagName) {
   int ret = QMessageBox::question(
-      window(), tr("Delete Tag"),
+      window(), tr("Delete"),
       tr("Are you sure you want to delete tag \"%1\"?").arg(p_tagName),
       QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
   if (ret == QMessageBox::Yes) {
@@ -157,4 +182,20 @@ void TagExplorer2::onDeleteTagRequested(const QString &p_notebookId, const QStri
 
 void TagExplorer2::onErrorOccurred(const QString &p_title, const QString &p_message) {
   QMessageBox::critical(window(), p_title, p_message);
+}
+
+void TagExplorer2::onContextMenuRequested(const QString &p_tagName, const QPoint &p_globalPos) {
+  QMenu menu(this);
+
+  menu.addAction(tr("New Tag"), this, [this]() {
+    m_tagController->onNewTagAction(m_notebookId);
+  });
+
+  if (!p_tagName.isEmpty()) {
+    menu.addAction(tr("Delete"), this, [this, p_tagName]() {
+      m_tagController->onDeleteTagAction(m_notebookId, p_tagName);
+    });
+  }
+
+  menu.exec(p_globalPos);
 }

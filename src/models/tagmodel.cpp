@@ -2,13 +2,17 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QSet>
 
 #include <core/services/tagcoreservice.h>
+#include <gui/services/themeservice.h>
+#include <utils/iconutils.h>
 
 using namespace vnotex;
 
 TagModel::TagModel(ServiceLocator &p_services, QObject *p_parent)
     : QAbstractItemModel(p_parent), m_services(p_services) {
+  initTagIcon();
 }
 
 TagModel::~TagModel() {
@@ -105,6 +109,9 @@ QVariant TagModel::data(const QModelIndex &p_index, int p_role) const {
   case Qt::DisplayRole:
   case TagNameRole:
     return info.name;
+
+  case Qt::DecorationRole:
+    return m_tagIcon;
 
   case TagParentRole:
     return info.parent;
@@ -287,4 +294,36 @@ QString TagModel::tagNameForIndexId(quintptr p_indexId) const {
   }
 
   return it.value();
+}
+
+QString TagModel::fullTagPath(const QString &p_tagName) const {
+  if (p_tagName.isEmpty() || !m_nodeCache.contains(p_tagName)) {
+    return p_tagName;
+  }
+
+  QStringList parts;
+  QString current = p_tagName;
+  // Walk up the parent chain, guard against cycles.
+  QSet<QString> visited;
+  while (!current.isEmpty() && !visited.contains(current)) {
+    visited.insert(current);
+    parts.prepend(current);
+    auto it = m_nodeCache.find(current);
+    if (it == m_nodeCache.end()) {
+      break;
+    }
+    current = it.value().parent;
+  }
+
+  return parts.join(QLatin1Char('/'));
+}
+
+void TagModel::initTagIcon() {
+  auto *themeService = m_services.get<ThemeService>();
+  if (themeService) {
+    const QString iconFile = themeService->getIconFile(QStringLiteral("tag.svg"));
+    if (!iconFile.isEmpty()) {
+      m_tagIcon = IconUtils::fetchIcon(iconFile);
+    }
+  }
 }

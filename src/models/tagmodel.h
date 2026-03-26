@@ -3,6 +3,7 @@
 
 #include <QAbstractItemModel>
 #include <QHash>
+#include <QIcon>
 #include <QJsonValue>
 #include <QMap>
 #include <QVector>
@@ -48,6 +49,10 @@ public:
   QString tagNameFromIndex(const QModelIndex &p_index) const;
   QModelIndex indexFromTagName(const QString &p_tagName) const;
 
+  // Reconstruct full tag path by walking the parent chain.
+  // E.g. tag "c" with parent "b" with parent "a" returns "a/b/c".
+  QString fullTagPath(const QString &p_tagName) const;
+
 signals:
   void notebookChanged();
 
@@ -55,9 +60,11 @@ private:
   int childRow(const QString &p_parentTagName, const QString &p_childTagName) const;
   quintptr indexIdForTagName(const QString &p_tagName) const;
   QString tagNameForIndexId(quintptr p_indexId) const;
+  void initTagIcon();
 
   ServiceLocator &m_services;
   QString m_notebookId;
+  QIcon m_tagIcon;
   mutable QMap<QString, TagNodeInfo> m_nodeCache;
   mutable QMap<QString, QVector<QString>> m_childrenCache;
   mutable QHash<QString, quintptr> m_indexIdCache;

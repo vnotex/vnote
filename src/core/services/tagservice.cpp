@@ -147,3 +147,8 @@ QJsonArray TagService::listTags(const QString &p_notebookId) const {
 QJsonArray TagService::searchByTags(const QString &p_notebookId, const QStringList &p_tags) {
   return TagCoreService::searchByTags(p_notebookId, p_tags);
 }
+
+QJsonArray TagService::findFilesByTags(const QString &p_notebookId, const QStringList &p_tags,
+                                       const QString &p_op) {
+  return TagCoreService::findFilesByTags(p_notebookId, p_tags, p_op);
+}

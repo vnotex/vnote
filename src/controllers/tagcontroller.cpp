@@ -47,7 +47,7 @@ void TagController::onTagsSelected(const QStringList &p_selectedTags) {
     return;
   }
 
-  m_matchingNodes = tagService->searchByTags(notebookId, p_selectedTags);
+  m_matchingNodes = tagService->findFilesByTags(notebookId, p_selectedTags);
   emit matchingNodesChanged(m_matchingNodes);
 
   QSet<QString> selectedTagSet;
@@ -67,7 +67,7 @@ void TagController::onTagsSelected(const QStringList &p_selectedTags) {
       if (!tagName.isEmpty() && !selectedTagSet.contains(tagName)) {
         QStringList queryTags = p_selectedTags;
         queryTags.append(tagName);
-        if (tagCoreService->searchByTags(notebookId, queryTags).isEmpty()) {
+        if (tagCoreService->findFilesByTags(notebookId, queryTags).isEmpty()) {
           incompatibleTags.append(tagName);
         }
       }
@@ -172,12 +172,18 @@ void TagController::handleNewTagResult(const QString &p_notebookId, const QStrin
     return;
   }
 
-  if (!tagService->createTag(notebookId, p_tagName)) {
+  if (!tagService->createTagPath(notebookId, p_tagName)) {
     emit errorOccurred(tr("New Tag"), tr("Failed to create tag: ") + p_tagName);
     return;
   }
 
   emit tagOperationCompleted();
+
+  // Extract the leaf tag name (last component of the path) so the view can locate it.
+  const QString leafTag = p_tagName.section(QLatin1Char('/'), -1);
+  if (!leafTag.isEmpty()) {
+    emit tagCreated(leafTag);
+  }
 }
 
 void TagController::handleDeleteTagConfirmed(const QString &p_notebookId, const QString &p_tagName) {

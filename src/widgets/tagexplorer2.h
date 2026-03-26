@@ -38,6 +38,7 @@ private slots:
   void onNewTagRequested(const QString &p_notebookId);
   void onDeleteTagRequested(const QString &p_notebookId, const QString &p_tagName);
   void onErrorOccurred(const QString &p_title, const QString &p_message);
+  void onContextMenuRequested(const QString &p_tagName, const QPoint &p_globalPos);
 
 private:
   void setupUI();

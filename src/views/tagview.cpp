@@ -65,3 +65,32 @@ void TagView::onContextMenuRequested(const QPoint &p_pos) {
   const QString name = tagNameFromIndex(idx);
   emit contextMenuRequested(name, viewport()->mapToGlobal(p_pos));
 }
+
+void TagView::selectAndScrollToTag(const QString &p_tagName) {
+  if (p_tagName.isEmpty() || !model()) {
+    return;
+  }
+
+  auto *tagModel = qobject_cast<TagModel *>(model());
+  if (!tagModel) {
+    return;
+  }
+
+  QModelIndex idx = tagModel->indexFromTagName(p_tagName);
+  if (!idx.isValid()) {
+    return;
+  }
+
+  // Expand all ancestors so the tag is visible.
+  QModelIndex ancestor = idx.parent();
+  while (ancestor.isValid()) {
+    if (!isExpanded(ancestor)) {
+      expand(ancestor);
+    }
+    ancestor = ancestor.parent();
+  }
+
+  // Select and scroll.
+  selectionModel()->setCurrentIndex(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+  scrollTo(idx, QAbstractItemView::EnsureVisible);
+}

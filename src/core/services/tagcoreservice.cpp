@@ -160,6 +160,36 @@ QJsonArray TagCoreService::searchByTags(const QString &p_notebookId, const QStri
   return resultObj.value("matches").toArray();
 }
 
+QJsonArray TagCoreService::findFilesByTags(const QString &p_notebookId, const QStringList &p_tags,
+                                            const QString &p_op) {
+  if (!checkContext()) {
+    return QJsonArray();
+  }
+
+  QJsonArray tagsArray;
+  for (const auto &tag : p_tags) {
+    tagsArray.append(tag);
+  }
+  const QByteArray tagsJson = QJsonDocument(tagsArray).toJson(QJsonDocument::Compact);
+  const QByteArray opBytes = p_op.toUtf8();
+
+  char *resultsJson = nullptr;
+  VxCoreError err = vxcore_tag_find_files(m_context,
+                                          p_notebookId.toUtf8().constData(),
+                                          tagsJson.constData(),
+                                          opBytes.constData(),
+                                          &resultsJson);
+  if (err != VXCORE_OK) {
+    qWarning() << "findFilesByTags failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QJsonArray();
+  }
+
+  // vxcore returns {"matchCount": N, "matches": [...]}.
+  // Extract the "matches" array.
+  QJsonObject resultObj = parseJsonObjectFromCStr(resultsJson);
+  return resultObj.value(QLatin1String("matches")).toArray();
+}
+
 // Private methods.
 bool TagCoreService::checkContext() const {
   if (!m_context) {
