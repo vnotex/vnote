@@ -78,12 +78,9 @@ void TagExplorer2::setupUI() {
   connect(m_tagController, &TagController::tagCreated,
           m_tagView, &TagView::selectAndScrollToTag);
 
-  // 7. Tag compatibility changed (store for future use)
+  // 7. Tag compatibility changed -> model state update (MVC)
   connect(m_tagController, &TagController::tagCompatibilityChanged,
-          this, [](const QStringList &p_incompatibleTags) {
-            Q_UNUSED(p_incompatibleTags);
-            // TODO: Grey out incompatible tags in TagView
-          });
+          m_tagModel, &TagModel::setIncompatibleTags);
 
   // 8. Context menu on tag tree
   connect(m_tagView, &TagView::contextMenuRequested,
@@ -194,6 +191,17 @@ void TagExplorer2::onContextMenuRequested(const QString &p_tagName, const QPoint
   if (!p_tagName.isEmpty()) {
     menu.addAction(tr("Delete"), this, [this, p_tagName]() {
       m_tagController->onDeleteTagAction(m_notebookId, p_tagName);
+    });
+
+    menu.addAction(tr("Move"), this, [this, p_tagName]() {
+      bool ok = false;
+      QString newParent = QInputDialog::getText(
+          window(), tr("Move Tag"),
+          tr("Enter new parent tag (empty for root):"),
+          QLineEdit::Normal, QString(), &ok);
+      if (ok) {
+        m_tagController->onMoveTagAction(m_notebookId, p_tagName, newParent.trimmed());
+      }
     });
   }
 

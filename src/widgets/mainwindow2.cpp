@@ -16,6 +16,7 @@
 #include <core/coreconfig.h>
 #include <core/hooknames.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/sessionconfig.h>
 
@@ -124,6 +125,13 @@ void MainWindow2::loadStateAndGeometry() {
     m_notebookExplorer->restoreState(explorerState);
   }
 
+  if (m_tagExplorer) {
+    QByteArray tagExplorerState = sessionConfig.getTagExplorerSession();
+    if (!tagExplorerState.isEmpty()) {
+      m_tagExplorer->restoreState(tagExplorerState);
+    }
+  }
+
   // Load view area layout (new architecture).
   if (m_viewArea) {
     QJsonObject layout = sessionConfig.getViewAreaLayout();
@@ -227,6 +235,10 @@ void MainWindow2::saveStateAndGeometry() {
 
   sessionConfig.setNotebookExplorerSession(m_notebookExplorer->saveState());
 
+  if (m_tagExplorer) {
+    sessionConfig.setTagExplorerSession(m_tagExplorer->saveState());
+  }
+
   // Save view area layout (new architecture).
   if (m_viewArea) {
     QJsonObject layout = m_viewArea->saveLayout();
@@ -290,6 +302,15 @@ void MainWindow2::setupDocks() {
   // Wire notebook changes to TagExplorer2.
   connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged,
           m_tagExplorer, &TagExplorer2::setNotebookId);
+
+  // Wire TagExplorer2 node activation to buffer opening.
+  connect(m_tagExplorer, &TagExplorer2::openNodeRequested,
+          this, [this](const NodeIdentifier &p_nodeId) {
+            auto *bufferSvc = m_serviceLocator.get<BufferService>();
+            if (bufferSvc) {
+              bufferSvc->openBuffer(p_nodeId);
+            }
+          });
 }
 
 QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const {
@@ -447,4 +468,3 @@ void MainWindow2::quitApp() {
   m_requestQuit = 0;
   close();
 }
-

@@ -129,6 +129,11 @@ Qt::ItemFlags TagModel::flags(const QModelIndex &p_index) const {
     return Qt::NoItemFlags;
   }
 
+  const QString tagName = tagNameFromIndex(p_index);
+  if (m_incompatibleTags.contains(tagName)) {
+    return Qt::ItemIsSelectable;
+  }
+
   return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
@@ -226,6 +231,23 @@ void TagModel::reloadTag(const QString &p_tagName) {
   if (idx.isValid()) {
     emit dataChanged(idx, idx, {Qt::DisplayRole, TagNameRole, TagParentRole, TagMetadataRole});
   }
+}
+
+void TagModel::setIncompatibleTags(const QStringList &p_tags) {
+  QSet<QString> incompatibleTags;
+  for (const auto &tag : p_tags) {
+    if (!tag.isEmpty()) {
+      incompatibleTags.insert(tag);
+    }
+  }
+
+  if (m_incompatibleTags == incompatibleTags) {
+    return;
+  }
+
+  beginResetModel();
+  m_incompatibleTags = incompatibleTags;
+  endResetModel();
 }
 
 QString TagModel::tagNameFromIndex(const QModelIndex &p_index) const {

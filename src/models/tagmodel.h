@@ -6,6 +6,7 @@
 #include <QIcon>
 #include <QJsonValue>
 #include <QMap>
+#include <QSet>
 #include <QVector>
 
 #include <core/servicelocator.h>
@@ -45,6 +46,7 @@ public:
 
   void reload();
   void reloadTag(const QString &p_tagName);
+  void setIncompatibleTags(const QStringList &p_tags);
 
   QString tagNameFromIndex(const QModelIndex &p_index) const;
   QModelIndex indexFromTagName(const QString &p_tagName) const;
@@ -70,6 +72,7 @@ private:
   mutable QHash<QString, quintptr> m_indexIdCache;
   mutable QHash<quintptr, QString> m_indexIdLookup;
   mutable quintptr m_nextIndexId = 1;
+  QSet<QString> m_incompatibleTags;
 };
 
 } // namespace vnotex

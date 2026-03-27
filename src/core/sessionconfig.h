@@ -113,6 +113,9 @@ public:
   QByteArray getNotebookExplorerSession() const;
   void setNotebookExplorerSession(const QByteArray &p_bytes);
 
+  QByteArray getTagExplorerSession() const;
+  void setTagExplorerSession(const QByteArray &p_bytes);
+
   const QString &getFlashPage() const;
   void setFlashPage(const QString &p_file);
 
@@ -188,6 +191,8 @@ private:
   QJsonObject m_viewAreaLayout;
 
   QByteArray m_notebookExplorerSession;
+
+  QByteArray m_tagExplorerSession;
 
   QString m_flashPage;
 

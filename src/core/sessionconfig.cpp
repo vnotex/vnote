@@ -81,6 +81,9 @@ void SessionConfig::fromJson(const QJsonObject &p_jobj) {
   m_notebookExplorerSession =
       readByteArray(p_jobj, QStringLiteral("notebookExplorerSession"));
 
+  m_tagExplorerSession =
+      readByteArray(p_jobj, QStringLiteral("tagExplorerSession"));
+
   loadExternalPrograms(p_jobj);
 
   loadHistory(p_jobj);
@@ -174,6 +177,7 @@ QJsonObject SessionConfig::toJson() const {
     obj[QStringLiteral("viewAreaLayout")] = m_viewAreaLayout;
   }
   writeByteArray(obj, QStringLiteral("notebookExplorerSession"), m_notebookExplorerSession);
+  writeByteArray(obj, QStringLiteral("tagExplorerSession"), m_tagExplorerSession);
   obj[QStringLiteral("externalPrograms")] = saveExternalPrograms();
   obj[QStringLiteral("history")] = saveHistory();
   obj[QStringLiteral("quickNoteSchemes")] = saveQuickNoteSchemes();
@@ -294,6 +298,14 @@ QByteArray SessionConfig::getNotebookExplorerSession() const {
 
 void SessionConfig::setNotebookExplorerSession(const QByteArray &p_bytes) {
   updateConfigWithoutCheck(m_notebookExplorerSession, p_bytes, this);
+}
+
+QByteArray SessionConfig::getTagExplorerSession() const {
+  return m_tagExplorerSession;
+}
+
+void SessionConfig::setTagExplorerSession(const QByteArray &p_bytes) {
+  updateConfigWithoutCheck(m_tagExplorerSession, p_bytes, this);
 }
 
 QJsonObject SessionConfig::getViewAreaLayout() const { return m_viewAreaLayout; }
