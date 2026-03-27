@@ -138,6 +138,8 @@ void MarkdownViewWindow2::setupToolBar() {
   addAction(toolBar, ViewWindowToolBarHelper2::TypeImage);
   addAction(toolBar, ViewWindowToolBarHelper2::TypeTable);
 
+  addAction(toolBar, ViewWindowToolBarHelper2::Tag);
+
   // Right-side actions: spacer + outline + live preview + layout toggle + find-and-replace.
   ViewWindowToolBarHelper2::addSpacer(toolBar);
 

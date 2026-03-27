@@ -55,7 +55,10 @@ public:
     ToggleLivePreview,
 
     // Outline popup button.
-    Outline
+    Outline,
+
+    // Tag popup button.
+    Tag
   };
 
   ViewWindowToolBarHelper2() = delete;

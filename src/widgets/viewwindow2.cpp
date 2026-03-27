@@ -25,6 +25,7 @@
 #include "findandreplacewidget2.h"
 #include "messageboxhelper.h"
 #include "outlineprovider.h"
+#include "tagpopup2.h"
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpanel.h"
 #include "wordcountpopup2.h"
@@ -300,6 +301,7 @@ QToolBar *ViewWindow2::createToolBar(QWidget *p_parent) {
 }
 
 void ViewWindow2::addCommonToolBarActions(QToolBar *p_toolBar) {
+  addAction(p_toolBar, ViewWindowToolBarHelper2::Tag);
   ViewWindowToolBarHelper2::addSpacer(p_toolBar);
   addAction(p_toolBar, ViewWindowToolBarHelper2::ToggleLayoutMode);
   addAction(p_toolBar, ViewWindowToolBarHelper2::FindAndReplace);
@@ -446,6 +448,16 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
       act->setVisible(m_mode == ViewWindowMode::Edit);
     });
     break;
+
+  case ViewWindowToolBarHelper2::Tag: {
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+    Q_ASSERT(toolBtn);
+    auto *tagPopup = dynamic_cast<TagPopup2 *>(toolBtn->menu());
+    if (tagPopup) {
+      tagPopup->setNodeId(getBuffer().nodeId());
+    }
+    break;
+  }
 
   default:
     break;

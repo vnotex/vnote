@@ -17,6 +17,7 @@
 
 #include "editreaddiscardaction.h"
 #include "outlinepopup.h"
+#include "tagpopup2.h"
 #include "propertydefs.h"
 
 using namespace vnotex;
@@ -334,6 +335,19 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
     addButtonShortcut(toolBtn, editorConfig.getShortcut(Shortcut::Outline), p_shortcutWidget);
     auto *menu = new OutlinePopup(p_services, toolBtn, p_tb);
+    toolBtn->setMenu(menu);
+    break;
+  }
+
+  case Action::Tag: {
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("tag_editor.svg")),
+                          QObject::tr("Tags"));
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
+    Q_ASSERT(toolBtn);
+    toolBtn->setPopupMode(QToolButton::InstantPopup);
+    toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+    addButtonShortcut(toolBtn, editorConfig.getShortcut(Shortcut::Tag), p_shortcutWidget);
+    auto *menu = new TagPopup2(p_services, toolBtn, p_tb);
     toolBtn->setMenu(menu);
     break;
   }
