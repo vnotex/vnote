@@ -14,7 +14,7 @@
 #
 # =============================================================================
 
-find_package(Qt6 REQUIRED COMPONENTS Core Test Gui)
+find_package(Qt6 REQUIRED COMPONENTS Core Test Gui Widgets)
 
 # Helper function to create a test executable
 function(add_qt_test NAME)

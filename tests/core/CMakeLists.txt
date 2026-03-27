@@ -127,6 +127,26 @@ add_qt_test(test_tagservice
   GUILESS
 )
 
+add_qt_test(test_tagviewer2
+  SOURCES
+    test_tagviewer2.cpp
+    stubs_tagviewer2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/tagviewer2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/listwidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/styleditemdelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/simplesegmenthighlighter.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/iconutils.cpp
+  LINKS
+    core_services
+    vxcore
+    Qt6::Widgets
+)
+
+# TagViewer2 widget sources need src/gui in include path (for utils/widgetutils.h).
+target_include_directories(test_tagviewer2 PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
 add_qt_test(test_textviewwindowcontroller
   SOURCES
     test_textviewwindowcontroller.cpp
