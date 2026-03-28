@@ -58,6 +58,9 @@ public:
 signals:
   void notebookChanged();
 
+private slots:
+  void onTagsChanged(const QString &p_notebookId);
+
 private:
   int childRow(const QString &p_parentTagName, const QString &p_childTagName) const;
   quintptr indexIdForTagName(const QString &p_tagName) const;

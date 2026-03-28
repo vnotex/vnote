@@ -35,6 +35,7 @@ bool TagService::createTag(const QString &p_notebookId, const QString &p_tagName
 
   if (ok) {
     m_hookMgr->doAction(HookNames::TagAfterCreate, event);
+    emit tagsChanged(p_notebookId);
   }
   return ok;
 }
@@ -52,6 +53,7 @@ bool TagService::deleteTag(const QString &p_notebookId, const QString &p_tagName
 
   if (ok) {
     m_hookMgr->doAction(HookNames::TagAfterDelete, event);
+    emit tagsChanged(p_notebookId);
   }
   return ok;
 }
@@ -71,6 +73,7 @@ bool TagService::moveTag(const QString &p_notebookId, const QString &p_tagName,
 
   if (ok) {
     m_hookMgr->doAction(HookNames::TagAfterMove, event);
+    emit tagsChanged(p_notebookId);
   }
   return ok;
 }
@@ -92,6 +95,7 @@ bool TagService::tagFile(const QString &p_notebookId, const QString &p_filePath,
 
   if (ok) {
     m_hookMgr->doAction(HookNames::FileAfterTag, event);
+    emit tagsChanged(p_notebookId);
   }
   return ok;
 }
@@ -111,6 +115,7 @@ bool TagService::untagFile(const QString &p_notebookId, const QString &p_filePat
 
   if (ok) {
     m_hookMgr->doAction(HookNames::FileAfterUntag, event);
+    emit tagsChanged(p_notebookId);
   }
   return ok;
 }
@@ -130,6 +135,7 @@ bool TagService::updateFileTags(const QString &p_notebookId, const QString &p_fi
 
   if (ok) {
     m_hookMgr->doAction(HookNames::FileAfterTag, event);
+    emit tagsChanged(p_notebookId);
   }
   return ok;
 }
@@ -137,7 +143,11 @@ bool TagService::updateFileTags(const QString &p_notebookId, const QString &p_fi
 // ============ Pass-through (no hooks) ============
 
 bool TagService::createTagPath(const QString &p_notebookId, const QString &p_tagPath) {
-  return TagCoreService::createTagPath(p_notebookId, p_tagPath);
+  bool ok = TagCoreService::createTagPath(p_notebookId, p_tagPath);
+  if (ok) {
+    emit tagsChanged(p_notebookId);
+  }
+  return ok;
 }
 
 QJsonArray TagService::listTags(const QString &p_notebookId) const {

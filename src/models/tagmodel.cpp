@@ -5,6 +5,7 @@
 #include <QSet>
 
 #include <core/services/tagcoreservice.h>
+#include <core/services/tagservice.h>
 #include <gui/services/themeservice.h>
 #include <utils/iconutils.h>
 
@@ -13,6 +14,14 @@ using namespace vnotex;
 TagModel::TagModel(ServiceLocator &p_services, QObject *p_parent)
     : QAbstractItemModel(p_parent), m_services(p_services) {
   initTagIcon();
+
+  // Connect to TagService::tagsChanged so that tag mutations from any source
+  // (toolbar popup, explorer, etc.) trigger a model reload.
+  auto *tagService = m_services.get<TagService>();
+  if (tagService) {
+    connect(tagService->asQObject(), SIGNAL(tagsChanged(QString)), this,
+            SLOT(onTagsChanged(QString)));
+  }
 }
 
 TagModel::~TagModel() {
@@ -192,6 +201,12 @@ void TagModel::reload() {
   }
 
   endResetModel();
+}
+
+void TagModel::onTagsChanged(const QString &p_notebookId) {
+  if (p_notebookId == m_notebookId) {
+    reload();
+  }
 }
 
 void TagModel::reloadTag(const QString &p_tagName) {

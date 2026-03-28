@@ -74,6 +74,11 @@ public:
   QJsonArray findFilesByTags(const QString &p_notebookId, const QStringList &p_tags,
                              const QString &p_op = QString(QLatin1String("AND")));
 
+signals:
+  // Emitted after any tag mutation (create, delete, move, tag/untag file, update).
+  // Listeners should reload tag data for the given notebook.
+  void tagsChanged(const QString &p_notebookId);
+
 private:
   HookManager *m_hookMgr = nullptr;
 };
