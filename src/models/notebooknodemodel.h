@@ -10,6 +10,7 @@
 
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
+#include <models/inodelistmodel.h>
 
 namespace vnotex {
 
@@ -23,26 +24,10 @@ inline bool operator<(const NodeIdentifier &p_left, const NodeIdentifier &p_righ
 // A QAbstractItemModel implementation that exposes notebook node hierarchy
 // to Qt's Model/View framework. Uses NodeIdentifier/NodeInfo instead of Node*.
 // Data is fetched from NotebookService via ServiceLocator.
-class NotebookNodeModel : public QAbstractItemModel {
+class NotebookNodeModel : public QAbstractItemModel, public INodeListModel {
   Q_OBJECT
 
 public:
-  // Custom data roles for node information
-  enum Roles {
-    // New architecture roles (preferred)
-    NodeInfoRole = Qt::UserRole + 1, // NodeInfo struct
-    IsFolderRole,                    // bool - is folder
-    NodeIdentifierRole,              // NodeIdentifier struct
-    IsExternalRole,                  // bool - is external (unindexed) node
-
-    // Display roles
-    ChildCountRole,   // int - number of children
-    PathRole,         // QString - relative node path
-    ModifiedTimeRole, // QDateTime
-    CreatedTimeRole,  // QDateTime
-    PreviewRole       // QString - file content preview (lazy-loaded, files only)
-  };
-
   explicit NotebookNodeModel(ServiceLocator &p_services, QObject *p_parent = nullptr);
   ~NotebookNodeModel() override;
 
@@ -71,17 +56,24 @@ public:
 
   // Custom API
   void setNotebookId(const QString &p_notebookId);
-  QString getNotebookId() const;
+  QString getNotebookId() const override;
 
   // Set display root for flat view modes (e.g., file list showing one folder's contents)
   // When set, this folder's children appear at the model's root level
   void setDisplayRoot(const NodeIdentifier &p_folderId);
-  NodeIdentifier getDisplayRoot() const;
+  NodeIdentifier getDisplayRoot() const override;
 
   // NodeIdentifier <-> Index conversion
-  NodeIdentifier nodeIdFromIndex(const QModelIndex &p_index) const;
-  NodeInfo nodeInfoFromIndex(const QModelIndex &p_index) const;
-  QModelIndex indexFromNodeId(const NodeIdentifier &p_nodeId) const;
+  NodeIdentifier nodeIdFromIndex(const QModelIndex &p_index) const override;
+  NodeInfo nodeInfoFromIndex(const QModelIndex &p_index) const override;
+  QModelIndex indexFromNodeId(const NodeIdentifier &p_nodeId) const override;
+
+  // INodeListModel capability overrides.
+  bool supportsDragDrop() const override { return true; }
+  bool supportsPreview() const override { return true; }
+  bool supportsHierarchy() const override { return true; }
+  bool supportsExternalNodes() const override { return true; }
+  bool supportsDisplayRoot() const override { return true; }
 
   // Reload operations
   void reload();

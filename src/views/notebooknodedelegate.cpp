@@ -23,7 +23,7 @@ void NotebookNodeDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem
     return;
   }
 
-  NodeInfo nodeInfo = p_index.data(NotebookNodeModel::NodeInfoRole).value<NodeInfo>();
+  NodeInfo nodeInfo = p_index.data(INodeListModel::NodeInfoRole).value<NodeInfo>();
   if (!nodeInfo.isValid()) {
     QStyledItemDelegate::paint(p_painter, p_option, p_index);
     return;
@@ -174,7 +174,7 @@ void NotebookNodeDelegate::setEditorData(QWidget *p_editor, const QModelIndex &p
   }
 
   // Check if this is a folder - if so, keep default selectAll behavior
-  NodeInfo nodeInfo = p_index.data(NotebookNodeModel::NodeInfoRole).value<NodeInfo>();
+  NodeInfo nodeInfo = p_index.data(INodeListModel::NodeInfoRole).value<NodeInfo>();
   if (nodeInfo.isFolder) {
     return;
   }

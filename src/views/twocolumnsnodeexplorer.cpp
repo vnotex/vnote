@@ -470,7 +470,7 @@ void TwoColumnsNodeExplorer::onFolderSelectionChanged(const QList<NodeIdentifier
     // External folders cannot be listed - clear file view instead
     QModelIndex sourceIdx = m_folderModel->indexFromNodeId(folderId);
     if (sourceIdx.isValid()) {
-      bool isExternal = m_folderModel->data(sourceIdx, NotebookNodeModel::IsExternalRole).toBool();
+      bool isExternal = m_folderModel->data(sourceIdx, INodeListModel::IsExternalRole).toBool();
       if (isExternal) {
         // Clear file view by setting invalid display root
         m_fileModel->setDisplayRoot(NodeIdentifier());

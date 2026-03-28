@@ -25,7 +25,7 @@ void FileNodeDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem &p_
     return;
   }
 
-  NodeInfo nodeInfo = p_index.data(NotebookNodeModel::NodeInfoRole).value<NodeInfo>();
+  NodeInfo nodeInfo = p_index.data(INodeListModel::NodeInfoRole).value<NodeInfo>();
   if (!nodeInfo.isValid()) {
     QStyledItemDelegate::paint(p_painter, p_option, p_index);
     return;
@@ -128,7 +128,7 @@ void FileNodeDelegate::paintFileNode(QPainter *p_painter, const QStyleOptionView
 
   // Render preview text (two lines)
   // Fetch preview via model (lazy-loaded)
-  QString previewText = p_index.data(NotebookNodeModel::PreviewRole).toString();
+  QString previewText = p_index.data(INodeListModel::PreviewRole).toString();
   if (!previewText.isEmpty()) {
     // Set up preview font and color (already calculated previewFont/previewFm above)
     p_painter->setFont(previewFont);
@@ -303,7 +303,7 @@ QSize FileNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option, const QMo
   int totalHeight = line1Height + m_lineSpacing + previewBlockHeight + 2 * m_vPadding;
 
   // Line 4 (optional): tags line - only if node has tags
-  NodeInfo nodeInfo = p_index.data(NotebookNodeModel::NodeInfoRole).value<NodeInfo>();
+  NodeInfo nodeInfo = p_index.data(INodeListModel::NodeInfoRole).value<NodeInfo>();
   if (!nodeInfo.tags.isEmpty()) {
     // Tags use smaller font
     QFont tagFont = p_option.font;
