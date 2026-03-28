@@ -227,7 +227,7 @@ void FileListView::mouseDoubleClickEvent(QMouseEvent *p_event) {
   NodeInfo nodeInfo = nodeInfoFromIndex(idx);
   if (nodeInfo.isValid()) {
     // For files, activate (open)
-    if (!nodeInfo.isFolder) {
+    if (!nodeInfo.isFolder && m_controller) {
       m_controller->openNode(nodeInfo.id);
       p_event->accept();
       return;
@@ -242,7 +242,7 @@ void FileListView::keyPressEvent(QKeyEvent *p_event) {
   case Qt::Key_Return:
   case Qt::Key_Enter: {
     NodeInfo nodeInfo = nodeInfoFromIndex(currentIndex());
-    if (nodeInfo.isValid() && !nodeInfo.isFolder) {
+    if (nodeInfo.isValid() && !nodeInfo.isFolder && m_controller) {
       m_controller->openNode(nodeInfo.id);
       p_event->accept();
       return;
@@ -391,6 +391,10 @@ void FileListView::selectionChanged(const QItemSelection &p_selected,
 }
 
 void FileListView::onItemActivated(const QModelIndex &p_index) {
+  if (!m_controller) {
+    return;
+  }
+
   NodeInfo nodeInfo = nodeInfoFromIndex(p_index);
   if (nodeInfo.isValid() && !nodeInfo.isFolder) {
     m_controller->openNode(nodeInfo.id);

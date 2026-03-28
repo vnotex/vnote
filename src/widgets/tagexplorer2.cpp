@@ -1,19 +1,28 @@
 #include "tagexplorer2.h"
 
+#include <QApplication>
+#include <QClipboard>
 #include <QDataStream>
+#include <QDesktopServices>
+#include <QFileInfo>
 #include <QIODevice>
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
 #include <QSplitter>
 #include <QToolButton>
+#include <QUrl>
 #include <QVBoxLayout>
 
 #include <controllers/tagcontroller.h>
+#include <core/services/notebookcoreservice.h>
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
+#include <models/inodelistmodel.h>
+#include <models/tagfilemodel.h>
 #include <models/tagmodel.h>
-#include <views/tagnodelistview.h>
+#include <views/filelistview.h>
+#include <views/filenodedelegate.h>
 #include <views/tagview.h>
 #include <widgets/titlebar.h>
 
@@ -37,13 +46,24 @@ void TagExplorer2::setupUI() {
   m_tagModel = new TagModel(m_services, this);
   m_tagView = new TagView(this);
   m_tagView->setModel(m_tagModel);
-  m_tagNodeListView = new TagNodeListView(this);
   m_tagController = new TagController(m_services, this);
+
+  // File list panel
+  m_fileModel = new TagFileModel(this);
+  m_fileView = new FileListView(this);
+  m_fileView->setModel(m_fileModel);
+  // Disable drag & drop for tag file list
+  m_fileView->setDragEnabled(false);
+  m_fileView->setAcceptDrops(false);
+  m_fileView->setDragDropMode(QAbstractItemView::NoDragDrop);
+
+  m_fileDelegate = new FileNodeDelegate(m_services, this);
+  m_fileView->setItemDelegate(m_fileDelegate);
 
   // Splitter: tag tree on top, node list on bottom
   m_splitter = new QSplitter(Qt::Vertical, this);
   m_splitter->addWidget(m_tagView);
-  m_splitter->addWidget(m_tagNodeListView);
+  m_splitter->addWidget(m_fileView);
   mainLayout->addWidget(m_splitter, 1);
 
   // Wire signals
@@ -52,9 +72,9 @@ void TagExplorer2::setupUI() {
   connect(m_tagView, &TagView::tagsSelectionChanged,
           m_tagController, &TagController::onTagsSelected);
 
-  // 2. TagController matching nodes → TagNodeListView
+  // 2. TagController matching nodes → file model
   connect(m_tagController, &TagController::matchingNodesChanged,
-          m_tagNodeListView, &TagNodeListView::setNodes);
+          this, &TagExplorer2::onMatchingNodesChanged);
 
   // 3. TagController GUI requests → TagExplorer2 dialog handlers
   connect(m_tagController, &TagController::newTagRequested,
@@ -64,9 +84,71 @@ void TagExplorer2::setupUI() {
   connect(m_tagController, &TagController::errorOccurred,
           this, &TagExplorer2::onErrorOccurred);
 
-  // 4. TagNodeListView activation → TagController → propagate upward
-  connect(m_tagNodeListView, &TagNodeListView::nodeActivated,
-          m_tagController, &TagController::onNodeActivated);
+  // 4. FileListView activation
+  connect(m_fileView, &QListView::activated, this, [this](const QModelIndex &idx) {
+    QVariant v = idx.data(INodeListModel::NodeIdentifierRole);
+    if (v.isValid()) {
+      NodeIdentifier nodeId = v.value<NodeIdentifier>();
+      if (nodeId.isValid()) {
+        emit openNodeRequested(nodeId);
+      }
+    }
+  });
+
+  // Context menu on file list
+  connect(m_fileView, &FileListView::contextMenuRequested, this,
+          [this](const NodeIdentifier &nodeId, const QPoint &globalPos) {
+            if (!nodeId.isValid()) {
+              return;
+            }
+
+            QMenu menu(this);
+
+            menu.addAction(tr("Open"), this, [this, nodeId]() {
+              emit openNodeRequested(nodeId);
+            });
+
+            menu.addAction(tr("Open Location"), this, [this, nodeId]() {
+              auto *notebookSvc = m_services.get<NotebookCoreService>();
+              if (!notebookSvc) {
+                return;
+              }
+              const QString absPath =
+                  notebookSvc->buildAbsolutePath(nodeId.notebookId, nodeId.relativePath);
+              if (!absPath.isEmpty()) {
+                QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(absPath).absolutePath()));
+              }
+            });
+
+            menu.addAction(tr("Copy Path"), this, [this, nodeId]() {
+              auto *notebookSvc = m_services.get<NotebookCoreService>();
+              if (!notebookSvc) {
+                return;
+              }
+              const QString absPath =
+                  notebookSvc->buildAbsolutePath(nodeId.notebookId, nodeId.relativePath);
+              if (!absPath.isEmpty()) {
+                QApplication::clipboard()->setText(absPath);
+              }
+            });
+
+            menu.addAction(tr("Properties"), this, [this, nodeId]() {
+              auto *notebookSvc = m_services.get<NotebookCoreService>();
+              if (!notebookSvc) {
+                return;
+              }
+              const QString absPath =
+                  notebookSvc->buildAbsolutePath(nodeId.notebookId, nodeId.relativePath);
+              QMessageBox::information(window(), tr("Properties"),
+                                       tr("File: %1\nPath: %2\nNotebook: %3")
+                                           .arg(nodeId.relativePath.section('/', -1))
+                                           .arg(absPath)
+                                           .arg(nodeId.notebookId));
+            });
+
+            menu.exec(globalPos);
+          });
+
   connect(m_tagController, &TagController::openNodeRequested,
           this, &TagExplorer2::openNodeRequested);
 
@@ -143,6 +225,10 @@ void TagExplorer2::restoreState(const QByteArray &p_data) {
   if (!splitterState.isEmpty()) {
     m_splitter->restoreState(splitterState);
   }
+}
+
+void TagExplorer2::onMatchingNodesChanged(const QJsonArray &p_nodes) {
+  m_fileModel->setNodes(p_nodes, m_notebookId);
 }
 
 void TagExplorer2::onNewTagRequested(const QString &p_notebookId) {
