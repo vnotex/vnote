@@ -3,6 +3,7 @@ target_sources(vnote PRIVATE
     notebooknodemodel.cpp notebooknodemodel.h
     notebooknodeproxymodel.cpp notebooknodeproxymodel.h
     outlinemodel.cpp outlinemodel.h
+    tagfilemodel.cpp tagfilemodel.h
     tagmodel.cpp tagmodel.h
 )
 
