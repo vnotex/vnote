@@ -47,7 +47,17 @@ void TagController::onTagsSelected(const QStringList &p_selectedTags) {
     return;
   }
 
-  m_matchingNodes = tagService->findFilesByTags(notebookId, p_selectedTags);
+  QJsonArray rawNodes = tagService->findFilesByTags(notebookId, p_selectedTags);
+
+  // Inject notebookId into each match object — vxcore doesn't include it.
+  m_matchingNodes = QJsonArray();
+  for (const QJsonValue &val : rawNodes) {
+    QJsonObject obj = val.toObject();
+    if (!obj.contains(QLatin1String("notebookId"))) {
+      obj.insert(QLatin1String("notebookId"), notebookId);
+    }
+    m_matchingNodes.append(obj);
+  }
   emit matchingNodesChanged(m_matchingNodes);
 
   QSet<QString> selectedTagSet;

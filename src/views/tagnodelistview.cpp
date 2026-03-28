@@ -27,10 +27,22 @@ void TagNodeListView::setNodes(const QJsonArray &p_nodes) {
 
   for (const QJsonValue &val : p_nodes) {
     const QJsonObject obj = val.toObject();
-    const QString path = obj.value(QStringLiteral("path")).toString();
+
+    // vxcore returns "filePath" for tag matches; also accept "relativePath" and "path" as fallbacks.
+    QString path = obj.value(QStringLiteral("filePath")).toString();
+    if (path.isEmpty()) {
+      path = obj.value(QStringLiteral("relativePath")).toString();
+    }
+    if (path.isEmpty()) {
+      path = obj.value(QStringLiteral("path")).toString();
+    }
+
     const QString notebookId = obj.value(QStringLiteral("notebookId")).toString();
 
-    auto *item = new QStandardItem(path);
+    // Display the file name portion for readability; store full relative path as data.
+    const QString displayName = obj.value(QStringLiteral("fileName")).toString();
+    auto *item = new QStandardItem(displayName.isEmpty() ? path : displayName);
+    item->setToolTip(path);
     item->setData(notebookId, NotebookIdRole);
     item->setData(path, RelativePathRole);
     m_model->appendRow(item);
