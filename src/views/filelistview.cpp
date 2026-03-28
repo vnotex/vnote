@@ -11,10 +11,11 @@
 
 #include <QUrl>
 
+#include <QAbstractProxyModel>
+
 #include <controllers/notebooknodecontroller.h>
 #include <core/fileopenparameters.h>
-#include <models/notebooknodemodel.h>
-#include <models/notebooknodeproxymodel.h>
+#include <models/inodelistmodel.h>
 
 using namespace vnotex;
 
@@ -163,20 +164,12 @@ NodeIdentifier FileListView::nodeIdFromIndex(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
     return NodeIdentifier();
   }
-
-  // Handle proxy model
-  QModelIndex sourceIdx = p_index;
-  auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
-  if (proxyModel) {
-    sourceIdx = proxyModel->mapToSource(p_index);
+  // Read role directly — works with any model including proxy models
+  // (proxy models forward data() calls to source model automatically)
+  QVariant v = p_index.data(INodeListModel::NodeIdentifierRole);
+  if (v.isValid()) {
+    return v.value<NodeIdentifier>();
   }
-
-  auto *nodeModel =
-      qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
-  if (nodeModel) {
-    return nodeModel->nodeIdFromIndex(sourceIdx);
-  }
-
   return NodeIdentifier();
 }
 
@@ -184,20 +177,10 @@ NodeInfo FileListView::nodeInfoFromIndex(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
     return NodeInfo();
   }
-
-  // Handle proxy model
-  QModelIndex sourceIdx = p_index;
-  auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
-  if (proxyModel) {
-    sourceIdx = proxyModel->mapToSource(p_index);
+  QVariant v = p_index.data(INodeListModel::NodeInfoRole);
+  if (v.isValid()) {
+    return v.value<NodeInfo>();
   }
-
-  auto *nodeModel =
-      qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
-  if (nodeModel) {
-    return nodeModel->nodeInfoFromIndex(sourceIdx);
-  }
-
   return NodeInfo();
 }
 
@@ -205,21 +188,18 @@ QModelIndex FileListView::indexFromNodeId(const NodeIdentifier &p_nodeId) const 
   if (!p_nodeId.isValid()) {
     return QModelIndex();
   }
-
-  auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
-  auto *nodeModel =
-      qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
-
-  if (!nodeModel) {
+  QAbstractItemModel *m = model();
+  if (!m) {
     return QModelIndex();
   }
-
-  QModelIndex sourceIdx = nodeModel->indexFromNodeId(p_nodeId);
-  if (proxyModel) {
-    return proxyModel->mapFromSource(sourceIdx);
+  for (int i = 0; i < m->rowCount(); ++i) {
+    QModelIndex idx = m->index(i, 0);
+    QVariant v = idx.data(INodeListModel::NodeIdentifierRole);
+    if (v.isValid() && v.value<NodeIdentifier>() == p_nodeId) {
+      return idx;
+    }
   }
-
-  return sourceIdx;
+  return QModelIndex();
 }
 
 void FileListView::mousePressEvent(QMouseEvent *p_event) {
@@ -322,18 +302,26 @@ void FileListView::dragMoveEvent(QDragMoveEvent *p_event) {
 void FileListView::dropEvent(QDropEvent *p_event) {
   const QMimeData *mimeData = p_event->mimeData();
 
-  // In FileListView, target is the current display root folder
-  NodeIdentifier targetId;
-  auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
-  auto *nodeModel =
-      qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
-  if (nodeModel) {
-    targetId = nodeModel->getDisplayRoot();
-    if (!targetId.isValid()) {
-      // Fall back to notebook root
-      targetId.notebookId = nodeModel->getNotebookId();
-      targetId.relativePath = QString();
+  // Check if model supports drag & drop via INodeListModel interface
+  auto *nodeListModel = dynamic_cast<INodeListModel *>(model());
+  if (!nodeListModel) {
+    // Check source model if proxy
+    auto *proxy = qobject_cast<QAbstractProxyModel *>(model());
+    if (proxy) {
+      nodeListModel = dynamic_cast<INodeListModel *>(proxy->sourceModel());
     }
+  }
+  if (!nodeListModel || !nodeListModel->supportsDragDrop()) {
+    p_event->ignore();
+    return;
+  }
+
+  // In FileListView, target is the current display root folder
+  NodeIdentifier targetId = nodeListModel->getDisplayRoot();
+  if (!targetId.isValid()) {
+    // Fall back to notebook root
+    targetId.notebookId = nodeListModel->getNotebookId();
+    targetId.relativePath = QString();
   }
 
   if (!targetId.isValid()) {
