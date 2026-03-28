@@ -8,12 +8,12 @@
 #include <functional>
 
 #include <core/fileopensettings.h>
+#include <models/inodelistmodel.h>
 #include <nodeinfo.h>
 
 class QMenu;
 
 namespace vnotex {
-
 
 class NotebookNodeModel;
 class NotebookNodeView;
@@ -31,8 +31,8 @@ public:
   ~NotebookNodeController() override;
 
   // Set the model this controller operates on
-  void setModel(NotebookNodeModel *p_model);
-  NotebookNodeModel *model() const;
+  void setModel(INodeListModel *p_model);
+  INodeListModel *model() const;
 
   // Set the view this controller manages
   void setView(NotebookNodeView *p_view);
@@ -149,7 +149,7 @@ private:
   NodeInfo getNodeInfo(const NodeIdentifier &p_nodeId) const;
 
   ServiceLocator &m_services;
-  NotebookNodeModel *m_model = nullptr;
+  INodeListModel *m_model = nullptr;
   NotebookNodeView *m_view = nullptr;
   SelectedNodesCallback m_selectedNodesCallback;
 

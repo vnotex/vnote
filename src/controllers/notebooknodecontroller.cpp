@@ -33,9 +33,9 @@ NotebookNodeController::NotebookNodeController(ServiceLocator &p_services, QObje
 
 NotebookNodeController::~NotebookNodeController() {}
 
-void NotebookNodeController::setModel(NotebookNodeModel *p_model) { m_model = p_model; }
+void NotebookNodeController::setModel(INodeListModel *p_model) { m_model = p_model; }
 
-NotebookNodeModel *NotebookNodeController::model() const { return m_model; }
+INodeListModel *NotebookNodeController::model() const { return m_model; }
 
 void NotebookNodeController::setView(NotebookNodeView *p_view) { m_view = p_view; }
 
@@ -368,9 +368,9 @@ void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
       if (notebookService &&
           notebookService->indexNode(p_nodeId.notebookId, p_nodeId.relativePath)) {
         // Reload parent to update view
-        if (m_model) {
+        if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
           NodeIdentifier parentId = getParentFolder(p_nodeId);
-          m_model->reloadNode(parentId);
+          nbModel->reloadNode(parentId);
         }
       }
       // Import failed, fall through to open as external file
@@ -540,20 +540,23 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
 
 
   // For cut operations, refresh source parent folders
-  if (m_clipboard->isCut && m_model) {
-    for (const QString &parentPath : sourceParentPaths) {
-      NodeIdentifier parentId;
-      parentId.notebookId = p_targetFolderId.notebookId;
-      parentId.relativePath = parentPath;
-      m_model->reloadNode(parentId);
+  if (m_clipboard->isCut) {
+    auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model);
+    if (nbModel) {
+      for (const QString &parentPath : sourceParentPaths) {
+        NodeIdentifier parentId;
+        parentId.notebookId = p_targetFolderId.notebookId;
+        parentId.relativePath = parentPath;
+        nbModel->reloadNode(parentId);
+      }
     }
     m_clipboard->nodes.clear();
     m_clipboard->isCut = false;
   }
 
   // Refresh target folder
-  if (m_model) {
-    m_model->reloadNode(p_targetFolderId);
+  if (auto *nbModel2 = dynamic_cast<NotebookNodeModel *>(m_model)) {
+    nbModel2->reloadNode(p_targetFolderId);
   }
 
   // Notify that paste completed (for cross-panel refresh)
@@ -629,9 +632,9 @@ void NotebookNodeController::importExternalNode(const NodeIdentifier &p_nodeId) 
   }
 
   // Reload parent folder to update the view
-  if (m_model) {
+  if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
     NodeIdentifier parentId = getParentFolder(p_nodeId);
-    m_model->reloadNode(parentId);
+    nbModel->reloadNode(parentId);
   }
 }
 
@@ -679,8 +682,8 @@ void NotebookNodeController::reloadNode(const NodeIdentifier &p_nodeId) {
     auto event = QSharedPointer<Event>::create();
     emit nodeAboutToReload(p_nodeId, event);
 
-    if (m_model) {
-      m_model->reloadNode(p_nodeId);
+    if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
+      nbModel->reloadNode(p_nodeId);
     }
   } else {
     reloadAll();
@@ -688,8 +691,8 @@ void NotebookNodeController::reloadNode(const NodeIdentifier &p_nodeId) {
 }
 
 void NotebookNodeController::reloadAll() {
-  if (m_model) {
-    m_model->reload();
+  if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
+    nbModel->reload();
   }
 }
 
@@ -821,9 +824,9 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
 
   // NodeAfterRename hook is fired by NotebookCoreService::renameFile/renameFolder.
 
-  if (m_model) {
+  if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
     NodeIdentifier parentId = getParentFolder(p_nodeId);
-    m_model->reloadNode(parentId);
+    nbModel->reloadNode(parentId);
   }
 }
 
@@ -858,9 +861,9 @@ void NotebookNodeController::handleDeleteConfirmed(const QList<NodeIdentifier> &
     }
   }
   // Reload all affected parent folders
-  if (m_model) {
+  if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
     for (const NodeIdentifier &parentId : parentsToReload) {
-      m_model->reloadNode(parentId);
+      nbModel->reloadNode(parentId);
     }
   }
 }
@@ -884,9 +887,9 @@ void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &
     }
   }
   // Reload all affected parent folders
-  if (m_model) {
+  if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
     for (const NodeIdentifier &parentId : parentsToReload) {
-      m_model->reloadNode(parentId);
+      nbModel->reloadNode(parentId);
     }
   }
 }
@@ -917,8 +920,10 @@ void NotebookNodeController::handleImportFiles(const NodeIdentifier &p_targetFol
   }
 
   // Reload the target folder to show imported files
-  if (m_model && successCount > 0) {
-    m_model->reloadNode(p_targetFolderId);
+  if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
+    if (successCount > 0) {
+      nbModel->reloadNode(p_targetFolderId);
+    }
   }
 
   // Report results
