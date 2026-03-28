@@ -188,16 +188,28 @@ void TagViewer2::handleReturnPressed() {
     return;
   }
 
-  if (auto *item = findItem(tagName)) {
-    // Tag already exists — select it.
+  // Determine the display name (leaf segment for paths, full name otherwise).
+  const bool isPath = tagName.contains(QLatin1Char('/'));
+  const auto leafName = isPath ? tagName.section(QLatin1Char('/'), -1) : tagName;
+
+  if (leafName.isEmpty()) {
+    m_searchEdit->clear();
+    return;
+  }
+
+  // Check if the leaf tag already exists in the list.
+  if (auto *item = findItem(isPath ? leafName : tagName)) {
     setItemTagSelected(item, true);
   } else {
-    // Create new tag via TagService.
     auto *tagSvc = m_services.get<TagService>();
     if (tagSvc) {
-      tagSvc->createTag(m_nodeId.notebookId, tagName);
+      if (isPath) {
+        tagSvc->createTagPath(m_nodeId.notebookId, tagName);
+      } else {
+        tagSvc->createTag(m_nodeId.notebookId, tagName);
+      }
     }
-    addTagItem(tagName, true, true);
+    addTagItem(leafName, true, true);
   }
 
   m_searchEdit->clear();

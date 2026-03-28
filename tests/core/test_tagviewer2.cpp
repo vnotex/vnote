@@ -55,6 +55,7 @@ private slots:
 
   // Inline create / select.
   void testInlineCreateTag();
+  void testInlineCreateTagPath();
   void testInlineSelectExistingTag();
 
 private:
@@ -540,6 +541,56 @@ void TestTagViewer2::testInlineCreateTag() {
     }
   }
   QVERIFY(found);
+}
+
+void TestTagViewer2::testInlineCreateTagPath() {
+  QString nbPath = m_tempDir.filePath("tv2_inline_path_nb");
+  QString nbId = createTestNotebook(nbPath);
+  QVERIFY(!nbId.isEmpty());
+
+  m_notebookService->createFile(nbId, "", "pathtest.md");
+
+  TagViewer2 viewer(m_serviceLocator);
+  NodeIdentifier nodeId;
+  nodeId.notebookId = nbId;
+  nodeId.relativePath = "pathtest.md";
+  viewer.setNodeId(nodeId);
+
+  auto *list = tagList(&viewer);
+  auto *search = searchEdit(&viewer);
+  QCOMPARE(list->count(), 0);
+
+  // Type a hierarchical tag path and press Enter.
+  QTest::keyClicks(search, "programming/python");
+  QTest::keyClick(search, Qt::Key_Return);
+
+  // Only the leaf name should appear in the list.
+  QCOMPARE(list->count(), 1);
+  auto *item = list->item(0);
+  QCOMPARE(item->data(Qt::UserRole).toString(), QStringLiteral("python"));
+  QVERIFY(item->data(UserRole2).toBool());
+
+  // Search edit should be cleared after Return.
+  QVERIFY(search->text().isEmpty());
+
+  // Verify both parent and leaf tags were created in the service.
+  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  bool foundProgramming = false;
+  bool foundPython = false;
+  QString pythonParent;
+  for (const auto &tagVal : tags) {
+    QJsonObject obj = tagVal.toObject();
+    QString name = obj["name"].toString();
+    if (name == "programming") {
+      foundProgramming = true;
+    } else if (name == "python") {
+      foundPython = true;
+      pythonParent = obj["parent"].toString();
+    }
+  }
+  QVERIFY(foundProgramming);
+  QVERIFY(foundPython);
+  QCOMPARE(pythonParent, QStringLiteral("programming"));
 }
 
 void TestTagViewer2::testInlineSelectExistingTag() {
