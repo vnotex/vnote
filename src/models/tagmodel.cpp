@@ -1,7 +1,9 @@
 #include "tagmodel.h"
 
+#include <QApplication>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QPalette>
 #include <QSet>
 
 #include <core/services/tagcoreservice.h>
@@ -128,6 +130,12 @@ QVariant TagModel::data(const QModelIndex &p_index, int p_role) const {
   case TagMetadataRole:
     return info.metadata.toVariant();
 
+  case Qt::ForegroundRole:
+    if (m_incompatibleTags.contains(tagName)) {
+      return QApplication::palette().color(QPalette::Disabled, QPalette::Text);
+    }
+    return QVariant();
+
   default:
     return QVariant();
   }
@@ -164,6 +172,7 @@ void TagModel::reload() {
   m_indexIdCache.clear();
   m_indexIdLookup.clear();
   m_nextIndexId = 1;
+  m_incompatibleTags.clear();
 
   if (!m_notebookId.isEmpty()) {
     auto *tagService = m_services.get<TagCoreService>();
@@ -260,9 +269,21 @@ void TagModel::setIncompatibleTags(const QStringList &p_tags) {
     return;
   }
 
-  beginResetModel();
+  QSet<QString> changedTags = m_incompatibleTags;
+  changedTags.subtract(incompatibleTags);
+
+  QSet<QString> newlyChangedTags = incompatibleTags;
+  newlyChangedTags.subtract(m_incompatibleTags);
+  changedTags.unite(newlyChangedTags);
+
   m_incompatibleTags = incompatibleTags;
-  endResetModel();
+
+  for (const auto &tagName : changedTags) {
+    const QModelIndex idx = indexFromTagName(tagName);
+    if (idx.isValid()) {
+      emit dataChanged(idx, idx, {Qt::ForegroundRole});
+    }
+  }
 }
 
 QString TagModel::tagNameFromIndex(const QModelIndex &p_index) const {

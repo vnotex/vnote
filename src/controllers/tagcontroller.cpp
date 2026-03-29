@@ -4,7 +4,6 @@
 #include <QJsonValue>
 
 #include <QSet>
-#include <QVector>
 
 #include <core/servicelocator.h>
 #include <core/services/tagcoreservice.h>
@@ -66,31 +65,18 @@ void TagController::onTagsSelected(const QStringList &p_selectedTags) {
   }
   QStringList incompatibleTags;
 
-  QVector<QJsonArray> pendingArrays;
-  pendingArrays.append(tagCoreService->listTags(notebookId));
-
-  while (!pendingArrays.isEmpty()) {
-    QJsonArray tags = pendingArrays.last();
-    pendingArrays.removeLast();
-    for (const auto &tagValue : tags) {
-      const QString tagName = extractTagName(tagValue);
-      if (!tagName.isEmpty() && !selectedTagSet.contains(tagName)) {
-        QStringList queryTags = p_selectedTags;
-        queryTags.append(tagName);
-        if (tagCoreService->findFilesByTags(notebookId, queryTags).isEmpty()) {
-          incompatibleTags.append(tagName);
-        }
-      }
-
-      const QJsonObject tagObj = tagValue.toObject();
-      const QJsonArray children = tagObj.value(QString(QLatin1String("children"))).toArray();
-      if (!children.isEmpty()) {
-        pendingArrays.append(children);
+  const QJsonArray allTags = tagCoreService->listTags(notebookId);
+  for (const auto &tagValue : allTags) {
+    const QString tagName = extractTagName(tagValue);
+    if (!tagName.isEmpty() && !selectedTagSet.contains(tagName)) {
+      QStringList queryTags = p_selectedTags;
+      queryTags.append(tagName);
+      if (tagCoreService->findFilesByTags(notebookId, queryTags).isEmpty()) {
+        incompatibleTags.append(tagName);
       }
     }
   }
 
-  incompatibleTags.removeDuplicates();
   emit tagCompatibilityChanged(incompatibleTags);
 }
 

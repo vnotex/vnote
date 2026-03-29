@@ -690,6 +690,10 @@ QTreeView::item:selected:!active {
     background-color: @widgets#qtreeview#item#selected#inactive#bg;
 }
 
+QTreeView::item:disabled {
+    background-color: transparent;
+}
+
 /* Set branch background to match tree view */
 QTreeView::branch {
     background-color: @widgets#qtreeview#bg;
