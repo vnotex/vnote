@@ -8,7 +8,6 @@ target_sources(vnote PRIVATE
     combinednodeexplorer.cpp combinednodeexplorer.h
     twocolumnsnodeexplorer.cpp twocolumnsnodeexplorer.h
     tagview.cpp tagview.h
-    tagnodelistview.cpp tagnodelistview.h
 )
 
 target_include_directories(vnote PRIVATE
