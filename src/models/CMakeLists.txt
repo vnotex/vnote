@@ -1,4 +1,5 @@
 target_sources(vnote PRIVATE
+    inodelistmodel.h
     notebooknodemodel.cpp notebooknodemodel.h
     notebooknodeproxymodel.cpp notebooknodeproxymodel.h
     outlinemodel.cpp outlinemodel.h
