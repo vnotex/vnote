@@ -112,6 +112,7 @@ void MarkdownViewWindow2::setupToolBar() {
   addAction(toolBar, ViewWindowToolBarHelper2::EditRead);
   addAction(toolBar, ViewWindowToolBarHelper2::Save);
   addAction(toolBar, ViewWindowToolBarHelper2::WordCount);
+  addAction(toolBar, ViewWindowToolBarHelper2::Tag);
 
   // Separator between word count and formatting actions (visible only in edit mode).
   auto *typeSeparator = toolBar->addSeparator();
@@ -137,8 +138,6 @@ void MarkdownViewWindow2::setupToolBar() {
   addAction(toolBar, ViewWindowToolBarHelper2::TypeLink);
   addAction(toolBar, ViewWindowToolBarHelper2::TypeImage);
   addAction(toolBar, ViewWindowToolBarHelper2::TypeTable);
-
-  addAction(toolBar, ViewWindowToolBarHelper2::Tag);
 
   // Right-side actions: spacer + outline + live preview + layout toggle + find-and-replace.
   ViewWindowToolBarHelper2::addSpacer(toolBar);
