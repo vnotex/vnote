@@ -210,7 +210,7 @@ void FileListView::mousePressEvent(QMouseEvent *p_event) {
     QModelIndex idx = indexAt(p_event->pos());
     if (idx.isValid()) {
       NodeInfo nodeInfo = nodeInfoFromIndex(idx);
-      if (nodeInfo.isValid() && !nodeInfo.isFolder) {
+      if (nodeInfo.isValid() && !nodeInfo.isFolder && m_controller) {
         m_controller->openNode(nodeInfo.id);
       }
     }
