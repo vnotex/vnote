@@ -80,11 +80,9 @@ void NotebookExplorer2::setupUI() {
   m_notebookSelector->setViewOrder(widgetConfig.getNotebookSelectorViewOrder());
   m_mainLayout->addWidget(m_notebookSelector);
 
-  // Get initial explore mode from config
+  // Get initial explore mode from config (0=Combined, 1=TwoColumns)
   int mode = m_services.get<ConfigMgr2>()->getWidgetConfig().getNodeExplorerExploreMode();
-  // Map old NotebookNodeExplorer modes (0=Combined, 1=SeparateSingle, 2=SeparateDouble)
-  // to new modes (0=Combined, 1=TwoColumns)
-  m_exploreMode = (mode >= 1) ? TwoColumns : Combined;
+  m_exploreMode = (mode == TwoColumns) ? TwoColumns : Combined;
 
   // Create the initial explorer
   if (m_exploreMode == Combined) {
@@ -273,24 +271,16 @@ void NotebookExplorer2::setupExploreModeMenu() {
   m_titleBar->addMenuAction(act);
 
   int mode = m_services.get<ConfigMgr2>()->getWidgetConfig().getNodeExplorerExploreMode();
-  // Map old NotebookNodeExplorer modes to new modes
-  // Combined = 0, SeparateSingle = 1, SeparateDouble = 2
-  // Our modes: Combined = 0, TwoColumns = 1
-  ExploreMode mappedMode = Combined;
-  if (mode >= 1) {
-    mappedMode = TwoColumns;
-  }
 
   for (const auto &action : ag->actions()) {
-    if (action->data().toInt() == static_cast<int>(mappedMode)) {
+    if (action->data().toInt() == mode) {
       action->setChecked(true);
     }
   }
 
   connect(ag, &QActionGroup::triggered, this, [this](QAction *action) {
     int mode = action->data().toInt();
-    // Store as compatible value for old config
-    m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerExploreMode(mode == 0 ? 0 : 2);
+    m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerExploreMode(mode);
     setExploreMode(static_cast<ExploreMode>(mode));
   });
 }

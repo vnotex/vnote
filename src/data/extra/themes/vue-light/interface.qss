@@ -76,10 +76,6 @@ vnotex--TitleBar QLabel[TitleBarTitle="true"] {
 }
 
 /* QDockWidget */
-QDockWidget[MainWindowSideBar="true"] QWidget {
-    background-color: @widgets#mainwindow#side_bar#widget#bg;
-}
-
 QDockWidget[MainWindowSideBar="true"] QToolButton:checked {
     color: @widgets#qtoolbutton#checked#fg;
     background-color: @widgets#qtoolbutton#checked#bg;

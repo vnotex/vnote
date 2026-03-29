@@ -366,23 +366,23 @@ QColor FileNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
     // Check active vs inactive window state
     if (p_option.state & QStyle::State_Active) {
       textColor =
-          QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#selected#active#fg")));
+          QColor(themeService->paletteColor(QStringLiteral("widgets#qlistview#item#selected#active#fg")));
     } else {
       textColor =
-          QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#selected#inactive#fg")));
+          QColor(themeService->paletteColor(QStringLiteral("widgets#qlistview#item#selected#inactive#fg")));
     }
     // Fallback to general selected color if specific one not found
     if (!textColor.isValid()) {
       textColor =
-          QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#selected#fg")));
+          QColor(themeService->paletteColor(QStringLiteral("widgets#qlistview#item#selected#fg")));
     }
   } else if (p_option.state & QStyle::State_MouseOver) {
-    textColor = QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#hover#fg")));
+    textColor = QColor(themeService->paletteColor(QStringLiteral("widgets#qlistview#item#hover#fg")));
   }
 
   // Fallback to normal text color
   if (!textColor.isValid()) {
-    textColor = QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#fg")));
+    textColor = QColor(themeService->paletteColor(QStringLiteral("widgets#qlistview#fg")));
   }
 
   // Final fallback to palette

@@ -118,10 +118,6 @@ QDockWidget::float-button {
     position: absolute;
     top: 0px; right: 18px; bottom: 0px;
 }
-/* Side bar dock widgets */
-QDockWidget[MainWindowSideBar="true"] QWidget {
-    background-color: @widgets#mainwindow#side_bar#widget#bg;
-}
 /* Generic tab bar */
 QTabBar {
     border: none;
