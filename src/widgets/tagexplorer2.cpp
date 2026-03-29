@@ -183,6 +183,13 @@ void TagExplorer2::setupTitleBar() {
     m_tagController->onNewTagAction(m_notebookId);
   });
 
+  // Clear selection button
+  auto *clearSelBtn =
+      m_titleBar->addActionButton(QStringLiteral("clear_selection.svg"), tr("Clear Selection"));
+  connect(clearSelBtn, &QToolButton::clicked, this, [this]() {
+    m_tagView->clearSelection();
+  });
+
   setupTitleBarMenu();
 }
 
