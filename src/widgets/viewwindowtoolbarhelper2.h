@@ -58,7 +58,10 @@ public:
     Outline,
 
     // Tag popup button.
-    Tag
+    Tag,
+
+    // Attachment popup button.
+    Attachment
   };
 
   ViewWindowToolBarHelper2() = delete;
