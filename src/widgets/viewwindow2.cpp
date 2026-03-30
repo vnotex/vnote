@@ -25,6 +25,7 @@
 #include "findandreplacewidget2.h"
 #include "messageboxhelper.h"
 #include "outlineprovider.h"
+#include "attachmentpopup2.h"
 #include "tagpopup2.h"
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpanel.h"
@@ -61,6 +62,8 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
             SLOT(onBufferAutoSaved(QString)));
     connect(bufferService->asQObject(), SIGNAL(bufferModifiedChanged(QString)), this,
             SLOT(onBufferModifiedChanged(QString)));
+    connect(bufferService->asQObject(), SIGNAL(attachmentChanged(QString)), this,
+            SLOT(onAttachmentChanged(QString)));
   }
 }
 
@@ -459,6 +462,22 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
     break;
   }
 
+  case ViewWindowToolBarHelper2::Attachment: {
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+    Q_ASSERT(toolBtn);
+    auto *attachmentPopup = dynamic_cast<AttachmentPopup2 *>(toolBtn->menu());
+    if (attachmentPopup) {
+      attachmentPopup->setBuffer(&getBuffer());
+      m_attachmentPopup = attachmentPopup;
+    }
+    m_attachmentAction = act;
+    // Disable if buffer doesn't support attachments.
+    act->setEnabled(getBuffer().isAttachmentSupported());
+    // Set initial icon state.
+    updateAttachmentIcon();
+    break;
+  }
+
   default:
     break;
   }
@@ -584,6 +603,23 @@ void ViewWindow2::onBufferModifiedChanged(const QString &p_bufferId) {
     return;
   }
   emit statusChanged();
+}
+
+void ViewWindow2::onAttachmentChanged(const QString &p_bufferId) {
+  if (p_bufferId != m_buffer.id()) {
+    return;
+  }
+  updateAttachmentIcon();
+}
+
+void ViewWindow2::updateAttachmentIcon() {
+  if (!m_attachmentAction) {
+    return;
+  }
+  m_attachmentAction->setIcon(ViewWindowToolBarHelper2::generateIcon(
+      m_services, getBuffer().hasAttachments()
+                      ? QStringLiteral("attachment_full_editor.svg")
+                      : QStringLiteral("attachment_editor.svg")));
 }
 
 // ============ Find and Replace ============

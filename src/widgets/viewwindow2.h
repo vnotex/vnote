@@ -24,6 +24,7 @@ class QWheelEvent;
 
 namespace vnotex {
 
+class AttachmentPopup2;
 class EditReadDiscardAction;
 class OutlineProvider;
 class ServiceLocator;
@@ -351,6 +352,10 @@ private slots:
   // Emits statusChanged() if the buffer ID matches ours.
   void onBufferModifiedChanged(const QString &p_bufferId);
 
+  // Called when BufferService emits attachmentChanged for any buffer.
+  // Updates the attachment icon if the buffer ID matches ours.
+  void onAttachmentChanged(const QString &p_bufferId);
+
 private:
   struct FindInfo {
     QStringList m_texts;
@@ -417,8 +422,17 @@ private:
   // Edit/Read/Discard action. Managed by QObject.
   EditReadDiscardAction *m_editReadAction = nullptr;
 
+  // Attachment popup widget. Managed by QObject.
+  AttachmentPopup2 *m_attachmentPopup = nullptr;
+
+  // Attachment toolbar action. Managed by QObject.
+  QAction *m_attachmentAction = nullptr;
+
   // Last find info for findNextOnLastFind().
   FindInfo m_findInfo;
+
+  // Update the attachment action icon based on whether the buffer has attachments.
+  void updateAttachmentIcon();
 };
 
 } // namespace vnotex

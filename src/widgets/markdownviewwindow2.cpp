@@ -113,6 +113,7 @@ void MarkdownViewWindow2::setupToolBar() {
   addAction(toolBar, ViewWindowToolBarHelper2::Save);
   addAction(toolBar, ViewWindowToolBarHelper2::WordCount);
   addAction(toolBar, ViewWindowToolBarHelper2::Tag);
+  addAction(toolBar, ViewWindowToolBarHelper2::Attachment);
 
   // Separator between word count and formatting actions (visible only in edit mode).
   auto *typeSeparator = toolBar->addSeparator();
