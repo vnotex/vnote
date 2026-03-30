@@ -71,6 +71,7 @@ void MindMapViewWindow2::setupToolBar() {
   addToolBar(toolBar);
 
   addAction(toolBar, ViewWindowToolBarHelper2::Save);
+  addAction(toolBar, ViewWindowToolBarHelper2::Attachment);
 
   // Common right-side actions: spacer + layout toggle + find-and-replace.
   addCommonToolBarActions(toolBar);
