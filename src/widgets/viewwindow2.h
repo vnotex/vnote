@@ -24,6 +24,7 @@ class QWheelEvent;
 
 namespace vnotex {
 
+class AttachmentDragDropAreaIndicator2;
 class AttachmentPopup2;
 class EditReadDiscardAction;
 class OutlineProvider;
@@ -281,6 +282,8 @@ protected:
 
   void findNextOnLastFind(bool p_forward = true);
 
+  bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
+
   void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
   void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
@@ -427,6 +430,9 @@ private:
 
   // Attachment toolbar action. Managed by QObject.
   QAction *m_attachmentAction = nullptr;
+
+  // Attachment drag-drop area indicator. Managed by QObject. Lazily created.
+  AttachmentDragDropAreaIndicator2 *m_attachmentDragDropIndicator = nullptr;
 
   // Last find info for findNextOnLastFind().
   FindInfo m_findInfo;

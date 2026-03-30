@@ -1,5 +1,6 @@
 target_sources(vnote PRIVATE
     attachmentdragdropareaindicator.cpp attachmentdragdropareaindicator.h
+    attachmentdragdropareaindicator2.cpp attachmentdragdropareaindicator2.h
     attachmentpopup.cpp attachmentpopup.h
     attachmentpopup2.cpp attachmentpopup2.h
     biaction.cpp biaction.h

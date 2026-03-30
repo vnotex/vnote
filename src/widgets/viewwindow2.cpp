@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QAction>
 #include <QDebug>
+#include <QDragEnterEvent>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QWheelEvent>
@@ -21,6 +22,7 @@
 #include <core/widgetconfig.h>
 
 #include "editreaddiscardaction.h"
+#include "attachmentdragdropareaindicator2.h"
 #include "editors/statuswidget.h"
 #include "findandreplacewidget2.h"
 #include "messageboxhelper.h"
@@ -257,6 +259,10 @@ void ViewWindow2::addToolBar(QToolBar *p_bar) {
   Q_ASSERT(!m_toolBar);
   m_toolBar = p_bar;
   m_topLayout->addWidget(p_bar);
+
+  // Enable drag-drop on toolbar for attachment support.
+  p_bar->setAcceptDrops(true);
+  p_bar->installEventFilter(this);
 }
 
 void ViewWindow2::addTopWidget(QWidget *p_widget) {
@@ -922,4 +928,42 @@ void ViewWindow2::updateContentMargins() {
 void ViewWindow2::resizeEvent(QResizeEvent *p_event) {
   QFrame::resizeEvent(p_event);
   updateContentMargins();
+}
+
+bool ViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (p_obj == m_toolBar) {
+    switch (p_event->type()) {
+    case QEvent::DragEnter:
+      if (m_buffer.isValid() && m_buffer.isAttachmentSupported() &&
+          AttachmentDragDropAreaIndicator2::isAccepted(
+              dynamic_cast<QDragEnterEvent *>(p_event))) {
+        // Lazily create indicator on first drag.
+        if (!m_attachmentDragDropIndicator) {
+          m_attachmentDragDropIndicator = new AttachmentDragDropAreaIndicator2(this);
+          m_attachmentDragDropIndicator->setBuffer(&getBuffer());
+          m_attachmentDragDropIndicator->hide();
+          addTopWidget(m_attachmentDragDropIndicator);
+
+          // Show status message when files are attached.
+          connect(m_attachmentDragDropIndicator,
+                  &AttachmentDragDropAreaIndicator2::filesAttached, this,
+                  [this](int count) {
+                    showMessage(tr("Attached %n file(s)", "", count));
+                  });
+        }
+        m_attachmentDragDropIndicator->show();
+      }
+      break;
+
+    case QEvent::HoverLeave:
+      if (m_attachmentDragDropIndicator) {
+        m_attachmentDragDropIndicator->hide();
+      }
+      break;
+
+    default:
+      break;
+    }
+  }
+  return QFrame::eventFilter(p_obj, p_event);
 }
