@@ -106,9 +106,10 @@ public:
   using BufferCoreService::insertAsset;
   using BufferCoreService::deleteAsset;
   using BufferCoreService::getAssetsFolder;
-  using BufferCoreService::insertAttachment;
-  using BufferCoreService::deleteAttachment;
-  using BufferCoreService::renameAttachment;
+  QString insertAttachment(const QString &p_bufferId, const QString &p_sourcePath);
+  bool deleteAttachment(const QString &p_bufferId, const QString &p_filename);
+  QString renameAttachment(const QString &p_bufferId, const QString &p_oldFilename,
+                           const QString &p_newFilename);
   using BufferCoreService::listAttachments;
   using BufferCoreService::getAttachmentsFolder;
 
@@ -150,6 +151,9 @@ signals:
 
   // Emitted after 3 consecutive auto-save failures; auto-save suspended for this buffer.
   void bufferAutoSaveAborted(const QString &p_bufferId);
+
+  // Emitted after attachment list/content changes for a buffer.
+  void attachmentChanged(const QString &p_bufferId);
 
 private:
   // Timer tick handler — syncs all dirty buffers and executes auto-save policy.

@@ -215,3 +215,11 @@ QString Buffer2::getAttachmentsFolder() const {
   }
   return m_bufferService->getAttachmentsFolder(m_bufferId);
 }
+
+bool Buffer2::hasAttachments() const {
+  if (!isValid()) {
+    return false;
+  }
+
+  return !m_bufferService->listAttachments(m_bufferId).isEmpty();
+}

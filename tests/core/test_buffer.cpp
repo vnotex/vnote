@@ -1,7 +1,9 @@
 #include <QtTest>
 #include <QFile>
+#include <QSignalSpy>
 #include <QTemporaryDir>
 
+#include <core/hookevents.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
@@ -60,6 +62,11 @@ private slots:
   void testDeleteAttachment();
   void testRenameAttachment();
   void testGetAttachmentsFolder();
+  void testInsertAttachmentFiresHooks();
+  void testDeleteAttachmentHookCancel();
+  void testRenameAttachmentFiresHooks();
+  void testAttachmentChangedSignal();
+  void testHasAttachments();
 
   // Invalid buffer guard
   void testInvalidBufferOperations();
@@ -418,6 +425,185 @@ void TestBuffer::testGetAttachmentsFolder() {
   Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QVERIFY(!buf.getAttachmentsFolder().isEmpty());
+}
+
+void TestBuffer::testInsertAttachmentFiresHooks() {
+  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  QVERIFY(buf.isValid());
+
+  QString srcPath = m_tempDir.filePath(QStringLiteral("buf_hook_add_attach.txt"));
+  QFile src(srcPath);
+  QVERIFY(src.open(QIODevice::WriteOnly));
+  QVERIFY(src.write("hook add") > 0);
+  src.close();
+
+  bool beforeFired = false;
+  bool afterFired = false;
+  AttachmentAddEvent beforeEvent;
+  AttachmentAddEvent afterEvent;
+
+  int beforeId = m_hookMgr->addAction<AttachmentAddEvent>(
+      HookNames::AttachmentBeforeAdd,
+      [&beforeFired, &beforeEvent](HookContext &, const AttachmentAddEvent &p_event) {
+        beforeFired = true;
+        beforeEvent = p_event;
+      },
+      10);
+
+  int afterId = m_hookMgr->addAction<AttachmentAddEvent>(
+      HookNames::AttachmentAfterAdd,
+      [&afterFired, &afterEvent](HookContext &, const AttachmentAddEvent &p_event) {
+        afterFired = true;
+        afterEvent = p_event;
+      },
+      10);
+
+  QString filename = buf.insertAttachment(srcPath);
+
+  m_hookMgr->removeAction(beforeId);
+  m_hookMgr->removeAction(afterId);
+
+  QVERIFY(!filename.isEmpty());
+  QVERIFY(beforeFired);
+  QVERIFY(afterFired);
+  QCOMPARE(beforeEvent.bufferId, buf.id());
+  QCOMPARE(beforeEvent.sourcePath, srcPath);
+  QVERIFY(beforeEvent.filename.isEmpty());
+  QCOMPARE(afterEvent.bufferId, buf.id());
+  QCOMPARE(afterEvent.sourcePath, srcPath);
+  QCOMPARE(afterEvent.filename, filename);
+}
+
+void TestBuffer::testDeleteAttachmentHookCancel() {
+  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  QVERIFY(buf.isValid());
+
+  QString srcPath = m_tempDir.filePath(QStringLiteral("buf_hook_del_attach.txt"));
+  QFile src(srcPath);
+  QVERIFY(src.open(QIODevice::WriteOnly));
+  QVERIFY(src.write("hook delete") > 0);
+  src.close();
+
+  QString filename = buf.insertAttachment(srcPath);
+  QVERIFY(!filename.isEmpty());
+
+  int hookId = m_hookMgr->addAction<AttachmentDeleteEvent>(
+      HookNames::AttachmentBeforeDelete,
+      [](HookContext &p_ctx, const AttachmentDeleteEvent &) { p_ctx.cancel(); }, 10);
+
+  QVERIFY(!buf.deleteAttachment(filename));
+
+  m_hookMgr->removeAction(hookId);
+
+  QJsonArray attachments = buf.listAttachments();
+  bool found = false;
+  for (const auto &val : attachments) {
+    if (val.toString() == filename) {
+      found = true;
+      break;
+    }
+  }
+  QVERIFY(found);
+}
+
+void TestBuffer::testRenameAttachmentFiresHooks() {
+  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  QVERIFY(buf.isValid());
+
+  QString srcPath = m_tempDir.filePath(QStringLiteral("buf_hook_rename_attach.txt"));
+  QFile src(srcPath);
+  QVERIFY(src.open(QIODevice::WriteOnly));
+  QVERIFY(src.write("hook rename") > 0);
+  src.close();
+
+  QString oldFilename = buf.insertAttachment(srcPath);
+  QVERIFY(!oldFilename.isEmpty());
+
+  bool beforeFired = false;
+  bool afterFired = false;
+  AttachmentRenameEvent beforeEvent;
+  AttachmentRenameEvent afterEvent;
+
+  int beforeId = m_hookMgr->addAction<AttachmentRenameEvent>(
+      HookNames::AttachmentBeforeRename,
+      [&beforeFired, &beforeEvent](HookContext &, const AttachmentRenameEvent &p_event) {
+        beforeFired = true;
+        beforeEvent = p_event;
+      },
+      10);
+
+  int afterId = m_hookMgr->addAction<AttachmentRenameEvent>(
+      HookNames::AttachmentAfterRename,
+      [&afterFired, &afterEvent](HookContext &, const AttachmentRenameEvent &p_event) {
+        afterFired = true;
+        afterEvent = p_event;
+      },
+      10);
+
+  QString requestedName = QStringLiteral("buf_hook_renamed.txt");
+  QString actualName = buf.renameAttachment(oldFilename, requestedName);
+
+  m_hookMgr->removeAction(beforeId);
+  m_hookMgr->removeAction(afterId);
+
+  QVERIFY(!actualName.isEmpty());
+  QVERIFY(beforeFired);
+  QVERIFY(afterFired);
+  QCOMPARE(beforeEvent.bufferId, buf.id());
+  QCOMPARE(beforeEvent.oldFilename, oldFilename);
+  QCOMPARE(beforeEvent.newFilename, requestedName);
+  QCOMPARE(afterEvent.bufferId, buf.id());
+  QCOMPARE(afterEvent.oldFilename, oldFilename);
+  QCOMPARE(afterEvent.newFilename, actualName);
+}
+
+void TestBuffer::testAttachmentChangedSignal() {
+  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  QVERIFY(buf.isValid());
+
+  QSignalSpy spy(m_bufferService->asQObject(), SIGNAL(attachmentChanged(QString)));
+
+  QString srcPath = m_tempDir.filePath(QStringLiteral("buf_signal_attach.txt"));
+  QFile src(srcPath);
+  QVERIFY(src.open(QIODevice::WriteOnly));
+  QVERIFY(src.write("signal") > 0);
+  src.close();
+
+  QString filename = buf.insertAttachment(srcPath);
+  QVERIFY(!filename.isEmpty());
+  QCOMPARE(spy.count(), 1);
+
+  QList<QVariant> args = spy.takeFirst();
+  QCOMPARE(args.size(), 1);
+  QCOMPARE(args[0].toString(), buf.id());
+}
+
+void TestBuffer::testHasAttachments() {
+  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  QVERIFY(buf.isValid());
+
+  const QJsonArray existing = buf.listAttachments();
+  for (const auto &val : existing) {
+    const QString filename = val.toString();
+    if (!filename.isEmpty()) {
+      QVERIFY(buf.deleteAttachment(filename));
+    }
+  }
+
+  QVERIFY(!buf.hasAttachments());
+
+  QString srcPath = m_tempDir.filePath(QStringLiteral("buf_has_attach.txt"));
+  QFile src(srcPath);
+  QVERIFY(src.open(QIODevice::WriteOnly));
+  QVERIFY(src.write("has") > 0);
+  src.close();
+
+  QString filename = buf.insertAttachment(srcPath);
+  QVERIFY(!filename.isEmpty());
+  QVERIFY(buf.hasAttachments());
+
+  QVERIFY(buf.deleteAttachment(filename));
+  QVERIFY(!buf.hasAttachments());
 }
 
 // ============ Invalid buffer guard ============

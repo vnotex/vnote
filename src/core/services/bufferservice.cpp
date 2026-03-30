@@ -155,6 +155,65 @@ bool BufferService::reloadBuffer(const QString &p_bufferId) {
   return ok;
 }
 
+QString BufferService::insertAttachment(const QString &p_bufferId, const QString &p_sourcePath) {
+  AttachmentAddEvent event;
+  event.bufferId = p_bufferId;
+  event.sourcePath = p_sourcePath;
+  if (m_hookMgr->doAction(HookNames::AttachmentBeforeAdd, event)) {
+    return QString(); // Cancelled by plugin.
+  }
+
+  QString filename = BufferCoreService::insertAttachment(p_bufferId, p_sourcePath);
+
+  if (!filename.isEmpty()) {
+    event.filename = filename;
+    m_hookMgr->doAction(HookNames::AttachmentAfterAdd, event);
+    emit attachmentChanged(p_bufferId);
+  }
+
+  return filename;
+}
+
+bool BufferService::deleteAttachment(const QString &p_bufferId, const QString &p_filename) {
+  AttachmentDeleteEvent event;
+  event.bufferId = p_bufferId;
+  event.filename = p_filename;
+  if (m_hookMgr->doAction(HookNames::AttachmentBeforeDelete, event)) {
+    return false; // Cancelled by plugin.
+  }
+
+  bool ok = BufferCoreService::deleteAttachment(p_bufferId, p_filename);
+
+  if (ok) {
+    m_hookMgr->doAction(HookNames::AttachmentAfterDelete, event);
+    emit attachmentChanged(p_bufferId);
+  }
+
+  return ok;
+}
+
+QString BufferService::renameAttachment(const QString &p_bufferId, const QString &p_oldFilename,
+                                        const QString &p_newFilename) {
+  AttachmentRenameEvent event;
+  event.bufferId = p_bufferId;
+  event.oldFilename = p_oldFilename;
+  event.newFilename = p_newFilename;
+  if (m_hookMgr->doAction(HookNames::AttachmentBeforeRename, event)) {
+    return QString(); // Cancelled by plugin.
+  }
+
+  QString actualName =
+      BufferCoreService::renameAttachment(p_bufferId, p_oldFilename, p_newFilename);
+
+  if (!actualName.isEmpty()) {
+    event.newFilename = actualName;
+    m_hookMgr->doAction(HookNames::AttachmentAfterRename, event);
+    emit attachmentChanged(p_bufferId);
+  }
+
+  return actualName;
+}
+
 // ============ Auto-Save & Dirty Tracking ============
 
 void BufferService::markDirty(const QString &p_bufferId) {

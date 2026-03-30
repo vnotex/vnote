@@ -135,6 +135,9 @@ public:
   // Get absolute path to the buffer's attachments folder.
   QString getAttachmentsFolder() const;
 
+  // Check if this buffer has any attachments.
+  bool hasAttachments() const;
+
 private:
   friend class BufferService;
   friend class ViewWindow2;
