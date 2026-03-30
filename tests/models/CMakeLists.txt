@@ -7,3 +7,14 @@ add_qt_test(test_tagfilemodel
     vxcore
   GUILESS
 )
+
+add_qt_test(test_attachmentmodel
+  SOURCES
+    test_attachmentmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/attachmentlistmodel.cpp
+  LINKS
+    core_services
+    vxcore
+    Qt6::Widgets
+  GUILESS
+)
