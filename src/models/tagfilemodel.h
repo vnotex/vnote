@@ -10,11 +10,14 @@
 
 namespace vnotex {
 
+class NotebookCoreService;
+
 class TagFileModel : public QAbstractListModel, public INodeListModel {
   Q_OBJECT
 
 public:
-  explicit TagFileModel(QObject *p_parent = nullptr);
+  explicit TagFileModel(NotebookCoreService *p_notebookService,
+                        QObject *p_parent = nullptr);
   ~TagFileModel() override = default;
 
   // Set nodes from tag search JSON results.
@@ -33,13 +36,14 @@ public:
   QModelIndex indexFromNodeId(const NodeIdentifier &p_nodeId) const override;
 
   bool supportsDragDrop() const override { return false; }
-  bool supportsPreview() const override { return false; }
+  bool supportsPreview() const override { return true; }
   bool supportsHierarchy() const override { return false; }
   bool supportsExternalNodes() const override { return false; }
 
   QString getNotebookId() const override;
 
 private:
+  NotebookCoreService *m_notebookService = nullptr;
   QVector<NodeInfo> m_nodes;
   QString m_notebookId;
 };

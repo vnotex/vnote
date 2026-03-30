@@ -2,10 +2,12 @@
 
 #include <QJsonObject>
 
+#include <core/services/notebookcoreservice.h>
+
 using namespace vnotex;
 
-TagFileModel::TagFileModel(QObject *p_parent)
-    : QAbstractListModel(p_parent) {
+TagFileModel::TagFileModel(NotebookCoreService *p_notebookService, QObject *p_parent)
+    : QAbstractListModel(p_parent), m_notebookService(p_notebookService) {
 }
 
 void TagFileModel::setNodes(const QJsonArray &p_nodes, const QString &p_notebookId) {
@@ -89,7 +91,11 @@ QVariant TagFileModel::data(const QModelIndex &p_index, int p_role) const {
     return info.id.relativePath;
 
   case INodeListModel::PreviewRole:
-    return QString();
+    if (info.preview.isEmpty() && m_notebookService) {
+      NodeInfo &mutableInfo = const_cast<NodeInfo &>(m_nodes[row]);
+      mutableInfo.preview = m_notebookService->peekFile(info.id.notebookId, info.id.relativePath);
+    }
+    return info.preview;
 
   case Qt::DisplayRole:
     return info.name;

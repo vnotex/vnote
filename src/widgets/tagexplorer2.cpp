@@ -49,7 +49,7 @@ void TagExplorer2::setupUI() {
   m_tagController = new TagController(m_services, this);
 
   // File list panel
-  m_fileModel = new TagFileModel(this);
+  m_fileModel = new TagFileModel(m_services.get<NotebookCoreService>(), this);
   m_fileView = new FileListView(this);
   m_fileView->setModel(m_fileModel);
   // Disable drag & drop for tag file list

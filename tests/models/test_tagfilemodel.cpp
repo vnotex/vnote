@@ -106,7 +106,7 @@ QJsonArray TestTagFileModel::makeThreeNodeArray() {
 
 // ===== Setup / Teardown =====
 
-void TestTagFileModel::initTestCase() { m_model = new vnotex::TagFileModel(this); }
+void TestTagFileModel::initTestCase() { m_model = new vnotex::TagFileModel(nullptr, this); }
 
 void TestTagFileModel::cleanupTestCase() {
   delete m_model;
@@ -117,7 +117,7 @@ void TestTagFileModel::cleanupTestCase() {
 
 void TestTagFileModel::testEmptyModel() {
   // A fresh model (no setNodes called) must have zero rows.
-  vnotex::TagFileModel emptyModel;
+  vnotex::TagFileModel emptyModel(nullptr);
   QCOMPARE(emptyModel.rowCount(), 0);
 
   // data() on an invalid index returns invalid QVariant.
@@ -410,7 +410,7 @@ void TestTagFileModel::testIndexFromNodeIdNotFound() {
 
 void TestTagFileModel::testCapabilities() {
   QCOMPARE(m_model->supportsDragDrop(), false);
-  QCOMPARE(m_model->supportsPreview(), false);
+  QCOMPARE(m_model->supportsPreview(), true);
   QCOMPARE(m_model->supportsHierarchy(), false);
 }
 
