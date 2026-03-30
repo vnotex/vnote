@@ -81,10 +81,8 @@ void TextViewWindow2::setupToolBar() {
 
   addAction(toolBar, ViewWindowToolBarHelper2::Save);
   addAction(toolBar, ViewWindowToolBarHelper2::WordCount);
-  addAction(toolBar, ViewWindowToolBarHelper2::Tag);
-  addAction(toolBar, ViewWindowToolBarHelper2::Attachment);
 
-  // Common right-side actions: spacer + layout toggle + find-and-replace.
+  // Common right-side actions: tag + attachment + spacer + layout toggle + find-and-replace.
   addCommonToolBarActions(toolBar);
 
   // Print action.

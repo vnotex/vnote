@@ -311,6 +311,7 @@ QToolBar *ViewWindow2::createToolBar(QWidget *p_parent) {
 
 void ViewWindow2::addCommonToolBarActions(QToolBar *p_toolBar) {
   addAction(p_toolBar, ViewWindowToolBarHelper2::Tag);
+  addAction(p_toolBar, ViewWindowToolBarHelper2::Attachment);
   ViewWindowToolBarHelper2::addSpacer(p_toolBar);
   addAction(p_toolBar, ViewWindowToolBarHelper2::ToggleLayoutMode);
   addAction(p_toolBar, ViewWindowToolBarHelper2::FindAndReplace);

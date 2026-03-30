@@ -37,10 +37,7 @@ void PdfViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
 
-  addAction(toolBar, ViewWindowToolBarHelper2::Tag);
-  addAction(toolBar, ViewWindowToolBarHelper2::Attachment);
-
-  // Common right-side actions: spacer + layout toggle + find-and-replace.
+  // Common right-side actions: tag + attachment + spacer + layout toggle + find-and-replace.
   addCommonToolBarActions(toolBar);
 }
 
