@@ -30,6 +30,20 @@ private slots:
   void testTagOperationEventRoundTrip();
   void testFileTagEventRoundTrip();
 
+  // Attachment event round-trip tests.
+  void testAttachmentAddEventRoundTrip();
+  void testAttachmentDeleteEventRoundTrip();
+  void testAttachmentRenameEventRoundTrip();
+
+  // Attachment typed doAction emission test.
+  void testTypedDoActionAttachmentAddEvent();
+
+  // Attachment typed addAction subscription test.
+  void testTypedAddActionAttachmentRenameEvent();
+
+  // Attachment typed cancellation test.
+  void testTypedCancellationAttachmentDeleteEvent();
+
   // Typed doAction emission tests.
   void testTypedDoActionNodeOperationEvent();
   void testTypedDoActionFileOpenEvent();
@@ -484,6 +498,124 @@ void TestHookEvents::testFileTagEventRoundTrip() {
   QCOMPARE(restored.tagName, orig.tagName);
   QCOMPARE(restored.tagsJson, orig.tagsJson);
   QCOMPARE(restored.operation, orig.operation);
+}
+
+// ===== Attachment event round-trip tests =====
+
+void TestHookEvents::testAttachmentAddEventRoundTrip() {
+  AttachmentAddEvent orig;
+  orig.bufferId = QStringLiteral("buf-att-1");
+  orig.sourcePath = QStringLiteral("/tmp/image.png");
+  orig.filename = QStringLiteral("image.png");
+
+  QVariantMap map = orig.toVariantMap();
+  AttachmentAddEvent restored = AttachmentAddEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.bufferId, orig.bufferId);
+  QCOMPARE(restored.sourcePath, orig.sourcePath);
+  QCOMPARE(restored.filename, orig.filename);
+}
+
+void TestHookEvents::testAttachmentDeleteEventRoundTrip() {
+  AttachmentDeleteEvent orig;
+  orig.bufferId = QStringLiteral("buf-att-2");
+  orig.filename = QStringLiteral("old-file.pdf");
+
+  QVariantMap map = orig.toVariantMap();
+  AttachmentDeleteEvent restored = AttachmentDeleteEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.bufferId, orig.bufferId);
+  QCOMPARE(restored.filename, orig.filename);
+}
+
+void TestHookEvents::testAttachmentRenameEventRoundTrip() {
+  AttachmentRenameEvent orig;
+  orig.bufferId = QStringLiteral("buf-att-3");
+  orig.oldFilename = QStringLiteral("old-name.txt");
+  orig.newFilename = QStringLiteral("new-name.txt");
+
+  QVariantMap map = orig.toVariantMap();
+  AttachmentRenameEvent restored = AttachmentRenameEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.bufferId, orig.bufferId);
+  QCOMPARE(restored.oldFilename, orig.oldFilename);
+  QCOMPARE(restored.newFilename, orig.newFilename);
+}
+
+// ===== Attachment typed doAction emission test =====
+
+void TestHookEvents::testTypedDoActionAttachmentAddEvent() {
+  bool fired = false;
+  QVariantMap captured;
+  int hookId = m_hookMgr->addAction(
+      HookNames::AttachmentBeforeAdd,
+      [&fired, &captured](HookContext &, const QVariantMap &p_args) {
+        fired = true;
+        captured = p_args;
+      },
+      10);
+
+  AttachmentAddEvent event;
+  event.bufferId = QStringLiteral("buf-emit-att-1");
+  event.sourcePath = QStringLiteral("/home/user/photo.jpg");
+  event.filename = QStringLiteral("photo.jpg");
+
+  m_hookMgr->doAction(HookNames::AttachmentBeforeAdd, event);
+
+  QVERIFY(fired);
+  QCOMPARE(captured[QStringLiteral("bufferId")].toString(),
+           QStringLiteral("buf-emit-att-1"));
+  QCOMPARE(captured[QStringLiteral("sourcePath")].toString(),
+           QStringLiteral("/home/user/photo.jpg"));
+  QCOMPARE(captured[QStringLiteral("filename")].toString(),
+           QStringLiteral("photo.jpg"));
+
+  m_hookMgr->removeAction(hookId);
+}
+
+// ===== Attachment typed addAction subscription test =====
+
+void TestHookEvents::testTypedAddActionAttachmentRenameEvent() {
+  bool fired = false;
+  AttachmentRenameEvent captured;
+  int hookId = m_hookMgr->addAction<AttachmentRenameEvent>(
+      HookNames::AttachmentAfterRename,
+      [&fired, &captured](HookContext &, const AttachmentRenameEvent &p_event) {
+        fired = true;
+        captured = p_event;
+      },
+      10);
+
+  QVariantMap rawArgs;
+  rawArgs[QStringLiteral("bufferId")] = QStringLiteral("buf-sub-att-1");
+  rawArgs[QStringLiteral("oldFilename")] = QStringLiteral("before.txt");
+  rawArgs[QStringLiteral("newFilename")] = QStringLiteral("after.txt");
+
+  m_hookMgr->doAction(HookNames::AttachmentAfterRename, rawArgs);
+
+  QVERIFY(fired);
+  QCOMPARE(captured.bufferId, QStringLiteral("buf-sub-att-1"));
+  QCOMPARE(captured.oldFilename, QStringLiteral("before.txt"));
+  QCOMPARE(captured.newFilename, QStringLiteral("after.txt"));
+
+  m_hookMgr->removeAction(hookId);
+}
+
+// ===== Attachment typed cancellation test =====
+
+void TestHookEvents::testTypedCancellationAttachmentDeleteEvent() {
+  int hookId = m_hookMgr->addAction<AttachmentDeleteEvent>(
+      HookNames::AttachmentBeforeDelete,
+      [](HookContext &p_ctx, const AttachmentDeleteEvent &) { p_ctx.cancel(); }, 10);
+
+  AttachmentDeleteEvent event;
+  event.bufferId = QStringLiteral("buf-cancel-att");
+  event.filename = QStringLiteral("doomed.pdf");
+
+  bool cancelled = m_hookMgr->doAction(HookNames::AttachmentBeforeDelete, event);
+  QVERIFY(cancelled);
+
+  m_hookMgr->removeAction(hookId);
 }
 
 } // namespace tests

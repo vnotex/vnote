@@ -240,3 +240,55 @@ FileTagEvent FileTagEvent::fromVariantMap(const QVariantMap &p_args) {
   return e;
 }
 
+// ===== AttachmentAddEvent =====
+
+QVariantMap AttachmentAddEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("bufferId")] = bufferId;
+  m[QStringLiteral("sourcePath")] = sourcePath;
+  m[QStringLiteral("filename")] = filename;
+  return m;
+}
+
+AttachmentAddEvent AttachmentAddEvent::fromVariantMap(const QVariantMap &p_args) {
+  AttachmentAddEvent e;
+  e.bufferId = p_args.value(QStringLiteral("bufferId")).toString();
+  e.sourcePath = p_args.value(QStringLiteral("sourcePath")).toString();
+  e.filename = p_args.value(QStringLiteral("filename")).toString();
+  return e;
+}
+
+// ===== AttachmentDeleteEvent =====
+
+QVariantMap AttachmentDeleteEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("bufferId")] = bufferId;
+  m[QStringLiteral("filename")] = filename;
+  return m;
+}
+
+AttachmentDeleteEvent AttachmentDeleteEvent::fromVariantMap(const QVariantMap &p_args) {
+  AttachmentDeleteEvent e;
+  e.bufferId = p_args.value(QStringLiteral("bufferId")).toString();
+  e.filename = p_args.value(QStringLiteral("filename")).toString();
+  return e;
+}
+
+// ===== AttachmentRenameEvent =====
+
+QVariantMap AttachmentRenameEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("bufferId")] = bufferId;
+  m[QStringLiteral("oldFilename")] = oldFilename;
+  m[QStringLiteral("newFilename")] = newFilename;
+  return m;
+}
+
+AttachmentRenameEvent AttachmentRenameEvent::fromVariantMap(const QVariantMap &p_args) {
+  AttachmentRenameEvent e;
+  e.bufferId = p_args.value(QStringLiteral("bufferId")).toString();
+  e.oldFilename = p_args.value(QStringLiteral("oldFilename")).toString();
+  e.newFilename = p_args.value(QStringLiteral("newFilename")).toString();
+  return e;
+}
+

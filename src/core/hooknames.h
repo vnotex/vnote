@@ -212,6 +212,27 @@ inline const QLatin1String ViewWindowBeforeModeChange("vnote.viewarea.window.bef
 // After view window mode changes (read/edit)
 inline const QLatin1String ViewWindowAfterModeChange("vnote.viewarea.window.after_mode_change");
 
+// ===== Attachment Events =====
+// Triggered when attachment operations occur
+
+// Before an attachment is added
+inline const QLatin1String AttachmentBeforeAdd("vnote.attachment.before_add");
+
+// After an attachment is added
+inline const QLatin1String AttachmentAfterAdd("vnote.attachment.after_add");
+
+// Before an attachment is deleted
+inline const QLatin1String AttachmentBeforeDelete("vnote.attachment.before_delete");
+
+// After an attachment is deleted
+inline const QLatin1String AttachmentAfterDelete("vnote.attachment.after_delete");
+
+// Before an attachment is renamed
+inline const QLatin1String AttachmentBeforeRename("vnote.attachment.before_rename");
+
+// After an attachment is renamed
+inline const QLatin1String AttachmentAfterRename("vnote.attachment.after_rename");
+
 // ===== Filter Hooks =====
 // Filters transform data and return modified values
 

@@ -139,6 +139,35 @@ struct FileTagEvent {
   static FileTagEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for AttachmentBeforeAdd, AttachmentAfterAdd.
+struct AttachmentAddEvent {
+  QString bufferId;
+  QString sourcePath;
+  QString filename; // result filename after add
+
+  QVariantMap toVariantMap() const;
+  static AttachmentAddEvent fromVariantMap(const QVariantMap &p_args);
+};
+
+// Typed event struct for AttachmentBeforeDelete, AttachmentAfterDelete.
+struct AttachmentDeleteEvent {
+  QString bufferId;
+  QString filename;
+
+  QVariantMap toVariantMap() const;
+  static AttachmentDeleteEvent fromVariantMap(const QVariantMap &p_args);
+};
+
+// Typed event struct for AttachmentBeforeRename, AttachmentAfterRename.
+struct AttachmentRenameEvent {
+  QString bufferId;
+  QString oldFilename;
+  QString newFilename;
+
+  QVariantMap toVariantMap() const;
+  static AttachmentRenameEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 } // namespace vnotex
 
 #endif // HOOKEVENTS_H
