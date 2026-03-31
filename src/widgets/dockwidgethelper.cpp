@@ -272,6 +272,8 @@ void DockWidgetHelper::postSetup() {
     connect(dock, &QDockWidget::dockLocationChanged, this,
             &DockWidgetHelper::updateDockWidgetTabBar);
     connect(dock, &QDockWidget::topLevelChanged, this, &DockWidgetHelper::updateDockWidgetTabBar);
+    connect(dock, &QDockWidget::visibilityChanged, this,
+            &DockWidgetHelper::updateDockWidgetTabBar);
   }
 }
 
