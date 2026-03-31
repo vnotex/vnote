@@ -140,7 +140,7 @@ void AttachmentPopup2::setupUI() {
     m_renameBtn = createButton();
     auto *act = new QAction(
         IconUtils::fetchIconWithDisabledState(
-            themeService->getIconFile(QStringLiteral("edit_editor.svg"))),
+            themeService->getIconFile(QStringLiteral("rename.svg"))),
         tr("Rename"), m_renameBtn);
     connect(act, &QAction::triggered, this, [this]() {
       auto idx = m_listView->currentIndex();
