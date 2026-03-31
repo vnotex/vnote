@@ -46,9 +46,6 @@ private:
   QColor getNodeTextColor(const NodeInfo &p_nodeInfo,
                           const QStyleOptionViewItem &p_option) const;
 
-  // Get icon for node
-  QIcon getNodeIcon(const NodeInfo &p_nodeInfo) const;
-
   // Configuration
   ServiceLocator &m_services;
   bool m_showChildCount = true;

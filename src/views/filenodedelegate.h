@@ -46,9 +46,6 @@ private:
   QColor getNodeTextColor(const NodeInfo &p_nodeInfo,
                           const QStyleOptionViewItem &p_option) const;
 
-  // Get icon for file node
-  QIcon getNodeIcon(const NodeInfo &p_nodeInfo) const;
-
   // Configuration
   ServiceLocator &m_services;
   const int m_hPadding = 8;   // Horizontal padding (left/right margins)

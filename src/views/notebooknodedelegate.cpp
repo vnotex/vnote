@@ -8,7 +8,7 @@
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <models/notebooknodemodel.h>
-#include <gui/utils/iconutils.h>
+#include "nodeiconhelper.h"
 
 using namespace vnotex;
 
@@ -63,7 +63,7 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
   textRect.setRight(p_option.rect.right() - m_hPadding);
 
   // Draw icon
-  QIcon icon = getNodeIcon(p_nodeInfo);
+  QIcon icon = NodeIconHelper::getNodeIcon(m_services, p_nodeInfo);
   if (!icon.isNull()) {
     QIcon::Mode iconMode = QIcon::Normal;
     if (!(p_option.state & QStyle::State_Enabled)) {
@@ -241,15 +241,4 @@ QColor NotebookNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
   return QColor();
 }
 
-QIcon NotebookNodeDelegate::getNodeIcon(const NodeInfo &p_nodeInfo) const {
-  auto *themeService = m_services.get<ThemeService>();
-  QString iconName;
 
-  if (p_nodeInfo.isFolder) {
-    iconName = QStringLiteral("folder_node.svg");
-  } else {
-    iconName = QStringLiteral("file_node.svg");
-  }
-
-  return IconUtils::fetchIcon(themeService->getIconFile(iconName));
-}

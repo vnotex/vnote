@@ -3,7 +3,6 @@
 
 #include <QAbstractItemModel>
 #include <QHash>
-#include <QIcon>
 #include <QMap>
 #include <QSet>
 #include <QVector>
@@ -105,7 +104,6 @@ private:
   QVector<NodeInfo> parseExternalNodesFromJson(const QJsonObject &p_json,
                                                const NodeIdentifier &p_parentId) const;
   NodeInfo parseNodeInfoFromJson(const QJsonObject &p_json, const NodeIdentifier &p_parentId) const;
-  QIcon getNodeIcon(const NodeInfo &p_info) const;
 
   ServiceLocator &m_services;
   QString m_notebookId;

@@ -1,6 +1,5 @@
 #include "notebooknodemodel.h"
 
-#include <QBrush>
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -10,8 +9,6 @@
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
-#include <gui/services/themeservice.h>
-#include <gui/utils/iconutils.h>
 
 using namespace vnotex;
 
@@ -364,31 +361,11 @@ QVariant NotebookNodeModel::data(const QModelIndex &p_index, int p_role) const {
   case Qt::EditRole:
     return info.name;
 
-  case Qt::DecorationRole:
-    return getNodeIcon(info);
-
   case Qt::ToolTipRole:
     if (info.isExternal) {
       return QStringLiteral("[External] ") + info.relativePath();
     }
     return info.relativePath();
-
-  case Qt::ForegroundRole:
-    // External nodes have semi-transparent text to visually differentiate them
-    // Note: This is mainly for views that don't use custom delegates
-    if (info.isExternal) {
-      auto *themeService = m_services.get<ThemeService>();
-      if (themeService) {
-        QString externalFg = themeService->paletteColor(
-            QStringLiteral("widgets#notebookexplorer#external_node_text#fg"));
-        if (!externalFg.isEmpty()) {
-          return QBrush(QColor(externalFg));
-        }
-      }
-      // Fallback: use a semi-transparent gray if no theme color defined
-      return QBrush(QColor(128, 128, 128, 160));
-    }
-    return QVariant();
 
   case NodeInfoRole:
     return QVariant::fromValue(info);
@@ -741,27 +718,6 @@ void NotebookNodeModel::prefetchChildrenOfChildren(const QModelIndex &p_parent) 
       emit dataChanged(childIndex, childIndex);
     }
   }
-}
-QIcon NotebookNodeModel::getNodeIcon(const NodeInfo &p_info) const {
-  auto *themeService = m_services.get<ThemeService>();
-  if (!themeService) {
-    return QIcon();
-  }
-
-  QString iconName = p_info.isFolder ? QStringLiteral("folder_node.svg")
-                                     : QStringLiteral("file_node.svg");
-  QString iconFile = themeService->getIconFile(iconName);
-
-  // External nodes use a different icon color from theme
-  if (p_info.isExternal) {
-    QString externalFg =
-        themeService->paletteColor(QStringLiteral("widgets#notebookexplorer#external_node_icon#fg"));
-    if (!externalFg.isEmpty()) {
-      return IconUtils::fetchIcon(iconFile, externalFg);
-    }
-  }
-
-  return IconUtils::fetchIcon(iconFile);
 }
 
 Qt::DropActions NotebookNodeModel::supportedDropActions() const {

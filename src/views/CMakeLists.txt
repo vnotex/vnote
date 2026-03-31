@@ -2,6 +2,7 @@ target_sources(vnote PRIVATE
     notebooknodedelegate.cpp notebooknodedelegate.h
     filenodedelegate.cpp filenodedelegate.h
     filelistview.cpp filelistview.h
+    nodeiconhelper.cpp nodeiconhelper.h
     notebooknodeview.cpp notebooknodeview.h
     outlineview.cpp outlineview.h
     inodeexplorer.h

@@ -10,7 +10,7 @@
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <models/notebooknodemodel.h>
-#include <gui/utils/iconutils.h>
+#include "nodeiconhelper.h"
 
 using namespace vnotex;
 
@@ -87,7 +87,7 @@ void FileNodeDelegate::paintFileNode(QPainter *p_painter, const QStyleOptionView
   nameRect.setRight(p_option.rect.right() - m_hPadding);
 
   // Draw icon
-  QIcon icon = getNodeIcon(p_nodeInfo);
+  QIcon icon = NodeIconHelper::getNodeIcon(m_services, p_nodeInfo);
   if (!icon.isNull()) {
     QIcon::Mode iconMode = QIcon::Normal;
     if (!(p_option.state & QStyle::State_Enabled)) {
@@ -393,14 +393,6 @@ QColor FileNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
   return textColor;
 }
 
-QIcon FileNodeDelegate::getNodeIcon(const NodeInfo &p_nodeInfo) const {
-  Q_UNUSED(p_nodeInfo);
-
-  auto *themeService = m_services.get<ThemeService>();
-  QString iconName = QStringLiteral("file_node.svg");
-
-  return IconUtils::fetchIcon(themeService->getIconFile(iconName));
-}
 
 void FileNodeDelegate::setEditorData(QWidget *p_editor, const QModelIndex &p_index) const {
   Q_UNUSED(p_index);
