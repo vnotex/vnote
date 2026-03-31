@@ -134,6 +134,12 @@ void DockWidgetHelper::setupDocks() {
     m_mainWindow->tabifyDockWidget(m_docks[tabifiedDockIndex[i - 1]],
                                    m_docks[tabifiedDockIndex[i]]);
   }
+
+  // Make Notebooks the active tab by default.
+  // This will be overridden by restoreState() if saved state exists.
+  if (m_docks[DockType::NavigationDock]) {
+    m_docks[DockType::NavigationDock]->raise();
+  }
 }
 
 static void addWidgetToDock(QDockWidget *p_dock, QWidget *p_widget) {
