@@ -105,7 +105,7 @@ void DockWidgetHelper::setupDocks() {
   }
 
   if (setupDock(DockType::TagDock, tr("Tags"), QStringLiteral("TagDock.vnotex"), Qt::LeftDockWidgetArea,
-                    Qt::AllDockWidgetAreas, false)) {
+                    Qt::AllDockWidgetAreas, true)) {
     tabifiedDockIndex.append(DockType::TagDock);
   }
 
@@ -115,7 +115,7 @@ void DockWidgetHelper::setupDocks() {
   }
 
   if (setupDock(DockType::SnippetDock, tr("Snippets"), QStringLiteral("SnippetDock.vnotex"),
-                    Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, false)) {
+                    Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, true)) {
     tabifiedDockIndex.append(DockType::SnippetDock);
   }
 
