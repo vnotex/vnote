@@ -3,6 +3,7 @@
 
 #include <QFrame>
 #include <QIcon>
+#include <QPixmap>
 #include <QSharedPointer>
 #include <QString>
 #include <QStringList>
@@ -256,10 +257,23 @@ protected:
   // Create a standard toolbar with the configured icon size.
   static QToolBar *createToolBar(QWidget *p_parent = nullptr);
 
-  // Add common right-side toolbar actions: spacer + layout mode toggle + find-and-replace.
-  // Call at the end of subclass setupToolBar() after adding subclass-specific actions.
+  // Add common left-side toolbar actions: save + word count + tag + attachment.
+  // Call near the beginning of subclass setupToolBar() after creating the toolbar.
   // @p_toolBar: The toolbar to add actions to.
-  void addCommonToolBarActions(QToolBar *p_toolBar);
+  void addLeftCommonToolBarActions(QToolBar *p_toolBar);
+
+  // Add common right-side toolbar actions: spacer + layout mode toggle + find-and-replace
+  // + print. Call at the end of subclass setupToolBar() after adding subclass-specific
+  // actions.
+  // @p_toolBar: The toolbar to add actions to.
+  void addRightCommonToolBarActions(QToolBar *p_toolBar);
+
+  // Add subclass-specific right-side toolbar actions between the spacer and the standard
+  // right-side actions.
+  virtual void addAdditionalRightToolBarActions(QToolBar *p_toolBar);
+
+  // Handle print action.
+  virtual void handlePrint();
 
   // ============ Find and Replace ============
 
@@ -431,6 +445,9 @@ private:
   // Attachment toolbar action. Managed by QObject.
   QAction *m_attachmentAction = nullptr;
 
+  // Print action. Managed by QObject.
+  QAction *m_printAction = nullptr;
+
   // Attachment drag-drop area indicator. Managed by QObject. Lazily created.
   AttachmentDragDropAreaIndicator2 *m_attachmentDragDropIndicator = nullptr;
 
@@ -439,6 +456,17 @@ private:
 
   // Update the attachment action icon based on whether the buffer has attachments.
   void updateAttachmentIcon();
+
+  static QIcon generateAttachmentFullIcon(const QString &p_iconFile, const QString &p_foreground,
+                                          const QString &p_disabledForeground);
+
+  static QString s_attachmentFullIconFile;
+
+  static QString s_attachmentFullIconForeground;
+
+  static QString s_attachmentFullIconDisabledForeground;
+
+  static QIcon s_attachmentFullIcon;
 };
 
 } // namespace vnotex

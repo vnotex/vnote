@@ -110,10 +110,7 @@ void MarkdownViewWindow2::setupToolBar() {
   addToolBar(toolBar);
 
   addAction(toolBar, ViewWindowToolBarHelper2::EditRead);
-  addAction(toolBar, ViewWindowToolBarHelper2::Save);
-  addAction(toolBar, ViewWindowToolBarHelper2::WordCount);
-  addAction(toolBar, ViewWindowToolBarHelper2::Tag);
-  addAction(toolBar, ViewWindowToolBarHelper2::Attachment);
+  addLeftCommonToolBarActions(toolBar);
 
   // Separator between word count and formatting actions (visible only in edit mode).
   auto *typeSeparator = toolBar->addSeparator();
@@ -140,13 +137,14 @@ void MarkdownViewWindow2::setupToolBar() {
   addAction(toolBar, ViewWindowToolBarHelper2::TypeImage);
   addAction(toolBar, ViewWindowToolBarHelper2::TypeTable);
 
-  // Right-side actions: spacer + outline + live preview + layout toggle + find-and-replace.
-  ViewWindowToolBarHelper2::addSpacer(toolBar);
+  addRightCommonToolBarActions(toolBar);
+}
 
+void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
   // Outline popup button (right corner, first): wire it to this window's outline provider.
   {
-    auto *outlineAct = addAction(toolBar, ViewWindowToolBarHelper2::Outline);
-    auto *toolBtn = dynamic_cast<QToolButton *>(toolBar->widgetForAction(outlineAct));
+    auto *outlineAct = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(outlineAct));
     if (toolBtn) {
       auto *outlinePopup = dynamic_cast<OutlinePopup *>(toolBtn->menu());
       if (outlinePopup) {
@@ -157,7 +155,7 @@ void MarkdownViewWindow2::setupToolBar() {
 
   // Live preview toggle (visible only in Edit mode).
   {
-    auto *livePreviewAction = addAction(toolBar, ViewWindowToolBarHelper2::ToggleLivePreview);
+    auto *livePreviewAction = addAction(p_toolBar, ViewWindowToolBarHelper2::ToggleLivePreview);
     livePreviewAction->setChecked(
         m_editViewMode == MarkdownEditorConfig::EditViewMode::EditPreview);
     connect(livePreviewAction, &QAction::toggled, this, [this](bool p_checked) {
@@ -169,24 +167,17 @@ void MarkdownViewWindow2::setupToolBar() {
       setEditViewMode(mode);
     });
   }
+}
 
-  addAction(toolBar, ViewWindowToolBarHelper2::ToggleLayoutMode);
+void MarkdownViewWindow2::handlePrint() {
+  if (!m_viewer || !m_viewerReady) {
+    return;
+  }
 
-  addAction(toolBar, ViewWindowToolBarHelper2::FindAndReplace);
-
-  // Print (Markdown-specific: uses viewer for PDF rendering).
-  {
-    auto *printAction = addAction(toolBar, ViewWindowToolBarHelper2::Print);
-    connect(printAction, &QAction::triggered, this, [this]() {
-      if (!m_viewer || !m_viewerReady) {
-        return;
-      }
-      m_printer = PrintUtils::promptForPrint(m_viewer->hasSelection(), this);
-      if (m_printer) {
-        m_printer->setOutputFormat(QPrinter::PdfFormat);
-        m_viewer->print(m_printer.get());
-      }
-    });
+  m_printer = PrintUtils::promptForPrint(m_viewer->hasSelection(), this);
+  if (m_printer) {
+    m_printer->setOutputFormat(QPrinter::PdfFormat);
+    m_viewer->print(m_printer.get());
   }
 }
 

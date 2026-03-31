@@ -13,7 +13,7 @@
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/widgetutils.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 
 #include "editreaddiscardaction.h"
 #include "outlinepopup.h"

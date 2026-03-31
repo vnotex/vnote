@@ -7,7 +7,7 @@
 #include "core/exception.h"
 #include "core/theme.h"
 #include <gui/utils/themeutils.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;

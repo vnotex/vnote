@@ -4,8 +4,11 @@
 #include <QAction>
 #include <QDebug>
 #include <QDragEnterEvent>
+#include <QPainter>
+#include <QPolygonF>
 #include <QKeyEvent>
 #include <QMenu>
+#include <QtMath>
 #include <QWheelEvent>
 #include <QMessageBox>
 #include <QToolBar>
@@ -21,6 +24,10 @@
 #include <core/services/bufferservice.h>
 #include <core/widgetconfig.h>
 
+#include <gui/services/themeservice.h>
+
+#include <gui/utils/iconutils.h>
+
 #include "editreaddiscardaction.h"
 #include "attachmentdragdropareaindicator2.h"
 #include "editors/statuswidget.h"
@@ -34,6 +41,14 @@
 #include "wordcountpopup2.h"
 
 using namespace vnotex;
+
+QString ViewWindow2::s_attachmentFullIconFile;
+
+QString ViewWindow2::s_attachmentFullIconForeground;
+
+QString ViewWindow2::s_attachmentFullIconDisabledForeground;
+
+QIcon ViewWindow2::s_attachmentFullIcon;
 
 ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                          QWidget *p_parent)
@@ -309,12 +324,27 @@ QToolBar *ViewWindow2::createToolBar(QWidget *p_parent) {
   return toolBar;
 }
 
-void ViewWindow2::addCommonToolBarActions(QToolBar *p_toolBar) {
+void ViewWindow2::addLeftCommonToolBarActions(QToolBar *p_toolBar) {
+  addAction(p_toolBar, ViewWindowToolBarHelper2::Save);
+  addAction(p_toolBar, ViewWindowToolBarHelper2::WordCount);
   addAction(p_toolBar, ViewWindowToolBarHelper2::Tag);
   addAction(p_toolBar, ViewWindowToolBarHelper2::Attachment);
+}
+
+void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar) {
   ViewWindowToolBarHelper2::addSpacer(p_toolBar);
+  addAdditionalRightToolBarActions(p_toolBar);
   addAction(p_toolBar, ViewWindowToolBarHelper2::ToggleLayoutMode);
   addAction(p_toolBar, ViewWindowToolBarHelper2::FindAndReplace);
+  m_printAction = addAction(p_toolBar, ViewWindowToolBarHelper2::Print);
+  connect(m_printAction, &QAction::triggered, this, &ViewWindow2::handlePrint);
+}
+
+void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
+  Q_UNUSED(p_toolBar)
+}
+
+void ViewWindow2::handlePrint() {
 }
 
 // Convert a ViewWindowToolBarHelper2::Action (TypeBold..TypeTable) to the
@@ -623,10 +653,79 @@ void ViewWindow2::updateAttachmentIcon() {
   if (!m_attachmentAction) {
     return;
   }
-  m_attachmentAction->setIcon(ViewWindowToolBarHelper2::generateIcon(
-      m_services, getBuffer().hasAttachments()
-                      ? QStringLiteral("attachment_full_editor.svg")
-                      : QStringLiteral("attachment_editor.svg")));
+
+  auto *themeService = m_services.get<ThemeService>();
+  if (!themeService) {
+    m_attachmentAction->setIcon(QIcon());
+    return;
+  }
+
+  const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
+  const auto disabledFg =
+      themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
+  QVector<IconUtils::OverriddenColor> colors;
+  colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+  colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
+
+  const auto iconFile = themeService->getIconFile(QStringLiteral("attachment_editor.svg"));
+  m_attachmentAction->setIcon(getBuffer().hasAttachments()
+                                  ? generateAttachmentFullIcon(iconFile, fg, disabledFg)
+                                  : IconUtils::fetchIcon(iconFile, colors));
+}
+
+QIcon ViewWindow2::generateAttachmentFullIcon(const QString &p_iconFile,
+                                              const QString &p_foreground,
+                                              const QString &p_disabledForeground) {
+  if (!s_attachmentFullIcon.isNull() && s_attachmentFullIconFile == p_iconFile
+      && s_attachmentFullIconForeground == p_foreground
+      && s_attachmentFullIconDisabledForeground == p_disabledForeground) {
+    return s_attachmentFullIcon;
+  }
+
+  QIcon icon;
+  const int iconSize = 24;
+  const QPointF badgeCenter(iconSize - 6.0, 6.0);
+  const qreal outerRadius = 4.5;
+  const qreal innerRadius = 2.0;
+  const QVector<IconUtils::OverriddenColor> iconColors = {
+      IconUtils::OverriddenColor(p_foreground, QIcon::Normal, QIcon::Off),
+      IconUtils::OverriddenColor(p_disabledForeground, QIcon::Disabled, QIcon::Off)
+  };
+
+  for (const auto &color : iconColors) {
+    QVector<IconUtils::OverriddenColor> overriddenColors;
+    overriddenColors.push_back(color);
+    QPixmap pixmap = IconUtils::fetchIcon(p_iconFile, overriddenColors).pixmap(
+        iconSize, iconSize, color.m_mode, color.m_state);
+    if (pixmap.isNull()) {
+      continue;
+    }
+
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QBrush(Qt::white));
+    painter.drawEllipse(badgeCenter, outerRadius + 0.9, outerRadius + 0.9);
+
+    QPolygonF star;
+    for (int i = 0; i < 10; ++i) {
+      const qreal angle = -90.0 + i * 36.0;
+      const qreal radius = (i % 2 == 0) ? outerRadius : innerRadius;
+      const qreal radians = qDegreesToRadians(angle);
+      star << QPointF(badgeCenter.x() + radius * qCos(radians),
+                      badgeCenter.y() + radius * qSin(radians));
+    }
+
+    painter.setBrush(QBrush(QColor(color.m_foreground)));
+    painter.drawPolygon(star);
+    icon.addPixmap(pixmap, color.m_mode, color.m_state);
+  }
+
+  s_attachmentFullIconFile = p_iconFile;
+  s_attachmentFullIconForeground = p_foreground;
+  s_attachmentFullIconDisabledForeground = p_disabledForeground;
+  s_attachmentFullIcon = icon;
+  return s_attachmentFullIcon;
 }
 
 // ============ Find and Replace ============

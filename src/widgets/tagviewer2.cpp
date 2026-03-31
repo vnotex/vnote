@@ -15,7 +15,7 @@
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
 #include <gui/services/themeservice.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 
 #include "listwidget.h"
 

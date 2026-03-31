@@ -5,11 +5,12 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmap>
+#include <QPolygonF>
 #include <QRegularExpression>
 
 #include <core/vnotex.h>
 
-#include "fileutils.h"
+#include <utils/fileutils.h>
 
 using namespace vnotex;
 

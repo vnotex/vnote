@@ -5,7 +5,7 @@
 #include <QPushButton>
 
 #include <core/vnotex.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 
 using namespace vnotex;
 

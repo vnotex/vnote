@@ -33,7 +33,7 @@
 #include <notebookconfigmgr/inotebookconfigmgr.h>
 #include <utils/clipboardutils.h>
 #include <utils/docsutils.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/pathutils.h>
 #include <utils/vxurlutils.h>
 #include <utils/widgetutils.h>

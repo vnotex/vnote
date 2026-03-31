@@ -19,7 +19,7 @@
 #include "notebookmgr.h"
 #include "vnotex.h"
 #include <core/configmgr.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/utils.h>
 #include <utils/widgetutils.h>
 

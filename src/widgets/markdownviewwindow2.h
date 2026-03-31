@@ -72,7 +72,11 @@ protected slots:
   void handleFindAndReplaceWidgetOpened() Q_DECL_OVERRIDE;
 
 protected:
+  void addAdditionalRightToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
+
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
+
+  void handlePrint() Q_DECL_OVERRIDE;
 
   bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 

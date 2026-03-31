@@ -11,7 +11,7 @@
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 #include <gui/services/themeservice.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 
 using namespace vnotex;
 

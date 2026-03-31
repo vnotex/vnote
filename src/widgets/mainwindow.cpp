@@ -53,7 +53,7 @@
 #include <core/widgetconfig.h>
 #include <notebook/notebook.h>
 #include <utils/docsutils.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <vtextedit/spellchecker.h>
 #include <widgets/dialogs/exportdialog.h>

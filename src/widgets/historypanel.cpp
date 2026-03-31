@@ -11,7 +11,7 @@
 #include <core/historymgr.h>
 #include <core/notebookmgr.h>
 #include <core/vnotex.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/pathutils.h>
 #include <utils/utils.h>
 #include <utils/widgetutils.h>

@@ -10,7 +10,7 @@
 #include <core/notebookmgr.h>
 #include <core/vnotex.h>
 #include <notebook/notebook.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;

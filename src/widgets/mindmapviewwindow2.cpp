@@ -70,10 +70,8 @@ void MindMapViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
 
-  addAction(toolBar, ViewWindowToolBarHelper2::Save);
-
-  // Common right-side actions: tag + attachment + spacer + layout toggle + find-and-replace.
-  addCommonToolBarActions(toolBar);
+  addLeftCommonToolBarActions(toolBar);
+  addRightCommonToolBarActions(toolBar);
 }
 
 void MindMapViewWindow2::syncEditorFromBuffer() {

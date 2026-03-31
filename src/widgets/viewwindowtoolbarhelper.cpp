@@ -21,7 +21,7 @@
 #include <core/configmgr.h>
 #include <core/editorconfig.h>
 #include <core/global.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;

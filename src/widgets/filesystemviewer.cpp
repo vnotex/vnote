@@ -13,7 +13,7 @@
 #include <core/thememgr.h>
 #include <core/vnotex.h>
 #include <utils/clipboardutils.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;

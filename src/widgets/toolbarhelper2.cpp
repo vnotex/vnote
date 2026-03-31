@@ -27,7 +27,7 @@
 #include <core/services/bufferservice.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/pathutils.h>
 #include <utils/vxurlutils.h>
 #include <utils/widgetutils.h>

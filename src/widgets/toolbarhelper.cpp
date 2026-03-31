@@ -32,7 +32,7 @@
 #include <task/taskmgr.h>
 #include <unitedentry/unitedentry.h>
 #include <utils/docsutils.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/pathutils.h>
 #include <utils/vxurlutils.h>
 #include <utils/widgetutils.h>

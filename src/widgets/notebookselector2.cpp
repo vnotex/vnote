@@ -10,7 +10,7 @@
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <core/configmgr2.h>
 #include <core/sessionconfig.h>

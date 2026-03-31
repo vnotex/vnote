@@ -7,7 +7,6 @@ target_sources(vnote PRIVATE
     fileutils.cpp fileutils.h
     fileutils2.cpp fileutils2.h
     htmlutils.cpp htmlutils.h
-    iconutils.cpp iconutils.h
     pathutils.cpp pathutils.h
     stringutils.cpp stringutils.h
     strnatcmp.c strnatcmp.h

@@ -34,7 +34,7 @@
 #include <core/configmgr.h>
 #include <core/editorconfig.h>
 #include <imagehost/imagehostmgr.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/utils.h>
 #include <utils/widgetutils.h>
 
@@ -515,7 +515,8 @@ QAction *ViewWindow::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper::Act
 
 const QIcon &ViewWindow::getAttachmentIcon(Buffer *p_buffer) const {
   static QIcon emptyIcon = ToolBarHelper::generateIcon("attachment_editor.svg");
-  static QIcon fullIcon = ToolBarHelper::generateIcon("attachment_full_editor.svg");
+  static QIcon fullIcon = ToolBarHelper::generateIcon("attachment_editor.svg");
+
   if (p_buffer && p_buffer->hasAttachment()) {
     return fullIcon;
   } else {

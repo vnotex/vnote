@@ -33,7 +33,7 @@
 #include <notebook/notebook.h>
 #include <snippet/snippetmgr.h>
 #include <utils/fileutils.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/pathutils.h>
 #include <utils/widgetutils.h>
 

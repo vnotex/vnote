@@ -79,22 +79,15 @@ void TextViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
 
-  addAction(toolBar, ViewWindowToolBarHelper2::Save);
-  addAction(toolBar, ViewWindowToolBarHelper2::WordCount);
+  addLeftCommonToolBarActions(toolBar);
+  addRightCommonToolBarActions(toolBar);
+}
 
-  // Common right-side actions: tag + attachment + spacer + layout toggle + find-and-replace.
-  addCommonToolBarActions(toolBar);
-
-  // Print action.
-  {
-    auto *printAction = addAction(toolBar, ViewWindowToolBarHelper2::Print);
-    connect(printAction, &QAction::triggered, this, [this]() {
-      auto printer = PrintUtils::promptForPrint(
-          m_editor->getTextEdit()->hasSelection(), this);
-      if (printer) {
-        m_editor->getTextEdit()->print(printer.data());
-      }
-    });
+void TextViewWindow2::handlePrint() {
+  auto printer = PrintUtils::promptForPrint(
+      m_editor->getTextEdit()->hasSelection(), this);
+  if (printer) {
+    m_editor->getTextEdit()->print(printer.data());
   }
 }
 

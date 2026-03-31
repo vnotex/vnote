@@ -20,7 +20,7 @@
 #include <core/services/workspacecoreservice.h>
 #include <gui/services/themeservice.h>
 #include <utils/clipboardutils.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/pathutils.h>
 #include <utils/widgetutils.h>
 

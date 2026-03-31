@@ -13,7 +13,7 @@
 #include <notebook/node.h>
 #include <notebook/notebook.h>
 #include <notebook/tagi.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
 
 #include "lineedit.h"

@@ -20,7 +20,7 @@
 #include <core/thememgr.h>
 #include <core/vnotex.h>
 #include <core/widgetconfig.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <widgets/lineeditwithsnippet.h>
 #include <widgets/propertydefs.h>

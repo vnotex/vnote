@@ -10,7 +10,7 @@
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <models/notebooknodemodel.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 
 using namespace vnotex;
 

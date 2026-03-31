@@ -9,7 +9,7 @@
 #include <gui/services/themeservice.h>
 
 #include "widgetsfactory.h"
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 
 #include "propertydefs.h"
 

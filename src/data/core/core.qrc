@@ -40,7 +40,6 @@
         <file>icons/save_editor.svg</file>
         <file>icons/buffer.svg</file>
         <file>icons/attachment_editor.svg</file>
-        <file>icons/attachment_full_editor.svg</file>
         <file>icons/tag_editor.svg</file>
         <file>icons/word_count_editor.svg</file>
         <file>icons/split_menu.svg</file>

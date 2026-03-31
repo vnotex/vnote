@@ -16,7 +16,7 @@
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
-#include <utils/iconutils.h>
+#include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <core/widgetconfig.h>
 #include "propertydefs.h"

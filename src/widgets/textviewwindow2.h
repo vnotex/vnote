@@ -50,6 +50,8 @@ protected slots:
 protected:
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 
+  void handlePrint() Q_DECL_OVERRIDE;
+
   void scrollUp() Q_DECL_OVERRIDE;
 
   void scrollDown() Q_DECL_OVERRIDE;
