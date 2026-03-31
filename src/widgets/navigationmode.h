@@ -15,6 +15,8 @@ class QLabel;
 class QWidget;
 
 namespace vnotex {
+class ThemeService;
+
 // Interface for Navigation Mode.
 // Need to inherit this class if one widget wants to support Navigation mode.
 class NavigationMode {
@@ -37,7 +39,9 @@ public:
 protected:
   enum class Type { SingleKey, DoubleKeys, StagedDoubleKeys };
 
-  explicit NavigationMode(NavigationMode::Type p_type, QWidget *p_widget);
+  explicit NavigationMode(NavigationMode::Type p_type,
+                          QWidget *p_widget,
+                          ThemeService *p_themeService = nullptr);
 
   // @p_item: if it is null, that means it is a major key hit; otherwise, it is a second key hit.
   virtual void handleTargetHit(void *p_item) = 0;
@@ -59,13 +63,17 @@ protected:
 private:
   QString generateLabelString(QChar p_secondKey) const;
 
-  QLabel *createNavigationLabel(QChar p_secondKey, QWidget *p_parent) const;
+  QString generateNavigationLabelStyle(const QString &p_str, bool p_isSecond);
+
+  QLabel *createNavigationLabel(QChar p_secondKey, QWidget *p_parent);
 
   static QChar generateSecondKey(int p_idx);
 
   Type m_type = Type::SingleKey;
 
   QWidget *m_widget = nullptr;
+
+  ThemeService *m_themeService = nullptr;
 
   QChar m_majorKey;
 
