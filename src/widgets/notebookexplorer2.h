@@ -50,6 +50,9 @@ public:
   void setCurrentNode(const NodeIdentifier &p_nodeId);
   NodeIdentifier currentNodeId() const;
 
+  NotebookSelector2 *getNotebookSelector() const;
+  INodeExplorer *getNodeExplorer() const;
+
   // Mode switching
   void setExploreMode(ExploreMode p_mode);
   ExploreMode exploreMode() const;

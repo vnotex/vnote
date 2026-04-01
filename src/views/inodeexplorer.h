@@ -14,6 +14,7 @@ class QMenu;
 namespace vnotex {
 
 class Event;
+class NavigationMode;
 
 // INodeExplorer is the abstract base class for node explorer widgets.
 // Both CombinedNodeExplorer and TwoColumnsNodeExplorer implement this interface,
@@ -66,6 +67,9 @@ public:
 
   // === External files visibility ===
   virtual void setExternalNodesVisible(bool p_visible) = 0;
+
+  // Navigation mode wrapper (override in subclasses that support navigation)
+  virtual NavigationMode *getNavigationModeWrapper() const { return nullptr; }
 
 signals:
   // === Activation signals ===

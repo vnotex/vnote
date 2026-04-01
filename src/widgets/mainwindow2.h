@@ -51,6 +51,8 @@ public:
 
   void kickOffPostInit(const QStringList &p_pathsToOpen);
 
+  void setupNavigationMode();
+
   // Content area expansion.
   bool isContentAreaExpanded() const;
   void setContentAreaExpanded(bool p_expanded);

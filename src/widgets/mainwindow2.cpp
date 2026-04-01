@@ -19,15 +19,18 @@
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/sessionconfig.h>
+#include <gui/services/navigationmodeservice.h>
 
 #include <qwebengineview.h>
 #include <widgets/notebookexplorer2.h>
+#include <widgets/notebookselector2.h>
 #include <widgets/outlineviewer.h>
 #include <widgets/tagexplorer2.h>
 #include <widgets/snippetpanel2.h>
 #include <widgets/viewarea2.h>
 #include <widgets/viewwindow2.h>
 #include <widgets/messageboxhelper.h>
+#include <views/inodeexplorer.h>
 #include <controllers/viewareacontroller.h>
 
 using namespace vnotex;
@@ -69,12 +72,46 @@ void MainWindow2::setupUI() {
   // Setup tool bar.
   setupToolBar();
 
+  setupNavigationMode();
+
   setupSystemTray();
 
 #if defined(Q_OS_WIN)
   m_dummyWebView = new QWebEngineView(this);
   m_dummyWebView->setAttribute(Qt::WA_DontShowOnScreen);
 #endif
+}
+
+void MainWindow2::setupNavigationMode() {
+  auto *navService = m_serviceLocator.get<NavigationModeService>();
+  if (!navService) {
+    return;
+  }
+
+  // Register in exact order matching legacy key assignment:
+  // 1. ViewArea2 (was first in legacy → gets key 'a')
+  navService->registerNavigationTarget(m_viewArea);
+
+  // 2. DockWidgetHelper
+  navService->registerNavigationTarget(&m_dockWidgetHelper);
+
+  // 3. NotebookSelector2
+  navService->registerNavigationTarget(m_notebookExplorer->getNotebookSelector());
+
+  // 4. CombinedNodeExplorer wrapper (if available)
+  if (auto *wrapper = m_notebookExplorer->getNodeExplorer()->getNavigationModeWrapper()) {
+    navService->registerNavigationTarget(wrapper);
+  }
+
+  // 5. TagExplorer2 tag wrapper
+  if (auto *tagWrapper = m_tagExplorer->getTagNavigationWrapper()) {
+    navService->registerNavigationTarget(tagWrapper);
+  }
+
+  // 6. TagExplorer2 file wrapper
+  if (auto *fileWrapper = m_tagExplorer->getFileNavigationWrapper()) {
+    navService->registerNavigationTarget(fileWrapper);
+  }
 }
 
 void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen) {

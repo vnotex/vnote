@@ -29,6 +29,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
+#include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
 #include <utils/fileutils.h>
 #include <utils/widgetutils.h>
@@ -44,8 +45,6 @@
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
-// TODO: Migrate NavigationModeMgr to use ServiceLocator DI pattern
-// #include <widgets/navigationmodemgr.h>
 #include <widgets/notebookselector2.h>
 #include <widgets/titlebar.h>
 #include <core/services/templateservice.h>
@@ -75,8 +74,6 @@ void NotebookExplorer2::setupUI() {
   m_notebookSelector = new NotebookSelector2(m_services, this);
   m_notebookSelector->setWhatsThis(tr("Select one of all the notebooks as current notebook.<br/>"
                                       "Move mouse on one item to check its details."));
-  // TODO: Migrate NavigationModeMgr to use ServiceLocator DI pattern
-  // NavigationModeMgr::getInst().registerNavigationTarget(m_notebookSelector);
   m_notebookSelector->setViewOrder(widgetConfig.getNotebookSelectorViewOrder());
   m_mainLayout->addWidget(m_notebookSelector);
 
@@ -535,6 +532,10 @@ NodeIdentifier NotebookExplorer2::currentNodeId() const {
   return m_nodeExplorer ? m_nodeExplorer->currentNodeId() : NodeIdentifier();
 }
 
+NotebookSelector2 *NotebookExplorer2::getNotebookSelector() const { return m_notebookSelector; }
+
+INodeExplorer *NotebookExplorer2::getNodeExplorer() const { return m_nodeExplorer; }
+
 void NotebookExplorer2::setExploreMode(ExploreMode p_mode) {
   if (m_exploreMode == p_mode) {
     return;
@@ -549,6 +550,14 @@ NotebookExplorer2::ExploreMode NotebookExplorer2::exploreMode() const {
 }
 
 void NotebookExplorer2::updateExploreMode() {
+  // Unregister old navigation wrapper before deleting explorer (prevents dangling pointer)
+  auto *navService = m_services.get<NavigationModeService>();
+  if (navService && m_nodeExplorer) {
+    if (auto *oldWrapper = m_nodeExplorer->getNavigationModeWrapper()) {
+      navService->unregisterNavigationTarget(oldWrapper);
+    }
+  }
+
   // Delete old explorer and create new one for the current mode
   m_mainLayout->removeWidget(m_nodeExplorer);
   delete m_nodeExplorer;
@@ -557,6 +566,13 @@ void NotebookExplorer2::updateExploreMode() {
     setupCombinedMode();
   } else {
     setupTwoColumnsMode();
+  }
+
+  // Register new navigation wrapper
+  if (navService && m_nodeExplorer) {
+    if (auto *newWrapper = m_nodeExplorer->getNavigationModeWrapper()) {
+      navService->registerNavigationTarget(newWrapper);
+    }
   }
 
   // Sync notebook to the explorer

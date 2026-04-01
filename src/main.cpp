@@ -26,6 +26,7 @@
 #include <core/services/workspacecoreservice.h>
 #include <core/services/filetypecoreservice.h>
 #include <gui/services/themeservice.h>
+#include <gui/services/navigationmodeservice.h>
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
 #include <core/services/snippetcoreservice.h>
@@ -331,6 +332,16 @@ int main(int argc, char *argv[]) {
 
     // Create MainWindow2 with ServiceLocator
     MainWindow2 mainWindow(serviceLocator);
+
+    // Create NavigationModeService AFTER MainWindow2 (needs top-level widget)
+    NavigationModeService navigationModeService(
+        *configService.coreService(), &mainWindow);
+    serviceLocator.registerService<NavigationModeService>(&navigationModeService);
+    qInfo() << "NavigationModeService registered";
+
+    // Register all navigation targets after NavigationModeService is available.
+    mainWindow.setupNavigationMode();
+
     mainWindow.show();
     qInfo() << "MainWindow2 shown";
 
