@@ -24,6 +24,7 @@
 #include <views/filelistview.h>
 #include <views/filenodedelegate.h>
 #include <views/tagview.h>
+#include <widgets/navigationmodeviewwrapper.h>
 #include <widgets/titlebar.h>
 
 using namespace vnotex;
@@ -64,6 +65,12 @@ void TagExplorer2::setupUI() {
   m_splitter = new QSplitter(Qt::Vertical, this);
   m_splitter->addWidget(m_tagView);
   m_splitter->addWidget(m_fileView);
+
+  // Navigation wrappers for keyboard navigation mode.
+  auto *themeService = m_services.get<ThemeService>();
+  m_tagNavWrapper.reset(new NavigationModeViewWrapper<TagView>(m_tagView, themeService));
+  m_fileNavWrapper.reset(new NavigationModeViewWrapper<FileListView>(m_fileView, themeService));
+
   mainLayout->addWidget(m_splitter, 1);
 
   // Wire signals
@@ -232,6 +239,14 @@ void TagExplorer2::restoreState(const QByteArray &p_data) {
   if (!splitterState.isEmpty()) {
     m_splitter->restoreState(splitterState);
   }
+}
+
+NavigationMode *TagExplorer2::getTagNavigationWrapper() const {
+  return m_tagNavWrapper.data();
+}
+
+NavigationMode *TagExplorer2::getFileNavigationWrapper() const {
+  return m_fileNavWrapper.data();
 }
 
 void TagExplorer2::onMatchingNodesChanged(const QJsonArray &p_nodes) {

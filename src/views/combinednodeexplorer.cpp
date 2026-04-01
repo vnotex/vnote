@@ -11,6 +11,8 @@
 #include <models/notebooknodeproxymodel.h>
 #include <views/notebooknodeview.h>
 #include <views/notebooknodedelegate.h>
+#include <widgets/navigationmodeviewwrapper.h>
+#include <gui/services/themeservice.h>
 
 using namespace vnotex;
 
@@ -49,6 +51,10 @@ void CombinedNodeExplorer::setupUI() {
   m_view->setController(m_controller);
 
   layout->addWidget(m_view);
+
+  // Navigation wrapper for keyboard navigation mode.
+  auto *themeService = m_services.get<ThemeService>();
+  m_navigationWrapper.reset(new NavigationModeViewWrapper<NotebookNodeView>(m_view, themeService));
 
   connect(m_view, &NotebookNodeView::contextMenuRequested, this,
           &CombinedNodeExplorer::onContextMenuRequested);
@@ -243,4 +249,8 @@ void CombinedNodeExplorer::setExternalNodesVisible(bool p_visible) {
   if (m_model) {
     m_model->setExternalNodesVisible(p_visible);
   }
+}
+
+NavigationMode *CombinedNodeExplorer::getNavigationModeWrapper() const {
+  return m_navigationWrapper.data();
 }

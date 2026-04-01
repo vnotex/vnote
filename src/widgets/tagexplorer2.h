@@ -2,6 +2,7 @@
 #define TAGEXPLORER2_H
 
 #include <QFrame>
+#include <QScopedPointer>
 
 #include <core/nodeidentifier.h>
 #include <core/noncopyable.h>
@@ -18,6 +19,8 @@ class TagController;
 class TagFileModel;
 class FileListView;
 class FileNodeDelegate;
+class NavigationMode;
+template <typename T> class NavigationModeViewWrapper;
 
 // TagExplorer2 is a dock shell widget that wires together TagModel, TagView,
 // FileListView (for tag-matched files), and TagController into a QFrame with
@@ -33,6 +36,9 @@ public:
 
   QByteArray saveState() const;
   void restoreState(const QByteArray &p_data);
+
+  NavigationMode *getTagNavigationWrapper() const;
+  NavigationMode *getFileNavigationWrapper() const;
 
 signals:
   void openNodeRequested(const vnotex::NodeIdentifier &p_nodeId);
@@ -60,6 +66,8 @@ private:
   // File list panel
   TagFileModel *m_fileModel = nullptr;
   FileListView *m_fileView = nullptr;
+  QScopedPointer<NavigationModeViewWrapper<TagView>> m_tagNavWrapper;
+  QScopedPointer<NavigationModeViewWrapper<FileListView>> m_fileNavWrapper;
   FileNodeDelegate *m_fileDelegate = nullptr;
 
   QString m_notebookId;

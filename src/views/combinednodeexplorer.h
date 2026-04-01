@@ -3,6 +3,8 @@
 
 #include "inodeexplorer.h"
 
+#include <QScopedPointer>
+
 namespace vnotex {
 
 class NotebookNodeModel;
@@ -10,6 +12,8 @@ class NotebookNodeProxyModel;
 class NotebookNodeView;
 class NotebookNodeDelegate;
 class NotebookNodeController;
+class NavigationMode;
+template <typename T> class NavigationModeViewWrapper;
 class ServiceLocator;
 
 // CombinedNodeExplorer encapsulates a single-panel view showing both folders and files.
@@ -52,6 +56,8 @@ public:
   // === External files visibility ===
   void setExternalNodesVisible(bool p_visible) override;
 
+  NavigationMode *getNavigationModeWrapper() const;
+
 private slots:
   void onContextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos);
 
@@ -65,6 +71,7 @@ private:
   NotebookNodeModel *m_model = nullptr;
   NotebookNodeProxyModel *m_proxyModel = nullptr;
   NotebookNodeView *m_view = nullptr;
+  QScopedPointer<NavigationModeViewWrapper<NotebookNodeView>> m_navigationWrapper;
   NotebookNodeDelegate *m_delegate = nullptr;
   NotebookNodeController *m_controller = nullptr;
 };
