@@ -52,6 +52,8 @@ QString ViewWindow2::s_attachmentFullIconForeground;
 
 QString ViewWindow2::s_attachmentFullIconDisabledForeground;
 
+QString ViewWindow2::s_attachmentFullIconMasterColor;
+
 QIcon ViewWindow2::s_attachmentFullIcon;
 
 ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
@@ -667,22 +669,25 @@ void ViewWindow2::updateAttachmentIcon() {
   const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
   const auto disabledFg =
       themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
+  const auto masterColor = themeService->paletteColor(QStringLiteral("base#master#bg"));
   QVector<IconUtils::OverriddenColor> colors;
   colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
   colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
 
   const auto iconFile = themeService->getIconFile(QStringLiteral("attachment_editor.svg"));
   m_attachmentAction->setIcon(getBuffer().hasAttachments()
-                                  ? generateAttachmentFullIcon(iconFile, fg, disabledFg)
+                                  ? generateAttachmentFullIcon(iconFile, fg, disabledFg, masterColor)
                                   : IconUtils::fetchIcon(iconFile, colors));
 }
 
 QIcon ViewWindow2::generateAttachmentFullIcon(const QString &p_iconFile,
-                                              const QString &p_foreground,
-                                              const QString &p_disabledForeground) {
+                                               const QString &p_foreground,
+                                               const QString &p_disabledForeground,
+                                               const QString &p_masterColor) {
   if (!s_attachmentFullIcon.isNull() && s_attachmentFullIconFile == p_iconFile
       && s_attachmentFullIconForeground == p_foreground
-      && s_attachmentFullIconDisabledForeground == p_disabledForeground) {
+      && s_attachmentFullIconDisabledForeground == p_disabledForeground
+      && s_attachmentFullIconMasterColor == p_masterColor) {
     return s_attachmentFullIcon;
   }
 
@@ -690,7 +695,6 @@ QIcon ViewWindow2::generateAttachmentFullIcon(const QString &p_iconFile,
   const int iconSize = 24;
   const QPointF badgeCenter(iconSize - 6.0, 6.0);
   const qreal outerRadius = 4.5;
-  const qreal innerRadius = 2.0;
   const QVector<IconUtils::OverriddenColor> iconColors = {
       IconUtils::OverriddenColor(p_foreground, QIcon::Normal, QIcon::Off),
       IconUtils::OverriddenColor(p_disabledForeground, QIcon::Disabled, QIcon::Off)
@@ -711,23 +715,15 @@ QIcon ViewWindow2::generateAttachmentFullIcon(const QString &p_iconFile,
     painter.setBrush(QBrush(Qt::white));
     painter.drawEllipse(badgeCenter, outerRadius + 0.9, outerRadius + 0.9);
 
-    QPolygonF star;
-    for (int i = 0; i < 10; ++i) {
-      const qreal angle = -90.0 + i * 36.0;
-      const qreal radius = (i % 2 == 0) ? outerRadius : innerRadius;
-      const qreal radians = qDegreesToRadians(angle);
-      star << QPointF(badgeCenter.x() + radius * qCos(radians),
-                      badgeCenter.y() + radius * qSin(radians));
-    }
-
-    painter.setBrush(QBrush(QColor(color.m_foreground)));
-    painter.drawPolygon(star);
+    painter.setBrush(QBrush(QColor(p_masterColor)));
+    painter.drawEllipse(badgeCenter, outerRadius, outerRadius);
     icon.addPixmap(pixmap, color.m_mode, color.m_state);
   }
 
   s_attachmentFullIconFile = p_iconFile;
   s_attachmentFullIconForeground = p_foreground;
   s_attachmentFullIconDisabledForeground = p_disabledForeground;
+  s_attachmentFullIconMasterColor = p_masterColor;
   s_attachmentFullIcon = icon;
   return s_attachmentFullIcon;
 }

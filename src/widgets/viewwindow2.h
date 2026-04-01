@@ -483,13 +483,16 @@ private:
   void updateAttachmentIcon();
 
   static QIcon generateAttachmentFullIcon(const QString &p_iconFile, const QString &p_foreground,
-                                          const QString &p_disabledForeground);
+                                          const QString &p_disabledForeground,
+                                          const QString &p_masterColor);
 
   static QString s_attachmentFullIconFile;
 
   static QString s_attachmentFullIconForeground;
 
   static QString s_attachmentFullIconDisabledForeground;
+
+  static QString s_attachmentFullIconMasterColor;
 
   static QIcon s_attachmentFullIcon;
 };
