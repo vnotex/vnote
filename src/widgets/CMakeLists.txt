@@ -110,6 +110,7 @@ target_sources(vnote PRIVATE
     mindmapviewwindow2.cpp mindmapviewwindow2.h
     navigationmode.cpp navigationmode.h
     navigationmodemgr.cpp navigationmodemgr.h
+    navigationmodeviewwrapper.h
     navigationmodewrapper.h
     notebookexplorer.cpp notebookexplorer.h
     notebookexplorer2.cpp notebookexplorer2.h
