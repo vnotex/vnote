@@ -66,7 +66,9 @@ MainWindow::MainWindow(QWidget *p_parent)
       // m_dockWidgetHelper(this) {
   VNoteX::getInst().setMainWindow(this);
 
+#if 0 // NavigationMode migrated to NavigationModeService (DI)
   NavigationModeMgr::init(this);
+#endif
 
   setupUI();
 
@@ -177,7 +179,9 @@ void MainWindow::createTipsArea() {
 
 void MainWindow::setupCentralWidget() {
   m_viewArea = new ViewArea(this);
+#if 0 // NavigationMode migrated to NavigationModeService (DI)
   NavigationModeMgr::getInst().registerNavigationTarget(m_viewArea);
+#endif
   connect(&VNoteX::getInst().getBufferMgr(), &BufferMgr::bufferRequested, m_viewArea,
           &ViewArea::openBuffer);
 

@@ -53,7 +53,9 @@ void HistoryPanel::setupUI() {
   mainLayout->addWidget(m_historyList);
 
   m_navigationWrapper.reset(new NavigationModeWrapper<QListWidget, QListWidgetItem>(m_historyList));
+#if 0 // NavigationMode migrated to NavigationModeService (DI)
   NavigationModeMgr::getInst().registerNavigationTarget(m_navigationWrapper.data());
+#endif
 
   setFocusProxy(m_historyList);
 }

@@ -74,7 +74,9 @@ void NotebookExplorer::setupUI() {
   m_selector = new NotebookSelector(this);
   m_selector->setWhatsThis(tr("Select one of all the notebooks as current notebook.<br/>"
                               "Move mouse on one item to check its details."));
+#if 0 // NavigationMode migrated to NavigationModeService (DI)
   NavigationModeMgr::getInst().registerNavigationTarget(m_selector);
+#endif
   m_selector->setViewOrder(widgetConfig.getNotebookSelectorViewOrder());
   connect(m_selector, QOverload<int>::of(&QComboBox::activated), this, [this](int p_idx) {
     auto id = static_cast<ID>(m_selector->itemData(p_idx).toULongLong());

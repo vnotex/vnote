@@ -225,7 +225,9 @@ void TagExplorer::setupTagTree(QWidget *p_parent) {
 
   m_tagTreeNavigationWrapper.reset(
       new NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>(m_tagTree));
+#if 0 // NavigationMode migrated to NavigationModeService (DI)
   NavigationModeMgr::getInst().registerNavigationTarget(m_tagTreeNavigationWrapper.data());
+#endif
 }
 
 void TagExplorer::setupNodeList(QWidget *p_parent) {
@@ -238,7 +240,9 @@ void TagExplorer::setupNodeList(QWidget *p_parent) {
 
   m_nodeListNavigationWrapper.reset(
       new NavigationModeWrapper<QListWidget, QListWidgetItem>(m_nodeList));
+#if 0 // NavigationMode migrated to NavigationModeService (DI)
   NavigationModeMgr::getInst().registerNavigationTarget(m_nodeListNavigationWrapper.data());
+#endif
 }
 
 QByteArray TagExplorer::saveState() const { return m_splitter->saveState(); }

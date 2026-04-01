@@ -247,7 +247,9 @@ void NotebookNodeExplorer::setupMasterExplorer(QWidget *p_parent) {
 
   m_masterNavigationWrapper.reset(
       new NavigationModeWrapper<QTreeWidget, QTreeWidgetItem>(m_masterExplorer));
+#if 0 // NavigationMode migrated to NavigationModeService (DI)
   NavigationModeMgr::getInst().registerNavigationTarget(m_masterNavigationWrapper.data());
+#endif
 
   connect(m_masterExplorer, &QTreeWidget::itemExpanded, this,
           &NotebookNodeExplorer::loadMasterItemChildren);
@@ -372,7 +374,9 @@ void NotebookNodeExplorer::setupSlaveExplorer() {
 
   m_slaveNavigationWrapper.reset(
       new NavigationModeWrapper<QListWidget, QListWidgetItem>(m_slaveExplorer));
+#if 0 // NavigationMode migrated to NavigationModeService (DI)
   NavigationModeMgr::getInst().registerNavigationTarget(m_slaveNavigationWrapper.data());
+#endif
 }
 
 void NotebookNodeExplorer::setNotebook(const QSharedPointer<Notebook> &p_notebook) {
