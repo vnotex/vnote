@@ -749,6 +749,13 @@ void MarkdownViewWindow2::zoom(bool p_zoomIn) {
   }
 }
 
+QPoint MarkdownViewWindow2::getFloatingWidgetPosition() {
+  if (m_editor) {
+    return TextViewWindowHelper::getFloatingWidgetPosition(this);
+  }
+  return ViewWindow2::getFloatingWidgetPosition();
+}
+
 // ============ selectedText ============
 
 QString MarkdownViewWindow2::selectedText() const {

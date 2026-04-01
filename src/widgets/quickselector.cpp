@@ -7,8 +7,7 @@
 #include <QRegularExpression>
 #include <QVBoxLayout>
 
-#include <core/thememgr.h>
-#include <core/vnotex.h>
+#include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
 
@@ -39,9 +38,10 @@ static bool selectorItemCmp(const QuickSelectorItem &p_a, const QuickSelectorIte
   }
 }
 
-QuickSelector::QuickSelector(const QString &p_title, const QVector<QuickSelectorItem> &p_items,
-                             bool p_sortByShortcut, QWidget *p_parent)
-    : FloatingWidget(p_parent), m_items(p_items) {
+QuickSelector::QuickSelector(ThemeService *p_themeService, const QString &p_title,
+                             const QVector<QuickSelectorItem> &p_items, bool p_sortByShortcut,
+                             QWidget *p_parent)
+    : FloatingWidget(p_parent), m_items(p_items), m_themeService(p_themeService) {
   if (p_sortByShortcut) {
     std::sort(m_items.begin(), m_items.end(), selectorItemCmp);
   }
@@ -81,11 +81,13 @@ void QuickSelector::setupUI(const QString &p_title) {
 void QuickSelector::updateItemList() {
   m_itemList->clear();
 
-  const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-
-  const auto fg = themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg"));
-  const auto border =
-      themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#border"));
+  QString fg;
+  QString border;
+  if (m_themeService) {
+    fg = m_themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg"));
+    border =
+        m_themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#border"));
+  }
 
   for (int i = 0; i < m_items.size(); ++i) {
     const auto &item = m_items[i];

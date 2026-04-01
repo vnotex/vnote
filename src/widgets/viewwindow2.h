@@ -313,8 +313,9 @@ protected:
   // Returns the widget's result.
   QVariant showFloatingWidget(FloatingWidget *p_widget);
 
-  // Get the screen position for floating widgets (near top of editor area).
-  QPoint getFloatingWidgetPosition();
+  // Get the screen position for floating widgets.
+  // Default returns top-left corner; subclasses override to position near cursor.
+  virtual QPoint getFloatingWidgetPosition();
 
   // Set up keyboard shortcuts from EditorConfig.
   // Call this from subclass constructors after UI is initialized.

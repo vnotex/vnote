@@ -10,6 +10,7 @@ class QListWidget;
 class QListWidgetItem;
 
 namespace vnotex {
+class ThemeService;
 class LineEdit;
 
 struct QuickSelectorItem {
@@ -31,8 +32,9 @@ struct QuickSelectorItem {
 class QuickSelector : public FloatingWidget {
   Q_OBJECT
 public:
-  QuickSelector(const QString &p_title, const QVector<QuickSelectorItem> &p_items,
-                bool p_sortByShortcut, QWidget *p_parent = nullptr);
+  QuickSelector(ThemeService *p_themeService, const QString &p_title,
+                const QVector<QuickSelectorItem> &p_items, bool p_sortByShortcut,
+                QWidget *p_parent = nullptr);
 
   QVariant result() const Q_DECL_OVERRIDE;
 
@@ -62,6 +64,8 @@ private:
   QListWidget *m_itemList = nullptr;
 
   QVariant m_selectedKey;
+
+  ThemeService *m_themeService = nullptr;
 };
 } // namespace vnotex
 

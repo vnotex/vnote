@@ -12,6 +12,7 @@
 #include <core/configmgr.h>
 #include <core/services/snippetcoreservice.h>
 #include <core/texteditorconfig.h>
+#include <gui/services/themeservice.h>
 #include <search/searchtoken.h>
 #include <snippet/snippetmgr.h>
 #include <gui/utils/widgetutils.h>
@@ -290,7 +291,8 @@ public:
     }
 
     // Ownership will be transferred to showFloatingWidget().
-    auto selector = new QuickSelector(vnotex::ViewWindow::tr("Select Snippet"), items, true, p_win);
+    auto selector =
+        new QuickSelector(nullptr, vnotex::ViewWindow::tr("Select Snippet"), items, true, p_win);
     auto ret = p_win->showFloatingWidget(selector);
     return ret.toString();
   }
@@ -494,7 +496,9 @@ public:
     }
 
     // Ownership will be transferred to showFloatingWidget().
-    auto selector = new QuickSelector(ViewWindow2::tr("Select Snippet"), items, true, p_win);
+    auto *themeSvc = p_win->getServices().template get<ThemeService>();
+    auto selector =
+        new QuickSelector(themeSvc, ViewWindow2::tr("Select Snippet"), items, true, p_win);
     auto ret = p_win->showFloatingWidget(selector);
     return ret.toString();
   }

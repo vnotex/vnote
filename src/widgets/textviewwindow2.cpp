@@ -234,6 +234,10 @@ void TextViewWindow2::handleFindAndReplaceWidgetClosed() {
   TextViewWindowHelper::clearSearchHighlights(this);
 }
 
+QPoint TextViewWindow2::getFloatingWidgetPosition() {
+  return TextViewWindowHelper::getFloatingWidgetPosition(this);
+}
+
 QString TextViewWindow2::selectedText() const {
   if (m_editor) {
     return m_editor->getTextEdit()->selectedText();
