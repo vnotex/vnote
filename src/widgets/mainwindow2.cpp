@@ -323,11 +323,15 @@ void MainWindow2::setupDocks() {
             }
           });
 
-  // Wire snippet apply (stub — ViewWindow2 does not have applySnippet() yet).
+  // Wire snippet apply from SnippetPanel2 to active ViewWindow2.
   connect(m_snippetPanel, &SnippetPanel2::applySnippetRequested,
           this, [this](const QString &p_name) {
-            // TODO: Route to active editor once ViewWindow2 gains applySnippet().
-            qWarning() << "Snippet apply not yet supported in ViewWindow2:" << p_name;
+            auto *viewWin = m_viewArea->getCurrentViewWindow();
+            if (viewWin) {
+                viewWin->applySnippet(p_name);
+            } else {
+                qWarning() << "No active view window for snippet apply";
+            }
           });
 }
 
