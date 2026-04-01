@@ -49,7 +49,8 @@ QGroupBox *NotebookInfoWidget::setupBasicInfoGroupBox(QWidget *p_parent) {
   }
 
   {
-    m_nameLineEdit = WidgetsFactory::createLineEditWithSnippet(box);
+    // LEGACY: requires SnippetCoreService migration
+    // m_nameLineEdit = WidgetsFactory::createLineEditWithSnippet(box);
     m_nameLineEdit->setPlaceholderText(tr("Name of notebook"));
     connect(m_nameLineEdit, &QLineEdit::textEdited, this, &NotebookInfoWidget::basicInfoEdited);
     mainLayout->addRow(tr("Name:"), m_nameLineEdit);

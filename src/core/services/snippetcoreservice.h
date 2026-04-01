@@ -30,6 +30,10 @@ public:
   QJsonObject applySnippet(const QString &p_name, const QString &p_selectedText,
                            const QString &p_indentation,
                            const QJsonObject &p_overrides) const;
+  // Resolve %snippet_name% symbols in arbitrary text.
+  // For each match, looks up snippet by name via getSnippet() and applySnippet(),
+  // then replaces the %name% with the expanded text.
+  QString applySnippetBySymbol(const QString &p_content) const;
 
 private:
   bool checkContext() const;

@@ -45,7 +45,8 @@ void NewTagDialog::setupUI() {
     mainLayout->addRow(tr("Location:"), m_parentTagLabel);
   }
 
-  m_nameLineEdit = WidgetsFactory::createLineEditWithSnippet(mainWidget);
+  // LEGACY: requires SnippetCoreService migration
+  // m_nameLineEdit = WidgetsFactory::createLineEditWithSnippet(mainWidget);
   mainLayout->addRow(tr("Name:"), m_nameLineEdit);
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);

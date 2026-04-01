@@ -1,13 +1,17 @@
 #include "lineeditwithsnippet.h"
 
-#include <snippet/snippetmgr.h>
+#include <core/services/snippetcoreservice.h>
 
 using namespace vnotex;
 
-LineEditWithSnippet::LineEditWithSnippet(QWidget *p_parent) : LineEdit(p_parent) { setTips(); }
+LineEditWithSnippet::LineEditWithSnippet(SnippetCoreService *p_snippetService, QWidget *p_parent)
+    : LineEdit(p_parent), m_snippetService(p_snippetService) {
+  setTips();
+}
 
-LineEditWithSnippet::LineEditWithSnippet(const QString &p_contents, QWidget *p_parent)
-    : LineEdit(p_contents, p_parent) {
+LineEditWithSnippet::LineEditWithSnippet(SnippetCoreService *p_snippetService,
+                                         const QString &p_contents, QWidget *p_parent)
+    : LineEdit(p_contents, p_parent), m_snippetService(p_snippetService) {
   setTips();
 }
 
@@ -18,5 +22,8 @@ void LineEditWithSnippet::setTips() {
 }
 
 QString LineEditWithSnippet::evaluatedText() const {
-  return SnippetMgr::getInst().applySnippetBySymbol(text());
+  if (m_snippetService) {
+    return m_snippetService->applySnippetBySymbol(text());
+  }
+  return text();
 }

@@ -64,7 +64,8 @@ void UnitedEntry::setupUI() {
   auto mainLayout = new QVBoxLayout(this);
 
   // Line edit.
-  m_lineEdit = WidgetsFactory::createLineEditWithSnippet(this);
+  // LEGACY: requires SnippetCoreService migration
+  // m_lineEdit = WidgetsFactory::createLineEditWithSnippet(this);
   mainLayout->addWidget(m_lineEdit);
   m_lineEdit->setPlaceholderText(tr("Type to command"));
   m_lineEdit->setClearButtonEnabled(true);

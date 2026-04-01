@@ -24,7 +24,8 @@ void RenameTagDialog::setupUI() {
 
   auto mainLayout = WidgetsFactory::createFormLayout(mainWidget);
 
-  m_nameLineEdit = WidgetsFactory::createLineEditWithSnippet(m_tagName, mainWidget);
+  // LEGACY: requires SnippetCoreService migration
+  // m_nameLineEdit = WidgetsFactory::createLineEditWithSnippet(m_tagName, mainWidget);
   mainLayout->addRow(tr("Name:"), m_nameLineEdit);
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);

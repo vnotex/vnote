@@ -152,8 +152,9 @@ void QuickAccessPage::setupUI() {
 
       {
         const QString label(tr("Note name:"));
-        m_quickNoteNoteNameLineEdit =
-            WidgetsFactory::createLineEditWithSnippet(m_quickNoteInfoGroupBox);
+        // LEGACY: requires SnippetCoreService migration
+        // m_quickNoteNoteNameLineEdit =
+        //     WidgetsFactory::createLineEditWithSnippet(m_quickNoteInfoGroupBox);
         infoLayout->addRow(label, m_quickNoteNoteNameLineEdit);
         connect(m_quickNoteNoteNameLineEdit, &QLineEdit::textChanged, this,
                 &QuickAccessPage::pageIsChanged);

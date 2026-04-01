@@ -11,6 +11,8 @@
 #include <QStyledItemDelegate>
 #include <QToolButton>
 
+#include <core/services/snippetcoreservice.h>
+
 #include "combobox.h"
 #include "lineeditwithsnippet.h"
 
@@ -34,13 +36,15 @@ QLineEdit *WidgetsFactory::createLineEdit(const QString &p_contents, QWidget *p_
   return new LineEdit(p_contents, p_parent);
 }
 
-LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(QWidget *p_parent) {
-  return new LineEditWithSnippet(p_parent);
+LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(
+    SnippetCoreService *p_snippetService, QWidget *p_parent) {
+  return new LineEditWithSnippet(p_snippetService, p_parent);
 }
 
-LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(const QString &p_contents,
-                                                               QWidget *p_parent) {
-  return new LineEditWithSnippet(p_contents, p_parent);
+LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(
+    SnippetCoreService *p_snippetService, const QString &p_contents,
+                                                                QWidget *p_parent) {
+  return new LineEditWithSnippet(p_snippetService, p_contents, p_parent);
 }
 
 QComboBox *WidgetsFactory::createComboBox(QWidget *p_parent) {

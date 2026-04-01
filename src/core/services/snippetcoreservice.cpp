@@ -2,6 +2,7 @@
 
 #include <QJsonDocument>
 #include <QJsonParseError>
+#include <QRegularExpression>
 
 using namespace vnotex;
 
@@ -156,6 +157,51 @@ QJsonObject SnippetCoreService::applySnippet(const QString &p_name, const QStrin
   }
 
   return parseJsonObjectFromCStr(json);
+}
+
+QString SnippetCoreService::applySnippetBySymbol(const QString &p_content) const {
+  QString content(p_content);
+
+  // Regex matches %name% patterns (same as legacy SnippetMgr::c_snippetSymbolRegExp)
+  static const QRegularExpression regExp(QString::fromLatin1("%([^%]+)%"));
+
+  int maxTimesAtSamePos = 100;
+  int pos = 0;
+  while (pos < content.size()) {
+    QRegularExpressionMatch match;
+    int idx = content.indexOf(regExp, pos, &match);
+    if (idx == -1) {
+      break;
+    }
+
+    const QString snippetName = match.captured(1);
+
+    // Look up snippet via the service
+    QJsonObject snippetObj = getSnippet(snippetName);
+    if (snippetObj.isEmpty()) {
+      // Snippet not found — skip this match
+      pos = idx + match.capturedLength(0);
+      continue;
+    }
+
+    // Apply the snippet (no selected text, no indentation, no overrides)
+    QJsonObject result = applySnippet(snippetName, QString(), QString(), QJsonObject());
+    QString afterText = result.value(QString::fromLatin1("text")).toString();
+
+    content.replace(idx, match.capturedLength(0), afterText);
+
+    // afterText may still contain snippet symbols — allow re-scan
+    if (pos == idx) {
+      if (--maxTimesAtSamePos == 0) {
+        break;
+      }
+    } else {
+      maxTimesAtSamePos = 100;
+    }
+    pos = idx;
+  }
+
+  return content;
 }
 
 bool SnippetCoreService::checkContext() const {
