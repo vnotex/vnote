@@ -8,15 +8,11 @@
 
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
-#include <gui/services/themeservice.h>
-#include <gui/utils/iconutils.h>
 
 using namespace vnotex;
 
 TagModel::TagModel(ServiceLocator &p_services, QObject *p_parent)
     : QAbstractItemModel(p_parent), m_services(p_services) {
-  initTagIcon();
-
   // Connect to TagService::tagsChanged so that tag mutations from any source
   // (toolbar popup, explorer, etc.) trigger a model reload.
   auto *tagService = m_services.get<TagService>();
@@ -120,9 +116,6 @@ QVariant TagModel::data(const QModelIndex &p_index, int p_role) const {
   case Qt::DisplayRole:
   case TagNameRole:
     return info.name;
-
-  case Qt::DecorationRole:
-    return m_tagIcon;
 
   case TagParentRole:
     return info.parent;
@@ -376,12 +369,3 @@ QString TagModel::fullTagPath(const QString &p_tagName) const {
   return parts.join(QLatin1Char('/'));
 }
 
-void TagModel::initTagIcon() {
-  auto *themeService = m_services.get<ThemeService>();
-  if (themeService) {
-    const QString iconFile = themeService->getIconFile(QStringLiteral("tag.svg"));
-    if (!iconFile.isEmpty()) {
-      m_tagIcon = IconUtils::fetchIcon(iconFile);
-    }
-  }
-}

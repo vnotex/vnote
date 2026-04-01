@@ -3,7 +3,6 @@
 
 #include <QAbstractItemModel>
 #include <QHash>
-#include <QIcon>
 #include <QJsonValue>
 #include <QMap>
 #include <QSet>
@@ -65,11 +64,8 @@ private:
   int childRow(const QString &p_parentTagName, const QString &p_childTagName) const;
   quintptr indexIdForTagName(const QString &p_tagName) const;
   QString tagNameForIndexId(quintptr p_indexId) const;
-  void initTagIcon();
-
   ServiceLocator &m_services;
   QString m_notebookId;
-  QIcon m_tagIcon;
   mutable QMap<QString, TagNodeInfo> m_nodeCache;
   mutable QMap<QString, QVector<QString>> m_childrenCache;
   mutable QHash<QString, quintptr> m_indexIdCache;

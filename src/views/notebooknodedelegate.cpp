@@ -57,24 +57,31 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
   iconRect.setTop(iconRect.top() + (p_option.rect.height() - m_iconSize) / 2);
   iconRect.setHeight(m_iconSize);
 
-  // Calculate text rect - leave room for icon on left
+  // Calculate text rect - leave room for icon on left (files only)
   QRect textRect = p_option.rect;
-  textRect.setLeft(iconRect.right() + m_hPadding);
+  if (p_nodeInfo.isFolder) {
+    // Folders have no icon — reclaim icon space for text
+    textRect.setLeft(iconRect.left());
+  } else {
+    textRect.setLeft(iconRect.right() + m_hPadding);
+  }
   textRect.setRight(p_option.rect.right() - m_hPadding);
 
-  // Draw icon
-  QIcon icon = NodeIconHelper::getNodeIcon(m_services, p_nodeInfo);
-  if (!icon.isNull()) {
-    QIcon::Mode iconMode = QIcon::Normal;
-    if (!(p_option.state & QStyle::State_Enabled)) {
-      iconMode = QIcon::Disabled;
-    } else if (p_nodeInfo.isExternal) {
-      // External nodes use disabled icon mode for faded appearance
-      iconMode = QIcon::Disabled;
-    } else if (p_option.state & QStyle::State_Selected) {
-      iconMode = QIcon::Selected;
+  // Draw icon (files only — folders have no icon)
+  if (!p_nodeInfo.isFolder) {
+    QIcon icon = NodeIconHelper::getNodeIcon(m_services, p_nodeInfo);
+    if (!icon.isNull()) {
+      QIcon::Mode iconMode = QIcon::Normal;
+      if (!(p_option.state & QStyle::State_Enabled)) {
+        iconMode = QIcon::Disabled;
+      } else if (p_nodeInfo.isExternal) {
+        // External nodes use disabled icon mode for faded appearance
+        iconMode = QIcon::Disabled;
+      } else if (p_option.state & QStyle::State_Selected) {
+        iconMode = QIcon::Selected;
+      }
+      icon.paint(p_painter, iconRect, Qt::AlignCenter, iconMode);
     }
-    icon.paint(p_painter, iconRect, Qt::AlignCenter, iconMode);
   }
 
   // Prepare text for drawing
