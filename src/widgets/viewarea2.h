@@ -10,6 +10,10 @@
 #include <core/global.h>
 #include <controllers/viewareaview.h>
 
+#include "navigationmode.h"
+#include "viewsplit2.h"
+
+class QLabel;
 class QSplitter;
 class QStackedLayout;
 class QVBoxLayout;
@@ -31,7 +35,7 @@ class ViewWindowFactory;
 // ID maps (sole source of truth):
 //   m_splits  : workspaceId  (QString) -> ViewSplit2*
 //   m_windows : windowId     (ID)      -> ViewWindow2*
-class ViewArea2 : public QWidget, public ViewAreaView {
+class ViewArea2 : public QWidget, public ViewAreaView, public NavigationMode {
   Q_OBJECT
 public:
   explicit ViewArea2(ServiceLocator &p_services, QWidget *p_parent = nullptr);
@@ -112,6 +116,13 @@ public:
                      const NodeIdentifier &p_newNodeId) override;
   void notifyEditorConfigChanged() override;
 
+protected:
+  // NavigationMode overrides.
+  QVector<void *> getVisibleNavigationItems() override;
+  void placeNavigationLabel(int p_idx, void *p_item, QLabel *p_label) override;
+  void handleTargetHit(void *p_item) override;
+  void clearNavigation() override;
+
 private slots:
   // ViewSplit2 signal handlers
   void onMoveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindow2 *p_win,
@@ -160,6 +171,7 @@ private:
   // ID -> widget maps.  ViewArea2 is the sole owner of these mappings.
   QMap<QString, ViewSplit2 *> m_splits;  // workspaceId -> split
   QMap<ID, ViewWindow2 *> m_windows;      // windowId -> window
+  QVector<ViewSplit2::TabNavigationInfo> m_navigationItems;
   ID m_nextWindowId = 1;
 };
 

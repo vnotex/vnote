@@ -3,6 +3,7 @@
 #include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QLabel>
 #include <QSplitter>
 #include <QStackedLayout>
 #include <QTimer>
@@ -15,6 +16,7 @@
 #include <core/services/buffer2.h>
 #include <core/services/hookmanager.h>
 #include <core/services/workspacecoreservice.h>
+#include <gui/services/themeservice.h>
 #include <gui/services/viewwindowfactory.h>
 
 #include "viewareahomewidget.h"
@@ -24,7 +26,11 @@
 using namespace vnotex;
 
 ViewArea2::ViewArea2(ServiceLocator &p_services, QWidget *p_parent)
-    : QWidget(p_parent), m_services(p_services) {
+    : QWidget(p_parent),
+      NavigationMode(NavigationMode::Type::DoubleKeys,
+                     this,
+                     p_services.get<ThemeService>()),
+      m_services(p_services) {
   setContentsMargins(0, 0, 0, 0);
 
   m_stackedLayout = new QStackedLayout(this);
@@ -257,6 +263,53 @@ ViewSplit2 *ViewArea2::getCurrentViewSplit() const {
 }
 
 int ViewArea2::getViewSplitCount() const { return getAllViewSplits().size(); }
+
+QVector<void *> ViewArea2::getVisibleNavigationItems() {
+  QVector<void *> items;
+  m_navigationItems.clear();
+
+  int idx = 0;
+  for (auto *split : getAllViewSplits()) {
+    if (split->getViewWindowCount() == 0) {
+      continue;
+    }
+    if (idx >= NavigationMode::c_maxNumOfNavigationItems) {
+      break;
+    }
+    auto info = split->getNavigationModeInfo();
+    for (int i = 0; i < info.size() && idx < NavigationMode::c_maxNumOfNavigationItems;
+         ++i, ++idx) {
+      items.push_back(info[i].m_viewWindow);
+      m_navigationItems.push_back(info[i]);
+    }
+  }
+  return items;
+}
+
+void ViewArea2::placeNavigationLabel(int p_idx, void *p_item, QLabel *p_label) {
+  Q_UNUSED(p_item);
+  Q_ASSERT(p_idx > -1);
+  p_label->setParent(static_cast<QWidget *>(m_navigationItems[p_idx].m_viewWindow)->parentWidget());
+  p_label->move(m_navigationItems[p_idx].m_topLeft);
+}
+
+void ViewArea2::handleTargetHit(void *p_item) {
+  if (p_item) {
+    auto *win = static_cast<ViewWindow2 *>(p_item);
+    for (auto *split : getAllViewSplits()) {
+      if (split->indexOf(win) != -1) {
+        split->setCurrentViewWindow(win);
+        split->focus();
+        break;
+      }
+    }
+  }
+}
+
+void ViewArea2::clearNavigation() {
+  NavigationMode::clearNavigation();
+  m_navigationItems.clear();
+}
 
 // ============ Top Widget ============
 
