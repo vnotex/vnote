@@ -73,6 +73,8 @@ void TextViewWindow2::setupUI() {
   m_propagateEditorToBuffer = false;
   syncEditorFromBuffer();
   m_propagateEditorToBuffer = true;
+
+  setupShortcuts();
 }
 
 void TextViewWindow2::setupToolBar() {
@@ -104,6 +106,9 @@ void TextViewWindow2::connectEditorSignals() {
       onEditorContentsChanged();
     }
   });
+
+  connect(m_editor, &TextEditor::applySnippetRequested,
+          this, QOverload<>::of(&TextViewWindow2::applySnippet));
 }
 
 void TextViewWindow2::syncEditorFromBuffer() {
@@ -248,4 +253,18 @@ void TextViewWindow2::fetchWordCountInfo(
 
   auto info = WordCountPanel::calculateWordCount(getLatestContent());
   p_callback(info);
+}
+
+// ============ Snippet Support ============
+
+void TextViewWindow2::applySnippet(const QString &p_name) {
+  TextViewWindowHelper::applySnippetByName2(this, p_name);
+}
+
+void TextViewWindow2::applySnippet() {
+  TextViewWindowHelper::applySnippetPrompt2(this);
+}
+
+void TextViewWindow2::clearHighlights() {
+  TextViewWindowHelper::clearSearchHighlights(this);
 }

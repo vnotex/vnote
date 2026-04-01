@@ -54,6 +54,12 @@ public:
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
 
+  void applySnippet(const QString &p_name) Q_DECL_OVERRIDE;
+
+  void applySnippet() Q_DECL_OVERRIDE;
+
+  void clearHighlights() Q_DECL_OVERRIDE;
+
 protected slots:
   void setModified(bool p_modified) Q_DECL_OVERRIDE;
 

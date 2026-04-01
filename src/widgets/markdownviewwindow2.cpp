@@ -63,6 +63,8 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
   // Going straight to Edit (Invalid -> Edit) avoids a visible Read -> Edit
   // transition (flash of blank viewer in QSplitter).
   setModeInternal(p_initialMode, true);
+
+  setupShortcuts();
 }
 
 // ============ Destructor ============
@@ -441,6 +443,10 @@ void MarkdownViewWindow2::connectEditorSignals() {
       m_outlineProvider->setCurrentHeadingIndex(m_editor->getCurrentHeadingIndex());
     }
   });
+
+  // Snippet apply from context menu / shortcut.
+  connect(m_editor, &MarkdownEditor::applySnippetRequested,
+          this, QOverload<>::of(&MarkdownViewWindow2::applySnippet));
 }
 
 // ============ setMode / setModeInternal ============
@@ -989,6 +995,32 @@ void MarkdownViewWindow2::fetchWordCountInfo(
   default:
     p_callback(WordCountInfo());
     break;
+  }
+}
+
+// ============ Snippet Support ============
+
+void MarkdownViewWindow2::applySnippet(const QString &p_name) {
+  if (isReadMode()) {
+    showMessage(tr("Snippet insertion is not supported in read mode"));
+    return;
+  }
+  TextViewWindowHelper::applySnippetByName2(this, p_name);
+}
+
+void MarkdownViewWindow2::applySnippet() {
+  if (isReadMode()) {
+    showMessage(tr("Snippet insertion is not supported in read mode"));
+    return;
+  }
+  TextViewWindowHelper::applySnippetPrompt2(this);
+}
+
+void MarkdownViewWindow2::clearHighlights() {
+  if (isReadMode()) {
+    adapter()->findText(QStringList(), FindOption::FindNone);
+  } else {
+    TextViewWindowHelper::clearSearchHighlights(this);
   }
 }
 
