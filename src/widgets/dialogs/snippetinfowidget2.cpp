@@ -8,8 +8,11 @@
 #include <QPlainTextEdit>
 #include <QRegularExpressionValidator>
 
+#include <core/servicelocator.h>
+#include <core/services/snippetcoreservice.h>
 #include <utils/pathutils.h>
 #include <utils/utils.h>
+#include <widgets/lineeditwithsnippet.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
@@ -63,7 +66,8 @@ void SnippetInfoWidget2::setupUI() {
   auto mainLayout = WidgetsFactory::createFormLayout(this);
 
   // Name.
-  m_nameLineEdit = WidgetsFactory::createLineEdit(this);
+  auto *snippetService = m_services.get<SnippetCoreService>();
+  m_nameLineEdit = WidgetsFactory::createLineEditWithSnippet(snippetService, this);
   auto validator = new QRegularExpressionValidator(
       QRegularExpression(PathUtils::c_fileNameRegularExpression), m_nameLineEdit);
   m_nameLineEdit->setValidator(validator);
@@ -134,7 +138,7 @@ void SnippetInfoWidget2::setupShortcutComboBox() {
           &SnippetInfoWidget2::inputEdited);
 }
 
-QString SnippetInfoWidget2::getName() const { return m_nameLineEdit->text(); }
+QString SnippetInfoWidget2::getName() const { return m_nameLineEdit->evaluatedText(); }
 
 QString SnippetInfoWidget2::getDescription() const { return m_descriptionLineEdit->text(); }
 

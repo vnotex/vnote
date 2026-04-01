@@ -5,16 +5,17 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
-#include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QVBoxLayout>
 
 #include <controllers/newnotebookcontroller.h>
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
+#include <core/services/snippetcoreservice.h>
 #include <core/sessionconfig.h>
 #include <utils/pathutils.h>
 
+#include "../lineeditwithsnippet.h"
 #include "../locationinputwithbrowsebutton.h"
 #include "../widgetsfactory.h"
 
@@ -37,8 +38,8 @@ void NewNotebookDialog2::setupUI() {
   auto *layout = new QFormLayout(mainWidget);
 
   // Name input.
-  m_nameEdit = WidgetsFactory::createLineEdit(mainWidget);
-  m_nameEdit->setPlaceholderText(tr("Notebook name"));
+  auto *snippetService = m_services.get<SnippetCoreService>();
+  m_nameEdit = WidgetsFactory::createLineEditWithSnippet(snippetService, mainWidget);
   layout->addRow(tr("Name:"), m_nameEdit);
 
   // Description input.
@@ -108,7 +109,7 @@ void NewNotebookDialog2::browseRootFolder() {
 void NewNotebookDialog2::acceptedButtonClicked() {
   // Collect input from UI.
   NewNotebookInput input;
-  input.name = m_nameEdit->text();
+  input.name = m_nameEdit->evaluatedText();
   input.description = m_descriptionEdit->toPlainText();
   input.rootFolderPath = m_rootFolderInput->text();
   input.type = static_cast<NotebookType>(m_typeCombo->currentData().toInt());

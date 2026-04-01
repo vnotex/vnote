@@ -1,14 +1,15 @@
 #include "newfolderdialog2.h"
 
 #include <QFormLayout>
-#include <QLineEdit>
 #include <QVBoxLayout>
 
 #include <controllers/newfoldercontroller.h>
 #include <core/servicelocator.h>
+#include <core/services/snippetcoreservice.h>
 #include <utils/pathutils.h>
 #include <utils/widgetutils.h>
 
+#include "../lineeditwithsnippet.h"
 #include "../widgetsfactory.h"
 
 using namespace vnotex;
@@ -31,8 +32,8 @@ void NewFolderDialog2::setupUI() {
   auto *layout = new QFormLayout(mainWidget);
 
   // Name input.
-  m_nameEdit = WidgetsFactory::createLineEdit(mainWidget);
-  m_nameEdit->setPlaceholderText(tr("Folder name"));
+  auto *snippetService = m_services.get<SnippetCoreService>();
+  m_nameEdit = WidgetsFactory::createLineEditWithSnippet(snippetService, mainWidget);
   layout->addRow(tr("Name:"), m_nameEdit);
 
   setCentralWidget(mainWidget);
@@ -45,7 +46,7 @@ void NewFolderDialog2::setupUI() {
 bool NewFolderDialog2::validateInputs() {
   FolderValidationResult result =
       m_controller->validateName(m_parentId.notebookId, m_parentId.relativePath,
-                                 m_nameEdit->text().trimmed());
+                                 m_nameEdit->evaluatedText().trimmed());
 
   if (!result.valid) {
     setInformationText(result.message, ScrollDialog::InformationLevel::Error);
@@ -65,7 +66,7 @@ void NewFolderDialog2::acceptedButtonClicked() {
   NewFolderInput input;
   input.notebookId = m_parentId.notebookId;
   input.parentFolderPath = m_parentId.relativePath;
-  input.name = m_nameEdit->text().trimmed();
+  input.name = m_nameEdit->evaluatedText().trimmed();
 
   // Delegate to controller.
   NewFolderResult result = m_controller->createFolder(input);

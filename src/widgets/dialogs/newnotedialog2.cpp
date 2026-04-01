@@ -2,11 +2,11 @@
 
 #include <QComboBox>
 #include <QFormLayout>
-#include <QLineEdit>
 #include <QVBoxLayout>
 
 #include <controllers/newnotecontroller.h>
 #include <core/services/filetypecoreservice.h>
+#include <core/services/snippetcoreservice.h>
 #include <core/configmgr2.h>
 #include <core/widgetconfig.h>
 #include <core/servicelocator.h>
@@ -16,6 +16,7 @@
 #include <utils/widgetutils.h>
 
 #include "../widgetsfactory.h"
+#include "../lineeditwithsnippet.h"
 #include "notetemplateselector.h"
 
 using namespace vnotex;
@@ -59,8 +60,8 @@ void NewNoteDialog2::setupUI() {
   layout->addRow(tr("Type:"), m_fileTypeCombo);
 
   // Name input.
-  m_nameEdit = WidgetsFactory::createLineEdit(mainWidget);
-  m_nameEdit->setPlaceholderText(tr("Note name"));
+  auto *snippetService = m_services.get<SnippetCoreService>();
+  m_nameEdit = WidgetsFactory::createLineEditWithSnippet(snippetService, mainWidget);
   connect(m_nameEdit, &QLineEdit::textEdited, this,
           [this]() { updateFileTypeForName(); });
   layout->addRow(tr("Name:"), m_nameEdit);
@@ -145,7 +146,7 @@ void NewNoteDialog2::updateFileTypeForName() {
 bool NewNoteDialog2::validateInputs() {
   NoteValidationResult result =
       m_controller->validateName(m_parentId.notebookId, m_parentId.relativePath,
-                                 m_nameEdit->text().trimmed());
+                                 m_nameEdit->evaluatedText().trimmed());
 
   if (!result.valid) {
     setInformationText(result.message, ScrollDialog::InformationLevel::Error);
@@ -183,7 +184,7 @@ void NewNoteDialog2::acceptedButtonClicked() {
   NewNoteInput input;
   input.notebookId = m_parentId.notebookId;
   input.parentFolderPath = m_parentId.relativePath;
-  input.name = m_nameEdit->text().trimmed();
+  input.name = m_nameEdit->evaluatedText().trimmed();
   input.templateContent = m_templateSelector->getTemplateContent();
   input.fileTypeName = fileTypeName;
 

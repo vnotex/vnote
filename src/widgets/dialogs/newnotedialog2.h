@@ -6,10 +6,10 @@
 #include <core/nodeinfo.h>
 
 class QComboBox;
-class QLineEdit;
 
 namespace vnotex {
 
+class LineEditWithSnippet;
 class NewNoteController;
 class NodeInfoWidget2;
 class NoteTemplateSelector;
@@ -58,7 +58,7 @@ private:
   NewNoteController *m_controller = nullptr;
 
   // UI widgets.
-  QLineEdit *m_nameEdit = nullptr;
+  LineEditWithSnippet *m_nameEdit = nullptr;
   QComboBox *m_fileTypeCombo = nullptr;
   NoteTemplateSelector *m_templateSelector = nullptr;
 

@@ -9,6 +9,7 @@ class QCheckBox;
 class QPlainTextEdit;
 
 namespace vnotex {
+class LineEditWithSnippet;
 class ServiceLocator;
 
 class SnippetInfoWidget2 : public QWidget {
@@ -49,7 +50,7 @@ private:
 
   bool m_editMode = false;
 
-  QLineEdit *m_nameLineEdit = nullptr;
+  LineEditWithSnippet *m_nameLineEdit = nullptr;
 
   QLineEdit *m_descriptionLineEdit = nullptr;
 

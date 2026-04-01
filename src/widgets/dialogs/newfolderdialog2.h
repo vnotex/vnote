@@ -5,10 +5,9 @@
 
 #include <core/nodeinfo.h>
 
-class QLineEdit;
-
 namespace vnotex {
 
+class LineEditWithSnippet;
 class NewFolderController;
 class ServiceLocator;
 
@@ -43,7 +42,7 @@ private:
   NewFolderController *m_controller = nullptr;
 
   // UI widgets.
-  QLineEdit *m_nameEdit = nullptr;
+  LineEditWithSnippet *m_nameEdit = nullptr;
 
   // Result.
   NodeIdentifier m_newNodeId;
