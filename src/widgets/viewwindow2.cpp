@@ -8,6 +8,7 @@
 #include <QPolygonF>
 #include <QKeyEvent>
 #include <QMenu>
+#include <QShortcut>
 #include <QtMath>
 #include <QWheelEvent>
 #include <QMessageBox>
@@ -16,6 +17,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QResizeEvent>
+#include <QWidgetAction>
 
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
@@ -27,11 +29,13 @@
 #include <gui/services/themeservice.h>
 
 #include <gui/utils/iconutils.h>
+#include <gui/utils/widgetutils.h>
 
 #include "editreaddiscardaction.h"
 #include "attachmentdragdropareaindicator2.h"
 #include "editors/statuswidget.h"
 #include "findandreplacewidget2.h"
+#include "floatingwidget.h"
 #include "messageboxhelper.h"
 #include "outlineprovider.h"
 #include "attachmentpopup2.h"
@@ -910,6 +914,69 @@ void ViewWindow2::applySnippet() {
 }
 
 void ViewWindow2::clearHighlights() {}
+
+QVariant ViewWindow2::showFloatingWidget(FloatingWidget *p_widget) {
+  // Show the widget through a QWidgetAction in menu.
+  QMenu menu;
+
+  auto act = new QWidgetAction(&menu);
+  // @act will own @p_widget.
+  act->setDefaultWidget(p_widget);
+  menu.addAction(act);
+
+  p_widget->setMenu(&menu);
+
+  menu.exec(getFloatingWidgetPosition());
+  return p_widget->result();
+}
+
+QPoint ViewWindow2::getFloatingWidgetPosition() {
+  return mapToGlobal(QPoint(5, 5));
+}
+
+void ViewWindow2::setupShortcuts() {
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
+  }
+  const auto &editorConfig = configMgr->getEditorConfig();
+
+  // FindNext.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        editorConfig.getShortcut(EditorConfig::FindNext), this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() { findNextOnLastFind(true); });
+    }
+  }
+
+  // FindPrevious.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        editorConfig.getShortcut(EditorConfig::FindPrevious), this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() { findNextOnLastFind(false); });
+    }
+  }
+
+  // ApplySnippet.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        editorConfig.getShortcut(EditorConfig::ApplySnippet), this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() { applySnippet(); });
+    }
+  }
+
+  // ClearHighlights.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        editorConfig.getShortcut(EditorConfig::ClearHighlights), this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() { clearHighlights(); });
+    }
+  }
+}
 
 void ViewWindow2::handleEditorConfigChange() {
   // Re-apply content margins when no local override is active.

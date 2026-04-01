@@ -28,6 +28,7 @@ namespace vnotex {
 class AttachmentDragDropAreaIndicator2;
 class AttachmentPopup2;
 class EditReadDiscardAction;
+class FloatingWidget;
 class OutlineProvider;
 class ServiceLocator;
 class StatusWidget;
@@ -307,6 +308,17 @@ protected:
   virtual QString selectedText() const;
 
   void findNextOnLastFind(bool p_forward = true);
+
+  // Show a floating widget (e.g., QuickSelector) via QMenu popup.
+  // Returns the widget's result.
+  QVariant showFloatingWidget(FloatingWidget *p_widget);
+
+  // Get the screen position for floating widgets (near top of editor area).
+  QPoint getFloatingWidgetPosition();
+
+  // Set up keyboard shortcuts from EditorConfig.
+  // Call this from subclass constructors after UI is initialized.
+  void setupShortcuts();
 
   bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
