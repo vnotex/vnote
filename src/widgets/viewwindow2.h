@@ -148,6 +148,18 @@ public slots:
 
   void replaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
 
+  // Apply a snippet by name. Called from snippet panel.
+  // Base implementation logs a warning; subclasses override for actual snippet support.
+  virtual void applySnippet(const QString &p_name);
+
+  // Apply a snippet with auto-detect or prompt. Called from shortcut.
+  // Base implementation logs a warning; subclasses override for actual snippet support.
+  virtual void applySnippet();
+
+  // Clear search/find highlights in the editor.
+  // Base implementation does nothing; subclasses override to clear their highlights.
+  virtual void clearHighlights();
+
   // Called when editor configuration changes at runtime.
   // Subclasses should override to reload config and update their editor widget.
   // Default implementation re-applies content margins for readable-width mode.

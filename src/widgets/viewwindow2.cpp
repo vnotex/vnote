@@ -898,6 +898,19 @@ void ViewWindow2::showZoomDelta(int p_delta) {
   showMessage(tr("Zoomed: %1%2").arg(p_delta > 0 ? "+" : "").arg(p_delta));
 }
 
+// ============ Snippet Support ============
+
+void ViewWindow2::applySnippet(const QString &p_name) {
+  Q_UNUSED(p_name);
+  qWarning() << "applySnippet not supported in this window type";
+}
+
+void ViewWindow2::applySnippet() {
+  qWarning() << "applySnippet not supported in this window type";
+}
+
+void ViewWindow2::clearHighlights() {}
+
 void ViewWindow2::handleEditorConfigChange() {
   // Re-apply content margins when no local override is active.
   if (m_layoutModeOverride < 0) {
