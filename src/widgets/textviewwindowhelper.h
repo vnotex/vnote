@@ -2,12 +2,15 @@
 #define TEXTVIEWWINDOWHELPER_H
 
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QSharedPointer>
 #include <QTextBlock>
 #include <QTextCursor>
 
 #include <core/configmgr.h>
+#include <core/services/snippetcoreservice.h>
 #include <core/texteditorconfig.h>
 #include <search/searchtoken.h>
 #include <snippet/snippetmgr.h>
@@ -17,6 +20,7 @@
 
 #include "quickselector.h"
 #include "viewwindow.h"
+#include "viewwindow2.h"
 #include "wordcountpanel.h"
 
 namespace vte {
@@ -312,6 +316,187 @@ public:
 
   static ViewWindow::WordCountInfo calculateWordCountInfo(const QString &p_text) {
     return WordCountPanel::calculateWordCount(p_text);
+  }
+
+  // ============ Snippet Support (New Architecture) ============
+
+  // Result of snippet symbol detection under cursor.
+  struct SnippetSymbolResult {
+    bool found = false;
+    QString name;
+    int start = -1; // Position within the block
+    int end = -1;   // Position within the block (exclusive)
+  };
+
+  // Generate snippet override keys from Buffer2's NodeIdentifier.
+  // Returns QJsonObject with "note" (relative path) and "no" (basename without extension).
+  template <typename _ViewWindow>
+  static QJsonObject generateSnippetOverrides2(_ViewWindow *p_win) {
+    QJsonObject overrides;
+    const auto &nodeId = p_win->getBuffer().nodeId();
+    overrides[QStringLiteral("note")] = nodeId.relativePath;
+    QFileInfo fi(nodeId.relativePath);
+    overrides[QStringLiteral("no")] = fi.completeBaseName();
+    return overrides;
+  }
+
+  // Detect %name% snippet symbol under or adjacent to cursor.
+  // Returns the symbol name and its block-relative positions.
+  template <typename _ViewWindow>
+  static SnippetSymbolResult detectSnippetSymbol2(_ViewWindow *p_win) {
+    SnippetSymbolResult result;
+    auto textEdit = p_win->m_editor->getTextEdit();
+    auto cursor = textEdit->textCursor();
+    const auto block = cursor.block();
+    const auto text = block.text();
+    const int pib = cursor.positionInBlock();
+
+    static const QRegularExpression regExp(QStringLiteral("%([^%]+)%"));
+    QRegularExpressionMatch match;
+    int idx = text.lastIndexOf(regExp, pib, &match);
+    if (idx >= 0 && (idx + match.capturedLength(0) >= pib)) {
+      result.found = true;
+      result.name = match.captured(1);
+      result.start = idx;
+      result.end = idx + match.capturedLength(0);
+    }
+    return result;
+  }
+
+  // Apply a snippet by name using SnippetCoreService.
+  // Inserts the expanded text at the cursor, handles cursor offset and edit blocks.
+  template <typename _ViewWindow>
+  static void applySnippetByName2(_ViewWindow *p_win, const QString &p_name) {
+    if (p_win->m_editor->isReadOnly() || p_name.isEmpty()) {
+      qWarning() << "failed to apply snippet" << p_name << "to a read-only buffer";
+      return;
+    }
+
+    auto *snippetSvc = p_win->getServices().template get<SnippetCoreService>();
+    if (!snippetSvc) {
+      qWarning() << "SnippetCoreService not available";
+      return;
+    }
+
+    auto textEdit = p_win->m_editor->getTextEdit();
+    auto cursor = textEdit->textCursor();
+
+    // Get selected text.
+    const auto selectedText = cursor.selectedText();
+
+    // Get indentation of current line.
+    const auto blockText = cursor.block().text();
+    QString indentation;
+    for (int i = 0; i < blockText.size(); ++i) {
+      if (blockText[i] == QLatin1Char(' ') || blockText[i] == QLatin1Char('\t')) {
+        indentation.append(blockText[i]);
+      } else {
+        break;
+      }
+    }
+
+    // Generate overrides from buffer identity.
+    const auto overrides = generateSnippetOverrides2(p_win);
+
+    // Call SnippetCoreService to expand the snippet.
+    const auto result = snippetSvc->applySnippet(p_name, selectedText, indentation, overrides);
+    const auto appliedText = result[QStringLiteral("text")].toString();
+    const int cursorOffset = result[QStringLiteral("cursorOffset")].toInt();
+
+    if (appliedText.isEmpty()) {
+      p_win->showMessage(ViewWindow2::tr("Snippet (%1) not found").arg(p_name));
+      return;
+    }
+
+    // Insert text atomically.
+    cursor.beginEditBlock();
+    cursor.removeSelectedText();
+    const int beforePos = cursor.position();
+    cursor.insertText(appliedText);
+    cursor.setPosition(beforePos + cursorOffset);
+    cursor.endEditBlock();
+    textEdit->setTextCursor(cursor);
+
+    p_win->m_editor->enterInsertModeIfApplicable();
+    p_win->showMessage(ViewWindow2::tr("Snippet applied: %1").arg(p_name));
+  }
+
+  // Apply snippet with auto-detection or QuickSelector prompt.
+  // If %name% detected under cursor, validates and applies. Otherwise, shows picker.
+  template <typename _ViewWindow> static void applySnippetPrompt2(_ViewWindow *p_win) {
+    if (p_win->m_editor->isReadOnly()) {
+      qWarning() << "failed to apply snippet to a read-only buffer";
+      return;
+    }
+
+    auto *snippetSvc = p_win->getServices().template get<SnippetCoreService>();
+    if (!snippetSvc) {
+      qWarning() << "SnippetCoreService not available";
+      return;
+    }
+
+    QString snippetName;
+
+    auto textEdit = p_win->m_editor->getTextEdit();
+    if (!textEdit->hasSelection()) {
+      // Try to detect %name% symbol under cursor.
+      auto symbolResult = detectSnippetSymbol2(p_win);
+      if (symbolResult.found) {
+        // Validate snippet exists BEFORE removing symbol from document.
+        const auto snippetObj = snippetSvc->getSnippet(symbolResult.name);
+        if (snippetObj.isEmpty()) {
+          p_win->showMessage(ViewWindow2::tr("Snippet (%1) not found").arg(symbolResult.name));
+          return;
+        }
+
+        // Remove the %name% symbol from document.
+        auto cursor = textEdit->textCursor();
+        const int blockPos = cursor.block().position();
+        cursor.setPosition(blockPos + symbolResult.start);
+        cursor.setPosition(blockPos + symbolResult.end, QTextCursor::KeepAnchor);
+        cursor.removeSelectedText();
+        textEdit->setTextCursor(cursor);
+
+        snippetName = symbolResult.name;
+      }
+    }
+
+    if (snippetName.isEmpty()) {
+      // Prompt for snippet selection via QuickSelector.
+      snippetName = promptForSnippet2(p_win);
+    }
+
+    if (!snippetName.isEmpty()) {
+      applySnippetByName2(p_win, snippetName);
+    }
+  }
+
+  // Prompt user to select a snippet via QuickSelector floating widget.
+  template <typename _ViewWindow> static QString promptForSnippet2(_ViewWindow *p_win) {
+    auto *snippetSvc = p_win->getServices().template get<SnippetCoreService>();
+    if (!snippetSvc) {
+      return QString();
+    }
+
+    const auto snippets = snippetSvc->listSnippets();
+    if (snippets.isEmpty()) {
+      p_win->showMessage(ViewWindow2::tr("Snippet not available"));
+      return QString();
+    }
+
+    QVector<QuickSelectorItem> items;
+    for (const auto &snipVal : snippets) {
+      const auto snip = snipVal.toObject();
+      items.push_back(QuickSelectorItem(snip[QStringLiteral("name")].toString(),
+                                        snip[QStringLiteral("name")].toString(),
+                                        snip[QStringLiteral("description")].toString(),
+                                        snip[QStringLiteral("shortcut")].toString()));
+    }
+
+    // Ownership will be transferred to showFloatingWidget().
+    auto selector = new QuickSelector(ViewWindow2::tr("Select Snippet"), items, true, p_win);
+    auto ret = p_win->showFloatingWidget(selector);
+    return ret.toString();
   }
 };
 } // namespace vnotex
