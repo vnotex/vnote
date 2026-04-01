@@ -563,3 +563,21 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
 
   menu.exec(p_globalPos);
 }
+
+QVector<ViewSplit2::TabNavigationInfo> ViewSplit2::getNavigationModeInfo() const {
+  QVector<TabNavigationInfo> infos;
+  auto bar = tabBar();
+  for (int i = 0; i < bar->count(); ++i) {
+    QPoint tl = bar->tabRect(i).topLeft();
+    if (tl.x() < 0 || tl.x() >= bar->width()) {
+      continue;
+    }
+
+    TabNavigationInfo info;
+    info.m_topLeft = bar->mapToParent(tl);
+    info.m_viewWindow = getViewWindow(i);
+    infos.append(info);
+  }
+
+  return infos;
+}

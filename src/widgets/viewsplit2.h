@@ -2,6 +2,7 @@
 #define VIEWSPLIT2_H
 
 #include <QIcon>
+#include <QPoint>
 #include <QTabWidget>
 #include <QString>
 #include <QStringList>
@@ -78,6 +79,16 @@ public:
   // Set the vxcore workspace ID this split is mapped to.
   // Used when switching workspaces on an existing split.
   void setWorkspaceId(const QString &p_workspaceId);
+
+  // ============ Navigation ============
+
+  struct TabNavigationInfo {
+    // Tab top-left relative to this ViewSplit2 widget.
+    QPoint m_topLeft;
+    ViewWindow2 *m_viewWindow = nullptr;
+  };
+
+  QVector<TabNavigationInfo> getNavigationModeInfo() const;
 
   // ============ State ============
 
