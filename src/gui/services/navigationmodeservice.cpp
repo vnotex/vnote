@@ -22,9 +22,12 @@ NavigationModeService::NavigationModeService(ConfigCoreService &p_configService,
   Q_ASSERT(p_topLevelWidget);
 
   const auto config = p_configService.getConfig();
-  const auto keys =
+  auto keys =
       config.value(QStringLiteral("core")).toObject().value(QStringLiteral("shortcuts")).toObject().value(
           QStringLiteral("navigationMode")).toString();
+  if (keys.isEmpty()) {
+    keys = QStringLiteral("Ctrl+G, W");
+  }
   auto shortcut =
       WidgetUtils::createShortcut(keys, p_topLevelWidget, Qt::ApplicationShortcut);
   if (!shortcut) {
