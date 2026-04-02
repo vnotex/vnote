@@ -2,6 +2,7 @@
 #include <QtTest>
 
 #include <core/services/searchcoreservice.h>
+#include <core/services/searchservice.h>
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 
@@ -42,6 +43,18 @@ private slots:
 
   // Test searchByTags with tags
   void testSearchByTagsWithTags();
+
+  // Test async wrapper initial searching state
+  void testIsSearchingInitiallyFalse();
+
+  // Test async wrapper file search finished signal
+  void testSearchFilesAsync();
+
+  // Test async wrapper cancellation
+  void testCancelSearch();
+
+  // Test async wrapper started signal
+  void testSearchStartedSignal();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -205,6 +218,55 @@ void TestSearchService::testSearchByTagsWithTags() {
                                    QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchByTags failed: %1").arg(err.message())));
   // Note: May need to rebuild cache or wait for indexing
+}
+
+void TestSearchService::testIsSearchingInitiallyFalse() {
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  QCOMPARE(service.isSearching(), false);
+}
+
+void TestSearchService::testSearchFilesAsync() {
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+
+  QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 5000);
+  QVERIFY2(finishedSpy.count() > 0,
+           qPrintable(QString("searchFiles async failed unexpectedly (%1)")
+                          .arg(failedSpy.isEmpty() ? QString() : failedSpy.takeFirst().at(0).toString())));
+}
+
+void TestSearchService::testCancelSearch() {
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy cancelledSpy(&service, &SearchService::searchCancelled);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  service.searchContent(m_notebookId, QStringLiteral("{\"pattern\":\"test\"}"), QString());
+  service.cancel();
+
+  QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || cancelledSpy.count() > 0 || failedSpy.count() > 0,
+                           5000);
+  QVERIFY(finishedSpy.count() > 0 || cancelledSpy.count() > 0);
+}
+
+void TestSearchService::testSearchStartedSignal() {
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  QSignalSpy startedSpy(&service, &SearchService::searchStarted);
+
+  service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+
+  QTRY_VERIFY_WITH_TIMEOUT(startedSpy.count() > 0, 3000);
 }
 
 } // namespace tests

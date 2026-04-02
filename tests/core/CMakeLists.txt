@@ -22,9 +22,27 @@ add_qt_test(test_servicelocator
 add_qt_test(test_searchservice
   SOURCES
     test_searchservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
   LINKS
     core_services
     vxcore
+  GUILESS
+)
+
+add_qt_test(test_searchresulttypes
+  SOURCES
+    test_searchresulttypes.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
+  GUILESS
+)
+
+add_qt_test(test_searchresultmodel
+  SOURCES
+    test_searchresultmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/searchresultmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
+  LINKS
+    Qt6::Widgets
   GUILESS
 )
 

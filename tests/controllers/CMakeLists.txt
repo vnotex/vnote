@@ -7,3 +7,15 @@ add_qt_test(test_snippetcontroller
     vxcore
   GUILESS
 )
+
+add_qt_test(test_searchcontroller
+  SOURCES
+    test_searchcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/searchcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/searchresultmodel.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
