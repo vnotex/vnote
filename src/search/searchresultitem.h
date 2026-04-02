@@ -5,9 +5,13 @@
 #include <QSharedPointer>
 #include <QString>
 
+#include <core/global.h>
 #include <core/location.h>
 
 namespace vnotex {
+// Deprecated: Use SearchResult/SearchFileResult/SearchLineMatch instead.
+// NOTE: Cannot use VNOTEX_DEPRECATED on this struct because MSVC propagates
+// C4996 through QSharedPointer/QVector template instantiations.
 struct SearchResultItem {
   friend QDebug operator<<(QDebug p_dbg, const SearchResultItem &p_item) {
     p_dbg << p_item.m_location;

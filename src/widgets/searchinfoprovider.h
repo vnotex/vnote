@@ -5,13 +5,16 @@
 
 #include <QSharedPointer>
 
+#include <core/global.h>
+
 namespace vnotex {
 class ViewArea;
 class NotebookExplorer2;
 class NotebookMgr;
 class MainWindow;
 
-class SearchInfoProvider : public ISearchInfoProvider {
+class VNOTEX_DEPRECATED("Use SearchCoreService with ServiceLocator pattern instead")
+    SearchInfoProvider : public ISearchInfoProvider {
 public:
   SearchInfoProvider(const ViewArea *p_viewArea, const NotebookExplorer2 *p_notebookExplorer,
                      const NotebookMgr *p_notebookMgr);

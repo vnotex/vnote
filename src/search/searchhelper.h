@@ -3,13 +3,15 @@
 
 #include <QSharedPointer>
 
+#include <core/global.h>
+
 #include "searchdata.h"
 #include "searcher.h"
 
 namespace vnotex {
 class ISearchInfoProvider;
 
-class SearchHelper {
+class VNOTEX_DEPRECATED("Use SearchController with ServiceLocator pattern instead") SearchHelper {
 public:
   SearchHelper() = delete;
 

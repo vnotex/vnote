@@ -6,6 +6,8 @@
 #include <QSharedPointer>
 #include <QVector>
 
+#include <core/global.h>
+
 #include "searchdata.h"
 
 namespace vnotex {
@@ -13,6 +15,9 @@ struct SearchResultItem;
 
 class SearchToken;
 
+// Deprecated: Use SearchService with ServiceLocator pattern instead.
+// NOTE: Cannot use VNOTEX_DEPRECATED on this struct because MSVC propagates
+// C4996 through QList/QVector template instantiations, causing cascading warnings.
 struct SearchSecondPhaseItem {
   SearchSecondPhaseItem() = default;
 
@@ -24,7 +29,8 @@ struct SearchSecondPhaseItem {
   QString m_displayPath;
 };
 
-class ISearchEngine : public QObject {
+class VNOTEX_DEPRECATED("Use SearchService with ServiceLocator pattern instead") ISearchEngine
+    : public QObject {
   Q_OBJECT
 public:
   ISearchEngine() = default;

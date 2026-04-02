@@ -8,6 +8,7 @@
 #include <QThread>
 #include <QVector>
 
+#include <core/global.h>
 #include <utils/asyncworker.h>
 
 #include "searchdata.h"
@@ -15,6 +16,9 @@
 #include "searchtoken.h"
 
 namespace vnotex {
+// Deprecated: Use SearchService with ServiceLocator pattern instead.
+// NOTE: Cannot use VNOTEX_DEPRECATED on this class because MSVC propagates
+// C4996 through QVector<QSharedPointer<FileSearchEngineWorker>> template instantiations.
 class FileSearchEngineWorker : public AsyncWorker {
   Q_OBJECT
   friend class FileSearchEngine;
@@ -53,7 +57,8 @@ private:
   QVector<QSharedPointer<SearchResultItem>> m_results;
 };
 
-class FileSearchEngine : public ISearchEngine {
+class VNOTEX_DEPRECATED("Use SearchService with ServiceLocator pattern instead") FileSearchEngine
+    : public ISearchEngine {
   Q_OBJECT
 public:
   FileSearchEngine();

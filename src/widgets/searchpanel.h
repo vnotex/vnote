@@ -4,6 +4,7 @@
 #include <QFrame>
 #include <QSharedPointer>
 
+#include <core/global.h>
 #include <search/searchdata.h>
 #include <search/searcher.h>
 
@@ -24,7 +25,8 @@ struct Location;
 class SearchToken;
 class ISearchInfoProvider;
 
-class SearchPanel : public QFrame {
+class VNOTEX_DEPRECATED("Use SearchPanel2 with ServiceLocator pattern instead") SearchPanel
+    : public QFrame {
   Q_OBJECT
 public:
   SearchPanel(const QSharedPointer<ISearchInfoProvider> &p_provider, QWidget *p_parent = nullptr);

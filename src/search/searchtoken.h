@@ -12,7 +12,7 @@
 class QCommandLineParser;
 
 namespace vnotex {
-class SearchToken {
+class VNOTEX_DEPRECATED("Use SearchService query JSON instead") SearchToken {
 public:
   enum class Type { PlainText, RegularExpression };
 

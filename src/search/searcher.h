@@ -7,6 +7,8 @@
 #include <QSharedPointer>
 #include <QThread>
 
+#include <core/global.h>
+
 #include "isearchengine.h"
 #include "searchdata.h"
 #include "searchtoken.h"
@@ -19,7 +21,8 @@ class Node;
 class Notebook;
 class AsyncWorkerWithFunctor;
 
-class Searcher : public QObject {
+class VNOTEX_DEPRECATED("Use SearchService with ServiceLocator pattern instead") Searcher
+    : public QObject {
   Q_OBJECT
 public:
   explicit Searcher(QObject *p_parent = nullptr);

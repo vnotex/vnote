@@ -4,12 +4,15 @@
 #include <QList>
 #include <QVector>
 
+#include <core/global.h>
+
 namespace vnotex {
 class Node;
 class Notebook;
 class Buffer;
 
-class ISearchInfoProvider {
+class VNOTEX_DEPRECATED("Use SearchCoreService with ServiceLocator pattern instead")
+    ISearchInfoProvider {
 public:
   ISearchInfoProvider() = default;
 

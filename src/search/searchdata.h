@@ -57,6 +57,9 @@ Q_DECLARE_FLAGS(SearchTargets, SearchTarget);
 
 enum class SearchEngine { Internal = 0 };
 
+// Deprecated: Use SearchService query JSON instead.
+// NOTE: Cannot use VNOTEX_DEPRECATED on this struct because MSVC propagates
+// C4996 through QSharedPointer<SearchOption> template instantiations.
 struct SearchOption {
   SearchOption();
 

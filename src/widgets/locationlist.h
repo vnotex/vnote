@@ -8,6 +8,7 @@
 #include <QScopedPointer>
 #include <QSharedPointer>
 
+#include <core/global.h>
 #include <core/location.h>
 
 #include "navigationmodewrapper.h"
@@ -15,7 +16,8 @@
 namespace vnotex {
 class TitleBar;
 
-class LocationList : public QFrame {
+class VNOTEX_DEPRECATED("Use LocationList2 with ServiceLocator pattern instead") LocationList
+    : public QFrame {
   Q_OBJECT
 public:
   typedef std::function<void(const Location &)> LocationCallback;
