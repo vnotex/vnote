@@ -1,6 +1,8 @@
 #ifndef SEARCHCORESERVICE_H
 #define SEARCHCORESERVICE_H
 
+#include <atomic>
+
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -49,6 +51,21 @@ public:
                       const QString &p_inputFilesJson,
                       QJsonArray *p_results) const;
 
+  // Search file content with cooperative cancellation support.
+  // @p_notebookId: Target notebook ID.
+  // @p_queryJson: JSON search query (pattern, options, etc.).
+  // @p_inputFilesJson: Optional JSON object with "files" and "folders" arrays.
+  // @p_cancelFlag: Atomic flag that can be set non-zero from another thread to cancel.
+  //   If nullptr, behaves like searchContent().
+  // @p_resultObj: Output parameter for the FULL vxcore JSON response
+  //   (contains "matchCount", "truncated", "matches" keys).
+  // @return: Error code (Ok on success, Cancelled if cancelled).
+  Error searchContentCancellable(const QString &p_notebookId,
+                                 const QString &p_queryJson,
+                                 const QString &p_inputFilesJson,
+                                 std::atomic<int> *p_cancelFlag,
+                                 QJsonObject *p_resultObj) const;
+
   // Search files by tags.
   // @p_notebookId: Target notebook ID.
   // @p_queryJson: JSON search query (tags array, options, etc.).
@@ -81,6 +98,10 @@ private:
   // Parse vxcore JSON search response, extracting "matches" into p_results
   // and caching "matchCount" and "truncated". Frees p_json via vxcore_string_free.
   Error parseSearchResponse(char *p_json, QJsonArray *p_results) const;
+
+  // Parse vxcore JSON search response, returning the FULL JSON object.
+  // Caches "matchCount" and "truncated". Frees p_json via vxcore_string_free.
+  Error parseSearchResponseFull(char *p_json, QJsonObject *p_resultObj) const;
 };
 
 } // namespace vnotex

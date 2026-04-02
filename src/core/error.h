@@ -19,7 +19,8 @@ enum class ErrorCode {
   FileMissingOnDisk,
   FileExistsOnCreate,
   DirExistsOnCreate,
-  InvalidArgument
+  InvalidArgument,
+  Cancelled
 };
 
 class Error {

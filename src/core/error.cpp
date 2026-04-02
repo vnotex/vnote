@@ -57,6 +57,8 @@ QString Error::codeToString(ErrorCode p_code) {
     return QStringLiteral("DirExistsOnCreate");
   case ErrorCode::InvalidArgument:
     return QStringLiteral("InvalidArgument");
+  case ErrorCode::Cancelled:
+    return QStringLiteral("Cancelled");
   }
   return QString::number(static_cast<int>(p_code));
 }

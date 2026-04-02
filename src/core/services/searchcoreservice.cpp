@@ -173,6 +173,9 @@ Error SearchCoreService::vxcoreErrorToError(VxCoreError p_error, const QString &
   case VXCORE_ERR_PERMISSION_DENIED:
     code = ErrorCode::FailToReadFile;
     break;
+  case VXCORE_ERR_CANCELLED:
+    code = ErrorCode::Cancelled;
+    break;
   default:
     code = ErrorCode::InvalidArgument;
     break;
@@ -180,4 +183,68 @@ Error SearchCoreService::vxcoreErrorToError(VxCoreError p_error, const QString &
 
   const QString msg = QString::fromUtf8(vxcore_error_message(p_error));
   return Error::error(code, QStringLiteral("%1 failed: %2").arg(p_operation, msg));
+}
+
+Error SearchCoreService::searchContentCancellable(const QString &p_notebookId,
+                                                  const QString &p_queryJson,
+                                                  const QString &p_inputFilesJson,
+                                                  std::atomic<int> *p_cancelFlag,
+                                                  QJsonObject *p_resultObj) const {
+  if (!m_context) {
+    return Error::error(ErrorCode::InvalidArgument, "Context is null");
+  }
+
+  if (!p_resultObj) {
+    return Error::error(ErrorCode::InvalidArgument, "Result output parameter is null");
+  }
+
+  // Local QByteArray variables ensure data lives until vxcore call completes.
+  QByteArray notebookUtf8 = p_notebookId.toUtf8();
+  QByteArray queryUtf8 = p_queryJson.toUtf8();
+  QByteArray inputUtf8 = p_inputFilesJson.toUtf8();
+  const char *notebookCStr = notebookUtf8.constData();
+  const char *queryCStr = queryUtf8.constData();
+  const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
+
+  // Cast std::atomic<int>* to volatile int* at the C boundary.
+  volatile int *cancelFlagPtr =
+      p_cancelFlag ? reinterpret_cast<volatile int *>(p_cancelFlag) : nullptr;
+
+  char *json = nullptr;
+  VxCoreError err = vxcore_search_content_ex(m_context,
+                                             notebookCStr,
+                                             queryCStr,
+                                             inputCStr,
+                                             cancelFlagPtr,
+                                             &json);
+
+  if (err != VXCORE_OK) {
+    return vxcoreErrorToError(err, QStringLiteral("searchContentCancellable"));
+  }
+
+  return parseSearchResponseFull(json, p_resultObj);
+}
+
+Error SearchCoreService::parseSearchResponseFull(char *p_json, QJsonObject *p_resultObj) const {
+  if (p_json) {
+    QJsonDocument doc = QJsonDocument::fromJson(QByteArray(p_json));
+    vxcore_string_free(p_json);
+    if (doc.isObject()) {
+      *p_resultObj = doc.object();
+
+      // Cache matchCount and truncated from the response.
+      const QString matchCountKey = QStringLiteral("matchCount");
+      const QString truncatedKey = QStringLiteral("truncated");
+      m_lastMatchCount = p_resultObj->value(matchCountKey).toInt(0);
+      m_lastTruncated = p_resultObj->value(truncatedKey).toBool(false);
+    } else {
+      return Error::error(ErrorCode::InvalidArgument, "Invalid JSON object response");
+    }
+  } else {
+    m_lastMatchCount = 0;
+    m_lastTruncated = false;
+    *p_resultObj = QJsonObject();
+  }
+
+  return Error::ok();
 }
