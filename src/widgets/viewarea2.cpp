@@ -4,12 +4,15 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QLabel>
+#include <QShortcut>
 #include <QSplitter>
 #include <QStackedLayout>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include <controllers/viewareacontroller.h>
+#include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/hookcontext.h>
 #include <core/hooknames.h>
 #include <core/servicelocator.h>
@@ -18,6 +21,7 @@
 #include <core/services/workspacecoreservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/services/viewwindowfactory.h>
+#include <gui/utils/widgetutils.h>
 
 #include "viewareahomewidget.h"
 #include "viewsplit2.h"
@@ -51,6 +55,7 @@ ViewArea2::ViewArea2(ServiceLocator &p_services, QWidget *p_parent)
   m_stackedLayout->setCurrentIndex(HomeScreen);
 
   setupController();
+  setupShortcuts();
 }
 
 ViewArea2::~ViewArea2() {
@@ -111,6 +116,190 @@ void ViewArea2::setupController() {
           m_controller->setShouldPropagateToCore(true);
         }, 10);
   }
+}
+
+void ViewArea2::setupShortcuts() {
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
+  }
+  const auto &coreConfig = configMgr->getCoreConfig();
+
+  // CloseTab.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::CloseTab), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *win = getCurrentViewWindow();
+        if (win) {
+          m_controller->closeViewWindow(idForWindow(win), false);
+        }
+      });
+    }
+  }
+
+  // CloseAllTabs.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::CloseAllTabs), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *split = getCurrentViewSplit();
+        if (split) {
+          m_controller->closeTabs(split->getWorkspaceId(), -1, CloseTabMode::All);
+        }
+      });
+    }
+  }
+
+  // CloseOtherTabs.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::CloseOtherTabs), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *split = getCurrentViewSplit();
+        if (split) {
+          m_controller->closeTabs(split->getWorkspaceId(),
+                                  split->currentIndex(), CloseTabMode::Others);
+        }
+      });
+    }
+  }
+
+  // CloseTabsToTheLeft.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::CloseTabsToTheLeft), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *split = getCurrentViewSplit();
+        if (split) {
+          m_controller->closeTabs(split->getWorkspaceId(),
+                                  split->currentIndex(), CloseTabMode::ToTheLeft);
+        }
+      });
+    }
+  }
+
+  // CloseTabsToTheRight.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::CloseTabsToTheRight), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *split = getCurrentViewSplit();
+        if (split) {
+          m_controller->closeTabs(split->getWorkspaceId(),
+                                  split->currentIndex(), CloseTabMode::ToTheRight);
+        }
+      });
+    }
+  }
+
+  // LocateNode.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::LocateNode), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *win = getCurrentViewWindow();
+        if (win) {
+          const auto &nodeId = win->getNodeId();
+          if (nodeId.isValid()) {
+            emit m_controller->locateNodeRequested(nodeId);
+          }
+        }
+      });
+    }
+  }
+
+  // FocusContentArea.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::FocusContentArea), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *win = getCurrentViewWindow();
+        if (win) {
+          win->setFocus();
+        } else {
+          setFocus();
+        }
+      });
+    }
+  }
+
+  // OneSplitLeft.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::OneSplitLeft), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *split = getCurrentViewSplit();
+        if (split) {
+          auto *target = findSplitByDirection(split, Direction::Left);
+          if (target) {
+            m_controller->setCurrentViewSplit(target->getWorkspaceId(), true);
+          }
+        }
+      });
+    }
+  }
+
+  // OneSplitDown.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::OneSplitDown), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *split = getCurrentViewSplit();
+        if (split) {
+          auto *target = findSplitByDirection(split, Direction::Down);
+          if (target) {
+            m_controller->setCurrentViewSplit(target->getWorkspaceId(), true);
+          }
+        }
+      });
+    }
+  }
+
+  // OneSplitUp.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::OneSplitUp), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *split = getCurrentViewSplit();
+        if (split) {
+          auto *target = findSplitByDirection(split, Direction::Up);
+          if (target) {
+            m_controller->setCurrentViewSplit(target->getWorkspaceId(), true);
+          }
+        }
+      });
+    }
+  }
+
+  // OneSplitRight.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::OneSplitRight), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *split = getCurrentViewSplit();
+        if (split) {
+          auto *target = findSplitByDirection(split, Direction::Right);
+          if (target) {
+            m_controller->setCurrentViewSplit(target->getWorkspaceId(), true);
+          }
+        }
+      });
+    }
+  }
+
+  // OpenLastClosedFile — skipped: depends on legacy HistoryMgr singleton (not yet migrated).
 }
 
 ViewAreaController *ViewArea2::getController() const {

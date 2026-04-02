@@ -337,8 +337,12 @@ void MainWindow2::setupDocks() {
   m_dockWidgetHelper.postSetup();
 
   // Wire ViewAreaController's locateNodeRequested to NotebookExplorer2.
+  // Activate the navigation dock first so the notebook explorer is visible.
   connect(m_viewArea->getController(), &ViewAreaController::locateNodeRequested,
-          m_notebookExplorer, &NotebookExplorer2::locateNode);
+          this, [this](const NodeIdentifier &p_nodeId) {
+            m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
+            m_notebookExplorer->locateNode(p_nodeId);
+          });
 
   // Wire current-window changes to the outline viewer.
   connect(m_viewArea->getController(), &ViewAreaController::currentViewWindowChanged,

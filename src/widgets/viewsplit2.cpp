@@ -9,6 +9,7 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QResizeEvent>
+#include <QShortcut>
 #include <QTabBar>
 #include <QToolButton>
 #include <QUrl>
@@ -16,8 +17,11 @@
 #include "propertydefs.h"
 #include "viewwindow2.h"
 #include "widgetsfactory.h"
+#include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/workspacecoreservice.h>
+#include <gui/utils/widgetutils.h>
 #include <gui/services/themeservice.h>
 #include <utils/clipboardutils.h>
 #include <gui/utils/iconutils.h>
@@ -41,6 +45,7 @@ ViewSplit2::ViewSplit2(ServiceLocator &p_services, const QString &p_workspaceId,
                        QWidget *p_parent)
     : QTabWidget(p_parent), m_services(p_services), m_workspaceId(p_workspaceId) {
   setupUI();
+  setupShortcuts();
 }
 
 ViewSplit2::~ViewSplit2() {
@@ -214,6 +219,9 @@ void ViewSplit2::setVisibleWorkspaceIdsFunc(const VisibleWorkspaceIdsFunc &p_fun
 void ViewSplit2::updateMenu(QMenu *p_menu) {
   p_menu->clear();
 
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  const auto *coreConfig = configMgr ? &configMgr->getCoreConfig() : nullptr;
+
   // Workspaces section.
   {
     p_menu->addSection(tr("Workspaces"));
@@ -253,7 +261,12 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
 
     p_menu->addSeparator();
 
-    p_menu->addAction(tr("New Workspace"), [this]() { emit newWorkspaceRequested(this); });
+    auto *newWsAct =
+        p_menu->addAction(tr("New Workspace"), [this]() { emit newWorkspaceRequested(this); });
+    if (coreConfig) {
+      WidgetUtils::addActionShortcutText(
+          newWsAct, coreConfig->getShortcut(CoreConfig::Shortcut::NewWorkspace));
+    }
 
     p_menu->addAction(tr("Rename Workspace"),
                       [this]() { emit renameWorkspaceRequested(this); });
@@ -271,11 +284,11 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
       multiSplit = m_visibleWorkspaceIdsFunc().size() > 1;
     }
 
-    p_menu->addAction(tr("Vertical Split"), [this]() {
+    auto *verticalAct = p_menu->addAction(tr("Vertical Split"), [this]() {
       emit splitRequested(this, Direction::Right);
     });
 
-    p_menu->addAction(tr("Horizontal Split"), [this]() {
+    auto *horizontalAct = p_menu->addAction(tr("Horizontal Split"), [this]() {
       emit splitRequested(this, Direction::Down);
     });
 
@@ -289,6 +302,17 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
     });
     distributeAct->setEnabled(multiSplit);
 
+    if (coreConfig) {
+      WidgetUtils::addActionShortcutText(
+          verticalAct, coreConfig->getShortcut(CoreConfig::Shortcut::VerticalSplit));
+      WidgetUtils::addActionShortcutText(
+          horizontalAct, coreConfig->getShortcut(CoreConfig::Shortcut::HorizontalSplit));
+      WidgetUtils::addActionShortcutText(
+          maximizeAct, coreConfig->getShortcut(CoreConfig::Shortcut::MaximizeSplit));
+      WidgetUtils::addActionShortcutText(
+          distributeAct, coreConfig->getShortcut(CoreConfig::Shortcut::DistributeSplits));
+    }
+
     p_menu->addSeparator();
 
     auto *removeSplitAct = p_menu->addAction(tr("Remove Split"), [this]() {
@@ -300,6 +324,12 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
       emit removeSplitAndWorkspaceRequested(this);
     });
     removeSplitAndWsAct->setEnabled(multiSplit);
+
+    if (coreConfig) {
+      WidgetUtils::addActionShortcutText(
+          removeSplitAndWsAct,
+          coreConfig->getShortcut(CoreConfig::Shortcut::RemoveSplitAndWorkspace));
+    }
   }
 }
 
@@ -439,6 +469,41 @@ void ViewSplit2::focusCurrentViewWindow() {
   m_currentViewWindow = win;
 }
 
+void ViewSplit2::alternateTab() {
+  if (!m_lastViewWindow) {
+    return;
+  }
+
+  // It is fine even when m_lastViewWindow is a wild pointer. The implementation will just
+  // compare its value without dereferencing it.
+  if (-1 != indexOf(m_lastViewWindow)) {
+    setCurrentViewWindow(m_lastViewWindow);
+  } else {
+    m_lastViewWindow = nullptr;
+  }
+}
+
+void ViewSplit2::activateNextTab(bool p_backward) {
+  int idx = currentIndex();
+  if (idx == -1 || count() == 1) {
+    return;
+  }
+
+  if (p_backward) {
+    --idx;
+    if (idx < 0) {
+      idx = count() - 1;
+    }
+  } else {
+    ++idx;
+    if (idx >= count()) {
+      idx = 0;
+    }
+  }
+
+  setCurrentViewWindow(idx);
+}
+
 void ViewSplit2::mousePressEvent(QMouseEvent *p_event) {
   QTabWidget::mousePressEvent(p_event);
   emit focused(this);
@@ -489,18 +554,21 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
     return;
   }
 
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  const auto *coreConfig = configMgr ? &configMgr->getCoreConfig() : nullptr;
+
   QMenu menu(this);
 
   // ---- Close Actions ----
-  menu.addAction(tr("Close Tab"), [this, p_tabIndex]() {
+  auto *closeTabAct = menu.addAction(tr("Close Tab"), [this, p_tabIndex]() {
     closeTab(p_tabIndex);
   });
 
-  menu.addAction(tr("Close All Tabs"), [this, p_tabIndex]() {
+  auto *closeAllAct = menu.addAction(tr("Close All Tabs"), [this, p_tabIndex]() {
     emit closeTabsRequested(this, p_tabIndex, CloseTabMode::All);
   });
 
-  menu.addAction(tr("Close Other Tabs"), [this, p_tabIndex]() {
+  auto *closeOtherAct = menu.addAction(tr("Close Other Tabs"), [this, p_tabIndex]() {
     emit closeTabsRequested(this, p_tabIndex, CloseTabMode::Others);
   });
 
@@ -513,6 +581,19 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
     emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheRight);
   });
   closeRightAct->setEnabled(p_tabIndex < count() - 1);
+
+  if (coreConfig) {
+    WidgetUtils::addActionShortcutText(
+        closeTabAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTab));
+    WidgetUtils::addActionShortcutText(
+        closeAllAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseAllTabs));
+    WidgetUtils::addActionShortcutText(
+        closeOtherAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseOtherTabs));
+    WidgetUtils::addActionShortcutText(
+        closeLeftAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTabsToTheLeft));
+    WidgetUtils::addActionShortcutText(
+        closeRightAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTabsToTheRight));
+  }
 
   menu.addSeparator();
 
@@ -537,29 +618,44 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   openLocAct->setEnabled(!absPath.isEmpty());
 
   if (nodeId.isValid()) {
-    menu.addAction(tr("Locate Node"), [this, nodeId]() {
+    auto *locateAct = menu.addAction(tr("Locate Node"), [this, nodeId]() {
       emit locateNodeRequested(nodeId);
     });
+    if (coreConfig) {
+      WidgetUtils::addActionShortcutText(
+          locateAct, coreConfig->getShortcut(CoreConfig::Shortcut::LocateNode));
+    }
   }
 
   menu.addSeparator();
 
   // ---- Move Actions ----
-  menu.addAction(tr("Move One Split Left"), [this, win]() {
+  auto *moveLeftAct = menu.addAction(tr("Move One Split Left"), [this, win]() {
     emit moveViewWindowOneSplitRequested(this, win, Direction::Left);
   });
 
-  menu.addAction(tr("Move One Split Right"), [this, win]() {
+  auto *moveRightAct = menu.addAction(tr("Move One Split Right"), [this, win]() {
     emit moveViewWindowOneSplitRequested(this, win, Direction::Right);
   });
 
-  menu.addAction(tr("Move One Split Up"), [this, win]() {
+  auto *moveUpAct = menu.addAction(tr("Move One Split Up"), [this, win]() {
     emit moveViewWindowOneSplitRequested(this, win, Direction::Up);
   });
 
-  menu.addAction(tr("Move One Split Down"), [this, win]() {
+  auto *moveDownAct = menu.addAction(tr("Move One Split Down"), [this, win]() {
     emit moveViewWindowOneSplitRequested(this, win, Direction::Down);
   });
+
+  if (coreConfig) {
+    WidgetUtils::addActionShortcutText(
+        moveLeftAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitLeft));
+    WidgetUtils::addActionShortcutText(
+        moveRightAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitRight));
+    WidgetUtils::addActionShortcutText(
+        moveUpAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitUp));
+    WidgetUtils::addActionShortcutText(
+        moveDownAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitDown));
+  }
 
   menu.exec(p_globalPos);
 }
@@ -580,4 +676,189 @@ QVector<ViewSplit2::TabNavigationInfo> ViewSplit2::getNavigationModeInfo() const
   }
 
   return infos;
+}
+
+void ViewSplit2::setupShortcuts() {
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
+  }
+  const auto &coreConfig = configMgr->getCoreConfig();
+
+  // NewWorkspace.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::NewWorkspace),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this,
+              [this]() { emit newWorkspaceRequested(this); });
+    }
+  }
+
+  // VerticalSplit.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::VerticalSplit),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this,
+              [this]() { emit splitRequested(this, Direction::Right); });
+    }
+  }
+
+  // HorizontalSplit.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::HorizontalSplit),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this,
+              [this]() { emit splitRequested(this, Direction::Down); });
+    }
+  }
+
+  // MaximizeSplit.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::MaximizeSplit),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this,
+              [this]() { emit maximizeSplitRequested(this); });
+    }
+  }
+
+  // DistributeSplits.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::DistributeSplits),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this,
+              [this]() { emit distributeSplitsRequested(); });
+    }
+  }
+
+  // RemoveSplitAndWorkspace.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::RemoveSplitAndWorkspace),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this,
+              [this]() { emit removeSplitAndWorkspaceRequested(this); });
+    }
+  }
+
+  // ActivateTab1-9.
+  {
+    const CoreConfig::Shortcut tabShortcuts[] = {
+        CoreConfig::Shortcut::ActivateTab1, CoreConfig::Shortcut::ActivateTab2,
+        CoreConfig::Shortcut::ActivateTab3, CoreConfig::Shortcut::ActivateTab4,
+        CoreConfig::Shortcut::ActivateTab5, CoreConfig::Shortcut::ActivateTab6,
+        CoreConfig::Shortcut::ActivateTab7, CoreConfig::Shortcut::ActivateTab8,
+        CoreConfig::Shortcut::ActivateTab9};
+    for (int i = 0; i < 9; ++i) {
+      auto shortcut = WidgetUtils::createShortcut(
+          coreConfig.getShortcut(tabShortcuts[i]),
+          this, Qt::WidgetWithChildrenShortcut);
+      if (shortcut) {
+        connect(shortcut, &QShortcut::activated, this,
+                [this, i]() { setCurrentViewWindow(i); });
+      }
+    }
+  }
+
+  // AlternateTab.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::AlternateTab),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, &ViewSplit2::alternateTab);
+    }
+  }
+
+  // ActivateNextTab.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::ActivateNextTab),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this,
+              [this]() { activateNextTab(false); });
+    }
+  }
+
+  // ActivatePreviousTab.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::ActivatePreviousTab),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this,
+              [this]() { activateNextTab(true); });
+    }
+  }
+
+  // MoveOneSplitLeft.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::MoveOneSplitLeft),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *win = getCurrentViewWindow();
+        if (win) {
+          emit moveViewWindowOneSplitRequested(this, win, Direction::Left);
+        }
+      });
+    }
+  }
+
+  // MoveOneSplitDown.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::MoveOneSplitDown),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *win = getCurrentViewWindow();
+        if (win) {
+          emit moveViewWindowOneSplitRequested(this, win, Direction::Down);
+        }
+      });
+    }
+  }
+
+  // MoveOneSplitUp.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::MoveOneSplitUp),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *win = getCurrentViewWindow();
+        if (win) {
+          emit moveViewWindowOneSplitRequested(this, win, Direction::Up);
+        }
+      });
+    }
+  }
+
+  // MoveOneSplitRight.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::MoveOneSplitRight),
+        this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *win = getCurrentViewWindow();
+        if (win) {
+          emit moveViewWindowOneSplitRequested(this, win, Direction::Right);
+        }
+      });
+    }
+  }
 }

@@ -132,6 +132,7 @@ private slots:
 
 private:
   void setupController();
+  void setupShortcuts();
   void wireSplitSignals(ViewSplit2 *p_split);
 
   ViewSplit2 *splitForWorkspace(const QString &p_workspaceId) const;

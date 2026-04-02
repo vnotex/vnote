@@ -169,6 +169,7 @@ private:
   void setupUI();
   void setupTabBar();
   void setupCornerWidget();
+  void setupShortcuts();
 
   void initIcons();
 
@@ -178,6 +179,12 @@ private:
   ViewWindow2 *getViewWindow(int p_idx) const;
 
   void focusCurrentViewWindow();
+
+  // Switch to the previously active tab (alternate tab).
+  void alternateTab();
+
+  // Activate the next (or previous if p_backward) tab, wrapping around.
+  void activateNextTab(bool p_backward);
 
   // Build and show the tab context menu at the given position.
   void createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos);
