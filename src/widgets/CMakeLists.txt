@@ -101,6 +101,7 @@ target_sources(vnote PRIVATE
     listwidget.cpp listwidget.h
     locationinputwithbrowsebutton.cpp locationinputwithbrowsebutton.h
     locationlist.cpp locationlist.h
+    locationlist2.cpp locationlist2.h
     mainwindow.cpp mainwindow.h
     mainwindow2.cpp mainwindow2.h
     markdownviewwindow.cpp markdownviewwindow.h
@@ -128,6 +129,7 @@ target_sources(vnote PRIVATE
     quickselector.cpp quickselector.h
     searchinfoprovider.cpp searchinfoprovider.h
     searchpanel.cpp searchpanel.h
+    searchpanel2.cpp searchpanel2.h
     simplesegmenthighlighter.cpp simplesegmenthighlighter.h
     snippetpanel.cpp snippetpanel.h
     snippetpanel2.cpp snippetpanel2.h
