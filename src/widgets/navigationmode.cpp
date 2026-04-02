@@ -10,8 +10,6 @@
 #include <QTreeWidgetItem>
 
 #include "treewidget.h"
-#include <core/thememgr.h>
-#include <core/vnotex.h>
 #include <gui/services/themeservice.h>
 #include <utils/widgetutils.h>
 
@@ -69,16 +67,9 @@ QString NavigationMode::generateNavigationLabelStyle(const QString &p_str, bool 
     lastLen = p_str.size();
   }
 
-  QString fg;
-  QString bgColor;
-  if (m_themeService) {
-    fg = m_themeService->paletteColor(QStringLiteral("widgets#navigationlabel#fg"));
-    bgColor = m_themeService->paletteColor(QStringLiteral("widgets#navigationlabel#bg"));
-  } else {
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    fg = themeMgr.paletteColor(QStringLiteral("widgets#navigationlabel#fg"));
-    bgColor = themeMgr.paletteColor(QStringLiteral("widgets#navigationlabel#bg"));
-  }
+  Q_ASSERT(m_themeService);
+  const auto fg = m_themeService->paletteColor(QStringLiteral("widgets#navigationlabel#fg"));
+  const auto bgColor = m_themeService->paletteColor(QStringLiteral("widgets#navigationlabel#bg"));
 
   QColor bg(bgColor);
   bg.setAlpha(200);

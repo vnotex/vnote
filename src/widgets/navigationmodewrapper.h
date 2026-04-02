@@ -33,7 +33,7 @@ private:
 
 template <typename T, typename I>
 NavigationModeWrapper<T, I>::NavigationModeWrapper(T *p_widget)
-    : NavigationMode(NavigationMode::Type::DoubleKeys, p_widget), m_widget(p_widget) {}
+    : NavigationMode(NavigationMode::Type::DoubleKeys, p_widget, nullptr), m_widget(p_widget) {}
 
 template <typename T, typename I>
 QVector<void *> NavigationModeWrapper<T, I>::getVisibleNavigationItems() {

@@ -41,7 +41,7 @@
 using namespace vnotex;
 
 ViewArea::ViewArea(QWidget *p_parent)
-    : QWidget(p_parent), NavigationMode(NavigationMode::Type::DoubleKeys, this) {
+    : QWidget(p_parent), NavigationMode(NavigationMode::Type::DoubleKeys, this, nullptr) {
   setupUI();
 
   setAcceptDrops(true);

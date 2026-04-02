@@ -26,7 +26,7 @@ const QString ToolBox::c_titleButtonForegroundName = "widgets#toolbox#title#butt
 const QString ToolBox::c_titleButtonActiveForegroundName = "widgets#toolbox#title#button#active#fg";
 
 ToolBox::ToolBox(QWidget *p_parent)
-    : QFrame(p_parent), NavigationMode(NavigationMode::Type::DoubleKeys, this),
+    : QFrame(p_parent), NavigationMode(NavigationMode::Type::DoubleKeys, this, nullptr),
       m_buttonLayout(nullptr), m_widgetLayout(nullptr), m_buttonActionGroup(nullptr),
       m_currentIndex(-1) {
   setupUI();

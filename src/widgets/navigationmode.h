@@ -41,7 +41,7 @@ protected:
 
   explicit NavigationMode(NavigationMode::Type p_type,
                           QWidget *p_widget,
-                          ThemeService *p_themeService = nullptr);
+                          ThemeService *p_themeService);
 
   // @p_item: if it is null, that means it is a major key hit; otherwise, it is a second key hit.
   virtual void handleTargetHit(void *p_item) = 0;

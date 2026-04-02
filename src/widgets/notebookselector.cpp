@@ -16,7 +16,7 @@
 using namespace vnotex;
 
 NotebookSelector::NotebookSelector(QWidget *p_parent)
-    : ComboBox(p_parent), NavigationMode(NavigationMode::Type::StagedDoubleKeys, this) {
+    : ComboBox(p_parent), NavigationMode(NavigationMode::Type::StagedDoubleKeys, this, nullptr) {
   auto itemDelegate = new QStyledItemDelegate(this);
   setItemDelegate(itemDelegate);
 

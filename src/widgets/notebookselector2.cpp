@@ -10,6 +10,7 @@
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <core/configmgr2.h>
@@ -19,7 +20,7 @@ using namespace vnotex;
 
 NotebookSelector2::NotebookSelector2(ServiceLocator &p_services, QWidget *p_parent)
     : ComboBox(p_parent),
-      NavigationMode(NavigationMode::Type::StagedDoubleKeys, this),
+      NavigationMode(NavigationMode::Type::StagedDoubleKeys, this, p_services.get<ThemeService>()),
       m_services(p_services) {
   auto itemDelegate = new QStyledItemDelegate(this);
   setItemDelegate(itemDelegate);

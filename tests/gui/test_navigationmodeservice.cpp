@@ -58,7 +58,7 @@ namespace tests {
 class MockNavigationMode : public vnotex::NavigationMode {
 public:
   explicit MockNavigationMode(QWidget *p_widget)
-      : vnotex::NavigationMode(vnotex::NavigationMode::Type::DoubleKeys, p_widget) {}
+      : vnotex::NavigationMode(vnotex::NavigationMode::Type::DoubleKeys, p_widget, nullptr) {}
 
   int showCount = 0;
   int hideCount = 0;
