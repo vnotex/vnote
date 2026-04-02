@@ -112,6 +112,11 @@ void MainWindow2::setupNavigationMode() {
   if (auto *fileWrapper = m_tagExplorer->getFileNavigationWrapper()) {
     navService->registerNavigationTarget(fileWrapper);
   }
+
+  // 7. OutlineViewer wrapper
+  if (auto *outlineWrapper = m_outlineViewer->getOutlineNavigationWrapper()) {
+    navService->registerNavigationTarget(outlineWrapper);
+  }
 }
 
 void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen) {

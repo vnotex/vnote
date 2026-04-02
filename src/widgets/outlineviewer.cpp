@@ -12,6 +12,8 @@
 #include <utils/widgetutils.h>
 #include <views/outlineview.h>
 
+#include <widgets/navigationmodeviewwrapper.h>
+
 #include "titlebar.h"
 
 using namespace vnotex;
@@ -43,6 +45,11 @@ void OutlineViewer::setupUI(const QString &p_title) {
   mainLayout->addWidget(m_outlineView);
 
   setFocusProxy(m_outlineView);
+
+  // Navigation wrapper for keyboard navigation mode.
+  auto *themeService = m_services.get<ThemeService>();
+  m_outlineNavWrapper.reset(
+      new NavigationModeViewWrapper<OutlineView>(m_outlineView, themeService));
 
   connect(m_controller, &OutlineController::focusViewAreaRequested,
           this, &OutlineViewer::focusViewArea);
@@ -97,4 +104,8 @@ void OutlineViewer::showLevel() {
   QToolTip::showText(mapToGlobal(QPoint(0, 0)),
                      tr("Expansion level: %1").arg(m_controller->getExpandLevel()),
                      this);
+}
+
+NavigationMode *OutlineViewer::getOutlineNavigationWrapper() const {
+  return m_outlineNavWrapper.data();
 }

@@ -2,15 +2,18 @@
 #define OUTLINEVIEWER_H
 
 #include <QFrame>
+#include <QScopedPointer>
 #include <QSharedPointer>
 
 namespace vnotex {
 
+class NavigationMode;
 class OutlineController;
 class OutlineProvider;
 class OutlineView;
 class ServiceLocator;
 class TitleBar;
+template <typename T> class NavigationModeViewWrapper;
 
 class OutlineViewer : public QFrame {
   Q_OBJECT
@@ -19,6 +22,8 @@ public:
                 QWidget *p_parent = nullptr);
 
   void setOutlineProvider(const QSharedPointer<OutlineProvider> &p_provider);
+
+  NavigationMode *getOutlineNavigationWrapper() const;
 
 signals:
   void focusViewArea();
@@ -40,6 +45,8 @@ private:
 
   // Owned by layout (child widget).
   OutlineView *m_outlineView = nullptr;
+
+  QScopedPointer<NavigationModeViewWrapper<OutlineView>> m_outlineNavWrapper;
 };
 
 } // namespace vnotex
