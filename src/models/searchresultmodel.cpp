@@ -137,7 +137,7 @@ QVariant SearchResultModel::data(const QModelIndex &p_index, int p_role) const {
   const auto &lineMatch = fileResult.m_lineMatches[lineRow];
   switch (p_role) {
   case Qt::DisplayRole:
-    return QStringLiteral("  %1: %2").arg(lineMatch.m_lineNumber + 1).arg(lineMatch.m_lineText);
+    return lineMatch.m_lineText;
   case NodeIdRole: {
     NodeIdentifier nodeId;
     nodeId.notebookId = fileResult.m_notebookId;

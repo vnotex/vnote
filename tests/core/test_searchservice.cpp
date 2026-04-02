@@ -181,8 +181,8 @@ void TestSearchService::testSearchContentWithContent() {
                                     "{\"pattern\":\"test\"}",
                                     QString(), &results);
 
-  // Should succeed even if no results
-  QVERIFY(err.isOk() || !err.isOk()); // Accept either for now
+  // searchContent may or may not find results; just verify the call doesn't crash
+  QVERIFY2(err.isOk(), qPrintable(QString("searchContent failed: %1").arg(err.message())));
 }
 
 void TestSearchService::testSearchByTagsWithTags() {

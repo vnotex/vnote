@@ -29,6 +29,9 @@ SearchController *SearchPanel2::getController() const {
 
 void SearchPanel2::setCurrentNotebookId(const QString &p_notebookId) {
   m_controller->setCurrentNotebookId(p_notebookId);
+  if (m_searchButton) {
+    m_searchButton->setEnabled(!p_notebookId.isEmpty());
+  }
 }
 
 void SearchPanel2::setCurrentFolderId(const NodeIdentifier &p_folderId) {
@@ -92,6 +95,7 @@ void SearchPanel2::setupUI() {
   mainLayout->addWidget(m_filePatternEdit);
 
   m_searchButton = new QPushButton(tr("Search"), this);
+  m_searchButton->setEnabled(false);
   mainLayout->addWidget(m_searchButton);
 
   m_progressBar = new QProgressBar(this);

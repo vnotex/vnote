@@ -98,8 +98,8 @@ void TestSearchResultModel::testSetContentSearchResult() {
   const QModelIndex lineIndex1 = model.index(1, 0, fileIndex);
   QVERIFY(lineIndex0.isValid());
   QVERIFY(lineIndex1.isValid());
-  QVERIFY(model.data(lineIndex0, Qt::DisplayRole).toString().contains(QStringLiteral("2:")));
-  QVERIFY(model.data(lineIndex1, Qt::DisplayRole).toString().contains(QStringLiteral("6:")));
+  QCOMPARE(model.data(lineIndex0, Qt::DisplayRole).toString(), QStringLiteral("first line"));
+  QCOMPARE(model.data(lineIndex1, Qt::DisplayRole).toString(), QStringLiteral("second line"));
 }
 
 void TestSearchResultModel::testSetFileSearchResult() {
