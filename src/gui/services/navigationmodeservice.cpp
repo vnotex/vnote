@@ -2,13 +2,12 @@
 
 #include <QApplication>
 #include <QDebug>
-#include <QJsonObject>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QShortcut>
 #include <QWidget>
 
-#include <core/services/configcoreservice.h>
+#include <core/coreconfig.h>
 #include <gui/utils/widgetutils.h>
 #include <vtextedit/vtextedit.h>
 
@@ -16,18 +15,12 @@
 
 using namespace vnotex;
 
-NavigationModeService::NavigationModeService(ConfigCoreService &p_configService,
+NavigationModeService::NavigationModeService(const CoreConfig &p_coreConfig,
                                              QWidget *p_topLevelWidget, QObject *p_parent)
     : QObject(p_parent) {
   Q_ASSERT(p_topLevelWidget);
 
-  const auto config = p_configService.getConfig();
-  auto keys =
-      config.value(QStringLiteral("core")).toObject().value(QStringLiteral("shortcuts")).toObject().value(
-          QStringLiteral("navigationMode")).toString();
-  if (keys.isEmpty()) {
-    keys = QStringLiteral("Ctrl+G, W");
-  }
+  const auto &keys = p_coreConfig.getShortcut(CoreConfig::NavigationMode);
   auto shortcut =
       WidgetUtils::createShortcut(keys, p_topLevelWidget, Qt::ApplicationShortcut);
   if (!shortcut) {

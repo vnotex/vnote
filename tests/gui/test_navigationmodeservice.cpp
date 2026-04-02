@@ -10,9 +10,7 @@
 #include <QShortcut>
 #include <QWidget>
 
-#include <vxcore/vxcore.h>
-
-#include <core/services/configcoreservice.h>
+#include <core/coreconfig.h>
 #include <gui/utils/widgetutils.h>
 #include <gui/services/navigationmodeservice.h>
 #include <widgets/navigationmode.h>
@@ -115,18 +113,13 @@ private slots:
   void testUnregisterDuringActiveMode();
 
 private:
-  VxCoreContextHandle m_ctx = nullptr;
-  vnotex::ConfigCoreService *m_configService = nullptr;
+  vnotex::CoreConfig *m_coreConfig = nullptr;
   QWidget *m_topLevelWidget = nullptr;
   vnotex::NavigationModeService *m_service = nullptr;
 };
 
 void TestNavigationModeService::initTestCase() {
-  vxcore_set_test_mode(1);
-  VxCoreError err = vxcore_context_create(nullptr, &m_ctx);
-  QCOMPARE(err, VXCORE_OK);
-
-  m_configService = new vnotex::ConfigCoreService(m_ctx, this);
+  m_coreConfig = new vnotex::CoreConfig(nullptr, nullptr);
 
   m_topLevelWidget = new QWidget();
   m_topLevelWidget->resize(400, 300);
@@ -138,12 +131,12 @@ void TestNavigationModeService::cleanupTestCase() {
   delete m_topLevelWidget;
   m_topLevelWidget = nullptr;
 
-  vxcore_context_destroy(m_ctx);
-  m_ctx = nullptr;
+  delete m_coreConfig;
+  m_coreConfig = nullptr;
 }
 
 void TestNavigationModeService::init() {
-  m_service = new vnotex::NavigationModeService(*m_configService, m_topLevelWidget, this);
+  m_service = new vnotex::NavigationModeService(*m_coreConfig, m_topLevelWidget, this);
 }
 
 void TestNavigationModeService::cleanup() {

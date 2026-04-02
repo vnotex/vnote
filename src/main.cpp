@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
 
     // Create NavigationModeService AFTER MainWindow2 (needs top-level widget)
     NavigationModeService navigationModeService(
-        *configService.coreService(), &mainWindow);
+        configMgr.getCoreConfig(), &mainWindow);
     serviceLocator.registerService<NavigationModeService>(&navigationModeService);
     qInfo() << "NavigationModeService registered";
 

@@ -13,14 +13,14 @@ class QEvent;
 
 namespace vnotex {
 
-class ConfigCoreService;
+class CoreConfig;
 class NavigationMode;
 
 class NavigationModeService : public QObject, private Noncopyable {
   Q_OBJECT
 
 public:
-  explicit NavigationModeService(ConfigCoreService &p_configService, QWidget *p_topLevelWidget,
+  explicit NavigationModeService(const CoreConfig &p_coreConfig, QWidget *p_topLevelWidget,
                                  QObject *p_parent = nullptr);
 
   void registerNavigationTarget(NavigationMode *p_target);

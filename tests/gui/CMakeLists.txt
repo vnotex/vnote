@@ -2,12 +2,11 @@ add_qt_test(test_navigationmodeservice
   SOURCES
     test_navigationmodeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/core/error.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/services/configcoreservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/coreconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/navigationmodeservice.cpp
   LINKS
     Qt6::Widgets
     VTextEdit
-    vxcore
 )
 
 target_include_directories(test_navigationmodeservice PRIVATE
