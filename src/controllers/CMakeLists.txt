@@ -19,6 +19,7 @@ target_sources(vnote PRIVATE
     markdownviewwindowcontroller.cpp markdownviewwindowcontroller.h
     outlinecontroller.cpp outlinecontroller.h
     attachmentcontroller.cpp attachmentcontroller.h
+    searchcontroller.cpp searchcontroller.h
 )
 
 target_include_directories(vnote PRIVATE
