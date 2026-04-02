@@ -20,6 +20,8 @@ class NotebookExplorer2;
 class OutlineViewer;
 class TagExplorer2;
 class SnippetPanel2;
+class SearchPanel2;
+class LocationList2;
 class ViewArea2;
 
 class ToolBarHelper2;
@@ -106,6 +108,12 @@ private:
   // Setup SnippetPanel2 as dock widget.
   void setupSnippetExplorer();
 
+  // Setup SearchPanel2 as dock widget.
+  void setupSearchPanel();
+
+  // Setup LocationList2 as dock widget.
+  void setupLocationList();
+
   // Setup ViewArea2 as central widget.
   void setupViewArea();
 
@@ -141,6 +149,12 @@ private:
 
   // SnippetPanel2 dock widget.
   SnippetPanel2 *m_snippetPanel = nullptr;
+
+  // SearchPanel2 dock widget.
+  SearchPanel2 *m_searchPanel = nullptr;
+
+  // LocationList2 dock widget.
+  LocationList2 *m_locationList = nullptr;
 
   // ViewArea2 central widget.
   ViewArea2 *m_viewArea = nullptr;

@@ -106,6 +106,7 @@ private slots:
 
 signals:
   void currentNotebookChanged(const QString &p_notebookId);
+  void currentExploredFolderChanged(const NodeIdentifier &p_folderId);
 
 private:
   void setupUI();

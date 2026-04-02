@@ -27,11 +27,14 @@
 #include <widgets/outlineviewer.h>
 #include <widgets/tagexplorer2.h>
 #include <widgets/snippetpanel2.h>
+#include <widgets/searchpanel2.h>
+#include <widgets/locationlist2.h>
 #include <widgets/viewarea2.h>
 #include <widgets/viewwindow2.h>
 #include <widgets/messageboxhelper.h>
 #include <views/inodeexplorer.h>
 #include <controllers/viewareacontroller.h>
+#include <controllers/searchcontroller.h>
 
 using namespace vnotex;
 
@@ -329,6 +332,14 @@ void MainWindow2::setupSnippetExplorer() {
   m_snippetPanel->setObjectName("SnippetPanel2.vnotex");
 }
 
+void MainWindow2::setupSearchPanel() {
+  m_searchPanel = new SearchPanel2(m_serviceLocator, this);
+}
+
+void MainWindow2::setupLocationList() {
+  m_locationList = new LocationList2(m_serviceLocator, this);
+}
+
 void MainWindow2::setupDocks() {
   setupNotebookExplorer();
 
@@ -338,8 +349,36 @@ void MainWindow2::setupDocks() {
 
   setupSnippetExplorer();
 
+  setupSearchPanel();
+
+  setupLocationList();
+
   m_dockWidgetHelper.setupDocks();
   m_dockWidgetHelper.postSetup();
+
+  // Wire SearchController to LocationList2's model.
+  m_searchPanel->getController()->setModel(m_locationList->getModel());
+
+  // Wire SearchController node activation to buffer opening.
+  connect(m_searchPanel->getController(), &SearchController::nodeActivated,
+          this, [this](const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings) {
+            auto *bufferSvc = m_serviceLocator.get<BufferService>();
+            if (bufferSvc) {
+              bufferSvc->openBuffer(p_nodeId, p_settings);
+            }
+          });
+
+  // Wire notebook changes to SearchPanel2.
+  connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged,
+          m_searchPanel, &SearchPanel2::setCurrentNotebookId);
+
+  // Wire folder context to SearchPanel2.
+  connect(m_notebookExplorer, &NotebookExplorer2::currentExploredFolderChanged,
+          m_searchPanel, &SearchPanel2::setCurrentFolderId);
+
+  // Wire LocationList2 result activation to SearchController.
+  connect(m_locationList, &LocationList2::resultActivated,
+          m_searchPanel->getController(), &SearchController::activateResult);
 
   // Wire ViewAreaController's locateNodeRequested to NotebookExplorer2.
   // Activate the navigation dock first so the notebook explorer is visible.
@@ -391,6 +430,10 @@ QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const
       return m_tagExplorer;
     case DockWidgetHelper::DockType::SnippetDock:
       return m_snippetPanel;
+    case DockWidgetHelper::DockType::SearchDock:
+      return m_searchPanel;
+    case DockWidgetHelper::DockType::LocationListDock:
+      return m_locationList;
     default:
       return nullptr;
   }

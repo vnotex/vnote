@@ -499,6 +499,7 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
   }
 
   emit currentNotebookChanged(p_notebookId);
+  emit currentExploredFolderChanged(currentExploredFolderId());
 }
 
 QString NotebookExplorer2::currentNotebookId() const {
@@ -1048,4 +1049,6 @@ void NotebookExplorer2::onNodeActivated(const NodeIdentifier &p_nodeId,
   }
 
   bufferSvc->openBuffer(p_nodeId, p_settings);
+
+  emit currentExploredFolderChanged(currentExploredFolderId());
 }
