@@ -2,6 +2,7 @@
 #define SEARCHCORESERVICE_H
 
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
@@ -27,8 +28,9 @@ public:
   // Search files by name pattern.
   // @p_notebookId: Target notebook ID.
   // @p_queryJson: JSON search query (pattern, options, etc.).
-  // @p_inputFilesJson: Optional JSON array of file paths to limit search scope.
-  // @p_results: Output parameter for search results.
+  // @p_inputFilesJson: Optional JSON object with "files" and "folders" arrays:
+  //   {"files":[...],"folders":[...]}. Empty string means no scope restriction.
+  // @p_results: Output parameter for search results (the "matches" array).
   // @return: Error code (Ok on success).
   Error searchFiles(const QString &p_notebookId,
                     const QString &p_queryJson,
@@ -38,8 +40,9 @@ public:
   // Search file content.
   // @p_notebookId: Target notebook ID.
   // @p_queryJson: JSON search query (pattern, options, etc.).
-  // @p_inputFilesJson: Optional JSON array of file paths to limit search scope.
-  // @p_results: Output parameter for search results.
+  // @p_inputFilesJson: Optional JSON object with "files" and "folders" arrays:
+  //   {"files":[...],"folders":[...]}. Empty string means no scope restriction.
+  // @p_results: Output parameter for search results (the "matches" array).
   // @return: Error code (Ok on success).
   Error searchContent(const QString &p_notebookId,
                       const QString &p_queryJson,
@@ -49,23 +52,35 @@ public:
   // Search files by tags.
   // @p_notebookId: Target notebook ID.
   // @p_queryJson: JSON search query (tags array, options, etc.).
-  // @p_inputFilesJson: Optional JSON array of file paths to limit search scope.
-  // @p_results: Output parameter for search results.
+  // @p_inputFilesJson: Optional JSON object with "files" and "folders" arrays:
+  //   {"files":[...],"folders":[...]}. Empty string means no scope restriction.
+  // @p_results: Output parameter for search results (the "matches" array).
   // @return: Error code (Ok on success).
   Error searchByTags(const QString &p_notebookId,
                      const QString &p_queryJson,
                      const QString &p_inputFilesJson,
                      QJsonArray *p_results) const;
 
+  // Get match count from the last search response.
+  int lastMatchCount() const { return m_lastMatchCount; }
+
+  // Get whether the last search response was truncated.
+  bool lastTruncated() const { return m_lastTruncated; }
+
 private:
   // Non-owning pointer to vxcore context.
   VxCoreContextHandle m_context = nullptr;
 
+  // Cached metadata from the last vxcore search response.
+  mutable int m_lastMatchCount = 0;
+  mutable bool m_lastTruncated = false;
+
   // Helper to convert VxCoreError to Error.
   Error vxcoreErrorToError(VxCoreError p_error, const QString &p_operation) const;
 
-  // Helper to convert QString to C string (nullptr for empty).
-  static const char *qstringToCStr(const QString &p_str);
+  // Parse vxcore JSON search response, extracting "matches" into p_results
+  // and caching "matchCount" and "truncated". Frees p_json via vxcore_string_free.
+  Error parseSearchResponse(char *p_json, QJsonArray *p_results) const;
 };
 
 } // namespace vnotex

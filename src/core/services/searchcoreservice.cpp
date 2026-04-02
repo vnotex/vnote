@@ -20,35 +20,26 @@ Error SearchCoreService::searchFiles(const QString &p_notebookId,
     return Error::error(ErrorCode::InvalidArgument, "Results output parameter is null");
   }
 
+  // Local QByteArray variables ensure data lives until vxcore call completes.
+  QByteArray notebookUtf8 = p_notebookId.toUtf8();
+  QByteArray queryUtf8 = p_queryJson.toUtf8();
+  QByteArray inputUtf8 = p_inputFilesJson.toUtf8();
+  const char *notebookCStr = notebookUtf8.constData();
+  const char *queryCStr = queryUtf8.constData();
+  const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
+
   char *json = nullptr;
   VxCoreError err = vxcore_search_files(m_context,
-                                        p_notebookId.toUtf8().constData(),
-                                        p_queryJson.toUtf8().constData(),
-                                        qstringToCStr(p_inputFilesJson),
+                                        notebookCStr,
+                                        queryCStr,
+                                        inputCStr,
                                         &json);
 
   if (err != VXCORE_OK) {
     return vxcoreErrorToError(err, QStringLiteral("searchFiles"));
   }
 
-  if (json) {
-    QJsonDocument doc = QJsonDocument::fromJson(QByteArray(json));
-    vxcore_string_free(json);
-    if (doc.isObject()) {
-      QJsonObject obj = doc.object();
-      if (obj.contains("matches") && obj["matches"].isArray()) {
-        *p_results = obj["matches"].toArray();
-      } else {
-        *p_results = QJsonArray();
-      }
-    } else {
-      return Error::error(ErrorCode::InvalidArgument, "Invalid JSON object response");
-    }
-  } else {
-    *p_results = QJsonArray();
-  }
-
-  return Error::ok();
+  return parseSearchResponse(json, p_results);
 }
 
 Error SearchCoreService::searchContent(const QString &p_notebookId,
@@ -63,35 +54,26 @@ Error SearchCoreService::searchContent(const QString &p_notebookId,
     return Error::error(ErrorCode::InvalidArgument, "Results output parameter is null");
   }
 
+  // Local QByteArray variables ensure data lives until vxcore call completes.
+  QByteArray notebookUtf8 = p_notebookId.toUtf8();
+  QByteArray queryUtf8 = p_queryJson.toUtf8();
+  QByteArray inputUtf8 = p_inputFilesJson.toUtf8();
+  const char *notebookCStr = notebookUtf8.constData();
+  const char *queryCStr = queryUtf8.constData();
+  const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
+
   char *json = nullptr;
   VxCoreError err = vxcore_search_content(m_context,
-                                          p_notebookId.toUtf8().constData(),
-                                          p_queryJson.toUtf8().constData(),
-                                          qstringToCStr(p_inputFilesJson),
+                                          notebookCStr,
+                                          queryCStr,
+                                          inputCStr,
                                           &json);
 
   if (err != VXCORE_OK) {
     return vxcoreErrorToError(err, QStringLiteral("searchContent"));
   }
 
-  if (json) {
-    QJsonDocument doc = QJsonDocument::fromJson(QByteArray(json));
-    vxcore_string_free(json);
-    if (doc.isObject()) {
-      QJsonObject obj = doc.object();
-      if (obj.contains("matches") && obj["matches"].isArray()) {
-        *p_results = obj["matches"].toArray();
-      } else {
-        *p_results = QJsonArray();
-      }
-    } else {
-      return Error::error(ErrorCode::InvalidArgument, "Invalid JSON object response");
-    }
-  } else {
-    *p_results = QJsonArray();
-  }
-
-  return Error::ok();
+  return parseSearchResponse(json, p_results);
 }
 
 Error SearchCoreService::searchByTags(const QString &p_notebookId,
@@ -106,24 +88,44 @@ Error SearchCoreService::searchByTags(const QString &p_notebookId,
     return Error::error(ErrorCode::InvalidArgument, "Results output parameter is null");
   }
 
+  // Local QByteArray variables ensure data lives until vxcore call completes.
+  QByteArray notebookUtf8 = p_notebookId.toUtf8();
+  QByteArray queryUtf8 = p_queryJson.toUtf8();
+  QByteArray inputUtf8 = p_inputFilesJson.toUtf8();
+  const char *notebookCStr = notebookUtf8.constData();
+  const char *queryCStr = queryUtf8.constData();
+  const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
+
   char *json = nullptr;
   VxCoreError err = vxcore_search_by_tags(m_context,
-                                          p_notebookId.toUtf8().constData(),
-                                          p_queryJson.toUtf8().constData(),
-                                          qstringToCStr(p_inputFilesJson),
+                                          notebookCStr,
+                                          queryCStr,
+                                          inputCStr,
                                           &json);
 
   if (err != VXCORE_OK) {
     return vxcoreErrorToError(err, QStringLiteral("searchByTags"));
   }
 
-  if (json) {
-    QJsonDocument doc = QJsonDocument::fromJson(QByteArray(json));
-    vxcore_string_free(json);
+  return parseSearchResponse(json, p_results);
+}
+
+Error SearchCoreService::parseSearchResponse(char *p_json, QJsonArray *p_results) const {
+  if (p_json) {
+    QJsonDocument doc = QJsonDocument::fromJson(QByteArray(p_json));
+    vxcore_string_free(p_json);
     if (doc.isObject()) {
       QJsonObject obj = doc.object();
-      if (obj.contains("matches") && obj["matches"].isArray()) {
-        *p_results = obj["matches"].toArray();
+
+      // Preserve matchCount and truncated from the vxcore response.
+      const QString matchCountKey = QStringLiteral("matchCount");
+      const QString truncatedKey = QStringLiteral("truncated");
+      const QString matchesKey = QStringLiteral("matches");
+      m_lastMatchCount = obj.value(matchCountKey).toInt(0);
+      m_lastTruncated = obj.value(truncatedKey).toBool(false);
+
+      if (obj.contains(matchesKey) && obj[matchesKey].isArray()) {
+        *p_results = obj[matchesKey].toArray();
       } else {
         *p_results = QJsonArray();
       }
@@ -131,6 +133,8 @@ Error SearchCoreService::searchByTags(const QString &p_notebookId,
       return Error::error(ErrorCode::InvalidArgument, "Invalid JSON object response");
     }
   } else {
+    m_lastMatchCount = 0;
+    m_lastTruncated = false;
     *p_results = QJsonArray();
   }
 
@@ -176,8 +180,4 @@ Error SearchCoreService::vxcoreErrorToError(VxCoreError p_error, const QString &
 
   const QString msg = QString::fromUtf8(vxcore_error_message(p_error));
   return Error::error(code, QStringLiteral("%1 failed: %2").arg(p_operation, msg));
-}
-
-const char *SearchCoreService::qstringToCStr(const QString &p_str) {
-  return p_str.isEmpty() ? nullptr : p_str.toUtf8().constData();
 }
