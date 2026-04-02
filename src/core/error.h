@@ -2,6 +2,7 @@
 #define ERROR_H
 
 #include <QString>
+#include <QMetaType>
 
 namespace vnotex {
 
@@ -50,5 +51,7 @@ private:
 };
 
 } // namespace vnotex
+
+Q_DECLARE_METATYPE(vnotex::Error)
 
 #endif // ERROR_H

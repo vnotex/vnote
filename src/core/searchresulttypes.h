@@ -2,6 +2,7 @@
 #define SEARCHRESULTTYPES_H
 
 #include <QString>
+#include <QMetaType>
 #include <QVector>
 
 class QJsonObject;
@@ -51,5 +52,7 @@ struct SearchResult {
 };
 
 } // namespace vnotex
+
+Q_DECLARE_METATYPE(vnotex::SearchResult)
 
 #endif // SEARCHRESULTTYPES_H

@@ -23,6 +23,7 @@
 #include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/searchcoreservice.h>
+#include <core/services/searchservice.h>
 #include <core/services/workspacecoreservice.h>
 #include <core/services/filetypecoreservice.h>
 #include <gui/services/themeservice.h>
@@ -169,6 +170,7 @@ int main(int argc, char *argv[]) {
     ConfigService configService(context, &hookManager);
     NotebookCoreService notebookService(context);
     SearchCoreService searchService(context);
+    SearchService searchAsyncService(&searchService);
     WorkspaceCoreService workspaceService(context);
     BufferService bufferService(context, &hookManager);
     TagCoreService tagCoreService(context);
@@ -180,6 +182,7 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<NotebookCoreService>(&notebookService);
     serviceLocator.registerService<BufferService>(&bufferService);
     serviceLocator.registerService<SearchCoreService>(&searchService);
+    serviceLocator.registerService<SearchService>(&searchAsyncService);
     serviceLocator.registerService<WorkspaceCoreService>(&workspaceService);
     serviceLocator.registerService<HookManager>(&hookManager);
     serviceLocator.registerService<TagCoreService>(&tagCoreService);
