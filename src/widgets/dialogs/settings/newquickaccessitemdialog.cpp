@@ -1,7 +1,6 @@
 #include "newquickaccessitemdialog.h"
 
 #include <QComboBox>
-#include <QFileDialog>
 #include <QFormLayout>
 
 #include <widgets/locationinputwithbrowsebutton.h>
@@ -22,15 +21,8 @@ void NewQuickAccessItemDialog::setupUI() {
   {
     m_pathInput = new LocationInputWithBrowseButton(widget);
     m_pathInput->setPlaceholderText(tr("File path"));
+    m_pathInput->setBrowseType(LocationInputWithBrowseButton::File, tr("Select Quick Access File"));
     mainLayout->addRow(tr("File:"), m_pathInput);
-
-    connect(m_pathInput, &LocationInputWithBrowseButton::clicked, this, [this]() {
-      auto filePath = QFileDialog::getOpenFileName(
-          this, tr("Select Quick Access File"), LocationInputWithBrowseButton::defaultBrowsePath());
-      if (!filePath.isEmpty()) {
-        m_pathInput->setText(filePath);
-      }
-    });
   }
 
   {
