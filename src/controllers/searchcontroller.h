@@ -87,6 +87,9 @@ private:
   QString m_queryJson;
   int m_activeSearchMode = ContentSearch;
   bool m_cancelRequested = false;
+
+  QString m_lastKeyword;
+  FindOptions m_lastFindOptions = FindNone;
 };
 
 } // namespace vnotex

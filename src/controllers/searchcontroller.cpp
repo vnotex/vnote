@@ -61,6 +61,16 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
   }
 
   m_activeSearchMode = p_searchMode;
+
+  m_lastKeyword = p_keyword;
+  m_lastFindOptions = FindNone;
+  if (p_caseSensitive) {
+    m_lastFindOptions |= CaseSensitive;
+  }
+  if (p_useRegex) {
+    m_lastFindOptions |= RegularExpression;
+  }
+
   m_queryJson = buildQueryJson(p_keyword, p_searchMode, p_caseSensitive, p_useRegex, p_filePattern);
   if (m_queryJson.isEmpty()) {
     emit searchFailed(tr("Failed to build search query."));
@@ -193,6 +203,15 @@ void SearchController::activateResult(const QModelIndex &p_index) {
   int lineNumber = m_model->data(p_index, SearchResultModel::LineNumberRole).toInt();
   if (lineNumber >= 0) {
     settings.m_lineNumber = lineNumber;
+  }
+
+  if (m_activeSearchMode == ContentSearch && !m_lastKeyword.isEmpty()) {
+    SearchHighlightContext ctx;
+    ctx.m_patterns = QStringList{m_lastKeyword};
+    ctx.m_options = m_lastFindOptions;
+    ctx.m_currentMatchLine = lineNumber;
+    ctx.m_isValid = true;
+    settings.m_searchHighlight = ctx;
   }
 
   qDebug() << "SearchController::activateResult: notebookId:" << nodeId.notebookId
