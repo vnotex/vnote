@@ -67,6 +67,11 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
   event.readOnly = p_settings.m_readOnly;
   event.lineNumber = p_settings.m_lineNumber;
   event.alwaysNewWindow = p_settings.m_alwaysNewWindow;
+  if (p_settings.m_searchHighlight.m_isValid) {
+    event.searchPatterns = p_settings.m_searchHighlight.m_patterns;
+    event.searchOptions = static_cast<int>(p_settings.m_searchHighlight.m_options);
+    event.searchCurrentMatchLine = p_settings.m_searchHighlight.m_currentMatchLine;
+  }
   if (m_hookMgr->doAction(HookNames::FileBeforeOpen, event)) {
     qDebug() << "BufferService::openBuffer cancelled by hook";
     return Buffer2(); // Cancelled by plugin.

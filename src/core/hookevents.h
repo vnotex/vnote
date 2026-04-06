@@ -2,6 +2,7 @@
 #define HOOKEVENTS_H
 
 #include <QString>
+#include <QStringList>
 #include <QVariantMap>
 
 namespace vnotex {
@@ -43,6 +44,9 @@ struct FileOpenEvent {
   bool readOnly = false;
   int lineNumber = -1;
   bool alwaysNewWindow = false;
+  QStringList searchPatterns;         // keyword patterns for highlight (empty = no highlight)
+  int searchOptions = 0;              // FindOptions serialized as int
+  int searchCurrentMatchLine = -1;    // line for current-match bias
 
   QVariantMap toVariantMap() const;
   static FileOpenEvent fromVariantMap(const QVariantMap &p_args);
