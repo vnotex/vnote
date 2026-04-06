@@ -11,7 +11,10 @@
 #include <QVBoxLayout>
 
 #include <controllers/searchcontroller.h>
+#include <core/configmgr2.h>
+#include <core/sessionconfig.h>
 #include <core/servicelocator.h>
+#include <core/widgetconfig.h>
 
 using namespace vnotex;
 
@@ -19,7 +22,9 @@ SearchPanel2::SearchPanel2(ServiceLocator &p_services, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services) {
   m_controller = new SearchController(m_services, this);
   setupUI();
+  restoreState();
   setupConnections();
+  m_initialized = true;
 }
 
 SearchPanel2::~SearchPanel2() = default;
@@ -47,10 +52,14 @@ void SearchPanel2::setupUI() {
   auto *keywordLabel = new QLabel(tr("Keyword:"), this);
   mainLayout->addWidget(keywordLabel);
 
-  m_keywordEdit = new QLineEdit(this);
-  m_keywordEdit->setPlaceholderText(tr("Search..."));
-  m_keywordEdit->setClearButtonEnabled(true);
-  mainLayout->addWidget(m_keywordEdit);
+  m_keywordCombo = new QComboBox(this);
+  m_keywordCombo->setEditable(true);
+  m_keywordCombo->setInsertPolicy(QComboBox::NoInsert);
+  m_keywordCombo->lineEdit()->setPlaceholderText(tr("Search..."));
+  m_keywordCombo->lineEdit()->setClearButtonEnabled(true);
+  m_keywordCombo->setMaxVisibleItems(10);
+  m_keywordCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  mainLayout->addWidget(m_keywordCombo);
 
   auto *modeLabel = new QLabel(tr("Mode:"), this);
   mainLayout->addWidget(modeLabel);
@@ -109,11 +118,68 @@ void SearchPanel2::setupUI() {
 
   mainLayout->addStretch();
 
-  setFocusProxy(m_keywordEdit);
+  setFocusProxy(m_keywordCombo);
+
+  updateModeDependentOptions();
 }
 
 void SearchPanel2::setupConnections() {
-  connect(m_keywordEdit, &QLineEdit::returnPressed, this, &SearchPanel2::startSearch);
+  connect(m_keywordCombo->lineEdit(), &QLineEdit::returnPressed, this, &SearchPanel2::startSearch);
+  connect(m_filePatternEdit, &QLineEdit::returnPressed, this, &SearchPanel2::startSearch);
+  connect(m_scopeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [this](int idx) {
+            if (!m_initialized) {
+              return;
+            }
+
+            auto *cm = m_services.get<ConfigMgr2>();
+            if (cm) {
+              cm->getWidgetConfig().setSearchScope(idx);
+            }
+          });
+  connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [this](int) { updateModeDependentOptions(); });
+  connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [this](int idx) {
+            if (!m_initialized) {
+              return;
+            }
+
+            auto *cm = m_services.get<ConfigMgr2>();
+            if (cm) {
+              cm->getWidgetConfig().setSearchMode(idx);
+            }
+          });
+  connect(m_caseSensitiveCheck, &QCheckBox::toggled, this, [this](bool checked) {
+    if (!m_initialized) {
+      return;
+    }
+
+    auto *cm = m_services.get<ConfigMgr2>();
+    if (cm) {
+      cm->getWidgetConfig().setSearchCaseSensitive(checked);
+    }
+  });
+  connect(m_regexCheck, &QCheckBox::toggled, this, [this](bool checked) {
+    if (!m_initialized) {
+      return;
+    }
+
+    auto *cm = m_services.get<ConfigMgr2>();
+    if (cm) {
+      cm->getWidgetConfig().setSearchRegex(checked);
+    }
+  });
+  connect(m_filePatternEdit, &QLineEdit::editingFinished, this, [this]() {
+    if (!m_initialized) {
+      return;
+    }
+
+    auto *cm = m_services.get<ConfigMgr2>();
+    if (cm) {
+      cm->getWidgetConfig().setSearchFilePattern(m_filePatternEdit->text().trimmed());
+    }
+  });
 
   connect(m_searchButton, &QPushButton::clicked, this, [this]() {
     if (m_searching) {
@@ -133,12 +199,49 @@ void SearchPanel2::setupConnections() {
           this, &SearchPanel2::onSearchCancelled);
   connect(m_controller, &SearchController::progressUpdated,
           this, &SearchPanel2::onProgressUpdated);
+
+  updateModeDependentOptions();
+}
+
+void SearchPanel2::restoreState() {
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
+  }
+
+  auto &wc = configMgr->getWidgetConfig();
+  m_scopeCombo->setCurrentIndex(wc.getSearchScope());
+  m_modeCombo->setCurrentIndex(wc.getSearchMode());
+  m_caseSensitiveCheck->setChecked(wc.getSearchCaseSensitive());
+  m_regexCheck->setChecked(wc.getSearchRegex());
+  m_filePatternEdit->setText(wc.getSearchFilePattern());
+
+  auto &sc = configMgr->getSessionConfig();
+  const auto &history = sc.getSearchHistory();
+  m_keywordCombo->addItems(history);
+  m_keywordCombo->setCurrentText(QString());
+
+  updateModeDependentOptions();
+}
+
+void SearchPanel2::updateModeDependentOptions() {
+  const bool content_mode = m_modeCombo->currentIndex() == SearchController::ContentSearch;
+  m_caseSensitiveCheck->setEnabled(content_mode);
+  m_regexCheck->setEnabled(content_mode);
 }
 
 void SearchPanel2::startSearch() {
-  const QString keyword = m_keywordEdit->text().trimmed();
+  const QString keyword = m_keywordCombo->currentText().trimmed();
   if (keyword.isEmpty()) {
     return;
+  }
+
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (configMgr) {
+    configMgr->getSessionConfig().addSearchHistory(keyword);
+    m_keywordCombo->clear();
+    m_keywordCombo->addItems(configMgr->getSessionConfig().getSearchHistory());
+    m_keywordCombo->setCurrentText(keyword);
   }
 
   const int scope = m_scopeCombo->currentIndex();

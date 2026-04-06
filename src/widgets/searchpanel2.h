@@ -33,7 +33,9 @@ public slots:
 
 private:
   void setupUI();
+  void restoreState();
   void setupConnections();
+  void updateModeDependentOptions();
 
   void startSearch();
   void onSearchStarted();
@@ -45,7 +47,7 @@ private:
   ServiceLocator &m_services;
   SearchController *m_controller = nullptr;
 
-  QLineEdit *m_keywordEdit = nullptr;
+  QComboBox *m_keywordCombo = nullptr;
   QComboBox *m_scopeCombo = nullptr;
   QComboBox *m_modeCombo = nullptr;
   QCheckBox *m_caseSensitiveCheck = nullptr;
@@ -55,6 +57,7 @@ private:
   QProgressBar *m_progressBar = nullptr;
   QLabel *m_statusLabel = nullptr;
 
+  bool m_initialized = false;
   bool m_searching = false;
 };
 
