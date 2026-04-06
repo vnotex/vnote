@@ -380,6 +380,12 @@ void MainWindow2::setupDocks() {
   connect(m_locationList, &LocationList2::resultActivated,
           m_searchPanel->getController(), &SearchController::activateResult);
 
+  // Auto-show the Location List dock when a search starts.
+  connect(m_searchPanel->getController(), &SearchController::searchStarted,
+          this, [this]() {
+            m_dockWidgetHelper.activateDock(DockWidgetHelper::LocationListDock);
+          });
+
   // Wire ViewAreaController's locateNodeRequested to NotebookExplorer2.
   // Activate the navigation dock first so the notebook explorer is visible.
   connect(m_viewArea->getController(), &ViewAreaController::locateNodeRequested,
