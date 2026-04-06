@@ -1,11 +1,54 @@
 #ifndef FILEOPENSETTINGS_H
 #define FILEOPENSETTINGS_H
 
+#include <QStringList>
 #include <QVariantMap>
 
 #include "global.h"
 
 namespace vnotex {
+
+// Search highlight context for in-page search highlighting after opening a file.
+// Plain value struct — not a QObject.
+struct SearchHighlightContext {
+  // Keyword patterns to highlight.
+  QStringList m_patterns;
+
+  // Find options (case-sensitive, whole-word, regex, etc.).
+  FindOptions m_options = FindNone;
+
+  // 0-based line number of the current match to scroll to. -1 means none.
+  int m_currentMatchLine = -1;
+
+  // Whether this context carries valid search data.
+  bool m_isValid = false;
+
+  QVariantMap toVariantMap() const {
+    QVariantMap map;
+    map[QStringLiteral("patterns")] = QVariant::fromValue(m_patterns);
+    map[QStringLiteral("options")] = static_cast<int>(m_options);
+    map[QStringLiteral("currentMatchLine")] = m_currentMatchLine;
+    map[QStringLiteral("isValid")] = m_isValid;
+    return map;
+  }
+
+  static SearchHighlightContext fromVariantMap(const QVariantMap &p_map) {
+    SearchHighlightContext ctx;
+    if (p_map.contains(QStringLiteral("patterns"))) {
+      ctx.m_patterns = p_map.value(QStringLiteral("patterns")).toStringList();
+    }
+    if (p_map.contains(QStringLiteral("options"))) {
+      ctx.m_options = static_cast<FindOptions>(p_map.value(QStringLiteral("options")).toInt());
+    }
+    if (p_map.contains(QStringLiteral("currentMatchLine"))) {
+      ctx.m_currentMatchLine = p_map.value(QStringLiteral("currentMatchLine")).toInt();
+    }
+    if (p_map.contains(QStringLiteral("isValid"))) {
+      ctx.m_isValid = p_map.value(QStringLiteral("isValid")).toBool();
+    }
+    return ctx;
+  }
+};
 
 // Clean, service-layer struct describing how to open a file buffer.
 // Unlike FileOpenParameters (UI-layer), this struct contains no UI-specific types
@@ -33,6 +76,9 @@ struct FileOpenSettings {
   // Whether always open a new window for file.
   bool m_alwaysNewWindow = false;
 
+  // Search highlight context for in-page highlighting after open.
+  SearchHighlightContext m_searchHighlight;
+
   // Serialize all fields into a flat QVariantMap suitable for hook arguments.
   QVariantMap toVariantMap() const {
     QVariantMap map;
@@ -43,6 +89,9 @@ struct FileOpenSettings {
     map[QStringLiteral("readOnly")] = m_readOnly;
     map[QStringLiteral("lineNumber")] = m_lineNumber;
     map[QStringLiteral("alwaysNewWindow")] = m_alwaysNewWindow;
+    if (m_searchHighlight.m_isValid) {
+      map[QStringLiteral("searchHighlight")] = m_searchHighlight.toVariantMap();
+    }
     return map;
   }
 
@@ -70,6 +119,10 @@ struct FileOpenSettings {
     }
     if (p_map.contains(QStringLiteral("alwaysNewWindow"))) {
       s.m_alwaysNewWindow = p_map.value(QStringLiteral("alwaysNewWindow")).toBool();
+    }
+    if (p_map.contains(QStringLiteral("searchHighlight"))) {
+      s.m_searchHighlight = SearchHighlightContext::fromVariantMap(
+          p_map.value(QStringLiteral("searchHighlight")).toMap());
     }
     return s;
   }
