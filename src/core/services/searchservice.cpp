@@ -1,5 +1,6 @@
 #include "searchservice.h"
 
+#include <QDebug>
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -26,6 +27,7 @@ public:
 public slots:
   void doSearchFiles(const QString &p_notebookId, const QString &p_queryJson,
                      const QString &p_inputFilesJson) {
+    qDebug() << "SearchWorker::doSearchFiles: [worker thread] notebookId:" << p_notebookId;
     emit progress(0);
 
     if (m_cancelFlag->load(std::memory_order_relaxed) != 0) {
@@ -56,12 +58,14 @@ public slots:
     wrapped.insert(QStringLiteral("matches"), QJsonValue(matches));
 
     SearchResult result = SearchResult::fromFileSearchJson(wrapped, p_notebookId);
+    qDebug() << "SearchWorker::doSearchFiles: [worker thread] completed, matches:" << matches.size();
     emit progress(100);
     emit finished(result);
   }
 
   void doSearchContent(const QString &p_notebookId, const QString &p_queryJson,
                        const QString &p_inputFilesJson) {
+    qDebug() << "SearchWorker::doSearchContent: [worker thread] notebookId:" << p_notebookId;
     emit progress(0);
 
     QJsonObject resultObj;
@@ -88,12 +92,15 @@ public slots:
     }
 
     SearchResult result = SearchResult::fromContentSearchJson(resultObj, p_notebookId);
+    qDebug() << "SearchWorker::doSearchContent: [worker thread] completed, matchCount:"
+             << result.m_matchCount << "truncated:" << result.m_truncated;
     emit progress(100);
     emit finished(result);
   }
 
   void doSearchByTags(const QString &p_notebookId, const QString &p_queryJson,
                       const QString &p_inputFilesJson) {
+    qDebug() << "SearchWorker::doSearchByTags: [worker thread] notebookId:" << p_notebookId;
     emit progress(0);
 
     if (m_cancelFlag->load(std::memory_order_relaxed) != 0) {
@@ -124,6 +131,7 @@ public slots:
     wrapped.insert(QStringLiteral("matches"), QJsonValue(matches));
 
     SearchResult result = SearchResult::fromFileSearchJson(wrapped, p_notebookId);
+    qDebug() << "SearchWorker::doSearchByTags: [worker thread] completed, matches:" << matches.size();
     emit progress(100);
     emit finished(result);
   }
@@ -187,7 +195,10 @@ SearchService::~SearchService() {
 
 void SearchService::searchFiles(const QString &p_notebookId, const QString &p_queryJson,
                                 const QString &p_inputFilesJson) {
+  qDebug() << "SearchService::searchFiles: notebookId:" << p_notebookId;
+
   if (m_searching.load(std::memory_order_relaxed)) {
+    qDebug() << "SearchService::searchFiles: cancelling previous search";
     cancel();
     waitForCurrentSearch();
   }
@@ -208,7 +219,10 @@ void SearchService::searchFiles(const QString &p_notebookId, const QString &p_qu
 
 void SearchService::searchContent(const QString &p_notebookId, const QString &p_queryJson,
                                   const QString &p_inputFilesJson) {
+  qDebug() << "SearchService::searchContent: notebookId:" << p_notebookId;
+
   if (m_searching.load(std::memory_order_relaxed)) {
+    qDebug() << "SearchService::searchContent: cancelling previous search";
     cancel();
     waitForCurrentSearch();
   }
@@ -229,7 +243,10 @@ void SearchService::searchContent(const QString &p_notebookId, const QString &p_
 
 void SearchService::searchByTags(const QString &p_notebookId, const QString &p_queryJson,
                                  const QString &p_inputFilesJson) {
+  qDebug() << "SearchService::searchByTags: notebookId:" << p_notebookId;
+
   if (m_searching.load(std::memory_order_relaxed)) {
+    qDebug() << "SearchService::searchByTags: cancelling previous search";
     cancel();
     waitForCurrentSearch();
   }
@@ -249,6 +266,7 @@ void SearchService::searchByTags(const QString &p_notebookId, const QString &p_q
 }
 
 void SearchService::cancel() {
+  qDebug() << "SearchService::cancel: setting cancel flag";
   m_cancelFlag.store(1, std::memory_order_relaxed);
 }
 
@@ -260,6 +278,8 @@ void SearchService::waitForCurrentSearch() {
   if (!m_searching.load(std::memory_order_relaxed)) {
     return;
   }
+
+  qDebug() << "SearchService::waitForCurrentSearch: waiting for worker thread to finish";
 
   QEventLoop loop;
   connect(this, &SearchService::searchFinished, &loop, &QEventLoop::quit);

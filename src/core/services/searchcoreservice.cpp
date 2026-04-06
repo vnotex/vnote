@@ -1,5 +1,7 @@
 #include "searchcoreservice.h"
 
+#include <QDebug>
+
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
@@ -12,11 +14,15 @@ Error SearchCoreService::searchFiles(const QString &p_notebookId,
                                  const QString &p_queryJson,
                                  const QString &p_inputFilesJson,
                                  QJsonArray *p_results) const {
+  qDebug() << "SearchCoreService::searchFiles: notebookId:" << p_notebookId;
+
   if (!m_context) {
+    qWarning() << "SearchCoreService::searchFiles: context is null";
     return Error::error(ErrorCode::InvalidArgument, "Context is null");
   }
 
   if (!p_results) {
+    qWarning() << "SearchCoreService::searchFiles: results output parameter is null";
     return Error::error(ErrorCode::InvalidArgument, "Results output parameter is null");
   }
 
@@ -36,9 +42,11 @@ Error SearchCoreService::searchFiles(const QString &p_notebookId,
                                         &json);
 
   if (err != VXCORE_OK) {
+    qWarning() << "SearchCoreService::searchFiles: vxcore_search_files failed, error:" << err;
     return vxcoreErrorToError(err, QStringLiteral("searchFiles"));
   }
 
+  qDebug() << "SearchCoreService::searchFiles: vxcore call succeeded, parsing response";
   return parseSearchResponse(json, p_results);
 }
 
@@ -46,11 +54,15 @@ Error SearchCoreService::searchContent(const QString &p_notebookId,
                                    const QString &p_queryJson,
                                    const QString &p_inputFilesJson,
                                    QJsonArray *p_results) const {
+  qDebug() << "SearchCoreService::searchContent: notebookId:" << p_notebookId;
+
   if (!m_context) {
+    qWarning() << "SearchCoreService::searchContent: context is null";
     return Error::error(ErrorCode::InvalidArgument, "Context is null");
   }
 
   if (!p_results) {
+    qWarning() << "SearchCoreService::searchContent: results output parameter is null";
     return Error::error(ErrorCode::InvalidArgument, "Results output parameter is null");
   }
 
@@ -70,9 +82,11 @@ Error SearchCoreService::searchContent(const QString &p_notebookId,
                                           &json);
 
   if (err != VXCORE_OK) {
+    qWarning() << "SearchCoreService::searchContent: vxcore_search_content failed, error:" << err;
     return vxcoreErrorToError(err, QStringLiteral("searchContent"));
   }
 
+  qDebug() << "SearchCoreService::searchContent: vxcore call succeeded, parsing response";
   return parseSearchResponse(json, p_results);
 }
 
@@ -80,11 +94,15 @@ Error SearchCoreService::searchByTags(const QString &p_notebookId,
                                   const QString &p_queryJson,
                                   const QString &p_inputFilesJson,
                                   QJsonArray *p_results) const {
+  qDebug() << "SearchCoreService::searchByTags: notebookId:" << p_notebookId;
+
   if (!m_context) {
+    qWarning() << "SearchCoreService::searchByTags: context is null";
     return Error::error(ErrorCode::InvalidArgument, "Context is null");
   }
 
   if (!p_results) {
+    qWarning() << "SearchCoreService::searchByTags: results output parameter is null";
     return Error::error(ErrorCode::InvalidArgument, "Results output parameter is null");
   }
 
@@ -104,9 +122,11 @@ Error SearchCoreService::searchByTags(const QString &p_notebookId,
                                           &json);
 
   if (err != VXCORE_OK) {
+    qWarning() << "SearchCoreService::searchByTags: vxcore_search_by_tags failed, error:" << err;
     return vxcoreErrorToError(err, QStringLiteral("searchByTags"));
   }
 
+  qDebug() << "SearchCoreService::searchByTags: vxcore call succeeded, parsing response";
   return parseSearchResponse(json, p_results);
 }
 
@@ -129,10 +149,16 @@ Error SearchCoreService::parseSearchResponse(char *p_json, QJsonArray *p_results
       } else {
         *p_results = QJsonArray();
       }
+
+      qDebug() << "SearchCoreService::parseSearchResponse: matchCount:" << m_lastMatchCount
+               << "truncated:" << m_lastTruncated
+               << "resultsArraySize:" << p_results->size();
     } else {
+      qWarning() << "SearchCoreService::parseSearchResponse: invalid JSON object response";
       return Error::error(ErrorCode::InvalidArgument, "Invalid JSON object response");
     }
   } else {
+    qDebug() << "SearchCoreService::parseSearchResponse: null JSON response, returning empty";
     m_lastMatchCount = 0;
     m_lastTruncated = false;
     *p_results = QJsonArray();
@@ -186,15 +212,20 @@ Error SearchCoreService::vxcoreErrorToError(VxCoreError p_error, const QString &
 }
 
 Error SearchCoreService::searchContentCancellable(const QString &p_notebookId,
-                                                  const QString &p_queryJson,
-                                                  const QString &p_inputFilesJson,
-                                                  std::atomic<int> *p_cancelFlag,
-                                                  QJsonObject *p_resultObj) const {
+                                                   const QString &p_queryJson,
+                                                   const QString &p_inputFilesJson,
+                                                   std::atomic<int> *p_cancelFlag,
+                                                   QJsonObject *p_resultObj) const {
+  qDebug() << "SearchCoreService::searchContentCancellable: notebookId:" << p_notebookId
+           << "hasCancelFlag:" << (p_cancelFlag != nullptr);
+
   if (!m_context) {
+    qWarning() << "SearchCoreService::searchContentCancellable: context is null";
     return Error::error(ErrorCode::InvalidArgument, "Context is null");
   }
 
   if (!p_resultObj) {
+    qWarning() << "SearchCoreService::searchContentCancellable: result output parameter is null";
     return Error::error(ErrorCode::InvalidArgument, "Result output parameter is null");
   }
 
@@ -219,9 +250,11 @@ Error SearchCoreService::searchContentCancellable(const QString &p_notebookId,
                                              &json);
 
   if (err != VXCORE_OK) {
+    qWarning() << "SearchCoreService::searchContentCancellable: vxcore_search_content_ex failed, error:" << err;
     return vxcoreErrorToError(err, QStringLiteral("searchContentCancellable"));
   }
 
+  qDebug() << "SearchCoreService::searchContentCancellable: vxcore call succeeded, parsing response";
   return parseSearchResponseFull(json, p_resultObj);
 }
 
@@ -237,10 +270,15 @@ Error SearchCoreService::parseSearchResponseFull(char *p_json, QJsonObject *p_re
       const QString truncatedKey = QStringLiteral("truncated");
       m_lastMatchCount = p_resultObj->value(matchCountKey).toInt(0);
       m_lastTruncated = p_resultObj->value(truncatedKey).toBool(false);
+
+      qDebug() << "SearchCoreService::parseSearchResponseFull: matchCount:" << m_lastMatchCount
+               << "truncated:" << m_lastTruncated;
     } else {
+      qWarning() << "SearchCoreService::parseSearchResponseFull: invalid JSON object response";
       return Error::error(ErrorCode::InvalidArgument, "Invalid JSON object response");
     }
   } else {
+    qDebug() << "SearchCoreService::parseSearchResponseFull: null JSON response, returning empty";
     m_lastMatchCount = 0;
     m_lastTruncated = false;
     *p_resultObj = QJsonObject();

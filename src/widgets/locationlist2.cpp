@@ -1,5 +1,6 @@
 #include "locationlist2.h"
 
+#include <QDebug>
 #include <QLabel>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -69,6 +70,9 @@ void LocationList2::setupConnections() {
 
 void LocationList2::updatePlaceholder() {
   bool hasResults = m_model->rowCount() > 0;
+  bool truncated = hasResults && m_model->isTruncated();
+  qDebug() << "LocationList2::updatePlaceholder: hasResults:" << hasResults
+           << "truncated:" << truncated;
   m_stackedWidget->setCurrentIndex(hasResults ? 1 : 0);
-  m_truncatedBanner->setVisible(hasResults && m_model->isTruncated());
+  m_truncatedBanner->setVisible(truncated);
 }

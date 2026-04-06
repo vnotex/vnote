@@ -2,6 +2,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDebug>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -146,6 +147,11 @@ void SearchPanel2::startSearch() {
   const bool useRegex = m_regexCheck->isChecked();
   const QString filePattern = m_filePatternEdit->text().trimmed();
 
+  qDebug() << "SearchPanel2::startSearch: keyword:" << keyword
+           << "scope:" << scope << "mode:" << mode
+           << "caseSensitive:" << caseSensitive << "regex:" << useRegex
+           << "filePattern:" << filePattern;
+
   m_controller->search(keyword, scope, mode, caseSensitive, useRegex, filePattern);
 }
 
@@ -158,6 +164,9 @@ void SearchPanel2::onSearchStarted() {
 }
 
 void SearchPanel2::onSearchFinished(int p_totalMatches, bool p_truncated) {
+  qDebug() << "SearchPanel2::onSearchFinished: totalMatches:" << p_totalMatches
+           << "truncated:" << p_truncated;
+
   m_searching = false;
   m_searchButton->setText(tr("Search"));
   m_progressBar->hide();
@@ -170,6 +179,7 @@ void SearchPanel2::onSearchFinished(int p_totalMatches, bool p_truncated) {
 }
 
 void SearchPanel2::onSearchFailed(const QString &p_errorMessage) {
+  qWarning() << "SearchPanel2::onSearchFailed:" << p_errorMessage;
   m_searching = false;
   m_searchButton->setText(tr("Search"));
   m_progressBar->hide();
@@ -177,6 +187,7 @@ void SearchPanel2::onSearchFailed(const QString &p_errorMessage) {
 }
 
 void SearchPanel2::onSearchCancelled() {
+  qDebug() << "SearchPanel2::onSearchCancelled";
   m_searching = false;
   m_searchButton->setText(tr("Search"));
   m_progressBar->hide();

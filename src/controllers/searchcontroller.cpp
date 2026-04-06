@@ -1,5 +1,6 @@
 #include "searchcontroller.h"
 
+#include <QDebug>
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -49,6 +50,11 @@ void SearchController::setCurrentFolderId(const NodeIdentifier &p_folderId) {
 void SearchController::search(const QString &p_keyword, int p_scope, int p_searchMode,
                               bool p_caseSensitive, bool p_useRegex,
                               const QString &p_filePattern) {
+  qDebug() << "SearchController::search: keyword:" << p_keyword
+           << "scope:" << p_scope << "mode:" << p_searchMode
+           << "caseSensitive:" << p_caseSensitive << "regex:" << p_useRegex
+           << "filePattern:" << p_filePattern;
+
   resetSearchState();
   if (m_model) {
     m_model->clear();
@@ -145,6 +151,7 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
   }
 
   if (m_pendingTargets.isEmpty()) {
+    qDebug() << "SearchController::search: no targets found, emitting empty result";
     if (m_model) {
       m_model->setSearchResult(m_accumulatedResult);
     }
@@ -152,10 +159,12 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
     return;
   }
 
+  qDebug() << "SearchController::search: pendingTargets:" << m_pendingTargets.size();
   startNextSearch();
 }
 
 void SearchController::cancel() {
+  qDebug() << "SearchController::cancel: cancelling search";
   m_cancelRequested = true;
   m_pendingTargets.clear();
 
@@ -186,10 +195,18 @@ void SearchController::activateResult(const QModelIndex &p_index) {
     settings.m_lineNumber = lineNumber;
   }
 
+  qDebug() << "SearchController::activateResult: notebookId:" << nodeId.notebookId
+           << "path:" << nodeId.relativePath << "lineNumber:" << lineNumber;
+
   emit nodeActivated(nodeId, settings);
 }
 
 void SearchController::onSearchFinished(const SearchResult &p_result) {
+  qDebug() << "SearchController::onSearchFinished: matchCount:" << p_result.m_matchCount
+           << "fileResults:" << p_result.m_fileResults.size()
+           << "truncated:" << p_result.m_truncated
+           << "pendingTargets:" << m_pendingTargets.size();
+
   mergeSearchResult(p_result);
 
   if (m_cancelRequested) {
@@ -215,11 +232,14 @@ void SearchController::onSearchFailed(const Error &p_error) {
     message = p_error.what();
   }
 
+  qWarning() << "SearchController::onSearchFailed:" << message;
+
   emit searchFailed(message);
   resetSearchState();
 }
 
 void SearchController::onSearchCancelled() {
+  qDebug() << "SearchController::onSearchCancelled";
   emit searchCancelled();
   resetSearchState();
 }
@@ -299,8 +319,13 @@ QString SearchController::buildFilesInputFilesJson(const QStringList &p_files) c
 }
 
 void SearchController::dispatchSearch(const SearchTarget &p_target) {
+  qDebug() << "SearchController::dispatchSearch: notebookId:" << p_target.notebookId
+           << "mode:" << m_activeSearchMode
+           << "hasInputFiles:" << !p_target.inputFilesJson.isEmpty();
+
   auto *searchSvc = m_services.get<SearchService>();
   if (!searchSvc) {
+    qWarning() << "SearchController::dispatchSearch: SearchService not available";
     emit searchFailed(tr("Search service is not available."));
     resetSearchState();
     return;
@@ -331,6 +356,8 @@ void SearchController::startNextSearch() {
     return;
   }
 
+  qDebug() << "SearchController::startNextSearch: remaining:" << m_pendingTargets.size();
+
   const SearchTarget target = m_pendingTargets.takeFirst();
   dispatchSearch(target);
 }
@@ -346,4 +373,9 @@ void SearchController::mergeSearchResult(const SearchResult &p_result) {
   m_accumulatedResult.m_fileResults += p_result.m_fileResults;
   m_accumulatedResult.m_matchCount += p_result.m_matchCount;
   m_accumulatedResult.m_truncated = m_accumulatedResult.m_truncated || p_result.m_truncated;
+
+  qDebug() << "SearchController::mergeSearchResult: accumulated matchCount:"
+           << m_accumulatedResult.m_matchCount
+           << "fileResults:" << m_accumulatedResult.m_fileResults.size()
+           << "truncated:" << m_accumulatedResult.m_truncated;
 }

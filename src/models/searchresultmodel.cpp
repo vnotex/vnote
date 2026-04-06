@@ -1,5 +1,6 @@
 #include "searchresultmodel.h"
 
+#include <QDebug>
 #include <QFileInfo>
 
 #include <core/nodeidentifier.h>
@@ -162,12 +163,15 @@ QVariant SearchResultModel::data(const QModelIndex &p_index, int p_role) const {
 }
 
 void SearchResultModel::setSearchResult(const SearchResult &p_result) {
+  qDebug() << "SearchResultModel::setSearchResult: fileResults:" << p_result.m_fileResults.size()
+           << "matchCount:" << p_result.m_matchCount << "truncated:" << p_result.m_truncated;
   beginResetModel();
   m_result = p_result;
   endResetModel();
 }
 
 void SearchResultModel::clear() {
+  qDebug() << "SearchResultModel::clear";
   beginResetModel();
   m_result = SearchResult();
   endResetModel();
