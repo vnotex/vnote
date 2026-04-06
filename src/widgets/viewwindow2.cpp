@@ -911,6 +911,12 @@ void ViewWindow2::applySnippet() {
 
 void ViewWindow2::clearHighlights() {}
 
+void ViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
+  Q_UNUSED(p_settings);
+  // Base implementation does nothing.
+  // Subclasses (MarkdownViewWindow2, TextViewWindow2) override for scroll + highlight.
+}
+
 QVariant ViewWindow2::showFloatingWidget(FloatingWidget *p_widget) {
   // Show the widget through a QWidgetAction in menu.
   QMenu menu;

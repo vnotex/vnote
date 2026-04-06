@@ -1031,6 +1031,46 @@ void MarkdownViewWindow2::clearHighlights() {
   }
 }
 
+void MarkdownViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
+  if (p_settings.m_lineNumber < 0 && !p_settings.m_searchHighlight.m_isValid) {
+    return;
+  }
+
+  if (p_settings.m_lineNumber >= 0) {
+    if (isReadMode()) {
+      if (adapter()) {
+        adapter()->scrollToPosition(
+            MarkdownViewerAdapter::Position(p_settings.m_lineNumber, QString()));
+      }
+    } else if (m_editor) {
+      m_editor->scrollToLine(p_settings.m_lineNumber, true);
+    }
+  }
+
+  if (!p_settings.m_searchHighlight.m_isValid) {
+    return;
+  }
+
+  if (isReadMode()) {
+    if (adapter()) {
+      adapter()->findText(p_settings.m_searchHighlight.m_patterns,
+                          p_settings.m_searchHighlight.m_options,
+                          p_settings.m_searchHighlight.m_currentMatchLine);
+    }
+  } else if (m_editor) {
+    const auto result =
+        m_editor->findText(p_settings.m_searchHighlight.m_patterns,
+                           TextViewWindowHelper::toEditorFindFlags(
+                               p_settings.m_searchHighlight.m_options),
+                           0,
+                           -1,
+                           p_settings.m_searchHighlight.m_currentMatchLine);
+    showFindResult(p_settings.m_searchHighlight.m_patterns,
+                   result.m_totalMatches,
+                   result.m_currentMatchIndex);
+  }
+}
+
 // ============ Type Actions ============
 
 void MarkdownViewWindow2::handleTypeAction(int p_action) {

@@ -10,6 +10,7 @@
 
 #include <functional>
 
+#include <core/fileopensettings.h>
 #include <core/global.h>
 #include <core/services/buffer2.h>
 
@@ -160,6 +161,10 @@ public slots:
   // Clear search/find highlights in the editor.
   // Base implementation does nothing; subclasses override to clear their highlights.
   virtual void clearHighlights();
+
+  // Apply file-open settings (scroll to line, search highlight, etc.) after the window is ready.
+  // Base implementation does nothing; subclasses override for actual behavior.
+  virtual void applyFileOpenSettings(const FileOpenSettings &p_settings);
 
   // Called when editor configuration changes at runtime.
   // Subclasses should override to reload config and update their editor widget.

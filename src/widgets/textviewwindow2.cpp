@@ -272,3 +272,19 @@ void TextViewWindow2::applySnippet() {
 void TextViewWindow2::clearHighlights() {
   TextViewWindowHelper::clearSearchHighlights(this);
 }
+
+void TextViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
+  if (p_settings.m_lineNumber >= 0 && m_editor) {
+    m_editor->scrollToLine(p_settings.m_lineNumber, true);
+  }
+
+  if (p_settings.m_searchHighlight.m_isValid && m_editor) {
+    const auto result = m_editor->findText(
+        p_settings.m_searchHighlight.m_patterns,
+        TextViewWindowHelper::toEditorFindFlags(p_settings.m_searchHighlight.m_options),
+        0, -1,
+        p_settings.m_searchHighlight.m_currentMatchLine);
+    showFindResult(p_settings.m_searchHighlight.m_patterns,
+                   result.m_totalMatches, result.m_currentMatchIndex);
+  }
+}

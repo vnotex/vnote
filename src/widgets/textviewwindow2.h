@@ -38,6 +38,8 @@ public slots:
 
   void clearHighlights() override;
 
+  void applyFileOpenSettings(const FileOpenSettings &p_settings) override;
+
 protected slots:
   void setModified(bool p_modified) Q_DECL_OVERRIDE;
 
