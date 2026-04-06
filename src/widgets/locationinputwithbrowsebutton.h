@@ -22,6 +22,9 @@ public:
 
   void setPlaceholderText(const QString &p_text);
 
+  // Returns the cached browse path, or QDir::homePath() if none cached.
+  static QString defaultBrowsePath();
+
 signals:
   void clicked();
 
@@ -29,6 +32,8 @@ signals:
 
 private:
   QLineEdit *m_lineEdit = nullptr;
+
+  static QString s_lastBrowsePath;
 };
 } // namespace vnotex
 
