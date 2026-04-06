@@ -48,6 +48,7 @@ target_sources(vnote PRIVATE
     dialogs/settings/markdowneditorpage.cpp dialogs/settings/markdowneditorpage.h
     dialogs/settings/miscpage.cpp dialogs/settings/miscpage.h
     dialogs/settings/newimagehostdialog.cpp dialogs/settings/newimagehostdialog.h
+    dialogs/settings/newquickaccessitemdialog.cpp dialogs/settings/newquickaccessitemdialog.h
     dialogs/settings/notemanagementpage.cpp dialogs/settings/notemanagementpage.h
     dialogs/settings/quickaccesspage.cpp dialogs/settings/quickaccesspage.h
     dialogs/settings/settingsdialog.cpp dialogs/settings/settingsdialog.h
