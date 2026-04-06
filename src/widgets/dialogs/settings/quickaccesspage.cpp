@@ -6,6 +6,7 @@
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QInputDialog>
 #include <QLineEdit>
 #include <QPlainTextEdit>
@@ -22,6 +23,7 @@
 #include <widgets/messageboxhelper.h>
 #include <widgets/widgetsfactory.h>
 
+#include "newquickaccessitemdialog.h"
 #include "settingspagehelper.h"
 
 // LEGACY: NoteTemplateSelector now requires ServiceLocator - disabled until migration
@@ -42,10 +44,25 @@ void QuickAccessPage::setupUI() {
     auto *cardLayout =
         SettingsPageHelper::addSection(mainLayout, tr("Quick Access"), QString(), this);
 
+    // New button row.
+    {
+      auto *btnWidget = new QWidget(this);
+      auto *btnLayout = new QHBoxLayout(btnWidget);
+      btnLayout->setContentsMargins(0, 0, 0, 0);
+
+      auto *newBtn = new QPushButton(tr("New"), this);
+      connect(newBtn, &QPushButton::clicked, this, &QuickAccessPage::newQuickAccessItem);
+      btnLayout->addWidget(newBtn);
+      btnLayout->addStretch();
+
+      cardLayout->addWidget(btnWidget);
+    }
+
     {
       m_quickAccessTextEdit = WidgetsFactory::createPlainTextEdit(this);
       m_quickAccessTextEdit->setToolTip(
-          tr("Edit the files pinned to Quick Access (one file per line)"));
+          tr("Edit the files pinned to Quick Access.\nFormat: filepath,openmode (one per line)\n"
+             "openmode: default, read, or edit\nIf omitted, 'default' is assumed."));
       m_quickAccessTextEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 
       const QString label(tr("Quick Access:"));
@@ -155,9 +172,9 @@ void QuickAccessPage::loadInternal() {
   const auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
 
   {
-    const auto &quickAccess = sessionConfig.getQuickAccessFiles();
+    const auto &quickAccess = sessionConfig.getQuickAccessItems();
     if (!quickAccess.isEmpty()) {
-      m_quickAccessTextEdit->setPlainText(quickAccess.join(QChar('\n')));
+      m_quickAccessTextEdit->setPlainText(formatQuickAccessItems(quickAccess));
     }
   }
 
@@ -187,7 +204,7 @@ bool QuickAccessPage::saveInternal() {
   {
     auto text = m_quickAccessTextEdit->toPlainText();
     if (!text.isEmpty()) {
-      sessionConfig.setQuickAccessFiles(text.split(QChar('\n')));
+      sessionConfig.setQuickAccessItems(parseQuickAccessText(text));
     }
   }
 
@@ -209,6 +226,77 @@ QString QuickAccessPage::title() const { return tr("Quick Access"); }
 QString QuickAccessPage::getDefaultQuickNoteFolderPath() {
   // LEGACY: NotebookMgr not yet in ServiceLocator - cannot get current notebook path
   return QDir::homePath();
+}
+
+void QuickAccessPage::newQuickAccessItem() {
+  NewQuickAccessItemDialog dialog(this);
+  if (dialog.exec() == QDialog::Accepted) {
+    auto item = dialog.getItem();
+    QString line;
+    if (item.m_openMode == QuickAccessOpenMode::Default) {
+      line = item.m_path;
+    } else {
+      line = item.m_path + QStringLiteral(",") + SessionConfig::openModeToString(item.m_openMode);
+    }
+
+    auto text = m_quickAccessTextEdit->toPlainText();
+    if (!text.isEmpty() && !text.endsWith(QChar('\n'))) {
+      text += QChar('\n');
+    }
+    text += line;
+    m_quickAccessTextEdit->setPlainText(text);
+    emit pageIsChanged();
+  }
+}
+
+QVector<SessionConfig::QuickAccessItem> QuickAccessPage::parseQuickAccessText(
+    const QString &p_text) {
+  QVector<SessionConfig::QuickAccessItem> items;
+  const auto lines = p_text.split(QChar('\n'));
+  for (const auto &rawLine : lines) {
+    auto line = rawLine.trimmed();
+    if (line.isEmpty()) {
+      continue;
+    }
+
+    SessionConfig::QuickAccessItem item;
+    int lastComma = line.lastIndexOf(QChar(','));
+    if (lastComma >= 0) {
+      auto suffix = line.mid(lastComma + 1).trimmed().toLower();
+      if (suffix == QStringLiteral("default") || suffix == QStringLiteral("read") ||
+          suffix == QStringLiteral("edit")) {
+        item.m_path = line.left(lastComma).trimmed();
+        item.m_openMode = SessionConfig::stringToOpenMode(suffix);
+      } else {
+        // Unrecognized suffix — entire line is the path.
+        item.m_path = line;
+        item.m_openMode = QuickAccessOpenMode::Default;
+      }
+    } else {
+      // No comma — entire line is the path.
+      item.m_path = line;
+      item.m_openMode = QuickAccessOpenMode::Default;
+    }
+
+    if (!item.m_path.isEmpty()) {
+      items.append(item);
+    }
+  }
+  return items;
+}
+
+QString QuickAccessPage::formatQuickAccessItems(
+    const QVector<SessionConfig::QuickAccessItem> &p_items) {
+  QStringList lines;
+  for (const auto &item : p_items) {
+    if (item.m_openMode == QuickAccessOpenMode::Default) {
+      lines << item.m_path;
+    } else {
+      lines << item.m_path + QStringLiteral(",") +
+                   SessionConfig::openModeToString(item.m_openMode);
+    }
+  }
+  return lines.join(QChar('\n'));
 }
 
 void QuickAccessPage::newQuickNoteScheme() {

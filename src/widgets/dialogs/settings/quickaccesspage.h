@@ -43,6 +43,11 @@ private:
 
   void setCurrentQuickNote(int idx);
 
+  void newQuickAccessItem();
+
+  static QVector<SessionConfig::QuickAccessItem> parseQuickAccessText(const QString &p_text);
+  static QString formatQuickAccessItems(const QVector<SessionConfig::QuickAccessItem> &p_items);
+
   static QString getDefaultQuickNoteFolderPath();
 
   QPlainTextEdit *m_quickAccessTextEdit = nullptr;
