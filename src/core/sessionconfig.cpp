@@ -74,6 +74,8 @@ void SessionConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_searchOption.fromJson(p_jobj[QStringLiteral("searchOption")].toObject());
 
+  m_searchHistory = readStringList(p_jobj, QStringLiteral("searchHistory"));
+
   m_viewAreaSession = readByteArray(p_jobj, QStringLiteral("viewareaSession"));
 
   m_viewAreaLayout = p_jobj[QStringLiteral("viewAreaLayout")].toObject();
@@ -172,6 +174,7 @@ QJsonObject SessionConfig::toJson() const {
   obj[QStringLiteral("stateGeometry")] = saveStateAndGeometry();
   obj[QStringLiteral("export")] = saveExportOption();
   obj[QStringLiteral("searchOption")] = m_searchOption.toJson();
+  writeStringList(obj, QStringLiteral("searchHistory"), m_searchHistory);
   writeByteArray(obj, QStringLiteral("viewareaSession"), m_viewAreaSession);
   if (!m_viewAreaLayout.isEmpty()) {
     obj[QStringLiteral("viewAreaLayout")] = m_viewAreaLayout;
@@ -447,4 +450,30 @@ const QVector<SessionConfig::QuickNoteScheme> &SessionConfig::getQuickNoteScheme
 
 void SessionConfig::setQuickNoteSchemes(const QVector<QuickNoteScheme> &p_schemes) {
   updateConfig(m_quickNoteSchemes, p_schemes, this);
+}
+
+const QStringList &SessionConfig::getSearchHistory() const { return m_searchHistory; }
+
+void SessionConfig::addSearchHistory(const QString &p_keyword) {
+  auto trimmed = p_keyword.trimmed();
+  if (trimmed.isEmpty()) {
+    return;
+  }
+
+  // Remove existing occurrence (case-sensitive dedup).
+  m_searchHistory.removeAll(trimmed);
+
+  // Prepend to front.
+  m_searchHistory.prepend(trimmed);
+
+  // Cap at 20.
+  while (m_searchHistory.size() > 20) {
+    m_searchHistory.removeLast();
+  }
+
+  update();
+}
+
+void SessionConfig::setSearchHistory(const QStringList &p_history) {
+  updateConfig(m_searchHistory, p_history, this);
 }

@@ -291,6 +291,7 @@ add_qt_test(test_widgetconfig_search
 add_qt_test(test_sessionconfig_search
   SOURCES
     test_sessionconfig_search.cpp
+    stubs_sessionconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/sessionconfig.cpp
   LINKS
     core_services

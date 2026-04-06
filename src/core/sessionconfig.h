@@ -137,6 +137,10 @@ public:
   const QString &getCurrentNotebook() const;
   void setCurrentNotebook(const QString &p_guid);
 
+  const QStringList &getSearchHistory() const;
+  void addSearchHistory(const QString &p_keyword);
+  void setSearchHistory(const QStringList &p_history);
+
 private:
   void loadCore(const QJsonObject &p_session);
 
@@ -209,6 +213,9 @@ private:
 
   // GUID of the currently active notebook.
   QString m_currentNotebook;
+
+  // Keyword search history (most recent first, capped at 20).
+  QStringList m_searchHistory;
 };
 } // namespace vnotex
 
