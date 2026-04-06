@@ -304,3 +304,13 @@ add_qt_test(test_searchhighlightcontext
     ${CMAKE_SOURCE_DIR}/src/core/hookevents.cpp
   GUILESS
 )
+
+add_qt_test(test_quickaccessitem
+  SOURCES
+    test_quickaccessitem.cpp
+    stubs_sessionconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/sessionconfig.cpp
+  LINKS
+    core_services
+  GUILESS
+)
