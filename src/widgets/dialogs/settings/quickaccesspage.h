@@ -45,8 +45,6 @@ private:
 
   static QString getDefaultQuickNoteFolderPath();
 
-  LocationInputWithBrowseButton *m_flashPageInput = nullptr;
-
   QPlainTextEdit *m_quickAccessTextEdit = nullptr;
 
   QComboBox *m_quickNoteSchemeComboBox = nullptr;

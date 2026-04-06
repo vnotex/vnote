@@ -46,7 +46,6 @@ public:
     NewWorkspace,
     Export,
     Quit,
-    FlashPage,
     QuickAccess,
     ActivateTab1,
     ActivateTab2,

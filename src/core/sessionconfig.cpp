@@ -116,8 +116,6 @@ void SessionConfig::loadCore(const QJsonObject &p_session) {
     m_minimizeToSystemTray = readBool(coreObj, QStringLiteral("minimizeToSystemTray")) ? 1 : 0;
   }
 
-  m_flashPage = readString(coreObj, QStringLiteral("flashPage"));
-
   m_quickAccessFiles = readStringList(coreObj, QStringLiteral("quickAccess"));
 
   m_externalMediaDefaultPath = readString(coreObj, QStringLiteral("externalMediaDefaultPath"));
@@ -137,7 +135,6 @@ QJsonObject SessionConfig::saveCore() const {
   if (m_minimizeToSystemTray != -1) {
     coreObj[QStringLiteral("minimizeToSystemTray")] = m_minimizeToSystemTray > 0;
   }
-  coreObj[QStringLiteral("flashPage")] = m_flashPage;
   writeStringList(coreObj, QStringLiteral("quickAccess"), m_quickAccessFiles);
   coreObj[QStringLiteral("externalMediaDefaultPath")] = m_externalMediaDefaultPath;
   coreObj[QStringLiteral("currentNotebook")] = m_currentNotebook;
@@ -316,10 +313,6 @@ QJsonObject SessionConfig::getViewAreaLayout() const { return m_viewAreaLayout; 
 void SessionConfig::setViewAreaLayout(const QJsonObject &p_layout) {
   updateConfigWithoutCheck(m_viewAreaLayout, p_layout, this);
 }
-
-const QString &SessionConfig::getFlashPage() const { return m_flashPage; }
-
-void SessionConfig::setFlashPage(const QString &p_file) { updateConfig(m_flashPage, p_file, this); }
 
 const QStringList &SessionConfig::getQuickAccessFiles() const { return m_quickAccessFiles; }
 

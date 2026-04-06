@@ -116,9 +116,6 @@ public:
   QByteArray getTagExplorerSession() const;
   void setTagExplorerSession(const QByteArray &p_bytes);
 
-  const QString &getFlashPage() const;
-  void setFlashPage(const QString &p_file);
-
   const QStringList &getQuickAccessFiles() const;
   void setQuickAccessFiles(const QStringList &p_files);
   void removeQuickAccessFile(const QString &p_file);
@@ -197,8 +194,6 @@ private:
   QByteArray m_notebookExplorerSession;
 
   QByteArray m_tagExplorerSession;
-
-  QString m_flashPage;
 
   QStringList m_quickAccessFiles;
 

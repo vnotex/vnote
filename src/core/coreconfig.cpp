@@ -255,7 +255,6 @@ void CoreConfig::initDefaults() {
   m_shortcuts[Shortcut::NewWorkspace] = QStringLiteral("");
   m_shortcuts[Shortcut::Export] = QStringLiteral("Ctrl+G, T");
   m_shortcuts[Shortcut::Quit] = QStringLiteral("Ctrl+Q");
-  m_shortcuts[Shortcut::FlashPage] = QStringLiteral("Ctrl+Alt+L");
   m_shortcuts[Shortcut::QuickAccess] = QStringLiteral("Ctrl+Alt+I");
   m_shortcuts[Shortcut::ActivateTab1] = QStringLiteral("Ctrl+G, 1");
   m_shortcuts[Shortcut::ActivateTab2] = QStringLiteral("Ctrl+G, 2");

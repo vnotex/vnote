@@ -37,33 +37,6 @@ QuickAccessPage::QuickAccessPage(ServiceLocator &p_services, QWidget *p_parent)
 void QuickAccessPage::setupUI() {
   auto *mainLayout = new QVBoxLayout(this);
 
-  // Flash Page section.
-  {
-    auto *cardLayout =
-        SettingsPageHelper::addSection(mainLayout, tr("Flash Page"), QString(), this);
-
-    {
-      m_flashPageInput = new LocationInputWithBrowseButton(this);
-      m_flashPageInput->setToolTip(
-          tr("Flash Page location (user could copy the path of one note and paste it here)"));
-
-      const QString label(tr("Flash Page:"));
-      auto *row = SettingsPageHelper::createSettingRow(
-          label, m_flashPageInput->toolTip(), m_flashPageInput, this);
-      cardLayout->addWidget(row);
-      addSearchItem(label, m_flashPageInput->toolTip(), m_flashPageInput);
-      connect(m_flashPageInput, &LocationInputWithBrowseButton::textChanged, this,
-              &QuickAccessPage::pageIsChanged);
-      connect(m_flashPageInput, &LocationInputWithBrowseButton::clicked, this, [this]() {
-        auto filePath =
-            QFileDialog::getOpenFileName(this, tr("Select Flash Page File"), QDir::homePath());
-        if (!filePath.isEmpty()) {
-          m_flashPageInput->setText(filePath);
-        }
-      });
-    }
-  }
-
   // Quick Access section.
   {
     auto *cardLayout =
@@ -181,8 +154,6 @@ void QuickAccessPage::setupUI() {
 void QuickAccessPage::loadInternal() {
   const auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
 
-  m_flashPageInput->setText(sessionConfig.getFlashPage());
-
   {
     const auto &quickAccess = sessionConfig.getQuickAccessFiles();
     if (!quickAccess.isEmpty()) {
@@ -212,8 +183,6 @@ void QuickAccessPage::loadQuickNoteSchemes() {
 
 bool QuickAccessPage::saveInternal() {
   auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
-
-  sessionConfig.setFlashPage(m_flashPageInput->text());
 
   {
     auto text = m_quickAccessTextEdit->toPlainText();
