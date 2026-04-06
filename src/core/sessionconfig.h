@@ -13,6 +13,8 @@
 namespace vnotex {
 class IConfigMgr;
 
+enum class QuickAccessOpenMode { Default, Read, Edit };
+
 class SessionConfig : public IConfig {
 public:
   struct MainWindowStateGeometry {
@@ -44,6 +46,18 @@ public:
     QString m_noteName;
 
     QString m_template;
+  };
+
+  struct QuickAccessItem {
+    bool operator==(const QuickAccessItem &p_other) const;
+
+    void fromJson(const QJsonObject &p_jobj);
+
+    QJsonObject toJson() const;
+
+    QString m_path;
+
+    QuickAccessOpenMode m_openMode = QuickAccessOpenMode::Default;
   };
 
   enum OpenGL { None, Desktop, Angle, Software };
@@ -91,6 +105,9 @@ public:
   static QString openGLToString(OpenGL p_option);
   static OpenGL stringToOpenGL(const QString &p_str);
 
+  static QString openModeToString(QuickAccessOpenMode p_mode);
+  static QuickAccessOpenMode stringToOpenMode(const QString &p_str);
+
   int getMinimizeToSystemTray() const;
   void setMinimizeToSystemTray(bool p_enabled);
 
@@ -116,7 +133,10 @@ public:
   QByteArray getTagExplorerSession() const;
   void setTagExplorerSession(const QByteArray &p_bytes);
 
-  const QStringList &getQuickAccessFiles() const;
+  const QVector<QuickAccessItem> &getQuickAccessItems() const;
+  void setQuickAccessItems(const QVector<QuickAccessItem> &p_items);
+
+  QStringList getQuickAccessFiles() const;
   void setQuickAccessFiles(const QStringList &p_files);
   void removeQuickAccessFile(const QString &p_file);
 
@@ -154,6 +174,10 @@ private:
   void loadQuickNoteSchemes(const QJsonObject &p_session);
 
   QJsonArray saveQuickNoteSchemes() const;
+
+  void loadQuickAccessItems(const QJsonObject &p_session);
+
+  QJsonArray saveQuickAccessItems() const;
 
   void doVersionSpecificOverride();
 
@@ -195,7 +219,7 @@ private:
 
   QByteArray m_tagExplorerSession;
 
-  QStringList m_quickAccessFiles;
+  QVector<QuickAccessItem> m_quickAccessItems;
 
   QVector<ExternalProgram> m_externalPrograms;
 

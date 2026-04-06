@@ -38,6 +38,22 @@ QJsonObject SessionConfig::QuickNoteScheme::toJson() const {
   return jobj;
 }
 
+bool SessionConfig::QuickAccessItem::operator==(const QuickAccessItem &p_other) const {
+  return m_path == p_other.m_path && m_openMode == p_other.m_openMode;
+}
+
+void SessionConfig::QuickAccessItem::fromJson(const QJsonObject &p_jobj) {
+  m_path = p_jobj[QStringLiteral("path")].toString();
+  m_openMode = stringToOpenMode(p_jobj[QStringLiteral("openMode")].toString());
+}
+
+QJsonObject SessionConfig::QuickAccessItem::toJson() const {
+  QJsonObject jobj;
+  jobj[QStringLiteral("path")] = m_path;
+  jobj[QStringLiteral("openMode")] = openModeToString(m_openMode);
+  return jobj;
+}
+
 void SessionConfig::ExternalProgram::fromJson(const QJsonObject &p_jobj) {
   m_name = p_jobj[QStringLiteral("name")].toString();
   m_command = p_jobj[QStringLiteral("command")].toString();
@@ -116,7 +132,13 @@ void SessionConfig::loadCore(const QJsonObject &p_session) {
     m_minimizeToSystemTray = readBool(coreObj, QStringLiteral("minimizeToSystemTray")) ? 1 : 0;
   }
 
-  m_quickAccessFiles = readStringList(coreObj, QStringLiteral("quickAccess"));
+  {
+    const auto quickAccessArr = coreObj.value(QStringLiteral("quickAccess")).toArray();
+    m_quickAccessItems.resize(quickAccessArr.size());
+    for (int i = 0; i < quickAccessArr.size(); ++i) {
+      m_quickAccessItems[i].fromJson(quickAccessArr[i].toObject());
+    }
+  }
 
   m_externalMediaDefaultPath = readString(coreObj, QStringLiteral("externalMediaDefaultPath"));
   if (m_externalMediaDefaultPath.isEmpty()) {
@@ -135,7 +157,7 @@ QJsonObject SessionConfig::saveCore() const {
   if (m_minimizeToSystemTray != -1) {
     coreObj[QStringLiteral("minimizeToSystemTray")] = m_minimizeToSystemTray > 0;
   }
-  writeStringList(coreObj, QStringLiteral("quickAccess"), m_quickAccessFiles);
+  coreObj[QStringLiteral("quickAccess")] = saveQuickAccessItems();
   coreObj[QStringLiteral("externalMediaDefaultPath")] = m_externalMediaDefaultPath;
   coreObj[QStringLiteral("currentNotebook")] = m_currentNotebook;
   return coreObj;
@@ -236,6 +258,27 @@ SessionConfig::OpenGL SessionConfig::stringToOpenGL(const QString &p_str) {
   }
 }
 
+QString SessionConfig::openModeToString(QuickAccessOpenMode p_mode) {
+  switch (p_mode) {
+  case QuickAccessOpenMode::Read:
+    return QStringLiteral("read");
+  case QuickAccessOpenMode::Edit:
+    return QStringLiteral("edit");
+  default:
+    return QStringLiteral("default");
+  }
+}
+
+QuickAccessOpenMode SessionConfig::stringToOpenMode(const QString &p_str) {
+  auto s = p_str.toLower();
+  if (s == QStringLiteral("read")) {
+    return QuickAccessOpenMode::Read;
+  } else if (s == QStringLiteral("edit")) {
+    return QuickAccessOpenMode::Edit;
+  }
+  return QuickAccessOpenMode::Default;
+}
+
 bool SessionConfig::getSystemTitleBarEnabled() const { return m_systemTitleBarEnabled; }
 
 void SessionConfig::setSystemTitleBarEnabled(bool p_enabled) {
@@ -314,21 +357,35 @@ void SessionConfig::setViewAreaLayout(const QJsonObject &p_layout) {
   updateConfigWithoutCheck(m_viewAreaLayout, p_layout, this);
 }
 
-const QStringList &SessionConfig::getQuickAccessFiles() const { return m_quickAccessFiles; }
+QStringList SessionConfig::getQuickAccessFiles() const {
+  QStringList files;
+  files.reserve(m_quickAccessItems.size());
+  for (const auto &item : m_quickAccessItems) {
+    files << item.m_path;
+  }
+  return files;
+}
 
 void SessionConfig::setQuickAccessFiles(const QStringList &p_files) {
-  QStringList files;
+  QVector<QuickAccessItem> items;
   for (const auto &file : p_files) {
     auto fi = file.trimmed();
     if (!fi.isEmpty()) {
-      files << fi;
+      QuickAccessItem item;
+      item.m_path = fi;
+      item.m_openMode = QuickAccessOpenMode::Default;
+      items << item;
     }
   }
-  updateConfig(m_quickAccessFiles, files, this);
+  updateConfig(m_quickAccessItems, items, this);
 }
 
 void SessionConfig::removeQuickAccessFile(const QString &p_file) {
-  m_quickAccessFiles.removeAll(p_file);
+  for (int i = m_quickAccessItems.size() - 1; i >= 0; --i) {
+    if (m_quickAccessItems[i].m_path == p_file) {
+      m_quickAccessItems.removeAt(i);
+    }
+  }
   update();
 }
 
@@ -362,6 +419,40 @@ QJsonArray SessionConfig::saveQuickNoteSchemes() const {
     arr.append(scheme.toJson());
   }
   return arr;
+}
+
+void SessionConfig::loadQuickAccessItems(const QJsonObject &p_session) {
+  const auto arr = p_session.value(QStringLiteral("quickAccess")).toArray();
+  m_quickAccessItems.resize(arr.size());
+  for (int i = 0; i < arr.size(); ++i) {
+    m_quickAccessItems[i].fromJson(arr[i].toObject());
+  }
+}
+
+QJsonArray SessionConfig::saveQuickAccessItems() const {
+  QJsonArray arr;
+  for (const auto &item : m_quickAccessItems) {
+    arr.append(item.toJson());
+  }
+  return arr;
+}
+
+const QVector<SessionConfig::QuickAccessItem> &SessionConfig::getQuickAccessItems() const {
+  return m_quickAccessItems;
+}
+
+void SessionConfig::setQuickAccessItems(const QVector<QuickAccessItem> &p_items) {
+  QVector<QuickAccessItem> items;
+  for (const auto &item : p_items) {
+    auto path = item.m_path.trimmed();
+    if (!path.isEmpty()) {
+      QuickAccessItem cleanItem;
+      cleanItem.m_path = path;
+      cleanItem.m_openMode = item.m_openMode;
+      items << cleanItem;
+    }
+  }
+  updateConfig(m_quickAccessItems, items, this);
 }
 
 const QVector<SessionConfig::ExternalProgram> &SessionConfig::getExternalPrograms() const {
