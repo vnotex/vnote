@@ -280,3 +280,19 @@ add_custom_command(TARGET test_markdowneditorcontroller POST_BUILD
 #     vxcore
 #   GUILESS
 # )
+
+add_qt_test(test_widgetconfig_search
+  SOURCES
+    test_widgetconfig_search.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/widgetconfig.cpp
+  GUILESS
+)
+
+add_qt_test(test_sessionconfig_search
+  SOURCES
+    test_sessionconfig_search.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/sessionconfig.cpp
+  LINKS
+    core_services
+  GUILESS
+)

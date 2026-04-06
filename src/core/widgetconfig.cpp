@@ -64,6 +64,20 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
   if (m_readableWidthMaxPx <= 0) {
     m_readableWidthMaxPx = 720;
   }
+
+  m_searchScope = READINT(QStringLiteral("searchScope"));
+  if (m_searchScope < 0 || m_searchScope > 3) {
+    m_searchScope = 0;
+  }
+
+  m_searchMode = READINT(QStringLiteral("searchMode"));
+  if (m_searchMode < 0 || m_searchMode > 2) {
+    m_searchMode = 0;
+  }
+
+  m_searchCaseSensitive = READBOOL(QStringLiteral("searchCaseSensitive"));
+  m_searchRegex = READBOOL(QStringLiteral("searchRegex"));
+  m_searchFilePattern = readString(p_jobj, QStringLiteral("searchFilePattern"));
 }
 
 QJsonObject WidgetConfig::toJson() const {
@@ -97,6 +111,11 @@ QJsonObject WidgetConfig::toJson() const {
   obj[QStringLiteral("viewWindowLayoutMode")] =
       static_cast<int>(m_viewWindowLayoutMode);
   obj[QStringLiteral("readableWidthMaxPx")] = m_readableWidthMaxPx;
+  obj[QStringLiteral("searchScope")] = m_searchScope;
+  obj[QStringLiteral("searchMode")] = m_searchMode;
+  obj[QStringLiteral("searchCaseSensitive")] = m_searchCaseSensitive;
+  obj[QStringLiteral("searchRegex")] = m_searchRegex;
+  obj[QStringLiteral("searchFilePattern")] = m_searchFilePattern;
   return obj;
 }
 
@@ -271,4 +290,34 @@ void WidgetConfig::setReadableWidthMaxPx(int p_px) {
 
 void WidgetConfig::initDefaults() {
   m_mainWindowKeepDocksExpandingContentArea = {QStringLiteral("OutlineDock.vnotex"), QStringLiteral("WindowsDock.vnotex")};
+}
+
+int WidgetConfig::getSearchScope() const { return m_searchScope; }
+
+void WidgetConfig::setSearchScope(int p_scope) {
+  updateConfig(m_searchScope, p_scope, this);
+}
+
+int WidgetConfig::getSearchMode() const { return m_searchMode; }
+
+void WidgetConfig::setSearchMode(int p_mode) {
+  updateConfig(m_searchMode, p_mode, this);
+}
+
+bool WidgetConfig::getSearchCaseSensitive() const { return m_searchCaseSensitive; }
+
+void WidgetConfig::setSearchCaseSensitive(bool p_sensitive) {
+  updateConfig(m_searchCaseSensitive, p_sensitive, this);
+}
+
+bool WidgetConfig::getSearchRegex() const { return m_searchRegex; }
+
+void WidgetConfig::setSearchRegex(bool p_regex) {
+  updateConfig(m_searchRegex, p_regex, this);
+}
+
+const QString &WidgetConfig::getSearchFilePattern() const { return m_searchFilePattern; }
+
+void WidgetConfig::setSearchFilePattern(const QString &p_pattern) {
+  updateConfig(m_searchFilePattern, p_pattern, this);
 }

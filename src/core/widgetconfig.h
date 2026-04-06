@@ -78,6 +78,21 @@ public:
   int getReadableWidthMaxPx() const;
   void setReadableWidthMaxPx(int p_px);
 
+  int getSearchScope() const;
+  void setSearchScope(int p_scope);
+
+  int getSearchMode() const;
+  void setSearchMode(int p_mode);
+
+  bool getSearchCaseSensitive() const;
+  void setSearchCaseSensitive(bool p_sensitive);
+
+  bool getSearchRegex() const;
+  void setSearchRegex(bool p_regex);
+
+  const QString &getSearchFilePattern() const;
+  void setSearchFilePattern(const QString &p_pattern);
+
 private:
   int m_outlineAutoExpandedLevel = 6;
 
@@ -119,6 +134,21 @@ private:
 
   // Maximum content width in pixels for Readable Width mode.
   int m_readableWidthMaxPx = 720;
+
+  // Search panel: scope index (0=Buffers, 1=CurrentFolder, 2=CurrentNotebook, 3=AllNotebooks).
+  int m_searchScope = 0;
+
+  // Search panel: mode index (0=FileNameSearch, 1=ContentSearch, 2=TagSearch).
+  int m_searchMode = 0;
+
+  // Search panel: case sensitivity toggle.
+  bool m_searchCaseSensitive = false;
+
+  // Search panel: regex toggle.
+  bool m_searchRegex = false;
+
+  // Search panel: file pattern filter (empty = no filter).
+  QString m_searchFilePattern;
 
   void initDefaults();
 };
