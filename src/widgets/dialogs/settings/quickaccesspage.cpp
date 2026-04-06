@@ -8,6 +8,7 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QInputDialog>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -44,32 +45,37 @@ void QuickAccessPage::setupUI() {
     auto *cardLayout =
         SettingsPageHelper::addSection(mainLayout, tr("Quick Access"), QString(), this);
 
-    // New button row.
+    // Label + New button row.
     {
-      auto *btnWidget = new QWidget(this);
-      auto *btnLayout = new QHBoxLayout(btnWidget);
-      btnLayout->setContentsMargins(0, 0, 0, 0);
+      auto *headerWidget = new QWidget(this);
+      auto *headerLayout = new QHBoxLayout(headerWidget);
+      headerLayout->setContentsMargins(16, 6, 16, 6);
+
+      auto *label = new QLabel(tr("Quick Access:"), this);
+      headerLayout->addWidget(label);
+      headerLayout->addStretch();
 
       auto *newBtn = new QPushButton(tr("New"), this);
       connect(newBtn, &QPushButton::clicked, this, &QuickAccessPage::newQuickAccessItem);
-      btnLayout->addWidget(newBtn);
-      btnLayout->addStretch();
+      headerLayout->addWidget(newBtn);
 
-      cardLayout->addWidget(btnWidget);
+      cardLayout->addWidget(headerWidget);
     }
 
+    // Text edit.
     {
       m_quickAccessTextEdit = WidgetsFactory::createPlainTextEdit(this);
-      m_quickAccessTextEdit->setToolTip(
-          tr("Edit the files pinned to Quick Access.\nFormat: filepath,openmode (one per line)\n"
-             "openmode: default, read, or edit\nIf omitted, 'default' is assumed."));
+      m_quickAccessTextEdit->setToolTip(tr("One per line. Format: filepath,openmode"));
       m_quickAccessTextEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 
-      const QString label(tr("Quick Access:"));
-      auto *row = SettingsPageHelper::createSettingRow(
-          label, m_quickAccessTextEdit->toolTip(), m_quickAccessTextEdit, this);
-      cardLayout->addWidget(row);
-      addSearchItem(label, m_quickAccessTextEdit->toolTip(), m_quickAccessTextEdit);
+      auto *editWrapper = new QWidget(this);
+      auto *editLayout = new QVBoxLayout(editWrapper);
+      editLayout->setContentsMargins(16, 0, 16, 6);
+      editLayout->addWidget(m_quickAccessTextEdit);
+      cardLayout->addWidget(editWrapper);
+
+      const QString searchLabel(tr("Quick Access:"));
+      addSearchItem(searchLabel, m_quickAccessTextEdit->toolTip(), m_quickAccessTextEdit);
       connect(m_quickAccessTextEdit, &QPlainTextEdit::textChanged, this,
               &QuickAccessPage::pageIsChanged);
     }
