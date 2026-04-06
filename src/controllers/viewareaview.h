@@ -36,6 +36,9 @@ public:
   // Close the view window. Returns true if closed, false if cancelled by user
   // (e.g., unsaved changes dialog). Callers must handle false for abort semantics.
   virtual bool closeViewWindow(ID p_windowId, bool p_force) = 0;
+  // Apply file open settings (scroll, highlight) to an already-created window.
+  virtual void applyFileOpenSettings(ID p_windowId,
+                                     const FileOpenSettings &p_settings) = 0;
 
   // Focus/navigation
   virtual void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) = 0;

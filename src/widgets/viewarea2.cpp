@@ -816,7 +816,18 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
     split->setCurrentViewWindow(win);
   }
 
+  // Apply file open settings (scroll to line, search highlight).
+  win->applyFileOpenSettings(p_settings);
+
   updateScreenVisibility();
+}
+
+void ViewArea2::applyFileOpenSettings(ID p_windowId,
+                                      const FileOpenSettings &p_settings) {
+  auto *win = windowForId(p_windowId);
+  if (win) {
+    win->applyFileOpenSettings(p_settings);
+  }
 }
 
 bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {

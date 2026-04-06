@@ -98,6 +98,8 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer,
             << "activating existing window:" << existingWindowId;
     m_view->setCurrentBuffer(m_currentWorkspaceId, p_buffer.id(), true);
     setCurrentViewWindow(existingWindowId, p_buffer.id());
+    // Apply file open settings to the existing window (scroll + highlight).
+    m_view->applyFileOpenSettings(existingWindowId, p_settings);
     return;
   }
 
@@ -1149,6 +1151,13 @@ void ViewAreaController::onFileAfterOpen(const FileOpenEvent &p_event) {
   settings.m_readOnly = p_event.readOnly;
   settings.m_lineNumber = p_event.lineNumber;
   settings.m_alwaysNewWindow = p_event.alwaysNewWindow;
+  // Reconstruct SearchHighlightContext from event's search fields.
+  if (!p_event.searchPatterns.isEmpty()) {
+    settings.m_searchHighlight.m_patterns = p_event.searchPatterns;
+    settings.m_searchHighlight.m_options = static_cast<FindOptions>(p_event.searchOptions);
+    settings.m_searchHighlight.m_currentMatchLine = p_event.searchCurrentMatchLine;
+    settings.m_searchHighlight.m_isValid = true;
+  }
   openBuffer(buf, settings);
 }
 
