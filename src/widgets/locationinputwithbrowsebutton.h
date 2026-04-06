@@ -12,7 +12,8 @@ class LocationInputWithBrowseButton : public QWidget {
 public:
   enum BrowseType { File, Folder };
 
-  explicit LocationInputWithBrowseButton(QWidget *p_parent = nullptr);
+  explicit LocationInputWithBrowseButton(QWidget *p_parent = nullptr,
+                                        const QString &p_defaultPath = QString());
 
   QString text() const;
 
@@ -47,6 +48,7 @@ private:
   BrowseType m_browseType = File;
   QString m_browseTitle;
   QString m_browseFilter;
+  QString m_defaultPath;
   bool m_browseConfigured = false;
 
   static QString s_lastBrowsePath;

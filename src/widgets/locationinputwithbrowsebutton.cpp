@@ -13,8 +13,9 @@ using namespace vnotex;
 
 QString LocationInputWithBrowseButton::s_lastBrowsePath;
 
-LocationInputWithBrowseButton::LocationInputWithBrowseButton(QWidget *p_parent)
-    : QWidget(p_parent) {
+LocationInputWithBrowseButton::LocationInputWithBrowseButton(QWidget *p_parent,
+                                                             const QString &p_defaultPath)
+    : QWidget(p_parent), m_defaultPath(p_defaultPath) {
   auto layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
@@ -69,7 +70,7 @@ void LocationInputWithBrowseButton::setBrowseType(BrowseType p_type,
 }
 
 void LocationInputWithBrowseButton::browse() {
-  auto initPath = defaultBrowsePath();
+  auto initPath = m_defaultPath.isEmpty() ? defaultBrowsePath() : m_defaultPath;
 
   QString result;
   if (m_browseType == Folder) {
