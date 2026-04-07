@@ -2,12 +2,29 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
+#include <core/global.h>
 #include <core/sessionconfig.h>
 #include <core/iconfigmgr.h>
 
 using namespace vnotex;
 
 namespace tests {
+
+namespace {
+
+ViewWindowMode resolveOpenModeForContractTest(QuickAccessOpenMode p_mode) {
+  switch (p_mode) {
+  case QuickAccessOpenMode::Read:
+    return ViewWindowMode::Read;
+  case QuickAccessOpenMode::Edit:
+    return ViewWindowMode::Edit;
+  case QuickAccessOpenMode::Default:
+  default:
+    return ViewWindowMode::Read;
+  }
+}
+
+} // namespace
 
 // Minimal mock that prevents crash when update() is called.
 class MockConfigMgr : public IConfigMgr {
@@ -32,6 +49,9 @@ private slots:
   void testRemoveQuickAccessFileCompat();
   void testSetQuickAccessItemsTrimAndFilter();
   void testUnknownModeDefaultsToDefault();
+  void testOpenModeToViewWindowMode_Default();
+  void testOpenModeToViewWindowMode_Read();
+  void testOpenModeToViewWindowMode_Edit();
 
 private:
   MockConfigMgr m_mockMgr;
@@ -245,6 +265,18 @@ void TestQuickAccessItem::testUnknownModeDefaultsToDefault() {
 
   QCOMPARE(item.m_path, QStringLiteral("test.md"));
   QCOMPARE(item.m_openMode, QuickAccessOpenMode::Default);
+}
+
+void TestQuickAccessItem::testOpenModeToViewWindowMode_Default() {
+  QCOMPARE(resolveOpenModeForContractTest(QuickAccessOpenMode::Default), ViewWindowMode::Read);
+}
+
+void TestQuickAccessItem::testOpenModeToViewWindowMode_Read() {
+  QCOMPARE(resolveOpenModeForContractTest(QuickAccessOpenMode::Read), ViewWindowMode::Read);
+}
+
+void TestQuickAccessItem::testOpenModeToViewWindowMode_Edit() {
+  QCOMPARE(resolveOpenModeForContractTest(QuickAccessOpenMode::Edit), ViewWindowMode::Edit);
 }
 
 } // namespace tests

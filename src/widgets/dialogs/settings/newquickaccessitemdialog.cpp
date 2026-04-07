@@ -35,7 +35,7 @@ void NewQuickAccessItemDialog::setupUI() {
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 
-  setWindowTitle(tr("New Quick Access Item"));
+  setWindowTitle(tr("New Quick Access"));
 }
 
 void NewQuickAccessItemDialog::acceptedButtonClicked() {

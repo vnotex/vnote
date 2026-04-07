@@ -4,6 +4,9 @@
 #include <QIcon>
 #include <QObject>
 
+#include <core/global.h>
+#include <core/sessionconfig.h>
+
 class QMenu;
 class QToolBar;
 
@@ -49,9 +52,9 @@ private:
 
   void setupSettingsButton(QToolBar *p_toolBar);
 
-  void activateQuickAccess(const QString &p_file);
+  void activateQuickAccess(const SessionConfig::QuickAccessItem &p_item);
 
-  void activateQuickAccessFilePath(const QString &p_file);
+  void activateQuickAccessFilePath(const QString &p_file, ViewWindowMode p_mode);
 
   void activateQuickAccessFromVxUrl(const QString &p_vxUrl);
 

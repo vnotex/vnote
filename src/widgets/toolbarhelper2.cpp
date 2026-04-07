@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QDialog>
 #include <QDir>
 #include <QDockWidget>
 #include <QFileDialog>
@@ -10,14 +11,13 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QWhatsThis>
-#include <QWidgetAction>
 
 #include "dialogs/settings/settingsdialog.h"
 #include "fullscreentoggleaction.h"
-#include "labelwithbuttonswidget.h"
 #include "mainwindow2.h"
 #include "messageboxhelper.h"
 #include "widgetsfactory.h"
+#include "dialogs/settings/newquickaccessitemdialog.h"
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/exception.h>
@@ -37,6 +37,34 @@ using namespace vnotex;
 static const QString c_fgPalette = QStringLiteral("widgets#toolbar#icon#fg");
 static const QString c_disabledPalette = QStringLiteral("widgets#toolbar#icon#disabled#fg");
 static const QString c_dangerousPalette = QStringLiteral("widgets#toolbar#icon#danger#fg");
+
+namespace {
+
+ViewWindowMode resolveOpenMode(QuickAccessOpenMode p_qaMode, const CoreConfig &p_coreConfig) {
+  switch (p_qaMode) {
+  case QuickAccessOpenMode::Read:
+    return ViewWindowMode::Read;
+  case QuickAccessOpenMode::Edit:
+    return ViewWindowMode::Edit;
+  case QuickAccessOpenMode::Default:
+  default:
+    return p_coreConfig.getDefaultOpenMode();
+  }
+}
+
+QString quickAccessModeSuffix(QuickAccessOpenMode p_mode) {
+  switch (p_mode) {
+  case QuickAccessOpenMode::Read:
+    return QObject::tr(" (Read)");
+  case QuickAccessOpenMode::Edit:
+    return QObject::tr(" (Edit)");
+  case QuickAccessOpenMode::Default:
+  default:
+    return QString();
+  }
+}
+
+} // namespace
 
 ToolBarHelper2::ToolBarHelper2(ServiceLocator &p_services, MainWindow2 *p_mainWindow)
     : QObject(p_mainWindow), m_services(p_services), m_mainWindow(p_mainWindow) {}
@@ -140,18 +168,21 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
     const auto text = MainWindow2::tr("Quick Access");
     auto quickAccessAct = new QAction(generateIcon("quick_access_menu.svg"), text, toolBtn);
     MainWindow2::connect(quickAccessAct, &QAction::triggered, m_mainWindow, [this]() {
-      const auto &quickAccess =
-          m_services.get<ConfigMgr2>()->getSessionConfig().getQuickAccessFiles();
-      if (quickAccess.isEmpty()) {
-        MessageBoxHelper::notify(
-            MessageBoxHelper::Type::Information,
-            MainWindow2::tr("Please pin files to Quick Access first."),
-            MainWindow2::tr("Files could be pinned to Quick Access via context menu."),
-            MainWindow2::tr("Quick Access could be managed in the Settings dialog."), m_mainWindow);
+      auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
+      const auto &quickAccessItems = sessionConfig.getQuickAccessItems();
+      if (quickAccessItems.isEmpty()) {
+        NewQuickAccessItemDialog dialog(m_mainWindow);
+        if (dialog.exec() == QDialog::Accepted) {
+          auto items = sessionConfig.getQuickAccessItems();
+          const auto newItem = dialog.getItem();
+          items.append(newItem);
+          sessionConfig.setQuickAccessItems(items);
+          activateQuickAccess(newItem);
+        }
         return;
       }
 
-      activateQuickAccess(quickAccess.first());
+      activateQuickAccess(quickAccessItems.first());
     });
     WidgetUtils::addActionShortcut(quickAccessAct,
                                    coreConfig.getShortcut(CoreConfig::Shortcut::QuickAccess));
@@ -165,8 +196,19 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
 
     MainWindow2::connect(btnMenu, &QMenu::aboutToShow, btnMenu,
                          [this, btnMenu]() { updateQuickAccessMenu(btnMenu); });
-    MainWindow2::connect(btnMenu, &QMenu::triggered, btnMenu,
-                         [this](QAction *p_act) { activateQuickAccess(p_act->data().toString()); });
+    MainWindow2::connect(btnMenu, &QMenu::triggered, btnMenu, [this](QAction *p_act) {
+      if (!p_act || !p_act->data().isValid()) {
+        return;
+      }
+
+      const auto index = p_act->data().toInt();
+      const auto &items = m_services.get<ConfigMgr2>()->getSessionConfig().getQuickAccessItems();
+      if (index < 0 || index >= items.size()) {
+        return;
+      }
+
+      activateQuickAccess(items[index]);
+    });
     tb->addWidget(toolBtn);
   }
 
@@ -245,36 +287,35 @@ void ToolBarHelper2::updateQuickAccessMenu(QMenu *p_menu) {
   p_menu->clear();
   auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
 
-  const auto &quickAccess = sessionConfig.getQuickAccessFiles();
-  if (quickAccess.isEmpty()) {
+  const auto &quickAccessItems = sessionConfig.getQuickAccessItems();
+  if (quickAccessItems.isEmpty()) {
     auto act = p_menu->addAction(MainWindow2::tr("Quick Access Not Set"));
     act->setEnabled(false);
-    return;
+  } else {
+    for (int i = 0; i < quickAccessItems.size(); ++i) {
+      const auto &item = quickAccessItems[i];
+      QString displayName = PathUtils::fileName(item.m_path);
+      QString displayFullName =
+          VxUrlUtils::getFilePathFromVxURL(item.m_path) + quickAccessModeSuffix(item.m_openMode);
+
+      auto act = p_menu->addAction(displayName);
+      act->setToolTip(displayFullName);
+      act->setData(i);
+    }
   }
 
-  for (const auto &file : quickAccess) {
-    auto act = new QWidgetAction(p_menu);
-    QString displayName = PathUtils::fileName(file);
-    QString displayFullName = VxUrlUtils::getFilePathFromVxURL(file);
+  p_menu->addSeparator();
 
-    auto widget = new LabelWithButtonsWidget(displayName, LabelWithButtonsWidget::Delete);
-    p_menu->connect(widget, &LabelWithButtonsWidget::triggered, p_menu, [p_menu, act, this]() {
-      const auto qaFile = act->data().toString();
-      auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
-      sessionConfig.removeQuickAccessFile(qaFile);
-      p_menu->removeAction(act);
-      if (p_menu->isEmpty()) {
-        p_menu->hide();
-      }
-    });
-    // @act will own @widget.
-    act->setDefaultWidget(widget);
-    act->setData(file);
-    act->setToolTip(displayFullName);
-
-    // Must call after setDefaultWidget().
-    p_menu->addAction(act);
-  }
+  auto newAct = p_menu->addAction(MainWindow2::tr("New Quick Access"));
+  QAction::connect(newAct, &QAction::triggered, p_menu, [this]() {
+    auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
+    NewQuickAccessItemDialog dialog(m_mainWindow);
+    if (dialog.exec() == QDialog::Accepted) {
+      auto items = sessionConfig.getQuickAccessItems();
+      items.append(dialog.getItem());
+      sessionConfig.setQuickAccessItems(items);
+    }
+  });
 }
 
 void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
@@ -417,15 +458,16 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   p_toolBar->addWidget(btn);
 }
 
-void ToolBarHelper2::activateQuickAccess(const QString &p_file) {
-  if (p_file.startsWith('#')) {
-    activateQuickAccessFromVxUrl(p_file);
+void ToolBarHelper2::activateQuickAccess(const SessionConfig::QuickAccessItem &p_item) {
+  const auto mode = resolveOpenMode(p_item.m_openMode, m_services.get<ConfigMgr2>()->getCoreConfig());
+  if (p_item.m_path.startsWith('#')) {
+    activateQuickAccessFromVxUrl(p_item.m_path);
   } else {
-    activateQuickAccessFilePath(p_file);
+    activateQuickAccessFilePath(p_item.m_path, mode);
   }
 }
 
-void ToolBarHelper2::activateQuickAccessFilePath(const QString &p_file) {
+void ToolBarHelper2::activateQuickAccessFilePath(const QString &p_file, ViewWindowMode p_mode) {
   auto *bufferSvc = m_services.get<BufferService>();
   if (!bufferSvc) {
     return;
@@ -434,7 +476,7 @@ void ToolBarHelper2::activateQuickAccessFilePath(const QString &p_file) {
   NodeIdentifier nodeId;
   nodeId.relativePath = p_file;
   FileOpenSettings settings;
-  settings.m_mode = m_services.get<ConfigMgr2>()->getCoreConfig().getDefaultOpenMode();
+  settings.m_mode = p_mode;
   bufferSvc->openBuffer(nodeId, settings);
 }
 
