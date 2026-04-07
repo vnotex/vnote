@@ -31,13 +31,13 @@ SearchController::SearchController(ServiceLocator &p_services, QObject *p_parent
   connect(searchSvc, &SearchService::searchFinished, this, &SearchController::onSearchFinished);
   connect(searchSvc, &SearchService::searchFailed, this, &SearchController::onSearchFailed);
   connect(searchSvc, &SearchService::searchCancelled, this, &SearchController::onSearchCancelled);
-  connect(searchSvc, &SearchService::searchProgress, this, &SearchController::progressUpdated);
-  connect(searchSvc, &SearchService::searchStarted, this, &SearchController::searchStarted);
+  connect(searchSvc, &SearchService::searchProgress, this,
+          [this](int /*p_token*/, int p_percent) { emit progressUpdated(p_percent); });
+  connect(searchSvc, &SearchService::searchStarted, this,
+          [this](int /*p_token*/) { emit searchStarted(); });
 }
 
-void SearchController::setModel(SearchResultModel *p_model) {
-  m_model = p_model;
-}
+void SearchController::setModel(SearchResultModel *p_model) { m_model = p_model; }
 
 void SearchController::setCurrentNotebookId(const QString &p_notebookId) {
   m_currentNotebookId = p_notebookId;
@@ -48,12 +48,10 @@ void SearchController::setCurrentFolderId(const NodeIdentifier &p_folderId) {
 }
 
 void SearchController::search(const QString &p_keyword, int p_scope, int p_searchMode,
-                              bool p_caseSensitive, bool p_useRegex,
-                              const QString &p_filePattern) {
-  qDebug() << "SearchController::search: keyword:" << p_keyword
-           << "scope:" << p_scope << "mode:" << p_searchMode
-           << "caseSensitive:" << p_caseSensitive << "regex:" << p_useRegex
-           << "filePattern:" << p_filePattern;
+                              bool p_caseSensitive, bool p_useRegex, const QString &p_filePattern) {
+  qDebug() << "SearchController::search: keyword:" << p_keyword << "scope:" << p_scope
+           << "mode:" << p_searchMode << "caseSensitive:" << p_caseSensitive
+           << "regex:" << p_useRegex << "filePattern:" << p_filePattern;
 
   resetSearchState();
   if (m_model) {
@@ -177,6 +175,7 @@ void SearchController::cancel() {
   qDebug() << "SearchController::cancel: cancelling search";
   m_cancelRequested = true;
   m_pendingTargets.clear();
+  m_activeTokens.clear();
 
   auto *searchSvc = m_services.get<SearchService>();
   if (searchSvc) {
@@ -220,11 +219,16 @@ void SearchController::activateResult(const QModelIndex &p_index) {
   emit nodeActivated(nodeId, settings);
 }
 
-void SearchController::onSearchFinished(const SearchResult &p_result) {
+void SearchController::onSearchFinished(int p_token, const SearchResult &p_result) {
+  if (!m_activeTokens.contains(p_token)) {
+    qDebug() << "SearchController::onSearchFinished: discarding stale token:" << p_token;
+    return;
+  }
+  m_activeTokens.remove(p_token);
+
   qDebug() << "SearchController::onSearchFinished: matchCount:" << p_result.m_matchCount
            << "fileResults:" << p_result.m_fileResults.size()
-           << "truncated:" << p_result.m_truncated
-           << "pendingTargets:" << m_pendingTargets.size();
+           << "truncated:" << p_result.m_truncated << "pendingTargets:" << m_pendingTargets.size();
 
   mergeSearchResult(p_result);
 
@@ -237,15 +241,23 @@ void SearchController::onSearchFinished(const SearchResult &p_result) {
     return;
   }
 
-  if (m_model) {
-    m_model->setSearchResult(m_accumulatedResult);
-  }
+  if (m_activeTokens.isEmpty() && m_pendingTargets.isEmpty()) {
+    if (m_model) {
+      m_model->setSearchResult(m_accumulatedResult);
+    }
 
-  emit searchFinished(m_accumulatedResult.m_matchCount, m_accumulatedResult.m_truncated);
-  resetSearchState();
+    emit searchFinished(m_accumulatedResult.m_matchCount, m_accumulatedResult.m_truncated);
+    resetSearchState();
+  }
 }
 
-void SearchController::onSearchFailed(const Error &p_error) {
+void SearchController::onSearchFailed(int p_token, const Error &p_error) {
+  if (!m_activeTokens.contains(p_token)) {
+    qDebug() << "SearchController::onSearchFailed: discarding stale token:" << p_token;
+    return;
+  }
+  m_activeTokens.remove(p_token);
+
   QString message = p_error.message();
   if (message.isEmpty()) {
     message = p_error.what();
@@ -257,7 +269,13 @@ void SearchController::onSearchFailed(const Error &p_error) {
   resetSearchState();
 }
 
-void SearchController::onSearchCancelled() {
+void SearchController::onSearchCancelled(int p_token) {
+  if (!m_activeTokens.contains(p_token)) {
+    qDebug() << "SearchController::onSearchCancelled: discarding stale token:" << p_token;
+    return;
+  }
+  m_activeTokens.remove(p_token);
+
   qDebug() << "SearchController::onSearchCancelled";
   emit searchCancelled();
   resetSearchState();
@@ -350,23 +368,28 @@ void SearchController::dispatchSearch(const SearchTarget &p_target) {
     return;
   }
 
+  int token = 0;
   switch (m_activeSearchMode) {
   case FileNameSearch:
-    searchSvc->searchFiles(p_target.notebookId, m_queryJson, p_target.inputFilesJson);
+    token = searchSvc->searchFiles(p_target.notebookId, m_queryJson, p_target.inputFilesJson);
     break;
 
   case ContentSearch:
-    searchSvc->searchContent(p_target.notebookId, m_queryJson, p_target.inputFilesJson);
+    token = searchSvc->searchContent(p_target.notebookId, m_queryJson, p_target.inputFilesJson);
     break;
 
   case TagSearch:
-    searchSvc->searchByTags(p_target.notebookId, m_queryJson, p_target.inputFilesJson);
+    token = searchSvc->searchByTags(p_target.notebookId, m_queryJson, p_target.inputFilesJson);
     break;
 
   default:
     emit searchFailed(tr("Invalid search mode."));
     resetSearchState();
-    break;
+    return;
+  }
+
+  if (token > 0) {
+    m_activeTokens.insert(token);
   }
 }
 
@@ -383,6 +406,7 @@ void SearchController::startNextSearch() {
 
 void SearchController::resetSearchState() {
   m_pendingTargets.clear();
+  m_activeTokens.clear();
   m_accumulatedResult = SearchResult();
   m_queryJson.clear();
   m_cancelRequested = false;

@@ -3,6 +3,7 @@
 
 #include <QList>
 #include <QObject>
+#include <QSet>
 #include <QString>
 #include <QStringList>
 
@@ -22,18 +23,9 @@ class SearchController : public QObject {
   Q_OBJECT
 
 public:
-  enum SearchScope {
-    Buffers = 0,
-    CurrentFolder = 1,
-    CurrentNotebook = 2,
-    AllNotebooks = 3
-  };
+  enum SearchScope { Buffers = 0, CurrentFolder = 1, CurrentNotebook = 2, AllNotebooks = 3 };
 
-  enum SearchMode {
-    FileNameSearch = 0,
-    ContentSearch = 1,
-    TagSearch = 2
-  };
+  enum SearchMode { FileNameSearch = 0, ContentSearch = 1, TagSearch = 2 };
 
   explicit SearchController(ServiceLocator &p_services, QObject *p_parent = nullptr);
 
@@ -42,8 +34,8 @@ public:
   void setCurrentNotebookId(const QString &p_notebookId);
   void setCurrentFolderId(const NodeIdentifier &p_folderId);
 
-  void search(const QString &p_keyword, int p_scope, int p_searchMode,
-              bool p_caseSensitive, bool p_useRegex, const QString &p_filePattern);
+  void search(const QString &p_keyword, int p_scope, int p_searchMode, bool p_caseSensitive,
+              bool p_useRegex, const QString &p_filePattern);
   void cancel();
   void activateResult(const QModelIndex &p_index);
 
@@ -56,9 +48,9 @@ signals:
   void progressUpdated(int p_percent);
 
 private slots:
-  void onSearchFinished(const SearchResult &p_result);
-  void onSearchFailed(const Error &p_error);
-  void onSearchCancelled();
+  void onSearchFinished(int p_token, const SearchResult &p_result);
+  void onSearchFailed(int p_token, const Error &p_error);
+  void onSearchCancelled(int p_token);
 
 private:
   struct SearchTarget {
@@ -66,9 +58,8 @@ private:
     QString inputFilesJson;
   };
 
-  QString buildQueryJson(const QString &p_keyword, int p_searchMode,
-                         bool p_caseSensitive, bool p_useRegex,
-                         const QString &p_filePattern) const;
+  QString buildQueryJson(const QString &p_keyword, int p_searchMode, bool p_caseSensitive,
+                         bool p_useRegex, const QString &p_filePattern) const;
   QString buildFoldersInputFilesJson(const QString &p_folderPath) const;
   QString buildFilesInputFilesJson(const QStringList &p_files) const;
   void dispatchSearch(const SearchTarget &p_target);
@@ -87,6 +78,7 @@ private:
   QString m_queryJson;
   int m_activeSearchMode = ContentSearch;
   bool m_cancelRequested = false;
+  QSet<int> m_activeTokens;
 
   QString m_lastKeyword;
   FindOptions m_lastFindOptions = FindNone;
