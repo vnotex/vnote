@@ -102,16 +102,13 @@ void QuickAccessPage::setupUI() {
       selectorLayout->addWidget(deleteBtn);
 
       const QString label(tr("Scheme:"));
-      auto *row =
-          SettingsPageHelper::createSettingRow(label, QString(), selectorWidget, this);
+      auto *row = SettingsPageHelper::createSettingRow(label, QString(), selectorWidget, this);
       cardLayout->addWidget(row);
       addSearchItem(label, m_quickNoteSchemeComboBox);
 
-      connect(m_quickNoteSchemeComboBox,
-              QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+      connect(m_quickNoteSchemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
               &QuickAccessPage::pageIsChanged);
-      connect(m_quickNoteSchemeComboBox,
-              QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+      connect(m_quickNoteSchemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
               [deleteBtn](int idx) { deleteBtn->setEnabled(idx > -1); });
     }
 
@@ -124,11 +121,9 @@ void QuickAccessPage::setupUI() {
 
       {
         const QString label(tr("Folder:"));
-        m_quickNoteFolderPathInput =
-            new LocationInputWithBrowseButton(m_quickNoteInfoGroupBox);
-        m_quickNoteFolderPathInput->setBrowseType(
-            LocationInputWithBrowseButton::Folder,
-            tr("Select Quick Note Folder"));
+        m_quickNoteFolderPathInput = new LocationInputWithBrowseButton(m_quickNoteInfoGroupBox);
+        m_quickNoteFolderPathInput->setBrowseType(LocationInputWithBrowseButton::Folder,
+                                                  tr("Select Quick Note Folder"));
         m_quickNoteFolderPathInput->setPlaceholderText(
             tr("Empty to use current explored folder dynamically"));
         infoLayout->addRow(label, m_quickNoteFolderPathInput);
@@ -152,8 +147,8 @@ void QuickAccessPage::setupUI() {
       m_quickNoteInfoGroupBox->setVisible(false);
       cardLayout->addWidget(m_quickNoteInfoGroupBox);
 
-      connect(m_quickNoteSchemeComboBox,
-              QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int idx) {
+      connect(m_quickNoteSchemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+              [this](int idx) {
                 if (isLoading()) {
                   return;
                 }
@@ -226,7 +221,7 @@ QString QuickAccessPage::getDefaultQuickNoteFolderPath() {
 }
 
 void QuickAccessPage::newQuickAccessItem() {
-  NewQuickAccessItemDialog dialog(this);
+  NewQuickAccessItemDialog dialog(m_services, this);
   if (dialog.exec() == QDialog::Accepted) {
     auto item = dialog.getItem();
     QString line;
@@ -246,8 +241,8 @@ void QuickAccessPage::newQuickAccessItem() {
   }
 }
 
-QVector<SessionConfig::QuickAccessItem> QuickAccessPage::parseQuickAccessText(
-    const QString &p_text) {
+QVector<SessionConfig::QuickAccessItem>
+QuickAccessPage::parseQuickAccessText(const QString &p_text) {
   QVector<SessionConfig::QuickAccessItem> items;
   const auto lines = p_text.split(QChar('\n'));
   for (const auto &rawLine : lines) {
@@ -282,15 +277,14 @@ QVector<SessionConfig::QuickAccessItem> QuickAccessPage::parseQuickAccessText(
   return items;
 }
 
-QString QuickAccessPage::formatQuickAccessItems(
-    const QVector<SessionConfig::QuickAccessItem> &p_items) {
+QString
+QuickAccessPage::formatQuickAccessItems(const QVector<SessionConfig::QuickAccessItem> &p_items) {
   QStringList lines;
   for (const auto &item : p_items) {
     if (item.m_openMode == QuickAccessOpenMode::Default) {
       lines << item.m_path;
     } else {
-      lines << item.m_path + QStringLiteral(",") +
-                   SessionConfig::openModeToString(item.m_openMode);
+      lines << item.m_path + QStringLiteral(",") + SessionConfig::openModeToString(item.m_openMode);
     }
   }
   return lines.join(QChar('\n'));

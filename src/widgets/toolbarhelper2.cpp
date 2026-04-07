@@ -12,12 +12,12 @@
 #include <QUrl>
 #include <QWhatsThis>
 
+#include "dialogs/settings/newquickaccessitemdialog.h"
 #include "dialogs/settings/settingsdialog.h"
 #include "fullscreentoggleaction.h"
 #include "mainwindow2.h"
 #include "messageboxhelper.h"
 #include "widgetsfactory.h"
-#include "dialogs/settings/newquickaccessitemdialog.h"
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/exception.h>
@@ -25,6 +25,7 @@
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
@@ -106,9 +107,9 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
     newBtn->setMenu(newMenu);
 
     // Quick note.
-    auto newQuickNoteAct =
-        newMenu->addAction(MainWindow2::tr("Quick Note"), newMenu,
-                           [this]() { emit m_mainWindow->newQuickNoteRequested(); });
+    auto newQuickNoteAct = newMenu->addAction(MainWindow2::tr("Quick Note"), newMenu, [this]() {
+      emit m_mainWindow->newQuickNoteRequested();
+    });
     WidgetUtils::addActionShortcut(newQuickNoteAct,
                                    coreConfig.getShortcut(CoreConfig::Shortcut::NewQuickNote));
 
@@ -171,7 +172,7 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
       auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
       const auto &quickAccessItems = sessionConfig.getQuickAccessItems();
       if (quickAccessItems.isEmpty()) {
-        NewQuickAccessItemDialog dialog(m_mainWindow);
+        NewQuickAccessItemDialog dialog(m_services, m_mainWindow);
         if (dialog.exec() == QDialog::Accepted) {
           auto items = sessionConfig.getQuickAccessItems();
           const auto newItem = dialog.getItem();
@@ -309,7 +310,7 @@ void ToolBarHelper2::updateQuickAccessMenu(QMenu *p_menu) {
   auto newAct = p_menu->addAction(MainWindow2::tr("New Quick Access"));
   QAction::connect(newAct, &QAction::triggered, p_menu, [this]() {
     auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
-    NewQuickAccessItemDialog dialog(m_mainWindow);
+    NewQuickAccessItemDialog dialog(m_services, m_mainWindow);
     if (dialog.exec() == QDialog::Accepted) {
       auto items = sessionConfig.getQuickAccessItems();
       items.append(dialog.getItem());
@@ -330,8 +331,9 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
   expandAct->setCheckable(true);
   MainWindow2::connect(expandAct, &QAction::triggered, m_mainWindow,
                        &MainWindow2::setContentAreaExpanded);
-  MainWindow2::connect(m_mainWindow, &MainWindow2::layoutChanged, expandAct,
-                       [expandAct, this]() { expandAct->setChecked(m_mainWindow->isContentAreaExpanded()); });
+  MainWindow2::connect(m_mainWindow, &MainWindow2::layoutChanged, expandAct, [expandAct, this]() {
+    expandAct->setChecked(m_mainWindow->isContentAreaExpanded());
+  });
   btn->addAction(expandAct);
   btn->setDefaultAction(expandAct);
   btn->setText(defaultText);
@@ -353,9 +355,9 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
     menu->addAction(fullScreenAct);
   }
 
-  auto stayOnTopAct = menu->addAction(generateIcon("stay_on_top.svg"),
-                                      MainWindow2::tr("Stay on Top"), m_mainWindow,
-                                      &MainWindow2::setStayOnTop);
+  auto stayOnTopAct =
+      menu->addAction(generateIcon("stay_on_top.svg"), MainWindow2::tr("Stay on Top"), m_mainWindow,
+                      &MainWindow2::setStayOnTop);
   stayOnTopAct->setCheckable(true);
   WidgetUtils::addActionShortcut(stayOnTopAct,
                                  coreConfig.getShortcut(CoreConfig::Shortcut::StayOnTop));
@@ -437,18 +439,16 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   menu->addAction(MainWindow2::tr("About"), menu, [this]() {
     auto info = MainWindow2::tr("<h3>%1</h3><h4>%2</h4>")
                     .arg(qApp->applicationDisplayName(), qApp->applicationVersion());
-    const auto text = MainWindow2::tr("A pleasant note-taking platform, focusing on native experience, open source since 2016.");
+    const auto text = MainWindow2::tr(
+        "A pleasant note-taking platform, focusing on native experience, open source since 2016.");
     QMessageBox::about(m_mainWindow, MainWindow2::tr("About"), info + text);
   });
 
   // TODO: Updater dialog not yet migrated.
-  menu->addAction(MainWindow2::tr("Check for Updates"), menu, [this]() {
-    qDebug() << "Check for updates requested (stub)";
-  });
+  menu->addAction(MainWindow2::tr("Check for Updates"), menu,
+                  [this]() { qDebug() << "Check for updates requested (stub)"; });
 
-  menu->addAction(MainWindow2::tr("Restart"), menu, [this]() {
-    m_mainWindow->restart();
-  });
+  menu->addAction(MainWindow2::tr("Restart"), menu, [this]() { m_mainWindow->restart(); });
 
   auto quitAct =
       menu->addAction(MainWindow2::tr("Quit"), menu, [this]() { m_mainWindow->close(); });
@@ -459,7 +459,31 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
 }
 
 void ToolBarHelper2::activateQuickAccess(const SessionConfig::QuickAccessItem &p_item) {
-  const auto mode = resolveOpenMode(p_item.m_openMode, m_services.get<ConfigMgr2>()->getCoreConfig());
+  // UUID-first: try to resolve by UUID if available.
+  if (!p_item.m_uuid.isEmpty()) {
+    auto *notebookSvc = m_services.get<NotebookCoreService>();
+    QJsonObject resolved = notebookSvc->resolveNodeByUuid(p_item.m_uuid);
+    if (!resolved.isEmpty()) {
+      const auto mode =
+          resolveOpenMode(p_item.m_openMode, m_services.get<ConfigMgr2>()->getCoreConfig());
+
+      NodeIdentifier nodeId;
+      nodeId.notebookId = resolved["notebookId"].toString();
+      nodeId.relativePath = resolved["relativePath"].toString();
+
+      FileOpenSettings settings;
+      settings.m_mode = mode;
+
+      auto *bufferSvc = m_services.get<BufferService>();
+      bufferSvc->openBuffer(nodeId, settings);
+      return;
+    }
+    // UUID resolution failed — fall through to path-based logic.
+    qDebug() << "UUID resolution failed for" << p_item.m_uuid << ", falling back to path";
+  }
+
+  const auto mode =
+      resolveOpenMode(p_item.m_openMode, m_services.get<ConfigMgr2>()->getCoreConfig());
   if (p_item.m_path.startsWith('#')) {
     activateQuickAccessFromVxUrl(p_item.m_path);
   } else {

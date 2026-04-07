@@ -2,13 +2,17 @@
 
 #include <QComboBox>
 #include <QFormLayout>
+#include <QJsonObject>
 
+#include <core/servicelocator.h>
+#include <core/services/notebookcoreservice.h>
 #include <widgets/locationinputwithbrowsebutton.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
 
-NewQuickAccessItemDialog::NewQuickAccessItemDialog(QWidget *p_parent) : ScrollDialog(p_parent) {
+NewQuickAccessItemDialog::NewQuickAccessItemDialog(ServiceLocator &p_services, QWidget *p_parent)
+    : ScrollDialog(p_parent), m_services(p_services) {
   setupUI();
 }
 
@@ -56,7 +60,21 @@ bool NewQuickAccessItemDialog::validateInputs() {
 SessionConfig::QuickAccessItem NewQuickAccessItemDialog::getItem() const {
   SessionConfig::QuickAccessItem item;
   item.m_path = m_pathInput->text().trimmed();
-  item.m_openMode =
-      static_cast<QuickAccessOpenMode>(m_openModeComboBox->currentData().toInt());
+  item.m_openMode = static_cast<QuickAccessOpenMode>(m_openModeComboBox->currentData().toInt());
+
+  // Attempt to resolve UUID for files that belong to an open notebook.
+  auto *notebookSvc = m_services.get<NotebookCoreService>();
+  if (notebookSvc) {
+    auto resolved = notebookSvc->resolvePathToNotebook(item.m_path);
+    if (!resolved.isEmpty()) {
+      auto notebookId = resolved[QStringLiteral("notebookId")].toString();
+      auto relativePath = resolved[QStringLiteral("relativePath")].toString();
+      auto fileInfo = notebookSvc->getFileInfo(notebookId, relativePath);
+      if (!fileInfo.isEmpty() && fileInfo.contains(QStringLiteral("id"))) {
+        item.m_uuid = fileInfo[QStringLiteral("id")].toString();
+      }
+    }
+  }
+
   return item;
 }

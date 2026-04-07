@@ -10,11 +10,12 @@ class QComboBox;
 namespace vnotex {
 
 class LocationInputWithBrowseButton;
+class ServiceLocator;
 
 class NewQuickAccessItemDialog : public ScrollDialog {
   Q_OBJECT
 public:
-  explicit NewQuickAccessItemDialog(QWidget *p_parent = nullptr);
+  explicit NewQuickAccessItemDialog(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   SessionConfig::QuickAccessItem getItem() const;
 
@@ -25,6 +26,8 @@ private:
   void setupUI();
 
   bool validateInputs();
+
+  ServiceLocator &m_services;
 
   LocationInputWithBrowseButton *m_pathInput = nullptr;
 
