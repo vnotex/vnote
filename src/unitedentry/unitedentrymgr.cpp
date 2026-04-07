@@ -35,7 +35,7 @@ void UnitedEntryMgr::init() {
 
   // Built-in entries.
   addEntry(QSharedPointer<FindUnitedEntry>::create(
-      QSharedPointer<ISearchInfoProvider>(new NullSearchInfoProvider()), this));
+      m_services, QSharedPointer<ISearchInfoProvider>(new NullSearchInfoProvider()), this));
 
   addEntry(QSharedPointer<HelpUnitedEntry>::create(this));
 

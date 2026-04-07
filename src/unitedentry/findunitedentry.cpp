@@ -8,8 +8,11 @@
 #include "entrywidgetfactory.h"
 #include "unitedentryhelper.h"
 #include "unitedentrymgr.h"
-#include <core/fileopenparameters.h>
-#include <core/vnotex.h>
+#include <core/fileopensettings.h>
+#include <core/nodeidentifier.h>
+#include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
+#include <gui/services/themeservice.h>
 #include <search/isearchinfoprovider.h>
 #include <search/searchdata.h>
 #include <search/searcher.h>
@@ -21,10 +24,11 @@
 
 using namespace vnotex;
 
-FindUnitedEntry::FindUnitedEntry(const QSharedPointer<ISearchInfoProvider> &p_provider,
+FindUnitedEntry::FindUnitedEntry(ServiceLocator &p_services,
+                                 const QSharedPointer<ISearchInfoProvider> &p_provider,
                                  UnitedEntryMgr *p_mgr, QObject *p_parent)
     : IUnitedEntry("find", tr("Search for files in notebooks"), p_mgr, p_parent),
-      m_provider(p_provider) {
+      m_services(p_services), m_provider(p_provider) {
   m_processTimer = new QTimer(this);
   m_processTimer->setSingleShot(true);
   m_processTimer->setInterval(500);
@@ -228,9 +232,10 @@ void FindUnitedEntry::prepareResultTree() {
 
 void FindUnitedEntry::addLocation(const ComplexLocation &p_location) {
   auto item = new QTreeWidgetItem(m_resultTree.data());
+  auto *themeService = m_services.get<ThemeService>();
   item->setText(0, p_location.m_displayPath);
-  item->setIcon(
-      0, UnitedEntryHelper::itemIcon(UnitedEntryHelper::locationTypeToItemType(p_location.m_type)));
+  item->setIcon(0, UnitedEntryHelper::itemIcon(
+                       UnitedEntryHelper::locationTypeToItemType(p_location.m_type), themeService));
   item->setData(0, Qt::UserRole, p_location.m_path);
   item->setToolTip(0, p_location.m_path);
 
@@ -303,24 +308,41 @@ void FindUnitedEntry::handleItemActivated(QTreeWidgetItem *p_item, int p_column)
   }
 
   // TODO: decode the path of location and handle different types of destination.
-  auto paras = QSharedPointer<FileOpenParameters>::create();
-
   QString itemPath;
+  int lineNumber = -1;
   auto pa = p_item->parent();
   if (pa) {
     itemPath = pa->data(0, Qt::UserRole).toString();
-    paras->m_lineNumber = p_item->data(0, Qt::UserRole).toInt();
+    lineNumber = p_item->data(0, Qt::UserRole).toInt();
   } else {
     itemPath = p_item->data(0, Qt::UserRole).toString();
     // Use the first line number if there is any.
     if (p_item->childCount() > 0) {
       auto childItem = p_item->child(0);
-      paras->m_lineNumber = childItem->data(0, Qt::UserRole).toInt();
+      lineNumber = childItem->data(0, Qt::UserRole).toInt();
     }
   }
 
-  paras->m_searchToken = m_searchTokenOfSession;
-  emit VNoteX::getInst().openFileRequested(itemPath, paras);
+  FileOpenSettings settings;
+  if (lineNumber > -1) {
+    settings.m_lineNumber = lineNumber;
+  }
+
+  if (m_searchTokenOfSession) {
+    auto patterns = m_searchTokenOfSession->toPatterns();
+    settings.m_searchHighlight.m_patterns = patterns.first;
+    settings.m_searchHighlight.m_options = patterns.second;
+    settings.m_searchHighlight.m_currentMatchLine = lineNumber;
+    settings.m_searchHighlight.m_isValid = true;
+  }
+
+  NodeIdentifier nodeId;
+  nodeId.relativePath = itemPath;
+
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (bufferSvc) {
+    bufferSvc->openBuffer(nodeId, settings);
+  }
 
   emit itemActivated(true, false);
 }

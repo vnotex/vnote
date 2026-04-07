@@ -13,6 +13,7 @@ class QTreeWidgetItem;
 class QTimer;
 
 namespace vnotex {
+class ServiceLocator;
 class Searcher;
 class ISearchInfoProvider;
 struct ComplexLocation;
@@ -21,8 +22,8 @@ class SearchToken;
 class FindUnitedEntry : public IUnitedEntry {
   Q_OBJECT
 public:
-  FindUnitedEntry(const QSharedPointer<ISearchInfoProvider> &p_provider, UnitedEntryMgr *p_mgr,
-                  QObject *p_parent = nullptr);
+  FindUnitedEntry(ServiceLocator &p_services, const QSharedPointer<ISearchInfoProvider> &p_provider,
+                  UnitedEntryMgr *p_mgr, QObject *p_parent = nullptr);
 
   void stop() Q_DECL_OVERRIDE;
 
@@ -37,6 +38,8 @@ protected:
       Q_DECL_OVERRIDE;
 
 private:
+  ServiceLocator &m_services;
+
   QString getHelpText() const;
 
   QSharedPointer<SearchOption> collectOptions() const;
