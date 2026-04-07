@@ -2,6 +2,7 @@ target_sources(vnote PRIVATE
     inodelistmodel.h
     notebooknodemodel.cpp notebooknodemodel.h
     notebooknodeproxymodel.cpp notebooknodeproxymodel.h
+    treefilterproxymodel.cpp treefilterproxymodel.h
     searchresultmodel.cpp searchresultmodel.h
     outlinemodel.cpp outlinemodel.h
     tagfilemodel.cpp tagfilemodel.h

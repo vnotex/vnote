@@ -44,6 +44,9 @@ public:
   void decreaseExpandLevel();
   int getExpandLevel() const;
 
+  // Apply current expand level to the view.
+  void applyExpandLevel();
+
   // Section number toggle.
   void toggleSectionNumber();
   bool isSectionNumberEnabled() const;
@@ -59,9 +62,6 @@ private:
   // Get the base heading level (level of the first heading in the current
   // outline). Returns 1 if no outline or empty.
   int getBaseLevel() const;
-
-  // Apply current expand level to the view.
-  void applyExpandLevel();
 
   // Update the model with the current provider's outline data.
   void updateModelFromProvider();

@@ -8,6 +8,7 @@
 
 #include <gui/services/themeservice.h>
 
+#include "lineedit.h"
 #include "widgetsfactory.h"
 #include <gui/utils/iconutils.h>
 
@@ -43,7 +44,9 @@ void TitleBar::setupUI(const QString &p_title, bool p_hasInfoLabel,
     mainLayout->addWidget(titleLabel);
   }
 
-  mainLayout->addStretch();
+  m_spacer = new QWidget(this);
+  m_spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  mainLayout->addWidget(m_spacer);
 
   {
     m_buttonToolBar = new QToolBar(this);
@@ -92,6 +95,29 @@ void TitleBar::setupActionButtons(TitleBar::Actions p_actionFlags) {
     connect(btn, &QToolButton::triggered, this, []() {
       // TODO.
     });
+  }
+
+  if (p_actionFlags & Action::Search) {
+    // Create search edit (hidden initially).
+    m_searchEdit = new LineEdit(this);
+    m_searchEdit->setPlaceholderText(tr("Search"));
+    m_searchEdit->setClearButtonEnabled(true);
+    m_searchEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_searchEdit->setVisible(false);
+
+    auto *mainLayout = qobject_cast<QHBoxLayout *>(layout());
+    Q_ASSERT(mainLayout);
+    // Insert after title label (index 0), before spacer (index 1).
+    mainLayout->insertWidget(1, m_searchEdit);
+
+    connect(m_searchEdit, &LineEdit::textChanged, this, &TitleBar::searchTextChanged);
+
+    // Create toggle button. Checkable must be set on the QAction (not the
+    // QToolButton) because setDefaultAction() synchronises button properties
+    // from the action, overriding any direct button state.
+    m_searchButton = addActionButton(QStringLiteral("search.svg"), tr("Search"));
+    m_searchButton->defaultAction()->setCheckable(true);
+    connect(m_searchButton->defaultAction(), &QAction::toggled, this, &TitleBar::setSearchBoxVisible);
   }
 }
 
@@ -195,4 +221,23 @@ void TitleBar::setInfoLabel(const QString &p_info) {
 void TitleBar::setActionButtonsAlwaysShown(bool p_shown) {
   m_actionButtonsAlwaysShown = p_shown;
   setActionButtonsVisible(m_actionButtonsForcedShown || m_actionButtonsAlwaysShown);
+}
+
+void TitleBar::setSearchPlaceholder(const QString &p_placeholderText) {
+  if (m_searchEdit) {
+    m_searchEdit->setPlaceholderText(p_placeholderText);
+  }
+}
+
+void TitleBar::setSearchBoxVisible(bool p_visible) {
+  if (!m_searchEdit) {
+    return;
+  }
+  m_searchEdit->setVisible(p_visible);
+  m_spacer->setVisible(!p_visible);
+  if (p_visible) {
+    m_searchEdit->setFocus();
+  } else {
+    m_searchEdit->clear();
+  }
 }

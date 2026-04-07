@@ -1,6 +1,7 @@
 #include "tagview.h"
 
 #include <QItemSelectionModel>
+#include <QSortFilterProxyModel>
 
 #include <models/tagmodel.h>
 
@@ -71,18 +72,24 @@ void TagView::selectAndScrollToTag(const QString &p_tagName) {
     return;
   }
 
-  auto *tagModel = qobject_cast<TagModel *>(model());
+  auto *proxy = qobject_cast<QSortFilterProxyModel *>(model());
+  auto *tagModel = qobject_cast<TagModel *>(proxy ? proxy->sourceModel() : model());
   if (!tagModel) {
     return;
   }
 
-  QModelIndex idx = tagModel->indexFromTagName(p_tagName);
-  if (!idx.isValid()) {
+  QModelIndex srcIdx = tagModel->indexFromTagName(p_tagName);
+  if (!srcIdx.isValid()) {
+    return;
+  }
+
+  QModelIndex viewIdx = proxy ? proxy->mapFromSource(srcIdx) : srcIdx;
+  if (!viewIdx.isValid()) {
     return;
   }
 
   // Expand all ancestors so the tag is visible.
-  QModelIndex ancestor = idx.parent();
+  QModelIndex ancestor = viewIdx.parent();
   while (ancestor.isValid()) {
     if (!isExpanded(ancestor)) {
       expand(ancestor);
@@ -90,7 +97,6 @@ void TagView::selectAndScrollToTag(const QString &p_tagName) {
     ancestor = ancestor.parent();
   }
 
-  // Select and scroll.
-  selectionModel()->setCurrentIndex(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-  scrollTo(idx, QAbstractItemView::EnsureVisible);
+  selectionModel()->setCurrentIndex(viewIdx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+  scrollTo(viewIdx, QAbstractItemView::EnsureVisible);
 }

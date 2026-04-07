@@ -13,6 +13,7 @@ class OutlineProvider;
 class OutlineView;
 class ServiceLocator;
 class TitleBar;
+class TreeFilterProxyModel;
 template <typename T> class NavigationModeViewWrapper;
 
 class OutlineViewer : public QFrame {
@@ -45,6 +46,9 @@ private:
 
   // Owned by layout (child widget).
   OutlineView *m_outlineView = nullptr;
+
+  // Proxy model for search filtering (child QObject).
+  TreeFilterProxyModel *m_proxyModel = nullptr;
 
   QScopedPointer<NavigationModeViewWrapper<OutlineView>> m_outlineNavWrapper;
 };

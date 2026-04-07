@@ -9,6 +9,7 @@
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <models/outlinemodel.h>
+#include <models/treefilterproxymodel.h>
 #include <utils/widgetutils.h>
 #include <views/outlineview.h>
 
@@ -32,8 +33,22 @@ void OutlineViewer::setupUI(const QString &p_title) {
   // because setupTitleBar() reads m_controller->isSectionNumberEnabled().
   m_outlineView = new OutlineView(this);
   m_controller = new OutlineController(m_services, this);
-  m_outlineView->setModel(m_controller->model());
+  m_proxyModel = new TreeFilterProxyModel(this);
+  m_proxyModel->setSourceModel(m_controller->model());
+  m_outlineView->setModel(m_proxyModel);
   m_controller->setView(m_outlineView);
+
+  connect(m_proxyModel, &QAbstractItemModel::layoutChanged, this, [this]() {
+    m_controller->applyExpandLevel();
+  });
+
+  connect(m_proxyModel, &TreeFilterProxyModel::filterActiveChanged, this, [this](bool p_active) {
+    if (p_active) {
+      m_outlineView->expandAll();
+    } else {
+      m_controller->applyExpandLevel();
+    }
+  });
 
   {
     auto titleBar = setupTitleBar(p_title, this);
@@ -58,7 +73,7 @@ void OutlineViewer::setupUI(const QString &p_title) {
 TitleBar *OutlineViewer::setupTitleBar(const QString &p_title, QWidget *p_parent) {
   auto *themeService = m_services.get<ThemeService>();
   auto titleBar =
-      new TitleBar(themeService, p_title, false, TitleBar::Action::Menu, p_parent);
+      new TitleBar(themeService, p_title, false, TitleBar::Action::Menu | TitleBar::Action::Search, p_parent);
   titleBar->setActionButtonsAlwaysShown(true);
 
   auto decreaseBtn = titleBar->addActionButton(
@@ -87,6 +102,10 @@ TitleBar *OutlineViewer::setupTitleBar(const QString &p_title, QWidget *p_parent
 
   connect(m_controller, &OutlineController::expandLevelChanged,
           this, &OutlineViewer::showLevel);
+
+  titleBar->setSearchPlaceholder(tr("Search headings"));
+  connect(titleBar, &TitleBar::searchTextChanged,
+          m_proxyModel, &TreeFilterProxyModel::setFilterText);
 
   return titleBar;
 }

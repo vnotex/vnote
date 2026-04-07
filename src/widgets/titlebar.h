@@ -11,12 +11,13 @@ class QLabel;
 
 namespace vnotex {
 
+class LineEdit;
 class ThemeService;
 
 class TitleBar : public QFrame {
   Q_OBJECT
 public:
-  enum Action { None = 0, Settings = 0x1, Menu = 0x2 };
+  enum Action { None = 0, Settings = 0x1, Menu = 0x2, Search = 0x4 };
   Q_DECLARE_FLAGS(Actions, Action)
 
   TitleBar(ThemeService *p_themeService, const QString &p_title, bool p_hasInfoLabel,
@@ -50,6 +51,11 @@ public:
 
   void setActionButtonsAlwaysShown(bool p_shown);
 
+  void setSearchPlaceholder(const QString &p_placeholderText);
+
+signals:
+  void searchTextChanged(const QString &p_text);
+
 protected:
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
   void enterEvent(QEvent *p_event) Q_DECL_OVERRIDE;
@@ -65,6 +71,8 @@ private:
   void setupActionButtons(TitleBar::Actions p_actionFlags);
 
   void setActionButtonsVisible(bool p_visible);
+
+  void setSearchBoxVisible(bool p_visible);
 
   QToolButton *newActionButton(const QString &p_iconName, const QString &p_text,
                                       QWidget *p_parent);
@@ -84,6 +92,12 @@ private:
   QMenu *m_menu = nullptr;
 
   ThemeService *m_themeService = nullptr;
+
+  LineEdit *m_searchEdit = nullptr;
+
+  QWidget *m_spacer = nullptr;
+
+  QToolButton *m_searchButton = nullptr;
 
   static const char *c_titleProp;
 

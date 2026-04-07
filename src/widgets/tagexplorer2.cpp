@@ -21,6 +21,7 @@
 #include <models/inodelistmodel.h>
 #include <models/tagfilemodel.h>
 #include <models/tagmodel.h>
+#include <models/treefilterproxymodel.h>
 #include <views/filelistview.h>
 #include <views/filenodedelegate.h>
 #include <views/tagview.h>
@@ -45,8 +46,10 @@ void TagExplorer2::setupUI() {
 
   // MVC components
   m_tagModel = new TagModel(m_services, this);
+  m_tagProxyModel = new TreeFilterProxyModel(this);
+  m_tagProxyModel->setSourceModel(m_tagModel);
   m_tagView = new TagView(this);
-  m_tagView->setModel(m_tagModel);
+  m_tagView->setModel(m_tagProxyModel);
   m_tagController = new TagController(m_services, this);
 
   // File list panel
@@ -175,13 +178,24 @@ void TagExplorer2::setupUI() {
   connect(m_tagView, &TagView::contextMenuRequested,
           this, &TagExplorer2::onContextMenuRequested);
 
+  // 9. Search filtering on tag tree
+  connect(m_titleBar, &TitleBar::searchTextChanged,
+          m_tagProxyModel, &TreeFilterProxyModel::setFilterText);
+
+  // 10. Auto-expand/collapse on filter activation
+  connect(m_tagProxyModel, &TreeFilterProxyModel::filterActiveChanged, this, [this](bool p_active) {
+    Q_UNUSED(p_active);
+    m_tagView->expandAll();
+  });
+
   setFocusProxy(m_tagView);
 }
 
 void TagExplorer2::setupTitleBar() {
   m_titleBar =
-      new TitleBar(m_services.get<ThemeService>(), QString(), false, TitleBar::Action::Menu, this);
+      new TitleBar(m_services.get<ThemeService>(), QString(), false, TitleBar::Action::Menu | TitleBar::Action::Search, this);
   m_titleBar->setActionButtonsAlwaysShown(true);
+  m_titleBar->setSearchPlaceholder(tr("Search tags"));
 
   // + button for New Tag
   auto *newTagBtn =

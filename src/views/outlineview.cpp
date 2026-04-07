@@ -1,6 +1,7 @@
 #include "outlineview.h"
 
 #include <QItemSelectionModel>
+#include <QSortFilterProxyModel>
 
 #include <models/outlinemodel.h>
 
@@ -63,19 +64,26 @@ void OutlineView::activateHeading(const QModelIndex &p_index) {
 }
 
 void OutlineView::highlightHeading(int p_headingIndex) {
-  auto *outlineModel = qobject_cast<OutlineModel *>(model());
+  auto *proxy = qobject_cast<QSortFilterProxyModel *>(model());
+  auto *outlineModel =
+      qobject_cast<OutlineModel *>(proxy ? proxy->sourceModel() : model());
   if (!outlineModel) {
     return;
   }
 
-  QModelIndex idx = outlineModel->indexForHeadingIndex(p_headingIndex);
-  if (!idx.isValid()) {
+  QModelIndex srcIdx = outlineModel->indexForHeadingIndex(p_headingIndex);
+  if (!srcIdx.isValid()) {
+    return;
+  }
+
+  QModelIndex viewIdx = proxy ? proxy->mapFromSource(srcIdx) : srcIdx;
+  if (!viewIdx.isValid()) {
     return;
   }
 
   m_muted = true;
-  setCurrentIndex(idx);
-  scrollTo(idx);
+  setCurrentIndex(viewIdx);
+  scrollTo(viewIdx);
   m_muted = false;
 }
 

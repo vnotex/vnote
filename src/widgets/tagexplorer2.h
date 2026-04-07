@@ -19,6 +19,7 @@ class TagController;
 class TagFileModel;
 class FileListView;
 class FileNodeDelegate;
+class TreeFilterProxyModel;
 class NavigationMode;
 template <typename T> class NavigationModeViewWrapper;
 
@@ -60,6 +61,7 @@ private:
   TitleBar *m_titleBar = nullptr;
   QSplitter *m_splitter = nullptr;
   TagModel *m_tagModel = nullptr;
+  TreeFilterProxyModel *m_tagProxyModel = nullptr;
   TagView *m_tagView = nullptr;
   TagController *m_tagController = nullptr;
 
