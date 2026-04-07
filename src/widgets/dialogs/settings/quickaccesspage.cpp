@@ -3,7 +3,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
-#include <QFileDialog>
+#include <QDir>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -126,20 +126,15 @@ void QuickAccessPage::setupUI() {
         const QString label(tr("Folder:"));
         m_quickNoteFolderPathInput =
             new LocationInputWithBrowseButton(m_quickNoteInfoGroupBox);
+        m_quickNoteFolderPathInput->setBrowseType(
+            LocationInputWithBrowseButton::Folder,
+            tr("Select Quick Note Folder"));
         m_quickNoteFolderPathInput->setPlaceholderText(
             tr("Empty to use current explored folder dynamically"));
         infoLayout->addRow(label, m_quickNoteFolderPathInput);
         addSearchItem(label, m_quickNoteFolderPathInput);
         connect(m_quickNoteFolderPathInput, &LocationInputWithBrowseButton::textChanged, this,
                 &QuickAccessPage::pageIsChanged);
-        connect(m_quickNoteFolderPathInput, &LocationInputWithBrowseButton::clicked, this,
-                [this]() {
-                  auto folderPath = QFileDialog::getExistingDirectory(
-                      this, tr("Select Quick Note Folder"), getDefaultQuickNoteFolderPath());
-                  if (!folderPath.isEmpty()) {
-                    m_quickNoteFolderPathInput->setText(folderPath);
-                  }
-                });
       }
 
       {

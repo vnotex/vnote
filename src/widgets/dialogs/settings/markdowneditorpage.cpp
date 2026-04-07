@@ -3,7 +3,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
-#include <QFileDialog>
+#include <QFileInfo>
 #include <QFont>
 #include <QFontComboBox>
 #include <QHBoxLayout>
@@ -546,13 +546,10 @@ void MarkdownEditorPage::setupGeneralGroup() {
 
     m_plantUmlJarFileInput = new LocationInputWithBrowseButton(this);
     m_plantUmlJarFileInput->setToolTip(tr("Local JAR file to render PlantUml graphs"));
-    connect(m_plantUmlJarFileInput, &LocationInputWithBrowseButton::clicked, this, [this]() {
-      auto filePath = QFileDialog::getOpenFileName(this, tr("Select PlantUml JAR File"),
-                                                   QDir::homePath(), "PlantUml JAR (*.jar)");
-      if (!filePath.isEmpty()) {
-        m_plantUmlJarFileInput->setText(filePath);
-      }
-    });
+    m_plantUmlJarFileInput->setBrowseType(
+        LocationInputWithBrowseButton::File,
+        tr("Select PlantUml JAR File"),
+        QStringLiteral("PlantUml JAR (*.jar)"));
     jarLayout->addWidget(m_plantUmlJarFileInput, 1);
 
     auto *testBtn = new QPushButton(tr("Test"), this);
@@ -620,13 +617,9 @@ void MarkdownEditorPage::setupGeneralGroup() {
 
     m_graphvizFileInput = new LocationInputWithBrowseButton(this);
     m_graphvizFileInput->setToolTip(tr("Local executable file to render Graphviz graphs"));
-    connect(m_graphvizFileInput, &LocationInputWithBrowseButton::clicked, this, [this]() {
-      auto filePath = QFileDialog::getOpenFileName(this, tr("Select Graphviz Executable File"),
-                                                   QDir::homePath());
-      if (!filePath.isEmpty()) {
-        m_graphvizFileInput->setText(filePath);
-      }
-    });
+    m_graphvizFileInput->setBrowseType(
+        LocationInputWithBrowseButton::File,
+        tr("Select Graphviz Executable File"));
     fileLayout->addWidget(m_graphvizFileInput, 1);
 
     auto *testBtn = new QPushButton(tr("Test"), this);

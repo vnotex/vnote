@@ -34,8 +34,6 @@ protected:
 private slots:
   void handleRootFolderPathChanged();
 
-  void browseRootFolder();
-
 private:
   void setupUI();
 

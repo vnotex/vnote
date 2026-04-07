@@ -1,8 +1,6 @@
 #include "newnotebookdialog2.h"
 
 #include <QComboBox>
-#include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QPlainTextEdit>
@@ -49,13 +47,20 @@ void NewNotebookDialog2::setupUI() {
   layout->addRow(tr("Description:"), m_descriptionEdit);
 
   // Root folder input with browse button.
-  m_rootFolderInput = new LocationInputWithBrowseButton(mainWidget);
+  // Get default path from session config.
+  QString defaultRootPath;
+  {
+    auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
+    defaultRootPath = sessionConfig.getNewNotebookDefaultRootFolderPath();
+  }
+  m_rootFolderInput = new LocationInputWithBrowseButton(mainWidget, defaultRootPath);
+  m_rootFolderInput->setBrowseType(
+      LocationInputWithBrowseButton::Folder,
+      tr("Select Notebook Root Folder"));
   m_rootFolderInput->setPlaceholderText(tr("Select a folder as notebook root"));
   m_rootFolderInput->setToolTip(
       tr("Root folder of the notebook.\n"
          "A new notebook requires an empty folder or a non-existent path (will be created)."));
-  connect(m_rootFolderInput, &LocationInputWithBrowseButton::clicked, this,
-          &NewNotebookDialog2::browseRootFolder);
   connect(m_rootFolderInput, &LocationInputWithBrowseButton::textChanged, this,
           &NewNotebookDialog2::handleRootFolderPathChanged);
   layout->addRow(tr("Root Folder:"), m_rootFolderInput);
@@ -83,26 +88,6 @@ void NewNotebookDialog2::handleRootFolderPathChanged() {
     if (!rootPath.isEmpty()) {
       m_nameEdit->setText(PathUtils::dirName(rootPath));
     }
-  }
-}
-
-void NewNotebookDialog2::browseRootFolder() {
-  QString startPath = m_rootFolderInput->text().trimmed();
-  if (startPath.isEmpty()) {
-    // Use last used path from session config, fallback to home.
-    auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
-    startPath = sessionConfig.getNewNotebookDefaultRootFolderPath();
-    if (startPath.isEmpty()) {
-      startPath = QDir::homePath();
-    }
-  }
-
-  QString dir = QFileDialog::getExistingDirectory(
-      this, tr("Select Notebook Root Folder"), startPath,
-      QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-  if (!dir.isEmpty()) {
-    m_rootFolderInput->setText(dir);
   }
 }
 

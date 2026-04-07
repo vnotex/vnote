@@ -174,22 +174,11 @@ QGroupBox *ExportDialog::setupTargetGroup(QWidget *p_parent) {
   }
 
   {
-    m_outputDirInput = new LocationInputWithBrowseButton(box);
+    m_outputDirInput = new LocationInputWithBrowseButton(box, getDefaultOutputDir());
+    m_outputDirInput->setBrowseType(
+        LocationInputWithBrowseButton::Folder,
+        tr("Select Export Output Directory"));
     layout->addRow(tr("Output directory:"), m_outputDirInput);
-    connect(m_outputDirInput, &LocationInputWithBrowseButton::clicked, this, [this]() {
-      QString initPath = getOutputDir();
-      if (!QFileInfo::exists(initPath)) {
-        initPath = getDefaultOutputDir();
-      }
-
-      QString dirPath = QFileDialog::getExistingDirectory(
-          this, tr("Select Export Output Directory"), initPath,
-          QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-      if (!dirPath.isEmpty()) {
-        m_outputDirInput->setText(dirPath);
-      }
-    });
   }
 
   return box;
