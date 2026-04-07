@@ -1037,8 +1037,14 @@ void MarkdownViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settin
   }
 
   if (p_settings.m_lineNumber >= 0) {
+    // In read mode, skip scrollToPosition when findText will handle scrolling
+    // to the current match. The JS findText already calls scrollIntoView() on
+    // the matched node, and scrollToPosition defers by 300ms which creates a
+    // race condition that overrides the findText scroll.
+    const bool searchWillScroll = p_settings.m_searchHighlight.m_isValid
+        && p_settings.m_searchHighlight.m_currentMatchLine >= 0;
     if (isReadMode()) {
-      if (adapter()) {
+      if (adapter() && !searchWillScroll) {
         adapter()->scrollToPosition(
             MarkdownViewerAdapter::Position(p_settings.m_lineNumber, QString()));
       }
