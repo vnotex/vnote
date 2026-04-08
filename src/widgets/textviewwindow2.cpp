@@ -48,10 +48,9 @@ void TextViewWindow2::setupUI() {
   // Central widget: text editor.
   {
     m_editor = new TextEditor(
-        TextViewWindowController::buildTextEditorConfig(
-            editorConfig, textEditorConfig, themeFile, syntaxTheme, scaleFactor),
-        TextViewWindowController::buildTextEditorParameters(editorConfig, textEditorConfig),
-        this);
+        TextViewWindowController::buildTextEditorConfig(editorConfig, textEditorConfig, themeFile,
+                                                        syntaxTheme, scaleFactor),
+        TextViewWindowController::buildTextEditorParameters(editorConfig, textEditorConfig), this);
     setCentralWidget(m_editor);
 
     updateEditorFromConfig();
@@ -86,8 +85,7 @@ void TextViewWindow2::setupToolBar() {
 }
 
 void TextViewWindow2::handlePrint() {
-  auto printer = PrintUtils::promptForPrint(
-      m_editor->getTextEdit()->hasSelection(), this);
+  auto printer = PrintUtils::promptForPrint(m_editor->getTextEdit()->hasSelection(), this);
   if (printer) {
     m_editor->getTextEdit()->print(printer.data());
   }
@@ -95,8 +93,7 @@ void TextViewWindow2::handlePrint() {
 
 void TextViewWindow2::connectEditorSignals() {
   // Forward focus signal.
-  connect(m_editor, &vte::VTextEditor::focusIn, this,
-          [this]() { emit focused(this); });
+  connect(m_editor, &vte::VTextEditor::focusIn, this, [this]() { emit focused(this); });
 
   // Content change: use the new auto-save dirty flag approach.
   // Instead of writing content to buffer on every keystroke,
@@ -107,8 +104,8 @@ void TextViewWindow2::connectEditorSignals() {
     }
   });
 
-  connect(m_editor, &TextEditor::applySnippetRequested,
-          this, QOverload<>::of(&TextViewWindow2::applySnippet));
+  connect(m_editor, &TextEditor::applySnippetRequested, this,
+          QOverload<>::of(&TextViewWindow2::applySnippet));
 }
 
 void TextViewWindow2::syncEditorFromBuffer() {
@@ -132,7 +129,12 @@ void TextViewWindow2::syncEditorFromBuffer() {
   m_propagateEditorToBuffer = old;
 }
 
-QString TextViewWindow2::getLatestContent() const { return m_editor->getText(); }
+QString TextViewWindow2::getLatestContent() const {
+  if (m_editor) {
+    return m_editor->getText();
+  }
+  return QString::fromUtf8(getBuffer().getContentRaw());
+}
 
 void TextViewWindow2::setModified(bool p_modified) { m_editor->setModified(p_modified); }
 
@@ -265,13 +267,9 @@ void TextViewWindow2::applySnippet(const QString &p_name) {
   TextViewWindowHelper::applySnippetByName2(this, p_name);
 }
 
-void TextViewWindow2::applySnippet() {
-  TextViewWindowHelper::applySnippetPrompt2(this);
-}
+void TextViewWindow2::applySnippet() { TextViewWindowHelper::applySnippetPrompt2(this); }
 
-void TextViewWindow2::clearHighlights() {
-  TextViewWindowHelper::clearSearchHighlights(this);
-}
+void TextViewWindow2::clearHighlights() { TextViewWindowHelper::clearSearchHighlights(this); }
 
 void TextViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
   if (p_settings.m_lineNumber >= 0 && m_editor) {
@@ -281,10 +279,9 @@ void TextViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) 
   if (p_settings.m_searchHighlight.m_isValid && m_editor) {
     const auto result = m_editor->findText(
         p_settings.m_searchHighlight.m_patterns,
-        TextViewWindowHelper::toEditorFindFlags(p_settings.m_searchHighlight.m_options),
-        0, -1,
+        TextViewWindowHelper::toEditorFindFlags(p_settings.m_searchHighlight.m_options), 0, -1,
         p_settings.m_searchHighlight.m_currentMatchLine);
-    showFindResult(p_settings.m_searchHighlight.m_patterns,
-                   result.m_totalMatches, result.m_currentMatchIndex);
+    showFindResult(p_settings.m_searchHighlight.m_patterns, result.m_totalMatches,
+                   result.m_currentMatchIndex);
   }
 }

@@ -19,6 +19,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QStackedLayout>
+#include <QStandardItemModel>
 #include <QTextCursor>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -209,11 +210,15 @@ void ExportDialog2::setupUI() {
     auto source = static_cast<ExportSource>(i);
     m_sourceCombo->addItem(sourceText(source, m_context), i);
     const int idx = m_sourceCombo->count() - 1;
-    auto item = m_sourceCombo->model()->index(idx, 0);
-    m_sourceCombo->model()->setData(item, 1, Qt::UserRole - 1);
 
     if (!sourceAvailable(source, m_context)) {
-      m_sourceCombo->model()->setData(item, 0, Qt::UserRole - 1);
+      // Disable the item via QStandardItem flags (the proper Qt API).
+      auto *stdModel = qobject_cast<QStandardItemModel *>(m_sourceCombo->model());
+      if (stdModel) {
+        if (auto *stdItem = stdModel->item(idx)) {
+          stdItem->setEnabled(false);
+        }
+      }
       m_sourceCombo->setItemData(idx, sourceUnavailableReason(source), Qt::ToolTipRole);
     }
   }
@@ -475,10 +480,9 @@ void ExportDialog2::loadConfig() {
   restoreFields(option);
 
   const int presetIdx = m_sourceCombo->findData(static_cast<int>(m_context.presetSource));
-  if (presetIdx >= 0 &&
-      m_sourceCombo->model()
-              ->data(m_sourceCombo->model()->index(presetIdx, 0), Qt::UserRole - 1)
-              .toInt() == 1) {
+  if (presetIdx >= 0 && m_sourceCombo->model()
+                            ->flags(m_sourceCombo->model()->index(presetIdx, 0))
+                            .testFlag(Qt::ItemIsEnabled)) {
     m_sourceCombo->setCurrentIndex(presetIdx);
   }
 }
@@ -491,8 +495,8 @@ void ExportDialog2::saveConfig() {
 void ExportDialog2::restoreFields(const ExportOption &p_option) {
   int idx = m_sourceCombo->findData(static_cast<int>(p_option.m_source));
   if (idx >= 0 && m_sourceCombo->model()
-                          ->data(m_sourceCombo->model()->index(idx, 0), Qt::UserRole - 1)
-                          .toInt() == 1) {
+                      ->flags(m_sourceCombo->model()->index(idx, 0))
+                      .testFlag(Qt::ItemIsEnabled)) {
     m_sourceCombo->setCurrentIndex(idx);
   }
 
