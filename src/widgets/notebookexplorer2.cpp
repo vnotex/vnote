@@ -428,6 +428,8 @@ void NotebookExplorer2::setupCombinedMode() {
   connect(explorer, &CombinedNodeExplorer::infoMessage, this, &NotebookExplorer2::onInfoMessage);
   connect(explorer, &CombinedNodeExplorer::nodeActivated, this,
           &NotebookExplorer2::onNodeActivated);
+  connect(explorer, &CombinedNodeExplorer::exportNodeRequested, this,
+          &NotebookExplorer2::exportNodeRequested);
 
   m_nodeExplorer = explorer;
 }
@@ -456,6 +458,8 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   connect(explorer, &TwoColumnsNodeExplorer::infoMessage, this, &NotebookExplorer2::onInfoMessage);
   connect(explorer, &TwoColumnsNodeExplorer::nodeActivated, this,
           &NotebookExplorer2::onNodeActivated);
+  connect(explorer, &TwoColumnsNodeExplorer::exportNodeRequested, this,
+          &NotebookExplorer2::exportNodeRequested);
 
   m_nodeExplorer = explorer;
 }

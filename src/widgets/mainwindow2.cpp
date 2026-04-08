@@ -1,40 +1,45 @@
 #include "mainwindow2.h"
 
 #include <QCloseEvent>
+#include <QDialog>
 #include <QDockWidget>
+#include <QFileInfo>
 #include <QJsonDocument>
-#include <QToolBar>
-#include <QTimer>
-#include <QWidget>
 #include <QSystemTrayIcon>
+#include <QTimer>
+#include <QToolBar>
+#include <QWidget>
 
 #include "constants.h"
-#include "titletoolbar.h"
 #include "systemtrayhelper.h"
+#include "titletoolbar.h"
 #include "toolbarhelper2.h"
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
+#include <core/exportcontext.h>
 #include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
+#include <core/services/notebookcoreservice.h>
 #include <core/sessionconfig.h>
 #include <gui/services/navigationmodeservice.h>
 
+#include <controllers/searchcontroller.h>
+#include <controllers/viewareacontroller.h>
 #include <qwebengineview.h>
+#include <views/inodeexplorer.h>
+#include <widgets/dialogs/exportdialog2.h>
+#include <widgets/locationlist2.h>
+#include <widgets/messageboxhelper.h>
 #include <widgets/notebookexplorer2.h>
 #include <widgets/notebookselector2.h>
 #include <widgets/outlineviewer.h>
-#include <widgets/tagexplorer2.h>
-#include <widgets/snippetpanel2.h>
 #include <widgets/searchpanel2.h>
-#include <widgets/locationlist2.h>
+#include <widgets/snippetpanel2.h>
+#include <widgets/tagexplorer2.h>
 #include <widgets/viewarea2.h>
 #include <widgets/viewwindow2.h>
-#include <widgets/messageboxhelper.h>
-#include <views/inodeexplorer.h>
-#include <controllers/viewareacontroller.h>
-#include <controllers/searchcontroller.h>
 
 using namespace vnotex;
 
@@ -311,6 +316,51 @@ void MainWindow2::setupNotebookExplorer() {
           &NotebookExplorer2::importFile);
   connect(this, &MainWindow2::importFolderRequested, m_notebookExplorer,
           &NotebookExplorer2::importFolder);
+  connect(this, &MainWindow2::exportRequested, this, &MainWindow2::exportNotes);
+}
+
+void MainWindow2::exportNotes() {
+  // Single-instance enforcement.
+  if (m_exportDialog) {
+    m_exportDialog->activateWindow();
+    m_exportDialog->raise();
+    return;
+  }
+
+  // Build ExportContext from current state.
+  ExportContext context;
+
+  // Get current ViewWindow2 (may be null if no file is open).
+  auto *viewWin = m_viewArea->getCurrentViewWindow();
+  if (viewWin) {
+    context.bufferContent = viewWin->getLatestContent();
+    context.bufferName = viewWin->getName();
+    const auto &buffer = viewWin->getBuffer();
+    context.currentNodeId = buffer.nodeId();
+  }
+
+  // Get notebook/folder context from NotebookExplorer2.
+  context.notebookId = m_notebookExplorer->currentNotebookId();
+  context.currentFolderId = m_notebookExplorer->currentExploredFolderId();
+
+  // If no explicit current node from ViewWindow2, use explorer's selected node.
+  if (!context.currentNodeId.isValid()) {
+    context.currentNodeId = m_notebookExplorer->currentExploredNodeId();
+  }
+
+  // Default source for toolbar is CurrentBuffer (if available).
+  context.presetSource = viewWin ? ExportSource::CurrentBuffer : ExportSource::CurrentNote;
+
+  // Create non-modal ExportDialog2.
+  m_exportDialog = new ExportDialog2(m_serviceLocator, context, this);
+
+  // Cleanup on close.
+  connect(m_exportDialog, &QDialog::finished, this, [this]() {
+    m_exportDialog->deleteLater();
+    m_exportDialog = nullptr;
+  });
+
+  m_exportDialog->show();
 }
 
 void MainWindow2::setupViewArea() {
@@ -332,9 +382,7 @@ void MainWindow2::setupSnippetExplorer() {
   m_snippetPanel->setObjectName("SnippetPanel2.vnotex");
 }
 
-void MainWindow2::setupSearchPanel() {
-  m_searchPanel = new SearchPanel2(m_serviceLocator, this);
-}
+void MainWindow2::setupSearchPanel() { m_searchPanel = new SearchPanel2(m_serviceLocator, this); }
 
 void MainWindow2::setupLocationList() {
   m_locationList = new LocationList2(m_serviceLocator, this);
@@ -360,8 +408,8 @@ void MainWindow2::setupDocks() {
   m_searchPanel->getController()->setModel(m_locationList->getModel());
 
   // Wire SearchController node activation to buffer opening.
-  connect(m_searchPanel->getController(), &SearchController::nodeActivated,
-          this, [this](const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings) {
+  connect(m_searchPanel->getController(), &SearchController::nodeActivated, this,
+          [this](const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings) {
             auto *bufferSvc = m_serviceLocator.get<BufferService>();
             if (bufferSvc) {
               bufferSvc->openBuffer(p_nodeId, p_settings);
@@ -369,45 +417,91 @@ void MainWindow2::setupDocks() {
           });
 
   // Wire notebook changes to SearchPanel2.
-  connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged,
-          m_searchPanel, &SearchPanel2::setCurrentNotebookId);
+  connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged, m_searchPanel,
+          &SearchPanel2::setCurrentNotebookId);
 
   // Wire folder context to SearchPanel2.
-  connect(m_notebookExplorer, &NotebookExplorer2::currentExploredFolderChanged,
-          m_searchPanel, &SearchPanel2::setCurrentFolderId);
+  connect(m_notebookExplorer, &NotebookExplorer2::currentExploredFolderChanged, m_searchPanel,
+          &SearchPanel2::setCurrentFolderId);
+
+  // Wire context menu export to ExportDialog2.
+  connect(m_notebookExplorer, &NotebookExplorer2::exportNodeRequested, this,
+          [this](const NodeIdentifier &p_nodeId) {
+            auto *notebookService = m_serviceLocator.get<NotebookCoreService>();
+            bool isFolder = p_nodeId.relativePath.isEmpty();
+            if (!isFolder && notebookService) {
+              isFolder =
+                  !notebookService->getFolderConfig(p_nodeId.notebookId, p_nodeId.relativePath)
+                       .isEmpty();
+            }
+
+            ExportContext context;
+            context.currentNodeId = p_nodeId;
+            context.notebookId = p_nodeId.notebookId;
+
+            if (isFolder) {
+              context.currentFolderId = p_nodeId;
+              context.presetSource = ExportSource::CurrentFolder;
+            } else {
+              const auto parentPath = QFileInfo(p_nodeId.relativePath).path();
+              context.currentFolderId = NodeIdentifier{
+                  p_nodeId.notebookId,
+                  parentPath == QStringLiteral(".") ? QString() : parentPath,
+              };
+              context.presetSource = ExportSource::CurrentNote;
+            }
+
+            auto *viewWin = m_viewArea->getCurrentViewWindow();
+            if (viewWin) {
+              const auto &buffer = viewWin->getBuffer();
+              if (buffer.nodeId() == p_nodeId) {
+                context.bufferContent = viewWin->getLatestContent();
+                context.bufferName = viewWin->getName();
+              }
+            }
+
+            if (m_exportDialog) {
+              m_exportDialog->close();
+            }
+
+            m_exportDialog = new ExportDialog2(m_serviceLocator, context, this);
+            connect(m_exportDialog, &QDialog::finished, this, [this]() {
+              m_exportDialog->deleteLater();
+              m_exportDialog = nullptr;
+            });
+            m_exportDialog->show();
+          });
 
   // Wire LocationList2 result activation to SearchController.
-  connect(m_locationList, &LocationList2::resultActivated,
-          m_searchPanel->getController(), &SearchController::activateResult);
+  connect(m_locationList, &LocationList2::resultActivated, m_searchPanel->getController(),
+          &SearchController::activateResult);
 
   // Auto-show the Location List dock when a search starts.
-  connect(m_searchPanel->getController(), &SearchController::searchStarted,
-          this, [this]() {
-            m_dockWidgetHelper.activateDock(DockWidgetHelper::LocationListDock);
-          });
+  connect(m_searchPanel->getController(), &SearchController::searchStarted, this,
+          [this]() { m_dockWidgetHelper.activateDock(DockWidgetHelper::LocationListDock); });
 
   // Wire ViewAreaController's locateNodeRequested to NotebookExplorer2.
   // Activate the navigation dock first so the notebook explorer is visible.
-  connect(m_viewArea->getController(), &ViewAreaController::locateNodeRequested,
-          this, [this](const NodeIdentifier &p_nodeId) {
+  connect(m_viewArea->getController(), &ViewAreaController::locateNodeRequested, this,
+          [this](const NodeIdentifier &p_nodeId) {
             m_dockWidgetHelper.activateDock(DockWidgetHelper::NavigationDock);
             m_notebookExplorer->locateNode(p_nodeId);
           });
 
   // Wire current-window changes to the outline viewer.
-  connect(m_viewArea->getController(), &ViewAreaController::currentViewWindowChanged,
-          this, [this]() {
+  connect(m_viewArea->getController(), &ViewAreaController::currentViewWindowChanged, this,
+          [this]() {
             auto *win = m_viewArea->getCurrentViewWindow();
             m_outlineViewer->setOutlineProvider(win ? win->getOutlineProvider() : nullptr);
           });
 
   // Wire notebook changes to TagExplorer2.
-  connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged,
-          m_tagExplorer, &TagExplorer2::setNotebookId);
+  connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged, m_tagExplorer,
+          &TagExplorer2::setNotebookId);
 
   // Wire TagExplorer2 node activation to buffer opening.
-  connect(m_tagExplorer, &TagExplorer2::openNodeRequested,
-          this, [this](const NodeIdentifier &p_nodeId) {
+  connect(m_tagExplorer, &TagExplorer2::openNodeRequested, this,
+          [this](const NodeIdentifier &p_nodeId) {
             auto *bufferSvc = m_serviceLocator.get<BufferService>();
             if (bufferSvc) {
               bufferSvc->openBuffer(p_nodeId);
@@ -415,33 +509,33 @@ void MainWindow2::setupDocks() {
           });
 
   // Wire snippet apply from SnippetPanel2 to active ViewWindow2.
-  connect(m_snippetPanel, &SnippetPanel2::applySnippetRequested,
-          this, [this](const QString &p_name) {
+  connect(m_snippetPanel, &SnippetPanel2::applySnippetRequested, this,
+          [this](const QString &p_name) {
             auto *viewWin = m_viewArea->getCurrentViewWindow();
             if (viewWin) {
-                viewWin->applySnippet(p_name);
+              viewWin->applySnippet(p_name);
             } else {
-                qWarning() << "No active view window for snippet apply";
+              qWarning() << "No active view window for snippet apply";
             }
           });
 }
 
 QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const {
   switch (p_dockType) {
-    case DockWidgetHelper::DockType::NavigationDock:
-      return m_notebookExplorer;
-    case DockWidgetHelper::DockType::OutlineDock:
-      return m_outlineViewer;
-    case DockWidgetHelper::DockType::TagDock:
-      return m_tagExplorer;
-    case DockWidgetHelper::DockType::SnippetDock:
-      return m_snippetPanel;
-    case DockWidgetHelper::DockType::SearchDock:
-      return m_searchPanel;
-    case DockWidgetHelper::DockType::LocationListDock:
-      return m_locationList;
-    default:
-      return nullptr;
+  case DockWidgetHelper::DockType::NavigationDock:
+    return m_notebookExplorer;
+  case DockWidgetHelper::DockType::OutlineDock:
+    return m_outlineViewer;
+  case DockWidgetHelper::DockType::TagDock:
+    return m_tagExplorer;
+  case DockWidgetHelper::DockType::SnippetDock:
+    return m_snippetPanel;
+  case DockWidgetHelper::DockType::SearchDock:
+    return m_searchPanel;
+  case DockWidgetHelper::DockType::LocationListDock:
+    return m_locationList;
+  default:
+    return nullptr;
   }
 }
 
@@ -455,11 +549,10 @@ void MainWindow2::setupToolBar() {
     auto toolBar = new TitleToolBar(tr("Global"), this);
     toolBar->setIconSize(QSize(sz + 4, sz + 4));
     m_toolBarHelper->setupToolBars(toolBar);
-    toolBar->addTitleBarIcons(
-        m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
-        m_toolBarHelper->generateIcon(QStringLiteral("maximize.svg")),
-        m_toolBarHelper->generateIcon(QStringLiteral("maximize_restore.svg")),
-        m_toolBarHelper->generateDangerousIcon(QStringLiteral("close.svg")));
+    toolBar->addTitleBarIcons(m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
+                              m_toolBarHelper->generateIcon(QStringLiteral("maximize.svg")),
+                              m_toolBarHelper->generateIcon(QStringLiteral("maximize_restore.svg")),
+                              m_toolBarHelper->generateDangerousIcon(QStringLiteral("close.svg")));
     setTitleBar(toolBar);
     connect(this, &FramelessMainWindowImpl::windowStateChanged, toolBar,
             &TitleToolBar::updateMaximizeAct);

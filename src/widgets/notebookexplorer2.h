@@ -5,15 +5,14 @@
 #include <QVBoxLayout>
 
 #include <core/global.h>
-#include <nodeinfo.h>
 #include <core/noncopyable.h>
+#include <nodeinfo.h>
 
 class QSplitter;
 class QMenu;
 class QActionGroup;
 
 namespace vnotex {
-
 
 class NotebookSelector2;
 class TitleBar;
@@ -35,8 +34,8 @@ class NotebookExplorer2 : public QFrame, private Noncopyable {
 
 public:
   enum ExploreMode {
-    Combined,   // Single tree with folders and files
-    TwoColumns  // Left: folders only, Right: files in selected folder
+    Combined,  // Single tree with folders and files
+    TwoColumns // Left: folders only, Right: files in selected folder
   };
 
   explicit NotebookExplorer2(ServiceLocator &p_services, QWidget *p_parent = nullptr);
@@ -91,8 +90,7 @@ public slots:
 
 private slots:
   // Node activation — opens the file via BufferService
-  void onNodeActivated(const NodeIdentifier &p_nodeId,
-                       const FileOpenSettings &p_settings);
+  void onNodeActivated(const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings);
 
   // GUI request handlers from controller signals
   void onNewNoteRequested(const NodeIdentifier &p_parentId);
@@ -107,6 +105,7 @@ private slots:
 signals:
   void currentNotebookChanged(const QString &p_notebookId);
   void currentExploredFolderChanged(const NodeIdentifier &p_folderId);
+  void exportNodeRequested(const NodeIdentifier &p_nodeId);
 
 private:
   void setupUI();
@@ -130,7 +129,6 @@ private:
   void setCurrentNotebookInternal(const QString &p_notebookId);
   // Apply view order to all node views
   void setNodeViewOrder(ViewOrder p_order);
-
 
   // Services
   ServiceLocator &m_services;

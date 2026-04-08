@@ -3,7 +3,6 @@
 
 #include "inodeexplorer.h"
 
-
 class QSplitter;
 class QMenu;
 
@@ -87,6 +86,9 @@ public:
   // This class uses contextMenuRequested with bool parameter to indicate which panel.
   // The INodeExplorer::contextMenuRequested(nodeId, globalPos) is NOT emitted directly;
   // callers should connect to the 3-param version.
+
+signals:
+  void exportNodeRequested(const NodeIdentifier &p_nodeId);
 
 private slots:
   void onFolderSelectionChanged(const QList<NodeIdentifier> &p_nodeIds);

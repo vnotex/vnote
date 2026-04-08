@@ -58,6 +58,9 @@ public:
 
   NavigationMode *getNavigationModeWrapper() const;
 
+signals:
+  void exportNodeRequested(const NodeIdentifier &p_nodeId);
+
 private slots:
   void onContextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos);
 

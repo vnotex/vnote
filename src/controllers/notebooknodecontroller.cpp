@@ -601,8 +601,11 @@ void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &p_nodeIds,
 }
 
 void NotebookNodeController::exportNode(const NodeIdentifier &p_nodeId) {
-  Q_UNUSED(p_nodeId);
-  emit infoMessage(tr("Export"), tr("Export functionality not yet implemented."));
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  emit exportNodeRequested(p_nodeId);
 }
 
 void NotebookNodeController::importExternalNode(const NodeIdentifier &p_nodeId) {

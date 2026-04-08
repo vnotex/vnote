@@ -3,9 +3,9 @@
 
 #include <QMainWindow>
 
+#include "framelessmainwindow/framelessmainwindowimpl.h"
 #include <core/noncopyable.h>
 #include <widgets/dockwidgethelper.h>
-#include "framelessmainwindow/framelessmainwindowimpl.h"
 
 class QCloseEvent;
 class QDockWidget;
@@ -23,6 +23,7 @@ class SnippetPanel2;
 class SearchPanel2;
 class LocationList2;
 class ViewArea2;
+class ExportDialog2;
 
 class ToolBarHelper2;
 // MainWindow2 is a minimal QMainWindow shell for the new clean architecture.
@@ -123,6 +124,8 @@ private:
   // Setup tool bar.
   void setupToolBar();
 
+  void exportNotes();
+
   void setupSystemTray();
 
   // Restore only window geometry and dock state (safe to call before event loop).
@@ -161,6 +164,8 @@ private:
 
   // Toolbar helper.
   ToolBarHelper2 *m_toolBarHelper = nullptr;
+
+  ExportDialog2 *m_exportDialog = nullptr;
 
   QSystemTrayIcon *m_trayIcon = nullptr;
 

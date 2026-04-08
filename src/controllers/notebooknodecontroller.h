@@ -102,8 +102,7 @@ public:
 
 signals:
   // Signals to notify external components (e.g., BufferMgr)
-  void nodeActivated(const NodeIdentifier &p_nodeId,
-                     const FileOpenSettings &p_settings);
+  void nodeActivated(const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings);
   void nodeAboutToMove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
   void nodeAboutToRemove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
   void nodeAboutToReload(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
@@ -118,6 +117,7 @@ signals:
   void propertiesRequested(const NodeIdentifier &p_nodeId);
   void errorOccurred(const QString &p_title, const QString &p_message);
   void infoMessage(const QString &p_title, const QString &p_message);
+  void exportNodeRequested(const NodeIdentifier &p_nodeId);
 
   // Signal emitted when nodes are pasted (for cross-panel refresh in two-column view)
   void nodesPasted(const NodeIdentifier &p_targetFolderId);

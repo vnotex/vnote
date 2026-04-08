@@ -3,16 +3,16 @@
 #include <QMenu>
 #include <QVBoxLayout>
 
+#include <controllers/notebooknodecontroller.h>
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/widgetconfig.h>
-#include <controllers/notebooknodecontroller.h>
+#include <gui/services/themeservice.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
-#include <views/notebooknodeview.h>
 #include <views/notebooknodedelegate.h>
+#include <views/notebooknodeview.h>
 #include <widgets/navigationmodeviewwrapper.h>
-#include <gui/services/themeservice.h>
 
 using namespace vnotex;
 
@@ -84,6 +84,8 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::removeFromNotebookRequested);
   connect(m_controller, &NotebookNodeController::propertiesRequested, this,
           &CombinedNodeExplorer::propertiesRequested);
+  connect(m_controller, &NotebookNodeController::exportNodeRequested, this,
+          &CombinedNodeExplorer::exportNodeRequested);
 
   // Status signals
   connect(m_controller, &NotebookNodeController::errorOccurred, this,
@@ -92,8 +94,7 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::infoMessage);
 
   // Model error signals (for inline rename failures)
-  connect(m_model, &NotebookNodeModel::errorOccurred, this,
-          &CombinedNodeExplorer::errorOccurred);
+  connect(m_model, &NotebookNodeModel::errorOccurred, this, &CombinedNodeExplorer::errorOccurred);
 }
 
 void CombinedNodeExplorer::setNotebookId(const QString &p_notebookId) {
@@ -189,14 +190,14 @@ NodeInfo CombinedNodeExplorer::getNodeInfo(const NodeIdentifier &p_nodeId) const
 }
 
 void CombinedNodeExplorer::handleRenameResult(const NodeIdentifier &p_nodeId,
-                                               const QString &p_newName) {
+                                              const QString &p_newName) {
   if (m_controller) {
     m_controller->handleRenameResult(p_nodeId, p_newName);
   }
 }
 
 void CombinedNodeExplorer::handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds,
-                                                  bool p_permanent) {
+                                                 bool p_permanent) {
   if (m_controller) {
     m_controller->handleDeleteConfirmed(p_nodeIds, p_permanent);
   }
