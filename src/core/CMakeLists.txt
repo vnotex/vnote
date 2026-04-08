@@ -24,6 +24,7 @@ target_sources(vnote PRIVATE
     events.h
     exception.h
     exampleplugin.cpp exampleplugin.h
+    exportcontext.h
     externalfile.cpp externalfile.h
     file.cpp file.h
     filelocator.h
