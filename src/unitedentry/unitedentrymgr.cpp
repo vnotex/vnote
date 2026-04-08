@@ -4,14 +4,27 @@
 #include "helpunitedentry.h"
 #include "unitedentryalias.h"
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/coreconfig.h>
-#include <core/vnotex.h>
-#include <widgets/searchinfoprovider.h>
+#include <search/isearchinfoprovider.h>
+
+namespace {
+class NullSearchInfoProvider : public vnotex::ISearchInfoProvider {
+public:
+  QList<vnotex::Buffer *> getBuffers() const override { return {}; }
+
+  vnotex::Node *getCurrentFolder() const override { return nullptr; }
+
+  vnotex::Notebook *getCurrentNotebook() const override { return nullptr; }
+
+  QVector<vnotex::Notebook *> getNotebooks() const override { return {}; }
+};
+} // namespace
 
 using namespace vnotex;
 
-UnitedEntryMgr::UnitedEntryMgr(QObject *p_parent) : QObject(p_parent) {}
+UnitedEntryMgr::UnitedEntryMgr(ServiceLocator &p_services, QObject *p_parent)
+    : QObject(p_parent), m_services(p_services) {}
 
 void UnitedEntryMgr::init() {
   if (m_initialized) {
@@ -21,13 +34,13 @@ void UnitedEntryMgr::init() {
   m_initialized = true;
 
   // Built-in entries.
-  const auto mainWindow = VNoteX::getInst().getMainWindow();
-  addEntry(QSharedPointer<FindUnitedEntry>::create(SearchInfoProvider::create(mainWindow), this));
+  addEntry(QSharedPointer<FindUnitedEntry>::create(
+      QSharedPointer<ISearchInfoProvider>(new NullSearchInfoProvider()), this));
 
   addEntry(QSharedPointer<HelpUnitedEntry>::create(this));
 
   // Alias from config.
-  const auto &config = ConfigMgr::getInst().getCoreConfig();
+  const auto &config = m_services.get<ConfigMgr2>()->getCoreConfig();
   const auto &aliasArr = config.getUnitedEntryAlias();
   for (int i = 0; i < aliasArr.size(); ++i) {
     auto entry = QSharedPointer<UnitedEntryAlias>::create(aliasArr[i].toObject(), this);

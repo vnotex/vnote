@@ -6,6 +6,7 @@
 #include <QSharedPointer>
 
 #include <core/noncopyable.h>
+#include <core/servicelocator.h>
 
 namespace vnotex {
 class IUnitedEntry;
@@ -13,11 +14,7 @@ class IUnitedEntry;
 class UnitedEntryMgr : public QObject, private Noncopyable {
   Q_OBJECT
 public:
-  static UnitedEntryMgr &getInst() {
-    static UnitedEntryMgr inst;
-    inst.init();
-    return inst;
-  }
+  explicit UnitedEntryMgr(ServiceLocator &p_services, QObject *p_parent = nullptr);
 
   void init();
 
@@ -36,9 +33,9 @@ signals:
   void entryItemActivated(IUnitedEntry *p_entry, bool p_quit, bool p_restoreFocus);
 
 private:
-  explicit UnitedEntryMgr(QObject *p_parent = nullptr);
-
   void addEntry(const QSharedPointer<IUnitedEntry> &p_entry);
+
+  ServiceLocator &m_services;
 
   bool m_initialized = false;
 
