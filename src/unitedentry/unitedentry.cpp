@@ -73,7 +73,8 @@ void UnitedEntry::setupUI() {
   setupActions();
 
   m_popup = new EntryPopup();
-  m_popup->setWindowFlags(Qt::Popup | Qt::NoDropShadowWindowHint);
+  m_popup->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
+  m_popup->setAttribute(Qt::WA_ShowWithoutActivating);
   m_popup->installEventFilter(this);
   m_popup->hide();
 }
@@ -145,6 +146,19 @@ void UnitedEntry::activate() {
 
   m_comboBox->lineEdit()->selectAll();
   m_comboBox->lineEdit()->setFocus();
+}
+
+void UnitedEntry::ensureActivated(QWidget *p_previousFocus) {
+  if (m_activated) {
+    return;
+  }
+
+  if (!m_mgr->isInitialized()) {
+    return;
+  }
+
+  m_activated = true;
+  m_previousFocusWidget = p_previousFocus;
 }
 
 void UnitedEntry::deactivate() {
@@ -335,7 +349,6 @@ void UnitedEntry::popupWidget(const QSharedPointer<QWidget> &p_widget) {
   m_popup->setWidget(p_widget);
   updatePopupGeometry();
   m_popup->show();
-  m_comboBox->lineEdit()->setFocus();
 }
 
 const QSharedPointer<QTreeWidget> &UnitedEntry::getEntryListWidget() {
@@ -466,7 +479,15 @@ void UnitedEntry::updatePopupGeometry() {
 }
 
 void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now) {
-  Q_UNUSED(p_old);
+  if (!m_activated) {
+    if (p_now == m_comboBox || p_now == m_comboBox->lineEdit()) {
+      ensureActivated(p_old);
+      m_processTimer->stop();
+      processInput();
+      return;
+    }
+  }
+
   if (m_activated && (!p_now || (p_now != m_comboBox && p_now != m_comboBox->lineEdit() &&
                                  !WidgetUtils::isOrAncestorOf(m_popup, p_now)))) {
     deactivate();

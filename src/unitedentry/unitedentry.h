@@ -40,6 +40,8 @@ private:
 
   void clear();
 
+  void ensureActivated(QWidget *p_previousFocus);
+
   void processInput();
 
   void handleFocusChanged(QWidget *p_old, QWidget *p_now);
