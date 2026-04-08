@@ -7,13 +7,10 @@
 using namespace vnotex;
 
 SearchCoreService::SearchCoreService(VxCoreContextHandle p_context, QObject *p_parent)
-  : QObject(p_parent), m_context(p_context) {
-}
+    : QObject(p_parent), m_context(p_context) {}
 
-Error SearchCoreService::searchFiles(const QString &p_notebookId,
-                                 const QString &p_queryJson,
-                                 const QString &p_inputFilesJson,
-                                 QJsonArray *p_results) const {
+Error SearchCoreService::searchFiles(const QString &p_notebookId, const QString &p_queryJson,
+                                     const QString &p_inputFilesJson, QJsonArray *p_results) const {
   qDebug() << "SearchCoreService::searchFiles: notebookId:" << p_notebookId;
 
   if (!m_context) {
@@ -35,11 +32,7 @@ Error SearchCoreService::searchFiles(const QString &p_notebookId,
   const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
 
   char *json = nullptr;
-  VxCoreError err = vxcore_search_files(m_context,
-                                        notebookCStr,
-                                        queryCStr,
-                                        inputCStr,
-                                        &json);
+  VxCoreError err = vxcore_search_files(m_context, notebookCStr, queryCStr, inputCStr, &json);
 
   if (err != VXCORE_OK) {
     qWarning() << "SearchCoreService::searchFiles: vxcore_search_files failed, error:" << err;
@@ -50,10 +43,9 @@ Error SearchCoreService::searchFiles(const QString &p_notebookId,
   return parseSearchResponse(json, p_results);
 }
 
-Error SearchCoreService::searchContent(const QString &p_notebookId,
-                                   const QString &p_queryJson,
-                                   const QString &p_inputFilesJson,
-                                   QJsonArray *p_results) const {
+Error SearchCoreService::searchContent(const QString &p_notebookId, const QString &p_queryJson,
+                                       const QString &p_inputFilesJson,
+                                       QJsonArray *p_results) const {
   qDebug() << "SearchCoreService::searchContent: notebookId:" << p_notebookId;
 
   if (!m_context) {
@@ -75,11 +67,7 @@ Error SearchCoreService::searchContent(const QString &p_notebookId,
   const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
 
   char *json = nullptr;
-  VxCoreError err = vxcore_search_content(m_context,
-                                          notebookCStr,
-                                          queryCStr,
-                                          inputCStr,
-                                          &json);
+  VxCoreError err = vxcore_search_content(m_context, notebookCStr, queryCStr, inputCStr, &json);
 
   if (err != VXCORE_OK) {
     qWarning() << "SearchCoreService::searchContent: vxcore_search_content failed, error:" << err;
@@ -90,10 +78,9 @@ Error SearchCoreService::searchContent(const QString &p_notebookId,
   return parseSearchResponse(json, p_results);
 }
 
-Error SearchCoreService::searchByTags(const QString &p_notebookId,
-                                  const QString &p_queryJson,
-                                  const QString &p_inputFilesJson,
-                                  QJsonArray *p_results) const {
+Error SearchCoreService::searchByTags(const QString &p_notebookId, const QString &p_queryJson,
+                                      const QString &p_inputFilesJson,
+                                      QJsonArray *p_results) const {
   qDebug() << "SearchCoreService::searchByTags: notebookId:" << p_notebookId;
 
   if (!m_context) {
@@ -115,11 +102,7 @@ Error SearchCoreService::searchByTags(const QString &p_notebookId,
   const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
 
   char *json = nullptr;
-  VxCoreError err = vxcore_search_by_tags(m_context,
-                                          notebookCStr,
-                                          queryCStr,
-                                          inputCStr,
-                                          &json);
+  VxCoreError err = vxcore_search_by_tags(m_context, notebookCStr, queryCStr, inputCStr, &json);
 
   if (err != VXCORE_OK) {
     qWarning() << "SearchCoreService::searchByTags: vxcore_search_by_tags failed, error:" << err;
@@ -137,12 +120,12 @@ Error SearchCoreService::parseSearchResponse(char *p_json, QJsonArray *p_results
     if (doc.isObject()) {
       QJsonObject obj = doc.object();
 
-      // Preserve matchCount and truncated from the vxcore response.
+      // Extract matchCount and truncated from the vxcore response.
       const QString matchCountKey = QStringLiteral("matchCount");
       const QString truncatedKey = QStringLiteral("truncated");
       const QString matchesKey = QStringLiteral("matches");
-      m_lastMatchCount = obj.value(matchCountKey).toInt(0);
-      m_lastTruncated = obj.value(truncatedKey).toBool(false);
+      int matchCount = obj.value(matchCountKey).toInt(0);
+      bool truncated = obj.value(truncatedKey).toBool(false);
 
       if (obj.contains(matchesKey) && obj[matchesKey].isArray()) {
         *p_results = obj[matchesKey].toArray();
@@ -150,17 +133,14 @@ Error SearchCoreService::parseSearchResponse(char *p_json, QJsonArray *p_results
         *p_results = QJsonArray();
       }
 
-      qDebug() << "SearchCoreService::parseSearchResponse: matchCount:" << m_lastMatchCount
-               << "truncated:" << m_lastTruncated
-               << "resultsArraySize:" << p_results->size();
+      qDebug() << "SearchCoreService::parseSearchResponse: matchCount:" << matchCount
+               << "truncated:" << truncated << "resultsArraySize:" << p_results->size();
     } else {
       qWarning() << "SearchCoreService::parseSearchResponse: invalid JSON object response";
       return Error::error(ErrorCode::InvalidArgument, "Invalid JSON object response");
     }
   } else {
     qDebug() << "SearchCoreService::parseSearchResponse: null JSON response, returning empty";
-    m_lastMatchCount = 0;
-    m_lastTruncated = false;
     *p_results = QJsonArray();
   }
 
@@ -212,10 +192,10 @@ Error SearchCoreService::vxcoreErrorToError(VxCoreError p_error, const QString &
 }
 
 Error SearchCoreService::searchContentCancellable(const QString &p_notebookId,
-                                                   const QString &p_queryJson,
-                                                   const QString &p_inputFilesJson,
-                                                   std::atomic<int> *p_cancelFlag,
-                                                   QJsonObject *p_resultObj) const {
+                                                  const QString &p_queryJson,
+                                                  const QString &p_inputFilesJson,
+                                                  std::atomic<int> *p_cancelFlag,
+                                                  QJsonObject *p_resultObj) const {
   qDebug() << "SearchCoreService::searchContentCancellable: notebookId:" << p_notebookId
            << "hasCancelFlag:" << (p_cancelFlag != nullptr);
 
@@ -242,19 +222,18 @@ Error SearchCoreService::searchContentCancellable(const QString &p_notebookId,
       p_cancelFlag ? reinterpret_cast<volatile int *>(p_cancelFlag) : nullptr;
 
   char *json = nullptr;
-  VxCoreError err = vxcore_search_content_ex(m_context,
-                                             notebookCStr,
-                                             queryCStr,
-                                             inputCStr,
-                                             cancelFlagPtr,
-                                             &json);
+  VxCoreError err =
+      vxcore_search_content_ex(m_context, notebookCStr, queryCStr, inputCStr, cancelFlagPtr, &json);
 
   if (err != VXCORE_OK) {
-    qWarning() << "SearchCoreService::searchContentCancellable: vxcore_search_content_ex failed, error:" << err;
+    qWarning()
+        << "SearchCoreService::searchContentCancellable: vxcore_search_content_ex failed, error:"
+        << err;
     return vxcoreErrorToError(err, QStringLiteral("searchContentCancellable"));
   }
 
-  qDebug() << "SearchCoreService::searchContentCancellable: vxcore call succeeded, parsing response";
+  qDebug()
+      << "SearchCoreService::searchContentCancellable: vxcore call succeeded, parsing response";
   return parseSearchResponseFull(json, p_resultObj);
 }
 
@@ -265,22 +244,20 @@ Error SearchCoreService::parseSearchResponseFull(char *p_json, QJsonObject *p_re
     if (doc.isObject()) {
       *p_resultObj = doc.object();
 
-      // Cache matchCount and truncated from the response.
+      // Extract matchCount and truncated from the response.
       const QString matchCountKey = QStringLiteral("matchCount");
       const QString truncatedKey = QStringLiteral("truncated");
-      m_lastMatchCount = p_resultObj->value(matchCountKey).toInt(0);
-      m_lastTruncated = p_resultObj->value(truncatedKey).toBool(false);
+      int matchCount = p_resultObj->value(matchCountKey).toInt(0);
+      bool truncated = p_resultObj->value(truncatedKey).toBool(false);
 
-      qDebug() << "SearchCoreService::parseSearchResponseFull: matchCount:" << m_lastMatchCount
-               << "truncated:" << m_lastTruncated;
+      qDebug() << "SearchCoreService::parseSearchResponseFull: matchCount:" << matchCount
+               << "truncated:" << truncated;
     } else {
       qWarning() << "SearchCoreService::parseSearchResponseFull: invalid JSON object response";
       return Error::error(ErrorCode::InvalidArgument, "Invalid JSON object response");
     }
   } else {
     qDebug() << "SearchCoreService::parseSearchResponseFull: null JSON response, returning empty";
-    m_lastMatchCount = 0;
-    m_lastTruncated = false;
     *p_resultObj = QJsonObject();
   }
 

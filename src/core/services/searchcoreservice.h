@@ -34,10 +34,8 @@ public:
   //   {"files":[...],"folders":[...]}. Empty string means no scope restriction.
   // @p_results: Output parameter for search results (the "matches" array).
   // @return: Error code (Ok on success).
-  Error searchFiles(const QString &p_notebookId,
-                    const QString &p_queryJson,
-                    const QString &p_inputFilesJson,
-                    QJsonArray *p_results) const;
+  Error searchFiles(const QString &p_notebookId, const QString &p_queryJson,
+                    const QString &p_inputFilesJson, QJsonArray *p_results) const;
 
   // Search file content.
   // @p_notebookId: Target notebook ID.
@@ -46,10 +44,8 @@ public:
   //   {"files":[...],"folders":[...]}. Empty string means no scope restriction.
   // @p_results: Output parameter for search results (the "matches" array).
   // @return: Error code (Ok on success).
-  Error searchContent(const QString &p_notebookId,
-                      const QString &p_queryJson,
-                      const QString &p_inputFilesJson,
-                      QJsonArray *p_results) const;
+  Error searchContent(const QString &p_notebookId, const QString &p_queryJson,
+                      const QString &p_inputFilesJson, QJsonArray *p_results) const;
 
   // Search file content with cooperative cancellation support.
   // @p_notebookId: Target notebook ID.
@@ -60,10 +56,8 @@ public:
   // @p_resultObj: Output parameter for the FULL vxcore JSON response
   //   (contains "matchCount", "truncated", "matches" keys).
   // @return: Error code (Ok on success, Cancelled if cancelled).
-  Error searchContentCancellable(const QString &p_notebookId,
-                                 const QString &p_queryJson,
-                                 const QString &p_inputFilesJson,
-                                 std::atomic<int> *p_cancelFlag,
+  Error searchContentCancellable(const QString &p_notebookId, const QString &p_queryJson,
+                                 const QString &p_inputFilesJson, std::atomic<int> *p_cancelFlag,
                                  QJsonObject *p_resultObj) const;
 
   // Search files by tags.
@@ -73,34 +67,22 @@ public:
   //   {"files":[...],"folders":[...]}. Empty string means no scope restriction.
   // @p_results: Output parameter for search results (the "matches" array).
   // @return: Error code (Ok on success).
-  Error searchByTags(const QString &p_notebookId,
-                     const QString &p_queryJson,
-                     const QString &p_inputFilesJson,
-                     QJsonArray *p_results) const;
-
-  // Get match count from the last search response.
-  int lastMatchCount() const { return m_lastMatchCount; }
-
-  // Get whether the last search response was truncated.
-  bool lastTruncated() const { return m_lastTruncated; }
+  Error searchByTags(const QString &p_notebookId, const QString &p_queryJson,
+                     const QString &p_inputFilesJson, QJsonArray *p_results) const;
 
 private:
   // Non-owning pointer to vxcore context.
   VxCoreContextHandle m_context = nullptr;
 
-  // Cached metadata from the last vxcore search response.
-  mutable int m_lastMatchCount = 0;
-  mutable bool m_lastTruncated = false;
-
   // Helper to convert VxCoreError to Error.
   Error vxcoreErrorToError(VxCoreError p_error, const QString &p_operation) const;
 
-  // Parse vxcore JSON search response, extracting "matches" into p_results
-  // and caching "matchCount" and "truncated". Frees p_json via vxcore_string_free.
+  // Parse vxcore JSON search response, extracting "matches" into p_results.
+  // Frees p_json via vxcore_string_free.
   Error parseSearchResponse(char *p_json, QJsonArray *p_results) const;
 
   // Parse vxcore JSON search response, returning the FULL JSON object.
-  // Caches "matchCount" and "truncated". Frees p_json via vxcore_string_free.
+  // Frees p_json via vxcore_string_free.
   Error parseSearchResponseFull(char *p_json, QJsonObject *p_resultObj) const;
 };
 
