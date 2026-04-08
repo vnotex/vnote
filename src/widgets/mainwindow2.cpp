@@ -81,6 +81,14 @@ void MainWindow2::setupUI() {
   // Setup tool bar.
   setupToolBar();
 
+  // Wire notebook changes to UnitedEntryMgr (after setupToolBar creates m_toolBarHelper).
+  connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged,
+          m_toolBarHelper->unitedEntryMgr(), &UnitedEntryMgr::setCurrentNotebookId);
+
+  // Wire folder context to UnitedEntryMgr.
+  connect(m_notebookExplorer, &NotebookExplorer2::currentExploredFolderChanged,
+          m_toolBarHelper->unitedEntryMgr(), &UnitedEntryMgr::setCurrentFolderId);
+
   setupNavigationMode();
 
   setupSystemTray();
@@ -469,15 +477,6 @@ void MainWindow2::setupDocks() {
             });
             m_exportDialog->show();
           });
-
-  // Wire notebook changes to UnitedEntryMgr.
-  connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged,
-          m_toolBarHelper->unitedEntryMgr(), &UnitedEntryMgr::setCurrentNotebookId);
-
-  // Wire folder context to UnitedEntryMgr.
-  connect(m_notebookExplorer, &NotebookExplorer2::currentExploredFolderChanged,
-          m_toolBarHelper->unitedEntryMgr(), &UnitedEntryMgr::setCurrentFolderId);
-
   // Wire LocationList2 result activation to SearchController.
   connect(m_locationList, &LocationList2::resultActivated, m_searchPanel->getController(),
           &SearchController::activateResult);
