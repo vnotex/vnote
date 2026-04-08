@@ -66,6 +66,14 @@ public:
   Buffer2 openBuffer(const NodeIdentifier &p_nodeId,
                      const FileOpenSettings &p_settings = FileOpenSettings());
 
+  // Open a file as a buffer by its node ID (UUID).
+  // Resolves the UUID to notebookId + relativePath first (without opening a buffer),
+  // then delegates to openBuffer() which fires FileBeforeOpen/AfterOpen hooks.
+  // @p_settings controls how the file should be opened.
+  // Returns a Buffer2 handle, or invalid Buffer2 if UUID not found or cancelled.
+  Buffer2 openBufferByNodeId(const QString &p_nodeId,
+                             const FileOpenSettings &p_settings = FileOpenSettings());
+
   // Close a buffer by ID.
   // Fires FileBeforeClose (cancellable) and FileAfterClose.
   bool closeBuffer(const QString &p_bufferId);
@@ -92,26 +100,26 @@ public:
   // saveBuffer and reloadBuffer emit bufferModifiedChanged after the operation.
   bool saveBuffer(const QString &p_bufferId);
   bool reloadBuffer(const QString &p_bufferId);
-  using BufferCoreService::getContent;
-  using BufferCoreService::setContent;
-  using BufferCoreService::getContentRaw;
-  using BufferCoreService::peekContentRaw;
-  using BufferCoreService::setContentRaw;
-  using BufferCoreService::getState;
-  using BufferCoreService::isModified;
-  using BufferCoreService::getRevision;
-  using BufferCoreService::getResolvedPath;
-  using BufferCoreService::getResourceBasePath;
-  using BufferCoreService::insertAssetRaw;
-  using BufferCoreService::insertAsset;
   using BufferCoreService::deleteAsset;
   using BufferCoreService::getAssetsFolder;
+  using BufferCoreService::getContent;
+  using BufferCoreService::getContentRaw;
+  using BufferCoreService::getResolvedPath;
+  using BufferCoreService::getResourceBasePath;
+  using BufferCoreService::getRevision;
+  using BufferCoreService::getState;
+  using BufferCoreService::insertAsset;
+  using BufferCoreService::insertAssetRaw;
+  using BufferCoreService::isModified;
+  using BufferCoreService::peekContentRaw;
+  using BufferCoreService::setContent;
+  using BufferCoreService::setContentRaw;
   QString insertAttachment(const QString &p_bufferId, const QString &p_sourcePath);
   bool deleteAttachment(const QString &p_bufferId, const QString &p_filename);
   QString renameAttachment(const QString &p_bufferId, const QString &p_oldFilename,
                            const QString &p_newFilename);
-  using BufferCoreService::listAttachments;
   using BufferCoreService::getAttachmentsFolder;
+  using BufferCoreService::listAttachments;
 
   // ============ Auto-Save & Dirty Tracking ============
 

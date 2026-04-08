@@ -19,21 +19,14 @@ BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookM
 
   m_autoSaveTimer = new QTimer(this);
   m_autoSaveTimer->setInterval(c_autoSaveIntervalMs);
-  QObject::connect(m_autoSaveTimer, &QTimer::timeout, this, [this]() {
-    onAutoSaveTimerTick();
-  });
+  QObject::connect(m_autoSaveTimer, &QTimer::timeout, this, [this]() { onAutoSaveTimerTick(); });
 }
 
-BufferService::~BufferService() {
-}
+BufferService::~BufferService() {}
 
-QObject *BufferService::asQObject() {
-  return this;
-}
+QObject *BufferService::asQObject() { return this; }
 
-void BufferService::setAutoSavePolicy(AutoSavePolicy p_policy) {
-  m_autoSavePolicy = p_policy;
-}
+void BufferService::setAutoSavePolicy(AutoSavePolicy p_policy) { m_autoSavePolicy = p_policy; }
 
 void BufferService::syncAutoSavePolicy(int p_configPolicy) {
   // Map EditorConfig::AutoSavePolicy (0=None, 1=AutoSave, 2=BackupFile)
@@ -52,10 +45,8 @@ void BufferService::syncAutoSavePolicy(int p_configPolicy) {
 Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
                                   const FileOpenSettings &p_settings) {
   qDebug() << "BufferService::openBuffer notebook:" << p_nodeId.notebookId
-           << "path:" << p_nodeId.relativePath
-           << "mode:" << static_cast<int>(p_settings.m_mode)
-           << "readOnly:" << p_settings.m_readOnly
-           << "lineNumber:" << p_settings.m_lineNumber;
+           << "path:" << p_nodeId.relativePath << "mode:" << static_cast<int>(p_settings.m_mode)
+           << "readOnly:" << p_settings.m_readOnly << "lineNumber:" << p_settings.m_lineNumber;
 
   FileOpenEvent event;
   event.notebookId = p_nodeId.notebookId;
@@ -89,6 +80,24 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
 
   qDebug() << "BufferService::openBuffer succeeded bufferId:" << bufferId;
   return Buffer2(this, m_hookMgr, bufferId, p_nodeId);
+}
+
+Buffer2 BufferService::openBufferByNodeId(const QString &p_nodeId,
+                                          const FileOpenSettings &p_settings) {
+  // Step 1: Resolve UUID to notebookId + relativePath (NO buffer opened here).
+  QString notebookId;
+  QString relativePath;
+  if (!BufferCoreService::resolveNodeId(p_nodeId, notebookId, relativePath)) {
+    qDebug() << "BufferService::openBufferByNodeId: UUID not found:" << p_nodeId;
+    return Buffer2();
+  }
+
+  // Step 2: Delegate to existing openBuffer() which fires FileBeforeOpen BEFORE
+  // vxcore_buffer_open — preserving the hook-before-open contract.
+  NodeIdentifier nodeId;
+  nodeId.notebookId = notebookId;
+  nodeId.relativePath = relativePath;
+  return openBuffer(nodeId, p_settings);
 }
 
 bool BufferService::closeBuffer(const QString &p_bufferId) {
@@ -142,9 +151,7 @@ QJsonObject BufferService::getBuffer(const QString &p_bufferId) const {
   return BufferCoreService::getBuffer(p_bufferId);
 }
 
-QJsonArray BufferService::listBuffers() const {
-  return BufferCoreService::listBuffers();
-}
+QJsonArray BufferService::listBuffers() const { return BufferCoreService::listBuffers(); }
 
 // ============ BufferCoreService wrappers ============
 
@@ -326,12 +333,12 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     } else {
       int failCount = m_saveFailureCounts.value(p_bufferId, 0) + 1;
       m_saveFailureCounts[p_bufferId] = failCount;
-      qWarning() << "BufferService: AutoSave failed for buffer" << p_bufferId
-                 << "(attempt" << failCount << ")";
+      qWarning() << "BufferService: AutoSave failed for buffer" << p_bufferId << "(attempt"
+                 << failCount << ")";
       emit bufferAutoSaveFailed(p_bufferId);
       if (failCount >= c_maxSaveFailures) {
-        qWarning() << "BufferService: AutoSave aborted for buffer" << p_bufferId
-                   << "after" << c_maxSaveFailures << "failures";
+        qWarning() << "BufferService: AutoSave aborted for buffer" << p_bufferId << "after"
+                   << c_maxSaveFailures << "failures";
         emit bufferAutoSaveAborted(p_bufferId);
       } else {
         // Keep in dirty set for retry on next tick.
@@ -345,20 +352,20 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     // Use vxcore's built-in backup mechanism via BufferCoreService.
     bool backupOk = BufferCoreService::writeBackup(p_bufferId);
     if (backupOk) {
-      qDebug() << "BufferService: backup written for buffer" << p_bufferId
-               << "at" << BufferCoreService::getBackupPath(p_bufferId);
+      qDebug() << "BufferService: backup written for buffer" << p_bufferId << "at"
+               << BufferCoreService::getBackupPath(p_bufferId);
       m_saveFailureCounts.remove(p_bufferId);
       emit bufferAutoSaved(p_bufferId);
       emit bufferModifiedChanged(p_bufferId);
     } else {
       int failCount = m_saveFailureCounts.value(p_bufferId, 0) + 1;
       m_saveFailureCounts[p_bufferId] = failCount;
-      qWarning() << "BufferService: BackupFile write failed for buffer" << p_bufferId
-                 << "(attempt" << failCount << ")";
+      qWarning() << "BufferService: BackupFile write failed for buffer" << p_bufferId << "(attempt"
+                 << failCount << ")";
       emit bufferAutoSaveFailed(p_bufferId);
       if (failCount >= c_maxSaveFailures) {
-        qWarning() << "BufferService: BackupFile aborted for buffer" << p_bufferId
-                   << "after" << c_maxSaveFailures << "failures";
+        qWarning() << "BufferService: BackupFile aborted for buffer" << p_bufferId << "after"
+                   << c_maxSaveFailures << "failures";
         emit bufferAutoSaveAborted(p_bufferId);
       } else {
         m_dirtyBuffers.insert(p_bufferId);

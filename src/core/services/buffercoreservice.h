@@ -23,8 +23,9 @@ enum class BufferState {
   SaveFailed = VXCORE_BUFFER_SAVE_FAILED
 };
 
-// Service layer for buffer operations. Wraps VxCore buffer C API and provides Qt-friendly interface.
-// BufferCoreService manages open file buffers - opening, closing, reading/writing content, and assets.
+// Service layer for buffer operations. Wraps VxCore buffer C API and provides Qt-friendly
+// interface. BufferCoreService manages open file buffers - opening, closing, reading/writing
+// content, and assets.
 class BufferCoreService : public QObject, private Noncopyable {
   Q_OBJECT
 
@@ -40,6 +41,11 @@ public:
   // p_filePath: Relative path (notebook) or absolute path (external).
   // Returns buffer ID, or empty string on failure.
   QString openBuffer(const QString &p_notebookId, const QString &p_filePath);
+
+  // Open a file as a buffer by its node ID (UUID).
+  // Combines UUID resolution and buffer opening in a single atomic vxcore call.
+  // Returns buffer ID, or empty string on failure.
+  QString openBufferByNodeId(const QString &p_nodeId);
 
   // Close a buffer by ID.
   bool closeBuffer(const QString &p_bufferId);
@@ -103,6 +109,12 @@ public:
   // Otherwise, calls vxcore_path_build_absolute to combine notebook root + relative path.
   // Returns empty string on failure.
   QString getResolvedPath(const QString &p_notebookId, const QString &p_filePath) const;
+
+  // Resolve a node ID (UUID) to its notebook ID and relative path.
+  // This only resolves the identity — it does NOT open a buffer.
+  // Returns true if resolution succeeded, false if UUID not found or error.
+  bool resolveNodeId(const QString &p_nodeId, QString &p_outNotebookId,
+                     QString &p_outRelativePath) const;
 
   // Get the resource base path for resolving relative URLs in buffer content.
   // Returns empty string on failure.

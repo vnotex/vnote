@@ -6,11 +6,9 @@
 using namespace vnotex;
 
 BufferCoreService::BufferCoreService(VxCoreContextHandle p_context, QObject *p_parent)
-    : QObject(p_parent), m_context(p_context) {
-}
+    : QObject(p_parent), m_context(p_context) {}
 
-BufferCoreService::~BufferCoreService() {
-}
+BufferCoreService::~BufferCoreService() {}
 
 // Buffer lifecycle.
 QString BufferCoreService::openBuffer(const QString &p_notebookId, const QString &p_filePath) {
@@ -24,6 +22,23 @@ QString BufferCoreService::openBuffer(const QString &p_notebookId, const QString
       p_filePath.toUtf8().constData(), &bufferId);
   if (err != VXCORE_OK) {
     qWarning() << "openBuffer failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+  return cstrToQString(bufferId);
+}
+
+QString BufferCoreService::openBufferByNodeId(const QString &p_nodeId) {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *bufferId = nullptr;
+  VxCoreError err =
+      vxcore_buffer_open_by_node_id(m_context, p_nodeId.toUtf8().constData(), &bufferId);
+  if (err != VXCORE_OK) {
+    if (err != VXCORE_ERR_NOT_FOUND) {
+      qWarning() << "openBufferByNodeId failed:" << QString::fromUtf8(vxcore_error_message(err));
+    }
     return QString();
   }
   return cstrToQString(bufferId);
@@ -164,8 +179,9 @@ bool BufferCoreService::setContentRaw(const QString &p_bufferId, const QByteArra
     return false;
   }
 
-  VxCoreError err = vxcore_buffer_set_content_raw(
-      m_context, p_bufferId.toUtf8().constData(), p_data.constData(), static_cast<size_t>(p_data.size()));
+  VxCoreError err =
+      vxcore_buffer_set_content_raw(m_context, p_bufferId.toUtf8().constData(), p_data.constData(),
+                                    static_cast<size_t>(p_data.size()));
   if (err != VXCORE_OK) {
     qWarning() << "setContentRaw failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -180,8 +196,7 @@ BufferState BufferCoreService::getState(const QString &p_bufferId) const {
   }
 
   VxCoreBufferState state = VXCORE_BUFFER_NORMAL;
-  VxCoreError err =
-      vxcore_buffer_get_state(m_context, p_bufferId.toUtf8().constData(), &state);
+  VxCoreError err = vxcore_buffer_get_state(m_context, p_bufferId.toUtf8().constData(), &state);
   if (err != VXCORE_OK) {
     qWarning() << "getState failed:" << QString::fromUtf8(vxcore_error_message(err));
     return BufferState::Normal;
@@ -269,6 +284,28 @@ QString BufferCoreService::getResolvedPath(const QString &p_notebookId,
   return cstrToQString(absPath);
 }
 
+bool BufferCoreService::resolveNodeId(const QString &p_nodeId, QString &p_outNotebookId,
+                                      QString &p_outRelativePath) const {
+  if (!checkContext()) {
+    return false;
+  }
+
+  char *outNotebookId = nullptr;
+  char *outRelativePath = nullptr;
+  VxCoreError err = vxcore_node_resolve_by_id(m_context, p_nodeId.toUtf8().constData(),
+                                              &outNotebookId, &outRelativePath);
+  if (err == VXCORE_OK) {
+    p_outNotebookId = cstrToQString(outNotebookId);
+    p_outRelativePath = cstrToQString(outRelativePath);
+    return true;
+  }
+
+  if (err != VXCORE_ERR_NOT_FOUND) {
+    qWarning() << "resolveNodeId failed:" << QString::fromUtf8(vxcore_error_message(err));
+  }
+  return false;
+}
+
 QString BufferCoreService::getResourceBasePath(const QString &p_bufferId) const {
   if (!checkContext()) {
     return QString();
@@ -286,7 +323,7 @@ QString BufferCoreService::getResourceBasePath(const QString &p_bufferId) const 
 
 // Asset operations.
 QString BufferCoreService::insertAssetRaw(const QString &p_bufferId, const QString &p_assetName,
-                                      const QByteArray &p_data) {
+                                          const QByteArray &p_data) {
   if (!checkContext()) {
     return QString();
   }
@@ -308,8 +345,8 @@ QString BufferCoreService::insertAsset(const QString &p_bufferId, const QString 
   }
 
   char *relativePath = nullptr;
-  VxCoreError err = vxcore_buffer_insert_asset(
-      m_context, p_bufferId.toUtf8().constData(), p_sourcePath.toUtf8().constData(), &relativePath);
+  VxCoreError err = vxcore_buffer_insert_asset(m_context, p_bufferId.toUtf8().constData(),
+                                               p_sourcePath.toUtf8().constData(), &relativePath);
   if (err != VXCORE_OK) {
     qWarning() << "insertAsset failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();
@@ -322,8 +359,8 @@ bool BufferCoreService::deleteAsset(const QString &p_bufferId, const QString &p_
     return false;
   }
 
-  VxCoreError err = vxcore_buffer_delete_asset(
-      m_context, p_bufferId.toUtf8().constData(), p_relativePath.toUtf8().constData());
+  VxCoreError err = vxcore_buffer_delete_asset(m_context, p_bufferId.toUtf8().constData(),
+                                               p_relativePath.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "deleteAsset failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -347,14 +384,15 @@ QString BufferCoreService::getAssetsFolder(const QString &p_bufferId) const {
 }
 
 // Attachment operations.
-QString BufferCoreService::insertAttachment(const QString &p_bufferId, const QString &p_sourcePath) {
+QString BufferCoreService::insertAttachment(const QString &p_bufferId,
+                                            const QString &p_sourcePath) {
   if (!checkContext()) {
     return QString();
   }
 
   char *filename = nullptr;
-  VxCoreError err = vxcore_buffer_insert_attachment(
-      m_context, p_bufferId.toUtf8().constData(), p_sourcePath.toUtf8().constData(), &filename);
+  VxCoreError err = vxcore_buffer_insert_attachment(m_context, p_bufferId.toUtf8().constData(),
+                                                    p_sourcePath.toUtf8().constData(), &filename);
   if (err != VXCORE_OK) {
     qWarning() << "insertAttachment failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();
@@ -367,8 +405,8 @@ bool BufferCoreService::deleteAttachment(const QString &p_bufferId, const QStrin
     return false;
   }
 
-  VxCoreError err = vxcore_buffer_delete_attachment(
-      m_context, p_bufferId.toUtf8().constData(), p_filename.toUtf8().constData());
+  VxCoreError err = vxcore_buffer_delete_attachment(m_context, p_bufferId.toUtf8().constData(),
+                                                    p_filename.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "deleteAttachment failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -377,7 +415,7 @@ bool BufferCoreService::deleteAttachment(const QString &p_bufferId, const QStrin
 }
 
 QString BufferCoreService::renameAttachment(const QString &p_bufferId, const QString &p_oldFilename,
-                                        const QString &p_newFilename) {
+                                            const QString &p_newFilename) {
   if (!checkContext()) {
     return QString();
   }
