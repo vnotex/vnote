@@ -1,3 +1,5 @@
+find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets)
+
 add_qt_test(test_snippetcontroller
   SOURCES
     test_snippetcontroller.cpp
@@ -17,5 +19,18 @@ add_qt_test(test_searchcontroller
   LINKS
     core_services
     vxcore
+  GUILESS
+)
+
+add_qt_test(test_exportcontroller
+  SOURCES
+    test_exportcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/exportcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/export/exportdata.cpp
+  LINKS
+    core_services
+    vxcore
+    Qt6::Gui
+    Qt6::Widgets
   GUILESS
 )
