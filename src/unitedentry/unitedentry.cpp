@@ -2,27 +2,27 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QComboBox>
+#include <QCursor>
 #include <QDebug>
-#include <QFocusEvent>
-#include <QFont>
-#include <QKeySequence>
+#include <QEvent>
+#include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QLabel>
-#include <QMainWindow>
+#include <QLineEdit>
 #include <QMenu>
-#include <QShortcut>
 #include <QSizePolicy>
 #include <QTimer>
 #include <QTreeWidget>
-#include <QVBoxLayout>
+#include <functional>
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/coreconfig.h>
-#include <core/thememgr.h>
-#include <core/vnotex.h>
+#include <core/servicelocator.h>
 #include <core/widgetconfig.h>
+#include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
-#include <widgets/lineeditwithsnippet.h>
 #include <widgets/propertydefs.h>
 #include <widgets/widgetsfactory.h>
 
@@ -34,8 +34,10 @@
 
 using namespace vnotex;
 
-UnitedEntry::UnitedEntry(QMainWindow *p_mainWindow)
-    : QFrame(p_mainWindow), m_mainWindow(p_mainWindow) {
+UnitedEntry::UnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr, QWidget *p_parent)
+    : QWidget(p_parent), m_services(p_services), m_mgr(p_mgr) {
+  Q_ASSERT(m_mgr);
+
   m_processTimer = new QTimer(this);
   m_processTimer->setSingleShot(true);
   m_processTimer->setInterval(300);
@@ -43,84 +45,60 @@ UnitedEntry::UnitedEntry(QMainWindow *p_mainWindow)
 
   setupUI();
 
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-  setWindowFlags(Qt::Tool | Qt::NoDropShadowWindowHint);
-  setWindowModality(Qt::ApplicationModal);
-#else
-  setWindowFlags(Qt::ToolTip);
-#endif
-
   connect(qApp, &QApplication::focusChanged, this, &UnitedEntry::handleFocusChanged);
 
-  connect(&UnitedEntryMgr::getInst(), &UnitedEntryMgr::entryFinished, this,
-          &UnitedEntry::handleEntryFinished);
-  connect(&UnitedEntryMgr::getInst(), &UnitedEntryMgr::entryItemActivated, this,
-          &UnitedEntry::handleEntryItemActivated);
+  connect(m_mgr, &UnitedEntryMgr::entryFinished, this, &UnitedEntry::handleEntryFinished);
+  connect(m_mgr, &UnitedEntryMgr::entryItemActivated, this, &UnitedEntry::handleEntryItemActivated);
 }
 
-UnitedEntry::~UnitedEntry() {}
+UnitedEntry::~UnitedEntry() { delete m_popup; }
 
 void UnitedEntry::setupUI() {
-  auto mainLayout = new QVBoxLayout(this);
+  auto mainLayout = new QHBoxLayout(this);
+  mainLayout->setContentsMargins(0, 0, 0, 0);
 
-  // Line edit.
-  // LEGACY: requires SnippetCoreService migration
-  // m_lineEdit = WidgetsFactory::createLineEditWithSnippet(this);
-  mainLayout->addWidget(m_lineEdit);
-  m_lineEdit->setPlaceholderText(tr("Type to command"));
-  m_lineEdit->setClearButtonEnabled(true);
-  m_lineEdit->installEventFilter(this);
-  connect(m_lineEdit, &QLineEdit::textChanged, m_processTimer, QOverload<>::of(&QTimer::start));
-  setFocusProxy(m_lineEdit);
+  m_comboBox = new QComboBox(this);
+  m_comboBox->setEditable(true);
+  m_comboBox->setInsertPolicy(QComboBox::NoInsert);
+  m_comboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  m_comboBox->setMinimumWidth(300);
+  m_comboBox->lineEdit()->setPlaceholderText(tr("Type to command"));
+  m_comboBox->lineEdit()->setClearButtonEnabled(true);
+  m_comboBox->lineEdit()->installEventFilter(this);
+  connect(m_comboBox->lineEdit(), &QLineEdit::textChanged, m_processTimer,
+          QOverload<>::of(&QTimer::start));
+  setFocusProxy(m_comboBox);
+  mainLayout->addWidget(m_comboBox);
 
   setupActions();
 
-  // Popup.
-  m_popup = new EntryPopup(this);
-  mainLayout->addWidget(m_popup);
+  m_popup = new EntryPopup();
+  m_popup->setWindowFlags(Qt::Popup | Qt::NoDropShadowWindowHint);
   m_popup->installEventFilter(this);
-
-  hide();
-}
-
-QString UnitedEntry::getTriggerActionText() const { return tr("United Entry"); }
-
-QAction *UnitedEntry::getTriggerAction() {
-  const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-  const auto fg = themeMgr.paletteColor("widgets#unitedentry#icon#fg");
-
-  const auto icon = IconUtils::fetchIcon(themeMgr.getIconFile("united_entry.svg"), fg);
-  auto act = new QAction(icon, getTriggerActionText(), this);
-  connect(act, &QAction::triggered, this, &UnitedEntry::activateUnitedEntry);
-
-  const auto shortcut =
-      ConfigMgr::getInst().getCoreConfig().getShortcut(CoreConfig::Shortcut::UnitedEntry);
-  WidgetUtils::addActionShortcut(act, shortcut, Qt::ApplicationShortcut);
-
-  return act;
+  m_popup->hide();
 }
 
 void UnitedEntry::setupActions() {
-  const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-  const auto fg = themeMgr.paletteColor("widgets#unitedentry#icon#fg");
-  const auto busyFg = themeMgr.paletteColor("widgets#unitedentry#icon#busy#fg");
+  auto *themeService = m_services.get<ThemeService>();
+  const auto fg = themeService->paletteColor("widgets#unitedentry#icon#fg");
+  const auto busyFg = themeService->paletteColor("widgets#unitedentry#icon#busy#fg");
 
-  // Menu.
-  const auto menuIcon = IconUtils::fetchIcon(themeMgr.getIconFile("menu.svg"), fg);
-  m_menuIconAction = m_lineEdit->addAction(menuIcon, QLineEdit::ActionPosition::TrailingPosition);
+  const auto menuIcon = IconUtils::fetchIcon(themeService->getIconFile("menu.svg"), fg);
+  m_menuIconAction = m_comboBox->lineEdit()->addAction(menuIcon, QLineEdit::TrailingPosition);
   m_menuIconAction->setText(tr("Options"));
 
   auto menu = WidgetsFactory::createMenu(this);
   m_menuIconAction->setMenu(menu);
 
   {
-    auto expandAct = menu->addAction(tr("Expand All"), this, [](bool checked) {
-      ConfigMgr::getInst().getWidgetConfig().setUnitedEntryExpandAllEnabled(checked);
-      UnitedEntryMgr::getInst().setExpandAllEnabled(checked);
+    auto *configMgr = m_services.get<ConfigMgr2>();
+    auto expandAct = menu->addAction(tr("Expand All"), this, [this, configMgr](bool checked) {
+      configMgr->getWidgetConfig().setUnitedEntryExpandAllEnabled(checked);
+      m_mgr->setExpandAllEnabled(checked);
     });
     expandAct->setCheckable(true);
-    expandAct->setChecked(ConfigMgr::getInst().getWidgetConfig().getUnitedEntryExpandAllEnabled());
-    UnitedEntryMgr::getInst().setExpandAllEnabled(expandAct->isChecked());
+    expandAct->setChecked(configMgr->getWidgetConfig().getUnitedEntryExpandAllEnabled());
+    m_mgr->setExpandAllEnabled(expandAct->isChecked());
   }
 
   connect(m_menuIconAction, &QAction::triggered, this, [this]() {
@@ -129,36 +107,47 @@ void UnitedEntry::setupActions() {
     menu->exec(pos);
   });
 
-  // Busy.
-  const auto busyIcon = IconUtils::fetchIcon(themeMgr.getIconFile("busy.svg"), busyFg);
-  m_busyIconAction = m_lineEdit->addAction(busyIcon, QLineEdit::ActionPosition::TrailingPosition);
+  const auto busyIcon = IconUtils::fetchIcon(themeService->getIconFile("busy.svg"), busyFg);
+  m_busyIconAction = m_comboBox->lineEdit()->addAction(busyIcon, QLineEdit::TrailingPosition);
   m_busyIconAction->setText(tr("Busy"));
   m_busyIconAction->setVisible(false);
 }
 
-void UnitedEntry::activateUnitedEntry() {
+QAction *UnitedEntry::getActivateAction() {
+  auto *themeService = m_services.get<ThemeService>();
+  const auto fg = themeService->paletteColor("widgets#unitedentry#icon#fg");
+  const auto icon = IconUtils::fetchIcon(themeService->getIconFile("united_entry.svg"), fg);
+
+  auto act = new QAction(icon, tr("United Entry"), this);
+  connect(act, &QAction::triggered, this, &UnitedEntry::activate);
+
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  const auto shortcut = configMgr->getCoreConfig().getShortcut(CoreConfig::Shortcut::UnitedEntry);
+  WidgetUtils::addActionShortcut(act, shortcut, Qt::ApplicationShortcut);
+
+  return act;
+}
+
+void UnitedEntry::activate() {
   if (m_activated) {
     return;
   }
 
-  if (!UnitedEntryMgr::getInst().isInitialized()) {
+  if (!m_mgr->isInitialized()) {
     return;
   }
 
   m_activated = true;
-
   m_previousFocusWidget = QApplication::focusWidget();
-
-  show();
 
   m_processTimer->stop();
   processInput();
 
-  m_lineEdit->selectAll();
-  m_lineEdit->setFocus();
+  m_comboBox->lineEdit()->selectAll();
+  m_comboBox->lineEdit()->setFocus();
 }
 
-void UnitedEntry::deactivateUnitedEntry() {
+void UnitedEntry::deactivate() {
   if (!m_activated) {
     return;
   }
@@ -166,10 +155,12 @@ void UnitedEntry::deactivateUnitedEntry() {
   m_activated = false;
   m_previousFocusWidget = nullptr;
 
-  hide();
+  m_popup->hide();
+  m_comboBox->lineEdit()->clearFocus();
 }
 
 bool UnitedEntry::handleLineEditKeyPress(QKeyEvent *p_event) {
+  auto *lineEdit = m_comboBox->lineEdit();
   const int key = p_event->key();
   const int modifiers = p_event->modifiers();
   IUnitedEntry::Action act = IUnitedEntry::Action::NextItem;
@@ -220,10 +211,10 @@ bool UnitedEntry::handleLineEditKeyPress(QKeyEvent *p_event) {
   case Qt::Key_E:
     if (WidgetUtils::isViControlModifier(modifiers)) {
       // Eliminate input till the entry name.
-      const auto text = m_lineEdit->evaluatedText();
+      const auto text = lineEdit->text();
       const auto entry = UnitedEntryHelper::parseUserEntry(text);
       if (!entry.m_name.isEmpty()) {
-        m_lineEdit->setText(entry.m_name + QLatin1Char(' '));
+        lineEdit->setText(entry.m_name + QLatin1Char(' '));
       }
       return true;
     }
@@ -232,10 +223,10 @@ bool UnitedEntry::handleLineEditKeyPress(QKeyEvent *p_event) {
   case Qt::Key_F:
     if (WidgetUtils::isViControlModifier(modifiers)) {
       // Select the entry name.
-      const auto text = m_lineEdit->evaluatedText();
+      const auto text = lineEdit->text();
       const auto entry = UnitedEntryHelper::parseUserEntry(text);
       if (!entry.m_name.isEmpty()) {
-        m_lineEdit->setSelection(0, entry.m_name.size());
+        lineEdit->setSelection(0, entry.m_name.size());
       }
       return true;
     }
@@ -289,8 +280,8 @@ bool UnitedEntry::handleLineEditKeyPress(QKeyEvent *p_event) {
 }
 
 void UnitedEntry::clear() {
-  m_lineEdit->clear();
-  m_lineEdit->setFocus();
+  m_comboBox->lineEdit()->clear();
+  m_comboBox->lineEdit()->setFocus();
 }
 
 void UnitedEntry::processInput() {
@@ -306,7 +297,7 @@ void UnitedEntry::processInput() {
     return;
   }
 
-  const auto text = m_lineEdit->evaluatedText();
+  const auto text = m_comboBox->lineEdit()->text();
   const auto entry = UnitedEntryHelper::parseUserEntry(text);
   if (entry.m_name.isEmpty()) {
     filterEntryListWidgetEntries(entry.m_name);
@@ -324,11 +315,10 @@ void UnitedEntry::processInput() {
     }
   } else {
     if (!m_lastEntry || m_lastEntry->name() == entry.m_name) {
-      m_lastEntry = UnitedEntryMgr::getInst().findEntry(entry.m_name);
+      m_lastEntry = m_mgr->findEntry(entry.m_name);
     }
 
     if (m_lastEntry) {
-      // Found.
       setBusy(true);
       m_lastEntry->process(entry.m_args,
                            std::bind(&UnitedEntry::popupWidget, this, std::placeholders::_1));
@@ -343,8 +333,9 @@ void UnitedEntry::processInput() {
 
 void UnitedEntry::popupWidget(const QSharedPointer<QWidget> &p_widget) {
   m_popup->setWidget(p_widget);
-
-  m_lineEdit->setFocus();
+  updatePopupGeometry();
+  m_popup->show();
+  m_comboBox->lineEdit()->setFocus();
 }
 
 const QSharedPointer<QTreeWidget> &UnitedEntry::getEntryListWidget() {
@@ -353,7 +344,7 @@ const QSharedPointer<QTreeWidget> &UnitedEntry::getEntryListWidget() {
     m_entryListWidget->setHeaderHidden(false);
     m_entryListWidget->setHeaderLabels(QStringList() << tr("Entry") << tr("Description"));
 
-    const auto entries = UnitedEntryMgr::getInst().getEntries();
+    const auto entries = m_mgr->getEntries();
     for (const auto &entry : entries) {
       m_entryListWidget->addTopLevelItem(
           new QTreeWidgetItem({entry->name(), entry->description()}));
@@ -409,7 +400,7 @@ void UnitedEntry::handleEntryItemActivated(IUnitedEntry *p_entry, bool p_quit,
     if (p_restoreFocus) {
       exitUnitedEntry();
     } else {
-      deactivateUnitedEntry();
+      deactivate();
     }
   }
 }
@@ -434,7 +425,7 @@ bool UnitedEntry::eventFilter(QObject *p_watched, QEvent *p_event) {
         break;
       }
     }
-  } else if (p_watched == m_lineEdit) {
+  } else if (p_watched == m_comboBox->lineEdit()) {
     if (p_event->type() == QEvent::KeyPress) {
       auto eve = static_cast<QKeyEvent *>(p_event);
       if (handleLineEditKeyPress(eve)) {
@@ -443,55 +434,41 @@ bool UnitedEntry::eventFilter(QObject *p_watched, QEvent *p_event) {
     }
   }
 
-  return QFrame::eventFilter(p_watched, p_event);
+  return QWidget::eventFilter(p_watched, p_event);
 }
 
 void UnitedEntry::exitUnitedEntry() {
   if (m_previousFocusWidget) {
-    // Deactivate and focus previous widget.
     m_previousFocusWidget->setFocus();
   } else {
-    m_mainWindow->setFocus();
+    if (auto *w = window()) {
+      w->setFocus();
+    }
   }
-  deactivateUnitedEntry();
+  deactivate();
 }
 
-void UnitedEntry::showEvent(QShowEvent *p_event) {
-  QFrame::showEvent(p_event);
-
-  // Fix input method issue.
-  activateWindow();
-
-  m_lineEdit->setFocus();
-
-  updateGeometryToContents();
-}
-
-void UnitedEntry::updateGeometryToContents() {
-  adjustSize();
-
-  const auto winSize = m_mainWindow->size();
-  const auto sz = preferredSize();
-  auto pos = parentWidget()->mapToGlobal(
-      QPoint((winSize.width() - sz.width()) / 2, (winSize.height() - sz.height()) / 2));
-  setGeometry(QRect(pos, preferredSize()));
-}
-
-QSize UnitedEntry::preferredSize() const {
+QSize UnitedEntry::calculatePopupSize() const {
   const int minWidth = 400;
-  const int minHeight = 300;
+  const int minHeight = 200;
+  const int maxHeight = 600;
 
-  const auto winSize = m_mainWindow->size();
-  int w = minWidth;
-  int h = sizeHint().height();
-  w = qMax(w, qMin(winSize.width() / 2, 900));
-  h = qMax(h, qMin(winSize.height() - 300, 800));
-  return QSize(qMax(minWidth, w), qMax(h, minHeight));
+  int w = qMax(minWidth, m_comboBox->width());
+  w = qMin(w, 900);
+  int h = qMax(minHeight, qMin(maxHeight, 400));
+  return QSize(w, h);
+}
+
+void UnitedEntry::updatePopupGeometry() {
+  QPoint globalPos = m_comboBox->mapToGlobal(QPoint(0, m_comboBox->height()));
+  QSize popupSize = calculatePopupSize();
+  m_popup->setGeometry(QRect(globalPos, popupSize));
 }
 
 void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now) {
   Q_UNUSED(p_old);
-  if (m_activated && (!p_now || (p_now != this && !WidgetUtils::isOrAncestorOf(this, p_now)))) {
-    deactivateUnitedEntry();
+  if (m_activated && (!p_now || (p_now != m_comboBox && p_now != m_comboBox->lineEdit() &&
+                                 !WidgetUtils::isOrAncestorOf(m_popup, p_now)))) {
+    deactivate();
   }
 }

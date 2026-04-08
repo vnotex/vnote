@@ -7,7 +7,6 @@
 using namespace vnotex;
 
 EntryPopup::EntryPopup(QWidget *p_parent) : QFrame(p_parent) {
-  Q_ASSERT(p_parent);
   auto layout = new QVBoxLayout(this);
   Q_UNUSED(layout);
 }

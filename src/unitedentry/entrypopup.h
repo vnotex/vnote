@@ -8,6 +8,7 @@ namespace vnotex {
 class EntryPopup : public QFrame {
   Q_OBJECT
 public:
+  // Allow parentless construction for floating popup usage.
   explicit EntryPopup(QWidget *p_parent = nullptr);
 
   ~EntryPopup();

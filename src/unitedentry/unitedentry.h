@@ -1,44 +1,42 @@
 #ifndef UNITEDENTRY_H
 #define UNITEDENTRY_H
 
-#include <QFrame>
 #include <QSharedPointer>
+#include <QWidget>
 
 class QAction;
 class QTimer;
 class QTreeWidget;
 class QLabel;
-class QMainWindow;
+class QComboBox;
+class QKeyEvent;
 
 namespace vnotex {
-class LineEditWithSnippet;
+class ServiceLocator;
 class EntryPopup;
 class IUnitedEntry;
+class UnitedEntryMgr;
 
-class UnitedEntry : public QFrame {
+class UnitedEntry : public QWidget {
   Q_OBJECT
 public:
-  explicit UnitedEntry(QMainWindow *p_mainWindow);
+  explicit UnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
+                       QWidget *p_parent = nullptr);
 
   ~UnitedEntry();
 
   bool eventFilter(QObject *p_watched, QEvent *p_event) Q_DECL_OVERRIDE;
 
-  QAction *getTriggerAction();
+  QAction *getActivateAction();
 
-  QString getTriggerActionText() const;
+  void activate();
 
-protected:
-  void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+  void deactivate();
 
 private:
   void setupUI();
 
   void setupActions();
-
-  void activateUnitedEntry();
-
-  void deactivateUnitedEntry();
 
   void clear();
 
@@ -63,16 +61,18 @@ private:
 
   void exitUnitedEntry();
 
-  void updateGeometryToContents();
-
-  QSize preferredSize() const;
-
   // Return true if want to stop the propogation.
   bool handleLineEditKeyPress(QKeyEvent *p_event);
 
-  QMainWindow *m_mainWindow = nullptr;
+  QSize calculatePopupSize() const;
 
-  LineEditWithSnippet *m_lineEdit = nullptr;
+  void updatePopupGeometry();
+
+  ServiceLocator &m_services;
+
+  UnitedEntryMgr *m_mgr = nullptr;
+
+  QComboBox *m_comboBox = nullptr;
 
   EntryPopup *m_popup = nullptr;
 
