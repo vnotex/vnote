@@ -2,20 +2,17 @@
 
 #include <QDir>
 #include <QFileInfo>
-#include <QJsonObject>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QTemporaryDir>
 #include <QWebEnginePage>
 #include <QWidget>
 
+#include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/exception.h>
 #include <core/htmltemplatehelper.h>
-#include <core/iconfigmgr.h>
-#include <core/mainconfig.h>
 #include <core/markdowneditorconfig.h>
-#include <core/services/configcoreservice.h>
 #include <gui/services/themeservice.h>
 #include <utils/fileutils.h>
 #include <utils/htmlutils.h>
@@ -32,24 +29,8 @@ static const QString c_imgRegExp = "<img ([^>]*)src=\"(?!data:)([^\"]+)\"([^>]*)
 
 namespace {
 
-class ExportConfigMgr final : public IConfigMgr {
-public:
-  void updateMainConfig(const QJsonObject &p_jobj) override { m_mainConfig = p_jobj; }
-
-  void updateSessionConfig(const QJsonObject &p_jobj) override { m_sessionConfig = p_jobj; }
-
-private:
-  QJsonObject m_mainConfig;
-  QJsonObject m_sessionConfig;
-};
-
-QString resolveConfigFile(ConfigCoreService &p_configService, const QString &p_filePath) {
-  QFileInfo info(p_filePath);
-  if (info.isAbsolute()) {
-    return p_filePath;
-  }
-
-  return QDir(p_configService.getDataPath(DataLocation::App)).filePath(p_filePath);
+QString resolveConfigFile(ConfigMgr2 &p_configMgr, const QString &p_filePath) {
+  return p_configMgr.getFileFromConfigFolder(p_filePath);
 }
 
 QString readTemplateFile(const QString &p_filePath, const QString &p_logPrefix) {
@@ -92,14 +73,14 @@ void fillGlobalOptions(QString &p_template, const MarkdownWebGlobalOptions &p_op
                      p_opts.toJavascriptObject());
 }
 
-void fillGlobalStyles(QString &p_template, const WebResource &p_resource,
-                      ConfigCoreService &p_configService, const QString &p_additionalStyles) {
+void fillGlobalStyles(QString &p_template, const WebResource &p_resource, ConfigMgr2 &p_configMgr,
+                      const QString &p_additionalStyles) {
   QString styles;
   for (const auto &ele : p_resource.m_resources) {
     if (ele.isGlobal()) {
       if (ele.m_enabled) {
         for (const auto &style : ele.m_styles) {
-          const auto styleFile = resolveConfigFile(p_configService, style);
+          const auto styleFile = resolveConfigFile(p_configMgr, style);
           const auto content = readTemplateFile(styleFile, "failed to read global styles");
           if (!content.isEmpty()) {
             styles += content;
@@ -126,19 +107,18 @@ void fillThemeStyles(QString &p_template, const QString &p_webStyleSheetFile,
   }
 }
 
-void fillResources(QString &p_template, const WebResource &p_resource,
-                   ConfigCoreService &p_configService) {
+void fillResources(QString &p_template, const WebResource &p_resource, ConfigMgr2 &p_configMgr) {
   QString styles;
   QString scripts;
 
   for (const auto &ele : p_resource.m_resources) {
     if (ele.m_enabled && !ele.isGlobal()) {
       for (const auto &style : ele.m_styles) {
-        styles += fillStyleTag(resolveConfigFile(p_configService, style));
+        styles += fillStyleTag(resolveConfigFile(p_configMgr, style));
       }
 
       for (const auto &script : ele.m_scripts) {
-        scripts += fillScriptTag(resolveConfigFile(p_configService, script));
+        scripts += fillScriptTag(resolveConfigFile(p_configMgr, script));
       }
     }
   }
@@ -153,14 +133,14 @@ void fillResources(QString &p_template, const WebResource &p_resource,
 }
 
 void fillResourcesByContent(QString &p_template, const WebResource &p_resource,
-                            ConfigCoreService &p_configService) {
+                            ConfigMgr2 &p_configMgr) {
   QString styles;
   QString scripts;
 
   for (const auto &ele : p_resource.m_resources) {
     if (ele.m_enabled && !ele.isGlobal()) {
       for (const auto &style : ele.m_styles) {
-        const auto styleFile = resolveConfigFile(p_configService, style);
+        const auto styleFile = resolveConfigFile(p_configMgr, style);
         const auto content = readTemplateFile(styleFile, "failed to read resource");
         if (!content.isEmpty()) {
           styles += content;
@@ -168,7 +148,7 @@ void fillResourcesByContent(QString &p_template, const WebResource &p_resource,
       }
 
       for (const auto &script : ele.m_scripts) {
-        const auto scriptFile = resolveConfigFile(p_configService, script);
+        const auto scriptFile = resolveConfigFile(p_configMgr, script);
         const auto content = readTemplateFile(scriptFile, "failed to read resource");
         if (!content.isEmpty()) {
           scripts += content;
@@ -186,17 +166,17 @@ void fillResourcesByContent(QString &p_template, const WebResource &p_resource,
   }
 }
 
-QString generateMarkdownViewerTemplate(ConfigCoreService &p_configService,
+QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
                                        const MarkdownEditorConfig &p_config,
                                        const HtmlTemplateHelper::MarkdownParas &p_paras) {
   const auto &viewerResource = p_config.getViewerResource();
-  const auto templateFile = resolveConfigFile(p_configService, viewerResource.m_template);
+  const auto templateFile = resolveConfigFile(p_configMgr, viewerResource.m_template);
   auto htmlTemplate = readTemplateFile(templateFile, "failed to read HTML template");
   if (htmlTemplate.isEmpty()) {
     return errorPage();
   }
 
-  fillGlobalStyles(htmlTemplate, viewerResource, p_configService, QString());
+  fillGlobalStyles(htmlTemplate, viewerResource, p_configMgr, QString());
   fillThemeStyles(htmlTemplate, p_paras.m_webStyleSheetFile, p_paras.m_highlightStyleSheetFile);
 
   MarkdownWebGlobalOptions opts;
@@ -224,37 +204,25 @@ QString generateMarkdownViewerTemplate(ConfigCoreService &p_configService,
   opts.m_removeCodeToolBarEnabled = p_paras.m_removeCodeToolBarEnabled;
   fillGlobalOptions(htmlTemplate, opts);
 
-  fillResources(htmlTemplate, viewerResource, p_configService);
+  fillResources(htmlTemplate, viewerResource, p_configMgr);
   return htmlTemplate;
 }
 
-QString generateMarkdownExportTemplate(ConfigCoreService &p_configService,
+QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
                                        const MarkdownEditorConfig &p_config,
                                        bool p_addOutlinePanel) {
   auto exportResource = p_config.getExportResource();
-  const auto templateFile = resolveConfigFile(p_configService, exportResource.m_template);
+  const auto templateFile = resolveConfigFile(p_configMgr, exportResource.m_template);
   auto htmlTemplate =
       readTemplateFile(templateFile, "failed to read Markdown export HTML template");
   if (htmlTemplate.isEmpty()) {
     return errorPage();
   }
 
-  fillGlobalStyles(htmlTemplate, exportResource, p_configService, QString());
+  fillGlobalStyles(htmlTemplate, exportResource, p_configMgr, QString());
   HtmlTemplateHelper::fillOutlinePanel(htmlTemplate, exportResource, p_addOutlinePanel);
-  fillResourcesByContent(htmlTemplate, exportResource, p_configService);
+  fillResourcesByContent(htmlTemplate, exportResource, p_configMgr);
   return htmlTemplate;
-}
-
-MarkdownEditorConfig buildMarkdownEditorConfig(ConfigCoreService &p_configService) {
-  ExportConfigMgr configMgr;
-  MainConfig mainConfig(&configMgr);
-
-  const auto mainConfigJson = p_configService.getConfig();
-  if (!mainConfigJson.isEmpty()) {
-    mainConfig.fromJson(mainConfigJson);
-  }
-
-  return mainConfig.getEditorConfig().getMarkdownEditorConfig();
 }
 
 } // namespace
@@ -458,9 +426,9 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
            p_option.m_targetFormat == ExportFormat::HTML);
 
   auto *themeService = m_services.get<ThemeService>();
-  auto *configService = m_services.get<ConfigCoreService>();
+  auto *configMgr = m_services.get<ConfigMgr2>();
   Q_ASSERT(themeService);
-  Q_ASSERT(configService);
+  Q_ASSERT(configMgr);
 
   auto *adapter = new MarkdownViewerAdapter(m_services, this);
   m_viewer = new MarkdownViewer(adapter, m_services, themeService->getBaseBackground(), 1,
@@ -479,7 +447,7 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
     scrollable = false;
   }
 
-  const auto config = buildMarkdownEditorConfig(*configService);
+  const auto &config = configMgr->getEditorConfig().getMarkdownEditorConfig();
   bool useWkhtmltopdf = false;
   QSize pageBodySize(1024, 768);
   if (p_option.m_targetFormat == ExportFormat::PDF) {
@@ -513,12 +481,12 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   paras.m_mathJaxScale = useWkhtmltopdf ? 2.5 : -1;
   paras.m_removeCodeToolBarEnabled = p_option.m_removeCodeToolBarEnabled;
 
-  m_htmlTemplate = generateMarkdownViewerTemplate(*configService, config, paras);
+  m_htmlTemplate = generateMarkdownViewerTemplate(*configMgr, config, paras);
 
   {
     const bool addOutlinePanel =
         p_option.m_targetFormat == ExportFormat::HTML && p_option.m_htmlOption.m_addOutlinePanel;
-    m_exportHtmlTemplate = generateMarkdownExportTemplate(*configService, config, addOutlinePanel);
+    m_exportHtmlTemplate = generateMarkdownExportTemplate(*configMgr, config, addOutlinePanel);
   }
 
   if (useWkhtmltopdf) {
