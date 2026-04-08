@@ -197,13 +197,13 @@ void ExportDialog2::setupUI() {
   auto *mainLayout = new QVBoxLayout(mainWidget);
 
   // Common options (including source + format).
-  auto *commonWidget = new QWidget(mainWidget);
-  auto *commonLayout = new QGridLayout(commonWidget);
+  auto *optionsGroupBox = new QGroupBox(tr("Options"), mainWidget);
+  auto *commonLayout = new QGridLayout(optionsGroupBox);
   commonLayout->setColumnStretch(1, 1);
   commonLayout->setColumnStretch(3, 1);
 
   // Row 0: Source + Format.
-  m_sourceCombo = WidgetsFactory::createComboBox(commonWidget);
+  m_sourceCombo = WidgetsFactory::createComboBox(optionsGroupBox);
   for (int i = static_cast<int>(ExportSource::CurrentBuffer);
        i <= static_cast<int>(ExportSource::CurrentNotebook); ++i) {
     auto source = static_cast<ExportSource>(i);
@@ -218,47 +218,47 @@ void ExportDialog2::setupUI() {
     }
   }
 
-  m_formatCombo = WidgetsFactory::createComboBox(commonWidget);
+  m_formatCombo = WidgetsFactory::createComboBox(optionsGroupBox);
   m_formatCombo->addItem(tr("Markdown"), static_cast<int>(ExportFormat::Markdown));
   m_formatCombo->addItem(tr("HTML"), static_cast<int>(ExportFormat::HTML));
   m_formatCombo->addItem(tr("PDF"), static_cast<int>(ExportFormat::PDF));
   m_formatCombo->addItem(tr("Custom"), static_cast<int>(ExportFormat::Custom));
 
-  commonLayout->addWidget(new QLabel(tr("Source:"), commonWidget), 0, 0);
+  commonLayout->addWidget(new QLabel(tr("Source:"), optionsGroupBox), 0, 0);
   commonLayout->addWidget(m_sourceCombo, 0, 1);
-  commonLayout->addWidget(new QLabel(tr("Format:"), commonWidget), 0, 2);
+  commonLayout->addWidget(new QLabel(tr("Format:"), optionsGroupBox), 0, 2);
   commonLayout->addWidget(m_formatCombo, 0, 3);
 
   // Row 1: Output directory.
-  m_outputDirInput = new LocationInputWithBrowseButton(commonWidget, getDefaultOutputDir());
+  m_outputDirInput = new LocationInputWithBrowseButton(optionsGroupBox, getDefaultOutputDir());
   m_outputDirInput->setBrowseType(LocationInputWithBrowseButton::Folder,
                                   tr("Select Export Output Directory"));
-  commonLayout->addWidget(new QLabel(tr("Output directory:"), commonWidget), 1, 0);
+  commonLayout->addWidget(new QLabel(tr("Output directory:"), optionsGroupBox), 1, 0);
   commonLayout->addWidget(m_outputDirInput, 1, 1, 1, 3);
 
   // Row 2: Rendering style + Syntax style.
   const auto webStyles = m_services.get<ThemeService>()->getWebStyles();
 
-  m_renderingStyleCombo = WidgetsFactory::createComboBox(commonWidget);
-  m_syntaxStyleCombo = WidgetsFactory::createComboBox(commonWidget);
+  m_renderingStyleCombo = WidgetsFactory::createComboBox(optionsGroupBox);
+  m_syntaxStyleCombo = WidgetsFactory::createComboBox(optionsGroupBox);
   for (const auto &style : webStyles) {
     m_renderingStyleCombo->addItem(style.first, style.second);
     m_syntaxStyleCombo->addItem(style.first, style.second);
   }
 
-  commonLayout->addWidget(new QLabel(tr("Rendering style:"), commonWidget), 2, 0);
+  commonLayout->addWidget(new QLabel(tr("Rendering style:"), optionsGroupBox), 2, 0);
   commonLayout->addWidget(m_renderingStyleCombo, 2, 1);
-  commonLayout->addWidget(new QLabel(tr("Syntax style:"), commonWidget), 2, 2);
+  commonLayout->addWidget(new QLabel(tr("Syntax style:"), optionsGroupBox), 2, 2);
   commonLayout->addWidget(m_syntaxStyleCombo, 2, 3);
 
   // Row 3: Checkboxes.
   m_transparentBgCheck =
-      WidgetsFactory::createCheckBox(tr("Use transparent background"), commonWidget);
-  m_recursiveCheck = WidgetsFactory::createCheckBox(tr("Process sub-folders"), commonWidget);
+      WidgetsFactory::createCheckBox(tr("Use transparent background"), optionsGroupBox);
+  m_recursiveCheck = WidgetsFactory::createCheckBox(tr("Process sub-folders"), optionsGroupBox);
   commonLayout->addWidget(m_transparentBgCheck, 3, 0, 1, 2);
   commonLayout->addWidget(m_recursiveCheck, 3, 2, 1, 2);
 
-  mainLayout->addWidget(commonWidget);
+  mainLayout->addWidget(optionsGroupBox);
 
   // Middle: format-specific stacked pages in a group box.
   auto *stackedScrollWidget = new StackedScrollWidget(mainWidget);
