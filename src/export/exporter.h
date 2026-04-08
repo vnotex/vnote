@@ -3,32 +3,37 @@
 
 #include <QObject>
 #include <QStringList>
+#include <QVector>
 
 #include "exportdata.h"
+#include <core/servicelocator.h>
 
 namespace vnotex {
-class Notebook;
-class Node;
-class Buffer;
-class File;
 class WebViewExporter;
+
+struct ExportFileInfo {
+  QString filePath;
+  QString fileName;
+  QString resourcePath;
+  QString attachmentFolderPath;
+  bool isMarkdown = true;
+};
 
 class Exporter : public QObject {
   Q_OBJECT
 public:
   // We need the QWidget as parent.
-  explicit Exporter(QWidget *p_parent);
+  explicit Exporter(ServiceLocator &p_services, QWidget *p_parent);
 
   // Return exported output file.
-  QString doExport(const ExportOption &p_option, Buffer *p_buffer);
-
-  // Return exported output file.
-  QString doExport(const ExportOption &p_option, Node *p_note);
+  QString doExportFile(const ExportOption &p_option, const QString &p_content,
+                       const QString &p_filePath, const QString &p_fileName,
+                       const QString &p_resourcePath, const QString &p_attachmentFolderPath,
+                       bool p_isMarkdown);
 
   // Return exported output files.
-  QStringList doExportFolder(const ExportOption &p_option, Node *p_folder);
-
-  QStringList doExport(const ExportOption &p_option, Notebook *p_notebook);
+  QStringList doExportBatch(const ExportOption &p_option, const QVector<ExportFileInfo> &p_files,
+                            const QString &p_batchName);
 
   void stop();
 
@@ -37,33 +42,44 @@ signals:
 
   void logRequested(const QString &p_log);
 
-private:
-  QStringList doExport(const ExportOption &p_option, const QString &p_outputDir, Node *p_folder);
+  void askedToStop();
 
-  QString doExport(const ExportOption &p_option, const QString &p_outputDir, const File *p_file);
+private:
+  QString doExport(const ExportOption &p_option, const QString &p_outputDir,
+                   const ExportFileInfo &p_file, const QString &p_content = QString());
 
   QString doExportMarkdown(const ExportOption &p_option, const QString &p_outputDir,
-                           const File *p_file);
+                           const QString &p_content, const QString &p_filePath,
+                           const QString &p_fileName, const QString &p_resourcePath,
+                           const QString &p_attachmentFolderPath);
 
   QString doExportHtml(const ExportOption &p_option, const QString &p_outputDir,
-                       const File *p_file);
+                       const QString &p_content, const QString &p_filePath,
+                       const QString &p_fileName, const QString &p_resourcePath,
+                       const QString &p_destPath, const QString &p_attachmentFolderPath);
 
-  QString doExportPdf(const ExportOption &p_option, const QString &p_outputDir, const File *p_file);
+  QString doExportPdf(const ExportOption &p_option, const QString &p_outputDir,
+                      const QString &p_content, const QString &p_filePath,
+                      const QString &p_fileName, const QString &p_resourcePath,
+                      const QString &p_destPath, const QString &p_attachmentFolderPath);
 
   QString doExportCustom(const ExportOption &p_option, const QString &p_outputDir,
-                         const File *p_file);
+                         const QString &p_content, const QString &p_filePath,
+                         const QString &p_fileName, const QString &p_resourcePath,
+                         const QString &p_destPath, const QString &p_attachmentFolderPath);
 
   bool doExportCustom(const ExportOption &p_option, const QStringList &p_files,
                       const QStringList &p_resourcePaths, const QString &p_filePath);
 
-  // Export @p_notebook or @p_folder. @p_folder will be considered only when @p_notebook is null.
-  QString doExportPdfAllInOne(const ExportOption &p_option, Notebook *p_notebook, Node *p_folder);
+  QString doExportPdfAllInOne(const ExportOption &p_option, const QVector<ExportFileInfo> &p_files,
+                              const QString &p_batchName);
 
-  QString doExportCustomAllInOne(const ExportOption &p_option, Notebook *p_notebook,
-                                 Node *p_folder);
+  QString doExportCustomAllInOne(const ExportOption &p_option,
+                                 const QVector<ExportFileInfo> &p_files,
+                                 const QString &p_batchName);
 
-  void exportAttachments(Node *p_node, const QString &p_srcFilePath, const QString &p_outputFolder,
-                         const QString &p_destFilePath);
+  void exportAttachments(const QString &p_attachmentFolderPath, const QString &p_srcFilePath,
+                         const QString &p_outputFolder, const QString &p_destFilePath);
 
   WebViewExporter *getWebViewExporter(const ExportOption &p_option);
 
@@ -73,9 +89,6 @@ private:
 
   bool checkAskedToStop() const;
 
-  QStringList doExportNotebook(const ExportOption &p_option, const QString &p_outputDir,
-                               Notebook *p_notebook);
-
   static ExportOption getExportOptionForIntermediateHtml(const ExportOption &p_option,
                                                          const QString &p_outputDir);
 
@@ -84,8 +97,7 @@ private:
 
   static QString getQuotedPath(const QString &p_path);
 
-  static void collectFiles(const QList<QSharedPointer<File>> &p_files, QStringList &p_inputFiles,
-                           QStringList &p_resourcePaths);
+  ServiceLocator &m_services;
 
   // Managed by QObject.
   WebViewExporter *m_webViewExporter = nullptr;

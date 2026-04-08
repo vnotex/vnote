@@ -175,9 +175,8 @@ QGroupBox *ExportDialog::setupTargetGroup(QWidget *p_parent) {
 
   {
     m_outputDirInput = new LocationInputWithBrowseButton(box, getDefaultOutputDir());
-    m_outputDirInput->setBrowseType(
-        LocationInputWithBrowseButton::Folder,
-        tr("Select Export Output Directory"));
+    m_outputDirInput->setBrowseType(LocationInputWithBrowseButton::Folder,
+                                    tr("Select Export Output Directory"));
     layout->addRow(tr("Output directory:"), m_outputDirInput);
   }
 
@@ -357,7 +356,13 @@ void ExportDialog::rejectedButtonClicked() {
   if (m_exportOngoing) {
     // Just cancel the export.
     appendLog(tr("Cancelling the export"));
-    getExporter()->stop();
+    if (auto exporter = getExporter()) {
+      exporter->stop();
+    } else {
+      // [MIGRATION] Exporter legacy integration is disabled during ExportDialog -> ExportDialog2
+      // migration.
+      appendLog(tr("Export migration in progress. Stop request is ignored."));
+    }
   } else {
     Dialog::rejectedButtonClicked();
   }
@@ -400,8 +405,10 @@ int ExportDialog::doExport(ExportOption p_option) {
     p_option.m_customOption = &m_customOptions[optIdx];
   }
 
+  // [MIGRATION] Exporter API moved to path-based interface in Exporter.
+  // [MIGRATION] Legacy ExportDialog callers (Buffer/Node/Notebook) are disabled.
+#if 0
   int exportedFilesCount = 0;
-
   switch (p_option.m_source) {
   case ExportSource::CurrentBuffer: {
     Q_ASSERT(m_buffer);
@@ -439,14 +446,23 @@ int ExportDialog::doExport(ExportOption p_option) {
   }
 
   return exportedFilesCount;
+#else
+  Q_UNUSED(p_option);
+  appendLog(tr("Export migration in progress. Please use ExportDialog2 + ExportController."));
+  return 0;
+#endif
 }
 
 Exporter *ExportDialog::getExporter() {
+  // [MIGRATION] Exporter now requires ServiceLocator and path-based input.
+  // [MIGRATION] Legacy ExportDialog does not construct Exporter anymore.
+#if 0
   if (!m_exporter) {
     m_exporter = new Exporter(this);
     connect(m_exporter, &Exporter::progressUpdated, this, &ExportDialog::updateProgress);
     connect(m_exporter, &Exporter::logRequested, this, &ExportDialog::appendLog);
   }
+#endif
   return m_exporter;
 }
 
