@@ -2,8 +2,11 @@
 #define SEARCHSERVICE_H
 
 #include <atomic>
+#include <memory>
 
+#include <QMap>
 #include <QObject>
+#include <QSet>
 #include <QString>
 
 #include <core/error.h>
@@ -18,7 +21,7 @@ class SearchCoreService;
 class SearchWorker;
 
 // Async wrapper around SearchCoreService using QThread + worker object.
-// Guarantees single-search-at-a-time and cooperative cancellation.
+// Supports multiple queued searches with per-request cooperative cancellation.
 class SearchService : public QObject {
   Q_OBJECT
 
@@ -26,32 +29,33 @@ public:
   explicit SearchService(SearchCoreService *p_coreService, QObject *p_parent = nullptr);
   ~SearchService() override;
 
-  void searchFiles(const QString &p_notebookId, const QString &p_queryJson,
-                   const QString &p_inputFilesJson = QString());
-  void searchContent(const QString &p_notebookId, const QString &p_queryJson,
-                     const QString &p_inputFilesJson = QString());
-  void searchByTags(const QString &p_notebookId, const QString &p_queryJson,
+  int searchFiles(const QString &p_notebookId, const QString &p_queryJson,
+                  const QString &p_inputFilesJson = QString());
+  int searchContent(const QString &p_notebookId, const QString &p_queryJson,
                     const QString &p_inputFilesJson = QString());
+  int searchByTags(const QString &p_notebookId, const QString &p_queryJson,
+                   const QString &p_inputFilesJson = QString());
 
+  void cancel(int p_token);
   void cancel();
   bool isSearching() const;
+  bool isSearching(int p_token) const;
 
 signals:
-  void searchFinished(const SearchResult &p_result);
-  void searchFailed(const Error &p_error);
-  void searchCancelled();
-  void searchProgress(int p_percent);
-  void searchStarted();
+  void searchFinished(int p_token, const SearchResult &p_result);
+  void searchFailed(int p_token, const Error &p_error);
+  void searchCancelled(int p_token);
+  void searchProgress(int p_token, int p_percent);
+  void searchStarted(int p_token);
 
 private:
-  void waitForCurrentSearch();
-
   SearchCoreService *m_coreService = nullptr;
   SearchWorker *m_worker = nullptr;
   QThread *m_thread = nullptr;
   QMutex *m_mutex = nullptr;
-  std::atomic<int> m_cancelFlag{0};
-  std::atomic<bool> m_searching{false};
+  QMap<int, std::shared_ptr<std::atomic<int>>> m_cancelFlags;
+  QSet<int> m_activeTokens;
+  int m_nextToken = 1;
 };
 
 } // namespace vnotex
