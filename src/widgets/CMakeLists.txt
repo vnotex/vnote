@@ -10,6 +10,7 @@ target_sources(vnote PRIVATE
     dialogs/deleteconfirmdialog.cpp dialogs/deleteconfirmdialog.h
     dialogs/dialog.cpp dialogs/dialog.h
     dialogs/exportdialog.cpp dialogs/exportdialog.h
+    dialogs/exportdialog2.cpp dialogs/exportdialog2.h
     dialogs/filepropertiesdialog.cpp dialogs/filepropertiesdialog.h
     dialogs/folderfilesfilterwidget.cpp dialogs/folderfilesfilterwidget.h
     dialogs/folderpropertiesdialog.cpp dialogs/folderpropertiesdialog.h
