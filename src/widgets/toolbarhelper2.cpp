@@ -28,6 +28,8 @@
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
+#include <unitedentry/unitedentry.h>
+#include <unitedentry/unitedentrymgr.h>
 #include <utils/pathutils.h>
 #include <utils/vxurlutils.h>
 #include <utils/widgetutils.h>
@@ -221,8 +223,6 @@ QToolBar *ToolBarHelper2::setupSettingsToolBar(QToolBar *p_toolBar) {
     tb = createToolBar(MainWindow2::tr("Settings"), "SettingsToolBar");
   }
 
-  addSpacer(tb);
-
   setupExpandButton(tb);
 
   setupSettingsButton(tb);
@@ -264,6 +264,7 @@ QIcon ToolBarHelper2::generateDangerousIcon(const QString &p_iconName) {
 
 void ToolBarHelper2::setupToolBars() {
   setupFileToolBar(nullptr);
+  setupUnitedEntry(nullptr);
   setupSettingsToolBar(nullptr);
 }
 
@@ -273,7 +274,35 @@ void ToolBarHelper2::setupToolBars(QToolBar *p_toolBar) {
   m_mainWindow->addToolBar(p_toolBar);
 
   setupFileToolBar(p_toolBar);
+  setupUnitedEntry(p_toolBar);
   setupSettingsToolBar(p_toolBar);
+}
+
+void ToolBarHelper2::setupUnitedEntry(QToolBar *p_toolBar) {
+  auto tb = p_toolBar;
+  if (!tb) {
+    tb = createToolBar(MainWindow2::tr("United Entry"), "UnitedEntryToolBar");
+  }
+
+  // Create the UnitedEntryMgr controller.
+  m_unitedEntryMgr = new UnitedEntryMgr(m_services, this);
+  m_unitedEntryMgr->init();
+
+  // Create the UnitedEntry toolbar widget.
+  m_unitedEntry = new UnitedEntry(m_services, m_unitedEntryMgr, tb);
+
+  // Left spacer.
+  addSpacer(tb);
+
+  // Add the UnitedEntry widget.
+  tb->addWidget(m_unitedEntry);
+
+  // Right spacer.
+  addSpacer(tb);
+
+  // Create activation action (Ctrl+G,G shortcut).
+  auto *activateAct = m_unitedEntry->getActivateAction();
+  m_mainWindow->addAction(activateAct);
 }
 
 void ToolBarHelper2::addSpacer(QToolBar *p_toolBar) {

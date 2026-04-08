@@ -14,6 +14,8 @@ namespace vnotex {
 
 class MainWindow2;
 class ServiceLocator;
+class UnitedEntry;
+class UnitedEntryMgr;
 
 // Tool bar helper for MainWindow2.
 // Non-static design with dependency injection for testability.
@@ -46,6 +48,8 @@ private:
 
   QToolBar *setupSettingsToolBar(QToolBar *p_toolBar);
 
+  void setupUnitedEntry(QToolBar *p_toolBar);
+
   void updateQuickAccessMenu(QMenu *p_menu);
 
   void setupExpandButton(QToolBar *p_toolBar);
@@ -63,6 +67,10 @@ private:
   ServiceLocator &m_services;
 
   MainWindow2 *m_mainWindow;
+
+  UnitedEntry *m_unitedEntry = nullptr;
+
+  UnitedEntryMgr *m_unitedEntryMgr = nullptr;
 };
 
 } // namespace vnotex

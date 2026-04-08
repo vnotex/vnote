@@ -30,9 +30,10 @@
 #include <core/sessionconfig.h>
 #include <core/vnotex.h>
 #include <task/taskmgr.h>
-#include <unitedentry/unitedentry.h>
-#include <utils/docsutils.h>
+// LEGACY: UnitedEntry migrated to new architecture in toolbarhelper2.cpp.
+// #include <unitedentry/unitedentry.h>
 #include <gui/utils/iconutils.h>
+#include <utils/docsutils.h>
 #include <utils/pathutils.h>
 #include <utils/vxurlutils.h>
 #include <utils/widgetutils.h>
@@ -76,16 +77,15 @@ QToolBar *ToolBarHelper::setupFileToolBar(MainWindow *p_win, QToolBar *p_toolBar
     newBtn->setMenu(newMenu);
 
     // Quick note.
-    auto newQuickNoteAct =
-        newMenu->addAction(MainWindow::tr("Quick Note"), newMenu,
-                           []() { emit VNoteX::getInst().newQuickNoteRequested(); });
+    auto newQuickNoteAct = newMenu->addAction(MainWindow::tr("Quick Note"), newMenu, []() {
+      emit VNoteX::getInst().newQuickNoteRequested();
+    });
     WidgetUtils::addActionShortcut(newQuickNoteAct,
                                    coreConfig.getShortcut(CoreConfig::Shortcut::NewQuickNote));
 
     // New folder.
-    auto newFolderAct =
-        newMenu->addAction(MainWindow::tr("New Folder"), newMenu,
-                           []() { emit VNoteX::getInst().newFolderRequested(); });
+    auto newFolderAct = newMenu->addAction(MainWindow::tr("New Folder"), newMenu,
+                                           []() { emit VNoteX::getInst().newFolderRequested(); });
     WidgetUtils::addActionShortcut(newFolderAct,
                                    coreConfig.getShortcut(CoreConfig::Shortcut::NewFolder));
 
@@ -278,8 +278,7 @@ void ToolBarHelper::setupExpandButton(MainWindow *p_win, QToolBar *p_toolBar) {
   auto btn = WidgetsFactory::createToolButton(p_toolBar);
 
   auto defaultText = MainWindow::tr("Expand Content Area");
-  auto expandAct =
-      new QAction(generateIcon("expand.svg"), defaultText, btn);
+  auto expandAct = new QAction(generateIcon("expand.svg"), defaultText, btn);
   WidgetUtils::addActionShortcut(expandAct,
                                  coreConfig.getShortcut(CoreConfig::Shortcut::ExpandContentArea));
   expandAct->setCheckable(true);
@@ -352,13 +351,12 @@ void ToolBarHelper::setupSettingsButton(MainWindow *p_win, QToolBar *p_toolBar) 
 
   auto defaultText = MainWindow::tr("Settings");
   auto settingsAct = new QAction(generateIcon("settings.svg"), defaultText, btn);
-  QAction::connect(settingsAct, &QAction::triggered,
-                   [p_win]() {
-                      // LEGACY: SettingsDialog now requires ServiceLocator.
-                      // Use MainWindow2 code path for settings dialog.
-                      Q_UNUSED(p_win);
-                      qDebug() << "Settings dialog not available in legacy code path";
-                   });
+  QAction::connect(settingsAct, &QAction::triggered, [p_win]() {
+    // LEGACY: SettingsDialog now requires ServiceLocator.
+    // Use MainWindow2 code path for settings dialog.
+    Q_UNUSED(p_win);
+    qDebug() << "Settings dialog not available in legacy code path";
+  });
   WidgetUtils::addActionShortcut(settingsAct,
                                  coreConfig.getShortcut(CoreConfig::Shortcut::Settings));
   btn->addAction(settingsAct);
