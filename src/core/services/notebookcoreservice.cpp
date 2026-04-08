@@ -734,6 +734,42 @@ QString NotebookCoreService::peekFile(const QString &p_notebookId, const QString
   return cstrToQString(content);
 }
 
+QString NotebookCoreService::getAttachmentsFolder(const QString &p_notebookId,
+                                                  const QString &p_filePath) const {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *path = nullptr;
+  VxCoreError err = vxcore_node_get_attachments_folder(m_context, p_notebookId.toUtf8().constData(),
+                                                       p_filePath.toUtf8().constData(), &path);
+  if (err != VXCORE_OK) {
+    qWarning() << "getAttachmentsFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+
+  QString result = cstrToQString(path);
+  return result;
+}
+
+QJsonArray NotebookCoreService::listAttachments(const QString &p_notebookId,
+                                                const QString &p_filePath) const {
+  if (!checkContext()) {
+    return QJsonArray();
+  }
+
+  char *attachmentsJson = nullptr;
+  VxCoreError err = vxcore_node_list_attachments(m_context, p_notebookId.toUtf8().constData(),
+                                                 p_filePath.toUtf8().constData(), &attachmentsJson);
+  if (err != VXCORE_OK) {
+    qWarning() << "listAttachments failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QJsonArray();
+  }
+
+  QJsonArray result = parseJsonArrayFromCStr(attachmentsJson);
+  return result;
+}
+
 // Private methods.
 bool NotebookCoreService::checkContext() const {
   if (!m_context) {

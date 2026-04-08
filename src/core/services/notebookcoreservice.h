@@ -142,6 +142,14 @@ public:
   QString peekFile(const QString &p_notebookId, const QString &p_filePath,
                    int p_maxChars = 256) const;
 
+  // Get absolute path to the file's attachments folder.
+  // Returns empty string on error.
+  QString getAttachmentsFolder(const QString &p_notebookId, const QString &p_filePath) const;
+
+  // List attachment filenames for a file.
+  // Returns empty array on error.
+  QJsonArray listAttachments(const QString &p_notebookId, const QString &p_filePath) const;
+
 private:
   // Check context validity before operations.
   bool checkContext() const;
