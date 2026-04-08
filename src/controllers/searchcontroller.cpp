@@ -183,12 +183,14 @@ void SearchController::cancel() {
   qDebug() << "SearchController::cancel: cancelling search";
   m_cancelRequested = true;
   m_pendingTargets.clear();
-  m_activeTokens.clear();
 
   auto *searchSvc = m_services.get<SearchService>();
   if (searchSvc) {
-    searchSvc->cancel();
+    for (int token : m_activeTokens) {
+      searchSvc->cancel(token);
+    }
   }
+  m_activeTokens.clear();
 }
 
 void SearchController::activateResult(const QModelIndex &p_index) {

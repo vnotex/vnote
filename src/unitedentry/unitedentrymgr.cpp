@@ -37,9 +37,9 @@ void UnitedEntryMgr::addEntry(const QSharedPointer<IUnitedEntry> &p_entry) {
   Q_ASSERT(!m_entries.contains(p_entry->name()));
   m_entries.insert(p_entry->name(), p_entry);
   connect(p_entry.data(), &IUnitedEntry::finished, this,
-          [this]() { emit entryFinished(reinterpret_cast<IUnitedEntry *>(sender())); });
+          [this]() { emit entryFinished(qobject_cast<IUnitedEntry *>(sender())); });
   connect(p_entry.data(), &IUnitedEntry::itemActivated, this, [this](bool quit, bool restoreFocus) {
-    emit entryItemActivated(reinterpret_cast<IUnitedEntry *>(sender()), quit, restoreFocus);
+    emit entryItemActivated(qobject_cast<IUnitedEntry *>(sender()), quit, restoreFocus);
   });
 }
 
