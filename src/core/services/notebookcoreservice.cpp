@@ -181,32 +181,6 @@ QString NotebookCoreService::getNodePathById(const QString &p_notebookId,
   return cstrToQString(path);
 }
 
-QJsonObject NotebookCoreService::resolveNodeByUuid(const QString &p_uuid) const {
-  if (!checkContext()) {
-    return QJsonObject();
-  }
-
-  char *notebookId = nullptr;
-  char *relativePath = nullptr;
-  VxCoreError err =
-      vxcore_node_resolve_by_id(m_context, p_uuid.toUtf8().constData(), &notebookId, &relativePath);
-  if (err != VXCORE_OK) {
-    if (err != VXCORE_ERR_NOT_FOUND) {
-      qWarning() << "resolveNodeByUuid failed:" << QString::fromUtf8(vxcore_error_message(err));
-    }
-    return QJsonObject();
-  }
-
-  QJsonObject result;
-  result["notebookId"] = QString::fromUtf8(notebookId);
-  result["relativePath"] = QString::fromUtf8(relativePath);
-
-  vxcore_string_free(notebookId);
-  vxcore_string_free(relativePath);
-
-  return result;
-}
-
 bool NotebookCoreService::unindexNode(const QString &p_notebookId, const QString &p_nodePath) {
   if (!checkContext()) {
     return false;

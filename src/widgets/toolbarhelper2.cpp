@@ -25,7 +25,6 @@
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
-#include <core/services/notebookcoreservice.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
@@ -459,23 +458,15 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
 }
 
 void ToolBarHelper2::activateQuickAccess(const SessionConfig::QuickAccessItem &p_item) {
-  // UUID-first: try to resolve by UUID if available.
+  // UUID-first: try to open by UUID if available.
   if (!p_item.m_uuid.isEmpty()) {
-    auto *notebookSvc = m_services.get<NotebookCoreService>();
-    QJsonObject resolved = notebookSvc->resolveNodeByUuid(p_item.m_uuid);
-    if (!resolved.isEmpty()) {
-      const auto mode =
-          resolveOpenMode(p_item.m_openMode, m_services.get<ConfigMgr2>()->getCoreConfig());
-
-      NodeIdentifier nodeId;
-      nodeId.notebookId = resolved["notebookId"].toString();
-      nodeId.relativePath = resolved["relativePath"].toString();
-
-      FileOpenSettings settings;
-      settings.m_mode = mode;
-
-      auto *bufferSvc = m_services.get<BufferService>();
-      bufferSvc->openBuffer(nodeId, settings);
+    const auto mode =
+        resolveOpenMode(p_item.m_openMode, m_services.get<ConfigMgr2>()->getCoreConfig());
+    FileOpenSettings settings;
+    settings.m_mode = mode;
+    auto *bufferSvc = m_services.get<BufferService>();
+    Buffer2 buf = bufferSvc->openBufferByNodeId(p_item.m_uuid, settings);
+    if (buf.isValid()) {
       return;
     }
     // UUID resolution failed — fall through to path-based logic.

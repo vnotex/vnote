@@ -44,10 +44,6 @@ private slots:
   void testImportFile();
   void testGetFileInfo();
 
-  // Resolve node by UUID tests.
-  void testResolveNodeByUuid();
-  void testResolveNodeByUuidNotFound();
-
   // Hook tests (delete).
   void testDeleteFileCancelledByHook();
   void testDeleteFolderCancelledByHook();
@@ -390,34 +386,6 @@ void TestNotebookService::testGetFileInfo() {
 
   QJsonObject metadata = m_service->getFileMetadata(nbId, "info.md");
   QVERIFY(!metadata.isEmpty());
-}
-
-// ===== Resolve node by UUID tests =====
-
-void TestNotebookService::testResolveNodeByUuid() {
-  QString nbPath = m_tempDir.filePath("resolve_uuid_notebook");
-  QString nbId = createTestNotebook(nbPath);
-  QVERIFY(!nbId.isEmpty());
-
-  // Create a file and get its info (which includes UUID).
-  m_service->createFile(nbId, "", "resolve_me.md");
-  QJsonObject fileInfo = m_service->getFileInfo(nbId, "resolve_me.md");
-  QVERIFY(!fileInfo.isEmpty());
-
-  QString uuid = fileInfo["id"].toString();
-  QVERIFY(!uuid.isEmpty());
-
-  // Resolve the UUID back to notebook + path.
-  QJsonObject resolved = m_service->resolveNodeByUuid(uuid);
-  QVERIFY(!resolved.isEmpty());
-  QCOMPARE(resolved["notebookId"].toString(), nbId);
-  QCOMPARE(resolved["relativePath"].toString(), QStringLiteral("resolve_me.md"));
-}
-
-void TestNotebookService::testResolveNodeByUuidNotFound() {
-  // Resolving a non-existent UUID should return empty object (not crash).
-  QJsonObject resolved = m_service->resolveNodeByUuid(QStringLiteral("nonexistent-uuid-12345"));
-  QVERIFY(resolved.isEmpty());
 }
 
 // ===== Hook tests: Delete =====

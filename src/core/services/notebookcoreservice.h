@@ -54,11 +54,6 @@ public:
   // Returns empty string if node is not found.
   QString getNodePathById(const QString &p_notebookId, const QString &p_nodeId) const;
 
-  // Resolve a node UUID to its containing notebook across all open notebooks.
-  // Returns JSON with "notebookId" and "relativePath" keys on success.
-  // Returns empty object if no open notebook contains a node with this UUID.
-  QJsonObject resolveNodeByUuid(const QString &p_uuid) const;
-
   // Remove a node (file or folder) from the notebook index.
   // Files remain on disk - only metadata is removed.
   bool unindexNode(const QString &p_notebookId, const QString &p_nodePath);
