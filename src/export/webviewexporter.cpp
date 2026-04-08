@@ -1,17 +1,22 @@
 #include "webviewexporter.h"
 
+#include <QDir>
 #include <QFileInfo>
+#include <QJsonObject>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QTemporaryDir>
 #include <QWebEnginePage>
 #include <QWidget>
 
-#include <core/configmgr.h>
 #include <core/editorconfig.h>
-#include <core/file.h>
+#include <core/exception.h>
 #include <core/htmltemplatehelper.h>
+#include <core/iconfigmgr.h>
+#include <core/mainconfig.h>
 #include <core/markdowneditorconfig.h>
+#include <core/services/configcoreservice.h>
+#include <gui/services/themeservice.h>
 #include <utils/fileutils.h>
 #include <utils/htmlutils.h>
 #include <utils/pathutils.h>
@@ -25,7 +30,237 @@ using namespace vnotex;
 
 static const QString c_imgRegExp = "<img ([^>]*)src=\"(?!data:)([^\"]+)\"([^>]*)>";
 
-WebViewExporter::WebViewExporter(QWidget *p_parent) : QObject(p_parent) {}
+namespace {
+
+class ExportConfigMgr final : public IConfigMgr {
+public:
+  void updateMainConfig(const QJsonObject &p_jobj) override { m_mainConfig = p_jobj; }
+
+  void updateSessionConfig(const QJsonObject &p_jobj) override { m_sessionConfig = p_jobj; }
+
+private:
+  QJsonObject m_mainConfig;
+  QJsonObject m_sessionConfig;
+};
+
+QString resolveConfigFile(ConfigCoreService &p_configService, const QString &p_filePath) {
+  QFileInfo info(p_filePath);
+  if (info.isAbsolute()) {
+    return p_filePath;
+  }
+
+  return QDir(p_configService.getDataPath(DataLocation::App)).filePath(p_filePath);
+}
+
+QString readTemplateFile(const QString &p_filePath, const QString &p_logPrefix) {
+  try {
+    return FileUtils::readTextFile(p_filePath);
+  } catch (Exception &p_e) {
+    qWarning() << p_logPrefix << p_filePath << p_e.what();
+    return QString();
+  }
+}
+
+QString errorPage() {
+  return QStringLiteral("Failed to load HTML template. Check the logs for details. "
+                        "Try deleting the user configuration file and the default configuration "
+                        "file.");
+}
+
+QString fillStyleTag(const QString &p_styleFile) {
+  if (p_styleFile.isEmpty()) {
+    return QString();
+  }
+
+  const auto url = PathUtils::pathToUrl(p_styleFile);
+  return QStringLiteral("<link rel=\"stylesheet\" type=\"text/css\" href=\"%1\">\n")
+      .arg(url.toString());
+}
+
+QString fillScriptTag(const QString &p_scriptFile) {
+  if (p_scriptFile.isEmpty()) {
+    return QString();
+  }
+
+  const auto url = PathUtils::pathToUrl(p_scriptFile);
+  return QStringLiteral("<script type=\"text/javascript\" src=\"%1\"></script>\n")
+      .arg(url.toString());
+}
+
+void fillGlobalOptions(QString &p_template, const MarkdownWebGlobalOptions &p_opts) {
+  p_template.replace(QStringLiteral("/* VX_GLOBAL_OPTIONS_PLACEHOLDER */"),
+                     p_opts.toJavascriptObject());
+}
+
+void fillGlobalStyles(QString &p_template, const WebResource &p_resource,
+                      ConfigCoreService &p_configService, const QString &p_additionalStyles) {
+  QString styles;
+  for (const auto &ele : p_resource.m_resources) {
+    if (ele.isGlobal()) {
+      if (ele.m_enabled) {
+        for (const auto &style : ele.m_styles) {
+          const auto styleFile = resolveConfigFile(p_configService, style);
+          const auto content = readTemplateFile(styleFile, "failed to read global styles");
+          if (!content.isEmpty()) {
+            styles += content;
+          }
+        }
+      }
+      break;
+    }
+  }
+
+  styles += p_additionalStyles;
+  if (!styles.isEmpty()) {
+    p_template.replace(QStringLiteral("/* VX_GLOBAL_STYLES_PLACEHOLDER */"), styles);
+  }
+}
+
+void fillThemeStyles(QString &p_template, const QString &p_webStyleSheetFile,
+                     const QString &p_highlightStyleSheetFile) {
+  QString styles;
+  styles += fillStyleTag(p_webStyleSheetFile);
+  styles += fillStyleTag(p_highlightStyleSheetFile);
+  if (!styles.isEmpty()) {
+    p_template.replace(QStringLiteral("<!-- VX_THEME_STYLES_PLACEHOLDER -->"), styles);
+  }
+}
+
+void fillResources(QString &p_template, const WebResource &p_resource,
+                   ConfigCoreService &p_configService) {
+  QString styles;
+  QString scripts;
+
+  for (const auto &ele : p_resource.m_resources) {
+    if (ele.m_enabled && !ele.isGlobal()) {
+      for (const auto &style : ele.m_styles) {
+        styles += fillStyleTag(resolveConfigFile(p_configService, style));
+      }
+
+      for (const auto &script : ele.m_scripts) {
+        scripts += fillScriptTag(resolveConfigFile(p_configService, script));
+      }
+    }
+  }
+
+  if (!styles.isEmpty()) {
+    p_template.replace(QStringLiteral("<!-- VX_STYLES_PLACEHOLDER -->"), styles);
+  }
+
+  if (!scripts.isEmpty()) {
+    p_template.replace(QStringLiteral("<!-- VX_SCRIPTS_PLACEHOLDER -->"), scripts);
+  }
+}
+
+void fillResourcesByContent(QString &p_template, const WebResource &p_resource,
+                            ConfigCoreService &p_configService) {
+  QString styles;
+  QString scripts;
+
+  for (const auto &ele : p_resource.m_resources) {
+    if (ele.m_enabled && !ele.isGlobal()) {
+      for (const auto &style : ele.m_styles) {
+        const auto styleFile = resolveConfigFile(p_configService, style);
+        const auto content = readTemplateFile(styleFile, "failed to read resource");
+        if (!content.isEmpty()) {
+          styles += content;
+        }
+      }
+
+      for (const auto &script : ele.m_scripts) {
+        const auto scriptFile = resolveConfigFile(p_configService, script);
+        const auto content = readTemplateFile(scriptFile, "failed to read resource");
+        if (!content.isEmpty()) {
+          scripts += content;
+        }
+      }
+    }
+  }
+
+  if (!styles.isEmpty()) {
+    p_template.replace(QStringLiteral("/* VX_STYLES_PLACEHOLDER */"), styles);
+  }
+
+  if (!scripts.isEmpty()) {
+    p_template.replace(QStringLiteral("/* VX_SCRIPTS_PLACEHOLDER */"), scripts);
+  }
+}
+
+QString generateMarkdownViewerTemplate(ConfigCoreService &p_configService,
+                                       const MarkdownEditorConfig &p_config,
+                                       const HtmlTemplateHelper::MarkdownParas &p_paras) {
+  const auto &viewerResource = p_config.getViewerResource();
+  const auto templateFile = resolveConfigFile(p_configService, viewerResource.m_template);
+  auto htmlTemplate = readTemplateFile(templateFile, "failed to read HTML template");
+  if (htmlTemplate.isEmpty()) {
+    return errorPage();
+  }
+
+  fillGlobalStyles(htmlTemplate, viewerResource, p_configService, QString());
+  fillThemeStyles(htmlTemplate, p_paras.m_webStyleSheetFile, p_paras.m_highlightStyleSheetFile);
+
+  MarkdownWebGlobalOptions opts;
+  opts.m_webPlantUml = p_config.getWebPlantUml();
+  opts.m_plantUmlWebService = p_config.getPlantUmlWebService();
+  opts.m_webGraphviz = p_config.getWebGraphviz();
+  opts.m_mathJaxScript = p_config.getMathJaxScript();
+  opts.m_sectionNumberEnabled =
+      p_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Read;
+  opts.m_sectionNumberBaseLevel = p_config.getSectionNumberBaseLevel();
+  opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
+  opts.m_imageAlignCenterEnabled = p_config.getImageAlignCenterEnabled();
+  opts.m_protectFromXss = p_config.getProtectFromXss();
+  opts.m_htmlTagEnabled = p_config.getHtmlTagEnabled();
+  opts.m_autoBreakEnabled = p_config.getAutoBreakEnabled();
+  opts.m_linkifyEnabled = p_config.getLinkifyEnabled();
+  opts.m_indentFirstLineEnabled = p_config.getIndentFirstLineEnabled();
+  opts.m_codeBlockLineNumberEnabled = p_config.getCodeBlockLineNumberEnabled();
+  opts.m_transparentBackgroundEnabled = p_paras.m_transparentBackgroundEnabled;
+  opts.m_scrollable = p_paras.m_scrollable;
+  opts.m_bodyWidth = p_paras.m_bodyWidth;
+  opts.m_bodyHeight = p_paras.m_bodyHeight;
+  opts.m_transformSvgToPngEnabled = p_paras.m_transformSvgToPngEnabled;
+  opts.m_mathJaxScale = p_paras.m_mathJaxScale;
+  opts.m_removeCodeToolBarEnabled = p_paras.m_removeCodeToolBarEnabled;
+  fillGlobalOptions(htmlTemplate, opts);
+
+  fillResources(htmlTemplate, viewerResource, p_configService);
+  return htmlTemplate;
+}
+
+QString generateMarkdownExportTemplate(ConfigCoreService &p_configService,
+                                       const MarkdownEditorConfig &p_config,
+                                       bool p_addOutlinePanel) {
+  auto exportResource = p_config.getExportResource();
+  const auto templateFile = resolveConfigFile(p_configService, exportResource.m_template);
+  auto htmlTemplate =
+      readTemplateFile(templateFile, "failed to read Markdown export HTML template");
+  if (htmlTemplate.isEmpty()) {
+    return errorPage();
+  }
+
+  fillGlobalStyles(htmlTemplate, exportResource, p_configService, QString());
+  HtmlTemplateHelper::fillOutlinePanel(htmlTemplate, exportResource, p_addOutlinePanel);
+  fillResourcesByContent(htmlTemplate, exportResource, p_configService);
+  return htmlTemplate;
+}
+
+MarkdownEditorConfig buildMarkdownEditorConfig(ConfigCoreService &p_configService) {
+  ExportConfigMgr configMgr;
+  MainConfig mainConfig(&configMgr);
+
+  const auto mainConfigJson = p_configService.getConfig();
+  if (!mainConfigJson.isEmpty()) {
+    mainConfig.fromJson(mainConfigJson);
+  }
+
+  return mainConfig.getEditorConfig().getMarkdownEditorConfig();
+}
+
+} // namespace
+
+vnotex::WebViewExporter::WebViewExporter(ServiceLocator &p_services, QWidget *p_parent)
+    : QObject(p_parent), m_services(p_services) {}
 
 WebViewExporter::~WebViewExporter() { clear(); }
 
@@ -41,23 +276,23 @@ void WebViewExporter::clear() {
   m_exportOngoing = false;
 }
 
-bool WebViewExporter::doExport(const ExportOption &p_option, const File *p_file,
-                               const QString &p_outputFile) {
+bool vnotex::WebViewExporter::doExport(const ExportOption &p_option, const QString &p_content,
+                                       const QString &p_filePath, const QString &p_fileName,
+                                       const QString &p_resourcePath, const QString &p_destPath) {
   bool ret = false;
   m_askedToStop = false;
-
-  Q_ASSERT(p_file->getContentType().isMarkdown());
 
   Q_ASSERT(!m_exportOngoing);
   m_exportOngoing = true;
 
   m_webViewStates = WebViewState::Started;
 
-  auto baseUrl = PathUtils::pathToUrl(p_file->getContentPath());
+  const auto contentPath = p_filePath.isEmpty() ? p_resourcePath : p_filePath;
+  auto baseUrl = PathUtils::pathToUrl(contentPath);
   m_viewer->adapter()->reset();
   m_viewer->setHtml(m_htmlTemplate, baseUrl);
 
-  auto textContent = p_file->read();
+  auto textContent = p_content;
   if (p_option.m_targetFormat == ExportFormat::PDF && p_option.m_pdfOption.m_addTableOfContents &&
       !p_option.m_pdfOption.m_useWkhtmltopdf) {
     // Add `[TOC]` at the beginning.
@@ -74,7 +309,8 @@ bool WebViewExporter::doExport(const ExportOption &p_option, const File *p_file,
     }
 
     if (isWebViewFailed()) {
-      qWarning() << "WebView failed when exporting" << p_file->getFilePath();
+      qWarning() << "WebView failed when exporting"
+                 << (p_filePath.isEmpty() ? p_fileName : p_filePath);
       goto exit_export;
     }
   }
@@ -88,14 +324,14 @@ bool WebViewExporter::doExport(const ExportOption &p_option, const File *p_file,
   case ExportFormat::HTML:
     // TODO: MIME HTML format is not supported yet.
     Q_ASSERT(!p_option.m_htmlOption.m_useMimeHtmlFormat);
-    ret = doExportHtml(p_option.m_htmlOption, p_outputFile, baseUrl);
+    ret = doExportHtml(p_option.m_htmlOption, p_destPath, baseUrl);
     break;
 
   case ExportFormat::PDF:
     if (p_option.m_pdfOption.m_useWkhtmltopdf) {
-      ret = doExportWkhtmltopdf(p_option.m_pdfOption, p_outputFile, baseUrl);
+      ret = doExportWkhtmltopdf(p_option.m_pdfOption, p_destPath, baseUrl);
     } else {
-      ret = doExportPdf(p_option.m_pdfOption, p_outputFile);
+      ret = doExportPdf(p_option.m_pdfOption, p_destPath);
     }
     break;
 
@@ -221,23 +457,19 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   Q_ASSERT(p_option.m_targetFormat == ExportFormat::PDF ||
            p_option.m_targetFormat == ExportFormat::HTML);
 
-  {
-    // TODO: Legacy export path - MarkdownViewer now requires ServiceLocator.
-    // This needs migration to use ServiceLocator for export.
-    Q_ASSERT_X(false, "WebViewExporter::prepare",
-               "Legacy WebViewExporter needs migration to ServiceLocator");
-#if 0
-    // Adapter will be managed by MarkdownViewer.
-    auto adapter = new MarkdownViewerAdapter(this);
-    m_viewer = new MarkdownViewer(adapter, QColor(), 1, static_cast<QWidget *>(parent()));
-    m_viewer->hide();
-    connect(m_viewer->page(), &QWebEnginePage::loadFinished, this,
-            [this]() { m_webViewStates |= WebViewState::LoadFinished; });
-    connect(adapter, &MarkdownViewerAdapter::workFinished, this,
-            [this]() { m_webViewStates |= WebViewState::WorkFinished; });
-#endif
-    return;
-  }
+  auto *themeService = m_services.get<ThemeService>();
+  auto *configService = m_services.get<ConfigCoreService>();
+  Q_ASSERT(themeService);
+  Q_ASSERT(configService);
+
+  auto *adapter = new MarkdownViewerAdapter(m_services, this);
+  m_viewer = new MarkdownViewer(adapter, m_services, themeService->getBaseBackground(), 1,
+                                static_cast<QWidget *>(parent()));
+  m_viewer->hide();
+  connect(m_viewer->page(), &QWebEnginePage::loadFinished, this,
+          [this]() { m_webViewStates |= WebViewState::LoadFinished; });
+  connect(adapter, &MarkdownViewerAdapter::workFinished, this,
+          [this]() { m_webViewStates |= WebViewState::WorkFinished; });
 
   bool scrollable = true;
   if (p_option.m_targetFormat == ExportFormat::PDF ||
@@ -247,7 +479,7 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
     scrollable = false;
   }
 
-  const auto &config = ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
+  const auto config = buildMarkdownEditorConfig(*configService);
   bool useWkhtmltopdf = false;
   QSize pageBodySize(1024, 768);
   if (p_option.m_targetFormat == ExportFormat::PDF) {
@@ -258,8 +490,21 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   qDebug() << "export page body size" << pageBodySize;
 
   HtmlTemplateHelper::MarkdownParas paras;
-  paras.m_webStyleSheetFile = p_option.m_renderingStyleFile;
-  paras.m_highlightStyleSheetFile = p_option.m_syntaxHighlightStyleFile;
+  auto webStyleFile = p_option.m_renderingStyleFile;
+  if (webStyleFile.isEmpty()) {
+    const auto webStyles = themeService->getWebStyles();
+    if (!webStyles.isEmpty()) {
+      webStyleFile = webStyles.constFirst().second;
+    }
+  }
+
+  paras.m_webStyleSheetFile = webStyleFile;
+  auto highlightStyleFile = p_option.m_syntaxHighlightStyleFile;
+  if (highlightStyleFile.isEmpty()) {
+    highlightStyleFile = themeService->getFile(Theme::File::HighlightStyleSheet);
+  }
+
+  paras.m_highlightStyleSheetFile = highlightStyleFile;
   paras.m_transparentBackgroundEnabled = p_option.m_useTransparentBg;
   paras.m_scrollable = scrollable;
   paras.m_bodyWidth = pageBodySize.width();
@@ -268,13 +513,12 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   paras.m_mathJaxScale = useWkhtmltopdf ? 2.5 : -1;
   paras.m_removeCodeToolBarEnabled = p_option.m_removeCodeToolBarEnabled;
 
-  m_htmlTemplate = HtmlTemplateHelper::generateMarkdownViewerTemplate(config, paras);
+  m_htmlTemplate = generateMarkdownViewerTemplate(*configService, config, paras);
 
   {
     const bool addOutlinePanel =
         p_option.m_targetFormat == ExportFormat::HTML && p_option.m_htmlOption.m_addOutlinePanel;
-    m_exportHtmlTemplate =
-        HtmlTemplateHelper::generateMarkdownExportTemplate(config, addOutlinePanel);
+    m_exportHtmlTemplate = generateMarkdownExportTemplate(*configService, config, addOutlinePanel);
   }
 
   if (useWkhtmltopdf) {

@@ -5,10 +5,11 @@
 
 #include "exportdata.h"
 
+#include <core/servicelocator.h>
+
 class QWidget;
 
 namespace vnotex {
-class File;
 class MarkdownViewer;
 
 class WebViewExporter : public QObject {
@@ -18,11 +19,13 @@ public:
   Q_DECLARE_FLAGS(WebViewStates, WebViewState);
 
   // We need QWidget as parent.
-  explicit WebViewExporter(QWidget *p_parent);
+  explicit WebViewExporter(ServiceLocator &p_services, QWidget *p_parent);
 
   ~WebViewExporter();
 
-  bool doExport(const ExportOption &p_option, const File *p_file, const QString &p_outputFile);
+  bool doExport(const ExportOption &p_option, const QString &p_content, const QString &p_filePath,
+                const QString &p_fileName, const QString &p_resourcePath,
+                const QString &p_destPath);
 
   void prepare(const ExportOption &p_option);
 
@@ -39,6 +42,8 @@ signals:
 
 private:
   enum class ExportState { Busy = 0, Finished, Failed };
+
+  ServiceLocator &m_services;
 
   bool isWebViewReady() const;
 
