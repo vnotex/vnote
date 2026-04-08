@@ -142,8 +142,11 @@ bool ExportCustomOption::operator==(const ExportCustomOption &p_other) const {
 
 QJsonObject ExportOption::toJson() const {
   QJsonObject obj;
+  obj["source"] = static_cast<int>(m_source);
   obj["targetFormat"] = static_cast<int>(m_targetFormat);
   obj["useTransparentBg"] = m_useTransparentBg;
+  obj["renderingStyleFile"] = m_renderingStyleFile;
+  obj["syntaxHighlightStyleFile"] = m_syntaxHighlightStyleFile;
   obj["outputDir"] = m_outputDir;
   obj["recursive"] = m_recursive;
   obj["exportAttachments"] = m_exportAttachments;
@@ -156,6 +159,29 @@ QJsonObject ExportOption::toJson() const {
 void ExportOption::fromJson(const QJsonObject &p_obj) {
   if (p_obj.isEmpty()) {
     return;
+  }
+
+  {
+    int src = p_obj["source"].toInt();
+    switch (src) {
+    case static_cast<int>(ExportSource::CurrentNote):
+      m_source = ExportSource::CurrentNote;
+      break;
+
+    case static_cast<int>(ExportSource::CurrentFolder):
+      m_source = ExportSource::CurrentFolder;
+      break;
+
+    case static_cast<int>(ExportSource::CurrentNotebook):
+      m_source = ExportSource::CurrentNotebook;
+      break;
+
+    case static_cast<int>(ExportSource::CurrentBuffer):
+      Q_FALLTHROUGH();
+    default:
+      m_source = ExportSource::CurrentBuffer;
+      break;
+    }
   }
 
   {
@@ -182,6 +208,8 @@ void ExportOption::fromJson(const QJsonObject &p_obj) {
   }
 
   m_useTransparentBg = p_obj["useTransparentBg"].toBool();
+  m_renderingStyleFile = p_obj["renderingStyleFile"].toString();
+  m_syntaxHighlightStyleFile = p_obj["syntaxHighlightStyleFile"].toString();
   m_outputDir = p_obj["outputDir"].toString();
   m_recursive = p_obj["recursive"].toBool();
   m_exportAttachments = p_obj["exportAttachments"].toBool();
