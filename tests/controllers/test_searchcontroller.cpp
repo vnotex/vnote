@@ -31,6 +31,7 @@ private slots:
   void testCancelDelegates();
   void testSearchWithNoNotebook();
   void testBuildQueryJsonContentSearch();
+  void testStaleTokenRejection();
 
 private:
   struct ControllerFixture {
@@ -127,16 +128,15 @@ void TestSearchController::testActivateResultEmitsNodeActivated() {
 
 void TestSearchController::testCancelDelegates() {
   ControllerFixture fixture(m_ctx);
-  QSignalSpy cancelledSpy(fixture.controller, &vnotex::SearchController::searchCancelled);
-  QSignalSpy finishedSpy(fixture.controller, &vnotex::SearchController::searchFinished);
 
   fixture.controller->setCurrentNotebookId(m_notebookId);
   fixture.controller->search(QStringLiteral("test"), vnotex::SearchController::CurrentNotebook,
-                       vnotex::SearchController::ContentSearch, false, false, QString());
+                             vnotex::SearchController::ContentSearch, false, false, QString());
   fixture.controller->cancel();
 
-  QTRY_VERIFY_WITH_TIMEOUT(cancelledSpy.count() > 0 || finishedSpy.count() > 0, 5000);
-  QTRY_VERIFY_WITH_TIMEOUT(!fixture.searchService->isSearching(), 3000);
+  QTRY_VERIFY_WITH_TIMEOUT(!fixture.searchService->isSearching(), 5000);
+  QVERIFY(fixture.controller->m_activeTokens.isEmpty());
+  QVERIFY(fixture.controller->m_cancelRequested);
 }
 
 void TestSearchController::testSearchWithNoNotebook() {
@@ -145,7 +145,7 @@ void TestSearchController::testSearchWithNoNotebook() {
 
   fixture.controller->setCurrentNotebookId(QString());
   fixture.controller->search(QStringLiteral("abc"), vnotex::SearchController::CurrentNotebook,
-                       vnotex::SearchController::ContentSearch, false, false, QString());
+                             vnotex::SearchController::ContentSearch, false, false, QString());
 
   QCOMPARE(failedSpy.count(), 1);
   QVERIFY(failedSpy.takeFirst().at(0).toString().contains(QStringLiteral("No current notebook")));
@@ -155,8 +155,8 @@ void TestSearchController::testBuildQueryJsonContentSearch() {
   ControllerFixture fixture(m_ctx);
   fixture.controller->setCurrentNotebookId(QString());
   fixture.controller->search(QStringLiteral("hello"), vnotex::SearchController::CurrentNotebook,
-                       vnotex::SearchController::ContentSearch, true, true,
-                       QStringLiteral("*.md"));
+                             vnotex::SearchController::ContentSearch, true, true,
+                             QStringLiteral("*.md"));
 
   const QString jsonText = fixture.controller->m_queryJson;
   QVERIFY(!jsonText.isEmpty());
@@ -172,6 +172,47 @@ void TestSearchController::testBuildQueryJsonContentSearch() {
   const QJsonArray patterns = scopeObj.value(QStringLiteral("pathPatterns")).toArray();
   QCOMPARE(patterns.size(), 1);
   QCOMPARE(patterns.first().toString(), QStringLiteral("*.md"));
+}
+
+void TestSearchController::testStaleTokenRejection() {
+  ControllerFixture fixture(m_ctx);
+  vnotex::SearchResultModel model;
+  fixture.controller->setModel(&model);
+
+  fixture.controller->setCurrentNotebookId(m_notebookId);
+  fixture.controller->search(QStringLiteral("aaa"), vnotex::SearchController::CurrentNotebook,
+                             vnotex::SearchController::ContentSearch, false, false, QString());
+
+  QTRY_VERIFY_WITH_TIMEOUT(!fixture.controller->m_activeTokens.isEmpty(), 2000);
+  int tokenA = *fixture.controller->m_activeTokens.begin();
+
+  fixture.controller->search(QStringLiteral("bbb"), vnotex::SearchController::CurrentNotebook,
+                             vnotex::SearchController::ContentSearch, false, false, QString());
+
+  QVERIFY(!fixture.controller->m_activeTokens.contains(tokenA));
+
+  vnotex::SearchResult fakeResult;
+  vnotex::SearchFileResult fakeFile;
+  fakeFile.m_path = QStringLiteral("STALE_SHOULD_NOT_APPEAR");
+  fakeFile.m_notebookId = QStringLiteral("fake-nb");
+  fakeResult.m_fileResults.append(fakeFile);
+  fakeResult.m_matchCount = 1;
+
+  const bool invoked =
+      QMetaObject::invokeMethod(fixture.controller, "onSearchFinished", Qt::DirectConnection,
+                                Q_ARG(int, tokenA), Q_ARG(vnotex::SearchResult, fakeResult));
+  QVERIFY(invoked);
+
+  const QString stalePath = QStringLiteral("STALE_SHOULD_NOT_APPEAR");
+  for (int i = 0; i < model.rowCount(); ++i) {
+    const QModelIndex idx = model.index(i, 0);
+    const QString path = model.data(idx, Qt::ToolTipRole).toString();
+    QVERIFY2(path != stalePath, "Stale token result was incorrectly merged into model");
+  }
+
+  QTRY_VERIFY_WITH_TIMEOUT(!fixture.searchService->isSearching(), 5000);
+
+  QVERIFY(model.rowCount() >= 0);
 }
 
 } // namespace tests

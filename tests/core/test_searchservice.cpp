@@ -56,6 +56,24 @@ private slots:
   // Test async wrapper started signal
   void testSearchStartedSignal();
 
+  // Test async wrapper token uniqueness
+  void testTokenUniqueness();
+
+  // Test finished signal token matches returned token
+  void testSignalTokenMatching();
+
+  // Test per-token cancellation behavior
+  void testIndividualCancellation();
+
+  // Test cancel all in-flight searches
+  void testCancelAll();
+
+  // Test per-token searching state
+  void testIsSearchingPerToken();
+
+  // Test safe destruction with in-flight search
+  void testDestructionSafety();
+
 private:
   VxCoreContextHandle m_context = nullptr;
   TempDirFixture m_tempDir;
@@ -78,8 +96,7 @@ void TestSearchService::initTestCase() {
 
   char *notebookId = nullptr;
   err = vxcore_notebook_create(m_context, notebookPathUtf8.constData(),
-                               "{\"name\":\"TestNotebook\"}",
-                               VXCORE_NOTEBOOK_BUNDLED, &notebookId);
+                               "{\"name\":\"TestNotebook\"}", VXCORE_NOTEBOOK_BUNDLED, &notebookId);
   QCOMPARE(err, VXCORE_OK);
   QVERIFY(notebookId != nullptr);
   m_notebookId = QString::fromUtf8(notebookId);
@@ -115,9 +132,7 @@ void TestSearchService::testSearchFilesEmptyNotebook() {
   QJsonArray results;
 
   // Search with empty pattern should return empty results
-  Error err = service.searchFiles(m_notebookId,
-                                  "{\"pattern\":\"*.txt\"}",
-                                  QString(), &results);
+  Error err = service.searchFiles(m_notebookId, "{\"pattern\":\"*.txt\"}", QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchFiles failed: %1").arg(err.message())));
   QVERIFY(results.isEmpty());
 }
@@ -126,9 +141,7 @@ void TestSearchService::testSearchContentEmptyNotebook() {
   SearchCoreService service(m_context);
   QJsonArray results;
 
-  Error err = service.searchContent(m_notebookId,
-                                    "{\"pattern\":\"test\"}",
-                                    QString(), &results);
+  Error err = service.searchContent(m_notebookId, "{\"pattern\":\"test\"}", QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchContent failed: %1").arg(err.message())));
   QVERIFY(results.isEmpty());
 }
@@ -137,9 +150,7 @@ void TestSearchService::testSearchByTagsEmptyNotebook() {
   SearchCoreService service(m_context);
   QJsonArray results;
 
-  Error err = service.searchByTags(m_notebookId,
-                                   "{\"tags\":[\"test\"]}",
-                                   QString(), &results);
+  Error err = service.searchByTags(m_notebookId, "{\"tags\":[\"test\"]}", QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchByTags failed: %1").arg(err.message())));
   QVERIFY(results.isEmpty());
 }
@@ -147,11 +158,8 @@ void TestSearchService::testSearchByTagsEmptyNotebook() {
 void TestSearchService::testSearchFilesWithFiles() {
   // Create a file in the notebook
   char *fileId = nullptr;
-  VxCoreError vxerr = vxcore_file_create(m_context,
-                                         m_notebookId.toUtf8().constData(),
-                                         "",
-                                         "test_file.md",
-                                         &fileId);
+  VxCoreError vxerr =
+      vxcore_file_create(m_context, m_notebookId.toUtf8().constData(), "", "test_file.md", &fileId);
   QCOMPARE(vxerr, VXCORE_OK);
   QVERIFY(fileId != nullptr);
   vxcore_string_free(fileId);
@@ -160,9 +168,7 @@ void TestSearchService::testSearchFilesWithFiles() {
   QJsonArray results;
 
   // Search for markdown files
-  Error err = service.searchFiles(m_notebookId,
-                                  "{\"pattern\":\"*.md\"}",
-                                  QString(), &results);
+  Error err = service.searchFiles(m_notebookId, "{\"pattern\":\"*.md\"}", QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchFiles failed: %1").arg(err.message())));
   QCOMPARE(results.size(), 1);
 
@@ -177,9 +183,7 @@ void TestSearchService::testSearchContentWithContent() {
   QJsonArray results;
 
   // Search for content (may be empty if no indexing)
-  Error err = service.searchContent(m_notebookId,
-                                    "{\"pattern\":\"test\"}",
-                                    QString(), &results);
+  Error err = service.searchContent(m_notebookId, "{\"pattern\":\"test\"}", QString(), &results);
 
   // searchContent may or may not find results; just verify the call doesn't crash
   QVERIFY2(err.isOk(), qPrintable(QString("searchContent failed: %1").arg(err.message())));
@@ -188,34 +192,25 @@ void TestSearchService::testSearchContentWithContent() {
 void TestSearchService::testSearchByTagsWithTags() {
   // Create a file
   char *fileId = nullptr;
-  VxCoreError vxerr = vxcore_file_create(m_context,
-                                         m_notebookId.toUtf8().constData(),
-                                         "",
-                                         "tagged_file.md",
-                                         &fileId);
+  VxCoreError vxerr = vxcore_file_create(m_context, m_notebookId.toUtf8().constData(), "",
+                                         "tagged_file.md", &fileId);
   QCOMPARE(vxerr, VXCORE_OK);
   vxcore_string_free(fileId);
 
   // Create a tag
-  vxerr = vxcore_tag_create(m_context,
-                            m_notebookId.toUtf8().constData(),
-                            "test-tag");
+  vxerr = vxcore_tag_create(m_context, m_notebookId.toUtf8().constData(), "test-tag");
   QCOMPARE(vxerr, VXCORE_OK);
 
   // Tag the file
-  vxerr = vxcore_file_tag(m_context,
-                          m_notebookId.toUtf8().constData(),
-                          "tagged_file.md",
-                          "test-tag");
+  vxerr =
+      vxcore_file_tag(m_context, m_notebookId.toUtf8().constData(), "tagged_file.md", "test-tag");
   QCOMPARE(vxerr, VXCORE_OK);
 
   SearchCoreService service(m_context);
   QJsonArray results;
 
   // Search by tag
-  Error err = service.searchByTags(m_notebookId,
-                                   "{\"tags\":[\"test-tag\"]}",
-                                   QString(), &results);
+  Error err = service.searchByTags(m_notebookId, "{\"tags\":[\"test-tag\"]}", QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchByTags failed: %1").arg(err.message())));
   // Note: May need to rebuild cache or wait for indexing
 }
@@ -234,12 +229,16 @@ void TestSearchService::testSearchFilesAsync() {
   QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
   QSignalSpy failedSpy(&service, &SearchService::searchFailed);
 
-  service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+  int token =
+      service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+  QVERIFY(token > 0);
 
   QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 5000);
   QVERIFY2(finishedSpy.count() > 0,
-           qPrintable(QString("searchFiles async failed unexpectedly (%1)")
-                          .arg(failedSpy.isEmpty() ? QString() : failedSpy.takeFirst().at(0).toString())));
+           qPrintable(
+               QString("searchFiles async failed unexpectedly (%1)")
+                   .arg(failedSpy.isEmpty() ? QString() : failedSpy.takeFirst().at(1).toString())));
+  QCOMPARE(finishedSpy.at(0).at(0).toInt(), token);
 }
 
 void TestSearchService::testCancelSearch() {
@@ -250,11 +249,13 @@ void TestSearchService::testCancelSearch() {
   QSignalSpy cancelledSpy(&service, &SearchService::searchCancelled);
   QSignalSpy failedSpy(&service, &SearchService::searchFailed);
 
-  service.searchContent(m_notebookId, QStringLiteral("{\"pattern\":\"test\"}"), QString());
+  int token =
+      service.searchContent(m_notebookId, QStringLiteral("{\"pattern\":\"test\"}"), QString());
+  QVERIFY(token > 0);
   service.cancel();
 
-  QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || cancelledSpy.count() > 0 || failedSpy.count() > 0,
-                           5000);
+  QTRY_VERIFY_WITH_TIMEOUT(
+      finishedSpy.count() > 0 || cancelledSpy.count() > 0 || failedSpy.count() > 0, 5000);
   QVERIFY(finishedSpy.count() > 0 || cancelledSpy.count() > 0);
 }
 
@@ -264,9 +265,183 @@ void TestSearchService::testSearchStartedSignal() {
 
   QSignalSpy startedSpy(&service, &SearchService::searchStarted);
 
-  service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+  int token =
+      service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+  QVERIFY(token > 0);
 
   QTRY_VERIFY_WITH_TIMEOUT(startedSpy.count() > 0, 3000);
+  QCOMPARE(startedSpy.at(0).at(0).toInt(), token);
+}
+
+void TestSearchService::testTokenUniqueness() {
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  int t1 = service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+  int t2 = service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.txt\"}"), QString());
+
+  QVERIFY(t1 > 0);
+  QVERIFY(t2 > 0);
+  QVERIFY(t1 != t2);
+
+  QTRY_VERIFY_WITH_TIMEOUT(!service.isSearching(), 5000);
+}
+
+void TestSearchService::testSignalTokenMatching() {
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  int token =
+      service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+  QVERIFY(token > 0);
+
+  QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 5000);
+  QVERIFY2(finishedSpy.count() > 0,
+           qPrintable(
+               QString("search failed unexpectedly (%1)")
+                   .arg(failedSpy.isEmpty() ? QString() : failedSpy.takeFirst().at(1).toString())));
+  QCOMPARE(finishedSpy.at(0).at(0).toInt(), token);
+}
+
+void TestSearchService::testIndividualCancellation() {
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy cancelledSpy(&service, &SearchService::searchCancelled);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  int tokenA =
+      service.searchContent(m_notebookId, QStringLiteral("{\"pattern\":\"token-a\"}"), QString());
+  int tokenB =
+      service.searchContent(m_notebookId, QStringLiteral("{\"pattern\":\"token-b\"}"), QString());
+  QVERIFY(tokenA > 0);
+  QVERIFY(tokenB > 0);
+  QVERIFY(tokenA != tokenB);
+
+  service.cancel(tokenA);
+
+  auto hasTokenSignal = [](const QSignalSpy &p_spy, int p_token) {
+    for (const auto &args : p_spy) {
+      if (!args.isEmpty() && args.at(0).toInt() == p_token) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  QTRY_VERIFY_WITH_TIMEOUT(
+      (hasTokenSignal(finishedSpy, tokenA) || hasTokenSignal(cancelledSpy, tokenA) ||
+       hasTokenSignal(failedSpy, tokenA)) &&
+          (hasTokenSignal(finishedSpy, tokenB) || hasTokenSignal(cancelledSpy, tokenB) ||
+           hasTokenSignal(failedSpy, tokenB)),
+      5000);
+
+  const bool tokenAFinished = hasTokenSignal(finishedSpy, tokenA);
+  const bool tokenACancelled = hasTokenSignal(cancelledSpy, tokenA);
+  QVERIFY(tokenAFinished || tokenACancelled);
+  QVERIFY(!hasTokenSignal(failedSpy, tokenA));
+
+  QVERIFY(hasTokenSignal(finishedSpy, tokenB));
+  QVERIFY(!hasTokenSignal(cancelledSpy, tokenB));
+  QVERIFY(!hasTokenSignal(failedSpy, tokenB));
+
+  SearchResult tokenBResult;
+  bool foundTokenBResult = false;
+  for (const auto &args : finishedSpy) {
+    if (args.size() >= 2 && args.at(0).toInt() == tokenB) {
+      tokenBResult = args.at(1).value<SearchResult>();
+      foundTokenBResult = true;
+      break;
+    }
+  }
+  QVERIFY(foundTokenBResult);
+  QVERIFY(tokenBResult.m_matchCount >= 0);
+}
+
+void TestSearchService::testCancelAll() {
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy cancelledSpy(&service, &SearchService::searchCancelled);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  int token1 =
+      service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+  int token2 = service.searchContent(m_notebookId, QStringLiteral("{\"pattern\":\"cancel-all\"}"),
+                                     QString());
+  int token3 =
+      service.searchByTags(m_notebookId, QStringLiteral("{\"tags\":[\"cancel-all\"]}"), QString());
+
+  QVERIFY(token1 > 0);
+  QVERIFY(token2 > 0);
+  QVERIFY(token3 > 0);
+
+  service.cancel();
+
+  QSet<int> tokens{token1, token2, token3};
+  auto resolvedCount = [&]() {
+    int count = 0;
+    for (int token : tokens) {
+      bool resolved = false;
+      for (const auto &args : finishedSpy) {
+        if (!args.isEmpty() && args.at(0).toInt() == token) {
+          resolved = true;
+          break;
+        }
+      }
+      if (!resolved) {
+        for (const auto &args : cancelledSpy) {
+          if (!args.isEmpty() && args.at(0).toInt() == token) {
+            resolved = true;
+            break;
+          }
+        }
+      }
+      if (!resolved) {
+        for (const auto &args : failedSpy) {
+          if (!args.isEmpty() && args.at(0).toInt() == token) {
+            resolved = true;
+            break;
+          }
+        }
+      }
+      if (resolved) {
+        ++count;
+      }
+    }
+    return count;
+  };
+
+  QTRY_VERIFY_WITH_TIMEOUT(resolvedCount() >= 3, 5000);
+}
+
+void TestSearchService::testIsSearchingPerToken() {
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  int token =
+      service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+  QVERIFY(token > 0);
+
+  QTRY_VERIFY_WITH_TIMEOUT(service.isSearching() && service.isSearching(token), 2000);
+  QTRY_VERIFY_WITH_TIMEOUT(!service.isSearching(token), 5000);
+  QVERIFY(!service.isSearching());
+}
+
+void TestSearchService::testDestructionSafety() {
+  SearchCoreService coreService(m_context);
+
+  {
+    SearchService service(&coreService);
+    service.searchFiles(m_notebookId, QStringLiteral("{\"pattern\":\"*.md\"}"), QString());
+  }
+
+  QVERIFY(true);
 }
 
 } // namespace tests
