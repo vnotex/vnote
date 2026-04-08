@@ -5,6 +5,8 @@
 #include <QTemporaryDir>
 #include <QWidget>
 
+#include <core/exception.h>
+
 #include "webviewexporter.h"
 #include <utils/contentmediautils.h>
 #include <utils/fileutils.h>
@@ -101,27 +103,37 @@ QStringList Exporter::doExportBatch(const ExportOption &p_option,
 
 QString Exporter::doExport(const ExportOption &p_option, const QString &p_outputDir,
                            const ExportFileInfo &p_file, const QString &p_content) {
+  auto content = p_content;
+  if (content.isEmpty() && !p_file.filePath.isEmpty()) {
+    try {
+      content = FileUtils::readTextFile(p_file.filePath);
+    } catch (const Exception &e) {
+      emit logRequested(
+          tr("Failed to read file (%1): %2").arg(p_file.filePath, QString::fromUtf8(e.what())));
+      return QString();
+    }
+  }
+
   QString outputFile;
 
   switch (p_option.m_targetFormat) {
   case ExportFormat::Markdown:
-    outputFile =
-        doExportMarkdown(p_option, p_outputDir, p_content, p_file.filePath, p_file.fileName,
-                         p_file.resourcePath, p_file.attachmentFolderPath);
+    outputFile = doExportMarkdown(p_option, p_outputDir, content, p_file.filePath, p_file.fileName,
+                                  p_file.resourcePath, p_file.attachmentFolderPath);
     break;
 
   case ExportFormat::HTML:
-    outputFile = doExportHtml(p_option, p_outputDir, p_content, p_file.filePath, p_file.fileName,
+    outputFile = doExportHtml(p_option, p_outputDir, content, p_file.filePath, p_file.fileName,
                               p_file.resourcePath, QString(), p_file.attachmentFolderPath);
     break;
 
   case ExportFormat::PDF:
-    outputFile = doExportPdf(p_option, p_outputDir, p_content, p_file.filePath, p_file.fileName,
+    outputFile = doExportPdf(p_option, p_outputDir, content, p_file.filePath, p_file.fileName,
                              p_file.resourcePath, QString(), p_file.attachmentFolderPath);
     break;
 
   case ExportFormat::Custom:
-    outputFile = doExportCustom(p_option, p_outputDir, p_content, p_file.filePath, p_file.fileName,
+    outputFile = doExportCustom(p_option, p_outputDir, content, p_file.filePath, p_file.fileName,
                                 p_file.resourcePath, QString(), p_file.attachmentFolderPath);
     break;
 

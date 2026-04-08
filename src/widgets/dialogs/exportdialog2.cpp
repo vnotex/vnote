@@ -70,7 +70,7 @@ bool sourceAvailable(ExportSource p_source, const ExportContext &p_context) {
     return !p_context.bufferContent.isEmpty();
 
   case ExportSource::CurrentNote:
-    return p_context.currentNodeId.isValid();
+    return p_context.currentNodeId.isValid() && !p_context.currentNodeId.relativePath.isEmpty();
 
   case ExportSource::CurrentFolder:
     return p_context.currentFolderId.isValid();
@@ -214,6 +214,10 @@ void ExportDialog2::setupUI() {
     layout->addRow(m_addOutlinePanelCheck);
 
     m_useMimeHtmlFormatCheck = WidgetsFactory::createCheckBox(tr("MIME HTML format"), page);
+    // MIME HTML format is not yet supported by WebViewExporter.
+    m_useMimeHtmlFormatCheck->setChecked(false);
+    m_useMimeHtmlFormatCheck->setEnabled(false);
+    m_useMimeHtmlFormatCheck->setVisible(false);
     layout->addRow(m_useMimeHtmlFormatCheck);
     connect(m_useMimeHtmlFormatCheck, &QCheckBox::stateChanged, this, [this](int p_state) {
       const bool checked = p_state == Qt::Checked;
@@ -475,6 +479,10 @@ ExportOption ExportDialog2::collectFields() {
 
   saveCurrentCustomScheme();
   option.m_customExport = m_customSchemeCombo->currentData().toString();
+  const int customIdx = findCustomOption(m_customOptions, option.m_customExport);
+  if (customIdx >= 0) {
+    option.m_customOption = &m_customOptions[customIdx];
+  }
 
   return option;
 }
@@ -484,7 +492,7 @@ void ExportDialog2::restoreHtmlFields(const ExportHtmlOption &p_option) {
   m_embedImagesCheck->setChecked(p_option.m_embedImages);
   m_completePageCheck->setChecked(p_option.m_completePage);
   m_addOutlinePanelCheck->setChecked(p_option.m_addOutlinePanel);
-  m_useMimeHtmlFormatCheck->setChecked(p_option.m_useMimeHtmlFormat);
+  m_useMimeHtmlFormatCheck->setChecked(false);
   m_scrollableCheck->setChecked(p_option.m_scrollable);
 }
 
@@ -493,7 +501,7 @@ void ExportDialog2::saveHtmlFields(ExportHtmlOption &p_option) const {
   p_option.m_embedImages = m_embedImagesCheck->isChecked();
   p_option.m_completePage = m_completePageCheck->isChecked();
   p_option.m_addOutlinePanel = m_addOutlinePanelCheck->isChecked();
-  p_option.m_useMimeHtmlFormat = m_useMimeHtmlFormatCheck->isChecked();
+  p_option.m_useMimeHtmlFormat = false;
   p_option.m_scrollable = m_scrollableCheck->isChecked();
 }
 

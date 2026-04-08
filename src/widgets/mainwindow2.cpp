@@ -427,13 +427,14 @@ void MainWindow2::setupDocks() {
   // Wire context menu export to ExportDialog2.
   connect(m_notebookExplorer, &NotebookExplorer2::exportNodeRequested, this,
           [this](const NodeIdentifier &p_nodeId) {
-            auto *notebookService = m_serviceLocator.get<NotebookCoreService>();
-            bool isFolder = p_nodeId.relativePath.isEmpty();
-            if (!isFolder && notebookService) {
-              isFolder =
-                  !notebookService->getFolderConfig(p_nodeId.notebookId, p_nodeId.relativePath)
-                       .isEmpty();
+            if (m_exportDialog) {
+              m_exportDialog->activateWindow();
+              m_exportDialog->raise();
+              return;
             }
+
+            bool isFolder = p_nodeId.relativePath.isEmpty() ||
+                            QFileInfo(p_nodeId.relativePath).suffix().isEmpty();
 
             ExportContext context;
             context.currentNodeId = p_nodeId;
@@ -458,10 +459,6 @@ void MainWindow2::setupDocks() {
                 context.bufferContent = viewWin->getLatestContent();
                 context.bufferName = viewWin->getName();
               }
-            }
-
-            if (m_exportDialog) {
-              m_exportDialog->close();
             }
 
             m_exportDialog = new ExportDialog2(m_serviceLocator, context, this);
