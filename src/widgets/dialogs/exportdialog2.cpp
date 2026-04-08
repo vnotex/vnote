@@ -7,6 +7,7 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QLabel>
@@ -17,7 +18,7 @@
 #include <QPrinter>
 #include <QProgressBar>
 #include <QPushButton>
-#include <QStackedWidget>
+#include <QStackedLayout>
 #include <QTextCursor>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -30,6 +31,59 @@
 
 #include "../locationinputwithbrowsebutton.h"
 #include "../widgetsfactory.h"
+
+class StackedScrollWidget : public QWidget {
+public:
+  explicit StackedScrollWidget(QWidget *p_parent = nullptr)
+      : QWidget(p_parent), m_layout(new QStackedLayout(this)) {
+    m_layout->setContentsMargins(0, 0, 0, 0);
+    m_layout->setSizeConstraint(QLayout::SetDefaultConstraint);
+
+    connect(m_layout, &QStackedLayout::currentChanged, this, [this](int p_idx) {
+      Q_UNUSED(p_idx);
+      if (auto *w = m_layout->currentWidget()) {
+        QSizePolicy sp = w->sizePolicy();
+        sp.setHeightForWidth(w->hasHeightForWidth());
+        setSizePolicy(sp);
+      }
+      m_layout->invalidate();
+      updateGeometry();
+    });
+  }
+
+  QStackedLayout *stackedLayout() const { return m_layout; }
+
+  QSize sizeHint() const override {
+    if (auto *w = m_layout->currentWidget()) {
+      return w->sizeHint();
+    }
+    return QWidget::sizeHint();
+  }
+
+  QSize minimumSizeHint() const override {
+    if (auto *w = m_layout->currentWidget()) {
+      return w->minimumSizeHint();
+    }
+    return QWidget::minimumSizeHint();
+  }
+
+  bool hasHeightForWidth() const override {
+    if (auto *w = m_layout->currentWidget()) {
+      return w->hasHeightForWidth();
+    }
+    return QWidget::hasHeightForWidth();
+  }
+
+  int heightForWidth(int p_width) const override {
+    if (auto *w = m_layout->currentWidget()) {
+      return w->hasHeightForWidth() ? w->heightForWidth(p_width) : w->sizeHint().height();
+    }
+    return QWidget::heightForWidth(p_width);
+  }
+
+private:
+  QStackedLayout *m_layout = nullptr;
+};
 
 using namespace vnotex;
 
@@ -176,26 +230,68 @@ void ExportDialog2::setupUI() {
 
   mainLayout->addLayout(topLayout);
 
-  // Middle: format-specific stacked pages.
-  m_stackedWidget = new QStackedWidget(mainWidget);
-  connect(m_formatCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), m_stackedWidget,
-          &QStackedWidget::setCurrentIndex);
+  // Common options.
+  auto *commonWidget = new QWidget(mainWidget);
+  auto *commonLayout = new QGridLayout(commonWidget);
+
+  m_outputDirInput = new LocationInputWithBrowseButton(commonWidget, getDefaultOutputDir());
+  m_outputDirInput->setBrowseType(LocationInputWithBrowseButton::Folder,
+                                  tr("Select Export Output Directory"));
+  commonLayout->addWidget(new QLabel(tr("Output directory:"), commonWidget), 0, 0);
+  commonLayout->addWidget(m_outputDirInput, 0, 1, 1, 3);
+
+  const auto webStyles = m_services.get<ThemeService>()->getWebStyles();
+
+  m_renderingStyleCombo = WidgetsFactory::createComboBox(commonWidget);
+  m_syntaxStyleCombo = WidgetsFactory::createComboBox(commonWidget);
+  for (const auto &style : webStyles) {
+    m_renderingStyleCombo->addItem(style.first, style.second);
+    m_syntaxStyleCombo->addItem(style.first, style.second);
+  }
+
+  commonLayout->addWidget(new QLabel(tr("Rendering style:"), commonWidget), 1, 0);
+  commonLayout->addWidget(m_renderingStyleCombo, 1, 1);
+  commonLayout->addWidget(new QLabel(tr("Syntax style:"), commonWidget), 1, 2);
+  commonLayout->addWidget(m_syntaxStyleCombo, 1, 3);
+
+  m_transparentBgCheck =
+      WidgetsFactory::createCheckBox(tr("Use transparent background"), commonWidget);
+  m_recursiveCheck = WidgetsFactory::createCheckBox(tr("Process sub-folders"), commonWidget);
+  commonLayout->addWidget(m_transparentBgCheck, 2, 0, 1, 2);
+  commonLayout->addWidget(m_recursiveCheck, 2, 2, 1, 2);
+
+  mainLayout->addWidget(commonWidget);
+
+  // Middle: format-specific stacked pages in a group box.
+  auto *stackedScrollWidget = new StackedScrollWidget(mainWidget);
+  m_stackedLayout = stackedScrollWidget->stackedLayout();
+
+  connect(m_formatCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), m_stackedLayout,
+          &QStackedLayout::setCurrentIndex);
+  connect(m_formatCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [this](int p_idx) {
+            const QString titles[] = {tr("Markdown Options"), tr("HTML Options"), tr("PDF Options"),
+                                      tr("Custom Options")};
+            if (p_idx >= 0 && p_idx < 4) {
+              m_formatGroupBox->setTitle(titles[p_idx]);
+            }
+          });
 
   // Markdown page.
   {
-    auto *page = new QWidget(m_stackedWidget);
+    auto *page = new QWidget(stackedScrollWidget);
     auto *layout = WidgetsFactory::createFormLayout(page);
     layout->setContentsMargins(0, 0, 0, 0);
 
     m_exportAttachmentsCheck = WidgetsFactory::createCheckBox(tr("Export attachments"), page);
     layout->addRow(m_exportAttachmentsCheck);
 
-    m_stackedWidget->addWidget(page);
+    m_stackedLayout->addWidget(page);
   }
 
   // HTML page.
   {
-    auto *page = new QWidget(m_stackedWidget);
+    auto *page = new QWidget(stackedScrollWidget);
     auto *layout = WidgetsFactory::createFormLayout(page);
     layout->setContentsMargins(0, 0, 0, 0);
 
@@ -228,12 +324,12 @@ void ExportDialog2::setupUI() {
     m_scrollableCheck = WidgetsFactory::createCheckBox(tr("Scrollable page"), page);
     layout->addRow(m_scrollableCheck);
 
-    m_stackedWidget->addWidget(page);
+    m_stackedLayout->addWidget(page);
   }
 
   // PDF page.
   {
-    auto *page = new QWidget(m_stackedWidget);
+    auto *page = new QWidget(stackedScrollWidget);
     auto *layout = WidgetsFactory::createFormLayout(page);
     layout->setContentsMargins(0, 0, 0, 0);
 
@@ -281,12 +377,12 @@ void ExportDialog2::setupUI() {
     connect(m_useWkhtmltopdfCheck, &QCheckBox::stateChanged, this,
             [this](int) { updatePdfWidgetsByWkhtmltopdf(); });
 
-    m_stackedWidget->addWidget(page);
+    m_stackedLayout->addWidget(page);
   }
 
   // Custom page.
   {
-    auto *page = new QWidget(m_stackedWidget);
+    auto *page = new QWidget(stackedScrollWidget);
     auto *layout = WidgetsFactory::createFormLayout(page);
     layout->setContentsMargins(0, 0, 0, 0);
 
@@ -327,42 +423,14 @@ void ExportDialog2::setupUI() {
     connect(m_customSchemeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &ExportDialog2::onCustomSchemeChanged);
 
-    m_stackedWidget->addWidget(page);
+    m_stackedLayout->addWidget(page);
   }
 
-  mainLayout->addWidget(m_stackedWidget);
-
-  // Common options.
-  auto *commonWidget = new QWidget(mainWidget);
-  auto *commonLayout = new QGridLayout(commonWidget);
-
-  m_outputDirInput = new LocationInputWithBrowseButton(commonWidget, getDefaultOutputDir());
-  m_outputDirInput->setBrowseType(LocationInputWithBrowseButton::Folder,
-                                  tr("Select Export Output Directory"));
-  commonLayout->addWidget(new QLabel(tr("Output directory:"), commonWidget), 0, 0);
-  commonLayout->addWidget(m_outputDirInput, 0, 1, 1, 3);
-
-  const auto webStyles = m_services.get<ThemeService>()->getWebStyles();
-
-  m_renderingStyleCombo = WidgetsFactory::createComboBox(commonWidget);
-  m_syntaxStyleCombo = WidgetsFactory::createComboBox(commonWidget);
-  for (const auto &style : webStyles) {
-    m_renderingStyleCombo->addItem(style.first, style.second);
-    m_syntaxStyleCombo->addItem(style.first, style.second);
-  }
-
-  commonLayout->addWidget(new QLabel(tr("Rendering style:"), commonWidget), 1, 0);
-  commonLayout->addWidget(m_renderingStyleCombo, 1, 1);
-  commonLayout->addWidget(new QLabel(tr("Syntax style:"), commonWidget), 1, 2);
-  commonLayout->addWidget(m_syntaxStyleCombo, 1, 3);
-
-  m_transparentBgCheck =
-      WidgetsFactory::createCheckBox(tr("Use transparent background"), commonWidget);
-  m_recursiveCheck = WidgetsFactory::createCheckBox(tr("Process sub-folders"), commonWidget);
-  commonLayout->addWidget(m_transparentBgCheck, 2, 0, 1, 2);
-  commonLayout->addWidget(m_recursiveCheck, 2, 2, 1, 2);
-
-  mainLayout->addWidget(commonWidget);
+  m_formatGroupBox = new QGroupBox(tr("Markdown Options"), mainWidget);
+  auto *groupBoxLayout = new QVBoxLayout(m_formatGroupBox);
+  groupBoxLayout->setContentsMargins(0, 0, 0, 0);
+  groupBoxLayout->addWidget(stackedScrollWidget);
+  mainLayout->addWidget(m_formatGroupBox);
 
   // Bottom: progress + log.
   m_progressBar = new QProgressBar(mainWidget);
@@ -433,7 +501,7 @@ void ExportDialog2::restoreFields(const ExportOption &p_option) {
   idx = m_formatCombo->findData(static_cast<int>(p_option.m_targetFormat));
   if (idx >= 0) {
     m_formatCombo->setCurrentIndex(idx);
-    m_stackedWidget->setCurrentIndex(idx);
+    m_stackedLayout->setCurrentIndex(idx);
   }
 
   m_outputDirInput->setText(p_option.m_outputDir.isEmpty() ? getDefaultOutputDir()

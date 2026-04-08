@@ -14,8 +14,9 @@ class QLineEdit;
 class QPlainTextEdit;
 class QProgressBar;
 class QPushButton;
-class QStackedWidget;
+class QGroupBox;
 class QPageLayout;
+class QStackedLayout;
 
 namespace vnotex {
 
@@ -77,7 +78,8 @@ private:
   QComboBox *m_formatCombo = nullptr;
 
   // Middle stacked pages.
-  QStackedWidget *m_stackedWidget = nullptr;
+  QStackedLayout *m_stackedLayout = nullptr;
+  QGroupBox *m_formatGroupBox = nullptr;
 
   // Markdown page.
   QCheckBox *m_exportAttachmentsCheck = nullptr;
