@@ -244,662 +244,6 @@ src/
 
 ---
 
-## ServiceLocator Pattern
-
-### Registration (in main.cpp)
-
-```cpp
-#include <core/servicelocator.h>
-#include <core/configcoreservice.h>
-#include <core/notebookcoreservice.h>
-
-int main(int argc, char *argv[]) {
-  QApplication app(argc, argv);
-
-  // Create vxcore context
-  vxcore_context *ctx = vxcore_context_create();
-
-  // Create and populate ServiceLocator
-  vnotex::ServiceLocator services;
-  services.registerService<vnotex::ConfigCoreService>(
-      std::make_unique<vnotex::ConfigCoreService>(ctx));
-  services.registerService<vnotex::NotebookCoreService>(
-      std::make_unique<vnotex::NotebookCoreService>(ctx));
-
-  // Pass to UI
-  vnotex::MainWindow2 mainWindow(services);
-  mainWindow.show();
-
-  int result = app.exec();
-  vxcore_context_destroy(ctx);
-  return result;
-}
-```
-
-### Usage in Widgets
-
-```cpp
-// src/widgets/mywidget.h
-class MyWidget : public QWidget {
-  Q_OBJECT
-public:
-  explicit MyWidget(ServiceLocator &p_services, QWidget *p_parent = nullptr);
-
-private:
-  ServiceLocator &m_services;
-};
-
-// src/widgets/mywidget.cpp
-MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
-    : QWidget(p_parent), m_services(p_services) {
-  // Access services when needed
-  auto *config = m_services.get<ConfigCoreService>();
-  auto configJson = config->getConfig();
-}
-```
-
-### Available Services
-
-| Service | Purpose | Key Methods |
-|---------|---------|-------------|
-| `ConfigCoreService` | App configuration via vxcore | `getConfig()`, `getSessionConfig()`, `getDataPath()`, `updateConfigByName()` |
-| `NotebookCoreService` | Notebook/folder/file operations | `createNotebook()`, `openNotebook()`, `createFile()`, `listFolderChildren()` |
-| `BufferCoreService` | Low-level buffer operations via vxcore | `openBuffer()`, `closeBuffer()`, `saveBuffer()`, `getContentRaw()`, `setContentRaw()`, `getState()`, `insertAsset()`, `listAttachments()` |
-| `BufferService` | Hook-aware buffer wrapper; returns `Buffer2` handles | `openBuffer(NodeIdentifier)` → `Buffer2`, `closeBuffer()`, `listBuffers()`, `autoSaveTick()` |
-| `SearchCoreService` | Content and file search | `searchFiles()`, `searchContent()`, `searchByTags()` |
-| `FileTypeCoreService` | File type detection | `getFileType()`, `getFileTypeBySuffix()`, `getAllFileTypes()` |
-| `TemplateService` | Note template management | `getTemplates()`, `getTemplateContent()`, `getTemplateFilePath()` |
-| `WorkspaceCoreService` | Workspace (split pane) operations via vxcore | `createWorkspace()`, `deleteWorkspace()`, `listWorkspaces()`, `addBuffer()`, `removeBuffer()` |
-| `HookManager` | Plugin hook system | `addAction()`, `doAction()`, `addFilter()`, `applyFilters()` |
-
-### Buffer2 Handle Pattern
-
-`Buffer2` is a **lightweight copyable value type** (like `QModelIndex`) that represents an open file buffer. It is NOT a `QObject` and is NOT heap-allocated. Obtain a `Buffer2` from `BufferService::openBuffer()`.
-
-#### Opening a Buffer
-
-```cpp
-auto *bufferSvc = m_services.get<BufferService>();
-
-// Identify the file to open
-NodeIdentifier nodeId;
-nodeId.notebookId = "my-notebook-guid";
-nodeId.relativePath = "notes/hello.md";
-
-// Open returns a lightweight handle (fires vnote.file.before_open / after_open hooks)
-Buffer2 buf = bufferSvc->openBuffer(nodeId);
-if (!buf.isValid()) {
-  // Open failed or was cancelled by a hook
-  return;
-}
-```
-
-#### Per-Buffer Operations via Handle
-
-```cpp
-// Read/write content
-QByteArray content = buf.getContentRaw();
-buf.setContentRaw("# Updated content\n");
-
-// Save (fires vnote.file.before_save / after_save hooks)
-buf.save();
-
-// Check state
-if (buf.isModified()) { /* unsaved changes */ }
-
-// Assets and attachments
-buf.insertAssetRaw("image.png", pngData);
-buf.insertAttachment("/path/to/file.pdf");
-QJsonArray attachments = buf.listAttachments();
-
-// Access node identity
-NodeIdentifier id = buf.nodeId();  // notebookId + relativePath
-```
-
-#### Closing a Buffer
-
-```cpp
-// Close via BufferService (fires vnote.file.before_close / after_close hooks)
-bufferSvc->closeBuffer(buf.id());
-```
-
----
-
-## Plugin Hook System (WordPress-style)
-
-VNote implements a WordPress-inspired hook system for plugin extensibility. This enables plugins to:
-- **Intercept events** (e.g., notebook opening, node activation) and optionally cancel them
-- **Transform data** (e.g., modify display names, filter content before save)
-
-### Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     HookManager                             │
-│  (Registered in ServiceLocator, single-threaded)            │
-│                                                             │
-│  ┌─────────────────────┐  ┌─────────────────────────────┐  │
-│  │  Actions (Events)   │  │  Filters (Data Transform)   │  │
-│  │  - Cancellable      │  │  - Chain execution          │  │
-│  │  - Priority-ordered │  │  - Return modified value    │  │
-│  └─────────────────────┘  └─────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Hook Types
-
-| Type | Purpose | Return Value |
-|------|---------|--------------|
-| **Action** | Event notification, can cancel downstream processing | `void` (via `HookContext`) |
-| **Filter** | Transform data through a chain of handlers | Modified `QVariant` |
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `src/core/hookcontext.h` | Context passed to callbacks (cancellation, metadata) |
-| `src/core/hooknames.h` | Hook name constants (`vnote.notebook.before_open`, etc.) |
-| `src/core/services/hookmanager.h` | Main hook manager API |
-| `src/core/exampleplugin.h` | Example plugin demonstrating hook usage |
-| `tests/core/test_hookmanager.cpp` | Unit tests (24 test cases) |
-| `tests/core/test_hookintegration.cpp` | Integration tests (10 test cases) |
-
-### Registering Hooks
-
-```cpp
-#include <core/hooknames.h>
-#include <core/services/hookmanager.h>
-
-// Get HookManager from ServiceLocator
-auto *hookMgr = m_services.get<HookManager>();
-
-// Register an action (event handler)
-int actionId = hookMgr->addAction(
-    HookNames::NotebookBeforeOpen,
-    [](HookContext &p_ctx, const QVariantMap &p_args) {
-      QString notebookId = p_args.value("notebookId").toString();
-      qDebug() << "Opening notebook:" << notebookId;
-
-      // Optional: Cancel the action
-      // p_ctx.cancel();
-    },
-    10); // Priority: lower = earlier execution
-
-// Register a filter (data transformer)
-int filterId = hookMgr->addFilter(
-    HookNames::FilterNodeDisplayName,
-    [](const QVariant &p_value, const QVariantMap &p_context) -> QVariant {
-      QString name = p_value.toString();
-      // Transform and return
-      return "[Modified] " + name;
-    },
-    10);
-```
-
-### Hook Emission Rule (CRITICAL)
-
-**Hooks MUST be emitted inside services, NOT in controllers or widgets.**
-
-The service layer owns the hook contract. Any caller that invokes a service operation automatically gets the correct before/after hooks fired. Controllers translate user actions into service calls and service results into UI feedback — they do not orchestrate hooks.
-
-**Why:**
-1. **Enforced contract** — Every caller gets hooks automatically; no caller can accidentally skip them
-2. **No duplication** — A second controller or CLI command doesn't need to re-implement hook logic
-3. **Clean separation** — Controllers handle user intent → service calls → UI feedback; services handle operation + hooks
-4. **Testability** — Testing a service tests its hooks; testing a controller doesn't need hook setup
-
-**Correct (hooks inside service):**
-```cpp
-// In BufferService::save() — service fires hooks around the operation
-OperationResult BufferService::save(const Buffer2 &p_buffer) {
-    QVariantMap args;
-    args["bufferId"] = p_buffer.id();
-    if (m_hookMgr->doAction(HookNames::FileBeforeSave, args)) {
-        return OperationResult::Cancelled;
-    }
-
-    bool ok = m_coreService.saveBuffer(p_buffer.id());
-
-    if (ok) {
-        m_hookMgr->doAction(HookNames::FileAfterSave, args);
-    }
-    return ok ? OperationResult::Success : OperationResult::Failed;
-}
-
-// In Controller — just calls service, checks result
-void MyController::onSaveRequested(const Buffer2 &p_buffer) {
-    auto result = m_bufferService->save(p_buffer);
-    if (result == OperationResult::Cancelled) {
-        emit statusMessage(tr("Save blocked by plugin"));
-    }
-}
-```
-
-**Wrong (hooks in controller/widget):**
-```cpp
-// DON'T DO THIS — controller firing hooks directly
-void MyController::doSomething() {
-    auto *hookMgr = m_services.get<HookManager>();
-    if (hookMgr && hookMgr->doAction(HookNames::SomeBeforeHook, args)) {
-        return; // Cancelled
-    }
-    m_someService->doOperation();  // Hook contract bypassed if called elsewhere
-    if (hookMgr) {
-        hookMgr->doAction(HookNames::SomeAfterHook, args);
-    }
-}
-```
-
-**Exception — UI lifecycle hooks:** `MainWindowBeforeShow`, `MainWindowAfterShow`, `MainWindowAfterStart`, `MainWindowBeforeClose` are inherently tied to the widget lifecycle (QWidget::show, QCloseEvent). These may remain in `MainWindow2` until a dedicated `AppLifecycleService` is introduced.
-
-#### Hook Ownership Map
-
-| Service | Hook(s) Owned |
-|---------|---------------|
-| `BufferService` | `FileBeforeOpen`/`AfterOpen`, `FileBeforeClose`/`AfterClose` |
-| `Buffer2` (handle) | `FileBeforeSave`/`AfterSave` |
-| `NotebookCoreService` | `NodeBeforeDelete`, `NodeBeforeMove`, `NodeBeforeRename`/`AfterRename` |
-| `WorkspaceCoreService` | `ViewWindowBefore/AfterOpen/Close/Move`, `ViewSplitBefore/AfterCreate/Remove/Activate` |
-| `MainWindow2` (exception) | `MainWindowBefore/AfterShow`, `MainWindowAfterStart`, `MainWindowBeforeClose` |
-
-### Typed Hook API
-
-VNote uses a type-safe hook event system. Each hook has a corresponding C++ struct defined in `src/core/hookevents.h`. **Always use the typed API in C++ code.** The raw `QVariantMap` API exists only for plugin compatibility.
-
-**Event structs:** Each struct has `toVariantMap()` and `static fromVariantMap()` for bridging to the raw API.
-
-| Struct | Used by hooks |
-|--------|--------------|
-| `NodeOperationEvent` | `NodeBeforeDelete`, `NodeBeforeMove` |
-| `NodeRenameEvent` | `NodeBeforeRename`, `NodeAfterRename` |
-| `FileOpenEvent` | `FileBeforeOpen`, `FileAfterOpen` |
-| `BufferEvent` | `FileBeforeSave`, `FileAfterSave`, `FileBeforeClose`, `FileAfterClose` |
-| `ViewWindowOpenEvent` | `ViewWindowBeforeOpen`, `ViewWindowAfterOpen` |
-| `ViewWindowCloseEvent` | `ViewWindowBeforeClose`, `ViewWindowAfterClose` |
-| `ViewWindowMoveEvent` | `ViewWindowBeforeMove`, `ViewWindowAfterMove` |
-| `ViewSplitCreateEvent` | `ViewSplitBeforeCreate`, `ViewSplitAfterCreate` |
-| `ViewSplitRemoveEvent` | `ViewSplitBeforeRemove`, `ViewSplitAfterRemove` |
-| `ViewSplitActivateEvent` | `ViewSplitBeforeActivate`, `ViewSplitAfterActivate` |
-
-**Emitting hooks (services):**
-```cpp
-// CORRECT: use typed event
-NodeOperationEvent event;
-event.notebookId = p_notebookId;
-event.relativePath = p_filePath;
-event.isFolder = false;
-event.name = extractName(p_filePath);
-event.operation = QStringLiteral("delete");
-if (m_hookMgr->doAction(HookNames::NodeBeforeDelete, event)) { return false; }
-
-// WRONG: manual QVariantMap construction
-QVariantMap args;
-args["notebookId"] = p_notebookId;  // fragile string keys, no compile-time checking
-```
-
-**Subscribing to hooks (C++ code):**
-```cpp
-// CORRECT: typed subscription
-hookMgr->addAction<NodeRenameEvent>(HookNames::NodeAfterRename,
-    [this](HookContext &ctx, const NodeRenameEvent &event) {
-      qDebug() << event.oldName << "->" << event.newName;  // type-safe access
-    }, 10);
-
-// WRONG: raw QVariantMap subscription in C++ code
-hookMgr->addAction(HookNames::NodeAfterRename,
-    [](HookContext &ctx, const QVariantMap &args) {
-      QString oldName = args["oldName"].toString();  // fragile
-    }, 10);
-```
-
-**Adding a new hook:**
-1. Add hook name constant to `src/core/hooknames.h`
-2. Add (or reuse) event struct in `src/core/hookevents.h` with `toVariantMap()` / `fromVariantMap()`
-3. Add typed `doAction()` overload to `HookManager` if new struct type
-4. Emit from the appropriate service using the typed API
-5. Add round-trip test in `tests/core/test_hookevents.cpp`
-
-### Available Hook Names
-
-**Notebook Events:**
-- `vnote.notebook.before_open` / `after_open`
-- `vnote.notebook.before_close` / `after_close`
-
-**Node Events:**
-- `vnote.node.before_activate` / `after_activate`
-- `vnote.node.before_create` / `after_create`
-- `vnote.node.before_rename` / `after_rename`
-- `vnote.node.before_delete` / `after_delete`
-- `vnote.node.before_move` / `after_move`
-
-**File Events:**
-- `vnote.file.before_open` / `after_open`
-- `vnote.file.before_save` / `after_save`
-- `vnote.file.before_close` / `after_close`
-
-**UI Events:**
-- `vnote.ui.mainwindow.before_show` / `after_show`
-- `vnote.ui.contextmenu.before_show`
-
-**ViewSplit Events:**
-- `vnote.viewsplit.before_create` / `after_create`
-- `vnote.viewsplit.before_remove` / `after_remove`
-
-**ViewWindow Events:**
-- `vnote.viewwindow.before_open` / `after_open`
-- `vnote.viewwindow.before_close` / `after_close`
-- `vnote.viewwindow.before_move` / `after_move`
-
-**Filters:**
-- `vnote.filter.node_display_name`
-- `vnote.filter.file_content_before_save`
-- `vnote.filter.file_content_after_load`
-- `vnote.filter.context_menu_items`
-
-### Unregistering Hooks
-
-```cpp
-// Store the ID when registering
-int actionId = hookMgr->addAction(...);
-
-// Later, remove by ID
-hookMgr->removeAction(actionId);
-hookMgr->removeFilter(filterId);
-```
-
-### Error Handling
-
-The hook system isolates errors to prevent app crashes:
-- Exceptions in callbacks are caught and logged
-- Errors emit `actionError` / `filterError` signals
-- Other callbacks continue executing
-
-### Testing Hooks
-
-```cpp
-void TestMyPlugin::testHookFires() {
-  vnotex::HookManager hookMgr;
-  bool hookFired = false;
-
-  hookMgr.addAction(
-      vnotex::HookNames::SomeHook,
-      [&](vnotex::HookContext &, const QVariantMap &) {
-        hookFired = true;
-      },
-      10);
-
-  hookMgr.doAction(vnotex::HookNames::SomeHook, {});
-  QVERIFY(hookFired);
-}
-```
-
----
-
-## Migration Guide
-
-### Migrating a Widget to New Architecture
-
-**Before (legacy):**
-```cpp
-// Uses global singletons
-class OldWidget : public QWidget {
-  void doSomething() {
-    auto &config = ConfigMgr::getInst();
-    auto &notebooks = VNoteX::getInst().getNotebookMgr();
-  }
-};
-```
-
-**After (new architecture):**
-```cpp
-// Receives dependencies via constructor
-class NewWidget : public QWidget {
-  Q_OBJECT
-public:
-  explicit NewWidget(ServiceLocator &p_services, QWidget *p_parent = nullptr);
-
-private:
-  ServiceLocator &m_services;
-
-  void doSomething() {
-    auto &config = m_services.get<ConfigCoreService>();
-    auto &notebooks = m_services.get<NotebookCoreService>();
-  }
-};
-```
-
-### Migration Checklist
-
-- [ ] Create new file with `2` suffix (e.g., `mywidget2.h`)
-- [ ] Add `ServiceLocator &p_services` to constructor
-- [ ] Store reference: `ServiceLocator &m_services`
-- [ ] Replace `ConfigMgr::getInst()` → `m_services.get<ConfigCoreService>()`
-- [ ] Replace `VNoteX::getInst().getNotebookMgr()` → `m_services.get<NotebookCoreService>()`
-- [ ] Update parent widget to pass `ServiceLocator&`
-- [ ] Add to CMakeLists.txt
-- [ ] Write unit test with mock services
-
-### Adding a New Service
-
-1. **Create service class** in `src/core/`:
-```cpp
-// src/core/myservice.h
-#ifndef MYSERVICE_H
-#define MYSERVICE_H
-
-#include <QObject>
-
-struct vxcore_context;
-
-namespace vnotex {
-
-class MyService : public QObject {
-  Q_OBJECT
-public:
-  explicit MyService(vxcore_context *p_ctx, QObject *p_parent = nullptr);
-
-  // Service methods
-  QString doSomething() const;
-
-signals:
-  void somethingHappened();
-
-private:
-  vxcore_context *m_ctx;
-};
-
-} // namespace vnotex
-
-#endif // MYSERVICE_H
-```
-
-2. **Register in main.cpp**:
-```cpp
-services.registerService<vnotex::MyService>(
-    std::make_unique<vnotex::MyService>(ctx));
-```
-
-3. **Add to CMakeLists.txt**:
-```cmake
-# src/core/CMakeLists.txt
-target_sources(core2 PRIVATE
-  myservice.h
-  myservice.cpp
-)
-```
-
----
-
-## Testing
-
-### Test Structure
-
-```
-tests/
-├── CMakeLists.txt          # Root test config with add_qt_test() helper
-├── helpers/
-│   ├── CMakeLists.txt
-│   ├── test_helper.h       # Common includes
-│   └── temp_dir_fixture.h  # QTemporaryDir wrapper
-├── core/
-│   ├── CMakeLists.txt
-│   ├── test_error.cpp
-│   ├── test_exception.cpp
-│   ├── test_configservice.cpp
-│   ├── test_notebookservice.cpp
-│   ├── test_bufferservice.cpp   # BufferCoreService tests
-│   └── test_buffer.cpp          # Buffer2 + BufferService integration tests (29 cases)
-└── utils/
-    ├── CMakeLists.txt
-    ├── test_pathutils.cpp
-    └── test_htmlutils.cpp
-```
-
-### CRITICAL: Test Mode for vxcore
-
-**Always enable test mode BEFORE creating vxcore context in tests:**
-
-```cpp
-void TestMyService::initTestCase() {
-  // CRITICAL: Must call BEFORE vxcore_context_create()
-  // Prevents tests from corrupting real user data
-  vxcore_set_test_mode(1);
-
-  m_ctx = vxcore_context_create();
-  // ...
-}
-```
-
-**Why this matters:**
-- Without test mode, vxcore uses real `AppData/Local` paths
-- Tests will corrupt actual user configuration
-- Test mode redirects to isolated temp directories
-
-### Writing Service Tests
-
-```cpp
-// tests/core/test_myservice.cpp
-#include <QtTest>
-
-#include <vxcore/vxcore.h>
-
-#include <core/myservice.h>
-
-namespace tests {
-
-class TestMyService : public QObject {
-  Q_OBJECT
-
-private slots:
-  void initTestCase();
-  void cleanupTestCase();
-  void testBasicOperation();
-
-private:
-  vxcore_context *m_ctx = nullptr;
-};
-
-void TestMyService::initTestCase() {
-  vxcore_set_test_mode(1);  // CRITICAL!
-  m_ctx = vxcore_context_create();
-}
-
-void TestMyService::cleanupTestCase() {
-  vxcore_context_destroy(m_ctx);
-  m_ctx = nullptr;
-}
-
-void TestMyService::testBasicOperation() {
-  vnotex::MyService service(m_ctx);
-  QVERIFY(!service.doSomething().isEmpty());
-}
-
-} // namespace tests
-
-QTEST_GUILESS_MAIN(tests::TestMyService)
-#include "test_myservice.moc"
-```
-
-### Enable Tests
-Uncomment in root `CMakeLists.txt`:
-```cmake
-add_subdirectory(tests)
-```
-
-### Build Tests
-```bash
-cmake --build build --config Release --target test_error test_exception test_pathutils test_htmlutils
-```
-
-### Run Tests
-
-**Windows (Qt DLLs must be in PATH):**
-```powershell
-$env:PATH = "C:/Qt/6.9.3/msvc2022_64/bin;" + $env:PATH
-./build/tests/core/test_error.exe
-./build/tests/core/test_configservice.exe
-./build/tests/core/test_notebookservice.exe
-```
-
-**Using CTest (requires Qt in system PATH):**
-```bash
-ctest --test-dir build                    # Run all tests
-ctest --test-dir build -R test_error      # Run single test (pattern match)
-ctest --test-dir build --output-on-failure  # Show output on failure
-```
-
-### Adding New Tests
-
-Use the `add_qt_test()` helper function in CMakeLists.txt:
-
-```cmake
-# tests/module/CMakeLists.txt
-add_qt_test(test_myclass
-  SOURCES
-    test_myclass.cpp
-    ${CMAKE_SOURCE_DIR}/src/module/myclass.cpp
-  LINKS
-    Qt6::Gui  # Optional: extra Qt modules
-  GUILESS     # Optional: use QCoreApplication instead of QApplication
-)
-```
-
-### Qt Test Macros
-
-| Macro | Purpose |
-|-------|---------|
-| `QTEST_MAIN(Class)` | Creates main(), runs tests with QApplication |
-| `QTEST_GUILESS_MAIN(Class)` | Headless test runner (preferred) |
-| `QVERIFY(condition)` | Assert condition is true |
-| `QCOMPARE(actual, expected)` | Assert equality |
-| `QFETCH(type, name)` | Fetch data-driven test value |
-| `QTest::addColumn<T>("name")` | Declare data column |
-| `QTest::newRow("name")` | Add data row |
-| `QSKIP("reason")` | Skip test |
-| `QTest::ignoreMessage(type, msg)` | Suppress expected qDebug/qWarning/qCritical |
-
-### Current Test Coverage
-
-| Test | Class | Test Cases |
-|------|-------|------------|
-| test_error | `Error`, `ErrorCode` | 23 |
-| test_exception | `Exception` | 20 |
-| test_pathutils | `PathUtils` | 68 |
-| test_htmlutils | `HtmlUtils` | 31 |
-| test_fileutils2 | `FileUtils2` | 15 |
-| test_configservice | `ConfigCoreService` | 10 |
-| test_notebookservice | `NotebookCoreService` | 33 |
-| test_bufferservice | `BufferCoreService` | - |
-| test_buffer | `Buffer2` + `BufferService` | 29 |
-| test_searchservice | `SearchCoreService` | - |
-| test_servicelocator | `ServiceLocator` | - |
-| test_configmgr2 | `ConfigMgr2` | - |
-| test_hookmanager | `HookManager` | 24 |
-| test_hookintegration | Hook integration | 10 |
-| **Total** | | **260+** |
-
----
-
 ## Code Style Guidelines
 
 ### Standards
@@ -1051,6 +395,52 @@ m_themeMgr = new ThemeMgr(this);  // 'this' takes ownership
 
 ---
 
+## Migration Guide
+
+### Migrating a Widget to New Architecture
+
+**Before (legacy):**
+```cpp
+// Uses global singletons
+class OldWidget : public QWidget {
+  void doSomething() {
+    auto &config = ConfigMgr::getInst();
+    auto &notebooks = VNoteX::getInst().getNotebookMgr();
+  }
+};
+```
+
+**After (new architecture):**
+```cpp
+// Receives dependencies via constructor
+class NewWidget : public QWidget {
+  Q_OBJECT
+public:
+  explicit NewWidget(ServiceLocator &p_services, QWidget *p_parent = nullptr);
+
+private:
+  ServiceLocator &m_services;
+
+  void doSomething() {
+    auto &config = m_services.get<ConfigCoreService>();
+    auto &notebooks = m_services.get<NotebookCoreService>();
+  }
+};
+```
+
+### Migration Checklist
+
+- [ ] Create new file with `2` suffix (e.g., `mywidget2.h`)
+- [ ] Add `ServiceLocator &p_services` to constructor
+- [ ] Store reference: `ServiceLocator &m_services`
+- [ ] Replace `ConfigMgr::getInst()` → `m_services.get<ConfigCoreService>()`
+- [ ] Replace `VNoteX::getInst().getNotebookMgr()` → `m_services.get<NotebookCoreService>()`
+- [ ] Update parent widget to pass `ServiceLocator&`
+- [ ] Add to CMakeLists.txt
+- [ ] Write unit test with mock services
+
+---
+
 ## Legacy Architecture (Reference Only)
 
 The following patterns exist in legacy code. **Do NOT use for new code.**
@@ -1095,3 +485,22 @@ clang-format -i src/core/myfile.cpp
 ```
 
 **Excluded from formatting:** `libs/` directory (third-party code)
+
+---
+
+## Module Documentation Index
+
+Detailed knowledge for each module lives in its own AGENTS.md:
+
+| Module | File | Description |
+|--------|------|-------------|
+| Core & Services | [src/core/AGENTS.md](src/core/AGENTS.md) | ServiceLocator, DI, Buffer2, hooks, adding services |
+| Controllers | [src/controllers/AGENTS.md](src/controllers/AGENTS.md) | Controller patterns, MVC rules for controllers |
+| Models | [src/models/AGENTS.md](src/models/AGENTS.md) | Qt Model/View data representations |
+| Views | [src/views/AGENTS.md](src/views/AGENTS.md) | View conventions, delegate patterns |
+| Widgets | [src/widgets/AGENTS.md](src/widgets/AGENTS.md) | Widget conventions, ViewArea2 framework |
+| GUI Services | [src/gui/AGENTS.md](src/gui/AGENTS.md) | Theme, ViewWindowFactory, GUI utilities |
+| Utilities | [src/utils/AGENTS.md](src/utils/AGENTS.md) | PathUtils, HtmlUtils, FileUtils2 reference |
+| Testing | [tests/AGENTS.md](tests/AGENTS.md) | Test infrastructure, test mode, coverage |
+| vxcore (submodule) | [libs/vxcore/AGENTS.md](libs/vxcore/AGENTS.md) | C library: notebook/config/search backend |
+| vtextedit (submodule) | [libs/vtextedit/AGENTS.md](libs/vtextedit/AGENTS.md) | Qt editor widget library |
