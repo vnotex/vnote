@@ -37,18 +37,18 @@
 #include <views/inodeexplorer.h>
 #include <views/twocolumnsnodeexplorer.h>
 // TODO: Migrate dialogs to use ServiceLocator DI pattern
+#include <core/services/templateservice.h>
+#include <snippet/snippetmgr.h>
 #include <widgets/dialogs/importfolderdialog2.h>
-#include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/managenotebooksdialog2.h>
 #include <widgets/dialogs/newfolderdialog2.h>
+#include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/newnotedialog2.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
 #include <widgets/notebookselector2.h>
 #include <widgets/titlebar.h>
-#include <core/services/templateservice.h>
-#include <snippet/snippetmgr.h>
 
 using namespace vnotex;
 
@@ -89,7 +89,8 @@ void NotebookExplorer2::setupUI() {
   }
 
   // Connect notebook selector - activated fires on user interaction only
-  // Note: We don't use currentIndexChanged because it fires during addItem() before item data is set
+  // Note: We don't use currentIndexChanged because it fires during addItem() before item data is
+  // set
   connect(m_notebookSelector, QOverload<int>::of(&QComboBox::activated), this, [this](int p_idx) {
     QString guid = m_notebookSelector->itemData(p_idx, NotebookGuidRole).toString();
     setCurrentNotebookInternal(guid);
@@ -143,26 +144,24 @@ void NotebookExplorer2::setupTitleBarMenu() {
   // External files options
   {
     m_titleBar->addMenuSeparator();
-    auto showAct = m_titleBar->addMenuAction(tr("Show External Files"), m_titleBar,
-                                             [this](bool p_checked) {
-                                               m_services.get<ConfigMgr2>()
-                                                   ->getWidgetConfig()
-                                                   .setNodeExplorerExternalFilesVisible(p_checked);
-                                               // Apply to current explorer
-                                               if (m_nodeExplorer) {
-                                                 m_nodeExplorer->setExternalNodesVisible(p_checked);
-                                               }
-                                             });
+    auto showAct =
+        m_titleBar->addMenuAction(tr("Show External Files"), m_titleBar, [this](bool p_checked) {
+          m_services.get<ConfigMgr2>()->getWidgetConfig().setNodeExplorerExternalFilesVisible(
+              p_checked);
+          // Apply to current explorer
+          if (m_nodeExplorer) {
+            m_nodeExplorer->setExternalNodesVisible(p_checked);
+          }
+        });
     showAct->setCheckable(true);
     showAct->setChecked(widgetConfig.isNodeExplorerExternalFilesVisible());
 
-    auto importAct =
-        m_titleBar->addMenuAction(tr("Import External Files on Open"), m_titleBar,
-                                  [this](bool p_checked) {
-                                    m_services.get<ConfigMgr2>()
-                                        ->getWidgetConfig()
-                                        .setNodeExplorerAutoImportExternalFilesEnabled(p_checked);
-                                  });
+    auto importAct = m_titleBar->addMenuAction(
+        tr("Import External Files on Open"), m_titleBar, [this](bool p_checked) {
+          m_services.get<ConfigMgr2>()
+              ->getWidgetConfig()
+              .setNodeExplorerAutoImportExternalFilesEnabled(p_checked);
+        });
     importAct->setCheckable(true);
     importAct->setChecked(widgetConfig.getNodeExplorerAutoImportExternalFilesEnabled());
   }
@@ -364,22 +363,20 @@ void NotebookExplorer2::rebuildDatabase() {
       tr("Are you sure you want to rebuild the database for notebook \"%1\"?\n\n"
          "This will re-scan all files and rebuild the metadata cache from the filesystem.")
           .arg(notebookName),
-      QString(),
-      QString(),
-      window());
+      QString(), QString(), window());
   if (ret != QMessageBox::Ok) {
     return;
   }
 
   // Show progress dialog (indeterminate for sync operation).
   QProgressDialog progress(tr("Rebuilding database for \"%1\"...").arg(notebookName),
-                           QString(),  // No cancel button for sync operation
-                           0, 0,       // Indeterminate progress
+                           QString(), // No cancel button for sync operation
+                           0, 0,      // Indeterminate progress
                            window());
   progress.setWindowModality(Qt::WindowModal);
-  progress.setMinimumDuration(0);  // Show immediately
+  progress.setMinimumDuration(0); // Show immediately
   progress.show();
-  QCoreApplication::processEvents();  // Ensure dialog is displayed
+  QCoreApplication::processEvents(); // Ensure dialog is displayed
 
   // Perform the rebuild (synchronous).
   bool success = notebookService.rebuildNotebookCache(m_currentNotebookId);
@@ -428,8 +425,7 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onPropertiesRequested);
   connect(explorer, &CombinedNodeExplorer::errorOccurred, this,
           &NotebookExplorer2::onErrorOccurred);
-  connect(explorer, &CombinedNodeExplorer::infoMessage, this,
-          &NotebookExplorer2::onInfoMessage);
+  connect(explorer, &CombinedNodeExplorer::infoMessage, this, &NotebookExplorer2::onInfoMessage);
   connect(explorer, &CombinedNodeExplorer::nodeActivated, this,
           &NotebookExplorer2::onNodeActivated);
 
@@ -457,8 +453,7 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::onPropertiesRequested);
   connect(explorer, &TwoColumnsNodeExplorer::errorOccurred, this,
           &NotebookExplorer2::onErrorOccurred);
-  connect(explorer, &TwoColumnsNodeExplorer::infoMessage, this,
-          &NotebookExplorer2::onInfoMessage);
+  connect(explorer, &TwoColumnsNodeExplorer::infoMessage, this, &NotebookExplorer2::onInfoMessage);
   connect(explorer, &TwoColumnsNodeExplorer::nodeActivated, this,
           &NotebookExplorer2::onNodeActivated);
 
@@ -502,9 +497,7 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
   emit currentExploredFolderChanged(currentExploredFolderId());
 }
 
-QString NotebookExplorer2::currentNotebookId() const {
-  return m_currentNotebookId;
-}
+QString NotebookExplorer2::currentNotebookId() const { return m_currentNotebookId; }
 
 void NotebookExplorer2::setCurrentNode(const NodeIdentifier &p_nodeId) {
   if (!p_nodeId.isValid() || !m_nodeExplorer) {
@@ -546,9 +539,7 @@ void NotebookExplorer2::setExploreMode(ExploreMode p_mode) {
   updateExploreMode();
 }
 
-NotebookExplorer2::ExploreMode NotebookExplorer2::exploreMode() const {
-  return m_exploreMode;
-}
+NotebookExplorer2::ExploreMode NotebookExplorer2::exploreMode() const { return m_exploreMode; }
 
 void NotebookExplorer2::updateExploreMode() {
   // Unregister old navigation wrapper before deleting explorer (prevents dangling pointer)
@@ -584,9 +575,7 @@ void NotebookExplorer2::updateExploreMode() {
   updateFocusProxy();
 }
 
-void NotebookExplorer2::updateFocusProxy() {
-  setFocusProxy(m_nodeExplorer);
-}
+void NotebookExplorer2::updateFocusProxy() { setFocusProxy(m_nodeExplorer); }
 
 // --- Public Slots Implementation ---
 
@@ -717,11 +706,13 @@ void NotebookExplorer2::newQuickNote() {
       notebookId = resolved[QStringLiteral("notebookId")].toString();
       folderPath = resolved[QStringLiteral("relativePath")].toString();
     } else {
-      // Path not found in any notebook - use scheme.m_folderPath as-is if current notebook is valid.
+      // Path not found in any notebook - use scheme.m_folderPath as-is if current notebook is
+      // valid.
       if (notebookId.isEmpty()) {
         MessageBoxHelper::notify(
             MessageBoxHelper::Information,
-            tr("The quick note folder path (%1) is not within any open notebook.").arg(scheme.m_folderPath),
+            tr("The quick note folder path (%1) is not within any open notebook.")
+                .arg(scheme.m_folderPath),
             window());
         return;
       }
@@ -739,8 +730,7 @@ void NotebookExplorer2::newQuickNote() {
 
   if (notebookId.isEmpty()) {
     MessageBoxHelper::notify(MessageBoxHelper::Information,
-                             tr("The quick note should be created within a notebook."),
-                             window());
+                             tr("The quick note should be created within a notebook."), window());
     return;
   }
 
@@ -752,9 +742,7 @@ void NotebookExplorer2::newQuickNote() {
   auto &notebookService = *m_services.get<NotebookCoreService>();
   QJsonObject notebookConfig = notebookService.getNotebookConfig(notebookId);
   QString rootFolder = notebookConfig[QStringLiteral("rootFolder")].toString();
-  QString parentAbsPath = folderPath.isEmpty()
-                             ? rootFolder
-                             : QDir(rootFolder).filePath(folderPath);
+  QString parentAbsPath = folderPath.isEmpty() ? rootFolder : QDir(rootFolder).filePath(folderPath);
 
   QString newFileName = FileUtils::generateFileNameWithSequence(
       parentAbsPath, finfo.completeBaseName(), finfo.suffix());
@@ -769,10 +757,9 @@ void NotebookExplorer2::newQuickNote() {
   // Create the file via NotebookService.
   QString fileId = notebookService.createFile(notebookId, folderPath, newFileName);
   if (fileId.isEmpty()) {
-    MessageBoxHelper::notify(
-        MessageBoxHelper::Information,
-        tr("Failed to create quick note from scheme (%1).").arg(scheme.m_name),
-        window());
+    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                             tr("Failed to create quick note from scheme (%1).").arg(scheme.m_name),
+                             window());
     return;
   }
 
@@ -786,7 +773,19 @@ void NotebookExplorer2::newQuickNote() {
     }
   }
 
-  // TODO: Open the file in edit mode.
+  NodeIdentifier newNodeId;
+  newNodeId.notebookId = notebookId;
+  newNodeId.relativePath =
+      folderPath.isEmpty() ? newFileName : folderPath + QStringLiteral("/") + newFileName;
+
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (bufferSvc) {
+    FileOpenSettings settings;
+    settings.m_mode = ViewWindowMode::Edit;
+    settings.m_forceMode = true;
+    settings.m_newFile = true;
+    bufferSvc->openBuffer(newNodeId, settings);
+  }
 }
 
 void NotebookExplorer2::importFile() {
@@ -841,9 +840,7 @@ NodeIdentifier NotebookExplorer2::currentExploredFolderId() const {
   return parentId;
 }
 
-NodeIdentifier NotebookExplorer2::currentExploredNodeId() const {
-  return currentNodeId();
-}
+NodeIdentifier NotebookExplorer2::currentExploredNodeId() const { return currentNodeId(); }
 
 QByteArray NotebookExplorer2::saveState() const {
   // Save current node path and view state
@@ -898,6 +895,15 @@ void NotebookExplorer2::onNewNoteRequested(const NodeIdentifier &p_parentId) {
     if (newNodeId.isValid()) {
       m_nodeExplorer->reloadNode(p_parentId);
       setCurrentNode(newNodeId);
+
+      auto *bufferSvc = m_services.get<BufferService>();
+      if (bufferSvc) {
+        FileOpenSettings settings;
+        settings.m_mode = ViewWindowMode::Edit;
+        settings.m_forceMode = true;
+        settings.m_newFile = true;
+        bufferSvc->openBuffer(newNodeId, settings);
+      }
     }
   }
 }
@@ -919,7 +925,8 @@ void NotebookExplorer2::onRenameRequested(const NodeIdentifier &p_nodeId,
   m_nodeExplorer->startInlineRename(p_nodeId);
 }
 
-void NotebookExplorer2::onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent) {
+void NotebookExplorer2::onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds,
+                                          bool p_permanent) {
   if (p_nodeIds.isEmpty()) {
     return;
   }
@@ -951,8 +958,8 @@ void NotebookExplorer2::onRemoveFromNotebookRequested(const QList<NodeIdentifier
   QString message =
       tr("Remove %n node(s) from notebook index? Files will remain on disk.", "", p_nodeIds.size());
 
-  int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question,
-                                               tr("Remove From Notebook"), message, QString(), window());
+  int ret = MessageBoxHelper::questionOkCancel(
+      MessageBoxHelper::Question, tr("Remove From Notebook"), message, QString(), window());
   if (ret != QMessageBox::Ok) {
     return;
   }
@@ -962,8 +969,8 @@ void NotebookExplorer2::onRemoveFromNotebookRequested(const QList<NodeIdentifier
 }
 
 void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFolderId) {
-  QStringList files = QFileDialog::getOpenFileNames(window(), tr("Import Files"), QString(),
-                                                    tr("All Files (*)"));
+  QStringList files =
+      QFileDialog::getOpenFileNames(window(), tr("Import Files"), QString(), tr("All Files (*)"));
   if (files.isEmpty()) {
     return;
   }
@@ -999,7 +1006,6 @@ void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
 
   // Get node info using unified interface
   NodeInfo nodeInfo = m_nodeExplorer->getNodeInfo(p_nodeId);
-
 
   if (!nodeInfo.isValid()) {
     return;
