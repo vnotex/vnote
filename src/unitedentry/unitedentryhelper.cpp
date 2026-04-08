@@ -2,8 +2,7 @@
 
 #include <QIcon>
 
-#include <core/thememgr.h>
-#include <core/vnotex.h>
+#include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 
 using namespace vnotex;
@@ -28,21 +27,22 @@ UnitedEntryHelper::UserEntry UnitedEntryHelper::parseUserEntry(const QString &p_
   return entry;
 }
 
-const QIcon &UnitedEntryHelper::itemIcon(ItemType p_type) {
+const QIcon &UnitedEntryHelper::itemIcon(ItemType p_type, ThemeService *p_themeService) {
   static QIcon icons[ItemType::MaxItemType];
 
   if (icons[0].isNull()) {
     // Init.
     const QString nodeIconFgName = "base#icon#fg";
-    const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-    const auto fg = themeMgr.paletteColor(nodeIconFgName);
+    const auto fg = p_themeService->paletteColor(nodeIconFgName);
 
-    icons[ItemType::Buffer] = IconUtils::fetchIcon(themeMgr.getIconFile("buffer.svg"), fg);
-    icons[ItemType::File] = IconUtils::fetchIcon(themeMgr.getIconFile("file_node.svg"), fg);
-    icons[ItemType::Folder] = IconUtils::fetchIcon(themeMgr.getIconFile("folder_node.svg"), fg);
+    icons[ItemType::Buffer] = IconUtils::fetchIcon(p_themeService->getIconFile("buffer.svg"), fg);
+    icons[ItemType::File] = IconUtils::fetchIcon(p_themeService->getIconFile("file_node.svg"), fg);
+    icons[ItemType::Folder] =
+        IconUtils::fetchIcon(p_themeService->getIconFile("folder_node.svg"), fg);
     icons[ItemType::Notebook] =
-        IconUtils::fetchIcon(themeMgr.getIconFile("notebook_default.svg"), fg);
-    icons[ItemType::Other] = IconUtils::fetchIcon(themeMgr.getIconFile("other_item.svg"), fg);
+        IconUtils::fetchIcon(p_themeService->getIconFile("notebook_default.svg"), fg);
+    icons[ItemType::Other] =
+        IconUtils::fetchIcon(p_themeService->getIconFile("other_item.svg"), fg);
   }
 
   return icons[p_type];

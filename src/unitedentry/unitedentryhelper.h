@@ -8,6 +8,9 @@
 class QIcon;
 
 namespace vnotex {
+
+class ThemeService;
+
 class UnitedEntryHelper {
 public:
   struct UserEntry {
@@ -22,7 +25,7 @@ public:
 
   static UserEntry parseUserEntry(const QString &p_text);
 
-  static const QIcon &itemIcon(ItemType p_type);
+  static const QIcon &itemIcon(ItemType p_type, ThemeService *p_themeService);
 
   static ItemType locationTypeToItemType(LocationType p_type);
 };
