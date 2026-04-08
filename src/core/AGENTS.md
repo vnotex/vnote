@@ -60,7 +60,8 @@ MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
 
 | Service | Purpose | Key Methods |
 |---------|---------|-------------|
-| `ConfigCoreService` | App configuration via vxcore | `getConfig()`, `getSessionConfig()`, `getDataPath()`, `updateConfigByName()` |
+| `ConfigMgr2` | High-level config manager (owns `MainConfig`, `SessionConfig`, resolves paths) | `getConfig()`, `getEditorConfig()`, `getCoreConfig()`, `getFileFromConfigFolder()`, `getAppDataPath()` |
+| `ConfigCoreService` | Low-level app configuration via vxcore C API | `getConfig()`, `getSessionConfig()`, `getDataPath()`, `updateConfigByName()` |
 | `NotebookCoreService` | Notebook/folder/file operations | `createNotebook()`, `openNotebook()`, `createFile()`, `listFolderChildren()` |
 | `BufferCoreService` | Low-level buffer operations via vxcore | `openBuffer()`, `closeBuffer()`, `saveBuffer()`, `getContentRaw()`, `setContentRaw()`, `getState()`, `insertAsset()`, `listAttachments()` |
 | `BufferService` | Hook-aware buffer wrapper; returns `Buffer2` handles | `openBuffer(NodeIdentifier)` → `Buffer2`, `closeBuffer()`, `listBuffers()`, `autoSaveTick()` |
@@ -69,6 +70,51 @@ MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
 | `TemplateService` | Note template management | `getTemplates()`, `getTemplateContent()`, `getTemplateFilePath()` |
 | `WorkspaceCoreService` | Workspace (split pane) operations via vxcore | `createWorkspace()`, `deleteWorkspace()`, `listWorkspaces()`, `addBuffer()`, `removeBuffer()` |
 | `HookManager` | Plugin hook system | `addAction()`, `doAction()`, `addFilter()`, `applyFilters()` |
+
+### ConfigMgr2 vs ConfigCoreService (CRITICAL — Read Before Using Config)
+
+`ConfigMgr2` and `ConfigCoreService` both deal with configuration, but they serve **different roles**. Using the wrong one will cause subtle runtime bugs.
+
+| | `ConfigMgr2` | `ConfigCoreService` |
+|---|---|---|
+| **Level** | High-level (Qt/C++ typed config objects) | Low-level (raw JSON via vxcore C API) |
+| **Owns** | `MainConfig`, `SessionConfig` (fully initialized with defaults + user overrides) | Nothing — stateless pass-through to vxcore |
+| **Config access** | `getEditorConfig().getMarkdownEditorConfig()` → typed C++ objects | `getConfig()` → raw `QJsonObject` |
+| **Path resolution** | `getFileFromConfigFolder(relativePath)` — resolves against app data path | `getDataPath(DataLocation::App)` — returns raw directory path |
+| **Use when** | You need config values (editor settings, theme, shortcuts, etc.) | You need to read/write raw JSON config files directly |
+
+#### NEVER Do This (Anti-Pattern)
+
+```cpp
+// WRONG: Creating a throwaway MainConfig to parse raw JSON
+// This fails because the raw JSON may not contain all sections
+// (e.g., viewerResource, exportResource), causing defaults to be wiped.
+ConfigCoreService *svc = m_services.get<ConfigCoreService>();
+MainConfig tempConfig(someIConfigMgr);
+tempConfig.fromJson(svc->getConfig());  // BUG: missing keys → empty defaults
+auto &mdConfig = tempConfig.getEditorConfig().getMarkdownEditorConfig();
+```
+
+#### Correct Pattern
+
+```cpp
+// RIGHT: Get the already-initialized config from ConfigMgr2
+auto *configMgr = m_services.get<ConfigMgr2>();
+const auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
+
+// RIGHT: Resolve config-relative file paths
+QString templatePath = configMgr->getFileFromConfigFolder("web/markdown-viewer-template.html");
+// Returns: "C:/Users/.../AppData/Roaming/VNote/web/markdown-viewer-template.html"
+// (or the path unchanged if it's already absolute)
+```
+
+#### Why ConfigMgr2 Exists
+
+`ConfigMgr2` wraps `ConfigCoreService` and adds:
+1. **Default merging** — `ConfigMgr2::init()` loads the `vnotex.json` config file via `ConfigCoreService::getConfigByName()`, then calls `MainConfig::fromJson()`. The `MainConfig` constructor first calls `initDefaults()` on all child configs, then `fromJson()` overlays only the keys present in the JSON. Missing keys keep their C++ defaults.
+2. **Debounced persistence** — Changes to config objects auto-save via 500ms debounced timers.
+3. **Path resolution** — `getFileFromConfigFolder()` resolves relative paths against the app data directory.
+4. **Version upgrade** — Handles copying themes, web resources, etc. on version change.
 
 ### Buffer2 Handle Pattern
 
