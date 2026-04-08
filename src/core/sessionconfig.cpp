@@ -45,12 +45,16 @@ bool SessionConfig::QuickAccessItem::operator==(const QuickAccessItem &p_other) 
 void SessionConfig::QuickAccessItem::fromJson(const QJsonObject &p_jobj) {
   m_path = p_jobj[QStringLiteral("path")].toString();
   m_openMode = stringToOpenMode(p_jobj[QStringLiteral("openMode")].toString());
+  m_uuid = p_jobj[QStringLiteral("uuid")].toString();
 }
 
 QJsonObject SessionConfig::QuickAccessItem::toJson() const {
   QJsonObject jobj;
   jobj[QStringLiteral("path")] = m_path;
   jobj[QStringLiteral("openMode")] = openModeToString(m_openMode);
+  if (!m_uuid.isEmpty()) {
+    jobj[QStringLiteral("uuid")] = m_uuid;
+  }
   return jobj;
 }
 
@@ -96,11 +100,9 @@ void SessionConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_viewAreaLayout = p_jobj[QStringLiteral("viewAreaLayout")].toObject();
 
-  m_notebookExplorerSession =
-      readByteArray(p_jobj, QStringLiteral("notebookExplorerSession"));
+  m_notebookExplorerSession = readByteArray(p_jobj, QStringLiteral("notebookExplorerSession"));
 
-  m_tagExplorerSession =
-      readByteArray(p_jobj, QStringLiteral("tagExplorerSession"));
+  m_tagExplorerSession = readByteArray(p_jobj, QStringLiteral("tagExplorerSession"));
 
   loadExternalPrograms(p_jobj);
 
@@ -150,8 +152,7 @@ void SessionConfig::loadCore(const QJsonObject &p_session) {
 
 QJsonObject SessionConfig::saveCore() const {
   QJsonObject coreObj;
-  coreObj[QStringLiteral("newNotebookDefaultRootFolderPath")] =
-      m_newNotebookDefaultRootFolderPath;
+  coreObj[QStringLiteral("newNotebookDefaultRootFolderPath")] = m_newNotebookDefaultRootFolderPath;
   coreObj[QStringLiteral("opengl")] = openGLToString(m_openGL);
   coreObj[QStringLiteral("systemTitleBar")] = m_systemTitleBarEnabled;
   if (m_minimizeToSystemTray != -1) {
@@ -335,17 +336,13 @@ void SessionConfig::setViewAreaSession(const QByteArray &p_bytes) {
   updateConfigWithoutCheck(m_viewAreaSession, p_bytes, this);
 }
 
-QByteArray SessionConfig::getNotebookExplorerSession() const {
-  return m_notebookExplorerSession;
-}
+QByteArray SessionConfig::getNotebookExplorerSession() const { return m_notebookExplorerSession; }
 
 void SessionConfig::setNotebookExplorerSession(const QByteArray &p_bytes) {
   updateConfigWithoutCheck(m_notebookExplorerSession, p_bytes, this);
 }
 
-QByteArray SessionConfig::getTagExplorerSession() const {
-  return m_tagExplorerSession;
-}
+QByteArray SessionConfig::getTagExplorerSession() const { return m_tagExplorerSession; }
 
 void SessionConfig::setTagExplorerSession(const QByteArray &p_bytes) {
   updateConfigWithoutCheck(m_tagExplorerSession, p_bytes, this);
@@ -449,6 +446,7 @@ void SessionConfig::setQuickAccessItems(const QVector<QuickAccessItem> &p_items)
       QuickAccessItem cleanItem;
       cleanItem.m_path = path;
       cleanItem.m_openMode = item.m_openMode;
+      cleanItem.m_uuid = item.m_uuid;
       items << cleanItem;
     }
   }

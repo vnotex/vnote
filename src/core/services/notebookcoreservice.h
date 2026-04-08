@@ -54,6 +54,11 @@ public:
   // Returns empty string if node is not found.
   QString getNodePathById(const QString &p_notebookId, const QString &p_nodeId) const;
 
+  // Resolve a node UUID to its containing notebook across all open notebooks.
+  // Returns JSON with "notebookId" and "relativePath" keys on success.
+  // Returns empty object if no open notebook contains a node with this UUID.
+  QJsonObject resolveNodeByUuid(const QString &p_uuid) const;
+
   // Remove a node (file or folder) from the notebook index.
   // Files remain on disk - only metadata is removed.
   bool unindexNode(const QString &p_notebookId, const QString &p_nodePath);
@@ -130,15 +135,17 @@ public:
                      const QString &p_externalFilePath);
 
   // Import external folder into notebook folder (copies folder recursively and adds to index).
-  // p_suffixAllowlist: semicolon-separated list of file extensions (e.g., "md;txt"), or empty to import all.
-  // Returns folder ID on success, empty string on failure.
+  // p_suffixAllowlist: semicolon-separated list of file extensions (e.g., "md;txt"), or empty to
+  // import all. Returns folder ID on success, empty string on failure.
   QString importFolder(const QString &p_notebookId, const QString &p_destFolderPath,
-                       const QString &p_externalFolderPath, const QString &p_suffixAllowlist = QString());
+                       const QString &p_externalFolderPath,
+                       const QString &p_suffixAllowlist = QString());
 
   // Peek file content (first N characters for preview).
   // p_maxChars: maximum number of characters to return (default 256).
   // Returns empty string if file doesn't exist or on error.
-  QString peekFile(const QString &p_notebookId, const QString &p_filePath, int p_maxChars = 256) const;
+  QString peekFile(const QString &p_notebookId, const QString &p_filePath,
+                   int p_maxChars = 256) const;
 
 private:
   // Check context validity before operations.

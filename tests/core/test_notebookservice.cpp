@@ -1,6 +1,6 @@
-#include <QtTest>
 #include <QFile>
 #include <QTemporaryDir>
+#include <QtTest>
 
 #include <core/hookcontext.h>
 #include <core/hooknames.h>
@@ -43,6 +43,10 @@ private slots:
   void testCopyFile();
   void testImportFile();
   void testGetFileInfo();
+
+  // Resolve node by UUID tests.
+  void testResolveNodeByUuid();
+  void testResolveNodeByUuidNotFound();
 
   // Hook tests (delete).
   void testDeleteFileCancelledByHook();
@@ -371,7 +375,6 @@ void TestNotebookService::testImportFile() {
   QVERIFY(content.contains("External File Content"));
 }
 
-
 void TestNotebookService::testGetFileInfo() {
   QString nbPath = m_tempDir.filePath("fileinfo_notebook");
   QString nbId = createTestNotebook(nbPath);
@@ -389,6 +392,34 @@ void TestNotebookService::testGetFileInfo() {
   QVERIFY(!metadata.isEmpty());
 }
 
+// ===== Resolve node by UUID tests =====
+
+void TestNotebookService::testResolveNodeByUuid() {
+  QString nbPath = m_tempDir.filePath("resolve_uuid_notebook");
+  QString nbId = createTestNotebook(nbPath);
+  QVERIFY(!nbId.isEmpty());
+
+  // Create a file and get its info (which includes UUID).
+  m_service->createFile(nbId, "", "resolve_me.md");
+  QJsonObject fileInfo = m_service->getFileInfo(nbId, "resolve_me.md");
+  QVERIFY(!fileInfo.isEmpty());
+
+  QString uuid = fileInfo["id"].toString();
+  QVERIFY(!uuid.isEmpty());
+
+  // Resolve the UUID back to notebook + path.
+  QJsonObject resolved = m_service->resolveNodeByUuid(uuid);
+  QVERIFY(!resolved.isEmpty());
+  QCOMPARE(resolved["notebookId"].toString(), nbId);
+  QCOMPARE(resolved["relativePath"].toString(), QStringLiteral("resolve_me.md"));
+}
+
+void TestNotebookService::testResolveNodeByUuidNotFound() {
+  // Resolving a non-existent UUID should return empty object (not crash).
+  QJsonObject resolved = m_service->resolveNodeByUuid(QStringLiteral("nonexistent-uuid-12345"));
+  QVERIFY(resolved.isEmpty());
+}
+
 // ===== Hook tests: Delete =====
 
 void TestNotebookService::testDeleteFileCancelledByHook() {
@@ -401,8 +432,8 @@ void TestNotebookService::testDeleteFileCancelledByHook() {
   QVERIFY(!before.isEmpty());
 
   int hookId = m_hookMgr->addAction(
-      HookNames::NodeBeforeDelete,
-      [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); }, 10);
+      HookNames::NodeBeforeDelete, [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); },
+      10);
 
   bool result = m_service->deleteFile(nbId, "hook_delete.md");
   QVERIFY(!result);
@@ -424,8 +455,8 @@ void TestNotebookService::testDeleteFolderCancelledByHook() {
   QVERIFY(!before.isEmpty());
 
   int hookId = m_hookMgr->addAction(
-      HookNames::NodeBeforeDelete,
-      [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); }, 10);
+      HookNames::NodeBeforeDelete, [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); },
+      10);
 
   bool result = m_service->deleteFolder(nbId, "HookDeleteFolder");
   QVERIFY(!result);
@@ -505,8 +536,8 @@ void TestNotebookService::testRenameFileCancelledByHook() {
   m_service->createFile(nbId, "", "hook_rename_orig.md");
 
   int hookId = m_hookMgr->addAction(
-      HookNames::NodeBeforeRename,
-      [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); }, 10);
+      HookNames::NodeBeforeRename, [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); },
+      10);
 
   bool result = m_service->renameFile(nbId, "hook_rename_orig.md", "hook_rename_new.md");
   QVERIFY(!result);
@@ -530,8 +561,8 @@ void TestNotebookService::testRenameFolderCancelledByHook() {
   m_service->createFolder(nbId, "", "HookRenameOrigFolder");
 
   int hookId = m_hookMgr->addAction(
-      HookNames::NodeBeforeRename,
-      [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); }, 10);
+      HookNames::NodeBeforeRename, [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); },
+      10);
 
   bool result = m_service->renameFolder(nbId, "HookRenameOrigFolder", "HookRenameNewFolder");
   QVERIFY(!result);
@@ -570,8 +601,7 @@ void TestNotebookService::testRenameFileFiresAfterHook() {
   QCOMPARE(capturedArgs[QStringLiteral("notebookId")].toString(), nbId);
   QCOMPARE(capturedArgs[QStringLiteral("oldName")].toString(),
            QStringLiteral("hook_after_orig.md"));
-  QCOMPARE(capturedArgs[QStringLiteral("newName")].toString(),
-           QStringLiteral("hook_after_new.md"));
+  QCOMPARE(capturedArgs[QStringLiteral("newName")].toString(), QStringLiteral("hook_after_new.md"));
   QCOMPARE(capturedArgs[QStringLiteral("isFolder")].toBool(), false);
 
   m_hookMgr->removeAction(hookId);
@@ -618,8 +648,8 @@ void TestNotebookService::testMoveFileCancelledByHook() {
   m_service->createFolder(nbId, "", "MoveDestFolder");
 
   int hookId = m_hookMgr->addAction(
-      HookNames::NodeBeforeMove,
-      [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); }, 10);
+      HookNames::NodeBeforeMove, [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); },
+      10);
 
   bool result = m_service->moveFile(nbId, "hook_move_file.md", "MoveDestFolder");
   QVERIFY(!result);
@@ -644,8 +674,8 @@ void TestNotebookService::testMoveFolderCancelledByHook() {
   m_service->createFolder(nbId, "", "MoveFolderDest");
 
   int hookId = m_hookMgr->addAction(
-      HookNames::NodeBeforeMove,
-      [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); }, 10);
+      HookNames::NodeBeforeMove, [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); },
+      10);
 
   bool result = m_service->moveFolder(nbId, "HookMoveFolder", "MoveFolderDest");
   QVERIFY(!result);

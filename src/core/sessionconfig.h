@@ -58,6 +58,8 @@ public:
     QString m_path;
 
     QuickAccessOpenMode m_openMode = QuickAccessOpenMode::Default;
+
+    QString m_uuid;
   };
 
   enum OpenGL { None, Desktop, Angle, Software };
