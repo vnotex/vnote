@@ -328,9 +328,9 @@ QString SearchController::buildQueryJson(const QString &p_keyword, int p_searchM
 
   if (!p_filePattern.isEmpty()) {
     QJsonObject scopeObj;
-    QJsonArray pathPatterns;
-    pathPatterns.append(p_filePattern);
-    scopeObj.insert(QStringLiteral("pathPatterns"), pathPatterns);
+    QJsonArray filePatterns;
+    filePatterns.append(p_filePattern);
+    scopeObj.insert(QStringLiteral("filePatterns"), filePatterns);
     queryObj.insert(QStringLiteral("scope"), scopeObj);
   }
 
