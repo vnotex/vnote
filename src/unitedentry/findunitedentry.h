@@ -6,7 +6,9 @@
 #include <QCommandLineParser>
 #include <QSharedPointer>
 
-#include <search/searchdata.h>
+#include <functional>
+
+#include <controllers/searchcontroller.h>
 
 class QTreeWidget;
 class QTreeWidgetItem;
@@ -14,16 +16,23 @@ class QTimer;
 
 namespace vnotex {
 class ServiceLocator;
-class Searcher;
-class ISearchInfoProvider;
-struct ComplexLocation;
-class SearchToken;
+class SearchResultModel;
 
 class FindUnitedEntry : public IUnitedEntry {
   Q_OBJECT
 public:
-  FindUnitedEntry(ServiceLocator &p_services, const QSharedPointer<ISearchInfoProvider> &p_provider,
-                  UnitedEntryMgr *p_mgr, QObject *p_parent = nullptr);
+  struct SearchParams {
+    QString keyword;
+    int scope = SearchController::CurrentNotebook;
+    int searchMode = SearchController::ContentSearch;
+    bool caseSensitive = false;
+    bool useRegex = false;
+    QString filePattern;
+  };
+
+  FindUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr, QObject *p_parent = nullptr);
+
+  static SearchParams mapArgsToSearchParams(const QCommandLineParser &p_parser);
 
   void stop() Q_DECL_OVERRIDE;
 
@@ -42,15 +51,11 @@ private:
 
   QString getHelpText() const;
 
-  QSharedPointer<SearchOption> collectOptions() const;
-
-  Searcher *getSearcher();
-
-  void handleSearchFinished(SearchState p_state);
-
   void prepareResultTree();
 
-  void addLocation(const ComplexLocation &p_location);
+  void populateResultTree();
+
+  void showMessageInResultTree(const QString &p_message);
 
   void doProcessInternal();
 
@@ -58,19 +63,21 @@ private:
 
   void handleItemActivated(QTreeWidgetItem *p_item, int p_column);
 
-  QSharedPointer<ISearchInfoProvider> m_provider;
-
   QCommandLineParser m_parser;
 
-  Searcher *m_searcher = nullptr;
+  SearchController *m_searchController = nullptr;
+
+  SearchResultModel *m_resultModel = nullptr;
 
   QSharedPointer<QTreeWidget> m_resultTree;
 
   QTimer *m_processTimer = nullptr;
 
-  QSharedPointer<SearchOption> m_searchOption;
+  SearchParams m_lastSearchParams;
 
-  QSharedPointer<SearchToken> m_searchTokenOfSession;
+  bool m_hasLastSearchParams = false;
+
+  bool m_searchActive = false;
 };
 } // namespace vnotex
 

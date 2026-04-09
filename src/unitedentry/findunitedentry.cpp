@@ -2,33 +2,30 @@
 
 #include <QCommandLineOption>
 #include <QDebug>
-#include <QLabel>
+#include <QFileInfo>
 #include <QTimer>
+#include <QTreeWidgetItem>
 
 #include "entrywidgetfactory.h"
 #include "unitedentryhelper.h"
 #include "unitedentrymgr.h"
 #include <core/fileopensettings.h>
+#include <core/global.h>
 #include <core/nodeidentifier.h>
+#include <core/searchresulttypes.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <gui/services/themeservice.h>
-#include <search/isearchinfoprovider.h>
-#include <search/searchdata.h>
-#include <search/searcher.h>
-#include <search/searchhelper.h>
-#include <search/searchresultitem.h>
-#include <search/searchtoken.h>
+#include <models/searchresultmodel.h>
 #include <utils/processutils.h>
 #include <widgets/treewidget.h>
 
 using namespace vnotex;
 
-FindUnitedEntry::FindUnitedEntry(ServiceLocator &p_services,
-                                 const QSharedPointer<ISearchInfoProvider> &p_provider,
-                                 UnitedEntryMgr *p_mgr, QObject *p_parent)
+FindUnitedEntry::FindUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
+                                 QObject *p_parent)
     : IUnitedEntry("find", tr("Search for files in notebooks"), p_mgr, p_parent),
-      m_services(p_services), m_provider(p_provider) {
+      m_services(p_services) {
   m_processTimer = new QTimer(this);
   m_processTimer->setSingleShot(true);
   m_processTimer->setInterval(500);
@@ -62,13 +59,95 @@ void FindUnitedEntry::initOnFirstProcess() {
                                 tr("file_pattern"));
   m_parser.addOption(patternOpt);
 
-  SearchToken::addSearchOptionsToCommand(&m_parser);
+  m_parser.addOption(QCommandLineOption({"c", "case-sensitive"}, tr("Search in case sensitive.")));
+  m_parser.addOption(
+      QCommandLineOption({"r", "regular-expression"}, tr("Search by regular expression.")));
+  m_parser.addOption(QCommandLineOption({"w", "whole-word-only"}, tr("Search whole word only.")));
+  m_parser.addOption(QCommandLineOption(
+      {"f", "fuzzy-search"}, tr("Do a fuzzy search (not applicable to content search).")));
+
+  m_searchController = new SearchController(m_services, this);
+  m_resultModel = new SearchResultModel(this);
+  m_searchController->setModel(m_resultModel);
+
+  connect(m_searchController, &SearchController::searchStarted, this,
+          [this]() { m_searchActive = true; });
+  connect(m_searchController, &SearchController::searchFinished, this, [this](int, bool) {
+    m_searchActive = false;
+    populateResultTree();
+    finish();
+  });
+  connect(m_searchController, &SearchController::searchFailed, this,
+          [this](const QString &p_errorMessage) {
+            m_searchActive = false;
+            showMessageInResultTree(tr("Error: %1").arg(p_errorMessage));
+            finish();
+          });
+  connect(m_searchController, &SearchController::searchCancelled, this, [this]() {
+    m_searchActive = false;
+    finish();
+  });
+}
+
+FindUnitedEntry::SearchParams
+FindUnitedEntry::mapArgsToSearchParams(const QCommandLineParser &p_parser) {
+  SearchParams params;
+  params.keyword = p_parser.positionalArguments().join(QLatin1Char(' ')).trimmed();
+  params.caseSensitive = p_parser.isSet(QStringLiteral("c"));
+  params.useRegex = p_parser.isSet(QStringLiteral("r"));
+  params.filePattern = p_parser.value(QStringLiteral("p")).trimmed();
+
+  const auto scopeStr = p_parser.value(QStringLiteral("s"));
+  if (scopeStr == QStringLiteral("buffer")) {
+    params.scope = SearchController::Buffers;
+  } else if (scopeStr == QStringLiteral("folder")) {
+    params.scope = SearchController::CurrentFolder;
+  } else if (scopeStr == QStringLiteral("all_notebook")) {
+    params.scope = SearchController::AllNotebooks;
+  } else {
+    params.scope = SearchController::CurrentNotebook;
+  }
+
+  bool hasContent = false;
+  bool hasTag = false;
+  bool hasNameOrPath = false;
+  const auto objectStrs = p_parser.values(QStringLiteral("b"));
+  for (const auto &str : objectStrs) {
+    if (str == QStringLiteral("content")) {
+      hasContent = true;
+    } else if (str == QStringLiteral("tag")) {
+      hasTag = true;
+    } else if (str == QStringLiteral("name") || str == QStringLiteral("path")) {
+      hasNameOrPath = true;
+    }
+  }
+
+  if (hasContent) {
+    params.searchMode = SearchController::ContentSearch;
+  } else if (hasNameOrPath || objectStrs.size() > 1) {
+    params.searchMode = SearchController::FileNameSearch;
+  } else if (hasTag) {
+    params.searchMode = SearchController::TagSearch;
+  }
+
+  if (p_parser.isSet(QStringLiteral("w"))) {
+    qDebug() << "FindUnitedEntry: -w is unsupported in SearchController and will be ignored";
+  }
+
+  if (p_parser.isSet(QStringLiteral("f"))) {
+    qDebug() << "FindUnitedEntry: -f is unsupported in SearchController and will be ignored";
+  }
+
+  if (p_parser.isSet(QStringLiteral("t"))) {
+    qDebug() << "FindUnitedEntry: -t is unsupported in SearchController and will be ignored";
+  }
+
+  return params;
 }
 
 void FindUnitedEntry::processInternal(
     const QString &p_args,
     const std::function<void(const QSharedPointer<QWidget> &)> &p_popupWidgetFunc) {
-  // Do another timer delay here since it is a very expensive operation.
   m_processTimer->stop();
 
   Q_ASSERT(!isOngoing());
@@ -76,9 +155,8 @@ void FindUnitedEntry::processInternal(
   setOngoing(true);
 
   auto args = ProcessUtils::parseCombinedArgString(p_args);
-  // The parser needs the first arg to be the application name.
   args.prepend(name());
-  bool ret = m_parser.parse(args);
+  const bool ret = m_parser.parse(args);
   const auto positionalArgs = m_parser.positionalArguments();
   if (!ret) {
     auto label = EntryWidgetFactory::createLabel(m_parser.errorText());
@@ -86,6 +164,7 @@ void FindUnitedEntry::processInternal(
     finish();
     return;
   }
+
   if (positionalArgs.isEmpty()) {
     auto label = EntryWidgetFactory::createLabel(getHelpText());
     p_popupWidgetFunc(label);
@@ -93,131 +172,37 @@ void FindUnitedEntry::processInternal(
     return;
   }
 
-  auto opt = collectOptions();
-  if (m_searchOption && m_searchOption->strictEquals(*opt)) {
-    // Reuse last result.
+  const auto params = mapArgsToSearchParams(m_parser);
+  if (params.keyword.isEmpty()) {
+    auto label = EntryWidgetFactory::createLabel(getHelpText());
+    p_popupWidgetFunc(label);
+    finish();
+    return;
+  }
+
+  const bool sameSearch = m_hasLastSearchParams && m_lastSearchParams.keyword == params.keyword &&
+                          m_lastSearchParams.scope == params.scope &&
+                          m_lastSearchParams.searchMode == params.searchMode &&
+                          m_lastSearchParams.caseSensitive == params.caseSensitive &&
+                          m_lastSearchParams.useRegex == params.useRegex &&
+                          m_lastSearchParams.filePattern == params.filePattern;
+  if (sameSearch && m_resultTree) {
     p_popupWidgetFunc(m_resultTree);
     finish();
     return;
   }
 
-  m_searchOption = opt;
-
-  m_searchTokenOfSession.clear();
+  m_lastSearchParams = params;
+  m_hasLastSearchParams = true;
 
   prepareResultTree();
-
   p_popupWidgetFunc(m_resultTree);
-
   m_processTimer->start();
-}
-
-QSharedPointer<SearchOption> FindUnitedEntry::collectOptions() const {
-  auto opt = QSharedPointer<SearchOption>::create();
-
-  opt->m_engine = SearchEngine::Internal;
-
-  opt->m_keyword = m_parser.positionalArguments().join(QLatin1Char(' '));
-  Q_ASSERT(!opt->m_keyword.isEmpty());
-
-  opt->m_filePattern = m_parser.value("p");
-
-  {
-    SearchScope scope = SearchScope::CurrentNotebook;
-    const auto scopeStr = m_parser.value("s");
-    if (scopeStr == QStringLiteral("buffer")) {
-      scope = SearchScope::Buffers;
-    } else if (scopeStr == QStringLiteral("folder")) {
-      scope = SearchScope::CurrentFolder;
-    } else if (scopeStr == QStringLiteral("notebook")) {
-      scope = SearchScope::CurrentNotebook;
-    } else if (scopeStr == QStringLiteral("all_notebook")) {
-      scope = SearchScope::AllNotebooks;
-    }
-    opt->m_scope = scope;
-  }
-
-  {
-    SearchObjects objects = SearchObject::ObjectNone;
-    const auto objectStrs = m_parser.values("b");
-    for (const auto &str : objectStrs) {
-      if (str == QStringLiteral("name")) {
-        objects |= SearchObject::SearchName;
-      } else if (str == QStringLiteral("content")) {
-        objects |= SearchObject::SearchContent;
-      } else if (str == QStringLiteral("tag")) {
-        objects |= SearchObject::SearchTag;
-      } else if (str == QStringLiteral("path")) {
-        objects |= SearchObject::SearchPath;
-      }
-    }
-    opt->m_objects = objects;
-  }
-
-  {
-    SearchTargets targets = SearchTarget::TargetNone;
-    auto targetStrs = m_parser.values("t");
-    for (const auto &str : targetStrs) {
-      if (str == QStringLiteral("file")) {
-        targets |= SearchTarget::SearchFile;
-      } else if (str == QStringLiteral("folder")) {
-        targets |= SearchTarget::SearchFolder;
-      } else if (str == QStringLiteral("notebook")) {
-        targets |= SearchTarget::SearchNotebook;
-      }
-    }
-    opt->m_targets = targets;
-  }
-
-  {
-    FindOptions options = FindOption::FindNone;
-    if (m_parser.isSet("c")) {
-      options |= FindOption::CaseSensitive;
-    }
-    if (m_parser.isSet("r")) {
-      options |= FindOption::RegularExpression;
-    }
-    if (m_parser.isSet("w")) {
-      options |= FindOption::WholeWordOnly;
-    }
-    if (m_parser.isSet("f")) {
-      options |= FindOption::FuzzySearch;
-    }
-    opt->m_findOptions = options;
-  }
-
-  return opt;
 }
 
 QString FindUnitedEntry::getHelpText() const {
   auto text = m_parser.helpText();
-  // Skip the first line containing the application name.
   return text.mid(text.indexOf('\n') + 1);
-}
-
-Searcher *FindUnitedEntry::getSearcher() {
-  if (!m_searcher) {
-    m_searcher = new Searcher(this);
-    connect(m_searcher, &Searcher::resultItemAdded, this,
-            [this](const QSharedPointer<SearchResultItem> &p_item) {
-              addLocation(p_item->m_location);
-            });
-    connect(m_searcher, &Searcher::resultItemsAdded, this,
-            [this](const QVector<QSharedPointer<SearchResultItem>> &p_items) {
-              for (const auto &item : p_items) {
-                addLocation(item->m_location);
-              }
-            });
-    connect(m_searcher, &Searcher::finished, this, &FindUnitedEntry::handleSearchFinished);
-  }
-  return m_searcher;
-}
-
-void FindUnitedEntry::handleSearchFinished(SearchState p_state) {
-  if (p_state != SearchState::Busy) {
-    getSearcher()->clear();
-    finish();
-  }
 }
 
 void FindUnitedEntry::prepareResultTree() {
@@ -230,40 +215,88 @@ void FindUnitedEntry::prepareResultTree() {
   m_resultTree->clear();
 }
 
-void FindUnitedEntry::addLocation(const ComplexLocation &p_location) {
-  auto item = new QTreeWidgetItem(m_resultTree.data());
+void FindUnitedEntry::populateResultTree() {
+  prepareResultTree();
+
   auto *themeService = m_services.get<ThemeService>();
-  item->setText(0, p_location.m_displayPath);
-  item->setIcon(0, UnitedEntryHelper::itemIcon(
-                       UnitedEntryHelper::locationTypeToItemType(p_location.m_type), themeService));
-  item->setData(0, Qt::UserRole, p_location.m_path);
-  item->setToolTip(0, p_location.m_path);
-
-  // Add sub items.
-  for (const auto &line : p_location.m_lines) {
-    auto subItem = new QTreeWidgetItem(item);
-
-    // Truncate the text.
-    if (line.m_text.size() > 500) {
-      subItem->setText(0, line.m_text.left(500));
-    } else {
-      subItem->setText(0, line.m_text);
+  const int topLevelRows = m_resultModel ? m_resultModel->rowCount() : 0;
+  for (int i = 0; i < topLevelRows; ++i) {
+    const QModelIndex fileIdx = m_resultModel->index(i, 0);
+    if (!fileIdx.isValid() || fileIdx.internalId() != 0) {
+      continue;
     }
 
-    if (!line.m_segments.isEmpty()) {
-      subItem->setData(0, HighlightsRole, QVariant::fromValue(line.m_segments));
+    const QString relativePath = m_resultModel->data(fileIdx, Qt::ToolTipRole).toString();
+    const NodeIdentifier nodeId =
+        qvariant_cast<NodeIdentifier>(m_resultModel->data(fileIdx, SearchResultModel::NodeIdRole));
+    const QString absolutePath =
+        m_resultModel->data(fileIdx, SearchResultModel::AbsolutePathRole).toString();
+
+    UnitedEntryHelper::ItemType itemType = UnitedEntryHelper::File;
+    if ((!absolutePath.isEmpty() && QFileInfo(absolutePath).isDir()) ||
+        relativePath.endsWith(QLatin1Char('/'))) {
+      itemType = UnitedEntryHelper::Folder;
     }
 
-    subItem->setData(0, Qt::UserRole, line.m_lineNumber);
+    auto *item = new QTreeWidgetItem(m_resultTree.data());
+    item->setText(0, relativePath);
+    item->setToolTip(0, relativePath);
+    item->setIcon(0, UnitedEntryHelper::itemIcon(itemType, themeService));
+    item->setData(0, Qt::UserRole, QVariant::fromValue(nodeId));
+
+    const int childRows = m_resultModel->rowCount(fileIdx);
+    for (int j = 0; j < childRows; ++j) {
+      const QModelIndex lineIdx = m_resultModel->index(j, 0, fileIdx);
+      if (!lineIdx.isValid() || lineIdx.internalId() == 0) {
+        continue;
+      }
+
+      QString lineText = m_resultModel->data(lineIdx, Qt::DisplayRole).toString();
+      const int columnStart =
+          m_resultModel->data(lineIdx, SearchResultModel::ColumnStartRole).toInt();
+      const int columnEnd = m_resultModel->data(lineIdx, SearchResultModel::ColumnEndRole).toInt();
+      const int lineNumber =
+          m_resultModel->data(lineIdx, SearchResultModel::LineNumberRole).toInt();
+
+      QList<Segment> segments;
+      if (columnEnd > columnStart && columnStart >= 0) {
+        int textLength = lineText.size();
+        if (textLength > 500) {
+          textLength = 500;
+          lineText = lineText.left(500);
+        }
+
+        if (columnStart < textLength) {
+          segments.append(Segment(columnStart, qMin(columnEnd, textLength) - columnStart));
+        }
+      } else if (lineText.size() > 500) {
+        lineText = lineText.left(500);
+      }
+
+      auto *subItem = new QTreeWidgetItem(item);
+      subItem->setText(0, lineText);
+      subItem->setData(0, Qt::UserRole, lineNumber);
+      if (!segments.isEmpty()) {
+        subItem->setData(0, HighlightsRole, QVariant::fromValue(segments));
+      }
+    }
+
+    if (m_mgr->getExpandAllEnabled()) {
+      item->setExpanded(true);
+    }
   }
 
-  if (m_mgr->getExpandAllEnabled()) {
-    item->setExpanded(true);
+  if (m_resultTree->topLevelItemCount() > 0) {
+    m_resultTree->setCurrentItem(m_resultTree->topLevelItem(0));
   }
+}
 
-  if (m_resultTree->topLevelItemCount() == 1) {
-    m_resultTree->setCurrentItem(item);
-  }
+void FindUnitedEntry::showMessageInResultTree(const QString &p_message) {
+  prepareResultTree();
+
+  auto *item = new QTreeWidgetItem(m_resultTree.data());
+  item->setText(0, p_message);
+  m_resultTree->setCurrentItem(item);
 }
 
 void FindUnitedEntry::doProcessInternal() {
@@ -272,13 +305,17 @@ void FindUnitedEntry::doProcessInternal() {
     return;
   }
 
-  QString msg;
-  auto state = SearchHelper::searchOnProvider(getSearcher(), m_searchOption, m_provider, msg);
-  if (!msg.isEmpty()) {
-    qWarning() << msg;
+  if (!m_searchController) {
+    finish();
+    return;
   }
 
-  handleSearchFinished(state);
+  m_searchController->setCurrentNotebookId(m_mgr->currentNotebookId());
+  m_searchController->setCurrentFolderId(m_mgr->currentFolderId());
+  m_searchActive = true;
+  m_searchController->search(m_lastSearchParams.keyword, m_lastSearchParams.scope,
+                             m_lastSearchParams.searchMode, m_lastSearchParams.caseSensitive,
+                             m_lastSearchParams.useRegex, m_lastSearchParams.filePattern);
 }
 
 void FindUnitedEntry::stop() {
@@ -286,9 +323,16 @@ void FindUnitedEntry::stop() {
 
   if (m_processTimer->isActive()) {
     m_processTimer->stop();
-    // Let it go finished.
-    doProcessInternal();
+    finish();
+    return;
   }
+
+  if (m_searchActive && m_searchController) {
+    m_searchController->cancel();
+    return;
+  }
+
+  finish();
 }
 
 void FindUnitedEntry::finish() {
@@ -301,26 +345,25 @@ QSharedPointer<QWidget> FindUnitedEntry::currentPopupWidget() const { return m_r
 void FindUnitedEntry::handleItemActivated(QTreeWidgetItem *p_item, int p_column) {
   Q_UNUSED(p_column);
 
-  if (!m_searchTokenOfSession) {
-    if (m_searchOption->m_objects & SearchObject::SearchContent) {
-      m_searchTokenOfSession = QSharedPointer<SearchToken>::create(getSearcher()->getToken());
+  if (!p_item) {
+    return;
+  }
+
+  NodeIdentifier nodeId;
+  int lineNumber = -1;
+  auto *parentItem = p_item->parent();
+  if (parentItem) {
+    nodeId = qvariant_cast<NodeIdentifier>(parentItem->data(0, Qt::UserRole));
+    lineNumber = p_item->data(0, Qt::UserRole).toInt();
+  } else {
+    nodeId = qvariant_cast<NodeIdentifier>(p_item->data(0, Qt::UserRole));
+    if (p_item->childCount() > 0) {
+      lineNumber = p_item->child(0)->data(0, Qt::UserRole).toInt();
     }
   }
 
-  // TODO: decode the path of location and handle different types of destination.
-  QString itemPath;
-  int lineNumber = -1;
-  auto pa = p_item->parent();
-  if (pa) {
-    itemPath = pa->data(0, Qt::UserRole).toString();
-    lineNumber = p_item->data(0, Qt::UserRole).toInt();
-  } else {
-    itemPath = p_item->data(0, Qt::UserRole).toString();
-    // Use the first line number if there is any.
-    if (p_item->childCount() > 0) {
-      auto childItem = p_item->child(0);
-      lineNumber = childItem->data(0, Qt::UserRole).toInt();
-    }
+  if (!nodeId.isValid()) {
+    return;
   }
 
   FileOpenSettings settings;
@@ -328,16 +371,19 @@ void FindUnitedEntry::handleItemActivated(QTreeWidgetItem *p_item, int p_column)
     settings.m_lineNumber = lineNumber;
   }
 
-  if (m_searchTokenOfSession) {
-    auto patterns = m_searchTokenOfSession->toPatterns();
-    settings.m_searchHighlight.m_patterns = patterns.first;
-    settings.m_searchHighlight.m_options = patterns.second;
+  if (m_lastSearchParams.searchMode == SearchController::ContentSearch &&
+      !m_lastSearchParams.keyword.isEmpty()) {
+    settings.m_searchHighlight.m_patterns = QStringList{m_lastSearchParams.keyword};
+    settings.m_searchHighlight.m_options = FindNone;
+    if (m_lastSearchParams.caseSensitive) {
+      settings.m_searchHighlight.m_options |= CaseSensitive;
+    }
+    if (m_lastSearchParams.useRegex) {
+      settings.m_searchHighlight.m_options |= RegularExpression;
+    }
     settings.m_searchHighlight.m_currentMatchLine = lineNumber;
     settings.m_searchHighlight.m_isValid = true;
   }
-
-  NodeIdentifier nodeId;
-  nodeId.relativePath = itemPath;
 
   auto *bufferSvc = m_services.get<BufferService>();
   if (bufferSvc) {
