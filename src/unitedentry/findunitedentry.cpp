@@ -3,6 +3,7 @@
 #include <QCommandLineOption>
 #include <QDebug>
 #include <QFileInfo>
+#include <QLabel>
 #include <QTimer>
 #include <QTreeWidgetItem>
 
