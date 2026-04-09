@@ -736,38 +736,20 @@ QString NotebookCoreService::peekFile(const QString &p_notebookId, const QString
 
 QString NotebookCoreService::getAttachmentsFolder(const QString &p_notebookId,
                                                   const QString &p_filePath) const {
-  if (!checkContext()) {
-    return QString();
-  }
-
-  char *path = nullptr;
-  VxCoreError err = vxcore_node_get_attachments_folder(m_context, p_notebookId.toUtf8().constData(),
-                                                       p_filePath.toUtf8().constData(), &path);
-  if (err != VXCORE_OK) {
-    qWarning() << "getAttachmentsFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
-    return QString();
-  }
-
-  QString result = cstrToQString(path);
-  return result;
+  // TODO(vxcore): Re-enable when vxcore_node_get_attachments_folder is added to vxcore
+  Q_UNUSED(p_notebookId);
+  Q_UNUSED(p_filePath);
+  qWarning() << "getAttachmentsFolder: vxcore API not available";
+  return QString();
 }
 
 QJsonArray NotebookCoreService::listAttachments(const QString &p_notebookId,
                                                 const QString &p_filePath) const {
-  if (!checkContext()) {
-    return QJsonArray();
-  }
-
-  char *attachmentsJson = nullptr;
-  VxCoreError err = vxcore_node_list_attachments(m_context, p_notebookId.toUtf8().constData(),
-                                                 p_filePath.toUtf8().constData(), &attachmentsJson);
-  if (err != VXCORE_OK) {
-    qWarning() << "listAttachments failed:" << QString::fromUtf8(vxcore_error_message(err));
-    return QJsonArray();
-  }
-
-  QJsonArray result = parseJsonArrayFromCStr(attachmentsJson);
-  return result;
+  // TODO(vxcore): Re-enable when vxcore_node_list_attachments is added to vxcore
+  Q_UNUSED(p_notebookId);
+  Q_UNUSED(p_filePath);
+  qWarning() << "listAttachments: vxcore API not available";
+  return QJsonArray();
 }
 
 // Private methods.
