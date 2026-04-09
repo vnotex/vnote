@@ -40,6 +40,9 @@ public:
   // Generate dangerous/warning icon from theme.
   QIcon generateDangerousIcon(const QString &p_iconName);
 
+  // Access the UnitedEntryMgr instance (for signal wiring).
+  UnitedEntryMgr *unitedEntryMgr() const;
+
   // Add spacer to toolbar.
   static void addSpacer(QToolBar *p_toolBar);
 

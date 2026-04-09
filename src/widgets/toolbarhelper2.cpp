@@ -486,6 +486,8 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   p_toolBar->addWidget(btn);
 }
 
+UnitedEntryMgr *ToolBarHelper2::unitedEntryMgr() const { return m_unitedEntryMgr; }
+
 void ToolBarHelper2::activateQuickAccess(const SessionConfig::QuickAccessItem &p_item) {
   // UUID-first: try to open by UUID if available.
   if (!p_item.m_uuid.isEmpty()) {

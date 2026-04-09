@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QSharedPointer>
 
+#include <core/nodeidentifier.h>
 #include <core/noncopyable.h>
 #include <core/servicelocator.h>
 
@@ -27,6 +28,13 @@ public:
   bool getExpandAllEnabled() const;
   void setExpandAllEnabled(bool p_enabled);
 
+  const QString &currentNotebookId() const;
+  const NodeIdentifier &currentFolderId() const;
+
+public slots:
+  void setCurrentNotebookId(const QString &p_notebookId);
+  void setCurrentFolderId(const NodeIdentifier &p_folderId);
+
 signals:
   void entryFinished(IUnitedEntry *p_entry);
 
@@ -42,6 +50,10 @@ private:
   QMap<QString, QSharedPointer<IUnitedEntry>> m_entries;
 
   bool m_expandAllEnabled = false;
+
+  QString m_currentNotebookId;
+
+  NodeIdentifier m_currentFolderId;
 };
 } // namespace vnotex
 

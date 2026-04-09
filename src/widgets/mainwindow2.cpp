@@ -28,6 +28,7 @@
 #include <controllers/searchcontroller.h>
 #include <controllers/viewareacontroller.h>
 #include <qwebengineview.h>
+#include <unitedentry/unitedentrymgr.h>
 #include <views/inodeexplorer.h>
 #include <widgets/dialogs/exportdialog2.h>
 #include <widgets/locationlist2.h>
@@ -468,6 +469,14 @@ void MainWindow2::setupDocks() {
             });
             m_exportDialog->show();
           });
+
+  // Wire notebook changes to UnitedEntryMgr.
+  connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged,
+          m_toolBarHelper->unitedEntryMgr(), &UnitedEntryMgr::setCurrentNotebookId);
+
+  // Wire folder context to UnitedEntryMgr.
+  connect(m_notebookExplorer, &NotebookExplorer2::currentExploredFolderChanged,
+          m_toolBarHelper->unitedEntryMgr(), &UnitedEntryMgr::setCurrentFolderId);
 
   // Wire LocationList2 result activation to SearchController.
   connect(m_locationList, &LocationList2::resultActivated, m_searchPanel->getController(),

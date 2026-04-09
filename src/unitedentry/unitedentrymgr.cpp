@@ -6,20 +6,6 @@
 
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
-#include <search/isearchinfoprovider.h>
-
-namespace {
-class NullSearchInfoProvider : public vnotex::ISearchInfoProvider {
-public:
-  QList<vnotex::Buffer *> getBuffers() const override { return {}; }
-
-  vnotex::Node *getCurrentFolder() const override { return nullptr; }
-
-  vnotex::Notebook *getCurrentNotebook() const override { return nullptr; }
-
-  QVector<vnotex::Notebook *> getNotebooks() const override { return {}; }
-};
-} // namespace
 
 using namespace vnotex;
 
@@ -34,8 +20,7 @@ void UnitedEntryMgr::init() {
   m_initialized = true;
 
   // Built-in entries.
-  addEntry(QSharedPointer<FindUnitedEntry>::create(
-      m_services, QSharedPointer<ISearchInfoProvider>(new NullSearchInfoProvider()), this));
+  addEntry(QSharedPointer<FindUnitedEntry>::create(m_services, this));
 
   addEntry(QSharedPointer<HelpUnitedEntry>::create(this));
 
@@ -76,3 +61,15 @@ bool UnitedEntryMgr::isInitialized() const { return m_initialized; }
 bool UnitedEntryMgr::getExpandAllEnabled() const { return m_expandAllEnabled; }
 
 void UnitedEntryMgr::setExpandAllEnabled(bool p_enabled) { m_expandAllEnabled = p_enabled; }
+
+void UnitedEntryMgr::setCurrentNotebookId(const QString &p_notebookId) {
+  m_currentNotebookId = p_notebookId;
+}
+
+void UnitedEntryMgr::setCurrentFolderId(const NodeIdentifier &p_folderId) {
+  m_currentFolderId = p_folderId;
+}
+
+const QString &UnitedEntryMgr::currentNotebookId() const { return m_currentNotebookId; }
+
+const NodeIdentifier &UnitedEntryMgr::currentFolderId() const { return m_currentFolderId; }
