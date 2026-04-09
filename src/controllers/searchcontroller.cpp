@@ -31,10 +31,18 @@ SearchController::SearchController(ServiceLocator &p_services, QObject *p_parent
   connect(searchSvc, &SearchService::searchFinished, this, &SearchController::onSearchFinished);
   connect(searchSvc, &SearchService::searchFailed, this, &SearchController::onSearchFailed);
   connect(searchSvc, &SearchService::searchCancelled, this, &SearchController::onSearchCancelled);
-  connect(searchSvc, &SearchService::searchProgress, this,
-          [this](int /*p_token*/, int p_percent) { emit progressUpdated(p_percent); });
-  connect(searchSvc, &SearchService::searchStarted, this,
-          [this](int /*p_token*/) { emit searchStarted(); });
+  connect(searchSvc, &SearchService::searchProgress, this, [this](int p_token, int p_percent) {
+    if (!m_activeTokens.contains(p_token) && !m_expectingStartSignal) {
+      return;
+    }
+    emit progressUpdated(p_percent);
+  });
+  connect(searchSvc, &SearchService::searchStarted, this, [this](int p_token) {
+    if (!m_activeTokens.contains(p_token) && !m_expectingStartSignal) {
+      return;
+    }
+    emit searchStarted();
+  });
 }
 
 void SearchController::setModel(SearchResultModel *p_model) { m_model = p_model; }
@@ -369,6 +377,7 @@ void SearchController::dispatchSearch(const SearchTarget &p_target) {
   }
 
   int token = 0;
+  m_expectingStartSignal = true;
   switch (m_activeSearchMode) {
   case FileNameSearch:
     token = searchSvc->searchFiles(p_target.notebookId, m_queryJson, p_target.inputFilesJson);
@@ -383,10 +392,12 @@ void SearchController::dispatchSearch(const SearchTarget &p_target) {
     break;
 
   default:
+    m_expectingStartSignal = false;
     emit searchFailed(tr("Invalid search mode."));
     resetSearchState();
     return;
   }
+  m_expectingStartSignal = false;
 
   if (token > 0) {
     m_activeTokens.insert(token);

@@ -79,6 +79,7 @@ private:
   int m_activeSearchMode = ContentSearch;
   bool m_cancelRequested = false;
   QSet<int> m_activeTokens;
+  bool m_expectingStartSignal = false;
 
   QString m_lastKeyword;
   FindOptions m_lastFindOptions = FindNone;
