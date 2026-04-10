@@ -41,6 +41,7 @@
 #include <snippet/snippetmgr.h>
 #include <widgets/dialogs/importfolderdialog2.h>
 #include <widgets/dialogs/managenotebooksdialog2.h>
+#include <widgets/dialogs/marknodedialog2.h>
 #include <widgets/dialogs/newfolderdialog2.h>
 #include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/newnotedialog2.h>
@@ -430,6 +431,8 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onNodeActivated);
   connect(explorer, &CombinedNodeExplorer::exportNodeRequested, this,
           &NotebookExplorer2::exportNodeRequested);
+  connect(explorer, &CombinedNodeExplorer::markRequested, this,
+          &NotebookExplorer2::onMarkRequested);
 
   m_nodeExplorer = explorer;
 }
@@ -460,6 +463,8 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::onNodeActivated);
   connect(explorer, &TwoColumnsNodeExplorer::exportNodeRequested, this,
           &NotebookExplorer2::exportNodeRequested);
+  connect(explorer, &TwoColumnsNodeExplorer::markRequested, this,
+          &NotebookExplorer2::onMarkRequested);
 
   m_nodeExplorer = explorer;
 }
@@ -1041,6 +1046,19 @@ void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
   }
 
   MessageBoxHelper::notify(MessageBoxHelper::Information, info, window());
+}
+
+void NotebookExplorer2::onMarkRequested(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid() || !m_nodeExplorer) {
+    return;
+  }
+
+  NodeInfo nodeInfo = m_nodeExplorer->getNodeInfo(p_nodeId);
+
+  MarkNodeDialog2 dialog(nodeInfo.textColor, nodeInfo.backgroundColor, window());
+  if (dialog.exec() == QDialog::Accepted) {
+    m_nodeExplorer->handleMarkResult(p_nodeId, dialog.textColor(), dialog.backgroundColor());
+  }
 }
 
 void NotebookExplorer2::onErrorOccurred(const QString &p_title, const QString &p_message) {

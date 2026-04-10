@@ -57,6 +57,8 @@ public:
   virtual void handleRenameResult(const NodeIdentifier &p_nodeId, const QString &p_newName) = 0;
   virtual void handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent) = 0;
   virtual void handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds) = 0;
+  virtual void handleMarkResult(const NodeIdentifier &p_nodeId, const QString &p_textColor,
+                                const QString &p_bgColor) = 0;
 
   // === Reload ===
   virtual void reloadNode(const NodeIdentifier &p_nodeId) = 0;
@@ -73,8 +75,7 @@ public:
 
 signals:
   // === Activation signals ===
-  void nodeActivated(const NodeIdentifier &p_nodeId,
-                     const FileOpenSettings &p_settings);
+  void nodeActivated(const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings);
 
   // === Node lifecycle signals ===
   void nodeAboutToMove(const NodeIdentifier &p_nodeId, const QSharedPointer<Event> &p_event);
@@ -89,6 +90,7 @@ signals:
   void deleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
   void removeFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
   void propertiesRequested(const NodeIdentifier &p_nodeId);
+  void markRequested(const NodeIdentifier &p_nodeId);
 
   // === Status signals ===
   void errorOccurred(const QString &p_title, const QString &p_message);

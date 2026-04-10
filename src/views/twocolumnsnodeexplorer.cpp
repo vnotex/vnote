@@ -145,6 +145,8 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
           &TwoColumnsNodeExplorer::propertiesRequested);
   connect(p_controller, &NotebookNodeController::exportNodeRequested, this,
           &TwoColumnsNodeExplorer::exportNodeRequested);
+  connect(p_controller, &NotebookNodeController::markRequested, this,
+          &TwoColumnsNodeExplorer::markRequested);
 
   // Status signals
   connect(p_controller, &NotebookNodeController::errorOccurred, this,
@@ -371,6 +373,15 @@ void TwoColumnsNodeExplorer::handleRemoveConfirmed(const QList<NodeIdentifier> &
   NotebookNodeController *controller = controllerForNode(p_nodeIds.first());
   if (controller) {
     controller->handleRemoveConfirmed(p_nodeIds);
+  }
+}
+
+void TwoColumnsNodeExplorer::handleMarkResult(const NodeIdentifier &p_nodeId,
+                                              const QString &p_textColor,
+                                              const QString &p_bgColor) {
+  NotebookNodeController *controller = controllerForNode(p_nodeId);
+  if (controller) {
+    controller->handleMarkResult(p_nodeId, p_textColor, p_bgColor);
   }
 }
 

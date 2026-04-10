@@ -56,6 +56,7 @@ public:
   void pasteNodes(const NodeIdentifier &p_targetFolderId);
   void duplicateNode(const NodeIdentifier &p_nodeId);
   void renameNode(const NodeIdentifier &p_nodeId);
+  void markNode(const NodeIdentifier &p_nodeId);
   void moveNodes(const QList<NodeIdentifier> &p_nodeIds, const NodeIdentifier &p_targetFolderId);
 
   // Import/Export
@@ -91,10 +92,13 @@ public:
   using SelectedNodesCallback = std::function<QList<NodeIdentifier>()>;
   void setSelectedNodesCallback(SelectedNodesCallback p_callback);
 
+public slots:
   // Slots for handling dialog results from View
   void handleNewNoteResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
   void handleNewFolderResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
   void handleRenameResult(const NodeIdentifier &p_nodeId, const QString &p_newName);
+  void handleMarkResult(const NodeIdentifier &p_nodeId, const QString &p_textColor,
+                        const QString &p_bgColor);
   void handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
   void handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds);
   void handleImportFiles(const NodeIdentifier &p_targetFolderId, const QStringList &p_files);
@@ -121,6 +125,8 @@ signals:
 
   // Signal emitted when nodes are pasted (for cross-panel refresh in two-column view)
   void nodesPasted(const NodeIdentifier &p_targetFolderId);
+
+  void markRequested(const NodeIdentifier &p_nodeId);
 
 public:
   // Get the parent folder path for a node

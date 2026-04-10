@@ -5,6 +5,7 @@
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QMenu>
 #include <QMessageBox>
@@ -305,6 +306,8 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
 
 void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
                                             bool p_isFolder) {
+  Q_UNUSED(p_isFolder);
+
   auto *reloadAction = p_menu->addAction(tr("Re&load"));
   connect(reloadAction, &QAction::triggered, this, [this, p_nodeId]() { reloadNode(p_nodeId); });
 
@@ -312,6 +315,15 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
     auto *pinAction = p_menu->addAction(tr("Pin to &Quick Access"));
     connect(pinAction, &QAction::triggered, this,
             [this, p_nodeId]() { pinNodeToQuickAccess(p_nodeId); });
+
+    auto *notebookService = m_services.get<NotebookCoreService>();
+    QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeId.notebookId);
+    QString nbType = nbConfig.value(QStringLiteral("type")).toString();
+    bool isBundled = (nbType == QStringLiteral("bundled"));
+    if (!p_nodeId.isRoot() && isBundled) {
+      auto *markAction = p_menu->addAction(tr("&Mark"));
+      connect(markAction, &QAction::triggered, this, [this, p_nodeId]() { markNode(p_nodeId); });
+    }
   }
 }
 
@@ -594,6 +606,14 @@ void NotebookNodeController::renameNode(const NodeIdentifier &p_nodeId) {
   emit renameRequested(p_nodeId, nodeInfo.name);
 }
 
+void NotebookNodeController::markNode(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  emit markRequested(p_nodeId);
+}
+
 void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &p_nodeIds,
                                        const NodeIdentifier &p_targetFolderId) {
   cutNodes(p_nodeIds);
@@ -858,6 +878,62 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
   }
 
   // NodeAfterRename hook is fired by NotebookCoreService::renameFile/renameFolder.
+
+  if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
+    NodeIdentifier parentId = getParentFolder(p_nodeId);
+    nbModel->reloadNode(parentId);
+  }
+}
+
+void NotebookNodeController::handleMarkResult(const NodeIdentifier &p_nodeId,
+                                              const QString &p_textColor,
+                                              const QString &p_bgColor) {
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  if (!nodeInfo.isValid()) {
+    return;
+  }
+
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  QJsonObject metadata;
+  bool success = false;
+
+  if (nodeInfo.isFolder) {
+    metadata = notebookService->getFolderMetadata(p_nodeId.notebookId, p_nodeId.relativePath);
+  } else {
+    metadata = notebookService->getFileMetadata(p_nodeId.notebookId, p_nodeId.relativePath);
+  }
+
+  if (p_textColor.isEmpty()) {
+    metadata.remove(QStringLiteral("textColor"));
+  } else {
+    metadata[QStringLiteral("textColor")] = p_textColor;
+  }
+
+  if (p_bgColor.isEmpty()) {
+    metadata.remove(QStringLiteral("backgroundColor"));
+  } else {
+    metadata[QStringLiteral("backgroundColor")] = p_bgColor;
+  }
+
+  QJsonDocument doc(metadata);
+  QString metadataJson = QString::fromUtf8(doc.toJson(QJsonDocument::Compact));
+
+  if (nodeInfo.isFolder) {
+    success = notebookService->updateFolderMetadata(p_nodeId.notebookId, p_nodeId.relativePath,
+                                                    metadataJson);
+  } else {
+    success = notebookService->updateFileMetadata(p_nodeId.notebookId, p_nodeId.relativePath,
+                                                  metadataJson);
+  }
+
+  if (!success) {
+    emit errorOccurred(tr("Error"), tr("Failed to mark %1.").arg(nodeInfo.name));
+    return;
+  }
 
   if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
     NodeIdentifier parentId = getParentFolder(p_nodeId);

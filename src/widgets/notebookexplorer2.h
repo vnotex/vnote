@@ -99,6 +99,7 @@ private slots:
   void onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
   void onRemoveFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
   void onPropertiesRequested(const NodeIdentifier &p_nodeId);
+  void onMarkRequested(const NodeIdentifier &p_nodeId);
   void onErrorOccurred(const QString &p_title, const QString &p_message);
   void onInfoMessage(const QString &p_title, const QString &p_message);
 

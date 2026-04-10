@@ -86,6 +86,8 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::propertiesRequested);
   connect(m_controller, &NotebookNodeController::exportNodeRequested, this,
           &CombinedNodeExplorer::exportNodeRequested);
+  connect(m_controller, &NotebookNodeController::markRequested, this,
+          &CombinedNodeExplorer::markRequested);
 
   // Status signals
   connect(m_controller, &NotebookNodeController::errorOccurred, this,
@@ -206,6 +208,13 @@ void CombinedNodeExplorer::handleDeleteConfirmed(const QList<NodeIdentifier> &p_
 void CombinedNodeExplorer::handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds) {
   if (m_controller) {
     m_controller->handleRemoveConfirmed(p_nodeIds);
+  }
+}
+
+void CombinedNodeExplorer::handleMarkResult(const NodeIdentifier &p_nodeId,
+                                            const QString &p_textColor, const QString &p_bgColor) {
+  if (m_controller) {
+    m_controller->handleMarkResult(p_nodeId, p_textColor, p_bgColor);
   }
 }
 
