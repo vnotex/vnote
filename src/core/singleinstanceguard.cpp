@@ -5,6 +5,8 @@
 #include <QDebug>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QLockFile>
+#include <QStandardPaths>
 
 #include <utils/utils.h>
 
@@ -14,25 +16,44 @@ const QString SingleInstanceGuard::c_serverName = "vnote";
 
 const QChar SingleInstanceGuard::c_stringListSeparator = '>';
 
+QString SingleInstanceGuard::lockFilePath() const {
+  return QStandardPaths::writableLocation(QStandardPaths::TempLocation) +
+         QStringLiteral("/vnote.lock");
+}
+
 SingleInstanceGuard::~SingleInstanceGuard() { exit(); }
 
 bool SingleInstanceGuard::tryRun() {
   Q_ASSERT(!m_online);
 
-  // On Windows, multiple servers on the same name are allowed.
-  m_client = tryConnect();
-  if (m_client) {
-    // There is one server running and we are now connected, so we could not continue.
-    return false;
+  // Use a lock file for cross-platform single-instance detection.
+  // QLockFile::tryLock(0) is non-blocking (no 200ms timeout).
+  // QLocalServer::listen() cannot be used for detection on Windows
+  // because Windows allows multiple servers on the same named pipe.
+  m_lockFile.reset(new QLockFile(lockFilePath()));
+  m_lockFile->setStaleLockTime(0); // We check manually; no auto-expiry.
+
+  if (!m_lockFile->tryLock(0)) {
+    // Another instance holds the lock. Connect to it for IPC.
+    m_client = tryConnect();
+    if (m_client) {
+      return false;
+    }
+
+    // Lock is held but we cannot connect. Stale lock from a crash?
+    // Try to remove and re-acquire.
+    m_lockFile->removeStaleLockFile();
+    if (!m_lockFile->tryLock(0)) {
+      // Still cannot acquire. Fallback: allow running anyway.
+      qWarning() << "failed to acquire lock or connect to existing instance; proceeding anyway";
+    }
   }
 
   m_server = tryListen();
   if (m_server) {
-    // We are the lucky one.
     qInfo() << "guard succeeds to run";
   } else {
-    // We still allow the guard to run. There maybe a bug need to fix.
-    qWarning() << "failed to connect to an existing instance or establish a new local server";
+    qWarning() << "failed to start local server for IPC";
   }
 
   setupServer();
@@ -67,6 +88,11 @@ void SingleInstanceGuard::requestShow() {
 
 void SingleInstanceGuard::exit() {
   m_online = false;
+
+  if (m_lockFile) {
+    m_lockFile->unlock();
+    m_lockFile.reset();
+  }
 
   if (m_client) {
     m_client->disconnectFromServer();

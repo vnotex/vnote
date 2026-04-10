@@ -1,7 +1,9 @@
 #ifndef SINGLEINSTANCEGUARD_H
 #define SINGLEINSTANCEGUARD_H
 
+#include <QLockFile>
 #include <QObject>
+#include <QScopedPointer>
 #include <QSharedPointer>
 #include <QString>
 
@@ -58,6 +60,8 @@ private:
 
   void sendRequest(QLocalSocket *p_socket, OpCode p_code, const QString &p_payload);
 
+  QString lockFilePath() const;
+
   // Whether succeeded to run.
   bool m_online = false;
 
@@ -68,6 +72,8 @@ private:
   bool m_ongoingConnect = false;
 
   Command m_command;
+
+  QScopedPointer<QLockFile> m_lockFile;
 
   static const QString c_serverName;
 
