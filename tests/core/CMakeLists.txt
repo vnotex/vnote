@@ -314,3 +314,12 @@ add_qt_test(test_quickaccessitem
     core_services
   GUILESS
 )
+
+add_qt_test(test_mark_metadata
+  SOURCES
+    test_mark_metadata.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
