@@ -23,6 +23,7 @@ target_sources(vnote PRIVATE
     dialogs/linkinsertdialog.cpp dialogs/linkinsertdialog.h
     dialogs/managenotebooksdialog.cpp dialogs/managenotebooksdialog.h
     dialogs/managenotebooksdialog2.cpp dialogs/managenotebooksdialog2.h
+    dialogs/marknodedialog2.cpp dialogs/marknodedialog2.h
     dialogs/newfolderdialog.cpp dialogs/newfolderdialog.h
     dialogs/newfolderdialog2.cpp dialogs/newfolderdialog2.h
     dialogs/newnotebookdialog.cpp dialogs/newnotebookdialog.h
