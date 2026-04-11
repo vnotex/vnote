@@ -8,10 +8,12 @@
 class QTreeWidget;
 
 namespace vnotex {
+class ServiceLocator;
+
 class HelpUnitedEntry : public IUnitedEntry {
   Q_OBJECT
 public:
-  HelpUnitedEntry(UnitedEntryMgr *p_mgr, QObject *p_parent = nullptr);
+  HelpUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr, QObject *p_parent = nullptr);
 
   QSharedPointer<QWidget> currentPopupWidget() const Q_DECL_OVERRIDE;
 
@@ -25,6 +27,8 @@ protected:
 
 private:
   QSharedPointer<QTreeWidget> m_infoTree;
+
+  ServiceLocator &m_services;
 };
 } // namespace vnotex
 

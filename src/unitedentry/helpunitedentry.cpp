@@ -2,12 +2,16 @@
 
 #include <widgets/treewidget.h>
 
+#include <core/servicelocator.h>
+
 #include "entrywidgetfactory.h"
 
 using namespace vnotex;
 
-HelpUnitedEntry::HelpUnitedEntry(UnitedEntryMgr *p_mgr, QObject *p_parent)
-    : IUnitedEntry("help", tr("Help information about United Entry"), p_mgr, p_parent) {}
+HelpUnitedEntry::HelpUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
+                                 QObject *p_parent)
+    : IUnitedEntry("help", tr("Help information about United Entry"), p_mgr, p_parent),
+      m_services(p_services) {}
 
 QSharedPointer<QWidget> HelpUnitedEntry::currentPopupWidget() const { return m_infoTree; }
 
@@ -36,4 +40,5 @@ void HelpUnitedEntry::processInternal(
     const std::function<void(const QSharedPointer<QWidget> &)> &p_popupWidgetFunc) {
   Q_UNUSED(p_args);
   p_popupWidgetFunc(m_infoTree);
+  emit finished();
 }

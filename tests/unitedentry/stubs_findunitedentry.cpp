@@ -25,8 +25,9 @@ QSharedPointer<QLabel> EntryWidgetFactory::createLabel(const QString &p_info) {
   return QSharedPointer<QLabel>::create(p_info);
 }
 
-HelpUnitedEntry::HelpUnitedEntry(UnitedEntryMgr *p_mgr, QObject *p_parent)
-    : IUnitedEntry(QStringLiteral("help"), QString(), p_mgr, p_parent) {}
+HelpUnitedEntry::HelpUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
+                                 QObject *p_parent)
+    : IUnitedEntry(QStringLiteral("help"), QString(), p_mgr, p_parent), m_services(p_services) {}
 
 QSharedPointer<QWidget> HelpUnitedEntry::currentPopupWidget() const { return {}; }
 

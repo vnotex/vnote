@@ -22,7 +22,7 @@ void UnitedEntryMgr::init() {
   // Built-in entries.
   addEntry(QSharedPointer<FindUnitedEntry>::create(m_services, this));
 
-  addEntry(QSharedPointer<HelpUnitedEntry>::create(this));
+  addEntry(QSharedPointer<HelpUnitedEntry>::create(m_services, this));
 
   // Alias from config.
   const auto &config = m_services.get<ConfigMgr2>()->getCoreConfig();
