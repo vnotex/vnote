@@ -193,8 +193,10 @@ private:
   QSharedPointer<OutlineProvider> m_outlineProvider;
 
   // Image tracking for obsolete-image cleanup.
-  QSet<QString> m_initialImages;  // Normalized paths of images present when buffer was opened.
-  QSet<QString> m_insertedImages; // Normalized paths of images inserted during this session.
+  QSet<QString>
+      m_initialImages; // Relative URLs (as in markdown) of images present when buffer was opened.
+  QSet<QString>
+      m_insertedImages; // Relative URLs (as in markdown) of images inserted during this session.
 };
 
 } // namespace vnotex

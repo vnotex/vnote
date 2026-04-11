@@ -148,32 +148,9 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
   if (m_shouldPropagateToCore) {
     if (wsSvc && !p_workspaceId.isEmpty() && !p_bufferId.isEmpty()) {
       wsSvc->removeBuffer(p_workspaceId, p_bufferId);
-
-      // Check if any workspace still references this buffer.
-      // If none do, close the buffer (fires FileBeforeClose/AfterClose hooks).
-      bool stillReferenced = false;
-      QJsonArray allWorkspaces = wsSvc->listWorkspaces();
-      for (int i = 0; i < allWorkspaces.size(); ++i) {
-        QJsonObject wsObj = allWorkspaces[i].toObject();
-        QJsonArray bufferIds = wsObj.value(QStringLiteral("bufferIds")).toArray();
-        for (int j = 0; j < bufferIds.size(); ++j) {
-          if (bufferIds[j].toString() == p_bufferId) {
-            stillReferenced = true;
-            break;
-          }
-        }
-        if (stillReferenced) {
-          break;
-        }
-      }
-      if (!stillReferenced) {
-        auto *bufferSvc = m_services.get<BufferService>();
-        const bool closeResult = bufferSvc ? bufferSvc->closeBuffer(p_bufferId) : false;
-        if (bufferSvc && !closeResult) {
-          qWarning() << "ViewAreaController::onViewWindowClosed: failed to close buffer"
-                     << p_bufferId;
-        }
-      }
+      // NOTE: vxcore auto-closes the buffer when it's removed from all workspaces
+      // (see workspace_manager.cpp). A future refactor should move close ownership
+      // to BufferService so FileBeforeClose/AfterClose hooks fire consistently.
     }
   }
   if (m_currentWindowId == p_windowId) {

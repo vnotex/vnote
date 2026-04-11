@@ -460,10 +460,9 @@ void MarkdownViewWindow2::connectEditorSignals() {
   // Track newly inserted images for obsolete-image cleanup.
   connect(m_editor, &MarkdownEditor::imageInserted, this,
           [this](const QString &p_imagePath, const QString &p_urlInLink) {
-            Q_UNUSED(p_urlInLink);
-            if (PathUtils::isLocalFile(p_imagePath)) {
-              auto normalized = PathUtils::normalizePath(p_imagePath);
-              m_insertedImages.insert(normalized);
+            Q_UNUSED(p_imagePath);
+            if (!p_urlInLink.isEmpty()) {
+              m_insertedImages.insert(p_urlInLink);
             }
           });
 }
@@ -1271,19 +1270,15 @@ void MarkdownViewWindow2::snapshotInitialImages() {
   auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(
       content, resourcePath, static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
   for (const auto &img : images) {
-    auto normalized = PathUtils::normalizePath(img.m_path);
-    m_initialImages.insert(normalized);
+    if (!img.m_urlInLink.isEmpty()) {
+      m_initialImages.insert(img.m_urlInLink);
+    }
   }
 }
 
 void MarkdownViewWindow2::clearObsoleteImages() {
   auto buffer = getBuffer();
   if (!buffer.isValid()) {
-    return;
-  }
-
-  const auto assetsFolder = buffer.getAssetsFolder();
-  if (assetsFolder.isEmpty()) {
     return;
   }
 
@@ -1295,7 +1290,9 @@ void MarkdownViewWindow2::clearObsoleteImages() {
 
   QSet<QString> currentImages;
   for (const auto &img : images) {
-    currentImages.insert(PathUtils::normalizePath(img.m_path));
+    if (!img.m_urlInLink.isEmpty()) {
+      currentImages.insert(img.m_urlInLink);
+    }
   }
 
   QSet<QString> obsoleteImages = m_initialImages;
@@ -1308,17 +1305,15 @@ void MarkdownViewWindow2::clearObsoleteImages() {
     }
   }
 
-  QDir assetsDir(assetsFolder);
-  for (const auto &obsoletePath : obsoleteImages) {
-    const auto relativePath = assetsDir.relativeFilePath(obsoletePath);
-    if (relativePath.isEmpty() || relativePath.startsWith(QStringLiteral("..")) ||
-        QDir::isAbsolutePath(relativePath)) {
+  for (const auto &obsoleteUrl : obsoleteImages) {
+    if (obsoleteUrl.isEmpty() || obsoleteUrl.startsWith(QStringLiteral("..")) ||
+        QDir::isAbsolutePath(obsoleteUrl)) {
       continue;
     }
 
-    const bool deleteOk = buffer.deleteAsset(relativePath);
+    const bool deleteOk = buffer.deleteAsset(obsoleteUrl);
     if (!deleteOk) {
-      qWarning() << "MarkdownViewWindow2: failed to delete obsolete image:" << relativePath;
+      qWarning() << "MarkdownViewWindow2: failed to delete obsolete image:" << obsoleteUrl;
     }
   }
 
