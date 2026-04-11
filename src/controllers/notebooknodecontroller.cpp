@@ -779,7 +779,7 @@ void NotebookNodeController::notifyBeforeNodeOperation(const NodeIdentifier &p_n
     return;
   }
 
-  // Hooks (NodeBeforeDelete, NodeBeforeMove, FileBeforeClose) are now fired
+  // Hooks (NodeBeforeDelete, NodeBeforeMove) are now fired
   // by the service layer (NotebookCoreService) — not by the controller.
   // The controller only emits Qt signals for UI coordination.
 

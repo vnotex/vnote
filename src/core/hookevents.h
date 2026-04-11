@@ -36,23 +36,23 @@ struct NodeRenameEvent {
 struct FileOpenEvent {
   QString notebookId;
   QString filePath;
-  QString bufferId;       // empty for BeforeOpen, filled for AfterOpen
-  int mode = 0;           // ViewWindowMode enum as int
+  QString bufferId; // empty for BeforeOpen, filled for AfterOpen
+  int mode = 0;     // ViewWindowMode enum as int
   bool forceMode = false;
   bool focus = true;
   bool newFile = false;
   bool readOnly = false;
   int lineNumber = -1;
   bool alwaysNewWindow = false;
-  QStringList searchPatterns;         // keyword patterns for highlight (empty = no highlight)
-  int searchOptions = 0;              // FindOptions serialized as int
-  int searchCurrentMatchLine = -1;    // line for current-match bias
+  QStringList searchPatterns;      // keyword patterns for highlight (empty = no highlight)
+  int searchOptions = 0;           // FindOptions serialized as int
+  int searchCurrentMatchLine = -1; // line for current-match bias
 
   QVariantMap toVariantMap() const;
   static FileOpenEvent fromVariantMap(const QVariantMap &p_args);
 };
 
-// Typed event struct for FileBeforeSave, FileAfterSave, FileBeforeClose, FileAfterClose.
+// Typed event struct for FileBeforeSave, FileAfterSave.
 struct BufferEvent {
   QString bufferId;
 
@@ -124,8 +124,8 @@ struct ViewSplitActivateEvent {
 struct TagOperationEvent {
   QString notebookId;
   QString tagName;
-  QString parentTag;  // parent tag (for move operations, empty for root-level)
-  QString operation;  // "create", "delete", or "move"
+  QString parentTag; // parent tag (for move operations, empty for root-level)
+  QString operation; // "create", "delete", or "move"
 
   QVariantMap toVariantMap() const;
   static TagOperationEvent fromVariantMap(const QVariantMap &p_args);

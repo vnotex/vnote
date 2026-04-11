@@ -101,12 +101,6 @@ Buffer2 BufferService::openBufferByNodeId(const QString &p_nodeId,
 }
 
 bool BufferService::closeBuffer(const QString &p_bufferId) {
-  BufferEvent event;
-  event.bufferId = p_bufferId;
-  if (m_hookMgr->doAction(HookNames::FileBeforeClose, event)) {
-    return false; // Cancelled by plugin.
-  }
-
   // Clean up auto-save state for this buffer.
   m_dirtyBuffers.remove(p_bufferId);
   m_activeWriters.remove(p_bufferId);
@@ -115,13 +109,7 @@ bool BufferService::closeBuffer(const QString &p_bufferId) {
     m_autoSaveTimer->stop();
   }
 
-  bool ok = BufferCoreService::closeBuffer(p_bufferId);
-
-  if (ok) {
-    m_hookMgr->doAction(HookNames::FileAfterClose, event);
-  }
-
-  return ok;
+  return BufferCoreService::closeBuffer(p_bufferId);
 }
 
 // ============ Buffer Handle ============

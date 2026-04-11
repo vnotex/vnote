@@ -163,7 +163,7 @@ NodeIdentifier id = buf.nodeId();  // notebookId + relativePath
 #### Closing a Buffer
 
 ```cpp
-// Close via BufferService (fires vnote.file.before_close / after_close hooks)
+// Close via BufferService (cleans up auto-save state and closes the vxcore buffer)
 bufferSvc->closeBuffer(buf.id());
 ```
 
@@ -298,7 +298,7 @@ void MyController::doSomething() {
 
 | Service | Hook(s) Owned |
 |---------|---------------|
-| `BufferService` | `FileBeforeOpen`/`AfterOpen`, `FileBeforeClose`/`AfterClose` |
+| `BufferService` | `FileBeforeOpen`/`AfterOpen` |
 | `Buffer2` (handle) | `FileBeforeSave`/`AfterSave` |
 | `NotebookCoreService` | `NodeBeforeDelete`, `NodeBeforeMove`, `NodeBeforeRename`/`AfterRename` |
 | `WorkspaceCoreService` | `ViewWindowBefore/AfterOpen/Close/Move`, `ViewSplitBefore/AfterCreate/Remove/Activate` |
@@ -315,7 +315,7 @@ VNote uses a type-safe hook event system. Each hook has a corresponding C++ stru
 | `NodeOperationEvent` | `NodeBeforeDelete`, `NodeBeforeMove` |
 | `NodeRenameEvent` | `NodeBeforeRename`, `NodeAfterRename` |
 | `FileOpenEvent` | `FileBeforeOpen`, `FileAfterOpen` |
-| `BufferEvent` | `FileBeforeSave`, `FileAfterSave`, `FileBeforeClose`, `FileAfterClose` |
+| `BufferEvent` | `FileBeforeSave`, `FileAfterSave` |
 | `ViewWindowOpenEvent` | `ViewWindowBeforeOpen`, `ViewWindowAfterOpen` |
 | `ViewWindowCloseEvent` | `ViewWindowBeforeClose`, `ViewWindowAfterClose` |
 | `ViewWindowMoveEvent` | `ViewWindowBeforeMove`, `ViewWindowAfterMove` |
@@ -377,7 +377,6 @@ hookMgr->addAction(HookNames::NodeAfterRename,
 **File Events:**
 - `vnote.file.before_open` / `after_open`
 - `vnote.file.before_save` / `after_save`
-- `vnote.file.before_close` / `after_close`
 
 **UI Events:**
 - `vnote.ui.mainwindow.before_show` / `after_show`

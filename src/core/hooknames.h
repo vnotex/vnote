@@ -80,12 +80,6 @@ inline const QLatin1String FileBeforeSave("vnote.file.before_save");
 // After a file is saved
 inline const QLatin1String FileAfterSave("vnote.file.after_save");
 
-// Before a file is closed
-inline const QLatin1String FileBeforeClose("vnote.file.before_close");
-
-// After a file is closed
-inline const QLatin1String FileAfterClose("vnote.file.after_close");
-
 // Before a tag is applied to a file
 inline const QLatin1String FileBeforeTag("vnote.file.before_tag");
 

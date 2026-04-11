@@ -75,7 +75,7 @@ public:
                              const FileOpenSettings &p_settings = FileOpenSettings());
 
   // Close a buffer by ID.
-  // Fires FileBeforeClose (cancellable) and FileAfterClose.
+  // Cleans up auto-save state and closes the buffer in vxcore.
   bool closeBuffer(const QString &p_bufferId);
 
   // ============ Buffer Handle ============
