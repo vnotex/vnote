@@ -463,19 +463,27 @@ void UnitedEntry::exitUnitedEntry() {
 
 QSize UnitedEntry::calculatePopupSize() const {
   const int minWidth = 400;
+  const int maxWidth = 900;
   const int minHeight = 200;
   const int maxHeight = 600;
 
-  int w = qMax(minWidth, m_comboBox->width());
-  w = qMin(w, 900);
+  int w = qMax(minWidth, static_cast<int>(window()->width() * 0.8));
+  w = qMin(w, maxWidth);
   int h = qMax(minHeight, qMin(maxHeight, 400));
   return QSize(w, h);
 }
 
 void UnitedEntry::updatePopupGeometry() {
-  QPoint globalPos = m_comboBox->mapToGlobal(QPoint(0, m_comboBox->height()));
   QSize popupSize = calculatePopupSize();
-  m_popup->setGeometry(QRect(globalPos, popupSize));
+
+  // Center the popup horizontally under the combo box.
+  int comboCenter = m_comboBox->mapToGlobal(QPoint(m_comboBox->width() / 2, 0)).x();
+  int x = comboCenter - popupSize.width() / 2;
+
+  // Anchor vertically below the combo box.
+  int y = m_comboBox->mapToGlobal(QPoint(0, m_comboBox->height())).y();
+
+  m_popup->setGeometry(x, y, popupSize.width(), popupSize.height());
 }
 
 void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now) {
