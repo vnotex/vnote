@@ -60,11 +60,13 @@ void UnitedEntry::setupUI() {
   m_comboBox = new QComboBox(this);
   m_comboBox->setEditable(true);
   m_comboBox->setInsertPolicy(QComboBox::NoInsert);
+  m_comboBox->setCompleter(nullptr);
   m_comboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   m_comboBox->setMinimumWidth(300);
   m_comboBox->lineEdit()->setPlaceholderText(tr("Type to command"));
   m_comboBox->lineEdit()->setClearButtonEnabled(true);
   m_comboBox->lineEdit()->installEventFilter(this);
+  m_comboBox->installEventFilter(this);
   connect(m_comboBox->lineEdit(), &QLineEdit::textChanged, m_processTimer,
           QOverload<>::of(&QTimer::start));
   setFocusProxy(m_comboBox);
@@ -293,6 +295,33 @@ bool UnitedEntry::handleLineEditKeyPress(QKeyEvent *p_event) {
   return false;
 }
 
+bool UnitedEntry::isUnitedEntryShortcut(QKeyEvent *p_event) const {
+  const int key = p_event->key();
+  const int modifiers = p_event->modifiers();
+  switch (key) {
+  case Qt::Key_Escape:
+  case Qt::Key_Up:
+  case Qt::Key_Down:
+  case Qt::Key_Enter:
+  case Qt::Key_Return:
+    return true;
+
+  case Qt::Key_BracketLeft:
+  case Qt::Key_J:
+  case Qt::Key_K:
+  case Qt::Key_L:
+  case Qt::Key_I:
+  case Qt::Key_B:
+  case Qt::Key_E:
+  case Qt::Key_F:
+  case Qt::Key_D:
+    return WidgetUtils::isViControlModifier(modifiers);
+
+  default:
+    return false;
+  }
+}
+
 void UnitedEntry::clear() {
   m_comboBox->lineEdit()->clear();
   m_comboBox->lineEdit()->setFocus();
@@ -438,8 +467,14 @@ bool UnitedEntry::eventFilter(QObject *p_watched, QEvent *p_event) {
         break;
       }
     }
-  } else if (p_watched == m_comboBox->lineEdit()) {
-    if (p_event->type() == QEvent::KeyPress) {
+  } else if (p_watched == m_comboBox || p_watched == m_comboBox->lineEdit()) {
+    if (p_event->type() == QEvent::ShortcutOverride) {
+      auto eve = static_cast<QKeyEvent *>(p_event);
+      if (isUnitedEntryShortcut(eve)) {
+        eve->accept();
+        return true;
+      }
+    } else if (p_event->type() == QEvent::KeyPress) {
       auto eve = static_cast<QKeyEvent *>(p_event);
       if (handleLineEditKeyPress(eve)) {
         return true;

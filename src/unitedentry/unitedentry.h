@@ -66,6 +66,8 @@ private:
   // Return true if want to stop the propogation.
   bool handleLineEditKeyPress(QKeyEvent *p_event);
 
+  bool isUnitedEntryShortcut(QKeyEvent *p_event) const;
+
   QSize calculatePopupSize() const;
 
   void updatePopupGeometry();
