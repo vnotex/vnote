@@ -1314,7 +1314,8 @@ void MarkdownViewWindow2::clearObsoleteImages() {
       continue;
     }
 
-    if (!buffer.deleteAsset(relativePath)) {
+    const bool deleteOk = buffer.deleteAsset(relativePath);
+    if (!deleteOk) {
       qWarning() << "MarkdownViewWindow2: failed to delete obsolete image:" << relativePath;
     }
   }

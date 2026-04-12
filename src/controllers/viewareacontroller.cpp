@@ -168,7 +168,8 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
       }
       if (!stillReferenced) {
         auto *bufferSvc = m_services.get<BufferService>();
-        if (bufferSvc && !bufferSvc->closeBuffer(p_bufferId)) {
+        const bool closeResult = bufferSvc ? bufferSvc->closeBuffer(p_bufferId) : false;
+        if (bufferSvc && !closeResult) {
           qWarning() << "ViewAreaController::onViewWindowClosed: failed to close buffer"
                      << p_bufferId;
         }

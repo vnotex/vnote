@@ -16,6 +16,7 @@ WebViewer::WebViewer(const QColor &p_background, qreal p_zoomFactor, QWidget *p_
   setPage(viewPage);
 
   connect(viewPage, &QWebEnginePage::linkHovered, this, &WebViewer::linkHovered);
+  connect(viewPage, &WebPage::localFileOpenRequested, this, &WebViewer::localFileOpenRequested);
 
   // Avoid white flash before loading content.
   // Setting Qt::transparent will force GrayScale antialias rendering.

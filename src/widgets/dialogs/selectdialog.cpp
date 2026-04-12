@@ -2,8 +2,6 @@
 
 #include <QtWidgets>
 
-#include <core/thememgr.h>
-#include <core/vnotex.h>
 #include <gui/utils/iconutils.h>
 #include <utils/utils.h>
 #include <utils/widgetutils.h>
@@ -13,17 +11,15 @@ using namespace vnotex;
 
 const QChar SelectDialog::c_cancelShortcut = QLatin1Char('z');
 
-SelectDialog::SelectDialog(const QString &p_title, QWidget *p_parent)
-    : SelectDialog(p_title, QString(), p_parent) {}
+SelectDialog::SelectDialog(const QString &p_title, const QString &p_shortcutIconFg,
+                           const QString &p_shortcutIconBorder, QWidget *p_parent)
+    : SelectDialog(p_title, QString(), p_shortcutIconFg, p_shortcutIconBorder, p_parent) {}
 
-SelectDialog::SelectDialog(const QString &p_title, const QString &p_text, QWidget *p_parent)
-    : QDialog(p_parent) {
-  const auto &themeMgr = VNoteX::getInst().getThemeMgr();
-  m_shortcutIconForeground =
-      themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg"));
-  m_shortcutIconBorder =
-      themeMgr.paletteColor(QStringLiteral("widgets#quickselector#item_icon#border"));
-
+SelectDialog::SelectDialog(const QString &p_title, const QString &p_text,
+                           const QString &p_shortcutIconFg, const QString &p_shortcutIconBorder,
+                           QWidget *p_parent)
+    : QDialog(p_parent), m_shortcutIconForeground(p_shortcutIconFg),
+      m_shortcutIconBorder(p_shortcutIconBorder) {
   setupUI(p_title, p_text);
 }
 

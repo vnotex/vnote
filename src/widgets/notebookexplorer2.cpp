@@ -691,7 +691,12 @@ void NotebookExplorer2::newQuickNote() {
   }
 
   // Show selection dialog.
-  SelectDialog dialog(tr("New Quick Note"), window());
+  auto *themeService = m_services.get<ThemeService>();
+  SelectDialog dialog(
+      tr("New Quick Note"),
+      themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg")),
+      themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#border")),
+      window());
   for (int i = 0; i < schemes.size(); ++i) {
     dialog.addSelection(schemes[i].m_name, i);
   }

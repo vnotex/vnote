@@ -1,6 +1,8 @@
 #include "mindmapviewwindow2.h"
 
+#include <QDesktopServices>
 #include <QToolBar>
+#include <QUrl>
 
 #include <controllers/mindmapviewwindowcontroller.h>
 #include <core/configmgr2.h>
@@ -55,15 +57,16 @@ void MindMapViewWindow2::setupEditor() {
   auto *adapterObj = new MindMapEditorAdapter(nullptr);
 
   m_editor = new MindMapEditor(adapterObj, themeService->getBaseBackground(), 1.0, this);
+  connect(m_editor, &WebViewer::localFileOpenRequested, this, [](const QString &p_filePath) {
+    QDesktopServices::openUrl(QUrl::fromLocalFile(p_filePath));
+  });
 
   connectEditorSignals();
 }
 
 void MindMapViewWindow2::connectEditorSignals() {
   // Content change: mark dirty via base class, let BufferService handle sync.
-  connect(m_editor, &MindMapEditor::contentsChanged, this, [this]() {
-    onEditorContentsChanged();
-  });
+  connect(m_editor, &MindMapEditor::contentsChanged, this, [this]() { onEditorContentsChanged(); });
 }
 
 void MindMapViewWindow2::setupToolBar() {
@@ -112,9 +115,7 @@ QString MindMapViewWindow2::selectedText() const {
   return m_editor ? m_editor->selectedText() : QString();
 }
 
-void MindMapViewWindow2::setModified(bool p_modified) {
-  m_editor->setModified(p_modified);
-}
+void MindMapViewWindow2::setModified(bool p_modified) { m_editor->setModified(p_modified); }
 
 void MindMapViewWindow2::setMode(ViewWindowMode p_mode) {
   Q_UNUSED(p_mode);

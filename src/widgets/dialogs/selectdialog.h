@@ -16,9 +16,11 @@ namespace vnotex {
 class SelectDialog : public QDialog {
   Q_OBJECT
 public:
-  SelectDialog(const QString &p_title, QWidget *p_parent = nullptr);
+  SelectDialog(const QString &p_title, const QString &p_shortcutIconFg,
+               const QString &p_shortcutIconBorder, QWidget *p_parent = nullptr);
 
-  SelectDialog(const QString &p_title, const QString &p_text, QWidget *p_parent = nullptr);
+  SelectDialog(const QString &p_title, const QString &p_text, const QString &p_shortcutIconFg,
+               const QString &p_shortcutIconBorder, QWidget *p_parent = nullptr);
 
   // @p_selectID should >= 0.
   void addSelection(const QString &p_selectStr, int p_selectID);

@@ -2,8 +2,6 @@
 
 #include <QDebug>
 
-#include <core/fileopenparameters.h>
-#include <core/vnotex.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
@@ -14,8 +12,7 @@ bool WebPage::acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
                                       bool p_isMainFrame) {
   Q_UNUSED(p_type);
   if (p_url.isLocalFile()) {
-    emit VNoteX::getInst().openFileRequested(p_url.toLocalFile(),
-                                             QSharedPointer<FileOpenParameters>::create());
+    emit localFileOpenRequested(p_url.toLocalFile());
     return false;
   }
   if (!p_isMainFrame) {

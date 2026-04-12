@@ -2,9 +2,11 @@
 
 #include <QApplication>
 #include <QContextMenuEvent>
+#include <QDesktopServices>
 #include <QMenu>
 #include <QMimeData>
 #include <QScopedPointer>
+#include <QUrl>
 #include <QWebChannel>
 #include <QWebEngineSettings>
 
@@ -15,6 +17,7 @@
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <utils/clipboardutils.h>
 #include <utils/fileutils.h>
 #include <utils/utils.h>
@@ -62,6 +65,15 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
             mimeData->setHtml(p_html);
             ClipboardUtils::setMimeDataToClipboard(QApplication::clipboard(), mimeData.release());
           });
+
+  connect(this, &WebViewer::localFileOpenRequested, this, [this](const QString &p_filePath) {
+    auto *bufferSvc = m_services.get<BufferService>();
+    if (bufferSvc) {
+      // BufferService currently opens files via NodeIdentifier, not raw local file path.
+    }
+
+    QDesktopServices::openUrl(QUrl::fromLocalFile(p_filePath));
+  });
 
   settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 }

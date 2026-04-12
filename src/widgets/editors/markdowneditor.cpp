@@ -40,11 +40,12 @@
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/texteditorconfig.h>
+#include <gui/services/themeservice.h>
+#include <gui/utils/imageutils.h>
 #include <imagehost/imagehost.h>
 #include <utils/clipboardutils.h>
 #include <utils/fileutils.h>
 #include <utils/htmlutils.h>
-#include <gui/utils/imageutils.h>
 #include <utils/pathutils.h>
 #include <utils/webutils.h>
 #include <utils/widgetutils.h>
@@ -55,18 +56,25 @@
 
 using namespace vnotex;
 
+namespace {
+QPair<QString, QString> getSelectDialogShortcutColors(ServiceLocator &p_services) {
+  auto *themeService = p_services.get<ThemeService>();
+  return qMakePair(
+      themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg")),
+      themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#border")));
+}
+} // namespace
+
 MarkdownEditor::Heading::Heading(const QString &p_name, int p_level, const QString &p_sectionNumber,
                                  int p_blockNumber)
     : m_name(p_name), m_level(p_level), m_sectionNumber(p_sectionNumber),
       m_blockNumber(p_blockNumber) {}
 
-MarkdownEditor::MarkdownEditor(ServiceLocator &p_services,
-                               const MarkdownEditorConfig &p_config,
+MarkdownEditor::MarkdownEditor(ServiceLocator &p_services, const MarkdownEditorConfig &p_config,
                                const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
                                const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
                                QWidget *p_parent)
-    : vte::VMarkdownEditor(p_editorConfig, p_editorParas, p_parent),
-      m_config(p_config),
+    : vte::VMarkdownEditor(p_editorConfig, p_editorParas, p_parent), m_config(p_config),
       m_services(p_services) {
   init();
 }
@@ -316,9 +324,7 @@ void MarkdownEditor::typeTable() {
 
 void MarkdownEditor::setBuffer2(Buffer2 *p_buffer) { m_buffer2 = p_buffer; }
 
-void MarkdownEditor::setContentPath(const QString &p_contentPath) {
-  m_contentPath = p_contentPath;
-}
+void MarkdownEditor::setContentPath(const QString &p_contentPath) { m_contentPath = p_contentPath; }
 
 EditorConfig &MarkdownEditor::getEditorConfig() const {
   return m_services.get<ConfigMgr2>()->getEditorConfig();
@@ -408,8 +414,8 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const Q
     p_image.save(&buffer, format.toStdString().c_str());
     destFilePath = m_buffer2->insertAssetRaw(destFileName, ba);
     if (destFilePath.isEmpty()) {
-      MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                               tr("Failed to insert image from data."), this);
+      MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Failed to insert image from data."),
+                               this);
       return false;
     }
   }
@@ -435,9 +441,8 @@ void MarkdownEditor::insertImageLink(const QString &p_title, const QString &p_al
 
 void MarkdownEditor::handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled,
                                                  bool *p_allowed) {
-  m_shouldTriggerRichPaste = getEditorConfig()
-                                 .getMarkdownEditorConfig()
-                                 .getRichPasteByDefaultEnabled();
+  m_shouldTriggerRichPaste =
+      getEditorConfig().getMarkdownEditorConfig().getRichPasteByDefaultEnabled();
 
   if (m_plainTextPasteAsked) {
     m_shouldTriggerRichPaste = false;
@@ -521,7 +526,8 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source) {
   if (html.indexOf(reg, 0, &match) != -1 && HtmlUtils::hasOnlyImgTag(html)) {
     if (p_source->hasImage()) {
       // Both image data and URL are embedded.
-      SelectDialog dialog(tr("Insert From Clipboard"), this);
+      const auto colors = getSelectDialogShortcutColors(m_services);
+      SelectDialog dialog(tr("Insert From Clipboard"), colors.first, colors.second, this);
       dialog.addSelection(tr("Insert From URL"), 0);
       dialog.addSelection(tr("Insert From Image Data"), 1);
       dialog.addSelection(tr("Insert As Image Link"), 2);
@@ -557,7 +563,8 @@ bool MarkdownEditor::processImageFromMimeData(const QMimeData *p_source) {
 
   // Image url in the clipboard.
   if (p_source->hasText()) {
-    SelectDialog dialog(tr("Insert From Clipboard"), this);
+    const auto colors = getSelectDialogShortcutColors(m_services);
+    SelectDialog dialog(tr("Insert From Clipboard"), colors.first, colors.second, this);
     dialog.addSelection(tr("Insert As Image"), 0);
     dialog.addSelection(tr("Insert As Text"), 1);
     dialog.addSelection(tr("Insert As Image Link"), 2);
@@ -626,7 +633,8 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
     }
   }
 
-  SelectDialog dialog(tr("Insert From Clipboard"), this);
+  const auto colors = getSelectDialogShortcutColors(m_services);
+  SelectDialog dialog(tr("Insert From Clipboard"), colors.first, colors.second, this);
   if (isImage) {
     dialog.addSelection(tr("Insert As Image"), 0);
     dialog.addSelection(tr("Insert As Image Link"), 1);
@@ -770,7 +778,9 @@ bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) 
     }
   }
 
-  SelectDialog dialog(tr("Insert From Clipboard (%n items)", "", urls.size()), this);
+  const auto colors = getSelectDialogShortcutColors(m_services);
+  SelectDialog dialog(tr("Insert From Clipboard (%n items)", "", urls.size()), colors.first,
+                      colors.second, this);
   if (isAllImage) {
     dialog.addSelection(tr("Insert As Image"), 0);
   }
@@ -854,8 +864,7 @@ void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet) {
 
 QString MarkdownEditor::getRelativeLink(const QString &p_path) {
   if (PathUtils::isLocalFile(p_path)) {
-    auto relativePath =
-        PathUtils::relativePath(PathUtils::parentDirPath(m_contentPath), p_path);
+    auto relativePath = PathUtils::relativePath(PathUtils::parentDirPath(m_contentPath), p_path);
     auto link = PathUtils::encodeSpacesInPath(QDir::fromNativeSeparators(relativePath));
     if (m_config.getPrependDotInRelativeLink()) {
       PathUtils::prependDotIfRelative(link);
@@ -1068,9 +1077,8 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
 }
 
 void MarkdownEditor::altPaste() {
-  const bool richPasteByDefault = getEditorConfig()
-                                      .getMarkdownEditorConfig()
-                                      .getRichPasteByDefaultEnabled();
+  const bool richPasteByDefault =
+      getEditorConfig().getMarkdownEditorConfig().getRichPasteByDefaultEnabled();
 
   if (richPasteByDefault) {
     // Paste as plain text.
@@ -1572,9 +1580,8 @@ bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cur
 
   {
     auto act = new QAction(tr("Open Link"), p_menu);
-    connect(act, &QAction::triggered, p_menu, [this, linkUrl]() {
-      emit openFileRequested(linkUrl);
-    });
+    connect(act, &QAction::triggered, p_menu,
+            [this, linkUrl]() { emit openFileRequested(linkUrl); });
     p_menu->insertAction(p_before, act);
   }
 

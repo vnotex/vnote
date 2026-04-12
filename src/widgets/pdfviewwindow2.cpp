@@ -1,6 +1,8 @@
 #include "pdfviewwindow2.h"
 
+#include <QDesktopServices>
 #include <QToolBar>
+#include <QUrl>
 
 #include <controllers/pdfviewwindowcontroller.h>
 #include <core/configmgr2.h>
@@ -58,6 +60,9 @@ void PdfViewWindow2::setupViewer() {
 
   auto *pdfAdapter = new PdfViewerAdapter(nullptr);
   m_viewer = new PdfViewer(pdfAdapter, themeService->getBaseBackground(), 1.0, this);
+  connect(m_viewer, &WebViewer::localFileOpenRequested, this, [](const QString &p_filePath) {
+    QDesktopServices::openUrl(QUrl::fromLocalFile(p_filePath));
+  });
 }
 
 QString PdfViewWindow2::getLatestContent() const { return QString(); }
