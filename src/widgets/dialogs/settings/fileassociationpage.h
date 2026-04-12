@@ -3,6 +3,8 @@
 
 #include "settingspage.h"
 
+class QVBoxLayout;
+
 namespace vnotex {
 class FileAssociationPage : public SettingsPage {
   Q_OBJECT
@@ -19,13 +21,15 @@ protected:
 private:
   void setupUI();
 
-  void loadBuiltInTypesGroup(QWidget *p_container);
+  void loadBuiltInTypesGroup();
 
-  void loadExternalProgramsGroup(QWidget *p_container);
+  void loadExternalProgramsGroup();
 
-  QWidget *m_builtInContainer = nullptr;
+  QVBoxLayout *m_builtInCardLayout = nullptr;
+  int m_builtInRowStartIndex = 0;
 
-  QWidget *m_externalContainer = nullptr;
+  QVBoxLayout *m_externalCardLayout = nullptr;
+  int m_externalRowStartIndex = 0;
 
   static const char *c_nameProperty;
 

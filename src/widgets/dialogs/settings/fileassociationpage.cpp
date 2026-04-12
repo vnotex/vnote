@@ -26,32 +26,22 @@ void FileAssociationPage::setupUI() {
   auto *mainLayout = new QVBoxLayout(this);
 
   // Built-In File Types card.
-  {
-    auto *cardLayout =
-        SettingsPageHelper::addSection(mainLayout, tr("Built-In File Types"), QString(), this);
-
-    m_builtInContainer = new QWidget(this);
-    new QVBoxLayout(m_builtInContainer);
-    cardLayout->addWidget(m_builtInContainer);
-  }
+  m_builtInCardLayout =
+      SettingsPageHelper::addSection(mainLayout, tr("Built-In File Types"), QString(), this);
+  m_builtInRowStartIndex = m_builtInCardLayout->count();
 
   // External Programs card.
-  {
-    auto *cardLayout =
-        SettingsPageHelper::addSection(mainLayout, tr("External Programs"), QString(), this);
-
-    m_externalContainer = new QWidget(this);
-    new QVBoxLayout(m_externalContainer);
-    cardLayout->addWidget(m_externalContainer);
-  }
+  m_externalCardLayout =
+      SettingsPageHelper::addSection(mainLayout, tr("External Programs"), QString(), this);
+  m_externalRowStartIndex = m_externalCardLayout->count();
 
   mainLayout->addStretch();
 }
 
 void FileAssociationPage::loadInternal() {
-  loadBuiltInTypesGroup(m_builtInContainer);
+  loadBuiltInTypesGroup();
 
-  loadExternalProgramsGroup(m_externalContainer);
+  loadExternalProgramsGroup();
 }
 
 bool FileAssociationPage::saveInternal() {
@@ -60,7 +50,8 @@ bool FileAssociationPage::saveInternal() {
   auto types = ftService->getAllFileTypes();
 
   // Update suffixes from UI line edits.
-  const auto lineEdits = m_builtInContainer->findChildren<QLineEdit *>();
+  auto *builtInCard = m_builtInCardLayout->parentWidget();
+  const auto lineEdits = builtInCard->findChildren<QLineEdit *>();
   for (auto *lineEdit : lineEdits) {
     QString name = lineEdit->property(c_nameProperty).toString();
     if (name.isEmpty()) {
@@ -91,12 +82,10 @@ bool FileAssociationPage::saveInternal() {
 
 QString FileAssociationPage::title() const { return tr("File Associations"); }
 
-void FileAssociationPage::loadBuiltInTypesGroup(QWidget *p_container) {
-  auto *layout = qobject_cast<QVBoxLayout *>(p_container->layout());
-
-  // Clear previous children.
-  while (layout->count() > 0) {
-    auto *item = layout->takeAt(0);
+void FileAssociationPage::loadBuiltInTypesGroup() {
+  // Clear previous dynamic rows.
+  while (m_builtInCardLayout->count() > m_builtInRowStartIndex) {
+    auto *item = m_builtInCardLayout->takeAt(m_builtInCardLayout->count() - 1);
     if (item->widget()) {
       delete item->widget();
     }
@@ -113,7 +102,7 @@ void FileAssociationPage::loadBuiltInTypesGroup(QWidget *p_container) {
       continue;
     }
 
-    auto *lineEdit = WidgetsFactory::createLineEdit(p_container);
+    auto *lineEdit = WidgetsFactory::createLineEdit(this);
     lineEdit->setProperty(c_nameProperty, ft.m_typeName);
     lineEdit->setPlaceholderText(tr("Suffixes separated by ;"));
     lineEdit->setToolTip(tr("List of suffixes for this file type"));
@@ -121,21 +110,19 @@ void FileAssociationPage::loadBuiltInTypesGroup(QWidget *p_container) {
     connect(lineEdit, &QLineEdit::textChanged, this, &FileAssociationPage::pageIsChanged);
 
     if (!firstRow) {
-      layout->addWidget(SettingsPageHelper::createSeparator(p_container));
+      m_builtInCardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     }
-    layout->addWidget(
-        SettingsPageHelper::createSettingRow(ft.m_displayName, QString(), lineEdit, p_container));
+    m_builtInCardLayout->addWidget(
+        SettingsPageHelper::createSettingRow(ft.m_displayName, QString(), lineEdit, this));
 
     firstRow = false;
   }
 }
 
-void FileAssociationPage::loadExternalProgramsGroup(QWidget *p_container) {
-  auto *layout = qobject_cast<QVBoxLayout *>(p_container->layout());
-
-  // Clear previous children.
-  while (layout->count() > 0) {
-    auto *item = layout->takeAt(0);
+void FileAssociationPage::loadExternalProgramsGroup() {
+  // Clear previous dynamic rows.
+  while (m_externalCardLayout->count() > m_externalRowStartIndex) {
+    auto *item = m_externalCardLayout->takeAt(m_externalCardLayout->count() - 1);
     if (item->widget()) {
       delete item->widget();
     }
@@ -155,7 +142,7 @@ void FileAssociationPage::loadExternalProgramsGroup(QWidget *p_container) {
 
   bool firstRow = true;
   for (const auto &name : names) {
-    auto *lineEdit = WidgetsFactory::createLineEdit(p_container);
+    auto *lineEdit = WidgetsFactory::createLineEdit(this);
     lineEdit->setProperty(c_nameProperty, name);
     lineEdit->setPlaceholderText(tr("Suffixes separated by ;"));
     lineEdit->setToolTip(
@@ -166,9 +153,10 @@ void FileAssociationPage::loadExternalProgramsGroup(QWidget *p_container) {
     // Suffix editing is shown but not persisted until session config migration.
 
     if (!firstRow) {
-      layout->addWidget(SettingsPageHelper::createSeparator(p_container));
+      m_externalCardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     }
-    layout->addWidget(SettingsPageHelper::createSettingRow(name, QString(), lineEdit, p_container));
+    m_externalCardLayout->addWidget(
+        SettingsPageHelper::createSettingRow(name, QString(), lineEdit, this));
 
     firstRow = false;
   }
