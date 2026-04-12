@@ -301,7 +301,8 @@ void MarkdownViewWindow2::setupViewer() {
   auto bgColor = themeService->getBaseBackground();
   auto zoomFactor = mdConfig.getZoomFactorInReadMode();
 
-  m_viewer = new MarkdownViewer(adapterObj, getServices(), bgColor, zoomFactor, this);
+  m_viewer = new MarkdownViewer(adapterObj, this, getServices(), bgColor, zoomFactor, this);
+  m_viewer->setController(m_windowController);
 
   m_splitter->addWidget(m_viewer);
   // Start hidden. The viewer will be shown explicitly when entering
