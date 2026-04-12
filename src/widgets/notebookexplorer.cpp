@@ -30,10 +30,10 @@
 #include <core/templatemgr.h>
 #include <core/vnotex.h>
 #include <core/widgetconfig.h>
+#include <gui/utils/iconutils.h>
 #include <notebook/notebook.h>
 #include <snippet/snippetmgr.h>
 #include <utils/fileutils.h>
-#include <gui/utils/iconutils.h>
 #include <utils/pathutils.h>
 #include <utils/widgetutils.h>
 
@@ -264,6 +264,8 @@ void NotebookExplorer::newQuickNote() {
     return;
   }
 
+  // TODO: migrate to new SelectDialog constructor with explicit theme colors
+  /*
   SelectDialog dialog(tr("New Quick Note"), VNoteX::getInst().getMainWindow());
   for (int i = 0; i < schemes.size(); ++i) {
     dialog.addSelection(schemes[i].m_name, i);
@@ -274,6 +276,9 @@ void NotebookExplorer::newQuickNote() {
   }
 
   int selection = dialog.getSelection();
+  */
+  // Stub: no dialog available, early return
+  return;
   const auto &scheme = schemes[selection];
 
   Notebook *notebook = m_currentNotebook.data();
@@ -302,12 +307,14 @@ void NotebookExplorer::newQuickNote() {
   // Legacy code commented out during migration to new architecture.
   // auto newNode =
   //     NewNoteDialog::newNote(notebook, parentNode, newName,
-  //                            TemplateMgr::getInst().getTemplateContent(scheme.m_template), errMsg);
+  //                            TemplateMgr::getInst().getTemplateContent(scheme.m_template),
+  //                            errMsg);
   QSharedPointer<Node> newNode; // Placeholder - returns null during migration
   Q_UNUSED(notebook);
   Q_UNUSED(parentNode);
   Q_UNUSED(newName);
-  qWarning() << "NotebookExplorer::newQuickNote() is disabled during migration to new architecture.";
+  qWarning()
+      << "NotebookExplorer::newQuickNote() is disabled during migration to new architecture.";
   if (!newNode) {
     MessageBoxHelper::notify(
         MessageBoxHelper::Information,
@@ -395,7 +402,8 @@ void NotebookExplorer::importFolder() {
   //   m_nodeExplorer->setCurrentNode(dialog.getNewNode().data());
   // }
   Q_UNUSED(node);
-  qWarning() << "NotebookExplorer::importFolderToNode: Legacy function. Use NotebookExplorer2 instead.";
+  qWarning()
+      << "NotebookExplorer::importFolderToNode: Legacy function. Use NotebookExplorer2 instead.";
 }
 
 void NotebookExplorer::manageNotebooks() {

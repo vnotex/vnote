@@ -183,10 +183,12 @@ void TaskVariableMgr::initTaskVariables() {
     return PathUtils::cleanPath(m_taskMgr->getNotebookTaskFolder());
   });
   addVariable("taskFolder", [](Task *, const QString &) {
-    return PathUtils::cleanPath(ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Tasks));
+    return PathUtils::cleanPath(
+        ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Tasks));
   });
   addVariable("themeFolder", [](Task *, const QString &) {
-    return PathUtils::cleanPath(ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Themes));
+    return PathUtils::cleanPath(
+        ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Themes));
   });
 }
 
@@ -272,6 +274,8 @@ void TaskVariableMgr::initInputVariables() {
         return QString();
       }
     } else if (input->type == "pickString") {
+      // TODO: migrate to new SelectDialog constructor with explicit theme colors
+      /*
       const auto desc = evaluate(task, input->description);
       SelectDialog dialog(task->getLabel(), desc, VNoteX::getInst().getMainWindow());
       for (int i = 0; i < input->options.size(); i++) {
@@ -285,6 +289,10 @@ void TaskVariableMgr::initInputVariables() {
         task->setCancelled(true);
         return QString();
       }
+      */
+      // Stub: cancel task until dialog is migrated
+      task->setCancelled(true);
+      return QString();
     } else {
       Exception::throwOne(Exception::Type::InvalidArgument,
                           QStringLiteral("task (%1) with invalid input type (%2)(%3)")
