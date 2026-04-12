@@ -1,23 +1,23 @@
 #include "viewwindow2.h"
 
-#include <QApplication>
 #include <QAction>
+#include <QApplication>
 #include <QDebug>
 #include <QDragEnterEvent>
-#include <QPainter>
-#include <QPolygonF>
+#include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QMenu>
-#include <QShortcut>
-#include <QtMath>
-#include <QWheelEvent>
 #include <QMessageBox>
+#include <QPainter>
+#include <QPolygonF>
+#include <QResizeEvent>
+#include <QShortcut>
 #include <QToolBar>
 #include <QToolButton>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QResizeEvent>
+#include <QWheelEvent>
 #include <QWidgetAction>
+#include <QtMath>
 
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
@@ -31,14 +31,14 @@
 #include <gui/utils/iconutils.h>
 #include <gui/utils/widgetutils.h>
 
-#include "editreaddiscardaction.h"
 #include "attachmentdragdropareaindicator2.h"
+#include "attachmentpopup2.h"
 #include "editors/statuswidget.h"
+#include "editreaddiscardaction.h"
 #include "findandreplacewidget2.h"
 #include "floatingwidget.h"
 #include "messageboxhelper.h"
 #include "outlineprovider.h"
-#include "attachmentpopup2.h"
 #include "tagpopup2.h"
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpanel.h"
@@ -56,8 +56,7 @@ QString ViewWindow2::s_attachmentFullIconMasterColor;
 
 QIcon ViewWindow2::s_attachmentFullIcon;
 
-ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
-                         QWidget *p_parent)
+ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services), m_buffer(p_buffer) {
   setupUI();
 
@@ -120,17 +119,11 @@ void ViewWindow2::setupUI() {
 
 // ============ Buffer Access ============
 
-const Buffer2 &ViewWindow2::getBuffer() const {
-  return m_buffer;
-}
+const Buffer2 &ViewWindow2::getBuffer() const { return m_buffer; }
 
-Buffer2 &ViewWindow2::getBuffer() {
-  return m_buffer;
-}
+Buffer2 &ViewWindow2::getBuffer() { return m_buffer; }
 
-const NodeIdentifier &ViewWindow2::getNodeId() const {
-  return m_buffer.nodeId();
-}
+const NodeIdentifier &ViewWindow2::getNodeId() const { return m_buffer.nodeId(); }
 
 // ============ Rename Support ============
 
@@ -141,9 +134,11 @@ void ViewWindow2::onNodeRenamed(const NodeIdentifier &p_newNodeId) {
 
 // ============ Window Identity ============
 
-QIcon ViewWindow2::getIcon() const {
-  return QIcon();
-}
+ID ViewWindow2::getViewWindowId() const { return m_viewWindowId; }
+
+void ViewWindow2::setViewWindowId(ID p_id) { m_viewWindowId = p_id; }
+
+QIcon ViewWindow2::getIcon() const { return QIcon(); }
 
 QString ViewWindow2::getName() const {
   // Extract filename from relative path.
@@ -155,9 +150,7 @@ QString ViewWindow2::getName() const {
   return path;
 }
 
-QSharedPointer<OutlineProvider> ViewWindow2::getOutlineProvider() const {
-  return nullptr;
-}
+QSharedPointer<OutlineProvider> ViewWindow2::getOutlineProvider() const { return nullptr; }
 
 QString ViewWindow2::getTitle() const {
   QString name = getName();
@@ -169,17 +162,11 @@ QString ViewWindow2::getTitle() const {
 
 // ============ Mode ============
 
-ViewWindowMode ViewWindow2::getMode() const {
-  return m_mode;
-}
+ViewWindowMode ViewWindow2::getMode() const { return m_mode; }
 
-int ViewWindow2::getCursorPosition() const {
-  return -1;
-}
+int ViewWindow2::getCursorPosition() const { return -1; }
 
-int ViewWindow2::getScrollPosition() const {
-  return -1;
-}
+int ViewWindow2::getScrollPosition() const { return -1; }
 
 bool ViewWindow2::isModified() const {
   // Use local dirty flag OR vxcore modified flag.
@@ -194,11 +181,8 @@ bool ViewWindow2::aboutToClose(bool p_force) {
   if (!p_force && isModified()) {
     // Show Save/Discard/Cancel dialog for unsaved changes.
     int ret = MessageBoxHelper::questionSaveDiscardCancel(
-        MessageBoxHelper::Question,
-        tr("Do you want to save changes to \"%1\"?").arg(getName()),
-        tr("Your changes will be lost if you don't save them."),
-        QString(),
-        this);
+        MessageBoxHelper::Question, tr("Do you want to save changes to \"%1\"?").arg(getName()),
+        tr("Your changes will be lost if you don't save them."), QString(), this);
 
     if (ret == QMessageBox::Cancel) {
       return false;
@@ -217,17 +201,13 @@ bool ViewWindow2::aboutToClose(bool p_force) {
             (attempt < c_maxRetries - 1)
                 ? (QMessageBox::Retry | QMessageBox::Discard | QMessageBox::Cancel)
                 : (QMessageBox::Discard | QMessageBox::Cancel);
-        QMessageBox msgBox(QMessageBox::Warning,
-                           tr("Save Changes"),
-                           tr("Failed to save \"%1\".").arg(getName()),
-                           buttons,
-                           this);
-        msgBox.setInformativeText(
-            (attempt < c_maxRetries - 1)
-                ? tr("Would you like to retry, discard changes, or cancel?")
-                : tr("Maximum retries reached. Discard changes or cancel?"));
-        msgBox.setDefaultButton(
-            (attempt < c_maxRetries - 1) ? QMessageBox::Retry : QMessageBox::Cancel);
+        QMessageBox msgBox(QMessageBox::Warning, tr("Save Changes"),
+                           tr("Failed to save \"%1\".").arg(getName()), buttons, this);
+        msgBox.setInformativeText((attempt < c_maxRetries - 1)
+                                      ? tr("Would you like to retry, discard changes, or cancel?")
+                                      : tr("Maximum retries reached. Discard changes or cancel?"));
+        msgBox.setDefaultButton((attempt < c_maxRetries - 1) ? QMessageBox::Retry
+                                                             : QMessageBox::Cancel);
         int failRet = msgBox.exec();
 
         if (failRet == QMessageBox::Cancel) {
@@ -244,8 +224,7 @@ bool ViewWindow2::aboutToClose(bool p_force) {
     if (m_buffer.isValid()) {
       auto *bufferService = m_services.get<BufferService>();
       if (bufferService) {
-        bufferService->unregisterActiveWriter(m_buffer.id(),
-                                              reinterpret_cast<quintptr>(this));
+        bufferService->unregisterActiveWriter(m_buffer.id(), reinterpret_cast<quintptr>(this));
       }
     }
     return true;
@@ -266,8 +245,7 @@ bool ViewWindow2::aboutToClose(bool p_force) {
   if (m_buffer.isValid()) {
     auto *bufferService = m_services.get<BufferService>();
     if (bufferService) {
-      bufferService->unregisterActiveWriter(m_buffer.id(),
-                                            reinterpret_cast<quintptr>(this));
+      bufferService->unregisterActiveWriter(m_buffer.id(), reinterpret_cast<quintptr>(this));
     }
   }
 
@@ -286,9 +264,7 @@ void ViewWindow2::addToolBar(QToolBar *p_bar) {
   p_bar->installEventFilter(this);
 }
 
-void ViewWindow2::addTopWidget(QWidget *p_widget) {
-  m_topLayout->addWidget(p_widget);
-}
+void ViewWindow2::addTopWidget(QWidget *p_widget) { m_topLayout->addWidget(p_widget); }
 
 void ViewWindow2::setCentralWidget(QWidget *p_widget) {
   if (m_centralWidget) {
@@ -304,9 +280,7 @@ void ViewWindow2::setCentralWidget(QWidget *p_widget) {
   }
 }
 
-void ViewWindow2::addBottomWidget(QWidget *p_widget) {
-  m_bottomLayout->addWidget(p_widget);
-}
+void ViewWindow2::addBottomWidget(QWidget *p_widget) { m_bottomLayout->addWidget(p_widget); }
 
 void ViewWindow2::setStatusWidget(const QSharedPointer<StatusWidget> &p_widget) {
   m_statusWidget = p_widget;
@@ -346,12 +320,9 @@ void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar) {
   connect(m_printAction, &QAction::triggered, this, &ViewWindow2::handlePrint);
 }
 
-void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
-  Q_UNUSED(p_toolBar)
-}
+void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) { Q_UNUSED(p_toolBar) }
 
-void ViewWindow2::handlePrint() {
-}
+void ViewWindow2::handlePrint() {}
 
 // Convert a ViewWindowToolBarHelper2::Action (TypeBold..TypeTable) to the
 // corresponding TypeAction ID used by handleTypeAction().
@@ -360,26 +331,22 @@ static int helperActionToTypeActionId(ViewWindowToolBarHelper2::Action p_action)
   return 4 + static_cast<int>(p_action);
 }
 
-QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
-                                ViewWindowToolBarHelper2::Action p_action) {
-  auto *act = ViewWindowToolBarHelper2::addAction(
-      p_toolBar, p_action, getServices(), this);
+QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::Action p_action) {
+  auto *act = ViewWindowToolBarHelper2::addAction(p_toolBar, p_action, getServices(), this);
 
   switch (p_action) {
   case ViewWindowToolBarHelper2::Save:
     m_saveAction = act;
     act->setEnabled(false);
     connect(act, &QAction::triggered, this, [this]() { save(); });
-    connect(this, &ViewWindow2::statusChanged, this, [this]() {
-      m_saveAction->setEnabled(getBuffer().isValid() && isModified());
-    });
+    connect(this, &ViewWindow2::statusChanged, this,
+            [this]() { m_saveAction->setEnabled(getBuffer().isValid() && isModified()); });
     break;
 
   case ViewWindowToolBarHelper2::EditRead: {
     m_editReadAction = dynamic_cast<EditReadDiscardAction *>(act);
     Q_ASSERT(m_editReadAction);
-    connect(this, &ViewWindow2::modeChanged, this,
-            &ViewWindow2::updateEditReadDiscardActionState);
+    connect(this, &ViewWindow2::modeChanged, this, &ViewWindow2::updateEditReadDiscardActionState);
     connect(m_editReadAction,
             QOverload<EditReadDiscardAction::Action>::of(&EditReadDiscardAction::triggered), this,
             [this](EditReadDiscardAction::Action p_act) {
@@ -401,16 +368,14 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
   }
 
   case ViewWindowToolBarHelper2::WordCount: {
-    auto *toolBtn =
-        dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
     Q_ASSERT(toolBtn);
     auto *popup = new WordCountPopup2(
         toolBtn,
         [this](WordCountPanel *p_panel) {
           fetchWordCountInfo([p_panel](const WordCountInfo &p_info) {
             p_panel->updateCount(p_info.m_isSelection, p_info.m_wordCount,
-                                 p_info.m_charWithoutSpaceCount,
-                                 p_info.m_charWithSpaceCount);
+                                 p_info.m_charWithoutSpaceCount, p_info.m_charWithSpaceCount);
           });
         },
         p_toolBar);
@@ -420,20 +385,15 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
 
   case ViewWindowToolBarHelper2::TypeHeading: {
     act->setVisible(false);
-    connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
-      act->setVisible(m_mode == ViewWindowMode::Edit);
-    });
+    connect(this, &ViewWindow2::modeChanged, this,
+            [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
     // Default button click triggers Heading 1.
-    connect(act, &QAction::triggered, this, [this]() {
-      handleTypeAction(TypeHeading1);
-    });
+    connect(act, &QAction::triggered, this, [this]() { handleTypeAction(TypeHeading1); });
     // Menu items (H2-H6, Clear) trigger via data().
-    auto *toolBtn =
-        dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
     Q_ASSERT(toolBtn);
-    connect(toolBtn->menu(), &QMenu::triggered, this, [this](QAction *p_act) {
-      handleTypeAction(p_act->data().toInt());
-    });
+    connect(toolBtn->menu(), &QMenu::triggered, this,
+            [this](QAction *p_act) { handleTypeAction(p_act->data().toInt()); });
     break;
   }
 
@@ -457,9 +417,8 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
     act->setVisible(false);
     connect(act, &QAction::triggered, this,
             [this, typeActionId]() { handleTypeAction(typeActionId); });
-    connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
-      act->setVisible(m_mode == ViewWindowMode::Edit);
-    });
+    connect(this, &ViewWindow2::modeChanged, this,
+            [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
     break;
   }
 
@@ -490,9 +449,8 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
   case ViewWindowToolBarHelper2::ToggleLivePreview:
     // Visible only in Edit mode. Subclass wires the toggled signal.
     act->setVisible(false);
-    connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
-      act->setVisible(m_mode == ViewWindowMode::Edit);
-    });
+    connect(this, &ViewWindow2::modeChanged, this,
+            [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
     break;
 
   case ViewWindowToolBarHelper2::Tag: {
@@ -528,9 +486,7 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar,
   return act;
 }
 
-void ViewWindow2::handleTypeAction(int p_action) {
-  Q_UNUSED(p_action);
-}
+void ViewWindow2::handleTypeAction(int p_action) { Q_UNUSED(p_action); }
 
 void ViewWindow2::fetchWordCountInfo(
     const std::function<void(const WordCountInfo &)> &p_callback) const {
@@ -538,9 +494,7 @@ void ViewWindow2::fetchWordCountInfo(
   p_callback(info);
 }
 
-ServiceLocator &ViewWindow2::getServices() const {
-  return m_services;
-}
+ServiceLocator &ViewWindow2::getServices() const { return m_services; }
 
 // ============ Auto-Save Integration ============
 
@@ -599,9 +553,8 @@ void ViewWindow2::onFocusGained() {
   // Register as active writer for this buffer.
   auto *bufferService = m_services.get<BufferService>();
   if (bufferService) {
-    bufferService->registerActiveWriter(
-        m_buffer.id(), reinterpret_cast<quintptr>(this),
-        [this]() { return getLatestContent(); });
+    bufferService->registerActiveWriter(m_buffer.id(), reinterpret_cast<quintptr>(this),
+                                        [this]() { return getLatestContent(); });
   }
 
   // Check for external changes (from other ViewWindows or disk reload).
@@ -675,19 +628,20 @@ void ViewWindow2::updateAttachmentIcon() {
   colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
 
   const auto iconFile = themeService->getIconFile(QStringLiteral("attachment_editor.svg"));
-  m_attachmentAction->setIcon(getBuffer().hasAttachments()
-                                  ? generateAttachmentFullIcon(iconFile, fg, disabledFg, masterColor)
-                                  : IconUtils::fetchIcon(iconFile, colors));
+  m_attachmentAction->setIcon(
+      getBuffer().hasAttachments()
+          ? generateAttachmentFullIcon(iconFile, fg, disabledFg, masterColor)
+          : IconUtils::fetchIcon(iconFile, colors));
 }
 
 QIcon ViewWindow2::generateAttachmentFullIcon(const QString &p_iconFile,
-                                               const QString &p_foreground,
-                                               const QString &p_disabledForeground,
-                                               const QString &p_masterColor) {
-  if (!s_attachmentFullIcon.isNull() && s_attachmentFullIconFile == p_iconFile
-      && s_attachmentFullIconForeground == p_foreground
-      && s_attachmentFullIconDisabledForeground == p_disabledForeground
-      && s_attachmentFullIconMasterColor == p_masterColor) {
+                                              const QString &p_foreground,
+                                              const QString &p_disabledForeground,
+                                              const QString &p_masterColor) {
+  if (!s_attachmentFullIcon.isNull() && s_attachmentFullIconFile == p_iconFile &&
+      s_attachmentFullIconForeground == p_foreground &&
+      s_attachmentFullIconDisabledForeground == p_disabledForeground &&
+      s_attachmentFullIconMasterColor == p_masterColor) {
     return s_attachmentFullIcon;
   }
 
@@ -697,14 +651,13 @@ QIcon ViewWindow2::generateAttachmentFullIcon(const QString &p_iconFile,
   const qreal outerRadius = 4.5;
   const QVector<IconUtils::OverriddenColor> iconColors = {
       IconUtils::OverriddenColor(p_foreground, QIcon::Normal, QIcon::Off),
-      IconUtils::OverriddenColor(p_disabledForeground, QIcon::Disabled, QIcon::Off)
-  };
+      IconUtils::OverriddenColor(p_disabledForeground, QIcon::Disabled, QIcon::Off)};
 
   for (const auto &color : iconColors) {
     QVector<IconUtils::OverriddenColor> overriddenColors;
     overriddenColors.push_back(color);
-    QPixmap pixmap = IconUtils::fetchIcon(p_iconFile, overriddenColors).pixmap(
-        iconSize, iconSize, color.m_mode, color.m_state);
+    QPixmap pixmap = IconUtils::fetchIcon(p_iconFile, overriddenColors)
+                         .pixmap(iconSize, iconSize, color.m_mode, color.m_state);
     if (pixmap.isNull()) {
       continue;
     }
@@ -835,14 +788,14 @@ void ViewWindow2::findNext(const QString &p_text, FindOptions p_options) {
 }
 
 void ViewWindow2::replace(const QString &p_text, FindOptions p_options,
-                           const QString &p_replaceText) {
+                          const QString &p_replaceText) {
   m_findInfo.m_texts = QStringList(p_text);
   m_findInfo.m_options = p_options;
   handleReplace(p_text, p_options, p_replaceText);
 }
 
 void ViewWindow2::replaceAll(const QString &p_text, FindOptions p_options,
-                              const QString &p_replaceText) {
+                             const QString &p_replaceText) {
   m_findInfo.m_texts = QStringList(p_text);
   m_findInfo.m_options = p_options;
   handleReplaceAll(p_text, p_options, p_replaceText);
@@ -867,7 +820,7 @@ void ViewWindow2::findNextOnLastFind(bool p_forward) {
 }
 
 void ViewWindow2::showFindResult(const QStringList &p_texts, int p_totalMatches,
-                                  int p_currentMatchIndex) {
+                                 int p_currentMatchIndex) {
   if (p_texts.isEmpty() || p_texts[0].isEmpty()) {
     showMessage(QString());
     return;
@@ -905,9 +858,7 @@ void ViewWindow2::applySnippet(const QString &p_name) {
   qWarning() << "applySnippet not supported in this window type";
 }
 
-void ViewWindow2::applySnippet() {
-  qWarning() << "applySnippet not supported in this window type";
-}
+void ViewWindow2::applySnippet() { qWarning() << "applySnippet not supported in this window type"; }
 
 void ViewWindow2::clearHighlights() {}
 
@@ -932,9 +883,7 @@ QVariant ViewWindow2::showFloatingWidget(FloatingWidget *p_widget) {
   return p_widget->result();
 }
 
-QPoint ViewWindow2::getFloatingWidgetPosition() {
-  return mapToGlobal(QPoint(5, 5));
-}
+QPoint ViewWindow2::getFloatingWidgetPosition() { return mapToGlobal(QPoint(5, 5)); }
 
 void ViewWindow2::setupShortcuts() {
   auto *configMgr = m_services.get<ConfigMgr2>();
@@ -945,8 +894,8 @@ void ViewWindow2::setupShortcuts() {
 
   // FindNext.
   {
-    auto shortcut = WidgetUtils::createShortcut(
-        editorConfig.getShortcut(EditorConfig::FindNext), this, Qt::WidgetWithChildrenShortcut);
+    auto shortcut = WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::FindNext),
+                                                this, Qt::WidgetWithChildrenShortcut);
     if (shortcut) {
       connect(shortcut, &QShortcut::activated, this, [this]() { findNextOnLastFind(true); });
     }
@@ -972,8 +921,9 @@ void ViewWindow2::setupShortcuts() {
 
   // ClearHighlights.
   {
-    auto shortcut = WidgetUtils::createShortcut(
-        editorConfig.getShortcut(EditorConfig::ClearHighlights), this, Qt::WidgetWithChildrenShortcut);
+    auto shortcut =
+        WidgetUtils::createShortcut(editorConfig.getShortcut(EditorConfig::ClearHighlights), this,
+                                    Qt::WidgetWithChildrenShortcut);
     if (shortcut) {
       connect(shortcut, &QShortcut::activated, this, [this]() { clearHighlights(); });
     }
@@ -989,8 +939,7 @@ void ViewWindow2::handleEditorConfigChange() {
   // Sync layout mode toggle to reflect current effective mode.
   if (m_layoutModeAction) {
     QSignalBlocker blocker(m_layoutModeAction);
-    m_layoutModeAction->setChecked(
-        getLayoutMode() == ViewWindowLayoutMode::ReadableWidth);
+    m_layoutModeAction->setChecked(getLayoutMode() == ViewWindowLayoutMode::ReadableWidth);
   }
 }
 
@@ -1015,9 +964,8 @@ void ViewWindow2::setLayoutMode(ViewWindowLayoutMode p_mode) {
 
 void ViewWindow2::toggleLayoutMode() {
   auto current = getLayoutMode();
-  setLayoutMode(current == ViewWindowLayoutMode::FullWidth
-                    ? ViewWindowLayoutMode::ReadableWidth
-                    : ViewWindowLayoutMode::FullWidth);
+  setLayoutMode(current == ViewWindowLayoutMode::FullWidth ? ViewWindowLayoutMode::ReadableWidth
+                                                           : ViewWindowLayoutMode::FullWidth);
 }
 
 void ViewWindow2::updateEditReadDiscardActionState() {
@@ -1044,11 +992,8 @@ void ViewWindow2::discardChangesAndRead() {
   if (isModified()) {
     // Ask to save changes.
     int ret = MessageBoxHelper::questionSaveDiscardCancel(
-        MessageBoxHelper::Question,
-        tr("Discard changes to note (%1)?").arg(getName()),
-        tr("Note path (%1).").arg(m_buffer.resolvedPath()),
-        QString(),
-        this);
+        MessageBoxHelper::Question, tr("Discard changes to note (%1)?").arg(getName()),
+        tr("Note path (%1).").arg(m_buffer.resolvedPath()), QString(), this);
     switch (ret) {
     case QMessageBox::Save:
       // Save and read.
@@ -1117,8 +1062,7 @@ bool ViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
     switch (p_event->type()) {
     case QEvent::DragEnter:
       if (m_buffer.isValid() && m_buffer.isAttachmentSupported() &&
-          AttachmentDragDropAreaIndicator2::isAccepted(
-              dynamic_cast<QDragEnterEvent *>(p_event))) {
+          AttachmentDragDropAreaIndicator2::isAccepted(dynamic_cast<QDragEnterEvent *>(p_event))) {
         // Lazily create indicator on first drag.
         if (!m_attachmentDragDropIndicator) {
           m_attachmentDragDropIndicator = new AttachmentDragDropAreaIndicator2(this);
@@ -1127,11 +1071,8 @@ bool ViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
           addTopWidget(m_attachmentDragDropIndicator);
 
           // Show status message when files are attached.
-          connect(m_attachmentDragDropIndicator,
-                  &AttachmentDragDropAreaIndicator2::filesAttached, this,
-                  [this](int count) {
-                    showMessage(tr("Attached %n file(s)", "", count));
-                  });
+          connect(m_attachmentDragDropIndicator, &AttachmentDragDropAreaIndicator2::filesAttached,
+                  this, [this](int count) { showMessage(tr("Attached %n file(s)", "", count)); });
         }
         m_attachmentDragDropIndicator->show();
       }

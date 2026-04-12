@@ -278,7 +278,12 @@ void NotebookExplorer::newQuickNote() {
   int selection = dialog.getSelection();
   */
   // Stub: no dialog available, early return
+  qWarning()
+      << "NotebookExplorer::newQuickNote() is disabled during migration to new architecture.";
   return;
+  /*
+  // TODO: Migrate to NewNoteController with DI pattern
+  // Dead code — left for reference during migration.
   const auto &scheme = schemes[selection];
 
   Notebook *notebook = m_currentNotebook.data();
@@ -303,18 +308,10 @@ void NotebookExplorer::newQuickNote() {
       parentNode->fetchAbsolutePath(), finfo.completeBaseName(), finfo.suffix());
 
   QString errMsg;
-  // TODO: Migrate to NewNoteController with DI pattern
-  // Legacy code commented out during migration to new architecture.
-  // auto newNode =
-  //     NewNoteDialog::newNote(notebook, parentNode, newName,
-  //                            TemplateMgr::getInst().getTemplateContent(scheme.m_template),
-  //                            errMsg);
-  QSharedPointer<Node> newNode; // Placeholder - returns null during migration
-  Q_UNUSED(notebook);
-  Q_UNUSED(parentNode);
-  Q_UNUSED(newName);
-  qWarning()
-      << "NotebookExplorer::newQuickNote() is disabled during migration to new architecture.";
+  auto newNode =
+      NewNoteDialog::newNote(notebook, parentNode, newName,
+                             TemplateMgr::getInst().getTemplateContent(scheme.m_template),
+                             errMsg);
   if (!newNode) {
     MessageBoxHelper::notify(
         MessageBoxHelper::Information,
@@ -332,6 +329,7 @@ void NotebookExplorer::newQuickNote() {
   paras->m_mode = ViewWindowMode::Edit;
   paras->m_newFile = true;
   emit VNoteX::getInst().openNodeRequested(newNode.data(), paras);
+  */
 }
 
 Node *NotebookExplorer::currentExploredFolderNode() const {

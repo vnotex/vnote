@@ -462,7 +462,8 @@ void MarkdownViewWindow2::connectEditorSignals() {
           [this](const QString &p_imagePath, const QString &p_urlInLink) {
             Q_UNUSED(p_urlInLink);
             if (PathUtils::isLocalFile(p_imagePath)) {
-              m_insertedImages.insert(PathUtils::normalizePath(p_imagePath));
+              auto normalized = PathUtils::normalizePath(p_imagePath);
+              m_insertedImages.insert(normalized);
             }
           });
 }
@@ -1270,7 +1271,8 @@ void MarkdownViewWindow2::snapshotInitialImages() {
   auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(
       content, resourcePath, static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
   for (const auto &img : images) {
-    m_initialImages.insert(PathUtils::normalizePath(img.m_path));
+    auto normalized = PathUtils::normalizePath(img.m_path);
+    m_initialImages.insert(normalized);
   }
 }
 

@@ -82,6 +82,13 @@ public:
 
   // ============ Window Identity ============
 
+  // Get the view area window ID assigned when this window was added to ViewArea2.
+  // Returns 0 (InvalidViewWindowId) if not yet assigned.
+  ID getViewWindowId() const;
+
+  // Set the view area window ID. Called by ViewArea2 when the window is registered.
+  void setViewWindowId(ID p_id);
+
   // Get the display icon for the tab (e.g., file type icon).
   virtual QIcon getIcon() const;
 
@@ -246,8 +253,8 @@ protected:
   // Subclasses override to provide mode-specific word counting (e.g., async JS
   // extraction in read mode). The callback receives a WordCountInfo struct.
   // Default: calculates from getLatestContent() synchronously.
-  virtual void fetchWordCountInfo(
-      const std::function<void(const WordCountInfo &)> &p_callback) const;
+  virtual void
+  fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &p_callback) const;
 
   // ============ Layout Slots (for subclasses) ============
 
@@ -426,6 +433,9 @@ private:
   void discardChangesAndRead();
 
   ServiceLocator &m_services;
+
+  // ViewArea2-assigned window ID. 0 = not assigned.
+  ID m_viewWindowId = 0;
 
   Buffer2 m_buffer;
 
