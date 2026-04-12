@@ -50,10 +50,11 @@ public:
   // @p_themeFile: path to text editor style file (from ThemeService).
   // @p_syntaxTheme: editor highlight theme name (from ThemeService).
   // @p_scaleFactor: screen scale factor (from WidgetUtils).
+  // @p_maxContentWidth: maximum content width in pixels (0 = disabled).
   static QSharedPointer<vte::TextEditorConfig>
   buildTextEditorConfig(const EditorConfig &p_editorConfig, const TextEditorConfig &p_config,
                         const QString &p_themeFile, const QString &p_syntaxTheme,
-                        qreal p_scaleFactor);
+                        qreal p_scaleFactor, int p_maxContentWidth = 0);
 
   // Build vte::TextEditorParameters from VNote config.
   static QSharedPointer<vte::TextEditorParameters>

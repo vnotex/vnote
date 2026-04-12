@@ -45,12 +45,10 @@ bool MarkdownEditorController::checkAndUpdateConfigRevision() {
   return changed;
 }
 
-QSharedPointer<vte::MarkdownEditorConfig>
-MarkdownEditorController::buildMarkdownEditorConfig(const EditorConfig &p_editorConfig,
-                                                    const MarkdownEditorConfig &p_mdConfig,
-                                                    const QString &p_themeFile,
-                                                    const QString &p_syntaxTheme,
-                                                    qreal p_scaleFactor) {
+QSharedPointer<vte::MarkdownEditorConfig> MarkdownEditorController::buildMarkdownEditorConfig(
+    const EditorConfig &p_editorConfig, const MarkdownEditorConfig &p_mdConfig,
+    const QString &p_themeFile, const QString &p_syntaxTheme, qreal p_scaleFactor,
+    int p_maxContentWidth) {
   // Build base text editor config from the TextEditorConfig within MarkdownEditorConfig.
   const auto &textConfig = p_mdConfig.getTextEditorConfig();
 
@@ -122,6 +120,7 @@ MarkdownEditorController::buildMarkdownEditorConfig(const EditorConfig &p_editor
   textEditorConfig->m_expandTab = textConfig.getExpandTabEnabled();
   textEditorConfig->m_tabStopWidth = textConfig.getTabStopWidth();
   textEditorConfig->m_highlightWhitespace = textConfig.getHighlightWhitespaceEnabled();
+  textEditorConfig->m_maxContentWidth = p_maxContentWidth;
 
   switch (p_editorConfig.getLineEndingPolicy()) {
   case LineEndingPolicy::Platform:

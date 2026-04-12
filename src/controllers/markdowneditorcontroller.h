@@ -27,7 +27,7 @@ public:
   // State snapshot for applying buffer content to the editor.
   struct BufferState {
     QString content;
-    QString basePath;     // directory containing the file (for image resolution)
+    QString basePath; // directory containing the file (for image resolution)
     bool readOnly = false;
     bool modified = false;
     bool valid = false;
@@ -37,7 +37,7 @@ public:
   // State snapshot for applying config values to the editor.
   struct EditorConfigSnapshot {
     int zoomDelta = 0;
-    QString shortcutLeaderKey;     // raw key string from CoreConfig
+    QString shortcutLeaderKey; // raw key string from CoreConfig
     bool sectionNumberEnabled = false;
   };
 
@@ -64,12 +64,12 @@ public:
   // @p_themeFile: path to markdown editor style file (from ThemeService).
   // @p_syntaxTheme: editor highlight theme name (from ThemeService).
   // @p_scaleFactor: screen scale factor (from WidgetUtils).
+  // @p_maxContentWidth: maximum content width in pixels (0 = disabled).
   static QSharedPointer<vte::MarkdownEditorConfig>
   buildMarkdownEditorConfig(const EditorConfig &p_editorConfig,
-                            const MarkdownEditorConfig &p_mdConfig,
-                            const QString &p_themeFile,
-                            const QString &p_syntaxTheme,
-                            qreal p_scaleFactor);
+                            const MarkdownEditorConfig &p_mdConfig, const QString &p_themeFile,
+                            const QString &p_syntaxTheme, qreal p_scaleFactor,
+                            int p_maxContentWidth = 0);
 
   // Build vte::TextEditorParameters from VNote config (spell check settings).
   // @p_editorConfig: top-level EditorConfig (for auto-detect language, default dictionary).

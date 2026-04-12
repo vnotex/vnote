@@ -276,7 +276,7 @@ void ViewWindow2::setCentralWidget(QWidget *p_widget) {
     m_contentLayout->addWidget(m_centralWidget, 1);
     setFocusProxy(m_centralWidget);
     m_centralWidget->show();
-    updateContentMargins();
+    applyReadableWidth();
   }
 }
 
@@ -933,7 +933,7 @@ void ViewWindow2::setupShortcuts() {
 void ViewWindow2::handleEditorConfigChange() {
   // Re-apply content margins when no local override is active.
   if (m_layoutModeOverride < 0) {
-    updateContentMargins();
+    applyReadableWidth();
   }
 
   // Sync layout mode toggle to reflect current effective mode.
@@ -959,7 +959,7 @@ ViewWindowLayoutMode ViewWindow2::getLayoutMode() const {
 
 void ViewWindow2::setLayoutMode(ViewWindowLayoutMode p_mode) {
   m_layoutModeOverride = static_cast<int>(p_mode);
-  updateContentMargins();
+  applyReadableWidth();
 }
 
 void ViewWindow2::toggleLayoutMode() {
@@ -1028,6 +1028,8 @@ void ViewWindow2::discardChangesAndRead() {
   setMode(ViewWindowMode::Read);
 }
 
+void ViewWindow2::applyReadableWidth() { updateContentMargins(); }
+
 void ViewWindow2::updateContentMargins() {
   if (!m_contentLayout) {
     return;
@@ -1054,7 +1056,7 @@ void ViewWindow2::updateContentMargins() {
 
 void ViewWindow2::resizeEvent(QResizeEvent *p_event) {
   QFrame::resizeEvent(p_event);
-  updateContentMargins();
+  applyReadableWidth();
 }
 
 bool ViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {

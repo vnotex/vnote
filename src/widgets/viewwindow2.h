@@ -207,6 +207,10 @@ protected slots:
   virtual void handleFindAndReplaceWidgetOpened();
 
 protected:
+  // Apply readable-width constraints to the editor.
+  // Subclasses override to use editor-native line width instead of content margins.
+  virtual void applyReadableWidth();
+
   // ============ Type Action IDs ============
 
   // Type action IDs for formatting toolbar buttons.

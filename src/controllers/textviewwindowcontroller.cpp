@@ -38,12 +38,10 @@ bool TextViewWindowController::checkAndUpdateConfigRevision() {
   return changed;
 }
 
-QSharedPointer<vte::TextEditorConfig>
-TextViewWindowController::buildTextEditorConfig(const EditorConfig &p_editorConfig,
-                                                const TextEditorConfig &p_config,
-                                                const QString &p_themeFile,
-                                                const QString &p_syntaxTheme,
-                                                qreal p_scaleFactor) {
+QSharedPointer<vte::TextEditorConfig> TextViewWindowController::buildTextEditorConfig(
+    const EditorConfig &p_editorConfig, const TextEditorConfig &p_config,
+    const QString &p_themeFile, const QString &p_syntaxTheme, qreal p_scaleFactor,
+    int p_maxContentWidth) {
   auto editorConfig = QSharedPointer<vte::TextEditorConfig>::create();
 
   editorConfig->m_viConfig = p_editorConfig.getViConfig();
@@ -112,6 +110,7 @@ TextViewWindowController::buildTextEditorConfig(const EditorConfig &p_editorConf
   editorConfig->m_expandTab = p_config.getExpandTabEnabled();
   editorConfig->m_tabStopWidth = p_config.getTabStopWidth();
   editorConfig->m_highlightWhitespace = p_config.getHighlightWhitespaceEnabled();
+  editorConfig->m_maxContentWidth = p_maxContentWidth;
 
   switch (p_editorConfig.getLineEndingPolicy()) {
   case LineEndingPolicy::Platform:

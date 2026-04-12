@@ -335,6 +335,18 @@ class MarkdownViewerCore extends VXCore {
         }
     }
 
+    setContentMaxWidth(p_maxWidth) {
+        if (p_maxWidth > 0) {
+            this.contentContainer.style.maxWidth = p_maxWidth + 'px';
+            this.contentContainer.style.marginLeft = 'auto';
+            this.contentContainer.style.marginRight = 'auto';
+        } else {
+            this.contentContainer.style.maxWidth = '';
+            this.contentContainer.style.marginLeft = '';
+            this.contentContainer.style.marginRight = '';
+        }
+    }
+
     renderGraph(p_id, p_index, p_format, p_lang, p_text, p_callback) {
         this.renderGraphCallbacks[p_id + '_' + p_index] = p_callback;
         window.vxMarkdownAdapter.renderGraph(p_id, p_index, p_format, p_lang, p_text);
