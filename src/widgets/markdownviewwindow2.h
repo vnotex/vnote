@@ -3,6 +3,7 @@
 
 #include "viewwindow2.h"
 
+#include <QSet>
 #include <QSharedPointer>
 
 #include <core/markdowneditorconfig.h>
@@ -86,6 +87,8 @@ protected:
 
   void handlePrint() Q_DECL_OVERRIDE;
 
+  bool aboutToClose(bool p_force) Q_DECL_OVERRIDE;
+
   bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
   void scrollUp() Q_DECL_OVERRIDE;
@@ -113,8 +116,7 @@ private:
 
   void connectEditorSignals();
 
-  template <class T>
-  QSharedPointer<Outline> headingsToOutline(const QVector<T> &p_headings);
+  template <class T> QSharedPointer<Outline> headingsToOutline(const QVector<T> &p_headings);
 
   void focusEditor();
 
@@ -138,8 +140,8 @@ private:
 
   void handleTypeAction(int p_action) Q_DECL_OVERRIDE;
 
-  void fetchWordCountInfo(
-      const std::function<void(const WordCountInfo &)> &p_callback) const Q_DECL_OVERRIDE;
+  void fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &p_callback) const
+      Q_DECL_OVERRIDE;
 
   MarkdownViewerAdapter *adapter() const;
 
@@ -154,14 +156,20 @@ private:
 
   bool isReadMode() const;
 
+  void snapshotInitialImages();
+
+  void clearObsoleteImages();
+
+  bool isLastWindowForBuffer() const;
+
   // Controllers (owned via QObject parent).
   MarkdownEditorController *m_editorController = nullptr;
   MarkdownViewWindowController *m_windowController = nullptr;
 
   // Widgets (managed by QObject/layout).
   QSplitter *m_splitter = nullptr;
-  MarkdownEditor *m_editor = nullptr;       // Lazily created.
-  MarkdownViewer *m_viewer = nullptr;       // Lazily created.
+  MarkdownEditor *m_editor = nullptr; // Lazily created.
+  MarkdownViewer *m_viewer = nullptr; // Lazily created.
   PreviewHelper *m_previewHelper = nullptr;
 
   // Status widgets.
@@ -171,19 +179,22 @@ private:
 
   // State.
   bool m_propagateEditorToBuffer = false;
-  bool m_switchingMode = false;             // Reentrancy guard.
+  bool m_switchingMode = false; // Reentrancy guard.
   int m_textEditorBufferRevision = 0;
   int m_viewerBufferRevision = 0;
   ViewWindowMode m_previousMode = ViewWindowMode::Invalid;
   bool m_viewerReady = false;
-  MarkdownEditorConfig::EditViewMode m_editViewMode =
-      MarkdownEditorConfig::EditViewMode::EditOnly;
+  MarkdownEditorConfig::EditViewMode m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;
 
   QTimer *m_syncPreviewTimer = nullptr;
   QSharedPointer<QPrinter> m_printer;
 
   // Outline provider: bridges heading changes from editor/viewer to OutlinePopup.
   QSharedPointer<OutlineProvider> m_outlineProvider;
+
+  // Image tracking for obsolete-image cleanup.
+  QSet<QString> m_initialImages;  // Normalized paths of images present when buffer was opened.
+  QSet<QString> m_insertedImages; // Normalized paths of images inserted during this session.
 };
 
 } // namespace vnotex

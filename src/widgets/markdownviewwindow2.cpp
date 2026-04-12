@@ -2,8 +2,10 @@
 
 #include <QAction>
 #include <QCoreApplication>
+#include <QDir>
 #include <QEvent>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QLabel>
 #include <QPrinter>
 #include <QScrollBar>
@@ -13,6 +15,7 @@
 #include <QToolBar>
 #include <QToolButton>
 
+#include <vtextedit/markdownutils.h>
 #include <vtextedit/pegmarkdownhighlighter.h>
 #include <vtextedit/vtextedit.h>
 
@@ -25,6 +28,7 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/htmltemplateservice.h>
+#include <core/services/workspacecoreservice.h>
 #include <core/theme.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/printutils.h>
@@ -64,6 +68,8 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
   setModeInternal(p_initialMode, true);
 
   setupShortcuts();
+
+  snapshotInitialImages();
 }
 
 // ============ Destructor ============
@@ -179,6 +185,20 @@ void MarkdownViewWindow2::handlePrint() {
     m_printer->setOutputFormat(QPrinter::PdfFormat);
     m_viewer->print(m_printer.get());
   }
+}
+
+bool MarkdownViewWindow2::aboutToClose(bool p_force) {
+  const bool isLast = isLastWindowForBuffer();
+  const bool result = ViewWindow2::aboutToClose(p_force);
+  if (!result) {
+    return false;
+  }
+
+  if (isLast) {
+    clearObsoleteImages();
+  }
+
+  return true;
 }
 
 // ============ setupTextEditor (lazy init) ============
@@ -436,6 +456,15 @@ void MarkdownViewWindow2::connectEditorSignals() {
   // Snippet apply from context menu / shortcut.
   connect(m_editor, &MarkdownEditor::applySnippetRequested, this,
           QOverload<>::of(&MarkdownViewWindow2::applySnippet));
+
+  // Track newly inserted images for obsolete-image cleanup.
+  connect(m_editor, &MarkdownEditor::imageInserted, this,
+          [this](const QString &p_imagePath, const QString &p_urlInLink) {
+            Q_UNUSED(p_urlInLink);
+            if (PathUtils::isLocalFile(p_imagePath)) {
+              m_insertedImages.insert(PathUtils::normalizePath(p_imagePath));
+            }
+          });
 }
 
 // ============ setMode / setModeInternal ============
@@ -1228,6 +1257,99 @@ int MarkdownViewWindow2::getReadLineNumber() const {
 }
 
 bool MarkdownViewWindow2::isReadMode() const { return m_mode == ViewWindowMode::Read; }
+
+void MarkdownViewWindow2::snapshotInitialImages() {
+  auto content = QString::fromUtf8(getBuffer().getContentRaw());
+  auto resolved = getBuffer().resolvedPath();
+  if (content.isEmpty() || resolved.isEmpty()) {
+    return;
+  }
+
+  auto resourcePath = QFileInfo(resolved).path();
+  int linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal;
+  auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(
+      content, resourcePath, static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
+  for (const auto &img : images) {
+    m_initialImages.insert(PathUtils::normalizePath(img.m_path));
+  }
+}
+
+void MarkdownViewWindow2::clearObsoleteImages() {
+  auto buffer = getBuffer();
+  if (!buffer.isValid()) {
+    return;
+  }
+
+  const auto assetsFolder = buffer.getAssetsFolder();
+  if (assetsFolder.isEmpty()) {
+    return;
+  }
+
+  const auto content = QString::fromUtf8(buffer.getContentRaw());
+  const auto resourcePath = QFileInfo(buffer.resolvedPath()).path();
+  const int linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal;
+  const auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(
+      content, resourcePath, static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
+
+  QSet<QString> currentImages;
+  for (const auto &img : images) {
+    currentImages.insert(PathUtils::normalizePath(img.m_path));
+  }
+
+  QSet<QString> obsoleteImages = m_initialImages;
+  obsoleteImages.unite(m_insertedImages);
+  for (auto it = obsoleteImages.begin(); it != obsoleteImages.end();) {
+    if (currentImages.contains(*it)) {
+      it = obsoleteImages.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  QDir assetsDir(assetsFolder);
+  for (const auto &obsoletePath : obsoleteImages) {
+    const auto relativePath = assetsDir.relativeFilePath(obsoletePath);
+    if (relativePath.isEmpty() || relativePath.startsWith(QStringLiteral("..")) ||
+        QDir::isAbsolutePath(relativePath)) {
+      continue;
+    }
+
+    if (!buffer.deleteAsset(relativePath)) {
+      qWarning() << "MarkdownViewWindow2: failed to delete obsolete image:" << relativePath;
+    }
+  }
+
+  m_insertedImages.clear();
+  m_initialImages = currentImages;
+}
+
+bool MarkdownViewWindow2::isLastWindowForBuffer() const {
+  auto *wsSvc = getServices().get<WorkspaceCoreService>();
+  if (!wsSvc || !getBuffer().isValid()) {
+    return true;
+  }
+
+  const auto bufferId = getBuffer().id();
+  if (bufferId.isEmpty()) {
+    return true;
+  }
+
+  int count = 0;
+  const auto workspaces = wsSvc->listWorkspaces();
+  for (const auto &workspaceValue : workspaces) {
+    const auto bufferIds = workspaceValue.toObject().value(QStringLiteral("bufferIds")).toArray();
+    for (const auto &bufferIdValue : bufferIds) {
+      if (bufferIdValue.toString() == bufferId) {
+        ++count;
+        if (count > 1) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
 
 int MarkdownViewWindow2::getCursorPosition() const {
   if (m_mode == ViewWindowMode::Edit && m_editor) {
