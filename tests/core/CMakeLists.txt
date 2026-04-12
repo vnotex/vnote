@@ -235,7 +235,11 @@ add_qt_test(test_markdownviewwindowcontroller
     core_services
     vxcore
     VTextEdit
-  GUILESS
+    Qt6::Widgets
+)
+
+target_include_directories(test_markdownviewwindowcontroller PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
 )
 
 add_custom_command(TARGET test_markdownviewwindowcontroller POST_BUILD

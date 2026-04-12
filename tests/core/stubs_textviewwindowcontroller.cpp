@@ -6,6 +6,10 @@
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
+#include <gui/utils/widgetutils.h>
+
+#include <QAction>
+#include <QKeySequence>
 
 using namespace vnotex;
 
@@ -29,4 +33,20 @@ const QString &CoreConfig::getShortcutLeaderKey() const {
   Q_ASSERT_X(false, "stub", "CoreConfig::getShortcutLeaderKey() called in test - not expected");
   static QString s;
   return s; // unreachable
+}
+
+// --- WidgetUtils stubs ---
+
+void WidgetUtils::addActionShortcutText(QAction *p_action, const QString &p_shortcut) {
+  if (p_shortcut.isEmpty()) {
+    return;
+  }
+
+  QKeySequence kseq(p_shortcut);
+  if (kseq.isEmpty()) {
+    return;
+  }
+
+  p_action->setText(
+      QStringLiteral("%1\t%2").arg(p_action->text(), kseq.toString(QKeySequence::NativeText)));
 }

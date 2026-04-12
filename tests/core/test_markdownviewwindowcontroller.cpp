@@ -1,8 +1,12 @@
 #include <QtTest>
 
+#include <QAction>
+#include <QMenu>
+
 #include <controllers/markdownviewwindowcontroller.h>
 #include <core/global.h>
 #include <core/markdowneditorconfig.h>
+#include <core/servicelocator.h>
 
 using namespace vnotex;
 
@@ -47,6 +51,16 @@ private slots:
   void testGetEditViewMode_editOnly();
   void testGetEditViewMode_editPreview();
 
+  // ============ createContextMenu ============
+
+  void testContextMenu_readModeNoSelection();
+  void testContextMenu_readModeWithSelection();
+  void testContextMenu_editMode();
+  void testContextMenu_crossCopyTargets();
+  void testContextMenu_noCrossCopyTargets();
+  void testContextMenu_copyImagePresent();
+  void testContextMenu_noCopyImage();
+
 private:
   static const int c_readMode = static_cast<int>(ViewWindowMode::Read);
   static const int c_editMode = static_cast<int>(ViewWindowMode::Edit);
@@ -58,8 +72,8 @@ private:
 // --- Same mode -> no-op ---
 
 void TestMarkdownViewWindowController::testModeTransition_sameModeSameRead() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_readMode, c_readMode, false, false, true);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_readMode, c_readMode, false, false,
+                                                               true);
 
   QCOMPARE(t.needSetupEditor, false);
   QCOMPARE(t.needSetupViewer, false);
@@ -71,8 +85,8 @@ void TestMarkdownViewWindowController::testModeTransition_sameModeSameRead() {
 }
 
 void TestMarkdownViewWindowController::testModeTransition_sameModeSameEdit() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_editMode, c_editMode, true, true, true);
+  auto t =
+      MarkdownViewWindowController::computeModeTransition(c_editMode, c_editMode, true, true, true);
 
   QCOMPARE(t.needSetupEditor, false);
   QCOMPARE(t.needSetupViewer, false);
@@ -86,8 +100,8 @@ void TestMarkdownViewWindowController::testModeTransition_sameModeSameEdit() {
 // --- Invalid->Read ---
 
 void TestMarkdownViewWindowController::testModeTransition_invalidToRead_noViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_invalidMode, c_readMode, false, false, true);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_readMode, false,
+                                                               false, true);
 
   QCOMPARE(t.needSetupViewer, true);
   QCOMPARE(t.syncViewerFromBuffer, true);
@@ -100,8 +114,8 @@ void TestMarkdownViewWindowController::testModeTransition_invalidToRead_noViewer
 }
 
 void TestMarkdownViewWindowController::testModeTransition_invalidToRead_noViewer_noSync() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_invalidMode, c_readMode, false, false, false);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_readMode, false,
+                                                               false, false);
 
   QCOMPARE(t.needSetupViewer, true);
   // syncBuffer=false -> no content sync from buffer.
@@ -111,8 +125,8 @@ void TestMarkdownViewWindowController::testModeTransition_invalidToRead_noViewer
 }
 
 void TestMarkdownViewWindowController::testModeTransition_invalidToRead_hasViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_invalidMode, c_readMode, false, true, true);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_readMode, false,
+                                                               true, true);
 
   // Viewer already exists, no setup needed.
   QCOMPARE(t.needSetupViewer, false);
@@ -124,8 +138,8 @@ void TestMarkdownViewWindowController::testModeTransition_invalidToRead_hasViewe
 // --- Invalid->Edit ---
 
 void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditorNoViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_invalidMode, c_editMode, false, false, true);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_editMode, false,
+                                                               false, true);
 
   QCOMPARE(t.needSetupViewer, true);
   QCOMPARE(t.needSetupEditor, true);
@@ -139,8 +153,8 @@ void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditor
 }
 
 void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditorHasViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_invalidMode, c_editMode, false, true, true);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_editMode, false,
+                                                               true, true);
 
   // Viewer already exists -> no viewer setup.
   QCOMPARE(t.needSetupViewer, false);
@@ -151,8 +165,8 @@ void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditor
 }
 
 void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditor_noSync() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_invalidMode, c_editMode, false, false, false);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_editMode, false,
+                                                               false, false);
 
   QCOMPARE(t.needSetupViewer, true);
   QCOMPARE(t.needSetupEditor, true);
@@ -162,8 +176,8 @@ void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditor
 }
 
 void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_hasEditor() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_invalidMode, c_editMode, true, false, true);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_editMode, true,
+                                                               false, true);
 
   // Editor exists -> restore, not setup.
   QCOMPARE(t.needSetupEditor, false);
@@ -175,8 +189,8 @@ void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_hasEdito
 // --- Read->Edit ---
 
 void TestMarkdownViewWindowController::testModeTransition_readToEdit_noEditor_noViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_readMode, c_editMode, false, false, true);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_readMode, c_editMode, false, false,
+                                                               true);
 
   QCOMPARE(t.needSetupViewer, true);
   QCOMPARE(t.needSetupEditor, true);
@@ -190,8 +204,8 @@ void TestMarkdownViewWindowController::testModeTransition_readToEdit_noEditor_no
 }
 
 void TestMarkdownViewWindowController::testModeTransition_readToEdit_noEditor_hasViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_readMode, c_editMode, false, true, true);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_readMode, c_editMode, false, true,
+                                                               true);
 
   QCOMPARE(t.needSetupViewer, false);
   QCOMPARE(t.needSetupEditor, true);
@@ -200,8 +214,8 @@ void TestMarkdownViewWindowController::testModeTransition_readToEdit_noEditor_ha
 }
 
 void TestMarkdownViewWindowController::testModeTransition_readToEdit_hasEditor() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_readMode, c_editMode, true, true, true);
+  auto t =
+      MarkdownViewWindowController::computeModeTransition(c_readMode, c_editMode, true, true, true);
 
   QCOMPARE(t.needSetupEditor, false);
   QCOMPARE(t.restoreEditViewMode, true);
@@ -212,8 +226,8 @@ void TestMarkdownViewWindowController::testModeTransition_readToEdit_hasEditor()
 // --- Edit->Read ---
 
 void TestMarkdownViewWindowController::testModeTransition_editToRead_hasViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_editMode, c_readMode, true, true, true);
+  auto t =
+      MarkdownViewWindowController::computeModeTransition(c_editMode, c_readMode, true, true, true);
 
   QCOMPARE(t.needSetupViewer, false);
   QCOMPARE(t.syncPositionFromPrevMode, true);
@@ -223,8 +237,8 @@ void TestMarkdownViewWindowController::testModeTransition_editToRead_hasViewer()
 }
 
 void TestMarkdownViewWindowController::testModeTransition_editToRead_noViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(
-      c_editMode, c_readMode, true, false, true);
+  auto t = MarkdownViewWindowController::computeModeTransition(c_editMode, c_readMode, true, false,
+                                                               true);
 
   QCOMPARE(t.needSetupViewer, true);
   QCOMPARE(t.syncViewerFromBuffer, true);
@@ -256,7 +270,161 @@ void TestMarkdownViewWindowController::testGetEditViewMode_editPreview() {
   QCOMPARE(mode, MarkdownEditorConfig::EditViewMode::EditPreview);
 }
 
+// ============ createContextMenu ============
+
+void TestMarkdownViewWindowController::testContextMenu_readModeNoSelection() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  menu.addAction("Dummy");
+
+  MarkdownViewerContextInfo info;
+  info.hasSelection = false;
+  info.inReadMode = true;
+  info.editShortcutText = "Ctrl+T";
+
+  auto *result =
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+
+  QCOMPARE(result, &menu);
+  auto actions = result->actions();
+  QVERIFY(actions.size() >= 2);
+  QVERIFY(actions[0]->text().contains("Edit"));
+}
+
+void TestMarkdownViewWindowController::testContextMenu_readModeWithSelection() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  menu.addAction("Dummy");
+
+  MarkdownViewerContextInfo info;
+  info.hasSelection = true;
+  info.inReadMode = true;
+
+  auto *result =
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+
+  for (auto *act : result->actions()) {
+    QVERIFY(!act->text().contains("Edit"));
+  }
+}
+
+void TestMarkdownViewWindowController::testContextMenu_editMode() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  menu.addAction("Dummy");
+
+  MarkdownViewerContextInfo info;
+  info.hasSelection = false;
+  info.inReadMode = false;
+
+  auto *result =
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+
+  for (auto *act : result->actions()) {
+    QVERIFY(!act->text().contains("Edit"));
+  }
+}
+
+void TestMarkdownViewWindowController::testContextMenu_crossCopyTargets() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  auto *copyAct = menu.addAction("Copy");
+
+  MarkdownViewerContextInfo info;
+  info.hasSelection = true;
+  info.copyAction = copyAct;
+  info.crossCopyTargets = {"html", "text"};
+  info.crossCopyDisplayNames = {"HTML", "Plain Text"};
+
+  auto *result =
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+
+  bool foundCrossCopy = false;
+  for (auto *act : result->actions()) {
+    if (act->menu() && act->text() == "Cross Copy") {
+      foundCrossCopy = true;
+      auto subActions = act->menu()->actions();
+      QCOMPARE(subActions.size(), 2);
+      QCOMPARE(subActions[0]->text(), QString("HTML"));
+      QCOMPARE(subActions[1]->text(), QString("Plain Text"));
+    }
+  }
+  QVERIFY(foundCrossCopy);
+}
+
+void TestMarkdownViewWindowController::testContextMenu_noCrossCopyTargets() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  auto *copyAct = menu.addAction("Copy");
+
+  MarkdownViewerContextInfo info;
+  info.hasSelection = true;
+  info.copyAction = copyAct;
+
+  auto *result =
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+
+  for (auto *act : result->actions()) {
+    if (act->menu()) {
+      QVERIFY(act->text() != "Cross Copy");
+    }
+  }
+}
+
+void TestMarkdownViewWindowController::testContextMenu_copyImagePresent() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  auto *defaultCopyImageAct = menu.addAction("Copy image");
+
+  MarkdownViewerContextInfo info;
+  info.defaultCopyImageAction = defaultCopyImageAct;
+
+  bool copyImageCalled = false;
+  auto *result = controller.createContextMenu(
+      info, &menu, [&copyImageCalled]() { copyImageCalled = true; }, []() {},
+      [](const QString &) {});
+
+  QVERIFY(!defaultCopyImageAct->isVisible());
+
+  bool foundReplacement = false;
+  for (auto *act : result->actions()) {
+    if (act != defaultCopyImageAct && act->text() == "Copy") {
+      foundReplacement = true;
+      act->trigger();
+    }
+  }
+
+  QVERIFY(foundReplacement);
+  QVERIFY(copyImageCalled);
+}
+
+void TestMarkdownViewWindowController::testContextMenu_noCopyImage() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  menu.addAction("Dummy");
+
+  MarkdownViewerContextInfo info;
+
+  auto *result =
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+
+  int copyImageCount = 0;
+  for (auto *act : result->actions()) {
+    if (act->text() == "Copy Image") {
+      ++copyImageCount;
+    }
+  }
+  QCOMPARE(copyImageCount, 0);
+}
+
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestMarkdownViewWindowController)
+QTEST_MAIN(tests::TestMarkdownViewWindowController)
 #include "test_markdownviewwindowcontroller.moc"
