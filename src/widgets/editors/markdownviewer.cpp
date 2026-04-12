@@ -10,6 +10,8 @@
 #include <QWebChannel>
 #include <QWebEngineSettings>
 
+#include <controllers/markdownviewwindowcontroller.h>
+
 #include "../viewwindow2.h"
 #include "../widgetsfactory.h"
 #include "markdownvieweradapter.h"
@@ -80,6 +82,25 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
 
 MarkdownViewerAdapter *MarkdownViewer::adapter() const { return m_adapter; }
 
+void MarkdownViewer::setController(MarkdownViewWindowController *p_controller) {
+  m_controller = p_controller;
+}
+
+MarkdownViewerContextInfo MarkdownViewer::populateContextInfo() const {
+  MarkdownViewerContextInfo info;
+  info.hasSelection = hasSelection();
+  info.inReadMode = m_viewWindow2 && m_viewWindow2->getMode() == ViewWindowMode::Read;
+  const auto &targets = m_adapter->getCrossCopyTargets();
+  for (const auto &t : targets) {
+    info.crossCopyTargets.append(t);
+    info.crossCopyDisplayNames.append(m_adapter->getCrossCopyTargetDisplayName(t));
+  }
+  info.editShortcutText = getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead);
+  info.copyAction = pageAction(QWebEnginePage::Copy);
+  info.defaultCopyImageAction = pageAction(QWebEnginePage::CopyImageToClipboard);
+  return info;
+}
+
 void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper) {
   connect(p_previewHelper, &PreviewHelper::graphPreviewRequested, this,
           [this, p_previewHelper](quint64 p_id, TimeStamp p_timeStamp, const QString &p_lang,
@@ -128,43 +149,64 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
   }
 #endif
 
-  if (!hasSelection()) {
-    bool inReadMode = false;
-    if (m_viewWindow2) {
-      inReadMode = m_viewWindow2->getMode() == ViewWindowMode::Read;
+  if (m_controller) {
+    m_controller->createContextMenu(
+        populateContextInfo(), menu, [this]() { copyImage(); }, [this]() { emit editRequested(); },
+        [this](const QString &target) {
+          m_crossCopyTarget = target;
+          auto *clipboard = QApplication::clipboard();
+          clipboard->setProperty(c_propertyCrossCopy, true);
+          triggerPageAction(QWebEnginePage::Copy);
+        });
+  } else {
+    // Fallback: inline logic for when no controller is set (e.g., WebViewExporter).
+    // This preserves the exact original behavior.
+    if (!hasSelection()) {
+      bool inReadMode = false;
+      if (m_viewWindow2) {
+        inReadMode = m_viewWindow2->getMode() == ViewWindowMode::Read;
+      }
+      if (inReadMode) {
+        auto firstAct = actions.isEmpty() ? nullptr : actions[0];
+        auto editAct = new QAction(tr("&Edit"), menu);
+        WidgetUtils::addActionShortcutText(
+            editAct, getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead));
+        connect(editAct, &QAction::triggered, this, &MarkdownViewer::editRequested);
+        menu->insertAction(firstAct, editAct);
+        if (firstAct) {
+          menu->insertSeparator(firstAct);
+        }
+      }
     }
-    if (inReadMode) {
-      auto firstAct = actions.isEmpty() ? nullptr : actions[0];
-      auto editAct = new QAction(tr("&Edit"), menu);
-      WidgetUtils::addActionShortcutText(
-          editAct, getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead));
-      connect(editAct, &QAction::triggered, this, &MarkdownViewer::editRequested);
-      menu->insertAction(firstAct, editAct);
-      if (firstAct) {
-        menu->insertSeparator(firstAct);
+
+    // We need to replace the "Copy Image" action:
+    // - the default one use the fully-encoded URL to fetch the image while
+    // Windows seems to not recognize it.
+    // - We need to remove the html to let it be recognized by some web pages.
+    {
+      auto defaultCopyImageAct = pageAction(QWebEnginePage::CopyImageToClipboard);
+      if (actions.contains(defaultCopyImageAct)) {
+        QAction *copyImageAct = new QAction(tr("Copy"), menu);
+        copyImageAct->setToolTip(defaultCopyImageAct->toolTip());
+        connect(copyImageAct, &QAction::triggered, this, &MarkdownViewer::copyImage);
+        menu->insertAction(defaultCopyImageAct, copyImageAct);
+        defaultCopyImageAct->setVisible(false);
+      }
+    }
+
+    {
+      auto copyAct = pageAction(QWebEnginePage::Copy);
+      if (actions.contains(copyAct)) {
+        setupCrossCopyMenu(menu, copyAct);
       }
     }
   }
 
-  // We need to replace the "Copy Image" action:
-  // - the default one use the fully-encoded URL to fetch the image while
-  // Windows seems to not recognize it.
-  // - We need to remove the html to let it be recognized by some web pages.
+  // Override "Copy image address" text from Qt's default to title case.
   {
-    auto defaultCopyImageAct = pageAction(QWebEnginePage::CopyImageToClipboard);
-    if (actions.contains(defaultCopyImageAct)) {
-      QAction *copyImageAct = new QAction(defaultCopyImageAct->text(), menu);
-      copyImageAct->setToolTip(defaultCopyImageAct->toolTip());
-      connect(copyImageAct, &QAction::triggered, this, &MarkdownViewer::copyImage);
-      menu->insertAction(defaultCopyImageAct, copyImageAct);
-      defaultCopyImageAct->setVisible(false);
-    }
-  }
-
-  {
-    auto copyAct = pageAction(QWebEnginePage::Copy);
-    if (actions.contains(copyAct)) {
-      setupCrossCopyMenu(menu, copyAct);
+    auto *copyImageUrlAct = pageAction(QWebEnginePage::CopyImageUrlToClipboard);
+    if (actions.contains(copyImageUrlAct)) {
+      copyImageUrlAct->setText(tr("Copy Image Address"));
     }
   }
 

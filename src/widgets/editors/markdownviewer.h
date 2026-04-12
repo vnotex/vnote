@@ -5,10 +5,12 @@
 
 #include <QClipboard>
 
+#include <controllers/markdownviewwindowcontroller.h>
 #include <core/editorconfig.h>
 
 namespace vnotex {
 class MarkdownViewerAdapter;
+class MarkdownViewWindowController;
 class PreviewHelper;
 class ServiceLocator;
 class ViewWindow2;
@@ -25,6 +27,10 @@ public:
                  QWidget *p_parent = nullptr);
 
   MarkdownViewerAdapter *adapter() const;
+
+  void setController(MarkdownViewWindowController *p_controller);
+
+  MarkdownViewerContextInfo populateContextInfo() const;
 
   void setPreviewHelper(PreviewHelper *p_previewHelper);
 
@@ -84,6 +90,8 @@ private:
 
   // Target name of cross copy going to execute.
   QString m_crossCopyTarget;
+
+  MarkdownViewWindowController *m_controller = nullptr;
 };
 } // namespace vnotex
 
