@@ -58,6 +58,8 @@ protected slots:
 protected:
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 
+  void applyReadableWidth() override;
+
   void handlePrint() Q_DECL_OVERRIDE;
 
   void scrollUp() Q_DECL_OVERRIDE;
@@ -70,8 +72,8 @@ protected:
 
   QString selectedText() const Q_DECL_OVERRIDE;
 
-  void fetchWordCountInfo(
-      const std::function<void(const WordCountInfo &)> &p_callback) const Q_DECL_OVERRIDE;
+  void fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &p_callback) const
+      Q_DECL_OVERRIDE;
 
 private:
   void setupUI();

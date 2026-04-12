@@ -12,6 +12,7 @@
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/texteditorconfig.h>
+#include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/widgetutils.h>
 
@@ -45,11 +46,17 @@ void TextViewWindow2::setupUI() {
   auto syntaxTheme = themeService->getEditorHighlightTheme();
   qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
+  const auto &widgetConfig = configMgr->getWidgetConfig();
+  int maxContentWidth =
+      widgetConfig.getViewWindowLayoutMode() == ViewWindowLayoutMode::ReadableWidth
+          ? widgetConfig.getReadableWidthMaxPx()
+          : 0;
+
   // Central widget: text editor.
   {
     m_editor = new TextEditor(
         TextViewWindowController::buildTextEditorConfig(editorConfig, textEditorConfig, themeFile,
-                                                        syntaxTheme, scaleFactor),
+                                                        syntaxTheme, scaleFactor, maxContentWidth),
         TextViewWindowController::buildTextEditorParameters(editorConfig, textEditorConfig), this);
     setCentralWidget(m_editor);
 
@@ -129,6 +136,20 @@ void TextViewWindow2::syncEditorFromBuffer() {
   m_propagateEditorToBuffer = old;
 }
 
+void TextViewWindow2::applyReadableWidth() {
+  if (!m_editor) {
+    ViewWindow2::applyReadableWidth();
+    return;
+  }
+
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  const auto &widgetConfig = configMgr->getWidgetConfig();
+  int maxPx = getLayoutMode() == ViewWindowLayoutMode::ReadableWidth
+                  ? widgetConfig.getReadableWidthMaxPx()
+                  : 0;
+  m_editor->getTextEdit()->setMaxContentWidth(maxPx);
+}
+
 QString TextViewWindow2::getLatestContent() const {
   if (m_editor) {
     return m_editor->getText();
@@ -171,8 +192,14 @@ void TextViewWindow2::handleEditorConfigChange() {
     auto syntaxTheme = themeService->getEditorHighlightTheme();
     qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
+    const auto &widgetConfig = configMgr->getWidgetConfig();
+    int maxContentWidth =
+        widgetConfig.getViewWindowLayoutMode() == ViewWindowLayoutMode::ReadableWidth
+            ? widgetConfig.getReadableWidthMaxPx()
+            : 0;
+
     auto config = TextViewWindowController::buildTextEditorConfig(
-        editorConfig, textEditorConfig, themeFile, syntaxTheme, scaleFactor);
+        editorConfig, textEditorConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth);
     m_editor->setConfig(config);
 
     updateEditorFromConfig();

@@ -101,6 +101,8 @@ protected:
 
   QPoint getFloatingWidgetPosition() Q_DECL_OVERRIDE;
 
+  void applyReadableWidth() Q_DECL_OVERRIDE;
+
 private:
   void setupUI();
 

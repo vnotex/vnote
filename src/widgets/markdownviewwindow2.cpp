@@ -30,6 +30,7 @@
 #include <core/services/htmltemplateservice.h>
 #include <core/services/workspacecoreservice.h>
 #include <core/theme.h>
+#include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/printutils.h>
 #include <gui/utils/widgetutils.h>
@@ -218,11 +219,17 @@ void MarkdownViewWindow2::setupTextEditor() {
   auto syntaxTheme = themeService->getEditorHighlightTheme();
   qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
+  const auto &widgetConfig = configMgr->getWidgetConfig();
+  int maxContentWidth =
+      widgetConfig.getViewWindowLayoutMode() == ViewWindowLayoutMode::ReadableWidth
+          ? widgetConfig.getReadableWidthMaxPx()
+          : 0;
+
   // Create editor using ServiceLocator constructor.
   m_editor = new MarkdownEditor(
       getServices(), mdConfig,
-      MarkdownEditorController::buildMarkdownEditorConfig(editorConfig, mdConfig, themeFile,
-                                                          syntaxTheme, scaleFactor),
+      MarkdownEditorController::buildMarkdownEditorConfig(
+          editorConfig, mdConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth),
       MarkdownEditorController::buildMarkdownEditorParameters(editorConfig, mdConfig), this);
 
   // Insert at index 0 in splitter (editor always first).
@@ -277,6 +284,8 @@ void MarkdownViewWindow2::setupTextEditor() {
       setMode(ViewWindowMode::Read);
     }
   });
+
+  applyReadableWidth();
 }
 
 void MarkdownViewWindow2::setupViewer() {
@@ -344,6 +353,7 @@ void MarkdownViewWindow2::setupViewer() {
   // Viewer ready signal.
   connect(adapterObj, &MarkdownViewerAdapter::ready, this, [this]() {
     m_viewerReady = true;
+    applyReadableWidth();
     if (m_mode == ViewWindowMode::Edit) {
       setEditViewMode(m_editViewMode);
     }
@@ -817,14 +827,51 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
     auto themeFile = themeService->getFile(Theme::File::MarkdownEditorStyle);
     auto syntaxTheme = themeService->getEditorHighlightTheme();
     qreal scaleFactor = WidgetUtils::calculateScaleFactor();
+
+    const auto &widgetConfig = configMgr->getWidgetConfig();
+    int maxContentWidth =
+        widgetConfig.getViewWindowLayoutMode() == ViewWindowLayoutMode::ReadableWidth
+            ? widgetConfig.getReadableWidthMaxPx()
+            : 0;
+
     auto config = MarkdownEditorController::buildMarkdownEditorConfig(
-        editorConfig, mdConfig, themeFile, syntaxTheme, scaleFactor);
+        editorConfig, mdConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth);
     m_editor->setConfig(config);
     m_editor->updateFromConfig();
     updateEditorFromConfig();
   }
 
   updateWebViewerConfig();
+}
+
+void MarkdownViewWindow2::applyReadableWidth() {
+  auto mode = getLayoutMode();
+  auto &widgetConfig = getServices().get<ConfigMgr2>()->getWidgetConfig();
+  int maxPx = widgetConfig.getReadableWidthMaxPx();
+
+  bool hasEditorOrViewer = false;
+
+  if (m_editor) {
+    hasEditorOrViewer = true;
+    m_editor->getTextEdit()->setMaxContentWidth(mode == ViewWindowLayoutMode::ReadableWidth ? maxPx
+                                                                                            : 0);
+  }
+
+  if (m_viewer) {
+    hasEditorOrViewer = true;
+    if (m_viewerReady) {
+      if (mode == ViewWindowLayoutMode::ReadableWidth) {
+        m_viewer->page()->runJavaScript(
+            QStringLiteral("window.vxcore.setContentMaxWidth(%1)").arg(maxPx));
+      } else {
+        m_viewer->page()->runJavaScript(QStringLiteral("window.vxcore.setContentMaxWidth(0)"));
+      }
+    }
+  }
+
+  if (!hasEditorOrViewer) {
+    ViewWindow2::applyReadableWidth();
+  }
 }
 
 void MarkdownViewWindow2::updateEditorFromConfig() {
