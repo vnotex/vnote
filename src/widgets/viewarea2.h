@@ -3,12 +3,12 @@
 
 #include <QJsonObject>
 #include <QMap>
-#include <QWidget>
 #include <QVector>
+#include <QWidget>
 
+#include <controllers/viewareaview.h>
 #include <core/fileopensettings.h>
 #include <core/global.h>
-#include <controllers/viewareaview.h>
 
 #include "navigationmode.h"
 #include "viewsplit2.h"
@@ -49,8 +49,7 @@ public:
 
   // ============ Layout Management (widget-level) ============
   ViewSplit2 *addFirstViewSplitWidget(const QString &p_workspaceId);
-  ViewSplit2 *splitAt(ViewSplit2 *p_split, Direction p_direction,
-                      const QString &p_workspaceId);
+  ViewSplit2 *splitAt(ViewSplit2 *p_split, Direction p_direction, const QString &p_workspaceId);
   void removeViewSplitWidget(ViewSplit2 *p_split);
   void maximizeViewSplitWidget(ViewSplit2 *p_split);
   void distributeViewSplitWidgets();
@@ -86,36 +85,30 @@ public:
   void removeViewSplit(const QString &p_workspaceId) override;
   void maximizeViewSplit(const QString &p_workspaceId) override;
   void distributeViewSplits() override;
-  void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
-                  const QString &p_workspaceId,
+  void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType, const QString &p_workspaceId,
                   const FileOpenSettings &p_settings) override;
   bool closeViewWindow(ID p_windowId, bool p_force) override;
-  void applyFileOpenSettings(ID p_windowId,
-                             const FileOpenSettings &p_settings) override;
+  void applyFileOpenSettings(ID p_windowId, const FileOpenSettings &p_settings) override;
   void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) override;
   void focusViewSplit(const QString &p_workspaceId) override;
-  void moveViewWindowToSplit(ID p_windowId,
-                             const QString &p_srcWorkspaceId,
+  void moveViewWindowToSplit(ID p_windowId, const QString &p_srcWorkspaceId,
                              const QString &p_dstWorkspaceId) override;
   void switchWorkspace(const QString &p_currentWorkspaceId,
                        const QString &p_newWorkspaceId) override;
-  QVector<QObject *> takeViewWindowsFromSplit(
-      const QString &p_workspaceId, int *p_outCurrentIndex) override;
-  void placeViewWindowsInSplit(const QString &p_workspaceId,
-                               const QVector<QObject *> &p_windows,
+  QVector<QObject *> takeViewWindowsFromSplit(const QString &p_workspaceId,
+                                              int *p_outCurrentIndex) override;
+  void placeViewWindowsInSplit(const QString &p_workspaceId, const QVector<QObject *> &p_windows,
                                int p_currentIndex) override;
   void updateSplitWorkspaceId(const QString &p_oldWorkspaceId,
-                               const QString &p_newWorkspaceId) override;
+                              const QString &p_newWorkspaceId) override;
   void loadLayout(const QJsonObject &p_layout) override;
   void setCurrentBuffer(const QString &p_workspaceId, const QString &p_bufferId,
                         bool p_focus) override;
   QStringList getVisibleWorkspaceIds() const override;
   QVector<ID> getViewWindowIdsForWorkspace(const QString &p_workspaceId) const override;
-  ID findWindowIdByBufferId(const QString &p_workspaceId,
-                            const QString &p_bufferId) const override;
+  ID findWindowIdByBufferId(const QString &p_workspaceId, const QString &p_bufferId) const override;
   QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const override;
-  void onNodeRenamed(const NodeIdentifier &p_oldNodeId,
-                     const NodeIdentifier &p_newNodeId) override;
+  void onNodeRenamed(const NodeIdentifier &p_oldNodeId, const NodeIdentifier &p_newNodeId) override;
   void notifyEditorConfigChanged() override;
 
 protected:
@@ -139,7 +132,6 @@ private:
 
   ViewSplit2 *splitForWorkspace(const QString &p_workspaceId) const;
   ViewWindow2 *windowForId(ID p_windowId) const;
-  ID idForWindow(ViewWindow2 *p_win) const;
 
   void collectViewSplits(QWidget *p_widget, QVector<ViewSplit2 *> &p_splits) const;
   static void distributeSplitter(QSplitter *p_splitter);
@@ -172,8 +164,8 @@ private:
   ViewAreaController *m_controller = nullptr;
 
   // ID -> widget maps.  ViewArea2 is the sole owner of these mappings.
-  QMap<QString, ViewSplit2 *> m_splits;  // workspaceId -> split
-  QMap<ID, ViewWindow2 *> m_windows;      // windowId -> window
+  QMap<QString, ViewSplit2 *> m_splits; // workspaceId -> split
+  QMap<ID, ViewWindow2 *> m_windows;    // windowId -> window
   QVector<ViewSplit2::TabNavigationInfo> m_navigationItems;
   ID m_nextWindowId = 1;
 };

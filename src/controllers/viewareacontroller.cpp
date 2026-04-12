@@ -93,8 +93,8 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   // If so, just activate the existing tab instead of creating a duplicate.
   ID existingWindowId = m_view->findWindowIdByBufferId(m_currentWorkspaceId, p_buffer.id());
   if (existingWindowId != InvalidViewWindowId) {
-    qInfo() << "ViewAreaController::openBuffer: buffer already open in workspace,"
-            << "activating existing window:" << existingWindowId;
+    qDebug() << "ViewAreaController::openBuffer: buffer already open in workspace,"
+             << "activating existing window:" << existingWindowId;
     m_view->setCurrentBuffer(m_currentWorkspaceId, p_buffer.id(), true);
     setCurrentViewWindow(existingWindowId, p_buffer.id());
     // Apply file open settings to the existing window (scroll + highlight).
@@ -174,7 +174,8 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
       if (bufferIds.isEmpty()) {
         if (totalSplitCount > 1) {
           // Multiple splits: remove the empty workspace and its split.
-          qInfo() << "ViewAreaController: workspace" << p_workspaceId << "is empty, removing split";
+          qDebug() << "ViewAreaController: workspace" << p_workspaceId
+                   << "is empty, removing split";
           removeViewSplit(p_workspaceId, false, true);
         } else {
           // Single split: try to switch to a hidden workspace.
@@ -189,8 +190,8 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
             }
           }
           if (!hiddenWsId.isEmpty()) {
-            qInfo() << "ViewAreaController: workspace" << p_workspaceId
-                    << "is empty (last split), switching to hidden workspace:" << hiddenWsId;
+            qDebug() << "ViewAreaController: workspace" << p_workspaceId
+                     << "is empty (last split), switching to hidden workspace:" << hiddenWsId;
             // Update the split identity to point to the hidden workspace.
             // No windows to take/place since the workspace is empty.
             if (m_view) {
@@ -266,11 +267,11 @@ bool ViewAreaController::closeAll(const QVector<QString> &p_workspaceIds, bool p
   for (const auto &wsId : p_workspaceIds) {
     QVector<ID> windowIds = m_view->getViewWindowIdsForWorkspace(wsId);
     for (ID winId : windowIds) {
-      qInfo() << "ViewAreaController::closeAll: closing window:" << winId
-              << "in workspace:" << wsId;
+      qDebug() << "ViewAreaController::closeAll: closing window:" << winId
+               << "in workspace:" << wsId;
       if (!closeViewWindow(winId, p_force)) {
         // Close was cancelled. Abort entire closeAll.
-        qInfo() << "ViewAreaController::closeAll: close cancelled, aborting";
+        qDebug() << "ViewAreaController::closeAll: close cancelled, aborting";
         m_suppressAutoRemove = false;
         return false;
       }
@@ -463,10 +464,10 @@ bool ViewAreaController::removeViewSplit(const QString &p_workspaceId, bool p_ke
 
       QVector<ID> windowIds = m_view->getViewWindowIdsForWorkspace(p_workspaceId);
       for (ID winId : windowIds) {
-        qInfo() << "ViewAreaController::removeViewSplit: closing window:" << winId
-                << "in workspace:" << p_workspaceId;
+        qDebug() << "ViewAreaController::removeViewSplit: closing window:" << winId
+                 << "in workspace:" << p_workspaceId;
         if (!closeViewWindow(winId, p_force)) {
-          qInfo() << "ViewAreaController::removeViewSplit: close cancelled, aborting";
+          qDebug() << "ViewAreaController::removeViewSplit: close cancelled, aborting";
           m_suppressAutoRemove = false;
           return false;
         }
@@ -544,8 +545,8 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
   if (m_view && !p_bufferId.isEmpty()) {
     ID existingId = m_view->findWindowIdByBufferId(p_dstWorkspaceId, p_bufferId);
     if (existingId != InvalidViewWindowId) {
-      qInfo() << "ViewAreaController::moveViewWindowOneSplit: buffer already in destination,"
-              << "activating existing window:" << existingId;
+      qDebug() << "ViewAreaController::moveViewWindowOneSplit: buffer already in destination,"
+               << "activating existing window:" << existingId;
       setCurrentViewSplit(p_dstWorkspaceId, true);
       setCurrentViewWindow(existingId, p_bufferId);
       return;
@@ -619,8 +620,8 @@ void ViewAreaController::setCurrentViewWindow(ID p_windowId, const QString &p_bu
   if (m_currentWindowId == p_windowId) {
     return;
   }
-  qInfo() << "ViewAreaController::setCurrentViewWindow: windowId:" << p_windowId
-          << "bufferId:" << p_bufferId << "workspace:" << m_currentWorkspaceId;
+  qDebug() << "ViewAreaController::setCurrentViewWindow: windowId:" << p_windowId
+           << "bufferId:" << p_bufferId << "workspace:" << m_currentWorkspaceId;
   m_currentWindowId = p_windowId;
 
   // Update vxcore's current buffer tracking for the active workspace.
@@ -713,11 +714,11 @@ bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
 
     QVector<ID> windowIds = m_view->getViewWindowIdsForWorkspace(p_workspaceId);
     for (ID winId : windowIds) {
-      qInfo() << "ViewAreaController::removeWorkspace: closing window:" << winId
-              << "in workspace:" << p_workspaceId;
+      qDebug() << "ViewAreaController::removeWorkspace: closing window:" << winId
+               << "in workspace:" << p_workspaceId;
       if (!closeViewWindow(winId, p_force)) {
         // Close was cancelled (hook or aboutToClose returned false). Abort.
-        qInfo() << "ViewAreaController::removeWorkspace: close cancelled, aborting";
+        qDebug() << "ViewAreaController::removeWorkspace: close cancelled, aborting";
         m_suppressAutoRemove = false;
         return false;
       }
@@ -734,7 +735,7 @@ bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
   for (int i = 0; i < remainingBuffers.size(); ++i) {
     QString bufferId = remainingBuffers[i].toString();
     if (!bufferId.isEmpty()) {
-      qInfo() << "ViewAreaController::removeWorkspace: removing orphan buffer:" << bufferId;
+      qDebug() << "ViewAreaController::removeWorkspace: removing orphan buffer:" << bufferId;
       wsSvc->removeBuffer(p_workspaceId, bufferId);
     }
   }
@@ -759,8 +760,8 @@ bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
 
     if (!targetWsId.isEmpty()) {
       // Switch to a hidden workspace.
-      qInfo() << "ViewAreaController::removeWorkspace: switching to hidden workspace:"
-              << targetWsId;
+      qDebug() << "ViewAreaController::removeWorkspace: switching to hidden workspace:"
+               << targetWsId;
       switchWorkspace(p_workspaceId, targetWsId);
     } else if (totalSplitCount > 1) {
       // No hidden workspace. Remove the split entirely.
@@ -770,14 +771,14 @@ bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
         m_currentWorkspaceId.clear();
         m_currentWindowId = InvalidViewWindowId;
       }
-      qInfo() << "ViewAreaController::removeWorkspace: no hidden workspace, removing split";
+      qDebug() << "ViewAreaController::removeWorkspace: no hidden workspace, removing split";
       if (m_view) {
         m_view->removeViewSplit(p_workspaceId);
       }
       emit viewSplitsCountChanged();
     } else {
       // Last split. Create a new empty workspace.
-      qInfo() << "ViewAreaController::removeWorkspace: last split, creating new workspace";
+      qDebug() << "ViewAreaController::removeWorkspace: last split, creating new workspace";
       QString newWsId = wsSvc->createWorkspace(generateWorkspaceName());
       if (!newWsId.isEmpty()) {
         auto *newWrapper = new WorkspaceWrapper(newWsId, this);
@@ -788,7 +789,7 @@ bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
   }
 
   // Step 5: Delete the workspace in vxcore.
-  qInfo() << "ViewAreaController::removeWorkspace: deleting workspace:" << p_workspaceId;
+  qDebug() << "ViewAreaController::removeWorkspace: deleting workspace:" << p_workspaceId;
   wsSvc->deleteWorkspace(p_workspaceId);
 
   // Step 6: Destroy the WorkspaceWrapper.
@@ -841,11 +842,11 @@ void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
     return;
   }
 
-  qInfo() << "ViewAreaController::switchWorkspace:" << p_currentWorkspaceId << "->"
-          << p_targetWorkspaceId << "currentWrapper visible:" << currentWrapper->isVisible()
-          << "windowCount:" << currentWrapper->viewWindowCount()
-          << "targetWrapper visible:" << targetWrapper->isVisible()
-          << "windowCount:" << targetWrapper->viewWindowCount();
+  qDebug() << "ViewAreaController::switchWorkspace:" << p_currentWorkspaceId << "->"
+           << p_targetWorkspaceId << "currentWrapper visible:" << currentWrapper->isVisible()
+           << "windowCount:" << currentWrapper->viewWindowCount()
+           << "targetWrapper visible:" << targetWrapper->isVisible()
+           << "windowCount:" << targetWrapper->viewWindowCount();
 
   // Suppress vxcore propagation during reparenting to prevent
   // currentChanged signals from corrupting workspace state.
@@ -890,8 +891,8 @@ void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
       QJsonArray bufferIds = wsConfig.value(QStringLiteral("bufferIds")).toArray();
       QString currentBufferId = wsConfig.value(QStringLiteral("currentBufferId")).toString();
 
-      qInfo() << "ViewAreaController::switchWorkspace: fresh workspace" << p_targetWorkspaceId
-              << "buffers:" << bufferIds << "currentBufferId:" << currentBufferId;
+      qDebug() << "ViewAreaController::switchWorkspace: fresh workspace" << p_targetWorkspaceId
+               << "buffers:" << bufferIds << "currentBufferId:" << currentBufferId;
 
       m_currentWorkspaceId = p_targetWorkspaceId;
       for (int i = 0; i < bufferIds.size(); ++i) {
@@ -916,8 +917,8 @@ void ViewAreaController::setBufferOrder(const QString &p_workspaceId,
   if (p_workspaceId.isEmpty()) {
     return;
   }
-  qInfo() << "ViewAreaController::setBufferOrder: workspace:" << p_workspaceId
-          << "bufferIds:" << p_bufferIds;
+  qDebug() << "ViewAreaController::setBufferOrder: workspace:" << p_workspaceId
+           << "bufferIds:" << p_bufferIds;
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (wsSvc) {
     wsSvc->setBufferOrder(p_workspaceId, p_bufferIds);
@@ -958,28 +959,20 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
     return;
   }
 
-  // Log full vxcore workspace state at entry for debugging.
-  QJsonArray allWsAtEntry = wsSvc->listWorkspaces();
-  qInfo() << "ViewAreaController::restoreSession: vxcore has" << allWsAtEntry.size()
-          << "workspaces, layout has" << p_layoutWorkspaceIds.size();
-  for (int i = 0; i < allWsAtEntry.size(); ++i) {
-    QJsonObject wsObj = allWsAtEntry[i].toObject();
-    qInfo() << "  vxcore workspace:" << wsObj.value(QStringLiteral("id")).toString()
-            << "name:" << wsObj.value(QStringLiteral("name")).toString()
-            << "buffers:" << wsObj.value(QStringLiteral("bufferIds")).toArray();
-  }
+  qInfo() << "ViewAreaController::restoreSession: layout has" << p_layoutWorkspaceIds.size()
+          << "workspaces";
 
   // Determine the current workspace. If the saved current workspace is not in the
   // layout, fall back to the first workspace in the layout.
   QString restoredCurrentWsId = wsSvc->getCurrentWorkspace();
   if (!p_layoutWorkspaceIds.contains(restoredCurrentWsId)) {
     restoredCurrentWsId = p_layoutWorkspaceIds.first();
-    qInfo() << "ViewAreaController::restoreSession: saved current workspace not in layout,"
-            << "falling back to:" << restoredCurrentWsId;
+    qDebug() << "ViewAreaController::restoreSession: saved current workspace not in layout,"
+             << "falling back to:" << restoredCurrentWsId;
   }
 
-  qInfo() << "ViewAreaController::restoreSession: restoring workspaces from layout:"
-          << p_layoutWorkspaceIds << "currentWorkspace:" << restoredCurrentWsId;
+  qDebug() << "ViewAreaController::restoreSession: restoring workspaces from layout:"
+           << p_layoutWorkspaceIds << "currentWorkspace:" << restoredCurrentWsId;
 
   QStringList restoredWorkspaceIds;
 
@@ -1021,12 +1014,13 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
     // Per-buffer metadata is now stored in "bufferMetadata" (native vxcore field).
     QJsonObject bufferMetadata = wsConfig.value(QStringLiteral("bufferMetadata")).toObject();
 
-    qInfo() << "  Workspace" << wsId << "name:" << wsConfig.value(QStringLiteral("name")).toString()
-            << "buffers:" << bufferIds << "currentBuffer:" << currentBufferId
-            << "bufferMetadata keys:" << bufferMetadata.keys();
+    qDebug() << "  Workspace" << wsId
+             << "name:" << wsConfig.value(QStringLiteral("name")).toString()
+             << "buffers:" << bufferIds << "currentBuffer:" << currentBufferId
+             << "bufferMetadata keys:" << bufferMetadata.keys();
 
     if (bufferIds.isEmpty()) {
-      qInfo() << "    (no buffers, skipping)";
+      qDebug() << "    (no buffers, skipping)";
       continue;
     }
 
@@ -1048,16 +1042,16 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
         mode = ViewWindowMode::Edit;
       }
       lineNumber = bufMeta.value(QStringLiteral("cursorPosition")).toInt(-1);
-      qInfo() << "    Opening buffer" << bufferId
-              << (bufferId == currentBufferId ? "(current)" : "(non-current)") << "mode:" << modeStr
-              << "cursor:" << lineNumber;
+      qDebug() << "    Opening buffer" << bufferId
+               << (bufferId == currentBufferId ? "(current)" : "(non-current)")
+               << "mode:" << modeStr << "cursor:" << lineNumber;
       openRestoredBuffer(bufferSvc, wsId, bufferId, false, mode, lineNumber);
     }
 
     // After all buffers are opened in order, set the current buffer's tab as active.
     if (!currentBufferId.isEmpty() && m_view) {
       bool shouldFocus = (wsId == restoredCurrentWsId);
-      qInfo() << "    Setting current buffer:" << currentBufferId << "focus:" << shouldFocus;
+      qDebug() << "    Setting current buffer:" << currentBufferId << "focus:" << shouldFocus;
       m_view->setCurrentBuffer(wsId, currentBufferId, shouldFocus);
     }
   }
@@ -1080,10 +1074,10 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
   if (!restoredWorkspaceIds.contains(restoredCurrentWsId)) {
     if (!restoredWorkspaceIds.isEmpty()) {
       restoredCurrentWsId = restoredWorkspaceIds.first();
-      qInfo() << "  Current workspace not restored, falling back to:" << restoredCurrentWsId;
+      qDebug() << "  Current workspace not restored, falling back to:" << restoredCurrentWsId;
     } else {
       restoredCurrentWsId.clear();
-      qInfo() << "  No workspaces were restored";
+      qDebug() << "  No workspaces were restored";
     }
   }
 
@@ -1093,7 +1087,7 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
   // setCurrentViewSplit() to mark the split as active.
   m_currentWorkspaceId.clear();
   if (!restoredCurrentWsId.isEmpty()) {
-    qInfo() << "  Setting current workspace:" << restoredCurrentWsId;
+    qDebug() << "  Setting current workspace:" << restoredCurrentWsId;
     setCurrentViewSplit(restoredCurrentWsId, true);
   }
 
@@ -1124,10 +1118,10 @@ void ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
     fileType = QStringLiteral("Text");
   }
 
-  qInfo() << "    Opening restored buffer: buffer:" << p_bufferId
-          << "path:" << buf.nodeId().relativePath << "type:" << fileType
-          << "workspace:" << p_workspaceId << "focus:" << p_focus
-          << "mode:" << static_cast<int>(p_mode) << "lineNumber:" << p_lineNumber;
+  qDebug() << "    Opening restored buffer: buffer:" << p_bufferId
+           << "path:" << buf.nodeId().relativePath << "type:" << fileType
+           << "workspace:" << p_workspaceId << "focus:" << p_focus
+           << "mode:" << static_cast<int>(p_mode) << "lineNumber:" << p_lineNumber;
 
   FileOpenSettings settings;
   settings.m_focus = p_focus;
@@ -1145,8 +1139,8 @@ void ViewAreaController::checkCurrentViewWindowChange(const QString &p_workspace
 }
 
 void ViewAreaController::notifyCurrentViewWindowChanged() {
-  qInfo() << "ViewAreaController::notifyCurrentViewWindowChanged: currentWindowId:"
-          << m_currentWindowId << "currentWorkspaceId:" << m_currentWorkspaceId;
+  qDebug() << "ViewAreaController::notifyCurrentViewWindowChanged: currentWindowId:"
+           << m_currentWindowId << "currentWorkspaceId:" << m_currentWorkspaceId;
   emit currentViewWindowChanged();
 }
 
