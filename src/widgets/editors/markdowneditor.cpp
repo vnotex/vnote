@@ -1069,10 +1069,6 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
         snippetAct, editorConfig.getShortcut(EditorConfig::Shortcut::ApplySnippet));
   }
 
-  if (!hasSelection) {
-    appendImageHostMenu(menu);
-  }
-
   appendSpellCheckMenu(p_event, menu);
 }
 
@@ -1385,20 +1381,6 @@ QString MarkdownEditor::saveToImageHost(const QByteArray &p_imageData,
   return QString();
 }
 
-void MarkdownEditor::appendImageHostMenu(QMenu *p_menu) {
-  p_menu->addSeparator();
-  auto subMenu = p_menu->addMenu(tr("Upload Images To Image Host"));
-
-  // ImageHost integration deferred in new architecture.
-  // Show empty submenu with "None" entry.
-  auto act = subMenu->addAction(tr("None"));
-  act->setEnabled(false);
-}
-
-void MarkdownEditor::uploadImagesToImageHost() {
-  // ImageHost integration deferred in new architecture.
-}
-
 void MarkdownEditor::prependContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos) {
   auto cursor = m_textEdit->cursorForPosition(p_pos);
   const int pos = cursor.position();
@@ -1456,24 +1438,21 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
     break;
   }
 
-  {
-    auto act = new QAction(tr("View Image"), p_menu);
-    connect(act, &QAction::triggered, p_menu,
-            [imgPath]() { WidgetUtils::openUrlByDesktop(PathUtils::pathToUrl(imgPath)); });
-    p_menu->insertAction(p_before, act);
-  }
+  // Create "Image" submenu and position it before the standard actions.
+  auto imageSubMenu = new QMenu(tr("Image"), p_menu);
+  p_menu->insertMenu(p_before, imageSubMenu);
 
   {
-    auto act = new QAction(tr("Copy Image URL"), p_menu);
-    connect(act, &QAction::triggered, p_menu,
-            [imgPath]() { ClipboardUtils::setLinkToClipboard(imgPath); });
-    p_menu->insertAction(p_before, act);
+    auto act = new QAction(tr("View Image"), imageSubMenu);
+    connect(act, &QAction::triggered, imageSubMenu,
+            [imgPath]() { WidgetUtils::openUrlByDesktop(PathUtils::pathToUrl(imgPath)); });
+    imageSubMenu->addAction(act);
   }
 
   if (QFileInfo::exists(imgPath)) {
     // Local image.
-    auto act = new QAction(tr("Copy Image"), p_menu);
-    connect(act, &QAction::triggered, p_menu, [imgPath]() {
+    auto act = new QAction(tr("Copy"), imageSubMenu);
+    connect(act, &QAction::triggered, imageSubMenu, [imgPath]() {
       auto clipboard = QApplication::clipboard();
       clipboard->clear();
 
@@ -1489,10 +1468,17 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
         ClipboardUtils::setImageToClipboard(clipboard, img);
       }
     });
-    p_menu->insertAction(p_before, act);
+    imageSubMenu->addAction(act);
   } else {
-    // Online image.
-    prependInPlacePreviewMenu(p_menu, p_before, p_cursorPos, p_block);
+    // Online image: add Copy In-Place Preview to the submenu.
+    prependInPlacePreviewMenu(imageSubMenu, nullptr, p_cursorPos, p_block);
+  }
+
+  {
+    auto act = new QAction(tr("Copy Image Address"), imageSubMenu);
+    connect(act, &QAction::triggered, imageSubMenu,
+            [imgPath]() { ClipboardUtils::setLinkToClipboard(imgPath); });
+    imageSubMenu->addAction(act);
   }
 
   p_menu->insertSeparator(p_before);

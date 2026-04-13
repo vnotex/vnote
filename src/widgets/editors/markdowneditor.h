@@ -6,8 +6,8 @@
 #include <vtextedit/pegmarkdownhighlighter.h>
 #include <vtextedit/vmarkdowneditor.h>
 
-#include <core/global.h>
 #include <core/editorconfig.h>
+#include <core/global.h>
 
 class QMimeData;
 class QMenu;
@@ -44,8 +44,7 @@ public:
     int m_blockNumber = -1;
   };
 
-  MarkdownEditor(ServiceLocator &p_services,
-                 const MarkdownEditorConfig &p_config,
+  MarkdownEditor(ServiceLocator &p_services, const MarkdownEditorConfig &p_config,
                  const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
                  const QSharedPointer<vte::TextEditorParameters> &p_editorParas,
                  QWidget *p_parent = nullptr);
@@ -203,10 +202,6 @@ private:
 
   // Return the dest file path of the image on success.
   QString saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName);
-
-  void appendImageHostMenu(QMenu *p_menu);
-
-  void uploadImagesToImageHost();
 
   void prependContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos);
 
