@@ -3,8 +3,6 @@
 
 #include "settingspage.h"
 
-class QGroupBox;
-
 namespace vnotex {
 class FileAssociationPage : public SettingsPage {
   Q_OBJECT
@@ -21,13 +19,13 @@ protected:
 private:
   void setupUI();
 
-  void loadBuiltInTypesGroup(QGroupBox *p_box);
+  void loadBuiltInTypesGroup(QWidget *p_container);
 
-  void loadExternalProgramsGroup(QGroupBox *p_box);
+  void loadExternalProgramsGroup(QWidget *p_container);
 
-  QGroupBox *m_builtInFileTypesBox = nullptr;
+  QWidget *m_builtInContainer = nullptr;
 
-  QGroupBox *m_externalProgramsBox = nullptr;
+  QWidget *m_externalContainer = nullptr;
 
   static const char *c_nameProperty;
 
