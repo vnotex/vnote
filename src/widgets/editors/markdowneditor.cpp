@@ -1033,7 +1033,7 @@ void MarkdownEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_
       menu->insertSeparator(firstAct);
     }
 
-    prependContextSensitiveMenu(menu, p_event->pos());
+    insertContextSensitiveMenu(menu, p_event->pos(), firstAct);
   }
 
   if (pasteAct && pasteAct->isEnabled()) {
@@ -1381,26 +1381,24 @@ QString MarkdownEditor::saveToImageHost(const QByteArray &p_imageData,
   return QString();
 }
 
-void MarkdownEditor::prependContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos) {
+void MarkdownEditor::insertContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos,
+                                                 QAction *p_before) {
   auto cursor = m_textEdit->cursorForPosition(p_pos);
   const int pos = cursor.position();
   const auto block = cursor.block();
 
-  Q_ASSERT(!p_menu->isEmpty());
-  auto firstAct = p_menu->actions().at(0);
-
-  bool ret = prependImageMenu(p_menu, firstAct, pos, block);
+  bool ret = prependImageMenu(p_menu, p_before, pos, block);
   if (ret) {
     return;
   }
 
-  ret = prependLinkMenu(p_menu, firstAct, pos, block);
+  ret = prependLinkMenu(p_menu, p_before, pos, block);
   if (ret) {
     return;
   }
 
-  if (prependInPlacePreviewMenu(p_menu, firstAct, pos, block)) {
-    p_menu->insertSeparator(firstAct);
+  if (prependInPlacePreviewMenu(p_menu, p_before, pos, block)) {
+    p_menu->insertSeparator(p_before);
   }
 }
 

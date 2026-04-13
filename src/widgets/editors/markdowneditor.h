@@ -203,7 +203,7 @@ private:
   // Return the dest file path of the image on success.
   QString saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName);
 
-  void prependContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos);
+  void insertContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos, QAction *p_before);
 
   bool prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
                         const QTextBlock &p_block);
