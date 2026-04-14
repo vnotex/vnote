@@ -836,8 +836,16 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
 
     auto config = MarkdownEditorController::buildMarkdownEditorConfig(
         editorConfig, mdConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth);
+
+    // Guard: config application (e.g. applyLineSpacing) modifies block formats,
+    // which fires contentsChanged. Suppress propagation so this is not treated
+    // as a user edit.
+    const bool old = m_propagateEditorToBuffer;
+    m_propagateEditorToBuffer = false;
     m_editor->setConfig(config);
     m_editor->updateFromConfig();
+    m_propagateEditorToBuffer = old;
+
     updateEditorFromConfig();
   }
 
