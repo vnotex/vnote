@@ -8,13 +8,13 @@
 #include <QScrollBar>
 #include <QStyledItemDelegate>
 
+#include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
-#include <core/configmgr2.h>
-#include <core/sessionconfig.h>
 
 using namespace vnotex;
 
@@ -108,7 +108,6 @@ void NotebookSelector2::sortNotebooks(QJsonArray &p_notebooks) const {
   }
 }
 
-
 void NotebookSelector2::addNotebookItem(const QJsonObject &p_notebookJson) {
   QString name = p_notebookJson.value("name").toString();
   QString rootPath = p_notebookJson.value("rootFolder").toString();
@@ -177,6 +176,7 @@ void NotebookSelector2::setCurrentNotebook(const QString &p_guid) {
   if (idx >= 0) {
     setCurrentIndex(idx);
     setToolTip(getItemToolTip(idx));
+    saveCurrentNotebook();
   }
 }
 
@@ -311,6 +311,9 @@ void NotebookSelector2::restoreCurrentNotebook() {
 
   int idx = findNotebook(guid);
   if (idx >= 0) {
+    // Use raw setCurrentIndex(), NOT setCurrentNotebook(), to avoid
+    // persisting the restored value back (which would be a no-op but
+    // breaks the invariant if restore logic ever diverges from save).
     setCurrentIndex(idx);
     setToolTip(getItemToolTip(idx));
   }

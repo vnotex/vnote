@@ -592,8 +592,9 @@ void NotebookExplorer2::newNotebook() {
   // Use window() to get top-level MainWindow2 for dialog centering.
   NewNotebookDialog2 dialog(m_services, window());
   if (dialog.exec() == QDialog::Accepted) {
-    // Reload notebooks to show the newly created one
+    // Reload notebooks and select the newly created one.
     loadNotebooks();
+    setCurrentNotebook(dialog.getNewNotebookId());
   }
 }
 
