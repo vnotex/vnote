@@ -31,8 +31,13 @@ class MarkdownViewerCore extends VXCore {
 
     initOnLoad() {
         // Init DOM nodes.
+        this.bodyContainer = document.getElementById('body-container');
         this.contentContainer = document.getElementById('vx-content');
         this.inplacePreviewContainer = document.getElementById('vx-inplace-preview');
+
+        const bodyStyle = window.getComputedStyle(document.body);
+        this.originalBodyBackgroundColor = bodyStyle.backgroundColor;
+        this.originalBodyPadding = bodyStyle.padding;
 
         this.nodeLineMapper = new NodeLineMapper(this, this.contentContainer);
 
@@ -335,12 +340,36 @@ class MarkdownViewerCore extends VXCore {
         }
     }
 
-    setContentMaxWidth(p_maxWidth) {
+    setContentMaxWidth(p_maxWidth, p_marginBg, p_contentBg) {
         if (p_maxWidth > 0) {
-            this.contentContainer.style.maxWidth = p_maxWidth + 'px';
-            this.contentContainer.style.marginLeft = 'auto';
-            this.contentContainer.style.marginRight = 'auto';
+            this.bodyContainer.style.maxWidth = p_maxWidth + 'px';
+            this.bodyContainer.style.marginLeft = 'auto';
+            this.bodyContainer.style.marginRight = 'auto';
+            this.bodyContainer.style.backgroundColor = this.originalBodyBackgroundColor || p_contentBg;
+            this.bodyContainer.style.padding = this.originalBodyPadding;
+
+            this.contentContainer.style.maxWidth = 'none';
+            this.contentContainer.style.marginLeft = '';
+            this.contentContainer.style.marginRight = '';
+
+            document.body.style.padding = '0';
+
+            if (p_marginBg && p_contentBg
+                && (document.body.clientWidth - p_maxWidth) >= 40) {
+                document.body.style.backgroundColor = p_marginBg;
+            } else {
+                document.body.style.backgroundColor = '';
+            }
         } else {
+            document.body.style.backgroundColor = '';
+            document.body.style.padding = '';
+
+            this.bodyContainer.style.backgroundColor = '';
+            this.bodyContainer.style.padding = '';
+            this.bodyContainer.style.maxWidth = '';
+            this.bodyContainer.style.marginLeft = '';
+            this.bodyContainer.style.marginRight = '';
+
             this.contentContainer.style.maxWidth = '';
             this.contentContainer.style.marginLeft = '';
             this.contentContainer.style.marginRight = '';
