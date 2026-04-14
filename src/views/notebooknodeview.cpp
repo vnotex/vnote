@@ -10,11 +10,10 @@
 #include <QSortFilterProxyModel>
 #include <QUrl>
 
-
+#include <controllers/notebooknodecontroller.h>
 #include <core/fileopenparameters.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
-#include <controllers/notebooknodecontroller.h>
 #include <qmenu.h>
 
 using namespace vnotex;
@@ -49,7 +48,7 @@ QList<NodeIdentifier> decodeNodeMimeData(const QMimeData *p_mimeData) {
 
 // Check if target is same as or descendant of any source node (circular drop prevention)
 bool isDropOnSelfOrDescendant(const QList<NodeIdentifier> &p_sources,
-                               const NodeIdentifier &p_target) {
+                              const NodeIdentifier &p_target) {
   for (const NodeIdentifier &source : p_sources) {
     if (source.notebookId != p_target.notebookId) {
       continue;
@@ -69,10 +68,7 @@ bool isDropOnSelfOrDescendant(const QList<NodeIdentifier> &p_sources,
 
 } // anonymous namespace
 
-NotebookNodeView::NotebookNodeView(QWidget *p_parent) : QTreeView(p_parent) {
-  setupView();
-}
-
+NotebookNodeView::NotebookNodeView(QWidget *p_parent) : QTreeView(p_parent) { setupView(); }
 
 NotebookNodeView::~NotebookNodeView() {}
 
@@ -159,6 +155,11 @@ void NotebookNodeView::expandToNode(const NodeIdentifier &p_nodeId) {
   QString path = p_nodeId.relativePath;
   if (path.isEmpty()) {
     return; // Root node, nothing to expand
+  }
+
+  // Ensure root children are loaded (may be empty after notebook/display-root switch).
+  if (model()->canFetchMore(QModelIndex())) {
+    model()->fetchMore(QModelIndex());
   }
 
   // Split path into components and expand each parent
@@ -489,8 +490,6 @@ void NotebookNodeView::onItemExpanded(const QModelIndex &p_index) {
     nodeModel->prefetchChildrenOfChildren(sourceIdx);
   }
 }
-
-
 
 bool NotebookNodeView::isSingleClickActivationEnabled() const {
   if (m_controller) {

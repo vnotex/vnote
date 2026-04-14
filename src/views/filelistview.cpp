@@ -1,6 +1,5 @@
 #include "filelistview.h"
 
-
 #include <QContextMenuEvent>
 #include <QDataStream>
 #include <QDragEnterEvent>
@@ -49,7 +48,7 @@ QList<NodeIdentifier> decodeNodeMimeData(const QMimeData *p_mimeData) {
 
 // Check if target is same as or descendant of any source node (circular drop prevention)
 bool isDropOnSelfOrDescendant(const QList<NodeIdentifier> &p_sources,
-                               const NodeIdentifier &p_target) {
+                              const NodeIdentifier &p_target) {
   for (const NodeIdentifier &source : p_sources) {
     if (source.notebookId != p_target.notebookId) {
       continue;
@@ -69,10 +68,7 @@ bool isDropOnSelfOrDescendant(const QList<NodeIdentifier> &p_sources,
 
 } // anonymous namespace
 
-FileListView::FileListView(QWidget *p_parent) : QListView(p_parent) {
-  setupView();
-}
-
+FileListView::FileListView(QWidget *p_parent) : QListView(p_parent) { setupView(); }
 
 FileListView::~FileListView() {}
 
@@ -141,10 +137,14 @@ void FileListView::selectNode(const NodeIdentifier &p_nodeId) {
     return;
   }
 
+  // Ensure root children are loaded (may be empty after notebook/display-root switch).
+  if (model()->canFetchMore(QModelIndex())) {
+    model()->fetchMore(QModelIndex());
+  }
+
   QModelIndex idx = indexFromNodeId(p_nodeId);
   if (idx.isValid()) {
-    selectionModel()->select(idx,
-                             QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    selectionModel()->select(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     setCurrentIndex(idx);
   }
 }
@@ -152,6 +152,11 @@ void FileListView::selectNode(const NodeIdentifier &p_nodeId) {
 void FileListView::scrollToNode(const NodeIdentifier &p_nodeId) {
   if (!p_nodeId.isValid()) {
     return;
+  }
+
+  // Ensure root children are loaded (may be empty after notebook/display-root switch).
+  if (model()->canFetchMore(QModelIndex())) {
+    model()->fetchMore(QModelIndex());
   }
 
   QModelIndex idx = indexFromNodeId(p_nodeId);
