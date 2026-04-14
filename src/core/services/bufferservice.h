@@ -74,6 +74,12 @@ public:
   Buffer2 openBufferByNodeId(const QString &p_nodeId,
                              const FileOpenSettings &p_settings = FileOpenSettings());
 
+  // Open a virtual buffer (no filesystem backing).
+  // Does NOT fire FileBeforeOpen/FileAfterOpen hooks (virtual buffers are not files).
+  // @p_address: Virtual address (e.g., "vx://settings").
+  // Returns a Buffer2 handle, or invalid Buffer2 on failure.
+  Buffer2 openVirtualBuffer(const QString &p_address);
+
   // Close a buffer by ID.
   // Cleans up auto-save state and closes the buffer in vxcore.
   bool closeBuffer(const QString &p_bufferId);
@@ -90,6 +96,9 @@ public:
 
   // Get buffer configuration as JSON.
   QJsonObject getBuffer(const QString &p_bufferId) const;
+
+  // Check whether a buffer is virtual (non-file-backed).
+  bool isVirtualBuffer(const QString &p_bufferId) const;
 
   // List all open buffers as JSON array.
   QJsonArray listBuffers() const;
@@ -186,6 +195,10 @@ private:
 
   // Set of buffer IDs with pending editor changes.
   QSet<QString> m_dirtyBuffers;
+
+  // Set of buffer IDs that are virtual (non-file-backed).
+  // Used to skip auto-save/sync for virtual buffers.
+  QSet<QString> m_virtualBufferIds;
 
   // Map from buffer ID to the active writer's content fetch callback.
   QHash<QString, ActiveWriter> m_activeWriters;

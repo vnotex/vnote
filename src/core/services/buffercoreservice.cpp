@@ -44,6 +44,21 @@ QString BufferCoreService::openBufferByNodeId(const QString &p_nodeId) {
   return cstrToQString(bufferId);
 }
 
+QString BufferCoreService::openVirtualBuffer(const QString &p_address) {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *bufferId = nullptr;
+  VxCoreError err =
+      vxcore_buffer_open_virtual(m_context, p_address.toUtf8().constData(), &bufferId);
+  if (err != VXCORE_OK) {
+    qWarning() << "openVirtualBuffer failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+  return cstrToQString(bufferId);
+}
+
 bool BufferCoreService::closeBuffer(const QString &p_bufferId) {
   if (!checkContext()) {
     return false;

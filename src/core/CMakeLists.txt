@@ -38,6 +38,7 @@ target_sources(vnote PRIVATE
     hooknames.h
     iconfig.h
     iconfigmgr.h
+    iviewwindowcontent.h
     location.h
     nodeinfo.h
     logger.cpp logger.h

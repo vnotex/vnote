@@ -47,6 +47,11 @@ public:
   // Returns buffer ID, or empty string on failure.
   QString openBufferByNodeId(const QString &p_nodeId);
 
+  // Open a virtual buffer (no filesystem backing).
+  // @p_address: Virtual address (e.g., "vx://settings").
+  // Returns buffer ID, or empty string on failure.
+  QString openVirtualBuffer(const QString &p_address);
+
   // Close a buffer by ID.
   bool closeBuffer(const QString &p_bufferId);
 

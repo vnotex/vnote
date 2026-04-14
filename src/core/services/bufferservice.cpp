@@ -100,11 +100,37 @@ Buffer2 BufferService::openBufferByNodeId(const QString &p_nodeId,
   return openBuffer(nodeId, p_settings);
 }
 
+Buffer2 BufferService::openVirtualBuffer(const QString &p_address) {
+  qDebug() << "BufferService::openVirtualBuffer address:" << p_address;
+
+  // Call vxcore to open (or dedup) the virtual buffer.
+  QString bufferId = BufferCoreService::openVirtualBuffer(p_address);
+
+  if (bufferId.isEmpty()) {
+    qWarning() << "BufferService::openVirtualBuffer failed for" << p_address;
+    return Buffer2();
+  }
+
+  // Track as virtual for auto-save skip.
+  m_virtualBufferIds.insert(bufferId);
+
+  // Construct NodeIdentifier with empty notebookId and address as path.
+  NodeIdentifier nodeId;
+  nodeId.notebookId = QString();
+  nodeId.relativePath = p_address;
+
+  // NO hooks fired — virtual buffers are not files.
+
+  qDebug() << "BufferService::openVirtualBuffer succeeded bufferId:" << bufferId;
+  return Buffer2(this, m_hookMgr, bufferId, nodeId);
+}
+
 bool BufferService::closeBuffer(const QString &p_bufferId) {
   // Clean up auto-save state for this buffer.
   m_dirtyBuffers.remove(p_bufferId);
   m_activeWriters.remove(p_bufferId);
   m_saveFailureCounts.remove(p_bufferId);
+  m_virtualBufferIds.remove(p_bufferId);
   if (m_dirtyBuffers.isEmpty()) {
     m_autoSaveTimer->stop();
   }
@@ -137,6 +163,10 @@ Buffer2 BufferService::getBufferHandle(const QString &p_bufferId) {
 
 QJsonObject BufferService::getBuffer(const QString &p_bufferId) const {
   return BufferCoreService::getBuffer(p_bufferId);
+}
+
+bool BufferService::isVirtualBuffer(const QString &p_bufferId) const {
+  return m_virtualBufferIds.contains(p_bufferId);
 }
 
 QJsonArray BufferService::listBuffers() const { return BufferCoreService::listBuffers(); }
@@ -241,6 +271,15 @@ void BufferService::syncNow(const QString &p_bufferId) {
     return;
   }
 
+  // Virtual buffers have no file content to sync.
+  if (m_virtualBufferIds.contains(p_bufferId)) {
+    m_dirtyBuffers.remove(p_bufferId);
+    if (m_dirtyBuffers.isEmpty()) {
+      m_autoSaveTimer->stop();
+    }
+    return;
+  }
+
   executeSyncForBuffer(p_bufferId);
   m_dirtyBuffers.remove(p_bufferId);
 
@@ -288,6 +327,11 @@ void BufferService::onAutoSaveTimerTick() {
 }
 
 void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
+  // Virtual buffers have no file content to sync.
+  if (m_virtualBufferIds.contains(p_bufferId)) {
+    return;
+  }
+
   auto it = m_activeWriters.find(p_bufferId);
   if (it == m_activeWriters.end() || !it->callback) {
     // No active writer — content already synced from previous focus-loss.
