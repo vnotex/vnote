@@ -4607,24 +4607,6 @@ Description: %3</source>
     </message>
 </context>
 <context>
-    <name>vnotex::SettingsDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/settings/settingsdialog.cpp" line="72"/>
-        <source>Settings</source>
-        <translation>設定</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dialogs/settings/settingsdialog.cpp" line="86"/>
-        <source>Search</source>
-        <translation>検索</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dialogs/settings/settingsdialog.cpp" line="331"/>
-        <source>A restart of VNote may be needed to make changes take effect. Restart VNote now?</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>vnotex::SnippetInfoWidget</name>
     <message>
         <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="43"/>
