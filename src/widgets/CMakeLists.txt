@@ -53,7 +53,6 @@ target_sources(vnote PRIVATE
     dialogs/settings/newquickaccessitemdialog.cpp dialogs/settings/newquickaccessitemdialog.h
     dialogs/settings/notemanagementpage.cpp dialogs/settings/notemanagementpage.h
     dialogs/settings/quickaccesspage.cpp dialogs/settings/quickaccesspage.h
-    dialogs/settings/settingsdialog.cpp dialogs/settings/settingsdialog.h
     dialogs/settings/settingspage.cpp dialogs/settings/settingspage.h
     dialogs/settings/settingspagehelper.cpp dialogs/settings/settingspagehelper.h
     dialogs/settings/texteditorpage.cpp dialogs/settings/texteditorpage.h
@@ -133,6 +132,7 @@ target_sources(vnote PRIVATE
     searchinfoprovider.cpp searchinfoprovider.h
     searchpanel.cpp searchpanel.h
     searchpanel2.cpp searchpanel2.h
+    settingswidget.cpp settingswidget.h
     simplesegmenthighlighter.cpp simplesegmenthighlighter.h
     snippetpanel.cpp snippetpanel.h
     snippetpanel2.cpp snippetpanel2.h
@@ -169,6 +169,7 @@ target_sources(vnote PRIVATE
     viewwindowtoolbarhelper2.cpp viewwindowtoolbarhelper2.h
     webpage.cpp webpage.h
     webviewer.cpp webviewer.h
+    widgetviewwindow2.cpp widgetviewwindow2.h
     widgetsfactory.cpp widgetsfactory.h
     wordcountpanel.cpp wordcountpanel.h
     wordcountpopup.cpp wordcountpopup.h
