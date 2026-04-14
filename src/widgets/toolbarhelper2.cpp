@@ -13,11 +13,13 @@
 #include <QWhatsThis>
 
 #include "dialogs/settings/newquickaccessitemdialog.h"
-#include "dialogs/settings/settingsdialog.h"
 #include "fullscreentoggleaction.h"
 #include "mainwindow2.h"
 #include "messageboxhelper.h"
+#include "settingswidget.h"
+#include "viewarea2.h"
 #include "widgetsfactory.h"
+#include <controllers/viewareacontroller.h>
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/exception.h>
@@ -424,8 +426,9 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   auto defaultText = MainWindow2::tr("Settings");
   auto settingsAct = new QAction(generateIcon("settings.svg"), defaultText, btn);
   QAction::connect(settingsAct, &QAction::triggered, [this]() {
-    SettingsDialog dialog(m_services, m_mainWindow, m_mainWindow);
-    dialog.exec();
+    auto *content = new SettingsWidget(m_services, m_mainWindow);
+    auto *controller = m_mainWindow->getViewArea()->getController();
+    controller->openWidgetContent(content);
   });
   WidgetUtils::addActionShortcut(settingsAct,
                                  coreConfig.getShortcut(CoreConfig::Shortcut::Settings));

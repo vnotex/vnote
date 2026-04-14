@@ -11,7 +11,6 @@
 #include <QWhatsThis>
 #include <QWidgetAction>
 
-#include "dialogs/settings/settingsdialog.h"
 #include "dialogs/updater.h"
 #include "fullscreentoggleaction.h"
 #include "labelwithbuttonswidget.h"
