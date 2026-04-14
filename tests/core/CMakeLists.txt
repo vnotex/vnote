@@ -127,6 +127,15 @@ add_qt_test(test_buffer
   GUILESS
 )
 
+add_qt_test(test_virtual_buffer
+  SOURCES
+    test_virtual_buffer.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_config_hook
   SOURCES
     test_config_hook.cpp
