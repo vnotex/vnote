@@ -13,9 +13,9 @@
 #include <core/services/snippetcoreservice.h>
 #include <core/texteditorconfig.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/widgetutils.h>
 #include <search/searchtoken.h>
 #include <snippet/snippetmgr.h>
-#include <gui/utils/widgetutils.h>
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/vtextedit.h>
 
@@ -144,6 +144,8 @@ public:
     editorConfig->m_tabStopWidth = p_config.getTabStopWidth();
 
     editorConfig->m_highlightWhitespace = p_config.getHighlightWhitespaceEnabled();
+
+    editorConfig->m_lineSpacing = p_config.getLineSpacing();
 
     switch (p_lineEndingPolicy) {
     case LineEndingPolicy::Platform:
@@ -332,8 +334,7 @@ public:
 
   // Generate snippet override keys from Buffer2's NodeIdentifier.
   // Returns QJsonObject with "note" (relative path) and "no" (basename without extension).
-  template <typename _ViewWindow>
-  static QJsonObject generateSnippetOverrides2(_ViewWindow *p_win) {
+  template <typename _ViewWindow> static QJsonObject generateSnippetOverrides2(_ViewWindow *p_win) {
     QJsonObject overrides;
     const auto &nodeId = p_win->getBuffer().nodeId();
     overrides[QStringLiteral("note")] = nodeId.relativePath;

@@ -110,6 +110,7 @@ QSharedPointer<vte::TextEditorConfig> TextViewWindowController::buildTextEditorC
   editorConfig->m_expandTab = p_config.getExpandTabEnabled();
   editorConfig->m_tabStopWidth = p_config.getTabStopWidth();
   editorConfig->m_highlightWhitespace = p_config.getHighlightWhitespaceEnabled();
+  editorConfig->m_lineSpacing = p_config.getLineSpacing();
   editorConfig->m_maxContentWidth = p_maxContentWidth;
 
   switch (p_editorConfig.getLineEndingPolicy()) {

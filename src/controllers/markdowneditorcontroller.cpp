@@ -120,6 +120,7 @@ QSharedPointer<vte::MarkdownEditorConfig> MarkdownEditorController::buildMarkdow
   textEditorConfig->m_expandTab = textConfig.getExpandTabEnabled();
   textEditorConfig->m_tabStopWidth = textConfig.getTabStopWidth();
   textEditorConfig->m_highlightWhitespace = textConfig.getHighlightWhitespaceEnabled();
+  textEditorConfig->m_lineSpacing = textConfig.getLineSpacing();
   textEditorConfig->m_maxContentWidth = p_maxContentWidth;
 
   switch (p_editorConfig.getLineEndingPolicy()) {

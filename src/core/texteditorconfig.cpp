@@ -44,6 +44,8 @@ void TextEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_zoomDelta = READINT(QStringLiteral("zoomDelta"));
 
   m_spellCheckEnabled = READBOOL(QStringLiteral("spellCheck"));
+
+  m_lineSpacing = p_jobj.value(QStringLiteral("lineSpacing")).toDouble(1.0);
 }
 
 QJsonObject TextEditorConfig::toJson() const {
@@ -58,6 +60,7 @@ QJsonObject TextEditorConfig::toJson() const {
   obj[QStringLiteral("highlightWhitespace")] = m_highlightWhitespace;
   obj[QStringLiteral("zoomDelta")] = m_zoomDelta;
   obj[QStringLiteral("spellCheck")] = m_spellCheckEnabled;
+  obj[QStringLiteral("lineSpacing")] = m_lineSpacing;
   return obj;
 }
 
@@ -219,4 +222,10 @@ bool TextEditorConfig::isSpellCheckEnabled() const { return m_spellCheckEnabled;
 
 void TextEditorConfig::setSpellCheckEnabled(bool p_enabled) {
   updateConfig(m_spellCheckEnabled, p_enabled, this);
+}
+
+qreal TextEditorConfig::getLineSpacing() const { return m_lineSpacing; }
+
+void TextEditorConfig::setLineSpacing(qreal p_spacing) {
+  updateConfig(m_lineSpacing, p_spacing, this);
 }

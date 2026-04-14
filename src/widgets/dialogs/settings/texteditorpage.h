@@ -6,6 +6,7 @@
 class QComboBox;
 class QCheckBox;
 class QSpinBox;
+class QDoubleSpinBox;
 
 namespace vnotex {
 class TextEditorPage : public SettingsPage {
@@ -38,6 +39,8 @@ private:
   QSpinBox *m_tabStopWidthSpinBox = nullptr;
 
   QCheckBox *m_highlightWhitespaceCheckBox = nullptr;
+
+  QDoubleSpinBox *m_lineSpacingSpinBox = nullptr;
 
   QSpinBox *m_zoomDeltaSpinBox = nullptr;
 

@@ -53,6 +53,9 @@ public:
   bool isSpellCheckEnabled() const;
   void setSpellCheckEnabled(bool p_enabled);
 
+  qreal getLineSpacing() const;
+  void setLineSpacing(qreal p_spacing);
+
 private:
   friend class MainConfig;
 
@@ -87,6 +90,8 @@ private:
   int m_zoomDelta = 0;
 
   bool m_spellCheckEnabled = false;
+
+  qreal m_lineSpacing = 1.2;
 };
 } // namespace vnotex
 

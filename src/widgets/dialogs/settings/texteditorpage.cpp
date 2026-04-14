@@ -2,6 +2,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDoubleSpinBox>
 #include <QSpinBox>
 #include <QVBoxLayout>
 
@@ -26,8 +27,7 @@ TextEditorPage::TextEditorPage(ServiceLocator &p_services, QWidget *p_parent)
 void TextEditorPage::setupUI() {
   auto *mainLayout = new QVBoxLayout(this);
 
-  auto *cardLayout =
-      SettingsPageHelper::addSection(mainLayout, tr("Text Editor"), QString(), this);
+  auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Text Editor"), QString(), this);
 
   {
     m_lineNumberComboBox = WidgetsFactory::createComboBox(this);
@@ -38,9 +38,8 @@ void TextEditorPage::setupUI() {
     m_lineNumberComboBox->addItem(tr("Relative"), (int)TextEditorConfig::LineNumberType::Relative);
 
     const QString label(tr("Line number:"));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_lineNumberComboBox->toolTip(),
-                                             m_lineNumberComboBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_lineNumberComboBox->toolTip(), m_lineNumberComboBox, this));
     addSearchItem(label, m_lineNumberComboBox->toolTip(), m_lineNumberComboBox);
     connect(m_lineNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &TextEditorPage::pageIsChanged);
@@ -51,9 +50,8 @@ void TextEditorPage::setupUI() {
     m_textFoldingCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_textFoldingCheckBox->setToolTip(tr("Text folding"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createCheckBoxRow(m_textFoldingCheckBox,
-                                              m_textFoldingCheckBox->toolTip(), this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_textFoldingCheckBox, m_textFoldingCheckBox->toolTip(), this));
     addSearchItem(label, m_textFoldingCheckBox->toolTip(), m_textFoldingCheckBox);
     connect(m_textFoldingCheckBox, &QCheckBox::stateChanged, this, &TextEditorPage::pageIsChanged);
   }
@@ -68,9 +66,8 @@ void TextEditorPage::setupUI() {
 
     const QString label(tr("Input mode:"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_inputModeComboBox->toolTip(),
-                                             m_inputModeComboBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_inputModeComboBox->toolTip(), m_inputModeComboBox, this));
     addSearchItem(label, m_inputModeComboBox->toolTip(), m_inputModeComboBox);
     connect(m_inputModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &TextEditorPage::pageIsChanged);
@@ -88,9 +85,8 @@ void TextEditorPage::setupUI() {
 
     const QString label(tr("Center cursor:"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_centerCursorComboBox->toolTip(),
-                                             m_centerCursorComboBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_centerCursorComboBox->toolTip(), m_centerCursorComboBox, this));
     addSearchItem(label, m_centerCursorComboBox->toolTip(), m_centerCursorComboBox);
     connect(m_centerCursorComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &TextEditorPage::pageIsChanged);
@@ -108,9 +104,8 @@ void TextEditorPage::setupUI() {
 
     const QString label(tr("Wrap mode:"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_wrapModeComboBox->toolTip(),
-                                             m_wrapModeComboBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(label, m_wrapModeComboBox->toolTip(),
+                                                               m_wrapModeComboBox, this));
     addSearchItem(label, m_wrapModeComboBox->toolTip(), m_wrapModeComboBox);
     connect(m_wrapModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &TextEditorPage::pageIsChanged);
@@ -121,9 +116,8 @@ void TextEditorPage::setupUI() {
     m_expandTabCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_expandTabCheckBox->setToolTip(tr("Expand Tab into spaces"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createCheckBoxRow(m_expandTabCheckBox,
-                                              m_expandTabCheckBox->toolTip(), this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_expandTabCheckBox, m_expandTabCheckBox->toolTip(), this));
     addSearchItem(label, m_expandTabCheckBox->toolTip(), m_expandTabCheckBox);
     connect(m_expandTabCheckBox, &QCheckBox::stateChanged, this, &TextEditorPage::pageIsChanged);
   }
@@ -137,9 +131,8 @@ void TextEditorPage::setupUI() {
 
     const QString label(tr("Tab stop width:"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_tabStopWidthSpinBox->toolTip(),
-                                             m_tabStopWidthSpinBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_tabStopWidthSpinBox->toolTip(), m_tabStopWidthSpinBox, this));
     addSearchItem(label, m_tabStopWidthSpinBox->toolTip(), m_tabStopWidthSpinBox);
     connect(m_tabStopWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &TextEditorPage::pageIsChanged);
@@ -150,11 +143,26 @@ void TextEditorPage::setupUI() {
     m_highlightWhitespaceCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_highlightWhitespaceCheckBox->setToolTip(tr("Highlight Tab and trailing space"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createCheckBoxRow(m_highlightWhitespaceCheckBox,
-                                              m_highlightWhitespaceCheckBox->toolTip(), this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_highlightWhitespaceCheckBox, m_highlightWhitespaceCheckBox->toolTip(), this));
     addSearchItem(label, m_highlightWhitespaceCheckBox->toolTip(), m_highlightWhitespaceCheckBox);
     connect(m_highlightWhitespaceCheckBox, &QCheckBox::stateChanged, this,
+            &TextEditorPage::pageIsChanged);
+  }
+
+  {
+    m_lineSpacingSpinBox = WidgetsFactory::createDoubleSpinBox(this);
+    m_lineSpacingSpinBox->setToolTip(tr("Line spacing multiplier (1.0 = default)"));
+    m_lineSpacingSpinBox->setRange(1.0, 5.0);
+    m_lineSpacingSpinBox->setSingleStep(0.1);
+    m_lineSpacingSpinBox->setDecimals(1);
+
+    const QString label(tr("Line spacing:"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_lineSpacingSpinBox->toolTip(), m_lineSpacingSpinBox, this));
+    addSearchItem(label, m_lineSpacingSpinBox->toolTip(), m_lineSpacingSpinBox);
+    connect(m_lineSpacingSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
             &TextEditorPage::pageIsChanged);
   }
 
@@ -167,9 +175,8 @@ void TextEditorPage::setupUI() {
 
     const QString label(tr("Zoom delta:"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_zoomDeltaSpinBox->toolTip(),
-                                             m_zoomDeltaSpinBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(label, m_zoomDeltaSpinBox->toolTip(),
+                                                               m_zoomDeltaSpinBox, this));
     addSearchItem(label, m_zoomDeltaSpinBox->toolTip(), m_zoomDeltaSpinBox);
     connect(m_zoomDeltaSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &TextEditorPage::pageIsChanged);
@@ -180,9 +187,8 @@ void TextEditorPage::setupUI() {
     m_spellCheckCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_spellCheckCheckBox->setToolTip(tr("Spell check"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createCheckBoxRow(m_spellCheckCheckBox,
-                                              m_spellCheckCheckBox->toolTip(), this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_spellCheckCheckBox, m_spellCheckCheckBox->toolTip(), this));
     addSearchItem(label, m_spellCheckCheckBox->toolTip(), m_spellCheckCheckBox);
     connect(m_spellCheckCheckBox, &QCheckBox::stateChanged, this, &TextEditorPage::pageIsChanged);
   }
@@ -225,6 +231,8 @@ void TextEditorPage::loadInternal() {
 
   m_highlightWhitespaceCheckBox->setChecked(textConfig.getHighlightWhitespaceEnabled());
 
+  m_lineSpacingSpinBox->setValue(textConfig.getLineSpacing());
+
   m_zoomDeltaSpinBox->setValue(textConfig.getZoomDelta());
 
   m_spellCheckCheckBox->setChecked(textConfig.isSpellCheckEnabled());
@@ -260,6 +268,8 @@ bool TextEditorPage::saveInternal() {
   textConfig.setTabStopWidth(m_tabStopWidthSpinBox->value());
 
   textConfig.setHighlightWhitespaceEnabled(m_highlightWhitespaceCheckBox->isChecked());
+
+  textConfig.setLineSpacing(m_lineSpacingSpinBox->value());
 
   textConfig.setZoomDelta(m_zoomDeltaSpinBox->value());
 
