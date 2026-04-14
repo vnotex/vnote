@@ -27,6 +27,7 @@ class ViewAreaController;
 class ViewAreaHomeWidget;
 class Buffer2;
 class ViewWindowFactory;
+class IViewWindowContent;
 
 // ViewArea2: composite widget owning the GUI (splitter tree + ViewSplit2s) and
 // ViewAreaController.  The controller knows nothing about ViewArea2.
@@ -87,6 +88,8 @@ public:
   void distributeViewSplits() override;
   void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType, const QString &p_workspaceId,
                   const FileOpenSettings &p_settings) override;
+  void openWidgetContent(IViewWindowContent *p_content, const Buffer2 &p_buffer,
+                         const QString &p_workspaceId) override;
   bool closeViewWindow(ID p_windowId, bool p_force) override;
   void applyFileOpenSettings(ID p_windowId, const FileOpenSettings &p_settings) override;
   void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) override;

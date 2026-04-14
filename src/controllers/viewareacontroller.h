@@ -19,6 +19,7 @@ namespace vnotex {
 class ServiceLocator;
 class Buffer2;
 class BufferService;
+class IViewWindowContent;
 class WorkspaceWrapper;
 
 // Controller for the view area. Handles business logic and service interactions.
@@ -34,7 +35,8 @@ class WorkspaceWrapper;
 //
 // Communication flow:
 //   User action  ->  ViewArea2  ->  ViewAreaController method (carries IDs, not pointers)
-//   Controller decision  ->  m_view->method() (carries IDs)  ->  ViewArea2 (resolves to pointer, updates GUI)
+//   Controller decision  ->  m_view->method() (carries IDs)  ->  ViewArea2 (resolves to pointer,
+//   updates GUI)
 class ViewAreaController : public QObject {
   Q_OBJECT
 
@@ -53,8 +55,13 @@ public:
   // Resolves file type via FileTypeCoreService, fires before-hook,
   // ensures a current workspace exists, then calls m_view->openBuffer()
   // for the view to create the ViewWindow2 via factory.
-  void openBuffer(const Buffer2 &p_buffer,
-                  const FileOpenSettings &p_settings = FileOpenSettings());
+  void openBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings = FileOpenSettings());
+
+  // Open a widget-based content (e.g., Settings) as a tab in the view area.
+  // Creates a virtual buffer, checks for duplicate tabs across all workspaces,
+  // and delegates to the view layer to create WidgetViewWindow2.
+  // @p_content: ownership transferred. Deleted if a duplicate tab is found.
+  void openWidgetContent(IViewWindowContent *p_content);
 
   // Called by the view after it has successfully created a ViewWindow2
   // in response to m_view->openBuffer().
@@ -65,8 +72,7 @@ public:
 
   // Called by the view after a window was successfully destroyed.
   // Updates tracking state and emits windowsChanged.
-  void onViewWindowClosed(ID p_windowId, const QString &p_bufferId,
-                          const QString &p_workspaceId);
+  void onViewWindowClosed(ID p_windowId, const QString &p_bufferId, const QString &p_workspaceId);
 
   // Request to close the view window identified by p_windowId.
   // Fires the before-close hook (cancellable). On success, calls
@@ -120,9 +126,8 @@ public:
   // @p_direction:      direction of movement.
   // @p_dstWorkspaceId: resolved destination workspace.
   // @p_bufferId:       buffer ID of the window being moved.
-  void moveViewWindowOneSplit(const QString &p_srcWorkspaceId, ID p_windowId,
-                              Direction p_direction, const QString &p_dstWorkspaceId,
-                              const QString &p_bufferId);
+  void moveViewWindowOneSplit(const QString &p_srcWorkspaceId, ID p_windowId, Direction p_direction,
+                              const QString &p_dstWorkspaceId, const QString &p_bufferId);
 
   // Create a new workspace with the given name and switch to it.
   void newWorkspace(const QString &p_currentWorkspaceId, const QString &p_name);
@@ -230,8 +235,7 @@ private:
   // Resolves file type and calls m_view->openBuffer() for the view to create the ViewWindow2.
   void openRestoredBuffer(BufferService *p_bufferSvc, const QString &p_workspaceId,
                           const QString &p_bufferId, bool p_focus,
-                          ViewWindowMode p_mode = ViewWindowMode::Read,
-                          int p_lineNumber = -1);
+                          ViewWindowMode p_mode = ViewWindowMode::Read, int p_lineNumber = -1);
 
   ServiceLocator &m_services;
   ViewAreaView *m_view = nullptr;

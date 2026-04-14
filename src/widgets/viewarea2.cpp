@@ -15,6 +15,7 @@
 #include <core/coreconfig.h>
 #include <core/hookcontext.h>
 #include <core/hooknames.h>
+#include <core/iviewwindowcontent.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/hookmanager.h>
@@ -26,6 +27,7 @@
 #include "viewareahomewidget.h"
 #include "viewsplit2.h"
 #include "viewwindow2.h"
+#include "widgetviewwindow2.h"
 
 using namespace vnotex;
 
@@ -795,6 +797,30 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
 
   // Apply file open settings (scroll to line, search highlight).
   win->applyFileOpenSettings(p_settings);
+
+  updateScreenVisibility();
+}
+
+void ViewArea2::openWidgetContent(IViewWindowContent *p_content, const Buffer2 &p_buffer,
+                                  const QString &p_workspaceId) {
+  auto *split = splitForWorkspace(p_workspaceId);
+  if (!split) {
+    qWarning() << "ViewArea2::openWidgetContent: workspace not found:" << p_workspaceId;
+    delete p_content;
+    return;
+  }
+
+  auto *win = new WidgetViewWindow2(m_services, p_buffer, p_content, split);
+  ID id = m_nextWindowId++;
+  m_windows[id] = win;
+  win->setViewWindowId(id);
+  split->addViewWindow(win);
+
+  // Use default FileOpenSettings for notification.
+  FileOpenSettings settings;
+  settings.m_focus = true;
+  m_controller->onViewWindowOpened(id, p_buffer, settings);
+  split->setCurrentViewWindow(win);
 
   updateScreenVisibility();
 }

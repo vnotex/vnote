@@ -12,6 +12,7 @@
 #include <core/hookcontext.h>
 #include <core/hookevents.h>
 #include <core/hooknames.h>
+#include <core/iviewwindowcontent.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
@@ -103,6 +104,72 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   }
 
   m_view->openBuffer(p_buffer, fileType, m_currentWorkspaceId, p_settings);
+}
+
+void ViewAreaController::openWidgetContent(vnotex::IViewWindowContent *p_content) {
+  if (!p_content) {
+    return;
+  }
+
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (!bufferSvc) {
+    qWarning() << "ViewAreaController::openWidgetContent: no BufferService";
+    delete p_content;
+    return;
+  }
+
+  Buffer2 buffer = bufferSvc->openVirtualBuffer(p_content->virtualAddress());
+  if (!buffer.isValid()) {
+    qWarning() << "ViewAreaController::openWidgetContent: failed to create virtual buffer for"
+               << p_content->virtualAddress();
+    delete p_content;
+    return;
+  }
+
+  if (m_view) {
+    QStringList workspaceIds = m_view->getVisibleWorkspaceIds();
+    for (const auto &wsId : workspaceIds) {
+      ID existingWindowId = m_view->findWindowIdByBufferId(wsId, buffer.id());
+      if (existingWindowId != InvalidViewWindowId) {
+        qDebug() << "ViewAreaController::openWidgetContent: content already open in workspace"
+                 << wsId << "- activating existing window:" << existingWindowId;
+        m_view->setCurrentViewSplit(wsId, true);
+        m_view->setCurrentBuffer(wsId, buffer.id(), true);
+        setCurrentViewWindow(existingWindowId, buffer.id());
+        delete p_content;
+        return;
+      }
+    }
+  }
+
+  if (m_currentWorkspaceId.isEmpty()) {
+    auto *wsSvc = m_services.get<WorkspaceCoreService>();
+    QString wsId;
+    if (wsSvc) {
+      wsId = wsSvc->createWorkspace(generateWorkspaceName());
+    }
+    if (wsId.isEmpty()) {
+      qWarning() << "ViewAreaController::openWidgetContent: failed to create workspace";
+      delete p_content;
+      return;
+    }
+    auto *wrapper = new WorkspaceWrapper(wsId, this);
+    wrapper->setVisible(true);
+    m_workspaces.insert(wsId, wrapper);
+    if (!m_view) {
+      delete p_content;
+      return;
+    }
+    m_view->addFirstViewSplit(wsId);
+  }
+
+  if (m_currentWorkspaceId.isEmpty() || !m_view) {
+    qWarning() << "ViewAreaController::openWidgetContent: no current workspace";
+    delete p_content;
+    return;
+  }
+
+  m_view->openWidgetContent(p_content, buffer, m_currentWorkspaceId);
 }
 
 void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buffer,

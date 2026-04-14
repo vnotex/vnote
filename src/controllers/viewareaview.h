@@ -13,6 +13,7 @@
 namespace vnotex {
 
 class Buffer2;
+class IViewWindowContent;
 
 // Abstract interface for the view layer of the ViewArea MVC.
 // The controller calls these methods to command the view.
@@ -31,22 +32,28 @@ public:
 
   // Buffer/window management
   virtual void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
-                          const QString &p_workspaceId,
-                          const FileOpenSettings &p_settings) = 0;
+                          const QString &p_workspaceId, const FileOpenSettings &p_settings) = 0;
+
+  // Open a widget-based content (not file-backed) as a tab.
+  // The view layer creates WidgetViewWindow2 internally.
+  // @p_content: ownership transferred to the view.
+  // @p_buffer: virtual buffer handle for this content.
+  // @p_workspaceId: target workspace.
+  virtual void openWidgetContent(IViewWindowContent *p_content, const Buffer2 &p_buffer,
+                                 const QString &p_workspaceId) = 0;
+
   // Close the view window. Returns true if closed, false if cancelled by user
   // (e.g., unsaved changes dialog). Callers must handle false for abort semantics.
   virtual bool closeViewWindow(ID p_windowId, bool p_force) = 0;
   // Apply file open settings (scroll, highlight) to an already-created window.
-  virtual void applyFileOpenSettings(ID p_windowId,
-                                     const FileOpenSettings &p_settings) = 0;
+  virtual void applyFileOpenSettings(ID p_windowId, const FileOpenSettings &p_settings) = 0;
 
   // Focus/navigation
   virtual void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) = 0;
   virtual void focusViewSplit(const QString &p_workspaceId) = 0;
 
   // Window transfer
-  virtual void moveViewWindowToSplit(ID p_windowId,
-                                     const QString &p_srcWorkspaceId,
+  virtual void moveViewWindowToSplit(ID p_windowId, const QString &p_srcWorkspaceId,
                                      const QString &p_dstWorkspaceId) = 0;
 
   // Workspace switching
@@ -54,18 +61,17 @@ public:
                                const QString &p_newWorkspaceId) = 0;
 
   // Reparenting primitives for workspace switch (controller orchestrates these)
-  virtual QVector<QObject *> takeViewWindowsFromSplit(
-      const QString &p_workspaceId, int *p_outCurrentIndex) = 0;
+  virtual QVector<QObject *> takeViewWindowsFromSplit(const QString &p_workspaceId,
+                                                      int *p_outCurrentIndex) = 0;
   virtual void placeViewWindowsInSplit(const QString &p_workspaceId,
-                                       const QVector<QObject *> &p_windows,
-                                       int p_currentIndex) = 0;
+                                       const QVector<QObject *> &p_windows, int p_currentIndex) = 0;
   virtual void updateSplitWorkspaceId(const QString &p_oldWorkspaceId,
-                                       const QString &p_newWorkspaceId) = 0;
+                                      const QString &p_newWorkspaceId) = 0;
 
   // Session
   virtual void loadLayout(const QJsonObject &p_layout) = 0;
-  virtual void setCurrentBuffer(const QString &p_workspaceId,
-                                const QString &p_bufferId, bool p_focus) = 0;
+  virtual void setCurrentBuffer(const QString &p_workspaceId, const QString &p_bufferId,
+                                bool p_focus) = 0;
 
   // Query methods (controller needs widget-layer state)
   virtual int getViewSplitCount() const = 0;
