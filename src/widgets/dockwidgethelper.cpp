@@ -4,13 +4,14 @@
 #include <QBitArray>
 #include <QDockWidget>
 #include <QHelpEvent>
+#include <QLabel>
 #include <QShortcut>
 #include <QStyleOptionTab>
 #include <QTabBar>
 #include <QToolTip>
-#include <QLabel>
 
 #include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/widgetconfig.h>
 #include <gui/utils/iconutils.h>
@@ -41,14 +42,12 @@ DockWidgetHelper::NavigationItemInfo::NavigationItemInfo(QTabBar *p_tabBar, int 
                                                          int p_dockType)
     : m_tabBar(p_tabBar), m_tabIndex(p_tabIndex), m_dockType(p_dockType) {}
 
-DockWidgetHelper::NavigationItemInfo::NavigationItemInfo(int p_dockType)
-    : m_dockType(p_dockType) {}
+DockWidgetHelper::NavigationItemInfo::NavigationItemInfo(int p_dockType) : m_dockType(p_dockType) {}
 
 DockWidgetHelper::DockWidgetHelper(MainWindow2 *p_mainWindow, ServiceLocator &p_services)
-    : QObject(p_mainWindow),
-      NavigationMode(NavigationMode::Type::DoubleKeys, p_mainWindow, p_services.get<ThemeService>()),
-      m_mainWindow(p_mainWindow),
-      m_services(p_services) {}
+    : QObject(p_mainWindow), NavigationMode(NavigationMode::Type::DoubleKeys, p_mainWindow,
+                                            p_services.get<ThemeService>()),
+      m_mainWindow(p_mainWindow), m_services(p_services) {}
 
 QString DockWidgetHelper::iconFileName(DockType p_dockType) {
   switch (p_dockType) {
@@ -96,28 +95,27 @@ void DockWidgetHelper::setupDocks() {
   QVector<int> tabifiedDockIndex;
 
   if (setupDock(DockType::NavigationDock, tr("Notebooks"), QStringLiteral("NavigationDock.vnotex"),
-                    Qt::LeftDockWidgetArea, Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea,
-                    true)) {
+                Qt::LeftDockWidgetArea, Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea, true)) {
     tabifiedDockIndex.append(DockType::NavigationDock);
   }
 
   if (setupDock(DockType::HistoryDock, tr("History"), QStringLiteral("HistoryDock.vnotex"),
-                    Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, false)) {
+                Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, false)) {
     tabifiedDockIndex.append(DockType::HistoryDock);
   }
 
-  if (setupDock(DockType::TagDock, tr("Tags"), QStringLiteral("TagDock.vnotex"), Qt::LeftDockWidgetArea,
-                    Qt::AllDockWidgetAreas, true)) {
+  if (setupDock(DockType::TagDock, tr("Tags"), QStringLiteral("TagDock.vnotex"),
+                Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, true)) {
     tabifiedDockIndex.append(DockType::TagDock);
   }
 
   if (setupDock(DockType::SearchDock, tr("Search"), QStringLiteral("SearchDock.vnotex"),
-                    Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, false)) {
+                Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, false)) {
     tabifiedDockIndex.append(DockType::SearchDock);
   }
 
   if (setupDock(DockType::SnippetDock, tr("Snippets"), QStringLiteral("SnippetDock.vnotex"),
-                    Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, true)) {
+                Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, true)) {
     tabifiedDockIndex.append(DockType::SnippetDock);
   }
 
@@ -127,8 +125,9 @@ void DockWidgetHelper::setupDocks() {
   setupDock(DockType::ConsoleDock, tr("Console"), QStringLiteral("ConsoleDock.vnotex"),
             Qt::BottomDockWidgetArea, Qt::AllDockWidgetAreas, false);
 
-  setupDock(DockType::LocationListDock, tr("Location List"), QStringLiteral("LocationListDock.vnotex"),
-            Qt::BottomDockWidgetArea, Qt::AllDockWidgetAreas, false);
+  setupDock(DockType::LocationListDock, tr("Location List"),
+            QStringLiteral("LocationListDock.vnotex"), Qt::BottomDockWidgetArea,
+            Qt::AllDockWidgetAreas, false);
 
   setupShortcuts();
 
@@ -149,9 +148,9 @@ static void addWidgetToDock(QDockWidget *p_dock, QWidget *p_widget) {
   p_dock->setFocusProxy(p_widget);
 }
 
-bool DockWidgetHelper::setupDock(DockType p_dockType, const QString &p_title, const QString &p_objectName,
-                                 Qt::DockWidgetArea p_area, Qt::DockWidgetAreas p_allowedAreas,
-                                 bool p_visible) {
+bool DockWidgetHelper::setupDock(DockType p_dockType, const QString &p_title,
+                                 const QString &p_objectName, Qt::DockWidgetArea p_area,
+                                 Qt::DockWidgetAreas p_allowedAreas, bool p_visible) {
   auto *widget = m_mainWindow->getDockWidget(p_dockType);
   if (!widget) {
     return false;
@@ -274,8 +273,7 @@ void DockWidgetHelper::postSetup() {
     connect(dock, &QDockWidget::dockLocationChanged, this,
             &DockWidgetHelper::updateDockWidgetTabBar);
     connect(dock, &QDockWidget::topLevelChanged, this, &DockWidgetHelper::updateDockWidgetTabBar);
-    connect(dock, &QDockWidget::visibilityChanged, this,
-            &DockWidgetHelper::updateDockWidgetTabBar);
+    connect(dock, &QDockWidget::visibilityChanged, this, &DockWidgetHelper::updateDockWidgetTabBar);
   }
 }
 
@@ -287,9 +285,8 @@ void DockWidgetHelper::updateDockWidgetTabBar() {
       m_tabBarsMonitored.insert(tabBar);
       tabBar->installEventFilter(this);
       // Clean up when tab bar is destroyed to avoid dangling pointers.
-      connect(tabBar, &QObject::destroyed, this, [this, tabBar]() {
-        m_tabBarsMonitored.remove(tabBar);
-      });
+      connect(tabBar, &QObject::destroyed, this,
+              [this, tabBar]() { m_tabBarsMonitored.remove(tabBar); });
     }
 
     tabBar->setDrawBase(false);
@@ -373,7 +370,7 @@ QStringList DockWidgetHelper::getVisibleDocks() const {
 
 QStringList DockWidgetHelper::hideDocks() {
   const auto &keepDocks =
-      ConfigMgr::getInst().getWidgetConfig().getMainWindowKeepDocksExpandingContentArea();
+      m_services.get<ConfigMgr2>()->getWidgetConfig().getMainWindowKeepDocksExpandingContentArea();
   QStringList visibleDocks;
   for (const auto dock : m_docks) {
     if (!dock) {
@@ -396,7 +393,7 @@ QStringList DockWidgetHelper::hideDocks() {
 
 void DockWidgetHelper::restoreDocks(const QStringList &p_visibleDocks) {
   const auto &keepDocks =
-      ConfigMgr::getInst().getWidgetConfig().getMainWindowKeepDocksExpandingContentArea();
+      m_services.get<ConfigMgr2>()->getWidgetConfig().getMainWindowKeepDocksExpandingContentArea();
   bool hasVisible = false;
   for (const auto dock : m_docks) {
     if (!dock) {
