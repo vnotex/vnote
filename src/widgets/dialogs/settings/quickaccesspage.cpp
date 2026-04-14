@@ -16,6 +16,7 @@
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/snippetcoreservice.h>
 #include <core/sessionconfig.h>
 #include <utils/widgetutils.h>
 #include <widgets/lineeditwithsnippet.h>
@@ -134,9 +135,9 @@ void QuickAccessPage::setupUI() {
 
       {
         const QString label(tr("Note name:"));
-        // LEGACY: requires SnippetCoreService migration
-        // m_quickNoteNoteNameLineEdit =
-        //     WidgetsFactory::createLineEditWithSnippet(m_quickNoteInfoGroupBox);
+        auto *snippetService = m_services.get<SnippetCoreService>();
+        m_quickNoteNoteNameLineEdit =
+            WidgetsFactory::createLineEditWithSnippet(snippetService, m_quickNoteInfoGroupBox);
         infoLayout->addRow(label, m_quickNoteNoteNameLineEdit);
         connect(m_quickNoteNoteNameLineEdit, &QLineEdit::textChanged, this,
                 &QuickAccessPage::pageIsChanged);
