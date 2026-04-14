@@ -164,6 +164,8 @@ private:
 
   bool isLastWindowForBuffer() const;
 
+  QColor computeMarginBackground() const;
+
   // Controllers (owned via QObject parent).
   MarkdownEditorController *m_editorController = nullptr;
   MarkdownViewWindowController *m_windowController = nullptr;
