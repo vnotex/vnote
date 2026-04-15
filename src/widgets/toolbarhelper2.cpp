@@ -33,7 +33,6 @@
 #include <unitedentry/unitedentry.h>
 #include <unitedentry/unitedentrymgr.h>
 #include <utils/pathutils.h>
-#include <utils/vxurlutils.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
@@ -326,8 +325,7 @@ void ToolBarHelper2::updateQuickAccessMenu(QMenu *p_menu) {
     for (int i = 0; i < quickAccessItems.size(); ++i) {
       const auto &item = quickAccessItems[i];
       QString displayName = PathUtils::fileName(item.m_path);
-      QString displayFullName =
-          VxUrlUtils::getFilePathFromVxURL(item.m_path) + quickAccessModeSuffix(item.m_openMode);
+      QString displayFullName = item.m_path + quickAccessModeSuffix(item.m_openMode);
 
       auto act = p_menu->addAction(displayName);
       act->setToolTip(displayFullName);
@@ -509,11 +507,7 @@ void ToolBarHelper2::activateQuickAccess(const SessionConfig::QuickAccessItem &p
 
   const auto mode =
       resolveOpenMode(p_item.m_openMode, m_services.get<ConfigMgr2>()->getCoreConfig());
-  if (p_item.m_path.startsWith('#')) {
-    activateQuickAccessFromVxUrl(p_item.m_path);
-  } else {
-    activateQuickAccessFilePath(p_item.m_path, mode);
-  }
+  activateQuickAccessFilePath(p_item.m_path, mode);
 }
 
 void ToolBarHelper2::activateQuickAccessFilePath(const QString &p_file, ViewWindowMode p_mode) {
@@ -527,11 +521,4 @@ void ToolBarHelper2::activateQuickAccessFilePath(const QString &p_file, ViewWind
   FileOpenSettings settings;
   settings.m_mode = p_mode;
   bufferSvc->openBuffer(nodeId, settings);
-}
-
-void ToolBarHelper2::activateQuickAccessFromVxUrl(const QString &p_vxUrl) {
-  // TODO: Need NotebookService to get current notebook.
-  // For now, just try to open as a regular file path.
-  Q_UNUSED(p_vxUrl);
-  qDebug() << "activateQuickAccessFromVxUrl not fully implemented yet:" << p_vxUrl;
 }

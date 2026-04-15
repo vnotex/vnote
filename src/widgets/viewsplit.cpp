@@ -21,11 +21,10 @@
 #include <core/coreconfig.h>
 #include <core/thememgr.h>
 #include <core/vnotex.h>
-#include <utils/clipboardutils.h>
 #include <gui/utils/iconutils.h>
+#include <utils/clipboardutils.h>
 #include <utils/pathutils.h>
 #include <utils/urldragdroputils.h>
-#include <utils/vxurlutils.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
@@ -583,13 +582,8 @@ void ViewSplit::createContextMenuOnTabBar(QMenu *p_menu, int p_tabIdx) {
     auto win = getViewWindow(p_tabIdx);
     if (win) {
       const QString filePath = win->getBuffer()->getPath();
-      QString signature = VxUrlUtils::getSignatureFromFilePath(filePath);
-
-      if (!signature.isEmpty()) {
-        QString quickAccessItem = VxUrlUtils::generateVxURL(signature, filePath);
-        const QStringList files(quickAccessItem);
-        emit VNoteX::getInst().pinToQuickAccessRequested(files);
-      }
+      const QStringList files(filePath);
+      emit VNoteX::getInst().pinToQuickAccessRequested(files);
     }
   });
 

@@ -26,6 +26,7 @@
 #include "vnotex.h"
 #include "widgetsfactory.h"
 #include <core/exception.h>
+#include <gui/utils/iconutils.h>
 #include <notebook/externalnode.h>
 #include <notebook/node.h>
 #include <notebook/nodeparameters.h>
@@ -33,9 +34,7 @@
 #include <notebookconfigmgr/inotebookconfigmgr.h>
 #include <utils/clipboardutils.h>
 #include <utils/docsutils.h>
-#include <gui/utils/iconutils.h>
 #include <utils/pathutils.h>
-#include <utils/vxurlutils.h>
 #include <utils/widgetutils.h>
 
 #include <buffer/filetypehelper.h>
@@ -1491,25 +1490,14 @@ QAction *NotebookNodeExplorer::createAction(Action p_act, QObject *p_parent, boo
       auto nodes = p_master ? getMasterSelectedNodesAndExternalNodes()
                             : getSlaveSelectedNodesAndExternalNodes();
       QStringList files;
-      QStringList vxUrls;
       for (const auto &node : nodes.first) {
         files.push_back(node->fetchAbsolutePath());
       }
       for (const auto &node : nodes.second) {
         files.push_back(node->fetchAbsolutePath());
       }
-      // find file signature and pinToQuickAccess as VxUrl.
-      for (const auto &file : files) {
-        QFileInfo fileInfo(file);
-        QString signature = VxUrlUtils::getSignatureFromFilePath(file);
-
-        if (!signature.isEmpty()) {
-          QString item = VxUrlUtils::generateVxURL(signature, file);
-          vxUrls.append(item);
-        }
-      }
       if (!files.isEmpty()) {
-        emit VNoteX::getInst().pinToQuickAccessRequested(vxUrls);
+        emit VNoteX::getInst().pinToQuickAccessRequested(files);
       }
     });
     break;

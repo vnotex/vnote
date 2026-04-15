@@ -7,7 +7,6 @@
 
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
-#include <utils/vxurlutils.h>
 
 #include "historymgr.h"
 #include "iconfigmgr.h"

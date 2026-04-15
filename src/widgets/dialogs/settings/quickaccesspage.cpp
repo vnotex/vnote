@@ -166,6 +166,13 @@ void QuickAccessPage::loadInternal() {
 
   {
     const auto &quickAccess = sessionConfig.getQuickAccessItems();
+    // Build path->UUID map so UUIDs survive the text-edit round-trip.
+    m_quickAccessUuidMap.clear();
+    for (const auto &item : quickAccess) {
+      if (!item.m_uuid.isEmpty()) {
+        m_quickAccessUuidMap.insert(item.m_path, item.m_uuid);
+      }
+    }
     if (!quickAccess.isEmpty()) {
       m_quickAccessTextEdit->setPlainText(formatQuickAccessItems(quickAccess));
     }
@@ -197,7 +204,15 @@ bool QuickAccessPage::saveInternal() {
   {
     auto text = m_quickAccessTextEdit->toPlainText();
     if (!text.isEmpty()) {
-      sessionConfig.setQuickAccessItems(parseQuickAccessText(text));
+      auto items = parseQuickAccessText(text);
+      // Restore UUIDs from the hidden map.
+      for (auto &item : items) {
+        auto it = m_quickAccessUuidMap.constFind(item.m_path);
+        if (it != m_quickAccessUuidMap.constEnd()) {
+          item.m_uuid = it.value();
+        }
+      }
+      sessionConfig.setQuickAccessItems(items);
     }
   }
 
@@ -225,6 +240,10 @@ void QuickAccessPage::newQuickAccessItem() {
   NewQuickAccessItemDialog dialog(m_services, this);
   if (dialog.exec() == QDialog::Accepted) {
     auto item = dialog.getItem();
+    // Store UUID in hidden map so it survives the text round-trip.
+    if (!item.m_uuid.isEmpty()) {
+      m_quickAccessUuidMap.insert(item.m_path, item.m_uuid);
+    }
     QString line;
     if (item.m_openMode == QuickAccessOpenMode::Default) {
       line = item.m_path;

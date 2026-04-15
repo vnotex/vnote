@@ -13,6 +13,5 @@ target_sources(vnote PRIVATE
     processutils.cpp processutils.h
     urldragdroputils.cpp urldragdroputils.h
     utils.cpp utils.h
-    vxurlutils.cpp vxurlutils.h
     webutils.cpp webutils.h
 )

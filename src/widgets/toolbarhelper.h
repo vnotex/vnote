@@ -41,8 +41,6 @@ private:
   static void activateQuickAccess(const QString &p_file);
 
   static void activateQuickAccessFilePath(const QString &p_file);
-
-  static void activateQuickAccessFromVxUrl(const QString &p_vx_url);
 };
 } // namespace vnotex
 

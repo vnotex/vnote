@@ -63,8 +63,6 @@ private:
 
   void activateQuickAccessFilePath(const QString &p_file, ViewWindowMode p_mode);
 
-  void activateQuickAccessFromVxUrl(const QString &p_vxUrl);
-
   QToolBar *createToolBar(const QString &p_title, const QString &p_name);
 
   ServiceLocator &m_services;

@@ -3,6 +3,7 @@
 
 #include "settingspage.h"
 
+#include <QHash>
 #include <core/sessionconfig.h>
 
 class QGroupBox;
@@ -65,6 +66,10 @@ private:
   QVector<SessionConfig::QuickNoteScheme> m_quickNoteSchemes;
 
   int m_quickNoteCurrentIndex = -1;
+
+  // Hidden map: path -> UUID. Preserves UUIDs through the text-edit round-trip
+  // so the user never sees UUIDs but they survive save/load.
+  QHash<QString, QString> m_quickAccessUuidMap;
 };
 } // namespace vnotex
 

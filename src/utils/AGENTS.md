@@ -16,7 +16,6 @@
 | `ContentMediaUtils` | Content and media processing |
 | `DocsUtils` | Documentation utilities |
 | `WebUtils` | Web-related utilities |
-| `VxUrlUtils` | VNote URL scheme utilities |
 | `UrlDragDropUtils` | URL drag-and-drop handling |
 | `AsyncWorker` | Asynchronous task execution |
 | `CallbackPool` | Callback management pool |

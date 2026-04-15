@@ -34,7 +34,6 @@
 #include <gui/utils/iconutils.h>
 #include <utils/docsutils.h>
 #include <utils/pathutils.h>
-#include <utils/vxurlutils.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
@@ -249,7 +248,7 @@ void ToolBarHelper::updateQuickAccessMenu(QMenu *p_menu) {
   for (const auto &file : quickAccess) {
     auto act = new QWidgetAction(p_menu);
     QString displayName = PathUtils::fileName(file);
-    QString displayFullName = VxUrlUtils::getFilePathFromVxURL(file);
+    QString displayFullName = file;
 
     auto widget = new LabelWithButtonsWidget(displayName, LabelWithButtonsWidget::Delete);
     p_menu->connect(widget, &LabelWithButtonsWidget::triggered, p_menu, [p_menu, act]() {
@@ -407,11 +406,7 @@ void ToolBarHelper::setupSettingsButton(MainWindow *p_win, QToolBar *p_toolBar) 
 }
 
 void ToolBarHelper::activateQuickAccess(const QString &p_file) {
-  if (p_file.startsWith('#')) {
-    activateQuickAccessFromVxUrl(p_file);
-  } else {
-    activateQuickAccessFilePath(p_file);
-  }
+  activateQuickAccessFilePath(p_file);
 }
 
 void ToolBarHelper::activateQuickAccessFilePath(const QString &p_file) {
@@ -420,28 +415,4 @@ void ToolBarHelper::activateQuickAccessFilePath(const QString &p_file) {
   paras->m_mode = coreConfig.getDefaultOpenMode();
 
   emit VNoteX::getInst().openFileRequested(p_file, paras);
-}
-
-void ToolBarHelper::activateQuickAccessFromVxUrl(const QString &p_vx_url) {
-  auto notebook = VNoteX::getInst().getNotebookMgr().getCurrentNotebook();
-  if (!notebook) {
-    return;
-  }
-
-  // get 'signature' from format '#signature:filename'
-  QString signature = VxUrlUtils::getSignatureFromVxURL(p_vx_url);
-
-  // get FilePath from Signature from currentNotebook
-  const QString rootPath = notebook->getRootFolderAbsolutePath();
-  const QString filePath = VxUrlUtils::getFilePathFromSignature(rootPath, signature);
-
-  const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
-  auto paras = QSharedPointer<FileOpenParameters>::create();
-  paras->m_mode = coreConfig.getDefaultOpenMode();
-
-  if (filePath.isEmpty()) {
-    return;
-  }
-
-  emit VNoteX::getInst().openFileRequested(filePath, paras);
 }
