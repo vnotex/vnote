@@ -127,7 +127,7 @@ void SessionConfig::loadCore(const QJsonObject &p_session) {
   if (!isUndefinedKey(coreObj, QStringLiteral("systemTitleBar"))) {
     m_systemTitleBarEnabled = readBool(coreObj, QStringLiteral("systemTitleBar"));
   } else {
-    m_systemTitleBarEnabled = true;
+    m_systemTitleBarEnabled = false;
   }
 
   if (!isUndefinedKey(coreObj, QStringLiteral("minimizeToSystemTray"))) {

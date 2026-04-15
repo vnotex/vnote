@@ -198,7 +198,7 @@ private:
   OpenGL m_openGL = OpenGL::None;
 
   // Whether use system's title bar or not.
-  bool m_systemTitleBarEnabled = true;
+  bool m_systemTitleBarEnabled = false;
 
   // Whether to minimize to tray.
   // -1 for prompting for user;
