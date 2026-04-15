@@ -75,6 +75,10 @@ public:
   // Extended version for explicit folder/file specification
   void reloadNode(const NodeIdentifier &p_nodeId, bool p_isFolder);
 
+  // === State capture/restore ===
+  NodeExplorerState captureState() const override;
+  void applyState(const NodeExplorerState &p_state) override;
+
   // Splitter state for session save/restore
   QByteArray saveSplitterState() const;
   void restoreSplitterState(const QByteArray &p_data);

@@ -60,6 +60,10 @@ public:
 
   NavigationMode *getNavigationModeWrapper() const;
 
+  // === State capture/restore ===
+  NodeExplorerState captureState() const override;
+  void applyState(const NodeExplorerState &p_state) override;
+
 signals:
   void exportNodeRequested(const NodeIdentifier &p_nodeId);
 

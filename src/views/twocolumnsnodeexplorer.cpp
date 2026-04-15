@@ -524,3 +524,62 @@ void TwoColumnsNodeExplorer::onFileContextMenu(const NodeIdentifier &p_nodeId,
     menu->deleteLater();
   }
 }
+
+NodeExplorerState TwoColumnsNodeExplorer::captureState() const {
+  NodeExplorerState state;
+
+  // Capture folder-tree expanded nodes from the left panel.
+  if (m_folderView) {
+    state.expandedFolders = m_folderView->getExpandedFolders();
+  }
+
+  // Effective current node: prefer file selection, fallback to folder selection.
+  state.currentNodeId = currentNodeId();
+
+  // Display root: the folder currently shown in the file panel.
+  if (m_fileModel) {
+    state.displayRootId = m_fileModel->getDisplayRoot();
+  }
+
+  return state;
+}
+
+void TwoColumnsNodeExplorer::applyState(const NodeExplorerState &p_state) {
+  // 1. Replay folder-tree expansions (ancestors must be expanded before selection).
+  if (m_folderView && !p_state.expandedFolders.isEmpty()) {
+    m_folderView->replayExpandedFolders(p_state.expandedFolders);
+  }
+
+  // 2. Restore folder selection / display root.
+  if (p_state.displayRootId.isValid()) {
+    if (p_state.displayRootId.isRoot()) {
+      // Root folder — just set file model display root directly (no tree node to select).
+      if (m_fileModel) {
+        m_fileModel->setDisplayRoot(p_state.displayRootId);
+      }
+    } else {
+      // Non-root folder — select it in the folder view (triggers onFolderSelectionChanged
+      // which sets the file model display root automatically).
+      QModelIndex idx =
+          m_folderModel ? m_folderModel->indexFromNodeId(p_state.displayRootId) : QModelIndex();
+      if (idx.isValid()) {
+        m_folderView->selectNode(p_state.displayRootId);
+      } else {
+        // Stale/missing — fall back to notebook root.
+        NodeIdentifier rootId;
+        rootId.notebookId = m_notebookId;
+        if (m_fileModel) {
+          m_fileModel->setDisplayRoot(rootId);
+        }
+      }
+    }
+  }
+
+  // 3. Restore file selection if currentNodeId refers to a visible file.
+  if (p_state.currentNodeId.isValid() && m_fileView && m_fileModel) {
+    QModelIndex fileIdx = m_fileModel->indexFromNodeId(p_state.currentNodeId);
+    if (fileIdx.isValid()) {
+      m_fileView->selectNode(p_state.currentNodeId);
+    }
+  }
+}

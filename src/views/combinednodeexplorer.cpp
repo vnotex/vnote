@@ -264,3 +264,25 @@ void CombinedNodeExplorer::setExternalNodesVisible(bool p_visible) {
 NavigationMode *CombinedNodeExplorer::getNavigationModeWrapper() const {
   return m_navigationWrapper.data();
 }
+
+NodeExplorerState CombinedNodeExplorer::captureState() const {
+  NodeExplorerState state;
+  if (m_view) {
+    state.expandedFolders = m_view->getExpandedFolders();
+  }
+  state.currentNodeId = currentNodeId();
+  // displayRootId left default/empty — Combined mode has no separate display root.
+  return state;
+}
+
+void CombinedNodeExplorer::applyState(const NodeExplorerState &p_state) {
+  // Replay expansion before selection — ancestors must be expanded first.
+  if (m_view && !p_state.expandedFolders.isEmpty()) {
+    m_view->replayExpandedFolders(p_state.expandedFolders);
+  }
+
+  // Restore selection if the captured node is still valid.
+  if (p_state.currentNodeId.isValid()) {
+    selectNode(p_state.currentNodeId);
+  }
+}
