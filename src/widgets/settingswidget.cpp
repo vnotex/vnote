@@ -101,7 +101,13 @@ SettingsWidget::SettingsWidget(ServiceLocator &p_services, MainWindow2 *p_mainWi
 QString SettingsWidget::title() const { return tr("Settings"); }
 
 QIcon SettingsWidget::icon() const {
-  return QIcon(QStringLiteral(":/vnotex/data/core/icons/settings.svg"));
+  auto *themeService = m_services.get<ThemeService>();
+  if (!themeService) {
+    return QIcon();
+  }
+  const QString fg =
+      themeService->paletteColor(QStringLiteral("widgets#viewsplit#action_button#fg"));
+  return IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("settings.svg")), fg);
 }
 
 QString SettingsWidget::virtualAddress() const { return QStringLiteral("vx://settings"); }
