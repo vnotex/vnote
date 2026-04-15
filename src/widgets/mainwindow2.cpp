@@ -153,6 +153,7 @@ void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen) {
     emit layoutChanged();
 
     m_notebookExplorer->loadNotebooks();
+    m_notebookExplorer->applyRestoredSessionState();
 
     // Initialize snippet panel (load snippets from config).
     m_snippetPanel->initialize();

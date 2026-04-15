@@ -2,11 +2,13 @@
 #define NOTEBOOKEXPLORER2_H
 
 #include <QFrame>
+#include <QHash>
 #include <QVBoxLayout>
 
 #include <core/global.h>
 #include <core/noncopyable.h>
 #include <nodeinfo.h>
+#include <views/inodeexplorer.h>
 
 class QSplitter;
 class QMenu;
@@ -65,6 +67,7 @@ public:
   // State saving/restoring for session
   QByteArray saveState() const;
   void restoreState(const QByteArray &p_data);
+  void applyRestoredSessionState();
 
 public slots:
   // Notebook operations - these launch dialogs
@@ -128,6 +131,8 @@ private:
   void onImportFilesRequested(const NodeIdentifier &p_targetFolderId);
   void onImportFolderRequested(const NodeIdentifier &p_targetFolderId);
   void setCurrentNotebookInternal(const QString &p_notebookId);
+  void cacheCurrentExplorerState();
+  void applyCachedExplorerState(const QString &p_notebookId);
   // Apply view order to all node views
   void setNodeViewOrder(ViewOrder p_order);
 
@@ -145,6 +150,8 @@ private:
   // State
   ExploreMode m_exploreMode = Combined;
   QString m_currentNotebookId;
+  QHash<QString, NodeExplorerState> m_notebookStateCache;
+  bool m_hasRestoredSessionStatePending = false;
 };
 
 } // namespace vnotex

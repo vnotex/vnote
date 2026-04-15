@@ -53,6 +53,31 @@
 
 using namespace vnotex;
 
+namespace {
+
+const quint32 c_sessionVersion = 2;
+
+bool isNodeExplorerStateEmpty(const NodeExplorerState &p_state) {
+  return p_state.expandedFolders.isEmpty() && !p_state.currentNodeId.isValid() &&
+         !p_state.displayRootId.isValid();
+}
+
+NodeExplorerState mergeNodeExplorerStateForCache(const NodeExplorerState &p_capturedState,
+                                                 const NodeExplorerState &p_existingState) {
+  if (isNodeExplorerStateEmpty(p_capturedState) && !isNodeExplorerStateEmpty(p_existingState)) {
+    return p_existingState;
+  }
+
+  NodeExplorerState mergedState = p_capturedState;
+  if (!mergedState.displayRootId.isValid() && p_existingState.displayRootId.isValid()) {
+    mergedState.displayRootId = p_existingState.displayRootId;
+  }
+
+  return mergedState;
+}
+
+} // namespace
+
 NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services) {
   setupUI();
@@ -151,7 +176,9 @@ void NotebookExplorer2::setupTitleBarMenu() {
               p_checked);
           // Apply to current explorer
           if (m_nodeExplorer) {
+            cacheCurrentExplorerState();
             m_nodeExplorer->setExternalNodesVisible(p_checked);
+            applyCachedExplorerState(m_currentNotebookId);
           }
         });
     showAct->setCheckable(true);
@@ -495,11 +522,18 @@ void NotebookExplorer2::setCurrentNotebook(const QString &p_notebookId) {
 }
 
 void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) {
+  if (m_nodeExplorer && !m_currentNotebookId.isEmpty() && m_currentNotebookId != p_notebookId) {
+    cacheCurrentExplorerState();
+  }
+
   m_currentNotebookId = p_notebookId;
 
   // Update current explorer
   if (m_nodeExplorer) {
     m_nodeExplorer->setNotebookId(p_notebookId);
+    if (!m_hasRestoredSessionStatePending) {
+      applyCachedExplorerState(p_notebookId);
+    }
   }
 
   emit currentNotebookChanged(p_notebookId);
@@ -551,6 +585,10 @@ void NotebookExplorer2::setExploreMode(ExploreMode p_mode) {
 NotebookExplorer2::ExploreMode NotebookExplorer2::exploreMode() const { return m_exploreMode; }
 
 void NotebookExplorer2::updateExploreMode() {
+  if (m_nodeExplorer && !m_currentNotebookId.isEmpty()) {
+    cacheCurrentExplorerState();
+  }
+
   // Unregister old navigation wrapper before deleting explorer (prevents dangling pointer)
   auto *navService = m_services.get<NavigationModeService>();
   if (navService && m_nodeExplorer) {
@@ -579,9 +617,38 @@ void NotebookExplorer2::updateExploreMode() {
   // Sync notebook to the explorer
   if (!m_currentNotebookId.isEmpty()) {
     m_nodeExplorer->setNotebookId(m_currentNotebookId);
+    applyCachedExplorerState(m_currentNotebookId);
   }
 
   updateFocusProxy();
+}
+
+void NotebookExplorer2::cacheCurrentExplorerState() {
+  if (!m_nodeExplorer) {
+    return;
+  }
+
+  const auto notebookId = m_nodeExplorer->getNotebookId();
+  if (notebookId.isEmpty()) {
+    return;
+  }
+
+  const auto capturedState = m_nodeExplorer->captureState();
+  if (m_notebookStateCache.contains(notebookId)) {
+    m_notebookStateCache[notebookId] =
+        mergeNodeExplorerStateForCache(capturedState, m_notebookStateCache.value(notebookId));
+    return;
+  }
+
+  m_notebookStateCache[notebookId] = capturedState;
+}
+
+void NotebookExplorer2::applyCachedExplorerState(const QString &p_notebookId) {
+  if (!m_nodeExplorer || p_notebookId.isEmpty() || !m_notebookStateCache.contains(p_notebookId)) {
+    return;
+  }
+
+  m_nodeExplorer->applyState(m_notebookStateCache.value(p_notebookId));
 }
 
 void NotebookExplorer2::updateFocusProxy() { setFocusProxy(m_nodeExplorer); }
@@ -858,9 +925,15 @@ NodeIdentifier NotebookExplorer2::currentExploredFolderId() const {
 NodeIdentifier NotebookExplorer2::currentExploredNodeId() const { return currentNodeId(); }
 
 QByteArray NotebookExplorer2::saveState() const {
+  // Flush the active notebook's latest expansion/selection into the cache
+  // before serializing, so the current session state is not lost at shutdown.
+  const_cast<NotebookExplorer2 *>(this)->cacheCurrentExplorerState();
+
   // Save current node path and view state
   QByteArray state;
   QDataStream stream(&state, QIODevice::WriteOnly);
+
+  stream << c_sessionVersion;
 
   // Save explore mode
   stream << static_cast<int>(m_exploreMode);
@@ -873,6 +946,8 @@ QByteArray NotebookExplorer2::saveState() const {
     stream << QByteArray();
   }
 
+  stream << m_notebookStateCache;
+
   return state;
 }
 
@@ -883,8 +958,18 @@ void NotebookExplorer2::restoreState(const QByteArray &p_data) {
 
   QDataStream stream(p_data);
 
-  int mode;
-  stream >> mode;
+  quint32 versionOrMode = 0;
+  stream >> versionOrMode;
+
+  int mode = 0;
+  bool readCache = false;
+  if (versionOrMode == c_sessionVersion) {
+    stream >> mode;
+    readCache = true;
+  } else {
+    mode = static_cast<int>(versionOrMode);
+  }
+
   setExploreMode(static_cast<ExploreMode>(mode));
 
   QByteArray splitterState;
@@ -895,6 +980,24 @@ void NotebookExplorer2::restoreState(const QByteArray &p_data) {
       twoCol->restoreSplitterState(splitterState);
     }
   }
+
+  if (readCache) {
+    QHash<QString, NodeExplorerState> notebookStateCache;
+    stream >> notebookStateCache;
+    if (stream.status() == QDataStream::Ok) {
+      m_notebookStateCache = notebookStateCache;
+      m_hasRestoredSessionStatePending = true;
+    }
+  }
+}
+
+void NotebookExplorer2::applyRestoredSessionState() {
+  if (!m_hasRestoredSessionStatePending) {
+    return;
+  }
+
+  applyCachedExplorerState(m_currentNotebookId);
+  m_hasRestoredSessionStatePending = false;
 }
 
 void NotebookExplorer2::setNodeViewOrder(ViewOrder p_order) {
