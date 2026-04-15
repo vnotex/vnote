@@ -5,12 +5,9 @@
 #include <QSharedPointer>
 #include <QTreeView>
 
-
 #include <nodeinfo.h>
 
-
 namespace vnotex {
-
 
 class NotebookNodeController;
 struct FileOpenParameters;
@@ -36,6 +33,10 @@ public:
   void selectNode(const NodeIdentifier &p_nodeId);
   void expandToNode(const NodeIdentifier &p_nodeId);
   void scrollToNode(const NodeIdentifier &p_nodeId);
+
+  // Expanded-folder state capture/replay
+  QList<NodeIdentifier> getExpandedFolders() const;
+  void replayExpandedFolders(const QList<NodeIdentifier> &p_folders);
 
   // Expand/collapse helpers
   void expandAll();
@@ -69,8 +70,6 @@ private slots:
   void onItemActivated(const QModelIndex &p_index);
   void onItemExpanded(const QModelIndex &p_index);
 
-
-
   // Check if single-click activation is enabled in config
   bool isSingleClickActivationEnabled() const;
 
@@ -88,8 +87,6 @@ private:
   void setupView();
 
   NotebookNodeController *m_controller = nullptr;
-
-
 };
 
 } // namespace vnotex

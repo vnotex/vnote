@@ -7,6 +7,7 @@
 #include <QKeyEvent>
 #include <QMimeData>
 #include <QMouseEvent>
+#include <QQueue>
 #include <QSortFilterProxyModel>
 #include <QUrl>
 
@@ -197,6 +198,71 @@ void NotebookNodeView::scrollToNode(const NodeIdentifier &p_nodeId) {
 void NotebookNodeView::expandAll() { QTreeView::expandAll(); }
 
 void NotebookNodeView::collapseAll() { QTreeView::collapseAll(); }
+
+QList<NodeIdentifier> NotebookNodeView::getExpandedFolders() const {
+  QList<NodeIdentifier> result;
+  if (!model()) {
+    return result;
+  }
+
+  // BFS traversal ensures parent-before-child order.
+  QQueue<QModelIndex> queue;
+  int rootRows = model()->rowCount(QModelIndex());
+  for (int i = 0; i < rootRows; ++i) {
+    queue.enqueue(model()->index(i, 0, QModelIndex()));
+  }
+
+  while (!queue.isEmpty()) {
+    QModelIndex idx = queue.dequeue();
+    if (!idx.isValid()) {
+      continue;
+    }
+
+    if (isExpanded(idx)) {
+      NodeInfo info = nodeInfoFromIndex(idx);
+      if (info.isValid() && info.isFolder) {
+        result.append(info.id);
+      }
+
+      // Enqueue children for further traversal.
+      int childCount = model()->rowCount(idx);
+      for (int i = 0; i < childCount; ++i) {
+        queue.enqueue(model()->index(i, 0, idx));
+      }
+    }
+  }
+
+  return result;
+}
+
+void NotebookNodeView::replayExpandedFolders(const QList<NodeIdentifier> &p_folders) {
+  if (!model() || p_folders.isEmpty()) {
+    return;
+  }
+
+  // Ensure root children are loaded (may be empty after notebook/display-root switch).
+  if (model()->canFetchMore(QModelIndex())) {
+    model()->fetchMore(QModelIndex());
+  }
+
+  for (const NodeIdentifier &folderId : p_folders) {
+    if (!folderId.isValid()) {
+      continue;
+    }
+
+    QModelIndex idx = indexFromNodeId(folderId);
+    if (!idx.isValid()) {
+      continue; // Stale/missing ID — skip gracefully.
+    }
+
+    // Fetch children before expanding so the tree has data to show.
+    if (model()->canFetchMore(idx)) {
+      model()->fetchMore(idx);
+    }
+
+    expand(idx);
+  }
+}
 
 NodeIdentifier NotebookNodeView::nodeIdFromIndex(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
