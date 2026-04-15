@@ -132,7 +132,7 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
     newMenu->addAction(MainWindow2::tr("Import Folder"), newMenu,
                        [this]() { emit m_mainWindow->importFolderRequested(); });
 
-    auto exportAct = newMenu->addAction(MainWindow2::tr("Export (Convert Format)"), newMenu,
+    auto exportAct = newMenu->addAction(MainWindow2::tr("Export"), newMenu,
                                         [this]() { emit m_mainWindow->exportRequested(); });
     WidgetUtils::addActionShortcut(exportAct, coreConfig.getShortcut(CoreConfig::Shortcut::Export));
 

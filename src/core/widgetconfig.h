@@ -130,10 +130,10 @@ private:
   bool m_nodeExplorerSingleClickActivation = false;
 
   // Default layout mode for view windows.
-  ViewWindowLayoutMode m_viewWindowLayoutMode = ViewWindowLayoutMode::FullWidth;
+  ViewWindowLayoutMode m_viewWindowLayoutMode = ViewWindowLayoutMode::ReadableWidth;
 
   // Maximum content width in pixels for Readable Width mode.
-  int m_readableWidthMaxPx = 720;
+  int m_readableWidthMaxPx = 900;
 
   // Search panel: scope index (0=Buffers, 1=CurrentFolder, 2=CurrentNotebook, 3=AllNotebooks).
   int m_searchScope = 0;
