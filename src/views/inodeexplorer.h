@@ -1,12 +1,14 @@
 #ifndef INODEEXPLORER_H
 #define INODEEXPLORER_H
 
+#include <QDataStream>
 #include <QList>
 #include <QSharedPointer>
 #include <QWidget>
 
 #include <core/fileopensettings.h>
 #include <core/global.h>
+#include <core/nodeidentifier.h>
 #include <nodeinfo.h>
 
 class QMenu;
@@ -15,6 +17,30 @@ namespace vnotex {
 
 class Event;
 class NavigationMode;
+
+// Serializable snapshot of a node explorer's expansion, selection, and display state.
+// Plain value type — no QObject, no heap allocation.
+struct NodeExplorerState {
+  // Expanded folder IDs in parent-before-child order.
+  QList<NodeIdentifier> expandedFolders;
+
+  // Currently focused node.
+  NodeIdentifier currentNodeId;
+
+  // For TwoColumns mode: the folder currently displayed in the file panel.
+  // Empty/default for Combined mode.
+  NodeIdentifier displayRootId;
+};
+
+inline QDataStream &operator<<(QDataStream &p_stream, const NodeExplorerState &p_state) {
+  p_stream << p_state.expandedFolders << p_state.currentNodeId << p_state.displayRootId;
+  return p_stream;
+}
+
+inline QDataStream &operator>>(QDataStream &p_stream, NodeExplorerState &p_state) {
+  p_stream >> p_state.expandedFolders >> p_state.currentNodeId >> p_state.displayRootId;
+  return p_stream;
+}
 
 // INodeExplorer is the abstract base class for node explorer widgets.
 // Both CombinedNodeExplorer and TwoColumnsNodeExplorer implement this interface,
@@ -72,6 +98,10 @@ public:
 
   // Navigation mode wrapper (override in subclasses that support navigation)
   virtual NavigationMode *getNavigationModeWrapper() const { return nullptr; }
+
+  // === State capture/restore ===
+  virtual NodeExplorerState captureState() const = 0;
+  virtual void applyState(const NodeExplorerState &p_state) = 0;
 
 signals:
   // === Activation signals ===
