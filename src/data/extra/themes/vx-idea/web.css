@@ -225,10 +225,10 @@ div.vx-plantuml-graph {
     color: #c4c4c4;
 }
 
-/* ::selection {
+::selection {
   background-color: #dae3ea;
   color: #34495e;
-} */
+}
 
 ::-webkit-scrollbar {
     width: 10px;
