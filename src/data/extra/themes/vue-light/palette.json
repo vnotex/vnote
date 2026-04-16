@@ -1,6 +1,6 @@
 {
     "metadata" : {
-        "revision" : 2.0,
+        "revision" : 3,
         "editor-highlight-theme" : "Default",
         "markdown-editor-highlight-theme" : "Markdown Default",
         "display_name" : "Vue-light"
@@ -326,6 +326,9 @@
             "title" : {
                 "bg" : "@base#title#bg",
                 "button" : {
+                    "pressed" : {
+                        "bg" : "@base#pressed#bg"
+                    },
                     "hover" : {
                         "bg" : "@base#hover#bg"
                     }
@@ -602,7 +605,10 @@
             },
             "handle" : {
                 "border" : "@base#content#border",
-                "bg" : "@base#master#bg"
+                "bg" : "@base#master#bg",
+                "hover" : {
+                    "bg" : "@base#master#alt"
+                }
             },
             "subpage" : {
                 "border" : "@widgets#qslider#handle#border",
