@@ -76,6 +76,10 @@ vnotex--TitleBar QLabel[TitleBarTitle="true"] {
     margin: 0px;
 }
 
+vnotex--TitleBar QToolBar {
+    qproperty-iconSize: 16px 16px;
+}
+
 /* QDockWidget */
 QDockWidget {
     color: @widgets#qdockwidget#fg;
@@ -99,6 +103,10 @@ QDockWidget::close-button, QDockWidget::float-button {
     icon-size: 16px;
     width: 16px;
     padding: 2px;
+}
+
+QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+    background-color: @widgets#qdockwidget#title#button#pressed#bg;
 }
 
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
@@ -332,6 +340,12 @@ QMenu::indicator:exclusive:unchecked {
 
 QMenu::indicator:exclusive:checked {
     image: url(menu_radiobutton.svg);
+}
+
+QMenu::right-arrow {
+    image: url(right.svg);
+    width: 16px;
+    height: 16px;
 }
 
 /* QWidgetAction item */
@@ -612,6 +626,12 @@ QTabBar[MainWindowSideBar="true"]::tab:left:hover,
 QTabBar[MainWindowSideBar="true"]::tab:right:hover {
     color: transparent;
     background-color: @base#hover#bg;
+}
+
+QTabBar[MainWindowSideBar="true"]::tab:left:pressed,
+QTabBar[MainWindowSideBar="true"]::tab:right:pressed {
+    color: transparent;
+    background-color: @widgets#qtoolbutton#pressed#bg;
 }
 
 QTabBar[MainWindowSideBar="true"]::tab:left:selected {
@@ -1179,6 +1199,10 @@ QSlider::handle:horizontal {
     margin: -2px 0;
 }
 
+QSlider::handle:horizontal:hover {
+    background-color: @widgets#qslider#handle#hover#bg;
+}
+
 QSlider::add-page:horizontal {
     background-color: transparent;
 }
@@ -1201,6 +1225,10 @@ QSlider::handle:vertical {
     background-color: @widgets#qslider#handle#bg;
     height: 18px;
     margin: 0 -2px;
+}
+
+QSlider::handle:vertical:hover {
+    background-color: @widgets#qslider#handle#hover#bg;
 }
 
 QSlider::add-page:vertical {
