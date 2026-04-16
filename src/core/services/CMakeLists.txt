@@ -16,6 +16,7 @@ set(SERVICES_SOURCES
   htmltemplateservice.cpp
   hookmanager.cpp
   workspacecoreservice.cpp
+  vnote3migrationservice.cpp
   ${CMAKE_SOURCE_DIR}/src/core/hookevents.cpp
   ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/fileutils.cpp
@@ -39,6 +40,7 @@ set(SERVICES_HEADERS
   htmltemplateservice.h
   hookmanager.h
   workspacecoreservice.h
+  vnote3migrationservice.h
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})
