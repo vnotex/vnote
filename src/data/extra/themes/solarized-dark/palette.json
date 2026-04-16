@@ -1,15 +1,15 @@
 {
     "metadata" : {
-        "revision" : 0,
-        "//comment" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
-        "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
+        "revision" : 1,
+        "//comment_editor-highlight_1" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
+        "//comment_editor-highlight_2" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "editor-highlight-theme" : "Solarized Dark",
-        "//comment" : "If there is a file named 'markdown-editor-highlight.theme' under theme folder, this value will be ignored.",
-        "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
-        "//comment" : "If empty, 'editor-highlight-theme' will be used.",
+        "//comment_markdown_editor-highlight_1" : "If there is a file named 'markdown-editor-highlight.theme' under theme folder, this value will be ignored.",
+        "//comment_markdown_editor-highlight_2" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
+        "//comment_markdown_editor-highlight_3" : "If empty, 'editor-highlight-theme' will be used.",
         "markdown-editor-highlight-theme" : "Solarized Dark",
         "display_name" : "Solarized-dark",
-        "//comment" : "Display name for different locales",
+        "//comment_display_name" : "Display name for different locales",
         "display_name_zh_CN" : "Solarized-dark",
         "author": "nriver"
     },
@@ -117,6 +117,18 @@
                     "fg" : "@base#content#selected#fg",
                     "bg" : "@base#content#hover#bg"
                 }
+            }
+        },
+        "edit" : {
+            "focus" : {
+                "fg" : "@base#content#fg",
+                "bg" : "@base#content#bg",
+                "border" : "@base#master#bg"
+            },
+            "hover" : {
+                "fg" : "@base#content#fg",
+                "bg" : "@palette#bg2_7",
+                "border" : "@base#master#bg"
             }
         },
         "error" : {
@@ -270,6 +282,24 @@
             "bg" : "@base#normal#bg",
             "separator" : {
                 "bg" : "@widgets#separator#bg"
+            },
+            "side_bar" : {
+                "fg" : "@base#normal#fg",
+                "bg" : "@palette#bg1_71",
+                "selected" : {
+                    "fg" : "@base#selected#fg",
+                    "bg" : "@base#selected#bg"
+                },
+                "icon" : {
+                    "fg" : "@widgets#qmainwindow#side_bar#fg"
+                },
+                "hover" : {
+                    "fg" : "@base#hover#fg",
+                    "bg" : "@base#hover#bg"
+                },
+                "widget" : {
+                    "bg" : "@palette#bg1_8"
+                }
             }
         },
         "dragdropareaindicator" : {
@@ -335,6 +365,9 @@
             "title" : {
                 "bg" : "@base#title#bg",
                 "button" : {
+                    "pressed" : {
+                        "bg" : "@base#pressed#bg"
+                    },
                     "hover" : {
                         "bg" : "@base#hover#bg"
                     }
@@ -611,7 +644,10 @@
             },
             "handle" : {
                 "border" : "@base#content#border",
-                "bg" : "@base#master#bg"
+                "bg" : "@base#master#bg",
+                "hover" : {
+                    "bg" : "@base#master#alt"
+                }
             },
             "subpage" : {
                 "border" : "@widgets#qslider#handle#border",
