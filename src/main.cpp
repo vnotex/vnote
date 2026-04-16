@@ -3,46 +3,47 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QDir>
 #include <QIcon>
+#include <QProcess>
 #include <QSslSocket>
 #include <QTextCodec>
-#include <QDir>
 #include <QTranslator>
-#include <QProcess>
 
 #include <core/configmgr2.h>
 #include <core/constants.h>
-#include <core/logger.h>
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/hooknames.h>
+#include <core/logger.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/configservice.h>
+#include <core/services/filetypecoreservice.h>
 #include <core/services/hookmanager.h>
-#include <core/services/bufferservice.h>
+#include <core/services/htmltemplateservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/searchcoreservice.h>
 #include <core/services/searchservice.h>
-#include <core/services/workspacecoreservice.h>
-#include <core/services/filetypecoreservice.h>
-#include <gui/services/themeservice.h>
-#include <gui/services/navigationmodeservice.h>
+#include <core/services/snippetcoreservice.h>
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
-#include <core/services/snippetcoreservice.h>
 #include <core/services/templateservice.h>
-#include <core/services/htmltemplateservice.h>
-#include <gui/services/viewwindowfactory.h>
-#include <gui/utils/widgetutils.h>
+#include <core/services/vnote3migrationservice.h>
+#include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/singleinstanceguard.h>
+#include <gui/services/navigationmodeservice.h>
+#include <gui/services/themeservice.h>
+#include <gui/services/viewwindowfactory.h>
+#include <gui/utils/widgetutils.h>
 #include <qwindow.h>
+#include <vtextedit/spellchecker.h>
+#include <vtextedit/vtexteditor.h>
 #include <vxcore/vxcore.h>
 #include <widgets/mainwindow2.h>
 #include <widgets/messageboxhelper.h>
-#include <vtextedit/spellchecker.h>
-#include <vtextedit/vtexteditor.h>
 
 #include "application.h"
 #include "commandlineoptions.h"
@@ -180,6 +181,8 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<ConfigCoreService>(configService.coreService());
     serviceLocator.registerService<NotebookCoreService>(&notebookService);
+    VNote3MigrationService migrationService(&notebookService);
+    serviceLocator.registerService<VNote3MigrationService>(&migrationService);
     serviceLocator.registerService<BufferService>(&bufferService);
     serviceLocator.registerService<SearchCoreService>(&searchService);
     serviceLocator.registerService<SearchService>(&searchAsyncService);
@@ -237,11 +240,9 @@ int main(int argc, char *argv[]) {
     configMgr.initAfterQtAppStarted();
 
     // Create ThemeService after Qt app is started
-    ThemeService themeService({
-        configMgr.getCoreConfig().getTheme(),
-        configMgr.getCoreConfig().getLocaleToUse(),
-        configService.getDataPath(DataLocation::App)
-    });
+    ThemeService themeService({configMgr.getCoreConfig().getTheme(),
+                               configMgr.getCoreConfig().getLocaleToUse(),
+                               configService.getDataPath(DataLocation::App)});
     serviceLocator.registerService<ThemeService>(&themeService);
     app.setThemeService(&themeService);
     qInfo() << "ThemeService registered";
@@ -337,8 +338,7 @@ int main(int argc, char *argv[]) {
     MainWindow2 mainWindow(serviceLocator);
 
     // Create NavigationModeService AFTER MainWindow2 (needs top-level widget)
-    NavigationModeService navigationModeService(
-        configMgr.getCoreConfig(), &mainWindow);
+    NavigationModeService navigationModeService(configMgr.getCoreConfig(), &mainWindow);
     serviceLocator.registerService<NavigationModeService>(&navigationModeService);
     qInfo() << "NavigationModeService registered";
 
