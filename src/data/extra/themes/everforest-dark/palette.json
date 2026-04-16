@@ -323,7 +323,7 @@
         },
         "qtooltip": {
             "fg": "@base#master#fg",
-            "bg": "@base#master#bg"
+            "bg": "@base#normal#bg"
         },
         "qtoolbar": {
             "bg": "@base#header#bg",
