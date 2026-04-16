@@ -1,6 +1,6 @@
 {
     "metadata" : {
-        "revision" : 0,
+        "revision" : 1,
         "//comment" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
         "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "editor-highlight-theme" : "vscode-dark",
@@ -116,6 +116,18 @@
                     "fg" : "@base#content#selected#fg",
                     "bg" : "@base#content#hover#bg"
                 }
+            }
+        },
+        "edit" : {
+            "focus" : {
+                "fg" : "@base#content#fg",
+                "bg" : "@base#focus#bg",
+                "border" : "@base#master#bg"
+            },
+            "hover" : {
+                "fg" : "@base#content#fg",
+                "bg" : "@base#hover#bg",
+                "border" : "@base#master#bg"
             }
         },
         "error" : {
@@ -267,6 +279,24 @@
         "qmainwindow" : {
             "fg" : "@base#normal#fg",
             "bg" : "@base#normal#bg",
+            "side_bar" : {
+                "fg" : "@base#normal#fg",
+                "bg" : "@palette#bg1_51",
+                "selected" : {
+                    "fg" : "@base#selected#fg",
+                    "bg" : "@base#selected#bg"
+                },
+                "icon" : {
+                    "fg" : "@widgets#mainwindow#side_bar#fg"
+                },
+                "hover" : {
+                    "fg" : "@base#hover#fg",
+                    "bg" : "@base#hover#bg"
+                },
+                "widget" : {
+                    "bg" : "@palette#bg10_5"
+                }
+            },
             "separator" : {
                 "bg" : "@widgets#separator#bg"
             }
@@ -334,6 +364,9 @@
             "title" : {
                 "bg" : "@base#title#bg",
                 "button" : {
+                    "pressed" : {
+                        "bg" : "@base#pressed#bg"
+                    },
                     "hover" : {
                         "bg" : "@base#hover#bg"
                     }
@@ -610,7 +643,10 @@
             },
             "handle" : {
                 "border" : "@base#content#border",
-                "bg" : "@base#master#bg"
+                "bg" : "@base#master#bg",
+                "hover" : {
+                    "bg" : "@base#master#alt"
+                }
             },
             "subpage" : {
                 "border" : "@widgets#qslider#handle#border",
