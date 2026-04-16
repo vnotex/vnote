@@ -17,6 +17,10 @@ QWidget[DialogCentralWidget="true"] {
     border: none;
 }
 
+QWidget[HitSettingWidget="true"] {
+    border: 2px solid @widgets#qwidget#info#border;
+}
+
 /* All widgets */
 *[State="info"] {
     border: 1px solid @widgets#qwidget#info#border;
@@ -71,6 +75,10 @@ vnotex--TitleBar QLabel[TitleBarTitle="true"] {
     margin: 0px;
 }
 
+vnotex--TitleBar QToolBar {
+    qproperty-iconSize: 16px 16px;
+}
+
 /* QDockWidget */
 QDockWidget {
     color: @widgets#qdockwidget#fg;
@@ -98,6 +106,10 @@ QDockWidget::close-button, QDockWidget::float-button {
 
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
     background-color: @widgets#qdockwidget#title#button#hover#bg;
+}
+
+QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+    background-color: @widgets#qdockwidget#title#button#pressed#bg;
 }
 
 QDockWidget::close-button {
@@ -609,6 +621,12 @@ QTabBar[MainWindowSideBar="true"]::tab:right:hover {
     background-color: @base#hover#bg;
 }
 
+QTabBar[MainWindowSideBar="true"]::tab:left:pressed,
+QTabBar[MainWindowSideBar="true"]::tab:right:pressed {
+    color: transparent;
+    background-color: @widgets#qtoolbutton#pressed#bg;
+}
+
 QTabBar[MainWindowSideBar="true"]::tab:left:selected {
     color: transparent;
     background-color: @base#selected#bg;
@@ -643,6 +661,12 @@ QTabBar QToolButton {
 
 QTabBar QToolButton::right-arrow:enabled {
     image: url(right.svg);
+}
+
+QMenu::right-arrow {
+    image: url(right.svg);
+    width: 16px;
+    height: 16px;
 }
 
 QTabBar QToolButton::left-arrow:enabled {
@@ -1174,6 +1198,10 @@ QSlider::handle:horizontal {
     margin: -2px 0;
 }
 
+QSlider::handle:horizontal:hover {
+    background-color: @widgets#qslider#handle#hover#bg;
+}
+
 QSlider::add-page:horizontal {
     background-color: transparent;
 }
@@ -1196,6 +1224,10 @@ QSlider::handle:vertical {
     background-color: @widgets#qslider#handle#bg;
     height: 18px;
     margin: 0 -2px;
+}
+
+QSlider::handle:vertical:hover {
+    background-color: @widgets#qslider#handle#hover#bg;
 }
 
 QSlider::add-page:vertical {

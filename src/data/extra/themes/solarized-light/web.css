@@ -5,7 +5,7 @@
 
 body {
     margin: 0 auto;
-    font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
+    font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
     color: #657B83;
     line-height: 1.5;
     padding: 16px;
@@ -100,7 +100,7 @@ pre {
 }
 
 code {
-    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
+    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New", monospace;
     color: #D7BA7D;
     word-break: break-word;
 }
@@ -112,7 +112,7 @@ pre code {
     color: #D7BA7D;
     background-color: #FDF6E3;
     line-height: 1.5;
-    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
+    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New", monospace;
     white-space: pre;
     -moz-tab-size: 4;
     -o-tab-size: 4;
@@ -267,3 +267,40 @@ div.vx-plantuml-graph {
     color: #222222;
     background-color: #66bb6a;
 }
+
+.vx-alert{
+    background-color: #E2EDF3 !important;
+    padding: 12px 24px 12px 30px !important;
+    border-radius:0 !important;
+    border:none !important;
+    border-left: 4px solid #498BA7 !important;
+    color: inherit !important;
+}
+.vx-alert::before{
+    background-color: #498BA7;
+    border-radius: 100%;
+    color: #fff;
+    content: '!';
+    font-family: 'Dosis', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    left: -12px;
+    line-height: 20px;
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    text-align: center;
+    top: 14px;
+}
+.alert-success,.alert-s{ border-color: #42B983 !important; background-color: #D4EDDA !important; }
+.alert-success::before,.alert-s::before{ background-color: #42B983; }
+.alert-warning,.alert-w{ border-color: #ffa502 !important; background-color: #fff3cd !important; }
+.alert-warning:before,.alert-w::before{ background-color: #ffa502; }
+.alert-info,.alert-i{ border-color: #70a1ff !important; background-color: #CCE5FF !important; }
+.alert-info:before,.alert-i::before{ background-color: #70a1ff; }
+.alert-danger,.alert-d{ border-color: #ff4757 !important; background-color: #F8D7DA !important; }
+.alert-danger:before,.alert-d::before{ background-color: #ff4757; }
+.alert-light{ border-color: #C1C1C1 !important; background-color: #f8f8f8 !important; }
+.alert-light:before{ background-color: #C1C1C1; }
+.alert-dark{ border-color: #484848 !important; background-color: #F0F0F0 !important; }
+.alert-dark:before{ background-color: #484848; }

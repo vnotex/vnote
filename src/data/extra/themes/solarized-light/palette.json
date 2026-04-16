@@ -1,15 +1,15 @@
 {
     "metadata" : {
-        "revision" : 0,
-        "//comment" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
-        "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
+        "revision" : 1,
+        "//comment_1" : "If there is a file named 'editor-highlight.theme' under theme folder, this value will be ignored.",
+        "//comment_2" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "editor-highlight-theme" : "Solarized Light",
-        "//comment" : "If there is a file named 'markdown-editor-highlight.theme' under theme folder, this value will be ignored.",
-        "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
-        "//comment" : "If empty, 'editor-highlight-theme' will be used.",
+        "//comment_3" : "If there is a file named 'markdown-editor-highlight.theme' under theme folder, this value will be ignored.",
+        "//comment_4" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
+        "//comment_5" : "If empty, 'editor-highlight-theme' will be used.",
         "markdown-editor-highlight-theme" : "Solarized Light",
         "display_name" : "Solarized-light",
-        "//comment" : "Display name for different locales",
+        "//comment_6" : "Display name for different locales",
         "display_name_zh_CN" : "Solarized-light",
         "author": "nriver"
     },
@@ -57,7 +57,7 @@
         "bg10_8" : "#5a5f66",
         "bg11" : "#EEE8D5"
     },
-    "base" : {
+        "base" : {
         "normal" : {
             "fg" : "@palette#fg1_5",
             "bg" : "@palette#bg1_5",
@@ -119,6 +119,18 @@
                 }
             }
         },
+        "edit" : {
+            "focus" : {
+                "fg" : "@base#content#fg",
+                "bg" : "@base#content#focus#bg",
+                "border" : "@base#master#bg"
+            },
+            "hover" : {
+                "fg" : "@base#content#fg",
+                "bg" : "@base#content#hover#bg",
+                "border" : "@base#master#bg"
+            }
+        },
         "error" : {
             "fg" : "@palette#fg10"
         },
@@ -171,7 +183,7 @@
             }
         }
     },
-    "widgets" : {
+        "widgets" : {
         "separator" : {
             "bg" : "@base#normal#border"
         },
@@ -267,6 +279,24 @@
         "qmainwindow" : {
             "fg" : "@base#normal#fg",
             "bg" : "@base#normal#bg",
+            "side_bar" : {
+                "fg" : "@base#normal#fg",
+                "bg" : "@palette#bg1_8",
+                "selected" : {
+                    "fg" : "@base#selected#fg",
+                    "bg" : "@base#selected#bg"
+                },
+                "icon" : {
+                    "fg" : "@widgets#qmainwindow#side_bar#fg"
+                },
+                "hover" : {
+                    "fg" : "@base#hover#fg",
+                    "bg" : "@base#hover#bg"
+                },
+                "widget" : {
+                    "bg" : "@palette#bg1_7"
+                }
+            },
             "separator" : {
                 "bg" : "@widgets#separator#bg"
             }
@@ -334,6 +364,9 @@
             "title" : {
                 "bg" : "@base#title#bg",
                 "button" : {
+                    "pressed" : {
+                        "bg" : "@base#pressed#bg"
+                    },
                     "hover" : {
                         "bg" : "@base#hover#bg"
                     }
@@ -610,7 +643,10 @@
             },
             "handle" : {
                 "border" : "@base#content#border",
-                "bg" : "@base#master#bg"
+                "bg" : "@base#master#bg",
+                "hover" : {
+                    "bg" : "@base#master#alt"
+                }
             },
             "subpage" : {
                 "border" : "@widgets#qslider#handle#border",
