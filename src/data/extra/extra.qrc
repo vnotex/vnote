@@ -375,6 +375,39 @@
         <file>themes/moonlight/up.svg</file>
         <file>themes/moonlight/up_disabled.svg</file>
         <file>themes/moonlight/web.css</file>
+        <file>themes/everforest-dark/arrow_dropdown.svg</file>
+        <file>themes/everforest-dark/arrow_dropdown_disabled.svg</file>
+        <file>themes/everforest-dark/branch_closed.svg</file>
+        <file>themes/everforest-dark/branch_open.svg</file>
+        <file>themes/everforest-dark/checkbox_checked.svg</file>
+        <file>themes/everforest-dark/checkbox_checked_disabled.svg</file>
+        <file>themes/everforest-dark/checkbox_unchecked.svg</file>
+        <file>themes/everforest-dark/checkbox_unchecked_disabled.svg</file>
+        <file>themes/everforest-dark/close.svg</file>
+        <file>themes/everforest-dark/expand_toolbar.svg</file>
+        <file>themes/everforest-dark/close_grey.svg</file>
+        <file>themes/everforest-dark/cover.png</file>
+        <file>themes/everforest-dark/down.svg</file>
+        <file>themes/everforest-dark/down_disabled.svg</file>
+        <file>themes/everforest-dark/float.svg</file>
+        <file>themes/everforest-dark/highlight.css</file>
+        <file>themes/everforest-dark/interface.qss</file>
+        <file>themes/everforest-dark/left.svg</file>
+        <file>themes/everforest-dark/left_disabled.svg</file>
+        <file>themes/everforest-dark/menu_checkbox.svg</file>
+        <file>themes/everforest-dark/menu_radiobutton.svg</file>
+        <file>themes/everforest-dark/palette.json</file>
+        <file>themes/everforest-dark/radiobutton_checked.svg</file>
+        <file>themes/everforest-dark/radiobutton_checked_disabled.svg</file>
+        <file>themes/everforest-dark/radiobutton_unchecked.svg</file>
+        <file>themes/everforest-dark/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/everforest-dark/right.svg</file>
+        <file>themes/everforest-dark/right_disabled.svg</file>
+        <file>themes/everforest-dark/sizegrip.svg</file>
+        <file>themes/everforest-dark/text-editor.theme</file>
+        <file>themes/everforest-dark/up.svg</file>
+        <file>themes/everforest-dark/up_disabled.svg</file>
+        <file>themes/everforest-dark/web.css</file>
         <file>themes/pure/arrow_dropdown.svg</file>
         <file>themes/pure/arrow_dropdown_disabled.svg</file>
         <file>themes/pure/branch_closed.svg</file>

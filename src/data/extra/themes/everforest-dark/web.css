@@ -1,0 +1,345 @@
+body {
+    margin: 0 auto;
+    font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+    color: #D3C6AA;
+    line-height: 1.5;
+    padding: 16px;
+    background-color: #2D353B;
+    font-size: 16px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #E67E80;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding: 0;
+}
+
+p {
+    padding: 0;
+    margin-bottom: 16px;
+}
+
+h1 {
+    font-size: 26px;
+}
+
+h2 {
+    font-size: 24px;
+}
+
+h3 {
+    font-size: 22px;
+}
+
+h4 {
+    font-size: 20px;
+}
+
+h5 {
+    font-size: 19px;
+}
+
+h6 {
+    font-size: 18px;
+}
+
+a {
+    color: #7FBBB3;
+    margin: 0;
+    padding: 0;
+    vertical-align: baseline;
+    text-decoration: none;
+    word-break: break-word;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a:visited {
+    color: #D699B6;
+}
+
+ul, ol {
+    padding: 0;
+    padding-left: 24px;
+}
+
+li {
+    line-height: 24px;
+}
+
+li ul, li ol {
+    margin-left: 16px;
+}
+
+p, ul, ol {
+    font-size: 16px;
+    line-height: 24px;
+}
+
+mark {
+    color: #232A2E;
+    background-color: #DBBC7F;
+}
+
+pre {
+    display: block;
+    overflow-y: hidden;
+    overflow-x: auto;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+}
+
+code {
+    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", monospace, "Courier New", sans-serif;
+    color: #D3C6AA;
+    word-break: break-word;
+}
+
+pre code {
+    display: block;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    color: #D3C6AA;
+    background-color: #2D353B;
+    line-height: 1.5;
+    font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", monospace, "Courier New", sans-serif;
+    white-space: pre;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+}
+
+aside {
+    display: block;
+    float: right;
+    width: 390px;
+}
+
+blockquote {
+    color: #859289;
+    border-left: .5em solid #859289;
+    padding: 0 1em;
+    margin-left: 0;
+}
+
+blockquote p {
+    color: #859289;
+}
+
+hr {
+    display: block;
+    text-align: left;
+    margin: 1em 0;
+    border: none;
+    height: 2px;
+    background-color: #475258;
+}
+
+table {
+   padding: 0;
+   margin: 1rem 0.5rem;
+   border-collapse: collapse;
+}
+
+table tr {
+   border-top: 1px solid #475258;
+   background-color: #343F44;
+   margin: 0;
+   padding: 0;
+}
+
+table tr:hover {
+   background-color: #3D484D;
+}
+
+table tr th {
+   font-weight: bold;
+   border: 1px solid #475258;
+   margin: 0;
+   padding: 6px 13px;
+}
+
+table tr td {
+   border: 1px solid #475258;
+   margin: 0;
+   padding: 6px 13px;
+}
+
+table tr th :first-child, table tr td :first-child {
+   margin-top: 0;
+}
+
+table tr th :last-child, table tr td :last-child {
+   margin-bottom: 0;
+}
+
+div.vx-mermaid-graph {
+    margin: 16px 0px 16px 0px;
+    overflow-y: hidden;
+    background: #56635F;
+    color: #232A2E;
+}
+
+div.vx-flowchartjs-graph {
+    padding: 0px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+    background: #56635F;
+    color: #232A2E;
+}
+
+div.vx-wavedrom-graph {
+    padding: 0px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+    background: #56635F;
+    color: #232A2E;
+}
+
+div.vx-plantuml-graph {
+    padding: 5px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+    background: #56635F;
+    color: #232A2E;
+}
+
+::selection {
+  background-color: #543A48;
+  color: #D3C6AA;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background: transparent;
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 2px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.3);
+    border-radius: 4px;
+    min-height: 40px;
+    min-width: 40px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.5);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: rgba(128, 128, 128, 0.7);
+}
+
+::-webkit-scrollbar-button {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+#vx-content span.vx-search-match {
+    color: #232A2E;
+    background-color: #83C092;
+}
+
+#vx-content span.vx-current-search-match {
+    color: #232A2E;
+    background-color: #A7C080;
+}
+
+.vx-alert{
+    background-color: #3A515D;
+    padding: 12px 24px 12px 30px;
+    border-radius:0;
+    border:none;
+    border-left: 4px solid #7FBBB3;
+    color: inherit;
+}
+
+.vx-alert::before
+{
+    background-color: #7FBBB3;
+    border-radius: 100%;
+    color: #D3C6AA;
+    content: '!';
+    font-family: 'Dosis', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    left: -12px;
+    line-height: 20px;
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    text-align: center;
+    top: 14px;
+}
+
+.alert-success,.alert-s{
+    border-color: #83C092;
+    background-color: #425047;
+}
+
+.alert-success::before,.alert-s::before{
+    background-color: #83C092;
+}
+
+.alert-warning,.alert-w{
+    border-color: #DBBC7F;
+    background-color: #4D4C43;
+}
+
+.alert-warning:before,.alert-w::before{
+    background-color: #DBBC7F;
+}
+
+.alert-info,.alert-i{
+    border-color: #7FBBB3;
+    background-color: #3A515D;
+}
+
+.alert-info:before,.alert-i::before{
+    background-color: #7FBBB3;
+}
+
+.alert-danger,.alert-d{
+    border-color: #E67E80;
+    background-color: #514045;
+}
+
+.alert-danger:before,.alert-d::before{
+    background-color: #E67E80;
+}
+
+.alert-light{
+    border-color: #859289;
+    background-color: #3D484D;
+}
+
+.alert-light:before{
+    background-color: #859289;
+}
+
+.alert-dark{
+    border-color: #475258;
+    background-color: #343F44;
+}
+
+.alert-dark:before{
+    background-color: #475258;
+}
