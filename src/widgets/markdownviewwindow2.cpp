@@ -49,15 +49,6 @@
 
 using namespace vnotex;
 
-// Blend p_color1 toward p_color2 by p_ratio (0-255).
-// Duplicated from vtextedit/src/texteditor/vtexteditor.cpp.
-static QColor blendColors(const QColor &p_color1, const QColor &p_color2, int p_ratio) {
-  int r = (p_color1.red() * (255 - p_ratio) + p_color2.red() * p_ratio) / 255;
-  int g = (p_color1.green() * (255 - p_ratio) + p_color2.green() * p_ratio) / 255;
-  int b = (p_color1.blue() * (255 - p_ratio) + p_color2.blue() * p_ratio) / 255;
-  return QColor(r, g, b);
-}
-
 // ============ Constructor ============
 
 MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
@@ -316,7 +307,7 @@ void MarkdownViewWindow2::setupViewer() {
   // Create adapter and viewer.
   auto *adapterObj = new MarkdownViewerAdapter(getServices(), this);
 
-  auto bgColor = computeMarginBackground();
+  auto bgColor = getServices().get<ThemeService>()->getBaseBackground();
   auto zoomFactor = mdConfig.getZoomFactorInReadMode();
 
   m_viewer = new MarkdownViewer(adapterObj, this, getServices(), bgColor, zoomFactor, this);
@@ -878,13 +869,8 @@ void MarkdownViewWindow2::applyReadableWidth() {
     hasEditorOrViewer = true;
     if (m_viewerReady) {
       if (mode == ViewWindowLayoutMode::ReadableWidth) {
-        auto marginBg = computeMarginBackground();
-        auto contentBg = getServices().get<ThemeService>()->getBaseBackground();
         m_viewer->page()->runJavaScript(
-            QStringLiteral("window.vxcore.setContentMaxWidth(%1, '%2', '%3')")
-                .arg(maxPx)
-                .arg(marginBg.name())
-                .arg(contentBg.name()));
+            QStringLiteral("window.vxcore.setContentMaxWidth(%1)").arg(maxPx));
       } else {
         m_viewer->page()->runJavaScript(QStringLiteral("window.vxcore.setContentMaxWidth(0)"));
       }
@@ -1417,12 +1403,6 @@ bool MarkdownViewWindow2::isLastWindowForBuffer() const {
   }
 
   return true;
-}
-
-QColor MarkdownViewWindow2::computeMarginBackground() const {
-  auto baseBg = getServices().get<ThemeService>()->getBaseBackground();
-  auto target = (baseBg.value() > 128) ? Qt::black : Qt::white;
-  return blendColors(baseBg, target, 26);
 }
 
 int MarkdownViewWindow2::getCursorPosition() const {

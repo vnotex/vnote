@@ -340,12 +340,12 @@ class MarkdownViewerCore extends VXCore {
         }
     }
 
-    setContentMaxWidth(p_maxWidth, p_marginBg, p_contentBg) {
+    setContentMaxWidth(p_maxWidth) {
         if (p_maxWidth > 0) {
             this.bodyContainer.style.maxWidth = p_maxWidth + 'px';
             this.bodyContainer.style.marginLeft = 'auto';
             this.bodyContainer.style.marginRight = 'auto';
-            this.bodyContainer.style.backgroundColor = this.originalBodyBackgroundColor || p_contentBg;
+            this.bodyContainer.style.backgroundColor = this.originalBodyBackgroundColor;
             this.bodyContainer.style.padding = this.originalBodyPadding;
 
             this.contentContainer.style.maxWidth = 'none';
@@ -354,12 +354,7 @@ class MarkdownViewerCore extends VXCore {
 
             document.body.style.padding = '0';
 
-            if (p_marginBg && p_contentBg
-                && (document.body.clientWidth - p_maxWidth) >= 40) {
-                document.body.style.backgroundColor = p_marginBg;
-            } else {
-                document.body.style.backgroundColor = '';
-            }
+            document.body.style.backgroundColor = '';
         } else {
             document.body.style.backgroundColor = '';
             document.body.style.padding = '';
