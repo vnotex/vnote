@@ -155,7 +155,7 @@ VNote3MigrationService::inspectSourceNotebook(const QString &p_sourcePath) const
   result.notebookDescription = jobj[QStringLiteral("description")].toString();
   result.imageFolder = imageFolder;
   result.attachmentFolder = attachmentFolder;
-  result.tagGraph = jobj[QStringLiteral("tagGraph")].toString();
+  result.tagGraph = jobj[QStringLiteral("tag_graph")].toString();
 
   // Fixed ordered warnings list.
   result.warnings.append(

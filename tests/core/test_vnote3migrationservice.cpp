@@ -86,6 +86,7 @@ private slots:
   void testConvertEmptyTagGraphNoOp();
   void testConvertTagGraphOrphanTagsDegrades();
   void testConvertMalformedTagGraphPairsSkipped();
+  void testConvertPreservesMultiLevelTagGraph();
 
 private:
   void writeNotebookConfig(const QString &p_basePath, const QByteArray &p_content);
@@ -1723,7 +1724,7 @@ void TestVNote3MigrationService::testConvertPreservesTagGraph() {
   QJsonObject cfgOvr;
   cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
   cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
-  cfgOvr[QStringLiteral("tagGraph")] = QStringLiteral("parent>child");
+  cfgOvr[QStringLiteral("tag_graph")] = QStringLiteral("parent>child");
   writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
 
   {
@@ -1830,7 +1831,7 @@ void TestVNote3MigrationService::testConvertTagGraphOrphanTagsDegrades() {
   QJsonObject cfgOvr;
   cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
   cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
-  cfgOvr[QStringLiteral("tagGraph")] = QStringLiteral("ghost1>ghost2");
+  cfgOvr[QStringLiteral("tag_graph")] = QStringLiteral("ghost1>ghost2");
   writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
 
   // File with no tags referencing ghost1/ghost2.
@@ -1888,7 +1889,7 @@ void TestVNote3MigrationService::testConvertMalformedTagGraphPairsSkipped() {
   QJsonObject cfgOvr;
   cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
   cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
-  cfgOvr[QStringLiteral("tagGraph")] = QStringLiteral("valid>child;;>bad;also>;good>pair");
+  cfgOvr[QStringLiteral("tag_graph")] = QStringLiteral("valid>child;;>bad;also>;good>pair");
   writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
 
   {
@@ -1940,6 +1941,86 @@ void TestVNote3MigrationService::testConvertMalformedTagGraphPairsSkipped() {
   }
   QVERIFY2(foundChild, "Tag 'child' not found with parent 'valid'");
   QVERIFY2(foundPair, "Tag 'pair' not found with parent 'good'");
+
+  QVERIFY(m_notebookService->closeNotebook(nbId));
+}
+
+void TestVNote3MigrationService::testConvertPreservesMultiLevelTagGraph() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  cfgOvr[QStringLiteral("tag_graph")] =
+      QStringLiteral("tag1>tag11;tag11>tag111;tag5>tag55;tag55>ok");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  {
+    QFile f(base.filePath(QStringLiteral("multilevel.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Multi-level tag hierarchy note");
+    f.close();
+  }
+
+  QJsonArray tagsArr;
+  tagsArr.append(QStringLiteral("tag1"));
+  tagsArr.append(QStringLiteral("tag11"));
+  tagsArr.append(QStringLiteral("tag111"));
+  tagsArr.append(QStringLiteral("tag5"));
+  tagsArr.append(QStringLiteral("tag55"));
+  tagsArr.append(QStringLiteral("ok"));
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("multilevel.md");
+  fileEntry[QStringLiteral("tags")] = tagsArr;
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  QString destPath = m_tempDir.filePath(QStringLiteral("taggraph_multilevel_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QString nbId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
+
+  QJsonArray tags = m_tagCoreService->listTags(nbId);
+
+  // Build a name->parent map for easy verification.
+  QHash<QString, QString> parentMap;
+  for (const auto &tagVal : tags) {
+    QJsonObject tagObj = tagVal.toObject();
+    QString name = tagObj[QStringLiteral("name")].toString();
+    QString parent = tagObj[QStringLiteral("parent")].toString();
+    parentMap[name] = parent;
+  }
+
+  // Root-level tags: tag1 and tag5 have no parent.
+  QVERIFY2(parentMap.contains(QStringLiteral("tag1")), "tag1 not found");
+  QVERIFY2(parentMap[QStringLiteral("tag1")].isEmpty(),
+            "tag1 should be root-level (no parent)");
+
+  QVERIFY2(parentMap.contains(QStringLiteral("tag5")), "tag5 not found");
+  QVERIFY2(parentMap[QStringLiteral("tag5")].isEmpty(),
+            "tag5 should be root-level (no parent)");
+
+  // Level 2: tag11 -> parent tag1, tag55 -> parent tag5.
+  QVERIFY2(parentMap.contains(QStringLiteral("tag11")), "tag11 not found");
+  QCOMPARE(parentMap[QStringLiteral("tag11")], QStringLiteral("tag1"));
+
+  QVERIFY2(parentMap.contains(QStringLiteral("tag55")), "tag55 not found");
+  QCOMPARE(parentMap[QStringLiteral("tag55")], QStringLiteral("tag5"));
+
+  // Level 3: tag111 -> parent tag11, ok -> parent tag55.
+  QVERIFY2(parentMap.contains(QStringLiteral("tag111")), "tag111 not found");
+  QCOMPARE(parentMap[QStringLiteral("tag111")], QStringLiteral("tag11"));
+
+  QVERIFY2(parentMap.contains(QStringLiteral("ok")), "ok not found");
+  QCOMPARE(parentMap[QStringLiteral("ok")], QStringLiteral("tag55"));
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }

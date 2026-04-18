@@ -48,7 +48,7 @@ struct VNote3SourceInspectionResult {
   QStringList warnings;      // fixed ordered list for future UI
   QString imageFolder;       // Legacy image_folder value (e.g., "vx_images")
   QString attachmentFolder;  // Legacy attachment_folder value (e.g., "vx_attachments")
-  QString tagGraph;          // Raw tag graph string (e.g., "parent1>child1;parent1>child2")
+  QString tagGraph;          // VNote3 JSON key: "tag_graph". Raw tag graph string (e.g., "parent1>child1;parent1>child2")
   QString errorMessage;
 };
 
