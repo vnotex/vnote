@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
+#include <QStringList>
 
 #include <core/noncopyable.h>
 
@@ -135,6 +136,23 @@ public:
   QString importFolder(const QString &p_notebookId, const QString &p_destFolderPath,
                        const QString &p_externalFolderPath,
                        const QString &p_suffixAllowlist = QString());
+
+  // Tag operations.
+  // Create a tag in the notebook. Returns true on success or if tag already exists (idempotent).
+  bool createTag(const QString &p_notebookId, const QString &p_tagName);
+
+  // Update the tags of a file. p_tags is the full list of tags to set.
+  bool updateFileTags(const QString &p_notebookId, const QString &p_filePath,
+                      const QStringList &p_tags);
+
+  // Update timestamps (created/modified) for a node (file or folder).
+  // Timestamps are millisecond epoch values. Pass <= 0 to preserve existing value.
+  bool updateNodeTimestamps(const QString &p_notebookId, const QString &p_nodePath,
+                            qint64 p_createdUtc, qint64 p_modifiedUtc);
+
+  // Update the list of attachments for a file.
+  bool updateFileAttachments(const QString &p_notebookId, const QString &p_filePath,
+                             const QStringList &p_attachments);
 
   // Peek file content (first N characters for preview).
   // p_maxChars: maximum number of characters to return (default 256).

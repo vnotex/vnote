@@ -714,8 +714,89 @@ QString NotebookCoreService::importFolder(const QString &p_notebookId,
   return cstrToQString(folderId);
 }
 
+bool NotebookCoreService::createTag(const QString &p_notebookId, const QString &p_tagName) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  VxCoreError err =
+      vxcore_tag_create(m_context, p_notebookId.toUtf8().constData(), p_tagName.toUtf8().constData());
+  if (err != VXCORE_OK && err != VXCORE_ERR_ALREADY_EXISTS) {
+    qWarning() << "createTag failed:" << QString::fromUtf8(vxcore_error_message(err))
+               << "notebookId:" << p_notebookId << "tagName:" << p_tagName;
+    return false;
+  }
+  return true;
+}
+
+bool NotebookCoreService::updateFileTags(const QString &p_notebookId, const QString &p_filePath,
+                                         const QStringList &p_tags) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  QJsonArray tagsArray;
+  for (const auto &tag : p_tags) {
+    tagsArray.append(tag);
+  }
+  QString tagsJson = QString::fromUtf8(QJsonDocument(tagsArray).toJson(QJsonDocument::Compact));
+
+  VxCoreError err = vxcore_file_update_tags(m_context, p_notebookId.toUtf8().constData(),
+                                            p_filePath.toUtf8().constData(),
+                                            tagsJson.toUtf8().constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "updateFileTags failed:" << QString::fromUtf8(vxcore_error_message(err))
+               << "notebookId:" << p_notebookId << "filePath:" << p_filePath;
+    return false;
+  }
+  return true;
+}
+
+bool NotebookCoreService::updateNodeTimestamps(const QString &p_notebookId,
+                                               const QString &p_nodePath, qint64 p_createdUtc,
+                                               qint64 p_modifiedUtc) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  VxCoreError err = vxcore_node_update_timestamps(m_context, p_notebookId.toUtf8().constData(),
+                                                  p_nodePath.toUtf8().constData(), p_createdUtc,
+                                                  p_modifiedUtc);
+  if (err != VXCORE_OK) {
+    qWarning() << "updateNodeTimestamps failed:" << QString::fromUtf8(vxcore_error_message(err))
+               << "notebookId:" << p_notebookId << "nodePath:" << p_nodePath;
+    return false;
+  }
+  return true;
+}
+
+bool NotebookCoreService::updateFileAttachments(const QString &p_notebookId,
+                                                const QString &p_filePath,
+                                                const QStringList &p_attachments) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  QJsonArray attachArray;
+  for (const auto &att : p_attachments) {
+    attachArray.append(att);
+  }
+  QString attachJson =
+      QString::fromUtf8(QJsonDocument(attachArray).toJson(QJsonDocument::Compact));
+
+  VxCoreError err = vxcore_file_update_attachments(m_context, p_notebookId.toUtf8().constData(),
+                                                   p_filePath.toUtf8().constData(),
+                                                   attachJson.toUtf8().constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "updateFileAttachments failed:" << QString::fromUtf8(vxcore_error_message(err))
+               << "notebookId:" << p_notebookId << "filePath:" << p_filePath;
+    return false;
+  }
+  return true;
+}
+
 QString NotebookCoreService::peekFile(const QString &p_notebookId, const QString &p_filePath,
-                                      int p_maxChars) const {
+                                       int p_maxChars) const {
   if (!checkContext()) {
     return QString();
   }
@@ -736,20 +817,34 @@ QString NotebookCoreService::peekFile(const QString &p_notebookId, const QString
 
 QString NotebookCoreService::getAttachmentsFolder(const QString &p_notebookId,
                                                   const QString &p_filePath) const {
-  // TODO(vxcore): Re-enable when vxcore_node_get_attachments_folder is added to vxcore
-  Q_UNUSED(p_notebookId);
-  Q_UNUSED(p_filePath);
-  qWarning() << "getAttachmentsFolder: vxcore API not available";
-  return QString();
+  if (!checkContext()) {
+    return QString();
+  }
+
+  char *outPath = nullptr;
+  VxCoreError err = vxcore_node_get_attachments_folder(
+      m_context, p_notebookId.toUtf8().constData(), p_filePath.toUtf8().constData(), &outPath);
+  if (err != VXCORE_OK) {
+    qWarning() << "getAttachmentsFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QString();
+  }
+  return cstrToQString(outPath);
 }
 
 QJsonArray NotebookCoreService::listAttachments(const QString &p_notebookId,
                                                 const QString &p_filePath) const {
-  // TODO(vxcore): Re-enable when vxcore_node_list_attachments is added to vxcore
-  Q_UNUSED(p_notebookId);
-  Q_UNUSED(p_filePath);
-  qWarning() << "listAttachments: vxcore API not available";
-  return QJsonArray();
+  if (!checkContext()) {
+    return QJsonArray();
+  }
+
+  char *outJson = nullptr;
+  VxCoreError err = vxcore_node_list_attachments(
+      m_context, p_notebookId.toUtf8().constData(), p_filePath.toUtf8().constData(), &outJson);
+  if (err != VXCORE_OK) {
+    qWarning() << "listAttachments failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QJsonArray();
+  }
+  return parseJsonArrayFromCStr(outJson);
 }
 
 // Private methods.
