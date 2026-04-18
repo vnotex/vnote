@@ -4,13 +4,14 @@
 #include "settingspage.h"
 
 class QListWidget;
-class QLabel;
 
 namespace vnotex {
 class ThemePage : public SettingsPage {
   Q_OBJECT
 public:
   explicit ThemePage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
+
+  ~ThemePage() override;
 
   QString title() const Q_DECL_OVERRIDE;
 
@@ -24,15 +25,21 @@ private:
 
   void loadThemes();
 
-  void loadThemePreview(const QString &p_name);
-
   QString currentTheme() const;
+
+  void applyThemePreview(const QString &p_themeName);
+
+  void revertThemePreview();
+
+  QWidget *findSettingsWidget();
 
   QListWidget *m_themeListWidget = nullptr;
 
-  QLabel *m_previewLabel = nullptr;
+  QString m_originalStyleSheet;
 
-  QString m_noPreviewText;
+  bool m_previewActive = false;
+
+  QWidget *m_settingsWidget = nullptr;
 };
 } // namespace vnotex
 
