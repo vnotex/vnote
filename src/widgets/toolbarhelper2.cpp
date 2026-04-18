@@ -102,8 +102,6 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
                                    coreConfig.getShortcut(CoreConfig::Shortcut::NewNote));
     newBtn->addAction(newNoteAct);
     newBtn->setDefaultAction(newNoteAct);
-    // To hide the shortcut text shown in button.
-    newBtn->setText(text);
 
     // Popup menu.
     auto newMenu = WidgetsFactory::createMenu(tb);
@@ -193,8 +191,6 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
                                    coreConfig.getShortcut(CoreConfig::Shortcut::QuickAccess));
     toolBtn->addAction(quickAccessAct);
     toolBtn->setDefaultAction(quickAccessAct);
-    // To hide the shortcut text shown in button.
-    toolBtn->setText(text);
 
     auto btnMenu = WidgetsFactory::createMenu(tb);
     toolBtn->setMenu(btnMenu);
@@ -363,7 +359,6 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
   });
   btn->addAction(expandAct);
   btn->setDefaultAction(expandAct);
-  btn->setText(defaultText);
 
   auto menu = WidgetsFactory::createMenu(p_toolBar);
   btn->setMenu(menu);

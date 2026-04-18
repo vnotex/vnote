@@ -186,6 +186,7 @@ void WidgetUtils::addActionShortcut(QAction *p_action, const QString &p_shortcut
 
   p_action->setShortcut(kseq);
   p_action->setShortcutContext(p_context);
+  p_action->setIconText(p_action->text());  // Preserve clean label for toolbar display.
   p_action->setText(
       QStringLiteral("%1\t%2").arg(p_action->text(), kseq.toString(QKeySequence::NativeText)));
 }
