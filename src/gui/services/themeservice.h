@@ -90,6 +90,9 @@ public:
   // Reload current theme.
   void refreshCurrentTheme();
 
+  // Switch to a different theme by name.
+  void switchTheme(const QString &p_name);
+
   // Get all web stylesheets <DisplayName, FilePath>.
   QVector<QPair<QString, QString>> getWebStyles() const;
 

@@ -179,6 +179,8 @@ void ThemeService::refreshCurrentTheme() {
   }
 }
 
+void ThemeService::switchTheme(const QString &p_name) { loadCurrentTheme(p_name); }
+
 QVector<QPair<QString, QString>> ThemeService::getWebStyles() const {
   QVector<QPair<QString, QString>> styles;
 
