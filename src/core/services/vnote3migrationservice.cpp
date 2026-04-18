@@ -53,6 +53,26 @@ LegacyTimestamp parseLegacyTimestamp(const QJsonValue &p_val) {
   return ts;
 }
 
+// Recursively copy a directory tree using raw filesystem operations.
+// Does NOT use importFile/createFolderPath — purely filesystem copy.
+void copyDirectoryRecursively(const QString &p_srcDir, const QString &p_destDir) {
+  QDir srcDir(p_srcDir);
+  if (!srcDir.exists()) {
+    return;
+  }
+  QDir().mkpath(p_destDir);
+  const auto entries =
+      srcDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+  for (const QFileInfo &fi : entries) {
+    const QString destPath = p_destDir + QStringLiteral("/") + fi.fileName();
+    if (fi.isDir()) {
+      copyDirectoryRecursively(fi.absoluteFilePath(), destPath);
+    } else {
+      QFile::copy(fi.absoluteFilePath(), destPath);
+    }
+  }
+}
+
 } // namespace
 
 VNote3MigrationService::VNote3MigrationService(NotebookCoreService *p_notebookService,
@@ -157,6 +177,9 @@ VNote3ConversionResult VNote3MigrationService::convertNotebook(const QString &p_
     return result;
   }
 
+  // Pass 1: Pre-scan — collect all unique tags.
+  const QStringList allTags = collectAllTags(p_sourcePath);
+
   // 2. Build destination config JSON with ONLY name and description.
   QJsonObject destConfig;
   destConfig[QStringLiteral("name")] = inspection.notebookName;
@@ -181,51 +204,17 @@ VNote3ConversionResult VNote3MigrationService::convertNotebook(const QString &p_
     return result;
   }
 
-  // 4. Recursively enumerate the source tree.
-  const QDir sourceDir(p_sourcePath);
-  QDirIterator it(p_sourcePath, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot,
-                  QDirIterator::Subdirectories);
-
-  while (it.hasNext()) {
-    it.next();
-    const QFileInfo fi = it.fileInfo();
-    const QString relPath = sourceDir.relativeFilePath(fi.absoluteFilePath());
-
-    // 5. Check exclusion: skip vx_notebook and vx_recycle_bin subtrees.
-    if (relPath.startsWith(QStringLiteral("vx_notebook")) ||
-        relPath.startsWith(QStringLiteral("vx_recycle_bin"))) {
-      continue;
-    }
-
-    if (fi.isDir()) {
-      // Create the folder path in the destination notebook.
-      const QString folderId = m_notebookService->createFolderPath(notebookId, relPath);
-      if (folderId.isEmpty()) {
-        result.errorMessage = QStringLiteral("Failed to create folder: %1").arg(relPath);
-        m_notebookService->closeNotebook(notebookId);
-        QDir(p_destPath).removeRecursively();
-        return result;
-      }
-    } else if (fi.isFile()) {
-      // Exclude vx.json files.
-      if (fi.fileName() == QStringLiteral("vx.json")) {
-        continue;
-      }
-
-      // Determine the parent folder relative path.
-      const QString parentRelPath = sourceDir.relativeFilePath(fi.absolutePath());
-      const QString destFolder = (parentRelPath == QStringLiteral(".")) ? QString() : parentRelPath;
-
-      const QString fileId =
-          m_notebookService->importFile(notebookId, destFolder, fi.absoluteFilePath());
-      if (fileId.isEmpty()) {
-        result.errorMessage = QStringLiteral("Failed to import file: %1").arg(relPath);
-        m_notebookService->closeNotebook(notebookId);
-        QDir(p_destPath).removeRecursively();
-        return result;
-      }
+  // Create all tags in the destination notebook.
+  for (const QString &tag : allTags) {
+    if (!m_notebookService->createTag(notebookId, tag)) {
+      result.warnings.append(
+          QStringLiteral("Failed to create tag '%1', skipping").arg(tag));
     }
   }
+
+  // Pass 2: Main import — recursive, vx.json-driven.
+  const QDir sourceRoot(p_sourcePath);
+  importFolder(notebookId, sourceRoot, QString(), p_destPath, inspection, result.warnings);
 
   // 7. Close the notebook and return success.
   if (!m_notebookService->closeNotebook(notebookId)) {
@@ -238,6 +227,309 @@ VNote3ConversionResult VNote3MigrationService::convertNotebook(const QString &p_
   result.destinationPath = p_destPath;
   result.notebookName = inspection.notebookName;
   return result;
+}
+
+void VNote3MigrationService::importFolder(const QString &p_notebookId,
+                                          const QDir &p_sourceRoot,
+                                          const QString &p_relFolderPath,
+                                          const QString &p_destPath,
+                                          const VNote3SourceInspectionResult &p_inspection,
+                                          QStringList &p_warnings) {
+  // Build absolute source path for this folder.
+  const QString absFolderPath = p_relFolderPath.isEmpty()
+      ? p_sourceRoot.absolutePath()
+      : p_sourceRoot.absolutePath() + QStringLiteral("/") + p_relFolderPath;
+
+  // 1. Parse the folder's vx.json.
+  const QString vxJsonPath = absFolderPath + QStringLiteral("/vx.json");
+  const LegacyVxJson vxJson = parseLegacyVxJson(vxJsonPath);
+
+  // 2. Build set of names tracked by vx.json for orphan detection.
+  QSet<QString> vxJsonNames;
+  for (const LegacyFileEntry &fe : vxJson.files) {
+    if (!fe.name.isEmpty()) {
+      vxJsonNames.insert(fe.name);
+    }
+  }
+  for (const LegacyFolderEntry &fe : vxJson.folders) {
+    if (!fe.name.isEmpty()) {
+      vxJsonNames.insert(fe.name);
+    }
+  }
+
+  // --- Process file entries from vx.json ---
+  for (const LegacyFileEntry &entry : vxJson.files) {
+    if (entry.name.isEmpty()) {
+      continue;
+    }
+
+    const QString filePath = p_relFolderPath.isEmpty()
+        ? entry.name
+        : p_relFolderPath + QStringLiteral("/") + entry.name;
+    const QString absSourceFile = absFolderPath + QStringLiteral("/") + entry.name;
+
+    // 3. Import file.
+    try {
+      const QString fileId =
+          m_notebookService->importFile(p_notebookId, p_relFolderPath, absSourceFile);
+      if (fileId.isEmpty()) {
+        p_warnings.append(
+            QStringLiteral("File '%1': import failed, skipping").arg(filePath));
+        continue;
+      }
+    } catch (...) {
+      p_warnings.append(
+          QStringLiteral("File '%1': import threw exception, skipping").arg(filePath));
+      continue;
+    }
+
+    // 4. Apply timestamps.
+    {
+      qint64 createdMs = entry.createdTime.value;
+      qint64 modifiedMs = entry.modifiedTime.value;
+      if (!entry.createdTime.parseSucceeded) {
+        p_warnings.append(
+            QStringLiteral("File '%1': malformed created_time, skipping timestamp")
+                .arg(filePath));
+        createdMs = 0;
+      }
+      if (!entry.modifiedTime.parseSucceeded) {
+        p_warnings.append(
+            QStringLiteral("File '%1': malformed modified_time, skipping timestamp")
+                .arg(filePath));
+        modifiedMs = 0;
+      }
+      if (createdMs > 0 || modifiedMs > 0) {
+        try {
+          m_notebookService->updateNodeTimestamps(
+              p_notebookId, filePath, createdMs, modifiedMs);
+        } catch (...) {
+          p_warnings.append(
+              QStringLiteral("File '%1': failed to set timestamps").arg(filePath));
+        }
+      }
+    }
+
+    // 5. Apply tags.
+    if (!entry.tags.isEmpty()) {
+      try {
+        m_notebookService->updateFileTags(p_notebookId, filePath, entry.tags);
+      } catch (...) {
+        p_warnings.append(
+            QStringLiteral("File '%1': failed to set tags").arg(filePath));
+      }
+    }
+
+    // 6. Apply visual metadata.
+    if (!entry.nameColor.isEmpty() || !entry.backgroundColor.isEmpty()) {
+      QJsonObject metaObj;
+      if (!entry.nameColor.isEmpty()) {
+        metaObj[QStringLiteral("textColor")] = entry.nameColor;
+      }
+      if (!entry.backgroundColor.isEmpty()) {
+        metaObj[QStringLiteral("backgroundColor")] = entry.backgroundColor;
+      }
+      const QString metadataJson =
+          QString::fromUtf8(QJsonDocument(metaObj).toJson(QJsonDocument::Compact));
+      try {
+        m_notebookService->updateFileMetadata(p_notebookId, filePath, metadataJson);
+      } catch (...) {
+        p_warnings.append(
+            QStringLiteral("File '%1': failed to set visual metadata").arg(filePath));
+      }
+    }
+
+    // 7. Migrate attachments.
+    if (!entry.attachmentFolder.isEmpty()) {
+      const QString srcAttachDir = absFolderPath + QStringLiteral("/") +
+          p_inspection.attachmentFolder + QStringLiteral("/") + entry.attachmentFolder;
+      if (QDir(srcAttachDir).exists()) {
+        try {
+          const QString destAttachDir =
+              m_notebookService->getAttachmentsFolder(p_notebookId, filePath);
+          if (!destAttachDir.isEmpty()) {
+            QDir().mkpath(destAttachDir);
+            // Copy root-level files and collect names; recurse into subdirs.
+            QStringList rootFileNames;
+            const QDir srcAttDir(srcAttachDir);
+            const auto attachEntries =
+                srcAttDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+            for (const QFileInfo &afi : attachEntries) {
+              if (afi.isFile()) {
+                QFile::copy(afi.absoluteFilePath(),
+                            destAttachDir + QStringLiteral("/") + afi.fileName());
+                rootFileNames.append(afi.fileName());
+              } else if (afi.isDir()) {
+                copyDirectoryRecursively(
+                    afi.absoluteFilePath(),
+                    destAttachDir + QStringLiteral("/") + afi.fileName());
+              }
+            }
+            if (!rootFileNames.isEmpty()) {
+              m_notebookService->updateFileAttachments(
+                  p_notebookId, filePath, rootFileNames);
+            }
+          }
+        } catch (...) {
+          p_warnings.append(
+              QStringLiteral("File '%1': failed to migrate attachments").arg(filePath));
+        }
+      } else {
+        p_warnings.append(
+            QStringLiteral("File '%1': attachment source dir not found, skipping")
+                .arg(filePath));
+      }
+    }
+  }
+
+  // --- Process folder entries from vx.json ---
+  for (const LegacyFolderEntry &folderEntry : vxJson.folders) {
+    if (folderEntry.name.isEmpty()) {
+      continue;
+    }
+
+    const QString subfolderRelPath = p_relFolderPath.isEmpty()
+        ? folderEntry.name
+        : p_relFolderPath + QStringLiteral("/") + folderEntry.name;
+
+    // 8-9. Create folder.
+    try {
+      const QString folderId =
+          m_notebookService->createFolderPath(p_notebookId, subfolderRelPath);
+      if (folderId.isEmpty()) {
+        p_warnings.append(
+            QStringLiteral("Folder '%1': creation failed, skipping").arg(subfolderRelPath));
+        continue;
+      }
+    } catch (...) {
+      p_warnings.append(
+          QStringLiteral("Folder '%1': creation threw exception, skipping")
+              .arg(subfolderRelPath));
+      continue;
+    }
+
+    // 10-11. Parse subfolder's own vx.json for folder-level metadata.
+    const QString subAbsPath = absFolderPath + QStringLiteral("/") + folderEntry.name;
+    const LegacyVxJson subVxJson =
+        parseLegacyVxJson(subAbsPath + QStringLiteral("/vx.json"));
+
+    if (subVxJson.createdTime > 0 || subVxJson.modifiedTime > 0) {
+      try {
+        m_notebookService->updateNodeTimestamps(
+            p_notebookId, subfolderRelPath,
+            subVxJson.createdTime, subVxJson.modifiedTime);
+      } catch (...) {
+        p_warnings.append(
+            QStringLiteral("Folder '%1': failed to set timestamps").arg(subfolderRelPath));
+      }
+    }
+
+    // 12. Apply folder visual metadata.
+    if (!subVxJson.nameColor.isEmpty() || !subVxJson.backgroundColor.isEmpty()) {
+      QJsonObject metaObj;
+      if (!subVxJson.nameColor.isEmpty()) {
+        metaObj[QStringLiteral("textColor")] = subVxJson.nameColor;
+      }
+      if (!subVxJson.backgroundColor.isEmpty()) {
+        metaObj[QStringLiteral("backgroundColor")] = subVxJson.backgroundColor;
+      }
+      const QString metadataJson =
+          QString::fromUtf8(QJsonDocument(metaObj).toJson(QJsonDocument::Compact));
+      try {
+        m_notebookService->updateFolderMetadata(
+            p_notebookId, subfolderRelPath, metadataJson);
+      } catch (...) {
+        p_warnings.append(
+            QStringLiteral("Folder '%1': failed to set visual metadata")
+                .arg(subfolderRelPath));
+      }
+    }
+
+    // 13. Recurse into subfolder.
+    importFolder(p_notebookId, p_sourceRoot, subfolderRelPath,
+                 p_destPath, p_inspection, p_warnings);
+  }
+
+  // --- Image handling: raw-copy image folder if it exists ---
+  if (!p_inspection.imageFolder.isEmpty()) {
+    const QString srcImageDir =
+        absFolderPath + QStringLiteral("/") + p_inspection.imageFolder;
+    if (QDir(srcImageDir).exists()) {
+      const QString destImageDir = p_destPath + QStringLiteral("/") +
+          (p_relFolderPath.isEmpty()
+               ? p_inspection.imageFolder
+               : p_relFolderPath + QStringLiteral("/") + p_inspection.imageFolder);
+      copyDirectoryRecursively(srcImageDir, destImageDir);
+    }
+  }
+
+  // --- Orphan handling: import entries not in vx.json ---
+  const QDir currentDir(absFolderPath);
+  const auto fsEntries =
+      currentDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+  for (const QFileInfo &fi : fsEntries) {
+    const QString name = fi.fileName();
+
+    // Skip if already in vx.json.
+    if (vxJsonNames.contains(name)) {
+      continue;
+    }
+
+    // Exclusion list.
+    if (name == QStringLiteral("vx.json")) {
+      continue;
+    }
+    if (fi.isDir()) {
+      if (name == QStringLiteral("vx_notebook") ||
+          name == QStringLiteral("vx_recycle_bin")) {
+        continue;
+      }
+      if (!p_inspection.imageFolder.isEmpty() && name == p_inspection.imageFolder) {
+        continue; // Already handled by image raw-copy.
+      }
+      if (!p_inspection.attachmentFolder.isEmpty() &&
+          name == p_inspection.attachmentFolder) {
+        continue; // Attachment folder is not imported as content.
+      }
+    }
+
+    const QString orphanRelPath = p_relFolderPath.isEmpty()
+        ? name
+        : p_relFolderPath + QStringLiteral("/") + name;
+
+    if (fi.isFile()) {
+      try {
+        const QString fileId =
+            m_notebookService->importFile(p_notebookId, p_relFolderPath,
+                                          fi.absoluteFilePath());
+        if (fileId.isEmpty()) {
+          p_warnings.append(
+              QStringLiteral("Orphan file '%1': import failed").arg(orphanRelPath));
+        }
+      } catch (...) {
+        p_warnings.append(
+            QStringLiteral("Orphan file '%1': import threw exception").arg(orphanRelPath));
+      }
+    } else if (fi.isDir()) {
+      try {
+        const QString folderId =
+            m_notebookService->createFolderPath(p_notebookId, orphanRelPath);
+        if (folderId.isEmpty()) {
+          p_warnings.append(
+              QStringLiteral("Orphan folder '%1': creation failed").arg(orphanRelPath));
+          continue;
+        }
+      } catch (...) {
+        p_warnings.append(
+            QStringLiteral("Orphan folder '%1': creation threw exception")
+                .arg(orphanRelPath));
+        continue;
+      }
+      // Recurse into orphan folder.
+      importFolder(p_notebookId, p_sourceRoot, orphanRelPath,
+                   p_destPath, p_inspection, p_warnings);
+    }
+  }
 }
 
 LegacyVxJson VNote3MigrationService::parseLegacyVxJson(const QString &p_vxJsonPath) {

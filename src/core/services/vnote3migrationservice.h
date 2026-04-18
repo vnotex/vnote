@@ -1,6 +1,7 @@
 #ifndef VNOTE3MIGRATIONSERVICE_H
 #define VNOTE3MIGRATIONSERVICE_H
 
+#include <QDir>
 #include <QList>
 #include <QObject>
 #include <QString>
@@ -70,6 +71,10 @@ public:
   static QStringList collectAllTags(const QString &p_sourcePath);
 
 private:
+  void importFolder(const QString &p_notebookId, const QDir &p_sourceRoot,
+                    const QString &p_relFolderPath, const QString &p_destPath,
+                    const VNote3SourceInspectionResult &p_inspection, QStringList &p_warnings);
+
   NotebookCoreService *m_notebookService = nullptr;
 };
 
