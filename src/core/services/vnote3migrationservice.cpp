@@ -11,6 +11,7 @@
 #include <QSet>
 
 #include <core/services/notebookcoreservice.h>
+#include <core/services/tagcoreservice.h>
 
 using namespace vnotex;
 
@@ -76,8 +77,9 @@ void copyDirectoryRecursively(const QString &p_srcDir, const QString &p_destDir)
 } // namespace
 
 VNote3MigrationService::VNote3MigrationService(NotebookCoreService *p_notebookService,
+                                               TagCoreService *p_tagService,
                                                QObject *p_parent)
-    : QObject(p_parent), m_notebookService(p_notebookService) {}
+    : QObject(p_parent), m_notebookService(p_notebookService), m_tagService(p_tagService) {}
 
 VNote3SourceInspectionResult
 VNote3MigrationService::inspectSourceNotebook(const QString &p_sourcePath) const {
@@ -153,10 +155,11 @@ VNote3MigrationService::inspectSourceNotebook(const QString &p_sourcePath) const
   result.notebookDescription = jobj[QStringLiteral("description")].toString();
   result.imageFolder = imageFolder;
   result.attachmentFolder = attachmentFolder;
+  result.tagGraph = jobj[QStringLiteral("tagGraph")].toString();
 
   // Fixed ordered warnings list.
   result.warnings.append(
-      QStringLiteral("History, tag graph, and extra configs will not be migrated"));
+      QStringLiteral("History and extra configs will not be migrated"));
   result.warnings.append(
       QStringLiteral("Per-node metadata (tags, visual settings) will be migrated to new format"));
   result.warnings.append(QStringLiteral("Recycle bin contents will not be migrated"));
@@ -209,6 +212,20 @@ VNote3ConversionResult VNote3MigrationService::convertNotebook(const QString &p_
     if (!m_notebookService->createTag(notebookId, tag)) {
       result.warnings.append(
           QStringLiteral("Failed to create tag '%1', skipping").arg(tag));
+    }
+  }
+
+  // Apply tag graph hierarchy from VNote3 source.
+  const auto tagGraphPairs = parseTagGraph(inspection.tagGraph);
+  for (const auto &pair : tagGraphPairs) {
+    // Pre-create both tags to handle orphan graph entries.
+    // createTag() is idempotent — returns true if already exists.
+    m_notebookService->createTag(notebookId, pair.first);
+    m_notebookService->createTag(notebookId, pair.second);
+    if (!m_tagService->moveTag(notebookId, pair.second, pair.first)) {
+      result.warnings.append(
+          QStringLiteral("Failed to apply tag hierarchy '%1 > %2', skipping")
+              .arg(pair.first, pair.second));
     }
   }
 
@@ -634,4 +651,30 @@ QStringList VNote3MigrationService::collectAllTags(const QString &p_sourcePath) 
   }
 
   return tagSet.values();
+}
+
+// Logic mirrors NotebookTagMgr::stringToTagGraph()
+QVector<QPair<QString, QString>>
+VNote3MigrationService::parseTagGraph(const QString &p_tagGraphString) {
+  QVector<QPair<QString, QString>> result;
+  if (p_tagGraphString.isEmpty()) {
+    return result;
+  }
+
+  const QStringList pairs = p_tagGraphString.split(QLatin1Char(';'), Qt::SkipEmptyParts);
+  for (const QString &pairStr : pairs) {
+    const QStringList parts = pairStr.split(QLatin1Char('>'));
+    if (parts.size() != 2) {
+      qWarning() << "parseTagGraph: invalid pair (expected exactly one '>'):" << pairStr;
+      continue;
+    }
+    const QString parent = parts[0].trimmed();
+    const QString child = parts[1].trimmed();
+    if (parent.isEmpty() || child.isEmpty()) {
+      qWarning() << "parseTagGraph: empty parent or child in pair:" << pairStr;
+      continue;
+    }
+    result.append(qMakePair(parent, child));
+  }
+  return result;
 }

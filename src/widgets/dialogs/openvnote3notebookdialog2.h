@@ -42,8 +42,6 @@ private:
   QLabel *m_nameLabel = nullptr;
   QLabel *m_descriptionTitleLabel = nullptr;
   QLabel *m_descriptionLabel = nullptr;
-  QLabel *m_warningsTitleLabel = nullptr;
-  QLabel *m_warningsLabel = nullptr;
   QCheckBox *m_confirmCheckBox = nullptr;
 
   QString m_openedNotebookId;

@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<ConfigCoreService>(configService.coreService());
     serviceLocator.registerService<NotebookCoreService>(&notebookService);
-    VNote3MigrationService migrationService(&notebookService);
+    VNote3MigrationService migrationService(&notebookService, &tagCoreService);
     serviceLocator.registerService<VNote3MigrationService>(&migrationService);
     serviceLocator.registerService<BufferService>(&bufferService);
     serviceLocator.registerService<SearchCoreService>(&searchService);

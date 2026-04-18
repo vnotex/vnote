@@ -9,6 +9,7 @@
 #include <controllers/openvnote3notebookcontroller.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/tagcoreservice.h>
 #include <core/services/vnote3migrationservice.h>
 
 #include <vxcore/vxcore.h>
@@ -45,12 +46,14 @@ private:
   struct ControllerFixture {
     vnotex::ServiceLocator services;
     vnotex::NotebookCoreService *notebookService = nullptr;
+    vnotex::TagCoreService *tagCoreService = nullptr;
     vnotex::VNote3MigrationService *migrationService = nullptr;
     vnotex::OpenVNote3NotebookController *controller = nullptr;
 
     explicit ControllerFixture(VxCoreContextHandle p_ctx) {
       notebookService = new vnotex::NotebookCoreService(p_ctx);
-      migrationService = new vnotex::VNote3MigrationService(notebookService);
+      tagCoreService = new vnotex::TagCoreService(p_ctx);
+      migrationService = new vnotex::VNote3MigrationService(notebookService, tagCoreService);
       services.registerService<vnotex::NotebookCoreService>(notebookService);
       services.registerService<vnotex::VNote3MigrationService>(migrationService);
       controller = new vnotex::OpenVNote3NotebookController(services);
@@ -59,6 +62,7 @@ private:
     ~ControllerFixture() {
       delete controller;
       delete migrationService;
+      delete tagCoreService;
       delete notebookService;
     }
   };
@@ -67,7 +71,7 @@ private:
     QDir(p_basePath).mkpath(QStringLiteral("vx_notebook"));
     QJsonObject jobj;
     jobj[QStringLiteral("version")] = 3;
-    jobj[QStringLiteral("configMgr")] = QStringLiteral("vx.vnotex");
+    jobj[QStringLiteral("config_mgr")] = QStringLiteral("vx.vnotex");
     jobj[QStringLiteral("name")] = p_name;
     jobj[QStringLiteral("description")] = QString();
     QFile f(p_basePath + QStringLiteral("/vx_notebook/vx_notebook.json"));

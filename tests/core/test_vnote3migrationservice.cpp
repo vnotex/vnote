@@ -8,6 +8,7 @@
 #include <QJsonObject>
 
 #include <core/services/notebookcoreservice.h>
+#include <core/services/tagcoreservice.h>
 #include <core/services/vnote3migrationservice.h>
 #include <temp_dir_fixture.h>
 
@@ -79,6 +80,12 @@ private slots:
   void testConvertVxImagesAtMultipleLevels();
   void testConvertDegradedWarningsCollected();
 
+  // T-TagGraph: Tag graph migration tests
+  void testConvertPreservesTagGraph();
+  void testConvertEmptyTagGraphNoOp();
+  void testConvertTagGraphOrphanTagsDegrades();
+  void testConvertMalformedTagGraphPairsSkipped();
+
 private:
   void writeNotebookConfig(const QString &p_basePath, const QByteArray &p_content);
   QByteArray makeConfigJson(const QJsonObject &p_overrides = QJsonObject());
@@ -89,6 +96,7 @@ private:
 
   VxCoreContextHandle m_context = nullptr;
   NotebookCoreService *m_notebookService = nullptr;
+  TagCoreService *m_tagCoreService = nullptr;
   VNote3MigrationService *m_service = nullptr;
   TempDirFixture m_tempDir;
 };
@@ -109,14 +117,21 @@ void TestVNote3MigrationService::initTestCase() {
   m_notebookService = new NotebookCoreService(m_context, this);
   QVERIFY(m_notebookService != nullptr);
 
+  // Create TagCoreService with context.
+  m_tagCoreService = new TagCoreService(m_context, this);
+  QVERIFY(m_tagCoreService != nullptr);
+
   // Create VNote3MigrationService.
-  m_service = new VNote3MigrationService(m_notebookService, this);
+  m_service = new VNote3MigrationService(m_notebookService, m_tagCoreService, this);
   QVERIFY(m_service != nullptr);
 }
 
 void TestVNote3MigrationService::cleanupTestCase() {
   delete m_service;
   m_service = nullptr;
+
+  delete m_tagCoreService;
+  m_tagCoreService = nullptr;
 
   delete m_notebookService;
   m_notebookService = nullptr;
@@ -1519,6 +1534,237 @@ void TestVNote3MigrationService::testConvertDegradedWarningsCollected() {
   QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("bad_ts.md")));
   QVERIFY(
       pathExistsInNotebook(destPath, QStringLiteral("bad_attach.md")));
+}
+
+// --- T-TagGraph: Tag graph migration tests ---
+
+void TestVNote3MigrationService::testConvertPreservesTagGraph() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  cfgOvr[QStringLiteral("tagGraph")] = QStringLiteral("parent>child");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  {
+    QFile f(base.filePath(QStringLiteral("note.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Note with hierarchy tags");
+    f.close();
+  }
+
+  QJsonArray tagsArr;
+  tagsArr.append(QStringLiteral("parent"));
+  tagsArr.append(QStringLiteral("child"));
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("note.md");
+  fileEntry[QStringLiteral("tags")] = tagsArr;
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  QString destPath = m_tempDir.filePath(QStringLiteral("taggraph_happy_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QString nbId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
+
+  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  bool foundChild = false;
+  for (const auto &tagVal : tags) {
+    QJsonObject tagObj = tagVal.toObject();
+    if (tagObj[QStringLiteral("name")].toString() == QStringLiteral("child")) {
+      foundChild = true;
+      QCOMPARE(tagObj[QStringLiteral("parent")].toString(),
+               QStringLiteral("parent"));
+    }
+  }
+  QVERIFY2(foundChild, "Tag 'child' not found in listTags output");
+
+  QVERIFY(m_notebookService->closeNotebook(nbId));
+}
+
+void TestVNote3MigrationService::testConvertEmptyTagGraphNoOp() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  // No tagGraph key in config.
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  {
+    QFile f(base.filePath(QStringLiteral("flat.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Flat tags note");
+    f.close();
+  }
+
+  QJsonArray tagsArr;
+  tagsArr.append(QStringLiteral("alpha"));
+  tagsArr.append(QStringLiteral("beta"));
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("flat.md");
+  fileEntry[QStringLiteral("tags")] = tagsArr;
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  QString destPath = m_tempDir.filePath(QStringLiteral("taggraph_empty_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QString nbId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
+
+  // All tags should be root-level (no parent).
+  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  for (const auto &tagVal : tags) {
+    QJsonObject tagObj = tagVal.toObject();
+    QString name = tagObj[QStringLiteral("name")].toString();
+    if (name == QStringLiteral("alpha") || name == QStringLiteral("beta")) {
+      QVERIFY2(!tagObj.contains(QStringLiteral("parent")) ||
+                   tagObj[QStringLiteral("parent")].toString().isEmpty(),
+               qPrintable(QStringLiteral("Tag '%1' unexpectedly has parent '%2'")
+                              .arg(name, tagObj[QStringLiteral("parent")].toString())));
+    }
+  }
+
+  QVERIFY(m_notebookService->closeNotebook(nbId));
+}
+
+void TestVNote3MigrationService::testConvertTagGraphOrphanTagsDegrades() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  cfgOvr[QStringLiteral("tagGraph")] = QStringLiteral("ghost1>ghost2");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  // File with no tags referencing ghost1/ghost2.
+  {
+    QFile f(base.filePath(QStringLiteral("unrelated.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Unrelated note");
+    f.close();
+  }
+
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("unrelated.md");
+  fileEntry[QStringLiteral("tags")] = QJsonArray();
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  QString destPath = m_tempDir.filePath(QStringLiteral("taggraph_orphan_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QString nbId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
+
+  // Both orphan tags should be pre-created with correct hierarchy.
+  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  bool foundGhost1 = false;
+  bool foundGhost2 = false;
+  for (const auto &tagVal : tags) {
+    QJsonObject tagObj = tagVal.toObject();
+    QString name = tagObj[QStringLiteral("name")].toString();
+    if (name == QStringLiteral("ghost1")) {
+      foundGhost1 = true;
+    }
+    if (name == QStringLiteral("ghost2")) {
+      foundGhost2 = true;
+      QCOMPARE(tagObj[QStringLiteral("parent")].toString(),
+               QStringLiteral("ghost1"));
+    }
+  }
+  QVERIFY2(foundGhost1, "Orphan tag 'ghost1' not pre-created");
+  QVERIFY2(foundGhost2, "Orphan tag 'ghost2' not pre-created");
+
+  QVERIFY(m_notebookService->closeNotebook(nbId));
+}
+
+void TestVNote3MigrationService::testConvertMalformedTagGraphPairsSkipped() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  cfgOvr[QStringLiteral("tagGraph")] = QStringLiteral("valid>child;;>bad;also>;good>pair");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  {
+    QFile f(base.filePath(QStringLiteral("tagged2.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Note with mixed tags");
+    f.close();
+  }
+
+  QJsonArray tagsArr;
+  tagsArr.append(QStringLiteral("valid"));
+  tagsArr.append(QStringLiteral("child"));
+  tagsArr.append(QStringLiteral("good"));
+  tagsArr.append(QStringLiteral("pair"));
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("tagged2.md");
+  fileEntry[QStringLiteral("tags")] = tagsArr;
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  QString destPath = m_tempDir.filePath(QStringLiteral("taggraph_malformed_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QString nbId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
+
+  // Valid pairs: valid>child and good>pair should be applied.
+  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  bool foundChild = false;
+  bool foundPair = false;
+  for (const auto &tagVal : tags) {
+    QJsonObject tagObj = tagVal.toObject();
+    QString name = tagObj[QStringLiteral("name")].toString();
+    if (name == QStringLiteral("child")) {
+      foundChild = true;
+      QCOMPARE(tagObj[QStringLiteral("parent")].toString(),
+               QStringLiteral("valid"));
+    }
+    if (name == QStringLiteral("pair")) {
+      foundPair = true;
+      QCOMPARE(tagObj[QStringLiteral("parent")].toString(),
+               QStringLiteral("good"));
+    }
+  }
+  QVERIFY2(foundChild, "Tag 'child' not found with parent 'valid'");
+  QVERIFY2(foundPair, "Tag 'pair' not found with parent 'good'");
+
+  QVERIFY(m_notebookService->closeNotebook(nbId));
 }
 
 } // namespace tests

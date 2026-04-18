@@ -51,15 +51,8 @@ void OpenVNote3NotebookDialog2::setupUI() {
   m_descriptionLabel->hide();
   layout->addRow(m_descriptionTitleLabel, m_descriptionLabel);
 
-  m_warningsTitleLabel = new QLabel(tr("Warnings:"), mainWidget);
-  m_warningsLabel = new QLabel(mainWidget);
-  m_warningsLabel->setWordWrap(true);
-  m_warningsTitleLabel->hide();
-  m_warningsLabel->hide();
-  layout->addRow(m_warningsTitleLabel, m_warningsLabel);
-
   m_confirmCheckBox = new QCheckBox(
-      tr("I understand this will copy the notebook to the destination folder."), mainWidget);
+      tr("I understand this will copy the notebook to the destination folder and not all data will be migrated."), mainWidget);
   layout->addRow(QString(), m_confirmCheckBox);
 
   setCentralWidget(mainWidget);
@@ -68,6 +61,7 @@ void OpenVNote3NotebookDialog2::setupUI() {
   setButtonEnabled(QDialogButtonBox::Ok, false);
 
   setWindowTitle(tr("Open VNote3 Notebook"));
+  setMinimumWidth(600);
 
   // Track manual edits to destination.
   connect(m_destinationInput, &LocationInputWithBrowseButton::textChanged, this, [this]() {
@@ -93,8 +87,6 @@ void OpenVNote3NotebookDialog2::validateInputs() {
     m_nameLabel->hide();
     m_descriptionTitleLabel->hide();
     m_descriptionLabel->hide();
-    m_warningsTitleLabel->hide();
-    m_warningsLabel->hide();
     setInformationText(QString(), InformationLevel::Info);
     setButtonEnabled(QDialogButtonBox::Ok, false);
     return;
@@ -107,8 +99,6 @@ void OpenVNote3NotebookDialog2::validateInputs() {
     m_nameLabel->hide();
     m_descriptionTitleLabel->hide();
     m_descriptionLabel->hide();
-    m_warningsTitleLabel->hide();
-    m_warningsLabel->hide();
     setInformationText(inspection.errorMessage, InformationLevel::Error);
     setButtonEnabled(QDialogButtonBox::Ok, false);
     return;
@@ -128,16 +118,8 @@ void OpenVNote3NotebookDialog2::validateInputs() {
     m_descriptionLabel->show();
   }
 
-  if (inspection.warnings.isEmpty()) {
-    m_warningsTitleLabel->hide();
-    m_warningsLabel->hide();
-  } else {
-    m_warningsTitleLabel->show();
-    auto warningText =
-        QStringLiteral("\u2022 ") + inspection.warnings.join(QStringLiteral("\n\u2022 "));
-    m_warningsLabel->setText(warningText);
-    m_warningsLabel->show();
-  }
+  // Content height changed — resize dialog to fit new fields.
+  resizeToHideScrollBarLater(true, false);
 
   // Auto-fill destination if user hasn't manually edited it (tracks source changes).
   if (!m_destinationManuallyEdited) {
