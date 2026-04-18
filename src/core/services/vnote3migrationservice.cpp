@@ -2,10 +2,13 @@
 
 #include <QDir>
 #include <QDirIterator>
+#include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 
 #include <core/services/notebookcoreservice.h>
 
@@ -26,6 +29,29 @@ const QString c_configFolderName = QStringLiteral("vx_notebook");
 const QString c_configFileName = QStringLiteral("vx_notebook.json");
 const int c_requiredVersion = 3;
 const QString c_requiredConfigMgr = QStringLiteral("vx.vnotex");
+
+LegacyTimestamp parseLegacyTimestamp(const QJsonValue &p_val) {
+  LegacyTimestamp ts;
+  if (p_val.isUndefined() || p_val.isNull()) {
+    // Field absent: value=0, parseSucceeded=true (missing is not an error).
+    return ts;
+  }
+  const QString str = p_val.toString();
+  if (str.isEmpty()) {
+    // Empty string: treat same as absent.
+    return ts;
+  }
+  const QDateTime dt = QDateTime::fromString(str, Qt::ISODate);
+  if (!dt.isValid()) {
+    // Present but malformed.
+    ts.value = 0;
+    ts.parseSucceeded = false;
+    return ts;
+  }
+  ts.value = dt.toMSecsSinceEpoch();
+  ts.parseSucceeded = true;
+  return ts;
+}
 
 } // namespace
 
@@ -105,12 +131,14 @@ VNote3MigrationService::inspectSourceNotebook(const QString &p_sourcePath) const
   result.errorMessage.clear();
   result.notebookName = jobj[QStringLiteral("name")].toString();
   result.notebookDescription = jobj[QStringLiteral("description")].toString();
+  result.imageFolder = imageFolder;
+  result.attachmentFolder = attachmentFolder;
 
   // Fixed ordered warnings list.
   result.warnings.append(
       QStringLiteral("History, tag graph, and extra configs will not be migrated"));
   result.warnings.append(
-      QStringLiteral("Per-node metadata (tags, visual settings) will not be migrated"));
+      QStringLiteral("Per-node metadata (tags, visual settings) will be migrated to new format"));
   result.warnings.append(QStringLiteral("Recycle bin contents will not be migrated"));
 
   return result;
@@ -210,4 +238,108 @@ VNote3ConversionResult VNote3MigrationService::convertNotebook(const QString &p_
   result.destinationPath = p_destPath;
   result.notebookName = inspection.notebookName;
   return result;
+}
+
+LegacyVxJson VNote3MigrationService::parseLegacyVxJson(const QString &p_vxJsonPath) {
+  LegacyVxJson result;
+
+  QFile file(p_vxJsonPath);
+  if (!file.exists() || !file.open(QIODevice::ReadOnly)) {
+    return result;
+  }
+
+  const QByteArray data = file.readAll();
+  file.close();
+
+  QJsonParseError parseError;
+  const QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+  if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
+    return result;
+  }
+
+  const QJsonObject root = doc.object();
+
+  // Parse folder-level metadata.
+  {
+    const LegacyTimestamp ct = parseLegacyTimestamp(root.value(QStringLiteral("created_time")));
+    result.createdTime = ct.value;
+  }
+  {
+    const LegacyTimestamp mt = parseLegacyTimestamp(root.value(QStringLiteral("modified_time")));
+    result.modifiedTime = mt.value;
+  }
+  result.nameColor = root.value(QStringLiteral("name_color")).toString();
+  result.backgroundColor = root.value(QStringLiteral("background_color")).toString();
+
+  // Parse files array.
+  const QJsonArray filesArr = root.value(QStringLiteral("files")).toArray();
+  for (const QJsonValue &v : filesArr) {
+    if (!v.isObject()) {
+      continue;
+    }
+    const QJsonObject fobj = v.toObject();
+    LegacyFileEntry entry;
+    entry.name = fobj.value(QStringLiteral("name")).toString();
+    entry.id = fobj.value(QStringLiteral("id")).toString();
+    entry.attachmentFolder = fobj.value(QStringLiteral("attachment_folder")).toString();
+    entry.createdTime = parseLegacyTimestamp(fobj.value(QStringLiteral("created_time")));
+    entry.modifiedTime = parseLegacyTimestamp(fobj.value(QStringLiteral("modified_time")));
+    entry.nameColor = fobj.value(QStringLiteral("name_color")).toString();
+    entry.backgroundColor = fobj.value(QStringLiteral("background_color")).toString();
+
+    const QJsonArray tagsArr = fobj.value(QStringLiteral("tags")).toArray();
+    for (const QJsonValue &tv : tagsArr) {
+      const QString tag = tv.toString();
+      if (!tag.isEmpty()) {
+        entry.tags.append(tag);
+      }
+    }
+
+    result.files.append(entry);
+  }
+
+  // Parse folders array.
+  const QJsonArray foldersArr = root.value(QStringLiteral("folders")).toArray();
+  for (const QJsonValue &v : foldersArr) {
+    if (!v.isObject()) {
+      continue;
+    }
+    LegacyFolderEntry entry;
+    entry.name = v.toObject().value(QStringLiteral("name")).toString();
+    result.folders.append(entry);
+  }
+
+  return result;
+}
+
+QStringList VNote3MigrationService::collectAllTags(const QString &p_sourcePath) {
+  QSet<QString> tagSet;
+
+  QDirIterator it(p_sourcePath, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+
+  // Check the root directory itself.
+  {
+    const QString vxJsonPath = p_sourcePath + QStringLiteral("/vx.json");
+    const LegacyVxJson vxJson = parseLegacyVxJson(vxJsonPath);
+    for (const LegacyFileEntry &fe : vxJson.files) {
+      for (const QString &tag : fe.tags) {
+        tagSet.insert(tag);
+      }
+    }
+  }
+
+  // Walk subdirectories.
+  while (it.hasNext()) {
+    it.next();
+    const QString dirPath = it.filePath();
+    const QString vxJsonPath = dirPath + QStringLiteral("/vx.json");
+    const LegacyVxJson vxJson = parseLegacyVxJson(vxJsonPath);
+    for (const LegacyFileEntry &fe : vxJson.files) {
+      for (const QString &tag : fe.tags) {
+        tagSet.insert(tag);
+      }
+    }
+  }
+
+  return tagSet.values();
 }
