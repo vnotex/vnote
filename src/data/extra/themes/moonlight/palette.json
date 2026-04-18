@@ -54,7 +54,8 @@
         "bg10_6" : "#3c414d",
         "bg10_7" : "#444b58",
         "bg10_8" : "#5a5f66",
-        "bg11" : "#0c7bff"
+        "bg11" : "#0c7bff",
+        "bg3_45" : "#3b424c"
     },
     "base" : {
         "normal" : {
@@ -686,6 +687,27 @@
             "tips_label" : {
                 "fg" : "@base#master#fg",
                 "bg" : "@base#master#bg"
+            },
+            "side_bar" : {
+                "fg" : "@widgets#qmainwindow#side_bar#fg",
+                "bg" : "@widgets#qmainwindow#side_bar#bg",
+                "selected" : {
+                    "fg" : "@widgets#qmainwindow#side_bar#selected#fg",
+                    "bg" : "@widgets#qmainwindow#side_bar#selected#bg"
+                },
+                "icon" : {
+                    "fg" : "@widgets#qmainwindow#side_bar#icon#fg",
+                    "selected" : {
+                        "fg" : "@widgets#qmainwindow#side_bar#icon#fg"
+                    }
+                },
+                "hover" : {
+                    "fg" : "@widgets#qmainwindow#side_bar#hover#fg",
+                    "bg" : "@widgets#qmainwindow#side_bar#hover#bg"
+                },
+                "widget" : {
+                    "bg" : "@palette#bg3_45"
+                }
             }
         },
         "unitedentry" : {
