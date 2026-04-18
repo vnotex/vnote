@@ -895,8 +895,7 @@ void MarkdownViewWindow2::handleThemeChanged() {
         /*p_force=*/true);
 
     // Update WebEngine page background.
-    auto marginBg = computeMarginBackground();
-    m_viewer->page()->setBackgroundColor(marginBg);
+    m_viewer->page()->setBackgroundColor(themeService->getBaseBackground());
 
     // Reload viewer with new template (preserves buffer content, does not sync scroll from editor).
     syncViewerFromBuffer(false);

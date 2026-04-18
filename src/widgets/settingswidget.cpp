@@ -121,6 +121,7 @@ void SettingsWidget::setupToolBar(QToolBar *p_toolBar) {
       p_toolBar->addAction(IconUtils::fetchIconWithDisabledState(
                                themeService->getIconFile(QStringLiteral("save_editor.svg"))),
                            tr("Apply"));
+  m_applyAction->setProperty("iconName", QStringLiteral("save_editor.svg"));
   m_applyAction->setEnabled(false);
   connect(m_applyAction, &QAction::triggered, this, [this]() {
     if (savePages()) {
@@ -132,6 +133,7 @@ void SettingsWidget::setupToolBar(QToolBar *p_toolBar) {
       p_toolBar->addAction(IconUtils::fetchIconWithDisabledState(
                                themeService->getIconFile(QStringLiteral("reset_editor.svg"))),
                            tr("Reset"));
+  m_resetAction->setProperty("iconName", QStringLiteral("reset_editor.svg"));
   m_resetAction->setEnabled(false);
   connect(m_resetAction, &QAction::triggered, this, [this]() { resetPages(); });
 }
