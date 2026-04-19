@@ -91,7 +91,7 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QW
   // Refresh toolbar icons when the theme changes.
   auto *themeService = m_services.get<ThemeService>();
   if (themeService) {
-    connect(themeService, &ThemeService::themeChanged, this, &ViewWindow2::refreshToolBarIcons);
+    connect(themeService, &ThemeService::themeChanged, this, &ViewWindow2::handleThemeChanged);
   }
 }
 
@@ -954,6 +954,10 @@ void ViewWindow2::refreshToolBarIcons() {
     ViewWindowToolBarHelper2::refreshToolBarIcons(m_toolBar, m_services);
     updateAttachmentIcon();
   }
+}
+
+void ViewWindow2::handleThemeChanged() {
+  refreshToolBarIcons();
 }
 
 // ============ Layout Mode ============

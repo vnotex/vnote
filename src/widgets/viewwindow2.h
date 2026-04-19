@@ -182,6 +182,11 @@ public slots:
   // Default implementation re-applies content margins for readable-width mode.
   virtual void handleEditorConfigChange();
 
+  // Called when the application theme changes.
+  // Base implementation refreshes toolbar icons.
+  // Subclasses override to refresh theme-dependent content (editor themes, web viewer CSS, etc.).
+  virtual void handleThemeChanged();
+
 signals:
   // Emitted when this window gains keyboard focus.
   void focused(ViewWindow2 *p_win);

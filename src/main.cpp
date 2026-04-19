@@ -363,6 +363,13 @@ int main(int argc, char *argv[]) {
     WidgetUtils::calculateScaleFactor(mainWindow.windowHandle()->screen());
     themeService.setBaseBackground(mainWindow.palette().color(QPalette::Base));
 
+    // Update base background after theme switch (QSS already re-applied by earlier connection).
+    QObject::connect(&themeService, &ThemeService::themeChanged, &mainWindow,
+                     [&themeService, &mainWindow]() {
+                       themeService.setBaseBackground(
+                           mainWindow.palette().color(QPalette::Base));
+                     });
+
     mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen);
 
     // Run event loop
