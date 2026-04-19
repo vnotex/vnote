@@ -3,6 +3,7 @@
 
 #include <QIcon>
 #include <QString>
+#include <QStringList>
 
 class QToolBar;
 class QWidget;
@@ -60,6 +61,16 @@ public:
 
   // Return the QWidget to embed in the view area.
   virtual QWidget *contentWidget() = 0;
+
+  // --- Navigation ---
+
+  // Navigate to a subpage identified by path segments, optionally scrolling to a
+  // fragment widget. Default no-op; override in content widgets that support deep linking.
+  virtual void navigateTo(const QStringList &p_pathSegments, const QString &p_fragment)
+  {
+    Q_UNUSED(p_pathSegments);
+    Q_UNUSED(p_fragment);
+  }
 };
 
 } // namespace vnotex

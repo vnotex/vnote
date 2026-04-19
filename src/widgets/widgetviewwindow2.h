@@ -25,6 +25,7 @@ public:
   // ============ Identity (delegated to content) ============
   QIcon getIcon() const override;
   QString getName() const override;
+  IViewWindowContent *getContent() const { return m_content; }
 
   // ============ Pure Virtual Overrides ============
   void setMode(ViewWindowMode p_mode) override;
