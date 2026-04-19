@@ -60,8 +60,7 @@ void AppearancePage::setupUI() {
             &AppearancePage::pageIsChangedWithRestartNeeded);
   }
 
-  {
-    Q_ASSERT(m_mainWindow);
+  if (m_mainWindow) {
     const auto &docks = m_mainWindow->getDocks();
 
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
@@ -131,7 +130,7 @@ bool AppearancePage::saveInternal() {
 
   coreConfig.setToolBarIconSize(m_toolBarIconSizeSpinBox->value());
 
-  {
+  if (!m_keepDocksExpandingContentArea.isEmpty()) {
     QStringList docks;
     for (const auto &cb : m_keepDocksExpandingContentArea) {
       if (cb.first->isChecked()) {
