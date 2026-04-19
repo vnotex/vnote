@@ -1,10 +1,14 @@
 #include "mainwindow2.h"
 
+#include <QApplication>
 #include <QCloseEvent>
+#include <QCoreApplication>
 #include <QDialog>
 #include <QDockWidget>
 #include <QFileInfo>
 #include <QJsonDocument>
+#include <QProgressDialog>
+#include <QStyle>
 #include <QSystemTrayIcon>
 #include <QTimer>
 #include <QToolBar>
@@ -75,6 +79,24 @@ void MainWindow2::setupUI() {
 
   // Setup ViewArea2 as central widget.
   setupViewArea();
+
+  // Connect theme switch orchestration (BEFORE setupDocks/setupToolBar so this
+  // handler fires before DockWidgetHelper/ToolBarHelper2 handlers).
+  auto *themeService = m_serviceLocator.get<ThemeService>();
+  if (themeService) {
+    connect(themeService, &ThemeService::themeAboutToChange, this, [this]() {
+      if (!m_progressDialog) {
+        m_progressDialog = new QProgressDialog(this);
+        m_progressDialog->setWindowModality(Qt::WindowModal);
+        m_progressDialog->setCancelButton(nullptr);
+        m_progressDialog->setMinimumDuration(0);
+      }
+      m_progressDialog->setRange(0, 3);
+      m_progressDialog->setValue(0);
+      m_progressDialog->setLabelText(tr("Loading theme..."));
+    });
+    connect(themeService, &ThemeService::themeChanged, this, &MainWindow2::onThemeChanged);
+  }
 
   // Setup dock widgets (before toolbar, so the Windows submenu can enumerate them).
   setupDocks();
@@ -702,4 +724,37 @@ void MainWindow2::setupSystemTray() {
 void MainWindow2::quitApp() {
   m_requestQuit = 0;
   close();
+}
+
+void MainWindow2::onThemeChanged() {
+  auto *themeService = m_serviceLocator.get<ThemeService>();
+  if (!themeService) return;
+
+  // Step 1: Apply stylesheet
+  if (m_progressDialog) {
+    m_progressDialog->setValue(1);
+    m_progressDialog->setLabelText(tr("Applying stylesheet..."));
+  }
+  QCoreApplication::processEvents();
+
+  auto stylesheet = themeService->fetchQtStyleSheet();
+  if (!stylesheet.isEmpty()) {
+    qApp->setStyleSheet(stylesheet);
+    qApp->style()->unpolish(qApp);
+    qApp->style()->polish(qApp);
+  }
+
+  // Step 2: Refresh UI
+  if (m_progressDialog) {
+    m_progressDialog->setValue(2);
+    m_progressDialog->setLabelText(tr("Refreshing UI..."));
+  }
+  QCoreApplication::processEvents();
+
+  themeService->setBaseBackground(palette().color(QPalette::Base));
+
+  // Step 3: Done
+  if (m_progressDialog) {
+    m_progressDialog->setValue(3);
+  }
 }

@@ -247,15 +247,6 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<ThemeService>(&themeService);
     app.setThemeService(&themeService);
     themeService.setHookManager(&hookManager);
-    QObject::connect(&themeService, &ThemeService::themeChanged, &app,
-                     [&app, &themeService]() {
-                       auto stylesheet = themeService.fetchQtStyleSheet();
-                       if (!stylesheet.isEmpty()) {
-                         app.setStyleSheet(stylesheet);
-                         app.style()->unpolish(&app);
-                         app.style()->polish(&app);
-                       }
-                     });
     qInfo() << "ThemeService registered";
 
     // Initialize syntax highlighting repository (must happen before any TextEditor is created).
@@ -362,13 +353,6 @@ int main(int argc, char *argv[]) {
     // Let MainWindow show first to decide the screen on which app is running.
     WidgetUtils::calculateScaleFactor(mainWindow.windowHandle()->screen());
     themeService.setBaseBackground(mainWindow.palette().color(QPalette::Base));
-
-    // Update base background after theme switch (QSS already re-applied by earlier connection).
-    QObject::connect(&themeService, &ThemeService::themeChanged, &mainWindow,
-                     [&themeService, &mainWindow]() {
-                       themeService.setBaseBackground(
-                           mainWindow.palette().color(QPalette::Base));
-                     });
 
     mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen);
 

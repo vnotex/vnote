@@ -102,6 +102,9 @@ public:
   void setHookManager(HookManager *p_hookMgr);
 
 signals:
+  // Emitted before a theme load begins (switch or refresh).
+  void themeAboutToChange(const QString &p_themeName);
+
   // Emitted after a theme is loaded (switched or refreshed).
   void themeChanged(const QString &p_themeName);
 

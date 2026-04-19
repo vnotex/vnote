@@ -11,6 +11,7 @@ class QCloseEvent;
 class QDockWidget;
 class QToolBar;
 class QWebEngineView;
+class QProgressDialog;
 class QSystemTrayIcon;
 
 namespace vnotex {
@@ -136,6 +137,9 @@ private:
 
   void saveStateAndGeometry();
 
+  // Theme switch orchestration slot.
+  void onThemeChanged();
+
   // Non-owning reference to ServiceLocator.
   ServiceLocator &m_serviceLocator;
 
@@ -168,6 +172,9 @@ private:
   ExportDialog2 *m_exportDialog = nullptr;
 
   QSystemTrayIcon *m_trayIcon = nullptr;
+
+  // Theme switch progress dialog.
+  QProgressDialog *m_progressDialog = nullptr;
 
   // Content area expanded state.
   bool m_contentAreaExpanded = false;

@@ -1,5 +1,6 @@
 #include "themeservice.h"
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
 #include <QRegularExpression>
@@ -79,6 +80,9 @@ void ThemeService::checkAndAddThemeFolder(const QString &p_folder) {
 const Theme &ThemeService::getCurrentTheme() const { return *m_currentTheme; }
 
 void ThemeService::loadCurrentTheme(const QString &p_themeName) {
+  emit themeAboutToChange(p_themeName);
+  QCoreApplication::processEvents();
+
   m_currentTheme.reset();
   auto themeFolder = findThemeFolder(p_themeName);
   if (themeFolder.isNull()) {
