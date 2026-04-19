@@ -54,11 +54,28 @@ bool NotebookCoreService::closeNotebook(const QString &p_notebookId) {
     return false;
   }
 
+  // Fire NotebookBeforeClose hook (cancellable).
+  if (m_hookMgr) {
+    NotebookCloseEvent event;
+    event.notebookId = p_notebookId;
+    if (m_hookMgr->doAction(HookNames::NotebookBeforeClose, event)) {
+      return false;
+    }
+  }
+
   VxCoreError err = vxcore_notebook_close(m_context, p_notebookId.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "closeNotebook failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
   }
+
+  // Fire NotebookAfterClose hook so other modules can react.
+  if (m_hookMgr) {
+    NotebookCloseEvent event;
+    event.notebookId = p_notebookId;
+    m_hookMgr->doAction(HookNames::NotebookAfterClose, event);
+  }
+
   return true;
 }
 

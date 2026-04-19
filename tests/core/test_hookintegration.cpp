@@ -3,6 +3,7 @@
 #include <core/exampleplugin.h>
 #include <core/hookcontext.h>
 #include <core/hooknames.h>
+#include <core/hookevents.h>
 #include <core/services/hookmanager.h>
 
 namespace tests {
@@ -33,6 +34,11 @@ private slots:
 
   // Multiple handlers test
   void testMultipleHandlersExecuteInOrder();
+
+  // Notebook close hook tests
+  void testNotebookCloseHookFires();
+  void testNotebookAfterCloseHookFires();
+  void testNotebookCloseHookCancellation();
 
 private:
   vnotex::HookManager *m_hookMgr = nullptr;
@@ -254,6 +260,84 @@ void TestHookIntegration::testMultipleHandlersExecuteInOrder() {
   QCOMPARE(executionOrder[0], QStringLiteral("priority5"));
   QCOMPARE(executionOrder[1], QStringLiteral("priority10"));
   QCOMPARE(executionOrder[2], QStringLiteral("priority20"));
+}
+
+void TestHookIntegration::testNotebookCloseHookFires() {
+  bool hookFired = false;
+  QString receivedNotebookId;
+
+  m_hookMgr->addAction<vnotex::NotebookCloseEvent>(
+      vnotex::HookNames::NotebookBeforeClose,
+      [&](vnotex::HookContext &p_ctx, const vnotex::NotebookCloseEvent &p_event) {
+        Q_UNUSED(p_ctx);
+        hookFired = true;
+        receivedNotebookId = p_event.notebookId;
+      },
+      10);
+
+  vnotex::NotebookCloseEvent event;
+  event.notebookId = QStringLiteral("close-test-notebook-456");
+  m_hookMgr->doAction(vnotex::HookNames::NotebookBeforeClose, event);
+
+  QVERIFY(hookFired);
+  QCOMPARE(receivedNotebookId, QStringLiteral("close-test-notebook-456"));
+}
+
+void TestHookIntegration::testNotebookAfterCloseHookFires() {
+  bool hookFired = false;
+  QString receivedNotebookId;
+
+  m_hookMgr->addAction<vnotex::NotebookCloseEvent>(
+      vnotex::HookNames::NotebookAfterClose,
+      [&](vnotex::HookContext &p_ctx, const vnotex::NotebookCloseEvent &p_event) {
+        Q_UNUSED(p_ctx);
+        hookFired = true;
+        receivedNotebookId = p_event.notebookId;
+      },
+      10);
+
+  vnotex::NotebookCloseEvent event;
+  event.notebookId = QStringLiteral("after-close-notebook-789");
+  m_hookMgr->doAction(vnotex::HookNames::NotebookAfterClose, event);
+
+  QVERIFY(hookFired);
+  QCOMPARE(receivedNotebookId, QStringLiteral("after-close-notebook-789"));
+}
+
+void TestHookIntegration::testNotebookCloseHookCancellation() {
+  bool beforeFired = false;
+  bool afterFired = false;
+
+  // Subscribe to BeforeClose with cancellation
+  m_hookMgr->addAction<vnotex::NotebookCloseEvent>(
+      vnotex::HookNames::NotebookBeforeClose,
+      [&](vnotex::HookContext &p_ctx, const vnotex::NotebookCloseEvent &p_event) {
+        Q_UNUSED(p_event);
+        beforeFired = true;
+        p_ctx.cancel();
+      },
+      10);
+
+  // Subscribe to AfterClose to verify it is NOT fired
+  m_hookMgr->addAction<vnotex::NotebookCloseEvent>(
+      vnotex::HookNames::NotebookAfterClose,
+      [&](vnotex::HookContext &p_ctx, const vnotex::NotebookCloseEvent &p_event) {
+        Q_UNUSED(p_ctx);
+        Q_UNUSED(p_event);
+        afterFired = true;
+      },
+      10);
+
+  // Fire BeforeClose — should be cancelled
+  vnotex::NotebookCloseEvent event;
+  event.notebookId = QStringLiteral("cancel-notebook-001");
+  bool cancelled = m_hookMgr->doAction(vnotex::HookNames::NotebookBeforeClose, event);
+
+  QVERIFY(beforeFired);
+  QVERIFY(cancelled);
+
+  // AfterClose was never fired, so afterFired should remain false
+  QVERIFY(!afterFired);
 }
 
 } // namespace tests
