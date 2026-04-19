@@ -3,6 +3,7 @@
 #include <QDesktopServices>
 #include <QToolBar>
 #include <QUrl>
+#include <QWebEnginePage>
 
 #include <controllers/pdfviewwindowcontroller.h>
 #include <core/configmgr2.h>
@@ -84,6 +85,27 @@ void PdfViewWindow2::handleEditorConfigChange() {
     auto *tmplService = getServices().get<HtmlTemplateService>();
     tmplService->updatePdfViewerTemplate(pdfViewerConfig);
   }
+}
+
+void PdfViewWindow2::handleThemeChanged() {
+  ViewWindow2::handleThemeChanged();
+
+  if (!m_viewer) {
+    return;
+  }
+
+  // Force-regenerate PDF template (theme may have changed background colors in CSS).
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  const auto &pdfViewerConfig = configMgr->getEditorConfig().getPdfViewerConfig();
+  auto *tmplService = getServices().get<HtmlTemplateService>();
+  tmplService->updatePdfViewerTemplate(pdfViewerConfig, /*p_force=*/true);
+
+  // Update WebEngine page background color.
+  auto *themeService = getServices().get<ThemeService>();
+  m_viewer->page()->setBackgroundColor(themeService->getBaseBackground());
+
+  // Reload the viewer content with the new template.
+  syncEditorFromBuffer();
 }
 
 void PdfViewWindow2::setModified(bool p_modified) { Q_UNUSED(p_modified); }

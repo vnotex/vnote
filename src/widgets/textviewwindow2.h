@@ -32,6 +32,8 @@ public:
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
 
+  void handleThemeChanged() override;
+
   void applySnippet(const QString &p_name) override;
 
   void applySnippet() override;

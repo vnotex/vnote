@@ -136,6 +136,28 @@ void MindMapViewWindow2::handleEditorConfigChange() {
   }
 }
 
+void MindMapViewWindow2::handleThemeChanged() {
+  ViewWindow2::handleThemeChanged();
+
+  if (!m_editor) {
+    return;
+  }
+
+  // Force-regenerate MindMap template with theme stylesheet.
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  const auto &mindMapConfig = configMgr->getEditorConfig().getMindMapEditorConfig();
+  auto *tmplService = getServices().get<HtmlTemplateService>();
+  auto *themeService = getServices().get<ThemeService>();
+  tmplService->updateMindMapEditorTemplate(
+      mindMapConfig, themeService->getFile(Theme::File::WebStyleSheet), /*p_force=*/true);
+
+  // Update WebEngine page background color.
+  m_editor->page()->setBackgroundColor(themeService->getBaseBackground());
+
+  // Reload the editor content with the new template.
+  syncEditorFromBuffer();
+}
+
 void MindMapViewWindow2::scrollUp() {}
 
 void MindMapViewWindow2::scrollDown() {}

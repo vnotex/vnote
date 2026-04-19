@@ -852,6 +852,64 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   updateWebViewerConfig();
 }
 
+void MarkdownViewWindow2::handleThemeChanged() {
+  ViewWindow2::handleThemeChanged(); // base: refreshes toolbar icons
+
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  const auto &editorConfig = configMgr->getEditorConfig();
+  const auto &mdConfig = editorConfig.getMarkdownEditorConfig();
+  auto *themeService = getServices().get<ThemeService>();
+
+  // ---- Editor refresh ----
+  if (m_editor) {
+    auto themeFile = themeService->getFile(Theme::File::MarkdownEditorStyle);
+    auto syntaxTheme = themeService->getEditorHighlightTheme();
+    qreal scaleFactor = WidgetUtils::calculateScaleFactor();
+
+    const auto &widgetConfig = configMgr->getWidgetConfig();
+    int maxContentWidth =
+        widgetConfig.getViewWindowLayoutMode() == ViewWindowLayoutMode::ReadableWidth
+            ? widgetConfig.getReadableWidthMaxPx()
+            : 0;
+
+    auto config = MarkdownEditorController::buildMarkdownEditorConfig(
+        editorConfig, mdConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth);
+
+    // Propagation guard: prevent setConfig from triggering false "modified" state.
+    const bool old = m_propagateEditorToBuffer;
+    m_propagateEditorToBuffer = false;
+    m_editor->setConfig(config);
+    m_editor->updateFromConfig();
+    m_propagateEditorToBuffer = old;
+
+    updateEditorFromConfig();
+  }
+
+  // ---- Viewer refresh ----
+  if (m_viewer) {
+    // Force-regenerate HTML template with new theme CSS.
+    auto *htmlTemplateService = getServices().get<HtmlTemplateService>();
+    htmlTemplateService->updateMarkdownViewerTemplate(
+        mdConfig, themeService->getFile(Theme::File::WebStyleSheet),
+        themeService->getFile(Theme::File::HighlightStyleSheet),
+        /*p_force=*/true);
+
+    // Update WebEngine page background.
+    auto marginBg = computeMarginBackground();
+    m_viewer->page()->setBackgroundColor(marginBg);
+
+    // Reload viewer with new template (preserves buffer content, does not sync scroll from editor).
+    syncViewerFromBuffer(false);
+
+    // Re-apply readable width colors if in readable-width mode.
+    applyReadableWidth();
+  }
+
+  // Reset external code block highlight styles so they are re-initialized
+  // from the new theme's HighlightStyleSheet on next highlight request.
+  m_codeBlockStylesInitialized = false;
+}
+
 void MarkdownViewWindow2::applyReadableWidth() {
   auto mode = getLayoutMode();
   auto &widgetConfig = getServices().get<ConfigMgr2>()->getWidgetConfig();
@@ -1236,9 +1294,8 @@ bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
 
 void MarkdownViewWindow2::handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp,
                                                                   const QString &p_text) {
-  static bool stylesInitialized = false;
-  if (!stylesInitialized) {
-    stylesInitialized = true;
+  if (!m_codeBlockStylesInitialized) {
+    m_codeBlockStylesInitialized = true;
     auto *themeService = getServices().get<ThemeService>();
     const auto file = themeService->getFile(Theme::File::HighlightStyleSheet);
     if (file.isEmpty()) {

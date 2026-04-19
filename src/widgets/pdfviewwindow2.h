@@ -28,6 +28,8 @@ public:
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
 
+  void handleThemeChanged() Q_DECL_OVERRIDE;
+
 protected slots:
   void setModified(bool p_modified) Q_DECL_OVERRIDE;
 

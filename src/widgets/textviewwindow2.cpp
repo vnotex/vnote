@@ -213,6 +213,40 @@ void TextViewWindow2::handleEditorConfigChange() {
   }
 }
 
+void TextViewWindow2::handleThemeChanged() {
+  ViewWindow2::handleThemeChanged();
+
+  if (!m_editor) {
+    return;
+  }
+
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  const auto &editorConfig = configMgr->getEditorConfig();
+  const auto &textEditorConfig = editorConfig.getTextEditorConfig();
+
+  auto *themeService = getServices().get<ThemeService>();
+  auto themeFile = themeService->getFile(Theme::File::TextEditorStyle);
+  auto syntaxTheme = themeService->getEditorHighlightTheme();
+  qreal scaleFactor = WidgetUtils::calculateScaleFactor();
+
+  const auto &widgetConfig = configMgr->getWidgetConfig();
+  int maxContentWidth =
+      widgetConfig.getViewWindowLayoutMode() == ViewWindowLayoutMode::ReadableWidth
+          ? widgetConfig.getReadableWidthMaxPx()
+          : 0;
+
+  auto config = TextViewWindowController::buildTextEditorConfig(
+      editorConfig, textEditorConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth);
+
+  // Propagation guard: prevent setConfig from triggering false "modified" state.
+  const bool old = m_propagateEditorToBuffer;
+  m_propagateEditorToBuffer = false;
+  m_editor->setConfig(config);
+  m_propagateEditorToBuffer = old;
+
+  updateEditorFromConfig();
+}
+
 void TextViewWindow2::updateEditorFromConfig() {
   auto snapshot = m_controller->currentEditorConfig();
 

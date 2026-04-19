@@ -81,6 +81,8 @@ protected slots:
   void handleFindAndReplaceWidgetOpened() Q_DECL_OVERRIDE;
 
 protected:
+  void handleThemeChanged() override;
+
   void addAdditionalRightToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
 
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
@@ -193,6 +195,10 @@ private:
 
   // Outline provider: bridges heading changes from editor/viewer to OutlinePopup.
   QSharedPointer<OutlineProvider> m_outlineProvider;
+
+  // Whether external code-block highlight styles have been fetched from the theme.
+  // Reset on theme change so styles are re-initialized from the new theme.
+  bool m_codeBlockStylesInitialized = false;
 
   // Image tracking for obsolete-image cleanup.
   QSet<QString>
