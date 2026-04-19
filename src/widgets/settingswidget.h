@@ -36,6 +36,7 @@ public:
   void reset() override;
   bool canClose(bool p_force) override;
   QWidget *contentWidget() override;
+  void navigateTo(const QStringList &p_pathSegments, const QString &p_fragment) override;
 
 signals:
   void contentChanged();

@@ -86,3 +86,24 @@ add_custom_command(TARGET test_settings_slug POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_settings_slug>
 )
+
+add_qt_test(test_settings_navigation
+  SOURCES
+    test_settings_navigation.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/settingspage.h
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+
+target_include_directories(test_settings_navigation PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_settings_navigation POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_settings_navigation>
+)

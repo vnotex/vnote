@@ -382,6 +382,52 @@ void SettingsWidget::search() {
   });
 }
 
+void SettingsWidget::navigateTo(const QStringList &p_pathSegments, const QString &p_fragment) {
+  // Navigate to the page matching the slug path.
+  if (!p_pathSegments.isEmpty()) {
+    QTreeWidgetItem *currentItem = nullptr;
+    // Search top-level items first.
+    for (int i = 0; i < m_pageExplorer->topLevelItemCount(); ++i) {
+      auto *item = m_pageExplorer->topLevelItem(i);
+      auto *page = itemPage(item);
+      if (page && page->slug() == p_pathSegments[0]) {
+        currentItem = item;
+        break;
+      }
+    }
+    // Walk deeper path segments through children.
+    for (int seg = 1; seg < p_pathSegments.size() && currentItem; ++seg) {
+      QTreeWidgetItem *found = nullptr;
+      for (int c = 0; c < currentItem->childCount(); ++c) {
+        auto *child = currentItem->child(c);
+        auto *page = itemPage(child);
+        if (page && page->slug() == p_pathSegments[seg]) {
+          found = child;
+          break;
+        }
+      }
+      currentItem = found;
+    }
+    if (currentItem) {
+      m_pageExplorer->setCurrentItem(currentItem);
+      // setCurrentItem triggers currentItemChanged signal which switches the page.
+    }
+  }
+
+  // Fragment scroll.
+  if (!p_fragment.isEmpty()) {
+    auto *currentPage = m_pageLayout->currentWidget();
+    if (currentPage) {
+      auto *target = currentPage->findChild<QWidget *>(p_fragment);
+      if (target && m_scrollArea) {
+        QTimer::singleShot(0, this, [this, target]() {
+          m_scrollArea->ensureWidgetVisible(target);
+        });
+      }
+    }
+  }
+}
+
 void SettingsWidget::checkRestart() {
   forEachPage([this](const SettingsPage *p_page) {
     if (p_page->isRestartNeeded()) {
