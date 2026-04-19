@@ -48,6 +48,10 @@ public:
   // Apply file open settings (scroll, highlight) to an already-created window.
   virtual void applyFileOpenSettings(ID p_windowId, const FileOpenSettings &p_settings) = 0;
 
+  // Navigate a widget-based view window to a specific content location.
+  virtual void navigateWidgetContent(ID p_windowId, const QStringList &p_pathSegments,
+                                     const QString &p_fragment) = 0;
+
   // Focus/navigation
   virtual void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) = 0;
   virtual void focusViewSplit(const QString &p_workspaceId) = 0;

@@ -832,6 +832,22 @@ void ViewArea2::applyFileOpenSettings(ID p_windowId, const FileOpenSettings &p_s
   }
 }
 
+void ViewArea2::navigateWidgetContent(ID p_windowId, const QStringList &p_pathSegments,
+                                      const QString &p_fragment) {
+  auto *win = windowForId(p_windowId);
+  if (!win) {
+    return;
+  }
+  auto *widgetWindow = dynamic_cast<WidgetViewWindow2 *>(win);
+  if (!widgetWindow) {
+    return;
+  }
+  auto *content = widgetWindow->getContent();
+  if (content) {
+    content->navigateTo(p_pathSegments, p_fragment);
+  }
+}
+
 bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
   auto *win = windowForId(p_windowId);
   if (!win) {
